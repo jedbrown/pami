@@ -1,17 +1,19 @@
 /*
- * \file common/lapiunix/NativeInterface.h
+ * \file common/lapi/NativeInterface.h
  * \brief ???
  */
 
-#ifndef __common_lapiunix_NativeInterface_h__
-#define __common_lapiunix_NativeInterface_h__
+#ifndef __common_lapi_NativeInterface_h__
+#define __common_lapi_NativeInterface_h__
 
 #include "Global.h"
 #include "algorithms/interfaces/NativeInterface.h"
 #include "util/ccmi_util.h"
+
 #include "components/devices/MulticastModel.h"
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/MulticombineModel.h"
+
 #include "components/memory/MemoryAllocator.h"
 
 #ifndef TRACE_ERR
@@ -28,7 +30,7 @@ namespace XMI
   class LAPINativeInterface : public CCMI::Interfaces::NativeInterface
   {
   public:
-    inline LAPINativeInterface(T_Device &device, xmi_client_t client, xmi_context_t context, size_t context_id);
+    inline LAPINativeInterface(T_Device &device, xmi_client_t client, xmi_context_t context, size_t context_id, size_t client_id);
 
     /// \brief this call is called when the native interface is
     /// initialized to set the mcast dispatch
@@ -82,6 +84,7 @@ namespace XMI
     xmi_client_t              _client;
     xmi_context_t             _context;
     size_t                    _contextid;
+    size_t                    _clientid;
   }; // class LAPINativeInterface
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -89,10 +92,10 @@ namespace XMI
   ///////////////////////////////////////////////////////////////////////////////
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   LAPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::LAPINativeInterface(T_Device      &device,
-                        xmi_client_t   client,
-                        xmi_context_t  context,
-                        size_t         context_id,
-                        size_t         client_id):
+                       xmi_client_t   client,
+                       xmi_context_t  context,
+                       size_t         context_id,
+                       size_t         client_id):
       CCMI::Interfaces::NativeInterface(__global.mapping.task(),
                                         __global.mapping.size()),
   _allocator(),
@@ -107,8 +110,8 @@ namespace XMI
 
       _dispatch(0),
       _context(context),
+      _contextid(context_id),
       _clientid(client_id)
-      _contextid(context_id)
       {
     TRACE_ERR((stderr, "<%p>%s %d %d %d\n", this, __PRETTY_FUNCTION__,
                _mcast_status, _msync_status, _mcomb_status));
@@ -141,17 +144,17 @@ namespace XMI
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline xmi_result_t LAPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::setDispatch (xmi_dispatch_callback_fn fn, void *cookie)
       {
-        static size_t dispatch = DISPATCH_START;
+      static size_t        dispatch = DISPATCH_START;
 
     TRACE_ERR((stderr, "<%p>LAPINativeInterface::setDispatch(%p, %p) id=%zd\n",
                this, fn.multicast,  cookie,  dispatch));
 
     xmi_result_t result = _mcast.registerMcastRecvFunction(dispatch, fn.multicast, cookie);
 
-        _dispatch = dispatch;
-        dispatch ++;
+      _dispatch = dispatch;
+      dispatch ++;
     return result;
-      }
+    }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline xmi_result_t LAPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multicast (xmi_multicast_t *mcast)
@@ -167,7 +170,7 @@ namespace XMI
     xmi_multicast_t  m     = *mcast;
 
     m.dispatch =  _dispatch; // \todo ? Not really used in C++ objects?
-    m.client   =  _client;   // \todo ? Why doesn't caller set this?
+    m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
     m.context  =  _contextid;// \todo ? Why doesn't caller set this?
 
     m.cb_done.function     =  ni_client_done;
@@ -180,17 +183,16 @@ namespace XMI
   // Multisync Code
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t LAPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multisync    (xmi_multisync_t *msync)
+  inline xmi_result_t LAPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multisync(xmi_multisync_t *msync)
       {
     allocObj *req          = (allocObj *)_allocator.allocateObject();
         req->_ni               = this;
         req->_user_callback    = msync->cb_done;
-    TRACE_ERR((stderr, "<%p>LAPINativeInterface::multisync(%p) %p\n",
-               this, msync, req));
+    TRACE_ERR((stderr, "<%p>LAPINativeInterface::multisync(%p) %p\n", this, msync, req));
 
         xmi_multisync_t  m     = *msync;
 
-    m.client   =  _client;
+    m.client   =  _clientid;
     m.context  =  _contextid;
 
     m.cb_done.function     =  ni_client_done;
@@ -202,7 +204,7 @@ namespace XMI
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline xmi_result_t LAPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multicombine (xmi_multicombine_t *mcomb)
-      {
+  {
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
     req->_user_callback    = mcomb->cb_done;
@@ -211,25 +213,25 @@ namespace XMI
 
     xmi_multicombine_t  m     = *mcomb;
 
-    m.client   =  _client;
+    m.client   =  _clientid;
     m.context  =  _contextid;
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
 
     return _mcomb.postMulticombine(req->_state._mcomb, &m);
-      }
+  }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline xmi_result_t  LAPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multicast (uint8_t (&state)[T_Mcast::sizeof_msg],
                                                                                         xmi_multicast_t *mcast)
-  {
+      {
     TRACE_ERR((stderr, "<%p>LAPINativeInterface::multicast(%p, %p)\n",
                this, &state, mcast));
     mcast->dispatch =  _dispatch;
 
     return _mcast.postMulticast_impl(state, mcast);
-  }
+      }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline xmi_result_t  LAPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],

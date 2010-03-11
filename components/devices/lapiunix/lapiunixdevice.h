@@ -132,13 +132,15 @@ namespace XMI
           _m2m_dispatch_lookup[dispatch_id]=_m2m_dispatch_table[dispatch_id];
         }
 
-      inline xmi_result_t init_impl (SysDep        * sysdep,
+      inline xmi_result_t init_impl (SysDep         *sd,
+                                     size_t          clientid,
+                                     size_t          num_ctx,
                                      xmi_context_t   context,
-                                     size_t          offset)
+                                     size_t          contextid)
         {
-          _sysdep = sysdep;
-          _context=context;
-          _offset=offset;
+          _sysdep  = sd;
+          _context = context;
+          _offset  = contextid;
 	  return XMI_SUCCESS;
         };
 

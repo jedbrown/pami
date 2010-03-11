@@ -43,8 +43,8 @@ size_t _my_rank;
 
 uint8_t _rbuf[BUFSIZE];
 uint8_t _sbuf[BUFSIZE];
-  xmi_client_t  client;
-  xmi_context_t context;
+  xmi_client_t  _g_client;
+  xmi_context_t _g_context;
 
 volatile size_t _send_active;
 volatile size_t _recv_active;
@@ -86,7 +86,7 @@ unsigned long long test (size_t sndlen, size_t myrank)
   parameters.header.iov_len  = sizeof(msginfo);
   parameters.data.iov_base   = (void *)_sbuf; // send *something*
   parameters.data.iov_len    = sndlen;
-  parameters.dest = XMI_Client_endpoint (client, _my_rank, 0);
+  parameters.dest = XMI_Client_endpoint (_g_client, _my_rank, 0);
 
   unsigned i;
   unsigned long long t1 = 0;
@@ -100,13 +100,13 @@ unsigned long long test (size_t sndlen, size_t myrank)
     _recv_active = 1;
     TRACE_ERR((stderr,"test():  Calling XMI_Send_immediate\n"));
 
-    result = XMI_Send_immediate (context, &parameters);
+    result = XMI_Send_immediate (_g_context, &parameters);
     TRACE_ERR((stderr,"test():  Back from XMI_Send_immediate\n"));
 
     while (_recv_active)
       {
 	TRACE_ERR((stderr,"test():  Calling Advance\n"));
-	result = XMI_Context_advance (context, 100);
+	result = XMI_Context_advance (_g_context, 100);
 	TRACE_ERR((stderr,"test():  Back from Advance\n"));
       }
   }
@@ -122,14 +122,14 @@ int main ()
   char          cl_string[] = "TEST";
   xmi_result_t  result = XMI_ERROR;
 
-  result = XMI_Client_initialize (cl_string, &client);
+  result = XMI_Client_initialize (cl_string, &_g_client);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize client. result = %d\n", result);
     return 1;
   }
 
-  { size_t _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, _n); }
+  { size_t _n = 1; result = XMI_Context_createv(_g_client, NULL, 0, &_g_context, _n); }
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create context. result = %d\n", result);
@@ -139,7 +139,7 @@ int main ()
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query (_g_context, &configuration);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration task ID (%d). result = %d\n", configuration.name, result);
@@ -150,7 +150,7 @@ int main ()
   _my_rank = task_id;
 
   configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (context, &configuration);
+  result = XMI_Configuration_query (_g_context, &configuration);
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration NumTasks (%d). result = %d\n", configuration.name, result);
@@ -163,9 +163,9 @@ int main ()
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
   TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, _recv_active = %lu\n", &_recv_active, _recv_active));
-  result = XMI_Dispatch_set (context,
+  result = XMI_Dispatch_set (_g_context,
                              dispatch,
-                             (xmi_dispatch_callback_fn) fn,
+                             fn,
                              (void *)&_recv_active,
                              options);
   if (result != XMI_SUCCESS)

@@ -23,7 +23,7 @@ namespace XMI
     {
         template <class T_Device, class T_Message>
     class LAPIMulticastModel :
-      public Interface::AMMulticastModel<LAPIMulticastModel<T_Device, T_Message>,sizeof(T_Message)>
+      public Interface::AMMulticastModel<LAPIMulticastModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>
         {
         public:
       static const size_t mcast_model_state_bytes = sizeof(T_Message);
@@ -32,7 +32,7 @@ namespace XMI
 
 
       LAPIMulticastModel (T_Device & device, xmi_result_t &status) :
-        Interface::AMMulticastModel < LAPIMulticastModel<T_Device, T_Message>, sizeof(T_Message) > (status)
+        Interface::AMMulticastModel < LAPIMulticastModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, status)
                 {};
 
       inline xmi_result_t registerMcastRecvFunction_impl (int                        dispatch_id,

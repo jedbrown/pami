@@ -158,7 +158,7 @@ typedef enum {
    * \param[out] export        Opaque memory to export into
    * \return	success of the export operation
    */
-  xmi_result_t XMI_PipeWorkQueue_export(xmi_pipeworkqueue_t *wq, xmi_pipeworkqueue_ext_t *exp);
+  xmi_result_t XMI_PipeWorkQueue_export(xmi_pipeworkqueue_t *wq, xmi_pipeworkqueue_ext_t *t_exp);
 
   /**
    * \brief Import

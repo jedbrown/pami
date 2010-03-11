@@ -26,7 +26,7 @@ namespace XMI
 
 
 
-    inline initializeLapiHandle(lapi_handle_t *out_lapi,
+    inline xmi_result_t initializeLapiHandle(lapi_handle_t *out_lapi,
                                 int           *out_myrank,
                                 int           *out_mysize)
       {
@@ -91,6 +91,7 @@ namespace XMI
                               NUM_TASKS,
                               out_mysize));
         free(lapi_info);
+        return XMI_SUCCESS;
       }
 
 
@@ -175,7 +176,7 @@ namespace XMI
                 _contexts = (XMI::Context*)malloc(sizeof(XMI::Context)*n);
 		XMI_assertf(_contexts!=NULL, "malloc failed for _contexts[%d], errno=%d\n", n, errno);
 #endif
-		_platdevs.init(_clientid, n);
+                _platdevs.generate(_clientid, n, _mm);
 
 		// This memset has been removed due to the amount of cycles it takes
 		// on simulators.  Lower level initializers should be setting the
@@ -184,39 +185,39 @@ namespace XMI
 		//memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
 		size_t bytes = _mm.size() / n;
 		int x;
-        int first_context = 0;
-        for (x = 0; x < n; ++x)
-            {
-              lapi_handle_t lhandle;
-              if(!first_context)
-                  {
-                    lhandle=_main_lapi_handle;
-                    first_context = 1;
-                  }
-              else
-                  {
-                    int mrank, msize;
-                    initializeLapiHandle(&lhandle,
-                                         &mrank,
-                                         &msize);
-                  }
+                int first_context = 0;
+                for (x = 0; x < n; ++x)
+                    {
+                      lapi_handle_t lhandle;
+                      if(!first_context)
+                          {
+                            lhandle=_main_lapi_handle;
+                            first_context = 1;
+                          }
+                      else
+                          {
+                            int mrank, msize;
+                            initializeLapiHandle(&lhandle,
+                                                 &mrank,
+                                                 &msize);
+                          }
 
-			context[x] = (xmi_context_t)&_contexts[x];
-			void *base = NULL;
-			_mm.memalign((void **)&base, 16, bytes);
-			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
-              new (&_contexts[x]) XMI::Context(this->getClient(),
-                                               _clientid,
-                                               x,
-                                               n,
-                                               &_platdevs,
-                                               base,
-                                               bytes,
-                                               _world_geometry,
-                                               lhandle);
-              _ncontexts++;
-		}
-        CheckLapiRC(lapi_gfence (_main_lapi_handle));
+                      context[x] = (xmi_context_t)&_contexts[x];
+                      void *base = NULL;
+                      _mm.memalign((void **)&base, 16, bytes);
+                      XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
+                      new (&_contexts[x]) XMI::Context(this->getClient(),
+                                                       _clientid,
+                                                       x,
+                                                       n,
+                                                       &_platdevs,
+                                                       base,
+                                                       bytes,
+                                                       _world_geometry,
+                                                       lhandle);
+                      _ncontexts++;
+                    }
+                CheckLapiRC(lapi_gfence (_main_lapi_handle));
 
 		return XMI_SUCCESS;
         }
