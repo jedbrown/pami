@@ -64,6 +64,45 @@ public:
 new_context_assignment:
 			// need to detect when our context assignment changes,
 			// then need to tell others that we have responded.
+			// This is probably not right yet. Need to do some sort
+			// of barrier-like operation to ensure that everyone
+			// has compatible (disjoint) sets of contexts. Perhaps
+			// some global data about number of comm threads to
+			// split contexts across, and then each commthread just
+			// uses the same information in a consistent, cooperative,
+			// way. Need to ensure, though, that all comm threads quickly
+			// respond to changes. And need to know when they all have
+			// reponded.
+			//
+			// The event that triggers this is a comm thread voluntarily
+			// relinquishing control (lowering context below). At that
+			// point the comm thread should remove itself from the "global
+			// pool" and cause the rest to reshuffle contexts between
+			// them.  At the point that the comm thread regains control
+			// and raises it's priority, it needs to rejoin the global
+			// pool and cause the rest to reshuffle some contexts back
+			// to this thread. These reshuffle operations could be
+			// done lazily, but should not take too long. We also need
+			// to avoid thrashing if for some reason a competing thread
+			// is ill-behaved and keeps waking up only long enough to
+			// confirm it should go back to sleep. These reshufflings
+			// need to be efficient, or at least managed efficiently.
+			//
+			// We also can't use tryLock here, or at least can't
+			// forget contexts if tryLock fails, since we need the
+			// WAC region to be contiguous and without any unrelated
+			// changing memory over the entire WAC range. So, if a tryLock
+			// fails we need to be persistent about retrying and
+			// beware of doing a wait if we don't have all the locks.
+			//
+			// This also assumes that the context lock is not needed
+			// in order to initiate communications - which may not
+			// be true. In that case we hope to be frequently going
+			// through the 'wait' code (unlocking contexts), but that
+			// may not always be the case. Perhaps the communications
+			// (models?) always have a fall-back mode that does a
+			// context-post of the operation to the desired context.
+			//
 			do {
 				thus->_contexts_changed = 0;	// tells others that
 								// our previous set of
@@ -98,12 +137,16 @@ more_work:
 				}
 				goto more_work;
 			} else {
+				// disarm MU-WU signals...
 				for (x = ctx0; x < ctx0 + nctx; ++x) {
 					XMI_Context_unlock(thus->_all_contexts[x]);
 				}
-				// disarm MU-WU signals...
+				// if n == 1 (i.e. _contexts_changed != 0) we could
+				// go directly to new_context_assignment,
+				// and avoid priority change.
+
 				pthread_setschedprio(self, 0); // need official constant
-				// we get preempted here
+				//=== we get preempted here ===//
 				pthread_setschedprio(self, 99); // need official constant
 
 				// always assume context set changed... just simpler.
