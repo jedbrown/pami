@@ -21,10 +21,10 @@
 #include "util/queue/MultiQueue.h"
 
 /// \brief The mutex used by the generic device
-typedef XMI::Mutex::LockBoxProcMutex GenericDeviceMutex;
+typedef XMI::Mutex::BGP::LockBoxProcMutex GenericDeviceMutex;
 
 /// \brief The atomic counter used by threads for tracking completion of message
-typedef XMI::Counter::LockBoxProcCounter GenericDeviceCounter;
+typedef XMI::Counter::BGP::LockBoxProcCounter GenericDeviceCounter;
 
 #define GENDEVMSG_SEND_QNUM	0	///< queue number used for send queue
 #define GENDEVMSG_COMPL_QNUM	1	///< queue number used for completion queue

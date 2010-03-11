@@ -28,6 +28,7 @@
 
 namespace XMI {
 namespace Counter {
+namespace BGP {
 	//
 	// This class is used internally ONLY. See following classes for users
 	//
@@ -82,6 +83,7 @@ namespace Counter {
 		}
 	}; // class LockBoxProcCounter
 
+}; // BGP namespace
 }; // Counter namespace
 }; // XMI namespace
 

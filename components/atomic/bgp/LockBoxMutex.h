@@ -37,6 +37,7 @@ static inline unsigned long __tsc() {
 
 namespace XMI {
 namespace Mutex {
+namespace BGP {
 	//
 	// These classes are used internally ONLY. See following classes for users
 	//
@@ -155,6 +156,7 @@ namespace Mutex {
 		}
 	}; // class FairLockBoxProcMutex
 
+}; // BGP namespace
 }; // Mutex namespace
 }; // XMI namespace
 
