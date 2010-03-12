@@ -16,6 +16,9 @@
 #include "sys/xmi.h"
 #include "spi/include/l2/atomic.h" 
 
+#warning Need Kernel_VirtualToPhysical
+#define vtop(v)		((uint64_t)v)
+
 namespace XMI {
 namespace Device {
 namespace CommThread {
@@ -31,8 +34,12 @@ public:
 
 	inline xmi_result_t init(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
 		int rc;
-		// alignment requires something else...
-		rc = posix_memalign((void **)&_wakeup_region, 16, num_ctx * sizeof(*_wakeup_region));
+		// in order for WAC base/mask values to work, need to ensure alignment
+		// is such that power-of-two pairs of (ctx0,nctx) result in viable
+		// base/mask values. Also... this is physical address dependent, so
+		// does the virtual address even matter?
+		size_t s = num_ctx * sizeof(*_wakeup_region);
+		rc = posix_memalign((void **)&_wakeup_region, s, s);
 		if (rc != 0) return XMI_ERROR;
 		rc = posix_memalign((void **)&_bytesUsed, 16, num_ctx * sizeof(*_bytesUsed));
 		if (rc != 0) return XMI_ERROR;
@@ -43,21 +50,25 @@ public:
 	// must be called from thread-safe code - serialized by caller.
 	inline void *reserveWUSpace(size_t contextid, size_t length) {
 		void *v;
-		if (_bytesUsed[contextid] + length > sizeof(*_wakeup_region)) {
+		size_t l = length;
+		l = (l + 0x07) & ~0x07; // keep uint64_t alignment
+		if (_bytesUsed[contextid] + l > sizeof(*_wakeup_region)) {
 			return NULL;
 		}
 		v = ((char *)&_wakeup_region[contextid] + _bytesUsed[contextid]);
-		_bytesUsed[contextid] += length;
+		_bytesUsed[contextid] += l;
 		return v;
 	}
 
 	inline void getWURange(size_t ctx0, size_t nctx, uint64_t *base, uint64_t *mask) {
-		// this isn't quite right... needs to be aligned properly...
-		*base = (uint64_t)&_wakeup_region[ctx0];
-		*mask = nctx * sizeof(*_wakeup_region) - 1; // assumes power of two
+		// assert(ctx0 is power-of-two and nctx is power-of-two);
+		// these are virtual addresses - WAC needs physical...
+		*base = vtop(&_wakeup_region[ctx0]);
+		*mask = ~(nctx * sizeof(*_wakeup_region) - 1); // assumes power of two
+		// assert((*base & ~*mask) == 0);
 	}
 private:
-	BgqWakeupRegionBuffer *_wakeup_region;		///< memory for WAC for all contexts
+	BgqWakeupRegionBuffer *_wakeup_region;	///< memory for WAC for all contexts
 	size_t *_bytesUsed; ///< array of per-context space used vars
 }; // class BgqWakeupRegion
 

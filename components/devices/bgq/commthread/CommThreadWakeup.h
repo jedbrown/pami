@@ -73,6 +73,7 @@ private:
 			nctx = _num_contexts;
 		} while (_contexts_changed != 0);
 		// assert(ctx0 + nctx <= _total_ncontexts);
+		// ctx0 and nctx must be powers of two.
 	}
 
 	/// \brief Tell whether comm thread should reshuffle context set
@@ -203,10 +204,12 @@ public:
 		xmi_context_t *ctxs;
 		size_t x;
 		posix_memalign((void **)&devs, 16, num_ctx * sizeof(*devs));
-		posix_memalign((void **)&wu, 16, sizeof(*wu)); /// \todo not right alignment for BgqWakeupRegion...
 		posix_memalign((void **)&ctxs, 16, num_ctx * sizeof(*ctxs));
+
+		posix_memalign((void **)&wu, 16, sizeof(*wu)); // one per client
 		new (wu) BgqWakeupRegion();
 		wu->init(clientid, num_ctx, mm);
+
 		for (x = 0; x < num_ctx; ++x) {
 			// one per context, but not otherwise tied to a context.
 			new (&devs[x]) BgqCommThread(ctxs, wu, num_ctx);
@@ -230,15 +233,16 @@ public:
 		uint64_t wu_start, wu_mask;
 
 		pthread_setschedprio(self, 99); // need official constant here
+		thus->__joinActiveGroup();
 		while (1) {
 new_context_assignment:
 			thus->__getContextSet(ctx0, nctx);
+			thus->_wakeup_region->getWURange(ctx0, nctx, &wu_start, &wu_mask);
 
 			thus->__armMU_WU();
 
 			thus->__lockContextSet(ctx0, nctx);
 more_work:
-			thus->_wakeup_region->getWURange(ctx0, nctx, &wu_start, &wu_mask);
 			n = 0;
 			do {
 				WU_ArmWithAddress(wu_start, wu_mask);
@@ -255,8 +259,14 @@ more_work:
 			n = Kernel_SnoopScheduler();
 
 			if (n == 1 && !thus->__needContextShuffle()) {
-				// we are alone and active set did not change
+				// we are alone and the active group did not change
 				if (events == 0) {
+					// The wait can only detect new work.
+					// Only do the wait if we know the
+					// contexts have no work. otherwise
+					// we could wait forever for new work
+					// while existing work waits for us to
+					// advance it.
 					ppc_waitimpl();
 				}
 				goto more_work;
@@ -279,6 +289,10 @@ more_work:
 				goto new_context_assignment;
 			}
 		}
+		// not reached?
+
+		// must have unlocked before this...
+		thus->__leaveActiveGroup();
 		return NULL; // or poof()
 	}
 
