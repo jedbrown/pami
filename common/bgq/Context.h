@@ -128,29 +128,18 @@ namespace XMI
     inline xmi_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
        // these calls create (allocate and construct) each element.
        // We don't know how these relate to contexts, they are semi-opaque.
-      TRACE_ERR((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
         _generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
-      TRACE_ERR((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
         _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
-      TRACE_ERR((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
         _progfunc = XMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
-      TRACE_ERR((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
         _atombarr = XMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
-      TRACE_ERR((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
         _wqringreduce = XMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
-      TRACE_ERR((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
         _wqringbcast = XMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
-        _localallreduce = XMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx,
-mm);
-      TRACE_ERR((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
+        _localallreduce = XMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
         _localbcast = XMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
-      TRACE_ERR((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
         _localreduce = XMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
 #ifdef MU_DEVICE
-      TRACE_ERR((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
        _mu = MUDevice::Factory::generate(clientid, num_ctx, mm);
 #endif
-      TRACE_ERR((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
        return XMI_SUCCESS;
     }
 

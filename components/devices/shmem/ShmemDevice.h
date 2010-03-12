@@ -302,12 +302,15 @@ namespace XMI
               // number of contexts in each peer
               size_t done = 0;
               size_t total_fifos_on_node = 0;
+#ifdef ENABLE_MAMBO_WORKAROUNDS
               int countdown=10000;
+#endif
               while (done != npeers)
                 {
-                  mbar();       /// \todo doesn't seem to help mambo
-                  ppc_msync();  /// \todo doesn't seem to help mambo
-                  mm.sync();    /// \todo doesn't seem to help mambo - msync() errno 38: Function not implemented
+                  //mbar();       /// \todo doesn't seem to help mambo
+                  //ppc_msync();  /// \todo doesn't seem to help mambo
+                  //mm.sync();    /// \todo doesn't seem to help mambo - msync() errno 38: Function not implemented
+                  
                   // check to see if all peers have written a non-zero value
                   // in the "ncontexts" field
                   total_fifos_on_node = 0;
@@ -318,9 +321,13 @@ namespace XMI
                       total_fifos_on_node += ncontexts[i];
 
                       if (ncontexts[i] > 0) done++;
+#ifdef ENABLE_MAMBO_WORKAROUNDS
                       if(countdown==1) fprintf(stderr, "ShmemDevice::Factory::generate_impl() ncontexts[%zu] = %zu, %p, %zd\n", i, ncontexts[i],ncontexts,mm.available());
+#endif
                     }
+#ifdef ENABLE_MAMBO_WORKAROUNDS
                   XMI_assertf(countdown--, "I give up\n");
+#endif
                 }
 
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() ncontexts = %p sync'd\n", ncontexts));
