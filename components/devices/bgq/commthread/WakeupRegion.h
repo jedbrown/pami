@@ -30,9 +30,25 @@ public:
 	~BgqWakeupRegion() { }
 
 	inline xmi_result_t init(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
+		int rc;
 		// alignment requires something else...
-		int rc = posix_memalign((void **)&_wakeup_region, 16, num_ctx * sizeof(*_wakeup_region));
-		return (rc == 0 ? XMI_SUCCESS : XMI_ERROR);
+		rc = posix_memalign((void **)&_wakeup_region, 16, num_ctx * sizeof(*_wakeup_region));
+		if (rc != 0) return XMI_ERROR;
+		rc = posix_memalign((void **)&_bytesUsed, 16, num_ctx * sizeof(*_bytesUsed));
+		if (rc != 0) return XMI_ERROR;
+		memset(_bytesUsed, 0, num_ctx * sizeof(*_bytesUsed));
+		return XMI_SUCCESS;
+	}
+
+	// must be called from thread-safe code - serialized by caller.
+	inline void *reserveWUSpace(size_t contextid, size_t length) {
+		void *v;
+		if (_bytesUsed[contextid] + length > sizeof(*_wakeup_region)) {
+			return NULL;
+		}
+		v = ((char *)&_wakeup_region[contextid] + _bytesUsed[contextid]);
+		_bytesUsed[contextid] += length;
+		return v;
 	}
 
 	inline void getWURange(size_t ctx0, size_t nctx, uint64_t *base, uint64_t *mask) {
@@ -42,6 +58,7 @@ public:
 	}
 private:
 	BgqWakeupRegionBuffer *_wakeup_region;		///< memory for WAC for all contexts
+	size_t *_bytesUsed; ///< array of per-context space used vars
 }; // class BgqWakeupRegion
 
 }; // namespace CommThread

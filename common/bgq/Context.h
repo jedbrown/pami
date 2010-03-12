@@ -11,8 +11,6 @@
 #include "sys/xmi.h"
 #include "common/ContextInterface.h"
 
-#include "components/devices/bgq/commthread/CommThreadWakeup.h"
-
 #include "components/devices/generic/Device.h"
 #include "components/devices/misc/ProgressFunctionMsg.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
@@ -128,8 +126,6 @@ namespace XMI
      * \param[in] contextid    Context ID (index)
      */
     inline xmi_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
-	//_commThread = XMI::Device::CommThread::BgqCommThread::generate(clientid, num_ctx, mm);
-
        // these calls create (allocate and construct) each element.
        // We don't know how these relate to contexts, they are semi-opaque.
         _generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
@@ -208,7 +204,6 @@ mm);
        return events;
     }
 
-    //XMI::Device::CommThread::BgqCommThread *_commThread;
     XMI::Device::Generic::Device *_generics; // need better name...
     ShmemDevice *_shmem;
     XMI::Device::ProgressFunctionDev *_progfunc;

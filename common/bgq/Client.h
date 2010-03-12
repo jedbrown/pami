@@ -11,6 +11,11 @@
 
 #include "Context.h"
 
+#undef USE_COMMTHREADS // define/undef
+#ifdef USE_COMMTHREADS
+#include "components/devices/bgq/commthread/CommThreadWakeup.h"
+#endif // USE_COMMTHREADS
+
 #undef TRACE_ERR
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)  //fprintf x
@@ -119,6 +124,12 @@ namespace XMI
 
         int rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
         XMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
+#ifdef USE_COMMTHREADS
+	// Create one comm thread semi-opaque pointer. Internally, this may be
+	// one-per-context (optimal advance scenario) or some other arrangement.
+	_commThreads = XMI::Device::CommThread::BgqCommThread::generate(_clientid, n, _mm);
+	XMI_assertf(_commThreads, "BgqCommThread::generate failed for _commThreads[%d]\n", n);
+#endif // USE_COMMTHREADS
         int x;
 
 	_platdevs.generate(_clientid, n, _mm);
@@ -138,6 +149,11 @@ namespace XMI
             XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
             new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,
                                              &_platdevs, base, bytes);
+#ifdef USE_COMMTHREADS
+	    // Note, this is not inializing each comm thread but rather
+	    // initializing comm threads for each context.
+	    XMI::Device::CommThread::BgqCommThread::initContext(_commThreads, _clientid, x, context[x]);
+#endif // USE_COMMTHREADS
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
@@ -290,6 +306,9 @@ namespace XMI
       char         _name[256];
 
       Memory::MemoryManager _mm;
+#ifdef USE_COMMTHREADS
+      XMI::Device::CommThread::BgqCommThread *_commThreads;
+#endif // USE_COMMTHREADS
 
       inline void initializeMemoryManager ()
       {
