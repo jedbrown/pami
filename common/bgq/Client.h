@@ -329,16 +329,18 @@ namespace XMI
 
 #if 1
         // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-        rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
+        
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-        if(rc==-1)
-          fprintf(stderr, "shm_open(<%s>,O_CREAT | O_RDWR) rc = %d, errno = %d, %s\n", shmemfile,  rc,  errno,  strerror(errno));
-        else
-          close(rc);
-        Delay(100000);
+        rc = shm_open (shmemfile, O_CREAT | O_EXCL, 0600);
+        if(rc==-1 && errno != EEXIST)
+          fprintf(stderr, "shm_open(<%s>,O_CREAT | O_EXCL) rc = %d, errno = %d, %s\n", shmemfile,  rc,  errno,  strerror(errno));
+        close(rc);
+        Delay(1000000);
         rc = shm_open (shmemfile, O_RDWR, 0600);
         if(rc==-1)
           fprintf(stderr, "shm_open(<%s>,O_RDWR) rc = %d, errno = %d, %s\n", shmemfile,  rc,  errno,  strerror(errno));
+#else
+        rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
 #endif
         void * ptr = NULL;
         if ( rc != -1 )
