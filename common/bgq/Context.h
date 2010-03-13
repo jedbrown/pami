@@ -47,8 +47,8 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-#define MU_COLL_DEVICE
-//#define MU_DEVICE
+#undef MU_COLL_DEVICE
+#undef MU_DEVICE
 
 
 #ifdef MU_COLL_DEVICE
