@@ -32,6 +32,7 @@ private:
 	/// No contexts are locked at this point (by this member).
 	///
 	inline void __joinActiveGroup() {
+		// _ctxset->becomeActive();
 	}
 
 	/// \brief Inform the community that we will no longer advance contexts
@@ -39,6 +40,7 @@ private:
 	/// All contexts are unlocked at this point (by this member).
 	///
 	inline void __leaveActiveGroup() {
+		// _ctxset->becomeInactive();
 	}
 
 	/// \brief Get the set of contexts this comm thread should use
@@ -62,8 +64,11 @@ private:
 	///
 	/// \param[out] ctx0	First context ID to advance
 	/// \param[out] nctx	Number of contiguous contexts to advance
+	/// \param[out] mctx	Power-of-two size of context set (for WAC mask)
 	///
-	inline void __getContextSet(size_t &ctx0, size_t &nctx) {
+	inline void __getContextSet(size_t &ctx0, size_t &nctx, size_t &mctx) {
+		// _ctxset->compute_set(ctx0, nctx, mctx);
+		// return;
 		do {
 			_contexts_changed = 0;	// tells others that
 						// our previous set of
@@ -73,7 +78,10 @@ private:
 			nctx = _num_contexts;
 		} while (_contexts_changed != 0);
 		// assert(ctx0 + nctx <= _total_ncontexts);
-		// ctx0 and nctx must be powers of two.
+		// ctx0 and mctx must be powers of two.
+	}
+
+	inline void __dropContextSet(size_t &ctx0, size_t &nctx, size_t &mctx) {
 	}
 
 	/// \brief Tell whether comm thread should reshuffle context set
@@ -110,6 +118,7 @@ private:
 	/// \return	true if contexts need to be shuffled
 	///
 	inline bool __needContextShuffle() {
+		// return _ctxset->isOutOfDate();
 		return (_contexts_changed != 0);
 	}
 
@@ -225,7 +234,7 @@ public:
 
 	static void *commThread(void *cookie) {
 		// should/can this use the internal (C++) interface?
-		size_t ctx0, nctx;
+		size_t ctx0, nctx, mctx;
 		size_t n, events;
 		size_t max_loop = 100; // \todo need some heuristic or tunable for max loops
 		BgqCommThread *thus = (BgqCommThread *)cookie;
@@ -236,8 +245,8 @@ public:
 		thus->__joinActiveGroup();
 		while (1) {
 new_context_assignment:
-			thus->__getContextSet(ctx0, nctx);
-			thus->_wakeup_region->getWURange(ctx0, nctx, &wu_start, &wu_mask);
+			thus->__getContextSet(ctx0, nctx, mctx);
+			thus->_wakeup_region->getWURange(ctx0, mctx, &wu_start, &wu_mask);
 
 			thus->__armMU_WU();
 
@@ -274,6 +283,11 @@ more_work:
 				thus->__disarmMU_WU();
 
 				thus->__unlockContextSet(ctx0, nctx);
+				thus->__dropContextSet(ctx0, nctx, mctx);
+				if (n == 1) { // i.e. __needContextShuffle
+					// avoid thrash just to adapt to other threads
+					goto new_context_assignment;
+				}
 				thus->__leaveActiveGroup();
 
 				// if n == 1 (i.e. __needContextShuffle()) we could
@@ -302,6 +316,7 @@ private:
 	size_t _total_ncontexts;	///< total number of contexts (in client)
 
 	// operate strictly on a range of contexts, so that we can use the wakeup unit.
+	// XMI::Device::CommThread::BgqContextSets *_ctxset;
 	size_t _first_context;
 	size_t _num_contexts;
 	bool _contexts_changed;

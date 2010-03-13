@@ -111,7 +111,7 @@ public:
 		mctx = z;	// size of context set used for wakeup unit mask (2^Y).
 	}
 
-	inline bool outOfDate() {
+	inline bool isOutOfDate() {
 		return L2_AtomicLoad(&_ctl.generation) != _currentGeneration;
 	}
 
@@ -119,6 +119,12 @@ public:
 		size_t gen = L2_AtomicLoadIncrement(&_ctl.generation);
 		// this isn't even close...
 		_gen[gen & _generationMask].num_active += 1;
+	}
+
+	inline void becomeInactive() {
+		size_t gen = L2_AtomicLoadIncrement(&_ctl.generation);
+		// this isn't even close...
+		_gen[gen & _generationMask].num_active -= 1;
 	}
 
 private:

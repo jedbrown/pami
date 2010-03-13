@@ -32,18 +32,20 @@ public:
 
 	~BgqWakeupRegion() { }
 
-	inline xmi_result_t init(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
+	inline xmi_result_t init(size_t clientid, size_t nctx, Memory::MemoryManager &mm) {
 		int rc;
+		size_t mctx = nctx;
 		// in order for WAC base/mask values to work, need to ensure alignment
-		// is such that power-of-two pairs of (ctx0,nctx) result in viable
+		// is such that power-of-two pairs of (ctx0,mctx) result in viable
 		// base/mask values. Also... this is physical address dependent, so
 		// does the virtual address even matter?
-		size_t s = num_ctx * sizeof(*_wakeup_region);
+		while (mctx & (mctx - 1)) ++mctx; // brute force - better way?
+		size_t s = mctx * sizeof(*_wakeup_region);
 		rc = posix_memalign((void **)&_wakeup_region, s, s);
 		if (rc != 0) return XMI_ERROR;
-		rc = posix_memalign((void **)&_bytesUsed, 16, num_ctx * sizeof(*_bytesUsed));
+		rc = posix_memalign((void **)&_bytesUsed, 16, mctx * sizeof(*_bytesUsed));
 		if (rc != 0) return XMI_ERROR;
-		memset(_bytesUsed, 0, num_ctx * sizeof(*_bytesUsed));
+		memset(_bytesUsed, 0, mctx * sizeof(*_bytesUsed));
 		return XMI_SUCCESS;
 	}
 
@@ -60,11 +62,11 @@ public:
 		return v;
 	}
 
-	inline void getWURange(size_t ctx0, size_t nctx, uint64_t *base, uint64_t *mask) {
-		// assert(ctx0 is power-of-two and nctx is power-of-two);
+	inline void getWURange(size_t ctx0, size_t mctx, uint64_t *base, uint64_t *mask) {
+		// assert(ctx0 is power-of-two and mctx is power-of-two);
 		// these are virtual addresses - WAC needs physical...
 		*base = vtop(&_wakeup_region[ctx0]);
-		*mask = ~(nctx * sizeof(*_wakeup_region) - 1); // assumes power of two
+		*mask = ~(mctx * sizeof(*_wakeup_region) - 1); // assumes power of two
 		// assert((*base & ~*mask) == 0);
 	}
 private:
