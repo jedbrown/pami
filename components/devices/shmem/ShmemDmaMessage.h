@@ -107,7 +107,7 @@ namespace XMI
             }
           else
             {
-              XMI_abort();
+              XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             }
 
           return XMI_EAGAIN;
@@ -177,7 +177,7 @@ namespace XMI
             }
           else
             {
-              XMI_abort();
+              XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             }
 
           return XMI_EAGAIN;

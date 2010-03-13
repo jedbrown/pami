@@ -286,7 +286,7 @@ namespace XMI
 
             // Set the appropriate rget inj fifo id based on the channel and rank.
             uint16_t id = _device.getRgetInjFifoId (target_task);
-            TRACE((stderr, "MUDmaModel::postDmaGet_impl() .. after _device.getRgetInjFifoId(%zd), id = %d\n", target_rank, id));
+            TRACE((stderr, "MUDmaModel::postDmaGet_impl() .. after _device.getRgetInjFifoId(%d), id = %d\n", target_task, id));
             desc->setRemoteGetInjFIFOId (id);
 
             // Set the payload of the remote get descriptor.

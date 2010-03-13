@@ -74,26 +74,33 @@ namespace XMI
 
   class BgqMapCache
   {
-  public:
+    public:
 
-    inline BgqMapCache ()
-    {
-    };
+      inline BgqMapCache ()
+      {
+      };
 
-    inline ~BgqMapCache ()
-    {
-    };
+      inline ~BgqMapCache ()
+      {
+      };
 
-    inline size_t init (XMI::BgqPersonality & personality,
-                        void                   * ptr,
-                        size_t                   bytes
-                       )
-    {
-      return 0;
-    };
+      inline size_t init (XMI::BgqPersonality & personality,
+                          void                   * ptr,
+                          size_t                   bytes
+                         )
+      {
+        return 0;
+      };
 
 
   }; // XMI::BgqMapCache
 };     // XMI
 
 #endif // __xmi_components_mapping_bgq_bgqmapcache_h__
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

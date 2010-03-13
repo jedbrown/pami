@@ -130,7 +130,7 @@ usage:
 		nets[x] = find_netw(net);
 		if (nets[x] < 0) {
 			fprintf(stderr, "Invalid network: %s\n", net);
-			abort();
+			XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
 		}
 		con_setup_netw(nets[x], context, &protocol[x]);
 	}

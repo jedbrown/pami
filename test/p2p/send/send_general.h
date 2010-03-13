@@ -171,7 +171,7 @@ void fill_buf(char *buf, size_t len, unsigned tag) {
 #if 0
 	if (check_buf(buf, len, tag)) {
 		fprintf(stderr, "fill_buf/check_buf failed\n");
-		abort();
+		XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
 	}
 #endif
 }

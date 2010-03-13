@@ -22,7 +22,7 @@
 #include "util/common.h"
 
 #ifndef TRACE
-#define TRACE(x) //printf x
+#define TRACE(x) //fprintf x
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +62,7 @@ init ( uint32_t subGroupId,
   XMI_assert_debug( subGroupId < BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE );
   XMI_assert_debug( numFifos <= BGQ_MU_NUM_REC_FIFOS_PER_GROUP );
 
-  TRACE(("RecFifoSubGrou::init(), dispatch = %p\n", dispatch));
+  TRACE((stderr, "RecFifoSubGrou::init(), dispatch = %p\n", dispatch));
   _dispatch = dispatch;
   //////////////////////////////////////////////////////////////////////////////
   ///
@@ -74,7 +74,7 @@ init ( uint32_t subGroupId,
                               &numFreeFifos,
                               _fifoNumbers );
 
-  TRACE(("RecFifoSubGroup init(): Query Free returned rc=%d and %d free Fifos for group %d\n",
+  TRACE((stderr, "RecFifoSubGroup init(): Query Free returned rc=%d and %d free Fifos for group %d\n",
          rc,
          numFreeFifos,
          subGroupId ));
@@ -101,7 +101,7 @@ init ( uint32_t subGroupId,
                                  fifoAttrs );
 
 
-  TRACE(("RecFifoSubGroup init(): Allocate returned rc=%d for subgroup %d\n",
+  TRACE((stderr, "RecFifoSubGroup init(): Allocate returned rc=%d for subgroup %d\n",
          rc,
          subGroupId ));
 
@@ -130,7 +130,7 @@ init ( uint32_t subGroupId,
                                 (uint64_t)memRegion.BaseVa, // startoffset of start,head,tail relative to memRegion
                                 fifoSizes[fifoNum] - 1 );
 
-      TRACE(("RecFifoSubGroup init() InitById for subgroup %d, logical fifo id=%d, MU fifo id=%d, start=%p, end=%p, size=%d, returned %d\n",
+      TRACE((stderr, "RecFifoSubGroup init() InitById for subgroup %d, logical fifo id=%d, MU fifo id=%d, start=%p, end=%p, size=%d, returned %d\n",
              subGroupId,
              fifoNum,
              _fifoNumbers[fifoNum],

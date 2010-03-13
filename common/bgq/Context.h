@@ -47,7 +47,7 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-#undef MU_COLL_DEVICE
+#define MU_COLL_DEVICE
 #undef MU_DEVICE
 
 
@@ -63,11 +63,11 @@ namespace XMI
 {
 #ifdef MU_COLL_DEVICE
   typedef Device::MU::MUCollDevice MUDevice;
-  typedef BGQNativeInterface<MUDevice,
-                             Device::MU::MUMulticastModel,
-                             Device::MU::MUMultisyncModel,
-                             Device::MU::MUMulticombineModel> MUGlobalNI;
-  #define MU_DEVICE
+  typedef BGQNativeInterface < MUDevice,
+  Device::MU::MUMulticastModel,
+  Device::MU::MUMultisyncModel,
+  Device::MU::MUMulticombineModel > MUGlobalNI;
+#define MU_DEVICE
 #elif defined(MU_DEVICE)
   typedef Device::MU::MUDevice MUDevice;
 #endif
@@ -90,44 +90,46 @@ namespace XMI
 
   typedef XMI::Protocol::Get::Get <ShmemModel, ShmemDevice> GetShmem;
 #ifdef MU_DEVICE
-  typedef XMI::Protocol::Send::Eager < XMI::Device::MU::MUPacketModel,MUDevice > EagerMu;
+  typedef XMI::Protocol::Send::Eager < XMI::Device::MU::MUPacketModel, MUDevice > EagerMu;
   // << Point-to-point protocol typedefs and dispatch registration.
   //
 #endif
 
   typedef MemoryAllocator<1152, 16> ProtocolAllocator;
 
-/**
- * \brief Class containing all devices used on this platform.
- *
- * This container object governs creation (allocation of device objects),
- * initialization of device objects, and advance of work. Note, typically
- * the devices advance routine is very short - or empty - since it only
- * is checking for received messages (if the device even has reception).
- *
- * The generic device is present in all platforms. This is how context_post
- * works as well as how many (most/all) devices enqueue work.
- */
-  class PlatformDeviceList {
-  public:
-    PlatformDeviceList() { }
+  /**
+   * \brief Class containing all devices used on this platform.
+   *
+   * This container object governs creation (allocation of device objects),
+   * initialization of device objects, and advance of work. Note, typically
+   * the devices advance routine is very short - or empty - since it only
+   * is checking for received messages (if the device even has reception).
+   *
+   * The generic device is present in all platforms. This is how context_post
+   * works as well as how many (most/all) devices enqueue work.
+   */
+  class PlatformDeviceList
+  {
+    public:
+      PlatformDeviceList() { }
 
-    /**
-     * \brief initialize this platform device list
-     *
-     * This creates arrays (at least 1 element) for each device used in this platform.
-     * Note, in some cases there may be only one device instance for the entire
-     * process (all clients), but any handling of that (mutexing, etc) is hidden.
-     *
-     * Device arrays are semi-opaque (we don't know how many
-     * elements each has).
-     *
-     * \param[in] clientid     Client ID (index)
-     * \param[in] contextid    Context ID (index)
-     */
-    inline xmi_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
-       // these calls create (allocate and construct) each element.
-       // We don't know how these relate to contexts, they are semi-opaque.
+      /**
+       * \brief initialize this platform device list
+       *
+       * This creates arrays (at least 1 element) for each device used in this platform.
+       * Note, in some cases there may be only one device instance for the entire
+       * process (all clients), but any handling of that (mutexing, etc) is hidden.
+       *
+       * Device arrays are semi-opaque (we don't know how many
+       * elements each has).
+       *
+       * \param[in] clientid     Client ID (index)
+       * \param[in] contextid    Context ID (index)
+       */
+      inline xmi_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm)
+      {
+        // these calls create (allocate and construct) each element.
+        // We don't know how these relate to contexts, they are semi-opaque.
         _generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
         _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
         _progfunc = XMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
@@ -138,28 +140,29 @@ namespace XMI
         _localbcast = XMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
         _localreduce = XMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
 #ifdef MU_DEVICE
-       _mu = MUDevice::Factory::generate(clientid, num_ctx, mm);
+        _mu = MUDevice::Factory::generate(clientid, num_ctx, mm);
 #endif
-       return XMI_SUCCESS;
-    }
+        return XMI_SUCCESS;
+      }
 
-    /**
-     * \brief initialize devices for specific context
-     *
-     * Called once per context, after context object is initialized.
-     * Devices must handle having init() called multiple times, using
-     * clientid and contextid to ensure initialization happens to the correct
-     * instance and minimizing redundant initialization. When each is called,
-     * the 'this' pointer actually points to the array - each device knows whether
-     * that is truly an array and how many elements it contains.
-     *
-     * \param[in] sd           SysDep object
-     * \param[in] clientid     Client ID (index)
-     * \param[in] num_ctx      Number of contexts in this client
-     * \param[in] ctx          Context opaque entity
-     * \param[in] contextid    Context ID (index)
-     */
-    inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd) {
+      /**
+       * \brief initialize devices for specific context
+       *
+       * Called once per context, after context object is initialized.
+       * Devices must handle having init() called multiple times, using
+       * clientid and contextid to ensure initialization happens to the correct
+       * instance and minimizing redundant initialization. When each is called,
+       * the 'this' pointer actually points to the array - each device knows whether
+       * that is truly an array and how many elements it contains.
+       *
+       * \param[in] sd           SysDep object
+       * \param[in] clientid     Client ID (index)
+       * \param[in] num_ctx      Number of contexts in this client
+       * \param[in] ctx          Context opaque entity
+       * \param[in] contextid    Context ID (index)
+       */
+      inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd)
+      {
         XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, sd, _generics);
         ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, sd, _generics);
         XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, sd , _generics);
@@ -171,22 +174,23 @@ namespace XMI
         XMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, sd, _generics);
 
 #ifdef MU_DEVICE
-       MUDevice::Factory::init(_mu, clientid, contextid, clt, ctx, sd, _generics);
+        MUDevice::Factory::init(_mu, clientid, contextid, clt, ctx, sd, _generics);
 #endif
-       return XMI_SUCCESS;
-    }
+        return XMI_SUCCESS;
+      }
 
-    /**
-     * \brief advance all devices
-     *
-     * since device arrays are semi-opaque (we don't know how many
-     * elements each has) we call a more-general interface here.
-     *
-     * \param[in] clientid     Client ID (index)
-     * \param[in] contextid    Context ID (index)
-     */
-    inline size_t advance(size_t clientid, size_t contextid) {
-       size_t events = 0;
+      /**
+       * \brief advance all devices
+       *
+       * since device arrays are semi-opaque (we don't know how many
+       * elements each has) we call a more-general interface here.
+       *
+       * \param[in] clientid     Client ID (index)
+       * \param[in] contextid    Context ID (index)
+       */
+      inline size_t advance(size_t clientid, size_t contextid)
+      {
+        size_t events = 0;
         events += XMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
         events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
         events += XMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
@@ -198,22 +202,22 @@ namespace XMI
         events += XMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
 
 #ifdef MU_DEVICE
-       events += MUDevice::Factory::advance(_mu, clientid, contextid);
+        events += MUDevice::Factory::advance(_mu, clientid, contextid);
 #endif
-       return events;
-    }
+        return events;
+      }
 
-    XMI::Device::Generic::Device *_generics; // need better name...
-    ShmemDevice *_shmem;
-    XMI::Device::ProgressFunctionDev *_progfunc;
-    XMI::Device::AtomicBarrierDev *_atombarr;
-    XMI::Device::WQRingReduceDev *_wqringreduce;
-    XMI::Device::WQRingBcastDev *_wqringbcast;;
-    XMI::Device::LocalAllreduceWQDevice *_localallreduce;
-    XMI::Device::LocalBcastWQDevice *_localbcast;
-    XMI::Device::LocalReduceWQDevice *_localreduce;
+      XMI::Device::Generic::Device *_generics; // need better name...
+      ShmemDevice *_shmem;
+      XMI::Device::ProgressFunctionDev *_progfunc;
+      XMI::Device::AtomicBarrierDev *_atombarr;
+      XMI::Device::WQRingReduceDev *_wqringreduce;
+      XMI::Device::WQRingBcastDev *_wqringbcast;;
+      XMI::Device::LocalAllreduceWQDevice *_localallreduce;
+      XMI::Device::LocalBcastWQDevice *_localbcast;
+      XMI::Device::LocalReduceWQDevice *_localreduce;
 #ifdef MU_DEVICE
-    MUDevice *_mu;
+      MUDevice *_mu;
 #endif
   }; // class PlatformDeviceList
 
@@ -221,8 +225,8 @@ namespace XMI
   {
     public:
       inline Context (xmi_client_t client, size_t clientid, size_t id, size_t num,
-				PlatformDeviceList *devices,
-				void * addr, size_t bytes) :
+                      PlatformDeviceList *devices,
+                      void * addr, size_t bytes) :
           Interface::Context<XMI::Context> (client, id),
           _client (client),
           _context ((xmi_context_t)this),
@@ -230,10 +234,7 @@ namespace XMI
           _contextid (id),
           _mm (addr, bytes),
           _sysdep (_mm),
-	  _devices(devices)
-#ifdef MU_COLL_DEVICE
-        ,_global_mu_ni(NULL)// Can't construct NI until device is init()'d so lazy ctor
-#endif
+          _devices(devices)
       {
         TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         // ----------------------------------------------------------------
@@ -251,18 +252,18 @@ namespace XMI
         // Compile-time assertions
         // ----------------------------------------------------------------
 
+        _devices->init(_clientid, _contextid, _client, _context, &_sysdep);
 #ifdef MU_COLL_DEVICE
         // Can't construct NI until device is init()'d.  Ctor into member storage.
         _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
         //xmi_result_t status;
 #endif
-	_devices->init(_clientid, _contextid, _client, _context, &_sysdep);
 
 #warning This should not be here?
 #if 0 // not working yet? not fully implemented?
         xmi_result_t result ;
-	_get = (void *) _request.allocateObject ();
-	new ((void *)_get) GetShmem(ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
+        _get = (void *) _request.allocateObject ();
+        new ((void *)_get) GetShmem(ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
 
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
@@ -273,7 +274,7 @@ namespace XMI
 #if 0
 #ifdef MU_COLL_DEVICE
       // \brief For testing NativeInterface.
-      inline MUDevice* getMu(){ return MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid); }
+      inline MUDevice* getMu() { return MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid); }
 #endif
 #endif
       inline xmi_client_t getClient_impl ()
@@ -295,11 +296,11 @@ namespace XMI
       inline xmi_result_t post_impl (xmi_work_t *state, xmi_work_function work_fn, void * cookie)
       {
         XMI::Device::Generic::GenericThread *work;
-	COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
-	work = new (state) XMI::Device::Generic::GenericThread(work_fn, cookie);
-	work->setStatus(XMI::Device::OneShot);
-	_devices->_generics[_contextid].postThread(work);
-	return XMI_SUCCESS;
+        COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
+        work = new (state) XMI::Device::Generic::GenericThread(work_fn, cookie);
+        work->setStatus(XMI::Device::OneShot);
+        _devices->_generics[_contextid].postThread(work);
+        return XMI_SUCCESS;
       }
 
       inline size_t advance_impl (size_t maximum, xmi_result_t & result)
@@ -311,7 +312,7 @@ namespace XMI
 
         for (i = 0; i < maximum && events == 0; i++)
           {
-	    events += _devices->advance(_clientid, _contextid);
+            events += _devices->advance(_clientid, _contextid);
           }
 
         //if (events > 0) result = XMI_SUCCESS;
@@ -322,21 +323,23 @@ namespace XMI
       inline xmi_result_t lock_impl ()
       {
         _lock.acquire ();
-	return XMI_SUCCESS;
+        return XMI_SUCCESS;
       }
 
       inline xmi_result_t trylock_impl ()
       {
-        if (_lock.tryAcquire ()) {
-		return XMI_SUCCESS;
-	}
-	return XMI_EAGAIN;
+        if (_lock.tryAcquire ())
+          {
+            return XMI_SUCCESS;
+          }
+
+        return XMI_EAGAIN;
       }
 
       inline xmi_result_t unlock_impl ()
       {
         _lock.release ();
-	return XMI_SUCCESS;
+        return XMI_SUCCESS;
       }
 
       inline xmi_result_t send_impl (xmi_send_t * parameters)
@@ -432,13 +435,13 @@ namespace XMI
       {
 #if 0 // not implemented yet???
         ((GetShmem*)_get)->getimpl (	parameters->rma.done_fn,
-                                parameters->rma.cookie,
-                                parameters->rma.dest,
-                                parameters->rget.bytes,
-                                (Memregion*)parameters->rget.local_mr,
-                                (Memregion*)parameters->rget.remote_mr,
-                                parameters->rget.local_offset,
-                                parameters->rget.remote_offset);
+                                     parameters->rma.cookie,
+                                     parameters->rma.dest,
+                                     parameters->rget.bytes,
+                                     (Memregion*)parameters->rget.local_mr,
+                                     (Memregion*)parameters->rget.remote_mr,
+                                     parameters->rget.local_offset,
+                                     parameters->rget.remote_offset);
 #endif
         return XMI_SUCCESS;
       }
@@ -514,26 +517,26 @@ namespace XMI
 
 
       inline xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
-                                                           xmi_xfer_type_t colltype,
-                                                       xmi_algorithm_t  *algs0,
-                                                       xmi_metadata_t   *mdata0,
-                                                       int               num0,
-                                                       xmi_algorithm_t  *algs1,
-                                                       xmi_metadata_t   *mdata1,
-                                                       int               num1)
+                                                         xmi_xfer_type_t colltype,
+                                                         xmi_algorithm_t  *algs0,
+                                                         xmi_metadata_t   *mdata0,
+                                                         int               num0,
+                                                         xmi_algorithm_t  *algs1,
+                                                         xmi_metadata_t   *mdata1,
+                                                         int               num1)
       {
-	XMI_abort();
-	return XMI_SUCCESS;
+        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        return XMI_SUCCESS;
       }
 
-    inline xmi_result_t amcollective_dispatch_impl (xmi_algorithm_t            algorithm,
-                                                    size_t                     dispatch,
-                                                    xmi_dispatch_callback_fn   fn,
-                                                    void                     * cookie,
-                                                    xmi_collective_hint_t      options)
+      inline xmi_result_t amcollective_dispatch_impl (xmi_algorithm_t            algorithm,
+                                                      size_t                     dispatch,
+                                                      xmi_dispatch_callback_fn   fn,
+                                                      void                     * cookie,
+                                                      xmi_collective_hint_t      options)
       {
-	XMI_abort();
-	return XMI_SUCCESS;
+        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        return XMI_SUCCESS;
       }
 
 
@@ -559,44 +562,49 @@ namespace XMI
         return result;
       }
 
-    inline xmi_result_t dispatch_new_impl (size_t                     id,
-                                           xmi_dispatch_callback_fn   fn,
-                                           void                     * cookie,
-                                           xmi_dispatch_hint_t        options)
-    {
-      xmi_result_t result        = XMI_ERROR;
-      if(options.type == XMI_P2P_SEND)
+      inline xmi_result_t dispatch_new_impl (size_t                     id,
+                                             xmi_dispatch_callback_fn   fn,
+                                             void                     * cookie,
+                                             xmi_dispatch_hint_t        options)
       {
-        return dispatch_impl (id,
-                              fn,
-                              cookie,
-                              options.hint.send);
-      }
+        xmi_result_t result        = XMI_ERROR;
+
+        if (options.type == XMI_P2P_SEND)
+          {
+            return dispatch_impl (id,
+                                  fn,
+                                  cookie,
+                                  options.hint.send);
+          }
+
 #ifdef MU_COLL_DEVICE
-      TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zd\n", id));
-      if(_global_mu_ni == NULL) // lazy ctor
-      {
-        MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
-        TRACE_ERR((stderr, "new MUGlobalNI(%p, %p, %p, %zd) = %p, size %zd\n",
-                   &_mu, _client, _context, _contextid, temp, sizeof(MUGlobalNI)));
-        _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
-      }
-      if (_dispatch[id] == NULL)
-      {
-        _dispatch[id] = (void *)_global_mu_ni; // Only have one multicast right now
-        return _global_mu_ni->setDispatch(fn, cookie);
         TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zd\n", id));
-        XMI_assertf(_protocolAllocator.objsize >= sizeof(XMI::Device::MU::MUMulticastModel),"%zd >= %zd\n",_protocolAllocator.objsize,sizeof(XMI::Device::MU::MUMulticastModel));
-        // Allocate memory for the protocol object.
-        _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
 
-        XMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) XMI::Device::MU::MUMulticastModel(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), result);
-        model->registerMcastRecvFunction(id, fn.multicast, cookie);
+        if (_global_mu_ni == NULL) // lazy ctor
+          {
+            MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
+            TRACE_ERR((stderr, "new MUGlobalNI(%p, %zd, %p, %zd) = %p, size %zd\n",
+                       &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
+            _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
+          }
 
-      }
+        if (_dispatch[id] == NULL)
+          {
+            _dispatch[id] = (void *)_global_mu_ni; // Only have one multicast right now
+            return _global_mu_ni->setDispatch(fn, cookie);
+            TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zd\n", id));
+            XMI_assertf(_protocolAllocator.objsize >= sizeof(XMI::Device::MU::MUMulticastModel), "%zd >= %zd\n", _protocolAllocator.objsize, sizeof(XMI::Device::MU::MUMulticastModel));
+            // Allocate memory for the protocol object.
+            _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
+
+            XMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) XMI::Device::MU::MUMulticastModel(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), result);
+            model->registerMcastRecvFunction(id, fn.multicast, cookie);
+
+          }
+
 #endif
-      return result;
-    }
+        return result;
+      }
 
       inline xmi_result_t multisend_getroles(size_t          dispatch,
                                              int            *numRoles,
@@ -612,7 +620,7 @@ namespace XMI
         CCMI::Interfaces::NativeInterface * ni = (CCMI::Interfaces::NativeInterface *) _dispatch[mcastinfo->dispatch];
         return ni->multicast(mcastinfo); // this version of ni allocates/frees our request storage for us.
 #else
-          return XMI_UNIMPL;
+        return XMI_UNIMPL;
 #endif
       };
 
@@ -626,18 +634,20 @@ namespace XMI
       inline xmi_result_t multisync(xmi_multisync_t *msyncinfo)
       {
 #ifdef MU_COLL_DEVICE
-        if(_global_mu_ni == NULL) // lazy ctor
-        {
-          MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
-          TRACE_ERR((stderr, "new MUGlobalNI(%p, %p, %p, %zd) = %p, size %zd\n",
-                     &_mu, _client, _context, _contextid, temp, sizeof(MUGlobalNI)));
-          _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
-        }
+
+        if (_global_mu_ni == NULL) // lazy ctor
+          {
+            MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
+            TRACE_ERR((stderr, "new MUGlobalNI(%p, %zd, %p, %zd) = %p, size %zd\n",
+                       &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
+            _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
+          }
+
         TRACE_ERR((stderr, ">> multisync_impl multisync %p\n", msyncinfo));
         return _global_mu_ni->multisync(msyncinfo); // Only have one multisync right now
 
 #else
-          return XMI_UNIMPL;
+        return XMI_UNIMPL;
 #endif
       };
 
@@ -645,17 +655,19 @@ namespace XMI
       inline xmi_result_t multicombine(xmi_multicombine_t *mcombineinfo)
       {
 #ifdef MU_COLL_DEVICE
-        if(_global_mu_ni == NULL) // lazy ctor
-        {
-          MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
-          TRACE_ERR((stderr, "new MUGlobalNI(%p, %p, %p, %zd) = %p, size %zd\n",
-                     &_mu, _client, _context, _contextid, temp, sizeof(MUGlobalNI)));
-          _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
-        }
+
+        if (_global_mu_ni == NULL) // lazy ctor
+          {
+            MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
+            TRACE_ERR((stderr, "new MUGlobalNI(%p, %zd, %p, %zd) = %p, size %zd\n",
+                       &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
+            _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
+          }
+
         TRACE_ERR((stderr, ">> multicombine_impl multicombine %p\n", mcombineinfo));
         return _global_mu_ni->multicombine(mcombineinfo);// Only have one multicombine right now
 #else
-          return XMI_UNIMPL;
+        return XMI_UNIMPL;
 #endif
       };
 
@@ -685,3 +697,10 @@ namespace XMI
 }; // end namespace XMI
 
 #endif // __components_context_bgq_bgqcontext_h__
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

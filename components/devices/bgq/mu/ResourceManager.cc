@@ -22,7 +22,7 @@
 #include "Global.h"
 
 #ifndef TRACE
-#define TRACE(x) //printf x
+#define TRACE(x) //fprintf x
 #endif
 
 uint8_t XMI::Device::MU::ResourceManager::_funcIDs[MUSPI_MAX_FUNCTION_IDS];
@@ -58,7 +58,7 @@ getInfo()
         XMI_assert ( _injFifoInfo != NULL );
         _injFifoInfo->numSubGroups = MINIMAL_INJ_NUM_SUBGROUPS;
 
-        TRACE(("My Coords are: A=%zd, B=%zd, C=%zd, D=%zd, E=%zd, T=%zd, P=%zd, aSize=%zd, bSize=%zd, cSize=%zd, dSize=%zd, eSize=%zd, tSize=%zd, pSize=%zd\n",
+        TRACE((stderr, "My Coords are: A=%zd, B=%zd, C=%zd, D=%zd, E=%zd, T=%zd, P=%zd, aSize=%zd, bSize=%zd, cSize=%zd, dSize=%zd, eSize=%zd, tSize=%zd, pSize=%zd\n",
                __global.mapping.a(), __global.mapping.b(), __global.mapping.c(), __global.mapping.d(), __global.mapping.e(), __global.mapping.t(), __global.mapping.p(), __global.personality.aSize(), __global.personality.bSize(), __global.personality.cSize(), __global.personality.dSize(), __global.personality.eSize(), __global.personality.tSize(), __global.personality.pSize()))
         ;
 
@@ -166,7 +166,7 @@ init ( ResourceType_t  type,
   _injFifoSubGroups = (InjFifoSubGroup**)malloc ( _injFifoInfo->numSubGroups *
                                                   sizeof ( InjFifoSubGroup * ) );
   XMI_assert ( _injFifoSubGroups != NULL );
-  TRACE(("_injFifoSubGroups=%p\n", _injFifoSubGroups));
+  TRACE((stderr, "_injFifoSubGroups=%p\n", _injFifoSubGroups));
 
   // - Loop through each subgroup, initializing it.
 
@@ -179,7 +179,7 @@ init ( ResourceType_t  type,
       _injFifoSubGroups[i] = (InjFifoSubGroup*)malloc ( sizeof(InjFifoSubGroup) );
       XMI_assert ( _injFifoSubGroups[i] != NULL );
       new (_injFifoSubGroups[i]) InjFifoSubGroup;
-      TRACE(("_injFifoSubGroups[%u]=%p\n", i, _injFifoSubGroups[i]));
+      TRACE((stderr, "_injFifoSubGroups[%u]=%p\n", i, _injFifoSubGroups[i]));
 
       // - Allocate space for the fifo pointers.
       // - Allocate space for the fifo sizes.
@@ -193,7 +193,7 @@ init ( ResourceType_t  type,
       Kernel_InjFifoAttributes_t *fifoAttrs =
         (Kernel_InjFifoAttributes_t*)malloc ( numElements * sizeof ( Kernel_InjFifoAttributes_t ) );
       XMI_assert ( fifoAttrs != NULL );
-      TRACE(("fifoPtrs=%p, fifoSizes=%p, fifoAttrs=%p\n", fifoPtrs, fifoSizes, fifoAttrs));
+      TRACE((stderr, "fifoPtrs=%p, fifoSizes=%p, fifoAttrs=%p\n", fifoPtrs, fifoSizes, fifoAttrs));
 
       // - Allocate space for each fifo - and the single packet payload buffer
       // - Set each fifo's size.
@@ -211,7 +211,7 @@ init ( ResourceType_t  type,
           fifoAttrs[j].RemoteGet = 0;
           fifoAttrs[j].System    = 0;
 
-          TRACE(("fifoPtrs[%u]=%p, fifoSizes=%u\n", j, fifoPtrs[j], fifoSizes[j]));
+          TRACE((stderr, "fifoPtrs[%u]=%p, fifoSizes=%u\n", j, fifoPtrs[j], fifoSizes[j]));
         }
 
       // - Initialize the InjFifoSubGroup.
@@ -224,7 +224,7 @@ init ( ResourceType_t  type,
 
       if (rc) break;
 
-      TRACE(("Initialized InjFifoSubGroups for subgroup %u\n", _injFifoInfo->subGroupInfo[i].subGroupId));
+      TRACE((stderr, "Initialized InjFifoSubGroups for subgroup %u\n", _injFifoInfo->subGroupInfo[i].subGroupId));
 
       free ( fifoSizes );
       free ( fifoPtrs  );
@@ -244,7 +244,7 @@ init ( ResourceType_t  type,
   _recFifoSubGroups = (RecFifoSubGroup**)malloc ( _recFifoInfo->numSubGroups *
                                                   sizeof ( RecFifoSubGroup * ) );
   XMI_assert ( _recFifoSubGroups != NULL );
-  TRACE(("_recFifoSubGroups=%p\n", _recFifoSubGroups));
+  TRACE((stderr, "_recFifoSubGroups=%p\n", _recFifoSubGroups));
 
   // - Loop through each subgroup, initializing it.
 
@@ -257,7 +257,7 @@ init ( ResourceType_t  type,
       _recFifoSubGroups[i] = (RecFifoSubGroup*)malloc ( sizeof(RecFifoSubGroup) );
       XMI_assert ( _recFifoSubGroups[i] != NULL );
       new (_recFifoSubGroups[i]) RecFifoSubGroup;
-      TRACE(("_recFifoSubGroups[%u]=%p\n", i, _recFifoSubGroups[i]));
+      TRACE((stderr, "_recFifoSubGroups[%u]=%p\n", i, _recFifoSubGroups[i]));
 
       // - Allocate space for the fifo pointers.
       // - Allocate space for the fifo sizes.
@@ -271,7 +271,7 @@ init ( ResourceType_t  type,
       Kernel_RecFifoAttributes_t *fifoAttrs =
         (Kernel_RecFifoAttributes_t*)malloc ( numElements * sizeof ( Kernel_RecFifoAttributes_t ) );
       XMI_assert ( fifoAttrs != NULL );
-      TRACE(("fifoPtrs=%p, fifoSizes=%p, fifoAttrs=%p\n", fifoPtrs, fifoSizes, fifoAttrs));
+      TRACE((stderr, "fifoPtrs=%p, fifoSizes=%p, fifoAttrs=%p\n", fifoPtrs, fifoSizes, fifoAttrs));
 
       // - Allocate space for each fifo.
       // - Set each fifo's size.
@@ -283,7 +283,7 @@ init ( ResourceType_t  type,
 
           fifoSizes[j] = DEFAULT_REC_FIFO_SIZE;
           fifoAttrs[j].System = 0;
-          TRACE(("fifoPtrs[%u]=%p, fifoSizes=%u\n", j, fifoPtrs[j], fifoSizes[j]));
+          TRACE((stderr, "fifoPtrs[%u]=%p, fifoSizes=%u\n", j, fifoPtrs[j], fifoSizes[j]));
         }
 
       // - Initialize the RecFifoSubGroup.
@@ -297,7 +297,7 @@ init ( ResourceType_t  type,
 
       if (rc) break;
 
-      TRACE(("Initialized RecFifoSubGroups for subgroup %u\n", _recFifoInfo->subGroupInfo[i].subGroupId));
+      TRACE((stderr, "Initialized RecFifoSubGroups for subgroup %u\n", _recFifoInfo->subGroupInfo[i].subGroupId));
 
       free ( fifoSizes );
       free ( fifoPtrs  );
@@ -317,7 +317,7 @@ init ( ResourceType_t  type,
   _batSubGroups = (BaseAddressTableSubGroup**)malloc ( _batInfo->numSubGroups *
                                                        sizeof ( BaseAddressTableSubGroup * ) );
   XMI_assert ( _batSubGroups != NULL );
-  TRACE(("_batSubGroups=%p\n", _batSubGroups));
+  TRACE((stderr, "_batSubGroups=%p\n", _batSubGroups));
 
   // - Loop through each subgroup, initializing it.
 
@@ -330,7 +330,7 @@ init ( ResourceType_t  type,
       _batSubGroups[i] = (BaseAddressTableSubGroup*)malloc ( sizeof(BaseAddressTableSubGroup) );
       XMI_assert ( _batSubGroups[i] != NULL );
       new (_batSubGroups[i]) BaseAddressTableSubGroup();
-      TRACE(("_batSubGroups[%u]=%p\n", i, _batSubGroups[i]));
+      TRACE((stderr, "_batSubGroups[%u]=%p\n", i, _batSubGroups[i]));
 
       // - Initialize the BaseAddressTableSubGroup.
 
@@ -339,7 +339,7 @@ init ( ResourceType_t  type,
 
       if (rc) break;
 
-      TRACE(("Initialized BatSubGroups for subgroup %u\n", _batInfo->subGroupInfo[i].subGroupId));
+      TRACE((stderr, "Initialized BatSubGroups for subgroup %u\n", _batInfo->subGroupInfo[i].subGroupId));
 
     } // End:  Loop through each subgroup, initializing it.
 
@@ -370,3 +370,10 @@ init ( ResourceType_t  type,
   return rc;
 
 } // End: init()
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

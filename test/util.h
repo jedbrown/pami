@@ -160,7 +160,7 @@ void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
   if (result != XMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
-    abort();
+    XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
   }
 #ifdef __xmi_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS

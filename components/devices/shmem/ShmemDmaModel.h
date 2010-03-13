@@ -78,7 +78,7 @@ namespace XMI
         {
           // This constant-expression branch will be optimized out by the compiler
           if (! Memregion::shared_address_write_supported)
-            XMI_abort();
+            XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
 
           // Always use context 0 to determine the fifo for dma operations
           size_t fnum = _device.fnum (_device.task2peer(target_task), 0);
@@ -123,7 +123,7 @@ namespace XMI
         {
           // This constant-expression branch will be optimized out by the compiler
           if (! Memregion::shared_address_read_supported)
-            XMI_abort();
+            XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
 
           // Always use context 0 to determine the fifo for dma operations
           size_t fnum = _device.fnum (_device.task2peer(target_task), 0);

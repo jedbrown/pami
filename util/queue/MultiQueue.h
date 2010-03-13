@@ -260,13 +260,13 @@ namespace XMI
 
       inline void dump_impl (const char * str, int n)
       {
-        XMI_abort();
+        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       };
 
 #ifdef VALIDATE_ON
       inline void validate_impl ()
       {
-        XMI_abort();
+        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       };
 #endif
 

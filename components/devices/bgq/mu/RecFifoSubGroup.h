@@ -145,9 +145,11 @@ namespace XMI
             unsigned packets = 0;
 
             TRACE((stderr, ">> RecFifoSubGroup::recFifoPoll(%p)\n", rfifo));
+
             while ((total_bytes = MUSPI_getAvailableBytes (rfifo, &wrap)) != 0)
               {
                 TRACE((stderr, "   RecFifoSubGroup::recFifoPoll(%p) .. wrap = %d\n", rfifo, wrap));
+
                 if (wrap)   //Extra branch over older packet loop
                   {
                     hdr = (MemoryFifoPacketHeader_t *) MUSPI_getNextPacketWrap (rfifo, &cur_bytes);

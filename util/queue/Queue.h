@@ -272,14 +272,14 @@ namespace XMI
       /// \copydoc XMI::Interface::QueueInfoInterface::dump
       inline void dump_impl (const char * str, int n)
       {
-        XMI_abort();
+        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       };
 
 #ifdef VALIDATE_ON
       /// \copydoc XMI::Interface::QueueInfoInterface::validate
       inline void validate_impl ()
       {
-        XMI_abort();
+        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       };
 #endif
 
@@ -466,14 +466,14 @@ namespace XMI
       /// \copydoc XMI::Interface::QueueInfoInterface::dump
       inline void dump (const char * str, int n)
       {
-        XMI_abort();
+        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       };
 
 #ifdef VALIDATE_ON
       /// \copydoc XMI::Interface::QueueInfoInterface::validate
       inline void validate ()
       {
-        XMI_abort();
+        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       };
 #endif
 

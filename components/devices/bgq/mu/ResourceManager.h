@@ -184,7 +184,7 @@ namespace XMI
 
 
 
-          ResourceManager () { }
+          ResourceManager () {TRACE((stderr, "ResourceManager::ctor\n")); }
 
           int init ( ResourceType_t ,
                      SysDep  * sd,

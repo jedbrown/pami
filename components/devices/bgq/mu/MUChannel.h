@@ -46,7 +46,7 @@ namespace XMI
 
           Channel();
 
-          ~Channel() {}
+          ~Channel() {TRACE((stderr, "Channel::ctor\n"));}
 
           virtual int init( SysDep * sd, dispatch_t *dispatch ) = 0;
 

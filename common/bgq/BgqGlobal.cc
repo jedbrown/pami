@@ -42,3 +42,10 @@ XMI::Device::ProgressFunctionDev _g_progfunc_dev;
 
 extern "C" void __libxmi_dummy     () { abort(); }
 extern "C" void __cxa_pure_virtual  () __attribute__((weak, alias("__libxmi_dummy")));
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

@@ -37,6 +37,7 @@ XMI::Device::MU::MUDevice::MUDevice (size_t clientid, size_t ncontexts, size_t c
     _colChannel (NULL),
     _initialized (false)
 {
+  TRACE((stderr, "MUDEvice ctor\n"));
   unsigned i;
 
   for ( i = 0; i < MAX_NUM_P2P_CHANNELS; i++ ) _p2pChannel[i] = NULL;
@@ -45,13 +46,14 @@ XMI::Device::MU::MUDevice::MUDevice (size_t clientid, size_t ncontexts, size_t c
 XMI::Device::MU::MUDevice::~MUDevice() {};
 
 xmi_result_t XMI::Device::MU::MUDevice::init (size_t           clientid,
-                                     size_t           contextid,
-                                     xmi_client_t     client,
-                                     xmi_context_t    context,
-                                     SysDep         * sysdep,
-                                     XMI::Device::Generic::Device * progress)
+                                              size_t           contextid,
+                                              xmi_client_t     client,
+                                              xmi_context_t    context,
+                                              SysDep         * sysdep,
+                                              XMI::Device::Generic::Device * progress)
 {
   int rc = 0;
+  TRACE((stderr, "MUDEvice init \n"));
 
   this->sysdep  = sysdep;
   _client    = client;
@@ -111,13 +113,6 @@ xmi_result_t XMI::Device::MU::MUDevice::init (size_t           clientid,
   XMI_assert( rc == 0 );
 #endif
   _colChannel = _p2pChannel[0]; /// \todo temporarily use the p2p channel until resmgr is fixed
-#if 0
-  TRACE(("MUDEvice ctor p2pChan:%llx resMgr:%llx subgrpPtr:%llx MUsubgrpPtr:%llx\n",
-         (unsigned long long)(_p2pChannel[0]),
-         (unsigned long long)(&_p2pChannel[0]->_resMgr),
-         (unsigned long long)_p2pChannel[0]->_resMgr._injFifoSubGroups[0],
-         (unsigned long long)(&_p2pChannel[0]->_resMgr._injFifoSubGroups[0]->_fifoSubGroup)));
-#endif
   _initialized = true;
 
   return XMI_SUCCESS;
@@ -181,7 +176,7 @@ int XMI::Device::MU::MUDevice::noop (void   * metadata,
                                      void   * cookie)
 {
   fprintf (stderr, "Error. Dispatch to unregistered id (%zd).\n", (size_t) recv_func_parm);
-  XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
+  XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
   return 0;
 };
 
@@ -189,39 +184,42 @@ void XMI::Device::MU::dumpHexData(const char * pstring, const uint32_t *buffer, 
 {
   fprintf(stderr, "dumphex:%s:%p:%zd:\n\n", pstring, &buffer, n_ints);
   unsigned nChunks = n_ints / 8;
+
   if (!buffer || !n_ints) return;
+
   for (unsigned i = 0; i < nChunks; i++)
-  {
-    fprintf(stderr,
-            "<%p>: %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X \n",
-            buffer+(i*8),
-            *(buffer+(i*8)+0),
-            *(buffer+(i*8)+1),
-            *(buffer+(i*8)+2),
-            *(buffer+(i*8)+3),
-            *(buffer+(i*8)+4),
-            *(buffer+(i*8)+5),
-            *(buffer+(i*8)+6),
-            *(buffer+(i*8)+7)
-           );
-  }
+    {
+      fprintf(stderr,
+              "<%p>: %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X \n",
+              buffer + (i*8),
+              *(buffer + (i*8) + 0),
+              *(buffer + (i*8) + 1),
+              *(buffer + (i*8) + 2),
+              *(buffer + (i*8) + 3),
+              *(buffer + (i*8) + 4),
+              *(buffer + (i*8) + 5),
+              *(buffer + (i*8) + 6),
+              *(buffer + (i*8) + 7)
+             );
+    }
+
   if (n_ints % 8)
-  {
-    unsigned lastChunk = nChunks * 8;
-    fprintf(stderr,
-            "<%p>: %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X \n",
-            buffer+lastChunk,
-            lastChunk+0<n_ints?*(buffer+lastChunk+0):0xDEADDEAD,
-            lastChunk+1<n_ints?*(buffer+lastChunk+1):0xDEADDEAD,
-            lastChunk+2<n_ints?*(buffer+lastChunk+2):0xDEADDEAD,
-            lastChunk+3<n_ints?*(buffer+lastChunk+3):0xDEADDEAD,
-            lastChunk+4<n_ints?*(buffer+lastChunk+4):0xDEADDEAD,
-            lastChunk+5<n_ints?*(buffer+lastChunk+5):0xDEADDEAD,
-            lastChunk+6<n_ints?*(buffer+lastChunk+6):0xDEADDEAD,
-            lastChunk+7<n_ints?*(buffer+lastChunk+7):0xDEADDEAD
-           );
-    lastChunk = 0; // gets rid of an annoying warning when not tracing the buffer
-  }
+    {
+      unsigned lastChunk = nChunks * 8;
+      fprintf(stderr,
+              "<%p>: %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X \n",
+              buffer + lastChunk,
+              lastChunk + 0 < n_ints ? *(buffer + lastChunk + 0) : 0xDEADDEAD,
+              lastChunk + 1 < n_ints ? *(buffer + lastChunk + 1) : 0xDEADDEAD,
+              lastChunk + 2 < n_ints ? *(buffer + lastChunk + 2) : 0xDEADDEAD,
+              lastChunk + 3 < n_ints ? *(buffer + lastChunk + 3) : 0xDEADDEAD,
+              lastChunk + 4 < n_ints ? *(buffer + lastChunk + 4) : 0xDEADDEAD,
+              lastChunk + 5 < n_ints ? *(buffer + lastChunk + 5) : 0xDEADDEAD,
+              lastChunk + 6 < n_ints ? *(buffer + lastChunk + 6) : 0xDEADDEAD,
+              lastChunk + 7 < n_ints ? *(buffer + lastChunk + 7) : 0xDEADDEAD
+             );
+      lastChunk = 0; // gets rid of an annoying warning when not tracing the buffer
+    }
 }
 void XMI::Device::MU::dumpDescriptor(const char* string, const MUHWI_Descriptor_t *desc)
 {
@@ -244,96 +242,99 @@ void XMI::Device::MU::dumpDescriptor(const char* string, const MUHWI_Descriptor_
           (uint32_t)(*(((uint32_t*)desc) + 14)),
           (uint32_t)(*(((uint32_t*)desc) + 15)));
 
-  fprintf(stderr,"desc->Half_Word0.Prefetch_Only             %#X\n", desc->Half_Word0.Prefetch_Only);
-  fprintf(stderr,"desc->Half_Word1.Interrupt                 %#X\n", desc->Half_Word1.Interrupt    );
-  fprintf(stderr,"desc->Pa_Payload                           %#lX\n", desc->Pa_Payload              );
-  fprintf(stderr,"desc->Message_Length                       %#lX\n", desc->Message_Length          );
-  fprintf(stderr,"desc->Torus_FIFO_Map                       %#lX\n", desc->Torus_FIFO_Map          );
+  fprintf(stderr, "desc->Half_Word0.Prefetch_Only             %#X\n", desc->Half_Word0.Prefetch_Only);
+  fprintf(stderr, "desc->Half_Word1.Interrupt                 %#X\n", desc->Half_Word1.Interrupt    );
+  fprintf(stderr, "desc->Pa_Payload                           %#lX\n", desc->Pa_Payload              );
+  fprintf(stderr, "desc->Message_Length                       %#lX\n", desc->Message_Length          );
+  fprintf(stderr, "desc->Torus_FIFO_Map                       %#lX\n", desc->Torus_FIFO_Map          );
 
-  MUHWI_CollectiveNetworkHeader_t *chdr = (MUHWI_CollectiveNetworkHeader_t *)& desc->PacketHeader;
+  MUHWI_CollectiveNetworkHeader_t *chdr = (MUHWI_CollectiveNetworkHeader_t *) & desc->PacketHeader;
 
-  fprintf(stderr,"hdr->Data_Packet_Type                      %#X\n", chdr->Data_Packet_Type                     );
+  fprintf(stderr, "hdr->Data_Packet_Type                      %#X\n", chdr->Data_Packet_Type                     );
+
   if (chdr->Data_Packet_Type == MUHWI_COLLECTIVE_DATA_PACKET_TYPE)
-  {
-    fprintf(stderr,  "COLLECTIVE Data_Packet_Type\n");
-    fprintf(stderr,"hdr->Byte1.OpCode                          %#X\n", chdr->Byte1.OpCode                         );
-    fprintf(stderr,"hdr->Byte1.Word_Length                     %#X\n", chdr->Byte1.Word_Length                    );
-    fprintf(stderr,"hdr->Byte2.Class_Route                     %#X\n", chdr->Byte2.Class_Route                    );
-    fprintf(stderr,"hdr->Byte2.Interrupt                       %#X\n", chdr->Byte2.Interrupt                      );
-    fprintf(stderr,"hdr->Byte3.Virtual_channel                 %#X\n", chdr->Byte3.Virtual_channel                );
-    fprintf(stderr,"hdr->Byte3.Collective_Type                 %#X\n", chdr->Byte3.Collective_Type                );
-    fprintf(stderr,"hdr->Destination.Destination.A_Destination %#X\n", chdr->Destination.Destination.A_Destination);
-    fprintf(stderr,"hdr->Destination.Destination.B_Destination %#X\n", chdr->Destination.Destination.B_Destination);
-    fprintf(stderr,"hdr->Destination.Destination.C_Destination %#X\n", chdr->Destination.Destination.C_Destination);
-    fprintf(stderr,"hdr->Destination.Destination.D_Destination %#X\n", chdr->Destination.Destination.D_Destination);
-    fprintf(stderr,"hdr->Destination.Destination.E_Destination %#X\n", chdr->Destination.Destination.E_Destination);
-    fprintf(stderr,"hdr->Byte8.Packet_Type                     %#X\n", chdr->Byte8.Packet_Type                    );
-    fprintf(stderr,"hdr->Byte8.Size                            %#X\n", chdr->Byte8.Size                           );
-    fprintf(stderr,"hdr->Injection_Info.Skip                   %#X\n", chdr->Injection_Info.Skip                  );
-    if (chdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_FIFO)
     {
-      fprintf(stderr,  "FIFO Packet_Type\n");
-      MemoryFifoPacketHeader_t * hdr = (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
-      fprintf(stderr,"hdr->dev.issingle                          %#X\n", hdr->dev.issingle   );
-      //  fprintf(stderr,"hdr->dev.multipkt                          %#X\n", hdr->dev.multipkt   );
-      fprintf(stderr,"hdr->dev.singleonly                        %#X\n", hdr->dev.singleonly );
-      fprintf(stderr,"hdr->dev.singlepkt                         %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X\n",
-              hdr->dev.singlepkt.metadata[0], hdr->dev.singlepkt.metadata[1], hdr->dev.singlepkt.metadata[2], hdr->dev.singlepkt.metadata[3],
-              hdr->dev.singlepkt.metadata[4], hdr->dev.singlepkt.metadata[5], hdr->dev.singlepkt.metadata[6], hdr->dev.singlepkt.metadata[7],
-              hdr->dev.singlepkt.metadata[8], hdr->dev.singlepkt.metadata[9], hdr->dev.singlepkt.metadata[10], hdr->dev.singlepkt.metadata[11],
-              hdr->dev.singlepkt.metadata[12], hdr->dev.singlepkt.metadata[13], hdr->dev.singlepkt.metadata[14], hdr->dev.singlepkt.metadata[15]);
-      fprintf(stderr,"hdr->dev.dispatch_id                       %#X\n", hdr->dev.dispatch_id);
-    }
-    else if (chdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_PUT) fprintf(stderr,  "PUT Packet_Type\n"); // \todo expand
-    else if (chdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_GET) fprintf(stderr,  "GET Packet_Type\n"); // \todo expand
-    else if (chdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_PACED_GET) fprintf(stderr,  "PACED GET Packet_Type\n"); // \todo expand
-    else
-      fprintf(stderr,  "unknown Packet_Type\n");
-  }
-  else if (chdr->Data_Packet_Type == MUHWI_PT2PT_DATA_PACKET_TYPE)
-  {
-    fprintf(stderr,  "PT2PT Data_Packet_Type\n"); // \todo expand
-    MUHWI_Pt2PtNetworkHeader_t *phdr = (MUHWI_Pt2PtNetworkHeader_t *)& desc->PacketHeader;
+      fprintf(stderr,  "COLLECTIVE Data_Packet_Type\n");
+      fprintf(stderr, "hdr->Byte1.OpCode                          %#X\n", chdr->Byte1.OpCode                         );
+      fprintf(stderr, "hdr->Byte1.Word_Length                     %#X\n", chdr->Byte1.Word_Length                    );
+      fprintf(stderr, "hdr->Byte2.Class_Route                     %#X\n", chdr->Byte2.Class_Route                    );
+      fprintf(stderr, "hdr->Byte2.Interrupt                       %#X\n", chdr->Byte2.Interrupt                      );
+      fprintf(stderr, "hdr->Byte3.Virtual_channel                 %#X\n", chdr->Byte3.Virtual_channel                );
+      fprintf(stderr, "hdr->Byte3.Collective_Type                 %#X\n", chdr->Byte3.Collective_Type                );
+      fprintf(stderr, "hdr->Destination.Destination.A_Destination %#X\n", chdr->Destination.Destination.A_Destination);
+      fprintf(stderr, "hdr->Destination.Destination.B_Destination %#X\n", chdr->Destination.Destination.B_Destination);
+      fprintf(stderr, "hdr->Destination.Destination.C_Destination %#X\n", chdr->Destination.Destination.C_Destination);
+      fprintf(stderr, "hdr->Destination.Destination.D_Destination %#X\n", chdr->Destination.Destination.D_Destination);
+      fprintf(stderr, "hdr->Destination.Destination.E_Destination %#X\n", chdr->Destination.Destination.E_Destination);
+      fprintf(stderr, "hdr->Byte8.Packet_Type                     %#X\n", chdr->Byte8.Packet_Type                    );
+      fprintf(stderr, "hdr->Byte8.Size                            %#X\n", chdr->Byte8.Size                           );
+      fprintf(stderr, "hdr->Injection_Info.Skip                   %#X\n", chdr->Injection_Info.Skip                  );
 
-    fprintf(stderr,"hdr->Hints                                 %#X\n", phdr->Hints                                    );
-    fprintf(stderr,"hdr->Byte2.Hint_E_plus                     %#X\n", phdr->Byte2.Hint_E_plus                        );
-    fprintf(stderr,"hdr->Byte2.Hint_E_minus                    %#X\n", phdr->Byte2.Hint_E_minus                       );
-    fprintf(stderr,"hdr->Byte2.Route_To_IO_Node                %#X\n", phdr->Byte2.Route_To_IO_Node                   );
-    fprintf(stderr,"hdr->Byte2.Return_From_IO_Node             %#X\n", phdr->Byte2.Return_From_IO_Node                );
-    fprintf(stderr,"hdr->Byte2.Dynamic                         %#X\n", phdr->Byte2.Dynamic                            );
-    fprintf(stderr,"hdr->Byte2.Deposit                         %#X\n", phdr->Byte2.Deposit                            );
-    fprintf(stderr,"hdr->Byte2.Interrupt                       %#X\n", phdr->Byte2.Interrupt                          );
-    fprintf(stderr,"hdr->Byte3.Virtual_channel                 %#X\n", phdr->Byte3.Virtual_channel                    );
-    fprintf(stderr,"hdr->Byte3.Zone_Routing_Id                 %#X\n", phdr->Byte3.Zone_Routing_Id                    );
-    fprintf(stderr,"hdr->Byte3.Stay_On_Bubble                  %#X\n", phdr->Byte3.Stay_On_Bubble                     );
-    fprintf(stderr,"hdr->Destination.Destination.A_Destination %#X\n", phdr->Destination.Destination.A_Destination);
-    fprintf(stderr,"hdr->Destination.Destination.B_Destination %#X\n", phdr->Destination.Destination.B_Destination);
-    fprintf(stderr,"hdr->Destination.Destination.C_Destination %#X\n", phdr->Destination.Destination.C_Destination);
-    fprintf(stderr,"hdr->Destination.Destination.D_Destination %#X\n", phdr->Destination.Destination.D_Destination);
-    fprintf(stderr,"hdr->Destination.Destination.E_Destination %#X\n", phdr->Destination.Destination.E_Destination);
-    fprintf(stderr,"hdr->Byte8.Packet_Type                     %#X\n", phdr->Byte8.Packet_Type                        );
-    fprintf(stderr,"hdr->Byte8.Size                            %#X\n", phdr->Byte8.Size                               );
-    fprintf(stderr,"hdr->Injection_Info.Skip                   %#X\n", phdr->Injection_Info.Skip                      );
-    if (phdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_FIFO)
-    {
-      fprintf(stderr,  "FIFO Packet_Type\n");
-      MemoryFifoPacketHeader_t * hdr = (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
-      fprintf(stderr,"hdr->dev.issingle                          %#X\n", hdr->dev.issingle   );
-      //  fprintf(stderr,"hdr->dev.multipkt                          %#X\n", hdr->dev.multipkt   );
-      fprintf(stderr,"hdr->dev.singleonly                        %#X\n", hdr->dev.singleonly );
-      fprintf(stderr,"hdr->dev.singlepkt                         %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X\n",
-              hdr->dev.singlepkt.metadata[0], hdr->dev.singlepkt.metadata[1], hdr->dev.singlepkt.metadata[2], hdr->dev.singlepkt.metadata[3],
-              hdr->dev.singlepkt.metadata[4], hdr->dev.singlepkt.metadata[5], hdr->dev.singlepkt.metadata[6], hdr->dev.singlepkt.metadata[7],
-              hdr->dev.singlepkt.metadata[8], hdr->dev.singlepkt.metadata[9], hdr->dev.singlepkt.metadata[10], hdr->dev.singlepkt.metadata[11],
-              hdr->dev.singlepkt.metadata[12], hdr->dev.singlepkt.metadata[13], hdr->dev.singlepkt.metadata[14], hdr->dev.singlepkt.metadata[15]);
-      fprintf(stderr,"hdr->dev.dispatch_id                       %#X\n", hdr->dev.dispatch_id);
+      if (chdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_FIFO)
+        {
+          fprintf(stderr,  "FIFO Packet_Type\n");
+          MemoryFifoPacketHeader_t * hdr = (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
+          fprintf(stderr, "hdr->dev.issingle                          %#X\n", hdr->dev.issingle   );
+          //  fprintf(stderr,"hdr->dev.multipkt                          %#X\n", hdr->dev.multipkt   );
+          fprintf(stderr, "hdr->dev.singleonly                        %#X\n", hdr->dev.singleonly );
+          fprintf(stderr, "hdr->dev.singlepkt                         %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X\n",
+                  hdr->dev.singlepkt.metadata[0], hdr->dev.singlepkt.metadata[1], hdr->dev.singlepkt.metadata[2], hdr->dev.singlepkt.metadata[3],
+                  hdr->dev.singlepkt.metadata[4], hdr->dev.singlepkt.metadata[5], hdr->dev.singlepkt.metadata[6], hdr->dev.singlepkt.metadata[7],
+                  hdr->dev.singlepkt.metadata[8], hdr->dev.singlepkt.metadata[9], hdr->dev.singlepkt.metadata[10], hdr->dev.singlepkt.metadata[11],
+                  hdr->dev.singlepkt.metadata[12], hdr->dev.singlepkt.metadata[13], hdr->dev.singlepkt.metadata[14], hdr->dev.singlepkt.metadata[15]);
+          fprintf(stderr, "hdr->dev.dispatch_id                       %#X\n", hdr->dev.dispatch_id);
+        }
+      else if (chdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_PUT) fprintf(stderr,  "PUT Packet_Type\n"); // \todo expand
+      else if (chdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_GET) fprintf(stderr,  "GET Packet_Type\n"); // \todo expand
+      else if (chdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_PACED_GET) fprintf(stderr,  "PACED GET Packet_Type\n"); // \todo expand
+      else
+        fprintf(stderr,  "unknown Packet_Type\n");
     }
-    else if (phdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_PUT) fprintf(stderr,  "PUT Packet_Type\n"); // \todo expand
-    else if (phdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_GET) fprintf(stderr,  "GET Packet_Type\n"); // \todo expand
-    else if (phdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_PACED_GET) fprintf(stderr,  "PACED GET Packet_Type\n"); // \todo expand
-    else
-      fprintf(stderr,  "unknown Packet_Type\n");
-  }
+  else if (chdr->Data_Packet_Type == MUHWI_PT2PT_DATA_PACKET_TYPE)
+    {
+      fprintf(stderr,  "PT2PT Data_Packet_Type\n"); // \todo expand
+      MUHWI_Pt2PtNetworkHeader_t *phdr = (MUHWI_Pt2PtNetworkHeader_t *) & desc->PacketHeader;
+
+      fprintf(stderr, "hdr->Hints                                 %#X\n", phdr->Hints                                    );
+      fprintf(stderr, "hdr->Byte2.Hint_E_plus                     %#X\n", phdr->Byte2.Hint_E_plus                        );
+      fprintf(stderr, "hdr->Byte2.Hint_E_minus                    %#X\n", phdr->Byte2.Hint_E_minus                       );
+      fprintf(stderr, "hdr->Byte2.Route_To_IO_Node                %#X\n", phdr->Byte2.Route_To_IO_Node                   );
+      fprintf(stderr, "hdr->Byte2.Return_From_IO_Node             %#X\n", phdr->Byte2.Return_From_IO_Node                );
+      fprintf(stderr, "hdr->Byte2.Dynamic                         %#X\n", phdr->Byte2.Dynamic                            );
+      fprintf(stderr, "hdr->Byte2.Deposit                         %#X\n", phdr->Byte2.Deposit                            );
+      fprintf(stderr, "hdr->Byte2.Interrupt                       %#X\n", phdr->Byte2.Interrupt                          );
+      fprintf(stderr, "hdr->Byte3.Virtual_channel                 %#X\n", phdr->Byte3.Virtual_channel                    );
+      fprintf(stderr, "hdr->Byte3.Zone_Routing_Id                 %#X\n", phdr->Byte3.Zone_Routing_Id                    );
+      fprintf(stderr, "hdr->Byte3.Stay_On_Bubble                  %#X\n", phdr->Byte3.Stay_On_Bubble                     );
+      fprintf(stderr, "hdr->Destination.Destination.A_Destination %#X\n", phdr->Destination.Destination.A_Destination);
+      fprintf(stderr, "hdr->Destination.Destination.B_Destination %#X\n", phdr->Destination.Destination.B_Destination);
+      fprintf(stderr, "hdr->Destination.Destination.C_Destination %#X\n", phdr->Destination.Destination.C_Destination);
+      fprintf(stderr, "hdr->Destination.Destination.D_Destination %#X\n", phdr->Destination.Destination.D_Destination);
+      fprintf(stderr, "hdr->Destination.Destination.E_Destination %#X\n", phdr->Destination.Destination.E_Destination);
+      fprintf(stderr, "hdr->Byte8.Packet_Type                     %#X\n", phdr->Byte8.Packet_Type                        );
+      fprintf(stderr, "hdr->Byte8.Size                            %#X\n", phdr->Byte8.Size                               );
+      fprintf(stderr, "hdr->Injection_Info.Skip                   %#X\n", phdr->Injection_Info.Skip                      );
+
+      if (phdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_FIFO)
+        {
+          fprintf(stderr,  "FIFO Packet_Type\n");
+          MemoryFifoPacketHeader_t * hdr = (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
+          fprintf(stderr, "hdr->dev.issingle                          %#X\n", hdr->dev.issingle   );
+          //  fprintf(stderr,"hdr->dev.multipkt                          %#X\n", hdr->dev.multipkt   );
+          fprintf(stderr, "hdr->dev.singleonly                        %#X\n", hdr->dev.singleonly );
+          fprintf(stderr, "hdr->dev.singlepkt                         %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X %#.2X%.2X%.2X%.2X\n",
+                  hdr->dev.singlepkt.metadata[0], hdr->dev.singlepkt.metadata[1], hdr->dev.singlepkt.metadata[2], hdr->dev.singlepkt.metadata[3],
+                  hdr->dev.singlepkt.metadata[4], hdr->dev.singlepkt.metadata[5], hdr->dev.singlepkt.metadata[6], hdr->dev.singlepkt.metadata[7],
+                  hdr->dev.singlepkt.metadata[8], hdr->dev.singlepkt.metadata[9], hdr->dev.singlepkt.metadata[10], hdr->dev.singlepkt.metadata[11],
+                  hdr->dev.singlepkt.metadata[12], hdr->dev.singlepkt.metadata[13], hdr->dev.singlepkt.metadata[14], hdr->dev.singlepkt.metadata[15]);
+          fprintf(stderr, "hdr->dev.dispatch_id                       %#X\n", hdr->dev.dispatch_id);
+        }
+      else if (phdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_PUT) fprintf(stderr,  "PUT Packet_Type\n"); // \todo expand
+      else if (phdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_GET) fprintf(stderr,  "GET Packet_Type\n"); // \todo expand
+      else if (phdr->Byte8.Packet_Type == MUHWI_PACKET_TYPE_PACED_GET) fprintf(stderr,  "PACED GET Packet_Type\n"); // \todo expand
+      else
+        fprintf(stderr,  "unknown Packet_Type\n");
+    }
   else
     fprintf(stderr,  "unknown Data_Packet_Type\n");
 

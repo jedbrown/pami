@@ -126,21 +126,21 @@ namespace XMI
         int rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
         XMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
 #ifdef USE_COMMTHREADS
-	// Create one comm thread semi-opaque pointer. Internally, this may be
-	// one-per-context (optimal advance scenario) or some other arrangement.
-	_commThreads = XMI::Device::CommThread::BgqCommThread::generate(_clientid, n, _mm);
-	XMI_assertf(_commThreads, "BgqCommThread::generate failed for _commThreads[%d]\n", n);
+        // Create one comm thread semi-opaque pointer. Internally, this may be
+        // one-per-context (optimal advance scenario) or some other arrangement.
+        _commThreads = XMI::Device::CommThread::BgqCommThread::generate(_clientid, n, _mm);
+        XMI_assertf(_commThreads, "BgqCommThread::generate failed for _commThreads[%d]\n", n);
 #endif // USE_COMMTHREADS
         int x;
-        TRACE_ERR((stderr, "%d:mm available %zd\n",__LINE__,_mm.available()));
-	_platdevs.generate(_clientid, n, _mm);
+        TRACE_ERR((stderr, "%d:mm available %zd\n", __LINE__, _mm.available()));
+        _platdevs.generate(_clientid, n, _mm);
 
         // This memset has been removed due to the amount of cycles it takes
         // on simulators.  Lower level initializers should be setting the
         // relevant fields of the context, so this memset should not be
         // needed anyway.
         //memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
-        TRACE_ERR((stderr, "%d:mm available %zd\n",__LINE__,_mm.available()));
+        TRACE_ERR((stderr, "%d:mm available %zd\n", __LINE__, _mm.available()));
         size_t bytes = _mm.available() / n - 16;
 
         for (x = 0; x < n; ++x)
@@ -148,17 +148,18 @@ namespace XMI
             context[x] = (xmi_context_t) & _contexts[x];
             void *base = NULL;
             _mm.memalign((void **)&base, 16, bytes);
-            XMI_assertf(base != NULL, "out of sharedmemory in context create x=%d,n=%d,bytes=%zd,mm.size=%zd,mm.available=%zd\n",x,n,bytes,_mm.size(),_mm.available());
+            XMI_assertf(base != NULL, "out of sharedmemory in context create x=%d,n=%d,bytes=%zd,mm.size=%zd,mm.available=%zd\n", x, n, bytes, _mm.size(), _mm.available());
             new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,
                                              &_platdevs, base, bytes);
 #ifdef USE_COMMTHREADS
-	    // Note, this is not inializing each comm thread but rather
-	    // initializing comm threads for each context.
-	    XMI::Device::CommThread::BgqCommThread::initContext(_commThreads, _clientid, x, context[x]);
+            // Note, this is not inializing each comm thread but rather
+            // initializing comm threads for each context.
+            XMI::Device::CommThread::BgqCommThread::initContext(_commThreads, _clientid, x, context[x]);
 #endif // USE_COMMTHREADS
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
+
         TRACE_ERR((stderr,  "%s exit\n", __PRETTY_FUNCTION__));
 
         return XMI_SUCCESS;
@@ -204,20 +205,21 @@ namespace XMI
               result = XMI_SUCCESS;
               break;
             case XMI_PROCESSOR_NAME:
-              {
-                int rc;
-                char* pn = __global.processor_name;
-                /// \todo This should be more descriptive and the
-                /// snprintf() should be run at init only.  This is
-                /// the BGP DCMF version:
-                /// "Rank 0 of 128 (0,0,0,0)  R00-M0-N10-J01"
-                rc = snprintf(pn, 128, "Task %zu of %zu", __global.mapping.task(), __global.mapping.size());
-                pn[128-1] = 0;
-                configuration->value.chararray = pn;
-                if (rc>0)
-                  result = XMI_SUCCESS;
-              }
-              break;
+            {
+              int rc;
+              char* pn = __global.processor_name;
+              /// \todo This should be more descriptive and the
+              /// snprintf() should be run at init only.  This is
+              /// the BGP DCMF version:
+              /// "Rank 0 of 128 (0,0,0,0)  R00-M0-N10-J01"
+              rc = snprintf(pn, 128, "Task %zu of %zu", __global.mapping.task(), __global.mapping.size());
+              pn[128-1] = 0;
+              configuration->value.chararray = pn;
+
+              if (rc > 0)
+                result = XMI_SUCCESS;
+            }
+            break;
             case XMI_MEM_SIZE:
             default:
               break;
@@ -249,43 +251,43 @@ namespace XMI
       {
         return _clientid;
       }
-    inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
+      inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
       {
-        XMI_abort();
+        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
         return XMI_SUCCESS;
       }
 
-    inline xmi_result_t geometry_create_taskrange_impl(xmi_geometry_t       * geometry,
-                                                       xmi_geometry_t         parent,
-                                                       unsigned               id,
-                                                       xmi_geometry_range_t * rank_slices,
-                                                       size_t                 slice_count,
-                                                       xmi_context_t          context,
-                                                       xmi_event_function     fn,
-                                                       void                 * cookie)
+      inline xmi_result_t geometry_create_taskrange_impl(xmi_geometry_t       * geometry,
+                                                         xmi_geometry_t         parent,
+                                                         unsigned               id,
+                                                         xmi_geometry_range_t * rank_slices,
+                                                         size_t                 slice_count,
+                                                         xmi_context_t          context,
+                                                         xmi_event_function     fn,
+                                                         void                 * cookie)
       {
-        XMI_abort();
+        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
         return XMI_SUCCESS;
       }
 
 
-    inline xmi_result_t geometry_create_tasklist_impl(xmi_geometry_t       * geometry,
-                                                      xmi_geometry_t         parent,
-                                                      unsigned               id,
-                                                      xmi_task_t           * tasks,
-                                                      size_t                 task_count,
-                                                      xmi_context_t          context,
-                                                      xmi_event_function     fn,
-                                                      void                 * cookie)
+      inline xmi_result_t geometry_create_tasklist_impl(xmi_geometry_t       * geometry,
+                                                        xmi_geometry_t         parent,
+                                                        unsigned               id,
+                                                        xmi_task_t           * tasks,
+                                                        size_t                 task_count,
+                                                        xmi_context_t          context,
+                                                        xmi_event_function     fn,
+                                                        void                 * cookie)
       {
         // todo:  implement this routine
-        XMI_abort();
+        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
         return XMI_SUCCESS;
       }
 
-    inline xmi_result_t geometry_destroy_impl (xmi_geometry_t geometry)
+      inline xmi_result_t geometry_destroy_impl (xmi_geometry_t geometry)
       {
-        XMI_abort();
+        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
         return XMI_UNIMPL;
       }
 
@@ -329,20 +331,25 @@ namespace XMI
 
 #if 1
         // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-        
+
 #ifdef ENABLE_MAMBO_WORKAROUNDS
         rc = shm_open (shmemfile, O_CREAT | O_EXCL, 0600);
-        if(rc==-1 && errno != EEXIST)
+
+        if (rc == -1 && errno != EEXIST)
           fprintf(stderr, "shm_open(<%s>,O_CREAT | O_EXCL) rc = %d, errno = %d, %s\n", shmemfile,  rc,  errno,  strerror(errno));
+
         close(rc);
         Delay(1000000);
         rc = shm_open (shmemfile, O_RDWR, 0600);
-        if(rc==-1)
+
+        if (rc == -1)
           fprintf(stderr, "shm_open(<%s>,O_RDWR) rc = %d, errno = %d, %s\n", shmemfile,  rc,  errno,  strerror(errno));
+
 #else
         rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
 #endif
         void * ptr = NULL;
+
         if ( rc != -1 )
           {
             fd = rc;
@@ -350,13 +357,18 @@ namespace XMI
 
             if ( rc != -1 )
               {
-              ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-                while(ptr==MAP_FAILED)
-                {
-                  fprintf(stderr,"%s:%d Failed to mmap (rc=%d, ptr=%p, n=%zd) errno %d %s\n",__FILE__,__LINE__, rc, ptr, n, errno, strerror(errno));
-                  n/=2; if(n<(32*1024)) break;
-                  ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-                }
+                ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+                while (ptr == MAP_FAILED)
+                  {
+                    fprintf(stderr, "%s:%d Failed to mmap (rc=%d, ptr=%p, n=%zd) errno %d %s\n", __FILE__, __LINE__, rc, ptr, n, errno, strerror(errno));
+                    n /= 2;
+
+                    if (n < (32*1024)) break;
+
+                    ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+                  }
+
                 if ( ptr != MAP_FAILED )
                   {
 #ifdef ENABLE_MAMBO_WORKAROUNDS
@@ -368,7 +380,8 @@ namespace XMI
                   }
               }
           }
-        fprintf(stderr,"%s:%d Failed to create shared memory <%s> (rc=%d, ptr=%p, n=%zd) errno %d %s\n",__FILE__,__LINE__, shmemfile, rc, ptr, n, errno, strerror(errno));
+
+        fprintf(stderr, "%s:%d Failed to create shared memory <%s> (rc=%d, ptr=%p, n=%zd) errno %d %s\n", __FILE__, __LINE__, shmemfile, rc, ptr, n, errno, strerror(errno));
         //XMI_abortf(stderr,"Failed to create shared memory (rc=%d, ptr=%p, n=%zd)\n", rc, ptr, n);
 
         // Failed to create shared memory .. fake it using the heap ??
