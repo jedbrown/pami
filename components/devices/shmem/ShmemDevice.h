@@ -310,7 +310,7 @@ namespace XMI
                   //mbar();       /// \todo doesn't seem to help mambo
                   //ppc_msync();  /// \todo doesn't seem to help mambo
                   //mm.sync();    /// \todo doesn't seem to help mambo - msync() errno 38: Function not implemented
-                  
+
                   // check to see if all peers have written a non-zero value
                   // in the "ncontexts" field
                   total_fifos_on_node = 0;

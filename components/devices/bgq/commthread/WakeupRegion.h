@@ -14,7 +14,7 @@
 #define __components_devices_bgq_commthread_WakeupRegion_h__
 
 #include "sys/xmi.h"
-#include "spi/include/l2/atomic.h" 
+#include "spi/include/l2/atomic.h"
 
 #warning Need Kernel_VirtualToPhysical
 #define vtop(v)		((uint64_t)v)

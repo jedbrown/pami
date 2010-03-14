@@ -82,7 +82,7 @@ namespace XMI
       coord2node (_a, _b, _c, _d, _e, _p,_t,      //fix?
                   _nodeaddr.global, _nodeaddr.local);
       TRACE_MAMBO((stderr, "Mapping() coords(a,b,c,d,e,p,t):(%zd %zd %zd %zd %zd %zd %zd), node: (%#lX %#lX)\n", _a, _b, _c, _d, _e, _p, _t, _nodeaddr.global, _nodeaddr.local));
-      size_t 
+      size_t
         asize =_pers.aSize(),
         bsize =_pers.bSize(),
         csize =_pers.cSize(),
@@ -533,7 +533,7 @@ namespace XMI
       TRACE_ERR((stderr, "Mapping::node2peer_impl({%zd, %zd}, ...) >>\n", address.global, address.local));
 
       size_t tSize = _pers.tSize();
-      //size_t pSize = _pers.pSize(); // psize isn't currently used in ESTIMATED_TASK. 
+      //size_t pSize = _pers.pSize(); // psize isn't currently used in ESTIMATED_TASK.
       //size_t peerSize = tSize * pSize;
 
       // local coordinate is the thread id (t) in the most significant

@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-/// \file components/devices/bgq/commthread/CommThread.h
+/// \file components/devices/bgq/commthread/CommThreadWakeup.h
 /// \brief
 
-#ifndef __components_devices_bgq_commthread_CommThread_h__
-#define __components_devices_bgq_commthread_CommThread_h__
+#ifndef __components_devices_bgq_commthread_CommThreadWakeup_h__
+#define __components_devices_bgq_commthread_CommThreadWakeup_h__
 
 #include "sys/xmi.h"
 #include "components/devices/bgq/commthread/WakeupRegion.h"
