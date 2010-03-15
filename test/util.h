@@ -19,7 +19,7 @@
 #include <assert.h>
 
 #include "sys/xmi.h"
-//#include "util/common.h"
+#include "util/common.h"
 
 #ifdef __xmi_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
