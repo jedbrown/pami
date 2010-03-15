@@ -22,8 +22,10 @@
 /// It is imperative that all who create an index into _rankcache[]
 /// do it in the identical way. Thus all should use this macro.
 ///
-#define ESTIMATED_TASK(a,b,c,d,e,t,p,aSize,bSize,cSize,dSize,eSize,tSize,pSize) \
-	((((((p * tSize + t) * eSize + e) * dSize + d) * cSize + c)* bSize + b) * aSize + a)
+#define ESTIMATED_TASK(a,b,c,d,e,p,t,aSize,bSize,cSize,dSize,eSize,pSize,tSize) \
+(t+tSize*(p+pSize*(a+aSize*(b+bSize*(c+cSize*(d+dSize*(e)))))))
+
+//	((((((p * tSize + t) * eSize + e) * dSize + d) * cSize + c)* bSize + b) * aSize + a)
 
 namespace XMI
 {

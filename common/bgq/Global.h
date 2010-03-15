@@ -420,7 +420,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
             // Increment the number of global ranks.
             cacheAnchorsPtr->numActiveRanksGlobal++;
 
-            uint32_t addr_hash = ESTIMATED_TASK(a, b, c, d, e, t, p, aSize, bSize, cSize, dSize, eSize, tSize, pSize);
+            uint32_t addr_hash = ESTIMATED_TASK(a, b, c, d, e, p, t, aSize, bSize, cSize, dSize, eSize, pSize, tSize);
             mapcache->torus.coords2task[addr_hash] = i;
             TRACE_ERR((stderr, "coords2task[%d]=%#lX\n", addr_hash, i));
 
@@ -476,11 +476,11 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
         {
           for (t = 0; t < tSize; t++)
             {
-              hash = ESTIMATED_TASK(a, b, c, d, e, t, p, aSize, bSize, cSize, dSize, eSize, tSize, pSize);
+              hash = ESTIMATED_TASK(a, b, c, d, e, p, t, aSize, bSize, cSize, dSize, eSize, pSize, tSize);
 
               mapcache->node.peer2task[peer] = mapcache->torus.coords2task[hash];
               TRACE_ERR((stderr, "peer2task[%zd]=coords2task[%d]=%#lX, local2peer[%d]=%zd\n", peer, hash, mapcache->node.peer2task[peer], hash, peer));
-              hash = ESTIMATED_TASK(0, 0, 0, 0, 0, t, p, 1, 1, 1, 1, 1, tSize, pSize);
+              hash = ESTIMATED_TASK(0, 0, 0, 0, 0, p, t, 1, 1, 1, 1, 1, pSize, tSize);
               mapcache->node.local2peer[hash] = peer++;
               cacheAnchorsPtr->numActiveRanksLocal++; //hack
             }

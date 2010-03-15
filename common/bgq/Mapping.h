@@ -87,19 +87,14 @@ namespace XMI
         bsize =_pers.bSize(),
         csize =_pers.cSize(),
         dsize =_pers.dSize(),
-      //  esize =_pers.eSize(),
+      //  esize =_pers.eSize(),// eSize isn't currently used in the calculation so we get warnings
         psize =_pers.pSize(),
         tsize =_pers.tSize();
 
       TRACE_MAMBO((stderr,"Mapping() size a/b/c/d/e/p/t = %zd/%zd/%zd/%zd/%zd/%zd/%zd\n", asize, bsize, csize, dsize, _pers.eSize(), psize, tsize));
 
-      _task = _e * dsize * csize * bsize * asize * psize * tsize +
-              _d * csize * bsize * asize * psize * tsize +
-              _c * bsize * asize * psize * tsize +
-              _b * asize * psize * tsize +
-              _a * psize * tsize +
-              _p * tsize +
-              _t;
+      _task = ESTIMATED_TASK(_a,_b,_c,_d,_e,_p,_t,
+                             asize,bsize,csize,dsize,(_pers.eSize()),psize,tsize); // esize isn't used but just in case...
 
       TRACE_MAMBO((stderr,"Mapping() task %zd\n", _task));
     };
@@ -316,8 +311,8 @@ namespace XMI
       }
 
       // Estimate the task id based on the bgq coordinates.
-      size_t hash = ESTIMATED_TASK(addr[0],addr[1],addr[2],addr[3],addr[4],addr[6],addr[5],
-                                   aSize,bSize,cSize,dSize,eSize,tSize,pSize);
+      size_t hash = ESTIMATED_TASK(addr[0],addr[1],addr[2],addr[3],addr[4],addr[5],addr[6],
+                                   aSize,bSize,cSize,dSize,eSize,pSize,tSize);
 
       // Verify that the estimated task is mapped.
       if (unlikely(_mapcache.torus.coords2task[hash] == (unsigned) - 1))
@@ -393,8 +388,8 @@ namespace XMI
         return XMI_INVAL;
       }
 
-      size_t hash = ESTIMATED_TASK(a,b,c,d,e,t,p,
-                                   aSize,bSize,cSize,dSize,eSize,tSize,pSize);
+      size_t hash = ESTIMATED_TASK(a,b,c,d,e,p,t,
+                                   aSize,bSize,cSize,dSize,eSize,pSize,tSize);
 
       if (_mapcache.torus.coords2task[hash] == (uint32_t)-1)
       {
@@ -514,8 +509,8 @@ namespace XMI
       }
 
       // Estimate the task id based on the bgq coordinates.
-      size_t hash = ESTIMATED_TASK(aCoord,bCoord,cCoord,dCoord,eCoord,tCoord,pCoord,
-                                   aSize,bSize,cSize,dSize,eSize,tSize,pSize);
+      size_t hash = ESTIMATED_TASK(aCoord,bCoord,cCoord,dCoord,eCoord,pCoord,tCoord,
+                                   aSize,bSize,cSize,dSize,eSize,pSize,tSize);
       // Verify that the estimated task is mapped.
       if (unlikely(_mapcache.torus.coords2task[hash] == (unsigned) - 1))
       {
@@ -533,7 +528,7 @@ namespace XMI
       TRACE_ERR((stderr, "Mapping::node2peer_impl({%zd, %zd}, ...) >>\n", address.global, address.local));
 
       size_t tSize = _pers.tSize();
-      //size_t pSize = _pers.pSize(); // psize isn't currently used in ESTIMATED_TASK.
+      size_t pSize = _pers.pSize();
       //size_t peerSize = tSize * pSize;
 
       // local coordinate is the thread id (t) in the most significant
@@ -551,8 +546,8 @@ namespace XMI
       //pCoord = (16/peerSize) * (pCoord%peerSize); /// \todo numCores == 16?
 
       // Estimate the task id based on the bgq coordinates.
-      size_t hash = ESTIMATED_TASK(0,0,0,0,0,tCoord,pCoord,
-                                   1,1,1,1,1,tSize,((size_t)abort())); // pSize isn't currently used
+      size_t hash = ESTIMATED_TASK(0,0,0,0,0,pCoord,tCoord,
+                                   1,1,1,1,1,pSize,tSize); 
 
       // Verify that the address hash is valid.
       if (unlikely(_mapcache.node.local2peer[hash] == (unsigned) - 1))

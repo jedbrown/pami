@@ -67,29 +67,31 @@ XMI::BgqPersonality::BgqPersonality ()
 
       TRACE_MAMBO((stderr, "BGQPersonality() NODE_COORDINATES DCR = 0x%016llx\n", dcr));
 
+#if 0 // no longer need to set personality from ND 500 if using runmm correctly
       Network_Config.Acoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_A_get(dcr);
       Network_Config.Bcoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_B_get(dcr);
       Network_Config.Ccoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_C_get(dcr);
       Network_Config.Dcoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_D_get(dcr);
       Network_Config.Ecoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_E_get(dcr);
 
-      TRACE_MAMBO((stderr, "BGQPersonality() Coord A = %#x\n", Network_Config.Acoord));
-      TRACE_MAMBO((stderr, "BGQPersonality() Coord B = %#x\n", Network_Config.Bcoord));
-      TRACE_MAMBO((stderr, "BGQPersonality() Coord C = %#x\n", Network_Config.Ccoord));
-      TRACE_MAMBO((stderr, "BGQPersonality() Coord D = %#x\n", Network_Config.Dcoord));
-      TRACE_MAMBO((stderr, "BGQPersonality() Coord E = %#x\n", Network_Config.Ecoord));
-
       Network_Config.Anodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_A_get(dcr) + 1;
       Network_Config.Bnodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_B_get(dcr) + 1;
       Network_Config.Cnodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_C_get(dcr) + 1;
       Network_Config.Dnodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_D_get(dcr) + 1;
       Network_Config.Enodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_E_get(dcr) + 1;
+#endif
 
-      TRACE_MAMBO((stderr, "BGQPersonality() Nodes A = %#x\n", Network_Config.Anodes));
-      TRACE_MAMBO((stderr, "BGQPersonality() Nodes B = %#x\n", Network_Config.Bnodes));
-      TRACE_MAMBO((stderr, "BGQPersonality() Nodes C = %#x\n", Network_Config.Cnodes));
-      TRACE_MAMBO((stderr, "BGQPersonality() Nodes D = %#x\n", Network_Config.Dnodes));
-      TRACE_MAMBO((stderr, "BGQPersonality() Nodes E = %#x\n", Network_Config.Enodes));
+      TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_A = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_A_get(dcr)));
+      TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_B = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_B_get(dcr)));
+      TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_C = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_C_get(dcr)));
+      TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_D = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_D_get(dcr)));
+      TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_E = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_E_get(dcr)));
+
+      TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_A = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_A_get(dcr)));
+      TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_B = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_B_get(dcr)));
+      TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_C = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_C_get(dcr)));
+      TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_D = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_D_get(dcr)));
+      TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_E = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_E_get(dcr)));
 
       XMI_assertf(Network_Config.Acoord < Network_Config.Anodes, "assert Network_Config.Acoord(%#X) < Network_Config.Anodes(%#X)\n", Network_Config.Acoord, Network_Config.Anodes);
       XMI_assertf(Network_Config.Bcoord < Network_Config.Bnodes, "assert Network_Config.Bcoord(%#X) < Network_Config.Bnodes(%#X)\n", Network_Config.Bcoord, Network_Config.Bnodes);

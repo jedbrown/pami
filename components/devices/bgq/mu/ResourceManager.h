@@ -208,7 +208,7 @@ namespace XMI
           int advanceReceptionFifos()
           {
             uint32_t numSubGroups = _recFifoInfo->numSubGroups;
-            TRACE((stderr, ">> advanceReceptionFifos() .. numSubGroups = %d\n", numSubGroups));
+            //TRACE((stderr, ">> advanceReceptionFifos() .. numSubGroups = %d\n", numSubGroups));
             int events = 0;
 
             for ( uint32_t i = 0; i < numSubGroups; i++ )
@@ -216,7 +216,7 @@ namespace XMI
                 events += _recFifoSubGroups[i]->advance();
               }
 
-            TRACE((stderr, "<< advanceReceptionFifos() .. events = %d\n", events));
+            //TRACE((stderr, "<< advanceReceptionFifos() .. events = %d\n", events));
             return events;
           }
 
