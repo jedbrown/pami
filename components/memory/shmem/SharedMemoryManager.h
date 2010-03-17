@@ -60,11 +60,6 @@ namespace XMI
 
           TRACE_ERR((stderr, "SharedMemoryManager() .. size = %zd\n", size));
           fd = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-          close(rc);
-          Delay(10000);
-          rc = shm_open (shmemfile, O_RDWR, 0600);
-#endif
           TRACE_ERR((stderr, "SharedMemoryManager() .. after shm_open, fd = %d\n", fd));
           if ( fd != -1 )
           {

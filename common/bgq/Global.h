@@ -67,11 +67,6 @@ namespace XMI
         TRACE_ERR((stderr, "Global() .. size = %zd\n", size));
         void * ptr = NULL;
         rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-        close(rc);
-        Delay(10000);
-        rc = shm_open (shmemfile, O_RDWR, 0600);
-#endif
         TRACE_ERR((stderr, "Global() .. after shm_open, fd = %d\n", rc));
 
         if (rc != -1)
