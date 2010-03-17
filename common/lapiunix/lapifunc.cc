@@ -155,7 +155,7 @@ LapiFunc::~LapiFunc()
 int LapiFunc::load()
 {
     char *filename = NULL;
-#ifdef _SHMEM_LINUX // Linux
+#ifdef _LAPI_LINUX // Linux
     filename = "liblapi.so";
 #else
 #ifdef __64BIT__
@@ -165,7 +165,7 @@ int LapiFunc::load()
 #endif
 #endif
 
-#ifdef _SHMEM_LINUX // Linux
+#ifdef _LAPI_LINUX // Linux
     dlopen_file = ::dlopen(filename, RTLD_NOW | RTLD_GLOBAL);
 #else // aix
     dlopen_file = ::dlopen(filename, RTLD_NOW | RTLD_GLOBAL | RTLD_MEMBER);
