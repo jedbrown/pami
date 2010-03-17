@@ -101,6 +101,7 @@ namespace XMI
 	  lockboxFactory.init(&mapping);
 	  xmi_coord_t ll, ur;
 	  size_t min, max;
+	  unsigned char tl[XMI_MAX_DIMS];
 
 	  XMI::Topology::static_init(&mapping);
 	  _mapcache.getMappingInit(ll, ur, min, max);
@@ -108,8 +109,12 @@ namespace XMI
 	  for (unsigned d = 0; d < mapping.globalDims(); ++d) {
 		rectsize *= (ur.u.n_torus.coords[d] - ll.u.n_torus.coords[d] + 1);
 	  }
+	  tl[0] = personality.isTorusX();
+	  tl[1] = personality.isTorusY();
+	  tl[2] = personality.isTorusZ();
+	  tl[3] = 1;
 	  if (mapping.size() == rectsize) {
-		new (&topology_global) XMI::Topology(&ll, &ur);
+		new (&topology_global) XMI::Topology(&ll, &ur, tl);
 	  } else if (mapping.size() == max - min + 1) {
 		new (&topology_global) XMI::Topology(min, max);
 	  } else {
