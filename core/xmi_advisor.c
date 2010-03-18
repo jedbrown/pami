@@ -84,7 +84,8 @@ xmi_result_t xmi_advisor_repo_fill(xmi_client_t client,
         malloc(sizeof(xmi_algorithm_t) * alg_list[algorithm_type]);
       metas = (xmi_metadata_t*)
         malloc(sizeof(xmi_metadata_t) * alg_list[algorithm_type]);
-
+#if 0
+      
       XMI_Geometry_algorithms_info(client,
                                    world_geometry,
                                    algorithm_type,
@@ -94,6 +95,7 @@ xmi_result_t xmi_advisor_repo_fill(xmi_client_t client,
                                    NULL,
                                    NULL,
                                    0);
+#endif      
 
     }
 #if 0
