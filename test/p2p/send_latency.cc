@@ -45,7 +45,7 @@ char              _recv_buffer[BUFSIZE] __attribute__ ((__aligned__(16)));
 size_t         _dispatch[100];
 unsigned       _dispatch_count;
 
-size_t _my_rank;
+size_t _my_task;
 
 typedef struct
 {
@@ -59,7 +59,7 @@ static void decrement (xmi_context_t   context,
                        xmi_result_t    result)
 {
   unsigned * value = (unsigned *) cookie;
-  TRACE_ERR((stderr, "(%zu) decrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
+  TRACE_ERR((stderr, "(%zu) decrement() cookie = %p, %d => %d\n", _my_task, cookie, *value, *value-1));
   --*value;
 }
 
@@ -77,13 +77,13 @@ static void test_dispatch (
   {
     //memcpy (_recv_buffer, pipe_addr, pipe_size);
     unsigned * value = (unsigned *) cookie;
-    TRACE_ERR((stderr, "(%zu) test_dispatch() short recv:  cookie = %p, decrement: %d => %d\n", _my_rank, cookie, *value, *value-1));
+    TRACE_ERR((stderr, "(%zu) test_dispatch() short recv:  cookie = %p, decrement: %d => %d\n", _my_task, cookie, *value, *value-1));
     --*value;
   }
   else
   {
     //header_t * header = (header_t *) header_addr;
-    TRACE_ERR((stderr, "(%zu) test_dispatch() async recv:  cookie = %p, pipe_size = %zu\n", _my_rank, cookie, pipe_size));
+    TRACE_ERR((stderr, "(%zu) test_dispatch() async recv:  cookie = %p, pipe_size = %zu\n", _my_task, cookie, pipe_size));
 
     recv->local_fn = decrement;
     recv->cookie   = cookie;
@@ -99,23 +99,23 @@ void send_once (xmi_context_t context, xmi_send_t * parameters)
 {
   //xmi_result_t result =
     XMI_Send (context, parameters);
-  TRACE_ERR((stderr, "(%zu) send_once() Before advance\n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) send_once() Before advance\n", _my_task));
   while (_send_active) XMI_Context_advance (context, 100);
-  TRACE_ERR((stderr, "(%zu) send_once()  After advance\n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) send_once()  After advance\n", _my_task));
 }
 
 void recv_once (xmi_context_t context)
 {
-  TRACE_ERR((stderr, "(%zu) recv_once() Before advance\n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) recv_once() Before advance\n", _my_task));
   while (_recv_active) XMI_Context_advance (context, 100);
 
   _recv_active = 1;
-  TRACE_ERR((stderr, "(%zu) recv_once()  After advance\n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) recv_once()  After advance\n", _my_task));
 }
 
-unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, xmi_task_t myrank, xmi_endpoint_t origin, xmi_endpoint_t target)
+unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, xmi_task_t mytask, xmi_task_t origintask, xmi_endpoint_t origin, xmi_task_t targettask, xmi_endpoint_t target)
 {
-  TRACE_ERR((stderr, "(%u) Do test ... sndlen = %zu\n", myrank, sndlen));
+  TRACE_ERR((stderr, "(%u) Do test ... sndlen = %zu\n", mytask, sndlen));
   _recv_active = 1;
   _recv_iteration = 0;
   _send_active = 1;
@@ -140,12 +140,12 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
 
   unsigned i;
   unsigned long long t1 = XMI_Wtimebase();
-  if (myrank == 0)
+  if (mytask == origintask)
   {
     parameters.send.dest = target;
     for (i = 0; i < ITERATIONS; i++)
     {
-      TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
+      TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", mytask, i, sndlen));
       send_once (context, &parameters);
       recv_once (context);
 
@@ -153,12 +153,12 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
       _send_active = 1;
     }
   }
-  else if (myrank == 1)
+  else if (mytask == targettask)
   {
     parameters.send.dest = origin;
     for (i = 0; i < ITERATIONS; i++)
     {
-      TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
+      TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", mytask, i, sndlen));
       recv_once (context);
       send_once (context, &parameters);
 
@@ -224,18 +224,22 @@ int main (int argc, char ** argv)
 
   configuration.name = XMI_TASK_ID;
   result = XMI_Configuration_query(client, &configuration);
-  size_t _my_rank = configuration.value.intval;
+  _my_task = configuration.value.intval;
 
   configuration.name = XMI_NUM_TASKS;
   result = XMI_Configuration_query(client, &configuration);
-  //size_t num_tasks = configuration.value.intval;
+  size_t num_tasks = configuration.value.intval;
 
   configuration.name = XMI_WTICK;
   result = XMI_Configuration_query(client, &configuration);
   double tick = configuration.value.doubleval;
 
+  // Use task 0 to last task (arbitrary)
+  xmi_task_t origin_task = 0; 
+  xmi_task_t target_task = num_tasks -1; 
+
   /* Display some test header information */
-  if (_my_rank == 0)
+  if (_my_task == origin_task)
   {
     char str[2][1024];
     int index[2];
@@ -270,8 +274,8 @@ int main (int argc, char ** argv)
 
   char str[10240];
 
-  xmi_endpoint_t origin = XMI_Client_endpoint (client, 0, 0);
-  xmi_endpoint_t target = XMI_Client_endpoint (client, 1, 0);
+  xmi_endpoint_t origin = XMI_Client_endpoint (client, origin_task, 0);
+  xmi_endpoint_t target = XMI_Client_endpoint (client, target_task, 0);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
   size_t sndlen = 1;
@@ -287,14 +291,14 @@ int main (int argc, char ** argv)
     for (i=0; i<hdrcnt; i++)
     {
 #ifdef WARMUP
-      test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank, origin, target);
+      test (context, _dispatch[0], hdrsize[i], sndlen, _my_task, origin_task, origin, target_task, target);
 #endif
-      cycles = test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank, origin, target);
+      cycles = test (context, _dispatch[0], hdrsize[i], sndlen, _my_task, origin_task, origin, target_task, target);
       usec   = cycles * tick * 1000000.0;
       index += sprintf (&str[index], "%8lld %8.4f  ", cycles, usec);
     }
 
-    if (_my_rank == 0)
+    if (_my_task == origin_task)
       fprintf (stdout, "%s\n", str);
   }
 
