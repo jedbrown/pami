@@ -65,7 +65,7 @@ xmi_endpoint_t __barrier_next_endpoint;
 
 size_t         __barrier_dispatch;
 xmi_context_t  __barrier_context;
-
+xmi_client_t   __barrier_client;
 
 /* ************************************************************************* */
 /* ************************************************************************* */
@@ -95,6 +95,7 @@ static void barrier_dispatch_function (
 
 void barrier ()
 {
+  size_t i;
   TRACE_ERR((stderr, "#### enter barrier(),  ...\n"));
 
   __barrier_active[__barrier_phase] = __barrier_size-1;
@@ -106,12 +107,19 @@ void barrier ()
   parameters.header.iov_len  = sizeof (__barrier_phase);
   parameters.data.iov_base   = NULL;
   parameters.data.iov_len    = 0;
-  parameters.dest            = __barrier_next_endpoint;
 
-  TRACE_ERR((stderr, "     barrier(), before send, phase = %zu, __barrier_active[%zu] = %u, parameters.dest = 0x%08x\n", __barrier_phase, __barrier_phase, __barrier_active[__barrier_phase], parameters.dest));
-  //xmi_result_t result =
+  __barrier_next_task = __barrier_task; // start with me (will increment immediately below)
+
+  for(i=1; i< __barrier_size; ++i)  /// \todo This doesn't scale but it's simple
+  {
+    __barrier_next_task = (__barrier_next_task + 1) % __barrier_size;
+    __barrier_next_endpoint = XMI_Client_endpoint (__barrier_client, __barrier_next_task, 0);
+    parameters.dest            = __barrier_next_endpoint;
+  
+    TRACE_ERR((stderr, "     barrier(), before send, phase = %zu, __barrier_active[%zu] = %u, parameters.dest = 0x%08x\n", __barrier_phase, __barrier_phase, __barrier_active[__barrier_phase], parameters.dest));
+    //xmi_result_t result =
     XMI_Send_immediate (__barrier_context, &parameters);
-
+  }
 
   TRACE_ERR((stderr, " barrier() Before recv advance\n"));
   while (__barrier_active[__barrier_phase]  != 0)
@@ -125,6 +133,8 @@ void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
 {
   TRACE_ERR((stderr, "enter barrier_init() ...\n"));
 
+  __barrier_client = client;
+
   xmi_configuration_t configuration;
 
   configuration.name = XMI_TASK_ID;
@@ -135,10 +145,7 @@ void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
   result = XMI_Configuration_query(client, &configuration);
   __barrier_size = configuration.value.intval;
 
-  __barrier_next_task = (__barrier_task + 1) % __barrier_size;
-  __barrier_next_endpoint = XMI_Client_endpoint (client, __barrier_next_task, 0);
-
-   TRACE_ERR((stderr,"__barrier_size:%zd __barrier_task:%zd\n",__barrier_size, __barrier_task));
+  TRACE_ERR((stderr,"__barrier_size:%zd __barrier_task:%zd\n",__barrier_size, __barrier_task));
 
   __barrier_context  = context;
   __barrier_dispatch = dispatch;
@@ -168,7 +175,7 @@ void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
   if (__global.personality._is_mambo) /// \todo mambo hack
   {
     fprintf(stderr, "%s:%s sleep(15) hack to allow mambo to init the MU\n",__FILE__,__PRETTY_FUNCTION__);
-    mamboSleep(15);
+    mamboSleep(5);
   }
 #endif
 #endif

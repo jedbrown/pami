@@ -528,13 +528,6 @@ int XMI::Device::MU::MUDevice::advance()
 {
   int events = 0;
 
-#if 1
-  static size_t loopcount = 0;
-
-  if (loopcount++ > 100000) XMI_abortf("Lots of advancing going on.\n");
-
-#endif
-
   //TRACE((stderr, ">> MUDevice::advance_impl() .. _p2pSendChannelIndex = %d (%d)\n", _p2pSendChannelIndex, NULL_P2P_CHANNEL));
 
   if ( _p2pSendChannelIndex != NULL_P2P_CHANNEL )
@@ -554,6 +547,12 @@ int XMI::Device::MU::MUDevice::advance()
 
   if ( _colRecvChannelFlag )
     events += _colChannel->advanceRecv();
+
+#if 1
+  static size_t loopcount = 0;
+  if(events) loopcount = 0;
+  else if (loopcount++ > 100000) XMI_abortf("Lots of advancing going on.\n");
+#endif
 
   //TRACE((stderr, "<< MUDevice::advance_impl() .. events = %d\n", events));
   return events;
