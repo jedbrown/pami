@@ -15,6 +15,7 @@
 
 #include "sys/xmi.h"
 #include "components/devices/bgq/commthread/WakeupRegion.h"
+#include "common/bgq/Context.h"
 #include "pthread.h"
 
 #warning need CNK definitions for WU_ArmWithAddress and Kernel_SnoopScheduler
@@ -147,10 +148,12 @@ private:
 	///
 	inline void __lockContextSet(size_t ctx0, size_t nctx) {
 		size_t x;
+		xmi_result_t r;
 		// must lock all contexts, since we need a contiguous region
 		// to wait on.
 		for (x = ctx0; x < ctx0 + nctx; ++x) {
-			XMI_Context_lock(_all_contexts[x]);
+			r = _all_contexts[x]->lock();
+			r = r; // avoid warning until we figure out what to do with result
 		}
 	}
 
@@ -161,8 +164,10 @@ private:
 	///
 	inline void __unlockContextSet(size_t ctx0, size_t nctx) {
 		size_t x;
+		xmi_result_t r;
 		for (x = ctx0; x < ctx0 + nctx; ++x) {
-			XMI_Context_unlock(_all_contexts[x]);
+			r = _all_contexts[x]->unlock();
+			r = r; // avoid warning until we figure out what to do with result
 		}
 	}
 
@@ -174,8 +179,10 @@ private:
 	///
 	inline size_t __advanceContextSet(size_t ctx0, size_t nctx) {
 		size_t x, e = 0;
+		xmi_result_t r;
 		for (x = ctx0; x < ctx0 + nctx; ++x) {
-			e += XMI_Context_advance(_all_contexts[x], 1);
+			e += _all_contexts[x]->advance(1, r);
+			r = r; // avoid warning until we figure out what to do with result
 		}
 		return e;
 	}
@@ -189,7 +196,7 @@ private:
 	inline void __disarmMU_WU() { }
 public:
 	BgqCommThread(xmi_context_t *ctxs, BgqWakeupRegion *wu, size_t num_ctx) :
-	_all_contexts(ctxs),
+	_all_contexts((XMI::Context **)ctxs),
 	_wakeup_region(wu),
 	_total_ncontexts(num_ctx),
 	_first_context(0),
@@ -229,7 +236,7 @@ public:
 	static inline void initContext(BgqCommThread *devs, size_t clientid,
 					size_t contextid, xmi_context_t context) {
 		// all have pointer to same array - one update gets all
-		devs[0]._all_contexts[contextid] = context;
+		devs[0]._all_contexts[contextid] = (XMI::Context *)context;
 	}
 
 	static void *commThread(void *cookie) {
@@ -311,7 +318,7 @@ more_work:
 	}
 
 private:
-	xmi_context_t *_all_contexts;	///< all contexts (in client)
+	XMI::Context **_all_contexts;	///< all contexts (in client)
 	BgqWakeupRegion *_wakeup_region;///< memory for WAC for all contexts
 	size_t _total_ncontexts;	///< total number of contexts (in client)
 
