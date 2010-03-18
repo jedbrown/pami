@@ -198,7 +198,10 @@ extern "C"
     uint32_t high_priority     : 1; /**< Message is delivered with high priority,
                                        which may result in out-of-order delivery                 */
     uint32_t no_long_header    : 1; /**< Disable long header support                             */
-    uint32_t reserved          :23; /**< Unused at this time                                     */
+    uint32_t use_shmem         : 1; /**< Assert/enable shared memory optimizations               */
+    uint32_t no_shmem          : 1; /**< Disable shared memory optimizationss                    */
+
+    uint32_t reserved          :21; /**< Unused at this time                                     */
   } xmi_send_hint_t;
 
   typedef struct
