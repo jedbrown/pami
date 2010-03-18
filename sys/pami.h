@@ -2171,6 +2171,7 @@ extern "C"
     PAMI_NUM_TASKS,          /**< Q : size_t : Total number of tasks        */
     PAMI_NUM_CONTEXTS,       /**< Q : size_t : The maximum number of contexts allowed on this process */
     PAMI_CONST_CONTEXTS,     /**< Q : size_t : All processes will return the same PAMI_NUM_CONTEXTS */
+    PAMI_HWTHREADS_AVAILABLE,/**< Q : size_t : The number of HW threads available to a process without over-subscribing (at least 1) */
     PAMI_CLOCK_MHZ,          /**< Q : size_t : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
     PAMI_WTIMEBASE_MHZ,      /**< Q : size_t : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from PAMI_Wtimebase to PAMI_Timer manually. */
     PAMI_WTICK,              /**< Q : double : This has the same definition as MPI_Wtick(). */
