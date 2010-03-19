@@ -5,6 +5,11 @@
 #ifndef __common_bgq_Context_h__
 #define __common_bgq_Context_h__
 
+
+#define ENABLE_SHMEM_DEVICE
+#define ENABLE_MU_DEVICE
+  #define MU_COLL_DEVICE
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -20,14 +25,26 @@
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
 
+#ifdef ENABLE_SHMEM_DEVICE
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
+#endif
 
+#ifdef ENABLE_MU_DEVICE
 #include "components/devices/bgq/mu/MUDevice.h"
 #include "components/devices/bgq/mu/MUPacketModel.h"
 #include "components/devices/bgq/mu/MUInjFifoMessage.h"
+
+#ifdef MU_COLL_DEVICE
+#include "components/devices/bgq/mu/MUCollDevice.h"
+#include "components/devices/bgq/mu/MUMulticastModel.h"
+#include "components/devices/bgq/mu/MUMultisyncModel.h"
+#include "components/devices/bgq/mu/MUMulticombineModel.h"
+#include "common/bgq/NativeInterface.h"
+#endif
+#endif
 
 #include "components/atomic/gcc/GccBuiltin.h"
 #include "components/atomic/bgq/L2Counter.h"
@@ -39,60 +56,47 @@
 #include "Memregion.h"
 
 #include "p2p/protocols/send/eager/Eager.h"
-#include "p2p/protocols/send/eager/EagerImmediate.h"
-#include "p2p/protocols/send/eager/EagerSimple.h"
+#include "p2p/protocols/send/composite/Composite.h"
 
 #include "p2p/protocols/get/Get.h"
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-#define MU_COLL_DEVICE
-#undef MU_DEVICE
 
-
-#ifdef MU_COLL_DEVICE
-#include "components/devices/bgq/mu/MUCollDevice.h"
-#include "components/devices/bgq/mu/MUMulticastModel.h"
-#include "components/devices/bgq/mu/MUMultisyncModel.h"
-#include "components/devices/bgq/mu/MUMulticombineModel.h"
-#include "common/bgq/NativeInterface.h"
-#endif
 
 namespace XMI
 {
+#ifdef ENABLE_MU_DEVICE
 #ifdef MU_COLL_DEVICE
   typedef Device::MU::MUCollDevice MUDevice;
   typedef BGQNativeInterface < MUDevice,
   Device::MU::MUMulticastModel,
   Device::MU::MUMultisyncModel,
   Device::MU::MUMulticombineModel > MUGlobalNI;
-#define MU_DEVICE
-#elif defined(MU_DEVICE)
+#else
   typedef Device::MU::MUDevice MUDevice;
+#endif
 #endif
 
   typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
+#ifdef ENABLE_SHMEM_DEVICE
   //typedef Fifo::FifoPacket <32, 992> ShmemPacket;
   typedef XMI::Fifo::FifoPacket <32, 512> ShmemPacket;
   //typedef XMI::Fifo::LinearFifo<Atomic::BGQ::L2ProcCounter, ShmemPacket, 16> ShmemFifo;
   typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
   //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
-
   typedef XMI::Device::ShmemDevice<ShmemFifo> ShmemDevice;
   typedef XMI::Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
 
-  //
-  // >> Point-to-point protocol typedefs and dispatch registration.
   typedef XMI::Protocol::Send::Eager <ShmemModel, ShmemDevice> EagerShmem;
-
   typedef XMI::Protocol::Get::Get <ShmemModel, ShmemDevice> GetShmem;
-#ifdef MU_DEVICE
+#endif
+
+#ifdef ENABLE_MU_DEVICE
   typedef XMI::Protocol::Send::Eager < XMI::Device::MU::MUPacketModel, MUDevice > EagerMu;
-  // << Point-to-point protocol typedefs and dispatch registration.
-  //
 #endif
 
   typedef MemoryAllocator<1152, 16> ProtocolAllocator;
@@ -132,7 +136,9 @@ namespace XMI
         // these calls create (allocate and construct) each element.
         // We don't know how these relate to contexts, they are semi-opaque.
         _generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
+#ifdef ENABLE_SHMEM_DEVICE
         _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
+#endif
         _progfunc = XMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
         _atombarr = XMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
         _wqringreduce = XMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
@@ -140,7 +146,7 @@ namespace XMI
         _localallreduce = XMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
         _localbcast = XMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
         _localreduce = XMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
-#ifdef MU_DEVICE
+#ifdef ENABLE_MU_DEVICE
         _mu = MUDevice::Factory::generate(clientid, num_ctx, mm);
 #endif
         return XMI_SUCCESS;
@@ -165,7 +171,9 @@ namespace XMI
       inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd)
       {
         XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, _mm, _generics);
+#ifdef ENABLE_SHMEM_DEVICE
         ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, _mm, _generics);
+#endif
         XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, _mm , _generics);
         XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, _mm, _generics);
         XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, _mm , _generics);
@@ -173,8 +181,7 @@ namespace XMI
         XMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, _mm, _generics);
         XMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, _mm, _generics);
         XMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, _mm, _generics);
-
-#ifdef MU_DEVICE
+#ifdef ENABLE_MU_DEVICE
         MUDevice::Factory::init(_mu, clientid, contextid, clt, ctx, _mm, _generics);
 #endif
         return XMI_SUCCESS;
@@ -193,7 +200,9 @@ namespace XMI
       {
         size_t events = 0;
         events += XMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
+#ifdef ENABLE_SHMEM_DEVICE
         events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
+#endif
         events += XMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
         events += XMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
         events += XMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
@@ -201,8 +210,7 @@ namespace XMI
         events += XMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
         events += XMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
         events += XMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
-
-#ifdef MU_DEVICE
+#ifdef ENABLE_MU_DEVICE
         events += MUDevice::Factory::advance(_mu, clientid, contextid);
 #endif
         return events;
@@ -210,7 +218,9 @@ namespace XMI
 
       Memory::MemoryManager *_mm;
       XMI::Device::Generic::Device *_generics; // need better name...
+#ifdef ENABLE_SHMEM_DEVICE
       ShmemDevice *_shmem;
+#endif
       XMI::Device::ProgressFunctionDev *_progfunc;
       XMI::Device::AtomicBarrierDev *_atombarr;
       XMI::Device::WQRingReduceDev *_wqringreduce;
@@ -218,7 +228,7 @@ namespace XMI
       XMI::Device::LocalAllreduceWQDevice *_localallreduce;
       XMI::Device::LocalBcastWQDevice *_localbcast;
       XMI::Device::LocalReduceWQDevice *_localreduce;
-#ifdef MU_DEVICE
+#ifdef ENABLE_MU_DEVICE
       MUDevice *_mu;
 #endif
   }; // class PlatformDeviceList
@@ -245,20 +255,26 @@ namespace XMI
 
         // Make sure the memory allocator is large enough for all
         // protocol classes.
+#ifdef ENABLE_SHMEM_DEVICE
         COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
         COMPILE_TIME_ASSERT(sizeof(GetShmem) <= ProtocolAllocator::objsize);
+#endif
+#ifdef ENABLE_MU_DEVICE
 #ifdef MU_COLL_DEVICE
         COMPILE_TIME_ASSERT(sizeof(MUGlobalNI) <= ProtocolAllocator::objsize);
+#endif
 #endif
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
 
         _devices->init(_clientid, _contextid, _client, _context, &_sysdep);
+#ifdef ENABLE_MU_DEVICE
 #ifdef MU_COLL_DEVICE
         // Can't construct NI until device is init()'d.  Ctor into member storage.
         _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
         //xmi_result_t status;
+#endif
 #endif
 
 #warning This should not be here?
@@ -541,26 +557,101 @@ namespace XMI
         return XMI_SUCCESS;
       }
 
-
       inline xmi_result_t dispatch_impl (size_t                     id,
                                          xmi_dispatch_callback_fn   fn,
                                          void                     * cookie,
                                          xmi_send_hint_t            options)
       {
         xmi_result_t result = XMI_ERROR;
+        TRACE_ERR((stderr, ">> Context::dispatch_impl .. _dispatch[%zu] = %p, result = %d\n", id, _dispatch[id], result));
 
         if (_dispatch[id] == NULL)
           {
-            // Allocate memory for the protocol object.
-            _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
+            bool no_shmem  = options.no_shmem;
+#ifndef ENABLE_SHMEM_DEVICE
+            no_shmem = true;
+#endif
 
-#ifdef MU_DEVICE
-            new ((void *)_dispatch[id]) EagerMu (id, fn, cookie, MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), result);
+            bool use_shmem = options.use_shmem;
+#ifndef ENABLE_MU_DEVICE
+            use_shmem = true;
+#endif
+
+            if (no_shmem == 1)
+            {
+              // Register only the "mu" eager send protocol
+#ifdef ENABLE_MU_DEVICE
+              if (options.no_long_header == 1)
+                {
+                  _dispatch[id] = (Protocol::Send::Send *)
+                    Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
+                      generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
+                }
+              else
+                {
+                  _dispatch[id] = (Protocol::Send::Send *)
+                    Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
+                      generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
+                }
 #else
-            new ((void *)_dispatch[id]) EagerShmem (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
+              XMI_abortf("No non-shmem protocols available.");
+#endif
+            }
+            else if (options.use_shmem == 1)
+            {
+              // Register only the "shmem" eager send protocol
+#ifdef ENABLE_SHMEM_DEVICE
+              if (options.no_long_header == 1)
+                {
+                  _dispatch[id] = (Protocol::Send::Send *)
+                    Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                }
+              else
+                {
+                  _dispatch[id] = (Protocol::Send::Send *)
+                    Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                }
+#else
+              XMI_abortf("No shmem protocols available.");
+#endif
+            }
+#if defined(ENABLE_SHMEM_DEVICE) && defined(ENABLE_MU_DEVICE)
+            else
+            {
+              // Register both the "mu" and "shmem" eager send protocols
+              if (options.no_long_header == 1)
+                {
+                  Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false> * eagermu =
+                    Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
+                      generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
+
+                  Protocol::Send::Eager <ShmemModel, ShmemDevice, false> * eagershmem =
+                    Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+
+                  _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
+                      generate (eagershmem, eagermu, _protocol, result);
+                }
+              else
+                {
+                  Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true> * eagermu =
+                    Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
+                      generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
+
+                  Protocol::Send::Eager <ShmemModel, ShmemDevice, true> * eagershmem =
+                    Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+
+                  _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
+                      generate (eagershmem, eagermu, _protocol, result);
+                }
+            }
 #endif
           }
 
+        TRACE_ERR((stderr, "<< Context::dispatch_impl .. result = %d\n", result));
         return result;
       }
 
@@ -578,13 +669,13 @@ namespace XMI
                                   cookie,
                                   options.hint.send);
           }
-
+#ifdef ENABLE_MU_DEVICE
 #ifdef MU_COLL_DEVICE
         TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zd\n", id));
 
         if (_global_mu_ni == NULL) // lazy ctor
           {
-            MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
+            MUGlobalNI* temp = (MUGlobalNI*) _protocol.allocateObject ();
             TRACE_ERR((stderr, "new MUGlobalNI(%p, %zd, %p, %zd) = %p, size %zd\n",
                        &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
             _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
@@ -595,15 +686,15 @@ namespace XMI
             _dispatch[id] = (void *)_global_mu_ni; // Only have one multicast right now
             return _global_mu_ni->setDispatch(fn, cookie);
             TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zd\n", id));
-            XMI_assertf(_protocolAllocator.objsize >= sizeof(XMI::Device::MU::MUMulticastModel), "%zd >= %zd\n", _protocolAllocator.objsize, sizeof(XMI::Device::MU::MUMulticastModel));
+            XMI_assertf(_protocol.objsize >= sizeof(XMI::Device::MU::MUMulticastModel), "%zd >= %zd\n", _protocol.objsize, sizeof(XMI::Device::MU::MUMulticastModel));
             // Allocate memory for the protocol object.
-            _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
+            _dispatch[id] = (void *) _protocol.allocateObject ();
 
             XMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) XMI::Device::MU::MUMulticastModel(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), result);
             model->registerMcastRecvFunction(id, fn.multicast, cookie);
 
           }
-
+#endif
 #endif
         return result;
       }
@@ -617,7 +708,7 @@ namespace XMI
 
       inline xmi_result_t multicast(xmi_multicast_t *mcastinfo)
       {
-#ifdef MU_COLL_DEVICE
+#if defined(ENABLE_MU_DEVICE) && defined (MU_COLL_DEVICE)
         TRACE_ERR((stderr, ">> multicast_impl multicast %zd, %p\n", mcastinfo->dispatch, mcastinfo));
         CCMI::Interfaces::NativeInterface * ni = (CCMI::Interfaces::NativeInterface *) _dispatch[mcastinfo->dispatch];
         return ni->multicast(mcastinfo); // this version of ni allocates/frees our request storage for us.
@@ -635,11 +726,10 @@ namespace XMI
 
       inline xmi_result_t multisync(xmi_multisync_t *msyncinfo)
       {
-#ifdef MU_COLL_DEVICE
-
+#if defined(ENABLE_MU_DEVICE) && defined (MU_COLL_DEVICE)
         if (_global_mu_ni == NULL) // lazy ctor
           {
-            MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
+            MUGlobalNI* temp = (MUGlobalNI*) _protocol.allocateObject ();
             TRACE_ERR((stderr, "new MUGlobalNI(%p, %zd, %p, %zd) = %p, size %zd\n",
                        &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
             _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
@@ -647,7 +737,6 @@ namespace XMI
 
         TRACE_ERR((stderr, ">> multisync_impl multisync %p\n", msyncinfo));
         return _global_mu_ni->multisync(msyncinfo); // Only have one multisync right now
-
 #else
         return XMI_UNIMPL;
 #endif
@@ -656,11 +745,10 @@ namespace XMI
 
       inline xmi_result_t multicombine(xmi_multicombine_t *mcombineinfo)
       {
-#ifdef MU_COLL_DEVICE
-
+#if defined(ENABLE_MU_DEVICE) && defined (MU_COLL_DEVICE)
         if (_global_mu_ni == NULL) // lazy ctor
           {
-            MUGlobalNI* temp = (MUGlobalNI*) _protocolAllocator.allocateObject ();
+            MUGlobalNI* temp = (MUGlobalNI*) _protocol.allocateObject ();
             TRACE_ERR((stderr, "new MUGlobalNI(%p, %zd, %p, %zd) = %p, size %zd\n",
                        &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
             _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
@@ -689,9 +777,9 @@ namespace XMI
       void* _get; //use for now..remove later
       MemoryAllocator<1024, 16> _request;
       ContextLock _lock;
-      ProtocolAllocator _protocolAllocator;
+      ProtocolAllocator _protocol;
       PlatformDeviceList *_devices;
-#ifdef MU_COLL_DEVICE
+#if defined(ENABLE_MU_DEVICE) && defined (MU_COLL_DEVICE)
       MUGlobalNI * _global_mu_ni;
       uint8_t      _global_mu_ni_storage[sizeof(MUGlobalNI)];
 #endif

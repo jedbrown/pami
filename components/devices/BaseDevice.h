@@ -87,6 +87,7 @@ namespace XMI
           ///
           inline size_t task2peer (size_t task);
 
+          inline bool isPeer (size_t task);
           ///
           /// \brief Advance routine for the device.
           ///
@@ -138,6 +139,12 @@ namespace XMI
       inline size_t BaseDevice<T_Device>::task2peer (size_t task)
       {
         return static_cast<T_Device*>(this)->task2peer_impl(task);
+      }
+
+      template <class T_Device>
+      inline bool BaseDevice<T_Device>::isPeer (size_t task)
+      {
+        return static_cast<T_Device*>(this)->isPeer_impl(task);
       }
 
       template <class T_Device>

@@ -6,7 +6,11 @@
 #include "sys/xmi.h"
 #include <stdio.h>
 
-#define TEST_CROSSTALK
+//#define TEST_CROSSTALK
+
+//#define USE_SHMEM_OPTION
+//#define NO_SHMEM_OPTION
+
 
 unsigned validate (void * addr, size_t bytes)
 {
@@ -118,6 +122,18 @@ int main (int argc, char ** argv)
   xmi_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   xmi_send_hint_t options={0};
+
+#ifdef USE_SHMEM_OPTION
+  options.use_shmem = 1;
+  fprintf (stderr, "##########################################\n");
+  fprintf (stderr, "shared memory optimizations forced ON\n");
+  fprintf (stderr, "##########################################\n");
+#elif defined(NO_SHMEM_OPTION)
+  options.no_shmem = 1;
+  fprintf (stderr, "##########################################\n");
+  fprintf (stderr, "shared memory optimizations forced OFF\n");
+  fprintf (stderr, "##########################################\n");
+#endif
 
   size_t i = 0;
 #ifdef TEST_CROSSTALK

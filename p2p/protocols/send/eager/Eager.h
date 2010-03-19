@@ -33,7 +33,6 @@ namespace XMI
   {
     namespace Send
     {
-
       ///
       /// \brief Eager simple send protocol class for reliable network devices.
       ///
@@ -49,6 +48,29 @@ namespace XMI
           public EagerSimple<T_Model, T_Device, T_LongHeader, T_Connection>
       {
         public:
+
+          template <class T_Allocator>
+          static Eager * generate (size_t                     dispatch,
+                                   xmi_dispatch_callback_fn   dispatch_fn,
+                                   void                     * cookie,
+                                   T_Device                 & device,
+                                   T_Allocator              & allocator,
+                                   xmi_result_t             & result)
+          {
+            TRACE_ERR((stderr, ">> Eager::generate()\n"));
+            COMPILE_TIME_ASSERT(sizeof(Eager) <= T_Allocator::objsize);
+
+            Eager * eager = (Eager *) allocator.allocateObject ();
+            new ((void *)eager) Eager (dispatch, dispatch_fn, cookie, device, result);
+            if (result != XMI_SUCCESS)
+            {
+              allocator.returnObject (eager);
+              eager = NULL;
+            }
+
+            TRACE_ERR((stderr, "<< Eager::generate(), eager = %p, result = %d\n", eager, result));
+            return eager;
+          }
 
           ///
           /// \brief Eager send protocol constructor.

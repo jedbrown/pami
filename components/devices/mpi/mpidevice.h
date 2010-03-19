@@ -13,6 +13,9 @@
 
 #ifndef __components_devices_mpi_mpidevice_h__
 #define __components_devices_mpi_mpidevice_h__
+
+#include "Global.h"
+
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
 #include "components/devices/mpi/mpimessage.h"
@@ -640,6 +643,23 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
         assert(task < _peers);
         return task;
       }
+
+      inline bool isPeer_impl (size_t task)
+      {
+#if 0
+        XMI::Interface::Mapping::nodeaddr_t node;
+        size_t peer;
+
+        __global.mapping.task2node(task,node);
+        xmi_result_t result = __global.mapping.node2peer(node,peer);
+
+        return result == XMI_SUCCESS;
+#else
+        return false;
+#endif
+      }
+
+
       inline void enqueue(MPIMessage* msg)
       {
         TRACE_DEVICE((stderr,

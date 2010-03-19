@@ -52,13 +52,15 @@ namespace XMI
           public:
             static inline UdpDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm)
             {
+              if ( __global.mapping.activateUdp() != XMI_SUCCESS ) abort();
+
               // Allocate an array of udp devices, one for each context in this
               // _task_ (from heap, not from shared memory)
               UdpDevice * devices;
               int rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
               XMI_assertf(rc == 0, "posix_memalign failed for UdpDevice[%zu], errno=%d\n", n, errno);
 
-              // Instantiate the shared memory devices
+              // Instantiate the udp devices
               size_t i;
               for (i = 0; i < n; ++i)
                 {
@@ -152,8 +154,6 @@ namespace XMI
       inline int init_impl (Memory::MemoryManager *mm,
                             xmi_context_t   context)
       {
-        if ( __global.mapping.activateUdp() != XMI_SUCCESS ) abort();
-
         _context   = context;
 
         _sndConnections = (UdpSndConnection**)malloc(__global.mapping.size()*sizeof(UdpSndConnection*));

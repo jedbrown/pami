@@ -302,8 +302,10 @@ namespace XMI
               // number of contexts in each peer
               size_t done = 0;
               size_t total_fifos_on_node = 0;
+#ifdef __xmi_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
               int countdown=10000;
+#endif
 #endif
               while (done != npeers)
                 {
@@ -321,12 +323,16 @@ namespace XMI
                       total_fifos_on_node += ncontexts[i];
 
                       if (ncontexts[i] > 0) done++;
+#ifdef __xmi_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
                       if(countdown==1) fprintf(stderr, "ShmemDevice::Factory::generate_impl() ncontexts[%zu] = %zu, %p, %zd\n", i, ncontexts[i],ncontexts,mm.available());
 #endif
+#endif
                     }
+#ifdef __xmi_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
                   XMI_assertf(countdown--, "I give up\n");
+#endif
 #endif
                 }
 
@@ -429,6 +435,9 @@ namespace XMI
 
         /// \see XMI::Device::Interface::BaseDevice::task2peer()
         inline size_t task2peer_impl (size_t task);
+
+        /// \see XMI::Device::Interface::BaseDevice::isPeer()
+        inline bool isPeer_impl (size_t task);
 
         inline xmi_context_t getContext_impl ();
 

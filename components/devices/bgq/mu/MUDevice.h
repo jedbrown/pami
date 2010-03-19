@@ -171,6 +171,9 @@ namespace XMI
           /// \copydoc XMI::Device::Interface::BaseDevice::task2peer
           inline size_t task2peer_impl (size_t task);
 
+          /// \copydoc XMI::Device::Interface::BaseDevice::isPeer
+          inline bool isPeer_impl (size_t task);
+
           inline int advance ();
 
           // ----------------------------------------------------------------------
@@ -522,6 +525,11 @@ size_t XMI::Device::MU::MUDevice::peers_impl ()
 size_t XMI::Device::MU::MUDevice::task2peer_impl (size_t task)
 {
   return task;
+}
+
+bool XMI::Device::MU::MUDevice::isPeer_impl (size_t task)
+{
+  return __global.mapping.isPeer(task, __global.mapping.task());
 }
 
 int XMI::Device::MU::MUDevice::advance()

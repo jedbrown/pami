@@ -6,6 +6,7 @@
 #define __common_mpi_Context_h__
 
 #define ENABLE_GENERIC_DEVICE
+#define ENABLE_SHMEM_DEVICE
 
 #include <stdlib.h>
 #include <string.h>
@@ -18,8 +19,8 @@
 #include "components/devices/mpi/mpimessage.h"
 
 #include "p2p/protocols/send/eager/Eager.h"
-#include "p2p/protocols/send/eager/EagerSimple.h"
-#include "p2p/protocols/send/eager/EagerImmediate.h"
+#include "p2p/protocols/send/composite/Composite.h"
+
 #include "SysDep.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/misc/ProgressFunctionMsg.h"
@@ -43,20 +44,21 @@
 #include "components/atomic/gcc/GccCounter.h"
 #include <sched.h>
 
-/** \todo shmem device must become sub-device of generic device */
+#ifdef ENABLE_SHMEM_DEVICE
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
-#include "components/devices/mpi/mpimulticastprotocol.h"
+#endif
 
+#include "components/devices/mpi/mpimulticastprotocol.h"
 #include "components/devices/mpi/mpimulticastmodel.h"
 #include "components/devices/mpi/mpimultisyncmodel.h"
 #include "components/devices/mpi/mpimulticombinemodel.h"
 #include "components/devices/mpi/mpimanytomanymodel.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x)// fprintf x
 #endif
 
 namespace XMI
@@ -74,10 +76,14 @@ namespace XMI
                                             XMI::Device::MPIBcastMdl,
 					    XMI::Device::MPIBcastDev> P2PMcastProto;
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
+    
+#ifdef ENABLE_SHMEM_DEVICE
     typedef Fifo::FifoPacket <32, 512> ShmemPacket;
     typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
     typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
     typedef Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
+#endif
+    
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
   // Collective Types
@@ -152,7 +158,9 @@ namespace XMI
 	// these calls create (allocate and construct) each element.
 	// We don't know how these relate to contexts, they are semi-opaque.
 	_generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
+#ifdef ENABLE_SHMEM_DEVICE
 	_shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
+#endif
 	_progfunc = XMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
 	_atombarr = XMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
 	_wqringreduce = XMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
@@ -183,7 +191,9 @@ namespace XMI
      */
     inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd) {
 	XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, _mm, _generics);
+#ifdef ENABLE_SHMEM_DEVICE
 	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, _mm, _generics);
+#endif
 	XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, _mm, _generics);
 	XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, _mm, _generics);
 	XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, _mm, _generics);
@@ -209,7 +219,9 @@ namespace XMI
     inline size_t advance(size_t clientid, size_t contextid) {
 	size_t events = 0;
 	events += XMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
+#ifdef ENABLE_SHMEM_DEVICE
 	events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
+#endif
 	events += XMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
 	events += XMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
 	events += XMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
@@ -224,7 +236,9 @@ namespace XMI
 
     Memory::MemoryManager *_mm;
     XMI::Device::Generic::Device *_generics; // need better name...
+#ifdef ENABLE_SHMEM_DEVICE
     ShmemDevice *_shmem;
+#endif
     XMI::Device::ProgressFunctionDev *_progfunc;
     XMI::Device::AtomicBarrierDev *_atombarr;
     XMI::Device::WQRingReduceDev *_wqringreduce;
@@ -379,48 +393,30 @@ namespace XMI
 
       inline xmi_result_t send_impl (xmi_send_t * parameters)
         {
-          size_t id = (size_t)(parameters->send.dispatch);
-          int local;
+        size_t id = (size_t)(parameters->send.dispatch);
+        TRACE_ERR((stderr, ">> Context::send_impl('simple'), _dispatch[%zd][0] = %p\n", id, _dispatch[id][0]));
+        XMI_assert_debug (_dispatch[id][0] != NULL);
 
-          xmi_task_t task;
-          size_t offset;
-          XMI_ENDPOINT_INFO(parameters->send.dest,task,offset);
+        XMI::Protocol::Send::Send * send =
+          (XMI::Protocol::Send::Send *) _dispatch[id][0];
+        send->simple (parameters);
 
-//          if(__global.mapping.isPeer(parameters->send.task, __global.mapping.task())) \todo isPeer should support XMI_MAPPLING_TSIZE
-          if(__global.topology_local.isRankMember(task))
-            local=1;
-          else
-            local=0;
-          XMI_assert_debug (_dispatch[id][local] != NULL);
-          XMI::Protocol::Send::Send * send =
-            (XMI::Protocol::Send::Send *) _dispatch[id][local];
-          send->simple (parameters);
-          return XMI_SUCCESS;
+        TRACE_ERR((stderr, "<< Context::send_impl('simple')\n"));
+        return XMI_SUCCESS;
         }
 
       inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
         {
-          size_t id = (size_t)(parameters->dispatch);
-          XMI_assert_debug (_dispatch[id][0] != NULL);
+        size_t id = (size_t)(parameters->dispatch);
+        TRACE_ERR((stderr, ">> Context::send_impl('immediate'), _dispatch[%zd][0] = %p\n", id, _dispatch[id][0]));
+        XMI_assert_debug (_dispatch[id][0] != NULL);
 
-          xmi_task_t task;
-          size_t offset;
-          XMI_ENDPOINT_INFO(parameters->dest,task,offset);
+        XMI::Protocol::Send::Send * send =
+          (XMI::Protocol::Send::Send *) _dispatch[id][0];
+        send->immediate (parameters);
 
-          int local;
-//          if(__global.mapping.isPeer(parameters->send.task, __global.mapping.task())) \todo isPeer should support XMI_MAPPLING_TSIZE
-          if(__global.topology_local.isRankMember(task))
-            local=1;
-          else
-            local=0;
-          TRACE_ERR((stderr, ">> send_impl('immediate') dispatch[%zd][%d] = %p\n", id, local,_dispatch[id][local]));
-
-          XMI::Protocol::Send::Send * send =
-            (XMI::Protocol::Send::Send *) _dispatch[id][local];
-          send->immediate (parameters);
-
-          TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
-          return XMI_SUCCESS;
+        TRACE_ERR((stderr, "<< Context::send_impl('immediate')\n"));
+        return XMI_SUCCESS;
         }
 
       inline xmi_result_t send_impl (xmi_send_typed_t * parameters)
@@ -673,60 +669,80 @@ namespace XMI
           XMI_abort();
           return XMI_UNIMPL;
         }
+
       inline xmi_result_t dispatch_impl (size_t                     id,
                                          xmi_dispatch_callback_fn   fn,
                                          void                     * cookie,
                                          xmi_send_hint_t            options)
-        {
-          size_t index = (size_t) id;
-          // Off node registration
-          // This is for communication off node
-          if (_dispatch[(size_t)id][0] != NULL) return XMI_ERROR;
-          _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();
-          xmi_result_t result        = XMI_ERROR;
-          XMI_assert(_request.objsize >= sizeof(EagerMPI));
-          new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, *_mpi, result);
-          if(result!=XMI_SUCCESS)
+      {
+        xmi_result_t result = XMI_ERROR;
+        TRACE_ERR((stderr, ">> Context::dispatch_impl .. _dispatch[%zu][0] = %p, result = %d\n", id, _dispatch[id][0], result));
+
+        if (_dispatch[id][0] == NULL)
           {
-             XMI_abort();
-             goto result_error;
+            if (options.no_shmem == 1)
+            {
+              // Register only the "mpi" eager protocol
+              //
+              // This mpi eager protocol code should be changed to respect the
+              // "long header" option
+              //
+              _dispatch[id][0] = (Protocol::Send::Send *)
+                EagerMPI::generate (id, fn, cookie, *_mpi, _protocol, result);
+            }
+            else if (options.use_shmem == 1)
+            {
+              // Register only the "shmem" eager protocol
+              if (options.no_long_header == 1)
+                {
+                  _dispatch[id][0] = (Protocol::Send::Send *)
+                    Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                }
+              else
+                {
+                  _dispatch[id][0] = (Protocol::Send::Send *)
+                    Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                }
+            }
+            else
+            {
+              // Register both the "mpi" and "shmem" eager protocols
+              //
+              // This mpi eager protocol code should be changed to respect the
+              // "long header" option
+              //
+              EagerMPI * eagermpi =
+                EagerMPI::generate (id, fn, cookie, *_mpi, _protocol, result);
+#ifdef ENABLE_SHMEM_DEVICE
+              if (options.no_long_header == 1)
+                {
+                  Protocol::Send::Eager <ShmemModel, ShmemDevice, false> * eagershmem =
+                    Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+
+                  _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
+                      generate (eagershmem, eagermpi, _protocol, result);
+                }
+              else
+                {
+                  Protocol::Send::Eager <ShmemModel, ShmemDevice, true> * eagershmem =
+                    Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+
+                  _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
+                      generate (eagershmem, eagermpi, _protocol, result);
+                }
+#else
+              _dispatch[id][0] = eagermpi;
+#endif
+            }
           }
-          // Shared Memory Registration
-          // This is for communication on node
-          TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zd] = %p\n", index, _dispatch[index][0]));
 
-          // currently, shared memory is off, because this dispatch_id will  not be null
-//          if (_dispatch[index][1] == NULL)
-              {
-                TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
-                if (options.no_long_header == 1)
-                    {
-                      _dispatch[id][1] = _protocol.allocateObject ();
-                      new (_dispatch[id][1])
-                        Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
-                        (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
-                    }
-                else
-                    {
-                      _dispatch[id][1] = _protocol.allocateObject ();
-                      new (_dispatch[id][1])
-                        Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
-                        (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
-                    }
-
-                TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
-                if (result != XMI_SUCCESS)
-                    {
-                      _protocol.returnObject (_dispatch[id][1]);
-                      _dispatch[id][1] = NULL;
-                    }
-              }
-              XMI_assert(result == XMI_SUCCESS);
-
-          result_error:
-          TRACE_ERR((stderr, "<< dispatch_impl(), result = %zd, _dispatch[%zd] = %p\n", result, index, _dispatch[index][0]));
-          return result;
-        }
+        TRACE_ERR((stderr, "<< Context::dispatch_impl .. result = %d\n", result));
+        return result;
+      }
 
     inline xmi_result_t dispatch_new_impl (size_t                     id,
                                            xmi_dispatch_callback_fn   fn,
@@ -801,44 +817,7 @@ XMI::Device::MPIBcastDev::Factory::getDevice(_devices->_mpimcast, _clientid, _co
       }
       else if(options.type == XMI_P2P_SEND)
       {
-        XMI_assert(_request.objsize >= sizeof(EagerMPI));
-        new (_dispatch[(size_t)id][0]) EagerMPI (id, fn, cookie, *_mpi, result);
-        if(result!=XMI_SUCCESS)
-        {
-          XMI_abort();
-          goto result_error;
-        }
-        // Shared Memory Registration
-        // This is for communication on node
-        TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
-
-        // currently, shared memory is off, because this dispatch_id will  not be null
-//          if (_dispatch[id][1] == NULL)
-        {
-          TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
-
-          if(options.hint.send.no_long_header == 1)
-          {
-            _dispatch[id][1] = _protocol.allocateObject ();
-            new (_dispatch[id][1])
-            Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
-            (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
-          }
-          else
-          {
-            _dispatch[id][1] = _protocol.allocateObject ();
-            new (_dispatch[id][1])
-            Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
-            (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
-          }
-
-          TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
-          if(result != XMI_SUCCESS)
-          {
-            _protocol.returnObject (_dispatch[id][1]);
-            _dispatch[id][1] = NULL;
-          }
-        }
+        result = dispatch_impl (id, fn, cookie, (xmi_send_hint_t){0});
         XMI_assert(result == XMI_SUCCESS);
       }
       else // !XMI_P2P_SEND and !XMI_MULTICAST

@@ -5,7 +5,7 @@
 #ifndef __common_socklinux_Context_h__
 #define __common_socklinux_Context_h__
 
-//#define ENABLE_SHMEM_DEVICE
+#define ENABLE_SHMEM_DEVICE
 #define ENABLE_UDP_DEVICE
 
 #include <stdlib.h>
@@ -46,6 +46,7 @@
 
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/datagram/Datagram.h"
+#include "p2p/protocols/send/composite/Composite.h"
 
 #include "p2p/protocols/get/Get.h"
 #ifndef TRACE_ERR
@@ -481,32 +482,88 @@ namespace XMI
                                          xmi_send_hint_t            options)
       {
         xmi_result_t result = XMI_ERROR;
-TRACE_ERR((stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result = %d\n", id, _dispatch[id], result));
+        TRACE_ERR((stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result = %d\n", id, _dispatch[id], result));
 
         if (_dispatch[id] == NULL)
           {
-            // Allocate memory for the protocol object.
-            _dispatch[id] = (void *) _protocolAllocator.allocateObject ();
+            bool no_shmem  = options.no_shmem;
+#ifndef ENABLE_SHMEM_DEVICE
+            no_shmem = true;
+#endif
+
+            bool use_shmem = options.use_shmem;
 #ifdef ENABLE_UDP_DEVICE
-            COMPILE_TIME_ASSERT(sizeof(DatagramUdp) <= ProtocolAllocator::objsize);
-            new ((void *)_dispatch[id])
-              DatagramUdp
-                (id, fn, cookie, _devices->_udp[_contextid], result);
+            use_shmem = true;
+#endif
+
+            if (no_shmem == 1)
+            {
+              // Register only the "udp" datagram protocol
+              //
+              // This udp datagram protocol code should be changed to respect the
+              // "long header" option
+              //
+#ifdef ENABLE_UDP_DEVICE
+              _dispatch[id] = (Protocol::Send::Send *)
+                DatagramUdp::generate (id, fn, cookie, _devices->_udp[_contextid], _protocol, result);
 #else
+              XMI_abortf("No non-shmem protocols available.");
+#endif
+            }
+            else if (options.use_shmem == 1)
+            {
+              // Register only the "shmem" eager protocol
 #ifdef ENABLE_SHMEM_DEVICE
-            COMPILE_TIME_ASSERT(sizeof(Protocol::Send::Eager <ShmemModel, ShmemDevice, true>) <= ProtocolAllocator::objsize);
-            new ((void *)_dispatch[id])
-              Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
-                (id, fn, cookie, _devices->_shmem[_contextid], result);
+              if (options.no_long_header == 1)
+                {
+                  _dispatch[id] = (Protocol::Send::Send *)
+                    Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                }
+              else
+                {
+                  _dispatch[id] = (Protocol::Send::Send *)
+                    Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                }
+#else
+              XMI_abortf("No shmem protocols available.");
 #endif
+            }
+#if defined(ENABLE_SHMEM_DEVICE) && defined(ENABLE_UDP_DEVICE)
+            else
+            {
+              // Register both the "udp" datagram and the "shmem" eager protocols
+              //
+              // This udp datagram protocol code should be changed to respect the
+              // "long header" option
+              //
+              DatagramUdp * datagram =
+                DatagramUdp::generate (id, fn, cookie, _devices->_udp[_contextid], _protocol, result);
+
+              if (options.no_long_header == 1)
+                {
+                  Protocol::Send::Eager <ShmemModel, ShmemDevice, false> * eager =
+                    Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+
+                  _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
+                      generate (eager, datagram, _protocol, result);
+                }
+              else
+                {
+                  Protocol::Send::Eager <ShmemModel, ShmemDevice, true> * eager =
+                    Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+
+                  _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
+                      generate (eager, datagram, _protocol, result);
+                }
+            }
 #endif
-            if (result != XMI_SUCCESS)
-              {
-                _protocolAllocator.returnObject (_dispatch[id]);
-                _dispatch[id] = NULL;
-              }
           }
-TRACE_ERR((stderr, "<< socklinux::dispatch_impl .. result = %d\n", result));
+
+        TRACE_ERR((stderr, "<< socklinux::dispatch_impl .. result = %d\n", result));
         return result;
       }
 
@@ -574,7 +631,7 @@ TRACE_ERR((stderr, "<< socklinux::dispatch_impl .. result = %d\n", result));
 
 
       //ContextLock _lock;
-      ProtocolAllocator _protocolAllocator;
+      ProtocolAllocator _protocol;
       PlatformDeviceList *_devices;
 
   }; // end XMI::Context

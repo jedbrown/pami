@@ -136,6 +136,13 @@ namespace XMI
           {
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() >>\n"));
 
+            xmi_task_t task;
+            size_t offset;
+            XMI_ENDPOINT_INFO(parameters->dest,task,offset);
+
+            // Verify that this task is addressable by this packet device
+            if (!_device.isPeer(task)) return XMI_ERROR;
+
             // Specify the protocol metadata to send with the application
             // metadata in the packet. This metadata is copied
             // into the network by the device and, therefore, can be placed
@@ -144,12 +151,9 @@ namespace XMI
             metadata.databytes = parameters->data.iov_len;
             metadata.metabytes = parameters->header.iov_len;
 
-            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. parameters->header.iov_len = %zd, parameters->data.iov_len = %zd dest:%x\n", parameters->header.iov_len, parameters->data.iov_len, parameters->dest));
+            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. parameters->header.iov_len = %zu, parameters->data.iov_len = %zu dest:%x\n", parameters->header.iov_len, parameters->data.iov_len, parameters->dest));
 
-            xmi_task_t task;
-            size_t offset;
-            XMI_ENDPOINT_INFO(parameters->dest,task,offset);
-            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. task %d,offset %zd\n", task, offset));
+            TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. task = %d, offset = %zu\n", task, offset));
 
             // This shadow pointer allows template specialization on the iovecs
             parameters_iov_t * const p = (parameters_iov_t *) parameters;

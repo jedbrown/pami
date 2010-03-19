@@ -110,6 +110,13 @@ namespace XMI
 #endif
     }
 
+    /// \see XMI::Device::Interface::BaseDevice::isPeer()
+    template <class T_Fifo>
+    bool ShmemDevice<T_Fifo>::isPeer_impl (size_t task)
+    {
+      return __global.mapping.isPeer(task, _global_task);
+    };
+
     ///
     /// \brief Regieter the receive function to dispatch when a packet arrives.
     ///

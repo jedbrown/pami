@@ -186,6 +186,13 @@ namespace XMI
           {
             TRACE_ERR((stderr, ">> EagerSimple::simple_impl() .. sizeof(protcol_metadata_t) = %zd, T_Model::packet_model_metadata_bytes = %zd\n", sizeof(protcol_metadata_t), T_Model::packet_model_metadata_bytes));
 
+            xmi_task_t task;
+            size_t offset;
+            XMI_ENDPOINT_INFO(parameters->send.dest,task,offset);
+
+            // Verify that this task is addressable by this packet device
+            if (!_device.isPeer (task)) return XMI_ERROR;
+
             // Allocate memory to maintain the state of the send.
             send_state_t * state = allocateSendState ();
 
@@ -214,11 +221,6 @@ namespace XMI
                 state->metadata.va_send = NULL;
                 state->remote_fn = NULL;
               }
-
-            // Retrieve the destination task and context offset from the endpoint
-            xmi_task_t task;
-            size_t offset;
-            XMI_ENDPOINT_INFO(parameters->send.dest,task,offset);
 
             if (unlikely(parameters->send.data.iov_len == 0))
               {

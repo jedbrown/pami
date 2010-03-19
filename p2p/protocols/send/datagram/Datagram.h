@@ -48,6 +48,31 @@ template < class T_Model, class T_Device, bool T_LongHeader = true, class T_Conn
 public:
 	typedef Datagram < T_Model, T_Device, T_LongHeader, T_Connection> DatagramProtocol;
 
+        template <class T_Allocator>
+        static DatagramProtocol * generate (size_t                     dispatch,
+                                            xmi_dispatch_callback_fn   dispatch_fn,
+                                            void                     * cookie,
+                                            T_Device                 & device,
+                                            T_Allocator              & allocator,
+                                            xmi_result_t             & result)
+        {
+          TRACE_ERR((stderr, ">> Datagram::generate()\n"));
+          COMPILE_TIME_ASSERT(sizeof(Datagram) <= T_Allocator::objsize);
+
+          Datagram * datagram = (Datagram *) allocator.allocateObject ();
+          new ((void *)datagram) Datagram (dispatch, dispatch_fn, cookie, device, result);
+          if (result != XMI_SUCCESS)
+          {
+            allocator.returnObject (datagram);
+            datagram = NULL;
+          }
+
+          TRACE_ERR((stderr, "<< Datagram::generate(), datagram = %p, result = %d\n", datagram, result));
+          return datagram;
+        }
+
+
+
 	// ----------------------------------------------------------------------
 	// STRUCTURES
 	// ----------------------------------------------------------------------
