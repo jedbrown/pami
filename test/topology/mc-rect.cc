@@ -48,7 +48,7 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
       if (topo.type() == XMI_AXIAL_TOPOLOGY)
       {
         xmi_network type;
-        xmi_task_t ref_task;
+        xmi_task_t ref_task = 0;
         xmi_coord_t low, high, ref;
         unsigned char tl[XMI_MAX_DIMS] = {0};
         
@@ -62,7 +62,7 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
           //for (int c = 0; c < XMI_MAX_DIMS; c++)
           //strcat(dir, tl[c]);
           __global.mapping.network2task(&ref, &ref_task, &type);
-          printf("Phase %d: R: %d L:<%d, %d, %d %d> H: <%d, %d, %d %d> \n",
+          printf("Phase %d: R: %d L:<%zu, %zu, %zu %zu> H: <%zu, %zu, %zu %zu> \n",
                  i, ref_task, low.net_coord(0), low.net_coord(1),
                  low.net_coord(2), low.net_coord(3),high.net_coord(0),
                  high.net_coord(1),high.net_coord(2),high.net_coord(3));
@@ -83,7 +83,7 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
           for (c = 0; c < (int) topo.size(); c++)
           {
             __global.mapping.task2network(list[c], &dst, XMI_N_TORUS_NETWORK);
-            printf(" <%d %d %d %d>", dst.net_coord(0),dst.net_coord(1),
+            printf(" <%zu %zu %zu %zu>", dst.net_coord(0),dst.net_coord(1),
                    dst.net_coord(2), dst.net_coord(3));
           }
           printf("\n");
@@ -99,7 +99,7 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
         if (task_id == id || id == (xmi_task_t) -1)
         {
           __global.mapping.task2network(dst_task, &dst, XMI_N_TORUS_NETWORK);
-          printf("Phase %d: Rank %d: <%d %d %d %d> send to %d: <%d %d %d %d>\n", i, task_id, self.net_coord(0),self.net_coord(1), self.net_coord(2),
+          printf("Phase %d: Rank %d: <%zu %zu %zu %zu> send to %d: <%zu %zu %zu %zu>\n", i, task_id, self.net_coord(0),self.net_coord(1), self.net_coord(2),
                  self.net_coord(3),
                  dst_task, dst.net_coord(0),dst.net_coord(1), dst.net_coord(2),
                  dst.net_coord(3));
@@ -129,7 +129,7 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
           for (c = 0; c < (int) topo.size(); c++)
           {
             __global.mapping.task2network(list[c], &rcv, XMI_N_TORUS_NETWORK);
-            printf(" <%d %d %d %d>", rcv.net_coord(0),rcv.net_coord(1),
+            printf(" <%zu %zu %zu %zu>", rcv.net_coord(0),rcv.net_coord(1),
                    rcv.net_coord(2), rcv.net_coord(3));
           }
           printf("\n");
@@ -145,7 +145,7 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
         if (task_id == id || id == (xmi_task_t) -1)
         {
           __global.mapping.task2network(rcv_task, &rcv, XMI_N_TORUS_NETWORK);
-          printf("Phase %d: Rank %d: <%d %d %d %d> recv from %d: <%d %d %d %d>\n", i, task_id,
+          printf("Phase %d: Rank %d: <%zu %zu %zu %zu> recv from %d: <%zu %zu %zu %zu>\n", i, task_id,
                  self.net_coord(0),self.net_coord(1), self.net_coord(2),
                  self.net_coord(3),rcv_task, rcv.net_coord(0),rcv.net_coord(1),
                  rcv.net_coord(2),   rcv.net_coord(3));
@@ -203,12 +203,12 @@ int main (int argc, char ** argv)
   if (op == 'r')
   {
     reduce.init(root, CCMI::Interfaces::REDUCE_OP, start, nphases);
-    printSchedule(reduce, start, nphases, "Reduce", color);
+    printSchedule(reduce, start, nphases, (char*)"Reduce", color);
   }
   if (op == 'b')
   {
     bcast.init(root, CCMI::Interfaces::BROADCAST_OP, start, nphases);
-    printSchedule(bcast, start, nphases, "Bcast", color);
+    printSchedule(bcast, start, nphases, (char *)"Bcast", color);
   }
   return 0;
 };

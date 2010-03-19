@@ -233,7 +233,7 @@ CCMI::Schedule::MCRect::getReduceSrcTopology(unsigned phase,
   int i, axis, j;
   unsigned int total = 0, color = _color;
   xmi_network type;
-  xmi_task_t src_id;
+  xmi_task_t src_id = 0;
   xmi_coord_t src = _self;
 
   char dir = 1; // positive
@@ -357,11 +357,13 @@ CCMI::Schedule::MCRect::getReduceSrcTopology(unsigned phase,
 
     total += _phases_per_dim[i];    
   }
-        
-  _map->network2task(&src, &src_id, &type);
-  if (src_id != _map->task())
-    new (topo) XMI::Topology(src_id);
-  
+
+  if (src_id >= 0)
+  {
+    _map->network2task(&src, &src_id, &type);
+    if (src_id != _map->task())
+      new (topo) XMI::Topology(src_id);
+  }
   return XMI_SUCCESS;
 }
 
@@ -383,7 +385,7 @@ CCMI::Schedule::MCRect::getReduceDstTopology(unsigned phase,
   int i, axis, j;
   unsigned int total = 0, color = _color;
   xmi_network type;
-  xmi_task_t dst_id;
+  xmi_task_t dst_id = 0;
   xmi_coord_t dst = _self;
 
   char dir = 1; // positive
@@ -416,11 +418,6 @@ CCMI::Schedule::MCRect::getReduceDstTopology(unsigned phase,
         {
           if (my_coord == _dim_sizes[i] - 1 + total - phase)
           {
-            if (phase == 20 && _map->task() == 3)
-              if (_torus_link[i])
-              printf("torus link 1\n");
-            else
-              printf("torus link 0\n");
             // if this line is a torus and data is moving in a positive dir
             if (_torus_link[i] && dir == 1)
             {
@@ -497,7 +494,7 @@ CCMI::Schedule::MCRect::getReduceDstTopology(unsigned phase,
 
     total += _phases_per_dim[i];    
   }
-        
+
   _map->network2task(&dst, &dst_id, &type);
 
   if (dst_id != _map->task())
