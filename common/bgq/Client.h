@@ -128,7 +128,7 @@ namespace XMI
 #ifdef USE_COMMTHREADS
         // Create one comm thread semi-opaque pointer. Internally, this may be
         // one-per-context (optimal advance scenario) or some other arrangement.
-        _commThreads = XMI::Device::CommThread::BgqCommThread::generate(_clientid, n, _mm);
+        _commThreads = XMI::Device::CommThread::BgqCommThread::generate(_clientid, n, &_mm);
         XMI_assertf(_commThreads, "BgqCommThread::generate failed for _commThreads[%d]\n", n);
 #endif // USE_COMMTHREADS
         int x;

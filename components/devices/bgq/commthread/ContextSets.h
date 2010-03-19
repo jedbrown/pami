@@ -14,6 +14,7 @@
 #define __components_devices_bgq_commthread_ContextSets_h__
 
 #include "sys/xmi.h"
+#include "components/atomic/bgq/L2Mutex.h"
 
 namespace XMI {
 namespace Device {
@@ -27,7 +28,7 @@ public:
 	BgqContextPool() :
 	_contexts(NULL),
 	_ncontexts_total(0),
-	_ncontextsl(0),
+	_ncontexts(0),
 	_mutex(),
 	_sets(NULL),
 	_notset(0ULL),
@@ -38,7 +39,6 @@ public:
 	}
 
 	inline void init(size_t clientid, size_t nctx, Memory::MemoryManager *mm) {
-	{
 		_mutex.init(mm);
 		posix_memalign((void **)&_contexts, 16, nctx * sizeof(*_contexts));
 		XMI_assertf(_contexts, "Out of memory for BgqContextPool::_contexts");
@@ -79,9 +79,9 @@ public:
 			size_t n = 0;
 
 			while (n < desired) {
-				k = _sets[_lastset];
+				uint64_t k = _sets[_lastset];
 				if ((k & ENABLE)) {
-					x = ffs(k);
+					size_t x = ffs(k);
 					if (x > 0 && x < 64) {
 						--x;
 						k &= (1ULL << x);
@@ -90,7 +90,7 @@ public:
 						_sets[_lastset] = k;
 					}
 				}
-				if (++_lastset >= _nset) _lastset = 0;
+				if (++_lastset >= _nsets) _lastset = 0;
 			}
 		}
 		_sets[threadid] = m;
@@ -117,7 +117,7 @@ public:
 					if ((n & ENABLE)) {
 						_sets[_lastset] = n | (1ULL << x);
 					}
-					if (++_lastset >= _nset) _lastset = 0;
+					if (++_lastset >= _nsets) _lastset = 0;
 				} while (!(n & ENABLE));
 			}
 			m >>= 1;

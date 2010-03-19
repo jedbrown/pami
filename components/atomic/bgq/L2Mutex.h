@@ -30,7 +30,7 @@ namespace BGQ {
 	//
 	// These classes are used internally ONLY. See following classes for users
 	//
-	class L2ProcMutex : public Interface::Mutex<L2ProcMutex> {
+	class L2ProcMutex : public XMI::Atomic::Interface::Mutex<L2ProcMutex> {
 	public:
 		L2ProcMutex() { }
 		inline void init_impl(XMI::Memory::MemoryManager *mm) {
@@ -52,7 +52,7 @@ namespace BGQ {
 		uint64_t _counter;
 	}; // class L2ProcMutex
 
-	class L2NodeMutex : public Interface::Mutex<L2NodeMutex> {
+	class L2NodeMutex : public XMI::Atomic::Interface::Mutex<L2NodeMutex> {
 	public:
 		L2NodeMutex() { }
 		inline void init_impl(XMI::Memory::MemoryManager *mm) {
@@ -76,7 +76,7 @@ namespace BGQ {
 		}
 		void *returnLock_impl() { return _counter; }
 	protected:
-		uint64_t _counter;
+		uint64_t *_counter;
 	}; // class L2NodeMutex
 
 }; // BGQ namespace

@@ -15,6 +15,7 @@
 
 #include "sys/xmi.h"
 #include "components/devices/bgq/commthread/WakeupRegion.h"
+#include "components/devices/bgq/commthread/ContextSets.h"
 #include "common/bgq/Context.h"
 #include "pthread.h"
 
@@ -33,26 +34,26 @@ private:
 	/// \param[in] old	Currently locked contexts
 	/// \param[in] new	New set of contexts that should be locked
 	///
-	inline void __lockContextSet(uint64_t &old, uint64_t &new) {
+	inline void __lockContextSet(uint64_t &old, uint64_t new_) {
 		uint64_t m, l = 0;
 		size_t x;
 		xmi_result_t r;
 
-		m = (old ^ new) & old; // must unlock these
+		m = (old ^ new_) & old; // must unlock these
 		x = 0;
 		while (m) {
 			if (m & 1) {
-				r = _ctxset.getContext(_client, x)->unlock();
+				r = _ctxset->getContext(_client, x)->unlock();
 			}
 			m >>= 1;
 			++x;
 		}
 
-		m = (old ^ new) & new; // must lock these
+		m = (old ^ new_) & new_; // must lock these
 		x = 0;
 		while (m) {
 			if (m & 1) {
-				r = _ctxset.getContext(_client, x)->trylock();
+				r = _ctxset->getContext(_client, x)->trylock();
 				if (r == XMI_SUCCESS) {
 					l |= (1ULL << x);
 				}
@@ -75,7 +76,7 @@ private:
 		x = 0;
 		while (m) {
 			if (m & 1) {
-				e += _ctxset.getContext(_client, x)->advance(1, r);
+				e += _ctxset->getContext(_client, x)->advance(1, r);
 				r = r; // avoid warning until we figure out what to do with result
 			}
 			m >>= 1;
@@ -111,7 +112,6 @@ public:
 							Memory::MemoryManager *mm) {
 		BgqCommThread *devs;
 		BgqWakeupRegion *wu;
-		xmi_context_t *ctxs;
 		BgqContextPool *pool;
 		size_t x;
 		posix_memalign((void **)&devs, 16, num_ctx * sizeof(*devs));
@@ -139,6 +139,7 @@ public:
 	static void *commThread(void *cookie) {
 		BgqCommThread *thus = (BgqCommThread *)cookie;
 		xmi_result_t r = thus->__commThread();
+		r = r; // avoid worning until we decide how to use result
 		return NULL;
 	}
 
@@ -181,7 +182,7 @@ more_work:		// lightweight enough.
 			// whether those other sw threads are truly active, or even
 			// running in some syncopated "tag team" mode.
 			// TBD
-re_evaluate:
+//re_evaluate:
 			n = Kernel_SnoopScheduler();
 
 			if (n == 1) {
