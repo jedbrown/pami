@@ -19,123 +19,125 @@ namespace XMI {
 namespace Device {
 namespace CommThread {
 
-class BgqContextSets {
-private:
-	struct Control {
-		uint64_t generation;
-		// ???
-	};
+class BgqContextPool {
+	static const uint64_t ENABLE = (1ULL << 63);
 
-	struct Generation {
-		uint64_t num_participants;
-		uint64_t num_active;
-		// ???
-	};
-
-	/// \brief Find the position of the MSB in word that is '1'
-	///
-	/// Returns 0 if no '1' bits exist. LSB is position 1.
-	/// \todo should use better (more efficient) routine.
-	///
-	/// \param[in] n	Word to scan
-	/// \return	bit position of most-significant '1'
-	inline size_t fls(size_t n) {
-		int x = 0;
-		while (n) {
-			n >>= 1;
-			++x;
-		}
-		return x;
-	}
+	typedef XMI::Mutex::BGQ::L2ProcMutex ContextSetMutex;
 public:
-	BgqContextSets() { }
+	BgqContextPool() :
+	_contexts(NULL),
+	_ncontexts_total(0),
+	_ncontextsl(0),
+	_mutex(),
+	_sets(NULL),
+	_notset(0ULL),
+	_nsets(0),
+	_nactive(0),
+	_lastset(0)
+	{
+	}
 
-	~BgqContextSets() { }
+	inline void init(size_t clientid, size_t nctx, Memory::MemoryManager *mm) {
+	{
+		_mutex.init(mm);
+		posix_memalign((void **)&_contexts, 16, nctx * sizeof(*_contexts));
+		XMI_assertf(_contexts, "Out of memory for BgqContextPool::_contexts");
+		posix_memalign((void **)&_sets, 16, nctx * sizeof(*_sets));
+		XMI_assertf(_contexts, "Out of memory for BgqContextPool::_sets");
+		_ncontexts_total = nctx;
+	}
 
-	/// \brief Compute context set from relative position among active comm threads
-	///
-	/// All contexts sets must be powers of two (except last). In addition,
-	/// a context set must be less than or equal in size to any context set
-	/// on the left (i.e. for a lower thread index). Again, the last set
-	/// (right-most) being excepted. Two values for the size of the context set
-	/// are returned, 'nctx' is the number of contexts that actually exist
-	/// (used for loop control when operating on contexts) and 'mctx' is the
-	/// size as a power of two, used to compute the WAC address mask.
-	///
-	/// \param[out] ctx0	First context of set
-	/// \param[out] nctx	Number of contexts to advance, etc
-	/// \param[out] mctx	Size of context set (power of two)
-	///
-	inline void compute_set(size_t &ctx0, size_t &nctx, size_t &mctx) {
-		size_t b, z, zz;
-		size_t base, div;
+	inline xmi_result_t addContext(size_t clientid, xmi_context_t ctx) {
+		if (_ncontexts >= _ncontexts_total) {
+			return XMI_ERROR;
+		}
+		_contexts[_ncontexts++] = (XMI::Context *)ctx;
+		return XMI_SUCCESS;
+	}
 
-		// assert(_numActiveThreads > 0); // at least one - ourself!
+	XMI::Context *getContext(size_t clientid, size_t contextix) {
+		return _contexts[contextix];
+	}
 
-		// special-case optimize when more (same) threads than contexts
-		if (_numActiveThreads >= _numContexts) {
-			if (_threadIndex >= _numContexts) {
-				*ctx0 = 0;
-				*nctx = 0;
-				*mctx = 0;
-				return;
-			} else {
-				*ctx0 = _threadIndex;
-				*nctx = 1;
-				*mctx = 0;
-				return;
+	inline uint64_t getContextSet(size_t clientid, size_t threadid) {
+		return _sets[threadid] & ~ENABLE;
+	}
+
+	inline void joinContextSet(size_t clientid, size_t &threadid) {
+		
+		uint64_t m = ENABLE;
+		_mutex.acquire();
+		threadid = _nactive;
+		if (_nactive == 0) {
+			// take all? or just a few...
+			m |= _notset;
+			_notset = 0;
+			++_nactive;
+		} else {
+			++_nactive;
+			size_t desired = (_ncontexts + (_nactive - 1)) / _nactive;
+			size_t n = 0;
+
+			while (n < desired) {
+				k = _sets[_lastset];
+				if ((k & ENABLE)) {
+					x = ffs(k);
+					if (x > 0 && x < 64) {
+						--x;
+						k &= (1ULL << x);
+						m |= (1ULL << x);
+						++n;
+						_sets[_lastset] = k;
+					}
+				}
+				if (++_lastset >= _nset) _lastset = 0;
 			}
 		}
-		// (_numContexts / _numActiveThreads) can never be zero...
-
-		// base number of contexts for each thread
-		base = fls(_numContexts / _numActiveThreads) - 1;
-
-		// number of threads that take extra contexts
-		div = (_numContexts >> base) - _numActiveThreads;
-
-		// may need one more thread to take extra contexts
-		div += (_numContexts != ((_numActiveThreads + div) << base)) ? 1 : 0;
-
-		// first context ID for _threadIndex
-		b = (_threadIndex + (_threadIndex > div ? div : _threadIndex)) << base;
-
-		// number of contexts to take
-		z = ((_threadIndex < div ? 2 : 1) << base);
-
-		// actual number of contexts
-		zz = (b + z > _numContexts ? _numContexts - b : z);
-
-		ctx0 = b;	// first context in set (2^X).
-		nctx = zz;	// size of context set for lock/unlock/advance.
-		mctx = z;	// size of context set used for wakeup unit mask (2^Y).
+		_sets[threadid] = m;
+		_mutex.release();
 	}
 
-	inline bool isOutOfDate() {
-		return L2_AtomicLoad(&_ctl.generation) != _currentGeneration;
+	inline void leaveContextSet(size_t clientid, size_t &threadid) {
+		
+		_mutex.acquire();
+		--_nactive;
+		uint64_t m = _sets[threadid];
+		_sets[threadid] = 0;
+		size_t x = 0;
+		// assert((m & ENABLE) != 0);
+		m &= ~ENABLE;
+		if (_nactive == 0) {
+			_notset |= m;
+		} else while (m) {
+			if (m & 1) {
+				uint64_t n;
+				// there must be one other... or else we hang here.
+				do {
+					n = _sets[_lastset];
+					if ((n & ENABLE)) {
+						_sets[_lastset] = n | (1ULL << x);
+					}
+					if (++_lastset >= _nset) _lastset = 0;
+				} while (!(n & ENABLE));
+			}
+			m >>= 1;
+			++x;
+		}
+		_mutex.release();
+		threadid = -1; // only valid while we're joined.
 	}
-
-	inline void becomeActive() {
-		size_t gen = L2_AtomicLoadIncrement(&_ctl.generation);
-		// this isn't even close...
-		_gen[gen & _generationMask].num_active += 1;
-	}
-
-	inline void becomeInactive() {
-		size_t gen = L2_AtomicLoadIncrement(&_ctl.generation);
-		// this isn't even close...
-		_gen[gen & _generationMask].num_active -= 1;
-	}
-
 private:
-	size_t _currentGeneration;
-	size_t _generationMask;	///< for indexing _gen[] with _currentGeneration
-	size_t _numContexts;
-	size_t _numActiveThreads;
-	size_t _threadIndex;
-	Control *_ctl;
-	Generation *_gen;
-}; // class BgqContextSets
+	XMI::Context **_contexts;
+	size_t _ncontexts_total;
+	size_t _ncontexts;
+
+	ContextSetMutex _mutex;
+	uint64_t *_sets;
+	uint64_t _notset;
+	size_t _nsets;
+	size_t _nactive;
+	size_t _lastset;
+}; // class BgqContextPool
 
 }; // namespace CommThread
 }; // namespace Device

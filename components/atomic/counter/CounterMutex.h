@@ -26,8 +26,8 @@ namespace Mutex {
 	public:
 		CounterMutex() {}
 		~CounterMutex() {}
-		inline void init_impl(XMI::SysDep *sd) {
-			_counter.init(sd);
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
+			_counter.init(mm);
 		}
 		void acquire_impl() {
 			while (_counter.fetch_and_inc() != 0);

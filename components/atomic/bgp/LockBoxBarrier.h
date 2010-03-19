@@ -61,7 +61,7 @@ public:
 	_LockBoxBarrier() { }
 	~_LockBoxBarrier() { }
 
-	inline void init_impl(void *sd, size_t z, bool m) {
+	inline void init_impl(XMI::Memory::MemoryManager *mm, size_t z, bool m) {
 		XMI_abortf("_LockBoxBarrier class must be subclass");
 	}
 
@@ -132,7 +132,7 @@ class LockBoxNodeCoreBarrier :
 public:
 	LockBoxNodeCoreBarrier() {}
 	~LockBoxNodeCoreBarrier() {}
-	inline void init_impl(XMI::SysDep *sd, size_t z, bool m) {
+	inline void init_impl(XMI::Memory::MemoryManager *mm, size_t z, bool m) {
 		// For core-granularity, everything is
 		// a core number. Assume the master core
 		// is the lowest-numbered core in the
@@ -153,7 +153,7 @@ class LockBoxNodeProcBarrier :
 public:
 	LockBoxNodeProcBarrier() {}
 	~LockBoxNodeProcBarrier() {}
-	inline void init_impl(XMI::SysDep *sd, size_t z, bool m) {
+	inline void init_impl(XMI::Memory::MemoryManager *mm, size_t z, bool m) {
 		// For proc-granularity, must convert
 		// between core id and process id,
 		// and only one core per process will

@@ -117,10 +117,10 @@ namespace XMI
                                                     size_t           contextid,
                                                     xmi_client_t     client,
                                                     xmi_context_t    context,
-                                                    SysDep         * sysdep,
+                                                    Memory::MemoryManager *mm,
                                                     XMI::Device::Generic::Device * progress)
               {
-                return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, sysdep, progress);
+                return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, mm, progress);
               };
 
               static inline size_t advance_impl (MUDevice * devices,
@@ -153,7 +153,7 @@ namespace XMI
                              size_t           contextid,
                              xmi_client_t     client,
                              xmi_context_t    context,
-                             SysDep         * sysdep,
+                             Memory::MemoryManager *mm,
                              XMI::Device::Generic::Device * progress);
 
           /// \copydoc XMI::Device::Interface::BaseDevice::getContext
@@ -454,7 +454,7 @@ namespace XMI
             return _p2pChannel[_p2pSendChannelIndex]->getRgetInjFifoId (target_rank);
           }
 
-          SysDep * sysdep;                         /**< sysdep pointer     */
+	  XMI::Memory::MemoryManager *_mm;
           xmi_context_t _context;
           size_t        _contextid;
           size_t        _ncontexts;

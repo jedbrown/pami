@@ -32,7 +32,7 @@ namespace XMI
         Counter  () {};
         ~Counter () {};
 
-        void init (XMI::SysDep *sd);
+        void init (XMI::Memory::MemoryManager *mm);
 
         ///
         /// \brief Fetch the atomic counter object value
@@ -92,9 +92,9 @@ namespace XMI
     }; // XMI::Atomic::Interface::Counter class
 
     template <class T_Object>
-    inline void Counter<T_Object>::init (XMI::SysDep *sd)
+    inline void Counter<T_Object>::init (XMI::Memory::MemoryManager *mm)
     {
-      static_cast<T_Object*>(this)->init_impl(sd);
+      static_cast<T_Object*>(this)->init_impl(mm);
     }
 
     template <class T_Object>

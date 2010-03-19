@@ -18,7 +18,7 @@ namespace DCMF
     {
 
 #if 0  //Implemented in MUDevice.cc
-      inline int MUDevice::init_impl(SysDep &sysdep)
+      inline int MUDevice::init_impl(Memory::MemoryManager *mm)
       {
       }
 #endif

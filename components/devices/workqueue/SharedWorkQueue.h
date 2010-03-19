@@ -60,14 +60,14 @@ namespace XMI
           ///
           /// \param[in] queue Location of the workqueue structure in shared memory.
           ///
-          SharedWorkQueue (XMI_SYSDEP_CLASS *sysdep, unsigned workunits = XMI_DEF_SH_WORKUNITS, unsigned worksize = XMI_DEF_SH_WORKSIZE) :
+          SharedWorkQueue (XMI::Memory::MemoryManager *mm, unsigned workunits = XMI_DEF_SH_WORKUNITS, unsigned worksize = XMI_DEF_SH_WORKSIZE) :
             WorkQueue (),
             _qsize (workunits * worksize),
             _worksize (worksize),
             _sharedqueue (NULL)
           {
                 size_t size = sizeof(workqueue_t) + _qsize;
-                sysdep->mm.memalign((void **)&_sharedqueue, 16, size);
+                mm->memalign((void **)&_sharedqueue, 16, size);
 		XMI_assert_debug(_sharedqueue);
 		XMI_assert_debug((_qsize & (_qsize - 1)) == 0);
 		_qmask = _qsize - 1;

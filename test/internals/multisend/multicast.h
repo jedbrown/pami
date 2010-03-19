@@ -25,7 +25,6 @@ private:
 	uint8_t _mdlbuf[sizeof(T_MulticastModel)];
 	T_MulticastModel *_model;
 	uint8_t _msgbuf[T_MulticastModel::sizeof_msg];
-	XMI::SysDep _sd;
 	XMI::Device::Generic::Device *_generics;
 	T_MulticastDevice *_dev;
 
@@ -94,28 +93,26 @@ private:
 public:
 
 	Multicast(const char *test, XMI::Memory::MemoryManager &mm) :
-	_sd(mm),
 	_name(test)
 	{
-		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _sd.mm);
-		_dev = T_MulticastDevice::Factory::generate(0, 1, _sd.mm);
+		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, mm);
+		_dev = T_MulticastDevice::Factory::generate(0, 1, mm);
 
-		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
-		T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (xmi_context_t)1, &mm, _generics);
+		T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, (xmi_context_t)1, &mm, _generics);
 		_model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 
 	Multicast(const char *test, size_t dispatch_id, XMI::Memory::MemoryManager &mm) :
-	_sd(mm),
 	_name(test),
     _dispatch_id(dispatch_id)
 	{
 
-		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _sd.mm);
-		_dev = T_MulticastDevice::Factory::generate(0, 1, _sd.mm);
+		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, mm);
+		_dev = T_MulticastDevice::Factory::generate(0, 1, mm);
 
-		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
-		T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (xmi_context_t)1, &mm, _generics);
+		T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, (xmi_context_t)1, &mm, _generics);
 		_model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
 
       _msginfo.w0 = 0;

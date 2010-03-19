@@ -42,10 +42,10 @@ namespace XMI
         ~CounterBarrier () {};
 
         /// \see XMI::Atomic::Interface::Barrier::init()
-        void init_impl (XMI::SysDep *sd, size_t participants, bool master)
+        void init_impl (XMI::Memory::MemoryManager *mm, size_t participants, bool master)
         {
           unsigned i;
-          for (i=0; i<5; i++) _counter[i].init(sd);
+          for (i=0; i<5; i++) _counter[i].init(mm);
 
           _participants = participants;
           _master = master;

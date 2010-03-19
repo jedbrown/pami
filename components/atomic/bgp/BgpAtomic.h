@@ -37,7 +37,7 @@ namespace XMI
         ~BgpAtomic () {};
 
         /// \see XMI::Atomic::AtomicObject::init
-        void init_impl (XMI::SysDep *sd)
+        void init_impl (XMI::Memory::MemoryManager *mm)
         {
           //_atom = _BGP_ATOMIC_INIT(0);
           fetch_and_clear_impl ();
@@ -121,7 +121,7 @@ namespace XMI
         };
 
         /// \see XMI::Atomic::Interface::Mutex::init
-        inline void init_impl (XMI::SysDep *sd)
+        inline void init_impl (XMI::Memory::MemoryManager *mm)
         {
           // Noop
         };

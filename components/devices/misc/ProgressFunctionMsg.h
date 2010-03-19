@@ -38,7 +38,7 @@ public:
 	class Factory : public Interface::FactoryInterface<Factory,ProgressFunctionDev,Generic::Device>  {
 	public:
 		static inline ProgressFunctionDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(ProgressFunctionDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline xmi_result_t init_impl(ProgressFunctionDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(ProgressFunctionDev *devs, size_t client, size_t context);
 		static inline ProgressFunctionDev & getDevice_impl(ProgressFunctionDev *devs, size_t client, size_t context);
 	}; // class ProgressFunctionDev::Factory
@@ -72,7 +72,7 @@ inline ProgressFunctionDev *ProgressFunctionDev::Factory::generate_impl(size_t c
 	return &_g_progfunc_dev;
 }
 
-inline xmi_result_t ProgressFunctionDev::Factory::init_impl(ProgressFunctionDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+inline xmi_result_t ProgressFunctionDev::Factory::init_impl(ProgressFunctionDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
 	return _g_progfunc_dev.init(client, contextId, devices);
 }
 

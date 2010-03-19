@@ -24,14 +24,14 @@
 #undef USE_FLAT_BUFFER	// (4*1024*1024)
 
 #define ALLOC_SHMEM(memptr, align, size)	\
-	{ memptr = NULL; ((XMI::SysDep *)_sysdep)->mm.memalign((void **)&memptr, align, size); }
+	{ memptr = NULL; _mm->memalign((void **)&memptr, align, size); }
 
 /// \todo Fix shmem free so that it doesn't assert
 #define FREE_SHMEM(memptr)	\
-	//((XMI::SysDep *)_sysdep)->mm.free(memptr)
+	//_mm->free(memptr)
 
 #define WAKEUP(vector)		\
-	// ((XMI::SysDep *)_sysdep)->wakeupManager().wakeup(vector)
+	// _wakeupManager().wakeup(vector)
 
 namespace XMI {
 
@@ -76,6 +76,7 @@ class PipeWorkQueue : public Interface::PipeWorkQueue<XMI::PipeWorkQueue> {
 public:
 	PipeWorkQueue() :
 	Interface::PipeWorkQueue<XMI::PipeWorkQueue>(),
+	_mm(NULL),
 	_qsize(0),
 	_isize(0),
 	_pmask(0),
@@ -86,9 +87,9 @@ public:
 #ifdef USE_FLAT_BUFFER
 #warning USE_FLAT_BUFFER Requires MemoryManager.cc change to increase shmem pool, also BG_SHAREDMEMPOOLSIZE when run
         // shmem flat buffer... experimental
-        inline void configure_impl(void *sysdep, size_t bufsize, size_t bufinit)
+        inline void configure_impl(XMI::Memory::MemoryManager *mm, size_t bufsize, size_t bufinit)
         {
-          _sysdep = sysdep;
+          _mm = mm;
           _qsize = bufsize;
           _isize = bufinit;
           size_t size = sizeof(workqueue_t) + _qsize;
@@ -110,12 +111,12 @@ public:
         /// Creates a circular buffer of specified size in shared memory.
         /// Buffer size must be power-of-two.
         ///
-        /// \param[in] sysdep	System dependent methods
+        /// \param[in] mm	System dependent methods
         /// \param[in] bufsize	Size of buffer to allocate
         ///
-        inline void configure_impl(void *sysdep, size_t bufsize)
+        inline void configure_impl(XMI::Memory::MemoryManager *mm, size_t bufsize)
         {
-          _sysdep = sysdep;
+          _mm = mm;
           _qsize = bufsize;
           size_t size = sizeof(workqueue_t) + _qsize;
           ALLOC_SHMEM(_sharedqueue, 16, size);
@@ -134,13 +135,13 @@ public:
         /// Assumes the caller has placed buffer and (this) in appropriate memory
         /// for desired use - i.e. all in shared memory if to be used beyond this process.
         ///
-        /// \param[in] sysdep   System dependent methods
+        /// \param[in] mm   System dependent methods
         /// \param[in] buffer	Buffer to use
         /// \param[in] bufsize	Size of buffer
         ///
-        inline void configure_impl(void *sysdep, char *buffer, size_t bufsize)
+        inline void configure_impl(XMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize)
         {
-          _sysdep = sysdep;
+          _mm = mm;
           _qsize = bufsize;
           _buffer = buffer;
           _sharedqueue = &this->__sq;
@@ -157,14 +158,14 @@ public:
         /// Assumes the caller has placed buffer and (this) in appropriate memory
         /// for desired use - i.e. all in shared memory if to be used beyond this process.
         ///
-        /// \param[in] sysdep   System dependent methods
+        /// \param[in] mm   System dependent methods
         /// \param[in] buffer	Buffer to use
         /// \param[in] bufsize	Size of buffer
         /// \param[in] bufinit	Amount of data initially in buffer
         ///
-        inline void configure_impl(void *sysdep, char *buffer, size_t bufsize, size_t bufinit)
+        inline void configure_impl(XMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize, size_t bufinit)
         {
-          _sysdep = sysdep;
+          _mm = mm;
           _qsize = bufsize;
           _isize = bufinit;
           _buffer = buffer;
@@ -196,7 +197,7 @@ public:
 	/// \param[in] dgspcount      Number of repetitions of buffer units
 	/// \param[in] dgspinit       Number of units initially in buffer
 	///
-	inline void configure_impl(void *sysdep, char *buffer, xmi_type_t *dgsp, size_t dgspcount, size_t dgspinit) {
+	inline void configure_impl(XMI::Memory::MemoryManager *mm, char *buffer, xmi_type_t *dgsp, size_t dgspcount, size_t dgspinit) {
 		XMI_abortf("DGSP PipeWorkQueue not yet supported");
 	}
 
@@ -212,7 +213,7 @@ public:
 	///
 	PipeWorkQueue(PipeWorkQueue &obj) :
 	Interface::PipeWorkQueue<XMI::PipeWorkQueue>(),
-	_sysdep(obj._sysdep),
+	_mm(obj._mm),
 	_qsize(obj._qsize),
 	_pmask(obj._pmask),
 	_buffer(obj._buffer),
@@ -605,7 +606,7 @@ public:
 	}
 
 private:
-	void *_sysdep;	// possible pointer to system-dependencies (platform specifics)
+	XMI::Memory::MemoryManager *_mm;
 	unsigned _qsize;
 	unsigned _isize;
 	unsigned _pmask;

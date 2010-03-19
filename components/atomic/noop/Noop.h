@@ -35,7 +35,7 @@ namespace XMI
         ~Noop () {};
 
         /// \see XMI::Atomic::AtomicObject::init
-        void init_impl (XMI::SysDep *sd)
+        void init_impl (XMI::Memory::MemoryManager *mm)
         {
           return;
         };
@@ -97,7 +97,7 @@ namespace XMI
         inline bool isLocked_impl () { return false; };
 
         /// \see XMI::Atomic::Interface::Mutex::init
-        inline void init_impl (XMI::SysDep *sd) {};
+        inline void init_impl (XMI::Memory::MemoryManager *mm) {};
 
         /// \see XMI::Atomic::Interface::Mutex::returnLock
         inline void * returnLock_impl () { return NULL; };

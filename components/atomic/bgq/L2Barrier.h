@@ -57,8 +57,8 @@ namespace BGQ {
 	public:
 		_L2_NodeBarrier_s() { }
 
-		init(XMI::SysDep *sd) {
-			xmi_result_t rc = sd->mm.memalign((void **)&_counters,
+		init(XMI::Memory::MemoryManager *mm) {
+			xmi_result_t rc = mm->memalign((void **)&_counters,
 							L1D_CACHE_LINE_SIZE,
 							sizeof(*_counters));
 			XMI_assertf(rc == XMI_SUCCESS,
@@ -91,7 +91,7 @@ public:
 	_L2Barrier() { }
 	~_L2Barrier() { }
 
-	inline void init_impl(void *sd, size_t z, bool m) {
+	inline void init_impl(Memory::MemoryManager *mm, size_t z, bool m) {
 		XMI_abortf("_L2Barrier class must be subclass");
 	}
 
@@ -162,7 +162,7 @@ class L2NodeCoreBarrier :
 public:
 	L2NodeCoreBarrier() {}
 	~L2NodeCoreBarrier() {}
-	inline void init_impl(XMI::SysDep *sd, size_t z, bool m) {
+	inline void init_impl(XMI::Memory::MemoryManager *mm, size_t z, bool m) {
 		// For core-granularity, everything is
 		// a core number. Assume the master core
 		// is the lowest-numbered core in the
@@ -183,7 +183,7 @@ class L2NodeProcBarrier :
 public:
 	L2NodeProcBarrier() {}
 	~L2NodeProcBarrier() {}
-	inline void init_impl(XMI::SysDep *sd, size_t z, bool m) {
+	inline void init_impl(XMI::Memory::MemoryManager *mm, size_t z, bool m) {
 		// For proc-granularity, must convert
 		// between core id and process id,
 		// and only one core per process will

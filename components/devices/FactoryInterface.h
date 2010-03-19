@@ -42,7 +42,7 @@ namespace XMI
                                            size_t          contextid,
                                            xmi_client_t    client,
                                            xmi_context_t   context,
-                                           SysDep        * sysdep,
+                                           Memory::MemoryManager *mm,
                                            T_Progress * progress);
 
           static inline size_t advance (T_Device * devices,
@@ -59,7 +59,7 @@ namespace XMI
 };        // XMI namespace
 
 template <class T_Factory, class T_Device, class T_Progress>
-T_Device * XMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::generate (size_t clientid, size_t num_ctx, Memory::MemoryManager & mm)
+T_Device * XMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::generate (size_t clientid, size_t num_ctx, Memory::MemoryManager &mm)
 {
    return T_Factory::generate_impl (clientid, num_ctx, mm);
 };
@@ -70,10 +70,10 @@ xmi_result_t XMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progr
                                                                                             size_t          contextid,
                                                                                             xmi_client_t    client,
                                                                                             xmi_context_t   context,
-                                                                                            SysDep        * sysdep,
+                                                                                            Memory::MemoryManager *mm,
                                                                                             T_Progress * progress)
 {
-   return T_Factory::init_impl (devices, clientid, contextid, client, context, sysdep, progress);
+   return T_Factory::init_impl (devices, clientid, contextid, client, context, mm, progress);
 };
 
 template <class T_Factory, class T_Device, class T_Progress>

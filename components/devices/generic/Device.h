@@ -235,8 +235,8 @@ public:
 		/// \param[in] sd		SysDep
 		/// \param[in] devices		Generic Device array (same as devs in this case)
 		/// \return	Error code
-		static inline xmi_result_t init_impl(Device *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
-			return getDevice_impl(devs, client, contextId).init(ctx, client, contextId, sd);
+		static inline xmi_result_t init_impl(Device *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+			return getDevice_impl(devs, client, contextId).init(ctx, client, contextId, mm);
 		}
 		/// \brief Advance this device for client/context
 		/// \param[in] devs	Device array returned by generate call
@@ -276,10 +276,10 @@ public:
 	/// \param[in] client	Client ID
 	/// \param[in] context	Context ID
 	/// \return	Error code
-	inline xmi_result_t init(xmi_context_t ctx, size_t client, size_t context, XMI::SysDep *sd) {
+	inline xmi_result_t init(xmi_context_t ctx, size_t client, size_t context, XMI::Memory::MemoryManager *mm) {
 		__context = ctx;
-		__Threads.init(sd);
-		__GenericQueue.init(sd);
+		__Threads.init(mm);
+		__GenericQueue.init(mm);
 		return XMI_SUCCESS;
 	}
 

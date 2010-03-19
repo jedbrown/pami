@@ -86,10 +86,10 @@ namespace XMI
         ///
         /// \brief Initialize the linear fifo with a specific packet buffer.
         ///
-        inline void init_impl (SysDep & sysdep)
+        inline void init_impl (Memory::MemoryManager *mm)
         {
           _head = 0;
-          _tail.init (&sysdep);
+          _tail.init (mm);
           _tail.fetch_and_clear ();
 
           unsigned i;

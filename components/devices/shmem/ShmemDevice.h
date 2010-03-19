@@ -367,10 +367,10 @@ namespace XMI
                                                   size_t           contextid,
                                                   xmi_client_t     client,
                                                   xmi_context_t    context,
-                                                  SysDep         * sysdep,
+                                                  Memory::MemoryManager *mm,
                                                   XMI::Device::Generic::Device * progress)
             {
-              return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, sysdep, progress);
+              return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, mm, progress);
             };
 
             static inline size_t advance_impl (ShmemDevice * devices,
@@ -521,7 +521,7 @@ namespace XMI
 
         inline Shmem::SendQueue *getQS (size_t fnum);
 
-        inline xmi_result_t init (size_t clientid, size_t contextid, xmi_client_t client, xmi_context_t context, SysDep * sysdep, XMI::Device::Generic::Device * progress);
+        inline xmi_result_t init (size_t clientid, size_t contextid, xmi_client_t client, xmi_context_t context, Memory::MemoryManager *mm, XMI::Device::Generic::Device * progress);
 
         inline size_t advance ();
 
@@ -542,7 +542,7 @@ namespace XMI
         size_t * _fnum_hash;    //< Fifo number lookup table
         T_Fifo  * _rfifo;       //< Pointer to fifo to use as the reception fifo
 
-        XMI::SysDep      * _sysdep;
+	Memory::MemoryManager *_mm;
         xmi_client_t       _client;
         xmi_context_t      _context;
         size_t             _contextid;

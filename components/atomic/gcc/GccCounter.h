@@ -25,9 +25,9 @@ namespace Counter {
 	public:
 		GccNodeCounter() {}
 		~GccNodeCounter() {}
-		inline void init_impl(XMI::SysDep *sd) {
-			sd->mm.memalign((void **)&_addr, sizeof(*_addr), sizeof(*_addr));
-			_addr->init(sd);
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
+			mm->memalign((void **)&_addr, sizeof(*_addr), sizeof(*_addr));
+			_addr->init(mm);
 		}
 		inline size_t fetch_impl() {
 			return _addr->fetch();
@@ -50,8 +50,8 @@ namespace Counter {
 	public:
 		GccProcCounter() {}
 		~GccProcCounter() {}
-		inline void init_impl(XMI::SysDep *sd) {
-			_addr.init(sd);
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
+			_addr.init(mm);
 		}
 		inline size_t fetch_impl() {
 			return _addr.fetch();

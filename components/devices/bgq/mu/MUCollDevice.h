@@ -73,10 +73,10 @@ namespace XMI
                                                     size_t           contextid,
                                                     xmi_client_t     client,
                                                     xmi_context_t    context,
-                                                    SysDep         * sysdep,
+                                                    Memory::MemoryManager *mm,
                                                     XMI::Device::Generic::Device * progress)
               {
-                return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, sysdep, progress);
+                return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, mm, progress);
               };
 
               static inline size_t advance_impl (MUCollDevice * devices,
@@ -199,12 +199,12 @@ namespace XMI
                              size_t           contextid,
                              xmi_client_t     client,
                              xmi_context_t    context,
-                             SysDep         * sysdep,
+                             Memory::MemoryManager *mm,
                              XMI::Device::Generic::Device * progress)
           {
             TRACE((stderr, "<%p>MUCollDevice::init() \n", this));
             int rc = 0;
-            rc = MUDevice::init(clientid, contextid, client, context, sysdep, progress);
+            rc = MUDevice::init(clientid, contextid, client, context, mm, progress);
 
             XMI_assert(_initialized);
 

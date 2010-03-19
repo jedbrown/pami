@@ -34,13 +34,13 @@ public:
 	class Factory : public Interface::FactoryInterface<Factory,LocalBcastWQDevice,Generic::Device> {
 	public:
 		static inline LocalBcastWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline xmi_result_t init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(LocalBcastWQDevice *devs, size_t client, size_t context);
 		static inline LocalBcastWQDevice & getDevice_impl(LocalBcastWQDevice *devs, size_t client, size_t context);
 	}; // class Factory
-	inline XMI::SysDep *getSysdep() { return _sd; }
+	inline XMI::Memory::MemoryManager *getSysdep() { return _mm; }
 protected:
-	XMI::SysDep *_sd;
+	XMI::Memory::MemoryManager *_mm;
 }; // class LocalBcastWQDevice
 
 }; // namespace Device
@@ -55,11 +55,11 @@ inline LocalBcastWQDevice *LocalBcastWQDevice::Factory::generate_impl(size_t cli
 	return &_g_l_bcastwq_dev;
 }
 
-inline xmi_result_t LocalBcastWQDevice::Factory::init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+inline xmi_result_t LocalBcastWQDevice::Factory::init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
 	if (client == 0 && contextId == 0) {
-		_g_l_bcastwq_dev._sd = sd;
+		_g_l_bcastwq_dev._mm = mm;
 	}
-	return _g_l_bcastwq_dev.__init(client, contextId, clt, ctx, sd, devices);
+	return _g_l_bcastwq_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
 
 inline size_t LocalBcastWQDevice::Factory::advance_impl(LocalBcastWQDevice *devs, size_t client, size_t contextid) {

@@ -85,7 +85,7 @@ namespace XMI
           //if (client->getReferenceCount () == 0)
           //{
             //__client_list->remove (client);
-            Client * c = (Client *) c;
+            Client * c = (Client *) client;
             shm_unlink (c->_shmemfile);
 
             free ((void *) client);

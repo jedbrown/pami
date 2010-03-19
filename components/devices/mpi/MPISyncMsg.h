@@ -46,7 +46,7 @@ namespace XMI
 	class Factory : public Interface::FactoryInterface<Factory,MPISyncDev,Generic::Device> {
 	public:
 		static inline MPISyncDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(MPISyncDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline xmi_result_t init_impl(MPISyncDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(MPISyncDev *devs, size_t client, size_t context);
 		static MPISyncDev &getDevice_impl(MPISyncDev *devs, size_t client, size_t context);
 	}; // class Factory
@@ -66,9 +66,9 @@ inline MPISyncDev *MPISyncDev::Factory::generate_impl(size_t client, size_t num_
 	return &_g_mpisync_dev;
 }
 
-inline xmi_result_t MPISyncDev::Factory::init_impl(MPISyncDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+inline xmi_result_t MPISyncDev::Factory::init_impl(MPISyncDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
 	MPI_Comm_dup(MPI_COMM_WORLD,&_g_mpisync_dev._msync_communicator);
-	return _g_mpisync_dev.__init(client, contextId, clt, ctx, sd, devices);
+	return _g_mpisync_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
 
 inline size_t MPISyncDev::Factory::advance_impl(MPISyncDev *devs, size_t client, size_t contextId) {

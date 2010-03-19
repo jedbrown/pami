@@ -46,7 +46,7 @@ namespace XMI
 	class Factory : public Interface::FactoryInterface<Factory,MPIBcastDev,Generic::Device> {
 	public:
 		static inline MPIBcastDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(MPIBcastDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline xmi_result_t init_impl(MPIBcastDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(MPIBcastDev *devs, size_t client, size_t context);
 		static MPIBcastDev &getDevice_impl(MPIBcastDev *devs, size_t client, size_t context);
 	}; // class Factory
@@ -66,9 +66,9 @@ inline MPIBcastDev *MPIBcastDev::Factory::generate_impl(size_t client, size_t nu
 	return &_g_mpibcast_dev;
 }
 
-inline xmi_result_t MPIBcastDev::Factory::init_impl(MPIBcastDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+inline xmi_result_t MPIBcastDev::Factory::init_impl(MPIBcastDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
 	MPI_Comm_dup(MPI_COMM_WORLD,&_g_mpibcast_dev._mcast_communicator);
-	return _g_mpibcast_dev.__init(client, contextId, clt, ctx, sd, devices);
+	return _g_mpibcast_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
 
 inline size_t MPIBcastDev::Factory::advance_impl(MPIBcastDev *devs, size_t client, size_t contextId) {

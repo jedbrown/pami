@@ -42,9 +42,9 @@ namespace XMI
 
         inline ~LockboxMutex () {};
 
-        inline void init_impl (XMI::SysDep *sd)
+        inline void init_impl (XMI::Memory::MemoryManager *mm)
         {
-	  sd->lockboxFactory.lbx_alloc((void **)&_mutex, 1, );
+	  __global.lockboxFactory.lbx_alloc((void **)&_mutex, 1, );
         };
 
         inline void acquire_impl ()

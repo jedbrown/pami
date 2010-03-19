@@ -83,9 +83,11 @@ namespace Interface
       ///
       /// \brief Initialize the local barrier objecti
       ///
-      /// \param[in] participants Number of participants for the barrier
+      /// \param[in] mm			Memory Manager
+      /// \param[in] participants	Number of participants for the barrier
+      /// \param[in] participants	Is caller the master of group
       ///
-      inline void init(XMI::SysDep *sd, size_t participants, bool master);
+      inline void init(XMI::Memory::MemoryManager *mm, size_t participants, bool master);
 
 
       ///
@@ -131,9 +133,9 @@ namespace Interface
     }; // class Barrier
 
 template <class T>
-inline void Barrier<T>::init(XMI::SysDep *sd, size_t participants, bool master)
+inline void Barrier<T>::init(XMI::Memory::MemoryManager *mm, size_t participants, bool master)
 {
-	static_cast<T*>(this)->init_impl(sd, participants, master);
+	static_cast<T*>(this)->init_impl(mm, participants, master);
 }
 
 template <class T>

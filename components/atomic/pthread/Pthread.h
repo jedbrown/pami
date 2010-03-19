@@ -33,7 +33,7 @@ namespace XMI
         ~Pthread () {}
 
         /// \see XMI::Atomic::AtomicObject::init
-        void init_impl (XMI::SysDep *sd)
+        void init_impl (XMI::Memory::MemoryManager *mm)
         {
           pthread_mutex_init (&_mutex, NULL);
           fetch_and_clear_impl ();

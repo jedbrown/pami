@@ -338,11 +338,11 @@ public:
 	/// \param[in] contextId	Id of current context
 	/// \param[in] clt		Client
 	/// \param[in] ctx		Context
-	/// \param[in] sd		SysDep object (not used?)
+	/// \param[in] mm		MemoryManager object (not used?)
 	/// \param[in] devices		Array of Generic::Device objects for client
 	/// \return	error code
 	///
-	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
 		if (contextId == 0) {
 			_generics[client] = devices;
 		}
@@ -486,7 +486,8 @@ public:
 	/// \brief Default constructor for CommonQueueSubDevice
 	CommonQueueSubDevice() :
 	GenericDeviceMessageQueue(),
-	_dispatch_id(0)
+	_dispatch_id(0),
+	_mm(NULL)
 	{
 	}
 
@@ -513,12 +514,12 @@ public:
 	/// All classes that inherit from this must implement init(), and that
 	/// must callback to __init().
 	///
-	/// \param[in] sd		SysDep object
+	/// \param[in] mm		MemoryManager object
 	/// \param[in] client		Client ID
 	/// \param[in] contextId	Context ID
 	/// \param[in] ctx		Context
 	/// \return	Error code
-	virtual xmi_result_t init(XMI::SysDep *sd, size_t client, size_t contextId, xmi_context_t ctx) = 0;
+	virtual xmi_result_t init(XMI::Memory::MemoryManager *mm, size_t client, size_t contextId, xmi_context_t ctx) = 0;
 
 	/// \brief CommonQueueSubDevice portion of init function
 	///
@@ -529,13 +530,13 @@ public:
 	/// \param[in] contextId	Context ID
 	/// \param[in] clt		Client
 	/// \param[in] ctx		Context
-	/// \param[in] sd		SysDep object
+	/// \param[in] mm		MemoryManager object
 	/// \param[in] devices		Array of generic devices for client
 	///
-	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
 		if (client == 0) {
-			_sd = sd;
-			_doneThreads.init(sd);
+			_mm = mm;
+			_doneThreads.init(mm);
 			_doneThreads.fetch_and_clear();
 			_init = 1;
 		}
@@ -565,7 +566,7 @@ public:
 
 	/// \brief Get SysDep object
 	/// \return	SysDep object
-	inline XMI::SysDep *getSysdep() { return _sd; }
+	inline XMI::Memory::MemoryManager *getSysdep() { return _mm; }
 
 	/// \brief Get array of generic devices for client
 	/// \param[in] client	Client ID (offset)
@@ -632,7 +633,7 @@ private:
 	GenericDeviceCounter _doneThreads;	///< counter used to track message complete
 	unsigned _dispatch_id;			///< unique id for sub-devices/messages
 	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS]; ///< save generic device array
-	XMI::SysDep *_sd;	///< saved SysDep
+	XMI::Memory::MemoryManager *_mm;	///< saved SysDep
 }; // class CommonQueueSubDevice
 
 /// \brief class for a Model/Device/Message/Thread tuple that shares hardware with others
@@ -693,18 +694,18 @@ public:
 	/// \param[in] contextId	Context ID
 	/// \param[in] clt		Client
 	/// \param[in] ctx		Context
-	/// \param[in] sd		SysDep
+	/// \param[in] mm		MemoryManager
 	/// \param[in] devices		Array of generic devices for client
 	/// \return	Error code
-	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
 		if (client == 0) {
 			// do this now so we don't have to every time we post
 //			for (int x = 0; x < N_Threads; ++x)
 //				//_threads[x].setPolled(true);
 //			}
 		}
-		_common->__init(client, contextId, clt, ctx, sd, devices);
-		return _common->init(sd, client, contextId, ctx);
+		_common->__init(client, contextId, clt, ctx, mm, devices);
+		return _common->init(mm, client, contextId, ctx);
 	}
 
 	/// \brief Get threads array to use

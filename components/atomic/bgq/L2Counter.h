@@ -105,9 +105,9 @@ namespace XMI
         ~L2NodeCounter () {};
 
         /// \see XMI::Atomic::Interface::Counter::init
-        void init_impl (XMI::SysDep *sd)
+        void init_impl (XMI::Memory::MemoryManager *mm)
         {
-	  xmi_result_t rc = sd->mm.memalign((void **)&_counter,
+	  xmi_result_t rc = mm->memalign((void **)&_counter,
 					L1D_CACHE_LINE_SIZE, sizeof(*_counter));
 	  XMI_assertf(rc == XMI_SUCCESS, "Failed to allocate shared memory for Node Counter");
 	  // MUST NOT DO THIS! other procs might be already using it.

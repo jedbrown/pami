@@ -66,7 +66,7 @@ namespace BGP {
 
 	typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier CNDeviceInitBarrier;
 
-	xmi_result_t CNDevice::init(XMI::SysDep *sd, size_t client, size_t contextId, xmi_context_t ctx) {
+	xmi_result_t CNDevice::init(XMI::Memory::MemoryManager *mm, size_t client, size_t contextId, xmi_context_t ctx) {
 		if (client != 0 || contextId != 0) {
 			return XMI_SUCCESS;
 		}
@@ -103,8 +103,8 @@ namespace BGP {
 		 */
 		_g_num_active_nodes = __global.mapping.size();
 		if (peers > 1) {
-			lbb.init(sd, peers, false);
-			sd->mm.memalign((void **)&loc, sizeof(loc), BGPCN_PKT_SIZE);
+			lbb.init(mm, peers, false);
+			mm->memalign((void **)&loc, sizeof(loc), BGPCN_PKT_SIZE);
 		}
 		if (__global.lockboxFactory.isMasterRank()) {
 			static char pkt[BGPCN_PKT_SIZE]__attribute__((__aligned__(16)));

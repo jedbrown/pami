@@ -34,13 +34,13 @@ public:
 	class Factory : public Interface::FactoryInterface<Factory,WQRingReduceDev,Generic::Device> {
 	public:
 		static inline WQRingReduceDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(WQRingReduceDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline xmi_result_t init_impl(WQRingReduceDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(WQRingReduceDev *devs, size_t client, size_t context);
 		static inline WQRingReduceDev & getDevice_impl(WQRingReduceDev *devs, size_t client, size_t context);
 	}; // class Factory
-	inline XMI::SysDep *getSysdep() { return _sd; }
+	inline XMI::Memory::MemoryManager *getSysdep() { return _mm; }
 protected:
-	XMI::SysDep *_sd;
+	XMI::Memory::MemoryManager *_mm;
 }; // class WQRingReduceDev
 
 }; //-- Device
@@ -55,11 +55,11 @@ inline WQRingReduceDev *WQRingReduceDev::Factory::generate_impl(size_t client, s
 	return &_g_wqreduce_dev;
 }
 
-inline xmi_result_t WQRingReduceDev::Factory::init_impl(WQRingReduceDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
+inline xmi_result_t WQRingReduceDev::Factory::init_impl(WQRingReduceDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
 	if (client == 0 && contextId == 0) {
-		_g_wqreduce_dev._sd = sd;
+		_g_wqreduce_dev._mm = mm;
 	}
-	return _g_wqreduce_dev.__init(client, contextId, clt, ctx, sd, devices);
+	return _g_wqreduce_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
 
 inline size_t WQRingReduceDev::Factory::advance_impl(WQRingReduceDev *devs, size_t client, size_t contextId) {
@@ -223,16 +223,16 @@ public:
 	XMI::Device::Interface::MulticombineModel<WQRingReduceMdl,WQRingReduceDev,sizeof(WQRingReduceMsg)>(device, status)
 	{
 		// assert(device == _g_wqreduce_dev);
-		XMI::SysDep *sd = _g_wqreduce_dev.getSysdep();
+		XMI::Memory::MemoryManager *mm = _g_wqreduce_dev.getSysdep();
 		_me = __global.mapping.task();
 		size_t t0 = __global.topology_local.index2Rank(0);
 		size_t tz;
 		__global.mapping.nodePeers(tz);
 		for (size_t x = 0; x < tz; ++x) {
 #ifdef USE_FLAT_BUFFER
-			_wq[x].configure(sd, USE_FLAT_BUFFER, 0);
+			_wq[x].configure(mm, USE_FLAT_BUFFER, 0);
 #else /* ! USE_FLAT_BUFFER */
-			_wq[x].configure(sd, 8192);
+			_wq[x].configure(mm, 8192);
 #endif /* ! USE_FLAT_BUFFER */
 			_wq[x].barrier_reset(tz, _me == t0);
 		}

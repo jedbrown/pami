@@ -30,7 +30,7 @@ XMI::Device::MU::MUDevice::MUDevice (size_t clientid, size_t ncontexts, size_t c
     //BaseDevice (),
     Interface::BaseDevice<MUDevice> (),
     Interface::PacketDevice<MUDevice> (),
-    sysdep (NULL),
+    _mm (NULL),
     _contextid (contextid),
     _ncontexts (ncontexts),
     _clientid (clientid),
@@ -49,13 +49,13 @@ xmi_result_t XMI::Device::MU::MUDevice::init (size_t           clientid,
                                               size_t           contextid,
                                               xmi_client_t     client,
                                               xmi_context_t    context,
-                                              SysDep         * sysdep,
+                                              Memory::MemoryManager *mm,
                                               XMI::Device::Generic::Device * progress)
 {
   int rc = 0;
   TRACE((stderr, "MUDEvice init \n"));
 
-  this->sysdep  = sysdep;
+  this->_mm  = mm;
   _client    = client;
   _context   = context;
 
@@ -93,7 +93,7 @@ xmi_result_t XMI::Device::MU::MUDevice::init (size_t           clientid,
           XMI_assert( rc == 0 );
 
           new ( _p2pChannel[i] ) P2PChannel();
-          rc = _p2pChannel[i]->init( sysdep, _dispatch );
+          rc = _p2pChannel[i]->init( _mm, _dispatch );
           XMI_assert( rc == 0 );
 
           if ( rc ) return XMI_ERROR;

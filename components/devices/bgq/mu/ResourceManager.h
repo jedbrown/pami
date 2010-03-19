@@ -187,7 +187,7 @@ namespace XMI
           ResourceManager () {TRACE((stderr, "ResourceManager::ctor\n")); }
 
           int init ( ResourceType_t ,
-                     SysDep  * sd,
+                     XMI::Memory::MemoryManager *mm,
                      dispatch_t      *dispatch
                    );
 
@@ -368,7 +368,7 @@ namespace XMI
           InjFifoSubGroup          **_injFifoSubGroups;
           RecFifoSubGroup          **_recFifoSubGroups;
           BaseAddressTableSubGroup **_batSubGroups;
-          SysDep         *_sysdep;
+          XMI::Memory::MemoryManager *_mm;
 
           // Declare pointers to resource structures that will be allocated and
           // initialized by getInfo(), containing info about each of the resources

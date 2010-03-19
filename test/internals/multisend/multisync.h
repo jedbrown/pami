@@ -24,7 +24,6 @@ private:
 	uint8_t _mdlbuf[sizeof(T_MultisyncModel)];
 	T_MultisyncModel *_model;
 	uint8_t _msgbuf[T_MultisyncModel::sizeof_msg];
-	XMI::SysDep _sd;
 	XMI::Device::Generic::Device *_generics;
 	T_MultisyncDevice *_dev;
 	xmi_result_t _status;
@@ -45,14 +44,13 @@ public:
 	unsigned long long barrier_time;
 
 	Multisync(const char *test, XMI::Memory::MemoryManager &mm) :
-	_sd(mm),
 	_name(test)
 	{
-		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, _sd.mm);
-		_dev = T_MultisyncDevice::Factory::generate(0, 1, _sd.mm);
+		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, mm);
+		_dev = T_MultisyncDevice::Factory::generate(0, 1, mm);
 
-		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
-		T_MultisyncDevice::Factory::init(_dev, 0, 0, NULL, (xmi_context_t)1, &_sd, _generics);
+		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (xmi_context_t)1, &mm, _generics);
+		T_MultisyncDevice::Factory::init(_dev, 0, 0, NULL, (xmi_context_t)1, &mm, _generics);
 		_model = new (_mdlbuf) T_MultisyncModel(T_MultisyncDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 

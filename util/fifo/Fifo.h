@@ -42,7 +42,7 @@ namespace XMI
         ///
         /// \brief Initialize the fifo
         ///
-        inline void init (SysDep &sysdep);
+        inline void init (Memory::MemoryManager *mm);
 
         inline size_t getPacketHeaderSize ();
         inline size_t getPacketPayloadSize ();
@@ -58,9 +58,9 @@ namespace XMI
     };
 
     template <class T_Fifo, class T_Packet>
-    void Fifo<T_Fifo, T_Packet>::init (SysDep &sysdep)
+    void Fifo<T_Fifo, T_Packet>::init (Memory::MemoryManager *mm)
     {
-      static_cast<T_Fifo*>(this)->init_impl (sysdep);
+      static_cast<T_Fifo*>(this)->init_impl (mm);
     }
 
     template <class T_Fifo, class T_Packet>

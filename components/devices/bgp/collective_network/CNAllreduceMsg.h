@@ -66,7 +66,7 @@ public:
 	class Factory : public Interface::FactoryInterface<Factory,CNAllreduceDevice,Generic::Device> {
 	public:
 		static inline CNAllreduceDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(CNAllreduceDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline xmi_result_t init_impl(CNAllreduceDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(CNAllreduceDevice *devs, size_t client, size_t context);
 		static CNAllreduceDevice &getDevice_impl(CNAllreduceDevice *devs, size_t client, size_t context);
 	}; // class Factory
@@ -86,8 +86,8 @@ inline CNAllreduceDevice *CNAllreduceDevice::Factory::generate_impl(size_t clien
 	return &_g_cnallreduce_dev;
 }
 
-inline xmi_result_t CNAllreduceDevice::Factory::init_impl(CNAllreduceDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
-	return _g_cnallreduce_dev.__init(client, contextId, clt, ctx, sd, devices);
+inline xmi_result_t CNAllreduceDevice::Factory::init_impl(CNAllreduceDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+	return _g_cnallreduce_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
 
 inline size_t CNAllreduceDevice::Factory::advance_impl(CNAllreduceDevice *devs, size_t client, size_t contextId) {

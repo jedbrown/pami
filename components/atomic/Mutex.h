@@ -65,7 +65,7 @@ namespace Interface
       ///
       /// \brief  Alloc and Init
       ///
-      inline void init(XMI::SysDep *sd);
+      inline void init(XMI::Memory::MemoryManager *mm);
 
       ///
       /// \brief  Provide access to the raw lock var/data
@@ -106,9 +106,9 @@ inline bool Mutex<T_Object>::isLocked()
 }
 
 template <class T_Object>
-inline void Mutex<T_Object>::init(XMI::SysDep *sd)
+inline void Mutex<T_Object>::init(XMI::Memory::MemoryManager *mm)
 {
-	static_cast<T_Object*>(this)->init_impl(sd);
+	static_cast<T_Object*>(this)->init_impl(mm);
 }
 
 template <class T_Object>

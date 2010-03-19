@@ -52,7 +52,7 @@ namespace BGP {
 		_LwarxStwcxNodeBarrier() { }
 		~_LwarxStwcxNodeBarrier() { }
 
-		inline void init_impl() {
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
 			XMI_abortf("_LwarxStwcxNodeBarrier must be subclass");
 		}
 
@@ -136,7 +136,7 @@ namespace BGP {
 		LwarxStwcxNodeProcBarrier() : _LwarxStwcxNodeBarrier() {}
 		~LwarxStwcxNodeProcBarrier() {}
 
-		inline void init_impl() {
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
 			// For proc-granularity, must convert
 			// between core id and process id,
 			// and only one core per process will
@@ -153,7 +153,7 @@ namespace BGP {
 		LwarxStwcxNodeCoreBarrier() : _LwarxStwcxNodeBarrier() {}
 		~LwarxStwcxNodeCoreBarrier() {}
 
-		inline void init_impl() {
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
 			// For core-granularity, everything is
 			// a core number. Assume the master core
 			// is the lowest-numbered core in the

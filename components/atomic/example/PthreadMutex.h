@@ -27,7 +27,7 @@ namespace XMI
 
         inline ~PthreadMutex () {};
 
-        inline void init_impl ()
+        inline void init_impl (XMI::Memory::MemoryManager *mm)
         {
           // foo...
         };

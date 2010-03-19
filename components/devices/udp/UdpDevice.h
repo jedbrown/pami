@@ -74,10 +74,10 @@ namespace XMI
                                                   size_t         contextid,
                                                   xmi_client_t   client,
                                                   xmi_context_t  context,
-                                                  SysDep         * sysdep,
+                                                  Memory::MemoryManager *mm,
                                                   XMI::Device::Generic::Device * progress)
             {
-              return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, sysdep, progress);
+              return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, mm, progress);
             };
 
             static inline size_t advance_impl (UdpDevice * devices,
@@ -142,14 +142,14 @@ namespace XMI
                                 size_t          contextid,
                                 xmi_client_t    client,
                                 xmi_context_t   context,
-                                SysDep        * sysdep,
+                                Memory::MemoryManager *mm,
                                 XMI::Device::Generic::Device * progress)
       {
-        init_impl (sysdep, context);
+        init_impl (mm, context);
         return XMI_SUCCESS;
       };
 
-      inline int init_impl (SysDep        * sysdep,
+      inline int init_impl (Memory::MemoryManager *mm,
                             xmi_context_t   context)
       {
         if ( __global.mapping.activateUdp() != XMI_SUCCESS ) abort();

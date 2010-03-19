@@ -34,7 +34,7 @@ namespace XMI
         ~GccBuiltin () {};
 
         /// \see XMI::Atomic::Interface::Counter::init
-        void init_impl (XMI::SysDep *sd)
+        void init_impl (XMI::Memory::MemoryManager *mm)
         {
 	  // MUST NOT DO THIS! other procs might be already using it.
 	  // TODO: find a way to ensure memory is zeroed once and only once.

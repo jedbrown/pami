@@ -47,7 +47,7 @@ public:
 	/// \param[in] mm	MemeryManager
 	/// \return	Error code
 	///
-	inline xmi_result_t init(size_t clientid, size_t nctx, Memory::MemoryManager &mm) {
+	inline xmi_result_t init(size_t clientid, size_t nctx, Memory::MemoryManager *mm) {
 		int rc;
 		size_t mctx = nctx;
 		// in order for WAC base/mask values to work, need to ensure alignment
@@ -117,13 +117,12 @@ public:
 
 	/// \brief Return base phy addr and mask for WAC given context(s)
 	///
-	/// \param[in] ctx0	(not used if WU_MULTICONTEXT)
-	/// \param[in] nctx	(not used if WU_MULTICONTEXT)
+	/// \param[in] ctx	(not used if WU_MULTICONTEXT)
 	/// \param[out] base	Physical base address of memory block
 	/// \param[out] mask	Address bit mask of memory block
 	/// \return	Pointer to WAC space.
 	///
-	inline void getWURange(size_t ctx0, size_t mctx, uint64_t *base, uint64_t *mask) {
+	inline void getWURange(uint64_t ctx, uint64_t *base, uint64_t *mask) {
 #if WU_MULTICONTEXT
 		// assert(ctx0 is power-of-two and mctx is power-of-two);
 		// these are virtual addresses - WAC needs physical...

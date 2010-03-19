@@ -28,14 +28,14 @@ namespace XMI
                                             size_t contextid,
                                             xmi_client_t     client,
                                             xmi_context_t    context,
-                                            SysDep         * sysdep,
+                                            XMI::Memory::MemoryManager *mm,
                                             XMI::Device::Generic::Device * progress)
     {
       TRACE_ERR((stderr, "(%zd) ShmemDevice::init ()\n", __global.mapping.task()));
       _client   = client;
       _context  = context;
       _contextid  = contextid;
-      _sysdep   = sysdep;
+      _mm = mm;
       _progress = progress;
 
       unsigned i;
@@ -51,7 +51,7 @@ namespace XMI
 #endif
 
       new (_rfifo) T_Fifo ();
-      _rfifo->init (*sysdep);
+      _rfifo->init (mm);
 
       // barrier ?
 

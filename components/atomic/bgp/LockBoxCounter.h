@@ -35,7 +35,7 @@ namespace BGP {
 	class _LockBoxCounter {
 	public:
 		_LockBoxCounter() { _addr = NULL; }
-		inline void init_impl(XMI::SysDep *sd) {
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
 			XMI_abortf("_LockBoxCounter must be a subclass");
 		}
 		inline size_t fetch_impl() {
@@ -68,7 +68,7 @@ namespace BGP {
 	public:
 		LockBoxNodeCounter() {}
 		~LockBoxNodeCounter() {}
-		inline void init_impl(XMI::SysDep *sd) {
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
 			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
 		}
 	}; // class LockBoxNodeCounter
@@ -78,7 +78,7 @@ namespace BGP {
 	public:
 		LockBoxProcCounter() {}
 		~LockBoxProcCounter() {}
-		inline void init_impl(XMI::SysDep *sd) {
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
 			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
 		}
 	}; // class LockBoxProcCounter

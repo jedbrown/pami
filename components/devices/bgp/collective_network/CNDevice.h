@@ -114,7 +114,7 @@ public:
 	 *
 	 * All environment variables are sampled at this point.
 	 */
-	xmi_result_t init(XMI::SysDep *sd, size_t client, size_t contextId, xmi_context_t ctx);
+	xmi_result_t init(XMI::Memory::MemoryManager *mm, size_t client, size_t contextId, xmi_context_t ctx);
 
 	inline int getMaxThreads() { return _threadRoles; }
 

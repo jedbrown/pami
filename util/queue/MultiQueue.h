@@ -113,7 +113,7 @@ namespace XMI
           _size (0)
       {};
 
-      inline void init(XMI::SysDep *sd)
+      inline void init(XMI::Memory::MemoryManager *mm)
       {
       }
 

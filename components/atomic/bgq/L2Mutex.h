@@ -33,7 +33,7 @@ namespace BGQ {
 	class L2ProcMutex : public Interface::Mutex<L2ProcMutex> {
 	public:
 		L2ProcMutex() { }
-		inline void init_impl(XMI::SysDep *sd) {
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
 		}
 		void acquire_impl() {
 			while (L2_AtomicLoadIncrement(&_counter) != 0);
@@ -55,8 +55,8 @@ namespace BGQ {
 	class L2NodeMutex : public Interface::Mutex<L2NodeMutex> {
 	public:
 		L2NodeMutex() { }
-		inline void init_impl(XMI::SysDep *sd) {
-			xmi_result_t rc = sd->mm.memalign((void **)&_counter,
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
+			xmi_result_t rc = mm->memalign((void **)&_counter,
 						L1D_CACHE_LINE_SIZE,
 						sizeof(*_counter));
 			XMI_assertf(rc == XMI_SUCCESS,

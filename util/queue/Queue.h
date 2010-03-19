@@ -104,7 +104,7 @@ namespace XMI
       {
       };
 
-      inline void init (XMI::SysDep *sd)
+      inline void init (XMI::Memory::MemoryManager *mm)
       {
       }
 
@@ -330,9 +330,9 @@ namespace XMI
           _mutex ()
       {};
 
-      inline void init (SysDep * sysdep)
+      inline void init (XMI::Memory::MemoryManager *mm)
       {
-        _mutex.init (sysdep);
+        _mutex.init (mm);
       };
 
       inline void enqueue (Element * element)

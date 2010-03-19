@@ -49,7 +49,7 @@ public:
 	class Factory : public Interface::FactoryInterface<Factory,giDevice,Generic::Device> {
 	public:
 		static inline giDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm);
-		static inline xmi_result_t init_impl(giDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline xmi_result_t init_impl(giDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(giDevice *devs, size_t client, size_t contextId);
 		static inline giDevice & getDevice_impl(giDevice *devs, size_t client, size_t contextId);
 	}; // class Factory
@@ -69,8 +69,8 @@ inline giDevice *giDevice::Factory::generate_impl(size_t client, size_t num_ctx,
 	return &_g_gibarrier_dev;
 }
 
-inline xmi_result_t giDevice::Factory::init_impl(giDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
-	return _g_gibarrier_dev.__init(client, contextId, clt, ctx, sd, devices);
+inline xmi_result_t giDevice::Factory::init_impl(giDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+	return _g_gibarrier_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
 
 inline size_t giDevice::Factory::advance_impl(giDevice *devs, size_t client, size_t contextId) {

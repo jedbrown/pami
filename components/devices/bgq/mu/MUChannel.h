@@ -48,7 +48,7 @@ namespace XMI
 
           ~Channel() {TRACE((stderr, "Channel::ctor\n"));}
 
-          virtual int init( SysDep * sd, dispatch_t *dispatch ) = 0;
+          virtual int init( Memory::MemoryManager *mm, dispatch_t *dispatch ) = 0;
 
           void * operator new ( size_t nbytes, void * addr) { return addr; }
 
@@ -126,9 +126,9 @@ namespace XMI
         public:
           P2PChannel() : Channel() { }
 
-          int init( SysDep * sd, dispatch_t *dispatch )
+          int init( Memory::MemoryManager *mm, dispatch_t *dispatch )
           {
-            return _resMgr.init( ResourceManager::P2P_TYPE, sd, dispatch );
+            return _resMgr.init( ResourceManager::P2P_TYPE, mm, dispatch );
           }
 
           inline void post( MUBaseMessage & msg,
@@ -148,9 +148,9 @@ namespace XMI
         public:
           ColChannel() : Channel() { }
 
-          int init( SysDep * sd, dispatch_t * dispatch )
+          int init( Memory::MemoryManager *mm, dispatch_t * dispatch )
           {
-            return _resMgr.init( ResourceManager::COLL_TYPE, sd, dispatch );
+            return _resMgr.init( ResourceManager::COLL_TYPE, mm, dispatch );
           }
 
           void post( MUBaseMessage & msg )

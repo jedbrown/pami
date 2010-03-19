@@ -86,8 +86,8 @@ static inline MPIDevice *generate_impl(size_t clientid, size_t num_ctx, Memory::
 	return devs;
 }
 
-static inline xmi_result_t init_impl(MPIDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
-	return getDevice_impl(devs, client, contextId).init_impl(sd, client, 0, ctx, contextId);
+static inline xmi_result_t init_impl(MPIDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+	return getDevice_impl(devs, client, contextId).init_impl(mm, client, 0, ctx, contextId);
 }
 
 static inline size_t advance_impl(MPIDevice *devs, size_t client, size_t contextId) {
@@ -171,7 +171,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
         TRACE_DEVICE((stderr,"<%p>MPIDevice::registerM2MRecvFunction %d\n",this,_dispatch_id));
       }
 
-      inline xmi_result_t init_impl (SysDep * sysdep, size_t clientid, size_t num_ctx, xmi_context_t context, size_t offset)
+      inline xmi_result_t init_impl (Memory::MemoryManager *mm, size_t clientid, size_t num_ctx, xmi_context_t context, size_t offset)
       {
         _context = context;
         _contextid = offset;

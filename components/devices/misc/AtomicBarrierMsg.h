@@ -58,13 +58,13 @@ public:
 	class Factory : public Interface::FactoryInterface<Factory,AtomicBarrierDev,Generic::Device> {
 	public:
 		static inline AtomicBarrierDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(AtomicBarrierDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline xmi_result_t init_impl(AtomicBarrierDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(AtomicBarrierDev *devs, size_t client, size_t context);
 		static inline AtomicBarrierDev & getDevice_impl(AtomicBarrierDev *devs, size_t client, size_t context);
 	}; // class Factory
-	inline XMI::SysDep *getSysdep() { return _sd; }
+	inline XMI::Memory::MemoryManager *getSysdep() { return _mm; }
 protected:
-	XMI::SysDep *_sd;
+	XMI::Memory::MemoryManager *_mm;
 }; // class AtomicBarrierDev
 
 }; //-- Device
@@ -79,11 +79,11 @@ inline AtomicBarrierDev *AtomicBarrierDev::Factory::generate_impl(size_t client,
 	return &_g_lmbarrier_dev;
 }
 
-inline xmi_result_t AtomicBarrierDev::Factory::init_impl(AtomicBarrierDev *devs, size_t client, size_t contextid, xmi_client_t clt, xmi_context_t context, SysDep *sd, XMI::Device::Generic::Device *devices) {
+inline xmi_result_t AtomicBarrierDev::Factory::init_impl(AtomicBarrierDev *devs, size_t client, size_t contextid, xmi_client_t clt, xmi_context_t context, Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
 	if (client == 0 && contextid == 0) {
-		_g_lmbarrier_dev._sd = sd;
+		_g_lmbarrier_dev._mm = mm;
 	}
-	return _g_lmbarrier_dev.__init(client, contextid, clt, context, sd, devices);
+	return _g_lmbarrier_dev.__init(client, contextid, clt, context, mm, devices);
 }
 
 inline size_t AtomicBarrierDev::Factory::advance_impl(AtomicBarrierDev *devs, size_t clientid, size_t contextid) {

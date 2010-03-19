@@ -116,14 +116,14 @@ getInfo()
 
 int XMI::Device::MU::ResourceManager::
 init ( ResourceType_t  type,
-       SysDep *sd,
+       XMI::Memory::MemoryManager *mm,
        dispatch_t      *dispatch )
 {
   int rc = 0;
   uint32_t i, j;
 
   _type = type;
-  _sysdep = sd;
+  _mm = mm;
 
   // Initialize the resource structures for the particular environment we are
   // running in.

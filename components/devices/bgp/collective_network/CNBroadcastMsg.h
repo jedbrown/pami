@@ -50,7 +50,7 @@ public:
 	class Factory : public Interface::FactoryInterface<Factory,CNBroadcastDevice,Generic::Device> {
 	public:
 		static inline CNBroadcastDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(CNBroadcastDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices);
+		static inline xmi_result_t init_impl(CNBroadcastDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(CNBroadcastDevice *devs, size_t client, size_t context);
 		static inline CNBroadcastDevice & getDevice_impl(CNBroadcastDevice *devs, size_t client, size_t context);
 	}; // class Factory
@@ -70,8 +70,8 @@ inline CNBroadcastDevice *CNBroadcastDevice::Factory::generate_impl(size_t clien
 	return &_g_cnbroadcast_dev;
 }
 
-inline xmi_result_t CNBroadcastDevice::Factory::init_impl(CNBroadcastDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd, XMI::Device::Generic::Device *devices) {
-	return _g_cnbroadcast_dev.__init(client, contextId, clt, ctx, sd, devices);
+inline xmi_result_t CNBroadcastDevice::Factory::init_impl(CNBroadcastDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+	return _g_cnbroadcast_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
 
 inline size_t CNBroadcastDevice::Factory::advance_impl(CNBroadcastDevice *devs, size_t client, size_t contextId) {
