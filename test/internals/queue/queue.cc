@@ -51,7 +51,7 @@ class TestElement : public XMI::Queue::Element
 int main(int argc, char **argv)
 {
 #ifdef __bgp__
-  XMI::AtomicQueue<XMI::Atomic::BgpMutex> q;
+  XMI::AtomicQueue<XMI::Mutex::BGP::BgpProcMutex> q;
 #else
   XMI::Queue q;
 #endif
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 
   XMI::Queue simpleq;
 #ifdef __bgp__
-  XMI::AtomicQueue<XMI::Atomic::BgpMutex> atomicq;
+  XMI::AtomicQueue<XMI::Mutex::BGP::BgpProcMutex> atomicq;
 #endif
 
   unsigned long long t0, t1;

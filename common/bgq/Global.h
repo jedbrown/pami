@@ -32,6 +32,7 @@
 #include "common/bgq/BgqMapCache.h"
 #include "Mapping.h"
 #include "Topology.h"
+#include "common/bgq/L2AtomicFactory.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)  //fprintf x
@@ -46,6 +47,7 @@ namespace XMI
       inline Global () :
           personality (),
           mapping(personality),
+	  l2atomicFactory(),
           _memptr (NULL),
           _memsize (0),
           _mapcache ()
@@ -144,6 +146,7 @@ namespace XMI
           }
 
         topology_global.subTopologyLocalToMe(&topology_local);
+	l2atomicFactory.init(&mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));
 
@@ -179,6 +182,7 @@ namespace XMI
 
       BgqPersonality       personality;
       XMI::Mapping         mapping;
+      XMI::Atomic::BGQ::L2AtomicFactory l2atomicFactory;
 
     private:
 

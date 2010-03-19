@@ -23,7 +23,7 @@
 #include <bpcore/bgp_atomic_ops.h>
 
 namespace XMI {
-namespace Atomic {
+namespace Barrier {
 namespace BGP {
 	/*
 	 */
@@ -59,25 +59,25 @@ namespace BGP {
 		inline void dump_impl(const char *string) {
 			fprintf(stderr, "%d: %p %s status=%d master=%d parties=%d core=%d [%d] %d %d %d %d %d\n",
 				Kernel_PhysicalProcessorID(), _barrier, string,
-				__status,
+				_status,
 				_barrier->master, _barrier->nparties,
 				_barrier->coreshift, (uint32_t)_data,
-				_barrier->lwx_u.atomics[0].atom,
-				_barrier->lwx_u.atomics[1].atom,
-				_barrier->lwx_u.atomics[2].atom,
-				_barrier->lwx_u.atomics[3].atom,
-				_barrier->lwx_u.atomics[4].atom);
+				_barrier->lwx_atomics[0].atom,
+				_barrier->lwx_atomics[1].atom,
+				_barrier->lwx_atomics[2].atom,
+				_barrier->lwx_atomics[3].atom,
+				_barrier->lwx_atomics[4].atom);
 		}
 
 		inline xmi_result_t enter_impl() {
-			pollInit();
-			while (poll() != Done);
+			pollInit_impl();
+			while (poll_impl() != XMI::Atomic::Interface::Done);
 			return XMI_SUCCESS;
 		}
 
-		inline void enterPoll_impl(pollFcn fcn, void *arg) {
-			pollInit();
-			while (poll() != Done) {
+		inline void enterPoll_impl(XMI::Atomic::Interface::pollFcn fcn, void *arg) {
+			pollInit_impl();
+			while (poll_impl() != XMI::Atomic::Interface::Done) {
 				fcn(arg);
 			}
 		}
@@ -87,15 +87,15 @@ namespace BGP {
 			lockup = _barrier->lwx_ctrl_lock.atom;
 			_bgp_fetch_and_add(&_barrier->lwx_lock[lockup], 1);
 			_data = (void*)lockup;
-			__status = Entered;
+			_status = XMI::Atomic::Interface::Entered;
 		}
 
-		inline DCMF::barrierPollStatus poll_impl() {
-			DCMF_assert(__status == Entered);
+		inline XMI::Atomic::Interface::barrierPollStatus poll_impl() {
+			XMI_assertf(_status == XMI::Atomic::Interface::Entered, "Barrier polled before entered");
 			uint32_t lockup, value;
 			lockup = (uint32_t)_data;
 			if (_barrier->lwx_lock[lockup].atom < _barrier->nparties) {
-				return Entered;
+				return XMI::Atomic::Interface::Entered;
 			}
 
 			// All cores have participated in the barrier
@@ -118,55 +118,62 @@ namespace BGP {
 				// wait until master releases the barrier by clearing the lock
 				while (_barrier->lwx_lock[lockup].atom > 0);
 			}
-			__status = Initialized;
-			return Done;
+			_status = XMI::Atomic::Interface::Initialized;
+			return XMI::Atomic::Interface::Done;
 		}
 		// With 5 lockboxes used... which one should be returned?
 		inline void *returnBarrier_impl() { return &_barrier->lwx_ctrl_lock; }
-	private:
+	protected:
 		LwarxStwcx_Barrier_s *_barrier;
 		void *_data;
-		static inline void compile_time_assert() {
-			COMPILE_TIME_ASSERT(sizeof(LwarxStwcxNodeBarrier) <= LM_MAX_SIZEOF_BARRIER);
-		}
+		XMI::Atomic::Interface::barrierPollStatus _status;
 	}; // class _LwarxStwcxNodeBarrier
 
-	class LwarxStwcxNodeProcBarrier : public _LwarxStwcxNodeBarrier {
+	class LwarxStwcxNodeProcBarrier : public XMI::Atomic::Interface::Barrier<LwarxStwcxNodeProcBarrier>,
+					public _LwarxStwcxNodeBarrier {
 	public:
-		LwarxStwcxNodeProcBarrier() : _LwarxStwcxNodeBarrier() {}
+		LwarxStwcxNodeProcBarrier() {}
 		~LwarxStwcxNodeProcBarrier() {}
 
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
+		inline void init_impl(XMI::Memory::MemoryManager *mm, size_t participants, bool master) {
+			_barrier = NULL;
+			mm->memalign((void **)&_barrier, 16, sizeof(*_barrier));
+			XMI_assertf(_barrier, "Failed to get shmem for LwarxStwcxNodeProcBarrier");
 			// For proc-granularity, must convert
 			// between core id and process id,
 			// and only one core per process will
 			// participate.
-			_barrier->master = lm->coreXlat[lm->masterProc] >> lm->coreShift;
-			_barrier->coreshift = lm->coreShift;
-			_barrier->nparties = lm->numProc;
-			__status = Initialized;
+#warning __global.lockboxFactory needs to be more general, since all PPC machines can do lwarx/stwcx
+			_barrier->master = __global.lockboxFactory.coreXlat(__global.lockboxFactory.masterProc()) >> __global.lockboxFactory.coreShift();
+			_barrier->coreshift = __global.lockboxFactory.coreShift();
+			_barrier->nparties = __global.lockboxFactory.numProc();
+			_status = XMI::Atomic::Interface::Initialized;
 		}
 	}; // class LwarxStwcxNodeProcBarrier
 
-	class LwarxStwcxNodeCoreBarrier : public _LwarxStwcxNodeBarrier {
+	class LwarxStwcxNodeCoreBarrier : public XMI::Atomic::Interface::Barrier<LwarxStwcxNodeCoreBarrier>,
+					public _LwarxStwcxNodeBarrier {
 	public:
-		LwarxStwcxNodeCoreBarrier() : _LwarxStwcxNodeBarrier() {}
+		LwarxStwcxNodeCoreBarrier() {}
 		~LwarxStwcxNodeCoreBarrier() {}
 
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
+		inline void init_impl(XMI::Memory::MemoryManager *mm, size_t participants, bool master) {
+			_barrier = NULL;
+			mm->memalign((void **)&_barrier, 16, sizeof(*_barrier));
+			XMI_assertf(_barrier, "Failed to get shmem for LwarxStwcxNodeCoreBarrier");
 			// For core-granularity, everything is
 			// a core number. Assume the master core
 			// is the lowest-numbered core in the
 			// process.
-			_barrier->master = lm->masterProc << lm->coreShift;
+			_barrier->master = __global.lockboxFactory.masterProc() << __global.lockboxFactory.coreShift();
 			_barrier->coreshift = 0;
-			_barrier->nparties = lm->numCore;
-			__status = Initialized;
+			_barrier->nparties = __global.lockboxFactory.numCore();
+			_status = XMI::Atomic::Interface::Initialized;
 		}
 	}; // class LwarxStwcxNodeCoreBarrier
 
 }; // BGP namespace
-}; // Atomic namespace
+}; // Barrier namespace
 }; // XMI namespace
 
 #endif // __xmi_bgp_lwarxstwcxbarrier_h__

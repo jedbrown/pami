@@ -464,7 +464,7 @@ namespace XMI
       // position followed by the core id (p) in the least significant
       // position.
       address.local = (coords & 0x0000000f) |
-                      ((coords >> 22) & 0x000000300);
+                      ((coords >> 22) & 0x00000030);
 
       TRACE_ERR((stderr, "Mapping::task2node_impl(%zd, {%zd, %zd}) <<\n", task, address.global, address.local));
       return XMI_SUCCESS;

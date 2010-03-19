@@ -10,6 +10,9 @@
 #ifndef __common_bgq_L2AtomicFactory_h__
 #define __common_bgq_L2AtomicFactory_h__
 
+#include "Mapping.h"
+#include "Topology.h"
+
 // not sure what this should be yet...
 #define MapL2AtomicRegion(v)	((uintptr_t)v)
 
@@ -50,17 +53,17 @@ namespace BGQ {
 		L2A_SMT_SCOPE,
 
 		L2A_PTHREAD_SCOPE,
-	} lbx_scope_t;
+	} l2x_scope_t;
 	/**
 	 * \brief Structure used to pass implementation parameters
 	 */
 	struct atomic_factory_t {
-		unsigned myProc;	/**< current process number */
-		unsigned masterProc;	/**< chosen master process */
-		int numProc;		/**< num active processes */
-		int numCore;		/**< num active cores */
-		unsigned coreXlat[NUM_CORES]; /**< translate process to core */
-		int coreShift;		/**< translate core to process */
+		size_t myProc;		/**< current process number */
+		size_t masterProc;	/**< chosen master process */
+		size_t numProc;		/**< num active processes */
+		size_t numCore;		/**< num active cores */
+		size_t coreXlat[NUM_CORES]; /**< translate process to core */
+		size_t coreShift;	/**< translate core to process */
 	};
 	static const int MAX_NUML2ATOMICS = 5;
 
@@ -68,8 +71,8 @@ namespace BGQ {
 	private:
 		/// \brief Storage for the implementation parameters
 		atomic_factory_t _factory;
-		size_t __masterRank;
-		int __numProc;
+		xmi_task_t __masterRank;
+		size_t __numProc;
 		bool __isMasterRank;
 		struct {
 			size_t size;
@@ -78,25 +81,40 @@ namespace BGQ {
 			size_t next;
 		} _l2atomic;
 	public:
-		L2AtomicFactory(XMI::BgqSysDep *sd) {
+		L2AtomicFactory() { }
+
+		inline void init(XMI::Mapping *mapping, XMI::Topology *local) {
+#warning must figure out L2 Atomic Factory memory management...
+#if 0
 			// Must coordinate with all other processes on this node,
 			// and arrive at a common chunk of physical address memory
 			// which we all will use for allocating "lockboxes" from.
 			// One sure way to do this is to allocate shared memory.
 			_l2atomic.size = sizeof(uint64_t) * L2A_MAX_NUML2ATOMIC;
-			_l2atomic.virt = sd->memoryManager().scratchpad_dynamic_area_malloc(_l2atomic.size);
+			mm->memalign((void **)&_l2atomic.virt, 8, _l2atomic.size);
 			XMI_assertf(_l2atomic.virt, "Out of shared memory in L2AtomicFactory");
 			_l2atomic.arena = MapL2AtomicRegion(_l2atomic.virt);
 			_l2atomic.next = 0;
 			// ...something like that...
+#endif
 
 			// Compute all implementation parameters,
 			// i.e. fill-in _factory struct.
-			XMI_Coord_t coord;
-			int ranks[4];
-			int i;
-			int ncores = Kernel_ProcessorCount();
-			int t = __global.mapping.vnpeers(ranks);
+			XMI::Interface::Mapping::nodeaddr_t addr;
+			xmi_task_t ranks[NUM_CORES];
+			size_t i;
+
+#warning This needs a proper CNK function for number of threads per process, when it exists...
+			int ncores = (64 / Kernel_ProcessCount());
+			// int ncores = Kernel_ThreadCount();
+
+			//int t = mapping->vnpeers(ranks);
+			// There should be a more elegent way to do this... yuk.
+			size_t t = local->size();
+			for (i = 0; i < t; ++i) {
+				ranks[i] = local->index2Rank(i);
+			}
+
 			_factory.numCore = 0;
 			_factory.numProc = 0;
 			_factory.masterProc = (unsigned)-1;
@@ -108,123 +126,41 @@ namespace BGQ {
 			// 2 |    2    |  -   |  -  |
 			// 3 |    3    |  -   |  -  |
 			//
-			int shift = (ncores == 4 ? 2 : (ncores == 2 ? 1 : 0));
+			// assert((ncores & (ncores - 1) == 0);
+			int shift = ffs(ncores);
+			XMI_assertf(shift > 0, "Internal error: no cores in process?");
+			--shift;
 			_factory.coreShift = shift;
 			for (i = 0; i < t; ++i) {
 				if (ranks[i] >= 0) {
 					_factory.numCore += ncores;
 					++_factory.numProc;
-					//__global.mapping.rank2Network((size_t)ranks[i], &coord, XMI_TORUS_NETWORK);
-					//_factory.coreXlat[i] = coord.u.torus.t << shift;
-					if ((size_t)ranks[i] == __global.mapping.rank()) {
+					mapping->task2node(ranks[i], addr);
+					size_t p;
+					mapping->node2peer(addr, p);
+					_factory.coreXlat[i] = p << shift;
+					if ((size_t)ranks[i] == mapping->task()) {
 						_factory.myProc = i;
 					}
-					if (_factory.masterProc == (unsigned)-1) {
+					if (_factory.masterProc == (size_t)-1) {
 						__masterRank = ranks[i];
 						_factory.masterProc = i;
 					}
 				}
 			}
 			__numProc = _factory.numProc;
-			__isMasterRank = (__masterRank == __global.mapping.rank());
+			__isMasterRank = (__masterRank == mapping->task());
 		}
 
 		~L2AtomicFactory() {}
 
-		/**
-		 * \brief Generic L2Atomic allocation
-		 *
-		 *
-		 * Warning: this allocation scheme must be used in the same way,
-		 * same sequence, on every process in the node. This is the only
-		 * way to ensure that each process has the same lockbox(es) for
-		 * a given object. This is why all lockboxes (mutexes, barriers, ...)
-		 * are allocated all at once at init time.
-		 *
-		 * When process-scoped lockboxes are requested, each
-		 * process on the node will request a different lockbox
-		 * number. This is accomplished by adding
-		 * numL2Atomics * lm->myProc to the desired lockbox
-		 * number and multiplying lockSpan by lm->numProc.
-		 * In this way, each process will be asking for different
-		 * lockboxes, even if they have to iterate to find a
-		 * free lockbox (set). In order to ensure all processes
-		 * stay in agreement on the next lockbox number, after
-		 * allocation the (next) lockbox number will have
-		 * numL2Atomics * lm->myProc subtracted from it.
-		 *
-		 * Only one core from each process can allocate
-		 * lockboxes, and it must be the lowest-numbered
-		 * core of the process.  This is to ensure that
-		 * Kernel_AllocateLockBox() can properly handle the
-		 * LOCKBOX_ORDERED_ALLOC flag.
-		 *
-		 * \param[in] lm	Implementation parameters
-		 * \param[out] p	Place to record lockbox id(s)
-		 * \param[in] numL2Atomics Number of lockboxes to get
-		 * \param[in] scope	Scope of lockboxes
-		 */
-		static inline void lbx_alloc(void **p, int numL2Atomics,
-					lbx_scope_t scope) {
-			static int desiredLock = L2A_MIN_L2ATOMIC;
-			static uint64_t *lockp[NUM_CORES * MAX_NUML2ATOMICS];
-			int lockSpan = numL2Atomics;
-			XMI_assert_debug(numL2Atomics <= MAX_NUML2ATOMICS);
-			switch(scope) {
-			case L2A_NODE_SCOPE:
-			case L2A_NODE_PROC_SCOPE:
-			case L2A_NODE_CORE_SCOPE:
-				// Node-scoped lockboxes...
-				local_barrier(_factory.coreXlat[_factory.masterProc], _factory.numProc);
-				break;
-			case L2A_PROC_SCOPE:
-				// Process-scoped lockboxes...
-				// Allocate the entire block on all processes, but
-				// only return our specific lock(s).
-				// ensure all get different lockboxes
-				lockSpan *= _factory.numProc;
-				break;
-			default:
-				XMI_abortf("Invalid lockbox scope");
-				break;
-			}
-			*p = NULL;
-			int rc = 0;
-			while (desiredLock < L2A_MAX_NUML2ATOMIC) {
-				// this can't be right...
-				for (x = 0; x < lockSpan; ++x) {
-					lockp[x] = _l2atomic.arena++ + (_l2atomic.next * sizeof(uintptr_t))
-				}
-				rc = 0;
-				desiredLock += lockSpan;
-				if (rc == EAGAIN) {
-					continue;
-				} else if(rc != 0) {
-					perror("Kernel_AllocateLockBox");
-					XMI_abortf("Fatal: allocLockBoxes(%d) rc=%d p=%p", desiredLock-1, rc, p);
-				}
-				switch(scope) {
-				case L2A_NODE_SCOPE:
-				case L2A_NODE_PROC_SCOPE:
-				case L2A_NODE_CORE_SCOPE:
-					// Node-scoped lockboxes...
-					// we get exactly what we asked for.
-					local_barrier(_factory.coreXlat[_factory.masterProc], _factory.numProc);
-					memcpy(p, &lockp[0], numL2Atomics * sizeof(*p));
-					break;
-				case L2A_PROC_SCOPE:
-					// Process-scoped lockboxes...
-					// Take our specific lock out of the entire block.
-					memcpy(p, &lockp[numL2Atomics * _factory.myProc], numL2Atomics * sizeof(*p));
-					break;
-				default:
-					XMI_abortf("Unsupported lockbox scope");
-					break;
-				}
-				return; // success.
-			}
-			XMI_abortf("Fatal: Kernel_AllocateLockBox: no available lockboxes");
-		}
+		inline size_t masterProc() { return _factory.masterProc; }
+		inline size_t coreShift() { return _factory.coreShift; }
+		inline size_t numCore() { return _factory.numCore; }
+		inline size_t numProc() { return _factory.numProc; }
+		inline size_t coreXlat(size_t x) { return _factory.coreXlat[x]; }
+		inline bool isMasterRank() { return __isMasterRank; }
+
 	}; // class L2AtomicFactory
 
 }; // namespace BGQ

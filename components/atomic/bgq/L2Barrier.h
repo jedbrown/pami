@@ -38,12 +38,12 @@ namespace BGQ {
 	public:
 		_L2_ProcBarrier_s() { }
 
-		init(XMI::SysDep *sd) {
+		inline void init(XMI::Memory::MemoryManager *mm) {
 		}
 
-		controlPtr() { return &_counters.ctrl_lock; }
-		lockPtr(int n) { return &_counters.lock[n]; }
-		statusPtr(int n) { return &_counters.status[n]; }
+		inline uint64_t *controlPtr() { return &_counters.ctrl_lock; }
+		inline uint64_t *lockPtr(int n) { return &_counters.lock[n]; }
+		inline uint64_t *statusPtr(int n) { return &_counters.status[n]; }
 
 	private:
 		L2_Barrier_ctrs _counters;
@@ -57,7 +57,7 @@ namespace BGQ {
 	public:
 		_L2_NodeBarrier_s() { }
 
-		init(XMI::Memory::MemoryManager *mm) {
+		inline void init(XMI::Memory::MemoryManager *mm) {
 			xmi_result_t rc = mm->memalign((void **)&_counters,
 							L1D_CACHE_LINE_SIZE,
 							sizeof(*_counters));
@@ -69,9 +69,9 @@ namespace BGQ {
 			// memset(_counters, 0, sizeof(*_counters));
 		}
 
-		controlPtr() { return &_counters->ctrl_lock; }
-		lockPtr(int n) { return &_counters->lock[n]; }
-		statusPtr(int n) { return &_counters->status[n]; }
+		inline uint64_t *controlPtr() { return &_counters->ctrl_lock; }
+		inline uint64_t *lockPtr(int n) { return &_counters->lock[n]; }
+		inline uint64_t *statusPtr(int n) { return &_counters->status[n]; }
 
 	private:
 		L2_Barrier_ctrs *_counters;
@@ -110,7 +110,7 @@ public:
 
 	inline void pollInit_impl() {
 		uint64_t lockup;
-		_bgp_msync();
+		mem_sync();
 		lockup = L2_AtomicLoad(_barrier.controlPtr());
 		L2_AtomicLoadIncrement(_barrier.lockPtr(lockup));
 		_data = (void*)lockup;
@@ -120,7 +120,7 @@ public:
 	inline XMI::Atomic::Interface::barrierPollStatus poll_impl() {
 		XMI_assert(_status == XMI::Atomic::Interface::Entered);
 		uint64_t lockup, value;
-		lockup = (unsigned)_data;
+		lockup = (uint64_t)_data;
 		if (L2_AtomicLoad(_barrier.lockPtr(lockup)) < _barrier._nparties) {
 			return XMI::Atomic::Interface::Entered;
 		}
@@ -168,11 +168,11 @@ public:
 		// is the lowest-numbered core in the
 		// process.
 
-		_L2Barrier<_L2_NodeBarrier_s>::init(sd);
+		_barrier.init(mm);
 		// assert(m .iff. me == masterProc());
-		_barrier._master = __global.lockboxFactory.masterProc() << __global.lockboxFactory.coreShift();
+		_barrier._master = __global.l2atomicFactory.masterProc() << __global.l2atomicFactory.coreShift();
 		_barrier._coreshift = 0;
-		_barrier._nparties = __global.lockboxFactory.numCore();
+		_barrier._nparties = __global.l2atomicFactory.numCore();
 		_status = XMI::Atomic::Interface::Initialized;
 	}
 }; // class L2NodeCoreBarrier
@@ -189,11 +189,11 @@ public:
 		// and only one core per process will
 		// participate.
 
-		_L2Barrier<_L2_NodeBarrier_s>::init(sd);
+		_barrier.init(mm);
 		// assert(m .iff. me == masterProc());
-		_barrier._master = __global.lockboxFactory.coreXlat(__global.lockboxFactory.masterProc()) >> __global.lockboxFactory.coreShift();
-		_barrier._coreshift = __global.lockboxFactory.coreShift();
-		_barrier._nparties = __global.lockboxFactory.numProc();
+		_barrier._master = __global.l2atomicFactory.coreXlat(__global.l2atomicFactory.masterProc()) >> __global.l2atomicFactory.coreShift();
+		_barrier._coreshift = __global.l2atomicFactory.coreShift();
+		_barrier._nparties = __global.l2atomicFactory.numProc();
 		_status = XMI::Atomic::Interface::Initialized;
 	}
 }; // class L2NodeProcBarrier

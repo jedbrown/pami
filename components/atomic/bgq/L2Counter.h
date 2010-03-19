@@ -20,7 +20,7 @@
 
 namespace XMI
 {
-  namespace Atomic
+  namespace Counter
   {
   namespace BGQ
   {
@@ -31,17 +31,17 @@ namespace XMI
     /// Later, we may need to go to a scheme that maps a block of memory for use
     /// in L2 Atomics, and allocates counters out of it a la BG/P Lockboxes.
     ///
-    class L2ProcCounter : public Interface::Counter <L2ProcCounter>
+    class L2ProcCounter : public XMI::Atomic::Interface::Counter <L2ProcCounter>
     {
       public:
         L2ProcCounter () :
-            Interface::Counter <L2ProcCounter> ()
+            XMI::Atomic::Interface::Counter <L2ProcCounter> ()
         {};
 
         ~L2ProcCounter () {};
 
         /// \see XMI::Atomic::Interface::Counter::init
-        void init_impl (XMI::SysDep *sd)
+        void init_impl (XMI::Memory::MemoryManager *mm)
         {
 	  // MUST NOT DO THIS! other procs might be already using it.
 	  // TODO: find a way to ensure memory is zeroed once and only once.
@@ -95,11 +95,11 @@ namespace XMI
     /// Later, we may need to go to a scheme that maps a block of memory for use
     /// in L2 Atomics, and allocates counters out of it a la BG/P Lockboxes.
     ///
-    class L2NodeCounter : public Interface::Counter <L2NodeCounter>
+    class L2NodeCounter : public XMI::Atomic::Interface::Counter <L2NodeCounter>
     {
       public:
         L2NodeCounter () :
-            Interface::Counter <L2NodeCounter> ()
+            XMI::Atomic::Interface::Counter <L2NodeCounter> ()
         {};
 
         ~L2NodeCounter () {};

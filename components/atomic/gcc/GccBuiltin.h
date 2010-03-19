@@ -80,7 +80,7 @@ namespace XMI
 
       protected:
 
-        volatile size_t _atom;
+        volatile uintptr_t _atom;
     };
   };
 };
