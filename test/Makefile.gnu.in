@@ -10,7 +10,7 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = time client context p2p multisend @XTRA_TEST_SUBDIRS@ topology
+SUBDIRS         = BG time client context p2p multisend @XTRA_TEST_SUBDIRS@ topology
 NOTBUILT        = 
 APPS            = xmihello.${EXTENSION} barrier.${EXTENSION} bcast.${EXTENSION} \
 		bcast_advisor.${EXTENSION} allreduce.${EXTENSION} allgather.${EXTENSION} \

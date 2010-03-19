@@ -10,9 +10,9 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = 
+SUBDIRS         = $(TARGET)
 NOTBUILT        = 
-APPS            = topology.${EXTENSION} 
+APPS            = 
 include @abs_top_builddir@/Build.rules
 
 ifeq (@BUILDENV@,ade)
