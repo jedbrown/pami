@@ -1248,3 +1248,16 @@ void XMI_Topology_subtract(xmi_topology_t *_new, xmi_topology_t *topo, xmi_topol
     XMI::Topology * t = (XMI::Topology *) topo;
     return t->subtractTopology((XMI::Topology *)_new, (XMI::Topology *)other);
 }
+
+#ifdef USE_COMMTHREADS // from (bgq/) Client.h
+#warning XMI_Client_add_commthread_context() is non-standard API
+extern "C" xmi_result_t XMI_Client_add_commthread_context(xmi_client_t client,
+                                            xmi_context_t context)
+{
+  xmi_result_t result;
+  XMI::Client *xmi = (XMI::Client *)client;
+
+  result = xmi->addContextToCommThreadPool(context);
+  return result;
+}
+#endif // USE_COMMTHREADS

@@ -136,6 +136,12 @@ public:
 		// might need hook later, to do per-context initialization?
 	}
 
+	static inline xmi_result_t addContext(BgqCommThread *devs, size_t clientid,
+					xmi_context_t context) {
+		// all BgqCommThread objects have the same ContextSet object.
+		return devs[0]._ctxset->addContext(clientid, context);
+	}
+
 	static void *commThread(void *cookie) {
 		BgqCommThread *thus = (BgqCommThread *)cookie;
 		xmi_result_t r = thus->__commThread();

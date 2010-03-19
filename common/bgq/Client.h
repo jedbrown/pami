@@ -173,6 +173,13 @@ namespace XMI
         //_context_list->unlock ();
       }
 
+#ifdef USE_COMMTHREADS
+      // This is not standard interface... yet?
+      inline xmi_result_t addContextToCommThreadPool(xmi_context_t ctx) {
+	return XMI::Device::CommThread::BgqCommThread::addContext(_commThreads, _clientid, ctx);
+      }
+#endif // USE_COMMTHREADS
+
       inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
       {
         xmi_result_t result = XMI_ERROR;
