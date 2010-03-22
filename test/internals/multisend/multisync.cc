@@ -70,7 +70,7 @@ int main(int argc, char ** argv) {
 	num_tasks = __global.mapping.size();
 	context = (xmi_context_t)1; // context must not be NULL
 	XMI::Memory::MemoryManager mm;
-	initializeMemoryManager("multisync test", 1024*1024, mm);
+	initializeMemoryManager("multisync test", 128*1024, mm);
 #endif
 	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 

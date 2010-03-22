@@ -53,7 +53,7 @@ namespace XMI
           _mapcache ()
       {
         xmi_coord_t ll, ur;
-        size_t min = 0, max = 0;
+        xmi_task_t min = 0, max = 0;
         const char   * shmemfile = "/unique-xmi-global-shmem-file";
         //size_t   bytes     = 1024*1024;
         size_t   bytes     = 32 * 1024;
@@ -142,10 +142,11 @@ namespace XMI
           }
         else
           {
-            //XMI_abortf("failed to build global-world topology %zd::%zd(%zd) / %zd..%zd", mapping.size(), rectsize, mapping.globalDims(), min, max); //hack
+            XMI_abortf("failed to build global-world topology %zd::%zd(%zd) / %d..%d", mapping.size(), rectsize, mapping.globalDims(), min, max); //hack
           }
 
         topology_global.subTopologyLocalToMe(&topology_local);
+fprintf(stderr, "local topo %zd\n", topology_local.size());
 	l2atomicFactory.init(&mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));
@@ -176,7 +177,7 @@ namespace XMI
     private:
 
       inline size_t initializeMapCache (BgqPersonality  & personality,
-                                        xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max, bool shared);
+                                        xmi_coord_t &ll, xmi_coord_t &ur, xmi_task_t &min, xmi_task_t &max, bool shared);
 
     public:
 
@@ -194,7 +195,7 @@ namespace XMI
 };     // XMI
 
 size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
-                                        xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max, bool shared)
+                                        xmi_coord_t &ll, xmi_coord_t &ur, xmi_task_t &min, xmi_task_t &max, bool shared)
 {
   void            * ptr      = _memptr;
   //size_t            bytes    = _memsize;
@@ -217,8 +218,8 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
     volatile size_t numActiveRanksLocal; // Number of ranks on our physical node.
     volatile size_t numActiveRanksGlobal;// Number of ranks in the partition.
     volatile size_t numActiveNodesGlobal;// Number of nodes in the partition.
-    volatile size_t maxRank;       // Largest valid rank
-    volatile size_t minRank;       // Smallest valid rank
+    volatile xmi_task_t maxRank;       // Largest valid rank
+    volatile xmi_task_t minRank;       // Smallest valid rank
     volatile xmi_coord_t activeLLCorner;
     volatile xmi_coord_t activeURCorner;
   } cacheAnchors_t;
@@ -279,7 +280,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
 
-  size_t max_rank = 0, min_rank = (size_t) - 1;
+  xmi_task_t max_rank = 0, min_rank = (xmi_task_t)-1;
   xmi_coord_t _ll, _ur;
 
   // If we are the master (participant 0), then initialize the caches.
@@ -358,8 +359,8 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
         _ll.u.n_torus.coords[2] = _ur.u.n_torus.coords[2] = personality.cCoord();
         _ll.u.n_torus.coords[3] = _ur.u.n_torus.coords[3] = personality.dCoord();
         _ll.u.n_torus.coords[4] = _ur.u.n_torus.coords[4] = personality.eCoord();
-        _ll.u.n_torus.coords[5] = _ur.u.n_torus.coords[5] = tCoord;
-        _ll.u.n_torus.coords[6] = _ur.u.n_torus.coords[6] = pCoord;
+        _ll.u.n_torus.coords[5] = _ur.u.n_torus.coords[5] = pCoord;
+        _ll.u.n_torus.coords[6] = _ur.u.n_torus.coords[6] = tCoord;
 
         for (i = 0; i < fullSize; i++)
           {
@@ -426,35 +427,23 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
             // because of "for (i..." this will give us MAX after loop.
             max_rank = i;
 
-            if (min_rank == (size_t) - 1) min_rank = i;
+            if (min_rank == (xmi_task_t)-1) min_rank = i;
 
             if (a < _ll.u.n_torus.coords[0]) _ll.u.n_torus.coords[0] = a;
-
             if (b < _ll.u.n_torus.coords[1]) _ll.u.n_torus.coords[1] = b;
-
             if (c < _ll.u.n_torus.coords[2]) _ll.u.n_torus.coords[2] = c;
-
             if (d < _ll.u.n_torus.coords[3]) _ll.u.n_torus.coords[3] = d;
-
             if (e < _ll.u.n_torus.coords[4]) _ll.u.n_torus.coords[4] = e;
+            if (p < _ll.u.n_torus.coords[5]) _ll.u.n_torus.coords[5] = p;
+            if (t < _ll.u.n_torus.coords[6]) _ll.u.n_torus.coords[6] = t;
 
-            if (t < _ll.u.n_torus.coords[5]) _ll.u.n_torus.coords[5] = t;
-
-            if (p < _ll.u.n_torus.coords[6]) _ll.u.n_torus.coords[6] = p;
-
-            if (a < _ur.u.n_torus.coords[0]) _ur.u.n_torus.coords[0] = a;
-
-            if (b < _ur.u.n_torus.coords[1]) _ur.u.n_torus.coords[1] = b;
-
-            if (c < _ur.u.n_torus.coords[2]) _ur.u.n_torus.coords[2] = c;
-
-            if (d < _ur.u.n_torus.coords[3]) _ur.u.n_torus.coords[3] = d;
-
-            if (e < _ur.u.n_torus.coords[4]) _ur.u.n_torus.coords[4] = e;
-
-            if (t < _ur.u.n_torus.coords[5]) _ur.u.n_torus.coords[5] = t;
-
-            if (p < _ur.u.n_torus.coords[6]) _ur.u.n_torus.coords[6] = p;
+            if (a > _ur.u.n_torus.coords[0]) _ur.u.n_torus.coords[0] = a;
+            if (b > _ur.u.n_torus.coords[1]) _ur.u.n_torus.coords[1] = b;
+            if (c > _ur.u.n_torus.coords[2]) _ur.u.n_torus.coords[2] = c;
+            if (d > _ur.u.n_torus.coords[3]) _ur.u.n_torus.coords[3] = d;
+            if (e > _ur.u.n_torus.coords[4]) _ur.u.n_torus.coords[4] = e;
+            if (p > _ur.u.n_torus.coords[5]) _ur.u.n_torus.coords[5] = p;
+            if (t > _ur.u.n_torus.coords[6]) _ur.u.n_torus.coords[6] = t;
 
             //  }
           }

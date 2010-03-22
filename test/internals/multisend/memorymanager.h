@@ -21,6 +21,8 @@
 #include <fcntl.h>
 #include "components/memory/MemoryManager.h"
 
+#define TEST_DEF_SHMEM_SIZE	(32*1024)
+
 static inline xmi_result_t initializeMemoryManager(const char *name, size_t bytes,
 					XMI::Memory::MemoryManager &mm) {
 	char shmemfile[1024];
