@@ -101,7 +101,6 @@ namespace XMI
      * \param[in] mm		MemeoryManager for use in generating devices
      */
     inline xmi_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
-	_mm = &mm;
 	// these calls create (allocate and construct) each element.
 	// We don't know how these relate to contexts, they are semi-opaque.
         _generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
@@ -138,21 +137,21 @@ namespace XMI
      * \param[in] ctx		Context opaque entity
      * \param[in] sd		SysDep object
      */
-    inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd) {
-	XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, _mm, _generics);
-	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::BGP::giDevice::Factory::init(_gibarr, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::BGP::CNAllreduceDevice::Factory::init(_cnallred, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::BGP::CNAllreducePPDevice::Factory::init(_cnppallred, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::BGP::CNAllreduce2PDevice::Factory::init(_cn2pallred, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::BGP::CNBroadcastDevice::Factory::init(_cnbcast, clientid, contextid, clt, ctx, _mm, _generics);
+    inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm) {
+	XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
+	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::BGP::giDevice::Factory::init(_gibarr, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::BGP::CNAllreduceDevice::Factory::init(_cnallred, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::BGP::CNAllreducePPDevice::Factory::init(_cnppallred, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::BGP::CNAllreduce2PDevice::Factory::init(_cn2pallred, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::BGP::CNBroadcastDevice::Factory::init(_cnbcast, clientid, contextid, clt, ctx, mm, _generics);
 	return XMI_SUCCESS;
     }
 
@@ -185,7 +184,6 @@ namespace XMI
 	return events;
     }
 
-    Memory::MemoryManager *_mm;
     XMI::Device::Generic::Device *_generics; // need better name...
     ShmemDevice *_shmem;
     XMI::Device::ProgressFunctionDev *_progfunc;
@@ -233,7 +231,7 @@ namespace XMI
         // ----------------------------------------------------------------
 
         _lock.init(&_mm);
-	_devices->init(_clientid, _contextid, _client, _context, &_sysdep);
+	_devices->init(_clientid, _contextid, _client, _context, &_mm);
 	_local_generic_device = & XMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, clientid, id);
 
 

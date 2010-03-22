@@ -157,7 +157,6 @@ namespace XMI
      * \param[in] contextid    Context ID (index)
      */
     inline xmi_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
-	_mm = &mm;
 	// these calls create (allocate and construct) each element.
 	// We don't know how these relate to contexts, they are semi-opaque.
 	_generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
@@ -188,16 +187,16 @@ namespace XMI
      * \param[in] ctx          Context opaque entity
      * \param[in] contextid    Context ID (index)
      */
-    inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::SysDep *sd) {
-	XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, _mm, _generics);
-//	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, _mm, _generics);
-	XMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, _mm, _generics);
+    inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm) {
+	XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
+//	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
+	XMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
 	return XMI_SUCCESS;
     }
 
@@ -224,7 +223,6 @@ namespace XMI
 	return events;
     }
 
-    Memory::MemoryManager *_mm;
     XMI::Device::Generic::Device *_generics; // need better name...
 //    ShmemDevice *_shmem;
     XMI::Device::ProgressFunctionDev *_progfunc;
@@ -282,7 +280,7 @@ namespace XMI
           memset(_dispatch, 0x00, sizeof(_dispatch));
 
 //	  _devices->dev_init(&_sysdep, _clientid, num, _context, _contextid);
-          _devices->init(_clientid, _contextid, _client, _context, &_sysdep);
+          _devices->init(_clientid, _contextid, _client, _context, &_mm);
         }
 
       inline xmi_client_t getClient_impl ()
