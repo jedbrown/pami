@@ -254,14 +254,13 @@ namespace XMI
         _mm (addr, bytes),
 	_sysdep(_mm),
         _lock (),
+        _world_geometry(world_geometry),
+        _minterface(_lapi_device,_client,this,_contextid,_clientid),
         _empty_advance(0),
-      _world_geometry(world_geometry),
-      _minterface(_lapi_device,_client,this,_contextid,_clientid),
-      _devices(devices),
-      _lapi_handle(lapi_handle)
+        _lapi_handle(lapi_handle),
+        _devices(devices)
       {
-
-        _lapi_device.init(&_sysdep, _clientid, 0, _context, _contextid);
+        _lapi_device.init(&_mm, _clientid, 0, _context, _contextid);
         _lapi_device.setLapiHandle(_lapi_handle);
 
         _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));

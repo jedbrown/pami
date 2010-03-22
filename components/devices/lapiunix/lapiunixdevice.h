@@ -132,13 +132,13 @@ namespace XMI
           _m2m_dispatch_lookup[dispatch_id]=_m2m_dispatch_table[dispatch_id];
         }
 
-      inline xmi_result_t init_impl (SysDep         *sd,
+      inline xmi_result_t init_impl (XMI::Memory::MemoryManager         *mm,
                                      size_t          clientid,
                                      size_t          num_ctx,
                                      xmi_context_t   context,
                                      size_t          contextid)
         {
-          _sysdep  = sd;
+          _mm      = mm;
           _context = context;
           _offset  = contextid;
 	  return XMI_SUCCESS;
@@ -185,6 +185,22 @@ namespace XMI
           assert(task < _peers);
           return task;
         }
+
+      inline bool isPeer_impl (size_t task)
+      {
+#if 0
+        XMI::Interface::Mapping::nodeaddr_t node;
+        size_t peer;
+
+        __global.mapping.task2node(task,node);
+        xmi_result_t result = __global.mapping.node2peer(node,peer);
+
+        return result == XMI_SUCCESS;
+#else
+        return false;
+#endif
+      }
+
       inline void enqueue(LAPIMessage* msg)
         {
           _sendQ.push_front(msg);
@@ -545,7 +561,7 @@ namespace XMI
           return 0;
         }
 
-      SysDep                                    *_sysdep;
+      XMI::Memory::MemoryManager                *_mm;
       xmi_context_t                              _context;
       size_t                                     _offset;
       lapi_handle_t                              _lapi_handle;
