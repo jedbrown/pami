@@ -104,7 +104,9 @@ namespace BGP {
 		_g_num_active_nodes = __global.mapping.size();
 		if (peers > 1) {
 			lbb.init(mm, peers, false);
+			loc = NULL;
 			mm->memalign((void **)&loc, sizeof(loc), BGPCN_PKT_SIZE);
+			XMI_assertf(loc, "Failed to get shmem for Tree Device init");
 		}
 		if (__global.lockboxFactory.isMasterRank()) {
 			static char pkt[BGPCN_PKT_SIZE]__attribute__((__aligned__(16)));
