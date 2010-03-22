@@ -18,7 +18,7 @@
 #include <errno.h>
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 namespace XMI
@@ -33,7 +33,7 @@ namespace XMI
         ///
         inline MemoryManager ()
         {
-          TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
+          TRACE_ERR((stderr, "%s, this = %p\n", __PRETTY_FUNCTION__, this));
           init (NULL, 0);
         };
 
@@ -45,7 +45,7 @@ namespace XMI
         ///
         inline MemoryManager (void * addr, size_t bytes)
         {
-          TRACE_ERR((stderr, "%s(%p, %zd)\n", __PRETTY_FUNCTION__,addr,bytes));
+          TRACE_ERR((stderr, "%s(%p, %zd), this = %p\n", __PRETTY_FUNCTION__,addr,bytes, this));
           init (addr, bytes);
         };
 
@@ -57,10 +57,11 @@ namespace XMI
         ///
         inline void init (void * addr, size_t bytes)
         {
-          TRACE_ERR((stderr, "%s(%p, %zd)\n", __PRETTY_FUNCTION__,addr,bytes));
+          TRACE_ERR((stderr, "%s(%p, %zd), this = %p\n", __PRETTY_FUNCTION__,addr,bytes, this));
           _base   = (uint8_t *) addr;
           _size   = bytes;
           _offset = 0;
+          _enabled = true;
         };
 
         ///
@@ -79,6 +80,9 @@ namespace XMI
           }
         }
 
+        inline void enable () { _enabled = true; }
+        inline void disable () { _enabled = false; }
+
         ///
         /// \brief Allocate an aligned buffer of the memory.
         ///
@@ -88,7 +92,8 @@ namespace XMI
         ///
         inline xmi_result_t memalign (void ** memptr, size_t alignment, size_t bytes)
         {
-          TRACE_ERR((stderr, "%s(%p, %zd, %zd)\n", __PRETTY_FUNCTION__,memptr,alignment,bytes));
+          TRACE_ERR((stderr, "%s(%p, %zd, %zd), _offset = %zu, this = %p\n", __PRETTY_FUNCTION__,memptr,alignment,bytes,_offset, this));
+          XMI_assert(_enabled==true);
           XMI_assert_debug(_base != NULL);
           XMI_assert((alignment & (alignment - 1)) == 0);
 
@@ -120,7 +125,8 @@ namespace XMI
         ///
         inline size_t available (size_t alignment = 1)
         {
-          TRACE_ERR((stderr, "%s(%zd) _size %zd, _offset %zd\n", __PRETTY_FUNCTION__,alignment, _size, _offset));
+          TRACE_ERR((stderr, "%s(%zd) _size %zd, _offset %zu, this = %p\n", __PRETTY_FUNCTION__,alignment, _size, _offset, this));
+          XMI_assert(_enabled==true);
           XMI_assert_debug((alignment & (alignment - 1)) == 0);
 
           size_t pad = 0;
@@ -150,6 +156,7 @@ namespace XMI
         void * _base;
         size_t _size;
         size_t _offset;
+        bool   _enabled;
     };
   };
 };

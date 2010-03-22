@@ -147,7 +147,9 @@ namespace XMI
           {
             context[x] = (xmi_context_t) & _contexts[x];
             void *base = NULL;
+            _mm.enable();
             _mm.memalign((void **)&base, 16, bytes);
+            _mm.disable();
             XMI_assertf(base != NULL, "out of sharedmemory in context create x=%d,n=%d,bytes=%zd,mm.size=%zd,mm.available=%zd\n", x, n, bytes, _mm.size(), _mm.available());
             new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,
                                              &_platdevs, base, bytes);
