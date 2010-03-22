@@ -1,5 +1,5 @@
 ///
-/// \file test/topology/bcast-axial.cc
+/// \file test/BG/bgp/mc-rect.cc
 /// \brief Simple Bcast test
 ///
 
@@ -34,7 +34,7 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
     printf("%s %s Schedule Root %d Start phase: %d  Nphases %d\n",
            colors[color], op, root, start, nphases);
   }
-  
+
   for (unsigned i = start; i < (unsigned) (start + nphases); i++)
   {
     new (&topo) XMI:: Topology();
@@ -44,17 +44,17 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
     {
       if (topo.type() == XMI_COORD_TOPOLOGY)
         topo.convertTopology(XMI_LIST_TOPOLOGY);
-      
+
       if (topo.type() == XMI_AXIAL_TOPOLOGY)
       {
         xmi_network type;
         xmi_task_t ref_task = 0;
         xmi_coord_t low, high, ref;
         unsigned char tl[XMI_MAX_DIMS] = {0};
-        
+
         // Get the axial members
         result = topo.axial(&low, &high, &ref, tl);
-        
+
         XMI_assert(result == XMI_SUCCESS);
         if (task_id == id || id == (xmi_task_t) -1)
         {
@@ -87,15 +87,15 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
                    dst.net_coord(2), dst.net_coord(3));
           }
           printf("\n");
-        } 
+        }
       }
-      
+
       if (topo.type() == XMI_SINGLE_TOPOLOGY)
       {
         xmi_coord_t dst;
         xmi_task_t dst_task;
         dst_task = topo.index2Rank(0);
-        
+
         if (task_id == id || id == (xmi_task_t) -1)
         {
           __global.mapping.task2network(dst_task, &dst, XMI_N_TORUS_NETWORK);
@@ -103,7 +103,7 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
                  self.net_coord(3),
                  dst_task, dst.net_coord(0),dst.net_coord(1), dst.net_coord(2),
                  dst.net_coord(3));
-        } 
+        }
       }
     }
 
@@ -114,7 +114,7 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
     {
       if (topo.type() == XMI_COORD_TOPOLOGY)
         topo.convertTopology(XMI_LIST_TOPOLOGY);
-      
+
       if (topo.type() == XMI_LIST_TOPOLOGY)
       {
         int c;
@@ -133,15 +133,15 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
                    rcv.net_coord(2), rcv.net_coord(3));
           }
           printf("\n");
-        } 
+        }
       }
-      
+
       if (topo.type() == XMI_SINGLE_TOPOLOGY)
       {
         xmi_coord_t rcv;
         xmi_task_t rcv_task;
         rcv_task = topo.index2Rank(0);
-        
+
         if (task_id == id || id == (xmi_task_t) -1)
         {
           __global.mapping.task2network(rcv_task, &rcv, XMI_N_TORUS_NETWORK);
@@ -149,13 +149,13 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
                  self.net_coord(0),self.net_coord(1), self.net_coord(2),
                  self.net_coord(3),rcv_task, rcv.net_coord(0),rcv.net_coord(1),
                  rcv.net_coord(2),   rcv.net_coord(3));
-        } 
+        }
       }
     }
   }
 }
-  
-  
+
+
 
 int main (int argc, char ** argv)
 {
@@ -177,7 +177,7 @@ int main (int argc, char ** argv)
       printf("missing args\nUsage: a.out id op color root\n");
     return 0;
   }
-  
+
   id = (xmi_task_t) atoi(argv[1]);
   char op = *argv[2];
   int color = atoi(argv[3]);
@@ -188,7 +188,7 @@ int main (int argc, char ** argv)
   result = XMI_Geometry_world (context, &world_geometry);
 
   // __global.topology_global.convertTopology(XMI_COORD_TOPOLOGY);
-  
+
   __global.mapping.task2network(task_id, &self, XMI_N_TORUS_NETWORK);
   XMI::Topology topo;
   int start = -1, nphases = 0;
@@ -212,6 +212,3 @@ int main (int argc, char ** argv)
   }
   return 0;
 };
-
-
-

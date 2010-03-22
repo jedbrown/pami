@@ -64,7 +64,7 @@ public:
 	}
 
 	inline void joinContextSet(size_t clientid, size_t &threadid) {
-		
+
 		uint64_t m = ENABLE;
 		_mutex.acquire();
 		threadid = _nactive;
@@ -98,7 +98,7 @@ public:
 	}
 
 	inline void leaveContextSet(size_t clientid, size_t &threadid) {
-		
+
 		_mutex.acquire();
 		--_nactive;
 		uint64_t m = _sets[threadid];

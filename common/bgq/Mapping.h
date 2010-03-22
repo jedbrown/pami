@@ -547,7 +547,7 @@ namespace XMI
 
       // Estimate the task id based on the bgq coordinates.
       size_t hash = ESTIMATED_TASK(0,0,0,0,0,pCoord,tCoord,
-                                   1,1,1,1,1,pSize,tSize); 
+                                   1,1,1,1,1,pSize,tSize);
 
       // Verify that the address hash is valid.
       if (unlikely(_mapcache.node.local2peer[hash] == (unsigned) - 1))

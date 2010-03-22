@@ -235,8 +235,8 @@ int main (int argc, char ** argv)
   double tick = configuration.value.doubleval;
 
   // Use task 0 to last task (arbitrary)
-  xmi_task_t origin_task = 0; 
-  xmi_task_t target_task = num_tasks -1; 
+  xmi_task_t origin_task = 0;
+  xmi_task_t target_task = num_tasks -1;
 
   /* Display some test header information */
   if (_my_task == origin_task)

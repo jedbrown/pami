@@ -47,14 +47,14 @@ namespace CCMI
       size_t            _dim_sizes[XMI_MAX_DIMS];
       XMI_MAPPING_CLASS *_map;
 
-        
+
       void setupLocal(XMI::Topology *topo);
-      
+
       int getReduceSrcTopology(unsigned phase, XMI::Topology * topo);
       int getBroadcastSrcTopology(unsigned phase, XMI::Topology * topo);
       int getReduceDstTopology(unsigned phase, XMI::Topology * topo);
       int getBroadcastDstTopology(unsigned phase, XMI::Topology * topo);
-      
+
     public:
       MCRect(): _map(NULL) {}
       MCRect(XMI_MAPPING_CLASS *map,
@@ -66,7 +66,7 @@ namespace CCMI
         _map->task2network(map->task(), &_self, XMI_N_TORUS_NETWORK);
         _start_phase = (unsigned) -1;
         rect->rectSeg(&_ll, &_ur, &_torus_link[0]);
-        
+
         _ndims = 0;
         for (i = 0; i < _map->torusDims(); i++)
           if (_ur.net_coord(i))
@@ -79,7 +79,7 @@ namespace CCMI
       virtual void getSrcTopology(unsigned phase, XMI::Topology *topo);
       virtual void getDstTopology(unsigned phase, XMI::Topology *topo);
 
-      
+
       unsigned color()
       {
         return _color;
@@ -169,10 +169,10 @@ CCMI::Schedule::MCRect::init(int root,
   {
     size_t axes[XMI_MAX_DIMS] = {0};
     unsigned int my_phase, color = _color;
-    
+
     for (axis = 0; axis < _ndims; axis++)
       axes[axis] = color++ % _ndims;
-  
+
     for (axis = 0; axis < _ndims; axis++)
     {
       // this checks if I currently share the same examined coordinates of
@@ -180,20 +180,20 @@ CCMI::Schedule::MCRect::init(int root,
       for (my_phase = 1, i = axis + 1; i < _ndims && my_phase; i++)
         if (_self.net_coord(axes[i]) != _root.net_coord(axes[i]))
           my_phase = 0;
-    
+
       if (my_phase)
         break;
     }
-  
+
     // only root starts at phase 0, shift other's phase by 1
     _start_phase = axis;
     if (_map->task() != (xmi_task_t) root)
       _start_phase += 1;
-  
+
 
     start = _start_phase;
     nphases = _ndims - start;
-    
+
     // add 1 for local comm if any
     if (_peers > 1)
       nphases++;
@@ -209,18 +209,18 @@ CCMI::Schedule::MCRect::init(int root,
     for (axis = 0; axis < _ndims; axis++)
     {
       _phases_per_dim[axis] = _dim_sizes[axis];
-      
+
       // if root is in the middle of this dimension, we add an extra
       // phase since data is coming from another direction to root
       if (_root.net_coord(axis) != 0 &&
           _root.net_coord(axis) != _dim_sizes[axis] - 1 &&
           !_torus_link[axis])
         _phases_per_dim[axis]++;
-      
+
       nphases += _phases_per_dim[axis];
     }
   }
-  
+
 }
 
 
@@ -238,7 +238,7 @@ CCMI::Schedule::MCRect::getReduceSrcTopology(unsigned phase,
 
   char dir = 1; // positive
   if (_color >= (unsigned) _ndims) dir = 0; // negative
-  
+
   if (_peers > 1)
   {
     total++;
@@ -248,15 +248,15 @@ CCMI::Schedule::MCRect::getReduceSrcTopology(unsigned phase,
       return XMI_SUCCESS;
     }
   }
-  
+
   for (i = 0; i < _ndims; i++)
     axes[i] = color++ % _ndims;
-    
+
   for (axis = _ndims - 1; axis >= 0; axis--)
   {
     i = axes[axis];
     my_phase = 1;
-    
+
     for (j = _ndims - 1; j > axis && my_phase; j--)
       if (_self.net_coord(axes[j]) != _root.net_coord(axes[j]))
         my_phase = 0;
@@ -267,7 +267,7 @@ CCMI::Schedule::MCRect::getReduceSrcTopology(unsigned phase,
       size_t tail = _dim_sizes[i] - 1;
       size_t my_coord = _self.net_coord(i);
       size_t root_coord = _root.net_coord(i);
-        
+
       if (root_coord == head) // if root is at head of this dim
       {
         //if (my_coord == (_dim_sizes[i] - 1 - phase % _dim_sizes[i]))
@@ -280,7 +280,7 @@ CCMI::Schedule::MCRect::getReduceSrcTopology(unsigned phase,
             src.net_coord(i) = (my_coord - 1 + _dim_sizes[i]) % _dim_sizes[i];
             break;
           }
-          
+
           // otherwise, data either moves in a negative direction, or this line
           // isn't a torus line. In either case, make sure tail recvs nothing
           else if (my_coord != tail)
@@ -290,7 +290,7 @@ CCMI::Schedule::MCRect::getReduceSrcTopology(unsigned phase,
           }
         }
       }
-      
+
       else if (root_coord == tail) // if root is at tail of this dim
       {
         if (my_coord == phase - total)
@@ -312,7 +312,7 @@ CCMI::Schedule::MCRect::getReduceSrcTopology(unsigned phase,
           }
         }
       }
-      
+
       else // root is in the middle of this dim
       {
         if (_torus_link[i]) // if torus dim, then data moves in one direction
@@ -334,7 +334,7 @@ CCMI::Schedule::MCRect::getReduceSrcTopology(unsigned phase,
           }
 
         }
-          
+
         else // data gets reduced to root of this dim from - and + directions
         {
           if (my_coord <= root_coord &&
@@ -355,7 +355,7 @@ CCMI::Schedule::MCRect::getReduceSrcTopology(unsigned phase,
       }
     }
 
-    total += _phases_per_dim[i];    
+    total += _phases_per_dim[i];
   }
 
   if (src_id >= 0)
@@ -378,7 +378,7 @@ int CCMI::Schedule::MCRect::getBroadcastSrcTopology(unsigned phase,
 inline int
 CCMI::Schedule::MCRect::getReduceDstTopology(unsigned phase,
                                              XMI::Topology * topo)
-    
+
 {
   char my_phase;
   size_t axes[XMI_MAX_DIMS] = {0};
@@ -390,17 +390,17 @@ CCMI::Schedule::MCRect::getReduceDstTopology(unsigned phase,
 
   char dir = 1; // positive
   if (_color >= (unsigned) _ndims) dir = 0; // negative
-  
+
   if (_peers > 1) total++;
 
   for (i = 0; i < _ndims; i++)
     axes[i] = color++ % _ndims;
-    
+
   for (axis = _ndims - 1; axis >= 0; axis--)
   {
     i = axes[axis];
     my_phase = 1;
-    
+
     for (j = _ndims - 1; j > axis && my_phase; j--)
       if (_self.net_coord(axes[j]) != _root.net_coord(axes[j]))
         my_phase = 0;
@@ -424,7 +424,7 @@ CCMI::Schedule::MCRect::getReduceDstTopology(unsigned phase,
               dst.net_coord(i) = (my_coord + 1) % _dim_sizes[i];
               break;
             }
-            
+
             // either data moves in a "-" direction, or this isnt a torus line
             else
             {
@@ -433,7 +433,7 @@ CCMI::Schedule::MCRect::getReduceDstTopology(unsigned phase,
             }
           }
         }
-        
+
         else if (root_coord == tail) // if root is at tail of this dim
         {
           if (my_coord == phase - total)
@@ -444,16 +444,16 @@ CCMI::Schedule::MCRect::getReduceDstTopology(unsigned phase,
               dst.net_coord(i) = my_coord + 1;
               break;
             }
-            
+
             // Either data moves in "-" direction, or this isnt a torus line
-            else 
+            else
             {
               dst.net_coord(i) = (my_coord - 1 + _dim_sizes[i]) % _dim_sizes[i];
               break;
             }
           }
         }
-        
+
         else // root is in the middle of this dim
         {
           if (_torus_link[i]) // if torus dim, then data moves in one direction
@@ -472,7 +472,7 @@ CCMI::Schedule::MCRect::getReduceDstTopology(unsigned phase,
               }
             }
           }
-          
+
           else // data gets reduced to root of this dim from - and + directions
           {
             if (my_coord < root_coord &&
@@ -492,7 +492,7 @@ CCMI::Schedule::MCRect::getReduceDstTopology(unsigned phase,
       }
     }
 
-    total += _phases_per_dim[i];    
+    total += _phases_per_dim[i];
   }
 
   _map->network2task(&dst, &dst_id, &type);
@@ -516,7 +516,7 @@ CCMI::Schedule::MCRect::getBroadcastDstTopology(unsigned phase,
     {
       xmi_coord_t low, high;
       unsigned char tl[XMI_MAX_DIMS];
-      
+
       //Find the axis to do the line broadcast on
       int axis = (phase + _color) % _ndims;
 
@@ -533,14 +533,14 @@ CCMI::Schedule::MCRect::getBroadcastDstTopology(unsigned phase,
                                 _self.net_coord(axis));
       high.net_coord(axis) = MAX(_ur.net_coord(axis),
                                  _self.net_coord(axis));
-   
+
       new (topo) XMI::Topology(&low, &high, &_self, &tl[0]);
     }
-    
+
     //Process local broadcasts
     if (phase == (unsigned) _ndims && _peers > 1)
       setupLocal(topo);
-  }  
+  }
   return XMI_SUCCESS;
 }
 
@@ -558,7 +558,7 @@ CCMI::Schedule::MCRect::getSrcTopology(unsigned phase,
       break;
     default:
       CCMI_abort();
-  }    
+  }
 }
 
 inline void
@@ -575,7 +575,7 @@ CCMI::Schedule::MCRect::getDstTopology(unsigned phase,
       break;
     default:
       CCMI_abort();
-  }    
+  }
 }
 
 inline xmi_result_t
@@ -598,11 +598,11 @@ CCMI::Schedule::MCRect::setupLocal(XMI::Topology *topo)
   // the cores dim is the first one after the physical torus dims
   size_t core_dim = _map->torusDims();
   bool match = true; // matches the root local dims?
-  
+
   for(size_t i = core_dim; i < _map->globalDims() && match; i++)
     if (_self.net_coord(i) != _root.net_coord(i))
       match = false;
-  
+
   if (match)
   {
     *topo = __global.topology_local;

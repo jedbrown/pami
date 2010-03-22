@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/schedule/TorusRect.cc
+ * \file algorithms/schedule/MCRect.cc
  * \brief The TorusRect Schedule for Barrier, Broadcast, and [All]Reduce.
  *
  */

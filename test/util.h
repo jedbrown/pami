@@ -115,7 +115,7 @@ void barrier ()
     __barrier_next_task = (__barrier_next_task + 1) % __barrier_size;
     __barrier_next_endpoint = XMI_Client_endpoint (__barrier_client, __barrier_next_task, 0);
     parameters.dest            = __barrier_next_endpoint;
-  
+
     TRACE_ERR((stderr, "     barrier(), before send, phase = %zu, __barrier_active[%zu] = %u, parameters.dest = 0x%08x\n", __barrier_phase, __barrier_phase, __barrier_active[__barrier_phase], parameters.dest));
     //xmi_result_t result =
     XMI_Send_immediate (__barrier_context, &parameters);
