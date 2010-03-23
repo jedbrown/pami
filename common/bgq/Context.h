@@ -275,7 +275,7 @@ namespace XMI
 #endif
 #endif
 
-#warning This should not be here?
+        /** \todo #warning This should not be here? */
 #if 0 // not working yet? not fully implemented?
         xmi_result_t result ;
         _get = (void *) _request.allocateObject ();

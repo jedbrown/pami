@@ -23,7 +23,6 @@ XMI::BgqPersonality::BgqPersonality ()
   Personality_t * p = (Personality_t *) this;
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-#warning ENABLE MAMBO WORKAROUNDS
 
   Kernel_GetPersonality(p, sizeof(Personality_t));
 

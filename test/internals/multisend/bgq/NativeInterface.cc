@@ -99,7 +99,7 @@ void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
   --*doneCountdown;
 }
 
-#warning Major hack: no call to client init or context create or official advance
+/// \todo #warning Major hack: no call to client init or context create or official advance
 int main(int argc, char ** argv)
 {
   xmi_client_t client = NULL;

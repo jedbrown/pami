@@ -86,7 +86,7 @@ namespace BGQ {
 		inline void init( /* XMI::Memory::MemoryManager *mm,  */
 				XMI::Mapping *mapping, XMI::Topology *local) {
 			xmi_result_t rc;
-#warning must figure out L2 Atomic Factory memory management...
+                        /** \todo #warning must figure out L2 Atomic Factory memory management... */
 #if 0
 			// Must coordinate with all other processes on this node,
 			// and arrive at a common chunk of physical address memory
@@ -106,7 +106,7 @@ namespace BGQ {
 			xmi_task_t ranks[NUM_CORES];
 			size_t i;
 
-#warning This needs a proper CNK function for number of threads per process, when it exists...
+                        /** \todo #warning This needs a proper CNK function for number of threads per process, when it exists... */
 			int ncores = (64 / Kernel_ProcessCount());
 			// int ncores = Kernel_ThreadCount();
 
