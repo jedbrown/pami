@@ -595,7 +595,7 @@ namespace XMI
               XMI_abortf("No non-shmem protocols available.");
 #endif
             }
-            else if (options.use_shmem == 1)
+            else if (use_shmem == 1)
             {
               // Register only the "shmem" eager send protocol
 #ifdef ENABLE_SHMEM_DEVICE
