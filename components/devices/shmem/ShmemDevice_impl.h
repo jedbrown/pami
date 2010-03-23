@@ -43,7 +43,7 @@ namespace XMI
 
       XMI::Interface::Mapping::nodeaddr_t nodeaddr;
       __global.mapping.nodeAddr (nodeaddr);
-      _global_task = nodeaddr.global;
+      _global_task = __global.mapping.task();//nodeaddr.global;
       _local_task  = nodeaddr.local;
 #ifdef __bgq__
       unsigned stride = 16 / _num_procs; //hack
@@ -132,7 +132,7 @@ namespace XMI
                                                             void                      * recv_func_parm,
                                                             uint16_t                  & id)
     {
-      TRACE_ERR((stderr, ">> (%zd) ShmemDevice::registerRecvFunction(%d,%p,%p) .. DISPATCH_SET_COUNT = %d\n", __global.mapping.task(), set, recv_func, recv_func_parm, DISPATCH_SET_COUNT));
+      TRACE_ERR((stderr, ">> (%zd) ShmemDevice::registerRecvFunction(%zd,%p,%p) .. DISPATCH_SET_COUNT = %d\n", __global.mapping.task(), set, recv_func, recv_func_parm, DISPATCH_SET_COUNT));
 
       // This device only supports up to 256 dispatch sets.
       if (set >= DISPATCH_SET_COUNT) return XMI_ERROR;

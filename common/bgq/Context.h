@@ -561,7 +561,7 @@ namespace XMI
                                          xmi_send_hint_t            options)
       {
         xmi_result_t result = XMI_ERROR;
-        TRACE_ERR((stderr, ">> Context::dispatch_impl .. _dispatch[%zu] = %p, result = %d\n", id, _dispatch[id], result));
+        TRACE_ERR((stderr, ">> Context::dispatch_impl .. _dispatch[%zu] = %p, options = %#X\n", id, _dispatch[id], *(unsigned*)&options));
 
         if (_dispatch[id] == NULL)
           {
