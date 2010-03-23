@@ -366,15 +366,15 @@ namespace XMI
       size_t cSize = _pers.cSize();
       size_t dSize = _pers.dSize();
       size_t eSize = _pers.eSize();
-      size_t tSize = _pers.pSize();
-      size_t pSize = _pers.tSize();
+      size_t pSize = _pers.pSize();
+      size_t tSize = _pers.tSize();
       size_t a = addr->u.n_torus.coords[0];
       size_t b = addr->u.n_torus.coords[1];
       size_t c = addr->u.n_torus.coords[2];
       size_t d = addr->u.n_torus.coords[3];
       size_t e = addr->u.n_torus.coords[4];
-      size_t t = addr->u.n_torus.coords[6];
       size_t p = addr->u.n_torus.coords[5];
+      size_t t = addr->u.n_torus.coords[6];
       // Verify that the bgq address is valid.
       // TODO convert to "unlikely if"
       if ((a >= aSize) ||
@@ -436,7 +436,7 @@ namespace XMI
       uint32_t coord1 = _mapcache.torus.task2coords[task1].raw;
       uint32_t coord2 = _mapcache.torus.task2coords[task2].raw;
 
-      return(bool) ((coord1 & 0x3fffffe0) == (coord2 & 0x3fffffe0));
+      return ((coord1 & 0x3fffffe0) == (coord2 & 0x3fffffe0));
     }
 
     /// \see XMI::Interface::Mapping::Node::nodeAddr()
@@ -464,7 +464,7 @@ namespace XMI
       // position followed by the core id (p) in the least significant
       // position.
       address.local = (coords & 0x0000000f) |
-                      ((coords >> 22) & 0x00000030);
+                      ((coords >> 26) & 0x00000030);
 
       TRACE_ERR((stderr, "Mapping::task2node_impl(%zd, {%zd, %zd}) <<\n", task, address.global, address.local));
       return XMI_SUCCESS;
@@ -512,7 +512,7 @@ namespace XMI
       size_t hash = ESTIMATED_TASK(aCoord,bCoord,cCoord,dCoord,eCoord,pCoord,tCoord,
                                    aSize,bSize,cSize,dSize,eSize,pSize,tSize);
       // Verify that the estimated task is mapped.
-      if (unlikely(_mapcache.torus.coords2task[hash] == (unsigned) - 1))
+      if (unlikely(_mapcache.torus.coords2task[hash] == (unsigned)-1))
       {
         return XMI_ERROR;
       }

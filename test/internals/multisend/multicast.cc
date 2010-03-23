@@ -86,9 +86,11 @@ int main(int argc, char ** argv) {
 
 	new (&itopo) XMI::Topology(root);
 	__global.topology_local.subtractTopology(&otopo, &itopo);
+	XMI_assertf(otopo.size() == num_tasks - 1, "Failed to create proper dest topology, size is %zd should be %zd\n", otopo.size(), num_tasks - 1);
+	XMI_assertf(itopo.size() == 1, "Failed to create proper root topology, size is %zd should be %zd\n", otopo.size(), 1);
 
 	xmi_multicast_t mcast;
-    memset(&mcast, 0x00, sizeof(mcast));
+	memset(&mcast, 0x00, sizeof(mcast));
 
 	// simple allreduce on the local ranks...
 	mcast.client = 0;
@@ -109,6 +111,7 @@ int main(int argc, char ** argv) {
 	}
 	fprintf(stderr, "PASS %s\n", test);
 
+	initializeMemoryManager("multicast test", 512*1024, mm);
 	test = LOCAL_BCAST_NAME2;
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL2, LOCAL_BCAST_DEVICE2, TEST_BUF_SIZE> test2(test, mm);

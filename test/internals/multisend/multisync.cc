@@ -17,6 +17,7 @@ typedef XMI::Barrier::CounterBarrier<XMI::Counter::GccNodeCounter> Barrier_Type;
 typedef XMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
 typedef XMI::Device::AtomicBarrierDev Barrier_Device;
 
+#undef BARRIER_NAME2
 #ifdef __bgp__
 
 #define BARRIER_NAME2	"XMI::Barrier::BGP::LockBoxNodeProcBarrier"
@@ -26,6 +27,15 @@ typedef XMI::Device::AtomicBarrierMdl<Barrier_Type2> Barrier_Model2;
 typedef XMI::Device::AtomicBarrierDev Barrier_Device2;
 
 #endif // __bgp__
+#ifdef __bgq__
+#if 0
+#define BARRIER_NAME2	"XMI::Barrier::BGQ::L2NodeProcBarrier"
+#include "components/atomic/bgq/L2Barrier.h"
+typedef XMI::Barrier::BGQ::L2NodeProcBarrier Barrier_Type2;
+typedef XMI::Device::AtomicBarrierMdl<Barrier_Type2> Barrier_Model2;
+typedef XMI::Device::AtomicBarrierDev Barrier_Device2;
+#endif
+#endif // __bgq__
 
 int main(int argc, char ** argv) {
 	xmi_context_t context;
@@ -107,8 +117,9 @@ int main(int argc, char ** argv) {
 	// between ranks, while the first number should be more uniform.
 	fprintf(stderr, "PASS? %5lld (%5lld) [delay: %lld, time: %lld]\n", test1.total_time, test1.barrier_time, test1.delay, test1.raw_time);
 
-#ifdef __bgp__
+#ifdef BARRIER_NAME2
 
+	initializeMemoryManager("multisync test", 128*1024, mm);
 	test = BARRIER_NAME2;
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multisync<Barrier_Model2,Barrier_Device2> test2(test, mm);
@@ -123,7 +134,7 @@ int main(int argc, char ** argv) {
 	// between ranks, while the first number should be more uniform.
 	fprintf(stderr, "PASS2? %5lld (%5lld) [delay: %lld, time: %lld]\n", test2.total_time, test2.barrier_time, test2.delay, test2.raw_time);
 
-#endif // __bgp__
+#endif // BARRIER_NAME2
 
 // ------------------------------------------------------------------------
 #if 0

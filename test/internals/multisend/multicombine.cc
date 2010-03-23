@@ -110,6 +110,7 @@ int main(int argc, char ** argv) {
 	}
 	fprintf(stderr, "PASS %s\n", test);
 
+	initializeMemoryManager("multicombine test", 512*1024, mm);
 	test = LOCAL_REDUCE_NAME2;
 	if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
 	XMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL2,LOCAL_REDUCE_DEVICE2,TEST_BUF_SIZE> test2(test, mm);

@@ -59,7 +59,7 @@ namespace BGQ {
 
 		inline void init(XMI::Memory::MemoryManager *mm) {
 			xmi_result_t rc = mm->memalign((void **)&_counters,
-							L1D_CACHE_LINE_SIZE,
+							sizeof(uint64_t),
 							sizeof(*_counters));
 			XMI_assertf(rc == XMI_SUCCESS,
 				"Failed to allocate shared memory for Node Barrier");

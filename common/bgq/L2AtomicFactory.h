@@ -83,7 +83,9 @@ namespace BGQ {
 	public:
 		L2AtomicFactory() { }
 
-		inline void init(XMI::Mapping *mapping, XMI::Topology *local) {
+		inline void init( /* XMI::Memory::MemoryManager *mm,  */
+				XMI::Mapping *mapping, XMI::Topology *local) {
+			xmi_result_t rc;
 #warning must figure out L2 Atomic Factory memory management...
 #if 0
 			// Must coordinate with all other processes on this node,
@@ -93,7 +95,7 @@ namespace BGQ {
 			_l2atomic.size = sizeof(uint64_t) * L2A_MAX_NUML2ATOMIC;
 			mm->memalign((void **)&_l2atomic.virt, 8, _l2atomic.size);
 			XMI_assertf(_l2atomic.virt, "Out of shared memory in L2AtomicFactory");
-			_l2atomic.arena = MapL2AtomicRegion(_l2atomic.virt);
+			_l2atomic.arena = (uintptr_t) _l2atomic.virt; //MapL2AtomicRegion(_l2atomic.virt);
 			_l2atomic.next = 0;
 			// ...something like that...
 #endif
@@ -117,7 +119,7 @@ namespace BGQ {
 
 			_factory.numCore = 0;
 			_factory.numProc = 0;
-			_factory.masterProc = (unsigned)-1;
+			_factory.masterProc = (size_t)-1;
 			//
 			// t | VN core | DUAL | SMP |
 			//---+---------+------+-----+---
@@ -135,11 +137,13 @@ namespace BGQ {
 				if (ranks[i] >= 0) {
 					_factory.numCore += ncores;
 					++_factory.numProc;
-					mapping->task2node(ranks[i], addr);
+					rc = mapping->task2node(ranks[i], addr);
+					XMI_assertf(rc == XMI_SUCCESS, "[%zd] task2node(%d, addr) failed\n", i, ranks[i]);
 					size_t p;
-					mapping->node2peer(addr, p);
+					rc = mapping->node2peer(addr, p);
+					XMI_assertf(rc == XMI_SUCCESS, "[%zd] node2peer(addr, p) failed\n", i);
 					_factory.coreXlat[i] = p << shift;
-					if ((size_t)ranks[i] == mapping->task()) {
+					if (ranks[i] == mapping->task()) {
 						_factory.myProc = i;
 					}
 					if (_factory.masterProc == (size_t)-1) {

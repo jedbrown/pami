@@ -146,6 +146,7 @@ namespace XMI
           }
 
         topology_global.subTopologyLocalToMe(&topology_local);
+	XMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
 	l2atomicFactory.init(&mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));

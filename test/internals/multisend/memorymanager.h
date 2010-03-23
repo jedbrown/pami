@@ -23,37 +23,48 @@
 
 #define TEST_DEF_SHMEM_SIZE	(32*1024)
 
+// re-initializes mm on subsequent calls. Caller ensures/expects size to be the same.
+//
 static inline xmi_result_t initializeMemoryManager(const char *name, size_t bytes,
 					XMI::Memory::MemoryManager &mm) {
+	static size_t _bytes = 0;
+	static void *_ptr = NULL;
 	char shmemfile[1024];
 
-	snprintf(shmemfile, 1023, "/xmi-test-%s", name);
+	if (!_ptr) {
+		snprintf(shmemfile, 1023, "/xmi-test-%s", name);
 
-	// Round up to the page size
-	//size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
+		// Round up to the page size
+		//size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-	int fd, rc;
-	size_t n = bytes;
+		int fd, rc;
+		size_t n = bytes;
+		void *ptr;
 
-	// CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-	rc = shm_open(shmemfile, O_CREAT | O_RDWR, 0600);
-
-	if (rc != -1) {
-		fd = rc;
-		rc = ftruncate(fd, n);
-
+		// CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
+		rc = shm_open(shmemfile, O_CREAT | O_RDWR, 0600);
 		if (rc != -1) {
-			void *ptr = mmap(NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-
-			if (ptr != MAP_FAILED) {
-				mm.init(ptr, n);
-				return XMI_SUCCESS;
+			fd = rc;
+			rc = ftruncate(fd, n);
+			if (rc != -1) {
+				ptr = mmap(NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+				if (ptr == MAP_FAILED) {
+					rc = -1;
+				}
 			}
 		}
+		if (rc == -1) {
+			// Failed to create shared memory .. fake it using the heap ??
+			// assume SMP mode (?)
+			ptr = malloc(n);
+			// check for failure???
+		}
+		_ptr = ptr;
+		_bytes = n;
+	} else {
+		// assert(bytes == _bytes);
 	}
-
-	// Failed to create shared memory .. fake it using the heap ??
-	mm.init(malloc(n), n);
+	mm.init(_ptr, _bytes);
 
 	return XMI_SUCCESS;
 }
