@@ -146,7 +146,6 @@ namespace XMI
           }
 
         topology_global.subTopologyLocalToMe(&topology_local);
-fprintf(stderr, "local topo %zd\n", topology_local.size());
 	l2atomicFactory.init(&mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));
