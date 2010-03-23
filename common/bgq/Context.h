@@ -366,10 +366,10 @@ namespace XMI
 
         XMI::Protocol::Send::Send * send =
           (XMI::Protocol::Send::Send *) _dispatch[id];
-        send->simple (parameters);
+        xmi_result_t rc = send->simple (parameters);
 
-        TRACE_ERR((stderr, "<< send_impl('simple')\n"));
-        return XMI_SUCCESS;
+        TRACE_ERR((stderr, "<< send_impl('simple') rc = %d\n",rc));
+        return rc;
       }
 
       inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
@@ -380,10 +380,10 @@ namespace XMI
 
         XMI::Protocol::Send::Send * send =
           (XMI::Protocol::Send::Send *) _dispatch[id];
-        send->immediate (parameters);
+        xmi_result_t rc = send->immediate (parameters);
 
-        TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
-        return XMI_SUCCESS;
+        TRACE_ERR((stderr, "<< send_impl('immediate') rc = %d\n",rc));
+        return rc;
       }
 
       inline xmi_result_t send_impl (xmi_send_typed_t * parameters)

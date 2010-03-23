@@ -529,7 +529,8 @@ size_t XMI::Device::MU::MUDevice::task2peer_impl (size_t task)
 
 bool XMI::Device::MU::MUDevice::isPeer_impl (size_t task)
 {
-  return __global.mapping.isPeer(task, __global.mapping.task());
+  // all tasks are addressable "peers" to the MU
+  return true;//__global.mapping.isPeer(task, __global.mapping.task());
 }
 
 int XMI::Device::MU::MUDevice::advance()
