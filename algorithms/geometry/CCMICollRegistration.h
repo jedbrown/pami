@@ -57,18 +57,28 @@ namespace XMI
         _context(context),
         _context_id(context_id),
         _dev(dev),
-        _minterface(dev, client,context,context_id,client_id),
+        _msync_ni(dev, client,context,context_id,client_id),
+        _barrier_ni(dev, client,context,context_id,client_id),
+        _binom_broadcast_ni(dev, client,context,context_id,client_id),
+        _ring_broadcast_ni(dev, client,context,context_id,client_id),
         _connmgr(65535),
-        _msync_reg(&_sconnmgr, &_minterface),
-	_barrier_reg(NULL,&_minterface, (xmi_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
-        _binom_broadcast_reg(&_connmgr, &_minterface),
-        _ring_broadcast_reg(&_connmgr, &_minterface)
+        _msync_reg(&_sconnmgr, &_msync_ni),
+	_barrier_reg(NULL,&_barrier_ni, (xmi_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
+        _binom_broadcast_reg(&_connmgr, &_binom_broadcast_ni),
+        _ring_broadcast_reg(&_connmgr, &_ring_broadcast_ni)
           {
 
           }
 
         inline xmi_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
         {
+          xmi_xfer_t xfer = {0};
+          _barrier_composite =_barrier_reg.generate(geometry,
+                                                    &xfer);
+
+          geometry->setKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE1,
+                           (void*)_barrier_composite);
+
           // Add Barriers
           geometry->addCollective(XMI_XFER_BARRIER,&_msync_reg,_context_id);
           geometry->addCollective(XMI_XFER_BARRIER,&_barrier_reg,_context_id);
@@ -90,9 +100,16 @@ namespace XMI
       xmi_context_t                                          _context;
       size_t                                                 _context_id;
 
+      // Barrier Storage
+      CCMI::Executor::Composite                             *_barrier_composite;
+
       // Native Interface
       T_Device                                              &_dev;
-      T_NativeInterface                                      _minterface;
+      T_NativeInterface                                      _msync_ni;
+      T_NativeInterface                                      _barrier_ni;
+      T_NativeInterface                                      _binom_broadcast_ni;
+      T_NativeInterface                                      _ring_broadcast_ni;
+
 
       // CCMI Connection Manager Class
       CCMI::ConnectionManager::ColorGeometryConnMgr<SysDep>  _connmgr;
@@ -101,6 +118,7 @@ namespace XMI
       // CCMI Barrier Interface
       CCMI::Adaptor::Barrier::MultiSyncFactory               _msync_reg;
       CCMI::Adaptor::Barrier::BinomialBarrierFactory         _barrier_reg;
+
 
       // CCMI Binomial and Ring Broadcast
       CCMI::Adaptor::Broadcast::BinomialBcastFactory         _binom_broadcast_reg;

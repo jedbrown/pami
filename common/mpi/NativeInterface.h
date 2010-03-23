@@ -109,13 +109,13 @@ namespace XMI
   _mcomb(device,_mcomb_status),
 
       _dispatch(0),
+      _client(client),
       _context(context),
       _contextid(context_id),
       _clientid(client_id)
       {
     TRACE_ERR((stderr, "<%p>%s %d %d %d\n", this, __PRETTY_FUNCTION__,
                _mcast_status, _msync_status, _mcomb_status));
-
     XMI_assert(_mcast_status == XMI_SUCCESS);
     XMI_assert(_msync_status == XMI_SUCCESS);
     XMI_assert(_mcomb_status == XMI_SUCCESS);
@@ -144,8 +144,21 @@ namespace XMI
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline xmi_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::setDispatch (xmi_dispatch_callback_fn fn, void *cookie)
       {
-      static size_t        dispatch = DISPATCH_START;
+      static size_t        dispatch = DISPATCH_START-1;
 
+      // todo:  this is a temporary upcall until we can call the interface directly (it gets implemented)
+#if 1
+      xmi_dispatch_hint_t        options;
+      dispatch++;
+      _dispatch=dispatch;
+      memset(&options, 0, sizeof(options));
+      options.type = XMI_MULTICAST;
+      options.hint.multicast.one_sided = 1;
+//      options.hint.multicast.all_sided = 1;
+//      options.hint.multicast.local     = 1;
+//      options.hint.multicast.ring_wq   = 1;
+      return XMI_Dispatch_set_new(_context,dispatch,fn,cookie, options);
+#else
     TRACE_ERR((stderr, "<%p>MPINativeInterface::setDispatch(%p, %p) id=%zd\n",
                this, fn.multicast,  cookie,  dispatch));
 
@@ -154,11 +167,20 @@ namespace XMI
       _dispatch = dispatch;
       dispatch ++;
     return result;
+#endif
     }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline xmi_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multicast (xmi_multicast_t *mcast)
       {
+
+#if 1
+        // todo:  temporary fix, upcall, and we shouldn't be putting in the client/dispatch for the user
+        mcast->client   = (size_t)_client;
+        mcast->dispatch = _dispatch;
+        return XMI_Multicast(mcast);
+#else
+
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
     req->_user_callback    = mcast->cb_done;
@@ -177,6 +199,7 @@ namespace XMI
     m.cb_done.clientdata   =  req;
 
     return _mcast.postMulticast(req->_state._mcast, &m);
+#endif
       }
 
 

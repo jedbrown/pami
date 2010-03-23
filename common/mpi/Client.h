@@ -120,7 +120,7 @@ namespace XMI
 			_mm.memalign((void **)&base, 16, bytes);
 			_mm.disable();
 			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
-			new (&_contexts[x]) XMI::Context(this->getClient(), _clientid, x, n,
+			new (&_contexts[x]) XMI::Context(this, _clientid, x, n,
 							&_platdevs, base, bytes, _world_geometry);
 			//_context_list->pushHead((QueueElem *)&context[x]);
 			//_context_list->unlock();

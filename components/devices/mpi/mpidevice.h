@@ -14,8 +14,6 @@
 #ifndef __components_devices_mpi_mpidevice_h__
 #define __components_devices_mpi_mpidevice_h__
 
-#include "Global.h"
-
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
 #include "components/devices/mpi/mpimessage.h"
@@ -655,7 +653,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
 
         return result == XMI_SUCCESS;
 #else
-        return false;
+        return true;
 #endif
       }
 

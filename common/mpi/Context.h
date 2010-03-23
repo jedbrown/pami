@@ -78,7 +78,7 @@ namespace XMI
     typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
 
 #ifdef ENABLE_SHMEM_DEVICE
-    typedef Fifo::FifoPacket <32, 512> ShmemPacket;
+    typedef Fifo::FifoPacket <64, 1024> ShmemPacket;
     typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
     typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
     typedef Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
@@ -397,10 +397,10 @@ namespace XMI
 
         XMI::Protocol::Send::Send * send =
           (XMI::Protocol::Send::Send *) _dispatch[id][0];
-        send->simple (parameters);
+
 
         TRACE_ERR((stderr, "<< Context::send_impl('simple')\n"));
-        return XMI_SUCCESS;
+        return send->simple (parameters);
         }
 
       inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
@@ -411,10 +411,10 @@ namespace XMI
 
         XMI::Protocol::Send::Send * send =
           (XMI::Protocol::Send::Send *) _dispatch[id][0];
-        send->immediate (parameters);
+
 
         TRACE_ERR((stderr, "<< Context::send_impl('immediate')\n"));
-        return XMI_SUCCESS;
+        return send->immediate (parameters);
         }
 
       inline xmi_result_t send_impl (xmi_send_typed_t * parameters)
@@ -598,7 +598,6 @@ namespace XMI
           XMI_abort();
           return XMI_UNIMPL;
         }
-
       inline xmi_result_t multicast_impl(xmi_multicast_t *mcastinfo)
       {
       size_t id = (size_t)(mcastinfo->dispatch);
@@ -647,7 +646,6 @@ namespace XMI
         XMI_abort();
       return XMI_SUCCESS;
       }
-
       inline xmi_result_t manytomany_impl(xmi_manytomany_t *m2minfo)
         {
           XMI_abort();
@@ -750,6 +748,7 @@ namespace XMI
       xmi_result_t result        = XMI_ERROR;
       // Off node registration
       // This is for communication off node
+
       if(_dispatch[(size_t)id][0] != NULL)
       {
         XMI_abort();
@@ -768,13 +767,13 @@ namespace XMI
           _dispatch[(size_t)id][1] = (void*) 2; // see HACK comments above
           XMI_assertf(_request.objsize >= sizeof(P2PMcastProto),"%zd >= %zd(%zd,%zd)\n",_request.objsize,sizeof(P2PMcastProto),sizeof(EagerMPI),sizeof(XMI::Device::MPIBcastMdl));
           new (_dispatch[(size_t)id][0]) P2PMcastProto(id, fn.multicast, cookie,
-                                                                      *_mpi,
-XMI::Device::MPIBcastDev::Factory::getDevice(_devices->_mpimcast, _clientid, _contextid),
-                                                                      this->_client,
-                                                                      this->_context,
-                                                                      this->_contextid,
-                                                                      this->_clientid,
-                                                                      result);
+                                                       *_mpi,
+                                                       XMI::Device::MPIBcastDev::Factory::getDevice(_devices->_mpimcast, _clientid, _contextid),
+                                                       this->_client,
+                                                       this->_context,
+                                                       this->_contextid,
+                                                       this->_clientid,
+                                                       result);
           TRACE_ERR((stderr, "<< dispatch_impl(), mcast local onesided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
         }
         else if((options.hint.multicast.all_sided) && (options.hint.multicast.local))
@@ -844,7 +843,7 @@ XMI::Device::MPIBcastDev::Factory::getDevice(_devices->_mpimcast, _clientid, _co
 #ifdef USE_WAKEUP_VECTORS
       XMI::WakeupManager _wakeupManager;
 #endif /* USE_WAKEUP_VECTORS */
-      MemoryAllocator<2048,16>  _request;
+      MemoryAllocator<4096,16>  _request;
       MPIDevice                *_mpi;
   public:
     CCMICollreg               *_ccmi_collreg;
