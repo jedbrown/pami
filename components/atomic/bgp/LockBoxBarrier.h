@@ -137,7 +137,7 @@ public:
 		// a core number. Assume the master core
 		// is the lowest-numbered core in the
 		// process.
-#warning take master cue from params?
+		/** \todo #warning take master cue from params? */
 		_barrier.master = __global.lockboxFactory.masterProc() << __global.lockboxFactory.coreShift();
 		_barrier.coreshift = 0;
 		_barrier.nparties = __global.lockboxFactory.numCore();

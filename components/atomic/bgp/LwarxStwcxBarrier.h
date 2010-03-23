@@ -143,7 +143,7 @@ namespace BGP {
 			// between core id and process id,
 			// and only one core per process will
 			// participate.
-#warning __global.lockboxFactory needs to be more general, since all PPC machines can do lwarx/stwcx
+                        /** \todo #warning __global.lockboxFactory needs to be more general, since all PPC machines can do lwarx/stwcx */
 			_barrier->master = __global.lockboxFactory.coreXlat(__global.lockboxFactory.masterProc()) >> __global.lockboxFactory.coreShift();
 			_barrier->coreshift = __global.lockboxFactory.coreShift();
 			_barrier->nparties = __global.lockboxFactory.numProc();
