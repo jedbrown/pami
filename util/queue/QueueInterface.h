@@ -124,6 +124,17 @@ namespace XMI
       public:
 
         ///
+        /// \brief Add an entire queue to the back of this queue
+        ///
+        /// All elements from the reference queue will be added, in order, to
+        /// the end of this queue.  The reference queue will be empty after the
+        /// enqueue operation.
+        ///
+        /// \param[in] queue  Queue to add
+        ///
+        inline void enqueue (T_Queue * queue);
+
+        ///
         /// \brief Add a queue element to the back of the queuei
         ///
         /// \param[in] element  Queue element to add
@@ -424,6 +435,12 @@ namespace XMI
 // XMI::Interface::QueueInterface<T_Queue,T_Element> method definitions
 //
 // ----------------------------------------------------------------------------
+
+template <class T_Queue, class T_Element>
+inline void XMI::Interface::QueueInterface<T_Queue, T_Element>::enqueue (T_Queue * queue)
+{
+  static_cast<T_Queue *>(this)->enqueue_impl (queue);
+}
 
 template <class T_Queue, class T_Element>
 inline void XMI::Interface::QueueInterface<T_Queue, T_Element>::enqueue (T_Element * element)
