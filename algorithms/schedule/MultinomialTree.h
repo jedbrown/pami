@@ -61,22 +61,22 @@ namespace CCMI
        */
       inline void NEXT_NODES(bool parent, unsigned ph, unsigned *nodes, unsigned &nranks)
       {
-	// This phase is only for communication
-	// between outside and peer. Don't care
-	// about 'parent' here - simply flip to
-	// other side of what we are.
+        // This phase is only for communication
+        // between outside and peer. Don't care
+        // about 'parent' here - simply flip to
+        // other side of what we are.
         if( ((ph == _auxsendph) && !parent) ||
-	    ((ph == _auxrecvph) &&  parent) )
+            ((ph == _auxrecvph) &&  parent) )
         {
-	  if (_map.isAuxProc(_map.getMyRank())) {
-	    nodes[0] = _map.getPeerForAux(_map.getMyRank());
-	    nranks = 1;
-	  }
-	  else if (_map.isPeerProc(_map.getMyRank())) {
-	    nodes[0] = _map.getAuxForPeer(_map.getMyRank());
-	    nranks = 1;
-	  }
-	}
+          if (_map.isAuxProc(_map.getMyRank())) {
+            nodes[0] = _map.getPeerForAux(_map.getMyRank());
+            nranks = 1;
+          }
+          else if (_map.isPeerProc(_map.getMyRank())) {
+            nodes[0] = _map.getAuxForPeer(_map.getMyRank());
+            nranks = 1;
+          }
+        }
         else if (ph != _auxrecvph && ph != _auxsendph)
         {
           // Multinomial part of operation. All of these
@@ -85,8 +85,8 @@ namespace CCMI
           // algorithm requires zero.
           ph -= 1;
 
-	  BINO(nodes, nranks, _map.getMyRank(), ph, _nphbino, _radix, _logradix);
-	  CCMI_assert(nranks >= 1);
+          BINO(nodes, nranks, _map.getMyRank(), ph, _nphbino, _radix, _logradix);
+          CCMI_assert(nranks >= 1);
         }
 
         if (nranks > 0)
@@ -106,16 +106,16 @@ namespace CCMI
        */
       inline void initBinoSched()
       {
-	_nranks = _map.getNumRanks();
+        _nranks = _map.getNumRanks();
         _op = -1;
 
-	_radix = getRadix (_nranks);
-	_logradix = 1;
+        _radix = getRadix (_nranks);
+        _logradix = 1;
 
-	if (_radix == 8)
-	  _logradix = 3;
-	else if (_radix == 4)
-	  _logradix = 2;
+        if (_radix == 8)
+          _logradix = 3;
+        else if (_radix == 4)
+          _logradix = 2;
 
         _maxphases = getMaxPhases(_nranks, &_nphbino);
         _hnranks = (1 << (_nphbino * _logradix)); // threshold for special handling
@@ -127,39 +127,39 @@ namespace CCMI
       /// \brief Enable a higher radix binomial algorithm
       ///
       static unsigned getRadix (unsigned nranks) {
-	int nph = 0;
-	int radix = 2;
+        int nph = 0;
+        int radix = 2;
 
-	for(unsigned i = nranks; i > 1; i >>= 1) {
-	  nph++;
-	}
+        for(unsigned i = nranks; i > 1; i >>= 1) {
+          nph++;
+        }
 
-	//Capping the number of phases
-	if ((nranks <= 4096) && (nph % 3) == 0)  //multiple of 3
-	  radix = 8;
-	else if ((nph & 1) == 0) //multiple of 2
-	  radix = 4;
+        //Capping the number of phases
+        if ((nranks <= 4096) && (nph % 3) == 0)  //multiple of 3
+          radix = 8;
+        else if ((nph & 1) == 0) //multiple of 2
+          radix = 4;
 
-	return radix;
+        return radix;
       }
 
       static unsigned getMaxPhases(unsigned nranks, unsigned *nbino = NULL)
       {
         unsigned nph;
-	unsigned radix = getRadix (nranks);
+        unsigned radix = getRadix (nranks);
 
         /* figure out the number of phases */
         nph = 0;
         if(nranks)
         {
-	  for(unsigned i = nranks; i > 1; i >>= 1) {
-	    nph++;
-	  }
+          for(unsigned i = nranks; i > 1; i >>= 1) {
+            nph++;
+          }
 
-	  if (radix == 8)
-	    nph /= 3;
-	  else if (radix == 4)
-	    nph /= 2;
+          if (radix == 8)
+            nph /= 3;
+          else if (radix == 4)
+            nph /= 2;
         }
         if(nbino)
         {
@@ -219,26 +219,26 @@ namespace CCMI
        */
       virtual void getSrcTopology(unsigned phase, PAMI::Topology *topology)
       {
-	unsigned *srcranks;
-	pami_result_t rc = topology->rankList(&srcranks);
-	CCMI_assert (rc == PAMI_SUCCESS);
-	CCMI_assert(srcranks != NULL);
+        unsigned *srcranks;
+        pami_result_t rc = topology->rankList(&srcranks);
+        CCMI_assert (rc == PAMI_SUCCESS);
+        CCMI_assert(srcranks != NULL);
 
-	unsigned nsrc = 0;
+        unsigned nsrc = 0;
         if((phase >= 1 && phase <= _nphbino && (_recvph == ALL_PHASES ||
                                                 (_recvph == NOT_SEND_PHASE && phase != _sendph) ||
                                                 phase == _recvph)) || phase == _auxrecvph)
         {
           NEXT_NODES(PARENT, phase, srcranks, nsrc);
         }
-	CCMI_assert (nsrc <= topology->size());
+        CCMI_assert (nsrc <= topology->size());
 
-	for (unsigned count = 0; count < nsrc; count ++) {
-	  srcranks[count] = _map.getGlobalRank(srcranks[count]);
-	}
+        for (unsigned count = 0; count < nsrc; count ++) {
+          srcranks[count] = _map.getGlobalRank(srcranks[count]);
+        }
 
-	//Convert to a list topology
-	new (topology) PAMI::Topology (srcranks, nsrc);
+        //Convert to a list topology
+        new (topology) PAMI::Topology (srcranks, nsrc);
       }
 
       /**
@@ -249,12 +249,12 @@ namespace CCMI
        */
       virtual void getDstTopology(unsigned phase, PAMI::Topology *topology)
       {
-	unsigned *dstranks;
-	pami_result_t rc = topology->rankList(&dstranks);
-	CCMI_assert (rc == PAMI_SUCCESS);
-	CCMI_assert(dstranks != NULL);
+        unsigned *dstranks;
+        pami_result_t rc = topology->rankList(&dstranks);
+        CCMI_assert (rc == PAMI_SUCCESS);
+        CCMI_assert(dstranks != NULL);
 
-	unsigned ndst = 0;
+        unsigned ndst = 0;
         if((phase >= 1 && phase <= _nphbino && (_sendph == ALL_PHASES ||
                                                 (_sendph == NOT_RECV_PHASE && phase != _recvph) ||
                                                 phase == _sendph)) || phase == _auxsendph)
@@ -262,15 +262,15 @@ namespace CCMI
           NEXT_NODES(CHILD, phase, dstranks, ndst);
         }
 
-	CCMI_assert (ndst <= topology->size());
-	for (unsigned count = 0; count < ndst; count ++)
-	{
-	  dstranks[count]   = _map.getGlobalRank(dstranks[count]);
-	  TRACE_ERR ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
-	}
+        CCMI_assert (ndst <= topology->size());
+        for (unsigned count = 0; count < ndst; count ++)
+        {
+          dstranks[count]   = _map.getGlobalRank(dstranks[count]);
+          TRACE_ERR ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
+        }
 
-	//Convert to a list topology of the accurate size
-	new (topology) PAMI::Topology (dstranks, ndst);
+        //Convert to a list topology of the accurate size
+        new (topology) PAMI::Topology (dstranks, ndst);
       }
 
       /**
@@ -278,30 +278,30 @@ namespace CCMI
        * \param[INOUT] topology : the union of all sources
        */
       virtual pami_result_t getSrcUnionTopology (PAMI::Topology *topology) {
-	unsigned *srcranks;
-	pami_result_t rc = topology->rankList(&srcranks);
-	CCMI_assert (rc == PAMI_SUCCESS);
-	CCMI_assert(srcranks != NULL);
+        unsigned *srcranks;
+        pami_result_t rc = topology->rankList(&srcranks);
+        CCMI_assert (rc == PAMI_SUCCESS);
+        CCMI_assert(srcranks != NULL);
 
-	unsigned ntotal_src = 0;
-	for (unsigned phase = _startphase; phase < _startphase + _nphases; phase++) {
-	  unsigned nsrc = 0;
-	  if((phase >= 1 && phase <= _nphbino && (_recvph == ALL_PHASES ||
-						  (_recvph == NOT_SEND_PHASE && phase != _sendph) ||
-						  phase == _recvph)) || phase == _auxrecvph)
-	  {
-	    NEXT_NODES(PARENT, phase, srcranks + ntotal_src, nsrc);
-	    ntotal_src += nsrc;
-	  }
-	  CCMI_assert (ntotal_src <= topology->size());
-	}
+        unsigned ntotal_src = 0;
+        for (unsigned phase = _startphase; phase < _startphase + _nphases; phase++) {
+          unsigned nsrc = 0;
+          if((phase >= 1 && phase <= _nphbino && (_recvph == ALL_PHASES ||
+                                                  (_recvph == NOT_SEND_PHASE && phase != _sendph) ||
+                                                  phase == _recvph)) || phase == _auxrecvph)
+          {
+            NEXT_NODES(PARENT, phase, srcranks + ntotal_src, nsrc);
+            ntotal_src += nsrc;
+          }
+          CCMI_assert (ntotal_src <= topology->size());
+        }
 
-	for (unsigned count = 0; count < ntotal_src; count ++) {
-	  srcranks[count] = _map.getGlobalRank(srcranks[count]);
-	}
+        for (unsigned count = 0; count < ntotal_src; count ++) {
+          srcranks[count] = _map.getGlobalRank(srcranks[count]);
+        }
 
-	//Convert to a list topology
-	new (topology) PAMI::Topology (srcranks, ntotal_src);
+        //Convert to a list topology
+        new (topology) PAMI::Topology (srcranks, ntotal_src);
         return PAMI_SUCCESS;
       }
 
@@ -310,32 +310,32 @@ namespace CCMI
        * \param[INOUT] topology : the union of all sources
        */
       virtual pami_result_t getDstUnionTopology (PAMI::Topology *topology) {
-	unsigned *dstranks;
-	pami_result_t rc = topology->rankList(&dstranks);
-	CCMI_assert (rc == PAMI_SUCCESS);
-	CCMI_assert(dstranks != NULL);
+        unsigned *dstranks;
+        pami_result_t rc = topology->rankList(&dstranks);
+        CCMI_assert (rc == PAMI_SUCCESS);
+        CCMI_assert(dstranks != NULL);
 
-	unsigned ntotal_dst = 0;
-	unsigned phase;
-	for (phase = _startphase; phase < _startphase + _nphases; phase++) {
-	  unsigned ndst = 0;
-	  if((phase >= 1 && phase <= _nphbino && (_sendph == ALL_PHASES ||
-						  (_sendph == NOT_RECV_PHASE && phase != _recvph) ||
-						  phase == _sendph)) || phase == _auxsendph)
-	  {
-	    NEXT_NODES(CHILD, phase, dstranks + ntotal_dst, ndst);
-	  }
-	  ntotal_dst += ndst;
-	  CCMI_assert (ntotal_dst <= topology->size());
-	}
+        unsigned ntotal_dst = 0;
+        unsigned phase;
+        for (phase = _startphase; phase < _startphase + _nphases; phase++) {
+          unsigned ndst = 0;
+          if((phase >= 1 && phase <= _nphbino && (_sendph == ALL_PHASES ||
+                                                  (_sendph == NOT_RECV_PHASE && phase != _recvph) ||
+                                                  phase == _sendph)) || phase == _auxsendph)
+          {
+            NEXT_NODES(CHILD, phase, dstranks + ntotal_dst, ndst);
+          }
+          ntotal_dst += ndst;
+          CCMI_assert (ntotal_dst <= topology->size());
+        }
 
-	for (unsigned count = 0; count < ntotal_dst; count ++) {
-	  dstranks[count]   = _map.getGlobalRank(dstranks[count]);
-	  TRACE_ERR ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
-	}
+        for (unsigned count = 0; count < ntotal_dst; count ++) {
+          dstranks[count]   = _map.getGlobalRank(dstranks[count]);
+          TRACE_ERR ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
+        }
 
-	//Convert to a list topology of the accurate size
-	new (topology) PAMI::Topology (dstranks, ntotal_dst);
+        //Convert to a list topology of the accurate size
+        new (topology) PAMI::Topology (dstranks, ntotal_dst);
         return PAMI_SUCCESS;
       }
 
@@ -501,16 +501,16 @@ setupContext(unsigned &startph, unsigned &nph)
         //np = ffs(_map.getMyRank()) + 1 - st;
         //_sendph = st + np - 1;
 
-	int distance = _map.getMyRank() + 1;
-	int n = 0, d = 1;
-	//We are computing Log(distance)
-	while (d < distance) {
-	  d *= _radix; //radix of the collective
-	  n ++;
-	}
+        int distance = _map.getMyRank() + 1;
+        int n = 0, d = 1;
+        //We are computing Log(distance)
+        while (d < distance) {
+          d *= _radix; //radix of the collective
+          n ++;
+        }
 
-	np -= n;  //np - n -1 ?
-	_sendph = st + np - 1;
+        np -= n;  //np - n -1 ?
+        _sendph = st + np - 1;
         _recvph = NOT_SEND_PHASE;
       }
       break;
@@ -523,14 +523,14 @@ setupContext(unsigned &startph, unsigned &nph)
       else
       {
         //int n = (_nphbino - ffs(_map.getMyRank()));
-	int distance = _map.getMyRank() + 1;
-	int n = 0, d = 1;
-	//We are computing Log(distance)
-	while (d < distance) {
-	  d *= _radix; //radix of the collective
-	  n ++;
-	}
-	n --; //first phase is the recv phase
+        int distance = _map.getMyRank() + 1;
+        int n = 0, d = 1;
+        //We are computing Log(distance)
+        while (d < distance) {
+          d *= _radix; //radix of the collective
+          n ++;
+        }
+        n --; //first phase is the recv phase
         st += n;
         np -= n;
         _recvph = st;

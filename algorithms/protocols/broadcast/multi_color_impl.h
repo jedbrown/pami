@@ -19,9 +19,9 @@ namespace CCMI
     namespace Broadcast
     {
       void get_colors (PAMI::Topology             * t,
-		       unsigned                    bytes,
-		       unsigned                  * colors,
-		       unsigned                  & ncolors)
+                       unsigned                    bytes,
+                       unsigned                  * colors,
+                       unsigned                  & ncolors)
       {
         ncolors = 1;
         colors[0] = CCMI::Schedule::NO_COLOR;
@@ -40,18 +40,18 @@ namespace CCMI
       }
 
       typedef BcastMultiColorCompositeT <1,
-	CCMI::Schedule::ListMultinomial,
-	CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
-	get_colors> BinomialBcastComposite;
+        CCMI::Schedule::ListMultinomial,
+        CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
+        get_colors> BinomialBcastComposite;
 
       typedef CollectiveProtocolFactoryT<BinomialBcastComposite,
                                          binom_bcast_md,
                                          CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> > BinomialBcastFactory;
 
       typedef BcastMultiColorCompositeT <1,
-	CCMI::Schedule::RingSchedule,
-	CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
-	get_colors> RingBcastComposite;
+        CCMI::Schedule::RingSchedule,
+        CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
+        get_colors> RingBcastComposite;
 
       typedef CollectiveProtocolFactoryT <RingBcastComposite,
                                           ring_bcast_md,

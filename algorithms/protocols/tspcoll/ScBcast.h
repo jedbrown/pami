@@ -77,19 +77,19 @@ template <class T_Mcast>
 inline TSPColl::ScBcast<T_Mcast>::
 ScBcast(PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
                NBColl<T_Mcast> (comm, tag, instID, NULL, NULL),
-	       _scatterv (comm, tag, instID,
-			  (size_t)&_scatterv - (size_t) this + tagoff),
-	       _barrier (comm, tag, instID,
-			 (size_t)&_barrier - (size_t) this + tagoff),
-	       _barrier2 (comm, tag, instID,
-			  (size_t)&_barrier2 - (size_t) this + tagoff),
-	       _barrier3 (comm, tag, instID,
-			  (size_t)&_barrier3 - (size_t) this + tagoff),
-	       _allgatherv (comm, tag, instID,
-			    (size_t)&_allgatherv - (size_t) this + tagoff)
+               _scatterv (comm, tag, instID,
+                          (size_t)&_scatterv - (size_t) this + tagoff),
+               _barrier (comm, tag, instID,
+                         (size_t)&_barrier - (size_t) this + tagoff),
+               _barrier2 (comm, tag, instID,
+                          (size_t)&_barrier2 - (size_t) this + tagoff),
+               _barrier3 (comm, tag, instID,
+                          (size_t)&_barrier3 - (size_t) this + tagoff),
+               _allgatherv (comm, tag, instID,
+                            (size_t)&_allgatherv - (size_t) this + tagoff)
 {
   TRACE((stderr, "%d: SCBCAST<%d,%d> constr. this=%p sc=%p ag=%p\n",
-	 PGASRT_MYNODE, tag, instID, this, &_scatterv, &_allgatherv));
+         PGASRT_MYNODE, tag, instID, this, &_scatterv, &_allgatherv));
 
 
   _lengths = (size_t *) malloc (sizeof(size_t) * comm->size());
@@ -120,7 +120,7 @@ reset (int root, const void * sbuf, void *rbuf, size_t len)
 
   assert (myoffset != -1);
   TRACE((stderr, "%d: SCBCAST reset (root=%d sbuf=%p rbuf=%p len=%d)\n",
-	 PGASRT_MYNODE, root, sbuf, rbuf, len));
+         PGASRT_MYNODE, root, sbuf, rbuf, len));
   _scatterv.reset (root, sbuf, (char *)rbuf + myoffset, this->_lengths);
   _allgatherv.reset ((char *)rbuf + myoffset, rbuf, this->_lengths);
   _barrier.reset ();

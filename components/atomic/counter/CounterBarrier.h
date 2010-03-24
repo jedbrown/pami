@@ -35,8 +35,8 @@ namespace PAMI
           _lock (&_counter[1]),
           _stat (&_counter[3]),
           _participants (0),
-	  _data(0),
-	  _master(false)
+          _data(0),
+          _master(false)
         {};
 
         ~CounterBarrier () {};
@@ -49,57 +49,57 @@ namespace PAMI
 
           _participants = participants;
           _master = master;
-	  local_barriered_ctrzero<T_Counter>(_counter, 5, participants, master);
+          local_barriered_ctrzero<T_Counter>(_counter, 5, participants, master);
         };
 
         /// \see PAMI::Atomic::Interface::Barrier::enter()
         inline pami_result_t enter_impl ()
         {
-		pollInit_impl();
-		while (poll_impl() != PAMI::Atomic::Interface::Done);
-		return PAMI_SUCCESS;
-	}
+                pollInit_impl();
+                while (poll_impl() != PAMI::Atomic::Interface::Done);
+                return PAMI_SUCCESS;
+        }
 
         inline void enterPoll_impl(PAMI::Atomic::Interface::pollFcn fcn, void *arg) {
-		pollInit_impl();
-		while (poll_impl() != PAMI::Atomic::Interface::Done) {
-			fcn(arg);
-		}
-	}
+                pollInit_impl();
+                while (poll_impl() != PAMI::Atomic::Interface::Done) {
+                        fcn(arg);
+                }
+        }
 
         inline void pollInit_impl() {
-		size_t phase;
-		// msync...
-		phase = _control.fetch();
-		_lock[phase].fetch_and_inc();
-		_data = phase;
-		_status = PAMI::Atomic::Interface::Entered;
-	}
+                size_t phase;
+                // msync...
+                phase = _control.fetch();
+                _lock[phase].fetch_and_inc();
+                _data = phase;
+                _status = PAMI::Atomic::Interface::Entered;
+        }
 
         inline PAMI::Atomic::Interface::barrierPollStatus poll_impl() {
-		PAMI_assert(_status == PAMI::Atomic::Interface::Entered);
-		size_t value;
-		size_t phase = _data;
-		if (_lock[phase].fetch() < _participants) return PAMI::Atomic::Interface::Entered;
-		_lock[phase].fetch_and_inc();
-		do {
-			value = _lock[phase].fetch();
-		} while (value > 0 && value < (2 * _participants));
-		if (_master) {
-			if (phase) {
-				_control.fetch_and_dec();
-			} else {
-				_control.fetch_and_inc();
-			}
-			_stat[phase].fetch_and_clear();
-			_lock[phase].fetch_and_clear();
-		} else {
-			// wait until master releases the barrier by clearing the lock
-			while (_lock[phase].fetch() > 0);
-		}
-		_status = PAMI::Atomic::Interface::Initialized;
-		return PAMI::Atomic::Interface::Done;
-	}
+                PAMI_assert(_status == PAMI::Atomic::Interface::Entered);
+                size_t value;
+                size_t phase = _data;
+                if (_lock[phase].fetch() < _participants) return PAMI::Atomic::Interface::Entered;
+                _lock[phase].fetch_and_inc();
+                do {
+                        value = _lock[phase].fetch();
+                } while (value > 0 && value < (2 * _participants));
+                if (_master) {
+                        if (phase) {
+                                _control.fetch_and_dec();
+                        } else {
+                                _control.fetch_and_inc();
+                        }
+                        _stat[phase].fetch_and_clear();
+                        _lock[phase].fetch_and_clear();
+                } else {
+                        // wait until master releases the barrier by clearing the lock
+                        while (_lock[phase].fetch() > 0);
+                }
+                _status = PAMI::Atomic::Interface::Initialized;
+                return PAMI::Atomic::Interface::Done;
+        }
         inline void * returnBarrier_impl() { PAMI_abortf("%s<%d>\n",__FILE__,__LINE__); }
         inline void dump_impl(char *string) { PAMI_abortf("%s<%d>\n",__FILE__,__LINE__); }
 
@@ -115,8 +115,8 @@ namespace PAMI
 
         size_t      _participants;
         size_t      _data;
-	bool        _master;
-	PAMI::Atomic::Interface::barrierPollStatus _status;
+        bool        _master;
+        PAMI::Atomic::Interface::barrierPollStatus _status;
 
     };  // PAMI::Barrier::CounterBarrier class
   };   // PAMI::Barrier namespace

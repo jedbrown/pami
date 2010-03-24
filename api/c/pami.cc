@@ -84,8 +84,8 @@ extern "C" pami_result_t PAMI_Client_finalize (pami_client_t client)
 }
 #if 0
 extern "C" pami_context_t PAMI_Client_getcontext(pami_client_t client, size_t context) {
-	PAMI::Client *clnt = (PAMI::Client *)client;
-	return (pami_context_t)clnt->getContext(context);
+        PAMI::Client *clnt = (PAMI::Client *)client;
+        return (pami_context_t)clnt->getContext(context);
 }
 #endif
 
@@ -119,7 +119,7 @@ extern "C" pami_result_t PAMI_Context_createv (pami_client_t          client,
                                             pami_configuration_t    configuration[],
                                             size_t                 count,
                                             pami_context_t        * context,
-					    size_t                 ncontexts)
+                                            size_t                 ncontexts)
 {
   pami_result_t result;
   PAMI::Client * pami = (PAMI::Client *) client;

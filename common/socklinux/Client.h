@@ -27,12 +27,12 @@ namespace PAMI
           _mm ()
         {
           TRACE_ERR((stderr, ">> Client::Client()\n"));
-	  static size_t next_client_id = 0;
+          static size_t next_client_id = 0;
           // Set the client name string.
           memset ((void *)_name, 0x00, sizeof(_name));
           strncpy (_name, name, sizeof(_name) - 1);
 
-	  _clientid = next_client_id++;
+          _clientid = next_client_id++;
           // Get some shared memory for this client
           initializeMemoryManager ();
 
@@ -126,7 +126,7 @@ namespace PAMI
         PAMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
         int x;
 
-	_platdevs.generate(_clientid, n, _mm);
+        _platdevs.generate(_clientid, n, _mm);
 
         // This memset has been removed due to the amount of cycles it takes
         // on simulators.  Lower level initializers should be setting the
@@ -161,68 +161,68 @@ namespace PAMI
           //_context_list->unlock ();
         }
 
-	inline pami_result_t queryConfiguration_impl (pami_configuration_t * configuration)
-	{
-		pami_result_t result = PAMI_ERROR;
+        inline pami_result_t queryConfiguration_impl (pami_configuration_t * configuration)
+        {
+                pami_result_t result = PAMI_ERROR;
 
-		switch (configuration->name)
-		{
-		case PAMI_NUM_CONTEXTS:
-			configuration->value.intval = 64; // modified by runmode?
-			result = PAMI_SUCCESS;
-			break;
-		case PAMI_CONST_CONTEXTS:
-			configuration->value.intval = 1; // .TRUE.
-			result = PAMI_SUCCESS;
-			break;
-		case PAMI_TASK_ID:
-			configuration->value.intval = __global.mapping.task();
-			result = PAMI_SUCCESS;
-			break;
-		case PAMI_NUM_TASKS:
-			configuration->value.intval = __global.mapping.size();
-			result = PAMI_SUCCESS;
-			break;
-		case PAMI_CLOCK_MHZ:
-		case PAMI_WTIMEBASE_MHZ:
-			configuration->value.intval = __global.time.clockMHz();
-			result = PAMI_SUCCESS;
-			break;
-		case PAMI_WTICK:
-			configuration->value.doubleval =__global.time.tick();
-			result = PAMI_SUCCESS;
-			break;
-		case PAMI_MEM_SIZE:
-		case PAMI_PROCESSOR_NAME:
-		default:
-			break;
-		}
-		return result;
-	}
+                switch (configuration->name)
+                {
+                case PAMI_NUM_CONTEXTS:
+                        configuration->value.intval = 64; // modified by runmode?
+                        result = PAMI_SUCCESS;
+                        break;
+                case PAMI_CONST_CONTEXTS:
+                        configuration->value.intval = 1; // .TRUE.
+                        result = PAMI_SUCCESS;
+                        break;
+                case PAMI_TASK_ID:
+                        configuration->value.intval = __global.mapping.task();
+                        result = PAMI_SUCCESS;
+                        break;
+                case PAMI_NUM_TASKS:
+                        configuration->value.intval = __global.mapping.size();
+                        result = PAMI_SUCCESS;
+                        break;
+                case PAMI_CLOCK_MHZ:
+                case PAMI_WTIMEBASE_MHZ:
+                        configuration->value.intval = __global.time.clockMHz();
+                        result = PAMI_SUCCESS;
+                        break;
+                case PAMI_WTICK:
+                        configuration->value.doubleval =__global.time.tick();
+                        result = PAMI_SUCCESS;
+                        break;
+                case PAMI_MEM_SIZE:
+                case PAMI_PROCESSOR_NAME:
+                default:
+                        break;
+                }
+                return result;
+        }
 
-	// the friend clause is actually global, but this helps us remember why...
-	//friend class PAMI::Device::Generic::Device;
-	//friend class pami.cc
+        // the friend clause is actually global, but this helps us remember why...
+        //friend class PAMI::Device::Generic::Device;
+        //friend class pami.cc
 
-	inline size_t getNumContexts()
-	{
-		return _ncontexts;
-	}
+        inline size_t getNumContexts()
+        {
+                return _ncontexts;
+        }
 
-	inline PAMI::Context *getContext(size_t ctx)
-	{
-		return _contexts + ctx;
-	}
+        inline PAMI::Context *getContext(size_t ctx)
+        {
+                return _contexts + ctx;
+        }
 
-	inline PAMI::Context *getContexts()
-	{
-		return _contexts;
-	}
+        inline PAMI::Context *getContexts()
+        {
+                return _contexts;
+        }
 
-	inline size_t getClientId()
-	{
-		return _clientid;
-	}
+        inline size_t getClientId()
+        {
+                return _clientid;
+        }
 
     inline pami_result_t geometry_world_impl (pami_geometry_t * world_geometry)
       {
@@ -278,8 +278,8 @@ namespace PAMI
         size_t       _clientid;
         size_t       _references;
         size_t       _ncontexts;
-	PAMI::Context *_contexts;
-	PAMI::PlatformDeviceList _platdevs;
+        PAMI::Context *_contexts;
+        PAMI::PlatformDeviceList _platdevs;
         char         _name[256];
 
         Memory::MemoryManager _mm;

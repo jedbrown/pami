@@ -62,7 +62,7 @@ static void _pami_core_uint16_conv_o(uint16_t *dst, const uint16_t *src, int cou
       : // no outputs
       : [sp] "b" (sp),
         [dp] "b" (dp),
-	[add] "r" (add)
+        [add] "r" (add)
       : "memory",
         "5",  "6",  "7",  "8",  "9",  "10", "11", "12"
     );
@@ -81,7 +81,7 @@ static void _pami_core_uint16_conv_o(uint16_t *dst, const uint16_t *src, int cou
       : // no outputs
       : [sp] "b" (sp),
         [dp] "b" (dp),
-	[add] "r" (add)
+        [add] "r" (add)
       : "memory", "12"
     );
 
@@ -154,7 +154,7 @@ static void _pami_core_uint16_conv_not_o(uint16_t *dst, const uint16_t *src, int
       : // no outputs
       : [sp] "b" (sp),
         [dp] "b" (dp),
-	[add] "r" (add)
+        [add] "r" (add)
       : "memory",
         "5",  "6",  "7",  "8",  "9",  "10", "11", "12"
     );
@@ -174,7 +174,7 @@ static void _pami_core_uint16_conv_not_o(uint16_t *dst, const uint16_t *src, int
       : // no outputs
       : [sp] "b" (sp),
         [dp] "b" (dp),
-	[add] "r" (add)
+        [add] "r" (add)
       : "memory", "12"
     );
 

@@ -287,7 +287,7 @@ pami_result_t PAMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
     {
       while ( cacheAnchorsPtr->done[tt] == 0 )
       {
-	_bgp_msync();
+        _bgp_msync();
       }
     }
 

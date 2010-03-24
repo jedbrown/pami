@@ -27,7 +27,7 @@ namespace CCMI
         ///
         /// \brief The schedule for binomial barrier protocol
         ///
-	CCMI::Executor::OldBarrier<T_Mcast>    _myexecutor;
+        CCMI::Executor::OldBarrier<T_Mcast>    _myexecutor;
         T_Schedule                             _myschedule;
 
       public:
@@ -41,16 +41,16 @@ namespace CCMI
         OldBarrierT  (T_Sysdep            * mapping,
                       T_Mcast             * mInterface,
                       PAMI_GEOMETRY_CLASS  * geometry) :
-	Composite(),
-	  _myexecutor (geometry->nranks(),
-		       geometry->ranks(),
-		       geometry->comm(),
-		       0U,
-		       mInterface),
+        Composite(),
+          _myexecutor (geometry->nranks(),
+                       geometry->ranks(),
+                       geometry->comm(),
+                       0U,
+                       mInterface),
           _myschedule (mapping, geometry->nranks(), geometry->ranks())
         {
           TRACE_INIT((stderr,"<%p>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
-		      this, geometry->comm()));
+                      this, geometry->comm()));
           _myexecutor.setCommSchedule (&_myschedule);
         }
 
@@ -59,12 +59,12 @@ namespace CCMI
           return((AnalyzeFn) afn)(geometry);
         }
 
-	virtual void start() {
-	  _myexecutor.setDoneCallback (_cb_done, _clientdata);
-	  _myexecutor.start();
-	}
+        virtual void start() {
+          _myexecutor.setDoneCallback (_cb_done, _clientdata);
+          _myexecutor.start();
+        }
 
-	Executor::OldBarrier<T_Mcast> * getExecutor() { return &_myexecutor; }
+        Executor::OldBarrier<T_Mcast> * getExecutor() { return &_myexecutor; }
       }; //- OldBarrierT
 
 
@@ -92,12 +92,12 @@ namespace CCMI
                             T_Sysdep               *map,
                             pami_mapidtogeometry_fn  cb_geometry) :
         _mcastInterface (minterface),
-	_mapping (map)
+        _mapping (map)
         {
           TRACE_INIT((stderr,"<%p>CCMI::Collectives::Barrier::BarrierFactory::ctor(%d)\n",
                      this,(int)cb_geometry));
           minterface->setCallback (cb_head, this);
-	  setMapIdToGeometry (cb_geometry);
+          setMapIdToGeometry (cb_geometry);
         }
 
         virtual void metadata(pami_metadata_t *mdata)
@@ -126,26 +126,26 @@ namespace CCMI
         ///
         CCMI::Executor::Composite *generate
         (void                                * request,
-	 unsigned                              rsize,
-	 pami_context_t                         context,
+         unsigned                              rsize,
+         pami_context_t                         context,
          pami_geometry_t                        g,
-	 void                                * cmd)
+         void                                * cmd)
         {
           CCMI_assert(rsize >= sizeof(T));
-	  PAMI_GEOMETRY_CLASS  *geometry = (PAMI_GEOMETRY_CLASS *)g;
+          PAMI_GEOMETRY_CLASS  *geometry = (PAMI_GEOMETRY_CLASS *)g;
           return new (request) T (this->_mapping, this->_mcastInterface, geometry);
         }
 
         static pami_quad_t *   cb_head   (const pami_quad_t    * info,
-					 unsigned          count,
-					 unsigned          peer,
-					 unsigned          sndlen,
-					 unsigned          conn_id,
-					 void            * arg,
-					 unsigned        * rcvlen,
-					 char           ** rcvbuf,
-					 unsigned        * pipewidth,
-					 PAMI_Callback_t * cb_done)
+                                         unsigned          count,
+                                         unsigned          peer,
+                                         unsigned          sndlen,
+                                         unsigned          conn_id,
+                                         void            * arg,
+                                         unsigned        * rcvlen,
+                                         char           ** rcvbuf,
+                                         unsigned        * pipewidth,
+                                         PAMI_Callback_t * cb_done)
         {
           CollHeaderData  *cdata = (CollHeaderData *) info;
           OldBarrierFactoryT *factory = (OldBarrierFactoryT *) arg;
@@ -161,7 +161,7 @@ namespace CCMI
           T *composite = (T*) geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE0);
           CCMI_assert (composite != NULL);
           TRACE_INIT((stderr,"<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",
-		      factory,cdata->_comm,composite));
+                      factory,cdata->_comm,composite));
 
           //Override poly morphism
           composite->getExecutor()->notifyRecv (peer, *info, NULL, 0);

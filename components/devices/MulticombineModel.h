@@ -37,20 +37,20 @@ namespace PAMI
             public:
                 /// \param[in] device                Multicombine device reference
                 MulticombineModel (T_Device &device, pami_result_t &status) {
-			COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
-			status = PAMI_SUCCESS;
-		};
+                        COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
+                        status = PAMI_SUCCESS;
+                };
                 ~MulticombineModel () {};
                 inline pami_result_t postMulticombine (uint8_t (&state)[T_StateBytes],
-						pami_multicombine_t *mcomb);
+                                                pami_multicombine_t *mcomb);
             }; // class MulticombineModel
 
             template <class T_Model,class T_Device, unsigned T_StateBytes>
             pami_result_t MulticombineModel<T_Model,T_Device, T_StateBytes>::postMulticombine(
-							uint8_t (&state)[T_StateBytes],
-							pami_multicombine_t *mcomb)
+                                                        uint8_t (&state)[T_StateBytes],
+                                                        pami_multicombine_t *mcomb)
             {
-	      return static_cast<T_Model*>(this)->postMulticombine_impl(state, mcomb);
+              return static_cast<T_Model*>(this)->postMulticombine_impl(state, mcomb);
             }
 
         }; // namespace Interface

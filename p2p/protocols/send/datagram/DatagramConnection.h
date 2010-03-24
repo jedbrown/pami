@@ -29,9 +29,9 @@ namespace PAMI
       class DatagramConnection
       {
         private:
-	struct datagram_connection_t
+        struct datagram_connection_t
           {
-	    public:
+            public:
             pami_client_t     client;
             size_t          context;
             void           ** array;
@@ -77,7 +77,7 @@ namespace PAMI
               {
                 return NULL;
               }
-			  _datagram_connection[first_empty_connection].client = client;
+                          _datagram_connection[first_empty_connection].client = client;
               _datagram_connection[first_empty_connection].context = context;
               _datagram_connection[first_empty_connection].array =
                 (void **) calloc (_device.peers(), sizeof(void *));

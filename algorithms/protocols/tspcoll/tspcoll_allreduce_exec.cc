@@ -170,144 +170,144 @@ getcallback (__pgasrt_ops_t optype, __pgasrt_dtypes_t dtype)
 
     case PGASRT_OP_ADD:
       {
-	switch (dtype)
-	  {
-	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  add);
-	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   add);
-	  case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   add);
-	  case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  add);
-	  case PGASRT_DT_int:    return CB_ALLREDUCE(int,   add);
-	  case PGASRT_DT_word:   return CB_ALLREDUCE(word,  add);
-	  case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   add);
-	  case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  add);
-	  case PGASRT_DT_dbl:    return CB_ALLREDUCE(dbl,   add);
-	  case PGASRT_DT_flt:    return CB_ALLREDUCE(flt,   add);
-	  default:               break;
-	  }
+        switch (dtype)
+          {
+          case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  add);
+          case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   add);
+          case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   add);
+          case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  add);
+          case PGASRT_DT_int:    return CB_ALLREDUCE(int,   add);
+          case PGASRT_DT_word:   return CB_ALLREDUCE(word,  add);
+          case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   add);
+          case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  add);
+          case PGASRT_DT_dbl:    return CB_ALLREDUCE(dbl,   add);
+          case PGASRT_DT_flt:    return CB_ALLREDUCE(flt,   add);
+          default:               break;
+          }
       }
 
     case PGASRT_OP_MUL:
       {
-	switch (dtype)
-	  {
-	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  mul);
-	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   mul);
-	  case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   mul);
-	  case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  mul);
-	  case PGASRT_DT_int:    return CB_ALLREDUCE(int,   mul);
-	  case PGASRT_DT_word:   return CB_ALLREDUCE(word,  mul);
-	  case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   mul);
-	  case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  mul);
-	  case PGASRT_DT_dbl:    return CB_ALLREDUCE(dbl,   mul);
-	  case PGASRT_DT_flt:    return CB_ALLREDUCE(flt,   mul);
+        switch (dtype)
+          {
+          case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  mul);
+          case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   mul);
+          case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   mul);
+          case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  mul);
+          case PGASRT_DT_int:    return CB_ALLREDUCE(int,   mul);
+          case PGASRT_DT_word:   return CB_ALLREDUCE(word,  mul);
+          case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   mul);
+          case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  mul);
+          case PGASRT_DT_dbl:    return CB_ALLREDUCE(dbl,   mul);
+          case PGASRT_DT_flt:    return CB_ALLREDUCE(flt,   mul);
           default:               break;
-	  }
+          }
       }
 
     case PGASRT_OP_DIV:
       {
-	switch (dtype)
-	  {
-	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  div);
-	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   div);
-	  case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   div);
-	  case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  div);
-	  case PGASRT_DT_int:    return CB_ALLREDUCE(int,   div);
-	  case PGASRT_DT_word:   return CB_ALLREDUCE(word,  div);
-	  case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   div);
-	  case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  div);
-	  case PGASRT_DT_dbl:    return CB_ALLREDUCE(dbl,   div);
-	  case PGASRT_DT_flt:    return CB_ALLREDUCE(flt,   div);
+        switch (dtype)
+          {
+          case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  div);
+          case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   div);
+          case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   div);
+          case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  div);
+          case PGASRT_DT_int:    return CB_ALLREDUCE(int,   div);
+          case PGASRT_DT_word:   return CB_ALLREDUCE(word,  div);
+          case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   div);
+          case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  div);
+          case PGASRT_DT_dbl:    return CB_ALLREDUCE(dbl,   div);
+          case PGASRT_DT_flt:    return CB_ALLREDUCE(flt,   div);
           default:               break;
-	  }
+          }
       }
 
     case PGASRT_OP_AND:
       {
-	switch (dtype)
-	  {
-	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  and);
-	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   and);
-	  case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   and);
-	  case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  and);
-	  case PGASRT_DT_int:    return CB_ALLREDUCE(int,   and);
-	  case PGASRT_DT_word:   return CB_ALLREDUCE(word,  and);
-	  case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   and);
-	  case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  and);
+        switch (dtype)
+          {
+          case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  and);
+          case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   and);
+          case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   and);
+          case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  and);
+          case PGASRT_DT_int:    return CB_ALLREDUCE(int,   and);
+          case PGASRT_DT_word:   return CB_ALLREDUCE(word,  and);
+          case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   and);
+          case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  and);
           default:               break;
-	  }
+          }
       }
 
     case PGASRT_OP_OR:
       {
-	switch (dtype)
-	  {
-	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  or);
-	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   or);
-	  case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   or);
-	  case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  or);
-	  case PGASRT_DT_int:    return CB_ALLREDUCE(int,   or);
-	  case PGASRT_DT_word:   return CB_ALLREDUCE(word,  or);
-	  case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   or);
-	  case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  or);
+        switch (dtype)
+          {
+          case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  or);
+          case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   or);
+          case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   or);
+          case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  or);
+          case PGASRT_DT_int:    return CB_ALLREDUCE(int,   or);
+          case PGASRT_DT_word:   return CB_ALLREDUCE(word,  or);
+          case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   or);
+          case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  or);
           default:               break;
-	  }
+          }
       }
 
     case PGASRT_OP_XOR:
       {
-	switch (dtype)
-	  {
-	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  xor);
-	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   xor);
-	  case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   xor);
-	  case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  xor);
-	  case PGASRT_DT_int:    return CB_ALLREDUCE(int,   xor);
-	  case PGASRT_DT_word:   return CB_ALLREDUCE(word,  xor);
-	  case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   xor);
-	  case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  xor);
+        switch (dtype)
+          {
+          case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  xor);
+          case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   xor);
+          case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   xor);
+          case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  xor);
+          case PGASRT_DT_int:    return CB_ALLREDUCE(int,   xor);
+          case PGASRT_DT_word:   return CB_ALLREDUCE(word,  xor);
+          case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   xor);
+          case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  xor);
           default:               break;
-	  }
+          }
       }
 
     case PGASRT_OP_MAX:
       {
-	switch (dtype)
-	  {
-	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  max);
-	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   max);
-	  case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   max);
-	  case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  max);
-	  case PGASRT_DT_int:    return CB_ALLREDUCE(int,   max);
-	  case PGASRT_DT_word:   return CB_ALLREDUCE(word,  max);
-	  case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   max);
-	  case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  max);
-	  case PGASRT_DT_dbl:    return CB_ALLREDUCE(dbl,   max);
-	  case PGASRT_DT_flt:    return CB_ALLREDUCE(flt,   max);
-	  case PGASRT_DT_dblint: return CB_ALLREDUCE(dblint,max);
+        switch (dtype)
+          {
+          case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  max);
+          case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   max);
+          case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   max);
+          case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  max);
+          case PGASRT_DT_int:    return CB_ALLREDUCE(int,   max);
+          case PGASRT_DT_word:   return CB_ALLREDUCE(word,  max);
+          case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   max);
+          case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  max);
+          case PGASRT_DT_dbl:    return CB_ALLREDUCE(dbl,   max);
+          case PGASRT_DT_flt:    return CB_ALLREDUCE(flt,   max);
+          case PGASRT_DT_dblint: return CB_ALLREDUCE(dblint,max);
           default:               break;
-	  }
+          }
       }
 
     case PGASRT_OP_MIN:
       {
-	switch (dtype)
-	  {
-	  case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  min);
-	  case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   min);
-	  case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   min);
-	  case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  min);
-	  case PGASRT_DT_int:    return CB_ALLREDUCE(int,   min);
-	  case PGASRT_DT_word:   return CB_ALLREDUCE(word,  min);
-	  case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   min);
-	  case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  min);
-	  case PGASRT_DT_dbl:    return CB_ALLREDUCE(dbl,   min);
-	  case PGASRT_DT_flt:    return CB_ALLREDUCE(flt,   min);
+        switch (dtype)
+          {
+          case PGASRT_DT_byte:   return CB_ALLREDUCE(byte,  min);
+          case PGASRT_DT_chr:    return CB_ALLREDUCE(chr,   min);
+          case PGASRT_DT_srt:    return CB_ALLREDUCE(srt,   min);
+          case PGASRT_DT_hwrd:   return CB_ALLREDUCE(hwrd,  min);
+          case PGASRT_DT_int:    return CB_ALLREDUCE(int,   min);
+          case PGASRT_DT_word:   return CB_ALLREDUCE(word,  min);
+          case PGASRT_DT_llg:    return CB_ALLREDUCE(llg,   min);
+          case PGASRT_DT_dwrd:   return CB_ALLREDUCE(dwrd,  min);
+          case PGASRT_DT_dbl:    return CB_ALLREDUCE(dbl,   min);
+          case PGASRT_DT_flt:    return CB_ALLREDUCE(flt,   min);
 #if 0
-	  case PGASRT_DT_dblint: return CB_ALLREDUCE(dblint,min);
+          case PGASRT_DT_dblint: return CB_ALLREDUCE(dblint,min);
 #endif
           default:               break;
-	  }
+          }
       }
     default: break;
     } /* switch (op) */

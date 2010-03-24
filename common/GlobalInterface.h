@@ -34,20 +34,20 @@ namespace Interface
       public:
 
         inline Global() :
-	  time(),
-	  topology_global(),
-	  topology_local()
+          time(),
+          topology_global(),
+          topology_local()
         {
-		ENFORCE_CLASS_MEMBER(T_Global,mapping);
+                ENFORCE_CLASS_MEMBER(T_Global,mapping);
         }
 
         inline ~Global () {};
 
       public:
 
-	PAMI::Time	time;
-	PAMI::Topology	topology_global;
-	PAMI::Topology	topology_local;
+        PAMI::Time	time;
+        PAMI::Topology	topology_global;
+        PAMI::Topology	topology_local;
 
         /// Global location for the processor name
         char processor_name[128];

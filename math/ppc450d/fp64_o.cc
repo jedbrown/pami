@@ -17,95 +17,95 @@
 #include "ppc450d/internal_o.h"
 
 void _pami_core_fp64_sum2(double *dst, const double **srcs, int nsrc, int count) {
-	if (count < 16) {
-		// This seems necessary for good latency,
-		// but its not as good as the unoptimized compile.
+        if (count < 16) {
+                // This seems necessary for good latency,
+                // but its not as good as the unoptimized compile.
 #define OP(a,b)	((a) + (b))
 #define TYPE	double
 #include "_dual_src.x.h"
 #undef OP
 #undef TYPE
-		return;
-	}
-	int size128 = count >> 4;
-	int remainder = count & 0xf;
-	const double *f0 = srcs[0];
-	const double *f1 = srcs[1];
-	double *f2 = dst;
-	if (size128 > 0) {
+                return;
+        }
+        int size128 = count >> 4;
+        int remainder = count & 0xf;
+        const double *f0 = srcs[0];
+        const double *f1 = srcs[1];
+        double *f2 = dst;
+        if (size128 > 0) {
 #define OP2(a,b)	(a) += (b)
 #define OP3(a,b,c)	asm volatile ("fpadd %0, %1, %2" : "=f"(a) : "f"(b), "f"(c))
 #include "ppc450d/_optim_fp64_dual_src.x.h"
 #undef OP2
 #undef OP3
-	}
-	int n;
-	for (n = 0; n < remainder; ++n) {
-		f2[n] = f0[n] + f1[n];
-	}
-	return;
+        }
+        int n;
+        for (n = 0; n < remainder; ++n) {
+                f2[n] = f0[n] + f1[n];
+        }
+        return;
 }
 
 void _pami_core_fp64_max2(double *dst, const double **srcs, int nsrc, int count) {
-	if (count < 16) {
-		// This seems necessary for good latency,
-		// but its not as good as the unoptimized compile.
+        if (count < 16) {
+                // This seems necessary for good latency,
+                // but its not as good as the unoptimized compile.
 #define OP(a,b) (((a)>(b))?(a):(b))
 #define TYPE	double
 #include "_dual_src.x.h"
 #undef OP
 #undef TYPE
-		return;
-	}
-	int size128 = count >> 4;
-	int remainder = count & 0xf;
-	const double *f0 = srcs[0];
-	const double *f1 = srcs[1];
-	double *f2 = dst;
-	if (size128 > 0) {
+                return;
+        }
+        int size128 = count >> 4;
+        int remainder = count & 0xf;
+        const double *f0 = srcs[0];
+        const double *f1 = srcs[1];
+        double *f2 = dst;
+        if (size128 > 0) {
 #define OP2(a,b)  a=(((a)>(b))?(a):(b))
 #define OP3(a,b,c)	asm volatile ("fpsub %0, %1, %2" : "=f"(a) : "f"(b), "f"(c)); \
-	                asm volatile ("fpsel %0, %1, %2, %3" : "=f"(a) : "f"(a), "f"(b), "f"(c))
+                        asm volatile ("fpsel %0, %1, %2, %3" : "=f"(a) : "f"(a), "f"(b), "f"(c))
 #include "ppc450d/_optim_fp64_dual_src.x.h"
 #undef OP2
 #undef OP3
-	}
-	int n;
-	for (n = 0; n < remainder; ++n) {
-	  f2[n] = (((f0[n])>(f1[n]))?(f0[n]):(f1[n]));
-	}
-	return;
+        }
+        int n;
+        for (n = 0; n < remainder; ++n) {
+          f2[n] = (((f0[n])>(f1[n]))?(f0[n]):(f1[n]));
+        }
+        return;
 }
 
 void _pami_core_fp64_min2(double *dst, const double **srcs, int nsrc, int count) {
-	if (count < 16) {
-		// This seems necessary for good latency,
-		// but its not as good as the unoptimized compile.
+        if (count < 16) {
+                // This seems necessary for good latency,
+                // but its not as good as the unoptimized compile.
 #define OP(a,b) (((a)>(b))?(b):(a))
 #define TYPE	double
 #include "_dual_src.x.h"
 #undef OP
 #undef TYPE
-		return;
-	}
-	int size128 = count >> 4;
-	int remainder = count & 0xf;
-	const double *f0 = srcs[0];
-	const double *f1 = srcs[1];
-	double *f2 = dst;
-	if (size128 > 0) {
+                return;
+        }
+        int size128 = count >> 4;
+        int remainder = count & 0xf;
+        const double *f0 = srcs[0];
+        const double *f1 = srcs[1];
+        double *f2 = dst;
+        if (size128 > 0) {
 #define OP2(a,b)  a=(((a)>(b))?(b):(a))
 #define OP3(a,b,c)	asm volatile ("fpsub %0, %1, %2" : "=f"(a) : "f"(b), "f"(c)); \
-	                asm volatile ("fpsel %0, %1, %2, %3" : "=f"(a) : "f"(a), "f"(c), "f"(b))
+                        asm volatile ("fpsel %0, %1, %2, %3" : "=f"(a) : "f"(a), "f"(c), "f"(b))
 #include "ppc450d/_optim_fp64_dual_src.x.h"
 #undef OP2
 #undef OP3
-	}
-	int n;
-	for (n = 0; n < remainder; ++n) {
-	  f2[n] = (((f0[n])>(f1[n]))?(f1[n]):(f0[n]));
-	}
-	return;
+        }
+        int n;
+        for (n = 0; n < remainder; ++n) {
+          f2[n] = (((f0[n])>(f1[n]))?(f1[n]):(f0[n]));
+        }
+        return;
 }
 
 
@@ -188,7 +188,7 @@ const double *src3 = srcs[3];
 #include "_quad_src.x.h"
 #undef OP
 #undef TYPE
-	return;
+        return;
 }
 
 void _pami_core_fp64_min4(double *dst, const double **srcs, int nsrc, int count) {
@@ -201,7 +201,7 @@ const double *src3 = srcs[3];
 #include "_quad_src.x.h"
 #undef OP
 #undef TYPE
-	return;
+        return;
 }
 
 void _pami_core_fp64_prod4(double *dst, const double **srcs, int nsrc, int count) {
@@ -214,7 +214,7 @@ const double *src3 = srcs[3];
 #include "_quad_src.x.h"
 #undef OP
 #undef TYPE
-	return;
+        return;
 }
 
 void _pami_core_fp64_sum4(double *dst, const double **srcs, int nsrc, int count) {
@@ -227,5 +227,5 @@ const double *src3 = srcs[3];
 #include "_quad_src.x.h"
 #undef OP
 #undef TYPE
-	return;
+        return;
 }

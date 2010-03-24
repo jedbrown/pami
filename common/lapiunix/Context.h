@@ -158,18 +158,18 @@ namespace PAMI
      * \param[in] contextid    Context ID (index)
      */
     inline pami_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
-	// these calls create (allocate and construct) each element.
-	// We don't know how these relate to contexts, they are semi-opaque.
-	_generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
+        // these calls create (allocate and construct) each element.
+        // We don't know how these relate to contexts, they are semi-opaque.
+        _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
 //	_shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
-	_progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
-	_atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
-	_wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
-	_wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
-	_localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
-	_localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
-	_localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
-	return PAMI_SUCCESS;
+        _progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
+        _atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
+        _wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
+        _wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
+        _localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+        _localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
+        _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+        return PAMI_SUCCESS;
     }
 
     /**
@@ -189,16 +189,16 @@ namespace PAMI
      * \param[in] contextid    Context ID (index)
      */
     inline pami_result_t init(size_t clientid, size_t contextid, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm) {
-	PAMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
 //	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
-	return PAMI_SUCCESS;
+        PAMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
+        return PAMI_SUCCESS;
     }
 
     /**
@@ -211,17 +211,17 @@ namespace PAMI
      * \param[in] contextid    Context ID (index)
      */
     inline size_t advance(size_t clientid, size_t contextid) {
-	size_t events = 0;
-	events += PAMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
+        size_t events = 0;
+        events += PAMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
 //	events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
-	events += PAMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
-	events += PAMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
-	events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
-	events += PAMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
-	events += PAMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
-	events += PAMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
-	events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
-	return events;
+        events += PAMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
+        events += PAMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
+        events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
+        events += PAMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
+        events += PAMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
+        events += PAMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
+        events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
+        return events;
     }
 
     PAMI::Device::Generic::Device *_generics; // need better name...
@@ -243,7 +243,7 @@ namespace PAMI
                     size_t                        clientid,
                     size_t                        id,
                     size_t                        num,
-		    PlatformDeviceList *devices,
+                    PlatformDeviceList *devices,
                     void                         *addr,
                     size_t                        bytes,
                     LAPIGeometry                 *world_geometry,
@@ -253,7 +253,7 @@ namespace PAMI
         _clientid (clientid),
         _contextid (id),
         _mm (addr, bytes),
-	_sysdep(_mm),
+        _sysdep(_mm),
         _lock (),
         _world_geometry(world_geometry),
         _minterface(_lapi_device,_client,this,_contextid,_clientid),
@@ -304,10 +304,10 @@ namespace PAMI
       inline pami_result_t post_impl (pami_work_t *state, pami_work_function work_fn, void * cookie)
         {
           PAMI::Device::Generic::GenericThread *work = NULL;
-	  COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
-	  work = new (work) PAMI::Device::Generic::GenericThread(work_fn, cookie);
-	  work->setStatus(PAMI::Device::OneShot);
-	  _devices->_generics[_contextid].postThread(work);
+          COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
+          work = new (work) PAMI::Device::Generic::GenericThread(work_fn, cookie);
+          work->setStatus(PAMI::Device::OneShot);
+          _devices->_generics[_contextid].postThread(work);
           return PAMI_SUCCESS;
         }
 
@@ -318,11 +318,11 @@ namespace PAMI
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
               {
-		// don't we want this advanced too?
-		// events += _work.advance ();
+                // don't we want this advanced too?
+                // events += _work.advance ();
 
                 events += _lapi_device.advance_impl();
-		events += _devices->advance(_clientid, _contextid);
+                events += _devices->advance(_clientid, _contextid);
               }
           return events;
         }

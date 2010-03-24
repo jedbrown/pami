@@ -41,12 +41,12 @@ namespace CCMI
 
       bool binomial_analyze (PAMI_GEOMETRY_CLASS *geometry)
       {
-	return true;
+        return true;
       }
 
 
       typedef BarrierT <CCMI::Schedule::ListMultinomial,
-	binomial_analyze> BinomialBarrier;
+        binomial_analyze> BinomialBarrier;
 
       typedef BarrierFactoryT <BinomialBarrier,
                                binom_barrier_md,
@@ -57,8 +57,8 @@ namespace CCMI
                            PAMI_SYSDEP_CLASS,
                            PAMI_COLL_MCAST_CLASS> OldBinomialBarrier;
       typedef OldBarrierFactoryT <OldBinomialBarrier,
-	                          PAMI_SYSDEP_CLASS,
-	                          PAMI_COLL_MCAST_CLASS> OldBinomialBarrierFactory;
+                                  PAMI_SYSDEP_CLASS,
+                                  PAMI_COLL_MCAST_CLASS> OldBinomialBarrierFactory;
 
       typedef CollectiveProtocolFactoryT<MultiSyncComposite,
                                          msync_barrier_md,

@@ -551,7 +551,7 @@ namespace PAMI
         size_t * _fnum_hash;    //< Fifo number lookup table
         T_Fifo  * _rfifo;       //< Pointer to fifo to use as the reception fifo
 
-	Memory::MemoryManager *_mm;
+        Memory::MemoryManager *_mm;
         pami_client_t       _client;
         pami_context_t      _context;
         size_t             _contextid;

@@ -20,16 +20,16 @@
 #include "components/atomic/pthread/Pthread.h"
 
 int main(int argc, char **argv) {
-	PAMI::Memory::MemoryManager mm;
-	mm.init(argv, argc); // anything
+        PAMI::Memory::MemoryManager mm;
+        mm.init(argv, argc); // anything
 
-	COUNTER_HELPER(PAMI::Counter::GccNodeCounter, counter1, mm);
-	COUNTER_HELPER(PAMI::Counter::GccProcCounter, counter2, mm);
-	COUNTER_HELPER(PAMI::Counter::Pthread, counter3, mm);
+        COUNTER_HELPER(PAMI::Counter::GccNodeCounter, counter1, mm);
+        COUNTER_HELPER(PAMI::Counter::GccProcCounter, counter2, mm);
+        COUNTER_HELPER(PAMI::Counter::Pthread, counter3, mm);
 
-	MUTEX_HELPER(PAMI::Mutex::CounterMutex<PAMI::Counter::GccNodeCounter>, mutex1, mm);
+        MUTEX_HELPER(PAMI::Mutex::CounterMutex<PAMI::Counter::GccNodeCounter>, mutex1, mm);
 
-	BARRIER_HELPER(PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter>, barrier1, mm, argc, (argc == 0));
+        BARRIER_HELPER(PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter>, barrier1, mm, argc, (argc == 0));
 
-	return 1;
+        return 1;
 }

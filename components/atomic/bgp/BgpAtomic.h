@@ -103,11 +103,11 @@ namespace BGP {
 
         inline size_t fetch_impl() { return _bgp_fetch_and_add((_BGP_Atomic *)&_atomic, 0); };
 
-	inline size_t fetch_and_inc_impl() { return _bgp_fetch_and_add((_BGP_Atomic *)&_atomic, 1); }
+        inline size_t fetch_and_inc_impl() { return _bgp_fetch_and_add((_BGP_Atomic *)&_atomic, 1); }
 
-	inline size_t fetch_and_dec_impl() { return _bgp_fetch_and_add((_BGP_Atomic *)&_atomic, -1); }
+        inline size_t fetch_and_dec_impl() { return _bgp_fetch_and_add((_BGP_Atomic *)&_atomic, -1); }
 
-	inline size_t fetch_and_clear_impl() { return _bgp_fetch_and_and((_BGP_Atomic *)&_atomic, 0); }
+        inline size_t fetch_and_clear_impl() { return _bgp_fetch_and_and((_BGP_Atomic *)&_atomic, 0); }
 
         inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
@@ -138,17 +138,17 @@ namespace BGP {
 
         inline size_t fetch_impl() { return _bgp_fetch_and_add((_BGP_Atomic *)_atomic, 0); };
 
-	inline size_t fetch_and_inc_impl() { return _bgp_fetch_and_add((_BGP_Atomic *)_atomic, 1); }
+        inline size_t fetch_and_inc_impl() { return _bgp_fetch_and_add((_BGP_Atomic *)_atomic, 1); }
 
-	inline size_t fetch_and_dec_impl() { return _bgp_fetch_and_add((_BGP_Atomic *)_atomic, -1); }
+        inline size_t fetch_and_dec_impl() { return _bgp_fetch_and_add((_BGP_Atomic *)_atomic, -1); }
 
-	inline size_t fetch_and_clear_impl() { return _bgp_fetch_and_and((_BGP_Atomic *)_atomic, 0); }
+        inline size_t fetch_and_clear_impl() { return _bgp_fetch_and_and((_BGP_Atomic *)_atomic, 0); }
 
         inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
-	  _atomic = NULL;
+          _atomic = NULL;
           mm->memalign((void **)&_atomic, 8, sizeof(*_atomic));
-	  PAMI_assertf(_atomic, "Failed to get shmem for BgpNodeCounter");
+          PAMI_assertf(_atomic, "Failed to get shmem for BgpNodeCounter");
         };
 
         /// \see PAMI::Atomic::Interface::Mutex::returnLock
@@ -256,9 +256,9 @@ namespace BGP {
         /// \see PAMI::Atomic::Interface::Mutex::init
         inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
-	  _atomic = NULL;
+          _atomic = NULL;
           mm->memalign((void **)&_atomic, 8, sizeof(*_atomic));
-	  PAMI_assertf(_atomic, "Failed to get shmem for BgpNodeMutex");
+          PAMI_assertf(_atomic, "Failed to get shmem for BgpNodeMutex");
         };
 
         /// \see PAMI::Atomic::Interface::Mutex::returnLock

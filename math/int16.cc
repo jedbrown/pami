@@ -106,31 +106,31 @@ void _pami_core_int16_sum(int16_t *dst, const int16_t **srcs, int nsrc, int coun
 }
 
 void _pami_core_int16_int32_maxloc(int16_int32_t *dst, const int16_int32_t **srcs, int nsrc, int count) {
-	register int n = 0, m, o;
-	for (n = 0; n < count; n++) {
-		m = 0;  // assume src0 > src1
-		for (o = 1; o < nsrc; ++o) {
-			if (srcs[m][n].a < srcs[o][n].a ||
-			    (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
-				m = o;
-			}
-		}
-		dst[n].a = srcs[m][n].a;
-		dst[n].b = srcs[m][n].b;
-	}
+        register int n = 0, m, o;
+        for (n = 0; n < count; n++) {
+                m = 0;  // assume src0 > src1
+                for (o = 1; o < nsrc; ++o) {
+                        if (srcs[m][n].a < srcs[o][n].a ||
+                            (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
+                                m = o;
+                        }
+                }
+                dst[n].a = srcs[m][n].a;
+                dst[n].b = srcs[m][n].b;
+        }
 }
 
 void _pami_core_int16_int32_minloc(int16_int32_t *dst, const int16_int32_t **srcs, int nsrc, int count) {
-	register int n = 0, m, o;
-	for (n = 0; n < count; n++) {
-		m = 0;  // assume src0 < src1
-		for (o = 1; o < nsrc; ++o) {
-			if (srcs[m][n].a > srcs[o][n].a ||
-			    (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
-				m = o;
-			}
-		}
-		dst[n].a = srcs[m][n].a;
-		dst[n].b = srcs[m][n].b;
-	}
+        register int n = 0, m, o;
+        for (n = 0; n < count; n++) {
+                m = 0;  // assume src0 < src1
+                for (o = 1; o < nsrc; ++o) {
+                        if (srcs[m][n].a > srcs[o][n].a ||
+                            (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
+                                m = o;
+                        }
+                }
+                dst[n].a = srcs[m][n].a;
+                dst[n].b = srcs[m][n].b;
+        }
 }

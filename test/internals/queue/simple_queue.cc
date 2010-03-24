@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/queue/queue.cc
+ * \file test/internals/queue/simple_queue.cc
  * \brief Test the queue interface features
  */
 

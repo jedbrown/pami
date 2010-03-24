@@ -181,9 +181,9 @@ unsigned long long test (size_t sndlen, size_t myrank)
 
     while (_send_active || _recv_active)
       {
-	TRACE_ERR((stderr,"test():  Calling Advance\n"));
-	result = PAMI_Context_advance (_g_context, 100);
-	TRACE_ERR((stderr,"test():  Back from Advance\n"));
+        TRACE_ERR((stderr,"test():  Calling Advance\n"));
+        result = PAMI_Context_advance (_g_context, 100);
+        TRACE_ERR((stderr,"test():  Back from Advance\n"));
       }
     T_ADVANCE_DONE = PAMI_Wtimebase();
   }
@@ -341,7 +341,7 @@ int main ()
     unsigned j;
     for (j=0; j<BUFSIZE; j++)
       {
-	_sbuf[j]=j*5+3;
+        _sbuf[j]=j*5+3;
       }
 
     size_t sndlen;
@@ -359,15 +359,15 @@ int main ()
         cycles = test (sndlen, _my_rank);
         usec   = cycles/clockMHz;
 
-	// Check the buffer.
-	unsigned j;
-	for (j=0; j<sndlen; j++)
-	{
-	  if (_sbuf[j] != _rbuf[j]) printf("Data Miscompare at size %zd, _sbuf[%u] = 0x%02x, _rbuf = 0x%02x\n",sndlen, j, _sbuf[j], _rbuf[j]);
-	}
+        // Check the buffer.
+        unsigned j;
+        for (j=0; j<sndlen; j++)
+        {
+          if (_sbuf[j] != _rbuf[j]) printf("Data Miscompare at size %zd, _sbuf[%u] = 0x%02x, _rbuf = 0x%02x\n",sndlen, j, _sbuf[j], _rbuf[j]);
+        }
 
-	TRACE_ERR(("sndlen=%u, START=%llu, SEND_DONE_LOCAL=%llu, DISPATCH=%llu, RECV_DONE=%llu, SEND_DONE_REMOTE=%llu, ADVANCE_DONE=%llu\n",
-		   sndlen, T_SEND_START,T_SEND_DONE_LOCAL,T_DISPATCH,T_RECV_DONE,T_SEND_DONE_REMOTE,T_ADVANCE_DONE));
+        TRACE_ERR(("sndlen=%u, START=%llu, SEND_DONE_LOCAL=%llu, DISPATCH=%llu, RECV_DONE=%llu, SEND_DONE_REMOTE=%llu, ADVANCE_DONE=%llu\n",
+                   sndlen, T_SEND_START,T_SEND_DONE_LOCAL,T_DISPATCH,T_RECV_DONE,T_SEND_DONE_REMOTE,T_ADVANCE_DONE));
         index += sprintf (&str[index], "%10lld %8.4f  ", cycles, usec);
       }
 

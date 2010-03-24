@@ -240,8 +240,8 @@ namespace DCMF
                                                      &relativeFnum );
             _descWrapper.setFIFONum ( relativeFnum );
 
-	    TRACE((stderr,"MUSendMessage.h postDescriptor() subgrpPtr:%llx fnum:%d\n",
-		   (unsigned long long)injFifoSubGroup,relativeFnum));
+            TRACE((stderr,"MUSendMessage.h postDescriptor() subgrpPtr:%llx fnum:%d\n",
+                   (unsigned long long)injFifoSubGroup,relativeFnum));
 
             int rc  = injFifoSubGroup->push ( _descWrapper );
             return rc;

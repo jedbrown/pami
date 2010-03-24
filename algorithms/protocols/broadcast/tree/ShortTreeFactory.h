@@ -43,10 +43,10 @@ namespace CCMI
            CCMI::ConnectionManager::ConnectionManager * cmgr,
            unsigned                                    nconn)
           : BroadcastFactory<CCMI::TorusCollectiveMapping>(mf, map, cmgr, nconn),
-			_map(map),
+                        _map(map),
                         _mf(mf)
 
-			//tree_bcast(mf, this, map)
+                        //tree_bcast(mf, this, map)
           {
             CCMI::Adaptor::Broadcast::Tree::ShortTreeBcast::init(map);
           }
@@ -91,12 +91,12 @@ namespace CCMI
 
             PAMI_assert(rsize >= sizeof(ShortTreeBcast));
             new (_request)ShortTreeBcast(_mf, _map, request, cb_done, consistency, src, bytes, root);
-			return NULL;
+                        return NULL;
           }
 
-		  private:
+                  private:
 
-		  //ShortTreeBcast tree_bcast;
+                  //ShortTreeBcast tree_bcast;
           CCMI::TorusCollectiveMapping                         * _map;
           CCMI::MultiSend::OldMulticastInterface        * _mf;
           PAMI_Request_t    _request __attribute__((__aligned__(16)));

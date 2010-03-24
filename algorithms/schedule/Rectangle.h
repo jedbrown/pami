@@ -63,7 +63,7 @@ namespace CCMI
 #define PHASE_THREE	2	/**< sec axis bcast to all of face (ter axis) */
 #define PHASE_FOUR	3	/**< face nodes bcast back on pri axis */
 #define PHASE_FIVE	4	/**< (begin) local core-to-core. NCores-1 phases
-				 * begin here */
+                                 * begin here */
 /*@}*/
 /** \brief Number of (starting) phases. */
 #define NUM_PHASES	5

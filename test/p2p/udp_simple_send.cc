@@ -287,7 +287,7 @@ int main (int argc, char ** argv)
    else
        val =atoi(argv[1]) ;
 
-	fprintf (stdout, "** The test will run %zd times ***\n", val);
+        fprintf (stdout, "** The test will run %zd times ***\n", val);
     fflush(stdout);
 
   for(i=0;i<val;i++){
@@ -296,11 +296,11 @@ int main (int argc, char ** argv)
 //	  if (_my_rank == 0)
 //	  {
 
-		   test (context, _dispatch[0], hdrsize, 0, _my_rank, origin, target);
+                   test (context, _dispatch[0], hdrsize, 0, _my_rank, origin, target);
 
 //	  }
   }
-	fprintf (stdout, "** Test completed. **\n");
+        fprintf (stdout, "** Test completed. **\n");
 
   PAMI_Client_finalize (client);
 

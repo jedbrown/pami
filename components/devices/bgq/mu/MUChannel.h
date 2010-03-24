@@ -109,8 +109,8 @@ namespace PAMI
           Queue      _msgQ [MAX_INJ_FIFOS];
 
           bool                       _pollQueues;  /**< flag to record
-						  that messages need
-						  to be advanced.*/
+                                                  that messages need
+                                                  to be advanced.*/
 
           ///
           /// \brief Process queued messages

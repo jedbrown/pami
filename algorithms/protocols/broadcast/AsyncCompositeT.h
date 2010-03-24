@@ -292,7 +292,7 @@ namespace CCMI
           CollHeaderData *cdata = (CollHeaderData *) info;
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
-	    factory->_cb_geometry(cdata->_comm);
+            factory->_cb_geometry(cdata->_comm);
 
           PAMI::MatchQueue  &mqueue = geometry->asyncBcastPostQ();
           BcastQueueElem *elem = (BcastQueueElem *) mqueue.findAndDelete(cdata->_root);
@@ -378,10 +378,10 @@ namespace CCMI
           CollHeaderData *cdata = (CollHeaderData *) info;
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
-	    factory->_cb_geometry(cdata->_comm);
+            factory->_cb_geometry(cdata->_comm);
 
           //Application callback
-	  // todo:  WARNING:  callback is not appropriately delivered to user (header for example)
+          // todo:  WARNING:  callback is not appropriately delivered to user (header for example)
           PAMI_Callback_t cb_client_done;
           pami_type_t     user_type;
 //          CCMI_Executor_t *request =  (CCMI_Executor_t *)
@@ -396,7 +396,7 @@ namespace CCMI
                               (size_t*)rcvlen,      // receive length
                               &cb_client_done.function,
                               &cb_client_done.clientdata);
-	  // todo:  WARNING:  we need to make sure this storage is freed!
+          // todo:  WARNING:  we need to make sure this storage is freed!
           CCMI_Executor_t *request = (CCMI_Executor_t *)malloc(sizeof(*request));
 
           *pipewidth = sndlen+1;

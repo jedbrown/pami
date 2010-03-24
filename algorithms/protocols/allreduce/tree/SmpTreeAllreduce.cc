@@ -37,12 +37,12 @@ namespace CCMI
                                        PAMI_Op                     op,
                                        size_t                      root)
           {
-	    struct _req {
-		PAMI_Request_t _msg;
-		PAMI::Topology _root;
-		PAMI::PipeWorkQueue _swq;
-		PAMI::PipeWorkQueue _rwq;
-	    } *req = (struct _req *)request;
+            struct _req {
+                PAMI_Request_t _msg;
+                PAMI::Topology _root;
+                PAMI::PipeWorkQueue _swq;
+                PAMI::PipeWorkQueue _rwq;
+            } *req = (struct _req *)request;
             // call tree multisend directly
             //TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::SmpTreeAllreduce::restart\n", this));
 
@@ -52,15 +52,15 @@ namespace CCMI
             }
 
             //_mcombArgs.setConsistency( consistency );
-	    req->_swq.configure(NULL, srcbuf, _bytes, _bytes);
-	    req->_swq.reset();
-	    req->_rwq.configure(NULL, dstbuf, _bytes, 0);
-	    req->_rwq.reset();
-	    if (root != (size_t)-1) {
-	    	new (&req->_root) PAMI::Topology(root);
-	    } else {
-	    	new (&req->_root) PAMI::Topology(_rank);
-	    }
+            req->_swq.configure(NULL, srcbuf, _bytes, _bytes);
+            req->_swq.reset();
+            req->_rwq.configure(NULL, dstbuf, _bytes, 0);
+            req->_rwq.reset();
+            if (root != (size_t)-1) {
+                    new (&req->_root) PAMI::Topology(root);
+            } else {
+                    new (&req->_root) PAMI::Topology(_rank);
+            }
 
             _mcombArgs.setRequestBuffer(&req->_msg, sizeof(req->_msg));
             _mcombArgs.setRoles((unsigned)-1); // perform all roles

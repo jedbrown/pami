@@ -59,9 +59,9 @@ namespace CCMI
        * \param cb_done: completion callback
        */
       virtual void   notifyRecv     (unsigned             src,
-				     const pami_quad_t   & info,
-				     PAMI::PipeWorkQueue ** pwq,
-				     pami_callback_t      * cb_done) = 0;
+                                     const pami_quad_t   & info,
+                                     PAMI::PipeWorkQueue ** pwq,
+                                     pami_callback_t      * cb_done) = 0;
 
       void setDoneCallback (pami_event_function cb_done, void *cd)
       {

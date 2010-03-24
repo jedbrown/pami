@@ -54,9 +54,9 @@ namespace TSPColl
   protected:
 
     CollExchange                   (PAMI_GEOMETRY_CLASS *, NBTag,
-				    int id, int off, bool strict=true,
-				    pami_event_function cb_complete=NULL,
-				    void * arg = NULL);
+                                    int id, int off, bool strict=true,
+                                    pami_event_function cb_complete=NULL,
+                                    void * arg = NULL);
     void          reset            (void);
 
 
@@ -224,41 +224,41 @@ inline void TSPColl::CollExchange<T_Mcast>::kick(T_Mcast *mcast_iface)
       /* ---------------------------------------------------- */
 
       if (_sendstarted <= _phase)
-	{
-	  _sendstarted++;
-	  if (_sbuf[_phase])
-	    {
-	      int phase = _phase;
-	      MUTEX_UNLOCK(&_mutex);
-	      send(phase,mcast_iface);
-	      return;
-	    }
-	  else
-	    _sendcomplete++;
-	}
+        {
+          _sendstarted++;
+          if (_sbuf[_phase])
+            {
+              int phase = _phase;
+              MUTEX_UNLOCK(&_mutex);
+              send(phase,mcast_iface);
+              return;
+            }
+          else
+            _sendcomplete++;
+        }
 
       /* ------------------------------------------------------------ */
       /* reception and callback : all complete? advance to next phase */
       /* ------------------------------------------------------------ */
 
       if (_cbcomplete[_phase] >= _counter)
-	{
-	  continue;
-	}
+        {
+          continue;
+        }
 
       /* ------------------------------------------------------- */
       /* special case: nothing to receive in this phase; advance */
       /* ------------------------------------------------------- */
 
       if (_rbuf[_phase] == NULL)
-	{
-	  assert (_cb_recv2[_phase] == NULL);
-	  _recvcomplete[_phase]++;          /* no receive, no callback */
-	  _cbcomplete[_phase]++;
-	  assert (_recvcomplete[_phase] <= _counter);
-	  assert (_cbcomplete[_phase] <= _counter);
-	  continue;
-	}
+        {
+          assert (_cb_recv2[_phase] == NULL);
+          _recvcomplete[_phase]++;          /* no receive, no callback */
+          _cbcomplete[_phase]++;
+          assert (_recvcomplete[_phase] <= _counter);
+          assert (_cbcomplete[_phase] <= _counter);
+          continue;
+        }
 
       /* ---------------------------------------------------- */
       /* reception not complete - NOT advancing to next phase */
@@ -271,12 +271,12 @@ inline void TSPColl::CollExchange<T_Mcast>::kick(T_Mcast *mcast_iface)
       /* -------------------------------------------------------- */
 
       if (_cb_recv2[_phase] == NULL) /* no cb */
-	{
-	  TRACE((stderr, "NOCB tag=%d ctr=%d phase=%d\n",
-		 _tag, _counter, _phase));
-	  _cbcomplete[_phase]++;
-	  continue;
-	}
+        {
+          TRACE((stderr, "NOCB tag=%d ctr=%d phase=%d\n",
+                 _tag, _counter, _phase));
+          _cbcomplete[_phase]++;
+          continue;
+        }
 
       /* -------------------------------------------------------- */
       /* cannot run callback until send in this phase is complete */
@@ -289,25 +289,25 @@ inline void TSPColl::CollExchange<T_Mcast>::kick(T_Mcast *mcast_iface)
       /* ------------ */
 
       TRACE((stderr, "CBCK tag=%d ctr=%d phase=%d\n",
-	     _tag, _counter, _phase));
+             _tag, _counter, _phase));
       _cb_recv2[_phase] (this, _phase);
       _cbcomplete[_phase]++;
     }
 
   TRACE((stderr, "FINI tag=%d ctr=%d phase=%d/%d sendcmplt=%d cb_complete=%p\n",
-	 _tag, _counter,
-	 _phase, _numphases,
-	 _sendcomplete,
-	 this->_cb_complete));
+         _tag, _counter,
+         _phase, _numphases,
+         _sendcomplete,
+         this->_cb_complete));
 
   if (this->_cb_complete)
       if (_phase == _numphases)
-	  {
-	      _phase++;
-	      TRACE((stderr, "Delivering user done callback fcn=%p arg=%p\n",
-		     this->_cb_complete, this->_arg));
-	      this->_cb_complete (NULL, this->_arg, PAMI_SUCCESS);
-	  }
+          {
+              _phase++;
+              TRACE((stderr, "Delivering user done callback fcn=%p arg=%p\n",
+                     this->_cb_complete, this->_arg));
+              this->_cb_complete (NULL, this->_arg, PAMI_SUCCESS);
+          }
 
  the_end:
   ;
@@ -322,7 +322,7 @@ template <class T_Mcast>
 inline bool TSPColl::CollExchange<T_Mcast>::isdone() const
 {
     TRACE((stderr, "Is done:  _phase=%d sendcomplete=%d, numphase=%d\n",
-	   _phase, _sendcomplete, _numphases));
+           _phase, _sendcomplete, _numphases));
   return (_phase >= _numphases && _sendcomplete >= _numphases);
 }
 
@@ -333,17 +333,17 @@ template <class T_Mcast>
 inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_iface)
 {
   TRACE((stderr, "SEND tag=%d ctr=%d phase=%d tgt=%d nbytes=%d, mcast_iface=%p\n",
-	 _tag, _counter, phase,
-	 _dest[phase], _sbufln[phase],mcast_iface));
+         _tag, _counter, phase,
+         _dest[phase], _sbufln[phase],mcast_iface));
   _header[phase].counter = _counter;
   assert (_dest[phase] != -1);
  #if 0
   void * r = __pgasrt_tsp_amsend (_dest[phase],
-				  & _header[phase].hdr,
-				  (__pgasrt_local_addr_t) _sbuf[phase],
-				  _sbufln[phase],
-				  CollExchange::cb_senddone,
-				  &_cmplt[phase]);
+                                  & _header[phase].hdr,
+                                  (__pgasrt_local_addr_t) _sbuf[phase],
+                                  _sbufln[phase],
+                                  CollExchange::cb_senddone,
+                                  &_cmplt[phase]);
 #endif
   unsigned        hints   = PAMI_PT_TO_PT_SUBTASK;
   unsigned        ranks   = _dest[phase];
@@ -352,23 +352,23 @@ inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_ifac
   cb_done.clientdata = &_cmplt[phase];
   void *r = NULL;
   TRACE((stderr, "SEND MCAST_IFACE %p: tag=%d id=%d,hdr=%p count=%d\n",
-	 ((int*)mcast_iface)[0],
-	 _header[phase].tag,
-	 _header[phase].id,
-	 &_header[phase],
-	 PAMIQuad_sizeof(_header[phase])));
+         ((int*)mcast_iface)[0],
+         _header[phase].tag,
+         _header[phase].id,
+         &_header[phase],
+         PAMIQuad_sizeof(_header[phase])));
 
   mcast_iface->send (&_req[phase],
-		     &cb_done,
-		     PAMI_MATCH_CONSISTENCY,
-		     (pami_quad_t*)& _header[phase],
-		     PAMIQuad_sizeof(_header[phase]),
-		     phase,
-		     (char*)_sbuf[phase],
-		     (unsigned)_sbufln[phase],
-		     &hints,
-		     &ranks,
-		     1);
+                     &cb_done,
+                     PAMI_MATCH_CONSISTENCY,
+                     (pami_quad_t*)& _header[phase],
+                     PAMIQuad_sizeof(_header[phase]),
+                     phase,
+                     (char*)_sbuf[phase],
+                     (unsigned)_sbufln[phase],
+                     &hints,
+                     &ranks,
+                     1);
   TRACE((stderr, "SEND finished\n"));
 
   assert (r == NULL);
@@ -385,11 +385,11 @@ inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (pami_context_t context,
   /* BEGIN ATOMIC */
   base->_sendcomplete++;
   TRACE((stderr,
-	 "SENT tag=%d ctr=%d phase=%d/%d tgt=%d nbyt=%d cplt=%d\n",
-	 base->_tag, base->_counter,
-	 base->_phase, base->_numphases,
-	 base->_dest[base->_phase], base->_sbufln[base->_phase],
-	 base->_sendcomplete));
+         "SENT tag=%d ctr=%d phase=%d/%d tgt=%d nbyt=%d cplt=%d\n",
+         base->_tag, base->_counter,
+         base->_phase, base->_numphases,
+         base->_dest[base->_phase], base->_sbufln[base->_phase],
+         base->_sendcomplete));
   base->kick(base->_mcast_iface);
 }
 
@@ -411,8 +411,8 @@ TSPColl::CollExchange<T_Mcast>::cb_recvcomplete (pami_context_t context, void * 
   MUTEX_LOCK(&base->_mutex);
   base->_recvcomplete[phase]++;
   TRACE((stderr, "IN_D tag=%d ctr=%d phase=%d msgphase=%d cplt=%d\n",
-	 base->_tag,
-	 base->_counter, base->_phase, phase, base->_recvcomplete[phase]));
+         base->_tag,
+         base->_counter, base->_phase, phase, base->_recvcomplete[phase]));
   if (base->_cb_recv1[phase]) base->_cb_recv1[phase](base, phase);
   base->kick(base->_mcast_iface);
 }
@@ -426,19 +426,19 @@ TSPColl::CollExchange<T_Mcast>::internalerror (AMHeader * header, int lineno)
 {
   if (header)
     fprintf (stderr, "CollExchange internal: line=%d "
-	     "tag=%d id=%d phase=%d/%d ctr=%d "
-	     "header: tag=%d id=%d phase=%d ctr=%d\n",
-	     lineno,
+             "tag=%d id=%d phase=%d/%d ctr=%d "
+             "header: tag=%d id=%d phase=%d ctr=%d\n",
+             lineno,
              NBColl<T_Mcast>::_tag, NBColl<T_Mcast>::_instID,
-	     _phase, _numphases, _counter,
-	     header->tag, header->id, header->phase,
-	     header->counter);
+             _phase, _numphases, _counter,
+             header->tag, header->id, header->phase,
+             header->counter);
   else
     fprintf (stderr, "CollExchange internal: line=%d "
-	     "tag=%d id=%d phase=%d/%d ctr=%d\n",
-	     lineno,
-	     NBColl<T_Mcast>::_tag, NBColl<T_Mcast>::_instID,
-	     _phase, _numphases, _counter);
+             "tag=%d id=%d phase=%d/%d ctr=%d\n",
+             lineno,
+             NBColl<T_Mcast>::_tag, NBColl<T_Mcast>::_instID,
+             _phase, _numphases, _counter);
   abort();
 }
 

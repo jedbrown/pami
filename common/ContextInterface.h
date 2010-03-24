@@ -118,12 +118,12 @@ namespace PAMI
                                       pami_dispatch_callback_fn   fn,
                                       void                     * cookie,
                                       pami_send_hint_t            options);
-	//#ifdef __pami_target_mpi__
+        //#ifdef __pami_target_mpi__
         inline pami_result_t dispatch_new (size_t                 dispatch,
                                           pami_dispatch_callback_fn   fn,
                                           void                     * cookie,
                                           pami_dispatch_hint_t        options);
-	//#endif
+        //#endif
         inline pami_result_t amcollective_dispatch(pami_algorithm_t            algorithm,
                                                   size_t                     dispatch,
                                                   pami_dispatch_callback_fn   fn,

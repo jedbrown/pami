@@ -38,7 +38,7 @@ namespace PAMI
 #else
           *memptr = malloc(bytes);
 #endif
-	  return PAMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
     protected:

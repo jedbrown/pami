@@ -195,13 +195,13 @@ namespace CCMI
 
         if(my_coords[CCMI_T_DIM] == root_t) {
           _isHead = true;
-	  _head   = _mapping->rank();
-	}
-	else {
+          _head   = _mapping->rank();
+        }
+        else {
           CCMI_COPY_COORDS(coords, my_coords);
           coords[CCMI_T_DIM] = root_t;
-	  _mapping->Torus2Rank (coords, &_head);
-	}
+          _mapping->Torus2Rank (coords, &_head);
+        }
 
         maxranks += 4;
 
@@ -217,28 +217,28 @@ namespace CCMI
         }
         else if(op == REDUCE_OP)
         {
-	  unsigned tail_t = (root_t + _mapping->GetDimLength(CCMI_T_DIM) - 1) %
-	    (_mapping->GetDimLength(CCMI_T_DIM));
+          unsigned tail_t = (root_t + _mapping->GetDimLength(CCMI_T_DIM) - 1) %
+            (_mapping->GetDimLength(CCMI_T_DIM));
 
-	  if(my_coords[CCMI_T_DIM] == tail_t)
-	    _isTail = true;
+          if(my_coords[CCMI_T_DIM] == tail_t)
+            _isTail = true;
 
-	  int next_t = my_coords[CCMI_T_DIM] +
+          int next_t = my_coords[CCMI_T_DIM] +
             ((root_t <= my_coords[CCMI_T_DIM]) ? 1 : (-1));
-	  if(next_t < 0)
-	    next_t += _mapping->GetDimLength(CCMI_T_DIM);
+          if(next_t < 0)
+            next_t += _mapping->GetDimLength(CCMI_T_DIM);
 
           CCMI_COPY_COORDS(coords, my_coords);
           coords[CCMI_T_DIM] = next_t;
-	  _mapping->Torus2Rank (coords, &_next);
+          _mapping->Torus2Rank (coords, &_next);
 
-	  int prev_t = my_coords[CCMI_T_DIM] +
+          int prev_t = my_coords[CCMI_T_DIM] +
             ((root_t <= my_coords[CCMI_T_DIM]) ? (-1) : 1);
-	  if(prev_t < 0)
-	    prev_t += _mapping->GetDimLength(CCMI_T_DIM);
+          if(prev_t < 0)
+            prev_t += _mapping->GetDimLength(CCMI_T_DIM);
 
           coords[CCMI_T_DIM] = prev_t;
-	  _mapping->Torus2Rank (coords, &_prev);
+          _mapping->Torus2Rank (coords, &_prev);
 
           int tsize = _mapping->GetDimLength(CCMI_T_DIM);
           /// Non tail nodes have an extra receive phase

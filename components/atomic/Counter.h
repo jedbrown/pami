@@ -87,7 +87,7 @@ namespace PAMI
         ///
         inline bool compare_and_swap (size_t compare, size_t swap);
 
-	inline void *returnLock();
+        inline void *returnLock();
 
     }; // PAMI::Atomic::Interface::Counter class
 

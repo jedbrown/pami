@@ -45,7 +45,7 @@ namespace TSPColl
   {
   public:
     NBColl (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID,
-	    pami_event_function cb_complete, void *arg);
+            pami_event_function cb_complete, void *arg);
 
   public:
     virtual void  kick  (T_mcast *mcast_iface) {};

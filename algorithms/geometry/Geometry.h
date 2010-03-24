@@ -148,12 +148,12 @@ namespace PAMI
                      unsigned                         comm,
                      int                              numranges,
                      pami_geometry_range_t             rangelist[]):
-	Geometry<PAMI::Geometry::Common>(parent,
+        Geometry<PAMI::Geometry::Common>(parent,
                                         mapping,
                                         comm,
                                         numranges,
                                         rangelist),
-	_kvstore(),
+        _kvstore(),
         _commid(comm)
         {
           int i, j, k, size;
@@ -211,8 +211,8 @@ namespace PAMI
           if (_topos[0].isRectSeg())
             pami_ca_set(&_attributes, PAMI_GEOMETRY_RECT);
           // \todo isGlobal is not yet implemented
-	  //          if (_topos[0].isGlobal())
-	  //            pami_ca_set(&attributes, PAMI_GEOMETRY_GLOBAL);
+          //          if (_topos[0].isGlobal())
+          //            pami_ca_set(&attributes, PAMI_GEOMETRY_GLOBAL);
           if (PAMI_ISPOF2(_topos[0].size()))
             pami_ca_set(&_attributes, PAMI_GEOMETRY_POF2);
           if (!PAMI_ISEVEN(_topos[0].size()))

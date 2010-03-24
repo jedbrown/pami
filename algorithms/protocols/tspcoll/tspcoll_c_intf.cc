@@ -93,9 +93,9 @@ extern "C" __pgasrt_thread_t __pgasrt_tspcoll_comm_size (int commID)
 /* ************************************************************************ */
 
 extern "C" void __pgasrt_tspcoll_comm_split   (int            commID,
-					       int            newID,
-					       int            color,
-					       int            rank)
+                                               int            newID,
+                                               int            color,
+                                               int            rank)
 {
   /* ---------------------------------------------------- */
   /* create a list of all processes in split communicator */
@@ -168,9 +168,9 @@ extern "C" void __pgasrt_tspcoll_barrier (int commID)
 /* ************************************************************************ */
 
 extern "C" void __pgasrt_tspcoll_allgather (int commID,
-					    const void * sbuf,
-					    void * rbuf,
-					    size_t bufsize)
+                                            const void * sbuf,
+                                            void * rbuf,
+                                            size_t bufsize)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
   assert (_tspcoll != NULL);
@@ -182,9 +182,9 @@ extern "C" void __pgasrt_tspcoll_allgather (int commID,
 /* ************************************************************************ */
 
 extern "C" void __pgasrt_tspcoll_allgatherv (int commID,
-					    const void * sbuf,
-					    void * rbuf,
-					     size_t * lengths)
+                                            const void * sbuf,
+                                            void * rbuf,
+                                             size_t * lengths)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
   assert (_tspcoll != NULL);
@@ -196,10 +196,10 @@ extern "C" void __pgasrt_tspcoll_allgatherv (int commID,
 /* ************************************************************************ */
 
 extern "C" void __pgasrt_tspcoll_scatter (int commID,
-					  int root,
-					  const void * sbuf,
-					  void * rbuf,
-					  size_t bufsize)
+                                          int root,
+                                          const void * sbuf,
+                                          void * rbuf,
+                                          size_t bufsize)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
   assert (_tspcoll != NULL);
@@ -211,10 +211,10 @@ extern "C" void __pgasrt_tspcoll_scatter (int commID,
 /* ************************************************************************ */
 
 extern "C" void __pgasrt_tspcoll_scatterv (int commID,
-					   int root,
-					   const void * sbuf,
-					   void * rbuf,
-					   size_t * lengths)
+                                           int root,
+                                           const void * sbuf,
+                                           void * rbuf,
+                                           size_t * lengths)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
   assert (_tspcoll != NULL);
@@ -226,10 +226,10 @@ extern "C" void __pgasrt_tspcoll_scatterv (int commID,
 /* ************************************************************************ */
 
 extern "C" void __pgasrt_tspcoll_bcast (int commID,
-					int root,
-					const void * sbuf,
-					void * rbuf,
-					size_t bufsize)
+                                        int root,
+                                        const void * sbuf,
+                                        void * rbuf,
+                                        size_t bufsize)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
   assert (_tspcoll != NULL);
@@ -240,11 +240,11 @@ extern "C" void __pgasrt_tspcoll_bcast (int commID,
 /* ************************************************************************ */
 
 extern "C" void __pgasrt_tspcoll_allreduce   (int               commID,
-					      const void      * sbuf,
-					      void            * rbuf,
-					      __pgasrt_ops_t    op,
-					      __pgasrt_dtypes_t dtype,
-					      unsigned          nelems)
+                                              const void      * sbuf,
+                                              void            * rbuf,
+                                              __pgasrt_ops_t    op,
+                                              __pgasrt_dtypes_t dtype,
+                                              unsigned          nelems)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
   assert (_tspcoll != NULL);
@@ -255,10 +255,10 @@ extern "C" void __pgasrt_tspcoll_allreduce   (int               commID,
 /* ************************************************************************ */
 
 extern "C" void __pgasrt_tspcoll_gather (int commID,
-					 int root,
-					 const void * sbuf,
-					 void * rbuf,
-					 size_t bufsize)
+                                         int root,
+                                         const void * sbuf,
+                                         void * rbuf,
+                                         size_t bufsize)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
   assert (_tspcoll != NULL);
@@ -270,10 +270,10 @@ extern "C" void __pgasrt_tspcoll_gather (int commID,
 /* ************************************************************************ */
 
 extern "C" void __pgasrt_tspcoll_gatherv (int commID,
-					  int root,
-					  const void * sbuf,
-					  void * rbuf,
-					  size_t * lengths)
+                                          int root,
+                                          const void * sbuf,
+                                          void * rbuf,
+                                          size_t * lengths)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
   assert (_tspcoll != NULL);

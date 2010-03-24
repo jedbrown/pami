@@ -111,7 +111,7 @@ namespace CCMI
             {
               memcpy(_dstbuf, _rwq_buf, _bytes);
             }
-	    // last one must "consume" the bytes...
+            // last one must "consume" the bytes...
 
             // completion callback
             if (_cb_done.function)
@@ -199,11 +199,11 @@ namespace CCMI
 
           static CCMI::MultiSend::CCMI_Multicombine_t _mcombArgs __attribute__ ((__aligned__ (16)));
           static SharedData            * _shared;
-	  static char *_swq_buf;
-	  static char *_rwq_buf;
-	  static PAMI::PipeWorkQueue _swq;
-	  static PAMI::PipeWorkQueue _rwq;
-	  static PAMI::Topology _root;
+          static char *_swq_buf;
+          static char *_rwq_buf;
+          static PAMI::PipeWorkQueue _swq;
+          static PAMI::PipeWorkQueue _rwq;
+          static PAMI::Topology _root;
           static unsigned _numPeers;
           static unsigned _myPeer;
           static unsigned _isMasterCore;

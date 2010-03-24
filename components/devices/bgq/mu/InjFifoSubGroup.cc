@@ -185,9 +185,9 @@ init ( uint32_t subGroupId,
       // ------------------------------------------------------------------------
 
       rc = Kernel_InjFifoActivate ( &_fifoSubGroup,
-				    1,
+                                    1,
                                     &_fifoNumbers[fifoNum],
-				    KERNEL_INJ_FIFO_ACTIVATE );
+                                    KERNEL_INJ_FIFO_ACTIVATE );
 
       if ( rc != 0 ) return (rc); // Return if error.
 

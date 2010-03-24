@@ -21,7 +21,7 @@
 /// do it in the identical way. Thus all should use this macro.
 ///
 #define ESTIMATED_TASK(x,y,z,t,xSize,ySize,zSize,tSize) \
-	(((t * zSize + z) * ySize + y) * xSize + x)
+        (((t * zSize + z) * ySize + y) * xSize + x)
 
 namespace PAMI
 {
@@ -172,7 +172,7 @@ namespace PAMI
 
 
           _max_rank = 0;
-	  _min_rank = (size_t) - 1;
+          _min_rank = (size_t) - 1;
 
           // If we are the master, then initialize the caches.
           // Then, set the cache pointers into the shared memory area for the other
@@ -383,12 +383,12 @@ namespace PAMI
           return _size;
         };
 
-	inline void getMappingInit(pami_coord_t &ll, pami_coord_t &ur, size_t &min, size_t &max) {
-		ll = _ll;
-		ur = _ur;
-		min = _min_rank;
-		max = _max_rank;
-	}
+        inline void getMappingInit(pami_coord_t &ll, pami_coord_t &ur, size_t &min, size_t &max) {
+                ll = _ll;
+                ur = _ur;
+                min = _min_rank;
+                max = _max_rank;
+        }
 
       private:
 
@@ -397,10 +397,10 @@ namespace PAMI
         size_t * _mapcache;
         size_t * _rankcache;
 
-	size_t _max_rank;
-	size_t _min_rank;
-	pami_coord_t _ll;
-	pami_coord_t _ur;
+        size_t _max_rank;
+        size_t _min_rank;
+        pami_coord_t _ll;
+        pami_coord_t _ur;
 
     }; // class BgpMapCache
 };     // namespace PAMI

@@ -27,49 +27,49 @@ namespace PAMI
       class MPIOldmulticastModel : public Interface::OldmulticastModel<MPIOldmulticastModel<T_Device, T_Message>, T_Device, T_Message>
       {
       public:
-	MPIOldmulticastModel (T_Device & device) :
+        MPIOldmulticastModel (T_Device & device) :
         Interface::OldmulticastModel<MPIOldmulticastModel<T_Device, T_Message>, T_Device, T_Message> (device),
-	  _device(device)
-	  {
+          _device(device)
+          {
             _dispatch_id = _device.initOldMcast();
           TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel() %d\n",this, _dispatch_id));
           };
 
-	inline void setCallback (pami_olddispatch_multicast_fn cb_recv, void *arg)
+        inline void setCallback (pami_olddispatch_multicast_fn cb_recv, void *arg)
         {
           _device.registerOldMcastRecvFunction (_dispatch_id, cb_recv, arg);
         }
 
-	inline unsigned  send   (PAMI_Request_t             * request,
-				 const pami_callback_t      * cb_done,
-				 pami_consistency_t           consistency,
-				 const pami_quad_t          * info,
-				 unsigned                    info_count,
-				 unsigned                    connection_id,
-				 const char                * buf,
-				 unsigned                    size,
-				 unsigned                  * hints,
-				 unsigned                  * ranks,
-				 unsigned                    nranks,
-				 pami_op                      op    = PAMI_UNDEFINED_OP,
-				 pami_dt                      dtype = PAMI_UNDEFINED_DT )
+        inline unsigned  send   (PAMI_Request_t             * request,
+                                 const pami_callback_t      * cb_done,
+                                 pami_consistency_t           consistency,
+                                 const pami_quad_t          * info,
+                                 unsigned                    info_count,
+                                 unsigned                    connection_id,
+                                 const char                * buf,
+                                 unsigned                    size,
+                                 unsigned                  * hints,
+                                 unsigned                  * ranks,
+                                 unsigned                    nranks,
+                                 pami_op                      op    = PAMI_UNDEFINED_OP,
+                                 pami_dt                      dtype = PAMI_UNDEFINED_DT )
         {
 
-	  OldMPIMcastMessage *hdr = (OldMPIMcastMessage *) malloc (sizeof (OldMPIMcastMessage) + size);
+          OldMPIMcastMessage *hdr = (OldMPIMcastMessage *) malloc (sizeof (OldMPIMcastMessage) + size);
           PAMI_assert( hdr != NULL );
           hdr->_dispatch_id = _dispatch_id;
           hdr->_info_count  = info_count;
           hdr->_size        = size;
           hdr->_conn        = connection_id;
           if( info )
-	    {
-	      memcpy (&hdr->_info[0], info, info_count * sizeof (pami_quad_t));
-	      if(info_count > 2)
-		{
-		  fprintf(stderr, "FIX:  The generic adaptor only supports up to 2 quads\n");
-		  abort();
-		}
-	    }
+            {
+              memcpy (&hdr->_info[0], info, info_count * sizeof (pami_quad_t));
+              if(info_count > 2)
+                {
+                  fprintf(stderr, "FIX:  The generic adaptor only supports up to 2 quads\n");
+                  abort();
+                }
+            }
           memcpy (hdr->buffer(), buf, size);
 
           int rc = -1;
@@ -83,26 +83,26 @@ namespace PAMI
 
           PAMI_assert(hdr->_req != NULL);
           for(unsigned count = 0; count < nranks; count ++)
-	    {
-	      PAMI_assert (hints[count] == PAMI_PT_TO_PT_SUBTASK);
+            {
+              PAMI_assert (hints[count] == PAMI_PT_TO_PT_SUBTASK);
 
           TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel:send MPI_Isend %zd to %zd\n",this,
                          hdr->totalsize(),ranks[count]));
-	      rc = MPI_Isend (hdr,
-			      hdr->totalsize(),
-			      MPI_CHAR,
-			      ranks[count],
-			      2,
-			      _device._communicator,
-			      &hdr->_req[count]);
-	      PAMI_assert (rc == MPI_SUCCESS);
-	    }
-	  _device.enqueue(hdr);
+              rc = MPI_Isend (hdr,
+                              hdr->totalsize(),
+                              MPI_CHAR,
+                              ranks[count],
+                              2,
+                              _device._communicator,
+                              &hdr->_req[count]);
+              PAMI_assert (rc == MPI_SUCCESS);
+            }
+          _device.enqueue(hdr);
           return rc;
         }
 
 
-	inline unsigned send (pami_oldmulticast_t *mcastinfo)
+        inline unsigned send (pami_oldmulticast_t *mcastinfo)
         {
           return this->send((PAMI_Request_t*)mcastinfo->request,
                             &mcastinfo->cb_done,
@@ -144,10 +144,10 @@ namespace PAMI
           TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel:postRecv pwidth %zd size %zd\n",this,
                      msg->_pwidth,msg->_size));
           _device.enqueue(msg);
-	  return 0;
+          return 0;
         }
 
-	inline unsigned postRecv (pami_oldmulticast_recv_t  *mrecv)
+        inline unsigned postRecv (pami_oldmulticast_recv_t  *mrecv)
         {
           postRecv((PAMI_Request_t*)mrecv->request,
                    &mrecv->cb_done,
@@ -158,14 +158,14 @@ namespace PAMI
                    mrecv->opcode,
                    mrecv->op,
                    mrecv->dt);
-	  return 0;
+          return 0;
         }
 
 
-	T_Device                     &_device;
-	size_t                        _dispatch_id;
-	pami_olddispatch_multicast_fn  _cb_async_head;
-	void                         *_async_arg;
+        T_Device                     &_device;
+        size_t                        _dispatch_id;
+        pami_olddispatch_multicast_fn  _cb_async_head;
+        void                         *_async_arg;
 
       };
   };

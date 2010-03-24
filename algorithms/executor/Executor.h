@@ -90,7 +90,7 @@ namespace CCMI
 
       void setConsistency  (pami_consistency_t consistency)
       {
-	_consistency = consistency;
+        _consistency = consistency;
       }
 
       pami_consistency_t getConsistency  ()

@@ -50,7 +50,7 @@ namespace DCMF
                           dispatch_id)
                 {
                 }
-		int advance(unsigned cycles, DCMF::Queueing::Tree::TreeMsgContext ctx);
+                int advance(unsigned cycles, DCMF::Queueing::Tree::TreeMsgContext ctx);
             private:
               unsigned           _classroute;
               DCMF::Tree::Packet _modelPkt;
@@ -70,7 +70,7 @@ namespace DCMF
                 TreeRecvMessage(TreeQS, cb, NULL, 1, 1, DCMF_BCAST_RECV_NOSTORE)
                 {
                 }
-	      int advance(unsigned cycles, DCMF::Queueing::Tree::TreeMsgContext ctx);
+              int advance(unsigned cycles, DCMF::Queueing::Tree::TreeMsgContext ctx);
             private:
             };
         }
@@ -105,25 +105,25 @@ namespace DCMF
       //  Barrier Code
       int TreeBarrierMessage::advance(unsigned cycles, DCMF::Queueing::Tree::TreeMsgContext ctx)
       {
-	register unsigned rechcount, recdcount, injhcount, injdcount;
-	CollectiveFifoStatus(VIRTUAL_CHANNEL,
-		&rechcount, &recdcount,
-		&injhcount, &injdcount);
-	if (injhcount >= TREE_FIFO_SIZE || injdcount >= TREE_QUADS_PER_FIFO) {
-		return DCMF::Queueing::Tree::Working;
-	}
+        register unsigned rechcount, recdcount, injhcount, injdcount;
+        CollectiveFifoStatus(VIRTUAL_CHANNEL,
+                &rechcount, &recdcount,
+                &injhcount, &injdcount);
+        if (injhcount >= TREE_FIFO_SIZE || injdcount >= TREE_QUADS_PER_FIFO) {
+                return DCMF::Queueing::Tree::Working;
+        }
         CollectiveRawSendPacket0(VIRTUAL_CHANNEL,&_modelPkt._hh);
         return DCMF::Queueing::Tree::Done;
       }
       int TreeBarrierRecvMessage::advance(unsigned cycles, DCMF::Queueing::Tree::TreeMsgContext ctx)
       {
-	register unsigned rechcount, recdcount, injhcount, injdcount;
-	CollectiveFifoStatus(VIRTUAL_CHANNEL,
-		&rechcount, &recdcount,
-		&injhcount, &injdcount);
-	if (rechcount == 0 || recdcount == 0) {
-		return DCMF::Queueing::Tree::Working;
-	}
+        register unsigned rechcount, recdcount, injhcount, injdcount;
+        CollectiveFifoStatus(VIRTUAL_CHANNEL,
+                &rechcount, &recdcount,
+                &injhcount, &injdcount);
+        if (rechcount == 0 || recdcount == 0) {
+                return DCMF::Queueing::Tree::Working;
+        }
         CollectiveRawReceivePacketNoHdrNoStore(VIRTUAL_CHANNEL);
         return DCMF::Queueing::Tree::Done;
       }

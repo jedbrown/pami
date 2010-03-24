@@ -57,10 +57,10 @@ namespace CCMI
       }
 
       BroadcastExec (Interfaces::NativeInterface  * mf,
-		     unsigned                       comm,
-		     T                            * connmgr,
-		     unsigned                       color,
-		     bool                           post_recvs = false):
+                     unsigned                       comm,
+                     T                            * connmgr,
+                     unsigned                       color,
+                     bool                           post_recvs = false):
       Interfaces::Executor(),
       _comm_schedule (NULL),
       _native(mf),
@@ -73,11 +73,11 @@ namespace CCMI
       {
         _clientdata        =  0;
         _root              =  (unsigned)-1;
-	_buflen            =  0;
+        _buflen            =  0;
         pami_quad_t *info   =  (_postReceives)?(NULL):(pami_quad_t*)((void*)&_mdata);
         _msend.msginfo     =  info;
         _msend.msgcount    =  1;
-	_msend.roles       = -1U;
+        _msend.roles       = -1U;
       }
 
       //-----------------------------------------
@@ -90,18 +90,18 @@ namespace CCMI
         int nph, phase;
         _comm_schedule->init (_root, BROADCAST_OP, phase, nph);
         CCMI_assert(_comm_schedule != NULL);
-	_comm_schedule->getDstUnionTopology (&_dsttopology);
+        _comm_schedule->getDstUnionTopology (&_dsttopology);
       }
 
       void  setInfo (int root, char *buf, int len)
       {
         TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::setInfo() root %d, buf %p, len %d, _pwq %p\n",this, root, buf, len, &_pwq));
         _root           =  root;
-	unsigned connid =  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
-	_msend.connection_id = connid;
-	_buflen = len;
-	//Setup pipework queue
-	_pwq.configure (NULL, buf, len, 0);
+        unsigned connid =  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
+        _msend.connection_id = connid;
+        _buflen = len;
+        //Setup pipework queue
+        _pwq.configure (NULL, buf, len, 0);
   _pwq.reset();
         TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::setInfo() _pwq %p, bytes available %zd/%zd\n",this,&_pwq,
                      _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
@@ -112,9 +112,9 @@ namespace CCMI
       //------------------------------------------
       virtual void   start          ();
       virtual void   notifyRecv     (unsigned             src,
-				     const pami_quad_t   & info,
-				     PAMI::PipeWorkQueue ** pwq,
-				     pami_callback_t      * cb_done);
+                                     const pami_quad_t   & info,
+                                     PAMI::PipeWorkQueue ** pwq,
+                                     pami_callback_t      * cb_done);
 
       //-----------------------------------------
       //--  Query functions ---------------------
@@ -129,20 +129,20 @@ namespace CCMI
       }
 
       void postReceives () {
-	if(_native->myrank() == _root) return;
+        if(_native->myrank() == _root) return;
 
-	pami_multicast_t mrecv;
-	memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
+        pami_multicast_t mrecv;
+        memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
 
-	TRACE_FLOW((stderr,"postReceives bytes %d, rank %d\n",_buflen, _selftopology.index2Rank(0)));
-	mrecv.src_participants   = NULL; //current mechanism to identify a non-root node
-	mrecv.dst_participants   = (pami_topology_t *)&_selftopology;
-	mrecv.cb_done.function   = _cb_done;
-	mrecv.cb_done.clientdata = _clientdata;
-	mrecv.dst    =  (pami_pipeworkqueue_t *)&_pwq;
-	mrecv.src    =  NULL;
-	mrecv.bytes  = _buflen;
-	_native->multicast(&mrecv);
+        TRACE_FLOW((stderr,"postReceives bytes %d, rank %d\n",_buflen, _selftopology.index2Rank(0)));
+        mrecv.src_participants   = NULL; //current mechanism to identify a non-root node
+        mrecv.dst_participants   = (pami_topology_t *)&_selftopology;
+        mrecv.cb_done.function   = _cb_done;
+        mrecv.cb_done.clientdata = _clientdata;
+        mrecv.dst    =  (pami_pipeworkqueue_t *)&_pwq;
+        mrecv.src    =  NULL;
+        mrecv.bytes  = _buflen;
+        _native->multicast(&mrecv);
       }
 
     };  //-- BroadcastExec

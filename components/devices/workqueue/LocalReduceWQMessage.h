@@ -31,16 +31,16 @@ class LocalReduceWQMessage;
 typedef PAMI::Device::Generic::GenericAdvanceThread LocalReduceWQThread;
 class LocalReduceWQDevice : public PAMI::Device::Generic::MultiSendQSubDevice<LocalReduceWQThread,1,true> {
 public:
-	class Factory : public Interface::FactoryInterface<Factory,LocalReduceWQDevice,Generic::Device> {
-	public:
-		static inline LocalReduceWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline pami_result_t init_impl(LocalReduceWQDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
-		static inline size_t advance_impl(LocalReduceWQDevice *devs, size_t client, size_t context);
-		static inline LocalReduceWQDevice & getDevice_impl(LocalReduceWQDevice *devs, size_t client, size_t context);
-	}; // class Factory
-	inline PAMI::Memory::MemoryManager *getSysdep() { return _mm; }
+        class Factory : public Interface::FactoryInterface<Factory,LocalReduceWQDevice,Generic::Device> {
+        public:
+                static inline LocalReduceWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+                static inline pami_result_t init_impl(LocalReduceWQDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
+                static inline size_t advance_impl(LocalReduceWQDevice *devs, size_t client, size_t context);
+                static inline LocalReduceWQDevice & getDevice_impl(LocalReduceWQDevice *devs, size_t client, size_t context);
+        }; // class Factory
+        inline PAMI::Memory::MemoryManager *getSysdep() { return _mm; }
 protected:
-	PAMI::Memory::MemoryManager *_mm;
+        PAMI::Memory::MemoryManager *_mm;
 }; // class LocalReduceWQDevice
 
 }; // namespace Device
@@ -52,22 +52,22 @@ namespace PAMI {
 namespace Device {
 
 inline LocalReduceWQDevice *LocalReduceWQDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-	return &_g_l_reducewq_dev;
+        return &_g_l_reducewq_dev;
 }
 
 inline pami_result_t LocalReduceWQDevice::Factory::init_impl(LocalReduceWQDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
-	if (client == 0 && contextId == 0) {
-		_g_l_reducewq_dev._mm = mm;
-	}
-	return _g_l_reducewq_dev.__init(client,  contextId,  clt,  ctx,  mm,  devices);
+        if (client == 0 && contextId == 0) {
+                _g_l_reducewq_dev._mm = mm;
+        }
+        return _g_l_reducewq_dev.__init(client,  contextId,  clt,  ctx,  mm,  devices);
 }
 
 inline size_t LocalReduceWQDevice::Factory::advance_impl(LocalReduceWQDevice *devs, size_t client, size_t contextId) {
-	return 0;
+        return 0;
 }
 
 inline LocalReduceWQDevice & LocalReduceWQDevice::Factory::getDevice_impl(LocalReduceWQDevice *devs, size_t client, size_t contextId) {
-	return _g_l_reducewq_dev;
+        return _g_l_reducewq_dev;
 }
 
 class LocalReduceWQMessage : public PAMI::Device::Generic::GenericMessage {
@@ -99,7 +99,7 @@ public:
                                        coremath          func,
                                        int               dtshift) :
             PAMI::Device::Generic::GenericMessage (device, mcomb->cb_done,
-				mcomb->client, mcomb->context),
+                                mcomb->client, mcomb->context),
             _isrootpeer (peer == rootpeer),
             //_iscopypeer (peer == ((rootpeer+1)%peers)),
             _iscopypeer (peer == ((rootpeer+1) >= peers ? (rootpeer+1) - peers : (rootpeer+1))),
@@ -121,59 +121,59 @@ public:
           }
 
 protected:
-	DECL_ADVANCE_ROUTINE(advanceThread,LocalReduceWQMessage,LocalReduceWQThread);
-	inline pami_result_t __advanceThread(LocalReduceWQThread *thr) {
-		// workaround for GNU compiler -fPIC -O3 bug
-		volatile coremath1 shmcpy = (coremath1) PAMI::Device::WorkQueue::SharedWorkQueue::shmemcpy;
-		// these should each be separate advanceThread routines...
-		if (_iscopypeer) {
-			_shared.Q2Q (_source, shmcpy, 0);
+        DECL_ADVANCE_ROUTINE(advanceThread,LocalReduceWQMessage,LocalReduceWQThread);
+        inline pami_result_t __advanceThread(LocalReduceWQThread *thr) {
+                // workaround for GNU compiler -fPIC -O3 bug
+                volatile coremath1 shmcpy = (coremath1) PAMI::Device::WorkQueue::SharedWorkQueue::shmemcpy;
+                // these should each be separate advanceThread routines...
+                if (_iscopypeer) {
+                        _shared.Q2Q (_source, shmcpy, 0);
 
-			// If all bytes have been copied from the local source buffer into
-			// the shared queue then this peer is done.
-			if (_source.bytesAvailableToConsume () == 0) {
-				thr->setStatus(PAMI::Device::Complete);
-				setStatus(PAMI::Device::Done);
-			}
-		} else if (_isrootpeer) {
-			_shared.reduce2Q (_source, _result, _func, _dtshift);
+                        // If all bytes have been copied from the local source buffer into
+                        // the shared queue then this peer is done.
+                        if (_source.bytesAvailableToConsume () == 0) {
+                                thr->setStatus(PAMI::Device::Complete);
+                                setStatus(PAMI::Device::Done);
+                        }
+                } else if (_isrootpeer) {
+                        _shared.reduce2Q (_source, _result, _func, _dtshift);
 
-			// If all bytes have been copied from the shared queue into the
-			// local result buffer then the root is done.
-			if (_result.bytesAvailableToProduce () == 0) {
-				thr->setStatus(PAMI::Device::Complete);
-				setStatus(PAMI::Device::Done);
-			}
-		} else {
-			_shared.reduceInPlace (_source, _func, _dtshift);
+                        // If all bytes have been copied from the shared queue into the
+                        // local result buffer then the root is done.
+                        if (_result.bytesAvailableToProduce () == 0) {
+                                thr->setStatus(PAMI::Device::Complete);
+                                setStatus(PAMI::Device::Done);
+                        }
+                } else {
+                        _shared.reduceInPlace (_source, _func, _dtshift);
 
-			// If all bytes have been copied from the local source buffer into
-			// the shared queue then this peer is done.
-			if (_source.bytesAvailableToConsume () == 0) {
-				thr->setStatus(PAMI::Device::Complete);
-				setStatus(PAMI::Device::Done);
-			}
-		}
-		return getStatus() == PAMI::Device::Done ? PAMI_SUCCESS : PAMI_EAGAIN;
-	}
+                        // If all bytes have been copied from the local source buffer into
+                        // the shared queue then this peer is done.
+                        if (_source.bytesAvailableToConsume () == 0) {
+                                thr->setStatus(PAMI::Device::Complete);
+                                setStatus(PAMI::Device::Done);
+                        }
+                }
+                return getStatus() == PAMI::Device::Done ? PAMI_SUCCESS : PAMI_EAGAIN;
+        }
 
 public:
-	// virtual function
-	pami_context_t postNext(bool devQueued) {
-		return _g_l_reducewq_dev.__postNext<LocalReduceWQMessage>(this, devQueued);
-	}
+        // virtual function
+        pami_context_t postNext(bool devQueued) {
+                return _g_l_reducewq_dev.__postNext<LocalReduceWQMessage>(this, devQueued);
+        }
 
-	inline int setThreads(LocalReduceWQThread **th) {
-		LocalReduceWQThread *t;
-		int n;
-		_g_l_reducewq_dev.__getThreads(&t, &n);
-		t[0].setMsg(this);
-		t[0].setAdv(advanceThread);
-		t[0].setStatus(PAMI::Device::Ready);
-		__advanceThread(t);
-		*th = t;
-		return 1;
-	}
+        inline int setThreads(LocalReduceWQThread **th) {
+                LocalReduceWQThread *t;
+                int n;
+                _g_l_reducewq_dev.__getThreads(&t, &n);
+                t[0].setMsg(this);
+                t[0].setAdv(advanceThread);
+                t[0].setStatus(PAMI::Device::Ready);
+                __advanceThread(t);
+                *th = t;
+                return 1;
+        }
 
 protected:
 
@@ -188,55 +188,55 @@ protected:
 
 class LocalReduceWQModel : public PAMI::Device::Interface::MulticombineModel<LocalReduceWQModel,LocalReduceWQDevice,sizeof(LocalReduceWQMessage)> {
 public:
-	static const int NUM_ROLES = 2;
-	static const int REPL_ROLE = 1;
-	static const size_t sizeof_msg = sizeof(LocalReduceWQMessage);
+        static const int NUM_ROLES = 2;
+        static const int REPL_ROLE = 1;
+        static const size_t sizeof_msg = sizeof(LocalReduceWQMessage);
 
-	LocalReduceWQModel(LocalReduceWQDevice &device, pami_result_t &status) :
-	PAMI::Device::Interface::MulticombineModel<LocalReduceWQModel,LocalReduceWQDevice,sizeof(LocalReduceWQMessage)>(device, status),
-	_shared(_g_l_reducewq_dev.getSysdep()),
-	_peer(__global.topology_local.rank2Index(__global.mapping.task())),
-	_npeers(__global.topology_local.size())
-	{
-		// assert(device == _g_l_reducewq_dev);
-		if (!_shared.available()) {
-			status = PAMI_ERROR;
-			return;
-		}
-		_shared.setProducers(_npeers, _peer);
-		_shared.setConsumers(_npeers, _peer);
-		// since we hard-code topology_local, we know _peer==0 exists...
-		_shared.barrier_reset(_npeers, (_peer == 0));
-	}
+        LocalReduceWQModel(LocalReduceWQDevice &device, pami_result_t &status) :
+        PAMI::Device::Interface::MulticombineModel<LocalReduceWQModel,LocalReduceWQDevice,sizeof(LocalReduceWQMessage)>(device, status),
+        _shared(_g_l_reducewq_dev.getSysdep()),
+        _peer(__global.topology_local.rank2Index(__global.mapping.task())),
+        _npeers(__global.topology_local.size())
+        {
+                // assert(device == _g_l_reducewq_dev);
+                if (!_shared.available()) {
+                        status = PAMI_ERROR;
+                        return;
+                }
+                _shared.setProducers(_npeers, _peer);
+                _shared.setConsumers(_npeers, _peer);
+                // since we hard-code topology_local, we know _peer==0 exists...
+                _shared.barrier_reset(_npeers, (_peer == 0));
+        }
 
-	inline void reset_impl() {
-		if (_peer == 0) {
-			_shared.reset();
-		}
-	}
+        inline void reset_impl() {
+                if (_peer == 0) {
+                        _shared.reset();
+                }
+        }
 
-	inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb);
+        inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb);
 
 private:
-	PAMI::Device::WorkQueue::SharedWorkQueue _shared;
-	unsigned _peer;
-	unsigned _npeers;
+        PAMI::Device::WorkQueue::SharedWorkQueue _shared;
+        unsigned _peer;
+        unsigned _npeers;
 }; // class LocalReduceWQModel
 
 inline pami_result_t LocalReduceWQModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb) {
-	PAMI::Topology *results_topo = (PAMI::Topology *)mcomb->results_participants;
-	// assert((data_topo .U. results_topo).size() == _npeers);
-	// This is a LOCAL reduce, results_topo must be a valid local rank!
-	// assert(_g_topology_local->rank2Index(results_topo->index2Rank(0)) != -1);
-	int dtshift = pami_dt_shift[mcomb->dtype];
-	coremath func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
-	unsigned rootpeer = __global.topology_local.rank2Index(results_topo->index2Rank(0));
-	LocalReduceWQMessage *msg =
-		new (&state) LocalReduceWQMessage(_g_l_reducewq_dev.getQS(),
-				mcomb, _shared, _peer, _npeers, rootpeer,
-				func, dtshift);
-	_g_l_reducewq_dev.__post<LocalReduceWQMessage>(msg);
-	return PAMI_SUCCESS;
+        PAMI::Topology *results_topo = (PAMI::Topology *)mcomb->results_participants;
+        // assert((data_topo .U. results_topo).size() == _npeers);
+        // This is a LOCAL reduce, results_topo must be a valid local rank!
+        // assert(_g_topology_local->rank2Index(results_topo->index2Rank(0)) != -1);
+        int dtshift = pami_dt_shift[mcomb->dtype];
+        coremath func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
+        unsigned rootpeer = __global.topology_local.rank2Index(results_topo->index2Rank(0));
+        LocalReduceWQMessage *msg =
+                new (&state) LocalReduceWQMessage(_g_l_reducewq_dev.getQS(),
+                                mcomb, _shared, _peer, _npeers, rootpeer,
+                                func, dtshift);
+        _g_l_reducewq_dev.__post<LocalReduceWQMessage>(msg);
+        return PAMI_SUCCESS;
 }
 
 }; // namespace Device

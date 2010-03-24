@@ -321,8 +321,8 @@ namespace PAMI
         }
 
     protected:
-	size_t            _task;
-	size_t            _size;
+        size_t            _task;
+        size_t            _size;
         size_t            _peers;
         // static const int  __pmiNameLen = 128;
         // char              __pmiName[__pmiNameLen];
@@ -343,16 +343,16 @@ namespace PAMI
         bool              _udpConnInit;
 
 
-	static int rank_compare(const void *a, const void *b) {
-		size_t *aa = (size_t *)a, *bb = (size_t *)b;
-		size_t r1 = *aa;
-		size_t r2 = *bb;
-		int x = r1 - r2;
-		return x;
-	}
+        static int rank_compare(const void *a, const void *b) {
+                size_t *aa = (size_t *)a, *bb = (size_t *)b;
+                size_t r1 = *aa;
+                size_t r2 = *bb;
+                int x = r1 - r2;
+                return x;
+        }
     public:
       inline pami_result_t init(size_t &min_rank, size_t &max_rank,
-				size_t &num_local, size_t **local_ranks)
+                                size_t &num_local, size_t **local_ranks)
       {
         char * tmp;
         tmp = getenv("PAMI_SOCK_SIZE");
@@ -379,12 +379,12 @@ namespace PAMI
         //*local_ranks = xxxx;
         num_local = 0;
 
-	min_rank = 0;
-	max_rank = _size-1;
+        min_rank = 0;
+        max_rank = _size-1;
 
         loadMapFile ();
 
-	return PAMI_SUCCESS;
+        return PAMI_SUCCESS;
       }
 
       inline size_t task_impl()
@@ -404,8 +404,8 @@ namespace PAMI
       }
 
       inline pami_result_t network2task_impl(const pami_coord_t *addr,
-						size_t *task,
-						pami_network *type)
+                                                size_t *task,
+                                                pami_network *type)
       {
         std::cout << "network2task not supported" << std::endl;
         abort();
@@ -413,7 +413,7 @@ namespace PAMI
 
       inline void udpAddr_impl(int & recvfd) const
       {
-	recvfd = _udpRcvConn;
+        recvfd = _udpRcvConn;
       }
 
      inline pami_result_t task2udp_impl( size_t task, int & sendfd, void * sockAddr, int & len )

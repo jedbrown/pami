@@ -25,15 +25,15 @@ namespace PAMI {
 namespace Device {
 namespace BGP {
 
-	CNAllreduceSetup CNAllreduceSetup::CNAllreduceSetupCache[PAMI_OP_COUNT][PAMI_DT_COUNT];
+        CNAllreduceSetup CNAllreduceSetup::CNAllreduceSetupCache[PAMI_OP_COUNT][PAMI_DT_COUNT];
 
-	void CNAllreduceSetup::initCNAS() {
-		for (unsigned op = PAMI_UNDEFINED_OP; op < PAMI_OP_COUNT; ++op) {
-		for (unsigned dt = PAMI_UNDEFINED_DT; dt < PAMI_DT_COUNT; ++dt) {
-			new (&CNAllreduceSetupCache[op][dt])
-				CNAllreduceSetup((pami_dt)dt, (pami_op)op);
-		}}
-	}
+        void CNAllreduceSetup::initCNAS() {
+                for (unsigned op = PAMI_UNDEFINED_OP; op < PAMI_OP_COUNT; ++op) {
+                for (unsigned dt = PAMI_UNDEFINED_DT; dt < PAMI_DT_COUNT; ++dt) {
+                        new (&CNAllreduceSetupCache[op][dt])
+                                CNAllreduceSetup((pami_dt)dt, (pami_op)op);
+                }}
+        }
 
       void preprocSum1PDouble(void *out, void *in, int c)
       {

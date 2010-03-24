@@ -21,7 +21,7 @@ int main(int argc, char **argv)
   // optionally override defaults/args here or test them (short counts, etc)
 
   initialize(CCMI_BINOMIAL_BARRIER_PROTOCOL,
-	     CCMI_BINOMIAL_BARRIER_PROTOCOL,
+             CCMI_BINOMIAL_BARRIER_PROTOCOL,
              CCMI_BINOMIAL_BROADCAST_PROTOCOL); // protocol to test
 
   allocate_buffers();

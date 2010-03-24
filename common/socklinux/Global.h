@@ -48,8 +48,8 @@ namespace PAMI
           TRACE_ERR((stderr, ">> Global::Global()\n"));
 
           Interface::Global<PAMI::Global>::time.init(0);
-	  pami_coord_t ll, ur;
-	  size_t min, max, num;
+          pami_coord_t ll, ur;
+          size_t min, max, num;
           size_t *ranks;
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
@@ -62,13 +62,13 @@ namespace PAMI
           int fd, rc;
           size_t n = size;
 
-	  // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
+          // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
           TRACE_ERR((stderr, "Global() .. size = %zd\n", size));
           rc = shm_open (_shmemfile, O_CREAT | O_RDWR, 0600);
           TRACE_ERR((stderr, "Global() .. after shm_open, fd = %d\n", fd));
           if ( rc != -1 )
           {
-	    fd = rc;
+            fd = rc;
             rc = ftruncate( fd, n );
             TRACE_ERR((stderr, "Global() .. after ftruncate(%d,%zd), rc = %d\n", fd,n,rc));
             if ( rc != -1 )
@@ -88,26 +88,26 @@ namespace PAMI
                 // Truncate to this size.
                 rc = ftruncate( fd, size );
                 TRACE_ERR((stderr, "Global() .. after second ftruncate(%d,%zd), rc = %d\n", fd,n,rc));
-	      } else { rc = -1; }
+              } else { rc = -1; }
             }
           }
 
           if (rc == -1) {
-          	// There was a failure obtaining the shared memory segment, most
-          	// likely because the application is running in SMP mode. Allocate
-          	// memory from the heap instead.
-          	//
-          	// TODO - verify the run mode is actually SMP.
-          	posix_memalign ((void **)&_memptr, 16, bytes);
-          	memset (_memptr, 0, bytes);
-          	_memsize = bytes;
-          	TRACE_ERR((stderr, "Global() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
-	  }
+                  // There was a failure obtaining the shared memory segment, most
+                  // likely because the application is running in SMP mode. Allocate
+                  // memory from the heap instead.
+                  //
+                  // TODO - verify the run mode is actually SMP.
+                  posix_memalign ((void **)&_memptr, 16, bytes);
+                  memset (_memptr, 0, bytes);
+                  _memsize = bytes;
+                  TRACE_ERR((stderr, "Global() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
+          }
 
           mapping.init(min, max, num, &ranks);
-	  PAMI::Topology::static_init(&mapping);
+          PAMI::Topology::static_init(&mapping);
           new (&topology_global) PAMI::Topology(min, max);
-	  topology_global.subTopologyLocalToMe(&topology_local);
+          topology_global.subTopologyLocalToMe(&topology_local);
           TRACE_ERR((stderr, "<< Global::Global()\n"));
 
           return;
@@ -129,7 +129,7 @@ namespace PAMI
 
        public:
 
-	PAMI::Mapping         mapping;
+        PAMI::Mapping         mapping;
 
       private:
         char _shmemfile[1024];

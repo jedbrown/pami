@@ -79,7 +79,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "After Client initialize\n");
 
     fprintf (stderr, "before context createv\n");
-	{ size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
+        { size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
@@ -154,7 +154,7 @@ int main (int argc, char ** argv)
       }
     }
     fprintf (stderr, "... after send-recv advance loop\n");
-	send_active = recv_active = 1;
+        send_active = recv_active = 1;
   }
 #endif
   result = PAMI_Context_destroy (context);

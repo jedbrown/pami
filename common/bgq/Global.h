@@ -49,7 +49,7 @@ namespace PAMI
       inline Global () :
           personality (),
           mapping(personality),
-	  l2atomicFactory(),
+          l2atomicFactory(),
           _mapcache ()
       {
         pami_coord_t ll, ur;
@@ -59,7 +59,7 @@ namespace PAMI
         size_t   pagesize  = 4096;
 
         bytes = initializeMapCache(personality, NULL, ll, ur, min, max, true);
-	
+
         // Round up to the page size
         size_t size = ((bytes + pagesize - 1) & ~(pagesize - 1)) + BGQ_GLOBAL_SHMEM_SIZE;
 
@@ -85,7 +85,7 @@ namespace PAMI
                 if (ptr != MAP_FAILED)
                   {
                     TRACE_ERR((stderr, "Global:shmem file <%s> %zd bytes mapped at %p\n", shmemfile, size, ptr));
-	            mm.init(ptr, size);
+                    mm.init(ptr, size);
 
                   }
                 else
@@ -105,7 +105,7 @@ namespace PAMI
             // TODO - verify the run mode is actually SMP.
             posix_memalign ((void **)&ptr, 16, size);
             memset (ptr, 0, size);
-	    mm.init(ptr, size);
+            mm.init(ptr, size);
           }
         (void)initializeMapCache(personality, &mm, ll, ur, min, max, false);
 
@@ -134,8 +134,8 @@ namespace PAMI
           }
 
         topology_global.subTopologyLocalToMe(&topology_local);
-	PAMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
-	l2atomicFactory.init(&mm, &mapping, &topology_local);
+        PAMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
+        l2atomicFactory.init(&mm, &mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));
 
@@ -165,7 +165,7 @@ namespace PAMI
     private:
 
       inline size_t initializeMapCache (BgqPersonality  & personality,
-					PAMI::Memory::MemoryManager *mm,
+                                        PAMI::Memory::MemoryManager *mm,
                                         pami_coord_t &ll, pami_coord_t &ur, pami_task_t &min, pami_task_t &max, bool shared);
 
     public:
@@ -184,7 +184,7 @@ namespace PAMI
 
 // If 'mm' is NULL, compute total memory needed for mapcache and return (doing nothing else).
 size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
-					PAMI::Memory::MemoryManager *mm,
+                                        PAMI::Memory::MemoryManager *mm,
                                         pami_coord_t &ll, pami_coord_t &ur, pami_task_t &min, pami_task_t &max, bool shared)
 {
   bgq_mapcache_t  * mapcache = &_mapcache;
@@ -235,13 +235,13 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
   size_t peerSize = pSize * tSize;
 
   if (!mm) {
-	size_t mapsize = sizeof(cacheAnchors_t) +
-		fullSize * sizeof(*mapcache->torus.task2coords) +
-		fullSize * sizeof(*mapcache->torus.coords2task) +
-		peerSize * sizeof(*mapcache->node.local2peer) +
-		peerSize * sizeof(*mapcache->node.peer2task);
-	TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() << mapsize = %zd\n", mapsize));
-	return mapsize;
+        size_t mapsize = sizeof(cacheAnchors_t) +
+                fullSize * sizeof(*mapcache->torus.task2coords) +
+                fullSize * sizeof(*mapcache->torus.coords2task) +
+                peerSize * sizeof(*mapcache->node.local2peer) +
+                peerSize * sizeof(*mapcache->node.peer2task);
+        TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() << mapsize = %zd\n", mapsize));
+        return mapsize;
   }
 
   volatile cacheAnchors_t *cacheAnchorsPtr;

@@ -255,7 +255,7 @@ namespace CCMI
           PAMI_abort();
 
         startphase = _startPhase;
-	nphases    = _nphases;
+        nphases    = _nphases;
 
         TRACE_SCHEDULE((stderr,"<%p>Schedule::RingSchedule::local_init schedule %d, %d, %d, "
                      "idxes = (%d, %d, %d) \n", this,
@@ -271,7 +271,7 @@ namespace CCMI
 
       virtual void getSrcTopology (unsigned phase, PAMI::Topology *topology)
       {
-	unsigned *srcranks;
+        unsigned *srcranks;
         pami_result_t rc = topology->rankList(&srcranks);
         CCMI_assert (rc == PAMI_SUCCESS);
         CCMI_assert(srcranks != NULL);
@@ -297,8 +297,8 @@ namespace CCMI
           CCMI_abort();
         }
 
-	//Convert to a list topology
-	new (topology) PAMI::Topology (srcranks, nranks);
+        //Convert to a list topology
+        new (topology) PAMI::Topology (srcranks, nranks);
       }
 
       /**
@@ -334,8 +334,8 @@ namespace CCMI
           CCMI_abort();
         }
 
-	//Convert to a list topology
-	new (topology) PAMI::Topology (dstranks, ndst);
+        //Convert to a list topology
+        new (topology) PAMI::Topology (dstranks, ndst);
         return;
       }
 
@@ -344,40 +344,40 @@ namespace CCMI
        * \param[INOUT] topology : the union of all sources
        */
       virtual pami_result_t getSrcUnionTopology (PAMI::Topology *topology) {
-	unsigned *srcranks;
+        unsigned *srcranks;
         pami_result_t rc = topology->rankList(&srcranks);
-	unsigned nsrcranks = topology->size();
+        unsigned nsrcranks = topology->size();
         CCMI_assert (rc == PAMI_SUCCESS);
         CCMI_assert(srcranks != NULL);
 
-	unsigned nranks = 0, ntotal_ranks = 0;
-	for (unsigned p = _startPhase; p < _startPhase + _nphases; p++) {
-	  switch(_op)
-	    {
-	    case REDUCE_OP:
-	      getReduceSources (p, srcranks + ntotal_ranks, nranks);
-	      break;
-	    case BROADCAST_OP:
-	      getBroadcastSources (p, srcranks + ntotal_ranks, nranks);
-	      break;
-	    case ALLREDUCE_OP:
-	      if(p < _bcastStart)
-		getReduceSources (p, srcranks + ntotal_ranks, nranks);
-	      else
-		getBroadcastSources (p, srcranks + ntotal_ranks, nranks);
-	      break;
+        unsigned nranks = 0, ntotal_ranks = 0;
+        for (unsigned p = _startPhase; p < _startPhase + _nphases; p++) {
+          switch(_op)
+            {
+            case REDUCE_OP:
+              getReduceSources (p, srcranks + ntotal_ranks, nranks);
+              break;
+            case BROADCAST_OP:
+              getBroadcastSources (p, srcranks + ntotal_ranks, nranks);
+              break;
+            case ALLREDUCE_OP:
+              if(p < _bcastStart)
+                getReduceSources (p, srcranks + ntotal_ranks, nranks);
+              else
+                getBroadcastSources (p, srcranks + ntotal_ranks, nranks);
+              break;
 
-	    case BARRIER_OP:
-	    default:
-	      CCMI_abort();
-	    }
-	  ntotal_ranks += nranks;
-	  nranks = 0;
-	  CCMI_assert (ntotal_ranks <= nsrcranks);
-	}
+            case BARRIER_OP:
+            default:
+              CCMI_abort();
+            }
+          ntotal_ranks += nranks;
+          nranks = 0;
+          CCMI_assert (ntotal_ranks <= nsrcranks);
+        }
 
-	//Convert to a list topology
-	new (topology) PAMI::Topology (srcranks, ntotal_ranks);
+        //Convert to a list topology
+        new (topology) PAMI::Topology (srcranks, ntotal_ranks);
         return PAMI_SUCCESS;
       }
 
@@ -387,40 +387,40 @@ namespace CCMI
        * \param[INOUT] topology : the union of all sources
        */
       virtual pami_result_t getDstUnionTopology (PAMI::Topology *topology) {
-	unsigned *dstranks;
-	pami_result_t rc = topology->rankList(&dstranks);
-	unsigned ndstranks = topology->size();
-	CCMI_assert (rc == PAMI_SUCCESS);
-	CCMI_assert(dstranks != NULL);
+        unsigned *dstranks;
+        pami_result_t rc = topology->rankList(&dstranks);
+        unsigned ndstranks = topology->size();
+        CCMI_assert (rc == PAMI_SUCCESS);
+        CCMI_assert(dstranks != NULL);
 
-	unsigned nranks = 0, ntotal_ranks = 0;
-	for (unsigned p = _startPhase; p < _startPhase + _nphases; p++) {
-	  switch(_op)
-	    {
-	    case REDUCE_OP:
-	      getReduceDestinations (p, dstranks + ntotal_ranks, nranks);
-	      break;
-	    case BROADCAST_OP:
-	      getBroadcastDestinations (p, dstranks + ntotal_ranks, nranks);
-	      break;
-	    case ALLREDUCE_OP:
-	      if(p < _bcastStart)
-		getReduceDestinations (p, dstranks + ntotal_ranks, nranks);
-	      else
-		getBroadcastDestinations (p, dstranks + ntotal_ranks, nranks);
-	      break;
+        unsigned nranks = 0, ntotal_ranks = 0;
+        for (unsigned p = _startPhase; p < _startPhase + _nphases; p++) {
+          switch(_op)
+            {
+            case REDUCE_OP:
+              getReduceDestinations (p, dstranks + ntotal_ranks, nranks);
+              break;
+            case BROADCAST_OP:
+              getBroadcastDestinations (p, dstranks + ntotal_ranks, nranks);
+              break;
+            case ALLREDUCE_OP:
+              if(p < _bcastStart)
+                getReduceDestinations (p, dstranks + ntotal_ranks, nranks);
+              else
+                getBroadcastDestinations (p, dstranks + ntotal_ranks, nranks);
+              break;
 
-	    case BARRIER_OP:
-	    default:
-	      CCMI_abort();
-	    }
-	  ntotal_ranks += nranks;
-	  CCMI_assert (ntotal_ranks <= ndstranks);
-	  nranks = 0;
-	}
+            case BARRIER_OP:
+            default:
+              CCMI_abort();
+            }
+          ntotal_ranks += nranks;
+          CCMI_assert (ntotal_ranks <= ndstranks);
+          nranks = 0;
+        }
 
-	//Convert to a list topology
-	new (topology) PAMI::Topology (dstranks, ntotal_ranks);
+        //Convert to a list topology
+        new (topology) PAMI::Topology (dstranks, ntotal_ranks);
         return PAMI_SUCCESS;
       }
 

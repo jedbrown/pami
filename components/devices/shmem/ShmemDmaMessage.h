@@ -38,7 +38,7 @@ namespace PAMI
     {
       public:
         inline ShmemDmaMessage (GenericDeviceMessageQueue *QS,
-				pami_event_function   fn,
+                                pami_event_function   fn,
                                 void               * cookie,
                                 T_Device           * device,
                                 size_t               fifo,
@@ -87,7 +87,7 @@ namespace PAMI
                                        remote_memregion, remote_offset, bytes)
         {};
 
-	DECL_ADVANCE_ROUTINE2(advancePut,ShmemDmaPutMessage,ShmemThread)
+        DECL_ADVANCE_ROUTINE2(advancePut,ShmemDmaPutMessage,ShmemThread)
         inline pami_result_t __advancePut (pami_context_t context, ShmemThread *thr)
         {
           // These constant-expression branch instructions will be optimized
@@ -113,26 +113,26 @@ namespace PAMI
           return PAMI_EAGAIN;
         };
 
-	inline int setThreads(ShmemThread **th)
-	{
-		ShmemThread *t;
-		int n;
-		_device->__getThreads(&t, &n);
-		int nt = 0;
-		// only one thread... for now...
-		t[nt].setMsg(this);
-		t[nt].setAdv(advancePut);
-		t[nt].setStatus(PAMI::Device::Ready);
-		__advancePut(_device->getContext(), t); // was this done by model?
-		++nt;
-		*th = t;
-		return nt;
-	}
+        inline int setThreads(ShmemThread **th)
+        {
+                ShmemThread *t;
+                int n;
+                _device->__getThreads(&t, &n);
+                int nt = 0;
+                // only one thread... for now...
+                t[nt].setMsg(this);
+                t[nt].setAdv(advancePut);
+                t[nt].setStatus(PAMI::Device::Ready);
+                __advancePut(_device->getContext(), t); // was this done by model?
+                ++nt;
+                *th = t;
+                return nt;
+        }
 
-	pami_context_t postNext(bool devQueued)
-	{
-		return _device->__postNext<ShmemDmaPutMessage>__postNext(this, devQueued);
-	}
+        pami_context_t postNext(bool devQueued)
+        {
+                return _device->__postNext<ShmemDmaPutMessage>__postNext(this, devQueued);
+        }
 
     };  // PAMI::Device::ShmemDmaPutMessage class
 
@@ -154,7 +154,7 @@ namespace PAMI
                                        remote_memregion, remote_offset, bytes)
         {};
 
-	DECL_ADVANCE_ROUTINE2(advanceGet,ShmemDmaPutMessage,ShmemThread)
+        DECL_ADVANCE_ROUTINE2(advanceGet,ShmemDmaPutMessage,ShmemThread)
         inline pami_result_t __advanceGet (pami_context_t context, ShmemThread *thr)
         {
           // These constant-expression branch instructions will be optimized
@@ -183,26 +183,26 @@ namespace PAMI
           return PAMI_EAGAIN;
         };
 
-	inline int setThreads(ShmemThread **th)
-	{
-		ShmemThread *t;
-		int n;
-		_device->__getThreads(&t, &n);
-		int nt = 0;
-		// only one thread... for now...
-		t[nt].setMsg(this);
-		t[nt].setAdv(advanceGet);
-		t[nt].setStatus(PAMI::Device::Ready);
-		__advancePut(_device->getContext(), t); // was this done by model?
-		++nt;
-		*th = t;
-		return nt;
-	}
+        inline int setThreads(ShmemThread **th)
+        {
+                ShmemThread *t;
+                int n;
+                _device->__getThreads(&t, &n);
+                int nt = 0;
+                // only one thread... for now...
+                t[nt].setMsg(this);
+                t[nt].setAdv(advanceGet);
+                t[nt].setStatus(PAMI::Device::Ready);
+                __advancePut(_device->getContext(), t); // was this done by model?
+                ++nt;
+                *th = t;
+                return nt;
+        }
 
-	pami_context_t postNext(bool devQueued)
-	{
-		return _device->__postNext<ShmemDmaGetMessage>__postNext(this, devQueued);
-	}
+        pami_context_t postNext(bool devQueued)
+        {
+                return _device->__postNext<ShmemDmaGetMessage>__postNext(this, devQueued);
+        }
     };  // PAMI::Device::ShmemDmaGetMessage class
   };    // PAMI::Device namespace
 };      // PAMI namespace

@@ -98,37 +98,37 @@ static inline void _sum_aligned2(float *dst, const float **srcs, int nsrc, int c
 #if 0
 void _pami_core_fp32_sum2(float *dst, const float **srcs, int nsrc, int count) {
 
-	if (( ((uint32_t) dst) | ((uint32_t) srcs[0]) | ((uint32_t) srcs[1])) & 0x03) {
-		// a buffer is not 8-byte aligned.
-		const float *s0 = srcs[0], *s1 = srcs[1];
-		register int n=0;
-		register float rbuffer0, rbuffer1, rbuffer2, rbuffer3;
-		register float buf00, buf01, buf02, buf03;
-		register float buf10, buf11, buf12, buf13;
-		for(; n<count-3; n+=4) {
-			buf00 = s0[n+0]; buf10 = s1[n+0];
-			buf01 = s0[n+1]; buf11 = s1[n+1];
-			buf02 = s0[n+2]; buf12 = s1[n+2];
-			buf03 = s0[n+3]; buf13 = s1[n+3];
+        if (( ((uint32_t) dst) | ((uint32_t) srcs[0]) | ((uint32_t) srcs[1])) & 0x03) {
+                // a buffer is not 8-byte aligned.
+                const float *s0 = srcs[0], *s1 = srcs[1];
+                register int n=0;
+                register float rbuffer0, rbuffer1, rbuffer2, rbuffer3;
+                register float buf00, buf01, buf02, buf03;
+                register float buf10, buf11, buf12, buf13;
+                for(; n<count-3; n+=4) {
+                        buf00 = s0[n+0]; buf10 = s1[n+0];
+                        buf01 = s0[n+1]; buf11 = s1[n+1];
+                        buf02 = s0[n+2]; buf12 = s1[n+2];
+                        buf03 = s0[n+3]; buf13 = s1[n+3];
 
-			rbuffer0 = buf00+buf10;
-			rbuffer1 = buf01+buf11;
-			rbuffer2 = buf02+buf12;
-			rbuffer3 = buf03+buf13;
+                        rbuffer0 = buf00+buf10;
+                        rbuffer1 = buf01+buf11;
+                        rbuffer2 = buf02+buf12;
+                        rbuffer3 = buf03+buf13;
 
-			dst[n+0] = rbuffer0;
-			dst[n+1] = rbuffer1;
-			dst[n+2] = rbuffer2;
-			dst[n+3] = rbuffer3;
-		}
-		for(; n<count; n++) {
-			dst[n] = s0[n]+s1[n];
-		}
-	} else {
-		_sum_aligned2(dst, srcs[0], srcs[1], count);
-	}
+                        dst[n+0] = rbuffer0;
+                        dst[n+1] = rbuffer1;
+                        dst[n+2] = rbuffer2;
+                        dst[n+3] = rbuffer3;
+                }
+                for(; n<count; n++) {
+                        dst[n] = s0[n]+s1[n];
+                }
+        } else {
+                _sum_aligned2(dst, srcs[0], srcs[1], count);
+        }
 
-	return;
+        return;
 }
 #else
 //#warning optimized 2-way sum float turned off

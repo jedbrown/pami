@@ -148,13 +148,13 @@ namespace PAMI
       inline pami_result_t network2task_impl(const pami_coord_t *addr,
                                             pami_task_t        *task,
                                             pami_network       *type)
-	{
+        {
           if (addr->network != PAMI_N_TORUS_NETWORK)
             return PAMI_ERROR;
           *task = addr->u.n_torus.coords[0];
           *type = PAMI_N_TORUS_NETWORK;
           return PAMI_SUCCESS;
-	}
+        }
     }; // class Mapping
 };	// namespace PAMI
 #endif // __components_mapping_lapi_lapimapping_h__

@@ -52,8 +52,8 @@ namespace PAMI
           /// \return  Return code of the device init status
           ///
           inline int init (Memory::MemoryManager *mm,
-			   size_t        clientid,
-			   size_t        num_ctx,
+                           size_t        clientid,
+                           size_t        num_ctx,
                            pami_context_t   context,
                            size_t          contextid);
 
@@ -103,8 +103,8 @@ namespace PAMI
 
       template <class T_Device>
       inline int BaseDevice<T_Device>::init (Memory::MemoryManager *mm,
-			   size_t        clientid,
-			   size_t        num_ctx,
+                           size_t        clientid,
+                           size_t        num_ctx,
                            pami_context_t   context,
                            size_t          contextid)
       {

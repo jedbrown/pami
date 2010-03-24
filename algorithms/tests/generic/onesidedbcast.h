@@ -57,13 +57,13 @@ inline void onesidedbcast_advance (unsigned * srcbuf, unsigned src_count, unsign
   done = 0; nreceived_countdown = src_count;
 
     CCMI_Broadcast(&onesidedbcast_reg,
-		   &onesidedbcast_request,
-		   common_done,
-		   consistency,
-		   &geometry,
-		   root,
-		   (char *)srcbuf,
-		   src_count*sizeof(unsigned));
+                   &onesidedbcast_request,
+                   common_done,
+                   consistency,
+                   &geometry,
+                   root,
+                   (char *)srcbuf,
+                   src_count*sizeof(unsigned));
     while(!done)
     {
       CCMI_Generic_adaptor_advance();

@@ -41,16 +41,16 @@ namespace CCMI
     {
       namespace Tree
       {
-	/// \todo Why is all this 'static' instead of instantiated in the registration?!
-	// Is it all *really* protected (mutual exclusion) from different instances?
-	CCMI::MultiSend::CCMI_Multicombine_t VnDualShortTreeAllreduce::_mcombArgs;
+        /// \todo Why is all this 'static' instead of instantiated in the registration?!
+        // Is it all *really* protected (mutual exclusion) from different instances?
+        CCMI::MultiSend::CCMI_Multicombine_t VnDualShortTreeAllreduce::_mcombArgs;
         VnDualShortTreeAllreduce::SharedData *VnDualShortTreeAllreduce::_shared =
-					(VnDualShortTreeAllreduce::SharedData *)-1;
-	char *VnDualShortTreeAllreduce::_swq_buf;
-	char *VnDualShortTreeAllreduce::_rwq_buf;
-	PAMI::PipeWorkQueue VnDualShortTreeAllreduce::_swq;
-	PAMI::PipeWorkQueue VnDualShortTreeAllreduce::_rwq;
-	PAMI::Topology VnDualShortTreeAllreduce::_root;
+                                        (VnDualShortTreeAllreduce::SharedData *)-1;
+        char *VnDualShortTreeAllreduce::_swq_buf;
+        char *VnDualShortTreeAllreduce::_rwq_buf;
+        PAMI::PipeWorkQueue VnDualShortTreeAllreduce::_swq;
+        PAMI::PipeWorkQueue VnDualShortTreeAllreduce::_rwq;
+        PAMI::Topology VnDualShortTreeAllreduce::_root;
         unsigned VnDualShortTreeAllreduce::_numPeers = 0;
         unsigned VnDualShortTreeAllreduce::_myPeer = 0;
         unsigned VnDualShortTreeAllreduce::_isMasterCore = 0;
@@ -79,33 +79,33 @@ namespace CCMI
           _shared =  (SharedData *)_g_sysdep->memoryManager().scratchpad_dynamic_area_malloc(sizeof(SharedData));
 #endif
 
-	_swq.configure(_g_messager->sysdep(), MaxDataBytes);
-	_swq.reset();
-	_swq_buf = _swq.bufferToConsume();
-	_rwq.configure(_g_messager->sysdep(), MaxDataBytes);
-	_rwq.reset();
-	_rwq_buf = _rwq.bufferToConsume();
+        _swq.configure(_g_messager->sysdep(), MaxDataBytes);
+        _swq.reset();
+        _swq_buf = _swq.bufferToConsume();
+        _rwq.configure(_g_messager->sysdep(), MaxDataBytes);
+        _rwq.reset();
+        _rwq_buf = _rwq.bufferToConsume();
 
-	_mcombArgs.setData((PAMI_PipeWorkQueue_t *)&_swq, 0);
-	_mcombArgs.setResults((PAMI_PipeWorkQueue_t *)&_rwq, 0);
-	_mcombArgs.setDataRanks(NULL);
+        _mcombArgs.setData((PAMI_PipeWorkQueue_t *)&_swq, 0);
+        _mcombArgs.setResults((PAMI_PipeWorkQueue_t *)&_rwq, 0);
+        _mcombArgs.setDataRanks(NULL);
 
           // find out who is the master core (to access the tree)
           unsigned i;
 
-	  _numPeers = _g_topology_local->size();
-	  size_t me = mapping->rank();
-	  _myPeer = _g_topology_local->rank2Index(me);
-	  _isMasterCore = (_myPeer == 0);
+          _numPeers = _g_topology_local->size();
+          size_t me = mapping->rank();
+          _myPeer = _g_topology_local->rank2Index(me);
+          _isMasterCore = (_myPeer == 0);
 
           for (i = 1; i < MAX_NUM_CORES; ++i) {
-		// everybody does the same, so trampling eachother isn't a problem
-		// this wasy we don't have to coordinate a "join" afterwards.
-		_shared->srcs[i] = _shared->client[i - 1].src;
-		if (i >= _numPeers && _isMasterCore) {
-			memset(_shared->client[i - 1].src, 0, MaxDataBytes);
-		}
-	  }
+                // everybody does the same, so trampling eachother isn't a problem
+                // this wasy we don't have to coordinate a "join" afterwards.
+                _shared->srcs[i] = _shared->client[i - 1].src;
+                if (i >= _numPeers && _isMasterCore) {
+                        memset(_shared->client[i - 1].src, 0, MaxDataBytes);
+                }
+          }
 
           TRACE_ADAPTOR((stderr,"<        >Allreduce::Tree::VnDualShortTreeAllreduce::init "
                          "minTCoord:%d numPeers:%d t:%d srcs[0]:%#.8X srcs[1]:%#.8X "
@@ -140,7 +140,7 @@ namespace CCMI
               _dstbuf = dstbuf;
             } else { // we don't want the results if we're non-root reduce.
               _dstbuf = NULL;
-	    }
+            }
             if (_op != op || _dt != dtype)
             {
               _op = op;
@@ -217,8 +217,8 @@ namespace CCMI
             {
               // register master's srcbuf for the reduction
               _shared->srcs[0] = srcbuf;
-	      _rwq.reset();
-	      _swq.reset();
+              _rwq.reset();
+              _swq.reset();
 
 
               // wait for peers to copy  src data into the shared buffer
@@ -232,10 +232,10 @@ namespace CCMI
               } while (num < _numPeers - 1);
 
               if (_dstbuf) {
-	        new (&_root) PAMI::Topology(_mapping->rank());
+                new (&_root) PAMI::Topology(_mapping->rank());
               } else { // we don't want the results if we're non-root reduce.
-	        new (&_root) PAMI::Topology();
-	      }
+                new (&_root) PAMI::Topology();
+              }
               _mcombArgs.setResultsRanks((PAMI_Topology_t *)&_root);
 
               TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::VnDualShortTreeAllreduce "
@@ -255,10 +255,10 @@ namespace CCMI
                 for (unsigned i = 0; i < _count; i++)
                 {
                   ((int *)(_swq_buf))[i] =
-                  	((int *)(_shared->srcs[0]))[i] +
-                  	((int *)(_shared->srcs[1]))[i] +
-                  	((int *)(_shared->srcs[2]))[i] +
-                  	((int *)(_shared->srcs[3]))[i];
+                          ((int *)(_shared->srcs[0]))[i] +
+                          ((int *)(_shared->srcs[1]))[i] +
+                          ((int *)(_shared->srcs[2]))[i] +
+                          ((int *)(_shared->srcs[3]))[i];
                 }
               }
               else if (_reduceOpSelect == DBL_SUM)
@@ -266,10 +266,10 @@ namespace CCMI
                 for (unsigned i = 0; i < _count; i++)
                 {
                   ((double *)(_swq_buf))[i] =
-                  	((double *)(_shared->srcs[0]))[i] +
-                  	((double *)(_shared->srcs[1]))[i] +
-                  	((double *)(_shared->srcs[2]))[i] +
-                  	((double *)(_shared->srcs[3]))[i];
+                          ((double *)(_shared->srcs[0]))[i] +
+                          ((double *)(_shared->srcs[1]))[i] +
+                          ((double *)(_shared->srcs[2]))[i] +
+                          ((double *)(_shared->srcs[3]))[i];
                 }
               }
               else
@@ -279,7 +279,7 @@ namespace CCMI
                 else
                   memcpy(_swq_buf, _shared->srcs[0], _bytes);
               }
-	      _swq.produceBytes(_bytes);
+              _swq.produceBytes(_bytes);
 
               // reset shared src buffer ready flags for the next run
               _shared->client[0].isSrcReady = 0;

@@ -183,28 +183,28 @@ typedef pami_geometry_t (*pami_mapidtogeometry_fn) (int comm);
 ///
 template <class T_Counter>
 inline void local_barriered_ctrzero(T_Counter *ctrs, size_t num,
-				size_t participants, bool master) {
-	PAMI_assertf(num >= 2, "local_barriered_ctrzero() requires at least two counters\n");
-	size_t c0 = num - 2;
-	size_t c1 = num - 1;
-	if (master) {
-		size_t value = ctrs[c1].fetch() + participants;
-		size_t i;
-		for (i = 0; i < c0; ++i) {
-			ctrs[i].fetch_and_clear();
-		}
-		ctrs[c1].fetch_and_inc();
-		while (ctrs[c1].fetch() != value) {
-			ctrs[c0].fetch_and_inc();
-		}
-		ctrs[c1].fetch_and_clear();
-		ctrs[c0].fetch_and_clear();
-	} else {
-		size_t value = ctrs[c0].fetch();
-		while (ctrs[c0].fetch() == value);
-		ctrs[c1].fetch_and_inc();
-		while (ctrs[c0].fetch() != 0);
-	}
+                                size_t participants, bool master) {
+        PAMI_assertf(num >= 2, "local_barriered_ctrzero() requires at least two counters\n");
+        size_t c0 = num - 2;
+        size_t c1 = num - 1;
+        if (master) {
+                size_t value = ctrs[c1].fetch() + participants;
+                size_t i;
+                for (i = 0; i < c0; ++i) {
+                        ctrs[i].fetch_and_clear();
+                }
+                ctrs[c1].fetch_and_inc();
+                while (ctrs[c1].fetch() != value) {
+                        ctrs[c0].fetch_and_inc();
+                }
+                ctrs[c1].fetch_and_clear();
+                ctrs[c0].fetch_and_clear();
+        } else {
+                size_t value = ctrs[c0].fetch();
+                while (ctrs[c0].fetch() == value);
+                ctrs[c1].fetch_and_inc();
+                while (ctrs[c0].fetch() != 0);
+        }
 }
 #endif // __cplusplus
 // try to do an un-templated version for C programs?
@@ -224,30 +224,30 @@ inline void local_barriered_ctrzero(T_Counter *ctrs, size_t num,
 /// semantics (i.e. just a load from 'volatile *').
 ///
 inline void local_barriered_shmemzero(void *shmem, size_t len,
-				size_t participants, bool master) {
-	volatile size_t *ctrs = (volatile size_t *)shmem;
-	size_t num = len / sizeof(size_t);
-	PAMI_assertf(num >= 2, "local_barriered_shmemzero() requires enough shmem for at least two counters\n");
-	size_t c0 = num - 2;
-	size_t c1 = num - 1;
-	if (master) {
-		size_t value = ctrs[c1] + participants;
-		size_t blk1 = (char *)&ctrs[c0] - (char *)shmem;
-		size_t blk2 = len - ((char *)&ctrs[c1] - (char *)shmem);
-		memset(shmem, 0, blk1);
-		__sync_fetch_and_add(&ctrs[c1], 1);
-		while (ctrs[c1] != value) {
-			__sync_fetch_and_add(&ctrs[c0], 1);
-			mem_sync();
-		}
-		memset((void *)&ctrs[c1], 0, blk2);
-		__sync_fetch_and_and(&ctrs[c0], 0);
-	} else {
-		size_t value = ctrs[c0];
-		while (ctrs[c0] == value);
-		__sync_fetch_and_add(&ctrs[c1], 1);
-		while (ctrs[c0] != 0);
-	}
+                                size_t participants, bool master) {
+        volatile size_t *ctrs = (volatile size_t *)shmem;
+        size_t num = len / sizeof(size_t);
+        PAMI_assertf(num >= 2, "local_barriered_shmemzero() requires enough shmem for at least two counters\n");
+        size_t c0 = num - 2;
+        size_t c1 = num - 1;
+        if (master) {
+                size_t value = ctrs[c1] + participants;
+                size_t blk1 = (char *)&ctrs[c0] - (char *)shmem;
+                size_t blk2 = len - ((char *)&ctrs[c1] - (char *)shmem);
+                memset(shmem, 0, blk1);
+                __sync_fetch_and_add(&ctrs[c1], 1);
+                while (ctrs[c1] != value) {
+                        __sync_fetch_and_add(&ctrs[c0], 1);
+                        mem_sync();
+                }
+                memset((void *)&ctrs[c1], 0, blk2);
+                __sync_fetch_and_and(&ctrs[c0], 0);
+        } else {
+                size_t value = ctrs[c0];
+                while (ctrs[c0] == value);
+                __sync_fetch_and_add(&ctrs[c1], 1);
+                while (ctrs[c0] != 0);
+        }
 }
 #endif // __local_barriered_shmemzero_fn__
 

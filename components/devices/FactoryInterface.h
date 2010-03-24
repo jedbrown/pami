@@ -49,9 +49,9 @@ namespace PAMI
                                         size_t     clientid,
                                         size_t     contextid);
 
-	  static inline T_Device & getDevice(T_Device * devices,
-					     size_t clientid,
-					     size_t contextid);
+          static inline T_Device & getDevice(T_Device * devices,
+                                             size_t clientid,
+                                             size_t contextid);
 
       };  // PAMI::Device::Interface::FactoryInterface class
     };    // PAMI::Device::Interface namespace

@@ -301,23 +301,23 @@ extern void _pami_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int cou
 #define OPTIMIZED_int8_pre_all(op)
 #define OPTIMIZED_int8_post_all(op)
 #define OPTIMIZED_int8_pre_min	\
-	OPTIMATH_UNARY(PAMI_SIGNED_CHAR,PAMI_MIN,_pami_core_int8_pre_min_o)
+        OPTIMATH_UNARY(PAMI_SIGNED_CHAR,PAMI_MIN,_pami_core_int8_pre_min_o)
 #define OPTIMIZED_int8_post_min	\
-	OPTIMATH_UNARY(PAMI_SIGNED_CHAR,PAMI_MIN,_pami_core_int8_post_min_o)
+        OPTIMATH_UNARY(PAMI_SIGNED_CHAR,PAMI_MIN,_pami_core_int8_post_min_o)
 #define OPTIMIZED_uint8_pre_all(op)
 #define OPTIMIZED_uint8_post_all(op)
 #define OPTIMIZED_uint8_pre_min	\
-	OPTIMATH_UNARY(PAMI_UNSIGNED_CHAR,PAMI_MIN,_pami_core_uint8_pre_min_o)
+        OPTIMATH_UNARY(PAMI_UNSIGNED_CHAR,PAMI_MIN,_pami_core_uint8_pre_min_o)
 #define OPTIMIZED_uint8_post_min	\
-	OPTIMATH_UNARY(PAMI_UNSIGNED_CHAR,PAMI_MIN,_pami_core_uint8_post_min_o)
+        OPTIMATH_UNARY(PAMI_UNSIGNED_CHAR,PAMI_MIN,_pami_core_uint8_post_min_o)
 #define OPTIMIZED_int16_pre_all(op)	\
-	OPTIMATH_UNARY(PAMI_SIGNED_SHORT,op,_pami_core_int16_pre_all_o)
+        OPTIMATH_UNARY(PAMI_SIGNED_SHORT,op,_pami_core_int16_pre_all_o)
 #define OPTIMIZED_int16_post_all(op)	\
-	OPTIMATH_UNARY(PAMI_SIGNED_SHORT,op,_pami_core_int16_post_all_o)
+        OPTIMATH_UNARY(PAMI_SIGNED_SHORT,op,_pami_core_int16_post_all_o)
 #define OPTIMIZED_int16_pre_min		\
-	OPTIMATH_UNARY(PAMI_SIGNED_SHORT,PAMI_MIN,_pami_core_int16_pre_min_o)
+        OPTIMATH_UNARY(PAMI_SIGNED_SHORT,PAMI_MIN,_pami_core_int16_pre_min_o)
 #define OPTIMIZED_int16_post_min	\
-	OPTIMATH_UNARY(PAMI_SIGNED_SHORT,PAMI_MIN,_pami_core_int16_post_min_o)
+        OPTIMATH_UNARY(PAMI_SIGNED_SHORT,PAMI_MIN,_pami_core_int16_post_min_o)
 #define OPTIMIZED_int16_int32_pre_maxloc
 #define OPTIMIZED_int16_int32_post_maxloc
 #define OPTIMIZED_int16_int32_pre_minloc
@@ -325,14 +325,14 @@ extern void _pami_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int cou
 #define OPTIMIZED_uint16_pre_all(op)
 #define OPTIMIZED_uint16_post_all(op)
 #define OPTIMIZED_uint16_pre_min	\
-	OPTIMATH_UNARY(PAMI_UNSIGNED_SHORT,PAMI_MIN,_pami_core_uint16_pre_min_o)
+        OPTIMATH_UNARY(PAMI_UNSIGNED_SHORT,PAMI_MIN,_pami_core_uint16_pre_min_o)
 #define OPTIMIZED_uint16_post_min	\
-	OPTIMATH_UNARY(PAMI_UNSIGNED_SHORT,PAMI_MIN,_pami_core_uint16_post_min_o)
+        OPTIMATH_UNARY(PAMI_UNSIGNED_SHORT,PAMI_MIN,_pami_core_uint16_post_min_o)
 #define OPTIMIZED_int32_pre_all(op)
 #define OPTIMIZED_int32_post_all(op)
 #define OPTIMIZED_int32_pre_min
 #define OPTIMIZED_int32_post_min	\
-	OPTIMATH_UNARY(PAMI_SIGNED_INT,PAMI_MIN,_pami_core_int32_post_min_o)
+        OPTIMATH_UNARY(PAMI_SIGNED_INT,PAMI_MIN,_pami_core_int32_post_min_o)
 #define OPTIMIZED_int32_int32_pre_maxloc
 #define OPTIMIZED_int32_int32_post_maxloc
 #define OPTIMIZED_int32_int32_pre_minloc
@@ -340,9 +340,9 @@ extern void _pami_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int cou
 #define OPTIMIZED_uint32_pre_all(op)
 #define OPTIMIZED_uint32_post_all(op)
 #define OPTIMIZED_uint32_pre_min	\
-	OPTIMATH_UNARY(PAMI_UNSIGNED_INT,PAMI_MIN,_pami_core_uint32_pre_min_o)
+        OPTIMATH_UNARY(PAMI_UNSIGNED_INT,PAMI_MIN,_pami_core_uint32_pre_min_o)
 #define OPTIMIZED_uint32_post_min	\
-	OPTIMATH_UNARY(PAMI_UNSIGNED_INT,PAMI_MIN,_pami_core_uint32_post_min_o)
+        OPTIMATH_UNARY(PAMI_UNSIGNED_INT,PAMI_MIN,_pami_core_uint32_post_min_o)
 #define OPTIMIZED_int64_pre_all(op)
 #define OPTIMIZED_int64_post_all(op)
 #define OPTIMIZED_int64_pre_min
@@ -350,9 +350,9 @@ extern void _pami_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int cou
 #define OPTIMIZED_uint64_pre_all(op)
 #define OPTIMIZED_uint64_post_all(op)
 #define OPTIMIZED_uint64_pre_min	\
-	OPTIMATH_UNARY(PAMI_UNSIGNED_LONG_LONG,PAMI_MIN,_pami_core_uint64_pre_min_o)
+        OPTIMATH_UNARY(PAMI_UNSIGNED_LONG_LONG,PAMI_MIN,_pami_core_uint64_pre_min_o)
 #define OPTIMIZED_uint64_post_min	\
-	OPTIMATH_UNARY(PAMI_UNSIGNED_LONG_LONG,PAMI_MIN,_pami_core_uint64_post_min_o)
+        OPTIMATH_UNARY(PAMI_UNSIGNED_LONG_LONG,PAMI_MIN,_pami_core_uint64_post_min_o)
 #define OPTIMIZED_fp32_pre_max
 #define OPTIMIZED_fp32_post_max
 #define OPTIMIZED_fp32_int32_pre_maxloc

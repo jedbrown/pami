@@ -40,8 +40,8 @@ namespace TSPColl
   private:
     static __pgasrt_local_addr_t
       cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
-		   void (** cH)(void *, void *),
-		   void ** arg);
+                   void (** cH)(void *, void *),
+                   void ** arg);
 
 
   private:
@@ -96,9 +96,9 @@ inline void TSPColl::BlockingBarrier::execute (CCMI::MultiSend::OldMulticastInte
       _header[i].counter = _counter;
 #if 0
       void * r = __pgasrt_tsp_amsend (_dest[i],
-				      & _header[i].hdr,
-				      NULL, 0,
-				      NULL, NULL);
+                                      & _header[i].hdr,
+                                      NULL, 0,
+                                      NULL, NULL);
 #endif
       unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
       unsigned        ranks   = _dest[i];
@@ -107,15 +107,15 @@ inline void TSPColl::BlockingBarrier::execute (CCMI::MultiSend::OldMulticastInte
       cb_done.clientdata     =  NULL;
 
       void * r = mcast_iface->send (&_req,
-				    cb_done,
-				    CCMI_MATCH_CONSISTENCY,
-				    & _header[phase].hdr,
-				    _counter,
-				    NULL,
-				    phase,
-				    &hints,
-				    &ranks,
-				    1);
+                                    cb_done,
+                                    CCMI_MATCH_CONSISTENCY,
+                                    & _header[phase].hdr,
+                                    _counter,
+                                    NULL,
+                                    phase,
+                                    &hints,
+                                    &ranks,
+                                    1);
 
 
       __pgasrt_tsp_wait (r);

@@ -47,7 +47,7 @@ namespace TSPColl
 /* *********************************************************************** */
 template <class T_Mcast>
 inline TSPColl::Allgatherv<T_Mcast>::Allgatherv (PAMI_GEOMETRY_CLASS * comm, NBTag tag,
-					int instID, int off):
+                                        int instID, int off):
   CollExchange<T_Mcast> (comm, tag, instID, off, false)
 {
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
@@ -101,20 +101,20 @@ Allgatherv<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t * lengths)
 
       size_t phasesumbytes=0;
       for (int n=0; n < (1<<i); n++)
-	phasesumbytes += lengths[(rank+n)%this->_comm->size()];
+        phasesumbytes += lengths[(rank+n)%this->_comm->size()];
 
       this->_rbuf[phase]   = (char *)rbuf+ ((mysumbytes + phasesumbytes) % allsumbytes);
       this->_rbuf[phase+1]   = (char *)rbuf;
       if (mysumbytes + phasesumbytes >= allsumbytes)
- 	{
-	  this->_sbufln[phase] = allsumbytes - mysumbytes;
-	  this->_sbufln[phase+1] = mysumbytes + phasesumbytes - allsumbytes;
-	}
+         {
+          this->_sbufln[phase] = allsumbytes - mysumbytes;
+          this->_sbufln[phase+1] = mysumbytes + phasesumbytes - allsumbytes;
+        }
       else
-	{
-	  this->_sbufln[phase] = phasesumbytes;
-	  this->_sbufln[phase+1] = 0;
-	}
+        {
+          this->_sbufln[phase] = phasesumbytes;
+          this->_sbufln[phase+1] = 0;
+        }
     }
 
   /* ----------------------------------- */

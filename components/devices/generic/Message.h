@@ -29,10 +29,10 @@ namespace Device {
 /// should be started.
 ///
 enum MessageStatus {
-	Uninitialized = 0,	///< status for uninitialized message
-	Initialized,		///< status for initialized message
-	Active,			///< status for active message
-	Done			///< status for completed message
+        Uninitialized = 0,	///< status for uninitialized message
+        Initialized,		///< status for initialized message
+        Active,			///< status for active message
+        Done			///< status for completed message
 };
 
 namespace Generic {
@@ -50,94 +50,94 @@ namespace Generic {
 ///
 class GenericMessage : public GenericDeviceMessageQueue::Element {
 public:
-	//////////////////////////////////////////////////////////////////////
-	///  \brief Constructor
-	//////////////////////////////////////////////////////////////////////
-	GenericMessage(GenericDeviceMessageQueue *QS, pami_callback_t cb,
-						size_t client, size_t context) :
-	GenericDeviceMessageQueue::Element(),
-	_status(Uninitialized),
-	_QS(QS),
-	_client(client),
-	_context(context),
-	_cb(cb)
-	{
-	}
+        //////////////////////////////////////////////////////////////////////
+        ///  \brief Constructor
+        //////////////////////////////////////////////////////////////////////
+        GenericMessage(GenericDeviceMessageQueue *QS, pami_callback_t cb,
+                                                size_t client, size_t context) :
+        GenericDeviceMessageQueue::Element(),
+        _status(Uninitialized),
+        _QS(QS),
+        _client(client),
+        _context(context),
+        _cb(cb)
+        {
+        }
 
-	virtual ~GenericMessage() {}
+        virtual ~GenericMessage() {}
 
         /// \note This is required to make "C" programs link successfully with virtual destructors
         inline void operator delete(void * p) { PAMI_abort(); }
 
-	/// \brief get client associated with message
-	/// \return	client for message posting/completion
-	size_t getClientId() { return _client; }
+        /// \brief get client associated with message
+        /// \return	client for message posting/completion
+        size_t getClientId() { return _client; }
 
-	/// \brief get context ID associated with message
-	/// \return	Context ID for message posting/completion
-	size_t getContextId() { return _context; }
+        /// \brief get context ID associated with message
+        /// \return	Context ID for message posting/completion
+        size_t getContextId() { return _context; }
 
-	///  \brief Query function to determine message state
-	///  \return	message status
-	///
-	inline MessageStatus getStatus() {return _status;}
+        ///  \brief Query function to determine message state
+        ///  \return	message status
+        ///
+        inline MessageStatus getStatus() {return _status;}
 
-	/// \brief Set message status
-	///
-	/// \param[in] status	Message status to set
-	///
-	inline void setStatus(MessageStatus status) {_status = status;}
+        /// \brief Set message status
+        ///
+        /// \param[in] status	Message status to set
+        ///
+        inline void setStatus(MessageStatus status) {_status = status;}
 
-	/// \brief     Returns the done status of the message
-	///
-	/// \return	true is message is Done
-	///
-	inline bool isDone() {return (getStatus() == Done);}
+        /// \brief     Returns the done status of the message
+        ///
+        /// \return	true is message is Done
+        ///
+        inline bool isDone() {return (getStatus() == Done);}
 
-	///  \brief Sets the message completion callback
-	///
-	/// \param[in] cb	Callback to use for message completion
-	///
-	void setCallback(pami_callback_t cb) {_cb = cb;}
+        ///  \brief Sets the message completion callback
+        ///
+        /// \param[in] cb	Callback to use for message completion
+        ///
+        void setCallback(pami_callback_t cb) {_cb = cb;}
 
-	///  \brief Executes the message completion callback
-	///
-	/// \param[in] ctx	The context object on which completion is called
-	/// \param[in] err	Optional error status (default is success)
-	///
-	void executeCallback(pami_context_t ctx, pami_result_t err = PAMI_SUCCESS) {
-		if(_cb.function) _cb.function(ctx, _cb.clientdata, err);
-	}
+        ///  \brief Executes the message completion callback
+        ///
+        /// \param[in] ctx	The context object on which completion is called
+        /// \param[in] err	Optional error status (default is success)
+        ///
+        void executeCallback(pami_context_t ctx, pami_result_t err = PAMI_SUCCESS) {
+                if(_cb.function) _cb.function(ctx, _cb.clientdata, err);
+        }
 
-	/// \brief accessor for sub-device linked to message
-	///
-	/// Returns reference to device object which contains "send queues".
-	/// This may not be the actual sub-device paired with the message.
-	///
-	/// \return	Reference to sub-device
-	///
-	inline GenericDeviceMessageQueue *getQS() { return _QS; }
+        /// \brief accessor for sub-device linked to message
+        ///
+        /// Returns reference to device object which contains "send queues".
+        /// This may not be the actual sub-device paired with the message.
+        ///
+        /// \return	Reference to sub-device
+        ///
+        inline GenericDeviceMessageQueue *getQS() { return _QS; }
 
-	/// \brief virtual wrapper starting the next message.
-	///
-	/// Used during message complete to start the next message.
-	/// Each message class must implement the appropriate wrapper.
-	/// This must be virtual since the actual implementation is specific
-	/// to the device and message. Certain device base classes
-	/// (SubDeviceSuppt.h) provide a __postNext() which this function
-	/// may call directly.
-	///
-	/// \param[in] devQueued	msg is already queued on device send queue
-	/// \return	context on which message completed, or NULL
-	///
-	virtual pami_context_t postNext(bool devQueued) = 0;
+        /// \brief virtual wrapper starting the next message.
+        ///
+        /// Used during message complete to start the next message.
+        /// Each message class must implement the appropriate wrapper.
+        /// This must be virtual since the actual implementation is specific
+        /// to the device and message. Certain device base classes
+        /// (SubDeviceSuppt.h) provide a __postNext() which this function
+        /// may call directly.
+        ///
+        /// \param[in] devQueued	msg is already queued on device send queue
+        /// \return	context on which message completed, or NULL
+        ///
+        virtual pami_context_t postNext(bool devQueued) = 0;
 
 protected:
-	MessageStatus _status;		///< current message status
-	GenericDeviceMessageQueue *_QS; ///< send queue associated with message
-	size_t _client;			///< client ID for message
-	size_t _context;		///< context ID for message
-	pami_callback_t _cb;		///< completion callback
+        MessageStatus _status;		///< current message status
+        GenericDeviceMessageQueue *_QS; ///< send queue associated with message
+        size_t _client;			///< client ID for message
+        size_t _context;		///< context ID for message
+        pami_callback_t _cb;		///< completion callback
 }; /* class GenericMessage */
 
 }; /* namespace Generic */

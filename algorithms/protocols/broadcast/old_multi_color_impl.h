@@ -27,10 +27,10 @@ namespace CCMI
     namespace Broadcast
     {
       void old_get_colors (PAMI_GEOMETRY_CLASS                  * g,
-			   unsigned                    bytes,
-			   CCMI::Schedule::Color     * colors,
-			   unsigned                  & ncolors,
-			   unsigned                  & pwidth)
+                           unsigned                    bytes,
+                           CCMI::Schedule::Color     * colors,
+                           unsigned                  & ncolors,
+                           unsigned                  & pwidth)
       {
         ncolors = 1;
         colors[0] = CCMI::Schedule::NO_COLOR;
@@ -39,10 +39,10 @@ namespace CCMI
 
       //This method is for schedules/executors that dont use pipelining
       inline void old_get_colors_nopw (PAMI_GEOMETRY_CLASS                  * g,
-				       unsigned                    bytes,
-				       CCMI::Schedule::Color     * colors,
-				       unsigned                  & ncolors,
-				       unsigned                  & pwidth)
+                                       unsigned                    bytes,
+                                       CCMI::Schedule::Color     * colors,
+                                       unsigned                  & ncolors,
+                                       unsigned                  & pwidth)
       {
         ncolors = 1;
         colors[0] = CCMI::Schedule::NO_COLOR;
@@ -69,7 +69,7 @@ namespace CCMI
                                     PAMI_SYSDEP_CLASS,
                                     PAMI_COLL_MCAST_CLASS,
                                     CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> >
-	OldBinomialBcastComposite;
+        OldBinomialBcastComposite;
       template<> void OldBinomialBcastComposite::create_schedule ( void                      * buf,
                                                                 unsigned                    size,
                                                                 PAMI_GEOMETRY_CLASS                  * g,
@@ -84,11 +84,11 @@ namespace CCMI
       //get_rcolors<CCMI::Schedule::OneColorRectangle> > RectangleBcastComposite;
 
       typedef OldMultiColorCompositeT <1,
-	                              CCMI::Schedule::OldRingSchedule<PAMI_SYSDEP_CLASS>,
-	                              old_get_colors,
-	                              PAMI_SYSDEP_CLASS,
-	                              PAMI_COLL_MCAST_CLASS,
-	                              CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> >
+                                      CCMI::Schedule::OldRingSchedule<PAMI_SYSDEP_CLASS>,
+                                      old_get_colors,
+                                      PAMI_SYSDEP_CLASS,
+                                      PAMI_COLL_MCAST_CLASS,
+                                      CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> >
                                       OldRingBcastComposite;
       template<> void OldRingBcastComposite::create_schedule ( void                      * buf,
                                                             unsigned                    size,
@@ -107,7 +107,7 @@ namespace CCMI
       //typedef MultiColorBroadcastFactoryT <RectangleBcastComposite, rectangle_analyze> RectBcastFactory;
       typedef OldMultiColorBroadcastFactoryT <OldRingBcastComposite,
                                            old_ring_bcast_md,
-	                                   PAMI_SYSDEP_CLASS,
+                                           PAMI_SYSDEP_CLASS,
                                            PAMI_COLL_MCAST_CLASS,
                                            CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> > OldRingBcastFactory;
     };

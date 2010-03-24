@@ -167,160 +167,160 @@ void _pami_core_int32_min2(int32_t *dst, const int32_t **srcs, int nsrc, int cou
 
 void _pami_core_int32_prod2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 
-	const int32_t *s0 = srcs[0];
-	const int32_t *s1 = srcs[1];
-	int num;
-	int remainder = count;
-	if (count <= 2048) {
-		num = count >> 2;
-		remainder = count - (num << 2);
-		register int r0=0;
-		register int r1=0;
-		register int r2=0;
-		register int r3=0;
-		register int r4=0;
-		register int r5=0;
-		register int r6=0;
-		register int r7=0;
+        const int32_t *s0 = srcs[0];
+        const int32_t *s1 = srcs[1];
+        int num;
+        int remainder = count;
+        if (count <= 2048) {
+                num = count >> 2;
+                remainder = count - (num << 2);
+                register int r0=0;
+                register int r1=0;
+                register int r2=0;
+                register int r3=0;
+                register int r4=0;
+                register int r5=0;
+                register int r6=0;
+                register int r7=0;
 
-		while (num--) {
-			asm volatile(
-				"lwz   %[r0],0(%[s0]);"
-				"lwz   %[r4],0(%[s1]);"
-				"lwz   %[r1],4(%[s0]);"
-				"lwz   %[r5],4(%[s1]);"
+                while (num--) {
+                        asm volatile(
+                                "lwz   %[r0],0(%[s0]);"
+                                "lwz   %[r4],0(%[s1]);"
+                                "lwz   %[r1],4(%[s0]);"
+                                "lwz   %[r5],4(%[s1]);"
 
-				"mullw %[r0],%[r0],%[r4];"
-				"stw   %[r0],0(%[dp]);"
+                                "mullw %[r0],%[r0],%[r4];"
+                                "stw   %[r0],0(%[dp]);"
 
-				"lwz   %[r2],8(%[s0]);"
-				"lwz   %[r6],8(%[s1]);"
-				"mullw %[r1],%[r1],%[r5];"
-				"stw   %[r1],4(%[dp]);"
+                                "lwz   %[r2],8(%[s0]);"
+                                "lwz   %[r6],8(%[s1]);"
+                                "mullw %[r1],%[r1],%[r5];"
+                                "stw   %[r1],4(%[dp]);"
 
-				"lwz   %[r3],12(%[s0]);"
-				"lwz   %[r7],12(%[s1]);"
-				"mullw %[r2],%[r2],%[r6];"
-				"stw   %[r2],8(%[dp]);"
+                                "lwz   %[r3],12(%[s0]);"
+                                "lwz   %[r7],12(%[s1]);"
+                                "mullw %[r2],%[r2],%[r6];"
+                                "stw   %[r2],8(%[dp]);"
 
-				"mullw %[r3],%[r3],%[r7];"
-				"stw   %[r3],12(%[dp]);"
+                                "mullw %[r3],%[r3],%[r7];"
+                                "stw   %[r3],12(%[dp]);"
 
-				"addi  %[s0],%[s0],16;"
-				"addi  %[s1],%[s1],16;"
-				"addi  %[dp],%[dp],16;"
+                                "addi  %[s0],%[s0],16;"
+                                "addi  %[s1],%[s1],16;"
+                                "addi  %[dp],%[dp],16;"
 
-				: [s0] "+b" (s0),
-				  [s1] "+b" (s1),
-				  [dp] "+b" (dst),
-				  [r0] "+r" (r0),
-				  [r1] "+r" (r1),
-				  [r2] "+r" (r2),
-				  [r3] "+r" (r3),
-				  [r4] "+r" (r4),
-				  [r5] "+r" (r5),
-				  [r6] "+r" (r6),
-				  [r7] "+r" (r7)
-				:
-				: "memory");
-		}
-		for (num = 0; num < remainder; ++num) {
-			dst[num] = s0[num] * s1[num];
-		}
-		return;
-	}
+                                : [s0] "+b" (s0),
+                                  [s1] "+b" (s1),
+                                  [dp] "+b" (dst),
+                                  [r0] "+r" (r0),
+                                  [r1] "+r" (r1),
+                                  [r2] "+r" (r2),
+                                  [r3] "+r" (r3),
+                                  [r4] "+r" (r4),
+                                  [r5] "+r" (r5),
+                                  [r6] "+r" (r6),
+                                  [r7] "+r" (r7)
+                                :
+                                : "memory");
+                }
+                for (num = 0; num < remainder; ++num) {
+                        dst[num] = s0[num] * s1[num];
+                }
+                return;
+        }
 
-	int32_t *s2 = dst;
-	num = (count - 16) >> 3;
-	remainder = (count & 0x07) + 16;
+        int32_t *s2 = dst;
+        num = (count - 16) >> 3;
+        remainder = (count & 0x07) + 16;
 #define OP2(a,b)	asm volatile ("mullw %0, %0, %1" : "=r"(a) : "r"(b))
 #include "ppc450d/_optim_uint32_dual_src.x.h"
 #undef OP2
-	for (num = 0; num < remainder; ++num) {
-		s2[num] = s0[num] * s1[num];
-	}
+        for (num = 0; num < remainder; ++num) {
+                s2[num] = s0[num] * s1[num];
+        }
 
-	//fprintf (stderr, "<< Core_uint32_prod()\n");
-	return;
+        //fprintf (stderr, "<< Core_uint32_prod()\n");
+        return;
 }
 
 void _pami_core_int32_sum2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
 
-	const int32_t *s0 = srcs[0];
-	const int32_t *s1 = srcs[1];
-	int num;
-	int remainder = count;
-	if (count <= 2048) {
-		num = count >> 2;
-		remainder = count - (num << 2);
-		register int r0=0;
-		register int r1=0;
-		register int r2=0;
-		register int r3=0;
-		register int r4=0;
-		register int r5=0;
-		register int r6=0;
-		register int r7=0;
+        const int32_t *s0 = srcs[0];
+        const int32_t *s1 = srcs[1];
+        int num;
+        int remainder = count;
+        if (count <= 2048) {
+                num = count >> 2;
+                remainder = count - (num << 2);
+                register int r0=0;
+                register int r1=0;
+                register int r2=0;
+                register int r3=0;
+                register int r4=0;
+                register int r5=0;
+                register int r6=0;
+                register int r7=0;
 
-		while (num--) {
-			asm volatile(
-				"lwz   %[r0],0(%[s0]);"
-				"lwz   %[r4],0(%[s1]);"
-				"lwz   %[r1],4(%[s0]);"
-				"lwz   %[r5],4(%[s1]);"
+                while (num--) {
+                        asm volatile(
+                                "lwz   %[r0],0(%[s0]);"
+                                "lwz   %[r4],0(%[s1]);"
+                                "lwz   %[r1],4(%[s0]);"
+                                "lwz   %[r5],4(%[s1]);"
 
-				"add   %[r0],%[r0],%[r4];"
-				"stw   %[r0],0(%[dp]);"
+                                "add   %[r0],%[r0],%[r4];"
+                                "stw   %[r0],0(%[dp]);"
 
-				"lwz   %[r2],8(%[s0]);"
-				"lwz   %[r6],8(%[s1]);"
-				"add   %[r1],%[r1],%[r5];"
-				"stw   %[r1],4(%[dp]);"
+                                "lwz   %[r2],8(%[s0]);"
+                                "lwz   %[r6],8(%[s1]);"
+                                "add   %[r1],%[r1],%[r5];"
+                                "stw   %[r1],4(%[dp]);"
 
-				"lwz   %[r3],12(%[s0]);"
-				"lwz   %[r7],12(%[s1]);"
-				"add   %[r2],%[r2],%[r6];"
-				"stw   %[r2],8(%[dp]);"
+                                "lwz   %[r3],12(%[s0]);"
+                                "lwz   %[r7],12(%[s1]);"
+                                "add   %[r2],%[r2],%[r6];"
+                                "stw   %[r2],8(%[dp]);"
 
-				"add   %[r3],%[r3],%[r7];"
-				"stw   %[r3],12(%[dp]);"
+                                "add   %[r3],%[r3],%[r7];"
+                                "stw   %[r3],12(%[dp]);"
 
-				"addi  %[s0],%[s0],16;"
-				"addi  %[s1],%[s1],16;"
-				"addi  %[dp],%[dp],16;"
+                                "addi  %[s0],%[s0],16;"
+                                "addi  %[s1],%[s1],16;"
+                                "addi  %[dp],%[dp],16;"
 
-				: [s0] "+b" (s0),
-				  [s1] "+b" (s1),
-				  [dp] "+b" (dst),
-				  [r0] "+r" (r0),
-				  [r1] "+r" (r1),
-				  [r2] "+r" (r2),
-				  [r3] "+r" (r3),
-				  [r4] "+r" (r4),
-				  [r5] "+r" (r5),
-				  [r6] "+r" (r6),
-				  [r7] "+r" (r7)
-				:
-				: "memory");
-		}
-		for (num = 0; num < remainder; ++num) {
-			dst[num] = s0[num] + s1[num];
-		}
-		return;
-	}
+                                : [s0] "+b" (s0),
+                                  [s1] "+b" (s1),
+                                  [dp] "+b" (dst),
+                                  [r0] "+r" (r0),
+                                  [r1] "+r" (r1),
+                                  [r2] "+r" (r2),
+                                  [r3] "+r" (r3),
+                                  [r4] "+r" (r4),
+                                  [r5] "+r" (r5),
+                                  [r6] "+r" (r6),
+                                  [r7] "+r" (r7)
+                                :
+                                : "memory");
+                }
+                for (num = 0; num < remainder; ++num) {
+                        dst[num] = s0[num] + s1[num];
+                }
+                return;
+        }
 
-	int32_t *s2 = dst;
-	num = (count - 16) >> 3;
-	remainder = (count & 0x07) + 16;
+        int32_t *s2 = dst;
+        num = (count - 16) >> 3;
+        remainder = (count & 0x07) + 16;
 #define OP2(a,b)	asm volatile ("add %0, %0, %1" : "=r"(a) : "r"(b))
 #include "ppc450d/_optim_uint32_dual_src.x.h"
 #undef OP2
-	for (num = 0; num < remainder; ++num) {
-		s2[num] = s0[num] + s1[num];
-	}
+        for (num = 0; num < remainder; ++num) {
+                s2[num] = s0[num] + s1[num];
+        }
 
-	//fprintf (stderr, "<< Core_uint32_sum()\n");
-	return;
+        //fprintf (stderr, "<< Core_uint32_sum()\n");
+        return;
 }
 
 void _pami_core_int32_band4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
@@ -333,7 +333,7 @@ const int32_t *src3 = srcs[3];
 #include "_quad_src.x.h"
 #undef OP
 #undef TYPE
-	return;
+        return;
 }
 
 void _pami_core_int32_bor4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
@@ -346,7 +346,7 @@ const int32_t *src3 = srcs[3];
 #include "_quad_src.x.h"
 #undef OP
 #undef TYPE
-	return;
+        return;
 }
 
 void _pami_core_int32_bxor4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
@@ -359,7 +359,7 @@ const int32_t *src3 = srcs[3];
 #include "_quad_src.x.h"
 #undef OP
 #undef TYPE
-	return;
+        return;
 }
 
 void _pami_core_int32_max4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
@@ -372,7 +372,7 @@ const int32_t *src3 = srcs[3];
 #include "_quad_src.x.h"
 #undef OP
 #undef TYPE
-	return;
+        return;
 }
 
 void _pami_core_int32_min4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
@@ -385,7 +385,7 @@ const int32_t *src3 = srcs[3];
 #include "_quad_src.x.h"
 #undef OP
 #undef TYPE
-	return;
+        return;
 }
 
 void _pami_core_int32_prod4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
@@ -398,7 +398,7 @@ const int32_t *src3 = srcs[3];
 #include "_quad_src.x.h"
 #undef OP
 #undef TYPE
-	return;
+        return;
 }
 
 void _pami_core_int32_sum4(int32_t *dst, const int32_t **srcs, int nsrc, int count) {
@@ -411,7 +411,7 @@ const int32_t *src3 = srcs[3];
 #include "_quad_src.x.h"
 #undef OP
 #undef TYPE
-	return;
+        return;
 }
 
 void _pami_core_int32_band2(int32_t *dst, const int32_t **srcs, int nsrc, int count) {

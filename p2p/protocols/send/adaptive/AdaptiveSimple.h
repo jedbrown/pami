@@ -53,7 +53,7 @@ namespace PAMI
 
           //typedef uint8_t pkt_t[T_Model::packet_model_state_bytes];
 
-		  typedef uint8_t pkt_t[T_Model::packet_model_state_bytes] ;
+                  typedef uint8_t pkt_t[T_Model::packet_model_state_bytes] ;
           //forward declaration
           class  send_state_t;
           struct recv_state_t;
@@ -69,7 +69,7 @@ namespace PAMI
           };
 
 
-	    //rts_ack header (metadata)
+            //rts_ack header (metadata)
           struct __attribute__((__packed__)) header_rts_ack_t
           {
             recv_state_t *            va_recv;     ///virtual address receiver
@@ -81,7 +81,7 @@ namespace PAMI
           struct recv_state_t
           {
             cts_info_t          cts;                               /// cts info
-			header_rts_ack_t    header_rts;                         /// header used by rts_ack
+                        header_rts_ack_t    header_rts;                         /// header used by rts_ack
             pkt_t               pkt;                            /// Message Object
             AdaptiveSimple<T_Model, T_Device, T_LongHeader> * adaptive;  /// Pointer to protocol
             pami_recv_t     info;                                   /// Application receive information.
@@ -89,7 +89,7 @@ namespace PAMI
             pami_task_t                       fromRank;             ///origen rank
             char *                           msgbuff;              /// RTS data buffer
             size_t                           msgbytes;		     /// RTS bytes received
-			void                             * ackinfo;   ///< a.k.a. send_state_t *
+                        void                             * ackinfo;   ///< a.k.a. send_state_t *
           };
 
 
@@ -97,10 +97,10 @@ namespace PAMI
           struct __attribute__((__packed__)) header_metadata_t
           {
             recv_state_t *            va_recv;   ///virtual address receiver
-			size_t                    offset;    ///Offset
+                        size_t                    offset;    ///Offset
             size_t                    bsend;     ///bytes send
-			//size_t                    gap;     ///bytes send
-			//size_t                    gap1;     ///bytes send
+                        //size_t                    gap;     ///bytes send
+                        //size_t                    gap1;     ///bytes send
         };
 
 
@@ -115,7 +115,7 @@ namespace PAMI
             pami_task_t                   fromRank;  ///origen rank
             pami_task_t                   destRank;  ///target rank
             size_t                       mbytes;     /// application metadata bytes
-			void                        * ackinfo;   ///< a.k.a. send_state_t *
+                        void                        * ackinfo;   ///< a.k.a. send_state_t *
 
           };
 

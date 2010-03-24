@@ -141,13 +141,13 @@ namespace PAMI
           _mm      = mm;
           _context = context;
           _offset  = contextid;
-	  return PAMI_SUCCESS;
+          return PAMI_SUCCESS;
         };
 
       inline bool isInit_impl ()
         {
           assert(0);
-	  return false;
+          return false;
         };
       inline bool isReliableNetwork ()
         {

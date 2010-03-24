@@ -163,8 +163,8 @@ namespace TSPColl
   {
     for (int i=0; i<MAXTAG; i++)
       {
-	_taglist [i] = (Vector<NBColl<T_Mcast> *> *) malloc (sizeof(Vector<NBColl<T_Mcast> *>));
-	new (_taglist[i]) Vector<NBColl<T_Mcast> *> ();
+        _taglist [i] = (Vector<NBColl<T_Mcast> *> *) malloc (sizeof(Vector<NBColl<T_Mcast> *>));
+        new (_taglist[i]) Vector<NBColl<T_Mcast> *> ();
       }
   }
 

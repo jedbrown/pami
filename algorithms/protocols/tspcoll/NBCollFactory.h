@@ -58,49 +58,49 @@ TSPColl::NBCollFactory<T_Mcast>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, 
     {
     case BarrierTag:
       {
-	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Barrier<T_Mcast>));
-	assert (b != NULL);
-	memset (b, 0, sizeof(Barrier<T_Mcast>));
-	new (b) Barrier<T_Mcast> (comm, tag, instID, 0);
-	return b;
+        NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Barrier<T_Mcast>));
+        assert (b != NULL);
+        memset (b, 0, sizeof(Barrier<T_Mcast>));
+        new (b) Barrier<T_Mcast> (comm, tag, instID, 0);
+        return b;
       }
     case AllgatherTag:
       {
-	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Allgather<T_Mcast>));
-	assert (b != NULL);
-	memset (b, 0, sizeof(Allgather<T_Mcast>));
-	new (b) Allgather<T_Mcast> (comm, tag, instID, 0);
-	return b;
+        NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Allgather<T_Mcast>));
+        assert (b != NULL);
+        memset (b, 0, sizeof(Allgather<T_Mcast>));
+        new (b) Allgather<T_Mcast> (comm, tag, instID, 0);
+        return b;
       }
     case AllgathervTag:
       {
-	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Allgatherv<T_Mcast>));
-	assert (b != NULL);
-	memset (b, 0, sizeof(Allgatherv<T_Mcast>));
-	new (b) Allgatherv<T_Mcast> (comm, tag, instID, 0);
-	return b;
+        NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Allgatherv<T_Mcast>));
+        assert (b != NULL);
+        memset (b, 0, sizeof(Allgatherv<T_Mcast>));
+        new (b) Allgatherv<T_Mcast> (comm, tag, instID, 0);
+        return b;
       }
     case BcastTag:
       {
-	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(BinomBcast<T_Mcast>));
-	assert (b != NULL);
-	memset (b, 0, sizeof(BinomBcast<T_Mcast>));
-	new (b) BinomBcast<T_Mcast> (comm, tag, instID, 0);
-	return b;
+        NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(BinomBcast<T_Mcast>));
+        assert (b != NULL);
+        memset (b, 0, sizeof(BinomBcast<T_Mcast>));
+        new (b) BinomBcast<T_Mcast> (comm, tag, instID, 0);
+        return b;
       }
     case BcastTag2:
       {
-	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(ScBcast<T_Mcast>));
-	assert (b != NULL);
-	memset (b, 0, sizeof(ScBcast<T_Mcast>));
-	new (b) ScBcast<T_Mcast> (comm, tag, instID, 0);
-	return b;
+        NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(ScBcast<T_Mcast>));
+        assert (b != NULL);
+        memset (b, 0, sizeof(ScBcast<T_Mcast>));
+        new (b) ScBcast<T_Mcast> (comm, tag, instID, 0);
+        return b;
       }
     case ShortAllreduceTag:
       {
         NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Allreduce::Short<T_Mcast>));
         assert (b != NULL);
-	memset (b, 0, sizeof(Allreduce::Short<T_Mcast>));
+        memset (b, 0, sizeof(Allreduce::Short<T_Mcast>));
         new (b) Allreduce::Short<T_Mcast> (comm, tag, instID, 0);
         return b;
       }
@@ -108,23 +108,23 @@ TSPColl::NBCollFactory<T_Mcast>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, 
       {
         NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Allreduce::Long<T_Mcast>));
         assert (b != NULL);
-	memset (b, 0, sizeof(Allreduce::Long<T_Mcast>));
+        memset (b, 0, sizeof(Allreduce::Long<T_Mcast>));
         new (b) Allreduce::Long<T_Mcast> (comm, tag, instID, 0);
         return b;
       }
     case ScatterTag:
       {
-	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Scatter<T_Mcast>));
+        NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Scatter<T_Mcast>));
         assert (b != NULL);
-	memset (b, 0, sizeof(Scatter<T_Mcast>));
+        memset (b, 0, sizeof(Scatter<T_Mcast>));
         new (b) Scatter<T_Mcast> (comm, tag, instID, 0);
         return b;
       }
     case ScattervTag:
       {
-	NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Scatterv<T_Mcast>));
+        NBColl<T_Mcast> * b = (NBColl<T_Mcast> *)malloc (sizeof(Scatterv<T_Mcast>));
         assert (b != NULL);
-	memset (b, 0, sizeof(Scatterv<T_Mcast>));
+        memset (b, 0, sizeof(Scatterv<T_Mcast>));
         new (b) Scatterv<T_Mcast> (comm, tag, instID, 0);
         return b;
       }
@@ -132,7 +132,7 @@ TSPColl::NBCollFactory<T_Mcast>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, 
     case GathervTag:
     default:
       {
-	assert (0);
+        assert (0);
       }
     }
   return (NBColl<T_Mcast> *) NULL;

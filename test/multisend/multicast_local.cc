@@ -169,8 +169,8 @@ int main(int argc, char ** argv)
     mcast.src = (pami_pipeworkqueue_t *)_buffer.srcPwq();
     mcast.dst = (pami_pipeworkqueue_t *)NULL;
 
-	mcast.client = 0;
-	mcast.context = 0;
+        mcast.client = 0;
+        mcast.context = 0;
     mcast.roles = -1;
     mcast.bytes = TEST_BUF_SIZE;
 

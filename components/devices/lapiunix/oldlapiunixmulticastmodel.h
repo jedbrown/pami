@@ -193,7 +193,7 @@ namespace PAMI
           //          msg->_dtype    = dtype;
           _device.enqueue(msg);
           _device.unlock();
-	  return 0;
+          return 0;
         }
 
       inline unsigned postRecv (pami_oldmulticast_recv_t  *mrecv)
@@ -207,7 +207,7 @@ namespace PAMI
                    mrecv->opcode,
                    mrecv->op,
                    mrecv->dt);
-	  return 0;
+          return 0;
         }
       T_Device                     &_device;
       size_t                        _dispatch_id;

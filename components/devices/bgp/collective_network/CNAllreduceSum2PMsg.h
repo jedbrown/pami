@@ -101,17 +101,17 @@ class CNAllreduce2PMessage;
 typedef PAMI::Device::BGP::BaseGenericCNThread CNAllreduce2PThread;
 class CNAllreduce2PDevice : public PAMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2> {
 public:
-	inline CNAllreduce2PDevice(CNDevice *common) :
-	PAMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2>(common) {
-	}
+        inline CNAllreduce2PDevice(CNDevice *common) :
+        PAMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduce2PThread,2>(common) {
+        }
 
-	class Factory : public Interface::FactoryInterface<Factory,CNAllreduce2PDevice,Generic::Device> {
-	public:
-		static inline CNAllreduce2PDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline pami_result_t init_impl(CNAllreduce2PDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
-		static inline size_t advance_impl(CNAllreduce2PDevice *devs, size_t client, size_t context);
-		static inline CNAllreduce2PDevice & getDevice_impl(CNAllreduce2PDevice *devs, size_t client, size_t context);
-	}; // class Factory
+        class Factory : public Interface::FactoryInterface<Factory,CNAllreduce2PDevice,Generic::Device> {
+        public:
+                static inline CNAllreduce2PDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+                static inline pami_result_t init_impl(CNAllreduce2PDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
+                static inline size_t advance_impl(CNAllreduce2PDevice *devs, size_t client, size_t context);
+                static inline CNAllreduce2PDevice & getDevice_impl(CNAllreduce2PDevice *devs, size_t client, size_t context);
+        }; // class Factory
 }; // class CNAllreduce2PDevice
 
 };	// BGP
@@ -125,19 +125,19 @@ namespace Device {
 namespace BGP {
 
 inline CNAllreduce2PDevice *CNAllreduce2PDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-	return &_g_cnallreduce2p_dev;
+        return &_g_cnallreduce2p_dev;
 }
 
 inline pami_result_t CNAllreduce2PDevice::Factory::init_impl(CNAllreduce2PDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
-	return _g_cnallreduce2p_dev.__init(client, contextId, clt, ctx, mm, devices);
+        return _g_cnallreduce2p_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
 
 inline size_t CNAllreduce2PDevice::Factory::advance_impl(CNAllreduce2PDevice *devs, size_t client, size_t contextId) {
-	return 0;
+        return 0;
 }
 
 inline CNAllreduce2PDevice & CNAllreduce2PDevice::Factory::getDevice_impl(CNAllreduce2PDevice *devs, size_t client, size_t contextId) {
-	return _g_cnallreduce2p_dev;
+        return _g_cnallreduce2p_dev;
 }
 
 /**
@@ -148,235 +148,235 @@ inline CNAllreduce2PDevice & CNAllreduce2PDevice::Factory::getDevice_impl(CNAllr
  */
 
 class CNAllreduce2PMessage : public PAMI::Device::BGP::BaseGenericCN2PMessage {
-	enum roles {
-		NO_ROLE = 0,
-		INJECTION_ROLE = (1 << 0), // first role must be "injector"
-		RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
-	};
+        enum roles {
+                NO_ROLE = 0,
+                INJECTION_ROLE = (1 << 0), // first role must be "injector"
+                RECEPTION_ROLE = (1 << 1), // last role must be "receptor"
+        };
 public:
-	CNAllreduce2PMessage(GenericDeviceMessageQueue *qs,
-		pami_multicombine_t *mcomb,
-		PAMI::Device::WorkQueue::WorkQueue &ewq,
-		PAMI::Device::WorkQueue::WorkQueue &mwq,
-		PAMI::Device::WorkQueue::WorkQueue &xwq,
-		size_t bytes,
-		bool doStore,
-		unsigned dispatch_id_e,
-		unsigned dispatch_id_m) :
-	BaseGenericCN2PMessage(qs, mcomb->client, mcomb->context,
-				ewq, mwq, xwq,
-				(PAMI::PipeWorkQueue *)mcomb->data,
-				(PAMI::PipeWorkQueue *)mcomb->results,
-				bytes, doStore, mcomb->roles, mcomb->cb_done,
-				dispatch_id_e, dispatch_id_m),
-	_roles(mcomb->roles),
-	_offx(0)
-	{
-	}
+        CNAllreduce2PMessage(GenericDeviceMessageQueue *qs,
+                pami_multicombine_t *mcomb,
+                PAMI::Device::WorkQueue::WorkQueue &ewq,
+                PAMI::Device::WorkQueue::WorkQueue &mwq,
+                PAMI::Device::WorkQueue::WorkQueue &xwq,
+                size_t bytes,
+                bool doStore,
+                unsigned dispatch_id_e,
+                unsigned dispatch_id_m) :
+        BaseGenericCN2PMessage(qs, mcomb->client, mcomb->context,
+                                ewq, mwq, xwq,
+                                (PAMI::PipeWorkQueue *)mcomb->data,
+                                (PAMI::PipeWorkQueue *)mcomb->results,
+                                bytes, doStore, mcomb->roles, mcomb->cb_done,
+                                dispatch_id_e, dispatch_id_m),
+        _roles(mcomb->roles),
+        _offx(0)
+        {
+        }
 
-	// virtual function
-	pami_context_t postNext(bool devQueued) {
-		return _g_cnallreduce2p_dev.common()->__postNext<CNAllreduce2PMessage,CNAllreduce2PThread>(this, devQueued);
-	}
+        // virtual function
+        pami_context_t postNext(bool devQueued) {
+                return _g_cnallreduce2p_dev.common()->__postNext<CNAllreduce2PMessage,CNAllreduce2PThread>(this, devQueued);
+        }
 
-	inline int setThreads(CNAllreduce2PThread **th) {
-		CNAllreduce2PThread *t;
-		int n;
-		_g_cnallreduce2p_dev.__getThreads(&t, &n);
-		int nt = 0;
-		_g_cnallreduce2p_dev.common()->__resetThreads();
-		_nThreads = ((_roles & INJECTION_ROLE) != 0) + ((_roles & RECEPTION_ROLE) != 0);
-		if (_roles & INJECTION_ROLE) {
-			t[nt].setMsg(this);
-			t[nt].setAdv(advanceInj);
-			t[nt].setStatus(PAMI::Device::Ready);
-			t[nt]._wq = _swq;
-			t[nt]._bytesLeft = _bytes;
-			t[nt]._cycles = 1;
-			__advanceInj(&t[nt]);
-			++nt;
-		}
-		if (_roles & RECEPTION_ROLE) {
-			t[nt].setMsg(this);
-			t[nt].setAdv(advanceRcp);
-			t[nt].setStatus(PAMI::Device::Ready);
-			t[nt]._wq = _rwq;
-			t[nt]._bytesLeft = _bytes;
-			t[nt]._cycles = 3000; // DCMF_PERSISTENT_ADVANCE;
-			__advanceRcp(&t[nt]);
-			++nt;
-		}
-		// assert(nt > 0? && nt < n);
-		*th = t;
-		return nt;
-	}
+        inline int setThreads(CNAllreduce2PThread **th) {
+                CNAllreduce2PThread *t;
+                int n;
+                _g_cnallreduce2p_dev.__getThreads(&t, &n);
+                int nt = 0;
+                _g_cnallreduce2p_dev.common()->__resetThreads();
+                _nThreads = ((_roles & INJECTION_ROLE) != 0) + ((_roles & RECEPTION_ROLE) != 0);
+                if (_roles & INJECTION_ROLE) {
+                        t[nt].setMsg(this);
+                        t[nt].setAdv(advanceInj);
+                        t[nt].setStatus(PAMI::Device::Ready);
+                        t[nt]._wq = _swq;
+                        t[nt]._bytesLeft = _bytes;
+                        t[nt]._cycles = 1;
+                        __advanceInj(&t[nt]);
+                        ++nt;
+                }
+                if (_roles & RECEPTION_ROLE) {
+                        t[nt].setMsg(this);
+                        t[nt].setAdv(advanceRcp);
+                        t[nt].setStatus(PAMI::Device::Ready);
+                        t[nt]._wq = _rwq;
+                        t[nt]._bytesLeft = _bytes;
+                        t[nt]._cycles = 3000; // DCMF_PERSISTENT_ADVANCE;
+                        __advanceRcp(&t[nt]);
+                        ++nt;
+                }
+                // assert(nt > 0? && nt < n);
+                *th = t;
+                return nt;
+        }
 
 protected:
-	DECL_ADVANCE_ROUTINE(advanceInj,CNAllreduce2PMessage,CNAllreduce2PThread);
-	DECL_ADVANCE_ROUTINE(advanceRcp,CNAllreduce2PMessage,CNAllreduce2PThread);
-	inline pami_result_t __advanceInj(CNAllreduce2PThread *thr) {
-		pami_result_t rc = PAMI_EAGAIN;
-		unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;
-		size_t avail = thr->_wq->bytesAvailableToConsume();
-		char *buf = thr->_wq->bufferToConsume();
-		unsigned expRemain = _expcount - _expsent;
-		unsigned manRemain = _expsent - _mansent;
-		size_t didx = 0;
-		size_t did = 0;
-		if (__wait_send_fifo_to(thr, hcount, dcount, thr->_cycles)) {
-			return rc;
-		}
-		char *bufx = buf + _offx;
-		__send_expo_packets(thr, hcount, dcount, expRemain, avail, didx, bufx);
-		_offx += didx;
-		// mantissas dont use original data buffer, partial mantissas in _mwq.
-		__send_mant_packets(thr, hcount, dcount, manRemain, did);
-		if (did) {
-			thr->_bytesLeft -= did;
-			thr->_wq->consumeBytes(did);
-			_offx -= did;
-		}
-		if (thr->_bytesLeft == 0) {
-			rc = PAMI_SUCCESS;
-			thr->setStatus(PAMI::Device::Complete);
-			__completeThread(thr);
-		}
-		return rc;
-	}
+        DECL_ADVANCE_ROUTINE(advanceInj,CNAllreduce2PMessage,CNAllreduce2PThread);
+        DECL_ADVANCE_ROUTINE(advanceRcp,CNAllreduce2PMessage,CNAllreduce2PThread);
+        inline pami_result_t __advanceInj(CNAllreduce2PThread *thr) {
+                pami_result_t rc = PAMI_EAGAIN;
+                unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;
+                size_t avail = thr->_wq->bytesAvailableToConsume();
+                char *buf = thr->_wq->bufferToConsume();
+                unsigned expRemain = _expcount - _expsent;
+                unsigned manRemain = _expsent - _mansent;
+                size_t didx = 0;
+                size_t did = 0;
+                if (__wait_send_fifo_to(thr, hcount, dcount, thr->_cycles)) {
+                        return rc;
+                }
+                char *bufx = buf + _offx;
+                __send_expo_packets(thr, hcount, dcount, expRemain, avail, didx, bufx);
+                _offx += didx;
+                // mantissas dont use original data buffer, partial mantissas in _mwq.
+                __send_mant_packets(thr, hcount, dcount, manRemain, did);
+                if (did) {
+                        thr->_bytesLeft -= did;
+                        thr->_wq->consumeBytes(did);
+                        _offx -= did;
+                }
+                if (thr->_bytesLeft == 0) {
+                        rc = PAMI_SUCCESS;
+                        thr->setStatus(PAMI::Device::Complete);
+                        __completeThread(thr);
+                }
+                return rc;
+        }
 
-	inline pami_result_t __advanceRcp(CNAllreduce2PThread *thr) {
-		pami_result_t rc = PAMI_EAGAIN;
-		register unsigned hcount = 0, dcount = 0;
-		if (__wait_recv_fifo_to(thr, hcount, dcount, thr->_cycles)) {
-			return rc;
-		}
-		_BGP_TreeHwHdr hdr;
-		size_t avail = thr->_wq->bytesAvailableToProduce();
-		char *buf = thr->_wq->bufferToProduce();
-		size_t total = 0;
-		size_t left = thr->_bytesLeft;
-		size_t dstBytes = (left < MANT_PER_PKT * sizeof(double) ?
-				left : MANT_PER_PKT * sizeof(double));
-		// we have to check avail before reading header, otherwise we
-		// might get committed to reading payload without any place to
-		// store it. This means we must also have space available in order
-		// to process an exponent packet - even though it doesnt need it.
-		while (left > 0 && avail >= dstBytes &&
-				hcount > 0 && dcount > 0) {
-			CollectiveRawReceiveHeader(VIRTUAL_CHANNEL, &hdr);
-			--hcount;
-			if (hdr.CtvHdr.Tag == _expo_disp_id) {
-				__recv_expo_packet(thr);
-				// recv expo can never complete message
-			} else if (hdr.CtvHdr.Tag == _mant_disp_id) {
-				size_t did = 0;
-				__recv_mant_packet(thr, avail, did, buf + total, dstBytes);
-				if (did) {
-					left -= did;
-					total += did;
-					avail -= did;
-				}
-			} else {
+        inline pami_result_t __advanceRcp(CNAllreduce2PThread *thr) {
+                pami_result_t rc = PAMI_EAGAIN;
+                register unsigned hcount = 0, dcount = 0;
+                if (__wait_recv_fifo_to(thr, hcount, dcount, thr->_cycles)) {
+                        return rc;
+                }
+                _BGP_TreeHwHdr hdr;
+                size_t avail = thr->_wq->bytesAvailableToProduce();
+                char *buf = thr->_wq->bufferToProduce();
+                size_t total = 0;
+                size_t left = thr->_bytesLeft;
+                size_t dstBytes = (left < MANT_PER_PKT * sizeof(double) ?
+                                left : MANT_PER_PKT * sizeof(double));
+                // we have to check avail before reading header, otherwise we
+                // might get committed to reading payload without any place to
+                // store it. This means we must also have space available in order
+                // to process an exponent packet - even though it doesnt need it.
+                while (left > 0 && avail >= dstBytes &&
+                                hcount > 0 && dcount > 0) {
+                        CollectiveRawReceiveHeader(VIRTUAL_CHANNEL, &hdr);
+                        --hcount;
+                        if (hdr.CtvHdr.Tag == _expo_disp_id) {
+                                __recv_expo_packet(thr);
+                                // recv expo can never complete message
+                        } else if (hdr.CtvHdr.Tag == _mant_disp_id) {
+                                size_t did = 0;
+                                __recv_mant_packet(thr, avail, did, buf + total, dstBytes);
+                                if (did) {
+                                        left -= did;
+                                        total += did;
+                                        avail -= did;
+                                }
+                        } else {
 fprintf(stderr, "bad packet header 0x%08x\n", hdr.CtvHdr.word);
 CollectiveRawReceivePacketNoHdrNoStore(VIRTUAL_CHANNEL);
 //				PAMI_abort();
-			}
-			dcount -= BGPCN_QUADS_PER_PKT;
-		}
-		if (total > 0) {
-			thr->_bytesLeft -= total;
-			thr->_wq->produceBytes(total);
-			if (thr->_bytesLeft == 0) {
-				rc = PAMI_SUCCESS;
-				thr->setStatus(PAMI::Device::Complete);
-				__completeThread(thr);
-			}
-		}
-		return rc;
-	}
+                        }
+                        dcount -= BGPCN_QUADS_PER_PKT;
+                }
+                if (total > 0) {
+                        thr->_bytesLeft -= total;
+                        thr->_wq->produceBytes(total);
+                        if (thr->_bytesLeft == 0) {
+                                rc = PAMI_SUCCESS;
+                                thr->setStatus(PAMI::Device::Complete);
+                                __completeThread(thr);
+                        }
+                }
+                return rc;
+        }
 
-	inline void __completeThread(CNAllreduce2PThread *thr);
+        inline void __completeThread(CNAllreduce2PThread *thr);
 
 private:
-	unsigned _roles;
-	unsigned _offx;
-	unsigned _nThreads;
+        unsigned _roles;
+        unsigned _offx;
+        unsigned _nThreads;
 }; // class CNAllreduce2PMessage
 
 class CNAllreduce2PModel : public PAMI::Device::Interface::MulticombineModel<CNAllreduce2PModel,CNAllreduce2PDevice,sizeof(CNAllreduce2PMessage)> {
 public:
-	static const int NUM_ROLES = 2;
-	static const int REPL_ROLE = -1;
-	static const size_t sizeof_msg = sizeof(CNAllreduce2PMessage);
+        static const int NUM_ROLES = 2;
+        static const int REPL_ROLE = -1;
+        static const size_t sizeof_msg = sizeof(CNAllreduce2PMessage);
 
-	CNAllreduce2PModel(CNAllreduce2PDevice &device, pami_result_t &status) :
-	PAMI::Device::Interface::MulticombineModel<CNAllreduce2PModel,CNAllreduce2PDevice,sizeof(CNAllreduce2PMessage)>(device,status),
-	// we depend on doing consumeBytes(bytesAvailableToConsume()) in order
-	// to "jump" to next "boundary" so we maintain alignment for each cycle.
-	// this requires the WQ behavior based on workunits and worksize that
-	// creates artificial "boundaries" at those points.
-	_ewq(_g_cnallreduce2p_dev.common()->getSysdep(), EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
-	_mwq(_g_cnallreduce2p_dev.common()->getSysdep(), EXPO_WQ_SIZE, MANT_WQ_FACT * BGPCN_PKT_SIZE),
-	_xwq(_g_cnallreduce2p_dev.common()->getSysdep(), EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
-	_dispatch_id_e(_g_cnallreduce2p_dev.newDispID()),
-	_dispatch_id_m(_g_cnallreduce2p_dev.newDispID())
-	{
-		// assert(device == _g_cnallreduce2p_dev);
-		_me = __global.mapping.task();
-		_ewq.setConsumers(1, 0);
-		_ewq.setProducers(1, 0);
-		_mwq.setConsumers(1, 0);
-		_mwq.setProducers(1, 0);
-		_xwq.setConsumers(2, 0);
-		_xwq.setProducers(1, 0);
-		reset_impl();
-	}
+        CNAllreduce2PModel(CNAllreduce2PDevice &device, pami_result_t &status) :
+        PAMI::Device::Interface::MulticombineModel<CNAllreduce2PModel,CNAllreduce2PDevice,sizeof(CNAllreduce2PMessage)>(device,status),
+        // we depend on doing consumeBytes(bytesAvailableToConsume()) in order
+        // to "jump" to next "boundary" so we maintain alignment for each cycle.
+        // this requires the WQ behavior based on workunits and worksize that
+        // creates artificial "boundaries" at those points.
+        _ewq(_g_cnallreduce2p_dev.common()->getSysdep(), EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
+        _mwq(_g_cnallreduce2p_dev.common()->getSysdep(), EXPO_WQ_SIZE, MANT_WQ_FACT * BGPCN_PKT_SIZE),
+        _xwq(_g_cnallreduce2p_dev.common()->getSysdep(), EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
+        _dispatch_id_e(_g_cnallreduce2p_dev.newDispID()),
+        _dispatch_id_m(_g_cnallreduce2p_dev.newDispID())
+        {
+                // assert(device == _g_cnallreduce2p_dev);
+                _me = __global.mapping.task();
+                _ewq.setConsumers(1, 0);
+                _ewq.setProducers(1, 0);
+                _mwq.setConsumers(1, 0);
+                _mwq.setProducers(1, 0);
+                _xwq.setConsumers(2, 0);
+                _xwq.setProducers(1, 0);
+                reset_impl();
+        }
 
-	inline void reset_impl() {
-		_ewq.reset();
-		_mwq.reset();
-		_xwq.reset();
-	}
+        inline void reset_impl() {
+                _ewq.reset();
+                _mwq.reset();
+                _xwq.reset();
+        }
 
-	inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb);
+        inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb);
 
 private:
-	PAMI::Device::WorkQueue::SharedWorkQueue _ewq;
-	PAMI::Device::WorkQueue::SharedWorkQueue _mwq;
-	PAMI::Device::WorkQueue::SharedWorkQueue _xwq;
-	unsigned _dispatch_id_e;
-	unsigned _dispatch_id_m;
-	size_t _me;
+        PAMI::Device::WorkQueue::SharedWorkQueue _ewq;
+        PAMI::Device::WorkQueue::SharedWorkQueue _mwq;
+        PAMI::Device::WorkQueue::SharedWorkQueue _xwq;
+        unsigned _dispatch_id_e;
+        unsigned _dispatch_id_m;
+        size_t _me;
 
-	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(EXPO_WQ_SIZE >= EXPCOUNT);
-		COMPILE_TIME_ASSERT((EXPO_WQ_SIZE & (EXPO_WQ_SIZE - 1)) == 0);
-		COMPILE_TIME_ASSERT(MANT_WQ_FACT * EXPO_WQ_SIZE >= EXPO_MANT_FACTOR * EXPCOUNT);
-		COMPILE_TIME_ASSERT((MANT_WQ_FACT & (MANT_WQ_FACT - 1)) == 0);
-	}
+        static inline void compile_time_assert () {
+                COMPILE_TIME_ASSERT(EXPO_WQ_SIZE >= EXPCOUNT);
+                COMPILE_TIME_ASSERT((EXPO_WQ_SIZE & (EXPO_WQ_SIZE - 1)) == 0);
+                COMPILE_TIME_ASSERT(MANT_WQ_FACT * EXPO_WQ_SIZE >= EXPO_MANT_FACTOR * EXPCOUNT);
+                COMPILE_TIME_ASSERT((MANT_WQ_FACT & (MANT_WQ_FACT - 1)) == 0);
+        }
 }; // class CNAllreduce2PModel
 
 inline void CNAllreduce2PMessage::__completeThread(CNAllreduce2PThread *thr) {
-	unsigned c = _g_cnallreduce2p_dev.common()->__completeThread(thr);
-	if (c >= _nThreads) {
-		setStatus(PAMI::Device::Done);
-	}
+        unsigned c = _g_cnallreduce2p_dev.common()->__completeThread(thr);
+        if (c >= _nThreads) {
+                setStatus(PAMI::Device::Done);
+        }
 }
 
 inline pami_result_t CNAllreduce2PModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb) {
-	// we don't need CNAllreduceSetup since we know this is DOUBLE-SUM
-	PAMI::Topology *results_topo = (PAMI::Topology *)mcomb->results_participants;
-	bool doStore = (!results_topo || results_topo->isRankMember(_me));
-	size_t bytes = mcomb->count << pami_dt_shift[mcomb->dtype];
-	// could try to complete allreduce before construction, but for now the code
-	// is too dependent on having message and thread structures to get/keep context.
-	// __post() will still try early advance... (after construction)
-	CNAllreduce2PMessage *msg;
-	msg = new (&state) CNAllreduce2PMessage(_g_cnallreduce2p_dev.common(),
-			mcomb, _ewq, _mwq, _xwq,
-			bytes, doStore, _dispatch_id_e, _dispatch_id_m);
-	_g_cnallreduce2p_dev.__post<CNAllreduce2PMessage>(msg);
-	return PAMI_SUCCESS;
+        // we don't need CNAllreduceSetup since we know this is DOUBLE-SUM
+        PAMI::Topology *results_topo = (PAMI::Topology *)mcomb->results_participants;
+        bool doStore = (!results_topo || results_topo->isRankMember(_me));
+        size_t bytes = mcomb->count << pami_dt_shift[mcomb->dtype];
+        // could try to complete allreduce before construction, but for now the code
+        // is too dependent on having message and thread structures to get/keep context.
+        // __post() will still try early advance... (after construction)
+        CNAllreduce2PMessage *msg;
+        msg = new (&state) CNAllreduce2PMessage(_g_cnallreduce2p_dev.common(),
+                        mcomb, _ewq, _mwq, _xwq,
+                        bytes, doStore, _dispatch_id_e, _dispatch_id_m);
+        _g_cnallreduce2p_dev.__post<CNAllreduce2PMessage>(msg);
+        return PAMI_SUCCESS;
 }
 
 };	// BGP

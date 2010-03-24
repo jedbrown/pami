@@ -207,9 +207,9 @@ asm volatile ("stwu %1,4(%0)" : "+Ob" (pkt) : "b"(r) : "memory");
                 [N]  "+b"(r1),\
                 [R1] "+r"(r2),\
                 [R2] "+r"(r3) \
-		: \
-		[XOFF] "i" EXPO_PRE_OFFSET	\
-		: "cr0", "cr4", "cr7" );
+                : \
+                [XOFF] "i" EXPO_PRE_OFFSET	\
+                : "cr0", "cr4", "cr7" );
 
 
 /* pre process 1 mantissa (64 bit wide) */
@@ -320,9 +320,9 @@ asm volatile ("stwu %1,4(%0)" : "+Ob" (pkt) : "b"(r) : "memory");
                 [R1] "+r"(r2),\
                 [R2] "+b"(r3),\
                 [R3] "+r"(r4) \
-		:\
-		[XOFF] "i" EXPO_PRE_OFFSET	\
-		: "cr0", "cr2", "cr4", "cr7" );
+                :\
+                [XOFF] "i" EXPO_PRE_OFFSET	\
+                : "cr0", "cr2", "cr4", "cr7" );
 
 
 
@@ -474,10 +474,10 @@ asm volatile("or.     %[NE],%[MH],%[ML];\n\t"  /* check: m == 0  (cr0!)      */\
              [CN] "+b"(c),\
              [R1] "+r"(r1),\
              [R2] "+b"(r2) \
-	    :\
-	     [XOFF1] "i" EXPO_PRE_OFFSET,\
-	     [XOFF2] "i" EXPO_POST_OFFSET\
-	    : "cr0","cr4", "cr7" );
+            :\
+             [XOFF1] "i" EXPO_PRE_OFFSET,\
+             [XOFF2] "i" EXPO_POST_OFFSET\
+            : "cr0","cr4", "cr7" );
 
 
 
@@ -623,10 +623,10 @@ asm volatile("or     %[R1],%[MH],%[ML];\n\t"    /* check if m == 0           */\
              [R1] "+b"(r1),\
              [R2] "+b"(r2),\
              [R3] "+b"(r3) \
-	    :\
-	     [XOFF1] "i" EXPO_PRE_OFFSET,\
-	     [XOFF2] "i" EXPO_POST_OFFSET\
-	    : "cr0","cr2","cr4","cr5", "cr7" );
+            :\
+             [XOFF1] "i" EXPO_PRE_OFFSET,\
+             [XOFF2] "i" EXPO_POST_OFFSET\
+            : "cr0","cr2","cr4","cr5", "cr7" );
 
 
 

@@ -76,9 +76,9 @@ extern void *pami_post_op_funcs[PAMI_OP_COUNT][PAMI_DT_COUNT][2];
  * the operation on the datatype.
  */
 static inline coremath1 PAMI_PRE_OP_FUNCS(pami_dt dt, pami_op op, int optim) {
-	return (coremath1)(pami_pre_op_funcs[op][dt][1] ?
-				pami_pre_op_funcs[op][dt][1] :
-				pami_pre_op_funcs[op][dt][0]);
+        return (coremath1)(pami_pre_op_funcs[op][dt][1] ?
+                                pami_pre_op_funcs[op][dt][1] :
+                                pami_pre_op_funcs[op][dt][0]);
 }
 
 /**
@@ -96,9 +96,9 @@ static inline coremath1 PAMI_PRE_OP_FUNCS(pami_dt dt, pami_op op, int optim) {
  * the operation on the datatype.
  */
 static inline coremath1 PAMI_POST_OP_FUNCS(pami_dt dt, pami_op op, int optim) {
-	return (coremath1)(pami_post_op_funcs[op][dt][1] ?
-				pami_post_op_funcs[op][dt][1] :
-				pami_post_op_funcs[op][dt][0]);
+        return (coremath1)(pami_post_op_funcs[op][dt][1] ?
+                                pami_post_op_funcs[op][dt][1] :
+                                pami_post_op_funcs[op][dt][0]);
 }
 
 /* Here is how we expand defines in pami_optibgmath.h into code: */
@@ -139,12 +139,12 @@ extern "C"
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int8_pre_all(uint8_t *dst, const int8_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int8_pre_all(PAMI_NOOP)
-	default:
-		_pami_core_int8_pre_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int8_pre_all(PAMI_NOOP)
+        default:
+                _pami_core_int8_pre_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -158,12 +158,12 @@ static inline void Core_int8_pre_all(uint8_t *dst, const int8_t *src, int count)
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int8_post_all(int8_t *dst, const uint8_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int8_post_all(PAMI_NOOP)
-	default:
-		_pami_core_int8_post_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int8_post_all(PAMI_NOOP)
+        default:
+                _pami_core_int8_post_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -177,12 +177,12 @@ static inline void Core_int8_post_all(int8_t *dst, const uint8_t *src, int count
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int8_pre_min(uint8_t *dst, const int8_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int8_pre_min
-	default:
-		_pami_core_int8_pre_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int8_pre_min
+        default:
+                _pami_core_int8_pre_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -196,12 +196,12 @@ static inline void Core_int8_pre_min(uint8_t *dst, const int8_t *src, int count)
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int8_post_min(int8_t *dst, const uint8_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int8_post_min
-	default:
-		_pami_core_int8_post_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int8_post_min
+        default:
+                _pami_core_int8_post_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -215,12 +215,12 @@ static inline void Core_int8_post_min(int8_t *dst, const uint8_t *src, int count
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint8_pre_all(uint8_t *dst, const uint8_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint8_pre_all(PAMI_NOOP)
-	default:
-		_pami_core_uint8_pre_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint8_pre_all(PAMI_NOOP)
+        default:
+                _pami_core_uint8_pre_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -234,12 +234,12 @@ static inline void Core_uint8_pre_all(uint8_t *dst, const uint8_t *src, int coun
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint8_post_all(uint8_t *dst, const uint8_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint8_post_all(PAMI_NOOP)
-	default:
-		_pami_core_uint8_post_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint8_post_all(PAMI_NOOP)
+        default:
+                _pami_core_uint8_post_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -253,12 +253,12 @@ static inline void Core_uint8_post_all(uint8_t *dst, const uint8_t *src, int cou
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint8_pre_min(uint8_t *dst, const uint8_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint8_pre_min
-	default:
-		_pami_core_uint8_pre_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint8_pre_min
+        default:
+                _pami_core_uint8_pre_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -272,12 +272,12 @@ static inline void Core_uint8_pre_min(uint8_t *dst, const uint8_t *src, int coun
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint8_post_min(uint8_t *dst, const uint8_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint8_post_min
-	default:
-		_pami_core_uint8_post_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint8_post_min
+        default:
+                _pami_core_uint8_post_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -291,12 +291,12 @@ static inline void Core_uint8_post_min(uint8_t *dst, const uint8_t *src, int cou
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int16_pre_all(uint16_t *dst, const int16_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int16_pre_all(PAMI_NOOP)
-	default:
-		_pami_core_int16_pre_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int16_pre_all(PAMI_NOOP)
+        default:
+                _pami_core_int16_pre_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -310,12 +310,12 @@ static inline void Core_int16_pre_all(uint16_t *dst, const int16_t *src, int cou
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int16_post_all(int16_t *dst, const uint16_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int16_post_all(PAMI_NOOP)
-	default:
-		_pami_core_int16_post_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int16_post_all(PAMI_NOOP)
+        default:
+                _pami_core_int16_post_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -329,12 +329,12 @@ static inline void Core_int16_post_all(int16_t *dst, const uint16_t *src, int co
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int16_pre_min(uint16_t *dst, const int16_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int16_pre_min
-	default:
-		_pami_core_int16_pre_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int16_pre_min
+        default:
+                _pami_core_int16_pre_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -348,12 +348,12 @@ static inline void Core_int16_pre_min(uint16_t *dst, const int16_t *src, int cou
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int16_post_min(int16_t *dst, const uint16_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int16_post_min
-	default:
-		_pami_core_int16_post_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int16_post_min
+        default:
+                _pami_core_int16_post_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -367,12 +367,12 @@ static inline void Core_int16_post_min(int16_t *dst, const uint16_t *src, int co
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int16_int32_pre_maxloc(uint16_int32_t *dst, const int16_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int16_int32_pre_maxloc
-	default:
-		_pami_core_int16_int32_pre_maxloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int16_int32_pre_maxloc
+        default:
+                _pami_core_int16_int32_pre_maxloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -386,12 +386,12 @@ static inline void Core_int16_int32_pre_maxloc(uint16_int32_t *dst, const int16_
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int16_int32_post_maxloc(int16_int32_t *dst, const uint16_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int16_int32_post_maxloc
-	default:
-		_pami_core_int16_int32_post_maxloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int16_int32_post_maxloc
+        default:
+                _pami_core_int16_int32_post_maxloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -405,12 +405,12 @@ static inline void Core_int16_int32_post_maxloc(int16_int32_t *dst, const uint16
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int16_int32_pre_minloc(uint16_int32_t *dst, const int16_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int16_int32_pre_minloc
-	default:
-		_pami_core_int16_int32_pre_minloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int16_int32_pre_minloc
+        default:
+                _pami_core_int16_int32_pre_minloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -424,12 +424,12 @@ static inline void Core_int16_int32_pre_minloc(uint16_int32_t *dst, const int16_
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int16_int32_post_minloc(int16_int32_t *dst, const uint16_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int16_int32_post_minloc
-	default:
-		_pami_core_int16_int32_post_minloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int16_int32_post_minloc
+        default:
+                _pami_core_int16_int32_post_minloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -443,12 +443,12 @@ static inline void Core_int16_int32_post_minloc(int16_int32_t *dst, const uint16
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint16_pre_all(uint16_t *dst, const uint16_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint16_pre_all(PAMI_NOOP)
-	default:
-		_pami_core_uint16_pre_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint16_pre_all(PAMI_NOOP)
+        default:
+                _pami_core_uint16_pre_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -462,12 +462,12 @@ static inline void Core_uint16_pre_all(uint16_t *dst, const uint16_t *src, int c
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint16_post_all(uint16_t *dst, const uint16_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint16_post_all(PAMI_NOOP)
-	default:
-		_pami_core_uint16_post_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint16_post_all(PAMI_NOOP)
+        default:
+                _pami_core_uint16_post_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -481,12 +481,12 @@ static inline void Core_uint16_post_all(uint16_t *dst, const uint16_t *src, int 
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint16_pre_min(uint16_t *dst, const uint16_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint16_pre_min
-	default:
-		_pami_core_uint16_pre_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint16_pre_min
+        default:
+                _pami_core_uint16_pre_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -500,12 +500,12 @@ static inline void Core_uint16_pre_min(uint16_t *dst, const uint16_t *src, int c
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint16_post_min(uint16_t *dst, const uint16_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint16_post_min
-	default:
-		_pami_core_uint16_post_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint16_post_min
+        default:
+                _pami_core_uint16_post_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -519,12 +519,12 @@ static inline void Core_uint16_post_min(uint16_t *dst, const uint16_t *src, int 
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int32_pre_all(uint32_t *dst, const int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int32_pre_all(PAMI_NOOP)
-	default:
-		_pami_core_int32_pre_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int32_pre_all(PAMI_NOOP)
+        default:
+                _pami_core_int32_pre_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -538,12 +538,12 @@ static inline void Core_int32_pre_all(uint32_t *dst, const int32_t *src, int cou
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int32_post_all(int32_t *dst, const uint32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int32_post_all(PAMI_NOOP)
-	default:
-		_pami_core_int32_post_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int32_post_all(PAMI_NOOP)
+        default:
+                _pami_core_int32_post_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -557,12 +557,12 @@ static inline void Core_int32_post_all(int32_t *dst, const uint32_t *src, int co
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int32_pre_min(uint32_t *dst, const int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int32_pre_min
-	default:
-		_pami_core_int32_pre_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int32_pre_min
+        default:
+                _pami_core_int32_pre_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -576,12 +576,12 @@ static inline void Core_int32_pre_min(uint32_t *dst, const int32_t *src, int cou
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int32_post_min(int32_t *dst, const uint32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int32_post_min
-	default:
-		_pami_core_int32_post_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int32_post_min
+        default:
+                _pami_core_int32_post_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -595,12 +595,12 @@ static inline void Core_int32_post_min(int32_t *dst, const uint32_t *src, int co
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int32_int32_pre_maxloc(uint32_int32_t *dst, const int32_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int32_int32_pre_maxloc
-	default:
-		_pami_core_int32_int32_pre_maxloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int32_int32_pre_maxloc
+        default:
+                _pami_core_int32_int32_pre_maxloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -614,12 +614,12 @@ static inline void Core_int32_int32_pre_maxloc(uint32_int32_t *dst, const int32_
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int32_int32_post_maxloc(int32_int32_t *dst, const uint32_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int32_int32_post_maxloc
-	default:
-		_pami_core_int32_int32_post_maxloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int32_int32_post_maxloc
+        default:
+                _pami_core_int32_int32_post_maxloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -633,12 +633,12 @@ static inline void Core_int32_int32_post_maxloc(int32_int32_t *dst, const uint32
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int32_int32_pre_minloc(uint32_int32_t *dst, const int32_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int32_int32_pre_minloc
-	default:
-		_pami_core_int32_int32_pre_minloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int32_int32_pre_minloc
+        default:
+                _pami_core_int32_int32_pre_minloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -652,12 +652,12 @@ static inline void Core_int32_int32_pre_minloc(uint32_int32_t *dst, const int32_
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int32_int32_post_minloc(int32_int32_t *dst, const uint32_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int32_int32_post_minloc
-	default:
-		_pami_core_int32_int32_post_minloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int32_int32_post_minloc
+        default:
+                _pami_core_int32_int32_post_minloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -671,12 +671,12 @@ static inline void Core_int32_int32_post_minloc(int32_int32_t *dst, const uint32
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint32_pre_all(uint32_t *dst, const uint32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint32_pre_all(PAMI_NOOP)
-	default:
-		_pami_core_uint32_pre_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint32_pre_all(PAMI_NOOP)
+        default:
+                _pami_core_uint32_pre_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -690,12 +690,12 @@ static inline void Core_uint32_pre_all(uint32_t *dst, const uint32_t *src, int c
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint32_post_all(uint32_t *dst, const uint32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint32_post_all(PAMI_NOOP)
-	default:
-		_pami_core_uint32_post_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint32_post_all(PAMI_NOOP)
+        default:
+                _pami_core_uint32_post_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -709,12 +709,12 @@ static inline void Core_uint32_post_all(uint32_t *dst, const uint32_t *src, int 
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint32_pre_min(uint32_t *dst, const uint32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint32_pre_min
-	default:
-		_pami_core_uint32_pre_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint32_pre_min
+        default:
+                _pami_core_uint32_pre_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -728,12 +728,12 @@ static inline void Core_uint32_pre_min(uint32_t *dst, const uint32_t *src, int c
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint32_post_min(uint32_t *dst, const uint32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint32_post_min
-	default:
-		_pami_core_uint32_post_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint32_post_min
+        default:
+                _pami_core_uint32_post_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -747,12 +747,12 @@ static inline void Core_uint32_post_min(uint32_t *dst, const uint32_t *src, int 
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int64_pre_all(uint64_t *dst, const int64_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int64_pre_all(PAMI_NOOP)
-	default:
-		_pami_core_int64_pre_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int64_pre_all(PAMI_NOOP)
+        default:
+                _pami_core_int64_pre_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -766,12 +766,12 @@ static inline void Core_int64_pre_all(uint64_t *dst, const int64_t *src, int cou
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int64_post_all(int64_t *dst, const uint64_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int64_post_all(PAMI_NOOP)
-	default:
-		_pami_core_int64_post_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int64_post_all(PAMI_NOOP)
+        default:
+                _pami_core_int64_post_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -785,12 +785,12 @@ static inline void Core_int64_post_all(int64_t *dst, const uint64_t *src, int co
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int64_pre_min(uint64_t *dst, const int64_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int64_pre_min
-	default:
-		_pami_core_int64_pre_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int64_pre_min
+        default:
+                _pami_core_int64_pre_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -804,12 +804,12 @@ static inline void Core_int64_pre_min(uint64_t *dst, const int64_t *src, int cou
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_int64_post_min(int64_t *dst, const uint64_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_int64_post_min
-	default:
-		_pami_core_int64_post_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_int64_post_min
+        default:
+                _pami_core_int64_post_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -823,12 +823,12 @@ static inline void Core_int64_post_min(int64_t *dst, const uint64_t *src, int co
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint64_pre_all(uint64_t *dst, const uint64_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint64_pre_all(PAMI_NOOP)
-	default:
-		_pami_core_uint64_pre_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint64_pre_all(PAMI_NOOP)
+        default:
+                _pami_core_uint64_pre_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -842,12 +842,12 @@ static inline void Core_uint64_pre_all(uint64_t *dst, const uint64_t *src, int c
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint64_post_all(uint64_t *dst, const uint64_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint64_post_all(PAMI_NOOP)
-	default:
-		_pami_core_uint64_post_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint64_post_all(PAMI_NOOP)
+        default:
+                _pami_core_uint64_post_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -861,12 +861,12 @@ static inline void Core_uint64_post_all(uint64_t *dst, const uint64_t *src, int 
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint64_pre_min(uint64_t *dst, const uint64_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint64_pre_min
-	default:
-		_pami_core_uint64_pre_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint64_pre_min
+        default:
+                _pami_core_uint64_pre_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -880,12 +880,12 @@ static inline void Core_uint64_pre_min(uint64_t *dst, const uint64_t *src, int c
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_uint64_post_min(uint64_t *dst, const uint64_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_uint64_post_min
-	default:
-		_pami_core_uint64_post_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_uint64_post_min
+        default:
+                _pami_core_uint64_post_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -899,12 +899,12 @@ static inline void Core_uint64_post_min(uint64_t *dst, const uint64_t *src, int 
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp32_pre_max(float *dst, const float *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp32_pre_max
-	default:
-		_pami_core_fp32_pre_max(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp32_pre_max
+        default:
+                _pami_core_fp32_pre_max(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -918,12 +918,12 @@ static inline void Core_fp32_pre_max(float *dst, const float *src, int count) {
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp32_post_max(float *dst, const float *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp32_post_max
-	default:
-		_pami_core_fp32_post_max(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp32_post_max
+        default:
+                _pami_core_fp32_post_max(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -937,12 +937,12 @@ static inline void Core_fp32_post_max(float *dst, const float *src, int count) {
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp32_int32_pre_maxloc(fp32_int32_t *dst, const fp32_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp32_int32_pre_maxloc
-	default:
-		_pami_core_fp32_int32_pre_maxloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp32_int32_pre_maxloc
+        default:
+                _pami_core_fp32_int32_pre_maxloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -956,12 +956,12 @@ static inline void Core_fp32_int32_pre_maxloc(fp32_int32_t *dst, const fp32_int3
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp32_int32_post_maxloc(fp32_int32_t *dst, const fp32_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp32_int32_post_maxloc
-	default:
-		_pami_core_fp32_int32_post_maxloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp32_int32_post_maxloc
+        default:
+                _pami_core_fp32_int32_post_maxloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -975,12 +975,12 @@ static inline void Core_fp32_int32_post_maxloc(fp32_int32_t *dst, const fp32_int
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp32_fp32_pre_maxloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp32_fp32_pre_maxloc
-	default:
-		_pami_core_fp32_fp32_pre_maxloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp32_fp32_pre_maxloc
+        default:
+                _pami_core_fp32_fp32_pre_maxloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -994,12 +994,12 @@ static inline void Core_fp32_fp32_pre_maxloc(fp32_fp32_t *dst, const fp32_fp32_t
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp32_fp32_post_maxloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp32_fp32_post_maxloc
-	default:
-		_pami_core_fp32_fp32_post_maxloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp32_fp32_post_maxloc
+        default:
+                _pami_core_fp32_fp32_post_maxloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1013,12 +1013,12 @@ static inline void Core_fp32_fp32_post_maxloc(fp32_fp32_t *dst, const fp32_fp32_
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp32_pre_min(float *dst, const float *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp32_pre_min
-	default:
-		_pami_core_fp32_pre_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp32_pre_min
+        default:
+                _pami_core_fp32_pre_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1032,12 +1032,12 @@ static inline void Core_fp32_pre_min(float *dst, const float *src, int count) {
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp32_post_min(float *dst, const float *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp32_post_min
-	default:
-		_pami_core_fp32_post_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp32_post_min
+        default:
+                _pami_core_fp32_post_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1051,12 +1051,12 @@ static inline void Core_fp32_post_min(float *dst, const float *src, int count) {
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp32_int32_pre_minloc(fp32_int32_t *dst, const fp32_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp32_int32_pre_minloc
-	default:
-		_pami_core_fp32_int32_pre_minloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp32_int32_pre_minloc
+        default:
+                _pami_core_fp32_int32_pre_minloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1070,12 +1070,12 @@ static inline void Core_fp32_int32_pre_minloc(fp32_int32_t *dst, const fp32_int3
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp32_int32_post_minloc(fp32_int32_t *dst, const fp32_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp32_int32_post_minloc
-	default:
-		_pami_core_fp32_int32_post_minloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp32_int32_post_minloc
+        default:
+                _pami_core_fp32_int32_post_minloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1089,12 +1089,12 @@ static inline void Core_fp32_int32_post_minloc(fp32_int32_t *dst, const fp32_int
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp32_fp32_pre_minloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp32_fp32_pre_minloc
-	default:
-		_pami_core_fp32_fp32_pre_minloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp32_fp32_pre_minloc
+        default:
+                _pami_core_fp32_fp32_pre_minloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1108,12 +1108,12 @@ static inline void Core_fp32_fp32_pre_minloc(fp32_fp32_t *dst, const fp32_fp32_t
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp32_fp32_post_minloc(fp32_fp32_t *dst, const fp32_fp32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp32_fp32_post_minloc
-	default:
-		_pami_core_fp32_fp32_post_minloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp32_fp32_post_minloc
+        default:
+                _pami_core_fp32_fp32_post_minloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1127,12 +1127,12 @@ static inline void Core_fp32_fp32_post_minloc(fp32_fp32_t *dst, const fp32_fp32_
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_pre_max(double *dst, const double *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_pre_max
-	default:
-		_pami_core_fp64_pre_max(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_pre_max
+        default:
+                _pami_core_fp64_pre_max(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1146,12 +1146,12 @@ static inline void Core_fp64_pre_max(double *dst, const double *src, int count) 
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_post_max(double *dst, const double *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_post_max
-	default:
-		_pami_core_fp64_post_max(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_post_max
+        default:
+                _pami_core_fp64_post_max(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1165,12 +1165,12 @@ static inline void Core_fp64_post_max(double *dst, const double *src, int count)
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_pre_all(double *dst, const double *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_pre_all(PAMI_NOOP)
-	default:
-		_pami_core_fp64_pre_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_pre_all(PAMI_NOOP)
+        default:
+                _pami_core_fp64_pre_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1184,12 +1184,12 @@ static inline void Core_fp64_pre_all(double *dst, const double *src, int count) 
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_post_all(double *dst, const double *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_post_all(PAMI_NOOP)
-	default:
-		_pami_core_fp64_post_all(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_post_all(PAMI_NOOP)
+        default:
+                _pami_core_fp64_post_all(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1203,12 +1203,12 @@ static inline void Core_fp64_post_all(double *dst, const double *src, int count)
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_int32_pre_maxloc(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_int32_pre_maxloc
-	default:
-		_pami_core_fp64_int32_pre_maxloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_int32_pre_maxloc
+        default:
+                _pami_core_fp64_int32_pre_maxloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1222,12 +1222,12 @@ static inline void Core_fp64_int32_pre_maxloc(fp64_int32_t *dst, const fp64_int3
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_int32_post_maxloc(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_int32_post_maxloc
-	default:
-		_pami_core_fp64_int32_post_maxloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_int32_post_maxloc
+        default:
+                _pami_core_fp64_int32_post_maxloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1241,12 +1241,12 @@ static inline void Core_fp64_int32_post_maxloc(fp64_int32_t *dst, const fp64_int
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_fp64_pre_maxloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_fp64_pre_maxloc
-	default:
-		_pami_core_fp64_fp64_pre_maxloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_fp64_pre_maxloc
+        default:
+                _pami_core_fp64_fp64_pre_maxloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1260,12 +1260,12 @@ static inline void Core_fp64_fp64_pre_maxloc(fp64_fp64_t *dst, const fp64_fp64_t
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_fp64_post_maxloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_fp64_post_maxloc
-	default:
-		_pami_core_fp64_fp64_post_maxloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_fp64_post_maxloc
+        default:
+                _pami_core_fp64_fp64_post_maxloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1279,12 +1279,12 @@ static inline void Core_fp64_fp64_post_maxloc(fp64_fp64_t *dst, const fp64_fp64_
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_pre_min(double *dst, const double *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_pre_min
-	default:
-		_pami_core_fp64_pre_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_pre_min
+        default:
+                _pami_core_fp64_pre_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1298,12 +1298,12 @@ static inline void Core_fp64_pre_min(double *dst, const double *src, int count) 
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_post_min(double *dst, const double *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_post_min
-	default:
-		_pami_core_fp64_post_min(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_post_min
+        default:
+                _pami_core_fp64_post_min(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1317,12 +1317,12 @@ static inline void Core_fp64_post_min(double *dst, const double *src, int count)
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_int32_pre_minloc(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_int32_pre_minloc
-	default:
-		_pami_core_fp64_int32_pre_minloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_int32_pre_minloc
+        default:
+                _pami_core_fp64_int32_pre_minloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1336,12 +1336,12 @@ static inline void Core_fp64_int32_pre_minloc(fp64_int32_t *dst, const fp64_int3
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_int32_post_minloc(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_int32_post_minloc
-	default:
-		_pami_core_fp64_int32_post_minloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_int32_post_minloc
+        default:
+                _pami_core_fp64_int32_post_minloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1355,12 +1355,12 @@ static inline void Core_fp64_int32_post_minloc(fp64_int32_t *dst, const fp64_int
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_fp64_pre_minloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_fp64_pre_minloc
-	default:
-		_pami_core_fp64_fp64_pre_minloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_fp64_pre_minloc
+        default:
+                _pami_core_fp64_fp64_pre_minloc(dst, src, count);
+                break;
+        }
 }
 
 /**
@@ -1374,12 +1374,12 @@ static inline void Core_fp64_fp64_pre_minloc(fp64_fp64_t *dst, const fp64_fp64_t
  * elements of the source buffer, results in destination buffer.
  */
 static inline void Core_fp64_fp64_post_minloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
-	switch(1) {
-	OPTIMIZED_fp64_fp64_post_minloc
-	default:
-		_pami_core_fp64_fp64_post_minloc(dst, src, count);
-		break;
-	}
+        switch(1) {
+        OPTIMIZED_fp64_fp64_post_minloc
+        default:
+                _pami_core_fp64_fp64_post_minloc(dst, src, count);
+                break;
+        }
 }
 
 #undef OPTIMATH_UNARY

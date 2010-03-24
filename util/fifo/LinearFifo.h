@@ -141,7 +141,7 @@ namespace PAMI
             {
               _head = 0;
               //mem_sync ();
-          	mem_barrier ();
+                  mem_barrier ();
               _tail.fetch_and_clear ();
             }
           //mem_barrier ();

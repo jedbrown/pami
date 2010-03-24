@@ -104,11 +104,11 @@ namespace PAMI
         _ncontexts (0),
         _mm ()
         {
-	  static size_t next_client_id = 0;
+          static size_t next_client_id = 0;
           // Set the client name string.
           memset ((void *)_name, 0x00, sizeof(_name));
           strncpy (_name, name, sizeof(_name) - 1);
-	  _clientid = next_client_id++;
+          _clientid = next_client_id++;
           initializeMemoryManager ();
 
         initializeLapiHandle(&_main_lapi_handle,
@@ -157,34 +157,34 @@ namespace PAMI
                                               pami_context_t     * context,
                                               size_t              ncontexts)
         {
-		//_context_list->lock ();
-		int n = ncontexts;
-		if (_ncontexts != 0) {
-			return PAMI_ERROR;
-		}
-		if (_ncontexts + n > 4) {
-			n = 4 - _ncontexts;
-		}
-		if (n <= 0) { // impossible?
-			return PAMI_ERROR;
-		}
+                //_context_list->lock ();
+                int n = ncontexts;
+                if (_ncontexts != 0) {
+                        return PAMI_ERROR;
+                }
+                if (_ncontexts + n > 4) {
+                        n = 4 - _ncontexts;
+                }
+                if (n <= 0) { // impossible?
+                        return PAMI_ERROR;
+                }
 
 #ifdef USE_MEMALIGN
-		int rc = posix_memalign((void **)&_contexts, 16, sizeof(PAMI::Context) * n);
-		PAMI_assertf(rc==0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
+                int rc = posix_memalign((void **)&_contexts, 16, sizeof(PAMI::Context) * n);
+                PAMI_assertf(rc==0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
 #else
                 _contexts = (PAMI::Context*)malloc(sizeof(PAMI::Context)*n);
-		PAMI_assertf(_contexts!=NULL, "malloc failed for _contexts[%d], errno=%d\n", n, errno);
+                PAMI_assertf(_contexts!=NULL, "malloc failed for _contexts[%d], errno=%d\n", n, errno);
 #endif
                 _platdevs.generate(_clientid, n, _mm);
 
-		// This memset has been removed due to the amount of cycles it takes
-		// on simulators.  Lower level initializers should be setting the
-		// relevant fields of the context, so this memset should not be
-		// needed anyway.
-		//memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
-		size_t bytes = _mm.size() / n;
-		int x;
+                // This memset has been removed due to the amount of cycles it takes
+                // on simulators.  Lower level initializers should be setting the
+                // relevant fields of the context, so this memset should not be
+                // needed anyway.
+                //memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
+                size_t bytes = _mm.size() / n;
+                int x;
                 int first_context = 0;
                 for (x = 0; x < n; ++x)
                     {
@@ -221,7 +221,7 @@ namespace PAMI
                     }
                 CheckLapiRC(lapi_gfence (_main_lapi_handle));
 
-		return PAMI_SUCCESS;
+                return PAMI_SUCCESS;
         }
 
       inline pami_result_t destroyContext_impl (pami_context_t context)
@@ -230,63 +230,63 @@ namespace PAMI
           return PAMI_SUCCESS;
         }
 
-	inline pami_result_t queryConfiguration_impl (pami_configuration_t * configuration)
-	{
-		pami_result_t result = PAMI_ERROR;
+        inline pami_result_t queryConfiguration_impl (pami_configuration_t * configuration)
+        {
+                pami_result_t result = PAMI_ERROR;
 
-		switch (configuration->name)
-		{
-		case PAMI_NUM_CONTEXTS:
-			configuration->value.intval = 1; // real value TBD
-			result = PAMI_SUCCESS;
-			break;
-		case PAMI_CONST_CONTEXTS:
-			configuration->value.intval = 0; // real value TBD
-			result = PAMI_SUCCESS;
-			break;
-		case PAMI_TASK_ID:
-			configuration->value.intval = __global.mapping.task();
-			result = PAMI_SUCCESS;
-			break;
-		case PAMI_NUM_TASKS:
-			configuration->value.intval = __global.mapping.size();
-			result = PAMI_SUCCESS;
-			break;
-		case PAMI_CLOCK_MHZ:
-		case PAMI_WTIMEBASE_MHZ:
-			configuration->value.intval = __global.time.clockMHz();
-			result = PAMI_SUCCESS;
-			break;
-		case PAMI_WTICK:
-			configuration->value.doubleval =__global.time.tick();
-			result = PAMI_SUCCESS;
-			break;
-		case PAMI_MEM_SIZE:
-		case PAMI_PROCESSOR_NAME:
-		default:
-			break;
-		}
-		return result;
-	}
+                switch (configuration->name)
+                {
+                case PAMI_NUM_CONTEXTS:
+                        configuration->value.intval = 1; // real value TBD
+                        result = PAMI_SUCCESS;
+                        break;
+                case PAMI_CONST_CONTEXTS:
+                        configuration->value.intval = 0; // real value TBD
+                        result = PAMI_SUCCESS;
+                        break;
+                case PAMI_TASK_ID:
+                        configuration->value.intval = __global.mapping.task();
+                        result = PAMI_SUCCESS;
+                        break;
+                case PAMI_NUM_TASKS:
+                        configuration->value.intval = __global.mapping.size();
+                        result = PAMI_SUCCESS;
+                        break;
+                case PAMI_CLOCK_MHZ:
+                case PAMI_WTIMEBASE_MHZ:
+                        configuration->value.intval = __global.time.clockMHz();
+                        result = PAMI_SUCCESS;
+                        break;
+                case PAMI_WTICK:
+                        configuration->value.doubleval =__global.time.tick();
+                        result = PAMI_SUCCESS;
+                        break;
+                case PAMI_MEM_SIZE:
+                case PAMI_PROCESSOR_NAME:
+                default:
+                        break;
+                }
+                return result;
+        }
 
-	inline size_t getNumContexts()
-	{
-		return _ncontexts;
-	}
+        inline size_t getNumContexts()
+        {
+                return _ncontexts;
+        }
 
-	inline PAMI::Context *getContext(size_t ctx)
-	{
-		return _contexts + ctx;
-	}
-	inline PAMI::Context *getContexts()
-	{
-		return _contexts;
-	}
+        inline PAMI::Context *getContext(size_t ctx)
+        {
+                return _contexts + ctx;
+        }
+        inline PAMI::Context *getContexts()
+        {
+                return _contexts;
+        }
 
-	inline size_t getClientId()
-	{
-		return _clientid;
-	}
+        inline size_t getClientId()
+        {
+                return _clientid;
+        }
 
     inline pami_result_t geometry_world_impl (pami_geometry_t * world_geometry)
       {
@@ -364,8 +364,8 @@ namespace PAMI
       size_t _clientid;
       size_t       _references;
       size_t       _ncontexts;
-	PAMI::Context *_contexts;
-	PAMI::PlatformDeviceList _platdevs;
+        PAMI::Context *_contexts;
+        PAMI::PlatformDeviceList _platdevs;
 
         char         _name[256];
     int                           _myrank;

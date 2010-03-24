@@ -40,7 +40,7 @@ namespace PAMI
                                   pami_multisync_t *msync)
         {
           pami_result_t      rc     = PAMI_SUCCESS;
-	  LAPIMsyncMessage *msg     = (LAPIMsyncMessage *) state;
+          LAPIMsyncMessage *msg     = (LAPIMsyncMessage *) state;
           PAMI::Topology   *topo    = (PAMI::Topology *)msync->participants;
           pami_task_t      *ranks_h = NULL;
           pami_task_t      *ranks   = NULL;

@@ -25,25 +25,25 @@ void _pami_core_uint32_not_o(uint32_t *dst, const uint32_t *src, int count) {
 
   while ( n-- ) {
     asm volatile (
-	"lwz    6,0(%[sp]);"
+        "lwz    6,0(%[sp]);"
 
-	"lwz    7,4(%[sp]);"
-	"not    6,6;"
+        "lwz    7,4(%[sp]);"
+        "not    6,6;"
 
-	"not    7,7;"
-	"stw    6,0(%[dp]);"
+        "not    7,7;"
+        "stw    6,0(%[dp]);"
 
-	"stw    7,4(%[dp]);"
+        "stw    7,4(%[dp]);"
 
-	"lwz    6,8(%[sp]);"
+        "lwz    6,8(%[sp]);"
 
-	"lwz    7,12(%[sp]);"
-	"not    6,6;"
+        "lwz    7,12(%[sp]);"
+        "not    6,6;"
 
-	"not    7,7;"
-	"stw    6,8(%[dp]);"
+        "not    7,7;"
+        "stw    6,8(%[dp]);"
 
-	"stw    7,12(%[dp]);"
+        "stw    7,12(%[dp]);"
 
       : // no outputs
       : [sp] "b" (sp),
@@ -123,12 +123,12 @@ static void _pami_core_uint32_conv_o(uint32_t *dst, const uint32_t *src, int cou
   while ( n-- ) {
     asm volatile (
            "lwz   12,0(%[sp]);"
-	   "subis  12,12,0x8000;"
-	   "stw   12,0(%[dp]);"
+           "subis  12,12,0x8000;"
+           "stw   12,0(%[dp]);"
 
-	  : // no outputs
+          : // no outputs
           : [sp] "b" (sp),
-	    [dp] "b" (dp)
+            [dp] "b" (dp)
           : "memory", "12"
             );
     sp++;
@@ -212,13 +212,13 @@ static void _pami_core_uint32_conv_not_o(uint32_t *dst, const uint32_t *src, int
   while ( n-- ) {
     asm volatile (
            "lwz   12,0(%[sp]);"
-	   "subis 12,12,0x8000;"
-	   "not   12,12;"
-	   "stw   12,0(%[dp]);"
+           "subis 12,12,0x8000;"
+           "not   12,12;"
+           "stw   12,0(%[dp]);"
 
-	  : // no outputs
+          : // no outputs
           : [sp] "b" (sp),
-	    [dp] "b" (dp)
+            [dp] "b" (dp)
           : "memory", "12"
             );
     sp++;

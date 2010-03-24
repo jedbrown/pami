@@ -208,198 +208,198 @@ namespace Generic {
 class Device {
 
 public:
-	/// \brief standard Device::Factory API
-	class Factory : public Interface::FactoryInterface<Factory,Device,Device> {
-	public:
-		/// \brief Generate an array of devices for a client
-		/// \param[in] client	Client ID
-		/// \param[in] num_ctx	Number of contexts being created in client
-		/// \param[in] mm	Memory manager (for shmem alloc, if needed)
-		/// \return	Array of devices
-		static inline Device *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm) {
-			size_t x;
-			Device *gds;
-			int rc = posix_memalign((void **)&gds, 16, sizeof(*gds) * num_ctx);
-			PAMI_assertf(rc == 0, "posix_memalign failed for generics[%zd], errno=%d\n", num_ctx, errno);
-			for (x = 0; x < num_ctx; ++x) {
-				new (&gds[x]) PAMI::Device::Generic::Device(client, x, num_ctx);
-			}
-			return gds;
-		}
-		/// \brief Initialize a specific device for client/context
-		/// \param[in] devs		Device array returned by generate call
-		/// \param[in] client		Client ID
-		/// \param[in] contextId	Context ID
-		/// \param[in] clt		Client
-		/// \param[in] ctx		Context
-		/// \param[in] sd		SysDep
-		/// \param[in] devices		Generic Device array (same as devs in this case)
-		/// \return	Error code
-		static inline pami_result_t init_impl(Device *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
-			return getDevice_impl(devs, client, contextId).init(ctx, client, contextId, mm);
-		}
-		/// \brief Advance this device for client/context
-		/// \param[in] devs	Device array returned by generate call
-		/// \param[in] client	Client ID
-		/// \param[in] context	Context ID
-		/// \return	Events processed
-		static inline size_t advance_impl(Device *devs, size_t client, size_t context) {
-			return getDevice_impl(devs, client, context).advance();
-		}
-		/// \brief Get reference to specific device given client and context
-		/// \param[in] devs	Device array returned by generate call
-		/// \param[in] client	Client ID
-		/// \param[in] context	Context ID
-		/// \return	Reference to a device
-		static inline Device & getDevice_impl(Device *devs, size_t client, size_t context) {
-			return devs[context];
-		}
-	}; // class Factory
+        /// \brief standard Device::Factory API
+        class Factory : public Interface::FactoryInterface<Factory,Device,Device> {
+        public:
+                /// \brief Generate an array of devices for a client
+                /// \param[in] client	Client ID
+                /// \param[in] num_ctx	Number of contexts being created in client
+                /// \param[in] mm	Memory manager (for shmem alloc, if needed)
+                /// \return	Array of devices
+                static inline Device *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm) {
+                        size_t x;
+                        Device *gds;
+                        int rc = posix_memalign((void **)&gds, 16, sizeof(*gds) * num_ctx);
+                        PAMI_assertf(rc == 0, "posix_memalign failed for generics[%zd], errno=%d\n", num_ctx, errno);
+                        for (x = 0; x < num_ctx; ++x) {
+                                new (&gds[x]) PAMI::Device::Generic::Device(client, x, num_ctx);
+                        }
+                        return gds;
+                }
+                /// \brief Initialize a specific device for client/context
+                /// \param[in] devs		Device array returned by generate call
+                /// \param[in] client		Client ID
+                /// \param[in] contextId	Context ID
+                /// \param[in] clt		Client
+                /// \param[in] ctx		Context
+                /// \param[in] sd		SysDep
+                /// \param[in] devices		Generic Device array (same as devs in this case)
+                /// \return	Error code
+                static inline pami_result_t init_impl(Device *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
+                        return getDevice_impl(devs, client, contextId).init(ctx, client, contextId, mm);
+                }
+                /// \brief Advance this device for client/context
+                /// \param[in] devs	Device array returned by generate call
+                /// \param[in] client	Client ID
+                /// \param[in] context	Context ID
+                /// \return	Events processed
+                static inline size_t advance_impl(Device *devs, size_t client, size_t context) {
+                        return getDevice_impl(devs, client, context).advance();
+                }
+                /// \brief Get reference to specific device given client and context
+                /// \param[in] devs	Device array returned by generate call
+                /// \param[in] client	Client ID
+                /// \param[in] context	Context ID
+                /// \return	Reference to a device
+                static inline Device & getDevice_impl(Device *devs, size_t client, size_t context) {
+                        return devs[context];
+                }
+        }; // class Factory
 
-	/// \brief  Constructor for generic device
-	///
-	/// \param[in] client		Client ID
-	/// \param[in] contextId	Context ID
-	/// \param[in] num_ctx		Number of contexts for client
-	///
-	inline Device(size_t client, size_t contextId, size_t num_ctx) :
-	__GenericQueue(),
-	__Threads(),
-	__clientId(client),
-	__contextId(contextId),
-	__nContexts(num_ctx)
-	{
-	}
+        /// \brief  Constructor for generic device
+        ///
+        /// \param[in] client		Client ID
+        /// \param[in] contextId	Context ID
+        /// \param[in] num_ctx		Number of contexts for client
+        ///
+        inline Device(size_t client, size_t contextId, size_t num_ctx) :
+        __GenericQueue(),
+        __Threads(),
+        __clientId(client),
+        __contextId(contextId),
+        __nContexts(num_ctx)
+        {
+        }
 
-	/// \brief Initialize the generic device slice
-	/// \param[in] ctx	Context
-	/// \param[in] client	Client ID
-	/// \param[in] context	Context ID
-	/// \return	Error code
-	inline pami_result_t init(pami_context_t ctx, size_t client, size_t context, PAMI::Memory::MemoryManager *mm) {
-		__context = ctx;
-		__Threads.init(mm);
-		__GenericQueue.init(mm);
-		return PAMI_SUCCESS;
-	}
+        /// \brief Initialize the generic device slice
+        /// \param[in] ctx	Context
+        /// \param[in] client	Client ID
+        /// \param[in] context	Context ID
+        /// \return	Error code
+        inline pami_result_t init(pami_context_t ctx, size_t client, size_t context, PAMI::Memory::MemoryManager *mm) {
+                __context = ctx;
+                __Threads.init(mm);
+                __GenericQueue.init(mm);
+                return PAMI_SUCCESS;
+        }
 
-	/// \brief Advance routine for (one channel of) the generic device.
-	///
-	/// This advances all units of work on this context's queue, and
-	/// checks the message queue for completions. It also calls the
-	/// advanceRecv routine for all devices.
-	///
-	/// \return	number of events processed
-	///
-	inline size_t advance() {
-		int events = 0;
-		//+ Need to ensure only one of these runs per core
-		//+ (even if multi-threads per core)
-		//+ if (core_mutex.tryAcquire()) {
+        /// \brief Advance routine for (one channel of) the generic device.
+        ///
+        /// This advances all units of work on this context's queue, and
+        /// checks the message queue for completions. It also calls the
+        /// advanceRecv routine for all devices.
+        ///
+        /// \return	number of events processed
+        ///
+        inline size_t advance() {
+                int events = 0;
+                //+ Need to ensure only one of these runs per core
+                //+ (even if multi-threads per core)
+                //+ if (core_mutex.tryAcquire()) {
 
-		// could check the queues here and return if empty, but it
-		// probably takes just as much as the for loops would, and
-		// just further delay the advance of real work when present.
+                // could check the queues here and return if empty, but it
+                // probably takes just as much as the for loops would, and
+                // just further delay the advance of real work when present.
 
-		//if (!__Threads.mutex()->tryAcquire()) continue;
-		GenericThread *thr, *nxtthr;
-		for (thr = (GenericThread *)__Threads.peekHead(); thr; thr = nxtthr) {
-			nxtthr = (GenericThread *)__Threads.nextElem(thr);
-			if (thr->getStatus() == PAMI::Device::Ready) {
-				++events;
-				pami_result_t rc = thr->executeThread(__context);
-				if (rc != PAMI_EAGAIN) {
-					// thr->setStatus(PAMI::Device::Complete);
-					__Threads.deleteElem(thr);
-					continue;
-				}
-			} else if (thr->getStatus() == PAMI::Device::OneShot) {
-				++events;
-				// thread is like completion callback, dequeue first.
-				__Threads.deleteElem(thr);
-				thr->executeThread(__context);
-				continue;
-			}
-			// This allows a thread to be "completed" by something else...
-			if (thr->getStatus() == PAMI::Device::Complete) {
-				__Threads.deleteElem(thr);
-				continue;
-			}
-		}
-		//__Threads.mutex()->release();
+                //if (!__Threads.mutex()->tryAcquire()) continue;
+                GenericThread *thr, *nxtthr;
+                for (thr = (GenericThread *)__Threads.peekHead(); thr; thr = nxtthr) {
+                        nxtthr = (GenericThread *)__Threads.nextElem(thr);
+                        if (thr->getStatus() == PAMI::Device::Ready) {
+                                ++events;
+                                pami_result_t rc = thr->executeThread(__context);
+                                if (rc != PAMI_EAGAIN) {
+                                        // thr->setStatus(PAMI::Device::Complete);
+                                        __Threads.deleteElem(thr);
+                                        continue;
+                                }
+                        } else if (thr->getStatus() == PAMI::Device::OneShot) {
+                                ++events;
+                                // thread is like completion callback, dequeue first.
+                                __Threads.deleteElem(thr);
+                                thr->executeThread(__context);
+                                continue;
+                        }
+                        // This allows a thread to be "completed" by something else...
+                        if (thr->getStatus() == PAMI::Device::Complete) {
+                                __Threads.deleteElem(thr);
+                                continue;
+                        }
+                }
+                //__Threads.mutex()->release();
 
-		//+ core_mutex.release();
+                //+ core_mutex.release();
 
-		// Now check everything on the completion queue...
-		GenericMessage *msg, *nxtmsg, *nxt;
-		for (msg = (GenericMessage *)__GenericQueue.peekHead(); msg; msg = nxtmsg) {
-			nxtmsg = (GenericMessage *)__GenericQueue.nextElem(msg);
-			if (msg->getStatus() == Done) {
-				++events;
-				__GenericQueue.deleteElem(msg);
-				GenericDeviceMessageQueue *qs = msg->getQS();
-				qs->dequeue(); // assert return == msg
-				nxt = (PAMI::Device::Generic::GenericMessage *)qs->peek();
-				if (nxt) nxt->postNext(true); // virtual function
-				msg->executeCallback(__context);
-			}
-		}
-		return events;
-	}
+                // Now check everything on the completion queue...
+                GenericMessage *msg, *nxtmsg, *nxt;
+                for (msg = (GenericMessage *)__GenericQueue.peekHead(); msg; msg = nxtmsg) {
+                        nxtmsg = (GenericMessage *)__GenericQueue.nextElem(msg);
+                        if (msg->getStatus() == Done) {
+                                ++events;
+                                __GenericQueue.deleteElem(msg);
+                                GenericDeviceMessageQueue *qs = msg->getQS();
+                                qs->dequeue(); // assert return == msg
+                                nxt = (PAMI::Device::Generic::GenericMessage *)qs->peek();
+                                if (nxt) nxt->postNext(true); // virtual function
+                                msg->executeCallback(__context);
+                        }
+                }
+                return events;
+        }
 
-	/// \brief     Advance routine for the generic device.
-	///
-	/// Currently not used, since subdevices have to be polled for recvs.
-	///
-	/// \return	Boolean indicating if device needs advancing
-	///
-	inline bool isAdvanceNeeded();
+        /// \brief     Advance routine for the generic device.
+        ///
+        /// Currently not used, since subdevices have to be polled for recvs.
+        ///
+        /// \return	Boolean indicating if device needs advancing
+        ///
+        inline bool isAdvanceNeeded();
 
-	/// \brief     Post a thread object on a generic device slice's queue
-	///
-	/// Used this to post a thread of work.
-	///
-	/// \param[in] thr	Thread object to post for advance work
-	///
-	inline void postThread(GenericThread *thr) {
-		__Threads.pushTail(thr);
-	}
+        /// \brief     Post a thread object on a generic device slice's queue
+        ///
+        /// Used this to post a thread of work.
+        ///
+        /// \param[in] thr	Thread object to post for advance work
+        ///
+        inline void postThread(GenericThread *thr) {
+                __Threads.pushTail(thr);
+        }
 
-	/// \brief Post a message to the generic-device queuing system
-	///
-	/// \param[in] msg	Message to be queued/completed.
-	///
-	inline void postMsg(GenericMessage *msg) {
-		__GenericQueue.pushTail(msg);
-	}
+        /// \brief Post a message to the generic-device queuing system
+        ///
+        /// \param[in] msg	Message to be queued/completed.
+        ///
+        inline void postMsg(GenericMessage *msg) {
+                __GenericQueue.pushTail(msg);
+        }
 
-	/// \brief accessor for the context-id associated with generic device slice
-	/// \return	context ID
-	inline size_t contextId() { return __contextId; }
+        /// \brief accessor for the context-id associated with generic device slice
+        /// \return	context ID
+        inline size_t contextId() { return __contextId; }
 
-	/// \brief accessor for the total number of contexts in this client
-	/// \return	number of contexts/generic device slices
-	inline size_t nContexts() { return __nContexts; }
+        /// \brief accessor for the total number of contexts in this client
+        /// \return	number of contexts/generic device slices
+        inline size_t nContexts() { return __nContexts; }
 
-	/// \brief accessor for the context associated with generic device slice
-	/// \return	context handle
-	inline pami_context_t getContext() { return __context; }
+        /// \brief accessor for the context associated with generic device slice
+        /// \return	context handle
+        inline pami_context_t getContext() { return __context; }
 
 private:
-	/// \brief Storage for the queue for message completion
-	///
-	/// Queue[1] is used by the Generic::Device to enqueue messages for completion.
-	/// By convention, queue[0] is used for attaching messages to a sub-device.
-	///
-	GenericDeviceCompletionQueue __GenericQueue;
+        /// \brief Storage for the queue for message completion
+        ///
+        /// Queue[1] is used by the Generic::Device to enqueue messages for completion.
+        /// By convention, queue[0] is used for attaching messages to a sub-device.
+        ///
+        GenericDeviceCompletionQueue __GenericQueue;
 
-	/// \brief Storage for the queue of threads (a.k.a. work units)
-	GenericDeviceWorkQueue __Threads;
+        /// \brief Storage for the queue of threads (a.k.a. work units)
+        GenericDeviceWorkQueue __Threads;
 
-	pami_context_t __context;	///< context handle for this generic device
-	size_t __clientId;		///< client ID for context
-	size_t __contextId;		///< context ID
-	size_t __nContexts;		///< number of contexts in client
+        pami_context_t __context;	///< context handle for this generic device
+        size_t __clientId;		///< client ID for context
+        size_t __contextId;		///< context ID
+        size_t __nContexts;		///< number of contexts in client
 }; /* class Device */
 
 }; /* namespace Generic */

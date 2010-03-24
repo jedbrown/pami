@@ -284,25 +284,25 @@ void _pami_core_fp64_post_all(double *dst, const double *src, int count) {
 }
 
 void _pami_core_fp64_pre_sum(double *dst, const double *src, int count) {
-	int c = 0;
-	double *s = (double *)src;
-	struct b { char b[BGPCN_PKT_SIZE]; } *d = (struct b *)dst;
-	for (c = 0; c < count; c++) {
-		double2uint(s, PKTWORDS, (uint64_t *)d);
-		++s;
-		++d;
-	}
+        int c = 0;
+        double *s = (double *)src;
+        struct b { char b[BGPCN_PKT_SIZE]; } *d = (struct b *)dst;
+        for (c = 0; c < count; c++) {
+                double2uint(s, PKTWORDS, (uint64_t *)d);
+                ++s;
+                ++d;
+        }
 }
 
 void _pami_core_fp64_post_sum(double *dst, const double *src, int count) {
-	int c = 0;
-	struct b { char b[BGPCN_PKT_SIZE]; } *s = (struct b *)src;
-	double *d = dst;
-	for (c = 0; c < count; c++) {
-		uint2double(_g_num_active_nodes, d, PKTWORDS, (uint64_t *)s);
-		++s;
-		++d;
-	}
+        int c = 0;
+        struct b { char b[BGPCN_PKT_SIZE]; } *s = (struct b *)src;
+        double *d = dst;
+        for (c = 0; c < count; c++) {
+                uint2double(_g_num_active_nodes, d, PKTWORDS, (uint64_t *)s);
+                ++s;
+                ++d;
+        }
 }
 
 void _pami_core_fp64_pre_max(double *dst, const double *src, int count) {
@@ -515,29 +515,29 @@ void _pami_core_fp64_fp64_post_minloc(fp64_fp64_t *dst, const fp64_fp64_t *src, 
  * \param[out] mp	Where to save 96-bit mantissa
  */
 static inline void split_dbl(const double *src, uint32_t *exp, uint32_t *mp) {
-	uint32_t *sp = (uint32_t *)src;
-	uint32_t mh, ml, x;
-	uint32_t neg;
+        uint32_t *sp = (uint32_t *)src;
+        uint32_t mh, ml, x;
+        uint32_t neg;
 
-	mh = sp[0];
-	ml = sp[1];
-	x = (mh >> 20) & 0x000007ffUL;
-	neg = ((mh & 0x80000000UL) != 0);
-	mh &= 0x000fffff;
-	if (x) mh |= 0x00100000UL;
-	if (neg) {
-		asm volatile (
-			"nor %0,%0,%0;"
-			"addic %0,%0,1;"
-			"nor %1,%1,%1;"
-			"addze %1,%1;"
-			: "+r"(ml),
-			  "+r"(mh)
-			);
-	}
-	mp[0] = mh;
-	mp[1] = ml;
-	*exp = x;
+        mh = sp[0];
+        ml = sp[1];
+        x = (mh >> 20) & 0x000007ffUL;
+        neg = ((mh & 0x80000000UL) != 0);
+        mh &= 0x000fffff;
+        if (x) mh |= 0x00100000UL;
+        if (neg) {
+                asm volatile (
+                        "nor %0,%0,%0;"
+                        "addic %0,%0,1;"
+                        "nor %1,%1,%1;"
+                        "addze %1,%1;"
+                        : "+r"(ml),
+                          "+r"(mh)
+                        );
+        }
+        mp[0] = mh;
+        mp[1] = ml;
+        *exp = x;
 }
 
 /**
@@ -554,41 +554,41 @@ static inline void split_dbl(const double *src, uint32_t *exp, uint32_t *mp) {
  * It does, however, handle mantissa packet boundaries.
  */
 void _pami_core_fp64_pre1_2pass(uint16_t *dst_e, uint32_t *dst_m, const double *src, int count) {
-	int n;
-	uint32_t x, x2;
-	uint32_t *ep = (uint32_t *)dst_e;
-	uint32_t *mp = (uint32_t *)dst_m;
-	uint32_t align = (unsigned)mp & 0x00ffUL;
-	const double *sp = src;
+        int n;
+        uint32_t x, x2;
+        uint32_t *ep = (uint32_t *)dst_e;
+        uint32_t *mp = (uint32_t *)dst_m;
+        uint32_t align = (unsigned)mp & 0x00ffUL;
+        const double *sp = src;
 
-	// PAMI_assert_debug(((unsigned)mp & 0x00ffUL) == 0x0000);
-	// NOTE: first 4 bytes of mant pkt are unused,
-	//       last 2 bytes of expo pkt are unused...
-	n = count >> 1;
-	while (n-- > 0) {
-		if (((unsigned)mp & 0x00ffUL) == align) {
-			++mp;
-		}
-		split_dbl(sp, &x, mp);
-		++sp;
-		mp += 3;
-		if (((unsigned)mp & 0x00ffUL) == align) {
-			++mp;
-		}
-		split_dbl(sp, &x2, mp);
-		++sp;
-		mp += 3;
-		*ep++ = (x << 16) | x2;
-	}
-	if (count & 1) {
-		if (((unsigned)mp & 0x00ffUL) == align) {
-			++mp;
-		}
-		split_dbl(sp, &x, mp);
-		//++sp;
-		//mp += 3;
-		*((uint16_t *)ep) = x;
-	}
+        // PAMI_assert_debug(((unsigned)mp & 0x00ffUL) == 0x0000);
+        // NOTE: first 4 bytes of mant pkt are unused,
+        //       last 2 bytes of expo pkt are unused...
+        n = count >> 1;
+        while (n-- > 0) {
+                if (((unsigned)mp & 0x00ffUL) == align) {
+                        ++mp;
+                }
+                split_dbl(sp, &x, mp);
+                ++sp;
+                mp += 3;
+                if (((unsigned)mp & 0x00ffUL) == align) {
+                        ++mp;
+                }
+                split_dbl(sp, &x2, mp);
+                ++sp;
+                mp += 3;
+                *ep++ = (x << 16) | x2;
+        }
+        if (count & 1) {
+                if (((unsigned)mp & 0x00ffUL) == align) {
+                        ++mp;
+                }
+                split_dbl(sp, &x, mp);
+                //++sp;
+                //mp += 3;
+                *((uint16_t *)ep) = x;
+        }
 }
 
 /**
@@ -599,42 +599,42 @@ void _pami_core_fp64_pre1_2pass(uint16_t *dst_e, uint32_t *dst_m, const double *
  * \param[in,out] src_dst	Where to load 52-bit mantissa and store 96-bit result
  */
 static inline void adj_mant(uint16_t max_e, uint16_t expo, uint32_t *src_dst) {
-	uint16_t dx;
-	uint32_t *mp = src_dst;
-	int32_t mh, ml, mt;
+        uint16_t dx;
+        uint32_t *mp = src_dst;
+        int32_t mh, ml, mt;
 
-	// NOTE: since we add 6 here, dx will never be zero.
-	dx = (max_e + EXPO_PRE_OFFSET) - expo;
-	if (dx >= 96) {
-		mp[0] = 0;
-		mp[1] = 0;
-		mp[2] = 0;
-	} else if (dx >= 64) {
-		dx -= 64;
-		mt = mp[0];
-		mh = (mt >> 31); // sign only
-		mp[0] = mh;
-		mp[1] = mh;
-		mp[2] = (mt >> dx);
-	} else if (dx >= 32) {
-		dx -= 32;
-		uint32_t umt = mp[1];
-		ml = mp[0];
-		mp[0] = (ml >> 31); // sign only
-		int64_t m = ((int64_t)ml << 32) | umt;
-		m = m >> dx;
-		mp[1] = (m >> 32) & 0x00000000ffffffffULL;
-		mp[2] = m & 0x00000000ffffffffULL;
-	} else {
-		uint32_t uml = mp[1];
-		mt = uml << (32 - dx);
-		mh = mp[0];
-		uint64_t m = ((((uint64_t)mh << 32) | uml) >> dx);
-		ml = m & 0x00000000ffffffffULL;
-		mp[0] = (mh >> dx);	// keep sign
-		mp[1] = ml;
-		mp[2] = mt;
-	}
+        // NOTE: since we add 6 here, dx will never be zero.
+        dx = (max_e + EXPO_PRE_OFFSET) - expo;
+        if (dx >= 96) {
+                mp[0] = 0;
+                mp[1] = 0;
+                mp[2] = 0;
+        } else if (dx >= 64) {
+                dx -= 64;
+                mt = mp[0];
+                mh = (mt >> 31); // sign only
+                mp[0] = mh;
+                mp[1] = mh;
+                mp[2] = (mt >> dx);
+        } else if (dx >= 32) {
+                dx -= 32;
+                uint32_t umt = mp[1];
+                ml = mp[0];
+                mp[0] = (ml >> 31); // sign only
+                int64_t m = ((int64_t)ml << 32) | umt;
+                m = m >> dx;
+                mp[1] = (m >> 32) & 0x00000000ffffffffULL;
+                mp[2] = m & 0x00000000ffffffffULL;
+        } else {
+                uint32_t uml = mp[1];
+                mt = uml << (32 - dx);
+                mh = mp[0];
+                uint64_t m = ((((uint64_t)mh << 32) | uml) >> dx);
+                ml = m & 0x00000000ffffffffULL;
+                mp[0] = (mh >> dx);	// keep sign
+                mp[1] = ml;
+                mp[2] = mt;
+        }
 }
 
 /**
@@ -651,37 +651,37 @@ static inline void adj_mant(uint16_t max_e, uint16_t expo, uint32_t *src_dst) {
  * exponents might be mid-packet. They must however be synced.
  */
 void _pami_core_fp64_pre2_2pass(uint32_t *dst_src_m, uint16_t *src_e,
-				uint16_t *src_ee, int count) {
-	uint32_t *oe = (uint32_t *)src_e;
-	uint32_t *xe = (uint32_t *)src_ee;
-	uint32_t *mp = dst_src_m;
-	uint32_t mxe, exp;
-	uint32_t align = (unsigned)mp & 0x00ffUL;
-	int n;
-	// PAMI_assert_debug(((unsigned)mp & 0x00ffUL) == 0x0000);
-	// PAMI_assert_debug((((unsigned)oe ^ (unsigned)xe) & 0x00ffUL) == 0x0000);
-	n = count >> 1;
-	while (n-- > 0) {
-		mxe = *xe++;
-		exp = *oe++;
-		if (((unsigned)mp & 0x00ffUL) == align) {
-			++mp;
-		}
-		adj_mant(mxe >> 16, exp >> 16, mp);
-		mp += 3;
-		if (((unsigned)mp & 0x00ffUL) == align) {
-			++mp;
-		}
-		adj_mant(mxe & 0x0ffffUL, exp & 0x0ffffUL, mp);
-		mp += 3;
-	}
-	if (count & 1) {
-		if (((unsigned)mp & 0x00ffUL) == align) {
-			++mp;
-		}
-		adj_mant(*((uint16_t *)xe), *((uint16_t *)oe), mp);
-		// mp += 3;
-	}
+                                uint16_t *src_ee, int count) {
+        uint32_t *oe = (uint32_t *)src_e;
+        uint32_t *xe = (uint32_t *)src_ee;
+        uint32_t *mp = dst_src_m;
+        uint32_t mxe, exp;
+        uint32_t align = (unsigned)mp & 0x00ffUL;
+        int n;
+        // PAMI_assert_debug(((unsigned)mp & 0x00ffUL) == 0x0000);
+        // PAMI_assert_debug((((unsigned)oe ^ (unsigned)xe) & 0x00ffUL) == 0x0000);
+        n = count >> 1;
+        while (n-- > 0) {
+                mxe = *xe++;
+                exp = *oe++;
+                if (((unsigned)mp & 0x00ffUL) == align) {
+                        ++mp;
+                }
+                adj_mant(mxe >> 16, exp >> 16, mp);
+                mp += 3;
+                if (((unsigned)mp & 0x00ffUL) == align) {
+                        ++mp;
+                }
+                adj_mant(mxe & 0x0ffffUL, exp & 0x0ffffUL, mp);
+                mp += 3;
+        }
+        if (count & 1) {
+                if (((unsigned)mp & 0x00ffUL) == align) {
+                        ++mp;
+                }
+                adj_mant(*((uint16_t *)xe), *((uint16_t *)oe), mp);
+                // mp += 3;
+        }
 }
 
 /**
@@ -694,83 +694,83 @@ void _pami_core_fp64_pre2_2pass(uint32_t *dst_src_m, uint16_t *src_e,
  * \param[out] dst	Where to store result (double, as two 32-bit ints)
  */
 static inline void regen(int32_t mh, int32_t ml, int32_t mt, uint16_t ex, double *dst) {
-	uint32_t *dp = (uint32_t *)dst;
-	uint32_t neg, dx = 0;
-	int32_t nx;
+        uint32_t *dp = (uint32_t *)dst;
+        uint32_t neg, dx = 0;
+        int32_t nx;
 
-	if (mh | ml | mt) {
-		// only normalize if non-zero
-		neg = (mh & 0x80000000UL);
-		if (neg) {
-			asm volatile (
-				"nor %0,%0,%0;"
-				"addic %0,%0,1;"
-				"nor %1,%1,%1;"
-				"addze %1,%1;"
-				"nor %2,%2,%2;"
-				"addze %2,%2;"
-				: "+r"(mt),
-				  "+r"(ml),
-				  "+r"(mh)
-				);
-		}
-		if (ex >= 0x7ff) {
-			dp[0] = 0x07ff7000UL;	// NAN
-			dp[1] = 0;
-			return;
-		}
-		nx = ex + EXPO_POST_OFFSET;
-		if (mh) {
-		} else if (ml) {
-			mh = ml;
-			ml = mt;
-			mt = 0;
-			nx -= 32;
-		} else {
-			mh = mt;
-			ml = 0;
-			mt = 0;
-			nx -= 64;
-		}
-		asm volatile (
-			"cntlzw %1,%0"
-			: "+r"(mh),
-			  "+r"(dx)
-			);
-		nx -= dx;
-		if (nx >= 0x7ff) {
-			dp[0] = 0x07ff0000UL;	// INF
-			dp[1] = 0;
-			return;
-		}
-		if (dx < 11) {
-			// shift right...
-			dx = 11 - dx;
-			uint32_t uml = ml;
-			ml = ((((uint64_t)mh << 32) | uml) >> dx) & 0x00000000ffffffffULL;
-			mh = mh >> dx;
-		} else {
-			dx -= 11;
-			if (nx < 1) {
-				nx = 0;
-				dx = ex + EXPO_PRE_OFFSET - (ex != 0);
-			}
-			if (dx) {
-				dx = 32 - dx;
-				uint32_t uml = ml;
-				uint32_t umt = mt;
-				mh = ((((uint64_t)mh << 32) |
-					uml) >> dx) & 0x00000000ffffffffULL;
-				ml = ((((uint64_t)uml << 32) |
-					umt) >> dx) & 0x00000000ffffffffULL;
-			}
-		}
-		dp[0] = neg | ((nx & 0x07ff) << 20) | (mh & 0x000fffffUL);
-		dp[1] = ml;
-	} else {
-		dp[0] = 0;
-		dp[1] = 0;
-	}
+        if (mh | ml | mt) {
+                // only normalize if non-zero
+                neg = (mh & 0x80000000UL);
+                if (neg) {
+                        asm volatile (
+                                "nor %0,%0,%0;"
+                                "addic %0,%0,1;"
+                                "nor %1,%1,%1;"
+                                "addze %1,%1;"
+                                "nor %2,%2,%2;"
+                                "addze %2,%2;"
+                                : "+r"(mt),
+                                  "+r"(ml),
+                                  "+r"(mh)
+                                );
+                }
+                if (ex >= 0x7ff) {
+                        dp[0] = 0x07ff7000UL;	// NAN
+                        dp[1] = 0;
+                        return;
+                }
+                nx = ex + EXPO_POST_OFFSET;
+                if (mh) {
+                } else if (ml) {
+                        mh = ml;
+                        ml = mt;
+                        mt = 0;
+                        nx -= 32;
+                } else {
+                        mh = mt;
+                        ml = 0;
+                        mt = 0;
+                        nx -= 64;
+                }
+                asm volatile (
+                        "cntlzw %1,%0"
+                        : "+r"(mh),
+                          "+r"(dx)
+                        );
+                nx -= dx;
+                if (nx >= 0x7ff) {
+                        dp[0] = 0x07ff0000UL;	// INF
+                        dp[1] = 0;
+                        return;
+                }
+                if (dx < 11) {
+                        // shift right...
+                        dx = 11 - dx;
+                        uint32_t uml = ml;
+                        ml = ((((uint64_t)mh << 32) | uml) >> dx) & 0x00000000ffffffffULL;
+                        mh = mh >> dx;
+                } else {
+                        dx -= 11;
+                        if (nx < 1) {
+                                nx = 0;
+                                dx = ex + EXPO_PRE_OFFSET - (ex != 0);
+                        }
+                        if (dx) {
+                                dx = 32 - dx;
+                                uint32_t uml = ml;
+                                uint32_t umt = mt;
+                                mh = ((((uint64_t)mh << 32) |
+                                        uml) >> dx) & 0x00000000ffffffffULL;
+                                ml = ((((uint64_t)uml << 32) |
+                                        umt) >> dx) & 0x00000000ffffffffULL;
+                        }
+                }
+                dp[0] = neg | ((nx & 0x07ff) << 20) | (mh & 0x000fffffUL);
+                dp[1] = ml;
+        } else {
+                dp[0] = 0;
+                dp[1] = 0;
+        }
 }
 
 /**
@@ -785,44 +785,44 @@ static inline void regen(int32_t mh, int32_t ml, int32_t mt, uint16_t ex, double
  * therefore we don't have to worry about exponent signs.
  */
 void _pami_core_fp64_post_2pass(double *dst, uint16_t *src_e, uint32_t *src_m, int count) {
-	uint32_t *ep = (uint32_t *)src_e;
-	uint32_t *mp = src_m;
-	double *dp = dst;
-	uint32_t ux;
-	int32_t mh, ml, mt;
-	uint32_t align = (unsigned)mp & 0x00ffUL;
+        uint32_t *ep = (uint32_t *)src_e;
+        uint32_t *mp = src_m;
+        double *dp = dst;
+        uint32_t ux;
+        int32_t mh, ml, mt;
+        uint32_t align = (unsigned)mp & 0x00ffUL;
 
-	// PAMI_assert_debug(((unsigned)mp & 0x00ffUL) == 0x0000);
-	// PAMI_assert_debug(n <= EXPO_PER_PKT);
-	int n = count >> 1;
-	while (n-- > 0) {
-		ux = *ep++;
-		if (((unsigned)mp & 0x00ffUL) == align) {
-			++mp;
-		}
-		mh = *mp++;
-		ml = *mp++;
-		mt = *mp++;
-		regen(mh, ml, mt, (ux >> 16), dp);
-		++dp;
+        // PAMI_assert_debug(((unsigned)mp & 0x00ffUL) == 0x0000);
+        // PAMI_assert_debug(n <= EXPO_PER_PKT);
+        int n = count >> 1;
+        while (n-- > 0) {
+                ux = *ep++;
+                if (((unsigned)mp & 0x00ffUL) == align) {
+                        ++mp;
+                }
+                mh = *mp++;
+                ml = *mp++;
+                mt = *mp++;
+                regen(mh, ml, mt, (ux >> 16), dp);
+                ++dp;
 
-		if (((unsigned)mp & 0x00ffUL) == align) {
-			++mp;
-		}
-		mh = *mp++;
-		ml = *mp++;
-		mt = *mp++;
-		regen(mh, ml, mt, (ux & 0x0000ffffUL), dp);
-		++dp;
-	}
-	if (count & 1) {
-		if (((unsigned)mp & 0x00ffUL) == align) {
-			++mp;
-		}
-		mh = *mp++;
-		ml = *mp++;
-		mt = *mp++;
-		regen(mh, ml, mt, *((uint16_t *)ep), dp);
-		//++dp;
-	}
+                if (((unsigned)mp & 0x00ffUL) == align) {
+                        ++mp;
+                }
+                mh = *mp++;
+                ml = *mp++;
+                mt = *mp++;
+                regen(mh, ml, mt, (ux & 0x0000ffffUL), dp);
+                ++dp;
+        }
+        if (count & 1) {
+                if (((unsigned)mp & 0x00ffUL) == align) {
+                        ++mp;
+                }
+                mh = *mp++;
+                ml = *mp++;
+                mt = *mp++;
+                regen(mh, ml, mt, *((uint16_t *)ep), dp);
+                //++dp;
+        }
 }

@@ -172,13 +172,13 @@ namespace CCMI
         _buflen         =  len;
         _buf            =  buf;
 
-	unsigned connid =
-	  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
-	_msend.connection_id = connid;
+        unsigned connid =
+          _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
+        _msend.connection_id = connid;
       }
 
       inline void setPipelineWidth (int pwidth) {
-	_pipelinewidth = pwidth;
+        _pipelinewidth = pwidth;
       }
 
       inline PAMI_Request_t * getRecvRequest ()

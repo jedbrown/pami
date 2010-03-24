@@ -52,17 +52,17 @@ namespace CCMI
             return c;
           }
       };
-      
+
       ///
       /// \brief Binomial barrier
       ///
       template <class T_Schedule, AnalyzeFn afn>
       class BarrierT : public CCMI::Executor::Composite
       {
-	///
-	/// \brief The executor for barrier protocol
-	///
-	CCMI::Executor::BarrierExec         _myexecutor;
+        ///
+        /// \brief The executor for barrier protocol
+        ///
+        CCMI::Executor::BarrierExec         _myexecutor;
         ///
         /// \brief The schedule for barrier protocol
         ///
@@ -76,18 +76,18 @@ namespace CCMI
         /// \param[in] geometry    Geometry object
         ///
         BarrierT  (Interfaces::NativeInterface          * mInterface,
-		   ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS>     * cmgr,
+                   ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS>     * cmgr,
                    pami_geometry_t                         geometry,
-		   void                                 * cmd,
+                   void                                 * cmd,
                    pami_event_function                     fn,
                    void                                 * cookie):
-	_myexecutor(((PAMI_GEOMETRY_CLASS *)geometry)->nranks(),
-		    ((PAMI_GEOMETRY_CLASS *)geometry)->ranks(),
-		    ((PAMI_GEOMETRY_CLASS *)geometry)->comm(),
-		    0,
-		    mInterface),
-	  _myschedule (__global.mapping.task(), (PAMI::Topology *)((PAMI_GEOMETRY_CLASS *)geometry)->getTopology(0))
-	{
+        _myexecutor(((PAMI_GEOMETRY_CLASS *)geometry)->nranks(),
+                    ((PAMI_GEOMETRY_CLASS *)geometry)->ranks(),
+                    ((PAMI_GEOMETRY_CLASS *)geometry)->comm(),
+                    0,
+                    mInterface),
+          _myschedule (__global.mapping.task(), (PAMI::Topology *)((PAMI_GEOMETRY_CLASS *)geometry)->getTopology(0))
+        {
           TRACE_INIT((stderr,"<%p>CCMI::Adaptors::Barrier::BarrierT::ctor()\n",
                      this));//, geometry->comm()));
           _myexecutor.setCommSchedule (&_myschedule);
@@ -98,47 +98,47 @@ namespace CCMI
           return((AnalyzeFn) afn)(geometry);
         }
 
-	virtual void start() {
-	  _myexecutor.setDoneCallback (_cb_done, _clientdata);
-	  _myexecutor.start();
-	}
-        
+        virtual void start() {
+          _myexecutor.setDoneCallback (_cb_done, _clientdata);
+          _myexecutor.start();
+        }
 
-	static void *   cb_head   (const pami_quad_t    * info,
-				   unsigned              count,
-				   unsigned              conn_id,
-				   unsigned              peer,
-				   unsigned              sndlen,
-				   void                * arg,
-				   size_t              * rcvlen,
-				   pami_pipeworkqueue_t **recvpwq,
-				   PAMI_Callback_t  * cb_done)
-	{
-	  CollHeaderData  *cdata = (CollHeaderData *) info;
-	  CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arg;
 
-	  PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
-	  if(geometry == NULL)
-	  {
-	    geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (cdata->_comm);
-	    PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
-	  }
-	  assert(geometry != NULL);
-	  BarrierT *composite = (BarrierT*) geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
-	  CCMI_assert (composite != NULL);
-	  TRACE_INIT((stderr,"<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",
-		      factory,cdata->_comm,composite));
+        static void *   cb_head   (const pami_quad_t    * info,
+                                   unsigned              count,
+                                   unsigned              conn_id,
+                                   unsigned              peer,
+                                   unsigned              sndlen,
+                                   void                * arg,
+                                   size_t              * rcvlen,
+                                   pami_pipeworkqueue_t **recvpwq,
+                                   PAMI_Callback_t  * cb_done)
+        {
+          CollHeaderData  *cdata = (CollHeaderData *) info;
+          CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arg;
 
-	  //Override poly morphism
-	  composite->_myexecutor.notifyRecv (peer, *info, NULL, 0);
+          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
+          if(geometry == NULL)
+          {
+            geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (cdata->_comm);
+            PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
+          }
+          assert(geometry != NULL);
+          BarrierT *composite = (BarrierT*) geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
+          CCMI_assert (composite != NULL);
+          TRACE_INIT((stderr,"<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",
+                      factory,cdata->_comm,composite));
 
-	  *rcvlen    = 0;
-	  *recvpwq   = 0;
-	  cb_done->function    = NULL;
-	  cb_done->clientdata = NULL;
+          //Override poly morphism
+          composite->_myexecutor.notifyRecv (peer, *info, NULL, 0);
 
-	  return NULL;
-	}
+          *rcvlen    = 0;
+          *recvpwq   = 0;
+          cb_done->function    = NULL;
+          cb_done->clientdata = NULL;
+
+          return NULL;
+        }
       }; //-BarrierT
 
 //////////////////////////////////////////////////////////////////////////////

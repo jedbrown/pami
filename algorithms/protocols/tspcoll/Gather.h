@@ -66,7 +66,7 @@ namespace TSPColl
     static void cb_senddone (void *arg);
     static __pgasrt_local_addr_t
       cb_incoming (const struct __pgasrt_AMHeader_t *,
-		   void (**)(void *,void *), void **);
+                   void (**)(void *,void *), void **);
     static void cb_recvcomplete (void * unused, void * arg);
     Barrier _barrier;
   };

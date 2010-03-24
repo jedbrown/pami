@@ -171,7 +171,7 @@ namespace CCMI
                                                unsigned color)
         {
           CCMI::Executor::OldComposite *composite =(CCMI::Executor::OldComposite *)
-	    ((PAMI_GEOMETRY_CLASS *)_cb_geometry(comm))->getAllreduceComposite(color);
+            ((PAMI_GEOMETRY_CLASS *)_cb_geometry(comm))->getAllreduceComposite(color);
           CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *executor = (composite)?
                                               (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *) composite->getExecutor (0):
                                               (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *)NULL;

@@ -109,13 +109,13 @@ namespace PAMI
 #ifdef ENABLE_UDP_DEVICE
         _udp = UdpDevice::Factory::generate(clientid, num_ctx, mm);
 #endif
-	_progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
-	_atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
-	_wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
-	_wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
-	_localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
-	_localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
-	_localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+        _progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
+        _atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
+        _wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
+        _wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
+        _localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+        _localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
+        _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
        return PAMI_SUCCESS;
     }
 
@@ -136,21 +136,21 @@ namespace PAMI
      * \param[in] contextid    Context ID (index)
      */
     inline pami_result_t init(size_t clientid, size_t contextid, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm) {
-	PAMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
 #ifdef ENABLE_SHMEM_DEVICE
-	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
+        ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
 #endif
 #ifdef ENABLE_UDP_DEVICE
-	UdpDevice::Factory::init(_udp, clientid, contextid, clt, ctx, mm, _generics);
+        UdpDevice::Factory::init(_udp, clientid, contextid, clt, ctx, mm, _generics);
 #endif
-	PAMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
-	PAMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
-	return PAMI_SUCCESS;
+        PAMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
+        PAMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
+        return PAMI_SUCCESS;
     }
 
     /**
@@ -163,7 +163,7 @@ namespace PAMI
      * \param[in] contextid    Context ID (index)
      */
     inline size_t advance(size_t clientid, size_t contextid) {
-	size_t events = 0;
+        size_t events = 0;
         events += PAMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
 #ifdef ENABLE_SHMEM_DEVICE
         events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
@@ -172,13 +172,13 @@ namespace PAMI
         events += UdpDevice::Factory::advance(_udp, clientid, contextid);
 #endif
         events += PAMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
-	events += PAMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
-	events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
-	events += PAMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
-	events += PAMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
-	events += PAMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
-	events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
-	return events;
+        events += PAMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
+        events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
+        events += PAMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
+        events += PAMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
+        events += PAMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
+        events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
+        return events;
     }
 
     PAMI::Device::Generic::Device *_generics; // need better name...
@@ -209,7 +209,7 @@ namespace PAMI
           _contextid (contextid),
           _mm (addr, bytes),
           _sysdep (_mm),
-	  _devices(devices)
+          _devices(devices)
       {
         TRACE_ERR((stderr, ">> Context::Context()\n"));
         // ----------------------------------------------------------------
@@ -219,7 +219,7 @@ namespace PAMI
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
-	_devices->init(_clientid, _contextid, _client, _context, &_mm);
+        _devices->init(_clientid, _contextid, _client, _context, &_mm);
         TRACE_ERR((stderr, "<< Context::Context()\n"));
       }
 
@@ -242,11 +242,11 @@ namespace PAMI
       inline pami_result_t post_impl (pami_work_t *state, pami_work_function work_fn, void * cookie)
       {
         PAMI::Device::Generic::GenericThread *work;
-	COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
-	work = new (state) PAMI::Device::Generic::GenericThread(work_fn, cookie);
-	work->setStatus(PAMI::Device::OneShot);
-	_devices->_generics[_contextid].postThread(work);
-	return PAMI_SUCCESS;
+        COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
+        work = new (state) PAMI::Device::Generic::GenericThread(work_fn, cookie);
+        work->setStatus(PAMI::Device::OneShot);
+        _devices->_generics[_contextid].postThread(work);
+        return PAMI_SUCCESS;
       }
 
       inline size_t advance_impl (size_t maximum, pami_result_t & result)
@@ -259,7 +259,7 @@ namespace PAMI
         //std::cout << "<" << __global.mapping.task() << ">: advance  max= " << maximum << std::endl;
         for (i = 0; i < maximum && events == 0; i++)
           {
-		events += _devices->advance(_clientid, _contextid);
+                events += _devices->advance(_clientid, _contextid);
           }
         //std::cout << "<" << __global.mapping.task() << ">: advance  events= " << events << std::endl;
 
@@ -271,21 +271,21 @@ namespace PAMI
       inline pami_result_t lock_impl ()
       {
         //_lock.acquire ();
-	return PAMI_SUCCESS;
+        return PAMI_SUCCESS;
       }
 
       inline pami_result_t trylock_impl ()
       {
         //if (_lock.tryAcquire ()) {
-		return PAMI_SUCCESS;
-	//}
-	//return PAMI_EAGAIN;
+                return PAMI_SUCCESS;
+        //}
+        //return PAMI_EAGAIN;
       }
 
       inline pami_result_t unlock_impl ()
       {
         //_lock.release ();
-	return PAMI_SUCCESS;
+        return PAMI_SUCCESS;
       }
 
       inline pami_result_t send_impl (pami_send_t * parameters)
@@ -450,8 +450,8 @@ namespace PAMI
                                                     void                     * cookie,
                                                     pami_collective_hint_t      options)
       {
-	PAMI_abort();
-	return PAMI_SUCCESS;
+        PAMI_abort();
+        return PAMI_SUCCESS;
       }
 
       inline pami_result_t geometry_algorithms_num_impl (pami_geometry_t geometry,
@@ -470,8 +470,8 @@ namespace PAMI
                                                        pami_metadata_t   *mdata1,
                                                        int               num1)
       {
-	PAMI_abort();
-	return PAMI_SUCCESS;
+        PAMI_abort();
+        return PAMI_SUCCESS;
       }
 
       inline pami_result_t dispatch_impl (size_t                     id,

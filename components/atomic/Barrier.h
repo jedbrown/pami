@@ -135,43 +135,43 @@ namespace Interface
 template <class T>
 inline void Barrier<T>::init(PAMI::Memory::MemoryManager *mm, size_t participants, bool master)
 {
-	static_cast<T*>(this)->init_impl(mm, participants, master);
+        static_cast<T*>(this)->init_impl(mm, participants, master);
 }
 
 template <class T>
 inline pami_result_t Barrier<T>::enter()
 {
-	return static_cast<T*>(this)->enter_impl();
+        return static_cast<T*>(this)->enter_impl();
 }
 
 template <class T>
 inline void Barrier<T>::dump(const char *string)
 {
-	static_cast<T*>(this)->dump_impl(string);
+        static_cast<T*>(this)->dump_impl(string);
 }
 
 template <class T>
 inline void Barrier<T>::enterPoll(pollFcn fcn, void *arg)
 {
-	static_cast<T*>(this)->enterPoll_impl(fcn, arg);
+        static_cast<T*>(this)->enterPoll_impl(fcn, arg);
 }
 
 template <class T>
 inline void Barrier<T>::pollInit()
 {
-	static_cast<T*>(this)->pollInit_impl();
+        static_cast<T*>(this)->pollInit_impl();
 }
 
 template <class T>
 inline barrierPollStatus Barrier<T>::poll()
 {
-	return static_cast<T*>(this)->poll_impl();
+        return static_cast<T*>(this)->poll_impl();
 }
 
 template <class T>
 inline void *Barrier<T>::returnBarrier()
 {
-	return static_cast<T*>(this)->returnBarrier_impl();
+        return static_cast<T*>(this)->returnBarrier_impl();
 }
 
 }; // namespace Interface

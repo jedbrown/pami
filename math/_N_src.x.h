@@ -31,10 +31,10 @@ TYPE buf2[MATH_MAX_NSRC];
 TYPE buf3[MATH_MAX_NSRC];
 for (; n < count - 3; n += 4) {
     for (m = 0; m < nsrc; ++m) {
-	buf0[m] = srcs[m][n+0];
-	buf1[m] = srcs[m][n+1];
-	buf2[m] = srcs[m][n+2];
-	buf3[m] = srcs[m][n+3];
+        buf0[m] = srcs[m][n+0];
+        buf1[m] = srcs[m][n+1];
+        buf2[m] = srcs[m][n+2];
+        buf3[m] = srcs[m][n+3];
     }
 
     rbuffer0 = OP(buf0[0],buf0[1]);
@@ -42,10 +42,10 @@ for (; n < count - 3; n += 4) {
     rbuffer2 = OP(buf2[0],buf2[1]);
     rbuffer3 = OP(buf3[0],buf3[1]);
     for (m = 2; m < nsrc; ++m) {
-	rbuffer0 = OP(rbuffer0,buf0[m]);
-	rbuffer1 = OP(rbuffer1,buf1[m]);
-	rbuffer2 = OP(rbuffer2,buf2[m]);
-	rbuffer3 = OP(rbuffer3,buf3[m]);
+        rbuffer0 = OP(rbuffer0,buf0[m]);
+        rbuffer1 = OP(rbuffer1,buf1[m]);
+        rbuffer2 = OP(rbuffer2,buf2[m]);
+        rbuffer3 = OP(rbuffer3,buf3[m]);
     }
 
     dst[n+0] = rbuffer0;
@@ -56,11 +56,11 @@ for (; n < count - 3; n += 4) {
 #endif
 for (; n < count; n++) {
     for (m = 0; m < nsrc; ++m) {
-	buf0[m] = srcs[m][n];
+        buf0[m] = srcs[m][n];
     }
     rbuffer0 = OP(buf0[0],buf0[1]);
     for (m = 2; m < nsrc; ++m) {
-	rbuffer0 = OP(rbuffer0,buf0[m]);
+        rbuffer0 = OP(rbuffer0,buf0[m]);
     }
     dst[n] = rbuffer0;
 }

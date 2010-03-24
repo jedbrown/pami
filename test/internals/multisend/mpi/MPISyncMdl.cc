@@ -55,11 +55,11 @@ int main(int argc, char ** argv)
   }
   size_t num_tasks = configuration.value.intval;
 #else
-	task_id = __global.mapping.task();
-	num_tasks = __global.mapping.size();
-	context = NULL;
-	PAMI::Memory::MemoryManager mm;
-	initializeMemoryManager("bgp multicast test", 1024*1024, mm);
+        task_id = __global.mapping.task();
+        num_tasks = __global.mapping.size();
+        context = NULL;
+        PAMI::Memory::MemoryManager mm;
+        initializeMemoryManager("bgp multicast test", 1024*1024, mm);
 #endif
   if(task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 

@@ -21,30 +21,30 @@
 namespace PAMI {
 namespace Mutex {
 
-	template <class T_Counter>
-	class CounterMutex : public PAMI::Atomic::Interface::Mutex<CounterMutex<T_Counter> > {
-	public:
-		CounterMutex() {}
-		~CounterMutex() {}
-		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-			_counter.init(mm);
-		}
-		void acquire_impl() {
-			while (_counter.fetch_and_inc() != 0);
-		}
-		void release_impl() {
-			_counter.fetch_and_clear();
-		}
-		bool tryAcquire_impl() {
-			return (_counter.fetch_and_inc() == 0) ? true : false;
-		}
-		bool isLocked_impl() {
-			return (_counter.fetch() > 0) ? true : false;
-		}
-		void *returnLock_impl() { return _counter.returnLock(); }
-	protected:
-		T_Counter _counter;
-	}; // class CounterMutex
+        template <class T_Counter>
+        class CounterMutex : public PAMI::Atomic::Interface::Mutex<CounterMutex<T_Counter> > {
+        public:
+                CounterMutex() {}
+                ~CounterMutex() {}
+                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+                        _counter.init(mm);
+                }
+                void acquire_impl() {
+                        while (_counter.fetch_and_inc() != 0);
+                }
+                void release_impl() {
+                        _counter.fetch_and_clear();
+                }
+                bool tryAcquire_impl() {
+                        return (_counter.fetch_and_inc() == 0) ? true : false;
+                }
+                bool isLocked_impl() {
+                        return (_counter.fetch() > 0) ? true : false;
+                }
+                void *returnLock_impl() { return _counter.returnLock(); }
+        protected:
+                T_Counter _counter;
+        }; // class CounterMutex
 
 }; // Mutex namespace
 }; // PAMI namespace

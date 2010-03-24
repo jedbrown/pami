@@ -53,61 +53,61 @@ void _pami_core_fp32_sum(float *dst, const float **srcs, int nsrc, int count) {
 }
 
 void _pami_core_fp32_int32_maxloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count) {
-	register int n = 0, m, o;
-	for (n = 0; n < count; n++) {
-		m = 0;  // assume src0 > src1
-		for (o = 1; o < nsrc; ++o) {
-			if (srcs[m][n].a < srcs[o][n].a ||
-			    (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
-				m = o;
-			}
-		}
-		dst[n].a = srcs[m][n].a;
-		dst[n].b = srcs[m][n].b;
-	}
+        register int n = 0, m, o;
+        for (n = 0; n < count; n++) {
+                m = 0;  // assume src0 > src1
+                for (o = 1; o < nsrc; ++o) {
+                        if (srcs[m][n].a < srcs[o][n].a ||
+                            (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
+                                m = o;
+                        }
+                }
+                dst[n].a = srcs[m][n].a;
+                dst[n].b = srcs[m][n].b;
+        }
 }
 
 void _pami_core_fp32_fp32_maxloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count) {
-	register int n = 0, m, o;
-	for (n = 0; n < count; n++) {
-		m = 0;  // assume src0 > src1
-		for (o = 1; o < nsrc; ++o) {
-			if (srcs[m][n].a < srcs[o][n].a ||
-			    (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
-				m = o;
-			}
-		}
-		dst[n].a = srcs[m][n].a;
-		dst[n].b = srcs[m][n].b;
-	}
+        register int n = 0, m, o;
+        for (n = 0; n < count; n++) {
+                m = 0;  // assume src0 > src1
+                for (o = 1; o < nsrc; ++o) {
+                        if (srcs[m][n].a < srcs[o][n].a ||
+                            (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
+                                m = o;
+                        }
+                }
+                dst[n].a = srcs[m][n].a;
+                dst[n].b = srcs[m][n].b;
+        }
 }
 
 void _pami_core_fp32_int32_minloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count) {
-	register int n = 0, m, o;
-	for (n = 0; n < count; n++) {
-		m = 0;  // assume src0 < src1
-		for (o = 1; o < nsrc; ++o) {
-			if (srcs[m][n].a > srcs[o][n].a ||
-			    (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
-				m = o;
-			}
-		}
-		dst[n].a = srcs[m][n].a;
-		dst[n].b = srcs[m][n].b;
-	}
+        register int n = 0, m, o;
+        for (n = 0; n < count; n++) {
+                m = 0;  // assume src0 < src1
+                for (o = 1; o < nsrc; ++o) {
+                        if (srcs[m][n].a > srcs[o][n].a ||
+                            (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
+                                m = o;
+                        }
+                }
+                dst[n].a = srcs[m][n].a;
+                dst[n].b = srcs[m][n].b;
+        }
 }
 
 void _pami_core_fp32_fp32_minloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count) {
-	register int n = 0, m, o;
-	for (n = 0; n < count; n++) {
-		m = 0;  // assume src0 < src1
-		for (o = 1; o < nsrc; ++o) {
-			if (srcs[m][n].a > srcs[o][n].a ||
-			    (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
-				m = o;
-			}
-		}
-		dst[n].a = srcs[m][n].a;
-		dst[n].b = srcs[m][n].b;
-	}
+        register int n = 0, m, o;
+        for (n = 0; n < count; n++) {
+                m = 0;  // assume src0 < src1
+                for (o = 1; o < nsrc; ++o) {
+                        if (srcs[m][n].a > srcs[o][n].a ||
+                            (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
+                                m = o;
+                        }
+                }
+                dst[n].a = srcs[m][n].a;
+                dst[n].b = srcs[m][n].b;
+        }
 }

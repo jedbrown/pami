@@ -26,13 +26,13 @@ inline void asyncbcast_advance (unsigned * srcbuf, unsigned src_count, unsigned 
   TRACE_TEST_VERBOSE((stderr, "%s:%s   src %p, count %d, root %d\n", argv0,__PRETTY_FUNCTION__, srcbuf, src_count, root));
   done = 0;
   CCMI_Broadcast(&asyncbcast_reg,
-		 &asyncbcast_request,
-		 common_done,
-		 consistency,
-		 &geometry,
-		 root,
-		 (char *)srcbuf,
-		 src_count*sizeof(unsigned));
+                 &asyncbcast_request,
+                 common_done,
+                 consistency,
+                 &geometry,
+                 root,
+                 (char *)srcbuf,
+                 src_count*sizeof(unsigned));
   while(!done)
   {
     CCMI_Generic_adaptor_advance();

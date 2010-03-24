@@ -160,36 +160,36 @@ namespace PAMI
             ///
             inline void setProducerWakeup(void *vec);
 
-	    /// \brief register user-defined info for consumer
-	    ///
-	    /// Cooperating consumer/producers may share information using
-	    /// these interfaces. The information is static, i.e. after a
-	    /// call to setConsumerUserInfo() with values A and B, all subsequent
-	    /// calls to getConsumerUserInfo() will return values A and B
-	    /// (until another call to setConsumerUserInfo() is made).
-	    ///
-	    /// "Producer" and "Consumer" here are just convenience references,
-	    /// either side (or potentially third-parties) may use these
-	    /// methods as desired to set/get the info.
-	    ///
-	    /// \param[in] word1	First piece of info
-	    /// \param[in] word2	Second piece of info
-	    inline void setConsumerUserInfo(void *word1, void *word2);
+            /// \brief register user-defined info for consumer
+            ///
+            /// Cooperating consumer/producers may share information using
+            /// these interfaces. The information is static, i.e. after a
+            /// call to setConsumerUserInfo() with values A and B, all subsequent
+            /// calls to getConsumerUserInfo() will return values A and B
+            /// (until another call to setConsumerUserInfo() is made).
+            ///
+            /// "Producer" and "Consumer" here are just convenience references,
+            /// either side (or potentially third-parties) may use these
+            /// methods as desired to set/get the info.
+            ///
+            /// \param[in] word1	First piece of info
+            /// \param[in] word2	Second piece of info
+            inline void setConsumerUserInfo(void *word1, void *word2);
 
-	    /// \brief register user-defined info for producer
-	    /// \param[in] word1	First piece of info
-	    /// \param[in] word2	Second piece of info
-	    inline void setProducerUserInfo(void *word1, void *word2);
+            /// \brief register user-defined info for producer
+            /// \param[in] word1	First piece of info
+            /// \param[in] word2	Second piece of info
+            inline void setProducerUserInfo(void *word1, void *word2);
 
-	    /// \brief get user-defined info for consumer
-	    /// \param[in] word1	First piece of info
-	    /// \param[in] word2	Second piece of info
-	    inline void getConsumerUserInfo(void **word1, void **word2);
+            /// \brief get user-defined info for consumer
+            /// \param[in] word1	First piece of info
+            /// \param[in] word2	Second piece of info
+            inline void getConsumerUserInfo(void **word1, void **word2);
 
-	    /// \brief register user-defined info for producer
-	    /// \param[in] word1	First piece of info
-	    /// \param[in] word2	Second piece of info
-	    inline void getProducerUserInfo(void **word1, void **word2);
+            /// \brief register user-defined info for producer
+            /// \param[in] word1	First piece of info
+            /// \param[in] word2	Second piece of info
+            inline void getProducerUserInfo(void **word1, void **word2);
 
             ///
             /// \brief Return the maximum number of bytes that can be produced into this work queue.
@@ -345,25 +345,25 @@ namespace PAMI
             return static_cast<T_PipeWorkQueue*>(this)->setProducerWakeup_impl(vec);
         }
 
-	template <class T_PipeWorkQueue>
-	void PipeWorkQueue<T_PipeWorkQueue>::setConsumerUserInfo(void *word1, void *word2) {
-		static_cast<T_PipeWorkQueue*>(this)->setConsumerUserInfo_impl(word1, word2);
-	}
+        template <class T_PipeWorkQueue>
+        void PipeWorkQueue<T_PipeWorkQueue>::setConsumerUserInfo(void *word1, void *word2) {
+                static_cast<T_PipeWorkQueue*>(this)->setConsumerUserInfo_impl(word1, word2);
+        }
 
-	template <class T_PipeWorkQueue>
-	void PipeWorkQueue<T_PipeWorkQueue>::setProducerUserInfo(void *word1, void *word2) {
-		static_cast<T_PipeWorkQueue*>(this)->setProducerUserInfo_impl(word1, word2);
-	}
+        template <class T_PipeWorkQueue>
+        void PipeWorkQueue<T_PipeWorkQueue>::setProducerUserInfo(void *word1, void *word2) {
+                static_cast<T_PipeWorkQueue*>(this)->setProducerUserInfo_impl(word1, word2);
+        }
 
-	template <class T_PipeWorkQueue>
-	void PipeWorkQueue<T_PipeWorkQueue>::getConsumerUserInfo(void **word1, void **word2) {
-		static_cast<T_PipeWorkQueue*>(this)->getConsumerUserInfo_impl(word1, word2);
-	}
+        template <class T_PipeWorkQueue>
+        void PipeWorkQueue<T_PipeWorkQueue>::getConsumerUserInfo(void **word1, void **word2) {
+                static_cast<T_PipeWorkQueue*>(this)->getConsumerUserInfo_impl(word1, word2);
+        }
 
-	template <class T_PipeWorkQueue>
-	void PipeWorkQueue<T_PipeWorkQueue>::getProducerUserInfo(void **word1, void **word2) {
-		static_cast<T_PipeWorkQueue*>(this)->getProducerUserInfo_impl(word1, word2);
-	}
+        template <class T_PipeWorkQueue>
+        void PipeWorkQueue<T_PipeWorkQueue>::getProducerUserInfo(void **word1, void **word2) {
+                static_cast<T_PipeWorkQueue*>(this)->getProducerUserInfo_impl(word1, word2);
+        }
 
         template <class T_PipeWorkQueue>
         size_t PipeWorkQueue<T_PipeWorkQueue>::bytesAvailableToProduce()

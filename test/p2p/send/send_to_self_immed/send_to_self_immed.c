@@ -105,9 +105,9 @@ unsigned long long test (size_t sndlen, size_t myrank)
 
     while (_recv_active)
       {
-	TRACE_ERR((stderr,"test():  Calling Advance\n"));
-	result = PAMI_Context_advance (_g_context, 100);
-	TRACE_ERR((stderr,"test():  Back from Advance\n"));
+        TRACE_ERR((stderr,"test():  Calling Advance\n"));
+        result = PAMI_Context_advance (_g_context, 100);
+        TRACE_ERR((stderr,"test():  Back from Advance\n"));
       }
   }
   unsigned long long t2 = PAMI_Wtimebase();
@@ -264,15 +264,15 @@ int main ()
     unsigned j;
     for (j=0; j<BUFSIZE; j++)
       {
-	_sbuf[j]=j*5+3;
+        _sbuf[j]=j*5+3;
       }
 
     // Limit the sndlen to <= IMMEDIATE_SEND_LIMIT bytes,
     // which is the range for send_immediate.
     size_t sndlen;
     for (sndlen = 0;
-	 sndlen < BUFSIZE && sndlen<=IMMEDIATE_SEND_LIMIT;
-	 sndlen = sndlen*3/2+1)
+         sndlen < BUFSIZE && sndlen<=IMMEDIATE_SEND_LIMIT;
+         sndlen = sndlen*3/2+1)
     {
       int index = 0;
       index += sprintf (&str[index], "%10zd ", sndlen);
@@ -286,12 +286,12 @@ int main ()
         cycles = test (sndlen, _my_rank);
         usec   = cycles/clockMHz;
 
-	// Check the buffer.
-	unsigned j;
-	for (j=0; j<sndlen; j++)
-	{
-	  if (_sbuf[j] != _rbuf[j]) printf("Data Miscompare at size %zd, _sbuf[%u] = 0x%02x, _rbuf = 0x%02x\n",sndlen, j, _sbuf[j], _rbuf[j]);
-	}
+        // Check the buffer.
+        unsigned j;
+        for (j=0; j<sndlen; j++)
+        {
+          if (_sbuf[j] != _rbuf[j]) printf("Data Miscompare at size %zd, _sbuf[%u] = 0x%02x, _rbuf = 0x%02x\n",sndlen, j, _sbuf[j], _rbuf[j]);
+        }
 
         index += sprintf (&str[index], "%10lld %8.4f  ", cycles, usec);
       }

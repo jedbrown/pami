@@ -23,7 +23,7 @@
 
 namespace CCMI { namespace Adaptor { namespace Allreduce {
       extern void getReduceFunction(pami_dt, pami_op, unsigned,
-				    unsigned&, coremath&);
+                                    unsigned&, coremath&);
     }}};
 namespace TSPColl
 {
@@ -48,10 +48,10 @@ namespace TSPColl
       void * operator new (size_t, void * addr) { return addr; }
       Short(PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
       void reset (const void        * s,
-		  void              * d,
-		  pami_op             op,
-		  pami_dt             dt,
-		  unsigned            nelems);
+                  void              * d,
+                  pami_op             op,
+                  pami_dt             dt,
+                  unsigned            nelems);
     protected:
       static void cb_switchbuf (CollExchange<T_Mcast> *, unsigned phase);
       static void cb_allreduce (CollExchange<T_Mcast> *, unsigned phase);
@@ -80,7 +80,7 @@ namespace TSPColl
       //      void reset (const void * s, void * d,
       //		  __pgasrt_ops_t op, __pgasrt_dtypes_t dt, unsigned nelems);
       void reset (const void * s, void * d,
-		  pami_op op, pami_dt dt, unsigned nelems);
+                  pami_op op, pami_dt dt, unsigned nelems);
 
     protected:
       static void cb_allreduce (CollExchange<T_Mcast> *, unsigned phase);
@@ -206,10 +206,10 @@ cb_switchbuf (CollExchange<T_Mcast> * coll, unsigned phase)
 /* ************************************************************************* */
 template <class T_Mcast>
 void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
-				       void               * dbuf,
-				       pami_op              op,
-				       pami_dt              dt,
-				       unsigned             nelems)
+                                       void               * dbuf,
+                                       pami_op              op,
+                                       pami_dt              dt,
+                                       unsigned             nelems)
 {
   assert (sbuf != NULL);
   assert (dbuf != NULL);
@@ -406,10 +406,10 @@ cb_allreduce (CollExchange<T_Mcast> *coll, unsigned phase)
 /* ************************************************************************* */
 template <class T_Mcast>
 void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf,
-				      void               * dbuf,
-				      pami_op              op,
-				      pami_dt              dt,
-				      unsigned             nelems)
+                                      void               * dbuf,
+                                      pami_op              op,
+                                      pami_dt              dt,
+                                      unsigned             nelems)
 {
   assert (sbuf != NULL);
   assert (dbuf != NULL);

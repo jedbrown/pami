@@ -40,7 +40,7 @@ namespace PAMI
                                   pami_multisync_t *msync)
         {
           pami_result_t      rc     = PAMI_SUCCESS;
-	  MPIMsyncMessage *msg     = (MPIMsyncMessage *) state;
+          MPIMsyncMessage *msg     = (MPIMsyncMessage *) state;
           PAMI::Topology   *topo    = (PAMI::Topology *)msync->participants;
           pami_task_t      *ranks_h = NULL;
           pami_task_t      *ranks   = NULL;
@@ -61,7 +61,7 @@ namespace PAMI
                 msg->_dests[i] = topo->index2Rank((myidx+(1<<i))%size);
                 msg->_srcs[i]  = topo->index2Rank((myidx-(1<<i)+size)%size);
               }
-	  _device.enqueue(msg);
+          _device.enqueue(msg);
           return rc;
         }
 

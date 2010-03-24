@@ -36,8 +36,8 @@ namespace PAMI
         /// \see PAMI::Atomic::Interface::Counter::init
         void init_impl (PAMI::Memory::MemoryManager *mm)
         {
-	  // MUST NOT DO THIS! other procs might be already using it.
-	  // TODO: find a way to ensure memory is zeroed once and only once.
+          // MUST NOT DO THIS! other procs might be already using it.
+          // TODO: find a way to ensure memory is zeroed once and only once.
           //fetch_and_clear_impl ();
         };
 
@@ -45,8 +45,8 @@ namespace PAMI
         inline size_t fetch_impl ()
         {
           // return __sync_fetch_and_or (&_atom, 0);
-	  // can't use __sync_fetch_and_or... it's broken?
-	  // instead, ensure "_atom" is volatile
+          // can't use __sync_fetch_and_or... it's broken?
+          // instead, ensure "_atom" is volatile
           return _atom;
         };
 
@@ -54,7 +54,7 @@ namespace PAMI
         inline size_t fetch_and_inc_impl ()
         {
           return __sync_fetch_and_add (&_atom, 1);
-	 // return _atom++;
+         // return _atom++;
         };
 
         /// \see PAMI::Atomic::Interface::Counter::fetch_and_dec
@@ -67,7 +67,7 @@ namespace PAMI
         inline size_t fetch_and_clear_impl ()
         {
           return __sync_fetch_and_and (&_atom, 0);
-	  //_atom = 0;
+          //_atom = 0;
         };
 
         /// \see PAMI::Atomic::Interface::Counter::compare_and_swap
@@ -76,7 +76,7 @@ namespace PAMI
           return __sync_bool_compare_and_swap (&_atom, compare, swap);
         };
 
-	inline void *returnLock_impl() { return (void *)&_atom; }
+        inline void *returnLock_impl() { return (void *)&_atom; }
 
       protected:
 

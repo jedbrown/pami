@@ -34,17 +34,17 @@
 
 /// \brief how to get the global part of an estimated task
 #define ESTIMATED_TASK_GLOBAL(x,y,z,t,xSize,ySize,zSize,tSize)	\
-	  ESTIMATED_TASK(x,y,z,0,xSize,ySize,zSize,1)
+          ESTIMATED_TASK(x,y,z,0,xSize,ySize,zSize,1)
 
 /// \brief how to get the local part of an estimated task
 #define ESTIMATED_TASK_LOCAL(x,y,z,t,xSize,ySize,zSize,tSize)	\
-	  (t)
+          (t)
 
 /// \brief how to get the estimated task back from global+local
 ///
 /// This is closely tied to ESTIMATED_TASK_GLOBAL and ESTIMATED_TASK_LOCAL!
 #define ESTIMATED_TASK_NODE(global,local,xSize,ySize,zSize,tSize)	\
-	  ((local * xSize * ySize * zSize) + global)
+          ((local * xSize * ySize * zSize) + global)
 
 namespace PAMI
 {
@@ -70,7 +70,7 @@ namespace PAMI
             Interface::Mapping::Base<Mapping>(),
             Interface::Mapping::Torus<Mapping,PAMI_BGP_NETWORK_DIMS>(),
             Interface::Mapping::Node<Mapping,PAMI_BGP_LOCAL_DIMS> (),
-	    _personality(pers),
+            _personality(pers),
             _task (0),
             _size (0),
             _nodes (0),
@@ -87,7 +87,7 @@ namespace PAMI
         inline ~Mapping () {};
 
       protected:
-	PAMI::BgpPersonality &_personality;
+        PAMI::BgpPersonality &_personality;
         pami_task_t _task;
         size_t _size;
         size_t _nodes;
@@ -115,8 +115,8 @@ namespace PAMI
         ///
         /// \brief Initialize the mapping
         ///
-	inline pami_result_t init(PAMI::BgpMapCache &mapcache,
-				PAMI::BgpPersonality &personality);
+        inline pami_result_t init(PAMI::BgpMapCache &mapcache,
+                                PAMI::BgpPersonality &personality);
 
         ///
         /// \brief Return the BGP global task for this process
@@ -168,35 +168,35 @@ namespace PAMI
                                               pami_task_t                 * task,
                                               pami_network               * type)
         {
-		size_t xSize = _personality.xSize();
-		size_t ySize = _personality.ySize();
-		size_t zSize = _personality.zSize();
-		size_t tSize = _personality.tSize();
-		if (addr->network != PAMI_DEFAULT_NETWORK &&
-			addr->network != PAMI_N_TORUS_NETWORK) {
-			return PAMI_INVAL;
-		}
-		size_t x = addr->u.n_torus.coords[0];
-		size_t y = addr->u.n_torus.coords[1];
-		size_t z = addr->u.n_torus.coords[2];
-		size_t t = addr->u.n_torus.coords[3];
+                size_t xSize = _personality.xSize();
+                size_t ySize = _personality.ySize();
+                size_t zSize = _personality.zSize();
+                size_t tSize = _personality.tSize();
+                if (addr->network != PAMI_DEFAULT_NETWORK &&
+                        addr->network != PAMI_N_TORUS_NETWORK) {
+                        return PAMI_INVAL;
+                }
+                size_t x = addr->u.n_torus.coords[0];
+                size_t y = addr->u.n_torus.coords[1];
+                size_t z = addr->u.n_torus.coords[2];
+                size_t t = addr->u.n_torus.coords[3];
 
-		if ((x >= xSize) || (y >= ySize) ||
-			  (z >= zSize) || (t >= tSize)) {
-			return PAMI_INVAL;
-		}
+                if ((x >= xSize) || (y >= ySize) ||
+                          (z >= zSize) || (t >= tSize)) {
+                        return PAMI_INVAL;
+                }
 
 
-		size_t estimated_task = ESTIMATED_TASK(x,y,z,t,xSize,ySize,zSize,tSize);
+                size_t estimated_task = ESTIMATED_TASK(x,y,z,t,xSize,ySize,zSize,tSize);
 
-		// convert to 'unlikely_if'
-		if (_rankcache [estimated_task] == (unsigned)-1) {
-			return PAMI_ERROR;
-		}
+                // convert to 'unlikely_if'
+                if (_rankcache [estimated_task] == (unsigned)-1) {
+                        return PAMI_ERROR;
+                }
 
-		*type = PAMI_N_TORUS_NETWORK;
-		*task = _rankcache [estimated_task];
-		return PAMI_SUCCESS;
+                *type = PAMI_N_TORUS_NETWORK;
+                *task = _rankcache [estimated_task];
+                return PAMI_SUCCESS;
         }
 
         inline pami_result_t task2network_impl (pami_task_t            task,
@@ -471,10 +471,10 @@ namespace PAMI
           TRACE_ERR((stderr,"Mapping::task2node_impl(%zd) >>\n", task));
           //fprintf(stderr, "Mapping::task2node_impl() .. _mapcache[%zd] = 0x%08x\n", task, _mapcache[task]);
           //fprintf(stderr, "Mapping::task2node_impl() .. _mapcache[%zd] = 0x%08x &_mapcache[%zd] = %p\n", task, _mapcache[task], task, &_mapcache[task]);
-	  size_t coords[PAMI_BGP_NETWORK_DIMS + PAMI_BGP_LOCAL_DIMS];
-	  task2torus_impl(task, coords);
-	  addr.global = ESTIMATED_TASK_GLOBAL(coords[0],coords[1],coords[2],coords[3],xSize(),ySize(),zSize(),tSize());
-	  addr.local = ESTIMATED_TASK_LOCAL(coords[0],coords[1],coords[2],coords[3],xSize(),ySize(),zSize(),tSize());
+          size_t coords[PAMI_BGP_NETWORK_DIMS + PAMI_BGP_LOCAL_DIMS];
+          task2torus_impl(task, coords);
+          addr.global = ESTIMATED_TASK_GLOBAL(coords[0],coords[1],coords[2],coords[3],xSize(),ySize(),zSize(),tSize());
+          addr.local = ESTIMATED_TASK_LOCAL(coords[0],coords[1],coords[2],coords[3],xSize(),ySize(),zSize(),tSize());
           TRACE_ERR((stderr,"Mapping::task2node_impl(%zd, %zd, %zd) <<\n", task, addr.global, addr.local));
           return PAMI_SUCCESS;
         }
@@ -503,7 +503,7 @@ namespace PAMI
 };	// namespace PAMI
 
 pami_result_t PAMI::Mapping::init(PAMI::BgpMapCache &mapcache,
-				PAMI::BgpPersonality &personality)
+                                PAMI::BgpPersonality &personality)
 {
   //fprintf (stderr, "Mapping::init_impl >>\n");
   _personality = personality;

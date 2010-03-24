@@ -24,142 +24,142 @@
 
 /// \brief Load a uint32 into a reg.
 #define LWZUX(reg, base, delta)		\
-	asm volatile ("lwzux %0, %1, %2"\
-			: "=r"(reg),	\
-			  "+b"(base)	\
-			: "r"(delta))
+        asm volatile ("lwzux %0, %1, %2"\
+                        : "=r"(reg),	\
+                          "+b"(base)	\
+                        : "r"(delta))
 
 /// \brief Store uint32 regs into memory.
 #define STWUX(reg, base, delta)		\
-	asm volatile ("stwux %0, %1, %2"\
-			: "=r"(reg),	\
-			  "+b"(base)	\
-			: "r"(delta))
+        asm volatile ("stwux %0, %1, %2"\
+                        : "=r"(reg),	\
+                          "+b"(base)	\
+                        : "r"(delta))
 
 #if defined(OP2)
 
-	// This code revolves around the 32-byte L1 cacheline, i.e. 8x uint32_t.
-	// There are three prefetch buffers for the L1, so we can start filling
-	// those - i.e. 96-byte prefetch - however we'll always take the hit
-	// (probably) for the first three cachelines. We also will be fetching
-	// beyond the end of our buffers.
-	unsigned four = 4;
+        // This code revolves around the 32-byte L1 cacheline, i.e. 8x uint32_t.
+        // There are three prefetch buffers for the L1, so we can start filling
+        // those - i.e. 96-byte prefetch - however we'll always take the hit
+        // (probably) for the first three cachelines. We also will be fetching
+        // beyond the end of our buffers.
+        unsigned four = 4;
 
-	register uint32_t r0 asm("r10");
-	register uint32_t r1 asm("r11");
-	register uint32_t r2 asm("r12");
-	register uint32_t r3 asm("r13");
-	register uint32_t r4 asm("r14");
-	register uint32_t r5 asm("r15");
-	register uint32_t r6 asm("r16");
-	register uint32_t r7 asm("r17");
+        register uint32_t r0 asm("r10");
+        register uint32_t r1 asm("r11");
+        register uint32_t r2 asm("r12");
+        register uint32_t r3 asm("r13");
+        register uint32_t r4 asm("r14");
+        register uint32_t r5 asm("r15");
+        register uint32_t r6 asm("r16");
+        register uint32_t r7 asm("r17");
 
-	register uint32_t i96 = 96 - 16 + 4;
-	register uint32_t j96 = 96 - 32 + 4;
+        register uint32_t i96 = 96 - 16 + 4;
+        register uint32_t j96 = 96 - 32 + 4;
 
-	--num;
-	--s0; // adjust for LWZUX(...4)
-	--s1;
-	--s2;
+        --num;
+        --s0; // adjust for LWZUX(...4)
+        --s1;
+        --s2;
 
-	// Before/after loop completes 8 uint32_t dual-src operations, in out-of-phase pairs
-	LWZUX(r0, s0, four);
-	LWZUX(r4, s1, four);
-	LWZUX(r1, s0, four);
-	LWZUX(r5, s1, four);
+        // Before/after loop completes 8 uint32_t dual-src operations, in out-of-phase pairs
+        LWZUX(r0, s0, four);
+        LWZUX(r4, s1, four);
+        LWZUX(r1, s0, four);
+        LWZUX(r5, s1, four);
 
-	// Each loop completes 8 uint32_t dual-src operations, in out-of-phase pairs
-	while (num--) {
-		LWZUX(r2, s0, four);
-		LWZUX(r6, s1, four);
-		LWZUX(r3, s0, four);
-		LWZUX(r7, s1, four);
-					// s1 is +12 beyond original/prior value
-		OP2(r0, r4);
-		OP2(r1, r5);
+        // Each loop completes 8 uint32_t dual-src operations, in out-of-phase pairs
+        while (num--) {
+                LWZUX(r2, s0, four);
+                LWZUX(r6, s1, four);
+                LWZUX(r3, s0, four);
+                LWZUX(r7, s1, four);
+                                        // s1 is +12 beyond original/prior value
+                OP2(r0, r4);
+                OP2(r1, r5);
 
-		DCBT(s1, i96);
+                DCBT(s1, i96);
 
-		STWUX(r0, s2, four);
-		STWUX(r1, s2, four);
+                STWUX(r0, s2, four);
+                STWUX(r1, s2, four);
 
-		LWZUX(r0, s0, four);
-		LWZUX(r4, s1, four);
-		LWZUX(r1, s0, four);
-		LWZUX(r5, s1, four);
+                LWZUX(r0, s0, four);
+                LWZUX(r4, s1, four);
+                LWZUX(r1, s0, four);
+                LWZUX(r5, s1, four);
 
-		OP2(r2, r6);
-		OP2(r3, r7);
+                OP2(r2, r6);
+                OP2(r3, r7);
 
-		STWUX(r2, s2, four);
-		STWUX(r3, s2, four);
+                STWUX(r2, s2, four);
+                STWUX(r3, s2, four);
 
-		LWZUX(r2, s0, four);
-		LWZUX(r6, s1, four);
-		LWZUX(r3, s0, four);
-		LWZUX(r7, s1, four);
-					// s0 is +28 beyond original/prior value
-		OP2(r0, r4);
-		OP2(r1, r5);
+                LWZUX(r2, s0, four);
+                LWZUX(r6, s1, four);
+                LWZUX(r3, s0, four);
+                LWZUX(r7, s1, four);
+                                        // s0 is +28 beyond original/prior value
+                OP2(r0, r4);
+                OP2(r1, r5);
 
-		DCBT(s0, j96);
+                DCBT(s0, j96);
 
-		STWUX(r0, s2, four);
-		STWUX(r1, s2, four);
+                STWUX(r0, s2, four);
+                STWUX(r1, s2, four);
 
-		LWZUX(r0, s0, four);
-		LWZUX(r4, s1, four);
-		LWZUX(r1, s0, four);
-		LWZUX(r5, s1, four);
+                LWZUX(r0, s0, four);
+                LWZUX(r4, s1, four);
+                LWZUX(r1, s0, four);
+                LWZUX(r5, s1, four);
 
-		OP2(r2, r6);
-		OP2(r3, r7);
+                OP2(r2, r6);
+                OP2(r3, r7);
 
-		STWUX(r2, s2, four);
-		STWUX(r3, s2, four);
-	}
-	LWZUX(r2, s0, four);
-	LWZUX(r6, s1, four);
-	LWZUX(r3, s0, four);
-	LWZUX(r7, s1, four);
+                STWUX(r2, s2, four);
+                STWUX(r3, s2, four);
+        }
+        LWZUX(r2, s0, four);
+        LWZUX(r6, s1, four);
+        LWZUX(r3, s0, four);
+        LWZUX(r7, s1, four);
 
-	OP2(r0, r4);
-	OP2(r1, r5);
+        OP2(r0, r4);
+        OP2(r1, r5);
 
-	STWUX(r0, s2, four);
-	STWUX(r1, s2, four);
+        STWUX(r0, s2, four);
+        STWUX(r1, s2, four);
 
-	LWZUX(r0, s0, four);
-	LWZUX(r4, s1, four);
-	LWZUX(r1, s0, four);
-	LWZUX(r5, s1, four);
+        LWZUX(r0, s0, four);
+        LWZUX(r4, s1, four);
+        LWZUX(r1, s0, four);
+        LWZUX(r5, s1, four);
 
-	OP2(r2, r6);
-	OP2(r3, r7);
+        OP2(r2, r6);
+        OP2(r3, r7);
 
-	STWUX(r2, s2, four);
-	STWUX(r3, s2, four);
+        STWUX(r2, s2, four);
+        STWUX(r3, s2, four);
 
-	LWZUX(r2, s0, four);
-	LWZUX(r6, s1, four);
-	LWZUX(r3, s0, four);
-	LWZUX(r7, s1, four);
+        LWZUX(r2, s0, four);
+        LWZUX(r6, s1, four);
+        LWZUX(r3, s0, four);
+        LWZUX(r7, s1, four);
 
-	OP2(r0, r4);
-	OP2(r1, r5);
+        OP2(r0, r4);
+        OP2(r1, r5);
 
-	STWUX(r0, s2, four);
-	STWUX(r1, s2, four);
+        STWUX(r0, s2, four);
+        STWUX(r1, s2, four);
 
-	OP2(r2, r6);
-	OP2(r3, r7);
+        OP2(r2, r6);
+        OP2(r3, r7);
 
-	STWUX(r2, s2, four);
-	STWUX(r3, s2, four);
+        STWUX(r2, s2, four);
+        STWUX(r3, s2, four);
 
-	++s0;	// compensate for prior adjust for LWZUX
-	++s1;
-	++s2;
+        ++s0;	// compensate for prior adjust for LWZUX
+        ++s1;
+        ++s2;
 
 #else /* !OP2 */
 #error "_optim_uint32_dual_src.x.h included without required defines"

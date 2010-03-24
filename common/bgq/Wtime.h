@@ -25,7 +25,7 @@ namespace PAMI
 
         inline Time () :
             Interface::BaseTime<Time> (),
-	    _mhz(0)
+            _mhz(0)
         {};
 
         ///
@@ -33,7 +33,7 @@ namespace PAMI
         ///
         inline pami_result_t init_impl (size_t clockMHz)
         {
-	  _mhz = clockMHz;
+          _mhz = clockMHz;
           return PAMI_SUCCESS;
         };
 
@@ -94,7 +94,7 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
 
         /// \brief BG/P compute node processors run at 850 MHz
         static const double seconds_per_cycle = 1.176470588235294033e-09;
-	size_t _mhz;
+        size_t _mhz;
     };	// class Time
 };	// namespace PAMI
 #endif // __components_time_bgq_bgqtime_h__

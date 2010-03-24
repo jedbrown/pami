@@ -88,39 +88,39 @@ namespace BGP {
 
 class CNDevice : public PAMI::Device::Generic::CommonQueueSubDevice {
 public:
-	/**
-	 * \brief  A Collective Network device constructor
-	 *
-	 * \param[in] sd	SysDep object
-	 */
-	CNDevice() :
-	PAMI::Device::Generic::CommonQueueSubDevice(),
-	_threadRoles(0)
-	{
-	}
+        /**
+         * \brief  A Collective Network device constructor
+         *
+         * \param[in] sd	SysDep object
+         */
+        CNDevice() :
+        PAMI::Device::Generic::CommonQueueSubDevice(),
+        _threadRoles(0)
+        {
+        }
 
-	virtual ~CNDevice() {}
+        virtual ~CNDevice() {}
 
         /// \note This is required to make "C" programs link successfully with virtual destructors
         inline void operator delete(void * p) { PAMI_abort(); }
 
-	/**
-	 * \brief Tree Device Initialization
-	 *
-	 * Typically called once, after construction.
-	 * Sets up various device parameters for use during
-	 * operation. This may include measuring the send-recv
-	 * timings for optimizing those parameters.
-	 *
-	 * All environment variables are sampled at this point.
-	 */
-	pami_result_t init(PAMI::Memory::MemoryManager *mm, size_t client, size_t contextId, pami_context_t ctx);
+        /**
+         * \brief Tree Device Initialization
+         *
+         * Typically called once, after construction.
+         * Sets up various device parameters for use during
+         * operation. This may include measuring the send-recv
+         * timings for optimizing those parameters.
+         *
+         * All environment variables are sampled at this point.
+         */
+        pami_result_t init(PAMI::Memory::MemoryManager *mm, size_t client, size_t contextId, pami_context_t ctx);
 
-	inline int getMaxThreads() { return _threadRoles; }
+        inline int getMaxThreads() { return _threadRoles; }
 
 private:
-	unsigned _threadRoles;
-	unsigned __cn_times[2]; // measured cn depth, local and global
+        unsigned _threadRoles;
+        unsigned __cn_times[2]; // measured cn depth, local and global
 }; // class CNDevice
 
 }; // namespace BGP

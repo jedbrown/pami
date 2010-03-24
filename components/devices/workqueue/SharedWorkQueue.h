@@ -46,10 +46,10 @@ namespace PAMI
             {
               volatile size_t bytes;     ///< Number of bytes consumed - Only written by each consumer!
             } producer[PAMI_MAX_PROC_PER_NODE];	// must preserve 16-byte alignment
-		// NOTE: producer[] must be at the end of the header
-		// (be the space used for the ad-hoc barrier counters)
-		// in order to avoid problems when early exiters of
-		// barrier_reset() start using this WQ.
+                // NOTE: producer[] must be at the end of the header
+                // (be the space used for the ad-hoc barrier counters)
+                // in order to avoid problems when early exiters of
+                // barrier_reset() start using this WQ.
             volatile char buffer[0]; ///< Producer-consumer buffer
           } workqueue_t __attribute__ ((__aligned__ (16)));
 
@@ -68,9 +68,9 @@ namespace PAMI
           {
                 size_t size = sizeof(workqueue_t) + _qsize;
                 mm->memalign((void **)&_sharedqueue, 16, size);
-		PAMI_assert_debug(_sharedqueue);
-		PAMI_assert_debug((_qsize & (_qsize - 1)) == 0);
-		_qmask = _qsize - 1;
+                PAMI_assert_debug(_sharedqueue);
+                PAMI_assert_debug((_qsize & (_qsize - 1)) == 0);
+                _qmask = _qsize - 1;
           }
 
           ///
@@ -118,17 +118,17 @@ namespace PAMI
           ///
           /// Sets the number of bytes produced and the number of bytes
           /// consumed by each consumer to zero. Performs a type of
-	  /// barrier operation with all callers, so that there is no
-	  /// contention between would-be initializers.
+          /// barrier operation with all callers, so that there is no
+          /// contention between would-be initializers.
           ///
           inline void barrier_reset(unsigned participants, bool master)
           {
-		// NOTE: producer[] must be at the end of the header
-		// (be the space used for the ad-hoc barrier counters)
-		// in order to avoid problems when early exiters of
-		// barrier_reset() start using this WQ.
-		local_barriered_shmemzero((void *)_sharedqueue, sizeof(*_sharedqueue),
-					participants, master);
+                // NOTE: producer[] must be at the end of the header
+                // (be the space used for the ad-hoc barrier counters)
+                // in order to avoid problems when early exiters of
+                // barrier_reset() start using this WQ.
+                local_barriered_shmemzero((void *)_sharedqueue, sizeof(*_sharedqueue),
+                                        participants, master);
           }
 
           ///
@@ -294,25 +294,25 @@ namespace PAMI
 
             unsigned pbytes = _sharedqueue->producer[_producers-1].bytes;
             unsigned cbytes = _sharedqueue->consumer[consumer].bytes;
-	    //
-	    // Detect counter wrap around by checking if pbytes is less than
-	    // cbytes, and then if bumping both by the same value changes that
-	    // relationship. The condition we're worried about is where the pbytes
-	    // has wrapped but cbytes has not. If both counters are on the same
-	    // side of the wrap point, everything works fine. It is an error if
-	    // consumed bytes passes produced bytes, so we don't look for that
-	    // condition. If we are spanning the wrap point, we bump both values
-	    // by some amount in order to get them both on the same side of the wrap.
-	    // We choose _qsize as the bump amount because the difference between
-	    // the counters should never exceed this value (in fact, it should never
-	    // exceed _worksize) and so we can depend on this value always causing
-	    // cbytes to wrap if pbytes has already wrapped.
-	    //
+            //
+            // Detect counter wrap around by checking if pbytes is less than
+            // cbytes, and then if bumping both by the same value changes that
+            // relationship. The condition we're worried about is where the pbytes
+            // has wrapped but cbytes has not. If both counters are on the same
+            // side of the wrap point, everything works fine. It is an error if
+            // consumed bytes passes produced bytes, so we don't look for that
+            // condition. If we are spanning the wrap point, we bump both values
+            // by some amount in order to get them both on the same side of the wrap.
+            // We choose _qsize as the bump amount because the difference between
+            // the counters should never exceed this value (in fact, it should never
+            // exceed _worksize) and so we can depend on this value always causing
+            // cbytes to wrap if pbytes has already wrapped.
+            //
             if (pbytes < cbytes && (pbytes + _qsize) > (cbytes + _qsize))
-	    {
-	      pbytes += _qsize;
-	      cbytes += _qsize;
-	    }
+            {
+              pbytes += _qsize;
+              cbytes += _qsize;
+            }
 
             unsigned head_offset = (pbytes) & _qmask;
             unsigned tail_offset = (cbytes) & _qmask;

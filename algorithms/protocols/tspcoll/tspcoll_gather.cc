@@ -86,7 +86,7 @@ void TSPColl::Gather::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
   Communicator * comm = TSPColl::_commlist[_commID];
 
   TRACE((stderr, "%d: Sending %d bytes to %d/%d\n",
-	 comm->rank(), _length, _root, comm->absrankof(_root)));
+         comm->rank(), _length, _root, comm->absrankof(_root)));
 
   if (comm->rank() == _root)
     {
@@ -97,9 +97,9 @@ void TSPColl::Gather::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
     {
 #if 0
       __pgasrt_tsp_amsend (comm->absrankof (_root),
-			   (__pgasrt_AMHeader_t *)&_header,
-			   (__pgasrt_local_addr_t) _sbuf, _length,
-			   cb_senddone, (void *) this);
+                           (__pgasrt_AMHeader_t *)&_header,
+                           (__pgasrt_local_addr_t) _sbuf, _length,
+                           cb_senddone, (void *) this);
 #endif
       unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
       unsigned        ranks   = comm->absrankof (_root);
@@ -107,15 +107,15 @@ void TSPColl::Gather::kick(CCMI::MultiSend::OldMulticastInterface *mcast_iface)
       cb_done.function        = cb_senddone;
       cb_done.clientdata      = this;
       void * r = mcast_iface->send (&_req,
-				    cb_done,
-				    CCMI_MATCH_CONSISTENCY,
-				    & _header,
-				    _counter,
-				    _sbuf,
-				    _length,
-				    &hints,
-				    &ranks,
-				    1);
+                                    cb_done,
+                                    CCMI_MATCH_CONSISTENCY,
+                                    & _header,
+                                    _counter,
+                                    _sbuf,
+                                    _length,
+                                    &hints,
+                                    &ranks,
+                                    1);
 
     }
 }
@@ -136,8 +136,8 @@ void TSPColl::Gather::cb_senddone (void * arg)
 
 __pgasrt_local_addr_t TSPColl::Gather::
 cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
-	     void (** completionHandler)(void *, void *),
-	     void ** arg)
+             void (** completionHandler)(void *, void *),
+             void ** arg)
 {
   struct gather_header * header = (struct gather_header *) hdr;
   void * base0 = TagList::find (header->tag, header->id);

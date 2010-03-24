@@ -55,7 +55,7 @@ namespace TSPColl
 /* *********************************************************************** */
 template <class T_Mcast>
 inline TSPColl::Allgather<T_Mcast>::Allgather (PAMI_GEOMETRY_CLASS *comm, NBTag tag,
-				      int instID, int offset):
+                                      int instID, int offset):
   CollExchange<T_Mcast> (comm, tag, instID, offset, false)
 {
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
@@ -106,15 +106,15 @@ void TSPColl::Allgather<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t nb
       this->_rbuf[phase+1] = (char *)rbuf;
 
       if ((size_t)rank + (1<<i) >= this->_comm->size())
- 	{
-	  this->_sbufln[phase]   = nbytes * (this->_comm->size() - rank);
-	  this->_sbufln[phase+1] = nbytes * (rank + (1<<i) - this->_comm->size());
-	}
+         {
+          this->_sbufln[phase]   = nbytes * (this->_comm->size() - rank);
+          this->_sbufln[phase+1] = nbytes * (rank + (1<<i) - this->_comm->size());
+        }
       else
-	{
-	  this->_sbufln[phase] = nbytes * (1<<i);
-	  this->_sbufln[phase+1] = 0;
-	}
+        {
+          this->_sbufln[phase] = nbytes * (1<<i);
+          this->_sbufln[phase+1] = 0;
+        }
     }
 
   CollExchange<T_Mcast>::reset();

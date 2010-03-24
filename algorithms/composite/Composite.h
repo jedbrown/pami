@@ -40,7 +40,7 @@ namespace CCMI
       }
 
       virtual void start() {
-	//Currently not all composites implement this method
+        //Currently not all composites implement this method
 //	CCMI_abort();
       }
 

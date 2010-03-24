@@ -66,7 +66,7 @@ namespace PAMI
         _ring_broadcast_ni(dev, client,context,context_id,client_id),
         _connmgr(65535),
         _msync_reg(&_sconnmgr, &_msync_ni),
-	_barrier_reg(NULL,&_barrier_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
+        _barrier_reg(NULL,&_barrier_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
         _binom_broadcast_reg(&_connmgr, &_binom_broadcast_ni),
         _ring_broadcast_reg(&_connmgr, &_ring_broadcast_ni)
           {

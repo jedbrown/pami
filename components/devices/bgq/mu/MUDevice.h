@@ -457,7 +457,7 @@ namespace PAMI
             return _p2pChannel[_p2pSendChannelIndex]->getRgetInjFifoId (target_rank);
           }
 
-	  PAMI::Memory::MemoryManager *_mm;
+          PAMI::Memory::MemoryManager *_mm;
           pami_context_t _context;
           size_t        _contextid;
           size_t        _ncontexts;

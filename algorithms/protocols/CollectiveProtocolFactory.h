@@ -29,16 +29,16 @@ namespace CCMI
     public:
       CollectiveProtocolFactory ()
       {
-	_cb_geometry = NULL;
+        _cb_geometry = NULL;
       }
 
       void setMapIdToGeometry(pami_mapidtogeometry_fn     cb_geometry) {
-	_cb_geometry = cb_geometry;
+        _cb_geometry = cb_geometry;
       }
 
       pami_geometry_t getGeometry(unsigned id) {
-	CCMI_assert (_cb_geometry != NULL);
-	return _cb_geometry (id);
+        CCMI_assert (_cb_geometry != NULL);
+        return _cb_geometry (id);
       }
 
       virtual ~CollectiveProtocolFactory ()
@@ -52,14 +52,14 @@ namespace CCMI
       }
 
       virtual Executor::Composite * generate(pami_geometry_t              geometry,
-					     void                      * cmd) = 0;
+                                             void                      * cmd) = 0;
 
       virtual void metadata(pami_metadata_t *mdata) = 0;
 
       virtual void setAsyncInfo (bool                          is_buffered,
                                  pami_dispatch_callback_fn      cb_async,
                                  pami_mapidtogeometry_fn        cb_geometry)
-	{
+        {
           PAMI_abort();
         };
 

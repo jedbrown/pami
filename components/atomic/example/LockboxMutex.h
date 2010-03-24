@@ -44,7 +44,7 @@ namespace PAMI
 
         inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
-	  __global.lockboxFactory.lbx_alloc((void **)&_mutex, 1, );
+          __global.lockboxFactory.lbx_alloc((void **)&_mutex, 1, );
         };
 
         inline void acquire_impl ()

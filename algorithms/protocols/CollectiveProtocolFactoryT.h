@@ -52,9 +52,9 @@ namespace CCMI
         _cmgr(cmgr),
         _native(native)
       {
-	pami_dispatch_callback_fn fn;
-	fn.multicast = (pami_dispatch_multicast_fn) cb_head;
-	_native->setDispatch(fn, this);
+        pami_dispatch_callback_fn fn;
+        fn.multicast = (pami_dispatch_multicast_fn) cb_head;
+        _native->setDispatch(fn, this);
       }
 
       virtual ~CollectiveProtocolFactoryT ()
@@ -78,8 +78,8 @@ namespace CCMI
 
 
       virtual Executor::Composite * generate(pami_geometry_t              geometry,
-					     void                      * cmd)
-	{
+                                             void                      * cmd)
+        {
           collObj *cobj = (collObj*) _alloc.allocateObject();
           new(cobj) collObj(_native,          // Native interface
                             _cmgr,            // Connection Manager
@@ -89,7 +89,7 @@ namespace CCMI
                             cobj,             // Intercept cookie
                             this);            // Factory
           return (Executor::Composite *)&cobj->_obj;
-	}
+        }
 
       virtual void metadata(pami_metadata_t *mdata)
         {

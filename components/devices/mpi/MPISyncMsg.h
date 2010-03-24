@@ -43,13 +43,13 @@ namespace PAMI
       {
       }
 
-	class Factory : public Interface::FactoryInterface<Factory,MPISyncDev,Generic::Device> {
-	public:
-		static inline MPISyncDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline pami_result_t init_impl(MPISyncDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
-		static inline size_t advance_impl(MPISyncDev *devs, size_t client, size_t context);
-		static MPISyncDev &getDevice_impl(MPISyncDev *devs, size_t client, size_t context);
-	}; // class Factory
+        class Factory : public Interface::FactoryInterface<Factory,MPISyncDev,Generic::Device> {
+        public:
+                static inline MPISyncDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+                static inline pami_result_t init_impl(MPISyncDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
+                static inline size_t advance_impl(MPISyncDev *devs, size_t client, size_t context);
+                static MPISyncDev &getDevice_impl(MPISyncDev *devs, size_t client, size_t context);
+        }; // class Factory
 
     };
   }; //-- Device
@@ -63,20 +63,20 @@ namespace PAMI
   {
 
 inline MPISyncDev *MPISyncDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-	return &_g_mpisync_dev;
+        return &_g_mpisync_dev;
 }
 
 inline pami_result_t MPISyncDev::Factory::init_impl(MPISyncDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
-	MPI_Comm_dup(MPI_COMM_WORLD,&_g_mpisync_dev._msync_communicator);
-	return _g_mpisync_dev.__init(client, contextId, clt, ctx, mm, devices);
+        MPI_Comm_dup(MPI_COMM_WORLD,&_g_mpisync_dev._msync_communicator);
+        return _g_mpisync_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
 
 inline size_t MPISyncDev::Factory::advance_impl(MPISyncDev *devs, size_t client, size_t contextId) {
-	return 0;
+        return 0;
 }
 
 inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t client, size_t contextId) {
-	return _g_mpisync_dev;
+        return _g_mpisync_dev;
 }
 
 ///
@@ -132,14 +132,14 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
 
       // virtual function
       pami_context_t postNext(bool devQueued) {
-	return _g_mpisync_dev.__postNext<MPISyncMsg>(this, devQueued);
+        return _g_mpisync_dev.__postNext<MPISyncMsg>(this, devQueued);
       }
 
       inline int setThreads(PAMI::Device::Generic::SimpleAdvanceThread **th)
       {
-	PAMI::Device::Generic::SimpleAdvanceThread *t;
-	int n;
-	_g_mpisync_dev.__getThreads(&t, &n);
+        PAMI::Device::Generic::SimpleAdvanceThread *t;
+        int n;
+        _g_mpisync_dev.__getThreads(&t, &n);
         int nt = 0;
         // assert(nt < n);
         t[nt].setMsg(this);
@@ -150,7 +150,7 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
         _nThreads = nt;
         TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__setThreads(%d) _nThreads %d\n",this,
                       n,nt));
-	*th = t;
+        *th = t;
         return nt;
       }
 

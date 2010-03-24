@@ -178,7 +178,7 @@ namespace PAMI
 #ifdef USE_COMMTHREADS
       // This is not standard interface... yet?
       inline pami_result_t addContextToCommThreadPool(pami_context_t ctx) {
-	return PAMI::Device::CommThread::BgqCommThread::addContext(_commThreads, _clientid, ctx);
+        return PAMI::Device::CommThread::BgqCommThread::addContext(_commThreads, _clientid, ctx);
       }
 #endif // USE_COMMTHREADS
 

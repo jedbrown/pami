@@ -28,9 +28,9 @@ namespace PAMI
       public:
         /// \param[in] device                Manytomany device reference
         ManytomanyModel (T_Device & device, pami_result_t &status) {
-		COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
-		status = PAMI_SUCCESS;
-	};
+                COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
+                status = PAMI_SUCCESS;
+        };
         ~ManytomanyModel () {};
 
         inline void setCallback (pami_dispatch_manytomany_fn cb_recv, void *arg);

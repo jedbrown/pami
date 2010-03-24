@@ -31,25 +31,25 @@ namespace PAMI
       public:
 
         inline Global () :
-	  Interface::Global<PAMI::Global>(),
-	  mapping()
+          Interface::Global<PAMI::Global>(),
+          mapping()
         {
-	  // Time gets its own clockMHz
-	  Interface::Global<PAMI::Global>::time.init(0);
-	  {
-		size_t min=0, max=0;
-		mapping.init(min, max);
+          // Time gets its own clockMHz
+          Interface::Global<PAMI::Global>::time.init(0);
+          {
+                size_t min=0, max=0;
+                mapping.init(min, max);
 #if 0
 
-		PAMI::Topology::static_init(&mapping);
-		if (mapping.size() == max - min + 1) {
-			new (&topology_global) PAMI::Topology(min, max);
-		} else {
-			PAMI_abortf("failed to build global-world topology %zd:: %zd..%zd", mapping.size(), min, max);
-		}
-		topology_global.subTopologyLocalToMe(&topology_local);
+                PAMI::Topology::static_init(&mapping);
+                if (mapping.size() == max - min + 1) {
+                        new (&topology_global) PAMI::Topology(min, max);
+                } else {
+                        PAMI_abortf("failed to build global-world topology %zd:: %zd..%zd", mapping.size(), min, max);
+                }
+                topology_global.subTopologyLocalToMe(&topology_local);
 #endif
-	  }
+          }
         };
 
 
@@ -58,7 +58,7 @@ namespace PAMI
 
       public:
 
-	PAMI::Mapping		mapping;
+        PAMI::Mapping		mapping;
 
   };   // class Global
 };     // namespace PAMI

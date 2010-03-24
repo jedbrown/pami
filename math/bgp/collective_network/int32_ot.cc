@@ -112,16 +112,16 @@ static void _pami_core_int32_prod_to_tree2(uint32_t *dst, const int32_t **srcs, 
   asm volatile (
 "0:      lswi   6,%[s0],28;"
         "lswi  15,%[s1],32;"
-	"lwz   14,28(%[s0]);"
+        "lwz   14,28(%[s0]);"
 
-	"mullw 15,15,6;"
-	"mullw 16,16,7;"
-	"mullw 17,17,8;"
-	"mullw 18,18,9;"
-	"mullw 19,19,10;"
-	"mullw 20,20,11;"
-	"mullw 21,21,12;"
-	"mullw 22,22,14;"
+        "mullw 15,15,6;"
+        "mullw 16,16,7;"
+        "mullw 17,17,8;"
+        "mullw 18,18,9;"
+        "mullw 19,19,10;"
+        "mullw 20,20,11;"
+        "mullw 21,21,12;"
+        "mullw 22,22,14;"
 
         "addis 15,15,0x8000;"
         "addis 16,16,0x8000;"
@@ -132,13 +132,13 @@ static void _pami_core_int32_prod_to_tree2(uint32_t *dst, const int32_t **srcs, 
         "addis 21,21,0x8000;"
         "addis 22,22,0x8000;"
 
-	"stswi 15,%[dp],32;"
-	"addi  %[s0],%[s0],32;"
-	"addi  %[s1],%[s1],32;"
-	"addi  %[dp],%[dp],32;"
-	"addi 5,5,-1;"
-	"cmpwi 5,0;"
-	"bne   0b;"
+        "stswi 15,%[dp],32;"
+        "addi  %[s0],%[s0],32;"
+        "addi  %[s1],%[s1],32;"
+        "addi  %[dp],%[dp],32;"
+        "addi 5,5,-1;"
+        "cmpwi 5,0;"
+        "bne   0b;"
       : [s0] "+b" (s0),
         [s1] "+b" (s1),
         [dp] "+b" (dp)
@@ -228,12 +228,12 @@ static void _pami_core_int32_conv_o(uint32_t *dst, const int32_t *src, int count
   while ( n-- ) {
     asm volatile (
            "lwz   12,0(%[sp]);"
-	   "addis  12,12,0x8000;"
-	   "stw   12,0(%[dp]);"
+           "addis  12,12,0x8000;"
+           "stw   12,0(%[dp]);"
 
-	  : // no outputs
+          : // no outputs
           : [sp] "b" (sp),
-	    [dp] "b" (dp)
+            [dp] "b" (dp)
           : "memory", "12"
             );
     sp++;
@@ -314,12 +314,12 @@ static void _pami_core_int32_unconv_o(int32_t *dst, const uint32_t *src, int cou
   while ( n-- ) {
     asm volatile (
            "lwz   12,0(%[sp]);"
-	   "subis  12,12,0x8000;"
-	   "stw   12,0(%[dp]);"
+           "subis  12,12,0x8000;"
+           "stw   12,0(%[dp]);"
 
-	  : // no outputs
+          : // no outputs
           : [sp] "b" (sp),
-	    [dp] "b" (dp)
+            [dp] "b" (dp)
           : "memory", "12"
             );
     sp++;
@@ -339,11 +339,11 @@ static void _pami_core_int32_unconv_not_o(int32_t *dst, const uint32_t *src, int
 }
 
 void _pami_core_int32_pre_all_o(uint32_t *dst, const int32_t *src, int count) {
-	_pami_core_int32_conv_o(dst, src, count);
+        _pami_core_int32_conv_o(dst, src, count);
 }
 
 void _pami_core_int32_post_all_o(int32_t *dst, const uint32_t *src, int count) {
-	_pami_core_int32_unconv_o(dst, src, count);
+        _pami_core_int32_unconv_o(dst, src, count);
 }
 
 void _pami_core_int32_pre_min_o(uint32_t *dst, const int32_t *src, int count) {
@@ -351,7 +351,7 @@ void _pami_core_int32_pre_min_o(uint32_t *dst, const int32_t *src, int count) {
 }
 
 void _pami_core_int32_post_min_o(int32_t *dst, const uint32_t *src, int count) {
-	_pami_core_int32_unconv_not_o(dst, src, count);
+        _pami_core_int32_unconv_not_o(dst, src, count);
 }
 
 void _pami_core_int32_int32_pre_maxloc_o(uint32_int32_t *dst, const int32_int32_t *src, int count) {

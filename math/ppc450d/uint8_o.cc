@@ -79,52 +79,52 @@ void _pami_core_uint8_land2(uint8_t *dst, const uint8_t **srcs, int nsrc, int co
   int n = count >> 2;
   while ( n-- ) {
     asm volatile (
-	"mtcr    %[z];"
+        "mtcr    %[z];"
 
-	"lwz     5,0(%[s0]);"
-	"lwz     6,0(%[s1]);"
-
-
-	"andi.   7,5,0x00ff;"
-	"crmove  31,2;"
-
-	"andi.   7,6,0x00ff;"
-	"crnor   31,31,2;"
+        "lwz     5,0(%[s0]);"
+        "lwz     6,0(%[s1]);"
 
 
-	"andi.   7,5,0xff00;"
-	"crmove  23,2;"
+        "andi.   7,5,0x00ff;"
+        "crmove  31,2;"
 
-	"andi.   7,6,0xff00;"
-	"crnor   23,23,2;"
-
-
-	"andis.  7,5,0x00ff;"
-	"crmove  15,2;"
-
-	"andis.  7,6,0x00ff;"
-	"crnor   15,15,2;"
+        "andi.   7,6,0x00ff;"
+        "crnor   31,31,2;"
 
 
-	"andis.  7,5,0xff00;"
-	"crmove  7,2;"
+        "andi.   7,5,0xff00;"
+        "crmove  23,2;"
 
-	"andis.  7,6,0xff00;"
-	"crnor   7,7,2;"
+        "andi.   7,6,0xff00;"
+        "crnor   23,23,2;"
 
 
-	"crclr   0;"
-	"crclr   1;"
-	"crclr   2;"
+        "andis.  7,5,0x00ff;"
+        "crmove  15,2;"
 
-	"mfcr    7;"
-	"stw     7,0(%[dp]);"
+        "andis.  7,6,0x00ff;"
+        "crnor   15,15,2;"
+
+
+        "andis.  7,5,0xff00;"
+        "crmove  7,2;"
+
+        "andis.  7,6,0xff00;"
+        "crnor   7,7,2;"
+
+
+        "crclr   0;"
+        "crclr   1;"
+        "crclr   2;"
+
+        "mfcr    7;"
+        "stw     7,0(%[dp]);"
 
       : // no outputs
       : [s0] "b" (s0),
         [s1] "b" (s1),
-	[dp] "b" (dp),
-	[z] "r" (zero)
+        [dp] "b" (dp),
+        [z] "r" (zero)
       : "memory", "5", "6", "7"
     );
 
@@ -155,37 +155,37 @@ void _pami_core_uint8_lor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int cou
   while ( n-- ) {
     asm volatile (
 
-	"lwz     5,0(%[s0]);"
-	"lwz     6,0(%[s1]);"
-	"mtcr    %[z];"
-	"or      5,5,6;"
+        "lwz     5,0(%[s0]);"
+        "lwz     6,0(%[s1]);"
+        "mtcr    %[z];"
+        "or      5,5,6;"
 
 
-	"andi.   7,5,0x00ff;"
-	"crnot   31,2;"
+        "andi.   7,5,0x00ff;"
+        "crnot   31,2;"
 
-	"andi.   7,5,0xff00;"
-	"crnot   23,2;"
+        "andi.   7,5,0xff00;"
+        "crnot   23,2;"
 
-	"andis.  7,5,0x00ff;"
-	"crnot   15,2;"
+        "andis.  7,5,0x00ff;"
+        "crnot   15,2;"
 
-	"andis.  7,5,0xff00;"
-	"crnot   7,2;"
+        "andis.  7,5,0xff00;"
+        "crnot   7,2;"
 
 
-	"crclr   0;"
-	"crclr   1;"
-	"crclr   2;"
+        "crclr   0;"
+        "crclr   1;"
+        "crclr   2;"
 
-	"mfcr    7;"
-	"stw     7,0(%[dp]);"
+        "mfcr    7;"
+        "stw     7,0(%[dp]);"
 
       : // no outputs
       : [s0] "b" (s0),
         [s1] "b" (s1),
-	[dp] "b" (dp),
-	[z] "r" (zero)
+        [dp] "b" (dp),
+        [z] "r" (zero)
       : "memory", "5", "6", "7"
     );
 
@@ -217,52 +217,52 @@ void _pami_core_uint8_lxor2(uint8_t *dst, const uint8_t **srcs, int nsrc, int co
   while ( n-- ) {
     asm volatile (
 
-	"mtcr    %[z];"
+        "mtcr    %[z];"
 
-	"lwz     5,0(%[s0]);"
-	"lwz     6,0(%[s1]);"
-
-
-	"andi.   7,5,0x00ff;"
-	"crmove  31,2;"
-
-	"andi.   7,6,0x00ff;"
-	"crxor   31,31,2;"
+        "lwz     5,0(%[s0]);"
+        "lwz     6,0(%[s1]);"
 
 
-	"andi.   7,5,0xff00;"
-	"crmove  23,2;"
+        "andi.   7,5,0x00ff;"
+        "crmove  31,2;"
 
-	"andi.   7,6,0xff00;"
-	"crxor   23,23,2;"
-
-
-	"andis.  7,5,0x00ff;"
-	"crmove  15,2;"
-
-	"andis.  7,6,0x00ff;"
-	"crxor   15,15,2;"
+        "andi.   7,6,0x00ff;"
+        "crxor   31,31,2;"
 
 
-	"andis.  7,5,0xff00;"
-	"crmove  7,2;"
+        "andi.   7,5,0xff00;"
+        "crmove  23,2;"
 
-	"andis.  7,6,0xff00;"
-	"crxor   7,7,2;"
+        "andi.   7,6,0xff00;"
+        "crxor   23,23,2;"
 
 
-	"crclr   0;"
-	"crclr   1;"
-	"crclr   2;"
+        "andis.  7,5,0x00ff;"
+        "crmove  15,2;"
 
-	"mfcr    7;"
-	"stw     7,0(%[dp]);"
+        "andis.  7,6,0x00ff;"
+        "crxor   15,15,2;"
+
+
+        "andis.  7,5,0xff00;"
+        "crmove  7,2;"
+
+        "andis.  7,6,0xff00;"
+        "crxor   7,7,2;"
+
+
+        "crclr   0;"
+        "crclr   1;"
+        "crclr   2;"
+
+        "mfcr    7;"
+        "stw     7,0(%[dp]);"
 
       : // no outputs
       : [s0] "b" (s0),
         [s1] "b" (s1),
-	[dp] "b" (dp),
-	[z] "r" (zero)
+        [dp] "b" (dp),
+        [z] "r" (zero)
       : "memory", "5", "6", "7"
     );
 

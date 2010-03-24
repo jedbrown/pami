@@ -215,7 +215,7 @@ static void _pami_core_int16_prod_conv2(uint16_t *dst, const int16_t **srcs, int
       : [s0] "b" (s0),
         [s1] "b" (s1),
         [dp] "b" (dp),
-	[add] "r" (add)
+        [add] "r" (add)
       : "memory",
         "5",  "6",  "7",  "8",  "9"
         );
@@ -295,7 +295,7 @@ static void _pami_core_int16_conv_o(uint16_t *dst, const int16_t *src, int count
       : // no outputs
       : [sp] "b" (sp),
         [dp] "b" (dp),
-	[add] "r" (add)
+        [add] "r" (add)
       : "memory",
         "5",  "6",  "7",  "8",  "9",  "10", "11", "12"
     );
@@ -314,7 +314,7 @@ static void _pami_core_int16_conv_o(uint16_t *dst, const int16_t *src, int count
       : // no outputs
       : [sp] "b" (sp),
         [dp] "b" (dp),
-	[add] "r" (add)
+        [add] "r" (add)
       : "memory", "12"
     );
 
@@ -377,7 +377,7 @@ static void _pami_core_int16_unconv_o(int16_t *dst, const uint16_t *src, int cou
       : // no outputs
       : [sp] "b" (sp),
         [dp] "b" (dp),
-	[sub] "r" (sub)
+        [sub] "r" (sub)
       : "memory",
         "5",  "6",  "7",  "8",  "9",  "10", "11", "12"
     );
@@ -396,7 +396,7 @@ static void _pami_core_int16_unconv_o(int16_t *dst, const uint16_t *src, int cou
       : // no outputs
       : [sp] "b" (sp),
         [dp] "b" (dp),
-	[sub] "r" (sub)
+        [sub] "r" (sub)
       : "memory", "12"
     );
 
@@ -469,7 +469,7 @@ static void _pami_core_int16_conv_not_o(uint16_t *dst, const int16_t *src, int c
       : // no outputs
       : [sp] "b" (sp),
         [dp] "b" (dp),
-	[add] "r" (add)
+        [add] "r" (add)
       : "memory",
         "5",  "6",  "7",  "8",  "9",  "10", "11", "12"
     );
@@ -489,7 +489,7 @@ static void _pami_core_int16_conv_not_o(uint16_t *dst, const int16_t *src, int c
       : // no outputs
       : [sp] "b" (sp),
         [dp] "b" (dp),
-	[add] "r" (add)
+        [add] "r" (add)
       : "memory", "12"
     );
 
@@ -562,7 +562,7 @@ static void _pami_core_int16_unconv_not_o(int16_t *dst, const uint16_t *src, int
       : // no outputs
       : [sp] "b" (sp),
         [dp] "b" (dp),
-	[sub] "r" (sub)
+        [sub] "r" (sub)
       : "memory",
         "5",  "6",  "7",  "8",  "9",  "10", "11", "12"
     );
@@ -582,7 +582,7 @@ static void _pami_core_int16_unconv_not_o(int16_t *dst, const uint16_t *src, int
       : // no outputs
       : [sp] "b" (sp),
         [dp] "b" (dp),
-	[sub] "r" (sub)
+        [sub] "r" (sub)
       : "memory", "12"
     );
 
@@ -594,19 +594,19 @@ static void _pami_core_int16_unconv_not_o(int16_t *dst, const uint16_t *src, int
 }
 
 void _pami_core_int16_pre_all_o(uint16_t *dst, const int16_t *src, int count) {
-	_pami_core_int16_conv_o(dst, src, count);
+        _pami_core_int16_conv_o(dst, src, count);
 }
 
 void _pami_core_int16_post_all_o(int16_t *dst, const uint16_t *src, int count) {
-	_pami_core_int16_unconv_o(dst, src, count);
+        _pami_core_int16_unconv_o(dst, src, count);
 }
 
 void _pami_core_int16_pre_min_o(uint16_t *dst, const int16_t *src, int count) {
-	_pami_core_int16_conv_not_o(dst, src, count);
+        _pami_core_int16_conv_not_o(dst, src, count);
 }
 
 void _pami_core_int16_post_min_o(int16_t *dst, const uint16_t *src, int count) {
-	_pami_core_int16_unconv_not_o(dst, src, count);
+        _pami_core_int16_unconv_not_o(dst, src, count);
 }
 
 void _pami_core_int16_int32_pre_maxloc_o(uint16_int32_t *dst, const int16_int32_t *src, int count) {

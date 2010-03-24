@@ -47,7 +47,7 @@ namespace PAMI
           inline pami_result_t task2network (pami_task_t           rank,
                                            pami_coord_t         * addr,
                                            pami_network           type);
-	  inline size_t globalDims();
+          inline size_t globalDims();
       };	// class Base
 
       template <class T_Mapping>

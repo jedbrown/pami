@@ -62,16 +62,16 @@ void check_bufs(size_t sz, size_t myrank)
   for ( r = 0; r < sz; r++ )
     for ( k = 0; k < rcvlens[r]; k++ )
       {
-	if ( rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff) )
-	  {
-	    printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
+        if ( rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff) )
+          {
+            printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
                    myrank,
-		   rdispls[r] + k,
-		   rbuf[ rdispls[r] + k ],
-		   ((r + k) & 0xff),
-		   r );
-	    exit(1);
-	  }
+                   rdispls[r] + k,
+                   rbuf[ rdispls[r] + k ],
+                   ((r + k) & 0xff),
+                   r );
+            exit(1);
+          }
       }
 }
 
@@ -152,7 +152,7 @@ int main(int argc, char*argv[])
         return 1;
       }
 
-	{ size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
+        { size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
   if (result != PAMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
@@ -264,29 +264,29 @@ int main(int argc, char*argv[])
   size_t i,j;
   if (task_id == 0)
       {
-	printf("# Alltoallv Bandwidth Test(size:%zu) %p\n",sz, cb_alltoallv);
-	  printf("# Size(bytes)           cycles    bytes/sec      usec\n");
-	  printf("# -----------      -----------    -----------    ---------\n");
+        printf("# Alltoallv Bandwidth Test(size:%zu) %p\n",sz, cb_alltoallv);
+          printf("# Size(bytes)           cycles    bytes/sec      usec\n");
+          printf("# -----------      -----------    -----------    ---------\n");
       }
 
 
   for(i=1; i<=MSGSIZE; i*=2)
       {
-	  long long dataSent = i;
-	  size_t niter = (i < 1024 ? 100 : 10);
-	  for ( j = 0; j < sz; j++ )
-	    {
-	      sndlens[j] = rcvlens[j] = i;
-	      sdispls[j] = rdispls[j] = i * j;
-	      INIT_BUFS( j );
-	    }
+          long long dataSent = i;
+          size_t niter = (i < 1024 ? 100 : 10);
+          for ( j = 0; j < sz; j++ )
+            {
+              sndlens[j] = rcvlens[j] = i;
+              sdispls[j] = rdispls[j] = i * j;
+              INIT_BUFS( j );
+            }
 
-	  _barrier (context, &barrier);
-	  ti = timer();
+          _barrier (context, &barrier);
+          ti = timer();
 
-	  for (j=0; j<niter; j++)
-	      {
-		_alltoallv ( context,
+          for (j=0; j<niter; j++)
+              {
+                _alltoallv ( context,
                              &alltoallv,
                              sbuf,
                              sndlens,
@@ -294,24 +294,24 @@ int main(int argc, char*argv[])
                              rbuf,
                              rcvlens,
                              rdispls );
-	      }
-	  tf = timer();
+              }
+          tf = timer();
 
-	  CHCK_BUFS(sz, task_id);
+          CHCK_BUFS(sz, task_id);
 
-	  _barrier (context, &barrier);
+          _barrier (context, &barrier);
 
-	  usec = (tf - ti)/(double)niter;
-	  if (task_id == 0)
-	      {
+          usec = (tf - ti)/(double)niter;
+          if (task_id == 0)
+              {
 
-		  printf("  %11lld %16lld %14.1f %12.2f\n",
-			 dataSent,
-			 0LL,
-			 (double)1e6*(double)dataSent/(double)usec,
-			 usec);
-		  fflush(stdout);
-	      }
+                  printf("  %11lld %16lld %14.1f %12.2f\n",
+                         dataSent,
+                         0LL,
+                         (double)1e6*(double)dataSent/(double)usec,
+                         usec);
+                  fflush(stdout);
+              }
       }
 
   result = PAMI_Context_destroy (context);

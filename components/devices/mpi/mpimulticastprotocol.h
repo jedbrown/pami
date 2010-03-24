@@ -95,7 +95,7 @@ namespace PAMI
                              pami_dispatch_multicast_fn  dispatch,
                              void                     * cookie,
                              T_P2P_DEVICE             & p2p_device,
-			     T_MULTICAST_DEVICE	      & mcast_dev,
+                             T_MULTICAST_DEVICE	      & mcast_dev,
                              //size_t                     origin_task,
                              pami_client_t               client,
                              pami_context_t              context,

@@ -325,231 +325,231 @@ extern void _pami_core_uint8_sum2(uint8_t *dst, const uint8_t **srcs, int nsrc, 
  * (inline).
  */
 #define OPTIMIZED_int8_band	\
-	OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_BAND,2,_pami_core_int8_band2)
+        OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_BAND,2,_pami_core_int8_band2)
 #define OPTIMIZED_int8_bor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_BOR,2,_pami_core_int8_bor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_BOR,2,_pami_core_int8_bor2)
 #define OPTIMIZED_int8_bxor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_BXOR,2,_pami_core_int8_bxor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_BXOR,2,_pami_core_int8_bxor2)
 #define OPTIMIZED_int8_land	\
-	OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_LAND,2,_pami_core_int8_land2)
+        OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_LAND,2,_pami_core_int8_land2)
 #define OPTIMIZED_int8_lor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_LOR,2,_pami_core_int8_lor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_LOR,2,_pami_core_int8_lor2)
 #define OPTIMIZED_int8_lxor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_LXOR,2,_pami_core_int8_lxor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_LXOR,2,_pami_core_int8_lxor2)
 #define OPTIMIZED_int8_max	\
-	OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_MAX,2,_pami_core_int8_max2)
+        OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_MAX,2,_pami_core_int8_max2)
 #define OPTIMIZED_int8_min	\
-	OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_MIN,2,_pami_core_int8_min2)
+        OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_MIN,2,_pami_core_int8_min2)
 #define OPTIMIZED_int8_prod	\
-	OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_PROD,2,_pami_core_int8_prod2)
+        OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_PROD,2,_pami_core_int8_prod2)
 #define OPTIMIZED_int8_sum	\
-	OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_SUM,2,_pami_core_int8_sum2)
+        OPTIMATH_NSRC(PAMI_SIGNED_CHAR,PAMI_SUM,2,_pami_core_int8_sum2)
 #define OPTIMIZED_uint8_band	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_BAND,2,_pami_core_uint8_band2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_BAND,2,_pami_core_uint8_band2)
 #define OPTIMIZED_uint8_bor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_BOR,2,_pami_core_uint8_bor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_BOR,2,_pami_core_uint8_bor2)
 #define OPTIMIZED_uint8_bxor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_BXOR,2,_pami_core_uint8_bxor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_BXOR,2,_pami_core_uint8_bxor2)
 #define OPTIMIZED_uint8_land	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_LAND,2,_pami_core_uint8_land2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_LAND,2,_pami_core_uint8_land2)
 #define OPTIMIZED_uint8_lor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_LOR,2,_pami_core_uint8_lor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_LOR,2,_pami_core_uint8_lor2)
 #define OPTIMIZED_uint8_lxor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_LXOR,2,_pami_core_uint8_lxor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_LXOR,2,_pami_core_uint8_lxor2)
 #define OPTIMIZED_uint8_max	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_MAX,2,_pami_core_uint8_max2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_MAX,2,_pami_core_uint8_max2)
 #define OPTIMIZED_uint8_min	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_MIN,2,_pami_core_uint8_min2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_MIN,2,_pami_core_uint8_min2)
 #define OPTIMIZED_uint8_prod	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_PROD,2,_pami_core_uint8_prod2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_PROD,2,_pami_core_uint8_prod2)
 #define OPTIMIZED_uint8_sum	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_SUM,2,_pami_core_uint8_sum2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_CHAR,PAMI_SUM,2,_pami_core_uint8_sum2)
 #define OPTIMIZED_int16_band	\
-	OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_BAND,2,_pami_core_int16_band2)
+        OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_BAND,2,_pami_core_int16_band2)
 #define OPTIMIZED_int16_bor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_BOR,2,_pami_core_int16_bor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_BOR,2,_pami_core_int16_bor2)
 #define OPTIMIZED_int16_bxor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_BXOR,2,_pami_core_int16_bxor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_BXOR,2,_pami_core_int16_bxor2)
 #define OPTIMIZED_int16_land	\
-	OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_LAND,2,_pami_core_int16_land2)
+        OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_LAND,2,_pami_core_int16_land2)
 #define OPTIMIZED_int16_lor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_LOR,2,_pami_core_int16_lor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_LOR,2,_pami_core_int16_lor2)
 #define OPTIMIZED_int16_lxor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_LXOR,2,_pami_core_int16_lxor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_LXOR,2,_pami_core_int16_lxor2)
 #define OPTIMIZED_int16_max	\
-	OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_MAX,2,_pami_core_int16_max2)
+        OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_MAX,2,_pami_core_int16_max2)
 #define OPTIMIZED_int16_min	\
-	OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_MIN,2,_pami_core_int16_min2)
+        OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_MIN,2,_pami_core_int16_min2)
 #define OPTIMIZED_int16_prod	\
-	OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_PROD,2,_pami_core_int16_prod2)
+        OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_PROD,2,_pami_core_int16_prod2)
 #define OPTIMIZED_int16_sum	\
-	OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_SUM,2,_pami_core_int16_sum2)
+        OPTIMATH_NSRC(PAMI_SIGNED_SHORT,PAMI_SUM,2,_pami_core_int16_sum2)
 #define OPTIMIZED_int16_int32_maxloc	\
-	OPTIMATH_NSRC(PAMI_LOC_SHORT_INT,PAMI_MAXLOC,2,_pami_core_int16_int32_maxloc2)
+        OPTIMATH_NSRC(PAMI_LOC_SHORT_INT,PAMI_MAXLOC,2,_pami_core_int16_int32_maxloc2)
 #define OPTIMIZED_int16_int32_minloc	\
-	OPTIMATH_NSRC(PAMI_LOC_SHORT_INT,PAMI_MINLOC,2,_pami_core_int16_int32_minloc2)
+        OPTIMATH_NSRC(PAMI_LOC_SHORT_INT,PAMI_MINLOC,2,_pami_core_int16_int32_minloc2)
 #define OPTIMIZED_uint16_band	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_BAND,2,_pami_core_uint16_band2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_BAND,2,_pami_core_uint16_band2)
 #define OPTIMIZED_uint16_bor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_BOR,2,_pami_core_uint16_bor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_BOR,2,_pami_core_uint16_bor2)
 #define OPTIMIZED_uint16_bxor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_BXOR,2,_pami_core_uint16_bxor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_BXOR,2,_pami_core_uint16_bxor2)
 #define OPTIMIZED_uint16_land	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_LAND,2,_pami_core_uint16_land2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_LAND,2,_pami_core_uint16_land2)
 #define OPTIMIZED_uint16_lor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_LOR,2,_pami_core_uint16_lor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_LOR,2,_pami_core_uint16_lor2)
 #define OPTIMIZED_uint16_lxor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_LXOR,2,_pami_core_uint16_lxor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_LXOR,2,_pami_core_uint16_lxor2)
 #define OPTIMIZED_uint16_max	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_MAX,2,_pami_core_uint16_max2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_MAX,2,_pami_core_uint16_max2)
 #define OPTIMIZED_uint16_min	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_MIN,2,_pami_core_uint16_min2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_MIN,2,_pami_core_uint16_min2)
 #define OPTIMIZED_uint16_prod	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_PROD,2,_pami_core_uint16_prod2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_PROD,2,_pami_core_uint16_prod2)
 #define OPTIMIZED_uint16_sum	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_SUM,2,_pami_core_uint16_sum2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_SHORT,PAMI_SUM,2,_pami_core_uint16_sum2)
 #define OPTIMIZED_int32_band	\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_BAND,2,_pami_core_int32_band2)\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_BAND,4,_pami_core_int32_band4)
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_BAND,2,_pami_core_int32_band2)\
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_BAND,4,_pami_core_int32_band4)
 #define OPTIMIZED_int32_bor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_BOR,2,_pami_core_int32_bor2)\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_BOR,4,_pami_core_int32_bor4)
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_BOR,2,_pami_core_int32_bor2)\
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_BOR,4,_pami_core_int32_bor4)
 #define OPTIMIZED_int32_bxor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_BXOR,2,_pami_core_int32_bxor2)\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_BXOR,4,_pami_core_int32_bxor4)
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_BXOR,2,_pami_core_int32_bxor2)\
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_BXOR,4,_pami_core_int32_bxor4)
 #define OPTIMIZED_int32_land	\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_LAND,2,_pami_core_int32_land2)
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_LAND,2,_pami_core_int32_land2)
 #define OPTIMIZED_int32_lor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_LOR,2,_pami_core_int32_lor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_LOR,2,_pami_core_int32_lor2)
 #define OPTIMIZED_int32_lxor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_LXOR,2,_pami_core_int32_lxor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_LXOR,2,_pami_core_int32_lxor2)
 #define OPTIMIZED_int32_max	\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_MAX,2,_pami_core_int32_max2) \
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_MAX,4,_pami_core_int32_max4)
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_MAX,2,_pami_core_int32_max2) \
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_MAX,4,_pami_core_int32_max4)
 #define OPTIMIZED_int32_min	\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_MIN,2,_pami_core_int32_min2) \
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_MIN,4,_pami_core_int32_min4)
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_MIN,2,_pami_core_int32_min2) \
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_MIN,4,_pami_core_int32_min4)
 #define OPTIMIZED_int32_prod	\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_PROD,2,_pami_core_int32_prod2)\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_PROD,4,_pami_core_int32_prod4)
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_PROD,2,_pami_core_int32_prod2)\
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_PROD,4,_pami_core_int32_prod4)
 #define OPTIMIZED_int32_sum	\
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_SUM,2,_pami_core_int32_sum2) \
-	OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_SUM,4,_pami_core_int32_sum4)
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_SUM,2,_pami_core_int32_sum2) \
+        OPTIMATH_NSRC(PAMI_SIGNED_INT,PAMI_SUM,4,_pami_core_int32_sum4)
 #define OPTIMIZED_int32_int32_maxloc	\
-	OPTIMATH_NSRC(PAMI_LOC_2INT,PAMI_MAXLOC,2,_pami_core_int32_int32_maxloc2)
+        OPTIMATH_NSRC(PAMI_LOC_2INT,PAMI_MAXLOC,2,_pami_core_int32_int32_maxloc2)
 #define OPTIMIZED_int32_int32_minloc	\
-	OPTIMATH_NSRC(PAMI_LOC_2INT,PAMI_MINLOC,2,_pami_core_int32_int32_minloc2)
+        OPTIMATH_NSRC(PAMI_LOC_2INT,PAMI_MINLOC,2,_pami_core_int32_int32_minloc2)
 #define OPTIMIZED_uint32_band	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_BAND,2,_pami_core_uint32_band2)\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_BAND,4,_pami_core_uint32_band4)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_BAND,2,_pami_core_uint32_band2)\
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_BAND,4,_pami_core_uint32_band4)
 #define OPTIMIZED_uint32_bor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_BOR,2,_pami_core_uint32_bor2) \
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_BOR,4,_pami_core_uint32_bor4)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_BOR,2,_pami_core_uint32_bor2) \
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_BOR,4,_pami_core_uint32_bor4)
 #define OPTIMIZED_uint32_bxor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_BXOR,2,_pami_core_uint32_bxor2)\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_BXOR,4,_pami_core_uint32_bxor4)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_BXOR,2,_pami_core_uint32_bxor2)\
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_BXOR,4,_pami_core_uint32_bxor4)
 #define OPTIMIZED_uint32_land	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_LAND,2,_pami_core_uint32_land2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_LAND,2,_pami_core_uint32_land2)
 #define OPTIMIZED_uint32_lor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_LOR,2,_pami_core_uint32_lor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_LOR,2,_pami_core_uint32_lor2)
 #define OPTIMIZED_uint32_lxor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_LXOR,2,_pami_core_uint32_lxor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_LXOR,2,_pami_core_uint32_lxor2)
 #define OPTIMIZED_uint32_max	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_MAX,2,_pami_core_uint32_max2) \
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_MAX,4,_pami_core_uint32_max4)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_MAX,2,_pami_core_uint32_max2) \
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_MAX,4,_pami_core_uint32_max4)
 #define OPTIMIZED_uint32_min	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_MIN,2,_pami_core_uint32_min2) \
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_MIN,4,_pami_core_uint32_min4)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_MIN,2,_pami_core_uint32_min2) \
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_MIN,4,_pami_core_uint32_min4)
 #define OPTIMIZED_uint32_prod	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_PROD,2,_pami_core_uint32_prod2)\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_PROD,4,_pami_core_uint32_prod4)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_PROD,2,_pami_core_uint32_prod2)\
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_PROD,4,_pami_core_uint32_prod4)
 #define OPTIMIZED_uint32_sum	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_SUM,2,_pami_core_uint32_sum2) \
-	OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_SUM,4,_pami_core_uint32_sum4)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_SUM,2,_pami_core_uint32_sum2) \
+        OPTIMATH_NSRC(PAMI_UNSIGNED_INT,PAMI_SUM,4,_pami_core_uint32_sum4)
 #define OPTIMIZED_int64_band	\
-	OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_BAND,2,_pami_core_int64_band2)
+        OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_BAND,2,_pami_core_int64_band2)
 #define OPTIMIZED_int64_bor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_BOR,2,_pami_core_int64_bor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_BOR,2,_pami_core_int64_bor2)
 #define OPTIMIZED_int64_bxor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_BXOR,2,_pami_core_int64_bxor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_BXOR,2,_pami_core_int64_bxor2)
 #define OPTIMIZED_int64_land	\
-	OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_LAND,2,_pami_core_int64_land2)
+        OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_LAND,2,_pami_core_int64_land2)
 #define OPTIMIZED_int64_lor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_LOR,2,_pami_core_int64_lor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_LOR,2,_pami_core_int64_lor2)
 #define OPTIMIZED_int64_lxor	\
-	OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_LXOR,2,_pami_core_int64_lxor2)
+        OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_LXOR,2,_pami_core_int64_lxor2)
 #define OPTIMIZED_int64_max	\
-	OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_MAX,2,_pami_core_int64_max2)
+        OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_MAX,2,_pami_core_int64_max2)
 #define OPTIMIZED_int64_min	\
-	OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_MIN,2,_pami_core_int64_min2)
+        OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_MIN,2,_pami_core_int64_min2)
 #define OPTIMIZED_int64_prod	\
-	OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_PROD,2,_pami_core_int64_prod2)
+        OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_PROD,2,_pami_core_int64_prod2)
 #define OPTIMIZED_int64_sum	\
-	OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_SUM,2,_pami_core_int64_sum2)
+        OPTIMATH_NSRC(PAMI_SIGNED_LONG_LONG,PAMI_SUM,2,_pami_core_int64_sum2)
 #define OPTIMIZED_uint64_band	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_BAND,2,_pami_core_uint64_band2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_BAND,2,_pami_core_uint64_band2)
 #define OPTIMIZED_uint64_bor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_BOR,2,_pami_core_uint64_bor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_BOR,2,_pami_core_uint64_bor2)
 #define OPTIMIZED_uint64_bxor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_BXOR,2,_pami_core_uint64_bxor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_BXOR,2,_pami_core_uint64_bxor2)
 #define OPTIMIZED_uint64_land	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_LAND,2,_pami_core_uint64_land2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_LAND,2,_pami_core_uint64_land2)
 #define OPTIMIZED_uint64_lor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_LOR,2,_pami_core_uint64_lor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_LOR,2,_pami_core_uint64_lor2)
 #define OPTIMIZED_uint64_lxor	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_LXOR,2,_pami_core_uint64_lxor2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_LXOR,2,_pami_core_uint64_lxor2)
 #define OPTIMIZED_uint64_max	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_MAX,2,_pami_core_uint64_max2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_MAX,2,_pami_core_uint64_max2)
 #define OPTIMIZED_uint64_min	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_MIN,2,_pami_core_uint64_min2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_MIN,2,_pami_core_uint64_min2)
 #define OPTIMIZED_uint64_prod	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_PROD,2,_pami_core_uint64_prod2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_PROD,2,_pami_core_uint64_prod2)
 #define OPTIMIZED_uint64_sum	\
-	OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_SUM,2,_pami_core_uint64_sum2)
+        OPTIMATH_NSRC(PAMI_UNSIGNED_LONG_LONG,PAMI_SUM,2,_pami_core_uint64_sum2)
 #define OPTIMIZED_fp32_max	\
-	OPTIMATH_NSRC(PAMI_FLOAT,PAMI_MAX,2,_pami_core_fp32_max2)
+        OPTIMATH_NSRC(PAMI_FLOAT,PAMI_MAX,2,_pami_core_fp32_max2)
 #define OPTIMIZED_fp32_min	\
-	OPTIMATH_NSRC(PAMI_FLOAT,PAMI_MIN,2,_pami_core_fp32_min2)
+        OPTIMATH_NSRC(PAMI_FLOAT,PAMI_MIN,2,_pami_core_fp32_min2)
 #define OPTIMIZED_fp32_prod	\
-	OPTIMATH_NSRC(PAMI_FLOAT,PAMI_PROD,2,_pami_core_fp32_prod2)
+        OPTIMATH_NSRC(PAMI_FLOAT,PAMI_PROD,2,_pami_core_fp32_prod2)
 #define OPTIMIZED_fp32_sum	\
-	OPTIMATH_NSRC(PAMI_FLOAT,PAMI_SUM,2,_pami_core_fp32_sum2)
+        OPTIMATH_NSRC(PAMI_FLOAT,PAMI_SUM,2,_pami_core_fp32_sum2)
 #define OPTIMIZED_fp32_int32_maxloc	\
-	OPTIMATH_NSRC(PAMI_LOC_FLOAT_INT,PAMI_MAXLOC,2,_pami_core_fp32_int32_maxloc2)
+        OPTIMATH_NSRC(PAMI_LOC_FLOAT_INT,PAMI_MAXLOC,2,_pami_core_fp32_int32_maxloc2)
 #define OPTIMIZED_fp32_fp32_maxloc	\
-	OPTIMATH_NSRC(PAMI_LOC_2FLOAT,PAMI_MAXLOC,2,_pami_core_fp32_fp32_maxloc2)
+        OPTIMATH_NSRC(PAMI_LOC_2FLOAT,PAMI_MAXLOC,2,_pami_core_fp32_fp32_maxloc2)
 #define OPTIMIZED_fp32_int32_minloc	\
-	OPTIMATH_NSRC(PAMI_LOC_FLOAT_INT,PAMI_MINLOC,2,_pami_core_fp32_int32_minloc2)
+        OPTIMATH_NSRC(PAMI_LOC_FLOAT_INT,PAMI_MINLOC,2,_pami_core_fp32_int32_minloc2)
 #define OPTIMIZED_fp32_fp32_minloc	\
-	OPTIMATH_NSRC(PAMI_LOC_2FLOAT,PAMI_MINLOC,2,_pami_core_fp32_fp32_minloc2)
+        OPTIMATH_NSRC(PAMI_LOC_2FLOAT,PAMI_MINLOC,2,_pami_core_fp32_fp32_minloc2)
 #define OPTIMIZED_fp64_max	\
-	OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_MAX,2,_pami_core_fp64_max2)	\
-	OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_MAX,4,_pami_core_fp64_max4)
+        OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_MAX,2,_pami_core_fp64_max2)	\
+        OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_MAX,4,_pami_core_fp64_max4)
 #define OPTIMIZED_fp64_min	\
-	OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_MIN,2,_pami_core_fp64_min2)	\
-	OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_MIN,4,_pami_core_fp64_min4)
+        OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_MIN,2,_pami_core_fp64_min2)	\
+        OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_MIN,4,_pami_core_fp64_min4)
 #define OPTIMIZED_fp64_prod	\
-	OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_PROD,2,_pami_core_fp64_prod2)	\
-	OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_PROD,4,_pami_core_fp64_prod4)
+        OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_PROD,2,_pami_core_fp64_prod2)	\
+        OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_PROD,4,_pami_core_fp64_prod4)
 #define OPTIMIZED_fp64_sum	\
-	OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_SUM,2,_pami_core_fp64_sum2)	\
-	OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_SUM,4,_pami_core_fp64_sum4)
+        OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_SUM,2,_pami_core_fp64_sum2)	\
+        OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_SUM,4,_pami_core_fp64_sum4)
 #define OPTIMIZED_fp64_int32_maxloc	\
-	OPTIMATH_NSRC(PAMI_LOC_DOUBLE_INT,PAMI_MAXLOC,2,_pami_core_fp64_int32_maxloc2)
+        OPTIMATH_NSRC(PAMI_LOC_DOUBLE_INT,PAMI_MAXLOC,2,_pami_core_fp64_int32_maxloc2)
 #define OPTIMIZED_fp64_fp64_maxloc	\
-	OPTIMATH_NSRC(PAMI_LOC_2DOUBLE,PAMI_MAXLOC,2,_pami_core_fp64_fp64_maxloc2)
+        OPTIMATH_NSRC(PAMI_LOC_2DOUBLE,PAMI_MAXLOC,2,_pami_core_fp64_fp64_maxloc2)
 #define OPTIMIZED_fp64_int32_minloc	\
-	OPTIMATH_NSRC(PAMI_LOC_DOUBLE_INT,PAMI_MINLOC,2,_pami_core_fp64_int32_minloc2)
+        OPTIMATH_NSRC(PAMI_LOC_DOUBLE_INT,PAMI_MINLOC,2,_pami_core_fp64_int32_minloc2)
 #define OPTIMIZED_fp64_fp64_minloc	\
-	OPTIMATH_NSRC(PAMI_LOC_2DOUBLE,PAMI_MINLOC,2,_pami_core_fp64_fp64_minloc2)
+        OPTIMATH_NSRC(PAMI_LOC_2DOUBLE,PAMI_MINLOC,2,_pami_core_fp64_fp64_minloc2)
 #define OPTIMIZED_fp128_max	\
-	OPTIMATH_NSRC(PAMI_LONG_DOUBLE,PAMI_MAX,2,_pami_core_fp128_max2)
+        OPTIMATH_NSRC(PAMI_LONG_DOUBLE,PAMI_MAX,2,_pami_core_fp128_max2)
 #define OPTIMIZED_fp128_min	\
-	OPTIMATH_NSRC(PAMI_LONG_DOUBLE,PAMI_MIN,2,_pami_core_fp128_min2)
+        OPTIMATH_NSRC(PAMI_LONG_DOUBLE,PAMI_MIN,2,_pami_core_fp128_min2)
 #define OPTIMIZED_fp128_prod	\
-	OPTIMATH_NSRC(PAMI_LONG_DOUBLE,PAMI_PROD,2,_pami_core_fp128_prod2)
+        OPTIMATH_NSRC(PAMI_LONG_DOUBLE,PAMI_PROD,2,_pami_core_fp128_prod2)
 #define OPTIMIZED_fp128_sum	\
-	OPTIMATH_NSRC(PAMI_LONG_DOUBLE,PAMI_SUM,2,_pami_core_fp128_sum2)
+        OPTIMATH_NSRC(PAMI_LONG_DOUBLE,PAMI_SUM,2,_pami_core_fp128_sum2)
 
 /**
  * The simple, unary, routines.

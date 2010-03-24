@@ -29,59 +29,59 @@
 namespace PAMI {
 namespace Counter {
 namespace BGP {
-	//
-	// This class is used internally ONLY. See following classes for users
-	//
-	class _LockBoxCounter {
-	public:
-		_LockBoxCounter() { _addr = NULL; }
-		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-			PAMI_abortf("_LockBoxCounter must be a subclass");
-		}
-		inline size_t fetch_impl() {
-			return LockBox_Query((LockBox_Counter_t)_addr);
-		}
-		inline size_t fetch_and_inc_impl() {
-			return LockBox_FetchAndInc((LockBox_Counter_t)_addr);
-		}
-		inline size_t fetch_and_dec_impl() {
-			return LockBox_FetchAndDec((LockBox_Counter_t)_addr);
-		}
-		inline size_t fetch_and_clear_impl() {
-			return LockBox_FetchAndClear((LockBox_Counter_t)_addr);
-		}
+        //
+        // This class is used internally ONLY. See following classes for users
+        //
+        class _LockBoxCounter {
+        public:
+                _LockBoxCounter() { _addr = NULL; }
+                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+                        PAMI_abortf("_LockBoxCounter must be a subclass");
+                }
+                inline size_t fetch_impl() {
+                        return LockBox_Query((LockBox_Counter_t)_addr);
+                }
+                inline size_t fetch_and_inc_impl() {
+                        return LockBox_FetchAndInc((LockBox_Counter_t)_addr);
+                }
+                inline size_t fetch_and_dec_impl() {
+                        return LockBox_FetchAndDec((LockBox_Counter_t)_addr);
+                }
+                inline size_t fetch_and_clear_impl() {
+                        return LockBox_FetchAndClear((LockBox_Counter_t)_addr);
+                }
 /* no such thing exists for BG/P lockboxes.
-		inline bool compare_and_swap_impl(size_t compare, size_t swap) {
-		}
+                inline bool compare_and_swap_impl(size_t compare, size_t swap) {
+                }
 */
-		void *returnLock_impl() { return _addr; }
-	protected:
-		void *_addr;
-	}; // class _LockBoxCounter
+                void *returnLock_impl() { return _addr; }
+        protected:
+                void *_addr;
+        }; // class _LockBoxCounter
 
-	//
-	// Here are the actual classes to be used:
-	//
+        //
+        // Here are the actual classes to be used:
+        //
 
-	class LockBoxNodeCounter : public _LockBoxCounter,
-				 public PAMI::Atomic::Interface::Counter<LockBoxNodeCounter> {
-	public:
-		LockBoxNodeCounter() {}
-		~LockBoxNodeCounter() {}
-		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_NODE_SCOPE);
-		}
-	}; // class LockBoxNodeCounter
+        class LockBoxNodeCounter : public _LockBoxCounter,
+                                 public PAMI::Atomic::Interface::Counter<LockBoxNodeCounter> {
+        public:
+                LockBoxNodeCounter() {}
+                ~LockBoxNodeCounter() {}
+                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+                        __global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_NODE_SCOPE);
+                }
+        }; // class LockBoxNodeCounter
 
-	class LockBoxProcCounter : public _LockBoxCounter,
-				 public PAMI::Atomic::Interface::Counter<LockBoxProcCounter> {
-	public:
-		LockBoxProcCounter() {}
-		~LockBoxProcCounter() {}
-		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_PROC_SCOPE);
-		}
-	}; // class LockBoxProcCounter
+        class LockBoxProcCounter : public _LockBoxCounter,
+                                 public PAMI::Atomic::Interface::Counter<LockBoxProcCounter> {
+        public:
+                LockBoxProcCounter() {}
+                ~LockBoxProcCounter() {}
+                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+                        __global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_PROC_SCOPE);
+                }
+        }; // class LockBoxProcCounter
 
 }; // BGP namespace
 }; // Counter namespace

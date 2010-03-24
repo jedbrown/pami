@@ -110,14 +110,14 @@ namespace CCMI
         _cdata._comm    = comm;
         MEMSET(_phasevec, 0, sizeof(_phasevec));
 
-	_minfo.msginfo       = (pami_quad_t *)(void *) &_cdata;
-	_minfo.msgcount      = 1;
-	_minfo.src           = NULL;
-	_minfo.dst           = NULL;
-	_minfo.bytes         = 0;
+        _minfo.msginfo       = (pami_quad_t *)(void *) &_cdata;
+        _minfo.msgcount      = 1;
+        _minfo.src           = NULL;
+        _minfo.dst           = NULL;
+        _minfo.bytes         = 0;
         _minfo.roles         = -1U;
         _minfo.dst_participants  = NULL;
-	_minfo.src_participants  = (pami_topology_t *)&_srctopology;
+        _minfo.src_participants  = (pami_topology_t *)&_srctopology;
 
         _iteration           = 0;
       }
@@ -237,9 +237,9 @@ inline void  CCMI::Executor::BarrierExec::start()
  * \param cb_done: completion callback
  */
 inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
-						       const pami_quad_t   & info,
-						       PAMI::PipeWorkQueue ** pwq,
-						       pami_callback_t      * cb_done)
+                                                       const pami_quad_t   & info,
+                                                       PAMI::PipeWorkQueue ** pwq,
+                                                       pami_callback_t      * cb_done)
 {
   CollHeaderData *hdr = (CollHeaderData *) (& info);
   CCMI_assert (hdr->_iteration <= 1);
@@ -247,7 +247,7 @@ inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
   _phasevec[hdr->_phase][hdr->_iteration] ++;
 
   TRACE_ERR((stderr,"%d: <%X>Executor::BarrierExec::notifyRecv phase %d, vec %d expected vec\n",_native->myrank(),
-	     this,
+             this,
              hdr->_phase, _phasevec[hdr->_phase][hdr->_iteration],  _cache.getSrcTopology(hdr->_phase)->size()));
 
   //Start has not been called, just record recv and return

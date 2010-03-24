@@ -63,7 +63,7 @@ namespace CCMI
                     int                         root = -1,
                     CCMI::Schedule::Color       color=CCMI::Schedule::XP_Y_Z) :
           CCMI::Adaptor::Allreduce::Composite<T_Mcast, T_Sysdep,T_ConnectionManager>(flags,
-										     (CCMI::Executor::Composite*)geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE0),
+                                                                                     (CCMI::Executor::Composite*)geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE0),
                                                                  factory, cb_done),
         _executor(map, cmgr, consistency, geometry->comm(), geometry->getAllreduceIteration())
         {

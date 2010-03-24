@@ -84,37 +84,37 @@ namespace Interface
 template <class T_Object>
 inline void Mutex<T_Object>::acquire()
 {
-	static_cast<T_Object*>(this)->acquire_impl();
+        static_cast<T_Object*>(this)->acquire_impl();
 }
 
 template <class T_Object>
 inline void Mutex<T_Object>::release()
 {
-	static_cast<T_Object*>(this)->release_impl();
+        static_cast<T_Object*>(this)->release_impl();
 }
 
 template <class T_Object>
 inline bool Mutex<T_Object>::tryAcquire()
 {
-	return static_cast<T_Object*>(this)->tryAcquire_impl();
+        return static_cast<T_Object*>(this)->tryAcquire_impl();
 }
 
 template <class T_Object>
 inline bool Mutex<T_Object>::isLocked()
 {
-	return static_cast<T_Object*>(this)->isLocked_impl();
+        return static_cast<T_Object*>(this)->isLocked_impl();
 }
 
 template <class T_Object>
 inline void Mutex<T_Object>::init(PAMI::Memory::MemoryManager *mm)
 {
-	static_cast<T_Object*>(this)->init_impl(mm);
+        static_cast<T_Object*>(this)->init_impl(mm);
 }
 
 template <class T_Object>
 inline void *Mutex<T_Object>::returnLock()
 {
-	return static_cast<T_Object*>(this)->returnLock_impl();
+        return static_cast<T_Object*>(this)->returnLock_impl();
 }
 
 }; // namespace Interface
