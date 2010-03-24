@@ -38,6 +38,8 @@
 #define TRACE_ERR(x)  //fprintf x
 #endif
 
+#define BGQ_GLOBAL_SHMEM_SIZE	256*1024 ///< extra shmem for BGQ L2 Atomics and WAC
+
 namespace XMI
 {
   class Global : public Interface::Global<XMI::Global>
@@ -48,22 +50,20 @@ namespace XMI
           personality (),
           mapping(personality),
 	  l2atomicFactory(),
-          _memptr (NULL),
-          _memsize (0),
           _mapcache ()
       {
         xmi_coord_t ll, ur;
         xmi_task_t min = 0, max = 0;
         const char   * shmemfile = "/unique-xmi-global-shmem-file";
-        //size_t   bytes     = 1024*1024;
-        size_t   bytes     = 32 * 1024;
+        size_t   bytes;
         size_t   pagesize  = 4096;
 
+        bytes = initializeMapCache(personality, NULL, ll, ur, min, max, true);
+	
         // Round up to the page size
-        size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
+        size_t size = ((bytes + pagesize - 1) & ~(pagesize - 1)) + BGQ_GLOBAL_SHMEM_SIZE;
 
         int fd, rc;
-        size_t n = size;
 
         // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
         TRACE_ERR((stderr, "Global() .. size = %zd\n", size));
@@ -74,30 +74,19 @@ namespace XMI
         if (rc != -1)
           {
             fd = rc;
-            rc = ftruncate( fd, n );
-            TRACE_ERR((stderr, "Global() .. after ftruncate(%d,%zd), rc = %d\n", fd, n, rc));
+            rc = ftruncate( fd, size );
+            TRACE_ERR((stderr, "Global() .. after ftruncate(%d,%zd), rc = %d\n", fd, size, rc));
 
             if (rc != -1)
               {
-                ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+                ptr = mmap( NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
                 TRACE_ERR((stderr, "Global() .. after mmap, ptr = %p, MAP_FAILED = %p\n", ptr, MAP_FAILED));
 
                 if (ptr != MAP_FAILED)
                   {
-                    TRACE_ERR((stderr, "Global:shmem file <%s> %zd bytes mapped at %p\n", shmemfile, n, ptr));
-                    _memptr  = ptr;
-                    _memsize = n;
+                    TRACE_ERR((stderr, "Global:shmem file <%s> %zd bytes mapped at %p\n", shmemfile, size, ptr));
+	            mm.init(ptr, size);
 
-                    TRACE_ERR((stderr, "Global() .. _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
-                    size_t bytes_used =
-                      initializeMapCache (personality, ll, ur, min, max, true);
-
-                    // Round up to the page size
-                    size = (bytes_used + pagesize - 1) & ~(pagesize - 1);
-
-                    // Truncate to this size.
-                    rc = ftruncate( fd, size );
-                    TRACE_ERR((stderr, "Global() .. after second ftruncate(%d,%zd), rc = %d\n", fd, n, rc));
                   }
                 else
                   {
@@ -108,18 +97,17 @@ namespace XMI
 
         if (rc == -1)
           {
-            fprintf(stderr, "%s:%d Failed to create shared memory (rc=%d, ptr=%p, n=%zd) errno %d %s\n", __FILE__, __LINE__, rc, ptr, n, errno, strerror(errno));
+            fprintf(stderr, "%s:%d Failed to create shared memory (rc=%d, ptr=%p, size=%zd) errno %d %s\n", __FILE__, __LINE__, rc, ptr, size, errno, strerror(errno));
             // There was a failure obtaining the shared memory segment, most
             // likely because the application is running in SMP mode. Allocate
             // memory from the heap instead.
             //
             // TODO - verify the run mode is actually SMP.
-            posix_memalign ((void **)&_memptr, 16, bytes);
-            memset (_memptr, 0, bytes);
-            _memsize = bytes;
-            TRACE_ERR((stderr, "Global() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
-            initializeMapCache (personality, ll, ur, min, max, false);
+            posix_memalign ((void **)&ptr, 16, size);
+            memset (ptr, 0, size);
+	    mm.init(ptr, size);
           }
+        (void)initializeMapCache(personality, &mm, ll, ur, min, max, false);
 
         mapping.init(_mapcache, personality);
         XMI::Topology::static_init(&mapping);
@@ -147,7 +135,7 @@ namespace XMI
 
         topology_global.subTopologyLocalToMe(&topology_local);
 	XMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
-	l2atomicFactory.init(&mapping, &topology_local);
+	l2atomicFactory.init(&mm, &mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));
 
@@ -177,6 +165,7 @@ namespace XMI
     private:
 
       inline size_t initializeMapCache (BgqPersonality  & personality,
+					XMI::Memory::MemoryManager *mm,
                                         xmi_coord_t &ll, xmi_coord_t &ur, xmi_task_t &min, xmi_task_t &max, bool shared);
 
     public:
@@ -184,21 +173,20 @@ namespace XMI
       BgqPersonality       personality;
       XMI::Mapping         mapping;
       XMI::Atomic::BGQ::L2AtomicFactory l2atomicFactory;
+      XMI::Memory::MemoryManager mm;
 
     private:
 
-      void           * _memptr;
-      size_t           _memsize;
       bgq_mapcache_t   _mapcache;
       size_t           _size;
   }; // XMI::Global
 };     // XMI
 
+// If 'mm' is NULL, compute total memory needed for mapcache and return (doing nothing else).
 size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
+					XMI::Memory::MemoryManager *mm,
                                         xmi_coord_t &ll, xmi_coord_t &ur, xmi_task_t &min, xmi_task_t &max, bool shared)
 {
-  void            * ptr      = _memptr;
-  //size_t            bytes    = _memsize;
   bgq_mapcache_t  * mapcache = &_mapcache;
 
   TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() >> ptr = %p, bytes = %zd, mapcache = %p\n", ptr, _memsize, mapcache));
@@ -224,8 +212,6 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
     volatile xmi_coord_t activeURCorner;
   } cacheAnchors_t;
 
-  volatile cacheAnchors_t * cacheAnchorsPtr = (volatile cacheAnchors_t *) ptr;
-
   //size_t myRank;
 
 
@@ -242,42 +228,50 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. p=%zd t=%zd size{%zd %zd %zd %zd %zd %zd %zd}\n", pCoord, tCoord, aSize, bSize, cSize, dSize, eSize, pSize, tSize));
 
-  // Notify all other tasks on the node that this task has entered the
-  // map cache initialization function.  If the value returned is zero
-  // then this task is the first one in and is designated the "master".
-  // All other tasks will wait until the master completes the
-  // initialization.
-  uint64_t participant =
-    Fetch_and_Add ((uint64_t *) & (cacheAnchorsPtr->atomic.enter), 1); /// \todo this isn't working on mambo
-
-  //myRank = personality.rank();
-
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. participant=%ld\n", participant));
-
-
   // Calculate the number of potential tasks in this partition.
   size_t fullSize = aSize * bSize * cSize * dSize * eSize * pSize * tSize;
 
   // Calculate the number of potential tasks on a node in this partition.
   size_t peerSize = pSize * tSize;
 
+  if (!mm) {
+	size_t mapsize = sizeof(cacheAnchors_t) +
+		fullSize * sizeof(*mapcache->torus.task2coords) +
+		fullSize * sizeof(*mapcache->torus.coords2task) +
+		peerSize * sizeof(*mapcache->node.local2peer) +
+		peerSize * sizeof(*mapcache->node.peer2task);
+	TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() << mapsize = %zd\n", mapsize));
+	return mapsize;
+  }
+
+  volatile cacheAnchors_t *cacheAnchorsPtr;
+  mm->memalign((void **)&cacheAnchorsPtr, 16, sizeof(*cacheAnchorsPtr));
+  XMI_assertf(cacheAnchorsPtr, "Failed to get memory for cacheAnchorsPtr");
+
   TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache = %p, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zd, fullSize = %zd, peerSize = %zd\n", mapcache, cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize));
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->torus.task2coords = %p\n", mapcache->torus.task2coords));
 
-  mapcache->torus.task2coords = (bgq_coords_t *) (cacheAnchorsPtr + 1);
+  // Notify all other tasks on the node that this task has entered the
+  // map cache initialization function.  If the value returned is zero
+  // then this task is the first one in and is designated the "master".
+  // All other tasks will wait until the master completes the
+  // initialization.
+  uint64_t participant = Fetch_and_Add((uint64_t *)&(cacheAnchorsPtr->atomic.enter), 1); /// \todo this isn't working on mambo
 
+  //myRank = personality.rank();
+
+  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. participant=%ld\n", participant));
+
+  mm->memalign((void **)&mapcache->torus.task2coords, 16, fullSize * sizeof(*mapcache->torus.task2coords));
+  XMI_assertf(cacheAnchorsPtr, "Failed to get memory for task2coords");
+  mm->memalign((void **)&mapcache->torus.coords2task, 16, fullSize * sizeof(*mapcache->torus.coords2task));
+  XMI_assertf(cacheAnchorsPtr, "Failed to get memory for coords2task");
   TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->torus.task2coords = %p mapcache->torus.coords2task = %p\n", mapcache->torus.task2coords, mapcache->torus.coords2task));
-
-  mapcache->torus.coords2task = (uint32_t *) (mapcache->torus.task2coords + fullSize);
-
   TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->torus.coords2task = %p\n", mapcache->node.local2peer, mapcache->torus.coords2task));
 
-  mapcache->node.local2peer   = (size_t *) (mapcache->torus.coords2task + peerSize);
-
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
-
-  mapcache->node.peer2task    = (size_t *) (mapcache->node.local2peer + peerSize);
-
+  mm->memalign((void **)&mapcache->node.local2peer, 16, peerSize * sizeof(*mapcache->node.local2peer));
+  XMI_assertf(cacheAnchorsPtr, "Failed to get memory for local2peer");
+  mm->memalign((void **)&mapcache->node.peer2task, 16, peerSize * sizeof(*mapcache->node.peer2task));
+  XMI_assertf(cacheAnchorsPtr, "Failed to get memory for peer2task");
   TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
 
   xmi_task_t max_rank = 0, min_rank = (xmi_task_t)-1;
@@ -551,14 +545,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
   mapcache->local_size = cacheAnchorsPtr->numActiveRanksLocal; //hack
   TRACE_ERR( (stderr, "local_size:%zu\n", mapcache->local_size));
 
-
-  size_t mapsize = sizeof(cacheAnchors_t) +
-                   (sizeof(bgq_coords_t) + sizeof(uint32_t)) * fullSize +
-                   (sizeof(size_t) * 2) * peerSize;
-
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() << mapsize = %zd\n", mapsize));
-
-  return mapsize;
+  return 0;
 };
 
 

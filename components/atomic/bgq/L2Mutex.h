@@ -30,37 +30,16 @@ namespace BGQ {
 	//
 	// These classes are used internally ONLY. See following classes for users
 	//
-	class L2ProcMutex : public XMI::Atomic::Interface::Mutex<L2ProcMutex> {
+	template <class T_Mutex>
+	class _L2Mutex : public XMI::Atomic::Interface::Mutex<T_Mutex> {
 	public:
-		L2ProcMutex() { }
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-		}
-		void acquire_impl() {
-			while (L2_AtomicLoadIncrement(&_counter) != 0);
-		}
-		void release_impl() {
-			L2_AtomicLoadClear(&_counter);
-		}
-		bool tryAcquire_impl() {
-			return (L2_AtomicLoadIncrement(&_counter) == 0);
-		}
-		bool isLocked_impl() {
-			return (L2_AtomicLoad(&_counter) > 0) ? true : false;
-		}
-		void *returnLock_impl() { return &_counter; }
-	protected:
-		uint64_t _counter;
-	}; // class L2ProcMutex
-
-	class L2NodeMutex : public XMI::Atomic::Interface::Mutex<L2NodeMutex> {
-	public:
-		L2NodeMutex() { }
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			xmi_result_t rc = mm->memalign((void **)&_counter,
-						L1D_CACHE_LINE_SIZE,
-						sizeof(*_counter));
-			XMI_assertf(rc == XMI_SUCCESS,
-				"Failed to allocate shared memory for Node Mutes");
+		_L2Mutex() { }
+		inline void __init(XMI::Memory::MemoryManager *mm,
+					XMI::Atomic::BGQ::l2x_scope_t scope) {
+			xmi_result_t rc = __global.l2atomicFactory.l2x_alloc((void **)&_counter,
+									1, scope);
+			XMI_assertf(rc == XMI_SUCCESS, "Failed to allocate L2 Atomic Mutex");
+			// if need to reset, must coordinate!
 		}
 		void acquire_impl() {
 			while (L2_AtomicLoadIncrement(_counter) != 0);
@@ -77,6 +56,27 @@ namespace BGQ {
 		void *returnLock_impl() { return _counter; }
 	protected:
 		uint64_t *_counter;
+	}; // class _L2Mutex
+
+	//
+	// These classes are used internally ONLY. See following classes for users
+	//
+	class L2ProcMutex : public _L2Mutex<L2ProcMutex> {
+	public:
+		L2ProcMutex() { }
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
+			__init(mm, XMI::Atomic::BGQ::L2A_PROC_SCOPE);
+		}
+	protected:
+	}; // class L2ProcMutex
+
+	class L2NodeMutex : public _L2Mutex<L2NodeMutex> {
+	public:
+		L2NodeMutex() { }
+		inline void init_impl(XMI::Memory::MemoryManager *mm) {
+			__init(mm, XMI::Atomic::BGQ::L2A_NODE_SCOPE);
+		}
+	protected:
 	}; // class L2NodeMutex
 
 }; // BGQ namespace

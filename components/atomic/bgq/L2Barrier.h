@@ -34,35 +34,17 @@ namespace BGQ {
 		uint64_t status[2];
 	};
 
-	class _L2_ProcBarrier_s {
+	class _L2_Barrier_s {
 	public:
-		_L2_ProcBarrier_s() { }
+		_L2_Barrier_s() { }
 
-		inline void init(XMI::Memory::MemoryManager *mm) {
-		}
-
-		inline uint64_t *controlPtr() { return &_counters.ctrl_lock; }
-		inline uint64_t *lockPtr(int n) { return &_counters.lock[n]; }
-		inline uint64_t *statusPtr(int n) { return &_counters.status[n]; }
-
-	private:
-		L2_Barrier_ctrs _counters;
-	public:
-		uint8_t _master;    /**< master participant */
-		uint8_t _coreshift; /**< convert core to process for comparing to master */
-		uint8_t _nparties;  /**< number of participants */
-	};
-
-	class _L2_NodeBarrier_s {
-	public:
-		_L2_NodeBarrier_s() { }
-
-		inline void init(XMI::Memory::MemoryManager *mm) {
-			xmi_result_t rc = mm->memalign((void **)&_counters,
-							sizeof(uint64_t),
-							sizeof(*_counters));
+		inline void init(XMI::Memory::MemoryManager *mm,
+				XMI::Atomic::BGQ::l2x_scope_t scope) {
+			xmi_result_t rc =
+				__global.l2atomicFactory.l2x_alloc((void **)&_counters,
+										5, scope);
 			XMI_assertf(rc == XMI_SUCCESS,
-				"Failed to allocate shared memory for Node Barrier");
+				"Failed to allocate L2 Atomics for Node Barrier");
 			// someone needs to reset the barrier, but needs to be
 			// done in some barriered region to ensure no one has
 			// started using the barrier yet (or only first one does it).
@@ -85,7 +67,6 @@ namespace BGQ {
  * This class cannot be used directly. The super class must allocate the
  * particular type of lockbox based on desired scope.
  */
-template <class T_Barrier_struct>
 class _L2Barrier {
 public:
 	_L2Barrier() { }
@@ -151,14 +132,14 @@ public:
 	// With 5 lockboxes used... which one should be returned?
 	inline void *returnBarrier_impl() { return _barrier.controlPtr(); }
 protected:
-	T_Barrier_struct _barrier;
+	_L2_Barrier_s _barrier;
 	void *_data;
 	XMI::Atomic::Interface::barrierPollStatus _status;
 }; // class _L2Barrier
 
 class L2NodeCoreBarrier :
 		public XMI::Atomic::Interface::Barrier<L2NodeCoreBarrier>,
-		public _L2Barrier<_L2_NodeBarrier_s> {
+		public _L2Barrier {
 public:
 	L2NodeCoreBarrier() {}
 	~L2NodeCoreBarrier() {}
@@ -168,7 +149,7 @@ public:
 		// is the lowest-numbered core in the
 		// process.
 
-		_barrier.init(mm);
+		_barrier.init(mm, XMI::Atomic::BGQ::L2A_NODE_CORE_SCOPE);
 		// assert(m .iff. me == masterProc());
 		_barrier._master = __global.l2atomicFactory.masterProc() << __global.l2atomicFactory.coreShift();
 		_barrier._coreshift = 0;
@@ -179,7 +160,7 @@ public:
 
 class L2NodeProcBarrier :
 		public XMI::Atomic::Interface::Barrier<L2NodeProcBarrier>,
-		public _L2Barrier<_L2_NodeBarrier_s> {
+		public _L2Barrier {
 public:
 	L2NodeProcBarrier() {}
 	~L2NodeProcBarrier() {}
@@ -189,7 +170,7 @@ public:
 		// and only one core per process will
 		// participate.
 
-		_barrier.init(mm);
+		_barrier.init(mm, XMI::Atomic::BGQ::L2A_NODE_PROC_SCOPE);
 		// assert(m .iff. me == masterProc());
 		_barrier._master = __global.l2atomicFactory.coreXlat(__global.l2atomicFactory.masterProc()) >> __global.l2atomicFactory.coreShift();
 		_barrier._coreshift = __global.l2atomicFactory.coreShift();

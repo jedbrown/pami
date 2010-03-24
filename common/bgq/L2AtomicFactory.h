@@ -12,20 +12,19 @@
 
 #include "Mapping.h"
 #include "Topology.h"
+#include "components/memory/MemoryManager.h"
+#include "spi/include/kernel/memory.h"
 
-// not sure what this should be yet...
-#define MapL2AtomicRegion(v)	((uintptr_t)v)
-
-// These define the range of lockboxes we're allowed to use.
-#define L2A_MIN_L2ATOMIC	0
-#define L2A_MAX_NUML2ATOMIC	256
+// These define the range of L2Atomics we're allowed to use.
+#define L2A_MAX_NUMNODEL2ATOMIC	16*256	///< max number of node-scope atomics
+#define L2A_MAX_NUMPROCL2ATOMIC	16*256	///< max number of proc(etc)-scope atomics
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file common/bgq/L2AtomicFactory.h
 ///  \brief Implementation of BGQ AtomicFactory scheme(s).
 ///
 ///  This object is a portability layer that implements allocation
-///  of lockboxes for use in Mutexes, Barriers, and Atomic (counters).
+///  of L2Atomics for use in Mutexes, Barriers, and Atomic (counters).
 ///
 ///  Namespace:  XMI, the messaging namespace
 ///  Notes:  This is currently indended for use only by the lock manager
@@ -65,7 +64,13 @@ namespace BGQ {
 		size_t coreXlat[NUM_CORES]; /**< translate process to core */
 		size_t coreShift;	/**< translate core to process */
 	};
-	static const int MAX_NUML2ATOMICS = 5;
+	struct atomic_arena_t {
+		size_t size;	///< number of atomics
+		void *virt;	///< virtual address of memory
+		Kernel_MemoryRegion_t memreg;	///< memory region
+		uint64_t *base;///< arena base (phys addr of memory)
+		size_t next;	///< current number allocated
+	};
 
 	class L2AtomicFactory {
 	private:
@@ -74,31 +79,51 @@ namespace BGQ {
 		xmi_task_t __masterRank;
 		size_t __numProc;
 		bool __isMasterRank;
-		struct {
-			size_t size;
-			void *virt;
-			uintptr_t arena;
-			size_t next;
-		} _l2atomic;
+		atomic_arena_t _l2node;
+		atomic_arena_t _l2proc;
 	public:
 		L2AtomicFactory() { }
 
-		inline void init( /* XMI::Memory::MemoryManager *mm,  */
+		inline void init(XMI::Memory::MemoryManager *mm,
 				XMI::Mapping *mapping, XMI::Topology *local) {
 			xmi_result_t rc;
+			uint32_t krc;
+			int irc;
                         /** \todo #warning must figure out L2 Atomic Factory memory management... */
-#if 0
 			// Must coordinate with all other processes on this node,
 			// and arrive at a common chunk of physical address memory
-			// which we all will use for allocating "lockboxes" from.
+			// which we all will use for allocating "L2Atomics" from.
 			// One sure way to do this is to allocate shared memory.
-			_l2atomic.size = sizeof(uint64_t) * L2A_MAX_NUML2ATOMIC;
-			mm->memalign((void **)&_l2atomic.virt, 8, _l2atomic.size);
-			XMI_assertf(_l2atomic.virt, "Out of shared memory in L2AtomicFactory");
-			_l2atomic.arena = (uintptr_t) _l2atomic.virt; //MapL2AtomicRegion(_l2atomic.virt);
-			_l2atomic.next = 0;
-			// ...something like that...
-#endif
+			_l2node.size = L2A_MAX_NUMNODEL2ATOMIC;
+			_l2node.virt = NULL;
+
+			rc = mm->memalign((void **)&_l2node.virt, sizeof(uint64_t),
+					sizeof(uint64_t) * _l2node.size);
+			XMI_assertf(rc == XMI_SUCCESS && _l2node.virt,
+				"Failed to get shmem for _l2node, asked size %zd",
+				sizeof(uint64_t) * _l2node.size);
+			memset(_l2node.virt, 0, sizeof(uint64_t) * _l2node.size);
+			krc = Kernel_CreateMemoryRegion(&_l2node.memreg,
+							_l2node.virt, _l2node.size);
+			XMI_assertf(krc == 0, "Failed to get physical address for L2 Atomic region");
+			_l2node.base = (uint64_t *)_l2node.memreg.BasePa;
+			// Kernel_DestroyMemoryRegion(&_l2node.memreg); ???
+			_l2node.next = 0;
+
+			_l2proc.size = L2A_MAX_NUMPROCL2ATOMIC;
+			_l2proc.virt = NULL;
+			irc = posix_memalign((void **)&_l2proc.virt, sizeof(uint64_t),
+					sizeof(uint64_t) * _l2proc.size);
+			XMI_assertf(irc == 0 && _l2proc.virt,
+				"Failed to get memory for _l2proc, asked size %zd",
+				sizeof(uint64_t) * _l2proc.size);
+			memset(_l2proc.virt, 0, sizeof(uint64_t) * _l2proc.size);
+			krc = Kernel_CreateMemoryRegion(&_l2proc.memreg,
+							_l2proc.virt, _l2proc.size);
+			XMI_assertf(krc == 0, "Failed to get physical address for L2 Atomic region");
+			_l2proc.base = (uint64_t *)_l2proc.memreg.BasePa;
+			// Kernel_DestroyMemoryRegion(&_l2proc.memreg); ???
+			_l2proc.next = 0;
 
 			// Compute all implementation parameters,
 			// i.e. fill-in _factory struct.
@@ -164,6 +189,98 @@ namespace BGQ {
 		inline size_t numProc() { return _factory.numProc; }
 		inline size_t coreXlat(size_t x) { return _factory.coreXlat[x]; }
 		inline bool isMasterRank() { return __isMasterRank; }
+
+		/// callers must ensure all use the same order
+		inline xmi_result_t l2x_alloc(void **p, int numAtomics, l2x_scope_t scope) {
+			int lockSpan = numAtomics;
+			atomic_arena_t *arena;
+			switch(scope) {
+			case L2A_NODE_SCOPE:
+			case L2A_NODE_PROC_SCOPE:
+			case L2A_NODE_PTHREAD_SCOPE:
+			case L2A_NODE_CORE_SCOPE:
+			case L2A_NODE_SMT_SCOPE:
+				// Node-scoped L2Atomics...
+				// barrier... ??
+				arena = &_l2node;
+				break;
+			case L2A_PROC_SCOPE:
+			case L2A_PROC_CORE_SCOPE:
+			case L2A_PROC_SMT_SCOPE:
+			case L2A_PROC_PTHREAD_SCOPE:
+				// Process-scoped L2Atomics...
+				// Allocate the entire block on all processes, but
+				// only return our specific lock(s).
+				// ensure all get different L2Atomics
+				lockSpan *= _factory.numProc;
+				arena = &_l2proc;
+				break;
+			case L2A_CORE_SCOPE:
+			case L2A_CORE_SMT_SCOPE:
+				/// \todo what are core-scoped atomics?
+				arena = &_l2proc;
+				//break;
+			case L2A_SMT_SCOPE:
+				/// \todo what are smt-scoped atomics?
+				arena = &_l2proc;
+				//break;
+			case L2A_PTHREAD_SCOPE:
+				/// \todo what are pthread-scoped atomics?
+				arena = &_l2proc;
+				//break;
+			default:
+				XMI_abortf("Invalid L2Atomic scope");
+				break;
+			}
+			*p = NULL;
+			if (arena->next + lockSpan > arena->size) {
+				return XMI_EAGAIN;
+			}
+			size_t idx = arena->next;
+			arena->next += lockSpan;
+			int x;
+			switch(scope) {
+			case L2A_NODE_SCOPE:
+			case L2A_NODE_PROC_SCOPE:
+			case L2A_NODE_PTHREAD_SCOPE:
+			case L2A_NODE_CORE_SCOPE:
+			case L2A_NODE_SMT_SCOPE:
+				// Node-scoped L2Atomics...
+				// we get exactly what we asked for.
+				for (x = 0; x < numAtomics; ++x) {
+					p[x] = &arena->base[idx++];
+				}
+fprintf(stderr, "Got %d NODE atomics at %p\n", numAtomics, p[0]);
+				// barrier... ??
+				break;
+			case L2A_PROC_SCOPE:
+			case L2A_PROC_CORE_SCOPE:
+			case L2A_PROC_SMT_SCOPE:
+			case L2A_PROC_PTHREAD_SCOPE:
+				// Process-scoped L2Atomics...
+				// Take our specific lock out of the entire block.
+				idx += (numAtomics * _factory.myProc);
+				for (x = 0; x < numAtomics; ++x) {
+					p[x] = &arena->base[idx++];
+				}
+fprintf(stderr, "Got %d PROC atomics at %p\n", numAtomics, p[0]);
+				break;
+			case L2A_CORE_SCOPE:
+			case L2A_CORE_SMT_SCOPE:
+				/// \todo what are core-scoped atomics?
+				//break;
+			case L2A_SMT_SCOPE:
+				/// \todo what are smt-scoped atomics?
+				//break;
+			case L2A_PTHREAD_SCOPE:
+				/// \todo what are pthread-scoped atomics?
+				//break;
+			default:
+				XMI_abortf("Invalid L2Atomic scope");
+				break;
+			}
+			return XMI_SUCCESS;
+		}
 
 	}; // class L2AtomicFactory
 
