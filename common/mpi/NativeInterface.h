@@ -26,7 +26,17 @@ extern XMI::Global __global;
 
 namespace XMI
 {
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
+  typedef enum MPINativeInterfaceSemantics
+  {
+    OneSided=0,
+    AllSided,
+  }MPINativeInterfaceSemantics;
+  size_t        dispatch = DISPATCH_START-1;
+
+
+
+
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb,  int T_Semantics=OneSided>
   class MPINativeInterface : public CCMI::Interfaces::NativeInterface
   {
   public:
@@ -90,8 +100,8 @@ namespace XMI
   ///////////////////////////////////////////////////////////////////////////////
   // Inline implementations
   ///////////////////////////////////////////////////////////////////////////////
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::MPINativeInterface(T_Device      &device,
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+  MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::MPINativeInterface(T_Device      &device,
                        xmi_client_t   client,
                        xmi_context_t  context,
                        size_t         context_id,
@@ -121,8 +131,8 @@ namespace XMI
     XMI_assert(_mcomb_status == XMI_SUCCESS);
   }
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline void MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::ni_client_done(xmi_context_t  context,
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+  inline void MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::ni_client_done(xmi_context_t  context,
                                                                                    void          *rdata,
                                                                                    xmi_result_t   res)
   {
@@ -141,11 +151,9 @@ namespace XMI
       }
 
     /// \brief this call is called when the native interface is initialized
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::setDispatch (xmi_dispatch_callback_fn fn, void *cookie)
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+  inline xmi_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::setDispatch (xmi_dispatch_callback_fn fn, void *cookie)
       {
-      static size_t        dispatch = DISPATCH_START-1;
-
       // todo:  this is a temporary upcall until we can call the interface directly (it gets implemented)
 #if 1
       xmi_dispatch_hint_t        options;
@@ -153,10 +161,16 @@ namespace XMI
       _dispatch=dispatch;
       memset(&options, 0, sizeof(options));
       options.type = XMI_MULTICAST;
-      options.hint.multicast.one_sided = 1;
-//      options.hint.multicast.all_sided = 1;
-//      options.hint.multicast.local     = 1;
-//      options.hint.multicast.ring_wq   = 1;
+      if(T_Semantics == OneSided)
+        options.hint.multicast.one_sided = 1;
+      else if(T_Semantics == AllSided)
+          {
+            options.hint.multicast.all_sided = 1;
+            options.hint.multicast.global    = 1;
+          }
+      else
+        assert(0);
+
       return XMI_Dispatch_set_new(_context,dispatch,fn,cookie, options);
 #else
     TRACE_ERR((stderr, "<%p>MPINativeInterface::setDispatch(%p, %p) id=%zd\n",
@@ -170,8 +184,8 @@ namespace XMI
 #endif
     }
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multicast (xmi_multicast_t *mcast)
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+  inline xmi_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::multicast (xmi_multicast_t *mcast)
       {
 
 #if 1
@@ -205,8 +219,8 @@ namespace XMI
 
   // Multisync Code
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multisync(xmi_multisync_t *msync)
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+  inline xmi_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::multisync(xmi_multisync_t *msync)
       {
     allocObj *req          = (allocObj *)_allocator.allocateObject();
         req->_ni               = this;
@@ -225,8 +239,8 @@ namespace XMI
       }
 
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multicombine (xmi_multicombine_t *mcomb)
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+  inline xmi_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::multicombine (xmi_multicombine_t *mcomb)
   {
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
@@ -245,8 +259,8 @@ namespace XMI
     return _mcomb.postMulticombine(req->_state._mcomb, &m);
   }
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t  MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multicast (uint8_t (&state)[T_Mcast::sizeof_msg],
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+  inline xmi_result_t  MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::multicast (uint8_t (&state)[T_Mcast::sizeof_msg],
                                                                                         xmi_multicast_t *mcast)
       {
     TRACE_ERR((stderr, "<%p>MPINativeInterface::multicast(%p, %p)\n",
@@ -256,8 +270,8 @@ namespace XMI
     return _mcast.postMulticast_impl(state, mcast);
       }
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t  MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+  inline xmi_result_t  MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],
                                                                                         xmi_multisync_t *msync)
   {
     TRACE_ERR((stderr, "<%p>MPINativeInterface::multisync(%p, %p)\n",
@@ -266,8 +280,8 @@ namespace XMI
     return _msync.postMultisync_impl(state, msync);
   }
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t  MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multicombine (uint8_t (&state)[T_Mcomb::sizeof_msg],
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+  inline xmi_result_t  MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::multicombine (uint8_t (&state)[T_Mcomb::sizeof_msg],
                                                                                            xmi_multicombine_t *mcomb)
   {
     TRACE_ERR((stderr, "<%p>MPINativeInterface::multicombine(%p, %p)\n",

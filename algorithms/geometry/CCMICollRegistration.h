@@ -35,11 +35,13 @@ namespace XMI
   namespace CollRegistration
   {
     template <class T_Geometry,
-              class T_NativeInterface,
+              class T_NativeInterface1S,
+              class T_NativeInterfaceAS,
               class T_Device>
     class CCMIRegistration :
       public CollRegistration<XMI::CollRegistration::CCMIRegistration<T_Geometry,
-                                                                      T_NativeInterface,
+                                                                      T_NativeInterface1S, // Onesided NI
+                                                                      T_NativeInterfaceAS, // Allsided NI
                                                                       T_Device>,
                               T_Geometry>
       {
@@ -50,7 +52,8 @@ namespace XMI
                               size_t             client_id,
                               T_Device          &dev):
         CollRegistration<XMI::CollRegistration::CCMIRegistration<T_Geometry,
-                                                                 T_NativeInterface,
+                                                                 T_NativeInterface1S,
+                                                                 T_NativeInterfaceAS,
                                                                  T_Device>,
                          T_Geometry> (),
         _client(client),
@@ -105,10 +108,10 @@ namespace XMI
 
       // Native Interface
       T_Device                                              &_dev;
-      T_NativeInterface                                      _msync_ni;
-      T_NativeInterface                                      _barrier_ni;
-      T_NativeInterface                                      _binom_broadcast_ni;
-      T_NativeInterface                                      _ring_broadcast_ni;
+      T_NativeInterface1S                                    _msync_ni;
+      T_NativeInterface1S                                    _barrier_ni;
+      T_NativeInterfaceAS                                    _binom_broadcast_ni;
+      T_NativeInterfaceAS                                    _ring_broadcast_ni;
 
 
       // CCMI Connection Manager Class

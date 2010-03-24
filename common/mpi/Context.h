@@ -106,9 +106,18 @@ namespace XMI
   typedef XMI::MPINativeInterface<MPIDevice,
                                   MPIMulticastModel,
                                   MPIMultisyncModel,
-                                  MPIMulticombineModel>              DefaultNativeInterface;
+                                  MPIMulticombineModel,
+                                  OneSided>              DefaultNativeInterface;
+
+  typedef XMI::MPINativeInterface<MPIDevice,
+                                  MPIMulticastModel,
+                                  MPIMultisyncModel,
+                                  MPIMulticombineModel,
+                                  AllSided>              DefaultNativeInterfaceAS;
+
   typedef CollRegistration::CCMIRegistration<MPIGeometry,
                                              DefaultNativeInterface,
+                                             DefaultNativeInterfaceAS,
                                              MPIDevice> CCMICollreg;
   // PGAS RT Typedefs/Coll Registration
   typedef XMI::Device::MPIOldmulticastModel<XMI::Device::MPIDevice,
@@ -640,6 +649,9 @@ namespace XMI
         XMI::Device::MPIBcastMdl  * multicast = (XMI::Device::MPIBcastMdl *) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, all sided global multicast %p\n", multicast));
         mcast_storage_t * msgbuf = (mcast_storage_t*)malloc(XMI::Device::MPIBcastMdl::sizeof_msg);/// \todo memleak
+        mcastinfo->client = this->_clientid;  // \todo:  this protocol is not consistent with the other protocols here
+                                              // It assumes info->client is client_id.  The hack here is to fix up the
+                                              // client.  this perturbs user storage
         multicast->postMulticast(*msgbuf,mcastinfo);
       }
       else
@@ -748,10 +760,9 @@ namespace XMI
       xmi_result_t result        = XMI_ERROR;
       // Off node registration
       // This is for communication off node
-
       if(_dispatch[(size_t)id][0] != NULL)
       {
-        XMI_abort();
+        XMI_assertf(0,"Error:  Dispatch already set, id=%d\n", id);
         goto result_error;
       }
       _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();
@@ -802,7 +813,7 @@ namespace XMI
         }
         else // !experimental collective and !local allsided shmem and !global allsided
         {
-          XMI_abort();
+          XMI_assertf(0,"Unknown options for multicast %d\n",options);
           return XMI_UNIMPL;
         }
 

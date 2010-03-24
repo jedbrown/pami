@@ -48,7 +48,7 @@ namespace CCMI
 
 	    XMI_GEOMETRY_CLASS *geometry = ((XMI_GEOMETRY_CLASS *)g);
 	    CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
-	      geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0);
+	      geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE1);
 	    barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
 	    //barrier->setConsistency (consistency);
 	    barrier->start();

@@ -36,7 +36,6 @@ namespace CCMI
           _user_done_fn(cmd->cb_done),
           _user_cookie(cmd->cookie)
           {
-
           }
         T                            _obj;
         CollectiveProtocolFactoryT * _factory;
@@ -87,7 +86,7 @@ namespace CCMI
                             geometry,         // Geometry Object
                             (xmi_xfer_t*)cmd, // Parameters
                             done_fn,          // Intercept function
-                            this,             // Intercept cookie
+                            cobj,             // Intercept cookie
                             this);            // Factory
           return (Executor::Composite *)&cobj->_obj;
 	}
