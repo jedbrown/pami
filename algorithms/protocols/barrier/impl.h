@@ -47,9 +47,10 @@ namespace CCMI
 
       typedef BarrierT <CCMI::Schedule::ListMultinomial,
 	binomial_analyze> BinomialBarrier;
-      typedef CollectiveProtocolFactoryT <BinomialBarrier,
-                                          binom_barrier_md,
-                                          ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS> > BinomialBarrierFactory;
+
+      typedef BarrierFactoryT <BinomialBarrier,
+                               binom_barrier_md,
+                               ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS> > BinomialBarrierFactory;
 
       typedef OldBarrierT <CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>,
                            binomial_analyze,

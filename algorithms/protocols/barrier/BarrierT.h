@@ -27,6 +27,32 @@ namespace CCMI
     {
       typedef bool (*AnalyzeFn) (XMI_GEOMETRY_CLASS *g);
 
+      // Barrier Factory for generate routine
+      // generate
+      //
+      template <class T, MetaDataFn get_metadata, class C>
+      class BarrierFactoryT : public CollectiveProtocolFactoryT<T,get_metadata,C>
+      {
+      public:
+        BarrierFactoryT(C                           *cmgr,
+                        Interfaces::NativeInterface *native,
+                        xmi_dispatch_multicast_fn    cb_head=NULL):
+          CollectiveProtocolFactoryT<T,get_metadata,C>(cmgr,native,cb_head)
+          {
+          }
+        virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+                                               void                      * cmd)
+
+          {
+            // Use the cached barrier or generate a new one if the cached barrier doesn't exist
+            XMI_GEOMETRY_CLASS  *g = ( XMI_GEOMETRY_CLASS *)geometry;
+            Executor::Composite *c =(Executor::Composite *) g->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE1);
+            if(!c)
+              c=CollectiveProtocolFactoryT<T,get_metadata,C>::generate(geometry,cmd);
+            return c;
+          }
+      };
+      
       ///
       /// \brief Binomial barrier
       ///
@@ -76,6 +102,7 @@ namespace CCMI
 	  _myexecutor.setDoneCallback (_cb_done, _clientdata);
 	  _myexecutor.start();
 	}
+        
 
 	static void *   cb_head   (const xmi_quad_t    * info,
 				   unsigned              count,
