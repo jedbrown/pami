@@ -93,7 +93,7 @@ int main (int argc, char ** argv)
       PAMI_Topology_create_list(&topo,tasklist,sz);
 
       pami_multisync_t multisync;
-      multisync.client             = client;
+      multisync.client             = (size_t)client;
       multisync.context            = (size_t)0;
       multisync.cb_done.function   = cb_multisync;
       multisync.cb_done.clientdata = (void*)&_g_multisync_active;
