@@ -107,6 +107,7 @@ namespace XMI
                                    LAPIMulticombineModel>              DefaultNativeInterface;
   typedef CollRegistration::CCMIRegistration<LAPIGeometry,
                                              DefaultNativeInterface,
+                                             DefaultNativeInterface,
                                              LAPIDevice> CCMICollreg;
 
   // PGAS RT Typedefs/Coll Registration
