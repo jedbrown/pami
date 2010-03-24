@@ -13,9 +13,9 @@
 #ifndef __common_BaseTimeInterface_h__
 #define __common_BaseTimeInterface_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
-namespace XMI
+namespace PAMI
 {
     namespace Interface
     {
@@ -30,7 +30,7 @@ namespace XMI
           ///
           /// \brief Initialize the time object.
           ///
-          inline xmi_result_t init (size_t clockMHz);
+          inline pami_result_t init (size_t clockMHz);
 
 
           ///
@@ -58,7 +58,7 @@ namespace XMI
       }; // class BaseTime
 
       template <class T>
-      inline xmi_result_t BaseTime<T>::init (size_t clockMHz)
+      inline pami_result_t BaseTime<T>::init (size_t clockMHz)
       {
         return static_cast<T*>(this)->init_impl (clockMHz);
       }
@@ -87,5 +87,5 @@ namespace XMI
         return static_cast<T*>(this)->time_impl ();
       }
     };	// namespace Interface
-};	// namespace XMI
+};	// namespace PAMI
 #endif // __components_time_time_h__

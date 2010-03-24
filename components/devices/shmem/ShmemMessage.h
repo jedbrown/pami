@@ -14,7 +14,7 @@
 
 #include <sys/uio.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "util/common.h"
 #include "util/queue/Queue.h"
@@ -26,7 +26,7 @@
 #define TRACE_ERR(x) // fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -37,15 +37,15 @@ namespace XMI
       {
         public:
 
-          class Message : public XMI::Device::Generic::GenericMessage
+          class Message : public PAMI::Device::Generic::GenericMessage
           {
             protected:
-              inline Message (xmi_work_function    work_func,
+              inline Message (pami_work_function    work_func,
                               void               * work_cookie,
-                              xmi_event_function   done_fn,
+                              pami_event_function   done_fn,
                               void               * done_cookie,
                               size_t               contextid) :
-                  XMI::Device::Generic::GenericMessage(NULL, (xmi_callback_t) {done_fn, done_cookie}, 0, contextid),
+                  PAMI::Device::Generic::GenericMessage(NULL, (pami_callback_t) {done_fn, done_cookie}, 0, contextid),
               _work (work_func, work_cookie),
               _genericdevice (NULL)
               {
@@ -60,10 +60,10 @@ namespace XMI
               /// \note This is required to make "C" programs link successfully with virtual destructors
               inline void operator delete (void * p)
               {
-                XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+                PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
               }
 
-              void setup (XMI::Device::Generic::Device * device, SendQueue * sendQ)
+              void setup (PAMI::Device::Generic::Device * device, SendQueue * sendQ)
               {
                 TRACE_ERR((stderr, ">> SendQueue::Message::setup(%p, %p)\n", device, sendQ));
                 _genericdevice = device;
@@ -73,20 +73,20 @@ namespace XMI
 
               ///
               /// \brief virtual function implementation
-              /// \see XMI::Device::Generic::GenericMessage::postNext()
+              /// \see PAMI::Device::Generic::GenericMessage::postNext()
               ///
               /// Post this message to the appropriate generic device, this is the
               /// completion message and the thread (work) message(s).
               ///
               /// \todo Figure out the input parameters and the return value
               ///
-              inline xmi_context_t postNext (bool something)
+              inline pami_context_t postNext (bool something)
               {
                 TRACE_ERR((stderr, ">> SendQueue::Message::postNext(%d)\n", something));
-                XMI_assert_debug (_genericdevice != NULL);
+                PAMI_assert_debug (_genericdevice != NULL);
 
-                _genericdevice->postMsg ((XMI::Device::Generic::GenericMessage *) this);
-                _genericdevice->postThread ((XMI::Device::Generic::GenericThread *) &_work);
+                _genericdevice->postMsg ((PAMI::Device::Generic::GenericMessage *) this);
+                _genericdevice->postThread ((PAMI::Device::Generic::GenericThread *) &_work);
 
                 TRACE_ERR((stderr, "<< SendQueue::Message::postNext(%d), return NULL\n", something));
                 return NULL; // what should this be?
@@ -94,14 +94,14 @@ namespace XMI
 
             protected:
 
-              XMI::Device::Generic::GenericThread _work;
-              XMI::Device::Generic::Device * _genericdevice;
+              PAMI::Device::Generic::GenericThread _work;
+              PAMI::Device::Generic::Device * _genericdevice;
           };
 
-          inline SendQueue (XMI::Device::Generic::Device * progress, size_t local) :
+          inline SendQueue (PAMI::Device::Generic::Device * progress, size_t local) :
               GenericDeviceMessageQueue (),
               _progress (progress),
-              _local_progress_device (XMI::Device::Generic::Device::Factory::getDevice(progress, 0, local))
+              _local_progress_device (PAMI::Device::Generic::Device::Factory::getDevice(progress, 0, local))
           {
           };
 
@@ -118,21 +118,21 @@ namespace XMI
           };
 
           /// \brief virtual function implementation
-          /// \see XMI::Device::Generic::GenericMessage::postNext()
+          /// \see PAMI::Device::Generic::GenericMessage::postNext()
           ///
           /// Post this message to the appropriate generic device, this is the
           /// completion message and the thread (work) message(s).
           inline bool postNext (SendQueue::Message * msg)
           {
             TRACE_ERR((stderr, ">> SendQueue::postNext(%p)\n", msg));
-            _local_progress_device.postMsg((XMI::Device::Generic::GenericMessage *) msg);
+            _local_progress_device.postMsg((PAMI::Device::Generic::GenericMessage *) msg);
             TRACE_ERR((stderr, "<< SendQueue::postNext(%p), return true\n", msg));
             return true; // huh?
           };
 
         private:
-          XMI::Device::Generic::Device * _progress;
-          XMI::Device::Generic::Device & _local_progress_device;
+          PAMI::Device::Generic::Device * _progress;
+          PAMI::Device::Generic::Device & _local_progress_device;
       };
     };
   };

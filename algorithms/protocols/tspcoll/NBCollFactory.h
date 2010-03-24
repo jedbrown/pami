@@ -30,7 +30,7 @@ namespace TSPColl
   class NBCollFactory
   {
   public:
-    NBColl<T_Mcast> * create (XMI_GEOMETRY_CLASS * comm, NBTag tag, int id);
+    NBColl<T_Mcast> * create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int id);
     void              initialize();
   };
 };
@@ -52,7 +52,7 @@ void TSPColl::NBCollFactory<T_Mcast>::initialize ()
 /* ************************************************************************ */
 template <class T_Mcast>
 TSPColl::NBColl<T_Mcast> *
-TSPColl::NBCollFactory<T_Mcast>::create (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID)
+TSPColl::NBCollFactory<T_Mcast>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID)
 {
   switch (tag)
     {

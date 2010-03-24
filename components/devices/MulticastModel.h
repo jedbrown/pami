@@ -15,10 +15,10 @@
 #define __components_devices_MulticastModel_h__
 
 #include <sys/uio.h>
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/common.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -34,21 +34,21 @@ namespace XMI
       class MulticastModel
       {
       public:
-        MulticastModel (T_Device &device, xmi_result_t &status)
+        MulticastModel (T_Device &device, pami_result_t &status)
           {
             COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
-            status = XMI_SUCCESS;
+            status = PAMI_SUCCESS;
           };
         ~MulticastModel ()
           {
           };
-        inline xmi_result_t postMulticast(uint8_t (&state)[T_StateBytes],
-                                           xmi_multicast_t *mcast);
+        inline pami_result_t postMulticast(uint8_t (&state)[T_StateBytes],
+                                           pami_multicast_t *mcast);
       }; // class MulticastModel
 
       template <class T_Model,class T_Device,unsigned T_StateBytes>
-      xmi_result_t MulticastModel<T_Model,T_Device, T_StateBytes>::postMulticast(uint8_t (&state)[T_StateBytes],
-                                                                         xmi_multicast_t *mcast)
+      pami_result_t MulticastModel<T_Model,T_Device, T_StateBytes>::postMulticast(uint8_t (&state)[T_StateBytes],
+                                                                         pami_multicast_t *mcast)
       {
         return static_cast<T_Model*>(this)->postMulticast_impl(state, mcast);
       }
@@ -67,21 +67,21 @@ namespace XMI
       class AMMulticastModel : public MulticastModel<T_Model,T_Device,T_StateBytes>
       {
       public:
-        AMMulticastModel (T_Device &device, xmi_result_t &status) :
+        AMMulticastModel (T_Device &device, pami_result_t &status) :
           MulticastModel<T_Model,T_Device,T_StateBytes> (device, status)
           {
           };
         ~AMMulticastModel ()
           {
           };
-        inline xmi_result_t registerMcastRecvFunction (int                        dispatch_id,
-                                                       xmi_dispatch_multicast_fn  recv_func,
+        inline pami_result_t registerMcastRecvFunction (int                        dispatch_id,
+                                                       pami_dispatch_multicast_fn  recv_func,
                                                        void                      *async_arg);
       }; // class AMMulticastModel
       template <class T_Model,class T_Device,unsigned T_StateBytes>
-      xmi_result_t AMMulticastModel<T_Model,T_Device,
+      pami_result_t AMMulticastModel<T_Model,T_Device,
                                     T_StateBytes>::registerMcastRecvFunction (int                        dispatch_id,
-                                                                                               xmi_dispatch_multicast_fn  recv_func,
+                                                                                               pami_dispatch_multicast_fn  recv_func,
                                                                                                void                      *async_arg)
       {
         return static_cast<T_Model*>(this)->registerMcastRecvFunction_impl (dispatch_id,
@@ -90,7 +90,7 @@ namespace XMI
       }
     }; // namespace Interface
   }; // namespace Device
-}; // namespace XMI
+}; // namespace PAMI
 #endif // __components_devices_MulticastModel_h__
 
 //

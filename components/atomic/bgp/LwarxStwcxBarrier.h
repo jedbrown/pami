@@ -22,7 +22,7 @@
 #include "components/atomic/Barrier.h"
 #include <bpcore/bgp_atomic_ops.h>
 
-namespace XMI {
+namespace PAMI {
 namespace Barrier {
 namespace BGP {
 	/*
@@ -52,8 +52,8 @@ namespace BGP {
 		_LwarxStwcxNodeBarrier() { }
 		~_LwarxStwcxNodeBarrier() { }
 
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			XMI_abortf("_LwarxStwcxNodeBarrier must be subclass");
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+			PAMI_abortf("_LwarxStwcxNodeBarrier must be subclass");
 		}
 
 		inline void dump_impl(const char *string) {
@@ -69,15 +69,15 @@ namespace BGP {
 				_barrier->lwx_atomics[4].atom);
 		}
 
-		inline xmi_result_t enter_impl() {
+		inline pami_result_t enter_impl() {
 			pollInit_impl();
-			while (poll_impl() != XMI::Atomic::Interface::Done);
-			return XMI_SUCCESS;
+			while (poll_impl() != PAMI::Atomic::Interface::Done);
+			return PAMI_SUCCESS;
 		}
 
-		inline void enterPoll_impl(XMI::Atomic::Interface::pollFcn fcn, void *arg) {
+		inline void enterPoll_impl(PAMI::Atomic::Interface::pollFcn fcn, void *arg) {
 			pollInit_impl();
-			while (poll_impl() != XMI::Atomic::Interface::Done) {
+			while (poll_impl() != PAMI::Atomic::Interface::Done) {
 				fcn(arg);
 			}
 		}
@@ -87,15 +87,15 @@ namespace BGP {
 			lockup = _barrier->lwx_ctrl_lock.atom;
 			_bgp_fetch_and_add(&_barrier->lwx_lock[lockup], 1);
 			_data = (void*)lockup;
-			_status = XMI::Atomic::Interface::Entered;
+			_status = PAMI::Atomic::Interface::Entered;
 		}
 
-		inline XMI::Atomic::Interface::barrierPollStatus poll_impl() {
-			XMI_assertf(_status == XMI::Atomic::Interface::Entered, "Barrier polled before entered");
+		inline PAMI::Atomic::Interface::barrierPollStatus poll_impl() {
+			PAMI_assertf(_status == PAMI::Atomic::Interface::Entered, "Barrier polled before entered");
 			uint32_t lockup, value;
 			lockup = (uint32_t)_data;
 			if (_barrier->lwx_lock[lockup].atom < _barrier->nparties) {
-				return XMI::Atomic::Interface::Entered;
+				return PAMI::Atomic::Interface::Entered;
 			}
 
 			// All cores have participated in the barrier
@@ -118,27 +118,27 @@ namespace BGP {
 				// wait until master releases the barrier by clearing the lock
 				while (_barrier->lwx_lock[lockup].atom > 0);
 			}
-			_status = XMI::Atomic::Interface::Initialized;
-			return XMI::Atomic::Interface::Done;
+			_status = PAMI::Atomic::Interface::Initialized;
+			return PAMI::Atomic::Interface::Done;
 		}
 		// With 5 lockboxes used... which one should be returned?
 		inline void *returnBarrier_impl() { return &_barrier->lwx_ctrl_lock; }
 	protected:
 		LwarxStwcx_Barrier_s *_barrier;
 		void *_data;
-		XMI::Atomic::Interface::barrierPollStatus _status;
+		PAMI::Atomic::Interface::barrierPollStatus _status;
 	}; // class _LwarxStwcxNodeBarrier
 
-	class LwarxStwcxNodeProcBarrier : public XMI::Atomic::Interface::Barrier<LwarxStwcxNodeProcBarrier>,
+	class LwarxStwcxNodeProcBarrier : public PAMI::Atomic::Interface::Barrier<LwarxStwcxNodeProcBarrier>,
 					public _LwarxStwcxNodeBarrier {
 	public:
 		LwarxStwcxNodeProcBarrier() {}
 		~LwarxStwcxNodeProcBarrier() {}
 
-		inline void init_impl(XMI::Memory::MemoryManager *mm, size_t participants, bool master) {
+		inline void init_impl(PAMI::Memory::MemoryManager *mm, size_t participants, bool master) {
 			_barrier = NULL;
 			mm->memalign((void **)&_barrier, 16, sizeof(*_barrier));
-			XMI_assertf(_barrier, "Failed to get shmem for LwarxStwcxNodeProcBarrier");
+			PAMI_assertf(_barrier, "Failed to get shmem for LwarxStwcxNodeProcBarrier");
 			// For proc-granularity, must convert
 			// between core id and process id,
 			// and only one core per process will
@@ -147,20 +147,20 @@ namespace BGP {
 			_barrier->master = __global.lockboxFactory.coreXlat(__global.lockboxFactory.masterProc()) >> __global.lockboxFactory.coreShift();
 			_barrier->coreshift = __global.lockboxFactory.coreShift();
 			_barrier->nparties = __global.lockboxFactory.numProc();
-			_status = XMI::Atomic::Interface::Initialized;
+			_status = PAMI::Atomic::Interface::Initialized;
 		}
 	}; // class LwarxStwcxNodeProcBarrier
 
-	class LwarxStwcxNodeCoreBarrier : public XMI::Atomic::Interface::Barrier<LwarxStwcxNodeCoreBarrier>,
+	class LwarxStwcxNodeCoreBarrier : public PAMI::Atomic::Interface::Barrier<LwarxStwcxNodeCoreBarrier>,
 					public _LwarxStwcxNodeBarrier {
 	public:
 		LwarxStwcxNodeCoreBarrier() {}
 		~LwarxStwcxNodeCoreBarrier() {}
 
-		inline void init_impl(XMI::Memory::MemoryManager *mm, size_t participants, bool master) {
+		inline void init_impl(PAMI::Memory::MemoryManager *mm, size_t participants, bool master) {
 			_barrier = NULL;
 			mm->memalign((void **)&_barrier, 16, sizeof(*_barrier));
-			XMI_assertf(_barrier, "Failed to get shmem for LwarxStwcxNodeCoreBarrier");
+			PAMI_assertf(_barrier, "Failed to get shmem for LwarxStwcxNodeCoreBarrier");
 			// For core-granularity, everything is
 			// a core number. Assume the master core
 			// is the lowest-numbered core in the
@@ -168,12 +168,12 @@ namespace BGP {
 			_barrier->master = __global.lockboxFactory.masterProc() << __global.lockboxFactory.coreShift();
 			_barrier->coreshift = 0;
 			_barrier->nparties = __global.lockboxFactory.numCore();
-			_status = XMI::Atomic::Interface::Initialized;
+			_status = PAMI::Atomic::Interface::Initialized;
 		}
 	}; // class LwarxStwcxNodeCoreBarrier
 
 }; // BGP namespace
 }; // Barrier namespace
-}; // XMI namespace
+}; // PAMI namespace
 
-#endif // __xmi_bgp_lwarxstwcxbarrier_h__
+#endif // __pami_bgp_lwarxstwcxbarrier_h__

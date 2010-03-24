@@ -45,7 +45,7 @@
 
 //#define FAKE_PERSONALITY
 
-namespace XMI
+namespace PAMI
 {
   class BgqPersonality : public Personality_t
   {
@@ -210,9 +210,9 @@ namespace XMI
       size_t _cores;
       size_t _hwthreads;
   };	// class BgqPersonality
-};	// namespace XMI
+};	// namespace PAMI
 
-#endif // __xmi_components_sysdep_bgq_bgqpersonnality_h__
+#endif // __pami_components_sysdep_bgq_bgqpersonnality_h__
 //
 // astyle info    http://astyle.sourceforge.net
 //

@@ -98,9 +98,9 @@ namespace CCMI {
 
       LinearMap () {}
 
-      LinearMap (unsigned myrank, XMI::Topology *topology)
+      LinearMap (unsigned myrank, PAMI::Topology *topology)
       {
-        CCMI_assert (topology->type() == XMI_RANGE_TOPOLOGY);
+        CCMI_assert (topology->type() == PAMI_RANGE_TOPOLOGY);
 	topology->rankRange(&_x0, &_xN);
 	_nranks = _xN - _x0 + 1;
 	_xM = myrank - _x0;
@@ -198,9 +198,9 @@ namespace CCMI {
 
       ListMap() {}
 
-      ListMap (unsigned myrank, XMI::Topology *topology)
+      ListMap (unsigned myrank, PAMI::Topology *topology)
       {
-        CCMI_assert (topology->type() == XMI_LIST_TOPOLOGY);
+        CCMI_assert (topology->type() == PAMI_LIST_TOPOLOGY);
 	topology->rankList(&_ranks);
 	_nranks = topology->size();
 
@@ -294,7 +294,7 @@ namespace CCMI {
       unsigned getNumRanks () { return _nranks; }
 
     protected:
-      xmi_task_t          * _ranks;     /** List of ranks */
+      pami_task_t          * _ranks;     /** List of ranks */
       unsigned              _nranks;    /** Number of ranks */
       unsigned              _hnranks;   /** Nearest power of 2 */
       unsigned              _rootindex; /** Index of the root */

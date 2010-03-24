@@ -1,13 +1,13 @@
 ///
 /// \file common/PipeWorkQueueInterface.h
-/// \brief XMI pipeworkqueue implementation.
+/// \brief PAMI pipeworkqueue implementation.
 ///
 #ifndef __common_PipeWorkQueueInterface_h__
 #define __common_PipeWorkQueueInterface_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
-namespace XMI
+namespace PAMI
 {
     namespace Interface
     {
@@ -44,7 +44,7 @@ namespace XMI
             /// \param[in] mm	System dependent methods
             /// \param[in] bufsize	Size of buffer to allocate
             ///
-            inline void configure(XMI::Memory::MemoryManager *mm, size_t bufsize);
+            inline void configure(PAMI::Memory::MemoryManager *mm, size_t bufsize);
 
             ///
             /// \brief Configure for User-supplied Circular Buffer variety.
@@ -59,7 +59,7 @@ namespace XMI
             /// \param[in] buffer	Buffer to use
             /// \param[in] bufsize	Size of buffer
             ///
-            inline void configure(XMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize);
+            inline void configure(PAMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize);
 
             ///
             /// \brief Configure for Memeory (flat buffer) variety.
@@ -75,7 +75,7 @@ namespace XMI
             /// \param[in] bufsize	Size of buffer
             /// \param[in] bufinit	Amount of data initially in buffer
             ///
-            inline void configure(XMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize, size_t bufinit);
+            inline void configure(PAMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize, size_t bufinit);
 
             ///
             /// \brief PROPOSAL: Configure for Non-Contig Memory (flat buffer) variety.
@@ -97,7 +97,7 @@ namespace XMI
             /// \param[in] typecount      Number of repetitions of buffer units
             /// \param[in] typeinit       Number of units initially in buffer
             ///
-            inline void configure(XMI::Memory::MemoryManager *mm, char *buffer, xmi_type_t *type, size_t typecount, size_t typeinit);
+            inline void configure(PAMI::Memory::MemoryManager *mm, char *buffer, pami_type_t *type, size_t typecount, size_t typeinit);
 
             ///
             /// \brief Reset this shared memory work queue.
@@ -126,7 +126,7 @@ namespace XMI
             /// \param[out] export        Opaque memory to export into
             /// \return   success of the export operation
             ///
-            inline xmi_result_t exp(xmi_pipeworkqueue_ext_t *exp);
+            inline pami_result_t exp(pami_pipeworkqueue_ext_t *exp);
 
             ///
             /// \brief Import
@@ -146,7 +146,7 @@ namespace XMI
             /// \param[out] wq           Opaque memory for new PipeWorkQueue
             /// \return   success of the import operation
             ///
-            inline xmi_result_t import(xmi_pipeworkqueue_ext_t *import);
+            inline pami_result_t import(pami_pipeworkqueue_ext_t *import);
 
             /// \brief register a wakeup for the consumer side of the PipeWorkQueue
             ///
@@ -271,10 +271,10 @@ namespace XMI
             ///
             inline bool available();
 
-        }; // end class XMI::Pipeworkqueue::Pipeworkqueue
+        }; // end class PAMI::Pipeworkqueue::Pipeworkqueue
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(XMI::Memory::MemoryManager *mm,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *mm,
                                                        size_t bufsize)
         {
             return static_cast<T_PipeWorkQueue*>(this)->configure_impl(mm,bufsize);
@@ -293,7 +293,7 @@ namespace XMI
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(XMI::Memory::MemoryManager *mm,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *mm,
                                                        char *buffer,
                                                        size_t bufsize)
         {
@@ -301,14 +301,14 @@ namespace XMI
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(XMI::Memory::MemoryManager *mm, char *buffer,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *mm, char *buffer,
                                                        size_t bufsize, size_t bufinit)
         {
             return static_cast<T_PipeWorkQueue*>(this)->configure_impl(mm, buffer,bufsize,bufinit);
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(XMI::Memory::MemoryManager *mm, char *buffer, xmi_type_t *type,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *mm, char *buffer, pami_type_t *type,
                                                        size_t typecount, size_t typeinit)
         {
             return static_cast<T_PipeWorkQueue*>(this)->configure_impl(mm, buffer, type,
@@ -322,13 +322,13 @@ namespace XMI
         }
 
         template <class T_PipeWorkQueue>
-        xmi_result_t PipeWorkQueue<T_PipeWorkQueue>::exp(xmi_pipeworkqueue_ext_t *exp)
+        pami_result_t PipeWorkQueue<T_PipeWorkQueue>::exp(pami_pipeworkqueue_ext_t *exp)
         {
             return static_cast<T_PipeWorkQueue*>(this)->exp_impl(exp);
         }
 
         template <class T_PipeWorkQueue>
-        xmi_result_t PipeWorkQueue<T_PipeWorkQueue>::import(xmi_pipeworkqueue_ext_t *import)
+        pami_result_t PipeWorkQueue<T_PipeWorkQueue>::import(pami_pipeworkqueue_ext_t *import)
         {
             return static_cast<T_PipeWorkQueue*>(this)->import_impl(import);
         }
@@ -419,6 +419,6 @@ namespace XMI
             return static_cast<T_PipeWorkQueue*>(this)->available_impl();
         }
     }; // end namespace Interface
-}; // end namespace XMI
+}; // end namespace PAMI
 
-#endif // __xmi_component_pipeworkqueue_h__
+#endif // __pami_component_pipeworkqueue_h__

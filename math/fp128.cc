@@ -15,7 +15,7 @@
 #include "math_coremath.h"
 #include "internal.h"
 
-void _xmi_core_fp128_max(long double *dst, const long double **srcs, int nsrc, int count) {
+void _pami_core_fp128_max(long double *dst, const long double **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(a):(b))
 
 #define TYPE long double
@@ -24,7 +24,7 @@ void _xmi_core_fp128_max(long double *dst, const long double **srcs, int nsrc, i
 #undef OP
 }
 
-void _xmi_core_fp128_min(long double *dst, const long double **srcs, int nsrc, int count) {
+void _pami_core_fp128_min(long double *dst, const long double **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(b):(a))
 
 #define TYPE long double
@@ -33,7 +33,7 @@ void _xmi_core_fp128_min(long double *dst, const long double **srcs, int nsrc, i
 #undef OP
 }
 
-void _xmi_core_fp128_prod(long double *dst, const long double **srcs, int nsrc, int count) {
+void _pami_core_fp128_prod(long double *dst, const long double **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)*(b))
 
 #define TYPE long double
@@ -42,7 +42,7 @@ void _xmi_core_fp128_prod(long double *dst, const long double **srcs, int nsrc, 
 #undef OP
 }
 
-void _xmi_core_fp128_sum(long double *dst, const long double **srcs, int nsrc, int count) {
+void _pami_core_fp128_sum(long double *dst, const long double **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)+(b))
 
 #define TYPE long double

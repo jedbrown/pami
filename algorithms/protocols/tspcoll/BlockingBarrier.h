@@ -102,7 +102,7 @@ inline void TSPColl::BlockingBarrier::execute (CCMI::MultiSend::OldMulticastInte
 #endif
       unsigned        hints   = CCMI_PT_TO_PT_SUBTASK;
       unsigned        ranks   = _dest[i];
-      XMI_Callback_t cb_done;
+      PAMI_Callback_t cb_done;
       cb_done.function        = NULL;
       cb_done.clientdata     =  NULL;
 

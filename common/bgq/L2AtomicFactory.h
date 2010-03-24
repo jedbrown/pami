@@ -26,11 +26,11 @@
 ///  This object is a portability layer that implements allocation
 ///  of L2Atomics for use in Mutexes, Barriers, and Atomic (counters).
 ///
-///  Namespace:  XMI, the messaging namespace
+///  Namespace:  PAMI, the messaging namespace
 ///  Notes:  This is currently indended for use only by the lock manager
 ///
 ////////////////////////////////////////////////////////////////////////
-namespace XMI {
+namespace PAMI {
 namespace Atomic {
 namespace BGQ {
 	// These may need to be put in a (more) common header... somewhere...
@@ -76,7 +76,7 @@ namespace BGQ {
 	private:
 		/// \brief Storage for the implementation parameters
 		atomic_factory_t _factory;
-		xmi_task_t __masterRank;
+		pami_task_t __masterRank;
 		size_t __numProc;
 		bool __isMasterRank;
 		atomic_arena_t _l2node;
@@ -84,9 +84,9 @@ namespace BGQ {
 	public:
 		L2AtomicFactory() { }
 
-		inline void init(XMI::Memory::MemoryManager *mm,
-				XMI::Mapping *mapping, XMI::Topology *local) {
-			xmi_result_t rc;
+		inline void init(PAMI::Memory::MemoryManager *mm,
+				PAMI::Mapping *mapping, PAMI::Topology *local) {
+			pami_result_t rc;
 			uint32_t krc;
 			int irc;
                         /** \todo #warning must figure out L2 Atomic Factory memory management... */
@@ -99,13 +99,13 @@ namespace BGQ {
 
 			rc = mm->memalign((void **)&_l2node.virt, sizeof(uint64_t),
 					sizeof(uint64_t) * _l2node.size);
-			XMI_assertf(rc == XMI_SUCCESS && _l2node.virt,
+			PAMI_assertf(rc == PAMI_SUCCESS && _l2node.virt,
 				"Failed to get shmem for _l2node, asked size %zd",
 				sizeof(uint64_t) * _l2node.size);
 			memset(_l2node.virt, 0, sizeof(uint64_t) * _l2node.size);
 			krc = Kernel_CreateMemoryRegion(&_l2node.memreg,
 							_l2node.virt, _l2node.size);
-			XMI_assertf(krc == 0, "Failed to get physical address for L2 Atomic region");
+			PAMI_assertf(krc == 0, "Failed to get physical address for L2 Atomic region");
 			_l2node.base = (uint64_t *)_l2node.memreg.BasePa;
 			// Kernel_DestroyMemoryRegion(&_l2node.memreg); ???
 			_l2node.next = 0;
@@ -114,21 +114,21 @@ namespace BGQ {
 			_l2proc.virt = NULL;
 			irc = posix_memalign((void **)&_l2proc.virt, sizeof(uint64_t),
 					sizeof(uint64_t) * _l2proc.size);
-			XMI_assertf(irc == 0 && _l2proc.virt,
+			PAMI_assertf(irc == 0 && _l2proc.virt,
 				"Failed to get memory for _l2proc, asked size %zd",
 				sizeof(uint64_t) * _l2proc.size);
 			memset(_l2proc.virt, 0, sizeof(uint64_t) * _l2proc.size);
 			krc = Kernel_CreateMemoryRegion(&_l2proc.memreg,
 							_l2proc.virt, _l2proc.size);
-			XMI_assertf(krc == 0, "Failed to get physical address for L2 Atomic region");
+			PAMI_assertf(krc == 0, "Failed to get physical address for L2 Atomic region");
 			_l2proc.base = (uint64_t *)_l2proc.memreg.BasePa;
 			// Kernel_DestroyMemoryRegion(&_l2proc.memreg); ???
 			_l2proc.next = 0;
 
 			// Compute all implementation parameters,
 			// i.e. fill-in _factory struct.
-			XMI::Interface::Mapping::nodeaddr_t addr;
-			xmi_task_t ranks[NUM_CORES];
+			PAMI::Interface::Mapping::nodeaddr_t addr;
+			pami_task_t ranks[NUM_CORES];
 			size_t i;
 
                         /** \todo #warning This needs a proper CNK function for number of threads per process, when it exists... */
@@ -155,7 +155,7 @@ namespace BGQ {
 			//
 			// assert((ncores & (ncores - 1) == 0);
 			int shift = ffs(ncores);
-			XMI_assertf(shift > 0, "Internal error: no cores in process?");
+			PAMI_assertf(shift > 0, "Internal error: no cores in process?");
 			--shift;
 			_factory.coreShift = shift;
 			for (i = 0; i < t; ++i) {
@@ -163,10 +163,10 @@ namespace BGQ {
 					_factory.numCore += ncores;
 					++_factory.numProc;
 					rc = mapping->task2node(ranks[i], addr);
-					XMI_assertf(rc == XMI_SUCCESS, "[%zd] task2node(%d, addr) failed\n", i, ranks[i]);
+					PAMI_assertf(rc == PAMI_SUCCESS, "[%zd] task2node(%d, addr) failed\n", i, ranks[i]);
 					size_t p;
 					rc = mapping->node2peer(addr, p);
-					XMI_assertf(rc == XMI_SUCCESS, "[%zd] node2peer(addr, p) failed\n", i);
+					PAMI_assertf(rc == PAMI_SUCCESS, "[%zd] node2peer(addr, p) failed\n", i);
 					_factory.coreXlat[i] = p << shift;
 					if (ranks[i] == mapping->task()) {
 						_factory.myProc = i;
@@ -191,7 +191,7 @@ namespace BGQ {
 		inline bool isMasterRank() { return __isMasterRank; }
 
 		/// callers must ensure all use the same order
-		inline xmi_result_t l2x_alloc(void **p, int numAtomics, l2x_scope_t scope) {
+		inline pami_result_t l2x_alloc(void **p, int numAtomics, l2x_scope_t scope) {
 			int lockSpan = numAtomics;
 			atomic_arena_t *arena;
 			switch(scope) {
@@ -229,12 +229,12 @@ namespace BGQ {
 				arena = &_l2proc;
 				//break;
 			default:
-				XMI_abortf("Invalid L2Atomic scope");
+				PAMI_abortf("Invalid L2Atomic scope");
 				break;
 			}
 			*p = NULL;
 			if (arena->next + lockSpan > arena->size) {
-				return XMI_EAGAIN;
+				return PAMI_EAGAIN;
 			}
 			size_t idx = arena->next;
 			arena->next += lockSpan;
@@ -276,16 +276,16 @@ fprintf(stderr, "Got %d PROC atomics at %p\n", numAtomics, p[0]);
 				/// \todo what are pthread-scoped atomics?
 				//break;
 			default:
-				XMI_abortf("Invalid L2Atomic scope");
+				PAMI_abortf("Invalid L2Atomic scope");
 				break;
 			}
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
 
 	}; // class L2AtomicFactory
 
 }; // namespace BGQ
 }; // namespace Atomic
-}; // namespace XMI
+}; // namespace PAMI
 
-#endif // __xmi_bgq_l2atomicfactory_h__
+#endif // __pami_bgq_l2atomicfactory_h__

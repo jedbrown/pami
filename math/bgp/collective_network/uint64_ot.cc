@@ -11,16 +11,16 @@
  * \brief Optimized math routines for unsigned 64 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */
-#include "xmi_bg_math.h"
+#include "pami_bg_math.h"
 #include "util/common.h"
 //#include "ppc450d/internal_o.h"
 
-static void _xmi_core_uint64_not_o(uint64_t *dst, const uint64_t *src, int count) {
-  _xmi_core_uint32_not_o((uint32_t *)dst, (const uint32_t *)src, count<<1);
+static void _pami_core_uint64_not_o(uint64_t *dst, const uint64_t *src, int count) {
+  _pami_core_uint32_not_o((uint32_t *)dst, (const uint32_t *)src, count<<1);
 }
 
 #ifdef NOT_USED
-static void _xmi_core_uint64_conv_o(uint64_t *dst, const uint64_t *src, int count) {
+static void _pami_core_uint64_conv_o(uint64_t *dst, const uint64_t *src, int count) {
 #define OP(a) ((a)-(0x8000000000000000ULL))
 
 #define TYPE uint64_t
@@ -29,7 +29,7 @@ static void _xmi_core_uint64_conv_o(uint64_t *dst, const uint64_t *src, int coun
 #undef OP
 }
 
-static void _xmi_core_uint64_conv_not_o(uint64_t *dst, const uint64_t *src, int count) {
+static void _pami_core_uint64_conv_not_o(uint64_t *dst, const uint64_t *src, int count) {
 #define OP(a) (~((a)-(0x8000000000000000ULL)))
 
 #define TYPE uint64_t
@@ -39,10 +39,10 @@ static void _xmi_core_uint64_conv_not_o(uint64_t *dst, const uint64_t *src, int 
 }
 #endif /* NOT_USED */
 
-void _xmi_core_uint64_pre_min_o(uint64_t *dst, const uint64_t *src, int count) {
-  _xmi_core_uint64_not_o(dst, src, count);
+void _pami_core_uint64_pre_min_o(uint64_t *dst, const uint64_t *src, int count) {
+  _pami_core_uint64_not_o(dst, src, count);
 }
 
-void _xmi_core_uint64_post_min_o(uint64_t *dst, const uint64_t *src, int count) {
-  _xmi_core_uint64_not_o(dst, src, count);
+void _pami_core_uint64_post_min_o(uint64_t *dst, const uint64_t *src, int count) {
+  _pami_core_uint64_not_o(dst, src, count);
 }

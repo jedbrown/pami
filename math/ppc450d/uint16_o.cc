@@ -15,7 +15,7 @@
 #include "Util.h"
 #include "ppc450d/internal_o.h"
 
-void _xmi_core_uint16_band2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
+void _pami_core_uint16_band2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
 
   const uint16_t *s[2] = {srcs[0],srcs[1]};
   uint16_t *dp = (uint16_t *)dst;
@@ -29,12 +29,12 @@ void _xmi_core_uint16_band2(uint16_t *dst, const uint16_t **srcs, int nsrc, int 
   }
   int num = count >> 1;
   if (num) {
-    _xmi_core_uint32_band2((uint32_t *)dp, (const uint32_t **)s, 2, num);
+    _pami_core_uint32_band2((uint32_t *)dp, (const uint32_t **)s, 2, num);
   }
   return;
 }
 
-void _xmi_core_uint16_bor2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
+void _pami_core_uint16_bor2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
 
   const uint16_t *s[2] = {srcs[0],srcs[1]};
   uint16_t *dp = (uint16_t *)dst;
@@ -48,12 +48,12 @@ void _xmi_core_uint16_bor2(uint16_t *dst, const uint16_t **srcs, int nsrc, int c
   }
   int num = count >> 1;
   if (num) {
-    _xmi_core_uint32_bor2((uint32_t *)dp, (const uint32_t **)s, 2, num);
+    _pami_core_uint32_bor2((uint32_t *)dp, (const uint32_t **)s, 2, num);
   }
   return;
 }
 
-void _xmi_core_uint16_bxor2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
+void _pami_core_uint16_bxor2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
 
   const uint16_t *s[2] = {srcs[0],srcs[1]};
   uint16_t *dp = (uint16_t *)dst;
@@ -67,12 +67,12 @@ void _xmi_core_uint16_bxor2(uint16_t *dst, const uint16_t **srcs, int nsrc, int 
   }
   int num = count >> 1;
   if (num) {
-    _xmi_core_uint32_bxor2((uint32_t *)dp, (const uint32_t **)s, 2, num);
+    _pami_core_uint32_bxor2((uint32_t *)dp, (const uint32_t **)s, 2, num);
   }
   return;
 }
 
-void _xmi_core_uint16_land2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
+void _pami_core_uint16_land2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
 
   uint16_t *dp = (uint16_t *)dst;
   const uint16_t *s0 = (const uint16_t *)srcs[0];
@@ -201,7 +201,7 @@ void _xmi_core_uint16_land2(uint16_t *dst, const uint16_t **srcs, int nsrc, int 
   return;
 }
 
-void _xmi_core_uint16_lor2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
+void _pami_core_uint16_lor2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
 
   const uint16_t *s0 = (const uint16_t *)srcs[0];
   const uint16_t *s1 = (const uint16_t *)srcs[1];
@@ -311,7 +311,7 @@ void _xmi_core_uint16_lor2(uint16_t *dst, const uint16_t **srcs, int nsrc, int c
   return;
 }
 
-void _xmi_core_uint16_lxor2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
+void _pami_core_uint16_lxor2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
 
   uint16_t *dp = (uint16_t *)dst;
   const uint16_t *s0 = (const uint16_t *)srcs[0];
@@ -448,7 +448,7 @@ void _xmi_core_uint16_lxor2(uint16_t *dst, const uint16_t **srcs, int nsrc, int 
   return;
 }
 
-void _xmi_core_uint16_max2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
+void _pami_core_uint16_max2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
 
   uint16_t *dp = (uint16_t *)dst;
   const uint16_t *s0 = (const uint16_t *)srcs[0];
@@ -527,7 +527,7 @@ void _xmi_core_uint16_max2(uint16_t *dst, const uint16_t **srcs, int nsrc, int c
   return;
 }
 
-void _xmi_core_uint16_min2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
+void _pami_core_uint16_min2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
 
   uint16_t *dp = (uint16_t *)dst;
   const uint16_t *s0 = (const uint16_t *)srcs[0];
@@ -610,7 +610,7 @@ void _xmi_core_uint16_min2(uint16_t *dst, const uint16_t **srcs, int nsrc, int c
   return;
 }
 
-void _xmi_core_uint16_prod2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
+void _pami_core_uint16_prod2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
 
   uint16_t *dp = (uint16_t *)dst;
   const uint16_t *s0 = (const uint16_t *)srcs[0];
@@ -690,7 +690,7 @@ void _xmi_core_uint16_prod2(uint16_t *dst, const uint16_t **srcs, int nsrc, int 
   return;
 }
 
-void _xmi_core_uint16_sum2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
+void _pami_core_uint16_sum2(uint16_t *dst, const uint16_t **srcs, int nsrc, int count) {
 
   const uint16_t *s0 = (const uint16_t *)srcs[0];
   const uint16_t *s1 = (const uint16_t *)srcs[1];

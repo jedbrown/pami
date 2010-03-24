@@ -9,7 +9,7 @@
 #                                                                  #
 # end_generated_IBM_copyright_prolog                               #
 
-VPATH		= @abs_srcdir@ @abs_top_srcdir@/xmi/math/bgp/collective_network
+VPATH		= @abs_srcdir@ @abs_top_srcdir@/pami/math/bgp/collective_network
 SUBDIRS		=
 @LIBNAME@-""-BGPCNDEVICE_SOURCES = CNDevice.cc CNAllreduce.cc cn_bg_dat.c \
 		fp128_t.cc fp64_t.cc fp64_ot.cc fp32_t.cc fp32_ot.cc \

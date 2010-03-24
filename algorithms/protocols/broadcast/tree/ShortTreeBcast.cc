@@ -79,7 +79,7 @@ namespace CCMI
 
             int rc = mapping->Torus2Rank(coords, &peerrank);
 
-            if((rc == XMI_SUCCESS) && (peerrank != (unsigned)-1))
+            if((rc == PAMI_SUCCESS) && (peerrank != (unsigned)-1))
             {
               _numPeers++;
               if(_minTCoord == (unsigned)-1)

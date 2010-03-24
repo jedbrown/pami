@@ -7,15 +7,15 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file core/xmi_ca.c
+ * \file core/pami_ca.c
  * \brief ???
  */
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/compact_attributes.h"
 #include <stdarg.h>
 
-void xmi_metadata_multiset(xmi_ca_t *ca_list, ...)
+void pami_metadata_multiset(pami_ca_t *ca_list, ...)
 {
   va_list arg_ptr;
   int value = 0;
@@ -26,7 +26,7 @@ void xmi_metadata_multiset(xmi_ca_t *ca_list, ...)
 
   do
   {
-    xmi_ca_set(ca_list, value);
+    pami_ca_set(ca_list, value);
     value = va_arg(arg_ptr, int);
   } while (value > CA_END_ARGS);
 

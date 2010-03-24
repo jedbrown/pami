@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/p2p/send/send_to_self_immed/send_to_self_immed.c
- * \brief Test XMI_SendImmediate(), sending via loopback to ourself.
+ * \brief Test PAMI_SendImmediate(), sending via loopback to ourself.
  *
  * The test starts with message size 0, and increases it up to the
  * IMMEDIATE_SEND_LIMIT, printing out cycles and microseconds.
@@ -19,12 +19,12 @@
 #include <math.h>
 #include <assert.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #define ITERATIONS 2
 //#define ITERATIONS 1000
 //#define ITERATIONS 100
 
-// This should be an XMI attribute, but until that is defined, here it is...
+// This should be an PAMI attribute, but until that is defined, here it is...
 // The limit is 512 for the MU device, but 488 for the shmem device.
 // So, until an attribute is available that programatically tells us this,
 // the shmem device test will fail after message size 314.
@@ -43,8 +43,8 @@ size_t _my_rank;
 
 uint8_t _rbuf[BUFSIZE];
 uint8_t _sbuf[BUFSIZE];
-  xmi_client_t  _g_client;
-  xmi_context_t _g_context;
+  pami_client_t  _g_client;
+  pami_context_t _g_context;
 
 volatile size_t _send_active;
 volatile size_t _recv_active;
@@ -55,13 +55,13 @@ char testcase_str[10240];
 
 
 static void test_dispatch (
-    xmi_context_t        context,      /**< IN: XMI context */
+    pami_context_t        context,      /**< IN: PAMI context */
     void               * cookie,       /**< IN: dispatch cookie */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
-    void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
-    size_t               pipe_size,    /**< IN: size of XMI pipe buffer */
-    xmi_recv_t         * recv)        /**< OUT: receive message structure */
+    void               * pipe_addr,    /**< IN: address of PAMI pipe buffer */
+    size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
+    pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
   TRACE_ERR((stderr, "Called dispatch function.  cookie = %p (active: %zd -> %zd), task = %zd, header_size = %zd, pipe_size = %zd, recv=%p\n", cookie, *active, *active-1, task, header_size, pipe_size,recv));
@@ -78,15 +78,15 @@ static void test_dispatch (
 
 unsigned long long test (size_t sndlen, size_t myrank)
 {
-  xmi_quad_t msginfo;
-  xmi_result_t result = XMI_ERROR;
-  xmi_send_immediate_t parameters;
+  pami_quad_t msginfo;
+  pami_result_t result = PAMI_ERROR;
+  pami_send_immediate_t parameters;
   parameters.dispatch        = dispatch;
   parameters.header.iov_base = (void *)&msginfo; // send *something*
   parameters.header.iov_len  = sizeof(msginfo);
   parameters.data.iov_base   = (void *)_sbuf; // send *something*
   parameters.data.iov_len    = sndlen;
-  parameters.dest = XMI_Client_endpoint (_g_client, _my_rank, 0);
+  parameters.dest = PAMI_Client_endpoint (_g_client, _my_rank, 0);
 
   unsigned i;
   unsigned long long t1 = 0;
@@ -95,22 +95,22 @@ unsigned long long test (size_t sndlen, size_t myrank)
   {
     TRACE_ERR((stderr, "(%zd)\n(%zd) Starting Iteration %d of size %zd\n", _my_rank, _my_rank, i, sndlen));
     if (i == 1)
-      t1 = XMI_Wtimebase();
+      t1 = PAMI_Wtimebase();
 
     _recv_active = 1;
-    TRACE_ERR((stderr,"test():  Calling XMI_Send_immediate\n"));
+    TRACE_ERR((stderr,"test():  Calling PAMI_Send_immediate\n"));
 
-    result = XMI_Send_immediate (_g_context, &parameters);
-    TRACE_ERR((stderr,"test():  Back from XMI_Send_immediate\n"));
+    result = PAMI_Send_immediate (_g_context, &parameters);
+    TRACE_ERR((stderr,"test():  Back from PAMI_Send_immediate\n"));
 
     while (_recv_active)
       {
 	TRACE_ERR((stderr,"test():  Calling Advance\n"));
-	result = XMI_Context_advance (_g_context, 100);
+	result = PAMI_Context_advance (_g_context, 100);
 	TRACE_ERR((stderr,"test():  Back from Advance\n"));
       }
   }
-  unsigned long long t2 = XMI_Wtimebase();
+  unsigned long long t2 = PAMI_Wtimebase();
 
   return ((t2-t1)/ITERATIONS);
 }
@@ -120,27 +120,27 @@ int main ()
   printf("Start test ...\n");
 
   char          cl_string[] = "TEST";
-  xmi_result_t  result = XMI_ERROR;
+  pami_result_t  result = PAMI_ERROR;
 
-  result = XMI_Client_initialize (cl_string, &_g_client);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Client_initialize (cl_string, &_g_client);
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize client. result = %d\n", result);
     return 1;
   }
 
-  { size_t _n = 1; result = XMI_Context_createv(_g_client, NULL, 0, &_g_context, _n); }
-  if (result != XMI_SUCCESS)
+  { size_t _n = 1; result = PAMI_Context_createv(_g_client, NULL, 0, &_g_context, _n); }
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create context. result = %d\n", result);
     return 1;
   }
 
-  xmi_configuration_t configuration;
+  pami_configuration_t configuration;
 
-  configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query (_g_context, &configuration);
-  if (result != XMI_SUCCESS)
+  configuration.name = PAMI_TASK_ID;
+  result = PAMI_Configuration_query (_g_context, &configuration);
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration task ID (%d). result = %d\n", configuration.name, result);
     return 1;
@@ -149,9 +149,9 @@ int main ()
   fprintf (stderr, "My task id = %zd\n", task_id);
   _my_rank = task_id;
 
-  configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query (_g_context, &configuration);
-  if (result != XMI_SUCCESS)
+  configuration.name = PAMI_NUM_TASKS;
+  result = PAMI_Configuration_query (_g_context, &configuration);
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration NumTasks (%d). result = %d\n", configuration.name, result);
     return 1;
@@ -159,18 +159,18 @@ int main ()
   size_t num_tasks = configuration.value.intval;
   printf("(%zd) after Initializing client and context.  num_tasks=%zd\n", task_id, num_tasks);
 
-  xmi_dispatch_callback_fn fn;
+  pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
-  xmi_send_hint_t options={0};
-  TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, _recv_active = %lu\n", &_recv_active, _recv_active));
-  result = XMI_Dispatch_set (_g_context,
+  pami_send_hint_t options={0};
+  TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, _recv_active = %lu\n", &_recv_active, _recv_active));
+  result = PAMI_Dispatch_set (_g_context,
                              dispatch,
                              fn,
                              (void *)&_recv_active,
                              options);
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
+    fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
     return 1;
   }
 
@@ -201,10 +201,10 @@ int main ()
 /*     if (i == DCMF_USER1_SEND_PROTOCOL) continue; */
 
 /*     p.protocol = (DCMF_Send_Protocol) i; */
-/*     for (j = 0; j < XMI_NETWORK_COUNT; j++) */
+/*     for (j = 0; j < PAMI_NETWORK_COUNT; j++) */
 /*     { */
 /*       /\* don't test the default network *\/ */
-/*       if (j == XMI_DEFAULT_NETWORK) continue; */
+/*       if (j == PAMI_DEFAULT_NETWORK) continue; */
 
 /*       /\* don't test the torus network *\/ */
 /*       /\*if (j == DCMF_TORUS_NETWORK) continue;*\/ */
@@ -212,12 +212,12 @@ int main ()
 /*       /\* don't test the shmem network *\/ */
 /*       /\*if (j == DCMF_SHMEM_NETWORK) continue;*\/ */
 
-/*       p.network = (XMI_Network) j; */
+/*       p.network = (PAMI_Network) j; */
 /*       TRACE_ERR((stderr, "(%zd) before DCMF_Send_register(), network = %d, protocol = %d\n", DCMF_Messager_rank (), j, i)); */
-/*       XMI_Result result = DCMF_Send_register (&_protocol[_protocol_count], &p); */
+/*       PAMI_Result result = DCMF_Send_register (&_protocol[_protocol_count], &p); */
 /*       TRACE_ERR((stderr, "(%zd) after DCMF_Send_register(), network = %d, protocol = %d, result = %d\n", DCMF_Messager_rank (), j, i, result)); */
 
-/*       if (result == XMI_SUCCESS) */
+/*       if (result == PAMI_SUCCESS) */
 /*       { */
 /*         k += sprintf (&testcase_str[k], "# testcase %d == %s: %s\n", _protocol_count, _send_names[i], _network_names[j]); */
 /*         _protocol_count++; */
@@ -247,7 +247,7 @@ int main ()
       index[1] += sprintf (&hdrstr[1][index[1]], "    cycles     usec  ");
     }
 
-    fprintf (stdout, "# XMI_Send_immediate() send-to-self immediate blocking latency performance test\n");
+    fprintf (stdout, "# PAMI_Send_immediate() send-to-self immediate blocking latency performance test\n");
     fprintf (stdout, "#\n");
     fprintf (stdout, "%s", testcase_str);
     fprintf (stdout, "#\n");

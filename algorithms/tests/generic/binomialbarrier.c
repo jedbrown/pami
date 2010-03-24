@@ -34,10 +34,10 @@ int mysleep(int seconds)
   return j;
 }
 
-XMI_CollectiveProtocol_t              bar_reg __attribute__((__aligned__(32))), local_bar_reg __attribute__((__aligned__(32)));
+PAMI_CollectiveProtocol_t              bar_reg __attribute__((__aligned__(32))), local_bar_reg __attribute__((__aligned__(32)));
 CCMI_Barrier_Configuration_t           configuration;
-XMI_CollectiveRequest_t               request;
-XMI_Callback_t                        cb_done;
+PAMI_CollectiveRequest_t               request;
+PAMI_Callback_t                        cb_done;
 CCMI_Consistency                       consistency;
 CCMI_Geometry_t                        geometry;
 int                                    done;
@@ -59,7 +59,7 @@ void barrier()
     }
 }
 
-void done_callback(void* cd, XMI_Error_t *err)
+void done_callback(void* cd, PAMI_Error_t *err)
 {
   done=1;
 
@@ -107,20 +107,20 @@ int main(int argc, char **argv)
   configuration.cb_geometry = getGeometry;
 
   CCMI_Result ccmiResult;
-  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&bar_reg, &configuration)) != XMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&bar_reg, &configuration)) != PAMI_SUCCESS)
     fprintf(stderr,"CCMI_Barrier_register failed %d\n",ccmiResult);
 
 #if 0
   configuration.protocol = CCMI_BINOMIAL_BARRIER_PROTOCOL;
-  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&local_bar_reg, &configuration)) != XMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&local_bar_reg, &configuration)) != PAMI_SUCCESS)
     fprintf(stderr,"CCMI_Barrier_register failed %d\n",ccmiResult);
 #endif
 
-  XMI_CollectiveProtocol_t             * bar_p = & bar_reg, * local_bar_p = & local_bar_reg;
+  PAMI_CollectiveProtocol_t             * bar_p = & bar_reg, * local_bar_p = & local_bar_reg;
   if((ccmiResult = (CCMI_Result) CCMI_Geometry_initialize (&geometry, 0, ranks, size,
                                                            &bar_p, 1,
                                                            &bar_p, 1,
-                                                           &request, 0, 1)) != XMI_SUCCESS)
+                                                           &request, 0, 1)) != PAMI_SUCCESS)
     fprintf(stderr,"CCMI_Geometry_initialize failed %d\n",ccmiResult);
 
   cb_done.function  = done_callback;

@@ -12,6 +12,6 @@
 VPATH		= @abs_srcdir@
 SUBDIRS		= @TARGET@
 NOTBUILT        =
-@LIBNAME@-""-CAPI_SOURCES=xmi.cc
+@LIBNAME@-""-CAPI_SOURCES=pami.cc
 DEVICENAME     = @LIBNAME@-""-CAPI
 include @abs_top_builddir@/Build.rules

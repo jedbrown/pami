@@ -11,8 +11,8 @@
 /* denotes the end of arguments in variadic functions */
 #define CA_END_ARGS   -1
 
-#define CA_BIT(b)       ((b) / XMI_CA_TOTAL_BITS)
-#define CA_MASK(b)      ((xmi_ca_mask) 1 << ((b) % XMI_CA_TOTAL_BITS))
+#define CA_BIT(b)       ((b) / PAMI_CA_TOTAL_BITS)
+#define CA_MASK(b)      ((pami_ca_mask) 1 << ((b) % PAMI_CA_TOTAL_BITS))
 
 #define CA_ELEMENT(list) ((list)->bits)
 
@@ -31,8 +31,8 @@
   do                                                                          \
   {                                                                           \
     unsigned int __i, __j;                                                    \
-    xmi_ca_t *__list = (l);                                                    \
-    for (__i = 0; __i < XMI_CA_NUM_ELEMENTS; __i++)                               \
+    pami_ca_t *__list = (l);                                                    \
+    for (__i = 0; __i < PAMI_CA_NUM_ELEMENTS; __i++)                               \
       CA_ELEMENT (__list)[__i] = 0;                                           \
   } while (0)
 
@@ -49,9 +49,9 @@
   do                                                                          \
   {                                                                           \
     unsigned int __i, __j;                                                    \
-    xmi_ca_t  *__src = (s);                                                    \
-    xmi_ca_t  *__dst = (d);                                                    \
-    for (__i = 0; __i < XMI_CA_NUM_ELEMENTS; ++__i)                               \
+    pami_ca_t  *__src = (s);                                                    \
+    pami_ca_t  *__dst = (d);                                                    \
+    for (__i = 0; __i < PAMI_CA_NUM_ELEMENTS; ++__i)                               \
       CA_ELEMENT (__dst)[__i] |= CA_ELEMENT (__src)[__i];                     \
   } while (0)
 
@@ -61,11 +61,11 @@
   do                                                                          \
   {                                                                           \
     unsigned int __i, __bit, __element;                                       \
-    for (__element = XMI_CA_NUM_ELEMENTS - 1; __element >=0; __element--)         \
+    for (__element = PAMI_CA_NUM_ELEMENTS - 1; __element >=0; __element--)         \
     {                                                                         \
-      for (__i = XMI_CA_TOTAL_BITS - 1; i >= 0; i--)                              \
+      for (__i = PAMI_CA_TOTAL_BITS - 1; i >= 0; i--)                              \
       {                                                                       \
-        if (((__i+1) % 4 == 0) && (__i+1) != XMI_CA_TOTAL_BITS) printf("-");      \
+        if (((__i+1) % 4 == 0) && (__i+1) != PAMI_CA_TOTAL_BITS) printf("-");      \
         __bit = (((CA_ELEMENT (l)[__element]) >> __i) & 1);                   \
         printf("%d", __bit);                                                  \
       }                                                                       \
@@ -80,9 +80,9 @@
   {                                                                           \
     result = 1;                                                               \
     unsigned int __i;                                                         \
-    xmi_ca_t *__l1 = (l1);                                                     \
-    xmi_ca_t *__l2 = (l2);                                                     \
-    for (__i = 0; __i < XMI_CA_NUM_ELEMENTS; __i++)                               \
+    pami_ca_t *__l1 = (l1);                                                     \
+    pami_ca_t *__l2 = (l2);                                                     \
+    for (__i = 0; __i < PAMI_CA_NUM_ELEMENTS; __i++)                               \
       if ((CA_ELEMENT (__l1)[__i] & CA_ELEMENT (__l2)[__i]) !=                \
           CA_ELEMENT (__l2)[__i])                                             \
       {                                                                       \
@@ -94,13 +94,13 @@
 
 
 
-#define xmi_ca_copy      CA_COPY
-#define xmi_ca_set       CA_SET
-#define xmi_ca_unset     CA_UNSET
-#define xmi_ca_isset     CA_ISSET
-#define xmi_ca_unset_all CA_UNSET_ALL
-#define xmi_ca_set_all   CA_SET_ALL
-#define xmi_ca_issubset  CA_ISSUBSET
-#define xmi_ca_print     CA_PRINT
+#define pami_ca_copy      CA_COPY
+#define pami_ca_set       CA_SET
+#define pami_ca_unset     CA_UNSET
+#define pami_ca_isset     CA_ISSET
+#define pami_ca_unset_all CA_UNSET_ALL
+#define pami_ca_set_all   CA_SET_ALL
+#define pami_ca_issubset  CA_ISSUBSET
+#define pami_ca_print     CA_PRINT
 
 #endif

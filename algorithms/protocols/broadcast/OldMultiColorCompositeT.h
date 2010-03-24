@@ -33,7 +33,7 @@ namespace CCMI
       ///
       /// \brief Get pipeline width and optimal colors based on bytes and schedule
       ///
-      typedef void      (*PWColorsFn) (XMI_GEOMETRY_CLASS                  * g,
+      typedef void      (*PWColorsFn) (PAMI_GEOMETRY_CLASS                  * g,
                                        unsigned                    bytes,
                                        CCMI::Schedule::Color     * colors,
                                        unsigned                  & ncolors,
@@ -60,7 +60,7 @@ namespace CCMI
         ///
         ///  \brief Application callback to call when the broadcast has finished
         ///
-        XMI_Callback_t                               _cb_done;
+        PAMI_Callback_t                               _cb_done;
 
         ///
         /// \brief Pointer to mapping
@@ -81,9 +81,9 @@ namespace CCMI
       ///
       /// \brief Receive the broadcast message and notify the executor
       ///
-        static void staticRecvFn(xmi_context_t context, void *executor, xmi_result_t err)
+        static void staticRecvFn(pami_context_t context, void *executor, pami_result_t err)
           {
-            xmi_quad_t *info = NULL;
+            pami_quad_t *info = NULL;
 
             CCMI::Executor::OldBroadcast<T_Sysdep,T_Mcast,T_ConnectionManager> *exe =
               (CCMI::Executor::OldBroadcast<T_Sysdep,T_Mcast,T_ConnectionManager> *) executor;
@@ -95,10 +95,10 @@ namespace CCMI
 
         OldMultiColorCompositeT (T_Sysdep                              * map,
                               T_ConnectionManager * cmgr,
-                              XMI_Callback_t                              cb_done,
-                              xmi_consistency_t                      consistency,
+                              PAMI_Callback_t                              cb_done,
+                              pami_consistency_t                      consistency,
                               T_Mcast                              * mf,
-                              XMI_GEOMETRY_CLASS                                   * geometry,
+                              PAMI_GEOMETRY_CLASS                                   * geometry,
                               unsigned                                     root,
                               char                                       * src,
                               unsigned                                     bytes) :
@@ -151,31 +151,31 @@ namespace CCMI
 
         void      create_schedule(void                      * buf,
                                  unsigned                    size,
-                                 XMI_GEOMETRY_CLASS                  * g,
+                                 PAMI_GEOMETRY_CLASS                  * g,
                                  CCMI::Schedule::Color       color) {CCMI_abort();};
-        void setDoneCallback (XMI_Callback_t  cb_done) { _cb_done = cb_done;}
+        void setDoneCallback (PAMI_Callback_t  cb_done) { _cb_done = cb_done;}
 
-        void SyncBcastPost(XMI_GEOMETRY_CLASS    * geometry,
+        void SyncBcastPost(PAMI_GEOMETRY_CLASS    * geometry,
                            unsigned                root,
                            T_ConnectionManager   * cmgr,
                            T_Mcast               * minterface)
         {
-          XMI_assert(this->_sd);
+          PAMI_assert(this->_sd);
           if(__global.mapping.task() != root)
           { //post receive on non root nodes
             //posts a receive on connection given by connection
             //mgr, bcast connmgrs shouldnt care about phases
 
-            xmi_oldmulticast_recv_t  mrecv;
+            pami_oldmulticast_recv_t  mrecv;
             mrecv.cb_done.function = staticRecvFn;
             mrecv.pipelineWidth = _pipewidth;
-            mrecv.opcode = XMI_PT_TO_PT_SUBTASK;
+            mrecv.opcode = PAMI_PT_TO_PT_SUBTASK;
 
             for(unsigned c = 0; c < _numColors; c++)
             {
               mrecv.bytes   = _bytecounts[c];
               mrecv.rcvbuf  = _srcbufs[c];
-              mrecv.request = (xmi_quad_t*)_executors[c].getRecvRequest();
+              mrecv.request = (pami_quad_t*)_executors[c].getRecvRequest();
               mrecv.connection_id = cmgr->getConnectionId (geometry->comm(), root, _colors[c],
                                                            (unsigned)-1, (unsigned)-1);
               mrecv.cb_done.clientdata = &_executors[c];
@@ -188,7 +188,7 @@ namespace CCMI
         /// \brief For sync broadcasts, the done call back to be called
         ///        when barrier finishes
         ///
-        static void cb_barrier_done(xmi_context_t context, void *me, xmi_result_t err)
+        static void cb_barrier_done(pami_context_t context, void *me, pami_result_t err)
         {
           OldMultiColorCompositeT * bcast_composite = (OldMultiColorCompositeT *) me;
           CCMI_assert (bcast_composite != NULL);
@@ -202,11 +202,11 @@ namespace CCMI
           ++bcast_composite->_doneCount;
           if(bcast_composite->_doneCount == bcast_composite->_nComplete) // call users done function
           {
-            bcast_composite->_cb_done.function(NULL, bcast_composite->_cb_done.clientdata,XMI_SUCCESS);
+            bcast_composite->_cb_done.function(NULL, bcast_composite->_cb_done.clientdata,PAMI_SUCCESS);
           }
         }
 
-        static void cb_bcast_done(xmi_context_t context, void *me, xmi_result_t err)
+        static void cb_bcast_done(pami_context_t context, void *me, pami_result_t err)
         {
           OldMultiColorCompositeT * bcast_composite = (OldMultiColorCompositeT *) me;
           CCMI_assert (bcast_composite != NULL);
@@ -216,7 +216,7 @@ namespace CCMI
 
           if(bcast_composite->_doneCount == bcast_composite->_nComplete) // call users done function
           {
-            bcast_composite->_cb_done.function(context, bcast_composite->_cb_done.clientdata, XMI_SUCCESS);
+            bcast_composite->_cb_done.function(context, bcast_composite->_cb_done.clientdata, PAMI_SUCCESS);
           }
         }
       };  //-- OldMultiColorCompositeT
@@ -225,7 +225,7 @@ namespace CCMI
       ///
       /// \brief Base factory class for broadcast factory implementations.
       ///
-      typedef void      (*MetaDataFn)   (xmi_metadata_t *m);
+      typedef void      (*MetaDataFn)   (pami_metadata_t *m);
       template <class B, MetaDataFn get_metadata, class T_Sysdep,class T_Mcast, class T_ConnectionManager>
       class OldMultiColorBroadcastFactoryT : public BroadcastFactory<T_Sysdep, T_Mcast, T_ConnectionManager>
       {
@@ -243,7 +243,7 @@ namespace CCMI
         {
         }
 
-        virtual void metadata(xmi_metadata_t *mdata)
+        virtual void metadata(pami_metadata_t *mdata)
         {
             get_metadata(mdata);
           }
@@ -251,7 +251,7 @@ namespace CCMI
         class collObj
          {
         public:
-          collObj(xmi_xfer_t *xfer):
+          collObj(pami_xfer_t *xfer):
             _rsize(sizeof(_req)),
             _xfer(*xfer),
             _user_done_fn(xfer->cb_done),
@@ -260,36 +260,36 @@ namespace CCMI
               _xfer.cb_done = alloc_done_fn;
               _xfer.cookie  = this;
             }
-          XMI_Request_t                _req[5];
+          PAMI_Request_t                _req[5];
           int                          _rsize;
-          xmi_xfer_t                   _xfer;
-          xmi_event_function           _user_done_fn;
+          pami_xfer_t                   _xfer;
+          pami_event_function           _user_done_fn;
           void                       * _user_cookie;
         };
 
-        static void alloc_done_fn( xmi_context_t   context,
+        static void alloc_done_fn( pami_context_t   context,
                                    void          * cookie,
-                                   xmi_result_t    result )
+                                   pami_result_t    result )
           {
             collObj *cObj = (collObj*)cookie;
             cObj->_user_done_fn(context,cObj->_user_cookie,result);
             free(cObj);
           }
 
-        virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+        virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                                void                      * cmd)
 
           {
             collObj *obj = (collObj*)malloc(sizeof(*obj));
-            new(obj) collObj((xmi_xfer_t*)cmd);
-            XMI_Callback_t cb_done;
+            new(obj) collObj((pami_xfer_t*)cmd);
+            PAMI_Callback_t cb_done;
             cb_done.function   = obj->_xfer.cb_done;
             cb_done.clientdata = obj->_xfer.cookie;
             return this->generate(&obj->_req[0],
                                   obj->_rsize,
                                   cb_done,
-                                  XMI_MATCH_CONSISTENCY,
-                                  (XMI_GEOMETRY_CLASS *)geometry,
+                                  PAMI_MATCH_CONSISTENCY,
+                                  (PAMI_GEOMETRY_CLASS *)geometry,
                                   obj->_xfer.cmd.xfer_broadcast.root,
                                   obj->_xfer.cmd.xfer_broadcast.buf,
                                   obj->_xfer.cmd.xfer_broadcast.typecount);
@@ -318,15 +318,15 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generate
         (void                      * request_buf,
          size_t                      rsize,
-         XMI_Callback_t              cb_done,
-         xmi_consistency_t           consistency,
-         XMI_GEOMETRY_CLASS        * geometry,
+         PAMI_Callback_t              cb_done,
+         pami_consistency_t           consistency,
+         PAMI_GEOMETRY_CLASS        * geometry,
          unsigned                    root,
          char                      * src,
          unsigned                    bytes)
         {
-          XMI_assert(rsize >= sizeof(B));
-          XMI_assert(request_buf);
+          PAMI_assert(rsize >= sizeof(B));
+          PAMI_assert(request_buf);
           B  *composite =
           new (request_buf)
           B (this->_sd,
@@ -338,10 +338,10 @@ namespace CCMI
              root,
              src,
              bytes);
-          XMI_assert(composite);
+          PAMI_assert(composite);
           composite->SyncBcastPost (geometry, root, this->_connmgr, this->_minterface);
           CCMI::Executor::Composite *barrier = (CCMI::Executor::Composite*)
-            geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0);
+            geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE0);
           CCMI_assert(barrier != NULL);
 
           barrier->setDoneCallback (B::cb_barrier_done, composite);

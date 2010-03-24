@@ -30,7 +30,7 @@
 #endif
 #define TRACE(x) //fprintf x
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -160,7 +160,7 @@ namespace XMI
                       metadata = (void *) hdr->dev.multipkt.metadata;
 
                     uint16_t id = hdr->dev.dispatch_id;
-                    XMI_assert(sizeof(id) == sizeof(hdr->dev.dispatch_id));
+                    PAMI_assert(sizeof(id) == sizeof(hdr->dev.dispatch_id));
                     TRACE((stderr, "recFifoPoll(wrap)    packet = %p, id = %d, cur_bytes = %d\n", hdr, id, cur_bytes));
                     _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
                     packets++;
@@ -183,7 +183,7 @@ namespace XMI
                           metadata = (void *) hdr->dev.multipkt.metadata;
 
                         uint16_t id = hdr->dev.dispatch_id;
-                        XMI_assert(sizeof(id) == sizeof(hdr->dev.dispatch_id));
+                        PAMI_assert(sizeof(id) == sizeof(hdr->dev.dispatch_id));
 
                         //TRACE((stderr, "recFifoPoll(no-wrap) packet = %p, id = %d, cur_bytes = %d\n", hdr, id, cur_bytes));
 
@@ -263,10 +263,10 @@ namespace XMI
           /// number of packets to avoid deadlock.
           const static unsigned DEFAULT_NUM_PACKETS_PER_ADVANCE = 32768;
 
-      }; // XMI::Device::MU::RecFifoSubGroup class
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+      }; // PAMI::Device::MU::RecFifoSubGroup class
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 #undef TRACE
 #endif   // __components_devices_bgq_mu_recfifosubgroup_h__
 

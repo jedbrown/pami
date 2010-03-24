@@ -20,57 +20,57 @@
 #endif // TEST_BUF_SIZE
 
 
-static XMI::Test::Buffer<TEST_BUF_SIZE> _buffer1;
-static XMI::Test::Buffer<TEST_BUF_SIZE> _buffer2;
+static PAMI::Test::Buffer<TEST_BUF_SIZE> _buffer1;
+static PAMI::Test::Buffer<TEST_BUF_SIZE> _buffer2;
 
 static   void       *_cookie=(void*)"HI COOKIE";
 static int           _doneCountdown;
-xmi_callback_t       _cb_done;
-const xmi_quad_t     _msginfo = {0,1,2,3};
+pami_callback_t       _cb_done;
+const pami_quad_t     _msginfo = {0,1,2,3};
 
-void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
+void dispatch_multicast_fn(const pami_quad_t     *msginfo,
                            unsigned              msgcount,
                            unsigned              connection_id,
                            size_t                root,
                            size_t                sndlen,
                            void                 *clientdata,
                            size_t               *rcvlen,
-                           xmi_pipeworkqueue_t **rcvpwq,
-                           xmi_callback_t       *cb_done)
+                           pami_pipeworkqueue_t **rcvpwq,
+                           pami_callback_t       *cb_done)
 {
   DBG_FPRINTF((stderr,"%s:%s msgcount %d, connection_id %d, root %zd, sndlen %zd, cookie %s\n",
                __FILE__,__PRETTY_FUNCTION__,msgcount, connection_id, root, sndlen, (char*) clientdata));
-  XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
-  XMI_assertf(sndlen <= TEST_BUF_SIZE,"sndlen %zu\n",sndlen);
-  XMI_assertf(msgcount == 1,"msgcount %d",msgcount);
-  XMI_assertf(msginfo->w0 == _msginfo.w0,"msginfo->w0=%d\n",msginfo->w0);
-  XMI_assertf(msginfo->w1 == _msginfo.w1,"msginfo->w1=%d\n",msginfo->w1);
-  XMI_assertf(msginfo->w2 == _msginfo.w2,"msginfo->w2=%d\n",msginfo->w2);
-  XMI_assertf(msginfo->w3 == _msginfo.w3,"msginfo->w3=%d\n",msginfo->w3);
+  PAMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
+  PAMI_assertf(sndlen <= TEST_BUF_SIZE,"sndlen %zu\n",sndlen);
+  PAMI_assertf(msgcount == 1,"msgcount %d",msgcount);
+  PAMI_assertf(msginfo->w0 == _msginfo.w0,"msginfo->w0=%d\n",msginfo->w0);
+  PAMI_assertf(msginfo->w1 == _msginfo.w1,"msginfo->w1=%d\n",msginfo->w1);
+  PAMI_assertf(msginfo->w2 == _msginfo.w2,"msginfo->w2=%d\n",msginfo->w2);
+  PAMI_assertf(msginfo->w3 == _msginfo.w3,"msginfo->w3=%d\n",msginfo->w3);
 
-  XMI::PipeWorkQueue * pwq;
+  PAMI::PipeWorkQueue * pwq;
 
   if(connection_id == 1)
     pwq = _buffer1.dstPwq();
   else if(connection_id == 2)
     pwq = _buffer2.dstPwq();
   else
-    XMI_abortf("connection id %d",connection_id);
+    PAMI_abortf("connection id %d",connection_id);
 
   DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %zd, %zd done out of %zd\n",__FILE__,__PRETTY_FUNCTION__,
                pwq,pwq->bytesAvailableToProduce(),pwq->getBytesProduced(),sndlen));
 
   *rcvlen = sndlen;
 
-  *rcvpwq = (xmi_pipeworkqueue_t*) pwq;
+  *rcvpwq = (pami_pipeworkqueue_t*) pwq;
 
   *cb_done = _cb_done;
 
 }
 
-void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
+void _done_cb(pami_context_t context, void *cookie, pami_result_t err)
 {
-  XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
+  PAMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   volatile int *doneCountdown = (volatile int*) cookie;
   DBG_FPRINTF((stderr, "%s:%s done %d/%d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown,_doneCountdown));
   --*doneCountdown;
@@ -78,31 +78,31 @@ void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
 
 int main(int argc, char ** argv)
 {
-  xmi_client_t client;
-  xmi_context_t context;
-  xmi_result_t status = XMI_ERROR;
+  pami_client_t client;
+  pami_context_t context;
+  pami_result_t status = PAMI_ERROR;
 
-  status = XMI_Client_initialize("multicast test", &client);
-  if(status != XMI_SUCCESS)
+  status = PAMI_Client_initialize("multicast test", &client);
+  if(status != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
+    fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);
     return 1;
   }
   DBG_FPRINTF((stderr,"Client %p\n",client));
   size_t n = 1;
-  status = XMI_Context_createv(client, NULL, 0, &context, n);
-  if(status != XMI_SUCCESS)
+  status = PAMI_Context_createv(client, NULL, 0, &context, n);
+  if(status != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", status);
+    fprintf (stderr, "Error. Unable to create pami context. result = %d\n", status);
     return 1;
   }
   DBG_FPRINTF((stderr,"Context %p\n",context));
 
-  xmi_configuration_t configuration;
+  pami_configuration_t configuration;
 
-  configuration.name = XMI_TASK_ID;
-  status = XMI_Configuration_query(client, &configuration);
-  if(status != XMI_SUCCESS)
+  configuration.name = PAMI_TASK_ID;
+  status = PAMI_Configuration_query(client, &configuration);
+  if(status != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
     return 1;
@@ -110,9 +110,9 @@ int main(int argc, char ** argv)
   size_t task_id = configuration.value.intval;
   DBG_FPRINTF((stderr, "My task id = %zu\n", task_id));
 
-  configuration.name = XMI_NUM_TASKS;
-  status = XMI_Configuration_query(client, &configuration);
-  if(status != XMI_SUCCESS)
+  configuration.name = PAMI_NUM_TASKS;
+  status = PAMI_Configuration_query(client, &configuration);
+  if(status != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
     return 1;
@@ -127,14 +127,14 @@ int main(int argc, char ** argv)
 
   size_t                     dispatch = 2;
 
-  xmi_dispatch_callback_fn   fn;
+  pami_dispatch_callback_fn   fn;
 
   fn.multicast = &dispatch_multicast_fn;
 
-  xmi_dispatch_hint_t        options;
+  pami_dispatch_hint_t        options;
   memset(&options, 0x00, sizeof(options));
 
-  options.type = XMI_MULTICAST;
+  options.type = PAMI_MULTICAST;
 
   options.config = NULL;
 
@@ -142,22 +142,22 @@ int main(int argc, char ** argv)
   options.hint.multicast.one_sided = 1;
   options.hint.multicast.active_message = 1;
 
-  status = XMI_Dispatch_set_new(context,
+  status = PAMI_Dispatch_set_new(context,
                                 dispatch,
                                 fn,
                                 _cookie,
                                 options);
 
   //For testing ease, I'm assuming rank list topology, so convert them
-  XMI::Topology topology_global = __global.topology_global;
-  topology_global.convertTopology(XMI_LIST_TOPOLOGY);
+  PAMI::Topology topology_global = __global.topology_global;
+  topology_global.convertTopology(PAMI_LIST_TOPOLOGY);
 
-  XMI::Topology topology_local  = __global.topology_local;
-  topology_local.convertTopology(XMI_LIST_TOPOLOGY);
+  PAMI::Topology topology_local  = __global.topology_local;
+  topology_local.convertTopology(PAMI_LIST_TOPOLOGY);
 
   // global topology variables
-  xmi_task_t  gRoot    = topology_global.index2Rank(0);
-  xmi_task_t *gRankList=NULL; topology_global.rankList(&gRankList);
+  pami_task_t  gRoot    = topology_global.index2Rank(0);
+  pami_task_t *gRankList=NULL; topology_global.rankList(&gRankList);
   size_t  gSize    = topology_global.size();
 
   DBG_FPRINTF((stderr,"gRoot %d, gSize %zd\n",gRoot, gSize));
@@ -166,15 +166,15 @@ int main(int argc, char ** argv)
     DBG_FPRINTF((stderr,"gRankList[%zd] = %d\n",j, gRankList[j]));
   }
 
-  xmi_multicast_t mcast;
+  pami_multicast_t mcast;
   memset(&mcast, 0x00, sizeof(mcast));
 
   mcast.dispatch = dispatch;
 
   mcast.msginfo = &_msginfo;
   mcast.msgcount = 1;
-  mcast.src_participants = (xmi_topology_t *)NULL;
-  mcast.dst_participants = (xmi_topology_t *)NULL;
+  mcast.src_participants = (pami_topology_t *)NULL;
+  mcast.dst_participants = (pami_topology_t *)NULL;
 
 
   mcast.client = 0;
@@ -195,8 +195,8 @@ int main(int argc, char ** argv)
 
     if(gRoot == task_id)
     {
-      mcast.src_participants = (xmi_topology_t *)new XMI::Topology(gRoot); // global root (mem leak)
-      mcast.dst_participants = (xmi_topology_t *)new XMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants (mem leak)
+      mcast.src_participants = (pami_topology_t *)new PAMI::Topology(gRoot); // global root (mem leak)
+      mcast.dst_participants = (pami_topology_t *)new PAMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants (mem leak)
       DBG_FPRINTF((stderr,"gRoot %d, gSize %zd\n",gRoot, gSize));
       for(size_t j=0;j<gSize;++j)
       {
@@ -207,19 +207,19 @@ int main(int argc, char ** argv)
 
       mcast.connection_id = 1; // I'm going to use connection id to specify which buffer to receive into.
 
-      XMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
+      PAMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
       srcPwq->configure(NULL, _buffer1.buffer(), (TEST_BUF_SIZE/4)*4, 0);
       srcPwq->reset();
 
-      mcast.src = (xmi_pipeworkqueue_t *) srcPwq;
-      mcast.dst = (xmi_pipeworkqueue_t *)NULL;
+      mcast.src = (pami_pipeworkqueue_t *) srcPwq;
+      mcast.dst = (pami_pipeworkqueue_t *)NULL;
 
-      status = XMI_Multicast(&mcast);
+      status = PAMI_Multicast(&mcast);
       sleep(1);
       unsigned dataCountDown = 17;
       while(_doneCountdown)
       {
-        status = XMI_Context_advance (context, 10);
+        status = PAMI_Context_advance (context, 10);
         if(dataCountDown && !(--dataCountDown % 4)) // slowly feed the src pwq
         {
           sleep(1);
@@ -231,7 +231,7 @@ int main(int argc, char ** argv)
     else
       while(_doneCountdown)
       {
-        status = XMI_Context_advance (context, 10);
+        status = PAMI_Context_advance (context, 10);
       }
     size_t
     bytesConsumed = 0,
@@ -268,11 +268,11 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
   {
     // local topology variables
-    //xmi_task_t  lRoot    = topology_local.index2Rank(0);
-    xmi_task_t *lRankList=NULL; topology_local.rankList(&lRankList);
+    //pami_task_t  lRoot    = topology_local.index2Rank(0);
+    pami_task_t *lRankList=NULL; topology_local.rankList(&lRankList);
     size_t  lSize   =  topology_local.size();
 
-    options.type = XMI_MULTICAST;
+    options.type = PAMI_MULTICAST;
 
     options.config = NULL;
 
@@ -281,7 +281,7 @@ int main(int argc, char ** argv)
     options.hint.multicast.active_message = 1;
 
     size_t                     spanning_dispatch = dispatch+1;
-    status = XMI_Dispatch_set_new(context,
+    status = PAMI_Dispatch_set_new(context,
                                   spanning_dispatch,
                                   fn,
                                   _cookie,
@@ -292,7 +292,7 @@ int main(int argc, char ** argv)
     options.hint.multicast.active_message = 1;
 
     size_t                     local_dispatch = spanning_dispatch+1;
-    status = XMI_Dispatch_set_new(context,
+    status = PAMI_Dispatch_set_new(context,
                                   local_dispatch,
                                   fn,
                                   _cookie,
@@ -304,39 +304,39 @@ int main(int argc, char ** argv)
     if(gRoot == task_id)
     {
       DBG_FPRINTF((stderr,"task_id %zu -> 1st ranks\n",task_id));
-      mcast.src_participants = (xmi_topology_t *)new XMI::Topology(gRoot); // global root (mem leak)
+      mcast.src_participants = (pami_topology_t *)new PAMI::Topology(gRoot); // global root (mem leak)
       // This isn't working correctly, so do it the hard way
       //topology_global.subTopologyNthGlobal(&dst_participants, 0); //0th rank on each locale
 
-      XMI::Topology topology(gRankList, (gSize)), subtopology;
-      topology.convertTopology(XMI_COORD_TOPOLOGY);
+      PAMI::Topology topology(gRankList, (gSize)), subtopology;
+      topology.convertTopology(PAMI_COORD_TOPOLOGY);
       topology.subTopologyNthGlobal(&subtopology, 0);
 
-      xmi_task_t *ranklist = new xmi_task_t[subtopology.size()];
+      pami_task_t *ranklist = new pami_task_t[subtopology.size()];
 
       // loop all global ranks, if they're in the subtopology, put then in a ranklist.
       for(size_t i = 0, j = 0; i < gSize; ++i)
       {
         if(subtopology.isRankMember(i)) ranklist[j++] = i;
-        XMI_assert(j<=subtopology.size());
+        PAMI_assert(j<=subtopology.size());
       }
 
-      mcast.dst_participants = (xmi_topology_t *)new XMI::Topology(ranklist, subtopology.size());// (mem leak)
+      mcast.dst_participants = (pami_topology_t *)new PAMI::Topology(ranklist, subtopology.size());// (mem leak)
 
       mcast.dispatch = spanning_dispatch;
       mcast.connection_id = 1; // I'm going to use connection id to specify which buffer to receive into.
 
       _buffer1.reset(true); // isRoot = true;
 
-      XMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
+      PAMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
       srcPwq->configure(NULL, _buffer1.buffer(), (TEST_BUF_SIZE/4)*4, 0);
       srcPwq->reset();
 
 
-      mcast.src = (xmi_pipeworkqueue_t *)srcPwq;
-      mcast.dst = (xmi_pipeworkqueue_t *)_buffer1.dstPwq();
+      mcast.src = (pami_pipeworkqueue_t *)srcPwq;
+      mcast.dst = (pami_pipeworkqueue_t *)_buffer1.dstPwq();
 
-      status = XMI_Multicast(&mcast);
+      status = PAMI_Multicast(&mcast);
     }
     else _buffer1.reset(); // non-root reset
 
@@ -347,28 +347,28 @@ int main(int argc, char ** argv)
 
 
 
-      mcast.src_participants = (xmi_topology_t *)new XMI::Topology(task_id); // root (mem leak)
-      mcast.dst_participants = (xmi_topology_t *)new XMI::Topology(lRankList+1, (lSize-1)); // everyone except root in dst_participants (mem leak)
+      mcast.src_participants = (pami_topology_t *)new PAMI::Topology(task_id); // root (mem leak)
+      mcast.dst_participants = (pami_topology_t *)new PAMI::Topology(lRankList+1, (lSize-1)); // everyone except root in dst_participants (mem leak)
 
       _buffer2.reset(true ); // isRoot = true
 
       // set buffer2 input from buffer1 output
 
-      XMI::PipeWorkQueue * srcPwq =_buffer1.dstPwq();
+      PAMI::PipeWorkQueue * srcPwq =_buffer1.dstPwq();
       _buffer2.set(srcPwq, _buffer2.dstPwq()); // isRoot = true
 
       mcast.dispatch = local_dispatch;
       mcast.connection_id = 2;  // I'm going to use connection id to specify which buffer to receive into.
 
-      mcast.src = (xmi_pipeworkqueue_t *)srcPwq;
-      mcast.dst = (xmi_pipeworkqueue_t *)NULL;
+      mcast.src = (pami_pipeworkqueue_t *)srcPwq;
+      mcast.dst = (pami_pipeworkqueue_t *)NULL;
 
 
       DBG_FPRINTF((stderr,"Context %p\n",context));
 /** \todo shouldnt need this advance but MPIBcastMsg only advances one msg at a time so start receiving first... */
-      sleep(2); status = XMI_Context_advance (context, 100);
+      sleep(2); status = PAMI_Context_advance (context, 100);
 
-      status = XMI_Multicast(&mcast);
+      status = PAMI_Multicast(&mcast);
 
 
     }
@@ -377,12 +377,12 @@ int main(int argc, char ** argv)
 
     if(gRoot == task_id)
     {
-      XMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
+      PAMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
       sleep(1);
       unsigned dataCountDown = 17;
       while(_doneCountdown)
       {
-        status = XMI_Context_advance (context, 10);
+        status = PAMI_Context_advance (context, 10);
         if(dataCountDown && !(--dataCountDown % 4)) // slowly feed the src pwq
         {
           sleep(1);
@@ -393,7 +393,7 @@ int main(int argc, char ** argv)
     }
     while(_doneCountdown)
     {
-      status = XMI_Context_advance (context, 10);
+      status = PAMI_Context_advance (context, 10);
     }
     size_t
     bytesConsumed = 0,
@@ -455,19 +455,19 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------
-  DBG_FPRINTF((stderr, "XMI_Context_destroy(context);\n"));
-  status = XMI_Context_destroy(context);
-  if(status != XMI_SUCCESS)
+  DBG_FPRINTF((stderr, "PAMI_Context_destroy(context);\n"));
+  status = PAMI_Context_destroy(context);
+  if(status != PAMI_SUCCESS)
   {
-    fprintf(stderr, "Error. Unable to destroy xmi context. result = %d\n", status);
+    fprintf(stderr, "Error. Unable to destroy pami context. result = %d\n", status);
     return 1;
   }
 
-  DBG_FPRINTF((stderr, "XMI_Client_finalize(client);\n"));
-  status = XMI_Client_finalize(client);
-  if(status != XMI_SUCCESS)
+  DBG_FPRINTF((stderr, "PAMI_Client_finalize(client);\n"));
+  status = PAMI_Client_finalize(client);
+  if(status != PAMI_SUCCESS)
   {
-    fprintf(stderr, "Error. Unable to finalize xmi client. result = %d\n", status);
+    fprintf(stderr, "Error. Unable to finalize pami client. result = %d\n", status);
     return 1;
   }
 

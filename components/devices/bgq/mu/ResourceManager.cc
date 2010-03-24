@@ -25,9 +25,9 @@
 #define TRACE(x) //fprintf x
 #endif
 
-uint8_t XMI::Device::MU::ResourceManager::_funcIDs[MUSPI_MAX_FUNCTION_IDS];
+uint8_t PAMI::Device::MU::ResourceManager::_funcIDs[MUSPI_MAX_FUNCTION_IDS];
 
-void XMI::Device::MU::ResourceManager::
+void PAMI::Device::MU::ResourceManager::
 getInfo()
 {
   uint32_t i;
@@ -55,7 +55,7 @@ getInfo()
         _injFifoInfo = (Resource_t*)malloc ( sizeof(Resource_t) +
                                              (MINIMAL_INJ_NUM_SUBGROUPS - 1) *
                                              sizeof (Resource_SubGroup_t) );
-        XMI_assert ( _injFifoInfo != NULL );
+        PAMI_assert ( _injFifoInfo != NULL );
         _injFifoInfo->numSubGroups = MINIMAL_INJ_NUM_SUBGROUPS;
 
         TRACE((stderr, "My Coords are: A=%zd, B=%zd, C=%zd, D=%zd, E=%zd, T=%zd, P=%zd, aSize=%zd, bSize=%zd, cSize=%zd, dSize=%zd, eSize=%zd, tSize=%zd, pSize=%zd\n",
@@ -76,7 +76,7 @@ getInfo()
         _recFifoInfo = (Resource_t*)malloc ( sizeof(Resource_t) +
                                              (MINIMAL_REC_NUM_SUBGROUPS - 1) *
                                              sizeof (Resource_SubGroup_t) );
-        XMI_assert ( _recFifoInfo != NULL );
+        PAMI_assert ( _recFifoInfo != NULL );
         _recFifoInfo->numSubGroups = MINIMAL_REC_NUM_SUBGROUPS;
 
         for (i = 0; i < MINIMAL_REC_NUM_SUBGROUPS; i++)
@@ -94,7 +94,7 @@ getInfo()
         _batInfo = (Resource_t*)malloc ( sizeof(Resource_t) +
                                          (MINIMAL_BAT_NUM_SUBGROUPS - 1) *
                                          sizeof (Resource_SubGroup_t) );
-        XMI_assert ( _batInfo != NULL );
+        PAMI_assert ( _batInfo != NULL );
         _batInfo->numSubGroups = MINIMAL_BAT_NUM_SUBGROUPS;
 
         for (i = 0; i < MINIMAL_BAT_NUM_SUBGROUPS; i++)
@@ -114,9 +114,9 @@ getInfo()
 }
 
 
-int XMI::Device::MU::ResourceManager::
+int PAMI::Device::MU::ResourceManager::
 init ( ResourceType_t  type,
-       XMI::Memory::MemoryManager *mm,
+       PAMI::Memory::MemoryManager *mm,
        dispatch_t      *dispatch )
 {
   int rc = 0;
@@ -146,7 +146,7 @@ init ( ResourceType_t  type,
                         DEFAULT_INJ_FIFO_DESC_COUNT *
                         (sizeof(MUHWI_Descriptor_t) +
                          sizeof(torus_packet_payload_t)));
-  XMI_assert ( rc == 0 );
+  PAMI_assert ( rc == 0 );
 
   fifoSize[0] = DEFAULT_INJ_FIFO_DESC_COUNT * sizeof (MUHWI_Descriptor_t);
   fifoAttr[0].RemoteGet = 1;
@@ -165,7 +165,7 @@ init ( ResourceType_t  type,
 
   _injFifoSubGroups = (InjFifoSubGroup**)malloc ( _injFifoInfo->numSubGroups *
                                                   sizeof ( InjFifoSubGroup * ) );
-  XMI_assert ( _injFifoSubGroups != NULL );
+  PAMI_assert ( _injFifoSubGroups != NULL );
   TRACE((stderr, "_injFifoSubGroups=%p\n", _injFifoSubGroups));
 
   // - Loop through each subgroup, initializing it.
@@ -177,7 +177,7 @@ init ( ResourceType_t  type,
       // - Allocate space for the InjFifoSubGroup object for this subgroup and
       //   run its constructor.
       _injFifoSubGroups[i] = (InjFifoSubGroup*)malloc ( sizeof(InjFifoSubGroup) );
-      XMI_assert ( _injFifoSubGroups[i] != NULL );
+      PAMI_assert ( _injFifoSubGroups[i] != NULL );
       new (_injFifoSubGroups[i]) InjFifoSubGroup;
       TRACE((stderr, "_injFifoSubGroups[%u]=%p\n", i, _injFifoSubGroups[i]));
 
@@ -185,14 +185,14 @@ init ( ResourceType_t  type,
       // - Allocate space for the fifo sizes.
 
       char **fifoPtrs = (char**)malloc ( numElements * sizeof ( char* ) );
-      XMI_assert ( fifoPtrs != NULL );
+      PAMI_assert ( fifoPtrs != NULL );
 
       uint32_t *fifoSizes = (uint32_t*)malloc ( numElements * sizeof ( uint32_t ) );
-      XMI_assert ( fifoSizes != NULL );
+      PAMI_assert ( fifoSizes != NULL );
 
       Kernel_InjFifoAttributes_t *fifoAttrs =
         (Kernel_InjFifoAttributes_t*)malloc ( numElements * sizeof ( Kernel_InjFifoAttributes_t ) );
-      XMI_assert ( fifoAttrs != NULL );
+      PAMI_assert ( fifoAttrs != NULL );
       TRACE((stderr, "fifoPtrs=%p, fifoSizes=%p, fifoAttrs=%p\n", fifoPtrs, fifoSizes, fifoAttrs));
 
       // - Allocate space for each fifo - and the single packet payload buffer
@@ -205,7 +205,7 @@ init ( ResourceType_t  type,
                                 DEFAULT_INJ_FIFO_DESC_COUNT *
                                 (sizeof(MUHWI_Descriptor_t) +
                                  sizeof(torus_packet_payload_t)));
-          XMI_assert ( rc == 0 );
+          PAMI_assert ( rc == 0 );
 
           fifoSizes[j] = DEFAULT_INJ_FIFO_DESC_COUNT * sizeof (MUHWI_Descriptor_t);
           fifoAttrs[j].RemoteGet = 0;
@@ -243,7 +243,7 @@ init ( ResourceType_t  type,
 
   _recFifoSubGroups = (RecFifoSubGroup**)malloc ( _recFifoInfo->numSubGroups *
                                                   sizeof ( RecFifoSubGroup * ) );
-  XMI_assert ( _recFifoSubGroups != NULL );
+  PAMI_assert ( _recFifoSubGroups != NULL );
   TRACE((stderr, "_recFifoSubGroups=%p\n", _recFifoSubGroups));
 
   // - Loop through each subgroup, initializing it.
@@ -255,7 +255,7 @@ init ( ResourceType_t  type,
       // - Allocate space for the RecFifoSubGroup object for this subgroup and
       //   run its constructor.
       _recFifoSubGroups[i] = (RecFifoSubGroup*)malloc ( sizeof(RecFifoSubGroup) );
-      XMI_assert ( _recFifoSubGroups[i] != NULL );
+      PAMI_assert ( _recFifoSubGroups[i] != NULL );
       new (_recFifoSubGroups[i]) RecFifoSubGroup;
       TRACE((stderr, "_recFifoSubGroups[%u]=%p\n", i, _recFifoSubGroups[i]));
 
@@ -263,14 +263,14 @@ init ( ResourceType_t  type,
       // - Allocate space for the fifo sizes.
 
       char **fifoPtrs = (char**)malloc ( numElements * sizeof ( char* ) );
-      XMI_assert ( fifoPtrs != NULL );
+      PAMI_assert ( fifoPtrs != NULL );
 
       uint32_t *fifoSizes = (uint32_t*)malloc ( numElements * sizeof ( uint32_t ) );
-      XMI_assert ( fifoSizes != NULL );
+      PAMI_assert ( fifoSizes != NULL );
 
       Kernel_RecFifoAttributes_t *fifoAttrs =
         (Kernel_RecFifoAttributes_t*)malloc ( numElements * sizeof ( Kernel_RecFifoAttributes_t ) );
-      XMI_assert ( fifoAttrs != NULL );
+      PAMI_assert ( fifoAttrs != NULL );
       TRACE((stderr, "fifoPtrs=%p, fifoSizes=%p, fifoAttrs=%p\n", fifoPtrs, fifoSizes, fifoAttrs));
 
       // - Allocate space for each fifo.
@@ -279,7 +279,7 @@ init ( ResourceType_t  type,
       for ( j = 0; j < numElements; j++ )
         {
           rc = posix_memalign ( (void**) & fifoPtrs[j], REC_FIFO_ALIGNMENT, DEFAULT_REC_FIFO_SIZE );
-          XMI_assert ( rc == 0 );
+          PAMI_assert ( rc == 0 );
 
           fifoSizes[j] = DEFAULT_REC_FIFO_SIZE;
           fifoAttrs[j].System = 0;
@@ -316,7 +316,7 @@ init ( ResourceType_t  type,
 
   _batSubGroups = (BaseAddressTableSubGroup**)malloc ( _batInfo->numSubGroups *
                                                        sizeof ( BaseAddressTableSubGroup * ) );
-  XMI_assert ( _batSubGroups != NULL );
+  PAMI_assert ( _batSubGroups != NULL );
   TRACE((stderr, "_batSubGroups=%p\n", _batSubGroups));
 
   // - Loop through each subgroup, initializing it.
@@ -328,7 +328,7 @@ init ( ResourceType_t  type,
       // - Allocate space for the BaseAddressTableSubGroup object for this subgroup
       //   and run its constructor.
       _batSubGroups[i] = (BaseAddressTableSubGroup*)malloc ( sizeof(BaseAddressTableSubGroup) );
-      XMI_assert ( _batSubGroups[i] != NULL );
+      PAMI_assert ( _batSubGroups[i] != NULL );
       new (_batSubGroups[i]) BaseAddressTableSubGroup();
       TRACE((stderr, "_batSubGroups[%u]=%p\n", i, _batSubGroups[i]));
 
@@ -358,7 +358,7 @@ init ( ResourceType_t  type,
 
   Kernel_MemoryRegion_t * memRegion = (Kernel_MemoryRegion_t *)(shared_counter_va + 1);
   rc = Kernel_CreateMemoryRegion (memRegion, shared_counter_va, sizeof(uint64_t));
-  XMI_assert ( rc == 0 );
+  PAMI_assert ( rc == 0 );
 
   uint64_t shared_counter_pa = (uint64_t)memRegion->BasePa +
                                ((uint64_t)shared_counter_va - (uint64_t)memRegion->BaseVa);

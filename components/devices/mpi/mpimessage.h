@@ -14,7 +14,7 @@
 #ifndef __components_devices_mpi_mpimessage_h__
 #define __components_devices_mpi_mpimessage_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/common.h"
 #include "util/queue/Queue.h"
 #include "PipeWorkQueue.h"
@@ -29,7 +29,7 @@
   #define TRACE_DEVICE(x) //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -51,9 +51,9 @@ namespace XMI
     class MPIMessage
     {
     public:
-      inline MPIMessage (xmi_client_t client, size_t       context,
+      inline MPIMessage (pami_client_t client, size_t       context,
                          size_t              dispatch_id,
-                         xmi_event_function  done_fn,
+                         pami_event_function  done_fn,
                          void               *cookie):
         _client(client),
         _context(context),
@@ -63,13 +63,13 @@ namespace XMI
         TRACE_DEVICE((stderr,"%s dispatch_id %d\n",__PRETTY_FUNCTION__, dispatch_id));
           _p2p_msg._dispatch_id=dispatch_id;
         };
-      xmi_client_t       _client;
+      pami_client_t       _client;
       size_t       _context;
-      xmi_event_function  _done_fn;
+      pami_event_function  _done_fn;
       void               *_cookie;
       int                 _freeme;
       MPI_Request         _request;
-      xmi_task_t          _target_task;
+      pami_task_t          _target_task;
 
       struct _p2p_msg
       {
@@ -88,16 +88,16 @@ namespace XMI
     class OldMPIMcastMessage
     {
     public:
-      xmi_client_t  _client;
+      pami_client_t  _client;
       size_t  _context;
       size_t         _dispatch_id;
-      xmi_quad_t     _info[2];
+      pami_quad_t     _info[2];
       int            _info_count;
       int            _size;
       unsigned       _conn;
       MPI_Request    *_req;
       int            _num;
-      xmi_callback_t _cb_done;
+      pami_callback_t _cb_done;
       inline void *buffer() { return ((char *)this + sizeof (*this)); }
       inline int  totalsize () { return _size + sizeof (*this); }
     };
@@ -107,26 +107,26 @@ namespace XMI
     public:
       size_t              _dispatch_id;
       unsigned            _conn;
-      xmi_event_function  _done_fn;
+      pami_event_function  _done_fn;
       void               *_cookie;
       char               *_buf;
       size_t              _size;
       size_t              _pwidth;
       unsigned            _nranks;
       unsigned            _hint;
-      xmi_op              _op;
-      xmi_dt              _dtype;
+      pami_op              _op;
+      pami_dt              _dtype;
       size_t              _counter;
     };
 
     class MPIM2MMessage
     {
     public:
-      xmi_client_t       _client;
+      pami_client_t       _client;
       size_t       _context;
       size_t              _dispatch_id;
       unsigned            _conn;
-      xmi_event_function  _done_fn;
+      pami_event_function  _done_fn;
       void               *_cookie;
       int                 _num;
       MPI_Request        *_reqs;
@@ -140,7 +140,7 @@ namespace XMI
     public:
       size_t              _dispatch_id;
       unsigned            _conn;
-      xmi_event_function  _done_fn;
+      pami_event_function  _done_fn;
       void               *_cookie;
       int                 _num;
       char               *_buf;
@@ -163,7 +163,7 @@ namespace XMI
     class MPIMsyncMessage
     {
     public:
-      xmi_callback_t _cb_done;
+      pami_callback_t _cb_done;
       unsigned       _numphases;
       unsigned       _sendcomplete;
       unsigned       _phase;
@@ -182,16 +182,16 @@ namespace XMI
     class MPIMcastMessage
     {
     public:
-      xmi_callback_t      _cb_done;
-      XMI::Topology      *_srcranks;
-      XMI::Topology      *_dstranks;
-      XMI::PipeWorkQueue *_srcpwq;
-      XMI::PipeWorkQueue *_dstpwq;
+      pami_callback_t      _cb_done;
+      PAMI::Topology      *_srcranks;
+      PAMI::Topology      *_dstranks;
+      PAMI::PipeWorkQueue *_srcpwq;
+      PAMI::PipeWorkQueue *_dstpwq;
       size_t              _root;
       size_t              _bytes;
       size_t              _currBytes;
       char               *_currBuf;
-      xmi_task_t         *_ranks;
+      pami_task_t         *_ranks;
       size_t              _numRanks;
       size_t              _dests[64];
       size_t              _srcs[64];

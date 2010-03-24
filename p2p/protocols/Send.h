@@ -13,9 +13,9 @@
 #ifndef __p2p_protocols_Send_h__
 #define __p2p_protocols_Send_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Protocol
   {
@@ -44,7 +44,7 @@ namespace XMI
           /// \note This is required to make "C" programs link successfully with virtual destructors
           inline void operator delete(void * p)
           {
-            XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
+            PAMI_abortf("%s<%d>\n",__FILE__,__LINE__);
           }
 
           ///
@@ -57,13 +57,13 @@ namespace XMI
           /// \param[in]  mbytes    Number of opaque application header bytes.
           ///
 #if 0
-          virtual xmi_result_t immediate (xmi_task_t           task,
+          virtual pami_result_t immediate (pami_task_t           task,
                                           void               * src,
                                           size_t               bytes,
                                           void               * msginfo,
                                           size_t               mbytes) = 0;
 #endif
-          virtual xmi_result_t immediate (xmi_send_immediate_t * parameters) = 0;
+          virtual pami_result_t immediate (pami_send_immediate_t * parameters) = 0;
 
           ///
           /// \brief Start a new simple send message.
@@ -80,23 +80,23 @@ namespace XMI
           /// \param[in]  mbytes    Number of msginfo bytes.
           ///
 #if 0
-          virtual xmi_result_t simple (xmi_event_function   local_fn,
-                                       xmi_event_function   remote_fn,
+          virtual pami_result_t simple (pami_event_function   local_fn,
+                                       pami_event_function   remote_fn,
                                        void               * cookie,
-                                       xmi_task_t           task,
+                                       pami_task_t           task,
                                        void               * src,
                                        size_t               bytes,
                                        void               * msginfo,
                                        size_t               mbytes) = 0;
 #endif
-          virtual xmi_result_t simple (xmi_send_t * parameters) = 0;
+          virtual pami_result_t simple (pami_send_t * parameters) = 0;
 
-      }; // XMI::Protocol::Send class
-    }; // XMI::Protocol::Send class
-  };   // XMI::Protocol namespace
-};     // XMI namespace
+      }; // PAMI::Protocol::Send class
+    }; // PAMI::Protocol::Send class
+  };   // PAMI::Protocol namespace
+};     // PAMI namespace
 
-#endif // __xmi_p2p_protocols_send_h__
+#endif // __pami_p2p_protocols_send_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

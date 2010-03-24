@@ -35,7 +35,7 @@ static inline unsigned long __tsc() {
 }
 #endif /* ! __defined__tsc__ */
 
-namespace XMI {
+namespace PAMI {
 namespace Mutex {
 namespace BGP {
 	//
@@ -44,8 +44,8 @@ namespace BGP {
 	class _LockBoxMutex {
 	public:
 		_LockBoxMutex() { _addr = NULL; }
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			XMI_abortf("_LockBoxMutex must be a subclass");
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+			PAMI_abortf("_LockBoxMutex must be a subclass");
 		}
 		void acquire_impl() {
 			LockBox_MutexLock((LockBox_Mutex_t)_addr);
@@ -67,8 +67,8 @@ namespace BGP {
 	class _FairLockBoxMutex {
 	public:
 		_FairLockBoxMutex() { _addr = NULL; }
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			XMI_abortf("_FairLockBoxMutex must be a subclass");
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+			PAMI_abortf("_FairLockBoxMutex must be a subclass");
 		}
 		void acquire_impl() {
 			// LockBox_MutexLock((LockBox_Mutex_t)_addr);
@@ -117,47 +117,47 @@ namespace BGP {
 	//
 
 	class LockBoxNodeMutex : public _LockBoxMutex,
-				 public XMI::Atomic::Interface::Mutex<LockBoxNodeMutex> {
+				 public PAMI::Atomic::Interface::Mutex<LockBoxNodeMutex> {
 	public:
 		LockBoxNodeMutex() {}
 		~LockBoxNodeMutex() {}
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_NODE_SCOPE);
 		}
 	}; // class LockBoxNodeMutex
 
 	class LockBoxProcMutex : public _LockBoxMutex,
-				 public XMI::Atomic::Interface::Mutex<LockBoxProcMutex> {
+				 public PAMI::Atomic::Interface::Mutex<LockBoxProcMutex> {
 	public:
 		LockBoxProcMutex() {}
 		~LockBoxProcMutex() {}
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_PROC_SCOPE);
 		}
 	}; // class LockBoxProcMutex
 
 	class FairLockBoxNodeMutex : public _FairLockBoxMutex,
-				     public XMI::Atomic::Interface::Mutex<FairLockBoxNodeMutex> {
+				     public PAMI::Atomic::Interface::Mutex<FairLockBoxNodeMutex> {
 	public:
 		FairLockBoxNodeMutex() {}
 		~FairLockBoxNodeMutex() {}
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_NODE_SCOPE);
 		}
 	}; // class FairLockBoxNodeMutex
 
 	class FairLockBoxProcMutex : public _FairLockBoxMutex,
-				     public XMI::Atomic::Interface::Mutex<FairLockBoxProcMutex> {
+				     public PAMI::Atomic::Interface::Mutex<FairLockBoxProcMutex> {
 	public:
 		FairLockBoxProcMutex() {}
 		~FairLockBoxProcMutex() {}
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_PROC_SCOPE);
 		}
 	}; // class FairLockBoxProcMutex
 
 }; // BGP namespace
 }; // Mutex namespace
-}; // XMI namespace
+}; // PAMI namespace
 
 #endif // __components_atomic_bgp_lockboxmutex_h__

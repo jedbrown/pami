@@ -35,7 +35,7 @@ namespace TSPColl
   {
   public:
     void * operator new (size_t, void * addr) { return addr; }
-    BinomBcast (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff);
+    BinomBcast (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff);
     void reset (int root, const void * sbuf, void *buf, size_t);
   private:
     char _dummy;
@@ -46,7 +46,7 @@ namespace TSPColl
 /* *********************************************************************** */
 template<class T_Mcast>
 inline TSPColl::BinomBcast<T_Mcast>::
-BinomBcast(XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
+BinomBcast(PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
   CollExchange<T_Mcast>(comm, tag, instID, tagoff, false)
 {
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;

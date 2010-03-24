@@ -15,28 +15,28 @@
 #include "Global.h"
 #include "Topology.h" // need to make static members...
 
-XMI::Global __global;
+PAMI::Global __global;
 
-XMI::Mapping *XMI::Topology::mapping = NULL;
-xmi_coord_t XMI::Topology::my_coords;
+PAMI::Mapping *PAMI::Topology::mapping = NULL;
+pami_coord_t PAMI::Topology::my_coords;
 
 #include "components/devices/misc/AtomicBarrierMsg.h"
-XMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
+PAMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
 
 #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
-XMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
+PAMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
 
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
-XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
+PAMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
-XMI::Device::LocalReduceWQDevice _g_l_reducewq_dev;
+PAMI::Device::LocalReduceWQDevice _g_l_reducewq_dev;
 
 #include "components/devices/workqueue/WQRingBcastMsg.h"
-XMI::Device::WQRingBcastDev _g_wqbcast_dev;
+PAMI::Device::WQRingBcastDev _g_wqbcast_dev;
 
 #include "components/devices/workqueue/WQRingReduceMsg.h"
-XMI::Device::WQRingReduceDev _g_wqreduce_dev;
+PAMI::Device::WQRingReduceDev _g_wqreduce_dev;
 
 #include "components/devices/misc/ProgressFunctionMsg.h"
-XMI::Device::ProgressFunctionDev _g_progfunc_dev;
+PAMI::Device::ProgressFunctionDev _g_progfunc_dev;

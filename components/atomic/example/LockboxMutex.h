@@ -6,7 +6,7 @@
 #ifndef __components_atomic_example_LockboxMutex_h__
 #define __components_atomic_example_LockboxMutex_h__
 
-namespace XMI
+namespace PAMI
 {
   namespace Atomic
   {
@@ -29,8 +29,8 @@ namespace XMI
 
       public:
 
-        /// \see XMI::Atomic::Interface::NodeScope
-        /// \see XMI::Atomic::Interface::ProcessScope
+        /// \see PAMI::Atomic::Interface::NodeScope
+        /// \see PAMI::Atomic::Interface::ProcessScope
         bool _scoped;
 
         inline LockboxMutex  () :
@@ -42,7 +42,7 @@ namespace XMI
 
         inline ~LockboxMutex () {};
 
-        inline void init_impl (XMI::Memory::MemoryManager *mm)
+        inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
 	  __global.lockboxFactory.lbx_alloc((void **)&_mutex, 1, );
         };

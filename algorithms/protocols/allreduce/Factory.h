@@ -41,15 +41,15 @@ namespace CCMI
         /// \brief Generate a non-blocking allreduce message.
         ///
         virtual CCMI::Executor::Composite *generate
-        (XMI_CollectiveRequest_t  * request,
-         XMI_Callback_t             cb_done,
-         xmi_consistency_t          consistency,
-         XMI_GEOMETRY_CLASS       * geometry,
+        (PAMI_CollectiveRequest_t  * request,
+         PAMI_Callback_t             cb_done,
+         pami_consistency_t          consistency,
+         PAMI_GEOMETRY_CLASS       * geometry,
          char                     * srcbuf,
          char                     * dstbuf,
          unsigned                   count,
-         xmi_dt                     dtype,
-         xmi_op                     op,
+         pami_dt                     dtype,
+         pami_op                     op,
          int                        root = -1 ) = 0;
       }; // class BaseFactory
 
@@ -78,7 +78,7 @@ namespace CCMI
         ///
         /// \brief get geometry from comm id
         ///
-        xmi_mapidtogeometry_fn               _cb_geometry;
+        pami_mapidtogeometry_fn               _cb_geometry;
 
         ///
         /// \brief mapping module
@@ -106,7 +106,7 @@ namespace CCMI
         inline Factory(T_Sysdep                               * mapping,
                        T_Mcast                                * moldinterface,
 //                       CCMI::MultiSend::MulticombineInterface        * minterface,
-                       xmi_mapidtogeometry_fn                            cb_geometry,
+                       pami_mapidtogeometry_fn                            cb_geometry,
                        ConfigFlags                                     flags ) :
         _moldinterface (moldinterface),
 //        _minterface (minterface),
@@ -131,7 +131,7 @@ namespace CCMI
         ///
         /// \brief Generate a non-blocking allreduce message.
         ///
-        static xmi_quad_t *   cb_receiveHead(const xmi_quad_t  * info,
+        static pami_quad_t *   cb_receiveHead(const pami_quad_t  * info,
                                                  unsigned          count,
                                                  unsigned          peer,
                                                  unsigned          sndlen,
@@ -140,7 +140,7 @@ namespace CCMI
                                                  unsigned        * rcvlen,
                                                  char           ** rcvbuf,
                                                  unsigned        * pipewidth,
-                                                 XMI_Callback_t * cb_done)
+                                                 PAMI_Callback_t * cb_done)
         {
           TRACE_ADAPTOR((stderr,
                          "<%p>Allreduce::Factory::cb_receiveHead peer %d, conn_id %d\n",
@@ -156,7 +156,7 @@ namespace CCMI
                          "cb_receiveHead(%#X,%p)\n",
                          factory,cdata->_comm,allreduce));
 
-          return (xmi_quad_t*)allreduce->notifyRecvHead (info,      count,
+          return (pami_quad_t*)allreduce->notifyRecvHead (info,      count,
                                                          peer,      sndlen,
                                                          conn_id,   arg,
                                                          rcvlen,    rcvbuf,
@@ -171,7 +171,7 @@ namespace CCMI
                                                unsigned color)
         {
           CCMI::Executor::OldComposite *composite =(CCMI::Executor::OldComposite *)
-	    ((XMI_GEOMETRY_CLASS *)_cb_geometry(comm))->getAllreduceComposite(color);
+	    ((PAMI_GEOMETRY_CLASS *)_cb_geometry(comm))->getAllreduceComposite(color);
           CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *executor = (composite)?
                                               (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *) composite->getExecutor (0):
                                               (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *)NULL;

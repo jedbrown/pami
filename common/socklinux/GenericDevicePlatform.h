@@ -18,15 +18,15 @@
 
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
-typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter> GenericDeviceMutex;
-typedef XMI::Counter::GccProcCounter GenericDeviceCounter;
+typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> GenericDeviceMutex;
+typedef PAMI::Counter::GccProcCounter GenericDeviceCounter;
 
 #else /* !__GNUC__ */
 
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/pthread/Pthread.h"
-typedef XMI::Mutex::CounterMutex<XMI::Counter::Pthread> GenericDeviceMutex;
-typedef XMI::Counter::Pthread GenericDeviceCounter;
+typedef PAMI::Mutex::CounterMutex<PAMI::Counter::Pthread> GenericDeviceMutex;
+typedef PAMI::Counter::Pthread GenericDeviceCounter;
 
 #endif /* !__GNUC__ */
 
@@ -37,10 +37,10 @@ typedef XMI::Counter::Pthread GenericDeviceCounter;
 #define GENDEVMSG_SEND_QNUM	0
 #define GENDEVMSG_COMPL_QNUM	1
 #define GENDEVMSG_NUM_QUEUES	2
-typedef XMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_COMPL_QNUM>	GenericDeviceCompletionQueue;
-typedef XMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_SEND_QNUM>	GenericDeviceMessageQueue;
+typedef PAMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_COMPL_QNUM>	GenericDeviceCompletionQueue;
+typedef PAMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_SEND_QNUM>	GenericDeviceMessageQueue;
 
 /// \brief Queue type to use for threads (work)
-typedef XMI::Queue		GenericDeviceWorkQueue;
+typedef PAMI::Queue		GenericDeviceWorkQueue;
 
 #endif // __common_socklinux_GenericDevicePlatform_h__

@@ -12,7 +12,7 @@
  */
 
 #include <stdio.h>
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "Global.h"
 #include "util/queue/Queue.h"
@@ -534,20 +534,20 @@ int main(int argc, char **argv)
   bool failed[2];
 
   failed[0]  = false;
-  failed[0] |= test_stack_operations<XMI::Queue>("XMI::Queue");
-  failed[0] |= test_queue_operations<XMI::Queue>("XMI::Queue");
-  //failed[0] |= test_q2q_operations<XMI::Queue>("XMI::Queue");
+  failed[0] |= test_stack_operations<PAMI::Queue>("PAMI::Queue");
+  failed[0] |= test_queue_operations<PAMI::Queue>("PAMI::Queue");
+  //failed[0] |= test_q2q_operations<PAMI::Queue>("PAMI::Queue");
 
   failed[1]  = false;
-  failed[1] |= test_stack_operations<XMI::CircularQueue>("XMI::CircularQueue");
-  failed[1] |= test_queue_operations<XMI::CircularQueue>("XMI::CircularQueue");
-  failed[1] |= test_q2q_operations<XMI::CircularQueue>("XMI::CircularQueue");
+  failed[1] |= test_stack_operations<PAMI::CircularQueue>("PAMI::CircularQueue");
+  failed[1] |= test_queue_operations<PAMI::CircularQueue>("PAMI::CircularQueue");
+  failed[1] |= test_q2q_operations<PAMI::CircularQueue>("PAMI::CircularQueue");
 
   fprintf (stdout, "\n");
   fprintf (stdout, "==========================================\n");
   fprintf (stdout, "  Test results\n");
-  fprintf (stdout, "    [XMI::Queue]:          %s\n", failed[0]==true?"FAILED":"PASSED");
-  fprintf (stdout, "    [XMI::CircularQueue]:  %s\n", failed[1]==true?"FAILED":"PASSED");
+  fprintf (stdout, "    [PAMI::Queue]:          %s\n", failed[0]==true?"FAILED":"PASSED");
+  fprintf (stdout, "    [PAMI::CircularQueue]:  %s\n", failed[1]==true?"FAILED":"PASSED");
   fprintf (stdout, "==========================================\n");
   fprintf (stdout, "\n");
 

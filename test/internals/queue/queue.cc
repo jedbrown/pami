@@ -12,7 +12,7 @@
  */
 
 #include <stdio.h>
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "Global.h"
 #include "util/queue/Queue.h"
@@ -23,12 +23,12 @@
 
 #define ELEMENTS 10240
 
-class TestElement : public XMI::Queue::Element
+class TestElement : public PAMI::Queue::Element
 {
   public:
 
     TestElement () :
-      XMI::Queue::Element (),
+      PAMI::Queue::Element (),
       _value (0)
     {};
 
@@ -51,9 +51,9 @@ class TestElement : public XMI::Queue::Element
 int main(int argc, char **argv)
 {
 #ifdef __bgp__
-  XMI::AtomicQueue<XMI::Mutex::BGP::BgpProcMutex> q;
+  PAMI::AtomicQueue<PAMI::Mutex::BGP::BgpProcMutex> q;
 #else
-  XMI::Queue q;
+  PAMI::Queue q;
 #endif
   TestElement element[ELEMENTS];
   TestElement * e = NULL;
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
   {
     element[i].set (10-i);
     tmp = q.size();
-    q.push ((XMI::Queue::Element *) &element[i]);
+    q.push ((PAMI::Queue::Element *) &element[i]);
     fprintf (stdout, "Push element (%zu) .. q.size () = %zu -> %zu\n", element[i].get(), tmp, q.size());
   }
 
@@ -79,9 +79,9 @@ int main(int argc, char **argv)
   for (i=0; i<ELEMENTS; i++) element[i].set (i);
 
 
-  XMI::Queue simpleq;
+  PAMI::Queue simpleq;
 #ifdef __bgp__
-  XMI::AtomicQueue<XMI::Mutex::BGP::BgpProcMutex> atomicq;
+  PAMI::AtomicQueue<PAMI::Mutex::BGP::BgpProcMutex> atomicq;
 #endif
 
   unsigned long long t0, t1;
@@ -89,13 +89,13 @@ int main(int argc, char **argv)
   fprintf (stdout, "\n");
 #ifdef __bgp__
   t0 = __global.time.timebase();
-  for (i=0; i<ELEMENTS; i++) atomicq.push ((XMI::Queue::Element *) &element[i]);
+  for (i=0; i<ELEMENTS; i++) atomicq.push ((PAMI::Queue::Element *) &element[i]);
   for (i=0; i<ELEMENTS; i++) e = (TestElement *) atomicq.pop ();
   t1 = __global.time.timebase();
   fprintf (stdout, "avg. atomic queue push-pop cycles: %lld\n", (t1-t0)/ELEMENTS);
 #endif
   t0 = __global.time.timebase();
-  for (i=0; i<ELEMENTS; i++) simpleq.push ((XMI::Queue::Element *) &element[i]);
+  for (i=0; i<ELEMENTS; i++) simpleq.push ((PAMI::Queue::Element *) &element[i]);
   for (i=0; i<ELEMENTS; i++) e = (TestElement *) simpleq.pop ();
   t1 = __global.time.timebase();
   fprintf (stdout, "avg. simple queue push-pop cycles: %lld\n", (t1-t0)/ELEMENTS);

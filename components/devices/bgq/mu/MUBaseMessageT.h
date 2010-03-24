@@ -13,7 +13,7 @@
 
 #include "util/queue/Queue.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -21,14 +21,14 @@ namespace XMI
     {
 
       template <class T>
-      class MUBaseMessageT : public XMI::Queue::Element
+      class MUBaseMessageT : public PAMI::Queue::Element
       {
         public:
           ///
           /// \brief Default and only constructor. This class is a bare
           /// bones base class template to optimize overheads
           ///
-          MUBaseMessageT () : XMI::Queue::Element() { }
+          MUBaseMessageT () : PAMI::Queue::Element() { }
 
           //////////////////////////////////////////////////////////////////////
           ///  \brief posts a message and begins the send
@@ -41,19 +41,19 @@ namespace XMI
           //////////////////////////////////////////////////////////////////
           int       reset();
 
-      }; // XMI::Device::MU::MUBaseMessageT class
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+      }; // PAMI::Device::MU::MUBaseMessageT class
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 template <class T>
-inline int XMI::Device::MU::MUBaseMessageT<T>::start()
+inline int PAMI::Device::MU::MUBaseMessageT<T>::start()
 {
   return static_cast<T*>(this)->start_impl();
 }
 
 template <class T>
-inline int XMI::Device::MU::MUBaseMessageT<T>::reset()
+inline int PAMI::Device::MU::MUBaseMessageT<T>::reset()
 {
   return static_cast<T*>(this)->reset_impl();
 }

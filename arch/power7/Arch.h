@@ -18,4 +18,4 @@
 
 // Here go things specific to this processor architecture
 
-#endif // __xmi_arch_power7_h__
+#endif // __pami_arch_power7_h__

@@ -25,14 +25,14 @@
 
 // re-initializes mm on subsequent calls. Caller ensures/expects size to be the same.
 //
-static inline xmi_result_t initializeMemoryManager(const char *name, size_t bytes,
-					XMI::Memory::MemoryManager &mm) {
+static inline pami_result_t initializeMemoryManager(const char *name, size_t bytes,
+					PAMI::Memory::MemoryManager &mm) {
 	static size_t _bytes = 0;
 	static void *_ptr = NULL;
 	char shmemfile[1024];
 
 	if (!_ptr) {
-		snprintf(shmemfile, 1023, "/xmi-test-%s", name);
+		snprintf(shmemfile, 1023, "/pami-test-%s", name);
 
 		// Round up to the page size
 		//size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
@@ -66,7 +66,7 @@ static inline xmi_result_t initializeMemoryManager(const char *name, size_t byte
 	}
 	mm.init(_ptr, _bytes);
 
-	return XMI_SUCCESS;
+	return PAMI_SUCCESS;
 }
 
 #endif

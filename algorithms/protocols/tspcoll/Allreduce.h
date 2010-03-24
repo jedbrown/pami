@@ -22,7 +22,7 @@
 #include <string.h>
 
 namespace CCMI { namespace Adaptor { namespace Allreduce {
-      extern void getReduceFunction(xmi_dt, xmi_op, unsigned,
+      extern void getReduceFunction(pami_dt, pami_op, unsigned,
 				    unsigned&, coremath&);
     }}};
 namespace TSPColl
@@ -46,11 +46,11 @@ namespace TSPColl
     public:
       static const int MAXBUF = 1000;
       void * operator new (size_t, void * addr) { return addr; }
-      Short(XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
+      Short(PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
       void reset (const void        * s,
 		  void              * d,
-		  xmi_op             op,
-		  xmi_dt             dt,
+		  pami_op             op,
+		  pami_dt             dt,
 		  unsigned            nelems);
     protected:
       static void cb_switchbuf (CollExchange<T_Mcast> *, unsigned phase);
@@ -76,11 +76,11 @@ namespace TSPColl
     {
     public:
       void * operator new (size_t, void * addr) { return addr; }
-      Long (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
+      Long (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
       //      void reset (const void * s, void * d,
       //		  __pgasrt_ops_t op, __pgasrt_dtypes_t dt, unsigned nelems);
       void reset (const void * s, void * d,
-		  xmi_op op, xmi_dt dt, unsigned nelems);
+		  pami_op op, pami_dt dt, unsigned nelems);
 
     protected:
       static void cb_allreduce (CollExchange<T_Mcast> *, unsigned phase);
@@ -110,7 +110,7 @@ namespace TSPColl
 /* ************************************************************************* */
 template <class T_Mcast>
 TSPColl::Allreduce::Short<T_Mcast>::
-Short (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
+Short (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
        CollExchange<T_Mcast> (comm, tag, instID, offset, false)
 {
   _dbuf   = NULL;
@@ -207,8 +207,8 @@ cb_switchbuf (CollExchange<T_Mcast> * coll, unsigned phase)
 template <class T_Mcast>
 void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
 				       void               * dbuf,
-				       xmi_op              op,
-				       xmi_dt              dt,
+				       pami_op              op,
+				       pami_dt              dt,
 				       unsigned             nelems)
 {
   assert (sbuf != NULL);
@@ -292,7 +292,7 @@ void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
 /* ************************************************************************* */
 template <class T_Mcast>
 TSPColl::Allreduce::Long<T_Mcast>::
-Long (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
+Long (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   CollExchange<T_Mcast> (comm, tag, instID, offset, false)
 {
   _tmpbuf = NULL;
@@ -407,8 +407,8 @@ cb_allreduce (CollExchange<T_Mcast> *coll, unsigned phase)
 template <class T_Mcast>
 void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf,
 				      void               * dbuf,
-				      xmi_op              op,
-				      xmi_dt              dt,
+				      pami_op              op,
+				      pami_dt              dt,
 				      unsigned             nelems)
 {
   assert (sbuf != NULL);

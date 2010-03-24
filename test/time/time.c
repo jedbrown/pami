@@ -1,20 +1,20 @@
 ///
 /// \file test/time/time.c
-/// \brief Simple XMI_Wtime() test before XMI_Client_initialize()
+/// \brief Simple PAMI_Wtime() test before PAMI_Client_initialize()
 ///
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include <stdio.h>
 #include <unistd.h>
 
 int main (int argc, char ** argv)
 {
-  fprintf (stdout, "Before XMI_Wtime()\n");
-  double t0 = XMI_Wtime ();
+  fprintf (stdout, "Before PAMI_Wtime()\n");
+  double t0 = PAMI_Wtime ();
   sleep(4);
-  fprintf (stdout, "After first XMI_Wtime, value = %g\n", t0);
-  double t1 = XMI_Wtime ();
-  fprintf (stdout, "After second XMI_Wtime, value = %g\n", t1);
+  fprintf (stdout, "After first PAMI_Wtime, value = %g\n", t0);
+  double t1 = PAMI_Wtime ();
+  fprintf (stdout, "After second PAMI_Wtime, value = %g\n", t1);
 
   fprintf (stdout, "Elapsed time, value = %g\n", t1-t0);
 

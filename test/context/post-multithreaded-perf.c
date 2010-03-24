@@ -1,13 +1,13 @@
 ///
 /// \file test/context/post-multithreaded-perf.c
-/// \brief Multithreaded XMI_Context_post() performance test
+/// \brief Multithreaded PAMI_Context_post() performance test
 ///
 /// \todo There is a slight difference in the reported post times in the case
 ///       where the number of 'helper' threads == 1. For this test to be
 ///       completely accurate the times should be nearly equal.
 ///
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
@@ -26,15 +26,15 @@
 #define ITERATIONS 10000
 //#define ITERATIONS 10
 
-xmi_context_t   _context[MAXTHREADS];
+pami_context_t   _context[MAXTHREADS];
 volatile size_t _value[MAXTHREADS];
-xmi_work_t      _work[ITERATIONS*MAXTHREADS];
+pami_work_t      _work[ITERATIONS*MAXTHREADS];
 
 volatile size_t _recv;
 volatile size_t _thread_state[MAXTHREADS];
 volatile size_t _main_state;
 
-xmi_result_t do_work (xmi_context_t   context,
+pami_result_t do_work (pami_context_t   context,
                       void          * cookie)
 {
   TRACE((stderr, ">> do_work (%0x08x, %p)\n", (unsigned)context, cookie));
@@ -44,7 +44,7 @@ xmi_result_t do_work (xmi_context_t   context,
   (*value)--;
 
   TRACE((stderr, "<< do_work ()\n"));
-  return XMI_SUCCESS;
+  return PAMI_SUCCESS;
 }
 
 void * thread_main (void * arg)
@@ -52,18 +52,18 @@ void * thread_main (void * arg)
   size_t id = (size_t) arg;
   TRACE((stderr, ">> thread_main (%zu)\n", id));
 
-  xmi_context_t context = _context[id];
+  pami_context_t context = _context[id];
 
   TRACE((stderr, "   thread_main (%zu) .. 0\n", id));
 
   /* Lock this context */
-  xmi_result_t result = XMI_Context_lock (context);
+  pami_result_t result = PAMI_Context_lock (context);
 
   TRACE((stderr, "   thread_main (%zu) .. 1\n", id));
 
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
     {
-      fprintf (stderr, "Error. Unable to lock the xmi context. result = %d\n", result);
+      fprintf (stderr, "Error. Unable to lock the pami context. result = %d\n", result);
       exit(1);
     }
 
@@ -78,12 +78,12 @@ void * thread_main (void * arg)
   while (_value[id] > 0)
     {
       TRACE((stderr, "   thread_main (%zu) .. 3\n", id));
-      result = XMI_Context_advance (context, 100);
+      result = PAMI_Context_advance (context, 100);
 #ifdef TRACE
 
-      if (result != XMI_SUCCESS)
+      if (result != PAMI_SUCCESS)
         {
-          fprintf (stderr, "Error. Unable to advance the xmi context. result = %d\n", result);
+          fprintf (stderr, "Error. Unable to advance the pami context. result = %d\n", result);
           exit(1);
         }
 
@@ -93,7 +93,7 @@ void * thread_main (void * arg)
   TRACE((stderr, "   thread_main (%zu) .. 4\n", id));
 
   /* Unlock this context */
-  result = XMI_Context_unlock (context);
+  result = PAMI_Context_unlock (context);
 
   /* *********************************************************************** */
   /* post work to context 0                                                  */
@@ -111,10 +111,10 @@ void * thread_main (void * arg)
   for (i = 0; i < ITERATIONS; i++)
     {
       TRACE((stderr, "   thread_main (%zu), i = %zu, work index = %zu\n", id, i, id*ITERATIONS + i));
-      result = XMI_Context_post (_context[0], &_work[id*ITERATIONS+i], do_work, (void *) & _recv);
+      result = PAMI_Context_post (_context[0], &_work[id*ITERATIONS+i], do_work, (void *) & _recv);
 #ifdef TRACE
 
-      if (result != XMI_SUCCESS)
+      if (result != PAMI_SUCCESS)
         {
           fprintf (stderr, "   thread_main (%zu): Error. Unable to post work to context[0]. result = %d\n", id, result);
           exit(1);
@@ -126,9 +126,9 @@ void * thread_main (void * arg)
 
   TRACE((stderr, "   thread_main (%zu) .. 5\n", id));
 
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
     {
-      fprintf (stderr, "Error. Unable to unlock the xmi context. result = %d\n", result);
+      fprintf (stderr, "Error. Unable to unlock the pami context. result = %d\n", result);
       exit(1);
     }
 
@@ -139,9 +139,9 @@ void * thread_main (void * arg)
 
 int main (int argc, char ** argv)
 {
-  xmi_client_t client;
+  pami_client_t client;
   char         cl_string[] = "TEST";
-  xmi_result_t result = XMI_ERROR;
+  pami_result_t result = PAMI_ERROR;
   size_t i;
   long long int max_threads = 0;
 
@@ -153,23 +153,23 @@ int main (int argc, char ** argv)
     }
 
 
-  result = XMI_Client_initialize (cl_string, &client);
+  result = PAMI_Client_initialize (cl_string, &client);
 
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
     {
-      fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
+      fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
       return 1;
     }
 
-  xmi_configuration_t configuration;
+  pami_configuration_t configuration;
 
-  configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query(client, &configuration);
-  xmi_task_t task = configuration.value.intval;
+  configuration.name = PAMI_TASK_ID;
+  result = PAMI_Configuration_query(client, &configuration);
+  pami_task_t task = configuration.value.intval;
 
   if (task == 0)
     {
-      fprintf (stdout, "XMI_Context_post() multi-threaded performance test\n");
+      fprintf (stdout, "PAMI_Context_post() multi-threaded performance test\n");
     }
 
   if (max_threads == 0 || max_threads > MAXTHREADS)
@@ -183,11 +183,11 @@ int main (int argc, char ** argv)
           fprintf (stdout, "\n");
         }
 
-      result = XMI_Client_finalize (client);
+      result = PAMI_Client_finalize (client);
 
-      if (result != XMI_SUCCESS)
+      if (result != PAMI_SUCCESS)
         {
-          fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+          fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
           return 1;
         }
 
@@ -197,11 +197,11 @@ int main (int argc, char ** argv)
     }
 
   /* Initialize the contexts */
-  result = XMI_Context_createv (client, NULL, 0, &_context[0], max_threads);
+  result = PAMI_Context_createv (client, NULL, 0, &_context[0], max_threads);
 
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
     {
-      fprintf (stderr, "Error. Unable to create first xmi context. result = %d\n", result);
+      fprintf (stderr, "Error. Unable to create first pami context. result = %d\n", result);
       return 1;
     }
 
@@ -256,7 +256,7 @@ int main (int argc, char ** argv)
           /* signal main thread is ready */
           _main_state = 1;
 
-          unsigned long long t0 = XMI_Wtimebase();
+          unsigned long long t0 = PAMI_Wtimebase();
 
           /* post all of the work */
           for (i = 0; i < ITERATIONS; i++)
@@ -264,10 +264,10 @@ int main (int argc, char ** argv)
               for (t = 0; t < num_threads; t++)
                 {
                   TRACE((stderr, "   main (), i = %zu, t = %zu, work index = %zu\n", i, t, t*ITERATIONS + i));
-                  result = XMI_Context_post (_context[t], &_work[t*ITERATIONS+i], do_work, (void *) & _value[t]);
+                  result = PAMI_Context_post (_context[t], &_work[t*ITERATIONS+i], do_work, (void *) & _value[t]);
 #ifdef TRACE
 
-                  if (result != XMI_SUCCESS)
+                  if (result != PAMI_SUCCESS)
                     {
                       fprintf (stderr, "Error. Unable to post work to context[%zu]. result = %d\n", t, result);
                       return 1;
@@ -283,7 +283,7 @@ int main (int argc, char ** argv)
               while (_value[t] > 0);
             }
 
-          unsigned long long t1 = XMI_Wtimebase();
+          unsigned long long t1 = PAMI_Wtimebase();
           unsigned long long cycles = ((t1 - t0) / ITERATIONS) / num_threads;
           fprintf (stdout, "  Average number of cycles to post:    %8lld\n", cycles);
 
@@ -294,7 +294,7 @@ int main (int argc, char ** argv)
 
 
           /* Lock this context */
-          result = XMI_Context_lock (_context[0]);
+          result = PAMI_Context_lock (_context[0]);
 
           /* wait until all threads are ready */
           for (t = 0; t < num_threads; t++)
@@ -308,27 +308,27 @@ int main (int argc, char ** argv)
 
           /* wait until all of the work is done */
           TRACE((stderr, "   main (), wait for all work to be received, _recv = %zu\n", _recv));
-          t0 = XMI_Wtimebase();
+          t0 = PAMI_Wtimebase();
 
           while (_recv > 0)
             {
               TRACE((stderr, "   main () .. recv advance loop, _recv = %zu\n", _recv));
-              result = XMI_Context_advance (_context[0], 100);
+              result = PAMI_Context_advance (_context[0], 100);
 #ifdef TRACE
 
-              if (result != XMI_SUCCESS)
+              if (result != PAMI_SUCCESS)
                 {
-                  fprintf (stderr, "Error. Unable to advance the xmi context. result = %d\n", result);
+                  fprintf (stderr, "Error. Unable to advance the pami context. result = %d\n", result);
                   exit(1);
                 }
 
 #endif
             }
 
-          t1 = XMI_Wtimebase();
+          t1 = PAMI_Wtimebase();
 
           /* Unlock this context */
-          result = XMI_Context_unlock (_context[0]);
+          result = PAMI_Context_unlock (_context[0]);
 
           cycles = ((t1 - t0) / ITERATIONS) / num_threads;
           fprintf (stdout, "  Average number of cycles to receive: %8lld\n", cycles);
@@ -340,20 +340,20 @@ int main (int argc, char ** argv)
 
   for (i = 0; i < MAXTHREADS; i++)
     {
-      result = XMI_Context_destroy (_context[i]);
+      result = PAMI_Context_destroy (_context[i]);
 
-      if (result != XMI_SUCCESS)
+      if (result != PAMI_SUCCESS)
         {
           fprintf (stderr, "Error. Unable to destroy context %zu. result = %d\n", i, result);
           return 1;
         }
     }
 
-  result = XMI_Client_finalize (client);
+  result = PAMI_Client_finalize (client);
 
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
     {
-      fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+      fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
       return 1;
     }
 

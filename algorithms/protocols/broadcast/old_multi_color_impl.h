@@ -26,7 +26,7 @@ namespace CCMI
   {
     namespace Broadcast
     {
-      void old_get_colors (XMI_GEOMETRY_CLASS                  * g,
+      void old_get_colors (PAMI_GEOMETRY_CLASS                  * g,
 			   unsigned                    bytes,
 			   CCMI::Schedule::Color     * colors,
 			   unsigned                  & ncolors,
@@ -38,7 +38,7 @@ namespace CCMI
       }
 
       //This method is for schedules/executors that dont use pipelining
-      inline void old_get_colors_nopw (XMI_GEOMETRY_CLASS                  * g,
+      inline void old_get_colors_nopw (PAMI_GEOMETRY_CLASS                  * g,
 				       unsigned                    bytes,
 				       CCMI::Schedule::Color     * colors,
 				       unsigned                  & ncolors,
@@ -49,13 +49,13 @@ namespace CCMI
         pwidth = bytes;
       }
 
-      void old_binom_bcast_md(xmi_metadata_t *m)
+      void old_binom_bcast_md(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
         strcpy(&m->name[0],"OldCCMIBinomBcast");
       }
 
-      void old_ring_bcast_md(xmi_metadata_t *m)
+      void old_ring_bcast_md(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
         strcpy(&m->name[0],"OldCCMIRingBcast");
@@ -64,18 +64,18 @@ namespace CCMI
 
 
       typedef OldMultiColorCompositeT <1,
-                                    CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>,
+                                    CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>,
                                     old_get_colors,
-                                    XMI_SYSDEP_CLASS,
-                                    XMI_COLL_MCAST_CLASS,
-                                    CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> >
+                                    PAMI_SYSDEP_CLASS,
+                                    PAMI_COLL_MCAST_CLASS,
+                                    CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> >
 	OldBinomialBcastComposite;
       template<> void OldBinomialBcastComposite::create_schedule ( void                      * buf,
                                                                 unsigned                    size,
-                                                                XMI_GEOMETRY_CLASS                  * g,
+                                                                PAMI_GEOMETRY_CLASS                  * g,
                                                                 CCMI::Schedule::Color       color)
       {
-        new (buf) CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS> (_sd, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS> (_sd, g->nranks(), g->ranks());
       }
 
 
@@ -84,32 +84,32 @@ namespace CCMI
       //get_rcolors<CCMI::Schedule::OneColorRectangle> > RectangleBcastComposite;
 
       typedef OldMultiColorCompositeT <1,
-	                              CCMI::Schedule::OldRingSchedule<XMI_SYSDEP_CLASS>,
+	                              CCMI::Schedule::OldRingSchedule<PAMI_SYSDEP_CLASS>,
 	                              old_get_colors,
-	                              XMI_SYSDEP_CLASS,
-	                              XMI_COLL_MCAST_CLASS,
-	                              CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> >
+	                              PAMI_SYSDEP_CLASS,
+	                              PAMI_COLL_MCAST_CLASS,
+	                              CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> >
                                       OldRingBcastComposite;
       template<> void OldRingBcastComposite::create_schedule ( void                      * buf,
                                                             unsigned                    size,
-                                                            XMI_GEOMETRY_CLASS        * g,
+                                                            PAMI_GEOMETRY_CLASS        * g,
                                                             CCMI::Schedule::Color       color)
       {
-        new (buf) CCMI::Schedule::OldRingSchedule<XMI_SYSDEP_CLASS> (_sd, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::OldRingSchedule<PAMI_SYSDEP_CLASS> (_sd, g->nranks(), g->ranks());
       }
 
 
       typedef OldMultiColorBroadcastFactoryT <OldBinomialBcastComposite,
                                            old_binom_bcast_md,
-                                           XMI_SYSDEP_CLASS,
-                                           XMI_COLL_MCAST_CLASS,
-                                           CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > OldBinomialBcastFactory;
+                                           PAMI_SYSDEP_CLASS,
+                                           PAMI_COLL_MCAST_CLASS,
+                                           CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> > OldBinomialBcastFactory;
       //typedef MultiColorBroadcastFactoryT <RectangleBcastComposite, rectangle_analyze> RectBcastFactory;
       typedef OldMultiColorBroadcastFactoryT <OldRingBcastComposite,
                                            old_ring_bcast_md,
-	                                   XMI_SYSDEP_CLASS,
-                                           XMI_COLL_MCAST_CLASS,
-                                           CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > OldRingBcastFactory;
+	                                   PAMI_SYSDEP_CLASS,
+                                           PAMI_COLL_MCAST_CLASS,
+                                           CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> > OldRingBcastFactory;
     };
   };
 };

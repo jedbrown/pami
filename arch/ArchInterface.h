@@ -59,4 +59,4 @@ class Type
     };
 };
 
-#endif // __xmi_arch_common_h__
+#endif // __pami_arch_common_h__

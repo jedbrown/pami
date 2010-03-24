@@ -26,7 +26,7 @@
 #include "trace.h"
 
 #define DISPATCH_SET_SIZE 256
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -47,18 +47,18 @@ namespace XMI
       static const size_t packet_payload_size = 224;
 
         // Inner factory class
-        class Factory : public Interface::FactoryInterface<Factory, UdpDevice, XMI::Device::Generic::Device>
+        class Factory : public Interface::FactoryInterface<Factory, UdpDevice, PAMI::Device::Generic::Device>
         {
           public:
             static inline UdpDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm)
             {
-              if ( __global.mapping.activateUdp() != XMI_SUCCESS ) abort();
+              if ( __global.mapping.activateUdp() != PAMI_SUCCESS ) abort();
 
               // Allocate an array of udp devices, one for each context in this
               // _task_ (from heap, not from shared memory)
               UdpDevice * devices;
               int rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
-              XMI_assertf(rc == 0, "posix_memalign failed for UdpDevice[%zu], errno=%d\n", n, errno);
+              PAMI_assertf(rc == 0, "posix_memalign failed for UdpDevice[%zu], errno=%d\n", n, errno);
 
               // Instantiate the udp devices
               size_t i;
@@ -71,13 +71,13 @@ namespace XMI
               return devices;
             };
 
-            static inline xmi_result_t init_impl (UdpDevice    * devices,
+            static inline pami_result_t init_impl (UdpDevice    * devices,
                                                   size_t         clientid,
                                                   size_t         contextid,
-                                                  xmi_client_t   client,
-                                                  xmi_context_t  context,
+                                                  pami_client_t   client,
+                                                  pami_context_t  context,
                                                   Memory::MemoryManager *mm,
-                                                  XMI::Device::Generic::Device * progress)
+                                                  PAMI::Device::Generic::Device * progress)
             {
               return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, mm, progress);
             };
@@ -118,7 +118,7 @@ namespace XMI
         }
       }
 
-      inline xmi_result_t setDispatchFunc (size_t                      dispatch,
+      inline pami_result_t setDispatchFunc (size_t                      dispatch,
                                   Interface::RecvFunction_t   direct_recv_func,
                                   void                      * direct_recv_func_parm,
                                   size_t & device_dispatch_id )
@@ -134,25 +134,25 @@ namespace XMI
               _dispatch_table[id].direct_recv_func_parm=direct_recv_func_parm;
               _dispatch_lookup[id] = _dispatch_table[id];
               device_dispatch_id = id;
-              return XMI_SUCCESS;
+              return PAMI_SUCCESS;
             }
           }
-          return XMI_NERROR;
+          return PAMI_NERROR;
       }
 
-      inline xmi_result_t init (size_t          clientid,
+      inline pami_result_t init (size_t          clientid,
                                 size_t          contextid,
-                                xmi_client_t    client,
-                                xmi_context_t   context,
+                                pami_client_t    client,
+                                pami_context_t   context,
                                 Memory::MemoryManager *mm,
-                                XMI::Device::Generic::Device * progress)
+                                PAMI::Device::Generic::Device * progress)
       {
         init_impl (mm, context);
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
       };
 
       inline int init_impl (Memory::MemoryManager *mm,
-                            xmi_context_t   context)
+                            pami_context_t   context)
       {
         _context   = context;
 
@@ -167,10 +167,10 @@ namespace XMI
 
         _rcvConnection = new UdpRcvConnection( );
 
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
       };
 
-      inline xmi_context_t getContext_impl ()
+      inline pami_context_t getContext_impl ()
       {
         return _context;
       };
@@ -219,7 +219,7 @@ namespace XMI
           }
         }
 
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
 
       };
 
@@ -230,7 +230,7 @@ namespace XMI
       // Implement Packet Device Routines
       inline int    read_impl(void * dst, size_t bytes, void * cookie)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
       inline size_t peers_impl ()
@@ -254,7 +254,7 @@ namespace XMI
       UdpRcvConnection			      * _rcvConnection;
       std::map<int, udp_dispatch_info_t>        _dispatch_lookup;
       udp_dispatch_info_t                       _dispatch_table[256*DISPATCH_SET_SIZE];
-      xmi_context_t _context;
+      pami_context_t _context;
       size_t _clientid;
       size_t _ncontexts;
       size_t _contextid;

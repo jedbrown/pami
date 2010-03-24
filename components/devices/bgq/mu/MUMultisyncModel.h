@@ -27,7 +27,7 @@
 #include "components/devices/bgq/mu/Dispatch.h"
 #include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "Global.h"
 #include "PipeWorkQueue.h"
 #include "Topology.h"
@@ -40,7 +40,7 @@
 
 //#define OPTIMIZE_AGGREGATE_LATENCY
 
-namespace XMI
+namespace PAMI
 {
 
   namespace Device
@@ -62,7 +62,7 @@ namespace XMI
         {
         };
         unsigned                             connection_id;
-        xmi_callback_t                       cb_done;
+        pami_callback_t                       cb_done;
       };
 
       // State (request) implementation.  Caller should use uint8_t[MUMultisync::sizeof_msg]
@@ -88,18 +88,18 @@ namespace XMI
 
       public:
 
-        /// \see XMI::Device::Interface::MultisyncModel::MultisyncModel
-        MUMultisyncModel (MUCollDevice & device, xmi_result_t &status);
+        /// \see PAMI::Device::Interface::MultisyncModel::MultisyncModel
+        MUMultisyncModel (MUCollDevice & device, pami_result_t &status);
 
-        /// \see XMI::Device::Interface::MultisyncModel::~MultisyncModel
+        /// \see PAMI::Device::Interface::MultisyncModel::~MultisyncModel
         ~MUMultisyncModel ();
 
         static const size_t sizeof_msg                              = sizeof(mu_multisync_statedata_t);
         static const size_t multisync_model_connection_id_max       = (uint32_t) - 1; // metadata_t::connection_id \todo 64 bit?
 
-        /// \see XMI::Device::Interface::MultisyncModel::postMultisync
-        xmi_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
-                                        xmi_multisync_t *multisync);
+        /// \see PAMI::Device::Interface::MultisyncModel::postMultisync
+        pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
+                                        pami_multisync_t *multisync);
 
       protected:
 
@@ -126,7 +126,7 @@ namespace XMI
         Queue                                 _recvQ;
         //std::map<unsigned,msync_recv_state_t*, std::less<unsigned>, __gnu_cxx::malloc_allocator<std::pair<const unsigned,msync_recv_state_t*> > >      _recvQ;            // _recvQ[connection_id]
 
-      }; // XMI::Device::MU::MUMultisyncModel class
+      }; // PAMI::Device::MU::MUMultisyncModel class
 
       inline void MUMultisyncModel::initializeDescriptor (MUSPI_DescriptorBase* desc,
                                                           uint64_t payloadPa,
@@ -139,10 +139,10 @@ namespace XMI
 
         DUMP_DESCRIPTOR("initializeDescriptor() ..done", desc);
 
-      }; // XMI::Device::MU::MUMultisyncModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
+      }; // PAMI::Device::MU::MUMultisyncModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
 
-      inline xmi_result_t MUMultisyncModel::postMultisync_impl(uint8_t (&state)[MUMultisyncModel::sizeof_msg],
-                                                               xmi_multisync_t *multisync)
+      inline pami_result_t MUMultisyncModel::postMultisync_impl(uint8_t (&state)[MUMultisyncModel::sizeof_msg],
+                                                               pami_multisync_t *multisync)
       {
         mu_multisync_statedata_t *state_data = (mu_multisync_statedata_t*) & state;
 
@@ -208,12 +208,12 @@ namespace XMI
           DUMP_DESCRIPTOR("MUMultisyncModel::postMsginfo().. before addToSendQ                ", desc);
           // Add this message to the send queue to be processed when there is
           // space available in the injection fifo.
-          _device.addToSendQ ((XMI::Queue::Element *) &state_data->message);
+          _device.addToSendQ ((PAMI::Queue::Element *) &state_data->message);
         }
 
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
 
-      }; // XMI::Device::MU::MUMultisyncModel::postMsginfo
+      }; // PAMI::Device::MU::MUMultisyncModel::postMsginfo
 
       inline void MUMultisyncModel::processHeader (metadata_t * metadata)
       {
@@ -223,19 +223,19 @@ namespace XMI
         // probably the head, but (unlikely) search if it isn't
         while(receive_state && receive_state->connection_id != metadata->connection_id)
           receive_state = (msync_recv_state_t*)_recvQ.nextElem(receive_state);
-        XMI_assert(receive_state); // all-sided and sync'd by MU so this shouldn't be unexpected data
+        PAMI_assert(receive_state); // all-sided and sync'd by MU so this shouldn't be unexpected data
 
         if (receive_state->cb_done.function)
           receive_state->cb_done.function (_device.getContext(),
                                            receive_state->cb_done.clientdata,
-                                           XMI_SUCCESS);
+                                           PAMI_SUCCESS);
         else
           TRACE((stderr, "<%p>:MUMultisyncModel::processHeader() WHY BOTHER?  connection_id = %d\n", this, metadata->connection_id));
 
         _recvQ.deleteElem(receive_state);
 
         return;
-      }; // XMI::Device::MU::MUMultisyncModel::processHeader
+      }; // PAMI::Device::MU::MUMultisyncModel::processHeader
 
       ///
       /// \brief Direct multi-packet send envelope packet dispatch.
@@ -252,7 +252,7 @@ namespace XMI
       /// subsequent eager simple send data packets and will be processed
       /// by the data dispatch function.
       ///
-      /// \see XMI::Device::Interface::RecvFunction_t
+      /// \see PAMI::Device::Interface::RecvFunction_t
       ///
       inline
       int MUMultisyncModel::dispatch (void   * metadata,
@@ -269,12 +269,12 @@ namespace XMI
         MUMultisyncModel * model = (MUMultisyncModel *) arg;
         model->processHeader(m);
         return 0;
-      }; // XMI::Device::MU::MUMultisyncModel::dispatch
+      }; // PAMI::Device::MU::MUMultisyncModel::dispatch
 
 
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 #undef TRACE
 

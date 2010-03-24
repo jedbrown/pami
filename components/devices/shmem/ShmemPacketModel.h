@@ -19,7 +19,7 @@
 
 #include "Arch.h"
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "components/devices/PacketInterface.h"
 #include "components/devices/shmem/ShmemDevice.h"
@@ -29,7 +29,7 @@
 #define TRACE_ERR(x) // fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -74,7 +74,7 @@ namespace XMI
           static const size_t packet_model_payload_bytes        = T_Device::payload_size;
           static const size_t packet_model_state_bytes          = sizeof(Shmem::PacketMessage<T_Device>);
 
-          xmi_result_t init_impl (size_t                      dispatch,
+          pami_result_t init_impl (size_t                      dispatch,
                                   Interface::RecvFunction_t   direct_recv_func,
                                   void                      * direct_recv_func_parm,
                                   Interface::RecvFunction_t   read_recv_func,
@@ -84,9 +84,9 @@ namespace XMI
           };
 
           inline bool postPacket_impl (uint8_t              (&state)[sizeof(Shmem::PacketMessage<T_Device>)],
-                                       xmi_event_function   fn,
+                                       pami_event_function   fn,
                                        void               * cookie,
-                                       xmi_task_t           target_task,
+                                       pami_task_t           target_task,
                                        size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
@@ -99,11 +99,11 @@ namespace XMI
 
             if (_device.isSendQueueEmpty (fnum) &&
                 _device.writeSinglePacket (fnum, _dispatch_id, metadata, metasize,
-                                           iov, niov, sequence) == XMI_SUCCESS)
+                                           iov, niov, sequence) == PAMI_SUCCESS)
               {
                 TRACE_ERR((stderr, "   PacketModel::postPacket_impl(1), write single packet successful\n"));
 
-                if (fn) fn (_context, cookie, XMI_SUCCESS);
+                if (fn) fn (_context, cookie, PAMI_SUCCESS);
 
                 TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(1), return true\n"));
                 return true;
@@ -123,9 +123,9 @@ namespace XMI
 
           template <unsigned T_Niov>
           inline bool postPacket_impl (uint8_t              (&state)[sizeof(Shmem::PacketMessage<T_Device>)],
-                                       xmi_event_function   fn,
+                                       pami_event_function   fn,
                                        void               * cookie,
-                                       xmi_task_t           target_task,
+                                       pami_task_t           target_task,
                                        size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
@@ -138,7 +138,7 @@ namespace XMI
 
               for (i = 0; i < T_Niov; i++) bytes += iov[i].iov_len;
 
-              XMI_assert(bytes <= packet_model_payload_bytes);
+              PAMI_assert(bytes <= packet_model_payload_bytes);
             }
 #endif
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(2), T_Niov = %d\n", T_Niov));
@@ -147,9 +147,9 @@ namespace XMI
 
             if (_device.isSendQueueEmpty (fnum) &&
                 _device.writeSinglePacket (fnum, _dispatch_id, metadata, metasize,
-                                           iov, sequence) == XMI_SUCCESS)
+                                           iov, sequence) == PAMI_SUCCESS)
               {
-                if (fn) fn (_context, cookie, XMI_SUCCESS);
+                if (fn) fn (_context, cookie, PAMI_SUCCESS);
 
                 TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(2), T_Niov = %d, return true\n", T_Niov));
                 return true;
@@ -168,9 +168,9 @@ namespace XMI
           };
 
           inline bool postPacket_impl (uint8_t              (&state)[sizeof(Shmem::PacketMessage<T_Device>)],
-                                       xmi_event_function   fn,
+                                       pami_event_function   fn,
                                        void               * cookie,
-                                       xmi_task_t           target_task,
+                                       pami_task_t           target_task,
                                        size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
@@ -183,11 +183,11 @@ namespace XMI
 
             if (_device.isSendQueueEmpty (fnum) &&
                 _device.writeSinglePacket (fnum, _dispatch_id, metadata, metasize,
-                                           payload, length, sequence) == XMI_SUCCESS)
+                                           payload, length, sequence) == PAMI_SUCCESS)
               {
                 TRACE_ERR((stderr, "   PacketModel::postPacket_impl(0), after write single packet\n"));
 
-                if (fn) fn (_device.getContext(), cookie, XMI_SUCCESS);
+                if (fn) fn (_device.getContext(), cookie, PAMI_SUCCESS);
 
                 TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(0), return true\n"));
                 return true;
@@ -206,7 +206,7 @@ namespace XMI
           };
 
           template <unsigned T_Niov>
-          inline bool postPacket_impl (xmi_task_t     target_task,
+          inline bool postPacket_impl (pami_task_t     target_task,
                                        size_t         target_offset,
                                        void         * metadata,
                                        size_t         metasize,
@@ -219,7 +219,7 @@ namespace XMI
 
               for (i = 0; i < T_Niov; i++) bytes += iov[i].iov_len;
 
-              XMI_assert(bytes <= packet_model_payload_bytes);
+              PAMI_assert(bytes <= packet_model_payload_bytes);
             }
 #endif
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(\"immediate\")\n"));
@@ -229,13 +229,13 @@ namespace XMI
             return (_device.isSendQueueEmpty (fnum) &&
                     _device.writeSinglePacket (fnum, _dispatch_id,
                                                metadata, metasize, iov,
-                                               sequence) == XMI_SUCCESS);
+                                               sequence) == PAMI_SUCCESS);
           };
 
           inline bool postMultiPacket_impl (uint8_t              (&state)[sizeof(MultiPacketMessage<T_Device>)],
-                                            xmi_event_function   fn,
+                                            pami_event_function   fn,
                                             void               * cookie,
-                                            xmi_task_t           target_task,
+                                            pami_task_t           target_task,
                                             size_t               target_offset,
                                             void               * metadata,
                                             size_t               metasize,
@@ -259,7 +259,7 @@ namespace XMI
                   if (_device.writeSinglePacket (fnum, _dispatch_id, metadata, metasize,
                                                  (void *) src,
                                                  //packet_model_payload_bytes,
-                                                 sequence) == XMI_SUCCESS)
+                                                 sequence) == PAMI_SUCCESS)
                   {
                     src += packet_model_payload_bytes;
                     bytes_to_write -= packet_model_payload_bytes;
@@ -286,12 +286,12 @@ namespace XMI
                 if (bytes_to_write > 0)
                 {
                   if (_device.writeSinglePacket (fnum, _dispatch_id, metadata, metasize,
-                                                 src, bytes_to_write, sequence) == XMI_SUCCESS)
+                                                 src, bytes_to_write, sequence) == PAMI_SUCCESS)
                   {
                     TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), all packets were written\n"));
 
                     // all packets were written to the fifo, invoke callback function
-                    if (fn) fn (_device.getContext(), cookie, XMI_SUCCESS);
+                    if (fn) fn (_device.getContext(), cookie, PAMI_SUCCESS);
 
                     TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return true\n"));
                     return true;
@@ -333,12 +333,12 @@ namespace XMI
 
           T_Device      & _device;
           uint16_t        _dispatch_id;
-          xmi_context_t   _context;
+          pami_context_t   _context;
 
-      };  // XMI::Device::Shmem::PacketModel class
-    };    // XMI::Device::Shmem namespace
-  };      // XMI::Device namespace
-};        // XMI namespace
+      };  // PAMI::Device::Shmem::PacketModel class
+    };    // PAMI::Device::Shmem namespace
+  };      // PAMI::Device namespace
+};        // PAMI namespace
 #undef TRACE_ERR
 #endif // __components_devices_shmem_ShmemPacketModel_h__
 

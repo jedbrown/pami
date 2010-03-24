@@ -19,7 +19,7 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Protocol
   {
@@ -32,27 +32,27 @@ namespace XMI
           inline Connection (T_Device & device) {}
           inline ~Connection () {}
 
-          inline void set (xmi_task_t task, size_t contextid, void * value);
+          inline void set (pami_task_t task, size_t contextid, void * value);
 
-          inline void * get (xmi_task_t task, size_t contextid);
+          inline void * get (pami_task_t task, size_t contextid);
 
-          inline void clear (xmi_task_t task, size_t contextid);
+          inline void clear (pami_task_t task, size_t contextid);
       };
 
       template <class T_Connection, class T_Device>
-      inline void Connection<T_Connection, T_Device>::set (xmi_task_t task, size_t contextid, void * value)
+      inline void Connection<T_Connection, T_Device>::set (pami_task_t task, size_t contextid, void * value)
       {
         static_cast<T_Connection*>(this)->set_impl(task, contextid, value);
       }
 
       template <class T_Connection, class T_Device>
-      inline void * Connection<T_Connection, T_Device>::get (xmi_task_t task, size_t contextid)
+      inline void * Connection<T_Connection, T_Device>::get (pami_task_t task, size_t contextid)
       {
         return static_cast<T_Connection*>(this)->get_impl(task, contextid);
       }
 
       template <class T_Connection, class T_Device>
-      inline void Connection<T_Connection, T_Device>::clear (xmi_task_t task, size_t contextid)
+      inline void Connection<T_Connection, T_Device>::clear (pami_task_t task, size_t contextid)
       {
         static_cast<T_Connection*>(this)->clear_impl(task, contextid);
       }

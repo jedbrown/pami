@@ -8,8 +8,8 @@ docs:
 	${RM} -r html
 	doxygen ./Doxyfile
 
-check: ${HEADERS_O} xmi_checkall.h.o
-xmi_checkall.h.o: ${HEADERS}
+check: ${HEADERS_O} pami_checkall.h.o
+pami_checkall.h.o: ${HEADERS}
 	@perl cmp ${CC} $@ ${HEADERS}
 	@echo All of {${HEADERS}} parse together
 ${SUBDIRS}:

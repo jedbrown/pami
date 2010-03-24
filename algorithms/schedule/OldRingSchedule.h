@@ -58,7 +58,7 @@ namespace CCMI
         {
           nsrc    = 1;
           *srcpes = (!_dir) ? _prev : _next;
-          *tasks  = XMI_PT_TO_PT_SUBTASK;
+          *tasks  = PAMI_PT_TO_PT_SUBTASK;
         }
       }
 
@@ -75,7 +75,7 @@ namespace CCMI
         {
           ndest     = 1;
           *dstpes   = (!_dir) ? _next : _prev;
-          *subtasks = XMI_PT_TO_PT_SUBTASK;
+          *subtasks = PAMI_PT_TO_PT_SUBTASK;
 
           TRACE_SCHEDULE((stderr,"<%p>Schedule::OldRingSchedule::getBroadcastDestinations() %d\n",this, *dstpes));
         }
@@ -92,7 +92,7 @@ namespace CCMI
         {
           nsrc    = 1;
           *srcpes = (!_dir) ? _next : _prev;
-          *tasks  = XMI_COMBINE_SUBTASK;
+          *tasks  = PAMI_COMBINE_SUBTASK;
         }
       }
 
@@ -109,7 +109,7 @@ namespace CCMI
         {
           ndest     = 1;
           *dstpes   = (!_dir) ? _prev : _next;
-          *subtasks = XMI_PT_TO_PT_SUBTASK;
+          *subtasks = PAMI_PT_TO_PT_SUBTASK;
 
           TRACE_SCHEDULE((stderr,"<%p>Schedule::OldRingSchedule::getReduceDestinations() %d\n",this, *dstpes));
         }
@@ -259,7 +259,7 @@ namespace CCMI
           nphases = (_isTail || _isHead) ? 1 : 2;
         }
         else
-          XMI_abort();
+          PAMI_abort();
 
         startphase = _startPhase;
 

@@ -16,7 +16,7 @@
 #include "components/atomic/Barrier.h"
 #include "util/common.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Barrier
   {
@@ -26,11 +26,11 @@ namespace XMI
     /// \param T_Counter  Atomic counter object derived class
     ///
     template <class T_Counter>
-    class CounterBarrier : public XMI::Atomic::Interface::Barrier<CounterBarrier<T_Counter> >
+    class CounterBarrier : public PAMI::Atomic::Interface::Barrier<CounterBarrier<T_Counter> >
     {
       public:
         CounterBarrier () :
-          XMI::Atomic::Interface::Barrier<CounterBarrier<T_Counter> > (),
+          PAMI::Atomic::Interface::Barrier<CounterBarrier<T_Counter> > (),
           _control (_counter[0]),
           _lock (&_counter[1]),
           _stat (&_counter[3]),
@@ -41,8 +41,8 @@ namespace XMI
 
         ~CounterBarrier () {};
 
-        /// \see XMI::Atomic::Interface::Barrier::init()
-        void init_impl (XMI::Memory::MemoryManager *mm, size_t participants, bool master)
+        /// \see PAMI::Atomic::Interface::Barrier::init()
+        void init_impl (PAMI::Memory::MemoryManager *mm, size_t participants, bool master)
         {
           unsigned i;
           for (i=0; i<5; i++) _counter[i].init(mm);
@@ -52,17 +52,17 @@ namespace XMI
 	  local_barriered_ctrzero<T_Counter>(_counter, 5, participants, master);
         };
 
-        /// \see XMI::Atomic::Interface::Barrier::enter()
-        inline xmi_result_t enter_impl ()
+        /// \see PAMI::Atomic::Interface::Barrier::enter()
+        inline pami_result_t enter_impl ()
         {
 		pollInit_impl();
-		while (poll_impl() != XMI::Atomic::Interface::Done);
-		return XMI_SUCCESS;
+		while (poll_impl() != PAMI::Atomic::Interface::Done);
+		return PAMI_SUCCESS;
 	}
 
-        inline void enterPoll_impl(XMI::Atomic::Interface::pollFcn fcn, void *arg) {
+        inline void enterPoll_impl(PAMI::Atomic::Interface::pollFcn fcn, void *arg) {
 		pollInit_impl();
-		while (poll_impl() != XMI::Atomic::Interface::Done) {
+		while (poll_impl() != PAMI::Atomic::Interface::Done) {
 			fcn(arg);
 		}
 	}
@@ -73,14 +73,14 @@ namespace XMI
 		phase = _control.fetch();
 		_lock[phase].fetch_and_inc();
 		_data = phase;
-		_status = XMI::Atomic::Interface::Entered;
+		_status = PAMI::Atomic::Interface::Entered;
 	}
 
-        inline XMI::Atomic::Interface::barrierPollStatus poll_impl() {
-		XMI_assert(_status == XMI::Atomic::Interface::Entered);
+        inline PAMI::Atomic::Interface::barrierPollStatus poll_impl() {
+		PAMI_assert(_status == PAMI::Atomic::Interface::Entered);
 		size_t value;
 		size_t phase = _data;
-		if (_lock[phase].fetch() < _participants) return XMI::Atomic::Interface::Entered;
+		if (_lock[phase].fetch() < _participants) return PAMI::Atomic::Interface::Entered;
 		_lock[phase].fetch_and_inc();
 		do {
 			value = _lock[phase].fetch();
@@ -97,11 +97,11 @@ namespace XMI
 			// wait until master releases the barrier by clearing the lock
 			while (_lock[phase].fetch() > 0);
 		}
-		_status = XMI::Atomic::Interface::Initialized;
-		return XMI::Atomic::Interface::Done;
+		_status = PAMI::Atomic::Interface::Initialized;
+		return PAMI::Atomic::Interface::Done;
 	}
-        inline void * returnBarrier_impl() { XMI_abortf("%s<%d>\n",__FILE__,__LINE__); }
-        inline void dump_impl(char *string) { XMI_abortf("%s<%d>\n",__FILE__,__LINE__); }
+        inline void * returnBarrier_impl() { PAMI_abortf("%s<%d>\n",__FILE__,__LINE__); }
+        inline void dump_impl(char *string) { PAMI_abortf("%s<%d>\n",__FILE__,__LINE__); }
 
       protected:
 
@@ -116,10 +116,10 @@ namespace XMI
         size_t      _participants;
         size_t      _data;
 	bool        _master;
-	XMI::Atomic::Interface::barrierPollStatus _status;
+	PAMI::Atomic::Interface::barrierPollStatus _status;
 
-    };  // XMI::Barrier::CounterBarrier class
-  };   // XMI::Barrier namespace
-};     // XMI namespace
+    };  // PAMI::Barrier::CounterBarrier class
+  };   // PAMI::Barrier namespace
+};     // PAMI namespace
 
 #endif // __components_atomic_counter_counterbarier_h__

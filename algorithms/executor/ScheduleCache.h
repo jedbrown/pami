@@ -22,10 +22,10 @@ namespace CCMI
       unsigned          _nphases;    //Number of phases
 
       ///A vector of source topologies with one for each phase
-      XMI::Topology          ** _srctopologies;
+      PAMI::Topology          ** _srctopologies;
 
       ///A vector of destination topologies with one of each phase
-      XMI::Topology          ** _dsttopologies;
+      PAMI::Topology          ** _dsttopologies;
 
       size_t                 * _srcranks;  //Cache buffer of source ranks
       size_t                 * _dstranks;  //Cache buffer of destination ranks
@@ -65,8 +65,8 @@ namespace CCMI
 	for(count = _start; count < (_start + _nphases); count ++)
         {
 	  size_t srcranks[SC_MAXRANKS], dstranks[SC_MAXRANKS];
-	  XMI::Topology src_topology((xmi_task_t *)&srcranks, SC_MAXRANKS);
-	  XMI::Topology dst_topology((xmi_task_t *)&dstranks, SC_MAXRANKS);
+	  PAMI::Topology src_topology((pami_task_t *)&srcranks, SC_MAXRANKS);
+	  PAMI::Topology dst_topology((pami_task_t *)&dstranks, SC_MAXRANKS);
 
 	  schedule->getSrcTopology(count, &src_topology);
 	  ntotal_src += src_topology.size();
@@ -84,11 +84,11 @@ namespace CCMI
         {
 	  //fprintf (stderr, "Schedule Cache : construct topology of size src %d dst %d\n", ntotal_src - srcindex, ntotal_dst - dstindex);
 
-	  new (_srctopologies[count]) XMI::Topology ((xmi_task_t*)_srcranks + srcindex, ntotal_src - srcindex);
-	  new (_dsttopologies[count]) XMI::Topology ((xmi_task_t*)_dstranks + dstindex, ntotal_dst - dstindex);
+	  new (_srctopologies[count]) PAMI::Topology ((pami_task_t*)_srcranks + srcindex, ntotal_src - srcindex);
+	  new (_dsttopologies[count]) PAMI::Topology ((pami_task_t*)_dstranks + dstindex, ntotal_dst - dstindex);
 
-	  CCMI_assert (_srctopologies[count]->type() == XMI_LIST_TOPOLOGY);
-	  CCMI_assert (_dsttopologies[count]->type() == XMI_LIST_TOPOLOGY);
+	  CCMI_assert (_srctopologies[count]->type() == PAMI_LIST_TOPOLOGY);
+	  CCMI_assert (_dsttopologies[count]->type() == PAMI_LIST_TOPOLOGY);
 
 	  schedule->getSrcTopology(count, _srctopologies[count]);
 	  schedule->getDstTopology(count, _dsttopologies[count]);
@@ -107,7 +107,7 @@ namespace CCMI
 
       }
 
-      XMI::Topology  *getSrcTopology (unsigned phase)
+      PAMI::Topology  *getSrcTopology (unsigned phase)
       {
 	if ((phase < _start) || (phase >= _start + _nphases))
 	  fprintf(stderr, "<%p>phase not in range %d, %d, %d\n", this, phase, _start, _start+_nphases);
@@ -116,7 +116,7 @@ namespace CCMI
 	return _srctopologies[phase];
       }
 
-      XMI::Topology  *getDstTopology (unsigned phase)
+      PAMI::Topology  *getDstTopology (unsigned phase)
       {
 	CCMI_assert ((phase >= _start) && (phase < _start + _nphases));
 	return _dsttopologies[phase];
@@ -145,7 +145,7 @@ inline void CCMI::Executor::ScheduleCache::allocate
 {
   //Compute space for nsrcranks, srcoffsets, srcranks, srcsubstasks +
   //ndstranks, dstoffsets, dstranks, dstsubstasks
-  unsigned buf_size = 2 * (sizeof(XMI::Topology *) + sizeof(xmi_topology_t)) * nphases + (nsrc + ndst)*sizeof(size_t);
+  unsigned buf_size = 2 * (sizeof(PAMI::Topology *) + sizeof(pami_topology_t)) * nphases + (nsrc + ndst)*sizeof(size_t);
 
   if (_cachesize < buf_size) {
     if (_cachebuf != NULL)
@@ -158,18 +158,18 @@ inline void CCMI::Executor::ScheduleCache::allocate
   }
 
   unsigned offset = 0, count = 0;
-  _srctopologies =  (XMI::Topology **)(_cachebuf + offset);
-  offset += nphases * sizeof(XMI::Topology *);
+  _srctopologies =  (PAMI::Topology **)(_cachebuf + offset);
+  offset += nphases * sizeof(PAMI::Topology *);
   for (count = 0; count < nphases; count ++) {
-    _srctopologies[count] = (XMI::Topology *)(_cachebuf + offset);
-    offset += sizeof(xmi_topology_t);
+    _srctopologies[count] = (PAMI::Topology *)(_cachebuf + offset);
+    offset += sizeof(pami_topology_t);
   }
 
-  _dsttopologies =  (XMI::Topology **)(_cachebuf + offset);
-  offset += nphases * sizeof(XMI::Topology *);
+  _dsttopologies =  (PAMI::Topology **)(_cachebuf + offset);
+  offset += nphases * sizeof(PAMI::Topology *);
   for (count = 0; count < nphases; count ++) {
-    _dsttopologies[count] = (XMI::Topology *)(_cachebuf + offset);
-    offset += sizeof(xmi_topology_t);
+    _dsttopologies[count] = (PAMI::Topology *)(_cachebuf + offset);
+    offset += sizeof(pami_topology_t);
   }
 
   _srcranks   =  (size_t *)(_cachebuf + offset);

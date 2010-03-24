@@ -16,40 +16,40 @@
 #undef TRACE
 #endif
 #define TRACE(x) //fprintf x
-const bool   XMI::Device::MU::MUMulticombineModel::multicombine_model_op_support(xmi_dt dt, xmi_op op)
+const bool   PAMI::Device::MU::MUMulticombineModel::multicombine_model_op_support(pami_dt dt, pami_op op)
 {
-  const bool support[XMI_DT_COUNT][XMI_OP_COUNT] =
+  const bool support[PAMI_DT_COUNT][PAMI_OP_COUNT] =
   {
-    // XMI_UNDEFINED_OP, XMI_NOOP, XMI_MAX, XMI_MIN, XMI_SUM, XMI_PROD, XMI_LAND, XMI_LOR, XMI_LXOR, XMI_BAND, XMI_BOR, XMI_BXOR, XMI_MAXLOC, XMI_MINLOC, XMI_USERDEFINED_OP,
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_UNDEFINED_DT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_SIGNED_CHAR
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_UNSIGNED_CHAR
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_SIGNED_SHORT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_UNSIGNED_SHORT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_SIGNED_INT
-    {false,           false,    false,   true,    false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_UNSIGNED_INT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_SIGNED_LONG_LONG
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_UNSIGNED_LONG_LONG
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_FLOAT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_DOUBLE
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_LONG_DOUBLE
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_LOGICAL
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_SINGLE_COMPLEX
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_DOUBLE_COMPLEX
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_LOC_2INT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_LOC_SHORT_INT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_LOC_FLOAT_INT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_LOC_DOUBLE_INT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_LOC_2FLOAT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//XMI_LOC_2DOUBLE
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false} //XMI_USERDEFINED_DT
+    // PAMI_UNDEFINED_OP, PAMI_NOOP, PAMI_MAX, PAMI_MIN, PAMI_SUM, PAMI_PROD, PAMI_LAND, PAMI_LOR, PAMI_LXOR, PAMI_BAND, PAMI_BOR, PAMI_BXOR, PAMI_MAXLOC, PAMI_MINLOC, PAMI_USERDEFINED_OP,
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_UNDEFINED_DT
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_SIGNED_CHAR
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_UNSIGNED_CHAR
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_SIGNED_SHORT
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_UNSIGNED_SHORT
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_SIGNED_INT
+    {false,           false,    false,   true,    false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_UNSIGNED_INT
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_SIGNED_LONG_LONG
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_UNSIGNED_LONG_LONG
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_FLOAT
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_DOUBLE
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LONG_DOUBLE
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOGICAL
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_SINGLE_COMPLEX
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_DOUBLE_COMPLEX
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOC_2INT
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOC_SHORT_INT
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOC_FLOAT_INT
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOC_DOUBLE_INT
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOC_2FLOAT
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOC_2DOUBLE
+    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false} //PAMI_USERDEFINED_DT
   };
   TRACE((stderr, "MUMulticombineModel::multicombine_model_op_support(%d, %d) = %d\n", dt, op, support[dt][op]));
   return(support[dt][op]);
 }
 
 /// \see MUMulticombineModel
-XMI::Device::MU::MUMulticombineModel::MUMulticombineModel (MUCollDevice *devices, size_t client_id, size_t context_id, xmi_result_t &status) :
+PAMI::Device::MU::MUMulticombineModel::MUMulticombineModel (MUCollDevice *devices, size_t client_id, size_t context_id, pami_result_t &status) :
     Interface::MulticombineModel < MUMulticombineModel,MUCollDevice, sizeof(mu_multicombine_statedata_t) > (devices[context_id], status),
     _device (devices[context_id]),
     _wrapper_model (&_desc_model)
@@ -128,10 +128,10 @@ SoftwareBytes  :
   _desc_model.setMemoryFIFOFields (&memfifo);
 
   // Use our rank/addr to set our master reception fifo
-  xmi_task_t target_rank = __global.mapping.task();
+  pami_task_t target_rank = __global.mapping.task();
   size_t addr[BGQ_TDIMS + BGQ_LDIMS];
   TRACE((stderr, "<%p>:MUMulticombineModel::ctor .. %p->getRecFifoIdForDescriptor() target_rank %zd\n", this, &_device, (size_t)target_rank));
-  __global.mapping.task2global ((xmi_task_t)target_rank, addr);
+  __global.mapping.task2global ((pami_task_t)target_rank, addr);
   TRACE((stderr, "<%p>:MUMulticombineModel::ctor .. %p->getRecFifoIdForDescriptor(%zd) target_rank %zd\n", this, &_device, addr[5], (size_t)target_rank));
   /// \todo Assuming p is the recv grp id?
   uint32_t recFifoId = _device.getCollRecFifoIdForDescriptor(addr[5]);;
@@ -150,11 +150,11 @@ SoftwareBytes  :
   TRACE((stderr, "<%p>:MUMulticastModel::registerMcastRecvFunction_impl dispatch_id = %#X, success = %d\n", this, hdr->dev.dispatch_id, (unsigned)success));
   DUMP_DESCRIPTOR("MUMultisyncModel::ctor", &_desc_model);
 
-  XMI_assert(success);
+  PAMI_assert(success);
 
 };
 
-XMI::Device::MU::MUMulticombineModel::~MUMulticombineModel ()
+PAMI::Device::MU::MUMulticombineModel::~MUMulticombineModel ()
 {
 };
 

@@ -14,7 +14,7 @@
 #ifndef __algorithms_interfaces_GeometryInterface_h__
 #define __algorithms_interfaces_GeometryInterface_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/compact_attributes.h"
 #include "util/queue/MatchQueue.h"
 #include "Mapping.h"
@@ -23,16 +23,16 @@
 #define CCMI_EXECUTOR_TYPE void*
 #define COMPOSITE_TYPE void*
 
-namespace XMI
+namespace PAMI
 {
   namespace Geometry
   {
     typedef enum
     {
-      XMI_GKEY_COLLFACTORY     = 0,
-      XMI_GKEY_BARRIERCOMPOSITE0,
-      XMI_GKEY_BARRIERCOMPOSITE1,
-      XMI_GKEY_LOCALBARRIECOMPOSITE
+      PAMI_GKEY_COLLFACTORY     = 0,
+      PAMI_GKEY_BARRIERCOMPOSITE0,
+      PAMI_GKEY_BARRIERCOMPOSITE1,
+      PAMI_GKEY_LOCALBARRIECOMPOSITE
     }keys_t;
 
     template <class T_Geometry>
@@ -40,8 +40,8 @@ namespace XMI
     {
     public:
       inline Geometry(Mapping     *mapping,
-                      xmi_task_t  *ranks,
-                      xmi_task_t  nranks,
+                      pami_task_t  *ranks,
+                      pami_task_t  nranks,
                       unsigned     comm,
                       unsigned     numcolors,
                       bool         globalcontext)
@@ -51,7 +51,7 @@ namespace XMI
                        Mapping   *mapping,
                        unsigned   comm,
                        int        numranges,
-                       xmi_geometry_range_t rangelist[])
+                       pami_geometry_range_t rangelist[])
       {
       }
 
@@ -61,19 +61,19 @@ namespace XMI
       inline unsigned                   getAsyncAllreduceMode();
       inline unsigned                   incrementAllreduceIteration();
       inline unsigned                   comm();
-      inline xmi_task_t                 *ranks();
-      inline xmi_task_t                 *ranks_sizet();
-      inline xmi_task_t                 nranks();
-      inline xmi_task_t                 myIdx();
+      inline pami_task_t                 *ranks();
+      inline pami_task_t                 *ranks_sizet();
+      inline pami_task_t                 nranks();
+      inline pami_task_t                 myIdx();
       inline void                       generatePermutation();
       inline void                       freePermutation();
       inline unsigned                  *permutation();
-      inline xmi_topology_t* getTopology(int topo_num);
+      inline pami_topology_t* getTopology(int topo_num);
       inline int myTopologyId();
       inline int getNumTopos();
       inline void                       generatePermutation_sizet();
       inline void                       freePermutation_sizet();
-      inline xmi_task_t                 *permutation_sizet();
+      inline pami_task_t                 *permutation_sizet();
 /** \todo  need to replace by attributes */
 #if 1
       // no need for these as they are embedded inside attributes
@@ -120,36 +120,36 @@ namespace XMI
                                                               unsigned comm);
 
       // These methods were originally from the PGASRT Communicator class
-      inline xmi_task_t                 size       (void);
-      inline xmi_task_t                 rank       (void);
-      inline xmi_task_t                 virtrank   (void);
-      inline xmi_task_t                 absrankof  (int rank);
-      inline xmi_task_t                 virtrankof (int rank);
+      inline pami_task_t                 size       (void);
+      inline pami_task_t                 rank       (void);
+      inline pami_task_t                 virtrank   (void);
+      inline pami_task_t                 absrankof  (int rank);
+      inline pami_task_t                 virtrankof (int rank);
       inline void                       setKey(keys_t key, void*value);
       inline void                      *getKey(keys_t key);
 
       // API support
-      inline xmi_result_t algorithms_num(xmi_xfer_type_t  colltype,
+      inline pami_result_t algorithms_num(pami_xfer_type_t  colltype,
                                          int             *lists_lengths,
                                          size_t           context_id);
 
-      inline xmi_result_t algorithms_info (xmi_xfer_type_t   colltype,
-                                           xmi_algorithm_t  *algs0,
-                                           xmi_metadata_t   *mdata0,
+      inline pami_result_t algorithms_info (pami_xfer_type_t   colltype,
+                                           pami_algorithm_t  *algs0,
+                                           pami_metadata_t   *mdata0,
                                            int               num0,
-                                           xmi_algorithm_t  *algs1,
-                                           xmi_metadata_t   *mdata1,
+                                           pami_algorithm_t  *algs1,
+                                           pami_metadata_t   *mdata1,
                                            int               num1,
                                            size_t            context_id);
 
 
 
       // List management
-      inline xmi_result_t addCollective(xmi_xfer_type_t                            xfer_type,
+      inline pami_result_t addCollective(pami_xfer_type_t                            xfer_type,
                                         CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                         size_t                                     context_id);
 
-      inline xmi_result_t addCollectiveCheck(xmi_xfer_type_t                            xfer_type,
+      inline pami_result_t addCollectiveCheck(pami_xfer_type_t                            xfer_type,
                                              CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                              size_t                                     context_id);
 
@@ -165,7 +165,7 @@ namespace XMI
 
 
     template <class T_Geometry>
-    inline xmi_topology_t* Geometry<T_Geometry>::getTopology(int topo_num)
+    inline pami_topology_t* Geometry<T_Geometry>::getTopology(int topo_num)
     {
       return static_cast<T_Geometry*>(this)->getTopology_impl(topo_num);
     }
@@ -207,25 +207,25 @@ namespace XMI
     }
 
     template <class T_Geometry>
-    inline xmi_task_t *Geometry<T_Geometry>::ranks()
+    inline pami_task_t *Geometry<T_Geometry>::ranks()
     {
       return static_cast<T_Geometry*>(this)->ranks_impl();
     }
 
     template <class T_Geometry>
-    inline xmi_task_t *Geometry<T_Geometry>::ranks_sizet()
+    inline pami_task_t *Geometry<T_Geometry>::ranks_sizet()
     {
       return static_cast<T_Geometry*>(this)->ranks_sizet_impl();
     }
 
     template <class T_Geometry>
-    inline xmi_task_t Geometry<T_Geometry>::nranks()
+    inline pami_task_t Geometry<T_Geometry>::nranks()
     {
       return static_cast<T_Geometry*>(this)->nranks_impl();
     }
 
     template <class T_Geometry>
-    inline xmi_task_t Geometry<T_Geometry>::myIdx()
+    inline pami_task_t Geometry<T_Geometry>::myIdx()
     {
       return static_cast<T_Geometry*>(this)->myIdx_impl();
     }
@@ -243,7 +243,7 @@ namespace XMI
     }
 
     template <class T_Geometry>
-    inline xmi_task_t *Geometry<T_Geometry>::permutation()
+    inline pami_task_t *Geometry<T_Geometry>::permutation()
     {
       return static_cast<T_Geometry*>(this)->permutation_impl();
     }
@@ -261,7 +261,7 @@ namespace XMI
     }
 
     template <class T_Geometry>
-    inline xmi_task_t *Geometry<T_Geometry>::permutation_sizet()
+    inline pami_task_t *Geometry<T_Geometry>::permutation_sizet()
     {
       return static_cast<T_Geometry*>(this)->permutation_sizet_impl();
     }
@@ -442,27 +442,27 @@ namespace XMI
 
     // These methods were originally from the PGASRT Communicator class
     template <class T_Geometry>
-    inline xmi_task_t  Geometry<T_Geometry>::size       (void)
+    inline pami_task_t  Geometry<T_Geometry>::size       (void)
     {
       return static_cast<T_Geometry*>(this)->size_impl();
     }
     template <class T_Geometry>
-    inline xmi_task_t  Geometry<T_Geometry>::rank       (void)
+    inline pami_task_t  Geometry<T_Geometry>::rank       (void)
     {
       return static_cast<T_Geometry*>(this)->rank_impl();
     }
     template <class T_Geometry>
-    inline xmi_task_t   Geometry<T_Geometry>::virtrank()
+    inline pami_task_t   Geometry<T_Geometry>::virtrank()
     {
       return static_cast<T_Geometry*>(this)->virtrank_impl();
     }
     template <class T_Geometry>
-    inline xmi_task_t  Geometry<T_Geometry>::absrankof  (int rank)
+    inline pami_task_t  Geometry<T_Geometry>::absrankof  (int rank)
     {
       return static_cast<T_Geometry*>(this)->absrankof_impl(rank);
     }
     template <class T_Geometry>
-    inline xmi_task_t Geometry<T_Geometry>::virtrankof (int rank)
+    inline pami_task_t Geometry<T_Geometry>::virtrankof (int rank)
     {
       return static_cast<T_Geometry*>(this)->virtrankof_impl(rank);
     }
@@ -478,7 +478,7 @@ namespace XMI
     }
 
     template <class T_Geometry>
-    inline xmi_result_t Geometry<T_Geometry>::algorithms_num(xmi_xfer_type_t  colltype,
+    inline pami_result_t Geometry<T_Geometry>::algorithms_num(pami_xfer_type_t  colltype,
                                                              int             *lists_lengths,
                                                              size_t           context_id)
     {
@@ -486,12 +486,12 @@ namespace XMI
     }
 
     template <class T_Geometry>
-    inline xmi_result_t  Geometry<T_Geometry>::algorithms_info (xmi_xfer_type_t   colltype,
-                                                                xmi_algorithm_t  *algs0,
-                                                                xmi_metadata_t   *mdata0,
+    inline pami_result_t  Geometry<T_Geometry>::algorithms_info (pami_xfer_type_t   colltype,
+                                                                pami_algorithm_t  *algs0,
+                                                                pami_metadata_t   *mdata0,
                                                                 int               num0,
-                                                                xmi_algorithm_t  *algs1,
-                                                                xmi_metadata_t   *mdata1,
+                                                                pami_algorithm_t  *algs1,
+                                                                pami_metadata_t   *mdata1,
                                                                 int               num1,
                                                                 size_t            context_id)
     {
@@ -506,7 +506,7 @@ namespace XMI
     }
 
     template <class T_Geometry>
-    inline xmi_result_t Geometry<T_Geometry>::addCollective(xmi_xfer_type_t                            xfer_type,
+    inline pami_result_t Geometry<T_Geometry>::addCollective(pami_xfer_type_t                            xfer_type,
                                                             CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                                             size_t                                     context_id)
     {
@@ -515,7 +515,7 @@ namespace XMI
 
 
     template <class T_Geometry>
-    inline xmi_result_t Geometry<T_Geometry>::addCollectiveCheck(xmi_xfer_type_t                            xfer_type,
+    inline pami_result_t Geometry<T_Geometry>::addCollectiveCheck(pami_xfer_type_t                            xfer_type,
                                                                  CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                                                  size_t                                     context_id)
     {
@@ -526,6 +526,6 @@ namespace XMI
 
 
   }; // namespace Geometry
-}; // namespace XMI
+}; // namespace PAMI
 
 #endif

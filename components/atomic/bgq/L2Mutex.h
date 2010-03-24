@@ -24,21 +24,21 @@
 #include "components/atomic/Mutex.h"
 #include <spi/include/l2/atomic.h>
 
-namespace XMI {
+namespace PAMI {
 namespace Mutex {
 namespace BGQ {
 	//
 	// These classes are used internally ONLY. See following classes for users
 	//
 	template <class T_Mutex>
-	class _L2Mutex : public XMI::Atomic::Interface::Mutex<T_Mutex> {
+	class _L2Mutex : public PAMI::Atomic::Interface::Mutex<T_Mutex> {
 	public:
 		_L2Mutex() { }
-		inline void __init(XMI::Memory::MemoryManager *mm,
-					XMI::Atomic::BGQ::l2x_scope_t scope) {
-			xmi_result_t rc = __global.l2atomicFactory.l2x_alloc((void **)&_counter,
+		inline void __init(PAMI::Memory::MemoryManager *mm,
+					PAMI::Atomic::BGQ::l2x_scope_t scope) {
+			pami_result_t rc = __global.l2atomicFactory.l2x_alloc((void **)&_counter,
 									1, scope);
-			XMI_assertf(rc == XMI_SUCCESS, "Failed to allocate L2 Atomic Mutex");
+			PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate L2 Atomic Mutex");
 			// if need to reset, must coordinate!
 		}
 		void acquire_impl() {
@@ -64,8 +64,8 @@ namespace BGQ {
 	class L2ProcMutex : public _L2Mutex<L2ProcMutex> {
 	public:
 		L2ProcMutex() { }
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			__init(mm, XMI::Atomic::BGQ::L2A_PROC_SCOPE);
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+			__init(mm, PAMI::Atomic::BGQ::L2A_PROC_SCOPE);
 		}
 	protected:
 	}; // class L2ProcMutex
@@ -73,14 +73,14 @@ namespace BGQ {
 	class L2NodeMutex : public _L2Mutex<L2NodeMutex> {
 	public:
 		L2NodeMutex() { }
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			__init(mm, XMI::Atomic::BGQ::L2A_NODE_SCOPE);
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+			__init(mm, PAMI::Atomic::BGQ::L2A_NODE_SCOPE);
 		}
 	protected:
 	}; // class L2NodeMutex
 
 }; // BGQ namespace
 }; // Mutex namespace
-}; // XMI namespace
+}; // PAMI namespace
 
 #endif // __components_atomic_bgq_L2Mutex_h__

@@ -16,7 +16,7 @@ namespace CCMI
     ///
     /// \brief choose if this protocol is supports the input geometry
     ///
-    typedef void      (*MetaDataFn)   (xmi_metadata_t *m);
+    typedef void      (*MetaDataFn)   (pami_metadata_t *m);
 
     template <class T, MetaDataFn get_metadata, class C>
       class CollectiveProtocolFactoryT: public CollectiveProtocolFactory
@@ -26,9 +26,9 @@ namespace CCMI
       public:
         collObj(Interfaces::NativeInterface             * native,
                C                                        * cmgr,
-               xmi_geometry_t                             geometry,
-               xmi_xfer_t                               * cmd,
-               xmi_event_function                         fn,
+               pami_geometry_t                             geometry,
+               pami_xfer_t                               * cmd,
+               pami_event_function                         fn,
                void                                     * cookie,
                CollectiveProtocolFactoryT               * factory):
           _obj(native,cmgr,geometry,cmd,fn,cookie),
@@ -39,7 +39,7 @@ namespace CCMI
           }
         T                            _obj;
         CollectiveProtocolFactoryT * _factory;
-        xmi_event_function           _user_done_fn;
+        pami_event_function           _user_done_fn;
         void                       * _user_cookie;
       };
 
@@ -47,13 +47,13 @@ namespace CCMI
     public:
       CollectiveProtocolFactoryT (C                           *cmgr,
                                   Interfaces::NativeInterface *native,
-                                  xmi_dispatch_multicast_fn    cb_head=NULL):
+                                  pami_dispatch_multicast_fn    cb_head=NULL):
         CollectiveProtocolFactory(),
         _cmgr(cmgr),
         _native(native)
       {
-	xmi_dispatch_callback_fn fn;
-	fn.multicast = (xmi_dispatch_multicast_fn) cb_head;
+	pami_dispatch_callback_fn fn;
+	fn.multicast = (pami_dispatch_multicast_fn) cb_head;
 	_native->setDispatch(fn, this);
       }
 
@@ -67,9 +67,9 @@ namespace CCMI
         CCMI_abort();
       }
 
-      static void done_fn(xmi_context_t  context,
+      static void done_fn(pami_context_t  context,
                           void          *clientdata,
-                          xmi_result_t   res)
+                          pami_result_t   res)
         {
           collObj *cobj = (collObj *)clientdata;
           cobj->_user_done_fn(context, cobj->_user_cookie, res);
@@ -77,28 +77,28 @@ namespace CCMI
         }
 
 
-      virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+      virtual Executor::Composite * generate(pami_geometry_t              geometry,
 					     void                      * cmd)
 	{
           collObj *cobj = (collObj*) _alloc.allocateObject();
           new(cobj) collObj(_native,          // Native interface
                             _cmgr,            // Connection Manager
                             geometry,         // Geometry Object
-                            (xmi_xfer_t*)cmd, // Parameters
+                            (pami_xfer_t*)cmd, // Parameters
                             done_fn,          // Intercept function
                             cobj,             // Intercept cookie
                             this);            // Factory
           return (Executor::Composite *)&cobj->_obj;
 	}
 
-      virtual void metadata(xmi_metadata_t *mdata)
+      virtual void metadata(pami_metadata_t *mdata)
         {
           get_metadata(mdata);
         }
 
       C                                          * _cmgr;
       Interfaces::NativeInterface                * _native;
-      XMI::MemoryAllocator<sizeof(collObj), 16>    _alloc;
+      PAMI::MemoryAllocator<sizeof(collObj), 16>    _alloc;
     };
   };
 };

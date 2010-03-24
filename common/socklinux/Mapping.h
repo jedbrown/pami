@@ -20,7 +20,7 @@
 #include "common/UdpSocketMappingInterface.h"
 #include "common/SocketMappingInterface.h"
 #include "common/NodeMappingInterface.h"
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include <errno.h>
 #include <unistd.h>
 //#include <pmi.h>
@@ -40,9 +40,9 @@
 #define TRACE_COUTMAP(x)//  std::cout << x << std::endl
 #endif
 
-#define XMI_MAPPING_CLASS XMI::Mapping
+#define PAMI_MAPPING_CLASS PAMI::Mapping
 
-namespace XMI
+namespace PAMI
 {
     class Mapping : public Interface::Mapping::Base<Mapping>,
                        public Interface::Mapping::UdpSocket<Mapping>,
@@ -92,9 +92,9 @@ namespace XMI
 
 
 
-        udp_config = getenv ("XMI_UDP_CONFIG");
+        udp_config = getenv ("PAMI_UDP_CONFIG");
         if (udp_config == NULL ) {
-          std::cout << "Environment variable XMI_UDP_CONFIG must be set" << std::endl;
+          std::cout << "Environment variable PAMI_UDP_CONFIG must be set" << std::endl;
           abort();
         }
         TRACE_COUTMAP("The current UDP configuration file is: " << udp_config);
@@ -302,12 +302,12 @@ namespace XMI
       {
         _tcpConnInit = true;
         // Allocate space for the connection table
-        _tcpConnTable = (xmi_coord_t *)malloc(_size * sizeof(xmi_coord_t));
+        _tcpConnTable = (pami_coord_t *)malloc(_size * sizeof(pami_coord_t));
 
         // All are sockets entries
         size_t i;
         for ( i=0; i<_size; i++) {
-          _tcpConnTable[i].network = XMI_SOCKET_NETWORK;
+          _tcpConnTable[i].network = PAMI_SOCKET_NETWORK;
         }
         std::cout << "TCP not supported yet " << std::endl;
         abort ();
@@ -336,7 +336,7 @@ namespace XMI
           Interface::Mapping::nodeaddr_t node_addr;
         } udp_conn_t;
 
-        xmi_coord_t *     _tcpConnTable;
+        pami_coord_t *     _tcpConnTable;
         bool              _tcpConnInit;
         udp_conn_t *      _udpConnTable;
         int               _udpRcvConn;
@@ -351,20 +351,20 @@ namespace XMI
 		return x;
 	}
     public:
-      inline xmi_result_t init(size_t &min_rank, size_t &max_rank,
+      inline pami_result_t init(size_t &min_rank, size_t &max_rank,
 				size_t &num_local, size_t **local_ranks)
       {
         char * tmp;
-        tmp = getenv("XMI_SOCK_SIZE");
+        tmp = getenv("PAMI_SOCK_SIZE");
         if (tmp == NULL ) {
-          std::cout << "Environment variable XMI_SOCK_SIZE must be set" << std::endl;
+          std::cout << "Environment variable PAMI_SOCK_SIZE must be set" << std::endl;
           abort();
         }
         _size = strtoul( tmp, NULL, 0 );
         TRACE_COUTMAP( "Size = " << _size );
-        tmp = getenv("XMI_SOCK_TASK");
+        tmp = getenv("PAMI_SOCK_TASK");
         if (tmp == NULL ) {
-          std::cout << "Environment variable XMI_SOCK_TASK must be set" << std::endl;
+          std::cout << "Environment variable PAMI_SOCK_TASK must be set" << std::endl;
           abort();
         }
         _task = strtoul( tmp, NULL, 0 );
@@ -384,7 +384,7 @@ namespace XMI
 
         loadMapFile ();
 
-	return XMI_SUCCESS;
+	return PAMI_SUCCESS;
       }
 
       inline size_t task_impl()
@@ -397,15 +397,15 @@ namespace XMI
           return _size;
         }
 
-      inline xmi_result_t task2network (size_t task, xmi_coord_t *addr, xmi_network type)
+      inline pami_result_t task2network (size_t task, pami_coord_t *addr, pami_network type)
       {
         std::cout << "task2network not supported" << std::endl;
         abort();
       }
 
-      inline xmi_result_t network2task_impl(const xmi_coord_t *addr,
+      inline pami_result_t network2task_impl(const pami_coord_t *addr,
 						size_t *task,
-						xmi_network *type)
+						pami_network *type)
       {
         std::cout << "network2task not supported" << std::endl;
         abort();
@@ -416,28 +416,28 @@ namespace XMI
 	recvfd = _udpRcvConn;
       }
 
-     inline xmi_result_t task2udp_impl( size_t task, int & sendfd, void * sockAddr, int & len )
+     inline pami_result_t task2udp_impl( size_t task, int & sendfd, void * sockAddr, int & len )
      {
        if ( task >= _size )
        {
-         return XMI_ERROR;
+         return PAMI_ERROR;
        }
        sendfd = _udpConnTable[task].send_fd;
        len = _udpConnTable[task].send_addr_len;
        memcpy( sockAddr, &(_udpConnTable[task].send_addr), len );
-       return XMI_SUCCESS;
+       return PAMI_SUCCESS;
      }
 
-     inline xmi_result_t udp2task_impl( int sendfd, void * sockAddr, int len , size_t & task )
+     inline pami_result_t udp2task_impl( int sendfd, void * sockAddr, int len , size_t & task )
      {
        abort();
      }
 
      inline void socketAddr_impl (size_t & recv_fd, size_t & send_fd) { abort(); }
 
-     inline xmi_result_t task2socket_impl (size_t task, size_t & recv_fd, size_t & send_fd) { abort(); }
+     inline pami_result_t task2socket_impl (size_t task, size_t & recv_fd, size_t & send_fd) { abort(); }
 
-     inline xmi_result_t socket2task_impl (size_t recv_fd, size_t send_fd, size_t & task) { abort(); }
+     inline pami_result_t socket2task_impl (size_t recv_fd, size_t send_fd, size_t & task) { abort(); }
 
      inline size_t globalDims()
      {
@@ -447,21 +447,21 @@ namespace XMI
      ///
      /// \brief Get the number of possible tasks on any node
      ///
-     inline xmi_result_t nodeTasks_impl (size_t global, size_t & tasks)
+     inline pami_result_t nodeTasks_impl (size_t global, size_t & tasks)
      {
-       XMI_abort();
-       return XMI_ERROR;
+       PAMI_abort();
+       return PAMI_ERROR;
      };
 
      ///
      /// \brief Get the number of peer tasks on the local node
-     /// \see XMI::Interface::Mapping::Node::nodePeers()
+     /// \see PAMI::Interface::Mapping::Node::nodePeers()
      ///
-     inline xmi_result_t nodePeers_impl (size_t & peers)
+     inline pami_result_t nodePeers_impl (size_t & peers)
      {
        TRACE_COUTMAP("Mapping::nodePeers_impl(), peers = " << _peers);
        peers = _peers;
-       return XMI_SUCCESS;
+       return PAMI_SUCCESS;
      }
 
      ///
@@ -487,47 +487,47 @@ namespace XMI
      /// \brief Node address for a specific task
      ///
      /// The global task identifier monotonically increases from zero to
-     /// XMI::Mapping::Interface::Base.size() - 1.
+     /// PAMI::Mapping::Interface::Base.size() - 1.
      ///
      /// \param[in]  task    Global task identifier
      /// \param[out] address Node address
      ///
-     inline xmi_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
+     inline pami_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
      {
        address = _nodetable[task].addr;
-       return XMI_SUCCESS;
+       return PAMI_SUCCESS;
      }
 
      ///
      /// \brief Global task identifier associated with a specific node address
      ///
      /// The global task identifier monotonically increases from zero to
-     /// XMI::Mapping::Interface::Base.size() - 1.
+     /// PAMI::Mapping::Interface::Base.size() - 1.
      ///
      /// \param[in]  address Node address
      /// \param[out] task    Global task identifier
      ///
-     inline xmi_result_t node2task_impl (Interface::Mapping::nodeaddr_t & address, size_t & task)
+     inline pami_result_t node2task_impl (Interface::Mapping::nodeaddr_t & address, size_t & task)
      {
-       XMI_abort();
-       return XMI_ERROR;
+       PAMI_abort();
+       return PAMI_ERROR;
      }
 
      ///
      /// \brief Peer identifier associated with a specific node address
      ///
      /// The local peer identifier monotonically increases from zero to
-     /// XMI::Mapping::Interface::Node.nodePeers() - 1.
+     /// PAMI::Mapping::Interface::Node.nodePeers() - 1.
      ///
      /// \param[in]  address Node address
      /// \param[out] peer    peer identifier
      ///
-     inline xmi_result_t node2peer_impl (Interface::Mapping::nodeaddr_t & address, size_t & peer)
+     inline pami_result_t node2peer_impl (Interface::Mapping::nodeaddr_t & address, size_t & peer)
      {
        peer = address.local;
-       return XMI_SUCCESS;
+       return PAMI_SUCCESS;
      }
 
    }; // class Mapping
-};	// namespace XMI
+};	// namespace PAMI
 #endif // __common_socklinux_Mapping_h__

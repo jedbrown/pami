@@ -15,12 +15,12 @@
 #define __components_devices_udp_UdpModel_h__
 
 #include <sys/uio.h>
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "components/devices/PacketInterface.h"
 #include "components/devices/udp/UdpMessage.h"
 #include "errno.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -45,7 +45,7 @@ namespace XMI
       static const size_t packet_model_payload_bytes        = T_Device::payload_size;
       static const size_t    packet_model_state_bytes       = sizeof(T_Message);
 
-      xmi_result_t init_impl (size_t                      dispatch,
+      pami_result_t init_impl (size_t                      dispatch,
                               Interface::RecvFunction_t   direct_recv_func,
                               void                      * direct_recv_func_parm,
                               Interface::RecvFunction_t   read_recv_func,
@@ -55,9 +55,9 @@ namespace XMI
         };
 
       inline bool postPacket_impl (uint8_t              (&state)[UdpModel::packet_model_state_bytes],
-                                   xmi_event_function   fn,
+                                   pami_event_function   fn,
                                    void               * cookie,
-                                   xmi_task_t           target,
+                                   pami_task_t           target,
                                    size_t               contextid,
                                    void               * metadata,
                                    size_t               metasize,
@@ -73,9 +73,9 @@ namespace XMI
 
       template <unsigned T_Niov>
       inline bool postPacket_impl (uint8_t              (&state)[UdpModel::packet_model_state_bytes],
-                                   xmi_event_function   fn,
+                                   pami_event_function   fn,
                                    void               * cookie,
-                                   xmi_task_t           target,
+                                   pami_task_t           target,
                                    size_t               contextid,
                                    void               * metadata,
                                    size_t               metasize,
@@ -85,7 +85,7 @@ namespace XMI
         };
 
       template <unsigned T_Niov>
-      inline bool postPacket_impl (xmi_task_t     target,
+      inline bool postPacket_impl (pami_task_t     target,
                                    size_t         contextid,
                                    void         * metadata,
                                    size_t         metasize,
@@ -98,9 +98,9 @@ namespace XMI
 
       template <unsigned T_Niov>
       inline bool postMultiPacket_impl (uint8_t              (&state)[UdpModel::packet_model_state_bytes],
-                                        xmi_event_function   fn,
+                                        pami_event_function   fn,
                                         void               * cookie,
-                                        xmi_task_t           target,
+                                        pami_task_t           target,
                                         size_t               contextid,
                                         void               * metadata,
                                         size_t               metasize,
@@ -120,7 +120,7 @@ namespace XMI
 
     protected:
       T_Device                   & _device;
-      xmi_context_t                _context;
+      pami_context_t                _context;
       uint32_t                     _usr_dispatch_id;
       size_t                       _device_dispatch_id;
 

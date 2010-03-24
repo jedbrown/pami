@@ -44,7 +44,7 @@
 ///
 ////////////////////////////////////////////////////////////////////////////////
 
-int32_t XMI::Device::MU::RecFifoSubGroup::
+int32_t PAMI::Device::MU::RecFifoSubGroup::
 init ( uint32_t subGroupId,
        uint32_t numFifos,
        char    *fifoPtrs[],
@@ -59,8 +59,8 @@ init ( uint32_t subGroupId,
   uint32_t groupId = subGroupId / BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP;
   uint64_t enableBits = 0;
 
-  XMI_assert_debug( subGroupId < BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE );
-  XMI_assert_debug( numFifos <= BGQ_MU_NUM_REC_FIFOS_PER_GROUP );
+  PAMI_assert_debug( subGroupId < BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE );
+  PAMI_assert_debug( numFifos <= BGQ_MU_NUM_REC_FIFOS_PER_GROUP );
 
   TRACE((stderr, "RecFifoSubGrou::init(), dispatch = %p\n", dispatch));
   _dispatch = dispatch;
@@ -83,7 +83,7 @@ init ( uint32_t subGroupId,
 
   if ( numFreeFifos < numFifos )
     {
-      printf("XMI::Device::MU::RecFifoSubGroup:init() Requesting %d fifos, but only %d are free.\n",
+      printf("PAMI::Device::MU::RecFifoSubGroup:init() Requesting %d fifos, but only %d are free.\n",
              numFifos, numFreeFifos);
       return (-EBUSY); // Quit if not enough available.
     }
@@ -115,7 +115,7 @@ init ( uint32_t subGroupId,
 
   for ( fifoNum = 0; fifoNum < numFifos; fifoNum++ )
     {
-      XMI_assert_debug( ( fifoSizes[fifoNum] & 0x1F ) == 0 ); // 32B aligned
+      PAMI_assert_debug( ( fifoSizes[fifoNum] & 0x1F ) == 0 ); // 32B aligned
 
       rc = Kernel_CreateMemoryRegion( &memRegion,
                                       (void*) fifoPtrs[fifoNum],

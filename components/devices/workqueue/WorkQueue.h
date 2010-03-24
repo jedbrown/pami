@@ -17,10 +17,10 @@
 #include "SysDep.h"
 #include "PipeWorkQueue.h"
 #include "math/math_coremath.h"
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/common.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -105,10 +105,10 @@ namespace XMI
           ///
           inline void setProducers (unsigned producers, unsigned producer)
           {
-            XMI_assert_debugf(producers > 0, "WorkQueue requires at least one producer, got %d\n", producers);
-            XMI_assert_debugf(producers <= XMI_MAX_PROC_PER_NODE, "WorkQueue producers must be less than %d, got %d\n", XMI_MAX_PROC_PER_NODE, producers);
-            XMI_assert_debugf(producer >= 0, "WorkQueue producer number must be positive, got %d\n", producer);
-            XMI_assert_debugf(producer < producers, "WorkQueue producer number must be less than producers (%d !< %d)\n", producer, producers);
+            PAMI_assert_debugf(producers > 0, "WorkQueue requires at least one producer, got %d\n", producers);
+            PAMI_assert_debugf(producers <= PAMI_MAX_PROC_PER_NODE, "WorkQueue producers must be less than %d, got %d\n", PAMI_MAX_PROC_PER_NODE, producers);
+            PAMI_assert_debugf(producer >= 0, "WorkQueue producer number must be positive, got %d\n", producer);
+            PAMI_assert_debugf(producer < producers, "WorkQueue producer number must be less than producers (%d !< %d)\n", producer, producers);
 
             _producers = producers;
             _producer  = producer;
@@ -129,10 +129,10 @@ namespace XMI
           ///
           inline void setConsumers (unsigned consumers, unsigned consumer)
           {
-            XMI_assert_debugf(consumers > 0, "WorkQueue requires at least one consumer, got %d\n", consumers);
-            XMI_assert_debugf(consumers <= XMI_MAX_PROC_PER_NODE, "WorkQueue consumers must be less than %d, got %d\n", XMI_MAX_PROC_PER_NODE, consumers);
-            XMI_assert_debugf(consumer >= 0, "WorkQueue consumer number must be positive, got %d\n", consumer);
-            XMI_assert_debugf(consumer < consumers, "WorkQueue consumer number must be less than consumers (%d !< %d)\n", consumer, consumers);
+            PAMI_assert_debugf(consumers > 0, "WorkQueue requires at least one consumer, got %d\n", consumers);
+            PAMI_assert_debugf(consumers <= PAMI_MAX_PROC_PER_NODE, "WorkQueue consumers must be less than %d, got %d\n", PAMI_MAX_PROC_PER_NODE, consumers);
+            PAMI_assert_debugf(consumer >= 0, "WorkQueue consumer number must be positive, got %d\n", consumer);
+            PAMI_assert_debugf(consumer < consumers, "WorkQueue consumer number must be less than consumers (%d !< %d)\n", consumer, consumers);
 
             _consumers = consumers;
             _consumer  = consumer;
@@ -374,7 +374,7 @@ namespace XMI
             return nbytes;
           }
           // Q2Q using PipeWorkQueue as 'in' (should use template?)
-          inline unsigned Q2Q (XMI::PipeWorkQueue & in,
+          inline unsigned Q2Q (PAMI::PipeWorkQueue & in,
                                coremath1   func,
                                int         dtshift)
           {
@@ -402,7 +402,7 @@ namespace XMI
             return nbytes;
           }
           // reverse-direction Q2Q, using PipeWorkQueue as 'out'
-          inline unsigned Q2Qr (XMI::PipeWorkQueue &out,
+          inline unsigned Q2Qr (PAMI::PipeWorkQueue &out,
                                coremath1   func,
                                int         dtshift)
           {
@@ -486,8 +486,8 @@ namespace XMI
           }
 
           /// PipeWorkQueue version... "this" is the SharedWorkQueue...
-          inline unsigned reduce2Q (XMI::PipeWorkQueue &in,
-                                    XMI::PipeWorkQueue &out,
+          inline unsigned reduce2Q (PAMI::PipeWorkQueue &in,
+                                    PAMI::PipeWorkQueue &out,
                                     coremath    func,
                                     int         dtshift)
           {
@@ -548,7 +548,7 @@ namespace XMI
           }
 
           // reduceInPlace using PipeWorkQueue as 'in' (should use template?)
-          inline unsigned reduceInPlace (XMI::PipeWorkQueue & in,
+          inline unsigned reduceInPlace (PAMI::PipeWorkQueue & in,
                                          coremath    func,
                                          int         dtshift)
           {
@@ -747,7 +747,7 @@ namespace XMI
 
     }; /* namespace WorkQueue */
   }; /* namespace Device */
-}; /* namespace XMI */
+}; /* namespace PAMI */
 
 
 #endif // __components_devices_workqueue_workqueue_h__

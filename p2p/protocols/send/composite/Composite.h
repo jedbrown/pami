@@ -24,7 +24,7 @@
 #define TRACE_ERR(x) // fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Protocol
   {
@@ -39,7 +39,7 @@ namespace XMI
         static Composite<T_Primary, T_Secondary> * generate (T_Primary    * primary,
                                                              T_Secondary  * secondary,
                                                              T_Allocator  & allocator,
-                                                             xmi_result_t & result)
+                                                             pami_result_t & result)
         {
           TRACE_ERR((stderr, ">> Send::Factory::generate() [Composite]\n"));
           COMPILE_TIME_ASSERT(sizeof(Composite<T_Primary, T_Secondary>) <= T_Allocator::objsize);
@@ -47,7 +47,7 @@ namespace XMI
           void * composite = allocator.allocateObject ();
           new (composite) Composite<T_Primary, T_Secondary> (primary, secondary, result);
 
-          if (result != XMI_SUCCESS)
+          if (result != PAMI_SUCCESS)
             {
               allocator.returnObject (composite);
               composite = NULL;
@@ -56,7 +56,7 @@ namespace XMI
           TRACE_ERR((stderr, "<< Send::Factory::generate() [Composite], composite = %p\n", composite));
           return (Composite<T_Primary, T_Secondary> *) composite;
         };
-      };  // XMI::Protocol::Send::Factory namespace
+      };  // PAMI::Protocol::Send::Factory namespace
 
       ///
       /// \brief Composite send protocol class
@@ -68,10 +68,10 @@ namespace XMI
       /// \tparam T_Primary    Template send protocol class
       /// \tparam T_Secondary  Template send protocol class
       ///
-      /// \see XMI::Protocol::Send::Send
+      /// \see PAMI::Protocol::Send::Send
       ///
       template <class T_Primary, class T_Secondary>
-      class Composite : public XMI::Protocol::Send::Send
+      class Composite : public PAMI::Protocol::Send::Send
       {
         public:
           ///
@@ -83,12 +83,12 @@ namespace XMI
           ///
           inline Composite (T_Primary    * primary,
                             T_Secondary  * secondary,
-                            xmi_result_t & status) :
-              XMI::Protocol::Send::Send (),
+                            pami_result_t & status) :
+              PAMI::Protocol::Send::Send (),
               _primary (primary),
               _secondary (secondary)
           {
-            status = XMI_SUCCESS;
+            status = PAMI_SUCCESS;
           };
 
           virtual ~Composite () {};
@@ -97,21 +97,21 @@ namespace XMI
           ///       with virtual destructors
           inline void operator delete(void * p)
           {
-            XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
           }
 
           ///
           /// \brief Start a new immediate send operation.
           ///
-          /// \see XMI::Protocol::Send::immediate
+          /// \see PAMI::Protocol::Send::immediate
           ///
-          virtual xmi_result_t immediate (xmi_send_immediate_t * parameters)
+          virtual pami_result_t immediate (pami_send_immediate_t * parameters)
           {
             TRACE_ERR((stderr, ">> Composite::immediate()\n"));
-            xmi_result_t result = _primary->immediate (parameters);
+            pami_result_t result = _primary->immediate (parameters);
             TRACE_ERR((stderr, "   Composite::immediate(), primary result = %d\n", result));
 
-            if (result != XMI_SUCCESS)
+            if (result != PAMI_SUCCESS)
               {
                 result = _secondary->immediate (parameters);
                 TRACE_ERR((stderr, "   Composite::immediate(), secondary result = %d\n", result));
@@ -124,15 +124,15 @@ namespace XMI
           ///
           /// \brief Start a new simple send operation.
           ///
-          /// \see XMI::Protocol::Send::simple
+          /// \see PAMI::Protocol::Send::simple
           ///
-          virtual xmi_result_t simple (xmi_send_t * parameters)
+          virtual pami_result_t simple (pami_send_t * parameters)
           {
             TRACE_ERR((stderr, ">> Composite::simple()\n"));
-            xmi_result_t result = _primary->simple (parameters);
+            pami_result_t result = _primary->simple (parameters);
             TRACE_ERR((stderr, "   Composite::simple(), primary result = %d\n", result));
 
-            if (result != XMI_SUCCESS)
+            if (result != PAMI_SUCCESS)
               {
                 result = _secondary->simple (parameters);
                 TRACE_ERR((stderr, "   Composite::simple(), secondary result = %d\n", result));
@@ -147,10 +147,10 @@ namespace XMI
           T_Primary   * _primary;
           T_Secondary * _secondary;
 
-      };  // XMI::Protocol::Send::Composite class
-    };    // XMI::Protocol::Send namespace
-  };      // XMI::Protocol namespace
-};        // XMI namespace
+      };  // PAMI::Protocol::Send::Composite class
+    };    // PAMI::Protocol::Send namespace
+  };      // PAMI::Protocol namespace
+};        // PAMI namespace
 #undef TRACE_ERR
 #endif // __p2p_protocols_send_composite_Composite_h__
 

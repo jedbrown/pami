@@ -25,7 +25,7 @@
 
 #include "util/common.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -104,7 +104,7 @@ namespace XMI
           inline int32_t setBaseAddress ( uint32_t  entryNum,
                                           void     *va )
           {
-            XMI_assert_debug ( entryNum < BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP );
+            PAMI_assert_debug ( entryNum < BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP );
 
             MUHWI_BaseAddress_t pa;
             int32_t  rc;
@@ -149,10 +149,10 @@ namespace XMI
           uint32_t                         _numEntries;
           uint32_t           _entryNumbers[BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP];
 
-      }; // XMI::Device::MU::BaseAddressTableSubGroup class
-    };   // XMI::Device::MU namepsace
-  };     // XMI::Device namespace
-};       // XMI namespace
+      }; // PAMI::Device::MU::BaseAddressTableSubGroup class
+    };   // PAMI::Device::MU namepsace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 #endif   // __components_devices_bgq_mu_baseaddresstablesubgroup_h__
 

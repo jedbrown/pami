@@ -14,7 +14,7 @@
 #ifndef __components_devices_udp_UdpMessage_h__
 #define __components_devices_udp_UdpMessage_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/common.h"
 #include "util/queue/Queue.h"
 #include <stdint.h>
@@ -22,7 +22,7 @@
 //#include <netinet/in.h>
 //#include <sys/socket.h>
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -109,8 +109,8 @@ namespace XMI
     class UdpSendMessage
     {
       public:
-        inline UdpSendMessage (xmi_context_t               context,
-                            xmi_event_function   fn,
+        inline UdpSendMessage (pami_context_t               context,
+                            pami_event_function   fn,
                             void               * cookie,
                             uint32_t             device_dispatch_id,
                             void               * metadata,
@@ -210,7 +210,7 @@ namespace XMI
         {
            if (_done_fn != NULL )
            {
-              _done_fn(_context,_cookie,XMI_SUCCESS);
+              _done_fn(_context,_cookie,PAMI_SUCCESS);
            }
         }
 
@@ -245,8 +245,8 @@ namespace XMI
         }
 
         UdpMsg              _msg;
-        xmi_context_t       _context;
-        xmi_event_function  _done_fn;
+        pami_context_t       _context;
+        pami_event_function  _done_fn;
         void              * _cookie;
         void              * _metadata;
         struct iovec      * _iov;

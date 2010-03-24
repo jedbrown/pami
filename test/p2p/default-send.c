@@ -1,9 +1,9 @@
 ///
 /// \file test/p2p/default-send.c
-/// \brief Simple point-topoint XMI_send() test
+/// \brief Simple point-topoint PAMI_send() test
 ///
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include <stdio.h>
 
 #define TEST_REMOTE_CALLBACK
@@ -31,9 +31,9 @@ unsigned validate (void * addr, size_t bytes)
 }
 
 
-static void recv_done (xmi_context_t   context,
+static void recv_done (pami_context_t   context,
                        void          * cookie,
-                       xmi_result_t    result)
+                       pami_result_t    result)
 {
   volatile size_t * active = (volatile size_t *) cookie;
   fprintf (stderr, "Called recv_done function.  active(%p): %zu -> %zu, __recv_size = %zu\n", active, *active, *active-1, __recv_size);
@@ -48,13 +48,13 @@ static void recv_done (xmi_context_t   context,
 }
 
 static void test_dispatch (
-    xmi_context_t        context,      /**< IN: XMI context */
+    pami_context_t        context,      /**< IN: PAMI context */
     void               * cookie,       /**< IN: dispatch cookie */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
-    void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
-    size_t               pipe_size,    /**< IN: size of XMI pipe buffer */
-    xmi_recv_t         * recv)        /**< OUT: receive message structure */
+    void               * pipe_addr,    /**< IN: address of PAMI pipe buffer */
+    size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
+    pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
   fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zu, header_size = %zu, pipe_size = %zu\n", cookie, *active, header_size, pipe_size);
@@ -74,7 +74,7 @@ static void test_dispatch (
 
     recv->local_fn = recv_done;
     recv->cookie   = cookie;
-    recv->kind = XMI_AM_KIND_SIMPLE;
+    recv->kind = PAMI_AM_KIND_SIMPLE;
     recv->data.simple.addr  = __recv_buffer;
     recv->data.simple.bytes = pipe_size;
     //fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn);
@@ -83,18 +83,18 @@ static void test_dispatch (
   return;
 }
 
-static void send_done_local (xmi_context_t   context,
+static void send_done_local (pami_context_t   context,
                              void          * cookie,
-                             xmi_result_t    result)
+                             pami_result_t    result)
 {
   volatile size_t * active = (volatile size_t *) cookie;
   fprintf (stderr, "Called send_done_local function.  active(%p): %zu -> %zu\n", active, *active, *active-1);
   (*active)--;
 }
 
-static void send_done_remote (xmi_context_t   context,
+static void send_done_remote (pami_context_t   context,
                               void          * cookie,
-                              xmi_result_t    result)
+                              pami_result_t    result)
 {
   volatile size_t * active = (volatile size_t *) cookie;
   fprintf (stderr, "Called send_done_remote function.  active(%p): %zu -> %zu\n", active, *active, *active-1);
@@ -112,45 +112,45 @@ int main (int argc, char ** argv)
 
   __data_errors = 0;
 
-  xmi_client_t client;
-  xmi_context_t context[2];
-  //xmi_configuration_t * configuration = NULL;
+  pami_client_t client;
+  pami_context_t context[2];
+  //pami_configuration_t * configuration = NULL;
   char                  cl_string[] = "TEST";
-  xmi_result_t result = XMI_ERROR;
+  pami_result_t result = PAMI_ERROR;
 
-  result = XMI_Client_initialize (cl_string, &client);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Client_initialize (cl_string, &client);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
     return 1;
   }
 
 #ifdef TEST_CROSSTALK
-  result = XMI_Context_createv(client, NULL, 0, context, 2);
+  result = PAMI_Context_createv(client, NULL, 0, context, 2);
 #else
-  result = XMI_Context_createv(client, NULL, 0, context, 1);
+  result = PAMI_Context_createv(client, NULL, 0, context, 1);
 #endif
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
     return 1;
   }
 
-  xmi_configuration_t configuration;
+  pami_configuration_t configuration;
 
-  configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query(client, &configuration);
-  if (result != XMI_SUCCESS)
+  configuration.name = PAMI_TASK_ID;
+  result = PAMI_Configuration_query(client, &configuration);
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
     return 1;
   }
-  xmi_task_t task_id = configuration.value.intval;
+  pami_task_t task_id = configuration.value.intval;
   fprintf (stderr, "My task id = %d\n", task_id);
 
-  configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query(client, &configuration);
-  if (result != XMI_SUCCESS)
+  configuration.name = PAMI_NUM_TASKS;
+  result = PAMI_Configuration_query(client, &configuration);
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
     return 1;
@@ -164,23 +164,23 @@ int main (int argc, char ** argv)
   }
 
   size_t dispatch = 0;
-  xmi_dispatch_callback_fn fn;
+  pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
-  xmi_send_hint_t options={0};
+  pami_send_hint_t options={0};
   size_t i = 0;
 #ifdef TEST_CROSSTALK
   for (i=0; i<2; i++)
 #endif
   {
-    fprintf (stderr, "Before XMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
-    result = XMI_Dispatch_set (context[i],
+    fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
+    result = PAMI_Dispatch_set (context[i],
                                dispatch,
                                fn,
                                (void *)&recv_active,
                                options);
-    if (result != XMI_SUCCESS)
+    if (result != PAMI_SUCCESS)
     {
-      fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
+      fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
       return 1;
     }
   }
@@ -210,7 +210,7 @@ int main (int argc, char ** argv)
   data_bytes[psize++] = 512;
   data_bytes[psize++] = 1024;
 
-  xmi_send_t parameters;
+  pami_send_t parameters;
   parameters.send.dispatch        = dispatch;
   parameters.send.header.iov_base = header;
   parameters.send.data.iov_base   = data;
@@ -224,13 +224,13 @@ int main (int argc, char ** argv)
   if (task_id == 0)
   {
 #ifdef TEST_CROSSTALK
-    fprintf (stdout, "XMI_Send() functional test [crosstalk]\n");
+    fprintf (stdout, "PAMI_Send() functional test [crosstalk]\n");
     fprintf (stdout, "\n");
-    parameters.send.dest = XMI_Client_endpoint (client, 1, 1);
+    parameters.send.dest = PAMI_Client_endpoint (client, 1, 1);
 #else
-    fprintf (stdout, "XMI_Send() functional test [no crosstalk]\n");
+    fprintf (stdout, "PAMI_Send() functional test [no crosstalk]\n");
     fprintf (stdout, "\n");
-    parameters.send.dest = XMI_Client_endpoint (client, 1, 0);
+    parameters.send.dest = PAMI_Client_endpoint (client, 1, 0);
 #endif
 
     for (h=0; h<hsize; h++)
@@ -242,16 +242,16 @@ int main (int argc, char ** argv)
 
         fprintf (stderr, "################################### %zu %zu\n", header_bytes[h], data_bytes[p]);
         fprintf (stderr, "before send ...\n");
-        result = XMI_Send (context[0], &parameters);
+        result = PAMI_Send (context[0], &parameters);
         fprintf (stderr, "... after send.\n");
 
         fprintf (stderr, "before send-recv advance loop ... &send_active = %p, &recv_active = %p\n", &send_active, &recv_active);
         while (send_active || recv_active)
         {
-          result = XMI_Context_advance (context[0], 100);
-          if (result != XMI_SUCCESS)
+          result = PAMI_Context_advance (context[0], 100);
+          if (result != PAMI_SUCCESS)
           {
-            fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
+            fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
             return 1;
           }
         }
@@ -271,7 +271,7 @@ int main (int argc, char ** argv)
 #else
     size_t contextid = 0;
 #endif
-    parameters.send.dest = XMI_Client_endpoint (client, 0, 0);
+    parameters.send.dest = PAMI_Client_endpoint (client, 0, 0);
 
     for (h=0; h<hsize; h++)
     {
@@ -284,10 +284,10 @@ int main (int argc, char ** argv)
         fprintf (stderr, "before recv advance loop ... &recv_active = %p\n", &recv_active);
         while (recv_active != 0)
         {
-          result = XMI_Context_advance (context[contextid], 100);
-          if (result != XMI_SUCCESS)
+          result = PAMI_Context_advance (context[contextid], 100);
+          if (result != PAMI_SUCCESS)
           {
-            fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
+            fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
             return 1;
           }
           fprintf (stderr, "------ recv advance loop ... &recv_active = %p\n", &recv_active);
@@ -296,16 +296,16 @@ int main (int argc, char ** argv)
         fprintf (stderr, "... after recv advance loop\n");
 
         fprintf (stderr, "before send ...\n");
-        result = XMI_Send (context[contextid], &parameters);
+        result = PAMI_Send (context[contextid], &parameters);
         fprintf (stderr, "... after send.\n");
 
         fprintf (stderr, "before send advance loop ... &send_active = %p\n", &send_active);
         while (send_active)
         {
-          result = XMI_Context_advance (context[contextid], 100);
-          if (result != XMI_SUCCESS)
+          result = PAMI_Context_advance (context[contextid], 100);
+          if (result != PAMI_SUCCESS)
           {
-            fprintf (stderr, "Error. Unable to advance xmi context. result = %d\n", result);
+            fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
             return 1;
           }
           fprintf (stderr, "------ send advance loop ... &send_active = %p\n", &send_active);
@@ -321,25 +321,25 @@ int main (int argc, char ** argv)
 
 
 
-  result = XMI_Context_destroy (context[0]);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Context_destroy (context[0]);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
     return 1;
   }
 #ifdef TEST_CROSSTALK
-  result = XMI_Context_destroy (context[1]);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Context_destroy (context[1]);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
     return 1;
   }
 #endif
 
-  result = XMI_Client_finalize (client);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Client_finalize (client);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
     return 1;
   }
 

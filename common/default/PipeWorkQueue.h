@@ -33,9 +33,9 @@
 #define WAKEUP(vector)		\
 	// _wakeupManager().wakeup(vector)
 
-namespace XMI {
+namespace PAMI {
 
-class PipeWorkQueue : public Interface::PipeWorkQueue<XMI::PipeWorkQueue> {
+class PipeWorkQueue : public Interface::PipeWorkQueue<PAMI::PipeWorkQueue> {
 ///
 /// \brief Work queue implementation of a fixed-size shared memory buffer.
 ///
@@ -55,14 +55,14 @@ class PipeWorkQueue : public Interface::PipeWorkQueue<XMI::PipeWorkQueue> {
 		volatile void *consumerWord1;
 		volatile void *consumerWord2;
 	};
-	static const int PWQ_HDR_NQUADS	= ((sizeof(struct workqueue_hdr_t) + sizeof(xmi_quad_t) - 1) / sizeof(xmi_quad_t));
+	static const int PWQ_HDR_NQUADS	= ((sizeof(struct workqueue_hdr_t) + sizeof(pami_quad_t) - 1) / sizeof(pami_quad_t));
 	///
 	/// \brief Work queue structure in shared memory
 	///
 	typedef struct workqueue_t {
 		union {
 			struct workqueue_hdr_t _s;
-			xmi_quad_t _pad[PWQ_HDR_NQUADS];
+			pami_quad_t _pad[PWQ_HDR_NQUADS];
 		} _u;
 		volatile char buffer[0]; ///< Producer-consumer buffer
 	} workqueue_t __attribute__ ((__aligned__(16)));
@@ -75,7 +75,7 @@ class PipeWorkQueue : public Interface::PipeWorkQueue<XMI::PipeWorkQueue> {
 
 public:
 	PipeWorkQueue() :
-	Interface::PipeWorkQueue<XMI::PipeWorkQueue>(),
+	Interface::PipeWorkQueue<PAMI::PipeWorkQueue>(),
 	_mm(NULL),
 	_qsize(0),
 	_isize(0),
@@ -87,16 +87,16 @@ public:
 #ifdef USE_FLAT_BUFFER
 #warning USE_FLAT_BUFFER Requires MemoryManager.cc change to increase shmem pool, also BG_SHAREDMEMPOOLSIZE when run
         // shmem flat buffer... experimental
-        inline void configure_impl(XMI::Memory::MemoryManager *mm, size_t bufsize, size_t bufinit)
+        inline void configure_impl(PAMI::Memory::MemoryManager *mm, size_t bufsize, size_t bufinit)
         {
           _mm = mm;
           _qsize = bufsize;
           _isize = bufinit;
           size_t size = sizeof(workqueue_t) + _qsize;
           ALLOC_SHMEM(_sharedqueue, 16, size);
-          XMI_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
+          PAMI_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
           _buffer = &_sharedqueue->buffer[0];
-          XMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
+          PAMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
           _pmask = 0; // nil mask
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
@@ -114,15 +114,15 @@ public:
         /// \param[in] mm	System dependent methods
         /// \param[in] bufsize	Size of buffer to allocate
         ///
-        inline void configure_impl(XMI::Memory::MemoryManager *mm, size_t bufsize)
+        inline void configure_impl(PAMI::Memory::MemoryManager *mm, size_t bufsize)
         {
           _mm = mm;
           _qsize = bufsize;
           size_t size = sizeof(workqueue_t) + _qsize;
           ALLOC_SHMEM(_sharedqueue, 16, size);
-          XMI_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
+          PAMI_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
           _buffer = &_sharedqueue->buffer[0];
-          XMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
+          PAMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
           _pmask = _qsize - 1;
         }
 
@@ -139,13 +139,13 @@ public:
         /// \param[in] buffer	Buffer to use
         /// \param[in] bufsize	Size of buffer
         ///
-        inline void configure_impl(XMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize)
+        inline void configure_impl(PAMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize)
         {
           _mm = mm;
           _qsize = bufsize;
           _buffer = buffer;
           _sharedqueue = &this->__sq;
-          XMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
+          PAMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
           _pmask = _qsize - 1;
         }
 
@@ -163,7 +163,7 @@ public:
         /// \param[in] bufsize	Size of buffer
         /// \param[in] bufinit	Amount of data initially in buffer
         ///
-        inline void configure_impl(XMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize, size_t bufinit)
+        inline void configure_impl(PAMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize, size_t bufinit)
         {
           _mm = mm;
           _qsize = bufsize;
@@ -197,8 +197,8 @@ public:
 	/// \param[in] dgspcount      Number of repetitions of buffer units
 	/// \param[in] dgspinit       Number of units initially in buffer
 	///
-	inline void configure_impl(XMI::Memory::MemoryManager *mm, char *buffer, xmi_type_t *dgsp, size_t dgspcount, size_t dgspinit) {
-		XMI_abortf("DGSP PipeWorkQueue not yet supported");
+	inline void configure_impl(PAMI::Memory::MemoryManager *mm, char *buffer, pami_type_t *dgsp, size_t dgspcount, size_t dgspinit) {
+		PAMI_abortf("DGSP PipeWorkQueue not yet supported");
 	}
 
 	///
@@ -212,7 +212,7 @@ public:
 	/// \param[in] obj     Shared work queue object
 	///
 	PipeWorkQueue(PipeWorkQueue &obj) :
-	Interface::PipeWorkQueue<XMI::PipeWorkQueue>(),
+	Interface::PipeWorkQueue<PAMI::PipeWorkQueue>(),
 	_mm(obj._mm),
 	_qsize(obj._qsize),
 	_pmask(obj._pmask),
@@ -295,15 +295,15 @@ public:
 	/// \param[out] export        Opaque memory to export into
 	/// \return   success of the export operation
 	///
-	inline xmi_result_t exp_impl(xmi_pipeworkqueue_ext_t *exp) {
+	inline pami_result_t exp_impl(pami_pipeworkqueue_ext_t *exp) {
 		if (unlikely(_pmask)) {
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
 		export_t *e = (export_t *)exp;
 		//e->bufPaddr = vtop(_buffer);
 		//e->hdrPaddr = vtop(_sharedqueue);
 		e->pmask = _pmask;
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 
 	///
@@ -324,9 +324,9 @@ public:
 	/// \param[out] wq           Opaque memory for new PipeWorkQueue
 	/// \return   success of the import operation
 	///
-	inline xmi_result_t import_impl(xmi_pipeworkqueue_ext_t *import) {
+	inline pami_result_t import_impl(pami_pipeworkqueue_ext_t *import) {
 		// import is not supported for this class
-		return XMI_ERROR;
+		return PAMI_ERROR;
 	}
 
 	/// \brief register a wakeup for the consumer side of the PipeWorkQueue
@@ -601,12 +601,12 @@ public:
 	}
 
 	static inline void compile_time_assert () {
-		COMPILE_TIME_ASSERT(sizeof(export_t) <= sizeof(xmi_pipeworkqueue_ext_t));
-		COMPILE_TIME_ASSERT(sizeof(PipeWorkQueue) <= sizeof(xmi_pipeworkqueue_t));
+		COMPILE_TIME_ASSERT(sizeof(export_t) <= sizeof(pami_pipeworkqueue_ext_t));
+		COMPILE_TIME_ASSERT(sizeof(PipeWorkQueue) <= sizeof(pami_pipeworkqueue_t));
 	}
 
 private:
-	XMI::Memory::MemoryManager *_mm;
+	PAMI::Memory::MemoryManager *_mm;
 	unsigned _qsize;
 	unsigned _isize;
 	unsigned _pmask;
@@ -615,6 +615,6 @@ private:
 	workqueue_t __sq;
 }; // class PipeWorkQueue
 
-}; /* namespace XMI */
+}; /* namespace PAMI */
 
 #endif // __components_pipeworkqueue_default_pipeworkqueue_h__

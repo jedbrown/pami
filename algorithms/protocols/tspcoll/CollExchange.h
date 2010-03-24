@@ -53,9 +53,9 @@ namespace TSPColl
     static void   amsend_reg       (T_Mcast *mcast_iface, void *cd);
   protected:
 
-    CollExchange                   (XMI_GEOMETRY_CLASS *, NBTag,
+    CollExchange                   (PAMI_GEOMETRY_CLASS *, NBTag,
 				    int id, int off, bool strict=true,
-				    xmi_event_function cb_complete=NULL,
+				    pami_event_function cb_complete=NULL,
 				    void * arg = NULL);
     void          reset            (void);
 
@@ -68,7 +68,7 @@ namespace TSPColl
 
     void          send                     (int phase,T_Mcast*mcast_iface);
     //static inline CCMI::MultiSend::DCMF_OldRecvMulticast cb_incoming;
-    static inline xmi_quad_t *cb_incoming(const xmi_quad_t  * hdr,
+    static inline pami_quad_t *cb_incoming(const pami_quad_t  * hdr,
                                           unsigned          count,
                                           unsigned          peer,
                                           unsigned          sndlen,
@@ -77,16 +77,16 @@ namespace TSPColl
                                           unsigned        * rcvlen,
                                           char           ** rcvbuf,
                                           unsigned        * pipewidth,
-                                          XMI_Callback_t * cb_done);
+                                          PAMI_Callback_t * cb_done);
 
-    static void   cb_recvcomplete (xmi_context_t context, void * arg, xmi_result_t error);
-    static void   cb_senddone     (xmi_context_t, void*, xmi_result_t);
+    static void   cb_recvcomplete (pami_context_t context, void * arg, pami_result_t error);
+    static void   cb_senddone     (pami_context_t, void*, pami_result_t);
   protected:
     /* ------------------------------ */
     /* static: set by constructor     */
     /* ------------------------------ */
-    XMI_Request_t                       _req[MAX_PHASES];
-    XMI_Request_t                       _rreq[MAX_PHASES];
+    PAMI_Request_t                       _req[MAX_PHASES];
+    PAMI_Request_t                       _rreq[MAX_PHASES];
 
     T_Mcast                            *_mcast_iface;
 
@@ -168,9 +168,9 @@ inline void TSPColl::CollExchange<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface, v
 /* *********************************************************************** */
 template <class T_Mcast>
 inline TSPColl::CollExchange<T_Mcast>::
-CollExchange (XMI_GEOMETRY_CLASS * comm,
+CollExchange (PAMI_GEOMETRY_CLASS * comm,
                        NBTag tag, int id, int offset,
-                       bool strict, xmi_event_function cb_complete, void *arg):
+                       bool strict, pami_event_function cb_complete, void *arg):
 NBColl<T_Mcast> (comm, tag, id, cb_complete, arg), _strict(strict)
 {
   _counter         = 0;
@@ -306,7 +306,7 @@ inline void TSPColl::CollExchange<T_Mcast>::kick(T_Mcast *mcast_iface)
 	      _phase++;
 	      TRACE((stderr, "Delivering user done callback fcn=%p arg=%p\n",
 		     this->_cb_complete, this->_arg));
-	      this->_cb_complete (NULL, this->_arg, XMI_SUCCESS);
+	      this->_cb_complete (NULL, this->_arg, PAMI_SUCCESS);
 	  }
 
  the_end:
@@ -345,9 +345,9 @@ inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_ifac
 				  CollExchange::cb_senddone,
 				  &_cmplt[phase]);
 #endif
-  unsigned        hints   = XMI_PT_TO_PT_SUBTASK;
+  unsigned        hints   = PAMI_PT_TO_PT_SUBTASK;
   unsigned        ranks   = _dest[phase];
-  XMI_Callback_t cb_done;
+  PAMI_Callback_t cb_done;
   cb_done.function   = CollExchange::cb_senddone;
   cb_done.clientdata = &_cmplt[phase];
   void *r = NULL;
@@ -356,13 +356,13 @@ inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_ifac
 	 _header[phase].tag,
 	 _header[phase].id,
 	 &_header[phase],
-	 XMIQuad_sizeof(_header[phase])));
+	 PAMIQuad_sizeof(_header[phase])));
 
   mcast_iface->send (&_req[phase],
 		     &cb_done,
-		     XMI_MATCH_CONSISTENCY,
-		     (xmi_quad_t*)& _header[phase],
-		     XMIQuad_sizeof(_header[phase]),
+		     PAMI_MATCH_CONSISTENCY,
+		     (pami_quad_t*)& _header[phase],
+		     PAMIQuad_sizeof(_header[phase]),
 		     phase,
 		     (char*)_sbuf[phase],
 		     (unsigned)_sbufln[phase],
@@ -378,7 +378,7 @@ inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_ifac
 /*                             send complete                               */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (xmi_context_t context, void * arg, xmi_result_t err)
+inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (pami_context_t context, void * arg, pami_result_t err)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   MUTEX_LOCK(&base->_mutex);
@@ -399,7 +399,7 @@ inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (xmi_context_t context, 
 /* *********************************************************************** */
 template <class T_Mcast>
 inline void
-TSPColl::CollExchange<T_Mcast>::cb_recvcomplete (xmi_context_t context, void * arg, xmi_result_t error)
+TSPColl::CollExchange<T_Mcast>::cb_recvcomplete (pami_context_t context, void * arg, pami_result_t error)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   unsigned  phase = ((CompleteHelper *) arg)->phase;

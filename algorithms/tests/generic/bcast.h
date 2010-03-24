@@ -17,9 +17,9 @@
 #include "common.h"
 #include "barrier.h"
 
-XMI_CollectiveProtocol_t              bcast_reg;
+PAMI_CollectiveProtocol_t              bcast_reg;
 CCMI_Broadcast_Configuration_t         bcast_conf;
-XMI_CollectiveRequest_t               bcast_request;
+PAMI_CollectiveRequest_t               bcast_request;
 
 inline void bcast_advance (unsigned * srcbuf, unsigned src_count, unsigned root)
 {
@@ -55,7 +55,7 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
 
   CCMI_Result dcmfResult;
 
-  if((dcmfResult = (CCMI_Result) CCMI_Broadcast_register (&bcast_reg, &bcast_conf)) != XMI_SUCCESS)
+  if((dcmfResult = (CCMI_Result) CCMI_Broadcast_register (&bcast_reg, &bcast_conf)) != PAMI_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_Bcast_register failed %d\n",dcmfResult);
 
   if(!CCMI_Geometry_analyze(&geometry, &bcast_reg))

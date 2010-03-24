@@ -20,7 +20,7 @@
 #include <spi/bgp_SPI.h>
 #include <bpcore/bgp_atomic_ops.h>
 
-namespace XMI
+namespace PAMI
 {
   namespace Atomic
   {
@@ -29,47 +29,47 @@ namespace XMI
     ///
     /// \brief CRTP interface for bgp atomic objects.
     ///
-    class BgpAtomic : public XMI::Atomic::Interface::Counter <BgpAtomic>
+    class BgpAtomic : public PAMI::Atomic::Interface::Counter <BgpAtomic>
     {
       public:
         BgpAtomic () :
-            XMI::Atomic::Interface::Counter <BgpAtomic> ()
+            PAMI::Atomic::Interface::Counter <BgpAtomic> ()
         {};
 
         ~BgpAtomic () {};
 
-        /// \see XMI::Atomic::AtomicObject::init
-        void init_impl (XMI::Memory::MemoryManager *mm)
+        /// \see PAMI::Atomic::AtomicObject::init
+        void init_impl (PAMI::Memory::MemoryManager *mm)
         {
           //_atom = _BGP_ATOMIC_INIT(0);
           fetch_and_clear_impl ();
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch
+        /// \see PAMI::Atomic::AtomicObject::fetch
         inline size_t fetch_impl ()
         {
           return _bgp_fetch_and_add (&_atom, 0);
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch_and_inc
+        /// \see PAMI::Atomic::AtomicObject::fetch_and_inc
         inline size_t fetch_and_inc_impl ()
         {
           return _bgp_fetch_and_add (&_atom, 1);
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch_and_dec
+        /// \see PAMI::Atomic::AtomicObject::fetch_and_dec
         inline size_t fetch_and_dec_impl ()
         {
           return _bgp_fetch_and_add (&_atom, (uint32_t)-1);
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch_and_clear
+        /// \see PAMI::Atomic::AtomicObject::fetch_and_clear
         inline size_t fetch_and_clear_impl ()
         {
           return _bgp_fetch_and_and (&_atom, 0);
         };
 
-        /// \see XMI::Atomic::AtomicObject::compare_and_swap
+        /// \see PAMI::Atomic::AtomicObject::compare_and_swap
         inline bool compare_and_swap_impl (size_t compare, size_t swap)
         {
           size_t tmp = compare;
@@ -90,12 +90,12 @@ namespace XMI
 namespace Counter {
 namespace BGP {
 
-    class BgpProcCounter : public XMI::Atomic::Interface::Counter <BgpProcCounter>
+    class BgpProcCounter : public PAMI::Atomic::Interface::Counter <BgpProcCounter>
     {
       public:
 
         inline BgpProcCounter () :
-          XMI::Atomic::Interface::Counter <BgpProcCounter> (),
+          PAMI::Atomic::Interface::Counter <BgpProcCounter> (),
           _atomic (0)
         {};
 
@@ -109,12 +109,12 @@ namespace BGP {
 
 	inline size_t fetch_and_clear_impl() { return _bgp_fetch_and_and((_BGP_Atomic *)&_atomic, 0); }
 
-        inline void init_impl (XMI::Memory::MemoryManager *mm)
+        inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
           // Noop
         };
 
-        /// \see XMI::Atomic::Interface::Mutex::returnLock
+        /// \see PAMI::Atomic::Interface::Mutex::returnLock
         inline void * returnLock_impl ()
         {
           return (void *) & _atomic;
@@ -125,12 +125,12 @@ namespace BGP {
         volatile uint32_t _atomic __attribute__ ((aligned(8)));
     };
 
-    class BgpNodeCounter : public XMI::Atomic::Interface::Counter <BgpNodeCounter>
+    class BgpNodeCounter : public PAMI::Atomic::Interface::Counter <BgpNodeCounter>
     {
       public:
 
         inline BgpNodeCounter () :
-          XMI::Atomic::Interface::Counter <BgpNodeCounter> (),
+          PAMI::Atomic::Interface::Counter <BgpNodeCounter> (),
           _atomic (NULL)
         {};
 
@@ -144,14 +144,14 @@ namespace BGP {
 
 	inline size_t fetch_and_clear_impl() { return _bgp_fetch_and_and((_BGP_Atomic *)_atomic, 0); }
 
-        inline void init_impl (XMI::Memory::MemoryManager *mm)
+        inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
 	  _atomic = NULL;
           mm->memalign((void **)&_atomic, 8, sizeof(*_atomic));
-	  XMI_assertf(_atomic, "Failed to get shmem for BgpNodeCounter");
+	  PAMI_assertf(_atomic, "Failed to get shmem for BgpNodeCounter");
         };
 
-        /// \see XMI::Atomic::Interface::Mutex::returnLock
+        /// \see PAMI::Atomic::Interface::Mutex::returnLock
         inline void * returnLock_impl ()
         {
           return (void *) _atomic;
@@ -167,47 +167,47 @@ namespace BGP {
 namespace Mutex {
 namespace BGP {
 
-    class BgpProcMutex : public XMI::Atomic::Interface::Mutex <BgpProcMutex>
+    class BgpProcMutex : public PAMI::Atomic::Interface::Mutex <BgpProcMutex>
     {
       public:
 
         inline BgpProcMutex () :
-          XMI::Atomic::Interface::Mutex <BgpProcMutex> (),
+          PAMI::Atomic::Interface::Mutex <BgpProcMutex> (),
           _atomic (0)
         {};
 
         ~BgpProcMutex () {};
 
-        /// \see XMI::Atomic::Interface::Mutex::acquire
+        /// \see PAMI::Atomic::Interface::Mutex::acquire
         inline void acquire_impl ()
         {
           while (!_bgp_test_and_set((_BGP_Atomic *)&_atomic, 1));
         };
 
-        /// \see XMI::Atomic::Interface::Mutex::release
+        /// \see PAMI::Atomic::Interface::Mutex::release
         inline void release_impl ()
         {
           _atomic = 0;
         };
 
-        /// \see XMI::Atomic::Interface::Mutex::tryAcquire
+        /// \see PAMI::Atomic::Interface::Mutex::tryAcquire
         inline bool tryAcquire_impl ()
         {
           return (_bgp_test_and_set((_BGP_Atomic *)&_atomic, 1) != 0);
         };
 
-        /// \see XMI::Atomic::Interface::Mutex::isLocked
+        /// \see PAMI::Atomic::Interface::Mutex::isLocked
         inline bool isLocked_impl ()
         {
           return (_atomic != 0);
         };
 
-        /// \see XMI::Atomic::Interface::Mutex::init
-        inline void init_impl (XMI::Memory::MemoryManager *mm)
+        /// \see PAMI::Atomic::Interface::Mutex::init
+        inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
         };
 
-        /// \see XMI::Atomic::Interface::Mutex::returnLock
+        /// \see PAMI::Atomic::Interface::Mutex::returnLock
         inline void * returnLock_impl ()
         {
           return (void *) & _atomic;
@@ -218,50 +218,50 @@ namespace BGP {
         volatile uint32_t _atomic __attribute__ ((aligned(8)));
     };
 
-    class BgpNodeMutex : public XMI::Atomic::Interface::Mutex <BgpNodeMutex>
+    class BgpNodeMutex : public PAMI::Atomic::Interface::Mutex <BgpNodeMutex>
     {
       public:
 
         inline BgpNodeMutex () :
-          XMI::Atomic::Interface::Mutex <BgpNodeMutex> (),
+          PAMI::Atomic::Interface::Mutex <BgpNodeMutex> (),
           _atomic (NULL)
         {};
 
         ~BgpNodeMutex () {};
 
-        /// \see XMI::Atomic::Interface::Mutex::acquire
+        /// \see PAMI::Atomic::Interface::Mutex::acquire
         inline void acquire_impl ()
         {
           while (!_bgp_test_and_set((_BGP_Atomic *)_atomic, 1));
         };
 
-        /// \see XMI::Atomic::Interface::Mutex::release
+        /// \see PAMI::Atomic::Interface::Mutex::release
         inline void release_impl ()
         {
           *_atomic = 0;
         };
 
-        /// \see XMI::Atomic::Interface::Mutex::tryAcquire
+        /// \see PAMI::Atomic::Interface::Mutex::tryAcquire
         inline bool tryAcquire_impl ()
         {
           return (_bgp_test_and_set((_BGP_Atomic *)_atomic, 1) != 0);
         };
 
-        /// \see XMI::Atomic::Interface::Mutex::isLocked
+        /// \see PAMI::Atomic::Interface::Mutex::isLocked
         inline bool isLocked_impl ()
         {
           return (*_atomic != 0);
         };
 
-        /// \see XMI::Atomic::Interface::Mutex::init
-        inline void init_impl (XMI::Memory::MemoryManager *mm)
+        /// \see PAMI::Atomic::Interface::Mutex::init
+        inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
 	  _atomic = NULL;
           mm->memalign((void **)&_atomic, 8, sizeof(*_atomic));
-	  XMI_assertf(_atomic, "Failed to get shmem for BgpNodeMutex");
+	  PAMI_assertf(_atomic, "Failed to get shmem for BgpNodeMutex");
         };
 
-        /// \see XMI::Atomic::Interface::Mutex::returnLock
+        /// \see PAMI::Atomic::Interface::Mutex::returnLock
         inline void * returnLock_impl ()
         {
           return (void *) _atomic;
@@ -273,7 +273,7 @@ namespace BGP {
     };
 }; // namespace BGP
 }; // namespace Mutex
-}; // namespace XMI
+}; // namespace PAMI
 
 
-#endif // __xmi_atomic_bgp_bgpatomic_h__
+#endif // __pami_atomic_bgp_bgpatomic_h__

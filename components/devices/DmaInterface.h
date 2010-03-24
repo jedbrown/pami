@@ -16,9 +16,9 @@
 
 #include <errno.h>
 #include "Memregion.h"
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -75,7 +75,7 @@ namespace XMI
           ///               callback is invoked
           ///
           inline bool postDmaPut (uint8_t              (&state)[T_StateBytes],
-                                  xmi_event_function   local_fn,
+                                  pami_event_function   local_fn,
                                   void               * cookie,
                                   size_t               target_task,
                                   Memregion          * local_memregion,
@@ -116,7 +116,7 @@ namespace XMI
           ///               callback is invoked
           ///
           inline bool postDmaGet (uint8_t              (&state)[T_StateBytes],
-                                  xmi_event_function   local_fn,
+                                  pami_event_function   local_fn,
                                   void               * cookie,
                                   size_t               target_rank,
                                   Memregion          * local_memregion,
@@ -129,7 +129,7 @@ namespace XMI
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       inline bool DmaModel<T_Model, T_Device, T_StateBytes>::postDmaPut (
           uint8_t              (&state)[T_StateBytes],
-          xmi_event_function   local_fn,
+          pami_event_function   local_fn,
           void               * cookie,
           size_t               target_task,
           Memregion          * local_memregion,
@@ -153,7 +153,7 @@ namespace XMI
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       inline bool DmaModel<T_Model, T_Device, T_StateBytes>::postDmaGet (
           uint8_t              (&state)[T_StateBytes],
-          xmi_event_function   local_fn,
+          pami_event_function   local_fn,
           void               * cookie,
           size_t               target_task,
           Memregion          * local_memregion,

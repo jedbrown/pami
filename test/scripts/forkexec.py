@@ -14,12 +14,12 @@ testname = tmprev[len(tmprev)-1]
 for i in xrange(2):
     rc = os.fork()
     if (rc > 0):
-        os.environ['XMI_SOCK_TASK'] = str(i)
-        os.environ['XMI_SOCK_SIZE'] = str(2)
-#        os.environ['XMI_UDP_CONFIG'] = '/gsa/rchgsa/home/j/e/jecarey/play/test.cfg'
-        os.environ['XMI_UDP_CONFIG'] = config
+        os.environ['PAMI_SOCK_TASK'] = str(i)
+        os.environ['PAMI_SOCK_SIZE'] = str(2)
+#        os.environ['PAMI_UDP_CONFIG'] = '/gsa/rchgsa/home/j/e/jecarey/play/test.cfg'
+        os.environ['PAMI_UDP_CONFIG'] = config
 #        os.execlp('/gsa/rchgsa/projects/o/opencl/jec/play/fe.py')
-#        os.execlp('/gsa/rchgsa/home/j/e/jecarey/xmi/mbuild/xmi/test/p2p/send_latency.elf','send_latency')
+#        os.execlp('/gsa/rchgsa/home/j/e/jecarey/pami/mbuild/pami/test/p2p/send_latency.elf','send_latency')
         os.execlp(test,testname)
     elif (rc == 0):
         print "Started rank " + str(i)

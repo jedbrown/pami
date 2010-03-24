@@ -14,12 +14,12 @@
 #ifndef __components_devices_mpi_oldmpim2mmodel_h__
 #define __components_devices_mpi_oldmpim2mmodel_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "components/devices/OldM2MModel.h"
 #include "components/devices/mpi/mpimessage.h"
 #include <mpi.h>
 #include "util/common.h"
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -35,13 +35,13 @@ namespace XMI
           TRACE_ADAPTOR((stderr,"<%p>MPIOldm2mModel() %d\n",this, _dispatch_id));
         };
 
-      inline void setCallback (xmi_olddispatch_manytomany_fn cb_recv, void *arg)
+      inline void setCallback (pami_olddispatch_manytomany_fn cb_recv, void *arg)
         {
           _device.registerM2MRecvFunction (_dispatch_id, cb_recv, arg);
         }
 
-      inline void  send_impl  (XMI_Request_t         * request,
-                               const xmi_callback_t  * cb_done,
+      inline void  send_impl  (PAMI_Request_t         * request,
+                               const pami_callback_t  * cb_done,
                                unsigned                connid,
                                unsigned                rcvindex,
                                const char            * buf,
@@ -55,7 +55,7 @@ namespace XMI
 
           unsigned i;
           MPIM2MMessage * m2m = (MPIM2MMessage *)malloc(sizeof(MPIM2MMessage));
-          XMI_assert( m2m != NULL );
+          PAMI_assert( m2m != NULL );
 
           m2m->_context     = NULL;
           m2m->_dispatch_id = _dispatch_id;
@@ -83,22 +83,22 @@ namespace XMI
           if( m2m->_num == 0 )
           {
             if( m2m->_done_fn )
-              m2m->_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
+              m2m->_done_fn(NULL, m2m->_cookie,PAMI_SUCCESS);
             free ( m2m );
             return ;
           }
 
           m2m->_reqs = (MPI_Request *)malloc( m2m->_num * sizeof(MPI_Request));
-          XMI_assert ( m2m->_reqs != NULL );
+          PAMI_assert ( m2m->_reqs != NULL );
           m2m->_bufs = ( char *)malloc( m2m->_totalsize );
-          XMI_assert ( m2m->_bufs != NULL );
+          PAMI_assert ( m2m->_bufs != NULL );
 
           MPIM2MHeader   * hdr = (MPIM2MHeader *) m2m->_bufs;
           MPI_Request    * req = m2m->_reqs;
           for( i = 0; i < nranks; i++)
           {
             int index = permutation[i];
-            XMI_assert ( (unsigned)index < nranks );
+            PAMI_assert ( (unsigned)index < nranks );
             if( sizes[index] == 0 ) continue;
             hdr->_dispatch_id = _dispatch_id;
             hdr->_size        = sizes[index];
@@ -114,7 +114,7 @@ namespace XMI
                             3,
                             _device._communicator,
                             req);
-            XMI_assert (rc == MPI_SUCCESS);
+            PAMI_assert (rc == MPI_SUCCESS);
             hdr = (MPIM2MHeader *)((char *)hdr + hdr->totalsize());
             req++;
           }
@@ -122,8 +122,8 @@ namespace XMI
           return;
         }
 
-      inline void postRecv_impl (XMI_Request_t          * request,
-                                 const xmi_callback_t   * cb_done,
+      inline void postRecv_impl (PAMI_Request_t          * request,
+                                 const pami_callback_t   * cb_done,
                                  unsigned                 connid,
                                  char                   * buf,
                                  T_Counter              * sizes,
@@ -147,7 +147,7 @@ namespace XMI
           if( msg->_num == 0 )
           {
             if( msg->_done_fn )
-              (*msg->_done_fn)(NULL, msg->_cookie,XMI_SUCCESS);
+              (*msg->_done_fn)(NULL, msg->_cookie,PAMI_SUCCESS);
             free(msg);
           }
           msg->_buf     = buf;
@@ -161,7 +161,7 @@ namespace XMI
         }
       T_Device                     &_device;
       size_t                        _dispatch_id;
-      xmi_olddispatch_manytomany_fn _cb_async_head;
+      pami_olddispatch_manytomany_fn _cb_async_head;
       void                         *_async_arg;
 
     };

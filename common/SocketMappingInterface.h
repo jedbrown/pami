@@ -13,9 +13,9 @@
 #ifndef __common_SocketMappingInterface_h__
 #define __common_SocketMappingInterface_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Interface
   {
@@ -44,7 +44,7 @@ namespace XMI
           /// \param[out] recv_fd Socket recv file descriptor
           /// \param[out] send_fd Socket send file descriptor
           ///
-          inline xmi_result_t task2socket (size_t task, size_t & recv_fd, size_t & send_fd) const;
+          inline pami_result_t task2socket (size_t task, size_t & recv_fd, size_t & send_fd) const;
 
           ///
           /// \brief Get the task associated with a specific socket address
@@ -53,7 +53,7 @@ namespace XMI
           /// \param[in]  send_fd Socket send file descriptor
           /// \param[out] task    Global task identifier
           ///
-          inline xmi_result_t socket2task (size_t recv_fd, size_t send_fd, size_t & task) const;
+          inline pami_result_t socket2task (size_t recv_fd, size_t send_fd, size_t & task) const;
 
       }; // class Socket
 
@@ -64,17 +64,17 @@ namespace XMI
       }
 
       template <class T_Mapping>
-      inline xmi_result_t Socket<T_Mapping>::task2socket (size_t task, size_t & recv_fd, size_t & send_fd) const
+      inline pami_result_t Socket<T_Mapping>::task2socket (size_t task, size_t & recv_fd, size_t & send_fd) const
       {
         return static_cast<T_Mapping*>(this)->task2socket_impl (task, recv_fd, send_fd);
       }
 
       template <class T_Mapping>
-      inline xmi_result_t Socket<T_Mapping>::socket2task (size_t recv_fd, size_t send_fd, size_t & task) const
+      inline pami_result_t Socket<T_Mapping>::socket2task (size_t recv_fd, size_t send_fd, size_t & task) const
       {
         return static_cast<T_Mapping*>(this)->socket2task_impl (recv_fd, send_fd, task);
       }
     };	// namespace Mapping
   };	// namespace Interface
-};	// namespace XMI
+};	// namespace PAMI
 #endif // __components_mapping_socketmapping_h__

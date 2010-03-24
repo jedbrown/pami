@@ -27,7 +27,7 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Protocol
   {
@@ -39,11 +39,11 @@ namespace XMI
       /// \tparam T_Model   Template packet model class
       /// \tparam T_Device  Template packet device class
       ///
-      /// \see XMI::Device::Interface::PacketModel
-      /// \see XMI::Device::Interface::PacketDevice
+      /// \see PAMI::Device::Interface::PacketModel
+      /// \see PAMI::Device::Interface::PacketDevice
       ///
       template < class T_Model, class T_Device, bool T_LongHeader = true, class T_Connection = ConnectionArray<T_Device> >
-      class Eager : public XMI::Protocol::Send::Send,
+      class Eager : public PAMI::Protocol::Send::Send,
           public EagerImmediate<T_Model, T_Device>,
           public EagerSimple<T_Model, T_Device, T_LongHeader, T_Connection>
       {
@@ -51,18 +51,18 @@ namespace XMI
 
           template <class T_Allocator>
           static Eager * generate (size_t                     dispatch,
-                                   xmi_dispatch_callback_fn   dispatch_fn,
+                                   pami_dispatch_callback_fn   dispatch_fn,
                                    void                     * cookie,
                                    T_Device                 & device,
                                    T_Allocator              & allocator,
-                                   xmi_result_t             & result)
+                                   pami_result_t             & result)
           {
             TRACE_ERR((stderr, ">> Eager::generate()\n"));
             COMPILE_TIME_ASSERT(sizeof(Eager) <= T_Allocator::objsize);
 
             Eager * eager = (Eager *) allocator.allocateObject ();
             new ((void *)eager) Eager (dispatch, dispatch_fn, cookie, device, result);
-            if (result != XMI_SUCCESS)
+            if (result != PAMI_SUCCESS)
             {
               allocator.returnObject (eager);
               eager = NULL;
@@ -89,11 +89,11 @@ namespace XMI
           /// \param[out] status      Constructor status
           ///
           inline Eager (size_t                     dispatch,
-                        xmi_dispatch_callback_fn   dispatch_fn,
+                        pami_dispatch_callback_fn   dispatch_fn,
                         void                     * cookie,
                         T_Device                 & device,
-                        xmi_result_t             & status) :
-              XMI::Protocol::Send::Send (),
+                        pami_result_t             & status) :
+              PAMI::Protocol::Send::Send (),
               EagerImmediate<T_Model, T_Device> (dispatch,
                                                  dispatch_fn,
                                                  cookie,
@@ -113,18 +113,18 @@ namespace XMI
           /// \note This is required to make "C" programs link successfully with virtual destructors
           inline void operator delete(void * p)
           {
-            XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
+            PAMI_abortf("%s<%d>\n",__FILE__,__LINE__);
           }
 
           ///
           /// \brief Start a new immediate send operation.
           ///
-          /// \see XMI::Protocol::Send::immediate
+          /// \see PAMI::Protocol::Send::immediate
           ///
-          virtual xmi_result_t immediate (xmi_send_immediate_t * parameters)
+          virtual pami_result_t immediate (pami_send_immediate_t * parameters)
           {
             TRACE_ERR((stderr, ">> Eager::immediate()\n"));
-            xmi_result_t result = this->immediate_impl (parameters);
+            pami_result_t result = this->immediate_impl (parameters);
             TRACE_ERR((stderr, "<< Eager::immediate()\n"));
             return result;
           };
@@ -132,21 +132,21 @@ namespace XMI
           ///
           /// \brief Start a new simple send operation.
           ///
-          /// \see XMI::Protocol::Send::simple
+          /// \see PAMI::Protocol::Send::simple
           ///
-          virtual xmi_result_t simple (xmi_send_t * parameters)
+          virtual pami_result_t simple (pami_send_t * parameters)
           {
             TRACE_ERR((stderr, ">> Eager::simple()\n"));
-            xmi_result_t result = this->simple_impl (parameters);
+            pami_result_t result = this->simple_impl (parameters);
             TRACE_ERR((stderr, "<< Eager::simple()\n"));
             return result;
           };
-      };  // XMI::Protocol::Send::Eager class
-    };    // XMI::Protocol::Send namespace
-  };      // XMI::Protocol namespace
-};        // XMI namespace
+      };  // PAMI::Protocol::Send::Eager class
+    };    // PAMI::Protocol::Send namespace
+  };      // PAMI::Protocol namespace
+};        // PAMI namespace
 #undef TRACE_ERR
-#endif // __xmi_p2p_protocol_send_eager_eager_h__
+#endif // __pami_p2p_protocol_send_eager_eager_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

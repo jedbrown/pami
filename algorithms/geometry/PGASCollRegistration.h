@@ -20,9 +20,9 @@
 #include "algorithms/geometry/PGASWrapper.h"
 #include "SysDep.h"
 
-namespace XMI
+namespace PAMI
 {
-  extern std::map<unsigned, xmi_geometry_t> geometry_map;
+  extern std::map<unsigned, pami_geometry_t> geometry_map;
   namespace CollRegistration
   {
 
@@ -41,7 +41,7 @@ namespace XMI
               class T_Device,
               class T_NBCollMgr>
     class PGASRegistration :
-      public CollRegistration<XMI::CollRegistration::PGASRegistration<T_Geometry,
+      public CollRegistration<PAMI::CollRegistration::PGASRegistration<T_Geometry,
                                                                       T_Mcast,
                                                                       T_Device,
                                                                       T_NBCollMgr>,
@@ -77,11 +77,11 @@ namespace XMI
         }Factories;
 
       public:
-      inline PGASRegistration(xmi_client_t       client,
-                              xmi_context_t      context,
+      inline PGASRegistration(pami_client_t       client,
+                              pami_context_t      context,
                               size_t             context_id,
                               T_Device          &dev):
-        CollRegistration<XMI::CollRegistration::PGASRegistration<T_Geometry,
+        CollRegistration<PAMI::CollRegistration::PGASRegistration<T_Geometry,
                                                                  T_Mcast,
                                                                  T_Device,
                                                                  T_NBCollMgr>,
@@ -114,7 +114,7 @@ namespace XMI
             _mgr.multisend_reg(TSPColl::BarrierTag, &_barrier);
           }
 
-      inline xmi_result_t analyze_impl(size_t context_id,T_Geometry *geometry)
+      inline pami_result_t analyze_impl(size_t context_id,T_Geometry *geometry)
         {
 
           _nb_barrier    = (TSPColl::Barrier<T_Mcast>*)_mgr.allocate (geometry, TSPColl::BarrierTag);
@@ -145,48 +145,48 @@ namespace XMI
           new(_broadcast_reg)      BroadcastFactory(&_dev, &_bcast, _nb_bcast);
 
 
-          geometry->addCollective(XMI_XFER_BARRIER,
+          geometry->addCollective(PAMI_XFER_BARRIER,
                                   (CCMI::Adaptor::CollectiveProtocolFactory*)_barrier_reg,
                                   _context_id);
-          geometry->addCollective(XMI_XFER_ALLGATHER,
+          geometry->addCollective(PAMI_XFER_ALLGATHER,
                                   (CCMI::Adaptor::CollectiveProtocolFactory*)_allgather_reg,
                                   _context_id);
 
-          geometry->addCollective(XMI_XFER_ALLGATHERV,
+          geometry->addCollective(PAMI_XFER_ALLGATHERV,
                                   (CCMI::Adaptor::CollectiveProtocolFactory*)_allgatherv_reg,
                                   _context_id);
 
-          geometry->addCollective(XMI_XFER_SCATTER,
+          geometry->addCollective(PAMI_XFER_SCATTER,
                                   (CCMI::Adaptor::CollectiveProtocolFactory*)_scatter_reg,
                                   _context_id);
 
-          geometry->addCollective(XMI_XFER_SCATTERV,
+          geometry->addCollective(PAMI_XFER_SCATTERV,
                                   (CCMI::Adaptor::CollectiveProtocolFactory*)_scatterv_reg,
                                   _context_id);
 
-          geometry->addCollective(XMI_XFER_ALLREDUCE,
+          geometry->addCollective(PAMI_XFER_ALLREDUCE,
                                   (CCMI::Adaptor::CollectiveProtocolFactory*)_allreduce_reg,
                                   _context_id);
 
-          geometry->addCollectiveCheck(XMI_XFER_ALLREDUCE,
+          geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
                                        (CCMI::Adaptor::CollectiveProtocolFactory*)_shortallreduce_reg,
                                        _context_id);
 
-          geometry->addCollective(XMI_XFER_BROADCAST,
+          geometry->addCollective(PAMI_XFER_BROADCAST,
                                   (CCMI::Adaptor::CollectiveProtocolFactory*)_broadcast_reg,
                                   _context_id);
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
-      static xmi_geometry_t mapidtogeometry (int comm)
+      static pami_geometry_t mapidtogeometry (int comm)
         {
-          xmi_geometry_t g = geometry_map[comm];
+          pami_geometry_t g = geometry_map[comm];
           return g;
         }
 
     public:
-      xmi_client_t               _client;
-      xmi_context_t              _context;
+      pami_client_t               _client;
+      pami_context_t              _context;
       size_t                     _context_id;
       T_NBCollMgr                _mgr;
 
@@ -205,7 +205,7 @@ namespace XMI
 
 
 
-      XMI::MemoryAllocator<sizeof(Factories),16> _allocator;
+      PAMI::MemoryAllocator<sizeof(Factories),16> _allocator;
 
 
       TSPColl::Barrier<T_Mcast>          *_nb_barrier;

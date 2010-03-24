@@ -59,11 +59,11 @@ namespace CCMI
        * \param cb_done: completion callback
        */
       virtual void   notifyRecv     (unsigned             src,
-				     const xmi_quad_t   & info,
-				     XMI::PipeWorkQueue ** pwq,
-				     xmi_callback_t      * cb_done) = 0;
+				     const pami_quad_t   & info,
+				     PAMI::PipeWorkQueue ** pwq,
+				     pami_callback_t      * cb_done) = 0;
 
-      void setDoneCallback (xmi_event_function cb_done, void *cd)
+      void setDoneCallback (pami_event_function cb_done, void *cd)
       {
         _cb_done    =   cb_done;
         _clientdata =   cd;
@@ -74,7 +74,7 @@ namespace CCMI
       ///
       ///  \brief Callback to call when the barrier has finished
       ///
-      xmi_event_function    _cb_done;
+      pami_event_function    _cb_done;
       void                * _clientdata;
 
     };  //--  Executor class

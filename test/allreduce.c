@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <assert.h>
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 
 #define FULL_TEST
@@ -27,20 +27,20 @@
 #define NITERBW    10
 #define CUTOFF     65536
 
-xmi_op op_array[] =
+pami_op op_array[] =
   {
-    XMI_MAX,
-    XMI_MIN,
-    XMI_SUM,
-    XMI_PROD,
-    XMI_LAND,
-    XMI_LOR,
-    XMI_LXOR,
-    XMI_BAND,
-    XMI_BOR,
-    XMI_BXOR,
-    XMI_MAXLOC,
-    XMI_MINLOC,
+    PAMI_MAX,
+    PAMI_MIN,
+    PAMI_SUM,
+    PAMI_PROD,
+    PAMI_LAND,
+    PAMI_LOR,
+    PAMI_LXOR,
+    PAMI_BAND,
+    PAMI_BOR,
+    PAMI_BXOR,
+    PAMI_MAXLOC,
+    PAMI_MINLOC,
   };
 enum opNum
   {
@@ -60,28 +60,28 @@ enum opNum
   };
 int op_count = OP_COUNT;
 
-xmi_dt dt_array[] =
+pami_dt dt_array[] =
   {
-    XMI_SIGNED_CHAR,
-    XMI_UNSIGNED_CHAR,
-    XMI_SIGNED_SHORT,
-    XMI_UNSIGNED_SHORT,
-    XMI_SIGNED_INT,
-    XMI_UNSIGNED_INT,
-    XMI_SIGNED_LONG_LONG,
-    XMI_UNSIGNED_LONG_LONG,
-    XMI_FLOAT,
-    XMI_DOUBLE,
-    XMI_LONG_DOUBLE,
-    XMI_LOGICAL,
-    XMI_SINGLE_COMPLEX,
-    XMI_DOUBLE_COMPLEX,
-    XMI_LOC_2INT,
-    XMI_LOC_SHORT_INT,
-    XMI_LOC_FLOAT_INT,
-    XMI_LOC_DOUBLE_INT,
-    XMI_LOC_2FLOAT,
-    XMI_LOC_2DOUBLE,
+    PAMI_SIGNED_CHAR,
+    PAMI_UNSIGNED_CHAR,
+    PAMI_SIGNED_SHORT,
+    PAMI_UNSIGNED_SHORT,
+    PAMI_SIGNED_INT,
+    PAMI_UNSIGNED_INT,
+    PAMI_SIGNED_LONG_LONG,
+    PAMI_UNSIGNED_LONG_LONG,
+    PAMI_FLOAT,
+    PAMI_DOUBLE,
+    PAMI_LONG_DOUBLE,
+    PAMI_LOGICAL,
+    PAMI_SINGLE_COMPLEX,
+    PAMI_DOUBLE_COMPLEX,
+    PAMI_LOC_2INT,
+    PAMI_LOC_SHORT_INT,
+    PAMI_LOC_FLOAT_INT,
+    PAMI_LOC_DOUBLE_INT,
+    PAMI_LOC_2FLOAT,
+    PAMI_LOC_2DOUBLE,
   };
 
 enum dtNum
@@ -113,73 +113,73 @@ int dt_count = DT_COUNT;
 
 const char * op_array_str[] =
   {
-    "XMI_MAX",
-    "XMI_MIN",
-    "XMI_SUM",
-    "XMI_PROD",
-    "XMI_LAND",
-    "XMI_LOR",
-    "XMI_LXOR",
-    "XMI_BAND",
-    "XMI_BOR",
-    "XMI_BXOR",
-    "XMI_MAXLOC",
-    "XMI_MINLOC"
+    "PAMI_MAX",
+    "PAMI_MIN",
+    "PAMI_SUM",
+    "PAMI_PROD",
+    "PAMI_LAND",
+    "PAMI_LOR",
+    "PAMI_LXOR",
+    "PAMI_BAND",
+    "PAMI_BOR",
+    "PAMI_BXOR",
+    "PAMI_MAXLOC",
+    "PAMI_MINLOC"
   };
 
 
 const char * dt_array_str[] =
   {
-    "XMI_SIGNED_CHAR",
-    "XMI_UNSIGNED_CHAR",
-    "XMI_SIGNED_SHORT",
-    "XMI_UNSIGNED_SHORT",
-    "XMI_SIGNED_INT",
-    "XMI_UNSIGNED_INT",
-    "XMI_SIGNED_LONG_LONG",
-    "XMI_UNSIGNED_LONG_LONG",
-    "XMI_FLOAT",
-    "XMI_DOUBLE",
-    "XMI_LONG_DOUBLE",
-    "XMI_LOGICAL",
-    "XMI_SINGLE_COMPLEX",
-    "XMI_DOUBLE_COMPLEX",
-    "XMI_LOC_2INT",
-    "XMI_LOC_SHORT_INT",
-    "XMI_LOC_FLOAT_INT",
-    "XMI_LOC_DOUBLE_INT",
-    "XMI_LOC_2FLOAT",
-    "XMI_LOC_2DOUBLE"
+    "PAMI_SIGNED_CHAR",
+    "PAMI_UNSIGNED_CHAR",
+    "PAMI_SIGNED_SHORT",
+    "PAMI_UNSIGNED_SHORT",
+    "PAMI_SIGNED_INT",
+    "PAMI_UNSIGNED_INT",
+    "PAMI_SIGNED_LONG_LONG",
+    "PAMI_UNSIGNED_LONG_LONG",
+    "PAMI_FLOAT",
+    "PAMI_DOUBLE",
+    "PAMI_LONG_DOUBLE",
+    "PAMI_LOGICAL",
+    "PAMI_SINGLE_COMPLEX",
+    "PAMI_DOUBLE_COMPLEX",
+    "PAMI_LOC_2INT",
+    "PAMI_LOC_SHORT_INT",
+    "PAMI_LOC_FLOAT_INT",
+    "PAMI_LOC_DOUBLE_INT",
+    "PAMI_LOC_2FLOAT",
+    "PAMI_LOC_2DOUBLE"
   };
 
 unsigned elemsize_array[] =
   {
-    2, // XMI_SIGNED_CHAR,
-    2, // XMI_UNSIGNED_CHAR,
-    2, // XMI_SIGNED_SHORT,
-    2, // XMI_UNSIGNED_SHORT,
-    4, // XMI_SIGNED_INT,
-    4, // XMI_UNSIGNED_INT,
-    8, // XMI_SIGNED_LONG_LONG,
-    8, // XMI_UNSIGNED_LONG_LONG,
-    4, // XMI_FLOAT,
-    8, // XMI_DOUBLE,
-    8, // XMI_LONG_DOUBLE,
-    4, // XMI_LOGICAL,
-    8, // XMI_SINGLE_COMPLEX,
-    1, // XMI_DOUBLE_COMPLEX
-    8, // XMI_LOC_2INT,
-    6, // XMI_LOC_SHORT_INT,
-    8, // XMI_LOC_FLOAT_INT,
-    12, // XMI_LOC_DOUBLE_INT,
-    8,  // XMI_LOC_2FLOAT,
-    16, // XMI_LOC_2DOUBLE,
+    2, // PAMI_SIGNED_CHAR,
+    2, // PAMI_UNSIGNED_CHAR,
+    2, // PAMI_SIGNED_SHORT,
+    2, // PAMI_UNSIGNED_SHORT,
+    4, // PAMI_SIGNED_INT,
+    4, // PAMI_UNSIGNED_INT,
+    8, // PAMI_SIGNED_LONG_LONG,
+    8, // PAMI_UNSIGNED_LONG_LONG,
+    4, // PAMI_FLOAT,
+    8, // PAMI_DOUBLE,
+    8, // PAMI_LONG_DOUBLE,
+    4, // PAMI_LOGICAL,
+    8, // PAMI_SINGLE_COMPLEX,
+    1, // PAMI_DOUBLE_COMPLEX
+    8, // PAMI_LOC_2INT,
+    6, // PAMI_LOC_SHORT_INT,
+    8, // PAMI_LOC_FLOAT_INT,
+    12, // PAMI_LOC_DOUBLE_INT,
+    8,  // PAMI_LOC_2FLOAT,
+    16, // PAMI_LOC_2DOUBLE,
   };
 
 volatile unsigned       _g_barrier_active;
 volatile unsigned       _g_allreduce_active;
 
-void cb_barrier (void *ctxt, void * clientdata, xmi_result_t err)
+void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;
@@ -194,39 +194,39 @@ static double timer()
 }
 
 
-void cb_allreduce (void *ctxt, void * clientdata, xmi_result_t err)
+void cb_allreduce (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;
 }
 
-void _barrier (xmi_context_t context, xmi_xfer_t *barrier)
+void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
   _g_barrier_active++;
-  xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)barrier);
-  if (result != XMI_SUCCESS)
+  pami_result_t result;
+  result = PAMI_Collective(context, (pami_xfer_t*)barrier);
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
     exit(1);
   }
   while (_g_barrier_active)
-    result = XMI_Context_advance (context, 1);
+    result = PAMI_Context_advance (context, 1);
 
 }
 
-void _allreduce (xmi_context_t context, xmi_xfer_t *allreduce)
+void _allreduce (pami_context_t context, pami_xfer_t *allreduce)
 {
   _g_allreduce_active++;
-  xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)allreduce);
-  if (result != XMI_SUCCESS)
+  pami_result_t result;
+  result = PAMI_Collective(context, (pami_xfer_t*)allreduce);
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to issue allreduce collective. result = %d\n", result);
     exit(1);
   }
   while (_g_allreduce_active)
-    result = XMI_Context_advance (context, 1);
+    result = PAMI_Context_advance (context, 1);
 
 }
 
@@ -253,28 +253,28 @@ int main(int argc, char*argv[])
   char sbuf[MAXBUFSIZE];
   char rbuf[MAXBUFSIZE];
   int  op, dt;
-  xmi_client_t  client;
-  xmi_context_t context;
-  xmi_result_t  result = XMI_ERROR;
+  pami_client_t  client;
+  pami_context_t context;
+  pami_result_t  result = PAMI_ERROR;
   char          cl_string[] = "TEST";
-  result = XMI_Client_initialize (cl_string, &client);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Client_initialize (cl_string, &client);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
     return 1;
   }
 
-	{ size_t _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, _n); }
-  if (result != XMI_SUCCESS)
+	{ size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
     return 1;
   }
 
-  xmi_configuration_t configuration;
-  configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query(client, &configuration);
-  if (result != XMI_SUCCESS)
+  pami_configuration_t configuration;
+  configuration.name = PAMI_TASK_ID;
+  result = PAMI_Configuration_query(client, &configuration);
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
     return 1;
@@ -283,23 +283,23 @@ int main(int argc, char*argv[])
   int    rank    = task_id;
   int i,j,root   = 0;
 
-  xmi_geometry_t  world_geometry;
+  pami_geometry_t  world_geometry;
 
-  result = XMI_Geometry_world (client, &world_geometry);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Geometry_world (client, &world_geometry);
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
     return 1;
   }
 
   int algorithm_type = 0;
-  xmi_algorithm_t *algorithm=NULL;
+  pami_algorithm_t *algorithm=NULL;
   int num_algorithm[2] = {0};
-  result = XMI_Geometry_algorithms_num(context,
+  result = PAMI_Geometry_algorithms_num(context,
                                        world_geometry,
-                                       XMI_XFER_BARRIER,
+                                       PAMI_XFER_BARRIER,
                                        num_algorithm);
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr,
              "Error. Unable to query barrier algorithm. result = %d\n",
@@ -309,13 +309,13 @@ int main(int argc, char*argv[])
 
   if (num_algorithm[0])
   {
-    algorithm = (xmi_algorithm_t*)
-                malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
-    result = XMI_Geometry_algorithms_info(context,
+    algorithm = (pami_algorithm_t*)
+                malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
+    result = PAMI_Geometry_algorithms_info(context,
                                           world_geometry,
-                                          XMI_XFER_BARRIER,
+                                          PAMI_XFER_BARRIER,
                                           algorithm,
-                                          (xmi_metadata_t*)NULL,
+                                          (pami_metadata_t*)NULL,
                                           num_algorithm[0],
                                           NULL,
                                           NULL,
@@ -323,15 +323,15 @@ int main(int argc, char*argv[])
 
   }
 
-  xmi_algorithm_t *allreducealgorithm=NULL;
-  xmi_metadata_t *metas=NULL;
+  pami_algorithm_t *allreducealgorithm=NULL;
+  pami_metadata_t *metas=NULL;
   int allreducenum_algorithm[2] = {0};
-  result = XMI_Geometry_algorithms_num(context,
+  result = PAMI_Geometry_algorithms_num(context,
                                        world_geometry,
-                                       XMI_XFER_ALLREDUCE,
+                                       PAMI_XFER_ALLREDUCE,
                                        allreducenum_algorithm);
 
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr,
              "Error. Unable to query allreduce algorithm. result = %d\n",
@@ -341,14 +341,14 @@ int main(int argc, char*argv[])
 
   if (allreducenum_algorithm[0])
   {
-    allreducealgorithm = (xmi_algorithm_t*)
-      malloc(sizeof(xmi_algorithm_t) * allreducenum_algorithm[0]);
-    metas = (xmi_metadata_t*)
-      malloc(sizeof(xmi_metadata_t) * allreducenum_algorithm[0]);
+    allreducealgorithm = (pami_algorithm_t*)
+      malloc(sizeof(pami_algorithm_t) * allreducenum_algorithm[0]);
+    metas = (pami_metadata_t*)
+      malloc(sizeof(pami_metadata_t) * allreducenum_algorithm[0]);
 
-    result = XMI_Geometry_algorithms_info(context,
+    result = PAMI_Geometry_algorithms_info(context,
                                           world_geometry,
-                                          XMI_XFER_ALLREDUCE,
+                                          PAMI_XFER_ALLREDUCE,
                                           allreducealgorithm,
                                           metas,
                                           allreducenum_algorithm[0],
@@ -356,7 +356,7 @@ int main(int argc, char*argv[])
                                           NULL,
                                           0);
 
-    if (result != XMI_SUCCESS)
+    if (result != PAMI_SUCCESS)
     {
       fprintf(stderr, "Error. Unable to query allreduce algorithm attributes."
               "result = %d\n", result);
@@ -417,21 +417,21 @@ int main(int argc, char*argv[])
       printf("# -----------      -----------    -----------    ---------\n");
     }
 
-    xmi_xfer_t barrier;
+    pami_xfer_t barrier;
     barrier.cb_done   = cb_barrier;
     barrier.cookie    = (void*)&_g_barrier_active;
     barrier.algorithm = algorithm[0];
     _barrier(context, &barrier);
 
-    xmi_xfer_t allreduce;
+    pami_xfer_t allreduce;
     allreduce.cb_done   = cb_allreduce;
     allreduce.cookie    = (void*)&_g_allreduce_active;
     allreduce.algorithm = allreducealgorithm[nalg];
     allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
-    allreduce.cmd.xfer_allreduce.stype     = XMI_BYTE;
+    allreduce.cmd.xfer_allreduce.stype     = PAMI_BYTE;
     allreduce.cmd.xfer_allreduce.stypecount= 0;
     allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
-    allreduce.cmd.xfer_allreduce.rtype     = XMI_BYTE;
+    allreduce.cmd.xfer_allreduce.rtype     = PAMI_BYTE;
     allreduce.cmd.xfer_allreduce.rtypecount= 0;
 
 
@@ -481,17 +481,17 @@ int main(int argc, char*argv[])
   }
 #endif
 
-  result = XMI_Context_destroy (context);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Context_destroy (context);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
     return 1;
   }
 
-  result = XMI_Client_finalize (client);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Client_finalize (client);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
     return 1;
   }
   free(metas);

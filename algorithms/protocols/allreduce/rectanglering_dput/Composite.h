@@ -78,11 +78,11 @@ namespace CCMI
           ///
           /// \brief Constructor
           ///
-          Composite (XMI_CollectiveRequest_t  * req,
+          Composite (PAMI_CollectiveRequest_t  * req,
                      CCMI::TorusCollectiveMapping              * map,
                      CCMI::ConnectionManager::ConnectionManager *rcmgr,
                      CCMI::ConnectionManager::ConnectionManager *bcmgr,
-                     XMI_Callback_t             cb_done,
+                     PAMI_Callback_t             cb_done,
                      CCMI_Consistency            consistency,
                      CCMI::MultiSend::OldMulticastInterface *mf,
                      Geometry                  * geometry,
@@ -90,8 +90,8 @@ namespace CCMI
                      char                      * dstbuf,
                      unsigned                    offset,
                      unsigned                    count,
-                     XMI_Dt                     dtype,
-                     XMI_Op                     op,
+                     PAMI_Dt                     dtype,
+                     PAMI_Op                     op,
                      ConfigFlags                 flags,
                      CCMI::Adaptor::CollectiveProtocolFactory* factory,
                      unsigned                    ideal,
@@ -145,12 +145,12 @@ namespace CCMI
             }
           }
 
-          void internal_restart (XMI_CollectiveRequest_t  * creq,
+          void internal_restart (PAMI_CollectiveRequest_t  * creq,
                                  char                      * srcbuf,
                                  char                      * dstbuf,
                                  unsigned                    count,
-                                 XMI_Dt                     dtype,
-                                 XMI_Op                     op)
+                                 PAMI_Dt                     dtype,
+                                 PAMI_Op                     op)
           {
             coremath func;
             unsigned sizeOfType;
@@ -186,7 +186,7 @@ namespace CCMI
                              nextd[0]));
               for(idx = 1; idx < _ncolors; ++idx)
               {
-                rvec[idx] = rvec[idx-1] + sizeof(CCMI::Executor::AllreduceBase::SendState) * XMI_MAX_ACTIVE_SENDS;
+                rvec[idx] = rvec[idx-1] + sizeof(CCMI::Executor::AllreduceBase::SendState) * PAMI_MAX_ACTIVE_SENDS;
                 nexts[idx] = (char *)(((unsigned)nexts[idx-1] + (bytes/_ncolors)) & 0xFFFFFFF0);
                 byteCnt[idx-1] = (unsigned)(nexts[idx] - nexts[idx-1]);
                 nextd[idx] = nextd[idx-1] + byteCnt[idx-1];
@@ -216,7 +216,7 @@ namespace CCMI
                              idx,
                              byteCnt[idx]/sizeOfType));
               CCMI::Executor::PipelinedAllreduce *allreduce = (CCMI::Executor::PipelinedAllreduce *) getExecutor(idx);
-              initialize (allreduce, (XMI_CollectiveRequest_t *)rvec[idx],
+              initialize (allreduce, (PAMI_CollectiveRequest_t *)rvec[idx],
                           nexts[idx], nextd[idx], byteCnt[idx]/sizeOfType,
                           dtype, op, -1, pwidth, cb_mc_compositeDone, this);
 
@@ -227,14 +227,14 @@ namespace CCMI
             _doneCountdown = _ncolors; // default to just a composite done needed
           }
 
-          virtual unsigned restart   ( XMI_CollectiveRequest_t  * request,
-                                       XMI_Callback_t           & cb_done,
+          virtual unsigned restart   ( PAMI_CollectiveRequest_t  * request,
+                                       PAMI_Callback_t           & cb_done,
                                        CCMI_Consistency            consistency,
                                        char                      * srcbuf,
                                        char                      * dstbuf,
                                        unsigned                    count,
-                                       XMI_Dt                     dtype,
-                                       XMI_Op                     op,
+                                       PAMI_Dt                     dtype,
+                                       PAMI_Op                     op,
                                        int                         root=-1)
           {
             TRACE_ADAPTOR((stderr,"<%p>Allreduce::RectangleRingDput::Composite::restart()\n",this));
@@ -251,7 +251,7 @@ namespace CCMI
               startBarrier (consistency);
             }
 
-            return XMI_SUCCESS;
+            return PAMI_SUCCESS;
           }
 
           void mc_done()
@@ -279,7 +279,7 @@ namespace CCMI
           /// the client done isn't called until both the composite and
           /// (optional) barrier are done.
           ///
-          static void cb_mc_compositeDone(void *me, XMI_Error_t *err)
+          static void cb_mc_compositeDone(void *me, PAMI_Error_t *err)
           {
             Composite *composite = (Composite *) me;
             composite->mc_done();
@@ -294,7 +294,7 @@ namespace CCMI
           /// It means the is done, but the client done isn't called
           /// until both the composite and (optional) barrier are done.
           ///
-          static void cb_mc_barrierDone(void *me, XMI_Error_t *err)
+          static void cb_mc_barrierDone(void *me, PAMI_Error_t *err)
           {
             Composite *composite = (Composite *) me;
 

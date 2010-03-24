@@ -20,7 +20,7 @@
 #include "trace.h"
 
 #define DISPATCH_SET_SIZE 256
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {

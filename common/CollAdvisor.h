@@ -14,10 +14,10 @@
 #ifndef __common_CollAdvisor_h__
 #define __common_CollAdvisor_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/compact_attributes.h"
 
-#define XMI_MAX_PROTOCOLS                                                    20
+#define PAMI_MAX_PROTOCOLS                                                    20
 
 #ifdef __cplusplus
 extern "C"
@@ -26,30 +26,30 @@ extern "C"
 
 typedef struct
 {
-  xmi_metadata_t metadata;
-  xmi_algorithm_t alg_id;
-} xmi_alg_repo;
+  pami_metadata_t metadata;
+  pami_algorithm_t alg_id;
+} pami_alg_repo;
 
-extern xmi_alg_repo *coll_repos[XMI_XFER_COUNT];
-extern int coll_repo_size[XMI_XFER_COUNT];
-extern int coll_repo_enabled[XMI_XFER_COUNT];
-extern xmi_algorithm_t algorithm_ids[XMI_XFER_COUNT][XMI_MAX_PROTOCOLS];
+extern pami_alg_repo *coll_repos[PAMI_XFER_COUNT];
+extern int coll_repo_size[PAMI_XFER_COUNT];
+extern int coll_repo_enabled[PAMI_XFER_COUNT];
+extern pami_algorithm_t algorithm_ids[PAMI_XFER_COUNT][PAMI_MAX_PROTOCOLS];
 
 
-xmi_result_t xmi_advisor_init();
+pami_result_t pami_advisor_init();
 
-xmi_result_t xmi_advisor_suggest_algorithm(xmi_metadata_t callsite_meta,
-                                           xmi_metadata_t alg_meta,
-                                           xmi_xfer_type_t coll_op,
-                                           xmi_algorithm_t *alg);
+pami_result_t pami_advisor_suggest_algorithm(pami_metadata_t callsite_meta,
+                                           pami_metadata_t alg_meta,
+                                           pami_xfer_type_t coll_op,
+                                           pami_algorithm_t *alg);
 
-  xmi_result_t xmi_advisor_repo_fill(xmi_client_t client,
-                                     xmi_context_t context,
-                                   xmi_xfer_type_t xfer_type);
+  pami_result_t pami_advisor_repo_fill(pami_client_t client,
+                                     pami_context_t context,
+                                   pami_xfer_type_t xfer_type);
 
-xmi_result_t xmi_advisor_coll(xmi_context_t context,
-                              xmi_xfer_t *collective,
-                              xmi_metadata_t meta);
+pami_result_t pami_advisor_coll(pami_context_t context,
+                              pami_xfer_t *collective,
+                              pami_metadata_t meta);
 
 #ifdef __cplusplus
 }

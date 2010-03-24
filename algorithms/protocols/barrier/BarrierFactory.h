@@ -19,7 +19,7 @@ namespace CCMI
       ///
       /// \brief Binomial barrier
       ///
-      typedef bool (*AnalyzeFn) (XMI_GEOMETRY_CLASS *g);
+      typedef bool (*AnalyzeFn) (PAMI_GEOMETRY_CLASS *g);
       template <class T_Schedule, AnalyzeFn afn, class T_Sysdep, class T_Mcast>
       class OldBarrierT : public CCMI::Executor::Composite
       {
@@ -40,7 +40,7 @@ namespace CCMI
         ///
         OldBarrierT  (T_Sysdep            * mapping,
                       T_Mcast             * mInterface,
-                      XMI_GEOMETRY_CLASS  * geometry) :
+                      PAMI_GEOMETRY_CLASS  * geometry) :
 	Composite(),
 	  _myexecutor (geometry->nranks(),
 		       geometry->ranks(),
@@ -54,7 +54,7 @@ namespace CCMI
           _myexecutor.setCommSchedule (&_myschedule);
         }
 
-        static bool analyze (XMI_GEOMETRY_CLASS *geometry)
+        static bool analyze (PAMI_GEOMETRY_CLASS *geometry)
         {
           return((AnalyzeFn) afn)(geometry);
         }
@@ -90,7 +90,7 @@ namespace CCMI
         ///
         OldBarrierFactoryT (T_Mcast                *minterface,
                             T_Sysdep               *map,
-                            xmi_mapidtogeometry_fn  cb_geometry) :
+                            pami_mapidtogeometry_fn  cb_geometry) :
         _mcastInterface (minterface),
 	_mapping (map)
         {
@@ -100,17 +100,17 @@ namespace CCMI
 	  setMapIdToGeometry (cb_geometry);
         }
 
-        virtual void metadata(xmi_metadata_t *mdata)
+        virtual void metadata(pami_metadata_t *mdata)
         {
             strcpy(mdata->name, "OldCCMIBarrier");
         }
 
-        virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+        virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                                void                      * cmd)
 
           {
-            XMI_GEOMETRY_CLASS  *g = ( XMI_GEOMETRY_CLASS *)geometry;
-            return (Executor::Composite *) g->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0);
+            PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
+            return (Executor::Composite *) g->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE0);
           }
 
 
@@ -127,16 +127,16 @@ namespace CCMI
         CCMI::Executor::Composite *generate
         (void                                * request,
 	 unsigned                              rsize,
-	 xmi_context_t                         context,
-         xmi_geometry_t                        g,
+	 pami_context_t                         context,
+         pami_geometry_t                        g,
 	 void                                * cmd)
         {
           CCMI_assert(rsize >= sizeof(T));
-	  XMI_GEOMETRY_CLASS  *geometry = (XMI_GEOMETRY_CLASS *)g;
+	  PAMI_GEOMETRY_CLASS  *geometry = (PAMI_GEOMETRY_CLASS *)g;
           return new (request) T (this->_mapping, this->_mcastInterface, geometry);
         }
 
-        static xmi_quad_t *   cb_head   (const xmi_quad_t    * info,
+        static pami_quad_t *   cb_head   (const pami_quad_t    * info,
 					 unsigned          count,
 					 unsigned          peer,
 					 unsigned          sndlen,
@@ -145,20 +145,20 @@ namespace CCMI
 					 unsigned        * rcvlen,
 					 char           ** rcvbuf,
 					 unsigned        * pipewidth,
-					 XMI_Callback_t * cb_done)
+					 PAMI_Callback_t * cb_done)
         {
           CollHeaderData  *cdata = (CollHeaderData *) info;
           OldBarrierFactoryT *factory = (OldBarrierFactoryT *) arg;
 
-          XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *) XMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
+          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
           if(geometry == NULL)
           {
-            geometry = (XMI_GEOMETRY_CLASS *) factory->getGeometry(cdata->_comm);
-            XMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
+            geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry(cdata->_comm);
+            PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
           }
           assert(geometry != NULL);
 
-          T *composite = (T*) geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0);
+          T *composite = (T*) geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE0);
           CCMI_assert (composite != NULL);
           TRACE_INIT((stderr,"<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",
 		      factory,cdata->_comm,composite));

@@ -21,7 +21,7 @@
 /**
  * \page env_vars Environment Variables
  *
- * - XMI_THREADED_CN -
+ * - PAMI_THREADED_CN -
  *	Bitmask indicating whether Send (1) and/or Recv (2) should
  *	use Comm (helper) Threads.  Note, Comm
  *	threads may not be used in all cases, it will depend on
@@ -34,35 +34,35 @@
  *      - 3 - Both Send and Recv will use Comm Threads.
  *      - Default is 3.
  *
- * - XMI_PERSISTENT_ADVANCE -
+ * - PAMI_PERSISTENT_ADVANCE -
  *	Number of cycles to persist in the advance loop waiting for
  *	a (the first) receive packet to arrive.
  *      - Default is a value computed from the partition size
  *        (Collective network depth).
  *
- * - XMI_PERSIST_MAX -
+ * - PAMI_PERSIST_MAX -
  *	Upper limit on the number of cycles to persist in advance.
- *	This is only used when XMI_PERSISTENT_ADVANCE is computed.
+ *	This is only used when PAMI_PERSISTENT_ADVANCE is computed.
  *	- Default is 5000 cycles.
  *
- * - XMI_PERSIST_MIN -
+ * - PAMI_PERSIST_MIN -
  *	Lower limit on the number of cycles to persist in advance.
- *	This is only used when XMI_PERSISTENT_ADVANCE is computed.
+ *	This is only used when PAMI_PERSISTENT_ADVANCE is computed.
  *	- Default is 1000 cycles.
  *
- * - XMI_CN_DBLSUM_THRESH -
+ * - PAMI_CN_DBLSUM_THRESH -
  *	Number of doubles at which to start using the 2-Pass algorithm.
  *      Special values:
  *      - -1 (minus 1) - Effectively disables the 2-Pass algorithm.
  *      - Default is 2 doubles.
  *
- * - XMI_CN_HELPER_THRESH -
+ * - PAMI_CN_HELPER_THRESH -
  *	Number of bytes (message size) at which to start using a
  *	helper thread. Ideally this value would be computed based
  *	on network depth and comm thread start-up time.
  *	- Default 16384 bytes.
  *
- * - XMI_CN_VN_DEEP -
+ * - PAMI_CN_VN_DEEP -
  *	Boolean indicating whether to use the "Deep" protocol
  *	for receiving a message in virtual node mode. Currently
  *	not used.
@@ -71,22 +71,22 @@
  *      - 1 (true)  - The "Deep" protocol is used.
  *      - Default is 1.
  */
-extern int XMI_THREADED_CN;
-extern unsigned XMI_PERSISTENT_ADVANCE;
-extern unsigned XMI_PERSIST_MAX;
-extern unsigned XMI_PERSIST_MIN;
-extern unsigned XMI_CN_DBLSUM_THRESH;
-extern unsigned XMI_CN_HELPER_THRESH;
-extern int XMI_CN_VN_DEEP;
+extern int PAMI_THREADED_CN;
+extern unsigned PAMI_PERSISTENT_ADVANCE;
+extern unsigned PAMI_PERSIST_MAX;
+extern unsigned PAMI_PERSIST_MIN;
+extern unsigned PAMI_CN_DBLSUM_THRESH;
+extern unsigned PAMI_CN_HELPER_THRESH;
+extern int PAMI_CN_VN_DEEP;
 
 // This is here to avoid recursive includes
 extern "C" size_t _g_num_active_nodes;
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace BGP {
 
-class CNDevice : public XMI::Device::Generic::CommonQueueSubDevice {
+class CNDevice : public PAMI::Device::Generic::CommonQueueSubDevice {
 public:
 	/**
 	 * \brief  A Collective Network device constructor
@@ -94,7 +94,7 @@ public:
 	 * \param[in] sd	SysDep object
 	 */
 	CNDevice() :
-	XMI::Device::Generic::CommonQueueSubDevice(),
+	PAMI::Device::Generic::CommonQueueSubDevice(),
 	_threadRoles(0)
 	{
 	}
@@ -102,7 +102,7 @@ public:
 	virtual ~CNDevice() {}
 
         /// \note This is required to make "C" programs link successfully with virtual destructors
-        inline void operator delete(void * p) { XMI_abort(); }
+        inline void operator delete(void * p) { PAMI_abort(); }
 
 	/**
 	 * \brief Tree Device Initialization
@@ -114,7 +114,7 @@ public:
 	 *
 	 * All environment variables are sampled at this point.
 	 */
-	xmi_result_t init(XMI::Memory::MemoryManager *mm, size_t client, size_t contextId, xmi_context_t ctx);
+	pami_result_t init(PAMI::Memory::MemoryManager *mm, size_t client, size_t contextId, pami_context_t ctx);
 
 	inline int getMaxThreads() { return _threadRoles; }
 
@@ -125,6 +125,6 @@ private:
 
 }; // namespace BGP
 }; // namespace Device
-}; // namespace XMI
+}; // namespace PAMI
 
 #endif /* __components_devices_bgp_cndevice_h__ */

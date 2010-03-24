@@ -35,7 +35,7 @@
 #define TRACE(x) //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -52,8 +52,8 @@ namespace XMI
           inline bool init_impl (size_t origin_rank);
 
           inline bool postDmaPut_impl (uint8_t          (&obj)[sizeof(MUInjFifoMessage)],
-                                       xmi_callback_t & cb,
-                                       xmi_task_t       target_task,
+                                       pami_callback_t & cb,
+                                       pami_task_t       target_task,
                                        Memregion      * local_memregion,
                                        size_t           local_offset,
                                        Memregion      * remote_memregion,
@@ -61,8 +61,8 @@ namespace XMI
                                        size_t           bytes);
 
           inline bool postDmaGet_impl (uint8_t          (&obj)[sizeof(MUInjFifoMessage)],
-                                       xmi_callback_t & cb,
-                                       xmi_task_t       target_task,
+                                       pami_callback_t & cb,
+                                       pami_task_t       target_task,
                                        Memregion      * local_memregion,
                                        size_t           local_offset,
                                        Memregion      * remote_memregion,
@@ -74,9 +74,9 @@ namespace XMI
                                       size_t   bytes,
                                       void   * recv_func_parm)
           {
-            xmi_callback_t * cb = (xmi_callback_t *) metadata;
+            pami_callback_t * cb = (pami_callback_t *) metadata;
             TRACE((stderr, "MUDmaModel::dispatch_notify() >> cb = %p, cb->function = %p, cb->clientdata = %p\n", cb, cb->function, cb->clientdata));
-            cb->function (NULL, cb->clientdata, XMI_SUCCESS);
+            cb->function (NULL, cb->clientdata, PAMI_SUCCESS);
             TRACE((stderr, "MUDmaModel::dispatch_notify() <<\n"));
             return 0;
           };
@@ -90,12 +90,12 @@ namespace XMI
           MUSPI_Pt2PtDirectPutDescriptor    _rput_desc_model;
           MUSPI_Pt2PtMemoryFIFODescriptor   _rmem_desc_model;
 
-          xmi_context_t                     _context;
+          pami_context_t                     _context;
       };
 
       bool MUDmaModel::postDmaPut_impl (uint8_t          (&obj)[sizeof(MUInjFifoMessage)],
-                                        xmi_callback_t & cb,
-                                        xmi_task_t       target_task,
+                                        pami_callback_t & cb,
+                                        pami_task_t       target_task,
                                         Memregion      * local_memregion,
                                         size_t           local_offset,
                                         Memregion      * remote_memregion,
@@ -176,7 +176,7 @@ namespace XMI
 
                 if ( rc == 1 )
                   {
-                    cb.function (_context, cb.clientdata, XMI_SUCCESS); // Descriptor is done...notify.
+                    cb.function (_context, cb.clientdata, PAMI_SUCCESS); // Descriptor is done...notify.
                   }
                 else
 #endif
@@ -195,15 +195,15 @@ namespace XMI
           }
         else
           {
-            XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
+            PAMI_abortf("%s<%d>\n",__FILE__,__LINE__);
           }
 
         return true;
       };
 
       bool MUDmaModel::postDmaGet_impl (uint8_t          (&obj)[sizeof(MUInjFifoMessage)],
-                                        xmi_callback_t & cb,
-                                        xmi_task_t       target_task,
+                                        pami_callback_t & cb,
+                                        pami_task_t       target_task,
                                         Memregion      * local_memregion,
                                         size_t           local_offset,
                                         Memregion      * remote_memregion,
@@ -256,7 +256,7 @@ namespace XMI
             // packet header for a single packet transfer. The remote memfifo send
             // operation will contain 0 bytes of data in the payload because all
             // information is being packed in the header.
-            xmi_callback_t * callback = (xmi_callback_t *) & payload_desc[1].PacketHeader.messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_LSB;
+            pami_callback_t * callback = (pami_callback_t *) & payload_desc[1].PacketHeader.messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_LSB;
             callback->function   = cb.function;
             callback->clientdata = cb.clientdata;
 
@@ -317,7 +317,7 @@ namespace XMI
           }
         else
           {
-            XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
+            PAMI_abortf("%s<%d>\n",__FILE__,__LINE__);
 #if 0
             // Construct a message and post to the device to be processed later.
             new (obj) MUInjFifoMessage (cb);
@@ -330,7 +330,7 @@ namespace XMI
             // Copy the metadata into the network header in the descriptor.
             MemoryFifoPacketHeader_t * hdr =
               (MemoryFifoPacketHeader_t *) & (desc->PacketHeader);
-            XMI_assert(metasize <= _device.getPacketMetadataSize());
+            PAMI_assert(metasize <= _device.getPacketMetadataSize());
             memcpy((void *) &hdr->dev.singlepkt.metadata, metadata, metasize); // <-- replace with an optimized MUSPI function.
 
             // Add this message to the send queue to be processed when there is
@@ -342,10 +342,10 @@ namespace XMI
         TRACE((stderr, "MUDmaModel::postDmaGet_impl() << \n"));
         return true;
 
-      }; // XMI::Device::MU::MUDmaModel class
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+      }; // PAMI::Device::MU::MUDmaModel class
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 #undef TRACE
 

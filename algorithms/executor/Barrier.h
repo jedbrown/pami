@@ -34,7 +34,7 @@ namespace CCMI
       unsigned             _iteration:1; ///The Red or black iteration
 
       CollHeaderData                 _cdata;
-      xmi_multicast_t                _minfo;
+      pami_multicast_t                _minfo;
 
       ///\brief A red/black vector for each neigbor which is incremented
       ///when the neighbor's message arrives
@@ -43,7 +43,7 @@ namespace CCMI
       ///\brief A cache of the barrier schedule
       ScheduleCache         _cache;
 
-      XMI::Topology         _srctopology;
+      PAMI::Topology         _srctopology;
 
       ///
       /// \brief core internal function to initiate the next phase
@@ -73,7 +73,7 @@ namespace CCMI
       }
 
       /// Static function to be passed into the done of multisend
-      static void staticNotifySendDone(xmi_context_t context, void *cd, xmi_result_t err)
+      static void staticNotifySendDone(pami_context_t context, void *cd, pami_result_t err)
       {
         TRACE_ERR((stderr,"<%X>Executor::BarrierExec::staticNotifySendDone\n",(int)cd));
 
@@ -110,14 +110,14 @@ namespace CCMI
         _cdata._comm    = comm;
         MEMSET(_phasevec, 0, sizeof(_phasevec));
 
-	_minfo.msginfo       = (xmi_quad_t *)(void *) &_cdata;
+	_minfo.msginfo       = (pami_quad_t *)(void *) &_cdata;
 	_minfo.msgcount      = 1;
 	_minfo.src           = NULL;
 	_minfo.dst           = NULL;
 	_minfo.bytes         = 0;
         _minfo.roles         = -1U;
         _minfo.dst_participants  = NULL;
-	_minfo.src_participants  = (xmi_topology_t *)&_srctopology;
+	_minfo.src_participants  = (pami_topology_t *)&_srctopology;
 
         _iteration           = 0;
       }
@@ -145,9 +145,9 @@ namespace CCMI
        * \param cb_done: completion callback
        */
       virtual void   notifyRecv     (unsigned             src,
-                                     const xmi_quad_t   & info,
-                                     XMI::PipeWorkQueue ** pwq,
-                                     xmi_callback_t      * cb_done);
+                                     const pami_quad_t   & info,
+                                     PAMI::PipeWorkQueue ** pwq,
+                                     pami_callback_t      * cb_done);
 
 
       void internalNotifySendDone();
@@ -167,16 +167,16 @@ inline void CCMI::Executor::BarrierExec::sendNext()
   {
     TRACE_ERR((stderr,"<%p>Executor::BarrierExec::sendNext DONE _cb_done %p, _phase %d, _clientdata %p\n",
                this, _cb_done, _phase, _clientdata));
-    if(_cb_done) _cb_done(NULL, _clientdata, XMI_SUCCESS);
+    if(_cb_done) _cb_done(NULL, _clientdata, PAMI_SUCCESS);
     _senddone = false;
 
     return;
   }
 
   _senddone = false;
-  XMI::Topology *topology = _cache.getDstTopology(_phase);
+  PAMI::Topology *topology = _cache.getDstTopology(_phase);
   int ndest = topology->size();
-  _minfo.dst_participants = (xmi_topology_t *)topology;
+  _minfo.dst_participants = (pami_topology_t *)topology;
 
   ///We can now send any number of messages in barrier
   if(ndest > 0)
@@ -190,7 +190,7 @@ inline void CCMI::Executor::BarrierExec::sendNext()
 
     for (int count = 0; count < ndest; count++)
       TRACE_ERR((stderr,"<%p>Executor::BarrierExec::sendNext _phase %d, ndest %zd, _dstranks[count] %d, _connid %d, _clientdata %p\n", this,_phase, ndest, dstranks[count], _connid, _clientdata));
-    CCMI_assert (topology->type() == XMI_LIST_TOPOLOGY);
+    CCMI_assert (topology->type() == PAMI_LIST_TOPOLOGY);
 #endif
 
     _minfo.connection_id = _phase; //set connection id to phase
@@ -237,9 +237,9 @@ inline void  CCMI::Executor::BarrierExec::start()
  * \param cb_done: completion callback
  */
 inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
-						       const xmi_quad_t   & info,
-						       XMI::PipeWorkQueue ** pwq,
-						       xmi_callback_t      * cb_done)
+						       const pami_quad_t   & info,
+						       PAMI::PipeWorkQueue ** pwq,
+						       pami_callback_t      * cb_done)
 {
   CollHeaderData *hdr = (CollHeaderData *) (& info);
   CCMI_assert (hdr->_iteration <= 1);

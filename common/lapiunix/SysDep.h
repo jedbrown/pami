@@ -16,7 +16,7 @@
 
 #undef __bgp__
 #undef __bgq__
-#define XMI_SYSDEP_CLASS XMI::SysDep
+#define PAMI_SYSDEP_CLASS PAMI::SysDep
 
 
 #include "common/SysDepInterface.h"
@@ -25,7 +25,7 @@
 #include "Wtime.h"
 #include "Topology.h"
 
-namespace XMI
+namespace PAMI
 {
   typedef Interface::SysDep SysDep;
 };

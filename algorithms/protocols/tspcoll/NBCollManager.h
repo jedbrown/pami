@@ -56,7 +56,7 @@ namespace TSPColl
     NBCollManager(void);
     void initialize ();
     NBColl<T_Mcast> * find (NBTag tag, int id); /* find an existing instance */
-    NBColl<T_Mcast> * allocate (XMI_GEOMETRY_CLASS *, NBTag tag);
+    NBColl<T_Mcast> * allocate (PAMI_GEOMETRY_CLASS *, NBTag tag);
     void     multisend_reg (NBTag tag,T_Mcast *mcast_iface);
 
   private:
@@ -193,7 +193,7 @@ namespace TSPColl
 /* ************************************************************************ */
   template <class T_Mcast>
   TSPColl::NBColl<T_Mcast> *
-  TSPColl::NBCollManager<T_Mcast>::allocate (XMI_GEOMETRY_CLASS * comm, NBTag tag)
+  TSPColl::NBCollManager<T_Mcast>::allocate (PAMI_GEOMETRY_CLASS * comm, NBTag tag)
   {
     assert (0 <= tag && tag < MAXTAG);
     int nextID = _taglist[tag]->size();

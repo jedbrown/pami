@@ -33,7 +33,7 @@ namespace CCMI
       ///
       virtual ~Composite() {}
 
-      void setDoneCallback (xmi_event_function cb_done, void *cd)
+      void setDoneCallback (pami_event_function cb_done, void *cd)
       {
         _cb_done    =   cb_done;
         _clientdata =   cd;
@@ -48,7 +48,7 @@ namespace CCMI
       ///
       ///  \brief Callback to call when the barrier has finished
       ///
-      xmi_event_function    _cb_done;
+      pami_event_function    _cb_done;
       void                * _clientdata;
     };
 

@@ -12,7 +12,7 @@
  * \brief Default C math routines for 64 bit floating point operations.
  */
 
-#include "xmi_bg_math.h"
+#include "pami_bg_math.h"
 #include "CNUtil.h"
 #include "util/common.h"
 //#include "internal.h"
@@ -275,15 +275,15 @@ int uint2double(int participants, double *d, int ulen, uint64_t *u)
   return 0;
 }
 
-void _xmi_core_fp64_pre_all(double *dst, const double *src, int count) {
-  XMI_abort();
+void _pami_core_fp64_pre_all(double *dst, const double *src, int count) {
+  PAMI_abort();
 }
 
-void _xmi_core_fp64_post_all(double *dst, const double *src, int count) {
-  XMI_abort();
+void _pami_core_fp64_post_all(double *dst, const double *src, int count) {
+  PAMI_abort();
 }
 
-void _xmi_core_fp64_pre_sum(double *dst, const double *src, int count) {
+void _pami_core_fp64_pre_sum(double *dst, const double *src, int count) {
 	int c = 0;
 	double *s = (double *)src;
 	struct b { char b[BGPCN_PKT_SIZE]; } *d = (struct b *)dst;
@@ -294,7 +294,7 @@ void _xmi_core_fp64_pre_sum(double *dst, const double *src, int count) {
 	}
 }
 
-void _xmi_core_fp64_post_sum(double *dst, const double *src, int count) {
+void _pami_core_fp64_post_sum(double *dst, const double *src, int count) {
 	int c = 0;
 	struct b { char b[BGPCN_PKT_SIZE]; } *s = (struct b *)src;
 	double *d = dst;
@@ -305,7 +305,7 @@ void _xmi_core_fp64_post_sum(double *dst, const double *src, int count) {
 	}
 }
 
-void _xmi_core_fp64_pre_max(double *dst, const double *src, int count) {
+void _pami_core_fp64_pre_max(double *dst, const double *src, int count) {
   uint64_t *d=(uint64_t*)dst, *s=(uint64_t*)src;
   register int n=0;
   register unsigned long long d0, d1, d2, d3;
@@ -335,7 +335,7 @@ void _xmi_core_fp64_pre_max(double *dst, const double *src, int count) {
     }
 }
 
-void _xmi_core_fp64_post_max(double *dst, const double *src, int count) {
+void _pami_core_fp64_post_max(double *dst, const double *src, int count) {
   uint64_t *d=(uint64_t*)dst, *s=(uint64_t*)src;
   register int n=0;
   register unsigned long long d0, d1, d2, d3;
@@ -365,7 +365,7 @@ void _xmi_core_fp64_post_max(double *dst, const double *src, int count) {
     }
 }
 
-void _xmi_core_fp64_int32_pre_maxloc(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
+void _pami_core_fp64_int32_pre_maxloc(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
   register int n = 0;
   uint64_int32_t *d=(uint64_int32_t*)dst, *s=(uint64_int32_t*)src;
   for (n = 0; n < count; n++)
@@ -376,7 +376,7 @@ void _xmi_core_fp64_int32_pre_maxloc(fp64_int32_t *dst, const fp64_int32_t *src,
     }
 }
 
-void _xmi_core_fp64_int32_post_maxloc(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
+void _pami_core_fp64_int32_post_maxloc(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
   register int n = 0;
   uint64_int32_t *d=(uint64_int32_t*)dst, *s=(uint64_int32_t*)src;
   for (n = 0; n < count; n++)
@@ -386,7 +386,7 @@ void _xmi_core_fp64_int32_post_maxloc(fp64_int32_t *dst, const fp64_int32_t *src
     }
 }
 
-void _xmi_core_fp64_fp64_pre_maxloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
+void _pami_core_fp64_fp64_pre_maxloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
   register int n = 0;
   uint64_uint64_t *d=(uint64_uint64_t*)dst, *s=(uint64_uint64_t*)src;
   for (n = 0; n < count; n++)
@@ -396,7 +396,7 @@ void _xmi_core_fp64_fp64_pre_maxloc(fp64_fp64_t *dst, const fp64_fp64_t *src, in
     }
 }
 
-void _xmi_core_fp64_fp64_post_maxloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
+void _pami_core_fp64_fp64_post_maxloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
   register int n = 0;
   uint64_uint64_t *d=(uint64_uint64_t*)dst, *s=(uint64_uint64_t*)src;
   for (n = 0; n < count; n++)
@@ -406,7 +406,7 @@ void _xmi_core_fp64_fp64_post_maxloc(fp64_fp64_t *dst, const fp64_fp64_t *src, i
     }
 }
 
-void _xmi_core_fp64_pre_min(double *dst, const double *src, int count) {
+void _pami_core_fp64_pre_min(double *dst, const double *src, int count) {
   uint64_t *d=(uint64_t*)dst, *s=(uint64_t*)src;
   register int n=0;
   register unsigned long long d0, d1, d2, d3;
@@ -436,7 +436,7 @@ void _xmi_core_fp64_pre_min(double *dst, const double *src, int count) {
     }
 }
 
-void _xmi_core_fp64_post_min(double *dst, const double *src, int count) {
+void _pami_core_fp64_post_min(double *dst, const double *src, int count) {
   uint64_t *d=(uint64_t*)dst, *s=(uint64_t*)src;
   register int n=0;
   register unsigned long long d0, d1, d2, d3;
@@ -466,7 +466,7 @@ void _xmi_core_fp64_post_min(double *dst, const double *src, int count) {
     }
 }
 
-void _xmi_core_fp64_int32_pre_minloc(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
+void _pami_core_fp64_int32_pre_minloc(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
   register int n = 0;
   uint64_int32_t *d=(uint64_int32_t*)dst, *s=(uint64_int32_t*)src;
   for (n = 0; n < count; n++)
@@ -477,7 +477,7 @@ void _xmi_core_fp64_int32_pre_minloc(fp64_int32_t *dst, const fp64_int32_t *src,
     }
 }
 
-void _xmi_core_fp64_int32_post_minloc(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
+void _pami_core_fp64_int32_post_minloc(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
   register int n = 0;
   uint64_int32_t *d=(uint64_int32_t*)dst, *s=(uint64_int32_t*)src;
   for (n = 0; n < count; n++)
@@ -487,7 +487,7 @@ void _xmi_core_fp64_int32_post_minloc(fp64_int32_t *dst, const fp64_int32_t *src
     }
 }
 
-void _xmi_core_fp64_fp64_pre_minloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
+void _pami_core_fp64_fp64_pre_minloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
   register int n = 0;
   uint64_uint64_t *d=(uint64_uint64_t*)dst, *s=(uint64_uint64_t*)src;
   for (n = 0; n < count; n++)
@@ -497,7 +497,7 @@ void _xmi_core_fp64_fp64_pre_minloc(fp64_fp64_t *dst, const fp64_fp64_t *src, in
     }
 }
 
-void _xmi_core_fp64_fp64_post_minloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
+void _pami_core_fp64_fp64_post_minloc(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
   register int n = 0;
   uint64_uint64_t *d=(uint64_uint64_t*)dst, *s=(uint64_uint64_t*)src;
   for (n = 0; n < count; n++)
@@ -553,7 +553,7 @@ static inline void split_dbl(const double *src, uint32_t *exp, uint32_t *mp) {
  *
  * It does, however, handle mantissa packet boundaries.
  */
-void _xmi_core_fp64_pre1_2pass(uint16_t *dst_e, uint32_t *dst_m, const double *src, int count) {
+void _pami_core_fp64_pre1_2pass(uint16_t *dst_e, uint32_t *dst_m, const double *src, int count) {
 	int n;
 	uint32_t x, x2;
 	uint32_t *ep = (uint32_t *)dst_e;
@@ -561,7 +561,7 @@ void _xmi_core_fp64_pre1_2pass(uint16_t *dst_e, uint32_t *dst_m, const double *s
 	uint32_t align = (unsigned)mp & 0x00ffUL;
 	const double *sp = src;
 
-	// XMI_assert_debug(((unsigned)mp & 0x00ffUL) == 0x0000);
+	// PAMI_assert_debug(((unsigned)mp & 0x00ffUL) == 0x0000);
 	// NOTE: first 4 bytes of mant pkt are unused,
 	//       last 2 bytes of expo pkt are unused...
 	n = count >> 1;
@@ -650,7 +650,7 @@ static inline void adj_mant(uint16_t max_e, uint16_t expo, uint32_t *src_dst) {
  * We always are starting at a Mantissa Packet boundary, but the
  * exponents might be mid-packet. They must however be synced.
  */
-void _xmi_core_fp64_pre2_2pass(uint32_t *dst_src_m, uint16_t *src_e,
+void _pami_core_fp64_pre2_2pass(uint32_t *dst_src_m, uint16_t *src_e,
 				uint16_t *src_ee, int count) {
 	uint32_t *oe = (uint32_t *)src_e;
 	uint32_t *xe = (uint32_t *)src_ee;
@@ -658,8 +658,8 @@ void _xmi_core_fp64_pre2_2pass(uint32_t *dst_src_m, uint16_t *src_e,
 	uint32_t mxe, exp;
 	uint32_t align = (unsigned)mp & 0x00ffUL;
 	int n;
-	// XMI_assert_debug(((unsigned)mp & 0x00ffUL) == 0x0000);
-	// XMI_assert_debug((((unsigned)oe ^ (unsigned)xe) & 0x00ffUL) == 0x0000);
+	// PAMI_assert_debug(((unsigned)mp & 0x00ffUL) == 0x0000);
+	// PAMI_assert_debug((((unsigned)oe ^ (unsigned)xe) & 0x00ffUL) == 0x0000);
 	n = count >> 1;
 	while (n-- > 0) {
 		mxe = *xe++;
@@ -784,7 +784,7 @@ static inline void regen(int32_t mh, int32_t ml, int32_t mt, uint16_t ex, double
  * smallest exponent (~ e-309 if mantissa bits are one).
  * therefore we don't have to worry about exponent signs.
  */
-void _xmi_core_fp64_post_2pass(double *dst, uint16_t *src_e, uint32_t *src_m, int count) {
+void _pami_core_fp64_post_2pass(double *dst, uint16_t *src_e, uint32_t *src_m, int count) {
 	uint32_t *ep = (uint32_t *)src_e;
 	uint32_t *mp = src_m;
 	double *dp = dst;
@@ -792,8 +792,8 @@ void _xmi_core_fp64_post_2pass(double *dst, uint16_t *src_e, uint32_t *src_m, in
 	int32_t mh, ml, mt;
 	uint32_t align = (unsigned)mp & 0x00ffUL;
 
-	// XMI_assert_debug(((unsigned)mp & 0x00ffUL) == 0x0000);
-	// XMI_assert_debug(n <= EXPO_PER_PKT);
+	// PAMI_assert_debug(((unsigned)mp & 0x00ffUL) == 0x0000);
+	// PAMI_assert_debug(n <= EXPO_PER_PKT);
 	int n = count >> 1;
 	while (n-- > 0) {
 		ux = *ep++;

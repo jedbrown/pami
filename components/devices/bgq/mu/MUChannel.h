@@ -28,7 +28,7 @@
 #endif
 #define TRACE(x) //fprintf x
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -162,9 +162,9 @@ namespace XMI
 
       };
 
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 
 
@@ -182,7 +182,7 @@ namespace XMI
 ///  other.
 ///
 
-inline void XMI::Device::MU::Channel::postToFifo( MUBaseMessage   & msg,
+inline void PAMI::Device::MU::Channel::postToFifo( MUBaseMessage   & msg,
                                                   unsigned          fnum,
                                                   bool              hiprio)
 {
@@ -205,7 +205,7 @@ inline void XMI::Device::MU::Channel::postToFifo( MUBaseMessage   & msg,
 
 
 
-inline int XMI::Device::MU::Channel::advanceSend()
+inline int PAMI::Device::MU::Channel::advanceSend()
 {
   int events = 0;
 
@@ -220,7 +220,7 @@ inline int XMI::Device::MU::Channel::advanceSend()
 }
 
 
-inline int XMI::Device::MU::Channel::advanceRecv()
+inline int PAMI::Device::MU::Channel::advanceRecv()
 {
   int events = 0;
 

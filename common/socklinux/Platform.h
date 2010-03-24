@@ -17,10 +17,10 @@
 #define NUM_SMT 1
 
 // somewhat arbitrary...
-#define XMI_MAX_PROC_PER_NODE	32
-#define XMI_MAX_THREAD_PER_PROC	32
-#define XMI_DEF_SH_WORKSIZE   4096 // Default shared work queue worksize
-#define XMI_DEF_SH_WORKUNITS  32   // Default shared work queue workunits
+#define PAMI_MAX_PROC_PER_NODE	32
+#define PAMI_MAX_THREAD_PER_PROC	32
+#define PAMI_DEF_SH_WORKSIZE   4096 // Default shared work queue worksize
+#define PAMI_DEF_SH_WORKUNITS  32   // Default shared work queue workunits
 
 
 #endif // __common_socklinux_Platform_h__

@@ -28,9 +28,9 @@
 #include "algorithms/protocols/allreduce/async_impl.h"
 #include "algorithms/protocols/alltoall/impl.h"
 
-namespace XMI
+namespace PAMI
 {
-  extern std::map<unsigned, xmi_geometry_t> geometry_map;
+  extern std::map<unsigned, pami_geometry_t> geometry_map;
 
   namespace CollRegistration
   {
@@ -39,19 +39,19 @@ namespace XMI
               class T_NativeInterfaceAS,
               class T_Device>
     class CCMIRegistration :
-      public CollRegistration<XMI::CollRegistration::CCMIRegistration<T_Geometry,
+      public CollRegistration<PAMI::CollRegistration::CCMIRegistration<T_Geometry,
                                                                       T_NativeInterface1S, // Onesided NI
                                                                       T_NativeInterfaceAS, // Allsided NI
                                                                       T_Device>,
                               T_Geometry>
       {
       public:
-      inline CCMIRegistration(xmi_client_t       client,
-                              xmi_context_t      context,
+      inline CCMIRegistration(pami_client_t       client,
+                              pami_context_t      context,
                               size_t             context_id,
                               size_t             client_id,
                               T_Device          &dev):
-        CollRegistration<XMI::CollRegistration::CCMIRegistration<T_Geometry,
+        CollRegistration<PAMI::CollRegistration::CCMIRegistration<T_Geometry,
                                                                  T_NativeInterface1S,
                                                                  T_NativeInterfaceAS,
                                                                  T_Device>,
@@ -66,41 +66,41 @@ namespace XMI
         _ring_broadcast_ni(dev, client,context,context_id,client_id),
         _connmgr(65535),
         _msync_reg(&_sconnmgr, &_msync_ni),
-	_barrier_reg(NULL,&_barrier_ni, (xmi_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
+	_barrier_reg(NULL,&_barrier_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
         _binom_broadcast_reg(&_connmgr, &_binom_broadcast_ni),
         _ring_broadcast_reg(&_connmgr, &_ring_broadcast_ni)
           {
 
           }
 
-        inline xmi_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
+        inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
         {
-          xmi_xfer_t xfer = {0};
+          pami_xfer_t xfer = {0};
           _barrier_composite =_barrier_reg.generate(geometry,
                                                     &xfer);
 
-          geometry->setKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE1,
+          geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
                            (void*)_barrier_composite);
 
           // Add Barriers
-          geometry->addCollective(XMI_XFER_BARRIER,&_msync_reg,_context_id);
-          geometry->addCollective(XMI_XFER_BARRIER,&_barrier_reg,_context_id);
+          geometry->addCollective(PAMI_XFER_BARRIER,&_msync_reg,_context_id);
+          geometry->addCollective(PAMI_XFER_BARRIER,&_barrier_reg,_context_id);
 
           // Add Broadcasts
-          geometry->addCollective(XMI_XFER_BROADCAST,&_binom_broadcast_reg,_context_id);
-          geometry->addCollective(XMI_XFER_BROADCAST,&_ring_broadcast_reg,_context_id);
-          return XMI_SUCCESS;
+          geometry->addCollective(PAMI_XFER_BROADCAST,&_binom_broadcast_reg,_context_id);
+          geometry->addCollective(PAMI_XFER_BROADCAST,&_ring_broadcast_reg,_context_id);
+          return PAMI_SUCCESS;
         }
 
-      static xmi_geometry_t mapidtogeometry (int comm)
+      static pami_geometry_t mapidtogeometry (int comm)
         {
-          xmi_geometry_t g = geometry_map[comm];
+          pami_geometry_t g = geometry_map[comm];
           return g;
         }
 
     public:
-      xmi_client_t                                           _client;
-      xmi_context_t                                          _context;
+      pami_client_t                                           _client;
+      pami_context_t                                          _context;
       size_t                                                 _context_id;
 
       // Barrier Storage

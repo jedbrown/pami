@@ -18,7 +18,7 @@
 #include "components/atomic/Counter.h"
 #include "components/atomic/Mutex.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Atomic
   {
@@ -34,37 +34,37 @@ namespace XMI
 
         ~Noop () {};
 
-        /// \see XMI::Atomic::AtomicObject::init
-        void init_impl (XMI::Memory::MemoryManager *mm)
+        /// \see PAMI::Atomic::AtomicObject::init
+        void init_impl (PAMI::Memory::MemoryManager *mm)
         {
           return;
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch
+        /// \see PAMI::Atomic::AtomicObject::fetch
         inline size_t fetch_impl ()
         {
           return 0;
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch_and_inc
+        /// \see PAMI::Atomic::AtomicObject::fetch_and_inc
         inline size_t fetch_and_inc_impl ()
         {
           return 0;
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch_and_dec
+        /// \see PAMI::Atomic::AtomicObject::fetch_and_dec
         inline size_t fetch_and_dec_impl ()
         {
           return 0;
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch_and_clear
+        /// \see PAMI::Atomic::AtomicObject::fetch_and_clear
         inline size_t fetch_and_clear_impl ()
         {
           return 0;
         };
 
-        /// \see XMI::Atomic::AtomicObject::compare_and_swap
+        /// \see PAMI::Atomic::AtomicObject::compare_and_swap
         inline bool compare_and_swap_impl (size_t compare, size_t swap)
         {
           return true;
@@ -84,26 +84,26 @@ namespace XMI
 
         ~NoopMutex () {};
 
-        /// \see XMI::Atomic::Interface::Mutex::acquire
+        /// \see PAMI::Atomic::Interface::Mutex::acquire
         inline void acquire_impl () {};
 
-        /// \see XMI::Atomic::Interface::Mutex::release
+        /// \see PAMI::Atomic::Interface::Mutex::release
         inline void release_impl () {};
 
-        /// \see XMI::Atomic::Interface::Mutex::tryAcquire
+        /// \see PAMI::Atomic::Interface::Mutex::tryAcquire
         inline bool tryAcquire_impl () { return true; };
 
-        /// \see XMI::Atomic::Interface::Mutex::isLocked
+        /// \see PAMI::Atomic::Interface::Mutex::isLocked
         inline bool isLocked_impl () { return false; };
 
-        /// \see XMI::Atomic::Interface::Mutex::init
-        inline void init_impl (XMI::Memory::MemoryManager *mm) {};
+        /// \see PAMI::Atomic::Interface::Mutex::init
+        inline void init_impl (PAMI::Memory::MemoryManager *mm) {};
 
-        /// \see XMI::Atomic::Interface::Mutex::returnLock
+        /// \see PAMI::Atomic::Interface::Mutex::returnLock
         inline void * returnLock_impl () { return NULL; };
     };
   };
 };
 
 
-#endif // __xmi_atomic_noop_noop_h__
+#endif // __pami_atomic_noop_noop_h__

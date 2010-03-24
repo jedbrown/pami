@@ -6,7 +6,7 @@
 #ifndef __components_atomic_example_Scope_h__
 #define __components_atomic_example_Scope_h__
 
-namespace XMI
+namespace PAMI
 {
   namespace Atomic
   {
@@ -48,14 +48,14 @@ namespace XMI
 };
 
 template <class T>
-inline bool XMI::Atomic::Interface::NodeScope<T>::setNodeScope()
+inline bool PAMI::Atomic::Interface::NodeScope<T>::setNodeScope()
 {
   static_cast<T*>(this)->setNodeScope_impl();
   return T::_scoped;
 }
 
 template <class T>
-inline bool XMI::Atomic::Interface::ProcessScope<T>::setProcessScope()
+inline bool PAMI::Atomic::Interface::ProcessScope<T>::setProcessScope()
 {
   static_cast<T*>(this)->setProcessScope_impl();
   return T::_scoped;

@@ -18,7 +18,7 @@ namespace CCMI
   {
     namespace Broadcast
     {
-      void get_colors (XMI::Topology             * t,
+      void get_colors (PAMI::Topology             * t,
 		       unsigned                    bytes,
 		       unsigned                  * colors,
 		       unsigned                  & ncolors)
@@ -27,13 +27,13 @@ namespace CCMI
         colors[0] = CCMI::Schedule::NO_COLOR;
       }
 
-      void binom_bcast_md(xmi_metadata_t *m)
+      void binom_bcast_md(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
         strcpy(&m->name[0],"CCMIBinomBcast");
       }
 
-      void ring_bcast_md(xmi_metadata_t *m)
+      void ring_bcast_md(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
         strcpy(&m->name[0],"CCMIRingBcast");
@@ -41,21 +41,21 @@ namespace CCMI
 
       typedef BcastMultiColorCompositeT <1,
 	CCMI::Schedule::ListMultinomial,
-	CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS>,
+	CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
 	get_colors> BinomialBcastComposite;
 
       typedef CollectiveProtocolFactoryT<BinomialBcastComposite,
                                          binom_bcast_md,
-                                         CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > BinomialBcastFactory;
+                                         CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> > BinomialBcastFactory;
 
       typedef BcastMultiColorCompositeT <1,
 	CCMI::Schedule::RingSchedule,
-	CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS>,
+	CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
 	get_colors> RingBcastComposite;
 
       typedef CollectiveProtocolFactoryT <RingBcastComposite,
                                           ring_bcast_md,
-                                          CCMI::ConnectionManager::ColorGeometryConnMgr<XMI_SYSDEP_CLASS> > RingBcastFactory;
+                                          CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> > RingBcastFactory;
 
     };
   };

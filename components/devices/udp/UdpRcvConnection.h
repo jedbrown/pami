@@ -21,7 +21,7 @@
 #define IOV_MAX 256  // TODO WHat is the right value for this?
 
 #define DISPATCH_SET_SIZE 256
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {

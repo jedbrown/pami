@@ -27,32 +27,32 @@
   #define TRACE_DEVICE(x) //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
 #define DISPATCH_SET_SIZE 256
     typedef struct mpi_dispatch_info_t
     {
-      XMI::Device::Interface::RecvFunction_t  recv_func;
+      PAMI::Device::Interface::RecvFunction_t  recv_func;
       void                      *recv_func_parm;
     }mpi_dispatch_info_t;
 
     typedef struct mpi_oldmcast_dispatch_info_t
     {
-      xmi_olddispatch_multicast_fn  recv_func;
+      pami_olddispatch_multicast_fn  recv_func;
       void                         *async_arg;
     }mpi_oldmcast_dispatch_info_t;
 
     typedef struct mpi_mcast_dispatch_info_t
     {
-      xmi_dispatch_multicast_fn  recv_func;
+      pami_dispatch_multicast_fn  recv_func;
       void                         *async_arg;
     }mpi_mcast_dispatch_info_t;
 
     typedef struct mpi_m2m_dispatch_info_t
     {
-      xmi_olddispatch_manytomany_fn  recv_func;
+      pami_olddispatch_manytomany_fn  recv_func;
       void                          *async_arg;
     }mpi_m2m_dispatch_info_t;
 
@@ -80,14 +80,14 @@ static inline MPIDevice *generate_impl(size_t clientid, size_t num_ctx, Memory::
 	size_t x;
 	MPIDevice *devs;
 	int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
-	XMI_assertf(rc == 0, "posix_memalign failed for MPIDevice[%zd], errno=%d\n", num_ctx, errno);
+	PAMI_assertf(rc == 0, "posix_memalign failed for MPIDevice[%zd], errno=%d\n", num_ctx, errno);
 	for (x = 0; x < num_ctx; ++x) {
 		new (&devs[x]) MPIDevice();
 	}
 	return devs;
 }
 
-static inline xmi_result_t init_impl(MPIDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+static inline pami_result_t init_impl(MPIDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
 	return getDevice_impl(devs, client, contextId).init_impl(mm, client, 0, ctx, contextId);
 }
 
@@ -107,7 +107,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
 
 
       int registerRecvFunction (size_t                     dispatch,
-                                XMI::Device::Interface::RecvFunction_t  recv_func,
+                                PAMI::Device::Interface::RecvFunction_t  recv_func,
                                 void                      *recv_func_parm)
         {
           unsigned i;
@@ -143,7 +143,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
       }
 
       void registerOldMcastRecvFunction (int                           dispatch_id,
-                                      xmi_olddispatch_multicast_fn  recv_func,
+                                      pami_olddispatch_multicast_fn  recv_func,
                                       void                         *async_arg)
       {
         _oldmcast_dispatch_table[dispatch_id].recv_func=recv_func;
@@ -153,7 +153,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
       }
 
       void registerMcastRecvFunction (int                           dispatch_id,
-                                      xmi_dispatch_multicast_fn     recv_func,
+                                      pami_dispatch_multicast_fn     recv_func,
                                       void                         *async_arg)
       {
         _mcast_dispatch_table[dispatch_id].recv_func=recv_func;
@@ -163,7 +163,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
       }
 
       void registerM2MRecvFunction (int                           dispatch_id,
-                                    xmi_olddispatch_manytomany_fn  recv_func,
+                                    pami_olddispatch_manytomany_fn  recv_func,
                                     void                         *async_arg)
       {
         _m2m_dispatch_table[dispatch_id].recv_func=recv_func;
@@ -172,15 +172,15 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
         TRACE_DEVICE((stderr,"<%p>MPIDevice::registerM2MRecvFunction %d\n",this,_dispatch_id));
       }
 
-      inline xmi_result_t init_impl (Memory::MemoryManager *mm, size_t clientid, size_t num_ctx, xmi_context_t context, size_t offset)
+      inline pami_result_t init_impl (Memory::MemoryManager *mm, size_t clientid, size_t num_ctx, pami_context_t context, size_t offset)
       {
         _context = context;
         _contextid = offset;
 
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
       };
 
-      inline xmi_context_t getContext_impl ()
+      inline pami_context_t getContext_impl ()
       {
         return _context;
       };
@@ -237,17 +237,17 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
           {
             events++;
             TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl() p2p\n",this)); dbg = 1;
-            xmi_event_function  done_fn = (*it_p2p)->_done_fn;
+            pami_event_function  done_fn = (*it_p2p)->_done_fn;
             void               *cookie  = (*it_p2p)->_cookie;
-            xmi_client_t       client = (*it_p2p)->_client;
+            pami_client_t       client = (*it_p2p)->_client;
             size_t       context = (*it_p2p)->_context;
             _sendQ.remove((*it_p2p));
             if((*it_p2p)->_freeme)
               free(*it_p2p);
 
             if(done_fn)
-              done_fn(NULL,//XMI_Client_getcontext(client,context),  \todo fix this
-                      cookie,XMI_SUCCESS);
+              done_fn(NULL,//PAMI_Client_getcontext(client,context),  \todo fix this
+                      cookie,PAMI_SUCCESS);
             break;
           }
         }
@@ -263,8 +263,8 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
             events++;
             TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl mc\n",this)); dbg = 1;
             if((*it_mcast)->_cb_done.function )
-              (*(*it_mcast)->_cb_done.function)(NULL,//XMI_Client_getcontext((*it_mcast)->_client,(*it_mcast)->_context),   \todo fix this
-                                                (*it_mcast)->_cb_done.clientdata, XMI_SUCCESS);
+              (*(*it_mcast)->_cb_done.function)(NULL,//PAMI_Client_getcontext((*it_mcast)->_client,(*it_mcast)->_context),   \todo fix this
+                                                (*it_mcast)->_cb_done.clientdata, PAMI_SUCCESS);
             free ((*it_mcast)->_req);
             free (*it_mcast);
             _oldmcastsendQ.remove((*it_mcast));
@@ -283,7 +283,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
             events++;
             TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl m2m\n",this)); dbg = 1;
             if((*it)->_done_fn )
-              ((*it)->_done_fn)(NULL, (*it)->_cookie, XMI_SUCCESS);
+              ((*it)->_done_fn)(NULL, (*it)->_cookie, PAMI_SUCCESS);
 
             free ((*it)->_reqs);
             free ((*it)->_bufs);
@@ -328,7 +328,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                 m->_phase++;
                 if(m->_phase == m->_numphases)
                     {
-                      m->_cb_done.function(NULL,m->_cb_done.clientdata, XMI_SUCCESS);
+                      m->_cb_done.function(NULL,m->_cb_done.clientdata, PAMI_SUCCESS);
                       _msyncsendQ.erase(it_msync);
                       break;
                     }
@@ -402,11 +402,11 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
               OldMPIMcastMessage *msg = (OldMPIMcastMessage *) malloc (nbytes);
               assert(msg != NULL);
               int rc = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, _communicator,&sts);
-              XMI_assert (rc == MPI_SUCCESS);
+              PAMI_assert (rc == MPI_SUCCESS);
               unsigned         rcvlen;
               char           * rcvbuf;
               unsigned         pwidth;
-              xmi_callback_t   cb_done;
+              pami_callback_t   cb_done;
               size_t dispatch_id      = msg->_dispatch_id;
               TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
                              this, nbytes,dispatch_id));
@@ -427,7 +427,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
               OldMPIMcastRecvMessage _m_store;
               if( !found )
               {
-                XMI_assert (mdi.recv_func != NULL);
+                PAMI_assert (mdi.recv_func != NULL);
 
                 mdi.recv_func (&msg->_info[0],
                                msg->_info_count,
@@ -449,9 +449,9 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                 mcast->_buf      = rcvbuf;
                 mcast->_size     = rcvlen;
                 mcast->_pwidth   = pwidth;
-                mcast->_hint     = XMI_PT_TO_PT_SUBTASK;
-                mcast->_op       = XMI_UNDEFINED_OP;
-                mcast->_dtype    = XMI_UNDEFINED_DT;
+                mcast->_hint     = PAMI_PT_TO_PT_SUBTASK;
+                mcast->_op       = PAMI_UNDEFINED_OP;
+                mcast->_dtype    = PAMI_UNDEFINED_DT;
                 mcast->_counter = 0;
                 mcast->_dispatch_id = dispatch_id;
                 enqueue(mcast);
@@ -464,8 +464,8 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
               if(mcast->_pwidth == 0 && (mcast->_size == 0||mcast->_buf == 0))
               {
                 if(mcast->_done_fn)
-                  mcast->_done_fn (NULL,//XMI_Client_getcontext(msg->_client, msg->_context),   \todo fix this
-                                   mcast->_cookie, XMI_SUCCESS);
+                  mcast->_done_fn (NULL,//PAMI_Client_getcontext(msg->_client, msg->_context),   \todo fix this
+                                   mcast->_cookie, PAMI_SUCCESS);
 
                 _oldmcastrecvQ.remove(mcast);
                 free (msg);
@@ -487,9 +487,9 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
 
               //for(unsigned count = 0; count < mcast->_size; count += mcast->_pwidth)
               //if(mcast->_done_fn)
-              //  mcast->_done_fn(XMI_Client_getcontext(msg->_client, msg->context), mcast->_cookie, XMI_SUCCESS);
+              //  mcast->_done_fn(PAMI_Client_getcontext(msg->_client, msg->context), mcast->_cookie, PAMI_SUCCESS);
 
-              // XMI_assert (nbytes <= mcast->_pwidth);
+              // PAMI_assert (nbytes <= mcast->_pwidth);
 
               for(; bytes > 0; bytes -= mcast->_pwidth)
               {
@@ -497,8 +497,8 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                                this, mcast->_counter,mcast->_pwidth, bytes, mcast->_size));
                 mcast->_counter += mcast->_pwidth;
                 if(mcast->_done_fn)
-                  mcast->_done_fn(NULL,//XMI_Client_getcontext(msg->_client, msg->_context),   \todo fix this
-                                  mcast->_cookie, XMI_SUCCESS);
+                  mcast->_done_fn(NULL,//PAMI_Client_getcontext(msg->_client, msg->_context),   \todo fix this
+                                  mcast->_cookie, PAMI_SUCCESS);
               }
 
               if(mcast->_counter >= mcast->_size)
@@ -517,7 +517,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
               MPIM2MHeader *msg = (MPIM2MHeader *) malloc (nbytes);
               int rc            = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, _communicator,&sts);
-              XMI_assert (rc == MPI_SUCCESS);
+              PAMI_assert (rc == MPI_SUCCESS);
               TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d\n",
                              this, nbytes));
 
@@ -531,7 +531,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
               MPIM2MRecvMessage<size_t> * m2m;
               if( it == _m2mrecvQ.end() )
               {
-                xmi_callback_t    cb_done;
+                pami_callback_t    cb_done;
                 char            * buf;
                 size_t        * sizes;
                 size_t        * offsets;
@@ -546,7 +546,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                               &nranks,
                               &cb_done );
                 m2m = (MPIM2MRecvMessage<size_t> *)malloc(sizeof(MPIM2MRecvMessage<size_t>) );
-                XMI_assert ( m2m != NULL );
+                PAMI_assert ( m2m != NULL );
                 m2m->_conn = msg->_conn;
                 m2m->_done_fn = cb_done.function;
                 m2m->_cookie  = cb_done.clientdata;
@@ -559,7 +559,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                 if( m2m->_num == 0 )
                 {
                   if( m2m->_done_fn )
-                    (m2m->_done_fn)(NULL, m2m->_cookie,XMI_SUCCESS);
+                    (m2m->_done_fn)(NULL, m2m->_cookie,PAMI_SUCCESS);
                   free ( m2m );
                   return NULL;
                 }
@@ -577,14 +577,14 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
               if( m2m )
               {
                 unsigned size = msg->_size < m2m->_sizes[src] ? msg->_size : m2m->_sizes[src];
-                XMI_assert( size > 0 );
+                PAMI_assert( size > 0 );
                 memcpy( m2m->_buf + m2m->_offsets[src], msg->buffer(), size );
                 m2m->_num--;
                 if( m2m->_num == 0 )
                 {
                   if( m2m->_done_fn )
                   {
-                    m2m->_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
+                    m2m->_done_fn(NULL, m2m->_cookie,PAMI_SUCCESS);
                   }
                   _m2mrecvQ.remove(m2m);
                   free ( m2m );
@@ -605,7 +605,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                                             sts.MPI_TAG,
                                             _communicator,
                                             &sts);
-               XMI_assert (rc == MPI_SUCCESS);
+               PAMI_assert (rc == MPI_SUCCESS);
                MPIMsyncMessage *m = _msyncsendQ[conn_id];
                if (m)
                  m->_recvDone = true;
@@ -614,7 +614,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
              }
              break;
          default:
-           XMI_abort();
+           PAMI_abort();
           }
         }
         return events;
@@ -645,13 +645,13 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
       inline bool isPeer_impl (size_t task)
       {
 #if 0
-        XMI::Interface::Mapping::nodeaddr_t node;
+        PAMI::Interface::Mapping::nodeaddr_t node;
         size_t peer;
 
         __global.mapping.task2node(task,node);
-        xmi_result_t result = __global.mapping.node2peer(node,peer);
+        pami_result_t result = __global.mapping.node2peer(node,peer);
 
-        return result == XMI_SUCCESS;
+        return result == PAMI_SUCCESS;
 #else
         return true;
 #endif
@@ -762,7 +762,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
       mpi_oldmcast_dispatch_info_t              _oldmcast_dispatch_table[256];
       mpi_m2m_dispatch_info_t                   _m2m_dispatch_table[256];
       int                                       _curMcastTag;
-      xmi_context_t                             _context;
+      pami_context_t                             _context;
       size_t                                    _contextid;
     };
 #undef DISPATCH_SET_SIZE

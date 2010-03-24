@@ -15,7 +15,7 @@
 #include "Util.h"
 #include "ppc450d/internal_o.h"
 
-void _xmi_core_int64_sum2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
+void _pami_core_int64_sum2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
 
   int64_t *dp = (int64_t *) dst;
   const int64_t *s0 = (const int64_t *) srcs[0];
@@ -73,7 +73,7 @@ void _xmi_core_int64_sum2(int64_t *dst, const int64_t **srcs, int nsrc, int coun
   return;
 }
 
-void _xmi_core_int64_band2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
+void _pami_core_int64_band2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)&(b))
 
 #define TYPE int64_t
@@ -82,7 +82,7 @@ void _xmi_core_int64_band2(int64_t *dst, const int64_t **srcs, int nsrc, int cou
 #undef OP
 }
 
-void _xmi_core_int64_bor2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
+void _pami_core_int64_bor2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)|(b))
 
 #define TYPE int64_t
@@ -91,7 +91,7 @@ void _xmi_core_int64_bor2(int64_t *dst, const int64_t **srcs, int nsrc, int coun
 #undef OP
 }
 
-void _xmi_core_int64_bxor2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
+void _pami_core_int64_bxor2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)^(b))
 
 #define TYPE int64_t
@@ -100,7 +100,7 @@ void _xmi_core_int64_bxor2(int64_t *dst, const int64_t **srcs, int nsrc, int cou
 #undef OP
 }
 
-void _xmi_core_int64_land2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
+void _pami_core_int64_land2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)&&(b))
 
 #define TYPE int64_t
@@ -109,7 +109,7 @@ void _xmi_core_int64_land2(int64_t *dst, const int64_t **srcs, int nsrc, int cou
 #undef OP
 }
 
-void _xmi_core_int64_lor2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
+void _pami_core_int64_lor2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)||(b))
 
 #define TYPE int64_t
@@ -118,7 +118,7 @@ void _xmi_core_int64_lor2(int64_t *dst, const int64_t **srcs, int nsrc, int coun
 #undef OP
 }
 
-void _xmi_core_int64_lxor2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
+void _pami_core_int64_lxor2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)&&(!b))||((!a)&&(b)))
 
 #define TYPE int64_t
@@ -127,7 +127,7 @@ void _xmi_core_int64_lxor2(int64_t *dst, const int64_t **srcs, int nsrc, int cou
 #undef OP
 }
 
-void _xmi_core_int64_max2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
+void _pami_core_int64_max2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(a):(b))
 
 #define TYPE int64_t
@@ -136,7 +136,7 @@ void _xmi_core_int64_max2(int64_t *dst, const int64_t **srcs, int nsrc, int coun
 #undef OP
 }
 
-void _xmi_core_int64_min2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
+void _pami_core_int64_min2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(b):(a))
 
 #define TYPE int64_t
@@ -145,7 +145,7 @@ void _xmi_core_int64_min2(int64_t *dst, const int64_t **srcs, int nsrc, int coun
 #undef OP
 }
 
-void _xmi_core_int64_prod2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
+void _pami_core_int64_prod2(int64_t *dst, const int64_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)*(b))
 
 #define TYPE int64_t

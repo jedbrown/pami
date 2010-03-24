@@ -96,7 +96,7 @@ static inline void _sum_aligned2(float *dst, const float **srcs, int nsrc, int c
 }
 
 #if 0
-void _xmi_core_fp32_sum2(float *dst, const float **srcs, int nsrc, int count) {
+void _pami_core_fp32_sum2(float *dst, const float **srcs, int nsrc, int count) {
 
 	if (( ((uint32_t) dst) | ((uint32_t) srcs[0]) | ((uint32_t) srcs[1])) & 0x03) {
 		// a buffer is not 8-byte aligned.
@@ -133,7 +133,7 @@ void _xmi_core_fp32_sum2(float *dst, const float **srcs, int nsrc, int count) {
 #else
 //#warning optimized 2-way sum float turned off
 
-void _xmi_core_fp32_sum2(float *dst, const float **srcs, int nsrc, int count) {
+void _pami_core_fp32_sum2(float *dst, const float **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)+(b))
 
 #define TYPE float
@@ -143,7 +143,7 @@ void _xmi_core_fp32_sum2(float *dst, const float **srcs, int nsrc, int count) {
 }
 #endif
 
-void _xmi_core_fp32_max2(float *dst, const float **srcs, int nsrc, int count) {
+void _pami_core_fp32_max2(float *dst, const float **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(a):(b))
 
 #define TYPE float
@@ -152,7 +152,7 @@ void _xmi_core_fp32_max2(float *dst, const float **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _xmi_core_fp32_min2(float *dst, const float **srcs, int nsrc, int count) {
+void _pami_core_fp32_min2(float *dst, const float **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(b):(a))
 
 #define TYPE float
@@ -161,7 +161,7 @@ void _xmi_core_fp32_min2(float *dst, const float **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _xmi_core_fp32_prod2(float *dst, const float **srcs, int nsrc, int count) {
+void _pami_core_fp32_prod2(float *dst, const float **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)*(b))
 
 #define TYPE float
@@ -170,7 +170,7 @@ void _xmi_core_fp32_prod2(float *dst, const float **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _xmi_core_fp32_int32_maxloc2(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count) {
+void _pami_core_fp32_int32_maxloc2(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count) {
   const fp32_int32_t *s0 = srcs[0], *s1 = srcs[1];
   register int n = 0;
   for (n = 0; n < count; n++)
@@ -185,7 +185,7 @@ void _xmi_core_fp32_int32_maxloc2(fp32_int32_t *dst, const fp32_int32_t **srcs, 
     }
 }
 
-void _xmi_core_fp32_fp32_maxloc2(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count) {
+void _pami_core_fp32_fp32_maxloc2(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count) {
   const fp32_fp32_t *s0 = srcs[0], *s1 = srcs[1];
   register int n = 0;
   for (n = 0; n < count; n++)
@@ -200,7 +200,7 @@ void _xmi_core_fp32_fp32_maxloc2(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int
     }
 }
 
-void _xmi_core_fp32_int32_minloc2(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count) {
+void _pami_core_fp32_int32_minloc2(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count) {
   const fp32_int32_t *s0 = srcs[0], *s1 = srcs[1];
   register int n = 0;
   for (n = 0; n < count; n++)
@@ -215,7 +215,7 @@ void _xmi_core_fp32_int32_minloc2(fp32_int32_t *dst, const fp32_int32_t **srcs, 
     }
 }
 
-void _xmi_core_fp32_fp32_minloc2(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count) {
+void _pami_core_fp32_fp32_minloc2(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count) {
   const fp32_fp32_t *s0 = srcs[0], *s1 = srcs[1];
   register int n = 0;
   for (n = 0; n < count; n++)

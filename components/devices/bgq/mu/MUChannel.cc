@@ -13,7 +13,7 @@
 
 #include "components/devices/bgq/mu/MUChannel.h"
 
-XMI::Device::MU::Channel::Channel() :
+PAMI::Device::MU::Channel::Channel() :
     _resMgr(),
     _pollQueues(false)
 {
@@ -23,7 +23,7 @@ XMI::Device::MU::Channel::Channel() :
 
 
 
-uint32_t XMI::Device::MU::Channel::pollQueuedMessages ()
+uint32_t PAMI::Device::MU::Channel::pollQueuedMessages ()
 {
   // Count the events processed.
   unsigned events = 0;

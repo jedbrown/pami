@@ -20,7 +20,7 @@
 ///  \brief Generic Device Threads implementation
 ///
 ////////////////////////////////////////////////////////////////////////
-namespace XMI {
+namespace PAMI {
 namespace Device {
 
 	/// \brief Thread Status
@@ -29,9 +29,9 @@ namespace Device {
 	/// status is Ready or OneShot. In the case of OneShot, the
 	/// thread will be dequeued first. In the case of Ready, the
 	/// return value of the function determines whether the thread
-	/// is dequeued. XMI_EAGAIN keeps the thread on the queue for
+	/// is dequeued. PAMI_EAGAIN keeps the thread on the queue for
 	/// subsequent advance calls. Any other value causes the thread
-	/// to be dequeue, and XMI_SUCCESS indicates successful completion.
+	/// to be dequeue, and PAMI_SUCCESS indicates successful completion.
 	///
 	enum ThreadStatus {
 		New = 0,	///< Thread has only been constructed (do not call)
@@ -75,7 +75,7 @@ public:
 	/// \param[in] func	Work function to call
 	/// \param[in] cookie	Opaque data for work function
 	///
-	GenericThread(xmi_work_function func, void *cookie) :
+	GenericThread(pami_work_function func, void *cookie) :
 	GenericDeviceWorkQueue::Element(),
 	_func(func),
 	_cookie(cookie),
@@ -89,7 +89,7 @@ public:
 	///
 	/// \param[in] context	Context in which thread is being executed
 	///
-	inline xmi_result_t executeThread(xmi_context_t context) {
+	inline pami_result_t executeThread(pami_context_t context) {
 		return _func(context, _cookie);
 	}
 
@@ -113,18 +113,18 @@ public:
 	/// \param[in] func	Function to call from advance
 	/// \param[in] cookie	Opaque data to pass to function
 	///
-	inline void setFunc(xmi_work_function func, void *cookie) {
+	inline void setFunc(pami_work_function func, void *cookie) {
 		_func = func;
 		_cookie = cookie;
 	}
 protected:
-	xmi_work_function _func; ///< work function to call
+	pami_work_function _func; ///< work function to call
 	void *_cookie;		 ///< opaque value to pass to work function
 	ThreadStatus _status;	 ///< current thread status
 }; // class GenericThread
 
 }; /* namespace Generic */
 }; /* namespace Device */
-}; /* namespace XMI */
+}; /* namespace PAMI */
 
 #endif /* __components_devices_generic_thread_h__ */

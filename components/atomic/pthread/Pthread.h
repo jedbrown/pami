@@ -18,28 +18,28 @@
 
 #include <pthread.h>
 
-namespace XMI
+namespace PAMI
 {
   namespace Counter
   {
     ///
     /// \brief CRTP interface for pthread atomic objects.
     ///
-      class Pthread : public XMI::Atomic::Interface::Counter <Pthread>
+      class Pthread : public PAMI::Atomic::Interface::Counter <Pthread>
     {
       public:
         Pthread (){}
 
         ~Pthread () {}
 
-        /// \see XMI::Atomic::AtomicObject::init
-        void init_impl (XMI::Memory::MemoryManager *mm)
+        /// \see PAMI::Atomic::AtomicObject::init
+        void init_impl (PAMI::Memory::MemoryManager *mm)
         {
           pthread_mutex_init (&_mutex, NULL);
           fetch_and_clear_impl ();
         }
 
-        /// \see XMI::Atomic::AtomicObject::fetch
+        /// \see PAMI::Atomic::AtomicObject::fetch
         inline size_t fetch_impl ()
         {
           pthread_mutex_lock (&_mutex);
@@ -49,7 +49,7 @@ namespace XMI
           return value;
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch_and_inc
+        /// \see PAMI::Atomic::AtomicObject::fetch_and_inc
         inline size_t fetch_and_inc_impl ()
         {
           pthread_mutex_lock (&_mutex);
@@ -60,7 +60,7 @@ namespace XMI
           return value;
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch_and_dec
+        /// \see PAMI::Atomic::AtomicObject::fetch_and_dec
         inline size_t fetch_and_dec_impl ()
         {
           pthread_mutex_lock (&_mutex);
@@ -71,7 +71,7 @@ namespace XMI
           return value;
         };
 
-        /// \see XMI::Atomic::AtomicObject::fetch_and_clear
+        /// \see PAMI::Atomic::AtomicObject::fetch_and_clear
         inline size_t fetch_and_clear_impl ()
         {
           pthread_mutex_lock (&_mutex);
@@ -82,7 +82,7 @@ namespace XMI
           return value;
         };
 
-        /// \see XMI::Atomic::AtomicObject::compare_and_swap
+        /// \see PAMI::Atomic::AtomicObject::compare_and_swap
         inline bool compare_and_swap_impl (size_t compare, size_t swap)
         {
           bool did_swap = false;
@@ -106,4 +106,4 @@ namespace XMI
 };
 
 
-#endif // __xmi_atomic_pthread_pthread_h__
+#endif // __pami_atomic_pthread_pthread_h__

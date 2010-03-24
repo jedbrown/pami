@@ -14,15 +14,15 @@
 #ifndef __components_devices_bgp_collective_network_CNAllreduce_h__
 #define __components_devices_bgp_collective_network_CNAllreduce_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/common.h"
 #include "components/devices/MulticombineModel.h"
 #include "components/devices/bgp/collective_network/CNPacket.h"
 #include "components/devices/workqueue/WorkQueue.h"
-#include "math/bgp/collective_network/xmi_bg_math.h"
+#include "math/bgp/collective_network/pami_bg_math.h"
 #include "math/FloatUtil.h"
 
-extern int xmi_dt_shift[XMI_DT_COUNT];
+extern int pami_dt_shift[PAMI_DT_COUNT];
 
 typedef coremath1 preprocess;
 typedef coremath vnmprocess;
@@ -48,51 +48,51 @@ typedef coremath1 postprocess;
  * \param[out]	opsize	Size of operands in datatype
  * \return	Zero on success, -1 if dt/op pair is not supported.
  */
-static inline int allreduce_setup(xmi_dt	dt,
-				xmi_op		op,
+static inline int allreduce_setup(pami_dt	dt,
+				pami_op		op,
 				preprocess	*pre,
 				postprocess	*post,
 				unsigned	*hhfunc,
 				unsigned	*opshift) {
 	*pre =NULL;
 	*post=NULL;
-	*opshift = xmi_dt_shift[dt];
+	*opshift = pami_dt_shift[dt];
 	switch(op) {
-	case XMI_SUM:
-		*hhfunc =  XMI::Device::BGP::COMBINE_OP_ADD;
+	case PAMI_SUM:
+		*hhfunc =  PAMI::Device::BGP::COMBINE_OP_ADD;
 		break;
-	case XMI_MAX:
-	case XMI_MAXLOC:
-		*hhfunc =  XMI::Device::BGP::COMBINE_OP_MAX;
+	case PAMI_MAX:
+	case PAMI_MAXLOC:
+		*hhfunc =  PAMI::Device::BGP::COMBINE_OP_MAX;
 		break;
-	case XMI_MIN:
-	case XMI_MINLOC:
-		*hhfunc =  XMI::Device::BGP::COMBINE_OP_MAX;
+	case PAMI_MIN:
+	case PAMI_MINLOC:
+		*hhfunc =  PAMI::Device::BGP::COMBINE_OP_MAX;
 		break;
-	case XMI_BAND:
-	case XMI_LAND:
-		*hhfunc =  XMI::Device::BGP::COMBINE_OP_AND;
+	case PAMI_BAND:
+	case PAMI_LAND:
+		*hhfunc =  PAMI::Device::BGP::COMBINE_OP_AND;
 		break;
-	case XMI_BOR:
-	case XMI_LOR:
-		*hhfunc =  XMI::Device::BGP::COMBINE_OP_OR;
+	case PAMI_BOR:
+	case PAMI_LOR:
+		*hhfunc =  PAMI::Device::BGP::COMBINE_OP_OR;
 		break;
-	case XMI_BXOR:
-	case XMI_LXOR:
-		*hhfunc =  XMI::Device::BGP::COMBINE_OP_XOR;
+	case PAMI_BXOR:
+	case PAMI_LXOR:
+		*hhfunc =  PAMI::Device::BGP::COMBINE_OP_XOR;
 		break;
 	default:
 		return -1;
 	}
-	*pre = XMI_PRE_OP_FUNCS(dt,op,1);
-	if (*pre == (void *)XMI_UNIMPL) {
+	*pre = PAMI_PRE_OP_FUNCS(dt,op,1);
+	if (*pre == (void *)PAMI_UNIMPL) {
 		return -1;
 	}
-	*post = XMI_POST_OP_FUNCS(dt,op,1);
+	*post = PAMI_POST_OP_FUNCS(dt,op,1);
 	return 0;
 }
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace BGP {
 
@@ -109,30 +109,30 @@ extern void postprocSum1PFloat(void *out, void *in, int c);
  * and operator.
  */
 class CNAllreduceSetup {
-	static CNAllreduceSetup CNAllreduceSetupCache[XMI_OP_COUNT][XMI_DT_COUNT];
+	static CNAllreduceSetup CNAllreduceSetupCache[PAMI_OP_COUNT][PAMI_DT_COUNT];
 public:
 
         CNAllreduceSetup() {}
-        CNAllreduceSetup(xmi_dt dt, xmi_op op)
+        CNAllreduceSetup(pami_dt dt, pami_op op)
 		{
 
 		int rc = allreduce_setup(dt, op, &_pre, &_post,
 					&_hhfunc, &_logopsize);
 		if (rc != 0)
-			_hhfunc = XMI::Device::BGP::COMBINE_OP_NONE;
+			_hhfunc = PAMI::Device::BGP::COMBINE_OP_NONE;
 
-		_dbl_sum = (dt == XMI_DOUBLE && op == XMI_SUM);
-		//_flt_sum = (dt == XMI_FLOAT && op == XMI_SUM);
+		_dbl_sum = (dt == PAMI_DOUBLE && op == PAMI_SUM);
+		//_flt_sum = (dt == PAMI_FLOAT && op == PAMI_SUM);
 		if (_dbl_sum) {
 			_logopsize = 8; // 2^8 == 256 == BGPCN_PKT_SIZE
 		//} else if (_flt_sum) {
 			// TBD...
 		}
-		_logbytemult = _logopsize - xmi_dt_shift[dt];
+		_logbytemult = _logopsize - pami_dt_shift[dt];
 		_opsize = (1 << _logopsize);
 	}
 	static void initCNAS();
-	static CNAllreduceSetup &getCNAS(xmi_dt dt, xmi_op op) {
+	static CNAllreduceSetup &getCNAS(pami_dt dt, pami_op op) {
 		return CNAllreduceSetupCache[op][dt];
 	}
 	preprocess         _pre;
@@ -148,6 +148,6 @@ public:
 
 };      // namespace BGP
 };      // namespace Device
-};	// XMI
+};	// PAMI
 
 #endif // __components_devices_bgp_cnallreduce_h__

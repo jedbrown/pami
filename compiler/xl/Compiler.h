@@ -25,4 +25,4 @@
 #define __sync_fetch_and_swap(x,y)	__fetch_and_swap((volatile int *)x,y)
 #define __sync_bool_compare_and_swap(x,y,z) __compare_and_swap ((volatile int *)x,(int*)&y, z)
 
-#endif // __xmi_compiler_xl_h__
+#endif // __pami_compiler_xl_h__

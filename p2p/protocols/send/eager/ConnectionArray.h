@@ -16,7 +16,7 @@
 
 #include "p2p/protocols/send/eager/ConnectionInterface.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Protocol
   {
@@ -67,32 +67,32 @@ namespace XMI
           }
 
           // All connection arrays are allocated? abort.
-          XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
+          PAMI_abortf("%s<%d>\n",__FILE__,__LINE__);
           return;
         };
 
-        inline void set_impl (xmi_task_t task, size_t contextid, void * value)
+        inline void set_impl (pami_task_t task, size_t contextid, void * value)
         {
-          XMI_assert_debug(task < _peers);
-          XMI_assert_debug(contextid < _maximum_context_count);
+          PAMI_assert_debug(task < _peers);
+          PAMI_assert_debug(contextid < _maximum_context_count);
           size_t index = (task << 2) | contextid;
-          XMI_assert_debug(_connection[index] == NULL);
+          PAMI_assert_debug(_connection[index] == NULL);
           _connection[index] = value;
         };
 
-        inline void * get_impl (xmi_task_t task, size_t contextid)
+        inline void * get_impl (pami_task_t task, size_t contextid)
         {
-          XMI_assert_debug(task < _peers);
-          XMI_assert_debug(contextid < _maximum_context_count);
+          PAMI_assert_debug(task < _peers);
+          PAMI_assert_debug(contextid < _maximum_context_count);
           size_t index = (task << 2) | contextid;
-          XMI_assert_debug(_connection[index] != NULL);
+          PAMI_assert_debug(_connection[index] != NULL);
           return _connection[index];
         };
 
-        inline void clear_impl (xmi_task_t task, size_t contextid)
+        inline void clear_impl (pami_task_t task, size_t contextid)
         {
-          XMI_assert_debug(task < _peers);
-          XMI_assert_debug(contextid < _maximum_context_count);
+          PAMI_assert_debug(task < _peers);
+          PAMI_assert_debug(contextid < _maximum_context_count);
           size_t index = (task << 2) | contextid;
           _connection[index] = NULL;
         };

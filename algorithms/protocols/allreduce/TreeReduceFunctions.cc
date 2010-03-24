@@ -29,273 +29,273 @@ namespace CCMI
         /// \brief check the reduce function and datatype and see if
         /// it's supported by the tree
         ///
-        int checkOp(XMI_Dt dt, XMI_Op op)
+        int checkOp(PAMI_Dt dt, PAMI_Op op)
         {
           TRACE_ADAPTOR ((stderr, "<          >CCMI::Adaptor::Tree:checkOp((op %#X, type %#X)\n",
                           op, dt));
           switch(op)
           {
-          case XMI_SUM:
+          case PAMI_SUM:
             switch(dt)
             {
-            case XMI_SIGNED_INT:
-            case XMI_UNSIGNED_INT:
+            case PAMI_SIGNED_INT:
+            case PAMI_UNSIGNED_INT:
               break;
-            case XMI_SIGNED_LONG_LONG:
+            case PAMI_SIGNED_LONG_LONG:
               break;
-            case XMI_UNSIGNED_LONG_LONG:
+            case PAMI_UNSIGNED_LONG_LONG:
               break;
-            case XMI_SIGNED_SHORT:
-            case XMI_UNSIGNED_SHORT:
+            case PAMI_SIGNED_SHORT:
+            case PAMI_UNSIGNED_SHORT:
               break;
-            case XMI_DOUBLE:
+            case PAMI_DOUBLE:
               break;
-            case XMI_LOGICAL:
+            case PAMI_LOGICAL:
               return -1;
-            case XMI_FLOAT:
+            case PAMI_FLOAT:
               return -1;
-            case XMI_LONG_DOUBLE:
+            case PAMI_LONG_DOUBLE:
               return -1;
-            case XMI_DOUBLE_COMPLEX:
+            case PAMI_DOUBLE_COMPLEX:
               return -1;
-            case XMI_SIGNED_CHAR:
-            case XMI_UNSIGNED_CHAR:
+            case PAMI_SIGNED_CHAR:
+            case PAMI_UNSIGNED_CHAR:
             default:
               return -1;
             }
             break;
-          case XMI_MAX:
+          case PAMI_MAX:
             switch(dt)
             {
-            case XMI_SIGNED_INT:
+            case PAMI_SIGNED_INT:
               break;
-            case XMI_SIGNED_LONG_LONG:
+            case PAMI_SIGNED_LONG_LONG:
               break;
-            case XMI_UNSIGNED_LONG_LONG:
+            case PAMI_UNSIGNED_LONG_LONG:
               break;
-            case XMI_SIGNED_SHORT:
+            case PAMI_SIGNED_SHORT:
               break;
-            case XMI_UNSIGNED_INT:
+            case PAMI_UNSIGNED_INT:
               break;
-            case XMI_UNSIGNED_SHORT:
+            case PAMI_UNSIGNED_SHORT:
               break;
-            case XMI_FLOAT:
+            case PAMI_FLOAT:
               break;
-            case XMI_DOUBLE:
+            case PAMI_DOUBLE:
               break;
-            case XMI_LOGICAL:
+            case PAMI_LOGICAL:
               return -1;
-            case XMI_LONG_DOUBLE:
+            case PAMI_LONG_DOUBLE:
               return -1;
-            case XMI_DOUBLE_COMPLEX:
+            case PAMI_DOUBLE_COMPLEX:
               return -1;
-            case XMI_UNSIGNED_CHAR:
-            case XMI_SIGNED_CHAR:
+            case PAMI_UNSIGNED_CHAR:
+            case PAMI_SIGNED_CHAR:
             default:
               return -1;
             }
             break;
-          case XMI_MIN:
+          case PAMI_MIN:
             switch(dt)
             {
-            case XMI_SIGNED_INT:
+            case PAMI_SIGNED_INT:
               break;
-            case XMI_SIGNED_LONG_LONG:
-            case XMI_UNSIGNED_LONG_LONG:
+            case PAMI_SIGNED_LONG_LONG:
+            case PAMI_UNSIGNED_LONG_LONG:
               break;
-            case XMI_SIGNED_SHORT:
+            case PAMI_SIGNED_SHORT:
               break;
-            case XMI_UNSIGNED_INT:
+            case PAMI_UNSIGNED_INT:
               break;
-            case XMI_UNSIGNED_SHORT:
+            case PAMI_UNSIGNED_SHORT:
               break;
-            case XMI_FLOAT:
+            case PAMI_FLOAT:
               break;
-            case XMI_DOUBLE:
+            case PAMI_DOUBLE:
               break;
-            case XMI_LOGICAL:
+            case PAMI_LOGICAL:
               return -1;
-            case XMI_LONG_DOUBLE:
+            case PAMI_LONG_DOUBLE:
               return -1;
-            case XMI_DOUBLE_COMPLEX:
+            case PAMI_DOUBLE_COMPLEX:
               return -1;
-            case XMI_UNSIGNED_CHAR:
-            case XMI_SIGNED_CHAR:
+            case PAMI_UNSIGNED_CHAR:
+            case PAMI_SIGNED_CHAR:
             default:
               return -1;
             }
             break;
-          case XMI_BAND:
+          case PAMI_BAND:
             switch(dt)
             {
-            case XMI_LOGICAL:
-            case XMI_FLOAT:
-            case XMI_UNSIGNED_INT:
-            case XMI_SIGNED_INT:
+            case PAMI_LOGICAL:
+            case PAMI_FLOAT:
+            case PAMI_UNSIGNED_INT:
+            case PAMI_SIGNED_INT:
               break;
-            case XMI_DOUBLE:
-            case XMI_SIGNED_LONG_LONG:
-            case XMI_UNSIGNED_LONG_LONG:
+            case PAMI_DOUBLE:
+            case PAMI_SIGNED_LONG_LONG:
+            case PAMI_UNSIGNED_LONG_LONG:
               break;
-            case XMI_UNSIGNED_SHORT:
-            case XMI_SIGNED_SHORT:
+            case PAMI_UNSIGNED_SHORT:
+            case PAMI_SIGNED_SHORT:
               break;
-            case XMI_UNSIGNED_CHAR:
-            case XMI_SIGNED_CHAR:
-              break;
-            default:
-              return -1;
-            }
-            break;
-          case XMI_BOR:
-            switch(dt)
-            {
-            case XMI_LOGICAL:
-            case XMI_FLOAT:
-            case XMI_UNSIGNED_INT:
-            case XMI_SIGNED_INT:
-              break;
-            case XMI_DOUBLE:
-            case XMI_SIGNED_LONG_LONG:
-            case XMI_UNSIGNED_LONG_LONG:
-              break;
-            case XMI_UNSIGNED_SHORT:
-            case XMI_SIGNED_SHORT:
-              break;
-            case XMI_UNSIGNED_CHAR:
-            case XMI_SIGNED_CHAR:
+            case PAMI_UNSIGNED_CHAR:
+            case PAMI_SIGNED_CHAR:
               break;
             default:
               return -1;
             }
             break;
-          case XMI_BXOR:
+          case PAMI_BOR:
             switch(dt)
             {
-            case XMI_LOGICAL:
-            case XMI_FLOAT:
-            case XMI_UNSIGNED_INT:
-            case XMI_SIGNED_INT:
+            case PAMI_LOGICAL:
+            case PAMI_FLOAT:
+            case PAMI_UNSIGNED_INT:
+            case PAMI_SIGNED_INT:
               break;
-            case XMI_DOUBLE:
-            case XMI_SIGNED_LONG_LONG:
-            case XMI_UNSIGNED_LONG_LONG:
+            case PAMI_DOUBLE:
+            case PAMI_SIGNED_LONG_LONG:
+            case PAMI_UNSIGNED_LONG_LONG:
               break;
-            case XMI_UNSIGNED_SHORT:
-            case XMI_SIGNED_SHORT:
+            case PAMI_UNSIGNED_SHORT:
+            case PAMI_SIGNED_SHORT:
               break;
-            case XMI_UNSIGNED_CHAR:
-            case XMI_SIGNED_CHAR:
+            case PAMI_UNSIGNED_CHAR:
+            case PAMI_SIGNED_CHAR:
               break;
             default:
               return -1;
             }
             break;
-          case XMI_LAND:
+          case PAMI_BXOR:
             switch(dt)
             {
-            case XMI_LOGICAL:
-            case XMI_FLOAT:
-            case XMI_UNSIGNED_INT:
-            case XMI_SIGNED_INT:
+            case PAMI_LOGICAL:
+            case PAMI_FLOAT:
+            case PAMI_UNSIGNED_INT:
+            case PAMI_SIGNED_INT:
               break;
-            case XMI_DOUBLE:
-            case XMI_UNSIGNED_LONG_LONG:
-            case XMI_SIGNED_LONG_LONG:
+            case PAMI_DOUBLE:
+            case PAMI_SIGNED_LONG_LONG:
+            case PAMI_UNSIGNED_LONG_LONG:
               break;
-            case XMI_UNSIGNED_SHORT:
-            case XMI_SIGNED_SHORT:
+            case PAMI_UNSIGNED_SHORT:
+            case PAMI_SIGNED_SHORT:
               break;
-            case XMI_UNSIGNED_CHAR:
-            case XMI_SIGNED_CHAR:
+            case PAMI_UNSIGNED_CHAR:
+            case PAMI_SIGNED_CHAR:
               break;
             default:
               return -1;
             }
             break;
-          case XMI_LOR:
+          case PAMI_LAND:
             switch(dt)
             {
-            case XMI_LOGICAL:
-            case XMI_FLOAT:
-            case XMI_UNSIGNED_INT:
-            case XMI_SIGNED_INT:
+            case PAMI_LOGICAL:
+            case PAMI_FLOAT:
+            case PAMI_UNSIGNED_INT:
+            case PAMI_SIGNED_INT:
               break;
-            case XMI_DOUBLE:
-            case XMI_UNSIGNED_LONG_LONG:
-            case XMI_SIGNED_LONG_LONG:
+            case PAMI_DOUBLE:
+            case PAMI_UNSIGNED_LONG_LONG:
+            case PAMI_SIGNED_LONG_LONG:
               break;
-            case XMI_UNSIGNED_SHORT:
-            case XMI_SIGNED_SHORT:
+            case PAMI_UNSIGNED_SHORT:
+            case PAMI_SIGNED_SHORT:
               break;
-            case XMI_UNSIGNED_CHAR:
-            case XMI_SIGNED_CHAR:
+            case PAMI_UNSIGNED_CHAR:
+            case PAMI_SIGNED_CHAR:
               break;
             default:
               return -1;
             }
             break;
-          case XMI_LXOR:
+          case PAMI_LOR:
             switch(dt)
             {
-            case XMI_LOGICAL:
-            case XMI_FLOAT:
-            case XMI_UNSIGNED_INT:
-            case XMI_SIGNED_INT:
+            case PAMI_LOGICAL:
+            case PAMI_FLOAT:
+            case PAMI_UNSIGNED_INT:
+            case PAMI_SIGNED_INT:
               break;
-            case XMI_DOUBLE:
-            case XMI_UNSIGNED_LONG_LONG:
-            case XMI_SIGNED_LONG_LONG:
+            case PAMI_DOUBLE:
+            case PAMI_UNSIGNED_LONG_LONG:
+            case PAMI_SIGNED_LONG_LONG:
               break;
-            case XMI_UNSIGNED_SHORT:
-            case XMI_SIGNED_SHORT:
+            case PAMI_UNSIGNED_SHORT:
+            case PAMI_SIGNED_SHORT:
               break;
-            case XMI_UNSIGNED_CHAR:
-            case XMI_SIGNED_CHAR:
+            case PAMI_UNSIGNED_CHAR:
+            case PAMI_SIGNED_CHAR:
               break;
             default:
               return -1;
             }
             break;
-          case XMI_MAXLOC:
+          case PAMI_LXOR:
             switch(dt)
             {
-            case XMI_LOC_2INT:
+            case PAMI_LOGICAL:
+            case PAMI_FLOAT:
+            case PAMI_UNSIGNED_INT:
+            case PAMI_SIGNED_INT:
               break;
-            case XMI_LOC_SHORT_INT:
+            case PAMI_DOUBLE:
+            case PAMI_UNSIGNED_LONG_LONG:
+            case PAMI_SIGNED_LONG_LONG:
               break;
-            case XMI_LOC_FLOAT_INT:
+            case PAMI_UNSIGNED_SHORT:
+            case PAMI_SIGNED_SHORT:
               break;
-            case XMI_LOC_DOUBLE_INT:
-              break;
-            case XMI_LOC_2FLOAT:
-              break;
-            case XMI_LOC_2DOUBLE:
+            case PAMI_UNSIGNED_CHAR:
+            case PAMI_SIGNED_CHAR:
               break;
             default:
               return -1;
             }
             break;
-          case XMI_MINLOC:
+          case PAMI_MAXLOC:
             switch(dt)
             {
-            case XMI_LOC_2INT:
+            case PAMI_LOC_2INT:
               break;
-            case XMI_LOC_SHORT_INT:
+            case PAMI_LOC_SHORT_INT:
               break;
-            case XMI_LOC_FLOAT_INT:
+            case PAMI_LOC_FLOAT_INT:
               break;
-            case XMI_LOC_DOUBLE_INT:
+            case PAMI_LOC_DOUBLE_INT:
               break;
-            case XMI_LOC_2FLOAT:
+            case PAMI_LOC_2FLOAT:
               break;
-            case XMI_LOC_2DOUBLE:
+            case PAMI_LOC_2DOUBLE:
               break;
             default:
               return -1;
             }
             break;
-          case XMI_PROD:
+          case PAMI_MINLOC:
+            switch(dt)
+            {
+            case PAMI_LOC_2INT:
+              break;
+            case PAMI_LOC_SHORT_INT:
+              break;
+            case PAMI_LOC_FLOAT_INT:
+              break;
+            case PAMI_LOC_DOUBLE_INT:
+              break;
+            case PAMI_LOC_2FLOAT:
+              break;
+            case PAMI_LOC_2DOUBLE:
+              break;
+            default:
+              return -1;
+            }
+            break;
+          case PAMI_PROD:
             return -1;
           default:
             return -1;

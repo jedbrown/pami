@@ -14,10 +14,10 @@
 ///  \brief Generic Device base class for Messages
 ///
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "GenericDevicePlatform.h"
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 
 /// \brief Message Status
@@ -53,7 +53,7 @@ public:
 	//////////////////////////////////////////////////////////////////////
 	///  \brief Constructor
 	//////////////////////////////////////////////////////////////////////
-	GenericMessage(GenericDeviceMessageQueue *QS, xmi_callback_t cb,
+	GenericMessage(GenericDeviceMessageQueue *QS, pami_callback_t cb,
 						size_t client, size_t context) :
 	GenericDeviceMessageQueue::Element(),
 	_status(Uninitialized),
@@ -67,7 +67,7 @@ public:
 	virtual ~GenericMessage() {}
 
         /// \note This is required to make "C" programs link successfully with virtual destructors
-        inline void operator delete(void * p) { XMI_abort(); }
+        inline void operator delete(void * p) { PAMI_abort(); }
 
 	/// \brief get client associated with message
 	/// \return	client for message posting/completion
@@ -98,14 +98,14 @@ public:
 	///
 	/// \param[in] cb	Callback to use for message completion
 	///
-	void setCallback(xmi_callback_t cb) {_cb = cb;}
+	void setCallback(pami_callback_t cb) {_cb = cb;}
 
 	///  \brief Executes the message completion callback
 	///
 	/// \param[in] ctx	The context object on which completion is called
 	/// \param[in] err	Optional error status (default is success)
 	///
-	void executeCallback(xmi_context_t ctx, xmi_result_t err = XMI_SUCCESS) {
+	void executeCallback(pami_context_t ctx, pami_result_t err = PAMI_SUCCESS) {
 		if(_cb.function) _cb.function(ctx, _cb.clientdata, err);
 	}
 
@@ -130,18 +130,18 @@ public:
 	/// \param[in] devQueued	msg is already queued on device send queue
 	/// \return	context on which message completed, or NULL
 	///
-	virtual xmi_context_t postNext(bool devQueued) = 0;
+	virtual pami_context_t postNext(bool devQueued) = 0;
 
 protected:
 	MessageStatus _status;		///< current message status
 	GenericDeviceMessageQueue *_QS; ///< send queue associated with message
 	size_t _client;			///< client ID for message
 	size_t _context;		///< context ID for message
-	xmi_callback_t _cb;		///< completion callback
+	pami_callback_t _cb;		///< completion callback
 }; /* class GenericMessage */
 
 }; /* namespace Generic */
 }; /* namespace Device */
-}; /* namespace XMI */
+}; /* namespace PAMI */
 
 #endif /* __components_devices_generic_message_h__ */

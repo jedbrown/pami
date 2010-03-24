@@ -1,6 +1,6 @@
 ///
 /// \file common/default/Memregion.h
-/// \brief XMI default memregion implementation.
+/// \brief PAMI default memregion implementation.
 ///
 #ifndef __common_default_Memregion_h__
 #define __common_default_Memregion_h__
@@ -10,33 +10,33 @@
 
 #include "common/MemregionInterface.h"
 
-namespace XMI
+namespace PAMI
 {
   class Memregion : public Interface::Memregion<Memregion>
   {
     public:
-      inline Memregion (xmi_context_t context) :
+      inline Memregion (pami_context_t context) :
           Interface::Memregion<Memregion> (context),
           _context (context)
       {
       }
-      inline xmi_result_t createMemregion (size_t   * bytes_out,
+      inline pami_result_t createMemregion (size_t   * bytes_out,
                                            size_t     bytes_in,
                                            void     * base,
                                            uint64_t   options)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t destroyMemregion ()
+      inline pami_result_t destroyMemregion ()
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t getInfo (size_t * bytes,
+      inline pami_result_t getInfo (size_t * bytes,
                                    void ** base)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
 
       }
 
@@ -45,20 +45,20 @@ namespace XMI
         return NULL;
       }
 
-      inline xmi_result_t read_impl (size_t      local_offset,
+      inline pami_result_t read_impl (size_t      local_offset,
                                      Memregion * remote_memregion,
                                      size_t      remote_offset,
                                      size_t      bytes)
       {
-        return XMI_ERROR;
+        return PAMI_ERROR;
       }
 
-      inline xmi_result_t write_impl (size_t      local_offset,
+      inline pami_result_t write_impl (size_t      local_offset,
                                       Memregion * remote_memregion,
                                       size_t      remote_offset,
                                       size_t      bytes)
       {
-        return XMI_ERROR;
+        return PAMI_ERROR;
       }
 
       inline bool isSharedAddressReadSupported ()
@@ -75,8 +75,8 @@ namespace XMI
       static const bool shared_address_write_supported = false;
 
     private:
-      xmi_context_t _context;
-  }; // end XMI::Memregion
-}; // end namespace XMI
+      pami_context_t _context;
+  }; // end PAMI::Memregion
+}; // end namespace PAMI
 
 #endif

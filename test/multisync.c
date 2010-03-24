@@ -3,14 +3,14 @@
 /// \brief Simple Multisync test
 ///
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include <sys/time.h>
 #include <unistd.h>
 #include <stdio.h>
 
 volatile unsigned       _g_multisync_active;
 
-void cb_multisync (void *ctxt, void * clientdata, xmi_result_t err)
+void cb_multisync (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;
@@ -23,18 +23,18 @@ static double timer()
     return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-void _multisync (xmi_context_t context, xmi_multisync_t *multisync)
+void _multisync (pami_context_t context, pami_multisync_t *multisync)
 {
   _g_multisync_active++;
-  xmi_result_t result;
-  result = XMI_Multisync(multisync);
-  if (result != XMI_SUCCESS)
+  pami_result_t result;
+  result = PAMI_Multisync(multisync);
+  if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue multisync collective. result = %d\n", result);
       exit(1);
     }
   while (_g_multisync_active)
-    result = XMI_Context_advance (context, 1);
+    result = PAMI_Context_advance (context, 1);
 
 }
 
@@ -42,29 +42,29 @@ void _multisync (xmi_context_t context, xmi_multisync_t *multisync)
 
 int main (int argc, char ** argv)
 {
-  xmi_client_t  client;
-  xmi_context_t context;
-  xmi_result_t  result = XMI_ERROR;
+  pami_client_t  client;
+  pami_context_t context;
+  pami_result_t  result = PAMI_ERROR;
   char          cl_string[] = "TEST";
-  result = XMI_Client_initialize (cl_string, &client);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Client_initialize (cl_string, &client);
+  if (result != PAMI_SUCCESS)
       {
-        fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
+        fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
         return 1;
       }
 
-      { size_t _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, _n); }
-      if (result != XMI_SUCCESS)
+      { size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
+      if (result != PAMI_SUCCESS)
           {
-            fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
+            fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
             return 1;
           }
 
 
-      xmi_configuration_t configuration;
-      configuration.name = XMI_TASK_ID;
-      result = XMI_Configuration_query(client, &configuration);
-      if (result != XMI_SUCCESS)
+      pami_configuration_t configuration;
+      configuration.name = PAMI_TASK_ID;
+      result = PAMI_Configuration_query(client, &configuration);
+      if (result != PAMI_SUCCESS)
           {
             fprintf (stderr,
                      "Error. Unable query configuration (%d). result = %d\n",
@@ -73,9 +73,9 @@ int main (int argc, char ** argv)
           }
       size_t task_id = configuration.value.intval;
 
-      configuration.name = XMI_NUM_TASKS;
-      result = XMI_Configuration_query(client, &configuration);
-      if (result != XMI_SUCCESS)
+      configuration.name = PAMI_NUM_TASKS;
+      result = PAMI_Configuration_query(client, &configuration);
+      if (result != PAMI_SUCCESS)
           {
             fprintf (stderr,
                      "Error. Unable query configuration (%d). result = %d\n",
@@ -85,14 +85,14 @@ int main (int argc, char ** argv)
       size_t          sz    = configuration.value.intval;
 
 
-      xmi_topology_t    topo;
-      xmi_task_t       *tasklist = (xmi_task_t*)malloc(sz*sizeof(xmi_task_t));
+      pami_topology_t    topo;
+      pami_task_t       *tasklist = (pami_task_t*)malloc(sz*sizeof(pami_task_t));
       size_t i;
       for(i=0; i<sz; i++)tasklist[i]=i;
-      //XMI_Topology_create_range(&topo,0,sz-1);
-      XMI_Topology_create_list(&topo,tasklist,sz);
+      //PAMI_Topology_create_range(&topo,0,sz-1);
+      PAMI_Topology_create_list(&topo,tasklist,sz);
 
-      xmi_multisync_t multisync;
+      pami_multisync_t multisync;
       multisync.client             = client;
       multisync.context            = (size_t)0;
       multisync.cb_done.function   = cb_multisync;
@@ -146,17 +146,17 @@ int main (int argc, char ** argv)
         fprintf(stderr,"multisync: time=%f usec\n", usec/(double)niter);
 
 
-      result = XMI_Context_destroy (context);
-      if (result != XMI_SUCCESS)
+      result = PAMI_Context_destroy (context);
+      if (result != PAMI_SUCCESS)
           {
-            fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
+            fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
             return 1;
           }
 
-      result = XMI_Client_finalize (client);
-      if (result != XMI_SUCCESS)
+      result = PAMI_Client_finalize (client);
+      if (result != PAMI_SUCCESS)
           {
-            fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+            fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
             return 1;
           }
 

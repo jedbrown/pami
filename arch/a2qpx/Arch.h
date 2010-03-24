@@ -49,4 +49,4 @@ void Type<size_t>::copy (size_t * dst, size_t * src)
   }
 };
 
-#endif // __xmi_arch_a2qpx_h__
+#endif // __pami_arch_a2qpx_h__

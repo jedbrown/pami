@@ -35,7 +35,7 @@
 #define TRACE_ERR(x)
 #endif
 
-namespace XMI
+namespace PAMI
 {
 
   //
@@ -88,27 +88,27 @@ namespace XMI
   };
 
 
-  class Queue : public XMI::Interface::DequeInterface<Queue>,
-      public XMI::Interface::QueueInfoInterface<Queue>
+  class Queue : public PAMI::Interface::DequeInterface<Queue>,
+      public PAMI::Interface::QueueInfoInterface<Queue>
   {
     public:
 
       typedef Interface::QueueElement<Queue> Element;
 
       inline Queue() :
-          XMI::Interface::DequeInterface<Queue> (),
-          XMI::Interface::QueueInfoInterface<Queue> (),
+          PAMI::Interface::DequeInterface<Queue> (),
+          PAMI::Interface::QueueInfoInterface<Queue> (),
           _head (NULL),
           _tail (NULL),
           _size (0)
       {
       };
 
-      inline void init (XMI::Memory::MemoryManager *mm)
+      inline void init (PAMI::Memory::MemoryManager *mm)
       {
       }
 
-      /// \copydoc XMI::Interface::QueueInterface::enqueue
+      /// \copydoc PAMI::Interface::QueueInterface::enqueue
       inline void enqueue_impl (Queue::Element * element)
       {
         TRACE_ERR ((stderr, "enqueue(%p)\n", element));
@@ -125,7 +125,7 @@ namespace XMI
         _size++;
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::dequeue
+      /// \copydoc PAMI::Interface::QueueInterface::dequeue
       inline Queue::Element * dequeue_impl ()
       {
         Queue::Element * element = _head;
@@ -146,7 +146,7 @@ namespace XMI
         return element;
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::push
+      /// \copydoc PAMI::Interface::QueueInterface::push
       inline void push_impl (Element * element)
       {
         TRACE_ERR ((stderr, "push(%p)\n", element));
@@ -163,26 +163,26 @@ namespace XMI
         _size++;
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::peek
+      /// \copydoc PAMI::Interface::QueueInterface::peek
       inline Element * peek_impl ()
       {
         return _head;
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::isEmpty
+      /// \copydoc PAMI::Interface::QueueInterface::isEmpty
       inline bool isEmpty_impl ()
       {
         return (_head == NULL);
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::next
+      /// \copydoc PAMI::Interface::QueueInterface::next
       inline Element * next_impl (Element * reference)
       {
         return reference->next();
       };
 
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
-      /// \copydoc XMI::Interface::QueueInterface::popTail
+      /// \copydoc PAMI::Interface::QueueInterface::popTail
       inline Element * popTail_impl ()
       {
         Element * element = _tail;
@@ -201,26 +201,26 @@ namespace XMI
         return element;
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::peekTail
+      /// \copydoc PAMI::Interface::QueueInterface::peekTail
       inline Element * peekTail_impl ()
       {
         return _tail;
       };
 #endif
 
-      /// \copydoc XMI::Interface::DequeInterface::tail
+      /// \copydoc PAMI::Interface::DequeInterface::tail
       inline Queue::Element * tail_impl ()
       {
         return _tail;
       };
 
-      /// \copydoc XMI::Interface::DequeInterface::before
+      /// \copydoc PAMI::Interface::DequeInterface::before
       inline Queue::Element * before_impl (Queue::Element * reference)
       {
         return reference->prev();
       };
 
-      /// \copydoc XMI::Interface::DequeInterface::insert
+      /// \copydoc PAMI::Interface::DequeInterface::insert
       inline void insert_impl (Queue::Element * reference,
                                Queue::Element * element)
       {
@@ -231,7 +231,7 @@ namespace XMI
         _size++;
       };
 
-      /// \copydoc XMI::Interface::DequeInterface::append
+      /// \copydoc PAMI::Interface::DequeInterface::append
       inline void append_impl (Queue::Element * reference,
                                Queue::Element * element)
       {
@@ -242,7 +242,7 @@ namespace XMI
         _size++;
       };
 
-      /// \copydoc XMI::Interface::DequeInterface::remove
+      /// \copydoc PAMI::Interface::DequeInterface::remove
       inline void remove_impl (Queue::Element * element)
       {
         Element * prev = element->prev ();
@@ -263,28 +263,28 @@ namespace XMI
         return;
       };
 
-      /// \copydoc XMI::Interface::QueueInfoInterface::size
+      /// \copydoc PAMI::Interface::QueueInfoInterface::size
       inline size_t size_impl ()
       {
         return _size;
       };
 
-      /// \copydoc XMI::Interface::QueueInfoInterface::dump
+      /// \copydoc PAMI::Interface::QueueInfoInterface::dump
       inline void dump_impl (const char * str, int n)
       {
-        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       };
 
 #ifdef VALIDATE_ON
-      /// \copydoc XMI::Interface::QueueInfoInterface::validate
+      /// \copydoc PAMI::Interface::QueueInfoInterface::validate
       inline void validate_impl ()
       {
-        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       };
 #endif
 
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
-      /// \copydoc XMI::Interface::QueueInfoInterface::insertElem
+      /// \copydoc PAMI::Interface::QueueInfoInterface::insertElem
       inline void insertElem_impl (Queue::Element * element, size_t position)
       {
         if (position == 0)
@@ -316,7 +316,7 @@ namespace XMI
       Queue::Element * _tail;
       size_t           _size;
 
-  }; // class XMI::Queue
+  }; // class PAMI::Queue
 
   template <class T_Mutex>
   class AtomicQueue : public Queue
@@ -330,7 +330,7 @@ namespace XMI
           _mutex ()
       {};
 
-      inline void init (XMI::Memory::MemoryManager *mm)
+      inline void init (PAMI::Memory::MemoryManager *mm)
       {
         _mutex.init (mm);
       };
@@ -463,22 +463,22 @@ namespace XMI
       };
 #endif
 
-      /// \copydoc XMI::Interface::QueueInfoInterface::dump
+      /// \copydoc PAMI::Interface::QueueInfoInterface::dump
       inline void dump (const char * str, int n)
       {
-        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       };
 
 #ifdef VALIDATE_ON
-      /// \copydoc XMI::Interface::QueueInfoInterface::validate
+      /// \copydoc PAMI::Interface::QueueInfoInterface::validate
       inline void validate ()
       {
-        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       };
 #endif
 
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
-      /// \copydoc XMI::Interface::QueueInfoInterface::insertElem
+      /// \copydoc PAMI::Interface::QueueInfoInterface::insertElem
       inline void insertElem (Queue::Element * element, size_t position)
       {
         _mutex.acquire ();
@@ -493,8 +493,8 @@ namespace XMI
 
       T_Mutex _mutex;
 
-  }; // class XMI::AtomicQueue
-}; // namespace XMI
+  }; // class PAMI::AtomicQueue
+}; // namespace PAMI
 
 #endif // __util_queue_queue_h__
 

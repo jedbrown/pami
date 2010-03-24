@@ -16,10 +16,10 @@
 
 #include <sys/uio.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/common.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -232,7 +232,7 @@ namespace XMI
           /// The packet device implementation will use the appropriate receive
           /// function depending on the packet device "requires read" attribute.
           ///
-          /// \see XMI::Device::Interface::PacketDevice::readData()
+          /// \see PAMI::Device::Interface::PacketDevice::readData()
           ///
           /// \param[in] dispatch              Dispatch set identifier
           /// \param[in] direct_recv_func      Receive function for direct-access packet devices
@@ -240,7 +240,7 @@ namespace XMI
           /// \param[in] read_recv_func        Receive function for read-access packet devices
           /// \param[in] read_recv_func_parm   Receive function clientdata for read-access packet devices
           ///
-          xmi_result_t init (size_t           dispatch,
+          pami_result_t init (size_t           dispatch,
                              RecvFunction_t   direct_recv_func,
                              void           * direct_recv_func_parm,
                              RecvFunction_t   read_recv_func,
@@ -298,7 +298,7 @@ namespace XMI
           ///       payload data will be truncated if more bytes than a single
           ///       packet can transfer is specified as the payload.
           ///
-          /// \see XMI::Device::Interface::PacketDevice::getPacketPayloadSize()
+          /// \see PAMI::Device::Interface::PacketDevice::getPacketPayloadSize()
           ///
           /// \note The size of the metadata to be copied into the packet
           ///       is an attribute of the specific packet device associated
@@ -306,7 +306,7 @@ namespace XMI
           ///       if more metadat bytes than a single packet can transfer
           ///       is specified.
           ///
-          /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
+          /// \see PAMI::Device::Interface::PacketDevice::getPacketMetadataSize()
           ///
           /// \param[in] target_task     Global identifier of the packet destination task
           /// \param[in] target_offset  Identifier of the packet destination context
@@ -318,7 +318,7 @@ namespace XMI
           /// \retval false No data has been posted
           ///
           template <unsigned T_Niov>
-          inline bool postPacket (xmi_task_t     target_task,
+          inline bool postPacket (pami_task_t     target_task,
                                   size_t         target_offset,
                                   void         * metadata,
                                   size_t         metasize,
@@ -366,7 +366,7 @@ namespace XMI
           ///       payload data will be truncated if more bytes than a single
           ///       packet can transfer is specified as the payload.
           ///
-          /// \see XMI::Device::Interface::PacketDevice::getPacketPayloadSize()
+          /// \see PAMI::Device::Interface::PacketDevice::getPacketPayloadSize()
           ///
           /// \note The size of the metadata to be copied into the packet
           ///       is an attribute of the specific packet device associated
@@ -374,7 +374,7 @@ namespace XMI
           ///       if more metadat bytes than a single packet can transfer
           ///       is specified.
           ///
-          /// \see XMI::Device::Interface::PacketDevice::getPacketMetadataSize()
+          /// \see PAMI::Device::Interface::PacketDevice::getPacketMetadataSize()
           ///
           /// \param[in] state           Byte array for the packet transfer state
           /// \param[in] fn              Event function to invoke when the operation completes
@@ -394,9 +394,9 @@ namespace XMI
           ///               event function is invoked
           ///
           inline bool postPacket (uint8_t              (&state)[T_StateBytes],
-                                  xmi_event_function   fn,
+                                  pami_event_function   fn,
                                   void               * cookie,
-                                  xmi_task_t           target_task,
+                                  pami_task_t           target_task,
                                   size_t               target_offset,
                                   void               * metadata,
                                   size_t               metasize,
@@ -408,9 +408,9 @@ namespace XMI
           ///
           template <unsigned T_Niov>
           inline bool postPacket (uint8_t              (&state)[T_StateBytes],
-                                  xmi_event_function   fn,
+                                  pami_event_function   fn,
                                   void               * cookie,
-                                  xmi_task_t           target_task,
+                                  pami_task_t           target_task,
                                   size_t               target_offset,
                                   void               * metadata,
                                   size_t               metasize,
@@ -422,9 +422,9 @@ namespace XMI
           /// the iovec management responsibilities...
           ///
           inline bool postPacket (uint8_t              (&state)[T_StateBytes],
-                                  xmi_event_function   fn,
+                                  pami_event_function   fn,
                                   void               * cookie,
-                                  xmi_task_t           target_task,
+                                  pami_task_t           target_task,
                                   size_t               target_offset,
                                   void               * metadata,
                                   size_t               metasize,
@@ -451,7 +451,7 @@ namespace XMI
           ///       is an attribute of the specific packet device associated
           ///       with this packet model.
           ///
-          /// \see XMI::Device::Interface::PacketDevice::getMultiPacketMetadataSize()
+          /// \see PAMI::Device::Interface::PacketDevice::getMultiPacketMetadataSize()
           ///
           /// \param[in] state           Location to store the transfer object
           /// \param[in] fn              Event function to invoke when the operation completes
@@ -470,9 +470,9 @@ namespace XMI
           ///               callback is invoked
           ///
           inline bool postMultiPacket (uint8_t              (&state)[T_StateBytes],
-                                       xmi_event_function   fn,
+                                       pami_event_function   fn,
                                        void               * cookie,
-                                       xmi_task_t           target_task,
+                                       pami_task_t           target_task,
                                        size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
@@ -517,7 +517,7 @@ namespace XMI
       }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
-      xmi_result_t PacketModel<T_Model, T_Device, T_StateBytes>::init (size_t           dispatch,
+      pami_result_t PacketModel<T_Model, T_Device, T_StateBytes>::init (size_t           dispatch,
                                                                        RecvFunction_t   direct_recv_func,
                                                                        void           * direct_recv_func_parm,
                                                                        RecvFunction_t   read_recv_func,
@@ -532,7 +532,7 @@ namespace XMI
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       template <unsigned T_Niov>
-      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (xmi_task_t     target_task,
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (pami_task_t     target_task,
                                                                             size_t         target_offset,
                                                                             void         * metadata,
                                                                             size_t         metasize,
@@ -543,9 +543,9 @@ namespace XMI
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
-                                                                            xmi_event_function   fn,
+                                                                            pami_event_function   fn,
                                                                             void               * cookie,
-                                                                            xmi_task_t           target_task,
+                                                                            pami_task_t           target_task,
                                                                             size_t               target_offset,
                                                                             void               * metadata,
                                                                             size_t               metasize,
@@ -561,9 +561,9 @@ namespace XMI
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       template <unsigned T_Niov>
       inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
-                                                                            xmi_event_function   fn,
+                                                                            pami_event_function   fn,
                                                                             void               * cookie,
-                                                                            xmi_task_t           target_task,
+                                                                            pami_task_t           target_task,
                                                                             size_t               target_offset,
                                                                             void               * metadata,
                                                                             size_t               metasize,
@@ -576,9 +576,9 @@ namespace XMI
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
-                                                                            xmi_event_function   fn,
+                                                                            pami_event_function   fn,
                                                                             void               * cookie,
-                                                                            xmi_task_t           target_task,
+                                                                            pami_task_t           target_task,
                                                                             size_t               target_offset,
                                                                             void               * metadata,
                                                                             size_t               metasize,
@@ -593,9 +593,9 @@ namespace XMI
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postMultiPacket (uint8_t              (&state)[T_StateBytes],
-                                                                                 xmi_event_function   fn,
+                                                                                 pami_event_function   fn,
                                                                                  void               * cookie,
-                                                                                 xmi_task_t           target_task,
+                                                                                 pami_task_t           target_task,
                                                                                  size_t               target_offset,
                                                                                  void               * metadata,
                                                                                  size_t               metasize,

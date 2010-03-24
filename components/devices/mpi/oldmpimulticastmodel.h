@@ -14,12 +14,12 @@
 #ifndef __components_devices_mpi_oldmpimulticastmodel_h__
 #define __components_devices_mpi_oldmpimulticastmodel_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "components/devices/OldMulticastModel.h"
 #include "components/devices/mpi/mpimessage.h"
 #include <mpi.h>
 #include "util/common.h"
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -35,15 +35,15 @@ namespace XMI
           TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel() %d\n",this, _dispatch_id));
           };
 
-	inline void setCallback (xmi_olddispatch_multicast_fn cb_recv, void *arg)
+	inline void setCallback (pami_olddispatch_multicast_fn cb_recv, void *arg)
         {
           _device.registerOldMcastRecvFunction (_dispatch_id, cb_recv, arg);
         }
 
-	inline unsigned  send   (XMI_Request_t             * request,
-				 const xmi_callback_t      * cb_done,
-				 xmi_consistency_t           consistency,
-				 const xmi_quad_t          * info,
+	inline unsigned  send   (PAMI_Request_t             * request,
+				 const pami_callback_t      * cb_done,
+				 pami_consistency_t           consistency,
+				 const pami_quad_t          * info,
 				 unsigned                    info_count,
 				 unsigned                    connection_id,
 				 const char                * buf,
@@ -51,19 +51,19 @@ namespace XMI
 				 unsigned                  * hints,
 				 unsigned                  * ranks,
 				 unsigned                    nranks,
-				 xmi_op                      op    = XMI_UNDEFINED_OP,
-				 xmi_dt                      dtype = XMI_UNDEFINED_DT )
+				 pami_op                      op    = PAMI_UNDEFINED_OP,
+				 pami_dt                      dtype = PAMI_UNDEFINED_DT )
         {
 
 	  OldMPIMcastMessage *hdr = (OldMPIMcastMessage *) malloc (sizeof (OldMPIMcastMessage) + size);
-          XMI_assert( hdr != NULL );
+          PAMI_assert( hdr != NULL );
           hdr->_dispatch_id = _dispatch_id;
           hdr->_info_count  = info_count;
           hdr->_size        = size;
           hdr->_conn        = connection_id;
           if( info )
 	    {
-	      memcpy (&hdr->_info[0], info, info_count * sizeof (xmi_quad_t));
+	      memcpy (&hdr->_info[0], info, info_count * sizeof (pami_quad_t));
 	      if(info_count > 2)
 		{
 		  fprintf(stderr, "FIX:  The generic adaptor only supports up to 2 quads\n");
@@ -81,10 +81,10 @@ namespace XMI
           else
             hdr->_cb_done.function = NULL;
 
-          XMI_assert(hdr->_req != NULL);
+          PAMI_assert(hdr->_req != NULL);
           for(unsigned count = 0; count < nranks; count ++)
 	    {
-	      XMI_assert (hints[count] == XMI_PT_TO_PT_SUBTASK);
+	      PAMI_assert (hints[count] == PAMI_PT_TO_PT_SUBTASK);
 
           TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel:send MPI_Isend %zd to %zd\n",this,
                          hdr->totalsize(),ranks[count]));
@@ -95,18 +95,18 @@ namespace XMI
 			      2,
 			      _device._communicator,
 			      &hdr->_req[count]);
-	      XMI_assert (rc == MPI_SUCCESS);
+	      PAMI_assert (rc == MPI_SUCCESS);
 	    }
 	  _device.enqueue(hdr);
           return rc;
         }
 
 
-	inline unsigned send (xmi_oldmulticast_t *mcastinfo)
+	inline unsigned send (pami_oldmulticast_t *mcastinfo)
         {
-          return this->send((XMI_Request_t*)mcastinfo->request,
+          return this->send((PAMI_Request_t*)mcastinfo->request,
                             &mcastinfo->cb_done,
-                            XMI_MATCH_CONSISTENCY,
+                            PAMI_MATCH_CONSISTENCY,
                             mcastinfo->msginfo,
                             mcastinfo->count,
                             mcastinfo->connection_id,
@@ -118,15 +118,15 @@ namespace XMI
         }
 
 
-        inline unsigned postRecv (XMI_Request_t          * request,
-                                  const xmi_callback_t   * cb_done,
+        inline unsigned postRecv (PAMI_Request_t          * request,
+                                  const pami_callback_t   * cb_done,
                                   unsigned                 conn_id,
                                   char                   * buf,
                                   unsigned                 size,
                                   unsigned                 pwidth,
-                                  unsigned                 hint   = XMI_UNDEFINED_SUBTASK,
-                                  xmi_op                   op     = XMI_UNDEFINED_OP,
-                                  xmi_dt                   dtype  = XMI_UNDEFINED_DT)
+                                  unsigned                 hint   = PAMI_UNDEFINED_SUBTASK,
+                                  pami_op                   op     = PAMI_UNDEFINED_OP,
+                                  pami_dt                   dtype  = PAMI_UNDEFINED_DT)
         {
 
           OldMPIMcastRecvMessage *msg = (OldMPIMcastRecvMessage*)malloc(sizeof(*msg));
@@ -147,9 +147,9 @@ namespace XMI
 	  return 0;
         }
 
-	inline unsigned postRecv (xmi_oldmulticast_recv_t  *mrecv)
+	inline unsigned postRecv (pami_oldmulticast_recv_t  *mrecv)
         {
-          postRecv((XMI_Request_t*)mrecv->request,
+          postRecv((PAMI_Request_t*)mrecv->request,
                    &mrecv->cb_done,
                    mrecv->connection_id,
                    mrecv->rcvbuf,
@@ -164,7 +164,7 @@ namespace XMI
 
 	T_Device                     &_device;
 	size_t                        _dispatch_id;
-	xmi_olddispatch_multicast_fn  _cb_async_head;
+	pami_olddispatch_multicast_fn  _cb_async_head;
 	void                         *_async_arg;
 
       };

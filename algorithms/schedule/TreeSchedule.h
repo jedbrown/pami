@@ -470,7 +470,7 @@ TreeSchedule(TorusCollectiveMapping *map, unsigned nranks, unsigned *ranks)
     for(i = 0; i < t_size; ++i)
     {
       tmp_coords[CCMI_T_DIM] = i;
-      if(XMI_SUCCESS  ==
+      if(PAMI_SUCCESS  ==
          _mapping->Torus2Rank(tmp_coords, &trank))
         _peer_ranks[_npeers++] = trank;
     }

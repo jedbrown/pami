@@ -15,7 +15,7 @@
 
 #include <sys/uio.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/queue/Queue.h"
 
 //#ifdef TRACE
@@ -24,28 +24,28 @@
 //#define TRACE(x) fprintf x
 //#endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
     namespace MU
     {
-      class MUInjFifoMessage : public XMI::Queue::Element
+      class MUInjFifoMessage : public PAMI::Queue::Element
       {
         public:
           inline MUInjFifoMessage (uint64_t sequenceNum = 0) :
-              XMI::Queue::Element (),
+              PAMI::Queue::Element (),
               _desc (),
               _wrapper (&_desc)
           {
             _wrapper.setSequenceNumber (sequenceNum);
           }
 
-          inline MUInjFifoMessage (xmi_event_function function,
+          inline MUInjFifoMessage (pami_event_function function,
                                    void *             cookie,
-                                   xmi_context_t      context,
+                                   pami_context_t      context,
                                    uint64_t           sequenceNum = 0) :
-              XMI::Queue::Element (),
+              PAMI::Queue::Element (),
               _desc (),
               _wrapper (&_desc)
           {
@@ -164,10 +164,10 @@ namespace XMI
           struct iovec * _iov;
           size_t         _niov;
 
-      }; // XMI::Device::MU::MUInjFifoMessage class
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+      }; // PAMI::Device::MU::MUInjFifoMessage class
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 //#undef TRACE
 

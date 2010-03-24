@@ -72,15 +72,15 @@ namespace CCMI
           /// \brief Generate a non-blocking allreduce message.
           ///
           virtual CCMI::Executor::Composite * generate
-          (XMI_CollectiveRequest_t * request,
-           XMI_Callback_t            cb_done,
+          (PAMI_CollectiveRequest_t * request,
+           PAMI_Callback_t            cb_done,
            CCMI_Consistency           consistency,
            Geometry                 * geometry,
            char                     * srcbuf,
            char                     * dstbuf,
            unsigned                   count,
-           XMI_Dt                    dtype,
-           XMI_Op                    op,
+           PAMI_Dt                    dtype,
+           PAMI_Op                    op,
            int                        root = -1 )
           {
             TRACE_ALERT((stderr,"<%p>Allreduce::RectangleRingDput::Factory::generate() ALERT:\n",this));

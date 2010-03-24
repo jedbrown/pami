@@ -24,11 +24,11 @@
 ///  This object is a portability layer that implements allocation
 ///  of lockboxes for use in Mutexes, Barriers, and Atomic (counters).
 ///
-///  Namespace:  XMI, the messaging namespace
+///  Namespace:  PAMI, the messaging namespace
 ///  Notes:  This is currently indended for use only by the lock manager
 ///
 ////////////////////////////////////////////////////////////////////////
-namespace XMI {
+namespace PAMI {
 namespace Atomic {
 namespace BGP {
 	// These may need to be put in a (more) common header... somewhere...
@@ -63,16 +63,16 @@ namespace BGP {
 
 		~LockBoxFactory() {}
 
-		inline void init(XMI::Mapping *mapping) {
+		inline void init(PAMI::Mapping *mapping) {
 			// Compute all implementation parameters,
 			// i.e. fill-in _factory struct.
-			xmi_result_t rc;
-			xmi_coord_t coord;
+			pami_result_t rc;
+			pami_coord_t coord;
 			size_t i;
 			int ncores = Kernel_ProcessorCount();
 			size_t t;
 			rc = mapping->nodePeers(t);
-			XMI_assert(rc == XMI_SUCCESS);
+			PAMI_assert(rc == PAMI_SUCCESS);
 			_factory.numCore = 0;
 			_factory.numProc = 0;
 			_factory.masterProc = (unsigned)-1;
@@ -86,17 +86,17 @@ namespace BGP {
 			//
 			int shift = (ncores == 4 ? 2 : (ncores == 2 ? 1 : 0));
 			_factory.coreShift = shift;
-			XMI::Interface::Mapping::nodeaddr_t n;
+			PAMI::Interface::Mapping::nodeaddr_t n;
 			mapping->nodeAddr(n);
 			for (i = 0; i < t; ++i) {
 				size_t r;
 				n.local = i;
 				rc = mapping->node2task(n, r);
-				XMI_assert(rc == XMI_SUCCESS);
+				PAMI_assert(rc == PAMI_SUCCESS);
 				if (r != (size_t)-1) {
 					_factory.numCore += ncores;
 					++_factory.numProc;
-					mapping->task2network(r, &coord, XMI_N_TORUS_NETWORK);
+					mapping->task2network(r, &coord, PAMI_N_TORUS_NETWORK);
 					_factory.coreXlat[i] = coord.u.n_torus.coords[3] << shift;
 					if (r == mapping->task()) {
 						_factory.myProc = i;
@@ -157,7 +157,7 @@ namespace BGP {
 			static uint32_t *lockp[NUM_CORES * MAX_NUMLOCKBOXES];
 			int lockSpan = numLockBoxes;
 			unsigned flags = 0;
-			XMI_assert_debug(numLockBoxes <= MAX_NUMLOCKBOXES);
+			PAMI_assert_debug(numLockBoxes <= MAX_NUMLOCKBOXES);
 			switch(scope) {
 			case LBX_NODE_SCOPE:
 			case LBX_NODE_PROC_SCOPE:
@@ -175,7 +175,7 @@ namespace BGP {
 				lockSpan *= _factory.numProc;
 				break;
 			default:
-				XMI_abortf("Invalid lockbox scope");
+				PAMI_abortf("Invalid lockbox scope");
 				break;
 			}
 			*p = NULL;
@@ -190,7 +190,7 @@ namespace BGP {
 					continue;
 				} else if(rc != 0) {
 					perror("Kernel_AllocateLockBox");
-					XMI_abortf("Fatal: allocLockBoxes(%d) rc=%d p=%p", desiredLock-1, rc, p);
+					PAMI_abortf("Fatal: allocLockBoxes(%d) rc=%d p=%p", desiredLock-1, rc, p);
 				}
 				switch(scope) {
 				case LBX_NODE_SCOPE:
@@ -206,17 +206,17 @@ namespace BGP {
 					memcpy(p, &lockp[numLockBoxes * _factory.myProc], numLockBoxes * sizeof(*p));
 					break;
 				default:
-					XMI_abortf("Unsupported lockbox scope");
+					PAMI_abortf("Unsupported lockbox scope");
 					break;
 				}
 				return; // success.
 			}
-			XMI_abortf("Fatal: Kernel_AllocateLockBox: no available lockboxes");
+			PAMI_abortf("Fatal: Kernel_AllocateLockBox: no available lockboxes");
 		}
 	}; // class LockBoxFactory
 
 }; // namespace BGP
 }; // namespace Atomic
-}; // namespace XMI
+}; // namespace PAMI
 
-#endif /* __xmi_bgp_lockboxfactory_h__ */
+#endif /* __pami_bgp_lockboxfactory_h__ */

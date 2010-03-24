@@ -14,12 +14,12 @@
 #ifndef __components_devices_lapiunix_oldlapiunixm2mmodel_h__
 #define __components_devices_lapiunix_oldlapiunixm2mmodel_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "components/devices/OldM2MModel.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
 #include <lapi.h>
 #include "util/common.h"
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -34,25 +34,25 @@ namespace XMI
           _dispatch_id = _device.initM2M();
         };
 
-      static void __xmi_lapi_m2m_senddone_fn (lapi_handle_t * handle, void * param, lapi_sh_info_t * info)
+      static void __pami_lapi_m2m_senddone_fn (lapi_handle_t * handle, void * param, lapi_sh_info_t * info)
         {
           OldLAPIM2MMessage * sreq = (OldLAPIM2MMessage *) param;
           sreq->_numdone++;
           if(sreq->_numdone == sreq->_num)
               {
                 if (sreq->_user_done_fn)
-                  sreq->_user_done_fn (NULL, sreq->_cookie, XMI_SUCCESS);
+                  sreq->_user_done_fn (NULL, sreq->_cookie, PAMI_SUCCESS);
                 free(sreq->_send_headers);
               }
         }
 
-      inline void setCallback (xmi_olddispatch_manytomany_fn cb_recv, void *arg)
+      inline void setCallback (pami_olddispatch_manytomany_fn cb_recv, void *arg)
         {
           _device.registerM2MRecvFunction (_dispatch_id, cb_recv, arg);
         }
 
-      inline void  send_impl  (XMI_Request_t         * request,
-                               const xmi_callback_t  * cb_done,
+      inline void  send_impl  (PAMI_Request_t         * request,
+                               const pami_callback_t  * cb_done,
                                unsigned                connid,
                                unsigned                rcvindex,
                                const char            * buf,
@@ -65,7 +65,7 @@ namespace XMI
         {
           unsigned i;
           OldLAPIM2MMessage * m2m = (OldLAPIM2MMessage *)malloc(sizeof(OldLAPIM2MMessage));
-          XMI_assert( m2m != NULL );
+          PAMI_assert( m2m != NULL );
 
           m2m->_context     = NULL;
           m2m->_conn        = connid;
@@ -89,19 +89,19 @@ namespace XMI
           if( m2m->_num == 0 )
           {
             if( m2m->_user_done_fn )
-              m2m->_user_done_fn(NULL,m2m->_cookie,XMI_SUCCESS);
+              m2m->_user_done_fn(NULL,m2m->_cookie,PAMI_SUCCESS);
             free ( m2m );
             return ;
           }
 
           m2m->_send_headers = (OldLAPIM2MHeader*)malloc(m2m->_num*sizeof(OldLAPIM2MHeader));
-          XMI_assert ( m2m->_send_headers != NULL );
+          PAMI_assert ( m2m->_send_headers != NULL );
           OldLAPIM2MHeader *hdr = (OldLAPIM2MHeader *) m2m->_send_headers;
           for( i = 0; i < nranks; i++)
               {
                 lapi_xfer_t xfer_struct;
                 int index = permutation[i];
-                XMI_assert ( (unsigned)index < nranks );
+                PAMI_assert ( (unsigned)index < nranks );
                 if( sizes[index] == 0 ) continue;
                 hdr->_dispatch_id = _dispatch_id;
                 hdr->_size        = sizes[index];
@@ -120,7 +120,7 @@ namespace XMI
                       xfer_struct.Am.udata     = (void *) ((char*)buf+offsets[index]);
                       xfer_struct.Am.udata_len = sizes[index];
                       CheckLapiRC(lapi_xfer(_device._lapi_handle, &xfer_struct));
-                      __xmi_lapi_m2m_senddone_fn(&_device._lapi_handle, m2m, NULL);
+                      __pami_lapi_m2m_senddone_fn(&_device._lapi_handle, m2m, NULL);
                     }
                 else
                     {
@@ -132,7 +132,7 @@ namespace XMI
                       xfer_struct.Am.uhdr_len  = sizeof(OldLAPIM2MHeader);
                       xfer_struct.Am.udata     = (void *) ((char*)buf+offsets[index]);
                       xfer_struct.Am.udata_len = sizes[index];
-                      xfer_struct.Am.shdlr     = (scompl_hndlr_t*) __xmi_lapi_m2m_senddone_fn;
+                      xfer_struct.Am.shdlr     = (scompl_hndlr_t*) __pami_lapi_m2m_senddone_fn;
                       xfer_struct.Am.sinfo     = (void *) m2m;
                       xfer_struct.Am.org_cntr  = NULL;
                       xfer_struct.Am.cmpl_cntr = NULL;
@@ -144,8 +144,8 @@ namespace XMI
           return;
         }
 
-      inline void postRecv_impl (XMI_Request_t          * request,
-                                 const xmi_callback_t   * cb_done,
+      inline void postRecv_impl (PAMI_Request_t          * request,
+                                 const pami_callback_t   * cb_done,
                                  unsigned                 connid,
                                  char                   * buf,
                                  T_Counter              * sizes,
@@ -169,7 +169,7 @@ namespace XMI
           if( msg->_num == 0 )
           {
             if( msg->_done_fn )
-              (*msg->_done_fn)(NULL, msg->_cookie,XMI_SUCCESS);
+              (*msg->_done_fn)(NULL, msg->_cookie,PAMI_SUCCESS);
             free(msg);
           }
           msg->_buf      = buf;
@@ -182,7 +182,7 @@ namespace XMI
         }
       T_Device                     &_device;
       size_t                        _dispatch_id;
-      xmi_olddispatch_manytomany_fn _cb_async_head;
+      pami_olddispatch_manytomany_fn _cb_async_head;
       void                         *_async_arg;
 
     };

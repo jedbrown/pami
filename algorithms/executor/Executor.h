@@ -38,7 +38,7 @@ namespace CCMI
       {
         _cb_done      =  NULL;
         _clientdata   =  NULL;
-        _consistency  =  XMI_UNDEFINED_CONSISTENCY;
+        _consistency  =  PAMI_UNDEFINED_CONSISTENCY;
       }
 
       /**
@@ -70,7 +70,7 @@ namespace CCMI
        * operation has finished
        */
 
-      virtual void notifySendDone ( const xmi_quad_t &info ) = 0;
+      virtual void notifySendDone ( const pami_quad_t &info ) = 0;
 
 
       /**
@@ -80,20 +80,20 @@ namespace CCMI
        * \param bytes : number of bytes received
        */
 
-      virtual void notifyRecv (unsigned src, const xmi_quad_t &info, char * buf, unsigned bytes) = 0;
+      virtual void notifyRecv (unsigned src, const pami_quad_t &info, char * buf, unsigned bytes) = 0;
 
-      void setDoneCallback (xmi_event_function cb_done, void *cd)
+      void setDoneCallback (pami_event_function cb_done, void *cd)
       {
         _cb_done    =   cb_done;
         _clientdata =   cd;
       }
 
-      void setConsistency  (xmi_consistency_t consistency)
+      void setConsistency  (pami_consistency_t consistency)
       {
 	_consistency = consistency;
       }
 
-      xmi_consistency_t getConsistency  ()
+      pami_consistency_t getConsistency  ()
       {
         return _consistency;
       }
@@ -102,13 +102,13 @@ namespace CCMI
       ///
       ///  \brief Callback to call when the barrier has finished
       ///
-      xmi_event_function    _cb_done;
+      pami_event_function    _cb_done;
       void                * _clientdata;
 
       ///
       ///  \brief Consistency required to perform the collective
       ///
-      xmi_consistency_t      _consistency;
+      pami_consistency_t      _consistency;
     };  //--  Executor class
   };  //-- Executor Name Space
 };  //-- CCMI

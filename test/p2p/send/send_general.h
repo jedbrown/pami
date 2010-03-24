@@ -22,7 +22,7 @@
 #include <malloc.h>
 #include <strings.h>
 
-#include "xmi.h"
+#include "pami.h"
 //#include "../util/barrier.h"
 
 #ifndef ITERATIONS
@@ -56,19 +56,19 @@ void send_general_init(int bufsize) {
 	assert(!(((size_t)rbuf | (size_t)sbuf) & 0x0f));
 }
 
-int setup_localpeers(xmi_task_t *ranks, size_t nranks, xmi_task_t *mine) {
+int setup_localpeers(pami_task_t *ranks, size_t nranks, pami_task_t *mine) {
 	int i = 0;
 #if 0
 	size_t me = DCMF_Messager_rank();
 	size_t t, r;
 	*mine = -1;
 
-	XMI_Coord_t addr;
-	XMI_Network network;
-	DCMF_Messager_rank2network(me, XMI_TORUS_NETWORK, &addr);
+	PAMI_Coord_t addr;
+	PAMI_Network network;
+	DCMF_Messager_rank2network(me, PAMI_TORUS_NETWORK, &addr);
 	for (t = 0; t < nranks; ++t) {
 		addr.torus.t = t;
-		if (DCMF_Messager_network2rank(&addr, &r, &network) == XMI_SUCCESS) {
+		if (DCMF_Messager_network2rank(&addr, &r, &network) == PAMI_SUCCESS) {
 			if (r == me) *mine = i;
 			ranks[i++] = r;
 		}
@@ -171,7 +171,7 @@ void fill_buf(char *buf, size_t len, unsigned tag) {
 #if 0
 	if (check_buf(buf, len, tag)) {
 		fprintf(stderr, "fill_buf/check_buf failed\n");
-		XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+		PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
 	}
 #endif
 }
@@ -180,7 +180,7 @@ static unsigned curr_tag = 0;
 
 /* --------------------------------------------------------------- */
 
-void latency_senddone (xmi_context_t context, void *clientdata, xmi_result_t err)
+void latency_senddone (pami_context_t context, void *clientdata, pami_result_t err)
 {
 	sendflag = 0;
 	TRACE_ERR(stderr, "Send Done\n");
@@ -188,7 +188,7 @@ void latency_senddone (xmi_context_t context, void *clientdata, xmi_result_t err
 
 /* --------------------------------------------------------------- */
 
-void latency_recvdone (xmi_context_t context, void *clientdata, xmi_result_t err)
+void latency_recvdone (pami_context_t context, void *clientdata, pami_result_t err)
 {
 	recvflag = 0;
 	TRACE_ERR(stderr, "Recv Done\n");
@@ -197,10 +197,10 @@ void latency_recvdone (xmi_context_t context, void *clientdata, xmi_result_t err
 
 /* --------------------------------------------------------------- */
 
-void cb_recv_new(xmi_context_t context, void *clientdata,
+void cb_recv_new(pami_context_t context, void *clientdata,
 			void *header_addr, size_t header_size,
 			void *pipe_addr, size_t pipe_size,
-			xmi_recv_t *recv) {
+			pami_recv_t *recv) {
 	if (pipe_addr != NULL) {
 		memcpy(rbuf, pipe_addr, pipe_size);
 		recvflag = 0;
@@ -209,27 +209,27 @@ void cb_recv_new(xmi_context_t context, void *clientdata,
 	}
 }
 
-int setup_netw(int netpro, xmi_context_t context, size_t *dispatch_id,
-		xmi_dispatch_p2p_fn cb_recv = cb_recv_new,
+int setup_netw(int netpro, pami_context_t context, size_t *dispatch_id,
+		pami_dispatch_p2p_fn cb_recv = cb_recv_new,
 		void *cb_recv_cd = NULL) {
-	xmi_dispatch_callback_fn fn;
+	pami_dispatch_callback_fn fn;
 	fn.p2p = cb_recv;
 	int net = netpro & 0x0000ffff;
 	int pro = netpro >> 16;
-	// TBD: figure out which type of send we want, and then tell XMI...
+	// TBD: figure out which type of send we want, and then tell PAMI...
 	*dispatch_id = 0;
 
-	xmi_result_t e = XMI_Dispatch_set(context, *dispatch_id, fn, cb_recv_cd,
-					(xmi_send_hint_t){0});
+	pami_result_t e = PAMI_Dispatch_set(context, *dispatch_id, fn, cb_recv_cd,
+					(pami_send_hint_t){0});
 	return e;
 }
 
 #if 0 // finish porting later... if needed...
-void send(XMI_Protocol_t *proto, char *buf, size_t sndlen, size_t targetrank, DCMF_Consistency consistency) {
-	XMIQuad msginfo;
-	XMI_Request_t sender;
+void send(PAMI_Protocol_t *proto, char *buf, size_t sndlen, size_t targetrank, DCMF_Consistency consistency) {
+	PAMIQuad msginfo;
+	PAMI_Request_t sender;
 
-	XMI_Callback_t cb_info = { latency_senddone, (void *)0 };
+	PAMI_Callback_t cb_info = { latency_senddone, (void *)0 };
 
 	CRITICAL_SECTION_ENTER;
 	DCMF_Send(proto, &sender, cb_info, consistency, targetrank,
@@ -243,11 +243,11 @@ void send(XMI_Protocol_t *proto, char *buf, size_t sndlen, size_t targetrank, DC
 
 int recv_err = 0, send_err = 0;
 
-void recv(xmi_context_t context, size_t dispatch_id, size_t bytes, bool verify) {
-	XMI_Context_lock(context);
-	while (recvflag > 0) XMI_Context_advance(context);
+void recv(pami_context_t context, size_t dispatch_id, size_t bytes, bool verify) {
+	PAMI_Context_lock(context);
+	while (recvflag > 0) PAMI_Context_advance(context);
 	TRACE_ERR(stderr, "After advance\n");
-	XMI_Context_unlock(context);
+	PAMI_Context_unlock(context);
 	recvflag = 1;
 	int x;
 	if (verify && (x = check_buf(rbuf, bytes, curr_tag))) {
@@ -257,8 +257,8 @@ void recv(xmi_context_t context, size_t dispatch_id, size_t bytes, bool verify) 
 	}
 }
 
-int test(xmi_context_t context, size_t dispatch_id, xmi_task_t rank,
-		xmi_task_t originrank, xmi_task_t targetrank,
+int test(pami_context_t context, size_t dispatch_id, pami_task_t rank,
+		pami_task_t originrank, pami_task_t targetrank,
 		unsigned *times, bool verify) {
 	int i, niter = ITERATIONS, tt = 0;
 	size_t sndlen;
@@ -290,7 +290,7 @@ int test(xmi_context_t context, size_t dispatch_id, xmi_task_t rank,
 	for (sndlen = MINBUFSIZE; sndlen <= BUFSIZE; sndlen = NEXT_BUFSIZE(sndlen)) {
 		++curr_tag;
 		fill_buf(sbuf, sndlen, curr_tag);
-		unsigned long long t1 = XMI_Wtimebase();
+		unsigned long long t1 = PAMI_Wtimebase();
 		for (i = 0; i < niter; i++) {
 			if (rank == originrank) {
 				TRACE_ERR(stderr, "Starting Iteration %d of size %d\n", i, sndlen);
@@ -304,7 +304,7 @@ int test(xmi_context_t context, size_t dispatch_id, xmi_task_t rank,
 				send(context, dispatch_id, sbuf, sndlen, originrank);
 			}
 		}
-		unsigned long long t2 = XMI_Wtimebase();
+		unsigned long long t2 = PAMI_Wtimebase();
 		unsigned t = (unsigned)((t2 - t1) / 2 / niter);
 		if (times) {
 			times[tt++] = t;

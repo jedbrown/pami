@@ -22,4 +22,4 @@
 #define mem_isync()   mem_sync()
 #define mem_barrier() do { asm volatile ("eieio"  : : : "memory"); } while(0)
 
-#endif // __xmi_arch_ppc64_h__
+#endif // __pami_arch_ppc64_h__

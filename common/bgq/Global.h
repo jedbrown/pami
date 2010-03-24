@@ -40,9 +40,9 @@
 
 #define BGQ_GLOBAL_SHMEM_SIZE	256*1024 ///< extra shmem for BGQ L2 Atomics and WAC
 
-namespace XMI
+namespace PAMI
 {
-  class Global : public Interface::Global<XMI::Global>
+  class Global : public Interface::Global<PAMI::Global>
   {
     public:
 
@@ -52,9 +52,9 @@ namespace XMI
 	  l2atomicFactory(),
           _mapcache ()
       {
-        xmi_coord_t ll, ur;
-        xmi_task_t min = 0, max = 0;
-        const char   * shmemfile = "/unique-xmi-global-shmem-file";
+        pami_coord_t ll, ur;
+        pami_task_t min = 0, max = 0;
+        const char   * shmemfile = "/unique-pami-global-shmem-file";
         size_t   bytes;
         size_t   pagesize  = 4096;
 
@@ -110,7 +110,7 @@ namespace XMI
         (void)initializeMapCache(personality, &mm, ll, ur, min, max, false);
 
         mapping.init(_mapcache, personality);
-        XMI::Topology::static_init(&mapping);
+        PAMI::Topology::static_init(&mapping);
         size_t rectsize = 1;
 
         for (unsigned d = 0; d < mapping.globalDims(); ++d)
@@ -122,19 +122,19 @@ namespace XMI
 
         if (mapping.size() == rectsize)
           {
-            new (&topology_global) XMI::Topology(&ll, &ur);
+            new (&topology_global) PAMI::Topology(&ll, &ur);
           }
         else if (mapping.size() == max - min + 1)
           {
-            new (&topology_global) XMI::Topology(min, max);
+            new (&topology_global) PAMI::Topology(min, max);
           }
         else
           {
-            XMI_abortf("failed to build global-world topology %zd::%zd(%zd) / %d..%d", mapping.size(), rectsize, mapping.globalDims(), min, max); //hack
+            PAMI_abortf("failed to build global-world topology %zd::%zd(%zd) / %d..%d", mapping.size(), rectsize, mapping.globalDims(), min, max); //hack
           }
 
         topology_global.subTopologyLocalToMe(&topology_local);
-	XMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
+	PAMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
 	l2atomicFactory.init(&mm, &mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));
@@ -165,31 +165,31 @@ namespace XMI
     private:
 
       inline size_t initializeMapCache (BgqPersonality  & personality,
-					XMI::Memory::MemoryManager *mm,
-                                        xmi_coord_t &ll, xmi_coord_t &ur, xmi_task_t &min, xmi_task_t &max, bool shared);
+					PAMI::Memory::MemoryManager *mm,
+                                        pami_coord_t &ll, pami_coord_t &ur, pami_task_t &min, pami_task_t &max, bool shared);
 
     public:
 
       BgqPersonality       personality;
-      XMI::Mapping         mapping;
-      XMI::Atomic::BGQ::L2AtomicFactory l2atomicFactory;
-      XMI::Memory::MemoryManager mm;
+      PAMI::Mapping         mapping;
+      PAMI::Atomic::BGQ::L2AtomicFactory l2atomicFactory;
+      PAMI::Memory::MemoryManager mm;
 
     private:
 
       bgq_mapcache_t   _mapcache;
       size_t           _size;
-  }; // XMI::Global
-};     // XMI
+  }; // PAMI::Global
+};     // PAMI
 
 // If 'mm' is NULL, compute total memory needed for mapcache and return (doing nothing else).
-size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
-					XMI::Memory::MemoryManager *mm,
-                                        xmi_coord_t &ll, xmi_coord_t &ur, xmi_task_t &min, xmi_task_t &max, bool shared)
+size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
+					PAMI::Memory::MemoryManager *mm,
+                                        pami_coord_t &ll, pami_coord_t &ur, pami_task_t &min, pami_task_t &max, bool shared)
 {
   bgq_mapcache_t  * mapcache = &_mapcache;
 
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() >> ptr = %p, bytes = %zd, mapcache = %p\n", ptr, _memsize, mapcache));
+  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() >> ptr = %p, bytes = %zd, mapcache = %p\n", ptr, _memsize, mapcache));
   // This structure anchors pointers to the map cache and rank cache.
   // It is created in the static portion of shared memory in this
   // constructor, but exists there only for the duration of this
@@ -206,10 +206,10 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
     volatile size_t numActiveRanksLocal; // Number of ranks on our physical node.
     volatile size_t numActiveRanksGlobal;// Number of ranks in the partition.
     volatile size_t numActiveNodesGlobal;// Number of nodes in the partition.
-    volatile xmi_task_t maxRank;       // Largest valid rank
-    volatile xmi_task_t minRank;       // Smallest valid rank
-    volatile xmi_coord_t activeLLCorner;
-    volatile xmi_coord_t activeURCorner;
+    volatile pami_task_t maxRank;       // Largest valid rank
+    volatile pami_task_t minRank;       // Smallest valid rank
+    volatile pami_coord_t activeLLCorner;
+    volatile pami_coord_t activeURCorner;
   } cacheAnchors_t;
 
   //size_t myRank;
@@ -226,7 +226,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
   size_t pSize  = personality.pSize ();
   size_t tSize  = personality.tSize ();
 
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. p=%zd t=%zd size{%zd %zd %zd %zd %zd %zd %zd}\n", pCoord, tCoord, aSize, bSize, cSize, dSize, eSize, pSize, tSize));
+  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. p=%zd t=%zd size{%zd %zd %zd %zd %zd %zd %zd}\n", pCoord, tCoord, aSize, bSize, cSize, dSize, eSize, pSize, tSize));
 
   // Calculate the number of potential tasks in this partition.
   size_t fullSize = aSize * bSize * cSize * dSize * eSize * pSize * tSize;
@@ -240,15 +240,15 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 		fullSize * sizeof(*mapcache->torus.coords2task) +
 		peerSize * sizeof(*mapcache->node.local2peer) +
 		peerSize * sizeof(*mapcache->node.peer2task);
-	TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() << mapsize = %zd\n", mapsize));
+	TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() << mapsize = %zd\n", mapsize));
 	return mapsize;
   }
 
   volatile cacheAnchors_t *cacheAnchorsPtr;
   mm->memalign((void **)&cacheAnchorsPtr, 16, sizeof(*cacheAnchorsPtr));
-  XMI_assertf(cacheAnchorsPtr, "Failed to get memory for cacheAnchorsPtr");
+  PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for cacheAnchorsPtr");
 
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache = %p, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zd, fullSize = %zd, peerSize = %zd\n", mapcache, cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize));
+  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. mapcache = %p, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zd, fullSize = %zd, peerSize = %zd\n", mapcache, cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize));
 
   // Notify all other tasks on the node that this task has entered the
   // map cache initialization function.  If the value returned is zero
@@ -259,23 +259,23 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   //myRank = personality.rank();
 
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. participant=%ld\n", participant));
+  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. participant=%ld\n", participant));
 
   mm->memalign((void **)&mapcache->torus.task2coords, 16, fullSize * sizeof(*mapcache->torus.task2coords));
-  XMI_assertf(cacheAnchorsPtr, "Failed to get memory for task2coords");
+  PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for task2coords");
   mm->memalign((void **)&mapcache->torus.coords2task, 16, fullSize * sizeof(*mapcache->torus.coords2task));
-  XMI_assertf(cacheAnchorsPtr, "Failed to get memory for coords2task");
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->torus.task2coords = %p mapcache->torus.coords2task = %p\n", mapcache->torus.task2coords, mapcache->torus.coords2task));
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->torus.coords2task = %p\n", mapcache->node.local2peer, mapcache->torus.coords2task));
+  PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for coords2task");
+  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. mapcache->torus.task2coords = %p mapcache->torus.coords2task = %p\n", mapcache->torus.task2coords, mapcache->torus.coords2task));
+  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->torus.coords2task = %p\n", mapcache->node.local2peer, mapcache->torus.coords2task));
 
   mm->memalign((void **)&mapcache->node.local2peer, 16, peerSize * sizeof(*mapcache->node.local2peer));
-  XMI_assertf(cacheAnchorsPtr, "Failed to get memory for local2peer");
+  PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for local2peer");
   mm->memalign((void **)&mapcache->node.peer2task, 16, peerSize * sizeof(*mapcache->node.peer2task));
-  XMI_assertf(cacheAnchorsPtr, "Failed to get memory for peer2task");
-  TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
+  PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for peer2task");
+  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
 
-  xmi_task_t max_rank = 0, min_rank = (xmi_task_t)-1;
-  xmi_coord_t _ll, _ur;
+  pami_task_t max_rank = 0, min_rank = (pami_task_t)-1;
+  pami_coord_t _ll, _ur;
 
   // If we are the master (participant 0), then initialize the caches.
   // Then, set the cache pointers into the shared memory area for the other
@@ -297,7 +297,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
       // Calculate number of array slots needed...
       uint64_t narraySize = (numNodes + 63) >> 6; // Divide by 64 bits.
       uint8_t *narray = (uint8_t*)malloc(narraySize);
-      XMI_assert(narray != NULL);
+      PAMI_assert(narray != NULL);
       memset(narray, 0, narraySize);
 
       // Initialize the task and peer mappings to -1 (== "not mapped")
@@ -345,9 +345,9 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
          * 4. Number of active ranks on each compute node.
          */
         size_t i;
-        TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. fullSize = %zd\n", fullSize));
+        TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. fullSize = %zd\n", fullSize));
 
-        _ll.network = _ur.network = XMI_N_TORUS_NETWORK;
+        _ll.network = _ur.network = PAMI_N_TORUS_NETWORK;
         _ll.u.n_torus.coords[0] = _ur.u.n_torus.coords[0] = personality.aCoord();
         _ll.u.n_torus.coords[1] = _ur.u.n_torus.coords[1] = personality.bCoord();
         _ll.u.n_torus.coords[2] = _ur.u.n_torus.coords[2] = personality.cCoord();
@@ -394,7 +394,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
             p = mapcache->torus.task2coords[i].core;
             t = mapcache->torus.task2coords[i].thread;
 #endif
-            TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. i = %zd, {%zd %zd %zd %zd %zd %zd %zd}\n", i, a, b, c, d, e, p, t));
+            TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. i = %zd, {%zd %zd %zd %zd %zd %zd %zd}\n", i, a, b, c, d, e, p, t));
 
             // Set the bit corresponding to the physical node of this rank,
             // indicating that we have found a rank on that node.
@@ -408,7 +408,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
               {
                 cacheAnchorsPtr->numActiveNodesGlobal++;
                 narray[narrayIndex] |= bitNumberMask;
-                TRACE_ERR( (stderr, "XMI::Global::initializeMapCache() .. bitNumberMask = %#.16lX, narray[%#.16lX]=%#.8X\n", bitNumberMask, narrayIndex, narray[narrayIndex]));
+                TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. bitNumberMask = %#.16lX, narray[%#.16lX]=%#.8X\n", bitNumberMask, narrayIndex, narray[narrayIndex]));
               }
 
             // Increment the number of global ranks.
@@ -421,7 +421,7 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
             // because of "for (i..." this will give us MAX after loop.
             max_rank = i;
 
-            if (min_rank == (xmi_task_t)-1) min_rank = i;
+            if (min_rank == (pami_task_t)-1) min_rank = i;
 
             if (a < _ll.u.n_torus.coords[0]) _ll.u.n_torus.coords[0] = a;
             if (b < _ll.u.n_torus.coords[1]) _ll.u.n_torus.coords[1] = b;
@@ -551,9 +551,9 @@ size_t XMI::Global::initializeMapCache (BgqPersonality  & personality,
 
 
 
-extern XMI::Global __global;
+extern PAMI::Global __global;
 #undef TRACE_ERR
-#endif // __xmi_components_sysdep_bgq_bgqglobal_h__
+#endif // __pami_components_sysdep_bgq_bgqglobal_h__
 //
 // astyle info    http://astyle.sourceforge.net
 //

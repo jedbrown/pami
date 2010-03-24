@@ -31,14 +31,14 @@ struct test_msginfo {
 
 /* --------------------------------------------------------------- */
 
-static void concurrency_senddone(xmi_context_t context, void *clientdata, xmi_result_t err) {
+static void concurrency_senddone(pami_context_t context, void *clientdata, pami_result_t err) {
 	++sendflag;
 	TRACE_ERR(stderr, "Send Done\n");
 }
 
 /* --------------------------------------------------------------- */
 
-static void concurrency_recvdone(xmi_context_t context, void *clientdata, xmi_result_t err) {
+static void concurrency_recvdone(pami_context_t context, void *clientdata, pami_result_t err) {
 	int *rflagp = (int *)clientdata;
 	++(*rflagp);
 	TRACE_ERR(stderr, "Recv Done\n");
@@ -47,10 +47,10 @@ static void concurrency_recvdone(xmi_context_t context, void *clientdata, xmi_re
 
 /* --------------------------------------------------------------- */
 
-static void cb_recv_con(xmi_context_t context, void *clientdata,
+static void cb_recv_con(pami_context_t context, void *clientdata,
 			void *msginfo, size_t msginfolen,
 			void *pipe_addr, size_t pipe_size,
-			xmi_recv_t *recv) {
+			pami_recv_t *recv) {
 	struct test_msginfo *mi = (struct test_msginfo *)msginfo;
 	int phase = mi->phase;
 
@@ -60,7 +60,7 @@ static void cb_recv_con(xmi_context_t context, void *clientdata,
 	} else {
 		recv->cookie = &recvflags[phase];
 		recv->local_fn = concurrency_recvdone;
-		recv->kind = XMI_AM_KIND_SIMPLE;
+		recv->kind = PAMI_AM_KIND_SIMPLE;
 		recv->data.simple.bytes = pipe_size;
 		recv->data.simple.addr = rbuf;
 	}
@@ -68,7 +68,7 @@ static void cb_recv_con(xmi_context_t context, void *clientdata,
 
 int con_recv_err = 0, con_send_err = 0;
 
-int con_setup_netw(int net, xmi_context_t context, size_t *proto) {
+int con_setup_netw(int net, pami_context_t context, size_t *proto) {
 	// turns out, for now, we don't need special values here,
 	// but this is a better way of doing the registration since
 	// the callbacks reside in this file and so should the specification
@@ -80,8 +80,8 @@ int con_setup_netw(int net, xmi_context_t context, size_t *proto) {
 // Global: rank = 0..numranks-1
 // Local:  rank = ranks[0..numranks-1]
 //
-int con_test(size_t dispatch_id, xmi_client_t client, xmi_context_t context,
-		xmi_task_t rank, xmi_task_t *ranks, size_t numranks,
+int con_test(size_t dispatch_id, pami_client_t client, pami_context_t context,
+		pami_task_t rank, pami_task_t *ranks, size_t numranks,
 		unsigned *times, bool verify) {
 	int i, niter = ITERATIONS, tt = 0;
 	size_t sndlen;
@@ -96,11 +96,11 @@ int con_test(size_t dispatch_id, xmi_client_t client, xmi_context_t context,
 		barrier_init();
 		init = false;
 	}
-	xmi_send_t send;
+	pami_send_t send;
 	send.send.header.iov_base = &msginfo;
 	send.send.header.iov_len = sizeof(msginfo);
 	send.send.data.iov_base = sbuf;
-	send.send.hints = (xmi_send_hint_t){0};
+	send.send.hints = (pami_send_hint_t){0};
 	send.send.dispatch = dispatch_id;
 	send.events.cookie = NULL;
 	send.events.local_fn = concurrency_senddone;
@@ -116,24 +116,24 @@ int con_test(size_t dispatch_id, xmi_client_t client, xmi_context_t context,
 		// assert (recvflag == lastrecv);
 		sendflag = recvflags[0] = recvflags[1] = 0;
 		barrier();
-		unsigned long long t1 = XMI_Wtimebase();
+		unsigned long long t1 = PAMI_Wtimebase();
 		for (i = 0; i < niter; i++) {
 			int phase = i & 1; // phase of test, alternate 0/1
 			msginfo.phase = phase;
-			XMI_Context_lock(context);
+			PAMI_Context_lock(context);
 			for (targ = 0; targ < numranks; ++targ) {
 				unsigned t = ranks ? ranks[targ] : targ;
 				if (t == rank) continue;
-				send.send.dest = XMI_Client_endpoint(client, t, 0);
-				XMI_Send(context, &send);
+				send.send.dest = PAMI_Client_endpoint(client, t, 0);
+				PAMI_Send(context, &send);
 			}
 			while (sendflag < (int)numranks - 1) {
-				XMI_Context_advance(context, 100);
+				PAMI_Context_advance(context, 100);
 			}
 			while (recvflags[phase] < (int)numranks - 1) {
-				XMI_Context_advance(context, 100);
+				PAMI_Context_advance(context, 100);
 			}
-			XMI_Context_unlock(context);
+			PAMI_Context_unlock(context);
 			recvflags[phase] = 0;
 			sendflag = 0;
 			if (verify) {
@@ -141,7 +141,7 @@ int con_test(size_t dispatch_id, xmi_client_t client, xmi_context_t context,
 				// need barrier?  how to separate diff orig buffers?
 			}
 		}
-		unsigned long long t2 = XMI_Wtimebase();
+		unsigned long long t2 = PAMI_Wtimebase();
 		unsigned t = (unsigned)((t2 - t1) / (numranks - 1) / niter);
 		if (times) {
 			times[tt++] = t;

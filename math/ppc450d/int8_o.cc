@@ -15,7 +15,7 @@
 #include "Util.h"
 #include "ppc450d/internal_o.h"
 
-void _xmi_core_int8_max2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
+void _pami_core_int8_max2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
 
   int8_t *dp = (int8_t *)dst;
   const int8_t *s0 = (const int8_t *)srcs[0];
@@ -99,7 +99,7 @@ void _xmi_core_int8_max2(int8_t *dst, const int8_t **srcs, int nsrc, int count) 
   return;
 }
 
-void _xmi_core_int8_min2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
+void _pami_core_int8_min2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
 
   int8_t *dp = (int8_t *)dst;
   const int8_t *s0 = (const int8_t *)srcs[0];
@@ -182,7 +182,7 @@ void _xmi_core_int8_min2(int8_t *dst, const int8_t **srcs, int nsrc, int count) 
   return;
 }
 
-void _xmi_core_int8_prod2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
+void _pami_core_int8_prod2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
 
   int8_t *dp = (int8_t *)dst;
   const int8_t *s0 = (const int8_t *)srcs[0];
@@ -261,7 +261,7 @@ void _xmi_core_int8_prod2(int8_t *dst, const int8_t **srcs, int nsrc, int count)
   return;
 }
 
-void _xmi_core_int8_sum2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
+void _pami_core_int8_sum2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
 
   const int8_t *s0 = (const int8_t *)srcs[0];
   const int8_t *s1 = (const int8_t *)srcs[1];
@@ -337,7 +337,7 @@ void _xmi_core_int8_sum2(int8_t *dst, const int8_t **srcs, int nsrc, int count) 
   return;
 }
 
-void _xmi_core_int8_band2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
+void _pami_core_int8_band2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)&(b))
 
 #define TYPE int8_t
@@ -346,7 +346,7 @@ void _xmi_core_int8_band2(int8_t *dst, const int8_t **srcs, int nsrc, int count)
 #undef OP
 }
 
-void _xmi_core_int8_bor2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
+void _pami_core_int8_bor2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)|(b))
 
 #define TYPE int8_t
@@ -355,7 +355,7 @@ void _xmi_core_int8_bor2(int8_t *dst, const int8_t **srcs, int nsrc, int count) 
 #undef OP
 }
 
-void _xmi_core_int8_bxor2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
+void _pami_core_int8_bxor2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)^(b))
 
 #define TYPE int8_t
@@ -364,7 +364,7 @@ void _xmi_core_int8_bxor2(int8_t *dst, const int8_t **srcs, int nsrc, int count)
 #undef OP
 }
 
-void _xmi_core_int8_land2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
+void _pami_core_int8_land2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)&&(b))
 
 #define TYPE int8_t
@@ -373,7 +373,7 @@ void _xmi_core_int8_land2(int8_t *dst, const int8_t **srcs, int nsrc, int count)
 #undef OP
 }
 
-void _xmi_core_int8_lor2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
+void _pami_core_int8_lor2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)||(b))
 
 #define TYPE int8_t
@@ -382,7 +382,7 @@ void _xmi_core_int8_lor2(int8_t *dst, const int8_t **srcs, int nsrc, int count) 
 #undef OP
 }
 
-void _xmi_core_int8_lxor2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
+void _pami_core_int8_lxor2(int8_t *dst, const int8_t **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)&&(!b))||((!a)&&(b)))
 
 #define TYPE int8_t

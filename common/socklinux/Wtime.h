@@ -13,12 +13,12 @@
 #ifndef __common_socklinux_Wtime_h__
 #define __common_socklinux_Wtime_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include <sys/time.h>
 #include "common/BaseTimeInterface.h"
 #include <stdio.h>
 
-namespace XMI
+namespace PAMI
 {
 #if defined(__i386) || defined(__amd64__)
     static inline uint64_t tb()
@@ -70,14 +70,14 @@ namespace XMI
       ///
       /// \brief Initialize the time object.
       ///
-      inline xmi_result_t init_impl (size_t dummy)
+      inline pami_result_t init_impl (size_t dummy)
         {
           _clockMHz      = clockMHz()/1e9;
           _sec_per_cycle = 1.0 / ((double)_clockMHz * 1000000.0);
           if(_clockMHz == -1ULL)
-            return XMI_ERROR;
+            return PAMI_ERROR;
           else
-            return XMI_SUCCESS;
+            return PAMI_SUCCESS;
         };
 
       ///
@@ -170,5 +170,5 @@ namespace XMI
       uint64_t _clockMHz;
       double _sec_per_cycle;
     };	// class Time
-};	// namespace XMI
+};	// namespace PAMI
 #endif // __components_time_time_h__

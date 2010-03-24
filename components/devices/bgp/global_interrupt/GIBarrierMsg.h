@@ -33,23 +33,23 @@
 ///  - giMessage:  A global interrupt message
 ///  - Device:     The global interrupt queue system
 ///
-///  Namespace:  XMI, the messaging namespace.
+///  Namespace:  PAMI, the messaging namespace.
 ///
 ////////////////////////////////////////////////////////////////////////
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace BGP {
 
 class giModel;
 class giMessage;
-typedef XMI::Device::Generic::GenericAdvanceThread giThread;
-class giDevice : public XMI::Device::Generic::MultiSendQSubDevice<giThread,1,true> {
+typedef PAMI::Device::Generic::GenericAdvanceThread giThread;
+class giDevice : public PAMI::Device::Generic::MultiSendQSubDevice<giThread,1,true> {
 public:
 	class Factory : public Interface::FactoryInterface<Factory,giDevice,Generic::Device> {
 	public:
 		static inline giDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm);
-		static inline xmi_result_t init_impl(giDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
+		static inline pami_result_t init_impl(giDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(giDevice *devs, size_t client, size_t contextId);
 		static inline giDevice & getDevice_impl(giDevice *devs, size_t client, size_t contextId);
 	}; // class Factory
@@ -57,11 +57,11 @@ public:
 
 }; // namespace BGP
 }; // namespace Device
-}; // namespace XMI
+}; // namespace PAMI
 
-extern XMI::Device::BGP::giDevice _g_gibarrier_dev;
+extern PAMI::Device::BGP::giDevice _g_gibarrier_dev;
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace BGP {
 
@@ -69,7 +69,7 @@ inline giDevice *giDevice::Factory::generate_impl(size_t client, size_t num_ctx,
 	return &_g_gibarrier_dev;
 }
 
-inline xmi_result_t giDevice::Factory::init_impl(giDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+inline pami_result_t giDevice::Factory::init_impl(giDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
 	return _g_gibarrier_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
 
@@ -85,7 +85,7 @@ inline giDevice & giDevice::Factory::getDevice_impl(giDevice *devs, size_t clien
 ///  \brief Global interrupt message class
 ///  This message is posted to a GI device
 //////////////////////////////////////////////////////////////////////
-class giMessage : public XMI::Device::Generic::GenericMessage {
+class giMessage : public PAMI::Device::Generic::GenericMessage {
 public:
 
 protected:
@@ -95,8 +95,8 @@ protected:
 	/// \brief  GI Message constructor
 	/// \param cb: A "done" callback structure to be executed
 	//////////////////////////////////////////////////////////////////
-	giMessage(GenericDeviceMessageQueue *GI_QS, xmi_multisync_t *msync) :
-	XMI::Device::Generic::GenericMessage(GI_QS, msync->cb_done,
+	giMessage(GenericDeviceMessageQueue *GI_QS, pami_multisync_t *msync) :
+	PAMI::Device::Generic::GenericMessage(GI_QS, msync->cb_done,
 				msync->client, msync->context)
 	{
 	}
@@ -105,36 +105,36 @@ protected:
 	static const int GI_CHANNEL = 0;
 
 	DECL_ADVANCE_ROUTINE(advanceThread,giMessage,giThread);
-	inline xmi_result_t __advanceThread(giThread *thr) {
-		XMI::Device::MessageStatus stat = getStatus();
+	inline pami_result_t __advanceThread(giThread *thr) {
+		PAMI::Device::MessageStatus stat = getStatus();
 
 		unsigned loop = 32;
-		while (stat != XMI::Device::Done && loop--) {
+		while (stat != PAMI::Device::Done && loop--) {
 			switch(stat) {
-			case XMI::Device::Initialized:
+			case PAMI::Device::Initialized:
 				GlobInt_InitBarrier(GI_CHANNEL);
-				stat = XMI::Device::Active;
+				stat = PAMI::Device::Active;
 				// FALLTHROUGH
-			case XMI::Device::Active:
+			case PAMI::Device::Active:
 				if (GlobInt_QueryDone(GI_CHANNEL) == 0) {
 					break;
 				}
-				stat = XMI::Device::Done;
+				stat = PAMI::Device::Done;
 				// FALLTHROUGH
-			case XMI::Device::Done:
-				thr->setStatus(XMI::Device::Complete);
+			case PAMI::Device::Done:
+				thr->setStatus(PAMI::Device::Complete);
 				break;
 			default:
-				XMI_abortf("Unexpected message status of %d (loop %d)\n", stat, loop);
+				PAMI_abortf("Unexpected message status of %d (loop %d)\n", stat, loop);
 			}
 		}
 		setStatus(stat);
-		return stat == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
+		return stat == PAMI::Device::Done ? PAMI_SUCCESS : PAMI_EAGAIN;
 	}
 
 public:
 	// virtual function
-	xmi_context_t postNext(bool devQueued) {
+	pami_context_t postNext(bool devQueued) {
 		return _g_gibarrier_dev.__postNext<giMessage>(this, devQueued);
 	}
 
@@ -146,7 +146,7 @@ public:
 		_g_gibarrier_dev.__getThreads(&t, &n);
 		t->setMsg(this);
 		t->setAdv(advanceThread);
-		t->setStatus(XMI::Device::Ready);
+		t->setStatus(PAMI::Device::Ready);
 		__advanceThread(t);
 		*th = t;
 		return 1;
@@ -155,33 +155,33 @@ public:
 protected:
 }; // class giMessage
 
-class giModel : public XMI::Device::Interface::MultisyncModel<giModel,giDevice,sizeof(giMessage)> {
+class giModel : public PAMI::Device::Interface::MultisyncModel<giModel,giDevice,sizeof(giMessage)> {
 public:
 	static const size_t sizeof_msg = sizeof(giMessage);
 
-	giModel(giDevice &device, xmi_result_t &status) :
-	XMI::Device::Interface::MultisyncModel<giModel,giDevice,sizeof(giMessage)>(device,status)
+	giModel(giDevice &device, pami_result_t &status) :
+	PAMI::Device::Interface::MultisyncModel<giModel,giDevice,sizeof(giMessage)>(device,status)
 	{
 		// assert(device == _g_gibarrier_dev);
 		// if we need sysdep, use _g_gibarrier_dev.getSysdep()...
 	}
 
-	inline xmi_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg], xmi_multisync_t *msync);
+	inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg], pami_multisync_t *msync);
 
 private:
 }; // class giModel
 
 }; // namespace BGP
 }; // namespace Device
-}; // namespace XMI
+}; // namespace PAMI
 
-inline xmi_result_t XMI::Device::BGP::giModel::postMultisync_impl(uint8_t (&state)[sizeof_msg], xmi_multisync_t *msync) {
+inline pami_result_t PAMI::Device::BGP::giModel::postMultisync_impl(uint8_t (&state)[sizeof_msg], pami_multisync_t *msync) {
 	// assert(participants == ctor topology)
 	giMessage *msg;
 
 	msg = new (&state) giMessage(_g_gibarrier_dev.getQS(), msync);
 	_g_gibarrier_dev.__post<giMessage>(msg);
-	return XMI_SUCCESS;
+	return PAMI_SUCCESS;
 }
 
 #endif // __components_devices_bgp_gibarriermsg_h__

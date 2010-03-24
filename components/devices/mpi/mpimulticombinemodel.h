@@ -14,10 +14,10 @@
 #ifndef __components_devices_mpi_mpimulticombinemodel_h__
 #define __components_devices_mpi_mpimulticombinemodel_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "components/devices/MulticombineModel.h"
 
-namespace XMI
+namespace PAMI
 {
     namespace Device
     {
@@ -30,16 +30,16 @@ namespace XMI
           static const size_t sizeof_msg                     = sizeof(T_Message);
 
 
-          MPIMulticombineModel (T_Device & device, xmi_result_t &status) :
+          MPIMulticombineModel (T_Device & device, pami_result_t &status) :
               Interface::MulticombineModel < MPIMulticombineModel<T_Device, T_Message>,T_Device,sizeof(T_Message) > (device, status)
                 {};
 
 
-          inline xmi_result_t postMulticombine_impl (uint8_t (&state)[multicombine_model_state_bytes],
-                                                     xmi_multicombine_t *mcombine)
+          inline pami_result_t postMulticombine_impl (uint8_t (&state)[multicombine_model_state_bytes],
+                                                     pami_multicombine_t *mcombine)
                 {
 
-              return XMI_SUCCESS;
+              return PAMI_SUCCESS;
                 }
         };
     };

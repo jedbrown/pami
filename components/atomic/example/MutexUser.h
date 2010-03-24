@@ -6,7 +6,7 @@
 #ifndef __components_atomic_example_MutexUser_h__
 #define __components_atomic_example_MutexUser_h__
 
-namespace XMI
+namespace PAMI
 {
   template <T_Mutex>
   class MutexUser

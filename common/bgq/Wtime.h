@@ -13,11 +13,11 @@
 #ifndef __common_bgq_Wtime_h__
 #define __common_bgq_Wtime_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "common/BaseTimeInterface.h"
 
-namespace XMI
+namespace PAMI
 {
     class Time : public Interface::BaseTime<Time>
     {
@@ -31,10 +31,10 @@ namespace XMI
         ///
         /// \brief Initialize the time object.
         ///
-        inline xmi_result_t init_impl (size_t clockMHz)
+        inline pami_result_t init_impl (size_t clockMHz)
         {
 	  _mhz = clockMHz;
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         };
 
         ///
@@ -79,7 +79,7 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
         ///
         inline double tick ()
         {
-          return XMI::Time::seconds_per_cycle;
+          return PAMI::Time::seconds_per_cycle;
         };
 
         ///
@@ -87,7 +87,7 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
         ///
         inline double time ()
         {
-          return ((double)timebase() * XMI::Time::seconds_per_cycle);
+          return ((double)timebase() * PAMI::Time::seconds_per_cycle);
         };
 
       protected:
@@ -96,5 +96,5 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
         static const double seconds_per_cycle = 1.176470588235294033e-09;
 	size_t _mhz;
     };	// class Time
-};	// namespace XMI
+};	// namespace PAMI
 #endif // __components_time_bgq_bgqtime_h__

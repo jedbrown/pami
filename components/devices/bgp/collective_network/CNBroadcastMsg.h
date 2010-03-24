@@ -34,23 +34,23 @@
  * in order to complete the operation.
  */
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace BGP {
 
 class CNBroadcastModel;
 class CNBroadcastMessage;
-typedef XMI::Device::BGP::BaseGenericCNThread CNBroadcastThread;
-class CNBroadcastDevice : public XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2> {
+typedef PAMI::Device::BGP::BaseGenericCNThread CNBroadcastThread;
+class CNBroadcastDevice : public PAMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2> {
 public:
 	inline CNBroadcastDevice(CNDevice *common) :
-	XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2>(common) {
+	PAMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNBroadcastThread,2>(common) {
 	}
 
 	class Factory : public Interface::FactoryInterface<Factory,CNBroadcastDevice,Generic::Device> {
 	public:
 		static inline CNBroadcastDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(CNBroadcastDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
+		static inline pami_result_t init_impl(CNBroadcastDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(CNBroadcastDevice *devs, size_t client, size_t context);
 		static inline CNBroadcastDevice & getDevice_impl(CNBroadcastDevice *devs, size_t client, size_t context);
 	}; // class Factory
@@ -58,11 +58,11 @@ public:
 
 };	// BGP
 };	// Device
-};	// XMI
+};	// PAMI
 
-extern XMI::Device::BGP::CNBroadcastDevice _g_cnbroadcast_dev;
+extern PAMI::Device::BGP::CNBroadcastDevice _g_cnbroadcast_dev;
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace BGP {
 
@@ -70,7 +70,7 @@ inline CNBroadcastDevice *CNBroadcastDevice::Factory::generate_impl(size_t clien
 	return &_g_cnbroadcast_dev;
 }
 
-inline xmi_result_t CNBroadcastDevice::Factory::init_impl(CNBroadcastDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+inline pami_result_t CNBroadcastDevice::Factory::init_impl(CNBroadcastDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
 	return _g_cnbroadcast_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
 
@@ -87,7 +87,7 @@ inline CNBroadcastDevice & CNBroadcastDevice::Factory::getDevice_impl(CNBroadcas
  *
  */
 
-class CNBroadcastMessage : public XMI::Device::BGP::BaseGenericCNMessage {
+class CNBroadcastMessage : public PAMI::Device::BGP::BaseGenericCNMessage {
 	enum roles {
 		NO_ROLE = 0,
 		INJECTION_ROLE = (1 << 0), // first role must be "injector"
@@ -95,22 +95,22 @@ class CNBroadcastMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 	};
 public:
 	CNBroadcastMessage(GenericDeviceMessageQueue *qs,
-			xmi_multicast_t *mcast,
+			pami_multicast_t *mcast,
 			size_t bytes,
 			bool doStore,
 			bool doData,
 			unsigned dispatch_id) :
 	BaseGenericCNMessage(qs, mcast->client, mcast->context,
-		(XMI::PipeWorkQueue *)mcast->src, (XMI::PipeWorkQueue *)mcast->dst,
+		(PAMI::PipeWorkQueue *)mcast->src, (PAMI::PipeWorkQueue *)mcast->dst,
 		bytes, doStore, mcast->roles, mcast->cb_done,
-		dispatch_id, XMI::Device::BGP::COMBINE_OP_OR, BGPCN_PKT_SIZE),
+		dispatch_id, PAMI::Device::BGP::COMBINE_OP_OR, BGPCN_PKT_SIZE),
 	_doData(doData),
 	_roles(mcast->roles)
 	{
 	}
 
 	// virtual function
-	xmi_context_t postNext(bool devQueued) {
+	pami_context_t postNext(bool devQueued) {
 		return _g_cnbroadcast_dev.common()->__postNext<CNBroadcastMessage,CNBroadcastThread>(this, devQueued);
 	}
 
@@ -124,7 +124,7 @@ public:
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
 			t[nt].setAdv(advanceInj);
-			t[nt].setStatus(XMI::Device::Ready);
+			t[nt].setStatus(PAMI::Device::Ready);
 			t[nt]._wq = _swq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = 1;
@@ -134,7 +134,7 @@ public:
 		if (_roles & RECEPTION_ROLE) {
 			t[nt].setMsg(this);
 			t[nt].setAdv(advanceRcp);
-			t[nt].setStatus(XMI::Device::Ready);
+			t[nt].setStatus(PAMI::Device::Ready);
 			t[nt]._wq = _rwq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = 3000; // DCMF_PERSISTENT_ADVANCE...
@@ -151,12 +151,12 @@ protected:
 
 	DECL_ADVANCE_ROUTINE(advanceInj,CNBroadcastMessage,CNBroadcastThread);
 	DECL_ADVANCE_ROUTINE(advanceRcp,CNBroadcastMessage,CNBroadcastThread);
-	inline xmi_result_t __advanceInj(CNBroadcastThread *thr) {
-		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
+	inline pami_result_t __advanceInj(CNBroadcastThread *thr) {
+		if (thr->_bytesLeft == 0) return PAMI_SUCCESS;
 		unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;
 		// thr->_wq is not valid unless _doData...
 		if (__wait_send_fifo_to(thr, hcount, dcount, thr->_cycles)) {
-			return XMI_EAGAIN;
+			return PAMI_EAGAIN;
 		}
 		if (_doData) {
 			size_t avail = thr->_wq->bytesAvailableToConsume();
@@ -164,7 +164,7 @@ protected:
 			bool aligned = (((unsigned)buf & 0x0f) == 0);
 			size_t did = 0;
 			if (avail < BGPCN_PKT_SIZE && avail < thr->_bytesLeft) {
-				return XMI_EAGAIN;
+				return PAMI_EAGAIN;
 			}
 			// is this possible??
 			if (avail > thr->_bytesLeft) avail = thr->_bytesLeft;
@@ -175,19 +175,19 @@ protected:
 			__send_null_packets(thr, hcount, dcount);
 		}
 		if (thr->_bytesLeft == 0) {
-			thr->setStatus(XMI::Device::Complete);
+			thr->setStatus(PAMI::Device::Complete);
 			__completeThread(thr);
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
-		return XMI_EAGAIN;
+		return PAMI_EAGAIN;
 	}
 
-	inline xmi_result_t __advanceRcp(CNBroadcastThread *thr) {
-		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
+	inline pami_result_t __advanceRcp(CNBroadcastThread *thr) {
+		if (thr->_bytesLeft == 0) return PAMI_SUCCESS;
 		unsigned hcount = 0, dcount = 0;
 		size_t did = 0;
 		if (__wait_recv_fifo_to(thr, hcount, dcount, thr->_cycles)) {
-			return XMI_EAGAIN;
+			return PAMI_EAGAIN;
 		}
 		// thr->_wq is not valid unless _doStore...
 		if (_doStore) {
@@ -196,7 +196,7 @@ protected:
 			char *buf = thr->_wq->bufferToProduce();
 			bool aligned = (((unsigned)buf & 0x0f) == 0);
 			if (avail < toCopy) {
-				return XMI_EAGAIN;
+				return PAMI_EAGAIN;
 			}
 			__recv_whole_packets(thr, hcount, dcount, avail, did, buf, aligned);
 			__recv_last_packet(thr, hcount, dcount, avail, did, buf, aligned);
@@ -207,11 +207,11 @@ protected:
 			__recv_null_packets(thr, hcount, dcount, did);
 		}
 		if (thr->_bytesLeft == 0) {
-			thr->setStatus(XMI::Device::Complete);
+			thr->setStatus(PAMI::Device::Complete);
 			__completeThread(thr);
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
-		return XMI_EAGAIN;
+		return PAMI_EAGAIN;
 	}
 
 	bool _doData;
@@ -219,21 +219,21 @@ protected:
 	unsigned _nThreads;
 }; // class CNBroadcastMessage
 
-class CNBroadcastModel : public XMI::Device::Interface::MulticastModel<CNBroadcastModel,CNBroadcastDevice,sizeof(CNBroadcastMessage)> {
+class CNBroadcastModel : public PAMI::Device::Interface::MulticastModel<CNBroadcastModel,CNBroadcastDevice,sizeof(CNBroadcastMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 	static const size_t sizeof_msg = sizeof(CNBroadcastMessage);
 
-	CNBroadcastModel(CNBroadcastDevice &device, xmi_result_t &status) :
-	XMI::Device::Interface::MulticastModel<CNBroadcastModel,CNBroadcastDevice,sizeof(CNBroadcastMessage)>(device,status)
+	CNBroadcastModel(CNBroadcastDevice &device, pami_result_t &status) :
+	PAMI::Device::Interface::MulticastModel<CNBroadcastModel,CNBroadcastDevice,sizeof(CNBroadcastMessage)>(device,status)
 	{
 		// assert(device == _g_cnbroadcast_dev);
 		_dispatch_id = _g_cnbroadcast_dev.newDispID();
 		_me = __global.mapping.task();
 	}
 
-	inline xmi_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg], xmi_multicast_t *mcast);
+	inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg], pami_multicast_t *mcast);
 
 private:
 	size_t _me;
@@ -243,13 +243,13 @@ private:
 inline void CNBroadcastMessage::__completeThread(CNBroadcastThread *thr) {
 	unsigned c = _g_cnbroadcast_dev.common()->__completeThread(thr);
 	if (c >= _nThreads) {
-		setStatus(XMI::Device::Done);
+		setStatus(PAMI::Device::Done);
 	}
 }
 
-inline xmi_result_t CNBroadcastModel::postMulticast_impl(uint8_t (&state)[sizeof_msg], xmi_multicast_t *mcast) {
-	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
-	XMI::Topology *dst_topo = (XMI::Topology *)mcast->dst_participants;
+inline pami_result_t CNBroadcastModel::postMulticast_impl(uint8_t (&state)[sizeof_msg], pami_multicast_t *mcast) {
+	PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
+	PAMI::Topology *dst_topo = (PAMI::Topology *)mcast->dst_participants;
 	bool doData = (!src_topo || src_topo->isRankMember(_me));
 	bool doStore = (!dst_topo || dst_topo->isRankMember(_me));
 
@@ -260,11 +260,11 @@ inline xmi_result_t CNBroadcastModel::postMulticast_impl(uint8_t (&state)[sizeof
 	msg = new (&state) CNBroadcastMessage(_g_cnbroadcast_dev.common(),
 			mcast, mcast->bytes, doStore, doData, _dispatch_id);
 	_g_cnbroadcast_dev.__post<CNBroadcastMessage>(msg);
-	return XMI_SUCCESS;
+	return PAMI_SUCCESS;
 }
 
 };	// BGP
 };	// Device
-};	// XMI
+};	// PAMI
 
 #endif // __components_devices_bgp_cnbroadcastmsg_h__

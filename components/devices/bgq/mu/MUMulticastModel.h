@@ -27,7 +27,7 @@
 #include "components/devices/bgq/mu/Dispatch.h"
 #include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "Global.h"
 #include "PipeWorkQueue.h"
 #include "Topology.h"
@@ -40,7 +40,7 @@
 
 //#define OPTIMIZE_AGGREGATE_LATENCY
 
-namespace XMI
+namespace PAMI
 {
 
   namespace Device
@@ -56,7 +56,7 @@ namespace XMI
       {
         unsigned          msgcount;
         unsigned          msgpad[3];
-        xmi_quad_t        msginfo;
+        pami_quad_t        msginfo;
       } mu_multicast_msgdata_t __attribute__ ((__aligned__ (16)));
 
       // State (request) implementation.  Caller should use uint8_t[MUMulticast::sizeof_msg]
@@ -86,10 +86,10 @@ namespace XMI
 
       public:
 
-        /// \see XMI::Device::Interface::MulticastModel::MulticastModel
-        MUMulticastModel (MUCollDevice & device, xmi_result_t &status);
+        /// \see PAMI::Device::Interface::MulticastModel::MulticastModel
+        MUMulticastModel (MUCollDevice & device, pami_result_t &status);
 
-        /// \see XMI::Device::Interface::MulticastModel::~MulticastModel
+        /// \see PAMI::Device::Interface::MulticastModel::~MulticastModel
         ~MUMulticastModel ();
 
         /// \brief Multicast model constants/attributes
@@ -102,13 +102,13 @@ namespace XMI
         static const size_t multicast_model_bytes_max               = (uint32_t) - 1; // metadata_t::sndlen
         static const size_t multicast_model_connection_id_max       = (uint32_t) - 1; // metadata_t::connection_id \todo 64 bit?
 
-        /// \see XMI::Device::Interface::MulticastModel::registerMcastRecvFunction
-        xmi_result_t registerMcastRecvFunction_impl(int                        dispatch_id,
-                                                    xmi_dispatch_multicast_fn  func,
+        /// \see PAMI::Device::Interface::MulticastModel::registerMcastRecvFunction
+        pami_result_t registerMcastRecvFunction_impl(int                        dispatch_id,
+                                                    pami_dispatch_multicast_fn  func,
                                                     void                      *arg);
-        /// \see XMI::Device::Interface::MulticastModel::postMulticast
-        xmi_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                        xmi_multicast_t *mcast);
+        /// \see PAMI::Device::Interface::MulticastModel::postMulticast
+        pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
+                                        pami_multicast_t *mcast);
 
       protected:
         // Metadata passed in the packet header
@@ -125,9 +125,9 @@ namespace XMI
           bool                                 active;
           size_t                               received_length;
           size_t                               expected_length;
-          XMI::PipeWorkQueue                 * rcvpwq;
+          PAMI::PipeWorkQueue                 * rcvpwq;
           uint8_t                            * buffer;
-          xmi_callback_t                       cb_done;
+          pami_callback_t                       cb_done;
           unsigned                             connection_id;
         } mcast_recv_state_t;
 
@@ -172,29 +172,29 @@ namespace XMI
         MUCollDevice                        & _device;
         MUDescriptorWrapper                   _wrapper_model;
         MUSPI_CollectiveMemoryFIFODescriptor  _desc_model;
-        xmi_dispatch_multicast_fn             _dispatch_function;
+        pami_dispatch_multicast_fn             _dispatch_function;
         void                                * _dispatch_arg;
         // We only need one receive state because we only support one active collective at a time
         mcast_recv_state_t                          _receive_state;
 
-      }; // XMI::Device::MU::MUMulticastModel class
+      }; // PAMI::Device::MU::MUMulticastModel class
 
       ///////////////////////////////////////////////////////////////////////////////
       // Inline implementations
       ///////////////////////////////////////////////////////////////////////////////
 
-      inline xmi_result_t MUMulticastModel::postMulticast_impl(uint8_t (&state)[MUMulticastModel::sizeof_msg],
-                                                               xmi_multicast_t *mcast)
+      inline pami_result_t MUMulticastModel::postMulticast_impl(uint8_t (&state)[MUMulticastModel::sizeof_msg],
+                                                               pami_multicast_t *mcast)
       {
-//      XMI_assert(!multicast_model_all_sided || mcast->src != ... not sure what I was trying to assert but think about it...
+//      PAMI_assert(!multicast_model_all_sided || mcast->src != ... not sure what I was trying to assert but think about it...
         mu_multicast_statedata_t *state_data = (mu_multicast_statedata_t*) & state;
 
         // Get the source data buffer/length and validate (assert) inputs
         size_t length = mcast->bytes;
-        XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)mcast->src;
+        PAMI::PipeWorkQueue *pwq = (PAMI::PipeWorkQueue *)mcast->src;
 
         // multicast_model_available_buffers_only semantics: If you're sending data, it must all be ready in the pwq.
-        XMI_assert((length == 0) || (multicast_model_available_buffers_only && pwq && pwq->bytesAvailableToConsume() == length));
+        PAMI_assert((length == 0) || (multicast_model_available_buffers_only && pwq && pwq->bytesAvailableToConsume() == length));
 
         TRACE((stderr, "<%p>:MUMulticastModel::postMulticast_impl() dispatch %zd, connection_id %#X, msgcount %d/%p, bytes %zd/%p/%p\n",
                this, mcast->dispatch, mcast->connection_id,
@@ -212,7 +212,7 @@ namespace XMI
         // Get the msginfo buffer/length and validate (assert) inputs
         void* msgdata = (void*)mcast->msginfo;
 
-        XMI_assert(multicast_model_msgcount_max >= mcast->msgcount);
+        PAMI_assert(multicast_model_msgcount_max >= mcast->msgcount);
 
         // calc how big our msginfo needs to be
         size_t msgsize = sizeof(mu_multicast_msgdata_t().msgcount) + sizeof(mu_multicast_msgdata_t().msgpad) + (mcast->msgcount * sizeof(mu_multicast_msgdata_t().msginfo));
@@ -235,9 +235,9 @@ namespace XMI
         TRACE((stderr, "<%p>:MUMulticastModel::postMulticast_impl() dispatch %zd, connection_id %#X exit\n",
                this, mcast->dispatch, mcast->connection_id));
 
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
 
-      }; // XMI::Device::MU::MUMulticastModel::postMulticast_impl
+      }; // PAMI::Device::MU::MUMulticastModel::postMulticast_impl
 
       inline void MUMulticastModel::initializeDescriptor (MUSPI_DescriptorBase* desc,
                                                           uint64_t payloadPa,
@@ -251,7 +251,7 @@ namespace XMI
         desc->setPayload (payloadPa, bytes);
         DUMP_DESCRIPTOR("initializeDescriptor() ..done", desc);
 
-      }; // XMI::Device::MU::MUMulticastModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
+      }; // PAMI::Device::MU::MUMulticastModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
 
       inline bool MUMulticastModel::postHeader(mu_multicast_statedata_t      * state,
                                                MUInjFifoMessage  & message,
@@ -366,14 +366,14 @@ namespace XMI
           DUMP_DESCRIPTOR("MUMulticastModel::postHeader().. before addToSendQ                ", desc);
           // Add this message to the send queue to be processed when there is
           // space available in the injection fifo.
-          _device.addToSendQ ((XMI::Queue::Element *) &message);
+          _device.addToSendQ ((PAMI::Queue::Element *) &message);
         }
 
         TRACE((stderr, "<%p>:MUMulticastModel::postHeader() exit\n", this));
 
         return true;
 
-      }; // XMI::Device::MU::MUMulticastModel::postHeader
+      }; // PAMI::Device::MU::MUMulticastModel::postHeader
 
       inline bool MUMulticastModel::postData(MUInjFifoMessage &message,
                                              unsigned connection_id,
@@ -391,7 +391,7 @@ namespace XMI
         uint32_t rc;
         Kernel_MemoryRegion_t memRegion; // Memory region associated with the buffer.
         rc = Kernel_CreateMemoryRegion (&memRegion, payload, payload_length);
-        XMI_assert ( rc == 0 );
+        PAMI_assert ( rc == 0 );
 
         uint64_t paddr = (uint64_t)memRegion.BasePa +
                          ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
@@ -453,14 +453,14 @@ namespace XMI
           DUMP_DESCRIPTOR("MUMulticastModel::postData().. before addToSendQ                ", desc);
           // Add this message to the send queue to be processed when there is
           // space available in the injection fifo.
-          _device.addToSendQ ((XMI::Queue::Element *) &message);
+          _device.addToSendQ ((PAMI::Queue::Element *) &message);
         }
 
         return true;
 
 
 
-      }; // XMI::Device::MU::MUMulticastModel::postData
+      }; // PAMI::Device::MU::MUMulticastModel::postData
 
       inline void MUMulticastModel::processHeader (metadata_t * metadata,
                                                    mu_multicast_msgdata_t  * msgdata,
@@ -470,7 +470,7 @@ namespace XMI
 
 
         // Only one active (receive) connection id at a time
-        XMI_assertf(!_receive_state.active, "connection_id %#X/%#X\n", _receive_state.connection_id, metadata->connection_id);
+        PAMI_assertf(!_receive_state.active, "connection_id %#X/%#X\n", _receive_state.connection_id, metadata->connection_id);
 
         _receive_state.connection_id = metadata->connection_id;
         _receive_state.received_length = 0; // no bytes received yet
@@ -489,13 +489,13 @@ namespace XMI
                            metadata->sndlen,                        // Length of data sent
                            _dispatch_arg,                            // Opaque dispatch arg
                            &_receive_state.expected_length,         // [out] Length of data to receive
-                           (xmi_pipeworkqueue_t**) &_receive_state.rcvpwq,// [out] Where to put recv data
+                           (pami_pipeworkqueue_t**) &_receive_state.rcvpwq,// [out] Where to put recv data
                            &_receive_state.cb_done                  // [out] Completion callback to invoke when data received
                           );
 
         TRACE((stderr, "<%p>:MUMulticastModel::processHeader() after dispatch expected_length %zd, pwq %p\n", this, _receive_state.expected_length, _receive_state.rcvpwq));
 
-        XMI_assert(_receive_state.expected_length == metadata->sndlen); /// \todo allow partial receives and toss unwanted data
+        PAMI_assert(_receive_state.expected_length == metadata->sndlen); /// \todo allow partial receives and toss unwanted data
 
         // No data expected? Then we're done so invoke the receive done callback.
         if (!_receive_state.expected_length)
@@ -503,7 +503,7 @@ namespace XMI
           if (_receive_state.cb_done.function)
             _receive_state.cb_done.function (_device.getContext(),
                                              _receive_state.cb_done.clientdata,
-                                             XMI_SUCCESS);
+                                             PAMI_SUCCESS);
           return;
         }
 
@@ -511,7 +511,7 @@ namespace XMI
         _receive_state.active = true;
 
         // multicast_model_available_buffers_only semantics: If you're receiving data then the pwq must be available
-        XMI_assert(multicast_model_available_buffers_only &&
+        PAMI_assert(multicast_model_available_buffers_only &&
                    (_receive_state.rcvpwq && _receive_state.rcvpwq->bytesAvailableToProduce() == _receive_state.expected_length));
 
         _receive_state.buffer = (uint8_t*)_receive_state.rcvpwq->bufferToProduce();
@@ -527,7 +527,7 @@ namespace XMI
         }
 
         return;
-      }; // XMI::Device::MU::MUMulticastModel::processHeader
+      }; // PAMI::Device::MU::MUMulticastModel::processHeader
 
       inline void MUMulticastModel::processData   (metadata_t   *  metadata,
                                                    uint8_t * payload,
@@ -537,7 +537,7 @@ namespace XMI
                this, metadata, payload, bytes, (_receive_state.expected_length - _receive_state.received_length)));
 
 
-        XMI_assertf(_receive_state.active, "connection_id %#X/%#X\n", _receive_state.connection_id, metadata->connection_id);
+        PAMI_assertf(_receive_state.active, "connection_id %#X/%#X\n", _receive_state.connection_id, metadata->connection_id);
 
         // Number of bytes left to copy into the destination buffer
         size_t nleft = _receive_state.expected_length - _receive_state.received_length;
@@ -566,15 +566,15 @@ namespace XMI
             if (_receive_state.cb_done.function)
               _receive_state.cb_done.function (_device.getContext(),
                                                _receive_state.cb_done.clientdata,
-                                               XMI_SUCCESS);
+                                               PAMI_SUCCESS);
           }
         }
-        else XMI_abortf("Unwanted data?\n");  /// \todo toss unwanted data?
+        else PAMI_abortf("Unwanted data?\n");  /// \todo toss unwanted data?
 
         return ;
-      }; // XMI::Device::MU::MUMulticastModel::processData
+      }; // PAMI::Device::MU::MUMulticastModel::processData
 
-      /// \see XMI::Device::Interface::RecvFunction_t
+      /// \see PAMI::Device::Interface::RecvFunction_t
       inline
       int MUMulticastModel::dispatch (void   * metadata,
                                       void   * payload,
@@ -602,12 +602,12 @@ namespace XMI
         }
 
         return 0;
-      }; // XMI::Device::MU::MUMulticastModel::dispatch
+      }; // PAMI::Device::MU::MUMulticastModel::dispatch
 
 
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 #undef TRACE
 

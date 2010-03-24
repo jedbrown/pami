@@ -24,10 +24,10 @@ namespace CCMI
     class A2AProtocol
     {
     protected:
-      XMI_Request_t    _sreq    __attribute__((__aligned__(16)));
-      XMI_Request_t    _rreq    __attribute__((__aligned__(16)));
-      xmi_callback_t   _my_cb_done;
-      xmi_callback_t   _app_cb_done;
+      PAMI_Request_t    _sreq    __attribute__((__aligned__(16)));
+      PAMI_Request_t    _rreq    __attribute__((__aligned__(16)));
+      pami_callback_t   _my_cb_done;
+      pami_callback_t   _app_cb_done;
 
       unsigned             _donecount;
 
@@ -35,15 +35,15 @@ namespace CCMI
       T_Counter          * _sndlens;
       T_Counter          * _sdispls;
       T_Counter          * _sndcounters;
-      XMI_GEOMETRY_CLASS * _geometry;
+      PAMI_GEOMETRY_CLASS * _geometry;
       T_Manytomany       * _minterface;
 
     public:
       A2AProtocol (T_Sysdep           * mapping,
                    T_Manytomany       * minterface,
-                   xmi_callback_t       cb_done,
-                   xmi_consistency_t     consistency,
-                   XMI_GEOMETRY_CLASS * geometry,
+                   pami_callback_t       cb_done,
+                   pami_consistency_t     consistency,
+                   PAMI_GEOMETRY_CLASS * geometry,
                    const char         * sndbuf,
                    T_Counter          * sndlens,
                    T_Counter          * sdispls,
@@ -121,12 +121,12 @@ namespace CCMI
                              _geometry->nranks());
       }
 
-      static void done (xmi_context_t context, void *arg, xmi_result_t err)
+      static void done (pami_context_t context, void *arg, pami_result_t err)
       {
         A2AProtocol *proto = (A2AProtocol *) arg;
         proto->_donecount ++;
         if((proto->_donecount == 2) && (proto->_app_cb_done.function))
-          proto->_app_cb_done.function (NULL, proto->_app_cb_done.clientdata, XMI_SUCCESS);
+          proto->_app_cb_done.function (NULL, proto->_app_cb_done.clientdata, PAMI_SUCCESS);
       }
     };
 
@@ -158,7 +158,7 @@ namespace CCMI
 
       //virtual ~AlltoallFactory () {}
       //void operator delete (void *p) {CCMI_abort();}
-      virtual bool Analyze(XMI_GEOMETRY_CLASS *geometry)
+      virtual bool Analyze(PAMI_GEOMETRY_CLASS *geometry)
       {
         return(geometry->isTorus());
       }
@@ -167,7 +167,7 @@ namespace CCMI
       class collObj
       {
       public:
-        collObj(xmi_xfer_t *xfer):
+        collObj(pami_xfer_t *xfer):
           _rsize(sizeof(_req)),
           _xfer(*xfer),
           _user_done_fn(xfer->cb_done),
@@ -176,17 +176,17 @@ namespace CCMI
             _xfer.cb_done = alloc_done_fn;
             _xfer.cookie  = this;
           }
-        XMI_CollectiveRequest_t      _req[1];
+        PAMI_CollectiveRequest_t      _req[1];
         int                          _rsize;
-        xmi_xfer_t                   _xfer;
-        xmi_event_function           _user_done_fn;
+        pami_xfer_t                   _xfer;
+        pami_event_function           _user_done_fn;
         void                       * _user_cookie;
         SimpleExecutor               _simpleExec;
       };
 
-      static void alloc_done_fn( xmi_context_t   context,
+      static void alloc_done_fn( pami_context_t   context,
                                  void          * cookie,
-                                 xmi_result_t    result )
+                                 pami_result_t    result )
         {
           collObj *cObj = (collObj*)cookie;
           cObj->_user_done_fn(context,cObj->_user_cookie,result);
@@ -195,19 +195,19 @@ namespace CCMI
 
 
 
-      virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+      virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                              void                      * cmd)
 
         {
           collObj *obj = (collObj*)malloc(sizeof(*obj));
-          new(obj) collObj((xmi_xfer_t*)cmd);
-          XMI_Callback_t cb_done;
+          new(obj) collObj((pami_xfer_t*)cmd);
+          PAMI_Callback_t cb_done;
           cb_done.function   = obj->_xfer.cb_done;
           cb_done.clientdata = obj->_xfer.cookie;
           this->generate(&obj->_req[0],
                          cb_done,
-                         XMI_MATCH_CONSISTENCY,
-                         (XMI_GEOMETRY_CLASS *)geometry,
+                         PAMI_MATCH_CONSISTENCY,
+                         (PAMI_GEOMETRY_CLASS *)geometry,
                          obj->_xfer.cmd.xfer_alltoallv.sndbuf,
                          obj->_xfer.cmd.xfer_alltoallv.stypecounts,
                          obj->_xfer.cmd.xfer_alltoallv.sdispls,
@@ -218,15 +218,15 @@ namespace CCMI
           return &obj->_simpleExec;
         }
 
-      virtual void metadata(xmi_metadata_t *mdata)
+      virtual void metadata(pami_metadata_t *mdata)
           {
             strcpy(mdata->name, "CCMIAlltoall");
           }
 
-      virtual unsigned generate (XMI_CollectiveRequest_t   * request,
-                                 xmi_callback_t    cb_done,
-                                 xmi_consistency_t   consistency,
-                                 XMI_GEOMETRY_CLASS         * geometry,
+      virtual unsigned generate (PAMI_CollectiveRequest_t   * request,
+                                 pami_callback_t    cb_done,
+                                 pami_consistency_t   consistency,
+                                 PAMI_GEOMETRY_CLASS         * geometry,
                                  const char       * sndbuf,
                                  T_Counter         * sndlens,
                                  T_Counter         * sdispls,
@@ -246,7 +246,7 @@ namespace CCMI
 
         // Lets do the barrier to sync
         CCMI::Executor::Composite *barrier =(CCMI::Executor::Composite *)
-          geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0);
+          geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE0);
         CCMI_assert(barrier != NULL);
         barrier->setDoneCallback (cb_barrier_done, request);
         //barrier->setConsistency (consistency);
@@ -255,7 +255,7 @@ namespace CCMI
         return 0;
       }
 
-      static void cb_barrier_done (xmi_context_t context, void *arg, xmi_result_t err)
+      static void cb_barrier_done (pami_context_t context, void *arg, pami_result_t err)
       {
         A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> *proto = (A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> *) arg;
         proto->start();

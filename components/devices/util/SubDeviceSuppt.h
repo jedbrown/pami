@@ -15,7 +15,7 @@
 ///  \file components/devices/util/SubDeviceSuppt.h
 ///  \brief Generic Device Examples and Frequently-used sub-classes
 ///
-///  Namespace:  XMI, the messaging namespace.
+///  Namespace:  PAMI, the messaging namespace.
 ///
 ////////////////////////////////////////////////////////////////////////
 
@@ -35,19 +35,19 @@
 /// \subsection use_gendev_suppt_thr THREAD SUPPORT
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::GenericAdvanceThread "class GenericAdvanceThread"
+/// \ref PAMI::Device::Generic::GenericAdvanceThread "class GenericAdvanceThread"
 ///
 /// \b Provides:
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::GenericAdvanceThread::setMsg "void setMsg(GenericMessage *msg)"
+/// \ref PAMI::Device::Generic::GenericAdvanceThread::setMsg "void setMsg(GenericMessage *msg)"
 ///
-/// \ref XMI::Device::Generic::GenericAdvanceThread::getMsg "GenericMessage *getMsg()"
+/// \ref PAMI::Device::Generic::GenericAdvanceThread::getMsg "GenericMessage *getMsg()"
 ///
-/// \ref XMI::Device::Generic::GenericAdvanceThread::setAdv "void setAdv(xmi_work_function advThr)"
+/// \ref PAMI::Device::Generic::GenericAdvanceThread::setAdv "void setAdv(pami_work_function advThr)"
 ///
 /// </div>
-/// \ref XMI::Device::Generic::SimpleAdvanceThread "class SimpleAdvanceThread"
+/// \ref PAMI::Device::Generic::SimpleAdvanceThread "class SimpleAdvanceThread"
 ///
 /// Basic thread object for messages that move data. Adds a "bytes left" field.
 /// Inherits from GenericAdvanceThread (and, by definition, GenericThread).
@@ -56,14 +56,14 @@
 /// \b Provides:
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::SimpleAdvanceThread::_bytesLeft "size_t _bytesLeft (public data member)"
+/// \ref PAMI::Device::Generic::SimpleAdvanceThread::_bytesLeft "size_t _bytesLeft (public data member)"
 ///
 /// </div>
 /// </div>
 /// \subsection use_gendev_suppt_msg MESSAGE SUPPORT
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::DECL_ADVANCE_ROUTINE "DECL_ADVANCE_ROUTINE(method, message, thread)"
+/// \ref PAMI::Device::Generic::DECL_ADVANCE_ROUTINE "DECL_ADVANCE_ROUTINE(method, message, thread)"
 ///
 ///  Declare a static advance function stub (e.g. that may be use in setAdv()) which
 ///  calls an inlined function by the same name prepended with double-underscore.
@@ -73,16 +73,16 @@
 /// \b Creates:
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::method "xmi_result_t method(xmi_context_t, void *)"
+/// \ref PAMI::Device::Generic::method "pami_result_t method(pami_context_t, void *)"
 ///
 /// </div>
 /// \b Requires:
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::__method "xmi_result_t __method(thread *)"
+/// \ref PAMI::Device::Generic::__method "pami_result_t __method(thread *)"
 ///
 /// </div>
-/// \ref XMI::Device::Generic::DECL_ADVANCE_ROUTINE2 "DECL_ADVANCE_ROUTINE2(method, message, thread)"
+/// \ref PAMI::Device::Generic::DECL_ADVANCE_ROUTINE2 "DECL_ADVANCE_ROUTINE2(method, message, thread)"
 ///
 ///   Declare a static advance function stub (e.g. that may be use in setAdv()) which
 ///   calls an inlined function by the same name prepended with double-underscore.
@@ -92,13 +92,13 @@
 /// \b Creates:
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::method "xmi_result_t method(xmi_context_t, void *)"
+/// \ref PAMI::Device::Generic::method "pami_result_t method(pami_context_t, void *)"
 ///
 /// </div>
 /// \b Requires:
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::__method "xmi_result_t __method(xmi_context_t, thread *)"
+/// \ref PAMI::Device::Generic::__method "pami_result_t __method(pami_context_t, thread *)"
 ///
 ///
 /// </div>
@@ -106,7 +106,7 @@
 /// \subsection use_gendev_suppt_dev DEVICE SUPPORT
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::MultiSendQSubDevice "class MultiSendQSubDevice<thread, nthreads, usequeue>"
+/// \ref PAMI::Device::Generic::MultiSendQSubDevice "class MultiSendQSubDevice<thread, nthreads, usequeue>"
 ///
 /// A send-queue with an array of thread objects. Inherits from the typedef
 /// GenericDeviceMessageQueue which defines the type of queue needed by the
@@ -115,31 +115,31 @@
 /// \b Provides:
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::MultiSendQSubDevice::getGenerics "Device *getGenerics(size_t client)"
+/// \ref PAMI::Device::Generic::MultiSendQSubDevice::getGenerics "Device *getGenerics(size_t client)"
 ///
-/// \ref XMI::Device::Generic::MultiSendQSubDevice::getQS "GenericDeviceMessageQueue *getQS()"
+/// \ref PAMI::Device::Generic::MultiSendQSubDevice::getQS "GenericDeviceMessageQueue *getQS()"
 ///
-/// \ref XMI::Device::Generic::MultiSendQSubDevice::__getThreads "void __getThreads(T_Thread **t, int *n)"
+/// \ref PAMI::Device::Generic::MultiSendQSubDevice::__getThreads "void __getThreads(T_Thread **t, int *n)"
 ///
-/// \ref XMI::Device::Generic::MultiSendQSubDevice::__postNext "xmi_context_t __postNext(GenericMessage *msg, bool devQueued)"
+/// \ref PAMI::Device::Generic::MultiSendQSubDevice::__postNext "pami_context_t __postNext(GenericMessage *msg, bool devQueued)"
 ///
-/// \ref XMI::Device::Generic::MultiSendQSubDevice::__post "void __post(GenericMessage *msg)"
+/// \ref PAMI::Device::Generic::MultiSendQSubDevice::__post "void __post(GenericMessage *msg)"
 ///
 /// </div>
 /// \b Requires:
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::T_Message::setThreads "int msg->setThreads(thread **t)"
+/// \ref PAMI::Device::Generic::T_Message::setThreads "int msg->setThreads(thread **t)"
 ///
 ///
 /// </div>
 /// </div>
-/// \ref XMI::Device::Generic::CommonQueueSubDevice "Single Global Device with multiple Message types"
+/// \ref PAMI::Device::Generic::CommonQueueSubDevice "Single Global Device with multiple Message types"
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::CommonQueueSubDevice "class CommonQueueSubDevice"
+/// \ref PAMI::Device::Generic::CommonQueueSubDevice "class CommonQueueSubDevice"
 /// \n
-/// \ref XMI::Device::Generic::SharedQueueSubDevice "class SharedQueueSubDevice<commondevice, thread, nthreads>"
+/// \ref PAMI::Device::Generic::SharedQueueSubDevice "class SharedQueueSubDevice<commondevice, thread, nthreads>"
 ///
 /// A pair of classes that support a device model where there is a single
 /// hardware device (and send queue) that is used by multiple different
@@ -158,7 +158,7 @@
 /// </div>
 /// <HR>
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace Generic {
 
@@ -188,7 +188,7 @@ public:
 	/// (i.e. this thread object).
 	///
 	/// \param[in] advThr	Advance function
-	inline void setAdv(xmi_work_function advThr) { _func = advThr; _cookie = this; }
+	inline void setAdv(pami_work_function advThr) { _func = advThr; _cookie = this; }
 
 	/// \brief Get message object that thread works on
 	///
@@ -231,17 +231,17 @@ public:
 /// \param[in] method	Basename of method used to advance thread(s)
 /// \param[in] message	Class of message
 /// \param[in] thread	Class of thread
-/// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
+/// \return	PAMI_SUCCESS when complete, or PAMI_EAGAIN if more work to do
 ///
 #define DECL_ADVANCE_ROUTINE(method,message,thread)			\
-static xmi_result_t method(xmi_context_t context, void *t) {	\
+static pami_result_t method(pami_context_t context, void *t) {	\
 	thread *thr = (thread *)t;				\
 	message *msg = (message *)thr->getMsg();		\
 	return msg->__##method(thr);				\
 }
 class T_Thread;	// happy doxygen
 
-/// \fn static xmi_result_t method(xmi_context_t ctx, void *thr)
+/// \fn static pami_result_t method(pami_context_t ctx, void *thr)
 /// \brief Static function used for advancing work on thread/message
 ///
 /// The static advance function stub, suitable for use in setAdv().
@@ -249,10 +249,10 @@ class T_Thread;	// happy doxygen
 ///
 /// \param[in] ctx	The context on which working is being done
 /// \param[in] thr	The thread object being worked
-/// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
-extern xmi_result_t method(xmi_context_t ctx, void *thr);	// happy doxygen
+/// \return	PAMI_SUCCESS when complete, or PAMI_EAGAIN if more work to do
+extern pami_result_t method(pami_context_t ctx, void *thr);	// happy doxygen
 
-/// \fn static xmi_result_t __method(T_Thread *thr)
+/// \fn static pami_result_t __method(T_Thread *thr)
 /// \brief Inline function used for advancing work on thread/message
 ///
 /// The actual advance function. A message class that uses DECL_ADVANCE_ROUTINE()
@@ -260,8 +260,8 @@ extern xmi_result_t method(xmi_context_t ctx, void *thr);	// happy doxygen
 /// advance routine.
 ///
 /// \param[in] thr	The thread object being worked
-/// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
-extern xmi_result_t __method(T_Thread *thr);	// happy doxygen
+/// \return	PAMI_SUCCESS when complete, or PAMI_EAGAIN if more work to do
+extern pami_result_t __method(T_Thread *thr);	// happy doxygen
 
 /// \brief Macro for declaring a routine as an advance routine for a thread
 /// \ingroup use_gendev_suppt
@@ -276,16 +276,16 @@ extern xmi_result_t __method(T_Thread *thr);	// happy doxygen
 /// \param[in] method	Basename of method used to advance thread(s)
 /// \param[in] message	Class of message
 /// \param[in] thread	Class of thread
-/// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
+/// \return	PAMI_SUCCESS when complete, or PAMI_EAGAIN if more work to do
 ///
 #define DECL_ADVANCE_ROUTINE2(method,message,thread)		\
-static xmi_result_t method(xmi_context_t context, void *t) {	\
+static pami_result_t method(pami_context_t context, void *t) {	\
 	thread *thr = (thread *)t;				\
 	message *msg = (message *)thr->getMsg();		\
 	return msg->__##method(context, thr);			\
 }
 
-/// \fn xmi_result_t __method(xmi_context_t ctx, T_Thread *thr)
+/// \fn pami_result_t __method(pami_context_t ctx, T_Thread *thr)
 /// \brief Inline function used for advancing work on thread/message
 ///
 /// The actual advance function. Has access to context if needed.
@@ -295,8 +295,8 @@ static xmi_result_t method(xmi_context_t context, void *t) {	\
 ///
 /// \param[in] ctx	The context on which work is being done
 /// \param[in] thr	The thread object being worked
-/// \return	XMI_SUCCESS when complete, or XMI_EAGAIN if more work to do
-extern xmi_result_t __method(xmi_context_t ctx, T_Thread *thr);	// happy doxygen
+/// \return	PAMI_SUCCESS when complete, or PAMI_EAGAIN if more work to do
+extern pami_result_t __method(pami_context_t ctx, T_Thread *thr);	// happy doxygen
 
 /// \fn int T_Message::setThreads(T_Thread **t)
 /// \brief inline function for setting up threads on a message
@@ -342,11 +342,11 @@ public:
 	/// \param[in] devices		Array of Generic::Device objects for client
 	/// \return	error code
 	///
-	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+	inline pami_result_t __init(size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
 		if (contextId == 0) {
 			_generics[client] = devices;
 		}
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 
 	/// \brief Accessor for arrays of generic devices
@@ -355,7 +355,7 @@ public:
 	/// \param[in] client		Id of current client
 	/// \return	Array of generic devices for client
 	///
-	inline XMI::Device::Generic::Device *getGenerics(size_t client) {
+	inline PAMI::Device::Generic::Device *getGenerics(size_t client) {
 		return _generics[client];
 	}
 
@@ -401,23 +401,23 @@ public:
 	/// \return	context for completion callback, or NULL if not completed
 	///
 	template <class T_Message>
-	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devQueued) {
-		XMI::Device::Generic::Device *g;
+	inline pami_context_t __postNext(PAMI::Device::Generic::GenericMessage *msg, bool devQueued) {
+		PAMI::Device::Generic::Device *g;
 		g = getGenerics(msg->getClientId());
 		T_Thread *t;
 		int n;
-		msg->setStatus(XMI::Device::Initialized);
+		msg->setStatus(PAMI::Device::Initialized);
 		// setThreads() might complete some/all threads...
 		n = static_cast<T_Message *>(msg)->setThreads(&t);
 		size_t x = msg->getContextId();
-		if (!devQueued && msg->getStatus() == XMI::Device::Done) {
+		if (!devQueued && msg->getStatus() == PAMI::Device::Done) {
 			// assert(g[x].getContext() != NULL);
 			return g[x].getContext();
 		}
 		size_t numctx = g[x].nContexts();
 		g[x].postMsg(msg);
 		while (n > 0) {
-			if (t->getStatus() != XMI::Device::Complete) {
+			if (t->getStatus() != PAMI::Device::Complete) {
 				if (++x >= numctx) x = 0;
 				g[x].postThread(t);
 			}
@@ -442,7 +442,7 @@ public:
 	/// \param[in] msg	Message to be posted
 	///
 	template <class T_Message>
-	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
+	inline void __post(PAMI::Device::Generic::GenericMessage *msg) {
 		// GenericDeviceMessageQueue *qs = (GenericDeviceMessageQueue *)msg->getQS();
 		// the above would allow an implementation to vary where the queue is...
 
@@ -451,7 +451,7 @@ public:
 		// If !Use_Queue, there must never be a message queued...
 		// assert(Use_Queue || peek() == NULL);
 		if (first) {
-			xmi_context_t ctx = __postNext<T_Message>(msg, false);
+			pami_context_t ctx = __postNext<T_Message>(msg, false);
 			if (ctx) {
 				msg->executeCallback(ctx);
 				return;
@@ -467,7 +467,7 @@ public:
 
 protected:
 	T_Thread _threads[N_Threads];	///< Threads for current message on device
-	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS]; ///< generic device arrays
+	PAMI::Device::Generic::Device *_generics[PAMI_MAX_NUM_CLIENTS]; ///< generic device arrays
 }; // class MultiSendQSubDevice
 
 ///
@@ -494,7 +494,7 @@ public:
 	virtual ~CommonQueueSubDevice() {}
 
         /// \note This is required to make "C" programs link successfully with virtual destructors
-        inline void operator delete(void * p) { XMI_abortf("%s<%d>\n", __FILE__, __LINE__); }
+        inline void operator delete(void * p) { PAMI_abortf("%s<%d>\n", __FILE__, __LINE__); }
 
 	/// \brief returns a unique ID relative to this common sub-device
 	///
@@ -519,7 +519,7 @@ public:
 	/// \param[in] contextId	Context ID
 	/// \param[in] ctx		Context
 	/// \return	Error code
-	virtual xmi_result_t init(XMI::Memory::MemoryManager *mm, size_t client, size_t contextId, xmi_context_t ctx) = 0;
+	virtual pami_result_t init(PAMI::Memory::MemoryManager *mm, size_t client, size_t contextId, pami_context_t ctx) = 0;
 
 	/// \brief CommonQueueSubDevice portion of init function
 	///
@@ -533,7 +533,7 @@ public:
 	/// \param[in] mm		MemoryManager object
 	/// \param[in] devices		Array of generic devices for client
 	///
-	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+	inline pami_result_t __init(size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
 		if (client == 0) {
 			_mm = mm;
 			_doneThreads.init(mm);
@@ -543,7 +543,7 @@ public:
 		if (contextId == 0) {
 			_generics[client] = devices;
 		}
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 
 	/// \brief Reset for threads prior to being re-used.
@@ -566,12 +566,12 @@ public:
 
 	/// \brief Get SysDep object
 	/// \return	SysDep object
-	inline XMI::Memory::MemoryManager *getSysdep() { return _mm; }
+	inline PAMI::Memory::MemoryManager *getSysdep() { return _mm; }
 
 	/// \brief Get array of generic devices for client
 	/// \param[in] client	Client ID (offset)
 	/// \return	Array of generic devices
-	inline XMI::Device::Generic::Device *getGenerics(size_t client) {
+	inline PAMI::Device::Generic::Device *getGenerics(size_t client) {
 		return _generics[client];
 	}
 
@@ -579,23 +579,23 @@ public:
 	/// \param[in] msg		Message to start
 	/// \param[in] devQueued	Whether message is already on device send queue
 	template <class T_Message, class T_Thread>
-	inline xmi_context_t __postNext(XMI::Device::Generic::GenericMessage *msg, bool devQueued) {
-		XMI::Device::Generic::Device *g;
+	inline pami_context_t __postNext(PAMI::Device::Generic::GenericMessage *msg, bool devQueued) {
+		PAMI::Device::Generic::Device *g;
 		g = getGenerics(msg->getClientId());
 		T_Thread *t;
 		int n;
-		msg->setStatus(XMI::Device::Initialized);
+		msg->setStatus(PAMI::Device::Initialized);
 		// setThreads() might complete some/all threads...
 		n = static_cast<T_Message *>(msg)->setThreads(&t);
 		size_t x = msg->getContextId();
-		if (!devQueued && msg->getStatus() == XMI::Device::Done) {
+		if (!devQueued && msg->getStatus() == PAMI::Device::Done) {
 			// assert(g[x].getContext() != NULL);
 			return g[x].getContext();
 		}
 		size_t numctx = g[x].nContexts();
 		g[x].postMsg(msg);
 		while (n > 0) {
-			if (t->getStatus() != XMI::Device::Complete) {
+			if (t->getStatus() != PAMI::Device::Complete) {
 				if (++x >= numctx) x = 0;
 				g[x].postThread(t);
 			}
@@ -613,13 +613,13 @@ public:
 	/// \param[in] msg	Message to start and/or enqueue
 	///
 	template <class T_Message, class T_Thread>
-	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
+	inline void __post(PAMI::Device::Generic::GenericMessage *msg) {
 		// GenericDeviceMessageQueue *qs = (GenericDeviceMessageQueue *)msg->getQS();
 		// assert(qs == this);
 
 		bool first = (peek() == NULL);
 		if (first) {
-			xmi_context_t ctx = __postNext<T_Message,T_Thread>(msg, false);
+			pami_context_t ctx = __postNext<T_Message,T_Thread>(msg, false);
 			if (ctx) {
 				msg->executeCallback(ctx);
 				return;
@@ -632,8 +632,8 @@ private:
 	int _init;				///< detect first call to init()
 	GenericDeviceCounter _doneThreads;	///< counter used to track message complete
 	unsigned _dispatch_id;			///< unique id for sub-devices/messages
-	XMI::Device::Generic::Device *_generics[XMI_MAX_NUM_CLIENTS]; ///< save generic device array
-	XMI::Memory::MemoryManager *_mm;	///< saved SysDep
+	PAMI::Device::Generic::Device *_generics[PAMI_MAX_NUM_CLIENTS]; ///< save generic device array
+	PAMI::Memory::MemoryManager *_mm;	///< saved SysDep
 }; // class CommonQueueSubDevice
 
 /// \brief class for a Model/Device/Message/Thread tuple that shares hardware with others
@@ -685,7 +685,7 @@ public:
 	/// \brief Get pointer to generic device array for client
 	/// \param[in] client	The client ID (offset)
 	/// \return	Array of generic devices
-	inline XMI::Device::Generic::Device *getGenerics(size_t client) {
+	inline PAMI::Device::Generic::Device *getGenerics(size_t client) {
 		return _common->getGenerics(client);
 	}
 
@@ -697,7 +697,7 @@ public:
 	/// \param[in] mm		MemoryManager
 	/// \param[in] devices		Array of generic devices for client
 	/// \return	Error code
-	inline xmi_result_t __init(size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+	inline pami_result_t __init(size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
 		if (client == 0) {
 			// do this now so we don't have to every time we post
 //			for (int x = 0; x < N_Threads; ++x)
@@ -724,7 +724,7 @@ public:
 	/// \param[in] msg	Message to start and/or enqueue
 	///
 	template <class T_Message>
-	inline void __post(XMI::Device::Generic::GenericMessage *msg) {
+	inline void __post(PAMI::Device::Generic::GenericMessage *msg) {
 		_common->__post<T_Message,T_Thread>(msg);
 	}
 
@@ -747,6 +747,6 @@ private:
 
 }; /* namespace Generic */
 }; /* namespace Device */
-}; /* namespace XMI */
+}; /* namespace PAMI */
 
 #endif // __components_devices_generic_SubDeviceSuppt_h__

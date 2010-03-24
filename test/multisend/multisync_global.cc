@@ -19,11 +19,11 @@
 
 
 static int           _doneCountdown;
-xmi_callback_t       _cb_done;
+pami_callback_t       _cb_done;
 
-void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
+void _done_cb(pami_context_t context, void *cookie, pami_result_t err)
 {
-  XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
+  PAMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   volatile int *doneCountdown = (volatile int*) cookie;
   DBG_FPRINTF((stderr, "%s:%s doneCountdown %d/%d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown,_doneCountdown));
   --*doneCountdown;
@@ -31,30 +31,30 @@ void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
 
 int main(int argc, char ** argv)
 {
-  xmi_client_t client;
-  xmi_context_t context;
-  xmi_result_t status = XMI_ERROR;
+  pami_client_t client;
+  pami_context_t context;
+  pami_result_t status = PAMI_ERROR;
 
-  status = XMI_Client_initialize("multisync test", &client);
-  if(status != XMI_SUCCESS)
+  status = PAMI_Client_initialize("multisync test", &client);
+  if(status != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
+    fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);
     return 1;
   }
   DBG_FPRINTF((stderr,"Client %p\n",client));
   size_t n = 1;
-  status = XMI_Context_createv(client, NULL, 0, &context, n);
-  if(status != XMI_SUCCESS)
+  status = PAMI_Context_createv(client, NULL, 0, &context, n);
+  if(status != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", status);
+    fprintf (stderr, "Error. Unable to create pami context. result = %d\n", status);
     return 1;
   }
 
-  xmi_configuration_t configuration;
+  pami_configuration_t configuration;
 
-  configuration.name = XMI_TASK_ID;
-  status = XMI_Configuration_query(client, &configuration);
-  if(status != XMI_SUCCESS)
+  configuration.name = PAMI_TASK_ID;
+  status = PAMI_Configuration_query(client, &configuration);
+  if(status != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
     return 1;
@@ -62,9 +62,9 @@ int main(int argc, char ** argv)
   size_t task_id = configuration.value.intval;
   DBG_FPRINTF((stderr, "My task id = %zu\n", task_id));
 
-  configuration.name = XMI_NUM_TASKS;
-  status = XMI_Configuration_query(client, &configuration);
-  if(status != XMI_SUCCESS)
+  configuration.name = PAMI_NUM_TASKS;
+  status = PAMI_Configuration_query(client, &configuration);
+  if(status != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
     return 1;
@@ -77,13 +77,13 @@ int main(int argc, char ** argv)
   _cb_done.function   = &_done_cb;
   _cb_done.clientdata = &_doneCountdown;
 
-  XMI::Topology topology_global = __global.topology_global;
+  PAMI::Topology topology_global = __global.topology_global;
 
-  xmi_multisync_t multisync;
+  pami_multisync_t multisync;
   memset(&multisync, 0x00, sizeof(multisync));
 
   multisync.connection_id = 0xB; // arbitrary
-  multisync.participants = (xmi_topology_t *)&topology_global;
+  multisync.participants = (pami_topology_t *)&topology_global;
 
   multisync.client = (size_t) client;	// client ID
   multisync.context = 0;	// context ID
@@ -97,27 +97,27 @@ int main(int argc, char ** argv)
   _doneCountdown = 1;
   //sleep(5); // instead of syncing
 
-  status = XMI_Multisync(&multisync);
+  status = PAMI_Multisync(&multisync);
 
   while(_doneCountdown)
   {
-    status = XMI_Context_advance (context, 10);
+    status = PAMI_Context_advance (context, 10);
   }
 
 // ------------------------------------------------------------------------
-  DBG_FPRINTF((stderr, "XMI_Context_destroy(context);\n"));
-  status = XMI_Context_destroy(context);
-  if(status != XMI_SUCCESS)
+  DBG_FPRINTF((stderr, "PAMI_Context_destroy(context);\n"));
+  status = PAMI_Context_destroy(context);
+  if(status != PAMI_SUCCESS)
   {
-    fprintf(stderr, "Error. Unable to destroy xmi context. result = %d\n", status);
+    fprintf(stderr, "Error. Unable to destroy pami context. result = %d\n", status);
     return 1;
   }
 
-  DBG_FPRINTF((stderr, "XMI_Client_finalize(client);\n"));
-  status = XMI_Client_finalize(client);
-  if(status != XMI_SUCCESS)
+  DBG_FPRINTF((stderr, "PAMI_Client_finalize(client);\n"));
+  status = PAMI_Client_finalize(client);
+  if(status != PAMI_SUCCESS)
   {
-    fprintf(stderr, "Error. Unable to finalize xmi client. result = %d\n", status);
+    fprintf(stderr, "Error. Unable to finalize pami client. result = %d\n", status);
     return 1;
   }
 

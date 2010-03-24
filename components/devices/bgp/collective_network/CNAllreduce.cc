@@ -13,7 +13,7 @@
  */
 
 #include "config.h"
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include <util/common.h>
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
@@ -21,17 +21,17 @@
 
 extern "C" size_t _g_num_active_nodes;
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace BGP {
 
-	CNAllreduceSetup CNAllreduceSetup::CNAllreduceSetupCache[XMI_OP_COUNT][XMI_DT_COUNT];
+	CNAllreduceSetup CNAllreduceSetup::CNAllreduceSetupCache[PAMI_OP_COUNT][PAMI_DT_COUNT];
 
 	void CNAllreduceSetup::initCNAS() {
-		for (unsigned op = XMI_UNDEFINED_OP; op < XMI_OP_COUNT; ++op) {
-		for (unsigned dt = XMI_UNDEFINED_DT; dt < XMI_DT_COUNT; ++dt) {
+		for (unsigned op = PAMI_UNDEFINED_OP; op < PAMI_OP_COUNT; ++op) {
+		for (unsigned dt = PAMI_UNDEFINED_DT; dt < PAMI_DT_COUNT; ++dt) {
 			new (&CNAllreduceSetupCache[op][dt])
-				CNAllreduceSetup((xmi_dt)dt, (xmi_op)op);
+				CNAllreduceSetup((pami_dt)dt, (pami_op)op);
 		}}
 	}
 
@@ -105,4 +105,4 @@ namespace BGP {
 
 }; // namespace BGP
 }; // namespace Device
-}; // XMI
+}; // PAMI

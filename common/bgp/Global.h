@@ -37,14 +37,14 @@
 #include "Wtime.h"
 #include "common/bgp/LockBoxFactory.h"
 
-namespace XMI
+namespace PAMI
 {
-    class Global : public Interface::Global<XMI::Global>
+    class Global : public Interface::Global<PAMI::Global>
     {
       public:
 
         inline Global () :
-	  Interface::Global<XMI::Global>(),
+	  Interface::Global<PAMI::Global>(),
           personality (),
 	  mapping(personality),
           _mapcache (),
@@ -52,10 +52,10 @@ namespace XMI
           _memsize (0),
 	  lockboxFactory()
         {
-	  Interface::Global<XMI::Global>::time.init(personality.clockMHz());
+	  Interface::Global<PAMI::Global>::time.init(personality.clockMHz());
           //allocateMemory ();
 
-          char   * shmemfile = "/unique-xmi-global-shmem-file";
+          char   * shmemfile = "/unique-pami-global-shmem-file";
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
 
@@ -67,20 +67,20 @@ namespace XMI
 
 	  // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
           rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-          XMI_assertf(rc != -1, "shm_open(\"%s\", O_CREAT | O_RDWR, 0600) failed, errno=%d\n", shmemfile, errno)
+          PAMI_assertf(rc != -1, "shm_open(\"%s\", O_CREAT | O_RDWR, 0600) failed, errno=%d\n", shmemfile, errno)
 	  fd = rc;
           rc = ftruncate( fd, n );
-          XMI_assertf(rc != -1, "ftruncate(%d, %zd) failed, errno=%d\n", fd, n, errno);
+          PAMI_assertf(rc != -1, "ftruncate(%d, %zd) failed, errno=%d\n", fd, n, errno);
           void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
           if (ptr == MAP_FAILED) {
-		XMI_assertf(errno == ENOMEM, "mmap(NULL, %zd, PROT_READ | PROT_WRITE, MAP_SHARED, %d, 0) failed, errno = %d\n", n, fd, errno);
+		PAMI_assertf(errno == ENOMEM, "mmap(NULL, %zd, PROT_READ | PROT_WRITE, MAP_SHARED, %d, 0) failed, errno = %d\n", n, fd, errno);
 		// assert(mode == SMP)
 		close(fd);
 		shm_unlink(shmemfile);
 		fd = -1;
 		// just get some memory... remember, this is a ctor and is called pre-main
 		ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-		XMI_assertf(ptr != MAP_FAILED, "mmap(NULL, %zd, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0) failed, errno = %d\n", n, errno);
+		PAMI_assertf(ptr != MAP_FAILED, "mmap(NULL, %zd, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0) failed, errno = %d\n", n, errno);
 	  }
 
           size_t bytes_used = _mapcache.init (personality, ptr, n);
@@ -89,21 +89,21 @@ namespace XMI
 	  if (fd != -1) {
                 // Truncate to this size.
                 rc = ftruncate( fd, size );
-          	XMI_assertf(rc != -1, "ftruncate(%d, %zd) failed, errno=%d\n", fd, size, errno);
+          	PAMI_assertf(rc != -1, "ftruncate(%d, %zd) failed, errno=%d\n", fd, size, errno);
 	  } else {
 		void *v = ptr;
 		ptr = mremap(v, n, size, 0);
-		XMI_assertf(ptr != MAP_FAILED, "mremap(%p, %zd, %zd, 0) failed, errno = %d\n", v, n, size, errno);
+		PAMI_assertf(ptr != MAP_FAILED, "mremap(%p, %zd, %zd, 0) failed, errno = %d\n", v, n, size, errno);
 	  }
           _memptr  = ptr;
           _memsize = bytes_used;
 	  mapping.init(_mapcache, personality);
 	  lockboxFactory.init(&mapping);
-	  xmi_coord_t ll, ur;
+	  pami_coord_t ll, ur;
 	  size_t min, max;
-	  unsigned char tl[XMI_MAX_DIMS];
+	  unsigned char tl[PAMI_MAX_DIMS];
 
-	  XMI::Topology::static_init(&mapping);
+	  PAMI::Topology::static_init(&mapping);
 	  _mapcache.getMappingInit(ll, ur, min, max);
 	  size_t rectsize = 1;
 	  for (unsigned d = 0; d < mapping.globalDims(); ++d) {
@@ -114,11 +114,11 @@ namespace XMI
 	  tl[2] = personality.isTorusZ();
 	  tl[3] = 1;
 	  if (mapping.size() == rectsize) {
-		new (&topology_global) XMI::Topology(&ll, &ur, tl);
+		new (&topology_global) PAMI::Topology(&ll, &ur, tl);
 	  } else if (mapping.size() == max - min + 1) {
-		new (&topology_global) XMI::Topology(min, max);
+		new (&topology_global) PAMI::Topology(min, max);
 	  } else {
-		XMI_abortf("failed to build global-world topology %zd::%zd(%d) / %zd..%zd", mapping.size(), rectsize, mapping.globalDims(), min, max);
+		PAMI_abortf("failed to build global-world topology %zd::%zd(%d) / %zd..%zd", mapping.size(), rectsize, mapping.globalDims(), min, max);
 	  }
 	  topology_global.subTopologyLocalToMe(&topology_local);
         }
@@ -129,22 +129,22 @@ namespace XMI
 
       public:
 
-        XMI::BgpPersonality	personality;
-	XMI::Mapping		mapping;
+        PAMI::BgpPersonality	personality;
+	PAMI::Mapping		mapping;
 
       private:
 
-        XMI::BgpMapCache	_mapcache;
+        PAMI::BgpMapCache	_mapcache;
         void			*_memptr;
         size_t			_memsize;
 
       public:
 
-	XMI::Atomic::BGP::LockBoxFactory lockboxFactory;
+	PAMI::Atomic::BGP::LockBoxFactory lockboxFactory;
 
   };   // class Global
-};     // namespace XMI
+};     // namespace PAMI
 
-extern XMI::Global __global;
+extern PAMI::Global __global;
 
-#endif // __xmi_components_sysdep_bgp_bgpglobal_h__
+#endif // __pami_components_sysdep_bgp_bgpglobal_h__

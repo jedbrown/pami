@@ -24,7 +24,7 @@
 #define TRACE(x) // fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Fifo
   {
@@ -35,8 +35,8 @@ namespace XMI
           inline FifoPacket () :
               Packet<FifoPacket <T_HeaderSize, T_PacketSize> > ()
           {
-            COMPILE_TIME_ASSERT(T_HeaderSize%sizeof(xmi_quad_t)==0);
-            COMPILE_TIME_ASSERT(T_PacketSize%sizeof(xmi_quad_t)==0);
+            COMPILE_TIME_ASSERT(T_HeaderSize%sizeof(pami_quad_t)==0);
+            COMPILE_TIME_ASSERT(T_PacketSize%sizeof(pami_quad_t)==0);
           };
 
           inline void clear_impl ()
@@ -82,7 +82,7 @@ namespace XMI
             }
 #if 0 // buggy!
             if(likely((size_t)dst & 0x0f == 0))
-              Type<xmi_quad_t>::copy<T_HeaderSize>((xmi_quad_t *) dst, _data);
+              Type<pami_quad_t>::copy<T_HeaderSize>((pami_quad_t *) dst, _data);
             else
               Type<size_t>::copy<T_HeaderSize>((size_t *) dst, (size_t *) _data);
 #endif
@@ -121,7 +121,7 @@ namespace XMI
             }
 #if 0 // buggy!
             if(likely(((size_t)src & 0x0f) == 0))
-              Type<xmi_quad_t>::copy<T_HeaderSize>(_data, (xmi_quad_t *) src);
+              Type<pami_quad_t>::copy<T_HeaderSize>(_data, (pami_quad_t *) src);
             else
               Type<size_t>::copy<T_HeaderSize>((size_t *) _data, (size_t *) src);
 #endif
@@ -129,35 +129,35 @@ namespace XMI
 
           inline void * getPayload ()
           {
-            return (void *) &_data[T_HeaderSize/sizeof(xmi_quad_t)];
+            return (void *) &_data[T_HeaderSize/sizeof(pami_quad_t)];
           };
 
           inline void copyPayload_impl (void * addr)
           {
-            TRACE((stderr, "FifoPacket::copyPayload_impl(%p), sizeof(size_t) = %zu, T_PacketSize = %zu, T_HeaderSize = %zu, &_data[T_HeaderSize/sizeof(xmi_quad_t)] = %p\n", addr, sizeof(size_t), T_PacketSize, T_HeaderSize, &_data[T_HeaderSize/sizeof(xmi_quad_t)]));
+            TRACE((stderr, "FifoPacket::copyPayload_impl(%p), sizeof(size_t) = %zu, T_PacketSize = %zu, T_HeaderSize = %zu, &_data[T_HeaderSize/sizeof(pami_quad_t)] = %p\n", addr, sizeof(size_t), T_PacketSize, T_HeaderSize, &_data[T_HeaderSize/sizeof(pami_quad_t)]));
 #if 0
             if(likely((size_t)addr & 0x0f == 0))
-              Type<xmi_quad_t>::copy<T_PacketSize-T_HeaderSize> ((xmi_quad_t *) addr, &_data[T_HeaderSize]);
+              Type<pami_quad_t>::copy<T_PacketSize-T_HeaderSize> ((pami_quad_t *) addr, &_data[T_HeaderSize]);
             else
               Type<size_t>::copy<T_PacketSize-T_HeaderSize> ((size_t *) addr, (size_t *) &_data[T_HeaderSize]);
 #else
             if (sizeof(size_t) == 4)
             {
               size_t * src = (size_t *) addr;
-              size_t * dst = (size_t *) &_data[T_HeaderSize/sizeof(xmi_quad_t)];
+              size_t * dst = (size_t *) &_data[T_HeaderSize/sizeof(pami_quad_t)];
               size_t i, n = (T_PacketSize-T_HeaderSize) >> 2;
               for (i=0; i<n; i++) dst[i] = src[i];
             }
             else if (sizeof(size_t) == 8)
             {
               size_t * src = (size_t *) addr;
-              size_t * dst = (size_t *) &_data[T_HeaderSize/sizeof(xmi_quad_t)];
+              size_t * dst = (size_t *) &_data[T_HeaderSize/sizeof(pami_quad_t)];
               size_t i, n = (T_PacketSize-T_HeaderSize) >> 3;
               for (i=0; i<n; i++) dst[i] = src[i];
             }
             else
             {
-              memcpy ((void *) &_data[T_HeaderSize/sizeof(xmi_quad_t)], addr, T_PacketSize-T_HeaderSize);
+              memcpy ((void *) &_data[T_HeaderSize/sizeof(pami_quad_t)], addr, T_PacketSize-T_HeaderSize);
             }
 #endif
           };
@@ -165,7 +165,7 @@ namespace XMI
           static const size_t headerSize_impl  = T_HeaderSize;
           static const size_t payloadSize_impl = T_PacketSize - T_HeaderSize;
         private:
-          xmi_quad_t _data[T_PacketSize/sizeof(xmi_quad_t)];
+          pami_quad_t _data[T_PacketSize/sizeof(pami_quad_t)];
       };
   };
 };

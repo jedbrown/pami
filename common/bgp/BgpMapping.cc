@@ -19,7 +19,7 @@
 /// \brief Initialize the bgp mapping object.
 ///
 template <class T_Memory>
-xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
+pami_result_t PAMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
 {
   // This structure anchors pointers to the map cache and rank cache.
   // It is created in the static portion of shared memory in this constructor,
@@ -77,7 +77,7 @@ xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
   // the caches.  Only the master rank will initialize these caches and set the
   // pointers into this structure.  When the non-master ranks on this physical
   // node see the non-zero pointers, they can begin to use them.
-  xmi_result_t result = mm.memalign((void **) &cacheAnchorsPtr, 16, sizeof(cacheAnchors_t));
+  pami_result_t result = mm.memalign((void **) &cacheAnchorsPtr, 16, sizeof(cacheAnchors_t));
 #warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
 
   // Determine if we are the master rank on our physical node.  Do this by
@@ -365,7 +365,7 @@ xmi_result_t XMI::Mapping::BgpMapping<T_Memory>::init_impl (T_Memory & mm)
   }
 #endif
 
-  return XMI_SUCCESS;
+  return PAMI_SUCCESS;
 };
 
 #endif // EVERYTHING

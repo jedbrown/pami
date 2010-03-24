@@ -1,6 +1,6 @@
 ///
 /// \file common/mpi/Client.h
-/// \brief XMI client interface specific for the MPI platform.
+/// \brief PAMI client interface specific for the MPI platform.
 ///
 #ifndef __common_mpi_Client_h__
 #define __common_mpi_Client_h__
@@ -13,9 +13,9 @@
 #include "common/ClientInterface.h"
 #include "Context.h"
 
-namespace XMI
+namespace PAMI
 {
-    class Client : public Interface::Client<XMI::Client>
+    class Client : public Interface::Client<PAMI::Client>
     {
     public:
 
@@ -23,9 +23,9 @@ namespace XMI
         {
           MPI_Finalize();
         }
-      inline Client (const char * name, xmi_result_t & result) :
-        Interface::Client<XMI::Client>(name, result),
-        _client ((xmi_client_t) this),
+      inline Client (const char * name, pami_result_t & result) :
+        Interface::Client<PAMI::Client>(name, result),
+        _client ((pami_client_t) this),
         _references (1),
         _ncontexts (0),
         _mm ()
@@ -36,7 +36,7 @@ namespace XMI
           strncpy (_name, name, sizeof(_name) - 1);
 
 	  _clientid = next_client_id++;
-	  // assert(_clientid < XMI_MAX_NUM_CLIENTS);
+	  // assert(_clientid < PAMI_MAX_NUM_CLIENTS);
 
           // Get some shared memory for this client
           initializeMemoryManager ();
@@ -50,27 +50,27 @@ namespace XMI
         _world_range.lo=0;
         _world_range.hi=_mysize-1;
         new(_world_geometry) MPIGeometry(NULL, &__global.mapping,0, 1,&_world_range);
-          result = XMI_SUCCESS;
+          result = PAMI_SUCCESS;
         }
 
       inline ~Client ()
         {
         }
 
-      static xmi_result_t generate_impl (const char * name, xmi_client_t * client)
+      static pami_result_t generate_impl (const char * name, pami_client_t * client)
         {
           int rc = 0;
-          XMI::Client * clientp;
-          clientp = (XMI::Client *)malloc(sizeof (XMI::Client));
+          PAMI::Client * clientp;
+          clientp = (PAMI::Client *)malloc(sizeof (PAMI::Client));
           assert(clientp != NULL);
-          memset ((void *)clientp, 0x00, sizeof(XMI::Client));
-          xmi_result_t res;
-          new (clientp) XMI::Client (name, res);
-          *client = (xmi_client_t) clientp;
-          return XMI_SUCCESS;
+          memset ((void *)clientp, 0x00, sizeof(PAMI::Client));
+          pami_result_t res;
+          new (clientp) PAMI::Client (name, res);
+          *client = (pami_client_t) clientp;
+          return PAMI_SUCCESS;
         }
 
-      static void destroy_impl (xmi_client_t client)
+      static void destroy_impl (pami_client_t client)
         {
           free (client);
         }
@@ -80,29 +80,29 @@ namespace XMI
           return _name;
         }
 
-      inline xmi_result_t createContext_impl (xmi_configuration_t configuration[],
+      inline pami_result_t createContext_impl (pami_configuration_t configuration[],
                                               size_t              count,
-                                              xmi_context_t     * context,
+                                              pami_context_t     * context,
                                               size_t              ncontexts)
         {
 		//_context_list->lock ();
 		int n = ncontexts;
 		if (_ncontexts != 0) {
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
 		if (_ncontexts + n > 4) {
 			n = 4 - _ncontexts;
 		}
 		if (n <= 0) { // impossible?
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
 
 #ifdef USE_MEMALIGN
-		int rc = posix_memalign((void **)&_contexts, 16, sizeof(XMI::Context) * n);
-		XMI_assertf(rc==0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
+		int rc = posix_memalign((void **)&_contexts, 16, sizeof(PAMI::Context) * n);
+		PAMI_assertf(rc==0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
 #else
-                _contexts = (XMI::Context*)malloc(sizeof(XMI::Context)*n);
-		XMI_assertf(_contexts!=NULL, "malloc failed for _contexts[%d], errno=%d\n", n, errno);
+                _contexts = (PAMI::Context*)malloc(sizeof(PAMI::Context)*n);
+		PAMI_assertf(_contexts!=NULL, "malloc failed for _contexts[%d], errno=%d\n", n, errno);
 #endif
 		_platdevs.generate(_clientid, n, _mm);
 
@@ -110,64 +110,64 @@ namespace XMI
 		// on simulators.  Lower level initializers should be setting the
 		// relevant fields of the context, so this memset should not be
 		// needed anyway.
-		//memset((void *)_contexts, 0, sizeof(XMI::Context) * n);
+		//memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
 		size_t bytes = _mm.available() / n - 16;
 		int x;
 		for (x = 0; x < n; ++x) {
-			context[x] = (xmi_context_t)&_contexts[x];
+			context[x] = (pami_context_t)&_contexts[x];
 			void *base = NULL;
 			_mm.enable();
 			_mm.memalign((void **)&base, 16, bytes);
 			_mm.disable();
-			XMI_assertf(base != NULL, "out of sharedmemory in context create\n");
-			new (&_contexts[x]) XMI::Context(this, _clientid, x, n,
+			PAMI_assertf(base != NULL, "out of sharedmemory in context create\n");
+			new (&_contexts[x]) PAMI::Context(this, _clientid, x, n,
 							&_platdevs, base, bytes, _world_geometry);
 			//_context_list->pushHead((QueueElem *)&context[x]);
 			//_context_list->unlock();
           _ncontexts = n;
 		}
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
         }
 
-      inline xmi_result_t destroyContext_impl (xmi_context_t context)
+      inline pami_result_t destroyContext_impl (pami_context_t context)
         {
           free(context);
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
-	inline xmi_result_t queryConfiguration_impl (xmi_configuration_t * configuration)
+	inline pami_result_t queryConfiguration_impl (pami_configuration_t * configuration)
 	{
-		xmi_result_t result = XMI_ERROR;
+		pami_result_t result = PAMI_ERROR;
 
 		switch (configuration->name)
 		{
-		case XMI_NUM_CONTEXTS:
+		case PAMI_NUM_CONTEXTS:
 			configuration->value.intval = 1; // real value TBD
-			result = XMI_SUCCESS;
+			result = PAMI_SUCCESS;
 			break;
-		case XMI_CONST_CONTEXTS:
+		case PAMI_CONST_CONTEXTS:
 			configuration->value.intval = 0; // real value TBD
-			result = XMI_SUCCESS;
+			result = PAMI_SUCCESS;
 			break;
-		case XMI_TASK_ID:
+		case PAMI_TASK_ID:
 			configuration->value.intval = __global.mapping.task();
-			result = XMI_SUCCESS;
+			result = PAMI_SUCCESS;
 			break;
-		case XMI_NUM_TASKS:
+		case PAMI_NUM_TASKS:
 			configuration->value.intval = __global.mapping.size();
-			result = XMI_SUCCESS;
+			result = PAMI_SUCCESS;
 			break;
-		case XMI_CLOCK_MHZ:
-		case XMI_WTIMEBASE_MHZ:
+		case PAMI_CLOCK_MHZ:
+		case PAMI_WTIMEBASE_MHZ:
 			configuration->value.intval = __global.time.clockMHz();
-			result = XMI_SUCCESS;
+			result = PAMI_SUCCESS;
 			break;
-		case XMI_WTICK:
+		case PAMI_WTICK:
 			configuration->value.doubleval =__global.time.tick();
-			result = XMI_SUCCESS;
+			result = PAMI_SUCCESS;
 			break;
-		case XMI_MEM_SIZE:
-		case XMI_PROCESSOR_NAME:
+		case PAMI_MEM_SIZE:
+		case PAMI_PROCESSOR_NAME:
 		default:
 			break;
 		}
@@ -179,11 +179,11 @@ namespace XMI
 		return _ncontexts;
 	}
 
-	inline XMI::Context *getContext(size_t ctx)
+	inline PAMI::Context *getContext(size_t ctx)
 	{
 		return _contexts + ctx;
 	}
-	inline XMI::Context *getContexts()
+	inline PAMI::Context *getContexts()
 	{
 		return _contexts;
 	}
@@ -193,19 +193,19 @@ namespace XMI
 		return _clientid;
 	}
 
-    inline xmi_result_t geometry_world_impl (xmi_geometry_t * world_geometry)
+    inline pami_result_t geometry_world_impl (pami_geometry_t * world_geometry)
       {
         *world_geometry = _world_geometry;
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
       }
 
-    inline xmi_result_t geometry_create_taskrange_impl(xmi_geometry_t       * geometry,
-                                                       xmi_geometry_t         parent,
+    inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
+                                                       pami_geometry_t         parent,
                                                        unsigned               id,
-                                                       xmi_geometry_range_t * rank_slices,
+                                                       pami_geometry_range_t * rank_slices,
                                                        size_t                 slice_count,
-                                                       xmi_context_t          context,
-                                                       xmi_event_function     fn,
+                                                       pami_context_t          context,
+                                                       pami_event_function     fn,
                                                        void                 * cookie)
       {
         MPIGeometry              *new_geometry;
@@ -213,7 +213,7 @@ namespace XMI
         if(geometry != NULL)
             {
               new_geometry=(MPIGeometry*) malloc(sizeof(*new_geometry));
-              new(new_geometry) MPIGeometry((XMI::Geometry::Common*)parent,
+              new(new_geometry) MPIGeometry((PAMI::Geometry::Common*)parent,
                                             &__global.mapping,
                                             id,
                                             slice_count,
@@ -228,54 +228,54 @@ namespace XMI
               // todo:  deliver completion to the appropriate context
             }
         MPIGeometry *bargeom = (MPIGeometry*)parent;
-        XMI::Context *ctxt = (XMI::Context *)context;
+        PAMI::Context *ctxt = (PAMI::Context *)context;
         bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
       }
 
 
-    inline xmi_result_t geometry_create_tasklist_impl(xmi_geometry_t       * geometry,
-                                                      xmi_geometry_t         parent,
+    inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       * geometry,
+                                                      pami_geometry_t         parent,
                                                       unsigned               id,
-                                                      xmi_task_t           * tasks,
+                                                      pami_task_t           * tasks,
                                                       size_t                 task_count,
-                                                      xmi_context_t          context,
-                                                      xmi_event_function     fn,
+                                                      pami_context_t          context,
+                                                      pami_event_function     fn,
                                                       void                 * cookie)
       {
         // todo:  implement this routine
-        XMI_abort();
+        PAMI_abort();
 
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
       }
 
 
-    inline xmi_result_t geometry_destroy_impl (xmi_geometry_t geometry)
+    inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
       {
-        XMI_abort();
-        return XMI_UNIMPL;
+        PAMI_abort();
+        return PAMI_UNIMPL;
       }
 
     protected:
 
-      inline xmi_client_t getClient () const
+      inline pami_client_t getClient () const
         {
           return _client;
         }
 
     private:
-      xmi_client_t _client;
+      pami_client_t _client;
       size_t _clientid;
       size_t       _references;
       size_t       _ncontexts;
-	XMI::Context *_contexts;
-	XMI::PlatformDeviceList _platdevs;
+	PAMI::Context *_contexts;
+	PAMI::PlatformDeviceList _platdevs;
 
         char         _name[256];
     int                           _myrank;
     int                           _mysize;
     MPIGeometry                  *_world_geometry;
-    xmi_geometry_range_t          _world_range;
+    pami_geometry_range_t          _world_range;
 
         Memory::MemoryManager _mm;
 
@@ -285,7 +285,7 @@ namespace XMI
           size_t bytes     = 1024*1024;
           size_t pagesize  = 4096;
 
-          snprintf (shmemfile, 1023, "/xmi-client-%s", _name);
+          snprintf (shmemfile, 1023, "/pami-client-%s", _name);
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
           int fd, rc;
@@ -310,9 +310,9 @@ namespace XMI
           return;
         }
 
-    }; // end class XMI::Client
-}; // end namespace XMI
+    }; // end class PAMI::Client
+}; // end namespace PAMI
 
 
 #endif
-// __xmi_mpi_mpiclient_h__
+// __pami_mpi_mpiclient_h__

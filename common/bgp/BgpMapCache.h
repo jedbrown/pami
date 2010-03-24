@@ -23,7 +23,7 @@
 #define ESTIMATED_TASK(x,y,z,t,xSize,ySize,zSize,tSize) \
 	(((t * zSize + z) * ySize + y) * xSize + x)
 
-namespace XMI
+namespace PAMI
 {
     class BgpMapCache
     {
@@ -56,8 +56,8 @@ namespace XMI
             volatile size_t numActiveNodesGlobal;// Number of nodes in the partition.
             volatile size_t maxRank;       // Largest valid rank
             volatile size_t minRank;       // Smallest valid rank
-            volatile xmi_coord_t activeLLCorner;
-            volatile xmi_coord_t activeURCorner;
+            volatile pami_coord_t activeLLCorner;
+            volatile pami_coord_t activeURCorner;
           } cacheAnchors_t;
 
           //size_t myRank, mySize;
@@ -69,7 +69,7 @@ namespace XMI
 
           //_processor_id = rts_get_processor_id();
           //_pers = & __global_personality;
-          //_myNetworkCoord.network = XMI_N_TORUS_NETWORK;
+          //_myNetworkCoord.network = PAMI_N_TORUS_NETWORK;
           //unsigned ix = 0;
           //_myNetworkCoord.n_torus.coords[ix++] = x();
           //_myNetworkCoord.n_torus.coords[ix++] = y();
@@ -95,7 +95,7 @@ namespace XMI
           // the caches.  Only the master rank will initialize these caches and set the
           // pointers into this structure.  When the non-master ranks on this physical
           // node see the non-zero pointers, they can begin to use them.
-          xmi_result_t result = mm.memalign((void **) & cacheAnchorsPtr, 16, sizeof(cacheAnchors_t));
+          pami_result_t result = mm.memalign((void **) & cacheAnchorsPtr, 16, sizeof(cacheAnchors_t));
 #warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
 #endif
           cacheAnchorsPtr = (volatile cacheAnchors_t *) ptr;
@@ -198,7 +198,7 @@ namespace XMI
                */
               if (rc == 0)
                 {
-                  _ll.network = _ur.network = XMI_N_TORUS_NETWORK;
+                  _ll.network = _ur.network = PAMI_N_TORUS_NETWORK;
                   _ll.u.n_torus.coords[0] = _ur.u.n_torus.coords[0] = personality.xCoord();
                   _ll.u.n_torus.coords[1] = _ur.u.n_torus.coords[1] = personality.yCoord();
                   _ll.u.n_torus.coords[2] = _ur.u.n_torus.coords[2] = personality.zCoord();
@@ -383,7 +383,7 @@ namespace XMI
           return _size;
         };
 
-	inline void getMappingInit(xmi_coord_t &ll, xmi_coord_t &ur, size_t &min, size_t &max) {
+	inline void getMappingInit(pami_coord_t &ll, pami_coord_t &ur, size_t &min, size_t &max) {
 		ll = _ll;
 		ur = _ur;
 		min = _min_rank;
@@ -399,10 +399,10 @@ namespace XMI
 
 	size_t _max_rank;
 	size_t _min_rank;
-	xmi_coord_t _ll;
-	xmi_coord_t _ur;
+	pami_coord_t _ll;
+	pami_coord_t _ur;
 
     }; // class BgpMapCache
-};     // namespace XMI
+};     // namespace PAMI
 
-#endif // __xmi_components_mapping_bgp_bgpmapcache_h__
+#endif // __pami_components_mapping_bgp_bgpmapcache_h__

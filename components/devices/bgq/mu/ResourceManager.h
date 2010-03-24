@@ -30,7 +30,7 @@
 #endif
 #define TRACE(x) //fprintf x
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -187,7 +187,7 @@ namespace XMI
           ResourceManager () {TRACE((stderr, "ResourceManager::ctor\n")); }
 
           int init ( ResourceType_t ,
-                     XMI::Memory::MemoryManager *mm,
+                     PAMI::Memory::MemoryManager *mm,
                      dispatch_t      *dispatch
                    );
 
@@ -351,7 +351,7 @@ namespace XMI
                 if ( _funcIDs[id] == 0 ) break;
               }
 
-            XMI_assert ( id < MUSPI_MAX_FUNCTION_IDS );
+            PAMI_assert ( id < MUSPI_MAX_FUNCTION_IDS );
 
             MUSPI_RegisterRecvFunction ( function, arg, id );
 
@@ -368,7 +368,7 @@ namespace XMI
           InjFifoSubGroup          **_injFifoSubGroups;
           RecFifoSubGroup          **_recFifoSubGroups;
           BaseAddressTableSubGroup **_batSubGroups;
-          XMI::Memory::MemoryManager *_mm;
+          PAMI::Memory::MemoryManager *_mm;
 
           // Declare pointers to resource structures that will be allocated and
           // initialized by getInfo(), containing info about each of the resources
@@ -408,10 +408,10 @@ namespace XMI
 
           static uint8_t  _funcIDs[MUSPI_MAX_FUNCTION_IDS];
 
-      }; // XMI::Device::MU::ResourceManager class
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+      }; // PAMI::Device::MU::ResourceManager class
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 #undef TRACE
 #endif   // __components_devices_bgq_mu_resourcemanager_h__
 

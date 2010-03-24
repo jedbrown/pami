@@ -16,7 +16,7 @@
 #include "Util.h"
 #include "ppc450d/internal_o.h"
 
-void _xmi_core_fp64_sum2(double *dst, const double **srcs, int nsrc, int count) {
+void _pami_core_fp64_sum2(double *dst, const double **srcs, int nsrc, int count) {
 	if (count < 16) {
 		// This seems necessary for good latency,
 		// but its not as good as the unoptimized compile.
@@ -46,7 +46,7 @@ void _xmi_core_fp64_sum2(double *dst, const double **srcs, int nsrc, int count) 
 	return;
 }
 
-void _xmi_core_fp64_max2(double *dst, const double **srcs, int nsrc, int count) {
+void _pami_core_fp64_max2(double *dst, const double **srcs, int nsrc, int count) {
 	if (count < 16) {
 		// This seems necessary for good latency,
 		// but its not as good as the unoptimized compile.
@@ -77,7 +77,7 @@ void _xmi_core_fp64_max2(double *dst, const double **srcs, int nsrc, int count) 
 	return;
 }
 
-void _xmi_core_fp64_min2(double *dst, const double **srcs, int nsrc, int count) {
+void _pami_core_fp64_min2(double *dst, const double **srcs, int nsrc, int count) {
 	if (count < 16) {
 		// This seems necessary for good latency,
 		// but its not as good as the unoptimized compile.
@@ -109,7 +109,7 @@ void _xmi_core_fp64_min2(double *dst, const double **srcs, int nsrc, int count) 
 }
 
 
-void _xmi_core_fp64_prod2(double *dst, const double **srcs, int nsrc, int count) {
+void _pami_core_fp64_prod2(double *dst, const double **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)*(b))
 
 #define TYPE double
@@ -118,7 +118,7 @@ void _xmi_core_fp64_prod2(double *dst, const double **srcs, int nsrc, int count)
 #undef OP
 }
 
-void _xmi_core_fp64_int32_maxloc2(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count) {
+void _pami_core_fp64_int32_maxloc2(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count) {
   const fp64_int32_t *s0 = srcs[0], *s1 = srcs[1];
   register int n = 0;
   for (n = 0; n < count; n++)
@@ -133,7 +133,7 @@ void _xmi_core_fp64_int32_maxloc2(fp64_int32_t *dst, const fp64_int32_t **srcs, 
     }
 }
 
-void _xmi_core_fp64_fp64_maxloc2(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count) {
+void _pami_core_fp64_fp64_maxloc2(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count) {
   const fp64_fp64_t *s0 = srcs[0], *s1 = srcs[1];
   register int n = 0;
   for (n = 0; n < count; n++)
@@ -148,7 +148,7 @@ void _xmi_core_fp64_fp64_maxloc2(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int
     }
 }
 
-void _xmi_core_fp64_int32_minloc2(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count) {
+void _pami_core_fp64_int32_minloc2(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count) {
   const fp64_int32_t *s0 = srcs[0], *s1 = srcs[1];
   register int n = 0;
   for (n = 0; n < count; n++)
@@ -163,7 +163,7 @@ void _xmi_core_fp64_int32_minloc2(fp64_int32_t *dst, const fp64_int32_t **srcs, 
     }
 }
 
-void _xmi_core_fp64_fp64_minloc2(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count) {
+void _pami_core_fp64_fp64_minloc2(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count) {
   const fp64_fp64_t *s0 = srcs[0], *s1 = srcs[1];
   register int n = 0;
   for (n = 0; n < count; n++)
@@ -178,7 +178,7 @@ void _xmi_core_fp64_fp64_minloc2(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int
     }
 }
 
-void _xmi_core_fp64_max4(double *dst, const double **srcs, int nsrc, int count) {
+void _pami_core_fp64_max4(double *dst, const double **srcs, int nsrc, int count) {
 const double *src0 = srcs[0];
 const double *src1 = srcs[1];
 const double *src2 = srcs[2];
@@ -191,7 +191,7 @@ const double *src3 = srcs[3];
 	return;
 }
 
-void _xmi_core_fp64_min4(double *dst, const double **srcs, int nsrc, int count) {
+void _pami_core_fp64_min4(double *dst, const double **srcs, int nsrc, int count) {
 const double *src0 = srcs[0];
 const double *src1 = srcs[1];
 const double *src2 = srcs[2];
@@ -204,7 +204,7 @@ const double *src3 = srcs[3];
 	return;
 }
 
-void _xmi_core_fp64_prod4(double *dst, const double **srcs, int nsrc, int count) {
+void _pami_core_fp64_prod4(double *dst, const double **srcs, int nsrc, int count) {
 const double *src0 = srcs[0];
 const double *src1 = srcs[1];
 const double *src2 = srcs[2];
@@ -217,7 +217,7 @@ const double *src3 = srcs[3];
 	return;
 }
 
-void _xmi_core_fp64_sum4(double *dst, const double **srcs, int nsrc, int count) {
+void _pami_core_fp64_sum4(double *dst, const double **srcs, int nsrc, int count) {
 const double *src0 = srcs[0];
 const double *src1 = srcs[1];
 const double *src2 = srcs[2];

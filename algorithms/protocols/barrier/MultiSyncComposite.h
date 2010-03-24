@@ -19,21 +19,21 @@ namespace CCMI
       class MultiSyncComposite : public CCMI::Executor::Composite {
       protected:
 	Interfaces::NativeInterface        * _native;
-	XMI_GEOMETRY_CLASS                 * _geometry;
+	PAMI_GEOMETRY_CLASS                 * _geometry;
 
       public:
 	MultiSyncComposite (Interfaces::NativeInterface          * mInterface,
-			    ConnectionManager::SimpleConnMgr<XMI_SYSDEP_CLASS>     * cmgr,
-			    xmi_geometry_t                         g,
+			    ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS>     * cmgr,
+			    pami_geometry_t                         g,
 			    void                                 * cmd,
-                            xmi_event_function                     fn,
+                            pami_event_function                     fn,
                             void                                 * cookie) :
-	Composite(), _native(mInterface), _geometry((XMI_GEOMETRY_CLASS*)g)
+	Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g)
 	{
 	}
 
 	virtual void start() {
-	  xmi_multisync_t  minfo;
+	  pami_multisync_t  minfo;
 
 	  minfo.cb_done.function   = _cb_done;
 	  minfo.cb_done.clientdata = _clientdata;

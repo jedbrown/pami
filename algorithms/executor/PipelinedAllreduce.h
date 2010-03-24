@@ -22,7 +22,7 @@
 //#include "util/logging/LogMgr.h"
 
 
-#define XMI_MAX_ACTIVE_SENDS  8
+#define PAMI_MAX_ACTIVE_SENDS  8
 
 namespace CCMI
 {
@@ -34,19 +34,19 @@ namespace CCMI
 
     private:
       /// Static function to be passed into the done of multisend send
-      static void pipeAllreduceNotifySend (xmi_context_t context, void *cd, xmi_result_t err)
+      static void pipeAllreduceNotifySend (pami_context_t context, void *cd, pami_result_t err)
       {
         SendCallbackData * cdata = ( SendCallbackData *)cd;
-        xmi_quad_t *info = (xmi_quad_t *)cd;
+        pami_quad_t *info = (pami_quad_t *)cd;
 
         ((PipelinedAllreduce *)(cdata->me))->PipelinedAllreduce::notifySendDone( *info );
       }
 
       /// Static function to be passed into the done of multisend postRecv
-      static void pipeAllreduceNotifyReceive (xmi_context_t context, void *cd, xmi_result_t err)
+      static void pipeAllreduceNotifyReceive (pami_context_t context, void *cd, pami_result_t err)
       {
         RecvCallbackData * cdata = (RecvCallbackData *)cd;
-        xmi_quad_t *info = (xmi_quad_t *)cd;
+        pami_quad_t *info = (pami_quad_t *)cd;
 
         ((PipelinedAllreduce *)cdata->allreduce)->PipelinedAllreduce::notifyRecv
         ((unsigned)-1, *info, NULL, (unsigned)-1);
@@ -62,7 +62,7 @@ namespace CCMI
 
         if(_donecount == 2 && this->_cb_done)
         {
-          this->_cb_done (NULL, this->_clientdata, XMI_SUCCESS);
+          this->_cb_done (NULL, this->_clientdata, PAMI_SUCCESS);
           //_curSendPhase = -1;
           //_curRecvPhase = -1;
         }
@@ -76,7 +76,7 @@ namespace CCMI
                          unsigned                 bytes,
                          unsigned               * dstpes,
                          unsigned                 ndst,
-                         xmi_subtask_t          * dsthints,
+                         pami_subtask_t          * dsthints,
                          unsigned                 sphase);
 
       //Squeeze local state in one cache line
@@ -114,7 +114,7 @@ namespace CCMI
       PipelinedAllreduce
       (T_Sysdep             * map,
        T_ConnectionManager  * connmgr,
-       xmi_consistency_t      consistency,
+       pami_consistency_t      consistency,
        const unsigned         commID,
        unsigned               iteration):
         AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>(map,connmgr, consistency, commID, iteration, true),
@@ -134,9 +134,9 @@ namespace CCMI
 //        _log_notifyrecv  = lmgr->registerEvent ("Allreduce notify recv");
       }
 
-      virtual void notifySendDone( const xmi_quad_t &info );
+      virtual void notifySendDone( const pami_quad_t &info );
 
-      virtual void notifyRecv(unsigned src, const xmi_quad_t &info,
+      virtual void notifyRecv(unsigned src, const pami_quad_t &info,
                               char * buf, unsigned bytes);
 
       /// start allreduce
@@ -192,9 +192,9 @@ template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
 inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::start()
 {
   this->_initialized = true;
-  _numActiveSends   = XMI_MAX_ACTIVE_SENDS;
+  _numActiveSends   = PAMI_MAX_ACTIVE_SENDS;
 
-  XMI_assert(this->_sState);
+  PAMI_assert(this->_sState);
 
   unsigned count;
   for(count = 0; count < _numActiveSends; count++)
@@ -213,7 +213,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
   if(ndstpes > 0)
   {
     unsigned *dstpes   = this->_astate.getPhaseDstPes (this->_startPhase);
-    xmi_subtask_t *dsthints = (xmi_subtask_t *)this->_astate.getPhaseDstHints (this->_startPhase);
+    pami_subtask_t *dsthints = (pami_subtask_t *)this->_astate.getPhaseDstHints (this->_startPhase);
     sendMessage (this->_srcbuf, 0, this->_astate.getBytes(), dstpes, ndstpes, dsthints,
                  this->_startPhase);
 
@@ -239,7 +239,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
 inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifyRecv
 (unsigned                     src,
- const xmi_quad_t             & info,
+ const pami_quad_t             & info,
  char                       * buf,
  unsigned                     bytes)
 {
@@ -270,7 +270,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 
 template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
 inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifySendDone
-( const xmi_quad_t & info)
+( const pami_quad_t & info)
 {
   // update state
   TRACE_MSG ((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::notifySendDone "
@@ -291,7 +291,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 
   if((_curSendChunk > last_chunk)       &&
      (_numBcastChunksSent > last_chunk) &&
-     (_numActiveSends == XMI_MAX_ACTIVE_SENDS))
+     (_numActiveSends == PAMI_MAX_ACTIVE_SENDS))
     processDone();
   else
   {
@@ -332,7 +332,7 @@ TRACE_MSG((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::advanceRecv "
   {
 
     if(( cur_nsrc ) &&
-       (this->_astate.getPhaseSrcHints(_curRecvPhase, 0) == XMI_COMBINE_SUBTASK))
+       (this->_astate.getPhaseSrcHints(_curRecvPhase, 0) == PAMI_COMBINE_SUBTASK))
     {
       if(_curRecvPhase == this->_startPhase)
         mysrcbuf = this->_srcbuf;
@@ -472,7 +472,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
       sendMessage (rcv_buf, bufOffset, count * this->_astate.getSizeOfType(),
                    this->_astate.getPhaseDstPes(_curSendPhase),
                    this->_astate.getPhaseNumDstPes(_curSendPhase),
-                   (xmi_subtask_t *)this->_astate.getPhaseDstHints (_curSendPhase),
+                   (pami_subtask_t *)this->_astate.getPhaseDstHints (_curSendPhase),
                    _curSendPhase);
 
 //      Logging::LogMgr::getLogMgr()->startCounter (_log_advancesend);
@@ -491,7 +491,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
       {
         ///All sends done and all broadcasts done and no messages in
         ///flight
-        if(_numActiveSends == XMI_MAX_ACTIVE_SENDS
+        if(_numActiveSends == PAMI_MAX_ACTIVE_SENDS
            && _numBcastChunksSent > last_chunk)
           processDone();
         break;
@@ -511,7 +511,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
  unsigned                 bytes,
  unsigned               * dstpes,
  unsigned                 ndst,
- xmi_subtask_t                * dsthints,
+ pami_subtask_t                * dsthints,
  unsigned                 sphase)
 {
 
@@ -524,7 +524,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
               this,ThreadID(),
               _curSendChunk,_numActiveSends, offset, bytes));
 
-  int index = XMI_MAX_ACTIVE_SENDS - 1;
+  int index = PAMI_MAX_ACTIVE_SENDS - 1;
   if(!this->_sState[index].sndClientData.isDone)
   {
     while((index --) && (!this->_sState[index].sndClientData.isDone));
@@ -542,7 +542,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 //  _msend_data.setRequestBuffer (&(_sState[index].sndReq));
 //  _msend_data.setCallback (_sendCallbackHandler,
 //                           &_sState[index].sndClientData);
-  this->_msend_data.request            = (xmi_quad_t*)(&(this->_sState[index].sndReq));
+  this->_msend_data.request            = (pami_quad_t*)(&(this->_sState[index].sndReq));
   this->_msend_data.cb_done.function   = this->_sendCallbackHandler;
   this->_msend_data.cb_done.clientdata = &this->_sState[index].sndClientData;
 
@@ -566,13 +566,13 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
   if(bcastRecvPhase < 0)
       return;
 
-  if(_numActiveSends <= XMI_MAX_ACTIVE_SENDS/2)
+  if(_numActiveSends <= PAMI_MAX_ACTIVE_SENDS/2)
       return;
 
   if(this->_astate.getPhaseChunksRcvd(bcastRecvPhase, 0) > _numBcastChunksSent)
   {
     unsigned * dstpes     = this->_astate.getBcastDstPes();
-    xmi_subtask_t  * dsthints   = (xmi_subtask_t *) this->_astate.getBcastDstHints();
+    pami_subtask_t  * dsthints   = (pami_subtask_t *) this->_astate.getBcastDstHints();
     unsigned   ndst       = this->_astate.getBcastNumDstPes();
     unsigned   last_chunk = this->_astate.getLastChunk();
 

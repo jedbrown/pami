@@ -6,7 +6,7 @@
 #ifndef __components_atomic_example_PthreadMutex_h__
 #define __components_atomic_example_PthreadMutex_h__
 
-namespace XMI
+namespace PAMI
 {
   namespace Atomic
   {
@@ -27,7 +27,7 @@ namespace XMI
 
         inline ~PthreadMutex () {};
 
-        inline void init_impl (XMI::Memory::MemoryManager *mm)
+        inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
           // foo...
         };
@@ -45,7 +45,7 @@ namespace XMI
           _scoped = true;
         };
 
-        /// \see XMI::Atomic::Interface::ProcessScope
+        /// \see PAMI::Atomic::Interface::ProcessScope
         bool _scoped;
     };
   };

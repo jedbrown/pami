@@ -24,7 +24,7 @@
 #define VIRTUAL_CHANNEL 0
 #define BGPCN_PKT_SIZE   256
 #define BGPCN_FIFO_SIZE  8
-#define BGPCN_QUADS_PER_PKT      (BGPCN_PKT_SIZE / sizeof(xmi_quad_t))
+#define BGPCN_QUADS_PER_PKT      (BGPCN_PKT_SIZE / sizeof(pami_quad_t))
 #define BGPCN_QUADS_PER_FIFO     (BGPCN_FIFO_SIZE * BGPCN_QUADS_PER_PKT)
 
 #ifndef __defined__tsc__
@@ -46,24 +46,24 @@ static inline unsigned long __tsc() {
 #define MANT_WQ_FACT	(8)		// must be power of 2 and
 					//		>= EXPO_MANT_FACTOR.
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace BGP {
 
-class BaseGenericCNThread : public XMI::Device::Generic::SimpleAdvanceThread {
+class BaseGenericCNThread : public PAMI::Device::Generic::SimpleAdvanceThread {
 public:
 	BaseGenericCNThread() :
-	XMI::Device::Generic::SimpleAdvanceThread(),
+	PAMI::Device::Generic::SimpleAdvanceThread(),
 	_wq(NULL),
 	_cycles(0)
 	{
 	}
 public:
-	XMI::PipeWorkQueue *_wq;
+	PAMI::PipeWorkQueue *_wq;
 	unsigned _cycles;
 }; // class BaseGenericCNThread
 
-class BaseGenericCNMessage : public XMI::Device::Generic::GenericMessage {
+class BaseGenericCNMessage : public PAMI::Device::Generic::GenericMessage {
 public:
 	// on BG/P we only use one classroute, the global one.
 	static const unsigned classroute = 3;
@@ -71,16 +71,16 @@ public:
 	BaseGenericCNMessage(GenericDeviceMessageQueue *qs,
 			size_t client,
 			size_t context,
-			XMI::PipeWorkQueue *swq,
-			XMI::PipeWorkQueue *rwq,
+			PAMI::PipeWorkQueue *swq,
+			PAMI::PipeWorkQueue *rwq,
 			size_t bytes,
 			bool doStore,
 			unsigned roles,
-			xmi_callback_t cb,
+			pami_callback_t cb,
 			unsigned disp_id,
 			unsigned hhfunc,
 			unsigned opsize) :
-	XMI::Device::Generic::GenericMessage(qs, cb, client, context),
+	PAMI::Device::Generic::GenericMessage(qs, cb, client, context),
 	_swq(swq),
 	_rwq(rwq),
 	_bytes(bytes),
@@ -323,12 +323,12 @@ public:
 		}
 	}
 protected:
-	XMI::PipeWorkQueue *_swq;
-	XMI::PipeWorkQueue *_rwq;
+	PAMI::PipeWorkQueue *_swq;
+	PAMI::PipeWorkQueue *_rwq;
 	size_t _bytes;
 	unsigned _roles;
 	bool _doStore;
-	XMI::Device::BGP::CNPacket _modelPkt;
+	PAMI::Device::BGP::CNPacket _modelPkt;
 }; // class BaseGenericCNMessage
 
 /// Collective Network Message with Pre/Post-processing of packets
@@ -337,14 +337,14 @@ public:
 	BaseGenericCNPPMessage(GenericDeviceMessageQueue *qs,
 			size_t client,
 			size_t context,
-			XMI::PipeWorkQueue *swq,
-			XMI::PipeWorkQueue *rwq,
+			PAMI::PipeWorkQueue *swq,
+			PAMI::PipeWorkQueue *rwq,
 			size_t bytes,
 			bool doStore,
 			unsigned roles,
-			xmi_callback_t cb,
+			pami_callback_t cb,
 			unsigned disp_id,
-			XMI::Device::BGP::CNAllreduceSetup &tas) :
+			PAMI::Device::BGP::CNAllreduceSetup &tas) :
 	BaseGenericCNMessage(qs, client, context, swq, rwq, bytes, doStore, roles, cb, disp_id,
 			tas._hhfunc, tas._opsize),
 	_allreduceSetup(tas)
@@ -451,7 +451,7 @@ public:
 		}
 	}
 protected:
-	XMI::Device::BGP::CNAllreduceSetup &_allreduceSetup;
+	PAMI::Device::BGP::CNAllreduceSetup &_allreduceSetup;
 }; // class BaseGenericCNPPMessage
 
 class BaseGenericCN2PMessage : public BaseGenericCNMessage {
@@ -459,15 +459,15 @@ public:
 	BaseGenericCN2PMessage(GenericDeviceMessageQueue *qs,
 			size_t client,
 			size_t context,
-			XMI::Device::WorkQueue::WorkQueue &ewq,
-			XMI::Device::WorkQueue::WorkQueue &mwq,
-			XMI::Device::WorkQueue::WorkQueue &xwq,
-			XMI::PipeWorkQueue *swq,
-			XMI::PipeWorkQueue *rwq,
+			PAMI::Device::WorkQueue::WorkQueue &ewq,
+			PAMI::Device::WorkQueue::WorkQueue &mwq,
+			PAMI::Device::WorkQueue::WorkQueue &xwq,
+			PAMI::PipeWorkQueue *swq,
+			PAMI::PipeWorkQueue *rwq,
 			size_t bytes,
 			bool doStore,
 			unsigned roles,
-			const xmi_callback_t cb,
+			const pami_callback_t cb,
 			unsigned dispatch_id_e,
 			unsigned dispatch_id_m) :
 	BaseGenericCNMessage(qs, client, context, swq, rwq, bytes, doStore, roles, cb, 0, 0, 0),
@@ -481,8 +481,8 @@ public:
 	_manrecv(0),
 	_expo_disp_id(dispatch_id_e),
 	_mant_disp_id(dispatch_id_m),
-	_ehdr(classroute,XMI::Device::BGP::COMBINE_OP_MAX,0,dispatch_id_e), // 16-bit exponent
-	_mhdr(classroute,XMI::Device::BGP::COMBINE_OP_ADD,5,dispatch_id_m), // 96 bit mantissa
+	_ehdr(classroute,PAMI::Device::BGP::COMBINE_OP_MAX,0,dispatch_id_e), // 16-bit exponent
+	_mhdr(classroute,PAMI::Device::BGP::COMBINE_OP_ADD,5,dispatch_id_m), // 96 bit mantissa
 	_ewq(ewq),
 	_mwq(mwq),
 	_xwq(xwq)
@@ -496,17 +496,17 @@ public:
 	// (xx) - data/results user buffers
 	//
 	// Injection:
-	// (in) --> _xmi_core_fp64_pre1_2pass --+--> _ewq ---> [expo]
+	// (in) --> _pami_core_fp64_pre1_2pass --+--> _ewq ---> [expo]
 	//                                  +--> _mwq
 	//
 	// _ewq --+
-	// _mwq --+--> _xmi_core_fp64_pre2_2pass ---> [mant]
+	// _mwq --+--> _pami_core_fp64_pre2_2pass ---> [mant]
 	// _xwq --+
 	//
 	// Reception:
 	// [expo] --> _xwq
 	//
-	// [mant] --+--> _xmi_core_fp64_post_2pass --> (out)
+	// [mant] --+--> _pami_core_fp64_post_2pass --> (out)
 	// _xwq ----+
 	//
 	//
@@ -523,8 +523,8 @@ public:
 				hcount < BGPCN_FIFO_SIZE && dcount < BGPCN_QUADS_PER_FIFO) {
 			uint16_t *ebuf = (uint16_t *)_ewq.bufferToProduce(0);
 			uint32_t *mbuf = (uint32_t *)_mwq.bufferToProduce(0);
-			_xmi_core_fp64_pre1_2pass(ebuf, mbuf, (double *)(buf + did), exptoSend);
-//fprintf(stderr, "_xmi_core_fp64_pre1_2pass {%p} %08x%08x%08x %04x %f (%d)\n", mbuf, mbuf[1], mbuf[2], mbuf[3], ebuf[0], *((double *)(buf + did)), exptoSend);
+			_pami_core_fp64_pre1_2pass(ebuf, mbuf, (double *)(buf + did), exptoSend);
+//fprintf(stderr, "_pami_core_fp64_pre1_2pass {%p} %08x%08x%08x %04x %f (%d)\n", mbuf, mbuf[1], mbuf[2], mbuf[3], ebuf[0], *((double *)(buf + did)), exptoSend);
 			_ewq.produceBytes(BGPCN_PKT_SIZE, 0);
 			// jump to boundary
 			_mwq.produceBytes(MANT_WQ_FACT * BGPCN_PKT_SIZE, 0);
@@ -562,9 +562,9 @@ public:
 		size_t did = 0;
 		while (manRemain > 0 && avail >= expBytes &&
 				hcount < BGPCN_FIFO_SIZE && dcount < BGPCN_QUADS_PER_FIFO) {
-//fprintf(stderr, "_xmi_core_fp64_pre2_2pass PRE  {%p} %08x%08x%08x %04x {%p} %04x (%d)\n", mbuf, mbuf[1], mbuf[2], mbuf[3], ebuf[0], xbuf, xbuf[0], mantoSend);
-			_xmi_core_fp64_pre2_2pass(mbuf, ebuf, xbuf, mantoSend);
-//fprintf(stderr, "_xmi_core_fp64_pre2_2pass POST {%p} %08x%08x%08x\n", mbuf, mbuf[1], mbuf[2], mbuf[3]);
+//fprintf(stderr, "_pami_core_fp64_pre2_2pass PRE  {%p} %08x%08x%08x %04x {%p} %04x (%d)\n", mbuf, mbuf[1], mbuf[2], mbuf[3], ebuf[0], xbuf, xbuf[0], mantoSend);
+			_pami_core_fp64_pre2_2pass(mbuf, ebuf, xbuf, mantoSend);
+//fprintf(stderr, "_pami_core_fp64_pre2_2pass POST {%p} %08x%08x%08x\n", mbuf, mbuf[1], mbuf[2], mbuf[3]);
 			CollectiveRawSendPacket(VIRTUAL_CHANNEL, &_mhdr._hh, mbuf);
 			++hcount;
 			dcount += BGPCN_QUADS_PER_PKT;
@@ -662,8 +662,8 @@ public:
 			CollectiveRawReceivePacketNoHdr(VIRTUAL_CHANNEL, tmp);
 			uint32_t *mbuf = (uint32_t *)tmp;
 			if (_doStore) {
-				_xmi_core_fp64_post_2pass((double *)buf, ebuf, mbuf, manToRecv);
-//fprintf(stderr, "_xmi_core_fp64_post_2pass %f %08x%08x%08x {%p} %04x (%d)\n", *((double *)buf), mbuf[1], mbuf[2], mbuf[3], ebuf, ebuf[0], manToRecv);
+				_pami_core_fp64_post_2pass((double *)buf, ebuf, mbuf, manToRecv);
+//fprintf(stderr, "_pami_core_fp64_post_2pass %f %08x%08x%08x {%p} %04x (%d)\n", *((double *)buf), mbuf[1], mbuf[2], mbuf[3], ebuf, ebuf[0], manToRecv);
 			}
 			_manrecv += manToRecv;
 			manRemain -= manToRecv;
@@ -708,17 +708,17 @@ protected:
 	unsigned _expo_disp_id;
 	unsigned _mant_disp_id;
 
-	XMI::Device::BGP::CNPacket _ehdr;	/**< exponent network header model */
-	XMI::Device::BGP::CNPacket _mhdr;	/**< mantissa network header model */
+	PAMI::Device::BGP::CNPacket _ehdr;	/**< exponent network header model */
+	PAMI::Device::BGP::CNPacket _mhdr;	/**< mantissa network header model */
 
-	XMI::Device::WorkQueue::WorkQueue &_ewq;
-	XMI::Device::WorkQueue::WorkQueue &_mwq;
-	XMI::Device::WorkQueue::WorkQueue &_xwq;
+	PAMI::Device::WorkQueue::WorkQueue &_ewq;
+	PAMI::Device::WorkQueue::WorkQueue &_mwq;
+	PAMI::Device::WorkQueue::WorkQueue &_xwq;
 }; // class BaseGenericCN2PMessage
 
 };	// namespace BGP
 };	// namespace Device
-};	// namespace XMI
+};	// namespace PAMI
 
 
 #endif // __components_devices_bgp_cnlib_h__

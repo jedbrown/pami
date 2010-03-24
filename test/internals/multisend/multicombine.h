@@ -7,7 +7,7 @@
 #define __test_internals_multisend_multicombine_h__
 
 #include <stdio.h>
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "PipeWorkQueue.h"
 #include "Topology.h"
@@ -15,7 +15,7 @@
 
 #include "memorymanager.h"
 
-namespace XMI {
+namespace PAMI {
 namespace Test {
 namespace Multisend {
 
@@ -24,68 +24,68 @@ class Multicombine {
 private:
 	uint8_t _mdlbuf[sizeof(T_MulticombineModel)];
 	T_MulticombineModel *_model;
-	XMI::Device::Generic::Device *_generics;
+	PAMI::Device::Generic::Device *_generics;
 	T_MulticombineDevice *_dev;
 	uint8_t _msgbuf[T_MulticombineModel::sizeof_msg];
 
 	char _source[T_BufSize];
 	char _result[T_BufSize];
 
-	XMI::PipeWorkQueue _ipwq;
-	XMI::PipeWorkQueue _opwq;
+	PAMI::PipeWorkQueue _ipwq;
+	PAMI::PipeWorkQueue _opwq;
 
-	xmi_result_t _status;
+	pami_result_t _status;
 	int _done;
 	const char *_name;
 
-	static void _done_cb(xmi_context_t context, void *cookie, xmi_result_t result) {
-		XMI::Test::Multisend::Multicombine<T_MulticombineModel,T_MulticombineDevice,T_BufSize> *thus =
-			(XMI::Test::Multisend::Multicombine<T_MulticombineModel,T_MulticombineDevice,T_BufSize> *)cookie;
+	static void _done_cb(pami_context_t context, void *cookie, pami_result_t result) {
+		PAMI::Test::Multisend::Multicombine<T_MulticombineModel,T_MulticombineDevice,T_BufSize> *thus =
+			(PAMI::Test::Multisend::Multicombine<T_MulticombineModel,T_MulticombineDevice,T_BufSize> *)cookie;
 		//fprintf(stderr, "... completion callback for %s, done %d ++\n", thus->_name, thus->_done);
 		++thus->_done;
 	}
 
 public:
 
-	Multicombine(const char *test, XMI::Memory::MemoryManager &mm) :
+	Multicombine(const char *test, PAMI::Memory::MemoryManager &mm) :
 	_name(test)
 	{
-		_generics = XMI::Device::Generic::Device::Factory::generate(0, 1, mm);
+		_generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm);
 		_dev = T_MulticombineDevice::Factory::generate(0, 1, mm);
 
-		XMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (xmi_context_t)1, &mm, _generics);
-		T_MulticombineDevice::Factory::init(_dev, 0, 0, NULL, (xmi_context_t)1, &mm, _generics);
+		PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
+		T_MulticombineDevice::Factory::init(_dev, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
 		_model = new (_mdlbuf) T_MulticombineModel(T_MulticombineDevice::Factory::getDevice(_dev, 0, 0), _status);
 	}
 
 	~Multicombine() { }
 
-	inline xmi_result_t perform_test(size_t task_id, size_t num_tasks,
-					xmi_context_t ctx, xmi_multicombine_t *mcomb) {
-		xmi_result_t rc;
+	inline pami_result_t perform_test(size_t task_id, size_t num_tasks,
+					pami_context_t ctx, pami_multicombine_t *mcomb) {
+		pami_result_t rc;
 		size_t x;
 
-		if (_status != XMI_SUCCESS) {
+		if (_status != PAMI_SUCCESS) {
 			fprintf(stderr, "Failed to register multicombine \"%s\"\n", _name);
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
 
 		bool root = (mcomb->results_participants == NULL ||
-			((XMI::Topology *)mcomb->results_participants)->isRankMember(task_id));
+			((PAMI::Topology *)mcomb->results_participants)->isRankMember(task_id));
 		_ipwq.configure(NULL, _source, sizeof(_source), sizeof(_source));
 		_ipwq.reset();
 		_opwq.configure(NULL, _result, sizeof(_result), 0);
 		_opwq.reset();
 
-		mcomb->cb_done = (xmi_callback_t){_done_cb, (void *)this};
-		mcomb->data = (xmi_pipeworkqueue_t *)&_ipwq;
-		mcomb->results = (xmi_pipeworkqueue_t *)&_opwq;
+		mcomb->cb_done = (pami_callback_t){_done_cb, (void *)this};
+		mcomb->data = (pami_pipeworkqueue_t *)&_ipwq;
+		mcomb->results = (pami_pipeworkqueue_t *)&_opwq;
 
 		//mcomb->count = TEST_BUF_SIZE / sizeof(unsigned);
 		// temporary, until this gets smarter...
-		if (mcomb->dtype != XMI_UNSIGNED_INT || mcomb->optor != XMI_SUM) {
+		if (mcomb->dtype != PAMI_UNSIGNED_INT || mcomb->optor != PAMI_SUM) {
 			fprintf(stderr, "unsupported test case operator/datatype\n");
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
 		for (x = 0; x < mcomb->count; ++x) {
 			((unsigned *)_source)[x] = 1;
@@ -94,14 +94,14 @@ public:
 		_done = 0;
 		//fprintf(stderr, "... before %s.postMulticombine\n", _name);
 		rc = _model->postMulticombine(_msgbuf, mcomb);
-		if (rc != XMI_SUCCESS) {
+		if (rc != PAMI_SUCCESS) {
 			fprintf(stderr, "Failed to post multicombine \"%s\"\n", _name);
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
 
 		//fprintf(stderr, "... before advance loop for %s.postMulticombine\n", _name);
 		while (!_done) {
-			XMI::Device::Generic::Device::Factory::advance(_generics, 0, 0);
+			PAMI::Device::Generic::Device::Factory::advance(_generics, 0, 0);
 			T_MulticombineDevice::Factory::advance(_dev, 0, 0);
 		}
 		for (x = 0; x < mcomb->count; ++x) {
@@ -122,9 +122,9 @@ public:
 			}
 		}
 		if (x < mcomb->count) {
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 
 private:
@@ -132,6 +132,6 @@ private:
 }; // class Multicombine
 }; // namespace Multisend
 }; // namespace Test
-}; // namespace XMI
+}; // namespace PAMI
 
-#endif // __xmi_test_internals_multisend_multicombine_h__
+#endif // __pami_test_internals_multisend_multicombine_h__

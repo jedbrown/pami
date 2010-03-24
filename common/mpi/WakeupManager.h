@@ -1,6 +1,6 @@
 ///
 /// \file common/mpi/WakeupManager.h
-/// \brief XMI wakeup manager implementation.
+/// \brief PAMI wakeup manager implementation.
 ///
 #ifndef __common_mpi_WakeupManager_h__
 #define __common_mpi_WakeupManager_h__
@@ -14,9 +14,9 @@
 
 #undef USE_WAKEUP_VECTORS
 
-namespace XMI {
+namespace PAMI {
 
-        class WakeupManager : public Interface::WakeupManager<XMI::WakeupManager> {
+        class WakeupManager : public Interface::WakeupManager<PAMI::WakeupManager> {
 		// everything must fit in a (void *)
 		#define SEMID_BITS	((sizeof(void *) / 2) * 8)
 		#define SEMNO_BITS	SEMID_BITS
@@ -25,33 +25,33 @@ namespace XMI {
 		#define MAX_SEMNO	((1 << SEMNO_BITS) - 1)
         public:
 		inline WakeupManager() :
-		Interface::WakeupManager<XMI::WakeupManager>(),
+		Interface::WakeupManager<PAMI::WakeupManager>(),
 		_semKey(IPC_PRIVATE),
 		_semSet(0),
 		_semNum(0)
 		{
 		}
 
-		inline xmi_result_t init_impl(int num, int setKey) {
+		inline pami_result_t init_impl(int num, int setKey) {
 			if (_semKey != IPC_PRIVATE) {
-				return XMI_ERROR;
+				return PAMI_ERROR;
 			}
 			if (num > MAX_SEMNO) {
-				return XMI_ERROR;
+				return PAMI_ERROR;
 			}
 			key_t key = (key_t)setKey;
-			XMI_assertf(key != IPC_PRIVATE, "WakeupManager called with illegal key value %d\n", key);
+			PAMI_assertf(key != IPC_PRIVATE, "WakeupManager called with illegal key value %d\n", key);
 			int rc = semget(key, num, IPC_CREAT);
 			if (rc < 0) {
-				return XMI_ERROR;
+				return PAMI_ERROR;
 			}
 			if (rc > MAX_SEMID) {
-				return XMI_ERROR;
+				return PAMI_ERROR;
 			}
 			_semSet = rc;
 			_semKey = key;
 			_semNum = num;
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
 
 		inline void *getWakeupVec_impl(int num) {
@@ -62,7 +62,7 @@ namespace XMI {
 			return (void *)z;
 		}
 
-		inline xmi_result_t wakeup_impl(void *v) {
+		inline pami_result_t wakeup_impl(void *v) {
 			struct sembuf op;
 			size_t z = (size_t)v;
 			op.sem_num = ((z >> SEMNO_BITS) & MAX_SEMNO) - 1;
@@ -71,12 +71,12 @@ namespace XMI {
 			// assert(_semSet == (z & MAX_SEMID));
 			int err = semop(_semSet, &op, 1);
 			if (err < 0) {
-				return XMI_ERROR;
+				return PAMI_ERROR;
 			}
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
 
-		inline xmi_result_t clear_impl(void *v) {
+		inline pami_result_t clear_impl(void *v) {
 			// union semun a;
 			int a;
 			size_t z = (size_t)v;
@@ -86,12 +86,12 @@ namespace XMI {
 			// assert(_semSet == (z & MAX_SEMID));
 			int err = semctl(_semSet, sem_num, SETVAL, &a);
 			if (err < 0) {
-				return XMI_ERROR;
+				return PAMI_ERROR;
 			}
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
 
-		inline xmi_result_t sleep_impl(void *v) {
+		inline pami_result_t sleep_impl(void *v) {
 			struct sembuf op;
 			size_t z = (size_t)v;
 			op.sem_num = ((z >> SEMNO_BITS) & MAX_SEMNO) - 1;
@@ -100,13 +100,13 @@ namespace XMI {
 			// assert(_semSet == (z & MAX_SEMID));
 			int err = semop(_semSet, &op, 1);
 			if (err < 0) {
-				return XMI_ERROR;
+				return PAMI_ERROR;
 			}
 			clear_impl(v);
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
 
-		inline xmi_result_t trySleep_impl(void *v) {
+		inline pami_result_t trySleep_impl(void *v) {
 			struct sembuf op;
 			size_t z = (size_t)v;
 			op.sem_num = ((z >> SEMNO_BITS) & MAX_SEMNO) - 1;
@@ -115,27 +115,27 @@ namespace XMI {
 			// assert(_semSet == (z & MAX_SEMID));
 			int err = semop(_semSet, &op, 1);
 			if (err == EAGAIN) {
-				return XMI_EAGAIN;
+				return PAMI_EAGAIN;
 			}
 			if (err < 0) {
-				return XMI_ERROR;
+				return PAMI_ERROR;
 			}
 			clear_impl(v);
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
 
-		inline xmi_result_t poll_impl(void *v) {
+		inline pami_result_t poll_impl(void *v) {
 			size_t z = (size_t)v;
 			int s = ((z >> SEMNO_BITS) & MAX_SEMNO) - 1;
 			// assert(_semSet == (z & MAX_SEMID));
 			int err = semctl(_semSet, s, GETVAL);
 			if (err < 0) {
-				return XMI_ERROR;
+				return PAMI_ERROR;
 			}
 			if ((short)err <= 0) {
-				return XMI_EAGAIN;
+				return PAMI_EAGAIN;
 			}
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
 
 	private:
@@ -144,6 +144,6 @@ namespace XMI {
 		int _semNum;
 
         }; // class WakeupManager
-}; // namespace XMI
+}; // namespace PAMI
 
 #endif // __common_mpi_WakeupManager_h__

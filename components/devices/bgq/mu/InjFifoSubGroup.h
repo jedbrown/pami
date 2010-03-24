@@ -34,7 +34,7 @@
 #endif
 #define TRACE(x) //fprintf x
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -416,10 +416,10 @@ namespace XMI
           Queue              _waitToSendQ[BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP];
 
           MUSPI_InjFifo_t  * _injectionfifo[BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP];
-      }; // XMI::Device::MU::InjFifoSubGroup class
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+      }; // PAMI::Device::MU::InjFifoSubGroup class
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 #undef TRACE
 #endif   // __components_devices_bgq_mu_injfifosubgroup_h__
 

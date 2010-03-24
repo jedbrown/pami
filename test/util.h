@@ -18,10 +18,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/common.h"
 
-#ifdef __xmi_target_bgq__
+#ifdef __pami_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
   #include "Global.h"
 #endif
@@ -33,7 +33,7 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-#ifdef __xmi_target_bgq__
+#ifdef __pami_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 // sleep() doesn't appear to work in mambo right now.  A hackey simulation...
 #define mamboSleep(x) _mamboSleep(x, __LINE__)
@@ -42,11 +42,11 @@ unsigned _mamboSleep(unsigned seconds, unsigned from)
   if (__global.personality._is_mambo)
   {
     double dseconds = ((double)seconds)/1000; //mambo seconds are loooong.
-    double start = XMI_Wtime (), d=0;
-    while (XMI_Wtime() < (start+dseconds))
+    double start = PAMI_Wtime (), d=0;
+    while (PAMI_Wtime() < (start+dseconds))
     {
       for (int i=0; i<200000; ++i) ++d;
-      TRACE_ERR((stderr, "%s:%d sleep - %.0f, start %f, %f < %f\n",__PRETTY_FUNCTION__,from,d,start,XMI_Wtime(),start+dseconds));
+      TRACE_ERR((stderr, "%s:%d sleep - %.0f, start %f, %f < %f\n",__PRETTY_FUNCTION__,from,d,start,PAMI_Wtime(),start+dseconds));
     }
   }
   else
@@ -61,23 +61,23 @@ size_t __barrier_phase;
 size_t __barrier_size;
 size_t __barrier_task;
 size_t __barrier_next_task;
-xmi_endpoint_t __barrier_next_endpoint;
+pami_endpoint_t __barrier_next_endpoint;
 
 size_t         __barrier_dispatch;
-xmi_context_t  __barrier_context;
-xmi_client_t   __barrier_client;
+pami_context_t  __barrier_context;
+pami_client_t   __barrier_client;
 
 /* ************************************************************************* */
 /* ************************************************************************* */
 /* ************************************************************************* */
 static void barrier_dispatch_function (
-    xmi_context_t        context,      /**< IN: XMI context */
+    pami_context_t        context,      /**< IN: PAMI context */
     void               * cookie,       /**< IN: dispatch cookie */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
-    void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
-    size_t               pipe_size,    /**< IN: size of XMI pipe buffer */
-    xmi_recv_t         * recv)        /**< OUT: receive message structure */
+    void               * pipe_addr,    /**< IN: address of PAMI pipe buffer */
+    size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
+    pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   size_t phase = *((size_t *) header_addr);
 
@@ -101,7 +101,7 @@ void barrier ()
   __barrier_active[__barrier_phase] = __barrier_size-1;
   __barrier_phase = __barrier_phase^1;
 
-  xmi_send_immediate_t parameters;
+  pami_send_immediate_t parameters;
   parameters.dispatch        = __barrier_dispatch;
   parameters.header.iov_base = &__barrier_phase;
   parameters.header.iov_len  = sizeof (__barrier_phase);
@@ -113,36 +113,36 @@ void barrier ()
   for(i=1; i< __barrier_size; ++i)  /// \todo This doesn't scale but it's simple
   {
     __barrier_next_task = (__barrier_next_task + 1) % __barrier_size;
-    __barrier_next_endpoint = XMI_Client_endpoint (__barrier_client, __barrier_next_task, 0);
+    __barrier_next_endpoint = PAMI_Client_endpoint (__barrier_client, __barrier_next_task, 0);
     parameters.dest            = __barrier_next_endpoint;
 
     TRACE_ERR((stderr, "     barrier(), before send, phase = %zu, __barrier_active[%zu] = %u, parameters.dest = 0x%08x\n", __barrier_phase, __barrier_phase, __barrier_active[__barrier_phase], parameters.dest));
-    //xmi_result_t result =
-    XMI_Send_immediate (__barrier_context, &parameters);
+    //pami_result_t result =
+    PAMI_Send_immediate (__barrier_context, &parameters);
   }
 
   TRACE_ERR((stderr, " barrier() Before recv advance\n"));
   while (__barrier_active[__barrier_phase]  != 0)
-    XMI_Context_advance (__barrier_context, 100);
+    PAMI_Context_advance (__barrier_context, 100);
 
   TRACE_ERR((stderr, "####  exit barrier(), \n"));
   return;
 }
 
-void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
+void barrier_init (pami_client_t client, pami_context_t context, size_t dispatch)
 {
   TRACE_ERR((stderr, "enter barrier_init() ...\n"));
 
   __barrier_client = client;
 
-  xmi_configuration_t configuration;
+  pami_configuration_t configuration;
 
-  configuration.name = XMI_TASK_ID;
-  xmi_result_t result = XMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_TASK_ID;
+  pami_result_t result = PAMI_Configuration_query(client, &configuration);
   __barrier_task = configuration.value.intval;
 
-  configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_NUM_TASKS;
+  result = PAMI_Configuration_query(client, &configuration);
   __barrier_size = configuration.value.intval;
 
   TRACE_ERR((stderr,"__barrier_size:%zd __barrier_task:%zd\n",__barrier_size, __barrier_task));
@@ -155,21 +155,21 @@ void barrier_init (xmi_client_t client, xmi_context_t context, size_t dispatch)
   //__barrier_active[1].send = 0;
   __barrier_active[1] = __barrier_size-1;
 
-  xmi_dispatch_callback_fn fn;
+  pami_dispatch_callback_fn fn;
   fn.p2p = barrier_dispatch_function;
-  xmi_send_hint_t options={0};
-  TRACE_ERR((stderr, "Before XMI_Dispatch_set() ...\n"));
-  result = XMI_Dispatch_set (context,
+  pami_send_hint_t options={0};
+  TRACE_ERR((stderr, "Before PAMI_Dispatch_set() ...\n"));
+  result = PAMI_Dispatch_set (context,
                              dispatch,
                              fn,
                              (void *)__barrier_active,
                              options);
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
-    XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+    fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
+    PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
   }
-#ifdef __xmi_target_bgq__
+#ifdef __pami_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
   // Give other tasks a chance to init the MU device by sleeping
   if (__global.personality._is_mambo) /// \todo mambo hack

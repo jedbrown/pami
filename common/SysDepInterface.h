@@ -13,12 +13,12 @@
 #ifndef __common_SysDepInterface_h__
 #define __common_SysDepInterface_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/common.h"
 
 #include "components/memory/MemoryManager.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Interface
   {
@@ -37,7 +37,7 @@ namespace XMI
     {
     };	// class NullSysDep
   };	// namespace Interface
-};	// namespace XMI
+};	// namespace PAMI
 #endif // __components_sysdep_sysdep_h__
 
 //

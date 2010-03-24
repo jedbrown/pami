@@ -30,7 +30,7 @@
 #define STD_RATE_RECV 10000
 #define STD_RATE_SEND 10000
 
-namespace XMI {
+namespace PAMI {
 namespace Protocol {
 namespace Send {
 
@@ -40,28 +40,28 @@ namespace Send {
 /// \tparam T_Model   Template packet model class
 /// \tparam T_Device  Template packet device class
 ///
-/// \see XMI::Device::Interface::PacketModel
-/// \see XMI::Device::Interface::PacketDevice
+/// \see PAMI::Device::Interface::PacketModel
+/// \see PAMI::Device::Interface::PacketDevice
 ///
 template < class T_Model, class T_Device, bool T_LongHeader = true, class T_Connection = ConnectionArray<T_Device> > class Datagram :
-	public XMI::Protocol::Send::Send {
+	public PAMI::Protocol::Send::Send {
 public:
 	typedef Datagram < T_Model, T_Device, T_LongHeader, T_Connection> DatagramProtocol;
 
         template <class T_Allocator>
         static DatagramProtocol * generate (size_t                     dispatch,
-                                            xmi_dispatch_callback_fn   dispatch_fn,
+                                            pami_dispatch_callback_fn   dispatch_fn,
                                             void                     * cookie,
                                             T_Device                 & device,
                                             T_Allocator              & allocator,
-                                            xmi_result_t             & result)
+                                            pami_result_t             & result)
         {
           TRACE_ERR((stderr, ">> Datagram::generate()\n"));
           COMPILE_TIME_ASSERT(sizeof(Datagram) <= T_Allocator::objsize);
 
           Datagram * datagram = (Datagram *) allocator.allocateObject ();
           new ((void *)datagram) Datagram (dispatch, dispatch_fn, cookie, device, result);
-          if (result != XMI_SUCCESS)
+          if (result != PAMI_SUCCESS)
           {
             allocator.returnObject (datagram);
             datagram = NULL;
@@ -102,8 +102,8 @@ public:
 	struct rts_info_t {
 		send_state_t *va_send; ///virtual address sender
 		uint32_t msg_id; ///message identifier
-		xmi_task_t from_taskid; ///task originating message
-		xmi_task_t dest_taskid; ///task receiving message
+		pami_task_t from_taskid; ///task originating message
+		pami_task_t dest_taskid; ///task receiving message
 		size_t from_contextid; ///context id on task originating message
 		size_t dest_contextid; ///context id on task receiving message
 		size_t wsize; ///window size fo ack
@@ -143,9 +143,9 @@ public:
 		header_ack_t ack; /// ack info
 		pkt_t pkt; /// Message Object
 		DatagramProtocol *datagram; /// Pointer to protocol
-		xmi_recv_t info; /// Application receive information.
+		pami_recv_t info; /// Application receive information.
 		size_t mbytes; /// Message info bytes
-		xmi_task_t from_taskid; ///origin task
+		pami_task_t from_taskid; ///origin task
 		size_t from_contextid; ///origin context id
 		//char *             msgbuff;                                     /// RTS data buffer
 		size_t rpkg; /// received packages
@@ -154,7 +154,7 @@ public:
 		size_t rate; /// rate timers
 		size_t bytes; /// bytes to receive
 
-		char pmsgbuf[2][XMI::Device::ProgressFunctionMdl::sizeof_msg]; ///timers' buffer
+		char pmsgbuf[2][PAMI::Device::ProgressFunctionMdl::sizeof_msg]; ///timers' buffer
 		DTimer timer1; ///timer 1
 		DTimer timer0; ///timer 2
 		size_t wmaxseq; ///Max sequence id in control mechanism (CM)
@@ -192,12 +192,12 @@ public:
 
 		header_metadata_t header; /// aux header
 
-		xmi_event_function cb_data; /// Callback to execute when data have been sent
-		xmi_event_function cb_rts; /// Callback to execute when rts have been sent
+		pami_event_function cb_data; /// Callback to execute when data have been sent
+		pami_event_function cb_rts; /// Callback to execute when rts have been sent
 		void *pf; /// Pointer to receiver parameters
 		void *msginfo; /// Message info
-		xmi_event_function local_fn; /// Local Completion callback.
-		xmi_event_function remote_fn; /// Remote Completion callback.
+		pami_event_function local_fn; /// Local Completion callback.
+		pami_event_function remote_fn; /// Remote Completion callback.
 		void *cookie; /// Cookie
 
 		size_t rate; /// used to setup timers rate
@@ -207,7 +207,7 @@ public:
 		size_t nlost; /// number of lost elements
 		size_t fbytes; /// short_data bytes, first package
 
-		char pmsgbuf[2][XMI::Device::ProgressFunctionMdl::sizeof_msg]; /// timers' buffer
+		char pmsgbuf[2][PAMI::Device::ProgressFunctionMdl::sizeof_msg]; /// timers' buffer
 		DTimer timer1; ///timer 1
 		DTimer timer0; ///timer 2
 		DatagramProtocol *datagram; ///pointer to protocol
@@ -231,9 +231,9 @@ public:
 	/// \param[in]  context      Communication context
 	/// \param[out] status       Constructor status
 	///
-	Datagram(size_t dispatch, xmi_dispatch_callback_fn dispatch_fn,
-			void *cookie, T_Device & device, xmi_result_t & status) :
-		                XMI::Protocol::Send::Send(),
+	Datagram(size_t dispatch, pami_dispatch_callback_fn dispatch_fn,
+			void *cookie, T_Device & device, pami_result_t & status) :
+		                PAMI::Protocol::Send::Send(),
 		                _rts_model(device),
 				_rts_ack_model(device),
 				_ack_model(device),
@@ -266,30 +266,30 @@ public:
 		}
 		status = _rts_model.init(dispatch, dispatch_rts_direct, this,
 				dispatch_rts_read, this);TRACE_ERR((stderr, "Datagram() _rts [1] status = %d\n", status));
-		if (status != XMI_SUCCESS)
+		if (status != PAMI_SUCCESS)
 			abort();
 
 		status = _rts_ack_model.init(dispatch, dispatch_rts_ack_direct, this,
 				dispatch_rts_ack_read, this);TRACE_ERR((stderr, "Datagram() _rts_ack [2] status = %d\n",
 						status));
-		if (status != XMI_SUCCESS)
+		if (status != PAMI_SUCCESS)
 			abort();
 
 		status = _ack_model.init(dispatch, dispatch_ack_direct, this,
 				dispatch_ack_read, this);TRACE_ERR((stderr, "Datagram() _ack [3] status = %d\n", status));
-		if (status != XMI_SUCCESS)
+		if (status != PAMI_SUCCESS)
 			abort();
 
 		status = _data_model.init(dispatch, dispatch_data_direct, this,
 				dispatch_data_read, this);TRACE_ERR((stderr, "Datagram() _data [4] status = %d\n",
 						status));
-		if (status != XMI_SUCCESS)
+		if (status != PAMI_SUCCESS)
 			abort();
 
 		status = _short_data_model.init(dispatch, dispatch_short_data_direct,
 				this, dispatch_short_data_read, this);TRACE_ERR((stderr,
 						"Datagram() _short_data [5] status = %d\n", status));
-		if (status != XMI_SUCCESS)
+		if (status != PAMI_SUCCESS)
 			abort();
 	}
 	;
@@ -309,10 +309,10 @@ public:
 	///  storage and then call the simple interface with a callback to
 	///  a routine that cleans up the message storage
 	///  Note: there is not attempt to call immediate on the device
-	xmi_result_t immediate(xmi_send_immediate_t * parameters) {
+	pami_result_t immediate(pami_send_immediate_t * parameters) {
 		TRACE_ERR((stderr, ">> Datagram::immediate()\n"));
-		xmi_result_t result;
-		xmi_send_t simple_parm;
+		pami_result_t result;
+		pami_send_t simple_parm;
 		// Create storage to save message until sent (have to malloc since unbounded)
 		msg_copy_t *msg_copy = (msg_copy_t *)malloc(sizeof(msg_copy_t));
 		memcpy(msg_copy->header, parameters->header.iov_base,
@@ -344,9 +344,9 @@ public:
 	///
 	/// \brief Start a new simple send operation.
 	///
-	/// \see XMI::Protocol::Send::simple
+	/// \see PAMI::Protocol::Send::simple
 	///
-	virtual xmi_result_t simple(xmi_send_t * parameters) {
+	virtual pami_result_t simple(pami_send_t * parameters) {
 		// This allows immediate to use this without having to call a virtual function
 		return simple_impl(parameters);
 	}
@@ -358,8 +358,8 @@ protected:
 	// ----------------------------------------------------------------------
 
 	/// \brief Callback for immediate completion to clean up message copy
-	static void cb_immediate_complete(xmi_context_t context,
-			void *cookie, xmi_result_t result) {
+	static void cb_immediate_complete(pami_context_t context,
+			void *cookie, pami_result_t result) {
 		TRACE_ERR((stderr, ">> Datagram::cb_immediate_complete() \n"));
 		// Send finished so get rid of copy of message
 		msg_copy_t *msg_copy = (msg_copy_t *) cookie;
@@ -387,28 +387,28 @@ protected:
 		_recv_allocator.returnObject((void *) object);
 	}
 #if 0
-	inline void setConnection(xmi_task_t task, void *arg) {
+	inline void setConnection(pami_task_t task, void *arg) {
 		size_t peer = _device.task2peer(task);
 		TRACE_ERR((stderr,
 						">> Datagram::setConnection(%zd, %p) .. _connection[%zd] = %p\n",
 						task, arg, peer, _connection[peer]));
-		XMI_assert(_connection[peer] == NULL);
+		PAMI_assert(_connection[peer] == NULL);
 		_connection[peer] = arg;TRACE_ERR((stderr, "<< Datagram::setConnection(%zd, %p)\n",
 						task, arg));
 	}
 
-	inline void *getConnection(xmi_task_t task) {
+	inline void *getConnection(pami_task_t task) {
 		size_t peer = _device.task2peer(task);
 		TRACE_ERR((stderr,
 						">> Datagram::getConnection(%zd) .. _connection[%zd] = %p\n",
 						task, peer, _connection[peer]));
-		XMI_assert(_connection[peer] != NULL);TRACE_ERR((stderr,
+		PAMI_assert(_connection[peer] != NULL);TRACE_ERR((stderr,
 						"<< Datagram::getConnection(%zd) .. _connection[%zd] = %p\n",
 						task, peer, _connection[peer]));
 		return _connection[peer];
 	}
 
-	inline void clearConnection(xmi_task_t task) {
+	inline void clearConnection(pami_task_t task) {
 		size_t peer = _device.task2peer(task);
 		TRACE_ERR((stderr,
 						">> Datagram::clearConnection(%zd) .. _connection[%zd] = %p\n",
@@ -421,7 +421,7 @@ protected:
 	// \brief Send a packet ... pack as needed.
 	//
 	static inline int send_packet(T_Model & model, pkt_t & msg,
-			xmi_event_function callback, void *cookie, xmi_task_t targetTask, size_t targetContextId,
+			pami_event_function callback, void *cookie, pami_task_t targetTask, size_t targetContextId,
 			vecs_t & vecs, void *part1, size_t numPart1, void *part2,
 			size_t numPart2) {
 		if (numPart1 <= T_Model::packet_model_metadata_bytes) { // part 1 will fit in the metadata
@@ -453,7 +453,7 @@ protected:
 					0, //
 					vecs.d2); // Message info
 		}
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 
 	// \brief Receive a packet ... unpack as needed.
@@ -470,7 +470,7 @@ protected:
 			part1 = payload;
 			part2 = (void *) ((uintptr_t) payload + numMeta);
 		}
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 
 	/// \brief Send an rts message -- utility to ensure consistency
@@ -490,7 +490,7 @@ protected:
 
 	/// \brief Send an rts ack message -- utility to ensure consistency
 	static inline void send_rts_ack(recv_state_t * rcv,
-			xmi_event_function callback, void *cookie) {
+			pami_event_function callback, void *cookie) {
 		send_packet(rcv->datagram->_rts_ack_model, // Model to send packet on
 				rcv->pkt, // T_Message to send
 				callback, // Callback
@@ -506,7 +506,7 @@ protected:
 
 	/// \brief Send an ack message -- utility to ensure consistency
 	static inline void send_ack(recv_state_t * rcv,
-			xmi_event_function callback, void *cookie) {
+			pami_event_function callback, void *cookie) {
 
 		if ( rcv->nlost != 0 ) {
 		send_packet(rcv->datagram->_ack_model, // Model to send packet on
@@ -577,10 +577,10 @@ private:
 	T_Model _data_model;
 	T_Model _short_data_model;
 	T_Device & _device;
-	xmi_task_t _from_taskid;
+	pami_task_t _from_taskid;
 	size_t     _from_contextid;
-	xmi_context_t _context;
-	xmi_dispatch_callback_fn _dispatch_fn;
+	pami_context_t _context;
+	pami_dispatch_callback_fn _dispatch_fn;
 	void *_cookie;
 	T_Connection _connection;
 
@@ -588,7 +588,7 @@ private:
 	//static Queue *_recvqueue;   ///not used
 	// static Queue *_lostqueue;  ///not used
 
-	XMI::Device::ProgressFunctionMdl _progfmodel; ///used to setup timers
+	PAMI::Device::ProgressFunctionMdl _progfmodel; ///used to setup timers
 
 	send_state_t *_lastva_send; //used in CM
 
@@ -599,7 +599,7 @@ private:
 	// ----------------------------------------------------------------------
 
 	/// \brief Simple implementation
-	xmi_result_t simple_impl(xmi_send_t * parameters) {
+	pami_result_t simple_impl(pami_send_t * parameters) {
 		TRACE_ERR((stderr, ">> Datagram::simple_impl()\n"));TRACE_ERR((stderr,
 						"*** Datagram::simple_imp(): msginfo_bytes = %d  , bytes =%d \n",
 						parameters->send.header.iov_len,
@@ -629,7 +629,7 @@ private:
 		send->rts.va_send = send; // Virtual Address sender
 
 		// Target task and context identifier (offset)
-		XMI_ENDPOINT_INFO(parameters->send.dest,send->rts.dest_taskid,send->rts.dest_contextid);
+		PAMI_ENDPOINT_INFO(parameters->send.dest,send->rts.dest_taskid,send->rts.dest_contextid);
 
 		send->rts.mbytes = parameters->send.header.iov_len; // Metadata Number of  bytes
 		send->rts.wrate = STD_RATE_SEND; // Initial value for window rate
@@ -669,7 +669,7 @@ private:
 		}
 
 		TRACE_ERR((stderr, "<< Datagram::simple_impl()\n"));
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 	;
 
@@ -678,22 +678,22 @@ private:
 	// ----------------------------------------------------------------------
 
 	/// \brief Resend the rts when there is a timeout
-	static void resend_rts(xmi_context_t context, void * cookie,
-			xmi_result_t result) {
+	static void resend_rts(pami_context_t context, void * cookie,
+			pami_result_t result) {
 		TRACE_ERR((stderr,"Datagram::resend_rts()\n"));
 		send_rts( (send_state_t *)cookie );
 	}
 
 	/// \brief Resend the rts ack when there is a timeout
-	static void resend_rts_ack(xmi_context_t context, void * cookie,
-			xmi_result_t result) {
+	static void resend_rts_ack(pami_context_t context, void * cookie,
+			pami_result_t result) {
 		TRACE_ERR((stderr,"Datagram::resend_rts_ack()\n"));
 		send_rts_ack( (recv_state_t *)cookie, NULL, NULL );
 	}
 
 	/// \brief Resend the ack when there is a timeout
-	static void resend_ack(xmi_context_t context, void * cookie,
-			xmi_result_t result) {
+	static void resend_ack(pami_context_t context, void * cookie,
+			pami_result_t result) {
 		TRACE_ERR((stderr,"Datagram::resend_ack()\n"));
 		recv_state_t * rcv = (recv_state_t *)cookie;
 		send_ack(rcv, NULL, NULL);
@@ -709,13 +709,13 @@ private:
 	/// completion callback and free the receive state object
 	/// memory.
 	///
-	static void receive_complete(xmi_context_t context, void *cookie,
-			xmi_result_t result) {
+	static void receive_complete(pami_context_t context, void *cookie,
+			pami_result_t result) {
 		TRACE_ERR((stderr, "Datagram::receive_complete() >> \n"));
 
 		recv_state_t *rcv = (recv_state_t *) cookie;
 
-		xmi_event_function local_fn = rcv->info.local_fn;
+		pami_event_function local_fn = rcv->info.local_fn;
 		void *fn_cookie = rcv->info.cookie;
 
 		DatagramProtocol *datagram =
@@ -740,16 +740,16 @@ private:
 	/// callback function and, if notification of remote receive
 	/// completion is not required, free the send state memory.
 	///
-	static void send_complete(xmi_context_t context, void *cookie,
-			xmi_result_t result) {
+	static void send_complete(pami_context_t context, void *cookie,
+			pami_result_t result) {
 		TRACE_ERR((stderr, "Datagram::send_complete() >> \n"));
 		send_state_t *send = (send_state_t *) cookie;
 
 		DatagramProtocol *datagram =
 				(DatagramProtocol *)send->datagram;
 
-		xmi_event_function local_fn = send->local_fn;
-		xmi_event_function remote_fn = send->remote_fn;
+		pami_event_function local_fn = send->local_fn;
+		pami_event_function remote_fn = send->remote_fn;
 		void *fn_cookie = send->cookie;
 
 		//free VA memory
@@ -892,11 +892,11 @@ private:
 					rts->mbytes, // Metadata bytes
 					NULL, // No payload data
 					rts->bytes, // Number of msg bytes
-					(xmi_recv_t *) & (rcv->info)); //Recv_state struct
+					(pami_recv_t *) & (rcv->info)); //Recv_state struct
 
 			// Only handle simple receives .. until the non-contiguous support
 			// is available
-			XMI_assert(rcv->info.kind == XMI_AM_KIND_SIMPLE);
+			PAMI_assert(rcv->info.kind == PAMI_AM_KIND_SIMPLE);
 
 			if (rts->bytes == 0) // Move this special case to another dispatch funtion to improve latency in the common case.
 			{
@@ -957,7 +957,7 @@ private:
 			ack->va_send->timer0.close();
 
 			//call terminate function
-			send_complete(datagram->_context, (void *) ack->va_send, XMI_SUCCESS);
+			send_complete(datagram->_context, (void *) ack->va_send, PAMI_SUCCESS);
 
 			return 0;
 		}
@@ -1043,8 +1043,8 @@ private:
 
 	/// \brief Callback invoked after send a data_send packet.
 	///
-	static void cb_data_send(xmi_context_t context, void *cookie,
-			xmi_result_t result) {
+	static void cb_data_send(pami_context_t context, void *cookie,
+			pami_result_t result) {
 
 		TRACE_ERR((stderr, ">> Datagram::cb_data_send()\n"));
 
@@ -1210,7 +1210,7 @@ private:
 	}
 
 	/// \brief resend data due to time out
-	static void resend_data(xmi_context_t ctx, void *cd, xmi_result_t result ) {
+	static void resend_data(pami_context_t ctx, void *cd, pami_result_t result ) {
 
 		TRACE_ERR((stderr,
 						"	Datagram::Timer send_data() .. Sending data, protocol header_info_t fits in the packet metadata, application metadata fits in a single packet payload\n"));
@@ -1438,7 +1438,7 @@ private:
 						header->seqno, header->bsend));
 
 		TRACE_ERR((stderr,
-						"   Datagram::dispatch_data_direct() Window size = %d, rpkg = %d , pkgnum = %d .  Protocol header_info_t fits in the packet metadata, xmi_task_t  fits in the message metadata\n",
+						"   Datagram::dispatch_data_direct() Window size = %d, rpkg = %d , pkgnum = %d .  Protocol header_info_t fits in the packet metadata, pami_task_t  fits in the message metadata\n",
 						header->va_recv->ack.wsize, header->va_recv->rpkg,
 						header->va_recv->pkgnum));
 
@@ -1462,7 +1462,7 @@ private:
 
 			//call terminate function
 			receive_complete(datagram->_context, (void *) header->va_recv,
-					XMI_SUCCESS);
+					PAMI_SUCCESS);
 
 			return 0;
 
@@ -1536,7 +1536,7 @@ private:
 
 				//call terminate function
 				receive_complete(header->va_recv->datagram->_context,
-						(void *) header->va_recv, XMI_SUCCESS);
+						(void *) header->va_recv, PAMI_SUCCESS);
 
 			} else {
 
@@ -1597,7 +1597,7 @@ private:
 								">>   Datagram::dispatch_ack_direct() wrate==0 .. all data was sent\n"));
 
 				send_complete(datagram->_context, (void *) ack->va_send,
-						XMI_SUCCESS);
+						PAMI_SUCCESS);
 
 				return 0;
 			} else {
@@ -1608,7 +1608,7 @@ private:
 				if (ack->va_send->pkgnum - 1> ack->va_send->header.seqno) {
 					ack->va_send->pkgsend = 0;
 					cb_data_send(datagram->_context, (void *) ack->va_send,
-							XMI_SUCCESS);
+							PAMI_SUCCESS);
 				}
 
 			}
@@ -1824,19 +1824,19 @@ private:
 #endif
 		return 0;
 	};
-	}; // XMI::Protocol::Send::Datagram class
+	}; // PAMI::Protocol::Send::Datagram class
 	// Initialize queue
 	template < class T_Model, class T_Device, bool T_LongHeader, class T_Connection> Queue* Datagram < T_Model, T_Device, T_LongHeader, T_Connection>::_queue = NULL;
 
 }
-; // XMI::Protocol::Send namespace
+; // PAMI::Protocol::Send namespace
 }
-; // XMI::Protocol namespace
+; // PAMI::Protocol namespace
 }
-; // XMI namespace
+; // PAMI namespace
 
 #undef TRACE_ERR
-#endif				// __xmi_p2p_protocol_send_datagram_datagram_h__
+#endif				// __pami_p2p_protocol_send_datagram_datagram_h__
 //
 // astyle info    http://astyle.sourceforge.net
 //

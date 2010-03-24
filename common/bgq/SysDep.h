@@ -13,7 +13,7 @@
 #ifndef __common_bgq_SysDep_h__
 #define __common_bgq_SysDep_h__
 
-#define XMI_SYSDEP_CLASS XMI::SysDep
+#define PAMI_SYSDEP_CLASS PAMI::SysDep
 
 #include "common/SysDepInterface.h"
 
@@ -24,7 +24,7 @@
 #include "Wtime.h"
 #include "Topology.h"
 
-namespace XMI
+namespace PAMI
 {
     // TODO -- need to make a different shared memory manager so that multiple
     // contexts can get shared memory .. right now the second context to call

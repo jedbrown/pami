@@ -11,12 +11,12 @@
  * \brief Optimized math routines for signed 16 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */
-#include "xmi_bg_math.h"
+#include "pami_bg_math.h"
 #include "util/common.h"
 //#include "ppc450d/internal_o.h"
 
 #ifdef NOT_USED
-static void _xmi_core_int16_min_conv2(uint16_t *dst, const int16_t **srcs, int nsrc, int count) {
+static void _pami_core_int16_min_conv2(uint16_t *dst, const int16_t **srcs, int nsrc, int count) {
 
   uint16_t *dp = (uint16_t *)dst;
   const int16_t *s0 = (const int16_t *)srcs[0];
@@ -104,7 +104,7 @@ static void _xmi_core_int16_min_conv2(uint16_t *dst, const int16_t **srcs, int n
   return;
 }
 
-static void _xmi_core_int16_prod_conv2(uint16_t *dst, const int16_t **srcs, int nsrc, int count) {
+static void _pami_core_int16_prod_conv2(uint16_t *dst, const int16_t **srcs, int nsrc, int count) {
 
   uint16_t *dp = (uint16_t *)dst;
   const int16_t *s0 = (const int16_t *)srcs[0];
@@ -243,7 +243,7 @@ static void _xmi_core_int16_prod_conv2(uint16_t *dst, const int16_t **srcs, int 
 }
 #endif /* NOT_USED */
 
-static void _xmi_core_int16_conv_o(uint16_t *dst, const int16_t *src, int count) {
+static void _pami_core_int16_conv_o(uint16_t *dst, const int16_t *src, int count) {
 
   uint16_t *dp = dst;
   const int16_t *sp = src;
@@ -325,7 +325,7 @@ static void _xmi_core_int16_conv_o(uint16_t *dst, const int16_t *src, int count)
   return;
 }
 
-static void _xmi_core_int16_unconv_o(int16_t *dst, const uint16_t *src, int count) {
+static void _pami_core_int16_unconv_o(int16_t *dst, const uint16_t *src, int count) {
 
   int16_t *dp = dst;
   const uint16_t *sp = src;
@@ -407,7 +407,7 @@ static void _xmi_core_int16_unconv_o(int16_t *dst, const uint16_t *src, int coun
   return;
 }
 
-static void _xmi_core_int16_conv_not_o(uint16_t *dst, const int16_t *src, int count) {
+static void _pami_core_int16_conv_not_o(uint16_t *dst, const int16_t *src, int count) {
 
   uint16_t *dp = dst;
   const int16_t *sp = src;
@@ -500,7 +500,7 @@ static void _xmi_core_int16_conv_not_o(uint16_t *dst, const int16_t *src, int co
   return;
 }
 
-static void _xmi_core_int16_unconv_not_o(int16_t *dst, const uint16_t *src, int count) {
+static void _pami_core_int16_unconv_not_o(int16_t *dst, const uint16_t *src, int count) {
 
   int16_t *dp = dst;
   const uint16_t *sp = src;
@@ -593,23 +593,23 @@ static void _xmi_core_int16_unconv_not_o(int16_t *dst, const uint16_t *src, int 
   return;
 }
 
-void _xmi_core_int16_pre_all_o(uint16_t *dst, const int16_t *src, int count) {
-	_xmi_core_int16_conv_o(dst, src, count);
+void _pami_core_int16_pre_all_o(uint16_t *dst, const int16_t *src, int count) {
+	_pami_core_int16_conv_o(dst, src, count);
 }
 
-void _xmi_core_int16_post_all_o(int16_t *dst, const uint16_t *src, int count) {
-	_xmi_core_int16_unconv_o(dst, src, count);
+void _pami_core_int16_post_all_o(int16_t *dst, const uint16_t *src, int count) {
+	_pami_core_int16_unconv_o(dst, src, count);
 }
 
-void _xmi_core_int16_pre_min_o(uint16_t *dst, const int16_t *src, int count) {
-	_xmi_core_int16_conv_not_o(dst, src, count);
+void _pami_core_int16_pre_min_o(uint16_t *dst, const int16_t *src, int count) {
+	_pami_core_int16_conv_not_o(dst, src, count);
 }
 
-void _xmi_core_int16_post_min_o(int16_t *dst, const uint16_t *src, int count) {
-	_xmi_core_int16_unconv_not_o(dst, src, count);
+void _pami_core_int16_post_min_o(int16_t *dst, const uint16_t *src, int count) {
+	_pami_core_int16_unconv_not_o(dst, src, count);
 }
 
-void _xmi_core_int16_int32_pre_maxloc_o(uint16_int32_t *dst, const int16_int32_t *src, int count) {
+void _pami_core_int16_int32_pre_maxloc_o(uint16_int32_t *dst, const int16_int32_t *src, int count) {
   register int n = 0;
   register unsigned shift = 0x8000UL;
   for (n = 0; n < count; n++)
@@ -620,7 +620,7 @@ void _xmi_core_int16_int32_pre_maxloc_o(uint16_int32_t *dst, const int16_int32_t
     }
 }
 
-void _xmi_core_int16_int32_post_maxloc_o(int16_int32_t *dst, const uint16_int32_t *src, int count) {
+void _pami_core_int16_int32_post_maxloc_o(int16_int32_t *dst, const uint16_int32_t *src, int count) {
   register int n = 0;
   register unsigned shift = 0x8000UL;
   for (n = 0; n < count; n++)
@@ -630,7 +630,7 @@ void _xmi_core_int16_int32_post_maxloc_o(int16_int32_t *dst, const uint16_int32_
     }
 }
 
-void _xmi_core_int16_int32_pre_minloc_o(uint16_int32_t *dst, const int16_int32_t *src, int count) {
+void _pami_core_int16_int32_pre_minloc_o(uint16_int32_t *dst, const int16_int32_t *src, int count) {
   register int n = 0;
   register unsigned shift = 0x8000UL;
   for (n = 0; n < count; n++)
@@ -641,7 +641,7 @@ void _xmi_core_int16_int32_pre_minloc_o(uint16_int32_t *dst, const int16_int32_t
     }
 }
 
-void _xmi_core_int16_int32_post_minloc_o(int16_int32_t *dst, const uint16_int32_t *src, int count) {
+void _pami_core_int16_int32_post_minloc_o(int16_int32_t *dst, const uint16_int32_t *src, int count) {
   register int n = 0;
   register unsigned shift = 0x8000UL;
   for (n = 0; n < count; n++)

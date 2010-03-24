@@ -27,21 +27,21 @@ namespace CCMI
       namespace Tree
       {
 
-          unsigned SmpTreeAllreduce::restart(XMI_CollectiveRequest_t  *request,
-                                       XMI_Callback_t           & cb_done,
+          unsigned SmpTreeAllreduce::restart(PAMI_CollectiveRequest_t  *request,
+                                       PAMI_Callback_t           & cb_done,
                                        CCMI_Consistency            consistency,
                                        char                      * srcbuf,
                                        char                      * dstbuf,
                                        size_t                      count,
-                                       XMI_Dt                     dtype,
-                                       XMI_Op                     op,
+                                       PAMI_Dt                     dtype,
+                                       PAMI_Op                     op,
                                        size_t                      root)
           {
 	    struct _req {
-		XMI_Request_t _msg;
-		XMI::Topology _root;
-		XMI::PipeWorkQueue _swq;
-		XMI::PipeWorkQueue _rwq;
+		PAMI_Request_t _msg;
+		PAMI::Topology _root;
+		PAMI::PipeWorkQueue _swq;
+		PAMI::PipeWorkQueue _rwq;
 	    } *req = (struct _req *)request;
             // call tree multisend directly
             //TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::SmpTreeAllreduce::restart\n", this));
@@ -57,24 +57,24 @@ namespace CCMI
 	    req->_rwq.configure(NULL, dstbuf, _bytes, 0);
 	    req->_rwq.reset();
 	    if (root != (size_t)-1) {
-	    	new (&req->_root) XMI::Topology(root);
+	    	new (&req->_root) PAMI::Topology(root);
 	    } else {
-	    	new (&req->_root) XMI::Topology(_rank);
+	    	new (&req->_root) PAMI::Topology(_rank);
 	    }
 
             _mcombArgs.setRequestBuffer(&req->_msg, sizeof(req->_msg));
             _mcombArgs.setRoles((unsigned)-1); // perform all roles
-            _mcombArgs.setData((XMI_PipeWorkQueue_t *)&req->_swq, _count);
+            _mcombArgs.setData((PAMI_PipeWorkQueue_t *)&req->_swq, _count);
             _mcombArgs.setDataRanks(NULL);
-            _mcombArgs.setResults((XMI_PipeWorkQueue_t *)&req->_rwq, _count);
-            _mcombArgs.setResultsRanks((XMI_Topology_t *)&req->_root);
+            _mcombArgs.setResults((PAMI_PipeWorkQueue_t *)&req->_rwq, _count);
+            _mcombArgs.setResultsRanks((PAMI_Topology_t *)&req->_root);
             _mcombArgs.setReduceInfo(op, dtype);
             _mcombArgs.setCallback(cb_done.function, cb_done.clientdata);
 
             ///Inlining the send implementation
             _mcomb->DCMF::Collectives::MultiSend::MulticombineImpl::generate(&_mcombArgs);
 
-            return XMI_SUCCESS;
+            return PAMI_SUCCESS;
           }
 
       }

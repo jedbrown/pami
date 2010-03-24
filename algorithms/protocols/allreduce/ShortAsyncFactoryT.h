@@ -34,7 +34,7 @@ namespace CCMI
       template <class CONNMGR, class COMPOSITE, class MAP> class ShortAsyncFactoryT : public CCMI::Adaptor::Allreduce::AsyncFactoryT<CONNMGR, COMPOSITE, MAP>
       {
       protected:
-        static XMI_Request_t * cb_asyncShortReceiveHead(const XMIQuad    * info,
+        static PAMI_Request_t * cb_asyncShortReceiveHead(const PAMIQuad    * info,
                                                          unsigned          count,
                                                          unsigned          peer,
                                                          unsigned          sndlen,
@@ -43,7 +43,7 @@ namespace CCMI
                                                          unsigned        * rcvlen,
                                                          char           ** rcvbuf,
                                                          unsigned        * pipewidth,
-                                                         XMI_Callback_t * cb_done)
+                                                         PAMI_Callback_t * cb_done)
         {
           TRACE_ADAPTOR((stderr,
                          "<%p>Allreduce::Short::%s::AsyncFactoryT::cb_asyncShortReceiveHead peer %d, conn_id %d\n",
@@ -80,8 +80,8 @@ namespace CCMI
             if(composite->isIdle())
               composite->restartAsync(allreduce,
                                       cdata->_count,
-                                      (XMI_Dt)(cdata->_dt),
-                                      (XMI_Op)(cdata->_op),
+                                      (PAMI_Dt)(cdata->_dt),
+                                      (PAMI_Op)(cdata->_op),
                                       cdata->_root);
           }
 

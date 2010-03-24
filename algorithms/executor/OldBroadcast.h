@@ -39,7 +39,7 @@ namespace CCMI
       T_Sysdep            * _sd;
       Schedule::Schedule  * _comm_schedule;
       T_Mcast             * _mInterface;
-      xmi_oldmulticast_t    _msend;
+      pami_oldmulticast_t    _msend;
 
       int              _comm;
       unsigned         _root;
@@ -58,9 +58,9 @@ namespace CCMI
       unsigned         _destpes    [MAX_PARALLEL];
       unsigned         _hints      [MAX_PARALLEL];
 
-      //XMI_Callback_t           _msend_cb;
-      XMI_Request_t            _send_request __attribute__((__aligned__(16)));   /// send request
-      XMI_Request_t            _recv_request __attribute__((__aligned__(16)));   /// recv request
+      //PAMI_Callback_t           _msend_cb;
+      PAMI_Request_t            _send_request __attribute__((__aligned__(16)));   /// send request
+      PAMI_Request_t            _recv_request __attribute__((__aligned__(16)));   /// recv request
 
       CollHeaderData           _mdata;
       T_ConnectionManager    * _connmgr;
@@ -91,9 +91,9 @@ namespace CCMI
 
     public:
 
-      static void staticSendDone (xmi_context_t context, void *clientdata, xmi_result_t err)
+      static void staticSendDone (pami_context_t context, void *clientdata, pami_result_t err)
       {
-        xmi_quad_t * info = NULL;
+        pami_quad_t * info = NULL;
         OldBroadcast *bcast = (OldBroadcast *) clientdata;
         bcast->notifySendDone( *info );
       }
@@ -133,11 +133,11 @@ namespace CCMI
         _msend.cb_done.clientdata =   this;
         _sd           =   sd;
         _msend.request     = &_send_request[0];
-        xmi_quad_t *info   = (_postReceives)?(NULL):(xmi_quad_t*)((void*)&_mdata);
+        pami_quad_t *info   = (_postReceives)?(NULL):(pami_quad_t*)((void*)&_mdata);
         _msend.msginfo     = info;
         _msend.count       = 1;
         _msend.flags       = 0;  //FLAGS_UNSET
-        _msend.opcodes     = (xmi_subtask_t*)&_hints;
+        _msend.opcodes     = (pami_subtask_t*)&_hints;
       }
 
       inline unsigned bytesrecvd ()
@@ -181,11 +181,11 @@ namespace CCMI
 	_pipelinewidth = pwidth;
       }
 
-      inline XMI_Request_t * getRecvRequest ()
+      inline PAMI_Request_t * getRecvRequest ()
       {
         return & _recv_request;
       }
-      inline XMI_Request_t * getSendRequest ()
+      inline PAMI_Request_t * getSendRequest ()
       {
         return & _send_request;
       }
@@ -195,8 +195,8 @@ namespace CCMI
       //------------------------------------------
 
       virtual void   start          ();
-      virtual void   notifySendDone ( const xmi_quad_t &info );
-      virtual void   notifyRecv     (unsigned src,  const xmi_quad_t &info,
+      virtual void   notifySendDone ( const pami_quad_t &info );
+      virtual void   notifyRecv     (unsigned src,  const pami_quad_t &info,
                                      char     *buf, unsigned bytes);
 
       //-----------------------------------------
@@ -237,7 +237,7 @@ inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager
 
   // Nothing to broadcast? We're done.
   if((_buflen == 0) && _cb_done)
-    _cb_done (NULL, _clientdata, XMI_SUCCESS);
+    _cb_done (NULL, _clientdata, PAMI_SUCCESS);
 
   else if(__global.mapping.task() == _root)
   {
@@ -255,7 +255,7 @@ inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager
   if(_startphase == _nphases || _nmessages == 0)
   {
     if(_bytesrecvd == _buflen && _cb_done)
-      _cb_done (NULL, _clientdata, XMI_SUCCESS);
+      _cb_done (NULL, _clientdata, PAMI_SUCCESS);
     return;
   }
 
@@ -271,7 +271,7 @@ inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager
   if(_bytessent == _buflen)
   {
     if(_cb_done)
-      _cb_done (NULL, _clientdata, XMI_SUCCESS);
+      _cb_done (NULL, _clientdata, PAMI_SUCCESS);
     return;
   }
 
@@ -312,7 +312,7 @@ inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager
 
 }
 template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: notifySendDone ( const xmi_quad_t & info )
+inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: notifySendDone ( const pami_quad_t & info )
 {
   TRACE_FLOW ((stderr, "<%p>Executor::OldBroadcast::notifySendDone() nmessages %d\n",this, _nmessages));
 
@@ -326,7 +326,7 @@ inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager
 template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
 inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager>::notifyRecv
 (unsigned        src,
- const xmi_quad_t  & info,
+ const pami_quad_t  & info,
  char          * buf,
  unsigned        bytes)
 {

@@ -35,7 +35,7 @@
 
 //#define OPTIMIZE_AGGREGATE_LATENCY
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -45,12 +45,12 @@ namespace XMI
       {
         public:
 
-          /// \see XMI::Device::Interface::PacketModel::PacketModel
-          /// \see XMI::Device::Interface::MessageModel::MessageModel
+          /// \see PAMI::Device::Interface::PacketModel::PacketModel
+          /// \see PAMI::Device::Interface::MessageModel::MessageModel
           MUPacketModel (MUDevice & device);
 
-          /// \see XMI::Device::Interface::PacketModel::~PacketModel
-          /// \see XMI::Device::Interface::MessageModel::~MessageModel
+          /// \see PAMI::Device::Interface::PacketModel::~PacketModel
+          /// \see PAMI::Device::Interface::MessageModel::~MessageModel
           ~MUPacketModel ();
 
           static const bool   deterministic_packet_model         = true;
@@ -60,59 +60,59 @@ namespace XMI
           static const size_t packet_model_payload_bytes         = MUDevice::payload_size;
           static const size_t packet_model_state_bytes           = sizeof(MUInjFifoMessage);
 
-          /// \see XMI::Device::Interface::PacketModel::init
-          xmi_result_t init_impl (size_t                      dispatch,
+          /// \see PAMI::Device::Interface::PacketModel::init
+          pami_result_t init_impl (size_t                      dispatch,
                                   Interface::RecvFunction_t   direct_recv_func,
                                   void                      * direct_recv_func_parm,
                                   Interface::RecvFunction_t   read_recv_func,
                                   void                      * read_recv_func_parm);
 
-          /// \see XMI::Device::Interface::PacketModel::postPacket
+          /// \see PAMI::Device::Interface::PacketModel::postPacket
           inline bool postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
-                                       xmi_event_function   fn,
+                                       pami_event_function   fn,
                                        void               * cookie,
-                                       xmi_task_t           target_task,
+                                       pami_task_t           target_task,
                                        size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
                                        struct iovec       * iov,
                                        size_t               niov);
 
-          /// \see XMI::Device::Interface::PacketModel::postPacket
+          /// \see PAMI::Device::Interface::PacketModel::postPacket
           template <unsigned T_Niov>
           inline bool postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
-                                       xmi_event_function   fn,
+                                       pami_event_function   fn,
                                        void               * cookie,
-                                       xmi_task_t           target_task,
+                                       pami_task_t           target_task,
                                        size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
                                        struct iovec         (&iov)[T_Niov]);
 
-          /// \see XMI::Device::Interface::PacketModel::postPacket
+          /// \see PAMI::Device::Interface::PacketModel::postPacket
           inline bool postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
-                                       xmi_event_function   fn,
+                                       pami_event_function   fn,
                                        void               * cookie,
-                                       xmi_task_t           target_task,
+                                       pami_task_t           target_task,
                                        size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
                                        void               * payload,
                                        size_t               length);
 
-          /// \see XMI::Device::Interface::PacketModel::postPacket
+          /// \see PAMI::Device::Interface::PacketModel::postPacket
           template <unsigned T_Niov>
-          inline bool postPacket_impl (xmi_task_t     target_task,
+          inline bool postPacket_impl (pami_task_t     target_task,
                                        size_t         target_offset,
                                        void         * metadata,
                                        size_t         metasize,
                                        struct iovec   (&iov)[T_Niov]);
 
-          /// \see XMI::Device::Interface::PacketModel::postMultiPacket
+          /// \see PAMI::Device::Interface::PacketModel::postMultiPacket
           inline bool postMultiPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
-                                            xmi_event_function   fn,
+                                            pami_event_function   fn,
                                             void               * cookie,
-                                            xmi_task_t           target_task,
+                                            pami_task_t           target_task,
                                             size_t               target_offset,
                                             void               * metadata,
                                             size_t               metasize,
@@ -122,7 +122,7 @@ namespace XMI
         protected:
 
           inline void initializeDescriptor (MUSPI_DescriptorBase * desc,
-                                            xmi_task_t             target_task,
+                                            pami_task_t             target_task,
                                             size_t                 target_offset,
                                             uint64_t               payloadPa,
                                             size_t                 bytes);
@@ -130,12 +130,12 @@ namespace XMI
           MUDevice                        & _device;
           MUDescriptorWrapper               _wrapper_model;
           MUSPI_Pt2PtMemoryFIFODescriptor   _desc_model;
-//          xmi_client_t                     _client;
-          xmi_context_t                     _context;
+//          pami_client_t                     _client;
+          pami_context_t                     _context;
       };
 
       void MUPacketModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
-                                                xmi_task_t             target_task,
+                                                pami_task_t             target_task,
                                                 size_t                 target_offset,
                                                 uint64_t               payloadPa,
                                                 size_t                 bytes)
@@ -161,7 +161,7 @@ namespace XMI
         // This is terribly inefficient.
         MUHWI_Destination dst;
         size_t addr[BGQ_TDIMS + BGQ_LDIMS];
-        __global.mapping.task2global ((xmi_task_t)target_task, addr);
+        __global.mapping.task2global ((pami_task_t)target_task, addr);
         dst.Destination.A_Destination = addr[0];
         dst.Destination.B_Destination = addr[1];
         dst.Destination.C_Destination = addr[2];
@@ -200,24 +200,24 @@ namespace XMI
       }
 
       bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
-                                           xmi_event_function   fn,
+                                           pami_event_function   fn,
                                            void               * cookie,
-                                           xmi_task_t           target_task,
+                                           pami_task_t           target_task,
                                            size_t               target_offset,
                                            void               * metadata,
                                            size_t               metasize,
                                            struct iovec       * iov,
                                            size_t               niov)
       {
-        XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
+        PAMI_abortf("%s<%d>\n",__FILE__,__LINE__);
       };
 
 
       template <unsigned T_Niov>
       bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
-                                           xmi_event_function   fn,
+                                           pami_event_function   fn,
                                            void               * cookie,
-                                           xmi_task_t           target_task,
+                                           pami_task_t           target_task,
                                            size_t               target_offset,
                                            void               * metadata,
                                            size_t               metasize,
@@ -272,7 +272,7 @@ namespace XMI
               {
                 MemoryFifoPacketHeader_t * hdr =
                   (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
-                XMI_assert(metasize <= packet_model_metadata_bytes);
+                PAMI_assert(metasize <= packet_model_metadata_bytes);
                 memcpy((void *) &hdr->dev.singlepkt.metadata, metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
@@ -287,7 +287,7 @@ namespace XMI
 
             if (fn != NULL)
               {
-                fn (_context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
+                fn (_context, cookie, PAMI_SUCCESS); // Descriptor is done...notify.
               }
           }
         else
@@ -311,7 +311,7 @@ namespace XMI
                 TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. copy metadata\n", T_Niov));
                 MemoryFifoPacketHeader_t * hdr =
                   (MemoryFifoPacketHeader_t *) & (desc->PacketHeader);
-                XMI_assert(metasize <= packet_model_metadata_bytes);
+                PAMI_assert(metasize <= packet_model_metadata_bytes);
                 memcpy((void *) &hdr->dev.singlepkt.metadata, metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
@@ -326,7 +326,7 @@ namespace XMI
 ///////////////////////////////////////////////////////////////////////////////
             // #warning send queue must be based on task+offset
             DUMP_DESCRIPTOR("Before addToSendQ", desc);
-            _device.addToSendQ (target_task, (XMI::Queue::Element *) obj);
+            _device.addToSendQ (target_task, (PAMI::Queue::Element *) obj);
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -339,9 +339,9 @@ namespace XMI
       };
 
       bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
-                                           xmi_event_function   fn,
+                                           pami_event_function   fn,
                                            void               * cookie,
-                                           xmi_task_t           target_task,
+                                           pami_task_t           target_task,
                                            size_t               target_offset,
                                            void               * metadata,
                                            size_t               metasize,
@@ -388,7 +388,7 @@ namespace XMI
               {
                 MemoryFifoPacketHeader_t * hdr =
                   (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
-                XMI_assert(metasize <= packet_model_metadata_bytes);
+                PAMI_assert(metasize <= packet_model_metadata_bytes);
                 memcpy((void *) &hdr->dev.singlepkt.metadata, metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
@@ -403,7 +403,7 @@ namespace XMI
 
             if (fn != NULL)
               {
-                fn (_context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
+                fn (_context, cookie, PAMI_SUCCESS); // Descriptor is done...notify.
               }
           }
         else
@@ -427,7 +427,7 @@ namespace XMI
                 TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. copy metadata\n"));
                 MemoryFifoPacketHeader_t * hdr =
                   (MemoryFifoPacketHeader_t *) & (desc->PacketHeader);
-                XMI_assert(metasize <= packet_model_metadata_bytes);
+                PAMI_assert(metasize <= packet_model_metadata_bytes);
                 memcpy((void *) &hdr->dev.singlepkt.metadata, metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
@@ -436,7 +436,7 @@ namespace XMI
             // Add this message to the send queue to be processed when there is
             // space available in the injection fifo.
             DUMP_DESCRIPTOR("Before addToSendQ", desc);
-            _device.addToSendQ (target_task, (XMI::Queue::Element *) obj);
+            _device.addToSendQ (target_task, (PAMI::Queue::Element *) obj);
           }
 
         TRACE((stderr, "MUPacketModel::postPacket_impl(single) << \n"));
@@ -444,7 +444,7 @@ namespace XMI
       };
 
       template <unsigned T_Niov>
-      bool MUPacketModel::postPacket_impl (xmi_task_t     target_task,
+      bool MUPacketModel::postPacket_impl (pami_task_t     target_task,
                                            size_t         target_offset,
                                            void         * metadata,
                                            size_t         metasize,
@@ -498,7 +498,7 @@ namespace XMI
           {
             MemoryFifoPacketHeader_t * hdr =
               (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
-            XMI_assert(metasize <= packet_model_metadata_bytes);
+            PAMI_assert(metasize <= packet_model_metadata_bytes);
             memcpy((void *) &hdr->dev.singlepkt.metadata, metadata, metasize); // <-- replace with an optimized MUSPI function.
           }
 
@@ -517,9 +517,9 @@ namespace XMI
       };
 
       bool MUPacketModel::postMultiPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
-                                                xmi_event_function   fn,
+                                                pami_event_function   fn,
                                                 void               * cookie,
-                                                xmi_task_t           target_task,
+                                                pami_task_t           target_task,
                                                 size_t               target_offset,
                                                 void               * metadata,
                                                 size_t               metasize,
@@ -546,7 +546,7 @@ namespace XMI
         uint32_t rc;
         Kernel_MemoryRegion_t memRegion; // Memory region associated with the buffer.
         rc = Kernel_CreateMemoryRegion (&memRegion, payload, length);
-        XMI_assert ( rc == 0 );
+        PAMI_assert ( rc == 0 );
 
         uint64_t paddr = (uint64_t)memRegion.BasePa +
                          ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
@@ -573,7 +573,7 @@ namespace XMI
               {
                 MemoryFifoPacketHeader_t * hdr =
                   (MemoryFifoPacketHeader_t *) & desc->PacketHeader;
-                XMI_assert(metasize <= packet_model_multi_metadata_bytes);
+                PAMI_assert(metasize <= packet_model_multi_metadata_bytes);
                 memcpy((void *) &hdr->dev.multipkt.metadata, metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
@@ -596,7 +596,7 @@ namespace XMI
 
                 if ( rc == 1 )
                   {
-                    fn (_context, cookie, XMI_SUCCESS); // Descriptor is done...notify.
+                    fn (_context, cookie, PAMI_SUCCESS); // Descriptor is done...notify.
                   }
                 else
 #endif
@@ -630,23 +630,23 @@ namespace XMI
               {
                 MemoryFifoPacketHeader_t * hdr =
                   (MemoryFifoPacketHeader_t *) & (desc->PacketHeader);
-                XMI_assert(metasize <= packet_model_multi_metadata_bytes);
+                PAMI_assert(metasize <= packet_model_multi_metadata_bytes);
                 memcpy((void *) &hdr->dev.multipkt.metadata, metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
             // Add this message to the send queue to be processed when there is
             // space available in the injection fifo.
             DUMP_DESCRIPTOR("Before addToSendQ", desc);
-            _device.addToSendQ (target_task, (XMI::Queue::Element *) obj);
+            _device.addToSendQ (target_task, (PAMI::Queue::Element *) obj);
           }
 
         TRACE((stderr, "MUPacketModel::postMultiPacket_impl() << \n"));
         return true;
 
-      }; // XMI::Device::MU::MUPacketModel class
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+      }; // PAMI::Device::MU::MUPacketModel class
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 #undef TRACE
 

@@ -15,7 +15,7 @@
 #define __algorithms_ccmi_h__
 
 #include <stdlib.h>
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 
 // A debug thread id
@@ -43,7 +43,7 @@ const unsigned MIN_PIPELINE_WIDTH_TORUS = 480;
 /// This is the default allreduce min torus pipeline width, set to 1920
 const unsigned ALLREDUCE_MIN_PIPELINE_WIDTH_TORUS = 1920;
 
-typedef xmi_dispatch_multicast_fn CCMI_RecvMulticast_t;
+typedef pami_dispatch_multicast_fn CCMI_RecvMulticast_t;
 #define __ccmi_recv_multicast_callback_defined__
 
 /* These are defined in ccmi_collectives.h */
@@ -51,7 +51,7 @@ typedef xmi_dispatch_multicast_fn CCMI_RecvMulticast_t;
 #define __ccmi_subtask_defined__
 #define __ccmi_recvasynccallback_defined__
 
-/* These are defined in xmi_types.h */
+/* These are defined in pami_types.h */
 #define __ccmi_pipeworkqueue_defined__
 #define __ccmi_topology_defined__
 #define __ccmi_op_defined__
@@ -62,19 +62,19 @@ typedef xmi_dispatch_multicast_fn CCMI_RecvMulticast_t;
 
 
 /** \todo fix NDIMS */
-#define XMI_X_DIM 0
-#define XMI_Y_DIM 0//1
-#define XMI_Z_DIM 0//2
-#define XMI_T_DIM 0//3
+#define PAMI_X_DIM 0
+#define PAMI_Y_DIM 0//1
+#define PAMI_Z_DIM 0//2
+#define PAMI_T_DIM 0//3
 
 // TODO:  generalize this using mappings
 
-#define XMI_TORUS_NDIMS 1
+#define PAMI_TORUS_NDIMS 1
 
-#define XMI_COPY_COORDS(a,b)               \
+#define PAMI_COPY_COORDS(a,b)               \
 {                                           \
   int _i;                                   \
-  for (_i = 0; _i < XMI_TORUS_NDIMS; _i++) \
+  for (_i = 0; _i < PAMI_TORUS_NDIMS; _i++) \
     a[_i] = b[_i];                          \
 }
 
@@ -108,8 +108,8 @@ static pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER
 #endif
 
 
-typedef xmi_quad_t XMI_Request_t[XMI_REQUEST_NQUADS];
-typedef xmi_callback_t XMI_Callback_t;
+typedef pami_quad_t PAMI_Request_t[PAMI_REQUEST_NQUADS];
+typedef pami_callback_t PAMI_Callback_t;
 
 
 //Descriptive quad of data that identifies each collective
@@ -133,9 +133,9 @@ typedef struct _cheader_data
 #define CCMI_Free(x)   free(x)
 #endif
 
-#define XMI_UNDEFINED_PHASE ((unsigned)-1)
+#define PAMI_UNDEFINED_PHASE ((unsigned)-1)
 
-#define  XMI_UNDEFINED_RANK ((unsigned)-1)
+#define  PAMI_UNDEFINED_RANK ((unsigned)-1)
 
 #ifndef CCMI_PROTOCOL_SIZE
 #define CCMI_PROTOCOL_SIZE	64
@@ -153,20 +153,20 @@ typedef enum
 
 
 
-typedef xmi_quad_t CCMI_Geometry_t [CCMI_GEOMETRY_SIZE];
-typedef xmi_quad_t XMI_CollectiveProtocol_t [CCMI_PROTOCOL_SIZE];/// \todo XMI_Prototol_t?
+typedef pami_quad_t CCMI_Geometry_t [CCMI_GEOMETRY_SIZE];
+typedef pami_quad_t PAMI_CollectiveProtocol_t [CCMI_PROTOCOL_SIZE];/// \todo PAMI_Prototol_t?
 
 // CCMI Collective request should be 32 CCMI_Requests. This is to store several
-// algorithms/schedule/executor pairs and have several messages in flight  \todo XMI_?
-typedef xmi_quad_t XMI_CollectiveRequest_t  [XMI_REQUEST_NQUADS*8*4];
-typedef xmi_quad_t CCMI_Executor_t           [XMI_REQUEST_NQUADS*4];
+// algorithms/schedule/executor pairs and have several messages in flight  \todo PAMI_?
+typedef pami_quad_t PAMI_CollectiveRequest_t  [PAMI_REQUEST_NQUADS*8*4];
+typedef pami_quad_t CCMI_Executor_t           [PAMI_REQUEST_NQUADS*4];
 
 typedef void * (*CCMI_RecvAsyncBroadcast) (unsigned           root,
                                            unsigned           comm,
                                            const unsigned     sndlen,
                                            unsigned         * rcvlen,
                                            char            ** rcvbuf,
-                                           XMI_Callback_t  * const cb_info);
+                                           PAMI_Callback_t  * const cb_info);
 
 
 /**

@@ -16,7 +16,7 @@
 
 #define USE_GCC_ICE_WORKAROUND
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "components/devices/PacketInterface.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
 #include "errno.h"
@@ -24,7 +24,7 @@
   #define TRACE_DEVICE(x) //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -62,7 +62,7 @@ namespace XMI
       static const size_t packet_model_state_bytes          = sizeof(T_Message);
 #endif // USE_GCC_ICE_WORKAROUND
 
-      xmi_result_t init_impl (size_t                      dispatch,
+      pami_result_t init_impl (size_t                      dispatch,
                               Interface::RecvFunction_t   direct_recv_func,
                               void                      * direct_recv_func_parm,
                               Interface::RecvFunction_t   read_recv_func,
@@ -71,110 +71,110 @@ namespace XMI
 #ifdef USE_GCC_ICE_WORKAROUND
           COMPILE_TIME_ASSERT(sizeof(T_Message) <= 512);
 #endif // USE_GCC_ICE_WORKAROUND
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         };
 
       inline bool postPacket_impl (uint8_t              (&state)[LAPIPacketModel::packet_model_state_bytes],
-                                   xmi_event_function   fn,
+                                   pami_event_function   fn,
                                    void               * cookie,
-                                   xmi_task_t           target_task,
+                                   pami_task_t           target_task,
                                    size_t               target_offset,
                                    void               * metadata,
                                    size_t               metasize,
                                    struct iovec_t     * iov,
                                    size_t               niov)
         {
-          XMI_abort();
+          PAMI_abort();
           return false;
         };
 
       template <unsigned T_Niov>
       inline bool postPacket_impl (uint8_t              (&state)[LAPIPacketModel::packet_model_state_bytes],
-                                   xmi_event_function   fn,
+                                   pami_event_function   fn,
                                    void               * cookie,
-                                   xmi_task_t           target_task,
+                                   pami_task_t           target_task,
                                    size_t               target_offset,
                                    void               * metadata,
                                    size_t               metasize,
                                    struct iovec         (&iov)[T_Niov])
         {
-          XMI_abort();
+          PAMI_abort();
           return false;
         };
 
 
       inline bool postPacket_impl (uint8_t              (&state)[LAPIPacketModel::packet_model_state_bytes],
-                                   xmi_event_function   fn,
+                                   pami_event_function   fn,
                                    void               * cookie,
-                                   xmi_task_t           target_task,
+                                   pami_task_t           target_task,
                                    size_t               target_offset,
                                    void               * metadata,
                                    size_t               metasize,
                                    struct iovec         (&iov)[1])
         {
-          XMI_abort();
+          PAMI_abort();
           return true;
         };
 
       inline bool postPacket_impl (uint8_t              (&state)[LAPIPacketModel::packet_model_state_bytes],
-                                   xmi_event_function   fn,
+                                   pami_event_function   fn,
                                    void               * cookie,
-                                   xmi_task_t           target_task,
+                                   pami_task_t           target_task,
                                    size_t               target_offset,
                                    void               * metadata,
                                    size_t               metasize,
                                    struct iovec         (&iov)[2])
         {
-          XMI_abort();
+          PAMI_abort();
           return true;
         };
 
       inline bool postPacket_impl (uint8_t              (&state)[LAPIPacketModel::packet_model_state_bytes],
-                                   xmi_event_function   fn,
+                                   pami_event_function   fn,
                                    void               * cookie,
-                                   xmi_task_t           target_task,
+                                   pami_task_t           target_task,
                                    size_t               target_offset,
                                    void               * metadata,
                                    size_t               metasize,
                                    void               * payload,
                                    size_t               length)
         {
-          XMI_abort();
+          PAMI_abort();
           return true;
         };
 
 
 
       template <unsigned T_Niov>
-      inline bool postPacket_impl (xmi_task_t     target_task,
+      inline bool postPacket_impl (pami_task_t     target_task,
                                    size_t         target_offset,
                                    void         * metadata,
                                    size_t         metasize,
                                    struct iovec   (&iov)[T_Niov])
         {
-          XMI_abort();
+          PAMI_abort();
           return true;
         }
 
 
       inline bool postMultiPacket_impl (uint8_t              (&state)[LAPIPacketModel::packet_model_state_bytes],
-                                        xmi_event_function   fn,
+                                        pami_event_function   fn,
                                         void               * cookie,
-                                        xmi_task_t           target_task,
+                                        pami_task_t           target_task,
                                         size_t               target_offset,
                                         void               * metadata,
                                         size_t               metasize,
                                         void               * payload,
                                         size_t               length)
         {
-          XMI_abort();
+          PAMI_abort();
           return true;
         };
 
     protected:
       T_Device                    & _device;
-      xmi_client_t                  _client;
-      xmi_context_t                 _context;
+      pami_client_t                  _client;
+      pami_context_t                 _context;
       size_t                        _contextid;
       size_t                        _dispatch_id;
       Interface::RecvFunction_t     _direct_recv_func;

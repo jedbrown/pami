@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "PipeWorkQueue.h"
 #include "Topology.h"
@@ -24,7 +24,7 @@
 #define DBGv_FPRINTF(x) //fprintf x // verbose fprintf
 #define DBGF_FUNCTIONNAME DBG_FPRINTF((stderr,"%.*s\n",_function_name_len(__PRETTY_FUNCTION__),_function_name(__PRETTY_FUNCTION__)))
 
-namespace XMI
+namespace PAMI
 {
   namespace Test
   {
@@ -47,12 +47,12 @@ namespace XMI
     {
     private:
       char                _source[T_BufSize];
-      XMI::PipeWorkQueue  _srcPwq;
-      XMI::PipeWorkQueue *_pSrcPwq;
+      PAMI::PipeWorkQueue  _srcPwq;
+      PAMI::PipeWorkQueue *_pSrcPwq;
 
       char                _destination[T_BufSize];
-      XMI::PipeWorkQueue  _dstPwq;
-      XMI::PipeWorkQueue *_pDstPwq;
+      PAMI::PipeWorkQueue  _dstPwq;
+      PAMI::PipeWorkQueue *_pDstPwq;
 
     public:
       Buffer(bool isRoot  = false) :
@@ -66,11 +66,11 @@ namespace XMI
       ~Buffer()
       {
       }
-      XMI::PipeWorkQueue * srcPwq()
+      PAMI::PipeWorkQueue * srcPwq()
       {
         return _pSrcPwq;
       }
-      XMI::PipeWorkQueue * dstPwq()
+      PAMI::PipeWorkQueue * dstPwq()
       {
         return _pDstPwq;
       }
@@ -80,8 +80,8 @@ namespace XMI
         return reset(&_srcPwq,&_dstPwq,isRoot);
       }
 
-      inline void reset(XMI::PipeWorkQueue* src,
-                        XMI::PipeWorkQueue* dst,
+      inline void reset(PAMI::PipeWorkQueue* src,
+                        PAMI::PipeWorkQueue* dst,
                         bool isRoot  = false)
       {
         DBGF_FUNCTIONNAME;
@@ -95,8 +95,8 @@ namespace XMI
         return setup(src, dst, isRoot);
       }
 
-      inline void set(XMI::PipeWorkQueue* src,
-                      XMI::PipeWorkQueue* dst)
+      inline void set(PAMI::PipeWorkQueue* src,
+                      PAMI::PipeWorkQueue* dst)
       {
         DBGF_FUNCTIONNAME;
         DBG_FPRINTF((stderr,"<%p> src %p, dst %p\n",this,src, dst));
@@ -115,8 +115,8 @@ namespace XMI
         return setup(&_srcPwq,&_dstPwq,isRoot);
       }
 
-      inline void setup(XMI::PipeWorkQueue* src,
-                        XMI::PipeWorkQueue* dst,
+      inline void setup(PAMI::PipeWorkQueue* src,
+                        PAMI::PipeWorkQueue* dst,
                         bool isRoot  = false,
                         size_t count = T_BufSize)
       {
@@ -142,7 +142,7 @@ namespace XMI
         return ;
       }
 
-      inline xmi_result_t validate(size_t &bytesConsumed,
+      inline pami_result_t validate(size_t &bytesConsumed,
                                    size_t &bytesProduced,
                                    bool isRoot  = false,
                                    bool isDest  = true,
@@ -156,8 +156,8 @@ namespace XMI
                         isDest,
                         count);
       }
-      inline xmi_result_t validate(XMI::PipeWorkQueue* src,
-                                   XMI::PipeWorkQueue* dst,
+      inline pami_result_t validate(PAMI::PipeWorkQueue* src,
+                                   PAMI::PipeWorkQueue* dst,
                                    size_t &bytesConsumed,
                                    size_t &bytesProduced,
                                    bool isRoot  = false,
@@ -229,10 +229,10 @@ namespace XMI
         if(errors) //(x - errors) < count_of_unsigneds)
         {
           fprintf(stderr, "<%3.3d>FAIL validation %d\n",__LINE__,errors);
-          return XMI_ERROR;
+          return PAMI_ERROR;
         }
         fprintf(stderr, "<%3.3d>PASS validation\n",__LINE__);
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
       }
       //====================================================================
       // Following MIN0 functions assume an unsigned/MIN [all]reduce. A designated "root" will set
@@ -244,8 +244,8 @@ namespace XMI
         return resetMIN0(&_srcPwq,&_dstPwq,isRoot);
       }
 
-      inline void resetMIN0(XMI::PipeWorkQueue* src,
-                        XMI::PipeWorkQueue* dst,
+      inline void resetMIN0(PAMI::PipeWorkQueue* src,
+                        PAMI::PipeWorkQueue* dst,
                         bool isRoot  = false)
       {
         DBGF_FUNCTIONNAME;
@@ -265,8 +265,8 @@ namespace XMI
         return setupMIN0(&_srcPwq,&_dstPwq,isRoot);
       }
 
-      inline void setupMIN0(XMI::PipeWorkQueue* src,
-                        XMI::PipeWorkQueue* dst,
+      inline void setupMIN0(PAMI::PipeWorkQueue* src,
+                        PAMI::PipeWorkQueue* dst,
                         bool isRoot  = false,
                         size_t count = T_BufSize)
       {
@@ -292,7 +292,7 @@ namespace XMI
         return ;
       }
 
-      inline xmi_result_t validateMIN0(size_t &bytesConsumed,
+      inline pami_result_t validateMIN0(size_t &bytesConsumed,
                                    size_t &bytesProduced,
                                    bool isRoot  = false,
                                    bool isDest  = true,
@@ -306,8 +306,8 @@ namespace XMI
                         isDest,
                         count);
       }
-      inline xmi_result_t validateMIN0(XMI::PipeWorkQueue* src,
-                                   XMI::PipeWorkQueue* dst,
+      inline pami_result_t validateMIN0(PAMI::PipeWorkQueue* src,
+                                   PAMI::PipeWorkQueue* dst,
                                    size_t &bytesConsumed,
                                    size_t &bytesProduced,
                                    bool isRoot  = false,
@@ -369,14 +369,14 @@ namespace XMI
         if(errors)
         {
           fprintf(stderr, "<%3.3d>FAIL validation %d\n",__LINE__,errors);
-          return XMI_ERROR;
+          return PAMI_ERROR;
         }
         fprintf(stderr, "<%3.3d>PASS validation\n",__LINE__);
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
       }
     }; // class Buffer
 
   }; // namespace Test
-}; // namespace XMI
+}; // namespace PAMI
 
 #endif // __test_multisend_buffer_h__

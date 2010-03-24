@@ -50,7 +50,7 @@ inline ostream& operator<< (ostream& out, LapiError& e)
     if (LAPI_SUCCESS != rc) { \
         LapiError e(rc, __FILE__, __LINE__, __func__); \
         cerr << e; \
-    XMI_abort(); \
+    PAMI_abort(); \
     } \
 }
 

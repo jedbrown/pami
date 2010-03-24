@@ -4,73 +4,73 @@
 ///
 
 #include <stdio.h>
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "components/devices/misc/AtomicBarrierMsg.h"
 #include "test/internals/multisend/multisync.h"
 
-#define BARRIER_NAME	"XMI::Barrier::CounterBarrier<XMI::Counter::GccNodeCounter>"
+#define BARRIER_NAME	"PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter>"
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
-typedef XMI::Barrier::CounterBarrier<XMI::Counter::GccNodeCounter> Barrier_Type;
+typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> Barrier_Type;
 
-typedef XMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
-typedef XMI::Device::AtomicBarrierDev Barrier_Device;
+typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
+typedef PAMI::Device::AtomicBarrierDev Barrier_Device;
 
 #undef BARRIER_NAME2
 #ifdef __bgp__
 
-#define BARRIER_NAME2	"XMI::Barrier::BGP::LockBoxNodeProcBarrier"
+#define BARRIER_NAME2	"PAMI::Barrier::BGP::LockBoxNodeProcBarrier"
 #include "components/atomic/bgp/LockBoxBarrier.h"
-typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier Barrier_Type2;
-typedef XMI::Device::AtomicBarrierMdl<Barrier_Type2> Barrier_Model2;
-typedef XMI::Device::AtomicBarrierDev Barrier_Device2;
+typedef PAMI::Barrier::BGP::LockBoxNodeProcBarrier Barrier_Type2;
+typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type2> Barrier_Model2;
+typedef PAMI::Device::AtomicBarrierDev Barrier_Device2;
 
 #endif // __bgp__
 #ifdef __bgq__
 #if 0
-#define BARRIER_NAME2	"XMI::Barrier::BGQ::L2NodeProcBarrier"
+#define BARRIER_NAME2	"PAMI::Barrier::BGQ::L2NodeProcBarrier"
 #include "components/atomic/bgq/L2Barrier.h"
-typedef XMI::Barrier::BGQ::L2NodeProcBarrier Barrier_Type2;
-typedef XMI::Device::AtomicBarrierMdl<Barrier_Type2> Barrier_Model2;
-typedef XMI::Device::AtomicBarrierDev Barrier_Device2;
+typedef PAMI::Barrier::BGQ::L2NodeProcBarrier Barrier_Type2;
+typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type2> Barrier_Model2;
+typedef PAMI::Device::AtomicBarrierDev Barrier_Device2;
 #endif
 #endif // __bgq__
 
 int main(int argc, char ** argv) {
-	xmi_context_t context;
+	pami_context_t context;
 	size_t task_id;
 	size_t num_tasks;
 
 #if 0
-	xmi_client_t client;
-	xmi_result_t status = XMI_ERROR;
-	status = XMI_Client_initialize("multisync test", &client);
-	if (status != XMI_SUCCESS) {
-		fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
+	pami_client_t client;
+	pami_result_t status = PAMI_ERROR;
+	status = PAMI_Client_initialize("multisync test", &client);
+	if (status != PAMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);
 		return 1;
 	}
 
-	{ size_t _n = 1; status = XMI_Context_createv(client, NULL, 0, &context, _n); }
-	if (status != XMI_SUCCESS) {
-		fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", status);
+	{ size_t _n = 1; status = PAMI_Context_createv(client, NULL, 0, &context, _n); }
+	if (status != PAMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable to create pami context. result = %d\n", status);
 		return 1;
 	}
 
-	xmi_configuration_t configuration;
+	pami_configuration_t configuration;
 
-	configuration.name = XMI_TASK_ID;
-	status = XMI_Configuration_query(client, &configuration);
-	if (status != XMI_SUCCESS) {
+	configuration.name = PAMI_TASK_ID;
+	status = PAMI_Configuration_query(client, &configuration);
+	if (status != PAMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
 	}
 	task_id = configuration.value.intval;
 	//fprintf(stderr, "My task id = %zu\n", task_id);
 
-	configuration.name = XMI_NUM_TASKS;
-	status = XMI_Configuration_query(client, &configuration);
-	if (status != XMI_SUCCESS) {
+	configuration.name = PAMI_NUM_TASKS;
+	status = PAMI_Configuration_query(client, &configuration);
+	if (status != PAMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
 	}
@@ -78,8 +78,8 @@ int main(int argc, char ** argv) {
 #else
 	task_id = __global.mapping.task();
 	num_tasks = __global.mapping.size();
-	context = (xmi_context_t)1; // context must not be NULL
-	XMI::Memory::MemoryManager mm;
+	context = (pami_context_t)1; // context must not be NULL
+	PAMI::Memory::MemoryManager mm;
 	initializeMemoryManager("multisync test", 128*1024, mm);
 #endif
 	if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
@@ -93,21 +93,21 @@ int main(int argc, char ** argv) {
 // ------------------------------------------------------------------------
 
 	// Register some multisyncs, C++ style
-	xmi_result_t rc;
+	pami_result_t rc;
 
-	xmi_multisync_t msync;
+	pami_multisync_t msync;
 
 	// simple allreduce on the tree... SMP mode (todo: check and error)
 	msync.client = 0;
 	msync.context = 0;
 	msync.roles = (unsigned)-1;
-	msync.participants = (xmi_topology_t *)&__global.topology_local;
+	msync.participants = (pami_topology_t *)&__global.topology_local;
 
 	const char *test = BARRIER_NAME;
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multisync<Barrier_Model,Barrier_Device> test1(test, mm);
+	PAMI::Test::Multisend::Multisync<Barrier_Model,Barrier_Device> test1(test, mm);
 	rc = test1.perform_test(task_id, num_tasks, context, &msync);
-	if (rc != XMI_SUCCESS) {
+	if (rc != PAMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test result = %d\n", test, rc);
 		exit(1);
 	}
@@ -122,9 +122,9 @@ int main(int argc, char ** argv) {
 	initializeMemoryManager("multisync test", 128*1024, mm);
 	test = BARRIER_NAME2;
 	if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
-	XMI::Test::Multisend::Multisync<Barrier_Model2,Barrier_Device2> test2(test, mm);
+	PAMI::Test::Multisend::Multisync<Barrier_Model2,Barrier_Device2> test2(test, mm);
 	rc = test2.perform_test(task_id, num_tasks, context, &msync);
-	if (rc != XMI_SUCCESS) {
+	if (rc != PAMI_SUCCESS) {
 		fprintf(stderr, "Failed %s test result = %d\n", test, rc);
 		exit(1);
 	}
@@ -138,9 +138,9 @@ int main(int argc, char ** argv) {
 
 // ------------------------------------------------------------------------
 #if 0
-	status = XMI_Client_finalize(client);
-	if (status != XMI_SUCCESS) {
-		fprintf(stderr, "Error. Unable to finalize xmi client. result = %d\n", status);
+	status = PAMI_Client_finalize(client);
+	if (status != PAMI_SUCCESS) {
+		fprintf(stderr, "Error. Unable to finalize pami client. result = %d\n", status);
 		return 1;
 	}
 #endif

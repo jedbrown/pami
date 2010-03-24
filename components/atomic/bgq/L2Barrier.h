@@ -19,7 +19,7 @@
 #include "Global.h"
 #include <spi/include/l2/atomic.h>
 
-namespace XMI {
+namespace PAMI {
 namespace Barrier {
 namespace BGQ {
 	/**
@@ -38,12 +38,12 @@ namespace BGQ {
 	public:
 		_L2_Barrier_s() { }
 
-		inline void init(XMI::Memory::MemoryManager *mm,
-				XMI::Atomic::BGQ::l2x_scope_t scope) {
-			xmi_result_t rc =
+		inline void init(PAMI::Memory::MemoryManager *mm,
+				PAMI::Atomic::BGQ::l2x_scope_t scope) {
+			pami_result_t rc =
 				__global.l2atomicFactory.l2x_alloc((void **)&_counters,
 										5, scope);
-			XMI_assertf(rc == XMI_SUCCESS,
+			PAMI_assertf(rc == PAMI_SUCCESS,
 				"Failed to allocate L2 Atomics for Node Barrier");
 			// someone needs to reset the barrier, but needs to be
 			// done in some barriered region to ensure no one has
@@ -73,18 +73,18 @@ public:
 	~_L2Barrier() { }
 
 	inline void init_impl(Memory::MemoryManager *mm, size_t z, bool m) {
-		XMI_abortf("_L2Barrier class must be subclass");
+		PAMI_abortf("_L2Barrier class must be subclass");
 	}
 
-	inline xmi_result_t enter_impl() {
+	inline pami_result_t enter_impl() {
 		pollInit_impl();
-		while (poll_impl() != XMI::Atomic::Interface::Done);
-		return XMI_SUCCESS;
+		while (poll_impl() != PAMI::Atomic::Interface::Done);
+		return PAMI_SUCCESS;
 	}
 
-	inline void enterPoll_impl(XMI::Atomic::Interface::pollFcn fcn, void *arg) {
+	inline void enterPoll_impl(PAMI::Atomic::Interface::pollFcn fcn, void *arg) {
 		pollInit_impl();
-		while (poll_impl() != XMI::Atomic::Interface::Done) {
+		while (poll_impl() != PAMI::Atomic::Interface::Done) {
 			fcn(arg);
 		}
 	}
@@ -95,15 +95,15 @@ public:
 		lockup = L2_AtomicLoad(_barrier.controlPtr());
 		L2_AtomicLoadIncrement(_barrier.lockPtr(lockup));
 		_data = (void*)lockup;
-		_status = XMI::Atomic::Interface::Entered;
+		_status = PAMI::Atomic::Interface::Entered;
 	}
 
-	inline XMI::Atomic::Interface::barrierPollStatus poll_impl() {
-		XMI_assert(_status == XMI::Atomic::Interface::Entered);
+	inline PAMI::Atomic::Interface::barrierPollStatus poll_impl() {
+		PAMI_assert(_status == PAMI::Atomic::Interface::Entered);
 		uint64_t lockup, value;
 		lockup = (uint64_t)_data;
 		if (L2_AtomicLoad(_barrier.lockPtr(lockup)) < _barrier._nparties) {
-			return XMI::Atomic::Interface::Entered;
+			return PAMI::Atomic::Interface::Entered;
 		}
 
 		// All cores have participated in the barrier
@@ -126,61 +126,61 @@ public:
 			// wait until master releases the barrier by clearing the lock
 			while (L2_AtomicLoad(_barrier.lockPtr(lockup)) > 0);
 		}
-		_status = XMI::Atomic::Interface::Initialized;
-		return XMI::Atomic::Interface::Done;
+		_status = PAMI::Atomic::Interface::Initialized;
+		return PAMI::Atomic::Interface::Done;
 	}
 	// With 5 lockboxes used... which one should be returned?
 	inline void *returnBarrier_impl() { return _barrier.controlPtr(); }
 protected:
 	_L2_Barrier_s _barrier;
 	void *_data;
-	XMI::Atomic::Interface::barrierPollStatus _status;
+	PAMI::Atomic::Interface::barrierPollStatus _status;
 }; // class _L2Barrier
 
 class L2NodeCoreBarrier :
-		public XMI::Atomic::Interface::Barrier<L2NodeCoreBarrier>,
+		public PAMI::Atomic::Interface::Barrier<L2NodeCoreBarrier>,
 		public _L2Barrier {
 public:
 	L2NodeCoreBarrier() {}
 	~L2NodeCoreBarrier() {}
-	inline void init_impl(XMI::Memory::MemoryManager *mm, size_t z, bool m) {
+	inline void init_impl(PAMI::Memory::MemoryManager *mm, size_t z, bool m) {
 		// For core-granularity, everything is
 		// a core number. Assume the master core
 		// is the lowest-numbered core in the
 		// process.
 
-		_barrier.init(mm, XMI::Atomic::BGQ::L2A_NODE_CORE_SCOPE);
+		_barrier.init(mm, PAMI::Atomic::BGQ::L2A_NODE_CORE_SCOPE);
 		// assert(m .iff. me == masterProc());
 		_barrier._master = __global.l2atomicFactory.masterProc() << __global.l2atomicFactory.coreShift();
 		_barrier._coreshift = 0;
 		_barrier._nparties = __global.l2atomicFactory.numCore();
-		_status = XMI::Atomic::Interface::Initialized;
+		_status = PAMI::Atomic::Interface::Initialized;
 	}
 }; // class L2NodeCoreBarrier
 
 class L2NodeProcBarrier :
-		public XMI::Atomic::Interface::Barrier<L2NodeProcBarrier>,
+		public PAMI::Atomic::Interface::Barrier<L2NodeProcBarrier>,
 		public _L2Barrier {
 public:
 	L2NodeProcBarrier() {}
 	~L2NodeProcBarrier() {}
-	inline void init_impl(XMI::Memory::MemoryManager *mm, size_t z, bool m) {
+	inline void init_impl(PAMI::Memory::MemoryManager *mm, size_t z, bool m) {
 		// For proc-granularity, must convert
 		// between core id and process id,
 		// and only one core per process will
 		// participate.
 
-		_barrier.init(mm, XMI::Atomic::BGQ::L2A_NODE_PROC_SCOPE);
+		_barrier.init(mm, PAMI::Atomic::BGQ::L2A_NODE_PROC_SCOPE);
 		// assert(m .iff. me == masterProc());
 		_barrier._master = __global.l2atomicFactory.coreXlat(__global.l2atomicFactory.masterProc()) >> __global.l2atomicFactory.coreShift();
 		_barrier._coreshift = __global.l2atomicFactory.coreShift();
 		_barrier._nparties = __global.l2atomicFactory.numProc();
-		_status = XMI::Atomic::Interface::Initialized;
+		_status = PAMI::Atomic::Interface::Initialized;
 	}
 }; // class L2NodeProcBarrier
 
 }; // BGQ namespace
 }; // Barrier namespace
-}; // XMI namespace
+}; // PAMI namespace
 
 #endif // __components_atomic_bgq_L2Barrier_h__

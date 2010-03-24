@@ -25,12 +25,12 @@ namespace CCMI
     namespace Broadcast
     {
 
-      class BcastQueueElem : public XMI::MatchQueueElem
+      class BcastQueueElem : public PAMI::MatchQueueElem
       {
       protected:
         //matchq
         unsigned            _bytes;  ///Bytes in the broadcast
-        XMI_Callback_t     _cb_done;///Application completion callback
+        PAMI_Callback_t     _cb_done;///Application completion callback
 
         char              * _rcvbuf;  ///buffer to receive bcast
         char              * _appbuf;  ///App buffer which will be
@@ -45,7 +45,7 @@ namespace CCMI
         ///
         /// \brief Default constructor
         ///
-        BcastQueueElem (CCMI::Executor::Composite *c=NULL, unsigned root=-1) : XMI::MatchQueueElem (root),
+        BcastQueueElem (CCMI::Executor::Composite *c=NULL, unsigned root=-1) : PAMI::MatchQueueElem (root),
         _isFinished (false),
         _composite (c)
         {
@@ -63,7 +63,7 @@ namespace CCMI
           CCMI_assert(bytes > 0);
         }
 
-        void initPostMsg (unsigned bytes, char *rcvbuf, XMI_Callback_t &cb)
+        void initPostMsg (unsigned bytes, char *rcvbuf, PAMI_Callback_t &cb)
         {
           _bytes    = bytes;
           _cb_done  = cb;
@@ -76,7 +76,7 @@ namespace CCMI
         ///        unexpected and the application wants to provide the final target
         ///        buffer
         void  setPosted (unsigned bytes, char *buf,
-                         xmi_callback_t &cb_done)
+                         pami_callback_t &cb_done)
         {
           CCMI_assert(bytes >= _bytes);
           _appbuf = buf;
@@ -88,7 +88,7 @@ namespace CCMI
           return _composite;
         }
 
-        XMI_Callback_t  &callback ()
+        PAMI_Callback_t  &callback ()
         {
           return _cb_done;
         }
@@ -127,13 +127,13 @@ namespace CCMI
           memcpy (_appbuf, _rcvbuf, _bytes);
 
           if(_cb_done.function)
-            _cb_done.function(NULL, _cb_done.clientdata, XMI_SUCCESS);
+            _cb_done.function(NULL, _cb_done.clientdata, PAMI_SUCCESS);
         }
 
         void completePosted ()
         {
           if(_cb_done.function)
-            _cb_done.function(NULL, _cb_done.clientdata, XMI_SUCCESS);
+            _cb_done.function(NULL, _cb_done.clientdata, PAMI_SUCCESS);
         }
 
       } __attribute__((__aligned__(16))); //- BcastQueueElem

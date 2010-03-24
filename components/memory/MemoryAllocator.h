@@ -22,10 +22,10 @@
 #endif
 //#define USE_MEMALIGN
 
-namespace XMI
+namespace PAMI
 {
   /// \todo Update to use a memory manager template parameter.
-  template <unsigned T_ObjSize, unsigned T_ObjAlign, class T_Atomic = XMI::Atomic::Noop>
+  template <unsigned T_ObjSize, unsigned T_ObjAlign, class T_Atomic = PAMI::Atomic::Noop>
   class MemoryAllocator
   {
     protected:
@@ -62,10 +62,10 @@ namespace XMI
           unsigned i;
 #ifdef USE_MEMALIGN
           int rc = posix_memalign ((void **)&object, T_ObjAlign, sizeof(memory_object_t) * 10);
-          XMI_assertf(rc==0, "posix_memalign failed for context, errno=%d, %s\n", errno, strerror(errno));
+          PAMI_assertf(rc==0, "posix_memalign failed for context, errno=%d, %s\n", errno, strerror(errno));
 #else
           object = (memory_object_t*)malloc(sizeof(memory_object_t)*10);
-          XMI_assertf((((unsigned long)object) & (T_ObjAlign-1))== 0, "object (%p) not aligned on %#X bytes.\n", object, T_ObjAlign);
+          PAMI_assertf((((unsigned long)object) & (T_ObjAlign-1))== 0, "object (%p) not aligned on %#X bytes.\n", object, T_ObjAlign);
 #endif
           // "return" the newly allocated objects to the pool of free objects.
           for (i=1; i<10; i++) returnObject ((void *) &object[i]);
@@ -107,4 +107,4 @@ namespace XMI
   };
 };
 
-#endif // __xmi_components_memory_memoryallocator_h__
+#endif // __pami_components_memory_memoryallocator_h__

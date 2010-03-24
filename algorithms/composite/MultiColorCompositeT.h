@@ -13,7 +13,7 @@ namespace CCMI
     ///
     /// \brief Get optimal colors based on bytes and schedule
     ///
-    typedef void      (*GetColorsFn) (XMI::Topology             * t,
+    typedef void      (*GetColorsFn) (PAMI::Topology             * t,
 				      unsigned                    bytes,
 				      unsigned                  * colors,
 				      unsigned                  & ncolors);
@@ -35,7 +35,7 @@ namespace CCMI
         ///
         ///  \brief Application callback to call when the broadcast has finished
         ///
-        xmi_event_function                            _cb_done;
+        pami_event_function                            _cb_done;
 	void                                        * _clientdata;
 
         T_Exec                                        _executors  [NUMCOLORS] __attribute__((__aligned__(16)));
@@ -53,9 +53,9 @@ namespace CCMI
       ///
       /// \brief Receive the broadcast message and notify the executor
       ///
-      static void staticRecvFn(xmi_context_t context, void *executor, xmi_result_t err)
+      static void staticRecvFn(pami_context_t context, void *executor, pami_result_t err)
       {
-	xmi_quad_t *info = NULL;
+	pami_quad_t *info = NULL;
 
 	T_Exec *exe = (T_Exec *) executor;
 
@@ -68,9 +68,9 @@ namespace CCMI
       /// \brief The Broadcast Constructor
       ///
       MultiColorCompositeT (unsigned                                   comm,
-			    XMI::Topology                            * topology,
+			    PAMI::Topology                            * topology,
 			    T_Conn                                   * cmgr,
-			    xmi_event_function                         cb_done,
+			    pami_event_function                         cb_done,
 			    void                                     * clientdata,
 			    Interfaces::NativeInterface              * mf,
 			    unsigned                                   root,
@@ -115,13 +115,13 @@ namespace CCMI
 	}
       }
 
-      void setDoneCallback(XMI_Callback_t  cb_done, void * clientdata) { _cb_done = cb_done; _clientdata = clientdata;}
+      void setDoneCallback(PAMI_Callback_t  cb_done, void * clientdata) { _cb_done = cb_done; _clientdata = clientdata;}
 
       ///
       /// \brief For sync broadcasts, the done call back to be called
       ///        when barrier finishes
       ///
-      static void cb_barrier_done(xmi_context_t context, void *me, xmi_result_t err)
+      static void cb_barrier_done(pami_context_t context, void *me, pami_result_t err)
       {
 	MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
 	CCMI_assert (composite != NULL);
@@ -137,11 +137,11 @@ namespace CCMI
 	if(composite->_doneCount == composite->_nComplete) // call users done function
         {
 	  //printf ("%d: Composite Done\n", composite->_native->myrank());
-	  composite->_cb_done(NULL, composite->_clientdata,XMI_SUCCESS);
+	  composite->_cb_done(NULL, composite->_clientdata,PAMI_SUCCESS);
 	}
       }
 
-      static void cb_composite_done(xmi_context_t context, void *me, xmi_result_t err)
+      static void cb_composite_done(pami_context_t context, void *me, pami_result_t err)
       {
 	MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
 	CCMI_assert (composite != NULL);
@@ -151,7 +151,7 @@ namespace CCMI
 
 	if(composite->_doneCount == composite->_nComplete) // call users done function
         {
-	  composite->_cb_done(context, composite->_clientdata, XMI_SUCCESS);
+	  composite->_cb_done(context, composite->_clientdata, PAMI_SUCCESS);
 	  //printf ("%d: Composite Done\n", composite->_native->myrank());
 	}
       }

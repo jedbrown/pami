@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 	bool graph = false;
 	bool local = false;
 	const char *dflt = "DEFAULT_NETWORK";
-	xmi_result_t result;
+	pami_result_t result;
 
 	extern int optind;
 	extern char *optarg;
@@ -81,40 +81,40 @@ usage:
 	assert(nets);
 	assert(protocol);
 
-	xmi_client_t client;
-	xmi_context_t context;
+	pami_client_t client;
+	pami_context_t context;
 
-	result = XMI_Client_initialize ("test", &client);
-	if (result != XMI_SUCCESS) {
-		fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
+	result = PAMI_Client_initialize ("test", &client);
+	if (result != PAMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
 		return 1;
 	}
 
-	result = XMI_Context_createv(client, NULL, 0, &context, 1);
-	if (result != XMI_SUCCESS) {
-		fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
+	result = PAMI_Context_createv(client, NULL, 0, &context, 1);
+	if (result != PAMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
 		return 1;
 	}
-	xmi_configuration_t configuration;
-	configuration.name = XMI_TASK_ID;
-	result = XMI_Configuration_query(client, &configuration);
-	if (result != XMI_SUCCESS) {
+	pami_configuration_t configuration;
+	configuration.name = PAMI_TASK_ID;
+	result = PAMI_Configuration_query(client, &configuration);
+	if (result != PAMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
 		return 1;
 	}
 	size_t task_id = configuration.value.intval;
-	configuration.name = XMI_NUM_TASKS;
-	result = XMI_Configuration_query(client, &configuration);
-	if (result != XMI_SUCCESS) {
+	configuration.name = PAMI_NUM_TASKS;
+	result = PAMI_Configuration_query(client, &configuration);
+	if (result != PAMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
 		return 1;
 	}
 	size_t num_tasks = configuration.value.intval;
 
 	send_concurrency_init(BUFSIZE, num_tasks);
-	xmi_task_t ranks[64];
+	pami_task_t ranks[64];
 	size_t nranks;
-	xmi_task_t me;
+	pami_task_t me;
 	if (local) {
 		//nranks = setup_localpeers(ranks, 64, &me);
 		// assume all local...
@@ -130,7 +130,7 @@ usage:
 		nets[x] = find_netw(net);
 		if (nets[x] < 0) {
 			fprintf(stderr, "Invalid network: %s\n", net);
-			XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+			PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
 		}
 		con_setup_netw(nets[x], context, &protocol[x]);
 	}
@@ -140,20 +140,20 @@ usage:
 
 	results = (unsigned *)malloc(argc * n * sizeof(unsigned));
 	if (me == 0) {
-		//XMI_Coord_t addr;
+		//PAMI_Coord_t addr;
 		//DCMF_Hardware_t hw;
 		//DCMF_Hardware(&hw);
 		size_t orig, *_orig;
 
 		fprintf(stdout, "#\n");
-		fprintf(stdout, "# XMI_Send() eager concurrency test\n");
+		fprintf(stdout, "# PAMI_Send() eager concurrency test\n");
 		for (orig = 0; orig < nranks; ++orig) {
 			if (local) {
 				_orig = &ranks[orig];
 			} else {
 				_orig = &orig;
 			}
-			//DCMF_Messager_rank2network(*_orig, XMI_TORUS_NETWORK, &addr);
+			//DCMF_Messager_rank2network(*_orig, PAMI_TORUS_NETWORK, &addr);
 			//fprintf(stdout, "# Rank %zd (%zd,%zd,%zd,%zd)\n", *_orig,
 			        //addr.torus.x, addr.torus.y, addr.torus.z, addr.torus.t);
 			fprintf(stdout, "# Rank %zd\n", *_orig);
@@ -211,9 +211,9 @@ usage:
 		fflush(stdout);
 	}
 
-	result = XMI_Client_finalize(client);
-	if (result != XMI_SUCCESS) {
-		fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+	result = PAMI_Client_finalize(client);
+	if (result != PAMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
 		return 1;
 	}
 	return e;

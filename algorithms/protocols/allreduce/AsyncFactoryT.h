@@ -36,7 +36,7 @@ namespace CCMI
       {
       protected:
         T_ConnectionManager     _sconnmgr;
-//      static XMI_Request_t *   cb_asyncReceiveHead(const XMIQuad    * info,
+//      static PAMI_Request_t *   cb_asyncReceiveHead(const PAMIQuad    * info,
 //                                                    unsigned          count,
 //                                                    unsigned          peer,
 //                                                    unsigned          sndlen,
@@ -45,7 +45,7 @@ namespace CCMI
 //                                                    unsigned        * rcvlen,
 //                                                    char           ** rcvbuf,
 //                                                    unsigned        * pipewidth,
-//                                                    XMI_Callback_t * cb_done)
+//                                                    PAMI_Callback_t * cb_done)
 //      {
 //        return CCMI::Adaptor::Allreduce::AsyncFactory::cb_receiveHead(info,
 //                                                                          count,
@@ -69,7 +69,7 @@ namespace CCMI
         ///
         inline AsyncFactoryT(T_Sysdep *mapping,
                              T_Mcast *mf,
-                             xmi_mapidtogeometry_fn cb_geometry,
+                             pami_mapidtogeometry_fn cb_geometry,
                              ConfigFlags flags) :
           CCMI::Adaptor::Allreduce::AsyncFactory<T_Sysdep, T_Mcast, T_ConnectionManager>(mapping, mf, cb_geometry, flags),
         _sconnmgr(mapping)
@@ -90,15 +90,15 @@ namespace CCMI
         /// \brief Generate a non-blocking allreduce message.
         ///
         virtual CCMI::Executor::Composite * generate
-        (XMI_CollectiveRequest_t * request,
-         XMI_Callback_t            cb_done,
-         xmi_consistency_t           consistency,
-         XMI_GEOMETRY_CLASS                 * geometry,
+        (PAMI_CollectiveRequest_t * request,
+         PAMI_Callback_t            cb_done,
+         pami_consistency_t           consistency,
+         PAMI_GEOMETRY_CLASS                 * geometry,
          char                     * srcbuf,
          char                     * dstbuf,
          unsigned                   count,
-         xmi_dt                    dtype,
-         xmi_op                    op,
+         pami_dt                    dtype,
+         pami_op                    op,
          int                        root = -1 )
         {
           TRACE_ALERT((stderr,"<%p>Allreduce::%s::AsyncFactoryT::generate() ALERT:\n",this, T_Composite::name));
@@ -130,10 +130,10 @@ namespace CCMI
         /// \brief Generate a non-blocking allreduce message.
         ///
         virtual CCMI::Executor::Composite * generateAsync
-        (XMI_GEOMETRY_CLASS                 * geometry,
+        (PAMI_GEOMETRY_CLASS                 * geometry,
          unsigned                   count,
-         xmi_dt                    dtype,
-         xmi_op                    op,
+         pami_dt                    dtype,
+         pami_op                    op,
          unsigned                   iteration,
          int                        root = -1 )
         {
@@ -142,17 +142,17 @@ namespace CCMI
                           " geometry %#X comm %#X iteration %#X\n",this, T_Composite::name,
                           sizeof(*this),(int) geometry, (int) geometry->comm(), iteration));
 
-          XMI_Callback_t temp_cb_done = {CCMI::Adaptor::Allreduce::temp_done_callback, NULL};
+          PAMI_Callback_t temp_cb_done = {CCMI::Adaptor::Allreduce::temp_done_callback, NULL};
 
           //CCMI_assert(geometry->getAsyncAllreduceMode());
           CCMI_Executor_t *c_request = geometry->getAllreduceCompositeStorage(iteration);
 
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
           T_Composite *allreduce = new (c_request)
-          T_Composite((XMI_CollectiveRequest_t*)NULL, // restart will reset this
+          T_Composite((PAMI_CollectiveRequest_t*)NULL, // restart will reset this
                     this->_mapping, &this->_sconnmgr,
                     temp_cb_done, // bogus temporary cb, restart will reset it.
-                    (xmi_consistency_t) XMI_MATCH_CONSISTENCY, // restart may reset this
+                    (pami_consistency_t) PAMI_MATCH_CONSISTENCY, // restart may reset this
                     this->_minterface,
                     geometry,
                     NULL, // restart will reset src buffer
@@ -169,12 +169,12 @@ namespace CCMI
         }
 
         // Template implementation should specialize this function if they want a color
-        CCMI::Schedule::Color getOneColor(XMI_GEOMETRY_CLASS * geometry)
+        CCMI::Schedule::Color getOneColor(PAMI_GEOMETRY_CLASS * geometry)
         {
           TRACE_ADAPTOR((stderr,"<%p>Allreduce::%s::AsyncFactoryT::getOneColor() NO_COLOR\n",this, T_Composite::name));
           return CCMI::Schedule::NO_COLOR;
         }
-        bool Analyze( XMI_GEOMETRY_CLASS * geometry )
+        bool Analyze( PAMI_GEOMETRY_CLASS * geometry )
         {
           TRACE_ALERT((stderr,"<%p>Allreduce::%s::AsyncFactoryT::Analyze() ALERT: %s\n",this, T_Composite::name,
                        T_Composite::analyze(geometry)? "true":"false"));

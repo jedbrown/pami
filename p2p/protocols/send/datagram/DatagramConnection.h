@@ -19,7 +19,7 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Protocol
   {
@@ -32,7 +32,7 @@ namespace XMI
 	struct datagram_connection_t
           {
 	    public:
-            xmi_client_t     client;
+            pami_client_t     client;
             size_t          context;
             void           ** array;
           };
@@ -46,7 +46,7 @@ namespace XMI
           ~DatagramConnection () {}
 
           /// \todo Do this in a threadsafe way
-          inline void ** getConnectionArray ( xmi_client_t     client, size_t context)
+          inline void ** getConnectionArray ( pami_client_t     client, size_t context)
           {
             void ** connection = NULL;
 
@@ -102,7 +102,7 @@ namespace XMI
 
 
 #undef TRACE_ERR
-#endif // __xmi_p2p_protocol_send_datagram_datagramconnection_h__
+#endif // __pami_p2p_protocol_send_datagram_datagramconnection_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

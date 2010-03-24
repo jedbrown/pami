@@ -1,6 +1,6 @@
 ///
 /// \file common/TopologyInterface.h
-/// \brief XMI topology implementation.
+/// \brief PAMI topology implementation.
 ///
 
 #ifndef __common_TopologyInterface_h__
@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Interface
   {
@@ -19,11 +19,11 @@ namespace XMI
       class Topology
     {
     public:
-      /// \brief default constructor (XMI_EMPTY_TOPOLOGY)
+      /// \brief default constructor (PAMI_EMPTY_TOPOLOGY)
       ///
       inline Topology() {}
 
-      /// \brief rectangular segment with torus (XMI_COORD_TOPOLOGY)
+      /// \brief rectangular segment with torus (PAMI_COORD_TOPOLOGY)
       ///
       /// Assumes no torus links if no 'tl' param.
       ///
@@ -31,10 +31,10 @@ namespace XMI
       /// \param[in] ur	upper-right coordinate
       /// \param[in] tl	optional, torus links flags
       ///
-      inline Topology(xmi_coord_t *ll, xmi_coord_t *ur,
+      inline Topology(pami_coord_t *ll, pami_coord_t *ur,
                       unsigned char *tl = NULL) {}
 
-      /// \brief axial neighborhood constructor(XMI_AXIAL_TOPOLOGY)
+      /// \brief axial neighborhood constructor(PAMI_AXIAL_TOPOLOGY)
       ///
       /// Define a set of axes from a reference task and the
       /// enclosing rectangular seqment.  The neighborhood is all
@@ -48,25 +48,25 @@ namespace XMI
       /// \param[in] ref reference rank
       /// \param[in] tl	optional, torus links flags
       ///
-      inline Topology(xmi_coord_t *ll,
-                      xmi_coord_t *ur,
-                      xmi_coord_t *ref,
+      inline Topology(pami_coord_t *ll,
+                      pami_coord_t *ur,
+                      pami_coord_t *ref,
                       unsigned char *tl = NULL) {}
 
-      /// \brief single rank constructor (XMI_SINGLE_TOPOLOGY)
+      /// \brief single rank constructor (PAMI_SINGLE_TOPOLOGY)
       ///
       /// \param[in] rank	The rank
       ///
-      inline Topology(xmi_task_t rank) {}
+      inline Topology(pami_task_t rank) {}
 
-      /// \brief rank range constructor (XMI_RANGE_TOPOLOGY)
+      /// \brief rank range constructor (PAMI_RANGE_TOPOLOGY)
       ///
       /// \param[in] rank0	first rank in range
       /// \param[in] rankn	last rank in range
       ///
-      inline Topology(xmi_task_t rank0, xmi_task_t rankn) {}
+      inline Topology(pami_task_t rank0, pami_task_t rankn) {}
 
-      /// \brief rank list constructor (XMI_LIST_TOPOLOGY)
+      /// \brief rank list constructor (PAMI_LIST_TOPOLOGY)
       ///
       /// caller must not free ranks[]!
       ///
@@ -75,10 +75,10 @@ namespace XMI
       ///
       /// \todo create destructor to free list, or establish rules
       ///
-      inline Topology(xmi_task_t *ranks, size_t nranks) {}
+      inline Topology(pami_task_t *ranks, size_t nranks) {}
 
       /// \brief accessor for size of a Topology object
-      /// \return	size of XMI::Topology
+      /// \return	size of PAMI::Topology
       inline unsigned size_of();
 
       /// \brief number of ranks in topology
@@ -87,7 +87,7 @@ namespace XMI
 
       /// \brief type of topology
       /// \return	topology type
-      inline xmi_topology_type_t type();
+      inline pami_topology_type_t type();
 
 
 
@@ -96,7 +96,7 @@ namespace XMI
       /// \param[in] ix	Which rank to select
       /// \return	Nth rank or (size_t)-1 if does not exist
       ///
-      inline xmi_task_t index2Rank(size_t ix);
+      inline pami_task_t index2Rank(size_t ix);
 
       /// \brief determine index of rank in topology
       ///
@@ -105,22 +105,22 @@ namespace XMI
       /// \param[in] rank	Which rank to get index for
       /// \return	index of rank (rank(ix) == rank) or (size_t)-1
       ///
-      inline size_t rank2Index(xmi_task_t rank);
+      inline size_t rank2Index(pami_task_t rank);
 
       /// \brief return range
       ///
       /// \param[out] first	Where to put first rank in range
       /// \param[out] last	Where to put last rank in range
-      /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a range topology
+      /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a range topology
       ///
-      inline xmi_result_t rankRange(xmi_task_t *first, xmi_task_t *last);
+      inline pami_result_t rankRange(pami_task_t *first, pami_task_t *last);
 
       /// \brief return rank list
       ///
       /// \param[out] list	pointer to list stored here
-      /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a list topology
+      /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a list topology
       ///
-      inline xmi_result_t rankList(xmi_task_t **list);
+      inline pami_result_t rankList(pami_task_t **list);
 
       /// \brief return axial neighborhood
       ///
@@ -132,10 +132,10 @@ namespace XMI
       /// \param[in] ref reference rank
       /// \param[in] tl	 torus links flags
       ///
-      /// \return	XMI_SUCCESS, or XMI_UNIMPL if not an axial topology
+      /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not an axial topology
       ///
-      inline xmi_result_t axial(xmi_coord_t **ll, xmi_coord_t **ur,
-                                  xmi_coord_t **ref,
+      inline pami_result_t axial(pami_coord_t **ll, pami_coord_t **ur,
+                                  pami_coord_t **ref,
                                   unsigned char **tl);
 
       /// \brief return axial neighborhood
@@ -148,10 +148,10 @@ namespace XMI
       /// \param[in] ref	reference rank
       /// \param[in] tl	torus links flags
       ///
-      /// \return	XMI_SUCCESS, or XMI_UNIMPL if not an axial topology
+      /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not an axial topology
       ///
-      inline xmi_result_t axial(xmi_coord_t *ll, xmi_coord_t *ur,
-                                  xmi_coord_t *ref,
+      inline pami_result_t axial(pami_coord_t *ll, pami_coord_t *ur,
+                                  pami_coord_t *ref,
                                   unsigned char *tl);
 
       /// \brief return rectangular segment coordinates
@@ -162,9 +162,9 @@ namespace XMI
       /// \param[out] ll	lower-left coord pointer storage
       /// \param[out] ur	upper-right coord pointer storage
       /// \param[out] tl	optional, torus links flags
-      /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
+      /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a coord topology
       ///
-      inline xmi_result_t rectSeg(xmi_coord_t **ll, xmi_coord_t **ur,
+      inline pami_result_t rectSeg(pami_coord_t **ll, pami_coord_t **ur,
                                   unsigned char **tl = NULL);
 
       /// \brief return rectangular segment coordinates
@@ -175,9 +175,9 @@ namespace XMI
       /// \param[out] ll	lower-left coord pointer storage
       /// \param[out] ur	upper-right coord pointer storage
       /// \param[out] tl	optional, torus links flags
-      /// \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
+      /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a coord topology
       ///
-      inline xmi_result_t rectSeg(xmi_coord_t *ll, xmi_coord_t *ur,
+      inline pami_result_t rectSeg(pami_coord_t *ll, pami_coord_t *ur,
                                   unsigned char *tl = NULL);
 
       /// \brief does topology consist entirely of ranks local to eachother
@@ -219,14 +219,14 @@ namespace XMI
       /// \param[in] rank	Rank to test
       /// \return	boolean indicating rank is in topology
       ///
-      inline bool isRankMember(xmi_task_t rank);
+      inline bool isRankMember(pami_task_t rank);
 
       /// \brief is coordinate in topology
       ///
       /// \param[in] c0	Coord to test
       /// \return	boolean indicating coord is a member of topology
       ///
-      inline bool isCoordMember(xmi_coord_t *c0);
+      inline bool isCoordMember(pami_coord_t *c0);
 
       /// \brief create topology of ranks local to self
       ///
@@ -251,7 +251,7 @@ namespace XMI
       /// \param[out] _new	where to build new topology
       /// \param[in] fmt	how to reduce dimensions
       ///
-      inline void subTopologyReduceDims(T_Topology *_new, xmi_coord_t *fmt);
+      inline void subTopologyReduceDims(T_Topology *_new, pami_coord_t *fmt);
 
       /// \brief Return list of ranks representing contents of topology
       ///
@@ -268,18 +268,18 @@ namespace XMI
       /// \param[out] ranks	array where rank list is placed
       /// \param[out] nranks	actual number of ranks put into array
       ///
-      inline void getRankList(size_t max, xmi_task_t *ranks, size_t *nranks);
+      inline void getRankList(size_t max, pami_task_t *ranks, size_t *nranks);
 
       /// \brief check if rank range or list can be converted to rectangle
       ///
       /// Since a rectangular segment is consider the optimal state, no
-      /// other analysis is done. A XMI_SINGLE_TOPOLOGY cannot be optimized,
+      /// other analysis is done. A PAMI_SINGLE_TOPOLOGY cannot be optimized,
       /// either. Optimization levels:
       ///
-      ///	XMI_SINGLE_TOPOLOGY (most)
-      ///	XMI_COORD_TOPOLOGY
-      ///	XMI_RANGE_TOPOLOGY
-      ///	XMI_LIST_TOPOLOGY (least)
+      ///	PAMI_SINGLE_TOPOLOGY (most)
+      ///	PAMI_COORD_TOPOLOGY
+      ///	PAMI_RANGE_TOPOLOGY
+      ///	PAMI_LIST_TOPOLOGY (least)
       ///
       /// \return	'true' if topology was changed
       ///
@@ -293,7 +293,7 @@ namespace XMI
       /// \param[in] new_type	Topology type to try and convert into
       /// \return	'true' if topology was changed
       ///
-      inline bool convertTopology(xmi_topology_type_t new_type);
+      inline bool convertTopology(pami_topology_type_t new_type);
 
       /// \brief produce the union of two topologies
       ///
@@ -321,7 +321,7 @@ namespace XMI
       /// \param[in] other	The other topology
       ///
       inline void subtractTopology(T_Topology *_new, T_Topology *other);
-    }; // end class XMI::Interface::Topology
+    }; // end class PAMI::Interface::Topology
 
     template <class T_Topology>
       unsigned Topology<T_Topology>::size_of()
@@ -336,60 +336,60 @@ namespace XMI
     }
 
     template <class T_Topology>
-      xmi_topology_type_t Topology<T_Topology>::type()
+      pami_topology_type_t Topology<T_Topology>::type()
     {
       return static_cast<T_Topology*>(this)->type_impl();
     }
 
    template <class T_Topology>
-      xmi_task_t Topology<T_Topology>::index2Rank(size_t ix)
+      pami_task_t Topology<T_Topology>::index2Rank(size_t ix)
     {
       return static_cast<T_Topology*>(this)->index2Rank_impl(ix);
     }
 
     template <class T_Topology>
-      size_t Topology<T_Topology>::rank2Index(xmi_task_t rank)
+      size_t Topology<T_Topology>::rank2Index(pami_task_t rank)
     {
       return static_cast<T_Topology*>(this)->rank2Index_impl(rank);
     }
 
     template <class T_Topology>
-      xmi_result_t Topology<T_Topology>::rankRange(xmi_task_t *first, xmi_task_t *last)
+      pami_result_t Topology<T_Topology>::rankRange(pami_task_t *first, pami_task_t *last)
     {
       return static_cast<T_Topology*>(this)->rankRange_impl(first,last);
     }
 
     template <class T_Topology>
-      xmi_result_t Topology<T_Topology>::rankList(xmi_task_t **list)
+      pami_result_t Topology<T_Topology>::rankList(pami_task_t **list)
     {
       return static_cast<T_Topology*>(this)->rankList_impl(list);
     }
 
     template <class T_Topology>
-      xmi_result_t Topology<T_Topology>::axial(xmi_coord_t **ll, xmi_coord_t **ur,
-                                               xmi_coord_t **ref,
+      pami_result_t Topology<T_Topology>::axial(pami_coord_t **ll, pami_coord_t **ur,
+                                               pami_coord_t **ref,
                                                unsigned char **tl)
     {
       return static_cast<T_Topology*>(this)->axial_impl(ll,ur,ref,tl);
     }
 
     template <class T_Topology>
-      xmi_result_t Topology<T_Topology>::axial(xmi_coord_t *ll, xmi_coord_t *ur,
-                                               xmi_coord_t *ref,
+      pami_result_t Topology<T_Topology>::axial(pami_coord_t *ll, pami_coord_t *ur,
+                                               pami_coord_t *ref,
                                                unsigned char *tl)
     {
       return static_cast<T_Topology*>(this)->axial_impl(ll,ur,ref,tl);
     }
 
     template <class T_Topology>
-      xmi_result_t Topology<T_Topology>::rectSeg(xmi_coord_t **ll, xmi_coord_t **ur,
+      pami_result_t Topology<T_Topology>::rectSeg(pami_coord_t **ll, pami_coord_t **ur,
                                                  unsigned char **tl)
     {
       return static_cast<T_Topology*>(this)->rectSeg_impl(ll,ur,tl);
     }
 
     template <class T_Topology>
-      xmi_result_t Topology<T_Topology>::rectSeg(xmi_coord_t *ll, xmi_coord_t *ur,
+      pami_result_t Topology<T_Topology>::rectSeg(pami_coord_t *ll, pami_coord_t *ur,
                                                  unsigned char *tl)
     {
       return static_cast<T_Topology*>(this)->rectSeg_impl(ll, ur, tl);
@@ -427,13 +427,13 @@ namespace XMI
     }
 
     template <class T_Topology>
-      bool Topology<T_Topology>::isRankMember(xmi_task_t rank)
+      bool Topology<T_Topology>::isRankMember(pami_task_t rank)
     {
       return static_cast<T_Topology*>(this)->isRankMember_impl(rank);
     }
 
     template <class T_Topology>
-      bool Topology<T_Topology>::isCoordMember(xmi_coord_t *c0)
+      bool Topology<T_Topology>::isCoordMember(pami_coord_t *c0)
     {
       return static_cast<T_Topology*>(this)->isCoordMember_impl(c0);
     }
@@ -451,13 +451,13 @@ namespace XMI
     }
 
     template <class T_Topology>
-      void Topology<T_Topology>::subTopologyReduceDims(T_Topology *_new, xmi_coord_t *fmt)
+      void Topology<T_Topology>::subTopologyReduceDims(T_Topology *_new, pami_coord_t *fmt)
     {
       return static_cast<T_Topology*>(this)->subTopologyReduceDims_impl(_new, fmt);
     }
 
     template <class T_Topology>
-      void Topology<T_Topology>::getRankList(size_t max, xmi_task_t *ranks, size_t *nranks)
+      void Topology<T_Topology>::getRankList(size_t max, pami_task_t *ranks, size_t *nranks)
     {
       return static_cast<T_Topology*>(this)->getRankList_impl(max,ranks,nranks);
     }
@@ -469,7 +469,7 @@ namespace XMI
     }
 
     template <class T_Topology>
-      bool Topology<T_Topology>::convertTopology(xmi_topology_type_t new_type)
+      bool Topology<T_Topology>::convertTopology(pami_topology_type_t new_type)
     {
       return static_cast<T_Topology*>(this)->convertTopology_impl(new_type);
     }
@@ -492,6 +492,6 @@ namespace XMI
       return static_cast<T_Topology*>(this)->subtractTopology_impl(_new, other);
     }
   }; // end namespace Interface
-}; // end namespace XMI
+}; // end namespace PAMI
 
-#endif // __xmi_topology_h__
+#endif // __pami_topology_h__

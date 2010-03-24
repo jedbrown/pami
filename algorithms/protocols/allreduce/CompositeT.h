@@ -45,25 +45,25 @@ namespace CCMI
         ///
         /// \brief Constructor
         ///
-        CompositeT (XMI_CollectiveRequest_t   * req,
+        CompositeT (PAMI_CollectiveRequest_t   * req,
                     T_Sysdep                  * map,
                     T_ConnectionManager       * cmgr,
-                    XMI_Callback_t              cb_done,
-                    xmi_consistency_t           consistency,
+                    PAMI_Callback_t              cb_done,
+                    pami_consistency_t           consistency,
                     T_Mcast                   * mf,
-                    XMI_GEOMETRY_CLASS        * geometry,
+                    PAMI_GEOMETRY_CLASS        * geometry,
                     char                      * srcbuf,
                     char                      * dstbuf,
                     unsigned                    offset,
                     unsigned                    count,
-                    xmi_dt                      dtype,
-                    xmi_op                      op,
+                    pami_dt                      dtype,
+                    pami_op                      op,
                     ConfigFlags                 flags,
                     CollectiveProtocolFactory * factory,
                     int                         root = -1,
                     CCMI::Schedule::Color       color=CCMI::Schedule::XP_Y_Z) :
           CCMI::Adaptor::Allreduce::Composite<T_Mcast, T_Sysdep,T_ConnectionManager>(flags,
-										     (CCMI::Executor::Composite*)geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0),
+										     (CCMI::Executor::Composite*)geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE0),
                                                                  factory, cb_done),
         _executor(map, cmgr, consistency, geometry->comm(), geometry->getAllreduceIteration())
         {
@@ -78,13 +78,13 @@ namespace CCMI
         }
         // Template implementation must specialize this function.
         void create_schedule(T_Sysdep        * map,
-                             XMI_GEOMETRY_CLASS                  * geometry,
+                             PAMI_GEOMETRY_CLASS                  * geometry,
                              CCMI::Schedule::Color       color)
         {
           CCMI_abort();
         }
         // Template implementation must specialize this function.
-        static bool analyze (XMI_GEOMETRY_CLASS *geometry)
+        static bool analyze (PAMI_GEOMETRY_CLASS *geometry)
         {
           CCMI_abort();
           return false;

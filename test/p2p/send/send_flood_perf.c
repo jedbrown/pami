@@ -17,7 +17,7 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 //#include "../../util.h"
 
 #define ITERATIONS 1
@@ -52,9 +52,9 @@ size_t _my_rank;
 
 /* --------------------------------------------------------------- */
 
-static void decrement (xmi_context_t   context,
+static void decrement (pami_context_t   context,
                        void          * cookie,
-                       xmi_result_t    result)
+                       pami_result_t    result)
 {
   unsigned * value = (unsigned *) cookie;
   TRACE_ERR((stderr, "(%zd) decrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
@@ -63,13 +63,13 @@ static void decrement (xmi_context_t   context,
 
 /* --------------------------------------------------------------- */
 static void test_dispatch (
-    xmi_context_t        context,      /**< IN: XMI context */
+    pami_context_t        context,      /**< IN: PAMI context */
     void               * cookie,       /**< IN: dispatch cookie */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
-    void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
-    size_t               pipe_size,    /**< IN: size of XMI pipe buffer */
-    xmi_recv_t         * recv)        /**< OUT: receive message structure */
+    void               * pipe_addr,    /**< IN: address of PAMI pipe buffer */
+    size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
+    pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   unsigned * value = (unsigned *) cookie;
   if (pipe_addr != NULL)
@@ -83,12 +83,12 @@ static void test_dispatch (
   TRACE_ERR((stderr, "(%zd) long recvn", _my_rank));
   recv->local_fn = decrement;
   recv->cookie   = cookie;
-  recv->kind = XMI_AM_KIND_SIMPLE;
+  recv->kind = PAMI_AM_KIND_SIMPLE;
   recv->data.simple.addr  = (void *)_tmpbuffer;
   recv->data.simple.bytes = pipe_size;
 }
 
-unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, size_t myrank, size_t ntasks)
+unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, size_t myrank, size_t ntasks)
 {
   TRACE_ERR((stderr, "(%zd) Do test ... sndlen = %zd\n", myrank, sndlen));
 
@@ -96,7 +96,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrlen, 
   char buffer[BUFSIZE];
   unsigned i, j;
 
-  xmi_client_t client = 0;
+  pami_client_t client = 0;
   if (myrank == 0)
     _recv_active = (ntasks - 1) * MSGCOUNT * ITERATIONS;
   else
@@ -104,11 +104,11 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrlen, 
 
   volatile unsigned send_active = MSGCOUNT * ITERATIONS;
 
-  xmi_endpoint_t endpoint[ntasks];
+  pami_endpoint_t endpoint[ntasks];
   for (i=0; i<ntasks; i++)
-    endpoint[i] = XMI_Client_endpoint (client, i, 0);
+    endpoint[i] = PAMI_Client_endpoint (client, i, 0);
 
-  xmi_send_t parameters;
+  pami_send_t parameters;
   parameters.send.dest = endpoint[0];
   parameters.send.dispatch = dispatch;
   parameters.send.header.iov_base = metadata;
@@ -119,7 +119,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrlen, 
   parameters.events.local_fn      = decrement;
   parameters.events.remote_fn     = NULL;
 
-  xmi_send_immediate_t ack;
+  pami_send_immediate_t ack;
   ack.dispatch = dispatch;
   ack.header.iov_base = NULL;
   ack.header.iov_len = 0;
@@ -129,14 +129,14 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrlen, 
   //barrier ();
   usleep(1000);
 
-  unsigned long long t1 = XMI_Wtimebase();
+  unsigned long long t1 = PAMI_Wtimebase();
   if (myrank == 0)
   {
-    while (_recv_active) XMI_Context_advance (context, 100);
+    while (_recv_active) PAMI_Context_advance (context, 100);
     for (i = 1; i < ntasks; i++)
     {
       ack.dest = endpoint[i];
-      XMI_Send_immediate (context, &ack);
+      PAMI_Send_immediate (context, &ack);
     }
   }
   else
@@ -146,15 +146,15 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrlen, 
       for (j = 0; j < MSGCOUNT; j++)
       {
 #ifdef TEST_SEND_IMMEDIATE
-        XMI_Send_immediate (context, &parameters.send);
+        PAMI_Send_immediate (context, &parameters.send);
 #else
-        XMI_Send (context, &parameters);
+        PAMI_Send (context, &parameters);
 #endif
       }
     }
-    while (_recv_active > 0) XMI_Context_advance (context, 100);
+    while (_recv_active > 0) PAMI_Context_advance (context, 100);
   }
-  unsigned long long t2 = XMI_Wtimebase();
+  unsigned long long t2 = PAMI_Wtimebase();
 
   return ((t2-t1)/ITERATIONS)/MSGCOUNT;
 }
@@ -173,15 +173,15 @@ int main (int argc, char ** argv)
     hdrsize[arg] = (size_t) strtol (argv[arg], NULL, 10);
   }
 
-  xmi_client_t client;
-  char clientname[]="XMI";
-  TRACE_ERR((stderr, "... before XMI_Client_initialize()\n"));
-  XMI_Client_initialize (clientname, &client);
-  TRACE_ERR((stderr, "...  after XMI_Client_initialize()\n"));
-  xmi_context_t context;
-  TRACE_ERR((stderr, "... before XMI_Context_create()\n"));
-  XMI_Context_createv (client, NULL, 0, &context, 1);
-  TRACE_ERR((stderr, "...  after XMI_Context_create()\n"));
+  pami_client_t client;
+  char clientname[]="PAMI";
+  TRACE_ERR((stderr, "... before PAMI_Client_initialize()\n"));
+  PAMI_Client_initialize (clientname, &client);
+  TRACE_ERR((stderr, "...  after PAMI_Client_initialize()\n"));
+  pami_context_t context;
+  TRACE_ERR((stderr, "... before PAMI_Context_create()\n"));
+  PAMI_Context_createv (client, NULL, 0, &context, 1);
+  TRACE_ERR((stderr, "...  after PAMI_Context_create()\n"));
 
   //TRACE_ERR((stderr, "... before barrier_init()\n"));
   //barrier_init (client, context, 0);
@@ -190,33 +190,33 @@ int main (int argc, char ** argv)
 
   /* Register the protocols to test */
   size_t dispatch = 1;
-  xmi_dispatch_callback_fn fn;
+  pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
-  xmi_send_hint_t options={0};
-  TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, recv_active = %zd\n", &_recv_active, _recv_active));
-  xmi_result_t result = XMI_Dispatch_set (context,
+  pami_send_hint_t options={0};
+  TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, recv_active = %zd\n", &_recv_active, _recv_active));
+  pami_result_t result = PAMI_Dispatch_set (context,
                                           dispatch,
                                           fn,
                                           (void *)&_recv_active,
                                           options);
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
+    fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
     return 1;
   }
 
-  xmi_configuration_t configuration;
+  pami_configuration_t configuration;
 
-  configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_TASK_ID;
+  result = PAMI_Configuration_query(client, &configuration);
   _my_rank = configuration.value.intval;
 
-  configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_NUM_TASKS;
+  result = PAMI_Configuration_query(client, &configuration);
   size_t num_tasks = configuration.value.intval;
 
-  configuration.name = XMI_WTICK;
-  result = XMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_WTICK;
+  result = PAMI_Configuration_query(client, &configuration);
   double tick = configuration.value.doubleval;
 
 
@@ -282,7 +282,7 @@ int main (int argc, char ** argv)
       fprintf (stdout, "%s\n", str);
   }
 
-  XMI_Client_finalize (client);
+  PAMI_Client_finalize (client);
 
   return 0;
 }

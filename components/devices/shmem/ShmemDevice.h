@@ -14,7 +14,7 @@
 
 #include <sys/uio.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "SysDep.h"
 #include "Arch.h"
@@ -49,7 +49,7 @@
 #define TRACE_ERR(x)  //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -259,7 +259,7 @@ namespace XMI
       public:
 
         // Inner factory class
-        class Factory : public Interface::FactoryInterface<Factory, ShmemDevice, XMI::Device::Generic::Device>
+        class Factory : public Interface::FactoryInterface<Factory, ShmemDevice, PAMI::Device::Generic::Device>
         {
           public:
             static inline ShmemDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm)
@@ -287,7 +287,7 @@ namespace XMI
 
               // Get the peer id for this task
               size_t me = 0;
-              XMI::Interface::Mapping::nodeaddr_t address;
+              PAMI::Interface::Mapping::nodeaddr_t address;
 
               __global.mapping.nodeAddr (address);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() after nodeAddr() global %zd, local %zd\n",address.global,address.local));
@@ -302,7 +302,7 @@ namespace XMI
               // number of contexts in each peer
               size_t done = 0;
               size_t total_fifos_on_node = 0;
-#ifdef __xmi_target_bgq__
+#ifdef __pami_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
               int countdown=10000;
 #endif
@@ -323,15 +323,15 @@ namespace XMI
                       total_fifos_on_node += ncontexts[i];
 
                       if (ncontexts[i] > 0) done++;
-#ifdef __xmi_target_bgq__
+#ifdef __pami_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
                       if(countdown==1) fprintf(stderr, "ShmemDevice::Factory::generate_impl() ncontexts[%zu] = %zu, %p, %zd\n", i, ncontexts[i],ncontexts,mm.available());
 #endif
 #endif
                     }
-#ifdef __xmi_target_bgq__
+#ifdef __pami_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-                  XMI_assertf(countdown--, "I give up\n");
+                  PAMI_assertf(countdown--, "I give up\n");
 #endif
 #endif
                 }
@@ -356,7 +356,7 @@ namespace XMI
               // context in this _task_ (from heap, not from shared memory)
               ShmemDevice * devices;
               int rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
-              XMI_assertf(rc == 0, "posix_memalign failed for ShmemDevice[%zu], errno=%d\n", n, errno);
+              PAMI_assertf(rc == 0, "posix_memalign failed for ShmemDevice[%zu], errno=%d\n", n, errno);
 
               // Instantiate the shared memory devices
               for (i = 0; i < n; ++i)
@@ -368,13 +368,13 @@ namespace XMI
               return devices;
             };
 
-            static inline xmi_result_t init_impl (ShmemDevice    * devices,
+            static inline pami_result_t init_impl (ShmemDevice    * devices,
                                                   size_t           clientid,
                                                   size_t           contextid,
-                                                  xmi_client_t     client,
-                                                  xmi_context_t    context,
+                                                  pami_client_t     client,
+                                                  pami_context_t    context,
                                                   Memory::MemoryManager *mm,
-                                                  XMI::Device::Generic::Device * progress)
+                                                  PAMI::Device::Generic::Device * progress)
             {
               return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, mm, progress);
             };
@@ -412,7 +412,7 @@ namespace XMI
 
           // Get the peer id for this task
           size_t me = 0;
-          XMI::Interface::Mapping::nodeaddr_t address;
+          PAMI::Interface::Mapping::nodeaddr_t address;
           __global.mapping.nodeAddr (address);
           __global.mapping.node2peer (address, me);
 
@@ -427,26 +427,26 @@ namespace XMI
 
         // ------------------------------------------
 
-        /// \see XMI::Device::Interface::BaseDevice::isInit()
+        /// \see PAMI::Device::Interface::BaseDevice::isInit()
         bool isInit_impl ();
 
-        /// \see XMI::Device::Interface::BaseDevice::peers()
+        /// \see PAMI::Device::Interface::BaseDevice::peers()
         inline size_t peers_impl ();
 
-        /// \see XMI::Device::Interface::BaseDevice::task2peer()
+        /// \see PAMI::Device::Interface::BaseDevice::task2peer()
         inline size_t task2peer_impl (size_t task);
 
-        /// \see XMI::Device::Interface::BaseDevice::isPeer()
+        /// \see PAMI::Device::Interface::BaseDevice::isPeer()
         inline bool isPeer_impl (size_t task);
 
-        inline xmi_context_t getContext_impl ();
+        inline pami_context_t getContext_impl ();
 
         inline size_t getContextId_impl ();
         inline size_t getContextOffset_impl ();
 
         // ------------------------------------------
 
-        /// \see XMI::Device::Interface::PacketDevice::read()
+        /// \see PAMI::Device::Interface::PacketDevice::read()
         inline int read_impl (void * buf, size_t length, void * cookie);
 
         static const size_t metadata_size = T_Fifo::packet_header_size - sizeof(uint16_t);
@@ -463,7 +463,7 @@ namespace XMI
         ///
         /// \return Dispatch id for this registration
         ///
-        xmi_result_t registerRecvFunction (size_t                      set,
+        pami_result_t registerRecvFunction (size_t                      set,
                                            Interface::RecvFunction_t   recv_func,
                                            void                      * recv_func_parm,
                                            uint16_t                  & id);
@@ -479,7 +479,7 @@ namespace XMI
         /// \param[out] sequence    Packet sequence number
         ///
         template <unsigned T_Niov>
-        inline xmi_result_t writeSinglePacket (size_t         fnum,
+        inline pami_result_t writeSinglePacket (size_t         fnum,
                                                uint16_t       dispatch_id,
                                                void         * metadata,
                                                size_t         metasize,
@@ -497,7 +497,7 @@ namespace XMI
         /// \param[in]  niov        Number of iovec array elements
         /// \param[out] sequence    Packet sequence number
         ///
-        inline xmi_result_t writeSinglePacket (size_t           fnum,
+        inline pami_result_t writeSinglePacket (size_t           fnum,
                                                uint16_t         dispatch_id,
                                                void           * metadata,
                                                size_t           metasize,
@@ -505,7 +505,7 @@ namespace XMI
                                                size_t           niov,
                                                size_t         & sequence);
 
-        inline xmi_result_t writeSinglePacket (size_t           fnum,
+        inline pami_result_t writeSinglePacket (size_t           fnum,
                                                uint16_t         dispatch_id,
                                                void           * metadata,
                                                size_t           metasize,
@@ -513,14 +513,14 @@ namespace XMI
                                                size_t           length,
                                                size_t         & sequence);
 
-        inline xmi_result_t writeSinglePacket (size_t           fnum,
+        inline pami_result_t writeSinglePacket (size_t           fnum,
                                                uint16_t         dispatch_id,
                                                void           * metadata,
                                                size_t           metasize,
                                                void           * payload,
                                                size_t         & sequence);
 
-        xmi_result_t post (size_t ififo, Shmem::SendQueue::Message * msg);
+        pami_result_t post (size_t ififo, Shmem::SendQueue::Message * msg);
 
         ///
         /// \brief Check if the send queue to an injection fifo is empty
@@ -530,14 +530,14 @@ namespace XMI
 
         inline Shmem::SendQueue *getQS (size_t fnum);
 
-        inline xmi_result_t init (size_t clientid, size_t contextid, xmi_client_t client, xmi_context_t context, Memory::MemoryManager *mm, XMI::Device::Generic::Device * progress);
+        inline pami_result_t init (size_t clientid, size_t contextid, pami_client_t client, pami_context_t context, Memory::MemoryManager *mm, PAMI::Device::Generic::Device * progress);
 
         inline size_t advance ();
 
         inline size_t fnum (size_t peer, size_t offset);
 
         ///
-        /// \see XMI::Device::Interface::RecvFunction_t
+        /// \see PAMI::Device::Interface::RecvFunction_t
         ///
         static int noop (void   * metadata,
                          void   * payload,
@@ -552,8 +552,8 @@ namespace XMI
         T_Fifo  * _rfifo;       //< Pointer to fifo to use as the reception fifo
 
 	Memory::MemoryManager *_mm;
-        xmi_client_t       _client;
-        xmi_context_t      _context;
+        pami_client_t       _client;
+        pami_context_t      _context;
         size_t             _contextid;
 
         dispatch_t  _dispatch[DISPATCH_SET_COUNT*DISPATCH_SET_SIZE];
@@ -564,7 +564,7 @@ namespace XMI
 #endif
 
         Shmem::SendQueue   * __sendQ;
-        XMI::Device::Generic::Device * _progress;
+        PAMI::Device::Generic::Device * _progress;
 
         size_t            _num_procs;
         size_t            _global_task;
@@ -583,7 +583,7 @@ namespace XMI
     }
 
     template <class T_Fifo>
-    inline xmi_context_t ShmemDevice<T_Fifo>::getContext_impl()
+    inline pami_context_t ShmemDevice<T_Fifo>::getContext_impl()
     {
       return _context;
     }
@@ -617,7 +617,7 @@ namespace XMI
       return &__sendQ[fnum];
     }
 
-    /// \see XMI::Device::Interface::PacketDevice::read()
+    /// \see PAMI::Device::Interface::PacketDevice::read()
     template <class T_Fifo>
     int ShmemDevice<T_Fifo>::read_impl (void * dst, size_t length, void * cookie)
     {
@@ -627,7 +627,7 @@ namespace XMI
 
     template <class T_Fifo>
     template <unsigned T_Niov>
-    xmi_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+    pami_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
       size_t         fnum,
       uint16_t       dispatch_id,
       void         * metadata,
@@ -640,7 +640,7 @@ namespace XMI
 #ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
       unsigned long long t = __global.time.timebase ();
 
-      if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
+      if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return PAMI_SUCCESS;
 
 #endif
 
@@ -662,16 +662,16 @@ namespace XMI
           TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. before producePacket()\n"));
           _fifo[fnum].producePacket (pktid);
 
-          TRACE_ERR((stderr, "<< ShmemDevice<>::writeSinglePacket () .. XMI_SUCCESS\n"));
-          return XMI_SUCCESS;
+          TRACE_ERR((stderr, "<< ShmemDevice<>::writeSinglePacket () .. PAMI_SUCCESS\n"));
+          return PAMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "<< ShmemDevice<>::writeSinglePacket () .. XMI_EAGAIN\n"));
-      return XMI_EAGAIN;
+      TRACE_ERR((stderr, "<< ShmemDevice<>::writeSinglePacket () .. PAMI_EAGAIN\n"));
+      return PAMI_EAGAIN;
     };
 
     template <class T_Fifo>
-    xmi_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+    pami_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
       size_t         fnum,
       uint16_t       dispatch_id,
       void         * metadata,
@@ -685,7 +685,7 @@ namespace XMI
 #ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
       unsigned long long t = __global.time.timebase ();
 
-      if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
+      if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return PAMI_SUCCESS;
 
 #endif
 
@@ -703,15 +703,15 @@ namespace XMI
           _fifo[fnum].producePacket (pktid);
 
           TRACE_ERR((stderr, "(%zd) 2.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p, %zd) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
       TRACE_ERR((stderr, "(%zd) 2.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p, %zd) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
-      return XMI_EAGAIN;
+      return PAMI_EAGAIN;
     };
 
     template <class T_Fifo>
-    xmi_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+    pami_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
       size_t         fnum,
       uint16_t       dispatch_id,
       void         * metadata,
@@ -725,7 +725,7 @@ namespace XMI
 #ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
       unsigned long long t = __global.time.timebase ();
 
-      if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
+      if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return PAMI_SUCCESS;
 
 #endif
 
@@ -743,15 +743,15 @@ namespace XMI
           _fifo[fnum].producePacket (pktid);
 
           TRACE_ERR((stderr, "(%zd) 3.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p, %zd) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
       TRACE_ERR((stderr, "(%zd) 3.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p, %zd) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
-      return XMI_EAGAIN;
+      return PAMI_EAGAIN;
     };
 
     template <class T_Fifo>
-    xmi_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+    pami_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
       size_t         fnum,
       uint16_t       dispatch_id,
       void         * metadata,
@@ -764,7 +764,7 @@ namespace XMI
 #ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
       unsigned long long t = __global.time.timebase ();
 
-      if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return XMI_SUCCESS;
+      if (t % EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY == 0) return PAMI_SUCCESS;
 
 #endif
 
@@ -781,12 +781,12 @@ namespace XMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
 
-          TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p) << XMI_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
-          return XMI_SUCCESS;
+          TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p) << PAMI_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
+          return PAMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p) << XMI_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
-      return XMI_EAGAIN;
+      TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p) << PAMI_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
+      return PAMI_EAGAIN;
     };
 
 
@@ -795,7 +795,7 @@ namespace XMI
     {
 #ifdef TRAP_ADVANCE_DEADLOCK
       static size_t iteration = 0;
-      XMI_assert (iteration++ < ADVANCE_DEADLOCK_MAX_LOOP);
+      PAMI_assert (iteration++ < ADVANCE_DEADLOCK_MAX_LOOP);
 #endif
 
       size_t events = 0;

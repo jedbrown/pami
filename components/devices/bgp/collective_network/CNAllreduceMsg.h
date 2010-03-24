@@ -25,17 +25,17 @@
 #include "components/devices/MulticombineModel.h"
 #include "components/devices/FactoryInterface.h"
 
-/// \page xmi_multicombine_examples
+/// \page pami_multicombine_examples
 ///
 /// #include "components/devices/bgp/collective_network/CNAllreduceMsg.h"
-/// typedef XMI::Device::BGP::CNAllreduceModel   MY_ALLREDUCE_MODEL;
-/// typedef XMI::Device::BGP::CNAllreduceMessage MY_ALLREDUCE_MEGSSAGE;
+/// typedef PAMI::Device::BGP::CNAllreduceModel   MY_ALLREDUCE_MODEL;
+/// typedef PAMI::Device::BGP::CNAllreduceMessage MY_ALLREDUCE_MEGSSAGE;
 ///
-/// xmi_result_t status;
+/// pami_result_t status;
 /// MY_ALLREDUCE_MODEL _allreduce(status);
-/// XMI_assert(status == XMI_SUCCESS);
+/// PAMI_assert(status == PAMI_SUCCESS);
 ///
-/// xmi_multicombine_t _mcomb;
+/// pami_multicombine_t _mcomb;
 /// MY_ALLREDUCE_MEGSSAGE _msg;
 /// _mcomb.request = &_msg;
 /// _mcomb.cb_done = ...;
@@ -45,7 +45,7 @@
 /// _allreduce.postMulticombine(&_mcomb);
 ///
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace BGP {
 
@@ -57,16 +57,16 @@ namespace BGP {
 
 class CNAllreduceModel;
 class CNAllreduceMessage;
-typedef XMI::Device::BGP::BaseGenericCNThread CNAllreduceThread;
-class CNAllreduceDevice : public XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2> {
+typedef PAMI::Device::BGP::BaseGenericCNThread CNAllreduceThread;
+class CNAllreduceDevice : public PAMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2> {
 public:
 	inline CNAllreduceDevice(CNDevice *common) :
-	XMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2>(common) {
+	PAMI::Device::Generic::SharedQueueSubDevice<CNDevice,CNAllreduceThread,2>(common) {
 	}
 	class Factory : public Interface::FactoryInterface<Factory,CNAllreduceDevice,Generic::Device> {
 	public:
 		static inline CNAllreduceDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(CNAllreduceDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
+		static inline pami_result_t init_impl(CNAllreduceDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(CNAllreduceDevice *devs, size_t client, size_t context);
 		static CNAllreduceDevice &getDevice_impl(CNAllreduceDevice *devs, size_t client, size_t context);
 	}; // class Factory
@@ -74,11 +74,11 @@ public:
 
 };	// BGP
 };	// Device
-};	// XMI
+};	// PAMI
 
-extern XMI::Device::BGP::CNAllreduceDevice _g_cnallreduce_dev;
+extern PAMI::Device::BGP::CNAllreduceDevice _g_cnallreduce_dev;
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace BGP {
 
@@ -86,7 +86,7 @@ inline CNAllreduceDevice *CNAllreduceDevice::Factory::generate_impl(size_t clien
 	return &_g_cnallreduce_dev;
 }
 
-inline xmi_result_t CNAllreduceDevice::Factory::init_impl(CNAllreduceDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+inline pami_result_t CNAllreduceDevice::Factory::init_impl(CNAllreduceDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
 	return _g_cnallreduce_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
 
@@ -98,7 +98,7 @@ inline CNAllreduceDevice & CNAllreduceDevice::Factory::getDevice_impl(CNAllreduc
 	return _g_cnallreduce_dev;
 }
 
-class CNAllreduceMessage : public XMI::Device::BGP::BaseGenericCNMessage {
+class CNAllreduceMessage : public PAMI::Device::BGP::BaseGenericCNMessage {
 	enum roles {
 		NO_ROLE = 0,
 		INJECTION_ROLE = (1 << 0), // first role must be "injector"
@@ -106,14 +106,14 @@ class CNAllreduceMessage : public XMI::Device::BGP::BaseGenericCNMessage {
 	};
 public:
 	CNAllreduceMessage(GenericDeviceMessageQueue *qs,
-			xmi_multicombine_t *mcomb,
+			pami_multicombine_t *mcomb,
 			size_t bytes,
 			bool doStore,
 			unsigned dispatch_id,
-			XMI::Device::BGP::CNAllreduceSetup &tas) :
+			PAMI::Device::BGP::CNAllreduceSetup &tas) :
 	BaseGenericCNMessage(qs, mcomb->client, mcomb->context,
-			(XMI::PipeWorkQueue *)mcomb->data,
-			(XMI::PipeWorkQueue *)mcomb->results,
+			(PAMI::PipeWorkQueue *)mcomb->data,
+			(PAMI::PipeWorkQueue *)mcomb->results,
 			bytes, doStore, mcomb->roles, mcomb->cb_done,
 				dispatch_id, tas._hhfunc, tas._opsize),
 	_roles(mcomb->roles)
@@ -121,7 +121,7 @@ public:
 	}
 
 	// virtual function
-	xmi_context_t postNext(bool devQueued) {
+	pami_context_t postNext(bool devQueued) {
 		return _g_cnallreduce_dev.common()->__postNext<CNAllreduceMessage,CNAllreduceThread>(this, devQueued);
 	}
 
@@ -135,7 +135,7 @@ public:
 		if (_roles & INJECTION_ROLE) {
 			t[nt].setMsg(this);
 			t[nt].setAdv(advanceInj);
-			t[nt].setStatus(XMI::Device::Ready);
+			t[nt].setStatus(PAMI::Device::Ready);
 			t[nt]._wq = _swq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = 1;
@@ -145,7 +145,7 @@ public:
 		if (_roles & RECEPTION_ROLE) {
 			t[nt].setMsg(this);
 			t[nt].setAdv(advanceRcp);
-			t[nt].setStatus(XMI::Device::Ready);
+			t[nt].setStatus(PAMI::Device::Ready);
 			t[nt]._wq = _rwq;
 			t[nt]._bytesLeft = _bytes;
 			t[nt]._cycles = 3000; // DCMF_PERSISTENT_ADVANCE;
@@ -163,18 +163,18 @@ protected:
 
 	DECL_ADVANCE_ROUTINE(advanceInj,CNAllreduceMessage,CNAllreduceThread);
 	DECL_ADVANCE_ROUTINE(advanceRcp,CNAllreduceMessage,CNAllreduceThread);
-	inline xmi_result_t __advanceInj(CNAllreduceThread *thr) {
-		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
+	inline pami_result_t __advanceInj(CNAllreduceThread *thr) {
+		if (thr->_bytesLeft == 0) return PAMI_SUCCESS;
 		unsigned hcount = BGPCN_FIFO_SIZE, dcount = BGPCN_QUADS_PER_FIFO;
 		size_t avail = thr->_wq->bytesAvailableToConsume();
 		char *buf = thr->_wq->bufferToConsume();
 		bool aligned = (((unsigned)buf & 0x0f) == 0);
 		size_t did = 0;
 		if (avail < BGPCN_PKT_SIZE && avail < thr->_bytesLeft) {
-			return XMI_EAGAIN;
+			return PAMI_EAGAIN;
 		}
 		if (__wait_send_fifo_to(thr, hcount, dcount, thr->_cycles)) {
-			return XMI_EAGAIN;
+			return PAMI_EAGAIN;
 		}
 		__send_whole_packets(thr, hcount, dcount, avail, did, buf, aligned);
 		__send_last_packet(thr, hcount, dcount, avail, did, buf, aligned);
@@ -182,16 +182,16 @@ protected:
 			thr->_wq->consumeBytes(did);
 		}
 		if (thr->_bytesLeft == 0) {
-			thr->setStatus(XMI::Device::Complete);
+			thr->setStatus(PAMI::Device::Complete);
 			__completeThread(thr);
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
-		return XMI_EAGAIN;
+		return PAMI_EAGAIN;
 	}
 
 
-	inline xmi_result_t __advanceRcp(CNAllreduceThread *thr) {
-		if (thr->_bytesLeft == 0) return XMI_SUCCESS;
+	inline pami_result_t __advanceRcp(CNAllreduceThread *thr) {
+		if (thr->_bytesLeft == 0) return PAMI_SUCCESS;
 		unsigned hcount = 0, dcount = 0;
 		unsigned toCopy = thr->_bytesLeft >= BGPCN_PKT_SIZE ? BGPCN_PKT_SIZE : thr->_bytesLeft;
 		size_t avail = thr->_wq->bytesAvailableToProduce();
@@ -199,10 +199,10 @@ protected:
 		bool aligned = (((unsigned)buf & 0x0f) == 0);
 		size_t did = 0;
 		if (avail < toCopy) {
-			return XMI_EAGAIN;
+			return PAMI_EAGAIN;
 		}
 		if (__wait_recv_fifo_to(thr, hcount, dcount, thr->_cycles)) {
-			return XMI_EAGAIN;
+			return PAMI_EAGAIN;
 		}
 		__recv_whole_packets(thr, hcount, dcount, avail, did, buf, aligned);
 		__recv_last_packet(thr, hcount, dcount, avail, did, buf, aligned);
@@ -210,34 +210,34 @@ protected:
 			thr->_wq->produceBytes(did);
 		}
 		if (thr->_bytesLeft == 0) {
-			thr->setStatus(XMI::Device::Complete);
+			thr->setStatus(PAMI::Device::Complete);
 			__completeThread(thr);
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
-		return XMI_EAGAIN;
+		return PAMI_EAGAIN;
 	}
 
 	unsigned _roles;
 	unsigned _nThreads;
 }; // class CNAllreduceMessage
 
-class CNAllreduceModel : public XMI::Device::Interface::MulticombineModel<CNAllreduceModel,CNAllreduceDevice,sizeof(CNAllreduceMessage)> {
+class CNAllreduceModel : public PAMI::Device::Interface::MulticombineModel<CNAllreduceModel,CNAllreduceDevice,sizeof(CNAllreduceMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = -1;
 	static const size_t sizeof_msg = sizeof(CNAllreduceMessage);
 
-	CNAllreduceModel(CNAllreduceDevice &device,xmi_result_t &status) :
-	XMI::Device::Interface::MulticombineModel<CNAllreduceModel,CNAllreduceDevice,sizeof(CNAllreduceMessage)>(device,status)
+	CNAllreduceModel(CNAllreduceDevice &device,pami_result_t &status) :
+	PAMI::Device::Interface::MulticombineModel<CNAllreduceModel,CNAllreduceDevice,sizeof(CNAllreduceMessage)>(device,status)
 	{
 		// assert(device == _g_cnallreduce_dev);
 		_dispatch_id = _g_cnallreduce_dev.newDispID();
 		_me = __global.mapping.task();
 		// at least one must do this
-		XMI::Device::BGP::CNAllreduceSetup::initCNAS();
+		PAMI::Device::BGP::CNAllreduceSetup::initCNAS();
 	}
 
-	inline xmi_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], xmi_multicombine_t *mcomb);
+	inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb);
 
 private:
 	size_t _me;
@@ -247,20 +247,20 @@ private:
 inline void CNAllreduceMessage::__completeThread(CNAllreduceThread *thr) {
 	unsigned c = _g_cnallreduce_dev.common()->__completeThread(thr);
 	if (c >= _nThreads) {
-		setStatus(XMI::Device::Done);
+		setStatus(PAMI::Device::Done);
 	}
 }
 
 // Permit a NULL results_topo to mean "everyone" (i.e. "root == -1")
-inline xmi_result_t CNAllreduceModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], xmi_multicombine_t *mcomb) {
-	XMI::Device::BGP::CNAllreduceSetup &tas = XMI::Device::BGP::CNAllreduceSetup::getCNAS(mcomb->dtype, mcomb->optor);
+inline pami_result_t CNAllreduceModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb) {
+	PAMI::Device::BGP::CNAllreduceSetup &tas = PAMI::Device::BGP::CNAllreduceSetup::getCNAS(mcomb->dtype, mcomb->optor);
 	// assert(tas._pre == NULL);
 	if (tas._pre) {
-		return XMI_ERROR;
+		return PAMI_ERROR;
 	}
-	XMI::Topology *result_topo = (XMI::Topology *)mcomb->results_participants;
+	PAMI::Topology *result_topo = (PAMI::Topology *)mcomb->results_participants;
 	bool doStore = (!result_topo || result_topo->isRankMember(_me));
-	size_t bytes = mcomb->count << xmi_dt_shift[mcomb->dtype];
+	size_t bytes = mcomb->count << pami_dt_shift[mcomb->dtype];
 
 	// could try to complete allreduce before construction, but for now the code
 	// is too dependent on having message and thread structures to get/keep context.
@@ -269,12 +269,12 @@ inline xmi_result_t CNAllreduceModel::postMulticombine_impl(uint8_t (&state)[siz
 	msg = new (&state) CNAllreduceMessage(_g_cnallreduce_dev.common(),
 			mcomb, bytes, doStore, _dispatch_id, tas);
 	_g_cnallreduce_dev.__post<CNAllreduceMessage>(msg);
-	return XMI_SUCCESS;
+	return PAMI_SUCCESS;
 }
 
 
 };	// BGP
 };	// Device
-};	// XMI
+};	// PAMI
 
 #endif // __components_devices_bgp_cnallreducemsg_h__

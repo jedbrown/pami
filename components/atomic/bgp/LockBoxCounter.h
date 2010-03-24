@@ -19,14 +19,14 @@
  *
  *
  */
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "components/atomic/Counter.h"
 #include "Global.h"
 
 #include <spi/bgp_SPI.h>
 #include <bpcore/bgp_atomic_ops.h>
 
-namespace XMI {
+namespace PAMI {
 namespace Counter {
 namespace BGP {
 	//
@@ -35,8 +35,8 @@ namespace BGP {
 	class _LockBoxCounter {
 	public:
 		_LockBoxCounter() { _addr = NULL; }
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			XMI_abortf("_LockBoxCounter must be a subclass");
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+			PAMI_abortf("_LockBoxCounter must be a subclass");
 		}
 		inline size_t fetch_impl() {
 			return LockBox_Query((LockBox_Counter_t)_addr);
@@ -64,27 +64,27 @@ namespace BGP {
 	//
 
 	class LockBoxNodeCounter : public _LockBoxCounter,
-				 public XMI::Atomic::Interface::Counter<LockBoxNodeCounter> {
+				 public PAMI::Atomic::Interface::Counter<LockBoxNodeCounter> {
 	public:
 		LockBoxNodeCounter() {}
 		~LockBoxNodeCounter() {}
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_NODE_SCOPE);
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_NODE_SCOPE);
 		}
 	}; // class LockBoxNodeCounter
 
 	class LockBoxProcCounter : public _LockBoxCounter,
-				 public XMI::Atomic::Interface::Counter<LockBoxProcCounter> {
+				 public PAMI::Atomic::Interface::Counter<LockBoxProcCounter> {
 	public:
 		LockBoxProcCounter() {}
 		~LockBoxProcCounter() {}
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
-			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, XMI::Atomic::BGP::LBX_PROC_SCOPE);
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+			__global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_PROC_SCOPE);
 		}
 	}; // class LockBoxProcCounter
 
 }; // BGP namespace
 }; // Counter namespace
-}; // XMI namespace
+}; // PAMI namespace
 
 #endif // __components_atomic_bgp_lockboxcounter_h__

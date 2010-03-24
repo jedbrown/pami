@@ -21,7 +21,7 @@
 #include <list>
 #include <sched.h>
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -33,13 +33,13 @@ namespace XMI
 
     typedef struct lapi_mcast_dispatch_info_t
     {
-      xmi_olddispatch_multicast_fn  recv_func;
+      pami_olddispatch_multicast_fn  recv_func;
       void                         *async_arg;
     }lapi_mcast_dispatch_info_t;
 
     typedef struct lapi_m2m_dispatch_info_t
     {
-      xmi_olddispatch_manytomany_fn  recv_func;
+      pami_olddispatch_manytomany_fn  recv_func;
       void                          *async_arg;
     }lapi_m2m_dispatch_info_t;
 
@@ -70,15 +70,15 @@ namespace XMI
           CheckLapiRC(lapi_util(_lapi_handle, (lapi_util_t *)&_tf));
 
           CheckLapiRC(lapi_addr_set (_lapi_handle,
-                                            (void *)__xmi_lapi_mcast_fn,
+                                            (void *)__pami_lapi_mcast_fn,
                                             1));
 
           CheckLapiRC(lapi_addr_set (_lapi_handle,
-                                            (void *)__xmi_lapi_m2m_fn,
+                                            (void *)__pami_lapi_m2m_fn,
                                             2));
 
           CheckLapiRC(lapi_addr_set (_lapi_handle,
-                                            (void *)__xmi_lapi_msync_fn,
+                                            (void *)__pami_lapi_msync_fn,
                                             3));
         }
 
@@ -115,7 +115,7 @@ namespace XMI
         }
 
       void registerMcastRecvFunction (int                           dispatch_id,
-                                      xmi_olddispatch_multicast_fn  recv_func,
+                                      pami_olddispatch_multicast_fn  recv_func,
                                       void                         *async_arg)
         {
           _mcast_dispatch_table[dispatch_id].recv_func=recv_func;
@@ -124,7 +124,7 @@ namespace XMI
         }
 
       void registerM2MRecvFunction (int                           dispatch_id,
-                                    xmi_olddispatch_manytomany_fn  recv_func,
+                                    pami_olddispatch_manytomany_fn  recv_func,
                                     void                         *async_arg)
         {
           _m2m_dispatch_table[dispatch_id].recv_func=recv_func;
@@ -132,16 +132,16 @@ namespace XMI
           _m2m_dispatch_lookup[dispatch_id]=_m2m_dispatch_table[dispatch_id];
         }
 
-      inline xmi_result_t init_impl (XMI::Memory::MemoryManager         *mm,
+      inline pami_result_t init_impl (PAMI::Memory::MemoryManager         *mm,
                                      size_t          clientid,
                                      size_t          num_ctx,
-                                     xmi_context_t   context,
+                                     pami_context_t   context,
                                      size_t          contextid)
         {
           _mm      = mm;
           _context = context;
           _offset  = contextid;
-	  return XMI_SUCCESS;
+	  return PAMI_SUCCESS;
         };
 
       inline bool isInit_impl ()
@@ -164,7 +164,7 @@ namespace XMI
         };
 
       // Implement MessageDevice Routines
-      /// \see XMI::Device::Interface::MessageDevice::getMessageMetadataSize()
+      /// \see PAMI::Device::Interface::MessageDevice::getMessageMetadataSize()
       static const size_t metadata_size = DEV_HEADER_SIZE;
       static const size_t payload_size  = DEV_PAYLOAD_SIZE;
 
@@ -189,13 +189,13 @@ namespace XMI
       inline bool isPeer_impl (size_t task)
       {
 #if 0
-        XMI::Interface::Mapping::nodeaddr_t node;
+        PAMI::Interface::Mapping::nodeaddr_t node;
         size_t peer;
 
         __global.mapping.task2node(task,node);
-        xmi_result_t result = __global.mapping.node2peer(node,peer);
+        pami_result_t result = __global.mapping.node2peer(node,peer);
 
-        return result == XMI_SUCCESS;
+        return result == PAMI_SUCCESS;
 #else
         return false;
 #endif
@@ -242,25 +242,25 @@ namespace XMI
                 if(msg->_cb_done.function)
                   msg->_cb_done.function(NULL,
                                        msg->_cb_done.clientdata,
-                                       XMI_SUCCESS);
+                                       PAMI_SUCCESS);
                 _msyncsendQ.erase(msg->_p2p_msg._connection_id);
               }
         }
 
-      static void __xmi_lapi_m2m_done_fn(lapi_handle_t* handle, void *clientdata)
+      static void __pami_lapi_m2m_done_fn(lapi_handle_t* handle, void *clientdata)
         {
           OldLAPIM2MRecvMessage<size_t> *m2m = (OldLAPIM2MRecvMessage<size_t> *)clientdata;
           m2m->_num--;
           if(m2m->_num==0)
               {
                 if( m2m->_done_fn )
-                  m2m->_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
+                  m2m->_done_fn(NULL, m2m->_cookie,PAMI_SUCCESS);
                 m2m->_m2mrecvQ->remove(m2m);
                 free ( m2m );
               }
         }
 
-      static    void * __xmi_lapi_m2m_fn (lapi_handle_t   * hndl,
+      static    void * __pami_lapi_m2m_fn (lapi_handle_t   * hndl,
                                           void            * uhdr,
                                           uint            * uhdr_len,
                                           ulong           * retinfo,
@@ -282,7 +282,7 @@ namespace XMI
           OldLAPIM2MRecvMessage<size_t> * m2m;
           if(it == dev->_m2mrecvQ.end())
               {
-                xmi_callback_t    cb_done;
+                pami_callback_t    cb_done;
                 char            * buf;
                 size_t          * sizes;
                 size_t          * offsets;
@@ -297,7 +297,7 @@ namespace XMI
                               &nranks,
                               &cb_done);
                 m2m = (OldLAPIM2MRecvMessage<size_t> *)malloc(sizeof(OldLAPIM2MRecvMessage<size_t>) );
-                XMI_assert ( m2m != NULL );
+                PAMI_assert ( m2m != NULL );
                 m2m->_conn    = hdr->_conn;
                 m2m->_done_fn = cb_done.function;
                 m2m->_cookie  = cb_done.clientdata;
@@ -310,7 +310,7 @@ namespace XMI
                 if( m2m->_num == 0 )
                     {
                       if( m2m->_done_fn )
-                        (m2m->_done_fn)(NULL, m2m->_cookie,XMI_SUCCESS);
+                        (m2m->_done_fn)(NULL, m2m->_cookie,PAMI_SUCCESS);
                       free ( m2m );
                       return NULL;
                     }
@@ -325,13 +325,13 @@ namespace XMI
               {
                 m2m = (*it);
               }
-          XMI_assert(m2m != NULL);
+          PAMI_assert(m2m != NULL);
 
           size_t src = hdr->_peer;
           if (ri->udata_one_pkt_ptr)
               {
                 unsigned size = hdr->_size < m2m->_sizes[src] ? hdr->_size : m2m->_sizes[src];
-                XMI_assert(size>0);
+                PAMI_assert(size>0);
                 memcpy(m2m->_buf+m2m->_offsets[src],
                        (void *)ri->udata_one_pkt_ptr,
                        size);
@@ -339,7 +339,7 @@ namespace XMI
                 if(m2m->_num==0)
                     {
                       if( m2m->_done_fn )
-                        m2m->_done_fn(NULL, m2m->_cookie,XMI_SUCCESS);
+                        m2m->_done_fn(NULL, m2m->_cookie,PAMI_SUCCESS);
                       dev->_m2mrecvQ.remove(m2m);
                       free ( m2m );
                     }
@@ -351,7 +351,7 @@ namespace XMI
           else
               {
                 r             = (void*)(m2m->_buf+m2m->_offsets[src]);
-                *comp_h       = __xmi_lapi_m2m_done_fn;
+                *comp_h       = __pami_lapi_m2m_done_fn;
                 *uinfo        = m2m;
                 ri->ret_flags = LAPI_SEND_REPLY;
               }
@@ -360,7 +360,7 @@ namespace XMI
 
 
 
-      static    void * __xmi_lapi_msync_fn (lapi_handle_t   * hndl,
+      static    void * __pami_lapi_msync_fn (lapi_handle_t   * hndl,
                                             void            * uhdr,
                                             uint            * uhdr_len,
                                             ulong           * retinfo,
@@ -396,7 +396,7 @@ namespace XMI
                 if(m->_cb_done.function)
                   m->_cb_done.function(NULL,
                                        m->_cb_done.clientdata,
-                                       XMI_SUCCESS);
+                                       PAMI_SUCCESS);
                 dev->_msyncsendQ.erase(m->_p2p_msg._connection_id);
               }
           r             = NULL;
@@ -406,7 +406,7 @@ namespace XMI
           return r;
         }
 
-      static void __xmi_lapi_mcast_done_fn(lapi_handle_t* handle, void *clientdata)
+      static void __pami_lapi_mcast_done_fn(lapi_handle_t* handle, void *clientdata)
         {
           OldLAPIMcastRecvReq *req = (OldLAPIMcastRecvReq *)clientdata;
           int bytes = req->_mcast._size - req->_mcast._counter;
@@ -414,14 +414,14 @@ namespace XMI
               {
                 req->_mcast._counter += req->_mcast._pwidth;
                 if(req->_mcast._done_fn)
-                  req->_mcast._done_fn(NULL, req->_mcast._cookie, XMI_SUCCESS);
+                  req->_mcast._done_fn(NULL, req->_mcast._cookie, PAMI_SUCCESS);
               }
           if(req->_mcast._counter >= req->_mcast._size)
             req->_mcastrecvQ->remove(&req->_mcast);
           free(req);
         }
 
-      static    void * __xmi_lapi_mcast_fn (lapi_handle_t   * hndl,
+      static    void * __pami_lapi_mcast_fn (lapi_handle_t   * hndl,
                                             void            * uhdr,
                                             uint            * uhdr_len,
                                             ulong           * retinfo,
@@ -435,7 +435,7 @@ namespace XMI
           unsigned                    rcvlen;
           char                       *rcvbuf;
           unsigned                    pwidth;
-          xmi_callback_t              cb_done;
+          pami_callback_t              cb_done;
 
           LAPIDevice *_dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
           lapi_mcast_dispatch_info_t ldi = _dev->_mcast_dispatch_lookup[dispatch_id];
@@ -451,7 +451,7 @@ namespace XMI
                       break;
                     }
               }
-          XMI_assert(!(ldi.recv_func==NULL && found!=1));
+          PAMI_assert(!(ldi.recv_func==NULL && found!=1));
           OldLAPIMcastRecvMessage  m_store;
           OldLAPIMcastRecvMessage *mcast = &m_store;
           if(!found)
@@ -473,9 +473,9 @@ namespace XMI
                 mcast->_buf         = rcvbuf;
                 mcast->_size        = rcvlen;
                 mcast->_pwidth      = pwidth;
-                mcast->_hint        = XMI_PT_TO_PT_SUBTASK;
-                mcast->_op          = XMI_UNDEFINED_OP;
-                mcast->_dtype       = XMI_UNDEFINED_DT;
+                mcast->_hint        = PAMI_PT_TO_PT_SUBTASK;
+                mcast->_op          = PAMI_UNDEFINED_OP;
+                mcast->_dtype       = PAMI_UNDEFINED_DT;
                 mcast->_counter     = 0;
                 mcast->_dispatch_id = dispatch_id;
                 it = _dev->_mcastrecvQ.insert(it,mcast);
@@ -489,7 +489,7 @@ namespace XMI
           if(mcast->_pwidth == 0 && (mcast->_size == 0||mcast->_buf == 0))
               {
                 if(mcast->_done_fn)
-                  mcast->_done_fn (&msg->_context, mcast->_cookie, XMI_SUCCESS);
+                  mcast->_done_fn (&msg->_context, mcast->_cookie, PAMI_SUCCESS);
                 _dev->_mcastrecvQ.remove(mcast);
                 if(found)
                   free (mcast);
@@ -513,7 +513,7 @@ namespace XMI
                 for(; incoming_bytes > 0; incoming_bytes -= mcast->_pwidth)
                     {
                       if(mcast->_done_fn)
-                        mcast->_done_fn(&msg->_context, mcast->_cookie, XMI_SUCCESS);
+                        mcast->_done_fn(&msg->_context, mcast->_cookie, PAMI_SUCCESS);
                     }
                 if(mcast->_counter >= mcast->_size)
                     {
@@ -538,7 +538,7 @@ namespace XMI
                   free (mcast);
 
                 r                       = (void*)((size_t)mcast->_buf + mcast->_counter);
-                *comp_h                 = __xmi_lapi_mcast_done_fn;
+                *comp_h                 = __pami_lapi_mcast_done_fn;
                 *uinfo                  = (void*)req;
                 ri->ret_flags           = LAPI_LOCAL_STATE;
                 assert(r != NULL);
@@ -548,7 +548,7 @@ namespace XMI
           return r;
         }
 
-      inline xmi_context_t getContext_impl ()
+      inline pami_context_t getContext_impl ()
         {
           //  \todo Implement this
           return NULL;
@@ -561,8 +561,8 @@ namespace XMI
           return 0;
         }
 
-      XMI::Memory::MemoryManager                *_mm;
-      xmi_context_t                              _context;
+      PAMI::Memory::MemoryManager                *_mm;
+      pami_context_t                              _context;
       size_t                                     _offset;
       lapi_handle_t                              _lapi_handle;
       lapi_thread_func_t                         _tf;

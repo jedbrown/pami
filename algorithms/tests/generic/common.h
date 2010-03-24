@@ -54,10 +54,10 @@ int repetitions = 50; // default performance loop
 
 char *argv0; // filename
 
-XMI_CollectiveProtocol_t              barrier_reg __attribute__((__aligned__(32))), local_barrier_reg __attribute__((__aligned__(32)));
+PAMI_CollectiveProtocol_t              barrier_reg __attribute__((__aligned__(32))), local_barrier_reg __attribute__((__aligned__(32)));
 CCMI_Barrier_Configuration_t           configuration;
-XMI_CollectiveRequest_t               request;
-XMI_Callback_t                        common_done;
+PAMI_CollectiveRequest_t               request;
+PAMI_Callback_t                        common_done;
 CCMI_Consistency                       consistency;
 CCMI_Geometry_t                        geometry;
 
@@ -68,8 +68,8 @@ unsigned * srcbuf, * allocSrcBuf;
 unsigned * dstbuf, * allocDstBuf;
 unsigned * ranks;
 
-XMI_Dt type = XMI_UNSIGNED_INT;
-XMI_Op op   = XMI_SUM;
+PAMI_Dt type = PAMI_UNSIGNED_INT;
+PAMI_Op op   = PAMI_SUM;
 
 CCMI_Geometry_t *getGeometry (int comm)
 {
@@ -78,7 +78,7 @@ CCMI_Geometry_t *getGeometry (int comm)
 }
 
 
-void done_callback(void* cd, XMI_Error_t *e)
+void done_callback(void* cd, PAMI_Error_t *e)
 {
   TRACE_TEST_VERBOSE((stderr,"%s:%s\n", argv0,__PRETTY_FUNCTION__));
   done=1;
@@ -167,22 +167,22 @@ void setup(int argc, char **argv, unsigned override_default_max_count = 0)
       repetitions  = atoi(optarg);
       break;
     case 'd':
-      type = XMI_DOUBLE;
+      type = PAMI_DOUBLE;
       break;
     case 'i':
-      type = XMI_UNSIGNED_INT;
+      type = PAMI_UNSIGNED_INT;
       break;
     case 'f':
-      type = XMI_FLOAT;
+      type = PAMI_FLOAT;
       break;
     case 'm':
-      op = XMI_MAX;
+      op = PAMI_MAX;
       break;
     case 'p':
-      op = XMI_PROD;
+      op = PAMI_PROD;
       break;
     case 's':
-      op = XMI_SUM;
+      op = PAMI_SUM;
       break;
     case 'h':
       if(rank == 0)usage(1);
@@ -214,18 +214,18 @@ void initialize_common(CCMI_Barrier_Protocol barrier_protocol,
   configuration.cb_geometry = getGeometry;
 
   CCMI_Result ccmiResult;
-  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&barrier_reg, &configuration)) != XMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&barrier_reg, &configuration)) != PAMI_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_Barrier_register failed %d\n",ccmiResult);
 
   configuration.protocol = lbarrier_protocol;
-  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&local_barrier_reg, &configuration)) != XMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Barrier_register(&local_barrier_reg, &configuration)) != PAMI_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_Barrier_register failed %d\n",ccmiResult);
 
-  XMI_CollectiveProtocol_t  * bar_p = & barrier_reg, * local_bar_p = & local_barrier_reg;
+  PAMI_CollectiveProtocol_t  * bar_p = & barrier_reg, * local_bar_p = & local_barrier_reg;
   if((ccmiResult = (CCMI_Result) CCMI_Geometry_initialize (&geometry, 0, ranks, size,
                                                            &bar_p, 1,
                                                            &local_bar_p, 1,
-                                                           &request, 0, 1)) != XMI_SUCCESS)
+                                                           &request, 0, 1)) != PAMI_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_Geometry_initialize failed %d\n",ccmiResult);
 
   return;

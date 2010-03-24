@@ -6,7 +6,7 @@
 #include <map>
 #include "common/lapiunix/lapifunc.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {

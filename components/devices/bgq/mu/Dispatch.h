@@ -17,7 +17,7 @@
 
 #include "components/devices/PacketInterface.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -55,9 +55,9 @@ namespace XMI
         void                      * p;
       } dispatch_t;
 
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 #endif
 

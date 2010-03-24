@@ -11,11 +11,11 @@
  * \brief Optimized math routines for signed 64 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */
-#include "xmi_bg_math.h"
+#include "pami_bg_math.h"
 #include "util/common.h"
 //#include "ppc450d/internal_o.h"
 
-static void _xmi_core_int64_conv_o(uint64_t *dst, const int64_t *src, int count) {
+static void _pami_core_int64_conv_o(uint64_t *dst, const int64_t *src, int count) {
 #define OP(a) ((a)+(0x8000000000000000ULL))
 
 #define TYPE uint64_t
@@ -24,7 +24,7 @@ static void _xmi_core_int64_conv_o(uint64_t *dst, const int64_t *src, int count)
 #undef OP
 }
 
-static void _xmi_core_int64_conv_not_o(uint64_t *dst, const int64_t *src, int count) {
+static void _pami_core_int64_conv_not_o(uint64_t *dst, const int64_t *src, int count) {
 #define OP(a) (~((a)+(0x8000000000000000ULL)))
 
 #define TYPE uint64_t
@@ -33,7 +33,7 @@ static void _xmi_core_int64_conv_not_o(uint64_t *dst, const int64_t *src, int co
 #undef OP
 }
 
-static void _xmi_core_int64_unconv_o(int64_t *dst, const uint64_t *src, int count) {
+static void _pami_core_int64_unconv_o(int64_t *dst, const uint64_t *src, int count) {
 #define OP(a) ((a)-(0x8000000000000000ULL))
 
 #define TYPE uint64_t
@@ -42,7 +42,7 @@ static void _xmi_core_int64_unconv_o(int64_t *dst, const uint64_t *src, int coun
 #undef OP
 }
 
-static void _xmi_core_int64_unconv_not_o(int64_t *dst, const uint64_t *src, int count) {
+static void _pami_core_int64_unconv_not_o(int64_t *dst, const uint64_t *src, int count) {
 #define OP(a) (~((a)-(0x8000000000000000ULL)))
 
 #define TYPE uint64_t
@@ -51,18 +51,18 @@ static void _xmi_core_int64_unconv_not_o(int64_t *dst, const uint64_t *src, int 
 #undef OP
 }
 
-void _xmi_core_int64_pre_all_o(uint64_t *dst, const int64_t *src, int count) {
-  _xmi_core_int64_conv_o(dst, src, count);
+void _pami_core_int64_pre_all_o(uint64_t *dst, const int64_t *src, int count) {
+  _pami_core_int64_conv_o(dst, src, count);
 }
 
-void _xmi_core_int64_post_all_o(int64_t *dst, const uint64_t *src, int count) {
-  _xmi_core_int64_unconv_o(dst, src, count);
+void _pami_core_int64_post_all_o(int64_t *dst, const uint64_t *src, int count) {
+  _pami_core_int64_unconv_o(dst, src, count);
 }
 
-void _xmi_core_int64_pre_min_o(uint64_t *dst, const int64_t *src, int count) {
-  _xmi_core_int64_conv_not_o(dst, src, count);
+void _pami_core_int64_pre_min_o(uint64_t *dst, const int64_t *src, int count) {
+  _pami_core_int64_conv_not_o(dst, src, count);
 }
 
-void _xmi_core_int64_post_min_o(int64_t *dst, const uint64_t *src, int count) {
-  _xmi_core_int64_unconv_not_o(dst, src, count);
+void _pami_core_int64_post_min_o(int64_t *dst, const uint64_t *src, int count) {
+  _pami_core_int64_unconv_not_o(dst, src, count);
 }

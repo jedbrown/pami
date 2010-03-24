@@ -56,14 +56,14 @@
 // \brief Number of dispatch functions in a dispatch set
 #define DISPATCH_SET_SIZE   16
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
     namespace MU
     {
 
-      // \brief XMI::Device::MU trace utilities
+      // \brief PAMI::Device::MU trace utilities
       ///
       /// \brief dump a descriptor to stderr
       ///  \param pstring : an informational text string to print
@@ -88,7 +88,7 @@ namespace XMI
         public:
 
           // Inner factory class
-          class Factory : public Interface::FactoryInterface<Factory, MUDevice, XMI::Device::Generic::Device>
+          class Factory : public Interface::FactoryInterface<Factory, MUDevice, PAMI::Device::Generic::Device>
           {
             public:
               static inline MUDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm)
@@ -100,7 +100,7 @@ namespace XMI
                 // context in this _task_ (from heap, not from shared memory)
                 MUDevice * devices;
                 int rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
-                XMI_assertf(rc == 0, "posix_memalign failed for MUDevice[%zu], errno=%d\n", n, errno);
+                PAMI_assertf(rc == 0, "posix_memalign failed for MUDevice[%zu], errno=%d\n", n, errno);
 
                 // Instantiate the shared memory devices
                 for (i = 0; i < n; ++i)
@@ -112,13 +112,13 @@ namespace XMI
                 return devices;
               };
 
-              static inline xmi_result_t init_impl (MUDevice       * devices,
+              static inline pami_result_t init_impl (MUDevice       * devices,
                                                     size_t           clientid,
                                                     size_t           contextid,
-                                                    xmi_client_t     client,
-                                                    xmi_context_t    context,
+                                                    pami_client_t     client,
+                                                    pami_context_t    context,
                                                     Memory::MemoryManager *mm,
-                                                    XMI::Device::Generic::Device * progress)
+                                                    PAMI::Device::Generic::Device * progress)
               {
                 return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, mm, progress);
               };
@@ -144,34 +144,34 @@ namespace XMI
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
           //
-          //   Device interface implementations -- XMI::Device::Interface::BaseDevice
+          //   Device interface implementations -- PAMI::Device::Interface::BaseDevice
           //
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
 
-          xmi_result_t init (size_t           clientid,
+          pami_result_t init (size_t           clientid,
                              size_t           contextid,
-                             xmi_client_t     client,
-                             xmi_context_t    context,
+                             pami_client_t     client,
+                             pami_context_t    context,
                              Memory::MemoryManager *mm,
-                             XMI::Device::Generic::Device * progress);
+                             PAMI::Device::Generic::Device * progress);
 
-          /// \copydoc XMI::Device::Interface::BaseDevice::getContext
-          xmi_context_t getContext_impl ();
+          /// \copydoc PAMI::Device::Interface::BaseDevice::getContext
+          pami_context_t getContext_impl ();
 
-          /// \copydoc XMI::Device::Interface::BaseDevice::getContextOffset
+          /// \copydoc PAMI::Device::Interface::BaseDevice::getContextOffset
           size_t getContextOffset_impl ();
 
-          /// \copydoc XMI::Device::Interface::BaseDevice::isInit
+          /// \copydoc PAMI::Device::Interface::BaseDevice::isInit
           bool isInit_impl ();
 
-          /// \copydoc XMI::Device::Interface::BaseDevice::peers
+          /// \copydoc PAMI::Device::Interface::BaseDevice::peers
           inline size_t peers_impl ();
 
-          /// \copydoc XMI::Device::Interface::BaseDevice::task2peer
+          /// \copydoc PAMI::Device::Interface::BaseDevice::task2peer
           inline size_t task2peer_impl (size_t task);
 
-          /// \copydoc XMI::Device::Interface::BaseDevice::isPeer
+          /// \copydoc PAMI::Device::Interface::BaseDevice::isPeer
           inline bool isPeer_impl (size_t task);
 
           inline int advance ();
@@ -179,12 +179,12 @@ namespace XMI
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
           //
-          //   Device interface implementations -- XMI::Device::Interface::PacketDevice
+          //   Device interface implementations -- PAMI::Device::Interface::PacketDevice
           //
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
 
-          /// \copydoc XMI::Device::Interface::PacketDevice::readData
+          /// \copydoc PAMI::Device::Interface::PacketDevice::readData
           inline int read_impl (void * dst, size_t length, void * cookie);
 
           static const size_t packet_metadata_size  = 17;  // <-- replace with a constant from SPIs somewhere
@@ -194,7 +194,7 @@ namespace XMI
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
           //
-          //   Device interface implementations -- XMI::Device::Interface::MessageDevice
+          //   Device interface implementations -- PAMI::Device::Interface::MessageDevice
           //
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
@@ -202,7 +202,7 @@ namespace XMI
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
           //
-          //   Device interface implementations -- XMI::Device::Interface::DmaDevice
+          //   Device interface implementations -- PAMI::Device::Interface::DmaDevice
           //
           // ----------------------------------------------------------------------
           // ----------------------------------------------------------------------
@@ -279,7 +279,7 @@ namespace XMI
           }
 
           inline void addToSendQ (size_t                target_rank,
-                                  XMI::Queue::Element * msg)
+                                  PAMI::Queue::Element * msg)
           {
             InjFifoSubGroup * injFifoSubGroup = NULL;
             uint32_t          relativeFnum = 0;
@@ -323,7 +323,7 @@ namespace XMI
           ///  \param msg : the message to post
           void    post( MUBaseMessage &msg )
           {
-            XMI_assert( _colSendChannelFlag );
+            PAMI_assert( _colSendChannelFlag );
             _colChannel->post( msg );
           }
 #endif
@@ -334,7 +334,7 @@ namespace XMI
           //////////////////////////////////////////////////////////////////////////
           void p2pSendChannelAcquire(unsigned ch)
           {
-            XMI_assert( ch < MAX_NUM_P2P_CHANNELS && _p2pChannel[ch] );
+            PAMI_assert( ch < MAX_NUM_P2P_CHANNELS && _p2pChannel[ch] );
 
             _p2pSendChannelIndex = ch;
           }
@@ -346,7 +346,7 @@ namespace XMI
 
           void p2pRecvChannelAcquire(unsigned ch)
           {
-            XMI_assert( ch < MAX_NUM_P2P_CHANNELS && _p2pChannel[ch] );
+            PAMI_assert( ch < MAX_NUM_P2P_CHANNELS && _p2pChannel[ch] );
 
             _p2pRecvChannelIndex = ch;
           }
@@ -457,11 +457,11 @@ namespace XMI
             return _p2pChannel[_p2pSendChannelIndex]->getRgetInjFifoId (target_rank);
           }
 
-	  XMI::Memory::MemoryManager *_mm;
-          xmi_context_t _context;
+	  PAMI::Memory::MemoryManager *_mm;
+          pami_context_t _context;
           size_t        _contextid;
           size_t        _ncontexts;
-          xmi_client_t  _client;
+          pami_client_t  _client;
           size_t        _clientid;
 
         protected:
@@ -495,7 +495,7 @@ namespace XMI
           /// \brief Noop/abort recv function used to initialize
           ///        unregistered dispatch ids.
           ///
-          /// \see XMI::Device::RecvFunction_t
+          /// \see PAMI::Device::RecvFunction_t
           ///
           static int noop (void   * metadata,
                            void   * payload,
@@ -503,37 +503,37 @@ namespace XMI
                            void   * recv_func_parm,
                            void   * cookie);
 
-      }; // XMI::Device::MU::MUDevicee class
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+      }; // PAMI::Device::MU::MUDevicee class
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 //
-// XMI::Device::MU::MUDevice inline method interface implementations
+// PAMI::Device::MU::MUDevice inline method interface implementations
 //
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-size_t XMI::Device::MU::MUDevice::peers_impl ()
+size_t PAMI::Device::MU::MUDevice::peers_impl ()
 {
   return __global.mapping.size();
 }
 
-size_t XMI::Device::MU::MUDevice::task2peer_impl (size_t task)
+size_t PAMI::Device::MU::MUDevice::task2peer_impl (size_t task)
 {
   return task;
 }
 
-bool XMI::Device::MU::MUDevice::isPeer_impl (size_t task)
+bool PAMI::Device::MU::MUDevice::isPeer_impl (size_t task)
 {
   // all tasks are addressable "peers" to the MU
   return true;//__global.mapping.isPeer(task, __global.mapping.task());
 }
 
-int XMI::Device::MU::MUDevice::advance()
+int PAMI::Device::MU::MUDevice::advance()
 {
   int events = 0;
 
@@ -560,14 +560,14 @@ int XMI::Device::MU::MUDevice::advance()
 #if 1
   static size_t loopcount = 0;
   if(events) loopcount = 0;
-  else if (loopcount++ > 100000) XMI_abortf("Lots of advancing going on.\n");
+  else if (loopcount++ > 100000) PAMI_abortf("Lots of advancing going on.\n");
 #endif
 
   //TRACE((stderr, "<< MUDevice::advance_impl() .. events = %d\n", events));
   return events;
 }
 
-int XMI::Device::MU::MUDevice::read_impl (void * dst, size_t length, void * cookie)
+int PAMI::Device::MU::MUDevice::read_impl (void * dst, size_t length, void * cookie)
 {
   // TODO - replace this with an optimized packet copy function.
   memcpy (dst, cookie, length);

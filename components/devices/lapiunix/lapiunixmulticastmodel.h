@@ -14,10 +14,10 @@
 #ifndef __components_devices_lapiunix_lapiunixmulticastmodel_h__
 #define __components_devices_lapiunix_lapiunixmulticastmodel_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "components/devices/MulticastModel.h"
 
-namespace XMI
+namespace PAMI
 {
     namespace Device
     {
@@ -31,22 +31,22 @@ namespace XMI
       static const bool   is_active_message       = true;
 
 
-      LAPIMulticastModel (T_Device & device, xmi_result_t &status) :
+      LAPIMulticastModel (T_Device & device, pami_result_t &status) :
         Interface::AMMulticastModel < LAPIMulticastModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, status)
                 {};
 
-      inline xmi_result_t registerMcastRecvFunction_impl (int                        dispatch_id,
-                                                          xmi_dispatch_multicast_fn  recv_func,
+      inline pami_result_t registerMcastRecvFunction_impl (int                        dispatch_id,
+                                                          pami_dispatch_multicast_fn  recv_func,
                                                           void                      *async_arg)
                 {
-              return XMI_SUCCESS;
+              return PAMI_SUCCESS;
                 }
 
 
-      inline xmi_result_t postMulticast_impl (uint8_t (&state)[mcast_model_state_bytes],
-                                              xmi_multicast_t *mcast)
+      inline pami_result_t postMulticast_impl (uint8_t (&state)[mcast_model_state_bytes],
+                                              pami_multicast_t *mcast)
                 {
-              return XMI_SUCCESS;
+              return PAMI_SUCCESS;
                 }
         };
     };

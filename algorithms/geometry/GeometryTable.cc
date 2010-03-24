@@ -3,13 +3,13 @@
 /// \brief ???
 ///
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include <map>
 
 
 
-namespace XMI
+namespace PAMI
 {
-  std::map<unsigned, xmi_geometry_t> geometry_map;
-  std::map<unsigned, xmi_geometry_t> cached_geometry;
+  std::map<unsigned, pami_geometry_t> geometry_map;
+  std::map<unsigned, pami_geometry_t> cached_geometry;
 }

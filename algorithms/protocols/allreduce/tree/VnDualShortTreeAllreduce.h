@@ -66,8 +66,8 @@ namespace CCMI
           _mapping(mapping),
           _mcomb((DCMF::Collectives::MultiSend::MulticombineImpl *)mf),
           _dstbuf(NULL),
-          _op(XMI_UNDEFINED_OP),
-          _dt(XMI_UNDEFINED_DT),
+          _op(PAMI_UNDEFINED_OP),
+          _dt(PAMI_UNDEFINED_DT),
           _sizeOfType(0),
           _count(0),
           _bytes(0),
@@ -84,7 +84,7 @@ namespace CCMI
 
           static void init(CCMI::TorusCollectiveMapping *mapping);
 
-          static void cb_treeRecvDone(void *me, XMI_Error_t *err)
+          static void cb_treeRecvDone(void *me, PAMI_Error_t *err)
           {
             VnDualShortTreeAllreduce *a = (VnDualShortTreeAllreduce *)me;
 
@@ -120,62 +120,62 @@ namespace CCMI
             }
           }
 
-          virtual unsigned restart(XMI_CollectiveRequest_t  *request,
-                                       XMI_Callback_t           & cb_done,
+          virtual unsigned restart(PAMI_CollectiveRequest_t  *request,
+                                       PAMI_Callback_t           & cb_done,
                                        CCMI_Consistency            consistency,
                                        char                      * srcbuf,
                                        char                      * dstbuf,
                                        size_t                      count,
-                                       XMI_Dt                     dtype,
-                                       XMI_Op                     op,
+                                       PAMI_Dt                     dtype,
+                                       PAMI_Op                     op,
                                        size_t                      root = (size_t)-1);
 
         private:
 #if 0
-          int sizeOfType( XMI_Dt dtype )
+          int sizeOfType( PAMI_Dt dtype )
           {
             int size;
             switch(dtype)
             {
-            case XMI_LOGICAL:
-            case XMI_SIGNED_INT:
-            case XMI_UNSIGNED_INT:
+            case PAMI_LOGICAL:
+            case PAMI_SIGNED_INT:
+            case PAMI_UNSIGNED_INT:
               size = sizeof(int);
               break;
-            case XMI_SIGNED_LONG_LONG:
-            case XMI_UNSIGNED_LONG_LONG:
+            case PAMI_SIGNED_LONG_LONG:
+            case PAMI_UNSIGNED_LONG_LONG:
               size = sizeof(long long);
               break;
-            case XMI_SIGNED_SHORT:
-            case XMI_UNSIGNED_SHORT:
+            case PAMI_SIGNED_SHORT:
+            case PAMI_UNSIGNED_SHORT:
               size = sizeof(short);
               break;
-            case XMI_UNSIGNED_CHAR:
-            case XMI_SIGNED_CHAR:
+            case PAMI_UNSIGNED_CHAR:
+            case PAMI_SIGNED_CHAR:
               size = sizeof(char);
               break;
-            case XMI_FLOAT:
+            case PAMI_FLOAT:
               size = sizeof(float);
               break;
-            case XMI_DOUBLE:
+            case PAMI_DOUBLE:
               size = sizeof(double);
               break;
-            case XMI_LOC_2INT:
+            case PAMI_LOC_2INT:
               size = sizeof(int32_int32_t);
               break;
-            case XMI_LOC_SHORT_INT:
+            case PAMI_LOC_SHORT_INT:
               size = sizeof(int16_int32_t);
               break;
-            case XMI_LOC_FLOAT_INT:
+            case PAMI_LOC_FLOAT_INT:
               size = sizeof(fp32_int32_t);
               break;
-            case XMI_LOC_DOUBLE_INT:
+            case PAMI_LOC_DOUBLE_INT:
               size = sizeof(fp64_int32_t);
               break;
-            case XMI_LOC_2FLOAT:
+            case PAMI_LOC_2FLOAT:
               size = sizeof(fp32_fp32_t);
               break;
-            case XMI_LOC_2DOUBLE:
+            case PAMI_LOC_2DOUBLE:
               size = sizeof(fp64_fp64_t);
               break;
             default:
@@ -187,10 +187,10 @@ namespace CCMI
 
           CCMI::TorusCollectiveMapping                 * _mapping;
           DCMF::Collectives::MultiSend::MulticombineImpl     * _mcomb;
-          XMI_Callback_t                _cb_done;
+          PAMI_Callback_t                _cb_done;
           char                         * _dstbuf;
-          XMI_Op                        _op;
-          XMI_Dt                        _dt;
+          PAMI_Op                        _op;
+          PAMI_Dt                        _dt;
           unsigned                       _sizeOfType;
           unsigned                       _count;
           unsigned                       _bytes;
@@ -201,9 +201,9 @@ namespace CCMI
           static SharedData            * _shared;
 	  static char *_swq_buf;
 	  static char *_rwq_buf;
-	  static XMI::PipeWorkQueue _swq;
-	  static XMI::PipeWorkQueue _rwq;
-	  static XMI::Topology _root;
+	  static PAMI::PipeWorkQueue _swq;
+	  static PAMI::PipeWorkQueue _rwq;
+	  static PAMI::Topology _root;
           static unsigned _numPeers;
           static unsigned _myPeer;
           static unsigned _isMasterCore;

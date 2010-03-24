@@ -16,46 +16,46 @@
 
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/util/SubDeviceSuppt.h"
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "Global.h"
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 #include "components/devices/MulticastModel.h"
 #include "components/devices/FactoryInterface.h"
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 
 class WQRingBcastMdl;
 class WQRingBcastMsg;
-typedef XMI::Device::Generic::SimpleAdvanceThread WQRingBcastThr;
-class WQRingBcastDev : public XMI::Device::Generic::MultiSendQSubDevice<WQRingBcastThr,1,true> {
+typedef PAMI::Device::Generic::SimpleAdvanceThread WQRingBcastThr;
+class WQRingBcastDev : public PAMI::Device::Generic::MultiSendQSubDevice<WQRingBcastThr,1,true> {
 public:
 	class Factory : public Interface::FactoryInterface<Factory,WQRingBcastDev,Generic::Device> {
 	public:
 		static inline WQRingBcastDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(WQRingBcastDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
+		static inline pami_result_t init_impl(WQRingBcastDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(WQRingBcastDev *devs, size_t client, size_t context);
 		static inline WQRingBcastDev & getDevice_impl(WQRingBcastDev *devs, size_t client, size_t context);
 	}; // class Factory
-	inline XMI::Memory::MemoryManager *getSysdep() { return _mm; }
+	inline PAMI::Memory::MemoryManager *getSysdep() { return _mm; }
 protected:
-	XMI::Memory::MemoryManager *_mm;
+	PAMI::Memory::MemoryManager *_mm;
 }; // class WQRingBcastDev
 
 }; //-- Device
-}; //-- XMI
+}; //-- PAMI
 
-extern XMI::Device::WQRingBcastDev _g_wqbcast_dev;
+extern PAMI::Device::WQRingBcastDev _g_wqbcast_dev;
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 
 inline WQRingBcastDev *WQRingBcastDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
 	return &_g_wqbcast_dev;
 }
 
-inline xmi_result_t WQRingBcastDev::Factory::init_impl(WQRingBcastDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+inline pami_result_t WQRingBcastDev::Factory::init_impl(WQRingBcastDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
 	if (client == 0 && contextId == 0) {
 		_g_wqbcast_dev._mm = mm;
 	}
@@ -74,7 +74,7 @@ inline WQRingBcastDev & WQRingBcastDev::Factory::getDevice_impl(WQRingBcastDev *
 /// \brief A local bcast message that takes advantage of the
 /// shared-memory workqueues
 ///
-class WQRingBcastMsg : public XMI::Device::Generic::GenericMessage {
+class WQRingBcastMsg : public PAMI::Device::Generic::GenericMessage {
 private:
 	enum roles {
 		NO_ROLE = 0,
@@ -83,11 +83,11 @@ private:
 	};
 public:
 	WQRingBcastMsg(GenericDeviceMessageQueue *Generic_QS,
-		xmi_multicast_t *mcast,
-		XMI::PipeWorkQueue *iwq,
-		XMI::PipeWorkQueue *swq,
-		XMI::PipeWorkQueue *rwq) :
-	XMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
+		pami_multicast_t *mcast,
+		PAMI::PipeWorkQueue *iwq,
+		PAMI::PipeWorkQueue *swq,
+		PAMI::PipeWorkQueue *rwq) :
+	PAMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
 				mcast->client, mcast->context),
 	_iwq(iwq),
 	_swq(swq), // might be NULL
@@ -97,7 +97,7 @@ public:
 	}
 
 	// virtual function
-	xmi_context_t postNext(bool devQueued) {
+	pami_context_t postNext(bool devQueued) {
 		return _g_wqbcast_dev.__postNext<WQRingBcastMsg>(this, devQueued);
 	}
 
@@ -110,7 +110,7 @@ public:
 		_nThreads = 1; // must predict total number of threads
 		t[nt].setMsg(this);
 		t[nt].setAdv(advanceThread);
-		t[nt].setStatus(XMI::Device::Ready);
+		t[nt].setStatus(PAMI::Device::Ready);
 		t[nt]._bytesLeft = _bytes;
 #ifdef USE_WAKEUP_VECTORS
 		// not here - but somewhere/somehow...
@@ -125,7 +125,7 @@ public:
 
 protected:
 	DECL_ADVANCE_ROUTINE(advanceThread,WQRingBcastMsg,WQRingBcastThr);
-	inline xmi_result_t __advanceThread(WQRingBcastThr *thr) {
+	inline pami_result_t __advanceThread(WQRingBcastThr *thr) {
 		size_t min = thr->_bytesLeft;
 		size_t wq = _iwq->bytesAvailableToConsume();
 		if (wq < min) min = wq;
@@ -138,7 +138,7 @@ protected:
 			if (wq < min) min = wq;
 		}
 		if (min == 0) {
-			return XMI_EAGAIN;
+			return PAMI_EAGAIN;
 		}
 		if (_rwq) {
 			memcpy(_rwq->bufferToProduce(), _iwq->bufferToConsume(), min);
@@ -151,14 +151,14 @@ protected:
 		_iwq->consumeBytes(min);
 		thr->_bytesLeft -= min;
 		if (thr->_bytesLeft == 0) {
-			thr->setStatus(XMI::Device::Complete);
+			thr->setStatus(PAMI::Device::Complete);
 #ifdef USE_WAKEUP_VECTORS
 			__clearWakeup(thr);
 #endif // USE_WAKEUP_VECTORS
-			setStatus(XMI::Device::Done);
-			return XMI_SUCCESS;
+			setStatus(PAMI::Device::Done);
+			return PAMI_SUCCESS;
 		}
-		return XMI_EAGAIN;
+		return PAMI_EAGAIN;
 	}
 
 	/// \brief arrange to be woken up when inputs/outputs become "ready"
@@ -199,23 +199,23 @@ protected:
 	}
 
 	unsigned _nThreads;
-	XMI::PipeWorkQueue *_iwq;
-	XMI::PipeWorkQueue *_swq;
-	XMI::PipeWorkQueue *_rwq;
+	PAMI::PipeWorkQueue *_iwq;
+	PAMI::PipeWorkQueue *_swq;
+	PAMI::PipeWorkQueue *_rwq;
 	size_t _bytes;
 }; //-- WQRingBcastMsg
 
-class WQRingBcastMdl : public XMI::Device::Interface::MulticastModel<WQRingBcastMdl,WQRingBcastDev,sizeof(WQRingBcastMsg)> {
+class WQRingBcastMdl : public PAMI::Device::Interface::MulticastModel<WQRingBcastMdl,WQRingBcastDev,sizeof(WQRingBcastMsg)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(WQRingBcastMsg);
 
-	WQRingBcastMdl(WQRingBcastDev &device, xmi_result_t &status) :
-        XMI::Device::Interface::MulticastModel<WQRingBcastMdl,WQRingBcastDev,sizeof(WQRingBcastMsg)>(device, status)
+	WQRingBcastMdl(WQRingBcastDev &device, pami_result_t &status) :
+        PAMI::Device::Interface::MulticastModel<WQRingBcastMdl,WQRingBcastDev,sizeof(WQRingBcastMsg)>(device, status)
 	{
 		// assert(device == _g_wqbcast_dev);
-		XMI::Memory::MemoryManager *mm = _g_wqbcast_dev.getSysdep();
+		PAMI::Memory::MemoryManager *mm = _g_wqbcast_dev.getSysdep();
 		_me = __global.mapping.task();
 		size_t t0 = __global.topology_local.index2Rank(0);
 		size_t tz;
@@ -230,18 +230,18 @@ public:
 		}
 	}
 
-	inline xmi_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                               xmi_multicast_t *mcast);
+	inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
+                                               pami_multicast_t *mcast);
 
 private:
 	size_t _me;
-	XMI::PipeWorkQueue _wq[XMI_MAX_PROC_PER_NODE];
+	PAMI::PipeWorkQueue _wq[PAMI_MAX_PROC_PER_NODE];
 }; // class WQRingBcastMdl
 
-inline xmi_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                               xmi_multicast_t *mcast) {
-	XMI::Topology *dst_topo = (XMI::Topology *)mcast->dst_participants;
-	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
+inline pami_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_msg],
+                                               pami_multicast_t *mcast) {
+	PAMI::Topology *dst_topo = (PAMI::Topology *)mcast->dst_participants;
+	PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
 	size_t root = src_topo->index2Rank(0); // assert size(0 == 1...
 	bool iamroot = (root == _me);
 	bool iamlast = false;
@@ -250,7 +250,7 @@ inline xmi_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_m
 	size_t me_1;
 	size_t meix = dst_topo->rank2Index(_me);
 	if (meix == (size_t)-1) {
-		XMI_assertf(iamroot, "WQRingBcastMdl::postMulticast called by non-participant\n");
+		PAMI_assertf(iamroot, "WQRingBcastMdl::postMulticast called by non-participant\n");
 		// meix = 0; // not used
 		meix_1 = 0; // output to _wq[0]
 	} else {
@@ -271,34 +271,34 @@ inline xmi_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_m
 	WQRingBcastMsg *msg;
 	if (iamroot) {      // I am root
 		// I am root - at head of stream
-		// XMI_assert(roles == ROOT_ROLE);
+		// PAMI_assert(roles == ROOT_ROLE);
 		// _input ===> _wq[meix]
 #ifdef USE_FLAT_BUFFER
 		_wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
 		msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev.getQS(), mcast,
-					(XMI::PipeWorkQueue *)mcast->src, &_wq[meix_1], NULL);
+					(PAMI::PipeWorkQueue *)mcast->src, &_wq[meix_1], NULL);
 	} else if (iamlast) {
 		// I am tail of stream - no one is downstream from me.
-		// XMI_assert(roles == NON_ROOT_ROLE);
+		// PAMI_assert(roles == NON_ROOT_ROLE);
 		// _wq[meix_1] ===> results
 		msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev.getQS(), mcast,
-					&_wq[meix], NULL, (XMI::PipeWorkQueue *)mcast->dst);
+					&_wq[meix], NULL, (PAMI::PipeWorkQueue *)mcast->dst);
 	} else {
-		// XMI_assert(roles == NON_ROOT_ROLE);
+		// PAMI_assert(roles == NON_ROOT_ROLE);
 		// _wq[meix_1] =+=> results
 		//              +=> _wq[meix]
 #ifdef USE_FLAT_BUFFER
 		_wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
 		msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev.getQS(), mcast,
-					&_wq[meix], &_wq[meix_1], (XMI::PipeWorkQueue *)mcast->dst);
+					&_wq[meix], &_wq[meix_1], (PAMI::PipeWorkQueue *)mcast->dst);
 	}
 	_g_wqbcast_dev.__post<WQRingBcastMsg>(msg);
-	return XMI_SUCCESS;
+	return PAMI_SUCCESS;
 }
 
 }; //-- Device
-}; //-- XMI
+}; //-- PAMI
 
 #endif // __components_devices_workqueue_wqringbcastmsg_h__

@@ -21,7 +21,7 @@
 #include "spi/bgp_SPI.h"
 #include "spi/bgp_collective_spi.h"
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace BGP {
 
@@ -66,7 +66,7 @@ namespace BGP {
 
 }; /* BGP */
 }; /* Device */
-}; /* XMI */
+}; /* PAMI */
 
 #endif /* defined(__bgp__) and  and !defined(__bgq__) */
 

@@ -16,7 +16,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "../util.h"
 
 #define ITERATIONS 100
@@ -54,9 +54,9 @@ typedef struct
 
 /* --------------------------------------------------------------- */
 
-static void decrement (xmi_context_t   context,
+static void decrement (pami_context_t   context,
                        void          * cookie,
-                       xmi_result_t    result)
+                       pami_result_t    result)
 {
   unsigned * value = (unsigned *) cookie;
   TRACE_ERR((stderr, "(%zu) decrement() cookie = %p, %d => %d\n", _my_task, cookie, *value, *value-1));
@@ -65,13 +65,13 @@ static void decrement (xmi_context_t   context,
 
 /* --------------------------------------------------------------- */
 static void test_dispatch (
-    xmi_context_t        context,      /**< IN: XMI context */
+    pami_context_t        context,      /**< IN: PAMI context */
     void               * cookie,       /**< IN: dispatch cookie */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
-    void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
-    size_t               pipe_size,    /**< IN: size of XMI pipe buffer */
-    xmi_recv_t         * recv)        /**< OUT: receive message structure */
+    void               * pipe_addr,    /**< IN: address of PAMI pipe buffer */
+    size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
+    pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   if (pipe_addr != NULL)
   {
@@ -87,7 +87,7 @@ static void test_dispatch (
 
     recv->local_fn = decrement;
     recv->cookie   = cookie;
-    recv->kind = XMI_AM_KIND_SIMPLE;
+    recv->kind = PAMI_AM_KIND_SIMPLE;
     recv->data.simple.addr  = _recv_buffer;
     recv->data.simple.bytes = pipe_size;
   }
@@ -95,25 +95,25 @@ static void test_dispatch (
   _recv_iteration++;
 }
 
-void send_once (xmi_context_t context, xmi_send_t * parameters)
+void send_once (pami_context_t context, pami_send_t * parameters)
 {
-  //xmi_result_t result =
-    XMI_Send (context, parameters);
+  //pami_result_t result =
+    PAMI_Send (context, parameters);
   TRACE_ERR((stderr, "(%zu) send_once() Before advance\n", _my_task));
-  while (_send_active) XMI_Context_advance (context, 100);
+  while (_send_active) PAMI_Context_advance (context, 100);
   TRACE_ERR((stderr, "(%zu) send_once()  After advance\n", _my_task));
 }
 
-void recv_once (xmi_context_t context)
+void recv_once (pami_context_t context)
 {
   TRACE_ERR((stderr, "(%zu) recv_once() Before advance\n", _my_task));
-  while (_recv_active) XMI_Context_advance (context, 100);
+  while (_recv_active) PAMI_Context_advance (context, 100);
 
   _recv_active = 1;
   TRACE_ERR((stderr, "(%zu) recv_once()  After advance\n", _my_task));
 }
 
-unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, xmi_task_t mytask, xmi_task_t origintask, xmi_endpoint_t origin, xmi_task_t targettask, xmi_endpoint_t target)
+unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, pami_task_t mytask, pami_task_t origintask, pami_endpoint_t origin, pami_task_t targettask, pami_endpoint_t target)
 {
   TRACE_ERR((stderr, "(%u) Do test ... sndlen = %zu\n", mytask, sndlen));
   _recv_active = 1;
@@ -126,7 +126,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
   header_t header;
   header.sndlen = sndlen;
 
-  xmi_send_t parameters;
+  pami_send_t parameters;
   parameters.send.dispatch        = dispatch;
   parameters.send.header.iov_base = metadata;
   parameters.send.header.iov_len  = hdrsize;
@@ -139,7 +139,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
   barrier ();
 
   unsigned i;
-  unsigned long long t1 = XMI_Wtimebase();
+  unsigned long long t1 = PAMI_Wtimebase();
   if (mytask == origintask)
   {
     parameters.send.dest = target;
@@ -166,7 +166,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
       _send_active = 1;
     }
   }
-  unsigned long long t2 = XMI_Wtimebase();
+  unsigned long long t2 = PAMI_Wtimebase();
 
   return ((t2-t1)/ITERATIONS)/2;
 }
@@ -185,15 +185,15 @@ int main (int argc, char ** argv)
     hdrsize[arg] = (size_t) strtol (argv[arg], NULL, 10);
   }
 
-  char clientname[] = "XMI";
-  xmi_client_t client;
-  TRACE_ERR((stderr, "... before XMI_Client_initialize()\n"));
-  XMI_Client_initialize (clientname, &client);
-  TRACE_ERR((stderr, "...  after XMI_Client_initialize()\n"));
-  xmi_context_t context;
-  TRACE_ERR((stderr, "... before XMI_Context_create()\n"));
-  { size_t _n = 1; XMI_Context_createv (client, NULL, 0, &context, _n); }
-  TRACE_ERR((stderr, "...  after XMI_Context_create()\n"));
+  char clientname[] = "PAMI";
+  pami_client_t client;
+  TRACE_ERR((stderr, "... before PAMI_Client_initialize()\n"));
+  PAMI_Client_initialize (clientname, &client);
+  TRACE_ERR((stderr, "...  after PAMI_Client_initialize()\n"));
+  pami_context_t context;
+  TRACE_ERR((stderr, "... before PAMI_Context_create()\n"));
+  { size_t _n = 1; PAMI_Context_createv (client, NULL, 0, &context, _n); }
+  TRACE_ERR((stderr, "...  after PAMI_Context_create()\n"));
 
   TRACE_ERR((stderr, "... before barrier_init()\n"));
   barrier_init (client, context, 0);
@@ -205,38 +205,38 @@ int main (int argc, char ** argv)
 
   _dispatch[_dispatch_count] = _dispatch_count + 1;
 
-  xmi_dispatch_callback_fn fn;
+  pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
-  xmi_send_hint_t options={0};
-  TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, recv_active = %u\n", &_recv_active, _recv_active));
-  xmi_result_t result = XMI_Dispatch_set (context,
+  pami_send_hint_t options={0};
+  TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, recv_active = %u\n", &_recv_active, _recv_active));
+  pami_result_t result = PAMI_Dispatch_set (context,
                                           _dispatch[_dispatch_count++],
                                           fn,
                                           (void *)&_recv_active,
                                           options);
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
+    fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
     return 1;
   }
 
-  xmi_configuration_t configuration;
+  pami_configuration_t configuration;
 
-  configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_TASK_ID;
+  result = PAMI_Configuration_query(client, &configuration);
   _my_task = configuration.value.intval;
 
-  configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_NUM_TASKS;
+  result = PAMI_Configuration_query(client, &configuration);
   size_t num_tasks = configuration.value.intval;
 
-  configuration.name = XMI_WTICK;
-  result = XMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_WTICK;
+  result = PAMI_Configuration_query(client, &configuration);
   double tick = configuration.value.doubleval;
 
   // Use task 0 to last task (arbitrary)
-  xmi_task_t origin_task = 0;
-  xmi_task_t target_task = num_tasks -1;
+  pami_task_t origin_task = 0;
+  pami_task_t target_task = num_tasks -1;
 
   /* Display some test header information */
   if (_my_task == origin_task)
@@ -249,7 +249,7 @@ int main (int argc, char ** argv)
     index[0] += sprintf (&str[0][index[0]], "#          ");
     index[1] += sprintf (&str[1][index[1]], "#    bytes ");
 
-    fprintf (stdout, "# XMI_Send() nearest-neighor half-pingpong blocking latency performance test\n");
+    fprintf (stdout, "# PAMI_Send() nearest-neighor half-pingpong blocking latency performance test\n");
     fprintf (stdout, "#\n");
     unsigned i;
     for (i=0; i<hdrcnt; i++)
@@ -274,8 +274,8 @@ int main (int argc, char ** argv)
 
   char str[10240];
 
-  xmi_endpoint_t origin = XMI_Client_endpoint (client, origin_task, 0);
-  xmi_endpoint_t target = XMI_Client_endpoint (client, target_task, 0);
+  pami_endpoint_t origin = PAMI_Client_endpoint (client, origin_task, 0);
+  pami_endpoint_t target = PAMI_Client_endpoint (client, target_task, 0);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
   size_t sndlen = 1;
@@ -302,7 +302,7 @@ int main (int argc, char ** argv)
       fprintf (stdout, "%s\n", str);
   }
 
-  XMI_Client_finalize (client);
+  PAMI_Client_finalize (client);
 
   return 0;
 }

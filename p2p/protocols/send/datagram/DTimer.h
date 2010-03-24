@@ -22,7 +22,7 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-namespace XMI {
+namespace PAMI {
 namespace Protocol {
 namespace Send {
 class DTimer {
@@ -33,11 +33,11 @@ public:
 				_running(false), _closed(false) {
 	}
 
-	xmi_result_t start(XMI::Device::ProgressFunctionMdl progfmodel,
-			unsigned long long interval, xmi_event_function timeout_cb, void * timeout_cookie,
-			unsigned long max_timeouts, xmi_event_function max_cb, void * max_cookie) {
+	pami_result_t start(PAMI::Device::ProgressFunctionMdl progfmodel,
+			unsigned long long interval, pami_event_function timeout_cb, void * timeout_cookie,
+			unsigned long max_timeouts, pami_event_function max_cb, void * max_cookie) {
 		TRACE_ERR((stderr,"DTimer(%p) start() ... Starting timer with interval = %llu \n", this, interval));
-		XMI_ProgressFunc_t progf;
+		PAMI_ProgressFunc_t progf;
 
 		_start_time = 0;
 		_interval = interval;
@@ -55,22 +55,22 @@ public:
 #warning fix this progress fnction stuff
 		//progf.client = clientid;
 		//progf.context = contextid;
-		progf.func = advance_timer_cb;  // xmi_work_function
-		progf.cb_done = (xmi_callback_t) {NULL};
+		progf.func = advance_timer_cb;  // pami_work_function
+		progf.cb_done = (pami_callback_t) {NULL};
 		bool rc = progfmodel.postWork(&progf);
 		if (!rc) {
 			TRACE_ERR((stderr,"DTimer(%p) advance_timer() ... Failed to generateMessage on progress function\n",this));
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 
-	static xmi_result_t advance_timer_cb(xmi_context_t context, void * me) {
+	static pami_result_t advance_timer_cb(pami_context_t context, void * me) {
 		DTimer *dt = (DTimer *)me;
 		return dt->advance_timer(context);
 	}
 
-	xmi_result_t advance_timer(xmi_context_t context) {
+	pami_result_t advance_timer(pami_context_t context) {
 		if (_running) {
 			// If initial time not set, set it
 			if (_start_time == 0) {
@@ -92,21 +92,21 @@ public:
 					// out of timeouts
 					TRACE_ERR((stderr, "   DTimer(%p) advance_timer() ...  Maxed Out\n", this));
 					if (_max_cb) {
-						_max_cb(context, _max_cookie, XMI_ERROR);
+						_max_cb(context, _max_cookie, PAMI_ERROR);
 					}
-					return XMI_ERROR;
+					return PAMI_ERROR;
 				} else {
 					// normal timeout processing
 					TRACE_ERR((stderr, "   DTimer(%p) advance_timer() ...  Normal timeout processing\n", this));
 					if (_timeout_cb) {
-						_timeout_cb(context, _timeout_cookie, XMI_EAGAIN);
+						_timeout_cb(context, _timeout_cookie, PAMI_EAGAIN);
 					}
 				}
 			}
-			return XMI_EAGAIN;
+			return PAMI_EAGAIN;
 		}
-		if (_closed) return XMI_SUCCESS;  // Remove from advance
-		return XMI_EAGAIN; // Keep advancing, but don't do anything
+		if (_closed) return PAMI_SUCCESS;  // Remove from advance
+		return PAMI_EAGAIN; // Keep advancing, but don't do anything
 	}
 
 	void reset() {
@@ -126,30 +126,30 @@ public:
 
 protected:
 private:
-	char pmsgbuf[XMI::Device::ProgressFunctionMdl::sizeof_msg];
+	char pmsgbuf[PAMI::Device::ProgressFunctionMdl::sizeof_msg];
 
 	unsigned long long _start_time; ///starting time
 	unsigned long long _interval; ///define interval
-	xmi_event_function _timeout_cb;
+	pami_event_function _timeout_cb;
 	void * _timeout_cookie;
 	unsigned long _max_timeouts; ///time out condition
 	unsigned long _max_timeouts_left;
-	xmi_event_function _max_cb;
+	pami_event_function _max_cb;
 	void * _max_cookie;
 	bool _running; ///running flag
 	bool _closed;  ///closed flag
 
 
-}; // XMI::Protocol::Send::DTimer class
+}; // PAMI::Protocol::Send::DTimer class
 }
-; // XMI::Protocol::Send namespace
+; // PAMI::Protocol::Send namespace
 }
-; // XMI::Protocol namespace
+; // PAMI::Protocol namespace
 }
-; // XMI namespace
+; // PAMI namespace
 
 #undef TRACE_ERR
-#endif // __xmi_p2p_protocol_send_datagram_DTimer_h__
+#endif // __pami_p2p_protocol_send_datagram_DTimer_h__
 //
 // astyle info    http://astyle.sourceforge.net
 //

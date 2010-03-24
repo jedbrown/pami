@@ -41,7 +41,7 @@ namespace CCMI
         /// \brief A buffer pool to optimize memory allocation
         /// overheads
         ///
-        XMI::Queue                      _bufferPool;
+        PAMI::Queue                      _bufferPool;
 
       public:
 

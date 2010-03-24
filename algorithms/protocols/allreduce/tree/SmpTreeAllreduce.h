@@ -17,7 +17,7 @@
 #include "../BaseComposite.h"
 #include "multisend/multisend_impl.h"
 
-extern int dcmf_dt_shift[XMI_DT_COUNT];
+extern int dcmf_dt_shift[PAMI_DT_COUNT];
 
 namespace CCMI
 {
@@ -41,7 +41,7 @@ namespace CCMI
                            ) :
           BaseComposite( factory ),
           _mcomb       ((DCMF::Collectives::MultiSend::MulticombineImpl *)mf),
-          _dt          (XMI_UNDEFINED_DT),
+          _dt          (PAMI_UNDEFINED_DT),
           _count       (0),
           _bytes       (0),
           _sizeOfType  (0),
@@ -49,25 +49,25 @@ namespace CCMI
           {
             _mcombArgs.setCallback( NULL, NULL );
             _mcombArgs.setDataRanks( NULL ); // ???
-            _mcombArgs.setReduceInfo( XMI_UNDEFINED_OP, XMI_UNDEFINED_DT );
+            _mcombArgs.setReduceInfo( PAMI_UNDEFINED_OP, PAMI_UNDEFINED_DT );
           }
 
-          virtual unsigned restart   ( XMI_CollectiveRequest_t  * request,
-                                       XMI_Callback_t           & cb_done,
+          virtual unsigned restart   ( PAMI_CollectiveRequest_t  * request,
+                                       PAMI_Callback_t           & cb_done,
                                        CCMI_Consistency            consistency,
                                        char                      * srcbuf,
                                        char                      * dstbuf,
                                        size_t                      count,
-                                       XMI_Dt                     dtype,
-                                       XMI_Op                     op,
+                                       PAMI_Dt                     dtype,
+                                       PAMI_Op                     op,
                                        size_t                      root = (size_t)-1);
 
         private:
-          inline void reset( XMI_Dt dtype, unsigned count ) __attribute__((noinline));
+          inline void reset( PAMI_Dt dtype, unsigned count ) __attribute__((noinline));
 
           //16 bytes of class vars
           DCMF::Collectives::MultiSend::MulticombineImpl *_mcomb;
-          XMI_Dt                        _dt;
+          PAMI_Dt                        _dt;
           unsigned                       _count;
           unsigned                       _bytes;
 
@@ -85,7 +85,7 @@ namespace CCMI
 }
 
 
-inline void CCMI::Adaptor::Allreduce::Tree::SmpTreeAllreduce::reset( XMI_Dt dtype, unsigned count )
+inline void CCMI::Adaptor::Allreduce::Tree::SmpTreeAllreduce::reset( PAMI_Dt dtype, unsigned count )
 {
   _dt = dtype;
   _bytes = count << dcmf_dt_shift[dtype];
@@ -94,45 +94,45 @@ inline void CCMI::Adaptor::Allreduce::Tree::SmpTreeAllreduce::reset( XMI_Dt dtyp
   int size;
   switch(dtype)
   {
-  case XMI_LOGICAL:
-  case XMI_SIGNED_INT:
-  case XMI_UNSIGNED_INT:
+  case PAMI_LOGICAL:
+  case PAMI_SIGNED_INT:
+  case PAMI_UNSIGNED_INT:
     size = sizeof(int);
     break;
-  case XMI_SIGNED_LONG_LONG:
-  case XMI_UNSIGNED_LONG_LONG:
+  case PAMI_SIGNED_LONG_LONG:
+  case PAMI_UNSIGNED_LONG_LONG:
     size = sizeof(long long);
     break;
-  case XMI_SIGNED_SHORT:
-  case XMI_UNSIGNED_SHORT:
+  case PAMI_SIGNED_SHORT:
+  case PAMI_UNSIGNED_SHORT:
     size = sizeof(short);
     break;
-  case XMI_UNSIGNED_CHAR:
-  case XMI_SIGNED_CHAR:
+  case PAMI_UNSIGNED_CHAR:
+  case PAMI_SIGNED_CHAR:
     size = sizeof(char);
     break;
-  case XMI_FLOAT:
+  case PAMI_FLOAT:
     size = sizeof(float);
     break;
-  case XMI_DOUBLE:
+  case PAMI_DOUBLE:
     size = sizeof(double);
     break;
-  case XMI_LOC_2INT:
+  case PAMI_LOC_2INT:
     size = sizeof(int32_int32_t);
     break;
-  case XMI_LOC_SHORT_INT:
+  case PAMI_LOC_SHORT_INT:
     size = sizeof(int16_int32_t);
     break;
-  case XMI_LOC_FLOAT_INT:
+  case PAMI_LOC_FLOAT_INT:
     size = sizeof(fp32_int32_t);
     break;
-  case XMI_LOC_DOUBLE_INT:
+  case PAMI_LOC_DOUBLE_INT:
     size = sizeof(fp64_int32_t);
     break;
-  case XMI_LOC_2FLOAT:
+  case PAMI_LOC_2FLOAT:
     size = sizeof(fp32_fp32_t);
     break;
-  case XMI_LOC_2DOUBLE:
+  case PAMI_LOC_2DOUBLE:
     size = sizeof(fp64_fp64_t);
     break;
   default:

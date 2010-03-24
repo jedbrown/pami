@@ -19,7 +19,7 @@
 
 /// \see MUSPI_Pt2PtMemoryFIFODescriptor
 ///
-XMI::Device::MU::MUPacketModel::MUPacketModel (MUDevice & device) :
+PAMI::Device::MU::MUPacketModel::MUPacketModel (MUDevice & device) :
     Interface::PacketModel<MUPacketModel, MUDevice, sizeof(MUInjFifoMessage)> (device),
     _device (device),
     _wrapper_model (&_desc_model),
@@ -63,9 +63,9 @@ XMI::Device::MU::MUPacketModel::MUPacketModel (MUDevice & device) :
   _desc_model.setMemoryFIFOFields (&memfifo);
 };
 
-XMI::Device::MU::MUPacketModel::~MUPacketModel () {};
+PAMI::Device::MU::MUPacketModel::~MUPacketModel () {};
 
-xmi_result_t XMI::Device::MU::MUPacketModel::init_impl (size_t                      dispatch,
+pami_result_t PAMI::Device::MU::MUPacketModel::init_impl (size_t                      dispatch,
                                                         Interface::RecvFunction_t   direct_recv_func,
                                                         void                      * direct_recv_func_parm,
                                                         Interface::RecvFunction_t   read_recv_func,
@@ -86,7 +86,7 @@ xmi_result_t XMI::Device::MU::MUPacketModel::init_impl (size_t                  
                                    hdr->dev.dispatch_id);
 
   TRACE((stderr, "<< MUPacketModel::init_impl() .. hdr->dev.dispatch_id = %d\n", hdr->dev.dispatch_id));
-  return success?XMI_SUCCESS:XMI_ERROR;
+  return success?PAMI_SUCCESS:PAMI_ERROR;
 };
 #undef TRACE
 //

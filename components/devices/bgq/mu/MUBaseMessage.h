@@ -8,7 +8,7 @@
 
 #include "MUBaseMessageT.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -36,10 +36,10 @@ namespace XMI
 
           inline void reset_impl () {}
 
-      }; // XMI::Device::MU::MUBaseMessage class
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+      }; // PAMI::Device::MU::MUBaseMessage class
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 #endif
 

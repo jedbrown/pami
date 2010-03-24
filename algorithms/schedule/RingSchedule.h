@@ -43,7 +43,7 @@ namespace CCMI
       {
       }
 
-      RingSchedule (unsigned myrank, XMI::Topology *topology, unsigned c=0);
+      RingSchedule (unsigned myrank, PAMI::Topology *topology, unsigned c=0);
 
       void configure (unsigned myrank, unsigned nranks, unsigned *ranks);
       void configure (unsigned x, unsigned x0, unsigned xN);
@@ -252,7 +252,7 @@ namespace CCMI
           _nphases = (_isTail || _isHead) ? 1 : 2;
         }
         else
-          XMI_abort();
+          PAMI_abort();
 
         startphase = _startPhase;
 	nphases    = _nphases;
@@ -269,11 +269,11 @@ namespace CCMI
        * \param [in] phase  : phase of the collective
        */
 
-      virtual void getSrcTopology (unsigned phase, XMI::Topology *topology)
+      virtual void getSrcTopology (unsigned phase, PAMI::Topology *topology)
       {
 	unsigned *srcranks;
-        xmi_result_t rc = topology->rankList(&srcranks);
-        CCMI_assert (rc == XMI_SUCCESS);
+        pami_result_t rc = topology->rankList(&srcranks);
+        CCMI_assert (rc == PAMI_SUCCESS);
         CCMI_assert(srcranks != NULL);
 
         unsigned nranks = 0;
@@ -298,18 +298,18 @@ namespace CCMI
         }
 
 	//Convert to a list topology
-	new (topology) XMI::Topology (srcranks, nranks);
+	new (topology) PAMI::Topology (srcranks, nranks);
       }
 
       /**
        * \brief Get the downstream processors to send data to.
        * \param phase : phase of the collective
        */
-      virtual void getDstTopology(unsigned phase, XMI::Topology *topology)
+      virtual void getDstTopology(unsigned phase, PAMI::Topology *topology)
       {
         unsigned *dstranks;
-        xmi_result_t rc = topology->rankList(&dstranks);
-        CCMI_assert (rc == XMI_SUCCESS);
+        pami_result_t rc = topology->rankList(&dstranks);
+        CCMI_assert (rc == PAMI_SUCCESS);
         CCMI_assert(dstranks != NULL);
 
         unsigned ndst = 0;
@@ -335,7 +335,7 @@ namespace CCMI
         }
 
 	//Convert to a list topology
-	new (topology) XMI::Topology (dstranks, ndst);
+	new (topology) PAMI::Topology (dstranks, ndst);
         return;
       }
 
@@ -343,11 +343,11 @@ namespace CCMI
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual xmi_result_t getSrcUnionTopology (XMI::Topology *topology) {
+      virtual pami_result_t getSrcUnionTopology (PAMI::Topology *topology) {
 	unsigned *srcranks;
-        xmi_result_t rc = topology->rankList(&srcranks);
+        pami_result_t rc = topology->rankList(&srcranks);
 	unsigned nsrcranks = topology->size();
-        CCMI_assert (rc == XMI_SUCCESS);
+        CCMI_assert (rc == PAMI_SUCCESS);
         CCMI_assert(srcranks != NULL);
 
 	unsigned nranks = 0, ntotal_ranks = 0;
@@ -377,8 +377,8 @@ namespace CCMI
 	}
 
 	//Convert to a list topology
-	new (topology) XMI::Topology (srcranks, ntotal_ranks);
-        return XMI_SUCCESS;
+	new (topology) PAMI::Topology (srcranks, ntotal_ranks);
+        return PAMI_SUCCESS;
       }
 
 
@@ -386,11 +386,11 @@ namespace CCMI
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual xmi_result_t getDstUnionTopology (XMI::Topology *topology) {
+      virtual pami_result_t getDstUnionTopology (PAMI::Topology *topology) {
 	unsigned *dstranks;
-	xmi_result_t rc = topology->rankList(&dstranks);
+	pami_result_t rc = topology->rankList(&dstranks);
 	unsigned ndstranks = topology->size();
-	CCMI_assert (rc == XMI_SUCCESS);
+	CCMI_assert (rc == PAMI_SUCCESS);
 	CCMI_assert(dstranks != NULL);
 
 	unsigned nranks = 0, ntotal_ranks = 0;
@@ -420,8 +420,8 @@ namespace CCMI
 	}
 
 	//Convert to a list topology
-	new (topology) XMI::Topology (dstranks, ntotal_ranks);
-        return XMI_SUCCESS;
+	new (topology) PAMI::Topology (dstranks, ntotal_ranks);
+        return PAMI_SUCCESS;
       }
 
 
@@ -480,20 +480,20 @@ namespace CCMI
 };
 
 inline CCMI::Schedule::RingSchedule::RingSchedule
-(unsigned myrank, XMI::Topology *topology, unsigned c)
+(unsigned myrank, PAMI::Topology *topology, unsigned c)
 {
-  xmi_topology_type_t t = topology->type();
+  pami_topology_type_t t = topology->type();
 
-  if (t == XMI_LIST_TOPOLOGY) {
+  if (t == PAMI_LIST_TOPOLOGY) {
     unsigned *ranks;
-    xmi_result_t rc = topology->rankList(&ranks);
-    CCMI_assert (rc == XMI_SUCCESS);
+    pami_result_t rc = topology->rankList(&ranks);
+    CCMI_assert (rc == PAMI_SUCCESS);
     CCMI_assert(ranks != NULL);
     configure (myrank, topology->size(), ranks);
   }
-  else   if (t == XMI_RANGE_TOPOLOGY) {
-    xmi_task_t first, last;
-    xmi_result_t rc = topology->rankRange(&first, &last);
+  else   if (t == PAMI_RANGE_TOPOLOGY) {
+    pami_task_t first, last;
+    pami_result_t rc = topology->rankRange(&first, &last);
     configure (myrank, first, last);
   }
 }

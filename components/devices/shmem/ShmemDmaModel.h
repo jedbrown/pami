@@ -20,7 +20,7 @@
 #include "Arch.h"
 #include "Memregion.h"
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "components/devices/DmaInterface.h"
 #include "components/devices/shmem/ShmemDevice.h"
@@ -30,7 +30,7 @@
 #define TRACE_ERR(x) // fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -67,9 +67,9 @@ namespace XMI
         static const size_t dma_model_state_bytes          = sizeof(ShmemDmaMessage<T_Device>);
 
         inline bool postDmaPut_impl (uint8_t              state[sizeof(ShmemDmaMessage<T_Device>)],
-                                     xmi_event_function   local_fn,
+                                     pami_event_function   local_fn,
                                      void               * cookie,
-                                     xmi_task_t           target_task,
+                                     pami_task_t           target_task,
                                      Memregion          * local_memregion,
                                      size_t               local_offset,
                                      Memregion          * remote_memregion,
@@ -78,7 +78,7 @@ namespace XMI
         {
           // This constant-expression branch will be optimized out by the compiler
           if (! Memregion::shared_address_write_supported)
-            XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
 
           // Always use context 0 to determine the fifo for dma operations
           size_t fnum = _device.fnum (_device.task2peer(target_task), 0);
@@ -95,9 +95,9 @@ namespace XMI
                                           remote_offset,
                                           bytes);
 
-                  if (local_fn) local_fn (_context, cookie, XMI_SUCCESS);
+                  if (local_fn) local_fn (_context, cookie, PAMI_SUCCESS);
 
-                  return XMI_SUCCESS;
+                  return PAMI_SUCCESS;
                 }
             }
 
@@ -108,13 +108,13 @@ namespace XMI
                                         bytes);
 
           _device.template post<ShmemDmaPutMessage<T_Device> > (fnum, obj);
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         };
 
         inline bool postDmaGet_impl (uint8_t              state[sizeof(ShmemDmaMessage<T_Device>)],
-                                     xmi_event_function   local_fn,
+                                     pami_event_function   local_fn,
                                      void               * cookie,
-                                     xmi_task_t           target_task,
+                                     pami_task_t           target_task,
                                      Memregion          * local_memregion,
                                      size_t               local_offset,
                                      Memregion          * remote_memregion,
@@ -123,7 +123,7 @@ namespace XMI
         {
           // This constant-expression branch will be optimized out by the compiler
           if (! Memregion::shared_address_read_supported)
-            XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
 
           // Always use context 0 to determine the fifo for dma operations
           size_t fnum = _device.fnum (_device.task2peer(target_task), 0);
@@ -143,9 +143,9 @@ namespace XMI
                                          remote_offset,
                                          bytes);
 
-                  if (local_fn) local_fn (_context, cookie, XMI_SUCCESS);
+                  if (local_fn) local_fn (_context, cookie, PAMI_SUCCESS);
 
-                  return XMI_SUCCESS;
+                  return PAMI_SUCCESS;
                 }
             }
 
@@ -157,17 +157,17 @@ namespace XMI
 
           _device.template post<ShmemDmaGetMessage<T_Device> > (fnum, obj);
 
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         };
 
       protected:
 
         T_Device      & _device;
-        xmi_context_t   _context;
+        pami_context_t   _context;
 
-    };  // XMI::Device::ShmemDmaModel class
-  };    // XMI::Device namespace
-};      // XMI namespace
+    };  // PAMI::Device::ShmemDmaModel class
+  };    // PAMI::Device namespace
+};      // PAMI namespace
 #undef TRACE_ERR
 #endif // __components_devices_shmem_ShmemDmaModel_h__
 

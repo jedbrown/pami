@@ -28,46 +28,46 @@
 #endif // TEST_BUF_SIZE
 
 
-static XMI::Test::Buffer<TEST_BUF_SIZE> _buffer;
+static PAMI::Test::Buffer<TEST_BUF_SIZE> _buffer;
 
 static   void       *_cookie=(void*)"HI COOKIE";
 static int           _doneCountdown, _countNoData=0;
-xmi_callback_t       _cb_done;
-const xmi_quad_t     _msginfo = {0,1,2,3};
+pami_callback_t       _cb_done;
+const pami_quad_t     _msginfo = {0,1,2,3};
 
 static int          _failed = 0;
 
-XMI::Topology dst_subtopology;
+PAMI::Topology dst_subtopology;
 
 size_t task_id;
 
 
-void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
+void dispatch_multicast_fn(const pami_quad_t     *msginfo,
                            unsigned              msgcount,
                            unsigned              connection_id,
                            size_t                root,
                            size_t                sndlen,
                            void                 *clientdata,
                            size_t               *rcvlen,
-                           xmi_pipeworkqueue_t **rcvpwq,
-                           xmi_callback_t       *cb_done)
+                           pami_pipeworkqueue_t **rcvpwq,
+                           pami_callback_t       *cb_done)
 {
   DBG_FPRINTF((stderr,"%s:%s msgcount %d, connection_id %d, root %zd, sndlen %zd, cookie %s\n",
                __FILE__,__PRETTY_FUNCTION__,msgcount, connection_id, root, sndlen, (char*) clientdata));
-  XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
-  XMI_assertf(sndlen <= TEST_BUF_SIZE,"sndlen %zu\n",sndlen);
-  XMI_assertf(msgcount == 1,"msgcount %d",msgcount);
-  XMI_assertf(msginfo->w0 == _msginfo.w0,"msginfo->w0=%d\n",msginfo->w0);
-  XMI_assertf(msginfo->w1 == _msginfo.w1,"msginfo->w1=%d\n",msginfo->w1);
-  XMI_assertf(msginfo->w2 == _msginfo.w2,"msginfo->w2=%d\n",msginfo->w2);
-  XMI_assertf(msginfo->w3 == _msginfo.w3,"msginfo->w3=%d\n",msginfo->w3);
-  XMI_assertf(dst_subtopology.isRankMember(task_id),"!isRankMember(%zd)\n",task_id);
+  PAMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
+  PAMI_assertf(sndlen <= TEST_BUF_SIZE,"sndlen %zu\n",sndlen);
+  PAMI_assertf(msgcount == 1,"msgcount %d",msgcount);
+  PAMI_assertf(msginfo->w0 == _msginfo.w0,"msginfo->w0=%d\n",msginfo->w0);
+  PAMI_assertf(msginfo->w1 == _msginfo.w1,"msginfo->w1=%d\n",msginfo->w1);
+  PAMI_assertf(msginfo->w2 == _msginfo.w2,"msginfo->w2=%d\n",msginfo->w2);
+  PAMI_assertf(msginfo->w3 == _msginfo.w3,"msginfo->w3=%d\n",msginfo->w3);
+  PAMI_assertf(dst_subtopology.isRankMember(task_id),"!isRankMember(%zd)\n",task_id);
 
   if (connection_id == 1) // no data being sent
   {
     ++_countNoData;
     *rcvlen = 0;
-    *rcvpwq = (xmi_pipeworkqueue_t*) NULL;
+    *rcvpwq = (pami_pipeworkqueue_t*) NULL;
     if (sndlen == 0)
       fprintf(stderr, "<%3.3d>PASS: msgdata received with no data\n",__LINE__);
     else
@@ -78,22 +78,22 @@ void dispatch_multicast_fn(const xmi_quad_t     *msginfo,
   }
   else
   {
-    XMI::PipeWorkQueue * pwq;
+    PAMI::PipeWorkQueue * pwq;
     pwq = _buffer.dstPwq();
     DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %zd, %zd done out of %zd\n",__FILE__,__PRETTY_FUNCTION__,
                  pwq,pwq->bytesAvailableToProduce(),pwq->getBytesProduced(),sndlen));
 
     *rcvlen = sndlen;
-    *rcvpwq = (xmi_pipeworkqueue_t*) pwq;
+    *rcvpwq = (pami_pipeworkqueue_t*) pwq;
   }
 
   *cb_done = _cb_done;
 
 }
 
-void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
+void _done_cb(pami_context_t context, void *cookie, pami_result_t err)
 {
-  XMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
+  PAMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   volatile int *doneCountdown = (volatile int*) cookie;
   DBG_FPRINTF((stderr, "%s:%s doneCountdown %d/%d \n",__FILE__,__PRETTY_FUNCTION__, *doneCountdown,_doneCountdown));
   --*doneCountdown;
@@ -102,28 +102,28 @@ void _done_cb(xmi_context_t context, void *cookie, xmi_result_t err)
 /// \todo #warning Major hack: no call to client init or context create or official advance
 int main(int argc, char ** argv)
 {
-  xmi_client_t client = NULL;
-  xmi_context_t context = NULL;
-  xmi_result_t status = XMI_ERROR;
+  pami_client_t client = NULL;
+  pami_context_t context = NULL;
+  pami_result_t status = PAMI_ERROR;
   task_id = __global.mapping.task();
   DBG_FPRINTF((stderr, "%s:%s: task %zd starting\n",__FILE__,__PRETTY_FUNCTION__, task_id));
   size_t                     dispatch = 2;
 
   size_t  bytesConsumed = 0,  bytesProduced = 0;
 
-  xmi_dispatch_callback_fn   fn;
+  pami_dispatch_callback_fn   fn;
 
   fn.multicast = &dispatch_multicast_fn;
 
-  XMI::Device::MU::MUCollDevice mu (0,1,0);
+  PAMI::Device::MU::MUCollDevice mu (0,1,0);
   mu.init (0, 0, client, context, NULL /*sysdep*/, NULL /*progress*/);
 
-  XMI::BGQNativeInterface<XMI::Device::MU::MUCollDevice,
-  XMI::Device::MU::MUMulticastModel,
-  XMI::Device::MU::MUMultisyncModel,
-  XMI::Device::MU::MUMulticombineModel>  nativeInterface(mu, 0, context, 0);
+  PAMI::BGQNativeInterface<PAMI::Device::MU::MUCollDevice,
+  PAMI::Device::MU::MUMulticastModel,
+  PAMI::Device::MU::MUMultisyncModel,
+  PAMI::Device::MU::MUMulticombineModel>  nativeInterface(mu, 0, context, 0);
 
-  uint8_t mcast_state[XMI::Device::MU::MUMulticastModel::sizeof_msg];
+  uint8_t mcast_state[PAMI::Device::MU::MUMulticastModel::sizeof_msg];
 
   status = nativeInterface.setDispatch(fn, _cookie);
 
@@ -132,11 +132,11 @@ int main(int argc, char ** argv)
   _cb_done.clientdata = &_doneCountdown;
 
   //For testing ease, I'm assuming rank list topology, so convert them
-  XMI::Topology topology_global_list = __global.topology_global;
-  topology_global_list.convertTopology(XMI_LIST_TOPOLOGY);
+  PAMI::Topology topology_global_list = __global.topology_global;
+  topology_global_list.convertTopology(PAMI_LIST_TOPOLOGY);
 
-  XMI::Topology topology_global_coord = __global.topology_global;
-  topology_global_coord.convertTopology(XMI_COORD_TOPOLOGY);
+  PAMI::Topology topology_global_coord = __global.topology_global;
+  topology_global_coord.convertTopology(PAMI_COORD_TOPOLOGY);
 
   topology_global_coord.subTopologyNthGlobal(&dst_subtopology, 0); //0th rank on each node
 
@@ -162,18 +162,18 @@ int main(int argc, char ** argv)
     DBG_FPRINTF((stderr, "%s: task %zd is not dst member\n",__PRETTY_FUNCTION__, task_id));
 
 
-  XMI::Topology topology_local  = __global.topology_local;
-  topology_local.convertTopology(XMI_LIST_TOPOLOGY);
+  PAMI::Topology topology_local  = __global.topology_local;
+  topology_local.convertTopology(PAMI_LIST_TOPOLOGY);
 
   // global topology variables
-  xmi_task_t  gRoot    = topology_global_list.index2Rank(0);
-  xmi_task_t *gRankList=NULL; topology_global_list.rankList(&gRankList);
+  pami_task_t  gRoot    = topology_global_list.index2Rank(0);
+  pami_task_t *gRankList=NULL; topology_global_list.rankList(&gRankList);
 
-  XMI::Topology src_participants;
+  PAMI::Topology src_participants;
 
-  new (&src_participants) XMI::Topology(gRoot); // global root
+  new (&src_participants) PAMI::Topology(gRoot); // global root
 
-  xmi_multicast_t mcast;
+  pami_multicast_t mcast;
   memset(&mcast, 0x00, sizeof(mcast));
   if (gRoot == task_id)
   {
@@ -182,11 +182,11 @@ int main(int argc, char ** argv)
     mcast.connection_id = 0xB; // arbitrary
     mcast.msginfo = &_msginfo;
     mcast.msgcount = 1;
-    mcast.src_participants = (xmi_topology_t *)&src_participants;
-    mcast.dst_participants = (xmi_topology_t *)&dst_subtopology; // 0th rank on each node
+    mcast.src_participants = (pami_topology_t *)&src_participants;
+    mcast.dst_participants = (pami_topology_t *)&dst_subtopology; // 0th rank on each node
 
-    mcast.src = (xmi_pipeworkqueue_t *)_buffer.srcPwq();
-    mcast.dst = (xmi_pipeworkqueue_t *) _buffer.dstPwq();
+    mcast.src = (pami_pipeworkqueue_t *)_buffer.srcPwq();
+    mcast.dst = (pami_pipeworkqueue_t *) _buffer.dstPwq();
 
     mcast.client = 0;  // client ID
     mcast.context = 0;  // context ID
@@ -331,8 +331,8 @@ int main(int argc, char ** argv)
   {
     mcast.connection_id = 1; // arbitrary - dispatch knows this means no data
 
-    mcast.src = (xmi_pipeworkqueue_t *)NULL;
-    mcast.dst = (xmi_pipeworkqueue_t *)NULL;
+    mcast.src = (pami_pipeworkqueue_t *)NULL;
+    mcast.dst = (pami_pipeworkqueue_t *)NULL;
 
     mcast.bytes = 0;
 
@@ -362,8 +362,8 @@ int main(int argc, char ** argv)
   {
     mcast.connection_id = 1; // arbitrary - dispatch knows this means no data
 
-    mcast.src = (xmi_pipeworkqueue_t *)NULL;
-    mcast.dst = (xmi_pipeworkqueue_t *)NULL;
+    mcast.src = (pami_pipeworkqueue_t *)NULL;
+    mcast.dst = (pami_pipeworkqueue_t *)NULL;
 
     mcast.bytes = 0;
 
@@ -385,13 +385,13 @@ int main(int argc, char ** argv)
 // ------------------------------------------------------------------------
 // Test multisync
 // ------------------------------------------------------------------------
-  xmi_multisync_t multisync;
+  pami_multisync_t multisync;
   memset(&multisync, 0x00, sizeof(multisync));
 
-  uint8_t msync_state[XMI::Device::MU::MUMultisyncModel::sizeof_msg];
+  uint8_t msync_state[PAMI::Device::MU::MUMultisyncModel::sizeof_msg];
 
   multisync.connection_id = 0xB; // arbitrary
-  multisync.participants = (xmi_topology_t *)&topology_global_list;
+  multisync.participants = (pami_topology_t *)&topology_global_list;
 
   multisync.client = 0;	// client ID
   multisync.context = 0;	// context ID
@@ -418,17 +418,17 @@ int main(int argc, char ** argv)
 // Test multicombine
 // ------------------------------------------------------------------------
 
-  xmi_multicombine_t multicombine;
+  pami_multicombine_t multicombine;
   memset(&multicombine, 0x00, sizeof(multicombine));
 
   multicombine.connection_id = 0xB0BC; // arbitrary
-  multicombine.data_participants = (xmi_topology_t *)&topology_global_list;
-  multicombine.results_participants = (xmi_topology_t *)&topology_global_list;
+  multicombine.data_participants = (pami_topology_t *)&topology_global_list;
+  multicombine.results_participants = (pami_topology_t *)&topology_global_list;
   multicombine.count = TEST_BUF_SIZE/sizeof(unsigned);
-  multicombine.data = (xmi_pipeworkqueue_t*) _buffer.srcPwq();
-  multicombine.dtype = XMI_UNSIGNED_INT;
-  multicombine.optor = XMI_MIN;
-  multicombine.results = (xmi_pipeworkqueue_t*) _buffer.dstPwq();
+  multicombine.data = (pami_pipeworkqueue_t*) _buffer.srcPwq();
+  multicombine.dtype = PAMI_UNSIGNED_INT;
+  multicombine.optor = PAMI_MIN;
+  multicombine.results = (pami_pipeworkqueue_t*) _buffer.dstPwq();
   multicombine.client = 0;	// client ID
   multicombine.context = 0;	// context ID
   multicombine.roles = -1;
@@ -439,7 +439,7 @@ int main(int argc, char ** argv)
 // simple multicombine
 // ------------------------------------------------------------------------
 
-  uint8_t mcomb_state[XMI::Device::MU::MUMulticombineModel::sizeof_msg];
+  uint8_t mcomb_state[PAMI::Device::MU::MUMulticombineModel::sizeof_msg];
 
   _buffer.reset(true); // isRoot = true
 

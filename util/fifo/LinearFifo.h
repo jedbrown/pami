@@ -29,7 +29,7 @@
 #define TRACE_ERR(x)  //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Fifo
   {

@@ -17,9 +17,9 @@
 #include "common.h"
 #include "barrier.h"
 
-XMI_CollectiveProtocol_t              asyncbcast_reg;
+PAMI_CollectiveProtocol_t              asyncbcast_reg;
 CCMI_Broadcast_Configuration_t         asyncbcast_conf;
-XMI_CollectiveRequest_t               asyncbcast_request;
+PAMI_CollectiveRequest_t               asyncbcast_request;
 
 inline void asyncbcast_advance (unsigned * srcbuf, unsigned src_count, unsigned root)
 {
@@ -58,7 +58,7 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
 
   CCMI_Result ccmiResult;
 
-  if((ccmiResult = (CCMI_Result) CCMI_Broadcast_register (&asyncbcast_reg, &asyncbcast_conf)) != XMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Broadcast_register (&asyncbcast_reg, &asyncbcast_conf)) != PAMI_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_AsyncBcast_register failed %d\n",ccmiResult);
 
   if(!CCMI_Geometry_analyze(&geometry, &asyncbcast_reg))

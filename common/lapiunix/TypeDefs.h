@@ -23,16 +23,16 @@
 #include "algorithms/geometry/Geometry.h"
 
 
-typedef XMI::Device::LAPIOldmulticastModel<XMI::Device::LAPIDevice,
-                                           XMI::Device::OldLAPIMcastMessage> LAPIOldMcastModel;
-typedef XMI::Device::LAPIOldm2mModel<XMI::Device::LAPIDevice,
-                                     XMI::Device::OldLAPIM2MMessage,
+typedef PAMI::Device::LAPIOldmulticastModel<PAMI::Device::LAPIDevice,
+                                           PAMI::Device::OldLAPIMcastMessage> LAPIOldMcastModel;
+typedef PAMI::Device::LAPIOldm2mModel<PAMI::Device::LAPIDevice,
+                                     PAMI::Device::OldLAPIM2MMessage,
                                      size_t>                                 LAPIOldM2MModel;
 
-#define XMI_COLL_MCAST_CLASS  LAPIOldMcastModel
-#define XMI_COLL_M2M_CLASS    LAPIOldM2MModel
-#define XMI_COLL_SYSDEP_CLASS XMI::SysDep
-#define XMI_NATIVEINTERFACE   LAPINativeInterface
-#define XMI_GEOMETRY_CLASS    XMI::Geometry::Common
+#define PAMI_COLL_MCAST_CLASS  LAPIOldMcastModel
+#define PAMI_COLL_M2M_CLASS    LAPIOldM2MModel
+#define PAMI_COLL_SYSDEP_CLASS PAMI::SysDep
+#define PAMI_NATIVEINTERFACE   LAPINativeInterface
+#define PAMI_GEOMETRY_CLASS    PAMI::Geometry::Common
 
 #endif

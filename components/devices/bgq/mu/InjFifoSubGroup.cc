@@ -44,7 +44,7 @@
 ///
 ////////////////////////////////////////////////////////////////////////////////
 
-int32_t XMI::Device::MU::InjFifoSubGroup::
+int32_t PAMI::Device::MU::InjFifoSubGroup::
 init ( uint32_t subGroupId,
        uint32_t numFifos,
        char    *fifoPtrs[],
@@ -55,8 +55,8 @@ init ( uint32_t subGroupId,
   uint32_t numFreeFifos;
   uint32_t fifoNum;
 
-  XMI_assert_debug( subGroupId < BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE );
-  XMI_assert_debug( numFifos <= BGQ_MU_NUM_INJ_FIFOS_PER_GROUP );
+  PAMI_assert_debug( subGroupId < BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE );
+  PAMI_assert_debug( numFifos <= BGQ_MU_NUM_INJ_FIFOS_PER_GROUP );
 
   //////////////////////////////////////////////////////////////////////////////
   ///
@@ -73,11 +73,11 @@ init ( uint32_t subGroupId,
          numFreeFifos,
          subGroupId ));
 
-  XMI_assertf(rc == 0, "Kernel_QueryInjFifos failed (rc=%d)\n", rc);
+  PAMI_assertf(rc == 0, "Kernel_QueryInjFifos failed (rc=%d)\n", rc);
 
   if ( numFreeFifos < numFifos )
     {
-      TRACE((stderr, "XMI::Device::MU::InjFifoSubGroup:init() Requesting %d fifos, but only %d are free.\n",
+      TRACE((stderr, "PAMI::Device::MU::InjFifoSubGroup:init() Requesting %d fifos, but only %d are free.\n",
              numFifos, numFreeFifos));
       return (-EBUSY); // Quit if not enough available.
     }
@@ -106,7 +106,7 @@ init ( uint32_t subGroupId,
          rc,
          subGroupId ));
 
-  XMI_assertf(rc == 0, "Kernel_AllocateInjFifos failed (rc=%d)\n", rc);
+  PAMI_assertf(rc == 0, "Kernel_AllocateInjFifos failed (rc=%d)\n", rc);
 
   //////////////////////////////////////////////////////////////////////////////
   //
@@ -116,13 +116,13 @@ init ( uint32_t subGroupId,
 
   for ( fifoNum = 0; fifoNum < numFifos; fifoNum++ )
     {
-      XMI_assert_debug( ( fifoSizes[fifoNum] & 0x3F ) == 0 ); // 64B aligned
+      PAMI_assert_debug( ( fifoSizes[fifoNum] & 0x3F ) == 0 ); // 64B aligned
 
       rc = Kernel_CreateMemoryRegion( &_injFifoMemRegion[fifoNum],
                                       (void*) fifoPtrs[fifoNum],
                                       (size_t) fifoSizes[fifoNum] );
 
-      XMI_assertf(rc == 0, "Kernel_CreateMemoryRegion failed (rc=%d)\n", rc);
+      PAMI_assertf(rc == 0, "Kernel_CreateMemoryRegion failed (rc=%d)\n", rc);
 
       TRACE((stderr, "   InjFifoSubGroup::init() .. before Kernel_InjFifoInit(%p, %d, %p, %ld, %d)\n",
                                 &_fifoSubGroup,
@@ -155,7 +155,7 @@ init ( uint32_t subGroupId,
              (unsigned long long)_fifoSubGroup._injfifos[_fifoNumbers[fifoNum]]._fifo.va_tail,
              rc));
 
-      XMI_assertf(rc == 0, "Kernel_InjFifoInit failed (rc=%d)\n", rc);
+      PAMI_assertf(rc == 0, "Kernel_InjFifoInit failed (rc=%d)\n", rc);
 
       // ------------------------------------------------------------------------
       // Cache a pointer to the MUSPI_InjFifo_t structure associate with each
@@ -212,7 +212,7 @@ init ( uint32_t subGroupId,
 ///
 ////////////////////////////////////////////////////////////////////////////////
 
-unsigned int XMI::Device::MU::InjFifoSubGroup::
+unsigned int PAMI::Device::MU::InjFifoSubGroup::
 advanceInternal ()
 {
   unsigned long long waitForDoneMaskCopy = _waitForDoneMask; // Copy of the

@@ -80,7 +80,7 @@ namespace CCMI
           virtual CCMI::Executor::Composite * generate
           (void                      * request,
            size_t                      rsize,
-           XMI_Callback_t             cb_done,
+           PAMI_Callback_t             cb_done,
            CCMI_Consistency            consistency,
            Geometry                  * geometry,
            unsigned                    root,
@@ -89,7 +89,7 @@ namespace CCMI
           {
             TRACE_ADAPTOR ((stderr, "Tree Broadcast Generate\n"));
 
-            XMI_assert(rsize >= sizeof(ShortTreeBcast));
+            PAMI_assert(rsize >= sizeof(ShortTreeBcast));
             new (_request)ShortTreeBcast(_mf, _map, request, cb_done, consistency, src, bytes, root);
 			return NULL;
           }
@@ -99,7 +99,7 @@ namespace CCMI
 		  //ShortTreeBcast tree_bcast;
           CCMI::TorusCollectiveMapping                         * _map;
           CCMI::MultiSend::OldMulticastInterface        * _mf;
-          XMI_Request_t    _request __attribute__((__aligned__(16)));
+          PAMI_Request_t    _request __attribute__((__aligned__(16)));
 
 
         };

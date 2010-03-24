@@ -1,13 +1,13 @@
 ///
 /// \file common/WakeupManagerInterface.h
-/// \brief XMI wakeup manager interface.
+/// \brief PAMI wakeup manager interface.
 ///
 #ifndef __common_WakeupManagerInterface_h__
 #define __common_WakeupManagerInterface_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
-namespace XMI {
+namespace PAMI {
 namespace Interface {
 	/// \brief WakeupManager class
 	///
@@ -36,7 +36,7 @@ namespace Interface {
 		/// \param[in] num	Number of vectors to create
 		/// \param[in] key	Unique value to identify this set of vectors
 		///
-		inline xmi_result_t init(int num, int key);
+		inline pami_result_t init(int num, int key);
 
 		/// \brief Get wakeup vector based on index
 		///
@@ -47,15 +47,15 @@ namespace Interface {
 		/// \brief Wakeup anyone awaiting on a vector
 		///
 		/// \param[in] v	Wakeup vector to wake
-		/// \return	XMI_SUCCESS = wakeup sent
-		///		XMI_ERROR = internal errors
+		/// \return	PAMI_SUCCESS = wakeup sent
+		///		PAMI_ERROR = internal errors
 		///
-		inline xmi_result_t wakeup(void *v);
+		inline pami_result_t wakeup(void *v);
 
 		/// \brief Reset a vector
 		///
 		/// Resets a vector such that the next poll
-		/// should indicate not ready (XMI_EAGAIN).
+		/// should indicate not ready (PAMI_EAGAIN).
 		/// This is used to avoid repeated advance loops
 		/// for wakeup conditions already being serviced.
 		/// As an example, suppose other thread(s)/context(s)
@@ -66,54 +66,54 @@ namespace Interface {
 		/// after one iteration of advance the loop will sleep.
 		///
 		/// \param[in] v	Wakeup vector to clear
-		/// \return	XMI_SUCCESS = cleared
-		///		XMI_ERROR = internal errors
+		/// \return	PAMI_SUCCESS = cleared
+		///		PAMI_ERROR = internal errors
 		///
-		inline xmi_result_t clear(void *v);
+		inline pami_result_t clear(void *v);
 
 		/// \brief Wait for (sleep until) a wakeup
 		///
-		/// Wakeup condition is cleared upon returnXMI_SUCCESS
+		/// Wakeup condition is cleared upon returnPAMI_SUCCESS
 		/// (as if clear() called).
 		///
 		/// \param[in] v	Wakeup vector to sleep on
-		/// \return	XMI_SUCCESS = woke up
-		///		XMI_ERROR = internal errors
+		/// \return	PAMI_SUCCESS = woke up
+		///		PAMI_ERROR = internal errors
 		///
-		inline xmi_result_t sleep(void *v);
+		inline pami_result_t sleep(void *v);
 
 		/// \brief Check if wakeup has happened
 		///
-		/// Wakeup condition is cleared upon return XMI_SUCCESS
+		/// Wakeup condition is cleared upon return PAMI_SUCCESS
 		/// (as if clear() called).
 		///
 		/// \param[in] v	Wakeup vector to check
-		/// \return	XMI_SUCCESS = wakeup occurred
-		///		XMI_EAGAIN = no wakeup (yet)
-		///		XMI_ERROR = internal errors
+		/// \return	PAMI_SUCCESS = wakeup occurred
+		///		PAMI_EAGAIN = no wakeup (yet)
+		///		PAMI_ERROR = internal errors
 		///
-		inline xmi_result_t trySleep(void *v);
+		inline pami_result_t trySleep(void *v);
 
 		/// \brief Check if wakeup has happened
 		///
 		/// Requires subsequent trySleep() or sleep() in order to
-		/// clear condition (if return was XMI_SUCCESS).
+		/// clear condition (if return was PAMI_SUCCESS).
 		///
 		/// It is generally expected that only one thread
 		/// would poll a wakeup vector. Otherwise, a race
 		/// between pollers exits.
 		///
 		/// \param[in] v	Wakeup vector to check
-		/// \return	XMI_SUCCESS = wakeup condition exists
-		///		XMI_EAGAIN = no wakeup condition (yet)
-		///		XMI_ERROR = internal errors
+		/// \return	PAMI_SUCCESS = wakeup condition exists
+		///		PAMI_EAGAIN = no wakeup condition (yet)
+		///		PAMI_ERROR = internal errors
 		///
-		inline xmi_result_t poll(void *v);
+		inline pami_result_t poll(void *v);
 
         }; // class Interface::WakeupManager
 
         template <class T_WakeupManager>
-        xmi_result_t WakeupManager<T_WakeupManager>::init(int num, int key)
+        pami_result_t WakeupManager<T_WakeupManager>::init(int num, int key)
         {
             return static_cast<T_WakeupManager*>(this)->init_impl(num, key);
         }
@@ -125,36 +125,36 @@ namespace Interface {
         }
 
         template <class T_WakeupManager>
-        xmi_result_t WakeupManager<T_WakeupManager>::wakeup(void *v)
+        pami_result_t WakeupManager<T_WakeupManager>::wakeup(void *v)
         {
             return static_cast<T_WakeupManager*>(this)->wakeup_impl(v);
         }
 
         template <class T_WakeupManager>
-        xmi_result_t WakeupManager<T_WakeupManager>::clear(void *v)
+        pami_result_t WakeupManager<T_WakeupManager>::clear(void *v)
         {
             return static_cast<T_WakeupManager*>(this)->clear_impl(v);
         }
 
         template <class T_WakeupManager>
-        xmi_result_t WakeupManager<T_WakeupManager>::sleep(void *v)
+        pami_result_t WakeupManager<T_WakeupManager>::sleep(void *v)
         {
             return static_cast<T_WakeupManager*>(this)->sleep_impl(v);
         }
 
         template <class T_WakeupManager>
-        xmi_result_t WakeupManager<T_WakeupManager>::trySleep(void *v)
+        pami_result_t WakeupManager<T_WakeupManager>::trySleep(void *v)
         {
             return static_cast<T_WakeupManager*>(this)->trySleep_impl(v);
         }
 
         template <class T_WakeupManager>
-        xmi_result_t WakeupManager<T_WakeupManager>::poll(void *v)
+        pami_result_t WakeupManager<T_WakeupManager>::poll(void *v)
         {
             return static_cast<T_WakeupManager*>(this)->poll_impl(v);
         }
 
 }; // namespace Interface
-}; // namespace XMI
+}; // namespace PAMI
 
 #endif // __common_WakeupManagerInterface_h__

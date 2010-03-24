@@ -12,14 +12,14 @@
  */
 
 #include <stdio.h>
-#include "sys/xmi.h"
+#include "sys/pami.h"
 //#include "Client.h"
 #include "Global.h"
 #include "components/devices/misc/ProgressFunctionMsg.h"
 
-XMI::Device::ProgressFunctionMdl _model;
+PAMI::Device::ProgressFunctionMdl _model;
 
-char msgbuf[XMI::Device::ProgressFunctionMdl::sizeof_msg];
+char msgbuf[PAMI::Device::ProgressFunctionMdl::sizeof_msg];
 
 struct my_work {
 	unsigned long long count;
@@ -29,7 +29,7 @@ struct my_work {
 
 unsigned done = 0;
 
-static xmi_result_t my_func(xmi_context_t ctx, void *cd) {
+static pami_result_t my_func(pami_context_t ctx, void *cd) {
 	struct my_work *w = (struct my_work *)cd;
 	if (w->t0 == 0) {
 		w->t0 = __global.time.timebase();
@@ -41,43 +41,43 @@ static xmi_result_t my_func(xmi_context_t ctx, void *cd) {
 	if (t1 - w->t0 >= w->count) {
 		fprintf(stderr, "Finished at tick %llu (%ld calls)\n", t1, w->v);
 		done = 1;
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 	++w->v;
-	return XMI_EAGAIN;
+	return PAMI_EAGAIN;
 }
 
 int main(int argc, char **argv) {
-	xmi_client_t client;
-	xmi_context_t context;
-	xmi_result_t status = XMI_ERROR;
+	pami_client_t client;
+	pami_context_t context;
+	pami_result_t status = PAMI_ERROR;
 
-	status = XMI_Client_initialize("progressfunc test", &client);
-	if (status != XMI_SUCCESS) {
-		fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", status);
+	status = PAMI_Client_initialize("progressfunc test", &client);
+	if (status != PAMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);
 		return 1;
 	}
 
-	{ size_t _n = 1; status = XMI_Context_createv(client, NULL, 0, &context, _n); }
-	if (status != XMI_SUCCESS) {
-		fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", status);
+	{ size_t _n = 1; status = PAMI_Context_createv(client, NULL, 0, &context, _n); }
+	if (status != PAMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable to create pami context. result = %d\n", status);
 		return 1;
 	}
 
-	xmi_configuration_t configuration;
+	pami_configuration_t configuration;
 
-	configuration.name = XMI_TASK_ID;
-	status = XMI_Configuration_query(client, &configuration);
-	if (status != XMI_SUCCESS) {
+	configuration.name = PAMI_TASK_ID;
+	status = PAMI_Configuration_query(client, &configuration);
+	if (status != PAMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
 	}
 	size_t task_id = configuration.value.intval;
 	//fprintf(stderr, "My task id = %zu\n", task_id);
 
-	configuration.name = XMI_NUM_TASKS;
-	status = XMI_Configuration_query(client, &configuration);
-	if (status != XMI_SUCCESS) {
+	configuration.name = PAMI_NUM_TASKS;
+	status = PAMI_Configuration_query(client, &configuration);
+	if (status != PAMI_SUCCESS) {
 		fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
 		return 1;
 	}
@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 // END standard setup
 // ------------------------------------------------------------------------
 	struct my_work work;
-	XMI_ProgressFunc_t pf;
+	PAMI_ProgressFunc_t pf;
 
 	work.t0 = 0;
 	if (argc > 1) {
@@ -107,21 +107,21 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	while (!done) {
-		XMI_Context_advance(context, 100);
+		PAMI_Context_advance(context, 100);
 	}
 	fprintf(stderr, "Test completed\n");
 
 // ------------------------------------------------------------------------
 
-	status = XMI_Context_destroy(context);
-	if (status != XMI_SUCCESS) {
-		fprintf(stderr, "Error. Unable to destroy xmi context. result = %d\n", status);
+	status = PAMI_Context_destroy(context);
+	if (status != PAMI_SUCCESS) {
+		fprintf(stderr, "Error. Unable to destroy pami context. result = %d\n", status);
 		return 1;
 	}
 
-	status = XMI_Client_finalize(client);
-	if (status != XMI_SUCCESS) {
-		fprintf(stderr, "Error. Unable to finalize xmi client. result = %d\n", status);
+	status = PAMI_Client_finalize(client);
+	if (status != PAMI_SUCCESS) {
+		fprintf(stderr, "Error. Unable to finalize pami client. result = %d\n", status);
 		return 1;
 	}
 

@@ -18,7 +18,7 @@
 /*                   incoming active message                               */
 /* *********************************************************************** */
 template <class T_Mcast>
-inline xmi_quad_t * TSPColl::CollExchange<T_Mcast>::cb_incoming(const xmi_quad_t  * hdr,
+inline pami_quad_t * TSPColl::CollExchange<T_Mcast>::cb_incoming(const pami_quad_t  * hdr,
                                                                 unsigned          count,
                                                                 unsigned          peer,
                                                                 unsigned          sndlen,
@@ -27,7 +27,7 @@ inline xmi_quad_t * TSPColl::CollExchange<T_Mcast>::cb_incoming(const xmi_quad_t
                                                                 unsigned        * rcvlen,
                                                                 char           ** rcvbuf,
                                                                 unsigned        * pipewidth,
-                                                                XMI_Callback_t * cb_done)
+                                                                PAMI_Callback_t * cb_done)
 
 {
   struct AMHeader * header = (struct AMHeader *) hdr;
@@ -66,7 +66,7 @@ inline xmi_quad_t * TSPColl::CollExchange<T_Mcast>::cb_incoming(const xmi_quad_t
   //  __pgasrt_local_addr_t z = (__pgasrt_local_addr_t) b->_rbuf[header->phase];
   //  if (z == NULL) b->internalerror (header, __LINE__);
   //  return z;
-  return (xmi_quad_t*)&b->_rreq[header->phase];
+  return (pami_quad_t*)&b->_rreq[header->phase];
 }
 
 
@@ -79,7 +79,7 @@ inline xmi_quad_t * TSPColl::CollExchange<T_Mcast>::cb_incoming(const xmi_quad_t
 //	     void (** completionHandler)(void *, void *),
 //	     void ** arg)
 template<class T_Mcast>
-xmi_quad_t * TSPColl::Scatter<T_Mcast>::cb_incoming(const xmi_quad_t  * hdr,
+pami_quad_t * TSPColl::Scatter<T_Mcast>::cb_incoming(const pami_quad_t  * hdr,
 					       unsigned          count,
 					       unsigned          peer,
 					       unsigned          sndlen,
@@ -88,7 +88,7 @@ xmi_quad_t * TSPColl::Scatter<T_Mcast>::cb_incoming(const xmi_quad_t  * hdr,
 					       unsigned        * rcvlen,
 					       char           ** rcvbuf,
 					       unsigned        * pipewidth,
-					       XMI_Callback_t * cb_done)
+					       PAMI_Callback_t * cb_done)
 {
   struct scatter_header * header = (struct scatter_header *) hdr;
   NBCollManager<T_Mcast> *mc = (NBCollManager<T_Mcast>*) arg;
@@ -111,7 +111,7 @@ xmi_quad_t * TSPColl::Scatter<T_Mcast>::cb_incoming(const xmi_quad_t  * hdr,
 	 header->tag, header->id, base0, s));
 
 
-  return (xmi_quad_t*)&s->_rreq;
+  return (pami_quad_t*)&s->_rreq;
 }
 
 

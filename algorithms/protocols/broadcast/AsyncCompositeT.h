@@ -26,7 +26,7 @@ namespace CCMI
   {
     namespace Broadcast
     {
-      typedef void      (*MetaDataFn)   (xmi_metadata_t *m);
+      typedef void      (*MetaDataFn)   (pami_metadata_t *m);
       ///
       /// \brief Asyc Broadcast Composite. It is single color right now
       ///
@@ -45,10 +45,10 @@ namespace CCMI
         ///
         AsyncCompositeT (T_Sysdep             * sd,
                          T_ConnectionManager  *cmgr,
-                         XMI_Callback_t             cb_done,
-                         xmi_consistency_t          consistency,
+                         PAMI_Callback_t             cb_done,
+                         pami_consistency_t          consistency,
                          T_Mcast                   * mf,
-                         XMI_GEOMETRY_CLASS        * geometry,
+                         PAMI_GEOMETRY_CLASS        * geometry,
                          unsigned                    root,
                          char                      * src,
                          unsigned                    bytes,
@@ -76,7 +76,7 @@ namespace CCMI
                                   unsigned                    size,
                                   unsigned                    root,
                                   T_Sysdep                       * sd,
-                                  XMI_GEOMETRY_CLASS                  * g) {CCMI_abort();};
+                                  PAMI_GEOMETRY_CLASS                  * g) {CCMI_abort();};
 
         ExecutorPool *execpool ()
         {
@@ -95,9 +95,9 @@ namespace CCMI
         ///
         /// \brief Receive the broadcast message and notify the executor
         ///
-        static void staticAsyncRecvFn (xmi_context_t context, void *clientdata, xmi_result_t err)
+        static void staticAsyncRecvFn (pami_context_t context, void *clientdata, pami_result_t err)
         {
-          xmi_quad_t *info = NULL;
+          pami_quad_t *info = NULL;
           AsyncCompositeT *composite = (AsyncCompositeT *) clientdata;
 
           TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AsyncCompositeT::staticAsyncRecvFn() \n",composite));
@@ -128,8 +128,8 @@ namespace CCMI
                                                                                                       sd,
                                                                                                       &_rbconnmgr,
                                                                                                       nconn,
-                                                                                                      (xmi_olddispatch_multicast_fn)cb_head,
-                                                                                                      (xmi_olddispatch_multicast_fn)cb_head_buffered),
+                                                                                                      (pami_olddispatch_multicast_fn)cb_head,
+                                                                                                      (pami_olddispatch_multicast_fn)cb_head_buffered),
         _rbconnmgr(sd)
         {
           //--
@@ -137,7 +137,7 @@ namespace CCMI
         }
 
         ///Works on all sub-communicators
-        virtual void metadata(xmi_metadata_t *m)
+        virtual void metadata(pami_metadata_t *m)
         {
           get_metadata(m);
         }
@@ -145,7 +145,7 @@ namespace CCMI
                 class collObj
          {
         public:
-          collObj(xmi_xfer_t *xfer):
+          collObj(pami_xfer_t *xfer):
             _xfer(*xfer),
             _rsize(sizeof(_req)),
             _user_done_fn(xfer->cb_done),
@@ -154,36 +154,36 @@ namespace CCMI
               _xfer.cb_done = alloc_done_fn;
               _xfer.cookie  = this;
             }
-          XMI_Request_t                _req[5];
-          xmi_xfer_t                   _xfer;
+          PAMI_Request_t                _req[5];
+          pami_xfer_t                   _xfer;
           int                          _rsize;
-          xmi_event_function           _user_done_fn;
+          pami_event_function           _user_done_fn;
           void                       * _user_cookie;
         };
 
-        static void alloc_done_fn( xmi_context_t   context,
+        static void alloc_done_fn( pami_context_t   context,
                                    void          * cookie,
-                                   xmi_result_t    result )
+                                   pami_result_t    result )
         {
             collObj *cObj = (collObj*)cookie;
             cObj->_user_done_fn(context,cObj->_user_cookie,result);
             free(cObj);
         }
 
-        virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+        virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                                void                      * cmd)
 
           {
             collObj *obj = (collObj*)malloc(sizeof(*obj));
-            new(obj) collObj((xmi_xfer_t*)cmd);
-            XMI_Callback_t cb_done;
+            new(obj) collObj((pami_xfer_t*)cmd);
+            PAMI_Callback_t cb_done;
             cb_done.function   = obj->_xfer.cb_done;
             cb_done.clientdata = obj->_xfer.cookie;
             return this->generate(&obj->_req[0],
                                   obj->_rsize,
                                   cb_done,
-                                  XMI_MATCH_CONSISTENCY,
-                                  (XMI_GEOMETRY_CLASS *)geometry,
+                                  PAMI_MATCH_CONSISTENCY,
+                                  (PAMI_GEOMETRY_CLASS *)geometry,
                                   __global.mapping.task(),
                                   (char*)obj->_xfer.cmd.xfer_ambroadcast.sndbuf,
                                   obj->_xfer.cmd.xfer_ambroadcast.stypecount);
@@ -214,16 +214,16 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generate
         (void                      * request_buf,
          size_t                      rsize,
-         XMI_Callback_t              cb_done,
-         xmi_consistency_t           consistency,
-         XMI_GEOMETRY_CLASS        * geometry,
+         PAMI_Callback_t              cb_done,
+         pami_consistency_t           consistency,
+         PAMI_GEOMETRY_CLASS        * geometry,
          unsigned                    root,
          char                      * src,
          unsigned                    bytes)
         {
           T_Schedule* a_bcast = NULL;
 
-          XMI_assert(rsize > sizeof(T_Schedule));
+          PAMI_assert(rsize > sizeof(T_Schedule));
 
           if(__global.mapping.task() == root)
           {
@@ -236,7 +236,7 @@ namespace CCMI
           }
           else if(this->_isBuffered)
           {
-            XMI::MatchQueue  & mqueue = geometry->asyncBcastUnexpQ();
+            PAMI::MatchQueue  & mqueue = geometry->asyncBcastUnexpQ();
             BcastQueueElem * elem = (BcastQueueElem *) mqueue.findAndDelete(root);
 
             /// Try to match in unexpected queue
@@ -256,7 +256,7 @@ namespace CCMI
             /// queue it in posted queue
             else
             {
-              XMI_Callback_t  cb_exec_done;
+              PAMI_Callback_t  cb_exec_done;
               cb_exec_done.function   = posted_done;
               cb_exec_done.clientdata = request_buf; //point to the executor
 
@@ -275,8 +275,8 @@ namespace CCMI
           return a_bcast;
         }
 
-        static XMI_Request_t *   cb_head_buffered
-        (const xmi_quad_t* info,
+        static PAMI_Request_t *   cb_head_buffered
+        (const pami_quad_t* info,
          unsigned          count,
          unsigned          peer,
          unsigned          sndlen,
@@ -285,16 +285,16 @@ namespace CCMI
          unsigned        * rcvlen,
          char           ** rcvbuf,
          unsigned        * pipewidth,
-         XMI_Callback_t * cb_done)
+         PAMI_Callback_t * cb_done)
         {
           AsyncCompositeFactoryT *factory = (AsyncCompositeFactoryT *) arg;
           TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AsyncCompositeFactoryT::cb_head_buffered() \n",factory));
           CollHeaderData *cdata = (CollHeaderData *) info;
 
-          XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *)
+          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
 	    factory->_cb_geometry(cdata->_comm);
 
-          XMI::MatchQueue  &mqueue = geometry->asyncBcastPostQ();
+          PAMI::MatchQueue  &mqueue = geometry->asyncBcastPostQ();
           BcastQueueElem *elem = (BcastQueueElem *) mqueue.findAndDelete(cdata->_root);
 
           T_Schedule *bcast = NULL;
@@ -305,7 +305,7 @@ namespace CCMI
             char *unexpbuf;
             factory->_execpool.allocateAsync (&exec_request, &unexpbuf, sndlen);
 
-            XMI_Callback_t cb_exec_done;
+            PAMI_Callback_t cb_exec_done;
             ///Handler which will have to free the above allocated buffer
             cb_exec_done.function = unexpected_done;
             cb_exec_done.clientdata = exec_request;
@@ -313,7 +313,7 @@ namespace CCMI
             COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Schedule));
             bcast = new (exec_request)
                     T_Schedule (factory->_sd, &factory->_rbconnmgr,
-                       cb_exec_done, XMI_MATCH_CONSISTENCY, factory->_minterface,
+                       cb_exec_done, PAMI_MATCH_CONSISTENCY, factory->_minterface,
                        geometry, cdata->_root, unexpbuf, sndlen, &factory->_execpool);
 
             elem = bcast->bqelem();
@@ -337,7 +337,7 @@ namespace CCMI
           return bcast->executor().getRecvRequest();
         }
 
-        static void unexpected_done (xmi_context_t context, void *cd, xmi_result_t err)
+        static void unexpected_done (pami_context_t context, void *cd, pami_result_t err)
         {
 
           CCMI::Adaptor::Broadcast::BcastQueueElem *bqe = ((T_Schedule *) cd)->bqelem();
@@ -351,7 +351,7 @@ namespace CCMI
           }
         }
 
-        static void posted_done (xmi_context_t context, void *cd, xmi_result_t err)
+        static void posted_done (pami_context_t context, void *cd, pami_result_t err)
         {
 
           CCMI::Adaptor::Broadcast::BcastQueueElem *bqe =
@@ -362,7 +362,7 @@ namespace CCMI
           //nothing needs to be freed as this is an application buffer
         }
 
-        static XMI_Request_t *   cb_head  (const xmi_quad_t    * info,
+        static PAMI_Request_t *   cb_head  (const pami_quad_t    * info,
                                            unsigned          count,
                                            unsigned          peer,
                                            unsigned          sndlen,
@@ -371,19 +371,19 @@ namespace CCMI
                                            unsigned        * rcvlen,
                                            char           ** rcvbuf,
                                            unsigned        * pipewidth,
-                                           XMI_Callback_t * cb_done)
+                                           PAMI_Callback_t * cb_done)
           {
             AsyncCompositeFactoryT *factory = (AsyncCompositeFactoryT *) arg;
             TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AsyncCompositeFactoryT::cb_head() \n",factory));
           CollHeaderData *cdata = (CollHeaderData *) info;
 
-          XMI_GEOMETRY_CLASS *geometry = (XMI_GEOMETRY_CLASS *)
+          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
 	    factory->_cb_geometry(cdata->_comm);
 
           //Application callback
 	  // todo:  WARNING:  callback is not appropriately delivered to user (header for example)
-          XMI_Callback_t cb_client_done;
-          xmi_type_t     user_type;
+          PAMI_Callback_t cb_client_done;
+          pami_type_t     user_type;
 //          CCMI_Executor_t *request =  (CCMI_Executor_t *)
           factory->_cb_async (NULL,                 // Context: NULL for now, until we can get the context
                               cdata->_root,         // Root
@@ -404,7 +404,7 @@ namespace CCMI
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Schedule));
           T_Schedule *bcast = new (request)
                      T_Schedule (factory->_sd, &factory->_rbconnmgr,
-                        cb_client_done, XMI_MATCH_CONSISTENCY, factory->_minterface,
+                        cb_client_done, PAMI_MATCH_CONSISTENCY, factory->_minterface,
                         geometry, cdata->_root, *rcvbuf, *rcvlen, &factory->_execpool);
 
           //callback to be called by multisend interface

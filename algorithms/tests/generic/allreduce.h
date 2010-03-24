@@ -16,9 +16,9 @@
 
 #include "common.h"
 
-XMI_CollectiveProtocol_t              allreduce_reg;
+PAMI_CollectiveProtocol_t              allreduce_reg;
 CCMI_Allreduce_Configuration_t         allreduce_conf;
-XMI_CollectiveRequest_t               allreduce_request;
+PAMI_CollectiveRequest_t               allreduce_request;
 
 inline void allreduce_advance (unsigned * srcbuf, unsigned * dstbuf, unsigned src_count)
 {
@@ -32,8 +32,8 @@ inline void allreduce_advance (unsigned * srcbuf, unsigned * dstbuf, unsigned sr
                  (char *)srcbuf,
                  (char *)dstbuf,
                  src_count,
-                 XMI_UNSIGNED_INT,
-                 XMI_SUM);
+                 PAMI_UNSIGNED_INT,
+                 PAMI_SUM);
   while(!done)
   {
     CCMI_Generic_adaptor_advance();
@@ -71,7 +71,7 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
 
   CCMI_Result ccmiResult;
 
-  if((ccmiResult = (CCMI_Result) CCMI_Allreduce_register (&allreduce_reg, &allreduce_conf)) != XMI_SUCCESS)
+  if((ccmiResult = (CCMI_Result) CCMI_Allreduce_register (&allreduce_reg, &allreduce_conf)) != PAMI_SUCCESS)
     if(rank == 0) fprintf(stderr,"CCMI_Allreduce_register failed %d\n",ccmiResult);
 
   if(!CCMI_Geometry_analyze(&geometry, &allreduce_reg))

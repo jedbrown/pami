@@ -11,13 +11,13 @@
  * \brief Collective Network Device implementation
  */
 #include "config.h"
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/common.h"
 #include "SysDep.h"
 #include "components/atomic/bgp/LockBoxBarrier.h"
 #include "components/devices/bgp/collective_network/CNDevice.h"
 
-XMI::Device::BGP::CNDevice _g_cncommon_dev;
+PAMI::Device::BGP::CNDevice _g_cncommon_dev;
 
 size_t _g_num_active_nodes;
 size_t _g_min_peers;
@@ -28,48 +28,48 @@ size_t _g_max_peers;
 /**
  * \brief Bitmap to enable helper thread(s), 1 = send, 2 = recv
  */
-int XMI_THREADED_CN = 3;
+int PAMI_THREADED_CN = 3;
 
 /**
  * \brief Actual persistence for advance (cycles)
  */
-unsigned XMI_PERSISTENT_ADVANCE = 1000;
+unsigned PAMI_PERSISTENT_ADVANCE = 1000;
 
 /**
  * \brief Maximum persistence for advance, when computed
  */
-unsigned XMI_PERSIST_MAX = 5000;
+unsigned PAMI_PERSIST_MAX = 5000;
 
 /**
  * \brief Minimum persistence for advance, when computed
  */
-unsigned XMI_PERSIST_MIN = 1000;
+unsigned PAMI_PERSIST_MIN = 1000;
 
 /**
  * \brief Number of bytes at which to start using 2-Pass
  */
-unsigned XMI_CN_DBLSUM_THRESH = 2 * sizeof(double);
+unsigned PAMI_CN_DBLSUM_THRESH = 2 * sizeof(double);
 
 /**
  * \brief Number of bytes at which to start using helper thread(s)
  */
-unsigned XMI_CN_HELPER_THRESH = 16384; // a guess
+unsigned PAMI_CN_HELPER_THRESH = 16384; // a guess
 
 /**
  * \brief Boolean, whether to use Deep Advance for VN mode
  */
-int XMI_CN_VN_DEEP = 1;
+int PAMI_CN_VN_DEEP = 1;
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace BGP {
 
-	typedef XMI::Barrier::BGP::LockBoxNodeProcBarrier CNDeviceInitBarrier;
+	typedef PAMI::Barrier::BGP::LockBoxNodeProcBarrier CNDeviceInitBarrier;
 
-	xmi_result_t CNDevice::init(XMI::Memory::MemoryManager *mm, size_t client, size_t contextId, xmi_context_t ctx) {
+	pami_result_t CNDevice::init(PAMI::Memory::MemoryManager *mm, size_t client, size_t contextId, pami_context_t ctx) {
 		static int init = 0;
 		if (init++) {
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
 		char *s;
 		/*
@@ -107,7 +107,7 @@ namespace BGP {
 			lbb.init(mm, peers, false);
 			loc = NULL;
 			mm->memalign((void **)&loc, sizeof(loc), BGPCN_PKT_SIZE);
-			XMI_assertf(loc, "Failed to get shmem for Tree Device init");
+			PAMI_assertf(loc, "Failed to get shmem for Tree Device init");
 		}
 		if (__global.lockboxFactory.isMasterRank()) {
 			static char pkt[BGPCN_PKT_SIZE]__attribute__((__aligned__(16)));
@@ -142,7 +142,7 @@ namespace BGP {
 				CollectiveFifoStatus(VIRTUAL_CHANNEL, &hc, &dc, &ih, &id);
 			} while (hc == 0 && dc == 0);
 			CollectiveRawReceivePacket(VIRTUAL_CHANNEL, &hdr, pkt);
-			// retrieve the MAX xmit time for all nodes
+			// retrieve the MAX pamit time for all nodes
 			__cn_times[1] = *((unsigned *)pkt);
 			if (peers > 1) {
 				// "broadcast" results to other cores
@@ -164,59 +164,59 @@ namespace BGP {
 			}
 		}
 		//fprintf(stderr, "Tree transmit time %d (%d)\n", __cn_times[1], __cn_times[0]);
-		s = getenv("XMI_CN_VN_DEEP");
-		if (s) XMI_CN_VN_DEEP = atoi(s);
-		s = getenv("XMI_CN_DBLSUM_THRESH");
+		s = getenv("PAMI_CN_VN_DEEP");
+		if (s) PAMI_CN_VN_DEEP = atoi(s);
+		s = getenv("PAMI_CN_DBLSUM_THRESH");
 		if (s) {
-			XMI_CN_DBLSUM_THRESH = atoi(s);
-			if (XMI_CN_DBLSUM_THRESH < (unsigned)-1) {
-				XMI_CN_DBLSUM_THRESH *= sizeof(double);
+			PAMI_CN_DBLSUM_THRESH = atoi(s);
+			if (PAMI_CN_DBLSUM_THRESH < (unsigned)-1) {
+				PAMI_CN_DBLSUM_THRESH *= sizeof(double);
 			}
 		} else {
-			/// \todo compute XMI_CN_DBLSUM_THRESH
+			/// \todo compute PAMI_CN_DBLSUM_THRESH
 		}
-		s = getenv("XMI_CN_HELPER_THRESH");
+		s = getenv("PAMI_CN_HELPER_THRESH");
 		if (s) {
-			XMI_CN_HELPER_THRESH = atoi(s);
+			PAMI_CN_HELPER_THRESH = atoi(s);
 		} else {
-			/// \todo compute XMI_CN_HELPER_THRESH
+			/// \todo compute PAMI_CN_HELPER_THRESH
 		}
-		s = getenv("XMI_THREADED_CN");
-		if (s) XMI_THREADED_CN = atoi(s);
-		s = getenv("XMI_PERSIST_MAX");
-		if (s) XMI_PERSIST_MAX = atoi(s);
-		s = getenv("XMI_PERSIST_MIN");
-		if (s) XMI_PERSIST_MIN = atoi(s);
-		s = getenv("XMI_PERSISTENT_ADVANCE");
+		s = getenv("PAMI_THREADED_CN");
+		if (s) PAMI_THREADED_CN = atoi(s);
+		s = getenv("PAMI_PERSIST_MAX");
+		if (s) PAMI_PERSIST_MAX = atoi(s);
+		s = getenv("PAMI_PERSIST_MIN");
+		if (s) PAMI_PERSIST_MIN = atoi(s);
+		s = getenv("PAMI_PERSISTENT_ADVANCE");
 		if (s) {
-			XMI_PERSISTENT_ADVANCE = atoi(s);
+			PAMI_PERSISTENT_ADVANCE = atoi(s);
 		} else {
 			unsigned i = 0;
 			// use 1.5x for persistent advance timeout
 			i = __cn_times[1] +
 					(__cn_times[1] >> 1);
-			if (i > 2 * XMI_PERSIST_MAX) {
+			if (i > 2 * PAMI_PERSIST_MAX) {
 				// Not worth even trying
 				i = 0;
 			}
-			if (i < XMI_PERSIST_MIN) {
-				i = XMI_PERSIST_MIN;
+			if (i < PAMI_PERSIST_MIN) {
+				i = PAMI_PERSIST_MIN;
 			}
-			if (i > XMI_PERSIST_MAX) {
-				i = XMI_PERSIST_MAX;
+			if (i > PAMI_PERSIST_MAX) {
+				i = PAMI_PERSIST_MAX;
 			}
-			XMI_PERSISTENT_ADVANCE = i;
+			PAMI_PERSISTENT_ADVANCE = i;
 		}
 		// this will need to be more generic if number of
 		// cores becomes larger.
 		switch (__global.mapping.tSize()) {
 		case 1: // SMP mode
-			if (XMI_THREADED_CN) {
+			if (PAMI_THREADED_CN) {
 				_threadRoles = 2; // two roles may use comm_threads
 			}
 			break;
 		case 2: // DUAL mode
-			if (XMI_THREADED_CN) {
+			if (PAMI_THREADED_CN) {
 				_threadRoles = 1; // only one comm_thread
 			}
 			break;
@@ -227,11 +227,11 @@ namespace BGP {
 			// different roles...
 			break;
 		default:
-			XMI_abort();
+			PAMI_abort();
 		}
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 
 }; // namespace BGP
 }; // namespace Device
-}; // namespace XMI
+}; // namespace PAMI

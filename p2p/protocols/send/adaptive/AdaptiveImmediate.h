@@ -26,7 +26,7 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Protocol
   {
@@ -39,8 +39,8 @@ namespace XMI
       /// \tparam T_Model   Template packet model class
       /// \tparam T_Device  Template packet device class
       ///
-      /// \see XMI::Device::Interface::PacketModel
-      /// \see XMI::Device::Interface::PacketDevice
+      /// \see PAMI::Device::Interface::PacketModel
+      /// \see PAMI::Device::Interface::PacketDevice
       ///
       template <class T_Model, class T_Device>
       class AdaptiveImmediate
@@ -71,7 +71,7 @@ namespace XMI
           ///
           typedef struct __attribute__((__packed__)) protocol_metadata
           {
-            xmi_task_t     fromRank;  ///< Origin task id
+            pami_task_t     fromRank;  ///< Origin task id
             uint16_t       databytes; ///< Number of bytes of data
             uint16_t       metabytes; ///< Number of bytes of metadata
         } protocol_metadata_t;
@@ -90,13 +90,13 @@ namespace XMI
           /// \param[out] status       Constructor status
           ///
           inline AdaptiveImmediate (size_t                     dispatch,
-                                    xmi_dispatch_callback_fn   dispatch_fn,
+                                    pami_dispatch_callback_fn   dispatch_fn,
                                     void                     * cookie,
                                     T_Device                 & device,
-                                    xmi_task_t                 origin_task,
-                                    xmi_client_t              client,
+                                    pami_task_t                 origin_task,
+                                    pami_client_t              client,
                                     size_t                     contextid,
-                                    xmi_result_t             & status) :
+                                    pami_result_t             & status) :
               _send_model (device, client, contextid),
               _fromRank (origin_task),
               _client (client),
@@ -127,9 +127,9 @@ namespace XMI
           ///
           /// \brief Start a new simple send adaptive operation.
           ///
-          /// \see XMI::Protocol::Send::immediate
+          /// \see PAMI::Protocol::Send::immediate
           ///
-          inline xmi_result_t immediate_impl (xmi_send_immediate_t * parameters)
+          inline pami_result_t immediate_impl (pami_send_immediate_t * parameters)
           {
             TRACE_ERR((stderr, "AdaptiveImmediate::immediate_impl() >>\n"));
 
@@ -142,9 +142,9 @@ namespace XMI
             metadata.databytes = parameters->data.iov_len;
             metadata.metabytes = parameters->header.iov_len;
 
-            xmi_task_t task;
+            pami_task_t task;
             size_t offset;
-            XMI_ENDPOINT_INFO(parameters->dest,task,offset);
+            PAMI_ENDPOINT_INFO(parameters->dest,task,offset);
 
             TRACE_ERR((stderr, "AdaptiveImmediate::immediate_impl() .. before _send_model.postPacket() .. bytes = %zd\n", bytes));
             bool posted =
@@ -176,7 +176,7 @@ namespace XMI
               }
 
             TRACE_ERR((stderr, "AdaptiveImmediate::immediate_impl() <<\n"));
-            return XMI_SUCCESS;
+            return PAMI_SUCCESS;
           };
 
         protected:
@@ -189,11 +189,11 @@ namespace XMI
           MemoryAllocator < sizeof(send_t), 16 > _allocator;
 
           T_Model         _send_model;
-          xmi_task_t      _fromRank;
+          pami_task_t      _fromRank;
 
-          xmi_client_t              _client;
+          pami_client_t              _client;
           size_t                     _contextid;
-          xmi_dispatch_callback_fn   _dispatch_fn;
+          pami_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;
           T_Device                 & _device;
 
@@ -212,7 +212,7 @@ namespace XMI
           /// subsequent adaptive simple send data packets and will be processed
           /// by the data dispatch function.
           ///
-          /// \see XMI::Device::Interface::RecvFunction_t
+          /// \see PAMI::Device::Interface::RecvFunction_t
           ///
           static int dispatch_send_direct (void   * metadata,
                                            void   * payload,
@@ -228,7 +228,7 @@ namespace XMI
               (AdaptiveImmediate<T_Model, T_Device> *) recv_func_parm;
 
             uint8_t * data = (uint8_t *)payload;
-            xmi_recv_t recv; // used only to provide a non-null recv object to the dispatch function.
+            pami_recv_t recv; // used only to provide a non-null recv object to the dispatch function.
 
             // Invoke the registered dispatch function.
             send->_dispatch_fn.p2p (send->_client,   // Communication context handle
@@ -239,7 +239,7 @@ namespace XMI
                                     m->metabytes,     // Metadata bytes
                                     (void *) (data + m->metabytes),  // payload data
                                     m->databytes,     // Total number of bytes
-                                    (xmi_recv_t *) &recv);
+                                    (pami_recv_t *) &recv);
 
             TRACE_ERR ((stderr, "<< AdaptiveImmediate::dispatch_send_direct()\n"));
             return 0;
@@ -283,7 +283,7 @@ namespace XMI
             // This packet device DOES NOT provide the data buffer(s) for the
             // message and the data must be read on to the stack before the
             // recv callback is invoked.
-            XMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
+            PAMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
 
             uint8_t stackData[T_Model::packet_model_payload_bytes];
             void * p = (void *) & stackData[0];
@@ -300,9 +300,9 @@ namespace XMI
           ///
           /// This callback will free the send state memory.
           ///
-          static void send_complete (xmi_context_t   context,
+          static void send_complete (pami_context_t   context,
                                      void          * cookie,
-                                     xmi_result_t    result)
+                                     pami_result_t    result)
           {
             TRACE_ERR((stderr, "AdaptiveImmediate::send_complete() >> \n"));
             send_t * state = (send_t *) cookie;
@@ -320,7 +320,7 @@ namespace XMI
   };
 };
 #undef TRACE_ERR
-#endif // __xmi_p2p_protocol_send_adaptive_adaptiveimmediate_h__
+#endif // __pami_p2p_protocol_send_adaptive_adaptiveimmediate_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

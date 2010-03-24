@@ -27,7 +27,7 @@
 #include "components/devices/bgq/mu/Dispatch.h"
 #include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "Global.h"
 #include "PipeWorkQueue.h"
 #include "Topology.h"
@@ -40,7 +40,7 @@
 
 //#define OPTIMIZE_AGGREGATE_LATENCY
 
-namespace XMI
+namespace PAMI
 {
 
   namespace Device
@@ -64,12 +64,12 @@ namespace XMI
 
         size_t                               received_length;
         size_t                               expected_length;
-        XMI::PipeWorkQueue                 * rcvpwq;
+        PAMI::PipeWorkQueue                 * rcvpwq;
         uint8_t                            * buffer;
-        xmi_callback_t                       cb_done;
+        pami_callback_t                       cb_done;
         unsigned                             connection_id;
-        xmi_op                               optor;
-        xmi_dt                               dtype;
+        pami_op                               optor;
+        pami_dt                               dtype;
         bool                                 mu_reset;
         uint8_t                              mu_dtype_optor;
         uint16_t                             mu_word_length;
@@ -100,10 +100,10 @@ namespace XMI
 
       public:
 
-        /// \see XMI::Device::Interface::MulticombineModel::MulticombineModel
-        MUMulticombineModel (MUCollDevice *devices, size_t client_id, size_t context_id, xmi_result_t &status);
+        /// \see PAMI::Device::Interface::MulticombineModel::MulticombineModel
+        MUMulticombineModel (MUCollDevice *devices, size_t client_id, size_t context_id, pami_result_t &status);
 
-        /// \see XMI::Device::Interface::MulticombineModel::~MulticombineModel
+        /// \see PAMI::Device::Interface::MulticombineModel::~MulticombineModel
         ~MUMulticombineModel ();
 
         static const bool   multicombine_model_allreduce_only          = true;
@@ -112,10 +112,10 @@ namespace XMI
         static const size_t multicombine_model_bytes_max               = (uint32_t) - 1; // metadata_t::sndlen
         static const size_t multicombine_model_connection_id_max       = (uint32_t) - 1; // metadata_t::connection_id \todo 64 bit?
         static const bool   multicombine_model_available_buffers_only  = true;
-        static const bool   multicombine_model_op_support(xmi_dt, xmi_op); /// \todo add to MulticombineModel and _impl it?
-        /// \see XMI::Device::Interface::MulticombineModel::postMulticombine
-        xmi_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg],
-                                           xmi_multicombine_t *multicombine);
+        static const bool   multicombine_model_op_support(pami_dt, pami_op); /// \todo add to MulticombineModel and _impl it?
+        /// \see PAMI::Device::Interface::MulticombineModel::postMulticombine
+        pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg],
+                                           pami_multicombine_t *multicombine);
 
       protected:
 
@@ -156,7 +156,7 @@ namespace XMI
         //std::map<unsigned,mcombine_recv_state_t*, std::less<unsigned>, __gnu_cxx::malloc_allocator<std::pair<const unsigned,mcombine_recv_state_t*> > >      _recvQ;            // _recvQ[connection_id]
         mcombine_recv_state_t               * _receive_state;    // current state, only valid during postMulticombine call.
 
-      }; // XMI::Device::MU::MUMulticombineModel class
+      }; // PAMI::Device::MU::MUMulticombineModel class
 
       inline void MUMulticombineModel::initializeDescriptor (MUSPI_DescriptorBase* desc,
                                                              uint64_t payloadPa,
@@ -184,16 +184,16 @@ namespace XMI
 
         DUMP_DESCRIPTOR("initializeDescriptor() ..done", desc);
 
-      }; // XMI::Device::MU::MUMulticombineModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
+      }; // PAMI::Device::MU::MUMulticombineModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
 
-      inline xmi_result_t MUMulticombineModel::postMulticombine_impl(uint8_t (&state)[MUMulticombineModel::sizeof_msg],
-                                                                     xmi_multicombine_t *multicombine)
+      inline pami_result_t MUMulticombineModel::postMulticombine_impl(uint8_t (&state)[MUMulticombineModel::sizeof_msg],
+                                                                     pami_multicombine_t *multicombine)
       {
-//        XMI_assert(!multicombine_model_all_sided || multicombine->src != ... not sure what I was trying to assert but think about it...
+//        PAMI_assert(!multicombine_model_all_sided || multicombine->src != ... not sure what I was trying to assert but think about it...
         mu_multicombine_statedata_t *state_data = (mu_multicombine_statedata_t*) & state;
 
         // multicombine_model_available_buffers_only semantics: If you're sending data, it must all be ready in the pwq. \todo assert?
-        XMI::PipeWorkQueue *pwq = (XMI::PipeWorkQueue *)multicombine->data;
+        PAMI::PipeWorkQueue *pwq = (PAMI::PipeWorkQueue *)multicombine->data;
         size_t length = pwq ? pwq->bytesAvailableToConsume() : 0;
 
         void* payload = NULL;
@@ -209,7 +209,7 @@ namespace XMI
 
         _receive_state->cb_done = multicombine->cb_done;
         _receive_state->connection_id = multicombine->connection_id;
-        _receive_state->rcvpwq = (XMI::PipeWorkQueue*)multicombine->results;
+        _receive_state->rcvpwq = (PAMI::PipeWorkQueue*)multicombine->results;
         _receive_state->expected_length = _receive_state->rcvpwq ? _receive_state->rcvpwq->bytesAvailableToProduce() : 0; /// \todo assert something?
         _receive_state->buffer = _receive_state->rcvpwq ? (uint8_t*)_receive_state->rcvpwq->bufferToProduce() : NULL; /// \todo assert something?
         _receive_state->received_length = 0;
@@ -218,7 +218,7 @@ namespace XMI
         {
           TRACE((stderr, "<%p>:MUMulticombineModel::postMulticombine_imp dt %d, op %d, support %s\n", this,
                  multicombine->dtype, multicombine->optor, multicombine_model_op_support(multicombine->dtype, multicombine->optor) ? "true" : "false"));
-          XMI_assertf(multicombine_model_op_support(multicombine->dtype, multicombine->optor),"Unsupported dt %d, op %d\n",multicombine->dtype, multicombine->optor);
+          PAMI_assertf(multicombine_model_op_support(multicombine->dtype, multicombine->optor),"Unsupported dt %d, op %d\n",multicombine->dtype, multicombine->optor);
 
           _receive_state->dtype = multicombine->dtype;
           _receive_state->optor = multicombine->optor;
@@ -245,9 +245,9 @@ namespace XMI
 
         _receive_state = NULL; // ONLY VALID DURING THIS CALL so reset it.
 
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
 
-      }; // XMI::Device::MU::MUMulticombineModel::postMulticombine_impl
+      }; // PAMI::Device::MU::MUMulticombineModel::postMulticombine_impl
 
       inline bool MUMulticombineModel::postShortPayload(MUInjFifoMessage &message,
                                                         unsigned connection_id,
@@ -322,12 +322,12 @@ namespace XMI
           DUMP_DESCRIPTOR("MUMulticombineModel::postShortPayload().. before addToSendQ                ", desc);
           // Add this message to the send queue to be processed when there is
           // space available in the injection fifo.
-          _device.addToSendQ ((XMI::Queue::Element *) &message);
+          _device.addToSendQ ((PAMI::Queue::Element *) &message);
         }
 
         return true;
 
-      }; // XMI::Device::MU::MUMulticombineModel::postShortPayload
+      }; // PAMI::Device::MU::MUMulticombineModel::postShortPayload
 
       inline bool MUMulticombineModel::postPayload(MUInjFifoMessage &message,
                                                    unsigned connection_id,
@@ -345,7 +345,7 @@ namespace XMI
         uint32_t rc;
         Kernel_MemoryRegion_t memRegion; // Memory region associated with the buffer.
         rc = Kernel_CreateMemoryRegion (&memRegion, payload, payload_length);
-        XMI_assert ( rc == 0 );
+        PAMI_assert ( rc == 0 );
 
         uint64_t paddr = (uint64_t)memRegion.BasePa +
                          ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
@@ -403,12 +403,12 @@ namespace XMI
           DUMP_DESCRIPTOR("MUMulticombineModel::postPayload().. before addToSendQ                ", desc);
           // Add this message to the send queue to be processed when there is
           // space available in the injection fifo.
-          _device.addToSendQ ((XMI::Queue::Element *) &message);
+          _device.addToSendQ ((PAMI::Queue::Element *) &message);
         }
 
         return true;
 
-      }; // XMI::Device::MU::MUMulticombineModel::postPayload
+      }; // PAMI::Device::MU::MUMulticombineModel::postPayload
 
 
       ///
@@ -424,7 +424,7 @@ namespace XMI
       /// to process the subsequent packets of a multi-packet message
       /// after the first envelope packet.
       ///
-      /// \see XMI::Device::Interface::RecvFunction_t
+      /// \see PAMI::Device::Interface::RecvFunction_t
       ///
       inline void MUMulticombineModel::processData   (metadata_t   *  metadata,
                                                       uint8_t * payload,
@@ -436,7 +436,7 @@ namespace XMI
         // probably the head, but (unlikely) search if it isn't
         while(receive_state && receive_state->connection_id != metadata->connection_id)
           receive_state = (mcombine_recv_state_t*)_recvQ.nextElem(receive_state);
-        XMI_assert(receive_state); // all-sided and sync'd by MU so this shouldn't be unexpected data
+        PAMI_assert(receive_state); // all-sided and sync'd by MU so this shouldn't be unexpected data
 
         // Number of bytes left to copy into the destination buffer
         size_t nleft = receive_state->expected_length - receive_state->received_length;
@@ -462,14 +462,14 @@ namespace XMI
             if (receive_state->cb_done.function)
               receive_state->cb_done.function (_device.getContext(),
                                                receive_state->cb_done.clientdata,
-                                               XMI_SUCCESS);
+                                               PAMI_SUCCESS);
             _recvQ.deleteElem(receive_state);
           }
         }
-        else XMI_abortf("%s<%d>\n",__FILE__,__LINE__);  /// \todo toss unwanted data?
+        else PAMI_abortf("%s<%d>\n",__FILE__,__LINE__);  /// \todo toss unwanted data?
 
         return ;
-      }; // XMI::Device::MU::MUMulticombineModel::processData
+      }; // PAMI::Device::MU::MUMulticombineModel::processData
 
       ///
       /// \brief Direct multi-packet send envelope packet dispatch.
@@ -486,7 +486,7 @@ namespace XMI
       /// subsequent eager simple send data packets and will be processed
       /// by the data dispatch function.
       ///
-      /// \see XMI::Device::Interface::RecvFunction_t
+      /// \see PAMI::Device::Interface::RecvFunction_t
       ///
       inline
       int MUMulticombineModel::dispatch (void   * metadata,
@@ -501,12 +501,12 @@ namespace XMI
         MUMulticombineModel * model = (MUMulticombineModel *) arg;
         model->processData(m, (uint8_t*)payload, bytes);
         return 0;
-      }; // XMI::Device::MU::MUMulticombineModel::dispatch
+      }; // PAMI::Device::MU::MUMulticombineModel::dispatch
 
 
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 #undef TRACE
 

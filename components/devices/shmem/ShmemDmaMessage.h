@@ -19,7 +19,7 @@
 
 #include "Arch.h"
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemMessage.h"
@@ -29,7 +29,7 @@
 #define TRACE_ERR(x) // fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -38,7 +38,7 @@ namespace XMI
     {
       public:
         inline ShmemDmaMessage (GenericDeviceMessageQueue *QS,
-				xmi_event_function   fn,
+				pami_event_function   fn,
                                 void               * cookie,
                                 T_Device           * device,
                                 size_t               fifo,
@@ -67,13 +67,13 @@ namespace XMI
         size_t               _remote_offset;
         size_t               _bytes;
 
-    };  // XMI::Device::ShmemDmaMessage class
+    };  // PAMI::Device::ShmemDmaMessage class
 
     template <class T_Device>
     class ShmemDmaPutMessage : public ShmemDmaMessage<T_Device>
     {
       public:
-        inline ShmemDmaPutMessage (xmi_event_function   fn,
+        inline ShmemDmaPutMessage (pami_event_function   fn,
                                    void               * cookie,
                                    T_Device           * device,
                                    size_t               fifo,
@@ -88,7 +88,7 @@ namespace XMI
         {};
 
 	DECL_ADVANCE_ROUTINE2(advancePut,ShmemDmaPutMessage,ShmemThread)
-        inline xmi_result_t __advancePut (xmi_context_t context, ShmemThread *thr)
+        inline pami_result_t __advancePut (pami_context_t context, ShmemThread *thr)
         {
           // These constant-expression branch instructions will be optimized
           // out by the compiler
@@ -102,15 +102,15 @@ namespace XMI
                 {
                   this->_local_memregion->write (this->_local_offset, this->_remote_memregion, this->_remote_offset, this->_bytes);
                   this->invokeCompletionFunction (context);
-                  return XMI_SUCCESS;
+                  return PAMI_SUCCESS;
                 }
             }
           else
             {
-              XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+              PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             }
 
-          return XMI_EAGAIN;
+          return PAMI_EAGAIN;
         };
 
 	inline int setThreads(ShmemThread **th)
@@ -122,25 +122,25 @@ namespace XMI
 		// only one thread... for now...
 		t[nt].setMsg(this);
 		t[nt].setAdv(advancePut);
-		t[nt].setStatus(XMI::Device::Ready);
+		t[nt].setStatus(PAMI::Device::Ready);
 		__advancePut(_device->getContext(), t); // was this done by model?
 		++nt;
 		*th = t;
 		return nt;
 	}
 
-	xmi_context_t postNext(bool devQueued)
+	pami_context_t postNext(bool devQueued)
 	{
 		return _device->__postNext<ShmemDmaPutMessage>__postNext(this, devQueued);
 	}
 
-    };  // XMI::Device::ShmemDmaPutMessage class
+    };  // PAMI::Device::ShmemDmaPutMessage class
 
     template <class T_Device>
     class ShmemDmaGetMessage : public ShmemDmaMessage<T_Device>
     {
       public:
-        inline ShmemDmaGetMessage (xmi_event_function   fn,
+        inline ShmemDmaGetMessage (pami_event_function   fn,
                                    void               * cookie,
                                    T_Device           * device,
                                    size_t               fifo,
@@ -155,7 +155,7 @@ namespace XMI
         {};
 
 	DECL_ADVANCE_ROUTINE2(advanceGet,ShmemDmaPutMessage,ShmemThread)
-        inline xmi_result_t __advanceGet (xmi_context_t context, ShmemThread *thr)
+        inline pami_result_t __advanceGet (pami_context_t context, ShmemThread *thr)
         {
           // These constant-expression branch instructions will be optimized
           // out by the compiler
@@ -172,15 +172,15 @@ namespace XMI
                 {
                   this->_local_memregion->read (this->_local_offset, this->_remote_memregion, this->_remote_offset, this->_bytes);
                   this->invokeCompletionFunction (context);
-                  return XMI_SUCCESS;
+                  return PAMI_SUCCESS;
                 }
             }
           else
             {
-              XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+              PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             }
 
-          return XMI_EAGAIN;
+          return PAMI_EAGAIN;
         };
 
 	inline int setThreads(ShmemThread **th)
@@ -192,20 +192,20 @@ namespace XMI
 		// only one thread... for now...
 		t[nt].setMsg(this);
 		t[nt].setAdv(advanceGet);
-		t[nt].setStatus(XMI::Device::Ready);
+		t[nt].setStatus(PAMI::Device::Ready);
 		__advancePut(_device->getContext(), t); // was this done by model?
 		++nt;
 		*th = t;
 		return nt;
 	}
 
-	xmi_context_t postNext(bool devQueued)
+	pami_context_t postNext(bool devQueued)
 	{
 		return _device->__postNext<ShmemDmaGetMessage>__postNext(this, devQueued);
 	}
-    };  // XMI::Device::ShmemDmaGetMessage class
-  };    // XMI::Device namespace
-};      // XMI namespace
+    };  // PAMI::Device::ShmemDmaGetMessage class
+  };    // PAMI::Device namespace
+};      // PAMI namespace
 #undef TRACE_ERR
 #endif // __components_devices_shmem_shmempacketmodel_h__
 

@@ -14,9 +14,9 @@
 #ifndef __components_devices_ManytomanyModel_h__
 #define __components_devices_ManytomanyModel_h__
 
-#include "sys/xmi.h"
-#include "algorithms/ccmi.h"  //for XMI_Callback_t...probably move this at some point
-namespace XMI
+#include "sys/pami.h"
+#include "algorithms/ccmi.h"  //for PAMI_Callback_t...probably move this at some point
+namespace PAMI
 {
   namespace Device
   {
@@ -27,16 +27,16 @@ namespace XMI
       {
       public:
         /// \param[in] device                Manytomany device reference
-        ManytomanyModel (T_Device & device, xmi_result_t &status) {
+        ManytomanyModel (T_Device & device, pami_result_t &status) {
 		COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
-		status = XMI_SUCCESS;
+		status = PAMI_SUCCESS;
 	};
         ~ManytomanyModel () {};
 
-        inline void setCallback (xmi_dispatch_manytomany_fn cb_recv, void *arg);
-        inline void send  (xmi_manytomany_t parameters);
+        inline void setCallback (pami_dispatch_manytomany_fn cb_recv, void *arg);
+        inline void send  (pami_manytomany_t parameters);
         inline void postRecv (uint8_t (&state)[T_StateBytes],
-                              const XMI_Callback_t  * cb_done,
+                              const PAMI_Callback_t  * cb_done,
                               unsigned                 connid,
                               char                   * buf,
                               unsigned               * sizes,
@@ -46,21 +46,21 @@ namespace XMI
                               unsigned                 myindex);
       };
       template <class T_Model, class T_Device, unsigned T_StateBytes>
-      void ManytomanyModel<T_Model, T_Device, T_StateBytes>::setCallback (xmi_dispatch_manytomany_fn cb_recv,
+      void ManytomanyModel<T_Model, T_Device, T_StateBytes>::setCallback (pami_dispatch_manytomany_fn cb_recv,
                                                                       void *arg)
       {
         static_cast<T_Model*>(this)->setCallback_impl(cb_recv, arg);
       }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
-      void ManytomanyModel<T_Model, T_Device, T_StateBytes>::send (xmi_manytomany_t parameters)
+      void ManytomanyModel<T_Model, T_Device, T_StateBytes>::send (pami_manytomany_t parameters)
       {
         static_cast<T_Model*>(this)->send_impl(parameters);
       }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       void ManytomanyModel<T_Model, T_Device, T_StateBytes>::postRecv (uint8_t (&state)[T_StateBytes],
-                                                                   const XMI_Callback_t  * cb_done,
+                                                                   const PAMI_Callback_t  * cb_done,
                                                                    unsigned                connid,
                                                                    char                  * buf,
                                                                    unsigned              * sizes,

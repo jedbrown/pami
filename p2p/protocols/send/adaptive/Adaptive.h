@@ -26,7 +26,7 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Protocol
   {
@@ -39,11 +39,11 @@ namespace XMI
       /// \tparam T_Model   Template packet model class
       /// \tparam T_Device  Template packet device class
       ///
-      /// \see XMI::Device::Interface::PacketModel
-      /// \see XMI::Device::Interface::PacketDevice
+      /// \see PAMI::Device::Interface::PacketModel
+      /// \see PAMI::Device::Interface::PacketDevice
       ///
       template < class T_Model, class T_Device, bool T_LongHeader = true >
-      class Adaptive : public XMI::Protocol::Send::Send,
+      class Adaptive : public PAMI::Protocol::Send::Send,
           public AdaptiveImmediate<T_Model, T_Device>,
           public AdaptiveSimple<T_Model, T_Device, T_LongHeader>
       {
@@ -61,14 +61,14 @@ namespace XMI
           /// \param[out] status       Constructor status
           ///
           inline Adaptive (size_t                     dispatch,
-                           xmi_dispatch_callback_fn   dispatch_fn,
+                           pami_dispatch_callback_fn   dispatch_fn,
                            void                     * cookie,
                            T_Device                 & device,
                            size_t                     origin_task,
-                           xmi_context_t              context,
+                           pami_context_t              context,
                            size_t                     contextid,
-                           xmi_result_t             & status) :
-              XMI::Protocol::Send::Send (),
+                           pami_result_t             & status) :
+              PAMI::Protocol::Send::Send (),
               AdaptiveImmediate<T_Model, T_Device> (dispatch,
                                                     dispatch_fn,
                                                     cookie,
@@ -93,12 +93,12 @@ namespace XMI
           ///
           /// \brief Start a new immediate send operation.
           ///
-          /// \see XMI::Protocol::Send::immediate
+          /// \see PAMI::Protocol::Send::immediate
           ///
-          virtual xmi_result_t immediate (xmi_send_immediate_t * parameters)
+          virtual pami_result_t immediate (pami_send_immediate_t * parameters)
           {
             TRACE_ERR((stderr, ">> Adaptive::immediate()\n"));
-            xmi_result_t result = this->immediate_impl (parameters);
+            pami_result_t result = this->immediate_impl (parameters);
             TRACE_ERR((stderr, "<< Adaptive::immediate()\n"));
             return result;
           };
@@ -106,21 +106,21 @@ namespace XMI
           ///
           /// \brief Start a new simple send operation.
           ///
-          /// \see XMI::Protocol::Send::simple
+          /// \see PAMI::Protocol::Send::simple
           ///
-          virtual xmi_result_t simple (xmi_send_t * parameters)
+          virtual pami_result_t simple (pami_send_t * parameters)
           {
             TRACE_ERR((stderr, ">> Adaptive::simple()\n"));
-            xmi_result_t result = this->simple_impl (parameters);
+            pami_result_t result = this->simple_impl (parameters);
             TRACE_ERR((stderr, "<< Adaptive::simple()\n"));
             return result;
           };
-      };  // XMI::Protocol::Send::Adaptive class
-    };    // XMI::Protocol::Send namespace
-  };      // XMI::Protocol namespace
-};        // XMI namespace
+      };  // PAMI::Protocol::Send::Adaptive class
+    };    // PAMI::Protocol::Send namespace
+  };      // PAMI::Protocol namespace
+};        // PAMI namespace
 #undef TRACE_ERR
-#endif // __xmi_p2p_protocol_send_adaptive_adaptive_h__
+#endif // __pami_p2p_protocol_send_adaptive_adaptive_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

@@ -79,17 +79,17 @@ namespace CCMI
           bool                _toAppRecv;
           unsigned            _appHints;
 
-          XMI_Callback_t     _cb_app_done;
+          PAMI_Callback_t     _cb_app_done;
           Geometry          * _geometry;
 
-          XMI_Request_t    _tmpRequest __attribute__((__aligned__(16)));
+          PAMI_Request_t    _tmpRequest __attribute__((__aligned__(16)));
 
           ///
           /// \brief Post a dummy send to inject 0s into the collective network
           ///
           void postDummySend (CCMI::MultiSend::OldMulticastInterface  * minterface)
           {
-            XMI_Callback_t newcb = {cb_bcast_done, this};
+            PAMI_Callback_t newcb = {cb_bcast_done, this};
             unsigned dstrank  = (unsigned)-1;  //Not the root, inject 0s
             unsigned nranks   = 1;
             unsigned opcode   = CCMI_TREE_BCAST;
@@ -97,7 +97,7 @@ namespace CCMI
             // posts a receive on connection given by connection mgr
             minterface->send (&_tmpRequest, &newcb,
                               CCMI_MATCH_CONSISTENCY, NULL, 1, 0, NULL, _bytecounts[0],
-                              &opcode, &dstrank, nranks, XMI_UNDEFINED_OP, XMI_UNDEFINED_DT);
+                              &opcode, &dstrank, nranks, PAMI_UNDEFINED_OP, PAMI_UNDEFINED_DT);
           }
 
           ///
@@ -105,7 +105,7 @@ namespace CCMI
           ///
           void postDummyRecv (CCMI::MultiSend::OldMulticastInterface  * minterface)
           {
-            XMI_Callback_t newcb = {cb_bcast_done, this};
+            PAMI_Callback_t newcb = {cb_bcast_done, this};
             unsigned  tconnid = 0;
 
             // posts a receive on connection given by connection mgr
@@ -120,7 +120,7 @@ namespace CCMI
           void postAppRecv (CCMI::MultiSend::OldMulticastInterface  * minterface)
           {
             //Support only broadcast
-            XMI_Callback_t newcb = {staticRecvFn, getExecutor(0)};
+            PAMI_Callback_t newcb = {staticRecvFn, getExecutor(0)};
             //bcast connection manger should be phase independent
             unsigned  tconnid = 0;
             //cmgr->getConnectionId (_comm, _root, _color, (unsigned)-1, (unsigned)-1);
@@ -140,8 +140,8 @@ namespace CCMI
           ///
           TreeBcastComposite (CCMI::TorusCollectiveMapping             * map,
                               CCMI::ConnectionManager::ConnectionManager *cmgr,
-                              XMI_Callback_t             cb_done,
-                              XMI_Callback_t             cb_app_done,
+                              PAMI_Callback_t             cb_done,
+                              PAMI_Callback_t             cb_app_done,
                               CCMI_Consistency            consistency,
                               CCMI::MultiSend::OldMulticastInterface *mf,
                               Geometry                  * geometry,
@@ -244,7 +244,7 @@ namespace CCMI
               postAppRecv (minterface);
           }
 
-          static void second_barrier_start (void *me, XMI_Error_t *err)
+          static void second_barrier_start (void *me, PAMI_Error_t *err)
           {
             TreeBcastComposite *composite = ( TreeBcastComposite *) me;
 
@@ -305,7 +305,7 @@ namespace CCMI
           virtual CCMI::Executor::Composite * generate
           (void                      * request,
            size_t                      rsize,
-           XMI_Callback_t             cb_done,
+           PAMI_Callback_t             cb_done,
            CCMI_Consistency            consistency,
            Geometry                  * geometry,
            unsigned                    root,
@@ -313,7 +313,7 @@ namespace CCMI
            unsigned                    bytes)
           {
             TRACE_ADAPTOR ((stderr, "Tree Broadcast Generate\n"));
-            XMI_Callback_t  cb_app_done = cb_done;
+            PAMI_Callback_t  cb_app_done = cb_done;
 
             if(_mapping->GetDimLength(CCMI_T_DIM) > 1)  //Enable second barrier after bcast
             {
@@ -321,7 +321,7 @@ namespace CCMI
               cb_done.clientdata = request;  //Pass pointer before its constructed
             }
 
-            XMI_assert(rsize >= sizeof(TreeBcastComposite));
+            PAMI_assert(rsize >= sizeof(TreeBcastComposite));
             TreeBcastComposite  *composite =
             new (request)
             TreeBcastComposite (_mapping,

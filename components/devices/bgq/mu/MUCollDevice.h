@@ -29,7 +29,7 @@
 //#define ENABLE_MAMBO_WORKAROUNDS
 
 
-namespace XMI
+namespace PAMI
 {
 
   namespace Device
@@ -44,7 +44,7 @@ namespace XMI
         public:
 
           // Inner factory class
-          class Factory : public Interface::FactoryInterface<Factory, MUCollDevice, XMI::Device::Generic::Device>
+          class Factory : public Interface::FactoryInterface<Factory, MUCollDevice, PAMI::Device::Generic::Device>
           {
             public:
               static inline MUCollDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm)
@@ -56,7 +56,7 @@ namespace XMI
                 // context in this _task_ (from heap, not from shared memory)
                 MUCollDevice * devices;
                 int rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
-                XMI_assertf(rc == 0, "posix_memalign failed for MUDevice[%zu], errno=%d\n", n, errno);
+                PAMI_assertf(rc == 0, "posix_memalign failed for MUDevice[%zu], errno=%d\n", n, errno);
 
                 // Instantiate the shared memory devices
                 for (i = 0; i < n; ++i)
@@ -68,13 +68,13 @@ namespace XMI
                 return devices;
               };
 
-              static inline xmi_result_t init_impl (MUCollDevice   * devices,
+              static inline pami_result_t init_impl (MUCollDevice   * devices,
                                                     size_t           clientid,
                                                     size_t           contextid,
-                                                    xmi_client_t     client,
-                                                    xmi_context_t    context,
+                                                    pami_client_t     client,
+                                                    pami_context_t    context,
                                                     Memory::MemoryManager *mm,
-                                                    XMI::Device::Generic::Device * progress)
+                                                    PAMI::Device::Generic::Device * progress)
               {
                 return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, mm, progress);
               };
@@ -115,7 +115,7 @@ namespace XMI
           ///
           /// I want to hook into MUDevice's init_impl (through BaseDevices's init()).  So hide init() with my own init().
           inline int init (SysDep        * sysdep,
-                           xmi_context_t   context,
+                           pami_context_t   context,
                            size_t          offset)
           {
             TRACE((stderr, "<%p>MUCollDevice::init() \n", this));
@@ -127,19 +127,19 @@ namespace XMI
 //  One way to hook into init_impl is multi-inheritence but then I have to hide these BaseDevice functions and explicitly call the parent that I want.
 //      int init(SysDep* sysdep)
 //      {
-//        return XMI::Device::Interface::BaseDevice<MUCollDevice, SysDep>::init(sysdep);
+//        return PAMI::Device::Interface::BaseDevice<MUCollDevice, SysDep>::init(sysdep);
 //      };
 //      int advance()
 //      {
-//        return XMI::Device::Interface::BaseDevice<MUDevice, SysDep>::advance();
+//        return PAMI::Device::Interface::BaseDevice<MUDevice, SysDep>::advance();
 //      }
 //      size_t peers()
 //      {
-//        return XMI::Device::Interface::BaseDevice<MUDevice, SysDep>::peers();
+//        return PAMI::Device::Interface::BaseDevice<MUDevice, SysDep>::peers();
 //      }
 //      size_t task2peer(size_t task)
 //      {
-//        return XMI::Device::Interface::BaseDevice<MUDevice, SysDep>::task2peer(task);
+//        return PAMI::Device::Interface::BaseDevice<MUDevice, SysDep>::task2peer(task);
 //      }
 //////////////////////////////////////////////////////
 
@@ -166,7 +166,7 @@ namespace XMI
             _injFifoSubGroup->addToDoneQ(_relativeFnum, wrapper);
           }
 
-          inline void addToSendQ (XMI::Queue::Element * msg)
+          inline void addToSendQ (PAMI::Queue::Element * msg)
           {
             TRACE((stderr, "<%p>MUCollDevice::addToSendQ() \n", this));
             _injFifoSubGroup->addToSendQ(_relativeFnum, msg);
@@ -195,18 +195,18 @@ namespace XMI
 //                  return _colChannel->getRgetInjFifoId (target_rank);
 //                }
 
-          xmi_result_t init (size_t           clientid,
+          pami_result_t init (size_t           clientid,
                              size_t           contextid,
-                             xmi_client_t     client,
-                             xmi_context_t    context,
+                             pami_client_t     client,
+                             pami_context_t    context,
                              Memory::MemoryManager *mm,
-                             XMI::Device::Generic::Device * progress)
+                             PAMI::Device::Generic::Device * progress)
           {
             TRACE((stderr, "<%p>MUCollDevice::init() \n", this));
             int rc = 0;
             rc = MUDevice::init(clientid, contextid, client, context, mm, progress);
 
-            XMI_assert(_initialized);
+            PAMI_assert(_initialized);
 
             _fnum = _colChannel->pinFifo (0);
             getSubGroupAndRelativeFifoNum (_fnum,
@@ -227,11 +227,11 @@ namespace XMI
 
             if (rc)
               {
-                XMI_abortf("AllocateClassRoute failed with rc %d\n", rc);
+                PAMI_abortf("AllocateClassRoute failed with rc %d\n", rc);
               }
 
 #endif
-            return XMI_SUCCESS;
+            return PAMI_SUCCESS;
           }
 
         protected:
@@ -240,10 +240,10 @@ namespace XMI
           uint32_t          _relativeFnum;
 
         private:
-      }; // XMI::Device::MU::MUCollDevicee class
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+      }; // PAMI::Device::MU::MUCollDevicee class
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 
 #undef TRACE

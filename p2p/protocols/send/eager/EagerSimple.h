@@ -24,7 +24,7 @@
 #define TRACE_ERR(x) // fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Protocol
   {
@@ -37,8 +37,8 @@ namespace XMI
       /// \tparam T_Model   Template packet model class
       /// \tparam T_Device  Template packet device class
       ///
-      /// \see XMI::Device::Interface::PacketModel
-      /// \see XMI::Device::Interface::PacketDevice
+      /// \see PAMI::Device::Interface::PacketModel
+      /// \see PAMI::Device::Interface::PacketDevice
       ///
       template <class T_Model, class T_Device, bool T_LongHeader, class T_Connection>
       class EagerSimple
@@ -53,7 +53,7 @@ namespace XMI
           // connection hash id on the origin side.
           typedef struct __attribute__((__packed__)) protocol_match
           {
-            xmi_task_t         task;
+            pami_task_t         task;
             uint16_t           offset;
           } protocol_match_t;
 
@@ -70,8 +70,8 @@ namespace XMI
           {
             pkt_t                   pkt[3];
             protcol_metadata_t      metadata;  ///< Eager protocol envelope metadata
-            xmi_event_function      local_fn;  ///< Application send injection completion callback
-            xmi_event_function      remote_fn; ///< Application remote receive acknowledgement callback
+            pami_event_function      local_fn;  ///< Application send injection completion callback
+            pami_event_function      remote_fn; ///< Application remote receive acknowledgement callback
             void                  * cookie;    ///< Application callback cookie
             struct iovec            v[2];      ///< Iovec array used for transfers
             EagerSimpleProtocol   * eager;    ///< Eager protocol object
@@ -80,7 +80,7 @@ namespace XMI
           typedef struct recv_state
           {
             pkt_t                   pkt;      ///< packet send state memory
-            xmi_recv_t              info;     ///< Application receive information.
+            pami_recv_t              info;     ///< Application receive information.
             size_t                  received; ///< Number of bytes received.
             struct
             {
@@ -104,10 +104,10 @@ namespace XMI
           /// \param[out] status       Constructor status
           ///
           inline EagerSimple (size_t                     dispatch,
-                              xmi_dispatch_callback_fn   dispatch_fn,
+                              pami_dispatch_callback_fn   dispatch_fn,
                               void                     * cookie,
                               T_Device                 & device,
-                              xmi_result_t             & status) :
+                              pami_result_t             & status) :
               _envelope_model (device),
               _longheader_model (device),
               _data_model (device),
@@ -152,14 +152,14 @@ namespace XMI
                                            dispatch_envelope_read, this);
             TRACE_ERR((stderr, "EagerSimple() [1] status = %d\n", status));
 
-            if (status == XMI_SUCCESS)
+            if (status == PAMI_SUCCESS)
               {
                 status = _data_model.init (dispatch,
                                            dispatch_data_message, this,
                                            dispatch_data_message, this);
                 TRACE_ERR((stderr, "EagerSimple() [2] status = %d\n", status));
 
-                if (status == XMI_SUCCESS)
+                if (status == PAMI_SUCCESS)
                   {
                     status = _ack_model.init (dispatch,
                                               dispatch_ack_direct, this,
@@ -170,7 +170,7 @@ namespace XMI
 
                     if (T_LongHeader == true)
                       {
-                        if (status == XMI_SUCCESS)
+                        if (status == PAMI_SUCCESS)
                           {
                             status = _longheader_model.init (dispatch,
                                                              dispatch_longheader_message, this,
@@ -182,16 +182,16 @@ namespace XMI
               }
           }
 
-          inline xmi_result_t simple_impl (xmi_send_t * parameters)
+          inline pami_result_t simple_impl (pami_send_t * parameters)
           {
             TRACE_ERR((stderr, ">> EagerSimple::simple_impl() .. sizeof(protcol_metadata_t) = %zd, T_Model::packet_model_metadata_bytes = %zd\n", sizeof(protcol_metadata_t), T_Model::packet_model_metadata_bytes));
 
-            xmi_task_t task;
+            pami_task_t task;
             size_t offset;
-            XMI_ENDPOINT_INFO(parameters->send.dest,task,offset);
+            PAMI_ENDPOINT_INFO(parameters->send.dest,task,offset);
 
             // Verify that this task is addressable by this packet device
-            if (!_device.isPeer (task)) return XMI_ERROR;
+            if (!_device.isPeer (task)) return PAMI_ERROR;
 
             // Allocate memory to maintain the state of the send.
             send_state_t * state = allocateSendState ();
@@ -240,7 +240,7 @@ namespace XMI
                     if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > T_Model::packet_model_payload_bytes))
                     {
                       // "'long header' support is disabled.\n"
-                      return XMI_INVAL;
+                      return PAMI_INVAL;
                     }
 #endif
 
@@ -293,14 +293,14 @@ namespace XMI
                 else
                   {
                     TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata\n"));
-                    //XMI_assertf((parameters->send.header.bytes + sizeof(protcol_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(protcol_metadata_t), parameters->send.header.bytes, T_Model::packet_model_payload_bytes);
+                    //PAMI_assertf((parameters->send.header.bytes + sizeof(protcol_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(protcol_metadata_t), parameters->send.header.bytes, T_Model::packet_model_payload_bytes);
 
 #ifdef ERROR_CHECKS
                     if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > (T_Model::packet_model_payload_bytes - sizeof(protcol_metadata_t))))
                     {
                       // "'long header' support is disabled.\n"
                       TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. error .. 'long header' support is disabled.\n"));
-                      return XMI_INVAL;
+                      return PAMI_INVAL;
                     }
 #endif
 
@@ -366,7 +366,7 @@ namespace XMI
                     {
                       // "'long header' support is disabled.\n"
                       TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. ERROR. 'long header' support is disabled.\n"));
-                      return XMI_INVAL;
+                      return PAMI_INVAL;
                     }
 #endif
 
@@ -423,7 +423,7 @@ namespace XMI
                     {
                       // "'long header' support is disabled.\n"
                       TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. ERROR. 'long header' support is disabled.\n"));
-                      return XMI_INVAL;
+                      return PAMI_INVAL;
                     }
 #endif
 
@@ -489,7 +489,7 @@ namespace XMI
               }
 
             TRACE_ERR((stderr, "<< EagerSimple::simple_impl()\n"));
-            return XMI_SUCCESS;
+            return PAMI_SUCCESS;
           };
 
         protected:
@@ -502,11 +502,11 @@ namespace XMI
           T_Model         _data_model;
           T_Model         _ack_model;
           T_Device      & _device;
-          xmi_context_t   _context;
+          pami_context_t   _context;
 
           protocol_match_t _origin;
 
-          xmi_dispatch_callback_fn   _dispatch_fn;
+          pami_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;
 
           T_Connection              _connection;
@@ -544,11 +544,11 @@ namespace XMI
                               metadata->metabytes, // Application metadata bytes
                               NULL,                // No payload data
                               metadata->bytes,     // Number of msg bytes
-                              (xmi_recv_t *) &(state->info));
+                              (pami_recv_t *) &(state->info));
 
             // Only handle simple receives .. until the non-contiguous support
             // is available
-            XMI_assert(state->info.kind == XMI_AM_KIND_SIMPLE);
+            PAMI_assert(state->info.kind == PAMI_AM_KIND_SIMPLE);
 
             TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zd\n", metadata->bytes));
 
@@ -561,7 +561,7 @@ namespace XMI
                 TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. state->info.local_fn = %p\n", state->info.local_fn));
 
                 if (state->info.local_fn)
-                  state->info.local_fn (_context, state->info.cookie, XMI_SUCCESS);
+                  state->info.local_fn (_context, state->info.cookie, PAMI_SUCCESS);
 
                 TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. state->metadata.va_send = %p\n", state->metadata.va_send));
 
@@ -596,7 +596,7 @@ namespace XMI
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_ack_direct()\n"));
             send_state_t * state = *((send_state_t **) payload);
 
-            xmi_event_function   remote_fn = state->remote_fn;
+            pami_event_function   remote_fn = state->remote_fn;
             void               * fn_cookie = state->cookie;
             TRACE_ERR((stderr, "   EagerSimple::dispatch_ack_direct() .. state = %p, remote_fn = %p\n", state, remote_fn));
 
@@ -604,7 +604,7 @@ namespace XMI
 
             eager->freeSendState (state);
 
-            if (remote_fn) remote_fn (eager->_context, fn_cookie, XMI_SUCCESS);
+            if (remote_fn) remote_fn (eager->_context, fn_cookie, PAMI_SUCCESS);
 
             TRACE_ERR((stderr, "<< EagerSimple::dispatch_ack_direct()\n"));
             return 0;
@@ -623,7 +623,7 @@ namespace XMI
             // This packet device DOES NOT provide the data buffer(s) for the
             // message and the data must be read on to the stack before the
             // recv callback is invoked.
-            XMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
+            PAMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
 
             uint8_t stackData[T_Model::packet_model_payload_bytes];
             void * p = (void *) & stackData[0];
@@ -650,7 +650,7 @@ namespace XMI
           /// subsequent eager simple send data packets and will be processed
           /// by the data dispatch function.
           ///
-          /// \see XMI::Device::Interface::RecvFunction_t
+          /// \see PAMI::Device::Interface::RecvFunction_t
           ///
           static int dispatch_envelope_direct (void   * metadata,
                                                void   * payload,
@@ -757,7 +757,7 @@ namespace XMI
             // This packet device DOES NOT provide the data buffer(s) for the
             // message and the data must be read on to the stack before the
             // recv callback is invoked.
-            XMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
+            PAMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
 
             uint8_t stackData[T_Model::packet_model_payload_bytes];
             void * p = (void *) & stackData[0];
@@ -777,7 +777,7 @@ namespace XMI
           {
             // This assertion of a constant expression should be optimized out
             // by the compiler when long header support is enabled.
-            XMI_assertf(T_LongHeader == true, "'long header' support is not enabled.");
+            PAMI_assertf(T_LongHeader == true, "'long header' support is not enabled.");
 
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
@@ -794,7 +794,7 @@ namespace XMI
             if (state->longheader.bytes == state->longheader.offset)
               {
                 // The entire application metadata has been received. Invoke the
-                // registered xmi point-to-point dispatch function.
+                // registered pami point-to-point dispatch function.
 
                 eager->process_envelope (&state->metadata, state->longheader.addr, state);
 
@@ -820,7 +820,7 @@ namespace XMI
           /// to process the subsequent packets of a multi-packet message
           /// after the first envelope packet.
           ///
-          /// \see XMI::Device::Interface::RecvFunction_t
+          /// \see PAMI::Device::Interface::RecvFunction_t
           ///
           static int dispatch_data_message   (void   * metadata,
                                               void   * payload,
@@ -877,7 +877,7 @@ namespace XMI
                 if (state->info.local_fn)
                   state->info.local_fn (eager->_context,
                                         state->info.cookie,
-                                        XMI_SUCCESS);
+                                        PAMI_SUCCESS);
 
                 if (state->metadata.va_send != NULL)
                   {
@@ -913,9 +913,9 @@ namespace XMI
           /// callback function and, if notification of remote receive
           /// completion is not required, free the send state memory.
           ///
-          static void send_complete (xmi_context_t   context,
+          static void send_complete (pami_context_t   context,
                                      void          * cookie,
-                                     xmi_result_t    result)
+                                     pami_result_t    result)
           {
             TRACE_ERR((stderr, "EagerSimple::send_complete() >> \n"));
             send_state_t * state = (send_state_t *) cookie;
@@ -924,7 +924,7 @@ namespace XMI
 
             if (state->local_fn != NULL)
               {
-                state->local_fn (eager->_context, state->cookie, XMI_SUCCESS);
+                state->local_fn (eager->_context, state->cookie, PAMI_SUCCESS);
               }
 
             if (state->remote_fn == NULL)
@@ -943,9 +943,9 @@ namespace XMI
           /// completion callback and free the receive state object
           /// memory.
           ///
-          static void receive_complete (xmi_context_t   context,
+          static void receive_complete (pami_context_t   context,
                                         void          * cookie,
-                                        xmi_result_t    result)
+                                        pami_result_t    result)
           {
             TRACE_ERR((stderr, "EagerSimple::receive_complete() >> \n"));
             recv_state_t * state = (recv_state_t *) cookie;
@@ -962,7 +962,7 @@ namespace XMI
   };
 };
 #undef TRACE_ERR
-#endif // __xmi_p2p_protocol_send_eager_eagersimple_h__
+#endif // __pami_p2p_protocol_send_eager_eagersimple_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

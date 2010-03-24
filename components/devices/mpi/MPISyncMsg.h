@@ -16,7 +16,7 @@
 
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/util/SubDeviceSuppt.h"
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "Global.h"
 #include "PipeWorkQueue.h"
 #include "Topology.h"
@@ -26,19 +26,19 @@
   #define TRACE_DEVICE(x) //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
 
     class MPISyncMdl;
 
-    class MPISyncDev : public XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,true>
+    class MPISyncDev : public PAMI::Device::Generic::MultiSendQSubDevice<PAMI::Device::Generic::SimpleAdvanceThread,1,true>
     {
     public:
       MPI_Comm _msync_communicator;
       MPISyncDev() :
-      XMI::Device::Generic::MultiSendQSubDevice<XMI::Device::Generic::SimpleAdvanceThread,1,true>(),
+      PAMI::Device::Generic::MultiSendQSubDevice<PAMI::Device::Generic::SimpleAdvanceThread,1,true>(),
       _msync_communicator(MPI_COMM_NULL)
       {
       }
@@ -46,18 +46,18 @@ namespace XMI
 	class Factory : public Interface::FactoryInterface<Factory,MPISyncDev,Generic::Device> {
 	public:
 		static inline MPISyncDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(MPISyncDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
+		static inline pami_result_t init_impl(MPISyncDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(MPISyncDev *devs, size_t client, size_t context);
 		static MPISyncDev &getDevice_impl(MPISyncDev *devs, size_t client, size_t context);
 	}; // class Factory
 
     };
   }; //-- Device
-}; //-- XMI
+}; //-- PAMI
 
-static XMI::Device::MPISyncDev _g_mpisync_dev;
+static PAMI::Device::MPISyncDev _g_mpisync_dev;
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -66,7 +66,7 @@ inline MPISyncDev *MPISyncDev::Factory::generate_impl(size_t client, size_t num_
 	return &_g_mpisync_dev;
 }
 
-inline xmi_result_t MPISyncDev::Factory::init_impl(MPISyncDev *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+inline pami_result_t MPISyncDev::Factory::init_impl(MPISyncDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
 	MPI_Comm_dup(MPI_COMM_WORLD,&_g_mpisync_dev._msync_communicator);
 	return _g_mpisync_dev.__init(client, contextId, clt, ctx, mm, devices);
 }
@@ -82,7 +82,7 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
 ///
 /// \brief
 ///
-    class MPISyncMsg : public XMI::Device::Generic::GenericMessage
+    class MPISyncMsg : public PAMI::Device::Generic::GenericMessage
     {
     private:
       enum roles
@@ -93,14 +93,14 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
       };
     public:
       MPISyncMsg(GenericDeviceMessageQueue *Generic_QS,
-                 xmi_multisync_t *msync) :
-      XMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
+                 pami_multisync_t *msync) :
+      PAMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
                                            msync->client, msync->context),
-      _participants((XMI::Topology *)msync->participants),
+      _participants((PAMI::Topology *)msync->participants),
       _tag(msync->connection_id),
       _idx(0),
       _req(MPI_REQUEST_NULL),
-      _pendingStatus(XMI::Device::Initialized),
+      _pendingStatus(PAMI::Device::Initialized),
       _root(_participants->index2Rank(0))
       {
         TRACE_DEVICE((stderr,"<%p>MPISyncMsg client %p, context %zd\n",this,
@@ -109,7 +109,7 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
         {
           // We have to use a local pending status because the sub device is too smart for us and will
           // reset the _status to initialized after __setThreads
-          _pendingStatus = XMI::Device::Done; //setStatus(XMI::Device::Done);
+          _pendingStatus = PAMI::Device::Done; //setStatus(PAMI::Device::Done);
           return;
         }
         if(_root == __global.mapping.task())
@@ -131,20 +131,20 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
       }
 
       // virtual function
-      xmi_context_t postNext(bool devQueued) {
+      pami_context_t postNext(bool devQueued) {
 	return _g_mpisync_dev.__postNext<MPISyncMsg>(this, devQueued);
       }
 
-      inline int setThreads(XMI::Device::Generic::SimpleAdvanceThread **th)
+      inline int setThreads(PAMI::Device::Generic::SimpleAdvanceThread **th)
       {
-	XMI::Device::Generic::SimpleAdvanceThread *t;
+	PAMI::Device::Generic::SimpleAdvanceThread *t;
 	int n;
 	_g_mpisync_dev.__getThreads(&t, &n);
         int nt = 0;
         // assert(nt < n);
         t[nt].setMsg(this);
         t[nt].setAdv(advanceThread);
-        t[nt].setStatus(XMI::Device::Ready);
+        t[nt].setStatus(PAMI::Device::Ready);
         ++nt;
         // assert(nt > 0? && nt < n);
         _nThreads = nt;
@@ -155,22 +155,22 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
       }
 
 protected:
-      DECL_ADVANCE_ROUTINE(advanceThread,MPISyncMsg,XMI::Device::Generic::SimpleAdvanceThread);
-      inline xmi_result_t __advanceThread(XMI::Device::Generic::SimpleAdvanceThread *thr)
+      DECL_ADVANCE_ROUTINE(advanceThread,MPISyncMsg,PAMI::Device::Generic::SimpleAdvanceThread);
+      inline pami_result_t __advanceThread(PAMI::Device::Generic::SimpleAdvanceThread *thr)
       {
-        if(getStatus() == XMI::Device::Done)
+        if(getStatus() == PAMI::Device::Done)
         {
           fprintf(stderr, "Warning: message/thread advanced after Done\n");
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
-        if(_pendingStatus == XMI::Device::Done)
+        if(_pendingStatus == PAMI::Device::Done)
         {
           // This happens when there is no data to send/receive and ctor set a "pending status" to done,
           //  so on the first advance, setDone and return.
-          thr->setStatus(XMI::Device::Complete);
-          setStatus(XMI::Device::Done);
+          thr->setStatus(PAMI::Device::Complete);
+          setStatus(PAMI::Device::Done);
           TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread() done - no participants\n",this));
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
         int flag = 0;
         MPI_Status status;
@@ -188,7 +188,7 @@ protected:
           }
           else
           {
-            return XMI_EAGAIN;
+            return PAMI_EAGAIN;
           }
           // current message was completed...
         }
@@ -201,7 +201,7 @@ protected:
                                _g_mpisync_dev._msync_communicator, &_req);
             TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread irecv rc = %d, dst %zd, tag %d \n",this,
                           rc, _participants->index2Rank(_idx), _tag));
-            return XMI_EAGAIN;
+            return PAMI_EAGAIN;
           }
           else
           {
@@ -215,13 +215,13 @@ protected:
             }
           }
         }
-        thr->setStatus(XMI::Device::Complete);
-        setStatus(XMI::Device::Done);
-        return XMI_SUCCESS;
+        thr->setStatus(PAMI::Device::Complete);
+        setStatus(PAMI::Device::Done);
+        return PAMI_SUCCESS;
       }
 
       unsigned _nThreads;
-      XMI::Topology *_participants;
+      PAMI::Topology *_participants;
       int            _tag;
       size_t         _idx;
       MPI_Request    _req;
@@ -229,38 +229,38 @@ protected:
       size_t         _root; // first rank in the sync - arbitrary 'root'
     }; //-- MPISyncMsg
 
-    class MPISyncMdl : public XMI::Device::Interface::MultisyncModel<MPISyncMdl,MPISyncDev,sizeof(MPISyncMsg)>
+    class MPISyncMdl : public PAMI::Device::Interface::MultisyncModel<MPISyncMdl,MPISyncDev,sizeof(MPISyncMsg)>
     {
     public:
       static const int NUM_ROLES = 2;
       static const int REPL_ROLE = 1;
       static const size_t sizeof_msg = sizeof(MPISyncMsg);
 
-      MPISyncMdl(MPISyncDev dev, xmi_result_t &status) :
-      XMI::Device::Interface::MultisyncModel<MPISyncMdl,MPISyncDev,sizeof(MPISyncMsg)>(dev, status)
+      MPISyncMdl(MPISyncDev dev, pami_result_t &status) :
+      PAMI::Device::Interface::MultisyncModel<MPISyncMdl,MPISyncDev,sizeof(MPISyncMsg)>(dev, status)
       {
         TRACE_DEVICE((stderr,"<%p>MPISyncMdl()\n",this));
-        //XMI::SysDep *sd = _g_mpisync_dev.getSysdep();
+        //PAMI::SysDep *sd = _g_mpisync_dev.getSysdep();
       }
 
-      inline xmi_result_t postMultisync_impl(uint8_t         (&state)[sizeof_msg],
-                                             xmi_multisync_t *msync);
+      inline pami_result_t postMultisync_impl(uint8_t         (&state)[sizeof_msg],
+                                             pami_multisync_t *msync);
 
     private:
     }; // class MPISyncMdl
 
-    inline xmi_result_t MPISyncMdl::postMultisync_impl(uint8_t         (&state)[sizeof_msg],
-                                                       xmi_multisync_t *msync)
+    inline pami_result_t MPISyncMdl::postMultisync_impl(uint8_t         (&state)[sizeof_msg],
+                                                       pami_multisync_t *msync)
     {
       TRACE_DEVICE((stderr,"<%p>MPISyncMdl::postMulticast() connection_id %d, request %p\n",this,
                     msync->connection_id, &state));
       MPISyncMsg *msg =
       new (&state) MPISyncMsg(_g_mpisync_dev.getQS(), msync);
       _g_mpisync_dev.__post<MPISyncMsg>(msg);
-      return XMI_SUCCESS;
+      return PAMI_SUCCESS;
     }
 
   }; //-- Device
-}; //-- XMI
+}; //-- PAMI
 #undef TRACE_DEVICE
 #endif // __components_devices_workqueue_mpisyncmsg_h__

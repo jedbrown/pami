@@ -16,7 +16,7 @@
 #include "components/devices/workqueue/SharedWorkQueue.h"
 #include "components/devices/workqueue/MemoryWorkQueue.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {

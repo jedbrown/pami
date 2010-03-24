@@ -19,7 +19,7 @@
 #include <spi/include/l2/atomic.h>
 #include "Global.h"
 
-namespace XMI {
+namespace PAMI {
 namespace Counter {
 namespace BGQ {
 
@@ -27,45 +27,45 @@ namespace BGQ {
 /// \brief CRTP interface for BG/Q L2 Atomics builtins atomic objects.
 ///
 template <class T_Counter>
-class _L2Counter : public XMI::Atomic::Interface::Counter<T_Counter> {
+class _L2Counter : public PAMI::Atomic::Interface::Counter<T_Counter> {
 public:
 	_L2Counter() :
-		XMI::Atomic::Interface::Counter<T_Counter>()
+		PAMI::Atomic::Interface::Counter<T_Counter>()
 	{}
 
 	~_L2Counter() {}
 
-	void __init(XMI::Memory::MemoryManager *mm,
-				XMI::Atomic::BGQ::l2x_scope_t scope) {
-		xmi_result_t rc = __global.l2atomicFactory.l2x_alloc((void **)&_counter,
+	void __init(PAMI::Memory::MemoryManager *mm,
+				PAMI::Atomic::BGQ::l2x_scope_t scope) {
+		pami_result_t rc = __global.l2atomicFactory.l2x_alloc((void **)&_counter,
 									1, scope);
-		XMI_assertf(rc == XMI_SUCCESS, "Failed to allocate L2 Atomic Counter");
+		PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate L2 Atomic Counter");
 		// MUST NOT DO THIS! other procs might be already using it.
 		// TODO: find a way to ensure memory is zeroed once and only once.
 		//fetch_and_clear_impl();
 	}
 
-	/// \see XMI::Atomic::Interface::Counter::fetch
+	/// \see PAMI::Atomic::Interface::Counter::fetch
 	inline size_t fetch_impl() {
 		return L2_AtomicLoad(_counter);
 	}
 
-	/// \see XMI::Atomic::Interface::Counter::fetch_and_inc
+	/// \see PAMI::Atomic::Interface::Counter::fetch_and_inc
 	inline size_t fetch_and_inc_impl() {
 		return L2_AtomicLoadIncrement(_counter);
 	}
 
-	/// \see XMI::Atomic::Interface::Counter::fetch_and_dec
+	/// \see PAMI::Atomic::Interface::Counter::fetch_and_dec
 	inline size_t fetch_and_dec_impl() {
 		return L2_AtomicLoadDecrement(_counter);
 	}
 
-	/// \see XMI::Atomic::Interface::Counter::fetch_and_clear
+	/// \see PAMI::Atomic::Interface::Counter::fetch_and_clear
 	inline size_t fetch_and_clear_impl() {
 		return L2_AtomicLoadClear(_counter);
 	}
 
-	/// \see XMI::Atomic::Interface::Counter::compare_and_swap
+	/// \see PAMI::Atomic::Interface::Counter::compare_and_swap
 	/// Since BG/Q L2 Atomics don't implement compare-and-swap, we use
 	/// the GCC builtin and hope for the best.
 	inline bool compare_and_swap_impl(size_t compare, size_t swap) {
@@ -95,9 +95,9 @@ public:
 
 	~L2ProcCounter() {}
 
-	/// \see XMI::Atomic::Interface::Counter::init
-	void init_impl(XMI::Memory::MemoryManager *mm) {
-		__init(mm, XMI::Atomic::BGQ::L2A_PROC_SCOPE);
+	/// \see PAMI::Atomic::Interface::Counter::init
+	void init_impl(PAMI::Memory::MemoryManager *mm) {
+		__init(mm, PAMI::Atomic::BGQ::L2A_PROC_SCOPE);
 		// MUST NOT DO THIS! other procs might be already using it.
 		// TODO: find a way to ensure memory is zeroed once and only once.
 		//fetch_and_clear_impl ();
@@ -121,9 +121,9 @@ public:
 
 	~L2NodeCounter() {}
 
-	/// \see XMI::Atomic::Interface::Counter::init
-	void init_impl(XMI::Memory::MemoryManager *mm) {
-		__init(mm, XMI::Atomic::BGQ::L2A_NODE_SCOPE);
+	/// \see PAMI::Atomic::Interface::Counter::init
+	void init_impl(PAMI::Memory::MemoryManager *mm) {
+		__init(mm, PAMI::Atomic::BGQ::L2A_NODE_SCOPE);
 		// MUST NOT DO THIS! other procs might be already using it.
 		// TODO: find a way to ensure memory is zeroed once and only once.
 		//fetch_and_clear_impl ();
@@ -134,6 +134,6 @@ protected:
 
 }; // namespace BGQ
 }; // namespace Atomic
-};   // namespace XMI
+};   // namespace PAMI
 
 #endif // __components_atomic_bgq_L2Counter_h__

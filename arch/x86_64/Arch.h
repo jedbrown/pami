@@ -27,4 +27,4 @@ inline void mem_sync()
 
 
 
-#endif // __xmi_arch_i386_h__
+#endif // __pami_arch_i386_h__

@@ -41,7 +41,7 @@ namespace DCMF
               TreeBarrierMessage(DCMF::Queueing::Tree::Device    &TreeQS,
                                  unsigned                         classroute,
                                  unsigned                         dispatch_id,
-                                 const XMI_Callback_t            cb_done):
+                                 const PAMI_Callback_t            cb_done):
                 TreeSendMessage(TreeQS, cb_done, 1),
                 _classroute(classroute),
                 _modelPkt(classroute,
@@ -66,7 +66,7 @@ namespace DCMF
             {
             public:
               TreeBarrierRecvMessage(DCMF::Queueing::Tree::Device    &TreeQS,
-                                     const XMI_Callback_t            cb):
+                                     const PAMI_Callback_t            cb):
                 TreeRecvMessage(TreeQS, cb, NULL, 1, 1, DCMF_BCAST_RECV_NOSTORE)
                 {
                 }

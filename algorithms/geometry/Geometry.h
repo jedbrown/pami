@@ -16,15 +16,15 @@
 
 #include "Topology.h"
 #include "Mapping.h"
-#include "sys/xmi_attributes.h"
+#include "sys/pami_attributes.h"
 #include "algorithms/interfaces/GeometryInterface.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include <map>
 
-namespace XMI
+namespace PAMI
 {
-  extern std::map<unsigned, xmi_geometry_t> geometry_map;
-  extern std::map<unsigned, xmi_geometry_t> cached_geometry;
+  extern std::map<unsigned, pami_geometry_t> geometry_map;
+  extern std::map<unsigned, pami_geometry_t> cached_geometry;
 
   namespace Geometry
   {
@@ -37,37 +37,37 @@ namespace XMI
     public:
       Algorithm<T_Geometry>(){}
 
-      inline void metadata(xmi_metadata_t   *mdata)
+      inline void metadata(pami_metadata_t   *mdata)
         {
           _factory->metadata(mdata);
         }
-      inline xmi_result_t generate(xmi_xfer_t *xfer)
+      inline pami_result_t generate(pami_xfer_t *xfer)
         {
-          CCMI::Executor::Composite *exec=_factory->generate((xmi_geometry_t)_geometry,
+          CCMI::Executor::Composite *exec=_factory->generate((pami_geometry_t)_geometry,
                                                              (void*) xfer);
           if(exec)
               {
                 exec->setDoneCallback(xfer->cb_done, xfer->cookie);
                 exec->start();
               }
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
-      static xmi_geometry_t mapidtogeometry (int comm)
+      static pami_geometry_t mapidtogeometry (int comm)
         {
-          xmi_geometry_t g = geometry_map[comm];
+          pami_geometry_t g = geometry_map[comm];
           return g;
         }
 
-      inline xmi_result_t dispatch_set(size_t                     dispatch,
-                                       xmi_dispatch_callback_fn   fn,
+      inline pami_result_t dispatch_set(size_t                     dispatch,
+                                       pami_dispatch_callback_fn   fn,
                                        void                     * cookie,
-                                       xmi_collective_hint_t      options)
+                                       pami_collective_hint_t      options)
         {
           _factory->setAsyncInfo(false,
                                  fn,
                                  mapidtogeometry);
 
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
 
@@ -90,7 +90,7 @@ namespace XMI
           memset(&_algo_list_store[0], 0, sizeof(_algo_list_store));
           memset(&_algo_list_check_store[0], 0, sizeof(_algo_list_check_store));
         }
-      inline xmi_result_t addCollective(CCMI::Adaptor::CollectiveProtocolFactory *factory,
+      inline pami_result_t addCollective(CCMI::Adaptor::CollectiveProtocolFactory *factory,
                                         T_Geometry                               *geometry,
                                         size_t                                    context_id)
         {
@@ -98,9 +98,9 @@ namespace XMI
           _algo_list_store[_num_algo]._geometry = geometry;
           _algo_list[_num_algo]                 = &_algo_list_store[_num_algo];
           _num_algo++;
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
-      inline xmi_result_t addCollectiveCheck(CCMI::Adaptor::CollectiveProtocolFactory  *factory,
+      inline pami_result_t addCollectiveCheck(CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                              T_Geometry                                *geometry,
                                              size_t                                     context_id)
         {
@@ -108,13 +108,13 @@ namespace XMI
           _algo_list_check_store[_num_algo_check]._geometry = geometry;
           _algo_list_check[_num_algo_check]                 = &_algo_list_check_store[_num_algo_check];
           _num_algo_check++;
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
-      inline xmi_result_t lengths(int             *lists_lengths)
+      inline pami_result_t lengths(int             *lists_lengths)
         {
           lists_lengths[0] = _num_algo;
           lists_lengths[1] = _num_algo_check;
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
       int                     _num_algo;
       int                     _num_algo_check;
@@ -125,30 +125,30 @@ namespace XMI
     };
 
     class Common :
-      public Geometry<XMI::Geometry::Common>
+      public Geometry<PAMI::Geometry::Common>
     {
     public:
       inline Common(Mapping                *mapping,
-                    xmi_task_t             *ranks,
-                    xmi_task_t              nranks,
+                    pami_task_t             *ranks,
+                    pami_task_t              nranks,
                     unsigned                comm,
                     unsigned                numcolors,
                     bool                    globalcontext):
-        Geometry<XMI::Geometry::Common>(mapping,
+        Geometry<PAMI::Geometry::Common>(mapping,
                                         ranks,
                                         nranks,
                                         comm,
                                         numcolors,
                                         globalcontext)
         {
-          xmi_ca_unset_all(&_attributes);
+          pami_ca_unset_all(&_attributes);
         }
-      inline Common (Geometry<XMI::Geometry::Common> *parent,
+      inline Common (Geometry<PAMI::Geometry::Common> *parent,
                      Mapping                         *mapping,
                      unsigned                         comm,
                      int                              numranges,
-                     xmi_geometry_range_t             rangelist[]):
-	Geometry<XMI::Geometry::Common>(parent,
+                     pami_geometry_range_t             rangelist[]):
+	Geometry<PAMI::Geometry::Common>(parent,
                                         mapping,
                                         comm,
                                         numranges,
@@ -157,9 +157,9 @@ namespace XMI
         _commid(comm)
         {
           int i, j, k, size;
-          xmi_task_t nranks;
+          pami_task_t nranks;
 
-          xmi_ca_unset_all(&_attributes);
+          pami_ca_unset_all(&_attributes);
 
           size = 0;
           nranks = 0;
@@ -167,12 +167,12 @@ namespace XMI
           _rank = mapping->task();
           _numtopos =  numranges + 1;
 
-          _topos = new XMI::Topology[_numtopos];
+          _topos = new PAMI::Topology[_numtopos];
 
           for (i = 0; i < numranges; i++)
             nranks += (rangelist[i].hi - rangelist[i].lo + 1);
 
-          _ranks = (xmi_task_t*)malloc(nranks * sizeof(xmi_task_t));
+          _ranks = (pami_task_t*)malloc(nranks * sizeof(pami_task_t));
 
           for (k = 0, i = 0; i < numranges; i++)
               {
@@ -181,23 +181,23 @@ namespace XMI
                 for (j = 0; j < size; j++, k++)
                     {
                       _ranks[k] = rangelist[i].lo + j;
-                      if (_ranks[k] == (xmi_task_t) _rank)
+                      if (_ranks[k] == (pami_task_t) _rank)
                         _virtual_rank = k;
                     }
               }
 
           // this creates the topology including all subtopologies
-          new(&_topos[0]) XMI::Topology(_ranks, nranks);
+          new(&_topos[0]) PAMI::Topology(_ranks, nranks);
 
           // now build up the individual subtopologies
           for (i = 1; i < _numtopos; i++)
               {
-                new(&_topos[i]) XMI::Topology(rangelist[i-1].lo, rangelist[i-1].hi);
+                new(&_topos[i]) PAMI::Topology(rangelist[i-1].lo, rangelist[i-1].hi);
                 size = rangelist[i-1].hi - rangelist[i-1].lo + 1;
 
                 for (j = 0; j < size; j++)
                     {
-                      if ((rangelist[i-1].lo + j) == (xmi_task_t) _rank)
+                      if ((rangelist[i-1].lo + j) == (pami_task_t) _rank)
                         _mytopo = i;
                     }
               }
@@ -209,20 +209,20 @@ namespace XMI
           // i guess we should have attributes per topo and per geometry
           // \todo need to do the following per topology maybe
           if (_topos[0].isRectSeg())
-            xmi_ca_set(&_attributes, XMI_GEOMETRY_RECT);
+            pami_ca_set(&_attributes, PAMI_GEOMETRY_RECT);
           // \todo isGlobal is not yet implemented
 	  //          if (_topos[0].isGlobal())
-	  //            xmi_ca_set(&attributes, XMI_GEOMETRY_GLOBAL);
-          if (XMI_ISPOF2(_topos[0].size()))
-            xmi_ca_set(&_attributes, XMI_GEOMETRY_POF2);
-          if (!XMI_ISEVEN(_topos[0].size()))
-            xmi_ca_set(&_attributes, XMI_GEOMETRY_ODD);
+	  //            pami_ca_set(&attributes, PAMI_GEOMETRY_GLOBAL);
+          if (PAMI_ISPOF2(_topos[0].size()))
+            pami_ca_set(&_attributes, PAMI_GEOMETRY_POF2);
+          if (!PAMI_ISEVEN(_topos[0].size()))
+            pami_ca_set(&_attributes, PAMI_GEOMETRY_ODD);
 
         }
 
-      inline xmi_topology_t* getTopology_impl(int topo_num)
+      inline pami_topology_t* getTopology_impl(int topo_num)
         {
-          return (xmi_topology_t *)(&_topos[topo_num]);
+          return (pami_topology_t *)(&_topos[topo_num]);
         }
       inline int myTopologyId_impl()
         {
@@ -254,19 +254,19 @@ namespace XMI
         {
           return _commid;
         }
-      inline xmi_task_t  *ranks_impl()
+      inline pami_task_t  *ranks_impl()
         {
           return _ranks;
         }
-      inline xmi_task_t *ranks_sizet_impl()
+      inline pami_task_t *ranks_sizet_impl()
         {
           return _ranks;
         }
-      inline xmi_task_t nranks_impl()
+      inline pami_task_t nranks_impl()
         {
           return _topos[0].size();
         }
-      inline xmi_task_t myIdx_impl()
+      inline pami_task_t myIdx_impl()
         {
           return _topos[0].rank2Index(_rank);
         }
@@ -279,7 +279,7 @@ namespace XMI
         {
           return;
         }
-      inline xmi_task_t *permutation_impl()
+      inline pami_task_t *permutation_impl()
         {
           return _ranks;
         }
@@ -293,7 +293,7 @@ namespace XMI
           assert(0);
           return;
         }
-      inline xmi_task_t *permutation_sizet_impl()
+      inline pami_task_t *permutation_sizet_impl()
         {
           return _ranks;
         }
@@ -361,7 +361,7 @@ namespace XMI
       inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl(unsigned i)
         {
           if(_allreduce_storage[i] == NULL)
-            _allreduce_storage[i] =  malloc (XMI_REQUEST_NQUADS*4);
+            _allreduce_storage[i] =  malloc (PAMI_REQUEST_NQUADS*4);
           return _allreduce_storage[i];
         }
       inline COMPOSITE_TYPE            getAllreduceComposite_impl(unsigned i)
@@ -381,7 +381,7 @@ namespace XMI
       inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl()
         {
           if(_allreduce_storage[_allreduce_iteration] == NULL)
-            _allreduce_storage[_allreduce_iteration] = malloc (XMI_REQUEST_NQUADS*4);
+            _allreduce_storage[_allreduce_iteration] = malloc (PAMI_REQUEST_NQUADS*4);
           return _allreduce_storage[_allreduce_iteration];
         }
 
@@ -403,30 +403,30 @@ namespace XMI
         }
 
       // These methods were originally from the PGASRT Communicator class
-      inline xmi_task_t size_impl(void)
+      inline pami_task_t size_impl(void)
         {
           return _topos[0].size();
         }
-      inline xmi_task_t rank_impl(void)
+      inline pami_task_t rank_impl(void)
         {
           return _rank;
         }
 
-      inline xmi_task_t virtrank_impl()
+      inline pami_task_t virtrank_impl()
         {
           return _virtual_rank;
         }
 
-      inline xmi_task_t absrankof_impl(int rank)
+      inline pami_task_t absrankof_impl(int rank)
         {
           // the following was written assuming range topologies, must change
           // implementation to account for other topologies
           int i, range_size, rank_left = rank;
-          xmi_task_t first, last;
+          pami_task_t first, last;
           for(i = 1; i < _numtopos; i++)
               {
-                xmi_result_t result = _topos[i].rankRange(&first, &last);
-                XMI_assert(result == XMI_SUCCESS);
+                pami_result_t result = _topos[i].rankRange(&first, &last);
+                PAMI_assert(result == PAMI_SUCCESS);
                 range_size = _topos[i].size();
                 rank_left -= range_size;
                 if(rank_left <= 0)
@@ -440,7 +440,7 @@ namespace XMI
               }
           return -1;
         }
-      inline xmi_task_t virtrankof_impl (int rank)
+      inline pami_task_t virtrankof_impl (int rank)
         {
           return _topos[0].rank2Index(rank);
         }
@@ -454,132 +454,132 @@ namespace XMI
           return value;
         }
 
-      inline AlgoLists<Geometry<XMI::Geometry::Common> > * algorithms_get_lists(size_t context_id,
-                                                                                xmi_xfer_type_t  colltype)
+      inline AlgoLists<Geometry<PAMI::Geometry::Common> > * algorithms_get_lists(size_t context_id,
+                                                                                pami_xfer_type_t  colltype)
         {
           switch(colltype)
               {
-                  case XMI_XFER_BROADCAST:
+                  case PAMI_XFER_BROADCAST:
                     return &_broadcasts[context_id];
                     break;
-                  case XMI_XFER_ALLREDUCE:
+                  case PAMI_XFER_ALLREDUCE:
                     return &_allreduces[context_id];
                     break;
-                  case XMI_XFER_REDUCE:
+                  case PAMI_XFER_REDUCE:
                     return &_reduces[context_id];
                     break;
-                  case XMI_XFER_ALLGATHER:
+                  case PAMI_XFER_ALLGATHER:
                     return &_allgathers[context_id];
                     break;
-                  case XMI_XFER_ALLGATHERV:
+                  case PAMI_XFER_ALLGATHERV:
                     return &_allgathervs[context_id];
                     break;
-                  case XMI_XFER_ALLGATHERV_INT:
+                  case PAMI_XFER_ALLGATHERV_INT:
                     return &_allgatherv_ints[context_id];
                     break;
-                  case XMI_XFER_SCATTER:
+                  case PAMI_XFER_SCATTER:
                     return &_scatters[context_id];
                     break;
-                  case XMI_XFER_SCATTERV:
+                  case PAMI_XFER_SCATTERV:
                     return &_scattervs[context_id];
                     break;
-                  case XMI_XFER_SCATTERV_INT:
+                  case PAMI_XFER_SCATTERV_INT:
                     return &_scatterv_ints[context_id];
                     break;
-                  case XMI_XFER_BARRIER:
+                  case PAMI_XFER_BARRIER:
                     return &_barriers[context_id];
                     break;
-                  case XMI_XFER_ALLTOALL:
+                  case PAMI_XFER_ALLTOALL:
                     return &_alltoalls[context_id];
                     break;
-                  case XMI_XFER_ALLTOALLV:
+                  case PAMI_XFER_ALLTOALLV:
                     return &_alltoallvs[context_id];
                     break;
-                  case XMI_XFER_ALLTOALLV_INT:
+                  case PAMI_XFER_ALLTOALLV_INT:
                     return &_alltoallv_ints[context_id];
                     break;
-                  case XMI_XFER_SCAN:
+                  case PAMI_XFER_SCAN:
                     return &_scans[context_id];
                     break;
-                  case XMI_XFER_AMBROADCAST:
+                  case PAMI_XFER_AMBROADCAST:
                     return &_ambroadcasts[context_id];
                     break;
-                  case XMI_XFER_AMSCATTER:
+                  case PAMI_XFER_AMSCATTER:
                     return &_amscatters[context_id];
                     break;
-                  case XMI_XFER_AMGATHER:
+                  case PAMI_XFER_AMGATHER:
                     return &_amgathers[context_id];
                     break;
-                  case XMI_XFER_AMREDUCE:
+                  case PAMI_XFER_AMREDUCE:
                     return &_amreduces[context_id];
                     break;
                   default:
-                    XMI_abort();
+                    PAMI_abort();
                     return NULL;
                     break;
               }
         }
 
-      inline xmi_result_t addCollective_impl(xmi_xfer_type_t                            colltype,
+      inline pami_result_t addCollective_impl(pami_xfer_type_t                            colltype,
                                              CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                              size_t                                     context_id)
         {
-          AlgoLists<Geometry<XMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
+          AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
           alist->addCollective(factory, this, context_id);
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
-      inline xmi_result_t addCollectiveCheck_impl(xmi_xfer_type_t                            colltype,
+      inline pami_result_t addCollectiveCheck_impl(pami_xfer_type_t                            colltype,
                                                   CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                                   size_t                                     context_id)
         {
-          AlgoLists<Geometry<XMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
+          AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
           alist->addCollectiveCheck(factory, this, context_id);
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
-      xmi_result_t algorithms_num_impl(xmi_xfer_type_t  colltype,
+      pami_result_t algorithms_num_impl(pami_xfer_type_t  colltype,
                                        int             *lengths,
                                        size_t           context_id)
         {
-          AlgoLists<Geometry<XMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
+          AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
           alist->lengths(lengths);
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
-      inline xmi_result_t algorithms_info_impl (xmi_xfer_type_t   colltype,
-                                                xmi_algorithm_t  *algs0,
-                                                xmi_metadata_t   *mdata0,
+      inline pami_result_t algorithms_info_impl (pami_xfer_type_t   colltype,
+                                                pami_algorithm_t  *algs0,
+                                                pami_metadata_t   *mdata0,
                                                 int               num0,
-                                                xmi_algorithm_t  *algs1,
-                                                xmi_metadata_t   *mdata1,
+                                                pami_algorithm_t  *algs1,
+                                                pami_metadata_t   *mdata1,
                                                 int               num1,
                                                 size_t            context_id)
         {
-          AlgoLists<Geometry<XMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
+          AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
           for(int i=0; i<num0; i++)
               {
                 if(algs0)
-                  algs0[i]   =(xmi_algorithm_t) alist->_algo_list[i];
+                  algs0[i]   =(pami_algorithm_t) alist->_algo_list[i];
                 if(mdata0)
                   alist->_algo_list[i]->metadata(&mdata0[i]);
               }
           for(int i=0; i<num1; i++)
               {
                 if(algs1)
-                  algs1[i] =(xmi_algorithm_t) alist->_algo_list_check[i];
+                  algs1[i] =(pami_algorithm_t) alist->_algo_list_check[i];
                 if(mdata1)
                   alist->_algo_list_check[i]->metadata(&mdata1[i]);
               }
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
-      xmi_result_t default_barrier(xmi_event_function       cb_done,
+      pami_result_t default_barrier(pami_event_function       cb_done,
                                    void                   * cookie,
                                    size_t                   ctxt_id,
-                                   xmi_context_t            context)
+                                   pami_context_t            context)
         {
-          xmi_xfer_t cmd;
+          pami_xfer_t cmd;
           cmd.cb_done=cb_done;
           cmd.cookie =cookie;
           return _barriers[ctxt_id]._algo_list[0]->generate(&cmd);
@@ -587,52 +587,52 @@ namespace XMI
 
 
     private:
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _allreduces[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _broadcasts[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _reduces[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _allgathers[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allreduces[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _broadcasts[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _reduces[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathers[64];
 
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _allgathervs[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _allgatherv_ints[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _scatters[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _scattervs[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathervs[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgatherv_ints[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatters[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scattervs[64];
 
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _scatterv_ints[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _gathers[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _gathervs[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _gatherv_ints[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatterv_ints[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathers[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathervs[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gatherv_ints[64];
 
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _alltoalls[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _alltoallvs[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _alltoallv_ints[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _ambroadcasts[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoalls[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallvs[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallv_ints[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _ambroadcasts[64];
 
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _amscatters[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _amgathers[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _amreduces[64];
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _scans[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amscatters[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amgathers[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amreduces[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scans[64];
 
-      AlgoLists<Geometry<XMI::Geometry::Common> >  _barriers[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _barriers[64];
 
       std::map <int, void*>                        _kvstore;
       int                                          _commid;
       int                                          _numranges;
-      xmi_task_t                                   _rank;
+      pami_task_t                                   _rank;
       MatchQueue                                   _ue;
       MatchQueue                                   _post;
-      xmi_task_t                                  *_ranks;
+      pami_task_t                                  *_ranks;
       void                                        *_allreduce_storage[2];
       void                                        *_allreduce[2];
       unsigned                                     _allreduce_async_mode;
       unsigned                                     _allreduce_iteration;
-      XMI::Topology                               *_topos;
+      PAMI::Topology                               *_topos;
       int                                          _numtopos;
       int                                          _mytopo;
-      xmi_task_t                                   _virtual_rank;
-      xmi_ca_t                                     _attributes;
+      pami_task_t                                   _virtual_rank;
+      pami_ca_t                                     _attributes;
     }; // class Geometry
   };  // namespace Geometry
-}; // namespace XMI
+}; // namespace PAMI
 
 
 #endif

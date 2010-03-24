@@ -39,15 +39,15 @@
 ///
 ////////////////////////////////////////////////////////////////////////////////
 
-int32_t XMI::Device::MU::BaseAddressTableSubGroup::
+int32_t PAMI::Device::MU::BaseAddressTableSubGroup::
 init ( uint32_t subGroupId,
        uint32_t numEntries )
 {
   int32_t rc;
   uint32_t numFreeEntries;
 
-  XMI_assert_debug( subGroupId < BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE );
-  XMI_assert_debug( numEntries <= BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP );
+  PAMI_assert_debug( subGroupId < BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE );
+  PAMI_assert_debug( numEntries <= BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP );
 
   //////////////////////////////////////////////////////////////////////////////
   ///

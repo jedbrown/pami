@@ -18,14 +18,14 @@
 #include "components/atomic/Counter.h"
 #include "components/atomic/gcc/GccBuiltin.h"
 
-namespace XMI {
+namespace PAMI {
 namespace Counter {
 
-	class GccNodeCounter : public XMI::Atomic::Interface::Counter<GccNodeCounter> {
+	class GccNodeCounter : public PAMI::Atomic::Interface::Counter<GccNodeCounter> {
 	public:
 		GccNodeCounter() {}
 		~GccNodeCounter() {}
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
 			mm->memalign((void **)&_addr, sizeof(*_addr), sizeof(*_addr));
 			_addr->init(mm);
 		}
@@ -43,14 +43,14 @@ namespace Counter {
 		}
 		void *returnLock_impl() { return _addr->returnLock(); }
 	protected:
-		XMI::Atomic::GccBuiltin *_addr;
+		PAMI::Atomic::GccBuiltin *_addr;
 	}; // class GccNodeCounter
 
-	class GccProcCounter : public XMI::Atomic::Interface::Counter<GccProcCounter> {
+	class GccProcCounter : public PAMI::Atomic::Interface::Counter<GccProcCounter> {
 	public:
 		GccProcCounter() {}
 		~GccProcCounter() {}
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
 			_addr.init(mm);
 		}
 		inline size_t fetch_impl() {
@@ -67,10 +67,10 @@ namespace Counter {
 		}
 		void *returnLock_impl() { return _addr.returnLock(); }
 	protected:
-		XMI::Atomic::GccBuiltin _addr;
+		PAMI::Atomic::GccBuiltin _addr;
 	}; // class GccProcCounter
 
 }; // Counter namespace
-}; // XMI namespace
+}; // PAMI namespace
 
 #endif // __components_atomic_gcccounter_h__

@@ -14,7 +14,7 @@
 #ifndef __components_atomic_Counter_h__
 #define __components_atomic_Counter_h__
 
-namespace XMI
+namespace PAMI
 {
   namespace Atomic
   {
@@ -32,7 +32,7 @@ namespace XMI
         Counter  () {};
         ~Counter () {};
 
-        void init (XMI::Memory::MemoryManager *mm);
+        void init (PAMI::Memory::MemoryManager *mm);
 
         ///
         /// \brief Fetch the atomic counter object value
@@ -89,10 +89,10 @@ namespace XMI
 
 	inline void *returnLock();
 
-    }; // XMI::Atomic::Interface::Counter class
+    }; // PAMI::Atomic::Interface::Counter class
 
     template <class T_Object>
-    inline void Counter<T_Object>::init (XMI::Memory::MemoryManager *mm)
+    inline void Counter<T_Object>::init (PAMI::Memory::MemoryManager *mm)
     {
       static_cast<T_Object*>(this)->init_impl(mm);
     }
@@ -133,8 +133,8 @@ namespace XMI
       return static_cast<T_Object*>(this)->returnLock_impl();
     }
 
-    }; // XMI::Atomic::Interface namespace
-  };   // XMI::Atomic namespace
-};     // XMI namespace
+    }; // PAMI::Atomic::Interface namespace
+  };   // PAMI::Atomic namespace
+};     // PAMI namespace
 
 #endif // __components_atomic_counter_h__

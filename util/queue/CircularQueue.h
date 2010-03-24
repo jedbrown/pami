@@ -24,7 +24,7 @@
 #define TRACE_ERR(x)
 #endif
 
-namespace XMI
+namespace PAMI
 {
   //
   // template specialization of queue element
@@ -76,29 +76,29 @@ namespace XMI
   };
 
   ///
-  /// \brief Circular linked list implementation of XMI::QueueInterface
+  /// \brief Circular linked list implementation of PAMI::QueueInterface
   ///
   /// The circular queue class is a space-efficient queue implementation - only
   /// a single \c head pointer is maintained. The "tail" element of the
   /// circular queue is the "previous" element of the "head" element.
   ///
-  class CircularQueue : public XMI::Interface::QueueInterface<CircularQueue>
+  class CircularQueue : public PAMI::Interface::QueueInterface<CircularQueue>
   {
     public:
 
       typedef Interface::QueueElement<CircularQueue> Element;
 
       inline CircularQueue() :
-          XMI::Interface::QueueInterface<CircularQueue> (),
+          PAMI::Interface::QueueInterface<CircularQueue> (),
           _head (NULL)
       {
       };
 
-      inline void init (XMI::Memory::MemoryManager * mm)
+      inline void init (PAMI::Memory::MemoryManager * mm)
       {
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::enqueue
+      /// \copydoc PAMI::Interface::QueueInterface::enqueue
       inline void enqueue_impl (CircularQueue * queue)
       {
         if (unlikely(queue->_head == NULL))
@@ -125,7 +125,7 @@ namespace XMI
         queue->_head = NULL;
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::enqueue
+      /// \copydoc PAMI::Interface::QueueInterface::enqueue
       inline void enqueue_impl (CircularQueue::Element * element)
       {
         if (unlikely(_head == NULL))
@@ -149,7 +149,7 @@ namespace XMI
         }
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::dequeue
+      /// \copydoc PAMI::Interface::QueueInterface::dequeue
       inline CircularQueue::Element * dequeue_impl ()
       {
         if (unlikely(_head == NULL))
@@ -175,7 +175,7 @@ namespace XMI
         return element;
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::push
+      /// \copydoc PAMI::Interface::QueueInterface::push
       inline void push_impl (CircularQueue::Element * element)
       {
         if (unlikely(_head == NULL))
@@ -192,19 +192,19 @@ namespace XMI
         _head = element;
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::peek
+      /// \copydoc PAMI::Interface::QueueInterface::peek
       inline CircularQueue::Element * peek_impl ()
       {
         return _head;
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::isEmpty
+      /// \copydoc PAMI::Interface::QueueInterface::isEmpty
       inline bool isEmpty_impl ()
       {
         return (_head == NULL);
       };
 
-      /// \copydoc XMI::Interface::QueueInterface::next
+      /// \copydoc PAMI::Interface::QueueInterface::next
       inline CircularQueue::Element * next_impl (CircularQueue::Element * reference)
       {
         CircularQueue::Element * next = reference->next();
@@ -219,8 +219,8 @@ namespace XMI
 
       CircularQueue::Element * _head;
 
-  }; // class XMI::CircularQueue
-}; // namespace XMI
+  }; // class PAMI::CircularQueue
+}; // namespace PAMI
 
 #endif // __util_queue_CircularQueue_h__
 

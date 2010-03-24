@@ -17,7 +17,7 @@
 #include "components/memory/MemoryManager.h"
 
 
-namespace XMI
+namespace PAMI
 {
   namespace Memory
   {
@@ -29,7 +29,7 @@ namespace XMI
         {
         }
 
-      inline xmi_result_t memalign_impl (void   ** memptr,
+      inline pami_result_t memalign_impl (void   ** memptr,
                                          size_t    alignment,
                                          size_t    bytes)
         {
@@ -38,7 +38,7 @@ namespace XMI
 #else
           *memptr = malloc(bytes);
 #endif
-	  return XMI_SUCCESS;
+	  return PAMI_SUCCESS;
         }
 
     protected:
@@ -46,4 +46,4 @@ namespace XMI
   };
 };
 
-#endif // __xmi_components_memory_heap_heapmemorymanager_h__
+#endif // __pami_components_memory_heap_heapmemorymanager_h__

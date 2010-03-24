@@ -24,7 +24,7 @@
 #include "Topology.h"
 #include "Wtime.h"
 
-namespace XMI
+namespace PAMI
 {
 namespace Interface
 {
@@ -45,15 +45,15 @@ namespace Interface
 
       public:
 
-	XMI::Time	time;
-	XMI::Topology	topology_global;
-	XMI::Topology	topology_local;
+	PAMI::Time	time;
+	PAMI::Topology	topology_global;
+	PAMI::Topology	topology_local;
 
         /// Global location for the processor name
         char processor_name[128];
 
   };   // class Global
 };     // namespace Interface
-};     // namespace XMI
+};     // namespace PAMI
 
-#endif // __xmi_common_global_h__
+#endif // __pami_common_global_h__

@@ -13,13 +13,13 @@
 #ifndef __components_devices_bgq_commthread_WakeupRegion_h__
 #define __components_devices_bgq_commthread_WakeupRegion_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "spi/include/l2/atomic.h"
 #include "spi/include/kernel/memory.h"
 
 #undef WU_MULTICONTEXT // does WAC region allow separate multiple contexts?
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace CommThread {
 
@@ -47,7 +47,7 @@ public:
 	/// \param[in] mm	MemeryManager
 	/// \return	Error code
 	///
-	inline xmi_result_t init(size_t clientid, size_t nctx, Memory::MemoryManager *mm) {
+	inline pami_result_t init(size_t clientid, size_t nctx, Memory::MemoryManager *mm) {
 		int rc;
 		size_t mctx = nctx;
 		// in order for WAC base/mask values to work, need to ensure alignment
@@ -57,12 +57,12 @@ public:
 		while (mctx & (mctx - 1)) ++mctx; // brute force - better way?
 		_wu_region_len = mctx * sizeof(*_wakeup_region);
 		rc = posix_memalign((void **)&_wakeup_region, _wu_region_len, _wu_region_len);
-		if (rc != 0) return XMI_ERROR;
+		if (rc != 0) return PAMI_ERROR;
 #if WU_MULTICONTEXT
 		rc = posix_memalign((void **)&_bytesUsed, 16, mctx * sizeof(*_bytesUsed));
 		if (rc != 0) {
 			free(_wakeup_region);
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
 		memset(_bytesUsed, 0, mctx * sizeof(*_bytesUsed));
 #else
@@ -76,11 +76,11 @@ public:
 			free(_bytesUsed);
 			_bytesUsed = NULL;
 #endif
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
 		// assert((_wu_region_len & (_wu_region_len - 1)) == 0); // power of 2
 		// assert((_wu_memreg.BasePa & (_wu_region_len - 1)) == 0); // aligned
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 
 	/// \brief Reserve space in the WAC region
@@ -147,6 +147,6 @@ private:
 
 }; // namespace CommThread
 }; // namespace Device
-}; // namespace XMI
+}; // namespace PAMI
 
 #endif // __components_devices_bgq_commthread_WakeupRegion_h__

@@ -18,15 +18,15 @@
 #include "common/BaseMappingInterface.h"
 #include "common/TorusMappingInterface.h"
 #include "common/NodeMappingInterface.h"
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/common.h"
 #include <mpi.h>
 #include <errno.h>
 #include <unistd.h>
 
-#define XMI_MAPPING_CLASS XMI::Mapping
+#define PAMI_MAPPING_CLASS PAMI::Mapping
 
-namespace XMI
+namespace PAMI
 {
 #define MPI_TDIMS 1
 #define MPI_LDIMS 1
@@ -60,7 +60,7 @@ namespace XMI
 		return x;
 	}
     public:
-      inline xmi_result_t init(size_t &min_rank, size_t &max_rank,
+      inline pami_result_t init(size_t &min_rank, size_t &max_rank,
 				size_t &num_local, size_t **local_ranks)
         {
 		int num_ranks;
@@ -79,28 +79,28 @@ namespace XMI
 		// local node process/rank info
 #ifdef USE_MEMALIGN
 		err = posix_memalign((void **)&_mapcache, sizeof(void *), sizeof(*_mapcache) * _size);
-		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
+		PAMI_assertf(err == 0, "memory alloc failed, err %d", err);
 		err = posix_memalign((void **)&_peers, sizeof(void *), sizeof(*_peers) * _size);
-		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
+		PAMI_assertf(err == 0, "memory alloc failed, err %d", err);
 		err = posix_memalign((void **)&host, sizeof(void *), str_len);
-		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
+		PAMI_assertf(err == 0, "memory alloc failed, err %d", err);
 		err = posix_memalign((void **)&hosts, sizeof(void *), str_len * _size);
-		XMI_assertf(err == 0, "memory alloc failed, err %d", err);
+		PAMI_assertf(err == 0, "memory alloc failed, err %d", err);
 #else
                 _mapcache=(uint32_t*)malloc(sizeof(*_mapcache) * _size);
-                XMI_assertf(_mapcache != NULL, "memory alloc failed");
+                PAMI_assertf(_mapcache != NULL, "memory alloc failed");
                 _peers = (size_t*)malloc(sizeof(*_peers) * _size);
-                XMI_assertf(_peers != NULL, "memory alloc failed");
+                PAMI_assertf(_peers != NULL, "memory alloc failed");
                 host=(char*)malloc(str_len);
-                XMI_assertf(host != NULL, "memory alloc failed");
+                PAMI_assertf(host != NULL, "memory alloc failed");
                 hosts=(char*)malloc(str_len*_size);
-                XMI_assertf(hosts != NULL, "memory alloc failed");
+                PAMI_assertf(hosts != NULL, "memory alloc failed");
 #endif
 		err = gethostname(host, str_len);
-		XMI_assertf(err == 0, "gethostname failed, errno %d", errno);
+		PAMI_assertf(err == 0, "gethostname failed, errno %d", errno);
 
 		err = MPI_Allgather(host, str_len, MPI_BYTE, hosts, str_len, MPI_BYTE, MPI_COMM_WORLD);
-		XMI_assertf(err == 0, "allgather failed, err %d", err);
+		PAMI_assertf(err == 0, "allgather failed, err %d", err);
 
 		_nSize = 0;
 		_tSize = 1;
@@ -129,11 +129,11 @@ namespace XMI
 		// if all ranks are local, then see if an ENV variable
 		// gives us permission to spice things up.
 		nz = tz = 0;
-		s = getenv("XMI_MAPPING_TSIZE");
+		s = getenv("PAMI_MAPPING_TSIZE");
 		if (s) {
 			tz = strtol(s, NULL, 0);
 		}
-		s = getenv("XMI_MAPPING_NSIZE");
+		s = getenv("PAMI_MAPPING_NSIZE");
 		if (s) {
 			nz = strtol(s, NULL, 0);
 		}
@@ -182,7 +182,7 @@ namespace XMI
 		// (at target node)_peers[index2] -> rank
 		// coordinates = (index1,index2)
 
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
         }
       inline size_t task_impl()
         {
@@ -192,42 +192,42 @@ namespace XMI
         {
           return _size;
         }
-      inline xmi_result_t nodeTasks_impl (size_t global, size_t & tasks)
+      inline pami_result_t nodeTasks_impl (size_t global, size_t & tasks)
         {
-          return XMI_UNIMPL;
+          return PAMI_UNIMPL;
         }
-      inline xmi_result_t nodePeers_impl (size_t & peers)
+      inline pami_result_t nodePeers_impl (size_t & peers)
         {
 		peers = _npeers;
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
         }
       inline bool isPeer_impl (size_t task1, size_t task2)
         {
-                /** \todo isPeer does not support XMI_MAPPING_TSIZE */
+                /** \todo isPeer does not support PAMI_MAPPING_TSIZE */
 		// this really needs to be global, but if we only check locally it
 		// will at least work for Topology.
 		Interface::Mapping::nodeaddr_t addr;
 		size_t peer;
 
 		task2node_impl(task1, addr);
-		xmi_result_t err1 = node2peer_impl(addr, peer);
+		pami_result_t err1 = node2peer_impl(addr, peer);
 		task2node_impl(task2, addr);
-		xmi_result_t err2 = node2peer_impl(addr, peer);
-		return (err1 == XMI_SUCCESS && err2 == XMI_SUCCESS);
+		pami_result_t err2 = node2peer_impl(addr, peer);
+		return (err1 == PAMI_SUCCESS && err2 == PAMI_SUCCESS);
         }
       inline void nodeAddr_impl (Interface::Mapping::nodeaddr_t & address)
         {
-		xmi_result_t err = task2node_impl(_task, address);
-		XMI_assertf(err == XMI_SUCCESS, "Internal error, my task does not exist");
+		pami_result_t err = task2node_impl(_task, address);
+		PAMI_assertf(err == PAMI_SUCCESS, "Internal error, my task does not exist");
         }
-      inline xmi_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
+      inline pami_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
         {
 		uint32_t x = _mapcache[task];
 		address.global = x >> 16;
 		address.local = x & 0x0000ffff;
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
         }
-      inline xmi_result_t node2task_impl (Interface::Mapping::nodeaddr_t & address, size_t & task)
+      inline pami_result_t node2task_impl (Interface::Mapping::nodeaddr_t & address, size_t & task)
         {
 		uint32_t x = (address.global << 16) | address.local;
 		// since we expect this to be small, searching is probably the easiest way
@@ -235,52 +235,52 @@ namespace XMI
 		for (r = 0; r < _size && _mapcache[r] != x; ++r);
 		if (r < _size) {
 			task = r;
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
 		// never happens?
-		return XMI_ERROR;
+		return PAMI_ERROR;
         }
-      inline xmi_result_t node2peer_impl (Interface::Mapping::nodeaddr_t & address, size_t & peer)
+      inline pami_result_t node2peer_impl (Interface::Mapping::nodeaddr_t & address, size_t & peer)
         {
 		size_t x, r = address.local;
 		for (x = 0; x < _npeers && r != _peers[x]; ++x);
 		if (x < _npeers) {
 			peer = x;
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
-		return XMI_ERROR;
+		return PAMI_ERROR;
         }
       inline void torusAddr_impl (size_t (&addr)[MPI_TDIMS])
         {
 	  task2torus_impl(_task, addr);
         }
-      inline xmi_result_t task2torus_impl (size_t task, size_t (&addr)[MPI_TDIMS])
+      inline pami_result_t task2torus_impl (size_t task, size_t (&addr)[MPI_TDIMS])
         {
 		if (task >= _size) {
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
 		uint32_t x = _mapcache[task];
 		addr[0] = x >> 16;
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
         }
       /** \todo These need to be added to a public interface */
-      inline xmi_result_t task2global (size_t task, size_t (&addr)[MPI_TDIMS + MPI_LDIMS])
+      inline pami_result_t task2global (size_t task, size_t (&addr)[MPI_TDIMS + MPI_LDIMS])
         {
 		if (task >= _size) {
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
 		uint32_t x = _mapcache[task];
 		addr[0] = x >> 16;
 		addr[1] = x & 0x0000ffff;
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
         }
 
-      inline xmi_result_t torus2task_impl (size_t (&addr)[MPI_TDIMS], size_t & task)
+      inline pami_result_t torus2task_impl (size_t (&addr)[MPI_TDIMS], size_t & task)
         {
-		XMI_abort();
-        return XMI_ERROR;
+		PAMI_abort();
+        return PAMI_ERROR;
 	}
-      inline xmi_result_t global2task(size_t (&addr)[MPI_TDIMS + MPI_LDIMS], size_t & task)
+      inline pami_result_t global2task(size_t (&addr)[MPI_TDIMS + MPI_LDIMS], size_t & task)
         {
 		uint32_t x = (addr[0] << 16) | addr[1];
 		// since we expect this to be small, searching is probably the easiest way
@@ -288,10 +288,10 @@ namespace XMI
 		for (r = 0; r < _size && _mapcache[r] != x; ++r);
 		if (r < _size) {
 			task = r;
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
 		// never happens?
-		return XMI_ERROR;
+		return PAMI_ERROR;
         }
       inline size_t       torusgetcoord_impl (size_t dimension)
         {
@@ -303,24 +303,24 @@ namespace XMI
         {
           return MPI_TDIMS + MPI_LDIMS;
         }
-      inline xmi_result_t task2network (xmi_task_t task, xmi_coord_t *addr, xmi_network type)
+      inline pami_result_t task2network (pami_task_t task, pami_coord_t *addr, pami_network type)
         {
 		if (task >= _size ||
-			(type != XMI_N_TORUS_NETWORK && type != XMI_DEFAULT_NETWORK)) {
-			return XMI_ERROR;
+			(type != PAMI_N_TORUS_NETWORK && type != PAMI_DEFAULT_NETWORK)) {
+			return PAMI_ERROR;
 		}
 		uint32_t x = _mapcache[task];
 		addr->u.n_torus.coords[0] = x >> 16;
 		addr->u.n_torus.coords[1] = x & 0x0000ffff;
-		addr->network = XMI_N_TORUS_NETWORK;
-		return XMI_SUCCESS;
+		addr->network = PAMI_N_TORUS_NETWORK;
+		return PAMI_SUCCESS;
         }
-      inline xmi_result_t network2task_impl(const xmi_coord_t *addr,
-						xmi_task_t *task,
-						xmi_network *type)
+      inline pami_result_t network2task_impl(const pami_coord_t *addr,
+						pami_task_t *task,
+						pami_network *type)
 	{
-		if (addr->network != XMI_N_TORUS_NETWORK) {
-			return XMI_ERROR;
+		if (addr->network != PAMI_N_TORUS_NETWORK) {
+			return PAMI_ERROR;
 		}
 
 		uint32_t x = (addr->u.n_torus.coords[0] << 16) | addr->u.n_torus.coords[1];
@@ -328,13 +328,13 @@ namespace XMI
 		size_t r;
 		for (r = 0; r < _size && _mapcache[r] != x; ++r);
 		if (r < _size) {
-			*type = XMI_N_TORUS_NETWORK;
+			*type = PAMI_N_TORUS_NETWORK;
 			*task = r;
-			return XMI_SUCCESS;
+			return PAMI_SUCCESS;
 		}
 		// never happens?
-		return XMI_ERROR;
+		return PAMI_ERROR;
 	}
     }; // class Mapping
-};	// namespace XMI
+};	// namespace PAMI
 #endif // __components_mapping_mpi_mpimapping_h__

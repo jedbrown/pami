@@ -15,7 +15,7 @@
 
 #include <hwi/include/bqc/MU_PacketCommon.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "Platform.h"
 
 #include "common/BaseMappingInterface.h"
@@ -27,14 +27,14 @@
 
 #include "util/common.h"
 
-#define XMI_MAPPING_CLASS XMI::Mapping
+#define PAMI_MAPPING_CLASS PAMI::Mapping
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
   #define TRACE_ERR(x) //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
 #define BGQ_TDIMS 5
 #define BGQ_LDIMS 2
@@ -45,7 +45,7 @@ namespace XMI
   {
   public:
 
-    inline Mapping (XMI::BgqPersonality &pers) :
+    inline Mapping (PAMI::BgqPersonality &pers) :
     Interface::Mapping::Base<Mapping>(),
     Interface::Mapping::Torus<Mapping, BGQ_TDIMS>(),
     Interface::Mapping::Node<Mapping,BGQ_LDIMS> (),
@@ -104,7 +104,7 @@ namespace XMI
     };
 
   protected:
-    XMI::BgqPersonality &_pers;
+    PAMI::BgqPersonality &_pers;
     size_t _task;
     size_t _nodes;
     size_t _peers;
@@ -178,20 +178,20 @@ namespace XMI
 
     /////////////////////////////////////////////////////////////////////////
     //
-    // XMI::Interface::Mapping::Base interface implementation
+    // PAMI::Interface::Mapping::Base interface implementation
     //
     /////////////////////////////////////////////////////////////////////////
 
     ///
     /// \brief Initialize the mapping
-    /// \see XMI::Interface::Mapping::Base::init()
+    /// \see PAMI::Interface::Mapping::Base::init()
     ///
-    inline xmi_result_t init(bgq_mapcache_t &mapcache,
-                             XMI::BgqPersonality &personality);
+    inline pami_result_t init(bgq_mapcache_t &mapcache,
+                             PAMI::BgqPersonality &personality);
 
     ///
     /// \brief Return the BGP global task for this process
-    /// \see XMI::Interface::Mapping::Base::task()
+    /// \see PAMI::Interface::Mapping::Base::task()
     ///
     inline size_t task_impl()
     {
@@ -200,7 +200,7 @@ namespace XMI
 
     ///
     /// \brief Returns the number of global tasks
-    /// \see XMI::Interface::Mapping::Base::size()
+    /// \see PAMI::Interface::Mapping::Base::size()
     ///
     inline size_t size_impl()
     {
@@ -209,7 +209,7 @@ namespace XMI
 
     ///
     /// \brief Returns the number of global dimensions
-    /// \see XMI::Interface::Mapping::Base::globalDims()
+    /// \see PAMI::Interface::Mapping::Base::globalDims()
     ///
     inline size_t globalDims_impl()
     {
@@ -218,13 +218,13 @@ namespace XMI
 
     /////////////////////////////////////////////////////////////////////////
     //
-    // XMI::Interface::Mapping::Torus interface implementation
+    // PAMI::Interface::Mapping::Torus interface implementation
     //
     /////////////////////////////////////////////////////////////////////////
 
     ///
     /// \brief Get the BGQ torus address for this task
-    /// \see XMI::Interface::Mapping::Torus::torusAddr()
+    /// \see PAMI::Interface::Mapping::Torus::torusAddr()
     ///
     //template <>
     inline void torusAddr_impl (size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS])
@@ -241,11 +241,11 @@ namespace XMI
 
     ///
     /// \brief Get the BGQ torus address for a task
-    /// \see XMI::Interface::Mapping::Torus::task2torus()
+    /// \see PAMI::Interface::Mapping::Torus::task2torus()
     ///
     /// \todo Error path
     ///
-    inline xmi_result_t task2torus_impl (size_t task, size_t (&addr)[BGQ_TDIMS])
+    inline pami_result_t task2torus_impl (size_t task, size_t (&addr)[BGQ_TDIMS])
     {
       uint32_t abcdept = _mapcache.torus.task2coords[task].raw;
 
@@ -256,16 +256,16 @@ namespace XMI
       addr[4] = (abcdept >>  5) & 0x000000001; // 'e' coordinate
 
       TRACE_ERR((stderr, "Mapping::task2torus(%zd, {%zd, %zd, %zd, %zd, %zd}) <<\n", task, addr[0], addr[1], addr[2], addr[3], addr[4]));
-      return XMI_SUCCESS;
+      return PAMI_SUCCESS;
     }
 
     ///
     /// \brief Get the BGQ torus address for a task
-    /// \see XMI::Interface::Mapping::Torus::task2torus()
+    /// \see PAMI::Interface::Mapping::Torus::task2torus()
     ///
     /// \todo Error path
     ///
-    inline xmi_result_t task2global (size_t task, size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS])
+    inline pami_result_t task2global (size_t task, size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS])
     {
       uint32_t abcdept = _mapcache.torus.task2coords[task].raw;
 
@@ -278,16 +278,16 @@ namespace XMI
       addr[6] = (abcdept >> 30) & 0x000000003; // 't' coordinate
 
       TRACE_ERR((stderr, "Mapping::task2global(%zd, {%zd, %zd, %zd, %zd, %zd, %zd, %zd}) <<\n", task, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6]));
-      return XMI_SUCCESS;
+      return PAMI_SUCCESS;
     }
 
     ///
     /// \brief Get the global task for a BGQ torus address
-    /// \see XMI::Interface::Mapping::Torus::torus2task()
+    /// \see PAMI::Interface::Mapping::Torus::torus2task()
     ///
     /// \todo Error path
     ///
-    inline xmi_result_t torus2task_impl (size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS], size_t & task)
+    inline pami_result_t torus2task_impl (size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS], size_t & task)
     {
 
       size_t aSize = _pers.aSize();
@@ -307,7 +307,7 @@ namespace XMI
                    (addr[6] >= tSize) ||
                    (addr[5] >= pSize)))
       {
-        return XMI_INVAL;
+        return PAMI_INVAL;
       }
 
       // Estimate the task id based on the bgq coordinates.
@@ -317,29 +317,29 @@ namespace XMI
       // Verify that the estimated task is mapped.
       if (unlikely(_mapcache.torus.coords2task[hash] == (unsigned) - 1))
       {
-        return XMI_ERROR;
+        return PAMI_ERROR;
       }
 
       task = _mapcache.torus.coords2task[hash];
 
       TRACE_ERR((stderr, "Mapping::torus2task_impl({%zd, %zd, %zd, %zd, %zd, %zd, %zd}, %zd) <<\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], task));
 
-      return XMI_SUCCESS;
+      return PAMI_SUCCESS;
     };
 
     ///
     /// \brief Get the BGQ network address for a task
-    /// \see XMI::Interface::Mapping::Torus::task2network()
+    /// \see PAMI::Interface::Mapping::Torus::task2network()
     ///
     /// \todo Error path
     ///
-    inline xmi_result_t task2network_impl (xmi_task_t task,
-                                           xmi_coord_t *addr,
-                                           xmi_network type)
+    inline pami_result_t task2network_impl (pami_task_t task,
+                                           pami_coord_t *addr,
+                                           pami_network type)
     {
       TRACE_ERR((stderr,"task2network %d\n",task));
       uint32_t abcdept = _mapcache.torus.task2coords[task].raw;
-      addr->network = XMI_N_TORUS_NETWORK;
+      addr->network = PAMI_N_TORUS_NETWORK;
       addr->u.n_torus.coords[0] = (abcdept >> 24) & 0x00000003f; // 'a' coordinate
       addr->u.n_torus.coords[1] = (abcdept >> 18) & 0x00000003f; // 'b' coordinate
       addr->u.n_torus.coords[2] = (abcdept >> 12) & 0x00000003f; // 'c' coordinate
@@ -348,18 +348,18 @@ namespace XMI
       addr->u.n_torus.coords[5] = (abcdept)       & 0x00000000f; // 'p' coordinate
       addr->u.n_torus.coords[6] = (abcdept >> 30) & 0x000000003; // 't' coordinate
       TRACE_ERR((stderr, "Mapping::task2network_impl(%d, {%zd, %zd, %zd, %zd, %zd, %zd, %zd}, %d) <<\n", task, addr->u.n_torus.coords[0], addr->u.n_torus.coords[1], addr->u.n_torus.coords[2], addr->u.n_torus.coords[3], addr->u.n_torus.coords[4], addr->u.n_torus.coords[5], addr->u.n_torus.coords[6], addr->network));
-      return XMI_SUCCESS;
+      return PAMI_SUCCESS;
     }
 
     ///
     /// \brief Get the BGQ network address for a task
-    /// \see XMI::Interface::Mapping::Torus::network2task()
+    /// \see PAMI::Interface::Mapping::Torus::network2task()
     ///
     /// \todo Error path
     ///
-    inline xmi_result_t network2task_impl (const xmi_coord_t *addr,
-                                           xmi_task_t *task,
-                                           xmi_network *type)
+    inline pami_result_t network2task_impl (const pami_coord_t *addr,
+                                           pami_task_t *task,
+                                           pami_network *type)
     {
       size_t aSize = _pers.aSize();
       size_t bSize = _pers.bSize();
@@ -385,7 +385,7 @@ namespace XMI
           (p >= pSize) ||
           (t >= tSize))
       {
-        return XMI_INVAL;
+        return PAMI_INVAL;
       }
 
       size_t hash = ESTIMATED_TASK(a,b,c,d,e,p,t,
@@ -393,23 +393,23 @@ namespace XMI
 
       if (_mapcache.torus.coords2task[hash] == (uint32_t)-1)
       {
-        return XMI_ERROR;
+        return PAMI_ERROR;
       }
       *task = _mapcache.torus.coords2task[hash];
-      *type = XMI_N_TORUS_NETWORK;
+      *type = PAMI_N_TORUS_NETWORK;
       TRACE_ERR((stderr, "Mapping::network2task_impl({%zd, %zd, %zd, %zd, %zd, %zd, %zd}, %d, %d) <<\n", addr->u.n_torus.coords[0], addr->u.n_torus.coords[1], addr->u.n_torus.coords[2], addr->u.n_torus.coords[3], addr->u.n_torus.coords[4], addr->u.n_torus.coords[5], addr->u.n_torus.coords[6], *task, addr->network));
-      return XMI_SUCCESS;
+      return PAMI_SUCCESS;
     }
 
 
     /////////////////////////////////////////////////////////////////////////
     //
-    // XMI::Interface::Mapping::Node interface implementation
+    // PAMI::Interface::Mapping::Node interface implementation
     //
     /////////////////////////////////////////////////////////////////////////
 
-    /// \see XMI::Interface::Mapping::Node::nodeTasks()
-    inline xmi_result_t nodeTasks_impl (size_t global, size_t & tasks)
+    /// \see PAMI::Interface::Mapping::Node::nodeTasks()
+    inline pami_result_t nodeTasks_impl (size_t global, size_t & tasks)
     {
       TRACE_ERR((stderr, "Mapping::nodeTasks_impl(%zd) >>\n", global));
 ///////////////////////////////////////////////////////////////////////////////
@@ -420,17 +420,17 @@ namespace XMI
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
       TRACE_ERR((stderr, "Mapping::nodeTasks_impl(%zd) <<\n", global));
-      return XMI_UNIMPL;
+      return PAMI_UNIMPL;
     };
 
-    /// \see XMI::Interface::Mapping::Node::nodePeers()
-    inline xmi_result_t nodePeers_impl (size_t & peers)
+    /// \see PAMI::Interface::Mapping::Node::nodePeers()
+    inline pami_result_t nodePeers_impl (size_t & peers)
     {
       peers = _peers;
-      return XMI_SUCCESS;
+      return PAMI_SUCCESS;
     };
 
-    /// \see XMI::Interface::Mapping::Node::isPeer()
+    /// \see PAMI::Interface::Mapping::Node::isPeer()
     inline bool isPeer_impl (size_t task1, size_t task2)
     {
       uint32_t coord1 = _mapcache.torus.task2coords[task1].raw;
@@ -439,7 +439,7 @@ namespace XMI
       return ((coord1 & 0x3fffffe0) == (coord2 & 0x3fffffe0));
     }
 
-    /// \see XMI::Interface::Mapping::Node::nodeAddr()
+    /// \see PAMI::Interface::Mapping::Node::nodeAddr()
     inline void nodeAddr_impl (Interface::Mapping::nodeaddr_t & address)
     {
       TRACE_ERR((stderr, "Mapping::nodeAddr_impl() >>\n"));
@@ -449,8 +449,8 @@ namespace XMI
       TRACE_ERR((stderr, "Mapping::nodeAddr_impl(%zd, %zd) <<\n", address.global, address.local));
     };
 
-    /// \see XMI::Interface::Mapping::Node::task2node()
-    inline xmi_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
+    /// \see PAMI::Interface::Mapping::Node::task2node()
+    inline pami_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
     {
       TRACE_ERR((stderr, "Mapping::task2node_impl(%zd) >>\n", task));
 
@@ -467,11 +467,11 @@ namespace XMI
                       ((coords >> 26) & 0x00000030);
 
       TRACE_ERR((stderr, "Mapping::task2node_impl(%zd, {%zd, %zd}) <<\n", task, address.global, address.local));
-      return XMI_SUCCESS;
+      return PAMI_SUCCESS;
     };
 
-    /// \see XMI::Interface::Mapping::Node::node2task()
-    inline xmi_result_t node2task_impl (Interface::Mapping::nodeaddr_t address, size_t & task)
+    /// \see PAMI::Interface::Mapping::Node::node2task()
+    inline pami_result_t node2task_impl (Interface::Mapping::nodeaddr_t address, size_t & task)
     {
       TRACE_ERR((stderr, "Mapping::node2task_impl({%zd, %zd}, ...) >>\n", address.global, address.local));
 
@@ -505,7 +505,7 @@ namespace XMI
                    (pCoord >= pSize) ||
                    (tCoord >= tSize)))
       {
-        return XMI_INVAL;
+        return PAMI_INVAL;
       }
 
       // Estimate the task id based on the bgq coordinates.
@@ -514,16 +514,16 @@ namespace XMI
       // Verify that the estimated task is mapped.
       if (unlikely(_mapcache.torus.coords2task[hash] == (unsigned)-1))
       {
-        return XMI_ERROR;
+        return PAMI_ERROR;
       }
 
       task = _mapcache.torus.coords2task[hash];
 
       TRACE_ERR((stderr, "Mapping::node2task_impl({%zd, %zd}, %zd) <<\n", address.global, address.local, task));
-      return XMI_SUCCESS;
+      return PAMI_SUCCESS;
     };
 
-    inline xmi_result_t node2peer_impl (XMI::Interface::Mapping::nodeaddr_t & address, size_t & peer)
+    inline pami_result_t node2peer_impl (PAMI::Interface::Mapping::nodeaddr_t & address, size_t & peer)
     {
       TRACE_ERR((stderr, "Mapping::node2peer_impl({%zd, %zd}, ...) >>\n", address.global, address.local));
 
@@ -540,7 +540,7 @@ namespace XMI
       // Verify that the local node address is valid.
 //    if (unlikely((pCoord >= pSize) || (tCoord >= tSize)))
 //    {
-//      return XMI_INVAL;
+//      return PAMI_INVAL;
 //    }
       TRACE_ERR((stderr, "Mapping::node2peer pSize %zd, peerSize %zd, pCoord=%zd/%zd\n", pSize,tSize * pSize,pCoord,(16/(tSize * pSize)) * (pCoord%(tSize * pSize))));
       //pCoord = (16/peerSize) * (pCoord%peerSize); /// \todo numCores == 16?
@@ -552,14 +552,14 @@ namespace XMI
       // Verify that the address hash is valid.
       if (unlikely(_mapcache.node.local2peer[hash] == (unsigned) - 1))
       {
-        return XMI_ERROR;
+        return PAMI_ERROR;
       }
 
       peer = _mapcache.node.local2peer[hash];
       TRACE_ERR((stderr, "local2peer[%zd]=%zd\n",hash,_mapcache.node.local2peer[peer]));
 
       TRACE_ERR((stderr, "Mapping::node2peer_impl({%zd, %zd}, %zd) <<\n", address.global, address.local, peer));
-      return XMI_SUCCESS;
+      return PAMI_SUCCESS;
     };
 
     inline size_t a ()
@@ -591,10 +591,10 @@ namespace XMI
       return _t;
     }
   };  // class Mapping
-};  // namespace XMI
+};  // namespace PAMI
 
-xmi_result_t XMI::Mapping::init(bgq_mapcache_t &mapcache,
-                                XMI::BgqPersonality &personality)
+pami_result_t PAMI::Mapping::init(bgq_mapcache_t &mapcache,
+                                PAMI::BgqPersonality &personality)
 {
   _mapcache.torus.task2coords = mapcache.torus.task2coords;
   _mapcache.torus.coords2task = mapcache.torus.coords2task;
@@ -625,7 +625,7 @@ xmi_result_t XMI::Mapping::init(bgq_mapcache_t &mapcache,
   _peers = _mapcache.local_size;         /// \todo hack
 
   TRACE_MAMBO((stderr,"Mapping::init() task %zd, size %zd, peers %zd\n", _task, _mapcache.size, _peers));
-  return XMI_SUCCESS;
+  return PAMI_SUCCESS;
 }
 #undef TRACE_ERR
 #endif // __components_mapping_bgq_bgqmapping_h__

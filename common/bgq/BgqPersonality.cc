@@ -18,7 +18,7 @@
 #include <hwi/include/bqc/nd_500_dcr.h>
 #endif
 
-XMI::BgqPersonality::BgqPersonality ()
+PAMI::BgqPersonality::BgqPersonality ()
 {
   Personality_t * p = (Personality_t *) this;
 
@@ -92,17 +92,17 @@ XMI::BgqPersonality::BgqPersonality ()
       TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_D = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_D_get(dcr)));
       TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_E = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_E_get(dcr)));
 
-      XMI_assertf(Network_Config.Acoord < Network_Config.Anodes, "assert Network_Config.Acoord(%#X) < Network_Config.Anodes(%#X)\n", Network_Config.Acoord, Network_Config.Anodes);
-      XMI_assertf(Network_Config.Bcoord < Network_Config.Bnodes, "assert Network_Config.Bcoord(%#X) < Network_Config.Bnodes(%#X)\n", Network_Config.Bcoord, Network_Config.Bnodes);
-      XMI_assertf(Network_Config.Ccoord < Network_Config.Cnodes, "assert Network_Config.Ccoord(%#X) < Network_Config.Cnodes(%#X)\n", Network_Config.Ccoord, Network_Config.Cnodes);
-      XMI_assertf(Network_Config.Dcoord < Network_Config.Dnodes, "assert Network_Config.Dcoord(%#X) < Network_Config.Dnodes(%#X)\n", Network_Config.Dcoord, Network_Config.Dnodes);
-      XMI_assertf(Network_Config.Ecoord < Network_Config.Enodes, "assert Network_Config.Ecoord(%#X) < Network_Config.Enodes(%#X)\n", Network_Config.Ecoord, Network_Config.Enodes);
+      PAMI_assertf(Network_Config.Acoord < Network_Config.Anodes, "assert Network_Config.Acoord(%#X) < Network_Config.Anodes(%#X)\n", Network_Config.Acoord, Network_Config.Anodes);
+      PAMI_assertf(Network_Config.Bcoord < Network_Config.Bnodes, "assert Network_Config.Bcoord(%#X) < Network_Config.Bnodes(%#X)\n", Network_Config.Bcoord, Network_Config.Bnodes);
+      PAMI_assertf(Network_Config.Ccoord < Network_Config.Cnodes, "assert Network_Config.Ccoord(%#X) < Network_Config.Cnodes(%#X)\n", Network_Config.Ccoord, Network_Config.Cnodes);
+      PAMI_assertf(Network_Config.Dcoord < Network_Config.Dnodes, "assert Network_Config.Dcoord(%#X) < Network_Config.Dnodes(%#X)\n", Network_Config.Dcoord, Network_Config.Dnodes);
+      PAMI_assertf(Network_Config.Ecoord < Network_Config.Enodes, "assert Network_Config.Ecoord(%#X) < Network_Config.Enodes(%#X)\n", Network_Config.Ecoord, Network_Config.Enodes);
     }
 
 #else // no mambo workarounds..
 
   if (Kernel_GetPersonality(p, sizeof(Personality_t)) != 0)
-    XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+    PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
 
 #endif
 
@@ -160,7 +160,7 @@ XMI::BgqPersonality::BgqPersonality ()
 
 };
 
-void XMI::BgqPersonality::location (char location[], size_t size)
+void PAMI::BgqPersonality::location (char location[], size_t size)
 {
 #if 0
   _BGP_Personality_t * p = (_BGP_Personality_t *) this;
@@ -173,7 +173,7 @@ void XMI::BgqPersonality::location (char location[], size_t size)
 #endif
 };
 
-void XMI::BgqPersonality::dumpPersonality ()
+void PAMI::BgqPersonality::dumpPersonality ()
 {
 #if 0
   _BGP_Personality_t * p = (_BGP_Personality_t *) this;

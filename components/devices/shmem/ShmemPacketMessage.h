@@ -19,7 +19,7 @@
 
 #include "Arch.h"
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemMessage.h"
@@ -28,7 +28,7 @@
 #define TRACE_ERR(x) // fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -41,33 +41,33 @@ namespace XMI
         protected:
           // invoked by the thread object
           /// \see SendQueue::Message::_work
-          static xmi_result_t __advance (xmi_context_t context, void * cookie)
+          static pami_result_t __advance (pami_context_t context, void * cookie)
           {
             PacketMessage * msg = (PacketMessage *) cookie;
             return msg->advance();
           };
 
-          inline xmi_result_t advance ()
+          inline pami_result_t advance ()
           {
             size_t sequence = 0;
             TRACE_ERR((stderr, ">> PacketMessage::advance()\n"));
 
             if (_device->writeSinglePacket (_fifo, _dispatch_id, _metadata, _metasize,
-                                            _iov, _niov, sequence) == XMI_SUCCESS)
+                                            _iov, _niov, sequence) == PAMI_SUCCESS)
               {
                 TRACE_ERR((stderr, "   PacketMessage::advance(), write single packet successful\n"));
-                this->setStatus (XMI::Device::Done);
-                TRACE_ERR((stderr, "<< PacketMessage::advance(), return XMI_SUCCESS\n"));
-                return XMI_SUCCESS;
+                this->setStatus (PAMI::Device::Done);
+                TRACE_ERR((stderr, "<< PacketMessage::advance(), return PAMI_SUCCESS\n"));
+                return PAMI_SUCCESS;
               }
 
-            TRACE_ERR((stderr, "<< PacketMessage::advance(), return XMI_EAGAIN\n"));
-            return XMI_EAGAIN;
+            TRACE_ERR((stderr, "<< PacketMessage::advance(), return PAMI_EAGAIN\n"));
+            return PAMI_EAGAIN;
           }
 
-          inline PacketMessage (xmi_work_function    work_func,
+          inline PacketMessage (pami_work_function    work_func,
                                 void               * work_cookie,
-                                xmi_event_function   fn,
+                                pami_event_function   fn,
                                 void               * cookie,
                                 T_Device           * device,
                                 size_t               fifo) :
@@ -78,7 +78,7 @@ namespace XMI
 
 
         public:
-          inline PacketMessage (xmi_event_function   fn,
+          inline PacketMessage (pami_event_function   fn,
                                 void               * cookie,
                                 T_Device           * device,
                                 size_t               fifo) :
@@ -131,27 +131,27 @@ namespace XMI
           struct iovec  * _iov;
           size_t          _niov;
           struct iovec    __iov;
-      };  // XMI::Device::PacketMessage class
+      };  // PAMI::Device::PacketMessage class
 
       template <class T_Device>
       class MultiPacketMessage : public PacketMessage<T_Device>
       {
         protected:
-          static xmi_result_t __advance (xmi_context_t context, void * cookie)
+          static pami_result_t __advance (pami_context_t context, void * cookie)
           {
             MultiPacketMessage * msg = (MultiPacketMessage *) cookie;
             return msg->advance();
           };
 
         public:
-          inline MultiPacketMessage (xmi_event_function   fn,
+          inline MultiPacketMessage (pami_event_function   fn,
                                      void               * cookie,
                                      T_Device           * device,
                                      size_t               fifo) :
               PacketMessage<T_Device> (MultiPacketMessage<T_Device>::__advance, (void *)this, fn, cookie, device, fifo)
           {};
 
-          inline xmi_result_t advance ()
+          inline pami_result_t advance ()
           {
             size_t sequence = 0;
             size_t bytes = MIN(this->__iov.iov_len, T_Device::payload_size);
@@ -160,14 +160,14 @@ namespace XMI
             while (this->_device->writeSinglePacket (this->_fifo, this->_dispatch_id,
                                                      this->_metadata, this->_metasize,
                                                      this->__iov.iov_base, bytes,
-                                                     sequence) == XMI_SUCCESS)
+                                                     sequence) == PAMI_SUCCESS)
               {
                 TRACE_ERR((stderr, "   MultiPacketMessage::advance() .. this->__iov.iov_base = %p, this->__iov.iov_len = %zu, bytes = %zu\n", this->__iov.iov_base, this->__iov.iov_len, bytes));
                 if (this->__iov.iov_len <= bytes)
                   {
-                    this->setStatus (XMI::Device::Done);
-                    TRACE_ERR((stderr, "<< MultiPacketMessage::advance() .. done (== XMI_SUCCESS)\n"));
-                    return XMI_SUCCESS;
+                    this->setStatus (PAMI::Device::Done);
+                    TRACE_ERR((stderr, "<< MultiPacketMessage::advance() .. done (== PAMI_SUCCESS)\n"));
+                    return PAMI_SUCCESS;
                   }
 
                 uint8_t * tmp = (uint8_t *) this->__iov.iov_base;
@@ -177,8 +177,8 @@ namespace XMI
                 TRACE_ERR((stderr, "   MultiPacketMessage::advance() .. update state, __iov.iov_base = %p, __iov.iov_len = %zu, bytes = %zu\n", this->__iov.iov_base, this->__iov.iov_len, bytes));
               }
 
-            TRACE_ERR((stderr, "<< MultiPacketMessage::advance() .. return XMI_EAGAIN (== \"not done\")\n"));
-            return XMI_EAGAIN;
+            TRACE_ERR((stderr, "<< MultiPacketMessage::advance() .. return PAMI_EAGAIN (== \"not done\")\n"));
+            return PAMI_EAGAIN;
           };
 
           inline void setPayload (void * src, size_t bytes)
@@ -186,10 +186,10 @@ namespace XMI
             this->__iov.iov_base = src;
             this->__iov.iov_len  = bytes;
           };
-      };  // XMI::Device::Shmem::MultiPacketMessage class
+      };  // PAMI::Device::Shmem::MultiPacketMessage class
     };
-  };    // XMI::Device namespace
-};      // XMI namespace
+  };    // PAMI::Device namespace
+};      // PAMI namespace
 #undef TRACE_ERR
 #endif  // __components_devices_shmem_ShmemPacketMessage_h__
 

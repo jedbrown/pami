@@ -25,7 +25,7 @@
 
 #include "Memregion.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Protocol
   {
@@ -41,7 +41,7 @@ namespace XMI
           typedef struct get_state
           {
             msg_t                       msg;
-            xmi_event_function          local_fn;
+            pami_event_function          local_fn;
             void                      * cookie;    ///< Application callback cookie
             Get < T_Model, T_Device > * get;    ///< get protocol object
           } get_state_t;
@@ -49,12 +49,12 @@ namespace XMI
 
         public:
           inline Get( T_Device                 & device,
-                      xmi_result_t             & status) :
+                      pami_result_t             & status) :
               _get_model (device),
               _device (device),
               _context (device.getContext())
           {
-            status = XMI_SUCCESS;
+            status = PAMI_SUCCESS;
           }
 
           ///
@@ -62,9 +62,9 @@ namespace XMI
           ///
           /// \see Get::generate
           ///
-          inline xmi_result_t getimpl ( xmi_event_function   local_fn,
+          inline pami_result_t getimpl ( pami_event_function   local_fn,
                                         void               * cookie,
-                                        xmi_endpoint_t       dest,
+                                        pami_endpoint_t       dest,
                                         size_t               bytes,
                                         Memregion          * src_memregion,
                                         Memregion          * dst_memregion,
@@ -79,9 +79,9 @@ namespace XMI
             state->local_fn = local_fn;
             state->get      = this;
 
-            xmi_task_t task;
+            pami_task_t task;
             size_t offset;
-            XMI_ENDPOINT_INFO(dest,task,offset);
+            PAMI_ENDPOINT_INFO(dest,task,offset);
 
             _get_model.postDmaGet (state->msg,
                                    get_complete,
@@ -93,7 +93,7 @@ namespace XMI
                                    src_offset,
                                    bytes);
 
-            return XMI_SUCCESS;
+            return PAMI_SUCCESS;
 
           };
 
@@ -102,7 +102,7 @@ namespace XMI
 
           T_Model                    _get_model;
           T_Device                 & _device;
-          xmi_context_t              _context;
+          pami_context_t              _context;
 
           inline get_state_t * allocateGetState ()
           {
@@ -121,9 +121,9 @@ namespace XMI
           /// callback function and, if notification of remote receive
           /// completion is not required, free the send state memory.
           ///
-          static void get_complete (xmi_context_t context,
+          static void get_complete (pami_context_t context,
                                     void          * cookie,
-                                    xmi_result_t    result)
+                                    pami_result_t    result)
           {
             get_state_t * state = (get_state_t *) cookie;
 
@@ -132,7 +132,7 @@ namespace XMI
 
             if (state->local_fn != NULL)
               {
-                state->local_fn (get->_context, state->cookie, XMI_SUCCESS);
+                state->local_fn (get->_context, state->cookie, PAMI_SUCCESS);
               }
 
             get->freeGetState(state);
@@ -145,7 +145,7 @@ namespace XMI
   };
 };
 
-#endif /* __xmi_protocol_get_cdi_factory_h__ */
+#endif /* __pami_protocol_get_cdi_factory_h__ */
 
 //
 // astyle info    http://astyle.sourceforge.net

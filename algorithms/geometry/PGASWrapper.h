@@ -19,7 +19,7 @@
 #include "algorithms/protocols/tspcoll/NBCollManager.h"
 #include "algorithms/composite/Composite.h"
 #include "algorithms/geometry/Geometry.h"
-namespace XMI
+namespace PAMI
 {
   namespace CollRegistration
   {
@@ -33,11 +33,11 @@ namespace XMI
     public:
       virtual void start() = 0;
       virtual void setcmd(T_TSPColl        *collexch,
-                          xmi_xfer_t       *cmd,
+                          pami_xfer_t       *cmd,
                           T_Device         *dev,
                           T_Mcast          *model,
                           T_TSPCollBarrier *collbarrier,
-                          xmi_geometry_t    geometry,
+                          pami_geometry_t    geometry,
                           T_Mcast          *barmodel)
         {
 
@@ -47,16 +47,16 @@ namespace XMI
           _model       = model;
           _collbarrier = collbarrier;
           _barmodel    = barmodel;
-          _geometry    = (XMI::Geometry::Common*)geometry;
+          _geometry    = (PAMI::Geometry::Common*)geometry;
         }
     public:
-      xmi_xfer_t                      *_cmd;
+      pami_xfer_t                      *_cmd;
       T_TSPColl                       *_collexch;
       T_Device                        *_dev;
       T_Mcast                         *_model;
       T_TSPCollBarrier                *_collbarrier;
       T_Mcast                         *_barmodel;
-      XMI::Geometry::Common           *_geometry;
+      PAMI::Geometry::Common           *_geometry;
     };
 
     // --------------  PGAS Factory base class -------------
@@ -86,11 +86,11 @@ namespace XMI
         _collbarrier(collbarrier)
         {
         }
-      virtual CCMI::Executor::Composite * generate(xmi_geometry_t  geometry,
+      virtual CCMI::Executor::Composite * generate(pami_geometry_t  geometry,
                                                    void           *cmd)
         {
           _exec.setcmd(_coll,
-                       (xmi_xfer_t*)cmd,
+                       (pami_xfer_t*)cmd,
                        _dev,
                        _model,
                        _collbarrier,
@@ -98,7 +98,7 @@ namespace XMI
                        _barmodel);
           return (CCMI::Executor::Composite*)&_exec;
         }
-      virtual void metadata(xmi_metadata_t *mdata)
+      virtual void metadata(pami_metadata_t *mdata)
         {
           strcpy(mdata->name, T_MDString);
         }

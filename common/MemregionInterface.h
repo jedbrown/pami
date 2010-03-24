@@ -14,9 +14,9 @@
 #ifndef __common_MemregionInterface_h__
 #define __common_MemregionInterface_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Interface
   {
@@ -32,7 +32,7 @@ namespace XMI
         ///
         /// \brief memory region constructor.
         ///
-        inline Memregion (xmi_context_t context)
+        inline Memregion (pami_context_t context)
         {
           isSharedAddressReadSupported ();
           isSharedAddressWriteSupported ();
@@ -49,26 +49,26 @@ namespace XMI
         /// \param[in]  base      Requested base virtual address
         /// \param[in]  options   ???
         ///
-        /// \retval XMI_SUCCESS The entire memory region, or a portion of
+        /// \retval PAMI_SUCCESS The entire memory region, or a portion of
         ///                      the memory region was pinned. The actual
         ///                      number of bytes pinned from the start of the
         ///                      buffer is returned in the \c bytes_out
         ///                      field. The memory region must be free'd with
         ///                      with destroyMemregion().
         ///
-        /// \retval XMI_EAGAIN  The memory region was not pinned due to an
+        /// \retval PAMI_EAGAIN  The memory region was not pinned due to an
         ///                      unavailable resource. The memory region does
         ///                      not need to be freed with destroyMemregion().
         ///
-        /// \retval XMI_INVAL   An invalid parameter value was specified.
+        /// \retval PAMI_INVAL   An invalid parameter value was specified.
         ///
-        /// \retval XMI_ERROR   The memory region was not pinned and does not need to
+        /// \retval PAMI_ERROR   The memory region was not pinned and does not need to
         ///                      be freed with destroyMemregion().
         ///
         /// \see destroyMemregion
-        /// \see XMI_Memregion_create()
+        /// \see PAMI_Memregion_create()
         ///
-        inline xmi_result_t createMemregion (size_t   * bytes_out,
+        inline pami_result_t createMemregion (size_t   * bytes_out,
                                              size_t     bytes_in,
                                              void     * base,
                                              uint64_t   options);
@@ -77,13 +77,13 @@ namespace XMI
         /// \attention All memory region derived classes \b must
         ///            implement the destroyMemregion_impl() method.
         ///
-        inline xmi_result_t destroyMemregion ();
+        inline pami_result_t destroyMemregion ();
 
         ///
         /// \attention All memory region derived classes \b must
         ///            implement the getInfo_impl() method.
         ///
-        inline xmi_result_t getInfo (size_t * bytes, void ** base);
+        inline pami_result_t getInfo (size_t * bytes, void ** base);
 
         ///
         /// \brief Get base virtual address
@@ -99,21 +99,21 @@ namespace XMI
 
         inline bool isSharedAddressReadSupported ();
 
-        inline xmi_result_t read (size_t   local_offset,
+        inline pami_result_t read (size_t   local_offset,
                                   T      * remote_memregion,
                                   size_t   remote_offset,
                                   size_t   bytes);
 
         inline bool isSharedAddressWriteSupported ();
 
-        inline xmi_result_t write (size_t   local_offset,
+        inline pami_result_t write (size_t   local_offset,
                                    T      * remote_memregion,
                                    size_t   remote_offset,
                                    size_t   bytes);
     };
 
     template <class T>
-    inline xmi_result_t Memregion<T>::createMemregion(size_t  * bytes_out,
+    inline pami_result_t Memregion<T>::createMemregion(size_t  * bytes_out,
                                                       size_t    bytes_in,
                                                       void    * base,
                                                       uint64_t  options)
@@ -122,13 +122,13 @@ namespace XMI
     }
 
     template <class T>
-    inline xmi_result_t Memregion<T>::destroyMemregion()
+    inline pami_result_t Memregion<T>::destroyMemregion()
     {
       return static_cast<T*>(this)->destroyMemregion_impl();
     }
 
     template <class T>
-    inline xmi_result_t Memregion<T>::getInfo(size_t * bytes, void ** base)
+    inline pami_result_t Memregion<T>::getInfo(size_t * bytes, void ** base)
     {
       return static_cast<T*>(this)->getInfo_impl(bytes, base);
     }
@@ -146,7 +146,7 @@ namespace XMI
     };
 
     template <class T>
-    inline xmi_result_t Memregion<T>::read(size_t   local_offset,
+    inline pami_result_t Memregion<T>::read(size_t   local_offset,
                                            T      * remote_memregion,
                                            size_t   remote_offset,
                                            size_t   bytes)
@@ -164,7 +164,7 @@ namespace XMI
     };
 
     template <class T>
-    inline xmi_result_t Memregion<T>::write(size_t   local_offset,
+    inline pami_result_t Memregion<T>::write(size_t   local_offset,
                                             T      * remote_memregion,
                                             size_t   remote_offset,
                                             size_t   bytes)
@@ -176,7 +176,7 @@ namespace XMI
     };
   };
 };
-#endif /* __xmi__memregion_h__ */
+#endif /* __pami__memregion_h__ */
 
 //
 // astyle info    http://astyle.sourceforge.net

@@ -11,11 +11,11 @@
  * \brief Optimized math routines for unsigned 8 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */
-#include "xmi_bg_math.h"
+#include "pami_bg_math.h"
 #include "util/common.h"
 //#include "ppc450d/internal_o.h"
 
-static void _xmi_core_uint8_not_o(uint8_t *dst, const uint8_t *src, int count) {
+static void _pami_core_uint8_not_o(uint8_t *dst, const uint8_t *src, int count) {
 
   uint8_t *dp = (uint8_t *)dst;
   uint8_t *sp = (uint8_t *)src;
@@ -27,11 +27,11 @@ static void _xmi_core_uint8_not_o(uint8_t *dst, const uint8_t *src, int count) {
     dp++;
   }
 
-  _xmi_core_uint32_not_o((uint32_t *)dp, (const uint32_t *)sp, count>>2);
+  _pami_core_uint32_not_o((uint32_t *)dp, (const uint32_t *)sp, count>>2);
 }
 
 #ifdef NOT_USED
-static void _xmi_core_uint8_conv_o(uint8_t *dst, const uint8_t *src, int count) {
+static void _pami_core_uint8_conv_o(uint8_t *dst, const uint8_t *src, int count) {
 
   uint8_t *dp = dst;
   const uint8_t *sp = src;
@@ -121,7 +121,7 @@ static void _xmi_core_uint8_conv_o(uint8_t *dst, const uint8_t *src, int count) 
   return;
 }
 
-static void _xmi_core_uint8_conv_not_o(uint8_t *dst, const uint8_t *src, int count) {
+static void _pami_core_uint8_conv_not_o(uint8_t *dst, const uint8_t *src, int count) {
 
   uint8_t *dp = dst;
   const uint8_t *sp = src;
@@ -229,10 +229,10 @@ static void _xmi_core_uint8_conv_not_o(uint8_t *dst, const uint8_t *src, int cou
 }
 #endif /* NOT_USED */
 
-void _xmi_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count) {
-  _xmi_core_uint8_not_o(dst, src, count);
+void _pami_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int count) {
+  _pami_core_uint8_not_o(dst, src, count);
 }
 
-void _xmi_core_uint8_post_min_o(uint8_t *dst, const uint8_t *src, int count) {
-  _xmi_core_uint8_not_o(dst, src, count);
+void _pami_core_uint8_post_min_o(uint8_t *dst, const uint8_t *src, int count) {
+  _pami_core_uint8_not_o(dst, src, count);
 }

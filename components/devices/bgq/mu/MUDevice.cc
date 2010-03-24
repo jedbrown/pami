@@ -15,10 +15,10 @@
 
 #if 0
 // #warning Do not use thread local storage .. a device is associated with a context, not a thread.
-__thread unsigned   XMI::Device::MU::MUDevice::_p2pSendChannelIndex;
-__thread unsigned   XMI::Device::MU::MUDevice::_p2pRecvChannelIndex;
-__thread bool       XMI::Device::MU::MUDevice::_colSendChannelFlag;
-__thread bool       XMI::Device::MU::MUDevice::_colRecvChannelFlag;
+__thread unsigned   PAMI::Device::MU::MUDevice::_p2pSendChannelIndex;
+__thread unsigned   PAMI::Device::MU::MUDevice::_p2pRecvChannelIndex;
+__thread bool       PAMI::Device::MU::MUDevice::_colSendChannelFlag;
+__thread bool       PAMI::Device::MU::MUDevice::_colRecvChannelFlag;
 #endif
 
 #ifdef TRACE
@@ -26,7 +26,7 @@ __thread bool       XMI::Device::MU::MUDevice::_colRecvChannelFlag;
 #endif
 #define TRACE(x) //fprintf x
 
-XMI::Device::MU::MUDevice::MUDevice (size_t clientid, size_t ncontexts, size_t contextid) :
+PAMI::Device::MU::MUDevice::MUDevice (size_t clientid, size_t ncontexts, size_t contextid) :
     //BaseDevice (),
     Interface::BaseDevice<MUDevice> (),
     Interface::PacketDevice<MUDevice> (),
@@ -43,14 +43,14 @@ XMI::Device::MU::MUDevice::MUDevice (size_t clientid, size_t ncontexts, size_t c
   for ( i = 0; i < MAX_NUM_P2P_CHANNELS; i++ ) _p2pChannel[i] = NULL;
 };
 
-XMI::Device::MU::MUDevice::~MUDevice() {};
+PAMI::Device::MU::MUDevice::~MUDevice() {};
 
-xmi_result_t XMI::Device::MU::MUDevice::init (size_t           clientid,
+pami_result_t PAMI::Device::MU::MUDevice::init (size_t           clientid,
                                               size_t           contextid,
-                                              xmi_client_t     client,
-                                              xmi_context_t    context,
+                                              pami_client_t     client,
+                                              pami_context_t    context,
                                               Memory::MemoryManager *mm,
-                                              XMI::Device::Generic::Device * progress)
+                                              PAMI::Device::Generic::Device * progress)
 {
   int rc = 0;
   TRACE((stderr, "MUDEvice init \n"));
@@ -90,13 +90,13 @@ xmi_result_t XMI::Device::MU::MUDevice::init (size_t           clientid,
                                L1D_CACHE_LINE_SIZE,
                                sizeof(P2PChannel));
 
-          XMI_assert( rc == 0 );
+          PAMI_assert( rc == 0 );
 
           new ( _p2pChannel[i] ) P2PChannel();
           rc = _p2pChannel[i]->init( _mm, _dispatch );
-          XMI_assert( rc == 0 );
+          PAMI_assert( rc == 0 );
 
-          if ( rc ) return XMI_ERROR;
+          if ( rc ) return PAMI_ERROR;
         }
     }
 
@@ -106,35 +106,35 @@ xmi_result_t XMI::Device::MU::MUDevice::init (size_t           clientid,
   rc = posix_memalign( (void **) & _colChannel,
                        L1D_CACHE_LINE_SIZE,
                        sizeof(ColChannel));
-  XMI_assert( rc == 0 );
+  PAMI_assert( rc == 0 );
 
   new ( _colChannel ) ColChannel();
   rc = _colChannel->init( sd );
-  XMI_assert( rc == 0 );
+  PAMI_assert( rc == 0 );
 #endif
   _colChannel = _p2pChannel[0]; /// \todo temporarily use the p2p channel until resmgr is fixed
   _initialized = true;
 
-  return XMI_SUCCESS;
+  return PAMI_SUCCESS;
 };
 
-xmi_context_t XMI::Device::MU::MUDevice::getContext_impl ()
+pami_context_t PAMI::Device::MU::MUDevice::getContext_impl ()
 {
   return _context;
 }
 
-size_t XMI::Device::MU::MUDevice::getContextOffset_impl ()
+size_t PAMI::Device::MU::MUDevice::getContextOffset_impl ()
 {
   return _contextid;
 }
 
-bool XMI::Device::MU::MUDevice::isInit_impl()
+bool PAMI::Device::MU::MUDevice::isInit_impl()
 {
   return _initialized;
 };
 
 
-bool XMI::Device::MU::MUDevice::registerPacketHandler (size_t                      dispatch,
+bool PAMI::Device::MU::MUDevice::registerPacketHandler (size_t                      dispatch,
                                                        Interface::RecvFunction_t   function,
                                                        void                      * arg,
                                                        uint16_t                  & id)
@@ -168,19 +168,19 @@ bool XMI::Device::MU::MUDevice::registerPacketHandler (size_t                   
 };
 
 
-/// \see XMI::Device::Interface::RecvFunction_t
-int XMI::Device::MU::MUDevice::noop (void   * metadata,
+/// \see PAMI::Device::Interface::RecvFunction_t
+int PAMI::Device::MU::MUDevice::noop (void   * metadata,
                                      void   * payload,
                                      size_t   bytes,
                                      void   * recv_func_parm,
                                      void   * cookie)
 {
   fprintf (stderr, "Error. Dispatch to unregistered id (%zd).\n", (size_t) recv_func_parm);
-  XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+  PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
   return 0;
 };
 
-void XMI::Device::MU::dumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints)
+void PAMI::Device::MU::dumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints)
 {
   fprintf(stderr, "dumphex:%s:%p:%zd:\n\n", pstring, &buffer, n_ints);
   unsigned nChunks = n_ints / 8;
@@ -221,7 +221,7 @@ void XMI::Device::MU::dumpHexData(const char * pstring, const uint32_t *buffer, 
       lastChunk = 0; // gets rid of an annoying warning when not tracing the buffer
     }
 }
-void XMI::Device::MU::dumpDescriptor(const char* string, const MUHWI_Descriptor_t *desc)
+void PAMI::Device::MU::dumpDescriptor(const char* string, const MUHWI_Descriptor_t *desc)
 {
   fprintf(stderr, "dumpDescriptor:%s:%p:\n\n", string, desc);
   fprintf(stderr, "0x%08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n",

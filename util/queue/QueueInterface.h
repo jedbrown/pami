@@ -26,7 +26,7 @@
 
 #define COMPILE_DEPRECATED_QUEUE_INTERFACES
 
-namespace XMI
+namespace PAMI
 {
   namespace Interface
   {
@@ -38,7 +38,7 @@ namespace XMI
     /// the specific queue implementation.
     ///
     /// \code
-    /// namespace XMI
+    /// namespace PAMI
     /// {
     ///   // Forward declaration of the queue class in order to spectialize
     ///   // the template definition of the "Interface::QueueElement<T>" class.
@@ -75,7 +75,7 @@ namespace XMI
     ///       typedef Interface::QueueElement<ExampleQueue> Element;
     ///
     ///       inline ExampleQueue() :
-    ///         XMI::Interface::QueueInterface<ExampleQueue> (),
+    ///         PAMI::Interface::QueueInterface<ExampleQueue> (),
     ///         _head (NULL),
     ///         _tail (NULL)
     ///       { };
@@ -235,8 +235,8 @@ namespace XMI
         ///
         /// \brief Access the head element of the queue without removing
         /// \deprecated
-        /// \see XMI::Interface::QueueInterface::peek
-        /// \see XMI::Interface::DequeInterface::head
+        /// \see PAMI::Interface::QueueInterface::peek
+        /// \see PAMI::Interface::DequeInterface::head
         /// \return The head element of the queue
         ///
         inline T_Element * peekHead ()
@@ -247,7 +247,7 @@ namespace XMI
         ///
         /// \brief Access the tail element of the queue without removing
         /// \deprecated
-        /// \see XMI::Interface::DequeInterface::tail
+        /// \see PAMI::Interface::DequeInterface::tail
         /// \return The tail element of the queue
         ///
         inline T_Element * peekTail ();
@@ -264,7 +264,7 @@ namespace XMI
         };
 
 #endif
-    }; // class XMI::Interface::QueueInterface
+    }; // class PAMI::Interface::QueueInterface
 
     ///
     /// \brief Double-ended queue, a.k.a. "deque", interface
@@ -378,7 +378,7 @@ namespace XMI
         ///
         inline void deleteElem (T_Element * element);
 #endif
-    }; // class XMI::Interface::DequeInterface
+    }; // class PAMI::Interface::DequeInterface
 
     template < class T_Queue, class T_Element = QueueElement<T_Queue> >
     class QueueInfoInterface
@@ -426,67 +426,67 @@ namespace XMI
         ///
         inline void insertElem (T_Element * element, size_t position);
 #endif
-    }; // class XMI::Interface::QueueInfoInterface
-  };   // namespace XMI::Interface
-};     // namespace XMI
+    }; // class PAMI::Interface::QueueInfoInterface
+  };   // namespace PAMI::Interface
+};     // namespace PAMI
 
 // ----------------------------------------------------------------------------
 //
-// XMI::Interface::QueueInterface<T_Queue,T_Element> method definitions
+// PAMI::Interface::QueueInterface<T_Queue,T_Element> method definitions
 //
 // ----------------------------------------------------------------------------
 
 template <class T_Queue, class T_Element>
-inline void XMI::Interface::QueueInterface<T_Queue, T_Element>::enqueue (T_Queue * queue)
+inline void PAMI::Interface::QueueInterface<T_Queue, T_Element>::enqueue (T_Queue * queue)
 {
   static_cast<T_Queue *>(this)->enqueue_impl (queue);
 }
 
 template <class T_Queue, class T_Element>
-inline void XMI::Interface::QueueInterface<T_Queue, T_Element>::enqueue (T_Element * element)
+inline void PAMI::Interface::QueueInterface<T_Queue, T_Element>::enqueue (T_Element * element)
 {
   static_cast<T_Queue *>(this)->enqueue_impl (element);
 }
 
 template <class T_Queue, class T_Element>
-inline T_Element * XMI::Interface::QueueInterface<T_Queue, T_Element>::dequeue ()
+inline T_Element * PAMI::Interface::QueueInterface<T_Queue, T_Element>::dequeue ()
 {
   return static_cast<T_Queue *>(this)->dequeue_impl ();
 }
 
 template <class T_Queue, class T_Element>
-inline void XMI::Interface::QueueInterface<T_Queue, T_Element>::push (T_Element * element)
+inline void PAMI::Interface::QueueInterface<T_Queue, T_Element>::push (T_Element * element)
 {
   static_cast<T_Queue *>(this)->push_impl (element);
 }
 
 template <class T_Queue, class T_Element>
-inline T_Element * XMI::Interface::QueueInterface<T_Queue, T_Element>::peek ()
+inline T_Element * PAMI::Interface::QueueInterface<T_Queue, T_Element>::peek ()
 {
   return static_cast<T_Queue *>(this)->peek_impl ();
 }
 
 template <class T_Queue, class T_Element>
-inline bool XMI::Interface::QueueInterface<T_Queue, T_Element>::isEmpty()
+inline bool PAMI::Interface::QueueInterface<T_Queue, T_Element>::isEmpty()
 {
   return static_cast<T_Queue *>(this)->isEmpty_impl ();
 }
 
 template <class T_Queue, class T_Element>
-inline T_Element * XMI::Interface::QueueInterface<T_Queue, T_Element>::next (T_Element * reference)
+inline T_Element * PAMI::Interface::QueueInterface<T_Queue, T_Element>::next (T_Element * reference)
 {
   return static_cast<T_Queue *>(this)->next_impl (reference);
 }
 
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
 template <class T_Queue, class T_Element>
-inline T_Element * XMI::Interface::QueueInterface<T_Queue, T_Element>::popTail ()
+inline T_Element * PAMI::Interface::QueueInterface<T_Queue, T_Element>::popTail ()
 {
   return static_cast<T_Queue *>(this)->popTail_impl ();
 }
 
 template <class T_Queue, class T_Element>
-inline T_Element * XMI::Interface::QueueInterface<T_Queue, T_Element>::peekTail ()
+inline T_Element * PAMI::Interface::QueueInterface<T_Queue, T_Element>::peekTail ()
 {
   return static_cast<T_Queue *>(this)->peekTail_impl ();
 }
@@ -494,57 +494,57 @@ inline T_Element * XMI::Interface::QueueInterface<T_Queue, T_Element>::peekTail 
 
 // ----------------------------------------------------------------------------
 //
-// XMI::Interface::DequeInterface<T_Queue,T_Element> method definitions
+// PAMI::Interface::DequeInterface<T_Queue,T_Element> method definitions
 //
 // ----------------------------------------------------------------------------
 
 template <class T_Queue, class T_Element>
-inline T_Element * XMI::Interface::DequeInterface<T_Queue, T_Element>::head ()
+inline T_Element * PAMI::Interface::DequeInterface<T_Queue, T_Element>::head ()
 {
   return static_cast<T_Queue *>(this)->peek_impl ();
 }
 
 template <class T_Queue, class T_Element>
-inline T_Element * XMI::Interface::DequeInterface<T_Queue, T_Element>::tail ()
+inline T_Element * PAMI::Interface::DequeInterface<T_Queue, T_Element>::tail ()
 {
   return static_cast<T_Queue *>(this)->tail_impl ();
 }
 
 template <class T_Queue, class T_Element>
-inline T_Element * XMI::Interface::DequeInterface<T_Queue, T_Element>::before (T_Element * reference)
+inline T_Element * PAMI::Interface::DequeInterface<T_Queue, T_Element>::before (T_Element * reference)
 {
   return static_cast<T_Queue *>(this)->before_impl (reference);
 }
 
 template <class T_Queue, class T_Element>
-inline T_Element * XMI::Interface::DequeInterface<T_Queue, T_Element>::after (T_Element * reference)
+inline T_Element * PAMI::Interface::DequeInterface<T_Queue, T_Element>::after (T_Element * reference)
 {
   return static_cast<T_Queue *>(this)->next_impl (reference);
 }
 
 template <class T_Queue, class T_Element>
-inline void XMI::Interface::DequeInterface<T_Queue, T_Element>::insert (T_Element * reference,
+inline void PAMI::Interface::DequeInterface<T_Queue, T_Element>::insert (T_Element * reference,
                                                                         T_Element * element)
 {
   static_cast<T_Queue *>(this)->insert_impl (reference, element);
 }
 
 template <class T_Queue, class T_Element>
-inline void XMI::Interface::DequeInterface<T_Queue, T_Element>::append (T_Element * reference,
+inline void PAMI::Interface::DequeInterface<T_Queue, T_Element>::append (T_Element * reference,
                                                                         T_Element * element)
 {
   static_cast<T_Queue *>(this)->append_impl (reference, element);
 }
 
 template <class T_Queue, class T_Element>
-inline void XMI::Interface::DequeInterface<T_Queue, T_Element>::remove (T_Element * element)
+inline void PAMI::Interface::DequeInterface<T_Queue, T_Element>::remove (T_Element * element)
 {
   static_cast<T_Queue *>(this)->remove_impl (element);
 }
 
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
 template <class T_Queue, class T_Element>
-inline void XMI::Interface::DequeInterface<T_Queue, T_Element>::deleteElem (T_Element * element)
+inline void PAMI::Interface::DequeInterface<T_Queue, T_Element>::deleteElem (T_Element * element)
 {
   static_cast<T_Queue *>(this)->remove_impl (element);
 }
@@ -552,25 +552,25 @@ inline void XMI::Interface::DequeInterface<T_Queue, T_Element>::deleteElem (T_El
 
 // ----------------------------------------------------------------------------
 //
-// XMI::Interface::QueueInfoInterface<T_Queue,T_Element> method definitions
+// PAMI::Interface::QueueInfoInterface<T_Queue,T_Element> method definitions
 //
 // ----------------------------------------------------------------------------
 
 template <class T_Queue, class T_Element>
-inline size_t XMI::Interface::QueueInfoInterface<T_Queue, T_Element>::size ()
+inline size_t PAMI::Interface::QueueInfoInterface<T_Queue, T_Element>::size ()
 {
   return static_cast<T_Queue *>(this)->size_impl ();
 }
 
 template <class T_Queue, class T_Element>
-inline void XMI::Interface::QueueInfoInterface<T_Queue, T_Element>::dump (const char * str, int n)
+inline void PAMI::Interface::QueueInfoInterface<T_Queue, T_Element>::dump (const char * str, int n)
 {
   return static_cast<T_Queue *>(this)->dump_impl (str, n);
 }
 
 #ifdef VALIDATE_ON
 template <class T_Queue, class T_Element>
-inline void XMI::Interface::QueueInfoInterface<T_Queue, T_Element>::validate ()
+inline void PAMI::Interface::QueueInfoInterface<T_Queue, T_Element>::validate ()
 {
   static_cast<T_Queue *>(this)->validate_impl ();
 }
@@ -578,7 +578,7 @@ inline void XMI::Interface::QueueInfoInterface<T_Queue, T_Element>::validate ()
 
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
 template <class T_Queue, class T_Element>
-inline void XMI::Interface::QueueInfoInterface<T_Queue, T_Element>::insertElem (T_Element * element, size_t position)
+inline void PAMI::Interface::QueueInfoInterface<T_Queue, T_Element>::insertElem (T_Element * element, size_t position)
 {
   static_cast<T_Queue *>(this)->insertElem_impl (element, position);
 }

@@ -1,9 +1,9 @@
 /**
- * \file sys/doxygen/xmi_context.h
- * \brief Detailed doxygen documentation for xmi multi-context interface
+ * \file sys/doxygen/pami_context.h
+ * \brief Detailed doxygen documentation for pami multi-context interface
  */
-#ifndef __doxygen_xmi_context_h__
-#define __doxygen_xmi_context_h__
+#ifndef __doxygen_pami_context_h__
+#define __doxygen_pami_context_h__
 
 
 
@@ -29,13 +29,13 @@
  * <b>Context initialization</b>
  *
  * The maximum number of allowed contexts should be queried after the client
- * is initialized with the XMI_Client_initialize() function. The contexts
- * are created with the XMI_Context_createv() function. This function will
+ * is initialized with the PAMI_Client_initialize() function. The contexts
+ * are created with the PAMI_Context_createv() function. This function will
  * initialize an array of context opaque objects and will set the
  * "global endpoints" output parameter.  The "global endpoints" is the number
  * of destination endpoints for all tasks in a client.
  *
- * XMI_Context_createv() is a
+ * PAMI_Context_createv() is a
  * synchronizing operation. Each task may create a different number of local
  * endpoints. However, the special attribute BLAH can be used to assert that
  * every task in the client is creating the same number of contexts
@@ -48,16 +48,16 @@
  * when the contexts are created. To obtain an endpoint opaque
  * object the application must invoke one of the two endpoint functions.
  *
- * - The application must invoke XMI_Client_endpoint() to obtain an endpoint to
+ * - The application must invoke PAMI_Client_endpoint() to obtain an endpoint to
  *   address a specific context on a destination task.
- * - The application must invoke XMI_Client_endpointv() to initialize an array
+ * - The application must invoke PAMI_Client_endpointv() to initialize an array
  *   of endpoint opaque objects that address the local contexts on a destination task.
  *
  * <b>Endpoint identification</b>
  * Applications may prefer to use a unique integer to identify all endpoints
  * for a client. This can be accomplished by creating an array of
  * endpoint opaque objects and using the index into the array as the endpoint
- * identifier. The XMI_Client_endpointv() function can be used to create the
+ * identifier. The PAMI_Client_endpointv() function can be used to create the
  * array.
  *
  * \dontinclude examples/endpoint_table.c
@@ -68,7 +68,7 @@
  *
  * \until }
  *
- * \until XMI_Context_unlock (context[0]);
+ * \until PAMI_Context_unlock (context[0]);
  *
  * <b>Dispatch</b>
  *
@@ -116,4 +116,4 @@
  *
  */
 
-#endif /* __doxygen_xmi_context_h__ */
+#endif /* __doxygen_pami_context_h__ */

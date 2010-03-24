@@ -18,7 +18,7 @@
 #define TRACE(x) //fprintf x
 
 /// \see MUMultisyncModel
-XMI::Device::MU::MUMultisyncModel::MUMultisyncModel (MUCollDevice & device, xmi_result_t &status) :
+PAMI::Device::MU::MUMultisyncModel::MUMultisyncModel (MUCollDevice & device, pami_result_t &status) :
     Interface::MultisyncModel < MUMultisyncModel, MUCollDevice, sizeof(mu_multisync_statedata_t) > (device, status),
     _device (device),
     _wrapper_model (&_desc_model)
@@ -97,10 +97,10 @@ SoftwareBytes  :
   _desc_model.setMemoryFIFOFields (&memfifo);
 
   // Use our rank/addr to set our master reception fifo
-  xmi_task_t target_rank = __global.mapping.task();
+  pami_task_t target_rank = __global.mapping.task();
   size_t addr[BGQ_TDIMS + BGQ_LDIMS];
   TRACE((stderr, "<%p>:MUMultisyncModel::ctor .. %p->getRecFifoIdForDescriptor() target_rank %zd\n", this, &_device, (size_t)target_rank));
-  __global.mapping.task2global ((xmi_task_t)target_rank, addr);
+  __global.mapping.task2global ((pami_task_t)target_rank, addr);
   TRACE((stderr, "<%p>:MUMultisyncModel::ctor .. %p->getRecFifoIdForDescriptor(%zd) target_rank %zd\n", this, &_device, addr[5], (size_t)target_rank));
   /// \todo Assuming p is the recv grp id?
   uint32_t recFifoId = _device.getCollRecFifoIdForDescriptor(addr[5]);;
@@ -119,11 +119,11 @@ SoftwareBytes  :
   TRACE((stderr, "<%p>:MUMulticastModel::registerMcastRecvFunction_impl dispatch_id = %#X, success = %d\n", this, hdr->dev.dispatch_id, (unsigned)success));
   DUMP_DESCRIPTOR("MUMultisyncModel::ctor", &_desc_model);
 
-  XMI_assert(success);
+  PAMI_assert(success);
 
 };
 
-XMI::Device::MU::MUMultisyncModel::~MUMultisyncModel ()
+PAMI::Device::MU::MUMultisyncModel::~MUMultisyncModel ()
 {
 };
 

@@ -29,7 +29,7 @@
 ///  Notes:  This is currently indended for use only by the lock manager
 ///
 ///
-namespace XMI
+namespace PAMI
 {
 namespace Atomic
 {
@@ -65,7 +65,7 @@ namespace Interface
       ///
       /// \brief  Alloc and Init
       ///
-      inline void init(XMI::Memory::MemoryManager *mm);
+      inline void init(PAMI::Memory::MemoryManager *mm);
 
       ///
       /// \brief  Provide access to the raw lock var/data
@@ -106,7 +106,7 @@ inline bool Mutex<T_Object>::isLocked()
 }
 
 template <class T_Object>
-inline void Mutex<T_Object>::init(XMI::Memory::MemoryManager *mm)
+inline void Mutex<T_Object>::init(PAMI::Memory::MemoryManager *mm)
 {
 	static_cast<T_Object*>(this)->init_impl(mm);
 }
@@ -119,6 +119,6 @@ inline void *Mutex<T_Object>::returnLock()
 
 }; // namespace Interface
 }; // namespace Atomic
-}; // namespace XMI
+}; // namespace PAMI
 
-#endif // __xmi_mutex_object_h__
+#endif // __pami_mutex_object_h__

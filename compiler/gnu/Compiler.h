@@ -16,4 +16,4 @@
 
 // Here go things specific to this compiler family
 
-#endif // __xmi_compiler_gnu_h__
+#endif // __pami_compiler_gnu_h__

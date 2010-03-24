@@ -35,7 +35,7 @@
 #include <common/bgp_personality.h>
 #include <common/bgp_personality_inlines.h>
 
-namespace XMI
+namespace PAMI
 {
     class BgpPersonality : public _BGP_Personality_t
     {
@@ -223,6 +223,6 @@ namespace XMI
         bool     _isHTCmode;
         //bool     _hasGI;
     };	// class BgpPersonality
-};	// namespace XMI
+};	// namespace PAMI
 
-#endif // __xmi_components_sysdep_bgp_bgppersonnality_h__
+#endif // __pami_components_sysdep_bgp_bgppersonnality_h__

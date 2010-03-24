@@ -26,7 +26,7 @@
 #define TRACE_ERR(x) // fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Protocol
   {
@@ -39,8 +39,8 @@ namespace XMI
       /// \tparam T_Model   Template packet model class
       /// \tparam T_Device  Template packet device class
       ///
-      /// \see XMI::Device::Interface::PacketModel
-      /// \see XMI::Device::Interface::PacketDevice
+      /// \see PAMI::Device::Interface::PacketModel
+      /// \see PAMI::Device::Interface::PacketDevice
       ///
       template <class T_Model, class T_Device>
       class EagerImmediate
@@ -59,7 +59,7 @@ namespace XMI
           } protocol_metadata_t;
 
           ///
-          /// \brief Shadow the \c xmi_send_immediate_t parameter structure
+          /// \brief Shadow the \c pami_send_immediate_t parameter structure
           ///
           /// This allows the header+data iovec elements to be treated as a
           /// two-element array of iovec structures, and therefore allows the
@@ -101,10 +101,10 @@ namespace XMI
           /// \param[out] status       Constructor status
           ///
           inline EagerImmediate (size_t                     dispatch,
-                                 xmi_dispatch_callback_fn   dispatch_fn,
+                                 pami_dispatch_callback_fn   dispatch_fn,
                                  void                     * cookie,
                                  T_Device                 & device,
-                                 xmi_result_t             & status) :
+                                 pami_result_t             & status) :
               _send_model (device),
               _context (device.getContext()),
               _dispatch_fn (dispatch_fn),
@@ -132,16 +132,16 @@ namespace XMI
             TRACE_ERR((stderr, "EagerImmediate() [1] status = %d\n", status));
           }
 
-          inline xmi_result_t immediate_impl (xmi_send_immediate_t * parameters)
+          inline pami_result_t immediate_impl (pami_send_immediate_t * parameters)
           {
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() >>\n"));
 
-            xmi_task_t task;
+            pami_task_t task;
             size_t offset;
-            XMI_ENDPOINT_INFO(parameters->dest,task,offset);
+            PAMI_ENDPOINT_INFO(parameters->dest,task,offset);
 
             // Verify that this task is addressable by this packet device
-            if (!_device.isPeer(task)) return XMI_ERROR;
+            if (!_device.isPeer(task)) return PAMI_ERROR;
 
             // Specify the protocol metadata to send with the application
             // metadata in the packet. This metadata is copied
@@ -210,7 +210,7 @@ namespace XMI
             }
 
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() <<\n"));
-            return XMI_SUCCESS;
+            return PAMI_SUCCESS;
           };
 
         protected:
@@ -224,8 +224,8 @@ namespace XMI
 
           T_Model                    _send_model;
 
-          xmi_context_t              _context;
-          xmi_dispatch_callback_fn   _dispatch_fn;
+          pami_context_t              _context;
+          pami_dispatch_callback_fn   _dispatch_fn;
           void                     * _cookie;
           T_Device                 & _device;
 
@@ -240,7 +240,7 @@ namespace XMI
           /// Protocol metadata, application metadata, and application data
           /// are all delivered as a single contiguous buffer.
           ///
-          /// \see XMI::Device::Interface::RecvFunction_t
+          /// \see PAMI::Device::Interface::RecvFunction_t
           ///
           static int dispatch_send_direct (void   * metadata,
                                            void   * payload,
@@ -264,7 +264,7 @@ namespace XMI
                                     m->metabytes,     // Metadata bytes
                                     (void *) (data + m->metabytes),  // payload data
                                     m->databytes,     // Total number of bytes
-                                    (xmi_recv_t *) NULL);
+                                    (pami_recv_t *) NULL);
 
             TRACE_ERR ((stderr, "<< EagerImmediate::dispatch_send_direct()\n"));
             return 0;
@@ -308,7 +308,7 @@ namespace XMI
             // This packet device DOES NOT provide the data buffer(s) for the
             // message and the data must be read on to the stack before the
             // recv callback is invoked.
-            XMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
+            PAMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
 
             uint8_t stackData[T_Model::packet_model_payload_bytes];
             void * p = (void *) & stackData[0];
@@ -325,9 +325,9 @@ namespace XMI
           ///
           /// This callback will free the send state memory.
           ///
-          static void send_complete (xmi_context_t   context,
+          static void send_complete (pami_context_t   context,
                                      void          * cookie,
-                                     xmi_result_t    result)
+                                     pami_result_t    result)
           {
             TRACE_ERR((stderr, "EagerImmediate::send_complete() >> \n"));
             send_t * state = (send_t *) cookie;
@@ -345,7 +345,7 @@ namespace XMI
   };
 };
 #undef TRACE_ERR
-#endif // __xmi_p2p_protocol_send_eager_eagerimmediate_h__
+#endif // __pami_p2p_protocol_send_eager_eagerimmediate_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

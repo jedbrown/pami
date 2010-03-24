@@ -27,11 +27,11 @@
 
 extern DCMF::Messager *_g_messager; /// \todo dcmf specific
 
-extern XMI::Topology *_g_topology_local;
+extern PAMI::Topology *_g_topology_local;
 
 #define SHM_FILE "/unique-ccmi-shmem"
 
-extern int dcmf_dt_shift[XMI_DT_COUNT];
+extern int dcmf_dt_shift[PAMI_DT_COUNT];
 
 namespace CCMI
 {
@@ -48,9 +48,9 @@ namespace CCMI
 					(VnDualShortTreeAllreduce::SharedData *)-1;
 	char *VnDualShortTreeAllreduce::_swq_buf;
 	char *VnDualShortTreeAllreduce::_rwq_buf;
-	XMI::PipeWorkQueue VnDualShortTreeAllreduce::_swq;
-	XMI::PipeWorkQueue VnDualShortTreeAllreduce::_rwq;
-	XMI::Topology VnDualShortTreeAllreduce::_root;
+	PAMI::PipeWorkQueue VnDualShortTreeAllreduce::_swq;
+	PAMI::PipeWorkQueue VnDualShortTreeAllreduce::_rwq;
+	PAMI::Topology VnDualShortTreeAllreduce::_root;
         unsigned VnDualShortTreeAllreduce::_numPeers = 0;
         unsigned VnDualShortTreeAllreduce::_myPeer = 0;
         unsigned VnDualShortTreeAllreduce::_isMasterCore = 0;
@@ -86,8 +86,8 @@ namespace CCMI
 	_rwq.reset();
 	_rwq_buf = _rwq.bufferToConsume();
 
-	_mcombArgs.setData((XMI_PipeWorkQueue_t *)&_swq, 0);
-	_mcombArgs.setResults((XMI_PipeWorkQueue_t *)&_rwq, 0);
+	_mcombArgs.setData((PAMI_PipeWorkQueue_t *)&_swq, 0);
+	_mcombArgs.setResults((PAMI_PipeWorkQueue_t *)&_rwq, 0);
 	_mcombArgs.setDataRanks(NULL);
 
           // find out who is the master core (to access the tree)
@@ -120,14 +120,14 @@ namespace CCMI
 
         }
 
-          unsigned VnDualShortTreeAllreduce::restart(XMI_CollectiveRequest_t  *request,
-                                       XMI_Callback_t           & cb_done,
+          unsigned VnDualShortTreeAllreduce::restart(PAMI_CollectiveRequest_t  *request,
+                                       PAMI_Callback_t           & cb_done,
                                        CCMI_Consistency            consistency,
                                        char                      * srcbuf,
                                        char                      * dstbuf,
                                        size_t                      count,
-                                       XMI_Dt                     dtype,
-                                       XMI_Op                     op,
+                                       PAMI_Dt                     dtype,
+                                       PAMI_Op                     op,
                                        size_t                      root)
           {
             TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::VnDualShortTreeAllreduce::restart() "
@@ -147,19 +147,19 @@ namespace CCMI
 
               _mcombArgs.setReduceInfo(op, dtype);
 
-              if (_op == XMI_SUM  &&  dtype == XMI_SIGNED_INT)
+              if (_op == PAMI_SUM  &&  dtype == PAMI_SIGNED_INT)
               {
                 _reduceOpSelect = INT_SUM;
               }
-              else if (_op == XMI_SUM  && dtype == XMI_DOUBLE)
+              else if (_op == PAMI_SUM  && dtype == PAMI_DOUBLE)
               {
                 _reduceOpSelect = DBL_SUM;
               }
               else
               {
                 _reduceOpSelect = OPT_FUN;
-                _reduceFunc = (coremath)MATH_OP_FUNCS( (XMI_Dt)dtype,
-                                                              (XMI_Op)op,
+                _reduceFunc = (coremath)MATH_OP_FUNCS( (PAMI_Dt)dtype,
+                                                              (PAMI_Op)op,
                                                               _numPeers );
               }
 
@@ -177,14 +177,14 @@ namespace CCMI
               if (_bytes > MaxDataBytes)// || (root != -1)) // short allreduce only
               {
                 TRACE_ALERT((stderr, "<%p>Allreduce::VnDualShortTreeAllreduce::Composite::restart() ALERT: "
-                             "XMI_INVAL op %#X, type %#X, count %#X!\n", this, op, dtype, count));
+                             "PAMI_INVAL op %#X, type %#X, count %#X!\n", this, op, dtype, count));
                 TRACE_ADAPTOR((stderr, "<%p>Allreduce::VnDualShortTreeAllreduce::Composite::restart():"
-                               "XMI_INVAL op %#X, type %#X, count %#X!\n",this, op, dtype, count));
-                return XMI_INVAL;
+                               "PAMI_INVAL op %#X, type %#X, count %#X!\n",this, op, dtype, count));
+                return PAMI_INVAL;
               }
 
-              _mcombArgs.setData((XMI_PipeWorkQueue_t *)&_swq, _count);
-              _mcombArgs.setResults((XMI_PipeWorkQueue_t *)&_rwq, _count);
+              _mcombArgs.setData((PAMI_PipeWorkQueue_t *)&_swq, _count);
+              _mcombArgs.setResults((PAMI_PipeWorkQueue_t *)&_rwq, _count);
             }
 
             if (!_isMasterCore)
@@ -232,11 +232,11 @@ namespace CCMI
               } while (num < _numPeers - 1);
 
               if (_dstbuf) {
-	        new (&_root) XMI::Topology(_mapping->rank());
+	        new (&_root) PAMI::Topology(_mapping->rank());
               } else { // we don't want the results if we're non-root reduce.
-	        new (&_root) XMI::Topology();
+	        new (&_root) PAMI::Topology();
 	      }
-              _mcombArgs.setResultsRanks((XMI_Topology_t *)&_root);
+              _mcombArgs.setResultsRanks((PAMI_Topology_t *)&_root);
 
               TRACE_ADAPTOR((stderr,"<%p>Allreduce::Tree::VnDualShortTreeAllreduce "
                              "master1 dst[0]:%d srcs[0,0]:%d srcs[1,0]:%d "
@@ -287,11 +287,11 @@ namespace CCMI
               _shared->client[2].isSrcReady = 0;
 
               // call tree multisend directly
-              _mcombArgs.setRequestBuffer((XMI_Request_t *)request, sizeof(XMI_Request_t));
+              _mcombArgs.setRequestBuffer((PAMI_Request_t *)request, sizeof(PAMI_Request_t));
               _mcomb->generate(&_mcombArgs);
             }
 
-            return XMI_SUCCESS;
+            return PAMI_SUCCESS;
           }
 
       } /* Tree */

@@ -50,14 +50,14 @@ namespace CCMI
         /// \brief At this level we only support single color
         /// collectives
         ///
-        virtual unsigned restart   ( XMI_CollectiveRequest_t  * request,
-                                     XMI_Callback_t           & cb_done,
-                                     xmi_consistency_t          consistency,
+        virtual unsigned restart   ( PAMI_CollectiveRequest_t  * request,
+                                     PAMI_Callback_t           & cb_done,
+                                     pami_consistency_t          consistency,
                                      char                      * srcbuf,
                                      char                      * dstbuf,
                                      size_t                      count,
-                                     xmi_dt                      dtype,
-                                     xmi_op                      op,
+                                     pami_dt                      dtype,
+                                     pami_op                      op,
                                      size_t                      root = (size_t)-1) = 0;
         virtual ~BaseComposite()
         {

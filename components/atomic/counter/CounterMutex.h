@@ -18,15 +18,15 @@
  */
 #include "components/atomic/Mutex.h"
 
-namespace XMI {
+namespace PAMI {
 namespace Mutex {
 
 	template <class T_Counter>
-	class CounterMutex : public XMI::Atomic::Interface::Mutex<CounterMutex<T_Counter> > {
+	class CounterMutex : public PAMI::Atomic::Interface::Mutex<CounterMutex<T_Counter> > {
 	public:
 		CounterMutex() {}
 		~CounterMutex() {}
-		inline void init_impl(XMI::Memory::MemoryManager *mm) {
+		inline void init_impl(PAMI::Memory::MemoryManager *mm) {
 			_counter.init(mm);
 		}
 		void acquire_impl() {
@@ -47,6 +47,6 @@ namespace Mutex {
 	}; // class CounterMutex
 
 }; // Mutex namespace
-}; // XMI namespace
+}; // PAMI namespace
 
 #endif // __components_atomic_countermutex_h__

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file math/bgp/collective_network/xmi_bg_math.h
+ * \file math/bgp/collective_network/pami_bg_math.h
  * \brief Prototypes for all the collective network math functions
  *
  * These routines are used when math operations are being performed
@@ -18,8 +18,8 @@
  */
 
 
-#ifndef __math_bgp_collective_network_xmi_bg_math_h__
-#define __math_bgp_collective_network_xmi_bg_math_h__
+#ifndef __math_bgp_collective_network_pami_bg_math_h__
+#define __math_bgp_collective_network_pami_bg_math_h__
 
 #include <stdint.h>
 #include "math/math_coremath.h"
@@ -38,33 +38,33 @@
 #define LOC_INT_FRTREE(i)     ((i) ^ 0x7fffffffUL)
 
 /* Must be included after math_coremath.h */
-#include "xmi_optibgmath.h"
+#include "pami_optibgmath.h"
 
 /**
  * \brief Translate operation, datatype, and optimization to math function
  *
  * This table should not be accessed directly. The inline/macro
- * XMI_PRE_OP_FUNCS(dt,op,n) should be used instead. That returns
+ * PAMI_PRE_OP_FUNCS(dt,op,n) should be used instead. That returns
  * the proper function (pointer) for the given combination of
  * datatype "dt", operand "op", and optimization level "n", taking
  * into account conbinations that are not optimized.
  */
-extern void *xmi_pre_op_funcs[XMI_OP_COUNT][XMI_DT_COUNT][2];
+extern void *pami_pre_op_funcs[PAMI_OP_COUNT][PAMI_DT_COUNT][2];
 /**
  * \brief Translate operation, datatype, and optimization to math function
  *
  * This table should not be accessed directly. The inline/macro
- * XMI_POST_OP_FUNCS(dt,op,n) should be used instead. That returns
+ * PAMI_POST_OP_FUNCS(dt,op,n) should be used instead. That returns
  * the proper function (pointer) for the given combination of
  * datatype "dt", operand "op", and optimization level "n", taking
  * into account conbinations that are not optimized.
  */
-extern void *xmi_post_op_funcs[XMI_OP_COUNT][XMI_DT_COUNT][2];
+extern void *pami_post_op_funcs[PAMI_OP_COUNT][PAMI_DT_COUNT][2];
 
 /**
  * \brief Return best tree pre-processing routine for datatype and operand.
  *
- * Selects an optimized conversion routine from xmi_pre_op_funcs[][][] or
+ * Selects an optimized conversion routine from pami_pre_op_funcs[][][] or
  * defaults to the generic, unoptimized, routine if no
  * better one exists.
  *
@@ -72,19 +72,19 @@ extern void *xmi_post_op_funcs[XMI_OP_COUNT][XMI_DT_COUNT][2];
  * \param op    Operand being used
  * \param optim Optimization flag (0/1)
  * \return      Pointer to coremath1 function. NULL if no processing
- * is needed on the tree, (void *)XMI_UNIMPL if the tree does not support
+ * is needed on the tree, (void *)PAMI_UNIMPL if the tree does not support
  * the operation on the datatype.
  */
-static inline coremath1 XMI_PRE_OP_FUNCS(xmi_dt dt, xmi_op op, int optim) {
-	return (coremath1)(xmi_pre_op_funcs[op][dt][1] ?
-				xmi_pre_op_funcs[op][dt][1] :
-				xmi_pre_op_funcs[op][dt][0]);
+static inline coremath1 PAMI_PRE_OP_FUNCS(pami_dt dt, pami_op op, int optim) {
+	return (coremath1)(pami_pre_op_funcs[op][dt][1] ?
+				pami_pre_op_funcs[op][dt][1] :
+				pami_pre_op_funcs[op][dt][0]);
 }
 
 /**
  * \brief Return best tree post-processing routine for datatype and operand.
  *
- * Selects an optimized conversion routine from xmi_post_op_funcs[][][] or
+ * Selects an optimized conversion routine from pami_post_op_funcs[][][] or
  * defaults to the generic, unoptimized, routine if no
  * better one exists.
  *
@@ -92,22 +92,22 @@ static inline coremath1 XMI_PRE_OP_FUNCS(xmi_dt dt, xmi_op op, int optim) {
  * \param op    Operand being used
  * \param optim Optimization flag (0/1)
  * \return      Pointer to coremath1 function. NULL if no processing
- * is needed on the tree, (void *)XMI_UNIMPL if the tree does not support
+ * is needed on the tree, (void *)PAMI_UNIMPL if the tree does not support
  * the operation on the datatype.
  */
-static inline coremath1 XMI_POST_OP_FUNCS(xmi_dt dt, xmi_op op, int optim) {
-	return (coremath1)(xmi_post_op_funcs[op][dt][1] ?
-				xmi_post_op_funcs[op][dt][1] :
-				xmi_post_op_funcs[op][dt][0]);
+static inline coremath1 PAMI_POST_OP_FUNCS(pami_dt dt, pami_op op, int optim) {
+	return (coremath1)(pami_post_op_funcs[op][dt][1] ?
+				pami_post_op_funcs[op][dt][1] :
+				pami_post_op_funcs[op][dt][0]);
 }
 
-/* Here is how we expand defines in xmi_optibgmath.h into code: */
-#ifndef XMI_NO_OPTIMATH
+/* Here is how we expand defines in pami_optibgmath.h into code: */
+#ifndef PAMI_NO_OPTIMATH
 /** \brief Create a "case" value for use in a switch statement */
 #define OPTIMATH_NSRC(dt,op,n,f)	case n: f(dst, srcs, nsrc, count); break;
-#else /* XMI_NO_OPTIMATH */
+#else /* PAMI_NO_OPTIMATH */
 #define OPTIMATH_NSRC(dt,op,n,f)
-#endif /* XMI_NO_OPTIMATH */
+#endif /* PAMI_NO_OPTIMATH */
 
 #if defined(__cplusplus)
 extern "C"
@@ -120,13 +120,13 @@ extern "C"
 
 /**** Unary routines ****/
 
-/* Here is how we expand defines in xmi_optibgmath.h into code: */
-#ifndef XMI_NO_OPTIMATH
+/* Here is how we expand defines in pami_optibgmath.h into code: */
+#ifndef PAMI_NO_OPTIMATH
 /** \brief Create a "case" value for use in a switch statement */
 #define OPTIMATH_UNARY(dt,op,f)	case 1: f(dst, src, count); break;
-#else /* XMI_NO_OPTIMATH */
+#else /* PAMI_NO_OPTIMATH */
 #define OPTIMATH_UNARY(dt,op,f)
-#endif /* XMI_NO_OPTIMATH */
+#endif /* PAMI_NO_OPTIMATH */
 
 /**
  * \brief Optimized pre-processing for default on signed-char datatypes.
@@ -140,9 +140,9 @@ extern "C"
  */
 static inline void Core_int8_pre_all(uint8_t *dst, const int8_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_int8_pre_all(XMI_NOOP)
+	OPTIMIZED_int8_pre_all(PAMI_NOOP)
 	default:
-		_xmi_core_int8_pre_all(dst, src, count);
+		_pami_core_int8_pre_all(dst, src, count);
 		break;
 	}
 }
@@ -159,9 +159,9 @@ static inline void Core_int8_pre_all(uint8_t *dst, const int8_t *src, int count)
  */
 static inline void Core_int8_post_all(int8_t *dst, const uint8_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_int8_post_all(XMI_NOOP)
+	OPTIMIZED_int8_post_all(PAMI_NOOP)
 	default:
-		_xmi_core_int8_post_all(dst, src, count);
+		_pami_core_int8_post_all(dst, src, count);
 		break;
 	}
 }
@@ -180,7 +180,7 @@ static inline void Core_int8_pre_min(uint8_t *dst, const int8_t *src, int count)
 	switch(1) {
 	OPTIMIZED_int8_pre_min
 	default:
-		_xmi_core_int8_pre_min(dst, src, count);
+		_pami_core_int8_pre_min(dst, src, count);
 		break;
 	}
 }
@@ -199,7 +199,7 @@ static inline void Core_int8_post_min(int8_t *dst, const uint8_t *src, int count
 	switch(1) {
 	OPTIMIZED_int8_post_min
 	default:
-		_xmi_core_int8_post_min(dst, src, count);
+		_pami_core_int8_post_min(dst, src, count);
 		break;
 	}
 }
@@ -216,9 +216,9 @@ static inline void Core_int8_post_min(int8_t *dst, const uint8_t *src, int count
  */
 static inline void Core_uint8_pre_all(uint8_t *dst, const uint8_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_uint8_pre_all(XMI_NOOP)
+	OPTIMIZED_uint8_pre_all(PAMI_NOOP)
 	default:
-		_xmi_core_uint8_pre_all(dst, src, count);
+		_pami_core_uint8_pre_all(dst, src, count);
 		break;
 	}
 }
@@ -235,9 +235,9 @@ static inline void Core_uint8_pre_all(uint8_t *dst, const uint8_t *src, int coun
  */
 static inline void Core_uint8_post_all(uint8_t *dst, const uint8_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_uint8_post_all(XMI_NOOP)
+	OPTIMIZED_uint8_post_all(PAMI_NOOP)
 	default:
-		_xmi_core_uint8_post_all(dst, src, count);
+		_pami_core_uint8_post_all(dst, src, count);
 		break;
 	}
 }
@@ -256,7 +256,7 @@ static inline void Core_uint8_pre_min(uint8_t *dst, const uint8_t *src, int coun
 	switch(1) {
 	OPTIMIZED_uint8_pre_min
 	default:
-		_xmi_core_uint8_pre_min(dst, src, count);
+		_pami_core_uint8_pre_min(dst, src, count);
 		break;
 	}
 }
@@ -275,7 +275,7 @@ static inline void Core_uint8_post_min(uint8_t *dst, const uint8_t *src, int cou
 	switch(1) {
 	OPTIMIZED_uint8_post_min
 	default:
-		_xmi_core_uint8_post_min(dst, src, count);
+		_pami_core_uint8_post_min(dst, src, count);
 		break;
 	}
 }
@@ -292,9 +292,9 @@ static inline void Core_uint8_post_min(uint8_t *dst, const uint8_t *src, int cou
  */
 static inline void Core_int16_pre_all(uint16_t *dst, const int16_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_int16_pre_all(XMI_NOOP)
+	OPTIMIZED_int16_pre_all(PAMI_NOOP)
 	default:
-		_xmi_core_int16_pre_all(dst, src, count);
+		_pami_core_int16_pre_all(dst, src, count);
 		break;
 	}
 }
@@ -311,9 +311,9 @@ static inline void Core_int16_pre_all(uint16_t *dst, const int16_t *src, int cou
  */
 static inline void Core_int16_post_all(int16_t *dst, const uint16_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_int16_post_all(XMI_NOOP)
+	OPTIMIZED_int16_post_all(PAMI_NOOP)
 	default:
-		_xmi_core_int16_post_all(dst, src, count);
+		_pami_core_int16_post_all(dst, src, count);
 		break;
 	}
 }
@@ -332,7 +332,7 @@ static inline void Core_int16_pre_min(uint16_t *dst, const int16_t *src, int cou
 	switch(1) {
 	OPTIMIZED_int16_pre_min
 	default:
-		_xmi_core_int16_pre_min(dst, src, count);
+		_pami_core_int16_pre_min(dst, src, count);
 		break;
 	}
 }
@@ -351,7 +351,7 @@ static inline void Core_int16_post_min(int16_t *dst, const uint16_t *src, int co
 	switch(1) {
 	OPTIMIZED_int16_post_min
 	default:
-		_xmi_core_int16_post_min(dst, src, count);
+		_pami_core_int16_post_min(dst, src, count);
 		break;
 	}
 }
@@ -370,7 +370,7 @@ static inline void Core_int16_int32_pre_maxloc(uint16_int32_t *dst, const int16_
 	switch(1) {
 	OPTIMIZED_int16_int32_pre_maxloc
 	default:
-		_xmi_core_int16_int32_pre_maxloc(dst, src, count);
+		_pami_core_int16_int32_pre_maxloc(dst, src, count);
 		break;
 	}
 }
@@ -389,7 +389,7 @@ static inline void Core_int16_int32_post_maxloc(int16_int32_t *dst, const uint16
 	switch(1) {
 	OPTIMIZED_int16_int32_post_maxloc
 	default:
-		_xmi_core_int16_int32_post_maxloc(dst, src, count);
+		_pami_core_int16_int32_post_maxloc(dst, src, count);
 		break;
 	}
 }
@@ -408,7 +408,7 @@ static inline void Core_int16_int32_pre_minloc(uint16_int32_t *dst, const int16_
 	switch(1) {
 	OPTIMIZED_int16_int32_pre_minloc
 	default:
-		_xmi_core_int16_int32_pre_minloc(dst, src, count);
+		_pami_core_int16_int32_pre_minloc(dst, src, count);
 		break;
 	}
 }
@@ -427,7 +427,7 @@ static inline void Core_int16_int32_post_minloc(int16_int32_t *dst, const uint16
 	switch(1) {
 	OPTIMIZED_int16_int32_post_minloc
 	default:
-		_xmi_core_int16_int32_post_minloc(dst, src, count);
+		_pami_core_int16_int32_post_minloc(dst, src, count);
 		break;
 	}
 }
@@ -444,9 +444,9 @@ static inline void Core_int16_int32_post_minloc(int16_int32_t *dst, const uint16
  */
 static inline void Core_uint16_pre_all(uint16_t *dst, const uint16_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_uint16_pre_all(XMI_NOOP)
+	OPTIMIZED_uint16_pre_all(PAMI_NOOP)
 	default:
-		_xmi_core_uint16_pre_all(dst, src, count);
+		_pami_core_uint16_pre_all(dst, src, count);
 		break;
 	}
 }
@@ -463,9 +463,9 @@ static inline void Core_uint16_pre_all(uint16_t *dst, const uint16_t *src, int c
  */
 static inline void Core_uint16_post_all(uint16_t *dst, const uint16_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_uint16_post_all(XMI_NOOP)
+	OPTIMIZED_uint16_post_all(PAMI_NOOP)
 	default:
-		_xmi_core_uint16_post_all(dst, src, count);
+		_pami_core_uint16_post_all(dst, src, count);
 		break;
 	}
 }
@@ -484,7 +484,7 @@ static inline void Core_uint16_pre_min(uint16_t *dst, const uint16_t *src, int c
 	switch(1) {
 	OPTIMIZED_uint16_pre_min
 	default:
-		_xmi_core_uint16_pre_min(dst, src, count);
+		_pami_core_uint16_pre_min(dst, src, count);
 		break;
 	}
 }
@@ -503,7 +503,7 @@ static inline void Core_uint16_post_min(uint16_t *dst, const uint16_t *src, int 
 	switch(1) {
 	OPTIMIZED_uint16_post_min
 	default:
-		_xmi_core_uint16_post_min(dst, src, count);
+		_pami_core_uint16_post_min(dst, src, count);
 		break;
 	}
 }
@@ -520,9 +520,9 @@ static inline void Core_uint16_post_min(uint16_t *dst, const uint16_t *src, int 
  */
 static inline void Core_int32_pre_all(uint32_t *dst, const int32_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_int32_pre_all(XMI_NOOP)
+	OPTIMIZED_int32_pre_all(PAMI_NOOP)
 	default:
-		_xmi_core_int32_pre_all(dst, src, count);
+		_pami_core_int32_pre_all(dst, src, count);
 		break;
 	}
 }
@@ -539,9 +539,9 @@ static inline void Core_int32_pre_all(uint32_t *dst, const int32_t *src, int cou
  */
 static inline void Core_int32_post_all(int32_t *dst, const uint32_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_int32_post_all(XMI_NOOP)
+	OPTIMIZED_int32_post_all(PAMI_NOOP)
 	default:
-		_xmi_core_int32_post_all(dst, src, count);
+		_pami_core_int32_post_all(dst, src, count);
 		break;
 	}
 }
@@ -560,7 +560,7 @@ static inline void Core_int32_pre_min(uint32_t *dst, const int32_t *src, int cou
 	switch(1) {
 	OPTIMIZED_int32_pre_min
 	default:
-		_xmi_core_int32_pre_min(dst, src, count);
+		_pami_core_int32_pre_min(dst, src, count);
 		break;
 	}
 }
@@ -579,7 +579,7 @@ static inline void Core_int32_post_min(int32_t *dst, const uint32_t *src, int co
 	switch(1) {
 	OPTIMIZED_int32_post_min
 	default:
-		_xmi_core_int32_post_min(dst, src, count);
+		_pami_core_int32_post_min(dst, src, count);
 		break;
 	}
 }
@@ -598,7 +598,7 @@ static inline void Core_int32_int32_pre_maxloc(uint32_int32_t *dst, const int32_
 	switch(1) {
 	OPTIMIZED_int32_int32_pre_maxloc
 	default:
-		_xmi_core_int32_int32_pre_maxloc(dst, src, count);
+		_pami_core_int32_int32_pre_maxloc(dst, src, count);
 		break;
 	}
 }
@@ -617,7 +617,7 @@ static inline void Core_int32_int32_post_maxloc(int32_int32_t *dst, const uint32
 	switch(1) {
 	OPTIMIZED_int32_int32_post_maxloc
 	default:
-		_xmi_core_int32_int32_post_maxloc(dst, src, count);
+		_pami_core_int32_int32_post_maxloc(dst, src, count);
 		break;
 	}
 }
@@ -636,7 +636,7 @@ static inline void Core_int32_int32_pre_minloc(uint32_int32_t *dst, const int32_
 	switch(1) {
 	OPTIMIZED_int32_int32_pre_minloc
 	default:
-		_xmi_core_int32_int32_pre_minloc(dst, src, count);
+		_pami_core_int32_int32_pre_minloc(dst, src, count);
 		break;
 	}
 }
@@ -655,7 +655,7 @@ static inline void Core_int32_int32_post_minloc(int32_int32_t *dst, const uint32
 	switch(1) {
 	OPTIMIZED_int32_int32_post_minloc
 	default:
-		_xmi_core_int32_int32_post_minloc(dst, src, count);
+		_pami_core_int32_int32_post_minloc(dst, src, count);
 		break;
 	}
 }
@@ -672,9 +672,9 @@ static inline void Core_int32_int32_post_minloc(int32_int32_t *dst, const uint32
  */
 static inline void Core_uint32_pre_all(uint32_t *dst, const uint32_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_uint32_pre_all(XMI_NOOP)
+	OPTIMIZED_uint32_pre_all(PAMI_NOOP)
 	default:
-		_xmi_core_uint32_pre_all(dst, src, count);
+		_pami_core_uint32_pre_all(dst, src, count);
 		break;
 	}
 }
@@ -691,9 +691,9 @@ static inline void Core_uint32_pre_all(uint32_t *dst, const uint32_t *src, int c
  */
 static inline void Core_uint32_post_all(uint32_t *dst, const uint32_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_uint32_post_all(XMI_NOOP)
+	OPTIMIZED_uint32_post_all(PAMI_NOOP)
 	default:
-		_xmi_core_uint32_post_all(dst, src, count);
+		_pami_core_uint32_post_all(dst, src, count);
 		break;
 	}
 }
@@ -712,7 +712,7 @@ static inline void Core_uint32_pre_min(uint32_t *dst, const uint32_t *src, int c
 	switch(1) {
 	OPTIMIZED_uint32_pre_min
 	default:
-		_xmi_core_uint32_pre_min(dst, src, count);
+		_pami_core_uint32_pre_min(dst, src, count);
 		break;
 	}
 }
@@ -731,7 +731,7 @@ static inline void Core_uint32_post_min(uint32_t *dst, const uint32_t *src, int 
 	switch(1) {
 	OPTIMIZED_uint32_post_min
 	default:
-		_xmi_core_uint32_post_min(dst, src, count);
+		_pami_core_uint32_post_min(dst, src, count);
 		break;
 	}
 }
@@ -748,9 +748,9 @@ static inline void Core_uint32_post_min(uint32_t *dst, const uint32_t *src, int 
  */
 static inline void Core_int64_pre_all(uint64_t *dst, const int64_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_int64_pre_all(XMI_NOOP)
+	OPTIMIZED_int64_pre_all(PAMI_NOOP)
 	default:
-		_xmi_core_int64_pre_all(dst, src, count);
+		_pami_core_int64_pre_all(dst, src, count);
 		break;
 	}
 }
@@ -767,9 +767,9 @@ static inline void Core_int64_pre_all(uint64_t *dst, const int64_t *src, int cou
  */
 static inline void Core_int64_post_all(int64_t *dst, const uint64_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_int64_post_all(XMI_NOOP)
+	OPTIMIZED_int64_post_all(PAMI_NOOP)
 	default:
-		_xmi_core_int64_post_all(dst, src, count);
+		_pami_core_int64_post_all(dst, src, count);
 		break;
 	}
 }
@@ -788,7 +788,7 @@ static inline void Core_int64_pre_min(uint64_t *dst, const int64_t *src, int cou
 	switch(1) {
 	OPTIMIZED_int64_pre_min
 	default:
-		_xmi_core_int64_pre_min(dst, src, count);
+		_pami_core_int64_pre_min(dst, src, count);
 		break;
 	}
 }
@@ -807,7 +807,7 @@ static inline void Core_int64_post_min(int64_t *dst, const uint64_t *src, int co
 	switch(1) {
 	OPTIMIZED_int64_post_min
 	default:
-		_xmi_core_int64_post_min(dst, src, count);
+		_pami_core_int64_post_min(dst, src, count);
 		break;
 	}
 }
@@ -824,9 +824,9 @@ static inline void Core_int64_post_min(int64_t *dst, const uint64_t *src, int co
  */
 static inline void Core_uint64_pre_all(uint64_t *dst, const uint64_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_uint64_pre_all(XMI_NOOP)
+	OPTIMIZED_uint64_pre_all(PAMI_NOOP)
 	default:
-		_xmi_core_uint64_pre_all(dst, src, count);
+		_pami_core_uint64_pre_all(dst, src, count);
 		break;
 	}
 }
@@ -843,9 +843,9 @@ static inline void Core_uint64_pre_all(uint64_t *dst, const uint64_t *src, int c
  */
 static inline void Core_uint64_post_all(uint64_t *dst, const uint64_t *src, int count) {
 	switch(1) {
-	OPTIMIZED_uint64_post_all(XMI_NOOP)
+	OPTIMIZED_uint64_post_all(PAMI_NOOP)
 	default:
-		_xmi_core_uint64_post_all(dst, src, count);
+		_pami_core_uint64_post_all(dst, src, count);
 		break;
 	}
 }
@@ -864,7 +864,7 @@ static inline void Core_uint64_pre_min(uint64_t *dst, const uint64_t *src, int c
 	switch(1) {
 	OPTIMIZED_uint64_pre_min
 	default:
-		_xmi_core_uint64_pre_min(dst, src, count);
+		_pami_core_uint64_pre_min(dst, src, count);
 		break;
 	}
 }
@@ -883,7 +883,7 @@ static inline void Core_uint64_post_min(uint64_t *dst, const uint64_t *src, int 
 	switch(1) {
 	OPTIMIZED_uint64_post_min
 	default:
-		_xmi_core_uint64_post_min(dst, src, count);
+		_pami_core_uint64_post_min(dst, src, count);
 		break;
 	}
 }
@@ -902,7 +902,7 @@ static inline void Core_fp32_pre_max(float *dst, const float *src, int count) {
 	switch(1) {
 	OPTIMIZED_fp32_pre_max
 	default:
-		_xmi_core_fp32_pre_max(dst, src, count);
+		_pami_core_fp32_pre_max(dst, src, count);
 		break;
 	}
 }
@@ -921,7 +921,7 @@ static inline void Core_fp32_post_max(float *dst, const float *src, int count) {
 	switch(1) {
 	OPTIMIZED_fp32_post_max
 	default:
-		_xmi_core_fp32_post_max(dst, src, count);
+		_pami_core_fp32_post_max(dst, src, count);
 		break;
 	}
 }
@@ -940,7 +940,7 @@ static inline void Core_fp32_int32_pre_maxloc(fp32_int32_t *dst, const fp32_int3
 	switch(1) {
 	OPTIMIZED_fp32_int32_pre_maxloc
 	default:
-		_xmi_core_fp32_int32_pre_maxloc(dst, src, count);
+		_pami_core_fp32_int32_pre_maxloc(dst, src, count);
 		break;
 	}
 }
@@ -959,7 +959,7 @@ static inline void Core_fp32_int32_post_maxloc(fp32_int32_t *dst, const fp32_int
 	switch(1) {
 	OPTIMIZED_fp32_int32_post_maxloc
 	default:
-		_xmi_core_fp32_int32_post_maxloc(dst, src, count);
+		_pami_core_fp32_int32_post_maxloc(dst, src, count);
 		break;
 	}
 }
@@ -978,7 +978,7 @@ static inline void Core_fp32_fp32_pre_maxloc(fp32_fp32_t *dst, const fp32_fp32_t
 	switch(1) {
 	OPTIMIZED_fp32_fp32_pre_maxloc
 	default:
-		_xmi_core_fp32_fp32_pre_maxloc(dst, src, count);
+		_pami_core_fp32_fp32_pre_maxloc(dst, src, count);
 		break;
 	}
 }
@@ -997,7 +997,7 @@ static inline void Core_fp32_fp32_post_maxloc(fp32_fp32_t *dst, const fp32_fp32_
 	switch(1) {
 	OPTIMIZED_fp32_fp32_post_maxloc
 	default:
-		_xmi_core_fp32_fp32_post_maxloc(dst, src, count);
+		_pami_core_fp32_fp32_post_maxloc(dst, src, count);
 		break;
 	}
 }
@@ -1016,7 +1016,7 @@ static inline void Core_fp32_pre_min(float *dst, const float *src, int count) {
 	switch(1) {
 	OPTIMIZED_fp32_pre_min
 	default:
-		_xmi_core_fp32_pre_min(dst, src, count);
+		_pami_core_fp32_pre_min(dst, src, count);
 		break;
 	}
 }
@@ -1035,7 +1035,7 @@ static inline void Core_fp32_post_min(float *dst, const float *src, int count) {
 	switch(1) {
 	OPTIMIZED_fp32_post_min
 	default:
-		_xmi_core_fp32_post_min(dst, src, count);
+		_pami_core_fp32_post_min(dst, src, count);
 		break;
 	}
 }
@@ -1054,7 +1054,7 @@ static inline void Core_fp32_int32_pre_minloc(fp32_int32_t *dst, const fp32_int3
 	switch(1) {
 	OPTIMIZED_fp32_int32_pre_minloc
 	default:
-		_xmi_core_fp32_int32_pre_minloc(dst, src, count);
+		_pami_core_fp32_int32_pre_minloc(dst, src, count);
 		break;
 	}
 }
@@ -1073,7 +1073,7 @@ static inline void Core_fp32_int32_post_minloc(fp32_int32_t *dst, const fp32_int
 	switch(1) {
 	OPTIMIZED_fp32_int32_post_minloc
 	default:
-		_xmi_core_fp32_int32_post_minloc(dst, src, count);
+		_pami_core_fp32_int32_post_minloc(dst, src, count);
 		break;
 	}
 }
@@ -1092,7 +1092,7 @@ static inline void Core_fp32_fp32_pre_minloc(fp32_fp32_t *dst, const fp32_fp32_t
 	switch(1) {
 	OPTIMIZED_fp32_fp32_pre_minloc
 	default:
-		_xmi_core_fp32_fp32_pre_minloc(dst, src, count);
+		_pami_core_fp32_fp32_pre_minloc(dst, src, count);
 		break;
 	}
 }
@@ -1111,7 +1111,7 @@ static inline void Core_fp32_fp32_post_minloc(fp32_fp32_t *dst, const fp32_fp32_
 	switch(1) {
 	OPTIMIZED_fp32_fp32_post_minloc
 	default:
-		_xmi_core_fp32_fp32_post_minloc(dst, src, count);
+		_pami_core_fp32_fp32_post_minloc(dst, src, count);
 		break;
 	}
 }
@@ -1130,7 +1130,7 @@ static inline void Core_fp64_pre_max(double *dst, const double *src, int count) 
 	switch(1) {
 	OPTIMIZED_fp64_pre_max
 	default:
-		_xmi_core_fp64_pre_max(dst, src, count);
+		_pami_core_fp64_pre_max(dst, src, count);
 		break;
 	}
 }
@@ -1149,7 +1149,7 @@ static inline void Core_fp64_post_max(double *dst, const double *src, int count)
 	switch(1) {
 	OPTIMIZED_fp64_post_max
 	default:
-		_xmi_core_fp64_post_max(dst, src, count);
+		_pami_core_fp64_post_max(dst, src, count);
 		break;
 	}
 }
@@ -1166,9 +1166,9 @@ static inline void Core_fp64_post_max(double *dst, const double *src, int count)
  */
 static inline void Core_fp64_pre_all(double *dst, const double *src, int count) {
 	switch(1) {
-	OPTIMIZED_fp64_pre_all(XMI_NOOP)
+	OPTIMIZED_fp64_pre_all(PAMI_NOOP)
 	default:
-		_xmi_core_fp64_pre_all(dst, src, count);
+		_pami_core_fp64_pre_all(dst, src, count);
 		break;
 	}
 }
@@ -1185,9 +1185,9 @@ static inline void Core_fp64_pre_all(double *dst, const double *src, int count) 
  */
 static inline void Core_fp64_post_all(double *dst, const double *src, int count) {
 	switch(1) {
-	OPTIMIZED_fp64_post_all(XMI_NOOP)
+	OPTIMIZED_fp64_post_all(PAMI_NOOP)
 	default:
-		_xmi_core_fp64_post_all(dst, src, count);
+		_pami_core_fp64_post_all(dst, src, count);
 		break;
 	}
 }
@@ -1206,7 +1206,7 @@ static inline void Core_fp64_int32_pre_maxloc(fp64_int32_t *dst, const fp64_int3
 	switch(1) {
 	OPTIMIZED_fp64_int32_pre_maxloc
 	default:
-		_xmi_core_fp64_int32_pre_maxloc(dst, src, count);
+		_pami_core_fp64_int32_pre_maxloc(dst, src, count);
 		break;
 	}
 }
@@ -1225,7 +1225,7 @@ static inline void Core_fp64_int32_post_maxloc(fp64_int32_t *dst, const fp64_int
 	switch(1) {
 	OPTIMIZED_fp64_int32_post_maxloc
 	default:
-		_xmi_core_fp64_int32_post_maxloc(dst, src, count);
+		_pami_core_fp64_int32_post_maxloc(dst, src, count);
 		break;
 	}
 }
@@ -1244,7 +1244,7 @@ static inline void Core_fp64_fp64_pre_maxloc(fp64_fp64_t *dst, const fp64_fp64_t
 	switch(1) {
 	OPTIMIZED_fp64_fp64_pre_maxloc
 	default:
-		_xmi_core_fp64_fp64_pre_maxloc(dst, src, count);
+		_pami_core_fp64_fp64_pre_maxloc(dst, src, count);
 		break;
 	}
 }
@@ -1263,7 +1263,7 @@ static inline void Core_fp64_fp64_post_maxloc(fp64_fp64_t *dst, const fp64_fp64_
 	switch(1) {
 	OPTIMIZED_fp64_fp64_post_maxloc
 	default:
-		_xmi_core_fp64_fp64_post_maxloc(dst, src, count);
+		_pami_core_fp64_fp64_post_maxloc(dst, src, count);
 		break;
 	}
 }
@@ -1282,7 +1282,7 @@ static inline void Core_fp64_pre_min(double *dst, const double *src, int count) 
 	switch(1) {
 	OPTIMIZED_fp64_pre_min
 	default:
-		_xmi_core_fp64_pre_min(dst, src, count);
+		_pami_core_fp64_pre_min(dst, src, count);
 		break;
 	}
 }
@@ -1301,7 +1301,7 @@ static inline void Core_fp64_post_min(double *dst, const double *src, int count)
 	switch(1) {
 	OPTIMIZED_fp64_post_min
 	default:
-		_xmi_core_fp64_post_min(dst, src, count);
+		_pami_core_fp64_post_min(dst, src, count);
 		break;
 	}
 }
@@ -1320,7 +1320,7 @@ static inline void Core_fp64_int32_pre_minloc(fp64_int32_t *dst, const fp64_int3
 	switch(1) {
 	OPTIMIZED_fp64_int32_pre_minloc
 	default:
-		_xmi_core_fp64_int32_pre_minloc(dst, src, count);
+		_pami_core_fp64_int32_pre_minloc(dst, src, count);
 		break;
 	}
 }
@@ -1339,7 +1339,7 @@ static inline void Core_fp64_int32_post_minloc(fp64_int32_t *dst, const fp64_int
 	switch(1) {
 	OPTIMIZED_fp64_int32_post_minloc
 	default:
-		_xmi_core_fp64_int32_post_minloc(dst, src, count);
+		_pami_core_fp64_int32_post_minloc(dst, src, count);
 		break;
 	}
 }
@@ -1358,7 +1358,7 @@ static inline void Core_fp64_fp64_pre_minloc(fp64_fp64_t *dst, const fp64_fp64_t
 	switch(1) {
 	OPTIMIZED_fp64_fp64_pre_minloc
 	default:
-		_xmi_core_fp64_fp64_pre_minloc(dst, src, count);
+		_pami_core_fp64_fp64_pre_minloc(dst, src, count);
 		break;
 	}
 }
@@ -1377,7 +1377,7 @@ static inline void Core_fp64_fp64_post_minloc(fp64_fp64_t *dst, const fp64_fp64_
 	switch(1) {
 	OPTIMIZED_fp64_fp64_post_minloc
 	default:
-		_xmi_core_fp64_fp64_post_minloc(dst, src, count);
+		_pami_core_fp64_fp64_post_minloc(dst, src, count);
 		break;
 	}
 }
@@ -1388,4 +1388,4 @@ static inline void Core_fp64_fp64_post_minloc(fp64_fp64_t *dst, const fp64_fp64_
 }; // extern "C"
 #endif
 
-#endif /* _xmi_bg_math_h_ */
+#endif /* _pami_bg_math_h_ */

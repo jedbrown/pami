@@ -17,9 +17,9 @@
 #include "math/bgp/collective_network/DblUtils.h"
 #include "math/bgp/collective_network/CNUtil.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"
-#include "math/bgp/collective_network/xmi_optibgmath.h"
+#include "math/bgp/collective_network/pami_optibgmath.h"
 
-void _xmi_core_fp64_pre_max_o(double *dst, const double *src, int count) {
+void _pami_core_fp64_pre_max_o(double *dst, const double *src, int count) {
   uint64_t *d=(uint64_t*)dst, *s=(uint64_t*)src;
   register int n=0;
   register unsigned long long d0, d1, d2, d3;
@@ -49,7 +49,7 @@ void _xmi_core_fp64_pre_max_o(double *dst, const double *src, int count) {
     }
 }
 
-void _xmi_core_fp64_post_max_o(double *dst, const double *src, int count) {
+void _pami_core_fp64_post_max_o(double *dst, const double *src, int count) {
   uint64_t *d=(uint64_t*)dst, *s=(uint64_t*)src;
   register int n=0;
   register unsigned long long d0, d1, d2, d3;
@@ -79,7 +79,7 @@ void _xmi_core_fp64_post_max_o(double *dst, const double *src, int count) {
     }
 }
 
-void _xmi_core_fp64_int32_pre_maxloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
+void _pami_core_fp64_int32_pre_maxloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
   register int n = 0;
   uint64_int32_t *d=(uint64_int32_t*)dst, *s=(uint64_int32_t*)src;
   for (n = 0; n < count; n++)
@@ -90,7 +90,7 @@ void _xmi_core_fp64_int32_pre_maxloc_o(fp64_int32_t *dst, const fp64_int32_t *sr
     }
 }
 
-void _xmi_core_fp64_int32_post_maxloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
+void _pami_core_fp64_int32_post_maxloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
   register int n = 0;
   uint64_int32_t *d=(uint64_int32_t*)dst, *s=(uint64_int32_t*)src;
   for (n = 0; n < count; n++)
@@ -100,7 +100,7 @@ void _xmi_core_fp64_int32_post_maxloc_o(fp64_int32_t *dst, const fp64_int32_t *s
     }
 }
 
-void _xmi_core_fp64_fp64_pre_maxloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
+void _pami_core_fp64_fp64_pre_maxloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
   register int n = 0;
   uint64_uint64_t *d=(uint64_uint64_t*)dst, *s=(uint64_uint64_t*)src;
   for (n = 0; n < count; n++)
@@ -110,7 +110,7 @@ void _xmi_core_fp64_fp64_pre_maxloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, 
     }
 }
 
-void _xmi_core_fp64_fp64_post_maxloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
+void _pami_core_fp64_fp64_post_maxloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
   register int n = 0;
   uint64_uint64_t *d=(uint64_uint64_t*)dst, *s=(uint64_uint64_t*)src;
   for (n = 0; n < count; n++)
@@ -120,7 +120,7 @@ void _xmi_core_fp64_fp64_post_maxloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src,
     }
 }
 
-void _xmi_core_fp64_pre_min_o(double *dst, const double *src, int count) {
+void _pami_core_fp64_pre_min_o(double *dst, const double *src, int count) {
   uint64_t *d=(uint64_t*)dst, *s=(uint64_t*)src;
   register int n=0;
   register unsigned long long d0, d1, d2, d3;
@@ -150,7 +150,7 @@ void _xmi_core_fp64_pre_min_o(double *dst, const double *src, int count) {
     }
 }
 
-void _xmi_core_fp64_post_min_o(double *dst, const double *src, int count) {
+void _pami_core_fp64_post_min_o(double *dst, const double *src, int count) {
   uint64_t *d=(uint64_t*)dst, *s=(uint64_t*)src;
   register int n=0;
   register unsigned long long d0, d1, d2, d3;
@@ -180,7 +180,7 @@ void _xmi_core_fp64_post_min_o(double *dst, const double *src, int count) {
     }
 }
 
-void _xmi_core_fp64_int32_pre_minloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
+void _pami_core_fp64_int32_pre_minloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
   register int n = 0;
   uint64_int32_t *d=(uint64_int32_t*)dst, *s=(uint64_int32_t*)src;
   for (n = 0; n < count; n++)
@@ -191,7 +191,7 @@ void _xmi_core_fp64_int32_pre_minloc_o(fp64_int32_t *dst, const fp64_int32_t *sr
     }
 }
 
-void _xmi_core_fp64_int32_post_minloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
+void _pami_core_fp64_int32_post_minloc_o(fp64_int32_t *dst, const fp64_int32_t *src, int count) {
   register int n = 0;
   uint64_int32_t *d=(uint64_int32_t*)dst, *s=(uint64_int32_t*)src;
   for (n = 0; n < count; n++)
@@ -201,7 +201,7 @@ void _xmi_core_fp64_int32_post_minloc_o(fp64_int32_t *dst, const fp64_int32_t *s
     }
 }
 
-void _xmi_core_fp64_fp64_pre_minloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
+void _pami_core_fp64_fp64_pre_minloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
   register int n = 0;
   uint64_uint64_t *d=(uint64_uint64_t*)dst, *s=(uint64_uint64_t*)src;
   for (n = 0; n < count; n++)
@@ -211,7 +211,7 @@ void _xmi_core_fp64_fp64_pre_minloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, 
     }
 }
 
-void _xmi_core_fp64_fp64_post_minloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
+void _pami_core_fp64_fp64_post_minloc_o(fp64_fp64_t *dst, const fp64_fp64_t *src, int count) {
   register int n = 0;
   uint64_uint64_t *d=(uint64_uint64_t*)dst, *s=(uint64_uint64_t*)src;
   for (n = 0; n < count; n++)

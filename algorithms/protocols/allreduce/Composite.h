@@ -45,7 +45,7 @@ namespace CCMI
     namespace Allreduce
     {
       // Forward declare prototype
-      extern void getReduceFunction(xmi_dt, xmi_op, unsigned,
+      extern void getReduceFunction(pami_dt, pami_op, unsigned,
                                     unsigned&, coremath&) __attribute__((noinline));
       //-- Composite
       /// \brief The Composite for the Allreduce (and reduce)
@@ -80,7 +80,7 @@ namespace CCMI
         /// \brief Client's callback to call when the allreduce has
         /// finished
         ///
-        xmi_event_function _myClientFunction;
+        pami_event_function _myClientFunction;
         void                * _myClientData;
       public:
         Composite () :
@@ -93,7 +93,7 @@ namespace CCMI
         Composite ( ConfigFlags                       flags,
                     CCMI::Executor::Composite      * barrier,
                     CollectiveProtocolFactory      * factory,
-                    XMI_Callback_t                   cb_done):
+                    PAMI_Callback_t                   cb_done):
 
         BaseComposite (factory),
         _doneCountdown(1),  // default to just a composite done needed
@@ -133,15 +133,15 @@ namespace CCMI
         /// have been added to the composite
         ///
         void initialize ( CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * allreduce,
-                          XMI_CollectiveRequest_t        * request,
+                          PAMI_CollectiveRequest_t        * request,
                           char                            * srcbuf,
                           char                            * dstbuf,
                           unsigned                          count,
-                          xmi_dt                           dtype,
-                          xmi_op                           op,
+                          pami_dt                           dtype,
+                          pami_op                           op,
                           int                               root,
                           unsigned                          pipelineWidth = 0,// none specified, calculate it
-                          xmi_event_function                cb_done = cb_compositeDone,
+                          pami_event_function                cb_done = cb_compositeDone,
                           void                            * cd = NULL
                         )
         {
@@ -161,7 +161,7 @@ namespace CCMI
                                                         sizeOfType, func);
 
             unsigned min_pwidth = MIN_PIPELINE_WIDTH;
-            if(dtype == XMI_DOUBLE && op == XMI_SUM)
+            if(dtype == PAMI_DOUBLE && op == PAMI_SUM)
               min_pwidth = MIN_PIPELINE_WIDTH_SUM2P;
 
             /* Select pipeline width.
@@ -211,14 +211,14 @@ namespace CCMI
         /// \brief At this level we only support single color
         /// collectives
         ///
-        virtual unsigned restart   ( XMI_CollectiveRequest_t  * request,
-                                     XMI_Callback_t           & cb_done,
-                                     xmi_consistency_t            consistency,
+        virtual unsigned restart   ( PAMI_CollectiveRequest_t  * request,
+                                     PAMI_Callback_t           & cb_done,
+                                     pami_consistency_t            consistency,
                                      char                      * srcbuf,
                                      char                      * dstbuf,
                                      size_t                      count,
-                                     xmi_dt                     dtype,
-                                     xmi_op                     op,
+                                     pami_dt                     dtype,
+                                     pami_op                     op,
                                      size_t                      root = (size_t)-1)
         {
           TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::restart()\n",this));
@@ -245,7 +245,7 @@ namespace CCMI
             startBarrier (consistency);
           }
 
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
         virtual void start()
@@ -263,7 +263,7 @@ namespace CCMI
                          (int)_myClientData));
           if(!_doneCountdown)  //allreduce done and (maybe) barrier done
           {
-            if(_myClientFunction) (*_myClientFunction) (NULL, _myClientData, XMI_SUCCESS);
+            if(_myClientFunction) (*_myClientFunction) (NULL, _myClientData, PAMI_SUCCESS);
             ((CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *) getExecutor(0))->getAllreduceState()->freeAllocations(_flags.reuse_storage_limit);
             TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::DONE() \n",
                            this));
@@ -279,7 +279,7 @@ namespace CCMI
         /// It means the is done, but the client done isn't called
         /// until both the composite and (optional) barrier are done.
         ///
-        static void cb_barrierDone(xmi_context_t context, void *me, xmi_result_t err)
+        static void cb_barrierDone(pami_context_t context, void *me, pami_result_t err)
         {
 
           TRACE_ADAPTOR((stderr,
@@ -304,7 +304,7 @@ namespace CCMI
         /// the client done isn't called until both the composite and
         /// (optional) barrier are done.
         ///
-        static void cb_compositeDone(xmi_context_t context, void *me, xmi_result_t err)
+        static void cb_compositeDone(pami_context_t context, void *me, pami_result_t err)
         {
           TRACE_ADAPTOR((stderr,
                          "<%p>Allreduce::Composite::cb_compositeDone()\n",
@@ -320,7 +320,7 @@ namespace CCMI
         /// \brief Setup and start the (optional) barrier.  It's done callback
         /// will start the [all]reduce.
         ///
-        void startBarrier(xmi_consistency_t             consistency)
+        void startBarrier(pami_consistency_t             consistency)
         {
           TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::startBarrier() barrier(%#X)\n",
                          this,(int)_barrier));

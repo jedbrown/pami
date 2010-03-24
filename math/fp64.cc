@@ -16,7 +16,7 @@
 #include "FloatUtil.h"
 #include "internal.h"
 
-void _xmi_core_fp64_max(double *dst, const double **srcs, int nsrc, int count) {
+void _pami_core_fp64_max(double *dst, const double **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(a):(b))
 
 #define TYPE double
@@ -25,7 +25,7 @@ void _xmi_core_fp64_max(double *dst, const double **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _xmi_core_fp64_min(double *dst, const double **srcs, int nsrc, int count) {
+void _pami_core_fp64_min(double *dst, const double **srcs, int nsrc, int count) {
 #define OP(a,b) (((a)>(b))?(b):(a))
 
 #define TYPE double
@@ -34,7 +34,7 @@ void _xmi_core_fp64_min(double *dst, const double **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _xmi_core_fp64_prod(double *dst, const double **srcs, int nsrc, int count) {
+void _pami_core_fp64_prod(double *dst, const double **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)*(b))
 
 #define TYPE double
@@ -43,7 +43,7 @@ void _xmi_core_fp64_prod(double *dst, const double **srcs, int nsrc, int count) 
 #undef OP
 }
 
-void _xmi_core_fp64_sum(double *dst, const double **srcs, int nsrc, int count) {
+void _pami_core_fp64_sum(double *dst, const double **srcs, int nsrc, int count) {
 #define OP(a,b) ((a)+(b))
 
 #define TYPE double
@@ -52,7 +52,7 @@ void _xmi_core_fp64_sum(double *dst, const double **srcs, int nsrc, int count) {
 #undef OP
 }
 
-void _xmi_core_fp64_int32_maxloc(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count) {
+void _pami_core_fp64_int32_maxloc(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count) {
 	register int n = 0, m, o;
 	for (n = 0; n < count; n++) {
 		m = 0;  // assume src0 > src1
@@ -67,7 +67,7 @@ void _xmi_core_fp64_int32_maxloc(fp64_int32_t *dst, const fp64_int32_t **srcs, i
 	}
 }
 
-void _xmi_core_fp64_fp64_maxloc(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count) {
+void _pami_core_fp64_fp64_maxloc(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count) {
 	register int n = 0, m, o;
 	for (n = 0; n < count; n++) {
 		m = 0;  // assume src0 > src1
@@ -82,7 +82,7 @@ void _xmi_core_fp64_fp64_maxloc(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int 
 	}
 }
 
-void _xmi_core_fp64_int32_minloc(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count) {
+void _pami_core_fp64_int32_minloc(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count) {
 	register int n = 0, m, o;
 	for (n = 0; n < count; n++) {
 		m = 0;  // assume src0 < src1
@@ -97,7 +97,7 @@ void _xmi_core_fp64_int32_minloc(fp64_int32_t *dst, const fp64_int32_t **srcs, i
 	}
 }
 
-void _xmi_core_fp64_fp64_minloc(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count) {
+void _pami_core_fp64_fp64_minloc(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count) {
 	register int n = 0, m, o;
 	for (n = 0; n < count; n++) {
 		m = 0;  // assume src0 < src1

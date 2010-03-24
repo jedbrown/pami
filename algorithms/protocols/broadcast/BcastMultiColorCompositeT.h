@@ -29,26 +29,26 @@ namespace CCMI
 
       BcastMultiColorCompositeT(Interfaces::NativeInterface              * mf,
 				T_Conn                                   * cmgr,
-				xmi_geometry_t                             g,
+				pami_geometry_t                             g,
 				void                                     * cmd,
-                                xmi_event_function                         fn,
+                                pami_event_function                         fn,
                                 void                                     * cookie):
 	Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
-        (   ((XMI_GEOMETRY_CLASS *)g)->comm(),
-	    (XMI::Topology*)((XMI_GEOMETRY_CLASS *)g)->getTopology(0),
+        (   ((PAMI_GEOMETRY_CLASS *)g)->comm(),
+	    (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(0),
 	    cmgr,
             fn,
             cookie,
 	    mf,
-	    ((xmi_xfer_t *)cmd)->cmd.xfer_broadcast.root,
-	    ((xmi_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
-	    ((xmi_xfer_t *)cmd)->cmd.xfer_broadcast.typecount )
+	    ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.root,
+	    ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
+	    ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount )
 	  {
 	    SyncBcastPost();
 
-	    XMI_GEOMETRY_CLASS *geometry = ((XMI_GEOMETRY_CLASS *)g);
+	    PAMI_GEOMETRY_CLASS *geometry = ((PAMI_GEOMETRY_CLASS *)g);
 	    CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
-	      geometry->getKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE1);
+	      geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
 	    barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
 	    //barrier->setConsistency (consistency);
 	    barrier->start();

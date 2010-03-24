@@ -29,16 +29,16 @@ namespace CCMI
       ///
       /// \brief choose if this protocol is supports the input geometry
       ///
-      bool true_analyze (XMI_GEOMETRY_CLASS *geometry)
+      bool true_analyze (PAMI_GEOMETRY_CLASS *geometry)
       {
         return true;
       }
-      inline bool global_analyze   (XMI_GEOMETRY_CLASS *geometry)
+      inline bool global_analyze   (PAMI_GEOMETRY_CLASS *geometry)
       {
         return(geometry->isGlobalContext());
       }
 
-      inline bool rectangle_analyze (XMI_GEOMETRY_CLASS *geometry)
+      inline bool rectangle_analyze (PAMI_GEOMETRY_CLASS *geometry)
       {
         return geometry->isRectangle();
       }
@@ -59,7 +59,7 @@ namespace CCMI
 
 
         /// \brief All protocols determine if a given geometry is supported
-        virtual bool Analyze(XMI_GEOMETRY_CLASS *grequest)
+        virtual bool Analyze(PAMI_GEOMETRY_CLASS *grequest)
         {
           CCMI_abort(); return 0;
         }
@@ -90,9 +90,9 @@ namespace CCMI
         virtual CCMI::Executor::Composite * generate
         (void                      * request_buf,
          size_t                      rsize,
-         XMI_Callback_t              cb_done,
-         xmi_consistency_t           consistency,
-         XMI_GEOMETRY_CLASS        * geometry,
+         PAMI_Callback_t              cb_done,
+         pami_consistency_t           consistency,
+         PAMI_GEOMETRY_CLASS        * geometry,
          unsigned                    root,
          char                      * src,
          unsigned                    bytes)=0;
@@ -124,21 +124,21 @@ namespace CCMI
         ///
         /// \brief async broadcast handler
         ///
-        xmi_dispatch_ambroadcast_fn _cb_async;
+        pami_dispatch_ambroadcast_fn _cb_async;
         ///
         /// \brief get geometry from comm id
         ///
-        xmi_mapidtogeometry_fn               _cb_geometry;
+        pami_mapidtogeometry_fn               _cb_geometry;
 
         ///
         /// \brief Callback for one-sided broadcasts
         ///
-         xmi_olddispatch_multicast_fn      _cb_head;
+         pami_olddispatch_multicast_fn      _cb_head;
 
         ///
         /// \brief Callback for two-sided broadcasts
         ///
-        xmi_olddispatch_multicast_fn      _cb_head_buffered;
+        pami_olddispatch_multicast_fn      _cb_head_buffered;
 
         bool                      _isBuffered;
 
@@ -157,8 +157,8 @@ namespace CCMI
          T_Sysdep                       * sd,
          T_ConnectionManager            * connmgr,
          unsigned                         nconn,
-         xmi_olddispatch_multicast_fn          cb_head = NULL,
-         xmi_olddispatch_multicast_fn          cb_head_buffered = NULL ) :
+         pami_olddispatch_multicast_fn          cb_head = NULL,
+         pami_olddispatch_multicast_fn          cb_head_buffered = NULL ) :
         _minterface (minterface), _connmgr(connmgr), _sd (sd),
         _cb_async(NULL), _cb_geometry(NULL), _cb_head(cb_head),
         _cb_head_buffered (cb_head_buffered), _isBuffered (true)
@@ -169,8 +169,8 @@ namespace CCMI
         /// \brief Utility functions
         ///
         void setAsyncInfo (bool                          is_buffered,
-                           xmi_dispatch_callback_fn   cb_async,
-                           xmi_mapidtogeometry_fn          cb_geometry)
+                           pami_dispatch_callback_fn   cb_async,
+                           pami_mapidtogeometry_fn          cb_geometry)
         {
           _isBuffered = is_buffered;
 

@@ -29,7 +29,7 @@
 #define TRACE_ERR(x)  //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Memory
   {
@@ -43,11 +43,11 @@ namespace XMI
           _size (0),
           _offset (0)
         {
-          const char   * shmemfile = "/unique-xmi-shmem-file";
+          const char   * shmemfile = "/unique-pami-shmem-file";
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
 
-          xmi_result_t result = XMI_ERROR;
+          pami_result_t result = PAMI_ERROR;
 
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
@@ -75,7 +75,7 @@ namespace XMI
                 _location = ptr;
                 _size     = n;
                 TRACE_ERR((stderr, "SharedMemoryManager() .. _location = %p, _size = %zd\n", _location, _size));
-                result = XMI_SUCCESS;
+                result = PAMI_SUCCESS;
                 return;
               }
             }
@@ -95,7 +95,7 @@ namespace XMI
           return;
         }
 
-        inline xmi_result_t memalign_impl (void   ** memptr,
+        inline pami_result_t memalign_impl (void   ** memptr,
                                            size_t    alignment,
                                            size_t    bytes)
         {
@@ -116,9 +116,9 @@ namespace XMI
             _offset += pad;
             *memptr =  (void *) ((size_t)_location + _offset);
             _offset += bytes;
-            return XMI_SUCCESS;
+            return PAMI_SUCCESS;
           }
-          return XMI_ERROR;
+          return PAMI_ERROR;
 
         }
 
@@ -131,4 +131,4 @@ namespace XMI
   };
 };
 #undef TRACE_ERR
-#endif // __xmi_components_memory_shmem_sharedmemorymanager_h__
+#endif // __pami_components_memory_shmem_sharedmemorymanager_h__

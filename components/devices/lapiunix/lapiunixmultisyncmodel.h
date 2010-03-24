@@ -14,11 +14,11 @@
 #ifndef __components_devices_lapiunix_lapiunixmultisyncmodel_h__
 #define __components_devices_lapiunix_lapiunixmultisyncmodel_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -29,21 +29,21 @@ namespace XMI
     public:
       static const size_t msync_model_state_bytes = sizeof(T_Message);
       static const size_t sizeof_msg              = sizeof(T_Message);
-      LAPIMultisyncModel (T_Device &device, xmi_result_t &status) :
+      LAPIMultisyncModel (T_Device &device, pami_result_t &status) :
         Interface::MultisyncModel<LAPIMultisyncModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>(device,status),
         _device(device)
         {
-          status = XMI_SUCCESS;
+          status = PAMI_SUCCESS;
         }
 
-      xmi_result_t postMultisync (uint8_t         (&state)[msync_model_state_bytes],
-                                  xmi_multisync_t *msync)
+      pami_result_t postMultisync (uint8_t         (&state)[msync_model_state_bytes],
+                                  pami_multisync_t *msync)
         {
-          xmi_result_t      rc     = XMI_SUCCESS;
+          pami_result_t      rc     = PAMI_SUCCESS;
 	  LAPIMsyncMessage *msg     = (LAPIMsyncMessage *) state;
-          XMI::Topology   *topo    = (XMI::Topology *)msync->participants;
-          xmi_task_t      *ranks_h = NULL;
-          xmi_task_t      *ranks   = NULL;
+          PAMI::Topology   *topo    = (PAMI::Topology *)msync->participants;
+          pami_task_t      *ranks_h = NULL;
+          pami_task_t      *ranks   = NULL;
           size_t           size    = topo->size();
           size_t          myidx    = topo->rank2Index(__global.mapping.task());
           topo->rankList(&ranks_h);
@@ -74,7 +74,7 @@ namespace XMI
 
       T_Device                     &_device;
       size_t                        _dispatch_id;
-      xmi_olddispatch_multicast_fn  _cb_async_head;
+      pami_olddispatch_multicast_fn  _cb_async_head;
       void                         *_async_arg;
     };
   };

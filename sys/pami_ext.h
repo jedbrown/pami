@@ -1,24 +1,24 @@
 /**
- * \file sys/xmi_ext.h
+ * \file sys/pami_ext.h
  * \brief platform-specific messaging interface
  */
-#ifndef __xmi_ext_h__
-#define __xmi_ext_h__
+#ifndef __pami_ext_h__
+#define __pami_ext_h__
 
-#ifndef XMI_EXT_ATTR
-#define XMI_EXT_ATTR 1000 /**< starting value for extended attributes */
+#ifndef PAMI_EXT_ATTR
+#define PAMI_EXT_ATTR 1000 /**< starting value for extended attributes */
 #endif
 
 typedef struct {
   int x; /**< X value */
   int y; /**< Y value */
   int z; /**< Z value */
-} xmi_coordinates_t;
+} pami_coordinates_t;
 
 typedef enum {
   /* Attribute                    Init / Query / Update    */
-  XMI_COORDINATES = XMI_EXT_ATTR, /** Q : xmi_coordinates_t: coordinates of this task */
-} xmi_attribute_ext_t;
+  PAMI_COORDINATES = PAMI_EXT_ATTR, /** Q : pami_coordinates_t: coordinates of this task */
+} pami_attribute_ext_t;
 
 
 
@@ -27,49 +27,49 @@ typedef enum {
    */
   typedef enum
   {
-    XMI_DEFAULT_NETWORK = 0, /**< Default network type. \b Guaranteed to work. */
-    XMI_N_TORUS_NETWORK,     /**< nD-Torus / nD-SMP network type.
+    PAMI_DEFAULT_NETWORK = 0, /**< Default network type. \b Guaranteed to work. */
+    PAMI_N_TORUS_NETWORK,     /**< nD-Torus / nD-SMP network type.
                               * mapping->torusDims() for torus dim,
                               * mapping->globalDims() for all (torus+SMP) dim.
                               */
-    XMI_SOCKET_NETWORK,      /**< Unix socket network type. */
-    XMI_SHMEM_NETWORK,       /**< local shared memory "network" for smp nodes. */
-    XMI_NETWORK_COUNT        /**< Number of network types defined. */
+    PAMI_SOCKET_NETWORK,      /**< Unix socket network type. */
+    PAMI_SHMEM_NETWORK,       /**< local shared memory "network" for smp nodes. */
+    PAMI_NETWORK_COUNT        /**< Number of network types defined. */
   }
-    xmi_network;
+    pami_network;
 
 /** \todo Remove this platform-specific #define */
-#define XMI_MAX_DIMS 7
-/* #define XMI_MAX_DIMS	4 */
+#define PAMI_MAX_DIMS 7
+/* #define PAMI_MAX_DIMS	4 */
 
   /**
    * \brief A structure to describe a network coordinate
    */
   typedef struct
   {
-    xmi_network network; /**< Network type for the coordinates */
+    pami_network network; /**< Network type for the coordinates */
     union
     {
       struct
       {
-        size_t coords[XMI_MAX_DIMS];
+        size_t coords[PAMI_MAX_DIMS];
       } n_torus;
       struct
       {
         int recv_fd;   /**< Receive file descriptor */
         int send_fd;   /**< Send file descriptor    */
-      } socket;   /**< XMI_SOCKET_NETWORK coordinates */
+      } socket;   /**< PAMI_SOCKET_NETWORK coordinates */
       struct
       {
         size_t rank;   /**< Global task id of process */
         size_t peer;   /**< Local task id of process */
-      } shmem;    /**< XMI_SHMEM_NETWORK coordinates */
+      } shmem;    /**< PAMI_SHMEM_NETWORK coordinates */
     } u;
-  } xmi_coord_t;
+  } pami_coord_t;
 
 
-  typedef xmi_quad_t xmi_pipeworkqueue_t[8];
-  typedef xmi_quad_t xmi_pipeworkqueue_ext_t[2];
+  typedef pami_quad_t pami_pipeworkqueue_t[8];
+  typedef pami_quad_t pami_pipeworkqueue_ext_t[2];
 
   /**
    * \brief Configure for Shared Circular Buffer variety.
@@ -81,7 +81,7 @@ typedef enum {
    * \param[out] wq	Opaque memory for PipeWorkQueue
    * \param[in] bufsize	Size of buffer to allocate
    */
-  void XMI_PipeWorkQueue_config_circ(xmi_pipeworkqueue_t *wq, size_t bufsize);
+  void PAMI_PipeWorkQueue_config_circ(pami_pipeworkqueue_t *wq, size_t bufsize);
 
   /**
    * \brief Configure for User-supplied Circular Buffer variety.
@@ -100,7 +100,7 @@ typedef enum {
    * \param[in] buffer		Buffer to use
    * \param[in] bufsize	Size of buffer
    */
-  void XMI_PipeWorkQueue_config_circ_usr(xmi_pipeworkqueue_t *wq, char *buffer, size_t bufsize);
+  void PAMI_PipeWorkQueue_config_circ_usr(pami_pipeworkqueue_t *wq, char *buffer, size_t bufsize);
 
   /**
    * \brief Configure for Memory (flat buffer) variety.
@@ -115,7 +115,7 @@ typedef enum {
    * \param[in] bufsize	Size of buffer
    * \param[in] bufinit	Amount of data initially in buffer
    */
-  void XMI_PipeWorkQueue_config_flat(xmi_pipeworkqueue_t *wq, char *buffer, size_t bufsize, size_t bufinit);
+  void PAMI_PipeWorkQueue_config_flat(pami_pipeworkqueue_t *wq, char *buffer, size_t bufsize, size_t bufinit);
 
   /**
    * \brief PROPOSAL: Configure for Non-Contig Memory (flat buffer) variety.
@@ -137,7 +137,7 @@ typedef enum {
    * \param[in] typecount      Number of repetitions of buffer units
    * \param[in] typeinit       Number of units initially in buffer
    */
-  void XMI_PipeWorkQueue_config_noncontig(xmi_pipeworkqueue_t *wq, char *buffer, xmi_type_t *type, size_t typecount, size_t typeinit);
+  void PAMI_PipeWorkQueue_config_noncontig(pami_pipeworkqueue_t *wq, char *buffer, pami_type_t *type, size_t typecount, size_t typeinit);
 
   /**
    * \brief Export
@@ -158,7 +158,7 @@ typedef enum {
    * \param[out] export        Opaque memory to export into
    * \return	success of the export operation
    */
-  xmi_result_t XMI_PipeWorkQueue_export(xmi_pipeworkqueue_t *wq, xmi_pipeworkqueue_ext_t *t_exp);
+  pami_result_t PAMI_PipeWorkQueue_export(pami_pipeworkqueue_t *wq, pami_pipeworkqueue_ext_t *t_exp);
 
   /**
    * \brief Import
@@ -179,7 +179,7 @@ typedef enum {
    * \param[out] wq           Opaque memory for new PipeWorkQueue
    * \return	success of the import operation
    */
-  xmi_result_t XMI_PipeWorkQueue_import(xmi_pipeworkqueue_ext_t *import, xmi_pipeworkqueue_t *wq);
+  pami_result_t PAMI_PipeWorkQueue_import(pami_pipeworkqueue_ext_t *import, pami_pipeworkqueue_t *wq);
 
   /**
    * \brief Clone constructor.
@@ -192,14 +192,14 @@ typedef enum {
    * \param[out] wq	Opaque memory for new PipeWorkQueue
    * \param[in] obj	old object, to be cloned
    */
-  void XMI_PipeWorkQueue_clone(xmi_pipeworkqueue_t *wq, xmi_pipeworkqueue_t *obj);
+  void PAMI_PipeWorkQueue_clone(pami_pipeworkqueue_t *wq, pami_pipeworkqueue_t *obj);
 
   /**
    * \brief Destructor
    *
    * \param[out] wq	Opaque memory for PipeWorkQueue
    */
-  void XMI_PipeWorkQueue_destroy(xmi_pipeworkqueue_t *wq);
+  void PAMI_PipeWorkQueue_destroy(pami_pipeworkqueue_t *wq);
 
   /**
    * \brief Reset this pipe work queue.
@@ -235,7 +235,7 @@ typedef enum {
    *
    * \param[out] wq	Opaque memory for PipeWorkQueue
    */
-  void XMI_PipeWorkQueue_reset(xmi_pipeworkqueue_t *wq);
+  void PAMI_PipeWorkQueue_reset(pami_pipeworkqueue_t *wq);
 
   /**
    * \brief Dump shared memory work queue statistics to stderr.
@@ -243,7 +243,7 @@ typedef enum {
    * \param[in] wq	Opaque memory for PipeWorkQueue
    * \param[in] prefix Optional character string to prefix.
    */
-  void XMI_PipeWorkQueue_dump(xmi_pipeworkqueue_t *wq, const char *prefix);
+  void PAMI_PipeWorkQueue_dump(pami_pipeworkqueue_t *wq, const char *prefix);
 
   /**
    * \brief register a wakeup for the consumer side of the PipeWorkQueue
@@ -258,7 +258,7 @@ typedef enum {
    * \param[in] wq	Opaque memory for PipeWorkQueue
    * \param[in] vec	Opaque wakeup vector parameter
    */
-  void XMI_PipeWorkQueue_setConsumerWakeup(xmi_pipeworkqueue_t *wq, void *vec);
+  void PAMI_PipeWorkQueue_setConsumerWakeup(pami_pipeworkqueue_t *wq, void *vec);
 
   /**
    * \brief register a wakeup for the producer side of the PipeWorkQueue
@@ -268,7 +268,7 @@ typedef enum {
    * \param[in] wq	Opaque memory for PipeWorkQueue
    * \param[in] vec	Opaque wakeup vector parameter
    */
-  void XMI_PipeWorkQueue_setProducerWakeup(xmi_pipeworkqueue_t *wq, void *vec);
+  void PAMI_PipeWorkQueue_setProducerWakeup(pami_pipeworkqueue_t *wq, void *vec);
 
   /**
    * \brief register user-defined info for producer
@@ -286,28 +286,28 @@ typedef enum {
    * \param[in] word1    First piece of info
    * \param[in] word2    Second piece of info
    */
-  void XMI_PipeWorkQueue_setProducerUserInfo(xmi_pipeworkqueue_t *wq, void *word1, void *word2);
+  void PAMI_PipeWorkQueue_setProducerUserInfo(pami_pipeworkqueue_t *wq, void *word1, void *word2);
 
   /**
    * \brief register user-defined info for consumer
    * \param[in] word1    First piece of info
    * \param[in] word2    Second piece of info
    */
-  void XMI_PipeWorkQueue_setConsumerUserInfo(xmi_pipeworkqueue_t *wq, void *word1, void *word2);
+  void PAMI_PipeWorkQueue_setConsumerUserInfo(pami_pipeworkqueue_t *wq, void *word1, void *word2);
 
   /**
    * \brief get user-defined info for producer
    * \param[in] word1    First piece of info
    * \param[in] word2    Second piece of info
    */
-  void XMI_PipeWorkQueue_getProducerUserInfo(xmi_pipeworkqueue_t *wq, void **word1, void **word2);
+  void PAMI_PipeWorkQueue_getProducerUserInfo(pami_pipeworkqueue_t *wq, void **word1, void **word2);
 
   /**
    * \brief get user-defined info for consumer
    * \param[in] word1    First piece of info
    * \param[in] word2    Second piece of info
    */
-  void XMI_PipeWorkQueue_getConsumerUserInfo(xmi_pipeworkqueue_t *wq, void **word1, void **word2);
+  void PAMI_PipeWorkQueue_getConsumerUserInfo(pami_pipeworkqueue_t *wq, void **word1, void **word2);
 
   /**
    * \brief Return the number of contiguous bytes that can be produced into this work queue.
@@ -321,7 +321,7 @@ typedef enum {
    * \param[in] wq	Opaque memory for PipeWorkQueue
    * \return Number of bytes that may be produced.
    */
-  size_t XMI_PipeWorkQueue_bytesAvailableToProduce(xmi_pipeworkqueue_t *wq);
+  size_t PAMI_PipeWorkQueue_bytesAvailableToProduce(pami_pipeworkqueue_t *wq);
 
   /**
    * \brief Return the number of contiguous bytes that can be consumed from this work queue.
@@ -338,7 +338,7 @@ typedef enum {
    * \param[in] wq	Opaque memory for PipeWorkQueue
    * \return Number of bytes that may be consumed.
    */
-  size_t XMI_PipeWorkQueue_bytesAvailableToConsume(xmi_pipeworkqueue_t *wq);
+  size_t PAMI_PipeWorkQueue_bytesAvailableToConsume(pami_pipeworkqueue_t *wq);
 
   /**
    * \brief raw accessor for total number of bytes produced since reset()
@@ -346,7 +346,7 @@ typedef enum {
    * \param[in] wq	Opaque memory for PipeWorkQueue
    * \return	number of bytes produced
    */
-  size_t XMI_PipeWorkQueue_getBytesProduced(xmi_pipeworkqueue_t *wq);
+  size_t PAMI_PipeWorkQueue_getBytesProduced(pami_pipeworkqueue_t *wq);
 
   /**
    * \brief raw accessor for total number of bytes consumed since reset()
@@ -354,7 +354,7 @@ typedef enum {
    * \param[in] wq	Opaque memory for PipeWorkQueue
    * \return	number of bytes consumed
    */
-  size_t XMI_PipeWorkQueue_getBytesConsumed(xmi_pipeworkqueue_t *wq);
+  size_t PAMI_PipeWorkQueue_getBytesConsumed(pami_pipeworkqueue_t *wq);
 
   /**
    * \brief current position for producing into buffer
@@ -362,7 +362,7 @@ typedef enum {
    * \param[in] wq	Opaque memory for PipeWorkQueue
    * \return	location in buffer to produce into
    */
-  char *XMI_PipeWorkQueue_bufferToProduce(xmi_pipeworkqueue_t *wq);
+  char *PAMI_PipeWorkQueue_bufferToProduce(pami_pipeworkqueue_t *wq);
 
   /**
    * \brief notify workqueue that bytes have been produced
@@ -370,7 +370,7 @@ typedef enum {
    * \param[in] wq	Opaque memory for PipeWorkQueue
    * \return	number of bytes that were produced
    */
-  void XMI_PipeWorkQueue_produceBytes(xmi_pipeworkqueue_t *wq, size_t bytes);
+  void PAMI_PipeWorkQueue_produceBytes(pami_pipeworkqueue_t *wq, size_t bytes);
 
   /**
    * \brief current position for consuming from buffer
@@ -378,7 +378,7 @@ typedef enum {
    * \param[in] wq	Opaque memory for PipeWorkQueue
    * \return	location in buffer to consume from
    */
-  char *XMI_PipeWorkQueue_bufferToConsume(xmi_pipeworkqueue_t *wq);
+  char *PAMI_PipeWorkQueue_bufferToConsume(pami_pipeworkqueue_t *wq);
 
   /**
    * \brief notify workqueue that bytes have been consumed
@@ -386,7 +386,7 @@ typedef enum {
    * \param[in] wq	Opaque memory for PipeWorkQueue
    * \return	number of bytes that were consumed
    */
-  void XMI_PipeWorkQueue_consumeBytes(xmi_pipeworkqueue_t *wq, size_t bytes);
+  void PAMI_PipeWorkQueue_consumeBytes(pami_pipeworkqueue_t *wq, size_t bytes);
 
   /**
    * \brief is workqueue ready for action
@@ -394,34 +394,34 @@ typedef enum {
    * \param[in] wq	Opaque memory for PipeWorkQueue
    * \return	boolean indicate workqueue readiness
    */
-  int XMI_PipeWorkQueue_available(xmi_pipeworkqueue_t *wq);
+  int PAMI_PipeWorkQueue_available(pami_pipeworkqueue_t *wq);
 
 
   /** \brief The various types a Topology can be */
   typedef enum {
-    XMI_EMPTY_TOPOLOGY = 0, /**< topology represents no (zero) tasks    */
-    XMI_SINGLE_TOPOLOGY,    /**< topology is for one task               */
-    XMI_RANGE_TOPOLOGY,     /**< topology is a simple range of tasks    */
-    XMI_LIST_TOPOLOGY,      /**< topology is an unordered list of tasks */
-    XMI_COORD_TOPOLOGY,     /**< topology is a rectangular segment
+    PAMI_EMPTY_TOPOLOGY = 0, /**< topology represents no (zero) tasks    */
+    PAMI_SINGLE_TOPOLOGY,    /**< topology is for one task               */
+    PAMI_RANGE_TOPOLOGY,     /**< topology is a simple range of tasks    */
+    PAMI_LIST_TOPOLOGY,      /**< topology is an unordered list of tasks */
+    PAMI_COORD_TOPOLOGY,     /**< topology is a rectangular segment
                                represented by coordinates               */
-    XMI_AXIAL_TOPOLOGY,     /**< topology is a axial neighborhood --
+    PAMI_AXIAL_TOPOLOGY,     /**< topology is a axial neighborhood --
                                represented by a rectangular seqment, a
                                reference task, and optional torus flags */
-    XMI_TOPOLOGY_COUNT
-  } xmi_topology_type_t;
+    PAMI_TOPOLOGY_COUNT
+  } pami_topology_type_t;
 
-  typedef xmi_quad_t xmi_topology_t[16];
+  typedef pami_quad_t pami_topology_t[16];
 
   /**
-   * \brief default constructor (XMI_EMPTY_TOPOLOGY)
+   * \brief default constructor (PAMI_EMPTY_TOPOLOGY)
    *
    * \param[out] topo	Opaque memory for topology
    */
-  void XMI_Topology_create(xmi_topology_t *topo);
+  void PAMI_Topology_create(pami_topology_t *topo);
 
   /**
-   * \brief rectangular segment with torus (XMI_COORD_TOPOLOGY)
+   * \brief rectangular segment with torus (PAMI_COORD_TOPOLOGY)
    *
    * Assumes no torus links if no 'tl' param.
    *
@@ -430,11 +430,11 @@ typedef enum {
    * \param[in] ur	upper-right coordinate
    * \param[in] tl	optional, torus links flags
    */
-  void XMI_Topology_create_rect(xmi_topology_t *topo,
-                                xmi_coord_t *ll, xmi_coord_t *ur, unsigned char *tl);
+  void PAMI_Topology_create_rect(pami_topology_t *topo,
+                                pami_coord_t *ll, pami_coord_t *ur, unsigned char *tl);
 
   /**
-   * \brief Axial topology (XMI_AXIAL_TOPOLOGY)
+   * \brief Axial topology (PAMI_AXIAL_TOPOLOGY)
    *
    * Assumes no torus links if 'tl' param = NULL.
    *
@@ -444,31 +444,31 @@ typedef enum {
    * \param[in] ref	coordinates of the reference task where axes cross.
    * \param[in] tl	optional, torus links flags
    */
-  void XMI_Topology_create_axial(xmi_topology_t *topo,
-                                 xmi_coord_t *ll,
-                                 xmi_coord_t *ur,
-                                 xmi_coord_t *ref,
+  void PAMI_Topology_create_axial(pami_topology_t *topo,
+                                 pami_coord_t *ll,
+                                 pami_coord_t *ur,
+                                 pami_coord_t *ref,
                                  unsigned char *tl);
 
   /**
-   * \brief single task constructor (XMI_SINGLE_TOPOLOGY)
+   * \brief single task constructor (PAMI_SINGLE_TOPOLOGY)
    *
    * \param[out] topo	Opaque memory for topology
    * \param[in] task	The task
    */
-  void XMI_Topology_create_task(xmi_topology_t *topo, xmi_task_t task);
+  void PAMI_Topology_create_task(pami_topology_t *topo, pami_task_t task);
 
   /**
-   * \brief task range constructor (XMI_RANGE_TOPOLOGY)
+   * \brief task range constructor (PAMI_RANGE_TOPOLOGY)
    *
    * \param[out] topo	Opaque memory for topology
    * \param[in] task0	first task in range
    * \param[in] taskn	last task in range
    */
-  void XMI_Topology_create_range(xmi_topology_t *topo, xmi_task_t task0, xmi_task_t taskn);
+  void PAMI_Topology_create_range(pami_topology_t *topo, pami_task_t task0, pami_task_t taskn);
 
   /**
-   * \brief task list constructor (XMI_LIST_TOPOLOGY)
+   * \brief task list constructor (PAMI_LIST_TOPOLOGY)
    *
    * caller must not free tasks[]!
    *
@@ -478,47 +478,47 @@ typedef enum {
    *
    * \todo create destructor to free list, or establish rules
    */
-  void XMI_Topology_create_list(xmi_topology_t *topo, xmi_task_t *tasks, size_t ntasks);
+  void PAMI_Topology_create_list(pami_topology_t *topo, pami_task_t *tasks, size_t ntasks);
 
   /**
    * \brief destructor
    *
-   * For XMI_LIST_TOPOLOGY, would free the tasks list array... ?
+   * For PAMI_LIST_TOPOLOGY, would free the tasks list array... ?
    *
    * \param[out] topo	Opaque memory for topology
    */
-  void XMI_Topology_destroy(xmi_topology_t *topo);
+  void PAMI_Topology_destroy(pami_topology_t *topo);
 
   /**
    * \brief accessor for size of a Topology object
    *
    * \param[in] topo	Opaque memory for topology
-   * \return	size of XMI::Topology
+   * \return	size of PAMI::Topology
    */
-  unsigned XMI_Topology_size_of(xmi_topology_t *topo);
+  unsigned PAMI_Topology_size_of(pami_topology_t *topo);
 
   /**
    * \brief number of tasks in topology
    * \param[in] topo	Opaque memory for topology
    * \return	number of tasks
    */
-  size_t XMI_Topology_size(xmi_topology_t *topo);
+  size_t PAMI_Topology_size(pami_topology_t *topo);
 
   /**
    * \brief type of topology
    * \param[out] topo	Opaque memory for topology
    * \return	topology type
    */
-  xmi_topology_type_t xmi_topology_type(xmi_topology_t *topo);
+  pami_topology_type_t pami_topology_type(pami_topology_t *topo);
 
   /**
    * \brief Nth task in topology
    *
    * \param[in] topo	Opaque memory for topology
    * \param[in] ix	Which task to select
-   * \return	Nth task or (xmi_task_t)-1 if does not exist
+   * \return	Nth task or (pami_task_t)-1 if does not exist
    */
-  xmi_task_t XMI_Topology_index2TaskID(xmi_topology_t *topo, size_t ix);
+  pami_task_t PAMI_Topology_index2TaskID(pami_topology_t *topo, size_t ix);
 
   /**
    * \brief determine index of task in topology
@@ -529,7 +529,7 @@ typedef enum {
    * \param[in] task	Which task to get index for
    * \return	index of task (task(ix) == task) or (size_t)-1
    */
-  size_t XMI_Topology_taskID2Index(xmi_topology_t *topo, xmi_task_t task);
+  size_t PAMI_Topology_taskID2Index(pami_topology_t *topo, pami_task_t task);
 
   /**
    * \brief return range
@@ -537,18 +537,18 @@ typedef enum {
    * \param[in] topo	Opaque memory for topology
    * \param[out] first	Where to put first task in range
    * \param[out] last	Where to put last task in range
-   * \return	XMI_SUCCESS, or XMI_UNIMPL if not a range topology
+   * \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a range topology
    */
-  xmi_result_t XMI_Topology_taskRange(xmi_topology_t *topo, xmi_task_t *first, xmi_task_t *last);
+  pami_result_t PAMI_Topology_taskRange(pami_topology_t *topo, pami_task_t *first, pami_task_t *last);
 
   /**
    * \brief return task list
    *
    * \param[in] topo	Opaque memory for topology
    * \param[out] list	pointer to list stored here
-   * \return	XMI_SUCCESS, or XMI_UNIMPL if not a list topology
+   * \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a list topology
    */
-  xmi_result_t XMI_Topology_taskList(xmi_topology_t *topo, xmi_task_t **list);
+  pami_result_t PAMI_Topology_taskList(pami_topology_t *topo, pami_task_t **list);
 
   /**
    * \brief return rectangular segment coordinates
@@ -560,10 +560,10 @@ typedef enum {
    * \param[out] ll	lower-left coord pointer storage
    * \param[out] ur	upper-right coord pointer storage
    * \param[out] tl	optional, torus links flags
-   * \return	XMI_SUCCESS, or XMI_UNIMPL if not a coord topology
+   * \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a coord topology
    */
-  xmi_result_t XMI_Topology_rectSeg(xmi_topology_t *topo,
-                                    xmi_coord_t *ll, xmi_coord_t *ur,
+  pami_result_t PAMI_Topology_rectSeg(pami_topology_t *topo,
+                                    pami_coord_t *ll, pami_coord_t *ur,
                                     unsigned char *tl);
 
   /**
@@ -572,14 +572,14 @@ typedef enum {
    * \param[in] topo	Opaque memory for topology
    * \return boolean indicating locality of tasks
    */
-  int XMI_Topology_isLocalToMe(xmi_topology_t *topo);
+  int PAMI_Topology_isLocalToMe(pami_topology_t *topo);
 
   /**
    * \brief is topology a rectangular segment
    * \param[in] topo	Opaque memory for topology
    * \return	boolean indicating rect seg topo
    */
-  int XMI_Topology_isRectSeg(xmi_topology_t *topo);
+  int PAMI_Topology_isRectSeg(pami_topology_t *topo);
 
   /**
    * \brief extract Nth dimensions from coord topology
@@ -590,7 +590,7 @@ typedef enum {
    * \param[out] cn	upper value for dim range
    * \param[out] tl	optional, torus link flag
    */
-  void XMI_Topology_getNthDims(xmi_topology_t *topo, unsigned n,
+  void PAMI_Topology_getNthDims(pami_topology_t *topo, unsigned n,
                                unsigned *c0, unsigned *cn, unsigned char *tl);
 
   /**
@@ -600,7 +600,7 @@ typedef enum {
    * \param[in] task	Task to test
    * \return	boolean indicating task is in topology
    */
-  int XMI_Topology_isTaskMember(xmi_topology_t *topo, xmi_task_t task);
+  int PAMI_Topology_isTaskMember(pami_topology_t *topo, pami_task_t task);
 
   /**
    * \brief is coordinate in topology
@@ -609,7 +609,7 @@ typedef enum {
    * \param[in] c0	Coord to test
    * \return	boolean indicating coord is a member of topology
    */
-  int XMI_Topology_isCoordMember(xmi_topology_t *topo, xmi_coord_t *c0);
+  int PAMI_Topology_isCoordMember(pami_topology_t *topo, pami_coord_t *c0);
 
   /**
    * \brief create topology of tasks local to self
@@ -617,7 +617,7 @@ typedef enum {
    * \param[out] _new	Where to build topology
    * \param[in] topo	Opaque memory for topology
    */
-  void XMI_Topology_sub_LocalToMe(xmi_topology_t *_new, xmi_topology_t *topo);
+  void PAMI_Topology_sub_LocalToMe(pami_topology_t *_new, pami_topology_t *topo);
 
   /**
    * \brief create topology from all Nth tasks globally
@@ -626,7 +626,7 @@ typedef enum {
    * \param[in] topo	Opaque memory for topology
    * \param[in] n	Which local task to select on each node
    */
-  void XMI_Topology_sub_NthGlobal(xmi_topology_t *_new, xmi_topology_t *topo, int n);
+  void PAMI_Topology_sub_NthGlobal(pami_topology_t *_new, pami_topology_t *topo, int n);
 
   /**
    * \brief reduce dimensions of topology (cube -> plane, etc)
@@ -640,7 +640,7 @@ typedef enum {
    * \param[in] topo	Opaque memory for topology
    * \param[in] fmt	how to reduce dimensions
    */
-  void XMI_Topology_sub_ReduceDims(xmi_topology_t *_new, xmi_topology_t *topo, xmi_coord_t *fmt);
+  void PAMI_Topology_sub_ReduceDims(pami_topology_t *_new, pami_topology_t *topo, pami_coord_t *fmt);
 
   /**
    * \brief Return list of tasks representing contents of topology
@@ -659,24 +659,24 @@ typedef enum {
    * \param[out] tasks	array where task list is placed
    * \param[out] ntasks	actual number of tasks put into array
    */
-  void XMI_Topology_getTaskList(xmi_topology_t *topo, size_t max, xmi_task_t *tasks, size_t *ntasks);
+  void PAMI_Topology_getTaskList(pami_topology_t *topo, size_t max, pami_task_t *tasks, size_t *ntasks);
 
   /**
    * \brief check if task range or list can be converted to rectangle
    *
    * Since a rectangular segment is consider the optimal state, no
-   * other analysis is done. A XMI_SINGLE_TOPOLOGY cannot be optimized,
+   * other analysis is done. A PAMI_SINGLE_TOPOLOGY cannot be optimized,
    * either. Optimization levels:
    *
-   * 	XMI_SINGLE_TOPOLOGY (most)
-   * 	XMI_COORD_TOPOLOGY
-   * 	XMI_RANGE_TOPOLOGY
-   * 	XMI_LIST_TOPOLOGY (least)
+   * 	PAMI_SINGLE_TOPOLOGY (most)
+   * 	PAMI_COORD_TOPOLOGY
+   * 	PAMI_RANGE_TOPOLOGY
+   * 	PAMI_LIST_TOPOLOGY (least)
    *
    * \param[in,out] topo	Opaque memory for topology
    * \return	'true' if topology was changed
    */
-  int XMI_Topology_analyze(xmi_topology_t *topo);
+  int PAMI_Topology_analyze(pami_topology_t *topo);
 
   /**
    * \brief check if topology can be converted to type
@@ -688,7 +688,7 @@ typedef enum {
    * \param[in] new_type	Topology type to try and convert into
    * \return	'true' if topology was changed
    */
-  int XMI_Topology_convert(xmi_topology_t *topo, xmi_topology_type_t new_type);
+  int PAMI_Topology_convert(pami_topology_t *topo, pami_topology_type_t new_type);
 
   /**
    * \brief produce the intersection of two topologies
@@ -699,7 +699,7 @@ typedef enum {
    * \param[in] topo	Opaque memory for topology
    * \param[in] other	The other topology
    */
-  void XMI_Topology_intersect(xmi_topology_t *_new, xmi_topology_t *topo, xmi_topology_t *other);
+  void PAMI_Topology_intersect(pami_topology_t *_new, pami_topology_t *topo, pami_topology_t *other);
 
   /**
    * \brief produce the difference of two topologies
@@ -710,7 +710,7 @@ typedef enum {
    * \param[in] topo	Opaque memory for topology
    * \param[in] other	The other topology
    */
-  void XMI_Topology_subtract(xmi_topology_t *_new, xmi_topology_t *topo, xmi_topology_t *other);
+  void PAMI_Topology_subtract(pami_topology_t *_new, pami_topology_t *topo, pami_topology_t *other);
 
 /**
  * \brief Multisend interfaces.
@@ -791,7 +791,7 @@ typedef enum {
    *				or -1 if no additional roles are used.
    * \return	success or failure
    */
-  xmi_result_t XMI_Multisend_getroles(xmi_context_t  context,
+  pami_result_t PAMI_Multisend_getroles(pami_context_t  context,
                                       size_t         dispatch,
                                       int           *numRoles,
                                       int           *replRole);
@@ -809,7 +809,7 @@ typedef enum {
     uint32_t local             : 1; /**< A local (to this task) multicast                        */
     uint32_t spanning          : 1; /**< A spanning (one task per local set) multicast           */
     uint32_t subtopology       : 1; /**< An arbitrary subtopology (use
-                                                  xmi_dispatch_hint_t.config field for topology) */
+                                                  pami_dispatch_hint_t.config field for topology) */
 
     /* The next 2 are mutually exclusive and may be used w/wo active_message enabled             */
     uint32_t all_sided         : 1; /**< All-sided multicast                                     */
@@ -821,7 +821,7 @@ typedef enum {
     uint32_t ring_wq           : 1; /**< Bogus hint to select WQRingBcastMdl                     */
 
     uint32_t reserved          :24; /**< Unused at this time                                     */
-  } xmi_multicast_hint_t;
+  } pami_multicast_hint_t;
 
   /**
    * \brief Recv callback for Multicast
@@ -842,23 +842,23 @@ typedef enum {
    * \param[out] cb_done    Completion callback to invoke when data received
    * \return   void
    */
-  typedef void (*xmi_dispatch_multicast_fn)(const xmi_quad_t        *msginfo,
+  typedef void (*pami_dispatch_multicast_fn)(const pami_quad_t        *msginfo,
                                             unsigned              msgcount,
                                             unsigned              connection_id,
                                             size_t                root,
                                             size_t                sndlen,
                                             void                 *clientdata,
                                             size_t               *rcvlen,
-                                            xmi_pipeworkqueue_t **rcvpwq,
-                                            xmi_callback_t       *cb_done);
+                                            pami_pipeworkqueue_t **rcvpwq,
+                                            pami_callback_t       *cb_done);
 
   /**
    * \brief The new structure to pass parameters for the multisend multicast operation.
    *
-   * The XMI_Multicast_t object is re-useable immediately, but objects referred to
+   * The PAMI_Multicast_t object is re-useable immediately, but objects referred to
    * (src, etc) cannot be re-used until cb_done.
    *
-   * client and context types should not be xmi_client_t and xmi_context_t,
+   * client and context types should not be pami_client_t and pami_context_t,
    * the implementations need offsets/index and can't access the opaque types
    * to get that because of circular dependencies.
    */
@@ -867,64 +867,64 @@ typedef enum {
     size_t               client;	   /**< client to operate within */
     size_t               context;	   /**< primary context to operate within */
     size_t               dispatch;         /**< Dispatch identifier */
-    xmi_callback_t       cb_done;          /**< Completion callback */
+    pami_callback_t       cb_done;          /**< Completion callback */
     unsigned             connection_id;    /**< A connection is a distinct stream of
                                               traffic. The connection id identifies the
                                               connection */
     unsigned             roles;            /**< bitmap of roles to perform */
     size_t               bytes;            /**< size of the message*/
-    xmi_pipeworkqueue_t *src;              /**< source buffer */
-    xmi_topology_t      *src_participants; /**< root */
-    xmi_pipeworkqueue_t *dst;              /**< dest buffer (ignored for one-sided) */
-    xmi_topology_t      *dst_participants; /**< destinations to multicast to*/
-    const xmi_quad_t    *msginfo;	       /**< A extra info field to be sent with the message.
+    pami_pipeworkqueue_t *src;              /**< source buffer */
+    pami_topology_t      *src_participants; /**< root */
+    pami_pipeworkqueue_t *dst;              /**< dest buffer (ignored for one-sided) */
+    pami_topology_t      *dst_participants; /**< destinations to multicast to*/
+    const pami_quad_t    *msginfo;	       /**< A extra info field to be sent with the message.
                                                   This might include information about
                                                   the data being sent, for one-sided. */
     unsigned            msgcount;          /**< info count*/
-  } xmi_multicast_t;
-  xmi_result_t XMI_Multicast(xmi_multicast_t *mcastinfo);
+  } pami_multicast_t;
+  pami_result_t PAMI_Multicast(pami_multicast_t *mcastinfo);
 
 
   /**  Deprecated Multicast:  To be deleted soon!!! */
   /**********************************************************************/
   typedef enum
   {
-    XMI_UNDEFINED_CONSISTENCY = -1,
-    XMI_RELAXED_CONSISTENCY,
-    XMI_MATCH_CONSISTENCY,
-    XMI_WEAK_CONSISTENCY,
-    XMI_CONSISTENCY_COUNT
-  } xmi_consistency_t;
+    PAMI_UNDEFINED_CONSISTENCY = -1,
+    PAMI_RELAXED_CONSISTENCY,
+    PAMI_MATCH_CONSISTENCY,
+    PAMI_WEAK_CONSISTENCY,
+    PAMI_CONSISTENCY_COUNT
+  } pami_consistency_t;
 
-#define  LINE_BCAST_MASK    (XMI_LINE_BCAST_XP|XMI_LINE_BCAST_XM|	\
-                             XMI_LINE_BCAST_YP|XMI_LINE_BCAST_YM|	\
-                             XMI_LINE_BCAST_ZP|XMI_LINE_BCAST_ZM)
+#define  LINE_BCAST_MASK    (PAMI_LINE_BCAST_XP|PAMI_LINE_BCAST_XM|	\
+                             PAMI_LINE_BCAST_YP|PAMI_LINE_BCAST_YM|	\
+                             PAMI_LINE_BCAST_ZP|PAMI_LINE_BCAST_ZM)
   typedef enum
   {
-    XMI_PT_TO_PT_SUBTASK           =  0,      /**< Send a pt-to-point message */
-    XMI_LINE_BCAST_XP              =  0x20,   /**< Bcast along x+ */
-    XMI_LINE_BCAST_XM              =  0x10,   /**< Bcast along x- */
-    XMI_LINE_BCAST_YP              =  0x08,   /**< Bcast along y+ */
-    XMI_LINE_BCAST_YM              =  0x04,   /**< Bcast along y- */
-    XMI_LINE_BCAST_ZP              =  0x02,   /**< Bcast along z+ */
-    XMI_LINE_BCAST_ZM              =  0x01,   /**< Bcast along z- */
-    XMI_COMBINE_SUBTASK            =  0x0100, /**< Combine the incoming message */
+    PAMI_PT_TO_PT_SUBTASK           =  0,      /**< Send a pt-to-point message */
+    PAMI_LINE_BCAST_XP              =  0x20,   /**< Bcast along x+ */
+    PAMI_LINE_BCAST_XM              =  0x10,   /**< Bcast along x- */
+    PAMI_LINE_BCAST_YP              =  0x08,   /**< Bcast along y+ */
+    PAMI_LINE_BCAST_YM              =  0x04,   /**< Bcast along y- */
+    PAMI_LINE_BCAST_ZP              =  0x02,   /**< Bcast along z+ */
+    PAMI_LINE_BCAST_ZM              =  0x01,   /**< Bcast along z- */
+    PAMI_COMBINE_SUBTASK            =  0x0100, /**< Combine the incoming message */
     /* with the local state */
-    XMI_GI_BARRIER                 =  0x0200,
-    XMI_LOCKBOX_BARRIER            =  0x0300,
-    XMI_TREE_BARRIER               =  0x0400,
-    XMI_TREE_BCAST                 =  0x0500,
-    XMI_TREE_ALLREDUCE             =  0x0600,
-    XMI_REDUCE_RECV_STORE          =  0x0700,
-    XMI_REDUCE_RECV_NOSTORE        =  0x0800,
-    XMI_BCAST_RECV_STORE           =  0x0900,
-    XMI_BCAST_RECV_NOSTORE         =  0x0a00,
-    XMI_LOCALCOPY                  =  0x0b00,
-    XMI_UNDEFINED_SUBTASK          =  (~LINE_BCAST_MASK),
-  } xmi_subtask_t;
+    PAMI_GI_BARRIER                 =  0x0200,
+    PAMI_LOCKBOX_BARRIER            =  0x0300,
+    PAMI_TREE_BARRIER               =  0x0400,
+    PAMI_TREE_BCAST                 =  0x0500,
+    PAMI_TREE_ALLREDUCE             =  0x0600,
+    PAMI_REDUCE_RECV_STORE          =  0x0700,
+    PAMI_REDUCE_RECV_NOSTORE        =  0x0800,
+    PAMI_BCAST_RECV_STORE           =  0x0900,
+    PAMI_BCAST_RECV_NOSTORE         =  0x0a00,
+    PAMI_LOCALCOPY                  =  0x0b00,
+    PAMI_UNDEFINED_SUBTASK          =  (~LINE_BCAST_MASK),
+  } pami_subtask_t;
 
 
-  typedef xmi_quad_t * (*xmi_olddispatch_multicast_fn) (const xmi_quad_t   * info,
+  typedef pami_quad_t * (*pami_olddispatch_multicast_fn) (const pami_quad_t   * info,
                                                         unsigned             count,
                                                         unsigned             peer,
                                                         unsigned             sndlen,
@@ -933,46 +933,46 @@ typedef enum {
                                                         unsigned           * rcvlen,
                                                         char              ** rcvbuf,
                                                         unsigned           * pipewidth,
-                                                        xmi_callback_t     * cb_done);
+                                                        pami_callback_t     * cb_done);
   typedef struct
   {
-    xmi_quad_t        * request;
-    xmi_callback_t      cb_done;
+    pami_quad_t        * request;
+    pami_callback_t      cb_done;
     unsigned            connection_id;
     unsigned            bytes;
     const char        * src;
     unsigned            ntasks;
     unsigned          * tasks;
-    xmi_subtask_t     * opcodes;
-    const xmi_quad_t  * msginfo;
+    pami_subtask_t     * opcodes;
+    const pami_quad_t  * msginfo;
     unsigned            count;
     unsigned            flags;
-    xmi_op              op;
-    xmi_dt              dt;
-  } xmi_oldmulticast_t;
+    pami_op              op;
+    pami_dt              dt;
+  } pami_oldmulticast_t;
 
   typedef struct
   {
-    xmi_quad_t        * request;
-    xmi_callback_t      cb_done;
+    pami_quad_t        * request;
+    pami_callback_t      cb_done;
     unsigned            connection_id;
     unsigned            bytes;
     char              * rcvbuf;
     unsigned            pipelineWidth;
-    xmi_subtask_t       opcode;
-    xmi_op              op;
-    xmi_dt              dt;
-  } xmi_oldmulticast_recv_t;
+    pami_subtask_t       opcode;
+    pami_op              op;
+    pami_dt              dt;
+  } pami_oldmulticast_recv_t;
 
 
-  typedef xmi_quad_t * (*xmi_olddispatch_manytomany_fn) (unsigned         conn_id,
+  typedef pami_quad_t * (*pami_olddispatch_manytomany_fn) (unsigned         conn_id,
                                                          void           * arg,
                                                          char          ** rcvbuf,
                                                          size_t        ** rcvdispls,
                                                          size_t        ** rcvlens,
                                                          size_t        ** rcvcounters,
                                                          size_t         * ntasks,
-                                                         xmi_callback_t * cb_done);
+                                                         pami_callback_t * cb_done);
 
 
   /**********************************************************************/
@@ -990,15 +990,15 @@ typedef enum {
    */
   typedef struct
   {
-    xmi_pipeworkqueue_t *buffer;       /**< Memory used for data (buffer)            */
-    xmi_topology_t      *participants; /**< Tasks that are vectored in buffer        */
+    pami_pipeworkqueue_t *buffer;       /**< Memory used for data (buffer)            */
+    pami_topology_t      *participants; /**< Tasks that are vectored in buffer        */
     size_t              *lengths;      /**< Array of lengths in buffer for each task */
     size_t              *offsets;      /**< Array of offsets in buffer for each task */
     size_t               num_vecs;     /**< The number of entries in
                                             "lengths" and "offsets".
                                             May be a flag: either "1"
                                             or participants->size(). */
-  } xmi_manytomanybuf_t;
+  } pami_manytomanybuf_t;
 
   /**
    * \brief Hints for manytomany
@@ -1011,7 +1011,7 @@ typedef enum {
     uint32_t global            : 1; /**< Force match ordering semantics                          */
     uint32_t local             : 1; /**< Assert that all sends will be synchronously received    */
     uint32_t reserved          :30; /**< Unused at this time                                     */
-  } xmi_manytomany_hint_t;
+  } pami_manytomany_hint_t;
   /**
    * \brief Callback for Manytomany Receive operations
    *
@@ -1031,19 +1031,19 @@ typedef enum {
    * \param[in] arg		Client Data
    * \param[in] conn_id		Instance ID
    * \param[in] metadata	Pointer to metadata, if any, in message header.
-   * \param[in] metacount	Number of xmi_quad_ts of metadata.
+   * \param[in] metacount	Number of pami_quad_ts of metadata.
    * \param[out] recv		Receive parameters for this connection (instance)
    * \param[out] myIndex	Index of Recv Task in the receive parameters.
    * \param[out] cb_done	Completion callback when message complete
    * \return	Request object opaque storage for message.
    */
-  typedef void (*xmi_dispatch_manytomany_fn)(void                 *arg,
+  typedef void (*pami_dispatch_manytomany_fn)(void                 *arg,
                                              unsigned              conn_id,
-                                             xmi_quad_t           *metadata,
+                                             pami_quad_t           *metadata,
                                              unsigned              metacount,
-                                             xmi_manytomanybuf_t **recv,
+                                             pami_manytomanybuf_t **recv,
                                              size_t               *myIndex,
-                                             xmi_callback_t       *cb_done);
+                                             pami_callback_t       *cb_done);
 
   /**
    * \brief Structure of parameters used to initiate a ManyToMany
@@ -1055,27 +1055,27 @@ typedef enum {
   {
     size_t               client;	     /**< client to operate within */
     size_t               context;	     /**< primary context to operate within */
-    xmi_callback_t       cb_done;	     /**< User's completion callback */
+    pami_callback_t       cb_done;	     /**< User's completion callback */
     unsigned             connection_id;      /**< differentiate data streams */
     unsigned             roles;              /**< bitmap of roles to perform */
     size_t              *taskIndex;	     /**< Index of send in recv parameters */
     size_t               num_index;          /**< Number of entries in "taskIndex".
                                                 should be multiple of send.participants->size()?
                                              */
-    xmi_manytomanybuf_t  send;               /**< send data parameters */
-    const xmi_quad_t    *metadata;	     /**< A extra info field to be sent with the message.
+    pami_manytomanybuf_t  send;               /**< send data parameters */
+    const pami_quad_t    *metadata;	     /**< A extra info field to be sent with the message.
                                                 This might include information about
                                                 the data being sent, for one-sided. */
     unsigned             metacount;	     /**< metadata count*/
-  } xmi_manytomany_t;
+  } pami_manytomany_t;
 
   /**
    * \brief Initiate a ManyToMany
    *
    * \param[in] m2minfo	Paramters for ManyToMany operation to be performed
-   * \return	XMI_SUCCESS or error code
+   * \return	PAMI_SUCCESS or error code
    */
-  xmi_result_t XMI_Manytomany(xmi_manytomany_t *m2minfo);
+  pami_result_t PAMI_Manytomany(pami_manytomany_t *m2minfo);
 
   /******************************************************************************
    *       Multisync Personalized synchronization/coordination
@@ -1093,7 +1093,7 @@ typedef enum {
     uint32_t global            : 1; /**< Force match ordering semantics                          */
     uint32_t local             : 1; /**< Assert that all sends will be synchronously received    */
     uint32_t reserved          :30; /**< Unused at this time                                     */
-  } xmi_multisync_hint_t;
+  } pami_multisync_hint_t;
 
   /**
    * \brief structure defining interface to Multisync
@@ -1102,11 +1102,11 @@ typedef enum {
   {
     size_t             client;	        /**< client to operate within */
     size_t             context;	        /**< primary context to operate within */
-    xmi_callback_t     cb_done;		/**< User's completion callback */
+    pami_callback_t     cb_done;		/**< User's completion callback */
     unsigned           connection_id;	/**< (remove?) differentiate data streams */
     unsigned           roles;		/**< bitmap of roles to perform */
-    xmi_topology_t    *participants;	/**< Tasks involved in synchronization */
-  } xmi_multisync_t;
+    pami_topology_t    *participants;	/**< Tasks involved in synchronization */
+  } pami_multisync_t;
   /**
    * \brief Barriers and the like.
    *
@@ -1114,9 +1114,9 @@ typedef enum {
    * distinction needed.
    *
    * \param[in] msyncinfo	Struct of all params needed to perform operation
-   * \return	XMI_SUCCESS or error codes
+   * \return	PAMI_SUCCESS or error codes
    */
-  xmi_result_t XMI_Multisync(xmi_multisync_t *msyncinfo);
+  pami_result_t PAMI_Multisync(pami_multisync_t *msyncinfo);
 
 
   /******************************************************************************
@@ -1141,25 +1141,25 @@ typedef enum {
     uint32_t global            : 1; /**< Force match ordering semantics                          */
     uint32_t local             : 1; /**< Assert that all sends will be synchronously received    */
     uint32_t reserved          :30; /**< Unused at this time                                     */
-  } xmi_multicombine_hint_t;
+  } pami_multicombine_hint_t;
 
   typedef struct
   {
     size_t               client;	      /**< client to operate within */
     size_t               context;	      /**< primary context to operate within */
-    xmi_callback_t       cb_done;             /**< User's completion callback */
+    pami_callback_t       cb_done;             /**< User's completion callback */
     unsigned             connection_id;    /**< A connection is a distinct stream of
                                               traffic. The connection id identifies the
                                               connection */
     unsigned             roles;		      /**< bitmap of roles to perform */
-    xmi_pipeworkqueue_t *data;		      /**< Data source */
-    xmi_topology_t      *data_participants;   /**< Tasks contributing data */
-    xmi_pipeworkqueue_t *results;	      /**< Results destination */
-    xmi_topology_t      *results_participants;/**< Tasks receiving results */
-    xmi_op               optor;		      /**< Operation to perform on data */
-    xmi_dt               dtype;		      /**< Datatype of elements */
+    pami_pipeworkqueue_t *data;		      /**< Data source */
+    pami_topology_t      *data_participants;   /**< Tasks contributing data */
+    pami_pipeworkqueue_t *results;	      /**< Results destination */
+    pami_topology_t      *results_participants;/**< Tasks receiving results */
+    pami_op               optor;		      /**< Operation to perform on data */
+    pami_dt               dtype;		      /**< Datatype of elements */
     size_t               count;		      /**< Number of elements */
-  } xmi_multicombine_t;
+  } pami_multicombine_t;
 
   /**
    * \brief Allreduce, Reduce, etc. (may include some specialized Broadcasts, too)
@@ -1172,35 +1172,35 @@ typedef enum {
    * All participants == {data_participants .U. results_participants}.
    *
    * \param[in] mcombineinfo	Struct of all params needed to perform operation
-   * \return	XMI_SUCCESS or error codes
+   * \return	PAMI_SUCCESS or error codes
    */
-  xmi_result_t XMI_Multicombine(xmi_multicombine_t *mcombineinfo);
+  pami_result_t PAMI_Multicombine(pami_multicombine_t *mcombineinfo);
 
   /*****************************************************************************/
   /**
-   * \defgroup datatype xmi non-contiguous datatype interface
+   * \defgroup datatype pami non-contiguous datatype interface
    *
    * Some brief documentation on active message stuff ...
    * \{
    */
   /*****************************************************************************/
 
-  extern int xmi_dt_shift[XMI_DT_COUNT];
+  extern int pami_dt_shift[PAMI_DT_COUNT];
 
 
-#define XMI_DISPATCH_EXTEND         xmi_dispatch_multicast_fn   multicast;  \
-                                    xmi_dispatch_manytomany_fn  manytomany;
+#define PAMI_DISPATCH_EXTEND         pami_dispatch_multicast_fn   multicast;  \
+                                    pami_dispatch_manytomany_fn  manytomany;
 
 
-#define XMI_DISPATCH_TYPE_EXTEND     XMI_MULTICAST,    /**< Multicast                   */ \
-                                     XMI_MULTISYNC,    /**< Multisync                   */ \
-                                     XMI_MULTICOMBINE, /**< Multicombine                */ \
-                                     XMI_MANYTOMANY,   /**< Manytomany                  */
+#define PAMI_DISPATCH_TYPE_EXTEND     PAMI_MULTICAST,    /**< Multicast                   */ \
+                                     PAMI_MULTISYNC,    /**< Multisync                   */ \
+                                     PAMI_MULTICOMBINE, /**< Multicombine                */ \
+                                     PAMI_MANYTOMANY,   /**< Manytomany                  */
 
-#define XMI_HINT_EXTEND        xmi_multicast_hint_t      multicast;     \
-                               xmi_multisync_hint_t      multisync;     \
-                               xmi_multicombine_hint_t   multicombine;  \
-                               xmi_manytomany_hint_t     manytomany;
+#define PAMI_HINT_EXTEND        pami_multicast_hint_t      multicast;     \
+                               pami_multisync_hint_t      multisync;     \
+                               pami_multicombine_hint_t   multicombine;  \
+                               pami_manytomany_hint_t     manytomany;
 
 
 

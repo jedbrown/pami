@@ -24,28 +24,28 @@
 #include "Topology.h"
 #include "Wtime.h"
 
-namespace XMI
+namespace PAMI
 {
-    class Global : public Interface::Global<XMI::Global>
+    class Global : public Interface::Global<PAMI::Global>
     {
       public:
 
         inline Global () :
-	  Interface::Global<XMI::Global>(),
+	  Interface::Global<PAMI::Global>(),
 	  mapping()
         {
 	  // Time gets its own clockMHz
-	  Interface::Global<XMI::Global>::time.init(0);
+	  Interface::Global<PAMI::Global>::time.init(0);
 	  {
 		size_t min=0, max=0;
 		mapping.init(min, max);
 #if 0
 
-		XMI::Topology::static_init(&mapping);
+		PAMI::Topology::static_init(&mapping);
 		if (mapping.size() == max - min + 1) {
-			new (&topology_global) XMI::Topology(min, max);
+			new (&topology_global) PAMI::Topology(min, max);
 		} else {
-			XMI_abortf("failed to build global-world topology %zd:: %zd..%zd", mapping.size(), min, max);
+			PAMI_abortf("failed to build global-world topology %zd:: %zd..%zd", mapping.size(), min, max);
 		}
 		topology_global.subTopologyLocalToMe(&topology_local);
 #endif
@@ -58,11 +58,11 @@ namespace XMI
 
       public:
 
-	XMI::Mapping		mapping;
+	PAMI::Mapping		mapping;
 
   };   // class Global
-};     // namespace XMI
+};     // namespace PAMI
 
-extern XMI::Global __global;
+extern PAMI::Global __global;
 
-#endif // __xmi_common_lapiunix_global_h__
+#endif // __pami_common_lapiunix_global_h__

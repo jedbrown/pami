@@ -20,31 +20,31 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-extern XMI::Global __global;
+extern PAMI::Global __global;
 
 #define DISPATCH_START 0x10
 
-namespace XMI
+namespace PAMI
 {
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   class BGQNativeInterface : public CCMI::Interfaces::NativeInterface
   {
     public:
-      inline BGQNativeInterface(T_Device &device, size_t clientid, xmi_context_t context, size_t context_id);
+      inline BGQNativeInterface(T_Device &device, size_t clientid, pami_context_t context, size_t context_id);
 
       /// \brief this call is called when the native interface is
       /// initialized to set the mcast dispatch
-      virtual inline xmi_result_t setDispatch (xmi_dispatch_callback_fn fn, void *cookie);
+      virtual inline pami_result_t setDispatch (pami_dispatch_callback_fn fn, void *cookie);
 
       /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterface)
-      virtual inline xmi_result_t multicast    (xmi_multicast_t    *);
-      virtual inline xmi_result_t multisync    (xmi_multisync_t    *);
-      virtual inline xmi_result_t multicombine (xmi_multicombine_t *);
+      virtual inline pami_result_t multicast    (pami_multicast_t    *);
+      virtual inline pami_result_t multisync    (pami_multisync_t    *);
+      virtual inline pami_result_t multicombine (pami_multicombine_t *);
 
       // Model-specific interfaces
-      inline xmi_result_t multicast    (uint8_t (&)[T_Mcast::sizeof_msg], xmi_multicast_t    *);
-      inline xmi_result_t multisync    (uint8_t (&)[T_Msync::sizeof_msg], xmi_multisync_t    *);
-      inline xmi_result_t multicombine (uint8_t (&)[T_Mcomb::sizeof_msg], xmi_multicombine_t *);
+      inline pami_result_t multicast    (uint8_t (&)[T_Mcast::sizeof_msg], pami_multicast_t    *);
+      inline pami_result_t multisync    (uint8_t (&)[T_Msync::sizeof_msg], pami_multisync_t    *);
+      inline pami_result_t multicombine (uint8_t (&)[T_Mcomb::sizeof_msg], pami_multicombine_t *);
 
       static const size_t multicast_sizeof_msg     = T_Mcast::sizeof_msg;
       static const size_t multisync_sizeof_msg     = T_Msync::sizeof_msg;
@@ -52,9 +52,9 @@ namespace XMI
 
     private:
       /// \brief NativeInterface done function - free allocation and call client's done
-      static void ni_client_done(xmi_context_t  context,
+      static void ni_client_done(pami_context_t  context,
                                  void          *rdata,
-                                 xmi_result_t   res);
+                                 pami_result_t   res);
 
       /// Allocation object to store state and user's callback
       class allocObj
@@ -67,21 +67,21 @@ namespace XMI
             uint8_t             _mcomb[T_Mcomb::sizeof_msg];
           } _state;
           BGQNativeInterface *_ni;
-          xmi_callback_t      _user_callback;
+          pami_callback_t      _user_callback;
       };
 
-      XMI::MemoryAllocator < sizeof(allocObj), 16 > _allocator;  // Allocator
+      PAMI::MemoryAllocator < sizeof(allocObj), 16 > _allocator;  // Allocator
 
-      xmi_result_t              _mcast_status;
-      xmi_result_t              _msync_status;
-      xmi_result_t              _mcomb_status;
+      pami_result_t              _mcast_status;
+      pami_result_t              _msync_status;
+      pami_result_t              _mcomb_status;
 
       T_Mcast                   _mcast;
       T_Msync                   _msync;
       T_Mcomb                   _mcomb;
 
       unsigned                  _dispatch;
-      xmi_context_t             _context;
+      pami_context_t             _context;
       size_t                    _clientid;
       size_t                    _contextid;
   }; // class BGQNativeInterface
@@ -92,15 +92,15 @@ namespace XMI
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::BGQNativeInterface(T_Device      &device,
                                                                               size_t         client_id,
-                                                                              xmi_context_t  context,
+                                                                              pami_context_t  context,
                                                                               size_t         context_id):
       CCMI::Interfaces::NativeInterface(__global.mapping.task(),
                                         __global.mapping.size()),
       _allocator(),
 
-      _mcast_status(XMI_SUCCESS),
-      _msync_status(XMI_SUCCESS),
-      _mcomb_status(XMI_SUCCESS),
+      _mcast_status(PAMI_SUCCESS),
+      _msync_status(PAMI_SUCCESS),
+      _mcomb_status(PAMI_SUCCESS),
 
       _mcast(device, _mcast_status),
       _msync(device, _msync_status),
@@ -114,15 +114,15 @@ namespace XMI
     TRACE_ERR((stderr, "<%p>%s %d %d %d\n", this, __PRETTY_FUNCTION__,
                _mcast_status, _msync_status, _mcomb_status));
 
-    XMI_assert(_mcast_status == XMI_SUCCESS);
-    XMI_assert(_msync_status == XMI_SUCCESS);
-    XMI_assert(_mcomb_status == XMI_SUCCESS);
+    PAMI_assert(_mcast_status == PAMI_SUCCESS);
+    PAMI_assert(_msync_status == PAMI_SUCCESS);
+    PAMI_assert(_mcomb_status == PAMI_SUCCESS);
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline void BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::ni_client_done(xmi_context_t  context,
+  inline void BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::ni_client_done(pami_context_t  context,
       void          *rdata,
-      xmi_result_t   res)
+      pami_result_t   res)
   {
     allocObj           *obj = (allocObj*)rdata;
     BGQNativeInterface *ni   = obj->_ni;
@@ -141,14 +141,14 @@ namespace XMI
 
   /// \brief this call is called when the native interface is initialized
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::setDispatch (xmi_dispatch_callback_fn fn, void *cookie)
+  inline pami_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::setDispatch (pami_dispatch_callback_fn fn, void *cookie)
   {
     static size_t dispatch = DISPATCH_START;
 
     TRACE_ERR((stderr, "<%p>BGQNativeInterface::setDispatch(%p, %p) id=%zd\n",
                this, fn.multicast,  cookie,  dispatch));
 
-    xmi_result_t result = _mcast.registerMcastRecvFunction(dispatch, fn.multicast, cookie);
+    pami_result_t result = _mcast.registerMcastRecvFunction(dispatch, fn.multicast, cookie);
 
     _dispatch = dispatch;
     dispatch ++;
@@ -156,7 +156,7 @@ namespace XMI
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicast (xmi_multicast_t *mcast)
+  inline pami_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicast (pami_multicast_t *mcast)
   {
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
@@ -166,7 +166,7 @@ namespace XMI
 
     //  \todo:  this copy will cause a latency hit, maybe we need to change postMultisync
     //          interface so we don't need to copy
-    xmi_multicast_t  m     = *mcast;
+    pami_multicast_t  m     = *mcast;
 
     m.dispatch =  _dispatch; // \todo ? Not really used in C++ objects?
     m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
@@ -182,7 +182,7 @@ namespace XMI
   // Multisync Code
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync    (xmi_multisync_t *msync)
+  inline pami_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync    (pami_multisync_t *msync)
   {
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
@@ -190,7 +190,7 @@ namespace XMI
     TRACE_ERR((stderr, "<%p>BGQNativeInterface::multisync(%p) %p\n",
                this, msync, req));
 
-    xmi_multisync_t  m     = *msync;
+    pami_multisync_t  m     = *msync;
 
     m.client   =  _clientid;
     m.context  =  _contextid;
@@ -198,12 +198,12 @@ namespace XMI
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
     _msync.postMultisync(req->_state._msync, &m);
-    return XMI_SUCCESS;
+    return PAMI_SUCCESS;
   }
 
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicombine (xmi_multicombine_t *mcomb)
+  inline pami_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicombine (pami_multicombine_t *mcomb)
   {
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
@@ -211,7 +211,7 @@ namespace XMI
     TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicombine(%p) %p\n",
                this, mcomb, req));
 
-    xmi_multicombine_t  m     = *mcomb;
+    pami_multicombine_t  m     = *mcomb;
 
     m.client   =  _clientid;
     m.context  =  _contextid;
@@ -223,8 +223,8 @@ namespace XMI
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t  BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicast (uint8_t (&state)[T_Mcast::sizeof_msg],
-      xmi_multicast_t *mcast)
+  inline pami_result_t  BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicast (uint8_t (&state)[T_Mcast::sizeof_msg],
+      pami_multicast_t *mcast)
   {
     TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicast(%p, %p)\n",
                this, &state, mcast));
@@ -234,8 +234,8 @@ namespace XMI
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t  BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],
-      xmi_multisync_t *msync)
+  inline pami_result_t  BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],
+      pami_multisync_t *msync)
   {
     TRACE_ERR((stderr, "<%p>BGQNativeInterface::multisync(%p, %p)\n",
                this, &state, msync));
@@ -244,8 +244,8 @@ namespace XMI
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline xmi_result_t  BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicombine (uint8_t (&state)[T_Mcomb::sizeof_msg],
-      xmi_multicombine_t *mcomb)
+  inline pami_result_t  BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicombine (uint8_t (&state)[T_Mcomb::sizeof_msg],
+      pami_multicombine_t *mcomb)
   {
     TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicombine(%p, %p)\n",
                this, &state, mcomb));

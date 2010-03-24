@@ -1,6 +1,6 @@
 ///
 /// \file common/bgq/Memregion.h
-/// \brief XMI BG/Q specific memregion implementation.
+/// \brief PAMI BG/Q specific memregion implementation.
 ///
 #ifndef __common_bgq_Memregion_h__
 #define __common_bgq_Memregion_h__
@@ -13,28 +13,28 @@
 #include "common/MemregionInterface.h"
 #include "util/common.h"
 
-namespace XMI
+namespace PAMI
 {
   class Memregion : public Interface::Memregion<Memregion>
   {
     public:
-      inline Memregion (xmi_context_t context) :
+      inline Memregion (pami_context_t context) :
           Interface::Memregion<Memregion> (context),
           _context (context)
       {
       }
 
-      inline xmi_result_t createMemregion_impl (size_t   * bytes_out,
+      inline pami_result_t createMemregion_impl (size_t   * bytes_out,
                                                 size_t     bytes_in,
                                                 void     * base,
                                                 uint64_t   options)
       {
-        XMI_assert(base != NULL);
+        PAMI_assert(base != NULL);
 
         // Determine the physical address of the source buffer.
         uint32_t rc;
         rc = Kernel_CreateMemoryRegion (&_memregion, base, bytes_in);
-        XMI_assert ( rc == 0 );
+        PAMI_assert ( rc == 0 );
 
         _offset = (uint64_t)base - (uint64_t)_memregion.BaseVa;
         fprintf(stderr, "DmaMemregionBgqCnk::createDmaMemregion_impl() .. base = %p, _memregion.BaseVa = %p, _offset = %zd\n", base, _memregion.BaseVa, _offset);
@@ -44,21 +44,21 @@ namespace XMI
         rc = Kernel_CreateGlobalMemoryRegion (&_memregion, &_globmemregion);
         printf("in create, my global va:%p\n", _globmemregion.BaseVa);
 
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
 
       }
 
-      inline xmi_result_t destroyMemregion_impl ()
+      inline pami_result_t destroyMemregion_impl ()
       {
-        return XMI_SUCCESS;;
+        return PAMI_SUCCESS;;
       }
 
-      inline xmi_result_t getInfo_impl (size_t  * bytes,
+      inline pami_result_t getInfo_impl (size_t  * bytes,
                                         void   ** base)
       {
         *bytes = _memregion.Bytes - _offset;
         *base  = (void *)((uint64_t)_memregion.BaseVa + _offset);
-        return XMI_SUCCESS;;
+        return PAMI_SUCCESS;;
       }
 
       inline void * getBaseVirtualAddress_impl ()
@@ -76,7 +76,7 @@ namespace XMI
         return (void *)((uint64_t)_globmemregion.BaseVa + _offset);
       }
 
-      inline xmi_result_t read_impl (size_t         local_offset,
+      inline pami_result_t read_impl (size_t         local_offset,
                                      Memregion * remote_memregion,
                                      size_t         remote_offset,
                                      size_t         bytes)
@@ -86,10 +86,10 @@ namespace XMI
         memcpy (local_vaddr, remote_vaddr, bytes);
         ppc_msync();
 
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
       }
 
-      inline xmi_result_t write_impl (size_t         local_offset,
+      inline pami_result_t write_impl (size_t         local_offset,
                                       Memregion * remote_memregion,
                                       size_t         remote_offset,
                                       size_t         bytes)
@@ -99,7 +99,7 @@ namespace XMI
         memcpy (remote_vaddr, local_vaddr, bytes);
         ppc_msync();
 
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
       }
 
       inline bool isSharedAddressReadSupported ()
@@ -120,10 +120,10 @@ namespace XMI
       Kernel_MemoryRegion_t _globmemregion; // Memory region associated with the buffer.
       size_t _offset;
 
-      xmi_context_t _context;
+      pami_context_t _context;
 
-  }; // end XMI::Memregion::Memregion
-}; // end namespace XMI
+  }; // end PAMI::Memregion::Memregion
+}; // end namespace PAMI
 
 #endif // __components_memregion_bgq_bgqmemregion_h__
 

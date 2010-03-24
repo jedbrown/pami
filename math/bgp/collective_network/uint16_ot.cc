@@ -11,12 +11,12 @@
  * \brief Optimized math routines for unsigned 16 bit integer operations on
  *        the ppc 450 dual fpu architecture.
  */
-#include "xmi_bg_math.h"
+#include "pami_bg_math.h"
 #include "util/common.h"
 //#include "ppc450d/internal_o.h"
 
 #ifdef NOT_USED
-static void _xmi_core_uint16_conv_o(uint16_t *dst, const uint16_t *src, int count) {
+static void _pami_core_uint16_conv_o(uint16_t *dst, const uint16_t *src, int count) {
 
   uint16_t *dp = dst;
   const uint16_t *sp = src;
@@ -92,7 +92,7 @@ static void _xmi_core_uint16_conv_o(uint16_t *dst, const uint16_t *src, int coun
   return;
 }
 
-static void _xmi_core_uint16_conv_not_o(uint16_t *dst, const uint16_t *src, int count) {
+static void _pami_core_uint16_conv_not_o(uint16_t *dst, const uint16_t *src, int count) {
 
   uint16_t *dp = dst;
   const uint16_t *sp = src;
@@ -186,7 +186,7 @@ static void _xmi_core_uint16_conv_not_o(uint16_t *dst, const uint16_t *src, int 
 }
 #endif /* NOT_USED */
 
-static void _xmi_core_uint16_not_o(uint16_t *dst, const uint16_t *src, int count) {
+static void _pami_core_uint16_not_o(uint16_t *dst, const uint16_t *src, int count) {
 
   uint16_t *dp = (uint16_t *)dst;
   uint16_t *sp = (uint16_t *)src;
@@ -197,13 +197,13 @@ static void _xmi_core_uint16_not_o(uint16_t *dst, const uint16_t *src, int count
     dp++;
   }
 
-  _xmi_core_uint32_not_o((uint32_t *)dp, (const uint32_t *)sp, count>>1);
+  _pami_core_uint32_not_o((uint32_t *)dp, (const uint32_t *)sp, count>>1);
 }
 
-void _xmi_core_uint16_pre_min_o(uint16_t *dst, const uint16_t *src, int count) {
-  _xmi_core_uint16_not_o(dst, src, count);
+void _pami_core_uint16_pre_min_o(uint16_t *dst, const uint16_t *src, int count) {
+  _pami_core_uint16_not_o(dst, src, count);
 }
 
-void _xmi_core_uint16_post_min_o(uint16_t *dst, const uint16_t *src, int count) {
-  _xmi_core_uint16_not_o(dst, src, count);
+void _pami_core_uint16_post_min_o(uint16_t *dst, const uint16_t *src, int count) {
+  _pami_core_uint16_not_o(dst, src, count);
 }

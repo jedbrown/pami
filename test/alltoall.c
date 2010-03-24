@@ -17,7 +17,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 
 //#define TRACE(x) printf x;fflush(stdout);
@@ -83,38 +83,38 @@ static double timer()
 }
 
 
-void cb_barrier (xmi_context_t ctxt, void * clientdata, xmi_result_t err)
+void cb_barrier (pami_context_t ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;
 }
 
-void cb_alltoallv (xmi_context_t ctxt, void * clientdata, xmi_result_t res)
+void cb_alltoallv (pami_context_t ctxt, void * clientdata, pami_result_t res)
 {
   int * active = (int *) clientdata;
-  TRACE(("%d: cb_alltoallv active:%d(%p)\n",XMI_Rank(),*active,active));
+  TRACE(("%d: cb_alltoallv active:%d(%p)\n",PAMI_Rank(),*active,active));
   (*active)--;
 }
 
 
-void _barrier (xmi_context_t context, xmi_xfer_t *barrier)
+void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
   _g_barrier_active++;
-  xmi_result_t result;
-  result = XMI_Collective(context, (xmi_xfer_t*)barrier);
-  if (result != XMI_SUCCESS)
+  pami_result_t result;
+  result = PAMI_Collective(context, (pami_xfer_t*)barrier);
+  if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
       exit(1);
     }
   while (_g_barrier_active)
-    result = XMI_Context_advance (context, 1);
+    result = PAMI_Context_advance (context, 1);
 
 }
 
 
-void _alltoallv (xmi_context_t    context,
-                 xmi_xfer_t *xfer,
+void _alltoallv (pami_context_t    context,
+                 pami_xfer_t *xfer,
                  char            *sndbuf,
                  size_t          *sndlens,
                  size_t          *sdispls,
@@ -122,57 +122,57 @@ void _alltoallv (xmi_context_t    context,
                  size_t          *rcvlens,
                  size_t          *rdispls )
 {
-  xmi_result_t result;
+  pami_result_t result;
   _g_alltoallv_active++;
   xfer->cmd.xfer_alltoallv.sndbuf        = sndbuf;
-  xfer->cmd.xfer_alltoallv.stype         = XMI_BYTE;
+  xfer->cmd.xfer_alltoallv.stype         = PAMI_BYTE;
   xfer->cmd.xfer_alltoallv.stypecounts   = sndlens;
   xfer->cmd.xfer_alltoallv.sdispls       = sdispls;
   xfer->cmd.xfer_alltoallv.rcvbuf        = rcvbuf;
-  xfer->cmd.xfer_alltoallv.rtype         = XMI_BYTE;
+  xfer->cmd.xfer_alltoallv.rtype         = PAMI_BYTE;
   xfer->cmd.xfer_alltoallv.rtypecounts   = rcvlens;
   xfer->cmd.xfer_alltoallv.rdispls       = rdispls;
-  result = XMI_Collective (NULL, (xmi_xfer_t*)xfer);
+  result = PAMI_Collective (NULL, (pami_xfer_t*)xfer);
   while (_g_alltoallv_active)
-    result = XMI_Context_advance (context, 1);
+    result = PAMI_Context_advance (context, 1);
 }
 
 
 int main(int argc, char*argv[])
 {
-  xmi_client_t  client;
-  xmi_context_t context;
-  xmi_result_t  result = XMI_ERROR;
+  pami_client_t  client;
+  pami_context_t context;
+  pami_result_t  result = PAMI_ERROR;
   char          cl_string[] = "TEST";
   double ti, tf, usec;
-  result = XMI_Client_initialize (cl_string, &client);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Client_initialize (cl_string, &client);
+  if (result != PAMI_SUCCESS)
       {
-        fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
+        fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
         return 1;
       }
 
-	{ size_t _n = 1; result = XMI_Context_createv(client, NULL, 0, &context, _n); }
-  if (result != XMI_SUCCESS)
+	{ size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
+  if (result != PAMI_SUCCESS)
       {
-        fprintf (stderr, "Error. Unable to create xmi context. result = %d\n", result);
+        fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
         return 1;
       }
 
 
-  xmi_configuration_t configuration;
-  configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query(client, &configuration);
-  if (result != XMI_SUCCESS)
+  pami_configuration_t configuration;
+  configuration.name = PAMI_TASK_ID;
+  result = PAMI_Configuration_query(client, &configuration);
+  if (result != PAMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
         return 1;
       }
   size_t task_id = configuration.value.intval;
 
-  configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query(client, &configuration);
-  if (result != XMI_SUCCESS)
+  configuration.name = PAMI_NUM_TASKS;
+  result = PAMI_Configuration_query(client, &configuration);
+  if (result != PAMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
         return 1;
@@ -180,22 +180,22 @@ int main(int argc, char*argv[])
   size_t sz = configuration.value.intval;
 
 
-  xmi_geometry_t  world_geometry;
+  pami_geometry_t  world_geometry;
 
-  result = XMI_Geometry_world (client, &world_geometry);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Geometry_world (client, &world_geometry);
+  if (result != PAMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
         return 1;
       }
 
-  xmi_algorithm_t *algorithm=NULL;
+  pami_algorithm_t *algorithm=NULL;
   int num_algorithm[2] = {0};
-  result = XMI_Geometry_algorithms_num(context,
+  result = PAMI_Geometry_algorithms_num(context,
                                        world_geometry,
-                                       XMI_XFER_BARRIER,
+                                       PAMI_XFER_BARRIER,
                                        num_algorithm);
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr,
              "Error. Unable to query barrier algorithm. result = %d\n",
@@ -205,13 +205,13 @@ int main(int argc, char*argv[])
 
   if (num_algorithm[0])
   {
-    algorithm = (xmi_algorithm_t*)
-                malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
-    result = XMI_Geometry_algorithms_info(context,
+    algorithm = (pami_algorithm_t*)
+                malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
+    result = PAMI_Geometry_algorithms_info(context,
                                           world_geometry,
-                                          XMI_XFER_BARRIER,
+                                          PAMI_XFER_BARRIER,
                                           algorithm,
-                                          (xmi_metadata_t*)NULL,
+                                          (pami_metadata_t*)NULL,
                                           num_algorithm[0],
                                           NULL,
                                           NULL,
@@ -220,14 +220,14 @@ int main(int argc, char*argv[])
   }
 
 
-  xmi_algorithm_t *alltoallvalgorithm=NULL;
+  pami_algorithm_t *alltoallvalgorithm=NULL;
   int             alltoallvnum_algorithm[2];
-  result = XMI_Geometry_algorithms_num(context,
+  result = PAMI_Geometry_algorithms_num(context,
                                        world_geometry,
-                                       XMI_XFER_ALLTOALLV,
+                                       PAMI_XFER_ALLTOALLV,
                                        alltoallvnum_algorithm);
 
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to query alltoallv algorithm. result = %d\n", result);
     return 1;
@@ -235,13 +235,13 @@ int main(int argc, char*argv[])
 
   if (num_algorithm[0])
   {
-    alltoallvalgorithm = (xmi_algorithm_t*)
-      malloc(sizeof(xmi_algorithm_t) * num_algorithm[0]);
-    result = XMI_Geometry_algorithms_info(context,
+    alltoallvalgorithm = (pami_algorithm_t*)
+      malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
+    result = PAMI_Geometry_algorithms_info(context,
                                           world_geometry,
-                                          XMI_XFER_ALLTOALLV,
+                                          PAMI_XFER_ALLTOALLV,
                                           alltoallvalgorithm,
-                                          (xmi_metadata_t*)NULL,
+                                          (pami_metadata_t*)NULL,
                                           alltoallvnum_algorithm[0],
                                           NULL,
                                           NULL,
@@ -251,12 +251,12 @@ int main(int argc, char*argv[])
 
   assert ( sz < MAX_COMM_SIZE );
 
-  xmi_xfer_t barrier;
+  pami_xfer_t barrier;
   barrier.cb_done   = cb_barrier;
   barrier.cookie    = (void*)&_g_barrier_active;
   barrier.algorithm = algorithm[0];
 
-  xmi_xfer_t alltoallv;
+  pami_xfer_t alltoallv;
   alltoallv.cb_done    = cb_alltoallv;
   alltoallv.cookie     = (void*)&_g_alltoallv_active;
   alltoallv.algorithm  = alltoallvalgorithm[0];
@@ -317,17 +317,17 @@ int main(int argc, char*argv[])
 	      }
       }
 
-  result = XMI_Context_destroy (context);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Context_destroy (context);
+  if (result != PAMI_SUCCESS)
       {
-        fprintf (stderr, "Error. Unable to destroy xmi context. result = %d\n", result);
+        fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
         return 1;
       }
 
-  result = XMI_Client_finalize (client);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Client_finalize (client);
+  if (result != PAMI_SUCCESS)
       {
-        fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+        fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
         return 1;
       }
 

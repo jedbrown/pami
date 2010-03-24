@@ -60,13 +60,13 @@ void Type<size_t>::copy (size_t * dst, size_t * src)
 #if 0
 template <>
 template <unsigned N>
-void Type<xmi_quad_t>::copy (xmi_quad_t * dst, xmi_quad_t * src)
+void Type<pami_quad_t>::copy (pami_quad_t * dst, pami_quad_t * src)
 {
   static const unsigned PWIDTH = 3;
 
-  register unsigned i16 = sizeof(xmi_quad_t);
-  register void * d = (void *)(((size_t)dst) - sizeof(xmi_quad_t));
-  register void * s = (void *)(((size_t)src) - sizeof(xmi_quad_t));
+  register unsigned i16 = sizeof(pami_quad_t);
+  register void * d = (void *)(((size_t)dst) - sizeof(pami_quad_t));
+  register void * s = (void *)(((size_t)src) - sizeof(pami_quad_t));
 
   register double r[9];
   unsigned ld = 0;
@@ -143,4 +143,4 @@ void Type<xmi_quad_t>::copy (xmi_quad_t * dst, xmi_quad_t * src)
 }
 #endif
 
-#endif // __xmi_arch_ppc450d_h__
+#endif // __pami_arch_ppc450d_h__

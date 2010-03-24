@@ -14,11 +14,11 @@
 #ifndef __components_devices_mpi_mpimulticastmodel_h__
 #define __components_devices_mpi_mpimulticastmodel_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "components/devices/MulticastModel.h"
 #include "components/devices/mpi/mpimessage.h"
 
-namespace XMI
+namespace PAMI
 {
     namespace Device
     {
@@ -32,38 +32,38 @@ namespace XMI
       static const bool   is_active_message       = true;
 
 
-      MPIMulticastModel (T_Device & device, xmi_result_t &status) :
+      MPIMulticastModel (T_Device & device, pami_result_t &status) :
         Interface::AMMulticastModel < MPIMulticastModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, status),
         _device(device)
                 {
-          status = XMI_SUCCESS;
+          status = PAMI_SUCCESS;
         };
 
-      inline xmi_result_t registerMcastRecvFunction_impl (int                        dispatch_id,
-                                                          xmi_dispatch_multicast_fn  recv_func,
+      inline pami_result_t registerMcastRecvFunction_impl (int                        dispatch_id,
+                                                          pami_dispatch_multicast_fn  recv_func,
                                                           void                      *async_arg)
                 {
           _device.registerMcastRecvFunction (dispatch_id,recv_func, async_arg);
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
                 }
 
-      inline xmi_result_t postMulticast_impl (uint8_t (&state)[mcast_model_state_bytes],
-                                              xmi_multicast_t *mcast)
+      inline pami_result_t postMulticast_impl (uint8_t (&state)[mcast_model_state_bytes],
+                                              pami_multicast_t *mcast)
                 {
-          xmi_result_t      rc         = XMI_SUCCESS;
+          pami_result_t      rc         = PAMI_SUCCESS;
           MPIMcastMessage  *msg        = (MPIMcastMessage *) state;
           unsigned          myrank     = __global.mapping.task();
           msg->_cb_done                = mcast->cb_done;
           msg->_p2p_msg._connection_id = mcast->connection_id;
-          msg->_srcranks               = (XMI::Topology*)mcast->src_participants;
-          msg->_dstranks               = (XMI::Topology*)mcast->src_participants;
-          msg->_srcpwq                 = (XMI::PipeWorkQueue*)mcast->src;
-          msg->_dstpwq                 = (XMI::PipeWorkQueue*)mcast->dst;
+          msg->_srcranks               = (PAMI::Topology*)mcast->src_participants;
+          msg->_dstranks               = (PAMI::Topology*)mcast->src_participants;
+          msg->_srcpwq                 = (PAMI::PipeWorkQueue*)mcast->src;
+          msg->_dstpwq                 = (PAMI::PipeWorkQueue*)mcast->dst;
           msg->_root                   = msg->_srcranks->index2Rank(0);
           msg->_bytes                  = mcast->bytes;
 
 
-          XMI_abort();
+          PAMI_abort();
 
           if(msg->_dstpwq)
                 {
@@ -84,7 +84,7 @@ namespace XMI
 	  return rc;
                 }
       T_Device                  &_device;
-      xmi_dispatch_multicast_fn  _cb_async_head;
+      pami_dispatch_multicast_fn  _cb_async_head;
       void                      *_async_arg;
         };
     };

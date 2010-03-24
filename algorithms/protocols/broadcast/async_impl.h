@@ -24,28 +24,28 @@ namespace CCMI
   {
     namespace Broadcast
     {
-      void am_bcast_md(xmi_metadata_t *m)
+      void am_bcast_md(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
         strcpy(&m->name[0],"CCMIAMBinomialBcast");
       }
 
       typedef
-      AsyncCompositeT <CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>,
-                       XMI_SYSDEP_CLASS,
-                       XMI_COLL_MCAST_CLASS,
-                       CCMI::ConnectionManager::RankBasedConnMgr<XMI_SYSDEP_CLASS> > AsyncBinomialComposite;
+      AsyncCompositeT <CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>,
+                       PAMI_SYSDEP_CLASS,
+                       PAMI_COLL_MCAST_CLASS,
+                       CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AsyncBinomialComposite;
       template<>
       void AsyncBinomialComposite::create_schedule(void                      * buf,
                                                    unsigned                    size,
                                                    unsigned                    root,
-                                                   XMI_SYSDEP_CLASS     * map,
-                                                   XMI_GEOMETRY_CLASS        * g)
+                                                   PAMI_SYSDEP_CLASS     * map,
+                                                   PAMI_GEOMETRY_CLASS        * g)
       {
-        new (buf) CCMI::Schedule::BinomialTreeSchedule<XMI_SYSDEP_CLASS>(map, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>(map, g->nranks(), g->ranks());
       }
 
-      typedef AsyncCompositeFactoryT <AsyncBinomialComposite,am_bcast_md,XMI_SYSDEP_CLASS,XMI_COLL_MCAST_CLASS>
+      typedef AsyncCompositeFactoryT <AsyncBinomialComposite,am_bcast_md,PAMI_SYSDEP_CLASS,PAMI_COLL_MCAST_CLASS>
       AsyncBinomialFactory;
     };
   };

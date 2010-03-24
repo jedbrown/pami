@@ -1,6 +1,6 @@
 ///
 /// \file common/socklinux/Context.h
-/// \brief XMI Sockets on Linux specific context implementation.
+/// \brief PAMI Sockets on Linux specific context implementation.
 ///
 #ifndef __common_socklinux_Context_h__
 #define __common_socklinux_Context_h__
@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "common/ContextInterface.h"
 
 #include "components/devices/generic/Device.h"
@@ -53,13 +53,13 @@
 #define TRACE_ERR(x) // fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
-  //typedef XMI::Mutex::CounterMutex<XMI::Counter::GccProcCounter>  ContextLock;
+  //typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>  ContextLock;
 #ifdef ENABLE_UDP_DEVICE
   typedef Device::UDP::UdpDevice<SysDep> UdpDevice;
   typedef Device::UDP::UdpModel<UdpDevice,Device::UDP::UdpSendMessage> UdpModel;
-  typedef XMI::Protocol::Send::Datagram < UdpModel, UdpDevice > DatagramUdp;
+  typedef PAMI::Protocol::Send::Datagram < UdpModel, UdpDevice > DatagramUdp;
 #endif
 
 #ifdef ENABLE_SHMEM_DEVICE
@@ -99,24 +99,24 @@ namespace XMI
      * \param[in] clientid     Client ID (index)
      * \param[in] contextid    Context ID (index)
      */
-    inline xmi_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
+    inline pami_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
        // these calls create (allocate and construct) each element.
        // We don't know how these relate to contexts, they are semi-opaque.
-        _generics = XMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
+        _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
 #ifdef ENABLE_SHMEM_DEVICE
         _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
 #endif
 #ifdef ENABLE_UDP_DEVICE
         _udp = UdpDevice::Factory::generate(clientid, num_ctx, mm);
 #endif
-	_progfunc = XMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
-	_atombarr = XMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
-	_wqringreduce = XMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
-	_wqringbcast = XMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
-	_localallreduce = XMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
-	_localbcast = XMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
-	_localreduce = XMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
-       return XMI_SUCCESS;
+	_progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
+	_atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
+	_wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
+	_wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
+	_localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+	_localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
+	_localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+       return PAMI_SUCCESS;
     }
 
     /**
@@ -135,22 +135,22 @@ namespace XMI
      * \param[in] ctx          Context opaque entity
      * \param[in] contextid    Context ID (index)
      */
-    inline xmi_result_t init(size_t clientid, size_t contextid, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm) {
-	XMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
+    inline pami_result_t init(size_t clientid, size_t contextid, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm) {
+	PAMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
 #ifdef ENABLE_SHMEM_DEVICE
 	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
 #endif
 #ifdef ENABLE_UDP_DEVICE
 	UdpDevice::Factory::init(_udp, clientid, contextid, clt, ctx, mm, _generics);
 #endif
-	XMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm, _generics);
-	XMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, mm, _generics);
-	XMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm, _generics);
-	XMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
-	XMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
-	XMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
-	XMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
-	return XMI_SUCCESS;
+	PAMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm, _generics);
+	PAMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, mm, _generics);
+	PAMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm, _generics);
+	PAMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
+	PAMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
+	PAMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
+	PAMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
+	return PAMI_SUCCESS;
     }
 
     /**
@@ -164,47 +164,47 @@ namespace XMI
      */
     inline size_t advance(size_t clientid, size_t contextid) {
 	size_t events = 0;
-        events += XMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
+        events += PAMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
 #ifdef ENABLE_SHMEM_DEVICE
         events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
 #endif
 #ifdef ENABLE_UDP_DEVICE
         events += UdpDevice::Factory::advance(_udp, clientid, contextid);
 #endif
-        events += XMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
-	events += XMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
-	events += XMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
-	events += XMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
-	events += XMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
-	events += XMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
-	events += XMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
+        events += PAMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
+	events += PAMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
+	events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
+	events += PAMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
+	events += PAMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
+	events += PAMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
+	events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
 	return events;
     }
 
-    XMI::Device::Generic::Device *_generics; // need better name...
+    PAMI::Device::Generic::Device *_generics; // need better name...
 #ifdef ENABLE_SHMEM_DEVICE
     ShmemDevice *_shmem;
 #endif
 #ifdef ENABLE_UDP_DEVICE
     UdpDevice *_udp;
 #endif
-    XMI::Device::ProgressFunctionDev *_progfunc;
-    XMI::Device::AtomicBarrierDev *_atombarr;
-    XMI::Device::WQRingReduceDev *_wqringreduce;
-    XMI::Device::WQRingBcastDev *_wqringbcast;;
-    XMI::Device::LocalAllreduceWQDevice *_localallreduce;
-    XMI::Device::LocalBcastWQDevice *_localbcast;
-    XMI::Device::LocalReduceWQDevice *_localreduce;
+    PAMI::Device::ProgressFunctionDev *_progfunc;
+    PAMI::Device::AtomicBarrierDev *_atombarr;
+    PAMI::Device::WQRingReduceDev *_wqringreduce;
+    PAMI::Device::WQRingBcastDev *_wqringbcast;;
+    PAMI::Device::LocalAllreduceWQDevice *_localallreduce;
+    PAMI::Device::LocalBcastWQDevice *_localbcast;
+    PAMI::Device::LocalReduceWQDevice *_localreduce;
   }; // class PlatformDeviceList
 
-  class Context : public Interface::Context<XMI::Context>
+  class Context : public Interface::Context<PAMI::Context>
   {
     public:
-      inline Context (xmi_client_t client, size_t clientid, size_t contextid, size_t num,
+      inline Context (pami_client_t client, size_t clientid, size_t contextid, size_t num,
                       PlatformDeviceList *devices, void * addr, size_t bytes) :
-          Interface::Context<XMI::Context> (client, contextid),
+          Interface::Context<PAMI::Context> (client, contextid),
           _client (client),
-          _context ((xmi_context_t)this),
+          _context ((pami_context_t)this),
           _clientid (clientid),
           _contextid (contextid),
           _mm (addr, bytes),
@@ -223,7 +223,7 @@ namespace XMI
         TRACE_ERR((stderr, "<< Context::Context()\n"));
       }
 
-      inline xmi_client_t getClient_impl ()
+      inline pami_client_t getClient_impl ()
       {
         return _client;
       }
@@ -233,26 +233,26 @@ namespace XMI
         return _contextid;
       }
 
-      inline xmi_result_t destroy_impl ()
+      inline pami_result_t destroy_impl ()
       {
-        //return XMI_UNIMPL;
-        return XMI_SUCCESS;
+        //return PAMI_UNIMPL;
+        return PAMI_SUCCESS;
       }
 
-      inline xmi_result_t post_impl (xmi_work_t *state, xmi_work_function work_fn, void * cookie)
+      inline pami_result_t post_impl (pami_work_t *state, pami_work_function work_fn, void * cookie)
       {
-        XMI::Device::Generic::GenericThread *work;
+        PAMI::Device::Generic::GenericThread *work;
 	COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
-	work = new (state) XMI::Device::Generic::GenericThread(work_fn, cookie);
-	work->setStatus(XMI::Device::OneShot);
+	work = new (state) PAMI::Device::Generic::GenericThread(work_fn, cookie);
+	work->setStatus(PAMI::Device::OneShot);
 	_devices->_generics[_contextid].postThread(work);
-	return XMI_SUCCESS;
+	return PAMI_SUCCESS;
       }
 
-      inline size_t advance_impl (size_t maximum, xmi_result_t & result)
+      inline size_t advance_impl (size_t maximum, pami_result_t & result)
       {
-//          result = XMI_EAGAIN;
-        result = XMI_SUCCESS;
+//          result = PAMI_EAGAIN;
+        result = PAMI_SUCCESS;
         size_t events = 0;
         unsigned i;
 
@@ -263,223 +263,223 @@ namespace XMI
           }
         //std::cout << "<" << __global.mapping.task() << ">: advance  events= " << events << std::endl;
 
-        if (events > 0) result = XMI_SUCCESS;
+        if (events > 0) result = PAMI_SUCCESS;
 
         return events;
       }
 
-      inline xmi_result_t lock_impl ()
+      inline pami_result_t lock_impl ()
       {
         //_lock.acquire ();
-	return XMI_SUCCESS;
+	return PAMI_SUCCESS;
       }
 
-      inline xmi_result_t trylock_impl ()
+      inline pami_result_t trylock_impl ()
       {
         //if (_lock.tryAcquire ()) {
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	//}
-	//return XMI_EAGAIN;
+	//return PAMI_EAGAIN;
       }
 
-      inline xmi_result_t unlock_impl ()
+      inline pami_result_t unlock_impl ()
       {
         //_lock.release ();
-	return XMI_SUCCESS;
+	return PAMI_SUCCESS;
       }
 
-      inline xmi_result_t send_impl (xmi_send_t * parameters)
+      inline pami_result_t send_impl (pami_send_t * parameters)
       {
         size_t id = (size_t)(parameters->send.dispatch);
         TRACE_ERR((stderr, ">> send_impl('simple'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
-        XMI_assert_debug (_dispatch[id] != NULL);
+        PAMI_assert_debug (_dispatch[id] != NULL);
 
-        XMI::Protocol::Send::Send * send =
-          (XMI::Protocol::Send::Send *) _dispatch[id];
+        PAMI::Protocol::Send::Send * send =
+          (PAMI::Protocol::Send::Send *) _dispatch[id];
         send->simple (parameters);
 
         TRACE_ERR((stderr, "<< send_impl('simple')\n"));
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
       }
 
-      inline xmi_result_t send_impl (xmi_send_immediate_t * parameters)
+      inline pami_result_t send_impl (pami_send_immediate_t * parameters)
       {
         size_t id = (size_t)(parameters->dispatch);
         TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
-        XMI_assert_debug (_dispatch[id] != NULL);
+        PAMI_assert_debug (_dispatch[id] != NULL);
 
-        XMI::Protocol::Send::Send * send =
-          (XMI::Protocol::Send::Send *) _dispatch[id];
+        PAMI::Protocol::Send::Send * send =
+          (PAMI::Protocol::Send::Send *) _dispatch[id];
         send->immediate (parameters);
 
         TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
-        return XMI_SUCCESS;
+        return PAMI_SUCCESS;
       }
 
-      inline xmi_result_t send_impl (xmi_send_typed_t * parameters)
+      inline pami_result_t send_impl (pami_send_typed_t * parameters)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t put (xmi_put_simple_t * parameters)
+      inline pami_result_t put (pami_put_simple_t * parameters)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t put_typed (xmi_put_typed_t * parameters)
+      inline pami_result_t put_typed (pami_put_typed_t * parameters)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t get (xmi_get_simple_t * parameters)
+      inline pami_result_t get (pami_get_simple_t * parameters)
       {
 
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t get_typed (xmi_get_typed_t * parameters)
+      inline pami_result_t get_typed (pami_get_typed_t * parameters)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t rmw (xmi_rmw_t * parameters)
+      inline pami_result_t rmw (pami_rmw_t * parameters)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t memregion_register (void            * address,
+      inline pami_result_t memregion_register (void            * address,
                                               size_t            bytes,
-                                              xmi_memregion_t * memregion)
+                                              pami_memregion_t * memregion)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t memregion_deregister (xmi_memregion_t * memregion)
+      inline pami_result_t memregion_deregister (pami_memregion_t * memregion)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t memregion_query (xmi_memregion_t    memregion,
+      inline pami_result_t memregion_query (pami_memregion_t    memregion,
                                            void            ** address,
                                            size_t           * bytes,
                                            size_t           * task)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t rput (xmi_rput_simple_t * parameters)
+      inline pami_result_t rput (pami_rput_simple_t * parameters)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t rput_typed (xmi_rput_typed_t * parameters)
+      inline pami_result_t rput_typed (pami_rput_typed_t * parameters)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t rget (xmi_rget_simple_t * parameters)
+      inline pami_result_t rget (pami_rget_simple_t * parameters)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t rget_typed (xmi_rget_typed_t * parameters)
+      inline pami_result_t rget_typed (pami_rget_typed_t * parameters)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t purge_totask (size_t *dest, size_t count)
+      inline pami_result_t purge_totask (size_t *dest, size_t count)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t resume_totask (size_t *dest, size_t count)
+      inline pami_result_t resume_totask (size_t *dest, size_t count)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t fence_begin ()
+      inline pami_result_t fence_begin ()
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t fence_end ()
+      inline pami_result_t fence_end ()
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t fence_all (xmi_event_function   done_fn,
+      inline pami_result_t fence_all (pami_event_function   done_fn,
                                      void               * cookie)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t fence_task (xmi_event_function   done_fn,
+      inline pami_result_t fence_task (pami_event_function   done_fn,
                                       void               * cookie,
                                       size_t               task)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t geometry_initialize (xmi_geometry_t       * geometry,
+      inline pami_result_t geometry_initialize (pami_geometry_t       * geometry,
                                                unsigned               id,
-                                               xmi_geometry_range_t * rank_slices,
+                                               pami_geometry_range_t * rank_slices,
                                                size_t                 slice_count)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t geometry_world (xmi_geometry_t * world_geometry)
+      inline pami_result_t geometry_world (pami_geometry_t * world_geometry)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
 
-      inline xmi_result_t geometry_finalize (xmi_geometry_t geometry)
+      inline pami_result_t geometry_finalize (pami_geometry_t geometry)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t collective (xmi_xfer_t * parameters)
+      inline pami_result_t collective (pami_xfer_t * parameters)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-    inline xmi_result_t amcollective_dispatch_impl (xmi_algorithm_t            algorithm,
+    inline pami_result_t amcollective_dispatch_impl (pami_algorithm_t            algorithm,
                                                     size_t                     dispatch,
-                                                    xmi_dispatch_callback_fn   fn,
+                                                    pami_dispatch_callback_fn   fn,
                                                     void                     * cookie,
-                                                    xmi_collective_hint_t      options)
+                                                    pami_collective_hint_t      options)
       {
-	XMI_abort();
-	return XMI_SUCCESS;
+	PAMI_abort();
+	return PAMI_SUCCESS;
       }
 
-      inline xmi_result_t geometry_algorithms_num_impl (xmi_geometry_t geometry,
-                                                        xmi_xfer_type_t ctype,
+      inline pami_result_t geometry_algorithms_num_impl (pami_geometry_t geometry,
+                                                        pami_xfer_type_t ctype,
                                                         int *lists_lengths)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       }
 
-      inline xmi_result_t geometry_algorithms_info_impl (xmi_geometry_t geometry,
-                                                           xmi_xfer_type_t colltype,
-                                                       xmi_algorithm_t  *algs0,
-                                                       xmi_metadata_t   *mdata0,
+      inline pami_result_t geometry_algorithms_info_impl (pami_geometry_t geometry,
+                                                           pami_xfer_type_t colltype,
+                                                       pami_algorithm_t  *algs0,
+                                                       pami_metadata_t   *mdata0,
                                                        int               num0,
-                                                       xmi_algorithm_t  *algs1,
-                                                       xmi_metadata_t   *mdata1,
+                                                       pami_algorithm_t  *algs1,
+                                                       pami_metadata_t   *mdata1,
                                                        int               num1)
       {
-	XMI_abort();
-	return XMI_SUCCESS;
+	PAMI_abort();
+	return PAMI_SUCCESS;
       }
 
-      inline xmi_result_t dispatch_impl (size_t                     id,
-                                         xmi_dispatch_callback_fn   fn,
+      inline pami_result_t dispatch_impl (size_t                     id,
+                                         pami_dispatch_callback_fn   fn,
                                          void                     * cookie,
-                                         xmi_send_hint_t            options)
+                                         pami_send_hint_t            options)
       {
-        xmi_result_t result = XMI_ERROR;
+        pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result = %d\n", id, _dispatch[id], result));
 
         if (_dispatch[id] == NULL)
@@ -505,7 +505,7 @@ namespace XMI
               _dispatch[id] = (Protocol::Send::Send *)
                 DatagramUdp::generate (id, fn, cookie, _devices->_udp[_contextid], _protocol, result);
 #else
-              XMI_abortf("No non-shmem protocols available.");
+              PAMI_abortf("No non-shmem protocols available.");
 #endif
             }
             else if (options.use_shmem == 1)
@@ -525,7 +525,7 @@ namespace XMI
                       generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
                 }
 #else
-              XMI_abortf("No shmem protocols available.");
+              PAMI_abortf("No shmem protocols available.");
 #endif
             }
 #if defined(ENABLE_SHMEM_DEVICE) && defined(ENABLE_UDP_DEVICE)
@@ -565,13 +565,13 @@ namespace XMI
         return result;
       }
 
-    inline xmi_result_t dispatch_new_impl (size_t                     id,
-                                           xmi_dispatch_callback_fn   fn,
+    inline pami_result_t dispatch_new_impl (size_t                     id,
+                                           pami_dispatch_callback_fn   fn,
                                            void                     * cookie,
-                                           xmi_dispatch_hint_t        options)
+                                           pami_dispatch_hint_t        options)
     {
-      xmi_result_t result        = XMI_ERROR;
-      if(options.type == XMI_P2P_SEND)
+      pami_result_t result        = PAMI_ERROR;
+      if(options.type == PAMI_P2P_SEND)
       {
         return dispatch_impl (id,
                               fn,
@@ -581,46 +581,46 @@ namespace XMI
         return result;
     }
 
-      inline xmi_result_t multisend_getroles(size_t          dispatch,
+      inline pami_result_t multisend_getroles(size_t          dispatch,
                                              int            *numRoles,
                                              int            *replRole)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       };
 
-      inline xmi_result_t multicast(xmi_multicast_t *mcastinfo)
+      inline pami_result_t multicast(pami_multicast_t *mcastinfo)
       {
-        return XMI_UNIMPL;
-      };
-
-
-      inline xmi_result_t manytomany(xmi_manytomany_t *m2minfo)
-      {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       };
 
 
-      inline xmi_result_t multisync(xmi_multisync_t *msyncinfo)
+      inline pami_result_t manytomany(pami_manytomany_t *m2minfo)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
       };
 
 
-      inline xmi_result_t multicombine(xmi_multicombine_t *mcombineinfo)
+      inline pami_result_t multisync(pami_multisync_t *msyncinfo)
       {
-        return XMI_UNIMPL;
+        return PAMI_UNIMPL;
+      };
+
+
+      inline pami_result_t multicombine(pami_multicombine_t *mcombineinfo)
+      {
+        return PAMI_UNIMPL;
       };
 
 
 
     private:
 
-      xmi_client_t  _client;
-      xmi_context_t _context;
+      pami_client_t  _client;
+      pami_context_t _context;
       size_t        _clientid;
       size_t        _contextid;
 
-      XMI::Memory::MemoryManager _mm;  // TODO why do I have to do this for sys dep?
+      PAMI::Memory::MemoryManager _mm;  // TODO why do I have to do this for sys dep?
       SysDep _sysdep;
 
       void * _dispatch[1024];
@@ -632,7 +632,7 @@ namespace XMI
       ProtocolAllocator _protocol;
       PlatformDeviceList *_devices;
 
-  }; // end XMI::Context
-}; // end namespace XMI
+  }; // end PAMI::Context
+}; // end namespace PAMI
 #undef TRACE_ERR
 #endif // __common_socklinux_Context_h__

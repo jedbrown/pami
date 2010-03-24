@@ -6,7 +6,7 @@
 #ifndef __components_atomic_example_Mutex_h__
 #define __components_atomic_example_Mutex_h__
 
-namespace XMI
+namespace PAMI
 {
   namespace Atomic
   {
@@ -40,19 +40,19 @@ namespace XMI
 };
 
 template <class T>
-inline void XMI::Atomic::Interface::Mutex<T>::init()
+inline void PAMI::Atomic::Interface::Mutex<T>::init()
 {
   static_cast<T*>(this)->init_impl();
 }
 
 template <class T>
-inline void XMI::Atomic::Interface::Mutex<T>::acquire()
+inline void PAMI::Atomic::Interface::Mutex<T>::acquire()
 {
   static_cast<T*>(this)->acquire_impl();
 }
 
 template <class T>
-inline void XMI::Atomic::Interface::Mutex<T>::release()
+inline void PAMI::Atomic::Interface::Mutex<T>::release()
 {
   static_cast<T*>(this)->release_impl();
 }

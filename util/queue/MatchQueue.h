@@ -18,7 +18,7 @@
 
 #define NUMQS    16
 
-namespace XMI
+namespace PAMI
 {
   class MatchQueueElem  : public Queue::Element
   {
@@ -98,6 +98,6 @@ namespace XMI
         return NULL;
       }
   };  //- MatchQueue
-};  //- XMI
+};  //- PAMI
 
 #endif // __util_queue_matchqueue_h__

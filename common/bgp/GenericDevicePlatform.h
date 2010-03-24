@@ -21,10 +21,10 @@
 #include "util/queue/MultiQueue.h"
 
 /// \brief The mutex used by the generic device
-typedef XMI::Mutex::BGP::LockBoxProcMutex GenericDeviceMutex;
+typedef PAMI::Mutex::BGP::LockBoxProcMutex GenericDeviceMutex;
 
 /// \brief The atomic counter used by threads for tracking completion of message
-typedef XMI::Counter::BGP::LockBoxProcCounter GenericDeviceCounter;
+typedef PAMI::Counter::BGP::LockBoxProcCounter GenericDeviceCounter;
 
 #define GENDEVMSG_SEND_QNUM	0	///< queue number used for send queue
 #define GENDEVMSG_COMPL_QNUM	1	///< queue number used for completion queue
@@ -33,14 +33,14 @@ typedef XMI::Counter::BGP::LockBoxProcCounter GenericDeviceCounter;
 /// \brief The type of queue used to implement generic device completion queue(s)
 ///
 /// Must be compatible with GenericDeviceMessageQueue.
-typedef XMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_COMPL_QNUM>	GenericDeviceCompletionQueue;
+typedef PAMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_COMPL_QNUM>	GenericDeviceCompletionQueue;
 
 /// \brief The type of queue used to implement device send queue(s)
 ///
 /// Must be compatible with GenericDeviceCompletionQueue.
-typedef XMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_SEND_QNUM>	GenericDeviceMessageQueue;
+typedef PAMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_SEND_QNUM>	GenericDeviceMessageQueue;
 
 /// \brief Queue type to use for generic device threads (work) queue(s)
-typedef XMI::AtomicQueue<GenericDeviceMutex>	GenericDeviceWorkQueue;
+typedef PAMI::AtomicQueue<GenericDeviceMutex>	GenericDeviceWorkQueue;
 
 #endif // __common_bgp_GenericDevicePlatform_h__

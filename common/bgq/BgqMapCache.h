@@ -27,7 +27,7 @@
 
 //	((((((p * tSize + t) * eSize + e) * dSize + d) * cSize + c)* bSize + b) * aSize + a)
 
-namespace XMI
+namespace PAMI
 {
   ///
   /// \brief Blue Gene/Q coordinate structure
@@ -86,7 +86,7 @@ namespace XMI
       {
       };
 
-      inline size_t init (XMI::BgqPersonality & personality,
+      inline size_t init (PAMI::BgqPersonality & personality,
                           void                   * ptr,
                           size_t                   bytes
                          )
@@ -95,10 +95,10 @@ namespace XMI
       };
 
 
-  }; // XMI::BgqMapCache
-};     // XMI
+  }; // PAMI::BgqMapCache
+};     // PAMI
 
-#endif // __xmi_components_mapping_bgq_bgqmapcache_h__
+#endif // __pami_components_mapping_bgq_bgqmapcache_h__
 //
 // astyle info    http://astyle.sourceforge.net
 //

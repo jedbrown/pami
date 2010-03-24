@@ -17,7 +17,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "../util.h"
 
 
@@ -78,9 +78,9 @@ void printHexLine2( char * data, size_t num, size_t pad )
 }
 /* --------------------------------------------------------------- */
 
-static void rcvdecrement (xmi_context_t   context,
+static void rcvdecrement (pami_context_t   context,
                        void          * cookie,
-                       xmi_result_t    result)
+                       pami_result_t    result)
 {
   unsigned * value = (unsigned *) cookie;
   TRACE_ERR((stderr, "(%zd) ***** in rcvdecrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
@@ -88,9 +88,9 @@ static void rcvdecrement (xmi_context_t   context,
   --*value;
 }
 
-static void snddecrement (xmi_context_t   context,
+static void snddecrement (pami_context_t   context,
                        void          * cookie,
-                       xmi_result_t    result)
+                       pami_result_t    result)
 {
   unsigned * value = (unsigned *) cookie;
   TRACE_ERR((stderr, "(%zd) ***** in snddecrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
@@ -99,13 +99,13 @@ static void snddecrement (xmi_context_t   context,
 
 /* --------------------------------------------------------------- */
 static void test_dispatch (
-    xmi_context_t        context,      /**< IN: XMI context */
+    pami_context_t        context,      /**< IN: PAMI context */
     void               * cookie,       /**< IN: dispatch cookie */
     void               * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
-    void               * pipe_addr,    /**< IN: address of XMI pipe buffer */
-    size_t               pipe_size,    /**< IN: size of XMI pipe buffer */
-    xmi_recv_t         * recv)        /**< OUT: receive message structure */
+    void               * pipe_addr,    /**< IN: address of PAMI pipe buffer */
+    size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
+    pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
    std::cout << "****** in test_dispatch() " << std::endl;
   if (pipe_addr != NULL)
@@ -123,7 +123,7 @@ static void test_dispatch (
 
     recv->local_fn = rcvdecrement;
     recv->cookie   = cookie;
-    recv->kind = XMI_AM_KIND_SIMPLE;
+    recv->kind = PAMI_AM_KIND_SIMPLE;
     recv->data.simple.addr  = _recv_buffer;
     recv->data.simple.bytes = pipe_size;
 
@@ -132,22 +132,22 @@ static void test_dispatch (
   _recv_iteration++;
 }
 
-void send_once (xmi_context_t context, xmi_send_t * parameters)
+void send_once (pami_context_t context, pami_send_t * parameters)
 {
  std::cout << __FILE__ << ":" << __LINE__ << std::endl;
-  //xmi_result_t result =
-    XMI_Send (context, parameters);
+  //pami_result_t result =
+    PAMI_Send (context, parameters);
   TRACE_ERR((stderr, "(%zd) send_once() Before advance\n", _my_rank));
-  while (_send_active) XMI_Context_advance (context, 100);
+  while (_send_active) PAMI_Context_advance (context, 100);
   _send_active = 1;
   TRACE_ERR((stderr, "(%zd) send_once()  After advance\n", _my_rank));
 }
 
-void recv_once (xmi_context_t context)
+void recv_once (pami_context_t context)
 {
  std::cout << __FILE__ << __LINE__ << std::endl;
   TRACE_ERR((stderr, "(%zd) recv_once() Before advance\n", _my_rank));
-  while (_recv_active) XMI_Context_advance (context, 100);
+  while (_recv_active) PAMI_Context_advance (context, 100);
   //print received buffer
   fprintf (stdout, "\n Received Message = %s\n",_recv_buffer);
   printHexLine2( _recv_buffer, 16, 0 );
@@ -156,7 +156,7 @@ void recv_once (xmi_context_t context)
   TRACE_ERR((stderr, "(%zd) recv_once()  After advance\n", _my_rank));
 }
 
-unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, size_t myrank, xmi_endpoint_t origin, xmi_endpoint_t target)
+unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, size_t myrank, pami_endpoint_t origin, pami_endpoint_t target)
 {
   std::cout << __FILE__ << __LINE__ << std::endl;
   _recv_active = 1;
@@ -167,7 +167,7 @@ unsigned long long test (xmi_context_t context, size_t dispatch, size_t hdrsize,
   char buffer[255];
   size_t sndlen1;
   unsigned i;
-  xmi_send_t parameters;
+  pami_send_t parameters;
 
   if (myrank == 0)
   {
@@ -224,15 +224,15 @@ int main (int argc, char ** argv)
   size_t hdrsize =0;
 
 
-  char clientname[] = "XMI";
-  xmi_client_t client;
-  TRACE_ERR((stderr, "... before XMI_Client_initialize()\n"));
-  XMI_Client_initialize (clientname, &client);
-  TRACE_ERR((stderr, "...  after XMI_Client_initialize()\n"));
-  xmi_context_t context;
-  TRACE_ERR((stderr, "... before XMI_Context_create()\n"));
-  { size_t _n = 1; XMI_Context_createv (client, NULL, 0, &context, _n); }
-  TRACE_ERR((stderr, "...  after XMI_Context_create()\n"));
+  char clientname[] = "PAMI";
+  pami_client_t client;
+  TRACE_ERR((stderr, "... before PAMI_Client_initialize()\n"));
+  PAMI_Client_initialize (clientname, &client);
+  TRACE_ERR((stderr, "...  after PAMI_Client_initialize()\n"));
+  pami_context_t context;
+  TRACE_ERR((stderr, "... before PAMI_Context_create()\n"));
+  { size_t _n = 1; PAMI_Context_createv (client, NULL, 0, &context, _n); }
+  TRACE_ERR((stderr, "...  after PAMI_Context_create()\n"));
 
   //TRACE_ERR((stderr, "... before barrier_init()\n"));
   //barrier_init (client, context, 0);
@@ -245,41 +245,41 @@ int main (int argc, char ** argv)
 
   _dispatch[_dispatch_count] = _dispatch_count + 1;
 
-  xmi_dispatch_callback_fn fn;
+  pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
-  xmi_send_hint_t options={0};
-  TRACE_ERR((stderr, "Before XMI_Dispatch_set() .. &_recv_active = %p, recv_active = %d\n", &_recv_active, _recv_active));
-  xmi_result_t result = XMI_Dispatch_set (context,
+  pami_send_hint_t options={0};
+  TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, recv_active = %d\n", &_recv_active, _recv_active));
+  pami_result_t result = PAMI_Dispatch_set (context,
                                           _dispatch[_dispatch_count++],
                                           fn,
                                           (void *)&_recv_active,
                                           options);
-  if (result != XMI_SUCCESS)
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable register xmi dispatch. result = %d\n", result);
+    fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
     return 1;
   }
 
-  xmi_configuration_t configuration;
+  pami_configuration_t configuration;
 
-  configuration.name = XMI_TASK_ID;
-  result = XMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_TASK_ID;
+  result = PAMI_Configuration_query(client, &configuration);
   _my_rank = configuration.value.intval;
   std::cout << "Rank = " << _my_rank << std::endl;
 
-  configuration.name = XMI_NUM_TASKS;
-  result = XMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_NUM_TASKS;
+  result = PAMI_Configuration_query(client, &configuration);
   size_t num_tasks = configuration.value.intval;
   std::cout << "Size = " << num_tasks << std::endl;
 
-  configuration.name = XMI_WTICK;
-  result = XMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_WTICK;
+  result = PAMI_Configuration_query(client, &configuration);
   //double tick = configuration.value.doubleval;
 
    size_t val = argc;
 
-  xmi_endpoint_t origin = XMI_Client_endpoint (client, 0, 0);
-  xmi_endpoint_t target = XMI_Client_endpoint (client, 1, 0);
+  pami_endpoint_t origin = PAMI_Client_endpoint (client, 0, 0);
+  pami_endpoint_t target = PAMI_Client_endpoint (client, 1, 0);
 
 
    if (argc==1)
@@ -302,7 +302,7 @@ int main (int argc, char ** argv)
   }
 	fprintf (stdout, "** Test completed. **\n");
 
-  XMI_Client_finalize (client);
+  PAMI_Client_finalize (client);
 
   return 0;
 }

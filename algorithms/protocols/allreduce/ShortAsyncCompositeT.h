@@ -36,10 +36,10 @@ namespace CCMI
         unsigned _my_coord   [5]; //T,X,Y,Z,T
         unsigned _rect_start [5]; //T,X,Y,Z,T
       public:
-        ShortAsyncCompositeT (XMI_CollectiveRequest_t  * req,
+        ShortAsyncCompositeT (PAMI_CollectiveRequest_t  * req,
                               MAP             * map,
                               CCMI::ConnectionManager::ConnectionManager *cmgr,
-                              XMI_Callback_t             cb_done,
+                              PAMI_Callback_t             cb_done,
                               CCMI_Consistency            consistency,
                               CCMI::MultiSend::OldMulticastInterface *mf,
                               Geometry                  * geometry,
@@ -47,8 +47,8 @@ namespace CCMI
                               char                      * dstbuf,
                               unsigned                    offset,
                               unsigned                    count,
-                              XMI_Dt                     dtype,
-                              XMI_Op                     op,
+                              PAMI_Dt                     dtype,
+                              PAMI_Op                     op,
                               ConfigFlags                 flags,
                               CollectiveProtocolFactory           * factory,
                               unsigned                    iteration,

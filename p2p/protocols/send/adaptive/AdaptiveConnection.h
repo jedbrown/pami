@@ -19,7 +19,7 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Protocol
   {
@@ -32,7 +32,7 @@ namespace XMI
           struct adaptive_connection_t
           {
 public:
-            xmi_client_t     client;
+            pami_client_t     client;
             size_t          context;
             void           ** array;
           };
@@ -46,7 +46,7 @@ public:
           ~AdaptiveConnection () {}
 
           /// \todo Do this in a threadsafe way
-          inline void ** getConnectionArray (xmi_client_t client, size_t context)
+          inline void ** getConnectionArray (pami_client_t client, size_t context)
           {
             void ** connection = NULL;
 
@@ -104,7 +104,7 @@ public:
 
 
 #undef TRACE_ERR
-#endif // __xmi_p2p_protocol_send_adaptive_adaptiveconnection_h__
+#endif // __pami_p2p_protocol_send_adaptive_adaptiveconnection_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

@@ -188,7 +188,7 @@ namespace CCMI
        * \param[in] nranks	Number of ranks in list
        * \param[in] ranks	Ranks list
        */
-      MultinomialTreeT (unsigned myrank, XMI::Topology *topo, unsigned c=0);
+      MultinomialTreeT (unsigned myrank, PAMI::Topology *topo, unsigned c=0);
 
 
       /**
@@ -217,11 +217,11 @@ namespace CCMI
        * \param[in] phase	Phase to work on
        * \param[INOUT] srcranks are filled in the topology
        */
-      virtual void getSrcTopology(unsigned phase, XMI::Topology *topology)
+      virtual void getSrcTopology(unsigned phase, PAMI::Topology *topology)
       {
 	unsigned *srcranks;
-	xmi_result_t rc = topology->rankList(&srcranks);
-	CCMI_assert (rc == XMI_SUCCESS);
+	pami_result_t rc = topology->rankList(&srcranks);
+	CCMI_assert (rc == PAMI_SUCCESS);
 	CCMI_assert(srcranks != NULL);
 
 	unsigned nsrc = 0;
@@ -238,7 +238,7 @@ namespace CCMI
 	}
 
 	//Convert to a list topology
-	new (topology) XMI::Topology (srcranks, nsrc);
+	new (topology) PAMI::Topology (srcranks, nsrc);
       }
 
       /**
@@ -247,11 +247,11 @@ namespace CCMI
        * \param[in] phase	Phase to work on
        * \param[INOUT] dstranks are filled in the topology
        */
-      virtual void getDstTopology(unsigned phase, XMI::Topology *topology)
+      virtual void getDstTopology(unsigned phase, PAMI::Topology *topology)
       {
 	unsigned *dstranks;
-	xmi_result_t rc = topology->rankList(&dstranks);
-	CCMI_assert (rc == XMI_SUCCESS);
+	pami_result_t rc = topology->rankList(&dstranks);
+	CCMI_assert (rc == PAMI_SUCCESS);
 	CCMI_assert(dstranks != NULL);
 
 	unsigned ndst = 0;
@@ -270,17 +270,17 @@ namespace CCMI
 	}
 
 	//Convert to a list topology of the accurate size
-	new (topology) XMI::Topology (dstranks, ndst);
+	new (topology) PAMI::Topology (dstranks, ndst);
       }
 
       /**
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual xmi_result_t getSrcUnionTopology (XMI::Topology *topology) {
+      virtual pami_result_t getSrcUnionTopology (PAMI::Topology *topology) {
 	unsigned *srcranks;
-	xmi_result_t rc = topology->rankList(&srcranks);
-	CCMI_assert (rc == XMI_SUCCESS);
+	pami_result_t rc = topology->rankList(&srcranks);
+	CCMI_assert (rc == PAMI_SUCCESS);
 	CCMI_assert(srcranks != NULL);
 
 	unsigned ntotal_src = 0;
@@ -301,18 +301,18 @@ namespace CCMI
 	}
 
 	//Convert to a list topology
-	new (topology) XMI::Topology (srcranks, ntotal_src);
-        return XMI_SUCCESS;
+	new (topology) PAMI::Topology (srcranks, ntotal_src);
+        return PAMI_SUCCESS;
       }
 
       /**
        * \brief Get the union of all destinations across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual xmi_result_t getDstUnionTopology (XMI::Topology *topology) {
+      virtual pami_result_t getDstUnionTopology (PAMI::Topology *topology) {
 	unsigned *dstranks;
-	xmi_result_t rc = topology->rankList(&dstranks);
-	CCMI_assert (rc == XMI_SUCCESS);
+	pami_result_t rc = topology->rankList(&dstranks);
+	CCMI_assert (rc == PAMI_SUCCESS);
 	CCMI_assert(dstranks != NULL);
 
 	unsigned ntotal_dst = 0;
@@ -335,8 +335,8 @@ namespace CCMI
 	}
 
 	//Convert to a list topology of the accurate size
-	new (topology) XMI::Topology (dstranks, ntotal_dst);
-        return XMI_SUCCESS;
+	new (topology) PAMI::Topology (dstranks, ntotal_dst);
+        return PAMI_SUCCESS;
       }
 
     protected:
@@ -354,7 +354,7 @@ namespace CCMI
       unsigned     _startphase; /// \brief the start phase after init is called
       unsigned     _nphases;    /// \brief the total number of phases after init is called
 
-      XMI::Topology     _topology;  /// \brief goes away when geoemetries store topologies
+      PAMI::Topology     _topology;  /// \brief goes away when geoemetries store topologies
       M            _map;
 
       static const bool PARENT = true;
@@ -380,7 +380,7 @@ namespace CCMI
  */
 template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
-MultinomialTreeT(unsigned myrank, XMI::Topology *topology, unsigned c):_map(myrank, topology)
+MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c):_map(myrank, topology)
 {
   initBinoSched();
 }
@@ -397,7 +397,7 @@ template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
 MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks):_topology(ranks, nranks), _map()
 {
-  CCMI_assert (_topology.type() == XMI_LIST_TOPOLOGY);
+  CCMI_assert (_topology.type() == PAMI_LIST_TOPOLOGY);
 
   new (&_map) M (myrank, &_topology);
   initBinoSched();

@@ -41,7 +41,7 @@
 // It is possible that users of the Queue could be replaced by the multiqueue
 // classes below.
 
-namespace XMI
+namespace PAMI
 {
 
   template <size_t T_NumElems>
@@ -100,8 +100,8 @@ namespace XMI
   };
 
   template <size_t T_NumElems, size_t T_ElemNum>
-  class MultiQueue : public XMI::Interface::DequeInterface< MultiQueue<T_NumElems, T_ElemNum>, MultiQueueElement<T_NumElems> >,
-      public XMI::Interface::QueueInfoInterface< MultiQueue<T_NumElems, T_ElemNum>, MultiQueueElement<T_NumElems> >
+  class MultiQueue : public PAMI::Interface::DequeInterface< MultiQueue<T_NumElems, T_ElemNum>, MultiQueueElement<T_NumElems> >,
+      public PAMI::Interface::QueueInfoInterface< MultiQueue<T_NumElems, T_ElemNum>, MultiQueueElement<T_NumElems> >
   {
     public:
       typedef MultiQueueElement<T_NumElems> Element;
@@ -113,7 +113,7 @@ namespace XMI
           _size (0)
       {};
 
-      inline void init(XMI::Memory::MemoryManager *mm)
+      inline void init(PAMI::Memory::MemoryManager *mm)
       {
       }
 
@@ -260,13 +260,13 @@ namespace XMI
 
       inline void dump_impl (const char * str, int n)
       {
-        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       };
 
 #ifdef VALIDATE_ON
       inline void validate_impl ()
       {
-        XMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       };
 #endif
 

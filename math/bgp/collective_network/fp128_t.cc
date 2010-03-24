@@ -12,7 +12,7 @@
  * \brief Default C math routines for 128 bit floating point operations.
  */
 
-#include "xmi_bg_math.h"
+#include "pami_bg_math.h"
 #include "util/common.h"
 //#include "internal.h"
 #include "math/FloatUtil.h"

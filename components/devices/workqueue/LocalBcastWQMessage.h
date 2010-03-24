@@ -23,39 +23,39 @@
 #include "components/devices/MulticastModel.h"
 #include "components/devices/FactoryInterface.h"
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 
 class LocalBcastWQModel;
 class LocalBcastWQMessage;
-typedef XMI::Device::Generic::GenericAdvanceThread LocalBcastWQThread;
-class LocalBcastWQDevice : public XMI::Device::Generic::MultiSendQSubDevice<LocalBcastWQThread,1,true> {
+typedef PAMI::Device::Generic::GenericAdvanceThread LocalBcastWQThread;
+class LocalBcastWQDevice : public PAMI::Device::Generic::MultiSendQSubDevice<LocalBcastWQThread,1,true> {
 public:
 	class Factory : public Interface::FactoryInterface<Factory,LocalBcastWQDevice,Generic::Device> {
 	public:
 		static inline LocalBcastWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
-		static inline xmi_result_t init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices);
+		static inline pami_result_t init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(LocalBcastWQDevice *devs, size_t client, size_t context);
 		static inline LocalBcastWQDevice & getDevice_impl(LocalBcastWQDevice *devs, size_t client, size_t context);
 	}; // class Factory
-	inline XMI::Memory::MemoryManager *getSysdep() { return _mm; }
+	inline PAMI::Memory::MemoryManager *getSysdep() { return _mm; }
 protected:
-	XMI::Memory::MemoryManager *_mm;
+	PAMI::Memory::MemoryManager *_mm;
 }; // class LocalBcastWQDevice
 
 }; // namespace Device
-}; // namespace XMI
+}; // namespace PAMI
 
-extern XMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
+extern PAMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 
 inline LocalBcastWQDevice *LocalBcastWQDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
 	return &_g_l_bcastwq_dev;
 }
 
-inline xmi_result_t LocalBcastWQDevice::Factory::init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+inline pami_result_t LocalBcastWQDevice::Factory::init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
 	if (client == 0 && contextId == 0) {
 		_g_l_bcastwq_dev._mm = mm;
 	}
@@ -70,7 +70,7 @@ inline LocalBcastWQDevice & LocalBcastWQDevice::Factory::getDevice_impl(LocalBca
 	return _g_l_bcastwq_dev;
 }
 
-class LocalBcastWQMessage : public XMI::Device::Generic::GenericMessage {
+class LocalBcastWQMessage : public PAMI::Device::Generic::GenericMessage {
 public:
 
           ///
@@ -86,31 +86,31 @@ public:
           ///                         broadcast buffer
           ///
           inline LocalBcastWQMessage(GenericDeviceMessageQueue *device,
-                                      xmi_multicast_t *mcast,
-                                      XMI::Device::WorkQueue::SharedWorkQueue & workqueue,
+                                      pami_multicast_t *mcast,
+                                      PAMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                       bool              isrootrole) :
-            XMI::Device::Generic::GenericMessage (device, mcast->cb_done,
+            PAMI::Device::Generic::GenericMessage (device, mcast->cb_done,
 					mcast->client, mcast->context),
             _isrootrole (isrootrole),
-            _sbuffer (*(XMI::PipeWorkQueue *)mcast->src),
-            _rbuffer (*(XMI::PipeWorkQueue *)mcast->dst),
+            _sbuffer (*(PAMI::PipeWorkQueue *)mcast->src),
+            _rbuffer (*(PAMI::PipeWorkQueue *)mcast->dst),
             _shared (workqueue)
           {
           }
 
 protected:
 	DECL_ADVANCE_ROUTINE(advanceThread,LocalBcastWQMessage,LocalBcastWQThread);
-	inline xmi_result_t __advanceThread(LocalBcastWQThread *thr) {
+	inline pami_result_t __advanceThread(LocalBcastWQThread *thr) {
 		// This works around a bug with "g++ -fPIC -O3"...
-		coremath1 func = (coremath1) XMI::Device::WorkQueue::SharedWorkQueue::shmemcpy;
+		coremath1 func = (coremath1) PAMI::Device::WorkQueue::SharedWorkQueue::shmemcpy;
 		if (_isrootrole) {
 			// "broadcast" the source buffer into the shared queue.
 			_shared.Q2Q(_sbuffer, func, 0);
 
 			// If all bytes have been copied to the shared queue then the root is done.
 			if (_sbuffer.bytesAvailableToConsume() == 0) {
-				thr->setStatus(XMI::Device::Complete);
-				setStatus(XMI::Device::Done);
+				thr->setStatus(PAMI::Device::Complete);
+				setStatus(PAMI::Device::Done);
 			}
 		} else {
 			// read bytes from the shared queue into the local result buffer.
@@ -118,17 +118,17 @@ protected:
 
 			// If all bytes have been copied from the shared queue then the recv is done.
 			if (_rbuffer.bytesAvailableToProduce() == 0) {
-				thr->setStatus(XMI::Device::Complete);
-				setStatus(XMI::Device::Done);
+				thr->setStatus(PAMI::Device::Complete);
+				setStatus(PAMI::Device::Done);
 			}
 		}
 
-		return getStatus() == XMI::Device::Done ? XMI_SUCCESS : XMI_EAGAIN;
+		return getStatus() == PAMI::Device::Done ? PAMI_SUCCESS : PAMI_EAGAIN;
 	}
 
 public:
 	// virtual function
-	xmi_context_t postNext(bool devQueued) {
+	pami_context_t postNext(bool devQueued) {
 		return _g_l_bcastwq_dev.__postNext<LocalBcastWQMessage>(this, devQueued);
 	}
 
@@ -138,7 +138,7 @@ public:
 		_g_l_bcastwq_dev.__getThreads(&t, &n);
 		t[0].setMsg(this);
 		t[0].setAdv(advanceThread);
-		t[0].setStatus(XMI::Device::Ready);
+		t[0].setStatus(PAMI::Device::Ready);
 		__advanceThread(t);
 		*th = t;
 		return 1;
@@ -146,26 +146,26 @@ public:
 
 private:
           bool              _isrootrole;
-          XMI::PipeWorkQueue   &_sbuffer;
-          XMI::PipeWorkQueue   &_rbuffer;
-          XMI::Device::WorkQueue::SharedWorkQueue & _shared;
+          PAMI::PipeWorkQueue   &_sbuffer;
+          PAMI::PipeWorkQueue   &_rbuffer;
+          PAMI::Device::WorkQueue::SharedWorkQueue & _shared;
 }; // class LocalBcastWQMessage
 
-class LocalBcastWQModel : public XMI::Device::Interface::MulticastModel<LocalBcastWQModel,LocalBcastWQDevice,sizeof(LocalBcastWQMessage)> {
+class LocalBcastWQModel : public PAMI::Device::Interface::MulticastModel<LocalBcastWQModel,LocalBcastWQDevice,sizeof(LocalBcastWQMessage)> {
 public:
 	static const int NUM_ROLES = 2;
 	static const int REPL_ROLE = 1;
 	static const size_t sizeof_msg = sizeof(LocalBcastWQMessage);
 
-	LocalBcastWQModel(LocalBcastWQDevice &device, xmi_result_t &status) :
-        XMI::Device::Interface::MulticastModel<LocalBcastWQModel,LocalBcastWQDevice,sizeof(LocalBcastWQMessage)>(device, status),
+	LocalBcastWQModel(LocalBcastWQDevice &device, pami_result_t &status) :
+        PAMI::Device::Interface::MulticastModel<LocalBcastWQModel,LocalBcastWQDevice,sizeof(LocalBcastWQMessage)>(device, status),
 	_shared(_g_l_bcastwq_dev.getSysdep()),
 	_peer(__global.topology_local.rank2Index(__global.mapping.task())),
 	_npeers(__global.topology_local.size())
 	{
 		// assert(device == _g_l_bcastwq_dev);
 		if (!_shared.available()) {
-			status = XMI_ERROR;
+			status = PAMI_ERROR;
 			return;
 		}
 		_shared.setProducers(1, 0);
@@ -180,19 +180,19 @@ public:
 		}
 	}
 
-	inline xmi_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                               xmi_multicast_t *mcast);
+	inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
+                                               pami_multicast_t *mcast);
 private:
-	XMI::Device::WorkQueue::SharedWorkQueue _shared;
+	PAMI::Device::WorkQueue::SharedWorkQueue _shared;
 	unsigned _peer;
 	unsigned _npeers;
 }; // class LocalBcastWQModel
 
-inline xmi_result_t LocalBcastWQModel::postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                                  xmi_multicast_t *mcast) {
+inline pami_result_t LocalBcastWQModel::postMulticast_impl(uint8_t (&state)[sizeof_msg],
+                                                  pami_multicast_t *mcast) {
 	// assert((src_topo .U. dst_topo).size() == _npeers);
 	// use roles to determine root status
-	XMI::Topology *src_topo = (XMI::Topology *)mcast->src_participants;
+	PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
 	unsigned rootpeer = __global.topology_local.rank2Index(src_topo->index2Rank(0));
 	bool isrootrole = (_peer == rootpeer);
 	unsigned consumer = (_peer - (_peer > rootpeer));
@@ -202,10 +202,10 @@ inline xmi_result_t LocalBcastWQModel::postMulticast_impl(uint8_t (&state)[sizeo
 		new (&state) LocalBcastWQMessage(_g_l_bcastwq_dev.getQS(),
 			mcast, _shared, isrootrole);
 	_g_l_bcastwq_dev.__post<LocalBcastWQMessage>(msg);
-	return XMI_SUCCESS;
+	return PAMI_SUCCESS;
 }
 
 }; // namespace Device
-}; // namespace XMI
+}; // namespace PAMI
 
-#endif // __xmi_components_devices_workqueue_localbcastwqmsg_h__
+#endif // __pami_components_devices_workqueue_localbcastwqmsg_h__

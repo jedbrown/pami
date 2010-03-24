@@ -22,8 +22,8 @@ namespace CCMI
   {
     namespace Alltoall
     {
-      typedef CCMI::Adaptor::A2AProtocol <XMI_COLL_M2M_CLASS, XMI_SYSDEP_CLASS, size_t> AlltoallProtocol;
-      typedef CCMI::Adaptor::AlltoallFactory <XMI_COLL_M2M_CLASS, XMI_SYSDEP_CLASS, size_t> AlltoallFactory;
+      typedef CCMI::Adaptor::A2AProtocol <PAMI_COLL_M2M_CLASS, PAMI_SYSDEP_CLASS, size_t> AlltoallProtocol;
+      typedef CCMI::Adaptor::AlltoallFactory <PAMI_COLL_M2M_CLASS, PAMI_SYSDEP_CLASS, size_t> AlltoallFactory;
     };
   };
 };  //namespace CCMI::Adaptor::Alltoall

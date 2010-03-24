@@ -18,7 +18,7 @@
 #define TRACE(x) //fprintf x
 
 /// \see MUMulticastModel
-XMI::Device::MU::MUMulticastModel::MUMulticastModel (MUCollDevice & device, xmi_result_t &status) :
+PAMI::Device::MU::MUMulticastModel::MUMulticastModel (MUCollDevice & device, pami_result_t &status) :
 Interface::AMMulticastModel < MUMulticastModel, MUCollDevice, sizeof(mu_multicast_statedata_t) > (device, status),
 _device (device),
 _wrapper_model (&_desc_model)
@@ -106,10 +106,10 @@ _wrapper_model (&_desc_model)
   _desc_model.setMemoryFIFOFields (&memfifo);
 
   // Use our rank/addr to set our master reception fifo
-  xmi_task_t target_rank = __global.mapping.task();
+  pami_task_t target_rank = __global.mapping.task();
   size_t addr[BGQ_TDIMS + BGQ_LDIMS];
   TRACE((stderr, "<%p>:MUMulticastModel::ctor .. %p->getRecFifoIdForDescriptor() target_rank %zd\n", this, &_device, (size_t)target_rank));
-  __global.mapping.task2global ((xmi_task_t)target_rank, addr);
+  __global.mapping.task2global ((pami_task_t)target_rank, addr);
   TRACE((stderr, "<%p>:MUMulticastModel::ctor .. %p->getRecFifoIdForDescriptor(%zd) target_rank %zd\n", this, &_device, addr[5], (size_t)target_rank));
   /// \todo Assuming p is the recv grp id?
   uint32_t recFifoId = _device.getCollRecFifoIdForDescriptor(addr[5]);;
@@ -128,16 +128,16 @@ _wrapper_model (&_desc_model)
 
 };
 
-XMI::Device::MU::MUMulticastModel::~MUMulticastModel ()
+PAMI::Device::MU::MUMulticastModel::~MUMulticastModel ()
 {
 };
 
-xmi_result_t XMI::Device::MU::MUMulticastModel::registerMcastRecvFunction_impl(int                        dispatch_id,
-                                                                               xmi_dispatch_multicast_fn  func,
+pami_result_t PAMI::Device::MU::MUMulticastModel::registerMcastRecvFunction_impl(int                        dispatch_id,
+                                                                               pami_dispatch_multicast_fn  func,
                                                                                void                      *arg)
 {
   TRACE((stderr, "<%p>:MUMulticastModel::registerMcastRecvFunction_impl(%d, %p, %p)\n", this, dispatch_id, func, arg));
-  XMI_assert(multicast_model_active_message);
+  PAMI_assert(multicast_model_active_message);
 
   MemoryFifoPacketHeader * hdr = (MemoryFifoPacketHeader *) & _desc_model.PacketHeader;
 
@@ -154,8 +154,8 @@ xmi_result_t XMI::Device::MU::MUMulticastModel::registerMcastRecvFunction_impl(i
                                  hdr->dev.dispatch_id);
 
   TRACE((stderr, "<%p>:MUMulticastModel::registerMcastRecvFunction_impl dispatch_id = %d, success = %d\n", this, hdr->dev.dispatch_id, (unsigned)success));
-  //XMI_assert(success);
-  return success ? XMI_SUCCESS : XMI_ERROR;
+  //PAMI_assert(success);
+  return success ? PAMI_SUCCESS : PAMI_ERROR;
 };
 
 

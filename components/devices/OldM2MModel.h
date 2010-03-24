@@ -14,10 +14,10 @@
 #ifndef __components_devices_OldM2MModel_h__
 #define __components_devices_OldM2MModel_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "algorithms/ccmi.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -29,10 +29,10 @@ namespace XMI
       public:
         Oldm2mModel (T_Device & device) {};
         ~Oldm2mModel () {};
-        inline void setCallback (xmi_olddispatch_manytomany_fn cb_recv, void *arg);
+        inline void setCallback (pami_olddispatch_manytomany_fn cb_recv, void *arg);
 
-        inline void send  (XMI_Request_t          * request,
-                           const xmi_callback_t   * cb_done,
+        inline void send  (PAMI_Request_t          * request,
+                           const pami_callback_t   * cb_done,
                            unsigned                 connid,
                            unsigned                 rcvindex,
                            const char             * buf,
@@ -43,8 +43,8 @@ namespace XMI
                            T_Counter               * permutation,
                            unsigned                 nranks);
 
-        inline void postRecv (XMI_Request_t          * request,
-                              const xmi_callback_t   * cb_done,
+        inline void postRecv (PAMI_Request_t          * request,
+                              const pami_callback_t   * cb_done,
                               unsigned                 connid,
                               char                   * buf,
                               T_Counter               * sizes,
@@ -57,14 +57,14 @@ namespace XMI
 
 
       template <class T_Model, class T_Device, class T_Object, class T_Counter>
-      void Oldm2mModel<T_Model, T_Device, T_Object, T_Counter>::setCallback (xmi_olddispatch_manytomany_fn cb_recv, void *arg)
+      void Oldm2mModel<T_Model, T_Device, T_Object, T_Counter>::setCallback (pami_olddispatch_manytomany_fn cb_recv, void *arg)
       {
         static_cast<T_Model*>(this)->setCallback_impl(cb_recv, arg);
       }
 
       template <class T_Model, class T_Device, class T_Object, class T_Counter>
-      void Oldm2mModel<T_Model, T_Device, T_Object, T_Counter>::send (XMI_Request_t         * request,
-                                                           const xmi_callback_t  * cb_done,
+      void Oldm2mModel<T_Model, T_Device, T_Object, T_Counter>::send (PAMI_Request_t         * request,
+                                                           const pami_callback_t  * cb_done,
                                                            unsigned                 connid,
                                                            unsigned                 rcvindex,
                                                            const char             * buf,
@@ -90,8 +90,8 @@ namespace XMI
       }
 
       template <class T_Model, class T_Device, class T_Object, class T_Counter>
-      void Oldm2mModel<T_Model, T_Device, T_Object, T_Counter>::postRecv(XMI_Request_t         * request,
-                                                              const xmi_callback_t  * cb_done,
+      void Oldm2mModel<T_Model, T_Device, T_Object, T_Counter>::postRecv(PAMI_Request_t         * request,
+                                                              const pami_callback_t  * cb_done,
                                                               unsigned                 connid,
                                                               char                   * buf,
                                                               T_Counter               * sizes,

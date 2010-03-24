@@ -14,11 +14,11 @@
 #ifndef __components_devices_FactoryInterface_h__
 #define __components_devices_FactoryInterface_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 #include "components/memory/MemoryManager.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -37,11 +37,11 @@ namespace XMI
 
           static inline T_Device * generate (size_t clientid, size_t num_ctx, Memory::MemoryManager & mm);
 
-          static inline xmi_result_t init (T_Device      * devices,
+          static inline pami_result_t init (T_Device      * devices,
                                            size_t          clientid,
                                            size_t          contextid,
-                                           xmi_client_t    client,
-                                           xmi_context_t   context,
+                                           pami_client_t    client,
+                                           pami_context_t   context,
                                            Memory::MemoryManager *mm,
                                            T_Progress * progress);
 
@@ -53,23 +53,23 @@ namespace XMI
 					     size_t clientid,
 					     size_t contextid);
 
-      };  // XMI::Device::Interface::FactoryInterface class
-    };    // XMI::Device::Interface namespace
-  };      // XMI::Device namespace
-};        // XMI namespace
+      };  // PAMI::Device::Interface::FactoryInterface class
+    };    // PAMI::Device::Interface namespace
+  };      // PAMI::Device namespace
+};        // PAMI namespace
 
 template <class T_Factory, class T_Device, class T_Progress>
-T_Device * XMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::generate (size_t clientid, size_t num_ctx, Memory::MemoryManager &mm)
+T_Device * PAMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::generate (size_t clientid, size_t num_ctx, Memory::MemoryManager &mm)
 {
    return T_Factory::generate_impl (clientid, num_ctx, mm);
 };
 
 template <class T_Factory, class T_Device, class T_Progress>
-xmi_result_t XMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::init (T_Device      * devices,
+pami_result_t PAMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::init (T_Device      * devices,
                                                                                             size_t          clientid,
                                                                                             size_t          contextid,
-                                                                                            xmi_client_t    client,
-                                                                                            xmi_context_t   context,
+                                                                                            pami_client_t    client,
+                                                                                            pami_context_t   context,
                                                                                             Memory::MemoryManager *mm,
                                                                                             T_Progress * progress)
 {
@@ -77,7 +77,7 @@ xmi_result_t XMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progr
 };
 
 template <class T_Factory, class T_Device, class T_Progress>
-size_t XMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::advance (T_Device * devices,
+size_t PAMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::advance (T_Device * devices,
                                                                                          size_t     contextid,
                                                                                          size_t     clientid)
 {
@@ -85,7 +85,7 @@ size_t XMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::
 };
 
 template <class T_Factory, class T_Device, class T_Progress>
-T_Device & XMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::getDevice (T_Device * devices,
+T_Device & PAMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::getDevice (T_Device * devices,
                                                                                          size_t     contextid,
                                                                                          size_t     clientid)
 {

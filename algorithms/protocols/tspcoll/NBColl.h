@@ -44,22 +44,22 @@ namespace TSPColl
   class NBColl
   {
   public:
-    NBColl (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID,
-	    xmi_event_function cb_complete, void *arg);
+    NBColl (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID,
+	    pami_event_function cb_complete, void *arg);
 
   public:
     virtual void  kick  (T_mcast *mcast_iface) {};
     virtual bool isdone () const { return false; } /* check completion */
     int instID () const { return _instID; }
     int tag    () const { return _tag;    }
-    virtual void setComplete (xmi_event_function cb_complete, void *arg);
+    virtual void setComplete (pami_event_function cb_complete, void *arg);
 // compiler gets cranky if this isn't here
     virtual ~NBColl() {}
   protected:
-    XMI_GEOMETRY_CLASS *_comm;
+    PAMI_GEOMETRY_CLASS *_comm;
     NBTag               _tag;
     int                 _instID;
-    xmi_event_function  _cb_complete;
+    pami_event_function  _cb_complete;
     void               *_arg;
   };
 
@@ -69,8 +69,8 @@ namespace TSPColl
 /*                 non-blocking collective constructor                      */
 /* ************************************************************************ */
   template <class T_Mcast>
-  TSPColl::NBColl<T_Mcast>::NBColl (XMI_GEOMETRY_CLASS * comm, NBTag tag, int instID,
-                                    xmi_event_function cb_complete, void *arg):
+  TSPColl::NBColl<T_Mcast>::NBColl (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID,
+                                    pami_event_function cb_complete, void *arg):
     _comm (comm), _tag (tag), _instID (instID),
     _cb_complete (cb_complete), _arg(arg)
   {
@@ -79,7 +79,7 @@ namespace TSPColl
 /* ************************************************************************ */
 /* ************************************************************************ */
   template <class T_Mcast>
-  void TSPColl::NBColl<T_Mcast>::setComplete (xmi_event_function cb_complete, void *arg)
+  void TSPColl::NBColl<T_Mcast>::setComplete (pami_event_function cb_complete, void *arg)
   {
     _cb_complete = cb_complete;
     _arg = arg;

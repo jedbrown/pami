@@ -20,7 +20,7 @@
 #define TRACE(x)
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Fifo
   {

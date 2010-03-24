@@ -28,7 +28,7 @@ namespace CCMI
       ///
       /// This factory will generate a CompositeT [all]reduce.
       ///
-      typedef void      (*MetaDataFn)   (xmi_metadata_t *m);
+      typedef void      (*MetaDataFn)   (pami_metadata_t *m);
       template <class T_ConnectionManager, class T_Composite, class T_Sysdep, class T_Mcast, MetaDataFn get_metadata>
       class FactoryT : public CCMI::Adaptor::Allreduce::Factory<T_Sysdep, T_Mcast, T_ConnectionManager>
       {
@@ -46,7 +46,7 @@ namespace CCMI
         inline FactoryT(T_Sysdep *mapping,
                         T_Mcast  *mof,
 //                        CCMI::MultiSend::MulticombineInterface *mf,
-                        xmi_mapidtogeometry_fn cb_geometry,
+                        pami_mapidtogeometry_fn cb_geometry,
                         ConfigFlags flags) :
           CCMI::Adaptor::Allreduce::Factory<T_Sysdep, T_Mcast, T_ConnectionManager>(mapping,
                                                                                     mof,
@@ -71,7 +71,7 @@ namespace CCMI
         class collObj
          {
         public:
-          collObj(xmi_xfer_t *xfer):
+          collObj(pami_xfer_t *xfer):
             _xfer(*xfer),
             _rsize(sizeof(_req)),
             _user_done_fn(xfer->cb_done),
@@ -80,35 +80,35 @@ namespace CCMI
               _xfer.cb_done = alloc_done_fn;
               _xfer.cookie  = this;
             }
-          XMI_CollectiveRequest_t      _req[1];
-          xmi_xfer_t                   _xfer;
+          PAMI_CollectiveRequest_t      _req[1];
+          pami_xfer_t                   _xfer;
           int                          _rsize;
-          xmi_event_function           _user_done_fn;
+          pami_event_function           _user_done_fn;
           void                       * _user_cookie;
         };
 
-        static void alloc_done_fn( xmi_context_t   context,
+        static void alloc_done_fn( pami_context_t   context,
                                    void          * cookie,
-                                   xmi_result_t    result )
+                                   pami_result_t    result )
           {
             collObj *cObj = (collObj*)cookie;
             cObj->_user_done_fn(context,cObj->_user_cookie,result);
             free(cObj);
           }
 
-        virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+        virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                                void                      * cmd)
 
           {
             collObj *obj = (collObj*)malloc(sizeof(*obj));
-            new(obj) collObj((xmi_xfer_t*)cmd);
-            XMI_Callback_t cb_done;
+            new(obj) collObj((pami_xfer_t*)cmd);
+            PAMI_Callback_t cb_done;
             cb_done.function   = obj->_xfer.cb_done;
             cb_done.clientdata = obj->_xfer.cookie;
             return this->generate(&obj->_req[0],
                                   cb_done,
-                                  XMI_MATCH_CONSISTENCY,
-                                  (XMI_GEOMETRY_CLASS *)geometry,
+                                  PAMI_MATCH_CONSISTENCY,
+                                  (PAMI_GEOMETRY_CLASS *)geometry,
                                   obj->_xfer.cmd.xfer_allreduce.sndbuf,
                                   obj->_xfer.cmd.xfer_allreduce.rcvbuf,
                                   obj->_xfer.cmd.xfer_allreduce.stypecount,
@@ -117,7 +117,7 @@ namespace CCMI
           }
 
 
-        virtual void metadata(xmi_metadata_t *mdata)
+        virtual void metadata(pami_metadata_t *mdata)
           {
             get_metadata(mdata);
           }
@@ -126,15 +126,15 @@ namespace CCMI
         /// \brief Generate a non-blocking allreduce message.
         ///
         virtual CCMI::Executor::Composite * generate
-        (XMI_CollectiveRequest_t * request,
-         XMI_Callback_t            cb_done,
-         xmi_consistency_t           consistency,
-         XMI_GEOMETRY_CLASS                 * geometry,
+        (PAMI_CollectiveRequest_t * request,
+         PAMI_Callback_t            cb_done,
+         pami_consistency_t           consistency,
+         PAMI_GEOMETRY_CLASS                 * geometry,
          char                     * srcbuf,
          char                     * dstbuf,
          unsigned                   count,
-         xmi_dt                    dtype,
-         xmi_op                    op,
+         pami_dt                    dtype,
+         pami_op                    op,
          int                        root = -1 )
         {
           TRACE_ALERT((stderr,"<%p>Allreduce::%s::FactoryT::generate() ALERT:\n",this, T_Composite::name));
@@ -144,16 +144,16 @@ namespace CCMI
           T_Composite *arcomposite = (T_Composite*)geometry->getAllreduceComposite();
           if(arcomposite != NULL && arcomposite->getFactory() == this)
               {
-                xmi_result_t status = (xmi_result_t)
+                pami_result_t status = (pami_result_t)
                   arcomposite->restart(request,
                                        cb_done,
-                                       XMI_MATCH_CONSISTENCY,
+                                       PAMI_MATCH_CONSISTENCY,
                                        srcbuf,
                                        dstbuf,
                                        count,
                                        dtype,
                                        op);
-                if(status == XMI_SUCCESS) geometry->setAllreduceComposite(arcomposite);
+                if(status == PAMI_SUCCESS) geometry->setAllreduceComposite(arcomposite);
                 return NULL;
               }
           else
@@ -176,11 +176,11 @@ namespace CCMI
           return NULL;
         }
 
-        CCMI::Schedule::Color getOneColor(XMI_GEOMETRY_CLASS * geometry)
+        CCMI::Schedule::Color getOneColor(PAMI_GEOMETRY_CLASS * geometry)
         {
           return CCMI::Schedule::NO_COLOR;
         }
-        bool Analyze( XMI_GEOMETRY_CLASS * geometry )
+        bool Analyze( PAMI_GEOMETRY_CLASS * geometry )
         {
           TRACE_ALERT((stderr,"<%p>Allreduce::%s::FactoryT::Analyze() ALERT: %s\n",this, T_Composite::name,
                       T_Composite::analyze(geometry)? "true":"false"));

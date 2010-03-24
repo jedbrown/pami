@@ -13,9 +13,9 @@
 #ifndef __common_BaseMappingInterface_h__
 #define __common_BaseMappingInterface_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Interface
   {
@@ -40,13 +40,13 @@ namespace XMI
           inline size_t size ();
 
 
-          inline xmi_result_t network2task (const xmi_coord_t  * addr,
-                                           xmi_task_t          * rank,
-                                           xmi_network         * type);
+          inline pami_result_t network2task (const pami_coord_t  * addr,
+                                           pami_task_t          * rank,
+                                           pami_network         * type);
 
-          inline xmi_result_t task2network (xmi_task_t           rank,
-                                           xmi_coord_t         * addr,
-                                           xmi_network           type);
+          inline pami_result_t task2network (pami_task_t           rank,
+                                           pami_coord_t         * addr,
+                                           pami_network           type);
 	  inline size_t globalDims();
       };	// class Base
 
@@ -62,17 +62,17 @@ namespace XMI
         return static_cast<T_Mapping*>(this)->size_impl ();
       }
       template <class T_Mapping>
-      inline xmi_result_t Base<T_Mapping>::network2task (const xmi_coord_t  * addr,
-                                                         xmi_task_t         * rank,
-                                                         xmi_network        * type)
+      inline pami_result_t Base<T_Mapping>::network2task (const pami_coord_t  * addr,
+                                                         pami_task_t         * rank,
+                                                         pami_network        * type)
       {
         return static_cast<T_Mapping*>(this)->network2task_impl (addr, rank, type);
       }
 
       template <class T_Mapping>
-      inline xmi_result_t Base<T_Mapping>::task2network (xmi_task_t    rank,
-                                                         xmi_coord_t * addr,
-                                                         xmi_network   type)
+      inline pami_result_t Base<T_Mapping>::task2network (pami_task_t    rank,
+                                                         pami_coord_t * addr,
+                                                         pami_network   type)
       {
         return static_cast<T_Mapping*>(this)->task2network_impl (rank, addr, type);
       }
@@ -84,5 +84,5 @@ namespace XMI
       }
     };	// namespace Mapping
   };	// namespace Interface
-};	// namespace XMI
+};	// namespace PAMI
 #endif // __components_mapping_basemapping_h__

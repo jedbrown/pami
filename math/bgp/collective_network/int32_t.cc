@@ -11,11 +11,11 @@
  * \brief Default C math routines for 32 bit signed integer operations.
  */
 
-#include "xmi_bg_math.h"
+#include "pami_bg_math.h"
 #include "util/common.h"
 //#include "internal.h"
 
-static void _xmi_core_int32_conv(uint32_t *dst, const int32_t *src, int count) {
+static void _pami_core_int32_conv(uint32_t *dst, const int32_t *src, int count) {
 #define OP(a) ((a)+(0x80000000UL))
 
 #define TYPE uint32_t
@@ -24,7 +24,7 @@ static void _xmi_core_int32_conv(uint32_t *dst, const int32_t *src, int count) {
 #undef OP
 }
 
-static void _xmi_core_int32_conv_not(uint32_t *dst, const int32_t *src, int count) {
+static void _pami_core_int32_conv_not(uint32_t *dst, const int32_t *src, int count) {
 #define OP(a) (~((a)+(0x80000000UL)))
 
 #define TYPE uint32_t
@@ -33,7 +33,7 @@ static void _xmi_core_int32_conv_not(uint32_t *dst, const int32_t *src, int coun
 #undef OP
 }
 
-static void _xmi_core_int32_unconv(int32_t *dst, const uint32_t *src, int count) {
+static void _pami_core_int32_unconv(int32_t *dst, const uint32_t *src, int count) {
 #define OP(a) ((a)-(0x80000000UL))
 
 #define TYPE int32_t
@@ -42,7 +42,7 @@ static void _xmi_core_int32_unconv(int32_t *dst, const uint32_t *src, int count)
 #undef OP
 }
 
-static void _xmi_core_int32_unconv_not(int32_t *dst, const uint32_t *src, int count) {
+static void _pami_core_int32_unconv_not(int32_t *dst, const uint32_t *src, int count) {
 #define OP(a) (~((a)-(0x80000000UL)))
 
 #define TYPE int32_t
@@ -51,23 +51,23 @@ static void _xmi_core_int32_unconv_not(int32_t *dst, const uint32_t *src, int co
 #undef OP
 }
 
-void _xmi_core_int32_pre_all(uint32_t *dst, const int32_t *src, int count) {
-  _xmi_core_int32_conv(dst, src, count);
+void _pami_core_int32_pre_all(uint32_t *dst, const int32_t *src, int count) {
+  _pami_core_int32_conv(dst, src, count);
 }
 
-void _xmi_core_int32_post_all(int32_t *dst, const uint32_t *src, int count) {
-  _xmi_core_int32_unconv(dst, src, count);
+void _pami_core_int32_post_all(int32_t *dst, const uint32_t *src, int count) {
+  _pami_core_int32_unconv(dst, src, count);
 }
 
-void _xmi_core_int32_pre_min(uint32_t *dst, const int32_t *src, int count) {
-  _xmi_core_int32_conv_not(dst, src, count);
+void _pami_core_int32_pre_min(uint32_t *dst, const int32_t *src, int count) {
+  _pami_core_int32_conv_not(dst, src, count);
 }
 
-void _xmi_core_int32_post_min(int32_t *dst, const uint32_t *src, int count) {
-  _xmi_core_int32_unconv_not(dst, src, count);
+void _pami_core_int32_post_min(int32_t *dst, const uint32_t *src, int count) {
+  _pami_core_int32_unconv_not(dst, src, count);
 }
 
-void _xmi_core_int32_int32_pre_maxloc(uint32_int32_t *dst, const int32_int32_t *src, int count) {
+void _pami_core_int32_int32_pre_maxloc(uint32_int32_t *dst, const int32_int32_t *src, int count) {
   register int n = 0;
   register unsigned shift = 0x80000000UL;
   for (n = 0; n < count; n++)
@@ -77,7 +77,7 @@ void _xmi_core_int32_int32_pre_maxloc(uint32_int32_t *dst, const int32_int32_t *
     }
 }
 
-void _xmi_core_int32_int32_post_maxloc(int32_int32_t *dst, const uint32_int32_t *src, int count) {
+void _pami_core_int32_int32_post_maxloc(int32_int32_t *dst, const uint32_int32_t *src, int count) {
   register int n = 0;
   register unsigned shift = 0x80000000UL;
   for (n = 0; n < count; n++)
@@ -87,7 +87,7 @@ void _xmi_core_int32_int32_post_maxloc(int32_int32_t *dst, const uint32_int32_t 
     }
 }
 
-void _xmi_core_int32_int32_pre_minloc(uint32_int32_t *dst, const int32_int32_t *src, int count) {
+void _pami_core_int32_int32_pre_minloc(uint32_int32_t *dst, const int32_int32_t *src, int count) {
   register int n = 0;
   register unsigned shift = 0x80000000UL;
   for (n = 0; n < count; n++)
@@ -97,7 +97,7 @@ void _xmi_core_int32_int32_pre_minloc(uint32_int32_t *dst, const int32_int32_t *
     }
 }
 
-void _xmi_core_int32_int32_post_minloc(int32_int32_t *dst, const uint32_int32_t *src, int count) {
+void _pami_core_int32_int32_post_minloc(int32_int32_t *dst, const uint32_int32_t *src, int count) {
   register int n = 0;
   register unsigned shift = 0x80000000UL;
   for (n = 0; n < count; n++)

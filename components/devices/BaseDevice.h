@@ -14,10 +14,10 @@
 #ifndef __components_devices_BaseDevice_h__
 #define __components_devices_BaseDevice_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "SysDep.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -54,10 +54,10 @@ namespace XMI
           inline int init (Memory::MemoryManager *mm,
 			   size_t        clientid,
 			   size_t        num_ctx,
-                           xmi_context_t   context,
+                           pami_context_t   context,
                            size_t          contextid);
 
-          inline xmi_context_t getContext ();
+          inline pami_context_t getContext ();
 
           inline size_t getContextOffset ();
 
@@ -105,14 +105,14 @@ namespace XMI
       inline int BaseDevice<T_Device>::init (Memory::MemoryManager *mm,
 			   size_t        clientid,
 			   size_t        num_ctx,
-                           xmi_context_t   context,
+                           pami_context_t   context,
                            size_t          contextid)
       {
         return static_cast<T_Device*>(this)->init_impl(mm, clientid, num_ctx, context, contextid);
       }
 
       template <class T_Device>
-      inline xmi_context_t BaseDevice<T_Device>::getContext ()
+      inline pami_context_t BaseDevice<T_Device>::getContext ()
       {
         return static_cast<T_Device*>(this)->getContext_impl();
       }

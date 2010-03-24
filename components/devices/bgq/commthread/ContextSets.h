@@ -13,17 +13,17 @@
 #ifndef __components_devices_bgq_commthread_ContextSets_h__
 #define __components_devices_bgq_commthread_ContextSets_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "components/atomic/bgq/L2Mutex.h"
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace CommThread {
 
 class BgqContextPool {
 	static const uint64_t ENABLE = (1ULL << 63);
 
-	typedef XMI::Mutex::BGQ::L2ProcMutex ContextSetMutex;
+	typedef PAMI::Mutex::BGQ::L2ProcMutex ContextSetMutex;
 public:
 	BgqContextPool() :
 	_contexts(NULL),
@@ -41,21 +41,21 @@ public:
 	inline void init(size_t clientid, size_t nctx, Memory::MemoryManager *mm) {
 		_mutex.init(mm);
 		posix_memalign((void **)&_contexts, 16, nctx * sizeof(*_contexts));
-		XMI_assertf(_contexts, "Out of memory for BgqContextPool::_contexts");
+		PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_contexts");
 		posix_memalign((void **)&_sets, 16, nctx * sizeof(*_sets));
-		XMI_assertf(_contexts, "Out of memory for BgqContextPool::_sets");
+		PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_sets");
 		_ncontexts_total = nctx;
 	}
 
-	inline xmi_result_t addContext(size_t clientid, xmi_context_t ctx) {
+	inline pami_result_t addContext(size_t clientid, pami_context_t ctx) {
 		if (_ncontexts >= _ncontexts_total) {
-			return XMI_ERROR;
+			return PAMI_ERROR;
 		}
-		_contexts[_ncontexts++] = (XMI::Context *)ctx;
-		return XMI_SUCCESS;
+		_contexts[_ncontexts++] = (PAMI::Context *)ctx;
+		return PAMI_SUCCESS;
 	}
 
-	XMI::Context *getContext(size_t clientid, size_t contextix) {
+	PAMI::Context *getContext(size_t clientid, size_t contextix) {
 		return _contexts[contextix];
 	}
 
@@ -127,7 +127,7 @@ public:
 		threadid = -1; // only valid while we're joined.
 	}
 private:
-	XMI::Context **_contexts;
+	PAMI::Context **_contexts;
 	size_t _ncontexts_total;
 	size_t _ncontexts;
 
@@ -141,6 +141,6 @@ private:
 
 }; // namespace CommThread
 }; // namespace Device
-}; // namespace XMI
+}; // namespace PAMI
 
 #endif // __components_devices_bgq_commthread_ContextSets_h__

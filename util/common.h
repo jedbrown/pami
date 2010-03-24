@@ -22,13 +22,13 @@
 #include <builtins.h>
 #endif
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "Compiler.h"
 #include "Arch.h"
 
 /** \todo set the client information in the endpoint opaque type */
-#define XMI_ENDPOINT_INIT(client,task,offset) ((offset << 23) | task)
-#define XMI_ENDPOINT_INFO(endpoint,task,offset) { task = endpoint & 0x007fffff; offset = (endpoint >> 23) & 0x03f; }
+#define PAMI_ENDPOINT_INIT(client,task,offset) ((offset << 23) | task)
+#define PAMI_ENDPOINT_INFO(endpoint,task,offset) { task = endpoint & 0x007fffff; offset = (endpoint >> 23) & 0x03f; }
 
 
 #ifndef MIN
@@ -60,11 +60,11 @@
 #define   likely(x) (__builtin_expect(x,1))
 #define unlikely(x) (__builtin_expect(x,0))
 
-#define XMIQuad_sizeof(x)  ((sizeof(x)+15)>>4)
+#define PAMIQuad_sizeof(x)  ((sizeof(x)+15)>>4)
 
 /// abort macros defined for all assertion levels
-#define XMI_abort()                       abort()
-#define XMI_abortf(fmt...)                { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); fprintf(stderr, fmt); abort(); }
+#define PAMI_abort()                       abort()
+#define PAMI_abortf(fmt...)                { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); fprintf(stderr, fmt); abort(); }
 
 #ifndef ASSERT_LEVEL
 #define ASSERT_LEVEL 2
@@ -72,22 +72,22 @@
 #endif
 
 #if ASSERT_LEVEL==0    // All asserts are disabled
-#define XMI_assert(expr)
-#define XMI_assertf(expr, fmt...)
-#define XMI_assert_debug(expr)
-#define XMI_assert_debugf(expr, fmt...)
+#define PAMI_assert(expr)
+#define PAMI_assertf(expr, fmt...)
+#define PAMI_assert_debug(expr)
+#define PAMI_assert_debugf(expr, fmt...)
 
 #elif ASSERT_LEVEL==1  // Only "normal" asserts, not debug, are enabled
-#define XMI_assert(expr)                assert(expr)
-#define XMI_assertf(expr, fmt...)       { if (!(expr)) XMI_abortf(fmt); }
-#define XMI_assert_debug(expr)
-#define XMI_assert_debugf(expr, fmt...)
+#define PAMI_assert(expr)                assert(expr)
+#define PAMI_assertf(expr, fmt...)       { if (!(expr)) PAMI_abortf(fmt); }
+#define PAMI_assert_debug(expr)
+#define PAMI_assert_debugf(expr, fmt...)
 
 #else // ASSERT_LEVEL==2 ... All asserts are enabled
-#define XMI_assert(expr)                assert(expr)
-#define XMI_assertf(expr, fmt...)       { if (!(expr)) XMI_abortf(fmt); }
-#define XMI_assert_debug(expr)          assert(expr)
-#define XMI_assert_debugf(expr, fmt...) XMI_assertf(expr, fmt)
+#define PAMI_assert(expr)                assert(expr)
+#define PAMI_assertf(expr, fmt...)       { if (!(expr)) PAMI_abortf(fmt); }
+#define PAMI_assert_debug(expr)          assert(expr)
+#define PAMI_assert_debugf(expr, fmt...) PAMI_assertf(expr, fmt)
 
 #endif // ASSERT_LEVEL
 
@@ -163,10 +163,10 @@ inline void* operator new(size_t obj_size, void* pointer)
  */
 #define static_assert(expr, string) COMPILE_TIME_ASSERT(expr)
 
-typedef xmi_geometry_t (*xmi_mapidtogeometry_fn) (int comm);
+typedef pami_geometry_t (*pami_mapidtogeometry_fn) (int comm);
 
 #ifdef __cplusplus
-#define ENFORCE_CLASS_MEMBER(class,member)	{ XMI_assert_debug(&((class *)this)->member || true); }
+#define ENFORCE_CLASS_MEMBER(class,member)	{ PAMI_assert_debug(&((class *)this)->member || true); }
 #endif // __cplusplus
 
 /*
@@ -184,7 +184,7 @@ typedef xmi_geometry_t (*xmi_mapidtogeometry_fn) (int comm);
 template <class T_Counter>
 inline void local_barriered_ctrzero(T_Counter *ctrs, size_t num,
 				size_t participants, bool master) {
-	XMI_assertf(num >= 2, "local_barriered_ctrzero() requires at least two counters\n");
+	PAMI_assertf(num >= 2, "local_barriered_ctrzero() requires at least two counters\n");
 	size_t c0 = num - 2;
 	size_t c1 = num - 1;
 	if (master) {
@@ -227,7 +227,7 @@ inline void local_barriered_shmemzero(void *shmem, size_t len,
 				size_t participants, bool master) {
 	volatile size_t *ctrs = (volatile size_t *)shmem;
 	size_t num = len / sizeof(size_t);
-	XMI_assertf(num >= 2, "local_barriered_shmemzero() requires enough shmem for at least two counters\n");
+	PAMI_assertf(num >= 2, "local_barriered_shmemzero() requires enough shmem for at least two counters\n");
 	size_t c0 = num - 2;
 	size_t c1 = num - 1;
 	if (master) {

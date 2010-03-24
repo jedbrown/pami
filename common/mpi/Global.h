@@ -25,14 +25,14 @@
 #include "Wtime.h"
 #include <mpi.h>
 #include "components/devices/mpi/mpidevice.h"
-namespace XMI
+namespace PAMI
 {
     static void shutdownfunc()
     {
       MPI_Finalize();
     }
 
-    class Global : public Interface::Global<XMI::Global>
+    class Global : public Interface::Global<PAMI::Global>
     {
 	  // Simple class to control MPI initialization independent of other classes.
 	  class MPI
@@ -44,7 +44,7 @@ namespace XMI
 			if(rc != MPI_SUCCESS)
 			{
 			  fprintf(stderr, "Unable to initialize context:  MPI_Init failure\n");
-			  XMI_abort();
+			  PAMI_abort();
 			}
 		  }
 	  };
@@ -52,31 +52,31 @@ namespace XMI
       public:
 
         inline Global () :
-	  Interface::Global<XMI::Global>(),
+	  Interface::Global<PAMI::Global>(),
 	  mapping()
         {
 	  // Time gets its own clockMHz
-	  Interface::Global<XMI::Global>::time.init(0);
+	  Interface::Global<PAMI::Global>::time.init(0);
 	  {
 		size_t min, max, num, *ranks;
 //              int rc = MPI_Init(0, NULL);
 //              if(rc != MPI_SUCCESS)
 //                  {
 //                    fprintf(stderr, "Unable to initialize context:  MPI_Init failure\n");
-//                    XMI_abort();
+//                    PAMI_abort();
 //                  }
                 atexit(shutdownfunc);
 
                 mapping.init(min, max, num, &ranks);
 
-		XMI::Topology::static_init(&mapping);
-                /** \todo remove these casts when conversion to xmi_task_t is complete */
+		PAMI::Topology::static_init(&mapping);
+                /** \todo remove these casts when conversion to pami_task_t is complete */
 		if (mapping.size() == max - min + 1) {
-			new (&topology_global) XMI::Topology((xmi_task_t)min, (xmi_task_t)max);
+			new (&topology_global) PAMI::Topology((pami_task_t)min, (pami_task_t)max);
 		} else {
-			XMI_abortf("failed to build global-world topology %zd:: %zd..%zd", mapping.size(), min, max);
+			PAMI_abortf("failed to build global-world topology %zd:: %zd..%zd", mapping.size(), min, max);
 		}
-		new (&topology_local) XMI::Topology((xmi_task_t *)ranks, num);
+		new (&topology_local) PAMI::Topology((pami_task_t *)ranks, num);
 		// could try to optimize list into range, etc...
 	  }
         };
@@ -87,12 +87,12 @@ namespace XMI
 
       public:
 	MPI        		    mpi; // First data member to initialize MPI first.
-	XMI::Mapping		mapping;
-    XMI::Device::MPIDevice mpi_device;
+	PAMI::Mapping		mapping;
+    PAMI::Device::MPIDevice mpi_device;
 
   };   // class Global
-};     // namespace XMI
+};     // namespace PAMI
 
-extern XMI::Global __global;
+extern PAMI::Global __global;
 
-#endif // __xmi_common_mpi_global_h__
+#endif // __pami_common_mpi_global_h__

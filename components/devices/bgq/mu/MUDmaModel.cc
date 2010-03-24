@@ -15,7 +15,7 @@
 
 /// \see MUSPI_Pt2PtMemoryFIFODescriptor
 ///
-XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
+PAMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
     Interface::DmaModel<MUDmaModel, MUDevice, sizeof(MUInjFifoMessage)> (device),
     _device (device),
     _wrapper_model (),
@@ -206,4 +206,4 @@ XMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
 #endif
 };
 
-XMI::Device::MU::MUDmaModel::~MUDmaModel () {};
+PAMI::Device::MU::MUDmaModel::~MUDmaModel () {};

@@ -35,9 +35,9 @@
 #define TRACE_ERR(x)  // fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
-    class Global : public Interface::Global<XMI::Global>
+    class Global : public Interface::Global<PAMI::Global>
     {
       public:
 
@@ -47,14 +47,14 @@ namespace XMI
         {
           TRACE_ERR((stderr, ">> Global::Global()\n"));
 
-          Interface::Global<XMI::Global>::time.init(0);
-	  xmi_coord_t ll, ur;
+          Interface::Global<PAMI::Global>::time.init(0);
+	  pami_coord_t ll, ur;
 	  size_t min, max, num;
           size_t *ranks;
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
 
-          snprintf (_shmemfile, 1023, "/unique-xmi-global-shmem-file");
+          snprintf (_shmemfile, 1023, "/unique-pami-global-shmem-file");
 
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
@@ -105,8 +105,8 @@ namespace XMI
 	  }
 
           mapping.init(min, max, num, &ranks);
-	  XMI::Topology::static_init(&mapping);
-          new (&topology_global) XMI::Topology(min, max);
+	  PAMI::Topology::static_init(&mapping);
+          new (&topology_global) PAMI::Topology(min, max);
 	  topology_global.subTopologyLocalToMe(&topology_local);
           TRACE_ERR((stderr, "<< Global::Global()\n"));
 
@@ -129,7 +129,7 @@ namespace XMI
 
        public:
 
-	XMI::Mapping         mapping;
+	PAMI::Mapping         mapping;
 
       private:
         char _shmemfile[1024];
@@ -137,9 +137,9 @@ namespace XMI
         void           * _memptr;
         size_t           _memsize;
         size_t           _size;
-    }; // XMI::Global
-};     // XMI
+    }; // PAMI::Global
+};     // PAMI
 
-extern XMI::Global __global;
+extern PAMI::Global __global;
 #undef TRACE_ERR
 #endif // __common_socklinux_Global_h__

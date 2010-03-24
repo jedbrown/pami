@@ -13,7 +13,7 @@
 #ifndef __components_memory_MemoryManager_h__
 #define __components_memory_MemoryManager_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include <sys/mman.h>
 #include <errno.h>
 
@@ -21,7 +21,7 @@
 #define TRACE_ERR(x) // fprintf x
 #endif
 
-namespace XMI
+namespace PAMI
 {
   namespace Memory
   {
@@ -90,12 +90,12 @@ namespace XMI
         /// \param[in]  alignment Requested buffer alignment - must be a power of 2.
         /// \param[in]  bytes     Number of bytes to allocate.
         ///
-        inline xmi_result_t memalign (void ** memptr, size_t alignment, size_t bytes)
+        inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes)
         {
           TRACE_ERR((stderr, "%s(%p, %zd, %zd), _offset = %zu, this = %p\n", __PRETTY_FUNCTION__,memptr,alignment,bytes,_offset, this));
-          XMI_assert(_enabled==true);
-          XMI_assert_debug(_base != NULL);
-          XMI_assert((alignment & (alignment - 1)) == 0);
+          PAMI_assert(_enabled==true);
+          PAMI_assert_debug(_base != NULL);
+          PAMI_assert((alignment & (alignment - 1)) == 0);
 
           size_t pad = 0;
           if (alignment > 0)
@@ -110,10 +110,10 @@ namespace XMI
             _offset += pad;
             *memptr =  (void *) ((size_t)_base + _offset);
             _offset += bytes;
-            return XMI_SUCCESS;
+            return PAMI_SUCCESS;
           }
-          TRACE_ERR((stderr, "%s XMI_ERROR !((%zd + %zd + %zd) <= %zd)\n",__PRETTY_FUNCTION__,_offset,pad,bytes,_size));
-          return XMI_ERROR;
+          TRACE_ERR((stderr, "%s PAMI_ERROR !((%zd + %zd + %zd) <= %zd)\n",__PRETTY_FUNCTION__,_offset,pad,bytes,_size));
+          return PAMI_ERROR;
         };
 
         ///
@@ -126,8 +126,8 @@ namespace XMI
         inline size_t available (size_t alignment = 1)
         {
           TRACE_ERR((stderr, "%s(%zd) _size %zd, _offset %zu, this = %p\n", __PRETTY_FUNCTION__,alignment, _size, _offset, this));
-          XMI_assert(_enabled==true);
-          XMI_assert_debug((alignment & (alignment - 1)) == 0);
+          PAMI_assert(_enabled==true);
+          PAMI_assert_debug((alignment & (alignment - 1)) == 0);
 
           size_t pad = 0;
           if (alignment > 0)
@@ -148,7 +148,7 @@ namespace XMI
         inline size_t size ()
         {
           TRACE_ERR((stderr, "%s %zd\n", __PRETTY_FUNCTION__,_size));
-          XMI_assert_debug(_base != NULL);
+          PAMI_assert_debug(_base != NULL);
           return _size;
         };
 

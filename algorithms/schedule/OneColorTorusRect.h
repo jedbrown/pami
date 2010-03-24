@@ -58,26 +58,26 @@ namespace CCMI
     {
       protected:
         unsigned          _color;
-        xmi_task_t        _root;
-        xmi_coord_t       _root_coord;
-        xmi_coord_t       _self_coord;
-        xmi_coord_t       _ll;
-        xmi_coord_t       _ur;
+        pami_task_t        _root;
+        pami_coord_t       _root_coord;
+        pami_coord_t       _self_coord;
+        pami_coord_t       _ll;
+        pami_coord_t       _ur;
         unsigned          _startphase;
-        unsinged char     _torus_link[XMI_MAX_DIMS];
-        size_t            _dim_sizes[XMI_MAX_DIMS];
-        XMI_MAPPING_CLASS *_map;
-        XMI::Topology     *_rect;
+        unsinged char     _torus_link[PAMI_MAX_DIMS];
+        size_t            _dim_sizes[PAMI_MAX_DIMS];
+        PAMI_MAPPING_CLASS *_map;
+        PAMI::Topology     *_rect;
 
-        void setupBroadcast(unsigned phase,  XMI::Topology *topo);
-        void setupGhost(XMI::Topology *topo);
-        void setupLocal(XMI::Topology *topo);
+        void setupBroadcast(unsigned phase,  PAMI::Topology *topo);
+        void setupGhost(PAMI::Topology *topo);
+        void setupLocal(PAMI::Topology *topo);
 
       public:
         OneColorTorusRect(): _rect(NULL), _map(NULL) {}
-        OneColorTorusRect(XMI_MAPPING_CLASS *_map,
-                          XMI::Topology *rect,
-                          xmi_coord_t self,
+        OneColorTorusRect(PAMI_MAPPING_CLASS *_map,
+                          PAMI::Topology *rect,
+                          pami_coord_t self,
                           unsigned color)
         {
           TRACE_ERR((stderr, "In One Color Torus Rect Bcast Constructor\n"));
@@ -92,13 +92,13 @@ namespace CCMI
             _dim_sizes[i] = _ur.net_coord(i) - _ll.net_coord(i) + 1;
 
 
-          virtual void init(xmi_task_t root, int op, int &start, int &nphases);
-          virtual void getSrcTopology(XMI::Topology *topo);
+          virtual void init(pami_task_t root, int op, int &start, int &nphases);
+          virtual void getSrcTopology(PAMI::Topology *topo);
           {
             return;
           }
 
-          virtual void getDstTopology(unsigned phase, XMI::Topology *topology);
+          virtual void getDstTopology(unsigned phase, PAMI::Topology *topology);
 
           unsigned color()
           {
@@ -119,14 +119,14 @@ namespace CCMI
            * \param[out] max	The maximum number of colors (returned in colors)
            * \param[out] colors	(optional) Array of enum Color's usable on rect
            */
-          static void getColors(XMI::Topology *rect, unsigned &ideal,
+          static void getColors(PAMI::Topology *rect, unsigned &ideal,
                                 unsigned &max, Color *colors = NULL)
           {
             int i = 0;
             ideal = 0;
-            xmi_coord_t ll, ur;
-            unsigned char torus_link[XMI_MAX_DIMS];
-            size_t torus_dims, sizes[XMI_MAX_DIMS];
+            pami_coord_t ll, ur;
+            unsigned char torus_link[PAMI_MAX_DIMS];
+            size_t torus_dims, sizes[PAMI_MAX_DIMS];
             torus_dims = _map->torusDims();
 
             rect->rectSeg(&ll, &ur, &torus_link);
@@ -171,7 +171,7 @@ namespace CCMI
    *  and other resources
    */
   inline void
-  CCMI::Schedule::OneColorTorusRect::init(xmi_task_t root,
+  CCMI::Schedule::OneColorTorusRect::init(pami_task_t root,
                                           int op,
                                           int &start,
                                           int &nphases)
@@ -179,7 +179,7 @@ namespace CCMI
     CCMI_assert (op == BROADCAST_OP);
 
     _root = root;
-    _map->task2network(root, &_root_coord, XMI_N_TORUS_NETWORK);
+    _map->task2network(root, &_root_coord, PAMI_N_TORUS_NETWORK);
 
     size_t torus_dims = _map->torusDims();
 
@@ -190,7 +190,7 @@ namespace CCMI
       int i, axis;
       unsigned color = _color;
 
-      size_t axes[XMI_MAX_DIMS];
+      size_t axes[PAMI_MAX_DIMS];
 
       for (axis = 0; axis < torus_dims; axis++)
         axes[i] = color++ % torus_dims;
@@ -244,7 +244,7 @@ namespace CCMI
 
   inline void
   CCMI::Schedule::OneColorTorusRect::getDstTopology(unsigned phase,
-                                                    XMI::Topology *topo)
+                                                    PAMI::Topology *topo)
   {
     CCMI_assert (phase >= _startphase);
 
@@ -288,10 +288,10 @@ namespace CCMI
      */
     inline void
     CCMI::Schedule::OneColorTorusRect::setupBroadcast(unsigned phase,
-                                                      XMI::Topology *topo)
+                                                      PAMI::Topology *topo)
     {
-      xmi_coord_t low, high;
-      unsigned char dir[XMI_MAX_DIMS] = {0};
+      pami_coord_t low, high;
+      unsigned char dir[PAMI_MAX_DIMS] = {0};
       size_t torus_dims = _map->torusDims();
 
       //Find the axis to do the line broadcast on
@@ -307,7 +307,7 @@ namespace CCMI
       high.net_coord(axis) = MAX(_ur.net_coord(axis),
                                  _self_coord.net_coord(axis));
 
-      new (topo) XMI::Topology(&low, &high, &_self_coord, &dir, &_torus_link);
+      new (topo) PAMI::Topology(&low, &high, &_self_coord, &dir, &_torus_link);
     }
 
     /**
@@ -319,11 +319,11 @@ namespace CCMI
      * \return	nothing (else).
      */
     inline void
-    CCMI::Schedule::OneColorTorusRect::setupGhost(XMI::Topology *topo)
+    CCMI::Schedule::OneColorTorusRect::setupGhost(PAMI::Topology *topo)
     {
       int i;
-      xmi_coord_t ref, dst;
-      unsigned char dir[XMI_MAX_DIMS] = {0};
+      pami_coord_t ref, dst;
+      unsigned char dir[PAMI_MAX_DIMS] = {0};
 
       size_t torus_dims = _map->torusDims();
       size_t axis = _color % torus_dims;
@@ -356,9 +356,9 @@ namespace CCMI
       //just before them have to send data to them
       if(_self_coord.net_coord(axis) == ref.net_coord(axis))
       {
-        xmi_network *type;
-        xmi_task_t dst_task;
-        dst.network = XMI_N_TORUS_NETWORK;
+        pami_network *type;
+        pami_task_t dst_task;
+        dst.network = PAMI_N_TORUS_NETWORK;
 
         dst.net_coord(axis) = _root_coord.net_coord(axis);
         _map->network2Task(dst, &dst_task, &type);
@@ -372,7 +372,7 @@ namespace CCMI
           high.net_coord(axis) = MAX(dst.net_coord(axis),
                                      _self_coord.net_coord(axis));
 
-          new (topo) XMI::Topology(&low, &high, &_self_coord, &dir,
+          new (topo) PAMI::Topology(&low, &high, &_self_coord, &dir,
                                    &_torus_link);
         }
       }
@@ -388,9 +388,9 @@ namespace CCMI
        * \return	nothing (else).
        */
       inline void
-      CCMI::Schedule::OneColorTorusRect::setupLocal(XMI::Topology *topo)
+      CCMI::Schedule::OneColorTorusRect::setupLocal(PAMI::Topology *topo)
       {
-        unsigned char dir[XMI_MAX_DIMS] = {0};
+        unsigned char dir[PAMI_MAX_DIMS] = {0};
         size_t peers, core_dim, core_dim;
         _map->nodePeers(&peers);
 
@@ -400,13 +400,13 @@ namespace CCMI
 
         if (_self_coord.net_coord(core_dim) == _root.net_coord(core_dim))
         {
-          xmi_coord_t low, high;
+          pami_coord_t low, high;
           low = _self_coord;
           high = _self_coord;
           low.net_coord(core_dim) = 0;
           high.net_coord(core_dim) = peers - 1;
         }
-        new (topo) XMI::Topology(&low, &high, &_self_coord, &dir, &_torus_link);
+        new (topo) PAMI::Topology(&low, &high, &_self_coord, &dir, &_torus_link);
       }
 
 #endif

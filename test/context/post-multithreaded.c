@@ -1,9 +1,9 @@
 ///
 /// \file test/context/post-multithreaded.c
-/// \brief Multithreaded XMI_Context_post() test
+/// \brief Multithreaded PAMI_Context_post() test
 ///
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
@@ -19,7 +19,7 @@
 
 typedef struct endpoint
 {
-  xmi_context_t   context;
+  pami_context_t   context;
   volatile size_t recv;
 } endpoint_t;
 
@@ -35,7 +35,7 @@ typedef struct work
 
 endpoint_t _endpoint[2];
 
-xmi_result_t do_work (xmi_context_t   context,
+pami_result_t do_work (pami_context_t   context,
               void          * cookie)
 {
   TRACE((stderr, ">> do_work (%0x08x, %p)\n", (unsigned)context, cookie));
@@ -56,7 +56,7 @@ xmi_result_t do_work (xmi_context_t   context,
   _endpoint[to].recv--;
 
   TRACE((stderr, "<< do_work ()\n"));
-  return XMI_SUCCESS;
+  return PAMI_SUCCESS;
 }
 
 void * endpoint (void * arg)
@@ -65,10 +65,10 @@ void * endpoint (void * arg)
   TRACE((stderr, ">> endpoint (%zu)\n", id));
 
   /* Lock this context */
-  xmi_result_t result = XMI_Context_lock (_endpoint[id].context);
-  if (result != XMI_SUCCESS)
+  pami_result_t result = PAMI_Context_lock (_endpoint[id].context);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to lock the xmi context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to lock the pami context. result = %d\n", result);
     exit(1);
   }
 
@@ -84,7 +84,7 @@ void * endpoint (void * arg)
   if (id == 0)
   {
     /* send a message to endpoint 10 */
-    xmi_work_t state;
+    pami_work_t state;
     work_t work;
     work.addr = (void *) send;
     work.bytes = 1024;
@@ -92,10 +92,10 @@ void * endpoint (void * arg)
     work.from = 0;
     work.to   = 1;
 
-    result = XMI_Context_post (_endpoint[1].context, &state, do_work, (void *)&work);
-    if (result != XMI_SUCCESS)
+    result = PAMI_Context_post (_endpoint[1].context, &state, do_work, (void *)&work);
+    if (result != PAMI_SUCCESS)
     {
-      fprintf (stderr, "Error. Unable to post work to the xmi context. result = %d\n", result);
+      fprintf (stderr, "Error. Unable to post work to the pami context. result = %d\n", result);
       exit(1);
     }
 
@@ -108,10 +108,10 @@ void * endpoint (void * arg)
     TRACE((stderr, "   endpoint(%zu), before blocking advance for recv, _endpoint[0].recv = %zu\n", id, _endpoint[0].recv));
     while (_endpoint[0].recv)
     {
-      result = XMI_Context_advance (_endpoint[0].context, 1);
-      if (result != XMI_SUCCESS)
+      result = PAMI_Context_advance (_endpoint[0].context, 1);
+      if (result != PAMI_SUCCESS)
       {
-        fprintf (stderr, "Error. Unable to advance the xmi context. result = %d\n", result);
+        fprintf (stderr, "Error. Unable to advance the pami context. result = %d\n", result);
         exit(1);
       }
     }
@@ -123,17 +123,17 @@ void * endpoint (void * arg)
     TRACE((stderr, "   endpoint(%zu), before blocking advance for recv, _endpoint[1].recv = %zu\n", id, _endpoint[1].recv));
     while (_endpoint[1].recv)
     {
-      result = XMI_Context_advance (_endpoint[1].context, 1);
-      if (result != XMI_SUCCESS)
+      result = PAMI_Context_advance (_endpoint[1].context, 1);
+      if (result != PAMI_SUCCESS)
       {
-        fprintf (stderr, "Error. Unable to advance the xmi context. result = %d\n", result);
+        fprintf (stderr, "Error. Unable to advance the pami context. result = %d\n", result);
         exit(1);
       }
     }
     TRACE((stderr, "   endpoint(%zu),  after blocking advance for recv, _endpoint[1].recv = %zu\n", id, _endpoint[1].recv));
 
     /* send a message to endpoint 1 */
-    xmi_work_t state;
+    pami_work_t state;
     work_t work;
     work.addr = (void *) send;
     work.bytes = 1024;
@@ -141,10 +141,10 @@ void * endpoint (void * arg)
     work.from = 1;
     work.to   = 0;
 
-    result = XMI_Context_post (_endpoint[0].context, &state, do_work, (void *)&work);
-    if (result != XMI_SUCCESS)
+    result = PAMI_Context_post (_endpoint[0].context, &state, do_work, (void *)&work);
+    if (result != PAMI_SUCCESS)
     {
-      fprintf (stderr, "Error. Unable to post work to the xmi context. result = %d\n", result);
+      fprintf (stderr, "Error. Unable to post work to the pami context. result = %d\n", result);
       exit(1);
     }
 
@@ -155,10 +155,10 @@ void * endpoint (void * arg)
   }
 
   /* Unlock the context and exit */
-  result = XMI_Context_unlock (_endpoint[id].context);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Context_unlock (_endpoint[id].context);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to unlock the xmi context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to unlock the pami context. result = %d\n", result);
     exit(1);
   }
 
@@ -169,26 +169,26 @@ void * endpoint (void * arg)
 
 int main (int argc, char ** argv)
 {
-  xmi_client_t client;
-  xmi_context_t context[2];
-  xmi_configuration_t * configuration = NULL;
+  pami_client_t client;
+  pami_context_t context[2];
+  pami_configuration_t * configuration = NULL;
   char                  cl_string[] = "TEST";
-  xmi_result_t result = XMI_ERROR;
+  pami_result_t result = PAMI_ERROR;
 
-  result = XMI_Client_initialize (cl_string, &client);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Client_initialize (cl_string, &client);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to initialize xmi client. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
     return 1;
   }
 
   _endpoint[0].recv = 1;
   {
   size_t num = 2;
-  result = XMI_Context_createv (client, configuration, 0, &context[0], num);
-  if (result != XMI_SUCCESS || num != 2)
+  result = PAMI_Context_createv (client, configuration, 0, &context[0], num);
+  if (result != PAMI_SUCCESS || num != 2)
   {
-    fprintf (stderr, "Error. Unable to create first xmi context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to create first pami context. result = %d\n", result);
     return 1;
   }
   _endpoint[0].context = context[0];
@@ -210,23 +210,23 @@ int main (int argc, char ** argv)
   endpoint ((void *)0);
 
 
-  result = XMI_Context_destroy (_endpoint[0].context);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Context_destroy (_endpoint[0].context);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to destroy first xmi context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to destroy first pami context. result = %d\n", result);
     return 1;
   }
-  result = XMI_Context_destroy (_endpoint[1].context);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Context_destroy (_endpoint[1].context);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to destroy second xmi context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to destroy second pami context. result = %d\n", result);
     return 1;
   }
 
-  result = XMI_Client_finalize (client);
-  if (result != XMI_SUCCESS)
+  result = PAMI_Client_finalize (client);
+  if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to finalize xmi client. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
     return 1;
   }
 

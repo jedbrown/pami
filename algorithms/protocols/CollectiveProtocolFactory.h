@@ -32,11 +32,11 @@ namespace CCMI
 	_cb_geometry = NULL;
       }
 
-      void setMapIdToGeometry(xmi_mapidtogeometry_fn     cb_geometry) {
+      void setMapIdToGeometry(pami_mapidtogeometry_fn     cb_geometry) {
 	_cb_geometry = cb_geometry;
       }
 
-      xmi_geometry_t getGeometry(unsigned id) {
+      pami_geometry_t getGeometry(unsigned id) {
 	CCMI_assert (_cb_geometry != NULL);
 	return _cb_geometry (id);
       }
@@ -51,20 +51,20 @@ namespace CCMI
         CCMI_abort();
       }
 
-      virtual Executor::Composite * generate(xmi_geometry_t              geometry,
+      virtual Executor::Composite * generate(pami_geometry_t              geometry,
 					     void                      * cmd) = 0;
 
-      virtual void metadata(xmi_metadata_t *mdata) = 0;
+      virtual void metadata(pami_metadata_t *mdata) = 0;
 
       virtual void setAsyncInfo (bool                          is_buffered,
-                                 xmi_dispatch_callback_fn      cb_async,
-                                 xmi_mapidtogeometry_fn        cb_geometry)
+                                 pami_dispatch_callback_fn      cb_async,
+                                 pami_mapidtogeometry_fn        cb_geometry)
 	{
-          XMI_abort();
+          PAMI_abort();
         };
 
     protected:
-      xmi_mapidtogeometry_fn     _cb_geometry;
+      pami_mapidtogeometry_fn     _cb_geometry;
     };
   };
 };

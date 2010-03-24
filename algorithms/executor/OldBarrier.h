@@ -135,7 +135,7 @@ namespace CCMI
       unsigned             _iteration:1; ///The Red or black iteration
 
       CollHeaderData       _cdata;
-      xmi_oldmulticast_t   _minfo;
+      pami_oldmulticast_t   _minfo;
 
       ///\brief A red/black vector for each neigbor which is incremented
       ///when the neighbor's message arrives
@@ -145,7 +145,7 @@ namespace CCMI
       ScheduleCache         _cache;
 
       /// \brief Request for the multisend msg
-      XMI_Request_t        _request __attribute__((__aligned__(16)));
+      PAMI_Request_t        _request __attribute__((__aligned__(16)));
 
       ///
       /// \brief core internal function to initiate the next phase
@@ -175,9 +175,9 @@ namespace CCMI
       }
 
       /// Static function to be passed into the done of multisend
-      static void staticNotifySendDone(xmi_context_t context, void *cd, xmi_result_t err)
+      static void staticNotifySendDone(pami_context_t context, void *cd, pami_result_t err)
       {
-        xmi_quad_t * info = NULL;
+        pami_quad_t * info = NULL;
         TRACE_ERR((stderr,"<%X>Executor::Barrier::staticNotifySendDone\n",(int)cd));
 
         OldBarrier *barrier = (OldBarrier *) cd;
@@ -216,20 +216,20 @@ namespace CCMI
 
 //	_minfo.setRequestBuffer(& _request);
 //	_minfo.setConsistency (CCMI_MATCH_CONSISTENCY);
-//      _minfo.setInfo((xmi_quad_t *)((void *) &_cdata),  1);
+//      _minfo.setInfo((pami_quad_t *)((void *) &_cdata),  1);
 //      _minfo.setConnectionId(_connid);
 //	_minfo.setSendData (NULL, 0);
 //	_minfo.setRanks (NULL, 0);
 //	_minfo.setOpcodes(NULL);
 
-        _minfo.request=(xmi_quad_t*)&_request;
-        _minfo.msginfo=(xmi_quad_t *)((void *) &_cdata);
+        _minfo.request=(pami_quad_t*)&_request;
+        _minfo.msginfo=(pami_quad_t *)((void *) &_cdata);
         _minfo.count  =1;
         _minfo.bytes  =0;
         _minfo.src    =NULL;
         _minfo.tasks  =NULL;
         _minfo.ntasks=0;
-        _minfo.opcodes=(xmi_subtask_t*)NULL;
+        _minfo.opcodes=(pami_subtask_t*)NULL;
         _iteration     = 0;
       }
 
@@ -250,15 +250,15 @@ namespace CCMI
       }
 
       /// Entry function to notify message has arrived
-      virtual void notifyRecv(unsigned src, const xmi_quad_t &info, char *buf, unsigned len);
+      virtual void notifyRecv(unsigned src, const pami_quad_t &info, char *buf, unsigned len);
 
       /// Entry function to declare that Message has been sent
-      virtual void notifySendDone( const xmi_quad_t & info )
+      virtual void notifySendDone( const pami_quad_t & info )
       {
         internalNotifySendDone(info);
       }
 
-      void internalNotifySendDone( const xmi_quad_t & info );
+      void internalNotifySendDone( const pami_quad_t & info );
 
       /// Start sending barrier operation
       virtual void start();
@@ -276,7 +276,7 @@ inline void CCMI::Executor::OldBarrier<T_Mcast>::sendNext()
     TRACE_ERR((stderr,"<%X>Executor::OldBarrier::sendNext DONE _cb_done %X, _phase %d, _clientdata %X\n",
                (int) this, (int)_cb_done, _phase, (int)_clientdata));
     if(_cb_done)
-      _cb_done(NULL, _clientdata, XMI_SUCCESS);
+      _cb_done(NULL, _clientdata, PAMI_SUCCESS);
     _senddone = false;
 
     return;
@@ -314,7 +314,7 @@ inline void CCMI::Executor::OldBarrier<T_Mcast>::sendNext()
         }
 //    _minfo.setOpcodes((CCMI_Subtask *)subtasks);
 //    _minfo.setRanks(dstranks, ndest);
-    _minfo.opcodes=(xmi_subtask_t*) subtasks;
+    _minfo.opcodes=(pami_subtask_t*) subtasks;
     _minfo.tasks=dstranks;
     _minfo.ntasks=ndest;
     ///Initiate multisend
@@ -323,7 +323,7 @@ inline void CCMI::Executor::OldBarrier<T_Mcast>::sendNext()
   }
   else
   {
-    xmi_quad_t * info = NULL;
+    pami_quad_t * info = NULL;
     //nothing to do, skip this phase
     notifySendDone( *info );
   }
@@ -344,7 +344,7 @@ inline void  CCMI::Executor::OldBarrier<T_Mcast>::start()
 ///
 template <class T_Mcast>
 inline void CCMI::Executor::OldBarrier<T_Mcast>::notifyRecv(unsigned          src,
-                                                const xmi_quad_t  & info,
+                                                const pami_quad_t  & info,
                                                 char            * buf,
                                                 unsigned          size)
 {
@@ -376,7 +376,7 @@ inline void CCMI::Executor::OldBarrier<T_Mcast>::notifyRecv(unsigned          sr
 /// \brief Entry function to indicate the send has finished
 ///
 template <class T_Mcast>
-inline void CCMI::Executor::OldBarrier<T_Mcast>::internalNotifySendDone( const xmi_quad_t & info )
+inline void CCMI::Executor::OldBarrier<T_Mcast>::internalNotifySendDone( const pami_quad_t & info )
 {
   TRACE_ERR((stderr,"<%X>Executor::OldBarrier::notifySendDone phase %d, vec %d\n",(int) this,_phase, _phasevec[_phase][_iteration]));
 

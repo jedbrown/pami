@@ -24,7 +24,7 @@
 #include "Global.h"
 #include <spi/bgp_SPI.h>
 
-namespace XMI {
+namespace PAMI {
 namespace Barrier {
 namespace BGP {
 /*
@@ -61,19 +61,19 @@ public:
 	_LockBoxBarrier() { }
 	~_LockBoxBarrier() { }
 
-	inline void init_impl(XMI::Memory::MemoryManager *mm, size_t z, bool m) {
-		XMI_abortf("_LockBoxBarrier class must be subclass");
+	inline void init_impl(PAMI::Memory::MemoryManager *mm, size_t z, bool m) {
+		PAMI_abortf("_LockBoxBarrier class must be subclass");
 	}
 
-	inline xmi_result_t enter_impl() {
+	inline pami_result_t enter_impl() {
 		pollInit_impl();
-		while (poll_impl() != XMI::Atomic::Interface::Done);
-		return XMI_SUCCESS;
+		while (poll_impl() != PAMI::Atomic::Interface::Done);
+		return PAMI_SUCCESS;
 	}
 
-	inline void enterPoll_impl(XMI::Atomic::Interface::pollFcn fcn, void *arg) {
+	inline void enterPoll_impl(PAMI::Atomic::Interface::pollFcn fcn, void *arg) {
 		pollInit_impl();
-		while (poll_impl() != XMI::Atomic::Interface::Done) {
+		while (poll_impl() != PAMI::Atomic::Interface::Done) {
 			fcn(arg);
 		}
 	}
@@ -84,15 +84,15 @@ public:
 		lockup = LockBox_Query(_barrier.lbx_ctrl_lock);
 		LockBox_FetchAndInc(_barrier.lbx_lock[lockup]);
 		_data = (void*)lockup;
-		_status = XMI::Atomic::Interface::Entered;
+		_status = PAMI::Atomic::Interface::Entered;
 	}
 
-	inline XMI::Atomic::Interface::barrierPollStatus poll_impl() {
-		XMI_assert(_status == XMI::Atomic::Interface::Entered);
+	inline PAMI::Atomic::Interface::barrierPollStatus poll_impl() {
+		PAMI_assert(_status == PAMI::Atomic::Interface::Entered);
 		uint32_t lockup, value;
 		lockup = (unsigned)_data;
 		if (LockBox_Query(_barrier.lbx_lock[lockup]) < _barrier.nparties) {
-			return XMI::Atomic::Interface::Entered;
+			return PAMI::Atomic::Interface::Entered;
 		}
 
 		// All cores have participated in the barrier
@@ -115,24 +115,24 @@ public:
 			// wait until master releases the barrier by clearing the lock
 			while (LockBox_Query(_barrier.lbx_lock[lockup]) > 0);
 		}
-		_status = XMI::Atomic::Interface::Initialized;
-		return XMI::Atomic::Interface::Done;
+		_status = PAMI::Atomic::Interface::Initialized;
+		return PAMI::Atomic::Interface::Done;
 	}
 	// With 5 lockboxes used... which one should be returned?
 	inline void *returnBarrier_impl() { return _barrier.lbx_ctrl_lock; }
 protected:
 	LockBox_Barrier_s _barrier;
 	void *_data;
-	XMI::Atomic::Interface::barrierPollStatus _status;
+	PAMI::Atomic::Interface::barrierPollStatus _status;
 }; // class _LockBoxBarrier
 
 class LockBoxNodeCoreBarrier :
-		public XMI::Atomic::Interface::Barrier<LockBoxNodeCoreBarrier>,
+		public PAMI::Atomic::Interface::Barrier<LockBoxNodeCoreBarrier>,
 		public _LockBoxBarrier {
 public:
 	LockBoxNodeCoreBarrier() {}
 	~LockBoxNodeCoreBarrier() {}
-	inline void init_impl(XMI::Memory::MemoryManager *mm, size_t z, bool m) {
+	inline void init_impl(PAMI::Memory::MemoryManager *mm, size_t z, bool m) {
 		// For core-granularity, everything is
 		// a core number. Assume the master core
 		// is the lowest-numbered core in the
@@ -142,18 +142,18 @@ public:
 		_barrier.coreshift = 0;
 		_barrier.nparties = __global.lockboxFactory.numCore();
 		__global.lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
-						XMI::Atomic::BGP::LBX_NODE_SCOPE);
-		_status = XMI::Atomic::Interface::Initialized;
+						PAMI::Atomic::BGP::LBX_NODE_SCOPE);
+		_status = PAMI::Atomic::Interface::Initialized;
 	}
 }; // class LockBoxNodeCoreBarrier
 
 class LockBoxNodeProcBarrier :
-		public XMI::Atomic::Interface::Barrier<LockBoxNodeProcBarrier>,
+		public PAMI::Atomic::Interface::Barrier<LockBoxNodeProcBarrier>,
 		public _LockBoxBarrier {
 public:
 	LockBoxNodeProcBarrier() {}
 	~LockBoxNodeProcBarrier() {}
-	inline void init_impl(XMI::Memory::MemoryManager *mm, size_t z, bool m) {
+	inline void init_impl(PAMI::Memory::MemoryManager *mm, size_t z, bool m) {
 		// For proc-granularity, must convert
 		// between core id and process id,
 		// and only one core per process will
@@ -162,13 +162,13 @@ public:
 		_barrier.coreshift = __global.lockboxFactory.coreShift();
 		_barrier.nparties = __global.lockboxFactory.numProc();
 		__global.lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
-						XMI::Atomic::BGP::LBX_NODE_SCOPE);
-		_status = XMI::Atomic::Interface::Initialized;
+						PAMI::Atomic::BGP::LBX_NODE_SCOPE);
+		_status = PAMI::Atomic::Interface::Initialized;
 	}
 }; // class LockBoxNodeProcBarrier
 
 }; // BGP namespace
 }; // Barrier namespace
-}; // XMI namespace
+}; // PAMI namespace
 
-#endif // __xmi_bgp_lockboxbarrier_h__
+#endif // __pami_bgp_lockboxbarrier_h__

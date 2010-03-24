@@ -13,10 +13,10 @@
 #ifndef __common_UdpSocketMappingInterface_h__
 #define __common_UdpSocketMappingInterface_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include <netinet/in.h>
 
-namespace XMI
+namespace PAMI
 {
   namespace Interface
   {
@@ -45,7 +45,7 @@ namespace XMI
           /// \param[out]
           /// \param[out]
           ///
-          inline xmi_result_t task2udp (size_t task, int & send_fd, sockaddr * send_addr, int & send_addr_len);
+          inline pami_result_t task2udp (size_t task, int & send_fd, sockaddr * send_addr, int & send_addr_len);
 
           ///
           /// \brief Get the task associated with a specific socket address
@@ -54,7 +54,7 @@ namespace XMI
           /// \param[in]
           /// \param[out] task    Global task identifier
           ///
-          inline xmi_result_t udp2task (int send_fd, sockaddr * send_addr, int send_addr_len, size_t & task);
+          inline pami_result_t udp2task (int send_fd, sockaddr * send_addr, int send_addr_len, size_t & task);
       }; // class UdpSocket
 
       template <class T_Mapping>
@@ -64,17 +64,17 @@ namespace XMI
       }
 
       template <class T_Mapping>
-      inline xmi_result_t UdpSocket<T_Mapping>::task2udp (size_t task, int & send_fd, sockaddr * send_addr, int & send_addr_len)
+      inline pami_result_t UdpSocket<T_Mapping>::task2udp (size_t task, int & send_fd, sockaddr * send_addr, int & send_addr_len)
       {
         return static_cast<T_Mapping*>(this)->task2udp_impl (task, send_fd, send_addr, send_addr_len);
       }
 
       template <class T_Mapping>
-      inline xmi_result_t UdpSocket<T_Mapping>::udp2task (int send_fd, sockaddr * send_addr, int send_addr_len, size_t & task)
+      inline pami_result_t UdpSocket<T_Mapping>::udp2task (int send_fd, sockaddr * send_addr, int send_addr_len, size_t & task)
       {
         return static_cast<T_Mapping*>(this)->udp2task_impl (send_fd, send_addr, send_addr_len, task);
       }
     };	// namespace Mapping
   };	// namespace Interface
-};	// namespace XMI
+};	// namespace PAMI
 #endif // __common_UdpSocketMappingInterface_h__

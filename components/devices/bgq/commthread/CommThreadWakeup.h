@@ -13,7 +13,7 @@
 #ifndef __components_devices_bgq_commthread_CommThreadWakeup_h__
 #define __components_devices_bgq_commthread_CommThreadWakeup_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "components/devices/bgq/commthread/WakeupRegion.h"
 #include "components/devices/bgq/commthread/ContextSets.h"
 #include "common/bgq/Context.h"
@@ -23,7 +23,7 @@
 #define WU_ArmWithAddress(...)
 #define Kernel_SnoopScheduler()		(0)
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace CommThread {
 
@@ -37,7 +37,7 @@ private:
 	inline void __lockContextSet(uint64_t &old, uint64_t new_) {
 		uint64_t m, l = 0;
 		size_t x;
-		xmi_result_t r;
+		pami_result_t r;
 
 		m = (old ^ new_) & old; // must unlock these
 		x = 0;
@@ -54,7 +54,7 @@ private:
 		while (m) {
 			if (m & 1) {
 				r = _ctxset->getContext(_client, x)->trylock();
-				if (r == XMI_SUCCESS) {
+				if (r == PAMI_SUCCESS) {
 					l |= (1ULL << x);
 				}
 			}
@@ -72,7 +72,7 @@ private:
 	inline size_t __advanceContextSet(uint64_t ctx) {
 		size_t x, e = 0;
 		uint64_t m = ctx;
-		xmi_result_t r;
+		pami_result_t r;
 		x = 0;
 		while (m) {
 			if (m & 1) {
@@ -132,25 +132,25 @@ public:
 	}
 
 	static inline void initContext(BgqCommThread *devs, size_t clientid,
-					size_t contextid, xmi_context_t context) {
+					size_t contextid, pami_context_t context) {
 		// might need hook later, to do per-context initialization?
 	}
 
-	static inline xmi_result_t addContext(BgqCommThread *devs, size_t clientid,
-					xmi_context_t context) {
+	static inline pami_result_t addContext(BgqCommThread *devs, size_t clientid,
+					pami_context_t context) {
 		// all BgqCommThread objects have the same ContextSet object.
 		return devs[0]._ctxset->addContext(clientid, context);
 	}
 
 	static void *commThread(void *cookie) {
 		BgqCommThread *thus = (BgqCommThread *)cookie;
-		xmi_result_t r = thus->__commThread();
+		pami_result_t r = thus->__commThread();
 		r = r; // avoid worning until we decide how to use result
 		return NULL;
 	}
 
 private:
-	inline xmi_result_t __commThread() {
+	inline pami_result_t __commThread() {
 		// should/can this use the internal (C++) interface?
 		uint64_t new_ctx, old_ctx, lkd_ctx;
 		size_t n, events;
@@ -228,16 +228,16 @@ more_work:		// lightweight enough.
 		// must have unlocked before this... ??
 		// __lockContextSet(lkd_ctx, 0);
 		_ctxset->leaveContextSet(0, id); // id invalid now
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 
 	BgqWakeupRegion *_wakeup_region;///< memory for WAC for all contexts
-	XMI::Device::CommThread::BgqContextPool *_ctxset;
+	PAMI::Device::CommThread::BgqContextPool *_ctxset;
 	size_t _client;
 }; // class BgqCommThread
 
 }; // namespace CommThread
 }; // namespace Device
-}; // namespace XMI
+}; // namespace PAMI
 
 #endif // __components_devices_bgq_commthread_CommThread_h__

@@ -14,10 +14,10 @@
 #ifndef __components_devices_MultisyncModel_h__
 #define __components_devices_MultisyncModel_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 #include "util/common.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -34,27 +34,27 @@ namespace XMI
       {
       public:
         /// \param[in] device                Multisync device reference
-        MultisyncModel (T_Device &device, xmi_result_t &status)
+        MultisyncModel (T_Device &device, pami_result_t &status)
           {
             COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
-            status = XMI_SUCCESS;
+            status = PAMI_SUCCESS;
           };
         ~MultisyncModel ()
           {
 
           };
-        inline xmi_result_t postMultisync(uint8_t (&state)[T_StateBytes],
-                                          xmi_multisync_t *msync);
+        inline pami_result_t postMultisync(uint8_t (&state)[T_StateBytes],
+                                          pami_multisync_t *msync);
       }; // class MultisyncModel
 
       template <class T_Model,class T_Device, unsigned T_StateBytes>
-      xmi_result_t MultisyncModel<T_Model,T_Device,T_StateBytes>::postMultisync(uint8_t (&state)[T_StateBytes],
-                                                                        xmi_multisync_t *msync)
+      pami_result_t MultisyncModel<T_Model,T_Device,T_StateBytes>::postMultisync(uint8_t (&state)[T_StateBytes],
+                                                                        pami_multisync_t *msync)
       {
         return static_cast<T_Model*>(this)->postMultisync_impl(state, msync);
       }
 
     }; // namespace Interface
   }; // namespace Device
-}; // namespace XMI
+}; // namespace PAMI
 #endif // __components_devices_MultisyncModel_h__

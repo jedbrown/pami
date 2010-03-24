@@ -16,7 +16,7 @@
 
 #include "components/devices/workqueue/WorkQueue.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -91,7 +91,7 @@ namespace XMI
             _consumed (0),
             _input (input)
           {
-            XMI_assert_debug(_consumers == 1);
+            PAMI_assert_debug(_consumers == 1);
             if (input) _produced = length;
           }
 #endif
@@ -134,7 +134,7 @@ namespace XMI
 
           inline size_t bytesAvailableToProduce (unsigned producer)
           {
-            XMI_abortf("%s<%d>\n",__FILE__,__LINE__);
+            PAMI_abortf("%s<%d>\n",__FILE__,__LINE__);
             return 0;
           }
 
@@ -162,7 +162,7 @@ namespace XMI
 
           inline size_t bytesAvailableToConsume (unsigned consumer)
           {
-            XMI_assert_debug(0);
+            PAMI_assert_debug(0);
             return 0;
           }
 
@@ -187,7 +187,7 @@ namespace XMI
 
           inline size_t getBytesProduced (unsigned producer)
           {
-            XMI_assert_debug(0);
+            PAMI_assert_debug(0);
             return 0;
           }
 
@@ -198,7 +198,7 @@ namespace XMI
 
           inline size_t getBytesConsumed (unsigned consumer)
           {
-            XMI_assert_debug(0);
+            PAMI_assert_debug(0);
             return 0;
           }
 
@@ -224,7 +224,7 @@ namespace XMI
 
           inline char * bufferToProduce (unsigned producer)
           {
-            XMI_assert_debug(0);
+            PAMI_assert_debug(0);
             return NULL;
           }
 
@@ -235,7 +235,7 @@ namespace XMI
 
           inline void produceBytes (size_t bytes, unsigned producer)
           {
-            XMI_assert_debug(0);
+            PAMI_assert_debug(0);
           }
 
           inline void produceBytes (size_t bytes)
@@ -245,7 +245,7 @@ namespace XMI
 
           inline char * bufferToConsume (unsigned consumer)
           {
-            XMI_assert_debug(0);
+            PAMI_assert_debug(0);
             return NULL;
           }
 
@@ -256,7 +256,7 @@ namespace XMI
 
           inline void consumeBytes (size_t bytes, unsigned consumer)
           {
-            XMI_assert_debug(0);
+            PAMI_assert_debug(0);
           }
 
           inline void consumeBytes (size_t bytes)

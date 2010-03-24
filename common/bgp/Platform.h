@@ -21,9 +21,9 @@
 #define NUM_SMT 1
 
 // these are based on what the CNK allows
-#define XMI_MAX_PROC_PER_NODE	(NUM_CORES * NUM_SMT)
-#define XMI_MAX_THREAD_PER_PROC	(NUM_CORES * NUM_SMT)
-#define XMI_DEF_SH_WORKSIZE   8192 // Default shared work queue worksize
-#define XMI_DEF_SH_WORKUNITS  32   // Default shared work queue workunits
+#define PAMI_MAX_PROC_PER_NODE	(NUM_CORES * NUM_SMT)
+#define PAMI_MAX_THREAD_PER_PROC	(NUM_CORES * NUM_SMT)
+#define PAMI_DEF_SH_WORKSIZE   8192 // Default shared work queue worksize
+#define PAMI_DEF_SH_WORKUNITS  32   // Default shared work queue workunits
 
 #endif // __common_bgp_platform_h__

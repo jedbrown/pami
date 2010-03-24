@@ -29,7 +29,7 @@ namespace CCMI
 /// Arbitrary maximum number PE's per phase.  (In practice it's < 4)
 /// This is used for examining the PE lists from the schedule.  If a
 /// schedule ever returns more than 16, we'll assert.
-#define XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE 128
+#define PAMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE 128
 
     /// client data for multisend receive done callback
     typedef struct RecvCallbackData_t
@@ -74,7 +74,7 @@ namespace CCMI
         unsigned     sconnId;      // # sender connection id for this phase
         unsigned  *  dstPes;       // destination ranks
         unsigned  *  dstHints;     // hints, one per destination
-        xmi_oldmulticast_recv_t *mrecv;
+        pami_oldmulticast_recv_t *mrecv;
       } PhaseState __attribute__((__aligned__(16))); ///Achieve better cache blocking
 
     protected:
@@ -103,7 +103,7 @@ namespace CCMI
       unsigned     *_all_dstHints;
       unsigned     *_all_chunks  ;
       unsigned     *_nextActivePhase;  //convert to dynamic vector
-      xmi_oldmulticast_recv_t *_all_mrecvs;
+      pami_oldmulticast_recv_t *_all_mrecvs;
 
       /// dynamically allocated buffer space (for received data)
       void             * _receiveAllocation;
@@ -112,7 +112,7 @@ namespace CCMI
       /// pointers into the receive allocation
       char             * _tempBuf;
       char             * _bufs;
-      XMI_Request_t   * _recvReq;
+      PAMI_Request_t   * _recvReq;
       RecvCallbackData * _recvClientData;
 
       // global state information
@@ -147,8 +147,8 @@ namespace CCMI
       unsigned                                _commid;   /// Communicator identifier
       unsigned                                _color;    /// Color of the collective
 
-      xmi_op                                 _op;         /// allreduce operation
-      xmi_dt                                 _dt;         /// allreduce datatype
+      pami_op                                 _op;         /// allreduce operation
+      pami_dt                                 _dt;         /// allreduce datatype
       unsigned                                _iteration;   /// allreduce async iteration
       Executor                              * _executor;   /// Pointer to executor which is needed to
       /// set up the receive callback data objects
@@ -156,27 +156,27 @@ namespace CCMI
     public:
 
 
-#ifdef XMI_DEBUG
+#ifdef PAMI_DEBUG
       inline void checkCorruption()
         {
           if(_receiveAllocation)
               {
-                XMI_ADAPTOR_DEBUG_trace_data("CHECK RECEIVE ALLOCATION CORRUPTION",(((char*)_receiveAllocation)-8), 16);
+                PAMI_ADAPTOR_DEBUG_trace_data("CHECK RECEIVE ALLOCATION CORRUPTION",(((char*)_receiveAllocation)-8), 16);
               }
-          else XMI_ADAPTOR_DEBUG_trace_data("CHECK RECEIVE ALLOCATION CORRUPTION NULL",NULL , 0);
+          else PAMI_ADAPTOR_DEBUG_trace_data("CHECK RECEIVE ALLOCATION CORRUPTION NULL",NULL , 0);
           if(_scheduleAllocation)
               {
-                XMI_ADAPTOR_DEBUG_trace_data("CHECK SCHEDULE ALLOCATION CORRUPTION",(((char*)_scheduleAllocation)-8), 16);
-                XMI_ADAPTOR_DEBUG_trace_data("CHECK PHASE VECTOR CORRUPTION",(char*)_phaseVec, 128);
+                PAMI_ADAPTOR_DEBUG_trace_data("CHECK SCHEDULE ALLOCATION CORRUPTION",(((char*)_scheduleAllocation)-8), 16);
+                PAMI_ADAPTOR_DEBUG_trace_data("CHECK PHASE VECTOR CORRUPTION",(char*)_phaseVec, 128);
               }
-          else XMI_ADAPTOR_DEBUG_trace_data("CHECK SCHEDULE ALLOCATION CORRUPTION NULL",NULL , 0);
+          else PAMI_ADAPTOR_DEBUG_trace_data("CHECK SCHEDULE ALLOCATION CORRUPTION NULL",NULL , 0);
         }
 #endif
-      inline xmi_op getOp()
+      inline pami_op getOp()
         {
           return _op;
         }
-      inline xmi_dt getDt()
+      inline pami_dt getDt()
         {
           return _dt;
         }
@@ -261,8 +261,8 @@ namespace CCMI
 
       inline int getNextActivePhase (int phase)
         {
-          XMI_assert (phase >= _startPhase);
-          XMI_assert (phase <= _endPhase);
+          PAMI_assert (phase >= _startPhase);
+          PAMI_assert (phase <= _endPhase);
           return _nextActivePhase [phase];
         }
 
@@ -325,7 +325,7 @@ namespace CCMI
         {
           return _phaseVec[index].totalChunksRcvd;
         }
-      inline xmi_oldmulticast_recv_t  *   getPhaseMcastRecv(unsigned index,unsigned jindex)
+      inline pami_oldmulticast_recv_t  *   getPhaseMcastRecv(unsigned index,unsigned jindex)
         {
           TRACE_STATE((stderr,"<%p>Executor::AllreduceState::getPhaseMcastRecv _phaseVec[%#X].recvBufs[%#X]=%#X _phaseVec[%#X].mrecv[%#X].rcvbuf=%#X\n",
                        this,
@@ -421,7 +421,7 @@ namespace CCMI
           ++_recvClientData[index].srcPeIndex;
         }
 
-      inline XMI_Request_t   * getRecvReq()
+      inline PAMI_Request_t   * getRecvReq()
         {
           return  _recvReq;
         }
@@ -469,8 +469,8 @@ namespace CCMI
       /// \param[in]  pdstbuf pointer to the destination buffer pointer.
       inline void setDstBuf(char** pdstbuf)
         {
-          XMI_assert(_scheduleAllocationSize);
-          if(_dstPhase != (int) XMI_UNDEFINED_PHASE)
+          PAMI_assert(_scheduleAllocationSize);
+          if(_dstPhase != (int) PAMI_UNDEFINED_PHASE)
               {
                 // We only use the destination buffer if we're a root or it's allreduce.  Otherwise we use
                 // a temporary buffer.
@@ -481,7 +481,7 @@ namespace CCMI
                 // The mrecv structure has to match, but we assume this only works for 1 src pe?  We
                 // only have a dst phase, not a dst src pe index (so mrecv[0]).  How would a final multi-
                 // src receive phase work?  Probably not an issue, but assert anyway.
-                XMI_assert(_phaseVec[_dstPhase].numSrcPes == 1);
+                PAMI_assert(_phaseVec[_dstPhase].numSrcPes == 1);
                 _phaseVec[_dstPhase].mrecv[0].rcvbuf = *_phaseVec[_dstPhase].recvBufs;
 
                 TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setDstBuf(%#X) dstPhase(%#X) _phaseVec[_dstPhase].recvBufs(%#X)\n",
@@ -512,7 +512,7 @@ namespace CCMI
               {
                 TRACE_ALERT((stderr,"<%p>Executor::AllreduceState::freeAllocations(%#.8X) ALERT: Allocation freed, %#X(%#X bytes), %#X(%#X bytes)\n",this,
                              limit, (int)_scheduleAllocation, _scheduleAllocationSize, (int)_receiveAllocation, _receiveAllocationSize));
-#ifdef XMI_DEBUG
+#ifdef PAMI_DEBUG
                 memset(_scheduleAllocation, 0xFB, _scheduleAllocationSize);
                 memset(_receiveAllocation, 0xFC, _receiveAllocationSize);
 #endif
@@ -547,26 +547,26 @@ namespace CCMI
                 _recvReq       = NULL;
                 _recvClientData= NULL;
 
-                _dstPhase = XMI_UNDEFINED_PHASE;
+                _dstPhase = PAMI_UNDEFINED_PHASE;
                 if (_nextActivePhase)
                     {
                       CCMI_Free(_nextActivePhase);
                       _nextActivePhase = NULL;
                     }
-#ifdef XMI_DEBUG
+#ifdef PAMI_DEBUG
                 _all_srcPes    = (unsigned*)0xFFFFFFF0;
                 _all_srcHints  = (unsigned*)0xFFFFFFF1;
                 _all_recvBufs  = (char**)0xFFFFFFF2;
                 _all_dstPes    = (unsigned*)0xFFFFFFF3;
                 _all_dstHints  = (unsigned*)0xFFFFFFF4;
                 _all_chunks    = (unsigned*)0xFFFFFFF5;
-                _all_mrecvs    = (MultiSend::XMI_OldMulticastRecv_t*)0xFFFFFFF6;
+                _all_mrecvs    = (MultiSend::PAMI_OldMulticastRecv_t*)0xFFFFFFF6;
 
                 _phaseVec      = (PhaseState*)0xFFFFFFF7;
 
                 _tempBuf       = (char             *)0xFFFFFFF8;
                 _bufs          = (char             *)0xFFFFFFF9;
-                _recvReq       = (XMI_Request_t   *)0xFFFFFFFa;
+                _recvReq       = (PAMI_Request_t   *)0xFFFFFFFa;
                 _recvClientData= (RecvCallbackData *)0xFFFFFFFb;
 #endif
               }
@@ -615,7 +615,7 @@ namespace CCMI
         _phaseVec(NULL),
         _startPhase(-1),
         _endPhase(-1),
-        _dstPhase(XMI_UNDEFINED_PHASE),
+        _dstPhase(PAMI_UNDEFINED_PHASE),
         _numSrcPes(0),
         _numDstPes(0),
         _pipelineWidth(0),
@@ -627,8 +627,8 @@ namespace CCMI
         _bconnmgr (NULL),
         _commid ((unsigned)-1),
         _color  ((unsigned)-1),
-        _op(XMI_UNDEFINED_OP),
-        _dt(XMI_UNDEFINED_DT),
+        _op(PAMI_UNDEFINED_OP),
+        _dt(PAMI_UNDEFINED_DT),
         _iteration(iteration)
         {
           TRACE_STATE((stderr,"<%p>Executor::AllreduceState::ctor(void) enter\n",this));
@@ -646,7 +646,7 @@ namespace CCMI
       /// NOTE: This is required to make "C" programs link successfully with virtual destructors
       inline void operator delete(void * p)
         {
-          XMI_abort();
+          PAMI_abort();
         }
 
       inline void setExecutor (Executor *exe)
@@ -666,11 +666,11 @@ namespace CCMI
       inline void setDataFunc(unsigned         pipelineWidth,
                               unsigned         count,
                               unsigned         sizeOfType,
-                              xmi_op          op,
-                              xmi_dt          dt)
+                              pami_op          op,
+                              pami_dt          dt)
         {
           TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setDataFunc() enter\n",this));
-          XMI_assert(pipelineWidth % sizeOfType == 0);
+          PAMI_assert(pipelineWidth % sizeOfType == 0);
 
           _op = op;
           _dt = dt;
@@ -730,10 +730,10 @@ namespace CCMI
                 for(int phase = _startPhase; phase <= _endPhase; phase++)
                   for(unsigned scount = 0; scount < _phaseVec[phase].numSrcPes; scount ++)
                       {
-                        xmi_oldmulticast_recv_t *mrecv = &(_phaseVec[phase].mrecv[scount]);
+                        pami_oldmulticast_recv_t *mrecv = &(_phaseVec[phase].mrecv[scount]);
                         mrecv->bytes = _bytes;
                         mrecv->pipelineWidth = _pipelineWidth;
-                        //mrecv->opcode = (XMI_Subtask) _phaseVec[phase].srcHints[scount];
+                        //mrecv->opcode = (PAMI_Subtask) _phaseVec[phase].srcHints[scount];
                       }
               }
 
@@ -751,9 +751,9 @@ namespace CCMI
       inline void resetReceives(unsigned infoRequired)
         {
           TRACE_STATE((stderr,"<%p>Executor::AllreduceState::resetReceives() enter\n",this));
-          //  XMI_assert(_curRcvPhase == XMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
-          XMI_assert(_bytes > 0);
-          XMI_assert(_sched);
+          //  PAMI_assert(_curRcvPhase == PAMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);
+          PAMI_assert(_bytes > 0);
+          PAMI_assert(_sched);
 
           // Do minimal setup if the config hasn't changed.
           if(!_isConfigChanged)
@@ -784,7 +784,7 @@ namespace CCMI
           TRACE_ALERT((stderr,"<%p>Executor::AllreduceState::constructPhaseData() ALERT: Phase data being reset\n",this));
           TRACE_STATE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() enter\n",this));
 
-          _dstPhase = (int) XMI_UNDEFINED_PHASE;
+          _dstPhase = (int) PAMI_UNDEFINED_PHASE;
 
           int startphase, nphases, maxranks;
 
@@ -802,8 +802,8 @@ namespace CCMI
                        "startphase:%#X nphases:%#X maxranks:%#X\n",this,
                        _root,startphase,nphases,maxranks));
 
-          XMI_assert(nphases > 0);
-          XMI_assert(startphase >= 0);
+          PAMI_assert(nphases > 0);
+          PAMI_assert(startphase >= 0);
 
           _startPhase = startphase;
           _endPhase   = _startPhase + nphases - 1;
@@ -827,15 +827,15 @@ namespace CCMI
           for(int i = _startPhase; i <= _endPhase; i++)
               {
                 unsigned iNumSrcPes, iNumDstPes,
-                  iSrcPes[XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
-                  iSrcHints[XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
-                  iDstPes[XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
-                  iDstHints[XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE];
+                  iSrcPes[PAMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
+                  iSrcHints[PAMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
+                  iDstPes[PAMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
+                  iDstHints[PAMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE];
 
                 _sched->getSrcPeList(i, iSrcPes, iNumSrcPes, iSrcHints);
                 _sched->getDstPeList(i, iDstPes, iNumDstPes, iDstHints);
-                XMI_assert(iNumSrcPes <= XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE &&
-                           iNumDstPes <= XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE);
+                PAMI_assert(iNumSrcPes <= PAMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE &&
+                           iNumDstPes <= PAMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE);
                 _numSrcPes += iNumSrcPes;
                 _numDstPes += iNumDstPes;
 
@@ -848,9 +848,9 @@ namespace CCMI
                       unsigned idx = 0;
                       ///find the last combine phase
                       for(idx = 0; idx < iNumSrcPes; idx++)
-                        if(iSrcHints [idx] == XMI_COMBINE_SUBTASK ||
-                           iSrcHints [idx] == XMI_REDUCE_RECV_STORE ||
-                           iSrcHints [idx] == XMI_REDUCE_RECV_NOSTORE)
+                        if(iSrcHints [idx] == PAMI_COMBINE_SUBTASK ||
+                           iSrcHints [idx] == PAMI_REDUCE_RECV_STORE ||
+                           iSrcHints [idx] == PAMI_REDUCE_RECV_NOSTORE)
                           _lastCombinePhase = i;
 
                       ///Broadcast recv phase is the last non-combine recv phase.
@@ -858,9 +858,9 @@ namespace CCMI
                       if(i > _startPhase)
                           {
                             for(idx = 0; idx < iNumSrcPes; idx++)
-                              if(iSrcHints [idx] != XMI_COMBINE_SUBTASK &&
-                                 iSrcHints [idx] != XMI_REDUCE_RECV_STORE &&
-                                 iSrcHints [idx] != XMI_REDUCE_RECV_NOSTORE)
+                              if(iSrcHints [idx] != PAMI_COMBINE_SUBTASK &&
+                                 iSrcHints [idx] != PAMI_REDUCE_RECV_STORE &&
+                                 iSrcHints [idx] != PAMI_REDUCE_RECV_NOSTORE)
                                   {
                                     _bcastRecvPhase = i;
                                     break;
@@ -884,8 +884,8 @@ namespace CCMI
                 for(; _bcastSendPhase <= _endPhase; _bcastSendPhase++)
                     {
                       unsigned iNumDstPes,
-                        iDstPes [XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
-                        iDstHints [XMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE];
+                        iDstPes [PAMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE],
+                        iDstHints [PAMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_PES_PER_PHASE];
                       _sched->getDstPeList(_bcastSendPhase, iDstPes, iNumDstPes, iDstHints);
                       if(iNumDstPes > 0) break;
                     }
@@ -908,7 +908,7 @@ namespace CCMI
               sizeof(unsigned) +                          // _all_srcHints
               sizeof(unsigned) +                          // _all_chunks
               sizeof(char*)  +                            // _all_recvBufs
-              sizeof(xmi_oldmulticast_recv_t))) + // _all_mrecvs
+              sizeof(pami_oldmulticast_recv_t))) + // _all_mrecvs
             (_numDstPes *                                 // dst pe data structures:
              (sizeof(unsigned) +                          // _all_dstPes
               sizeof(unsigned)));                         // _all_dstHints
@@ -925,14 +925,14 @@ namespace CCMI
                   CCMI_Free(_scheduleAllocation);
                 _scheduleAllocation = CCMI_Alloc(allocationNewSize);
 
-#ifdef XMI_DEBUG
+#ifdef PAMI_DEBUG
                 memset(_scheduleAllocation, 0xFD, allocationNewSize);
 
                 if(!_scheduleAllocation)
                   fprintf(stderr,"<%p>CCMI_Alloc failed<%p> free'd %#X, malloc'd %#X\n",this,
                           (int)_scheduleAllocation,_scheduleAllocationSize, allocationNewSize);
 #endif
-                XMI_assert(_scheduleAllocation);
+                PAMI_assert(_scheduleAllocation);
 
                 _scheduleAllocationSize = allocationNewSize;
               }
@@ -945,7 +945,7 @@ namespace CCMI
           _all_chunks   = (unsigned*)((char*)_all_srcHints + (_numSrcPes * sizeof(unsigned)));
           _all_dstPes   = (unsigned*)((char*)_all_chunks   + (_numSrcPes * sizeof(unsigned)));
           _all_dstHints = (unsigned*)((char*)_all_dstPes   + (_numDstPes * sizeof(unsigned)));
-          _all_mrecvs   = (xmi_oldmulticast_recv_t *) ((char*)_all_dstHints   + (_numDstPes * sizeof(unsigned)));
+          _all_mrecvs   = (pami_oldmulticast_recv_t *) ((char*)_all_dstHints   + (_numDstPes * sizeof(unsigned)));
 
           TRACE_STATE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() allocation<%p> _phaseVec<%p> _all_recvBufs<%p> _all_srcPes<%p> _all_srcHints<%p> _all_chunks<%p> _all_dstPes<%p> _all_dstHints<%p>\n",
                        this,_scheduleAllocation,
@@ -986,11 +986,11 @@ namespace CCMI
                                   else
                                     connID = _bconnmgr->getRecvConnectionId (_commid, _root, srcrank, i, _color);
 
-                                  xmi_oldmulticast_recv_t *mrecv = &(_phaseVec[i].mrecv[scount]);
+                                  pami_oldmulticast_recv_t *mrecv = &(_phaseVec[i].mrecv[scount]);
                                   mrecv->connection_id = connID;
                                   mrecv->bytes = _bytes;
                                   mrecv->pipelineWidth = _pipelineWidth;
-                                  mrecv->opcode = (xmi_subtask_t) _phaseVec[i].srcHints[scount];
+                                  mrecv->opcode = (pami_subtask_t) _phaseVec[i].srcHints[scount];
                                 }
 
                             indexSrcPe += _phaseVec[i].numSrcPes;
@@ -999,7 +999,7 @@ namespace CCMI
                             // final answer.
                             // Since the dstbuf changes external to this class, we will set the phase index and the
                             // executor will use this to setup the dstbuff appropriately.
-                            if(_phaseVec[i].srcHints[0] != XMI_COMBINE_SUBTASK)
+                            if(_phaseVec[i].srcHints[0] != PAMI_COMBINE_SUBTASK)
                               _dstPhase = i;  // No combine? Our target buffer will be the final dstbuf.
                             else; // Leave it as previously set to: &_all_recvBufs[indexSrcPe];
                           }
@@ -1065,7 +1065,7 @@ namespace CCMI
                                     bcast_phase = true;
                                 }
 
-                            ///XMI_assert (_color > 0); /// Most protocols set color to undefined, which we should change in the long run
+                            ///PAMI_assert (_color > 0); /// Most protocols set color to undefined, which we should change in the long run
 
                             if(bcast_phase)
                               //Use the broadcast connection manager
@@ -1105,7 +1105,7 @@ namespace CCMI
                                 _phaseVec[i].numDstPes ,
                                 _phaseVec[i].numDstPes ? _phaseVec[i].dstPes[0]:-1,
                                 _phaseVec[i].numDstPes ? _phaseVec[i].dstHints[0]:-1));
-#ifdef XMI_DEBUG_SCHEDULE
+#ifdef PAMI_DEBUG_SCHEDULE
                 for(unsigned j = 1; j < _phaseVec[i].numSrcPes; ++j)
                   TRACE_SCHEDULE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() src[%#X]:%#X srchints:%#X\n",this,j,
                                   _phaseVec[i].srcPes[j],_phaseVec[i].srcHints[j]));
@@ -1113,7 +1113,7 @@ namespace CCMI
                 for(unsigned j = 1; j < _phaseVec[i].numDstPes; ++j)
                   TRACE_SCHEDULE((stderr,"<%p>Executor::AllreduceState::constructPhaseData() dst[%#X]:%#X dsthints:%#X\n",this,j,
                                   _phaseVec[i].dstPes[j],_phaseVec[i].dstHints[j]));
-#endif // XMI_DEBUG_SCHEDULE
+#endif // PAMI_DEBUG_SCHEDULE
               } // for(int i = _startPhase; i <= _endPhase; i++)
 
 
@@ -1182,7 +1182,7 @@ namespace CCMI
 
           /// \todo maybe one too many mallocs?  for the final non-combine receive buf?
           unsigned allocationNewSize =
-            ((_numSrcPes * numRequests) * sizeof(XMI_Request_t)) +         // _recvReq
+            ((_numSrcPes * numRequests) * sizeof(PAMI_Request_t)) +         // _recvReq
             ((_numSrcPes * numRequests) * (sizeof(RecvCallbackData) + 4)) + // _recvClientData (padded to 16 bytes)
             (_numSrcPes * alignedBytes) +                                   // _bufs
             (((_root == -1) | (_root == (int)_myRank))? 0 : alignedBytes);  // We need a temp buffer on non-root nodes
@@ -1201,14 +1201,14 @@ namespace CCMI
                 if(_receiveAllocation) CCMI_Free(_receiveAllocation);
                 _receiveAllocation = CCMI_Alloc(allocationNewSize);
 
-#ifdef XMI_DEBUG
+#ifdef PAMI_DEBUG
                 memset(_receiveAllocation, 0xFE, allocationNewSize);
 
                 if(!_receiveAllocation)
                   fprintf(stderr,"<%p>CCMI_Alloc failed<%p> free'd %#X, malloc'd %#X\n",this,
                           (int)_receiveAllocation,_receiveAllocationSize, allocationNewSize);
 #endif
-                XMI_assert(_receiveAllocation);
+                PAMI_assert(_receiveAllocation);
 
                 _receiveAllocationSize = allocationNewSize;
                 _sizeOfBuffers = alignedBytes;
@@ -1224,7 +1224,7 @@ namespace CCMI
                 {
                   // See if the current allocation supports the buffer size.  If not, adjust buffer size.
                   unsigned maxAllocationSize =
-                    ((_numSrcPes * numRequests) * sizeof(XMI_Request_t)) +         // _recvReq
+                    ((_numSrcPes * numRequests) * sizeof(PAMI_Request_t)) +         // _recvReq
                     ((_numSrcPes * numRequests) * (sizeof(RecvCallbackData) + 4)) + // _recvClientData (padded to 16 bytes)
                     (_numSrcPes * _sizeOfBuffers) +                                   // _bufs
                     (((_root == -1) | (_root == (int)_myRank))? 0 : _sizeOfBuffers);  // We need a temp buffer on non-root nodes
@@ -1233,9 +1233,9 @@ namespace CCMI
                     _sizeOfBuffers = alignedBytes;
                 }
 
-          _recvReq = (XMI_Request_t *) _receiveAllocation;
+          _recvReq = (PAMI_Request_t *) _receiveAllocation;
 
-          _recvClientData = (RecvCallbackData *) ((char*)_recvReq + ((_numSrcPes * numRequests) * sizeof(XMI_Request_t)));
+          _recvClientData = (RecvCallbackData *) ((char*)_recvReq + ((_numSrcPes * numRequests) * sizeof(PAMI_Request_t)));
 
           _bufs = (char *) _recvClientData + ((_numSrcPes * numRequests) * (sizeof(RecvCallbackData) + 4));
 
@@ -1276,13 +1276,13 @@ namespace CCMI
                     {
                       for(unsigned scount = 0; scount < _phaseVec[p].numSrcPes; scount ++)
                           {
-                            XMI_Request_t *request = getRecvReq() + nextRecvData;
+                            PAMI_Request_t *request = getRecvReq() + nextRecvData;
                             RecvCallbackData *rdata = getRecvClient(nextRecvData);
                             rdata->allreduce        = _executor;
                             rdata->phase            = p;
                             rdata->srcPeIndex       = scount;
 
-                            _phaseVec[p].mrecv[scount].request = (xmi_quad_t*)request;
+                            _phaseVec[p].mrecv[scount].request = (pami_quad_t*)request;
                             _phaseVec[p].mrecv[scount].cb_done.clientdata = rdata;
                             _phaseVec[p].mrecv[scount].op = _op;
                             _phaseVec[p].mrecv[scount].dt = _dt;

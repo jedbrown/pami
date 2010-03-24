@@ -20,7 +20,7 @@
 #include "string.h"
 
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -41,11 +41,11 @@ namespace XMI
             struct
             {
               volatile size_t bytes;     ///< Number of bytes produced - Only written by each producer!
-            } consumer[XMI_MAX_PROC_PER_NODE];	// must preserve 16-byte alignment
+            } consumer[PAMI_MAX_PROC_PER_NODE];	// must preserve 16-byte alignment
             struct
             {
               volatile size_t bytes;     ///< Number of bytes consumed - Only written by each consumer!
-            } producer[XMI_MAX_PROC_PER_NODE];	// must preserve 16-byte alignment
+            } producer[PAMI_MAX_PROC_PER_NODE];	// must preserve 16-byte alignment
 		// NOTE: producer[] must be at the end of the header
 		// (be the space used for the ad-hoc barrier counters)
 		// in order to avoid problems when early exiters of
@@ -60,7 +60,7 @@ namespace XMI
           ///
           /// \param[in] queue Location of the workqueue structure in shared memory.
           ///
-          SharedWorkQueue (XMI::Memory::MemoryManager *mm, unsigned workunits = XMI_DEF_SH_WORKUNITS, unsigned worksize = XMI_DEF_SH_WORKSIZE) :
+          SharedWorkQueue (PAMI::Memory::MemoryManager *mm, unsigned workunits = PAMI_DEF_SH_WORKUNITS, unsigned worksize = PAMI_DEF_SH_WORKSIZE) :
             WorkQueue (),
             _qsize (workunits * worksize),
             _worksize (worksize),
@@ -68,8 +68,8 @@ namespace XMI
           {
                 size_t size = sizeof(workqueue_t) + _qsize;
                 mm->memalign((void **)&_sharedqueue, 16, size);
-		XMI_assert_debug(_sharedqueue);
-		XMI_assert_debug((_qsize & (_qsize - 1)) == 0);
+		PAMI_assert_debug(_sharedqueue);
+		PAMI_assert_debug((_qsize & (_qsize - 1)) == 0);
 		_qmask = _qsize - 1;
           }
 

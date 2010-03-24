@@ -31,13 +31,13 @@
 /// the generic device slice (context) is advanced. Depending on the
 /// thread status and work function return code, the thread may persist
 /// on the queue or be removed. Thread objects are posted using
-/// \ref XMI::Device::Generic::Device::postThread "postThread()".
+/// \ref PAMI::Device::Generic::Device::postThread "postThread()".
 ///
 /// The other queue holds message objects. These objects are queued only
 /// to be checked for completion. during advance, each object on this queue
 /// has it's status checked, and if Done will be dequeued and the completion
 /// callback invoked. Message are posted using
-/// \ref XMI::Device::Generic::Device::postMsg "postMsg()".
+/// \ref PAMI::Device::Generic::Device::postMsg "postMsg()".
 ///
 /// A user of the generic device may employ both message and threads,
 /// or either one alone.
@@ -70,18 +70,18 @@
 /// be changed by third-parties, for example to terminate a thread without
 /// the work function being called (again).
 ///
-/// \ref XMI::Device::ThreadStatus "GenericThread status values"
+/// \ref PAMI::Device::ThreadStatus "GenericThread status values"
 ///
-/// \ref XMI::Device::Generic::GenericThread "class GenericThread"
+/// \ref PAMI::Device::Generic::GenericThread "class GenericThread"
 ///
 /// \b Provides:
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::GenericThread::getStatus "ThreadStatus getStatus()"
+/// \ref PAMI::Device::Generic::GenericThread::getStatus "ThreadStatus getStatus()"
 ///
-/// \ref XMI::Device::Generic::GenericThread::setStatus "void setStatus(ThreadStatus stat)"
+/// \ref PAMI::Device::Generic::GenericThread::setStatus "void setStatus(ThreadStatus stat)"
 ///
-/// \ref XMI::Device::Generic::GenericThread::setFunc "void setFunc(xmi_work_function func, void *cookie)"
+/// \ref PAMI::Device::Generic::GenericThread::setFunc "void setFunc(pami_work_function func, void *cookie)"
 ///
 /// </div>
 /// </div>
@@ -91,9 +91,9 @@
 /// All objects posted to the generic device via postMsg() must
 /// inherit from GenericMessage.
 ///
-/// \ref XMI::Device::MessageStatus "GenericMessage status values"
+/// \ref PAMI::Device::MessageStatus "GenericMessage status values"
 ///
-/// \ref XMI::Device::Generic::GenericMessage "class GenericMessage"
+/// \ref PAMI::Device::Generic::GenericMessage "class GenericMessage"
 ///
 /// The generic device will check the status of each message on it's queue
 /// and if a status is Done then will dequeue the message and call the
@@ -111,23 +111,23 @@
 ///
 /// \ref GenericDeviceMessageQueue "typedef GenericDeviceMessageQueue"
 ///
-/// \ref XMI::Device::Generic::GenericMessage::postNext "virtual xmi_context_t postNext(bool devQueued)"
+/// \ref PAMI::Device::Generic::GenericMessage::postNext "virtual pami_context_t postNext(bool devQueued)"
 ///
 /// </div>
 /// \b Provides:
 /// <div style="margin-left: 3em">
 ///
-/// \ref XMI::Device::Generic::GenericMessage::setStatus "void setStatus(MessageStatus status)"
+/// \ref PAMI::Device::Generic::GenericMessage::setStatus "void setStatus(MessageStatus status)"
 ///
-/// \ref XMI::Device::Generic::GenericMessage::getStatus "MessageStatus getStatus()"
+/// \ref PAMI::Device::Generic::GenericMessage::getStatus "MessageStatus getStatus()"
 ///
-/// \ref XMI::Device::Generic::GenericMessage::getQS "GenericDeviceMessageQueue *getQS()"
+/// \ref PAMI::Device::Generic::GenericMessage::getQS "GenericDeviceMessageQueue *getQS()"
 ///
-/// \ref XMI::Device::Generic::GenericMessage::getClientId "size_t getClientId()"
+/// \ref PAMI::Device::Generic::GenericMessage::getClientId "size_t getClientId()"
 ///
-/// \ref XMI::Device::Generic::GenericMessage::getContextId "size_t getContextId()"
+/// \ref PAMI::Device::Generic::GenericMessage::getContextId "size_t getContextId()"
 ///
-/// \ref XMI::Device::Generic::GenericMessage::executeCallback "void executeCallback(xmi_context_t ctx, xmi_result_t err = XMI_SUCCESS)"
+/// \ref PAMI::Device::Generic::GenericMessage::executeCallback "void executeCallback(pami_context_t ctx, pami_result_t err = PAMI_SUCCESS)"
 ///
 /// </div>
 /// </div>
@@ -141,9 +141,9 @@
 ///
 /// The device has a private interface known by the model and message
 /// (and possibly thread). The device must, however, implement the
-/// \ref XMI::Device::Interface::FactoryInterface "FactoryInterface"
+/// \ref PAMI::Device::Interface::FactoryInterface "FactoryInterface"
 /// and be instanciated in the
-/// \ref XMI::PlatformDeviceList "PlatformDeviceList"
+/// \ref PAMI::PlatformDeviceList "PlatformDeviceList"
 /// of the client (defined in the context).
 ///
 /// \b Requires:
@@ -187,16 +187,16 @@
 #include "components/devices/generic/Message.h"
 #include "components/devices/FactoryInterface.h"
 #include "components/atomic/Mutex.h"
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
-#ifndef XMI_MAX_NUM_CLIENTS
-/** \todo XMI_MAX_NUM_CLIENTS needs to be setup by xmi.h */
-#define XMI_MAX_NUM_CLIENTS	4
-#endif // !XMI_MAX_NUM_CLIENTS
+#ifndef PAMI_MAX_NUM_CLIENTS
+/** \todo PAMI_MAX_NUM_CLIENTS needs to be setup by pami.h */
+#define PAMI_MAX_NUM_CLIENTS	4
+#endif // !PAMI_MAX_NUM_CLIENTS
 
 #include "GenericDevicePlatform.h"
 
-namespace XMI {
+namespace PAMI {
 namespace Device {
 namespace Generic {
 
@@ -220,9 +220,9 @@ public:
 			size_t x;
 			Device *gds;
 			int rc = posix_memalign((void **)&gds, 16, sizeof(*gds) * num_ctx);
-			XMI_assertf(rc == 0, "posix_memalign failed for generics[%zd], errno=%d\n", num_ctx, errno);
+			PAMI_assertf(rc == 0, "posix_memalign failed for generics[%zd], errno=%d\n", num_ctx, errno);
 			for (x = 0; x < num_ctx; ++x) {
-				new (&gds[x]) XMI::Device::Generic::Device(client, x, num_ctx);
+				new (&gds[x]) PAMI::Device::Generic::Device(client, x, num_ctx);
 			}
 			return gds;
 		}
@@ -235,7 +235,7 @@ public:
 		/// \param[in] sd		SysDep
 		/// \param[in] devices		Generic Device array (same as devs in this case)
 		/// \return	Error code
-		static inline xmi_result_t init_impl(Device *devs, size_t client, size_t contextId, xmi_client_t clt, xmi_context_t ctx, XMI::Memory::MemoryManager *mm, XMI::Device::Generic::Device *devices) {
+		static inline pami_result_t init_impl(Device *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
 			return getDevice_impl(devs, client, contextId).init(ctx, client, contextId, mm);
 		}
 		/// \brief Advance this device for client/context
@@ -276,11 +276,11 @@ public:
 	/// \param[in] client	Client ID
 	/// \param[in] context	Context ID
 	/// \return	Error code
-	inline xmi_result_t init(xmi_context_t ctx, size_t client, size_t context, XMI::Memory::MemoryManager *mm) {
+	inline pami_result_t init(pami_context_t ctx, size_t client, size_t context, PAMI::Memory::MemoryManager *mm) {
 		__context = ctx;
 		__Threads.init(mm);
 		__GenericQueue.init(mm);
-		return XMI_SUCCESS;
+		return PAMI_SUCCESS;
 	}
 
 	/// \brief Advance routine for (one channel of) the generic device.
@@ -305,15 +305,15 @@ public:
 		GenericThread *thr, *nxtthr;
 		for (thr = (GenericThread *)__Threads.peekHead(); thr; thr = nxtthr) {
 			nxtthr = (GenericThread *)__Threads.nextElem(thr);
-			if (thr->getStatus() == XMI::Device::Ready) {
+			if (thr->getStatus() == PAMI::Device::Ready) {
 				++events;
-				xmi_result_t rc = thr->executeThread(__context);
-				if (rc != XMI_EAGAIN) {
-					// thr->setStatus(XMI::Device::Complete);
+				pami_result_t rc = thr->executeThread(__context);
+				if (rc != PAMI_EAGAIN) {
+					// thr->setStatus(PAMI::Device::Complete);
 					__Threads.deleteElem(thr);
 					continue;
 				}
-			} else if (thr->getStatus() == XMI::Device::OneShot) {
+			} else if (thr->getStatus() == PAMI::Device::OneShot) {
 				++events;
 				// thread is like completion callback, dequeue first.
 				__Threads.deleteElem(thr);
@@ -321,7 +321,7 @@ public:
 				continue;
 			}
 			// This allows a thread to be "completed" by something else...
-			if (thr->getStatus() == XMI::Device::Complete) {
+			if (thr->getStatus() == PAMI::Device::Complete) {
 				__Threads.deleteElem(thr);
 				continue;
 			}
@@ -339,7 +339,7 @@ public:
 				__GenericQueue.deleteElem(msg);
 				GenericDeviceMessageQueue *qs = msg->getQS();
 				qs->dequeue(); // assert return == msg
-				nxt = (XMI::Device::Generic::GenericMessage *)qs->peek();
+				nxt = (PAMI::Device::Generic::GenericMessage *)qs->peek();
 				if (nxt) nxt->postNext(true); // virtual function
 				msg->executeCallback(__context);
 			}
@@ -383,7 +383,7 @@ public:
 
 	/// \brief accessor for the context associated with generic device slice
 	/// \return	context handle
-	inline xmi_context_t getContext() { return __context; }
+	inline pami_context_t getContext() { return __context; }
 
 private:
 	/// \brief Storage for the queue for message completion
@@ -396,7 +396,7 @@ private:
 	/// \brief Storage for the queue of threads (a.k.a. work units)
 	GenericDeviceWorkQueue __Threads;
 
-	xmi_context_t __context;	///< context handle for this generic device
+	pami_context_t __context;	///< context handle for this generic device
 	size_t __clientId;		///< client ID for context
 	size_t __contextId;		///< context ID
 	size_t __nContexts;		///< number of contexts in client
@@ -404,6 +404,6 @@ private:
 
 }; /* namespace Generic */
 }; /* namespace Device */
-}; /* namespace XMI */
+}; /* namespace PAMI */
 
 #endif /* __components_devices_generic_device_h__ */

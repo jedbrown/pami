@@ -37,16 +37,16 @@
 #include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
-#include <sys/xmi.h>
+#include <sys/pami.h>
 
 
 #define SSIZE 4    /**< This is the size (in bytes) of the small send */
 #define LSIZE 2345 /**< This is the size (in bytes) of the long  send */
 
 
-static xmi_client_t client;
+static pami_client_t client;
 #define MAX_CONTEXTS 64
-static xmi_context_t contexts[MAX_CONTEXTS];
+static pami_context_t contexts[MAX_CONTEXTS];
 static const size_t SHORT_DISPATCH=1, LONG_DISPATCH=12; /**< These dispatch IDs were chosen mostly at random, save one is even and one is odd */
 
 static size_t task, size, num_contexts;
@@ -72,9 +72,9 @@ static struct
  * completion.  We also print out the rest of the information and mark
  * it done.
  */
-static void RecvLongDoneCB(xmi_context_t   context,
+static void RecvLongDoneCB(pami_context_t   context,
                            void          * cookie,
-                           xmi_result_t    result)
+                           pami_result_t    result)
 {
   assert(cookie != NULL);
 
@@ -90,13 +90,13 @@ static void RecvLongDoneCB(xmi_context_t   context,
  * The data needs to be received into a malloced buffer.  We print out
  * the available information set up the done call-back.
  */
-static void RecvLongCB(xmi_context_t   context,
+static void RecvLongCB(pami_context_t   context,
                        void          * cookie,
                        void          * _msginfo,
                        size_t          msginfo_size,
                        void          * _addr,
                        size_t          size,
-                       xmi_recv_t    * recv)
+                       pami_recv_t    * recv)
 {
   assert(_addr == NULL);
   assert(size > 0);
@@ -108,7 +108,7 @@ static void RecvLongCB(xmi_context_t   context,
   void* buf = malloc(size);
   recv->local_fn = RecvLongDoneCB;
   recv->cookie   = buf;
-  recv->kind     = XMI_AM_KIND_SIMPLE;
+  recv->kind     = PAMI_AM_KIND_SIMPLE;
   recv->data.simple.addr  = buf;
   recv->data.simple.bytes = size;
 
@@ -122,13 +122,13 @@ static void RecvLongCB(xmi_context_t   context,
  * The data is already received, so we just print out the information
  * and mark it done.
  */
-static void RecvShortCB(xmi_context_t   context,
+static void RecvShortCB(pami_context_t   context,
                         void          * cookie,
                         void          * _msginfo,
                         size_t          msginfo_size,
                         void          * _addr,
                         size_t          size,
-                        xmi_recv_t    * recv)
+                        pami_recv_t    * recv)
 {
   assert(_addr != NULL);
   assert(size > 0);
@@ -146,9 +146,9 @@ static void RecvShortCB(xmi_context_t   context,
  * The long-send is asynchronous; this is used to signal its
  * completion and mark it done.
  */
-static void SendLongDoneCB(xmi_context_t   context,
+static void SendLongDoneCB(pami_context_t   context,
                            void          * cookie,
-                           xmi_result_t    result)
+                           pami_result_t    result)
 {
   assert(cookie != NULL);
 
@@ -158,20 +158,20 @@ static void SendLongDoneCB(xmi_context_t   context,
 }
 
 /**
- * This does the actual long-send using XMI_Send.
+ * This does the actual long-send using PAMI_Send.
  */
-static xmi_result_t SendLongHandoff(xmi_context_t   context,
+static pami_result_t SendLongHandoff(pami_context_t   context,
                                     void          * cookie)
 {
   assert(cookie != NULL);
 
   unsigned* quad = (unsigned*)cookie;
 
-  xmi_task_t remote_task = 1-task;
+  pami_task_t remote_task = 1-task;
   size_t remote_context = (task+LONG_DISPATCH)&(num_contexts-1);
-  xmi_endpoint_t dest = XMI_Client_endpoint(client, remote_task, remote_context);
+  pami_endpoint_t dest = PAMI_Client_endpoint(client, remote_task, remote_context);
 
-  xmi_send_t parameters = { {{0,0}, {0,0}}, {0} };
+  pami_send_t parameters = { {{0,0}, {0,0}}, {0} };
   parameters.send.dispatch        = LONG_DISPATCH;
 /*parameters.send.hints           = {0}; */
   parameters.send.dest            = dest;
@@ -183,8 +183,8 @@ static xmi_result_t SendLongHandoff(xmi_context_t   context,
   parameters.events.local_fn      = SendLongDoneCB;
   parameters.events.remote_fn     = NULL;
 
-  XMI_Send(context, &parameters);
-  return XMI_SUCCESS;
+  PAMI_Send(context, &parameters);
+  return PAMI_SUCCESS;
 }
 
 /**
@@ -200,34 +200,34 @@ static void *SendLong(void *c)
 {
   unsigned quad[] = {(unsigned)task, 0x11111, 0x22222, 0x33333};
 
-  xmi_task_t remote_task = 1-task;
+  pami_task_t remote_task = 1-task;
   size_t local_context = (remote_task+LONG_DISPATCH)&(num_contexts-1);
 
-  xmi_work_t state;
-  XMI_Context_post(contexts[local_context], &state, SendLongHandoff, quad);
+  pami_work_t state;
+  PAMI_Context_post(contexts[local_context], &state, SendLongHandoff, quad);
   while (!done.slong.send)
-    XMI_Context_multiadvance(contexts, num_contexts, 1);
+    PAMI_Context_multiadvance(contexts, num_contexts, 1);
   return NULL;
 }
 
 /**
- * This does the actual short-send using XMI_Send_immediate.  This
+ * This does the actual short-send using PAMI_Send_immediate.  This
  * will cause the data to be injected immediately, avoiding call-backs
  * and allowing us to declare more info on the stack.  We can mark it
  * done at the end.
  */
-static xmi_result_t SendShortHandoff(xmi_context_t   context,
+static pami_result_t SendShortHandoff(pami_context_t   context,
                                      void          * cookie)
 {
   assert(cookie == NULL);
 
   unsigned quad[] = {(unsigned)task, 0x11, 0x22, 0x33};
 
-  xmi_task_t remote_task = 1-task;
+  pami_task_t remote_task = 1-task;
   size_t remote_context = (task+SHORT_DISPATCH)&(num_contexts-1);
-  xmi_endpoint_t dest = XMI_Client_endpoint(client, remote_task, remote_context);
+  pami_endpoint_t dest = PAMI_Client_endpoint(client, remote_task, remote_context);
 
-  xmi_send_immediate_t parameters = { {0,0}, {0,0}, 0 };
+  pami_send_immediate_t parameters = { {0,0}, {0,0}, 0 };
   parameters.dispatch        = SHORT_DISPATCH;
 /*parameters.hints           = {0}; */
   parameters.dest            = dest;
@@ -236,10 +236,10 @@ static xmi_result_t SendShortHandoff(xmi_context_t   context,
   parameters.data.iov_base   = sbuf;
   parameters.data.iov_len    = SSIZE;
 
-  XMI_Send_immediate(context, &parameters);
+  PAMI_Send_immediate(context, &parameters);
   printf("Task=%zu Channel=%p <Sent short msg>   data=%x\n", task, context, sbuf[0]);
   done.sshort.send = 1;
-  return XMI_SUCCESS;
+  return PAMI_SUCCESS;
 }
 
 /**
@@ -248,13 +248,13 @@ static xmi_result_t SendShortHandoff(xmi_context_t   context,
  */
 static void *SendShort(void *c)
 {
-  xmi_task_t remote_task = 1-task;
+  pami_task_t remote_task = 1-task;
   size_t local_context = (remote_task+SHORT_DISPATCH)&(num_contexts-1);
 
-  xmi_work_t state;
-  XMI_Context_post(contexts[local_context], &state, SendShortHandoff, NULL);
+  pami_work_t state;
+  PAMI_Context_post(contexts[local_context], &state, SendShortHandoff, NULL);
   while (!done.sshort.send)
-    XMI_Context_multiadvance(contexts, num_contexts, 1);
+    PAMI_Context_multiadvance(contexts, num_contexts, 1);
   return NULL;
 }
 
@@ -272,13 +272,13 @@ static void *advance(void* c)
          )
         )
     /* I'm using "13" for the poll-iterations just because I like the number */
-    XMI_Context_multiadvance(contexts, num_contexts, 13);
+    PAMI_Context_multiadvance(contexts, num_contexts, 13);
 
   return NULL;
 }
 
 /**
- * \brief Initialize the XMI message layer.
+ * \brief Initialize the PAMI message layer.
  *
  * This gets the task ID, number of tasks, number of contexts, and
  * checks that each process has the same max number of contexts.  It
@@ -286,36 +286,36 @@ static void *advance(void* c)
  */
 static void init()
 {
-  xmi_configuration_t query;
-  xmi_send_hint_t options = {consistency:1};
+  pami_configuration_t query;
+  pami_send_hint_t options = {consistency:1};
 
-  XMI_Client_initialize("XMId ADI Example", &client);
+  PAMI_Client_initialize("PAMId ADI Example", &client);
 
-  query.name = XMI_TASK_ID;
-  XMI_Configuration_query (client, &query);
+  query.name = PAMI_TASK_ID;
+  PAMI_Configuration_query (client, &query);
   task = query.value.intval;
 
-  query.name = XMI_NUM_TASKS;
-  XMI_Configuration_query (client, &query);
+  query.name = PAMI_NUM_TASKS;
+  PAMI_Configuration_query (client, &query);
   size = query.value.intval;
   assert(size > 1);
 
-  query.name = XMI_NUM_CONTEXTS;
-  XMI_Configuration_query (client, &query);
+  query.name = PAMI_NUM_CONTEXTS;
+  PAMI_Configuration_query (client, &query);
   num_contexts = query.value.intval;
   assert(num_contexts <= MAX_CONTEXTS);
   assert((num_contexts&(num_contexts-1)) == 0);
 
-  query.name = XMI_CONST_CONTEXTS;
-  XMI_Configuration_query (client, &query);
+  query.name = PAMI_CONST_CONTEXTS;
+  PAMI_Configuration_query (client, &query);
   assert(query.value.intval);
 
   query.value.intval = 1;
-  XMI_Context_createv(client, &query, 1, contexts, num_contexts);
+  PAMI_Context_createv(client, &query, 1, contexts, num_contexts);
 
-  xmi_dispatch_callback_fn RecvShortFN;
+  pami_dispatch_callback_fn RecvShortFN;
   RecvShortFN.p2p = RecvShortCB;
-  xmi_dispatch_callback_fn RecvLongFN;
+  pami_dispatch_callback_fn RecvLongFN;
   RecvLongFN.p2p = RecvLongCB;
 
   /*
@@ -324,19 +324,19 @@ static void init()
    */
   size_t i;
   for (i=0; i<num_contexts; ++i) {
-    XMI_Dispatch_set(contexts[i],
+    PAMI_Dispatch_set(contexts[i],
                      SHORT_DISPATCH,
                      RecvShortFN,
                      (void*)i,
                      options);
-    XMI_Dispatch_set(contexts[i],
+    PAMI_Dispatch_set(contexts[i],
                      LONG_DISPATCH,
                      RecvLongFN,
                      (void*)i,
                      options);
   }
 
-  printf("Task=%zu Size=%zu    <XMI Initialized> thread-level=%d\n", task, size, 13);
+  printf("Task=%zu Size=%zu    <PAMI Initialized> thread-level=%d\n", task, size, 13);
 }
 
 /**
@@ -366,7 +366,7 @@ int main()
       pthread_join(threads[2], NULL);
     }
 
-  XMI_Client_finalize(client);
+  PAMI_Client_finalize(client);
   printf("Task=%zu           <DONE>\n", task);
   return 0;
 }

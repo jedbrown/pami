@@ -29,7 +29,7 @@ namespace CCMI
     {
 
       // Forward declare prototype
-      extern void getReduceFunction(xmi_dt, xmi_op, unsigned,
+      extern void getReduceFunction(pami_dt, pami_op, unsigned,
                                     unsigned&, coremath&) __attribute__((noinline));
 
       //-- AsyncComposite
@@ -70,14 +70,14 @@ namespace CCMI
         /// \brief Client's callback to call when the allreduce has
         /// finished
         ///
-        void               (* _myClientFunction)(void *, xmi_result_t *);
+        void               (* _myClientFunction)(void *, pami_result_t *);
         void                * _myClientData;
       public:
 
 #ifdef CCMI_DEBUG
         unsigned                          _count;
-        xmi_dt                            _dt;
-        xmi_op                            _op;
+        pami_dt                            _dt;
+        pami_op                            _op;
         unsigned                          _iteration;
         unsigned                          _root;
 #endif // CCMI_DEBUG
@@ -125,7 +125,7 @@ namespace CCMI
 
         AsyncComposite ( ConfigFlags                       flags,
                          CollectiveProtocolFactory                 * factory,
-                         XMI_Callback_t                   cb_done):
+                         PAMI_Callback_t                   cb_done):
 
         BaseComposite (factory),
         _doneCountdown(1),  // default to just a composite done needed
@@ -156,15 +156,15 @@ namespace CCMI
         /// have been added to the composite
         ///
         void initialize ( CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * allreduce,
-                          XMI_CollectiveRequest_t        * request,
+                          PAMI_CollectiveRequest_t        * request,
                           char                            * srcbuf,
                           char                            * dstbuf,
                           unsigned                          count,
-                          xmi_dt                            dtype,
-                          xmi_op                            op,
+                          pami_dt                            dtype,
+                          pami_op                            op,
                           int                               root,
                           unsigned                          pipelineWidth = 0,// none specified, calculate it
-                          void                           (* cb_done)(void *, xmi_result_t *) = cb_compositeDone,
+                          void                           (* cb_done)(void *, pami_result_t *) = cb_compositeDone,
                           void                            * cd = NULL
                         )
         {
@@ -184,7 +184,7 @@ namespace CCMI
                                                         sizeOfType, func);
 
             unsigned min_pwidth = MIN_PIPELINE_WIDTH;
-            if(dtype == XMI_DOUBLE && op == XMI_SUM)
+            if(dtype == PAMI_DOUBLE && op == PAMI_SUM)
               min_pwidth = MIN_PIPELINE_WIDTH_SUM2P;
 
             /* Select pipeline width.
@@ -234,14 +234,14 @@ namespace CCMI
         /// \brief At this level we only support single color
         /// collectives
         ///
-        virtual unsigned restart   ( XMI_CollectiveRequest_t  * request,
-                                     XMI_Callback_t           & cb_done,
-                                     xmi_consistency_t          consistency,
+        virtual unsigned restart   ( PAMI_CollectiveRequest_t  * request,
+                                     PAMI_Callback_t           & cb_done,
+                                     pami_consistency_t          consistency,
                                      char                      * srcbuf,
                                      char                      * dstbuf,
                                      size_t                      count,
-                                     xmi_dt                      dtype,
-                                     xmi_op                      op,
+                                     pami_dt                      dtype,
+                                     pami_op                      op,
                                      size_t                      root = (size_t)-1)
         {
           TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::restart()\n",this));
@@ -279,7 +279,7 @@ namespace CCMI
 
           if(!isDone()) setStarted();
 
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
         ///
@@ -288,14 +288,14 @@ namespace CCMI
         ///
         virtual unsigned restartAsync ( CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * allreduce,
                                         unsigned                    count,
-                                        xmi_dt                      dtype,
-                                        xmi_op                      op,
+                                        pami_dt                      dtype,
+                                        pami_op                      op,
                                         int                         root=-1)
         {
           TRACE_ALERT((stderr,"<%p>Allreduce::AsyncComposite::restartAsync() ALERT:\n",this));
           TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::restartAsync()\n",this));
 
-          initialize (allreduce,(XMI_CollectiveRequest_t  *) NULL, NULL, NULL,
+          initialize (allreduce,(PAMI_CollectiveRequest_t  *) NULL, NULL, NULL,
                       count, dtype, op, root);
           if(isIdle())
           {
@@ -306,7 +306,7 @@ namespace CCMI
 
           setQueueing();
 
-          return XMI_SUCCESS;
+          return PAMI_SUCCESS;
         }
 
         virtual void start()
@@ -340,7 +340,7 @@ namespace CCMI
         ///
         /// It means this composite (and kernel executor) is done
         ///
-        static void cb_compositeDone(void *me, xmi_result_t *err)
+        static void cb_compositeDone(void *me, pami_result_t *err)
         {
           TRACE_ADAPTOR((stderr,
                          "<%p>Allreduce::AsyncComposite::cb_compositeDone()\n",

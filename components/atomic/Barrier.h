@@ -9,7 +9,7 @@
 #ifndef __components_atomic_Barrier_h__
 #define __components_atomic_Barrier_h__
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/atomic/Barrier.h
@@ -30,23 +30,23 @@
 ///
 ////////////////////////////////////////////////////////////////////////
 
-/// \page xmi_atomic_examples
+/// \page pami_atomic_examples
 ///
 /// How to use a Barrier atomic object:
 ///
 /// // following changes with desired type of barrier...
 /// #include "collectives/components/atomic/bgp/LockBoxBarrier.h"
-/// typedef XMI::Barrier::BGP::LockBoxNodeCoreBarrier MY_BARRIER;
+/// typedef PAMI::Barrier::BGP::LockBoxNodeCoreBarrier MY_BARRIER;
 ///
 /// MY_BARRIER _barrier;
-/// xmi_result_t status;
+/// pami_result_t status;
 /// _barrier.init(sysdep, status); // get 'sysdep' wherever you can...
-/// XMI_assert(status == XMI_SUCCESS);
+/// PAMI_assert(status == PAMI_SUCCESS);
 ///
 /// _barrier.enter(); // perform actual barrier
 ///
 ///
-namespace XMI
+namespace PAMI
 {
 namespace Atomic
 {
@@ -87,7 +87,7 @@ namespace Interface
       /// \param[in] participants	Number of participants for the barrier
       /// \param[in] participants	Is caller the master of group
       ///
-      inline void init(XMI::Memory::MemoryManager *mm, size_t participants, bool master);
+      inline void init(PAMI::Memory::MemoryManager *mm, size_t participants, bool master);
 
 
       ///
@@ -95,7 +95,7 @@ namespace Interface
       ///
       /// Does not return until all participants have entered the barrier.
       ///
-      inline xmi_result_t enter();
+      inline pami_result_t enter();
 
       ///
       /// \brief  Enter a barrier and Poll
@@ -133,13 +133,13 @@ namespace Interface
     }; // class Barrier
 
 template <class T>
-inline void Barrier<T>::init(XMI::Memory::MemoryManager *mm, size_t participants, bool master)
+inline void Barrier<T>::init(PAMI::Memory::MemoryManager *mm, size_t participants, bool master)
 {
 	static_cast<T*>(this)->init_impl(mm, participants, master);
 }
 
 template <class T>
-inline xmi_result_t Barrier<T>::enter()
+inline pami_result_t Barrier<T>::enter()
 {
 	return static_cast<T*>(this)->enter_impl();
 }
@@ -176,6 +176,6 @@ inline void *Barrier<T>::returnBarrier()
 
 }; // namespace Interface
 }; // namespace Atomic
-}; // namespace XMI
+}; // namespace PAMI
 
 #endif // __components_atomic_barrier_h__

@@ -33,9 +33,9 @@
 
 
 
-namespace XMI
+namespace PAMI
 {
-  extern std::map<unsigned, xmi_geometry_t> geometry_map;
+  extern std::map<unsigned, pami_geometry_t> geometry_map;
   namespace CollRegistration
   {
     template <class T_Geometry,
@@ -44,7 +44,7 @@ namespace XMI
               class T_Device,
               class T_Sysdep>
     class OldCCMIRegistration :
-      public CollRegistration<XMI::CollRegistration::OldCCMIRegistration<T_Geometry,
+      public CollRegistration<PAMI::CollRegistration::OldCCMIRegistration<T_Geometry,
                                                                          T_Mcast,
                                                                          T_M2M,
                                                                          T_Device,
@@ -52,12 +52,12 @@ namespace XMI
                               T_Geometry>
       {
       public:
-        inline OldCCMIRegistration(xmi_client_t       client,
-                                   xmi_context_t      context,
+        inline OldCCMIRegistration(pami_client_t       client,
+                                   pami_context_t      context,
                                    size_t             context_id,
                                    T_Sysdep          &sd,
                                    T_Device          &dev):
-        CollRegistration<XMI::CollRegistration::OldCCMIRegistration<T_Geometry,
+        CollRegistration<PAMI::CollRegistration::OldCCMIRegistration<T_Geometry,
                                                                     T_Mcast,
                                                                     T_M2M,
                                                                     T_Device,
@@ -76,49 +76,49 @@ namespace XMI
         _binomallreduce(dev),
         _ringallreduce(dev),
         _ambionmialbroadcast(dev),
-        _barrier_registration(&_barrier,&_sd,(xmi_mapidtogeometry_fn)mapidtogeometry),
+        _barrier_registration(&_barrier,&_sd,(pami_mapidtogeometry_fn)mapidtogeometry),
         _broadcast_connmgr(65535),
         _broadcast_registration(&_sd,&_broadcast,&_broadcast_connmgr,_context_id),
         _ringbcast_connmgr(65535),
         _ringbcast_registration(&_sd,&_ringbroadcast,&_ringbcast_connmgr,65535),
         _alltoallv_registration(&_alltoallv,&_sd),
         _cf(0,0),
-        _shortbinomallreduce_registration(&_sd,&_shortbinomallreduce,(xmi_mapidtogeometry_fn)mapidtogeometry,_cf),
-        _binomallreduce_registration(&_sd,&_binomallreduce,(xmi_mapidtogeometry_fn)mapidtogeometry,_cf),
-        _ringallreduce_registration(&_sd,&_ringallreduce,(xmi_mapidtogeometry_fn)mapidtogeometry,_cf),
+        _shortbinomallreduce_registration(&_sd,&_shortbinomallreduce,(pami_mapidtogeometry_fn)mapidtogeometry,_cf),
+        _binomallreduce_registration(&_sd,&_binomallreduce,(pami_mapidtogeometry_fn)mapidtogeometry,_cf),
+        _ringallreduce_registration(&_sd,&_ringallreduce,(pami_mapidtogeometry_fn)mapidtogeometry,_cf),
         _ambcast_registration(&_sd,&_ambionmialbroadcast,__global.mapping.size())
           {
           }
 
-        inline xmi_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
+        inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
         {
           _barrier_registration.generate(&_barrier_composite,
                                          sizeof(CCMI_Executor_t),
                                          _context,
-                                         (xmi_geometry_t)geometry,
+                                         (pami_geometry_t)geometry,
                                          NULL);
-          geometry->setKey(XMI::Geometry::XMI_GKEY_BARRIERCOMPOSITE0,
+          geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE0,
                            (void*)&_barrier_composite);
 
-          geometry->addCollective(XMI_XFER_BARRIER,&_barrier_registration,_context_id);
-          geometry->addCollective(XMI_XFER_BROADCAST,&_broadcast_registration,_context_id);
-          geometry->addCollective(XMI_XFER_BROADCAST,&_ringbcast_registration,_context_id);
-          geometry->addCollective(XMI_XFER_ALLTOALLV,&_alltoallv_registration,_context_id);
-          geometry->addCollective(XMI_XFER_ALLREDUCE,&_shortbinomallreduce_registration,_context_id);
-          geometry->addCollective(XMI_XFER_ALLREDUCE,&_binomallreduce_registration,_context_id);
-          geometry->addCollective(XMI_XFER_ALLREDUCE,&_ringallreduce_registration,_context_id);
-          geometry->addCollective(XMI_XFER_AMBROADCAST,&_ambcast_registration,_context_id);
-          return XMI_SUCCESS;
+          geometry->addCollective(PAMI_XFER_BARRIER,&_barrier_registration,_context_id);
+          geometry->addCollective(PAMI_XFER_BROADCAST,&_broadcast_registration,_context_id);
+          geometry->addCollective(PAMI_XFER_BROADCAST,&_ringbcast_registration,_context_id);
+          geometry->addCollective(PAMI_XFER_ALLTOALLV,&_alltoallv_registration,_context_id);
+          geometry->addCollective(PAMI_XFER_ALLREDUCE,&_shortbinomallreduce_registration,_context_id);
+          geometry->addCollective(PAMI_XFER_ALLREDUCE,&_binomallreduce_registration,_context_id);
+          geometry->addCollective(PAMI_XFER_ALLREDUCE,&_ringallreduce_registration,_context_id);
+          geometry->addCollective(PAMI_XFER_AMBROADCAST,&_ambcast_registration,_context_id);
+          return PAMI_SUCCESS;
         }
 
-      static xmi_geometry_t mapidtogeometry (int comm)
+      static pami_geometry_t mapidtogeometry (int comm)
         {
-          xmi_geometry_t g = geometry_map[comm];
+          pami_geometry_t g = geometry_map[comm];
           return g;
         }
     public:
-      xmi_client_t               _client;
-      xmi_context_t              _context;
+      pami_client_t               _client;
+      pami_context_t              _context;
       size_t                     _context_id;
       T_Sysdep                  &_sd;
       T_Device                  &_dev;

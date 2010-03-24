@@ -46,19 +46,19 @@ namespace CCMI
         ///
         /// \brief Constructor
         ///
-        AsyncCompositeT (XMI_CollectiveRequest_t  * req,
+        AsyncCompositeT (PAMI_CollectiveRequest_t  * req,
                          T_Sysdep             * map,
                          T_ConnectionManager  *cmgr,
-                         XMI_Callback_t             cb_done,
-                         xmi_consistency_t            consistency,
+                         PAMI_Callback_t             cb_done,
+                         pami_consistency_t            consistency,
                          T_Mcast   *mf,
-                         XMI_GEOMETRY_CLASS                  * geometry,
+                         PAMI_GEOMETRY_CLASS                  * geometry,
                          char                      * srcbuf,
                          char                      * dstbuf,
                          unsigned                    offset,
                          unsigned                    count,
-                         xmi_dt                     dtype,
-                         xmi_op                     op,
+                         pami_dt                     dtype,
+                         pami_op                     op,
                          ConfigFlags                 flags,
                          CollectiveProtocolFactory           * factory,
                          unsigned                    iteration,
@@ -78,13 +78,13 @@ namespace CCMI
         }
         // Template implementation must specialize this function.
         void create_schedule(T_Sysdep        * map,
-                             XMI_GEOMETRY_CLASS                  * geometry,
+                             PAMI_GEOMETRY_CLASS                  * geometry,
                              CCMI::Schedule::Color       color)
         {
           CCMI_abort();
         }
         // Template implementation must specialize this function.
-        static bool analyze (XMI_GEOMETRY_CLASS *geometry)
+        static bool analyze (PAMI_GEOMETRY_CLASS *geometry)
         {
           CCMI_abort();
           return false;

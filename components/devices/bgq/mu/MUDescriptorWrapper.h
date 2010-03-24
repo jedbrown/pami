@@ -15,9 +15,9 @@
 
 #include <spi/include/mu/DescriptorWrapperXX.h>
 
-#include "sys/xmi.h"
+#include "sys/pami.h"
 
-namespace XMI
+namespace PAMI
 {
   namespace Device
   {
@@ -34,9 +34,9 @@ namespace XMI
 
           inline ~MUDescriptorWrapper () {};
 
-          inline void setCallback (xmi_event_function function,
+          inline void setCallback (pami_event_function function,
                                    void *             cookie,
-                                   xmi_context_t      context)
+                                   pami_context_t      context)
           {
             _requiresCallback = true;
             _function = function;
@@ -51,20 +51,20 @@ namespace XMI
 
           inline void invokeCallback ()
           {
-            _function (_context, _cookie, XMI_SUCCESS);
+            _function (_context, _cookie, PAMI_SUCCESS);
           };
 
         protected:
 
           bool               _requiresCallback;
-          xmi_event_function _function;
+          pami_event_function _function;
           void *             _cookie;
-          xmi_context_t      _context;
+          pami_context_t      _context;
 
-      }; // XMI::Device::MU::MUDescriptorWrapper class
-    };   // XMI::Device::MU namespace
-  };     // XMI::Device namespace
-};       // XMI namespace
+      }; // PAMI::Device::MU::MUDescriptorWrapper class
+    };   // PAMI::Device::MU namespace
+  };     // PAMI::Device namespace
+};       // PAMI namespace
 
 //#undef TRACE
 
