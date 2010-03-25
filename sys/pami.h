@@ -181,6 +181,28 @@ extern "C"
   /*****************************************************************************/
 
   /**
+   * \brief Options for bi-state dispatch hints
+   */
+  enum
+    {
+      PAMI_HINT2_OFF   = 0, /**< This turns the option off. */
+      PAMI_HINT2_ON    = 1, /**< This turns the option on. */
+    };
+
+  /**
+   * \brief Options for tri-state dispatch hints
+   *
+   * Several dispatch hints accept have a yes/no/maybe sort of
+   * approach.
+   */
+  enum
+    {
+      PAMI_HINT3_DEFAULT   = 0, /**< This hint leaves the option up to the PAMI implementation to choose. */
+      PAMI_HINT3_FORCE_ON  = 1, /**< This allows the user to force an option to be used. */
+      PAMI_HINT3_FORCE_OFF = 2, /**< The user can force the implementation to not use this option. */
+    };
+
+  /**
    * \brief Hints for sending a message
    *
    * \todo better names for the hints
@@ -188,20 +210,19 @@ extern "C"
    */
   typedef struct
   {
-    uint32_t consistency       : 1; /**< Force match ordering semantics                          */
-    uint32_t recv_immediate    : 1; /**< Assert that sends will result in an 'immediate' receive */
+    /* The following hints use the PAMI_HINT2_* values */
     uint32_t buffer_registered : 1; /**< Send and receive buffers are ready for RDMA operations  */
-    uint32_t use_rdma          : 1; /**< Assert/enable RDMA operations                           */
-    uint32_t no_rdma           : 1; /**< Disable RDMA operations                                 */
-    uint32_t no_local_copy     : 1; /**< Disable PAMI making a local copy of data                */
-    uint32_t interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
+    uint32_t consistency       : 1; /**< Force match ordering semantics                          */
     uint32_t high_priority     : 1; /**< Message is delivered with high priority,
-                                       which may result in out-of-order delivery                 */
+                                         which may result in out-of-order delivery               */
+    uint32_t interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
+    uint32_t no_local_copy     : 1; /**< Disable PAMI making a local copy of data                */
     uint32_t no_long_header    : 1; /**< Disable long header support                             */
-    uint32_t use_shmem         : 1; /**< Assert/enable shared memory optimizations               */
-    uint32_t no_shmem          : 1; /**< Disable shared memory optimizationss                    */
+    uint32_t recv_immediate    : 1; /**< Assert that sends will result in an 'immediate' receive */
 
-    uint32_t reserved          :21; /**< Unused at this time                                     */
+    /* The following hints use the PAMI_HINT3_* values */
+    uint32_t use_rdma          : 2; /**< Enable/Disable rdma operations                          */
+    uint32_t use_shmem         : 2; /**< Enable/Disable shared memory optimizations              */
   } pami_send_hint_t;
 
   typedef struct

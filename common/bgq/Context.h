@@ -687,13 +687,13 @@ namespace PAMI
          if (_dispatch[id] == NULL)
          {
             // either runtime options OR user-specified device only so we have to look at both
-            bool no_shmem = options.no_shmem || (!__global.useshmem() && __global.useMU());
-            bool use_shmem = options.use_shmem || (!__global.useMU() && __global.useshmem());
+           bool no_shmem  = (options.use_shmem == PAMI_HINT3_FORCE_OFF) || (!__global.useshmem() && __global.useMU());
+           bool use_shmem = (options.use_shmem == PAMI_HINT3_FORCE_ON ) || (!__global.useMU() && __global.useshmem());
 
             TRACE_ERR((stderr, "global.useshmem: %d, global.useMU: %d\n",
                         (int)__global.useshmem(), (int)__global.useMU()));
-            TRACE_ERR((stderr, "optons.no_shmem: %d, options. use_shmem: %d, no_shmem: %d, use_shmem: %d\n",
-                        (int)options.no_shmem, (int)options.use_shmem, (int)no_shmem, (int)use_shmem));
+            TRACE_ERR((stderr, "options.use_shmem: %d, no_shmem: %d, use_shmem: %d\n",
+                        (int)options.use_shmem, (int)no_shmem, (int)use_shmem));
             if (no_shmem == 1)
             {
                if(__global.useMU())

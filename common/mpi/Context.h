@@ -730,7 +730,7 @@ namespace PAMI
 
         if (_dispatch[id][0] == NULL)
           {
-            if (options.no_shmem == 1)
+            if (options.use_shmem == PAMI_HINT3_FORCE_OFF)
             {
               // Register only the "mpi" eager protocol
               //
@@ -740,7 +740,7 @@ namespace PAMI
               _dispatch[id][0] = (Protocol::Send::Send *)
                 MPIEagerBase::generate (id, fn.p2p, cookie, *_mpi, self, _context, _protocol, result);
             }
-            else if (options.use_shmem == 1)
+            else if (options.use_shmem == PAMI_HINT3_FORCE_ON)
             {
               // Register only the "shmem" eager protocol
               if (options.no_long_header == 1)

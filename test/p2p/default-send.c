@@ -207,7 +207,7 @@ int main (int argc, char ** argv)
   //size_t dispatch = 0;
   pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
-  pami_send_hint_t options={0};
+  pami_send_hint_t options={};
   size_t i, use_shmem = 0;
 
   for (i = 0; i < num_contexts; i++) {
@@ -217,8 +217,7 @@ int main (int argc, char ** argv)
 
     for (use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {
       fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
-      options.use_shmem = use_shmem;
-      options.no_shmem = !use_shmem;
+      options.use_shmem = use_shmem ? PAMI_HINT3_FORCE_ON : PAMI_HINT3_FORCE_OFF;
       result = PAMI_Dispatch_set (context[i],
 				  use_shmem,
 				  fn,

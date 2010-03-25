@@ -112,7 +112,7 @@ int main (int argc, char ** argv)
   size_t dispatch = 0;
   pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
-  pami_send_hint_t options={0};
+  pami_send_hint_t options={};
   fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
   result = PAMI_Dispatch_set (context,
                              dispatch,
