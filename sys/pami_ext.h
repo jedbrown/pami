@@ -2,6 +2,9 @@
  * \file sys/pami_ext.h
  * \brief platform-specific messaging interface
  */
+
+#include "pami.h"
+
 #ifndef __pami_ext_h__
 #define __pami_ext_h__
 
