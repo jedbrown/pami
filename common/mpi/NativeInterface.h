@@ -191,6 +191,7 @@ namespace PAMI
 #if 1
         // todo:  temporary fix, upcall, and we shouldn't be putting in the client/dispatch for the user
         mcast->client   = (size_t)_client;
+	mcast->context  = _contextid;
         mcast->dispatch = _dispatch;
         return PAMI_Multicast(mcast);
 #else
