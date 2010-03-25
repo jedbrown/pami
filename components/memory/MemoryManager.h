@@ -14,8 +14,10 @@
 #define __components_memory_MemoryManager_h__
 
 #include "sys/pami.h"
+#include "util/common.h"
 #include <sys/mman.h>
 #include <errno.h>
+#include <string.h>
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x

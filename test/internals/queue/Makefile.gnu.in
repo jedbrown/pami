@@ -12,7 +12,7 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = $(TARGET)
 NOTBUILT        = 
-APPS            = queue.$(EXTENSION) simple_queue.$(EXTENSION)
+APPS            = queue.$(EXTENSION) simple_queue.$(EXTENSION) queue_stress1.$(EXTENSION)
 
 include @abs_top_builddir@/Build.rules
 
