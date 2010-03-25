@@ -214,21 +214,21 @@ namespace PAMI {
 		// Iterator implementation
 
 		inline void iter_init_impl(QueueIterator *iter) {
-			new (&iter->_queue) GccThreadSafeMultiQueue(); // nothing more needed? 
-			iter->parent = iter->next_par = NULL; 
-			iter->curr = iter->next = NULL; 
+			new (&iter->_queue) GccThreadSafeMultiQueue(); // nothing more needed?
+			iter->parent = iter->next_par = NULL;
+			iter->curr = iter->next = NULL;
 		}
 
 		inline void iter_begin_impl(QueueIterator *iter) {
-			// pick up any new work... 
+			// pick up any new work...
 			__merge(&iter->_queue, this);
-			iter->parent = NULL; 
+			iter->parent = NULL;
 			iter->curr = iter->_queue.peek();
 		}
 
 		inline bool iter_check_impl(QueueIterator *iter) {
-			if (iter->curr == NULL) { 
-				// done with this pass... 
+			if (iter->curr == NULL) {
+				// done with this pass...
 				return false;
 			}
 			// save next element, so we survive removal.
