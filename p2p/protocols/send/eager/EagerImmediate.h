@@ -125,11 +125,11 @@ namespace PAMI
             // Compile-time assertions
             // ----------------------------------------------------------------
 
-            TRACE_ERR((stderr, "EagerImmediate() [0]\n"));
+            TRACE_ERR((stderr, "EagerImmediate() register 'immediate' model\n"));
             status = _send_model.init (dispatch,
                                        dispatch_send_direct, this,
                                        dispatch_send_read, this);
-            TRACE_ERR((stderr, "EagerImmediate() [1] status = %d\n", status));
+            TRACE_ERR((stderr, "EagerImmediate() 'immediate' model status = %d\n", status));
           }
 
           inline pami_result_t immediate_impl (pami_send_immediate_t * parameters)

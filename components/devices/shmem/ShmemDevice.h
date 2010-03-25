@@ -30,6 +30,7 @@
 #include "util/fifo/LinearFifo.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/queue/Queue.h"
+#include "util/queue/CircularQueue.h"
 
 //#define TRAP_ADVANCE_DEADLOCK
 #define ADVANCE_DEADLOCK_MAX_LOOP 10000
@@ -237,15 +238,16 @@ namespace PAMI
             };
         };
 
-#ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
-        class UnexpectedPacket : public QueueElem
+        class UnexpectedPacket : public CircularQueue::Element
         {
           public:
-            inline UnexpectedPacket (PacketImpl * packet, size_t s) :
-                QueueElem (),
+            inline UnexpectedPacket (PacketImpl * packet, size_t s = 0) :
+                CircularQueue::Element (),
                 sequence (s)
             {
-              memcpy ((void *) meta, packet->metadata (id), T_Fifo::packet_header_size);
+              id = packet->getDispatch ();
+              bytes = T_Fifo::packet_payload_size;
+              memcpy ((void *) meta, packet->getMetadata (), T_Fifo::packet_header_size);
               memcpy ((void *) data, packet->getPayload (), T_Fifo::packet_payload_size);
             };
 
@@ -253,8 +255,8 @@ namespace PAMI
             size_t   sequence;
             uint8_t  meta[T_Fifo::packet_header_size];
             uint8_t  data[T_Fifo::packet_payload_size];
+            size_t   bytes;
         };
-#endif
 
       public:
 
@@ -405,6 +407,7 @@ namespace PAMI
             __ndQ (),
             __ndpkt (),
 #endif
+            //__ueQ (),
             __sendQ (NULL),
             _progress (NULL)
         {
@@ -539,11 +542,11 @@ namespace PAMI
         ///
         /// \see PAMI::Device::Interface::RecvFunction_t
         ///
-        static int noop (void   * metadata,
-                         void   * payload,
-                         size_t   bytes,
-                         void   * recv_func_parm,
-                         void   * cookie);
+        static int unexpected (void   * metadata,
+                               void   * payload,
+                               size_t   bytes,
+                               void   * recv_func_parm,
+                               void   * cookie);
 
 
         T_Fifo * _fifo;         //< Injection fifo array for all node contexts
@@ -563,6 +566,7 @@ namespace PAMI
         MemoryAllocator < sizeof(UnexpectedPacket), 16 > __ndpkt;
 #endif
 
+        CircularQueue        __ueQ[DISPATCH_SET_COUNT];
         Shmem::SendQueue   * __sendQ;
         PAMI::Device::Generic::Device * _progress;
 

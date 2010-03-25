@@ -146,37 +146,37 @@ namespace PAMI
             _origin.task   = __global.mapping.task();
             _origin.offset = device.getContextOffset();
 
-            TRACE_ERR((stderr, "EagerSimple() [0]\n"));
-            status = _envelope_model.init (dispatch,
-                                           dispatch_envelope_direct, this,
-                                           dispatch_envelope_read, this);
-            TRACE_ERR((stderr, "EagerSimple() [1] status = %d\n", status));
-
+            // The models must be registered in reverse order of use in case
+            // the remote side is delayed in it's registrations and must save
+            // unexpected packets until dispatch registration.
+            TRACE_ERR((stderr, "EagerSimple() register ack model\n"));
+            status = _ack_model.init (dispatch,
+                                      dispatch_ack_direct, this,
+                                      dispatch_ack_read, this);
+            TRACE_ERR((stderr, "EagerSimple() ack model status = %d\n", status));
             if (status == PAMI_SUCCESS)
               {
+                TRACE_ERR((stderr, "EagerSimple() register data model\n"));
                 status = _data_model.init (dispatch,
                                            dispatch_data_message, this,
                                            dispatch_data_message, this);
-                TRACE_ERR((stderr, "EagerSimple() [2] status = %d\n", status));
-
+                TRACE_ERR((stderr, "EagerSimple() data model status = %d\n", status));
                 if (status == PAMI_SUCCESS)
                   {
-                    status = _ack_model.init (dispatch,
-                                              dispatch_ack_direct, this,
-                                              dispatch_ack_read, this);
-                    TRACE_ERR((stderr, "EagerSimple() [3] status = %d\n", status));
+                    TRACE_ERR((stderr, "EagerSimple() register envelope  model\n"));
+                    status = _envelope_model.init (dispatch,
+                                                   dispatch_envelope_direct, this,
+                                                   dispatch_envelope_read, this);
+                    TRACE_ERR((stderr, "EagerSimple() envelope model status = %d\n", status));
 
-                    TRACE_ERR((stderr, "EagerSimple() [4] 'long header' support enabled = %d\n", T_LongHeader));
-
+                    TRACE_ERR((stderr, "EagerSimple() 'long header' support enabled = %d\n", T_LongHeader));
                     if (T_LongHeader == true)
                       {
-                        if (status == PAMI_SUCCESS)
-                          {
-                            status = _longheader_model.init (dispatch,
-                                                             dispatch_longheader_message, this,
-                                                             dispatch_longheader_message, this);
-                            TRACE_ERR((stderr, "EagerSimple() [5] status = %d\n", status));
-                          }
+                        TRACE_ERR((stderr, "EagerSimple() register 'long header'  model\n"));
+                        status = _longheader_model.init (dispatch,
+                                                         dispatch_longheader_message, this,
+                                                         dispatch_longheader_message, this);
+                        TRACE_ERR((stderr, "EagerSimple() 'long header' model status = %d\n", status));
                       }
                   }
               }

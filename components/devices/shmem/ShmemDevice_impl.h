@@ -16,7 +16,7 @@
 #include "SysDep.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //  fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 namespace PAMI
@@ -64,15 +64,14 @@ namespace PAMI
           new (&__sendQ[i]) Shmem::SendQueue (_progress, _contextid);
         }
 
-      // Initialize the registered receive function array to noop().
+      // Initialize the registered receive function array to unexpected().
       // The array is limited to 256 dispatch ids because of the size of the
       // dispatch id field in the packet header.
       for (i = 0; i < DISPATCH_SET_COUNT*DISPATCH_SET_SIZE; i++)
         {
-          _dispatch[i].function   = noop;
-          _dispatch[i].clientdata = NULL;
+          _dispatch[i].function   = unexpected;
+          _dispatch[i].clientdata = (void *)&__ueQ[i/DISPATCH_SET_SIZE];
         }
-
 
       return PAMI_SUCCESS;
     }
@@ -143,9 +142,9 @@ namespace PAMI
 
       for (id = set * DISPATCH_SET_SIZE; id < n; id++)
         {
-          TRACE_ERR((stderr, "   (%zd) ShmemDevice::registerRecvFunction(), _dispatch[%d].function= %p\n", __global.mapping.task(), id, _dispatch[id].function));
+         // TRACE_ERR((stderr, "   (%zd) ShmemDevice::registerRecvFunction(), _dispatch[%d].function= %p\n", __global.mapping.task(), id, _dispatch[id].function));
 
-          if (_dispatch[id].function == (Interface::RecvFunction_t) noop)
+          if (_dispatch[id].function == (Interface::RecvFunction_t) unexpected)
             {
               found_free_slot = true;
               break;
@@ -156,6 +155,33 @@ namespace PAMI
 
       _dispatch[id].function   = recv_func;
       _dispatch[id].clientdata = recv_func_parm;
+
+      // Deliver any unexpected packets for registered dispatch ids. Stop at
+      // the first unexpected packet for an un-registered dispatch id.
+      UnexpectedPacket * uepkt = NULL;
+      while ((uepkt = (UnexpectedPacket *) __ueQ[set].peek()) != NULL)
+      {
+        if (_dispatch[uepkt->id].function != unexpected)
+        {
+          // Invoke the registered dispatch function
+          TRACE_ERR((stderr, "   (%zd) ShmemDevice::registerRecvFunction() uepkt = %p, uepkt->id = %zu\n", __global.mapping.task(), uepkt, uepkt->id));
+          _dispatch[uepkt->id].function (uepkt->meta,
+                                         uepkt->data,
+                                         uepkt->bytes,
+                                         _dispatch[uepkt->id].clientdata,
+                                         uepkt->data);
+
+          // Remove the unexpected packet from the queue and free
+          __ueQ[set].dequeue();
+          free (uepkt);
+        }
+        else
+        {
+          // Stop unexpected queue processing.  This maintains packet order
+          // which is required for protocols such as eager.
+          break;
+        }
+      }
 
       TRACE_ERR((stderr, "<< (%zd) ShmemDevice::registerRecvFunction() => %d\n", __global.mapping.task(), id));
       return PAMI_SUCCESS;
@@ -172,13 +198,27 @@ namespace PAMI
     };
 
     template <class T_Fifo>
-    int ShmemDevice<T_Fifo>::noop (void   * metadata,
-                                   void   * payload,
-                                   size_t   bytes,
-                                   void   * recv_func_parm,
-                                   void   * cookie)
+    int ShmemDevice<T_Fifo>::unexpected (void   * metadata,
+                                         void   * payload,
+                                         size_t   bytes,
+                                         void   * recv_func_parm,
+                                         void   * cookie)
     {
-      PAMI_abortf("%s<%d>\n",__FILE__,__LINE__);
+      //TRACE_ERR((stderr, ">> (%zd) ShmemDevice::unexpected()\n", __global.mapping.task()));
+
+      // The metadata is at the front of the packet.
+      PacketImpl * pkt = (PacketImpl *) metadata;
+
+      UnexpectedPacket * uepkt =
+        (UnexpectedPacket *) malloc (sizeof(UnexpectedPacket));
+      new ((void *)uepkt) UnexpectedPacket (pkt);
+
+      TRACE_ERR((stderr, "   (%zd) ShmemDevice::unexpected(), uepkt = %p, uepkt->id = %zu\n", __global.mapping.task(), uepkt, uepkt->id));
+
+      CircularQueue * q = (CircularQueue *) recv_func_parm;
+      q->enqueue ((CircularQueue::Element *) uepkt);
+
+      //TRACE_ERR((stderr, "<< (%zd) ShmemDevice::unexpected(), q = %p\n", __global.mapping.task(), q));
       return 0;
     }
   };
