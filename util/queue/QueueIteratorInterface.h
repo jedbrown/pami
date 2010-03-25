@@ -51,8 +51,9 @@ public:
 	/// Resets iterator from any possible previous state.
 	///
 	/// \param[in] iter	Iterator data structure
+	/// \return	True if new work discovered (e.g. merge done)
 	///
-	inline void iter_begin(T_Iterator *iter);
+	inline bool iter_begin(T_Iterator *iter);
 
 	/// \brief test if iteration loop may continue (element exists)
 	///
@@ -98,8 +99,8 @@ inline void PAMI::Interface::QueueIterator<T_Queue,T_Element,T_Iterator>::iter_i
 }
 
 template <class T_Queue, class T_Element, typename T_Iterator>
-inline void PAMI::Interface::QueueIterator<T_Queue,T_Element,T_Iterator>::iter_begin(T_Iterator *iter) {
-	static_cast<T_Queue *>(this)->iter_begin_impl(iter);
+inline bool PAMI::Interface::QueueIterator<T_Queue,T_Element,T_Iterator>::iter_begin(T_Iterator *iter) {
+	return static_cast<T_Queue *>(this)->iter_begin_impl(iter);
 }
 
 template <class T_Queue, class T_Element, typename T_Iterator>

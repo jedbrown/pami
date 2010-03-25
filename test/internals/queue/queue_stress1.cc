@@ -7,6 +7,9 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
+#define _POSIX_C_SOURCE 199309
+#include <time.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -41,6 +44,8 @@ queue_t queue;
 
 element_t *arrays[MAX_PTHREADS] = {NULL};
 
+double base_t = 0.0;
+
 struct thread_args {
 	queue_t *queue;
 	int num_iter;
@@ -56,9 +61,11 @@ void *enqueuers(void *v) {
 	int x;
 	element_t *e;
 	unsigned long long t0, t = 0;
+	timespec tv = {0, 100000};
 
 	fprintf(stderr, "%d: starting %d enqueues\n", gettid(), num);
 	for (x = 0; x < num; ++x) {
+		nanosleep(&tv, NULL);
 		if (a) {
 			e = &a[x];
 		} else {
@@ -73,7 +80,7 @@ void *enqueuers(void *v) {
 		t += PAMI_Wtimebase() - t0;
 	}
 	double d = t;
-	fprintf(stderr, "%d: finished %d enqueues (%g cycles each)\n", gettid(), num, d / num);
+	fprintf(stderr, "%d: finished %d enqueues (%g cycles each) %g\n", gettid(), num, d / num, base_t);
 	return NULL;
 }
 
@@ -82,9 +89,9 @@ void *dequeuer(void *v) {
 	queue_t *q = args->queue;
 	element_t *a = args->array;
 	int num = args->num_iter * (args->nthreads - 1);
-	int x = 0, y = 0;
+	int x = 0, y = 0, z = 0;
 	element_t *e;
-	unsigned long long t0, t = 0, tr = 0;
+	unsigned long long t0, t1, t = 0, tr = 0, tb = 0;
 
 	fprintf(stderr, "%d: looking for %d dequeues\n", gettid(), num);
 #ifdef DEBUG
@@ -96,7 +103,14 @@ void *dequeuer(void *v) {
 	while (x < num) {
 		if (!q->head()) sched_yield();
 		t0 = PAMI_Wtimebase();
-		for (q->iter_begin(&qi); q->iter_check(&qi); q->iter_end(&qi)) {
+		bool b = q->iter_begin(&qi);
+		t1 = PAMI_Wtimebase();
+		if (b) {
+			tb += t1 - t0;
+			++z;
+		}
+		t0 = PAMI_Wtimebase();
+		for (; q->iter_check(&qi); q->iter_end(&qi)) {
 			++y;
 			e = (element_t *)q->iter_current(&qi);
 			if (e->val == (unsigned)-1 || (rand() & 0x03) == 0) {
@@ -136,7 +150,8 @@ void *dequeuer(void *v) {
 	}
 	double d = t;
 	double dr = tr;
-	fprintf(stderr, "%d: finished %d dequeues (%g cycles per iter-elem (%d), %g per remove)\n", gettid(), num, d / y, y, dr / num);
+	double db = tb;
+	fprintf(stderr, "%d: finished %d dequeues (%g cycles per iter-elem (%d), %g per remove, %g per merge (%d))\n", gettid(), num, d / y, y, dr / num, db / z, z);
 	return NULL;
 }
 
@@ -182,6 +197,14 @@ int main(int argc, char **argv) {
 	assert(ptr);
 	mm.init(ptr, size);
 	queue.init(&mm);
+
+	unsigned long long t1, t0 = PAMI_Wtimebase();
+	for (x = 0; x < 10000; ++x) {
+		t1 = PAMI_Wtimebase() - t0;
+	}
+	t1 = PAMI_Wtimebase() - t0;
+	double d = t1;
+	base_t = d / x;
 
 	int status;
 	for (x = savethread; x < pthreads; ++x) {

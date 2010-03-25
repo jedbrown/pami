@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include "util/common.h"
+#include "Compiler.h"
 #include "util/queue/QueueInterface.h"
 #include "util/queue/QueueIteratorInterface.h"
 #include "components/memory/MemoryManager.h"
@@ -152,7 +153,7 @@ namespace PAMI {
 				// q->tail already set to 'e'...
 				_head = e; // q->head was NULL...
 			}
-			__sync_fetch_and_add(&_size, 1);
+			//__sync_fetch_and_add(&_size, 1);
 		}
 
 		inline Element *dequeue_impl() {
@@ -219,11 +220,12 @@ namespace PAMI {
 			iter->curr = iter->next = NULL;
 		}
 
-		inline void iter_begin_impl(QueueIterator *iter) {
+		inline bool iter_begin_impl(QueueIterator *iter) {
 			// pick up any new work...
-			__merge(&iter->_queue, this);
+			bool did = __merge(&iter->_queue, this);
 			iter->parent = NULL;
 			iter->curr = iter->_queue.peek();
+			return did;
 		}
 
 		inline bool iter_check_impl(QueueIterator *iter) {
@@ -263,23 +265,24 @@ namespace PAMI {
 			}
 			*h = n;
 			e->setNext(NULL, T_ElemNum);
+			//main->_size -= 1;
 			iter->next_par = iter->parent; // keep same parent for next iter
 			return PAMI_SUCCESS;
 		}
 
 	private:
-		inline void __merge(GccThreadSafeMultiQueue<T_NumElems,T_ElemNum> *main,
+		inline bool __merge(GccThreadSafeMultiQueue<T_NumElems,T_ElemNum> *main,
 				GccThreadSafeMultiQueue<T_NumElems,T_ElemNum> *new_work) {
 			Element *h, *t, *qt;
-			size_t c;
+			//size_t c;
 
 			h = new_work->peek();
-			if (!h) return;
+			if (!h) return false;
 
 			new_work->_head = NULL;
 			do {
 				t = new_work->_tail;
-				c = new_work->_size;
+				//c = new_work->_size;
 			} while (!__sync_bool_compare_and_swap(&new_work->_tail, t, NULL));
 
 			qt = main->_tail;
@@ -291,8 +294,9 @@ namespace PAMI {
 				main->_head = h;
 			}
 			main->_tail = t;
-			main->_size += c;
-			__sync_fetch_and_add(&new_work->_size, -c);
+			//main->_size += c;
+			//__sync_fetch_and_add(&new_work->_size, -c);
+			return true;
 		}
 
 	protected:
