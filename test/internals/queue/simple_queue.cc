@@ -47,7 +47,7 @@ class TestElement : public T_Queue::Element
 };
 
 template <class T_Queue>
-void dump_queue (T_Queue & queue, char * type, char * name = "Dump")
+void dump_queue (T_Queue & queue, const char * type, const char * name = "Dump")
 {
   char pad[10240];
   size_t i = 0;
@@ -73,7 +73,7 @@ void dump_queue (T_Queue & queue, char * type, char * name = "Dump")
 
 
 template <class T_Queue>
-bool test_stack_operations (size_t qsize, size_t esize, char * name = "")
+bool test_stack_operations (size_t qsize, size_t esize, const char * name = "")
 {
   bool failed = false;
 
@@ -202,7 +202,7 @@ bool test_stack_operations (size_t qsize, size_t esize, char * name = "")
 }
 
 template <class T_Queue>
-bool test_stack_operations (char * name = "")
+bool test_stack_operations (const char * name = "")
 {
   fprintf (stdout, "\n");
   fprintf (stdout, "[%s] ==============================================\n", name);
@@ -224,7 +224,7 @@ bool test_stack_operations (char * name = "")
 }
 
 template <class T_Queue>
-bool test_queue_operations (size_t qsize, size_t esize, char * name = "")
+bool test_queue_operations (size_t qsize, size_t esize, const char * name = "")
 {
   bool failed = false;
 
@@ -370,7 +370,7 @@ bool test_queue_operations (size_t qsize, size_t esize, char * name = "")
 }
 
 template <class T_Queue>
-bool test_queue_operations (char * name = "")
+bool test_queue_operations (const char * name = "")
 {
   fprintf (stdout, "\n");
   fprintf (stdout, "[%s] ==============================================\n", name);
@@ -394,7 +394,7 @@ bool test_queue_operations (char * name = "")
 
 
 template <class T_Queue>
-bool test_q2q_operations (size_t q0size, size_t q1size, char * name = "")
+bool test_q2q_operations (size_t q0size, size_t q1size, const char * name = "")
 {
   bool failed = false;
 
@@ -506,7 +506,7 @@ bool test_q2q_operations (size_t q0size, size_t q1size, char * name = "")
 
 
 template <class T_Queue>
-bool test_q2q_operations (char * name = "")
+bool test_q2q_operations (const char * name = "")
 {
   fprintf (stdout, "\n");
   fprintf (stdout, "[%s] ==============================================\n", name);
