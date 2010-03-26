@@ -305,7 +305,19 @@ namespace CCMI
 
     class OneColorRectangle : public Interfaces::Schedule
     {
+         virtual void
+      init(int root, int op, int &startphase, int &nphases) { PAMI_abort();}
+      virtual void
+      getSrcTopology (unsigned phase, PAMI::Topology *topology){ PAMI_abort();}
+      virtual void
+      getDstTopology (unsigned phase, PAMI::Topology *topology){ PAMI_abort();}
+      virtual pami_result_t
+      getSrcUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
+      virtual pami_result_t
+      getDstUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
 
+
+      
 /*
  * \page ocrmb_sched One-Color Rectangular Mesh Broadcast Schedule Design
  *
@@ -1781,7 +1793,7 @@ namespace CCMI
         nmessages = nmr + nmb; // max recvs we might do
       }
     }; /* OneColorRectAllredSched */
-
+    
 
   }; /* Schedule */
 } /* CCMI */

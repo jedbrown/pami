@@ -335,7 +335,17 @@ init(int root, int comm_op, int &start_phase, int &num_phases, int &num_ranks)
   else
     CCMI_abort();
 
-
+  virtual void
+    init(int root, int op, int &startphase, int &nphases) { PAMI_abort();}
+  virtual void
+    getSrcTopology (unsigned phase, PAMI::Topology *topology){ PAMI_abort();}
+  virtual void
+    getDstTopology (unsigned phase, PAMI::Topology *topology){ PAMI_abort();}
+  virtual pami_result_t
+    getSrcUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
+  virtual pami_result_t
+    getDstUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
+      
 
 /*   fprintf(stderr, "nranks: %u,  power2: %u,   ", _num_ranks, _power2); */
 /*   fprintf(stderr, "me:     %u,  root:   %u,   ", _myindex, _rootindex); */

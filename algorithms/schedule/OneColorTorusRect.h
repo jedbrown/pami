@@ -91,6 +91,16 @@ namespace CCMI
           for (i = 0; i < _map->torusDims(); i++)
             _dim_sizes[i] = _ur.net_coord(i) - _ll.net_coord(i) + 1;
 
+          
+          virtual void
+            init(int root, int op, int &startphase, int &nphases, int &maxranks)
+          {PAMI_abort();}
+          virtual void getSrcPeList (unsigned  phase, unsigned *srcpes,
+                                     unsigned  &nsrc, unsigned *subtasks=NULL)
+          {PAMI_abort();}
+          virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
+                                     unsigned  &ndst, unsigned *subtasks)
+          {PAMI_abort();}
 
           virtual void init(pami_task_t root, int op, int &start, int &nphases);
           virtual void getSrcTopology(PAMI::Topology *topo);

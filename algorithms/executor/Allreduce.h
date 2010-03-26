@@ -275,7 +275,7 @@ namespace CCMI
       /// \brief Register the schedule
       ///
       /// \param[in]  sched
-      inline void setSchedule(Interfaces::Schedule::Schedule *sched)
+      inline void setSchedule(Interfaces::Schedule *sched)
       {
         TRACE_FLOW((stderr,"<%p>Executor::Allreduce::setSchedule() enter\n",this));
         CCMI_assert(_curRcvPhase == CCMI_KERNEL_EXECUTOR_ALLREDUCE_INITIAL_PHASE);

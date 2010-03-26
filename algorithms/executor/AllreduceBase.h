@@ -270,7 +270,7 @@ namespace CCMI
 
       }
 
-      void setSchedule (Interfaces::Schedule::Schedule *schedule, unsigned color=0)
+      void setSchedule (Interfaces::Schedule *schedule, unsigned color=0)
       {
         _astate.setSchedule(schedule);
         _astate.setColor(color);

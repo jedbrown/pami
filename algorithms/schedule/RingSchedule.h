@@ -263,6 +263,16 @@ namespace CCMI
                      my_idx, head_idx, tail_idx));
       }
 
+      virtual void
+      init(int root, int op, int &startphase, int &nphases, int &maxranks)
+        {PAMI_abort();}
+      virtual void getSrcPeList (unsigned  phase, unsigned *srcpes,
+                                 unsigned  &nsrc, unsigned *subtasks=NULL)
+        {PAMI_abort();}
+      virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
+                                 unsigned  &ndst, unsigned *subtasks)
+        {PAMI_abort();}
+      
       /**
        * \brief Get the upstream processors. Source processors
        * that send messages to me in this collective operation

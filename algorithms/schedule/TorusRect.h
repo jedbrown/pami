@@ -91,7 +91,17 @@ namespace CCMI
         virtual pami_result_t getDstUnionTopology(PAMI::Topology *topology);
         virtual void getSrcTopology(unsigned phase, PAMI::Topology *topology);
         virtual void getDstTopology(unsigned phase, PAMI::Topology *topology);
+        virtual void
+        init(int root, int op, int &startphase, int &nphases, int &maxranks)
+        {PAMI_abort();}
+        virtual void getSrcPeList (unsigned  phase, unsigned *srcpes,
+                                   unsigned  &nsrc, unsigned *subtasks=NULL)
+        {PAMI_abort();}
+        virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
+                                   unsigned  &ndst, unsigned *subtasks)
+        {PAMI_abort();}
 
+      
         unsigned color()
         {
           return _color;
@@ -186,7 +196,7 @@ namespace CCMI
                                   int &start,
                                   int &nphases)
   {
-    CCMI_assert (op == CCMI::Interfaces::BROADCAST_OP);
+    CCMI_assert (op == CCMI::BROADCAST_OP);
 
     _root = root;
     _map->task2network(root, &_root_coord, PAMI_N_TORUS_NETWORK);

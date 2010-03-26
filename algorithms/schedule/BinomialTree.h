@@ -385,6 +385,17 @@ namespace CCMI
           ndst = 0;
         }
       }
+      virtual void
+      init(int root, int op, int &startphase, int &nphases) { PAMI_abort();}
+      virtual void
+      getSrcTopology (unsigned phase, PAMI::Topology *topology){ PAMI_abort();}
+      virtual void
+      getDstTopology (unsigned phase, PAMI::Topology *topology){ PAMI_abort();}
+      virtual pami_result_t
+      getSrcUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
+      virtual pami_result_t
+      getDstUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
+
 
     };    //Binomial Tree Schedule
   };   //Schedule

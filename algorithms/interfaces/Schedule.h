@@ -65,9 +65,9 @@ namespace CCMI
        * \param nphases : number of phases
        */
       virtual void
-      init(int root, int op, int &startphase, int &nphases, int &maxranks);
+      init(int root, int op, int &startphase, int &nphases, int &maxranks)=0;
       virtual void
-      init(int root, int op, int &startphase, int &nphases) ;
+      init(int root, int op, int &startphase, int &nphases)=0 ;
 
       /**
        * \brief Get the upstream processors. Source processors
@@ -76,7 +76,7 @@ namespace CCMI
        * \param[INOUT] topology : the topolgy that sends messages to me in this phase
        */
       virtual void
-      getSrcTopology (unsigned phase, PAMI::Topology *topology);
+      getSrcTopology (unsigned phase, PAMI::Topology *topology)=0;
 
       /**
        * \brief Get the downstream processors to send data to.
@@ -84,21 +84,21 @@ namespace CCMI
        * \param[INOUT] topology : The topology to send messages to in this phase
        */
       virtual void
-      getDstTopology (unsigned phase, PAMI::Topology *topology);
+      getDstTopology (unsigned phase, PAMI::Topology *topology)=0;
 
       /**
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
       virtual pami_result_t
-      getSrcUnionTopology (PAMI::Topology *topology);
+      getSrcUnionTopology (PAMI::Topology *topology)=0;
 
       /**
        * \brief Get the union of all destinations across all phases
        * \param[INOUT] topology : the union of all sources
        */
       virtual pami_result_t
-      getDstUnionTopology (PAMI::Topology *topology);
+      getDstUnionTopology (PAMI::Topology *topology)=0;
 
       /**
        * Old ccmi schedule interfaces
@@ -114,7 +114,7 @@ namespace CCMI
        */
 
       virtual void getSrcPeList (unsigned  phase, unsigned *srcpes,
-                                 unsigned  &nsrc, unsigned *subtasks=NULL);
+                                 unsigned  &nsrc, unsigned *subtasks=NULL)=0;
 
 
       /**
@@ -125,7 +125,7 @@ namespace CCMI
        * \param subtasks : what operations to perform? pt-to-pt, line bcast
        */
       virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
-                                 unsigned  &ndst, unsigned *subtasks);
+                                 unsigned  &ndst, unsigned *subtasks)=0;
 
       /**
        * \brief Initialize the schedule for collective operation

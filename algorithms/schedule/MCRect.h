@@ -74,6 +74,15 @@ namespace CCMI
       }
 
       void init(int root, int op, int &start, int &nphases);
+      virtual void
+      init(int root, int op, int &startphase, int &nphases, int &maxranks)
+        {PAMI_abort();}
+      virtual void getSrcPeList (unsigned  phase, unsigned *srcpes,
+                                 unsigned  &nsrc, unsigned *subtasks=NULL)
+        {PAMI_abort();}
+      virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
+                                 unsigned  &ndst, unsigned *subtasks)
+        {PAMI_abort();}
       virtual pami_result_t getSrcUnionTopology(PAMI::Topology *topo);
       virtual pami_result_t getDstUnionTopology(PAMI::Topology *topo);
       virtual void getSrcTopology(unsigned phase, PAMI::Topology *topo);

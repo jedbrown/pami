@@ -55,7 +55,7 @@ namespace CCMI
         {
         }
 
-        void init(Interfaces::Schedule::Schedule *schedule)
+        void init(Interfaces::Schedule *schedule)
         {
           int start, nph, nmessages = 0;
           schedule->init (-1, BARRIER_OP, start, nph, nmessages);
@@ -233,7 +233,7 @@ namespace CCMI
         _iteration     = 0;
       }
 
-      void setCommSchedule(Interfaces::Schedule::Schedule *sch)
+      void setCommSchedule(Interfaces::Schedule *sch)
       {
         _cache.init (sch);
 

@@ -89,7 +89,7 @@ namespace CCMI
       unsigned          _sizeOfBuffers; /// Size of allocated buffers (>= _bytes)
 
       /// my schedule
-      Interfaces::Schedule::Schedule                   * _sched;
+      Interfaces::Schedule                   * _sched;
 
       /// dynamically allocated buffer space (for algorithms/schedule/phase data members)
       void             * _scheduleAllocation;
@@ -444,12 +444,12 @@ namespace CCMI
       /// \brief Register the schedule
       ///
       /// \param[in]  sched
-      inline void setSchedule(Interfaces::Schedule::Schedule *sched)
+      inline void setSchedule(Interfaces::Schedule *sched)
         {
           TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setSchedule(%#X) enter\n",this, (int)sched));
           _sched = sched;
         }
-      inline Interfaces::Schedule::Schedule * getSchedule()
+      inline Interfaces::Schedule * getSchedule()
         {
           return _sched;
         }

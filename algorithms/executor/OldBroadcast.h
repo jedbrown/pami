@@ -37,7 +37,7 @@ namespace CCMI
     {
     protected:
       T_Sysdep            * _sd;
-      Interfaces::Schedule::Schedule  * _comm_schedule;
+      Interfaces::Schedule  * _comm_schedule;
       T_Mcast             * _mInterface;
       pami_oldmulticast_t    _msend;
 
@@ -149,7 +149,7 @@ namespace CCMI
       // --  Initialization routines
       //------------------------------------------
 
-      inline void setSchedule (Interfaces::Schedule::Schedule *ct)
+      inline void setSchedule (Interfaces::Schedule *ct)
       {
         _comm_schedule = ct;
 
