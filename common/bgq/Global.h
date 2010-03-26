@@ -86,7 +86,8 @@ namespace PAMI
                   {
                     TRACE_ERR((stderr, "Global:shmem file <%s> %zu bytes mapped at %p\n", shmemfile, size, ptr));
                     mm.init(ptr, size);
-
+                    (void)initializeMapCache(personality, &mm, ll, ur, min, max,
+                                             true); //shared initialization
                   }
                 else
                   {
@@ -106,8 +107,9 @@ namespace PAMI
             posix_memalign ((void **)&ptr, 16, size);
             memset (ptr, 0, size);
             mm.init(ptr, size);
+            (void)initializeMapCache(personality, &mm, ll, ur, min, max,
+                                     false); // un-shared initialization
           }
-        (void)initializeMapCache(personality, &mm, ll, ur, min, max, false);
 
         mapping.init(_mapcache, personality);
         PAMI::Topology::static_init(&mapping);
@@ -184,8 +186,8 @@ namespace PAMI
 
 // If 'mm' is NULL, compute total memory needed for mapcache and return (doing nothing else).
 size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
-                                        PAMI::Memory::MemoryManager *mm,
-                                        pami_coord_t &ll, pami_coord_t &ur, pami_task_t &min, pami_task_t &max, bool shared)
+                                         PAMI::Memory::MemoryManager *mm,
+                                         pami_coord_t &ll, pami_coord_t &ur, pami_task_t &min, pami_task_t &max, bool shared)
 {
   bgq_mapcache_t  * mapcache = &_mapcache;
 
@@ -234,15 +236,16 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
   // Calculate the number of potential tasks on a node in this partition.
   size_t peerSize = pSize * tSize;
 
-  if (!mm) {
-        size_t mapsize = sizeof(cacheAnchors_t) +
-                fullSize * sizeof(*mapcache->torus.task2coords) +
-                fullSize * sizeof(*mapcache->torus.coords2task) +
-                peerSize * sizeof(*mapcache->node.local2peer) +
-                peerSize * sizeof(*mapcache->node.peer2task);
-        TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() << mapsize = %zu\n", mapsize));
-        return mapsize;
-  }
+  if (!mm)
+    {
+      size_t mapsize = sizeof(cacheAnchors_t) +
+                       fullSize * sizeof(*mapcache->torus.task2coords) +
+                       fullSize * sizeof(*mapcache->torus.coords2task) +
+                       peerSize * sizeof(*mapcache->node.local2peer) +
+                       peerSize * sizeof(*mapcache->node.peer2task);
+      TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() << mapsize = %zu\n", mapsize));
+      return mapsize;
+    }
 
   volatile cacheAnchors_t *cacheAnchorsPtr;
   mm->memalign((void **)&cacheAnchorsPtr, 16, sizeof(*cacheAnchorsPtr));
@@ -255,7 +258,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
   // then this task is the first one in and is designated the "master".
   // All other tasks will wait until the master completes the
   // initialization.
-  uint64_t participant = Fetch_and_Add((uint64_t *)&(cacheAnchorsPtr->atomic.enter), 1); /// \todo this isn't working on mambo
+  uint64_t participant = Fetch_and_Add((uint64_t *) & (cacheAnchorsPtr->atomic.enter), 1); /// \todo this isn't working on mambo
 
   //myRank = personality.rank();
 
@@ -274,7 +277,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
   PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for peer2task");
   TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
 
-  pami_task_t max_rank = 0, min_rank = (pami_task_t)-1;
+  pami_task_t max_rank = 0, min_rank = (pami_task_t) - 1;
   pami_coord_t _ll, _ur;
 
   // If we are the master (participant 0), then initialize the caches.
@@ -319,13 +322,14 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
        * Non-active ranks (-np) have x, y, z, and t equal to 255, such
        * that the entire 4 byte int is -1.
        */
+      int rc = 0;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-// #warning Need ranks2coords syscall!
-// int rc = Kernel_Ranks2Coords((bgq_coords_t *)mapcache->torus.task2coords, fullSize);
+/// \todo #warning Need ranks2coords syscall!
+// rc = Kernel_Ranks2Coords((bgq_coords_t *)mapcache->torus.task2coords, fullSize);
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -335,124 +339,145 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
       /* The above system call is new in V1R3M0.  If it works, obtain info
        * from the returned _mapcache.
        */
-//              if (rc == 0)
-      {
-        /* Obtain the following information from the _mapcache:
-         * 1. Number of active ranks in the partition.
-         * 2. Number of active compute nodes in the partition.
-         * 3. _rankcache (the reverse of _mapcache).  It is indexed by
-         *    coordinates and contains the rank.
-         * 4. Number of active ranks on each compute node.
-         */
-        size_t i;
-        TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. fullSize = %zu\n", fullSize));
+      if (rc == 0)
+        {
+          /* Obtain the following information from the _mapcache:
+           * 1. Number of active ranks in the partition.
+           * 2. Number of active compute nodes in the partition.
+           * 3. _rankcache (the reverse of _mapcache).  It is indexed by
+           *    coordinates and contains the rank.
+           * 4. Number of active ranks on each compute node.
+           */
+          size_t i;
+          TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. fullSize = %zu\n", fullSize));
 
-        _ll.network = _ur.network = PAMI_N_TORUS_NETWORK;
-        _ll.u.n_torus.coords[0] = _ur.u.n_torus.coords[0] = personality.aCoord();
-        _ll.u.n_torus.coords[1] = _ur.u.n_torus.coords[1] = personality.bCoord();
-        _ll.u.n_torus.coords[2] = _ur.u.n_torus.coords[2] = personality.cCoord();
-        _ll.u.n_torus.coords[3] = _ur.u.n_torus.coords[3] = personality.dCoord();
-        _ll.u.n_torus.coords[4] = _ur.u.n_torus.coords[4] = personality.eCoord();
-        _ll.u.n_torus.coords[5] = _ur.u.n_torus.coords[5] = pCoord;
-        _ll.u.n_torus.coords[6] = _ur.u.n_torus.coords[6] = tCoord;
+          _ll.network = _ur.network = PAMI_N_TORUS_NETWORK;
+          _ll.u.n_torus.coords[0] = _ur.u.n_torus.coords[0] = personality.aCoord();
+          _ll.u.n_torus.coords[1] = _ur.u.n_torus.coords[1] = personality.bCoord();
+          _ll.u.n_torus.coords[2] = _ur.u.n_torus.coords[2] = personality.cCoord();
+          _ll.u.n_torus.coords[3] = _ur.u.n_torus.coords[3] = personality.dCoord();
+          _ll.u.n_torus.coords[4] = _ur.u.n_torus.coords[4] = personality.eCoord();
+          _ll.u.n_torus.coords[5] = _ur.u.n_torus.coords[5] = pCoord;
+          _ll.u.n_torus.coords[6] = _ur.u.n_torus.coords[6] = tCoord;
 
-        for (i = 0; i < fullSize; i++)
-          {
-            //if ( (int)_mapcache[i] != -1 )
-            //  {
-            //bgq_coords_t mapCacheElement = *((bgq_coords_t*) & _mapcache[i]);
+          size_t numActiveRanksGlobal = 0;
+          size_t numActiveNodesGlobal = 0;
+
+          for (i = 0; i < fullSize; i++)
+            {
+              //if ( (int)_mapcache[i] != -1 )
+              //  {
+              //bgq_coords_t mapCacheElement = *((bgq_coords_t*) & _mapcache[i]);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 
-            if (personality._is_mambo)
-              {
-                a = mapcache->torus.task2coords[i].a = (i / peerSize) % aSize;
-                b = mapcache->torus.task2coords[i].b = (i / (peerSize * aSize)) % bSize;
-                c = mapcache->torus.task2coords[i].c = (i / (peerSize * aSize * bSize)) % cSize;
-                d = mapcache->torus.task2coords[i].d = (i / (peerSize * aSize * bSize * cSize)) % dSize;
-                e = mapcache->torus.task2coords[i].e = (i / (peerSize * aSize * bSize * cSize * dSize)) % eSize;
-                p = mapcache->torus.task2coords[i].core = (i / tSize) % pSize;
-                t = mapcache->torus.task2coords[i].thread = i % tSize;
-              }
-            else
-              {
-                a = mapcache->torus.task2coords[i].a;
-                b = mapcache->torus.task2coords[i].b;
-                c = mapcache->torus.task2coords[i].c;
-                d = mapcache->torus.task2coords[i].d;
-                e = mapcache->torus.task2coords[i].e;
-                p = mapcache->torus.task2coords[i].core;
-                t = mapcache->torus.task2coords[i].thread;
-              }
+              if (personality._is_mambo)
+                {
+                  a = mapcache->torus.task2coords[i].a = (i / peerSize) % aSize;
+                  b = mapcache->torus.task2coords[i].b = (i / (peerSize * aSize)) % bSize;
+                  c = mapcache->torus.task2coords[i].c = (i / (peerSize * aSize * bSize)) % cSize;
+                  d = mapcache->torus.task2coords[i].d = (i / (peerSize * aSize * bSize * cSize)) % dSize;
+                  e = mapcache->torus.task2coords[i].e = (i / (peerSize * aSize * bSize * cSize * dSize)) % eSize;
+                  p = mapcache->torus.task2coords[i].core = (i / tSize) % pSize;
+                  t = mapcache->torus.task2coords[i].thread = i % tSize;
+                }
+              else
+                {
+                  a = mapcache->torus.task2coords[i].a;
+                  b = mapcache->torus.task2coords[i].b;
+                  c = mapcache->torus.task2coords[i].c;
+                  d = mapcache->torus.task2coords[i].d;
+                  e = mapcache->torus.task2coords[i].e;
+                  p = mapcache->torus.task2coords[i].core;
+                  t = mapcache->torus.task2coords[i].thread;
+                }
 
 #else
-            a = mapcache->torus.task2coords[i].a;
-            b = mapcache->torus.task2coords[i].b;
-            c = mapcache->torus.task2coords[i].c;
-            d = mapcache->torus.task2coords[i].d;
-            e = mapcache->torus.task2coords[i].e;
-            p = mapcache->torus.task2coords[i].core;
-            t = mapcache->torus.task2coords[i].thread;
+              a = mapcache->torus.task2coords[i].a;
+              b = mapcache->torus.task2coords[i].b;
+              c = mapcache->torus.task2coords[i].c;
+              d = mapcache->torus.task2coords[i].d;
+              e = mapcache->torus.task2coords[i].e;
+              p = mapcache->torus.task2coords[i].core;
+              t = mapcache->torus.task2coords[i].thread;
 #endif
-            TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. i = %zu, {%zu %zu %zu %zu %zu %zu %zu}\n", i, a, b, c, d, e, p, t));
+              TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. i = %zu, {%zu %zu %zu %zu %zu %zu %zu}\n", i, a, b, c, d, e, p, t));
 
-            // Set the bit corresponding to the physical node of this rank,
-            // indicating that we have found a rank on that node.
-            // Increment numActiveNodesGlobal when the bit goes from 0 to 1.
-            uint64_t tmpIndex    = (a * bcdeSize) + (b * cdeSize) + (c * deSize) + (d * eSize) + e;
-            uint64_t narrayIndex = tmpIndex >> 6;     // Divide by 64 to get narray index.
-            uint64_t bitNumber   = tmpIndex & (64 - 1); // Mask off high bits to get bit number.
-            uint64_t bitNumberMask = _BN(bitNumber);
+              // Set the bit corresponding to the physical node of this rank,
+              // indicating that we have found a rank on that node.
+              // Increment numActiveNodesGlobal when the bit goes from 0 to 1.
+              uint64_t tmpIndex    = (a * bcdeSize) + (b * cdeSize) + (c * deSize) + (d * eSize) + e;
+              uint64_t narrayIndex = tmpIndex >> 6;     // Divide by 64 to get narray index.
+              uint64_t bitNumber   = tmpIndex & (64 - 1); // Mask off high bits to get bit number.
+              uint64_t bitNumberMask = _BN(bitNumber);
 
-            if ((narray[narrayIndex] & bitNumberMask) == 0)
-              {
-                cacheAnchorsPtr->numActiveNodesGlobal++;
-                narray[narrayIndex] |= bitNumberMask;
-                TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. bitNumberMask = %#.16lX, narray[%#.16lX]=%#.8X\n", bitNumberMask, narrayIndex, narray[narrayIndex]));
-              }
+              if ((narray[narrayIndex] & bitNumberMask) == 0)
+                {
+                  numActiveNodesGlobal++;
+                  narray[narrayIndex] |= bitNumberMask;
+                  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. bitNumberMask = %#.16lX, narray[%#.16lX]=%#.8X\n", bitNumberMask, narrayIndex, narray[narrayIndex]));
+                }
 
-            // Increment the number of global ranks.
-            cacheAnchorsPtr->numActiveRanksGlobal++;
+              // Increment the number of global ranks.
+              numActiveRanksGlobal++;
 
-            uint32_t addr_hash = ESTIMATED_TASK(a, b, c, d, e, p, t, aSize, bSize, cSize, dSize, eSize, pSize, tSize);
-            mapcache->torus.coords2task[addr_hash] = i;
-            TRACE_ERR((stderr, "coords2task[%d]=%#lX\n", addr_hash, i));
+              uint32_t addr_hash = ESTIMATED_TASK(a, b, c, d, e, p, t, aSize, bSize, cSize, dSize, eSize, pSize, tSize);
+              mapcache->torus.coords2task[addr_hash] = i;
+              TRACE_ERR((stderr, "coords2task[%d]=%#lX\n", addr_hash, i));
 
-            // because of "for (i..." this will give us MAX after loop.
-            max_rank = i;
+              // because of "for (i..." this will give us MAX after loop.
+              max_rank = i;
 
-            if (min_rank == (pami_task_t)-1) min_rank = i;
+              if (min_rank == (pami_task_t) - 1) min_rank = i;
 
-            if (a < _ll.u.n_torus.coords[0]) _ll.u.n_torus.coords[0] = a;
-            if (b < _ll.u.n_torus.coords[1]) _ll.u.n_torus.coords[1] = b;
-            if (c < _ll.u.n_torus.coords[2]) _ll.u.n_torus.coords[2] = c;
-            if (d < _ll.u.n_torus.coords[3]) _ll.u.n_torus.coords[3] = d;
-            if (e < _ll.u.n_torus.coords[4]) _ll.u.n_torus.coords[4] = e;
-            if (p < _ll.u.n_torus.coords[5]) _ll.u.n_torus.coords[5] = p;
-            if (t < _ll.u.n_torus.coords[6]) _ll.u.n_torus.coords[6] = t;
+              if (a < _ll.u.n_torus.coords[0]) _ll.u.n_torus.coords[0] = a;
 
-            if (a > _ur.u.n_torus.coords[0]) _ur.u.n_torus.coords[0] = a;
-            if (b > _ur.u.n_torus.coords[1]) _ur.u.n_torus.coords[1] = b;
-            if (c > _ur.u.n_torus.coords[2]) _ur.u.n_torus.coords[2] = c;
-            if (d > _ur.u.n_torus.coords[3]) _ur.u.n_torus.coords[3] = d;
-            if (e > _ur.u.n_torus.coords[4]) _ur.u.n_torus.coords[4] = e;
-            if (p > _ur.u.n_torus.coords[5]) _ur.u.n_torus.coords[5] = p;
-            if (t > _ur.u.n_torus.coords[6]) _ur.u.n_torus.coords[6] = t;
+              if (b < _ll.u.n_torus.coords[1]) _ll.u.n_torus.coords[1] = b;
 
-            //  }
-          }
+              if (c < _ll.u.n_torus.coords[2]) _ll.u.n_torus.coords[2] = c;
 
-        free(narray);
-        narray = NULL;
-        cacheAnchorsPtr->maxRank = max_rank;
-        cacheAnchorsPtr->minRank = min_rank;
-        memcpy((void *)&cacheAnchorsPtr->activeLLCorner, &_ll, sizeof(_ll));
-        memcpy((void *)&cacheAnchorsPtr->activeURCorner, &_ur, sizeof(_ur));
-      }
+              if (d < _ll.u.n_torus.coords[3]) _ll.u.n_torus.coords[3] = d;
+
+              if (e < _ll.u.n_torus.coords[4]) _ll.u.n_torus.coords[4] = e;
+
+              if (p < _ll.u.n_torus.coords[5]) _ll.u.n_torus.coords[5] = p;
+
+              if (t < _ll.u.n_torus.coords[6]) _ll.u.n_torus.coords[6] = t;
+
+              if (a > _ur.u.n_torus.coords[0]) _ur.u.n_torus.coords[0] = a;
+
+              if (b > _ur.u.n_torus.coords[1]) _ur.u.n_torus.coords[1] = b;
+
+              if (c > _ur.u.n_torus.coords[2]) _ur.u.n_torus.coords[2] = c;
+
+              if (d > _ur.u.n_torus.coords[3]) _ur.u.n_torus.coords[3] = d;
+
+              if (e > _ur.u.n_torus.coords[4]) _ur.u.n_torus.coords[4] = e;
+
+              if (p > _ur.u.n_torus.coords[5]) _ur.u.n_torus.coords[5] = p;
+
+              if (t > _ur.u.n_torus.coords[6]) _ur.u.n_torus.coords[6] = t;
+
+              //  }
+            }
+
+          cacheAnchorsPtr->numActiveRanksGlobal = numActiveRanksGlobal;
+          cacheAnchorsPtr->numActiveNodesGlobal = numActiveNodesGlobal;
+
+          free(narray);
+          narray = NULL;
+          cacheAnchorsPtr->maxRank = max_rank;
+          cacheAnchorsPtr->minRank = min_rank;
+          memcpy((void *)&cacheAnchorsPtr->activeLLCorner, &_ll, sizeof(_ll));
+          memcpy((void *)&cacheAnchorsPtr->activeURCorner, &_ur, sizeof(_ur));
+          TRACE_ERR((stderr, "PAMI::Global::initializeMapCache() numActiveRanksGlobal %zu,numActiveNodesGlobal %zu,max_rank %u, min_rank %u\n", numActiveRanksGlobal, numActiveNodesGlobal, max_rank, min_rank));
+        }
+      else PAMI_abortf("Kernel_Ranks2Coords rc = %d\n", rc);
 
       // Initialize the node task2peer and peer2task caches.
       uint32_t hash;
       size_t peer = 0;
+      size_t numRanks = 0;
 
       for (p = 0; p < pSize; p++)
         {
@@ -464,9 +489,11 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
               TRACE_ERR((stderr, "peer2task[%zu]=coords2task[%d]=%#lX, local2peer[%d]=%zu\n", peer, hash, mapcache->node.peer2task[peer], hash, peer));
               hash = ESTIMATED_TASK(0, 0, 0, 0, 0, p, t, 1, 1, 1, 1, 1, pSize, tSize);
               mapcache->node.local2peer[hash] = peer++;
-              cacheAnchorsPtr->numActiveRanksLocal++; //hack
+              numRanks++; // increment local variable
             }
         }
+
+      cacheAnchorsPtr->numActiveRanksLocal = numRanks; // update global from local variable
 
 
       // Now that the map and rank caches have been initialized,
