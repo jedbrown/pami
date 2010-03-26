@@ -174,7 +174,7 @@ CCMI::Schedule::MCRect::init(int root,
   if (root < 0)
     _root = _ll;
 
-  if (op == CCMI::Interfaces::BROADCAST_OP)
+  if (op == CCMI::BROADCAST_OP)
   {
     size_t axes[PAMI_MAX_DIMS] = {0};
     unsigned int my_phase, color = _color;
@@ -208,7 +208,7 @@ CCMI::Schedule::MCRect::init(int root,
       nphases++;
   }
 
-  else if (op == CCMI::Interfaces::REDUCE_OP)
+  else if (op == CCMI::REDUCE_OP)
   {
     start = 0;
 
@@ -559,10 +559,10 @@ CCMI::Schedule::MCRect::getSrcTopology(unsigned phase,
 {
   switch(_op)
   {
-    case CCMI::Interfaces::BROADCAST_OP:
+    case CCMI::BROADCAST_OP:
       getBroadcastSrcTopology(phase, topology);
       break;
-    case CCMI::Interfaces::REDUCE_OP:
+    case CCMI::REDUCE_OP:
       getReduceSrcTopology(phase, topology);
       break;
     default:
@@ -576,10 +576,10 @@ CCMI::Schedule::MCRect::getDstTopology(unsigned phase,
 {
   switch(_op)
   {
-    case CCMI::Interfaces::BROADCAST_OP:
+    case CCMI::BROADCAST_OP:
       getBroadcastDstTopology(phase, topology);
       break;
-    case CCMI::Interfaces::REDUCE_OP:
+    case CCMI::REDUCE_OP:
       getReduceDstTopology(phase, topology);
       break;
     default:

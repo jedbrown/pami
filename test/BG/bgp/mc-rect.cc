@@ -202,12 +202,12 @@ int main (int argc, char ** argv)
 
   if (op == 'r')
   {
-    reduce.init(root, CCMI::Interfaces::REDUCE_OP, start, nphases);
+    reduce.init(root, CCMI::REDUCE_OP, start, nphases);
     printSchedule(reduce, start, nphases, (char*)"Reduce", color);
   }
   if (op == 'b')
   {
-    bcast.init(root, CCMI::Interfaces::BROADCAST_OP, start, nphases);
+    bcast.init(root, CCMI::BROADCAST_OP, start, nphases);
     printSchedule(bcast, start, nphases, (char *)"Bcast", color);
   }
   return 0;
