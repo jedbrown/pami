@@ -19,7 +19,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x) //fprintf x
 #endif
 
 namespace PAMI
@@ -32,8 +32,10 @@ namespace PAMI
           _client ((pami_client_t) this),
           _references (1),
           _ncontexts (0),
+          _world_geometry((BGQGeometry*)_world_geometry_storage),
           _mm ()
       {
+        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         static size_t next_client_id = 0;
         // Set the client name string.
         memset ((void *)_name, 0x00, sizeof(_name));
@@ -45,6 +47,10 @@ namespace PAMI
         // Get some shared memory for this client
         initializeMemoryManager ();
 
+        _world_range.lo=0;
+        _world_range.hi=__global.mapping.size();
+        new(_world_geometry_storage) BGQGeometry(NULL, &__global.mapping,0, 1,&_world_range);
+
         result = PAMI_SUCCESS;
       }
 
@@ -54,6 +60,7 @@ namespace PAMI
 
       static pami_result_t generate_impl (const char * name, pami_client_t * client)
       {
+        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         pami_result_t result;
         int rc = 0;
 
@@ -132,7 +139,7 @@ namespace PAMI
         PAMI_assertf(_commThreads, "BgqCommThread::generate failed for _commThreads[%d]\n", n);
 #endif // USE_COMMTHREADS
         int x;
-        TRACE_ERR((stderr, "%d:mm available %zu\n", __LINE__, _mm.available()));
+        TRACE_ERR((stderr, "BGQ::Client::createContext mm available %zu\n", _mm.available()));
         _platdevs.generate(_clientid, n, _mm);
 
         // This memset has been removed due to the amount of cycles it takes
@@ -140,19 +147,20 @@ namespace PAMI
         // relevant fields of the context, so this memset should not be
         // needed anyway.
         //memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
-        TRACE_ERR((stderr, "%d:mm available %zu\n", __LINE__, _mm.available()));
         size_t bytes = _mm.available() / n - 16;
+        TRACE_ERR((stderr, "BGQ::Client::createContext mm available %zu, bytes %zu\n", _mm.available(), bytes));
 
         for (x = 0; x < n; ++x)
           {
             context[x] = (pami_context_t) & _contexts[x];
             void *base = NULL;
             _mm.enable();
+            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
             _mm.memalign((void **)&base, 16, bytes);
             _mm.disable();
             PAMI_assertf(base != NULL, "out of sharedmemory in context create x=%d,n=%d,bytes=%zu,mm.size=%zu,mm.available=%zu\n", x, n, bytes, _mm.size(), _mm.available());
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                             &_platdevs, base, bytes);
+                                             &_platdevs, base, bytes, _world_geometry);
 #ifdef USE_COMMTHREADS
             // Note, this is not inializing each comm thread but rather
             // initializing comm threads for each context.
@@ -262,7 +270,7 @@ namespace PAMI
       }
       inline pami_result_t geometry_world_impl (pami_geometry_t * world_geometry)
       {
-        PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        *world_geometry = _world_geometry;
         return PAMI_SUCCESS;
       }
 
@@ -275,7 +283,24 @@ namespace PAMI
                                                          pami_event_function     fn,
                                                          void                 * cookie)
       {
-        PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+
+        if(geometry != NULL)
+        {
+          new(geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
+                                    &__global.mapping,
+                                    id,
+                                    slice_count,
+                                            rank_slices);
+          for(size_t n=0; n<_ncontexts; n++)
+          {
+            _contexts[n].analyze(n,(BGQGeometry*)geometry);
+          }
+              /// \todo  deliver completion to the appropriate context
+        }
+        BGQGeometry *bargeom = (BGQGeometry*)parent;
+        PAMI::Context *ctxt = (PAMI::Context *)context;
+        bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
         return PAMI_SUCCESS;
       }
 
@@ -317,6 +342,9 @@ namespace PAMI
       PAMI::Context *_contexts;
       PAMI::PlatformDeviceList _platdevs;
       char         _name[256];
+      BGQGeometry                  *_world_geometry;
+      uint8_t                       _world_geometry_storage[sizeof(BGQGeometry)];
+      pami_geometry_range_t         _world_range;
 
       Memory::MemoryManager _mm;
 #ifdef USE_COMMTHREADS
@@ -325,9 +353,10 @@ namespace PAMI
 
       inline void initializeMemoryManager ()
       {
+        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         char   shmemfile[1024];
         //size_t bytes     = 1024*1024;
-        size_t bytes     = 768 * 1024;
+        size_t bytes     = 2048 * 1024;
         //size_t pagesize  = 4096;
 
         snprintf (shmemfile, 1023, "/pami-client-%s", _name);
@@ -343,7 +372,8 @@ namespace PAMI
 
         rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
         if (rc == -1)
-          fprintf(stderr, "shm_open(<%s>,O_RDWR) rc = %d, errno = %d, %s\n", shmemfile,  rc,  errno,  strerror(errno));
+          fprintf(stderr, "BGQ::Client shm_open(<%s>,O_RDWR) rc = %d, errno = %d, %s\n", shmemfile,  rc,  errno,  strerror(errno));
+        TRACE_ERR((stderr,  "BGQ::Client() shm_open %d\n", rc));
 
         void * ptr = NULL;
 
@@ -355,30 +385,18 @@ namespace PAMI
             if ( rc != -1 )
               {
                 ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-
-                while (ptr == MAP_FAILED)
-                  {
-                    fprintf(stderr, "%s:%d Failed to mmap (rc=%d, ptr=%p, n=%zu) errno %d %s\n", __FILE__, __LINE__, rc, ptr, n, errno, strerror(errno));
-                    n /= 2;
-
-                    if (n < (32*1024)) break;
-
-                    ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-                  }
+                TRACE_ERR((stderr,  "BGQ::Client() mmap(NULL, %zu, PROT_READ | PROT_WRITE, MAP_SHARED, %d, 0); rc = %d \n", n, fd, rc));
 
                 if ( ptr != MAP_FAILED )
                   {
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-                    fprintf(stderr, "Client:shmem file <%s> %zu bytes mapped at %p\n", shmemfile, n, ptr);
-#endif
-                    TRACE_ERR((stderr, "Client:shmem file <%s> %zu bytes mapped at %p\n", shmemfile, n, ptr));
+                    TRACE_ERR((stderr, "BGQ::Client:shmem file <%s> %zu bytes mapped at %p\n", shmemfile, n, ptr));
                     _mm.init (ptr, n);
                     return;
                   }
               }
           }
 
-        fprintf(stderr, "%s:%d Failed to create shared memory <%s> (rc=%d, ptr=%p, n=%zu) errno %d %s\n", __FILE__, __LINE__, shmemfile, rc, ptr, n, errno, strerror(errno));
+        fprintf(stderr, "%s:%d BGQ::Client Failed to create shared memory <%s> (rc=%d, ptr=%p, n=%zu) errno %d %s\n", __FILE__, __LINE__, shmemfile, rc, ptr, n, errno, strerror(errno));
         //PAMI_abortf(stderr,"Failed to create shared memory (rc=%d, ptr=%p, n=%zu)\n", rc, ptr, n);
 
         // Failed to create shared memory .. fake it using the heap ??

@@ -223,6 +223,18 @@ namespace PAMI
     /////////////////////////////////////////////////////////////////////////
 
     ///
+    /// \brief Get the specified torus dimension for this task
+    /// \see PAMI::Interface::Mapping::Torus::torusgetcoord()
+    ///
+    inline size_t       torusgetcoord_impl (size_t dimension)
+    {
+      if(dimension >= BGQ_TDIMS + BGQ_LDIMS)
+        PAMI_abortf("dimension %zu requested\n",dimension);
+      size_t addr[BGQ_TDIMS + BGQ_LDIMS];
+      torusAddr_impl(addr);
+      return addr[dimension];
+    }
+    ///
     /// \brief Get the BGQ torus address for this task
     /// \see PAMI::Interface::Mapping::Torus::torusAddr()
     ///
@@ -287,6 +299,11 @@ namespace PAMI
     ///
     /// \todo Error path
     ///
+    /// \todo why is there task2global but no global2task?  stub it in for Rectangle.h 
+    inline pami_result_t global2task (size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS], size_t & task)
+    {
+      return torus2task_impl (addr,task);
+    }
     inline pami_result_t torus2task_impl (size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS], size_t & task)
     {
 

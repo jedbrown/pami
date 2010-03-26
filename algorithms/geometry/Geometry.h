@@ -21,6 +21,12 @@
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include <map>
 
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+
+#ifndef PAMI_GEOMETRY_NUMALGOLISTS
+#define PAMI_GEOMETRY_NUMALGOLISTS 64
+#endif
 namespace PAMI
 {
   extern std::map<unsigned, pami_geometry_t> geometry_map;
@@ -28,7 +34,6 @@ namespace PAMI
 
   namespace Geometry
   {
-
     // This class manages "Algorithms", which consist of a geometry
     // object and an algorithm to go along with that object
     template <class T_Geometry>
@@ -43,6 +48,7 @@ namespace PAMI
         }
       inline pami_result_t generate(pami_xfer_t *xfer)
         {
+          TRACE_ERR((stderr, "<%p>%s factory %p\n", this, __PRETTY_FUNCTION__,_factory));
           CCMI::Executor::Composite *exec=_factory->generate((pami_geometry_t)_geometry,
                                                              (void*) xfer);
           if(exec)
@@ -55,6 +61,7 @@ namespace PAMI
       static pami_geometry_t mapidtogeometry (int comm)
         {
           pami_geometry_t g = geometry_map[comm];
+          TRACE_ERR((stderr, "<%p>%s\n", g, __PRETTY_FUNCTION__));
           return g;
         }
 
@@ -63,6 +70,7 @@ namespace PAMI
                                        void                     * cookie,
                                        pami_collective_hint_t      options)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           _factory->setAsyncInfo(false,
                                  fn,
                                  mapidtogeometry);
@@ -84,6 +92,7 @@ namespace PAMI
         _num_algo(0),
         _num_algo_check(0)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           // Clear the algorithm list
           memset(&_algo_list[0], 0, sizeof(_algo_list));
           memset(&_algo_list[0], 0, sizeof(_algo_list_check));
@@ -94,6 +103,7 @@ namespace PAMI
                                         T_Geometry                               *geometry,
                                         size_t                                    context_id)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           _algo_list_store[_num_algo]._factory  = factory;
           _algo_list_store[_num_algo]._geometry = geometry;
           _algo_list[_num_algo]                 = &_algo_list_store[_num_algo];
@@ -104,6 +114,7 @@ namespace PAMI
                                              T_Geometry                                *geometry,
                                              size_t                                     context_id)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           _algo_list_check_store[_num_algo_check]._factory  = factory;
           _algo_list_check_store[_num_algo_check]._geometry = geometry;
           _algo_list_check[_num_algo_check]                 = &_algo_list_check_store[_num_algo_check];
@@ -112,6 +123,7 @@ namespace PAMI
         }
       inline pami_result_t lengths(int             *lists_lengths)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           lists_lengths[0] = _num_algo;
           lists_lengths[1] = _num_algo_check;
           return PAMI_SUCCESS;
@@ -141,6 +153,7 @@ namespace PAMI
                                         numcolors,
                                         globalcontext)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           pami_ca_unset_all(&_attributes);
         }
       inline Common (Geometry<PAMI::Geometry::Common> *parent,
@@ -156,6 +169,7 @@ namespace PAMI
         _kvstore(),
         _commid(comm)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           int i, j, k, size;
           pami_task_t nranks;
 
@@ -457,6 +471,7 @@ namespace PAMI
       inline AlgoLists<Geometry<PAMI::Geometry::Common> > * algorithms_get_lists(size_t context_id,
                                                                                 pami_xfer_type_t  colltype)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           switch(colltype)
               {
                   case PAMI_XFER_BROADCAST:
@@ -524,6 +539,7 @@ namespace PAMI
                                              CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                              size_t                                     context_id)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
           alist->addCollective(factory, this, context_id);
           return PAMI_SUCCESS;
@@ -533,6 +549,7 @@ namespace PAMI
                                                   CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                                   size_t                                     context_id)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
           alist->addCollectiveCheck(factory, this, context_id);
           return PAMI_SUCCESS;
@@ -542,6 +559,7 @@ namespace PAMI
                                        int             *lengths,
                                        size_t           context_id)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
           alist->lengths(lengths);
           return PAMI_SUCCESS;
@@ -556,6 +574,7 @@ namespace PAMI
                                                 int               num1,
                                                 size_t            context_id)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
           for(int i=0; i<num0; i++)
               {
@@ -579,6 +598,7 @@ namespace PAMI
                                    size_t                   ctxt_id,
                                    pami_context_t            context)
         {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           pami_xfer_t cmd;
           cmd.cb_done=cb_done;
           cmd.cookie =cookie;
@@ -587,32 +607,32 @@ namespace PAMI
 
 
     private:
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allreduces[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _broadcasts[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _reduces[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathers[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allreduces[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _broadcasts[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _reduces[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathers[PAMI_GEOMETRY_NUMALGOLISTS];
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathervs[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgatherv_ints[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatters[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scattervs[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathervs[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgatherv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatters[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scattervs[PAMI_GEOMETRY_NUMALGOLISTS];
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatterv_ints[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathers[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathervs[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gatherv_ints[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatterv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathers[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathervs[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gatherv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoalls[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallvs[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallv_ints[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _ambroadcasts[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoalls[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallvs[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _ambroadcasts[PAMI_GEOMETRY_NUMALGOLISTS];
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amscatters[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amgathers[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amreduces[64];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scans[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amscatters[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amgathers[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amreduces[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scans[PAMI_GEOMETRY_NUMALGOLISTS];
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _barriers[64];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _barriers[PAMI_GEOMETRY_NUMALGOLISTS];
 
       std::map <int, void*>                        _kvstore;
       int                                          _commid;

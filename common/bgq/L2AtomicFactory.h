@@ -15,6 +15,9 @@
 #include "components/memory/MemoryManager.h"
 #include "spi/include/kernel/memory.h"
 
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+
 // These define the range of L2Atomics we're allowed to use.
 #define L2A_MAX_NUMNODEL2ATOMIC	16*256	///< max number of node-scope atomics
 #define L2A_MAX_NUMPROCL2ATOMIC	16*256	///< max number of proc(etc)-scope atomics
@@ -101,6 +104,7 @@ namespace BGQ {
                         _l2node.size = L2A_MAX_NUMNODEL2ATOMIC;
                         _l2node.virt = NULL;
 
+            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
                         rc = mm->memalign((void **)&_l2node.virt, sizeof(uint64_t),
                                         sizeof(uint64_t) * _l2node.size);
                         PAMI_assertf(rc == PAMI_SUCCESS && _l2node.virt,

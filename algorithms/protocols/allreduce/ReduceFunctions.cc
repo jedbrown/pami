@@ -647,14 +647,84 @@ namespace CCMI
                     PAMI_abort();
                   }
                   break;
+        case PAMI_NOOP:
+          func = (coremath) NULL;
+          switch(dtype)
+          {
+          case PAMI_SIGNED_CHAR:
+            sizeOfType = sizeof(char);
+            break;
+          case PAMI_UNSIGNED_CHAR:
+            sizeOfType = sizeof(unsigned char);
+            break;
+          case PAMI_SIGNED_SHORT:
+            sizeOfType = sizeof(short);
+            break;
+          case PAMI_UNSIGNED_SHORT:
+            sizeOfType = sizeof(unsigned short);
+            break;
+          case PAMI_SIGNED_INT:
+            sizeOfType = sizeof(int);
+            break;
+          case PAMI_UNSIGNED_INT:
+            sizeOfType = sizeof(unsigned int);
+            break;
+          case PAMI_SIGNED_LONG_LONG:
+            sizeOfType = sizeof(long long);
+            break;
+          case PAMI_UNSIGNED_LONG_LONG:
+            sizeOfType = sizeof(unsigned long long);
+            break;
+          case PAMI_FLOAT:
+            sizeOfType = sizeof(float);
+            break;
+          case PAMI_DOUBLE:
+            sizeOfType = sizeof(double);
+            break;
+          case PAMI_LONG_DOUBLE:
+            sizeOfType = sizeof(long double);
+            break;
+          case PAMI_LOGICAL:
+            sizeOfType = sizeof(unsigned int);
+            break;
+          case PAMI_SINGLE_COMPLEX:
+            sizeOfType = 2 * sizeof(float);
+            break;
+          case PAMI_DOUBLE_COMPLEX:
+            sizeOfType = 2 * sizeof(double);
+            break;
+          case PAMI_LOC_2INT:
+            sizeOfType = sizeof(int32_int32_t);
+            break;
+          case PAMI_LOC_SHORT_INT:
+            sizeOfType = sizeof(int16_int32_t);
+            break;
+          case PAMI_LOC_FLOAT_INT:
+            sizeOfType = sizeof(fp32_int32_t);
+            break;
+          case PAMI_LOC_DOUBLE_INT:
+            sizeOfType = sizeof(fp64_int32_t);
+            break;
+          case PAMI_LOC_2FLOAT:
+            sizeOfType = sizeof(fp32_fp32_t);
+            break;
+          case PAMI_LOC_2DOUBLE:
+            sizeOfType = sizeof(fp64_fp64_t);
+            break;
+          default:
+            fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
+                    dtype, op, count);
+            PAMI_abort();
+          }
+          break;
         default:
           fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                   dtype, op, count);
           PAMI_abort();
         }
         TRACE_ADAPTOR ((stderr, "<          >CCMI::Adaptor::getReduceFunction()"
-                        " count %#X, size %#X, function %#X)\n",
-                        count, sizeOfType, (int) func));
+                        " count %#X, size %#X, function %p)\n",
+                        count, sizeOfType, func));
       }
     }
   }

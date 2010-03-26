@@ -18,6 +18,9 @@
 #include "components/atomic/Counter.h"
 #include "components/atomic/gcc/GccBuiltin.h"
 
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+
 namespace PAMI {
 namespace Counter {
 
@@ -26,6 +29,7 @@ namespace Counter {
                 GccNodeCounter() {}
                 ~GccNodeCounter() {}
                 inline void init_impl(PAMI::Memory::MemoryManager *mm) {
+            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
                         mm->memalign((void **)&_addr, sizeof(*_addr), sizeof(*_addr));
                         _addr->init(mm);
                 }

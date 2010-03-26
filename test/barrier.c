@@ -8,10 +8,19 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#define TRACE(x) //fprintf x
+
+#include <assert.h>
+#define TEST_abort()                       abort()
+#define TEST_abortf(fmt...)                { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); fprintf(stderr, fmt); abort(); }
+#define TEST_assert(expr)                assert(expr)
+#define TEST_assertf(expr, fmt...)       { if (!(expr)) TEST_abortf(fmt); }
+
 volatile unsigned       _g_barrier_active;
 
 void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
 {
+  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
   int * active = (int *) clientdata;
   (*active)--;
 }
@@ -25,6 +34,8 @@ static double timer()
 
 void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
+  static unsigned count = 10000;
+  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
   _g_barrier_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)barrier);
@@ -33,15 +44,17 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
       fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
       exit(1);
     }
-  while (_g_barrier_active)
+  while (_g_barrier_active && count--)
     result = PAMI_Context_advance (context, 1);
-
+  TEST_assertf(count,"%s:%d\n", __PRETTY_FUNCTION__, __LINE__);
+  count = 10000;
 }
 
 
 
 int main (int argc, char ** argv)
 {
+  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
   pami_client_t  client;
   pami_context_t context;
   pami_result_t  result = PAMI_ERROR;
@@ -52,6 +65,7 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
       return 1;
     }
+  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
 
         { size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
   if (result != PAMI_SUCCESS)
@@ -59,6 +73,7 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
       return 1;
     }
+  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
 
 
   pami_configuration_t configuration;
@@ -70,6 +85,7 @@ int main (int argc, char ** argv)
       return 1;
     }
   size_t task_id = configuration.value.intval;
+  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
 
 
   pami_geometry_t  world_geometry;
@@ -80,6 +96,7 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
       return 1;
     }
+  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
 
   int algorithm_type = 0;
   pami_algorithm_t *algorithm=NULL;
@@ -96,6 +113,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
+  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
   pami_metadata_t *metas=NULL;
   if (num_algorithm[0])
   {
@@ -121,6 +139,7 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable to get query algorithm. result = %d\n", result);
       return 1;
     }
+  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
 
   pami_xfer_t barrier;
   barrier.cb_done   = cb_barrier;

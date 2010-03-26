@@ -22,6 +22,8 @@
 #include "Global.h"
 #include "components/devices/util/SubDeviceSuppt.h"
 #include "components/devices/generic/AdvanceThread.h"
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
 
 namespace PAMI {
 namespace Device {
@@ -109,6 +111,7 @@ public:
             _result ((PAMI::PipeWorkQueue *)mcomb->results),
             _shared (workqueue)
           {
+            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
           }
 
 protected:
@@ -174,6 +177,7 @@ public:
         _peer(__global.topology_local.rank2Index(__global.mapping.task())),
         _npeers(__global.topology_local.size())
         {
+            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
                 // assert(device == _g_l_allreducewq_dev);
                 if (!_shared.available()) {
                         status = PAMI_ERROR;

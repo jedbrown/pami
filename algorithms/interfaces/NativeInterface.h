@@ -21,8 +21,12 @@ namespace CCMI {
       unsigned myrank()   { return _myrank; }
       unsigned numranks() { return _numranks; }
 
-      /// \brief this call is called when the native interface is initialized
-      virtual pami_result_t setDispatch  (pami_dispatch_callback_fn fn, void *cookie) = 0;
+      /// \brief this call is called when an active message native interface is initialized and
+      /// is not supported on all sided native interfaces
+      virtual pami_result_t setDispatch  (pami_dispatch_callback_fn fn, void *cookie)
+      {
+        PAMI_abort();
+      }
       virtual pami_result_t multicast    (pami_multicast_t *mcast) = 0;
       virtual pami_result_t multisync    (pami_multisync_t *msync) = 0;
       virtual pami_result_t multicombine (pami_multicombine_t *mcombine) = 0;

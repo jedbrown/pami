@@ -504,6 +504,7 @@ inline CCMI::Schedule::RingSchedule::RingSchedule
   else   if (t == PAMI_RANGE_TOPOLOGY) {
     pami_task_t first, last;
     pami_result_t rc = topology->rankRange(&first, &last);
+    PAMI_assert(rc == PAMI_SUCCESS);
     configure (myrank, first, last);
   }
 }

@@ -40,11 +40,6 @@
 #endif
 #define DUMP_DESCRIPTOR(x,d) //dumpDescriptor(x,d)
 
-#ifdef DUMP_HEXDATA
-#undef DUMP_HEXDATA
-#endif
-#define DUMP_HEXDATA(x,d,s) //dumpHexData(x,d,s)
-
 //#define ENABLE_MAMBO_WORKAROUNDS
 
 /// \brief Number of dispatch sets
@@ -69,12 +64,6 @@ namespace PAMI
       ///  \param pstring : an informational text string to print
       ///  \param desc    : the descriptor to dump
       void dumpDescriptor(const char * pstring, const MUHWI_Descriptor_t *desc);
-      ///
-      /// \brief dump hex data to stderr
-      ///  \param pstring : an informational text string to print
-      ///  \param buffer  : the (integer) buffer to dump
-      ///  \param n_ints  : number of integers to dump from the buffer
-      void dumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints);
 
 
       typedef   MUSPI_RecvFunction_t  MUDevice_DispatchFn_t;

@@ -30,7 +30,7 @@
 #define CA_UNSET_ALL(l)                                                       \
   do                                                                          \
   {                                                                           \
-    unsigned int __i, __j;                                                    \
+    unsigned int __i;                                                         \
     pami_ca_t *__list = (l);                                                    \
     for (__i = 0; __i < PAMI_CA_NUM_ELEMENTS; __i++)                               \
       CA_ELEMENT (__list)[__i] = 0;                                           \

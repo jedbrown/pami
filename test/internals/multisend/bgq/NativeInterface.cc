@@ -121,7 +121,7 @@ int main(int argc, char ** argv)
   PAMI::BGQNativeInterface<PAMI::Device::MU::MUCollDevice,
   PAMI::Device::MU::MUMulticastModel,
   PAMI::Device::MU::MUMultisyncModel,
-  PAMI::Device::MU::MUMulticombineModel>  nativeInterface(mu, 0, context, 0);
+  PAMI::Device::MU::MUMulticombineModel>  nativeInterface(mu, client, context, 0, 0);
 
   uint8_t mcast_state[PAMI::Device::MU::MUMulticastModel::sizeof_msg];
 

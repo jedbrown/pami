@@ -9,19 +9,29 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+
+#ifdef MAMBO_WORKAROUNDS
+#define BUFSIZE 131072 // any more is too long on mambo
+#else
 #define BUFSIZE 524288
+#endif
+
 volatile unsigned       _g_barrier_active;
 volatile unsigned       _g_broadcast_active;
 
 void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
+  TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
   (*active)--;
 }
 
 void cb_broadcast (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
+  TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
   (*active)--;
 }
 
@@ -34,6 +44,7 @@ static double timer()
 
 void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
+  TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
   _g_barrier_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)barrier);
@@ -49,6 +60,7 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
 
 void _broadcast (pami_context_t context, pami_xfer_t *broadcast)
 {
+  TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
   _g_broadcast_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)broadcast);
@@ -67,6 +79,7 @@ int main (int argc, char ** argv)
   pami_client_t  client;
   pami_context_t context;
   pami_result_t  result = PAMI_ERROR;
+  TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
   char cl_string[] = "TEST";
   result = PAMI_Client_initialize (cl_string, &client);
   if (result != PAMI_SUCCESS)
@@ -74,6 +87,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
     return 1;
   }
+  TRACE_ERR((stderr, "%s after client initialize\n", __PRETTY_FUNCTION__));
 
         { size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
   if (result != PAMI_SUCCESS)
@@ -81,6 +95,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
     return 1;
   }
+  TRACE_ERR((stderr, "%s after context create\n", __PRETTY_FUNCTION__));
 
 
   pami_configuration_t configuration;
@@ -117,6 +132,7 @@ int main (int argc, char ** argv)
              result);
     return 1;
   }
+  TRACE_ERR((stderr, "%s task_id %zu, num_algorithm %u/%u\n", __PRETTY_FUNCTION__, task_id, num_algorithm[0],num_algorithm[1]));
 
   if (num_algorithm[0])
   {
@@ -203,6 +219,7 @@ int main (int argc, char ** argv)
       printf("# Size(bytes)           cycles    bytes/sec    usec\n");
       printf("# -----------      -----------    -----------    ---------\n");
     }
+    else TRACE_ERR((stderr, "start test protocol: %s \n", metas[nalg].name));
 
     int i,j;
     for(i=1; i<=BUFSIZE; i*=2)
@@ -229,6 +246,7 @@ int main (int argc, char ** argv)
                usec);
         fflush(stdout);
       }
+      else TRACE_ERR((stderr, "end test protocol: %s, bytes %d \n", metas[nalg].name, i));
     }
   }
   result = PAMI_Context_destroy (context);
@@ -248,5 +266,6 @@ int main (int argc, char ** argv)
   free(algorithm);
   free(bcastalgorithm);
   free(metas);
+  TRACE_ERR((stderr, "%s DONE\n", __PRETTY_FUNCTION__));
   return 0;
 };

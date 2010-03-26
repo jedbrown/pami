@@ -351,7 +351,7 @@ namespace CCMI {
 
       void reset(bool rflag, bool infoRequired) {
 	/////////////////*****  Reset Pipe Work Queues  **********///////////////
-	TRACE_ACACHE((stderr,"<%#.8X>Executor::AllreduceCache::reset() enter\n",(int)this));
+	TRACE_ACACHE((stderr,"<%p>Executor::AllreduceCache::reset() enter\n",this));
 	CCMI_assert(_pcache._bytes > 0);
 
 	//Hard reset the cache
@@ -406,8 +406,8 @@ namespace CCMI {
 	  PAMI_assert(_scache->getNumSrcRanks(_dstPhase) == 1);	  
 	  _phaseVec[_dstPhase].mrecv[0].dst = (pami_pipeworkqueue_t *)&_phaseVec[_dstPhase].pwqs[0];
 	  
-	  TRACE_ACACHE((stderr,"<%#.8X>Executor::AllreduceState::setDstBuf(%#X) dstPhase(%#X) _phaseVec[_dstPhase].recvBufs(%#X)\n",
-			(int)this,
+	  TRACE_ACACHE((stderr,"<%p>Executor::AllreduceState::setDstBuf(%#X) dstPhase(%#X) _phaseVec[_dstPhase].recvBufs(%#X)\n",
+			this,
 			(int)*pdstbuf,
 			_dstPhase,
 			(int)*_phaseVec[_dstPhase].recvBufs
@@ -432,7 +432,7 @@ namespace CCMI {
       {
         if((_receiveAllocationSize) > limit)
 	  {
-	    TRACE_ACACHE((stderr,"<%#.8X>Executor::AllreduceState::freeAllocations(%#.8X) ALERT: Allocation freed, %#X(%#X bytes), %#X(%#X bytes)\n",(int)this,
+	    TRACE_ACACHE((stderr,"<%p>Executor::AllreduceState::freeAllocations(%#.8X) ALERT: Allocation freed, %#X(%#X bytes), %#X(%#X bytes)\n",this,
 			 limit, (int)_scheduleAllocation, _scheduleAllocationSize, (int)_receiveAllocation, _receiveAllocationSize));
 
 #ifdef CCMI_DEBUG
@@ -511,8 +511,8 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::updatePipelineWidth
       unsigned lastChunk = bytes / _pcache._pipewidth + (bytes % _pcache._pipewidth != 0) - 1;
       if(lastChunk > _lastChunk)
 	{
-	  TRACE_ACACHE((stderr,"<%#.8X>Executor::AllreduceCache::updatePipelineWidth ALERT: Pipelining grew %#X > %#X\n",
-			(int)this, lastChunk, _lastChunk));
+	  TRACE_ACACHE((stderr,"<%p>Executor::AllreduceCache::updatePipelineWidth ALERT: Pipelining grew %#X > %#X\n",
+			this, lastChunk, _lastChunk));
 	  _isConfigChanged = true;
 	}
       _lastChunk = lastChunk;
@@ -523,16 +523,16 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::updatePipelineWidth
 	_lastChunkCount = (bytes % _pcache._pipewidth) / _pcache._sizeOfType;
     }
 
-  TRACE_ACACHE((stderr,"<%#.8X>Executor:AllreduceCache::updatePipelineWidth() bytes:%#X "
-	       "pwidth:%#X lastChunk:%#X fullCount:%#X lastCount:%#X \n",(int)this,
+  TRACE_ACACHE((stderr,"<%p>Executor:AllreduceCache::updatePipelineWidth() bytes:%#X "
+	       "pwidth:%#X lastChunk:%#X fullCount:%#X lastCount:%#X \n",this,
 	       bytes,_pcache._pipewidth,_lastChunk,_fullChunkCount,
 	       _lastChunkCount));
 
   // We can reuse our existing buffer allocations if we aren't > the allocated size.
   if(bytes > _sizeOfBuffers)
     {
-      TRACE_ACACHE((stderr,"<%#.8X>Executor:AllreduceCache::updatePipelineWidth ALERT: Buffers too small %#X < %#X\n",
-		   (int)this, _sizeOfBuffers, bytes));
+      TRACE_ACACHE((stderr,"<%p>Executor:AllreduceCache::updatePipelineWidth ALERT: Buffers too small %#X < %#X\n",
+		   this, _sizeOfBuffers, bytes));
       _isConfigChanged = true;
     }
 
@@ -548,7 +548,7 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::updatePipelineWidth
 	}
   }
 
-  TRACE_ACACHE((stderr,"<%#.8X>Executor:AllreduceCache::updatePipelineWidth() exit\n",(int)this));
+  TRACE_ACACHE((stderr,"<%p>Executor:AllreduceCache::updatePipelineWidth() exit\n",this));
 }
 
 
@@ -584,7 +584,7 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
 
   // configure per phase state info structures
   /// \todo How about some data layout diagrams?
-  unsigned indexSrcPe = 0, indexDstPe = 0;
+  unsigned indexSrcPe = 0;
   for(unsigned i = _scache->getStartPhase(); i <= _scache->getEndPhase(); i++)
   {
     unsigned connID   =  (unsigned) -1;   
@@ -660,7 +660,7 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
 template<class T_Conn>
 inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequired)
 {
-  TRACE_ACACHE((stderr,"<%#.8X>Executor::AllreduceCache::setupReceives ALERT: Receive data being reset\n",(int)this));
+  TRACE_ACACHE((stderr,"<%p>Executor::AllreduceCache::setupReceives ALERT: Receive data being reset\n",this));
 
   // setup/allocate receive request objects and bufs
 
@@ -733,8 +733,8 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
   for(unsigned i = 0, offset = 0; i < _scache->getNumTotalSrcRanks(); i++, offset += _sizeOfBuffers)
     _all_recvBufs[ i ] = _bufs + offset;
 
-  TRACE_ACACHE((stderr,"<%#.8X>Executor::AllreduceCache::setupReceives() _bufs:%08X all[0]:%08X all[1]:%08X all[2]:%08X all[3]:%08X all[4]:%08X tempbuf:%08X\n",
-		(int)this,
+  TRACE_ACACHE((stderr,"<%p>Executor::AllreduceCache::setupReceives() _bufs:%08X all[0]:%08X all[1]:%08X all[2]:%08X all[3]:%08X all[4]:%08X tempbuf:%08X\n",
+		this,
 		(unsigned)_bufs,(unsigned)_all_recvBufs[0],
 		(unsigned)_all_recvBufs[1],(unsigned)_all_recvBufs[2],
 		(unsigned)_all_recvBufs[3], (unsigned)_all_recvBufs[4],
@@ -753,7 +753,7 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
 
   unsigned nextRecvData = 0;
   unsigned p = _scache->getStartPhase();
-  unsigned pwidth = getPipelineWidth();
+//  unsigned pwidth = getPipelineWidth();
   unsigned bytes  = getBytes();  
 
   for(p = _scache->getStartPhase(); p <= _scache->getEndPhase(); p++)
@@ -762,7 +762,7 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
     {
       for(unsigned scount = 0; scount < _scache->getNumSrcRanks(p); scount ++)
       {
-        PAMI_Request_t *request = getRecvReq() + nextRecvData;
+//        PAMI_Request_t *request = getRecvReq() + nextRecvData;
         AC_RecvCallbackData *rdata = getRecvClient(nextRecvData);
         rdata->allreduce        = _executor;
         rdata->phase            = p;

@@ -22,6 +22,8 @@
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/MulticombineModel.h"
 #include "components/devices/FactoryInterface.h"
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
 
 namespace PAMI {
 namespace Device {
@@ -109,6 +111,7 @@ public:
             _result (*(PAMI::PipeWorkQueue *)mcomb->results),
             _shared (workqueue)
           {
+            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
             // Producer 0 will always be the "copy peer"
             //unsigned copypeer = (rootpeer+1)%peers;
             //unsigned producer = (peer + peers - rootpeer - 1) % peers;
@@ -198,6 +201,7 @@ public:
         _peer(__global.topology_local.rank2Index(__global.mapping.task())),
         _npeers(__global.topology_local.size())
         {
+            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
                 // assert(device == _g_l_reducewq_dev);
                 if (!_shared.available()) {
                         status = PAMI_ERROR;

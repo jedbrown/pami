@@ -19,6 +19,8 @@
 #include "components/devices/workqueue/WorkQueue.h"
 #include "string.h"
 
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
 
 namespace PAMI
 {
@@ -66,8 +68,10 @@ namespace PAMI
             _worksize (worksize),
             _sharedqueue (NULL)
           {
+            TRACE_ERR((stderr,  "%s enter mm %p, workunits %u, worksize %u\n", __PRETTY_FUNCTION__,mm,workunits, worksize));
                 size_t size = sizeof(workqueue_t) + _qsize;
                 mm->memalign((void **)&_sharedqueue, 16, size);
+                if(!_sharedqueue) _sharedqueue->buffer[0] = 0;
                 PAMI_assert_debug(_sharedqueue);
                 PAMI_assert_debug((_qsize & (_qsize - 1)) == 0);
                 _qmask = _qsize - 1;
@@ -89,7 +93,7 @@ namespace PAMI
             _qmask (obj._qmask),
             _worksize (obj._worksize),
             _sharedqueue (obj._sharedqueue)
-          {}
+          {TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));}
 
           ///
           /// \brief Virtual destructors make compilers happy.

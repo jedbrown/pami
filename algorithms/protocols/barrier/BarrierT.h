@@ -39,12 +39,14 @@ namespace CCMI
                         pami_dispatch_multicast_fn    cb_head=NULL):
           CollectiveProtocolFactoryT<T,get_metadata,C>(cmgr,native,cb_head)
           {
+            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
           }
         virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                                void                      * cmd)
 
           {
             // Use the cached barrier or generate a new one if the cached barrier doesn't exist
+            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
             PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
             Executor::Composite *c =(Executor::Composite *) g->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
             if(!c)
@@ -99,6 +101,7 @@ namespace CCMI
         }
 
         virtual void start() {
+          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
           _myexecutor.setDoneCallback (_cb_done, _clientdata);
           _myexecutor.start();
         }
@@ -114,6 +117,7 @@ namespace CCMI
                                    pami_pipeworkqueue_t **recvpwq,
                                    PAMI_Callback_t  * cb_done)
         {
+          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
           CollHeaderData  *cdata = (CollHeaderData *) info;
           CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arg;
 

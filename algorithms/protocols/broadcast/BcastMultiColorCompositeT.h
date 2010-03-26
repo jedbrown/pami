@@ -45,6 +45,7 @@ namespace CCMI
             ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
             ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount )
           {
+            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
             SyncBcastPost();
 
             PAMI_GEOMETRY_CLASS *geometry = ((PAMI_GEOMETRY_CLASS *)g);
@@ -56,6 +57,7 @@ namespace CCMI
           }
 
         void SyncBcastPost () {
+          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
           Executor::BroadcastExec<T_Conn> *exec = (Executor::BroadcastExec<T_Conn> *) Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::getExecutor(0);
           unsigned root = exec->getRoot();
 

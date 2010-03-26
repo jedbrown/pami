@@ -26,9 +26,9 @@ namespace CCMI
       public:
         collObj(Interfaces::NativeInterface             * native,
                C                                        * cmgr,
-               pami_geometry_t                             geometry,
-               pami_xfer_t                               * cmd,
-               pami_event_function                         fn,
+               pami_geometry_t                            geometry,
+               pami_xfer_t                              * cmd,
+               pami_event_functon                         fn,
                void                                     * cookie,
                CollectiveProtocolFactoryT               * factory):
           _obj(native,cmgr,geometry,cmd,fn,cookie),
@@ -36,10 +36,17 @@ namespace CCMI
           _user_done_fn(cmd->cb_done),
           _user_cookie(cmd->cookie)
           {
+            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
           }
+        void done_fn( pami_context_t   context,
+                      pami_result_t    result )
+        {
+          _user_done_fn(context, _user_cookie, res);
+        }
+      private:
         T                            _obj;
         CollectiveProtocolFactoryT * _factory;
-        pami_event_function           _user_done_fn;
+        pami_event_function          _user_done_fn;
         void                       * _user_cookie;
       };
 
@@ -47,11 +54,12 @@ namespace CCMI
     public:
       CollectiveProtocolFactoryT (C                           *cmgr,
                                   Interfaces::NativeInterface *native,
-                                  pami_dispatch_multicast_fn    cb_head=NULL):
+                                  pami_dispatch_multicast_fn   cb_head=NULL):
         CollectiveProtocolFactory(),
         _cmgr(cmgr),
         _native(native)
       {
+        TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
         pami_dispatch_callback_fn fn;
         fn.multicast = (pami_dispatch_multicast_fn) cb_head;
         _native->setDispatch(fn, this);
@@ -68,18 +76,20 @@ namespace CCMI
       }
 
       static void done_fn(pami_context_t  context,
-                          void          *clientdata,
+                          void           *clientdata,
                           pami_result_t   res)
         {
+          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
           collObj *cobj = (collObj *)clientdata;
-          cobj->_user_done_fn(context, cobj->_user_cookie, res);
-          cobj->_factory->_alloc.returnObject(cobj);
+          cobj->done_fn(context, res);
+          _factory->_alloc.returnObject(cobj);
         }
 
 
-      virtual Executor::Composite * generate(pami_geometry_t              geometry,
+      virtual Executor::Composite * generate(pami_geometry_t             geometry,
                                              void                      * cmd)
         {
+          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
           collObj *cobj = (collObj*) _alloc.allocateObject();
           new(cobj) collObj(_native,          // Native interface
                             _cmgr,            // Connection Manager
@@ -98,7 +108,7 @@ namespace CCMI
 
       C                                          * _cmgr;
       Interfaces::NativeInterface                * _native;
-      PAMI::MemoryAllocator<sizeof(collObj), 16>    _alloc;
+      PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;
     };
   };
 };

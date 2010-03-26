@@ -101,7 +101,7 @@ namespace PAMI
       public:
 
         /// \see PAMI::Device::Interface::MulticombineModel::MulticombineModel
-        MUMulticombineModel (MUCollDevice *devices, size_t client_id, size_t context_id, pami_result_t &status);
+        MUMulticombineModel (MUCollDevice & device, pami_result_t &status);
 
         /// \see PAMI::Device::Interface::MulticombineModel::~MulticombineModel
         ~MUMulticombineModel ();

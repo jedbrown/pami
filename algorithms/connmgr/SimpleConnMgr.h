@@ -14,6 +14,9 @@
 #ifndef __algorithms_connmgr_SimpleConnMgr_h__
 #define __algorithms_connmgr_SimpleConnMgr_h__
 
+#include "SysDep.h" /// \todo think about removing this
+#include "algorithms/connmgr/ConnectionManager.h"
+
 namespace CCMI
 {
   namespace ConnectionManager

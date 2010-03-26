@@ -19,6 +19,7 @@
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/protocols/barrier/BarrierT.h"
 #include "algorithms/protocols/barrier/MultiSyncComposite.h"
+#include "algorithms/protocols/barrier/msync_impl.h"
 
 namespace CCMI
 {
@@ -31,12 +32,6 @@ namespace CCMI
       {
         // \todo:  fill in other metadata
         strcpy(&m->name[0],"CCMIBinomBarrier");
-      }
-
-      void msync_barrier_md(pami_metadata_t *m)
-      {
-        // \todo:  fill in other metadata
-        strcpy(&m->name[0],"CCMIMsyncBarrier");
       }
 
       bool binomial_analyze (PAMI_GEOMETRY_CLASS *geometry)
@@ -60,9 +55,6 @@ namespace CCMI
                                   PAMI_SYSDEP_CLASS,
                                   PAMI_COLL_MCAST_CLASS> OldBinomialBarrierFactory;
 
-      typedef CollectiveProtocolFactoryT<MultiSyncComposite,
-                                         msync_barrier_md,
-                                         ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MultiSyncFactory;
     };
   };
 };

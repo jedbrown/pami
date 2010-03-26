@@ -19,6 +19,9 @@
 #include "common/PipeWorkQueueInterface.h"
 #include "util/common.h"
 
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+
 // undef/define to control workqueues that are optimized for the flat buffer case.
 #define OPTIMIZE_FOR_FLAT_WORKQUEUE
 #undef USE_FLAT_BUFFER	// (4*1024*1024)
@@ -93,6 +96,7 @@ public:
           _qsize = bufsize;
           _isize = bufinit;
           size_t size = sizeof(workqueue_t) + _qsize;
+            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
           ALLOC_SHMEM(_sharedqueue, 16, size);
           PAMI_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
           _buffer = &_sharedqueue->buffer[0];
@@ -119,6 +123,7 @@ public:
           _mm = mm;
           _qsize = bufsize;
           size_t size = sizeof(workqueue_t) + _qsize;
+            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
           ALLOC_SHMEM(_sharedqueue, 16, size);
           PAMI_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
           _buffer = &_sharedqueue->buffer[0];

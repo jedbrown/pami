@@ -34,10 +34,17 @@
 #include "Topology.h"
 #include "common/bgq/L2AtomicFactory.h"
 
-#ifdef TRACE_ERR
 #undef TRACE_ERR
-#endif
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x) //fprintf x
+
+///
+/// \brief dump hex data to stderr
+///  \param pstring : an informational text string to print
+///  \param buffer  : the (integer) buffer to dump
+///  \param n_ints  : number of integers to dump from the buffer
+#undef DUMP_HEXDATA
+#define DUMP_HEXDATA(x,d,s) //globalDumpHexData(x,d,s)
+void globalDumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints);
 
 #define BGQ_GLOBAL_SHMEM_SIZE	256*1024 ///< extra shmem for BGQ L2 Atomics and WAC
 
@@ -61,6 +68,8 @@ namespace PAMI
 
         bytes = initializeMapCache(personality, NULL, ll, ur, min, max, true);
 
+        bytes += sizeof(uint64_t) * 4; /// \todo #warning pad it for BG_MEMSIZE problem to skip garbage
+
         // Round up to the page size
         size_t size = ((bytes + pagesize - 1) & ~(pagesize - 1)) + BGQ_GLOBAL_SHMEM_SIZE;
 
@@ -81,11 +90,15 @@ namespace PAMI
             if (rc != -1)
               {
                 ptr = mmap( NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-                TRACE_ERR((stderr, "Global() .. after mmap, ptr = %p, MAP_FAILED = %p\n", ptr, MAP_FAILED));
+                TRACE_ERR((stderr, "Global() .. after mmap, ptr = %p\n", ptr));
 
                 if (ptr != MAP_FAILED)
                   {
                     TRACE_ERR((stderr, "Global:shmem file <%s> %zu bytes mapped at %p\n", shmemfile, size, ptr));
+                    DUMP_HEXDATA("Shared memory map", (const uint32_t *)ptr, 16);
+                    uint64_t *uptr = (uint64_t *)ptr;
+                    uptr += 4; 
+                    ptr = uptr; /// \todo #warning skip padding for BG_MEMSIZE problem
                     mm.init(ptr, size);
                     (void)initializeMapCache(personality, &mm, ll, ur, min, max,
                                              true); //shared initialization
@@ -185,6 +198,7 @@ namespace PAMI
   }; // PAMI::Global
 };     // PAMI
 
+
 // If 'mm' is NULL, compute total memory needed for mapcache and return (doing nothing else).
 size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
                                          PAMI::Memory::MemoryManager *mm,
@@ -192,9 +206,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 {
   bgq_mapcache_t  * mapcache = &_mapcache;
 
-  //TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() >> ptr = %p, bytes = %zu, mapcache = %p\n", ptr, _memsize, mapcache));
-  //ptr and memsize are no longer in this scope
-  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() >>  mapcache = %p\n", mapcache));
+  TRACE_ERR( (stderr, "Global::initializeMapCache() >> mm = %p, mapcache = %p\n", mm, mapcache));
   // This structure anchors pointers to the map cache and rank cache.
   // It is created in the static portion of shared memory in this
   // constructor, but exists there only for the duration of this
@@ -231,7 +243,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
   size_t pSize  = personality.pSize ();
   size_t tSize  = personality.tSize ();
 
-  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. p=%zu t=%zu size{%zu %zu %zu %zu %zu %zu %zu}\n", pCoord, tCoord, aSize, bSize, cSize, dSize, eSize, pSize, tSize));
+  TRACE_ERR( (stderr, "Global::initializeMapCache() .. p=%zu t=%zu size{%zu %zu %zu %zu %zu %zu %zu}\n", pCoord, tCoord, aSize, bSize, cSize, dSize, eSize, pSize, tSize));
 
   // Calculate the number of potential tasks in this partition.
   size_t fullSize = aSize * bSize * cSize * dSize * eSize * pSize * tSize;
@@ -246,7 +258,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
                        fullSize * sizeof(*mapcache->torus.coords2task) +
                        peerSize * sizeof(*mapcache->node.local2peer) +
                        peerSize * sizeof(*mapcache->node.peer2task);
-      TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() << mapsize = %zu\n", mapsize));
+      TRACE_ERR( (stderr, "Global::initializeMapCache() << mapsize = %zu\n", mapsize));
       return mapsize;
     }
 
@@ -254,8 +266,12 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
   mm->memalign((void **)&cacheAnchorsPtr, 16, sizeof(*cacheAnchorsPtr));
   PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for cacheAnchorsPtr");
 
-  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. mapcache = %p, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zu, fullSize = %zu, peerSize = %zu\n", mapcache, cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize));
+  TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache = %p, size = %zu, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zu, fullSize = %zu, peerSize = %zu\n", mapcache, mm->size(), cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize));
 
+  if(shared)
+  {
+      DUMP_HEXDATA("Shared memory", (const uint32_t *)cacheAnchorsPtr, 16);
+  }
   // Notify all other tasks on the node that this task has entered the
   // map cache initialization function.  If the value returned is zero
   // then this task is the first one in and is designated the "master".
@@ -265,20 +281,20 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   //myRank = personality.rank();
 
-  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. participant=%ld\n", participant));
+  TRACE_ERR( (stderr, "Global::initializeMapCache() .. participant=%ld\n", participant));
 
   mm->memalign((void **)&mapcache->torus.task2coords, 16, fullSize * sizeof(*mapcache->torus.task2coords));
   PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for task2coords");
   mm->memalign((void **)&mapcache->torus.coords2task, 16, fullSize * sizeof(*mapcache->torus.coords2task));
   PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for coords2task");
-  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. mapcache->torus.task2coords = %p mapcache->torus.coords2task = %p\n", mapcache->torus.task2coords, mapcache->torus.coords2task));
-  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->torus.coords2task = %p\n", mapcache->node.local2peer, mapcache->torus.coords2task));
+  TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache->torus.task2coords = %p mapcache->torus.coords2task = %p\n", mapcache->torus.task2coords, mapcache->torus.coords2task));
+  TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->torus.coords2task = %p\n", mapcache->node.local2peer, mapcache->torus.coords2task));
 
   mm->memalign((void **)&mapcache->node.local2peer, 16, peerSize * sizeof(*mapcache->node.local2peer));
   PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for local2peer");
   mm->memalign((void **)&mapcache->node.peer2task, 16, peerSize * sizeof(*mapcache->node.peer2task));
   PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for peer2task");
-  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
+  TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
 
   pami_task_t max_rank = 0, min_rank = (pami_task_t) - 1;
   pami_coord_t _ll, _ur;
@@ -352,7 +368,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
            * 4. Number of active ranks on each compute node.
            */
           size_t i;
-          TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. fullSize = %zu\n", fullSize));
+          TRACE_ERR( (stderr, "Global::initializeMapCache() .. fullSize = %zu\n", fullSize));
 
           _ll.network = _ur.network = PAMI_N_TORUS_NETWORK;
           _ll.u.n_torus.coords[0] = _ur.u.n_torus.coords[0] = personality.aCoord();
@@ -404,7 +420,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
               p = mapcache->torus.task2coords[i].core;
               t = mapcache->torus.task2coords[i].thread;
 #endif
-              TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. i = %zu, {%zu %zu %zu %zu %zu %zu %zu}\n", i, a, b, c, d, e, p, t));
+              TRACE_ERR( (stderr, "Global::initializeMapCache() .. i = %zu, {%zu %zu %zu %zu %zu %zu %zu}\n", i, a, b, c, d, e, p, t));
 
               // Set the bit corresponding to the physical node of this rank,
               // indicating that we have found a rank on that node.
@@ -418,7 +434,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
                 {
                   numActiveNodesGlobal++;
                   narray[narrayIndex] |= bitNumberMask;
-                  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. bitNumberMask = %#.16lX, narray[%#.16lX]=%#.8X\n", bitNumberMask, narrayIndex, narray[narrayIndex]));
+                  TRACE_ERR( (stderr, "Global::initializeMapCache() .. bitNumberMask = %#.16lX, narray[%#.16lX]=%#.8X\n", bitNumberMask, narrayIndex, narray[narrayIndex]));
                 }
 
               // Increment the number of global ranks.
@@ -426,7 +442,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 
               uint32_t addr_hash = ESTIMATED_TASK(a, b, c, d, e, p, t, aSize, bSize, cSize, dSize, eSize, pSize, tSize);
               mapcache->torus.coords2task[addr_hash] = i;
-              TRACE_ERR((stderr, "coords2task[%d]=%#lX\n", addr_hash, i));
+        TRACE_ERR((stderr, "Global::initializeMapCache() .. coords2task[%d]=%#lX\n", addr_hash, i));
 
               // because of "for (i..." this will give us MAX after loop.
               max_rank = i;
@@ -473,7 +489,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
           cacheAnchorsPtr->minRank = min_rank;
           memcpy((void *)&cacheAnchorsPtr->activeLLCorner, &_ll, sizeof(_ll));
           memcpy((void *)&cacheAnchorsPtr->activeURCorner, &_ur, sizeof(_ur));
-          TRACE_ERR((stderr, "PAMI::Global::initializeMapCache() numActiveRanksGlobal %zu,numActiveNodesGlobal %zu,max_rank %u, min_rank %u\n", numActiveRanksGlobal, numActiveNodesGlobal, max_rank, min_rank));
+          TRACE_ERR((stderr, "Global::initializeMapCache() numActiveRanksGlobal %zu,numActiveNodesGlobal %zu,max_rank %u, min_rank %u\n", numActiveRanksGlobal, numActiveNodesGlobal, max_rank, min_rank));
         }
       else PAMI_abortf("Kernel_Ranks2Coords rc = %d\n", rc);
 
@@ -489,7 +505,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
               hash = ESTIMATED_TASK(a, b, c, d, e, p, t, aSize, bSize, cSize, dSize, eSize, pSize, tSize);
 
               mapcache->node.peer2task[peer] = mapcache->torus.coords2task[hash];
-              TRACE_ERR((stderr, "peer2task[%zu]=coords2task[%d]=%#lX, local2peer[%d]=%zu\n", peer, hash, mapcache->node.peer2task[peer], hash, peer));
+        TRACE_ERR((stderr, "Global::initializeMapCache() .. peer2task[%zu]=coords2task[%d]=%#lX, local2peer[%d]=%zu\n", peer, hash, mapcache->node.peer2task[peer], hash, peer));
               hash = ESTIMATED_TASK(0, 0, 0, 0, 0, p, t, 1, 1, 1, 1, 1, pSize, tSize);
               mapcache->node.local2peer[hash] = peer++;
               numRanks++; // increment local variable
@@ -573,11 +589,52 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   mapcache->size = cacheAnchorsPtr->numActiveRanksGlobal;
   mapcache->local_size = cacheAnchorsPtr->numActiveRanksLocal; //hack
-  TRACE_ERR( (stderr, "local_size:%zu\n", mapcache->local_size));
+  TRACE_ERR( (stderr, "Global::initializeMapCache() .. size: %zu local_size:%zu\n", mapcache->size, mapcache->local_size));
 
   return 0;
 };
 
+inline void globalDumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints)
+{
+  fprintf(stderr, "dumphex:%s:%p:%zu:\n\n", pstring, &buffer, n_ints);
+  unsigned nChunks = n_ints / 8;
+
+  if (!buffer || !n_ints) return;
+
+  for (unsigned i = 0; i < nChunks; i++)
+    {
+      fprintf(stderr,
+              "<%p>: %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X \n",
+              buffer + (i*8),
+              *(buffer + (i*8) + 0),
+              *(buffer + (i*8) + 1),
+              *(buffer + (i*8) + 2),
+              *(buffer + (i*8) + 3),
+              *(buffer + (i*8) + 4),
+              *(buffer + (i*8) + 5),
+              *(buffer + (i*8) + 6),
+              *(buffer + (i*8) + 7)
+             );
+    }
+
+  if (n_ints % 8)
+    {
+      unsigned lastChunk = nChunks * 8;
+      fprintf(stderr,
+              "<%p>: %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X \n",
+              buffer + lastChunk,
+              lastChunk + 0 < n_ints ? *(buffer + lastChunk + 0) : 0xDEADDEAD,
+              lastChunk + 1 < n_ints ? *(buffer + lastChunk + 1) : 0xDEADDEAD,
+              lastChunk + 2 < n_ints ? *(buffer + lastChunk + 2) : 0xDEADDEAD,
+              lastChunk + 3 < n_ints ? *(buffer + lastChunk + 3) : 0xDEADDEAD,
+              lastChunk + 4 < n_ints ? *(buffer + lastChunk + 4) : 0xDEADDEAD,
+              lastChunk + 5 < n_ints ? *(buffer + lastChunk + 5) : 0xDEADDEAD,
+              lastChunk + 6 < n_ints ? *(buffer + lastChunk + 6) : 0xDEADDEAD,
+              lastChunk + 7 < n_ints ? *(buffer + lastChunk + 7) : 0xDEADDEAD
+             );
+      lastChunk = 0; // gets rid of an annoying warning when not tracing the buffer
+    }
+}
 
 
 

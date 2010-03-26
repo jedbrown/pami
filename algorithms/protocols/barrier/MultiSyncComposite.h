@@ -1,11 +1,10 @@
 /**
  * \file algorithms/protocols/barrier/MultiSyncComposite.h
- * \brief ???
+ * \brief Simple composite based on multisync
  */
 #ifndef __algorithms_protocols_barrier_MultiSyncComposite_h__
 #define __algorithms_protocols_barrier_MultiSyncComposite_h__
 
-#include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "algorithms/executor/Barrier.h"
 #include "algorithms/composite/Composite.h"
 
@@ -30,9 +29,11 @@ namespace CCMI
                             void                                 * cookie) :
         Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g)
         {
+          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
         }
 
         virtual void start() {
+          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
           pami_multisync_t  minfo;
 
           minfo.cb_done.function   = _cb_done;

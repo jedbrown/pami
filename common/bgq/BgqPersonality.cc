@@ -34,6 +34,9 @@ PAMI::BgqPersonality::BgqPersonality ()
   var = getenv("BG_SHAREDMEMSIZE");
   TRACE_MAMBO((stderr, "BG_SHAREDMEMSIZE %s\n", var ? var : "NULL"));
 
+  var = getenv("BG_MEMSIZE");
+  TRACE_MAMBO((stderr, "BG_MEMSIZE %s\n", var ? var : "NULL"));
+
 
   TRACE_MAMBO((stderr, "BGQPersonality Kernel_Config.NodeConfig %#llX\n", (unsigned long long)(Kernel_Config.NodeConfig)));
   TRACE_MAMBO((stderr, "BGQPersonality Kernel_Config.TraceConfig %#llX\n", (unsigned long long)(Kernel_Config.TraceConfig)));
@@ -62,7 +65,9 @@ PAMI::BgqPersonality::BgqPersonality ()
     {
       unsigned dcr_num = ND_500_DCR_base + ND_500_DCR__CTRL_COORDS_offset;
 
-      unsigned long long dcr = DCRReadUser(dcr_num);
+      // funky code to avoid "unused variable" warning when TRACE_MAMBO is off.
+      unsigned long long dcr = 0; 
+      dcr = DCRReadUser(dcr_num);
 
       TRACE_MAMBO((stderr, "BGQPersonality() NODE_COORDINATES DCR = 0x%016llx\n", dcr));
 

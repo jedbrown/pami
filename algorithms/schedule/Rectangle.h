@@ -25,12 +25,40 @@
  */
 
 /*@}*/
-/** \brief Number of axii on BG Torus/Mesh network. */
 
-// TODO:  make these queryable by the mapping
+#ifndef PAMI_MAX_DIMS
+/// \todo bogus defaults if we don't know PAMI defaults
+/** \brief Number of axii on Torus/Mesh network. */
 #define NUM_STD_AXIS	2
-/** \brief Total number of axii on BG (includes local cores). */
-#define NUM_AXIS	2
+/** \brief Total number of axii on torus (includes local cores). */
+#define NUM_AXIS NUM_STD_AXIS
+#else 
+/// \todo this is screwed up
+/** \brief Number of axii on Torus/Mesh network. */
+#define NUM_STD_AXIS PAMI_MAX_DIMS
+/** \brief Total number of axii on torus (includes local cores). */
+#define NUM_AXIS NUM_STD_AXIS
+#endif
+
+#ifdef LAPI_DIMS
+#undef NUM_STD_AXIS
+#undef NUM_AXIS
+/// \todo this is ridiculously broken.. override PAMI_MAX_DIMS for lapi
+/** \brief Number of axii on Torus/Mesh network. */
+#define NUM_STD_AXIS (LAPI_DIMS+LAPI_LDIMS)
+/** \brief Total number of axii on torus (includes local cores). */
+#define NUM_AXIS NUM_STD_AXIS
+#endif
+
+#ifdef MPI_TDIMS
+#undef NUM_STD_AXIS
+#undef NUM_AXIS
+/// \todo this is ridiculously broken.. override PAMI_MAX_DIMS for MPI
+/** \brief Number of axii on Torus/Mesh network. */
+#define NUM_STD_AXIS (MPI_TDIMS + MPI_LDIMS)
+/** \brief Total number of axii on torus (includes local cores). */
+#define NUM_AXIS NUM_STD_AXIS
+#endif
 
 typedef size_t axis_array_t[NUM_STD_AXIS];
 

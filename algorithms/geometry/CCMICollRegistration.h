@@ -28,6 +28,9 @@
 #include "algorithms/protocols/allreduce/async_impl.h"
 #include "algorithms/protocols/alltoall/impl.h"
 
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+
 namespace PAMI
 {
   extern std::map<unsigned, pami_geometry_t> geometry_map;
@@ -73,6 +76,7 @@ namespace PAMI
 	_ring_broadcast_reg(&_connmgr, &_ring_broadcast_ni),
 	_binomial_allreduce_reg(&_rbconnmgr, &_binom_allreduce_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead)
           {
+            TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
 	    //set the mapid functions
             _barrier_reg.setMapIdToGeometry(mapidtogeometry);
             _binomial_allreduce_reg.setMapIdToGeometry(mapidtogeometry);
@@ -80,6 +84,7 @@ namespace PAMI
 
         inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
         {
+          TRACE_ERR((stderr, "<%p>%s context_id %zu, geometry %p\n", this, __PRETTY_FUNCTION__, context_id, geometry));
           pami_xfer_t xfer = {0};
           _barrier_composite =_barrier_reg.generate(geometry,
                                                     &xfer);
@@ -104,6 +109,7 @@ namespace PAMI
       static pami_geometry_t mapidtogeometry (int comm)
         {
           pami_geometry_t g = geometry_map[comm];
+          TRACE_ERR((stderr, "<%p>%s\n", g, __PRETTY_FUNCTION__));
           return g;
         }
 

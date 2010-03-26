@@ -19,6 +19,8 @@
 
 #include <spi/bgp_SPI.h>
 #include <bpcore/bgp_atomic_ops.h>
+#undef TRACE_ERR
+#define TRACE_ERR(x) fprintf x
 
 namespace PAMI
 {
@@ -155,6 +157,7 @@ namespace BGP {
         inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
           _atomic = NULL;
+            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
           mm->memalign((void **)&_atomic, 8, sizeof(*_atomic));
           PAMI_assertf(_atomic, "Failed to get shmem for BgpNodeCounter");
         };
@@ -265,6 +268,7 @@ namespace BGP {
         inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
           _atomic = NULL;
+            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
           mm->memalign((void **)&_atomic, 8, sizeof(*_atomic));
           PAMI_assertf(_atomic, "Failed to get shmem for BgpNodeMutex");
         };

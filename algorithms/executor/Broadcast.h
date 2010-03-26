@@ -54,6 +54,7 @@ namespace CCMI
       _comm_schedule(NULL),
       _comm(-1)
       {
+            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
       }
 
       BroadcastExec (Interfaces::NativeInterface  * mf,
@@ -70,6 +71,7 @@ namespace CCMI
       _color((unsigned) -1),
       _postReceives (post_recvs)
       {
+            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
         _clientdata        =  0;
         _root              =  (unsigned)-1;
         _buflen            =  0;
@@ -85,6 +87,7 @@ namespace CCMI
 
       void setSchedule (Interfaces::Schedule *ct, unsigned color)
       {
+            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
 	_color = color;
         _comm_schedule = ct;
         int nph, phase;
@@ -94,6 +97,7 @@ namespace CCMI
       }
 
       void setRoot(unsigned root) {
+            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
 	_root = root;
       }
 
@@ -180,7 +184,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
     return;
   }
 
-  TRACE_FLOW((stderr, "%d:Executor::BroadcastExec::sendNext() bytes %d, ndsts %d\n",_native->myrank(), _buflen, _dsttopology.size()));
+  TRACE_FLOW((stderr, "Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu\n",_buflen, _dsttopology.size()));
   //for(unsigned i = 0; i < _dsttopology.size(); ++i) TRACE_FLOW((stderr,"dstrank[%d]=%d/%d\n",i,_dstranks[i],_dsttopology.index2Rank(i)));
 
   //for(int dcount = 0; dcount < _nmessages; dcount++)

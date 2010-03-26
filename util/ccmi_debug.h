@@ -27,7 +27,7 @@
 
 #ifdef CCMI_DEBUG
 
-  #warning CCMI DEBUG enabled
+//  #warning CCMI DEBUG enabled
 
   #undef TRACE_MSG
   #define TRACE_MSG(x) fprintf x

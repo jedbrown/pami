@@ -45,10 +45,8 @@
 #define DISPATCH_SET_COUNT 256
 #define DISPATCH_SET_SIZE   16
 
-
-#ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
-#endif
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
 
 namespace PAMI
 {
@@ -799,17 +797,18 @@ namespace PAMI
     {
 #ifdef TRAP_ADVANCE_DEADLOCK
       static size_t iteration = 0;
+      TRACE_ERR((stderr, "(%zu) ShmemDevice::advance() iteration %zu \n", __global.mapping.task(), iteration));
       PAMI_assert (iteration++ < ADVANCE_DEADLOCK_MAX_LOOP);
 #endif
 
       size_t events = 0;
-      TRACE_ERR((stderr, "(%zu) ShmemDevice::advance() >>\n", __global.mapping.task()));
+      //TRACE_ERR((stderr, "(%zu) ShmemDevice::advance() >>\n", __global.mapping.task()));
 
       // Advance any pending receive messages.
       PacketImpl * pkt = NULL;
       uint16_t id;
 
-      TRACE_ERR((stderr, "(%zu) ShmemDevice::advance()    ... before _rfifo->nextRecPacket(), _rfifo = %p\n", __global.mapping.task(), _rfifo));
+      //TRACE_ERR((stderr, "(%zu) ShmemDevice::advance()    ... before _rfifo->nextRecPacket(), _rfifo = %p\n", __global.mapping.task(), _rfifo));
 
       while ((pkt = (PacketImpl *)_rfifo->nextRecPacket()) != NULL)
         {
@@ -870,7 +869,7 @@ namespace PAMI
 #endif
 
       //TRACE_ERR((stderr, "(%zu) ShmemDevice::advance()    ...  after _rfifo->nextRecPacket()\n", __global.mapping.task()));
-      TRACE_ERR((stderr, "(%zu) ShmemDevice::advance() << ... events = %zu\n", __global.mapping.task(), events));
+      //TRACE_ERR((stderr, "(%zu) ShmemDevice::advance() << ... events = %zu\n", __global.mapping.task(), events));
 
 #ifdef TRAP_ADVANCE_DEADLOCK
 

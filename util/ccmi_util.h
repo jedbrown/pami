@@ -84,4 +84,18 @@ inline void operator delete(void* pointer0, void* pointer)
 // ...and so on, for BGQ, ...
 #endif /* __bgl__ || __bgx__ ... */
 
+// \brief do some debug code
+#undef DO_DEBUG
+#define DO_DEBUG(x) //x
+
+/// \brief Trace the template name: eg.
+/// DO_DEBUG((templateName<T_Mcast>()));
+///   ...results in something like this traced:
+/// templateName() [with T_Model = PAMI::Device::LocalBcastWQModel]
+template <class T>
+inline void templateName()
+{
+  fprintf(stderr, "%s\n", __PRETTY_FUNCTION__);
+}
+
 #endif

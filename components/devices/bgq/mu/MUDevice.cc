@@ -180,47 +180,6 @@ int PAMI::Device::MU::MUDevice::noop (void   * metadata,
   return 0;
 };
 
-void PAMI::Device::MU::dumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints)
-{
-  fprintf(stderr, "dumphex:%s:%p:%zu:\n\n", pstring, &buffer, n_ints);
-  unsigned nChunks = n_ints / 8;
-
-  if (!buffer || !n_ints) return;
-
-  for (unsigned i = 0; i < nChunks; i++)
-    {
-      fprintf(stderr,
-              "<%p>: %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X \n",
-              buffer + (i*8),
-              *(buffer + (i*8) + 0),
-              *(buffer + (i*8) + 1),
-              *(buffer + (i*8) + 2),
-              *(buffer + (i*8) + 3),
-              *(buffer + (i*8) + 4),
-              *(buffer + (i*8) + 5),
-              *(buffer + (i*8) + 6),
-              *(buffer + (i*8) + 7)
-             );
-    }
-
-  if (n_ints % 8)
-    {
-      unsigned lastChunk = nChunks * 8;
-      fprintf(stderr,
-              "<%p>: %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X \n",
-              buffer + lastChunk,
-              lastChunk + 0 < n_ints ? *(buffer + lastChunk + 0) : 0xDEADDEAD,
-              lastChunk + 1 < n_ints ? *(buffer + lastChunk + 1) : 0xDEADDEAD,
-              lastChunk + 2 < n_ints ? *(buffer + lastChunk + 2) : 0xDEADDEAD,
-              lastChunk + 3 < n_ints ? *(buffer + lastChunk + 3) : 0xDEADDEAD,
-              lastChunk + 4 < n_ints ? *(buffer + lastChunk + 4) : 0xDEADDEAD,
-              lastChunk + 5 < n_ints ? *(buffer + lastChunk + 5) : 0xDEADDEAD,
-              lastChunk + 6 < n_ints ? *(buffer + lastChunk + 6) : 0xDEADDEAD,
-              lastChunk + 7 < n_ints ? *(buffer + lastChunk + 7) : 0xDEADDEAD
-             );
-      lastChunk = 0; // gets rid of an annoying warning when not tracing the buffer
-    }
-}
 void PAMI::Device::MU::dumpDescriptor(const char* string, const MUHWI_Descriptor_t *desc)
 {
   fprintf(stderr, "dumpDescriptor:%s:%p:\n\n", string, desc);

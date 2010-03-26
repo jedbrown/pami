@@ -46,6 +46,7 @@ namespace CCMI
       public:
         MultiColorCompositeT () : CompositeT<NUMCOLORS, T_Bar, T_Exec>(), _doneCount(0), _nComplete(0)
         {
+            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
         }
 
 	virtual ~MultiColorCompositeT () {}
@@ -149,6 +150,7 @@ namespace CCMI
       ///
       static void cb_barrier_done(pami_context_t context, void *me, pami_result_t err)
       {
+            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
 	MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
 	CCMI_assert (composite != NULL);
 
@@ -169,6 +171,7 @@ namespace CCMI
 
       static void cb_composite_done(pami_context_t context, void *me, pami_result_t err)
       {
+            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
 	MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
 	CCMI_assert (composite != NULL);
 

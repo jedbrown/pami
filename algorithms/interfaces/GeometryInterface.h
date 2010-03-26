@@ -46,6 +46,7 @@ namespace PAMI
                       unsigned     numcolors,
                       bool         globalcontext)
       {
+        TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
       }
       inline Geometry (Geometry  *parent,
                        Mapping   *mapping,
@@ -53,6 +54,7 @@ namespace PAMI
                        int        numranges,
                        pami_geometry_range_t rangelist[])
       {
+        TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
       }
 
       // These methods were originally from the CCMI Geometry class
