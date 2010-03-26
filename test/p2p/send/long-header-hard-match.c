@@ -157,14 +157,14 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  uint8_t short_header[1024];
-  uint8_t long_header[10240];
+  uint8_t short_header[128];
+  uint8_t long_header[1024];
 
   // Create matrix controls and values
   size_t d = 0;                              // controls dispatch id/hard hint & soft hint
   size_t h = 0;                              // controls header pointer and header size arrays
   uint8_t * header_ary[2] = {short_header, long_header};
-  size_t header_size_ary[2] = {1024, 10240};
+  size_t header_size_ary[2] = {128, 1024};
   size_t soft_hint_ary[2] = {1, 0};        // soft hint = opposite of hard hint
   char header_type_str[2][50] = {"short header", "long header"};
   pami_result_t hard_expected_ary [2][2];  // expected results based on d and h values
@@ -200,14 +200,14 @@ int main (int argc, char ** argv)
 	parameters.send.header.iov_len  = header_size_ary[h];
 	parameters.send.dest = PAMI_Client_endpoint (client, 1, 0);
 
-	fprintf(stderr, "Sending %s from task %d -> %d:\n", &header_type_str[h][0], task_id, soft_hint_ary[task_id]);
-	fprintf(stderr, "task %d no_long_header hard hint = %d\n", task_id, d);
-	fprintf(stderr, "task %d no_long_header hard hint = %d\n", soft_hint_ary[task_id], d);
+	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n", &header_type_str[h][0], header_size_ary[h], task_id, soft_hint_ary[task_id]);
+	fprintf(stderr, "task %zu no_long_header hard hint = %zu\n", task_id, d);
+	fprintf(stderr, "task %zu no_long_header hard hint = %zu\n", soft_hint_ary[task_id], d);
 
 	result = PAMI_Send (context, &parameters);
 	if (result != hard_expected_ary[d][h])
 	{
-	  fprintf(stderr, "Error. Expected rc = %d after sending a %s with no_long_header hint = %d, but got rc = %d\n", hard_expected_ary[d][h], &header_type_str[h][0], d, result);
+	  fprintf(stderr, "Error. Expected rc = %d after sending a %s (%zu bytes) with no_long_header hint = %zu, but got rc = %d\n", hard_expected_ary[d][h], &header_type_str[h][0], header_size_ary[h], d, result);
 	  return 1;
 	}
 	TRACE((stderr, "... after send.\n"));
@@ -251,14 +251,14 @@ int main (int argc, char ** argv)
 	parameters.send.header.iov_len  = header_size_ary[h];
 	parameters.send.dest = PAMI_Client_endpoint (client, 0, 0);
 
-	fprintf(stderr, "Sending %s from task %d -> %d:\n", &header_type_str[h][0], task_id, soft_hint_ary[task_id]);
-	fprintf(stderr, "task %d no_long_header hard hint = %d\n", task_id, d);
-	fprintf(stderr, "task %d no_long_header hard hint = %d\n", soft_hint_ary[task_id], d);
+	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n", &header_type_str[h][0], header_size_ary[h], task_id, soft_hint_ary[task_id]);
+	fprintf(stderr, "task %zu no_long_header hard hint = %zu\n", task_id, d);
+	fprintf(stderr, "task %zu no_long_header hard hint = %zu\n", soft_hint_ary[task_id], d);
 
 	result = PAMI_Send (context, &parameters);
 	if (result != hard_expected_ary[d][h])
 	{
-	  fprintf(stderr, "Error. Expected rc = %d after sending a %s with a hard no_long_header hint = %d, but got rc = %d\n", hard_expected_ary[d][h], &header_type_str[h][0], d, result);
+	  fprintf(stderr, "Error. Expected rc = %d after sending a %s (%zu bytes) with a hard no_long_header hint = %zu, but got rc = %d\n", hard_expected_ary[d][h], &header_type_str[h][0], header_size_ary[h], d, result);
 	  return 1;
 	  return 1;
 	}
@@ -296,15 +296,15 @@ int main (int argc, char ** argv)
 	parameters.send.dest = PAMI_Client_endpoint (client, 1, 0);
 	parameters.send.hints.no_long_header = soft_hint_ary[d];
 
-	fprintf(stderr, "Sending %s from task %d -> %d:\n", &header_type_str[h][0], task_id, soft_hint_ary[task_id]);
-	fprintf(stderr, "task %d no_long_header hard hint = %d\n", task_id, d);
-	fprintf(stderr, "task %d no_long_header soft hint = %d\n", task_id, soft_hint_ary[task_id]);
-	fprintf(stderr, "task %d no_long_header hard hint = %d\n", soft_hint_ary[task_id], d);
+	fprintf(stderr, "Sending %s (%zu bytes)from task %zu -> %zu:\n", &header_type_str[h][0],header_size_ary[h], task_id, soft_hint_ary[task_id]);
+	fprintf(stderr, "task %zu no_long_header hard hint = %zu\n", task_id, d);
+	fprintf(stderr, "task %zu no_long_header soft hint = %zu\n", task_id, soft_hint_ary[task_id]);
+	fprintf(stderr, "task %zu no_long_header hard hint = %zu\n", soft_hint_ary[task_id], d);
 
 	result = PAMI_Send (context, &parameters);
 	if (result != soft_expected_ary[d][h])
 	{
-	  fprintf(stderr, "Error. Expected rc = %d after sending a %s with: hard no_long_header hint = %d and soft no_long_header hint = %d, but got rc = %d\n", soft_expected_ary[d][h], &header_type_str[h][0], d, soft_hint_ary[d], result);
+	  fprintf(stderr, "Error. Expected rc = %d after sending a %s (%zu bytes) with: hard no_long_header hint = %zu and soft no_long_header hint = %zu, but got rc = %d\n", soft_expected_ary[d][h], &header_type_str[h][0], header_size_ary[h], d, soft_hint_ary[d], result);
 	  return 1;
 	}
 	TRACE((stderr, "... after send.\n"));
@@ -349,15 +349,15 @@ int main (int argc, char ** argv)
 	parameters.send.dest = PAMI_Client_endpoint (client, 0, 0);
 	parameters.send.hints.no_long_header = soft_hint_ary[d];
 
-	fprintf(stderr, "Sending %s from task %d -> %d:\n", &header_type_str[h][0], task_id, soft_hint_ary[task_id]);
-	fprintf(stderr, "task %d no_long_header hard hint = %d\n", task_id, d);
-	fprintf(stderr, "task %d no_long_header soft hint = %d\n", task_id, soft_hint_ary[task_id]);
-	fprintf(stderr, "task %d no_long_header hard hint = %d\n", soft_hint_ary[task_id], d);
+	fprintf(stderr, "Sending %s (%zu bytes)from task %zu -> %zu:\n", &header_type_str[h][0], header_size_ary[h], task_id, soft_hint_ary[task_id]);
+	fprintf(stderr, "task %zu no_long_header hard hint = %zu\n", task_id, d);
+	fprintf(stderr, "task %zu no_long_header soft hint = %zu\n", task_id, soft_hint_ary[task_id]);
+	fprintf(stderr, "task %zu no_long_header hard hint = %zu\n", soft_hint_ary[task_id], d);
 
 	result = PAMI_Send (context, &parameters);
 	if (result != soft_expected_ary[d][h])
 	{
-	  fprintf(stderr, "Error. Expected rc = %d after sending a %s with: hard no_long_header hint = %d and soft no_long_header hint = %d, but got rc = %d\n", soft_expected_ary[d][h], &header_type_str[h][0], d, soft_hint_ary[d], result);
+	  fprintf(stderr, "Error. Expected rc = %d after sending a %s (%zu bytes) with: hard no_long_header hint = %zu and soft no_long_header hint = %zu, but got rc = %d\n", soft_expected_ary[d][h], &header_type_str[h][0], header_size_ary[h], d, soft_hint_ary[d], result);
 	  return 1;
 	}
 	TRACE((stderr, "... after send.\n"));
