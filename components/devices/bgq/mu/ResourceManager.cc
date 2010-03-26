@@ -58,7 +58,7 @@ getInfo()
         PAMI_assert ( _injFifoInfo != NULL );
         _injFifoInfo->numSubGroups = MINIMAL_INJ_NUM_SUBGROUPS;
 
-        TRACE((stderr, "My Coords are: A=%zd, B=%zd, C=%zd, D=%zd, E=%zd, T=%zd, P=%zd, aSize=%zd, bSize=%zd, cSize=%zd, dSize=%zd, eSize=%zd, tSize=%zd, pSize=%zd\n",
+        TRACE((stderr, "My Coords are: A=%zu, B=%zu, C=%zu, D=%zu, E=%zu, T=%zu, P=%zu, aSize=%zu, bSize=%zu, cSize=%zu, dSize=%zu, eSize=%zu, tSize=%zu, pSize=%zu\n",
                __global.mapping.a(), __global.mapping.b(), __global.mapping.c(), __global.mapping.d(), __global.mapping.e(), __global.mapping.t(), __global.mapping.p(), __global.personality.aSize(), __global.personality.bSize(), __global.personality.cSize(), __global.personality.dSize(), __global.personality.eSize(), __global.personality.tSize(), __global.personality.pSize()))
         ;
 

@@ -84,10 +84,10 @@ static void test_dispatch (
 
 void send_once (pami_context_t context, pami_send_immediate_t * parameters)
 {
-  TRACE_ERR((stderr, "(%zd) before send_immediate()  \n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) before send_immediate()  \n", _my_rank));
   //pami_result_t result =
     PAMI_Send_immediate (context, parameters);
-  TRACE_ERR((stderr, "(%zd) after send_immediate()  \n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) after send_immediate()  \n", _my_rank));
 }
 
 void recv_once (pami_context_t context)

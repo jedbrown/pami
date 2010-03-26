@@ -189,7 +189,7 @@ inline void CCMI::Executor::BarrierExec::sendNext()
     TRACE_ERR((stderr,"Executor::BarrierExec::sendNext dstranks %p\n", dstranks));
 
     for (int count = 0; count < ndest; count++)
-      TRACE_ERR((stderr,"<%p>Executor::BarrierExec::sendNext _phase %d, ndest %zd, _dstranks[count] %d, _connid %d, _clientdata %p\n", this,_phase, ndest, dstranks[count], _connid, _clientdata));
+      TRACE_ERR((stderr,"<%p>Executor::BarrierExec::sendNext _phase %d, ndest %zu, _dstranks[count] %d, _connid %d, _clientdata %p\n", this,_phase, ndest, dstranks[count], _connid, _clientdata));
     CCMI_assert (topology->type() == PAMI_LIST_TOPOLOGY);
 #endif
 

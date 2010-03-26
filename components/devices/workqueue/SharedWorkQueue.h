@@ -151,7 +151,7 @@ namespace PAMI
             if (prefix == NULL)
               prefix = "";
 
-            fprintf (stderr, "%s SharedWorkQueue::dump() _sharedqueue = %p, produced bytes = %d %d %d %d (%zd %zd %zd %zd), consumed bytes = %d %d %d %d (%zd %zd %zd %zd)\n", prefix, _sharedqueue, pbytes0, pbytes1, pbytes2, pbytes3, bytesAvailableToProduce(0), bytesAvailableToProduce(1), bytesAvailableToProduce(2), bytesAvailableToProduce(3), cbytes0, cbytes1, cbytes2, cbytes3, bytesAvailableToConsume(0), bytesAvailableToConsume(1), bytesAvailableToConsume(2), bytesAvailableToConsume(3));
+            fprintf (stderr, "%s SharedWorkQueue::dump() _sharedqueue = %p, produced bytes = %d %d %d %d (%zu %zu %zu %zu), consumed bytes = %d %d %d %d (%zu %zu %zu %zu)\n", prefix, _sharedqueue, pbytes0, pbytes1, pbytes2, pbytes3, bytesAvailableToProduce(0), bytesAvailableToProduce(1), bytesAvailableToProduce(2), bytesAvailableToProduce(3), cbytes0, cbytes1, cbytes2, cbytes3, bytesAvailableToConsume(0), bytesAvailableToConsume(1), bytesAvailableToConsume(2), bytesAvailableToConsume(3));
           }
 
           ///

@@ -141,7 +141,7 @@ namespace PAMI
           msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
-          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl MPI_Isend %zd to %zd\n",this,
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl MPI_Isend %zu to %zu\n",this,
                          sizeof(msg->_p2p_msg),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (pami_task_t) target_task;
@@ -188,7 +188,7 @@ namespace PAMI
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
           memcpy(&msg->_p2p_msg._payload[iov[0].iov_len], iov[1].iov_base, iov[1].iov_len);
-          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket MPI_Isend %zd to %zd\n",this,
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket MPI_Isend %zu to %zu\n",this,
                          sizeof(msg->_p2p_msg),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (pami_task_t) target_task;
@@ -234,7 +234,7 @@ namespace PAMI
           msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], payload, length);
-          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl MPI_Isend %zd to %zd\n",this,
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl MPI_Isend %zu to %zu\n",this,
                          sizeof(msg->_p2p_msg),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (pami_task_t) target_task;
@@ -288,7 +288,7 @@ namespace PAMI
           memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
           if (T_Niov)
             memcpy(&msg->_p2p_msg._payload[iov[0].iov_len], iov[1].iov_base, iov[1].iov_len);
-          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl MPI_Isend %zd to %zd\n",this,
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl MPI_Isend %zu to %zu\n",this,
                          sizeof(msg->_p2p_msg),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (pami_task_t) target_task;
@@ -335,7 +335,7 @@ namespace PAMI
           msg->_p2p_msg._payloadsize1=0;
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy((char*)(&msg->_p2p_msg._metadata[0])+metasize, payload, length);
-          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postMultiPacket_impl MPI_Isend %zd+%zd+%zd-128-244 to %zd\n",this,
+          TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postMultiPacket_impl MPI_Isend %zu+%zu+%zu-128-244 to %zu\n",this,
                          sizeof(msg->_p2p_msg),metasize,(sizeof(msg->_p2p_msg)+metasize+length-128-224),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (pami_task_t) target_task;

@@ -120,7 +120,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
         else // we must be a dst_participant and we don't particularly care who is the root - just not me.
           _root = MPI_ANY_SOURCE;
 
-        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg client %p, context %zd, root %zd, iwq %p, rwq %p, bytes %zd/%zd/%zd\n",this,
+        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg client %p, context %zu, root %zu, iwq %p, rwq %p, bytes %zu/%zu/%zu\n",this,
                       mcast->client, mcast->context, _root, _iwq, _rwq, _bytes,
                       _iwq?_iwq->bytesAvailableToConsume():-1,
                       _rwq?_rwq->bytesAvailableToProduce():-1));
@@ -174,7 +174,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
         __advanceThread(&t[nt]);
         ++nt;
         // assert(nt > 0? && nt < n);
-        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__setThreads(%d) _nThreads %d, bytes left %zd\n",this,
+        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__setThreads(%d) _nThreads %d, bytes left %zu\n",this,
                       n,nt,t[nt]._bytesLeft));
         *th = t;
         return nt;
@@ -201,7 +201,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
         int flag = 0;
         MPI_Status status;
         //static unsigned count = 5; if(count) count--;
-        //if(count)TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() idx %zd/%zd, currBytes %zd, bytesLeft %zd, tag %d %s\n",this,
+        //if(count)TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() idx %zu/%zu, currBytes %zu, bytesLeft %zu, tag %d %s\n",this,
         //              _idx, _dst->size(), _currBytes, thr->_bytesLeft, _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
         if(_req != MPI_REQUEST_NULL)
         {
@@ -240,7 +240,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
           {
             return PAMI_EAGAIN;
           }
-          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() sending, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",this,
+          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() sending, idx %zu, currBytes %zu, bytesLeft %zu, dst %zu, tag %d %s\n",this,
                         _idx, _currBytes, thr->_bytesLeft, _dst->index2Rank(_idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           int rc = 0;
           if(_dst->index2Rank(_idx) == __global.mapping.task()) // This src task is also a dst? do a local copy
@@ -254,7 +254,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
                            _dst->index2Rank(_idx), _tag,
                            _g_mpibcast_dev._mcast_communicator, &_req);
           }
-          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() sending rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, dst %zd, tag %d %s\n",this,
+          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() sending rc = %d, idx %zu, currBytes %zu, bytesLeft %zu, dst %zu, tag %d %s\n",this,
                         rc,_idx, _currBytes, thr->_bytesLeft, _dst->index2Rank(_idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           //count = 5;
           // error checking?
@@ -276,7 +276,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
             {
               // how does MPI_Status.count work?
               PAMI_assertf((size_t)scount <= _currBytes,
-                          "MPIBcastMsg recv overrun (got %d, kept %zd)\n",
+                          "MPIBcastMsg recv overrun (got %d, kept %zu)\n",
                           scount, _currBytes);
             }
           }
@@ -292,7 +292,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
           }
           _currBytes = _rwq->bytesAvailableToProduce();
           _currBuf = _rwq->bufferToProduce();
-          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() recving idx %zd, currBytes %zd, bytesLeft %zd, src %zd, tag %d %s\n",this,
+          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() recving idx %zu, currBytes %zu, bytesLeft %zu, src %zu, tag %d %s\n",this,
                         _idx, _currBytes, thr->_bytesLeft, _root, _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           if(_currBytes == 0)
           {
@@ -302,7 +302,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
           int rc = MPI_Irecv(_currBuf, _currBytes, MPI_BYTE,
                              _root, _tag,
                              _g_mpibcast_dev._mcast_communicator, &_req);
-          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() recving rc = %d, idx %zd, currBytes %zd, bytesLeft %zd, src %zd, tag %d %s\n",this,
+          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() recving rc = %d, idx %zu, currBytes %zu, bytesLeft %zu, src %zu, tag %d %s\n",this,
                         rc, _idx, _currBytes, thr->_bytesLeft, _root, _tag, _req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
           // error checking?
         }
@@ -346,7 +346,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
     inline pami_result_t MPIBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                                         pami_multicast_t *mcast)
     {
-      TRACE_DEVICE((stderr,"<%p>MPIBcastMdl::postMulticast() dispatch %zd, connection_id %d, msgcount %d, bytes %zd, request %p\n",this,
+      TRACE_DEVICE((stderr,"<%p>MPIBcastMdl::postMulticast() dispatch %zu, connection_id %d, msgcount %d, bytes %zu, request %p\n",this,
                     mcast->dispatch, mcast->connection_id, mcast->msgcount, mcast->bytes, &state));
       MPIBcastMsg *msg =
       new (&state) MPIBcastMsg(_g_mpibcast_dev.getQS(), mcast);

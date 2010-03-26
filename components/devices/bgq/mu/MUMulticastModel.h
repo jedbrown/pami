@@ -196,7 +196,7 @@ namespace PAMI
         // multicast_model_available_buffers_only semantics: If you're sending data, it must all be ready in the pwq.
         PAMI_assert((length == 0) || (multicast_model_available_buffers_only && pwq && pwq->bytesAvailableToConsume() == length));
 
-        TRACE((stderr, "<%p>:MUMulticastModel::postMulticast_impl() dispatch %zd, connection_id %#X, msgcount %d/%p, bytes %zd/%p/%p\n",
+        TRACE((stderr, "<%p>:MUMulticastModel::postMulticast_impl() dispatch %zu, connection_id %#X, msgcount %d/%p, bytes %zu/%p/%p\n",
                this, mcast->dispatch, mcast->connection_id,
                mcast->msgcount, mcast->msginfo,
                mcast->bytes, pwq, pwq ? pwq->bufferToConsume() : NULL));
@@ -232,7 +232,7 @@ namespace PAMI
                    payload, length);
         }
 
-        TRACE((stderr, "<%p>:MUMulticastModel::postMulticast_impl() dispatch %zd, connection_id %#X exit\n",
+        TRACE((stderr, "<%p>:MUMulticastModel::postMulticast_impl() dispatch %zu, connection_id %#X exit\n",
                this, mcast->dispatch, mcast->connection_id));
 
         return PAMI_SUCCESS;
@@ -243,7 +243,7 @@ namespace PAMI
                                                           uint64_t payloadPa,
                                                           size_t bytes)
       {
-        TRACE((stderr, "<%p>:MUMulticastModel::initializeDescriptor(%p, %p, %zd)\n", this, desc, (void *)payloadPa, bytes));
+        TRACE((stderr, "<%p>:MUMulticastModel::initializeDescriptor(%p, %p, %zu)\n", this, desc, (void *)payloadPa, bytes));
 
         // Clone the model descriptor.
         _desc_model.clone (*desc);
@@ -288,12 +288,12 @@ namespace PAMI
 
           // Now the msginfo
           size_t msglength = msgcount * sizeof(mu_multicast_msgdata_t().msginfo);
-          TRACE((stderr, "<%p>:MUMulticastModel::postHeader()..msginfo memcpy(%p,%p,%zd)\n", this, data, msginfo, msglength));
+          TRACE((stderr, "<%p>:MUMulticastModel::postHeader()..msginfo memcpy(%p,%p,%zu)\n", this, data, msginfo, msglength));
           memcpy (data, msginfo, msglength);
           data += msglength;
 
           // Now the (optional) payload
-          TRACE((stderr, "<%p>:MUMulticastModel::postHeader()..payload memcpy(%p,%p,%zd)\n", this, data, payload, payload_length));
+          TRACE((stderr, "<%p>:MUMulticastModel::postHeader()..payload memcpy(%p,%p,%zu)\n", this, data, payload, payload_length));
 
           if (payload_length) memcpy (data, payload, payload_length);
 
@@ -493,7 +493,7 @@ namespace PAMI
                            &_receive_state.cb_done                  // [out] Completion callback to invoke when data received
                           );
 
-        TRACE((stderr, "<%p>:MUMulticastModel::processHeader() after dispatch expected_length %zd, pwq %p\n", this, _receive_state.expected_length, _receive_state.rcvpwq));
+        TRACE((stderr, "<%p>:MUMulticastModel::processHeader() after dispatch expected_length %zu, pwq %p\n", this, _receive_state.expected_length, _receive_state.rcvpwq));
 
         PAMI_assert(_receive_state.expected_length == metadata->sndlen); /// \todo allow partial receives and toss unwanted data
 
@@ -533,7 +533,7 @@ namespace PAMI
                                                    uint8_t * payload,
                                                    size_t    bytes)
       {
-        TRACE((stderr, "<%p>:MUMulticastModel::processData() metadata %p, payload %p, bytes %zd, nleft %zd\n",
+        TRACE((stderr, "<%p>:MUMulticastModel::processData() metadata %p, payload %p, bytes %zu, nleft %zu\n",
                this, metadata, payload, bytes, (_receive_state.expected_length - _receive_state.received_length)));
 
 
@@ -547,7 +547,7 @@ namespace PAMI
 
         if (nleft) // copy data and update receive state
         {
-          TRACE((stderr, "<%p>:MUMulticastModel::processData memcpy(%p,%p,%zd)\n", this, _receive_state.buffer, payload, nleft));
+          TRACE((stderr, "<%p>:MUMulticastModel::processData memcpy(%p,%p,%zu)\n", this, _receive_state.buffer, payload, nleft));
           memcpy (_receive_state.buffer, payload, nleft);
           //_device.read ((uint8_t *)(state->info.data.simple.addr) + nbyte, nleft, cookie);
 
@@ -584,7 +584,7 @@ namespace PAMI
       {
         metadata_t * m = (metadata_t*)metadata;
 
-        TRACE ((stderr, "<%p>:MUMulticastModel::dispatch(), root = %d, bytes = %zd/%d, connection id %#X\n", arg, (m->root), bytes, m->sndlen, m->connection_id));
+        TRACE ((stderr, "<%p>:MUMulticastModel::dispatch(), root = %d, bytes = %zu/%d, connection id %#X\n", arg, (m->root), bytes, m->sndlen, m->connection_id));
 
         MUMulticastModel * model = (MUMulticastModel *) arg;
         /// \todo I could use two dispatches instead of an if?

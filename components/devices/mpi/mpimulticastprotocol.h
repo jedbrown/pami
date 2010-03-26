@@ -89,7 +89,7 @@ namespace PAMI
           _cookie(NULL),
           _multicast_model(status)
           {
-            TRACE_DEVICE((stderr,"<%p>P2PMcastProto(status)  allocator size %zd\n",this,_allocator.objsize));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto(status)  allocator size %zu\n",this,_allocator.objsize));
           }
         inline P2PMcastProto(size_t                     dispatch_id,
                              pami_dispatch_multicast_fn  dispatch,
@@ -115,7 +115,7 @@ namespace PAMI
           _cookie(cookie),
           _multicast_model(mcast_dev, status)
           {
-            TRACE_DEVICE((stderr,"<%p>P2PMcastProto.  allocator size %zd\n",this,_allocator.objsize));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto.  allocator size %zu\n",this,_allocator.objsize));
             // Construct a p2p protocol for dispatching
             pami_dispatch_callback_fn fn;
             fn.p2p = dispatch_p2p;
@@ -128,7 +128,7 @@ namespace PAMI
                                                     pami_dispatch_multicast_fn     dispatch,
                                                     void                         *cookie)
           {
-            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::register id %zd, fn %p, cookie %p\n",this,dispatch_id, dispatch, cookie));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::register id %zu, fn %p, cookie %p\n",this,dispatch_id, dispatch, cookie));
             pami_result_t status = PAMI_SUCCESS;
             _dispatch_id=dispatch_id;
             _dispatch_fn=dispatch;
@@ -166,7 +166,7 @@ namespace PAMI
         pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                         pami_multicast_t *mcast)
           {
-            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::multicast() id %zd, connection_id %d\n",this,mcast->dispatch,mcast->connection_id));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::multicast() id %zu, connection_id %d\n",this,mcast->dispatch,mcast->connection_id));
 
             // First, send (p2p) the header/msgdata to dispatch destinations.  They will start all-sided multicasts when dispatched.
             dispatch_hdr_t header;
@@ -194,7 +194,7 @@ namespace PAMI
                   sendi.dest = PAMI_ENDPOINT_INIT(_client, rankList[i],0);
 
                   // Dispatch over p2p
-                  TRACE_DEVICE((stderr,"<%p>P2PMcastProto::multicast() send dispatch task_id[%d] %zd\n",
+                  TRACE_DEVICE((stderr,"<%p>P2PMcastProto::multicast() send dispatch task_id[%d] %zu\n",
                                 this, i, rankList[i]));
                   ((T_P2P_PROTOCOL*)&_p2p_protocol)->immediate(&sendi);
                 }
@@ -278,7 +278,7 @@ namespace PAMI
                                  size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
                                  pami_recv_t         * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
           {
-            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch_p2p header size %zd, data size %zd\n",(unsigned)cookie, header_size, data_size));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch_p2p header size %zu, data size %zu\n",(unsigned)cookie, header_size, data_size));
             P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL,T_MULTICAST_DEVICE> *p = (P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL,T_MULTICAST_DEVICE> *)cookie;
             p->dispatch(context_hdl,
                         header,
@@ -298,7 +298,7 @@ namespace PAMI
                       size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
                       pami_recv_t         * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
           {
-            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch() header size %zd, data size %zd\n",this, header_size, data_size));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch() header size %zu, data size %zu\n",this, header_size, data_size));
 
             // Call user's dispatch to get receive pwq and cb_done.
             pami_multicast_t mcast;

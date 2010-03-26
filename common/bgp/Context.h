@@ -321,7 +321,7 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_t * parameters)
       {
         size_t id = (size_t)(parameters->send.dispatch);
-        TRACE_ERR((stderr, ">> send_impl('simple'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
+        TRACE_ERR((stderr, ">> send_impl('simple'), _dispatch[%zu] = %p\n", id, _dispatch[id]));
         PAMI_assert_debug (_dispatch[id] != NULL);
 
         PAMI::Protocol::Send::Send * send =
@@ -335,7 +335,7 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_immediate_t * parameters)
       {
         size_t id = (size_t)(parameters->dispatch);
-        TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
+        TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zu] = %p\n", id, _dispatch[id]));
         PAMI_assert_debug (_dispatch[id] != NULL);
 
         PAMI::Protocol::Send::Send * send =
@@ -510,7 +510,7 @@ namespace PAMI
       {
         pami_result_t result = PAMI_ERROR;
         size_t index = (size_t) id;
-        TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zd] = %p\n", index, _dispatch[index]));
+        TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zu] = %p\n", index, _dispatch[index]));
 
         if (_dispatch[index] == NULL)
           {
@@ -535,7 +535,7 @@ namespace PAMI
                 (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
               }
 
-            TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zd\n", result));
+            TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zu\n", result));
 
             if (result != PAMI_SUCCESS)
               {
@@ -544,7 +544,7 @@ namespace PAMI
               }
           }
 
-        TRACE_ERR((stderr, "<< dispatch_impl(), result = %zd, _dispatch[%zd] = %p\n", result, index, _dispatch[index]));
+        TRACE_ERR((stderr, "<< dispatch_impl(), result = %zu, _dispatch[%zu] = %p\n", result, index, _dispatch[index]));
         return result;
       }
 
@@ -561,7 +561,7 @@ namespace PAMI
                                 cookie,
                                 options.hint.send);
         }
-          //TRACE_ERR((stderr, "<< dispatch_new_impl(), result = %zd, _dispatch[%zd] = %p\n", result, index, _dispatch[index]));
+          //TRACE_ERR((stderr, "<< dispatch_new_impl(), result = %zu, _dispatch[%zu] = %p\n", result, index, _dispatch[index]));
           return result;
       }
 

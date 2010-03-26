@@ -53,20 +53,20 @@ int main(int argc, char ** argv)
   var = getenv("PATH");
   fprintf(stderr,"PATH %s\n",var? var: "NULL");
 
-  fprintf(stderr,"BGQ Personality A coord %zd\n",__global.personality.aCoord());
-  fprintf(stderr,"BGQ Personality B coord %zd\n",__global.personality.bCoord());
-  fprintf(stderr,"BGQ Personality C coord %zd\n",__global.personality.cCoord());
-  fprintf(stderr,"BGQ Personality D coord %zd\n",__global.personality.dCoord());
-  fprintf(stderr,"BGQ Personality E coord %zd\n",__global.personality.eCoord());
+  fprintf(stderr,"BGQ Personality A coord %zu\n",__global.personality.aCoord());
+  fprintf(stderr,"BGQ Personality B coord %zu\n",__global.personality.bCoord());
+  fprintf(stderr,"BGQ Personality C coord %zu\n",__global.personality.cCoord());
+  fprintf(stderr,"BGQ Personality D coord %zu\n",__global.personality.dCoord());
+  fprintf(stderr,"BGQ Personality E coord %zu\n",__global.personality.eCoord());
 
-  fprintf(stderr,"BGQ Personality A size %zd\n",__global.personality.aSize());
-  fprintf(stderr,"BGQ Personality B size %zd\n",__global.personality.bSize());
-  fprintf(stderr,"BGQ Personality C size %zd\n",__global.personality.cSize());
-  fprintf(stderr,"BGQ Personality D size %zd\n",__global.personality.dSize());
-  fprintf(stderr,"BGQ Personality E size %zd\n",__global.personality.eSize());
+  fprintf(stderr,"BGQ Personality A size %zu\n",__global.personality.aSize());
+  fprintf(stderr,"BGQ Personality B size %zu\n",__global.personality.bSize());
+  fprintf(stderr,"BGQ Personality C size %zu\n",__global.personality.cSize());
+  fprintf(stderr,"BGQ Personality D size %zu\n",__global.personality.dSize());
+  fprintf(stderr,"BGQ Personality E size %zu\n",__global.personality.eSize());
 
   size_t task_id = __global.mapping.task();
-  fprintf(stderr,"HELLO from task %zd\n",task_id);
+  fprintf(stderr,"HELLO from task %zu\n",task_id);
 
   char clientname[] = "PAMI";
   pami_client_t client;
@@ -82,19 +82,19 @@ int main(int argc, char ** argv)
   configuration.name = PAMI_TASK_ID;
   result = PAMI_Configuration_query(client, &configuration);
   size_t my_rank = configuration.value.intval;
-  fprintf(stderr, "PAMI_TASK_ID %zd\n",my_rank);
+  fprintf(stderr, "PAMI_TASK_ID %zu\n",my_rank);
 
   configuration.name = PAMI_NUM_TASKS;
   result = PAMI_Configuration_query(client, &configuration);
   size_t num_tasks = configuration.value.intval;
-  fprintf(stderr, "PAMI_NUM_TASKS %zd\n",num_tasks);
+  fprintf(stderr, "PAMI_NUM_TASKS %zu\n",num_tasks);
 
   configuration.name = PAMI_WTICK;
   result = PAMI_Configuration_query(client, &configuration);
   double tick = configuration.value.doubleval;
   fprintf(stderr, "PAMI_WTICK %f\n",tick);
 
-  fprintf(stderr,"GOODBYE from task %zd/%zd\n",task_id,my_rank);
+  fprintf(stderr,"GOODBYE from task %zu/%zu\n",task_id,my_rank);
 
   return 0;
 }

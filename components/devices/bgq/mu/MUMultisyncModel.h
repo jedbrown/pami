@@ -132,7 +132,7 @@ namespace PAMI
                                                           uint64_t payloadPa,
                                                           size_t bytes)
       {
-        TRACE((stderr, "<%p>:MUMultisyncModel::initializeDescriptor(%p, %p, %zd)\n", this, desc, (void *)payloadPa, bytes));
+        TRACE((stderr, "<%p>:MUMultisyncModel::initializeDescriptor(%p, %p, %zu)\n", this, desc, (void *)payloadPa, bytes));
         // Clone the model descriptor.
         _desc_model.clone (*desc);
         desc->setPayload (payloadPa, bytes);
@@ -263,7 +263,7 @@ namespace PAMI
       {
         metadata_t * m = (metadata_t*)metadata;
 
-        TRACE ((stderr, "<%p>:MUMultisyncModel::dispatch(), bytes = %zd, connection id %#X\n", arg, bytes, m->connection_id));
+        TRACE ((stderr, "<%p>:MUMultisyncModel::dispatch(), bytes = %zu, connection id %#X\n", arg, bytes, m->connection_id));
         DUMP_HEXDATA("MUMultisyncModel::dispatch()",(uint32_t*)metadata, 3);
 
         MUMultisyncModel * model = (MUMultisyncModel *) arg;

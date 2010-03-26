@@ -137,7 +137,7 @@ namespace PAMI
 
             // Set the source buffer address for the direct put.
             uint64_t pa = (uint64_t) local_memregion->getBasePhysicalAddress ();
-            TRACE((stderr, "MUDmaModel::postDmaPut_impl() .. before setPayload(%ld + %zd, %zd)\n", pa, local_offset, bytes));
+            TRACE((stderr, "MUDmaModel::postDmaPut_impl() .. before setPayload(%ld + %zu, %zu)\n", pa, local_offset, bytes));
             desc->setPayload (pa + local_offset, bytes);
 
             // Set the destination buffer address for the direct put.

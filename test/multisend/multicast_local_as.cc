@@ -160,10 +160,10 @@ int main(int argc, char ** argv)
     new (&src_participants) PAMI::Topology(lRoot); // local root
     new (&dst_participants) PAMI::Topology(lRankList+1, (lSize-1)); // everyone except root in dst_participants
 
-    DBG_FPRINTF((stderr,"lRoot %d, lSize %zd\n",lRoot, lSize));
+    DBG_FPRINTF((stderr,"lRoot %d, lSize %zu\n",lRoot, lSize));
     for(size_t j=0;j<lSize;++j)
     {
-      DBG_FPRINTF((stderr,"lRankList[%zd] = %d\n",j, lRankList[j]));
+      DBG_FPRINTF((stderr,"lRankList[%zu] = %d\n",j, lRankList[j]));
     }
 
     if(lRoot == task_id)
@@ -221,10 +221,10 @@ int main(int argc, char ** argv)
     new (&src_participants) PAMI::Topology(lRoot); // local root
     new (&dst_participants) PAMI::Topology(lRankList+1, (lSize-1)); // everyone except root in dst_participants
 
-    DBG_FPRINTF((stderr,"lRoot %d, lSize %zd\n",lRoot, lSize));
+    DBG_FPRINTF((stderr,"lRoot %d, lSize %zu\n",lRoot, lSize));
     for(size_t j=0;j<lSize;++j)
     {
-      DBG_FPRINTF((stderr,"lRankList[%zd] = %d\n",j, lRankList[j]));
+      DBG_FPRINTF((stderr,"lRankList[%zu] = %d\n",j, lRankList[j]));
     }
 
     if(lRoot == task_id)

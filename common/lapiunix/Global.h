@@ -45,7 +45,7 @@ namespace PAMI
                 if (mapping.size() == max - min + 1) {
                         new (&topology_global) PAMI::Topology(min, max);
                 } else {
-                        PAMI_abortf("failed to build global-world topology %zd:: %zd..%zd", mapping.size(), min, max);
+                        PAMI_abortf("failed to build global-world topology %zu:: %zu..%zu", mapping.size(), min, max);
                 }
                 topology_global.subTopologyLocalToMe(&topology_local);
 #endif

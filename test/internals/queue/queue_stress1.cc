@@ -145,7 +145,7 @@ void *dequeuer(void *v) {
 		}
 		t += PAMI_Wtimebase() - t0;
 #ifdef DEBUG
-		if (++count == 1000000) fprintf(stderr, "stuck at %d {%p %p %zd}\n", x, q->head, q->tail, q->count);
+		if (++count == 1000000) fprintf(stderr, "stuck at %d {%p %p %zu}\n", x, q->head, q->tail, q->count);
 #endif /* DEBUG */
 	}
 	double d = t;
@@ -241,7 +241,7 @@ int main(int argc, char **argv) {
 	for (x = savethread; x < pthreads; ++x) {
 		pthread_join(thread[x], NULL);
 	}
-	fprintf(stderr, "main done. queue = { %p %p %zd }\n", queue.head(), queue.tail(), queue.size());
+	fprintf(stderr, "main done. queue = { %p %p %zu }\n", queue.head(), queue.tail(), queue.size());
 	if (queue.head() || queue.tail() || queue.size()) {
 		exit(1);
 	}

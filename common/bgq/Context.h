@@ -361,7 +361,7 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_t * parameters)
       {
         size_t id = (size_t)(parameters->send.dispatch);
-        TRACE_ERR((stderr, ">> send_impl('simple'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
+        TRACE_ERR((stderr, ">> send_impl('simple'), _dispatch[%zu] = %p\n", id, _dispatch[id]));
         PAMI_assert_debug (_dispatch[id] != NULL);
 
         PAMI::Protocol::Send::Send * send =
@@ -375,7 +375,7 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_immediate_t * parameters)
       {
         size_t id = (size_t)(parameters->dispatch);
-        TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
+        TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zu] = %p\n", id, _dispatch[id]));
         PAMI_assert_debug (_dispatch[id] != NULL);
 
         PAMI::Protocol::Send::Send * send =
@@ -669,12 +669,12 @@ namespace PAMI
           }
 #ifdef ENABLE_MU_DEVICE
 #ifdef MU_COLL_DEVICE
-        TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zd\n", id));
+        TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zu\n", id));
 
         if (_global_mu_ni == NULL) // lazy ctor
           {
             MUGlobalNI* temp = (MUGlobalNI*) _protocol.allocateObject ();
-            TRACE_ERR((stderr, "new MUGlobalNI(%p, %zd, %p, %zd) = %p, size %zd\n",
+            TRACE_ERR((stderr, "new MUGlobalNI(%p, %zu, %p, %zu) = %p, size %zu\n",
                        &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
             _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
           }
@@ -683,8 +683,8 @@ namespace PAMI
           {
             _dispatch[id] = (void *)_global_mu_ni; // Only have one multicast right now
             return _global_mu_ni->setDispatch(fn, cookie);
-            TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zd\n", id));
-            PAMI_assertf(_protocol.objsize >= sizeof(PAMI::Device::MU::MUMulticastModel), "%zd >= %zd\n", _protocol.objsize, sizeof(PAMI::Device::MU::MUMulticastModel));
+            TRACE_ERR((stderr, ">> dispatch_new_impl multicast %zu\n", id));
+            PAMI_assertf(_protocol.objsize >= sizeof(PAMI::Device::MU::MUMulticastModel), "%zu >= %zu\n", _protocol.objsize, sizeof(PAMI::Device::MU::MUMulticastModel));
             // Allocate memory for the protocol object.
             _dispatch[id] = (void *) _protocol.allocateObject ();
 
@@ -707,7 +707,7 @@ namespace PAMI
       inline pami_result_t multicast(pami_multicast_t *mcastinfo)
       {
 #if defined(ENABLE_MU_DEVICE) && defined (MU_COLL_DEVICE)
-        TRACE_ERR((stderr, ">> multicast_impl multicast %zd, %p\n", mcastinfo->dispatch, mcastinfo));
+        TRACE_ERR((stderr, ">> multicast_impl multicast %zu, %p\n", mcastinfo->dispatch, mcastinfo));
         CCMI::Interfaces::NativeInterface * ni = (CCMI::Interfaces::NativeInterface *) _dispatch[mcastinfo->dispatch];
         return ni->multicast(mcastinfo); // this version of ni allocates/frees our request storage for us.
 #else
@@ -728,7 +728,7 @@ namespace PAMI
         if (_global_mu_ni == NULL) // lazy ctor
           {
             MUGlobalNI* temp = (MUGlobalNI*) _protocol.allocateObject ();
-            TRACE_ERR((stderr, "new MUGlobalNI(%p, %zd, %p, %zd) = %p, size %zd\n",
+            TRACE_ERR((stderr, "new MUGlobalNI(%p, %zu, %p, %zu) = %p, size %zu\n",
                        &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
             _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
           }
@@ -747,7 +747,7 @@ namespace PAMI
         if (_global_mu_ni == NULL) // lazy ctor
           {
             MUGlobalNI* temp = (MUGlobalNI*) _protocol.allocateObject ();
-            TRACE_ERR((stderr, "new MUGlobalNI(%p, %zd, %p, %zd) = %p, size %zd\n",
+            TRACE_ERR((stderr, "new MUGlobalNI(%p, %zu, %p, %zu) = %p, size %zu\n",
                        &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
             _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _clientid, _context, _contextid);
           }

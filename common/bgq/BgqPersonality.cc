@@ -148,7 +148,7 @@ PAMI::BgqPersonality::BgqPersonality ()
   // Set the id of this thread [0..tSize]
   _tCoord = _hwthread / (maxThreads() / _hwthreads);
 
-  TRACE_MAMBO((stderr, "BGQPersonality() tid %zd, p %zd, t %zd, core %zd, thread %zd, pSize %zd, tSize %zd\n", tid(),  pCoord(),  tCoord(),  core(), thread(), pSize(), tSize()));
+  TRACE_MAMBO((stderr, "BGQPersonality() tid %zu, p %zu, t %zu, core %zu, thread %zu, pSize %zu, tSize %zu\n", tid(),  pCoord(),  tCoord(),  core(), thread(), pSize(), tSize()));
 
   _torusA = (bool) (ND_ENABLE_TORUS_DIM_A & Network_Config.NetFlags);
   _torusB = (bool) (ND_ENABLE_TORUS_DIM_B & Network_Config.NetFlags);

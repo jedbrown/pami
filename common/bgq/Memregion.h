@@ -37,7 +37,7 @@ namespace PAMI
         PAMI_assert ( rc == 0 );
 
         _offset = (uint64_t)base - (uint64_t)_memregion.BaseVa;
-        fprintf(stderr, "DmaMemregionBgqCnk::createDmaMemregion_impl() .. base = %p, _memregion.BaseVa = %p, _offset = %zd\n", base, _memregion.BaseVa, _offset);
+        fprintf(stderr, "DmaMemregionBgqCnk::createDmaMemregion_impl() .. base = %p, _memregion.BaseVa = %p, _offset = %zu\n", base, _memregion.BaseVa, _offset);
 
         *bytes_out = bytes_in;
 

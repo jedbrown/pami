@@ -47,7 +47,7 @@ namespace PAMI
         ///
         inline MemoryManager (void * addr, size_t bytes)
         {
-          TRACE_ERR((stderr, "%s(%p, %zd), this = %p\n", __PRETTY_FUNCTION__,addr,bytes, this));
+          TRACE_ERR((stderr, "%s(%p, %zu), this = %p\n", __PRETTY_FUNCTION__,addr,bytes, this));
           init (addr, bytes);
         };
 
@@ -59,7 +59,7 @@ namespace PAMI
         ///
         inline void init (void * addr, size_t bytes)
         {
-          TRACE_ERR((stderr, "%s(%p, %zd), this = %p\n", __PRETTY_FUNCTION__,addr,bytes, this));
+          TRACE_ERR((stderr, "%s(%p, %zu), this = %p\n", __PRETTY_FUNCTION__,addr,bytes, this));
           _base   = (uint8_t *) addr;
           _size   = bytes;
           _offset = 0;
@@ -94,7 +94,7 @@ namespace PAMI
         ///
         inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes)
         {
-          TRACE_ERR((stderr, "%s(%p, %zd, %zd), _offset = %zu, this = %p\n", __PRETTY_FUNCTION__,memptr,alignment,bytes,_offset, this));
+          TRACE_ERR((stderr, "%s(%p, %zu, %zu), _offset = %zu, this = %p\n", __PRETTY_FUNCTION__,memptr,alignment,bytes,_offset, this));
           PAMI_assert(_enabled==true);
           PAMI_assert_debug(_base != NULL);
           PAMI_assert((alignment & (alignment - 1)) == 0);
@@ -114,7 +114,7 @@ namespace PAMI
             _offset += bytes;
             return PAMI_SUCCESS;
           }
-          TRACE_ERR((stderr, "%s PAMI_ERROR !((%zd + %zd + %zd) <= %zd)\n",__PRETTY_FUNCTION__,_offset,pad,bytes,_size));
+          TRACE_ERR((stderr, "%s PAMI_ERROR !((%zu + %zu + %zu) <= %zu)\n",__PRETTY_FUNCTION__,_offset,pad,bytes,_size));
           return PAMI_ERROR;
         };
 
@@ -127,7 +127,7 @@ namespace PAMI
         ///
         inline size_t available (size_t alignment = 1)
         {
-          TRACE_ERR((stderr, "%s(%zd) _size %zd, _offset %zu, this = %p\n", __PRETTY_FUNCTION__,alignment, _size, _offset, this));
+          TRACE_ERR((stderr, "%s(%zu) _size %zu, _offset %zu, this = %p\n", __PRETTY_FUNCTION__,alignment, _size, _offset, this));
           PAMI_assert(_enabled==true);
           PAMI_assert_debug((alignment & (alignment - 1)) == 0);
 
@@ -149,7 +149,7 @@ namespace PAMI
         ///
         inline size_t size ()
         {
-          TRACE_ERR((stderr, "%s %zd\n", __PRETTY_FUNCTION__,_size));
+          TRACE_ERR((stderr, "%s %zu\n", __PRETTY_FUNCTION__,_size));
           PAMI_assert_debug(_base != NULL);
           return _size;
         };

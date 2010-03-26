@@ -287,7 +287,7 @@ inline void CCMI::Executor::OldBarrier<T_Mcast>::sendNext()
   unsigned *dstranks = _cache.getDstRanks(_phase);
   unsigned *subtasks = _cache.getDstSubtasks(_phase);
 
-  TRACE_ERR((stderr,"<%X>Executor::OldBarrier::sendNext _phase %d, ndest %zd, _destrank %zd, _connid %d, _clientdata %X\n",
+  TRACE_ERR((stderr,"<%X>Executor::OldBarrier::sendNext _phase %d, ndest %zu, _destrank %zu, _connid %d, _clientdata %X\n",
              (int) this,_phase, ndest, dstranks[0], _connid, (int)_clientdata));
 
   ///We can now send any number of messages in barrier

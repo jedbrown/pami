@@ -220,7 +220,7 @@ public:
                         size_t x;
                         Device *gds;
                         int rc = posix_memalign((void **)&gds, 16, sizeof(*gds) * num_ctx);
-                        PAMI_assertf(rc == 0, "posix_memalign failed for generics[%zd], errno=%d\n", num_ctx, errno);
+                        PAMI_assertf(rc == 0, "posix_memalign failed for generics[%zu], errno=%d\n", num_ctx, errno);
                         for (x = 0; x < num_ctx; ++x) {
                                 new (&gds[x]) PAMI::Device::Generic::Device(client, x, num_ctx);
                         }

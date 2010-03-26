@@ -54,7 +54,7 @@ unsigned long long T_RECV_DONE, T_DISPATCH, T_SEND_DONE_LOCAL, T_SEND_DONE_REMOT
 /* static void decrement (void * clientdata, PAMI_Error_t * err) */
 /* { */
 /*   unsigned* _clientdata = (unsigned *)clientdata; */
-/*   TRACE_ERR((stderr, "(%zd) decrement() clientdata = %p, %d => %d\n", _my_rank, _clientdata, *_clientdata, *_clientdata-1)); */
+/*   TRACE_ERR((stderr, "(%zu) decrement() clientdata = %p, %d => %d\n", _my_rank, _clientdata, *_clientdata, *_clientdata-1)); */
 /*   --*_clientdata; */
 /*   if (*_clientdata < 0) exit(-1); */
 /* } */
@@ -70,7 +70,7 @@ unsigned long long T_RECV_DONE, T_DISPATCH, T_SEND_DONE_LOCAL, T_SEND_DONE_REMOT
 /* { */
 /*   unsigned* _clientdata = (unsigned *)clientdata; */
 /*   if (*_clientdata <= 0) abort(); */
-/*   TRACE_ERR((stderr, "(%zd) cb_recv_new_short() clientdata = %p, %d => %d\n", _my_rank, _clientdata, *_clientdata, *_clientdata-1)); */
+/*   TRACE_ERR((stderr, "(%zu) cb_recv_new_short() clientdata = %p, %d => %d\n", _my_rank, _clientdata, *_clientdata, *_clientdata-1)); */
 /*   memcpy(_rbuf, src, bytes); */
 /*   --*_clientdata; */
 /* } */
@@ -86,7 +86,7 @@ unsigned long long T_RECV_DONE, T_DISPATCH, T_SEND_DONE_LOCAL, T_SEND_DONE_REMOT
 /*                                      char                ** rcvbuf, */
 /*                                      PAMI_Callback_t      * cb_info) */
 /* { */
-/*   TRACE_ERR((stderr, "(%zd) cb_recv_new() clientdata = %p, sndlen = %zd\n", _my_rank, clientdata, sndlen)); */
+/*   TRACE_ERR((stderr, "(%zu) cb_recv_new() clientdata = %p, sndlen = %zu\n", _my_rank, clientdata, sndlen)); */
 /*   * rcvbuf = (char *) _rbuf; */
 /*   * rcvlen = sndlen>0?sndlen:1; */
 /*   cb_info->function   = decrement; */
@@ -101,7 +101,7 @@ static void recv_done (pami_context_t   context,
 {
   T_RECV_DONE = PAMI_Wtimebase();
   volatile size_t * active = (volatile size_t *) cookie;
-  TRACE_ERR((stderr, "Called recv_done function.  cookie=%p, active: %zd -> %zd\n", cookie, *active, *active-1));
+  TRACE_ERR((stderr, "Called recv_done function.  cookie=%p, active: %zu -> %zu\n", cookie, *active, *active-1));
   (*active)--;
 }
 
@@ -115,7 +115,7 @@ static void test_dispatch (
     pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   T_DISPATCH = PAMI_Wtimebase();
-  TRACE_ERR((stderr, "Called dispatch function.  cookie = %p, active: %zd, header_addr = %p, pipe_addr = %p\n", cookie,  *((volatile size_t *) cookie), header_addr, pipe_addr));
+  TRACE_ERR((stderr, "Called dispatch function.  cookie = %p, active: %zu, header_addr = %p, pipe_addr = %p\n", cookie,  *((volatile size_t *) cookie), header_addr, pipe_addr));
 
   recv->local_fn = recv_done;
   recv->cookie   = cookie;
@@ -133,7 +133,7 @@ static void send_done_local (pami_context_t   context,
 {
   T_SEND_DONE_LOCAL = PAMI_Wtimebase();
   volatile size_t * active = (volatile size_t *) cookie;
-  TRACE_ERR((stderr, "Called send_done_local function.  cookie=%p, active: %zd -> %zd\n", cookie, *active, *active-1));
+  TRACE_ERR((stderr, "Called send_done_local function.  cookie=%p, active: %zu -> %zu\n", cookie, *active, *active-1));
   (*active)--;
 }
 
@@ -143,7 +143,7 @@ static void send_done_remote (pami_context_t   context,
 {
   T_SEND_DONE_REMOTE = PAMI_Wtimebase();
   volatile size_t * active = (volatile size_t *) cookie;
-  TRACE_ERR((stderr, "Called send_done_remote function.  cookie=%p, active: %zd -> %zd\n", cookie, *active, *active-1));
+  TRACE_ERR((stderr, "Called send_done_remote function.  cookie=%p, active: %zu -> %zu\n", cookie, *active, *active-1));
   (*active)--;
 }
 
@@ -167,7 +167,7 @@ unsigned long long test (size_t sndlen, size_t myrank)
   for (i = 0; i <= ITERATIONS; i++)
   {
     parameters.send.dest = PAMI_Client_endpoint (_g_client, myrank, 0);
-    TRACE_ERR((stderr, "(%zd)\n(%zd) Starting Iteration %d of size %zd\n", _my_rank, _my_rank, i, sndlen));
+    TRACE_ERR((stderr, "(%zu)\n(%zu) Starting Iteration %d of size %zu\n", _my_rank, _my_rank, i, sndlen));
     if (i == 1)
       t1 = PAMI_Wtimebase();
 
@@ -223,7 +223,7 @@ int main ()
     return 1;
   }
   size_t task_id = configuration.value.intval;
-  fprintf (stderr, "My task id = %zd\n", task_id);
+  fprintf (stderr, "My task id = %zu\n", task_id);
   _my_rank = task_id;
 
   configuration.name = PAMI_NUM_TASKS;
@@ -234,7 +234,7 @@ int main ()
     return 1;
   }
   size_t num_tasks = configuration.value.intval;
-  printf("(%zd) after Initializing client and context.  num_tasks=%zu\n", task_id, num_tasks);
+  printf("(%zu) after Initializing client and context.  num_tasks=%zu\n", task_id, num_tasks);
 
   pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
@@ -290,9 +290,9 @@ int main ()
 /*       /\*if (j == DCMF_SHMEM_NETWORK) continue;*\/ */
 
 /*       p.network = (PAMI_Network) j; */
-/*       TRACE_ERR((stderr, "(%zd) before DCMF_Send_register(), network = %d, protocol = %d\n", DCMF_Messager_rank (), j, i)); */
+/*       TRACE_ERR((stderr, "(%zu) before DCMF_Send_register(), network = %d, protocol = %d\n", DCMF_Messager_rank (), j, i)); */
 /*       PAMI_Result result = DCMF_Send_register (&_protocol[_protocol_count], &p); */
-/*       TRACE_ERR((stderr, "(%zd) after DCMF_Send_register(), network = %d, protocol = %d, result = %d\n", DCMF_Messager_rank (), j, i, result)); */
+/*       TRACE_ERR((stderr, "(%zu) after DCMF_Send_register(), network = %d, protocol = %d, result = %d\n", DCMF_Messager_rank (), j, i, result)); */
 
 /*       if (result == PAMI_SUCCESS) */
 /*       { */
@@ -363,7 +363,7 @@ int main ()
         unsigned j;
         for (j=0; j<sndlen; j++)
         {
-          if (_sbuf[j] != _rbuf[j]) printf("Data Miscompare at size %zd, _sbuf[%u] = 0x%02x, _rbuf = 0x%02x\n",sndlen, j, _sbuf[j], _rbuf[j]);
+          if (_sbuf[j] != _rbuf[j]) printf("Data Miscompare at size %zu, _sbuf[%u] = 0x%02x, _rbuf = 0x%02x\n",sndlen, j, _sbuf[j], _rbuf[j]);
         }
 
         TRACE_ERR(("sndlen=%u, START=%llu, SEND_DONE_LOCAL=%llu, DISPATCH=%llu, RECV_DONE=%llu, SEND_DONE_REMOTE=%llu, ADVANCE_DONE=%llu\n",

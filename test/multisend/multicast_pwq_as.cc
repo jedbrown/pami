@@ -119,10 +119,10 @@ int main(int argc, char ** argv)
   pami_task_t *gRankList=NULL; topology_global.rankList(&gRankList);
   size_t  gSize    = topology_global.size();
 
-  DBG_FPRINTF((stderr,"gRoot %d, gSize %zd\n",gRoot, gSize));
+  DBG_FPRINTF((stderr,"gRoot %d, gSize %zu\n",gRoot, gSize));
   for(size_t j=0;j<gSize;++j)
   {
-    DBG_FPRINTF((stderr,"gRankList[%zd] = %d\n",j, gRankList[j]));
+    DBG_FPRINTF((stderr,"gRankList[%zu] = %d\n",j, gRankList[j]));
   }
 
   pami_multicast_t mcast;
@@ -154,10 +154,10 @@ int main(int argc, char ** argv)
 
     mcast.src_participants = (pami_topology_t *)new PAMI::Topology(gRoot); // global root (mem leak)
     mcast.dst_participants = (pami_topology_t *)new PAMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants (mem leak)
-    DBG_FPRINTF((stderr,"gRoot %d, gSize %zd\n",gRoot, gSize));
+    DBG_FPRINTF((stderr,"gRoot %d, gSize %zu\n",gRoot, gSize));
     for(size_t j=0;j<gSize;++j)
     {
-      DBG_FPRINTF((stderr,"gRankList[%zd] = %d\n",j, gRankList[j]));
+      DBG_FPRINTF((stderr,"gRankList[%zu] = %d\n",j, gRankList[j]));
     }
 
     mcast.connection_id = 1;

@@ -74,7 +74,7 @@ namespace PAMI
                 if (mapping.size() == max - min + 1) {
                         new (&topology_global) PAMI::Topology((pami_task_t)min, (pami_task_t)max);
                 } else {
-                        PAMI_abortf("failed to build global-world topology %zd:: %zd..%zd", mapping.size(), min, max);
+                        PAMI_abortf("failed to build global-world topology %zu:: %zu..%zu", mapping.size(), min, max);
                 }
                 new (&topology_local) PAMI::Topology((pami_task_t *)ranks, num);
                 // could try to optimize list into range, etc...

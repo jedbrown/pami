@@ -162,7 +162,7 @@ namespace PAMI
                                                              uint64_t payloadPa,
                                                              size_t bytes)
       {
-        TRACE((stderr, "<%p>:MUMulticombineModel::initializeDescriptor(%p, %p, %zd)\n", this, desc, (void *)payloadPa, bytes));
+        TRACE((stderr, "<%p>:MUMulticombineModel::initializeDescriptor(%p, %p, %zu)\n", this, desc, (void *)payloadPa, bytes));
 
         // opcode or datatype changed so we need to reset our model.
         if (_receive_state->mu_reset)
@@ -228,7 +228,7 @@ namespace PAMI
           _receive_state->mu_word_length = 4;
         }
 
-        TRACE((stderr, "<%p>:MUMulticombineModel::postMulticombine_impl() connection_id %#X, data length %zd/%p/%p, results length %zd/%p/%p\n",
+        TRACE((stderr, "<%p>:MUMulticombineModel::postMulticombine_impl() connection_id %#X, data length %zu/%p/%p, results length %zu/%p/%p\n",
                this, multicombine->connection_id,
                length, pwq, payload,
                _receive_state->expected_length, _receive_state->rcvpwq, _receive_state->buffer));
@@ -273,7 +273,7 @@ namespace PAMI
           uint8_t * data = (uint8_t *) payloadVa;
 
           // Now the payload
-          TRACE((stderr, "<%p>:MUMulticombineModel::postShortPayload()..payload memcpy(%p,%p,%zd)\n", this, data, payload, payload_length));
+          TRACE((stderr, "<%p>:MUMulticombineModel::postShortPayload()..payload memcpy(%p,%p,%zu)\n", this, data, payload, payload_length));
 
           if (payload_length) memcpy (data, payload, payload_length);
 
@@ -446,7 +446,7 @@ namespace PAMI
 
         if (nleft)
         {
-          TRACE((stderr, "<%p>:MUMulticombineModel::processData memcpy(%p,%p,%zd)\n", this, receive_state->buffer, payload, nleft));
+          TRACE((stderr, "<%p>:MUMulticombineModel::processData memcpy(%p,%p,%zu)\n", this, receive_state->buffer, payload, nleft));
           memcpy (receive_state->buffer, payload, nleft);
           //_device.read ((uint8_t *)(state->info.data.simple.addr) + nbyte, nleft, cookie);
 
@@ -496,7 +496,7 @@ namespace PAMI
                                          void   * cookie)
       {
         metadata_t * m = (metadata_t*)metadata;
-        TRACE ((stderr, "<%p>:MUMulticombineModel::dispatch(), bytes = %zd/%d, connection id %#X\n", arg, bytes, m->sndlen, m->connection_id));
+        TRACE ((stderr, "<%p>:MUMulticombineModel::dispatch(), bytes = %zu/%d, connection id %#X\n", arg, bytes, m->sndlen, m->connection_id));
 
         MUMulticombineModel * model = (MUMulticombineModel *) arg;
         model->processData(m, (uint8_t*)payload, bytes);

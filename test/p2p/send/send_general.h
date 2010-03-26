@@ -252,7 +252,7 @@ void recv(pami_context_t context, size_t dispatch_id, size_t bytes, bool verify)
         int x;
         if (verify && (x = check_buf(rbuf, bytes, curr_tag))) {
                 if (++recv_err < 5) {
-                        printf("%zd: recv corrupted (%zd bytes) @%d [%08x : %08x]\n", DCMF_Messager_rank(), bytes, x, curr_tag, *((unsigned *)&rbuf[x]));
+                        printf("%zu: recv corrupted (%zu bytes) @%d [%08x : %08x]\n", DCMF_Messager_rank(), bytes, x, curr_tag, *((unsigned *)&rbuf[x]));
                 }
         }
 }
@@ -311,14 +311,14 @@ int test(pami_context_t context, size_t dispatch_id, pami_task_t rank,
                 }
                 if (verify && check_buf(sbuf, sndlen, curr_tag)) {
                         if (++send_err < 5) {
-                                printf("%zd: send sbuf corrupted (%zd bytes)\n", rank, sndlen);
+                                printf("%zu: send sbuf corrupted (%zu bytes)\n", rank, sndlen);
                         }
                 }
         }
 
         barrier();
         if (recv_err || send_err) {
-                fprintf(stderr, "%zd saw %d recv buffer errors and %d send buffer errors\n",
+                fprintf(stderr, "%zu saw %d recv buffer errors and %d send buffer errors\n",
                         rank, recv_err, send_err);
         }
         return 0;

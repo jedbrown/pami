@@ -37,7 +37,7 @@ void dispatch_multicast_fn(const pami_quad_t     *msginfo,
                            pami_pipeworkqueue_t **rcvpwq,
                            pami_callback_t       *cb_done)
 {
-  DBG_FPRINTF((stderr,"%s:%s msgcount %d, connection_id %d, root %zd, sndlen %zd, cookie %s\n",
+  DBG_FPRINTF((stderr,"%s:%s msgcount %d, connection_id %d, root %zu, sndlen %zu, cookie %s\n",
                __FILE__,__PRETTY_FUNCTION__,msgcount, connection_id, root, sndlen, (char*) clientdata));
   PAMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   PAMI_assertf(sndlen <= TEST_BUF_SIZE,"sndlen %zu\n",sndlen);
@@ -61,7 +61,7 @@ void dispatch_multicast_fn(const pami_quad_t     *msginfo,
   {
     PAMI::PipeWorkQueue * pwq;
     pwq = _buffer.dstPwq();
-    DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %zd, %zd done out of %zd\n",__FILE__,__PRETTY_FUNCTION__,
+    DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %zu, %zu done out of %zu\n",__FILE__,__PRETTY_FUNCTION__,
                  pwq,pwq->bytesAvailableToProduce(),pwq->getBytesProduced(),sndlen));
 
     *rcvlen = sndlen;

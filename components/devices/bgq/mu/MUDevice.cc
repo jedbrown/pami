@@ -139,7 +139,7 @@ bool PAMI::Device::MU::MUDevice::registerPacketHandler (size_t                  
                                                        void                      * arg,
                                                        uint16_t                  & id)
 {
-  TRACE((stderr, ">> MUDevice::registerPacketHandler(%zd, %p, %p), _dispatch = %p\n", dispatch, function, arg, _dispatch));
+  TRACE((stderr, ">> MUDevice::registerPacketHandler(%zu, %p, %p), _dispatch = %p\n", dispatch, function, arg, _dispatch));
 
   // There are DISPATCH_SET_COUNT sets of dispatch functions.
   // There are DISPATCH_SET_SIZE  dispatch functions in each dispatch set.
@@ -156,13 +156,13 @@ bool PAMI::Device::MU::MUDevice::registerPacketHandler (size_t                  
           _dispatch[id].f = function;
           _dispatch[id].p = arg;
 
-          TRACE((stderr, "<< MUDevice::registerPacketHandler(%zd, %p, %p, %d/%X), i = %d\n", dispatch, function, arg, id, id, i));
+          TRACE((stderr, "<< MUDevice::registerPacketHandler(%zu, %p, %p, %d/%X), i = %d\n", dispatch, function, arg, id, id, i));
           return true;
         }
     }
 
   // release the lock
-  TRACE((stderr, "<< MUDevice::registerPacketHandler(%zd, %p, %p, %d/%X), result = false\n", dispatch, function, arg, id, id));
+  TRACE((stderr, "<< MUDevice::registerPacketHandler(%zu, %p, %p, %d/%X), result = false\n", dispatch, function, arg, id, id));
 
   return false;
 };
@@ -175,14 +175,14 @@ int PAMI::Device::MU::MUDevice::noop (void   * metadata,
                                      void   * recv_func_parm,
                                      void   * cookie)
 {
-  fprintf (stderr, "Error. Dispatch to unregistered id (%zd).\n", (size_t) recv_func_parm);
+  fprintf (stderr, "Error. Dispatch to unregistered id (%zu).\n", (size_t) recv_func_parm);
   PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
   return 0;
 };
 
 void PAMI::Device::MU::dumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints)
 {
-  fprintf(stderr, "dumphex:%s:%p:%zd:\n\n", pstring, &buffer, n_ints);
+  fprintf(stderr, "dumphex:%s:%p:%zu:\n\n", pstring, &buffer, n_ints);
   unsigned nChunks = n_ints / 8;
 
   if (!buffer || !n_ints) return;

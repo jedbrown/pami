@@ -437,11 +437,11 @@ namespace PAMI
         /// \return Dimension size
         inline pami_result_t nodeTasks_impl (size_t global, size_t & tasks)
         {
-          TRACE_ERR((stderr,"Mapping::nodeTasks_impl(%zd) >>\n", global));
+          TRACE_ERR((stderr,"Mapping::nodeTasks_impl(%zu) >>\n", global));
 /// \todo #warning implement this!
 // If this were urgent, it would have been done in the 75 business
 // days since the warning was added.
-          TRACE_ERR((stderr,"Mapping::nodeTasks_impl(%zd) <<\n", global));
+          TRACE_ERR((stderr,"Mapping::nodeTasks_impl(%zu) <<\n", global));
           return PAMI_UNIMPL;
         }
 
@@ -462,41 +462,41 @@ namespace PAMI
           addr = _nodeaddr;
           //global = _nodeaddr.global;
           //local  = _nodeaddr.local;
-          TRACE_ERR((stderr,"Mapping::nodeAddr_impl(%zd, %zd) <<\n", addr.global, addr.local));
+          TRACE_ERR((stderr,"Mapping::nodeAddr_impl(%zu, %zu) <<\n", addr.global, addr.local));
         }
 
         /// \brief Get the node address for a specific task
         inline pami_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & addr)
         {
-          TRACE_ERR((stderr,"Mapping::task2node_impl(%zd) >>\n", task));
-          //fprintf(stderr, "Mapping::task2node_impl() .. _mapcache[%zd] = 0x%08x\n", task, _mapcache[task]);
-          //fprintf(stderr, "Mapping::task2node_impl() .. _mapcache[%zd] = 0x%08x &_mapcache[%zd] = %p\n", task, _mapcache[task], task, &_mapcache[task]);
+          TRACE_ERR((stderr,"Mapping::task2node_impl(%zu) >>\n", task));
+          //fprintf(stderr, "Mapping::task2node_impl() .. _mapcache[%zu] = 0x%08x\n", task, _mapcache[task]);
+          //fprintf(stderr, "Mapping::task2node_impl() .. _mapcache[%zu] = 0x%08x &_mapcache[%zu] = %p\n", task, _mapcache[task], task, &_mapcache[task]);
           size_t coords[PAMI_BGP_NETWORK_DIMS + PAMI_BGP_LOCAL_DIMS];
           task2torus_impl(task, coords);
           addr.global = ESTIMATED_TASK_GLOBAL(coords[0],coords[1],coords[2],coords[3],xSize(),ySize(),zSize(),tSize());
           addr.local = ESTIMATED_TASK_LOCAL(coords[0],coords[1],coords[2],coords[3],xSize(),ySize(),zSize(),tSize());
-          TRACE_ERR((stderr,"Mapping::task2node_impl(%zd, %zd, %zd) <<\n", task, addr.global, addr.local));
+          TRACE_ERR((stderr,"Mapping::task2node_impl(%zu, %zu, %zu) <<\n", task, addr.global, addr.local));
           return PAMI_SUCCESS;
         }
 
         /// \brief Get the task associated with a specific node address
         inline pami_result_t node2task_impl (Interface::Mapping::nodeaddr_t addr, size_t & task)
         {
-          TRACE_ERR((stderr,"Mapping::node2task_impl(%zd, %zd) >>\n", addr.global, addr.local));
+          TRACE_ERR((stderr,"Mapping::node2task_impl(%zu, %zu) >>\n", addr.global, addr.local));
           size_t estimated_task = ESTIMATED_TASK_NODE(addr.global,addr.local,xSize(),ySize(),zSize(),tSize());
           task = _rankcache [estimated_task];
-          TRACE_ERR((stderr,"Mapping::node2task_impl(%zd, %zd, %zd) <<\n", addr.global, addr.local, task));
+          TRACE_ERR((stderr,"Mapping::node2task_impl(%zu, %zu, %zu) <<\n", addr.global, addr.local, task));
           return PAMI_SUCCESS;
         }
 
         /// \brief Get the peer identifier associated with a specific node address
         inline pami_result_t node2peer_impl (Interface::Mapping::nodeaddr_t & addr, size_t & peer)
         {
-          TRACE_ERR((stderr,"Mapping::node2peer_impl(%zd, %zd) >>\n", addr.global, addr.local));
+          TRACE_ERR((stderr,"Mapping::node2peer_impl(%zu, %zu) >>\n", addr.global, addr.local));
 
           peer = _peercache[addr.local];
 
-          TRACE_ERR((stderr,"Mapping::node2peer_impl(%zd, %zd, %zd) <<\n", addr.global, addr.local, peer));
+          TRACE_ERR((stderr,"Mapping::node2peer_impl(%zu, %zu, %zu) <<\n", addr.global, addr.local, peer));
           return PAMI_SUCCESS;
         }
     };	// class Mapping
@@ -532,7 +532,7 @@ pami_result_t PAMI::Mapping::init(PAMI::BgpMapCache &mapcache,
   {
     if (network2task(&c, &task, &dummy) == PAMI_SUCCESS)
     {
-          //fprintf (stderr, "BgpMapping::init_impl .. _peercache[%zd] = %zd\n", c.n_torus.coords[3], peer);
+          //fprintf (stderr, "BgpMapping::init_impl .. _peercache[%zu] = %zu\n", c.n_torus.coords[3], peer);
           _peercache[c.u.n_torus.coords[3]] = peer++;
           _localranks[_peers] = task;
           _peers++;

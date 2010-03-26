@@ -568,27 +568,27 @@ namespace PAMI
           inline void setConnection (pami_task_t task, void * arg)
           {
             size_t peer = _device.task2peer (task);
-            TRACE_ERR((stderr, ">> AdaptiveSimple::setConnection(%zd, %p) .. _connection[%zd] = %p\n", task, arg, peer, _connection[peer]));
+            TRACE_ERR((stderr, ">> AdaptiveSimple::setConnection(%zu, %p) .. _connection[%zu] = %p\n", task, arg, peer, _connection[peer]));
             PAMI_assert(_connection[peer] == NULL);
             _connection[peer] = arg;
-            TRACE_ERR((stderr, "<< AdaptiveSimple::setConnection(%zd, %p)\n", task, arg));
+            TRACE_ERR((stderr, "<< AdaptiveSimple::setConnection(%zu, %p)\n", task, arg));
           }
 
           inline void * getConnection (pami_task_t task)
           {
             size_t peer = _device.task2peer (task);
-            TRACE_ERR((stderr, ">> AdaptiveSimple::getConnection(%zd) .. _connection[%zd] = %p\n", task, peer, _connection[peer]));
+            TRACE_ERR((stderr, ">> AdaptiveSimple::getConnection(%zu) .. _connection[%zu] = %p\n", task, peer, _connection[peer]));
             PAMI_assert(_connection[peer] != NULL);
-            TRACE_ERR((stderr, "<< AdaptiveSimple::getConnection(%zd) .. _connection[%zd] = %p\n", task, peer, _connection[peer]));
+            TRACE_ERR((stderr, "<< AdaptiveSimple::getConnection(%zu) .. _connection[%zu] = %p\n", task, peer, _connection[peer]));
             return _connection[peer];
           }
 
           inline void clearConnection (pami_task_t task)
           {
             size_t peer = _device.task2peer (task);
-            TRACE_ERR((stderr, ">> AdaptiveSimple::clearConnection(%zd) .. _connection[%zd] = %p\n", task, peer, _connection[peer]));
+            TRACE_ERR((stderr, ">> AdaptiveSimple::clearConnection(%zu) .. _connection[%zu] = %p\n", task, peer, _connection[peer]));
             _connection[peer] = NULL;
-            TRACE_ERR((stderr, "<< AdaptiveSimple::clearConnection(%zd) .. _connection[%zd] = %p\n", task, peer, _connection[peer]));
+            TRACE_ERR((stderr, "<< AdaptiveSimple::clearConnection(%zu) .. _connection[%zu] = %p\n", task, peer, _connection[peer]));
           }
 
 
@@ -1254,7 +1254,7 @@ namespace PAMI
                 header = (header_metadata_t *) payload;
 
                 //copy data to buffer
-//fprintf (stderr, "dispatch_data_direct() .. header = %p, header+1 = %p, header->bsend = %zd, header->offset = %zd\n", header, header+1, header->bsend, header->offset);
+//fprintf (stderr, "dispatch_data_direct() .. header = %p, header+1 = %p, header->bsend = %zu, header->offset = %zu\n", header, header+1, header->bsend, header->offset);
 //fprintf (stderr, "dispatch_data_direct() .. header->va_recv = %p\n", header->va_recv);
 //fprintf (stderr, "dispatch_data_direct() .. header->va_recv->info.data.simple.addr = %p\n", header->va_recv->info.data.simple.addr);
 
@@ -1506,7 +1506,7 @@ namespace PAMI
                   }
                 else if (iolen == 2)
                   {
-                    TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. window->pkg[%zd].iov[1].iov_base = %p ,window->pkg[%zd].iov[1].iov_len=%d\n", i, window->pkg[i].iov[1].iov_base, i, window->pkg[i].iov[1].iov_len));
+                    TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. window->pkg[%zu].iov[1].iov_base = %p ,window->pkg[%zu].iov[1].iov_len=%d\n", i, window->pkg[i].iov[1].iov_base, i, window->pkg[i].iov[1].iov_len));
 
                     window->va_send->adaptive->_data_model.postPacket (window->pkg[i].pkt,
                                                                        NULL,
@@ -1596,7 +1596,7 @@ namespace PAMI
               }
             else if (iolen == 2)
               {
-                TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. window->pkg[%zd].iov[1].iov_base = %p ,window->pkg[%zd].iov[1].iov_len=%d\n", i, window->pkg[i].iov[1].iov_base, i, window->pkg[i].iov[1].iov_len));
+                TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. window->pkg[%zu].iov[1].iov_base = %p ,window->pkg[%zu].iov[1].iov_len=%d\n", i, window->pkg[i].iov[1].iov_base, i, window->pkg[i].iov[1].iov_len));
 
                 window->va_send->adaptive->_data_model.postPacket (window->pkg[i].pkt,
                                                                    cb_data_send,
@@ -1796,7 +1796,7 @@ namespace PAMI
                                         void         * cookie)
           {
 #if 0
-            TRACE_ERR((stderr, "(%zd) AdaptiveFactory::dispatch_rts_read() .. \n"));
+            TRACE_ERR((stderr, "(%zu) AdaptiveFactory::dispatch_rts_read() .. \n"));
 
             AdaptiveFactory<T_Model, T_Device, T_LongHeader> * pf =
               (AdaptiveFactory<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
@@ -1828,7 +1828,7 @@ namespace PAMI
                                             void         * cookie)
           {
 #if 0
-            TRACE_ERR((stderr, "(%zd) AdaptiveFactory::dispatch_rts_ack_read() .. \n"));
+            TRACE_ERR((stderr, "(%zu) AdaptiveFactory::dispatch_rts_ack_read() .. \n"));
 
             AdaptiveFactory<T_Model, T_Device, T_LongHeader> * pf =
               (AdaptiveFactory<T_Model, T_Device, T_LongHeader> *) recv_func_parm;
@@ -1861,7 +1861,7 @@ namespace PAMI
                                              void         * cookie)
           {
 #if 0
-            TRACE_ERR((stderr, "(%zd) AdaptiveFactory::dispatch_rts_data_read() .. \n"));
+            TRACE_ERR((stderr, "(%zu) AdaptiveFactory::dispatch_rts_data_read() .. \n"));
 
             AdaptiveFactory<T_Model, T_Device, T_LongHeader> * pf =
               (AdaptiveFactory<T_Model, T_Device, T_LongHeader> *) recv_func_parm;

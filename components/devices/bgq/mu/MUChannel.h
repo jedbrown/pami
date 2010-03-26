@@ -93,7 +93,7 @@ namespace PAMI
 
           uint16_t getRgetInjFifoId (size_t target_rank)
           {
-            TRACE((stderr, "Channel::getRgetInjFifoId(%zd) .. BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE = %d, BGQ_MU_NUM_INJ_FIFOS_PER_GROUP = %d\n", target_rank, BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE, BGQ_MU_NUM_INJ_FIFOS_PER_GROUP));
+            TRACE((stderr, "Channel::getRgetInjFifoId(%zu) .. BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE = %d, BGQ_MU_NUM_INJ_FIFOS_PER_GROUP = %d\n", target_rank, BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE, BGQ_MU_NUM_INJ_FIFOS_PER_GROUP));
             return (BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE - 1) * 8; // change this later!
           }
 

@@ -100,7 +100,7 @@ namespace BGQ {
                         rc = mm->memalign((void **)&_l2node.virt, sizeof(uint64_t),
                                         sizeof(uint64_t) * _l2node.size);
                         PAMI_assertf(rc == PAMI_SUCCESS && _l2node.virt,
-                                "Failed to get shmem for _l2node, asked size %zd",
+                                "Failed to get shmem for _l2node, asked size %zu",
                                 sizeof(uint64_t) * _l2node.size);
                         memset(_l2node.virt, 0, sizeof(uint64_t) * _l2node.size);
                         krc = Kernel_CreateMemoryRegion(&_l2node.memreg,
@@ -115,7 +115,7 @@ namespace BGQ {
                         irc = posix_memalign((void **)&_l2proc.virt, sizeof(uint64_t),
                                         sizeof(uint64_t) * _l2proc.size);
                         PAMI_assertf(irc == 0 && _l2proc.virt,
-                                "Failed to get memory for _l2proc, asked size %zd",
+                                "Failed to get memory for _l2proc, asked size %zu",
                                 sizeof(uint64_t) * _l2proc.size);
                         memset(_l2proc.virt, 0, sizeof(uint64_t) * _l2proc.size);
                         krc = Kernel_CreateMemoryRegion(&_l2proc.memreg,
@@ -163,10 +163,10 @@ namespace BGQ {
                                         _factory.numCore += ncores;
                                         ++_factory.numProc;
                                         rc = mapping->task2node(ranks[i], addr);
-                                        PAMI_assertf(rc == PAMI_SUCCESS, "[%zd] task2node(%d, addr) failed\n", i, ranks[i]);
+                                        PAMI_assertf(rc == PAMI_SUCCESS, "[%zu] task2node(%d, addr) failed\n", i, ranks[i]);
                                         size_t p;
                                         rc = mapping->node2peer(addr, p);
-                                        PAMI_assertf(rc == PAMI_SUCCESS, "[%zd] node2peer(addr, p) failed\n", i);
+                                        PAMI_assertf(rc == PAMI_SUCCESS, "[%zu] node2peer(addr, p) failed\n", i);
                                         _factory.coreXlat[i] = p << shift;
                                         if (ranks[i] == mapping->task()) {
                                                 _factory.myProc = i;

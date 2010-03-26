@@ -173,7 +173,7 @@ namespace PAMI
 
       return PAMI_Dispatch_set_new(_context,dispatch,fn,cookie, options);
 #else
-    TRACE_ERR((stderr, "<%p>MPINativeInterface::setDispatch(%p, %p) id=%zd\n",
+    TRACE_ERR((stderr, "<%p>MPINativeInterface::setDispatch(%p, %p) id=%zu\n",
                this, fn.multicast,  cookie,  dispatch));
 
     pami_result_t result = _mcast.registerMcastRecvFunction(dispatch, fn.multicast, cookie);

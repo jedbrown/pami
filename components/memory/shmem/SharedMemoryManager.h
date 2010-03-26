@@ -58,30 +58,30 @@ namespace PAMI
           size_t n = size;
           void * ptr = NULL;
 
-          TRACE_ERR((stderr, "SharedMemoryManager() .. size = %zd\n", size));
+          TRACE_ERR((stderr, "SharedMemoryManager() .. size = %zu\n", size));
           fd = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
           TRACE_ERR((stderr, "SharedMemoryManager() .. after shm_open, fd = %d\n", fd));
           if ( fd != -1 )
           {
             rc = ftruncate( fd, n );
-            TRACE_ERR((stderr, "SharedMemoryManager() .. after ftruncate(%d,%zd), rc = %d\n", fd,n,rc));
+            TRACE_ERR((stderr, "SharedMemoryManager() .. after ftruncate(%d,%zu), rc = %d\n", fd,n,rc));
             if ( rc != -1 )
             {
               ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
               TRACE_ERR((stderr, "SharedMemoryManager() .. after mmap, ptr = %p, MAP_FAILED = %p\n", ptr, MAP_FAILED));
               if ( ptr != MAP_FAILED )
               {
-                TRACE_ERR((stderr, "SharedMemoryManager:shmem file <%s> %zd bytes mapped at %p\n", shmemfile, n, ptr));
+                TRACE_ERR((stderr, "SharedMemoryManager:shmem file <%s> %zu bytes mapped at %p\n", shmemfile, n, ptr));
                 _location = ptr;
                 _size     = n;
-                TRACE_ERR((stderr, "SharedMemoryManager() .. _location = %p, _size = %zd\n", _location, _size));
+                TRACE_ERR((stderr, "SharedMemoryManager() .. _location = %p, _size = %zu\n", _location, _size));
                 result = PAMI_SUCCESS;
                 return;
               }
             }
           }
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-          fprintf(stderr,"%s:%d Failed to create shared memory (rc=%d, ptr=%p, n=%zd) errno %d %s\n",__FILE__,__LINE__, rc, ptr, n, errno, strerror(errno));
+          fprintf(stderr,"%s:%d Failed to create shared memory (rc=%d, ptr=%p, n=%zu) errno %d %s\n",__FILE__,__LINE__, rc, ptr, n, errno, strerror(errno));
 #endif
           TRACE_ERR((stderr, "SharedMemoryManager() .. FAILED, fake shmem on the heap\n"));
 

@@ -57,7 +57,7 @@ static void decrement (pami_context_t   context,
                        pami_result_t    result)
 {
   unsigned * value = (unsigned *) cookie;
-  TRACE_ERR((stderr, "(%zd) decrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
+  TRACE_ERR((stderr, "(%zu) decrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
   --*value;
 }
 
@@ -74,13 +74,13 @@ static void test_dispatch (
   unsigned * value = (unsigned *) cookie;
   if (pipe_addr != NULL)
   {
-    TRACE_ERR((stderr, "(%zd) short recv:  decrement cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
+    TRACE_ERR((stderr, "(%zu) short recv:  decrement cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
     memcpy((void *)_tmpbuffer, pipe_addr, pipe_size);
     --*value;
     return;
   }
 
-  TRACE_ERR((stderr, "(%zd) long recvn", _my_rank));
+  TRACE_ERR((stderr, "(%zu) long recvn", _my_rank));
   recv->local_fn = decrement;
   recv->cookie   = cookie;
   recv->kind = PAMI_AM_KIND_SIMPLE;
@@ -90,7 +90,7 @@ static void test_dispatch (
 
 unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, size_t myrank, size_t ntasks)
 {
-  TRACE_ERR((stderr, "(%zd) Do test ... sndlen = %zd\n", myrank, sndlen));
+  TRACE_ERR((stderr, "(%zu) Do test ... sndlen = %zu\n", myrank, sndlen));
 
   char metadata[BUFSIZE];
   char buffer[BUFSIZE];
@@ -193,7 +193,7 @@ int main (int argc, char ** argv)
   pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   pami_send_hint_t options={0};
-  TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, recv_active = %zd\n", &_recv_active, _recv_active));
+  TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, recv_active = %zu\n", &_recv_active, _recv_active));
   pami_result_t result = PAMI_Dispatch_set (context,
                                           dispatch,
                                           fn,

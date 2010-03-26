@@ -80,7 +80,7 @@ static inline MPIDevice *generate_impl(size_t clientid, size_t num_ctx, Memory::
         size_t x;
         MPIDevice *devs;
         int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
-        PAMI_assertf(rc == 0, "posix_memalign failed for MPIDevice[%zd], errno=%d\n", num_ctx, errno);
+        PAMI_assertf(rc == 0, "posix_memalign failed for MPIDevice[%zu], errno=%d\n", num_ctx, errno);
         for (x = 0; x < num_ctx; ++x) {
                 new (&devs[x]) MPIDevice();
         }
@@ -111,7 +111,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                                 void                      *recv_func_parm)
         {
           unsigned i;
-          TRACE_DEVICE((stderr,"<%p>MPIDevice::registerRecvFunction dispatch %zd/%zd\n",this,dispatch,dispatch * DISPATCH_SET_SIZE));
+          TRACE_DEVICE((stderr,"<%p>MPIDevice::registerRecvFunction dispatch %zu/%zu\n",this,dispatch,dispatch * DISPATCH_SET_SIZE));
           for (i=0; i<DISPATCH_SET_SIZE; i++)
           {
             unsigned id = dispatch * DISPATCH_SET_SIZE + i;
@@ -359,7 +359,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                                 _communicator,&sts);
               assert(rc == MPI_SUCCESS);
               size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
-              TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
+              TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zu\n",
                              this, nbytes,dispatch_id));
               _currentBuf = msg->_p2p_msg._payload;
               mpi_dispatch_info_t mdi = _dispatch_lookup[dispatch_id];
@@ -382,7 +382,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                                 _communicator,&sts);
               assert(rc == MPI_SUCCESS);
               size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
-              TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
+              TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zu\n",
                              this, nbytes,dispatch_id));
               _currentBuf = (char*)msg->_p2p_msg._metadata+msg->_p2p_msg._metadatasize;
               mpi_dispatch_info_t mdi = _dispatch_lookup[dispatch_id];
@@ -408,7 +408,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
               unsigned         pwidth;
               pami_callback_t   cb_done;
               size_t dispatch_id      = msg->_dispatch_id;
-              TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zd\n",
+              TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zu\n",
                              this, nbytes,dispatch_id));
               mpi_oldmcast_dispatch_info_t mdi = _oldmcast_dispatch_lookup[dispatch_id];
 
@@ -493,7 +493,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
 
               for(; bytes > 0; bytes -= mcast->_pwidth)
               {
-                TRACE_DEVICE((stderr,"<%p>MPIDevice::calling done counter %zd, pwidth %zd, bytes %zd, size %zd\n",
+                TRACE_DEVICE((stderr,"<%p>MPIDevice::calling done counter %zu, pwidth %zu, bytes %zu, size %zu\n",
                                this, mcast->_counter,mcast->_pwidth, bytes, mcast->_size));
                 mcast->_counter += mcast->_pwidth;
                 if(mcast->_done_fn)
@@ -661,7 +661,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
       inline void enqueue(MPIMessage* msg)
       {
         TRACE_DEVICE((stderr,
-                      "<%p>MPIDevice::enqueue message size 0 %zd, size 1 %zd, msize %zd\n",
+                      "<%p>MPIDevice::enqueue message size 0 %zu, size 1 %zu, msize %zu\n",
                       this,
                       (size_t)msg->_p2p_msg._payloadsize0,
                       (size_t)msg->_p2p_msg._payloadsize1,
@@ -671,14 +671,14 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
 
       inline void enqueue(OldMPIMcastMessage* msg)
       {
-        TRACE_DEVICE((stderr,"<%p>MPIDevice::enqueue mcast message size %zd\n",this, (size_t)msg->_size));
+        TRACE_DEVICE((stderr,"<%p>MPIDevice::enqueue mcast message size %zu\n",this, (size_t)msg->_size));
         _oldmcastsendQ.push_front(msg);
       }
 
       inline void enqueue(OldMPIMcastRecvMessage *msg)
       {
         TRACE_DEVICE((stderr,
-                      "<%p>MPIDevice::enqueue mcast recv message pwidth %zd size %zd\n",
+                      "<%p>MPIDevice::enqueue mcast recv message pwidth %zu size %zu\n",
                       this,
                       (size_t)msg->_pwidth,
                       (size_t)msg->_size));
@@ -687,14 +687,14 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
 
       inline void enqueue(MPIMcastMessage* msg)
       {
-        TRACE_DEVICE((stderr,"<%p>MPIDevice::enqueue mcast message size %zd\n",this, (size_t)msg->_size));
+        TRACE_DEVICE((stderr,"<%p>MPIDevice::enqueue mcast message size %zu\n",this, (size_t)msg->_size));
         _mcastsendQ.push_front(msg);
       }
 
       inline void enqueue(MPIMcastRecvMessage *msg)
       {
         TRACE_DEVICE((stderr,
-                      "<%p>MPIDevice::enqueue mcast recv message pwidth %zd size %zd\n",
+                      "<%p>MPIDevice::enqueue mcast recv message pwidth %zu size %zu\n",
                       this,
                       (size_t)msg->_pwidth,
                       (size_t)msg->_size));
@@ -707,7 +707,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
       inline void enqueue(MPIM2MRecvMessage<size_t> *msg)
       {
         TRACE_DEVICE((stderr,
-                      "<%p>MPIDevice::enqueue m2m recv message size %zd\n",
+                      "<%p>MPIDevice::enqueue m2m recv message size %zu\n",
                       this,
                       (size_t)msg->_sizes[0]));
         _m2mrecvQ.push_front(msg);
@@ -716,7 +716,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
       inline void enqueue(MPIM2MMessage *msg)
       {
         TRACE_DEVICE((stderr,
-                      "<%p>MPIDevice::enqueue m2m message total size %zd\n",
+                      "<%p>MPIDevice::enqueue m2m message total size %zu\n",
                       this,
                       (size_t)msg->_totalsize));
         _m2msendQ.push_front(msg);

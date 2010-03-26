@@ -108,9 +108,9 @@ _wrapper_model (&_desc_model)
   // Use our rank/addr to set our master reception fifo
   pami_task_t target_rank = __global.mapping.task();
   size_t addr[BGQ_TDIMS + BGQ_LDIMS];
-  TRACE((stderr, "<%p>:MUMulticastModel::ctor .. %p->getRecFifoIdForDescriptor() target_rank %zd\n", this, &_device, (size_t)target_rank));
+  TRACE((stderr, "<%p>:MUMulticastModel::ctor .. %p->getRecFifoIdForDescriptor() target_rank %zu\n", this, &_device, (size_t)target_rank));
   __global.mapping.task2global ((pami_task_t)target_rank, addr);
-  TRACE((stderr, "<%p>:MUMulticastModel::ctor .. %p->getRecFifoIdForDescriptor(%zd) target_rank %zd\n", this, &_device, addr[5], (size_t)target_rank));
+  TRACE((stderr, "<%p>:MUMulticastModel::ctor .. %p->getRecFifoIdForDescriptor(%zu) target_rank %zu\n", this, &_device, addr[5], (size_t)target_rank));
   /// \todo Assuming p is the recv grp id?
   uint32_t recFifoId = _device.getCollRecFifoIdForDescriptor(addr[5]);;
 

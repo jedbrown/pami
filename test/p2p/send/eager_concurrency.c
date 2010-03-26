@@ -73,7 +73,7 @@ usage:
         argc -= optind;
         if (argc < 1) goto usage;
         if (MINBUFSIZE > BUFSIZE) {
-                fprintf(stderr, "-s value (%zd) must be less than (or equal) -e value (%zd)\n", MINBUFSIZE, BUFSIZE);
+                fprintf(stderr, "-s value (%zu) must be less than (or equal) -e value (%zu)\n", MINBUFSIZE, BUFSIZE);
                 goto usage;
         }
         nets = (int *)malloc(argc * sizeof(*nets));
@@ -154,9 +154,9 @@ usage:
                                 _orig = &orig;
                         }
                         //DCMF_Messager_rank2network(*_orig, PAMI_TORUS_NETWORK, &addr);
-                        //fprintf(stdout, "# Rank %zd (%zd,%zd,%zd,%zd)\n", *_orig,
+                        //fprintf(stdout, "# Rank %zu (%zu,%zu,%zu,%zu)\n", *_orig,
                                 //addr.torus.x, addr.torus.y, addr.torus.z, addr.torus.t);
-                        fprintf(stdout, "# Rank %zd\n", *_orig);
+                        fprintf(stdout, "# Rank %zu\n", *_orig);
                 }
                 //fprintf(stdout, "# Clock MHz = %d, Iterations = %d\n", hw.clockMHz, ITERATIONS);
                 fprintf(stdout, "# Clock MHz = %d, Iterations = %d\n", 0, ITERATIONS);

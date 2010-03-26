@@ -390,20 +390,20 @@ protected:
         inline void setConnection(pami_task_t task, void *arg) {
                 size_t peer = _device.task2peer(task);
                 TRACE_ERR((stderr,
-                                                ">> Datagram::setConnection(%zd, %p) .. _connection[%zd] = %p\n",
+                                                ">> Datagram::setConnection(%zu, %p) .. _connection[%zu] = %p\n",
                                                 task, arg, peer, _connection[peer]));
                 PAMI_assert(_connection[peer] == NULL);
-                _connection[peer] = arg;TRACE_ERR((stderr, "<< Datagram::setConnection(%zd, %p)\n",
+                _connection[peer] = arg;TRACE_ERR((stderr, "<< Datagram::setConnection(%zu, %p)\n",
                                                 task, arg));
         }
 
         inline void *getConnection(pami_task_t task) {
                 size_t peer = _device.task2peer(task);
                 TRACE_ERR((stderr,
-                                                ">> Datagram::getConnection(%zd) .. _connection[%zd] = %p\n",
+                                                ">> Datagram::getConnection(%zu) .. _connection[%zu] = %p\n",
                                                 task, peer, _connection[peer]));
                 PAMI_assert(_connection[peer] != NULL);TRACE_ERR((stderr,
-                                                "<< Datagram::getConnection(%zd) .. _connection[%zd] = %p\n",
+                                                "<< Datagram::getConnection(%zu) .. _connection[%zu] = %p\n",
                                                 task, peer, _connection[peer]));
                 return _connection[peer];
         }
@@ -411,10 +411,10 @@ protected:
         inline void clearConnection(pami_task_t task) {
                 size_t peer = _device.task2peer(task);
                 TRACE_ERR((stderr,
-                                                ">> Datagram::clearConnection(%zd) .. _connection[%zd] = %p\n",
+                                                ">> Datagram::clearConnection(%zu) .. _connection[%zu] = %p\n",
                                                 task, peer, _connection[peer]));
                 _connection[peer] = NULL;TRACE_ERR((stderr,
-                                                "<< Datagram::clearConnection(%zd) .. _connection[%zd] = %p\n",
+                                                "<< Datagram::clearConnection(%zu) .. _connection[%zu] = %p\n",
                                                 task, peer, _connection[peer]));
         }
 #endif
@@ -1651,7 +1651,7 @@ private:
                         void *recv_func_parm, void *cookie) {
 #if 0
                 TRACE_ERR((stderr,
-                                                "(%zd) DatagramFactory::dispatch_rts_read() .. \n"));
+                                                "(%zu) DatagramFactory::dispatch_rts_read() .. \n"));
 
                 DatagramFactory < T_Model, T_Device, T_LongHeader> *pf =
                 (DatagramFactory < T_Model, T_Device,
@@ -1681,7 +1681,7 @@ private:
                         void *recv_func_parm, void *cookie) {
 #if 0
                 TRACE_ERR((stderr,
-                                                "(%zd) DatagramFactory::dispatch_rts_read() .. \n"));
+                                                "(%zu) DatagramFactory::dispatch_rts_read() .. \n"));
 
                 DatagramFactory < T_Model, T_Device, T_LongHeader> *pf =
                 (DatagramFactory < T_Model, T_Device,
@@ -1711,7 +1711,7 @@ private:
                         size_t bytes, void *recv_func_parm, void *cookie) {
 #if 0
                 TRACE_ERR((stderr,
-                                                "(%zd) DatagramFactory::dispatch_rts_ack_read() .. \n"));
+                                                "(%zu) DatagramFactory::dispatch_rts_ack_read() .. \n"));
 
                 DatagramFactory < T_Model, T_Device, T_LongHeader> *pf =
                 (DatagramFactory < T_Model, T_Device,
@@ -1742,7 +1742,7 @@ private:
                         size_t bytes, void *recv_func_parm, void *cookie) {
 #if 0
                 TRACE_ERR((stderr,
-                                                "(%zd) DatagramFactory::dispatch_rts_data_read() .. \n"));
+                                                "(%zu) DatagramFactory::dispatch_rts_data_read() .. \n"));
 
                 DatagramFactory < T_Model, T_Device, T_LongHeader> *pf =
                 (DatagramFactory < T_Model, T_Device,

@@ -86,8 +86,8 @@ int main(int argc, char ** argv) {
 
         new (&itopo) PAMI::Topology(root);
         __global.topology_local.subtractTopology(&otopo, &itopo);
-        PAMI_assertf(otopo.size() == num_tasks - 1, "Failed to create proper dest topology, size is %zd should be %zd\n", otopo.size(), num_tasks - 1);
-        PAMI_assertf(itopo.size() == 1, "Failed to create proper root topology, size is %zd should be %u\n", otopo.size(), 1);
+        PAMI_assertf(otopo.size() == num_tasks - 1, "Failed to create proper dest topology, size is %zu should be %zu\n", otopo.size(), num_tasks - 1);
+        PAMI_assertf(itopo.size() == 1, "Failed to create proper root topology, size is %zu should be %u\n", otopo.size(), 1);
 
         pami_multicast_t mcast;
         memset(&mcast, 0x00, sizeof(mcast));

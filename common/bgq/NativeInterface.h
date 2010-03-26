@@ -145,7 +145,7 @@ namespace PAMI
   {
     static size_t dispatch = DISPATCH_START;
 
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::setDispatch(%p, %p) id=%zd\n",
+    TRACE_ERR((stderr, "<%p>BGQNativeInterface::setDispatch(%p, %p) id=%zu\n",
                this, fn.multicast,  cookie,  dispatch));
 
     pami_result_t result = _mcast.registerMcastRecvFunction(dispatch, fn.multicast, cookie);

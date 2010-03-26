@@ -132,7 +132,7 @@ namespace PAMI
         PAMI_assertf(_commThreads, "BgqCommThread::generate failed for _commThreads[%d]\n", n);
 #endif // USE_COMMTHREADS
         int x;
-        TRACE_ERR((stderr, "%d:mm available %zd\n", __LINE__, _mm.available()));
+        TRACE_ERR((stderr, "%d:mm available %zu\n", __LINE__, _mm.available()));
         _platdevs.generate(_clientid, n, _mm);
 
         // This memset has been removed due to the amount of cycles it takes
@@ -140,7 +140,7 @@ namespace PAMI
         // relevant fields of the context, so this memset should not be
         // needed anyway.
         //memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
-        TRACE_ERR((stderr, "%d:mm available %zd\n", __LINE__, _mm.available()));
+        TRACE_ERR((stderr, "%d:mm available %zu\n", __LINE__, _mm.available()));
         size_t bytes = _mm.available() / n - 16;
 
         for (x = 0; x < n; ++x)
@@ -150,7 +150,7 @@ namespace PAMI
             _mm.enable();
             _mm.memalign((void **)&base, 16, bytes);
             _mm.disable();
-            PAMI_assertf(base != NULL, "out of sharedmemory in context create x=%d,n=%d,bytes=%zd,mm.size=%zd,mm.available=%zd\n", x, n, bytes, _mm.size(), _mm.available());
+            PAMI_assertf(base != NULL, "out of sharedmemory in context create x=%d,n=%d,bytes=%zu,mm.size=%zu,mm.available=%zu\n", x, n, bytes, _mm.size(), _mm.available());
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
                                              &_platdevs, base, bytes);
 #ifdef USE_COMMTHREADS
@@ -358,7 +358,7 @@ namespace PAMI
 
                 while (ptr == MAP_FAILED)
                   {
-                    fprintf(stderr, "%s:%d Failed to mmap (rc=%d, ptr=%p, n=%zd) errno %d %s\n", __FILE__, __LINE__, rc, ptr, n, errno, strerror(errno));
+                    fprintf(stderr, "%s:%d Failed to mmap (rc=%d, ptr=%p, n=%zu) errno %d %s\n", __FILE__, __LINE__, rc, ptr, n, errno, strerror(errno));
                     n /= 2;
 
                     if (n < (32*1024)) break;
@@ -369,17 +369,17 @@ namespace PAMI
                 if ( ptr != MAP_FAILED )
                   {
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-                    fprintf(stderr, "Client:shmem file <%s> %zd bytes mapped at %p\n", shmemfile, n, ptr);
+                    fprintf(stderr, "Client:shmem file <%s> %zu bytes mapped at %p\n", shmemfile, n, ptr);
 #endif
-                    TRACE_ERR((stderr, "Client:shmem file <%s> %zd bytes mapped at %p\n", shmemfile, n, ptr));
+                    TRACE_ERR((stderr, "Client:shmem file <%s> %zu bytes mapped at %p\n", shmemfile, n, ptr));
                     _mm.init (ptr, n);
                     return;
                   }
               }
           }
 
-        fprintf(stderr, "%s:%d Failed to create shared memory <%s> (rc=%d, ptr=%p, n=%zd) errno %d %s\n", __FILE__, __LINE__, shmemfile, rc, ptr, n, errno, strerror(errno));
-        //PAMI_abortf(stderr,"Failed to create shared memory (rc=%d, ptr=%p, n=%zd)\n", rc, ptr, n);
+        fprintf(stderr, "%s:%d Failed to create shared memory <%s> (rc=%d, ptr=%p, n=%zu) errno %d %s\n", __FILE__, __LINE__, shmemfile, rc, ptr, n, errno, strerror(errno));
+        //PAMI_abortf(stderr,"Failed to create shared memory (rc=%d, ptr=%p, n=%zu)\n", rc, ptr, n);
 
         // Failed to create shared memory .. fake it using the heap ??
         _mm.init (malloc (n), n);

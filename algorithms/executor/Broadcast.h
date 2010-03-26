@@ -103,7 +103,7 @@ namespace CCMI
         //Setup pipework queue
         _pwq.configure (NULL, buf, len, 0);
   _pwq.reset();
-        TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::setInfo() _pwq %p, bytes available %zd/%zd\n",this,&_pwq,
+        TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::setInfo() _pwq %p, bytes available %zu/%zu\n",this,&_pwq,
                      _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
       }
 

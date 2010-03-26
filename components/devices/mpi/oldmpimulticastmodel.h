@@ -86,7 +86,7 @@ namespace PAMI
             {
               PAMI_assert (hints[count] == PAMI_PT_TO_PT_SUBTASK);
 
-          TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel:send MPI_Isend %zd to %zd\n",this,
+          TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel:send MPI_Isend %zu to %zu\n",this,
                          hdr->totalsize(),ranks[count]));
               rc = MPI_Isend (hdr,
                               hdr->totalsize(),
@@ -141,7 +141,7 @@ namespace PAMI
 //          msg->_hint     = hint;
 //          msg->_op       = op;
 //          msg->_dtype    = dtype;
-          TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel:postRecv pwidth %zd size %zd\n",this,
+          TRACE_ADAPTOR((stderr,"<%p>MPIOldmulticastModel:postRecv pwidth %zu size %zu\n",this,
                      msg->_pwidth,msg->_size));
           _device.enqueue(msg);
           return 0;

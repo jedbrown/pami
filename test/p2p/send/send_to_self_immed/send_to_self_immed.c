@@ -64,7 +64,7 @@ static void test_dispatch (
     pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  TRACE_ERR((stderr, "Called dispatch function.  cookie = %p (active: %zd -> %zd), task = %zd, header_size = %zd, pipe_size = %zd, recv=%p\n", cookie, *active, *active-1, task, header_size, pipe_size,recv));
+  TRACE_ERR((stderr, "Called dispatch function.  cookie = %p (active: %zu -> %zu), task = %zu, header_size = %zu, pipe_size = %zu, recv=%p\n", cookie, *active, *active-1, task, header_size, pipe_size,recv));
 
   if (pipe_size > 0)
     memcpy(_rbuf,pipe_addr,pipe_size);
@@ -93,7 +93,7 @@ unsigned long long test (size_t sndlen, size_t myrank)
   //Allow warmup of 1 iteration
   for (i = 0; i <= ITERATIONS; i++)
   {
-    TRACE_ERR((stderr, "(%zd)\n(%zd) Starting Iteration %d of size %zd\n", _my_rank, _my_rank, i, sndlen));
+    TRACE_ERR((stderr, "(%zu)\n(%zu) Starting Iteration %d of size %zu\n", _my_rank, _my_rank, i, sndlen));
     if (i == 1)
       t1 = PAMI_Wtimebase();
 
@@ -146,7 +146,7 @@ int main ()
     return 1;
   }
   size_t task_id = configuration.value.intval;
-  fprintf (stderr, "My task id = %zd\n", task_id);
+  fprintf (stderr, "My task id = %zu\n", task_id);
   _my_rank = task_id;
 
   configuration.name = PAMI_NUM_TASKS;
@@ -157,7 +157,7 @@ int main ()
     return 1;
   }
   size_t num_tasks = configuration.value.intval;
-  printf("(%zd) after Initializing client and context.  num_tasks=%zd\n", task_id, num_tasks);
+  printf("(%zu) after Initializing client and context.  num_tasks=%zu\n", task_id, num_tasks);
 
   pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
@@ -213,9 +213,9 @@ int main ()
 /*       /\*if (j == DCMF_SHMEM_NETWORK) continue;*\/ */
 
 /*       p.network = (PAMI_Network) j; */
-/*       TRACE_ERR((stderr, "(%zd) before DCMF_Send_register(), network = %d, protocol = %d\n", DCMF_Messager_rank (), j, i)); */
+/*       TRACE_ERR((stderr, "(%zu) before DCMF_Send_register(), network = %d, protocol = %d\n", DCMF_Messager_rank (), j, i)); */
 /*       PAMI_Result result = DCMF_Send_register (&_protocol[_protocol_count], &p); */
-/*       TRACE_ERR((stderr, "(%zd) after DCMF_Send_register(), network = %d, protocol = %d, result = %d\n", DCMF_Messager_rank (), j, i, result)); */
+/*       TRACE_ERR((stderr, "(%zu) after DCMF_Send_register(), network = %d, protocol = %d, result = %d\n", DCMF_Messager_rank (), j, i, result)); */
 
 /*       if (result == PAMI_SUCCESS) */
 /*       { */
@@ -290,7 +290,7 @@ int main ()
         unsigned j;
         for (j=0; j<sndlen; j++)
         {
-          if (_sbuf[j] != _rbuf[j]) printf("Data Miscompare at size %zd, _sbuf[%u] = 0x%02x, _rbuf = 0x%02x\n",sndlen, j, _sbuf[j], _rbuf[j]);
+          if (_sbuf[j] != _rbuf[j]) printf("Data Miscompare at size %zu, _sbuf[%u] = 0x%02x, _rbuf = 0x%02x\n",sndlen, j, _sbuf[j], _rbuf[j]);
         }
 
         index += sprintf (&str[index], "%10lld %8.4f  ", cycles, usec);

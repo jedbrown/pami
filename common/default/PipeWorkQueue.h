@@ -275,8 +275,8 @@ public:
                 fprintf(stderr, "%s dump(%p) _sharedqueue = %p, "
                         "size = %u, init size = %u, mask = 0x%08x, "
                         "wake p=%p c=%p, "
-                        "produced bytes = %zd (%zd), "
-                        "consumed bytes = %zd (%zd)\n",
+                        "produced bytes = %zu (%zu), "
+                        "consumed bytes = %zu (%zu)\n",
                         prefix, this, _sharedqueue,
                         _qsize, _isize, _pmask,
                         _sharedqueue->_u._s.producerWakeVec, _sharedqueue->_u._s.consumerWakeVec,

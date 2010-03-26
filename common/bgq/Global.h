@@ -66,7 +66,7 @@ namespace PAMI
         int fd, rc;
 
         // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-        TRACE_ERR((stderr, "Global() .. size = %zd\n", size));
+        TRACE_ERR((stderr, "Global() .. size = %zu\n", size));
         void * ptr = NULL;
         rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
         TRACE_ERR((stderr, "Global() .. after shm_open, fd = %d\n", rc));
@@ -75,7 +75,7 @@ namespace PAMI
           {
             fd = rc;
             rc = ftruncate( fd, size );
-            TRACE_ERR((stderr, "Global() .. after ftruncate(%d,%zd), rc = %d\n", fd, size, rc));
+            TRACE_ERR((stderr, "Global() .. after ftruncate(%d,%zu), rc = %d\n", fd, size, rc));
 
             if (rc != -1)
               {
@@ -84,7 +84,7 @@ namespace PAMI
 
                 if (ptr != MAP_FAILED)
                   {
-                    TRACE_ERR((stderr, "Global:shmem file <%s> %zd bytes mapped at %p\n", shmemfile, size, ptr));
+                    TRACE_ERR((stderr, "Global:shmem file <%s> %zu bytes mapped at %p\n", shmemfile, size, ptr));
                     mm.init(ptr, size);
 
                   }
@@ -97,7 +97,7 @@ namespace PAMI
 
         if (rc == -1)
           {
-            fprintf(stderr, "%s:%d Failed to create shared memory (rc=%d, ptr=%p, size=%zd) errno %d %s\n", __FILE__, __LINE__, rc, ptr, size, errno, strerror(errno));
+            fprintf(stderr, "%s:%d Failed to create shared memory (rc=%d, ptr=%p, size=%zu) errno %d %s\n", __FILE__, __LINE__, rc, ptr, size, errno, strerror(errno));
             // There was a failure obtaining the shared memory segment, most
             // likely because the application is running in SMP mode. Allocate
             // memory from the heap instead.
@@ -118,7 +118,7 @@ namespace PAMI
             rectsize *= (ur.u.n_torus.coords[d] - ll.u.n_torus.coords[d] + 1);
           }
 
-        TRACE_ERR((stderr,  "Global() mapping.size %zd, rectsize %zd,mapping.globalDims %zd, min %zd, max %zd\n", mapping.size(), rectsize, mapping.globalDims(), min, max));
+        TRACE_ERR((stderr,  "Global() mapping.size %zu, rectsize %zu,mapping.globalDims %zu, min %zu, max %zu\n", mapping.size(), rectsize, mapping.globalDims(), min, max));
 
         if (mapping.size() == rectsize)
           {
@@ -130,7 +130,7 @@ namespace PAMI
           }
         else
           {
-            PAMI_abortf("failed to build global-world topology %zd::%zd(%zd) / %d..%d", mapping.size(), rectsize, mapping.globalDims(), min, max); //hack
+            PAMI_abortf("failed to build global-world topology %zu::%zu(%zu) / %d..%d", mapping.size(), rectsize, mapping.globalDims(), min, max); //hack
           }
 
         topology_global.subTopologyLocalToMe(&topology_local);
@@ -189,7 +189,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 {
   bgq_mapcache_t  * mapcache = &_mapcache;
 
-  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() >> ptr = %p, bytes = %zd, mapcache = %p\n", ptr, _memsize, mapcache));
+  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() >> ptr = %p, bytes = %zu, mapcache = %p\n", ptr, _memsize, mapcache));
   // This structure anchors pointers to the map cache and rank cache.
   // It is created in the static portion of shared memory in this
   // constructor, but exists there only for the duration of this
@@ -226,7 +226,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
   size_t pSize  = personality.pSize ();
   size_t tSize  = personality.tSize ();
 
-  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. p=%zd t=%zd size{%zd %zd %zd %zd %zd %zd %zd}\n", pCoord, tCoord, aSize, bSize, cSize, dSize, eSize, pSize, tSize));
+  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. p=%zu t=%zu size{%zu %zu %zu %zu %zu %zu %zu}\n", pCoord, tCoord, aSize, bSize, cSize, dSize, eSize, pSize, tSize));
 
   // Calculate the number of potential tasks in this partition.
   size_t fullSize = aSize * bSize * cSize * dSize * eSize * pSize * tSize;
@@ -240,7 +240,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
                 fullSize * sizeof(*mapcache->torus.coords2task) +
                 peerSize * sizeof(*mapcache->node.local2peer) +
                 peerSize * sizeof(*mapcache->node.peer2task);
-        TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() << mapsize = %zd\n", mapsize));
+        TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() << mapsize = %zu\n", mapsize));
         return mapsize;
   }
 
@@ -248,7 +248,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
   mm->memalign((void **)&cacheAnchorsPtr, 16, sizeof(*cacheAnchorsPtr));
   PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for cacheAnchorsPtr");
 
-  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. mapcache = %p, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zd, fullSize = %zd, peerSize = %zd\n", mapcache, cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize));
+  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. mapcache = %p, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zu, fullSize = %zu, peerSize = %zu\n", mapcache, cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize));
 
   // Notify all other tasks on the node that this task has entered the
   // map cache initialization function.  If the value returned is zero
@@ -345,7 +345,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
          * 4. Number of active ranks on each compute node.
          */
         size_t i;
-        TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. fullSize = %zd\n", fullSize));
+        TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. fullSize = %zu\n", fullSize));
 
         _ll.network = _ur.network = PAMI_N_TORUS_NETWORK;
         _ll.u.n_torus.coords[0] = _ur.u.n_torus.coords[0] = personality.aCoord();
@@ -394,7 +394,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
             p = mapcache->torus.task2coords[i].core;
             t = mapcache->torus.task2coords[i].thread;
 #endif
-            TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. i = %zd, {%zd %zd %zd %zd %zd %zd %zd}\n", i, a, b, c, d, e, p, t));
+            TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() .. i = %zu, {%zu %zu %zu %zu %zu %zu %zu}\n", i, a, b, c, d, e, p, t));
 
             // Set the bit corresponding to the physical node of this rank,
             // indicating that we have found a rank on that node.
@@ -461,7 +461,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
               hash = ESTIMATED_TASK(a, b, c, d, e, p, t, aSize, bSize, cSize, dSize, eSize, pSize, tSize);
 
               mapcache->node.peer2task[peer] = mapcache->torus.coords2task[hash];
-              TRACE_ERR((stderr, "peer2task[%zd]=coords2task[%d]=%#lX, local2peer[%d]=%zd\n", peer, hash, mapcache->node.peer2task[peer], hash, peer));
+              TRACE_ERR((stderr, "peer2task[%zu]=coords2task[%d]=%#lX, local2peer[%d]=%zu\n", peer, hash, mapcache->node.peer2task[peer], hash, peer));
               hash = ESTIMATED_TASK(0, 0, 0, 0, 0, p, t, 1, 1, 1, 1, 1, pSize, tSize);
               mapcache->node.local2peer[hash] = peer++;
               cacheAnchorsPtr->numActiveRanksLocal++; //hack

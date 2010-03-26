@@ -103,7 +103,7 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
       _pendingStatus(PAMI::Device::Initialized),
       _root(_participants->index2Rank(0))
       {
-        TRACE_DEVICE((stderr,"<%p>MPISyncMsg client %p, context %zd\n",this,
+        TRACE_DEVICE((stderr,"<%p>MPISyncMsg client %p, context %zu\n",this,
                       msync->client, msync->context));
         if(_participants->size() == 1)
         {
@@ -120,13 +120,13 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
         {
           int rc = MPI_Send(NULL, 0, MPI_BYTE,
                             _root,_tag,_g_mpisync_dev._msync_communicator);
-          TRACE_DEVICE((stderr,"<%p>MPISyncMsg::ctor send rc = %d, dst %zd, tag %d \n",this,
+          TRACE_DEVICE((stderr,"<%p>MPISyncMsg::ctor send rc = %d, dst %zu, tag %d \n",this,
                         rc, _root, _tag));
         }
         int rc = MPI_Irecv(NULL,0, MPI_BYTE,
                            _participants->index2Rank(_idx),_tag,
                            _g_mpisync_dev._msync_communicator, &_req);
-        TRACE_DEVICE((stderr,"<%p>MPISyncMsg::ctor irecv rc = %d, dst %zd, tag %d \n",this,
+        TRACE_DEVICE((stderr,"<%p>MPISyncMsg::ctor irecv rc = %d, dst %zu, tag %d \n",this,
                       rc, _participants->index2Rank(_idx), _tag));
       }
 
@@ -175,14 +175,14 @@ protected:
         int flag = 0;
         MPI_Status status;
         //static unsigned count = 5; if(count) count--;
-        //if(count)TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread() idx %zd/%zd, currBytes %zd, bytesLeft %zd, tag %d %s\n",this,
+        //if(count)TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread() idx %zu/%zu, currBytes %zu, bytesLeft %zu, tag %d %s\n",this,
         //              _idx, _dst->size(), _currBytes, thr->_bytesLeft, _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
         if(_req != MPI_REQUEST_NULL)
         {
           MPI_Test(&_req, &flag, &status);
           if(flag)
           {
-            TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread test done, dst %zd, tag %d \n",this,
+            TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread test done, dst %zu, tag %d \n",this,
                           _participants->index2Rank(_idx), _tag));
             _req = MPI_REQUEST_NULL; // redundant?
           }
@@ -199,7 +199,7 @@ protected:
             int rc = MPI_Irecv(NULL,0, MPI_BYTE,
                                _participants->index2Rank(_idx),_tag,
                                _g_mpisync_dev._msync_communicator, &_req);
-            TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread irecv rc = %d, dst %zd, tag %d \n",this,
+            TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread irecv rc = %d, dst %zu, tag %d \n",this,
                           rc, _participants->index2Rank(_idx), _tag));
             return PAMI_EAGAIN;
           }
@@ -210,7 +210,7 @@ protected:
               int rc = MPI_Send(NULL, 0, MPI_BYTE,
                                 _participants->index2Rank(idx),_tag,
                                 _g_mpisync_dev._msync_communicator);
-              TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread() sending rc = %d, idx %zd, dst %zd, tag %d\n",this,
+              TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__advanceThread() sending rc = %d, idx %zu, dst %zu, tag %d\n",this,
                             rc,idx, _participants->index2Rank(idx), _tag));
             }
           }

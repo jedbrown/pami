@@ -105,7 +105,7 @@ namespace PAMI
             hdr->_conn        = connid;
             memcpy (hdr->buffer(), buf+offsets[index], sizes[index]);
             int rc = -1;
-            TRACE_ADAPTOR((stderr,"<%p>MPIOldm2mModel:send_impl MPI_Isend %zd to %zd\n",this,
+            TRACE_ADAPTOR((stderr,"<%p>MPIOldm2mModel:send_impl MPI_Isend %zu to %zu\n",this,
                          hdr->totalsize(),ranks[index]));
             rc = MPI_Isend (hdr,
                             hdr->totalsize(),
@@ -154,7 +154,7 @@ namespace PAMI
           msg->_sizes   = sizes;
           msg->_offsets = offsets;
           msg->_nranks  = nranks;
-          TRACE_ADAPTOR((stderr,"<%p>MPIOldm2mModel:postRecv_impl size[0] %zd\n",this,
+          TRACE_ADAPTOR((stderr,"<%p>MPIOldm2mModel:postRecv_impl size[0] %zu\n",this,
                          msg->_sizes[0]));
           _device.enqueue(msg);
           return;

@@ -140,7 +140,7 @@ namespace PAMI
                                                 uint64_t               payloadPa,
                                                 size_t                 bytes)
       {
-        TRACE((stderr, ">> initializeDescriptor(%p, %u, %zu, %p, %zd)\n", desc, target_task, target_offset, (void *)payloadPa, bytes));
+        TRACE((stderr, ">> initializeDescriptor(%p, %u, %zu, %p, %zu)\n", desc, target_task, target_offset, (void *)payloadPa, bytes));
         // Clone the model descriptor.
         _desc_model.clone (*desc);
 
@@ -167,11 +167,11 @@ namespace PAMI
         dst.Destination.C_Destination = addr[2];
         dst.Destination.D_Destination = addr[3];
         dst.Destination.E_Destination = addr[4];
-        TRACE((stderr, "MUPacketModel::initializeDescriptor() .. setDestination %zd,%zd,%zd,%zd,%zd\n", addr[0],addr[1],addr[2],addr[3],addr[4]));
+        TRACE((stderr, "MUPacketModel::initializeDescriptor() .. setDestination %zu,%zu,%zu,%zu,%zu\n", addr[0],addr[1],addr[2],addr[3],addr[4]));
         desc->setDestination (dst);
 
         // Assuming t is the recv grp id ... what about 'p' coordintate?
-        TRACE((stderr, "MUPacketModel::initializeDescriptor() .. _device.getRecFifoIdForDescriptor(%zd) = %d\n", addr[5], _device.getRecFifoIdForDescriptor(addr[5])));
+        TRACE((stderr, "MUPacketModel::initializeDescriptor() .. _device.getRecFifoIdForDescriptor(%zu) = %d\n", addr[5], _device.getRecFifoIdForDescriptor(addr[5])));
         desc->setRecFIFOId (_device.getRecFifoIdForDescriptor(addr[5]));
 
         // TODO - Calculate the best torusInjectionFifoMap.
@@ -196,7 +196,7 @@ namespace PAMI
         TRACE((stderr, "   initializeDescriptor(),  after desc->setPayload()\n"));
         //desc->dump();
 
-        TRACE((stderr, "<< initializeDescriptor(%p, %d, %p, %zd)\n", desc, target_task, (void *)payloadPa, bytes));
+        TRACE((stderr, "<< initializeDescriptor(%p, %d, %p, %zu)\n", desc, target_task, (void *)payloadPa, bytes));
       }
 
       bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],

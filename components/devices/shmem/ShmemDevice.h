@@ -111,7 +111,7 @@ namespace PAMI
             {
               unsigned i, j, n;
 
-//fprintf (stderr, "PacketImpl::writePayload (iov[%zd])\n", T_Niov);
+//fprintf (stderr, "PacketImpl::writePayload (iov[%zu])\n", T_Niov);
               if (T_Niov == 1)
                 {
                   // Constant-expression template specialization.
@@ -132,7 +132,7 @@ namespace PAMI
                   n = (iov[0].iov_len >> 2) + ((iov[0].iov_len & 0x03) != 0);
                   //printf("iov[0] size:%d\n", iov[0].iov_len);
 
-//fprintf (stderr, "PacketImpl::writePayload (iov[%zd]), 1st, n = %zd, dst = %p, src = %p\n", T_Niov, n, dst, src);
+//fprintf (stderr, "PacketImpl::writePayload (iov[%zu]), 1st, n = %zu, dst = %p, src = %p\n", T_Niov, n, dst, src);
                   for (i = 0; i < n; i++) dst[i] = src[i];
 
                   dst = (uint32_t *)((uint8_t *) dst + iov[0].iov_len);
@@ -140,7 +140,7 @@ namespace PAMI
                   n = (iov[1].iov_len >> 2) + ((iov[1].iov_len & 0x03) != 0);
                   //printf("iov[1] size:%d\n", iov[1].iov_len);
 
-//fprintf (stderr, "PacketImpl::writePayload (iov[%zd]), 2nd, n = %zd, dst = %p, src = %p\n", T_Niov, n, dst, src);
+//fprintf (stderr, "PacketImpl::writePayload (iov[%zu]), 2nd, n = %zu, dst = %p, src = %p\n", T_Niov, n, dst, src);
                   for (i = 0; i < n; i++) dst[i] = src[i];
 
                   return;
@@ -292,7 +292,7 @@ namespace PAMI
               PAMI::Interface::Mapping::nodeaddr_t address;
 
               __global.mapping.nodeAddr (address);
-              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() after nodeAddr() global %zd, local %zd\n",address.global,address.local));
+              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() after nodeAddr() global %zu, local %zu\n",address.global,address.local));
               __global.mapping.node2peer (address, me);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() me = %zu\n", me));
 
@@ -327,7 +327,7 @@ namespace PAMI
                       if (ncontexts[i] > 0) done++;
 #ifdef __pami_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-                      if(countdown==1) fprintf(stderr, "ShmemDevice::Factory::generate_impl() ncontexts[%zu] = %zu, %p, %zd\n", i, ncontexts[i],ncontexts,mm.available());
+                      if(countdown==1) fprintf(stderr, "ShmemDevice::Factory::generate_impl() ncontexts[%zu] = %zu, %p, %zu\n", i, ncontexts[i],ncontexts,mm.available());
 #endif
 #endif
                     }
@@ -651,11 +651,11 @@ namespace PAMI
       size_t pktid;
       TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. before nextInjPacket(), fnum = %zu\n", fnum));
       PacketImpl * pkt = (PacketImpl *) _fifo[fnum].nextInjPacket (pktid);
-      TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. pkt = %p, pktid = %zd\n", pkt, pktid));
+      TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. pkt = %p, pktid = %zu\n", pkt, pktid));
 
       if (pkt != NULL)
         {
-          TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. before write(), metadata = %p, metasize = %zd\n", metadata, metasize));
+          TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. before write(), metadata = %p, metasize = %zu\n", metadata, metasize));
           //if (likely(metadata!=NULL))
           //printf("metasize:%d T_Niov:%d\n", metasize, T_Niov);
           pkt->writeMetadata ((uint8_t *) metadata, metasize);
@@ -684,7 +684,7 @@ namespace PAMI
       size_t         niov,
       size_t       & sequence)
     {
-      TRACE_ERR((stderr, "(%zd) 2.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p, %zd) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
+      TRACE_ERR((stderr, "(%zu) 2.ShmemDevice::writeSinglePacket (%zu, %d, %p, %p, %zu) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
 
 #ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
       unsigned long long t = __global.time.timebase ();
@@ -706,11 +706,11 @@ namespace PAMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
 
-          TRACE_ERR((stderr, "(%zd) 2.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p, %zd) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
+          TRACE_ERR((stderr, "(%zu) 2.ShmemDevice::writeSinglePacket (%zu, %d, %p, %p, %zu) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
           return PAMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) 2.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p, %zd) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
+      TRACE_ERR((stderr, "(%zu) 2.ShmemDevice::writeSinglePacket (%zu, %d, %p, %p, %zu) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
       return PAMI_EAGAIN;
     };
 
@@ -724,7 +724,7 @@ namespace PAMI
       size_t         length,
       size_t       & sequence)
     {
-      TRACE_ERR((stderr, "(%zd) 3.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p, %zd) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
+      TRACE_ERR((stderr, "(%zu) 3.ShmemDevice::writeSinglePacket (%zu, %d, %p, %p, %zu) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
 
 #ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
       unsigned long long t = __global.time.timebase ();
@@ -746,11 +746,11 @@ namespace PAMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
 
-          TRACE_ERR((stderr, "(%zd) 3.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p, %zd) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
+          TRACE_ERR((stderr, "(%zu) 3.ShmemDevice::writeSinglePacket (%zu, %d, %p, %p, %zu) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
           return PAMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) 3.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p, %zd) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
+      TRACE_ERR((stderr, "(%zu) 3.ShmemDevice::writeSinglePacket (%zu, %d, %p, %p, %zu) << CM_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
       return PAMI_EAGAIN;
     };
 
@@ -763,7 +763,7 @@ namespace PAMI
       void         * payload,
       size_t       & sequence)
     {
-      TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
+      TRACE_ERR((stderr, "(%zu) 4.ShmemDevice::writeSinglePacket (%zu, %d, %p, %p) >>\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
 
 #ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
       unsigned long long t = __global.time.timebase ();
@@ -785,11 +785,11 @@ namespace PAMI
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
 
-          TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p) << PAMI_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
+          TRACE_ERR((stderr, "(%zu) 4.ShmemDevice::writeSinglePacket (%zu, %d, %p, %p) << PAMI_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
           return PAMI_SUCCESS;
         }
 
-      TRACE_ERR((stderr, "(%zd) 4.ShmemDevice::writeSinglePacket (%zd, %d, %p, %p) << PAMI_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
+      TRACE_ERR((stderr, "(%zu) 4.ShmemDevice::writeSinglePacket (%zu, %d, %p, %p) << PAMI_EAGAIN\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
       return PAMI_EAGAIN;
     };
 
@@ -803,17 +803,17 @@ namespace PAMI
 #endif
 
       size_t events = 0;
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance() >>\n", __global.mapping.task()));
+      TRACE_ERR((stderr, "(%zu) ShmemDevice::advance() >>\n", __global.mapping.task()));
 
       // Advance any pending receive messages.
       PacketImpl * pkt = NULL;
       uint16_t id;
 
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance()    ... before _rfifo->nextRecPacket(), _rfifo = %p\n", __global.mapping.task(), _rfifo));
+      TRACE_ERR((stderr, "(%zu) ShmemDevice::advance()    ... before _rfifo->nextRecPacket(), _rfifo = %p\n", __global.mapping.task(), _rfifo));
 
       while ((pkt = (PacketImpl *)_rfifo->nextRecPacket()) != NULL)
         {
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::advance()    ... before pkt->getHeader(), pkt = %p\n", __global.mapping.task(), pkt));
+          TRACE_ERR((stderr, "(%zu) ShmemDevice::advance()    ... before pkt->getHeader(), pkt = %p\n", __global.mapping.task(), pkt));
           //mem_sync ();
           mem_isync ();
 
@@ -832,13 +832,13 @@ namespace PAMI
           id = pkt->getDispatch ();
           void * meta = (void *) pkt->getMetadata ();
           void * data = pkt->getPayload ();
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::advance()    ... before  dispatch .. _dispatch[%d].function = %p, _dispatch[%d].clientdata = %p\n", __global.mapping.task(), id, _dispatch[id].function, id, _dispatch[id].clientdata));
+          TRACE_ERR((stderr, "(%zu) ShmemDevice::advance()    ... before  dispatch .. _dispatch[%d].function = %p, _dispatch[%d].clientdata = %p\n", __global.mapping.task(), id, _dispatch[id].function, id, _dispatch[id].clientdata));
           _dispatch[id].function (meta, data, T_Fifo::packet_payload_size, _dispatch[id].clientdata, data);
 
           // Complete this message/packet and increment the fifo head.
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::advance()    ... before _rfifo->consumePacket()\n", __global.mapping.task()));
+          TRACE_ERR((stderr, "(%zu) ShmemDevice::advance()    ... before _rfifo->consumePacket()\n", __global.mapping.task()));
           _rfifo->consumePacket ();
-          TRACE_ERR((stderr, "(%zd) ShmemDevice::advance()    ...  after _rfifo->consumePacket()\n", __global.mapping.task()));
+          TRACE_ERR((stderr, "(%zu) ShmemDevice::advance()    ...  after _rfifo->consumePacket()\n", __global.mapping.task()));
           events++;
 #endif
         }
@@ -857,7 +857,7 @@ namespace PAMI
 
           while ((uepkt = (UnexpectedPacket *) __ndQ.popHead()) != NULL)
             {
-              TRACE_ERRi((stderr, "(%zd) ShmemDevice::advance()    ...         dequeue nd packet, __ndQ.size() = %3d -> %3d, uepkt->sequence = %zd\n", __global.mapping.task(), __ndQ.size() + 1, __ndQ.size(), uepkt->sequence));
+              TRACE_ERRi((stderr, "(%zu) ShmemDevice::advance()    ...         dequeue nd packet, __ndQ.size() = %3d -> %3d, uepkt->sequence = %zu\n", __global.mapping.task(), __ndQ.size() + 1, __ndQ.size(), uepkt->sequence));
               _dispatch[uepkt->id].function (uepkt->meta,
                                              uepkt->data,
                                              T_Fifo::packet_payload_size,
@@ -869,8 +869,8 @@ namespace PAMI
 
 #endif
 
-      //TRACE_ERR((stderr, "(%zd) ShmemDevice::advance()    ...  after _rfifo->nextRecPacket()\n", __global.mapping.task()));
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::advance() << ... events = %zu\n", __global.mapping.task(), events));
+      //TRACE_ERR((stderr, "(%zu) ShmemDevice::advance()    ...  after _rfifo->nextRecPacket()\n", __global.mapping.task()));
+      TRACE_ERR((stderr, "(%zu) ShmemDevice::advance() << ... events = %zu\n", __global.mapping.task(), events));
 
 #ifdef TRAP_ADVANCE_DEADLOCK
 

@@ -83,7 +83,7 @@ static void rcvdecrement (pami_context_t   context,
                        pami_result_t    result)
 {
   unsigned * value = (unsigned *) cookie;
-  TRACE_ERR((stderr, "(%zd) ***** in rcvdecrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
+  TRACE_ERR((stderr, "(%zu) ***** in rcvdecrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
   std::cout << _recv_buffer << std::endl;
   --*value;
 }
@@ -93,7 +93,7 @@ static void snddecrement (pami_context_t   context,
                        pami_result_t    result)
 {
   unsigned * value = (unsigned *) cookie;
-  TRACE_ERR((stderr, "(%zd) ***** in snddecrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
+  TRACE_ERR((stderr, "(%zu) ***** in snddecrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
   --*value;
 }
 
@@ -113,13 +113,13 @@ static void test_dispatch (
     memcpy (_recv_buffer, pipe_addr, pipe_size);
     std::cout << "Msg = " << _recv_buffer << std::endl;
     unsigned * value = (unsigned *) cookie;
-    TRACE_ERR((stderr, "(%zd) ****** in test_dispatch() short recv:  cookie = %p, decrement: %d => %d\n", _my_rank, cookie, *value, *value-1));
+    TRACE_ERR((stderr, "(%zu) ****** in test_dispatch() short recv:  cookie = %p, decrement: %d => %d\n", _my_rank, cookie, *value, *value-1));
     --*value;
   }
   else
   {
     //header_t * header = (header_t *) header_addr;
-    TRACE_ERR((stderr, "(%zd) ****** in test_dispatch() async recv:  cookie = %p, pipe_size = %zd\n", _my_rank, cookie, pipe_size));
+    TRACE_ERR((stderr, "(%zu) ****** in test_dispatch() async recv:  cookie = %p, pipe_size = %zu\n", _my_rank, cookie, pipe_size));
 
     recv->local_fn = rcvdecrement;
     recv->cookie   = cookie;
@@ -137,23 +137,23 @@ void send_once (pami_context_t context, pami_send_t * parameters)
  std::cout << __FILE__ << ":" << __LINE__ << std::endl;
   //pami_result_t result =
     PAMI_Send (context, parameters);
-  TRACE_ERR((stderr, "(%zd) send_once() Before advance\n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) send_once() Before advance\n", _my_rank));
   while (_send_active) PAMI_Context_advance (context, 100);
   _send_active = 1;
-  TRACE_ERR((stderr, "(%zd) send_once()  After advance\n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) send_once()  After advance\n", _my_rank));
 }
 
 void recv_once (pami_context_t context)
 {
  std::cout << __FILE__ << __LINE__ << std::endl;
-  TRACE_ERR((stderr, "(%zd) recv_once() Before advance\n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) recv_once() Before advance\n", _my_rank));
   while (_recv_active) PAMI_Context_advance (context, 100);
   //print received buffer
   fprintf (stdout, "\n Received Message = %s\n",_recv_buffer);
   printHexLine2( _recv_buffer, 16, 0 );
   fflush (stdout);
   _recv_active = 1;
-  TRACE_ERR((stderr, "(%zd) recv_once()  After advance\n", _my_rank));
+  TRACE_ERR((stderr, "(%zu) recv_once()  After advance\n", _my_rank));
 }
 
 unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, size_t myrank, pami_endpoint_t origin, pami_endpoint_t target)
@@ -178,7 +178,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
     sndlen1 =strlen(buffer);
     printHexLine2( buffer, sndlen1, 0 );
 
-    TRACE_ERR((stderr, "(%zu) Do test ... sndlen = %zd\n", myrank, sndlen1));
+    TRACE_ERR((stderr, "(%zu) Do test ... sndlen = %zu\n", myrank, sndlen1));
 
     //header_t header;
     //header.sndlen = sndlen1;
@@ -200,7 +200,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
     parameters.send.dest = target;
     for (i = 0; i < ITERATIONS; i++)
     {
-      TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %d\n", myrank, i, ITERATIONS));
+      TRACE_ERR((stderr, "(%zu) Starting Iteration %d of size %d\n", myrank, i, ITERATIONS));
       send_once (context, &parameters);
     }
   }
@@ -208,7 +208,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
   {
     for (i = 0; i < ITERATIONS; i++)
     {
-      TRACE_ERR((stderr, "(%zd) Starting Iteration %d of size %d\n", myrank, i, ITERATIONS));
+      TRACE_ERR((stderr, "(%zu) Starting Iteration %d of size %d\n", myrank, i, ITERATIONS));
       recv_once (context);
     }
   }
@@ -287,7 +287,7 @@ int main (int argc, char ** argv)
    else
        val =atoi(argv[1]) ;
 
-        fprintf (stdout, "** The test will run %zd times ***\n", val);
+        fprintf (stdout, "** The test will run %zu times ***\n", val);
     fflush(stdout);
 
   for(i=0;i<val;i++){

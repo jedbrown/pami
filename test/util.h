@@ -86,7 +86,7 @@ static void barrier_dispatch_function (
   --__barrier_active[phase];
 
   // Forward this barrier notification to the next task.
-  //TRACE_ERR((stderr, "    barrier_dispatch_function(), __barrier_active[%zd].send %% __barrier_size (%zd) = %zd\n", index, __barrier_size, __barrier_active[index].send % __barrier_size));
+  //TRACE_ERR((stderr, "    barrier_dispatch_function(), __barrier_active[%zu].send %% __barrier_size (%zu) = %zu\n", index, __barrier_size, __barrier_active[index].send % __barrier_size));
 }
 
 /* ************************************************************************* */
@@ -145,7 +145,7 @@ void barrier_init (pami_client_t client, pami_context_t context, size_t dispatch
   result = PAMI_Configuration_query(client, &configuration);
   __barrier_size = configuration.value.intval;
 
-  TRACE_ERR((stderr,"__barrier_size:%zd __barrier_task:%zd\n",__barrier_size, __barrier_task));
+  TRACE_ERR((stderr,"__barrier_size:%zu __barrier_task:%zu\n",__barrier_size, __barrier_task));
 
   __barrier_context  = context;
   __barrier_dispatch = dispatch;

@@ -31,7 +31,7 @@ namespace PAMI
                                             PAMI::Memory::MemoryManager *mm,
                                             PAMI::Device::Generic::Device * progress)
     {
-      TRACE_ERR((stderr, "(%zd) ShmemDevice::init ()\n", __global.mapping.task()));
+      TRACE_ERR((stderr, "(%zu) ShmemDevice::init ()\n", __global.mapping.task()));
       _client   = client;
       _context  = context;
       _contextid  = contextid;
@@ -131,7 +131,7 @@ namespace PAMI
                                                             void                      * recv_func_parm,
                                                             uint16_t                  & id)
     {
-      TRACE_ERR((stderr, ">> (%zd) ShmemDevice::registerRecvFunction(%zd,%p,%p) .. DISPATCH_SET_COUNT = %d\n", __global.mapping.task(), set, recv_func, recv_func_parm, DISPATCH_SET_COUNT));
+      TRACE_ERR((stderr, ">> (%zu) ShmemDevice::registerRecvFunction(%zu,%p,%p) .. DISPATCH_SET_COUNT = %d\n", __global.mapping.task(), set, recv_func, recv_func_parm, DISPATCH_SET_COUNT));
 
       // This device only supports up to 256 dispatch sets.
       if (set >= DISPATCH_SET_COUNT) return PAMI_ERROR;
@@ -142,7 +142,7 @@ namespace PAMI
 
       for (id = set * DISPATCH_SET_SIZE; id < n; id++)
         {
-         // TRACE_ERR((stderr, "   (%zd) ShmemDevice::registerRecvFunction(), _dispatch[%d].function= %p\n", __global.mapping.task(), id, _dispatch[id].function));
+         // TRACE_ERR((stderr, "   (%zu) ShmemDevice::registerRecvFunction(), _dispatch[%d].function= %p\n", __global.mapping.task(), id, _dispatch[id].function));
 
           if (_dispatch[id].function == (Interface::RecvFunction_t) unexpected)
             {
@@ -164,7 +164,7 @@ namespace PAMI
         if (_dispatch[uepkt->id].function != unexpected)
         {
           // Invoke the registered dispatch function
-          TRACE_ERR((stderr, "   (%zd) ShmemDevice::registerRecvFunction() uepkt = %p, uepkt->id = %zu\n", __global.mapping.task(), uepkt, uepkt->id));
+          TRACE_ERR((stderr, "   (%zu) ShmemDevice::registerRecvFunction() uepkt = %p, uepkt->id = %zu\n", __global.mapping.task(), uepkt, uepkt->id));
           _dispatch[uepkt->id].function (uepkt->meta,
                                          uepkt->data,
                                          uepkt->bytes,
@@ -183,17 +183,17 @@ namespace PAMI
         }
       }
 
-      TRACE_ERR((stderr, "<< (%zd) ShmemDevice::registerRecvFunction() => %d\n", __global.mapping.task(), id));
+      TRACE_ERR((stderr, "<< (%zu) ShmemDevice::registerRecvFunction() => %d\n", __global.mapping.task(), id));
       return PAMI_SUCCESS;
     };
 
     template <class T_Fifo>
     pami_result_t ShmemDevice<T_Fifo>::post (size_t fnum, Shmem::SendQueue::Message * msg)
     {
-      TRACE_ERR((stderr, ">> (%zd) ShmemDevice::post(%zu, %p)\n", __global.mapping.task(), fnum, msg));
+      TRACE_ERR((stderr, ">> (%zu) ShmemDevice::post(%zu, %p)\n", __global.mapping.task(), fnum, msg));
       msg->setup (_progress, &__sendQ[fnum]);
       msg->postNext(true);
-      TRACE_ERR((stderr, "<< (%zd) ShmemDevice::post(%zu, %p)\n", __global.mapping.task(), fnum, msg));
+      TRACE_ERR((stderr, "<< (%zu) ShmemDevice::post(%zu, %p)\n", __global.mapping.task(), fnum, msg));
       return PAMI_SUCCESS;
     };
 
@@ -204,7 +204,7 @@ namespace PAMI
                                          void   * recv_func_parm,
                                          void   * cookie)
     {
-      //TRACE_ERR((stderr, ">> (%zd) ShmemDevice::unexpected()\n", __global.mapping.task()));
+      //TRACE_ERR((stderr, ">> (%zu) ShmemDevice::unexpected()\n", __global.mapping.task()));
 
       // The metadata is at the front of the packet.
       PacketImpl * pkt = (PacketImpl *) metadata;
@@ -213,12 +213,12 @@ namespace PAMI
         (UnexpectedPacket *) malloc (sizeof(UnexpectedPacket));
       new ((void *)uepkt) UnexpectedPacket (pkt);
 
-      TRACE_ERR((stderr, "   (%zd) ShmemDevice::unexpected(), uepkt = %p, uepkt->id = %zu\n", __global.mapping.task(), uepkt, uepkt->id));
+      TRACE_ERR((stderr, "   (%zu) ShmemDevice::unexpected(), uepkt = %p, uepkt->id = %zu\n", __global.mapping.task(), uepkt, uepkt->id));
 
       CircularQueue * q = (CircularQueue *) recv_func_parm;
       q->enqueue ((CircularQueue::Element *) uepkt);
 
-      //TRACE_ERR((stderr, "<< (%zd) ShmemDevice::unexpected(), q = %p\n", __global.mapping.task(), q));
+      //TRACE_ERR((stderr, "<< (%zu) ShmemDevice::unexpected(), q = %p\n", __global.mapping.task(), q));
       return 0;
     }
   };

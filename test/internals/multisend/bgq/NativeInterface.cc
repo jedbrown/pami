@@ -52,7 +52,7 @@ void dispatch_multicast_fn(const pami_quad_t     *msginfo,
                            pami_pipeworkqueue_t **rcvpwq,
                            pami_callback_t       *cb_done)
 {
-  DBG_FPRINTF((stderr,"%s:%s msgcount %d, connection_id %d, root %zd, sndlen %zd, cookie %s\n",
+  DBG_FPRINTF((stderr,"%s:%s msgcount %d, connection_id %d, root %zu, sndlen %zu, cookie %s\n",
                __FILE__,__PRETTY_FUNCTION__,msgcount, connection_id, root, sndlen, (char*) clientdata));
   PAMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   PAMI_assertf(sndlen <= TEST_BUF_SIZE,"sndlen %zu\n",sndlen);
@@ -61,7 +61,7 @@ void dispatch_multicast_fn(const pami_quad_t     *msginfo,
   PAMI_assertf(msginfo->w1 == _msginfo.w1,"msginfo->w1=%d\n",msginfo->w1);
   PAMI_assertf(msginfo->w2 == _msginfo.w2,"msginfo->w2=%d\n",msginfo->w2);
   PAMI_assertf(msginfo->w3 == _msginfo.w3,"msginfo->w3=%d\n",msginfo->w3);
-  PAMI_assertf(dst_subtopology.isRankMember(task_id),"!isRankMember(%zd)\n",task_id);
+  PAMI_assertf(dst_subtopology.isRankMember(task_id),"!isRankMember(%zu)\n",task_id);
 
   if (connection_id == 1) // no data being sent
   {
@@ -80,7 +80,7 @@ void dispatch_multicast_fn(const pami_quad_t     *msginfo,
   {
     PAMI::PipeWorkQueue * pwq;
     pwq = _buffer.dstPwq();
-    DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %zd, %zd done out of %zd\n",__FILE__,__PRETTY_FUNCTION__,
+    DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %zu, %zu done out of %zu\n",__FILE__,__PRETTY_FUNCTION__,
                  pwq,pwq->bytesAvailableToProduce(),pwq->getBytesProduced(),sndlen));
 
     *rcvlen = sndlen;
@@ -106,7 +106,7 @@ int main(int argc, char ** argv)
   pami_context_t context = NULL;
   pami_result_t status = PAMI_ERROR;
   task_id = __global.mapping.task();
-  DBG_FPRINTF((stderr, "%s:%s: task %zd starting\n",__FILE__,__PRETTY_FUNCTION__, task_id));
+  DBG_FPRINTF((stderr, "%s:%s: task %zu starting\n",__FILE__,__PRETTY_FUNCTION__, task_id));
   size_t                     dispatch = 2;
 
   size_t  bytesConsumed = 0,  bytesProduced = 0;
@@ -141,25 +141,25 @@ int main(int argc, char ** argv)
   topology_global_coord.subTopologyNthGlobal(&dst_subtopology, 0); //0th rank on each node
 
   if (task_id == 0)
-    DBG_FPRINTF((stderr, "%s: topology_global_list type %d and size %zd\n",__PRETTY_FUNCTION__, topology_global_list.type(), topology_global_list.size()));
+    DBG_FPRINTF((stderr, "%s: topology_global_list type %d and size %zu\n",__PRETTY_FUNCTION__, topology_global_list.type(), topology_global_list.size()));
     for (size_t i=0;i<topology_global_list.size();++i)
     {
-      DBG_FPRINTF((stderr, "%s: topology_global_list index %zd is task %d\n",__PRETTY_FUNCTION__, i, topology_global_list.index2Rank(i)));
+      DBG_FPRINTF((stderr, "%s: topology_global_list index %zu is task %d\n",__PRETTY_FUNCTION__, i, topology_global_list.index2Rank(i)));
     }
-    DBG_FPRINTF((stderr, "%s: topology_global_coord type %d and size %zd\n",__PRETTY_FUNCTION__, topology_global_coord.type(), topology_global_coord.size()));
+    DBG_FPRINTF((stderr, "%s: topology_global_coord type %d and size %zu\n",__PRETTY_FUNCTION__, topology_global_coord.type(), topology_global_coord.size()));
     for (size_t i=0;i<topology_global_coord.size();++i)
     {
-      DBG_FPRINTF((stderr, "%s: topology_global_coord index %zd is task %d\n",__PRETTY_FUNCTION__, i, topology_global_coord.index2Rank(i)));
+      DBG_FPRINTF((stderr, "%s: topology_global_coord index %zu is task %d\n",__PRETTY_FUNCTION__, i, topology_global_coord.index2Rank(i)));
     }
-    DBG_FPRINTF((stderr, "%s: dst subtopology type %d and size %zd\n",__PRETTY_FUNCTION__, dst_subtopology.type(), dst_subtopology.size()));
+    DBG_FPRINTF((stderr, "%s: dst subtopology type %d and size %zu\n",__PRETTY_FUNCTION__, dst_subtopology.type(), dst_subtopology.size()));
     for (size_t i=0;i<dst_subtopology.size();++i)
     {
-      DBG_FPRINTF((stderr, "%s: dst subtopology index %zd is task %d\n",__PRETTY_FUNCTION__, i, dst_subtopology.index2Rank(i)));
+      DBG_FPRINTF((stderr, "%s: dst subtopology index %zu is task %d\n",__PRETTY_FUNCTION__, i, dst_subtopology.index2Rank(i)));
     }
   if (dst_subtopology.isRankMember(task_id))
-    DBG_FPRINTF((stderr, "%s: task %zd is dst member\n",__PRETTY_FUNCTION__, task_id));
+    DBG_FPRINTF((stderr, "%s: task %zu is dst member\n",__PRETTY_FUNCTION__, task_id));
   else
-    DBG_FPRINTF((stderr, "%s: task %zd is not dst member\n",__PRETTY_FUNCTION__, task_id));
+    DBG_FPRINTF((stderr, "%s: task %zu is not dst member\n",__PRETTY_FUNCTION__, task_id));
 
 
   PAMI::Topology topology_local  = __global.topology_local;
@@ -265,7 +265,7 @@ int main(int argc, char ** argv)
 #ifdef ENABLE_MAMBO_WORKAROUNDS
   mamboSleep(5);
 #endif // ENABLE_MAMBO_WORKAROUNDS
-  DBG_FPRINTF((stderr, "%s:%s: task %zd exiting\n",__FILE__,__PRETTY_FUNCTION__, task_id));
+  DBG_FPRINTF((stderr, "%s:%s: task %zu exiting\n",__FILE__,__PRETTY_FUNCTION__, task_id));
   return 0;
 // ------------------------------------------------------------------------
 // simple mcast root to all

@@ -125,10 +125,10 @@ namespace PAMI
           inline void dump (const char * prefix = NULL)
           {
             if (prefix == NULL)
-              fprintf (stderr, "MemoryWorkQueue::dump() _buffer = %p, _length = %zd, _produced = %zd, _consumed = %zd, _input = %d\n",
+              fprintf (stderr, "MemoryWorkQueue::dump() _buffer = %p, _length = %zu, _produced = %zu, _consumed = %zu, _input = %d\n",
                        _buffer, _length, _produced, _consumed, _input);
             else
-              fprintf (stderr, "%s MemoryWorkQueue::dump() _buffer = %p, _length = %zd, _produced = %zd, _consumed = %zd, _input = %d\n",
+              fprintf (stderr, "%s MemoryWorkQueue::dump() _buffer = %p, _length = %zu, _produced = %zu, _consumed = %zu, _input = %d\n",
                        prefix, _buffer, _length, _produced, _consumed, _input);
           }
 

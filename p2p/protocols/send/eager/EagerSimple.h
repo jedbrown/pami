@@ -184,7 +184,7 @@ namespace PAMI
 
           inline pami_result_t simple_impl (pami_send_t * parameters)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::simple_impl() .. sizeof(protcol_metadata_t) = %zd, T_Model::packet_model_metadata_bytes = %zd\n", sizeof(protcol_metadata_t), T_Model::packet_model_metadata_bytes));
+            TRACE_ERR((stderr, ">> EagerSimple::simple_impl() .. sizeof(protcol_metadata_t) = %zu, T_Model::packet_model_metadata_bytes = %zu\n", sizeof(protcol_metadata_t), T_Model::packet_model_metadata_bytes));
 
             pami_task_t task;
             size_t offset;
@@ -293,7 +293,7 @@ namespace PAMI
                 else
                   {
                     TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata\n"));
-                    //PAMI_assertf((parameters->send.header.bytes + sizeof(protcol_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zd) and application metadata (%zd) within the payload of a single packet (%zd)\n", sizeof(protcol_metadata_t), parameters->send.header.bytes, T_Model::packet_model_payload_bytes);
+                    //PAMI_assertf((parameters->send.header.bytes + sizeof(protcol_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zu) and application metadata (%zu) within the payload of a single packet (%zu)\n", sizeof(protcol_metadata_t), parameters->send.header.bytes, T_Model::packet_model_payload_bytes);
 
 #ifdef ERROR_CHECKS
                     if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > (T_Model::packet_model_payload_bytes - sizeof(protcol_metadata_t))))
@@ -355,12 +355,12 @@ namespace PAMI
               }
             else
               {
-                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. parameters->send.header.iov_len = %zd, parameters->send.data.iov_len = %zd\n", parameters->send.header.iov_len, parameters->send.data.iov_len));
+                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. parameters->send.header.iov_len = %zu, parameters->send.data.iov_len = %zu\n", parameters->send.header.iov_len, parameters->send.data.iov_len));
 
                 // This branch should be resolved at compile time and optimized out.
                 if (sizeof(protcol_metadata_t) <= T_Model::packet_model_metadata_bytes)
                   {
-                    TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata (%zd bytes) sent in the packet metadata (%zd bytes available).\n", sizeof(protcol_metadata_t), T_Model::packet_model_metadata_bytes));
+                    TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata (%zu bytes) sent in the packet metadata (%zu bytes available).\n", sizeof(protcol_metadata_t), T_Model::packet_model_metadata_bytes));
 #ifdef ERROR_CHECKS
                     if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > T_Model::packet_model_payload_bytes))
                     {
@@ -380,7 +380,7 @@ namespace PAMI
                       {
                         // Application metadata does not fit in a single packet.
                         // Send a "long header" message.
-                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. application metadata (%zd bytes) is too large for a single packet (%zd bytes of payload). Send a 'long header'.\n", parameters->send.header.iov_len, T_Model::packet_model_payload_bytes));
+                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. application metadata (%zu bytes) is too large for a single packet (%zu bytes of payload). Send a 'long header'.\n", parameters->send.header.iov_len, T_Model::packet_model_payload_bytes));
 
                         _envelope_model.postPacket (state->pkt[0],
                                                     NULL,
@@ -403,7 +403,7 @@ namespace PAMI
                       }
                     else
                       {
-                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. application metadata (%zd bytes) sent in a single packet (%zd bytes of payload).\n", parameters->send.header.iov_len, T_Model::packet_model_payload_bytes));
+                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. application metadata (%zu bytes) sent in a single packet (%zu bytes of payload).\n", parameters->send.header.iov_len, T_Model::packet_model_payload_bytes));
                         _envelope_model.postPacket (state->pkt[0],
                                                     NULL,
                                                     NULL,
@@ -417,7 +417,7 @@ namespace PAMI
                   }
                 else
                   {
-                    TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata (%zd bytes) is too large for the packet metadata (%zd bytes available). Protocol metadata will be sent in the packet payload.\n", sizeof(protcol_metadata_t), T_Model::packet_model_metadata_bytes));
+                    TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata (%zu bytes) is too large for the packet metadata (%zu bytes available). Protocol metadata will be sent in the packet payload.\n", sizeof(protcol_metadata_t), T_Model::packet_model_metadata_bytes));
 #ifdef ERROR_CHECKS
                     if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > (T_Model::packet_model_payload_bytes - sizeof(protcol_metadata_t))))
                     {
@@ -437,7 +437,7 @@ namespace PAMI
                       {
                         // Protocol metadata + application metadata does not fit in
                         // a single packet. Send a "long header" message.
-                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata (%zd bytes) + application metadata (%zd bytes) is too large for a single packet (%zd bytes of payload). Send a 'long header'.\n", sizeof(protcol_metadata_t), parameters->send.header.iov_len, T_Model::packet_model_payload_bytes));
+                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata (%zu bytes) + application metadata (%zu bytes) is too large for a single packet (%zu bytes of payload). Send a 'long header'.\n", sizeof(protcol_metadata_t), parameters->send.header.iov_len, T_Model::packet_model_payload_bytes));
 
                         _envelope_model.postPacket (state->pkt[0],
                                                     NULL,
@@ -461,7 +461,7 @@ namespace PAMI
                       }
                     else
                       {
-                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata (%zd bytes) + application metadata (%zd bytes) sent in a single packet (%zd bytes of payload).\n", sizeof(protcol_metadata_t), parameters->send.header.iov_len, T_Model::packet_model_payload_bytes));
+                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata (%zu bytes) + application metadata (%zu bytes) sent in a single packet (%zu bytes of payload).\n", sizeof(protcol_metadata_t), parameters->send.header.iov_len, T_Model::packet_model_payload_bytes));
 
                         state->v[0].iov_base = (void *) &(state->metadata);
                         state->v[0].iov_len  = sizeof (protcol_metadata_t);
@@ -535,7 +535,7 @@ namespace PAMI
                                         uint8_t            * header,
                                         recv_state_t       * state)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::process_envelope() .. match.task = %d, match.offset = %d, header = %p, header bytes = %zd\n", metadata->match.task, metadata->match.offset, header, metadata->metabytes));
+            TRACE_ERR((stderr, ">> EagerSimple::process_envelope() .. match.task = %d, match.offset = %d, header = %p, header bytes = %zu\n", metadata->match.task, metadata->match.offset, header, metadata->metabytes));
 
             // Invoke the registered dispatch function.
             _dispatch_fn.p2p (_context,            // Communication context
@@ -550,7 +550,7 @@ namespace PAMI
             // is available
             PAMI_assert(state->info.kind == PAMI_AM_KIND_SIMPLE);
 
-            TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zd\n", metadata->bytes));
+            TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zu\n", metadata->bytes));
 
             if (unlikely(metadata->bytes == 0))
               {
@@ -673,7 +673,7 @@ namespace PAMI
                 p = payload;
               }
 
-            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), m->match.task = %d, m->match.offset = %d, m->bytes = %zd, m->va_send = %p\n", m->match.task, m->match.offset, m->bytes, m->va_send));
+            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), m->match.task = %d, m->match.offset = %d, m->bytes = %zu, m->va_send = %p\n", m->match.task, m->match.offset, m->bytes, m->va_send));
 
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
@@ -700,7 +700,7 @@ namespace PAMI
 
                 size_t pbytes = (sizeof(protcol_metadata_t) > T_Model::packet_model_metadata_bytes) ? sizeof(protcol_metadata_t) : 0;
 
-                TRACE_ERR ((stderr, "   EagerSimple::dispatch_envelope_direct() .. header_bytes = %zd, T_Model::packet_model_payload_bytes = %zd, pbytes = %zd\n", header_bytes, T_Model::packet_model_payload_bytes, pbytes));
+                TRACE_ERR ((stderr, "   EagerSimple::dispatch_envelope_direct() .. header_bytes = %zu, T_Model::packet_model_payload_bytes = %zu, pbytes = %zu\n", header_bytes, T_Model::packet_model_payload_bytes, pbytes));
 
                 if (unlikely((header_bytes) > (T_Model::packet_model_payload_bytes - pbytes)))
                   {
@@ -782,7 +782,7 @@ namespace PAMI
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
             protocol_match_t * match = (protocol_match_t *) metadata;
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), match->task = %d, match->offset = %d, bytes = %zd\n", match->task, match->offset, bytes));
+            TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), match->task = %d, match->offset = %d, bytes = %zu\n", match->task, match->offset, bytes));
 
             recv_state_t * state = (recv_state_t *) eager->_connection.get (match->task, match->offset);
 
@@ -831,7 +831,7 @@ namespace PAMI
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
             protocol_match_t * match = (protocol_match_t *) metadata;
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_message(), match->task = %d, match->offset = %d, bytes = %zd\n", match->task, match->offset, bytes));
+            TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_message(), match->task = %d, match->offset = %d, bytes = %zu\n", match->task, match->offset, bytes));
 
             recv_state_t * state = (recv_state_t *) eager->_connection.get (match->task, match->offset);
 
@@ -841,7 +841,7 @@ namespace PAMI
             // Number of bytes left to copy into the destination buffer
             size_t nleft = state->info.data.simple.bytes - nbyte;
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), bytes received so far = %zd, bytes yet to receive = %zd, total bytes to receive = %zd, total bytes being sent = %zd\n", state->received, nleft, state->info.data.simple.bytes, state->metadata.bytes));
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), bytes received so far = %zu, bytes yet to receive = %zu, total bytes to receive = %zu, total bytes being sent = %zu\n", state->received, nleft, state->info.data.simple.bytes, state->metadata.bytes));
 
             if (nleft > 0)
               {
@@ -864,7 +864,7 @@ namespace PAMI
                   }
               }
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), nbyte = %zd\n", nbyte));
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), nbyte = %zu\n", nbyte));
 
             if (nbyte + bytes >= state->metadata.bytes)
               {

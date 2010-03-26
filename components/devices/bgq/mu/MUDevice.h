@@ -245,7 +245,7 @@ namespace PAMI
                                                void               ** payloadPa)
           {
             uint32_t fnum = _p2pChannel[_p2pSendChannelIndex]->pinFifo (target_rank);
-            TRACE((stderr, ">> MUDevice::nextInjectionDescriptor() .. _p2pChannel[%d]->pinFifo (%zd) = %d\n", _p2pSendChannelIndex, target_rank, _p2pChannel[_p2pSendChannelIndex]->pinFifo (target_rank)));
+            TRACE((stderr, ">> MUDevice::nextInjectionDescriptor() .. _p2pChannel[%d]->pinFifo (%zu) = %d\n", _p2pSendChannelIndex, target_rank, _p2pChannel[_p2pSendChannelIndex]->pinFifo (target_rank)));
 
             if (!_p2pChannel[_p2pSendChannelIndex]->isEmptyMsgQ(fnum)) return false;
 

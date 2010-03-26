@@ -63,14 +63,14 @@ namespace PAMI
           size_t n = size;
 
           // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-          TRACE_ERR((stderr, "Global() .. size = %zd\n", size));
+          TRACE_ERR((stderr, "Global() .. size = %zu\n", size));
           rc = shm_open (_shmemfile, O_CREAT | O_RDWR, 0600);
           TRACE_ERR((stderr, "Global() .. after shm_open, fd = %d\n", fd));
           if ( rc != -1 )
           {
             fd = rc;
             rc = ftruncate( fd, n );
-            TRACE_ERR((stderr, "Global() .. after ftruncate(%d,%zd), rc = %d\n", fd,n,rc));
+            TRACE_ERR((stderr, "Global() .. after ftruncate(%d,%zu), rc = %d\n", fd,n,rc));
             if ( rc != -1 )
             {
               void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -80,14 +80,14 @@ namespace PAMI
                 _memptr  = ptr;
                 _memsize = n;
 
-                TRACE_ERR((stderr, "Global() .. _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
+                TRACE_ERR((stderr, "Global() .. _memptr = %p, _memsize = %zu\n", _memptr, _memsize));
 
                 // Round up to the page size
                 size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
                 // Truncate to this size.
                 rc = ftruncate( fd, size );
-                TRACE_ERR((stderr, "Global() .. after second ftruncate(%d,%zd), rc = %d\n", fd,n,rc));
+                TRACE_ERR((stderr, "Global() .. after second ftruncate(%d,%zu), rc = %d\n", fd,n,rc));
               } else { rc = -1; }
             }
           }
@@ -101,7 +101,7 @@ namespace PAMI
                   posix_memalign ((void **)&_memptr, 16, bytes);
                   memset (_memptr, 0, bytes);
                   _memsize = bytes;
-                  TRACE_ERR((stderr, "Global() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zd\n", _memptr, _memsize));
+                  TRACE_ERR((stderr, "Global() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zu\n", _memptr, _memsize));
           }
 
           mapping.init(min, max, num, &ranks);

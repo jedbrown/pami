@@ -401,7 +401,7 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_t * parameters)
         {
         size_t id = (size_t)(parameters->send.dispatch);
-        TRACE_ERR((stderr, ">> Context::send_impl('simple'), _dispatch[%zd][0] = %p\n", id, _dispatch[id][0]));
+        TRACE_ERR((stderr, ">> Context::send_impl('simple'), _dispatch[%zu][0] = %p\n", id, _dispatch[id][0]));
         PAMI_assert_debug (_dispatch[id][0] != NULL);
 
         PAMI::Protocol::Send::Send * send =
@@ -415,7 +415,7 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_immediate_t * parameters)
         {
         size_t id = (size_t)(parameters->dispatch);
-        TRACE_ERR((stderr, ">> Context::send_impl('immediate'), _dispatch[%zd][0] = %p\n", id, _dispatch[id][0]));
+        TRACE_ERR((stderr, ">> Context::send_impl('immediate'), _dispatch[%zu][0] = %p\n", id, _dispatch[id][0]));
         PAMI_assert_debug (_dispatch[id][0] != NULL);
 
         PAMI::Protocol::Send::Send * send =
@@ -610,7 +610,7 @@ namespace PAMI
       inline pami_result_t multicast_impl(pami_multicast_t *mcastinfo)
       {
       size_t id = (size_t)(mcastinfo->dispatch);
-      TRACE_ERR((stderr, ">> multicast_impl, _dispatch[%zd/%zd] = %p\n", id, mcastinfo->dispatch, _dispatch[id][0]));
+      TRACE_ERR((stderr, ">> multicast_impl, _dispatch[%zu/%zu] = %p\n", id, mcastinfo->dispatch, _dispatch[id][0]));
       PAMI_assert_debug (_dispatch[id][0] != NULL);
 
       // \todo A COMPLETE TEMPORARY HACK - since Mike gave us two dispatch table entries, we used the
@@ -776,7 +776,7 @@ namespace PAMI
         if(options.hint.multicast.one_sided)
         {
           _dispatch[(size_t)id][1] = (void*) 2; // see HACK comments above
-          PAMI_assertf(_request.objsize >= sizeof(P2PMcastProto),"%zd >= %zd(%zd,%zd)\n",_request.objsize,sizeof(P2PMcastProto),sizeof(EagerMPI),sizeof(PAMI::Device::MPIBcastMdl));
+          PAMI_assertf(_request.objsize >= sizeof(P2PMcastProto),"%zu >= %zu(%zu,%zu)\n",_request.objsize,sizeof(P2PMcastProto),sizeof(EagerMPI),sizeof(PAMI::Device::MPIBcastMdl));
           new (_dispatch[(size_t)id][0]) P2PMcastProto(id, fn.multicast, cookie,
                                                        *_mpi,
                                                        PAMI::Device::MPIBcastDev::Factory::getDevice(_devices->_mpimcast, _clientid, _contextid),
@@ -785,31 +785,31 @@ namespace PAMI
                                                        this->_contextid,
                                                        this->_clientid,
                                                        result);
-          TRACE_ERR((stderr, "<< dispatch_impl(), mcast local onesided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+          TRACE_ERR((stderr, "<< dispatch_impl(), mcast local onesided _dispatch[%zu] = %p\n", id, _dispatch[id][0]));
         }
         else if((options.hint.multicast.all_sided) && (options.hint.multicast.local))
         {
           if(options.hint.multicast.ring_wq ) // \todo bogus!  the problem with hints is ....
           {
             _dispatch[(size_t)id][1] = (void*) 3; // see HACK comments above
-            PAMI_assertf(_request.objsize >= sizeof(PAMI::Device::WQRingBcastMdl),"%zd >= %zd\n",_request.objsize,sizeof(PAMI::Device::WQRingBcastMdl));
+            PAMI_assertf(_request.objsize >= sizeof(PAMI::Device::WQRingBcastMdl),"%zu >= %zu\n",_request.objsize,sizeof(PAMI::Device::WQRingBcastMdl));
             new (_dispatch[(size_t)id][0]) PAMI::Device::WQRingBcastMdl(PAMI::Device::WQRingBcastDev::Factory::getDevice(_devices->_wqringbcast, _clientid, _contextid), result);
-            TRACE_ERR((stderr, "<< dispatch_impl(), mcast local allsided ring _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+            TRACE_ERR((stderr, "<< dispatch_impl(), mcast local allsided ring _dispatch[%zu] = %p\n", id, _dispatch[id][0]));
           }
         else
         {
             _dispatch[(size_t)id][1] = (void*) 4; // see HACK comments above
-            PAMI_assertf(_request.objsize >= sizeof(PAMI::Device::LocalBcastWQModel),"%zd >= %zd\n",_request.objsize,sizeof(PAMI::Device::LocalBcastWQModel));
+            PAMI_assertf(_request.objsize >= sizeof(PAMI::Device::LocalBcastWQModel),"%zu >= %zu\n",_request.objsize,sizeof(PAMI::Device::LocalBcastWQModel));
             new (_dispatch[(size_t)id][0]) PAMI::Device::LocalBcastWQModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid), result);
-            TRACE_ERR((stderr, "<< dispatch_impl(), mcast local allsided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+            TRACE_ERR((stderr, "<< dispatch_impl(), mcast local allsided _dispatch[%zu] = %p\n", id, _dispatch[id][0]));
           }
         }
         else if((options.hint.multicast.all_sided) && (options.hint.multicast.global))
         {
           _dispatch[(size_t)id][1] = (void*) 5; // see HACK comments above
-          PAMI_assertf(_request.objsize >= sizeof(PAMI::Device::MPIBcastMdl),"%zd >= %zd\n",_request.objsize,sizeof(PAMI::Device::MPIBcastMdl));
+          PAMI_assertf(_request.objsize >= sizeof(PAMI::Device::MPIBcastMdl),"%zu >= %zu\n",_request.objsize,sizeof(PAMI::Device::MPIBcastMdl));
           new (_dispatch[(size_t)id][0]) PAMI::Device::MPIBcastMdl(PAMI::Device::MPIBcastDev::Factory::getDevice(_devices->_mpimcast, _clientid, _contextid), result);
-          TRACE_ERR((stderr, "<< dispatch_impl(), mcast global allsided _dispatch[%zd] = %p\n", id, _dispatch[id][0]));
+          TRACE_ERR((stderr, "<< dispatch_impl(), mcast global allsided _dispatch[%zu] = %p\n", id, _dispatch[id][0]));
         }
         else // !experimental collective and !local allsided shmem and !global allsided
         {
@@ -835,7 +835,7 @@ namespace PAMI
       }
 
       result_error:
-      TRACE_ERR((stderr, "<< dispatch_impl(), result = %zd, _dispatch[%zd] = %p\n", result, id, _dispatch[id][0]));
+      TRACE_ERR((stderr, "<< dispatch_impl(), result = %zu, _dispatch[%zu] = %p\n", result, id, _dispatch[id][0]));
       return result;
     }
 

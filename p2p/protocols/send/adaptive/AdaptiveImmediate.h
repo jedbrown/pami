@@ -146,7 +146,7 @@ namespace PAMI
             size_t offset;
             PAMI_ENDPOINT_INFO(parameters->dest,task,offset);
 
-            TRACE_ERR((stderr, "AdaptiveImmediate::immediate_impl() .. before _send_model.postPacket() .. bytes = %zd\n", bytes));
+            TRACE_ERR((stderr, "AdaptiveImmediate::immediate_impl() .. before _send_model.postPacket() .. bytes = %zu\n", bytes));
             bool posted =
               _send_model.postPacket (task, offset,
                                       (void *) & metadata,

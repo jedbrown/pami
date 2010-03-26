@@ -43,7 +43,7 @@ namespace PAMI
             inline LinearFifoPacket () :
                 T_Packet ()
             {
-              TRACE_ERR((stderr, "%s: size %zd, fifosize %d, sizeof(LinearFifoPacket) %zd, sizeof(T_Atomic) %zd\n", __PRETTY_FUNCTION__,  sizeof(*this),  T_FifoSize, sizeof(LinearFifoPacket),sizeof(T_Atomic)));
+              TRACE_ERR((stderr, "%s: size %zu, fifosize %d, sizeof(LinearFifoPacket) %zu, sizeof(T_Atomic) %zu\n", __PRETTY_FUNCTION__,  sizeof(*this),  T_FifoSize, sizeof(LinearFifoPacket),sizeof(T_Atomic)));
               setActive (false);
             };
 
@@ -62,11 +62,11 @@ namespace PAMI
             };
             inline void setActive (bool active)
             {
-              TRACE_ERR((stderr, "(%zd) >> LinearFifoPacket::setActive(%d)\n", __global.mapping.task(), active));
+              TRACE_ERR((stderr, "(%zu) >> LinearFifoPacket::setActive(%d)\n", __global.mapping.task(), active));
               size_t * header = (size_t *) T_Packet::getHeader ();
               header[(T_Packet::headerSize_impl / sizeof(size_t))-1] = active;
-              TRACE_ERR((stderr, "(%zd)    LinearFifoPacket::setActive(%d), header = %p, header[%zd] = %zd\n", __global.mapping.task(), active, header, (T_Packet::headerSize_impl / sizeof(size_t)) - 1, header[(T_Packet::headerSize_impl / sizeof(size_t))-1]));
-              TRACE_ERR((stderr, "(%zd) << LinearFifoPacket::setActive(%d)\n", __global.mapping.task(), active));
+              TRACE_ERR((stderr, "(%zu)    LinearFifoPacket::setActive(%d), header = %p, header[%zu] = %zu\n", __global.mapping.task(), active, header, (T_Packet::headerSize_impl / sizeof(size_t)) - 1, header[(T_Packet::headerSize_impl / sizeof(size_t))-1]));
+              TRACE_ERR((stderr, "(%zu) << LinearFifoPacket::setActive(%d)\n", __global.mapping.task(), active));
             };
 
             static const size_t public_header_bytes = T_Packet::headerSize_impl - sizeof(size_t);
@@ -102,9 +102,9 @@ namespace PAMI
 
         inline T_Packet * nextInjPacket_impl (size_t & pktid)
         {
-          TRACE_ERR((stderr, "(%zd) LinearFifo::nextInjPacket_impl() >>\n", __global.mapping.task()));
+          TRACE_ERR((stderr, "(%zu) LinearFifo::nextInjPacket_impl() >>\n", __global.mapping.task()));
           pktid = _tail.fetch_and_inc ();
-          TRACE_ERR((stderr, "(%zd) LinearFifo::nextInjPacket_impl() .. _tail.fetch_and_inc() => %zd, T_FifoSize = %d\n", __global.mapping.task(), pktid, T_FifoSize));
+          TRACE_ERR((stderr, "(%zu) LinearFifo::nextInjPacket_impl() .. _tail.fetch_and_inc() => %zu, T_FifoSize = %d\n", __global.mapping.task(), pktid, T_FifoSize));
 
           if (pktid < T_FifoSize)
             {
@@ -118,7 +118,7 @@ namespace PAMI
         {
           //mem_barrier ();
           //mem_sync();
-          TRACE_ERR((stderr, "(%zd) LinearFifo::nextRecPacket_impl() .. this = %p, _packet[%zd].isActive () = %d\n", __global.mapping.task(), this, _head, _packet[_head].isActive ()));
+          TRACE_ERR((stderr, "(%zu) LinearFifo::nextRecPacket_impl() .. this = %p, _packet[%zu].isActive () = %d\n", __global.mapping.task(), this, _head, _packet[_head].isActive ()));
           if (_packet[_head].isActive ())
             return (T_Packet *) &_packet[_head];
 
@@ -127,7 +127,7 @@ namespace PAMI
 
         inline void consumePacket_impl ()
         {
-          TRACE_ERR((stderr, "(%zd) LinearFifo::consumePacket_impl() .. this = %p, _packet[%zd].isActive () = %d\n", __global.mapping.task(), this, _head, _packet[_head].isActive ()));
+          TRACE_ERR((stderr, "(%zu) LinearFifo::consumePacket_impl() .. this = %p, _packet[%zu].isActive () = %d\n", __global.mapping.task(), this, _head, _packet[_head].isActive ()));
                     //mem_barrier ();
           //mem_sync();
           _packet[_head].setActive (false);
@@ -150,7 +150,7 @@ namespace PAMI
 
         inline void producePacket_impl (size_t pktid)
         {
-          TRACE_ERR((stderr, "(%zd) >> LinearFifo::producePacket_impl(%zd)\n", __global.mapping.task(), pktid));
+          TRACE_ERR((stderr, "(%zu) >> LinearFifo::producePacket_impl(%zu)\n", __global.mapping.task(), pktid));
 
           // This memory barrier forces all previous memory operations to
           // complete (header writes, payload write, etc) before the packet is
@@ -169,7 +169,7 @@ namespace PAMI
           //mem_barrier ();
           //mem_sync();
 
-          TRACE_ERR((stderr, "(%zd) << LinearFifo::producePacket_impl(%zd)\n", __global.mapping.task(), pktid));
+          TRACE_ERR((stderr, "(%zu) << LinearFifo::producePacket_impl(%zu)\n", __global.mapping.task(), pktid));
         };
 
         inline size_t nextInjSequenceId_impl ()

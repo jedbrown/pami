@@ -150,7 +150,7 @@ int con_test(size_t dispatch_id, pami_client_t client, pami_context_t context,
 
         barrier();
         if (con_recv_err || con_send_err) {
-                fprintf(stderr, "%zd saw %d recv buffer errors and %d send buffer errors\n",
+                fprintf(stderr, "%zu saw %d recv buffer errors and %d send buffer errors\n",
                         rank, con_recv_err, con_send_err);
         }
         return 0;

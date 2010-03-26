@@ -357,7 +357,7 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_immediate_t * parameters)
         {
           size_t id = (size_t)(parameters->dispatch);
-          TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zd] = %p\n", id, _dispatch[id]));
+          TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zu] = %p\n", id, _dispatch[id]));
           PAMI_assert_debug (_dispatch[id] != NULL);
 
           PAMI::Protocol::Send::Send * send =

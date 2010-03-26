@@ -70,17 +70,17 @@ namespace PAMI
           PAMI_assertf(rc != -1, "shm_open(\"%s\", O_CREAT | O_RDWR, 0600) failed, errno=%d\n", shmemfile, errno)
           fd = rc;
           rc = ftruncate( fd, n );
-          PAMI_assertf(rc != -1, "ftruncate(%d, %zd) failed, errno=%d\n", fd, n, errno);
+          PAMI_assertf(rc != -1, "ftruncate(%d, %zu) failed, errno=%d\n", fd, n, errno);
           void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
           if (ptr == MAP_FAILED) {
-                PAMI_assertf(errno == ENOMEM, "mmap(NULL, %zd, PROT_READ | PROT_WRITE, MAP_SHARED, %d, 0) failed, errno = %d\n", n, fd, errno);
+                PAMI_assertf(errno == ENOMEM, "mmap(NULL, %zu, PROT_READ | PROT_WRITE, MAP_SHARED, %d, 0) failed, errno = %d\n", n, fd, errno);
                 // assert(mode == SMP)
                 close(fd);
                 shm_unlink(shmemfile);
                 fd = -1;
                 // just get some memory... remember, this is a ctor and is called pre-main
                 ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-                PAMI_assertf(ptr != MAP_FAILED, "mmap(NULL, %zd, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0) failed, errno = %d\n", n, errno);
+                PAMI_assertf(ptr != MAP_FAILED, "mmap(NULL, %zu, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0) failed, errno = %d\n", n, errno);
           }
 
           size_t bytes_used = _mapcache.init (personality, ptr, n);
@@ -89,11 +89,11 @@ namespace PAMI
           if (fd != -1) {
                 // Truncate to this size.
                 rc = ftruncate( fd, size );
-                  PAMI_assertf(rc != -1, "ftruncate(%d, %zd) failed, errno=%d\n", fd, size, errno);
+                  PAMI_assertf(rc != -1, "ftruncate(%d, %zu) failed, errno=%d\n", fd, size, errno);
           } else {
                 void *v = ptr;
                 ptr = mremap(v, n, size, 0);
-                PAMI_assertf(ptr != MAP_FAILED, "mremap(%p, %zd, %zd, 0) failed, errno = %d\n", v, n, size, errno);
+                PAMI_assertf(ptr != MAP_FAILED, "mremap(%p, %zu, %zu, 0) failed, errno = %d\n", v, n, size, errno);
           }
           _memptr  = ptr;
           _memsize = bytes_used;
@@ -118,7 +118,7 @@ namespace PAMI
           } else if (mapping.size() == max - min + 1) {
                 new (&topology_global) PAMI::Topology(min, max);
           } else {
-                PAMI_abortf("failed to build global-world topology %zd::%zd(%d) / %zd..%zd", mapping.size(), rectsize, mapping.globalDims(), min, max);
+                PAMI_abortf("failed to build global-world topology %zu::%zu(%d) / %zu..%zu", mapping.size(), rectsize, mapping.globalDims(), min, max);
           }
           topology_global.subTopologyLocalToMe(&topology_local);
         }

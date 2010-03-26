@@ -38,7 +38,7 @@ static void decrement (pami_context_t   context,
                        pami_result_t    result)
 {
   unsigned * value = (unsigned *) cookie;
-  TRACE_ERR((stderr, "(%zd) decrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
+  TRACE_ERR((stderr, "(%zu) decrement() cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
   --*value;
 }
 
@@ -55,13 +55,13 @@ static void test_dispatch (
   unsigned * value = (unsigned *) cookie;
   if (pipe_addr != NULL)
   {
-    TRACE_ERR((stderr, "(%zd) short recv:  decrement cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
+    TRACE_ERR((stderr, "(%zu) short recv:  decrement cookie = %p, %d => %d\n", _my_rank, cookie, *value, *value-1));
     memcpy((void *)_tmpbuffer, pipe_addr, pipe_size);
     --*value;
     return;
   }
 
-  TRACE_ERR((stderr, "(%zd) long recvn", _my_rank));
+  TRACE_ERR((stderr, "(%zu) long recvn", _my_rank));
   recv->local_fn = decrement;
   recv->cookie   = cookie;
   recv->kind = PAMI_AM_KIND_SIMPLE;

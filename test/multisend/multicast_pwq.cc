@@ -38,7 +38,7 @@ void dispatch_multicast_fn(const pami_quad_t     *msginfo,
                            pami_pipeworkqueue_t **rcvpwq,
                            pami_callback_t       *cb_done)
 {
-  DBG_FPRINTF((stderr,"%s:%s msgcount %d, connection_id %d, root %zd, sndlen %zd, cookie %s\n",
+  DBG_FPRINTF((stderr,"%s:%s msgcount %d, connection_id %d, root %zu, sndlen %zu, cookie %s\n",
                __FILE__,__PRETTY_FUNCTION__,msgcount, connection_id, root, sndlen, (char*) clientdata));
   PAMI_assertf(_doneCountdown > 0,"doneCountdown %d\n",_doneCountdown);
   PAMI_assertf(sndlen <= TEST_BUF_SIZE,"sndlen %zu\n",sndlen);
@@ -57,7 +57,7 @@ void dispatch_multicast_fn(const pami_quad_t     *msginfo,
   else
     PAMI_abortf("connection id %d",connection_id);
 
-  DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %zd, %zd done out of %zd\n",__FILE__,__PRETTY_FUNCTION__,
+  DBG_FPRINTF((stderr,"%s:%s bytesAvailable (%p) %zu, %zu done out of %zu\n",__FILE__,__PRETTY_FUNCTION__,
                pwq,pwq->bytesAvailableToProduce(),pwq->getBytesProduced(),sndlen));
 
   *rcvlen = sndlen;
@@ -160,10 +160,10 @@ int main(int argc, char ** argv)
   pami_task_t *gRankList=NULL; topology_global.rankList(&gRankList);
   size_t  gSize    = topology_global.size();
 
-  DBG_FPRINTF((stderr,"gRoot %d, gSize %zd\n",gRoot, gSize));
+  DBG_FPRINTF((stderr,"gRoot %d, gSize %zu\n",gRoot, gSize));
   for(size_t j=0;j<gSize;++j)
   {
-    DBG_FPRINTF((stderr,"gRankList[%zd] = %d\n",j, gRankList[j]));
+    DBG_FPRINTF((stderr,"gRankList[%zu] = %d\n",j, gRankList[j]));
   }
 
   pami_multicast_t mcast;
@@ -197,10 +197,10 @@ int main(int argc, char ** argv)
     {
       mcast.src_participants = (pami_topology_t *)new PAMI::Topology(gRoot); // global root (mem leak)
       mcast.dst_participants = (pami_topology_t *)new PAMI::Topology(gRankList+1, (gSize-1)); // everyone except root in dst_participants (mem leak)
-      DBG_FPRINTF((stderr,"gRoot %d, gSize %zd\n",gRoot, gSize));
+      DBG_FPRINTF((stderr,"gRoot %d, gSize %zu\n",gRoot, gSize));
       for(size_t j=0;j<gSize;++j)
       {
-        DBG_FPRINTF((stderr,"gRankList[%zd] = %d\n",j, gRankList[j]));
+        DBG_FPRINTF((stderr,"gRankList[%zu] = %d\n",j, gRankList[j]));
       }
 
       _buffer1.reset(true); // isRoot = true
