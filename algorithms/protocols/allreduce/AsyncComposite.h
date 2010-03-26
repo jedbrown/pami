@@ -14,7 +14,7 @@
 #ifndef __algorithms_protocols_allreduce_AsyncComposite_h__
 #define __algorithms_protocols_allreduce_AsyncComposite_h__
 
-#include "./Composite.h"
+#include "algorithms/protocols/allreduce/Composite.h"
 //  #include "Geometry.h"
 #include "algorithms/executor/Barrier.h"
 #include "algorithms/executor/AllreduceBase.h"

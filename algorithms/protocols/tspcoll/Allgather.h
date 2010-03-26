@@ -22,7 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "./CollExchange.h"
+#include "algorithms/protocols/tspcoll/CollExchange.h"
 //#define DEBUG_ALLGATHER 1
 #undef TRACE
 #ifdef DEBUG_ALLGATHER

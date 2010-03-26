@@ -15,7 +15,7 @@
 #define __algorithms_protocols_tspcoll_NBCollManager_h__
 
 
-#include "NBCollFactory.h"
+#include "algorithms/protocols/tspcoll/NBCollFactory.h"
 
 namespace TSPColl
 {

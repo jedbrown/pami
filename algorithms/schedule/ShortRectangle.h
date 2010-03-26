@@ -14,7 +14,7 @@
 #ifndef __algorithms_schedule_ShortRectangle_h__
 #define __algorithms_schedule_ShortRectangle_h__
 
-#include "Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 #include "util/ccmi_util.h"
 #include "interface/TorusCollectiveMapping.h"
 #include "OneColorTorusRect.h"

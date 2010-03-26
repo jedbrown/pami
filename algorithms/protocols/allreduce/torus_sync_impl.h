@@ -14,8 +14,8 @@
 #ifndef __algorithms_protocols_allreduce_torus_sync_impl_h__
 #define __algorithms_protocols_allreduce_torus_sync_impl_h__
 
-#include "./CompositeT.h"
-#include "./FactoryT.h"
+#include "algorithms/protocols/allreduce/CompositeT.h"
+#include "algorithms/protocols/allreduce/FactoryT.h"
 
 #include "algorithms/executor/PipelinedAllreduce.h"
 #include "algorithms/executor/Allreduce.h"

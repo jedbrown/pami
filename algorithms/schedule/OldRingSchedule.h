@@ -14,7 +14,7 @@
 #ifndef __algorithms_schedule_OldRingSchedule_h__
 #define __algorithms_schedule_OldRingSchedule_h__
 
-#include "algorithms/schedule/Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 
 
 /////////////////////////////////////////////////////////////////////
@@ -34,7 +34,7 @@ namespace CCMI
   namespace Schedule
   {
     template <class T_Sysdep>
-    class OldRingSchedule : public Schedule
+    class OldRingSchedule : public Interfaces::Schedule
     {
 
     public:

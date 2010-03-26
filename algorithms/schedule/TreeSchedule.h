@@ -15,7 +15,7 @@
 #ifndef __algorithms_schedule_TreeSchedule_h__
 #define __algorithms_schedule_TreeSchedule_h__
 
-#include "Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 #include "util/ccmi_util.h"
 #include "interface/TorusCollectiveMapping.h"
 #include "algorithms/schedule/BinomialTree.h"	// or SpraySchedule.h

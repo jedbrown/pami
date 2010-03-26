@@ -14,11 +14,11 @@
 #ifndef __algorithms_executor_PipelinedAllreduce_h__
 #define __algorithms_executor_PipelinedAllreduce_h__
 
-#include "algorithms/schedule/Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 #include "algorithms/executor/Executor.h"
 #include "algorithms/connmgr/ConnectionManager.h"
-#include "AllreduceState.h"
-#include "AllreduceBase.h"
+#include "algorithms/executor/AllreduceState.h"
+#include "algorithms/executor/AllreduceBase.h"
 //#include "util/logging/LogMgr.h"
 
 

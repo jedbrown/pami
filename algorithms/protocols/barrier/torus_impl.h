@@ -18,8 +18,8 @@
 #include "algorithms/schedule/TreeSchedule.h"
 #include "algorithms/schedule/ShortRectangle.h"
 #include "interface/Geometry.h"
-#include "BarrierT.h"
-#include "BarrierR.h"
+#include "algorithms/protocols/barrier/BarrierT.h"
+#include "algorithms/protocols/barrier/BarrierR.h"
 
 namespace CCMI
 {

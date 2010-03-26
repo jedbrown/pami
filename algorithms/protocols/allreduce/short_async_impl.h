@@ -14,8 +14,8 @@
 #ifndef __algorithms_protocols_allreduce_short_async_impl_h__
 #define __algorithms_protocols_allreduce_short_async_impl_h__
 
-#include "./ShortAsyncCompositeT.h"
-#include "./ShortAsyncFactoryT.h"
+#include "algorithms/protocols/allreduce/ShortAsyncCompositeT.h"
+#include "algorithms/protocols/allreduce/ShortAsyncFactoryT.h"
 
 #include "algorithms/executor/AllreduceBase.h"
 

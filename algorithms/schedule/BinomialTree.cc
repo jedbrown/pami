@@ -13,7 +13,7 @@
  * Also used by the Rectangle schedule to implement Reduce.
  */
 
-#include "./BinomialTree.h"
+#include "algorithms/schedule/BinomialTree.h"
 
 
 #ifndef __GNUC__

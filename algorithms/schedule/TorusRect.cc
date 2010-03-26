@@ -12,7 +12,7 @@
  *
  */
 
-#include "./TorusRect.h"
+#include "algorithms/schedule/TorusRect.h"
 
 
 #ifndef __GNUC__

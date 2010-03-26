@@ -17,7 +17,7 @@
 #ifndef __algorithms_protocols_allreduce_AsyncFactoryT_h__
 #define __algorithms_protocols_allreduce_AsyncFactoryT_h__
 
-#include "./AsyncFactory.h"
+#include "algorithms/protocols/allreduce/AsyncFactory.h"
 
 namespace CCMI
 {

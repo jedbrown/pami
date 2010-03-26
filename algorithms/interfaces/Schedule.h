@@ -17,10 +17,7 @@
 
 namespace CCMI
 {
-  namespace Interfaces
-  {
-
-    /**
+      /**
      * \brief The different collective operations supported
      */
     typedef enum
@@ -32,6 +29,8 @@ namespace CCMI
     } CollectiveOperation;
 
 
+  namespace Interfaces
+  {
     /**
      * \brief Abstract reference class to define the schedule of a collective
      */
@@ -66,7 +65,9 @@ namespace CCMI
        * \param nphases : number of phases
        */
       virtual void
-      init(int root, int op, int &startphase, int &nphases) = 0;
+      init(int root, int op, int &startphase, int &nphases, int &maxranks);
+      virtual void
+      init(int root, int op, int &startphase, int &nphases) ;
 
       /**
        * \brief Get the upstream processors. Source processors
@@ -75,7 +76,7 @@ namespace CCMI
        * \param[INOUT] topology : the topolgy that sends messages to me in this phase
        */
       virtual void
-      getSrcTopology (unsigned phase, PAMI::Topology *topology) = 0;
+      getSrcTopology (unsigned phase, PAMI::Topology *topology);
 
       /**
        * \brief Get the downstream processors to send data to.
@@ -83,21 +84,59 @@ namespace CCMI
        * \param[INOUT] topology : The topology to send messages to in this phase
        */
       virtual void
-      getDstTopology (unsigned phase, PAMI::Topology *topology) = 0;
+      getDstTopology (unsigned phase, PAMI::Topology *topology);
 
       /**
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
       virtual pami_result_t
-      getSrcUnionTopology (PAMI::Topology *topology) = 0;
+      getSrcUnionTopology (PAMI::Topology *topology);
 
       /**
        * \brief Get the union of all destinations across all phases
        * \param[INOUT] topology : the union of all sources
        */
       virtual pami_result_t
-      getDstUnionTopology (PAMI::Topology *topology) = 0;
+      getDstUnionTopology (PAMI::Topology *topology);
+
+      /**
+       * Old ccmi schedule interfaces
+       */
+
+      /**
+       * \brief Get the upstream processors. Source processors
+       * that send messages to me in this collective operation
+       * \param phase : phase of the collective
+       * \param srcpes : List of source processors
+       * \param nsrc :  number of source processors
+       * \param subtasks : what operations to perform? combine?
+       */
+
+      virtual void getSrcPeList (unsigned  phase, unsigned *srcpes,
+                                 unsigned  &nsrc, unsigned *subtasks=NULL);
+
+
+      /**
+       * \brief Get the downstream processors to send data to.
+       * \param phase : phase of the collective
+       * \param dstpes : List of source processors
+       * \param ndst :  number of source processors
+       * \param subtasks : what operations to perform? pt-to-pt, line bcast
+       */
+      virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
+                                 unsigned  &ndst, unsigned *subtasks);
+
+      /**
+       * \brief Initialize the schedule for collective operation
+       * \param root : the root of the collective
+       * \param startphase : The phase where I become active
+       * \param nphases : number of phases
+       * \param maxranks : total number of processors to communicate
+       *  with. Mainly needed in the executor to allocate queues
+       *  and other resources
+       */
+
 
     };  //-- Schedule
   };  //-- Schedule

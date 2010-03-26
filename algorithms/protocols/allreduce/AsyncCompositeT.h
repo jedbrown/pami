@@ -16,7 +16,7 @@
 #ifndef __algorithms_protocols_allreduce_AsyncCompositeT_h__
 #define __algorithms_protocols_allreduce_AsyncCompositeT_h__
 
-#include "./AsyncComposite.h"
+#include "algorithms/protocols/allreduce/AsyncComposite.h"
 
 namespace CCMI
 {

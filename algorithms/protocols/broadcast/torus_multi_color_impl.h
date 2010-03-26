@@ -16,7 +16,7 @@
 
 #include "algorithms/schedule/Rectangle.h"
 #include "algorithms/schedule/OneColorTorusRect.h"
-#include "./MultiColorCompositeT.h"
+#include "algorithms/protocols/broadcast/MultiColorCompositeT.h"
 
 namespace CCMI
 {

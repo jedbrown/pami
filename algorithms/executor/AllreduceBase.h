@@ -15,7 +15,7 @@
 #define __algorithms_executor_AllreduceBase_h__
 
 #include "sys/pami.h"
-#include "algorithms/schedule/Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 #include "algorithms/executor/Executor.h"
 #include "util/ccmi_debug.h"
 #include "math/math_coremath.h"
@@ -270,7 +270,7 @@ namespace CCMI
 
       }
 
-      void setSchedule (Schedule::Schedule *schedule, unsigned color=0)
+      void setSchedule (Interfaces::Schedule::Schedule *schedule, unsigned color=0)
       {
         _astate.setSchedule(schedule);
         _astate.setColor(color);

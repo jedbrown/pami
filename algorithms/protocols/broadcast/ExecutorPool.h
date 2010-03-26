@@ -15,7 +15,7 @@
 #define __algorithms_protocols_broadcast_ExecutorPool_h__
 
 #include "util/queue/Queue.h"
-#include "./BcastQueueElem.h"
+#include "algorithms/protocols/broadcast/BcastQueueElem.h"
 
 #define MAX_PREALLOCATED_BYTES      256
 #define MAX_NUM_PREALLOCATED        64

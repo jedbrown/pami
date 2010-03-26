@@ -14,7 +14,7 @@
 #ifndef __algorithms_protocols_allreduce_FactoryT_h__
 #define __algorithms_protocols_allreduce_FactoryT_h__
 
-#include "./Factory.h"
+#include "algorithms/protocols/allreduce/Factory.h"
 
 namespace CCMI
 {

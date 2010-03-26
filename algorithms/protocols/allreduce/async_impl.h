@@ -14,8 +14,8 @@
 #ifndef __algorithms_protocols_allreduce_async_impl_h__
 #define __algorithms_protocols_allreduce_async_impl_h__
 
-#include "./AsyncCompositeT.h"
-#include "./AsyncFactoryT.h"
+#include "algorithms/protocols/allreduce/AsyncCompositeT.h"
+#include "algorithms/protocols/allreduce/AsyncFactoryT.h"
 #include "algorithms/executor/AllreduceBase.h"
 #include "algorithms/schedule/BinomialTree.h"
 #include "algorithms/connmgr/RankBasedConnMgr.h"

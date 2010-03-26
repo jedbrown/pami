@@ -14,7 +14,7 @@
 #ifndef __util_queue_MatchQueue_h__
 #define __util_queue_MatchQueue_h__
 
-#include "Queue.h"
+#include "util/queue/Queue.h"
 
 #define NUMQS    16
 

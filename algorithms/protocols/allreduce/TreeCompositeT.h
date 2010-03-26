@@ -14,7 +14,7 @@
 #ifndef __algorithms_protocols_allreduce_TreeCompositeT_h__
 #define __algorithms_protocols_allreduce_TreeCompositeT_h__
 
-#include "./Composite.h"
+#include "algorithms/protocols/allreduce/Composite.h"
 
 
 namespace CCMI

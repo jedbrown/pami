@@ -37,7 +37,7 @@ typedef size_t axis_array_t[NUM_STD_AXIS];
 /** \brief Type which holds a set of coordinates (axii - X,Y,Z,T) */
 typedef size_t axii_t[NUM_AXIS];
 
-#include "Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 #include "algorithms/schedule/BinomialTree.h"
 #include "algorithms/schedule/OldRingSchedule.h"
 
@@ -303,7 +303,7 @@ namespace CCMI
       NUM_NODE_SETS,
     } node_set;
 
-    class OneColorRectangle : public Schedule
+    class OneColorRectangle : public Interfaces::Schedule
     {
 
 /*

@@ -22,7 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "algorithms/ccmi.h" // for PAMI_Request_t
-#include "./NBColl.h"
+#include "algorithms/protocols/tspcoll/NBColl.h"
 #include "util/common.h"
 
 /* **************************************************************** */

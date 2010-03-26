@@ -14,10 +14,10 @@
 #ifndef __algorithms_schedule_GiSchedule_h__
 #define __algorithms_schedule_GiSchedule_h__
 
-#include "Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 #include "util/ccmi_util.h"
 #include "interface/TorusCollectiveMapping.h"
-#include "LockboxBarrierSchedule.h"
+#include "algorithms/schedule/LockboxBarrierSchedule.h"
 
 namespace CCMI
 {

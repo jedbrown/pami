@@ -17,9 +17,10 @@
 #define __algorithms_schedule_BinomialTree_h__
 #define HAVE_BINO_LINE_SCHED	// until branch is merged into main
 
-#include "Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 #include "Global.h"
 #include <strings.h>  //needed for ffs on AIX
+#include "util/ccmi_util.h"
 namespace CCMI
 {
   namespace Schedule
@@ -30,7 +31,7 @@ namespace CCMI
     //------ The number of phases is logrithmic with a max of 20 --
     //-------------------------------------------------------------
     template <class T_SysDep>
-    class BinomialTreeSchedule : public Schedule
+    class BinomialTreeSchedule : public Interfaces::Schedule
     {
       unsigned _nphases;  /// \brief Number of phases total
       unsigned _nphbino;  /// \brief Num of phases in pow-of-2 sec

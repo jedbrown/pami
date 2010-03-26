@@ -6,7 +6,7 @@
 #ifndef __algorithms_executor_OldBarrier_h__
 #define __algorithms_executor_OldBarrier_h__
 
-#include "algorithms/schedule/Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 #include "algorithms/executor/Executor.h"
 
 #undef TRACE_ERR
@@ -55,7 +55,7 @@ namespace CCMI
         {
         }
 
-        void init(Schedule::Schedule *schedule)
+        void init(Interfaces::Schedule::Schedule *schedule)
         {
           int start, nph, nmessages = 0;
           schedule->init (-1, BARRIER_OP, start, nph, nmessages);
@@ -233,7 +233,7 @@ namespace CCMI
         _iteration     = 0;
       }
 
-      void setCommSchedule(Schedule::Schedule *sch)
+      void setCommSchedule(Interfaces::Schedule::Schedule *sch)
       {
         _cache.init (sch);
 

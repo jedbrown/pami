@@ -14,8 +14,8 @@
 #ifndef __algorithms_protocols_allreduce_tree_impl_h__
 #define __algorithms_protocols_allreduce_tree_impl_h__
 
-#include "./TreeCompositeT.h"
-#include "./TreeFactoryT.h"
+#include "algorithms/protocols/allreduce/TreeCompositeT.h"
+#include "algorithms/protocols/allreduce/TreeFactoryT.h"
 
 #include "algorithms/executor/AllreduceBase.h"
 #include "algorithms/executor/PipelinedAllreduce.h"

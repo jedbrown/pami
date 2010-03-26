@@ -15,7 +15,7 @@
 #define __algorithms_protocols_barrier_BarrierR_h__
 
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
-#include "./BarrierFactory.h"
+#include "algorithms/protocols/barrier/BarrierFactory.h"
 #include "interface/CollectiveMapping.h"
 #include "algorithms/executor/Barrier.h"
 #include "interface/Geometry.h"

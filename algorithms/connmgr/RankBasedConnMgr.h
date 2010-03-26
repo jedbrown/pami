@@ -14,7 +14,7 @@
 #ifndef __algorithms_connmgr_RankBasedConnMgr_h__
 #define __algorithms_connmgr_RankBasedConnMgr_h__
 
-#include "ConnectionManager.h"
+#include "algorithms/connmgr/ConnectionManager.h"
 #include "Global.h"
 
 namespace CCMI

@@ -892,7 +892,7 @@ namespace PAMI
 #undef TRACE_ERR
 
 // Include the non-inline method definitions
-#include "ShmemDevice_impl.h"
+#include "components/devices/shmem/ShmemDevice_impl.h"
 
 #undef DISPATCH_SET_COUNT
 #undef DISPATCH_SET_SIZE

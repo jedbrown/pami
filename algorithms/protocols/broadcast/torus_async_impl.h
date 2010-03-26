@@ -16,7 +16,7 @@
 
 #include "algorithms/schedule/BinomialTree.h"
 #include "algorithms/schedule/RingSchedule.h"
-#include "./AsyncCompositeT.h"
+#include "algorithms/protocols/broadcast/AsyncCompositeT.h"
 
 namespace CCMI
 {

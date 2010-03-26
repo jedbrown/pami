@@ -17,7 +17,7 @@
 #define __algorithms_schedule_JaynomialTree_h__
 #define HAVE_BINO_LINE_SCHED	// until branch is merged into main
 
-#include "Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 
 
 #define Right(rank, phase, N) ( ((rank) + (1<<(phase)) + (N)) % (N) )

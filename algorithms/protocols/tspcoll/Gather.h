@@ -23,7 +23,7 @@
 #include <stdlib.h>
 
 #include "interface/Communicator.h"
-#include "./Barrier.h"
+#include "algorithms/protocols/tspcoll/Barrier.h"
 
 /* **************************************************************** */
 /*                      Gather                                     */

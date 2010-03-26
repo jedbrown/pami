@@ -17,8 +17,8 @@
 #include "algorithms/schedule/MultinomialTree.h"
 #include "algorithms/schedule/BinomialTree.h"
 #include "algorithms/connmgr/SimpleConnMgr.h"
-#include "BarrierT.h"
-#include "MultiSyncComposite.h"
+#include "algorithms/protocols/barrier/BarrierT.h"
+#include "algorithms/protocols/barrier/MultiSyncComposite.h"
 
 namespace CCMI
 {

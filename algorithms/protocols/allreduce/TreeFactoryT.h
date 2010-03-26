@@ -14,10 +14,10 @@
 #ifndef __algorithms_protocols_allreduce_TreeFactoryT_h__
 #define __algorithms_protocols_allreduce_TreeFactoryT_h__
 
-#include "./Factory.h"
-#include "./TreeCompositeT.h"
-#include "./tree/SmpTreeAllreduce.h"
-#include "./tree/VnDualShortTreeAllreduce.h"
+#include "algorithms/protocols/allreduce/Factory.h"
+#include "algorithms/protocols/allreduce/TreeCompositeT.h"
+#include "algorithms/protocols/allreduce/tree/SmpTreeAllreduce.h"
+#include "algorithms/protocols/allreduce/tree/VnDualShortTreeAllreduce.h"
 
 
 namespace CCMI

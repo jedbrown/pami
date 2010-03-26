@@ -13,7 +13,7 @@
 #ifndef __algorithms_executor_AllreduceState_h__
 #define __algorithms_executor_AllreduceState_h__
 
-#include "algorithms/schedule/Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 #include "algorithms/executor/Executor.h"
 #include "algorithms/connmgr/ConnectionManager.h"
 #include "algorithms/ccmi.h"
@@ -89,7 +89,7 @@ namespace CCMI
       unsigned          _sizeOfBuffers; /// Size of allocated buffers (>= _bytes)
 
       /// my schedule
-      Schedule::Schedule                   * _sched;
+      Interfaces::Schedule::Schedule                   * _sched;
 
       /// dynamically allocated buffer space (for algorithms/schedule/phase data members)
       void             * _scheduleAllocation;
@@ -444,12 +444,12 @@ namespace CCMI
       /// \brief Register the schedule
       ///
       /// \param[in]  sched
-      inline void setSchedule(Schedule::Schedule *sched)
+      inline void setSchedule(Interfaces::Schedule::Schedule *sched)
         {
           TRACE_STATE((stderr,"<%p>Executor::AllreduceState::setSchedule(%#X) enter\n",this, (int)sched));
           _sched = sched;
         }
-      inline Schedule::Schedule * getSchedule()
+      inline Interfaces::Schedule::Schedule * getSchedule()
         {
           return _sched;
         }

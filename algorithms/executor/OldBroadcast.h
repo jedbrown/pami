@@ -16,7 +16,7 @@
 
 //#define TRACE_FLOW(x)  fprintf x
 
-#include "algorithms/schedule/Schedule.h"
+#include "algorithms/interfaces/Schedule.h"
 #include "algorithms/executor/Executor.h"
 #include "algorithms/connmgr/ConnectionManager.h"
 
@@ -37,7 +37,7 @@ namespace CCMI
     {
     protected:
       T_Sysdep            * _sd;
-      Schedule::Schedule  * _comm_schedule;
+      Interfaces::Schedule::Schedule  * _comm_schedule;
       T_Mcast             * _mInterface;
       pami_oldmulticast_t    _msend;
 
@@ -149,7 +149,7 @@ namespace CCMI
       // --  Initialization routines
       //------------------------------------------
 
-      inline void setSchedule (Schedule::Schedule *ct)
+      inline void setSchedule (Interfaces::Schedule::Schedule *ct)
       {
         _comm_schedule = ct;
 

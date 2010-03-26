@@ -22,7 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "./CollExchange.h"
+#include "algorithms/protocols/tspcoll/CollExchange.h"
 
 /* *********************************************************************** */
 /*                      binomial broadcast class                           */

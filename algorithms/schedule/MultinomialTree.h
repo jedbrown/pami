@@ -7,7 +7,7 @@
 #define __algorithms_schedule_MultinomialTree_h__
 
 #include "algorithms/interfaces/Schedule.h"
-#include "MultinomialMap.h"
+#include "algorithms/schedule/MultinomialMap.h"
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
