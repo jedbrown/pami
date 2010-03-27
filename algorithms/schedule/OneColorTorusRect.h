@@ -91,7 +91,7 @@ namespace CCMI
           for (i = 0; i < _map->torusDims(); i++)
             _dim_sizes[i] = _ur.net_coord(i) - _ll.net_coord(i) + 1;
 
-          
+
           virtual void
             init(int root, int op, int &startphase, int &nphases, int &maxranks)
           {PAMI_abort();}

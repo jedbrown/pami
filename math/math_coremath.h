@@ -26,11 +26,11 @@
 #define MATH_MAX_NSRC	4
 
 #ifndef MAX
-#define MAX(a,b) (((a)>(b))?(a):(b))   /*!< Maximum macro */
+#define MAX(a,b) (((a)>(b))?(a):(b))   /**< Maximum macro */
 #endif
 
 #ifndef MIN
-#define MIN(a,b) (((a)>(b))?(b):(a))   /*!< Minimum macro */
+#define MIN(a,b) (((a)>(b))?(b):(a))   /**< Minimum macro */
 #endif
 
 /**
@@ -38,9 +38,9 @@
  */
 typedef struct
 {
-    int16_t  a; /*!< First operand */
-    uint16_t z; /*!< Blank hole     */
-    int32_t  b; /*!< Second operand */
+    int16_t  a; /**< First operand */
+    uint16_t z; /**< Blank hole     */
+    int32_t  b; /**< Second operand */
 } int16_int32_t;
 
 /**
@@ -48,9 +48,9 @@ typedef struct
  */
 typedef struct
 {
-    uint16_t a; /*!< First operand */
-    uint16_t z; /*!< Blank hole     */
-    int32_t  b; /*!< Second operand */
+    uint16_t a; /**< First operand */
+    uint16_t z; /**< Blank hole     */
+    int32_t  b; /**< Second operand */
 } uint16_int32_t;
 
 /**
@@ -58,8 +58,8 @@ typedef struct
  */
 typedef struct
 {
-  int32_t  a; /*!< First operand */
-  int32_t  b; /*!< Second operand */
+  int32_t  a; /**< First operand */
+  int32_t  b; /**< Second operand */
 } int32_int32_t;
 
 /**
@@ -67,8 +67,8 @@ typedef struct
  */
 typedef struct
 {
-  uint32_t a; /*!< First operand */
-  int32_t  b; /*!< Second operand */
+  uint32_t a; /**< First operand */
+  int32_t  b; /**< Second operand */
 } uint32_int32_t;
 
 /**
@@ -76,8 +76,8 @@ typedef struct
  */
 typedef struct
 {
-  uint32_t a; /*!< First operand */
-  uint32_t b; /*!< Second operand */
+  uint32_t a; /**< First operand */
+  uint32_t b; /**< Second operand */
 } uint32_uint32_t;
 
 /**
@@ -85,9 +85,9 @@ typedef struct
  */
 typedef struct
 {
-  uint64_t a; /*!< First operand */
-  int32_t b; /*!< Second operand */
-  int32_t z; /*!< Blank hole     */
+  uint64_t a; /**< First operand */
+  int32_t b; /**< Second operand */
+  int32_t z; /**< Blank hole     */
 } uint64_int32_t;
 
 /**
@@ -95,8 +95,8 @@ typedef struct
  */
 typedef struct
 {
-  uint64_t a; /*!< First operand */
-  uint64_t b; /*!< Second operand */
+  uint64_t a; /**< First operand */
+  uint64_t b; /**< Second operand */
 } uint64_uint64_t;
 
 /**
@@ -104,8 +104,8 @@ typedef struct
  */
 typedef struct
 {
-  float    a; /*!< First operand */
-  int32_t  b; /*!< Second operand */
+  float    a; /**< First operand */
+  int32_t  b; /**< Second operand */
 } fp32_int32_t;
 
 /**
@@ -113,8 +113,8 @@ typedef struct
  */
 typedef struct
 {
-  float    a; /*!< First operand */
-  float    b; /*!< Second operand */
+  float    a; /**< First operand */
+  float    b; /**< Second operand */
 } fp32_fp32_t;
 
 /**
@@ -122,9 +122,9 @@ typedef struct
  */
 typedef struct
 {
-  double   a; /*!< First operand */
-  int32_t  b; /*!< Second operand */
-  uint32_t z; /*!< Blank hole     */
+  double   a; /**< First operand */
+  int32_t  b; /**< Second operand */
+  uint32_t z; /**< Blank hole     */
 } fp64_int32_t;
 
 /**
@@ -132,8 +132,8 @@ typedef struct
  */
 typedef struct
 {
-  double   a; /*!< First operand */
-  double   b; /*!< Second operand */
+  double   a; /**< First operand */
+  double   b; /**< Second operand */
 } fp64_fp64_t;
 
 /** \brief Generic prototype of math function with one source */

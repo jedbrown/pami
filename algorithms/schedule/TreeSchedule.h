@@ -438,7 +438,7 @@ namespace CCMI
       getDstUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
 
 
-      
+
 
       static inline void _compile_time_assert_ ()
       {

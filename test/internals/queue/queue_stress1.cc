@@ -6,6 +6,10 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file test/internals/queue/queue_stress1.cc
+ * \brief ???
+ */
 
 #define _POSIX_C_SOURCE 199309
 #include <time.h>

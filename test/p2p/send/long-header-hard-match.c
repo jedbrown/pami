@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/send/long-header-matrix.c
+/// \file test/p2p/send/long-header-hard-match.c
 /// \Matrixed "Long header" point-to-point PAMI_send() test
 ///
 ///   send hints       recv hints     header    exp
@@ -7,10 +7,10 @@
 /// ============== | ============== | ====== | ====== | ================================
 /// 0 (hard)       | 0 (hard)       | short  | pass   | Testsuite #1
 /// 0 (hard)       | 0 (hard)       | long   | pass   | Test with matched hard hints
-/// 1 (hard)       | 1 (hard)       | short  | pass   | 
+/// 1 (hard)       | 1 (hard)       | short  | pass   |
 /// 1 (hard)       | 1 (hard)       | long   | fail   |
 /// 1 (soft)       | 0 (hard)       | short  | pass   | Testsuite #2
-/// 1 (soft)       | 0 (hard)       | long   | fail   | Use soft hint to turn matched 
+/// 1 (soft)       | 0 (hard)       | long   | fail   | Use soft hint to turn matched
 /// 0 (soft)       | 1 (hard)       | short  | pass   | hard hints into mismatched hints
 /// 0 (soft)       | 1 (hard)       | long   | pass   |
 
@@ -174,7 +174,7 @@ int main (int argc, char ** argv)
   hard_expected_ary[0][1] = PAMI_SUCCESS;  // hard no_long_header = 0, send long_header
   hard_expected_ary[1][0] = PAMI_SUCCESS;  // hard no_long_header = 1, send short_header
   hard_expected_ary[1][1] = PAMI_INVAL;    // hard no_long_header = 1, send long_header
-  soft_expected_ary[0][0] = PAMI_SUCCESS;  // hard no_long_header = 0, send short_header, soft no_long_header = 0 -> 1 
+  soft_expected_ary[0][0] = PAMI_SUCCESS;  // hard no_long_header = 0, send short_header, soft no_long_header = 0 -> 1
   soft_expected_ary[0][1] = PAMI_INVAL;    // hard no_long_header = 0, send long_header, soft no_long_header = 0 -> 1
   soft_expected_ary[1][0] = PAMI_SUCCESS;  // hard no_long_header = 1, send short_header, soft no_long_header = 1 -> 0
   soft_expected_ary[1][1] = PAMI_SUCCESS;  // hard no_long_header = 1, send long_header, soft no_long_header = 1 -> 0
@@ -187,7 +187,7 @@ int main (int argc, char ** argv)
   parameters.events.remote_fn     = send_done_remote;
 
   // ======== Testsuite #1 ========
-  // Test results of sending short and long headers 
+  // Test results of sending short and long headers
   // when no_long_headers is set to 0 and 1 using hard hints
 
   if (task_id == 0)
@@ -281,7 +281,7 @@ int main (int argc, char ** argv)
   } // end task = 1 loop
 
   // ======== Testsuite #2 ========
-  // Test results of sending short and long headers 
+  // Test results of sending short and long headers
   // when no_long_headers is set to 0 and 1 using hard hints
   // but then the sending no_long_header hint is set opposite using soft hints
 

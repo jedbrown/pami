@@ -101,7 +101,7 @@ namespace CCMI
                                    unsigned  &ndst, unsigned *subtasks)
         {PAMI_abort();}
 
-      
+
         unsigned color()
         {
           return _color;

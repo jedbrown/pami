@@ -272,7 +272,7 @@ namespace CCMI
       virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
                                  unsigned  &ndst, unsigned *subtasks)
         {PAMI_abort();}
-      
+
       /**
        * \brief Get the upstream processors. Source processors
        * that send messages to me in this collective operation

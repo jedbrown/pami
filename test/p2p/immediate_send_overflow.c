@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/immediate_send.c
+/// \file test/p2p/immediate_send_overflow.c
 /// \brief Simple point-to-point PAMI_Send_immediate() test
 ///
 
@@ -117,7 +117,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. This test requires 2 tasks. Number of tasks in this job: %zu\n", num_tasks);
     return 1;
   }
-  
+
   configuration.name = PAMI_SEND_IMMEDIATE_MAX;
   result = PAMI_Configuration_query(client, &configuration);
   if (result != PAMI_SUCCESS)
@@ -127,7 +127,7 @@ int main (int argc, char ** argv)
   }
   size_t send_immediate_max = configuration.value.intval;
   fprintf (stderr, "Maximum number of bytes that can be transfered with the XMI_Send_immediate() function = %zu\n", send_immediate_max);
-  
+
   configuration.name = PAMI_RECV_IMMEDIATE_MAX;
   result = PAMI_Configuration_query(client, &configuration);
   if (result != PAMI_SUCCESS)

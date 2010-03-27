@@ -125,7 +125,7 @@ namespace CCMI
       virtual pami_result_t
       getDstUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
 
-      
+
     };
 
 // end reset indentation (3x)

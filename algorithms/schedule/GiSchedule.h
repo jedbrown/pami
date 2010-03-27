@@ -261,7 +261,7 @@ namespace CCMI
       getDstUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
 
 
-      
+
     };
 // restore indentation (3x)
   };

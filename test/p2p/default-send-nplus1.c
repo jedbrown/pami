@@ -264,7 +264,7 @@ int main (int argc, char ** argv)
 
     for (r = 0; r < 2; r++) {           // reset value loop
       for (h=0; h<hsize; h++) {         // header size loop
-    
+
 	parameters.send.header.iov_len = header_bytes[h];
 	for (p=0; p<psize; p++) {       // payload size loop
 	  parameters.send.data.iov_len = data_bytes[p];
@@ -283,7 +283,7 @@ int main (int argc, char ** argv)
             {
 	      fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
 	      return 1;
-            } 
+            }
 	  }
 	  send_active = 1;
 #ifdef TEST_REMOTE_CALLBACK
@@ -314,7 +314,7 @@ int main (int argc, char ** argv)
 #endif
     parameters.send.dest = PAMI_Client_endpoint (client, 0, 0);
 
-    for (r = 0; r < 2; r++) {    // reset value loop  
+    for (r = 0; r < 2; r++) {    // reset value loop
       for (h=0; h<hsize; h++)    // header size loop
       {
 	parameters.send.header.iov_len = header_bytes[h];
@@ -335,7 +335,7 @@ int main (int argc, char ** argv)
             }
 	    fprintf (stderr, "------ recv advance loop ... &recv_active = %p\n", &recv_active);
 	  }
-	
+
 	  if (recv_active == 0) {
 
 	    // Reset __recv_buffer

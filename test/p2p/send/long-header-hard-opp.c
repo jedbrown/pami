@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/send/long-header-matrix.c
+/// \file test/p2p/send/long-header-hard-opp.c
 /// \Matrixed "Long header" point-to-point PAMI_send() test
 ///
 ///   send hints       recv hints     header    exp
@@ -8,11 +8,11 @@
 /// 0 (hard)       | 1 (hard)       | short  | pass   | Testsuite #1
 /// 0 (hard)       | 1 (hard)       | long   | fail   | Test with mismatched hard hints
 /// 1 (hard)       | 0 (hard)       | short  | pass   | Same dispatch ID with unique hints
-/// 1 (hard)       | 0 (hard)       | long   | fail   | 
+/// 1 (hard)       | 0 (hard)       | long   | fail   |
 /// 0 (soft)       | 0 (hard)       | short  | pass   | Testsuite #2
-/// 0 (soft)       | 0 (hard)       | long   | pass   | Use soft hint to turn mismatched 
+/// 0 (soft)       | 0 (hard)       | long   | pass   | Use soft hint to turn mismatched
 /// 1 (soft)       | 1 (hard)       | short  | pass   | hard hints into matched hints
-/// 1 (soft)       | 1 (hard)       | long   | fail   | 
+/// 1 (soft)       | 1 (hard)       | long   | fail   |
 
 #include "sys/pami.h"
 #include <stdio.h>
@@ -159,11 +159,11 @@ int main (int argc, char ** argv)
   pami_result_t mixd_expected_ary [2][2];  // expected results based on h & sending task values
   pami_result_t fixd_expected_ary [2][2];  // expected results based on h & sending task values
   mixd_expected_ary[0][0] = PAMI_SUCCESS;  // t0d0 no_long_header = 0, send short_header, t1d0 no_long_header = 1
-  mixd_expected_ary[0][1] = PAMI_SUCCESS;  // t0d0 no_long_header = 0, send short_header, t1d0 no_long_header = 1 
+  mixd_expected_ary[0][1] = PAMI_SUCCESS;  // t0d0 no_long_header = 0, send short_header, t1d0 no_long_header = 1
   mixd_expected_ary[1][0] = PAMI_ERROR;    // t0d0 no_long_header = 0, send long_header, t1d0 no_long_header = 1
   mixd_expected_ary[1][1] = PAMI_INVAL;    // t0d0 no_long_header = 0, send long_header, t1d0 no_long_header = 1
   fixd_expected_ary[0][0] = PAMI_SUCCESS;  // t0d0 no_long_header = 0 -> 1, send short_header, t1d0 no_long_header = 1
-  fixd_expected_ary[0][1] = PAMI_SUCCESS;  // t0d0 no_long_header = 0, send short_header, t1d0 no_long_header = 1 -> 0 
+  fixd_expected_ary[0][1] = PAMI_SUCCESS;  // t0d0 no_long_header = 0, send short_header, t1d0 no_long_header = 1 -> 0
   fixd_expected_ary[1][0] = PAMI_INVAL;    // t0d0 no_long_header = 0 -> 1, send long_header, t1d0 no_long_header = 1
   fixd_expected_ary[1][1] = PAMI_SUCCESS;  // t0d0 no_long_header = 0, send long_header, t1d0 no_long_header = 1 -> 0
 
@@ -176,7 +176,7 @@ int main (int argc, char ** argv)
 
 
   // ======== Testsuite #1 ========
-  // Test results of sending short and long headers 
+  // Test results of sending short and long headers
   // when no_long_header is set to opposite values using hard hints
 
   if (task_id == 0)
@@ -304,7 +304,7 @@ int main (int argc, char ** argv)
   } // end task = 1 loop
 
   // ======== Testsuite #2 ========
-  // Test results of sending short and long headers 
+  // Test results of sending short and long headers
   // when no_long_headers is set to opposite values using hard hints
   // and soft hints are used to make the no_long_headers hints match
 

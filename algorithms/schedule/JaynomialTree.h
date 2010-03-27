@@ -345,7 +345,7 @@ init(int root, int comm_op, int &start_phase, int &num_phases, int &num_ranks)
     getSrcUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
   virtual pami_result_t
     getDstUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
-      
+
 
 /*   fprintf(stderr, "nranks: %u,  power2: %u,   ", _num_ranks, _power2); */
 /*   fprintf(stderr, "me:     %u,  root:   %u,   ", _myindex, _rootindex); */

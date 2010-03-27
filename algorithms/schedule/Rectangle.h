@@ -317,7 +317,7 @@ namespace CCMI
       getDstUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
 
 
-      
+
 /*
  * \page ocrmb_sched One-Color Rectangular Mesh Broadcast Schedule Design
  *
@@ -1793,7 +1793,7 @@ namespace CCMI
         nmessages = nmr + nmb; // max recvs we might do
       }
     }; /* OneColorRectAllredSched */
-    
+
 
   }; /* Schedule */
 } /* CCMI */
