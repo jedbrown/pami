@@ -42,6 +42,7 @@ namespace CCMI
             mf,
             ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.root,
             ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
+            ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
             ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount )
           {
             SyncBcastPost();

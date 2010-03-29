@@ -66,16 +66,16 @@ namespace CCMI
                          (composite == NULL?" ":
                           ((composite->isIdle())?"(Idle)":" "))));
 
-          CCMI::Executor::AllreduceBase *allreduce = NULL;
+          CCMI::Executor::OldAllreduceBase *allreduce = NULL;
           if(composite == NULL)
           {
             composite = (COMPOSITE *) factory->buildComposite (geometry, cdata);
-            allreduce = (CCMI::Executor::AllreduceBase *) composite->getExecutor (0);
+            allreduce = (CCMI::Executor::OldAllreduceBase *) composite->getExecutor (0);
           }
           else
           {
             ///Get the allreduce executor
-            allreduce = (CCMI::Executor::AllreduceBase *) composite->getExecutor (0);
+            allreduce = (CCMI::Executor::OldAllreduceBase *) composite->getExecutor (0);
 
             if(composite->isIdle())
               composite->restartAsync(allreduce,

@@ -17,18 +17,17 @@
 
 namespace CCMI
 {
-      /**
-     * \brief The different collective operations supported
-     */
-    typedef enum
-    {
-      BROADCAST_OP  =      1,
-      BARRIER_OP    =      2,
-      ALLREDUCE_OP  =      4,
-      REDUCE_OP     =      8
-    } CollectiveOperation;
-
-
+  /**
+   * \brief The different collective operations supported
+   */
+  typedef enum
+  {
+    BROADCAST_OP  =      1,
+    BARRIER_OP    =      2,
+    ALLREDUCE_OP  =      4,
+    REDUCE_OP     =      8
+  } CollectiveOperation;
+    
   namespace Interfaces
   {
     /**

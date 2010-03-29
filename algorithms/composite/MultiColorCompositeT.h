@@ -5,6 +5,8 @@
 #ifndef __algorithms_composite_MultiColorCompositeT_h__
 #define __algorithms_composite_MultiColorCompositeT_h__
 
+#include "Composite.h"
+
 
 namespace CCMI
 {
@@ -14,9 +16,10 @@ namespace CCMI
     /// \brief Get optimal colors based on bytes and schedule
     ///
     typedef void      (*GetColorsFn) (PAMI::Topology             * t,
-                                      unsigned                    bytes,
-                                      unsigned                  * colors,
-                                      unsigned                  & ncolors);
+				      unsigned                    bytes,
+				      unsigned                  * colors,
+				      unsigned                  & ncolors);
+
     ///
     ///  \brief Base class for synchronous broadcasts
     ///
@@ -25,97 +28,121 @@ namespace CCMI
     {
     protected:
         ///
-        /// \brief number of done callbacks called
-        ///
-        unsigned                 _doneCount;
-        unsigned                 _nComplete;
-        unsigned                 _numColors;
-        unsigned                 _colors [NUMCOLORS];
+	/// \brief number of done callbacks called
+	///
+	unsigned                 _doneCount;
+	unsigned                 _nComplete;
+	unsigned                 _numColors;
+	unsigned                 _colors [NUMCOLORS];
 
         ///
         ///  \brief Application callback to call when the broadcast has finished
         ///
         pami_event_function                            _cb_done;
-        void                                        * _clientdata;
-
+	void                                        * _clientdata;
         T_Exec                                        _executors  [NUMCOLORS] __attribute__((__aligned__(16)));
         T_Sched                                       _schedules  [NUMCOLORS];
-        char *                                        _srcbufs    [NUMCOLORS];
-        unsigned                                      _bytecounts [NUMCOLORS];
-
-        Interfaces::NativeInterface                 * _native;  //native interface
-
+	Interfaces::NativeInterface                 * _native;  //native interface
       public:
         MultiColorCompositeT () : CompositeT<NUMCOLORS, T_Bar, T_Exec>(), _doneCount(0), _nComplete(0)
         {
         }
+
+	virtual ~MultiColorCompositeT () {}
 
       ///
       /// \brief Receive the broadcast message and notify the executor
       ///
       static void staticRecvFn(pami_context_t context, void *executor, pami_result_t err)
       {
-        pami_quad_t *info = NULL;
-
-        T_Exec *exe = (T_Exec *) executor;
-
-        TRACE_ADAPTOR ((stderr, "<%p>Broadcast::MultiColorCompositeT::staticRecvFn() \n",(int)exe));
-
-        exe->notifyRecv ((unsigned)-1, *info, NULL, exe->getPwidth());
+	pami_quad_t *info = NULL;	
+	T_Exec *exe = (T_Exec *) executor;
+	TRACE_ADAPTOR ((stderr, "<%p>Broadcast::MultiColorCompositeT::staticRecvFn() \n",(int)exe));
+	exe->notifyRecv ((unsigned)-1, *info, NULL, exe->getPwidth());
       }
 
       ///
       /// \brief The Broadcast Constructor
       ///
-      MultiColorCompositeT (unsigned                                   comm,
-                            PAMI::Topology                            * topology,
-                            T_Conn                                   * cmgr,
-                            pami_event_function                         cb_done,
-                            void                                     * clientdata,
-                            Interfaces::NativeInterface              * mf,
-                            unsigned                                   root,
-                            char                                     * src,
-                            unsigned                                   bytes,
-                            unsigned                                   ncolors=1) :
-      CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>(), _doneCount(0), _numColors(ncolors), _cb_done(cb_done), _clientdata(clientdata), _native(mf)
+      MultiColorCompositeT (unsigned                                comm,
+			    PAMI::Topology                         * topology,
+			    T_Conn                                * cmgr,
+			    pami_event_function                      cb_done,
+			    void                                  * clientdata,
+			    Interfaces::NativeInterface           * mf,
+			    unsigned                                root,
+			    char                                  * src,
+			    char                                  * dst,
+			    unsigned                                bytes,
+			    unsigned                                ncolors=1):
+	CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>(), _doneCount(0), _numColors(ncolors), _cb_done(cb_done), _clientdata(clientdata), _native(mf)
       {
-        //fprintf(stderr, "%d:MultiColorCompositeT constructor\n", mf->myrank());
-        pwcfn (topology, bytes, _colors, _numColors);
+	//fprintf(stderr, "%d:MultiColorCompositeT constructor\n", 
+	//mf->myrank());
+	pwcfn (topology, bytes, _colors, _numColors);
+	
+	unsigned bytecounts[NUMCOLORS];
+	bytecounts[0] = bytes;
+	_nComplete     = _numColors + 1;
 
-        _srcbufs [0]   = src;
-        _bytecounts[0] = bytes;
-        _nComplete     = _numColors + 1;
+	unsigned aligned_bytes = 0;
+	if(_numColors > 1) {
+	  aligned_bytes = (bytes/_numColors) & (0xFFFFFFF0);
+	  bytecounts[0] =  aligned_bytes;
+	  for(unsigned c = 1; c < _numColors; ++c) {
+	    bytecounts[c] = aligned_bytes;
+	  }
+	  bytecounts[_numColors-1]  = bytes - (aligned_bytes * (_numColors-1));
+	}
 
-        if(_numColors > 1) {
-          unsigned aligned_bytes = (bytes/_numColors) & (0xFFFFFFF0);
-          _bytecounts[0] =  aligned_bytes;
-          for(unsigned c = 1; c < _numColors; ++c) {
-            _bytecounts[c] = aligned_bytes;
-            _srcbufs[c]    = (char *)((unsigned long)_srcbufs[c-1] + _bytecounts[c-1]);
-          }
-          _bytecounts[_numColors-1]  = bytes -  (aligned_bytes * ( _numColors - 1));
-        }
+	for(unsigned c = 0; c < _numColors; c++) {
+	  CCMI_assert (c < NUMCOLORS);
 
-        for(unsigned c = 0; c < _numColors; c++) {
-          CCMI_assert (c < NUMCOLORS);
-          T_Exec *exec  =
-            new (& _executors[c]) T_Exec (mf,
-                                          comm,
-                                          cmgr,
-                                          _colors[c],
-                                          true);
+	  new (&_schedules[c]) T_Sched(mf->myrank(), topology, _colors[c]);
 
-          exec->setInfo (root, _srcbufs[c], _bytecounts[c]);
-          exec->setDoneCallback (cb_composite_done, this);
+	  T_Exec *exec  =
+	    new (& _executors[c]) T_Exec (mf,
+					  cmgr,
+					  comm);
 
-          addExecutor (exec);
-          COMPILE_TIME_ASSERT(sizeof(_schedules[0]) >= sizeof(T_Sched));
-          new (&_schedules[c]) T_Sched(mf->myrank(), topology, _colors[c]);
-          exec->setSchedule (&_schedules[c]);
-        }
+	  exec->setSchedule (&_schedules[c], c);
+	  exec->setRoot (root);
+	  exec->setBuffers (src + aligned_bytes*c, 
+			    dst + aligned_bytes*c, 
+			    bytecounts[c]);
+	  exec->setDoneCallback (cb_composite_done, this);
+	  
+	  addExecutor (exec);
+	  COMPILE_TIME_ASSERT(sizeof(_schedules[0]) >= sizeof(T_Sched));
+	}
+      }
+
+      //The Command will be interpretted in the child class
+      virtual unsigned restart(void *cmd) {
+	if(CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier != NULL)
+	{
+	  // reset barrier since it may be been used between calls
+	  TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::reset barrier(%p)\n",this,_barrier));
+	  
+	  T_Bar  *barrier =  CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier;
+	  barrier->setDoneCallback(cb_barrier_done, this);
+	  barrier->start();
+	}
+
+	return PAMI_SUCCESS;
       }
 
       void setDoneCallback(PAMI_Callback_t  cb_done, void * clientdata) { _cb_done = cb_done; _clientdata = clientdata;}
+
+      void addBarrier (T_Bar *exec)
+      {
+	CompositeT<NUMCOLORS, T_Bar, T_Exec>::addBarrier(exec);
+      }
+
+      T_Exec * getExecutor (int idx)
+      {
+	return 	CompositeT<NUMCOLORS, T_Bar, T_Exec>::getExecutor(idx);
+      }
 
       ///
       /// \brief For sync broadcasts, the done call back to be called
@@ -123,37 +150,37 @@ namespace CCMI
       ///
       static void cb_barrier_done(pami_context_t context, void *me, pami_result_t err)
       {
-        MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
-        CCMI_assert (composite != NULL);
+	MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
+	CCMI_assert (composite != NULL);
 
-        //printf ("In cb_barrier_done donec=%d\n", composite->_doneCount);
-        for(unsigned i=0; i < composite->_numColors; ++i)
+	//printf ("In cb_barrier_done donec=%d\n", composite->_doneCount);
+	for(unsigned i=0; i < composite->_numColors; ++i)
         {
-          composite->getExecutor(i)->start();
-        }
+	  composite->getExecutor(i)->start();
+	}
 
-        CCMI_assert (composite->_doneCount <  composite->_nComplete);
-        ++composite->_doneCount;
-        if(composite->_doneCount == composite->_nComplete) // call users done function
+	CCMI_assert (composite->_doneCount <  composite->_nComplete);
+	++composite->_doneCount;
+	if(composite->_doneCount == composite->_nComplete) // call users done function
         {
-          //printf ("%d: Composite Done\n", composite->_native->myrank());
-          composite->_cb_done(NULL, composite->_clientdata,PAMI_SUCCESS);
-        }
+	  //printf ("%d: Composite Done\n", composite->_native->myrank());
+	  composite->_cb_done(NULL, composite->_clientdata,PAMI_SUCCESS);
+	}
       }
 
       static void cb_composite_done(pami_context_t context, void *me, pami_result_t err)
       {
-        MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
-        CCMI_assert (composite != NULL);
+	MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
+	CCMI_assert (composite != NULL);
 
-        CCMI_assert (composite->_doneCount <  composite->_nComplete);
-        ++composite->_doneCount;
+	CCMI_assert (composite->_doneCount <  composite->_nComplete);
+	++composite->_doneCount;
 
-        if(composite->_doneCount == composite->_nComplete) // call users done function
+	if(composite->_doneCount == composite->_nComplete) // call users done function
         {
-          composite->_cb_done(context, composite->_clientdata, PAMI_SUCCESS);
-          //printf ("%d: Composite Done\n", composite->_native->myrank());
-        }
+	  composite->_cb_done(context, composite->_clientdata, PAMI_SUCCESS);
+	  //printf ("%d: Composite Done\n", composite->_native->myrank());
+	}
       }
     };  //-- MultiColorCompositeT
 

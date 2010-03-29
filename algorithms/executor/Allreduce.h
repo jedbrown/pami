@@ -13,7 +13,7 @@
 #ifndef __algorithms_executor_Allreduce_h__
 #define __algorithms_executor_Allreduce_h__
 
-#include "algorithms/executor/AllreduceBase.h"
+#include "algorithms/executor/OldAllreduceBase.h"
 
 namespace CCMI
 {
@@ -55,7 +55,7 @@ namespace CCMI
     /// in an external class - AllreduceState.  The client should manage this class
     /// and free allocations when appropriate (AllreduceState::freeAllocations()).
     template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-    class Allreduce : public AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>
+    class Allreduce : public OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>
     {
     protected:
 
@@ -71,7 +71,7 @@ namespace CCMI
         bool            isDone;
       } SendCallbackData;
 
-      // send info - use AllreduceBase sendState
+      // send info - use OldAllreduceBase sendState
 //         PAMI_Request_t   *_sndReq;
 //         SendCallbackData *_sndClientData;
 //         CollHeaderData   *_sndInfo;
@@ -150,7 +150,7 @@ namespace CCMI
       }
       /// \brief Default Constructor
       inline Allreduce () :
-        AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>(),
+        OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>(),
       _state(&this->_astate),
       _nextRecvData(0),
       //_sState[].sndReq        uninitialzed opaque storage
@@ -188,7 +188,7 @@ namespace CCMI
                        pami_consistency_t                        consistency,
                        const unsigned                          commID,
                        unsigned                                iteration) :
-        AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>(map,connmgr,consistency,commID,iteration,true),
+        OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>(map,connmgr,consistency,commID,iteration,true),
       _state(&this->_astate),
       _nextRecvData(0),
       //_sState[].sndReq        uninitialzed opaque storage
@@ -207,9 +207,9 @@ namespace CCMI
         TRACE_FLOW((stderr,"<%p>Executor::Allreduce::ctor() enter\n",this));
 #ifdef CCMI_DEBUG
         TRACE_MSG((stderr, "<%p>Executor::Allreduce::ctor() "
-                   "Allreduce %X, AllreduceBase %X, Executor %X\n",this,
+                   "Allreduce %X, OldAllreduceBase %X, Executor %X\n",this,
                    sizeof(CCMI::Executor::Allreduce<T_Mcast,T_Sysdep,T_ConnectionManager>),
-                   sizeof(CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>),
+                   sizeof(CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>),
                    sizeof(CCMI::Executor::Executor)));
         TRACE_DATA(("this",(const char*)this, sizeof(*this)));
 #endif
@@ -331,7 +331,7 @@ namespace CCMI
       {
         // Compile time assert
         // SendState array must must fit in a request
-        COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(PAMI_CollectiveRequest_t));
+        COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(PAMI_CollectiveRequest_t));
       }
     }; // Allreduce
   };

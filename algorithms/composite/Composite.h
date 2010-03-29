@@ -39,10 +39,27 @@ namespace CCMI
         _clientdata =   cd;
       }
 
+      ///
+      /// \brief start a freshly constructed algorithm composite
+      ///
       virtual void start() {
         //Currently not all composites implement this method
-//	CCMI_abort();
+	//	CCMI_abort();
       }
+
+      ///
+      /// \breif start a previously constructed algorithm composite
+      ///
+      virtual unsigned restart (void *cmd) {
+        //Currently not all composites implement this method
+        CCMI_abort();
+        return PAMI_SUCCESS;
+      } 
+      
+      void   setAlgorithmFactory (void *f) { _afactory = f; }
+      
+      void  * getAlgorithmFactory() { return _afactory; }
+
 
     protected:
       ///
@@ -50,6 +67,10 @@ namespace CCMI
       ///
       pami_event_function    _cb_done;
       void                * _clientdata;
+
+      //Store a pointer to the algorithm factory
+      void                * _afactory;
+
     };
 
 

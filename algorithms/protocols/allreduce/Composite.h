@@ -17,7 +17,7 @@
 
 #include "algorithms/protocols/allreduce/BaseComposite.h"
 #include "algorithms/executor/Barrier.h"
-#include "algorithms/executor/AllreduceBase.h"
+#include "algorithms/executor/OldAllreduceBase.h"
 #include "math/math_coremath.h"
 
 namespace CCMI
@@ -132,7 +132,7 @@ namespace CCMI
         /// \brief initialize should be called after the executors
         /// have been added to the composite
         ///
-        void initialize ( CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * allreduce,
+        void initialize ( CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * allreduce,
                           PAMI_CollectiveRequest_t        * request,
                           char                            * srcbuf,
                           char                            * dstbuf,
@@ -226,8 +226,8 @@ namespace CCMI
           _myClientData     = cb_done.clientdata;
 
           CCMI_assert_debug (getNumExecutors() == 1);
-          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * allreduce =
-          (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *) getExecutor(0);
+          CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * allreduce =
+          (CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *) getExecutor(0);
 
           initialize (allreduce, request, srcbuf, dstbuf,
                       count, dtype, op, root);
@@ -264,7 +264,7 @@ namespace CCMI
           if(!_doneCountdown)  //allreduce done and (maybe) barrier done
           {
             if(_myClientFunction) (*_myClientFunction) (NULL, _myClientData, PAMI_SUCCESS);
-            ((CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *) getExecutor(0))->getAllreduceState()->freeAllocations(_flags.reuse_storage_limit);
+            ((CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *) getExecutor(0))->getAllreduceState()->freeAllocations(_flags.reuse_storage_limit);
             TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::DONE() \n",
                            this));
           }
@@ -287,8 +287,8 @@ namespace CCMI
                          me));
 
           Composite *composite = (Composite *) me;
-          CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *allreduce =
-          (CCMI::Executor::AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *) composite->getExecutor(0);
+          CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *allreduce =
+          (CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *) composite->getExecutor(0);
           allreduce->start();
           composite->done();
           TRACE_ADAPTOR((stderr,

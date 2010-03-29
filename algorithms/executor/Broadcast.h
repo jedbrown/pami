@@ -57,9 +57,8 @@ namespace CCMI
       }
 
       BroadcastExec (Interfaces::NativeInterface  * mf,
-                     unsigned                       comm,
                      T                            * connmgr,
-                     unsigned                       color,
+                     unsigned                       comm,
                      bool                           post_recvs = false):
       Interfaces::Executor(),
       _comm_schedule (NULL),
@@ -68,7 +67,7 @@ namespace CCMI
       _dsttopology((pami_task_t *)&_dstranks, MAX_PARALLEL),
       _selftopology(mf->myrank()),
       _connmgr(connmgr),
-      _color(color),
+      _color((unsigned) -1),
       _postReceives (post_recvs)
       {
         _clientdata        =  0;
@@ -84,8 +83,9 @@ namespace CCMI
       // --  Initialization routines
       //------------------------------------------
 
-      void setSchedule (Interfaces::Schedule *ct)
+      void setSchedule (Interfaces::Schedule *ct, unsigned color)
       {
+	_color = color;
         _comm_schedule = ct;
         int nph, phase;
         _comm_schedule->init (_root, BROADCAST_OP, phase, nph);
@@ -93,15 +93,18 @@ namespace CCMI
         _comm_schedule->getDstUnionTopology (&_dsttopology);
       }
 
-      void  setInfo (int root, char *buf, int len)
+      void setRoot(unsigned root) {
+	_root = root;
+      }
+
+      void  setBuffers (char *src, char *dst, int len)
       {
         TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::setInfo() root %d, buf %p, len %d, _pwq %p\n",this, root, buf, len, &_pwq));
-        _root           =  root;
         unsigned connid =  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
         _msend.connection_id = connid;
         _buflen = len;
         //Setup pipework queue
-        _pwq.configure (NULL, buf, len, 0);
+        _pwq.configure (NULL, src, len, 0);
   _pwq.reset();
         TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::setInfo() _pwq %p, bytes available %zu/%zu\n",this,&_pwq,
                      _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));

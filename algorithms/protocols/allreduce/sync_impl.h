@@ -19,10 +19,12 @@
 #include "algorithms/executor/PipelinedAllreduce.h"
 #include "algorithms/executor/Allreduce.h"
 #include "algorithms/schedule/BinomialTree.h"
-//#include "algorithms/schedule/Rectangle.h"
-//#include "algorithms/schedule/TreeBwSchedule.h"
-
 #include "algorithms/connmgr/RankBasedConnMgr.h"
+
+#include "algorithms/schedule/MultinomialTree.h"
+#include "algorithms/protocols/CollectiveProtocolFactoryT.h"
+#include "algorithms/protocols/allreduce/MultiColorCompositeT.h"
+#include "algorithms/protocols/allreduce/ProtocolFactoryT.h"
 
 namespace CCMI
 {
@@ -37,7 +39,7 @@ namespace CCMI
       ///
       /// Use the BinomialTreeSchedule
       ///
-      namespace Binomial
+      namespace OldBinomial
       {
 
         void binomial_ar_md(pami_metadata_t *m)
@@ -55,7 +57,7 @@ namespace CCMI
 
         typedef FactoryT
         <CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
-         CCMI::Adaptor::Allreduce::Binomial::Composite,
+         CCMI::Adaptor::Allreduce::OldBinomial::Composite,
          PAMI_SYSDEP_CLASS,
          PAMI_COLL_MCAST_CLASS,
          binomial_ar_md>
@@ -67,12 +69,44 @@ namespace CCMI
       /// Implement the correct analyze and schedule ctor.
       ///
       // Specify the static name in the class (for debug)
-      template<> const char* Binomial::Composite::name="Binomial";
-      template<> inline bool Binomial::Composite::analyze(PAMI_GEOMETRY_CLASS *geometry){ return true;};
-      template<> inline void Binomial::Composite::create_schedule(PAMI_SYSDEP_CLASS * map,PAMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
+      template<> const char* OldBinomial::Composite::name="Binomial";
+      template<> inline bool OldBinomial::Composite::analyze(PAMI_GEOMETRY_CLASS *geometry){ return true;};
+      template<> inline void OldBinomial::Composite::create_schedule(PAMI_SYSDEP_CLASS * map,PAMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
       {
         new (_schedule) CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
       };
+
+      /// New Binomial algorithms
+      /// class Binomial::Composite and Binomial::Factory 
+      ///                                           
+      /// \brief Binomial allreduce protocol              
+      ///                                          
+      /// Use the BinomialTreeSchedule                                        
+      ///                                            
+      namespace Binomial
+      {
+        void get_colors (PAMI::Topology             * t,
+                         unsigned                    bytes,
+                         unsigned                  * colors,
+                         unsigned                  & ncolors)
+        {
+          ncolors = 1;
+          colors[0] = CCMI::Schedule::NO_COLOR;
+        }
+        
+        void binomial_ar_md(pami_metadata_t *m)
+        {
+          // \todo:  fill in other metadata
+          strcpy(&m->name[0],"OldCCMIBinomialAllreduce");
+        }
+
+        typedef MultiColorCompositeT<1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
+          CCMI::Schedule::ListMultinomial,
+          CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+          get_colors> Composite;
+        typedef ProtocolFactoryT<Composite, binomial_ar_md, CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > Factory;
+      };
+
 
       // class ShortBinomial::Composite and ShortBinomial::Factory
       ///
@@ -90,7 +124,7 @@ namespace CCMI
 
         typedef CompositeT
         <CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>,
-         CCMI::Executor::AllreduceBase<PAMI_COLL_MCAST_CLASS,PAMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
+         CCMI::Executor::OldAllreduceBase<PAMI_COLL_MCAST_CLASS,PAMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
          PAMI_SYSDEP_CLASS,
          PAMI_COLL_MCAST_CLASS,
          CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >

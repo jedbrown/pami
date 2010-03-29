@@ -18,7 +18,7 @@
 #include "algorithms/executor/Executor.h"
 #include "algorithms/connmgr/ConnectionManager.h"
 #include "algorithms/executor/AllreduceState.h"
-#include "algorithms/executor/AllreduceBase.h"
+#include "algorithms/executor/OldAllreduceBase.h"
 //#include "util/logging/LogMgr.h"
 
 
@@ -29,7 +29,7 @@ namespace CCMI
   namespace Executor
   {
     template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-    class PipelinedAllreduce : public AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>
+    class PipelinedAllreduce : public OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>
     {
 
     private:
@@ -98,7 +98,7 @@ namespace CCMI
     public:
 
       /// Default Constructor
-      PipelinedAllreduce () : AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>(),
+      PipelinedAllreduce () : OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>(),
       _curRecvPhase ((unsigned) -1), _curRecvChunk((unsigned) -1),
       _curSendPhase ((unsigned) -1), _curSendChunk((unsigned) -1),
       _lastReducePhase((unsigned) -1)
@@ -117,7 +117,7 @@ namespace CCMI
        pami_consistency_t      consistency,
        const unsigned         commID,
        unsigned               iteration):
-        AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>(map,connmgr, consistency, commID, iteration, true),
+        OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>(map,connmgr, consistency, commID, iteration, true),
       _curRecvPhase ((unsigned) -1), _curRecvChunk((unsigned) -1),
       _curSendPhase ((unsigned) -1), _curSendChunk((unsigned) -1),
       _donecount (0), _lastReducePhase((unsigned) -1)
@@ -144,7 +144,7 @@ namespace CCMI
 
       virtual void reset ()
       {
-        AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>::reset ();
+        OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>::reset ();
 
         //The previous allreduce could have enabled this
 //        _msend_data.setFlags (MultiSend::CCMI_FLAGS_UNSET);
@@ -548,7 +548,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 
   CCMI_assert (offset + bytes <= this->_astate.getBytes());
 
-  AllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>::sendMessage (buf + offset, bytes, dstpes, ndst, dsthints,
+  OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager>::sendMessage (buf + offset, bytes, dstpes, ndst, dsthints,
                                                  sphase, &this->_sState[index]);
 }
 

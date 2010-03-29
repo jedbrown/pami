@@ -145,7 +145,7 @@ namespace PAMI
 
       CCMI::Adaptor::ConfigFlags                              _cf;
       CCMI::Adaptor::Allreduce::ShortBinomial::Factory        _shortbinomallreduce_registration;
-      CCMI::Adaptor::Allreduce::Binomial::Factory             _binomallreduce_registration;
+      CCMI::Adaptor::Allreduce::OldBinomial::Factory          _binomallreduce_registration;
       CCMI::Adaptor::Allreduce::Ring::Factory                 _ringallreduce_registration;
 
       CCMI::Adaptor::Broadcast::AsyncBinomialFactory          _ambcast_registration;

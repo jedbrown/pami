@@ -16,7 +16,7 @@
 
 #include "algorithms/protocols/allreduce/AsyncCompositeT.h"
 #include "algorithms/protocols/allreduce/AsyncFactoryT.h"
-#include "algorithms/executor/AllreduceBase.h"
+#include "algorithms/executor/OldAllreduceBase.h"
 #include "algorithms/schedule/BinomialTree.h"
 #include "algorithms/connmgr/RankBasedConnMgr.h"
 
@@ -73,7 +73,7 @@ namespace CCMI
       {
         typedef AsyncCompositeT
         <CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>,
-         CCMI::Executor::AllreduceBase<PAMI_COLL_MCAST_CLASS,PAMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
+         CCMI::Executor::OldAllreduceBase<PAMI_COLL_MCAST_CLASS,PAMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
          PAMI_SYSDEP_CLASS,
          PAMI_COLL_MCAST_CLASS,
          CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >
