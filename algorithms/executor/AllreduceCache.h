@@ -116,10 +116,11 @@ namespace CCMI {
     AllreduceCache(ScheduleCache *cache, unsigned myrank) : 
       _pcache(),
       _lastChunk(0),
-      _fullChunkCount(0),
       _lastChunkCount(0),
+      _fullChunkCount(0),
       _sizeOfBuffers(0),
       _dstPhase(PAMI_UNDEFINED_PHASE),
+      _iteration((unsigned)-1),
       _myrank(myrank),	
       _commid ((unsigned)-1),
       _color  ((unsigned)-1),
@@ -135,7 +136,6 @@ namespace CCMI {
       _recvClientData(NULL),
       _phaseVec(NULL),
       _isConfigChanged(true),
-      _iteration((unsigned)-1),
       _scache(cache)
       {
       }         
@@ -359,7 +359,7 @@ namespace CCMI {
 	// Do minimal setup if the config hasn't changed.
 	if(!_isConfigChanged)
 	{
-	  int idx = 0;
+	  unsigned idx = 0;
 	  //Make xlc happy as it thinks _all_chunks may overwrite the this
 	  //pointer
 	  unsigned *chunks = _all_chunks;
@@ -540,7 +540,7 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::updatePipelineWidth
   ///Recreate multisend recv data structures
   if(!_isConfigChanged)
   {
-    for(int phase = _scache->getStartPhase(); phase <= _scache->getEndPhase(); phase++)
+    for(unsigned phase = _scache->getStartPhase(); phase <= _scache->getEndPhase(); phase++)
       for(unsigned scount = 0; scount < _scache->getNumSrcRanks(phase); scount ++)
 	{
 	  pami_multicast_t *mrecv = &(_phaseVec[phase].mrecv[scount]); 
@@ -604,7 +604,7 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
 	for(unsigned scount = 0; scount < _scache->getNumSrcRanks(i); scount ++)
 	{
 	  PAMI::Topology *topology = _scache->getSrcTopology(i);
-	  pami_task_t *ranks;
+	  pami_task_t *ranks=NULL;
 	  topology->rankList(&ranks);
 	  
           unsigned srcrank  =  ranks[scount];
@@ -730,7 +730,7 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
   else
     _tempBuf = (char*) _bufs + (_scache->getNumTotalSrcRanks() * _sizeOfBuffers);
 
-  for(int i = 0, offset = 0; i < _scache->getNumTotalSrcRanks(); i++, offset += _sizeOfBuffers)
+  for(unsigned i = 0, offset = 0; i < _scache->getNumTotalSrcRanks(); i++, offset += _sizeOfBuffers)
     _all_recvBufs[ i ] = _bufs + offset;
 
   TRACE_ACACHE((stderr,"<%#.8X>Executor::AllreduceCache::setupReceives() _bufs:%08X all[0]:%08X all[1]:%08X all[2]:%08X all[3]:%08X all[4]:%08X tempbuf:%08X\n",
@@ -745,14 +745,14 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
   // clear received chunk counters
   memset(_all_chunks, 0, _scache->getNumTotalSrcRanks() * sizeof(unsigned));
 
-  for(int idx = _scache->getStartPhase(); idx <= _scache->getEndPhase(); idx++)
+  for(unsigned idx = _scache->getStartPhase(); idx <= _scache->getEndPhase(); idx++)
   {
     _phaseVec[idx].chunksSent = 0;        
     _phaseVec[idx].totalChunksRcvd = 0;        
   }    
 
   unsigned nextRecvData = 0;
-  int p = _scache->getStartPhase();
+  unsigned p = _scache->getStartPhase();
   unsigned pwidth = getPipelineWidth();
   unsigned bytes  = getBytes();  
 

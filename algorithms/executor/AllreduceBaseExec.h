@@ -155,12 +155,12 @@ namespace CCMI
       pami_event_function         _sendCallbackHandler;
       pami_event_function         _recvCallbackHandler;
 
+      T_Conn * _rconnmgr;  ///Reduce connection manager
+      T_Conn * _bconnmgr;  ///Broadcast connction manager
+
       Interfaces::NativeInterface    * _native;
       pami_multicast_t                  _msend;
       PAMI::Topology                    _selftopology;      
-
-      T_Conn * _rconnmgr;  ///Reduce connection manager
-      T_Conn * _bconnmgr;  ///Broadcast connction manager
 
       ScheduleCache                          _scache;
       AllreduceCache<T_Conn>                 _acache;
@@ -201,9 +201,9 @@ namespace CCMI
       _enablePipelining (false),
       _srcbuf (NULL), _dstbuf (NULL),
       _reduceFunc (NULL),
-      _native (NULL), 
       _rconnmgr (NULL), 
       _bconnmgr(NULL), 
+      _native (NULL), 
       _msend(),
       _selftopology(),
       _scache(),
@@ -225,7 +225,10 @@ namespace CCMI
       _enablePipelining (enable_pipe),
       _srcbuf (NULL), _dstbuf (NULL),
       _reduceFunc (NULL),
-      _native (native), _rconnmgr (connmgr), _bconnmgr(connmgr), _msend(),
+      _rconnmgr (connmgr), 
+      _bconnmgr(connmgr),       
+      _native (native), 
+      _msend(),
       _selftopology(native->myrank()),
       _scache(),
       _acache(&_scache, native->myrank())
@@ -648,7 +651,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
     _msend.msgcount = 1;
   }
 
-  pami_task_t *dstranks;
+  pami_task_t *dstranks=NULL;
   dst_topology->rankList(&dstranks);
 
   TRACE_MSG1 ((stderr, "<%#.8X>Executor::AllreduceBaseExec<T_Conn>::sendMessage connid %#X curphase:%#X " 
@@ -801,7 +804,7 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
   int nsrc = _scache.getNumSrcRanks(cdata->_phase);
   for (idx = 0; idx < nsrc; idx ++){
     PAMI::Topology *srctopology = _scache.getSrcTopology(cdata->_phase);
-    pami_task_t *srcranks;
+    pami_task_t *srcranks = NULL;
     srctopology->rankList(&srcranks);
     if (srcranks[idx] == peer){
       srcPeIndex = idx;

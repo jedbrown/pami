@@ -61,8 +61,8 @@ namespace CCMI
       ScheduleCache () : 
       _cachebuf(NULL), 
         _cachesize(0), 
-        _root(-1), 
         _oldroot(-2), 
+        _root(-1), 
         _operation((unsigned)-1),
         _schedule(NULL)
 	  {
@@ -152,6 +152,7 @@ namespace CCMI
 	    TRACE_ERR ((stderr, "Schedule Cache take_2 phase %d ndst %d dstrank %d\n", count, _dsttopologies[count]->size(), dstranks[0]));
 	  }
 #endif
+	return true;
       }
 
       unsigned getNumTotalSrcRanks() { return _ntotalsrcranks; }
