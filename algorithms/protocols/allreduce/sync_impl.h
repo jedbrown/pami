@@ -97,7 +97,7 @@ namespace CCMI
         void binomial_ar_md(pami_metadata_t *m)
         {
           // \todo:  fill in other metadata
-          strcpy(&m->name[0],"OldCCMIBinomialAllreduce");
+          strcpy(&m->name[0],"CCMIBinomialAllreduce");
         }
 
         typedef MultiColorCompositeT<1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
