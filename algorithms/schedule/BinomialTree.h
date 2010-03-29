@@ -392,9 +392,9 @@ namespace CCMI
       virtual void
       getDstTopology (unsigned phase, PAMI::Topology *topology){ PAMI_abort();}
       virtual pami_result_t
-      getSrcUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
+      getSrcUnionTopology (PAMI::Topology *topology){ PAMI_abort(); return PAMI_SUCCESS;}
       virtual pami_result_t
-      getDstUnionTopology (PAMI::Topology *topology){ PAMI_abort();}
+      getDstUnionTopology (PAMI::Topology *topology){ PAMI_abort(); return PAMI_SUCCESS;}
 
 
     };    //Binomial Tree Schedule
