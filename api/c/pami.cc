@@ -175,7 +175,7 @@ extern "C" pami_result_t PAMI_Context_multiadvance (pami_context_t context[],
   unsigned m, c;
   PAMI::Context * ctx;
 
-  pami_result_t result = PAMI_EAGAIN;
+  pami_result_t result = PAMI_SUCCESS;
   size_t events = 0;
 
   for (m=0; m<maximum && events==0 && result==PAMI_SUCCESS; m++)
