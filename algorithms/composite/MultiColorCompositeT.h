@@ -5,7 +5,7 @@
 #ifndef __algorithms_composite_MultiColorCompositeT_h__
 #define __algorithms_composite_MultiColorCompositeT_h__
 
-#include "Composite.h"
+#include "algorithms/composite/Composite.h"
 
 
 namespace CCMI

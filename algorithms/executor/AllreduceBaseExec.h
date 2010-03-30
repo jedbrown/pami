@@ -7,8 +7,8 @@
 #include "algorithms/interfaces/Executor.h"
 #include "algorithms/connmgr/ConnectionManager.h"
 #include "algorithms/interfaces/NativeInterface.h"
-#include "ScheduleCache.h"
-#include "AllreduceCache.h"
+#include "algorithms/executor/ScheduleCache.h"
+#include "algorithms/executor/AllreduceCache.h"
 
 #define TRACE_MSG1(X)      //fprintf X
 #define TRACE_ADVANCE1(X)  //fprintf X

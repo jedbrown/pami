@@ -11,7 +11,7 @@
 
 VPATH		= @abs_srcdir@
 SUBDIRS		= ${PAMI_PLATFORM}
-SOURCES		= pami.cc
+SOURCES		= pami.cc pamip2p.cc
 DEVICENAME	= 
 COPTS		+= -I ${VPATH}/${PAMI_PLATFORM}
 include @abs_top_builddir@/Build.rules
