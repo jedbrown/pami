@@ -957,6 +957,8 @@ extern "C" pami_result_t PAMI_Client_add_commthread_context(pami_client_t client
 
 
 
+
+#ifndef PAMI_LAPI_IMPL
 ///
 /// \copydoc PAMI_Client_initialize
 ///
@@ -1104,9 +1106,6 @@ extern "C" pami_result_t PAMI_Context_multiadvance (pami_context_t context[],
   return result;
 }
 
-
-
-#ifndef PAMI_LAPI_IMPL
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from pami_p2p.h                                                   //
 ////////////////////////////////////////////////////////////////////////////////
