@@ -111,7 +111,7 @@ namespace PAMI {
 		typedef GccThreadSafeMultiQueueIterator<
 			GccThreadSafeMultiQueue<T_NumElems,T_ElemNum>,
 			GccThreadSafeMultiQueueElement<T_NumElems>
-			> QueueIterator;
+			> Iterator;
 
 		inline GccThreadSafeMultiQueue() :
 		PAMI::Interface::DequeInterface<
@@ -214,13 +214,13 @@ namespace PAMI {
 
 		// Iterator implementation
 
-		inline void iter_init_impl(QueueIterator *iter) {
+		inline void iter_init_impl(Iterator *iter) {
 			new (&iter->_queue) GccThreadSafeMultiQueue(); // nothing more needed?
 			iter->parent = iter->next_par = NULL;
 			iter->curr = iter->next = NULL;
 		}
 
-		inline bool iter_begin_impl(QueueIterator *iter) {
+		inline bool iter_begin_impl(Iterator *iter) {
 			// pick up any new work...
 			bool did = __merge(&iter->_queue, this);
 			iter->parent = NULL;
@@ -228,7 +228,7 @@ namespace PAMI {
 			return did;
 		}
 
-		inline bool iter_check_impl(QueueIterator *iter) {
+		inline bool iter_check_impl(Iterator *iter) {
 			if (iter->curr == NULL) {
 				// done with this pass...
 				return false;
@@ -239,16 +239,16 @@ namespace PAMI {
 			return true;
 		}
 
-		inline void iter_end_impl(QueueIterator *iter) {
+		inline void iter_end_impl(Iterator *iter) {
 			iter->parent = iter->next_par;
 			iter->curr = iter->next;
 		}
 
-		inline Element *iter_current_impl(QueueIterator *iter) {
+		inline Element *iter_current_impl(Iterator *iter) {
 			return iter->curr;
 		}
 
-		inline pami_result_t iter_remove_impl(QueueIterator *iter) {
+		inline pami_result_t iter_remove_impl(Iterator *iter) {
 			Element *n, *e, **h;
 
 			if (iter->parent) h = iter->parent->nextPtr(T_ElemNum);

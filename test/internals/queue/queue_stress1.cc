@@ -26,6 +26,7 @@
 #include "sys/pami.h"
 #include "components/memory/MemoryManager.h"
 #include "util/queue/GccThreadSafeMultiQueue.h"
+#include "util/queue/MutexedMultiQueue.h"
 
 static inline pid_t gettid() {
 	return syscall(SYS_gettid);
@@ -35,7 +36,11 @@ static inline pid_t gettid() {
 #define MAX_PTHREADS	8
 #endif // MAX_PTHREADS
 
-typedef PAMI::GccThreadSafeMultiQueue<2,0> queue_t;
+//typedef PAMI::GccThreadSafeMultiQueue<2,0> queue_t;
+
+#include "components/atomic/bgp/LockBoxMutex.h"
+typedef PAMI::MutexedMultiQueue<PAMI::Mutex::BGP::LockBoxProcMutex,2,0> queue_t;
+
 typedef struct {
 	queue_t::Element elem;
 	unsigned int pid;
@@ -65,11 +70,15 @@ void *enqueuers(void *v) {
 	int x;
 	element_t *e;
 	unsigned long long t0, t = 0;
-	timespec tv = {0, 100000};
+#ifdef BACKOFF_NS
+	timespec tv = {0, BACKOFF_NS};
+#endif // BACKOFF_NS
 
 	fprintf(stderr, "%d: starting %d enqueues\n", gettid(), num);
 	for (x = 0; x < num; ++x) {
+#ifdef BACKOFF_NS
 		nanosleep(&tv, NULL);
+#endif // BACKOFF_NS
 		if (a) {
 			e = &a[x];
 		} else {
@@ -102,7 +111,7 @@ void *dequeuer(void *v) {
 	int count = 0;
 	static element_t *freelist = NULL;
 #endif /* DEBUG */
-	static queue_t::QueueIterator qi;
+	static queue_t::Iterator qi;
 	q->iter_init(&qi);
 	while (x < num) {
 		if (!q->head()) sched_yield();
