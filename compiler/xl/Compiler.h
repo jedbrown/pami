@@ -38,7 +38,7 @@
 #define __sync_val_compare_and_swap(x,y,z) (__typeof__(*x))({\
 	long _y = (long)y;				\
 	__compare_and_swaplp((volatile long *)x,&_y,(long)z);\
-	_y;					\
+	_y;						\
 })
 #else	// 32-bit
 #define __sync_bool_compare_and_swap(x,y,z) ({		\
@@ -50,7 +50,7 @@
 #define __sync_val_compare_and_swap(x,y,z) (__typeof__(*x))({\
 	int _y = (int)y;				\
 	__compare_and_swap((volatile int *)x,&_y,(int)z);\
-	_y;					\
+	_y;						\
 })
 #endif	// 32/64-bit
 
