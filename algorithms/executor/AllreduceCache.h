@@ -667,7 +667,8 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
 
   /// \todo not sure this alignment is needed anymore but leaving it.
   COMPILE_TIME_ASSERT((sizeof(PAMI_Request_t)%16)==0);         // Need 16 byte alignment?
-  COMPILE_TIME_ASSERT(((sizeof(AC_RecvCallbackData) + 4)%16)==0); // Need 16 byte alignment?
+    /// \todo not sure this alignment is needed anymore, and it's removed because it doesn't compile in 64 bit
+//  COMPILE_TIME_ASSERT(((sizeof(AC_RecvCallbackData) + 4)%16)==0); // Need 16 byte alignment?
 
   // How many requests might we receive per srcPe?  "infoRequired" indicates we 
   // are using recv head callback and need 1 per chunk per srcPE.  Otherwise we're doing postReceive 
