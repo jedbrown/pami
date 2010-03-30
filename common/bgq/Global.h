@@ -34,9 +34,10 @@
 #include "Topology.h"
 #include "common/bgq/L2AtomicFactory.h"
 
-#ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#ifdef TRACE_ERR
+#undef TRACE_ERR
 #endif
+#define TRACE_ERR(x)  //fprintf x
 
 #define BGQ_GLOBAL_SHMEM_SIZE	256*1024 ///< extra shmem for BGQ L2 Atomics and WAC
 
