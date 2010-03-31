@@ -123,7 +123,7 @@ void *dequeuer(void *v) {
 			++y;
 			e = (element_t *)q->iter_current(&qi);
 			if (e->val == (unsigned)-1 || (rand() & 0x03) == 0) {
-				e->val = 0; // helps debug
+				e->val = -1;
 				t += PAMI_Wtimebase() - t0;
 				t0 = PAMI_Wtimebase();
 				if (q->iter_remove(&qi) == PAMI_SUCCESS) {
