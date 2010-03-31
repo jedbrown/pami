@@ -60,21 +60,17 @@ typedef struct {
 PAMI::Memory::MemoryManager mm;
 queue_t queue;
 
-element_t *arrays[MAX_PTHREADS] = {NULL};
-
 double base_t = 0.0;
 
 struct thread_args {
 	queue_t *queue;
 	int num_iter;
 	int nthreads;
-	element_t *array;
 };
 
 void *enqueuers(void *v) {
 	struct thread_args *args = (struct thread_args *)v;
 	queue_t *q = args->queue;
-	element_t *a = args->array;
 	int num = args->num_iter;
 	int x;
 	element_t *e;
@@ -88,12 +84,8 @@ void *enqueuers(void *v) {
 #ifdef BACKOFF_NS
 		nanosleep(&tv, NULL);
 #endif // BACKOFF_NS
-		if (a) {
-			e = &a[x];
-		} else {
-			e = (element_t *)malloc(sizeof(*e));
-			assert(e);
-		}
+		e = (element_t *)malloc(sizeof(*e));
+		assert(e);
 		e->pid = gettid();
 		e->seq = x;
 		e->val = 1;	// debug
@@ -109,17 +101,12 @@ void *enqueuers(void *v) {
 void *dequeuer(void *v) {
 	struct thread_args *args = (struct thread_args *)v;
 	queue_t *q = args->queue;
-	element_t *a = args->array;
 	int num = args->num_iter * (args->nthreads - 1);
 	int x = 0, y = 0, z = 0;
 	element_t *e;
 	unsigned long long t0, t1, t = 0, tr = 0, tb = 0;
 
 	fprintf(stderr, "%d: looking for %d dequeues\n", gettid(), num);
-#ifdef DEBUG
-	int count = 0;
-	static element_t *freelist = NULL;
-#endif /* DEBUG */
 	static queue_t::Iterator qi;
 	q->iter_init(&qi);
 	while (x < num) {
@@ -136,29 +123,14 @@ void *dequeuer(void *v) {
 			++y;
 			e = (element_t *)q->iter_current(&qi);
 			if (e->val == (unsigned)-1 || (rand() & 0x03) == 0) {
-				e->val = 0;
-#ifdef DEBUG
-				e->pid = (unsigned)-1;
-				e->seq = x;
-				e->val = (unsigned)-1;
-#endif /* DEBUG */
+				e->val = 0; // helps debug
 				t += PAMI_Wtimebase() - t0;
 				t0 = PAMI_Wtimebase();
 				if (q->iter_remove(&qi) == PAMI_SUCCESS) {
 					tr += PAMI_Wtimebase() - t0;
-					if (!a) {
-#ifdef DEBUG
-						e->setNext(freelist);
-						freelist = e;
-#else /* !DEBUG */
-						free(e);
-#endif /* !DEBUG */
-						e = NULL; // just in case we try to access it
-					}
+					free(e);
+					e = NULL; // just in case we try to access it
 					++x;
-#ifdef DEBUG
-					count = 0;
-#endif /* DEBUG */
 				} else {
 					tr += PAMI_Wtimebase() - t0;
 				}
@@ -166,9 +138,6 @@ void *dequeuer(void *v) {
 			}
 		}
 		t += PAMI_Wtimebase() - t0;
-#ifdef DEBUG
-		if (++count == 1000000) fprintf(stderr, "stuck at %d {%p %p %zu}\n", x, q->head, q->tail, q->count);
-#endif /* DEBUG */
 	}
 	double d = t;
 	double dr = tr;
@@ -185,9 +154,7 @@ int main(int argc, char **argv) {
 	int x;
 	int pthreads = 4;
 	int elements = 1000;
-	int memalloc = 0;
 	int seed = 1;
-	int savethread = 0;
 
 	//extern int optind;
 	extern char *optarg;
@@ -198,7 +165,6 @@ int main(int argc, char **argv) {
 			elements = strtol(optarg, NULL, 0);
 			break;
 		case 'm':
-			memalloc = 1;
 			break;
 		case 'p':
 			pthreads = strtol(optarg, NULL, 0);
@@ -208,11 +174,10 @@ int main(int argc, char **argv) {
 			srand(seed);
 			break;
 		case 't':
-			savethread = 1;
 			break;
 		}
 	}
-	fprintf(stderr, "main: starting test with %d threads and %d elements per enqueuer (seed %d)%s\n", pthreads, elements, seed, memalloc ? " static malloc" : "");
+	fprintf(stderr, "main: starting test with %d threads and %d elements per enqueuer (seed %d)\n", pthreads, elements, seed);
 
 	size_t size = 32*1024;
 	void *ptr = malloc(size);
@@ -229,38 +194,27 @@ int main(int argc, char **argv) {
 	base_t = d / x;
 
 	int status;
-	for (x = savethread; x < pthreads; ++x) {
+	// thread "0" is the main thread - already running
+	for (x = 1; x < pthreads; ++x) {
 		pthread_attr_init(&attr[x]);
 		pthread_attr_setscope(&attr[x], PTHREAD_SCOPE_SYSTEM);
 		args[x].queue = &queue;
 		args[x].nthreads = pthreads;
 		args[x].num_iter = elements;
-		args[x].array = NULL;
 		if (x) {
-			if (memalloc) {
-				arrays[x] = (element_t *)malloc(sizeof(element_t) * elements);
-				args[x].array = arrays[x];
-			}
 			status = pthread_create(&thread[x], &attr[x], enqueuers, (void *)&args[x]);
 		} else {
-			if (memalloc) {
-				args[x].array = (element_t *)arrays;
-			}
 			status = pthread_create(&thread[x], &attr[x], dequeuer, (void *)&args[x]);
 		}
 		/* don't care about status? just reap threads below? */
 	}
-	if (savethread) {
-		args[0].queue = &queue;
-		args[0].nthreads = pthreads;
-		args[0].num_iter = elements;
-		args[0].array = NULL;
-		if (memalloc) {
-			args[0].array = (element_t *)arrays;
-		}
-		(void)dequeuer((void *)&args[0]);
-	}
-	for (x = savethread; x < pthreads; ++x) {
+	// create args struct for main thread
+	args[0].queue = &queue;
+	args[0].nthreads = pthreads;
+	args[0].num_iter = elements;
+	(void)dequeuer((void *)&args[0]);
+
+	for (x = 1; x < pthreads; ++x) {
 		pthread_join(thread[x], NULL);
 	}
 	fprintf(stderr, "main done. queue = { %p %p %zu }\n", queue.head(), queue.tail(), queue.size());
