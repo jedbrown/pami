@@ -1,5 +1,5 @@
 ///
-/// \file test/internals/multisend/multisync.cc
+/// \file test/internals/multisend/bgq/bgqmultisync.cc
 /// \brief ???
 ///
 
@@ -7,20 +7,22 @@
 #include "sys/pami.h"
 
 #include "components/devices/misc/AtomicBarrierMsg.h"
+#include "components/atomic/bgq/L2Barrier.h"
 #include "test/internals/multisend/multisync.h"
 
-#define BARRIER1_NAME	"PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter>"
-#define BARRIER1_ISLOCAL	1
-#include "components/atomic/gcc/GccCounter.h"
-#include "components/atomic/counter/CounterBarrier.h"
-typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> Barrier_Type1;
-
+#define BARRIER1_NAME	"PAMI::Barrier::BGQ::L2NodeProcBarrier"
+#define	BARRIER1_ISLOCAL	1
+typedef PAMI::Barrier::BGQ::L2NodeProcBarrier Barrier_Type1;
 typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type1> Barrier_Model1;
 typedef PAMI::Device::AtomicBarrierDev Barrier_Device1;
 
-#undef BARRIER2_NAME
-
-#define MEMMGR_SIZE	(128*1024)
+#if 0 // future...
+#include "components/devices/.../GIBarrierMsg.h"
+#define BARRIER2_NAME	"PAMI::Device::BGQ::GIBarrierMdl"
+#define BARRIER2_ISLOCAL	0
+typedef PAMI::Device::BGQ::GIBarrierMdl Barrier_Model2;
+typedef PAMI::Device::BGQ::GIBarrierDev Barrier_Device2;
+#endif
 
 int main(int argc, char ** argv) {
         pami_context_t context;
@@ -65,10 +67,9 @@ int main(int argc, char ** argv) {
         num_tasks = __global.mapping.size();
         context = (pami_context_t)1; // context must not be NULL
         PAMI::Memory::MemoryManager mm;
-        initializeMemoryManager("multisync test", MEMMGR_SIZE, mm);
+        initializeMemoryManager("multisync test", 128*1024, mm);
 #endif
         if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
-
 
 // END standard setup
 // ------------------------------------------------------------------------
@@ -76,12 +77,12 @@ int main(int argc, char ** argv) {
         // Register some multisyncs, C++ style
 #ifdef BARRIER1_NAME
 	DO_BARRIER_TEST(BARRIER1_NAME, Barrier_Model1, Barrier_Device1, BARRIER1_ISLOCAL,
-		mm, task_id, num_tasks, context);
-#endif // BARRIER1_NAME;
+			mm, task_id, num_tasks, context);
+#endif // BARRIER1_NAME
 
 #ifdef BARRIER2_NAME
 	DO_BARRIER_TEST(BARRIER2_NAME, Barrier_Model2, Barrier_Device2, BARRIER2_ISLOCAL,
-		mm, task_id, num_tasks, context);
+			mm, task_id, num_tasks, context);
 #endif // BARRIER2_NAME
 
 // ------------------------------------------------------------------------

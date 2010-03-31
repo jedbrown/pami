@@ -7,8 +7,20 @@
 #include "sys/pami.h"
 
 #include "components/devices/bgp/global_interrupt/GIBarrierMsg.h"
+#include "components/devices/misc/AtomicBarrierMsg.h"
+#include "components/atomic/bgp/LockBoxBarrier.h"
 #include "test/internals/multisend/multisync.h"
 
+#define BARRIER1_NAME	"PAMI::Device::BGP::giModel"
+#define BARRIER1_ISLOCAL	0
+typedef PAMI::Device::BGP::giModel	Barrier_Model1;
+typedef PAMI::Device::BGP::giDevice	Barrier_Device1;
+
+#define BARRIER2_NAME   "PAMI::Barrier::BGP::LockBoxNodeProcBarrier"
+#define BARRIER2_ISLOCAL	1
+typedef PAMI::Barrier::BGP::LockBoxNodeProcBarrier Barrier_Type2;
+typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type2> Barrier_Model2;
+typedef PAMI::Device::AtomicBarrierDev Barrier_Device2;
 
 int main(int argc, char ** argv) {
         pami_context_t context;
@@ -53,38 +65,23 @@ int main(int argc, char ** argv) {
         num_tasks = __global.mapping.size();
         context = (pami_context_t)1; // context must not be NULL
         PAMI::Memory::MemoryManager mm;
-        initializeMemoryManager("bgp multisync test", TEST_DEF_SHMEM_SIZE, mm);
+        initializeMemoryManager("bgp multisync test", 128*1024, mm);
 #endif
         if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
-
-        if (__global.mapping.tSize() != 1) {
-                fprintf(stderr, "This test requires SMP mode\n");
-                exit(1);
-        }
 
 // END standard setup
 // ------------------------------------------------------------------------
 
         // Register some multisyncs, C++ style
-        pami_result_t rc;
+#ifdef BARRIER1_NAME
+	DO_BARRIER_TEST(BARRIER1_NAME, Barrier_Model1, Barrier_Device1, BARRIER1_ISLOCAL,
+		mm, task_id, num_tasks, context);
+#endif // BARRIER1_NAME
 
-        pami_multisync_t msync;
-
-        // simple barrier on the GI network... SMP mode
-        msync.client = 0;
-        msync.context = 0;
-        msync.roles = (unsigned)-1;
-        msync.participants = (pami_topology_t *)&__global.topology_global;
-
-        const char *test = "PAMI::Device::BGP::giModel";
-        if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
-        PAMI::Test::Multisend::Multisync<PAMI::Device::BGP::giModel,PAMI::Device::BGP::giDevice> test1(test, mm);
-        rc = test1.perform_test(task_id, num_tasks, context, &msync);
-        if (rc != PAMI_SUCCESS) {
-                fprintf(stderr, "Failed %s test result = %d\n", test, rc);
-                exit(1);
-        }
-        fprintf(stderr, "PASS? %5lld (%5lld) [delay: %lld, time: %lld]\n", test1.total_time, test1.barrier_time, test1.delay, test1.raw_time);
+#ifdef BARRIER2_NAME
+	DO_BARRIER_TEST(BARRIER2_NAME, Barrier_Model2, Barrier_Device2, BARRIER2_ISLOCAL,
+		mm, task_id, num_tasks, context);
+#endif // BARRIER2_NAME
 
 // ------------------------------------------------------------------------
 #if 0

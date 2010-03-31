@@ -164,4 +164,33 @@ private:
 }; // namespace Test
 }; // namespace PAMI
 
+#define DO_BARRIER_TEST(name,model,device,islocal,mm,task_id,num_tasks,context)	\
+{										\
+	const char *test = name;						\
+	pami_result_t rc;							\
+	pami_multisync_t msync;							\
+	if (islocal && __global.topology_local.size() < 2) {			\
+		if (task_id == 0) fprintf(stderr, "SKIPPING: %s requires more than 1 local task\n", test);\
+	} else if (!islocal && __global.topology_local.size() > 1) {		\
+		if (task_id == 0) fprintf(stderr, "SKIPPING: %s requires only 1 task per node\n", test);\
+	} else {								\
+		initializeMemoryManager("multisync test", 0, mm);		\
+		msync.client = 0;						\
+		msync.context = 0;						\
+		msync.roles = (unsigned)-1;					\
+		msync.participants = (pami_topology_t *)(islocal ?		\
+			 &__global.topology_local : &__global.topology_global);	\
+		if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);	\
+		PAMI::Test::Multisend::Multisync<model,device> testclass(test, mm);\
+		rc = testclass.perform_test(task_id, num_tasks, context, &msync);\
+		if (rc != PAMI_SUCCESS) {					\
+			fprintf(stderr, "Failed %s test result = %d\n", test, rc);\
+			exit(1);						\
+		}								\
+		fprintf(stderr, "PASS2? %5lld (%5lld) [delay: %lld, time: %lld]\n",\
+			testclass.total_time, testclass.barrier_time,		\
+			testclass.delay, testclass.raw_time);			\
+	}									\
+}
+
 #endif // __pami_test_internals_multisend_multisync_h__

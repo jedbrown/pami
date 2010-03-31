@@ -12,7 +12,7 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        = 
-APPS            = NativeInterface.${EXTENSION}
+APPS            = NativeInterface.${EXTENSION} bgqmultisync.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
@@ -39,8 +39,9 @@ endif
 
 default: ${APPS}
 
+# hack: may not always want 4 processes per node. GI/MU Barrier for example.
 runmambo:
-	BG_SHAREDMEMSIZE=1 BG_PROCESSESPERNODE=4 @BGFLOOR@/scripts/runfctest.sh \
+	BG_MEMSIZE=4096 BG_SHAREDMEMSIZE=1 BG_PROCESSESPERNODE=4 @BGFLOOR@/scripts/runfctest.sh \
 	--ttype cnk \
 	--parmstest ${VPATH}/test.parms \
 	--program NativeInterface.cnk \

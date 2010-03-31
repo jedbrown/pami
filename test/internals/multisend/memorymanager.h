@@ -62,7 +62,7 @@ static inline pami_result_t initializeMemoryManager(const char *name, size_t byt
                 _ptr = ptr;
                 _bytes = n;
         } else {
-                // assert(bytes == _bytes);
+                // assert(bytes == _bytes || bytes == 0);
         }
         mm.init(_ptr, _bytes);
 

@@ -66,9 +66,7 @@ namespace BGQ {
         };
         struct atomic_arena_t {
                 size_t size;	///< number of atomics
-                void *virt;	///< virtual address of memory
-                Kernel_MemoryRegion_t memreg;	///< memory region
-                uint64_t *base;///< arena base (phys addr of memory)
+                uint64_t *virt;	///< virtual address of memory
                 size_t next;	///< current number allocated
         };
 
@@ -87,9 +85,15 @@ namespace BGQ {
                 inline void init(PAMI::Memory::MemoryManager *mm,
                                 PAMI::Mapping *mapping, PAMI::Topology *local) {
                         pami_result_t rc;
-                        uint32_t krc;
                         int irc;
-                        /** \todo #warning must figure out L2 Atomic Factory memory management... */
+
+			/// \todo The must be re-worked for >4G Nodes, since we won't
+			/// have enough TLBs to map all of memory for L2 Atomic use.
+			if (mapping->task() == 0) {
+				fprintf(stderr, "NOTICE: L2AtomicFactory currently "
+						"requires MEMSIZE <= 4G\n");
+			}
+
                         // Must coordinate with all other processes on this node,
                         // and arrive at a common chunk of physical address memory
                         // which we all will use for allocating "L2Atomics" from.
@@ -103,11 +107,6 @@ namespace BGQ {
                                 "Failed to get shmem for _l2node, asked size %zu",
                                 sizeof(uint64_t) * _l2node.size);
                         memset(_l2node.virt, 0, sizeof(uint64_t) * _l2node.size);
-                        krc = Kernel_CreateMemoryRegion(&_l2node.memreg,
-                                                        _l2node.virt, _l2node.size);
-                        PAMI_assertf(krc == 0, "Failed to get physical address for L2 Atomic region");
-                        _l2node.base = (uint64_t *)_l2node.memreg.BasePa;
-                        // Kernel_DestroyMemoryRegion(&_l2node.memreg); ???
                         _l2node.next = 0;
 
                         _l2proc.size = L2A_MAX_NUMPROCL2ATOMIC;
@@ -118,11 +117,6 @@ namespace BGQ {
                                 "Failed to get memory for _l2proc, asked size %zu",
                                 sizeof(uint64_t) * _l2proc.size);
                         memset(_l2proc.virt, 0, sizeof(uint64_t) * _l2proc.size);
-                        krc = Kernel_CreateMemoryRegion(&_l2proc.memreg,
-                                                        _l2proc.virt, _l2proc.size);
-                        PAMI_assertf(krc == 0, "Failed to get physical address for L2 Atomic region");
-                        _l2proc.base = (uint64_t *)_l2proc.memreg.BasePa;
-                        // Kernel_DestroyMemoryRegion(&_l2proc.memreg); ???
                         _l2proc.next = 0;
 
                         // Compute all implementation parameters,
@@ -248,9 +242,8 @@ namespace BGQ {
                                 // Node-scoped L2Atomics...
                                 // we get exactly what we asked for.
                                 for (x = 0; x < numAtomics; ++x) {
-                                        p[x] = &arena->base[idx++];
+					p[x] = &arena->virt[idx++];
                                 }
-fprintf(stderr, "Got %d NODE atomics at %p\n", numAtomics, p[0]);
                                 // barrier... ??
                                 break;
                         case L2A_PROC_SCOPE:
@@ -261,9 +254,8 @@ fprintf(stderr, "Got %d NODE atomics at %p\n", numAtomics, p[0]);
                                 // Take our specific lock out of the entire block.
                                 idx += (numAtomics * _factory.myProc);
                                 for (x = 0; x < numAtomics; ++x) {
-                                        p[x] = &arena->base[idx++];
+					p[x] = &arena->virt[idx++];
                                 }
-fprintf(stderr, "Got %d PROC atomics at %p\n", numAtomics, p[0]);
                                 break;
                         case L2A_CORE_SCOPE:
                         case L2A_CORE_SMT_SCOPE:
