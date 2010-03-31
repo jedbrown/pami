@@ -121,7 +121,7 @@ namespace PAMI
             rectsize *= (ur.u.n_torus.coords[d] - ll.u.n_torus.coords[d] + 1);
           }
 
-        TRACE_ERR((stderr,  "Global() mapping.size %zu, rectsize %zu,mapping.globalDims %zu, min %zu, max %zu\n", mapping.size(), rectsize, mapping.globalDims(), min, max));
+        TRACE_ERR((stderr,  "Global() mapping.size %zu, rectsize %zu,mapping.globalDims %zu, min %u, max %u\n", mapping.size(), rectsize, mapping.globalDims(), min, max));
 
         if (mapping.size() == rectsize)
           {
@@ -192,7 +192,9 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 {
   bgq_mapcache_t  * mapcache = &_mapcache;
 
-  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() >> ptr = %p, bytes = %zu, mapcache = %p\n", ptr, _memsize, mapcache));
+  //TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() >> ptr = %p, bytes = %zu, mapcache = %p\n", ptr, _memsize, mapcache));
+  //ptr and memsize are no longer in this scope
+  TRACE_ERR( (stderr, "PAMI::Global::initializeMapCache() >>  mapcache = %p\n", mapcache));
   // This structure anchors pointers to the map cache and rank cache.
   // It is created in the static portion of shared memory in this
   // constructor, but exists there only for the duration of this
