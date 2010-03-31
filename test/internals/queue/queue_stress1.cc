@@ -36,10 +36,12 @@ static inline pid_t gettid() {
 #define MAX_PTHREADS	8
 #endif // MAX_PTHREADS
 
-//typedef PAMI::GccThreadSafeMultiQueue<2,0> queue_t;
+typedef PAMI::GccThreadSafeMultiQueue<2,0> queue_t;
 
+#if 0
 #include "components/atomic/bgp/LockBoxMutex.h"
 typedef PAMI::MutexedMultiQueue<PAMI::Mutex::BGP::LockBoxProcMutex,2,0> queue_t;
+#endif
 
 typedef struct {
 	queue_t::Element elem;
