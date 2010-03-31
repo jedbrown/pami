@@ -24,7 +24,7 @@
 
 #undef TRACE_DEVICE
 #ifndef TRACE_DEVICE
-  #define TRACE_DEVICE(x) //fprintf x
+#define TRACE_DEVICE(x) //fprintf x
 #endif
 
 namespace PAMI
@@ -96,7 +96,8 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
       MPIBcastMsg(GenericDeviceMessageQueue *Generic_QS,
                   pami_multicast_t *mcast) :
       PAMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
-                                           mcast->client, mcast->context),
+                                           0,/// \todo #warning Is mcast->client an id or pami_client_t?  GenericMessage wants an id so hardcode 0
+                                            mcast->context),
       _dst((PAMI::Topology *)mcast->dst_participants),
       _iwq((PAMI::PipeWorkQueue *)mcast->src),
       _rwq((PAMI::PipeWorkQueue *)mcast->dst),
@@ -121,7 +122,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
         else // we must be a dst_participant and we don't particularly care who is the root - just not me.
           _root = MPI_ANY_SOURCE;
 
-        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg client %zu, context %zu, root %zu, iwq %p, rwq %p, bytes %zu/%zu/%zu\n",this,
+        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg client %#zX, context %zu, root %zu, iwq %p, rwq %p, bytes %zu/%zu/%zu\n",this,
                       mcast->client, mcast->context, _root, _iwq, _rwq, _bytes,
                       _iwq?_iwq->bytesAvailableToConsume():-1,
                       _rwq?_rwq->bytesAvailableToProduce():-1));
