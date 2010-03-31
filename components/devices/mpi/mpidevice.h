@@ -23,9 +23,8 @@
 #include "util/ccmi_debug.h"
 #include "SysDep.h"
 
-#ifndef TRACE_DEVICE
+#undef TRACE_DEVICE
   #define TRACE_DEVICE(x) //fprintf x
-#endif
 
 namespace PAMI
 {
@@ -687,17 +686,18 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
 
       inline void enqueue(MPIMcastMessage* msg)
       {
-        TRACE_DEVICE((stderr,"<%p>MPIDevice::enqueue mcast message size %zu\n",this, (size_t)msg->_size));
+        TRACE_DEVICE((stderr,"<%p>MPIDevice::enqueue mcast message size %zu\n",this, (size_t)msg->_bytes));
         _mcastsendQ.push_front(msg);
       }
 
       inline void enqueue(MPIMcastRecvMessage *msg)
       {
         TRACE_DEVICE((stderr,
-                      "<%p>MPIDevice::enqueue mcast recv message pwidth %zu size %zu\n",
-                      this,
-                      (size_t)msg->_pwidth,
-                      (size_t)msg->_size));
+                      "<%p>MPIDevice::enqueue mcast recv message \n",
+                      this));
+	//,
+	//(size_t)msg->_pwidth,
+	//(size_t)msg->_bytes));
         _mcastrecvQ.push_front(msg);
       }
 

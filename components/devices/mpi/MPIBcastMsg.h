@@ -21,6 +21,7 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 #include "components/devices/MulticastModel.h"
+
 #undef TRACE_DEVICE
 #ifndef TRACE_DEVICE
   #define TRACE_DEVICE(x) //fprintf x
@@ -120,7 +121,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
         else // we must be a dst_participant and we don't particularly care who is the root - just not me.
           _root = MPI_ANY_SOURCE;
 
-        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg client %p, context %zu, root %zu, iwq %p, rwq %p, bytes %zu/%zu/%zu\n",this,
+        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg client %zu, context %zu, root %zu, iwq %p, rwq %p, bytes %zu/%zu/%zu\n",this,
                       mcast->client, mcast->context, _root, _iwq, _rwq, _bytes,
                       _iwq?_iwq->bytesAvailableToConsume():-1,
                       _rwq?_rwq->bytesAvailableToProduce():-1));

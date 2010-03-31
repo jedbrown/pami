@@ -9,6 +9,7 @@
 #include "algorithms/interfaces/Schedule.h"
 #include "Topology.h"
 
+#undef TRACE_SCACHE
 #define TRACE_SCACHE(x)  
 
 namespace CCMI
@@ -106,8 +107,8 @@ namespace CCMI
 	  _schedule->getDstTopology(count, &dst_topology);
 	  ntotal_dst += dst_topology.size();
 
-	  //fprintf (stderr, "Schedule Cache take_1 phase %d ndst %d dstrank %d\n", count, 
-	  //dst_topology.size(), dstranks[0]);
+	  TRACE_SCHEDULE((stderr, "Schedule Cache take_1 phase %d ndst %d dstrank %d\n", count, 
+		     dst_topology.size(), dstranks[0]));
 	}
 
         _ntotalsrcranks = ntotal_src;
@@ -118,7 +119,7 @@ namespace CCMI
 	unsigned srcindex = 0, dstindex = 0;
 	for(count = _start; count < (_start + _nphases); count ++)
         {
-	  //fprintf (stderr, "Schedule Cache : construct topology of size src %d dst %d\n", ntotal_src - srcindex, ntotal_dst - dstindex);
+	  TRACE_SCHEDULE((stderr, "Schedule Cache : construct topology of size src %d dst %d\n", ntotal_src - srcindex, ntotal_dst - dstindex));
 
 	  new (_srctopologies[count]) PAMI::Topology ((pami_task_t*)_srcranks + srcindex, ntotal_src - srcindex);
 	  new (_dsttopologies[count]) PAMI::Topology ((pami_task_t*)_dstranks + dstindex, ntotal_dst - dstindex);
@@ -135,21 +136,19 @@ namespace CCMI
 	//_schedule->getSrcUnionTopology(&_srcuniontopology);
 	//_schedule->getDstUnionTopology(&_dstuniontopology);
 
-#if 0
+#ifdef CCMI_DEBUG_SCHEDULE
+#warning CCMI DEBUG SCHEDULE
 	for( count = _start; count < (_start + _nphases); count ++)
 	  if (getSrcTopology(count)->size() > 0) {
 	    size_t *srcranks;
 	    getSrcTopology(count)->rankList(&srcranks);
-	    fprintf (stderr, "Schedule Cache take_2 phase %d nsrc %d srcrank %d\n", count, _srctopologies[count]->size(), srcranks[0]);
+	    TRACE_SCHEDULE((stderr, "Schedule Cache take_2 phase %d nsrc %d srcrank %d\n", count, _srctopologies[count]->size(), srcranks[0]));
 	  }
-#endif
-
-#if 0
 	for( count = _start; count < (_start + _nphases); count ++)
 	  if (getDstTopology(count)->size() > 0) {
 	    size_t *dstranks;
 	    getDstTopology(count)->rankList(&dstranks);
-	    TRACE_ERR ((stderr, "Schedule Cache take_2 phase %d ndst %d dstrank %d\n", count, _dsttopologies[count]->size(), dstranks[0]));
+	    TRACE_SCHEDULE ((stderr, "Schedule Cache take_2 phase %d ndst %d dstrank %d\n", count, _dsttopologies[count]->size(), dstranks[0]));
 	  }
 #endif
 	return true;

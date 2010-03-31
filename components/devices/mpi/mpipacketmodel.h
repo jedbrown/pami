@@ -20,9 +20,9 @@
 #include "components/devices/PacketInterface.h"
 #include "components/devices/mpi/mpimessage.h"
 #include "errno.h"
-#ifndef TRACE_DEVICE
+
+#undef TRACE_DEVICE
   #define TRACE_DEVICE(x) //fprintf x
-#endif
 
 namespace PAMI
 {

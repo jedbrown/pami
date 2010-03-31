@@ -10,8 +10,10 @@
 #include "algorithms/executor/ScheduleCache.h"
 #include "algorithms/executor/AllreduceCache.h"
 
-#define TRACE_MSG1(X)      //fprintf X
-#define TRACE_ADVANCE1(X)  //fprintf X
+#undef TRACE_MSG1
+#undef TRACE_ADVANCE1
+#define TRACE_MSG1(X) //fprintf X
+#define TRACE_ADVANCE1(X) //fprintf X
 
 namespace CCMI
 {
@@ -674,7 +676,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
 template <class T_Conn>
 inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::start()
 {
-  //fprintf(stderr,"<%#.8X>Executor::AllreduceBaseExec start()\n",(int)this);
+  TRACE_FLOW((stderr,"<%#.8X>Executor::AllreduceBaseExec start()\n",(int)this));
 
   _initialized = true;    
   _sState.sndClientData.me        = this;

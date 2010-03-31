@@ -252,7 +252,7 @@ namespace PAMI
             P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL, T_MULTICAST_MODEL,T_MULTICAST_DEVICE>  *protocol = allocation->protocol;
 
             TRACE_DEVICE((stderr,"<%p>P2PMcastProto::done() free allocation %p, cb_done %p, client data %p\n",
-                          (unsigned)protocol, cookie, cb_done.function, cb_done.clientdata));
+                          protocol, cookie, cb_done.function, cb_done.clientdata));
 
             memset(cookie, 0x00, sizeof(allocation_t)); // cleanup for debug
             protocol->_allocator.returnObject(cookie);  // and release storage
@@ -278,7 +278,7 @@ namespace PAMI
                                  size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
                                  pami_recv_t         * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
           {
-            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch_p2p header size %zu, data size %zu\n",(unsigned)cookie, header_size, data_size));
+            TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch_p2p header size %zu, data size %zu\n",cookie, header_size, data_size));
             P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL,T_MULTICAST_DEVICE> *p = (P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL,T_MULTICAST_DEVICE> *)cookie;
             p->dispatch(context_hdl,
                         header,

@@ -12,7 +12,8 @@
 #include "math/math_coremath.h"
 #include "algorithms/executor/ScheduleCache.h"
 
-#define TRACE_ACACHE(X)  //fprintf X
+#undef TRACE_ACACHE
+#define TRACE_ACACHE(X) //fprintf X
 
 namespace CCMI {
   namespace Executor {
@@ -432,7 +433,7 @@ namespace CCMI {
         if((_receiveAllocationSize) > limit)
 	  {
 	    TRACE_ACACHE((stderr,"<%#.8X>Executor::AllreduceState::freeAllocations(%#.8X) ALERT: Allocation freed, %#X(%#X bytes), %#X(%#X bytes)\n",(int)this,
-			 limit, (int)_scheduleAllocation, (int)_receiveAllocation, _receiveAllocationSize));
+			 limit, (int)_scheduleAllocation, _scheduleAllocationSize, (int)_receiveAllocation, _receiveAllocationSize));
 
 #ifdef CCMI_DEBUG
 	    memset(_scheduleAllocation, 0xFB, _scheduleAllocationSize);
@@ -471,8 +472,6 @@ namespace CCMI {
 		free(_nextActivePhase);
 		_nextActivePhase = NULL;
 	      }
-#endif
-#ifdef CCMI_DEBUG
 	    _all_srcPes    = (unsigned*)0xFFFFFFF0;
 	    _all_srcHints  = (unsigned*)0xFFFFFFF1;
 	    _all_recvBufs  = (char**)0xFFFFFFF2;

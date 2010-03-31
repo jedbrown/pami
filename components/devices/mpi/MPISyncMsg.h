@@ -21,6 +21,7 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 #include "components/devices/MultisyncModel.h"
+
 #undef TRACE_DEVICE
 #ifndef TRACE_DEVICE
   #define TRACE_DEVICE(x) //fprintf x
@@ -103,7 +104,7 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
       _pendingStatus(PAMI::Device::Initialized),
       _root(_participants->index2Rank(0))
       {
-        TRACE_DEVICE((stderr,"<%p>MPISyncMsg client %p, context %zu\n",this,
+        TRACE_DEVICE((stderr,"<%p>MPISyncMsg client %zu, context %zu\n",this,
                       msync->client, msync->context));
         if(_participants->size() == 1)
         {

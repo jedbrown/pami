@@ -77,8 +77,7 @@ namespace CCMI
 			    unsigned                                ncolors=1):
 	CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>(), _doneCount(0), _numColors(ncolors), _cb_done(cb_done), _clientdata(clientdata), _native(mf)
       {
-	//fprintf(stderr, "%d:MultiColorCompositeT constructor\n", 
-	//mf->myrank());
+        TRACE_ADAPTOR((stderr, "MultiColorCompositeT constructor\n"));
 	pwcfn (topology, bytes, _colors, _numColors);
 	
 	unsigned bytecounts[NUMCOLORS];
@@ -122,7 +121,7 @@ namespace CCMI
 	if(CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier != NULL)
 	{
 	  // reset barrier since it may be been used between calls
-	  TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::reset barrier(%p)\n",this,_barrier));
+	  TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::reset barrier(%p)\n",this,(CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier)));
 	  
 	  T_Bar  *barrier =  CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier;
 	  barrier->setDoneCallback(cb_barrier_done, this);

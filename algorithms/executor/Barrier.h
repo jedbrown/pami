@@ -13,7 +13,6 @@
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
-//#define TRACE_ERR(x)
 
 #include "algorithms/executor/ScheduleCache.h"
 
@@ -65,7 +64,7 @@ namespace CCMI
         {
           _phasevec[count][_iteration] -= _cache.getSrcTopology(count)->size();
 
-          TRACE_ERR((stderr,"<%X>Executor::BarrierExec::decrementVector phase %d, nranks %d, vec %d\n",
+          TRACE_ERR((stderr,"<%p>Executor::BarrierExec::decrementVector phase %d, nranks %d, vec %d\n",
                      this,count,_cache.getSrcTopology(count)->size(),  _phasevec[count][_iteration]));
         }
 
@@ -100,7 +99,7 @@ namespace CCMI
       _connid(connid),
       _srctopology(ninterface->myrank())
       {
-        TRACE_ERR((stderr,"<%X>Executor::BarrierExec::::ctor(nranks %d,comm %X,connid %d)\n",
+        TRACE_ERR((stderr,"<%p>Executor::BarrierExec::::ctor(nranks %d,comm %X,connid %d)\n",
                    this, nranks, comm, connid));
         _start          =  0;
         _phase          =  0;
@@ -249,8 +248,7 @@ inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
   //Process this message by incrementing the phase vec
   _phasevec[hdr->_phase][hdr->_iteration] ++;
 
-  TRACE_ERR((stderr,"%d: <%X>Executor::BarrierExec::notifyRecv phase %d, vec %d expected vec\n",_native->myrank(),
-             this,
+  TRACE_ERR((stderr,"<%p>Executor::BarrierExec::notifyRecv phase %d, vec %d expected vec %zu\n", this,
              hdr->_phase, _phasevec[hdr->_phase][hdr->_iteration],  _cache.getSrcTopology(hdr->_phase)->size()));
 
   //Start has not been called, just record recv and return

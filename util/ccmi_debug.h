@@ -33,7 +33,7 @@
   #define TRACE_MSG(x) fprintf x
 
   #undef TRACE_BUF
-//  #define TRACE_BUF(x) fprintf x
+  #define TRACE_BUF(x) fprintf x
   #ifndef TRACE_BUF
     #define TRACE_BUF(x)
   #endif
@@ -43,13 +43,13 @@
 inline void CCMI_ADAPTOR_DEBUG_trace_data(const char* string, const char* buffer,unsigned size)
 {
   unsigned nChunks = size / 32;
-  TRACE_MSG((stderr, "<%p> %s, length=%#X\n",(int) buffer, string, size));
+  TRACE_MSG((stderr, "<%p> %s, length=%#X\n", buffer, string, size));
   if(!buffer) return;
   for(unsigned i = 0; i < nChunks; i++)
   {
     TRACE_BUF((stderr,
                "<%p>: %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X \n",
-               (int)buffer+(i*32),
+               buffer+(i*32),
                *(int*)(buffer+(i*32)+0),
                *(int*)(buffer+(i*32)+4),
                *(int*)(buffer+(i*32)+8),
@@ -65,7 +65,7 @@ inline void CCMI_ADAPTOR_DEBUG_trace_data(const char* string, const char* buffer
     unsigned lastChunk = nChunks * 32;
     TRACE_BUF((stderr,
                "<%p>: %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X %8.8X \n",
-               (int)buffer+lastChunk,
+               buffer+lastChunk,
                lastChunk+0<size?*(int*)(buffer+lastChunk+0):0xDEADDEAD,
                lastChunk+4<size?*(int*)(buffer+lastChunk+4):0xDEADDEAD,
                lastChunk+8<size?*(int*)(buffer+lastChunk+8):0xDEADDEAD,

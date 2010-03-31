@@ -57,9 +57,8 @@
 #include "components/devices/mpi/mpimulticombinemodel.h"
 #include "components/devices/mpi/mpimanytomanymodel.h"
 
-#ifndef TRACE_ERR
-#define TRACE_ERR(x)// fprintf x
-#endif
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
 
 namespace PAMI
 {
@@ -813,7 +812,7 @@ namespace PAMI
         }
         else // !experimental collective and !local allsided shmem and !global allsided
         {
-          PAMI_assertf(0,"Unknown options for multicast %d\n",options);
+          PAMI_abortf("Unknown options for multicast %d\n",*(unsigned*)&options);
           return PAMI_UNIMPL;
         }
 

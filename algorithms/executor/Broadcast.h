@@ -99,7 +99,7 @@ namespace CCMI
 
       void  setBuffers (char *src, char *dst, int len)
       {
-        TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::setInfo() root %d, buf %p, len %d, _pwq %p\n",this, root, buf, len, &_pwq));
+        TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::setInfo() src %p, dst %p, len %d, _pwq %p\n",this, src, dst, len, &_pwq));
         unsigned connid =  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
         _msend.connection_id = connid;
         _buflen = len;
