@@ -41,12 +41,13 @@ static inline pid_t gettid() {
 #endif // MAX_PTHREADS
 
 //typedef PAMI::GccThreadSafeMultiQueue<2,0> queue_t;
-//typedef PAMI::GccThreadSafeQueue queue_t;
-typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> > queue_t;
+typedef PAMI::GccThreadSafeQueue queue_t;
+//typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> > queue_t;
 
-#if 0
+#ifdef __bgp__
 #include "components/atomic/bgp/LockBoxMutex.h"
-typedef PAMI::MutexedMultiQueue<PAMI::Mutex::BGP::LockBoxProcMutex,2,0> queue_t;
+//typedef PAMI::MutexedMultiQueue<PAMI::Mutex::BGP::LockBoxProcMutex,2,0> queue_t;
+//typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex> queue_t;
 #endif
 
 typedef struct {

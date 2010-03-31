@@ -33,7 +33,7 @@ namespace Mutex {
                         while (_counter.fetch_and_inc() != 0);
                 }
                 void release_impl() {
-                        _counter.fetch_and_clear();
+                        _counter.clear();
                 }
                 bool tryAcquire_impl() {
                         return (_counter.fetch_and_inc() == 0) ? true : false;

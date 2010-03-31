@@ -41,6 +41,9 @@ namespace Counter {
                 inline size_t fetch_and_clear_impl() {
                         return _addr->fetch_and_clear();
                 }
+                inline void clear_impl() {
+                        _addr->clear();
+                }
                 void *returnLock_impl() { return _addr->returnLock(); }
         protected:
                 PAMI::Atomic::GccBuiltin *_addr;
@@ -64,6 +67,9 @@ namespace Counter {
                 }
                 inline size_t fetch_and_clear_impl() {
                         return _addr.fetch_and_clear();
+                }
+                inline void clear_impl() {
+                        _addr.clear();
                 }
                 void *returnLock_impl() { return _addr.returnLock(); }
         protected:

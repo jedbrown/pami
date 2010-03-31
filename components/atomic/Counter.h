@@ -75,6 +75,16 @@ namespace PAMI
         inline size_t fetch_and_clear ();
 
         ///
+        /// \brief Clear the atomic counter object value
+        ///
+        /// \attention All atomic counter object derived classes \b must
+        ///            implement the clear_impl() method.
+        ///
+        /// This is needed to make Mutexes deterministic on some implementations
+        ///
+        inline void clear ();
+
+        ///
         /// \brief Atomic compare and swap operation
         ///
         /// If the current value of the atomic object is the \c compare value,
@@ -119,6 +129,12 @@ namespace PAMI
     inline size_t Counter<T_Object>::fetch_and_clear ()
     {
       return static_cast<T_Object*>(this)->fetch_and_clear_impl();
+    }
+
+    template <class T_Object>
+    inline void Counter<T_Object>::clear ()
+    {
+      static_cast<T_Object*>(this)->clear_impl();
     }
 
     template <class T_Object>

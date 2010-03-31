@@ -69,6 +69,12 @@ namespace PAMI
           return _bgp_fetch_and_and (&_atom, 0);
         };
 
+        /// \see PAMI::Atomic::AtomicObject::clear
+        inline void clear_impl ()
+        {
+          _atom.atom = 0;
+        };
+
         /// \see PAMI::Atomic::AtomicObject::compare_and_swap
         inline bool compare_and_swap_impl (size_t compare, size_t swap)
         {
@@ -108,6 +114,7 @@ namespace BGP {
         inline size_t fetch_and_dec_impl() { return _bgp_fetch_and_add((_BGP_Atomic *)&_atomic, -1); }
 
         inline size_t fetch_and_clear_impl() { return _bgp_fetch_and_and((_BGP_Atomic *)&_atomic, 0); }
+        inline void clear_impl() { _atomic = 0; }
 
         inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {
@@ -143,6 +150,7 @@ namespace BGP {
         inline size_t fetch_and_dec_impl() { return _bgp_fetch_and_add((_BGP_Atomic *)_atomic, -1); }
 
         inline size_t fetch_and_clear_impl() { return _bgp_fetch_and_and((_BGP_Atomic *)_atomic, 0); }
+        inline void clear_impl() { *_atomic = 0; }
 
         inline void init_impl (PAMI::Memory::MemoryManager *mm)
         {

@@ -50,6 +50,9 @@ namespace BGP {
                 inline size_t fetch_and_clear_impl() {
                         return LockBox_FetchAndClear((LockBox_Counter_t)_addr);
                 }
+                inline void clear_impl() {
+                        LockBox_FetchAndClear((LockBox_Counter_t)_addr);
+                }
 /* no such thing exists for BG/P lockboxes.
                 inline bool compare_and_swap_impl(size_t compare, size_t swap) {
                 }

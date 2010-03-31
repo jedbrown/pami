@@ -70,6 +70,12 @@ namespace PAMI
           //_atom = 0;
         };
 
+        /// \see PAMI::Atomic::Interface::Counter::clear
+        inline void clear_impl ()
+        {
+          _atom = 0;
+        };
+
         /// \see PAMI::Atomic::Interface::Counter::compare_and_swap
         inline bool compare_and_swap_impl (size_t compare, size_t swap)
         {

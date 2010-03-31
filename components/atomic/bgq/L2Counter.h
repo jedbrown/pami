@@ -65,6 +65,11 @@ public:
                 return L2_AtomicLoadClear(_counter);
         }
 
+        /// \see PAMI::Atomic::Interface::Counter::fetch_and_clear
+        inline void clear_impl() {
+                L2_AtomicLoadClear(_counter);
+        }
+
         /// \see PAMI::Atomic::Interface::Counter::compare_and_swap
         /// Since BG/Q L2 Atomics don't implement compare-and-swap, we use
         /// the GCC builtin and hope for the best.

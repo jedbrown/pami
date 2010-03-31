@@ -64,6 +64,11 @@ namespace PAMI
           return 0;
         };
 
+        /// \see PAMI::Atomic::AtomicObject::clear
+        inline void clear_impl ()
+        {
+        };
+
         /// \see PAMI::Atomic::AtomicObject::compare_and_swap
         inline bool compare_and_swap_impl (size_t compare, size_t swap)
         {

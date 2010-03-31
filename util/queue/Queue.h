@@ -536,7 +536,7 @@ namespace PAMI
 	}
 
 	inline pami_result_t iter_remove_impl(Iterator *iter) {
-		Queue::remove(iter->curr);
+		remove(iter->curr);
 		return PAMI_SUCCESS;
 	}
 
