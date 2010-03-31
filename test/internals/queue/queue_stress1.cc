@@ -26,7 +26,11 @@
 #include "sys/pami.h"
 #include "components/memory/MemoryManager.h"
 #include "util/queue/GccThreadSafeMultiQueue.h"
+#include "util/queue/GccThreadSafeQueue.h"
 #include "util/queue/MutexedMultiQueue.h"
+#include "util/queue/Queue.h" // includes MutexedQueue
+#include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/gcc/GccCounter.h"
 
 static inline pid_t gettid() {
 	return syscall(SYS_gettid);
@@ -36,7 +40,9 @@ static inline pid_t gettid() {
 #define MAX_PTHREADS	8
 #endif // MAX_PTHREADS
 
-typedef PAMI::GccThreadSafeMultiQueue<2,0> queue_t;
+//typedef PAMI::GccThreadSafeMultiQueue<2,0> queue_t;
+//typedef PAMI::GccThreadSafeQueue queue_t;
+typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> > queue_t;
 
 #if 0
 #include "components/atomic/bgp/LockBoxMutex.h"

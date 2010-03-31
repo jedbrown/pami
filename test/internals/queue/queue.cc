@@ -51,7 +51,7 @@ class TestElement : public PAMI::Queue::Element
 int main(int argc, char **argv)
 {
 #ifdef __bgp__
-  PAMI::AtomicQueue<PAMI::Mutex::BGP::BgpProcMutex> q;
+  PAMI::MutexedQueue<PAMI::Mutex::BGP::BgpProcMutex> q;
 #else
   PAMI::Queue q;
 #endif
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 
   PAMI::Queue simpleq;
 #ifdef __bgp__
-  PAMI::AtomicQueue<PAMI::Mutex::BGP::BgpProcMutex> atomicq;
+  PAMI::MutexedQueue<PAMI::Mutex::BGP::BgpProcMutex> atomicq;
 #endif
 
   unsigned long long t0, t1;

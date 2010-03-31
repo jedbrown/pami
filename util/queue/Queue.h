@@ -30,6 +30,7 @@
 
 #include "util/common.h"
 #include "util/queue/QueueInterface.h"
+#include "util/queue/QueueIteratorInterface.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)
@@ -318,15 +319,30 @@ namespace PAMI
 
   }; // class PAMI::Queue
 
+  template <class T_Queue, class T_Element>
+  struct MutexedQueueIterator {
+	T_Element *curr;
+	T_Element *next;
+  };
+
   template <class T_Mutex>
-  class AtomicQueue : public Queue
+  class MutexedQueue :	public Queue,
+			public PAMI::Interface::QueueIterator<
+				MutexedQueue<T_Mutex>, Queue::Element,
+				MutexedQueueIterator<MutexedQueue<T_Mutex>, Queue::Element>
+				>
   {
     public:
 
       typedef Queue::Element Element;
+      typedef MutexedQueueIterator<MutexedQueue<T_Mutex>, Queue::Element> Iterator;
 
-      inline AtomicQueue () :
+      inline MutexedQueue () :
           Queue (),
+	  PAMI::Interface::QueueIterator<
+			MutexedQueue<T_Mutex>, Queue::Element,
+			MutexedQueueIterator<MutexedQueue<T_Mutex>, Queue::Element>
+			>(),
           _mutex ()
       {};
 
@@ -489,11 +505,46 @@ namespace PAMI
       };
 #endif
 
+    // Iterator implementation:
+    // This all works because there is only one thread removing (the iterator),
+    // all others only append new work.
+
+	inline void iter_init_impl(Iterator *iter) {
+		iter->curr = iter->next = NULL;
+	}
+
+	inline bool iter_begin_impl(Iterator *iter) {
+		iter->curr = peek();
+		return false; // did not alter queue
+	}
+
+	inline bool iter_check_impl(Iterator *iter) {
+		if (iter->curr == NULL) {
+			// done with this pass...
+			return false;
+		}
+		iter->next = nextElem(iter->curr);
+		return true;
+	}
+
+	inline void iter_end_impl(Iterator *iter) {
+		iter->curr = iter->next;
+	}
+
+	inline Element *iter_current_impl(Iterator *iter) {
+		return iter->curr;
+	}
+
+	inline pami_result_t iter_remove_impl(Iterator *iter) {
+		Queue::remove(iter->curr);
+		return PAMI_SUCCESS;
+	}
+
     protected:
 
       T_Mutex _mutex;
 
-  }; // class PAMI::AtomicQueue
+  }; // class PAMI::MutexedQueue
 }; // namespace PAMI
 
 #endif // __util_queue_queue_h__
