@@ -189,7 +189,7 @@ namespace PAMI
         switch (configuration->name)
           {
             case PAMI_NUM_CONTEXTS:
-              configuration->value.intval = 64; // modified by runmode?
+              configuration->value.intval = 1; // should be modified by runmode
               result = PAMI_SUCCESS;
               break;
             case PAMI_CONST_CONTEXTS:
