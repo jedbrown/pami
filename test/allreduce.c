@@ -492,8 +492,8 @@ int main(int argc, char*argv[])
 
 
 
-    for(dt=0; dt<dt_count; dt++)
-      for(op=0; op<op_count; op++)
+    for(dt=0; dt<1; dt++)
+      for(op=0; op<1; op++)
       {
         if(validTable[op][dt])
         {
