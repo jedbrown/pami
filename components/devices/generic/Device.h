@@ -265,6 +265,7 @@ public:
         inline Device(size_t client, size_t contextId, size_t num_ctx) :
         __GenericQueue(),
         __Threads(),
+        __ThrIter(),
         __clientId(client),
         __contextId(contextId),
         __nContexts(num_ctx)
@@ -279,6 +280,7 @@ public:
         inline pami_result_t init(pami_context_t ctx, size_t client, size_t context, PAMI::Memory::MemoryManager *mm) {
                 __context = ctx;
                 __Threads.init(mm);
+		__Threads.iter_init(&__ThrIter);
                 __GenericQueue.init(mm);
                 return PAMI_SUCCESS;
         }
@@ -302,27 +304,28 @@ public:
                 // just further delay the advance of real work when present.
 
                 //if (!__Threads.mutex()->tryAcquire()) continue;
-                GenericThread *thr, *nxtthr;
-                for (thr = (GenericThread *)__Threads.peekHead(); thr; thr = nxtthr) {
-                        nxtthr = (GenericThread *)__Threads.nextElem(thr);
+                GenericThread *thr;
+		__Threads.iter_begin(&__ThrIter);
+		for (; __Threads.iter_check(&__ThrIter); __Threads.iter_end(&__ThrIter)) {
+			thr = (GenericThread *)__Threads.iter_current(&__ThrIter);
                         if (thr->getStatus() == PAMI::Device::Ready) {
                                 ++events;
                                 pami_result_t rc = thr->executeThread(__context);
                                 if (rc != PAMI_EAGAIN) {
                                         // thr->setStatus(PAMI::Device::Complete);
-                                        __Threads.deleteElem(thr);
+                                        __Threads.iter_remove(&__ThrIter);
                                         continue;
                                 }
                         } else if (thr->getStatus() == PAMI::Device::OneShot) {
                                 ++events;
                                 // thread is like completion callback, dequeue first.
-                                __Threads.deleteElem(thr);
+                                __Threads.iter_remove(&__ThrIter);
                                 thr->executeThread(__context);
                                 continue;
                         }
                         // This allows a thread to be "completed" by something else...
                         if (thr->getStatus() == PAMI::Device::Complete) {
-                                __Threads.deleteElem(thr);
+                                __Threads.iter_remove(&__ThrIter);
                                 continue;
                         }
                 }
@@ -395,6 +398,7 @@ private:
 
         /// \brief Storage for the queue of threads (a.k.a. work units)
         GenericDeviceWorkQueue __Threads;
+        GenericDeviceWorkQueue::Iterator __ThrIter;
 
         pami_context_t __context;	///< context handle for this generic device
         size_t __clientId;		///< client ID for context
