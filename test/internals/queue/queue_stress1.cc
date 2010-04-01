@@ -40,186 +40,230 @@ static inline pid_t gettid() {
 #define MAX_PTHREADS	8
 #endif // MAX_PTHREADS
 
-//typedef PAMI::GccThreadSafeMultiQueue<2,0> queue_t;
-typedef PAMI::GccThreadSafeQueue queue_t;
-//typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> > queue_t;
+#define QUEUE1_NAME	"GccThreadSafeQueue"
+typedef PAMI::GccThreadSafeQueue queue_1;
+
+
+#define QUEUE2_NAME	"MutexedQueue<CounterMutex<GccProcCounter>>"
+typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> > queue_2;
 
 #ifdef __bgp__
 #include "components/atomic/bgp/LockBoxMutex.h"
-//typedef PAMI::MutexedMultiQueue<PAMI::Mutex::BGP::LockBoxProcMutex,2,0> queue_t;
-//typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex> queue_t;
+#define QUEUE3_NAME	"MutexedQueue<LockBoxProcMutex>"
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex> queue_3;
 #endif
 
-typedef struct {
-	queue_t::Element elem;
-	unsigned int pid;
-	unsigned int seq;
-	unsigned int val;
-} element_t;
+#ifdef __bgp__
+#include "components/atomic/bgq/L2Mutex.h"
+#define QUEUE3_NAME	"MutexedQueue<L2ProcMutex>"
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex> queue_3;
+#endif
 
-PAMI::Memory::MemoryManager mm;
-queue_t queue;
+template <class T_Queue, int T_BackoffNS = 0>
+class QueueTest {
+public:
 
-double base_t = 0.0;
+	struct element_t {
+		typename T_Queue::Element elem;
+		unsigned int pid;
+		unsigned int seq;
+		unsigned int val;
+	};
 
-struct thread_args {
-	queue_t *queue;
-	int num_iter;
-	int nthreads;
-};
+	PAMI::Memory::MemoryManager mm;
+	T_Queue queue;
 
-void *enqueuers(void *v) {
-	struct thread_args *args = (struct thread_args *)v;
-	queue_t *q = args->queue;
-	int num = args->num_iter;
-	int x;
-	element_t *e;
-	unsigned long long t0, t = 0;
-#ifdef BACKOFF_NS
-	timespec tv = {0, BACKOFF_NS};
-#endif // BACKOFF_NS
+	double base_t;
+	const char *name;
+	int pthreads;
+	int elements;
+	int seed;
 
-	fprintf(stderr, "%d: starting %d enqueues\n", gettid(), num);
-	for (x = 0; x < num; ++x) {
-#ifdef BACKOFF_NS
-		nanosleep(&tv, NULL);
-#endif // BACKOFF_NS
-		e = (element_t *)malloc(sizeof(*e));
-		assert(e);
-		e->pid = gettid();
-		e->seq = x;
-		e->val = 1;	// debug
-		t0 = PAMI_Wtimebase();
-		q->enqueue(&e->elem);
-		t += PAMI_Wtimebase() - t0;
+	QueueTest(const char *n, int pth, int elem, int s) :
+	name(n),
+	pthreads(pth),
+	elements(elem),
+	seed(s)
+	{
+		size_t size = 32*1024;
+		void *ptr = malloc(size);
+		assert(ptr);
+		mm.init(ptr, size);
+		queue.init(&mm);
+
+		int x;
+		unsigned long long t1, t0 = PAMI_Wtimebase();
+		for (x = 0; x < 10000; ++x) {
+			t1 = PAMI_Wtimebase() - t0;
+		}
+		t1 = PAMI_Wtimebase() - t0;
+		double d = t1;
+		base_t = d / x;
 	}
-	double d = t;
-	fprintf(stderr, "%d: finished %d enqueues (%g cycles each) %g\n", gettid(), num, d / num, base_t);
-	return NULL;
+
+	static void *enqueuers(void *v) {
+		QueueTest *thus = (QueueTest *)v;
+		T_Queue *q = &thus->queue;
+		int num = thus->elements;
+		int x;
+		element_t *e;
+		unsigned long long t0, t = 0;
+		timespec tv = {0, T_BackoffNS};
+
+		fprintf(stderr, "%d: starting %d enqueues\n", gettid(), num);
+		for (x = 0; x < num; ++x) {
+			if (T_BackoffNS) nanosleep(&tv, NULL);
+			e = (element_t *)malloc(sizeof(*e));
+			assert(e);
+			e->pid = gettid();
+			e->seq = x;
+			e->val = 1;	// debug
+			t0 = PAMI_Wtimebase();
+			q->enqueue(&e->elem);
+			t += PAMI_Wtimebase() - t0;
+		}
+		double d = t;
+		fprintf(stderr, "%d: finished %d enqueues (%g cycles each) %g\n",
+				gettid(), num, d / num, thus->base_t);
+		return NULL;
 }
 
-void *dequeuer(void *v) {
-	struct thread_args *args = (struct thread_args *)v;
-	queue_t *q = args->queue;
-	int num = args->num_iter * (args->nthreads - 1);
-	int x = 0, y = 0, z = 0;
-	element_t *e;
-	unsigned long long t0, t1, t = 0, tr = 0, tb = 0;
+	static void *dequeuer(void *v) {
+		QueueTest *thus = (QueueTest *)v;
+		T_Queue *q = &thus->queue;
+		int num = thus->elements * (thus->pthreads - 1);
+		int x = 0, y = 0, z = 0;
+		element_t *e;
+		unsigned long long t0, t1, t = 0, tr = 0, tb = 0;
 
-	fprintf(stderr, "%d: looking for %d dequeues\n", gettid(), num);
-	static queue_t::Iterator qi;
-	q->iter_init(&qi);
-	while (x < num) {
-		if (!q->head()) sched_yield();
-		t0 = PAMI_Wtimebase();
-		bool b = q->iter_begin(&qi);
-		t1 = PAMI_Wtimebase();
-		if (b) {
-			tb += t1 - t0;
-			++z;
-		}
-		t0 = PAMI_Wtimebase();
-		for (; q->iter_check(&qi); q->iter_end(&qi)) {
-			++y;
-			e = (element_t *)q->iter_current(&qi);
-			if (e->val == (unsigned)-1 || (rand() & 0x03) == 0) {
-				e->val = -1;
-				t += PAMI_Wtimebase() - t0;
-				t0 = PAMI_Wtimebase();
-				if (q->iter_remove(&qi) == PAMI_SUCCESS) {
-					tr += PAMI_Wtimebase() - t0;
-					free(e);
-					e = NULL; // just in case we try to access it
-					++x;
-				} else {
-					tr += PAMI_Wtimebase() - t0;
-				}
-				t0 = PAMI_Wtimebase();
+		fprintf(stderr, "%d: looking for %d dequeues\n", gettid(), num);
+		typename T_Queue::Iterator qi;
+		q->iter_init(&qi);
+		while (x < num) {
+			if (!q->head()) sched_yield();
+			t0 = PAMI_Wtimebase();
+			bool b = q->iter_begin(&qi);
+			t1 = PAMI_Wtimebase();
+			if (b) {
+				tb += t1 - t0;
+				++z;
 			}
+			t0 = PAMI_Wtimebase();
+			for (; q->iter_check(&qi); q->iter_end(&qi)) {
+				++y;
+				e = (element_t *)q->iter_current(&qi);
+				if (e->val == (unsigned)-1 || (rand() & 0x03) == 0) {
+					e->val = -1;
+					t += PAMI_Wtimebase() - t0;
+					t0 = PAMI_Wtimebase();
+					if (q->iter_remove(&qi) == PAMI_SUCCESS) {
+						tr += PAMI_Wtimebase() - t0;
+						free(e);
+						e = NULL; // just in case we try to access it
+						++x;
+					} else {
+						tr += PAMI_Wtimebase() - t0;
+					}
+					t0 = PAMI_Wtimebase();
+				}
+			}
+			t += PAMI_Wtimebase() - t0;
 		}
-		t += PAMI_Wtimebase() - t0;
+		double d = t;
+		double dr = tr;
+		double db = tb;
+		fprintf(stderr, "%d: finished %d dequeues (%g cycles per iter-elem (%d), "
+				"%g per remove, %g per merge (%d))\n",
+				gettid(), num, d / y, y, dr / num, db / z, z);
+		return NULL;
 	}
-	double d = t;
-	double dr = tr;
-	double db = tb;
-	fprintf(stderr, "%d: finished %d dequeues (%g cycles per iter-elem (%d), %g per remove, %g per merge (%d))\n", gettid(), num, d / y, y, dr / num, db / z, z);
-	return NULL;
-}
 
-pthread_attr_t attr[MAX_PTHREADS];
-pthread_t thread[MAX_PTHREADS];
-struct thread_args args[MAX_PTHREADS];
+	pthread_attr_t attr[MAX_PTHREADS];
+	pthread_t thread[MAX_PTHREADS];
+
+	int run_test(void) {
+		int x;
+		fprintf(stderr, "main: starting %s test with %d threads "
+				"and %d elements per enqueuer (seed %d)\n",
+				name, pthreads, elements, seed);
+
+		int status;
+		// thread "0" is the main thread - already running
+		for (x = 1; x < pthreads; ++x) {
+			pthread_attr_init(&attr[x]);
+			pthread_attr_setscope(&attr[x], PTHREAD_SCOPE_SYSTEM);
+			status = pthread_create(&thread[x], &attr[x],
+						enqueuers, (void *)this);
+			/* don't care about status? just reap threads below? */
+		}
+		// create args struct for main thread
+		(void)dequeuer((void *)this);
+
+		for (x = 1; x < pthreads; ++x) {
+			pthread_join(thread[x], NULL);
+		}
+		fprintf(stderr, "main done. queue = { %p %p %zu }\n",
+				queue.head(), queue.tail(), queue.size());
+
+		return (queue.head() || queue.tail() || queue.size());
+	}
+
+}; // class QueueTest
 
 int main(int argc, char **argv) {
 	int x;
 	int pthreads = 4;
 	int elements = 1000;
 	int seed = 1;
+	int qtype = 0;
 
 	//extern int optind;
 	extern char *optarg;
 
-	while ((x = getopt(argc, argv, "e:mp:s:t")) != EOF) {
+	while ((x = getopt(argc, argv, "e:p:q:s:")) != EOF) {
 		switch(x) {
 		case 'e':
 			elements = strtol(optarg, NULL, 0);
 			break;
-		case 'm':
-			break;
 		case 'p':
 			pthreads = strtol(optarg, NULL, 0);
+			break;
+		case 'q':
+			qtype = strtol(optarg, NULL, 0);
 			break;
 		case 's':
 			seed = strtol(optarg, NULL, 0);
 			srand(seed);
 			break;
-		case 't':
-			break;
 		}
 	}
-	fprintf(stderr, "main: starting test with %d threads and %d elements per enqueuer (seed %d)\n", pthreads, elements, seed);
-
-	size_t size = 32*1024;
-	void *ptr = malloc(size);
-	assert(ptr);
-	mm.init(ptr, size);
-	queue.init(&mm);
-
-	unsigned long long t1, t0 = PAMI_Wtimebase();
-	for (x = 0; x < 10000; ++x) {
-		t1 = PAMI_Wtimebase() - t0;
-	}
-	t1 = PAMI_Wtimebase() - t0;
-	double d = t1;
-	base_t = d / x;
-
-	int status;
-	// thread "0" is the main thread - already running
-	for (x = 1; x < pthreads; ++x) {
-		pthread_attr_init(&attr[x]);
-		pthread_attr_setscope(&attr[x], PTHREAD_SCOPE_SYSTEM);
-		args[x].queue = &queue;
-		args[x].nthreads = pthreads;
-		args[x].num_iter = elements;
-		if (x) {
-			status = pthread_create(&thread[x], &attr[x], enqueuers, (void *)&args[x]);
-		} else {
-			status = pthread_create(&thread[x], &attr[x], dequeuer, (void *)&args[x]);
+	if (!qtype) qtype = 1;
+	int ret = 0;
+	switch(qtype) {
+	case 1:
+		{
+		QueueTest<queue_1,0> test1(QUEUE1_NAME, pthreads, elements, seed);
+		ret = test1.run_test();
 		}
-		/* don't care about status? just reap threads below? */
+		break;
+	case 2:
+		{
+		QueueTest<queue_2,0> test2(QUEUE2_NAME, pthreads, elements, seed);
+		ret = test2.run_test();
+		}
+		break;
+#ifdef QUEUE3_NAME
+	case 3:
+		{
+		QueueTest<queue_3,0> test3(QUEUE3_NAME, pthreads, elements, seed);
+		ret = test3.run_test();
+		}
+		break;
+#endif // QUEUE3_NAME
+	default:
+		fprintf(stderr, "Invavlid queue type %d\n", qtype);
+		ret = 1;
+		break;
 	}
-	// create args struct for main thread
-	args[0].queue = &queue;
-	args[0].nthreads = pthreads;
-	args[0].num_iter = elements;
-	(void)dequeuer((void *)&args[0]);
-
-	for (x = 1; x < pthreads; ++x) {
-		pthread_join(thread[x], NULL);
-	}
-	fprintf(stderr, "main done. queue = { %p %p %zu }\n", queue.head(), queue.tail(), queue.size());
-	if (queue.head() || queue.tail() || queue.size()) {
-		exit(1);
-	}
-	exit(0);
+	exit(ret);
 }
