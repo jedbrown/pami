@@ -25,8 +25,13 @@
 
 // A cheat to override GenericDeviceWorkQueue, etc...
 #include "GenericDevicePlatform.h"
+#if 1
 #define QUEUE_NAME	"MutexedQueue<GenericDeviceMutex>"
 #define GenericDeviceWorkQueue	PAMI::MutexedQueue<GenericDeviceMutex>
+#else
+#define QUEUE_NAME	"GccThreadSafeQueue"
+#define GenericDeviceWorkQueue	PAMI::GccThreadSafeQueue
+#endif
 
 #include "sys/pami.h"
 #include "components/memory/MemoryManager.h"
