@@ -365,7 +365,7 @@ public:
         /// \param[in] thr	Thread object to post for advance work
         ///
         inline void postThread(GenericThread *thr) {
-                __Threads.pushTail(thr);
+                __Threads.enqueue((GenericDeviceWorkQueue::Element *)thr);
         }
 
         /// \brief Post a message to the generic-device queuing system
@@ -373,7 +373,7 @@ public:
         /// \param[in] msg	Message to be queued/completed.
         ///
         inline void postMsg(GenericMessage *msg) {
-                __GenericQueue.pushTail(msg);
+                __GenericQueue.enqueue((GenericDeviceCompletionQueue::Element *)msg);
         }
 
         /// \brief accessor for the context-id associated with generic device slice

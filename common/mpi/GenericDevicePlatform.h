@@ -31,6 +31,7 @@ typedef PAMI::Counter::Pthread GenericDeviceCounter;
 #endif /* !__GNUC__ */
 
 #include "util/queue/Queue.h"
+#include "util/queue/MutexedQueue.h"
 #include "util/queue/MultiQueue.h"
 
 /// \brief Queue type to use for messages

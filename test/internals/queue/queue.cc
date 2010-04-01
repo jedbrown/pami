@@ -16,6 +16,7 @@
 
 #include "Global.h"
 #include "util/queue/Queue.h"
+#include "util/queue/MutexedQueue.h"
 #ifdef __bgp__
 #include "components/atomic/bgp/BgpAtomic.h"
 #endif
@@ -23,12 +24,18 @@
 
 #define ELEMENTS 10240
 
-class TestElement : public PAMI::Queue::Element
+#ifdef __bgp__
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::BgpProcMutex> QueueType;
+#else
+typedef PAMI::Queue QueueType;
+#endif
+
+class TestElement : public QueueType
 {
   public:
 
     TestElement () :
-      PAMI::Queue::Element (),
+      QueueType (),
       _value (0)
     {};
 
@@ -50,11 +57,7 @@ class TestElement : public PAMI::Queue::Element
 
 int main(int argc, char **argv)
 {
-#ifdef __bgp__
-  PAMI::MutexedQueue<PAMI::Mutex::BGP::BgpProcMutex> q;
-#else
-  PAMI::Queue q;
-#endif
+  QueueType q;
   TestElement element[ELEMENTS];
   TestElement * e = NULL;
 
@@ -63,7 +66,7 @@ int main(int argc, char **argv)
   {
     element[i].set (10-i);
     tmp = q.size();
-    q.push ((PAMI::Queue::Element *) &element[i]);
+    q.push ((QueueType::Element *) &element[i]);
     fprintf (stdout, "Push element (%zu) .. q.size () = %zu -> %zu\n", element[i].get(), tmp, q.size());
   }
 
@@ -89,7 +92,7 @@ int main(int argc, char **argv)
   fprintf (stdout, "\n");
 #ifdef __bgp__
   t0 = __global.time.timebase();
-  for (i=0; i<ELEMENTS; i++) atomicq.push ((PAMI::Queue::Element *) &element[i]);
+  for (i=0; i<ELEMENTS; i++) atomicq.push ((QueueType::Element *) &element[i]);
   for (i=0; i<ELEMENTS; i++) e = (TestElement *) atomicq.pop ();
   t1 = __global.time.timebase();
   fprintf (stdout, "avg. atomic queue push-pop cycles: %lld\n", (t1-t0)/ELEMENTS);

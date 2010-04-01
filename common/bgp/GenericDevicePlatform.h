@@ -18,6 +18,7 @@
 #include "components/atomic/bgp/LockBoxMutex.h"
 #include "components/atomic/bgp/LockBoxCounter.h"
 #include "util/queue/Queue.h"
+#include "util/queue/MutexedQueue.h"
 #include "util/queue/MultiQueue.h"
 
 /// \brief The mutex used by the generic device

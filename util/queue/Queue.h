@@ -42,8 +42,8 @@ namespace PAMI
   //
   // template specialization of queue element
   //
-  class Queue;
 
+  class Queue;
   namespace Interface
   {
     template <>
@@ -85,20 +85,34 @@ namespace PAMI
 
         QueueElement * _prev;
         QueueElement * _next;
-    };
+    }; // class QueueElement<Queue>
+  }; // namespace Interface
+
+  template <class T_Queue, class T_Element>
+  struct BasicQueueIterator {
+	T_Element *curr;
+	T_Element *next;
   };
 
-
   class Queue : public PAMI::Interface::DequeInterface<Queue>,
-      public PAMI::Interface::QueueInfoInterface<Queue>
+      public PAMI::Interface::QueueInfoInterface<Queue>,
+      public PAMI::Interface::QueueIterator<
+			Queue, Interface::QueueElement<Queue> ,
+			BasicQueueIterator<Queue, Interface::QueueElement<Queue> >
+			>
   {
     public:
 
-      typedef Interface::QueueElement<Queue> Element;
+      typedef Interface::QueueElement<Queue>  Element;
+      typedef BasicQueueIterator<Queue, Interface::QueueElement<Queue> > Iterator;
 
       inline Queue() :
           PAMI::Interface::DequeInterface<Queue> (),
           PAMI::Interface::QueueInfoInterface<Queue> (),
+	  PAMI::Interface::QueueIterator<
+				Queue, Interface::QueueElement<Queue> ,
+				BasicQueueIterator<Queue, Interface::QueueElement<Queue> >
+				>(),
           _head (NULL),
           _tail (NULL),
           _size (0)
@@ -311,200 +325,6 @@ namespace PAMI
       };
 #endif
 
-    private:
-
-      Queue::Element * _head;
-      Queue::Element * _tail;
-      size_t           _size;
-
-  }; // class PAMI::Queue
-
-  template <class T_Queue, class T_Element>
-  struct MutexedQueueIterator {
-	T_Element *curr;
-	T_Element *next;
-  };
-
-  template <class T_Mutex>
-  class MutexedQueue :	public Queue,
-			public PAMI::Interface::QueueIterator<
-				MutexedQueue<T_Mutex>, Queue::Element,
-				MutexedQueueIterator<MutexedQueue<T_Mutex>, Queue::Element>
-				>
-  {
-    public:
-
-      typedef Queue::Element Element;
-      typedef MutexedQueueIterator<MutexedQueue<T_Mutex>, Queue::Element> Iterator;
-
-      inline MutexedQueue () :
-          Queue (),
-	  PAMI::Interface::QueueIterator<
-			MutexedQueue<T_Mutex>, Queue::Element,
-			MutexedQueueIterator<MutexedQueue<T_Mutex>, Queue::Element>
-			>(),
-          _mutex ()
-      {};
-
-      inline void init (PAMI::Memory::MemoryManager *mm)
-      {
-        _mutex.init (mm);
-      };
-
-      inline void enqueue (Element * element)
-      {
-        _mutex.acquire ();
-        Queue::enqueue (element);
-        _mutex.release ();
-      };
-
-      inline Element * dequeue ()
-      {
-        _mutex.acquire ();
-        Element * element = Queue::dequeue ();
-        _mutex.release ();
-        return element;
-      };
-
-      inline void push (Element * element)
-      {
-        _mutex.acquire ();
-        Queue::push (element);
-        _mutex.release ();
-      };
-
-      inline Element * pop () { return dequeue (); };
-
-      inline Element * next (Element * reference)
-      {
-        _mutex.acquire ();
-        Element * element = Queue::next (reference);
-        _mutex.release ();
-        return element;
-      };
-
-#ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
-      inline void pushTail (Element * element)
-      {
-        _mutex.acquire ();
-        Queue::pushTail (element);
-        _mutex.release ();
-      };
-
-      inline void pushHead (Element * element)
-      {
-        _mutex.acquire ();
-        Queue::pushHead (element);
-        _mutex.release ();
-      };
-
-      inline Element * popHead ()
-      {
-        _mutex.acquire ();
-        Element * element = Queue::popHead ();
-        _mutex.release ();
-        return element;
-      };
-
-      inline Element * popTail ()
-      {
-        _mutex.acquire ();
-        Element * element = Queue::popTail ();
-        _mutex.release ();
-        return element;
-      };
-
-      inline Element * peekTail ()
-      {
-        _mutex.acquire ();
-        Element * element = Queue::peekTail ();
-        _mutex.release ();
-        return element;
-      };
-
-      inline Element * nextElem (Element * element)
-      {
-        _mutex.acquire ();
-        Element * tmp = Queue::nextElem (element);
-        _mutex.release ();
-        return tmp;
-      };
-#endif
-
-      inline Element * before (Element * reference)
-      {
-        _mutex.acquire ();
-        Element * element = Queue::before (reference);
-        _mutex.release ();
-        return element;
-      };
-
-      inline Element * after (Element * reference)
-      {
-        _mutex.acquire ();
-        Element * element = Queue::next (reference);
-        _mutex.release ();
-        return element;
-      };
-
-      inline void insert (Element * reference,
-                          Element * element)
-      {
-        _mutex.acquire ();
-        Queue::insert (reference, element);
-        _mutex.release ();
-      };
-
-      inline void append (Element * reference,
-                          Element * element)
-      {
-        _mutex.acquire ();
-        Queue::append (reference, element);
-        _mutex.release ();
-      };
-
-      inline void remove (Element * element)
-      {
-        _mutex.acquire ();
-        Queue::remove (element);
-        _mutex.release ();
-      };
-
-#ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
-      inline void deleteElem (Element * element)
-      {
-        _mutex.acquire ();
-        Queue::remove (element);
-        _mutex.release ();
-      };
-#endif
-
-      /// \copydoc PAMI::Interface::QueueInfoInterface::dump
-      inline void dump (const char * str, int n)
-      {
-        PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
-      };
-
-#ifdef VALIDATE_ON
-      /// \copydoc PAMI::Interface::QueueInfoInterface::validate
-      inline void validate ()
-      {
-        PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
-      };
-#endif
-
-#ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
-      /// \copydoc PAMI::Interface::QueueInfoInterface::insertElem
-      inline void insertElem (Queue::Element * element, size_t position)
-      {
-        _mutex.acquire ();
-        Queue::insertElem (element, position);
-        _mutex.release ();
-
-        return;
-      };
-#endif
-
     // Iterator implementation:
     // This all works because there is only one thread removing (the iterator),
     // all others only append new work.
@@ -540,11 +360,13 @@ namespace PAMI
 		return PAMI_SUCCESS;
 	}
 
-    protected:
+    private:
 
-      T_Mutex _mutex;
+      Queue::Element * _head;
+      Queue::Element * _tail;
+      size_t           _size;
 
-  }; // class PAMI::MutexedQueue
+  }; // class PAMI::Queue
 }; // namespace PAMI
 
 #endif // __util_queue_queue_h__

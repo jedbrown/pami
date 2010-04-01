@@ -38,7 +38,8 @@
 #include "util/queue/GccThreadSafeMultiQueue.h"
 #include "util/queue/GccThreadSafeQueue.h"
 #include "util/queue/MutexedMultiQueue.h"
-#include "util/queue/Queue.h" // includes MutexedQueue
+#include "util/queue/Queue.h"
+#include "util/queue/MutexedQueue.h"
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
 
