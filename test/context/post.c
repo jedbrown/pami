@@ -17,8 +17,9 @@ post_info_t _info[2];
 pami_result_t do_work (pami_context_t   context,
               void          * cookie)
 {
-  fprintf (stderr, "do_work() cookie = %p, %d -> %d\n", cookie, *((unsigned *)cookie), *((unsigned *)cookie)-1);
-  (*((unsigned *)cookie))--;
+  post_info_t *info = (post_info_t *)cookie;
+  fprintf (stderr, "do_work() cookie = %p, %d -> %d\n", cookie, info->value, info->value-1);
+  info->value--;
   return PAMI_SUCCESS;
 }
 
