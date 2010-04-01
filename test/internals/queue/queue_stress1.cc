@@ -53,7 +53,7 @@ typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCount
 typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex> queue_3;
 #endif
 
-#ifdef __bgp__
+#ifdef __bgq__
 #include "components/atomic/bgq/L2Mutex.h"
 #define QUEUE3_NAME	"MutexedQueue<L2ProcMutex>"
 typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex> queue_3;
