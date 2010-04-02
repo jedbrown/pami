@@ -24,13 +24,47 @@
 #include <sys/types.h>
 
 // A cheat to override GenericDeviceWorkQueue, etc...
-#include "GenericDevicePlatform.h"
-#if 1
-#define QUEUE_NAME	"MutexedQueue<GenericDeviceMutex>"
-#define GenericDeviceWorkQueue	PAMI::MutexedQueue<GenericDeviceMutex>
-#else
+#include "GenericDevicePlatform.h" // prevent later inclusion...
+#if defined(GCCSAFE) && !defined(QUEUE_NAME)
 #define QUEUE_NAME	"GccThreadSafeQueue"
 #define GenericDeviceWorkQueue	PAMI::GccThreadSafeQueue
+#endif // GCCSAFE
+
+#if defined(L2MUTEX) && !defined(QUEUE_NAME)
+#include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/bgq/L2Mutex.h"
+#define QUEUE_NAME	"MutexedQueue<L2ProcMutex>"
+#define GenericDeviceWorkQueue	PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex>
+#endif // L2MUTEX
+
+#if defined(LBXMUTEX) && !defined(QUEUE_NAME)
+#include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/bgp/LockBoxMutex.h"
+#define QUEUE_NAME	"MutexedQueue<LockBoxProcMutex>"
+#define GenericDeviceWorkQueue	PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex>
+#endif // LBXMUTEX
+
+#if defined(GCCMUTEX) && !defined(QUEUE_NAME)
+#include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/gcc/GccCounter.h"
+#define QUEUE_NAME	"MutexedQueue<CounterMutex<GccProcCounter>>"
+#define GenericDeviceWorkQueue	PAMI::MutexedQueue<\
+		PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>\
+		>
+#endif // GCCMUTEX
+
+#if defined(PTHMUTEX) && !defined(QUEUE_NAME)
+#include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/pthread/Pthread.h"
+#define QUEUE_NAME	"MutexedQueue<CounterMutex<Pthread>>"
+#define GenericDeviceWorkQueue	PAMI::MutexedQueue<\
+		PAMI::Mutex::CounterMutex<PAMI::Counter::Pthread>\
+		>
+#endif // PTHMUTEX
+
+#ifndef QUEUE_NAME
+#define QUEUE_NAME	"MutexedQueue<GenericDeviceMutex>"
+#define GenericDeviceWorkQueue	PAMI::MutexedQueue<GenericDeviceMutex>
 #endif
 
 #include "sys/pami.h"
@@ -121,8 +155,8 @@ public:
 			t += PAMI_Wtimebase() - t0;
 		}
 		double d = t;
-		fprintf(stderr, "%d: finished %d enqueues (%g cycles each) %g\n",
-				gettid(), num, d / num, thus->base_t);
+		fprintf(stderr, "%d: finished %d enqueues (%g cycles each)\n",
+				gettid(), num, (d / num) - thus->base_t);
 		return NULL;
 }
 
@@ -148,9 +182,8 @@ public:
 	}
 
 	int run_test(void) {
-		fprintf(stderr, "main: starting %s test with %d threads "
-				"and %d elements per enqueuer (seed %d)\n",
-				name, 1, elements, seed);
+		fprintf(stderr, "main: starting %s test with %d elements per run\n",
+				name, elements);
 		done = 0;
 		(void)enqueuers((void *)this);
 		(void)dequeuer((void *)this);
