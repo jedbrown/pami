@@ -12,7 +12,8 @@
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
-#ifdef MAMBO_WORKAROUNDS
+/// \todo #warning why doesn't MAMBO_WORKAROUNDS work here?
+#ifdef __pami_target_bgq__
 #define BUFSIZE 131072 // any more is too long on mambo
 #else
 #define BUFSIZE 524288
