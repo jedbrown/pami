@@ -22,10 +22,12 @@
   #include "components/devices/shmem/shaddr/BgqShaddrReadOnly.h"
   #include "util/fifo/FifoPacket.h"
   #include "util/fifo/LinearFifo.h"
+
+#ifndef ENABLE_NEW_SHMEM
   #include "components/devices/workqueue/LocalBcastWQMessage.h"
   #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
   #include "components/devices/workqueue/LocalReduceWQMessage.h"
-  #include "components/devices/workqueue/LocalBcastWQMessage.h"
+#endif
 
   #include "components/devices/bgq/mu2/Factory.h"
   #include "components/devices/bgq/mu2/Context.h"
@@ -61,6 +63,13 @@
 #define PAMI_GEOMETRY_CLASS    PAMI::Geometry::Common
 
 #include "algorithms/geometry/PGASCollRegistration.h"
+
+#ifdef ENABLE_NEW_SHMEM
+#include "components/devices/shmemcoll/ShmemCollDevice.h"
+#include "components/devices/shmemcoll/ShmemCollDesc.h"
+#include "components/devices/shmemcoll/ShmemMcombModelWorld.h"
+#include "components/devices/shmemcoll/ShmemMcstModelWorld.h"
+#endif 
 
 namespace PAMI
 {
@@ -123,12 +132,21 @@ namespace PAMI
   // Old (BGP) Collective Shmem Protocol Typedefs
 
   typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2NodeCounter>       Barrier_Type;
-  typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           Barrier_Model;
-  typedef BGQNativeInterfaceAS <ShmemDevice, 
-                                Device::LocalBcastWQModel, 
-                                Barrier_Model,
-                                Device::LocalAllreduceWQModel>                   AllSidedShmemNI;
 
+  typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           ShmemMsyncModel;
+
+#ifdef ENABLE_NEW_SHMEM
+  typedef PAMI::Device::Shmem::ShmemCollDesc <Atomic::GccBuiltin> ShmemCollDesc;
+  typedef PAMI::Device::ShmemCollDevice<ShmemCollDesc> ShmemCollDevice;
+  typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcombModel;
+  typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcstModel;
+#else
+  typedef Device::LocalAllreduceWQModel ShmemMcombModel;
+  typedef Device::LocalBcastWQModel ShmemMcstModel;
+  typedef ShmemDevice ShmemCollDevice;
+#endif 
+
+  typedef BGQNativeInterfaceAS <ShmemCollDevice, ShmemMcstModel, ShmemMsyncModel,ShmemMcombModel> AllSidedShmemNI;
 }
 
 //#define PAMI_COLL_MCAST_CLASS

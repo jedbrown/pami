@@ -9,6 +9,16 @@
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "util/ccmi_util.h"
 
+#ifndef CCMI_TRACE_ALL
+#undef TRACE_ADAPTOR
+#define TRACE_ADAPTOR(x) //fprintf x
+#endif
+
+// Use a local done function for testing
+#define LOCAL_TEST 
+
+#undef DO_DEBUG
+#define DO_DEBUG(x) //x
 
 namespace CCMI
 {
@@ -22,79 +32,79 @@ namespace CCMI
 
       class MultiCombineComposite : public CCMI::Executor::Composite
       {
-      protected:
-        Interfaces::NativeInterface        * _native;
-        PAMI_GEOMETRY_CLASS                * _geometry;
-        pami_allreduce_t                     _xfer_allreduce;
-        PAMI::PipeWorkQueue                  _srcPwq;
-        PAMI::PipeWorkQueue                  _dstPwq;
-        pami_multicombine_t                  _minfo;
-        void                               * _deviceInfo;
+        protected:
+          Interfaces::NativeInterface        * _native;
+          PAMI_GEOMETRY_CLASS                * _geometry;
+          pami_allreduce_t                     _xfer_allreduce;
+          PAMI::PipeWorkQueue                  _srcPwq;
+          PAMI::PipeWorkQueue                  _dstPwq;
+          pami_multicombine_t                  _minfo;
+          void                               * _deviceInfo;
 
-      public:
-        MultiCombineComposite (Interfaces::NativeInterface          * mInterface,
-                            ConnectionManager::SimpleConnMgr     * cmgr,
-                            pami_geometry_t                        g,
-                            pami_xfer_t                          * cmd,
-                            pami_event_function                    fn,
-                            void                                 * cookie) :
-        Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g), _xfer_allreduce(cmd->cmd.xfer_allreduce)
-        {
-          TRACE_ADAPTOR((stderr,"%s, type %#zX/%#zX, count %zu/%zu, op %#X, dt %#X\n", __PRETTY_FUNCTION__,
-                         (size_t)cmd->cmd.xfer_allreduce.stype,(size_t)cmd->cmd.xfer_allreduce.rtype,
-                         cmd->cmd.xfer_allreduce.stypecount,cmd->cmd.xfer_allreduce.rtypecount,cmd->cmd.xfer_allreduce.op,cmd->cmd.xfer_allreduce.dt));
+        public:
+          MultiCombineComposite (Interfaces::NativeInterface          * mInterface,
+                                 ConnectionManager::SimpleConnMgr     * cmgr,
+                                 pami_geometry_t                        g,
+                                 pami_xfer_t                          * cmd,
+                                 pami_event_function                    fn,
+                                 void                                 * cookie) :
+              Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g), _xfer_allreduce(cmd->cmd.xfer_allreduce)
+          {
+            TRACE_ADAPTOR((stderr, "%s, type %#zX/%#zX, count %zu/%zu, op %#X, dt %#X\n", __PRETTY_FUNCTION__,
+                           (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype,
+                           cmd->cmd.xfer_allreduce.stypecount, cmd->cmd.xfer_allreduce.rtypecount, cmd->cmd.xfer_allreduce.op, cmd->cmd.xfer_allreduce.dt));
 
 
-          /// \todo only supporting PAMI_BYTE right now
-          PAMI_assertf((cmd->cmd.xfer_allreduce.stype == PAMI_BYTE)&&(cmd->cmd.xfer_allreduce.rtype == PAMI_BYTE),"Not PAMI_BYTE? %#zX %#zX\n",(size_t)cmd->cmd.xfer_allreduce.stype,(size_t)cmd->cmd.xfer_allreduce.rtype);
+            /// \todo only supporting PAMI_BYTE right now
+            PAMI_assertf((cmd->cmd.xfer_allreduce.stype == PAMI_BYTE) && (cmd->cmd.xfer_allreduce.rtype == PAMI_BYTE), "Not PAMI_BYTE? %#zX %#zX\n", (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype);
 
 //          PAMI_Type_sizeof(cmd->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
-          _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
+            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
 
-          unsigned        sizeOfType;
-          coremath        func;
+            unsigned        sizeOfType;
+            coremath        func;
 
-          getReduceFunction(cmd->cmd.xfer_allreduce.dt,
-                            cmd->cmd.xfer_allreduce.op,
-                            cmd->cmd.xfer_allreduce.stypecount,// this parm is unused
-                            sizeOfType,
-                            func );
-          size_t size = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
-          _srcPwq.configure(NULL, cmd->cmd.xfer_allreduce.sndbuf, size, size);
-          _srcPwq.reset();
+            getReduceFunction(cmd->cmd.xfer_allreduce.dt,
+                              cmd->cmd.xfer_allreduce.op,
+                              cmd->cmd.xfer_allreduce.stypecount,// this parm is unused
+                              sizeOfType,
+                              func );
+            size_t size = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
+            _srcPwq.configure(NULL, cmd->cmd.xfer_allreduce.sndbuf, size, size);
+            _srcPwq.reset();
 
-          size = cmd->cmd.xfer_allreduce.rtypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
-          _dstPwq.configure(NULL, cmd->cmd.xfer_allreduce.rcvbuf, size, 0);
-          _dstPwq.reset();
+            size = cmd->cmd.xfer_allreduce.rtypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
+            _dstPwq.configure(NULL, cmd->cmd.xfer_allreduce.rcvbuf, size, 0);
+            _dstPwq.reset();
 
-          DO_DEBUG(PAMI::Topology all);
-          DO_DEBUG(all = *(PAMI::Topology*)_geometry->getTopology(0));
-          DO_DEBUG(for(unsigned j=0; j< all.size(); ++j) fprintf(stderr,"all[%u]=%zu, size %zu\n",j,(size_t)all.index2Rank(j),all.size()));
+            DO_DEBUG(PAMI::Topology all);
+            DO_DEBUG(all = *(PAMI::Topology*)_geometry->getTopology(0));
+            DO_DEBUG(for (unsigned j = 0; j < all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)all.index2Rank(j), all.size()));
 
-         _minfo.client               = 0;
-         _minfo.context              = 0; /// \todo ?
-         //_minfo.cb_done.function     = _cb_done;
-         //_minfo.cb_done.clientdata   = _clientdata;
-         _minfo.connection_id        = 0;
-         _minfo.roles                = -1U;
-         _minfo.results_participants = _geometry->getTopology(0);
-         _minfo.data_participants    = _geometry->getTopology(0);
-         _minfo.data                 = (pami_pipeworkqueue_t *)&_srcPwq;
-         _minfo.results              = (pami_pipeworkqueue_t *)&_dstPwq;
-         _minfo.optor                = cmd->cmd.xfer_allreduce.op;
-         _minfo.dtype                = cmd->cmd.xfer_allreduce.dt;
-         _minfo.count                = size/sizeOfType;
-         TRACE_ADAPTOR((stderr,"%s, count %zu\n", __PRETTY_FUNCTION__,_minfo.count));
-        }
+            _minfo.client               = 0;
+            _minfo.context              = 0; /// \todo ?
+            //_minfo.cb_done.function     = _cb_done;
+            //_minfo.cb_done.clientdata   = _clientdata;
+            _minfo.connection_id        = 0;
+            _minfo.roles                = -1U;
+            _minfo.results_participants = _geometry->getTopology(0);
+            _minfo.data_participants    = _geometry->getTopology(0);
+            _minfo.data                 = (pami_pipeworkqueue_t *) & _srcPwq;
+            _minfo.results              = (pami_pipeworkqueue_t *) & _dstPwq;
+            _minfo.optor                = cmd->cmd.xfer_allreduce.op;
+            _minfo.dtype                = cmd->cmd.xfer_allreduce.dt;
+            _minfo.count                = size / sizeOfType;
+            TRACE_ADAPTOR((stderr, "%s, count %zu\n", __PRETTY_FUNCTION__, _minfo.count));
+          }
 
-        virtual void start()
-        {
-          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
-          _minfo.cb_done.function     = _cb_done;
-          _minfo.cb_done.clientdata   = _clientdata;
-          _native->multicombine(&_minfo, _deviceInfo);
-        }
+          virtual void start()
+          {
+            TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+            _minfo.cb_done.function     = _cb_done;
+            _minfo.cb_done.clientdata   = _clientdata;
+            _native->multicombine(&_minfo, _deviceInfo);
+          }
       };
 
       /// \brief This is a factory for a 2 device MultiCombine
@@ -230,8 +240,299 @@ namespace CCMI
 
 
 
+
+
+
+      /// \brief All sided allreduce over all sided multicombines/multicasts
+      /// A local device multicombine will chain into a global multicombine which
+      /// will chain into a local multicast
+      ///
+      /// No real 'pipelining' is done - it waits until each step
+      /// completes before starting the next step.
+
+      class MultiCombineComposite2DeviceNP : public CCMI::Executor::Composite
+      {
+
+          static void local_master_done_fn(pami_context_t  context,
+                                           void           *cookie,
+                                           pami_result_t   result )
+          {
+            MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::local_master_done_fn() bytes produced:%zd buffer:%p\n",cookie,m->_pwq_temp.bytesAvailableToConsume(),
+                           m->_pwq_temp.bufferToConsume()));
+            DO_DEBUG(dumpDbuf((double*)m->_pwq_temp.bufferToConsume() , m->_pwq_temp.bytesAvailableToConsume()/sizeof(double)));
+            m->_native_g->multicombine(&m->_mcomb_g, m->_deviceMcombInfo);
+          }
+
+          static void local_done_fn(pami_context_t  context,
+                                    void           *cookie,
+                                    pami_result_t   result )
+          {
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::local_done_fn()\n",cookie));
+            MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
+            m->_native_l->multicast(&m->_mcast_l, m->_deviceMcastInfo);
+          }
+
+          static void global_done_fn(pami_context_t  context,
+                                     void           *cookie,
+                                     pami_result_t   result )
+          {
+            MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::global_master_done_fn() bytes produced:%zd buffer:%p\n",cookie, m->_pwq_dst.bytesAvailableToConsume(),
+                           m->_pwq_dst.bufferToConsume()));
+            DO_DEBUG(dumpDbuf((double*)m->_pwq_dst.bufferToConsume() , m->_pwq_dst.bytesAvailableToConsume()/sizeof(double)));
+            m->_native_l->multicast(&m->_mcast_l, m->_deviceMcastInfo);
+          }
+
+#ifdef LOCAL_TEST
+          static void dumpDbuf(double* dbuf, size_t count)
+          {
+            fprintf(stderr, "dbuf=%p, size %zu\n", dbuf, count);
+            for (size_t i = 0; i < count; i++)
+              fprintf(stderr, "dbuf[%zu]=%f\n", i, dbuf[i]);
+          }
+
+          static void test_local_done_fn(pami_context_t  context,
+                                     void           *cookie,
+                                     pami_result_t   result )
+          {
+            MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::test_local_done_fn() %p, %p\n",cookie,m->_buffer,m->_buffer1));
+            DO_DEBUG(dumpDbuf((double*)m->_pwq_dst.bufferToConsume() , m->_pwq_dst.bytesAvailableToConsume()/sizeof(double)));
+            if (m->_cb_done.function) 
+                   m->_cb_done.function(context, m->_cb_done.clientdata, result);
+            if(m->_bytes > 2048)
+            {
+              free(m->_buffer); 
+              free(m->_buffer1); 
+            }
+            m->_buffer=NULL;
+            m->_buffer1=NULL;
+          }
+#else
+          static void dumpDbuf(double* dbuf,  unsigned count) {}
+#endif
+
+        public:
+          ~MultiCombineComposite2DeviceNP ()
+          {
+            TRACE_ADAPTOR((stderr, "<%p>~MultiCombineComposite2DeviceNP() %p, %p\n",this,_buffer,_buffer1));
+            if(_bytes > 2048)
+            {
+              free(_buffer);
+              free(_buffer1);
+            }
+          }
+          MultiCombineComposite2DeviceNP (Interfaces::NativeInterface      *mInterface,
+                                          ConnectionManager::SimpleConnMgr *cmgr,
+                                          pami_geometry_t                   g,
+                                          pami_xfer_t                      *cmd,
+                                          pami_event_function               fn,
+                                          void                             *cookie) :
+              Composite(),
+              // This is a small hack to get around making a whole new set of factories
+              // and classes for a 2 device NI.  We just treat the first parameter like a
+              // 2 element pinter array.
+              _native_l((Interfaces::NativeInterface*)((void **)mInterface)[0]),
+              _native_g((Interfaces::NativeInterface*)((void **)mInterface)[1]),
+              _geometry((PAMI_GEOMETRY_CLASS*)g),
+              _amMaster(_geometry->isLocalMasterParticipant()),
+              _pwq_src(),
+              _pwq_dst(),
+              _pwq_temp(),
+              _topology_l((PAMI::Topology*)_geometry->getLocalTopology()),
+              _topology_lm(_geometry->localMasterParticipant()),
+              _topology_g((PAMI::Topology*)_geometry->getLocalMasterTopology()),
+              _deviceMcombInfo(NULL),
+              _deviceMcastInfo(NULL)
+          {
+            TRACE_ADAPTOR((stderr,"<%p>%s, type %#zX/%#zX, count %zu/%zu, op %#X, dt %#X\n",this, __PRETTY_FUNCTION__,
+                           (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype,
+                           cmd->cmd.xfer_allreduce.stypecount, cmd->cmd.xfer_allreduce.rtypecount, cmd->cmd.xfer_allreduce.op, cmd->cmd.xfer_allreduce.dt));
+
+            DO_DEBUG(for (unsigned j = 0; j < _topology_l->size(); ++j) fprintf(stderr, "_topology_l[%u]=%zu, size %zu\n", j, (size_t)_topology_l->index2Rank(j), _topology_l->size()));
+            DO_DEBUG(for (unsigned j = 0; j < _topology_g->size(); ++j) fprintf(stderr, "_topology_g[%u]=%zu, size %zu\n", j, (size_t)_topology_g->index2Rank(j), _topology_g->size()));
+            DO_DEBUG(for (unsigned j = 0; j < _topology_lm.size(); ++j) fprintf(stderr, "_topology_lm[%u]=%zu, size %zu\n", j, (size_t)_topology_lm.index2Rank(j), _topology_lm.size()));
+
+            PAMI_assert(_topology_lm.index2Rank(0) != (unsigned) -1); // no local master?
+
+            /// \todo only supporting PAMI_BYTE right now
+            PAMI_assertf((cmd->cmd.xfer_allreduce.stype == PAMI_BYTE) && (cmd->cmd.xfer_allreduce.rtype == PAMI_BYTE), "Not PAMI_BYTE? %#zX %#zX\n", (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype);
+
+            //            PAMI_Type_sizeof(cmd->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
+
+            unsigned        sizeOfType;
+            coremath        func;
+
+            getReduceFunction(cmd->cmd.xfer_allreduce.dt,
+                              cmd->cmd.xfer_allreduce.op,
+                              cmd->cmd.xfer_allreduce.stypecount,// this parm is unused
+                              sizeOfType,
+                              func );
+
+            _bytes                       = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE?
+            if(_bytes > 2048)
+            {
+              _buffer = (char*) malloc(_bytes + 128); /// \todo memory leak?
+              _buffer1 = (char*) malloc(_bytes + 128); /// \todo memory leak?
+            }
+            else
+            {
+              _buffer = _bufferb;
+              _buffer1 = _buffer1b;
+            }
+
+            size_t countDt = _bytes / sizeOfType;
+
+            // Discover the root node and intereesting topology information
+            size_t           numMasters  = _topology_g->size();
+            size_t           numLocals   = _topology_l->size();
+            PAMI_assertf(numMasters > 1 && numLocals > 1, "numMasters %zu, numLocals %zu\n", numMasters, numLocals); /// \todo keep it simple for now.
+
+            _deviceMcombInfo = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
+            _deviceMcastInfo = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
+
+            _pwq_src.configure(NULL,                            // Memory manager
+                               cmd->cmd.xfer_allreduce.sndbuf,  // buffer
+                               _bytes,                          // buffer bytes
+                               _bytes);                         // amount initially in buffer
+            _pwq_src.reset();
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP() send buffer %p, bytes available to consume:%zd, produce:%zd\n", this, _pwq_src.bufferToConsume(), 
+                           _pwq_src.bytesAvailableToConsume(), _pwq_src.bytesAvailableToProduce()));
+            DO_DEBUG(dumpDbuf((double*)_pwq_src.bufferToConsume() , _pwq_src.bytesAvailableToConsume()/sizeof(double)));
+
+            _pwq_dst.configure(NULL,                            // Memory manager
+                               cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
+                               _bytes,                          // buffer bytes
+                               0);                              // amount initially in buffer
+            _pwq_dst.reset();
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP() receive buffer %p, bytes available to consume:%zd, produce:%zd\n", this, _pwq_dst.bufferToProduce(), 
+                           _pwq_dst.bytesAvailableToConsume(), _pwq_dst.bytesAvailableToProduce()));
+
+            char* tmp = (char*)(((uint64_t)_buffer + 127) & ~(uint64_t)127); // align the buffer
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP() _buffer %p/%p\n", this, _buffer, tmp));
+            _pwq_temp.configure(NULL,                           // Memory manager
+                                tmp,                            // buffer
+                                _bytes,                         // buffer bytes
+                                0);                             // amount initially in buffer
+            _pwq_temp.reset();
+
+            tmp = (char*)(((uint64_t)_buffer1 + 127) & ~(uint64_t)127); // align the buffer
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP() _buffer1 %p/%p\n", this, _buffer1, tmp));
+            _pwq_temp1.configure(NULL,                           // Memory manager
+                                 tmp,                            // buffer
+                                 _bytes,                         // buffer bytes
+                                 0);                             // amount initially in buffer
+            _pwq_temp1.reset();
+            _mcomb_l.connection_id        = 0;
+            _mcomb_l.roles                = -1U;
+            _mcomb_l.data_participants    = (pami_topology_t*)_topology_l;
+            _mcomb_l.results_participants = (pami_topology_t*) & _topology_lm;
+            _mcomb_l.data                 = (pami_pipeworkqueue_t*) & _pwq_src;
+            _mcomb_l.results              = (pami_pipeworkqueue_t*) & _pwq_temp;
+            _mcomb_l.cb_done.function     =  _amMaster ? local_master_done_fn : local_done_fn;
+            _mcomb_l.cb_done.clientdata   =  this;
+            _mcomb_l.context              = 0; /// \todo ?
+            _mcomb_l.client               = 0; /// \todo ?
+            _mcomb_l.count                = countDt;
+            _mcomb_l.dtype                = cmd->cmd.xfer_allreduce.dt;
+            _mcomb_l.optor                = cmd->cmd.xfer_allreduce.op;
+
+            _mcomb_g.connection_id        = 0;
+            _mcomb_g.roles                = -1U;
+            _mcomb_g.data_participants    = (pami_topology_t*)_topology_g;
+            _mcomb_g.results_participants = (pami_topology_t*)_topology_g;
+            _mcomb_g.data                 = (pami_pipeworkqueue_t*) & _pwq_temp;
+            _mcomb_g.results              = (pami_pipeworkqueue_t*) & _pwq_dst;
+            _mcomb_g.cb_done.function     = global_done_fn;
+            _mcomb_g.cb_done.clientdata   = this;
+            _mcomb_g.context              = 0; /// \todo ?
+            _mcomb_g.client               = 0; /// \todo ?
+            _mcomb_g.count                = countDt;
+            _mcomb_g.dtype                = cmd->cmd.xfer_allreduce.dt;
+            _mcomb_g.optor                = cmd->cmd.xfer_allreduce.op;
+
+            _mcast_l.connection_id        = 0;
+            _mcast_l.roles                = -1U;
+            _mcast_l.src_participants     = (pami_topology_t*) & _topology_lm;
+            _mcast_l.dst_participants     = (pami_topology_t*)_topology_l;
+            _mcast_l.src                  = (pami_pipeworkqueue_t*) & _pwq_dst;
+            _mcast_l.dst                  = _amMaster ? (pami_pipeworkqueue_t*) & _pwq_temp1 : (pami_pipeworkqueue_t*) & _pwq_dst; // masters use a temp for mcast destination
+#ifdef LOCAL_TEST
+            // Intercept the user's done for testing purposes.
+            _cb_done.function   = fn;
+            _cb_done.clientdata = cookie;
+            _mcast_l.cb_done.function     =  test_local_done_fn; 
+            _mcast_l.cb_done.clientdata   =  this;
+#else
+            _mcast_l.cb_done.function     =  fn;
+            _mcast_l.cb_done.clientdata   =  cookie;
+#endif
+            _mcast_l.context              = 0; /// \todo ?
+            _mcast_l.client               = 0; /// \todo ?
+            _mcast_l.bytes                = _bytes;
+            _mcast_l.dispatch             = -1; /// \todo assuming all-sided?
+            _mcast_l.msgcount             = 0;
+            _mcast_l.msginfo              = NULL;
+
+            TRACE_ADAPTOR((stderr, "MultiCombineComposite2DeviceNP() client data:%p\n", cookie));
+
+          }
+          virtual void start()
+          {
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::start()\n", this));
+            _native_l->multicombine(&_mcomb_l, _deviceMcombInfo);
+          }
+        protected:
+          Interfaces::NativeInterface        *_native_l;
+          Interfaces::NativeInterface        *_native_g;
+          Interfaces::NativeInterface        *_active_native;
+          PAMI_GEOMETRY_CLASS                *_geometry;
+          bool                                _amMaster;
+          PAMI::PipeWorkQueue                 _pwq_src;
+          PAMI::PipeWorkQueue                 _pwq_dst;
+          PAMI::PipeWorkQueue                 _pwq_temp;
+          PAMI::PipeWorkQueue                 _pwq_temp1;
+          PAMI::Topology                     *_topology_l;
+          PAMI::Topology                      _topology_lm;
+          PAMI::Topology                     *_topology_g;
+          void                               *_deviceMcombInfo;
+          void                               *_deviceMcastInfo;
+          pami_multicombine_t                 _mcomb_l;
+          pami_multicombine_t                 _mcomb_g;
+          pami_multicast_t                    _mcast_l;
+          pami_multicombine_t                *_active_mcomb;
+          char*                               _buffer;
+          char*                               _buffer1;
+          char                                _bufferb[2048+128];
+          char                                _buffer1b[2048+128];
+          size_t                              _bytes;
+#ifdef LOCAL_TEST
+          pami_callback_t                     _cb_done;   // User's completion callback 
+#endif
+      };
+
+
+
+
+
+
+
+
+
+
+
+
     };
   };
 };
+
+#ifndef CCMI_TRACE_ALL
+#undef TRACE_ADAPTOR
+#define TRACE_ADAPTOR(x)
+#endif
+
+#undef DO_DEBUG
+#define DO_DEBUG(x) 
 
 #endif

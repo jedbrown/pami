@@ -17,7 +17,12 @@
 
 #include "Arch.h"
 
+// New converged shmem stack:
 //#define _COLLSHM
+
+// New BGQ optimized shmem stack:
+//#define ENABLE_NEW_SHMEM
+
 
 #ifdef _COLLSHM   // New Collective Shmem Protocol defines
 

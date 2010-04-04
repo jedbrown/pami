@@ -7,19 +7,19 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/allreduce.c
- * \brief simple allreduce on world geometry
+ * \file test/internals/bgq/api/collectives/allreduce.c
+ * \brief ???
  */
 
-#include "../pami_util.h"
+#include "../../../../api/pami_util.h"
 
-//define this if you want to validate the data for unsigned sums
+//define this if you want to validate the data
 #define CHECK_DATA
 
-#define FULL_TEST
-#define COUNT      65536
+//#define FULL_TEST
+#define COUNT     1024
 #define MAXBUFSIZE COUNT*16
-#define NITERLAT   1000
+#define NITERLAT   100
 #define NITERBW    10
 #define CUTOFF     65536
 
@@ -170,20 +170,29 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
   int i;
 
   if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_UNSIGNED_INT)
-    {
-      unsigned int *ibuf = (unsigned int *)  buf;
+  {
+    unsigned int *ibuf = (unsigned int *)  buf;
 
-      for (i = 0; i < count; i++)
-        {
-          ibuf[i] = i;
-        }
-    }
-  else
+    for (i = 0; i < count; i++)
     {
-      size_t sz;
-      PAMI_Dt_query (dt_array[dt], &sz);
-      memset(buf,  task_id,  count * sz);
+      ibuf[i] = i;
     }
+  }
+  else if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_DOUBLE)
+  {
+    double *dbuf = (double *)  buf;
+  
+    for (i = 0; i < count; i++)
+    {
+      dbuf[i] = 1.0*i;
+    }
+  }
+  else
+  {
+    size_t sz;
+    PAMI_Dt_query (dt_array[dt], &sz);
+    memset(buf,  task_id,  count * sz);
+  }
 }
 
 int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks)
@@ -192,21 +201,38 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks)
   int i, err = 0;
 
   if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_UNSIGNED_INT)
-    {
-      unsigned int *rbuf = (unsigned int *)  buf;
+  {
+    unsigned int *rbuf = (unsigned int *)  buf;
 
-      for (i = 0; i < count; i++)
-        {
-          if (rbuf[i] != i * num_tasks)
-            {
-              fprintf(stderr, "Check(%d) failed rbuf[%d] %u != %u\n", count, i, rbuf[1], i*num_tasks);
-              err = -1;
+    for (i = 0; i < count; i++)
+    {
+      if (rbuf[i] != i * num_tasks)
+      {
+        fprintf(stderr, "Check(%d) failed rbuf[%d] %u != %u\n", count, i, rbuf[1], i*num_tasks);
+        err = -1;
 #ifndef FULL_TEST
-              return err;
+        return err;
 #endif
-            }
-        }
+      }
     }
+  }
+  else if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_DOUBLE)
+  {
+    double *rbuf = (double *)  buf;
+
+    for (i = 0; i < count; i++)
+    {
+      if (rbuf[i] != 1.0 * i * num_tasks)
+      {
+        fprintf(stderr, "Check(%d) failed rbuf[%d] %f != %f\n", count, i, rbuf[i], (double)1.0*num_tasks);
+        exit(0);
+        err = -1;
+#ifndef FULL_TEST
+        return err;
+#endif
+      }
+    }
+  }
 
   return err;
 }
@@ -245,10 +271,11 @@ int main(int argc, char*argv[])
   pami_xfer_t          allreduce;
 
 
-  char sbuf[MAXBUFSIZE];
-  char rbuf[MAXBUFSIZE];
+  char sbuf[MAXBUFSIZE+128]  __attribute__((__aligned__(128)));
+  char rbuf[MAXBUFSIZE+128] __attribute__((__aligned__(128)));
   int op, dt;
 
+//	printf("before pami init\n");
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -258,7 +285,7 @@ int main(int argc, char*argv[])
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
                      &num_tasks);    /* number of tasks    */
-
+  assert(rc != 1);
   if (rc == 1)
     return 1;
 
@@ -273,6 +300,7 @@ int main(int argc, char*argv[])
                             &bar_must_query_algo,
                             &bar_must_query_md);
 
+  assert(rc != 1);
   if (rc == 1)
     return 1;
 
@@ -287,11 +315,12 @@ int main(int argc, char*argv[])
                             &allreduce_must_query_algo,
                             &allreduce_must_query_md);
 
+  assert(rc != 1);
   if (rc == 1)
     return 1;
 
   unsigned** validTable =
-    alloc2DContig(op_count, dt_count);
+  alloc2DContig(op_count, dt_count);
 #ifdef FULL_TEST
 
   for (i = 0; i < op_count; i++)
@@ -347,42 +376,42 @@ int main(int argc, char*argv[])
   fprintf(stderr, "PAMI_DEVICE=%c\n", env ? *env : ' ');
 
   if ((env == NULL) || ((*env == 'M') || (*env == 'B')))
-    {
-      /// These are unsupported on MU
-      for (i = 0, j = DT_SIGNED_CHAR;    i < OP_COUNT; i++)validTable[i][j] = 0;
+  {
+    /// These are unsupported on MU
+    for (i = 0, j = DT_SIGNED_CHAR;    i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_UNSIGNED_CHAR;  i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_UNSIGNED_CHAR;  i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_SIGNED_SHORT;   i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_SIGNED_SHORT;   i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_UNSIGNED_SHORT; i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_UNSIGNED_SHORT; i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_FLOAT;          i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_FLOAT;          i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_LOGICAL;        i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOGICAL;        i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_LOC_2INT;       i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_2INT;       i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_LOC_SHORT_INT;  i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_SHORT_INT;  i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_LOC_FLOAT_INT;  i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_FLOAT_INT;  i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_LOC_DOUBLE_INT; i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_DOUBLE_INT; i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_LOC_2FLOAT;     i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_2FLOAT;     i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = 0, j = DT_LOC_2FLOAT;     i < OP_COUNT; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_2FLOAT;     i < OP_COUNT; i++)validTable[i][j] = 0;
 
-      for (i = OP_PROD,   j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
+    for (i = OP_PROD,   j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
 
-      for (i = OP_MAXLOC, j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
+    for (i = OP_MAXLOC, j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
 
-      for (i = OP_MINLOC, j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
-    }
+    for (i = OP_MINLOC, j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
+  }
 
   // This works on bgq so re-enable it
   if ((env) && (*env == 'M'))
@@ -397,95 +426,109 @@ int main(int argc, char*argv[])
       validTable[i][j] = 0;
 
   validTable[OP_SUM][DT_UNSIGNED_INT] = 1;
+  validTable[OP_SUM][DT_DOUBLE] = 1;
 
 #endif
 
   for (nalg = 0; nalg < allreduce_num_algorithm[0]; nalg++)
+  {
+    char* tmp;
+    if (task_id == root)
     {
-      if (task_id == root)
+      printf("# Allreduce Bandwidth Test -- root = %d protocol: %s\n", root, allreduce_always_works_md[nalg].name);
+      printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+      printf("# -----------      -----------    -----------    ---------\n");
+    }
+    barrier.cb_done   = cb_done;
+    barrier.cookie    = (void*) & bar_poll_flag;
+    barrier.algorithm = bar_always_works_algo[0];
+    blocking_coll(context, &barrier, &bar_poll_flag);
+
+    allreduce.cb_done   = cb_done;
+    allreduce.cookie    = (void*) & allreduce_poll_flag;
+    allreduce.algorithm = allreduce_always_works_algo[nalg];
+    tmp = (char*)(((uint64_t)sbuf + 127) & ~(uint64_t)127); // align the buffer
+    allreduce.cmd.xfer_allreduce.sndbuf    = tmp;
+    allreduce.cmd.xfer_allreduce.stype     = PAMI_BYTE;
+    allreduce.cmd.xfer_allreduce.stypecount = 0;
+    tmp = (char*)(((uint64_t)rbuf + 127) & ~(uint64_t)127); // align the buffer
+    allreduce.cmd.xfer_allreduce.rcvbuf    = tmp;
+    allreduce.cmd.xfer_allreduce.rtype     = PAMI_BYTE;
+    allreduce.cmd.xfer_allreduce.rtypecount = 0;
+
+
+
+    for (dt = 0; dt < dt_count; dt++)
+    {
+//    if (strcmp(allreduce_always_works_md[nalg].name,"MultiCombine2Device") != 0) continue;
+      for (op = 0; op < op_count; op++)
+      {
+        if (validTable[op][dt])
         {
-          printf("# Allreduce Bandwidth Test -- root = %d protocol: %s\n", root, allreduce_always_works_md[nalg].name);
-          printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-          printf("# -----------      -----------    -----------    ---------\n");
-        }
-      barrier.cb_done   = cb_done;
-      barrier.cookie    = (void*) & bar_poll_flag;
-      barrier.algorithm = bar_always_works_algo[0];
-      blocking_coll(context, &barrier, &bar_poll_flag);
+          if (task_id == root)
+            printf("Running Allreduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
 
-      allreduce.cb_done   = cb_done;
-      allreduce.cookie    = (void*) & allreduce_poll_flag;
-      allreduce.algorithm = allreduce_always_works_algo[nalg];
-      allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
-      allreduce.cmd.xfer_allreduce.stype     = PAMI_BYTE;
-      allreduce.cmd.xfer_allreduce.stypecount = 0;
-      allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
-      allreduce.cmd.xfer_allreduce.rtype     = PAMI_BYTE;
-      allreduce.cmd.xfer_allreduce.rtypecount = 0;
-
-
-
-      for (dt = 0; dt < dt_count; dt++)
-        for (op = 0; op < op_count; op++)
+          for (i = 1; i <= COUNT; i *= 2)
           {
-            if (validTable[op][dt])
+            size_t sz;
+            PAMI_Dt_query (dt_array[dt], &sz);
+            long long dataSent = i * sz;
+            int niter;
+
+            if (dataSent < CUTOFF)
+              niter = NITERLAT;
+            else
+              niter = NITERBW;
+
+#ifdef CHECK_DATA
+            initialize_sndbuf (allreduce.cmd.xfer_allreduce.sndbuf, i, op, dt, task_id);
+#endif
+            blocking_coll(context, &barrier, &bar_poll_flag);
+            ti = timer();
+
+            for (j = 0; j < niter; j++)
+            {
+              allreduce.cmd.xfer_allreduce.stypecount = dataSent;
+              allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
+              allreduce.cmd.xfer_allreduce.dt = dt_array[dt];
+              allreduce.cmd.xfer_allreduce.op = op_array[op];
+              blocking_coll(context, &allreduce, &allreduce_poll_flag);
+#ifdef CHECK_DATA
+              if (task_id == root)
               {
-                if (task_id == root)
-                  printf("Running Allreduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
-
-                for (i = 1; i <= COUNT; i *= 2)
-                  {
-                    size_t sz;
-                    PAMI_Dt_query (dt_array[dt], &sz);
-                    long long dataSent = i * sz;
-                    int niter;
-
-                    if (dataSent < CUTOFF)
-                      niter = NITERLAT;
-                    else
-                      niter = NITERBW;
-
-#ifdef CHECK_DATA
-                    initialize_sndbuf (sbuf, i, op, dt, task_id);
-#endif
-                    blocking_coll(context, &barrier, &bar_poll_flag);
-                    ti = timer();
-
-                    for (j = 0; j < niter; j++)
-                      {
-                        allreduce.cmd.xfer_allreduce.stypecount = dataSent;
-                        allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
-                        allreduce.cmd.xfer_allreduce.dt = dt_array[dt];
-                        allreduce.cmd.xfer_allreduce.op = op_array[op];
-                        blocking_coll(context, &allreduce, &allreduce_poll_flag);
-                      }
-
-                    tf = timer();
-                    blocking_coll(context, &barrier, &bar_poll_flag);
-
-#ifdef CHECK_DATA
-                    int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
-
-                    //assert (rc == 0);
-                    if (rc) fprintf(stderr, "FAILED validation\n");
-
-#endif
-
-                    usec = (tf - ti) / (double)niter;
-
-                    if (task_id == root)
-                      {
-                        printf("  %11lld %16d %14.1f %12.2f\n",
-                               dataSent,
-                               niter,
-                               (double)1e6*(double)dataSent / (double)usec,
-                               usec);
-                        fflush(stdout);
-                      }
-                  }
+                int rc = check_rcvbuf (allreduce.cmd.xfer_allreduce.rcvbuf, i, op, dt, num_tasks);
+                if (rc)
+                {
+                  fprintf(stderr, "FAILED validation\n");
+                  exit(0);
+                }
               }
+#endif
+            }
+            tf = timer();
+            blocking_coll(context, &barrier, &bar_poll_flag);
+
+#ifdef CHECK_DATA
+              int rc = check_rcvbuf (allreduce.cmd.xfer_allreduce.rcvbuf, i, op, dt, num_tasks);
+              if (rc) fprintf(stderr, "FAILED validation\n");
+#endif
+
+            usec = (tf - ti) / (double)niter;
+
+            if (task_id == root)
+            {
+              printf("  %11lld %16d %14.1f %12.2f\n",
+                     dataSent,
+                     niter,
+                     (double)1e6*(double)dataSent / (double)usec,
+                     usec);
+              fflush(stdout);
+            }
           }
         }
+      }
+    }
+  }
 
   rc = pami_shutdown(&client, &context, &num_contexts);
   free(bar_always_works_algo);

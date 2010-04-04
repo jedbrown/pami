@@ -17,12 +17,11 @@
 #include "components/devices/misc/ProgressFunctionMsg.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 #include "components/devices/misc/AtomicMutexMsg.h"
-//#include "components/devices/workqueue/WQRingReduceMsg.h"
-//#include "components/devices/workqueue/WQRingBcastMsg.h"
-
+#ifdef ENABLE_NEW_SHMEM
+  #include "components/devices/shmemcoll/ShmemCollDevice.h"
+#endif
 #include "components/atomic/gcc/GccBuiltin.h"
 #include "components/atomic/bgq/L2Counter.h"
-//#include "components/atomic/pthread/Pthread.h"
 
 #include "components/memory/MemoryAllocator.h"
 
@@ -108,13 +107,16 @@ namespace PAMI
       PlatformDeviceList():
           _generics(NULL),
           _shmem(NULL),
+#ifdef ENABLE_NEW_SHMEM
+          _shmemcoll(NULL),
+#endif
           _progfunc(NULL),
           _atombarr(NULL),
-//    _wqringreduce(NULL),
-//    _wqringbcast(NULL),
+#ifndef ENABLE_NEW_SHMEM
           _localallreduce(NULL),
           _localbcast(NULL),
           _localreduce(NULL),
+#endif
           _mu(NULL),
           _atmmtx(NULL)
       { }
@@ -143,12 +145,17 @@ namespace PAMI
           {
             TRACE_ERR((stderr, "device init: shmem\n"));
             _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+#ifdef ENABLE_NEW_SHMEM
+            TRACE_ERR((stderr, "device init: shmem coll\n"));
+            _shmemcoll = ShmemCollDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+#else
             TRACE_ERR((stderr, "device init: local allreduce wq\n"));
             _localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
             TRACE_ERR((stderr, "device init: local bcast wq\n"));
             _localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
             TRACE_ERR((stderr, "device init: local reduce wq\n"));
             _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+#endif
           }
 
         TRACE_ERR((stderr, "device init: progress function\n"));
@@ -156,10 +163,6 @@ namespace PAMI
         TRACE_ERR((stderr, "device init: atomic barrier\n"));
         _atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm, _generics);
 
-//      TRACE_ERR((stderr,"device init: wqring reduce\n"));
-//      _wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm, _generics);
-//      TRACE_ERR((stderr,"device init: wqring bcast\n"));
-//      _wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm, _generics);
         if (__global.useMU())
           {
             TRACE_ERR((stderr, "device init: MU\n"));
@@ -194,16 +197,18 @@ namespace PAMI
         if (__global.useshmem())
           {
             ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
+#ifdef ENABLE_NEW_SHMEM
+            ShmemCollDevice::Factory::init(_shmemcoll, clientid, contextid, clt, ctx, mm, _generics);
+#else
             PAMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
             PAMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
             PAMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
+#endif
           }
 
         PAMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm , _generics);
         PAMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, mm, _generics);
 
-//      PAMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm , _generics);
-//      PAMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
         if (__global.useMU())
           {
             Device::MU::Factory::init(_mu, clientid, contextid, clt, ctx, mm, _generics);
@@ -230,16 +235,18 @@ namespace PAMI
         if (__global.useshmem())
           {
             events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
+#ifdef ENABLE_NEW_SHMEM
+            events += ShmemCollDevice::Factory::advance(_shmemcoll, clientid, contextid);
+#else
             events += PAMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
             events += PAMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
             events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
+#endif
           }
 
         events += PAMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
         events += PAMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
 
-//      events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
-//      events += PAMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
         if (__global.useMU())
           events += Device::MU::Factory::advance(_mu, clientid, contextid);
 
@@ -249,13 +256,16 @@ namespace PAMI
 
       PAMI::Device::Generic::Device *_generics; // need better name...
       ShmemDevice *_shmem; //compile-time always needs the devices since runtime is where the check is made to use them
+#ifdef ENABLE_NEW_SHMEM
+      ShmemCollDevice *_shmemcoll;
+#endif
       PAMI::Device::ProgressFunctionDev *_progfunc;
       PAMI::Device::AtomicBarrierDev *_atombarr;
-//    PAMI::Device::WQRingReduceDev *_wqringreduce;
-//    PAMI::Device::WQRingBcastDev *_wqringbcast;;
+#ifndef ENABLE_NEW_SHMEM
       PAMI::Device::LocalAllreduceWQDevice *_localallreduce;
       PAMI::Device::LocalBcastWQDevice *_localbcast;
       PAMI::Device::LocalReduceWQDevice *_localreduce;
+#endif
       MUDevice *_mu;
       PAMI::Device::AtomicMutexDev *_atmmtx;
   }; // class PlatformDeviceList
@@ -408,14 +418,19 @@ namespace PAMI
             if (__global.topology_local.size() > 1)
               {
                 TRACE_ERR((stderr,  "<%p>Context::Context() construct shmem native interface and models\n", this));
-                _shmemMcastModel         = (Device::LocalBcastWQModel*)_shmemMcastModel_storage;
-                _shmemMcombModel         = (Device::LocalAllreduceWQModel*)_shmemMcombModel_storage;
-                _shmemMsyncModel         = (Barrier_Model*)_shmemMsyncModel_storage;
+                _shmemMcastModel         = (ShmemMcstModel*)_shmemMcastModel_storage;
+                _shmemMcombModel         = (ShmemMcombModel*)_shmemMcombModel_storage;
+                _shmemMsyncModel         = (ShmemMsyncModel*)_shmemMsyncModel_storage;
 
-                new (_shmemMsyncModel_storage)        Barrier_Model(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid), _status);
-                new (_shmemMcastModel_storage)        Device::LocalBcastWQModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid), _status);
-                new (_shmemMcombModel_storage)        Device::LocalAllreduceWQModel(PAMI::Device::LocalAllreduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid), _status);
+                new (_shmemMsyncModel_storage)        ShmemMsyncModel(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid), _status);
 
+#ifdef ENABLE_NEW_SHMEM
+                new (_shmemMcastModel_storage)        ShmemMcstModel(ShmemCollDevice::Factory::getDevice(_devices->_shmemcoll, _clientid, _contextid), _status);
+                new (_shmemMcombModel_storage)        ShmemMcombModel(ShmemCollDevice::Factory::getDevice(_devices->_shmemcoll, _clientid, _contextid), _status);
+#else
+                new (_shmemMcastModel_storage)        ShmemMcstModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid), _status);
+                new (_shmemMcombModel_storage)        ShmemMcombModel(PAMI::Device::LocalAllreduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid), _status);
+#endif
 
                 _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
                 new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid);
@@ -1072,18 +1087,18 @@ namespace PAMI
       CCMIRegistration            *_ccmi_registration;
       BGQGeometry                 *_world_geometry;
       pami_result_t                _status;
-      Device::LocalBcastWQModel   *_shmemMcastModel;
-      Barrier_Model               *_shmemMsyncModel;
-      Device::LocalAllreduceWQModel  *_shmemMcombModel;
+      ShmemMcstModel              *_shmemMcastModel;
+      ShmemMsyncModel             *_shmemMsyncModel;
+      ShmemMcombModel             *_shmemMcombModel;
       AllSidedShmemNI             *_shmem_native_interface;
       uint8_t                      _ccmi_registration_storage[sizeof(CCMIRegistration)];
 #ifdef _COLLSHM
       uint8_t                      _coll_shm_registration_storage[sizeof(CollShmCollreg)];
 #endif
       uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >)];
-      uint8_t                      _shmemMcastModel_storage[sizeof(Device::LocalBcastWQModel)];
-      uint8_t                      _shmemMsyncModel_storage[sizeof(Barrier_Model)];
-      uint8_t                      _shmemMcombModel_storage[sizeof(Device::LocalAllreduceWQModel)];
+      uint8_t                      _shmemMcastModel_storage[sizeof(ShmemMcstModel)];
+      uint8_t                      _shmemMsyncModel_storage[sizeof(ShmemMsyncModel)];
+      uint8_t                      _shmemMcombModel_storage[sizeof(ShmemMcombModel)];
       uint8_t                      _shmem_native_interface_storage[sizeof(AllSidedShmemNI)];
       ProtocolAllocator            _protocol;
       PlatformDeviceList          *_devices;

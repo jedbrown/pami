@@ -12,7 +12,7 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = $(TARGET)
 NOTBUILT        = 
-APPS            = multicombine.$(EXTENSION) multisync.$(EXTENSION) multicast.$(EXTENSION)
+APPS            = multicombine.$(EXTENSION) multisync.$(EXTENSION) multicast.$(EXTENSION) local_multicombine.$(EXTENSION) local_multicast.$(EXTENSION)
 
 include @abs_top_builddir@/Build.rules
 

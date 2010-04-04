@@ -8,18 +8,20 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/collectives/allreduce.c
- * \brief simple allreduce on world geometry
+ * \brief ???
  */
 
 #include "../pami_util.h"
 
 //define this if you want to validate the data for unsigned sums
-#define CHECK_DATA
+//#define CHECK_DATA
 
 #define FULL_TEST
-#define COUNT      65536
+#define COUNT     1024
+//#define COUNT     16
 #define MAXBUFSIZE COUNT*16
-#define NITERLAT   1000
+#define NITERLAT   100
+//#define NITERLAT   20
 #define NITERBW    10
 #define CUTOFF     65536
 
@@ -164,6 +166,7 @@ unsigned ** alloc2DContig(int nrows, int ncols)
 }
 
 #ifdef CHECK_DATA
+#if 0
 void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
 {
 
@@ -211,6 +214,46 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks)
   return err;
 }
 #endif
+void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
+{
+
+  int i;
+	
+  assert(op_array[op] == PAMI_SUM);
+  assert(dt_array[dt] == PAMI_DOUBLE);
+
+  double *ibuf = (double *)  buf;
+
+  for (i = 0; i < count; i++)
+  {
+		  ibuf[i] = 1.0*i;
+  }
+}
+
+int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks)
+{
+
+  int i, err = 0;
+  assert(op_array[op] == PAMI_SUM);
+  assert(dt_array[dt] == PAMI_DOUBLE);
+
+  double *rbuf = (double *)  buf;
+
+      for (i = 0; i < count; i++)
+        {
+          if (rbuf[i] != 1.0 * i * num_tasks)
+            {
+              fprintf(stderr, "Check(%d) failed rbuf[%d] %f != %f\n", count, i, rbuf[i], (double)1.0*num_tasks);
+			  exit(0);
+              err = -1;
+#ifndef FULL_TEST
+              return err;
+#endif
+            }
+        }
+  return err;
+}
+#endif
 
 int main(int argc, char*argv[])
 {
@@ -245,10 +288,11 @@ int main(int argc, char*argv[])
   pami_xfer_t          allreduce;
 
 
-  char sbuf[MAXBUFSIZE];
-  char rbuf[MAXBUFSIZE];
+  char sbuf[MAXBUFSIZE+128]  __attribute__((__aligned__(128)));
+  char rbuf[MAXBUFSIZE+128] __attribute__((__aligned__(128)));
   int op, dt;
 
+//	printf("before pami init\n");
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -258,10 +302,11 @@ int main(int argc, char*argv[])
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
                      &num_tasks);    /* number of tasks    */
-
+	assert(rc != 1);
   if (rc == 1)
     return 1;
 
+//	printf("before query geometry world,barrier \n");
   /*  Query the world geometry for barrier algorithms */
   rc = query_geometry_world(client,
                             context,
@@ -273,9 +318,11 @@ int main(int argc, char*argv[])
                             &bar_must_query_algo,
                             &bar_must_query_md);
 
+	assert(rc != 1);
   if (rc == 1)
     return 1;
 
+//	printf("before query geometry world,allreduce \n");
   /*  Query the world geometry for allreduce algorithms */
   rc = query_geometry_world(client,
                             context,
@@ -287,6 +334,7 @@ int main(int argc, char*argv[])
                             &allreduce_must_query_algo,
                             &allreduce_must_query_md);
 
+	assert(rc != 1);
   if (rc == 1)
     return 1;
 
@@ -401,7 +449,9 @@ int main(int argc, char*argv[])
 #endif
 
   for (nalg = 0; nalg < allreduce_num_algorithm[0]; nalg++)
+//nalg = 0;
     {
+      char* tmp;
       if (task_id == root)
         {
           printf("# Allreduce Bandwidth Test -- root = %d protocol: %s\n", root, allreduce_always_works_md[nalg].name);
@@ -416,17 +466,30 @@ int main(int argc, char*argv[])
       allreduce.cb_done   = cb_done;
       allreduce.cookie    = (void*) & allreduce_poll_flag;
       allreduce.algorithm = allreduce_always_works_algo[nalg];
-      allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
+      tmp = (char*)(((uint64_t)sbuf + 127) & ~(uint64_t)127); // align the buffer
+      allreduce.cmd.xfer_allreduce.sndbuf    = tmp;
       allreduce.cmd.xfer_allreduce.stype     = PAMI_BYTE;
       allreduce.cmd.xfer_allreduce.stypecount = 0;
-      allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
+      tmp = (char*)(((uint64_t)rbuf + 127) & ~(uint64_t)127); // align the buffer
+      allreduce.cmd.xfer_allreduce.rcvbuf    = tmp;
       allreduce.cmd.xfer_allreduce.rtype     = PAMI_BYTE;
       allreduce.cmd.xfer_allreduce.rtypecount = 0;
 
 
 
-      for (dt = 0; dt < dt_count; dt++)
-        for (op = 0; op < op_count; op++)
+      //for (dt = 0; dt < dt_count; dt++)
+      dt = 1; 
+        {
+        /*if(!strcmp(allreduce_always_works_md[nalg].name, "ShmemMultiComb") && (dt > 0))
+          continue;*/
+        /*if(strcmp(allreduce_always_works_md[nalg].name, "ShmemMultiComb") != 0)
+		{
+			printf("not shmemMultiComb\n");
+			exit(0);
+		}*/
+		if (strcmp(allreduce_always_works_md[nalg].name,"MultiCombine2Device") != 0) continue;
+        //for (op = 0; op < op_count; op++)
+		op = 0;
           {
             if (validTable[op][dt])
               {
@@ -434,19 +497,24 @@ int main(int argc, char*argv[])
                   printf("Running Allreduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
 
                 for (i = 1; i <= COUNT; i *= 2)
+				//i =1024;
+				//i =1;
                   {
                     size_t sz;
                     PAMI_Dt_query (dt_array[dt], &sz);
                     long long dataSent = i * sz;
                     int niter;
 
+                    /*if(dataSent > 256)
+                      continue;*/
+
                     if (dataSent < CUTOFF)
                       niter = NITERLAT;
                     else
                       niter = NITERBW;
-
+					
 #ifdef CHECK_DATA
-                    initialize_sndbuf (sbuf, i, op, dt, task_id);
+                    initialize_sndbuf (allreduce.cmd.xfer_allreduce.sndbuf, i, op, dt, task_id);
 #endif
                     blocking_coll(context, &barrier, &bar_poll_flag);
                     ti = timer();
@@ -457,18 +525,29 @@ int main(int argc, char*argv[])
                         allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
                         allreduce.cmd.xfer_allreduce.dt = dt_array[dt];
                         allreduce.cmd.xfer_allreduce.op = op_array[op];
+						//printf("starting iter:%d cb_done:%p cookie:%p\n", j,allreduce.cb_done, allreduce.cookie);
                         blocking_coll(context, &allreduce, &allreduce_poll_flag);
+#ifdef CHECK_DATA
+						if (task_id == root){
+                    	int rc = check_rcvbuf (allreduce.cmd.xfer_allreduce.rcvbuf, i, op, dt, num_tasks);
+                    	if (rc)
+						{
+							 fprintf(stderr, "FAILED validation\n");
+							exit(0);
+						}		
+						}
+#endif
+						//printf("finished iter:%d cb_done:%p cookie:%p\n", j,allreduce.cb_done, allreduce.cookie);
                       }
-
                     tf = timer();
                     blocking_coll(context, &barrier, &bar_poll_flag);
 
 #ifdef CHECK_DATA
-                    int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
-
+					if (task_id == root){
+                    int rc = check_rcvbuf (allreduce.cmd.xfer_allreduce.rcvbuf, i, op, dt, num_tasks);
                     //assert (rc == 0);
                     if (rc) fprintf(stderr, "FAILED validation\n");
-
+					}
 #endif
 
                     usec = (tf - ti) / (double)niter;
@@ -486,6 +565,7 @@ int main(int argc, char*argv[])
               }
           }
         }
+    }
 
   rc = pami_shutdown(&client, &context, &num_contexts);
   free(bar_always_works_algo);

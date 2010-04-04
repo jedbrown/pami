@@ -695,7 +695,8 @@ namespace PAMI
         TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::initializeMemoryManager\n", this, _clientid));
         char   shmemfile[1024];
         //size_t bytes     = 1024*1024;
-        size_t bytes     = 2048 * 1024;
+        //size_t bytes     = 2048 * 1024;
+        size_t bytes     = 8192 * 1024;
         //size_t pagesize  = 4096;
 
         char *env = getenv("PAMI_CLIENT_SHMEMSIZE");

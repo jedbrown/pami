@@ -28,6 +28,11 @@
 
 #include "util/ccmi_debug.h" // tracing
 
+#ifndef CCMI_TRACE_ALL
+  #undef TRACE_INIT
+  #define TRACE_INIT(x) //fprintf x
+#endif
+
 namespace PAMI
 {
   extern std::map<unsigned, pami_geometry_t> geometry_map;
@@ -272,7 +277,14 @@ namespace PAMI
     typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS>,
       Mcast2DMetaData, CCMI::ConnectionManager::SimpleConnMgr> MultiCast2DeviceFactory;
 
+    void Mcomb2DMetaData(pami_metadata_t *m)
+    {
+      strncpy(&m->name[0], "MultiCombine2DeviceNP", 32);
+    }
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
+      Mcomb2DMetaData, CCMI::ConnectionManager::SimpleConnMgr> MultiCombine2DeviceFactory;
 
+ 
     //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
     //----------------------------------------------------------------------------
@@ -311,7 +323,8 @@ namespace PAMI
             _mu_mcomb_factory(&_sconnmgr, _mu_ni),
             _msync_composite_factory(&_sconnmgr, NULL),
             _msync2d_composite_factory(NULL),
-            _mcast2d_composite_factory(NULL)
+            _mcast2d_composite_factory(NULL),
+            _mcomb2d_composite_factory(NULL)
         {
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()\n", this));
           DO_DEBUG((templateName<T_Geometry>()));
@@ -321,12 +334,14 @@ namespace PAMI
           //set the mapid functions
           if (__global.useshmem())// && (__global.topology_local.size() > 1))
             {
+            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration() useshmem\n", this));
               _shmem_msync_factory.setMapIdToGeometry(mapidtogeometry);
               _sub_shmem_msync_factory.setMapIdToGeometry(mapidtogeometry);
             }
 
           if (__global.useMU())
             {
+            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration() usemu\n", this));
               _mu_msync_factory.setMapIdToGeometry(mapidtogeometry);
               _sub_mu_msync_factory.setMapIdToGeometry(mapidtogeometry);
               _msync_composite_factory.setMapIdToGeometry(mapidtogeometry);
@@ -341,9 +356,8 @@ namespace PAMI
             _ni_array[1] = _mu_ni;
             _msync2d_composite_factory = new (_msync2d_composite_factory_storage) MultiSync2DeviceFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface*)_ni_array);
             _msync2d_composite_factory->setMapIdToGeometry(mapidtogeometry);
-
             _mcast2d_composite_factory = new (_mcast2d_composite_factory_storage) MultiCast2DeviceFactory(&_sconnmgr, _shmem_ni, false, _mu_ni,_mu_ni? true:false);
-
+            _mcomb2d_composite_factory = new (_mcomb2d_composite_factory_storage) MultiCombine2DeviceFactory(&_sconnmgr,  (CCMI::Interfaces::NativeInterface*)_ni_array);
           }
 
         }
@@ -468,6 +482,29 @@ namespace PAMI
 
                 }
 
+              // Add 2 device composite protocols
+              if((local_sub_topology->size() > 1) && (master_sub_topology->size() > 1))
+              {
+                if(_msync2d_composite_factory) 
+                {
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register msync 2D\n", this));
+                  _msync2d_composite = _msync2d_composite_factory->generate(geometry, &xfer);
+                  geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
+                }
+  
+                if(_mcast2d_composite_factory) 
+                {
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast 2D\n", this));
+                  geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
+                }
+  
+                if(_mcomb2d_composite_factory) 
+                {
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcomb 2D\n", this));
+                  geometry->addCollective(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory, _context_id);
+                }
+              }
+
               // Check if *someone* registered local/global protocols for our geometry
               // before generating any composite protocol...
 
@@ -482,19 +519,6 @@ namespace PAMI
               _msync_composite = _msync_composite_factory.generate(geometry, &xfer);
 
               geometry->addCollective(PAMI_XFER_BARRIER, &_msync_composite_factory, _context_id);
-
-              // Add 2 device composite protocols
-              if(_msync2d_composite_factory)
-              {
-                _msync2d_composite = _msync2d_composite_factory->generate(geometry, &xfer);
-                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
-              }
-
-              if(_mcast2d_composite_factory)
-              {
-/// \todo Doesn't work, disable it
-//              geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
-              }
 
 
             }
@@ -574,12 +598,20 @@ namespace PAMI
 
         MultiCast2DeviceFactory                        *_mcast2d_composite_factory;
         uint8_t                                         _mcast2d_composite_factory_storage[sizeof(MultiCast2DeviceFactory)];
+
+        MultiCombine2DeviceFactory                     *_mcomb2d_composite_factory;
+        uint8_t                                         _mcomb2d_composite_factory_storage[sizeof(MultiCombine2DeviceFactory)];
     };
 
 
 
   };
 };
+
+#ifndef CCMI_TRACE_ALL
+  #undef TRACE_INIT
+  #define TRACE_INIT(x)
+#endif
 
 #endif
 //
