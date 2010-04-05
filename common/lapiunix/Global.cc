@@ -11,7 +11,6 @@
 /// \brief Global Object implementation
 ///
 
-#include "config.h"
 #include "Global.h"
 #include "Topology.h" // need to make static members...
 

@@ -2,8 +2,10 @@
  * \file api/c/pami.cc
  * \brief PAMI C interface common implementation
  */
-
+#ifndef PAMI_LAPI_IMPL
 #include "config.h"
+#endif
+
 #include "Global.h"
 #include "SysDep.h"
 #include "Client.h"

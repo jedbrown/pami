@@ -17,7 +17,7 @@
 #define __common_lapiunix_lapifunc_h__
 
 #include <stdlib.h>
-#include <lapi.h>
+#include "components/lapi/include/lapi.h"
 #include "common/lapiunix/lapierror.h"
 
 class LapiFunc

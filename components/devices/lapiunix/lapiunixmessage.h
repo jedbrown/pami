@@ -17,7 +17,7 @@
 #include "sys/pami.h"
 #include "util/common.h"
 #include "util/queue/Queue.h"
-#include <lapi.h>
+#include "common/lapiunix/lapifunc.h"
 #include <list>
 
 namespace PAMI

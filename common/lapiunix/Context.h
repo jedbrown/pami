@@ -18,7 +18,6 @@
 #include "SysDep.h"
 #include "Mapping.h"
 #include "common/lapiunix/lapifunc.h"
-#include "lapi.h"
 #include "common/ContextInterface.h"
 
 // Geometry

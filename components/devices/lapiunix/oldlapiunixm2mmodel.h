@@ -17,7 +17,7 @@
 #include "sys/pami.h"
 #include "components/devices/OldM2MModel.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
-#include <lapi.h>
+#include "common/lapiunix/lapifunc.h"
 #include "util/common.h"
 namespace PAMI
 {
