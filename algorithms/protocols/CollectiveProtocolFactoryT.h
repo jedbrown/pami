@@ -28,7 +28,7 @@ namespace CCMI
                C                                        * cmgr,
                pami_geometry_t                            geometry,
                pami_xfer_t                              * cmd,
-               pami_event_functon                         fn,
+               pami_event_function                        fn,
                void                                     * cookie,
                CollectiveProtocolFactoryT               * factory):
           _obj(native,cmgr,geometry,cmd,fn,cookie),
@@ -41,9 +41,8 @@ namespace CCMI
         void done_fn( pami_context_t   context,
                       pami_result_t    result )
         {
-          _user_done_fn(context, _user_cookie, res);
+          _user_done_fn(context, _user_cookie, result);
         }
-      private:
         T                            _obj;
         CollectiveProtocolFactoryT * _factory;
         pami_event_function          _user_done_fn;
@@ -82,7 +81,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
           collObj *cobj = (collObj *)clientdata;
           cobj->done_fn(context, res);
-          _factory->_alloc.returnObject(cobj);
+          cobj->_factory->_alloc.returnObject(cobj);
         }
 
 
