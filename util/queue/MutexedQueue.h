@@ -127,12 +127,14 @@ public:
 	inline void init(PAMI::Memory::MemoryManager *mm)
 	{
 		_mutex.init(mm);
+		PAMI_assertf(!_mutex.isLocked(), "Mutex did not init unlocked\n");
 	}
 
 	/// \copydoc PAMI::Interface::QueueInterface::enqueue
 	inline void enqueue_impl(Element *element)
 	{
 		TRACE_ERR((stderr, "enqueue(%p)\n", element));
+		_mutex.acquire();
 
 		element->set(_tail, NULL);
 
@@ -144,14 +146,16 @@ public:
 		}
 
 		_size++;
+		_mutex.release();
 	}
 
 	/// \copydoc PAMI::Interface::QueueInterface::dequeue
 	inline Element *dequeue_impl()
 	{
+		_mutex.acquire();
 		Element *element = _head;
 
-		if (!element) return NULL;
+		if (!element) { _mutex.release(); return NULL; }
 
 		_head = element->next();
 
@@ -162,6 +166,7 @@ public:
 		element->setNext(NULL);
 
 		_size--;
+		_mutex.release();
 
 		TRACE_ERR((stderr, "dequeue() => %p\n", element));
 		return element;
@@ -171,6 +176,7 @@ public:
 	inline void push_impl(Element *element)
 	{
 		TRACE_ERR((stderr, "push(%p)\n", element));
+		_mutex.acquire();
 
 		element->set(NULL, _head);
 
@@ -182,6 +188,7 @@ public:
 		}
 
 		_size++;
+		_mutex.release();
 	}
 
 	/// \copydoc PAMI::Interface::QueueInterface::peek
@@ -199,16 +206,20 @@ public:
 	/// \copydoc PAMI::Interface::QueueInterface::next
 	inline Element *next_impl(Element *reference)
 	{
-		return reference->next();
+		_mutex.acquire();
+		Element *element = reference->next();
+		_mutex.release();
+		return element;
 	}
 
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
 	/// \copydoc PAMI::Interface::QueueInterface::popTail
 	inline Element *popTail_impl()
 	{
+		_mutex.acquire();
 		Element *element = _tail;
 
-		if (!element) return NULL;
+		if (!element) { _mutex.release(); return NULL; }
 
 		_tail = element->prev();
 
@@ -218,6 +229,7 @@ public:
 		element->setPrev(NULL);
 
 		_size--;
+		_mutex.release();
 
 		return element;
 	}
@@ -238,34 +250,42 @@ public:
 	/// \copydoc PAMI::Interface::DequeInterface::before
 	inline Element *before_impl(Element *reference)
 	{
-		return reference->prev();
+		_mutex.acquire();
+		Element *element = reference->prev();
+		_mutex.release();
+		return element;
 	}
 
 	/// \copydoc PAMI::Interface::DequeInterface::insert
 	inline void insert_impl(Element *reference,
 		Element *element)
 	{
+		_mutex.acquire();
 		Element *rprev = reference->prev();
 		element->set(rprev, reference);
 		rprev->setNext(element);
 		reference->setPrev(element);
 		_size++;
+		_mutex.release();
 	}
 
 	/// \copydoc PAMI::Interface::DequeInterface::append
 	inline void append_impl(Element *reference,
 		Element *element)
 	{
+		_mutex.acquire();
 		Element *rnext = reference->next();
 		element->set(reference, rnext);
 		reference->setNext(element);
 		rnext->setPrev(element);
 		_size++;
+		_mutex.release();
 	}
 
 	/// \copydoc PAMI::Interface::DequeInterface::remove
 	inline void remove_impl(Element *element)
 	{
+		_mutex.acquire();
 		Element *prev = element->prev();
 		Element *next = element->next();
 
@@ -280,6 +300,7 @@ public:
 			_tail = prev;
 		}
 		_size--;
+		_mutex.release();
 
 		return;
 	}
@@ -312,6 +333,7 @@ public:
 			_size++;
 			return;
 		}
+		_mutex.acquire();
 
 		size_t i;
 		Element *insert = _head;
@@ -323,6 +345,7 @@ public:
 		element->set(insert, insert->next());
 		insert->setNext(element);
 		_size++;
+		_mutex.release();
 
 		return;
 	}
