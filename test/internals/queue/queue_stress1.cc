@@ -70,6 +70,8 @@ typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex> queue_3;
 #define QUEUE_ALL	(QUEUE1_TYPE | QUEUE2_TYPE)
 #endif // ! QUEUE3_NAME
 
+#undef DEBUG	// define/undef
+
 template <class T_Queue, int T_BackoffNS = 0>
 class QueueTest {
 public:
@@ -147,7 +149,9 @@ public:
 		int yy, xx;
 		element_t *e;
 		unsigned long long t0, t1, t = 0, tr = 0, tb = 0;
-int dbg = 0;
+#ifdef DEBUG
+		int dbg = 0;
+#endif // DEBUG
 
 		fprintf(stderr, "%d: looking for %d dequeues\n", gettid(), num);
 		typename T_Queue::Iterator qi;
@@ -184,8 +188,12 @@ int dbg = 0;
 			t += PAMI_Wtimebase() - t0;
 			y += yy;
 			x += xx;
-if (!xx && ++dbg == 100000) fprintf(stderr, "stuck? %d %d queue = { %p %p %zu }\n", y, x,
-				q->head(), q->tail(), q->size());
+#ifdef DEBUG
+			if (!xx && ++dbg == 100000) {
+				fprintf(stderr, "stuck? %d %d queue = { %p %p %zu }\n",
+					y, x, q->head(), q->tail(), q->size());
+			}
+#endif // DEBUG
 		}
 		double d = t;
 		double dr = tr;
