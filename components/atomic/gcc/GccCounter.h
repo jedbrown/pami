@@ -59,6 +59,8 @@ namespace Counter {
                 ~GccProcCounter() {}
                 inline void init_impl(PAMI::Memory::MemoryManager *mm) {
                         _addr.init(mm);
+			// This is ok for proc counters since only one calls init()
+			_addr.clear();
                 }
                 inline size_t fetch_impl() {
                         return _addr.fetch();

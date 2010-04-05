@@ -65,6 +65,8 @@ namespace Interface
       ///
       /// \brief  Alloc and Init
       ///
+      /// \todo Need to find a way to initialize lock by only one entity
+      ///
       inline void init(PAMI::Memory::MemoryManager *mm);
 
       ///

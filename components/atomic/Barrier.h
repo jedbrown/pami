@@ -87,6 +87,8 @@ namespace Interface
       /// \param[in] participants	Number of participants for the barrier
       /// \param[in] participants	Is caller the master of group
       ///
+      /// \todo Need to find a way to initialize object by only one entity
+      ///
       inline void init(PAMI::Memory::MemoryManager *mm, size_t participants, bool master);
 
 

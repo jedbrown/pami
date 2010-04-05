@@ -32,6 +32,11 @@ namespace PAMI
         Counter  () {};
         ~Counter () {};
 
+        ///
+        /// \brief Initialize counter object
+        ///
+	/// \todo Need to find a way to initialize object by only one entity
+        ///
         void init (PAMI::Memory::MemoryManager *mm);
 
         ///
