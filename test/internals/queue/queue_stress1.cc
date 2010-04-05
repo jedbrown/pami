@@ -42,23 +42,33 @@ static inline pid_t gettid() {
 #endif // MAX_PTHREADS
 
 #define QUEUE1_NAME	"GccThreadSafeQueue"
+#define QUEUE1_TYPE	(1 << 0)
 typedef PAMI::GccThreadSafeQueue queue_1;
 
 
 #define QUEUE2_NAME	"MutexedQueue<CounterMutex<GccProcCounter>>"
+#define QUEUE2_TYPE	(1 << 1)
 typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> > queue_2;
 
 #ifdef __bgp__
 #include "components/atomic/bgp/LockBoxMutex.h"
 #define QUEUE3_NAME	"MutexedQueue<LockBoxProcMutex>"
+#define QUEUE3_TYPE	(1 << 2)
 typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex> queue_3;
 #endif
 
 #ifdef __bgq__
 #include "components/atomic/bgq/L2Mutex.h"
 #define QUEUE3_NAME	"MutexedQueue<L2ProcMutex>"
+#define QUEUE3_TYPE	(1 << 2)
 typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex> queue_3;
 #endif
+
+#ifdef QUEUE3_NAME
+#define QUEUE_ALL	(QUEUE1_TYPE | QUEUE2_TYPE | QUEUE3_TYPE)
+#else // ! QUEUE3_NAME
+#define QUEUE_ALL	(QUEUE1_TYPE | QUEUE2_TYPE)
+#endif // ! QUEUE3_NAME
 
 template <class T_Queue, int T_BackoffNS = 0>
 class QueueTest {
@@ -124,8 +134,8 @@ public:
 			t += PAMI_Wtimebase() - t0;
 		}
 		double d = t;
-		fprintf(stderr, "%d: finished %d enqueues (%g cycles each) %g\n",
-				gettid(), num, d / num, thus->base_t);
+		fprintf(stderr, "%d: finished %d enqueues (%g cycles each)\n",
+				gettid(), num, (d / num) - thus->base_t);
 		return NULL;
 }
 
@@ -134,8 +144,10 @@ public:
 		T_Queue *q = &thus->queue;
 		int num = thus->elements * (thus->pthreads - 1);
 		int x = 0, y = 0, z = 0;
+		int yy, xx;
 		element_t *e;
 		unsigned long long t0, t1, t = 0, tr = 0, tb = 0;
+int dbg = 0;
 
 		fprintf(stderr, "%d: looking for %d dequeues\n", gettid(), num);
 		typename T_Queue::Iterator qi;
@@ -149,9 +161,10 @@ public:
 				tb += t1 - t0;
 				++z;
 			}
+			xx = yy = 0;
 			t0 = PAMI_Wtimebase();
 			for (; q->iter_check(&qi); q->iter_end(&qi)) {
-				++y;
+				++yy;
 				e = (element_t *)q->iter_current(&qi);
 				if (e->val == (unsigned)-1 || (rand() & 0x03) == 0) {
 					e->val = -1;
@@ -161,7 +174,7 @@ public:
 						tr += PAMI_Wtimebase() - t0;
 						free(e);
 						e = NULL; // just in case we try to access it
-						++x;
+						++xx;
 					} else {
 						tr += PAMI_Wtimebase() - t0;
 					}
@@ -169,13 +182,25 @@ public:
 				}
 			}
 			t += PAMI_Wtimebase() - t0;
+			y += yy;
+			x += xx;
+if (!xx && ++dbg == 100000) fprintf(stderr, "stuck? %d %d queue = { %p %p %zu }\n", y, x,
+				q->head(), q->tail(), q->size());
 		}
 		double d = t;
 		double dr = tr;
 		double db = tb;
-		fprintf(stderr, "%d: finished %d dequeues (%g cycles per iter-elem (%d), "
+		if (z) {
+			fprintf(stderr, "%d: finished %d dequeues "
+				"(%g cycles per iter-elem (%d), "
 				"%g per remove, %g per merge (%d))\n",
 				gettid(), num, d / y, y, dr / num, db / z, z);
+		} else {
+			fprintf(stderr, "%d: finished %d dequeues "
+				"(%g cycles per iter-elem (%d), "
+				"%g per remove)\n",
+				gettid(), num, d / y, y, dr / num);
+		}
 		return NULL;
 	}
 
@@ -203,7 +228,8 @@ public:
 		for (x = 1; x < pthreads; ++x) {
 			pthread_join(thread[x], NULL);
 		}
-		fprintf(stderr, "main done. queue = { %p %p %zu }\n",
+		fprintf(stderr, "main done. queue = { %p %p %zu }\n"
+				"----------------------------------------------\n",
 				queue.head(), queue.tail(), queue.size());
 
 		return (queue.head() || queue.tail() || queue.size());
@@ -216,7 +242,7 @@ int main(int argc, char **argv) {
 	int pthreads = 4;
 	int elements = 1000;
 	int seed = 1;
-	int qtype = 0;
+	int qtype = QUEUE_ALL; // default to all tests
 
 	//extern int optind;
 	extern char *optarg;
@@ -229,42 +255,36 @@ int main(int argc, char **argv) {
 		case 'p':
 			pthreads = strtol(optarg, NULL, 0);
 			break;
-		case 'q':
-			qtype = strtol(optarg, NULL, 0);
+		case 'q': // may specify multiple...
+			qtype |= (1 << (strtol(optarg, NULL, 0) - 1));
+			if (qtype & ~QUEUE_ALL) {
+				fprintf(stderr, "Invalid queue type %s\n", optarg);
+				exit(1);
+			}
 			break;
 		case 's':
 			seed = strtol(optarg, NULL, 0);
-			srand(seed);
 			break;
 		}
 	}
 	if (!qtype) qtype = 1;
 	int ret = 0;
-	switch(qtype) {
-	case 1:
-		{
+	if (qtype & QUEUE1_TYPE) {
+		srand(seed);
 		QueueTest<queue_1,0> test1(QUEUE1_NAME, pthreads, elements, seed);
-		ret = test1.run_test();
-		}
-		break;
-	case 2:
-		{
-		QueueTest<queue_2,0> test2(QUEUE2_NAME, pthreads, elements, seed);
-		ret = test2.run_test();
-		}
-		break;
-#ifdef QUEUE3_NAME
-	case 3:
-		{
-		QueueTest<queue_3,0> test3(QUEUE3_NAME, pthreads, elements, seed);
-		ret = test3.run_test();
-		}
-		break;
-#endif // QUEUE3_NAME
-	default:
-		fprintf(stderr, "Invavlid queue type %d\n", qtype);
-		ret = 1;
-		break;
+		ret += test1.run_test();
 	}
+	if (qtype & QUEUE2_TYPE) {
+		srand(seed);
+		QueueTest<queue_2,0> test2(QUEUE2_NAME, pthreads, elements, seed);
+		ret += test2.run_test();
+	}
+#ifdef QUEUE3_NAME
+	if (qtype & QUEUE3_TYPE) {
+		srand(seed);
+		QueueTest<queue_3,0> test3(QUEUE3_NAME, pthreads, elements, seed);
+		ret += test3.run_test();
+	}
+#endif // QUEUE3_NAME
 	exit(ret);
 }
