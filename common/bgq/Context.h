@@ -50,7 +50,7 @@ namespace PAMI
 {
   typedef CollRegistration::CCMIMultiRegistration < BGQGeometry, AllSidedNI > MultiCollectiveRegistration;
 
-  typedef Mutex::CounterMutex<Counter::GccProcCounter>  ContextLock;
+  typedef Mutex::CounterMutex<Counter::BGQ::L2NodeCounter>  ContextLock;
 
   typedef MemoryAllocator<2048, 16> ProtocolAllocator;
 

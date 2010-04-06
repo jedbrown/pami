@@ -18,7 +18,8 @@ namespace CCMI
       class MultiSyncComposite : public CCMI::Executor::Composite {
       protected:
         Interfaces::NativeInterface        * _native;
-        PAMI_GEOMETRY_CLASS                 * _geometry;
+        PAMI_GEOMETRY_CLASS                * _geometry;
+        pami_multisync_t                     _minfo;
 
       public:
         MultiSyncComposite (Interfaces::NativeInterface          * mInterface,
@@ -30,19 +31,20 @@ namespace CCMI
         Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g)
         {
           TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+
+         //_minfo.cb_done.function   = _cb_done;
+         //_minfo.cb_done.clientdata = _clientdata;
+         _minfo.connection_id      = 0;
+         _minfo.roles              = -1U;
+         _minfo.participants       = _geometry->getTopology(0);
+
         }
 
         virtual void start() {
           TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
-          pami_multisync_t  minfo;
-
-          minfo.cb_done.function   = _cb_done;
-          minfo.cb_done.clientdata = _clientdata;
-          minfo.connection_id      = 0;
-          minfo.roles              = -1U;
-          minfo.participants       = _geometry->getTopology(0);
-
-          _native->multisync(&minfo);
+          _minfo.cb_done.function   = _cb_done;
+          _minfo.cb_done.clientdata = _clientdata;
+          _native->multisync(&_minfo);
         }
       };
     };

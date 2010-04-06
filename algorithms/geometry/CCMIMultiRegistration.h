@@ -20,13 +20,8 @@
 #include "SysDep.h"
 #include "TypeDefs.h"
 #include "algorithms/protocols/broadcast/mcast_impl.h"
-//#include "algorithms/protocols/broadcast/multi_color_impl.h"
-//#include "algorithms/protocols/broadcast/async_impl.h"
-//#include "algorithms/connmgr/ColorGeometryConnMgr.h"
 #include "algorithms/protocols/barrier/msync_impl.h"
-//#include "algorithms/protocols/allreduce/sync_impl.h"
-//#include "algorithms/protocols/allreduce/async_impl.h"
-//#include "algorithms/protocols/alltoall/impl.h"
+#include "algorithms/protocols/allreduce/mcomb_impl.h"
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -59,7 +54,8 @@ namespace PAMI
       _ni(ni),
       _sconnmgr(65535),
       _msync_reg(&_sconnmgr, &_ni),
-      _mcast_reg(&_sconnmgr, &_ni)
+      _mcast_reg(&_sconnmgr, &_ni),
+      _mcomb_reg(&_sconnmgr, &_ni)
       {
         TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
         //set the mapid functions
@@ -80,6 +76,9 @@ namespace PAMI
 
         // Add Broadcasts
         geometry->addCollective(PAMI_XFER_BROADCAST,&_mcast_reg,_context_id);
+
+        // Add Allreduces
+        geometry->addCollective(PAMI_XFER_ALLREDUCE,&_mcomb_reg,_context_id);
 
         return PAMI_SUCCESS;
       }
@@ -110,6 +109,9 @@ namespace PAMI
 
       // CCMI Broadcast Interface
       CCMI::Adaptor::Broadcast::MultiCastFactory             _mcast_reg;
+
+      // CCMI Allreduce Interface
+      CCMI::Adaptor::Allreduce::MultiCombineFactory          _mcomb_reg;
     };
   };
 };

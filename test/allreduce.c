@@ -19,6 +19,15 @@
 #include <assert.h>
 #include "sys/pami.h"
 
+#undef TRACE
+#define TRACE(x) //fprintf x
+
+#include <assert.h>
+#define TEST_abort()                       abort()
+#define TEST_abortf(fmt...)                { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); fprintf(stderr, fmt); abort(); }
+#define TEST_assert(expr)                assert(expr)
+#define TEST_assertf(expr, fmt...)       { if (!(expr)) TEST_abortf(fmt); }
+
 
 #define FULL_TEST
 #define COUNT      65536
@@ -176,12 +185,13 @@ unsigned elemsize_array[] =
     16, // PAMI_LOC_2DOUBLE,
   };
 
-volatile unsigned       _g_barrier_active;
-volatile unsigned       _g_allreduce_active;
+volatile unsigned       _g_barrier_active=0;
+volatile unsigned       _g_allreduce_active=0;
 
 void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
+  TRACE((stderr,"%s %p/%u, %u \n",__PRETTY_FUNCTION__,active, *active,_g_barrier_active));
   (*active)--;
 }
 
@@ -197,11 +207,15 @@ static double timer()
 void cb_allreduce (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
+  TRACE((stderr,"%s %p/%u, %u \n",__PRETTY_FUNCTION__,active, *active,_g_allreduce_active));
   (*active)--;
 }
 
 void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
+  //static unsigned entryCount = 0;
+  TRACE((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_barrier_active));
+  unsigned count = 10000;
   _g_barrier_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)barrier);
@@ -210,13 +224,17 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
     fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
     exit(1);
   }
-  while (_g_barrier_active)
+  while (_g_barrier_active && --count)
     result = PAMI_Context_advance (context, 1);
-
+  TEST_assertf(count,"%s:%d\n", __PRETTY_FUNCTION__, __LINE__);
+  TRACE((stderr,"%s done<%u> active %u, count %u\n",__PRETTY_FUNCTION__,entryCount,_g_barrier_active,count));
 }
 
 void _allreduce (pami_context_t context, pami_xfer_t *allreduce)
 {
+  //static unsigned entryCount = 0;
+  TRACE((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_allreduce_active));
+  unsigned count = 10000;
   _g_allreduce_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)allreduce);
@@ -225,9 +243,10 @@ void _allreduce (pami_context_t context, pami_xfer_t *allreduce)
     fprintf (stderr, "Error. Unable to issue allreduce collective. result = %d\n", result);
     exit(1);
   }
-  while (_g_allreduce_active)
+  while (_g_allreduce_active && --count)
     result = PAMI_Context_advance (context, 1);
-
+  TEST_assertf(count,"%s:%d\n", __PRETTY_FUNCTION__, __LINE__);
+  TRACE((stderr,"%s done<%u> active %u, count %u\n",__PRETTY_FUNCTION__,entryCount,_g_allreduce_active,count));
 }
 
 
@@ -257,12 +276,14 @@ int main(int argc, char*argv[])
   pami_context_t context;
   pami_result_t  result = PAMI_ERROR;
   char          cl_string[] = "TEST";
+  TRACE((stderr,"%s\n",__PRETTY_FUNCTION__));
   result = PAMI_Client_initialize (cl_string, &client);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
     return 1;
   }
+  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
         { size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
   if (result != PAMI_SUCCESS)
@@ -282,6 +303,7 @@ int main(int argc, char*argv[])
   size_t task_id = configuration.value.intval;
   int    rank    = task_id;
   int i,j,root   = 0;
+  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   pami_geometry_t  world_geometry;
 
@@ -291,6 +313,7 @@ int main(int argc, char*argv[])
     fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
     return 1;
   }
+  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   int algorithm_type = 0;
   pami_algorithm_t *algorithm=NULL;
@@ -306,6 +329,7 @@ int main(int argc, char*argv[])
              result);
     return 1;
   }
+  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   if (num_algorithm[0])
   {
@@ -322,6 +346,7 @@ int main(int argc, char*argv[])
                                           0);
 
   }
+  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   pami_algorithm_t *allreducealgorithm=NULL;
   pami_metadata_t *metas=NULL;
@@ -338,6 +363,7 @@ int main(int argc, char*argv[])
              result);
     return 1;
   }
+  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   if (allreducenum_algorithm[0])
   {
@@ -363,6 +389,7 @@ int main(int argc, char*argv[])
       return 1;
     }
   }
+  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   unsigned** validTable=
     alloc2DContig(op_count,dt_count);
@@ -404,6 +431,7 @@ int main(int argc, char*argv[])
 
   validTable[OP_SUM][DT_SIGNED_INT]=1;
 #endif
+  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
 #if 1
   int nalg;
@@ -456,8 +484,8 @@ int main(int argc, char*argv[])
             ti = timer();
             for (j=0; j<niter; j++)
             {
-              allreduce.cmd.xfer_allreduce.stypecount=i;
-              allreduce.cmd.xfer_allreduce.rtypecount=i;
+              allreduce.cmd.xfer_allreduce.stypecount=i; /// \todo shouldn't this be dataSent PAMI_BYTE's?
+              allreduce.cmd.xfer_allreduce.rtypecount=i; /// \todo shouldn't this be dataSent PAMI_BYTE's?
               allreduce.cmd.xfer_allreduce.dt=dt_array[dt];
               allreduce.cmd.xfer_allreduce.op=op_array[op];
               _allreduce(context, &allreduce);

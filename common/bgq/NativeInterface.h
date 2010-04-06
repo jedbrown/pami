@@ -186,7 +186,7 @@ namespace PAMI
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
     req->_user_callback    = mcast->cb_done;
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicast(%p) %p\n", this, mcast, req));
+    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicast(%p/%p) connection id %u, msgcount %u, bytes %zu\n", this, mcast, req, mcast->connection_id, mcast->msgcount, mcast->bytes));
     DO_DEBUG((templateName<T_Mcast>()));
 
     //  \todo:  this copy will cause a latency hit, maybe we need to change postMultisync
@@ -210,7 +210,7 @@ namespace PAMI
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
     req->_user_callback    = msync->cb_done;
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multisync(%p) %p\n", this, msync, req));
+    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multisync(%p/%p) connection id %u\n", this, msync, req, msync->connection_id));
     DO_DEBUG((templateName<T_Msync>()));
 
     pami_multisync_t  m     = *msync;
@@ -231,7 +231,7 @@ namespace PAMI
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
     req->_user_callback    = mcomb->cb_done;
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicombine(%p) %p\n", this, mcomb, req));
+    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicombine(%p/%p) connection id %u, count %zu, dt %#X, op %#X\n", this, mcomb, req, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor));
     DO_DEBUG((templateName<T_Mcomb>()));
 
     pami_multicombine_t  m     = *mcomb;
@@ -249,7 +249,7 @@ namespace PAMI
   inline pami_result_t BGQNativeInterfaceAS<T_Mcast, T_Msync, T_Mcomb>::multicast (uint8_t (&state)[T_Mcast::sizeof_msg],
                                                                      pami_multicast_t *mcast)
   {
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicast(%p, %p)\n", this, &state, mcast));
+    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicast(%p,%p) connection id %u, msgcount %u, bytes %zu\n", this, &state, mcast, mcast->connection_id, mcast->msgcount, mcast->bytes));
     DO_DEBUG((templateName<T_Mcast>()));
 
     mcast->dispatch =  _dispatch;
@@ -261,7 +261,7 @@ namespace PAMI
   inline pami_result_t BGQNativeInterfaceAS<T_Mcast, T_Msync, T_Mcomb>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],
                                                                      pami_multisync_t *msync)
   {
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multisync(%p, %p)\n", this, &state, msync));
+    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multisync(%p,%p) connection id %u\n", this, &state, msync, msync->connection_id));
     DO_DEBUG((templateName<T_Msync>()));
 
     return _msync.postMultisync_impl(state, msync);
@@ -271,7 +271,7 @@ namespace PAMI
   inline pami_result_t BGQNativeInterfaceAS<T_Mcast, T_Msync, T_Mcomb>::multicombine (uint8_t (&state)[T_Mcomb::sizeof_msg],
                                                                         pami_multicombine_t *mcomb)
   {
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicombine(%p, %p)\n", this, &state, mcomb));
+    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicombine(%p,%p) connection id %u, count %zu, dt %#X, op %#X\n", this, &state, mcomb, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor));
     DO_DEBUG((templateName<T_Mcomb>()));
 
     return _mcomb.postMulticombine_impl(state, mcomb);

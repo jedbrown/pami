@@ -42,7 +42,7 @@
 #include "p2p/protocols/send/composite/Composite.h"
 #include "p2p/protocols/get/Get.h"
 
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/bgq/L2Counter.h"
 #include "components/atomic/counter/CounterBarrier.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 
@@ -83,7 +83,7 @@ namespace PAMI
 
   typedef Protocol::BGQ::P2PMcastAM<ShmemDevice, EagerShmem, Device::LocalBcastWQModel,Device::LocalBcastWQDevice> ActiveMessageMcast;
 
-  typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> Barrier_Type;
+  typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2NodeCounter> Barrier_Type;
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
 

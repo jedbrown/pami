@@ -5,7 +5,6 @@
 #ifndef __algorithms_protocols_broadcast_MultiCastComposite_h__
 #define __algorithms_protocols_broadcast_MultiCastComposite_h__
 
-#include "algorithms/executor/Broadcast.h"
 #include "algorithms/composite/Composite.h"
 #include "util/ccmi_util.h"
 
@@ -26,6 +25,7 @@ namespace CCMI
         PAMI::Topology                       _root;
         PAMI::Topology                       _destinations;
         PAMI::PipeWorkQueue                  _pwq;
+        pami_multicast_t                     _minfo;
 
       public:
         MultiCastComposite (Interfaces::NativeInterface          * mInterface,
@@ -34,7 +34,8 @@ namespace CCMI
                             pami_xfer_t                          * cmd,
                             pami_event_function                    fn,
                             void                                 * cookie) :
-        Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g), _xfer_broadcast(cmd->cmd.xfer_broadcast), _root(cmd->cmd.xfer_broadcast.root)
+        Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g), 
+          _xfer_broadcast(cmd->cmd.xfer_broadcast), _root(cmd->cmd.xfer_broadcast.root)
         {
           TRACE_ADAPTOR((stderr,"%s type %#zX, count %zu, root %zu\n", __PRETTY_FUNCTION__,(size_t)cmd->cmd.xfer_broadcast.type,cmd->cmd.xfer_broadcast.typecount,cmd->cmd.xfer_broadcast.root));
 
@@ -59,34 +60,39 @@ namespace CCMI
 //                          cmd->cmd.xfer_broadcast.typecount,
 //                          sizeOfType,
 //                          func );
-//        size_t size = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
+//        size_t bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
           
-          size_t size = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_BYTE?
+          size_t bytes = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_BYTE?
           if(cmd->cmd.xfer_broadcast.root == __global.mapping.task())
           {
-            _pwq.configure(NULL, cmd->cmd.xfer_broadcast.buf, size, size);
+            _pwq.configure(NULL, cmd->cmd.xfer_broadcast.buf, bytes, bytes);
           }
           else
           {
-            _pwq.configure(NULL, cmd->cmd.xfer_broadcast.buf, size, 0);
+            _pwq.configure(NULL, cmd->cmd.xfer_broadcast.buf, bytes, 0);
           }
           _pwq.reset();
+
+          _minfo.client             = 0;
+          _minfo.context            = 0; /// \todo ?
+          //_minfo.cb_done.function   = _cb_done;
+          //_minfo.cb_done.clientdata = _clientdata;
+          _minfo.connection_id      = 0;
+          _minfo.roles              = -1U;
+          _minfo.dst_participants   = (pami_topology_t *)&_destinations;
+          _minfo.src_participants   = (pami_topology_t *)&_root;
+          _minfo.src                = (pami_pipeworkqueue_t *)&_pwq;
+          _minfo.dst                = (pami_pipeworkqueue_t *)&_pwq;
+          _minfo.msgcount           = 0;
+          _minfo.bytes              = bytes;
         }
 
         virtual void start()
         {
           TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
-          pami_multicast_t  minfo;
-          minfo.cb_done.function   = _cb_done;
-          minfo.cb_done.clientdata = _clientdata;
-          minfo.connection_id      = 0;
-          minfo.roles              = -1U;
-          minfo.dst_participants   = (pami_topology_t *)&_destinations;
-          minfo.src_participants   = (pami_topology_t *)&_root;
-          // we already set the pwq appropriately for the src or dst, it should be ignored on the other parm.
-          minfo.src                = (pami_pipeworkqueue_t *)&_pwq;
-          minfo.dst                = (pami_pipeworkqueue_t *)&_pwq;
-          _native->multicast(&minfo);
+          _minfo.cb_done.function   = _cb_done;
+          _minfo.cb_done.clientdata = _clientdata;
+          _native->multicast(&_minfo);
         }
       };
     };
