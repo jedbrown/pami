@@ -26,23 +26,47 @@
 // A cheat to override GenericDeviceWorkQueue, etc...
 #include "GenericDevicePlatform.h" // prevent later inclusion...
 #if defined(GCCSAFE) && !defined(QUEUE_NAME)
-#define QUEUE_NAME	"GccThreadSafeQueue"
-#define GenericDeviceWorkQueue	PAMI::GccThreadSafeQueue
+#define QUEUE_NAME	"GccThreadSafeQueue<GccProcCounter>"
+#include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/gcc/GccCounter.h"
+#define GenericDeviceWorkQueue	PAMI::GccThreadSafeQueue<\
+		PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> >\
+		>
 #endif // GCCSAFE
 
+#if defined(CMPSAFE) && !defined(QUEUE_NAME)
+#include "util/queue/GccCmpSwapQueue.h"
+#define QUEUE_NAME	"GccThreadSafeQueue<GccCmpSwap>"
+#define GenericDeviceWorkQueue	PAMI::GccThreadSafeQueue<PAMI::GccCmpSwapQueue>
+#endif // CMPSAFE
+
 #if defined(L2MUTEX) && !defined(QUEUE_NAME)
-#include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/bgq/L2Mutex.h"
 #define QUEUE_NAME	"MutexedQueue<L2ProcMutex>"
 #define GenericDeviceWorkQueue	PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex>
 #endif // L2MUTEX
 
+#if defined(L2SAFE) && !defined(QUEUE_NAME)
+#include "components/atomic/bgq/L2Mutex.h"
+#define QUEUE_NAME	"GccThreadSafeQueue<L2ProcMutex>"
+#define GenericDeviceWorkQueue	PAMI::GccThreadSafeQueue<\
+		PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex>\
+		>
+#endif // L2SAFE
+
 #if defined(LBXMUTEX) && !defined(QUEUE_NAME)
-#include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/bgp/LockBoxMutex.h"
 #define QUEUE_NAME	"MutexedQueue<LockBoxProcMutex>"
 #define GenericDeviceWorkQueue	PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex>
 #endif // LBXMUTEX
+
+#if defined(LBXSAFE) && !defined(QUEUE_NAME)
+#include "components/atomic/bgp/LockBoxMutex.h"
+#define QUEUE_NAME	"GccThreadSafeQueue<LockBoxProcMutex>"
+#define GenericDeviceWorkQueue	PAMI::GccThreadSafeQueue<\
+		PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex>\
+		>
+#endif // LBXSAFE
 
 #if defined(GCCMUTEX) && !defined(QUEUE_NAME)
 #include "components/atomic/counter/CounterMutex.h"
@@ -52,15 +76,6 @@
 		PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>\
 		>
 #endif // GCCMUTEX
-
-#if defined(PTHMUTEX) && !defined(QUEUE_NAME)
-#include "components/atomic/counter/CounterMutex.h"
-#include "components/atomic/pthread/Pthread.h"
-#define QUEUE_NAME	"MutexedQueue<CounterMutex<Pthread>>"
-#define GenericDeviceWorkQueue	PAMI::MutexedQueue<\
-		PAMI::Mutex::CounterMutex<PAMI::Counter::Pthread>\
-		>
-#endif // PTHMUTEX
 
 #ifndef QUEUE_NAME
 #define QUEUE_NAME	"MutexedQueue<GenericDeviceMutex>"

@@ -194,6 +194,28 @@ namespace PAMI
         ///
         inline T_Element * next (T_Element * reference);
 
+        ///
+        /// \brief Removal all elements and return.
+	///
+	/// This is used to merge the queue contents onto another (private) queue.
+	///
+        /// \param[out] head	previous head of queue or NULL if empty
+        /// \param[out] tail	previous tail of queue if head not NULL
+        /// \param[out] size	previous size of queue if head not NULL
+	///
+	inline void removeAll(T_Element *&head, T_Element *&tail, size_t &size);
+
+        ///
+        /// \brief Append all elements and return.
+	///
+	/// This is used to merge the queue contents onto another (private) queue.
+	///
+        /// \param[out] head	head of elements to append
+        /// \param[out] tail	tail of elements to append
+        /// \param[out] size	size of elements to append
+	///
+	inline void appendAll(T_Element *head, T_Element *tail, size_t size);
+
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
         ///
         /// \brief Add an element to the tail of the queuei
@@ -476,6 +498,18 @@ template <class T_Queue, class T_Element>
 inline T_Element * PAMI::Interface::QueueInterface<T_Queue, T_Element>::next (T_Element * reference)
 {
   return static_cast<T_Queue *>(this)->next_impl (reference);
+}
+
+template <class T_Queue, class T_Element>
+inline void PAMI::Interface::QueueInterface<T_Queue, T_Element>::removeAll(T_Element *&head, T_Element *&tail, size_t &size)
+{
+	static_cast<T_Queue *>(this)->removeAll_impl(head, tail, size);
+}
+
+template <class T_Queue, class T_Element>
+inline void PAMI::Interface::QueueInterface<T_Queue, T_Element>::appendAll(T_Element *head, T_Element *tail, size_t size)
+{
+	static_cast<T_Queue *>(this)->appendAll_impl(head, tail, size);
 }
 
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES

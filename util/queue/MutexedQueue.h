@@ -101,7 +101,7 @@ class MutexedQueue :	public PAMI::Interface::DequeInterface<
 				MutexedQueueIterator<MutexedQueue<T_Mutex>, MutexedQueueElement>
 				> {
 public:
-
+	const static bool removeAll_can_race = false;
 	typedef MutexedQueueElement Element;
 	typedef MutexedQueueIterator<MutexedQueue<T_Mutex>, MutexedQueueElement> Iterator;
 
@@ -210,6 +210,32 @@ public:
 		Element *element = reference->next();
 		_mutex.release();
 		return element;
+	}
+
+	/// \copydoc PAMI::Interface::QueueInterface::removeAll
+	inline void removeAll_impl(Element *&head, Element *&tail, size_t &size)
+	{
+		_mutex.acquire();
+		head = _head;
+		tail = _tail;
+		size = _size;
+		_head = _tail = NULL;
+		_size = 0;
+		_mutex.release();
+	}
+
+	/// \copydoc PAMI::Interface::QueueInterface::appendAll
+	inline void appendAll_impl(Element *head, Element *tail, size_t size)
+	{
+		_mutex.acquire();
+		if (_tail) {
+			_tail->setNext(head);
+		} else {
+			_head = head;
+		}
+		_tail = tail;
+		_size += size;
+		_mutex.release();
 	}
 
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES

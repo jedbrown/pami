@@ -196,6 +196,28 @@ namespace PAMI
         return reference->next();
       };
 
+      /// \copydoc PAMI::Interface::QueueInterface::removeAll
+      inline void removeAll_impl(Element *&head, Element *&tail, size_t &size)
+      {
+	head = _head;
+	tail = _tail;
+	size = _size;
+	_head = _tail = NULL;
+	_size = 0;
+      }
+
+      /// \copydoc PAMI::Interface::QueueInterface::appendAll
+      inline void appendAll_impl(Element *head, Element *tail, size_t size)
+      {
+	if (_tail) {
+		_tail->setNext(head);
+	} else {
+		_head = head;
+	}
+	_tail = tail;
+	_size += size;
+      }
+
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
       /// \copydoc PAMI::Interface::QueueInterface::popTail
       inline Element * popTail_impl ()

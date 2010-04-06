@@ -20,6 +20,7 @@
 #include "util/queue/QueueInterface.h"
 #include "util/queue/QueueIteratorInterface.h"
 #include "components/memory/MemoryManager.h"
+#include "util/queue/Queue.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)
@@ -35,35 +36,131 @@
 
 namespace PAMI {
 
-	class GccThreadSafeQueueElement {
-	protected:
-
-		typedef struct element {
-			GccThreadSafeQueueElement *_next;
-		} element_t;
-
+	template <class T_Element>
+	class GccThreadSafePrivQueue :	public PAMI::Interface::QueueInterface<
+						GccThreadSafePrivQueue<T_Element>,
+						T_Element
+						>,
+					public PAMI::Interface::QueueInfoInterface<
+						GccThreadSafePrivQueue<T_Element>,
+						T_Element
+						>
+	{
 	public:
-		inline GccThreadSafeQueueElement() {
-			_elem._next = NULL;
+		const static bool removeAll_can_race = false;
+		typedef T_Element Element;
+
+		inline GccThreadSafePrivQueue() :
+		PAMI::Interface::QueueInterface<
+			GccThreadSafePrivQueue<T_Element>,
+			T_Element
+			>(),
+		PAMI::Interface::QueueInfoInterface<
+			GccThreadSafePrivQueue<T_Element>,
+			T_Element
+			>(),
+		_head(NULL),
+		_tail(NULL),
+		_size(0)
+		{}
+
+		inline void init(PAMI::Memory::MemoryManager *mm) {
+		}
+		inline void enqueue_impl(Element *e) {
+			e->setNext(NULL);
+			if (_tail) {
+				_tail->setNext(e);
+			} else {
+				_head = e;
+			}
+			_tail = e;
+			++_size;
 		}
 
-		inline ~GccThreadSafeQueueElement() {}
-
-		inline GccThreadSafeQueueElement *next() {
-			return _elem._next;
+		inline Element *dequeue_impl() {
+			Element *e = _head;
+			if (e) {
+				_head = e->next();
+				if (_head == NULL) _tail = NULL;
+				--_size;
+				e->setNext(NULL);
+			}
+			return e;
 		}
 
-		inline GccThreadSafeQueueElement **nextPtr() {
-			return &_elem._next;
+		inline void push_impl(Element *e) {
+			e->setNext(_head);
+			if (_head == NULL) _tail = e;
+			_head = e;
+			++_size;
 		}
 
-		inline void setNext(GccThreadSafeQueueElement *element) {
-			_elem._next = element;
+		inline Element *peek_impl() {
+			return _head;
 		}
 
-	protected:
-		element_t _elem;
-	}; // class GccThreadSafeQueueElement
+		inline bool isEmpty_impl() {
+			return (_head == NULL);
+		}
+
+		inline Element *next_impl(Element *reference) {
+			return reference->next();
+		}
+
+		inline pami_result_t removeIfSafe(Element *parent, bool canRace) {
+			Element *n, *e;
+
+			if (parent) e = parent->next();
+			else e = _head;
+			n = e->next();
+			if (n == NULL) {
+				if (canRace && _tail != e) {
+					// can't remove, an old appender is still appending...
+					return PAMI_EAGAIN;
+				}
+				_tail = parent;
+			}
+			if (parent) parent->setNext(n);
+			else _head = n;
+			e->setNext(NULL);
+			--_size;
+			return PAMI_SUCCESS;
+		}
+
+		inline void removeAll_impl(T_Element *&head, T_Element *&tail, size_t &size) {
+			head = _head;
+			tail = _tail;
+			size = _size;
+			_head = _tail = NULL;
+			_size = 0;
+		}
+
+		inline void appendAll_impl(T_Element *head, T_Element *tail, size_t size) {
+			if (_tail) {
+				_tail->setNext(head);
+			} else {
+				_head = head;
+			}
+			_tail = tail;
+			_size += size;
+		}
+
+		inline size_t size_impl() {
+			return _size;
+		}
+
+#ifdef VALIDATE_ON
+		inline void validate_impl() {
+			_pub_queue.validate();
+		}
+#endif
+
+	private:
+		T_Element *_head;
+		T_Element *_tail;
+		size_t _size;
+	}; // class GccThreadSafePrivQueue
+
 
 	/// \brief structure used to iterate over queue
 	///
@@ -73,153 +170,150 @@ namespace PAMI {
 	/// fields help allow removal from the middle. Since there is never
 	/// any contention for '_queue', removal is easier.
 	///
+	/// This is only used by the dequeuer thread, so only applies to the
+	/// _priv_queue.
+	///
 	template <class T_Queue, class T_Element>
 	struct GccThreadSafeQueueIterator {
-		T_Queue _queue;
 		T_Element *parent;
 		T_Element *next_par;
 		T_Element *curr;
 		T_Element *next;
 	};
 
+	template <class T_PubQueue>
 	class GccThreadSafeQueue :
 		public PAMI::Interface::DequeInterface<
-			GccThreadSafeQueue,
-			GccThreadSafeQueueElement
+			GccThreadSafeQueue<T_PubQueue>,
+			typename T_PubQueue::Element
 			>,
 		public PAMI::Interface::QueueInfoInterface<
-			GccThreadSafeQueue,
-			GccThreadSafeQueueElement
+			GccThreadSafeQueue<T_PubQueue>,
+			typename T_PubQueue::Element
 			>,
 		public PAMI::Interface::QueueIterator<
-			GccThreadSafeQueue,
-			GccThreadSafeQueueElement,
+			GccThreadSafeQueue<T_PubQueue>,
+			typename T_PubQueue::Element,
 			GccThreadSafeQueueIterator<
-					GccThreadSafeQueue,
-					GccThreadSafeQueueElement
+					GccThreadSafePrivQueue<typename T_PubQueue::Element>,
+					typename T_PubQueue::Element
 					>
 			>
 	{
 	public:
-		typedef GccThreadSafeQueueElement Element;
+		typedef typename T_PubQueue::Element Element;
 		typedef GccThreadSafeQueueIterator<
-			GccThreadSafeQueue,
-			GccThreadSafeQueueElement
+			GccThreadSafePrivQueue<typename T_PubQueue::Element>,
+			typename T_PubQueue::Element
 			> Iterator;
 
 		inline GccThreadSafeQueue() :
 		PAMI::Interface::DequeInterface<
-			GccThreadSafeQueue,
-			GccThreadSafeQueueElement
+			GccThreadSafeQueue<T_PubQueue>,
+			typename T_PubQueue::Element
 			>(),
 		PAMI::Interface::QueueInfoInterface<
-			GccThreadSafeQueue,
-			GccThreadSafeQueueElement
+			GccThreadSafeQueue<T_PubQueue>,
+			typename T_PubQueue::Element
 			>(),
 		PAMI::Interface::QueueIterator<
-			GccThreadSafeQueue,
-			GccThreadSafeQueueElement,
+			GccThreadSafeQueue<T_PubQueue>,
+			typename T_PubQueue::Element,
 			GccThreadSafeQueueIterator<
-					GccThreadSafeQueue,
-					GccThreadSafeQueueElement
+					GccThreadSafePrivQueue<typename T_PubQueue::Element>,
+					typename T_PubQueue::Element
 					>
 			>(),
-		_head(NULL),
-		_tail(NULL),
-		_size(0)
+		_priv_queue(),
+		_pub_queue()
 		{}
 
 		inline void init(PAMI::Memory::MemoryManager *mm) {
+			_priv_queue.init(mm);
+			_pub_queue.init(mm);
 		}
 
 		inline void enqueue_impl(Element *e) {
-			Element *t, *u;
-
-			e->setNext(NULL);
-			u = _tail;
-			do {
-				t = u;
-			} while ((u = __sync_val_compare_and_swap(&_tail, t, e)) != t);
-			if (t) {
-				// assert(t->next == NULL);
-				t->setNext(e); // t->next was NULL...
-			} else {
-				// q->tail already set to 'e'...
-				_head = e; // q->head was NULL...
-			}
-			//__sync_fetch_and_add(&_size, 1);
+			_pub_queue.enqueue(e);
 		}
 
 		inline Element *dequeue_impl() {
-			PAMI_abortf("dequeue not used - only merge");
-			return NULL;
+			return _pub_queue.dequeue();
 		}
 
 		inline void push_impl(Element *element) {
-			PAMI_abortf("push not used - only enqueue");
+			_pub_queue.push(element);
 		}
 
 		inline Element *peek_impl() {
-			return _head;
+			return _pub_queue.peek();
 		}
 
 		inline bool isEmpty_impl() {
-			return(_head == NULL);
+			return _pub_queue.isEmpty();
 		}
 
 		inline Element *next_impl(Element *reference) {
-			return reference->next();
+			return _pub_queue.next(reference);
 		}
 
 		inline Element *tail_impl() {
-			return _tail;
+			return _pub_queue.tail();
 		}
 
 		inline Element *before_impl(Element *reference) {
-			PAMI_abortf("before not supported");
-			return NULL;
+			return _pub_queue.before(reference);
 		}
 
 		inline void insert_impl(Element *reference, Element *element) {
-			PAMI_abortf("insert not supported");
+			_pub_queue.insert(reference, element);
 		}
 
 		inline void append_impl(Element *reference, Element *element) {
-			PAMI_abortf("append not supported");
+			_pub_queue.append(reference, element);
 		}
 
 		inline void remove_impl(Element *element) {
-			PAMI_abortf("SE Queue does not support simple remove");
+			_pub_queue.remove(element);
 		}
 
 		inline size_t size_impl() {
-			return _size;
+			return _pub_queue.size();
+		}
+
+		inline void removeAll_impl(Element *&head, Element *&tail, size_t &size) {
+			_pub_queue.removeAll(head, tail, size);
 		}
 
 		inline void dump_impl(const char *str, int n) {
-			PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+			_pub_queue.dump(str, n);
 		}
 
 #ifdef VALIDATE_ON
 		inline void validate_impl() {
-			PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+			_pub_queue.validate();
 		}
 #endif
 
 		// Iterator implementation
 
 		inline void iter_init_impl(Iterator *iter) {
-			new (&iter->_queue) GccThreadSafeQueue(); // nothing more needed?
 			iter->parent = iter->next_par = NULL;
 			iter->curr = iter->next = NULL;
 		}
 
 		inline bool iter_begin_impl(Iterator *iter) {
 			// pick up any new work...
-			bool did = __merge(&iter->_queue, this);
+			Element *h, *t;
+			size_t c;
+
+			_pub_queue.removeAll(h, t, c);
+			if (h) {
+				_priv_queue.appendAll(h, t, c);
+			}
 			iter->parent = NULL;
-			iter->curr = iter->_queue.peek();
-			return did; // 'true' if queue was altered
+			iter->curr = _priv_queue.peek();
+			return (h != NULL);
 		}
 
 		inline bool iter_check_impl(Iterator *iter) {
@@ -228,7 +322,7 @@ namespace PAMI {
 				return false;
 			}
 			// save next element, so we survive removal.
-			iter->next = iter->_queue.nextElem(iter->curr);
+			iter->next = _priv_queue.nextElem(iter->curr);
 			iter->next_par = iter->curr;
 			return true;
 		}
@@ -243,61 +337,18 @@ namespace PAMI {
 		}
 
 		inline pami_result_t iter_remove_impl(Iterator *iter) {
-			Element *n, *e, **h;
 
-			if (iter->parent) h = iter->parent->nextPtr();
-			else h = &iter->_queue._head;
-
-			e = *h;
-			// assert (iter->curr == e);
-			n = e->next();
-			if (n == NULL) {
-				if (iter->_queue._tail != e) {
-					// can't remove, an old appender is still appending...
-					return PAMI_EAGAIN;
-				}
-				iter->_queue._tail = iter->parent;
+			pami_result_t rc = _priv_queue.removeIfSafe(iter->parent,
+							_pub_queue.removeAll_can_race);
+			if (rc == PAMI_SUCCESS) {
+				iter->next_par = iter->parent; // keep same parent for next iter
 			}
-			*h = n;
-			e->setNext(NULL);
-			//main->_size -= 1;
-			iter->next_par = iter->parent; // keep same parent for next iter
-			return PAMI_SUCCESS;
-		}
-
-	private:
-		inline bool __merge(GccThreadSafeQueue *main,
-				GccThreadSafeQueue *new_work) {
-			Element *h, *t, *qt;
-			//size_t c;
-
-			h = new_work->peek();
-			if (!h) return false;
-
-			new_work->_head = NULL;
-			do {
-				t = new_work->_tail;
-				//c = new_work->_size;
-			} while (!__sync_bool_compare_and_swap(&new_work->_tail, t, NULL));
-
-			qt = main->_tail;
-			if (qt) {
-				// assert(qt->_next == NULL);
-				qt->setNext(h);
-			} else {
-				// assert(main->_head == NULL);
-				main->_head = h;
-			}
-			main->_tail = t;
-			//main->_size += c;
-			//__sync_fetch_and_add(&new_work->_size, -c);
-			return true;
+			return rc;
 		}
 
 	protected:
-		Element *_head;
-		Element *_tail;
-		size_t    _size;
+		GccThreadSafePrivQueue<typename T_PubQueue::Element> _priv_queue;
+		T_PubQueue _pub_queue;
 	}; // class GccThreadSafeQueue
 }; // namespace PAMI
 

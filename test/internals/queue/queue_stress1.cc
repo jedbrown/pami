@@ -41,34 +41,52 @@ static inline pid_t gettid() {
 #define MAX_PTHREADS	8
 #endif // MAX_PTHREADS
 
-#define QUEUE1_NAME	"GccThreadSafeQueue"
+#define QUEUE1_NAME	"GccThreadSafeQueue<GccProcCounter>"
 #define QUEUE1_TYPE	(1 << 0)
-typedef PAMI::GccThreadSafeQueue queue_1;
+typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> > queue_1a;
+typedef PAMI::GccThreadSafeQueue<queue_1a> queue_1;
 
 
 #define QUEUE2_NAME	"MutexedQueue<CounterMutex<GccProcCounter>>"
 #define QUEUE2_TYPE	(1 << 1)
 typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> > queue_2;
 
+#define QUEUE3_NAME	"GccThreadSafeQueue<GccCmpSwap>"
+#define QUEUE3_TYPE	(1 << 2)
+typedef PAMI::GccCmpSwapQueue queue_3a;
+typedef PAMI::GccThreadSafeQueue<queue_3a> queue_3;
+
 #ifdef __bgp__
 #include "components/atomic/bgp/LockBoxMutex.h"
-#define QUEUE3_NAME	"MutexedQueue<LockBoxProcMutex>"
-#define QUEUE3_TYPE	(1 << 2)
-typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex> queue_3;
+#define QUEUE4_NAME	"MutexedQueue<LockBoxProcMutex>"
+#define QUEUE4_TYPE	(1 << 3)
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex> queue_4;
+
+#define QUEUE5_NAME	"GccThreadSafeQueue<LockBoxProcMutex>"
+#define QUEUE5_TYPE	(1 << 4)
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex> queue_5a;
+typedef PAMI::GccThreadSafeQueue<queue_5a> queue_5;
+
+#define QUEUE_ALL	(QUEUE1_TYPE | QUEUE2_TYPE | QUEUE3_TYPE | QUEUE4_TYPE | QUEUE5_TYPE)
 #endif
 
 #ifdef __bgq__
 #include "components/atomic/bgq/L2Mutex.h"
-#define QUEUE3_NAME	"MutexedQueue<L2ProcMutex>"
-#define QUEUE3_TYPE	(1 << 2)
+#define QUEUE4_NAME	"MutexedQueue<L2ProcMutex>"
+#define QUEUE4_TYPE	(1 << 2)
 typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex> queue_3;
+
+#define QUEUE5_NAME	"GccThreadSafeQueue<L2ProcMutex>"
+#define QUEUE5_TYPE	(1 << 3)
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex> queue_4a;
+typedef PAMI::GccThreadSafeQueue<queue_4a> queue_4;
+
+#define QUEUE_ALL	(QUEUE1_TYPE | QUEUE2_TYPE | QUEUE3_TYPE | QUEUE4_TYPE | QUEUE5_TYPE)
 #endif
 
-#ifdef QUEUE3_NAME
+#ifndef QUEUE_ALL
 #define QUEUE_ALL	(QUEUE1_TYPE | QUEUE2_TYPE | QUEUE3_TYPE)
-#else // ! QUEUE3_NAME
-#define QUEUE_ALL	(QUEUE1_TYPE | QUEUE2_TYPE)
-#endif // ! QUEUE3_NAME
+#endif // ! QUEUE_ALL
 
 #undef DEBUG	// define/undef
 
@@ -287,12 +305,24 @@ int main(int argc, char **argv) {
 		QueueTest<queue_2,0> test2(QUEUE2_NAME, pthreads, elements, seed);
 		ret += test2.run_test();
 	}
-#ifdef QUEUE3_NAME
 	if (qtype & QUEUE3_TYPE) {
 		srand(seed);
 		QueueTest<queue_3,0> test3(QUEUE3_NAME, pthreads, elements, seed);
 		ret += test3.run_test();
 	}
-#endif // QUEUE3_NAME
+#ifdef QUEUE4_NAME
+	if (qtype & QUEUE4_TYPE) {
+		srand(seed);
+		QueueTest<queue_4,0> test4(QUEUE4_NAME, pthreads, elements, seed);
+		ret += test4.run_test();
+	}
+#endif // QUEUE4_NAME
+#ifdef QUEUE5_NAME
+	if (qtype & QUEUE5_TYPE) {
+		srand(seed);
+		QueueTest<queue_5,0> test5(QUEUE5_NAME, pthreads, elements, seed);
+		ret += test5.run_test();
+	}
+#endif // QUEUE5_NAME
 	exit(ret);
 }
