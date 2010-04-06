@@ -51,7 +51,7 @@ namespace PAMI
 
   typedef Mutex::CounterMutex<Counter::GccProcCounter>  ContextLock;
 
-  typedef MemoryAllocator<1152, 16> ProtocolAllocator;
+  typedef MemoryAllocator<2048, 16> ProtocolAllocator;
 
   /**
    * \brief Class containing all devices used on this platform.
@@ -218,9 +218,7 @@ namespace PAMI
         COMPILE_TIME_ASSERT(sizeof(GetShmem) <= ProtocolAllocator::objsize);
 #endif
 #ifdef ENABLE_MU_DEVICE
-#ifdef MU_COLL_DEVICE
         COMPILE_TIME_ASSERT(sizeof(MUGlobalNI) <= ProtocolAllocator::objsize);
-#endif
 #endif
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -228,11 +226,9 @@ namespace PAMI
 
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 #ifdef ENABLE_MU_DEVICE
-#ifdef MU_COLL_DEVICE
         // Can't construct NI until device is init()'d.  Ctor into member storage.
         _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _client, _context, _contextid, _clientid);
 
-#endif
 #endif
 
         _mcastModel         = (Device::LocalBcastWQModel*)_mcastModel_storage;
@@ -632,7 +628,6 @@ namespace PAMI
           }
 
 #ifdef ENABLE_MU_DEVICE
-#ifdef MU_COLL_DEVICE
         TRACE_ERR((stderr, "Context::dispatch_new_impl multicast %zu\n", id));
 
         if (_global_mu_ni == NULL) // lazy ctor
@@ -658,7 +653,6 @@ namespace PAMI
           }
 
 #endif
-#endif
         return result;
       }
 
@@ -671,7 +665,7 @@ namespace PAMI
 
       inline pami_result_t multicast_impl(pami_multicast_t *mcastinfo)
       {
-#if defined(ENABLE_MU_DEVICE) && defined (MU_COLL_DEVICE)
+#if defined(ENABLE_MU_DEVICE)
         TRACE_ERR((stderr, "Context::multicast_impl multicast %zu, %p\n", mcastinfo->dispatch, mcastinfo));
         CCMI::Interfaces::NativeInterface * ni = (CCMI::Interfaces::NativeInterface *) _dispatch[mcastinfo->dispatch];
         return ni->multicast(mcastinfo); // this version of ni allocates/frees our request storage for us.
@@ -689,7 +683,7 @@ namespace PAMI
 
       inline pami_result_t multisync_impl(pami_multisync_t *msyncinfo)
       {
-#if defined(ENABLE_MU_DEVICE) && defined (MU_COLL_DEVICE)
+#if defined(ENABLE_MU_DEVICE)
 
         if (_global_mu_ni == NULL) // lazy ctor
           {
@@ -709,7 +703,7 @@ namespace PAMI
 
       inline pami_result_t multicombine_impl(pami_multicombine_t *mcombineinfo)
       {
-#if defined(ENABLE_MU_DEVICE) && defined (MU_COLL_DEVICE)
+#if defined(ENABLE_MU_DEVICE) 
 
         if (_global_mu_ni == NULL) // lazy ctor
           {
@@ -763,7 +757,7 @@ namespace PAMI
       uint8_t                      _native_interface_storage[sizeof(AllSidedNI)];
       ProtocolAllocator            _protocol;
       PlatformDeviceList          *_devices;
-#if defined(ENABLE_MU_DEVICE) && defined (MU_COLL_DEVICE)
+#if defined(ENABLE_MU_DEVICE)
       MUGlobalNI                  *_global_mu_ni;
       uint8_t                      _global_mu_ni_storage[sizeof(MUGlobalNI)];
 #endif

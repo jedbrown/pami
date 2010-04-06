@@ -15,8 +15,7 @@
 #define __common_bgq_TypeDefs_h__
 
 #define ENABLE_SHMEM_DEVICE
-//#define ENABLE_MU_DEVICE
-//#define MU_COLL_DEVICE
+#define ENABLE_MU_DEVICE
 
 #ifdef ENABLE_SHMEM_DEVICE
   #include "components/devices/shmem/ShmemDevice.h"
@@ -32,13 +31,11 @@
   #include "components/devices/bgq/mu/MUPacketModel.h"
   #include "components/devices/bgq/mu/MUInjFifoMessage.h"
 
-  #ifdef MU_COLL_DEVICE
-    #include "components/devices/bgq/mu/MUCollDevice.h"
-    #include "components/devices/bgq/mu/MUMulticastModel.h"
-    #include "components/devices/bgq/mu/MUMultisyncModel.h"
-    #include "components/devices/bgq/mu/MUMulticombineModel.h"
-    #include "common/bgq/NativeInterface.h"
-  #endif
+  #include "components/devices/bgq/mu/MUCollDevice.h"
+  #include "components/devices/bgq/mu/MUMulticastModel.h"
+  #include "components/devices/bgq/mu/MUMultisyncModel.h"
+  #include "components/devices/bgq/mu/MUMulticombineModel.h"
+  #include "common/bgq/NativeInterface.h"
 #endif
 
 #include "p2p/protocols/send/eager/Eager.h"
@@ -50,100 +47,58 @@
 #include "components/devices/misc/AtomicBarrierMsg.h"
 
 #include "common/bgq/NativeInterface.h"
+
 #define PAMI_GEOMETRY_NUMALGOLISTS 4
 #include "algorithms/geometry/Geometry.h"
 
 
 namespace PAMI
 {
-  typedef Geometry::Common                                           BGQGeometry;
+  typedef Geometry::Common                     BGQGeometry;
 
 #ifdef ENABLE_MU_DEVICE
-#ifdef MU_COLL_DEVICE
   typedef Device::MU::MUCollDevice MUDevice;
   typedef BGQNativeInterface < MUDevice,
-  Device::MU::MUMulticastModel,
-  Device::MU::MUMultisyncModel,
-  Device::MU::MUMulticombineModel > MUGlobalNI;
-#ifndef ENABLE_SHMEM_DEVICE
-  typedef CollRegistration::CCMIRegistration < BGQGeometry, MUGlobalNI, MUGlobalNI, MUDevice > CCMICollreg;
+                               Device::MU::MUMulticastModel,
+                               Device::MU::MUMultisyncModel,
+                               Device::MU::MUMulticombineModel > MUGlobalNI;
 
-#endif
-#else
-  typedef Device::MU::MUDevice MUDevice;
-#endif
+  #ifndef ENABLE_SHMEM_DEVICE
+    typedef MUGlobalNI AllSidedNI; // Something is required for collectives registration
+  #endif
 #endif
 
 #ifdef ENABLE_SHMEM_DEVICE
   //typedef Fifo::FifoPacket <32, 992> ShmemPacket;
-  typedef Fifo::FifoPacket <32, 512> ShmemPacket;
   //typedef Fifo::LinearFifo<Atomic::BGQ::L2ProcCounter, ShmemPacket, 16> ShmemFifo;
-  typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
   //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
+
+  typedef Fifo::FifoPacket <32, 512> ShmemPacket;
+  typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
 
   typedef Protocol::Send::Eager <ShmemModel, ShmemDevice> EagerShmem;
   typedef Protocol::Get::Get <ShmemModel, ShmemDevice> GetShmem;
 
-  typedef Protocol::BGQ::P2PMcastAM<ShmemDevice,
-  EagerShmem,
-  Device::LocalBcastWQModel,
-  Device::LocalBcastWQDevice> ActiveMessageMcast;
+  typedef Protocol::BGQ::P2PMcastAM<ShmemDevice, EagerShmem, Device::LocalBcastWQModel,Device::LocalBcastWQDevice> ActiveMessageMcast;
 
   typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> Barrier_Type;
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
 
-/* junk
-  template <
-  class T_DEVICE1,
-  class T_DEVICE2,
-  class T_MODEL>
-  class HideIt: public T_MODEL
-  {
-  public:
-    inline HideIt(T_DEVICE1 &device, pami_result_t& status):
-      T_MODEL(*bogus_device2, status)
-    {
-    }
-    T_DEVICE2* bogus_device2;
-  };
-
-  typedef HideIt<ShmemDevice, Device::AtomicBarrierDev, Barrier_Model> HBarrier_Model;
-  typedef HideIt<ShmemDevice, Device::LocalReduceWQDevice, Device::LocalReduceWQModel> HLocalReduce;
-  typedef HideIt<ShmemDevice, Device::LocalBcastWQDevice, Device::LocalBcastWQModel> HLocalBcast;
-
-
-  typedef BGQNativeInterface < ShmemDevice,
-  ActiveMessageMcast,
-  HBarrier_Model,
-  HLocalReduce,
-  OneSided > ActiveMessageNI;
-*/
-
   typedef BGQNativeInterfaceAS <Device::LocalBcastWQModel, Barrier_Model,Device::LocalReduceWQModel> AllSidedNI;
 
-#define PAMI_COLL_MCAST_CLASS  PAMI::ActiveMessageMcast
-#define PAMI_COLL_M2M_CLASS    PAMI::ActiveMessageMcast /// \todo ? m2m support
-#define PAMI_COLL_SYSDEP_CLASS SysDep
-#define PAMI_NATIVEINTERFACE   PAMI::ActiveMessageNI
-#define PAMI_GEOMETRY_CLASS    PAMI::BGQGeometry
-
-
-#else
-#ifdef ENABLE_MU_DEVICE
+#else // no shmem, need a default eager protocol (assume MU)
   typedef Protocol::Send::Eager < Device::MU::MUPacketModel, MUDevice > EagerMu;
-#define PAMI_COLL_MCAST_CLASS  PAMI::Device::MU::MUMulticastModel
-#define PAMI_COLL_M2M_CLASS    PAMI::Device::MU::MUMulticastModel
-#define PAMI_COLL_SYSDEP_CLASS SysDep
-#define PAMI_NATIVEINTERFACE   PAMI::Device::MU::MUGlobalNI
-#define PAMI_GEOMETRY_CLASS    PAMI::Geometry::Common
-#endif
 #endif
 }
 
-
+//#define PAMI_COLL_MCAST_CLASS 
+//#define PAMI_COLL_M2M_CLASS   
+//#define PAMI_COLL_SYSDEP_CLASS SysDep
+//#define PAMI_NATIVEINTERFACE
+#define PAMI_GEOMETRY_CLASS    PAMI::BGQGeometry
 
 #endif
