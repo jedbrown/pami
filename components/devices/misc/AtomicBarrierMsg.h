@@ -53,37 +53,30 @@ namespace Device {
 template <class T_Barrier> class AtomicBarrierMsg;
 template <class T_Barrier> class AtomicBarrierMdl;
 typedef PAMI::Device::Generic::GenericAdvanceThread AtomicBarrierThr;
-class AtomicBarrierDev : public PAMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> {
+// This device is never instantiated
+class AtomicBarrierDev {
 public:
         class Factory : public Interface::FactoryInterface<Factory,AtomicBarrierDev,Generic::Device> {
         public:
-                static inline AtomicBarrierDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+                static inline AtomicBarrierDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices);
                 static inline pami_result_t init_impl(AtomicBarrierDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
                 static inline size_t advance_impl(AtomicBarrierDev *devs, size_t client, size_t context);
                 static inline AtomicBarrierDev & getDevice_impl(AtomicBarrierDev *devs, size_t client, size_t context);
         }; // class Factory
-        inline PAMI::Memory::MemoryManager *getSysdep() { return _mm; }
-protected:
-        PAMI::Memory::MemoryManager *_mm;
 }; // class AtomicBarrierDev
 
 }; //-- Device
 }; //-- PAMI
 
-extern PAMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
-
 namespace PAMI {
 namespace Device {
 
-inline AtomicBarrierDev *AtomicBarrierDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
-        return &_g_lmbarrier_dev;
+inline AtomicBarrierDev *AtomicBarrierDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices) {
+        return (AtomicBarrierDev *)devices;
 }
 
 inline pami_result_t AtomicBarrierDev::Factory::init_impl(AtomicBarrierDev *devs, size_t client, size_t contextid, pami_client_t clt, pami_context_t context, Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
-        if (client == 0 && contextid == 0) {
-                _g_lmbarrier_dev._mm = mm;
-        }
-        return _g_lmbarrier_dev.__init(client, contextid, clt, context, mm, devices);
+	return PAMI_SUCCESS;
 }
 
 inline size_t AtomicBarrierDev::Factory::advance_impl(AtomicBarrierDev *devs, size_t clientid, size_t contextid) {
@@ -91,7 +84,8 @@ inline size_t AtomicBarrierDev::Factory::advance_impl(AtomicBarrierDev *devs, si
 }
 
 inline AtomicBarrierDev & AtomicBarrierDev::Factory::getDevice_impl(AtomicBarrierDev *devs, size_t clientid, size_t contextid) {
-        return _g_lmbarrier_dev;
+	PAMI::Device::Generic::Device *gds = (PAMI::Device::Generic::Device *)devs;
+        return (AtomicBarrierDev &)PAMI::Device::Generic::Device::Factory::getDevice(gds, clientid, contextid);
 }
 
 ///
@@ -132,13 +126,17 @@ protected:
 public:
         // virtual function
         pami_context_t postNext(bool devQueued) {
-                return _g_lmbarrier_dev.__postNext<AtomicBarrierMsg>(this, devQueued);
+		PAMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> *qs =
+			(PAMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> *)getQS();
+                return qs->__postNext<AtomicBarrierMsg>(this, devQueued);
         }
 
         inline int setThreads(AtomicBarrierThr **th) {
+		PAMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> *qs =
+			(PAMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> *)getQS();
                 AtomicBarrierThr *t;
                 int n;
-                _g_lmbarrier_dev.__getThreads(&t, &n);
+                qs->__getThreads(&t, &n);
                 t->setMsg(this);
                 t->setAdv(advanceThread);
                 t->setStatus(PAMI::Device::Ready);
@@ -161,12 +159,13 @@ public:
           PAMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier>,
                         AtomicBarrierDev,sizeof(AtomicBarrierMsg<T_Barrier>) >(device, status)
         {
-                // assert(device == _g_lmbarrier_dev);
+		_gd = (PAMI::Device::Generic::Device *)&device;
                 // "default" barrier: all local processes...
                 size_t peers = __global.topology_local.size();
                 size_t peer0 = __global.topology_local.index2Rank(0);
                 size_t me = __global.mapping.task();
-                _barrier.init(_g_lmbarrier_dev.getSysdep(), peers, (peer0 == me));
+                _barrier.init(_gd->getMM(), peers, (peer0 == me));
+		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
         }
 
         inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
@@ -174,6 +173,8 @@ public:
 
 private:
         T_Barrier _barrier;
+	PAMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> _queue;
+	PAMI::Device::Generic::Device *_gd;
 }; // class AtomicBarrierMdl
 
 }; //-- Device
@@ -187,7 +188,7 @@ inline pami_result_t PAMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_im
         for (int x = 0; x < 32; ++x) {
                 if (_barrier.poll() == PAMI::Atomic::Interface::Done) {
                         if (msync->cb_done.function) {
-                                pami_context_t ctx = _g_lmbarrier_dev.getGenerics(msync->client)[msync->context].getContext();
+                                pami_context_t ctx = _gd->getContext();
                                 msync->cb_done.function(ctx, msync->cb_done.clientdata, PAMI_SUCCESS);
                         }
                         return PAMI_SUCCESS;
@@ -195,8 +196,8 @@ inline pami_result_t PAMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_im
         }
         // must "continue" current barrier, not start new one!
         AtomicBarrierMsg<T_Barrier> *msg;
-        msg = new (&state) AtomicBarrierMsg<T_Barrier>(_g_lmbarrier_dev.getQS(), &_barrier, msync);
-        _g_lmbarrier_dev.__post<AtomicBarrierMsg<T_Barrier> >(msg);
+        msg = new (&state) AtomicBarrierMsg<T_Barrier>(_queue.getQS(), &_barrier, msync);
+        _queue.__post<AtomicBarrierMsg<T_Barrier> >(msg);
         return PAMI_SUCCESS;
 }
 

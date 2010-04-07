@@ -48,7 +48,7 @@ class giDevice : public PAMI::Device::Generic::MultiSendQSubDevice<giThread,1,tr
 public:
         class Factory : public Interface::FactoryInterface<Factory,giDevice,Generic::Device> {
         public:
-                static inline giDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm);
+                static inline giDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices);
                 static inline pami_result_t init_impl(giDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
                 static inline size_t advance_impl(giDevice *devs, size_t client, size_t contextId);
                 static inline giDevice & getDevice_impl(giDevice *devs, size_t client, size_t contextId);
@@ -65,7 +65,7 @@ namespace PAMI {
 namespace Device {
 namespace BGP {
 
-inline giDevice *giDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+inline giDevice *giDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices) {
         return &_g_gibarrier_dev;
 }
 

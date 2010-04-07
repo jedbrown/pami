@@ -35,7 +35,7 @@ class LocalReduceWQDevice : public PAMI::Device::Generic::MultiSendQSubDevice<Lo
 public:
         class Factory : public Interface::FactoryInterface<Factory,LocalReduceWQDevice,Generic::Device> {
         public:
-                static inline LocalReduceWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+                static inline LocalReduceWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices);
                 static inline pami_result_t init_impl(LocalReduceWQDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
                 static inline size_t advance_impl(LocalReduceWQDevice *devs, size_t client, size_t context);
                 static inline LocalReduceWQDevice & getDevice_impl(LocalReduceWQDevice *devs, size_t client, size_t context);
@@ -53,7 +53,7 @@ extern PAMI::Device::LocalReduceWQDevice _g_l_reducewq_dev;
 namespace PAMI {
 namespace Device {
 
-inline LocalReduceWQDevice *LocalReduceWQDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+inline LocalReduceWQDevice *LocalReduceWQDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices) {
         return &_g_l_reducewq_dev;
 }
 

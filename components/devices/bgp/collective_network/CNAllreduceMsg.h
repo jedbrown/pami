@@ -65,7 +65,7 @@ public:
         }
         class Factory : public Interface::FactoryInterface<Factory,CNAllreduceDevice,Generic::Device> {
         public:
-                static inline CNAllreduceDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+                static inline CNAllreduceDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices);
                 static inline pami_result_t init_impl(CNAllreduceDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
                 static inline size_t advance_impl(CNAllreduceDevice *devs, size_t client, size_t context);
                 static CNAllreduceDevice &getDevice_impl(CNAllreduceDevice *devs, size_t client, size_t context);
@@ -82,7 +82,7 @@ namespace PAMI {
 namespace Device {
 namespace BGP {
 
-inline CNAllreduceDevice *CNAllreduceDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+inline CNAllreduceDevice *CNAllreduceDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices) {
         return &_g_cnallreduce_dev;
 }
 

@@ -46,8 +46,8 @@ public:
         Multisync(const char *test, PAMI::Memory::MemoryManager &mm) :
         _name(test)
         {
-                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm);
-                _dev = T_MultisyncDevice::Factory::generate(0, 1, mm);
+                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm, NULL);
+                _dev = T_MultisyncDevice::Factory::generate(0, 1, mm, _generics);
 
                 PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
                 T_MultisyncDevice::Factory::init(_dev, 0, 0, NULL, (pami_context_t)1, &mm, _generics);

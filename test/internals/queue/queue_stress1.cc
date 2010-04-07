@@ -27,6 +27,7 @@
 #include "components/memory/MemoryManager.h"
 #include "util/queue/GccThreadSafeMultiQueue.h"
 #include "util/queue/GccThreadSafeQueue.h"
+#include "util/queue/GccCmpSwapQueue.h"
 #include "util/queue/MutexedMultiQueue.h"
 #include "util/queue/Queue.h"
 #include "util/queue/MutexedQueue.h"

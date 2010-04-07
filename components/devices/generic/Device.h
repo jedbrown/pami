@@ -216,7 +216,7 @@ public:
                 /// \param[in] num_ctx	Number of contexts being created in client
                 /// \param[in] mm	Memory manager (for shmem alloc, if needed)
                 /// \return	Array of devices
-                static inline Device *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm) {
+                static inline Device *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices) {
                         size_t x;
                         Device *gds;
                         int rc = posix_memalign((void **)&gds, 16, sizeof(*gds) * num_ctx);
@@ -236,7 +236,7 @@ public:
                 /// \param[in] devices		Generic Device array (same as devs in this case)
                 /// \return	Error code
                 static inline pami_result_t init_impl(Device *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
-                        return getDevice_impl(devs, client, contextId).init(ctx, client, contextId, mm);
+                        return getDevice_impl(devs, client, contextId).init(ctx, client, contextId, mm, devices);
                 }
                 /// \brief Advance this device for client/context
                 /// \param[in] devs	Device array returned by generate call
@@ -279,8 +279,10 @@ public:
         /// \param[in] client	Client ID
         /// \param[in] context	Context ID
         /// \return	Error code
-        inline pami_result_t init(pami_context_t ctx, size_t client, size_t context, PAMI::Memory::MemoryManager *mm) {
+        inline pami_result_t init(pami_context_t ctx, size_t client, size_t context, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
                 __context = ctx;
+		__mm = mm;
+		__allGds = devices;
                 __Threads.init(mm);
 #ifndef QUEUE_NO_ITER
 		__Threads.iter_init(&__ThrIter);
@@ -401,6 +403,7 @@ public:
         /// \brief accessor for the context-id associated with generic device slice
         /// \return	context ID
         inline size_t contextId() { return __contextId; }
+        inline size_t clientId() { return __clientId; }
 
         /// \brief accessor for the total number of contexts in this client
         /// \return	number of contexts/generic device slices
@@ -409,6 +412,10 @@ public:
         /// \brief accessor for the context associated with generic device slice
         /// \return	context handle
         inline pami_context_t getContext() { return __context; }
+
+        inline Memory::MemoryManager *getMM() { return __mm; }
+
+        inline PAMI::Device::Generic::Device *getAllDevs() { return __allGds; }
 
 private:
         /// \brief Storage for the queue for message completion
@@ -428,6 +435,8 @@ private:
         size_t __clientId;		///< client ID for context
         size_t __contextId;		///< context ID
         size_t __nContexts;		///< number of contexts in client
+	Memory::MemoryManager *__mm;
+	Device *__allGds;
 }; /* class Device */
 
 }; /* namespace Generic */

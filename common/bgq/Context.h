@@ -88,29 +88,29 @@ namespace PAMI
         // these calls create (allocate and construct) each element.
         // We don't know how these relate to contexts, they are semi-opaque.
         TRACE_ERR((stderr, "device init: generic\n"));
-        _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
+        _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm, NULL);
 #ifdef ENABLE_SHMEM_DEVICE
          TRACE_ERR((stderr,"device init: shmem\n"));
-        _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
+        _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm, _generics);
         TRACE_ERR((stderr,"device init shmem done, progress func\n"));
 #endif
          TRACE_ERR((stderr,"device init: progress function\n"));
-        _progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
+        _progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm, _generics);
         TRACE_ERR((stderr,"device init: atomic barrier\n"));
-        _atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
+        _atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm, _generics);
         TRACE_ERR((stderr,"device init: wqring reduce\n"));
-        _wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
+        _wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm, _generics);
         TRACE_ERR((stderr,"device init: wqring bcast\n"));
-        _wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
+        _wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm, _generics);
         TRACE_ERR((stderr,"device init: local allreduce wq\n"));
-        _localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+        _localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
         TRACE_ERR((stderr,"device init: local bcast wq\n"));
-        _localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
+        _localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
         TRACE_ERR((stderr,"device init: local reduce wq\n"));
-        _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+        _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
 #ifdef ENABLE_MU_DEVICE
          TRACE_ERR((stderr,"device init: MU\n"));
-        _mu = MUDevice::Factory::generate(clientid, num_ctx, mm);
+        _mu = MUDevice::Factory::generate(clientid, num_ctx, mm, _generics);
 #endif
          TRACE_ERR((stderr,"device init: done!\n"));
         return PAMI_SUCCESS;

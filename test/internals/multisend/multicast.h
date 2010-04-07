@@ -95,8 +95,8 @@ public:
         Multicast(const char *test, PAMI::Memory::MemoryManager &mm) :
         _name(test)
         {
-                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm);
-                _dev = T_MulticastDevice::Factory::generate(0, 1, mm);
+                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm, NULL);
+                _dev = T_MulticastDevice::Factory::generate(0, 1, mm, _generics);
 
                 PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
                 T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
@@ -108,8 +108,8 @@ public:
     _dispatch_id(dispatch_id)
         {
 
-                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm);
-                _dev = T_MulticastDevice::Factory::generate(0, 1, mm);
+                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm, NULL);
+                _dev = T_MulticastDevice::Factory::generate(0, 1, mm, _generics);
 
                 PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
                 T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, (pami_context_t)1, &mm, _generics);

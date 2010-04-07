@@ -33,7 +33,7 @@ class WQRingReduceDev : public PAMI::Device::Generic::MultiSendQSubDevice<WQRing
 public:
         class Factory : public Interface::FactoryInterface<Factory,WQRingReduceDev,Generic::Device> {
         public:
-                static inline WQRingReduceDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+                static inline WQRingReduceDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices);
                 static inline pami_result_t init_impl(WQRingReduceDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
                 static inline size_t advance_impl(WQRingReduceDev *devs, size_t client, size_t context);
                 static inline WQRingReduceDev & getDevice_impl(WQRingReduceDev *devs, size_t client, size_t context);
@@ -51,7 +51,7 @@ extern PAMI::Device::WQRingReduceDev _g_wqreduce_dev;
 namespace PAMI {
 namespace Device {
 
-inline WQRingReduceDev *WQRingReduceDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+inline WQRingReduceDev *WQRingReduceDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices) {
         return &_g_wqreduce_dev;
 }
 

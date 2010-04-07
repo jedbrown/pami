@@ -20,7 +20,7 @@ class ShmemZeroDevice {
 public:
 	class Factory : public PAMI::Device::Interface::FactoryInterface<Factory,ShmemZeroDevice,PAMI::Device::Generic::Device> {
 	public:
-		static inline ShmemZeroDevice *generate_impl(size_t client, size_t num_ctx, PAMI::Memory::MemoryManager & mm);
+		static inline ShmemZeroDevice *generate_impl(size_t client, size_t num_ctx, PAMI::Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices);
 		static inline pami_result_t init_impl(ShmemZeroDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
 		static inline size_t advance_impl(ShmemZeroDevice *devs, size_t client, size_t context);
 		static inline ShmemZeroDevice & getDevice_impl(ShmemZeroDevice *devs, size_t client, size_t context);
@@ -32,7 +32,7 @@ public:
 
 ShmemZeroDevice __dev;
 
-inline ShmemZeroDevice *ShmemZeroDevice::Factory::generate_impl(size_t clientid, size_t nctx, PAMI::Memory::MemoryManager &mm) {
+inline ShmemZeroDevice *ShmemZeroDevice::Factory::generate_impl(size_t clientid, size_t nctx, PAMI::Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices) {
 	return &__dev;
 }
 

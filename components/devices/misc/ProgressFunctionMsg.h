@@ -37,7 +37,7 @@ class ProgressFunctionDev {
 public:
         class Factory : public Interface::FactoryInterface<Factory,ProgressFunctionDev,Generic::Device>  {
         public:
-                static inline ProgressFunctionDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+                static inline ProgressFunctionDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices);
                 static inline pami_result_t init_impl(ProgressFunctionDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
                 static inline size_t advance_impl(ProgressFunctionDev *devs, size_t client, size_t context);
                 static inline ProgressFunctionDev & getDevice_impl(ProgressFunctionDev *devs, size_t client, size_t context);
@@ -68,7 +68,7 @@ extern PAMI::Device::ProgressFunctionDev _g_progfunc_dev;
 namespace PAMI {
 namespace Device {
 
-inline ProgressFunctionDev *ProgressFunctionDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm) {
+inline ProgressFunctionDev *ProgressFunctionDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices) {
         return &_g_progfunc_dev;
 }
 

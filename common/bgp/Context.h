@@ -103,21 +103,21 @@ namespace PAMI
     inline pami_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
         // these calls create (allocate and construct) each element.
         // We don't know how these relate to contexts, they are semi-opaque.
-        _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm);
-        _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm);
-        _progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm);
-        _atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm);
-        _wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm);
-        _wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm);
-        _localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm);
-        _localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm);
-        _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm);
+        _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm, NULL);
+        _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        _progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm, _generics);
+        _atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm, _generics);
+        _wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm, _generics);
+        _wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm, _generics);
+        _localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        _localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
         // BGP-specific devices...
-        _gibarr = PAMI::Device::BGP::giDevice::Factory::generate(clientid, num_ctx, mm);
-        _cnallred = PAMI::Device::BGP::CNAllreduceDevice::Factory::generate(clientid, num_ctx, mm);
-        _cnppallred = PAMI::Device::BGP::CNAllreducePPDevice::Factory::generate(clientid, num_ctx, mm);
-        _cn2pallred = PAMI::Device::BGP::CNAllreduce2PDevice::Factory::generate(clientid, num_ctx, mm);
-        _cnbcast = PAMI::Device::BGP::CNBroadcastDevice::Factory::generate(clientid, num_ctx, mm);
+        _gibarr = PAMI::Device::BGP::giDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        _cnallred = PAMI::Device::BGP::CNAllreduceDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        _cnppallred = PAMI::Device::BGP::CNAllreducePPDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        _cn2pallred = PAMI::Device::BGP::CNAllreduce2PDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        _cnbcast = PAMI::Device::BGP::CNBroadcastDevice::Factory::generate(clientid, num_ctx, mm, _generics);
         return PAMI_SUCCESS;
     }
 

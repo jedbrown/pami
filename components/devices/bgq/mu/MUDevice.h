@@ -80,25 +80,25 @@ namespace PAMI
           class Factory : public Interface::FactoryInterface<Factory, MUDevice, PAMI::Device::Generic::Device>
           {
             public:
-              static inline MUDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm)
+              static inline MUDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices)
               {
                 size_t i;
                 TRACE((stderr, ">> MUDevice::Factory::generate_impl() n = %zu\n", n));
 
                 // Allocate an array of mu devices, one for each
                 // context in this _task_ (from heap, not from shared memory)
-                MUDevice * devices;
-                int rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
+                MUDevice * MUs;
+                int rc = posix_memalign((void **) & MUs, 16, sizeof(*MUs) * n);
                 PAMI_assertf(rc == 0, "posix_memalign failed for MUDevice[%zu], errno=%d\n", n, errno);
 
                 // Instantiate the shared memory devices
                 for (i = 0; i < n; ++i)
                   {
-                    new (&devices[i]) MUDevice (clientid, n, i);
+                    new (&MUs[i]) MUDevice (clientid, n, i);
                   }
 
                 TRACE((stderr, "<< MUDevice::Factory::generate_impl()\n"));
-                return devices;
+                return MUs;
               };
 
               static inline pami_result_t init_impl (MUDevice       * devices,

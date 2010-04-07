@@ -134,7 +134,7 @@ public:
 		double d = t1;
 		base_t = d / x;
 
-		queue = PAMI::Device::Generic::Device::Factory::generate(0, num_ctx, mm);
+		queue = PAMI::Device::Generic::Device::Factory::generate(0, num_ctx, mm, NULL);
 		for (x = 0; x < num_ctx; ++x) {
 			PAMI::Device::Generic::Device::Factory::init(queue, 0, x,
 							(pami_client_t)(x+1),

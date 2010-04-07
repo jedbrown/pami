@@ -46,7 +46,7 @@ namespace PAMI
 
         class Factory : public Interface::FactoryInterface<Factory,MPIBcastDev,Generic::Device> {
         public:
-                static inline MPIBcastDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+                static inline MPIBcastDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices);
                 static inline pami_result_t init_impl(MPIBcastDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
                 static inline size_t advance_impl(MPIBcastDev *devs, size_t client, size_t context);
                 static MPIBcastDev &getDevice_impl(MPIBcastDev *devs, size_t client, size_t context);
@@ -63,7 +63,7 @@ namespace PAMI
   namespace Device
   {
 
-inline MPIBcastDev *MPIBcastDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+inline MPIBcastDev *MPIBcastDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices) {
         return &_g_mpibcast_dev;
 }
 

@@ -35,7 +35,7 @@ namespace PAMI
 
         public:
 
-          static inline T_Device * generate (size_t clientid, size_t num_ctx, Memory::MemoryManager & mm);
+          static inline T_Device * generate (size_t clientid, size_t num_ctx, Memory::MemoryManager & mm, T_Progress * progress);
 
           static inline pami_result_t init (T_Device      * devices,
                                            size_t          clientid,
@@ -59,9 +59,9 @@ namespace PAMI
 };        // PAMI namespace
 
 template <class T_Factory, class T_Device, class T_Progress>
-T_Device * PAMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::generate (size_t clientid, size_t num_ctx, Memory::MemoryManager &mm)
+T_Device * PAMI::Device::Interface::FactoryInterface<T_Factory,T_Device,T_Progress>::generate (size_t clientid, size_t num_ctx, Memory::MemoryManager &mm, T_Progress * progress)
 {
-   return T_Factory::generate_impl (clientid, num_ctx, mm);
+   return T_Factory::generate_impl (clientid, num_ctx, mm, progress);
 };
 
 template <class T_Factory, class T_Device, class T_Progress>

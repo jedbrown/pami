@@ -262,7 +262,7 @@ namespace PAMI
         class Factory : public Interface::FactoryInterface<Factory, ShmemDevice, PAMI::Device::Generic::Device>
         {
           public:
-            static inline ShmemDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm)
+            static inline ShmemDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *gds)
             {
               size_t i;
               TRACE_ERR((stderr, ">> ShmemDevice::Factory::generate_impl() n = %zu\n", n));

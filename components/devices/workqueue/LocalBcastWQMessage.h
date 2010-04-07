@@ -35,7 +35,7 @@ class LocalBcastWQDevice : public PAMI::Device::Generic::MultiSendQSubDevice<Loc
 public:
         class Factory : public Interface::FactoryInterface<Factory,LocalBcastWQDevice,Generic::Device> {
         public:
-                static inline LocalBcastWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm);
+                static inline LocalBcastWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices);
                 static inline pami_result_t init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
                 static inline size_t advance_impl(LocalBcastWQDevice *devs, size_t client, size_t context);
                 static inline LocalBcastWQDevice & getDevice_impl(LocalBcastWQDevice *devs, size_t client, size_t context);
@@ -53,7 +53,7 @@ extern PAMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
 namespace PAMI {
 namespace Device {
 
-inline LocalBcastWQDevice *LocalBcastWQDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm) {
+inline LocalBcastWQDevice *LocalBcastWQDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices) {
         return &_g_l_bcastwq_dev;
 }
 

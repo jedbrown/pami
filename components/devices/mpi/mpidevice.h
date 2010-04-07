@@ -75,7 +75,7 @@ namespace PAMI
         class Factory : public Interface::FactoryInterface<Factory,MPIDevice,Generic::Device> {
         public:
 
-static inline MPIDevice *generate_impl(size_t clientid, size_t num_ctx, Memory::MemoryManager & mm) {
+static inline MPIDevice *generate_impl(size_t clientid, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices) {
         size_t x;
         MPIDevice *devs;
         int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
