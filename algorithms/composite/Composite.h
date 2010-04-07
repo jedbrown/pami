@@ -24,12 +24,6 @@ namespace CCMI
   {
 
     class Composite {
-    private:
-      /// This is required to make "C" programs link successfully with virtual destructors.
-      inline void operator delete(void * p)
-      {
-        PAMI_abort();
-      }
     public:
       //Base Composite class
       Composite() {TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));}

@@ -16,12 +16,6 @@ namespace CCMI
     {
 
       class MultiSyncComposite : public CCMI::Executor::Composite {
-      private:
-        /// This is required to make "C" programs link successfully with virtual destructors.
-        inline void operator delete(void * p)
-        {
-          PAMI_abort();
-        }
       protected:
         Interfaces::NativeInterface        * _native;
         PAMI_GEOMETRY_CLASS                 * _geometry;

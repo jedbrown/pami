@@ -278,12 +278,6 @@ namespace PAMI
       ///
       class WorkQueue : public _BaseWorkQueue
       {
-        private:
-          /// This is required to make "C" programs link successfully with virtual destructors.
-          inline void operator delete(void * p)
-          {
-            PAMI_abort();
-          }
         public:
 
           ///
@@ -710,12 +704,6 @@ namespace PAMI
       ///
       class NonVirtWorkQueue : public _BaseWorkQueue
       {
-        private:
-          /// This is required to make "C" programs link successfully with virtual destructors.
-          inline void operator delete(void * p)
-          {
-            PAMI_abort();
-          }
         public:
 
           ///
