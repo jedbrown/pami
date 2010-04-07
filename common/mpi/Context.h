@@ -469,7 +469,7 @@ namespace PAMI
           return PAMI_UNIMPL;
         }
 
-      inline pami_result_t memregion_deregister_impl (pami_memregion_t * memregion)
+      inline pami_result_t memregion_deregister_impl (pami_memregion_t memregion)
         {
           PAMI_abort();
           return PAMI_UNIMPL;

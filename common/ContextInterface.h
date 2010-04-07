@@ -56,7 +56,7 @@ namespace PAMI
                                                 size_t            bytes,
                                                 pami_memregion_t * memregion);
 
-        inline pami_result_t memregion_deregister (pami_memregion_t * memregion);
+        inline pami_result_t memregion_deregister (pami_memregion_t memregion);
 
         inline pami_result_t memregion_query (pami_memregion_t    memregion,
                                              void            ** address,
@@ -238,7 +238,7 @@ namespace PAMI
     }
 
     template <class T_Context>
-    pami_result_t Context<T_Context>::memregion_deregister (pami_memregion_t * memregion)
+    pami_result_t Context<T_Context>::memregion_deregister (pami_memregion_t memregion)
     {
       return static_cast<T_Context*>(this)->memregion_deregister_impl(memregion);
     }

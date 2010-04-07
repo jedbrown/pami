@@ -1206,6 +1206,16 @@ extern "C" pami_result_t PAMI_Memregion_register (pami_context_t     context,
     return ctx->memregion_register(address, bytes, memregion);
 }
 
+///
+/// \copydoc PAMI_Memregion_deregister
+///
+extern "C" pami_result_t PAMI_Memregion_deregister (pami_context_t   context,
+                                                    pami_memregion_t memregion)
+{
+    PAMI::Context   * ctx = (PAMI::Context *) context;
+    return ctx->memregion_deregister(memregion);
+}
+
 
 ///
 /// \copydoc PAMI_Rput

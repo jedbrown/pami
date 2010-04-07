@@ -347,14 +347,14 @@ namespace PAMI
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t memregion_register (void            * address,
+      inline pami_result_t memregion_register_impl (void            * address,
                                               size_t            bytes,
                                               pami_memregion_t * memregion)
       {
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t memregion_deregister (pami_memregion_t * memregion)
+      inline pami_result_t memregion_deregister_impl (pami_memregion_t memregion)
       {
         return PAMI_UNIMPL;
       }
