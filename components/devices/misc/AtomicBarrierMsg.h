@@ -53,40 +53,9 @@ namespace Device {
 template <class T_Barrier> class AtomicBarrierMsg;
 template <class T_Barrier> class AtomicBarrierMdl;
 typedef PAMI::Device::Generic::GenericAdvanceThread AtomicBarrierThr;
+typedef PAMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> AtomicBarrierQue;
 // This device is never instantiated
-class AtomicBarrierDev {
-public:
-        class Factory : public Interface::FactoryInterface<Factory,AtomicBarrierDev,Generic::Device> {
-        public:
-                static inline AtomicBarrierDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices);
-                static inline pami_result_t init_impl(AtomicBarrierDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
-                static inline size_t advance_impl(AtomicBarrierDev *devs, size_t client, size_t context);
-                static inline AtomicBarrierDev & getDevice_impl(AtomicBarrierDev *devs, size_t client, size_t context);
-        }; // class Factory
-}; // class AtomicBarrierDev
-
-}; //-- Device
-}; //-- PAMI
-
-namespace PAMI {
-namespace Device {
-
-inline AtomicBarrierDev *AtomicBarrierDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices) {
-        return (AtomicBarrierDev *)devices;
-}
-
-inline pami_result_t AtomicBarrierDev::Factory::init_impl(AtomicBarrierDev *devs, size_t client, size_t contextid, pami_client_t clt, pami_context_t context, Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
-	return PAMI_SUCCESS;
-}
-
-inline size_t AtomicBarrierDev::Factory::advance_impl(AtomicBarrierDev *devs, size_t clientid, size_t contextid) {
-        return 0;
-}
-
-inline AtomicBarrierDev & AtomicBarrierDev::Factory::getDevice_impl(AtomicBarrierDev *devs, size_t clientid, size_t contextid) {
-	PAMI::Device::Generic::Device *gds = (PAMI::Device::Generic::Device *)devs;
-        return (AtomicBarrierDev &)PAMI::Device::Generic::Device::Factory::getDevice(gds, clientid, contextid);
-}
+typedef PAMI::Device::Generic::NillSubDevice AtomicBarrierDev;
 
 ///
 /// \brief A local barrier message that takes advantage of the
@@ -126,14 +95,12 @@ protected:
 public:
         // virtual function
         pami_context_t postNext(bool devQueued) {
-		PAMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> *qs =
-			(PAMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> *)getQS();
+		AtomicBarrierQue *qs = (AtomicBarrierQue *)getQS();
                 return qs->__postNext<AtomicBarrierMsg>(this, devQueued);
         }
 
         inline int setThreads(AtomicBarrierThr **th) {
-		PAMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> *qs =
-			(PAMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> *)getQS();
+		AtomicBarrierQue *qs = (AtomicBarrierQue *)getQS();
                 AtomicBarrierThr *t;
                 int n;
                 qs->__getThreads(&t, &n);
@@ -159,7 +126,7 @@ public:
           PAMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier>,
                         AtomicBarrierDev,sizeof(AtomicBarrierMsg<T_Barrier>) >(device, status)
         {
-		_gd = (PAMI::Device::Generic::Device *)&device;
+		_gd = &device;
                 // "default" barrier: all local processes...
                 size_t peers = __global.topology_local.size();
                 size_t peer0 = __global.topology_local.index2Rank(0);
@@ -173,7 +140,7 @@ public:
 
 private:
         T_Barrier _barrier;
-	PAMI::Device::Generic::MultiSendQSubDevice<AtomicBarrierThr,1,true> _queue;
+	AtomicBarrierQue _queue;
 	PAMI::Device::Generic::Device *_gd;
 }; // class AtomicBarrierMdl
 

@@ -470,6 +470,35 @@ protected:
         PAMI::Device::Generic::Device *_generics[PAMI_MAX_NUM_CLIENTS]; ///< generic device arrays
 }; // class MultiSendQSubDevice
 
+class NillSubDevice : public PAMI::Device::Generic::Device {
+public:
+	class Factory : public Interface::FactoryInterface<Factory,NillSubDevice,PAMI::Device::Generic::Device> {
+	public:
+		static inline NillSubDevice *generate_impl(size_t clientid, size_t num_ctx,
+						Memory::MemoryManager & mm,
+						PAMI::Device::Generic::Device *devices) {
+			return (NillSubDevice *)devices;
+		}
+		static inline pami_result_t init_impl(NillSubDevice *devs,
+						size_t clientid, size_t contextid,
+						pami_client_t clt, pami_context_t ctx,
+						PAMI::Memory::MemoryManager *mm,
+						PAMI::Device::Generic::Device *devices) {
+			return PAMI_SUCCESS;
+		}
+		static inline size_t advance_impl(NillSubDevice *devs,
+						size_t clientid, size_t contextid) {
+			return 0;
+		}
+		static inline NillSubDevice &getDevice_impl(NillSubDevice *devs,
+						size_t clientid, size_t contextid) {
+			return (NillSubDevice &)
+				PAMI::Device::Generic::Device::Factory::getDevice(devs,
+								clientid, contextid);
+		}
+	}; // class NillSubDevice::Factory
+}; // class NillSubDevice
+
 ///
 /// Implements a shared-queue for use by multiple different Thr/Msg/Dev/Mdl sets
 /// which all share the same hardware (system) resource. Such a family of sets

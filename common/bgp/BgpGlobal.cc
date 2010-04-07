@@ -28,9 +28,6 @@ pami_coord_t PAMI::Topology::my_coords;
 #include "components/devices/bgp/global_interrupt/GIBarrierMsg.h"
 PAMI::Device::BGP::giDevice _g_gibarrier_dev;
 
-#include "components/devices/misc/AtomicBarrierMsg.h"
-PAMI::Device::AtomicBarrierDev _g_lmbarrier_dev;
-
 #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
 PAMI::Device::LocalAllreduceWQDevice _g_l_allreducewq_dev;
 
