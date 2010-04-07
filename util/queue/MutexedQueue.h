@@ -206,9 +206,7 @@ public:
 	/// \copydoc PAMI::Interface::QueueInterface::next
 	inline Element *next_impl(Element *reference)
 	{
-		_mutex.acquire();
 		Element *element = reference->next();
-		_mutex.release();
 		return element;
 	}
 
@@ -276,9 +274,7 @@ public:
 	/// \copydoc PAMI::Interface::DequeInterface::before
 	inline Element *before_impl(Element *reference)
 	{
-		_mutex.acquire();
 		Element *element = reference->prev();
-		_mutex.release();
 		return element;
 	}
 
@@ -351,32 +347,6 @@ public:
 	}
 #endif
 
-#ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
-	/// \copydoc PAMI::Interface::QueueInfoInterface::insertElem
-	inline void insertElem_impl(Element *element, size_t position) {
-		if (position == 0) {
-			this->push(element);
-			_size++;
-			return;
-		}
-		_mutex.acquire();
-
-		size_t i;
-		Element *insert = _head;
-
-		for (i = 1; i < position; i++) {
-			insert = insert->next();
-		}
-
-		element->set(insert, insert->next());
-		insert->setNext(element);
-		_size++;
-		_mutex.release();
-
-		return;
-	}
-#endif
-
 // Iterator implementation:
 // This all works because there is only one thread removing (the iterator),
 // all others only append new work.
@@ -395,7 +365,7 @@ public:
 			// done with this pass...
 			return false;
 		}
-		iter->next = this->nextElem(iter->curr);
+		iter->next = iter->curr->next();
 		return true;
 	}
 

@@ -48,7 +48,7 @@ typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCount
 typedef PAMI::GccThreadSafeQueue<queue_1a> queue_1;
 
 
-#define QUEUE2_NAME	"MutexedQueue<CounterMutex<GccProcCounter>>"
+#define QUEUE2_NAME	"MutexedQueue<GccProcCounter>"
 #define QUEUE2_TYPE	(1 << 1)
 typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> > queue_2;
 
@@ -89,7 +89,7 @@ typedef PAMI::GccThreadSafeQueue<queue_5a> queue_5;
 #define QUEUE_ALL	(QUEUE1_TYPE | QUEUE2_TYPE | QUEUE3_TYPE)
 #endif // ! QUEUE_ALL
 
-#undef DEBUG	// define/undef
+#define DEBUG	// define/undef
 
 template <class T_Queue, int T_BackoffNS = 0>
 class QueueTest {
@@ -269,7 +269,7 @@ int main(int argc, char **argv) {
 	int pthreads = 4;
 	int elements = 1000;
 	int seed = 1;
-	int qtype = QUEUE_ALL; // default to all tests
+	int qtype = 0;
 
 	//extern int optind;
 	extern char *optarg;
@@ -294,7 +294,7 @@ int main(int argc, char **argv) {
 			break;
 		}
 	}
-	if (!qtype) qtype = 1;
+	if (!qtype) qtype = QUEUE_ALL; // default to all tests
 	int ret = 0;
 	if (qtype & QUEUE1_TYPE) {
 		srand(seed);

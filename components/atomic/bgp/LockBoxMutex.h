@@ -49,6 +49,7 @@ namespace BGP {
                 }
                 void acquire_impl() {
                         LockBox_MutexLock((LockBox_Mutex_t)_addr);
+			mem_sync();
                 }
                 void release_impl() {
                         LockBox_MutexUnlock((LockBox_Mutex_t)_addr);
