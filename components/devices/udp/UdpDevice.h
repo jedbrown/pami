@@ -50,7 +50,7 @@ namespace PAMI
         class Factory : public Interface::FactoryInterface<Factory, UdpDevice, PAMI::Device::Generic::Device>
         {
           public:
-            static inline UdpDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices)
+            static inline UdpDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *gds)
             {
               if ( __global.mapping.activateUdp() != PAMI_SUCCESS ) abort();
 

@@ -124,9 +124,9 @@ public:
 
         AtomicBarrierMdl(AtomicBarrierDev &device, pami_result_t &status) :
           PAMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier>,
-                        AtomicBarrierDev,sizeof(AtomicBarrierMsg<T_Barrier>) >(device, status)
+                        AtomicBarrierDev,sizeof(AtomicBarrierMsg<T_Barrier>) >(device, status),
+	_gd(&device)
         {
-		_gd = &device;
                 // "default" barrier: all local processes...
                 size_t peers = __global.topology_local.size();
                 size_t peer0 = __global.topology_local.index2Rank(0);
@@ -139,9 +139,9 @@ public:
                                                pami_multisync_t *msync);
 
 private:
+	PAMI::Device::Generic::Device *_gd;
         T_Barrier _barrier;
 	AtomicBarrierQue _queue;
-	PAMI::Device::Generic::Device *_gd;
 }; // class AtomicBarrierMdl
 
 }; //-- Device

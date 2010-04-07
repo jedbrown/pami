@@ -31,46 +31,8 @@ namespace Device {
 class LocalBcastWQModel;
 class LocalBcastWQMessage;
 typedef PAMI::Device::Generic::GenericAdvanceThread LocalBcastWQThread;
-class LocalBcastWQDevice : public PAMI::Device::Generic::MultiSendQSubDevice<LocalBcastWQThread,1,true> {
-public:
-        class Factory : public Interface::FactoryInterface<Factory,LocalBcastWQDevice,Generic::Device> {
-        public:
-                static inline LocalBcastWQDevice *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices);
-                static inline pami_result_t init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
-                static inline size_t advance_impl(LocalBcastWQDevice *devs, size_t client, size_t context);
-                static inline LocalBcastWQDevice & getDevice_impl(LocalBcastWQDevice *devs, size_t client, size_t context);
-        }; // class Factory
-        inline PAMI::Memory::MemoryManager *getSysdep() { return _mm; }
-protected:
-        PAMI::Memory::MemoryManager *_mm;
-}; // class LocalBcastWQDevice
-
-}; // namespace Device
-}; // namespace PAMI
-
-extern PAMI::Device::LocalBcastWQDevice _g_l_bcastwq_dev;
-
-namespace PAMI {
-namespace Device {
-
-inline LocalBcastWQDevice *LocalBcastWQDevice::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices) {
-        return &_g_l_bcastwq_dev;
-}
-
-inline pami_result_t LocalBcastWQDevice::Factory::init_impl(LocalBcastWQDevice *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
-        if (client == 0 && contextId == 0) {
-                _g_l_bcastwq_dev._mm = mm;
-        }
-        return _g_l_bcastwq_dev.__init(client, contextId, clt, ctx, mm, devices);
-}
-
-inline size_t LocalBcastWQDevice::Factory::advance_impl(LocalBcastWQDevice *devs, size_t client, size_t contextid) {
-        return 0;
-}
-
-inline LocalBcastWQDevice & LocalBcastWQDevice::Factory::getDevice_impl(LocalBcastWQDevice *devs, size_t client, size_t contextid) {
-        return _g_l_bcastwq_dev;
-}
+typedef PAMI::Device::Generic::MultiSendQSubDevice<LocalBcastWQThread,1,true> LocalBcastWQPendQ;
+typedef PAMI::Device::Generic::NillSubDevice LocalBcastWQDevice;
 
 class LocalBcastWQMessage : public PAMI::Device::Generic::GenericMessage {
 public:
@@ -132,13 +94,15 @@ protected:
 public:
         // virtual function
         pami_context_t postNext(bool devQueued) {
-                return _g_l_bcastwq_dev.__postNext<LocalBcastWQMessage>(this, devQueued);
+		LocalBcastWQPendQ *qs = (LocalBcastWQPendQ *)getQS();
+                return qs->__postNext<LocalBcastWQMessage>(this, devQueued);
         }
 
         inline int setThreads(LocalBcastWQThread **th) {
+		LocalBcastWQPendQ *qs = (LocalBcastWQPendQ *)getQS();
                 LocalBcastWQThread *t;
                 int n;
-                _g_l_bcastwq_dev.__getThreads(&t, &n);
+                qs->__getThreads(&t, &n);
                 t[0].setMsg(this);
                 t[0].setAdv(advanceThread);
                 t[0].setStatus(PAMI::Device::Ready);
@@ -162,12 +126,12 @@ public:
 
         LocalBcastWQModel(LocalBcastWQDevice &device, pami_result_t &status) :
         PAMI::Device::Interface::MulticastModel<LocalBcastWQModel,LocalBcastWQDevice,sizeof(LocalBcastWQMessage)>(device, status),
-        _shared(_g_l_bcastwq_dev.getSysdep()),
+	_gd(&device),
+        _shared(_gd->getMM()),
         _peer(__global.topology_local.rank2Index(__global.mapping.task())),
         _npeers(__global.topology_local.size())
         {
             TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-                // assert(device == _g_l_bcastwq_dev);
                 if (!_shared.available()) {
                         status = PAMI_ERROR;
                         return;
@@ -176,6 +140,7 @@ public:
                 _shared.setConsumers(_npeers - 1, 0);
                 // since we hard-code topology_local, we know _peer==0 exists...
                 _shared.barrier_reset(_npeers, (_peer == 0));
+		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
         }
 
         inline void reset_impl() {
@@ -187,9 +152,11 @@ public:
         inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                                pami_multicast_t *mcast);
 private:
+	PAMI::Device::Generic::Device *_gd;
         PAMI::Device::WorkQueue::SharedWorkQueue _shared;
         unsigned _peer;
         unsigned _npeers;
+	LocalBcastWQPendQ _queue;
 }; // class LocalBcastWQModel
 
 inline pami_result_t LocalBcastWQModel::postMulticast_impl(uint8_t (&state)[sizeof_msg],
@@ -203,9 +170,9 @@ inline pami_result_t LocalBcastWQModel::postMulticast_impl(uint8_t (&state)[size
         if (isrootrole) consumer = 0; // hack!
         _shared.setConsumers(_npeers - 1, consumer);
         LocalBcastWQMessage *msg =
-                new (&state) LocalBcastWQMessage(_g_l_bcastwq_dev.getQS(),
+                new (&state) LocalBcastWQMessage(_queue.getQS(),
                         mcast, _shared, isrootrole);
-        _g_l_bcastwq_dev.__post<LocalBcastWQMessage>(msg);
+        _queue.__post<LocalBcastWQMessage>(msg);
         return PAMI_SUCCESS;
 }
 

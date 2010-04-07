@@ -29,46 +29,8 @@ namespace Device {
 class WQRingBcastMdl;
 class WQRingBcastMsg;
 typedef PAMI::Device::Generic::SimpleAdvanceThread WQRingBcastThr;
-class WQRingBcastDev : public PAMI::Device::Generic::MultiSendQSubDevice<WQRingBcastThr,1,true> {
-public:
-        class Factory : public Interface::FactoryInterface<Factory,WQRingBcastDev,Generic::Device> {
-        public:
-                static inline WQRingBcastDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices);
-                static inline pami_result_t init_impl(WQRingBcastDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
-                static inline size_t advance_impl(WQRingBcastDev *devs, size_t client, size_t context);
-                static inline WQRingBcastDev & getDevice_impl(WQRingBcastDev *devs, size_t client, size_t context);
-        }; // class Factory
-        inline PAMI::Memory::MemoryManager *getSysdep() { return _mm; }
-protected:
-        PAMI::Memory::MemoryManager *_mm;
-}; // class WQRingBcastDev
-
-}; //-- Device
-}; //-- PAMI
-
-extern PAMI::Device::WQRingBcastDev _g_wqbcast_dev;
-
-namespace PAMI {
-namespace Device {
-
-inline WQRingBcastDev *WQRingBcastDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices) {
-        return &_g_wqbcast_dev;
-}
-
-inline pami_result_t WQRingBcastDev::Factory::init_impl(WQRingBcastDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
-        if (client == 0 && contextId == 0) {
-                _g_wqbcast_dev._mm = mm;
-        }
-        return _g_wqbcast_dev.__init(client, contextId, clt, ctx, mm, devices);
-}
-
-inline size_t WQRingBcastDev::Factory::advance_impl(WQRingBcastDev *devs, size_t client, size_t contextId) {
-        return 0;
-}
-
-inline WQRingBcastDev & WQRingBcastDev::Factory::getDevice_impl(WQRingBcastDev *devs, size_t client, size_t contextId) {
-        return _g_wqbcast_dev;
-}
+typedef PAMI::Device::Generic::MultiSendQSubDevice<WQRingBcastThr,1,true> WQRingBcastQue;
+typedef PAMI::Device::Generic::NillSubDevice WQRingBcastDev;
 
 ///
 /// \brief A local bcast message that takes advantage of the
@@ -98,13 +60,15 @@ public:
 
         // virtual function
         pami_context_t postNext(bool devQueued) {
-                return _g_wqbcast_dev.__postNext<WQRingBcastMsg>(this, devQueued);
+		WQRingBcastQue *qs = (WQRingBcastQue *)getQS();
+                return qs->__postNext<WQRingBcastMsg>(this, devQueued);
         }
 
         inline int setThreads(WQRingBcastThr **th) {
+		WQRingBcastQue *qs = (WQRingBcastQue *)getQS();
                 WQRingBcastThr *t;
                 int n;
-                _g_wqbcast_dev.__getThreads(&t, &n);
+                qs->__getThreads(&t, &n);
                 int nt = 0;
                 // assert(nt < n);
                 _nThreads = 1; // must predict total number of threads
@@ -212,10 +176,10 @@ public:
         static const size_t sizeof_msg = sizeof(WQRingBcastMsg);
 
         WQRingBcastMdl(WQRingBcastDev &device, pami_result_t &status) :
-        PAMI::Device::Interface::MulticastModel<WQRingBcastMdl,WQRingBcastDev,sizeof(WQRingBcastMsg)>(device, status)
+        PAMI::Device::Interface::MulticastModel<WQRingBcastMdl,WQRingBcastDev,sizeof(WQRingBcastMsg)>(device, status),
+	_gd(&device)
         {
-                // assert(device == _g_wqbcast_dev);
-                PAMI::Memory::MemoryManager *mm = _g_wqbcast_dev.getSysdep();
+                PAMI::Memory::MemoryManager *mm = _gd->getMM();
                 _me = __global.mapping.task();
                 size_t t0 = __global.topology_local.index2Rank(0);
                 size_t tz;
@@ -228,12 +192,15 @@ public:
 #endif /* ! USE_FLAT_BUFFER */
                         _wq[x].barrier_reset(tz, _me == t0);
                 }
+		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
         }
 
         inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                                pami_multicast_t *mcast);
 
 private:
+	PAMI::Device::Generic::Device *_gd;
+	WQRingBcastQue _queue;
         size_t _me;
         PAMI::PipeWorkQueue _wq[PAMI_MAX_PROC_PER_NODE];
 }; // class WQRingBcastMdl
@@ -276,13 +243,13 @@ inline pami_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_
 #ifdef USE_FLAT_BUFFER
                 _wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
-                msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev.getQS(), mcast,
+                msg = new (&state) WQRingBcastMsg(_queue.getQS(), mcast,
                                         (PAMI::PipeWorkQueue *)mcast->src, &_wq[meix_1], NULL);
         } else if (iamlast) {
                 // I am tail of stream - no one is downstream from me.
                 // PAMI_assert(roles == NON_ROOT_ROLE);
                 // _wq[meix_1] ===> results
-                msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev.getQS(), mcast,
+                msg = new (&state) WQRingBcastMsg(_queue.getQS(), mcast,
                                         &_wq[meix], NULL, (PAMI::PipeWorkQueue *)mcast->dst);
         } else {
                 // PAMI_assert(roles == NON_ROOT_ROLE);
@@ -291,10 +258,10 @@ inline pami_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_
 #ifdef USE_FLAT_BUFFER
                 _wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
-                msg = new (&state) WQRingBcastMsg(_g_wqbcast_dev.getQS(), mcast,
+                msg = new (&state) WQRingBcastMsg(_queue.getQS(), mcast,
                                         &_wq[meix], &_wq[meix_1], (PAMI::PipeWorkQueue *)mcast->dst);
         }
-        _g_wqbcast_dev.__post<WQRingBcastMsg>(msg);
+        _queue.__post<WQRingBcastMsg>(msg);
         return PAMI_SUCCESS;
 }
 

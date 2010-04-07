@@ -29,46 +29,8 @@ namespace Device {
 class WQRingReduceMdl;
 class WQRingReduceMsg;
 typedef PAMI::Device::Generic::SimpleAdvanceThread WQRingReduceThr;
-class WQRingReduceDev : public PAMI::Device::Generic::MultiSendQSubDevice<WQRingReduceThr,1,true> {
-public:
-        class Factory : public Interface::FactoryInterface<Factory,WQRingReduceDev,Generic::Device> {
-        public:
-                static inline WQRingReduceDev *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices);
-                static inline pami_result_t init_impl(WQRingReduceDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices);
-                static inline size_t advance_impl(WQRingReduceDev *devs, size_t client, size_t context);
-                static inline WQRingReduceDev & getDevice_impl(WQRingReduceDev *devs, size_t client, size_t context);
-        }; // class Factory
-        inline PAMI::Memory::MemoryManager *getSysdep() { return _mm; }
-protected:
-        PAMI::Memory::MemoryManager *_mm;
-}; // class WQRingReduceDev
-
-}; //-- Device
-}; //-- PAMI
-
-extern PAMI::Device::WQRingReduceDev _g_wqreduce_dev;
-
-namespace PAMI {
-namespace Device {
-
-inline WQRingReduceDev *WQRingReduceDev::Factory::generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager &mm, PAMI::Device::Generic::Device *devices) {
-        return &_g_wqreduce_dev;
-}
-
-inline pami_result_t WQRingReduceDev::Factory::init_impl(WQRingReduceDev *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
-        if (client == 0 && contextId == 0) {
-                _g_wqreduce_dev._mm = mm;
-        }
-        return _g_wqreduce_dev.__init(client, contextId, clt, ctx, mm, devices);
-}
-
-inline size_t WQRingReduceDev::Factory::advance_impl(WQRingReduceDev *devs, size_t client, size_t contextId) {
-        return 0;
-}
-
-inline WQRingReduceDev & WQRingReduceDev::Factory::getDevice_impl(WQRingReduceDev *devs, size_t client, size_t contextId) {
-        return _g_wqreduce_dev;
-}
+typedef PAMI::Device::Generic::MultiSendQSubDevice<WQRingReduceThr,1,true> WQRingReduceQue;
+typedef PAMI::Device::Generic::NillSubDevice WQRingReduceDev;
 
 ///
 /// \brief A local barrier message that takes advantage of the
@@ -107,13 +69,15 @@ public:
 
         // virtual function
         pami_context_t postNext(bool devQueued) {
-                return _g_wqreduce_dev.__postNext<WQRingReduceMsg>(this, devQueued);
+		WQRingReduceQue *qs = (WQRingReduceQue *)getQS();
+                return qs->__postNext<WQRingReduceMsg>(this, devQueued);
         }
 
         inline int setThreads(WQRingReduceThr **th) {
+		WQRingReduceQue *qs = (WQRingReduceQue *)getQS();
                 WQRingReduceThr *t;
                 int n;
-                _g_wqreduce_dev.__getThreads(&t, &n);
+                qs->__getThreads(&t, &n);
                 int nt = 0;
                 // assert(nt < n);
                 _nThreads = 1; // must predict total number of threads
@@ -220,10 +184,10 @@ public:
         static const size_t sizeof_msg = sizeof(WQRingReduceMsg);
 
         WQRingReduceMdl(WQRingReduceDev &device, pami_result_t &status) :
-        PAMI::Device::Interface::MulticombineModel<WQRingReduceMdl,WQRingReduceDev,sizeof(WQRingReduceMsg)>(device, status)
+        PAMI::Device::Interface::MulticombineModel<WQRingReduceMdl,WQRingReduceDev,sizeof(WQRingReduceMsg)>(device, status),
+	_gd(&device)
         {
-                // assert(device == _g_wqreduce_dev);
-                PAMI::Memory::MemoryManager *mm = _g_wqreduce_dev.getSysdep();
+                PAMI::Memory::MemoryManager *mm = _gd->getMM();
                 _me = __global.mapping.task();
                 size_t t0 = __global.topology_local.index2Rank(0);
                 size_t tz;
@@ -236,6 +200,7 @@ public:
 #endif /* ! USE_FLAT_BUFFER */
                         _wq[x].barrier_reset(tz, _me == t0);
                 }
+		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
         }
 
         inline void reset_impl() {}
@@ -243,6 +208,8 @@ public:
         inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb);
 
 private:
+	PAMI::Device::Generic::Device *_gd;
+	WQRingReduceQue _queue;
         size_t _me;
         PAMI::PipeWorkQueue _wq[PAMI_MAX_PROC_PER_NODE];
 }; // class WQRingReduceMdl
@@ -286,7 +253,7 @@ inline pami_result_t WQRingReduceMdl::postMulticombine_impl(uint8_t (&state)[siz
                 // I am root - downstream from eveyone.
                 // _input (op) _wq[meix_1] => _output
                 // PAMI_assert(roles == ROOT_ROLE);
-                msg = new (&state) WQRingReduceMsg(_g_wqreduce_dev.getQS(), mcomb,
+                msg = new (&state) WQRingReduceMsg(_queue.getQS(), mcomb,
                                         (PAMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], (PAMI::PipeWorkQueue *)mcomb->results);
         } else if (results_topo->isRankMember(me_1)) {
                 // I am head of stream.
@@ -294,7 +261,7 @@ inline pami_result_t WQRingReduceMdl::postMulticombine_impl(uint8_t (&state)[siz
 #ifdef USE_FLAT_BUFFER
                 _wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
-                msg = new (&state) WQRingReduceMsg(_g_wqreduce_dev.getQS(), mcomb,
+                msg = new (&state) WQRingReduceMsg(_queue.getQS(), mcomb,
                                         (PAMI::PipeWorkQueue *)mcomb->data, NULL, &_wq[meix]);
         } else {
                 // I am upstream of root, but not head.
@@ -302,10 +269,10 @@ inline pami_result_t WQRingReduceMdl::postMulticombine_impl(uint8_t (&state)[siz
 #ifdef USE_FLAT_BUFFER
                 _wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
-                msg = new (&state) WQRingReduceMsg(_g_wqreduce_dev.getQS(), mcomb,
+                msg = new (&state) WQRingReduceMsg(_queue.getQS(), mcomb,
                                         (PAMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], &_wq[meix]);
         }
-        _g_wqreduce_dev.__post<WQRingReduceMsg>(msg);
+        _queue.__post<WQRingReduceMsg>(msg);
         return PAMI_SUCCESS;
 }
 
