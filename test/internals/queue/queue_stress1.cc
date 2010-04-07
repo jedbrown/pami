@@ -91,7 +91,7 @@ typedef PAMI::GccThreadSafeQueue<queue_5a> queue_5;
 
 #define DEBUG	// define/undef
 
-template <class T_Queue, int T_BackoffNS = 0>
+template <class T_Queue, int T_BackoffNS = 0, int T_RandMask = 0>
 class QueueTest {
 public:
 
@@ -107,12 +107,14 @@ public:
 
 	double base_t;
 	const char *name;
+	const int testnum;
 	int pthreads;
 	int elements;
 	int seed;
 
-	QueueTest(const char *n, int pth, int elem, int s) :
+	QueueTest(const int tnum, const char *n, int pth, int elem, int s) :
 	name(n),
+	testnum(tnum),
 	pthreads(pth),
 	elements(elem),
 	seed(s)
@@ -155,8 +157,8 @@ public:
 			t += PAMI_Wtimebase() - t0;
 		}
 		double d = t;
-		fprintf(stderr, "%d: finished %d enqueues (%g cycles each)\n",
-				gettid(), num, (d / num) - thus->base_t);
+		fprintf(stderr, "%d: test %d finished %d enqueues (%g cycles each)\n",
+				gettid(), thus->testnum, num, (d / num) - thus->base_t);
 		return NULL;
 }
 
@@ -189,12 +191,15 @@ public:
 			for (; q->iter_check(&qi); q->iter_end(&qi)) {
 				++yy;
 				e = (element_t *)q->iter_current(&qi);
-				if (e->val == (unsigned)-1 || (rand() & 0x03) == 0) {
+				if (e->val == (unsigned)-1 || (rand() & T_RandMask) == 0) {
 					e->val = -1;
 					t += PAMI_Wtimebase() - t0;
 					t0 = PAMI_Wtimebase();
 					if (q->iter_remove(&qi) == PAMI_SUCCESS) {
 						tr += PAMI_Wtimebase() - t0;
+#ifdef DEBUG
+						dbg = 0;
+#endif // DEBUG
 						free(e);
 						e = NULL; // just in case we try to access it
 						++xx;
@@ -211,6 +216,7 @@ public:
 			if (!xx && ++dbg == 100000) {
 				fprintf(stderr, "stuck? %d %d queue = { %p %p %zu }\n",
 					y, x, q->head(), q->tail(), q->size());
+				abort();
 			}
 #endif // DEBUG
 		}
@@ -218,15 +224,15 @@ public:
 		double dr = tr;
 		double db = tb;
 		if (z) {
-			fprintf(stderr, "%d: finished %d dequeues "
+			fprintf(stderr, "%d: test %d finished %d dequeues "
 				"(%g cycles per iter-elem (%d), "
 				"%g per remove, %g per merge (%d))\n",
-				gettid(), num, d / y, y, dr / num, db / z, z);
+				gettid(), thus->testnum, num, d / y, y, dr / num, db / z, z);
 		} else {
-			fprintf(stderr, "%d: finished %d dequeues "
+			fprintf(stderr, "%d: test %d finished %d dequeues "
 				"(%g cycles per iter-elem (%d), "
 				"%g per remove)\n",
-				gettid(), num, d / y, y, dr / num);
+				gettid(), thus->testnum, num, d / y, y, dr / num);
 		}
 		return NULL;
 	}
@@ -236,9 +242,10 @@ public:
 
 	int run_test(void) {
 		int x;
-		fprintf(stderr, "main: starting %s test with %d threads "
+		unsigned long long t0 = PAMI_Wtimebase();
+		fprintf(stderr, "main: test %d starting %s test with %d threads "
 				"and %d elements per enqueuer (seed %d)\n",
-				name, pthreads, elements, seed);
+				testnum, name, pthreads, elements, seed);
 
 		int status;
 		// thread "0" is the main thread - already running
@@ -255,9 +262,10 @@ public:
 		for (x = 1; x < pthreads; ++x) {
 			pthread_join(thread[x], NULL);
 		}
-		fprintf(stderr, "main done. queue = { %p %p %zu }\n"
-				"----------------------------------------------\n",
-				queue.head(), queue.tail(), queue.size());
+		t0 = PAMI_Wtimebase() - t0;
+		fprintf(stderr, "test %d main done. queue = { %p %p %zu } (%lld cy)\n"
+				"----------------------------------------------------\n",
+				testnum, queue.head(), queue.tail(), queue.size(), t0);
 
 		return (queue.head() || queue.tail() || queue.size());
 	}
@@ -298,30 +306,30 @@ int main(int argc, char **argv) {
 	int ret = 0;
 	if (qtype & QUEUE1_TYPE) {
 		srand(seed);
-		QueueTest<queue_1,0> test1(QUEUE1_NAME, pthreads, elements, seed);
+		QueueTest<queue_1,0> test1(1, QUEUE1_NAME, pthreads, elements, seed);
 		ret += test1.run_test();
 	}
 	if (qtype & QUEUE2_TYPE) {
 		srand(seed);
-		QueueTest<queue_2,0> test2(QUEUE2_NAME, pthreads, elements, seed);
+		QueueTest<queue_2,0> test2(2, QUEUE2_NAME, pthreads, elements, seed);
 		ret += test2.run_test();
 	}
 	if (qtype & QUEUE3_TYPE) {
 		srand(seed);
-		QueueTest<queue_3,0> test3(QUEUE3_NAME, pthreads, elements, seed);
+		QueueTest<queue_3,0> test3(3, QUEUE3_NAME, pthreads, elements, seed);
 		ret += test3.run_test();
 	}
 #ifdef QUEUE4_NAME
 	if (qtype & QUEUE4_TYPE) {
 		srand(seed);
-		QueueTest<queue_4,0> test4(QUEUE4_NAME, pthreads, elements, seed);
+		QueueTest<queue_4,0> test4(4, QUEUE4_NAME, pthreads, elements, seed);
 		ret += test4.run_test();
 	}
 #endif // QUEUE4_NAME
 #ifdef QUEUE5_NAME
 	if (qtype & QUEUE5_TYPE) {
 		srand(seed);
-		QueueTest<queue_5,0> test5(QUEUE5_NAME, pthreads, elements, seed);
+		QueueTest<queue_5,0> test5(5, QUEUE5_NAME, pthreads, elements, seed);
 		ret += test5.run_test();
 	}
 #endif // QUEUE5_NAME
