@@ -34,18 +34,21 @@ namespace CCMI
                                 pami_event_function                         fn,
                                 void                                     * cookie):
         Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
-        (   ((PAMI_GEOMETRY_CLASS *)g)->comm(),
-            (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(0),
-            cmgr,
+	  ( cmgr,
             fn,
             cookie,
             mf,
-            ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.root,
-            ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
-            ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
-            ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount )
+	    NUMCOLORS)
           {
             TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+	    Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::
+	      initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(),
+			  (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(0),
+			  ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.root,
+			  ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount,
+			  ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
+			  ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf);
+	    
             SyncBcastPost();
 
             PAMI_GEOMETRY_CLASS *geometry = ((PAMI_GEOMETRY_CLASS *)g);

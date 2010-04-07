@@ -11,7 +11,7 @@
 
 #undef TRACE_MSG1
 #undef TRACE_ADVANCE1
-#define TRACE_MSG1(X) //fprintf X
+#define TRACE_MSG1(X)     //fprintf X
 #define TRACE_ADVANCE1(X) //fprintf X
 
 namespace CCMI
@@ -342,17 +342,9 @@ namespace CCMI
 			void           * dstbuf,
 			unsigned         bytes)
       {
+	//printf ("%d: srcbuf = %x, dstbuf %x\n", _native->myrank(), srcbuf, dstbuf);
         _srcbuf        = (char *) srcbuf;
         _dstbuf        = (char *) dstbuf;
-        //          _acache.setDstBuf (&_dstbuf);
-      }
-
-      /// \ brief Reset the final receive buffer to be the dstbuf.  This is
-      /// an abbreviated reset() and reset() should have already been called.
-      ///
-      void resetDstBuf()
-      {
-        _acache.setDstBuf (&_dstbuf);
       }
 
       /// \brief Set the parameters related to the reduce.  When
@@ -588,7 +580,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
     {
       // Call application done callback
       if(_cb_done)
-        _cb_done (NULL, _clientdata, PAMI_SUCCESS);
+	_cb_done (NULL, _clientdata, PAMI_SUCCESS);
 
       break;
     }
@@ -624,7 +616,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
   CCMI_assert (dst_topology->size() > 0);
 
   _msend.connection_id = _acache.getPhaseSendConnectionId (sphase);
-  _msend.bytes         = _acache.getBytes();
+  _msend.bytes         = bytes;
 
   PAMI::PipeWorkQueue *pwq = _acache.getPhaseDstPipeWorkQueue(sphase);
   pwq->configure(NULL, (char *)buf, bytes, 0);
@@ -702,7 +694,7 @@ template <class T_Conn>
 inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecv
 ( unsigned              src,
   const pami_quad_t    & info,
-  PAMI::PipeWorkQueue ** pwq,
+  PAMI::PipeWorkQueue ** p,
   pami_callback_t      * cb_done )
 {
   AC_RecvCallbackData * cdata = (AC_RecvCallbackData *)(&info);
@@ -712,6 +704,9 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecv
 
   // update state  (we dont support multiple sources per phase yet)
   _acache.incrementPhaseChunksRcvd(cdata->phase, cdata->srcPeIndex);
+  PAMI::PipeWorkQueue *pwq = _acache.getPhasePipeWorkQueues(cdata->phase, 
+							    cdata->srcPeIndex);  
+  pwq->consumeBytes (_acache.getBytes());
 
   //The send for the previous phase has finished and we have received
   //data for the current phase
@@ -753,17 +748,20 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
   CCMI_assert_debug(info);
   CollHeaderData *cdata = (CollHeaderData*) info;
 
-  TRACE_MSG1((stderr,"<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead() count: %#X "
-             "connID:%#X phase:%#X root:%#X local root:%#X _state->getBytes():%#X "
-             "_state->getPipelineWidth():%#X \n",
-             this,
-             count,
-             conn_id,
-             cdata->_phase,
-             (int) cdata->_root,
-             _scache.getRoot(),
-             _acache.getBytes(),
-             _acache.getPipelineWidth()));
+  TRACE_MSG1((stderr,"%d: <%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead() count: %#X "
+	      "connID:%#X phase:%#X root:%#X local root:%#X src %#X sndlen %#X,_state->getBytes():%#X "
+	      "_state->getPipelineWidth():%#X \n",
+	      _native->myrank(),
+	      this,
+	      count,
+	      conn_id,
+	      cdata->_phase,
+	      (int) cdata->_root,
+	      _scache.getRoot(),
+	      peer,
+	      sndlen,
+	      _acache.getBytes(),
+	      _acache.getPipelineWidth()));
 
   CCMI_assert_debug(cdata->_comm == _commID);
   CCMI_assert_debug(cdata->_root == (unsigned) _scache.getRoot());
@@ -841,10 +839,12 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
     _nAsyncRcvd ++;
   }
 
-  * rcvlen    = sndlen;
-  PAMI::PipeWorkQueue *pwq = _acache.getPhasePipeWorkQueues(cdata->_phase, srcPeIndex);
-  //char * buf = pwq->bufferToProduce();
-  //CCMI_assert (buf != NULL);
+  *rcvlen    = sndlen;
+  PAMI::PipeWorkQueue *pwq = _acache.getPhasePipeWorkQueues(cdata->_phase, srcPeIndex);  
+  pwq->reset();
+  char * buf = pwq->bufferToProduce();
+  CCMI_assert (buf != NULL);
+  //printf ("%d: PWQ buffer 0x%x for phase %d index %d\n", _native->myrank(), buf, cdata->_phase, srcPeIndex);
 
   * rcvpwq    = (pami_pipeworkqueue_t *) pwq;
   cb_done->function   = _recvCallbackHandler;

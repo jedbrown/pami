@@ -34,7 +34,7 @@ namespace CCMI
 	unsigned                 _nComplete;
 	unsigned                 _numColors;
 	unsigned                 _colors [NUMCOLORS];
-
+	
         ///
         ///  \brief Application callback to call when the broadcast has finished
         ///
@@ -43,6 +43,7 @@ namespace CCMI
         T_Exec                                        _executors  [NUMCOLORS] __attribute__((__aligned__(16)));
         T_Sched                                       _schedules  [NUMCOLORS];
 	Interfaces::NativeInterface                 * _native;  //native interface
+	T_Conn                                      * _cmgr;
       public:
         MultiColorCompositeT () : CompositeT<NUMCOLORS, T_Bar, T_Exec>(), _doneCount(0), _nComplete(0)
         {
@@ -65,25 +66,28 @@ namespace CCMI
       ///
       /// \brief The Broadcast Constructor
       ///
-      MultiColorCompositeT (unsigned                                comm,
-			    PAMI::Topology                         * topology,
-			    T_Conn                                * cmgr,
-			    pami_event_function                      cb_done,
+      MultiColorCompositeT (T_Conn                                * cmgr,
+			    pami_event_function                     cb_done,
 			    void                                  * clientdata,
 			    Interfaces::NativeInterface           * mf,
-			    unsigned                                root,
-			    char                                  * src,
-			    char                                  * dst,
-			    unsigned                                bytes,
 			    unsigned                                ncolors=1):
-	CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>(), _doneCount(0), _numColors(ncolors), _cb_done(cb_done), _clientdata(clientdata), _native(mf)
+      CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>(), _doneCount(0), _numColors(ncolors), _cb_done(cb_done), _clientdata(clientdata), _native(mf), _cmgr(cmgr)
       {
-        TRACE_ADAPTOR((stderr, "MultiColorCompositeT constructor\n"));
+	_nComplete     = _numColors + 1;
+      }
+
+      void initialize (unsigned                                comm,
+		       PAMI::Topology                        * topology,
+		       unsigned                                root,
+		       unsigned                                bytes,
+		       char                                  * src,
+		       char                                  * dst) 
+      {	
+	//fprintf(stderr, "%d: MultiColorCompositeT::intialize src %x dst %x\n", _native->myrank(), src, dst);
 	pwcfn (topology, bytes, _colors, _numColors);
 
 	unsigned bytecounts[NUMCOLORS];
 	bytecounts[0] = bytes;
-	_nComplete     = _numColors + 1;
 
 	unsigned aligned_bytes = 0;
 	if(_numColors > 1) {
@@ -98,11 +102,11 @@ namespace CCMI
 	for(unsigned c = 0; c < _numColors; c++) {
 	  CCMI_assert (c < NUMCOLORS);
 
-	  new (&_schedules[c]) T_Sched(mf->myrank(), topology, _colors[c]);
+	  new (&_schedules[c]) T_Sched(_native->myrank(), topology, _colors[c]);
 
 	  T_Exec *exec  =
-	    new (& _executors[c]) T_Exec (mf,
-					  cmgr,
+	    new (& _executors[c]) T_Exec (_native,
+					  _cmgr,
 					  comm);
 
 	  exec->setSchedule (&_schedules[c], c);
@@ -128,7 +132,7 @@ namespace CCMI
 	  barrier->setDoneCallback(cb_barrier_done, this);
 	  barrier->start();
 	}
-
+	
 	return PAMI_SUCCESS;
       }
 

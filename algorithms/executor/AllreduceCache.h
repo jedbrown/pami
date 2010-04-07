@@ -150,18 +150,19 @@ namespace CCMI {
 	      pami_dt          dt,
 	      unsigned         pipelineWidth)
       {
-	_pcache._op         = op;
-	_pcache._dt         = dt;
-	_pcache._count      = count;
-	_pcache._sizeOfType = sizeOfType;
-
 	if ((_pcache._pipewidth == pipelineWidth) &&
 	    (_pcache._sizeOfType    == sizeOfType) &&
 	    (_pcache._bytes         == count * sizeOfType))
           return;
-
-	_pcache._bytes      = count * sizeOfType;
+		
+	_pcache._op         = op;
+	_pcache._dt         = dt;
+	_pcache._count      = count;
+	_pcache._sizeOfType = sizeOfType;	
+	_pcache._bytes      = count * sizeOfType;	
 	updatePipelineWidth(pipelineWidth);
+
+	//printf ("In AllreduceCache::init bytes = %x\n", _pcache._bytes);
       }
 
     void updatePipelineWidth (unsigned pw);
@@ -786,7 +787,9 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
 	pwq->configure (NULL, _phaseVec[p].recvBufs[scount], _pcache._bytes, 0);
 	pwq->reset();
 	CCMI_assert (pwq->bufferToProduce() != NULL);
-      }
+
+	//printf ("%d: Buffer for phase %d index %d is %x\n", _myrank, p, scount, pwq->bufferToProduce());
+      }  
     }
   }
 }

@@ -55,18 +55,30 @@ namespace CCMI
 			      pami_event_function                         fn,
 			      void                                     * cookie):
 	Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>
-	  (((PAMI_GEOMETRY_CLASS *)g)->comm(),
-	   (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(0),
-	   cmgr,
+	  (cmgr,
 	   fn,
 	   cookie,
 	   mf,
-	   (unsigned)-1,/*((pami_allreduce_t *)cmd)->root,*/
-	   ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.sndbuf,
-	   ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rcvbuf,
-	   //For now assume stypecount == rtypecount
-	   ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount)
-	  {
+	   NUMCOLORS)
+	  {	    
+	    coremath func;
+            unsigned sizeOfType;
+	    CCMI::Adaptor::Allreduce::getReduceFunction(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,
+							((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op,
+							((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
+							sizeOfType, 
+							func);
+	    //For now assume stypecount == rtypecount
+	    unsigned bytes = sizeOfType * ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount;
+
+	    Executor::MultiColorCompositeT<NUMCOLORS,CCMI::Executor::Composite,T_Exec,T_Sched,T_Conn, pwcfn>::
+	      initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(), 
+			  (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(0), 
+			  (unsigned)-1,/*((pami_allreduce_t *)cmd)->root,*/
+			  bytes, 
+			  ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.sndbuf,
+			  ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rcvbuf);
+	    
 	    int iteration = ((PAMI_GEOMETRY_CLASS *)g)->getAllreduceIteration();
 	    for (unsigned c = 0; c < Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::_numColors; c++) {
 	      T_Exec *allreduce = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(c);
@@ -106,13 +118,13 @@ namespace CCMI
         ///
         void initialize ( T_Exec                          * allreduce,
                           unsigned                          count,
-                          pami_dt                            dtype,
-                          pami_op                            op,
+                          pami_dt                           dtype,
+                          pami_op                           op,
                           unsigned                          pipelineWidth = 0)// none specified, calculate it
 	{
+	  
+	  TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::initialize()\n",this)); 
 
-
-	  TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::initialize()\n",this));
 	  if((op != allreduce->getOp()) || (dtype != allreduce->getDt()) ||
              (count != allreduce->getCount()))
 	  {
@@ -229,10 +241,10 @@ namespace CCMI
 	  CCMI_assert (executor != NULL);
 
           return (pami_quad_t*)executor->notifyRecvHead (info,      count,
-							conn_id,   peer,
-							sndlen,    arg,
-							rcvlen,    rcvpwq,
-							cb_done);
+							 conn_id,   peer,   
+							 sndlen,    arg,
+							 rcvlen,    rcvpwq,
+							 cb_done);
         };
 
       };  //-- Composite
