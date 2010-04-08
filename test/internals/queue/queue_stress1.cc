@@ -220,7 +220,7 @@ public:
 			}
 #endif // DEBUG
 		}
-		double d = t;
+		double d = t + tr + tb;
 		double dr = tr;
 		double db = tb;
 		if (z) {
