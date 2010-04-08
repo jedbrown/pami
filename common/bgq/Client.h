@@ -48,7 +48,7 @@ namespace PAMI
         initializeMemoryManager ();
 
         _world_range.lo=0;
-        _world_range.hi=__global.mapping.size();
+        _world_range.hi=__global.mapping.size()-1;
         new(_world_geometry_storage) BGQGeometry(NULL, &__global.mapping,0, 1,&_world_range);
 
         result = PAMI_SUCCESS;
