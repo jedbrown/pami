@@ -48,7 +48,6 @@
 
 #include "common/bgq/NativeInterface.h"
 
-#define PAMI_GEOMETRY_NUMALGOLISTS 4
 #include "algorithms/geometry/Geometry.h"
 
 
