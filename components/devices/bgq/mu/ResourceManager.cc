@@ -152,7 +152,7 @@ init ( ResourceType_t  type,
   fifoAttr[0].RemoteGet = 1;
   fifoAttr[0].System    = 0;
 
-  rc = _rgetInjFifoSubgroup.init ( 67, 1, (char **) & fifoPtr[0], &fifoSize[0], &fifoAttr[0] );
+  rc = _rgetInjFifoSubgroup.init ( 64, 1, (char **) & fifoPtr[0], &fifoSize[0], &fifoAttr[0] );
 
 
 
