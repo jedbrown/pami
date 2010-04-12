@@ -34,7 +34,6 @@ static double timer()
 
 void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
-  static unsigned count = 10000;
   TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
   _g_barrier_active++;
   pami_result_t result;
@@ -44,10 +43,8 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
       fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
       exit(1);
     }
-  while (_g_barrier_active && count--)
+  while (_g_barrier_active)
     result = PAMI_Context_advance (context, 1);
-  TEST_assertf(count,"%s:%d\n", __PRETTY_FUNCTION__, __LINE__);
-  count = 10000;
 }
 
 

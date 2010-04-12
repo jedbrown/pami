@@ -215,7 +215,6 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
   //static unsigned entryCount = 0;
   TRACE((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_barrier_active));
-  unsigned count = 10000;
   _g_barrier_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)barrier);
@@ -224,17 +223,15 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
     fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
     exit(1);
   }
-  while (_g_barrier_active && --count)
+  while (_g_barrier_active)
     result = PAMI_Context_advance (context, 1);
-  TEST_assertf(count,"%s:%d\n", __PRETTY_FUNCTION__, __LINE__);
-  TRACE((stderr,"%s done<%u> active %u, count %u\n",__PRETTY_FUNCTION__,entryCount,_g_barrier_active,count));
+  TRACE((stderr,"%s done<%u> active %u\n",__PRETTY_FUNCTION__,entryCount,_g_barrier_active));
 }
 
 void _allreduce (pami_context_t context, pami_xfer_t *allreduce)
 {
   //static unsigned entryCount = 0;
   TRACE((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_allreduce_active));
-  unsigned count = 10000;
   _g_allreduce_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)allreduce);
@@ -243,10 +240,9 @@ void _allreduce (pami_context_t context, pami_xfer_t *allreduce)
     fprintf (stderr, "Error. Unable to issue allreduce collective. result = %d\n", result);
     exit(1);
   }
-  while (_g_allreduce_active && --count)
+  while (_g_allreduce_active)
     result = PAMI_Context_advance (context, 1);
-  TEST_assertf(count,"%s:%d\n", __PRETTY_FUNCTION__, __LINE__);
-  TRACE((stderr,"%s done<%u> active %u, count %u\n",__PRETTY_FUNCTION__,entryCount,_g_allreduce_active,count));
+  TRACE((stderr,"%s done<%u> active %u\n",__PRETTY_FUNCTION__,entryCount,_g_allreduce_active));
 }
 
 
@@ -484,8 +480,8 @@ int main(int argc, char*argv[])
             ti = timer();
             for (j=0; j<niter; j++)
             {
-              allreduce.cmd.xfer_allreduce.stypecount=i; /// \todo shouldn't this be dataSent PAMI_BYTE's?
-              allreduce.cmd.xfer_allreduce.rtypecount=i; /// \todo shouldn't this be dataSent PAMI_BYTE's?
+              allreduce.cmd.xfer_allreduce.stypecount=dataSent;
+              allreduce.cmd.xfer_allreduce.rtypecount=dataSent;
               allreduce.cmd.xfer_allreduce.dt=dt_array[dt];
               allreduce.cmd.xfer_allreduce.op=op_array[op];
               _allreduce(context, &allreduce);
