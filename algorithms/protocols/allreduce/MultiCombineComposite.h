@@ -56,16 +56,11 @@ namespace CCMI
                             cmd->cmd.xfer_allreduce.stypecount,// this parm is unused
                             sizeOfType,
                             func );
-          /// \todo what's the relationship between stypecount/rtypecount (pami_type_t) and mcombine count?  How does dt and sizeOfType fit in?  Kind of a mess
-          /// size_t size = cmd->cmd.xfer_allreduce.stypecount * sizeOfType;
-
-          //size_t size = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
-          size_t size = cmd->cmd.xfer_allreduce.stypecount * sizeOfType; /// \todo #warning I don't think this is right but it matches test/allreduce.c
+          size_t size = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
           _srcPwq.configure(NULL, cmd->cmd.xfer_allreduce.sndbuf, size, size);
           _srcPwq.reset();
 
-          //size = cmd->cmd.xfer_allreduce.rtypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
-          size = cmd->cmd.xfer_allreduce.rtypecount * sizeOfType; /// \todo #warning I don't think this is right but it matches test/allreduce.c
+          size = cmd->cmd.xfer_allreduce.rtypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
           _dstPwq.configure(NULL, cmd->cmd.xfer_allreduce.rcvbuf, size, 0);
           _dstPwq.reset();
 
@@ -85,7 +80,7 @@ namespace CCMI
          _minfo.results              = (pami_pipeworkqueue_t *)&_dstPwq;
          _minfo.optor                = cmd->cmd.xfer_allreduce.op;
          _minfo.dtype                = cmd->cmd.xfer_allreduce.dt;
-         _minfo.count                = size/sizeOfType; /// \todo is this really the equivalent count?
+         _minfo.count                = size/sizeOfType;
          TRACE_ADAPTOR((stderr,"%s, count %zu\n", __PRETTY_FUNCTION__,_minfo.count));
         }
 
