@@ -38,6 +38,10 @@ namespace CCMI
       {
         this->setNumConnections (conn == 0 ? 1 : conn );
       }
+      ///
+      /// \brief Virtual destructors make compilers happy.
+      ///
+      virtual ~SimpleConnMgr() {};
 
       ///
       /// \brief return the connection id given a set of inputs

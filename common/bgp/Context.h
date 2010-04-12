@@ -49,12 +49,16 @@
 //#include "p2p/protocols/send/adaptive/Adaptive.h"
 //#include "p2p/protocols/send/datagram/Datagram.h"
 
-#ifndef TRACE_ERR
+#include "TypeDefs.h"
+#include "algorithms/geometry/CCMIMultiRegistration.h"
+
+#undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
-#endif
 
 namespace PAMI
 {
+  typedef CollRegistration::CCMIMultiRegistration < BGPGeometry, AllSidedNI > MultiCollectiveRegistration;
+
   typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>  ContextLock;
 
   typedef Fifo::FifoPacket <16, 256> ShmemPacket;
@@ -207,7 +211,7 @@ namespace PAMI
     public:
       inline Context (pami_client_t client, size_t clientid, size_t id, size_t num,
                                       PlatformDeviceList *devices,
-                                void * addr, size_t bytes) :
+                                void * addr, size_t bytes, BGPGeometry *world_geometry) :
           Interface::Context<PAMI::Context> (client, id),
           _client (client),
           _context ((pami_context_t)this),
@@ -216,6 +220,13 @@ namespace PAMI
           _mm (addr, bytes),
           _sysdep (_mm),
           _lock (),
+          _multi_registration(NULL),
+          _world_geometry(world_geometry),
+          _status(PAMI_SUCCESS),
+          _mcastModel(NULL),
+          _msyncModel(NULL),
+          _mcombModel(NULL),
+          _native_interface(NULL),
           _devices(devices)
       {
         // ----------------------------------------------------------------
@@ -233,7 +244,19 @@ namespace PAMI
         _lock.init(&_mm);
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
         _local_generic_device = & PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, clientid, id);
+        _mcastModel         = (Device::LocalBcastWQModel*)_mcastModel_storage;
+        _msyncModel         = (Barrier_Model*)_msyncModel_storage;
+        _mcombModel         = (Device::LocalReduceWQModel*)_mcombModel_storage;
+        _native_interface   = (AllSidedNI*)_native_interface_storage;
+        _multi_registration = (MultiCollectiveRegistration*) _multi_registration_storage;
 
+        new (_mcastModel_storage)       Device::LocalBcastWQModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid),_status);
+        new (_msyncModel_storage)       Barrier_Model(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid),_status);
+        new (_mcombModel_storage)       Device::LocalReduceWQModel(PAMI::Device::LocalReduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid),_status);
+        new (_native_interface_storage) AllSidedNI(_mcastModel, _msyncModel, _mcombModel, client, (pami_context_t)this, id, clientid);
+        new (_multi_registration)       MultiCollectiveRegistration(*_native_interface, client, (pami_context_t)this, id, clientid);
+
+        _multi_registration->analyze(_contextid, _world_geometry);
 
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
@@ -451,29 +474,12 @@ namespace PAMI
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t geometry_initialize (pami_geometry_t       * geometry,
-                                               unsigned               id,
-                                               pami_geometry_range_t * rank_slices,
-                                               size_t                 slice_count)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t geometry_world (pami_geometry_t * world_geometry)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t geometry_finalize (pami_geometry_t geometry)
-      {
-        return PAMI_UNIMPL;
-      }
-
       inline pami_result_t geometry_algorithms_num_impl (pami_geometry_t geometry,
-                                                        pami_xfer_type_t ctype,
+                                                        pami_xfer_type_t colltype,
                                                         int *lists_lengths)
       {
-        return PAMI_UNIMPL;
+        BGPGeometry *_geometry = (BGPGeometry*) geometry;
+        return _geometry->algorithms_num(colltype, lists_lengths, _contextid);
       }
 
       inline pami_result_t geometry_algorithms_info_impl (pami_geometry_t geometry,
@@ -485,13 +491,21 @@ namespace PAMI
                                                        pami_metadata_t   *mdata1,
                                                        int               num1)
       {
-        PAMI_abort();
-        return PAMI_SUCCESS;
+        BGPGeometry *_geometry = (BGPGeometry*) geometry;
+        return _geometry->algorithms_info(colltype,
+                                          algs0,
+                                          mdata0,
+                                          num0,
+                                          algs1,
+                                          mdata1,
+                                          num1,
+                                          _contextid);
       }
 
-      inline pami_result_t collective (pami_xfer_t * parameters)
+      inline pami_result_t collective_impl (pami_xfer_t * parameters)
       {
-        return PAMI_UNIMPL;
+        Geometry::Algorithm<BGPGeometry> *algo = (Geometry::Algorithm<BGPGeometry> *)parameters->algorithm;
+        return algo->generate(parameters);
       }
 
     inline pami_result_t amcollective_dispatch_impl (pami_algorithm_t            algorithm,
@@ -597,6 +611,11 @@ namespace PAMI
         return PAMI_UNIMPL;
       };
 
+      inline pami_result_t analyze(size_t         context_id,
+                                  BGPGeometry    *geometry)
+      {
+        return _multi_registration->analyze(context_id,geometry);
+      }
 
 
     private:
@@ -613,6 +632,20 @@ namespace PAMI
       ContextLock _lock;
 
       void * _dispatch[1024];
+    public:
+      MultiCollectiveRegistration *_multi_registration;
+      BGPGeometry                 *_world_geometry;
+    private:
+      pami_result_t                _status;
+      Device::LocalBcastWQModel   *_mcastModel;
+      Barrier_Model               *_msyncModel;
+      Device::LocalReduceWQModel  *_mcombModel;
+      AllSidedNI                  *_native_interface;
+      uint8_t                      _multi_registration_storage[sizeof(MultiCollectiveRegistration)];
+      uint8_t                      _mcastModel_storage[sizeof(Device::LocalBcastWQModel)];
+      uint8_t                      _msyncModel_storage[sizeof(Barrier_Model)];
+      uint8_t                      _mcombModel_storage[sizeof(Device::LocalReduceWQModel)];
+      uint8_t                      _native_interface_storage[sizeof(AllSidedNI)];
       ProtocolAllocator _protocol;
       PlatformDeviceList *_devices;
 
@@ -623,3 +656,11 @@ namespace PAMI
 #undef TRACE_ERR
 
 #endif // __components_context_bgp_bgpcontext_h__
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

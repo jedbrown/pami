@@ -23,6 +23,9 @@
 #define CCMI_EXECUTOR_TYPE void*
 #define COMPOSITE_TYPE void*
 
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+
 namespace PAMI
 {
   namespace Geometry
@@ -529,5 +532,7 @@ namespace PAMI
 
   }; // namespace Geometry
 }; // namespace PAMI
+
+#undef TRACE_ERR
 
 #endif

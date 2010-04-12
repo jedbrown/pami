@@ -14,6 +14,9 @@
 
 #include "components/memory/MemoryManager.h"
 
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+
 namespace PAMI
 {
   class Client : public Interface::Client<PAMI::Client>
@@ -24,8 +27,10 @@ namespace PAMI
           _client ((pami_client_t) this),
           _references (1),
           _ncontexts (0),
+          _world_geometry((BGPGeometry*)_world_geometry_storage),
           _mm ()
       {
+        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         static size_t next_client_id = 0;
         // Set the client name string.
         memset ((void *)_name, 0x00, sizeof(_name));
@@ -37,6 +42,10 @@ namespace PAMI
         // Get some shared memory for this client
         initializeMemoryManager ();
 
+        _world_range.lo=0;
+        _world_range.hi=__global.mapping.size()-1;
+        new(_world_geometry_storage) BGPGeometry(NULL, &__global.mapping,0, 1,&_world_range);
+
         result = PAMI_SUCCESS;
       }
 
@@ -46,6 +55,7 @@ namespace PAMI
 
       static pami_result_t generate_impl (const char * name, pami_client_t * client)
       {
+        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         pami_result_t result;
         int rc = 0;
 
@@ -96,6 +106,7 @@ namespace PAMI
                                               pami_context_t       * context,
                                               size_t                ncontexts)
       {
+        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         //_context_list->lock ();
         int n = ncontexts;
 
@@ -117,7 +128,7 @@ namespace PAMI
         int rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
         PAMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
         int x;
-
+        TRACE_ERR((stderr, "BGP::Client::createContext mm available %zu\n", _mm.available()));
         _platdevs.generate(_clientid, n, _mm);
 
         // This memset has been removed due to the amount of cycles it takes
@@ -126,20 +137,24 @@ namespace PAMI
         // needed anyway.
         //memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
         size_t bytes = _mm.available() / n - 16;
+        TRACE_ERR((stderr, "BGP::Client::createContext mm available %zu, bytes %zu\n", _mm.available(), bytes));
 
         for (x = 0; x < n; ++x)
           {
             context[x] = (pami_context_t) & _contexts[x];
             void *base = NULL;
             _mm.enable();
+            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
             _mm.memalign((void **)&base, 16, bytes);
             _mm.disable();
-            PAMI_assertf(base != NULL, "out of sharedmemory in context create\n");
+            PAMI_assertf(base != NULL, "out of sharedmemory in context create x=%d,n=%d,bytes=%zu,mm.size=%zu,mm.available=%zu\n", x, n, bytes, _mm.size(), _mm.available());
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                             &_platdevs, base, bytes);
+                                             &_platdevs, base, bytes, _world_geometry);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
+
+        TRACE_ERR((stderr,  "%s exit\n", __PRETTY_FUNCTION__));
 
         return PAMI_SUCCESS;
       }
@@ -227,7 +242,7 @@ namespace PAMI
       }
     inline pami_result_t geometry_world_impl (pami_geometry_t * world_geometry)
       {
-        PAMI_abort();
+        *world_geometry = _world_geometry;
         return PAMI_SUCCESS;
       }
 
@@ -240,7 +255,24 @@ namespace PAMI
                                                        pami_event_function     fn,
                                                        void                 * cookie)
       {
-        PAMI_abort();
+        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+
+        if(geometry != NULL)
+        {
+          new(geometry) BGPGeometry((PAMI::Geometry::Common*)parent,
+                                    &__global.mapping,
+                                    id,
+                                    slice_count,
+                                            rank_slices);
+          for(size_t n=0; n<_ncontexts; n++)
+          {
+            _contexts[n].analyze(n,(BGPGeometry*)geometry);
+          }
+              /// \todo  deliver completion to the appropriate context
+        }
+        BGPGeometry *bargeom = (BGPGeometry*)parent;
+        PAMI::Context *ctxt = (PAMI::Context *)context;
+        bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
         return PAMI_SUCCESS;
       }
 
@@ -284,11 +316,15 @@ namespace PAMI
       PAMI::PlatformDeviceList _platdevs;
 
       char         _name[256];
+      BGPGeometry                  *_world_geometry;
+      uint8_t                       _world_geometry_storage[sizeof(BGPGeometry)];
+      pami_geometry_range_t         _world_range;
 
       Memory::MemoryManager _mm;
 
       inline void initializeMemoryManager ()
       {
+        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         char   shmemfile[1024];
         size_t bytes     = 1024 * 1024;
         //size_t pagesize  = 4096;
@@ -328,6 +364,9 @@ namespace PAMI
       }
   }; // end class PAMI::Client
 }; // end namespace PAMI
+
+#undef TRACE_ERR
+
 #endif // __components_client_bgp_bgpclient_h__
 
 //

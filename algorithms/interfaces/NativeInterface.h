@@ -17,6 +17,10 @@ namespace CCMI {
 
     public:
       NativeInterface(unsigned myrank, unsigned numranks): _myrank(myrank),_numranks(numranks){}
+      ///
+      /// \brief Virtual destructors make compilers happy.
+      ///
+      virtual inline ~NativeInterface() {};
 
       unsigned myrank()   { return _myrank; }
       unsigned numranks() { return _numranks; }
