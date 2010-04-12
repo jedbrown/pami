@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/broadcast/mcomb_impl.h
+ * \file algorithms/protocols/allreduce/mcomb_impl.h
  * \brief Implement the simple multicombine allreduce factory
  */
 
-#ifndef __algorithms_protocols_broadcast_mcomb_impl_h__
-#define __algorithms_protocols_broadcast_mcomb_impl_h__
+#ifndef __algorithms_protocols_allreduce_mcomb_impl_h__
+#define __algorithms_protocols_allreduce_mcomb_impl_h__
 
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/protocols/allreduce/MultiCombineComposite.h"

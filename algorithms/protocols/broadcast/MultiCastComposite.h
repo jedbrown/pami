@@ -34,7 +34,7 @@ namespace CCMI
                             pami_xfer_t                          * cmd,
                             pami_event_function                    fn,
                             void                                 * cookie) :
-        Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g), 
+        Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g),
           _xfer_broadcast(cmd->cmd.xfer_broadcast), _root(cmd->cmd.xfer_broadcast.root)
         {
           TRACE_ADAPTOR((stderr,"%s type %#zX, count %zu, root %zu\n", __PRETTY_FUNCTION__,(size_t)cmd->cmd.xfer_broadcast.type,cmd->cmd.xfer_broadcast.typecount,cmd->cmd.xfer_broadcast.root));
@@ -49,7 +49,7 @@ namespace CCMI
           /// \todo only supporting PAMI_BYTE right now
           PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_BYTE,"Not PAMI_BYTE? %#zX\n",(size_t)cmd->cmd.xfer_broadcast.type);
 
-          PAMI_Type_sizeof(cmd->cmd.xfer_broadcast.type); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?  
+          PAMI_Type_sizeof(cmd->cmd.xfer_broadcast.type); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
 //        unsigned        sizeOfType;
 //        coremath        func;
@@ -61,7 +61,7 @@ namespace CCMI
 //                          sizeOfType,
 //                          func );
 //        size_t bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
-          
+
           size_t bytes = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_BYTE?
           if(cmd->cmd.xfer_broadcast.root == __global.mapping.task())
           {

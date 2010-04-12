@@ -1,6 +1,5 @@
-
-#ifndef __algorithms_protocols_AllreduceProtocolFactoryT_h__
-#define __algorithms_protocols_AllreduceProtocolFactoryT_h__
+#ifndef __algorithms_protocols_allreduce_ProtocolFactoryT_h__
+#define __algorithms_protocols_allreduce_ProtocolFactoryT_h__
 
 #include "algorithms/protocols/CollectiveProtocolFactoryT.h"
 
@@ -9,7 +8,7 @@ namespace CCMI
   namespace Adaptor
   {
     namespace Allreduce
-    {      
+    {
       template <class T, MetaDataFn get_metadata, class C>
 	class ProtocolFactoryT: public CollectiveProtocolFactoryT<T, get_metadata, C>
       {
@@ -24,7 +23,7 @@ namespace CCMI
 	virtual ~ProtocolFactoryT ()
 	{
 	}
-      
+
 	/// NOTE: This is required to make "C" programs link successfully with virtual destructors
 	void operator delete(void * p)
 	{
@@ -34,8 +33,8 @@ namespace CCMI
 	virtual Executor::Composite * generate(pami_geometry_t              g,
 					     void                      * cmd) {
 	  PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
-	  T * arcomposite = (T *)geometry->getAllreduceComposite();	  
-	  
+	  T * arcomposite = (T *)geometry->getAllreduceComposite();
+
 	  pami_xfer_t *allreduce = (pami_xfer_t *)cmd;
 	  ///If the allreduce algorithm was created by this factory before, just restart it
 	  if(arcomposite != NULL  &&  arcomposite->getAlgorithmFactory() == this)
@@ -47,22 +46,22 @@ namespace CCMI
 		return NULL;
 	      }
 	    }
-	  
+
 	  if(arcomposite != NULL) // Different factory?  Cleanup old executor.
 	  {
 	    geometry->setAllreduceComposite(NULL);
 	    arcomposite->~T(); //Call destructor
 	    CollectiveProtocolFactoryT<T, get_metadata, C>::_alloc.returnObject(arcomposite);
 	  }
-	  
-	  void * obj = CollectiveProtocolFactoryT<T, get_metadata, C>::_alloc.allocateObject();	
+
+	  void * obj = CollectiveProtocolFactoryT<T, get_metadata, C>::_alloc.allocateObject();
 	  new (obj) T(CollectiveProtocolFactoryT<T, get_metadata, C>::_native,  // Native interface
 		      CollectiveProtocolFactoryT<T, get_metadata, C>::_cmgr,    // Connection Manager
 		      geometry,          // Geometry Object
 		      (pami_xfer_t*) cmd, // Parameters
 		      allreduce->cb_done,
 		      allreduce->cookie);
-	  
+
 	  geometry->setAllreduceComposite(obj);
 	  return NULL;
 	}

@@ -77,12 +77,12 @@ namespace CCMI
       };
 
       /// New Binomial algorithms
-      /// class Binomial::Composite and Binomial::Factory 
-      ///                                           
-      /// \brief Binomial allreduce protocol              
-      ///                                          
-      /// Use the BinomialTreeSchedule                                        
-      ///                                            
+      /// class Binomial::Composite and Binomial::Factory
+      ///
+      /// \brief Binomial allreduce protocol
+      ///
+      /// Use the BinomialTreeSchedule
+      ///
       namespace Binomial
       {
         void get_colors (PAMI::Topology             * t,
@@ -93,7 +93,7 @@ namespace CCMI
           ncolors = 1;
           colors[0] = CCMI::Schedule::NO_COLOR;
         }
-        
+
         void binomial_ar_md(pami_metadata_t *m)
         {
           // \todo:  fill in other metadata

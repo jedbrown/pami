@@ -84,7 +84,7 @@ namespace PAMI
           _client(NULL),
           _context(NULL),
           _contextid(0),
-          _clientid(0),          
+          _clientid(0),
           _task_id((size_t)__global.mapping.task()),
           _cookie(NULL),
           _multicast_model(_mcast_dev,status),

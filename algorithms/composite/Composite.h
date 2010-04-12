@@ -55,10 +55,10 @@ namespace CCMI
         //Currently not all composites implement this method
         CCMI_abort();
         return PAMI_SUCCESS;
-      } 
-      
+      }
+
       void   setAlgorithmFactory (void *f) { _afactory = f; }
-      
+
       void  * getAlgorithmFactory() { return _afactory; }
 
 

@@ -1,6 +1,5 @@
-
-#ifndef  __allreduce_base_executor_h__
-#define  __allreduce_base_executor_h__
+#ifndef __algorithms_executor_AllreduceBaseExec_h__
+#define __algorithms_executor_AllreduceBaseExec_h__
 
 #include "sys/pami.h"
 #include "algorithms/interfaces/Schedule.h"
@@ -59,7 +58,7 @@ namespace CCMI
         TRACE_FLOW((stderr,"<%p>Executor::AllreduceBaseExec<T_Conn>::short_recv_done exit\n", allreduce));
       }
 
-    protected:  
+    protected:
       void inline_math_isum (void *dst, void *src1, void *src2, unsigned count)
       {
         int *idst  = (int *) dst;
@@ -71,10 +70,10 @@ namespace CCMI
         TRACE_DATA(("dst ",(char*)dst, 1));  // Just to trace the input pointer
 
         for(unsigned c = 0; c < count; c++)
-          idst[c] = isrc1[c] + isrc2[c];        
+          idst[c] = isrc1[c] + isrc2[c];
 
         TRACE_DATA(("dst ",(char*)dst, count*_acache.getSizeOfType()));
-      }       
+      }
 
       void inline_math_dsum (void *dst, void *src1, void *src2, unsigned count)
       {
@@ -87,17 +86,17 @@ namespace CCMI
         TRACE_DATA(("dst ",(char*)dst, 1));  // Just to trace the input pointer
 
         for(unsigned c = 0; c < count; c++)
-          idst[c] = isrc1[c] + isrc2[c];        
+          idst[c] = isrc1[c] + isrc2[c];
 
         TRACE_DATA(("dst ",(char*)dst, count*_acache.getSizeOfType()));
-      }       
+      }
 
       void inline_math_dmin (void *dst, void *src1, void *src2, unsigned count)
       {
 	double *idst  = (double *) dst;
 	double *isrc1 = (double *) src1;
 	double *isrc2 = (double *) src2;
-          
+
 	TRACE_DATA(("src1",(char*)src1, count*_acache.getSizeOfType()));
 	TRACE_DATA(("src2",(char*)src2, count*_acache.getSizeOfType()));
 	TRACE_DATA(("dst ",(char*)dst, 1));  // Just to trace the input pointer
@@ -106,7 +105,7 @@ namespace CCMI
 	  idst[c] = (isrc1[c] < isrc2[c]) ? isrc1[c] : isrc2[c];
 
 	TRACE_DATA(("dst ",(char*)dst, count*_acache.getSizeOfType()));
-      }       
+      }
 
       void inline_math_dmax (void *dst, void *src1, void *src2, unsigned count)
       {
@@ -123,10 +122,10 @@ namespace CCMI
 
           TRACE_DATA(("dst ",(char*)dst, count*_acache.getSizeOfType()));
       }
-        
+
       void advance ();
 
-      void sendMessage (const char         * buffer, 
+      void sendMessage (const char         * buffer,
                         unsigned             size,
                         PAMI::Topology      * dst_topology,
                         unsigned             phase,
@@ -135,13 +134,13 @@ namespace CCMI
       /// State variables
       unsigned            _commID;
       unsigned            _curPhase;
-      unsigned            _curIdx;    
+      unsigned            _curIdx;
       unsigned            _startPhase;
       unsigned            _endPhase;
       unsigned            _firstCombinePhase;
       unsigned            _nAsyncRcvd;  /// number of messages received in
                                         /// the async callback
-      bool                _initialized;  
+      bool                _initialized;
       bool                _postReceives;
       bool                _enablePipelining;
 
@@ -162,12 +161,12 @@ namespace CCMI
 
       Interfaces::NativeInterface    * _native;
       pami_multicast_t                  _msend;
-      PAMI::Topology                    _selftopology;      
+      PAMI::Topology                    _selftopology;
 
       ScheduleCache                          _scache;
       AllreduceCache<T_Conn>                 _acache;
 
-    public: 
+    public:
 
       /// Default Destructor
       virtual ~AllreduceBaseExec ()
@@ -193,19 +192,19 @@ namespace CCMI
       }
 
       /// Default Constructor
-      AllreduceBaseExec () : 
+      AllreduceBaseExec () :
       Interfaces::Executor (),
-      _curPhase ((unsigned) -1), 
-      _curIdx ((unsigned) -1), 
+      _curPhase ((unsigned) -1),
+      _curIdx ((unsigned) -1),
       _firstCombinePhase((unsigned) -1),
       _nAsyncRcvd (0),
       _initialized (false), _postReceives (false),
       _enablePipelining (false),
       _srcbuf (NULL), _dstbuf (NULL),
       _reduceFunc (NULL),
-      _rconnmgr (NULL), 
-      _bconnmgr(NULL), 
-      _native (NULL), 
+      _rconnmgr (NULL),
+      _bconnmgr(NULL),
+      _native (NULL),
       _msend(),
       _selftopology(),
       _scache(),
@@ -221,15 +220,15 @@ namespace CCMI
 			const unsigned                   commID,
 			bool                             enable_pipe=false):
       Interfaces::Executor(),
-      _commID (commID), _curPhase ((unsigned) -1), _curIdx ((unsigned) -1), 
+      _commID (commID), _curPhase ((unsigned) -1), _curIdx ((unsigned) -1),
       _nAsyncRcvd (0),
       _initialized (false), _postReceives (false),
       _enablePipelining (enable_pipe),
       _srcbuf (NULL), _dstbuf (NULL),
       _reduceFunc (NULL),
-      _rconnmgr (connmgr), 
-      _bconnmgr(connmgr),       
-      _native (native), 
+      _rconnmgr (connmgr),
+      _bconnmgr(connmgr),
+      _native (native),
       _msend(),
       _selftopology(native->myrank()),
       _scache(),
@@ -237,7 +236,7 @@ namespace CCMI
       {
         TRACE_ALERT((stderr,"<%p>Executor::AllreduceBaseExec<T_Conn>::ctor() ALERT:\n",this));
 
-	_msend.msginfo     = NULL; 
+	_msend.msginfo     = NULL;
 	_msend.msgcount    = NULL;
         _msend.roles       = -1U;
 
@@ -251,7 +250,7 @@ namespace CCMI
         _acache.setCommID (commID);
 
         _msend.cb_done.function = _sendCallbackHandler;
-	_msend.cb_done.clientdata = &_sState.sndClientData;  
+	_msend.cb_done.clientdata = &_sState.sndClientData;
       }
 
       void setIteration (unsigned iteration) {
@@ -272,7 +271,7 @@ namespace CCMI
 
       void setBroadcastConnectionManager (T_Conn *cmgr)
       {
-        _bconnmgr = cmgr;     
+        _bconnmgr = cmgr;
         _acache.setBroadcastConnectionManager(cmgr);
       }
 
@@ -306,7 +305,7 @@ namespace CCMI
       /// \param[out]  rcvbuf     buffer to receive datatype
       /// \param[out]  pipeWidth  pipeline width
       /// \param[out]  cb_done    receive callback function
-      /// 
+      ///
       virtual PAMI_Request_t *   notifyRecvHead(const pami_quad_t     * info,
 						unsigned               count,
 						unsigned               conn_id,
@@ -350,14 +349,14 @@ namespace CCMI
 
       /// \ brief Reset the final receive buffer to be the dstbuf.  This is
       /// an abbreviated reset() and reset() should have already been called.
-      /// 
+      ///
       void resetDstBuf()
       {
         _acache.setDstBuf (&_dstbuf);
       }
 
       /// \brief Set the parameters related to the reduce.  When
-      ///  parameters change the allreduce state changes. 
+      ///  parameters change the allreduce state changes.
       ///
       /// \param[in]  count
       /// \param[in]  pipelineWidth
@@ -379,13 +378,13 @@ namespace CCMI
         _reduceFunc    = func;
 
         //override the pipeline width as we do not support
-        //pipelining in this simple executor.	  
+        //pipelining in this simple executor.
         if(!_enablePipelining)
           pipelineWidth = count * sizeOfType;
 
         _acache.init(count,sizeOfType,op,dt, pipelineWidth);
 
-        TRACE_INIT((stderr,"<%p>Executor::AllreduceBaseExec<T_Conn>::setReduceInfo() exit\n", this));    
+        TRACE_INIT((stderr,"<%p>Executor::AllreduceBaseExec<T_Conn>::setReduceInfo() exit\n", this));
       }
 
       pami_event_function  getRecvCallbackHandler ()
@@ -447,7 +446,7 @@ namespace CCMI
       {
         _acache.setDstBuf (&_dstbuf);
 	bool flag = _scache.init(ALLREDUCE_OP);
-	_acache.reset (flag, false);    
+	_acache.reset (flag, false);
 
         _startPhase = _curPhase = _scache.getStartPhase();
         _curIdx = 0;
@@ -482,11 +481,11 @@ namespace CCMI
       unsigned   getCount ()
       {
         return  _acache.getCount();
-      }       
+      }
       static void _compile_time_assert_ ()
       {
         // Compile time assert
-        // SendState storage must must fit in a request 
+        // SendState storage must must fit in a request
         COMPILE_TIME_ASSERT(sizeof(CCMI::Executor::AllreduceBaseExec<T_Conn>::SendState) <= sizeof(PAMI_CollectiveRequest_t));
       }
     }; // AllreduceBaseExec
@@ -516,8 +515,8 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
 
   while(_curPhase <= _scache.getEndPhase())
   {
-    unsigned nsrcranks = _scache.getNumSrcRanks(_curPhase);        
-    void *src1 = (void *) (((_curIdx==0)&&(_curPhase==_firstCombinePhase)) ? _srcbuf : reducebuf); 
+    unsigned nsrcranks = _scache.getNumSrcRanks(_curPhase);
+    void *src1 = (void *) (((_curIdx==0)&&(_curPhase==_firstCombinePhase)) ? _srcbuf : reducebuf);
     void *src2 = NULL;
 
     pami_op op = _acache.getOp();
@@ -535,7 +534,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
 	    }
 	}
       else if(op == PAMI_SUM && dt == PAMI_DOUBLE)
-	{ 
+	{
 	  for(; (_curIdx < nsrcranks) && (_acache.getPhaseChunksRcvd(_curPhase, _curIdx) > 0); _curIdx ++)
 	    {
 	      src2 = _acache.getPhaseRecvBufs (_curPhase, _curIdx);
@@ -560,26 +559,26 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
 	      inline_math_dmax (reducebuf, src1, src2, count);
 	      src1 = reducebuf;
 	    }
-	}    
+	}
       else
 	{
 	  for(; (_curIdx < nsrcranks) && (_acache.getPhaseChunksRcvd(_curPhase, _curIdx) > 0); _curIdx ++)
 	    {
-	      src2 =  _acache.getPhaseRecvBufs (_curPhase, _curIdx);    
+	      src2 =  _acache.getPhaseRecvBufs (_curPhase, _curIdx);
 	      void * bufs[2];
 	      bufs[0] = src1;
 	      bufs[1] = src2;
 	      TRACE_DATA(("localbuf",(char*)bufs[0], count*_acache.getSizeOfType()));
 	      TRACE_DATA(("input buf",(char*)bufs[1], count*_acache.getSizeOfType()));
 	      TRACE_DATA(("reduceBuf",(char*)reducebuf, 1));  // Just to trace the input pointer
-	      _reduceFunc( reducebuf, bufs, 2, count); 
-	      
+	      _reduceFunc( reducebuf, bufs, 2, count);
+
 	      TRACE_DATA(("reduceBuf",(char*)reducebuf, count*_acache.getSizeOfType()));
 	      src1 = reducebuf;
 	    }
 	}
     }
-      
+
     TRACE_ADVANCE1 ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::advance_loop _curPhase %d,_endPhase %d,_curIdx %d nsrcranks %d phase chunks rcvd %d\n",this, _curPhase,_scache.getEndPhase(),_curIdx, nsrcranks, _acache.getPhaseChunksRcvd(_curPhase, _curIdx)));
 
     if(_curIdx != nsrcranks) //we are waiting for more data
@@ -600,10 +599,10 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
     unsigned ndstranks = _scache.getNumDstRanks (_curPhase);
     if(ndstranks > 0)
     {
-      PAMI::Topology *dst_topology   = _scache.getDstTopology(_curPhase); 
-      sendMessage (reducebuf, _acache.getBytes(), dst_topology, 
-                   _curPhase, &_sState);         
-      //wait for send to finish 
+      PAMI::Topology *dst_topology   = _scache.getDstTopology(_curPhase);
+      sendMessage (reducebuf, _acache.getBytes(), dst_topology,
+                   _curPhase, &_sState);
+      //wait for send to finish
       break;
     }
   }
@@ -614,8 +613,8 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
 ///  \brief Send the next message by calling the msend interface
 ///
 template <class T_Conn>
-inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage 
-(const char             * buf, 
+inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
+(const char             * buf,
  unsigned                 bytes,
  PAMI::Topology          * dst_topology,
  unsigned                 sphase,
@@ -633,12 +632,12 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
   pwq->produceBytes(bytes);
 
   _msend.src           = (pami_pipeworkqueue_t *) pwq;
-  _msend.dst           = NULL;  
+  _msend.dst           = NULL;
   _msend.src_participants = (pami_topology_t *)&_selftopology;
   _msend.dst_participants = (pami_topology_t *) _scache.getDstTopology(sphase);
 
   //the message has been sent and send state slot is unavailable
-  s_state->sndClientData.isDone = false;  
+  s_state->sndClientData.isDone = false;
 
   if(!_postReceives)
   {
@@ -656,14 +655,14 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
   pami_task_t *dstranks=NULL;
   dst_topology->rankList(&dstranks);
 
-  TRACE_MSG1 ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::sendMessage connid %#X curphase:%#X " 
-              "bytes:%#X destPe:%#X ndst %#X cData:%#.8X \n", 
+  TRACE_MSG1 ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::sendMessage connid %#X curphase:%#X "
+              "bytes:%#X destPe:%#X ndst %#X cData:%#.8X \n",
               this,
               _acache.getPhaseSendConnectionId (sphase),
-              sphase, bytes, dstranks[0], dst_topology->size(), 
+              sphase, bytes, dstranks[0], dst_topology->size(),
               (unsigned) &s_state->sndInfo));
 
-  _native->multicast (&_msend);  
+  _native->multicast (&_msend);
 }
 
 
@@ -678,7 +677,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::start()
 {
   TRACE_FLOW((stderr,"<%p>Executor::AllreduceBaseExec start()\n",this));
 
-  _initialized = true;    
+  _initialized = true;
   _sState.sndClientData.me        = this;
   _sState.sndClientData.isDone    = true;
 
@@ -692,15 +691,15 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::start()
   unsigned ndstranks = _scache.getNumDstRanks (_curPhase);
   if(ndstranks)
   {
-    PAMI::Topology *dst_topology   = _scache.getDstTopology(_curPhase);  
-    sendMessage (_srcbuf, _acache.getBytes(), dst_topology, _curPhase, &_sState);         
+    PAMI::Topology *dst_topology   = _scache.getDstTopology(_curPhase);
+    sendMessage (_srcbuf, _acache.getBytes(), dst_topology, _curPhase, &_sState);
   }
   else
-    advance ();    
+    advance ();
 }
 
 template <class T_Conn>
-inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecv 
+inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecv
 ( unsigned              src,
   const pami_quad_t    & info,
   PAMI::PipeWorkQueue ** pwq,
@@ -708,7 +707,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecv
 {
   AC_RecvCallbackData * cdata = (AC_RecvCallbackData *)(&info);
 
-  TRACE_MSG1 ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecv %#X, %#X\n", 
+  TRACE_MSG1 ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecv %#X, %#X\n",
               this, cdata->phase, cdata->srcPeIndex));
 
   // update state  (we dont support multiple sources per phase yet)
@@ -723,23 +722,23 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecv
 }
 
 template <class T_Conn>
-inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifySendDone 
+inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifySendDone
 ( const pami_quad_t & info)
 {
   // update state
-  TRACE_MSG1((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifySendDone, cur phase %#X\n", 
+  TRACE_MSG1((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifySendDone, cur phase %#X\n",
              this, _curPhase));
 
   AC_SendCallbackData * cdata = (AC_SendCallbackData *)(&info);
-  cdata->isDone = true;  
+  cdata->isDone = true;
 
   //Call the appropriate advance
   advance ();
 }
 
 template <class T_Conn>
-inline PAMI_Request_t * 
-CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead 
+inline PAMI_Request_t *
+CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
 (const pami_quad_t     * info,
  unsigned               count,
  unsigned               conn_id,
@@ -768,10 +767,10 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
 
   CCMI_assert_debug(cdata->_comm == _commID);
   CCMI_assert_debug(cdata->_root == (unsigned) _scache.getRoot());
-  
-  CCMI_assert_debug(cdata->_phase >= (unsigned)_scache.getStartPhase());  
+
+  CCMI_assert_debug(cdata->_phase >= (unsigned)_scache.getStartPhase());
   //CCMI_assert_debug(conn_id == _rconnmgr->getRecvConnectionId(cdata->_comm, (unsigned)-1, peer, cdata->_phase, (unsigned) -1));
-  
+
   //CCMI_assert(arg && rcvlen && rcvbuf && pipewidth && cb_done);
   //CCMI_assert (cdata->_phase <= _scache.getEndPhase());
 
@@ -781,24 +780,24 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
   if(_scache.getNumSrcRanks(cdata->_phase) > 0)
   {
     // Schedule misbehavior patch:
-    // src and dst phases *should* match but some schedules 
+    // src and dst phases *should* match but some schedules
     // send (dst) in phase n and receive (src) in phase n+1.
-    // Allow this, I guess, by looking for the next src phase 
+    // Allow this, I guess, by looking for the next src phase
     // and assuming that's the one we want.  This only works if
-    // there are no src's in the specified phase.  If there are, 
+    // there are no src's in the specified phase.  If there are,
     // then we expect a match.
-    while((_scache.getNumSrcRanks(cdata->_phase) == 0) && 
+    while((_scache.getNumSrcRanks(cdata->_phase) == 0) &&
           (cdata->_phase < (unsigned)_scache.getEndPhase()))
     {
-      TRACE_MSG1((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead " 
-                 "no src in phase %#X\n", 
+      TRACE_MSG1((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead "
+                 "no src in phase %#X\n",
                  this,cdata->_phase));
       cdata->_phase++;
     }
   }
   CCMI_assert(_scache.getNumSrcRanks(cdata->_phase) > 0);
 
-  TRACE_MSG1 ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead phase %#X, numsrcranks %#X\n", 
+  TRACE_MSG1 ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead phase %#X, numsrcranks %#X\n",
 	      this, cdata->_phase, _scache.getNumSrcRanks(cdata->_phase)));
 
   int srcPeIndex = -1;
@@ -817,8 +816,8 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
 
   unsigned index = 0;
   unsigned nchunks = 0;
-  
-  //This is the fist message from that source 
+
+  //This is the fist message from that source
   if((nchunks = _acache.getPhaseChunksRcvd (cdata->_phase, srcPeIndex)) == 0)
     index = _nAsyncRcvd;
   else
@@ -828,8 +827,8 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
       if(_acache.getRecvClientPhase(index) == cdata->_phase &&
          _acache.getRecvClientSrcPeIndex(index) == (unsigned)srcPeIndex)
         break;
-    
-    CCMI_assert (index < _nAsyncRcvd);    
+
+    CCMI_assert (index < _nAsyncRcvd);
   }
 
   AC_RecvCallbackData *rdata = _acache.getRecvClient(index);
@@ -843,11 +842,11 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
   }
 
   * rcvlen    = sndlen;
-  PAMI::PipeWorkQueue *pwq = _acache.getPhasePipeWorkQueues(cdata->_phase, srcPeIndex);  
+  PAMI::PipeWorkQueue *pwq = _acache.getPhasePipeWorkQueues(cdata->_phase, srcPeIndex);
   //char * buf = pwq->bufferToProduce();
   //CCMI_assert (buf != NULL);
 
-  * rcvpwq    = (pami_pipeworkqueue_t *) pwq; 
+  * rcvpwq    = (pami_pipeworkqueue_t *) pwq;
   cb_done->function   = _recvCallbackHandler;
   cb_done->clientdata = rdata;
 
@@ -860,7 +859,7 @@ template <class T_Conn>
 inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::postReceives ()
 {
   // post receives for each expected incoming message
-  _postReceives = true;     
+  _postReceives = true;
 
   for(unsigned p = _scache.getStartPhase(); p <= _scache.getEndPhase(); p++)
   {
@@ -873,7 +872,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::postReceives ()
   }
 
   TRACE_INIT((stderr,"<%p>Executor::AllreduceBaseExec<T_Conn>::postReceives() exit\n",
-              this));  
+              this));
 }
 
 #endif
@@ -884,15 +883,15 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::postReceives ()
 ///  This callback does not return a request
 ///
 template <class T_Conn>
-inline void 
-CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvShort 
+inline void
+CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvShort
 (unsigned          phase,
  unsigned          sndlen,
  unsigned          srcindex,
  unsigned        * rcvlen,
  char           ** rcvbuf,
  PAMI_Callback_t * cb_done,
- unsigned          order) 
+ unsigned          order)
 {
   *rcvbuf = _acache.getPhaseRecvBufs (phase, srcindex);
   *rcvlen = sndlen;
@@ -900,9 +899,9 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvShort
   ///This is a short callback and at the end of it the data is
   ///guarangeed to be copied in
    CCMI_assert(_acache.getPhaseChunksRcvd(phase, srcindex) == 0);
-  _acache.incrementPhaseChunksRcvd(phase, srcindex); 
+  _acache.incrementPhaseChunksRcvd(phase, srcindex);
 
-  unsigned nsrcranks = _scache.getNumSrcRanks(phase);        
+  unsigned nsrcranks = _scache.getNumSrcRanks(phase);
 
   TRACE_FLOW ((stderr, "notifyRecvShort phase = %d, srcindex = %d, nsrcranks = %d, totalchunksrcvd %d, recvbuf = %#X, len = %d\n",
                phase, srcindex, nsrcranks, _acache.getPhaseTotalChunksRcvd(_curPhase),

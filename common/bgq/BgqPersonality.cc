@@ -66,7 +66,7 @@ PAMI::BgqPersonality::BgqPersonality ()
       unsigned dcr_num = ND_500_DCR_base + ND_500_DCR__CTRL_COORDS_offset;
 
       // funky code to avoid "unused variable" warning when TRACE_MAMBO is off.
-      unsigned long long dcr = 0; 
+      unsigned long long dcr = 0;
       dcr = DCRReadUser(dcr_num);
 
       TRACE_MAMBO((stderr, "BGQPersonality() NODE_COORDINATES DCR = 0x%016llx\n", dcr));

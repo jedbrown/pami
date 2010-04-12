@@ -97,7 +97,7 @@ namespace PAMI
                     TRACE_ERR((stderr, "Global:shmem file <%s> %zu bytes mapped at %p\n", shmemfile, size, ptr));
                     DUMP_HEXDATA("Shared memory map", (const uint32_t *)ptr, 16);
                     uint64_t *uptr = (uint64_t *)ptr;
-                    uptr += 4; 
+                    uptr += 4;
                     ptr = uptr; /// \todo #warning skip padding for BG_MEMSIZE problem
                     mm.init(ptr, size);
                     (void)initializeMapCache(personality, &mm, ll, ur, min, max,

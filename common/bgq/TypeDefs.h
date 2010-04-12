@@ -94,8 +94,8 @@ namespace PAMI
 #endif
 }
 
-//#define PAMI_COLL_MCAST_CLASS 
-//#define PAMI_COLL_M2M_CLASS   
+//#define PAMI_COLL_MCAST_CLASS
+//#define PAMI_COLL_M2M_CLASS
 //#define PAMI_COLL_SYSDEP_CLASS SysDep
 //#define PAMI_NATIVEINTERFACE
 #define PAMI_GEOMETRY_CLASS    PAMI::BGQGeometry

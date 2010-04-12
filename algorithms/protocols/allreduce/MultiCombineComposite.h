@@ -1,9 +1,9 @@
 /**
- * \file algorithms/protocols/broadcast/MultiCombineComposite.h
+ * \file algorithms/protocols/allreduce/MultiCombineComposite.h
  * \brief Simple composite based on multicombine
  */
-#ifndef __algorithms_protocols_broadcast_MultiCombineComposite_h__
-#define __algorithms_protocols_broadcast_MultiCombineComposite_h__
+#ifndef __algorithms_protocols_allreduce_MultiCombineComposite_h__
+#define __algorithms_protocols_allreduce_MultiCombineComposite_h__
 
 #include "algorithms/composite/Composite.h"
 #include "util/ccmi_util.h"
@@ -46,26 +46,26 @@ namespace CCMI
           /// \todo only supporting PAMI_BYTE right now
           PAMI_assertf((cmd->cmd.xfer_allreduce.stype == PAMI_BYTE)&&(cmd->cmd.xfer_allreduce.rtype == PAMI_BYTE),"Not PAMI_BYTE? %#zX %#zX\n",(size_t)cmd->cmd.xfer_allreduce.stype,(size_t)cmd->cmd.xfer_allreduce.rtype);
 
-          PAMI_Type_sizeof(cmd->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?  
+          PAMI_Type_sizeof(cmd->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
           unsigned        sizeOfType;
           coremath        func;
 
           getReduceFunction(cmd->cmd.xfer_allreduce.dt,
                             cmd->cmd.xfer_allreduce.op,
-                            cmd->cmd.xfer_allreduce.stypecount,// this parm is unused 
+                            cmd->cmd.xfer_allreduce.stypecount,// this parm is unused
                             sizeOfType,
                             func );
           /// \todo what's the relationship between stypecount/rtypecount (pami_type_t) and mcombine count?  How does dt and sizeOfType fit in?  Kind of a mess
           /// size_t size = cmd->cmd.xfer_allreduce.stypecount * sizeOfType;
-          
+
           //size_t size = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
-          size_t size = cmd->cmd.xfer_allreduce.stypecount * sizeOfType; /// \todo #warning I don't think this is right but it matches test/allreduce.c 
+          size_t size = cmd->cmd.xfer_allreduce.stypecount * sizeOfType; /// \todo #warning I don't think this is right but it matches test/allreduce.c
           _srcPwq.configure(NULL, cmd->cmd.xfer_allreduce.sndbuf, size, size);
           _srcPwq.reset();
 
           //size = cmd->cmd.xfer_allreduce.rtypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
-          size = cmd->cmd.xfer_allreduce.rtypecount * sizeOfType; /// \todo #warning I don't think this is right but it matches test/allreduce.c 
+          size = cmd->cmd.xfer_allreduce.rtypecount * sizeOfType; /// \todo #warning I don't think this is right but it matches test/allreduce.c
           _dstPwq.configure(NULL, cmd->cmd.xfer_allreduce.rcvbuf, size, 0);
           _dstPwq.reset();
 

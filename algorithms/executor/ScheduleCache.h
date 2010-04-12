@@ -10,7 +10,7 @@
 #include "Topology.h"
 
 #undef TRACE_SCACHE
-#define TRACE_SCACHE(x)  
+#define TRACE_SCACHE(x)
 
 namespace CCMI
 {
@@ -43,14 +43,14 @@ namespace CCMI
       char                   * _cachebuf;
       ///Size of the cache buffer
       unsigned                 _cachesize;
-      
+
       //The root of broadcast and reduce collectives
       int                      _oldroot;
       int                      _root;
       //The collective operation (barrier, broadcast, allreduce, reduce)
       unsigned             _operation;
       Interfaces::Schedule * _schedule;
-      
+
       static const size_t SC_MAXPHASES = 32;
       static const size_t SC_MAXRANKS  = 128;
 
@@ -59,16 +59,16 @@ namespace CCMI
       void allocate (unsigned nphases, unsigned nsrc, unsigned ndst);
 
     public:
-      ScheduleCache () : 
-      _cachebuf(NULL), 
-        _cachesize(0), 
-        _oldroot(-2), 
-        _root(-1), 
+      ScheduleCache () :
+      _cachebuf(NULL),
+        _cachesize(0),
+        _oldroot(-2),
+        _root(-1),
         _operation((unsigned)-1),
         _schedule(NULL)
 	  {
 	  }
-      
+
       virtual ~ScheduleCache() { if (_cachebuf) CCMI_Free (_cachebuf); }
 
       void operator delete(void * p)
@@ -107,7 +107,7 @@ namespace CCMI
 	  _schedule->getDstTopology(count, &dst_topology);
 	  ntotal_dst += dst_topology.size();
 
-	  TRACE_SCHEDULE((stderr, "Schedule Cache take_1 phase %d ndst %zu dstrank %zu\n", count, 
+	  TRACE_SCHEDULE((stderr, "Schedule Cache take_1 phase %d ndst %zu dstrank %zu\n", count,
 		     dst_topology.size(), dstranks[0]));
 	}
 
@@ -185,28 +185,28 @@ namespace CCMI
 	return _nphases;
       }
 
-      unsigned  getEndPhase () 
+      unsigned  getEndPhase ()
       {
         return _start + _nphases - 1;
-      } 
+      }
 
-      unsigned  getLastReducePhase() 
+      unsigned  getLastReducePhase()
       {
         //Curently hardcode to end phase
         return _start + _nphases - 1;
       }
 
-      void setRoot(int root) 
+      void setRoot(int root)
       {
         _root = root;
       }
 
-      int  getRoot() 
+      int  getRoot()
       {
 	return _root;
       }
 
-      void setSchedule(Interfaces::Schedule *schedule) 
+      void setSchedule(Interfaces::Schedule *schedule)
       {
         _schedule = schedule;
       }

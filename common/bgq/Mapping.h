@@ -299,7 +299,7 @@ namespace PAMI
     ///
     /// \todo Error path
     ///
-    /// \todo why is there task2global but no global2task?  stub it in for Rectangle.h 
+    /// \todo why is there task2global but no global2task?  stub it in for Rectangle.h
     inline pami_result_t global2task (size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS], size_t & task)
     {
       return torus2task_impl (addr,task);

@@ -27,7 +27,7 @@ namespace CCMI
     ALLREDUCE_OP  =      4,
     REDUCE_OP     =      8
   } CollectiveOperation;
-    
+
   namespace Interfaces
   {
     /**

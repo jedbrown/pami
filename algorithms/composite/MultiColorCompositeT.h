@@ -56,7 +56,7 @@ namespace CCMI
       ///
       static void staticRecvFn(pami_context_t context, void *executor, pami_result_t err)
       {
-	pami_quad_t *info = NULL;	
+	pami_quad_t *info = NULL;
 	T_Exec *exe = (T_Exec *) executor;
 	TRACE_ADAPTOR ((stderr, "<%p>Broadcast::MultiColorCompositeT::staticRecvFn() \n",(int)exe));
 	exe->notifyRecv ((unsigned)-1, *info, NULL, exe->getPwidth());
@@ -80,7 +80,7 @@ namespace CCMI
       {
         TRACE_ADAPTOR((stderr, "MultiColorCompositeT constructor\n"));
 	pwcfn (topology, bytes, _colors, _numColors);
-	
+
 	unsigned bytecounts[NUMCOLORS];
 	bytecounts[0] = bytes;
 	_nComplete     = _numColors + 1;
@@ -107,11 +107,11 @@ namespace CCMI
 
 	  exec->setSchedule (&_schedules[c], c);
 	  exec->setRoot (root);
-	  exec->setBuffers (src + aligned_bytes*c, 
-			    dst + aligned_bytes*c, 
+	  exec->setBuffers (src + aligned_bytes*c,
+			    dst + aligned_bytes*c,
 			    bytecounts[c]);
 	  exec->setDoneCallback (cb_composite_done, this);
-	  
+
 	  addExecutor (exec);
 	  COMPILE_TIME_ASSERT(sizeof(_schedules[0]) >= sizeof(T_Sched));
 	}
@@ -123,7 +123,7 @@ namespace CCMI
 	{
 	  // reset barrier since it may be been used between calls
 	  TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::reset barrier(%p)\n",this,(CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier)));
-	  
+
 	  T_Bar  *barrier =  CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier;
 	  barrier->setDoneCallback(cb_barrier_done, this);
 	  barrier->start();

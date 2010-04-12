@@ -32,7 +32,7 @@
 #define NUM_STD_AXIS	2
 /** \brief Total number of axii on torus (includes local cores). */
 #define NUM_AXIS NUM_STD_AXIS
-#else 
+#else
 /// \todo this is screwed up
 /** \brief Number of axii on Torus/Mesh network. */
 #define NUM_STD_AXIS PAMI_MAX_DIMS

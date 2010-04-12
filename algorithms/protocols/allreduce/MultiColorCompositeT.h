@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/allreduce/Composite.h
+ * \file algorithms/protocols/allreduce/MultiColorCompositeT.h
  * \brief CCMI composite adaptor for allreduce with barrier support
  */
 
-#ifndef __algorithms_protocols_allreduce_MC_Composite_h__
-#define __algorithms_protocols_allreduce_MC_Composite_h__
+#ifndef __algorithms_protocols_allreduce_MultiColorCompositeT_h__
+#define __algorithms_protocols_allreduce_MultiColorCompositeT_h__
 
 #include "algorithms/protocols/allreduce/BaseComposite.h"
 #include "algorithms/executor/Barrier.h"
@@ -47,7 +47,7 @@ namespace CCMI
       {
       public:
 	MultiColorCompositeT () { CCMI_abort(); }
-	
+
 	MultiColorCompositeT (Interfaces::NativeInterface              * mf,
 			      T_Conn                                   * cmgr,
 			      pami_geometry_t                             g,
@@ -77,7 +77,7 @@ namespace CCMI
 	      allreduce->reset();
 	      allreduce->setIteration(iteration);
 	    }
-	  
+
 	    PAMI_GEOMETRY_CLASS *geometry =(PAMI_GEOMETRY_CLASS *)g;
 	    CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
 	      geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
@@ -86,8 +86,8 @@ namespace CCMI
 	    barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
 	    barrier->start();
 	  }
-      
-	
+
+
         /// Default Destructor
         virtual ~MultiColorCompositeT()
         {
@@ -110,9 +110,9 @@ namespace CCMI
                           pami_op                            op,
                           unsigned                          pipelineWidth = 0)// none specified, calculate it
 	{
-	  
 
-	  TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::initialize()\n",this)); 
+
+	  TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::initialize()\n",this));
 	  if((op != allreduce->getOp()) || (dtype != allreduce->getDt()) ||
              (count != allreduce->getCount()))
 	  {
@@ -170,18 +170,18 @@ namespace CCMI
         /// \brief At this level we only support single color
         /// collectives
         ///
-        virtual unsigned restart   ( void *cmd ) 
+        virtual unsigned restart   ( void *cmd )
         {
           TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::restart()\n",this));
-	  
+
 	  for (unsigned c = 0; c <  Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::_numColors; c++) {
 	    T_Exec *allreduce = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(c);
-	    
+
 	    initialize(allreduce,
 		       ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
 		       ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,
 		       ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op);
-	    
+
 	    allreduce->reset();
 	  }
 
@@ -222,14 +222,14 @@ namespace CCMI
 
 	  Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn> *composite = (Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn> *)
             ((PAMI_GEOMETRY_CLASS *)factory->getGeometry(cdata->_comm))->getAllreduceComposite(cdata->_iteration);
-	  
+
 	  CCMI_assert (composite != NULL);
 	  //Use color 0 for now
-	  T_Exec *executor = composite->getExecutor(0);	 
+	  T_Exec *executor = composite->getExecutor(0);
 	  CCMI_assert (executor != NULL);
 
           return (pami_quad_t*)executor->notifyRecvHead (info,      count,
-							conn_id,   peer,   
+							conn_id,   peer,
 							sndlen,    arg,
 							rcvlen,    rcvpwq,
 							cb_done);

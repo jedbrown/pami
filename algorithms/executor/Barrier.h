@@ -123,7 +123,7 @@ namespace CCMI
 
       void setCommSchedule(Interfaces::Schedule *sch)
       {
-        //_cache.init (sch);	
+        //_cache.init (sch);
 	_cache.setSchedule (sch);
 	_cache.setRoot (-1);
 	_cache.init (BARRIER_OP);

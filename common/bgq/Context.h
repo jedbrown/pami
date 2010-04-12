@@ -718,7 +718,7 @@ namespace PAMI
 
       inline pami_result_t multicombine_impl(pami_multicombine_t *mcombineinfo)
       {
-#if defined(ENABLE_MU_DEVICE) 
+#if defined(ENABLE_MU_DEVICE)
 
         if (_global_mu_ni == NULL) // lazy ctor
           {
