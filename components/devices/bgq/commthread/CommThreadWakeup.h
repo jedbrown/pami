@@ -17,11 +17,14 @@
 #include "components/devices/bgq/commthread/WakeupRegion.h"
 #include "components/devices/bgq/commthread/ContextSets.h"
 #include "common/bgq/Context.h"
-#include "pthread.h"
+#include <pthread.h>
 
-#warning need CNK definitions for WU_ArmWithAddress and Kernel_SnoopScheduler
+/// \todo #warning need CNK definitions for WU_ArmWithAddress and Kernel_SnoopScheduler
+#define SNOOP_ALONE	(1)
+#define SNOOP_NOTALONE	(2)
 #define WU_ArmWithAddress(...)
-#define Kernel_SnoopScheduler()		(0)
+#define ppc_waitimpl()
+#define Kernel_SnoopScheduler()		(SNOOP_ALONE)
 
 namespace PAMI {
 namespace Device {
@@ -35,7 +38,7 @@ private:
         /// \param[in] new	New set of contexts that should be locked
         ///
         inline void __lockContextSet(uint64_t &old, uint64_t new_) {
-                uint64_t m, l = 0;
+                uint64_t m, l = old;
                 size_t x;
                 pami_result_t r;
 
@@ -131,6 +134,13 @@ public:
                 return devs;
         }
 
+        static void *commThread(void *cookie) {
+                BgqCommThread *thus = (BgqCommThread *)cookie;
+                pami_result_t r = thus->__commThread();
+                r = r; // avoid worning until we decide how to use result
+                return NULL;
+        }
+
         static inline void initContext(BgqCommThread *devs, size_t clientid,
                                         size_t contextid, pami_context_t context) {
                 // might need hook later, to do per-context initialization?
@@ -139,14 +149,29 @@ public:
         static inline pami_result_t addContext(BgqCommThread *devs, size_t clientid,
                                         pami_context_t context) {
                 // all BgqCommThread objects have the same ContextSet object.
-                return devs[0]._ctxset->addContext(clientid, context);
-        }
+                pami_result_t rc = devs[0]._ctxset->addContext(clientid, context);
+		if (rc != PAMI_SUCCESS) {
+			return rc;
+		}
+		pthread_attr_t attr;
+		pthread_t thread;	// do we need to save this for later?
+		int status;
 
-        static void *commThread(void *cookie) {
-                BgqCommThread *thus = (BgqCommThread *)cookie;
-                pami_result_t r = thus->__commThread();
-                r = r; // avoid worning until we decide how to use result
-                return NULL;
+		status = pthread_attr_init(&attr);
+		if (status) return PAMI_CHECK_ERRNO;
+		status = pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
+		if (status) return PAMI_CHECK_ERRNO;
+		// status = pthread_attr_setschedpolicy(&attr, SCHED_COMM);
+		// if (status) return PAMI_CHECK_ERRNO;
+
+		// we assume this is single-threaded so no locking required...
+		size_t x = _numActive++;
+		status = pthread_create(&thread, &attr, commThread, (void *)&devs[x]);
+		if (status) {
+			--_numActive;
+			return PAMI_CHECK_ERRNO;
+		}
+		return PAMI_SUCCESS;
         }
 
 private:
@@ -160,14 +185,14 @@ private:
                 uint64_t wu_start, wu_mask;
 
                 pthread_setschedprio(self, 99); // need official constant here
-                _ctxset->joinContextSet(0, id);
+                _ctxset->joinContextSet(_client, id);
                 new_ctx = old_ctx = lkd_ctx = 0;
                 while (1) {
                         //
 new_context_assignment:	// These are the same now, assuming the re-locking is
 more_work:		// lightweight enough.
                         //
-                        new_ctx = _ctxset->getContextSet(0, id);
+                        new_ctx = _ctxset->getContextSet(_client, id);
                         _wakeup_region->getWURange(new_ctx, &wu_start, &wu_mask);
 
                         __armMU_WU();
@@ -212,13 +237,13 @@ more_work:		// lightweight enough.
                                 // this only locks/unlocks what changed...
                                 __lockContextSet(lkd_ctx, 0);
 
-                                _ctxset->leaveContextSet(0, id); // id invalid now
+                                _ctxset->leaveContextSet(_client, id); // id invalid now
 
                                 pthread_setschedprio(self, 0); // need official constant
                                 //=== we get preempted here ===//
                                 pthread_setschedprio(self, 99); // need official constant
 
-                                _ctxset->joinContextSet(0, id); // got new id now...
+                                _ctxset->joinContextSet(_client, id); // got new id now...
                                 // always assume context set changed... just simpler.
                                 goto new_context_assignment;
                         }
@@ -227,17 +252,20 @@ more_work:		// lightweight enough.
 
                 // must have unlocked before this... ??
                 // __lockContextSet(lkd_ctx, 0);
-                _ctxset->leaveContextSet(0, id); // id invalid now
+                _ctxset->leaveContextSet(_client, id); // id invalid now
                 return PAMI_SUCCESS;
         }
 
         BgqWakeupRegion *_wakeup_region;///< memory for WAC for all contexts
         PAMI::Device::CommThread::BgqContextPool *_ctxset;
         size_t _client;
+	static size_t _numActive;
 }; // class BgqCommThread
 
 }; // namespace CommThread
 }; // namespace Device
 }; // namespace PAMI
+
+size_t PAMI::Device::CommThread::BgqCommThread::_numActive = 0;
 
 #endif // __components_devices_bgq_commthread_CommThread_h__

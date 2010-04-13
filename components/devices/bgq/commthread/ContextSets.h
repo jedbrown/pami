@@ -44,14 +44,24 @@ public:
                 PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_contexts");
                 posix_memalign((void **)&_sets, 16, nctx * sizeof(*_sets));
                 PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_sets");
+		memset(_sets, 0, nctx * sizeof(*_sets));
                 _ncontexts_total = nctx;
+                _nsets = nctx;
         }
 
+	// caller promises to be single-threaded (?)
         inline pami_result_t addContext(size_t clientid, pami_context_t ctx) {
                 if (_ncontexts >= _ncontexts_total) {
                         return PAMI_ERROR;
                 }
-                _contexts[_ncontexts++] = (PAMI::Context *)ctx;
+		size_t x = _ncontexts++;
+                _contexts[x] = (PAMI::Context *)ctx;
+                _mutex.acquire();
+		_notset |= (1ULL << x);
+                _mutex.release();
+		// presumably, a new comm thread is about to call joinContextSet(),
+		// but can we guarantee timing? May need a way to ensure that
+		// "_notset" will be checked.
                 return PAMI_SUCCESS;
         }
 
@@ -60,7 +70,12 @@ public:
         }
 
         inline uint64_t getContextSet(size_t clientid, size_t threadid) {
-                return _sets[threadid] & ~ENABLE;
+                _mutex.acquire();
+                uint64_t m = _sets[threadid] & ~ENABLE;
+		// should we check "_notset" and possibly pick up more contexts?
+		// or just trigger a "rejoin"?
+                _mutex.release();
+		return m;
         }
 
         inline void joinContextSet(size_t clientid, size_t &threadid) {
@@ -84,7 +99,7 @@ public:
                                         size_t x = ffs(k);
                                         if (x > 0 && x < 64) {
                                                 --x;
-                                                k &= (1ULL << x);
+                                                k &= ~(1ULL << x);
                                                 m |= (1ULL << x);
                                                 ++n;
                                                 _sets[_lastset] = k;
@@ -102,10 +117,11 @@ public:
                 _mutex.acquire();
                 --_nactive;
                 uint64_t m = _sets[threadid];
-                _sets[threadid] = 0;
-                size_t x = 0;
                 // assert((m & ENABLE) != 0);
                 m &= ~ENABLE;
+                uint64_t k = m;
+                _sets[threadid] = 0;
+                size_t x = 0;
                 if (_nactive == 0) {
                         _notset |= m;
                 } else while (m) {
@@ -132,11 +148,11 @@ private:
         size_t _ncontexts;
 
         ContextSetMutex _mutex;
-        uint64_t *_sets;
-        uint64_t _notset;
-        size_t _nsets;
-        size_t _nactive;
-        size_t _lastset;
+        uint64_t *_sets;	// protected by _mutex
+        uint64_t _notset;	// protected by _mutex
+        size_t _nsets;		// protected by _mutex
+        size_t _nactive;	// protected by _mutex
+        size_t _lastset;	// protected by _mutex
 }; // class BgqContextPool
 
 }; // namespace CommThread

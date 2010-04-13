@@ -943,7 +943,7 @@ void PAMI_Topology_subtract(pami_topology_t *_new, pami_topology_t *topo, pami_t
 }
 
 #ifdef USE_COMMTHREADS // from (bgq/) Client.h
-#warning PAMI_Client_add_commthread_context() is non-standard API
+/// \todo #warning PAMI_Client_add_commthread_context() is non-standard API
 extern "C" pami_result_t PAMI_Client_add_commthread_context(pami_client_t client,
                                             pami_context_t context)
 {
