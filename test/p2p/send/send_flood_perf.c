@@ -26,7 +26,7 @@
 
 #define WARMUP
 
-#define TEST_SEND_IMMEDIATE
+//#define TEST_SEND_IMMEDIATE
 
 #ifdef TEST_SEND_IMMEDIATE
 #define BUFSIZE 256
@@ -261,8 +261,12 @@ int main (int argc, char ** argv)
 
   char str[10240];
 
-  size_t sndlen;
-  for (sndlen = 0; sndlen < BUFSIZE; sndlen = sndlen*3/2+1)
+#ifdef TEST_SEND_IMMEDIATE
+  size_t sndlen = 0;
+#else
+  size_t sndlen = 512;
+#endif
+  for (; sndlen < BUFSIZE; sndlen = sndlen*3/2+1)
   {
     int index = 0;
     index += sprintf (&str[index], "%10zd ", sndlen);
