@@ -413,13 +413,31 @@ int main(int argc, char*argv[])
   validTable[OP_MIN][DT_DOUBLE_COMPLEX]=0;
   validTable[OP_PROD][DT_DOUBLE_COMPLEX]=0;
 
-  //  This one is failing using core math...we should find this bug.
-  validTable[OP_BAND][DT_DOUBLE]=0;
-
   /* Now add back the minloc/maxloc stuff */
   for(i=OP_MAXLOC; i<=OP_MINLOC; i++)
     for(j=DT_LOC_2INT; j<=DT_LOC_2DOUBLE; j++)
       validTable[i][j]=1;
+
+  /// \todo These fail using core math...we should find this bug.
+  validTable[OP_BAND][DT_DOUBLE]=0;
+#if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
+  validTable[OP_LAND][DT_FLOAT]=0; 
+  validTable[OP_LOR][DT_FLOAT]=0; 
+  validTable[OP_LXOR][DT_FLOAT]=0;
+  validTable[OP_BAND][DT_FLOAT]=0;
+  validTable[OP_BOR][DT_FLOAT]=0;
+  validTable[OP_BXOR][DT_FLOAT]=0;
+  validTable[OP_LAND][DT_DOUBLE]=0; 
+  validTable[OP_LOR][DT_DOUBLE]=0; 
+  validTable[OP_LXOR][DT_DOUBLE]=0; 
+  validTable[OP_BOR][DT_DOUBLE]=0; 
+  validTable[OP_BXOR][DT_DOUBLE]=0; 
+  validTable[OP_MAXLOC][DT_LOC_SHORT_INT]=0; 
+  validTable[OP_MINLOC][DT_LOC_SHORT_INT]=0; 
+  validTable[OP_MAXLOC][DT_LOC_DOUBLE_INT]=0; 
+  validTable[OP_MINLOC][DT_LOC_DOUBLE_INT]=0; 
+#endif
+
 #else
   for(i=0;i<op_count;i++)
     for(j=0;j<dt_count;j++)
