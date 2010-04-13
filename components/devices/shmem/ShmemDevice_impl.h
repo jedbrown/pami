@@ -61,7 +61,7 @@ namespace PAMI
 
       for (i = 0; i < _total_fifos; i++)
         {
-          new (&__sendQ[i]) Shmem::SendQueue (_progress, _contextid);
+          new (&__sendQ[i]) Shmem::SendQueue (Generic::Device::Factory::getDevice (progress, 0, contextid));
         }
 
       // Initialize the registered receive function array to unexpected().
@@ -191,8 +191,7 @@ namespace PAMI
     pami_result_t ShmemDevice<T_Fifo>::post (size_t fnum, Shmem::SendQueue::Message * msg)
     {
       TRACE_ERR((stderr, ">> (%zu) ShmemDevice::post(%zu, %p)\n", __global.mapping.task(), fnum, msg));
-      msg->setup (_progress, &__sendQ[fnum]);
-      msg->postNext(true);
+      __sendQ[fnum].post(msg);
       TRACE_ERR((stderr, "<< (%zu) ShmemDevice::post(%zu, %p)\n", __global.mapping.task(), fnum, msg));
       return PAMI_SUCCESS;
     };

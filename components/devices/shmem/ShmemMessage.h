@@ -40,6 +40,9 @@ namespace PAMI
           class Message : public PAMI::Device::Generic::GenericMessage
           {
             protected:
+
+              friend class SendQueue;
+
               inline Message (pami_work_function    work_func,
                               void               * work_cookie,
                               pami_event_function   done_fn,
@@ -53,22 +56,28 @@ namespace PAMI
                 _work.setStatus (Ready);
               };
 
-            public:
-
               virtual ~Message () {};
+
+              void setup (PAMI::Device::Generic::Device * device, SendQueue * sendQ)
+              {
+                TRACE_ERR((stderr, ">> SendQueue::Message::setup(%p, %p)\n", device, sendQ));
+
+                _genericdevice = device;
+                this->_QS = sendQ;
+
+                // Initialize the message and work state
+                this->setStatus (Initialized);
+                _work.setStatus (Ready);
+
+                TRACE_ERR((stderr, "<< SendQueue::Message::setup(%p, %p)\n", device, sendQ));
+              }
+
+            public:
 
               /// \note This is required to make "C" programs link successfully with virtual destructors
               inline void operator delete (void * p)
               {
                 PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
-              }
-
-              void setup (PAMI::Device::Generic::Device * device, SendQueue * sendQ)
-              {
-                TRACE_ERR((stderr, ">> SendQueue::Message::setup(%p, %p)\n", device, sendQ));
-                _genericdevice = device;
-                this->_QS = sendQ;
-                TRACE_ERR((stderr, "<< SendQueue::Message::setup(%p, %p)\n", device, sendQ));
               }
 
               ///
@@ -96,12 +105,12 @@ namespace PAMI
 
               PAMI::Device::Generic::GenericThread _work;
               PAMI::Device::Generic::Device * _genericdevice;
-          };
 
-          inline SendQueue (PAMI::Device::Generic::Device * progress, size_t local) :
+          };  // PAMI::Device::Shmem::SendQueue::Message class
+
+          inline SendQueue (PAMI::Device::Generic::Device & progress) :
               GenericDeviceMessageQueue (),
-              _progress (progress),
-              _local_progress_device (PAMI::Device::Generic::Device::Factory::getDevice(progress, 0, local))
+              _progress (&progress)
           {
           };
 
@@ -113,30 +122,30 @@ namespace PAMI
           inline void post (SendQueue::Message * msg)
           {
             TRACE_ERR((stderr, ">> SendQueue::post(%p)\n", msg));
-            this->enqueue (msg);
-            TRACE_ERR((stderr, "<< SendQueue::post(%p)\n", msg));
-          };
 
-          /// \brief virtual function implementation
-          /// \see PAMI::Device::Generic::GenericMessage::postNext()
-          ///
-          /// Post this message to the appropriate generic device, this is the
-          /// completion message and the thread (work) message(s).
-          inline bool postNext (SendQueue::Message * msg)
-          {
-            TRACE_ERR((stderr, ">> SendQueue::postNext(%p)\n", msg));
-            _local_progress_device.postMsg((PAMI::Device::Generic::GenericMessage *) msg);
-            TRACE_ERR((stderr, "<< SendQueue::postNext(%p), return true\n", msg));
-            return true; // huh?
+            // Initialize the message for this queue
+            msg->setup (_progress, this);
+
+            // If the "local" queue is empty, then post this message, and its
+            // associated work, to the generic device. Otherwise, simply add
+            // the message to the local queue.
+            if (this->isEmpty())
+              {
+                msg->postNext(true);
+              }
+
+            this->enqueue (msg);
+
+            TRACE_ERR((stderr, "<< SendQueue::post(%p)\n", msg));
           };
 
         private:
           PAMI::Device::Generic::Device * _progress;
-          PAMI::Device::Generic::Device & _local_progress_device;
-      };
-    };
-  };
-};
+
+      };  // PAMI::Device::Shmem::SendQueue class
+    };    // PAMI::Device::Shmem namespace
+  };      // PAMI::Device namespace
+};        // PAMI namespace
 #undef TRACE_ERR
 #endif // __components_devices_shmem_ShmemMessage_h__
 
