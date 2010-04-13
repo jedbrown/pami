@@ -250,6 +250,8 @@ namespace PAMI
         _native_interface   = (AllSidedNI*)_native_interface_storage;
         _multi_registration = (MultiCollectiveRegistration*) _multi_registration_storage;
 
+        if (__global.topology_local.size() > 1) 
+        {
         new (_mcastModel_storage)       Device::LocalBcastWQModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid),_status);
         new (_msyncModel_storage)       Barrier_Model(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid),_status);
         new (_mcombModel_storage)       Device::LocalReduceWQModel(PAMI::Device::LocalReduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid),_status);
@@ -257,7 +259,7 @@ namespace PAMI
         new (_multi_registration)       MultiCollectiveRegistration(*_native_interface, client, (pami_context_t)this, id, clientid);
 
         _multi_registration->analyze(_contextid, _world_geometry);
-
+        }
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
       }
