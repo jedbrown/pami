@@ -119,7 +119,6 @@ public:
                 uint64_t m = _sets[threadid];
                 // assert((m & ENABLE) != 0);
                 m &= ~ENABLE;
-                uint64_t k = m;
                 _sets[threadid] = 0;
                 size_t x = 0;
                 if (_nactive == 0) {
