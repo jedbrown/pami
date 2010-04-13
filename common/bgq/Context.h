@@ -89,11 +89,12 @@ namespace PAMI
         // We don't know how these relate to contexts, they are semi-opaque.
         TRACE_ERR((stderr, "device init: generic\n"));
         _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm, NULL);
-#ifdef ENABLE_SHMEM_DEVICE
+        if(__global.useshmem())
+        {
          TRACE_ERR((stderr,"device init: shmem\n"));
         _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm, _generics);
         TRACE_ERR((stderr,"device init shmem done, progress func\n"));
-#endif
+        }
          TRACE_ERR((stderr,"device init: progress function\n"));
         _progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm, _generics);
         TRACE_ERR((stderr,"device init: atomic barrier\n"));
@@ -108,10 +109,11 @@ namespace PAMI
         _localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
         TRACE_ERR((stderr,"device init: local reduce wq\n"));
         _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-#ifdef ENABLE_MU_DEVICE
+        if(__global.useMU())
+        {
          TRACE_ERR((stderr,"device init: MU\n"));
         _mu = MUDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-#endif
+        }
          TRACE_ERR((stderr,"device init: done!\n"));
         return PAMI_SUCCESS;
       }
@@ -135,9 +137,10 @@ namespace PAMI
       inline pami_result_t init(size_t clientid, size_t contextid, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm)
       {
         PAMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
-#ifdef ENABLE_SHMEM_DEVICE
-        ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
-#endif
+         if(__global.useshmem())
+         {
+           ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
+         }
         PAMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm , _generics);
         PAMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, mm, _generics);
         PAMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm , _generics);
@@ -145,9 +148,10 @@ namespace PAMI
         PAMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
         PAMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
         PAMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
-#ifdef ENABLE_MU_DEVICE
-        MUDevice::Factory::init(_mu, clientid, contextid, clt, ctx, mm, _generics);
-#endif
+        if(__global.useMU())
+        {
+         MUDevice::Factory::init(_mu, clientid, contextid, clt, ctx, mm, _generics);
+        }
         return PAMI_SUCCESS;
       }
 
@@ -164,9 +168,8 @@ namespace PAMI
       {
         size_t events = 0;
         events += PAMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
-#ifdef ENABLE_SHMEM_DEVICE
-        events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
-#endif
+        if(__global.useshmem())
+            events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
         events += PAMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
         events += PAMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
         events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
@@ -174,16 +177,13 @@ namespace PAMI
         events += PAMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
         events += PAMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
         events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
-#ifdef ENABLE_MU_DEVICE
-        events += MUDevice::Factory::advance(_mu, clientid, contextid);
-#endif
+        if(__global.useMU())
+           events += MUDevice::Factory::advance(_mu, clientid, contextid);
         return events;
       }
 
       PAMI::Device::Generic::Device *_generics; // need better name...
-#ifdef ENABLE_SHMEM_DEVICE
-      ShmemDevice *_shmem;
-#endif
+      ShmemDevice *_shmem; //compile-time always needs the devices since runtime is where the check is made to use them
       PAMI::Device::ProgressFunctionDev *_progfunc;
       PAMI::Device::AtomicBarrierDev *_atombarr;
       PAMI::Device::WQRingReduceDev *_wqringreduce;
@@ -191,9 +191,7 @@ namespace PAMI
       PAMI::Device::LocalAllreduceWQDevice *_localallreduce;
       PAMI::Device::LocalBcastWQDevice *_localbcast;
       PAMI::Device::LocalReduceWQDevice *_localreduce;
-#ifdef ENABLE_MU_DEVICE
       MUDevice *_mu;
-#endif
   }; // class PlatformDeviceList
 
   class Context : public Interface::Context<PAMI::Context>
@@ -226,23 +224,20 @@ namespace PAMI
 
         // Make sure the memory allocator is large enough for all
         // protocol classes.
-#ifdef ENABLE_SHMEM_DEVICE
         COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
         COMPILE_TIME_ASSERT(sizeof(GetShmem) <= ProtocolAllocator::objsize);
-#endif
-#ifdef ENABLE_MU_DEVICE
         COMPILE_TIME_ASSERT(sizeof(MUGlobalNI) <= ProtocolAllocator::objsize);
-#endif
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
 
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
-#ifdef ENABLE_MU_DEVICE
+        if(__global.useMU())
+        {
         // Can't construct NI until device is init()'d.  Ctor into member storage.
-        _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _client, _context, _contextid, _clientid);
+           _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _client, _context, _contextid, _clientid);
+        }
 
-#endif
 
         _mcastModel         = (Device::LocalBcastWQModel*)_mcastModel_storage;
         _msyncModel         = (Barrier_Model*)_msyncModel_storage;
@@ -533,97 +528,97 @@ namespace PAMI
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, "Context::dispatch_impl .. _dispatch[%zu] = %p, options = %#X\n", id, _dispatch[id], *(unsigned*)&options));
 
-        if (_dispatch[id] == NULL)
-          {
-            bool no_shmem  = options.no_shmem;
-#ifndef ENABLE_SHMEM_DEVICE
-            no_shmem = true;
-#endif
+         if (_dispatch[id] == NULL)
+         {
+            // either runtime options OR user-specified device only so we have to look at both
+            bool no_shmem = options.no_shmem || (!__global.useshmem() && __global.useMU());
+            bool use_shmem = options.use_shmem || (!__global.useMU() && __global.useshmem());
 
-            bool use_shmem = options.use_shmem;
-#ifndef ENABLE_MU_DEVICE
-            use_shmem = true;
-#endif
-
+            TRACE_ERR((stderr, "global.useshmem: %d, global.useMU: %d\n", 
+                        (int)__global.useshmem(), (int)__global.useMU()));
+            TRACE_ERR((stderr, "optons.no_shmem: %d, options. use_shmem: %d, no_shmem: %d, use_shmem: %d\n", 
+                        (int)options.no_shmem, (int)options.use_shmem, (int)no_shmem, (int)use_shmem));
             if (no_shmem == 1)
             {
-              // Register only the "mu" eager send protocol
-#ifdef ENABLE_MU_DEVICE
-
-              if (options.no_long_header == 1)
-                {
-                  _dispatch[id] = (Protocol::Send::Send *)
-                    Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
-                      generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
-                }
-              else
-                {
-                  _dispatch[id] = (Protocol::Send::Send *)
-                    Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
-                      generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
-                }
-
-#else
-              PAMI_abortf("No non-shmem protocols available.");
-#endif
+               if(__global.useMU())
+               {
+                  TRACE_ERR((stderr,"Only registering MU pt2pt protocols\n"));
+                  if (options.no_long_header == 1)
+                  {
+                     _dispatch[id] = (Protocol::Send::Send *)
+                           Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
+                           generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
+                  }
+                  else
+                  {
+                     _dispatch[id] = (Protocol::Send::Send *)
+                        Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
+                        generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
+                  }
+               }
+               else
+               {
+                  PAMI_abortf("No non-shmem protocols available.");
+               }
             }
             else if (use_shmem == 1)
             {
-              // Register only the "shmem" eager send protocol
-#ifdef ENABLE_SHMEM_DEVICE
-
-              if (options.no_long_header == 1)
-                {
-                  _dispatch[id] = (Protocol::Send::Send *)
-                    Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
-                }
-              else
-                {
-                  _dispatch[id] = (Protocol::Send::Send *)
-                    Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
-                }
-
-#else
-              PAMI_abortf("No shmem protocols available.");
-#endif
+               // Register only the "shmem" eager send protocol
+               if(__global.useshmem())
+               {
+                  TRACE_ERR((stderr,"Only register shmem pt2pt protocols\n"));
+                  if (options.no_long_header == 1)
+                  {
+                     _dispatch[id] = (Protocol::Send::Send *)
+                        Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
+                        generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                  }
+                  else
+                  {
+                     _dispatch[id] = (Protocol::Send::Send *)
+                        Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+                        generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                  }
+               }
+               else
+               {
+                  PAMI_abortf("No shmem protocols available.");
+               }
             }
-
-#if defined(ENABLE_SHMEM_DEVICE) && defined(ENABLE_MU_DEVICE)
             else
             {
-              // Register both the "mu" and "shmem" eager send protocols
-              if (options.no_long_header == 1)
-                {
-                  Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false> * eagermu =
-                    Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
-                      generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
+               // Register both the "mu" and "shmem" eager send protocols
+               if(__global.useshmem() && __global.useMU())
+               {
+                  if (options.no_long_header == 1)
+                  {
+                     Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false> * eagermu =
+                        Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
+                        generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
 
-                  Protocol::Send::Eager <ShmemModel, ShmemDevice, false> * eagershmem =
-                    Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                     Protocol::Send::Eager <ShmemModel, ShmemDevice, false> * eagershmem =
+                        Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
+                        generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
 
-                  _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
-                      generate (eagershmem, eagermu, _protocol, result);
-                }
-              else
-                {
-                  Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true> * eagermu =
-                    Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
-                      generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
+                     _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
+                        generate (eagershmem, eagermu, _protocol, result);
+                  }
+                  else
+                  {
+                     Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true> * eagermu =
+                        Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
+                        generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
 
-                  Protocol::Send::Eager <ShmemModel, ShmemDevice, true> * eagershmem =
-                    Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                     Protocol::Send::Eager <ShmemModel, ShmemDevice, true> * eagershmem =
+                        Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+                        generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
 
-                  _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
-                      generate (eagershmem, eagermu, _protocol, result);
-                }
+                     _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
+                        generate (eagershmem, eagermu, _protocol, result);
+                  }
+               }
             }
-
-#endif
-          }
+         } // end dispatch[id]==null
 
         TRACE_ERR((stderr, "Context::Context::dispatch_impl .. result = %d\n", result));
         return result;
@@ -634,29 +629,30 @@ namespace PAMI
                                              void                     * cookie,
                                              pami_dispatch_hint_t        options)
       {
-        pami_result_t result        = PAMI_ERROR;
+         pami_result_t result        = PAMI_ERROR;
 
-        if (options.type == PAMI_P2P_SEND)
-          {
+         if (options.type == PAMI_P2P_SEND)
+         {
             return dispatch_impl (id,
                                   fn,
                                   cookie,
                                   options.hint.send);
-          }
+         }
+         if(__global.useMU())
+         {
 
-#ifdef ENABLE_MU_DEVICE
-        TRACE_ERR((stderr, "Context::dispatch_new_impl multicast %zu\n", id));
+            TRACE_ERR((stderr, "Context::dispatch_new_impl multicast %zu\n", id));
 
-        if (_global_mu_ni == NULL) // lazy ctor
-          {
+            if (_global_mu_ni == NULL) // lazy ctor
+            {
             MUGlobalNI* temp = (MUGlobalNI*) _protocol.allocateObject ();
             TRACE_ERR((stderr, "new MUGlobalNI(%p, %zu, %p, %zu) = %p, size %zu\n",
                        &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
             _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _client, _context, _contextid, _clientid);
-          }
+            }
 
-        if (_dispatch[id] == NULL)
-          {
+            if (_dispatch[id] == NULL)
+            {
             _dispatch[id] = (void *)_global_mu_ni; // Only have one multicast right now
             return _global_mu_ni->setDispatch(fn, cookie);
             TRACE_ERR((stderr, "Context::dispatch_new_impl multicast %zu\n", id));
@@ -667,10 +663,10 @@ namespace PAMI
             PAMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) PAMI::Device::MU::MUMulticastModel(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), result);
             model->registerMcastRecvFunction(id, fn.multicast, cookie);
 
-          }
+            }
 
-#endif
-        return result;
+         }
+         return result;
       }
 
       inline pami_result_t multisend_getroles_impl(size_t          dispatch,
@@ -682,13 +678,14 @@ namespace PAMI
 
       inline pami_result_t multicast_impl(pami_multicast_t *mcastinfo)
       {
-#if defined(ENABLE_MU_DEVICE)
+         if(__global.useMU())
+         {
         TRACE_ERR((stderr, "Context::multicast_impl multicast %zu, %p\n", mcastinfo->dispatch, mcastinfo));
         CCMI::Interfaces::NativeInterface * ni = (CCMI::Interfaces::NativeInterface *) _dispatch[mcastinfo->dispatch];
         return ni->multicast(mcastinfo); // this version of ni allocates/frees our request storage for us.
-#else
-        return PAMI_UNIMPL;
-#endif
+        }
+        else
+           return PAMI_UNIMPL;
       };
 
 
@@ -700,7 +697,8 @@ namespace PAMI
 
       inline pami_result_t multisync_impl(pami_multisync_t *msyncinfo)
       {
-#if defined(ENABLE_MU_DEVICE)
+         if(__global.useMU())
+         {
 
         if (_global_mu_ni == NULL) // lazy ctor
           {
@@ -712,15 +710,16 @@ namespace PAMI
 
         TRACE_ERR((stderr, "Context::multisync_impl multisync %p\n", msyncinfo));
         return _global_mu_ni->multisync(msyncinfo); // Only have one multisync right now
-#else
-        return PAMI_UNIMPL;
-#endif
+        }
+        else
+           return PAMI_UNIMPL;
       };
 
 
       inline pami_result_t multicombine_impl(pami_multicombine_t *mcombineinfo)
       {
-#if defined(ENABLE_MU_DEVICE)
+         if(__global.useMU())
+         {
 
         if (_global_mu_ni == NULL) // lazy ctor
           {
@@ -732,9 +731,9 @@ namespace PAMI
 
         TRACE_ERR((stderr, "Context::multicombine_impl multicombine %p\n", mcombineinfo));
         return _global_mu_ni->multicombine(mcombineinfo);// Only have one multicombine right now
-#else
-        return PAMI_UNIMPL;
-#endif
+        }
+        else
+           return PAMI_UNIMPL;
       };
 
       inline pami_result_t analyze(size_t         context_id,
@@ -774,10 +773,8 @@ namespace PAMI
       uint8_t                      _native_interface_storage[sizeof(AllSidedNI)];
       ProtocolAllocator            _protocol;
       PlatformDeviceList          *_devices;
-#if defined(ENABLE_MU_DEVICE)
       MUGlobalNI                  *_global_mu_ni;
       uint8_t                      _global_mu_ni_storage[sizeof(MUGlobalNI)];
-#endif
   }; // end PAMI::Context
 }; // end namespace PAMI
 

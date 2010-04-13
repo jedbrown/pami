@@ -65,7 +65,41 @@ namespace PAMI
         const char   * shmemfile = "/unique-pami-global-shmem-file";
         size_t   bytes;
         size_t   pagesize  = 4096;
+        char *envopts;
+        envopts = getenv("PAMI_DEVICE");
+        _useshmem = true;
+        _useMU = true;
 
+      // Hopefully this is temporary. We should always include all the
+      //   devices and have run time checks. But with no MU on the FPGA,
+      //   this is required now, or you have to build multiple libraries.
+      //   Note: 4/13/2010: Enabling *just* MU does not work. Both or shmem
+      //   are the only viable options.
+        if(envopts != NULL)
+        {
+            if(strncasecmp(envopts,"B", 1) == 0) // use BOTH
+            {
+               _useshmem = true;
+               _useMU = true;
+            }
+            else if(strncasecmp(envopts, "S", 1) == 0) // SHMEM only
+            {
+               _useshmem = true;
+               _useMU = false;
+            }
+            else if(strncasecmp(envopts, "M", 1) == 0) // MU only
+            {
+               _useshmem = false;
+               _useMU = true;
+            }
+            else
+            {
+               fprintf(stderr,"Invalid device option %s\n", envopts);
+            }
+
+            if(_useshmem) TRACE_ERR((stderr, "Using shmem device\n"));
+            if(_useMU) TRACE_ERR((stderr,"Using MU device\n"));
+         }
         bytes = initializeMapCache(personality, NULL, ll, ur, min, max, true);
 
         bytes += sizeof(uint64_t) * 4; /// \todo #warning pad it for BG_MEMSIZE problem to skip garbage
@@ -178,6 +212,14 @@ namespace PAMI
       {
         return _mapcache.local_size;
       }
+      inline bool useshmem()
+      {
+         return _useshmem;
+      }
+      inline bool useMU()
+      {
+         return _useMU;
+      }
     private:
 
       inline size_t initializeMapCache (BgqPersonality  & personality,
@@ -195,6 +237,8 @@ namespace PAMI
 
       bgq_mapcache_t   _mapcache;
       size_t           _size;
+      bool _useshmem;
+      bool _useMU;
   }; // PAMI::Global
 };     // PAMI
 
