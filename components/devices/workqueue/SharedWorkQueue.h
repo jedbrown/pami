@@ -72,7 +72,6 @@ namespace PAMI
                 size_t size = sizeof(workqueue_t) + _qsize;
                 mm->memalign((void **)&_sharedqueue, 16, size);
                 TRACE_ERR((stderr,  "%s sharedqueue %p\n", __PRETTY_FUNCTION__,_sharedqueue));
-                if(!_sharedqueue) _sharedqueue->buffer[0] = 0;
                 PAMI_assert_debug(_sharedqueue);
                 PAMI_assert_debug((_qsize & (_qsize - 1)) == 0);
                 _qmask = _qsize - 1;
