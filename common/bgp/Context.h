@@ -105,6 +105,7 @@ namespace PAMI
      * \param[in] mm		MemeoryManager for use in generating devices
      */
     inline pami_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
+      TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
         // these calls create (allocate and construct) each element.
         // We don't know how these relate to contexts, they are semi-opaque.
         _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm, NULL);
@@ -142,6 +143,7 @@ namespace PAMI
      * \param[in] sd		SysDep object
      */
     inline pami_result_t init(size_t clientid, size_t contextid, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm) {
+      TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
         PAMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
         ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
         PAMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm, _generics);
@@ -229,6 +231,7 @@ namespace PAMI
           _native_interface(NULL),
           _devices(devices)
       {
+        TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
@@ -252,12 +255,17 @@ namespace PAMI
 
         if (__global.topology_local.size() > 1) 
         {
+        TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
         new (_mcastModel_storage)       Device::LocalBcastWQModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid),_status);
+        TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
         new (_msyncModel_storage)       Barrier_Model(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid),_status);
+        TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
         new (_mcombModel_storage)       Device::LocalReduceWQModel(PAMI::Device::LocalReduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid),_status);
+        TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
         new (_native_interface_storage) AllSidedNI(_mcastModel, _msyncModel, _mcombModel, client, (pami_context_t)this, id, clientid);
+        TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
         new (_multi_registration)       MultiCollectiveRegistration(*_native_interface, client, (pami_context_t)this, id, clientid);
-
+        TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
         _multi_registration->analyze(_contextid, _world_geometry);
         }
         // dispatch_impl relies on the table being initialized to NULL's.
