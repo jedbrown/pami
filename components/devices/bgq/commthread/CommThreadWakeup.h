@@ -19,12 +19,24 @@
 #include "common/bgq/Context.h"
 #include <pthread.h>
 
-/// \todo #warning need CNK definitions for WU_ArmWithAddress and Kernel_SnoopScheduler
+/// \todo #warning need CNK definition for WU_ArmWithAddress
+#define WU_ArmWithAddress(...)
+/// \todo #warning need CNK definition for ppc_waitimpl
+#define ppc_waitimpl()
+/// \todo #warning need CNK definition for Kernel_SnoopScheduler
 #define SNOOP_ALONE	(1)
 #define SNOOP_NOTALONE	(2)
-#define WU_ArmWithAddress(...)
-#define ppc_waitimpl()
 #define Kernel_SnoopScheduler()		(SNOOP_ALONE)
+
+#ifndef SCHED_COMM
+/// \todo #warning Need to get SCHED_COMM from system headers!
+#define SCHED_COMM 4
+#endif // !SCHED_COMM
+
+//#define COMMTHREAD_SCHED	SCHED_COMM
+//#define COMMTHREAD_SCHED	SCHED_FIFO
+//#define COMMTHREAD_SCHED	SCHED_RR
+#define COMMTHREAD_SCHED	SCHED_OTHER
 
 namespace PAMI {
 namespace Device {
@@ -88,6 +100,7 @@ private:
                 return e;
         }
 
+/// \todo #warning Need CNK method to enable MU "interrupts" through Wakeup Unit
         /// \brief Arm the MU interrupt-through-Wakeup Unit
         ///
         inline void __armMU_WU() { }
@@ -153,23 +166,27 @@ public:
 		if (rc != PAMI_SUCCESS) {
 			return rc;
 		}
-		pthread_attr_t attr;
-		pthread_t thread;	// do we need to save this for later?
 		int status;
-
-		status = pthread_attr_init(&attr);
-		if (status) return PAMI_CHECK_ERRNO;
-		status = pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
-		if (status) return PAMI_CHECK_ERRNO;
-		// status = pthread_attr_setschedpolicy(&attr, SCHED_COMM);
-		// if (status) return PAMI_CHECK_ERRNO;
-
 		// we assume this is single-threaded so no locking required...
 		size_t x = _numActive++;
-		status = pthread_create(&thread, &attr, commThread, (void *)&devs[x]);
+		BgqCommThread *thus = &devs[x];
+		pthread_attr_t attr;
+		pthread_t thread;	// do we need to save this for later?
+
+		status = pthread_attr_init(&attr);
+		if (status) return (pami_result_t)10;
+		//status = pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
+		//if (status) return (pami_result_t)11;
+		//pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+		//if (status) return (pami_result_t)12;
+		//status = pthread_attr_setschedpolicy(&attr, COMMTHREAD_SCHED);
+		//if (status) { errno = status; return (pami_result_t)13; }
+
+		status = pthread_create(&thread, &attr, commThread, thus);
+		pthread_attr_destroy(&attr);
 		if (status) {
 			--_numActive;
-			return PAMI_CHECK_ERRNO;
+			{ errno = status; return (pami_result_t)14; }
 		}
 		return PAMI_SUCCESS;
         }
@@ -183,8 +200,10 @@ private:
                 size_t id; // our current commthread id, among active ones.
                 pthread_t self = pthread_self();
                 uint64_t wu_start, wu_mask;
+		int min_pri = sched_get_priority_min(COMMTHREAD_SCHED);
+		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
 
-                pthread_setschedprio(self, 99); // need official constant here
+                pthread_setschedprio(self, max_pri);
                 _ctxset->joinContextSet(_client, id);
                 new_ctx = old_ctx = lkd_ctx = 0;
                 while (1) {
@@ -239,9 +258,9 @@ more_work:		// lightweight enough.
 
                                 _ctxset->leaveContextSet(_client, id); // id invalid now
 
-                                pthread_setschedprio(self, 0); // need official constant
+                                pthread_setschedprio(self, min_pri);
                                 //=== we get preempted here ===//
-                                pthread_setschedprio(self, 99); // need official constant
+                                pthread_setschedprio(self, max_pri);
 
                                 _ctxset->joinContextSet(_client, id); // got new id now...
                                 // always assume context set changed... just simpler.

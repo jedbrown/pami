@@ -6,6 +6,7 @@
 #include "sys/pami.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <errno.h>
 
 pami_result_t __add_context(pami_client_t client, pami_context_t context) {
 	return PAMI_UNIMPL;
@@ -37,12 +38,12 @@ pami_result_t run_test(pami_context_t *ctx, size_t nctx) {
 	/* Post some work to the contexts */
 	result = PAMI_Context_post(ctx[0], &_info[0].state, do_work, (void *)&_info[0]);
 	if (result != PAMI_SUCCESS) {
-		fprintf(stderr, "Error. Unable to post work to the first pami context. result = %d\n", result);
+		fprintf(stderr, "Error. Unable to post work to the first pami context. result = %d (%d)\n", result, errno);
 		return result;
 	}
 	result = PAMI_Context_post(ctx[1], &_info[1].state, do_work, (void *)&_info[1]);
 	if (result != PAMI_SUCCESS) {
-		fprintf(stderr, "Error. Unable to post work to the second pami context. result = %d\n", result);
+		fprintf(stderr, "Error. Unable to post work to the second pami context. result = %d (%d)\n", result, errno);
 		return result;
 	}
 
@@ -78,12 +79,12 @@ int main(int argc, char ** argv) {
 
 	result = PAMI_Client_add_commthread_context(client, context[0]);
 	if (result != PAMI_SUCCESS) {
-		fprintf(stderr, "Error. Unable to add commthread to first pami context. result = %d\n", result);
+		fprintf(stderr, "Error. Unable to add commthread to first pami context. result = %d (%d)\n", result, errno);
 		return 1;
 	}
 	result = PAMI_Client_add_commthread_context(client, context[1]);
 	if (result != PAMI_SUCCESS) {
-		fprintf(stderr, "Error. Unable to add commthread to second pami context. result = %d\n", result);
+		fprintf(stderr, "Error. Unable to add commthread to second pami context. result = %d (%d)\n", result, errno);
 		return 1;
 	}
 
