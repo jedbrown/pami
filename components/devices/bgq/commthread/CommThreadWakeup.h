@@ -30,12 +30,11 @@
 
 #ifndef SCHED_COMM
 /// \todo #warning Need to get SCHED_COMM from system headers!
-#define SCHED_COMM 4
+#define SCHED_COMM SCHED_RR
 #endif // !SCHED_COMM
 
 //#define COMMTHREAD_SCHED	SCHED_COMM
 //#define COMMTHREAD_SCHED	SCHED_FIFO
-//#define COMMTHREAD_SCHED	SCHED_RR
 #define COMMTHREAD_SCHED	SCHED_OTHER
 
 namespace PAMI {
@@ -59,6 +58,7 @@ private:
                 while (m) {
                         if (m & 1) {
                                 r = _ctxset->getContext(_client, x)->unlock();
+                                l &= ~(1ULL << x);
                         }
                         m >>= 1;
                         ++x;
@@ -174,19 +174,39 @@ public:
 		pthread_t thread;	// do we need to save this for later?
 
 		status = pthread_attr_init(&attr);
-		if (status) return (pami_result_t)10;
-		//status = pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
-		//if (status) return (pami_result_t)11;
-		//pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-		//if (status) return (pami_result_t)12;
-		//status = pthread_attr_setschedpolicy(&attr, COMMTHREAD_SCHED);
-		//if (status) { errno = status; return (pami_result_t)13; }
-
-		status = pthread_create(&thread, &attr, commThread, thus);
-		pthread_attr_destroy(&attr);
 		if (status) {
 			--_numActive;
-			{ errno = status; return (pami_result_t)14; }
+			errno = status;
+			return PAMI_CHECK_ERRNO;
+		}
+		status = pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
+		if (status) {
+			pthread_attr_destroy(&attr);
+			--_numActive;
+			errno = status;
+			return PAMI_CHECK_ERRNO;
+		}
+		pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+		if (status) {
+			pthread_attr_destroy(&attr);
+			--_numActive;
+			errno = status;
+			return PAMI_CHECK_ERRNO;
+		}
+		status = pthread_attr_setschedpolicy(&attr, COMMTHREAD_SCHED);
+		if (status) {
+			pthread_attr_destroy(&attr);
+			--_numActive;
+			errno = status;
+			return PAMI_CHECK_ERRNO;
+		}
+
+		status = pthread_create(&thread, 0, commThread, thus);
+		if (status) {
+			pthread_attr_destroy(&attr);
+			--_numActive;
+			errno = status;
+			return PAMI_CHECK_ERRNO;
 		}
 		return PAMI_SUCCESS;
         }

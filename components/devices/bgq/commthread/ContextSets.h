@@ -54,9 +54,9 @@ public:
                 if (_ncontexts >= _ncontexts_total) {
                         return PAMI_ERROR;
                 }
+                _mutex.acquire();
 		size_t x = _ncontexts++;
                 _contexts[x] = (PAMI::Context *)ctx;
-                _mutex.acquire();
 		_notset |= (1ULL << x);
                 _mutex.release();
 		// presumably, a new comm thread is about to call joinContextSet(),
@@ -113,7 +113,6 @@ public:
         }
 
         inline void leaveContextSet(size_t clientid, size_t &threadid) {
-
                 _mutex.acquire();
                 --_nactive;
                 uint64_t m = _sets[threadid];
