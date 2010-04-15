@@ -12,7 +12,13 @@
 #include "Context.h"
 #include <errno.h>
 
-#undef USE_COMMTHREADS // define/undef
+// This enables compilation of the comm-thread code, but it will
+// not be used unless something calls PAMI_Client_add_commthread_context().
+// See test/BG/bgq/commthreads/single-context.c for example use.
+// However, if desired, compilation may be disabled by changing
+// the following to "#undef".
+#define USE_COMMTHREADS // define/undef
+
 #ifdef USE_COMMTHREADS
 #include "components/devices/bgq/commthread/CommThreadWakeup.h"
 #endif // USE_COMMTHREADS
