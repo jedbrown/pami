@@ -208,6 +208,7 @@ namespace PAMI
           _contextid (id),
           _mm (addr, bytes),
           _sysdep (_mm),
+	  _lock(),
           _multi_registration(NULL),
           _world_geometry(world_geometry),
           _status(PAMI_SUCCESS),
@@ -231,6 +232,7 @@ namespace PAMI
         // Compile-time assertions
         // ----------------------------------------------------------------
 
+	_lock.init(&_mm);
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
         if(__global.useMU())
         {
