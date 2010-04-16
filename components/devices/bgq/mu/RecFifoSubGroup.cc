@@ -143,8 +143,8 @@ init ( uint32_t subGroupId,
 
       // Set the enable bit for this reception fifo.
       enableBits |= _BN(48 +
-                        ((subGroupId % BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE) *
-                         BGQ_MU_NUM_REC_FIFOS_PER_GROUP) +
+                        ((subGroupId % BGQ_MU_NUM_FIFO_SUBGROUPS) *
+                         BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) +
                         _fifoNumbers[fifoNum]);
 
       rc = Kernel_DestroyMemoryRegion( &memRegion );
