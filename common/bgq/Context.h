@@ -45,10 +45,9 @@
 #define TRACE_ERR(x) //fprintf x
 
 
-
 namespace PAMI
 {
-  typedef CollRegistration::CCMIMultiRegistration < BGQGeometry, AllSidedNI > MultiCollectiveRegistration;
+  typedef CollRegistration::CCMIMultiRegistration < BGQGeometry, AllSidedShmemNI > ShmemCollectiveRegistration;
 
   typedef Mutex::CounterMutex<Counter::BGQ::L2NodeCounter>  ContextLock;
 
@@ -68,7 +67,18 @@ namespace PAMI
   class PlatformDeviceList
   {
     public:
-      PlatformDeviceList() { }
+      PlatformDeviceList():
+      _generics(NULL),
+      _shmem(NULL),
+      _progfunc(NULL),
+      _atombarr(NULL),
+//    _wqringreduce(NULL),
+//    _wqringbcast(NULL),
+      _localallreduce(NULL),
+      _localbcast(NULL),
+      _localreduce(NULL),
+      _mu(NULL)
+      { }
 
       /**
        * \brief initialize this platform device list
@@ -91,24 +101,23 @@ namespace PAMI
         _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm, NULL);
         if(__global.useshmem())
         {
-         TRACE_ERR((stderr,"device init: shmem\n"));
-        _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-        TRACE_ERR((stderr,"device init shmem done, progress func\n"));
+          TRACE_ERR((stderr,"device init: shmem\n"));
+          _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+          TRACE_ERR((stderr,"device init: local allreduce wq\n"));
+          _localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+          TRACE_ERR((stderr,"device init: local bcast wq\n"));
+          _localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+          TRACE_ERR((stderr,"device init: local reduce wq\n"));
+          _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
         }
-         TRACE_ERR((stderr,"device init: progress function\n"));
+        TRACE_ERR((stderr,"device init: progress function\n"));
         _progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm, _generics);
         TRACE_ERR((stderr,"device init: atomic barrier\n"));
         _atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm, _generics);
-        TRACE_ERR((stderr,"device init: wqring reduce\n"));
-        _wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm, _generics);
-        TRACE_ERR((stderr,"device init: wqring bcast\n"));
-        _wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm, _generics);
-        TRACE_ERR((stderr,"device init: local allreduce wq\n"));
-        _localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-        TRACE_ERR((stderr,"device init: local bcast wq\n"));
-        _localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-        TRACE_ERR((stderr,"device init: local reduce wq\n"));
-        _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+//      TRACE_ERR((stderr,"device init: wqring reduce\n"));
+//      _wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm, _generics);
+//      TRACE_ERR((stderr,"device init: wqring bcast\n"));
+//      _wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm, _generics);
         if(__global.useMU())
         {
          TRACE_ERR((stderr,"device init: MU\n"));
@@ -140,14 +149,14 @@ namespace PAMI
          if(__global.useshmem())
          {
            ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
+           PAMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
+           PAMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
+           PAMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
          }
         PAMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm , _generics);
         PAMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm , _generics);
-        PAMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
+//      PAMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm , _generics);
+//      PAMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
         if(__global.useMU())
         {
          MUDevice::Factory::init(_mu, clientid, contextid, clt, ctx, mm, _generics);
@@ -169,14 +178,16 @@ namespace PAMI
         size_t events = 0;
         events += PAMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
         if(__global.useshmem())
+        {  
             events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
+            events += PAMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
+            events += PAMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
+            events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
+        }
         events += PAMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
         events += PAMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
-        events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
-        events += PAMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
-        events += PAMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
-        events += PAMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
-        events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
+//      events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
+//      events += PAMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
         if(__global.useMU())
            events += MUDevice::Factory::advance(_mu, clientid, contextid);
         return events;
@@ -186,8 +197,8 @@ namespace PAMI
       ShmemDevice *_shmem; //compile-time always needs the devices since runtime is where the check is made to use them
       PAMI::Device::ProgressFunctionDev *_progfunc;
       PAMI::Device::AtomicBarrierDev *_atombarr;
-      PAMI::Device::WQRingReduceDev *_wqringreduce;
-      PAMI::Device::WQRingBcastDev *_wqringbcast;;
+//    PAMI::Device::WQRingReduceDev *_wqringreduce;
+//    PAMI::Device::WQRingBcastDev *_wqringbcast;;
       PAMI::Device::LocalAllreduceWQDevice *_localallreduce;
       PAMI::Device::LocalBcastWQDevice *_localbcast;
       PAMI::Device::LocalReduceWQDevice *_localreduce;
@@ -208,17 +219,18 @@ namespace PAMI
           _contextid (id),
           _mm (addr, bytes),
           _sysdep (_mm),
-	  _lock(),
-          _multi_registration(NULL),
+          _lock(),
+          _shmem_registration(NULL),
           _world_geometry(world_geometry),
           _status(PAMI_SUCCESS),
-          _mcastModel(NULL),
-          _msyncModel(NULL),
-          _mcombModel(NULL),
-          _native_interface(NULL),
-          _devices(devices)
+          _shmemMcastModel(NULL),
+          _shmemMsyncModel(NULL),
+          _shmemMcombModel(NULL),
+          _shmem_native_interface(NULL),
+          _devices(devices),
+          _global_mu_ni(NULL)
       {
-        TRACE_ERR((stderr,  "Context::Context() enter\n"));
+        TRACE_ERR((stderr,  "<%p>Context::Context() enter\n",this));
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
@@ -232,7 +244,7 @@ namespace PAMI
         // Compile-time assertions
         // ----------------------------------------------------------------
 
-	_lock.init(&_mm);
+        _lock.init(&_mm);
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
         if(__global.useMU())
         {
@@ -240,22 +252,29 @@ namespace PAMI
            _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _client, _context, _contextid, _clientid);
         }
 
+        if(__global.useshmem())
+        {
+          if (__global.topology_local.size() > 1)
+          {
+            _shmemMcastModel         = (Device::LocalBcastWQModel*)_shmemMcastModel_storage;
+            _shmemMcombModel         = (Device::LocalReduceWQModel*)_shmemMcombModel_storage;
+            _shmemMsyncModel         = (Barrier_Model*)_shmemMsyncModel_storage;
 
-        _mcastModel         = (Device::LocalBcastWQModel*)_mcastModel_storage;
-        _msyncModel         = (Barrier_Model*)_msyncModel_storage;
-        _mcombModel         = (Device::LocalReduceWQModel*)_mcombModel_storage;
-        _native_interface   = (AllSidedNI*)_native_interface_storage;
-        _multi_registration = (MultiCollectiveRegistration*) _multi_registration_storage;
+            new (_shmemMsyncModel_storage)        Barrier_Model(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid),_status);
+            new (_shmemMcastModel_storage)        Device::LocalBcastWQModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid),_status);
+            new (_shmemMcombModel_storage)        Device::LocalReduceWQModel(PAMI::Device::LocalReduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid),_status);
 
-	if (__global.topology_local.size() > 1) {
-        	new (_mcastModel_storage)       Device::LocalBcastWQModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid),_status);
-        	new (_msyncModel_storage)       Barrier_Model(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid),_status);
-        	new (_mcombModel_storage)       Device::LocalReduceWQModel(PAMI::Device::LocalReduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid),_status);
-        	new (_native_interface_storage) AllSidedNI(_mcastModel, _msyncModel, _mcombModel, client, (pami_context_t)this, id, clientid);
-        	new (_multi_registration)       MultiCollectiveRegistration(*_native_interface, client, (pami_context_t)this, id, clientid);
+            _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
+            new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid);
 
-        	_multi_registration->analyze(_contextid, _world_geometry);
-	}
+
+            _shmem_registration      = (ShmemCollectiveRegistration*) _shmem_registration_storage;
+            new (_shmem_registration)             ShmemCollectiveRegistration(*_shmem_native_interface, client, (pami_context_t)this, id, clientid);
+  
+            _shmem_registration->analyze(_contextid, _world_geometry);
+          }
+          else TRACE_ERR((stderr, "topology does not support shmem\n"));
+        }
 
         /** \todo #warning This should not be here? */
 #if 0 // not working yet? not fully implemented?
@@ -263,11 +282,12 @@ namespace PAMI
         _get = (void *) _request.allocateObject ();
         new ((void *)_get) GetShmem(ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
 
-        // dispatch_impl relies on the table being initialized to NULL's.
-        memset(_dispatch, 0x00, sizeof(_dispatch));
 #endif
 
-        TRACE_ERR((stderr,  "Context:: exit\n"));
+        // dispatch_impl relies on the table being initialized to NULL's.
+        memset(_dispatch, 0x00, sizeof(_dispatch));
+
+        TRACE_ERR((stderr,  "<%p>Context:: exit\n",this));
       }
       inline pami_client_t getClient_impl ()
       {
@@ -333,6 +353,7 @@ namespace PAMI
         _lock.release ();
         return PAMI_SUCCESS;
       }
+
 
       inline pami_result_t send_impl (pami_send_t * parameters)
       {
@@ -640,34 +661,23 @@ namespace PAMI
                                   cookie,
                                   options.hint.send);
          }
-         if(__global.useMU())
+         if(__global.useshmem())
+         {
+           return PAMI_UNIMPL; // no shmem active message yet
+         }
+         else if(__global.useMU())
          {
 
             TRACE_ERR((stderr, "Context::dispatch_new_impl multicast %zu\n", id));
-
-            if (_global_mu_ni == NULL) // lazy ctor
-            {
-            MUGlobalNI* temp = (MUGlobalNI*) _protocol.allocateObject ();
-            TRACE_ERR((stderr, "new MUGlobalNI(%p, %zu, %p, %zu) = %p, size %zu\n",
-                       &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
-            _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _client, _context, _contextid, _clientid);
-            }
-
             if (_dispatch[id] == NULL)
             {
             _dispatch[id] = (void *)_global_mu_ni; // Only have one multicast right now
             return _global_mu_ni->setDispatch(fn, cookie);
-            TRACE_ERR((stderr, "Context::dispatch_new_impl multicast %zu\n", id));
-            PAMI_assertf(_protocol.objsize >= sizeof(PAMI::Device::MU::MUMulticastModel), "%zu >= %zu\n", _protocol.objsize, sizeof(PAMI::Device::MU::MUMulticastModel));
-            // Allocate memory for the protocol object.
-            _dispatch[id] = (void *) _protocol.allocateObject ();
-
-            PAMI::Device::MU::MUMulticastModel * model = new ((void*)_dispatch[id]) PAMI::Device::MU::MUMulticastModel(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), result);
-            model->registerMcastRecvFunction(id, fn.multicast, cookie);
-
             }
 
          }
+         else
+            return PAMI_UNIMPL;
          return result;
       }
 
@@ -680,68 +690,77 @@ namespace PAMI
 
       inline pami_result_t multicast_impl(pami_multicast_t *mcastinfo)
       {
-         if(__global.useMU())
+        if(__global.useshmem())
+        {
+          TRACE_ERR((stderr, "Context::multicast_impl shmem multicast %p\n", mcastinfo));
+          return _shmem_native_interface->multicast(mcastinfo); // Only have one multicast right now
+          
+        }
+        else if(__global.useMU())
          {
-        TRACE_ERR((stderr, "Context::multicast_impl multicast %zu, %p\n", mcastinfo->dispatch, mcastinfo));
+        TRACE_ERR((stderr, "Context::multicast_impl mu multicast %zu, %p\n", mcastinfo->dispatch, mcastinfo));
         CCMI::Interfaces::NativeInterface * ni = (CCMI::Interfaces::NativeInterface *) _dispatch[mcastinfo->dispatch];
         return ni->multicast(mcastinfo); // this version of ni allocates/frees our request storage for us.
         }
         else
-           return PAMI_UNIMPL;
+          PAMI_abortf("%s<%u>\n", __PRETTY_FUNCTION__, __LINE__);
+        return PAMI_UNIMPL;
       };
 
 
       inline pami_result_t manytomany_impl(pami_manytomany_t *m2minfo)
       {
+        PAMI_abortf("%s<%u>\n", __PRETTY_FUNCTION__, __LINE__);
         return PAMI_UNIMPL;
       };
 
 
       inline pami_result_t multisync_impl(pami_multisync_t *msyncinfo)
       {
-         if(__global.useMU())
+        if(__global.useshmem())
+        {
+          TRACE_ERR((stderr, "Context::multisync_impl shmem multisync %p\n", msyncinfo));
+          return _shmem_native_interface->multisync(msyncinfo); // Only have one multisync right now
+        }
+        else if(__global.useMU())
          {
 
-        if (_global_mu_ni == NULL) // lazy ctor
-          {
-            MUGlobalNI* temp = (MUGlobalNI*) _protocol.allocateObject ();
-            TRACE_ERR((stderr, "new MUGlobalNI(%p, %zu, %p, %zu) = %p, size %zu\n",
-                       &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
-            _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _client, _context, _contextid, _clientid);
-          }
-
-        TRACE_ERR((stderr, "Context::multisync_impl multisync %p\n", msyncinfo));
+        TRACE_ERR((stderr, "Context::multisync_impl mu multisync %p\n", msyncinfo));
         return _global_mu_ni->multisync(msyncinfo); // Only have one multisync right now
         }
         else
-           return PAMI_UNIMPL;
+          PAMI_abortf("%s<%u>\n", __PRETTY_FUNCTION__, __LINE__);
+
+        return PAMI_UNIMPL;
       };
 
 
       inline pami_result_t multicombine_impl(pami_multicombine_t *mcombineinfo)
       {
-         if(__global.useMU())
+        if(__global.useshmem())
+        {
+          TRACE_ERR((stderr, "Context::multicombine_impl shmem multicombine %p\n", mcombineinfo));
+          return _shmem_native_interface->multicombine(mcombineinfo); // Only have one multicombine right now
+        }
+         else if(__global.useMU())
          {
-
-        if (_global_mu_ni == NULL) // lazy ctor
-          {
-            MUGlobalNI* temp = (MUGlobalNI*) _protocol.allocateObject ();
-            TRACE_ERR((stderr, "new MUGlobalNI(%p, %zu, %p, %zu) = %p, size %zu\n",
-                       &_devices->_mu, _clientid, _context, _contextid, temp, sizeof(MUGlobalNI)));
-            _global_mu_ni = new (temp) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _client, _context, _contextid, _clientid);
-          }
 
         TRACE_ERR((stderr, "Context::multicombine_impl multicombine %p\n", mcombineinfo));
         return _global_mu_ni->multicombine(mcombineinfo);// Only have one multicombine right now
         }
         else
-           return PAMI_UNIMPL;
+          PAMI_abortf("%s<%u>\n", __PRETTY_FUNCTION__, __LINE__);
+        return PAMI_UNIMPL;
       };
 
       inline pami_result_t analyze(size_t         context_id,
                                   BGQGeometry    *geometry)
       {
-        return _multi_registration->analyze(context_id,geometry);
+        if(__global.useshmem())
+          return _shmem_registration->analyze(context_id,geometry);
+        else 
+          PAMI_abortf("%s<%u>\n", __PRETTY_FUNCTION__, __LINE__);
+        return PAMI_UNIMPL;
       }
 
 
@@ -760,19 +779,19 @@ namespace PAMI
       MemoryAllocator<1024, 16>    _request;
       ContextLock                  _lock;
     public:
-      MultiCollectiveRegistration *_multi_registration;
+      ShmemCollectiveRegistration *_shmem_registration;
       BGQGeometry                 *_world_geometry;
     private:
       pami_result_t                _status;
-      Device::LocalBcastWQModel   *_mcastModel;
-      Barrier_Model               *_msyncModel;
-      Device::LocalReduceWQModel  *_mcombModel;
-      AllSidedNI                  *_native_interface;
-      uint8_t                      _multi_registration_storage[sizeof(MultiCollectiveRegistration)];
-      uint8_t                      _mcastModel_storage[sizeof(Device::LocalBcastWQModel)];
-      uint8_t                      _msyncModel_storage[sizeof(Barrier_Model)];
-      uint8_t                      _mcombModel_storage[sizeof(Device::LocalReduceWQModel)];
-      uint8_t                      _native_interface_storage[sizeof(AllSidedNI)];
+      Device::LocalBcastWQModel   *_shmemMcastModel;
+      Barrier_Model               *_shmemMsyncModel;
+      Device::LocalReduceWQModel  *_shmemMcombModel;
+      AllSidedShmemNI             *_shmem_native_interface;
+      uint8_t                      _shmem_registration_storage[sizeof(ShmemCollectiveRegistration)];
+      uint8_t                      _shmemMcastModel_storage[sizeof(Device::LocalBcastWQModel)];
+      uint8_t                      _shmemMsyncModel_storage[sizeof(Barrier_Model)];
+      uint8_t                      _shmemMcombModel_storage[sizeof(Device::LocalReduceWQModel)];
+      uint8_t                      _shmem_native_interface_storage[sizeof(AllSidedShmemNI)];
       ProtocolAllocator            _protocol;
       PlatformDeviceList          *_devices;
       MUGlobalNI                  *_global_mu_ni;

@@ -39,11 +39,11 @@
 
 ///
 /// \brief dump hex data to stderr
-///  \param pstring : an informational text string to print
-///  \param buffer  : the (integer) buffer to dump
-///  \param n_ints  : number of integers to dump from the buffer
+///  \param s : an informational text string to print
+///  \param b : the (integer) buffer to dump
+///  \param n : number of integers to dump from the buffer
 #undef DUMP_HEXDATA
-#define DUMP_HEXDATA(x,d,s) //globalDumpHexData(x,d,s)
+#define DUMP_HEXDATA(s,b,n) //globalDumpHexData(s,b,n)
 void globalDumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints);
 
 #define BGQ_GLOBAL_SHMEM_SIZE	256*1024 ///< extra shmem for BGQ L2 Atomics and WAC
