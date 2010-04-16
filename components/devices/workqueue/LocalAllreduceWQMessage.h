@@ -147,10 +147,10 @@ public:
                         status = PAMI_ERROR;
                         return;
                 }
+                _shared.barrier_reset(_npeers, (_peer == 0));
                 _shared.setProducers(_npeers, _peer);
                 _shared.setConsumers(_npeers, _peer);
                 // since we hard-code topology_local, we know _peer==0 exists...
-                _shared.barrier_reset(_npeers, (_peer == 0));
 		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
         }
 
