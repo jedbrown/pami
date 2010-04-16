@@ -159,17 +159,23 @@ public:
                 // might need hook later, to do per-context initialization?
         }
 
+	// arrange for the new comm-thread to hunt-down this context and
+	// take it, even if some other thread already picked it up.
+	// This helps ensure a more-balanced startup, and prevents some
+	// complexities of trying to re-balance later. Then, only when
+	// a comm-thread leaves the set does there have to be a re-balance.
         static inline pami_result_t addContext(BgqCommThread *devs, size_t clientid,
                                         pami_context_t context) {
                 // all BgqCommThread objects have the same ContextSet object.
-                pami_result_t rc = devs[0]._ctxset->addContext(clientid, context);
-		if (rc != PAMI_SUCCESS) {
-			return rc;
+                uint64_t m = devs[0]._ctxset->addContext(clientid, context);
+		if (m == 0) {
+			return PAMI_EAGAIN; // closest thing to ENOSPC ?
 		}
 		int status;
 		// we assume this is single-threaded so no locking required...
 		size_t x = _numActive++;
 		BgqCommThread *thus = &devs[x];
+		thus->_initCtxs = m;	// this shold never be zero
 		pthread_attr_t attr;
 		pthread_t thread;	// do we need to save this for later?
 
@@ -224,7 +230,7 @@ private:
 		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
 
                 pthread_setschedprio(self, max_pri);
-                _ctxset->joinContextSet(_client, id);
+                _ctxset->joinContextSet(_client, id, _initCtxs);
                 new_ctx = old_ctx = lkd_ctx = 0;
                 while (1) {
                         //
@@ -295,9 +301,10 @@ more_work:		// lightweight enough.
                 return PAMI_SUCCESS;
         }
 
-        BgqWakeupRegion *_wakeup_region;///< memory for WAC for all contexts
-        PAMI::Device::CommThread::BgqContextPool *_ctxset;
-        size_t _client;
+        BgqWakeupRegion *_wakeup_region;	///< WAC memory for contexts (common)
+        PAMI::Device::CommThread::BgqContextPool *_ctxset; ///< context set (common)
+        size_t _client;		///< client ID
+	uint64_t _initCtxs;	///< initial set of contexts to take
 	static size_t _numActive;
 }; // class BgqCommThread
 

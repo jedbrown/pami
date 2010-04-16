@@ -24,6 +24,86 @@ class BgqContextPool {
         static const uint64_t ENABLE = (1ULL << 63);
 
         typedef PAMI::Mutex::BGQ::L2ProcMutex ContextSetMutex;
+
+	// lock is held by caller...
+	inline uint64_t __getOneContext(uint64_t &ref) {
+		uint64_t k = ref;
+		uint64_t m;
+		size_t x = ffs(k);
+		if (x > 0 && x < 64) {
+			--x;
+			m = (1ULL << x);
+			k &= ~m;
+			ref = k;
+			return m;
+		}
+		// should never happen...
+		return 0;
+	}
+	// lock is held by caller...
+	// must ensure we complete, even if no contexts found.
+	// right now, assumes caller's _sets[] is zero... (!ENABLE)
+	inline uint64_t __rebalanceContexts(uint64_t initial) {
+		uint64_t m = 0;
+		size_t desired = (_ncontexts + (_nactive - 1)) / _nactive;
+		size_t n = 0;
+		size_t ni = 0;
+
+		while (n < desired) {
+			if (++_lastset >= _nsets) {
+				_lastset = 0;
+				if (++ni >= 2) break;
+#if 0 // this is not right, yet...
+				if (_notset) {
+					m |= __getOneContext(k);
+					++n;
+					continue;
+				}
+#endif
+			}
+			uint64_t k = _sets[_lastset];
+			if ((k & ENABLE)) {
+				k &= ~ENABLE;
+				if ((k & initial)) {
+					++n; // for now, assume 1 bit set in "initial"...
+					_sets[_lastset] = (k & ~initial) | ENABLE;
+				} else if (k) {
+					// do not take their last context...
+					uint64_t mm = __getOneContext(k);
+					if (k && mm) {
+						m |= mm;
+						++n;
+						_sets[_lastset] = (k | ENABLE);
+					}
+				}
+			}
+		}
+		m |= initial; // we REALLY want this context...
+		return m;
+	}
+
+	// lock is held by caller...
+	inline void __giveupContexts(uint64_t ctxs) {
+		uint64_t m = ctxs;
+                size_t x = 0;
+		while (m) {
+			// give away each context in a round-robin fashion.
+                        if (m & 1) {
+                                uint64_t n;
+                                // there must be one other... or else we hang here.
+                                do {
+                                        if (++_lastset >= _nsets) _lastset = 0;
+                                        n = _sets[_lastset];
+                                        if ((n & ENABLE)) {
+                                                _sets[_lastset] = n | (1ULL << x);
+                                        }
+                                } while (!(n & ENABLE));
+                        }
+                        m >>= 1;
+                        ++x;
+		}
+	}
+
 public:
         BgqContextPool() :
         _contexts(NULL),
@@ -50,9 +130,9 @@ public:
         }
 
 	// caller promises to be single-threaded (?)
-        inline pami_result_t addContext(size_t clientid, pami_context_t ctx) {
+        inline uint64_t addContext(size_t clientid, pami_context_t ctx) {
                 if (_ncontexts >= _ncontexts_total) {
-                        return PAMI_ERROR;
+                        return 0ULL;
                 }
                 _mutex.acquire();
 		size_t x = _ncontexts++;
@@ -62,7 +142,7 @@ public:
 		// presumably, a new comm thread is about to call joinContextSet(),
 		// but can we guarantee timing? May need a way to ensure that
 		// "_notset" will be checked.
-                return PAMI_SUCCESS;
+                return (1ULL << x);
         }
 
         PAMI::Context *getContext(size_t clientid, size_t contextix) {
@@ -72,43 +152,38 @@ public:
         inline uint64_t getContextSet(size_t clientid, size_t threadid) {
                 _mutex.acquire();
                 uint64_t m = _sets[threadid] & ~ENABLE;
+#if 0
 		// should we check "_notset" and possibly pick up more contexts?
 		// or just trigger a "rejoin"?
+		if (!m) {
+			// must not cause thrashing, but try to get some contexts...
+			if (_notset || _ncontexts >= _nactive) {
+				m = __rebalanceContexts();
+fprintf(stderr, "picking up extra contexts %04zx\n", m);
+				_sets[threadid] = m | ENABLE;
+			}
+		}
+#endif
                 _mutex.release();
 		return m;
         }
 
-        inline void joinContextSet(size_t clientid, size_t &threadid) {
+        inline void joinContextSet(size_t clientid, size_t &threadid,
+						uint64_t initial = 0ULL) {
 
-                uint64_t m = ENABLE;
+                uint64_t m = 0;
                 _mutex.acquire();
                 threadid = _nactive;
                 if (_nactive == 0) {
                         // take all? or just a few...
-                        m |= _notset;
+                        m |= (_notset | initial);
                         _notset = 0;
                         ++_nactive;
                 } else {
                         ++_nactive;
-                        size_t desired = (_ncontexts + (_nactive - 1)) / _nactive;
-                        size_t n = 0;
-
-                        while (n < desired) {
-                                uint64_t k = _sets[_lastset];
-                                if ((k & ENABLE)) {
-                                        size_t x = ffs(k);
-                                        if (x > 0 && x < 64) {
-                                                --x;
-                                                k &= ~(1ULL << x);
-                                                m |= (1ULL << x);
-                                                ++n;
-                                                _sets[_lastset] = k;
-                                        }
-                                }
-                                if (++_lastset >= _nsets) _lastset = 0;
-                        }
+			m |= __rebalanceContexts(initial);
                 }
-                _sets[threadid] = m;
+                _sets[threadid] = m | ENABLE;
                 _mutex.release();
         }
 
@@ -119,23 +194,10 @@ public:
                 // assert((m & ENABLE) != 0);
                 m &= ~ENABLE;
                 _sets[threadid] = 0;
-                size_t x = 0;
                 if (_nactive == 0) {
                         _notset |= m;
-                } else while (m) {
-                        if (m & 1) {
-                                uint64_t n;
-                                // there must be one other... or else we hang here.
-                                do {
-                                        n = _sets[_lastset];
-                                        if ((n & ENABLE)) {
-                                                _sets[_lastset] = n | (1ULL << x);
-                                        }
-                                        if (++_lastset >= _nsets) _lastset = 0;
-                                } while (!(n & ENABLE));
-                        }
-                        m >>= 1;
-                        ++x;
+                } else {
+			__giveupContexts(m);
                 }
                 _mutex.release();
                 threadid = -1; // only valid while we're joined.
