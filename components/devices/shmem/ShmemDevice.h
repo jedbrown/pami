@@ -278,12 +278,12 @@ namespace PAMI
               // Allocate a "context count" array and a peer fifo pointer
               // array from shared memory
               volatile size_t * ncontexts = NULL;
-              size_t size = sizeof(size_t) * 2 * npeers;
+              size_t size = sizeof(size_t) * (2 * npeers + 1);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() size = %zu\n", size));
               mm.memalign ((void **)&ncontexts, 16, size);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() ncontexts = %p\n", ncontexts));
 
-              size_t * peer_fnum = (size_t *)ncontexts + npeers;
+              size_t * peer_fnum = (size_t *)ncontexts + npeers + 1;
 
               // Get the peer id for this task
               size_t me = 0;
@@ -294,47 +294,22 @@ namespace PAMI
               __global.mapping.node2peer (address, me);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() me = %zu\n", me));
 
-              // Set the number of contexts in this peer
-              ncontexts[me] = n;
-              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() ncontexts = %p, ncontexts[%zu] = %zu\n", ncontexts, me, ncontexts[me]));
-
-              // Determine the total number of contexts on the node and the
-              // number of contexts in each peer
-              size_t done = 0;
-              size_t total_fifos_on_node = 0;
-#ifdef __pami_target_bgq__
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-              int countdown=10000;
-#endif
-#endif
-              while (done != npeers)
-                {
-                  //mbar();       /// \todo doesn't seem to help mambo
-                  //ppc_msync();  /// \todo doesn't seem to help mambo
-                  //mm.sync();    /// \todo doesn't seem to help mambo - msync() errno 38: Function not implemented
-
-                  // check to see if all peers have written a non-zero value
-                  // in the "ncontexts" field
-                  total_fifos_on_node = 0;
-                  done = 0;
-
-                  for (i = 0; i < npeers; i++)
-                    {
-                      total_fifos_on_node += ncontexts[i];
-
-                      if (ncontexts[i] > 0) done++;
-#ifdef __pami_target_bgq__
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-                      if(countdown==1) fprintf(stderr, "ShmemDevice::Factory::generate_impl() ncontexts[%zu] = %zu, %p, %zu\n", i, ncontexts[i],ncontexts,mm.available());
-#endif
-#endif
-                    }
-#ifdef __pami_target_bgq__
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-                  PAMI_assertf(countdown--, "I give up\n");
-#endif
-#endif
-                }
+	      // will there always be a "0"?
+	      local_barriered_shmemzero((void *)ncontexts, size, npeers, me == 0);
+	      ncontexts[me] = n;
+	      __sync_fetch_and_add(&ncontexts[npeers], 1);
+	      mem_sync(); // paranoia?
+	      while (ncontexts[npeers] < npeers);
+	      mem_sync(); // paranoia?
+	      size_t total_fifos_on_node = 0;
+              // Assign fifo indexes to the peer fnum cache while computing total
+	      for (i = 0; i < npeers; i++)
+	      {
+		// This should only be done by one peer, but all write the same data
+		// and this way no extra synchronization is needed.
+		peer_fnum[i] = total_fifos_on_node;
+	      	total_fifos_on_node += ncontexts[i];
+	      }
 
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() ncontexts = %p sync'd\n", ncontexts));
 
@@ -343,14 +318,6 @@ namespace PAMI
               T_Fifo * all_fifos = NULL;
               size = ((sizeof(T_Fifo) + 15) & 0xfff0) * total_fifos_on_node;
               mm.memalign ((void **)&all_fifos, 16, size);
-
-              // Assign fifo indexes to the peer fnum cache
-              peer_fnum[0] = 0;
-
-              for (i = 1; i < npeers; i++)
-                {
-                  peer_fnum[i] = peer_fnum[i-1] + ncontexts[i-1];
-                }
 
               // Allocate an array of shared memory devices, one for each
               // context in this _task_ (from heap, not from shared memory)
