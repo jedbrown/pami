@@ -203,11 +203,15 @@ namespace PAMI
         switch (configuration->name)
           {
             case PAMI_NUM_CONTEXTS:
-              configuration->value.intval = 1; // should be modified by runmode
+              /// \todo #80 #99 Remove this when the DMA supports >1 context.
+              if (__global.useMU())
+                configuration->value.intval = 1;
+              else
+                configuration->value.intval = 64;
               result = PAMI_SUCCESS;
               break;
             case PAMI_CONST_CONTEXTS:
-              configuration->value.intval = 1; // .TRUE.
+              configuration->value.intval = true;
               result = PAMI_SUCCESS;
               break;
             case PAMI_TASK_ID:

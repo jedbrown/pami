@@ -70,11 +70,13 @@ namespace PAMI
         _useshmem = true;
         _useMU = true;
 
-      // Hopefully this is temporary. We should always include all the
-      //   devices and have run time checks. But with no MU on the FPGA,
-      //   this is required now, or you have to build multiple libraries.
-      //   Note: 4/13/2010: Enabling *just* MU does not work. Both or shmem
-      //   are the only viable options.
+        /// \todo #80 #99 Remove this when the DMA supports >1 context.
+        /// Hopefully this is temporary. We should always include all
+        /// the devices and have run time checks. But with no MU on
+        /// the FPGA, this is required now, or you have to build
+        /// multiple libraries.
+        /// \note 4/13/2010: Enabling *just* MU does not work. Both or
+        /// shmem are the only viable options.
         if(envopts != NULL)
         {
             if(strncasecmp(envopts,"B", 1) == 0) // use BOTH
