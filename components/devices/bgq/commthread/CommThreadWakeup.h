@@ -19,23 +19,41 @@
 #include "common/bgq/Context.h"
 #include <pthread.h>
 
+#include "hwi/include/bqc/A2_inlines.h"
+
+#undef HAVE_WU_ARMWITHADDRESS
+
+#ifndef HAVE_WU_ARMWITHADDRESS
 /// \todo #warning need CNK definition for WU_ArmWithAddress
-#define WU_ArmWithAddress(...)
-/// \todo #warning need CNK definition for ppc_waitimpl
-#define ppc_waitimpl()
+
+// temporary test implementation going directly to WAC registers...
+#include "hwi/include/bqc/wu_mmio.h"
+#define USR_WAKEUP_BASE ((unsigned long *)(PHYMAP_MINADDR_L1P + 0x1c00))
+
+#define CNK_WAKEUP_SPI_FIRST_WAC	0	// TBD: get from CNK
+#define WU_ArmWithAddress(addr,mask) {			\
+	int thr = Kernel_PhysicalHWThreadID();		\
+	int reg = thr + CNK_WAKEUP_SPI_FIRST_WAC;	\
+	USR_WAKEUP_BASE[WAC_BASE(reg)] = addr;		\
+	USR_WAKEUP_BASE[WAC_ENABLE(reg)] = mask;	\
+	USR_WAKEUP_BASE[CLEAR_THREAD(reg)] = -1L;	\
+	USR_WAKEUP_BASE[SET_THREAD(reg)] = (_BN(thr) >> (32+CNK_WAKEUP_SPI_FIRST_WAC));\
+}
+
+#endif // !HAVE_WU_ARMWITHADDRESS
+
 /// \todo #warning need CNK definition for Kernel_SnoopScheduler
 #define SNOOP_ALONE	(1)
 #define SNOOP_NOTALONE	(2)
 #define Kernel_SnoopScheduler()		(SNOOP_ALONE)
 
 #ifndef SCHED_COMM
-/// \todo #warning Need to get SCHED_COMM from system headers!
 #define SCHED_COMM SCHED_RR
 #endif // !SCHED_COMM
 
-//#define COMMTHREAD_SCHED	SCHED_COMM
+#define COMMTHREAD_SCHED	SCHED_COMM
 //#define COMMTHREAD_SCHED	SCHED_FIFO
-#define COMMTHREAD_SCHED	SCHED_OTHER
+//#define COMMTHREAD_SCHED	SCHED_OTHER
 
 namespace PAMI {
 namespace Device {
@@ -230,6 +248,7 @@ private:
 		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
 
                 pthread_setschedprio(self, max_pri);
+fprintf(stderr, "comm thread for context %04zx\n", _initCtxs);
                 _ctxset->joinContextSet(_client, id, _initCtxs);
                 new_ctx = old_ctx = lkd_ctx = 0;
                 while (1) {
@@ -270,7 +289,13 @@ more_work:		// lightweight enough.
                                         // we could wait forever for new work
                                         // while existing work waits for us to
                                         // advance it.
+#ifndef HAVE_WU_ARMWITHADDRESS
+fprintf(stderr, "going idle (%016zx %016zx)...\n", wu_start, wu_mask);
                                         ppc_waitimpl();
+fprintf(stderr, "woke up\n");
+#else // HAVE_WU_ARMWITHADDRESS
+                                        ppc_waitimpl();
+#endif // HAVE_WU_ARMWITHADDRESS
                                 }
                                 // need to re-evaluate things here?
                                 // goto re_evaluate;

@@ -134,6 +134,7 @@ public:
                 *mask = ~(_wu_region_len - 1);
 #endif
         }
+
 private:
         BgqWakeupRegionBuffer *_wakeup_region;	///< memory for WAC for all contexts
         size_t _wu_region_len;			///< length of total WAC region

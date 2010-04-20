@@ -41,7 +41,7 @@ pami_result_t do_work(pami_context_t context, void *cookie) {
 	return PAMI_SUCCESS;
 }
 
-pami_result_t run_test(pami_context_t *ctx, size_t nctx) {
+pami_result_t run_test(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 	pami_result_t result;
 	int x;
 
@@ -58,10 +58,16 @@ pami_result_t run_test(pami_context_t *ctx, size_t nctx) {
 		}
 	}
 
+#if 0
+	// temporary hack to test wakeup logic...
+	result = PAMI_Client_add_commthread_context(client, NULL); // causes wakeup
+#endif
+
 	const unsigned long long timeout = 500000;
 	unsigned long long t0, t1;
 	t0 = PAMI_Wtimebase();
 	int busy;
+	int stuck = 0;
 	do {
 		for (busy = 0, x = 0; x < nctx; ++x) busy += _info[x].value;
 		if (!busy) break;
@@ -77,6 +83,7 @@ pami_result_t run_test(pami_context_t *ctx, size_t nctx) {
 			fprintf(stderr, "No progress after %lld cycles...? %s\n",
 									timeout, buf);
 			// abort... ?
+			if (++stuck > 10) return PAMI_ERROR;
 			t0 = t1;
 		}
 	} while (busy);
@@ -104,7 +111,6 @@ int main(int argc, char ** argv) {
 						"result = %d\n", NUM_CONTEXTS, result);
 		return 1;
 	}
-
 	for (x = 0; x < NUM_CONTEXTS; ++x) {
 		result = PAMI_Client_add_commthread_context(client, context[x]);
 		if (result != PAMI_SUCCESS) {
@@ -118,7 +124,7 @@ int main(int argc, char ** argv) {
 			_info[x].seq = y * NUM_CONTEXTS + x + 1;
 		}
 
-		result = run_test(context, NUM_CONTEXTS);
+		result = run_test(client, context, NUM_CONTEXTS);
 		if (result != PAMI_SUCCESS) {
 			fprintf(stderr, "Error. Unable to run commthread test. "
 						"result = %d\n", result);
