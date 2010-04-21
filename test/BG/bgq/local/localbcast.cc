@@ -36,7 +36,7 @@ typedef long data_t;
 
 #define WARMUP 2
 
-// use double to force QPX
+// use double / QPX regardless of datatype - assume size and alignment works...
 void push_memcpy(void **dst, size_t ndst, void *src, size_t len) {
 	// assert(ndst == NTHREADS - 1);
 	register double *s = (double *)src;
@@ -106,7 +106,6 @@ void push_memcpy(void **dst, size_t ndst, void *src, size_t len) {
 			);
 #endif // NTHREADS == 16
 #endif // NTHREADS >= 8
-		s += 4;
 		idx += 4 * sizeof(double);
 		z -= 4;
 	}
