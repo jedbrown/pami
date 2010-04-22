@@ -167,10 +167,11 @@ struct reduce {
 	size_t root;
 	size_t participant;
 	void *cookie;
+	size_t iter;
 };
 
 struct pushpull_reduce {
-	volatile size_t done;
+	volatile size_t done[2];
 	data_t *dst;
 	data_t *srcs[NTHREADS];
 };
@@ -224,11 +225,9 @@ void *pushpull_reduce(void *v) {
 	size_t n = r->participant;
 	pr->srcs[n] = r->source;
 
-	if (r->root == r->participant) {
-		while (pr->done < NTHREADS - 1);
-	}
-	__sync_fetch_and_add(&pr->done, 1);
-	while (pr->done < NTHREADS);
+	int p = r->iter & 1;
+	__sync_fetch_and_add(&pr->done[p], 1);
+	while (pr->done[p] < NTHREADS);
 
 	pp.dst = pr->dst + off;
 	for (x = 0; x < NTHREADS; ++x) {
@@ -238,10 +237,10 @@ void *pushpull_reduce(void *v) {
 	memcomb(pp.dst, (void **)pp.srcs, NTHREADS, len * sizeof(data_t));
 
 	if (r->root == r->participant) {
-		pr->done = 0;
-	} else {
-		while (pr->done);
+		pr->done[1 - p] = 0;
 	}
+	__sync_fetch_and_add(&pr->done[p], 1);
+	while (pr->done[p] < 2 * NTHREADS);
 
 	return NULL;
 }
@@ -251,6 +250,7 @@ unsigned long long min;
 unsigned long long max;
 double sum;
 const char *name = NAME;
+volatile size_t barrier1 = 0;
 
 void *do_reduces(void *v) {
 	struct thread *t = (struct thread *)v;
@@ -268,15 +268,17 @@ void *do_reduces(void *v) {
 	}
 	memset((void *)r.dest, 0, BUFCNT * sizeof(data_t));
 	fprintf(stderr, "Thread %2d starting... %p %p\n", t->id, r.source, r.dest);
+	__sync_fetch_and_add(&barrier1, 1);
+	while (barrier1 < NTHREADS);
 
 	r.cookie = &STRUCT;
 #ifndef VERIFY
-	for (x = 0; x < WARMUP; ++x) {
+	for (r.iter = 0; r.iter < WARMUP; ++r.iter) {
 		FUNC(&r);
 	}
 
 	t->t = Timebase();
-	for (x = 0; x < NITER; ++x) {
+	for (; r.iter < WARMUP + NITER; ++r.iter) {
 		FUNC(&r);
 	}
 	t->t = (Timebase() - t->t) / NITER;

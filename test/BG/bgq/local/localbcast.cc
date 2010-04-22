@@ -142,10 +142,11 @@ struct bcast {
 	size_t root;
 	size_t participant;
 	void *cookie;
+	size_t iter;
 };
 
 struct pushpull_bcast {
-	volatile size_t done;
+	volatile size_t done[2];
 	data_t *src;
 	data_t *dests[NTHREADS];
 };
@@ -216,11 +217,9 @@ void *pushpull_bcast(void *v) {
 		pr->dests[n] = r->dest;
 	}
 
-	if (r->root == r->participant) {
-		while (pr->done < NTHREADS - 1);
-	}
-	__sync_fetch_and_add(&pr->done, 1);
-	while (pr->done < NTHREADS);
+	int p = r->iter & 1;
+	__sync_fetch_and_add(&pr->done[p], 1);
+	while (pr->done[p] < NTHREADS);
 
 	pp.src = pr->src + off;
 	for (x = 0; x < NTHREADS - 1; ++x) {
@@ -230,10 +229,10 @@ void *pushpull_bcast(void *v) {
 	push_memcpy((void **)pp.dests, NTHREADS - 1, pp.src, len * sizeof(data_t));
 
 	if (r->root == r->participant) {
-		pr->done = 0;
-	} else {
-		while (pr->done);
+		pr->done[1 - p] = 0;
 	}
+	__sync_fetch_and_add(&pr->done[p], 1);
+	while (pr->done[p] < 2 * NTHREADS);
 
 	return NULL;
 }
@@ -243,6 +242,7 @@ unsigned long long min;
 unsigned long long max;
 double sum;
 const char *name = NAME;
+volatile size_t barrier1 = 0;
 
 void *do_bcasts(void *v) {
 	struct thread *t = (struct thread *)v;
@@ -260,15 +260,17 @@ void *do_bcasts(void *v) {
 	}
 	memset((void *)b.dest, -1, BUFCNT * sizeof(data_t));
 	fprintf(stderr, "Thread %2d starting... %p %p\n", t->id, b.source, b.dest);
+	__sync_fetch_and_add(&barrier1, 1);
+	while (barrier1 < NTHREADS);
 
 	b.cookie = &STRUCT;
 #ifndef VERIFY
-	for (x = 0; x < WARMUP; ++x) {
+	for (b.iter = 0; b.iter < WARMUP; ++b.iter) {
 		FUNC(&b);
 	}
 
 	t->t = Timebase();
-	for (x = 0; x < NITER; ++x) {
+	for (; b.iter < WARMUP + NITER; ++b.iter) {
 		FUNC(&b);
 	}
 	t->t = (Timebase() - t->t) / NITER;
