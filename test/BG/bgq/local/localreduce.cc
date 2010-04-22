@@ -36,6 +36,22 @@ typedef long data_t;
 
 #define WARMUP 2
 
+#if TEST_TYPE == PUSH
+#error no PUSH algorithm (yet?)
+#endif // TEST_TYPE == PUSH
+
+#if TEST_TYPE == PULL
+#define FUNC	pull_reduce
+#define STRUCT	pull
+#define NAME	"pull"
+#endif // TEST_TYPE == PULL
+
+#if TEST_TYPE == PUSHPULL
+#define FUNC	pushpull_reduce
+#define STRUCT	pushpull
+#define NAME	"pushpull"
+#endif // TEST_TYPE == PUSHPULL
+
 void qpx_memcomb(void *dst, void **srcs, size_t nsrc, size_t len) {
 	// assert(nsrc == NTHREADS);
 	register double *d = (double *)dst;
@@ -208,6 +224,9 @@ void *pushpull_reduce(void *v) {
 	size_t n = r->participant;
 	pr->srcs[n] = r->source;
 
+	if (r->root == r->participant) {
+		while (pr->done < NTHREADS - 1);
+	}
 	__sync_fetch_and_add(&pr->done, 1);
 	while (pr->done < NTHREADS);
 
@@ -216,7 +235,7 @@ void *pushpull_reduce(void *v) {
 		pp.srcs[x] = pr->srcs[x] + off;
 	}
 	asm volatile ("msync" ::: "memory");
-	memcomb(pp.dst, (void **)pp.srcs, NTHREADS, len);
+	memcomb(pp.dst, (void **)pp.srcs, NTHREADS, len * sizeof(data_t));
 
 	if (r->root == r->participant) {
 		pr->done = 0;
@@ -231,7 +250,7 @@ struct thread thr[NTHREADS];
 unsigned long long min;
 unsigned long long max;
 double sum;
-const char *name;
+const char *name = NAME;
 
 void *do_reduces(void *v) {
 	struct thread *t = (struct thread *)v;
@@ -250,34 +269,41 @@ void *do_reduces(void *v) {
 	memset((void *)r.dest, 0, BUFCNT * sizeof(data_t));
 	fprintf(stderr, "Thread %2d starting... %p %p\n", t->id, r.source, r.dest);
 
-	r.cookie = &pull;
+	r.cookie = &STRUCT;
+#ifndef VERIFY
 	for (x = 0; x < WARMUP; ++x) {
-		pull_reduce(&r); // use specified test instead?
+		FUNC(&r);
 	}
 
-#if TEST_TYPE == PUSH
-#error no PUSH algorithm (yet?)
-#endif // TEST_TYPE == PUSH
-
-#if TEST_TYPE == PULL
-	if (t->id == 0) name = "pull";
 	t->t = Timebase();
-	r.cookie = &pull;
 	for (x = 0; x < NITER; ++x) {
-		pull_reduce(&r);
+		FUNC(&r);
 	}
 	t->t = (Timebase() - t->t) / NITER;
-#endif // TEST_TYPE == PULL
-
-#if TEST_TYPE == PUSHPULL
-	if (t->id == 0) name = "pushpull";
-	t->t = Timebase();
-	r.cookie = &pushpull;
-	for (x = 0; x < NITER; ++x) {
-		pushpull_reduce(&r);
+#else // VERIFY
+	size_t e = 0;
+	FUNC(&r);
+	if (r.participant == r.root) {
+		for (x = 0; x < BUFCNT; ++x) {
+			if (r.dest[x] != ((data_t)x + 1) * NTHREADS) {
+				++e;
+#ifdef VERBOSE
+				if (e <= (unsigned)VERBOSE) fprintf(stderr, "Error at dest[%d]: %g expected %g\n", x, r.dest[x], ((data_t)x + 1) * NTHREADS);
+#endif // VERBOSE
+			}
+		}
 	}
-	t->t = (Timebase() - t->t) / NITER;
-#endif // TEST_TYPE == PUSHPULL
+	for (x = 0; x < BUFCNT; ++x) {
+		if (r.source[x] != (data_t)x + 1) {
+			++e;
+#ifdef VERBOSE
+			if (e <= (unsigned)VERBOSE) fprintf(stderr, "Error at source[%d]: %g expected %g\n", x, r.source[x], ((data_t)x + 1));
+#endif // VERBOSE
+		}
+	}
+	t->t = e;
+#endif // VERIFY
+
 	free(r.dest);
 	free(r.source);
 	return NULL;
@@ -309,12 +335,21 @@ int main(int argc, char **argv) {
 		if (x > 0) {
 			pthread_join(thr[x].thr, &status);
 		}
+#ifndef VERIFY
 		sum += (double)thr[x].t;
 		if (min > thr[x].t) min = thr[x].t;
 		if (max < thr[x].t) max = thr[x].t;
+#else // VERIFY
+		max += thr[x].t;
+#endif // VERIFY
 	}
 	printf("reduce %s algorithm, %d threads, %d bytes, %d iterations\n", name, NTHREADS, BUFCNT * sizeof(data_t), NITER);
+#ifndef VERIFY
 	double b = BUFCNT * sizeof(data_t) * NTHREADS;
 	double d = sum / NTHREADS;
 	printf("%16u %16g %16u (min, avg, max) (%g b/c)\n", min, d, max, b / d);
+#else // VERIFY
+	if (!max) printf("No errors\n");
+	else printf("%d errors over all threads\n", max);
+#endif // VERIFY
 }

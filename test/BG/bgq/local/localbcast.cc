@@ -36,6 +36,24 @@ typedef long data_t;
 
 #define WARMUP 2
 
+#if TEST_TYPE == PUSH 
+#define FUNC    push_bcast
+#define STRUCT  push
+#define NAME    "push"  
+#endif // TEST_TYPE == PUSH 
+
+#if TEST_TYPE == PULL 
+#define FUNC    pull_bcast
+#define STRUCT  pull
+#define NAME    "pull"  
+#endif // TEST_TYPE == PULL 
+
+#if TEST_TYPE == PUSHPULL
+#define FUNC    pushpull_bcast
+#define STRUCT  pushpull
+#define NAME    "pushpull"
+#endif // TEST_TYPE == PUSHPULL
+
 // use double / QPX regardless of datatype - assume size and alignment works...
 void push_memcpy(void **dst, size_t ndst, void *src, size_t len) {
 	// assert(ndst == NTHREADS - 1);
@@ -198,6 +216,9 @@ void *pushpull_bcast(void *v) {
 		pr->dests[n] = r->dest;
 	}
 
+	if (r->root == r->participant) {
+		while (pr->done < NTHREADS - 1);
+	}
 	__sync_fetch_and_add(&pr->done, 1);
 	while (pr->done < NTHREADS);
 
@@ -221,7 +242,7 @@ struct thread thr[NTHREADS];
 unsigned long long min;
 unsigned long long max;
 double sum;
-const char *name;
+const char *name = NAME;
 
 void *do_bcasts(void *v) {
 	struct thread *t = (struct thread *)v;
@@ -235,45 +256,55 @@ void *do_bcasts(void *v) {
 	b.participant = t->id;
 
 	for (x = 0; x < BUFCNT * sizeof(data_t); ++x) {
-		((char *)b.source)[x] = x & 0x0ff;
+		((unsigned char *)b.source)[x] = x & 0x0ff;
 	}
 	memset((void *)b.dest, -1, BUFCNT * sizeof(data_t));
 	fprintf(stderr, "Thread %2d starting... %p %p\n", t->id, b.source, b.dest);
 
-	b.cookie = &push;
+	b.cookie = &STRUCT;
+#ifndef VERIFY
 	for (x = 0; x < WARMUP; ++x) {
-		push_bcast(&b); // use specified test instead?
+		FUNC(&b);
 	}
 
-#if TEST_TYPE == PUSH
-	if (t->id == 0) name = "push";
 	t->t = Timebase();
-	b.cookie = &push;
 	for (x = 0; x < NITER; ++x) {
-		push_bcast(&b);
+		FUNC(&b);
 	}
 	t->t = (Timebase() - t->t) / NITER;
-#endif // TEST_TYPE == PUSH
+#else // VERIFY
+	size_t e = 0;
+	FUNC(&b);
+	if (b.participant == b.root) {
+		for (x = 0; x < BUFCNT * sizeof(data_t); ++x) {
+			if (((unsigned char *)b.dest)[x] != 0x0ff) {
+				++e;
+#ifdef VERBOSE
+				if (e <= (unsigned)VERBOSE) fprintf(stderr, "Error at byte dest[%d]: %u expected %u\n", x, ((unsigned char *)b.dest)[x], 0x0ff);
+#endif // VERBOSE
+			}
+		}
+	} else {
+		for (x = 0; x < BUFCNT * sizeof(data_t); ++x) {
+			if (((unsigned char *)b.dest)[x] != (x & 0x0ff)) {
+				++e;
+#ifdef VERBOSE
+				if (e <= (unsigned)VERBOSE) fprintf(stderr, "Error at byte dest[%d]: %u expected %u\n", x, ((unsigned char *)b.dest)[x], x & 0x0ff);
+#endif // VERBOSE
+			}
+		}
+	}
+	for (x = 0; x < BUFCNT * sizeof(data_t); ++x) {
+		if (((unsigned char *)b.source)[x] != (x & 0x0ff)) {
+			++e;
+#ifdef VERBOSE
+			if (e <= (unsigned)VERBOSE) fprintf(stderr, "Error at byte source[%d]: %u expected %u\n", x, ((unsigned char *)b.source)[x], x & 0x0ff);
+#endif // VERBOSE
+		}
+	}
+	t->t = e;
+#endif // VERIFY
 
-#if TEST_TYPE == PULL
-	if (t->id == 0) name = "pull";
-	t->t = Timebase();
-	b.cookie = &pull;
-	for (x = 0; x < NITER; ++x) {
-		pull_bcast(&b);
-	}
-	t->t = (Timebase() - t->t) / NITER;
-#endif // TEST_TYPE == PULL
-
-#if TEST_TYPE == PUSHPULL
-	if (t->id == 0) name = "pushpull";
-	t->t = Timebase();
-	b.cookie = &pushpull;
-	for (x = 0; x < NITER; ++x) {
-		pushpull_bcast(&b);
-	}
-	t->t = (Timebase() - t->t) / NITER;
-#endif // TEST_TYPE == PUSHPULL
 	free(b.dest);
 	free(b.source);
 	return NULL;
@@ -305,12 +336,21 @@ int main(int argc, char **argv) {
 		if (x > 0) {
 			pthread_join(thr[x].thr, &status);
 		}
+#ifndef VERIFY
 		sum += (double)thr[x].t;
 		if (min > thr[x].t) min = thr[x].t;
 		if (max < thr[x].t) max = thr[x].t;
+#else // VERIFY
+		max += thr[x].t;
+#endif // VERIFY
 	}
 	printf("bcast %s algorithm, %d threads, %d bytes, %d iterations\n", name, NTHREADS, BUFCNT * sizeof(data_t), NITER);
+#ifndef VERIFY
 	double b = BUFCNT * sizeof(data_t) * (NTHREADS - 1);
 	double d = sum / NTHREADS;
 	printf("%16u %16g %16u (min, avg, max) (%g b/c)\n", min, d, max, b / d);
+#else // VERIFY
+	if (!max) printf("No errors\n");
+	else printf("%d errors over all threads\n", max);
+#endif // VERIFY
 }
