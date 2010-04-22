@@ -310,5 +310,7 @@ int main(int argc, char **argv) {
 		if (max < thr[x].t) max = thr[x].t;
 	}
 	printf("bcast %s algorithm, %d threads, %d bytes, %d iterations\n", name, NTHREADS, BUFCNT * sizeof(data_t), NITER);
-	printf("%16u %16g %16u (min, avg, max)\n", min, sum / NTHREADS, max);
+	double b = BUFCNT * sizeof(data_t) * (NTHREADS - 1);
+	double d = sum / NTHREADS;
+	printf("%16u %16g %16u (min, avg, max) (%g b/c)\n", min, d, max, b / d);
 }

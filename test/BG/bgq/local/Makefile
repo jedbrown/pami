@@ -1,7 +1,7 @@
 i~/cvs/bgq/work/gnu-linux/bin/powerpc64-bgq-linux-g++ -g -O3 localreduce.cc -o localreduce -I${HOME}/cvs/bgq/work -lpthread -DNTHREADS=8 -DNITER=10 -DBUFCNT="(32*1024)" -DTEST_TYPE="PULL"
 
 CXX = /bgsys/drivers/ppcfloor/gnu-linux/bin/powerpc64-bgq-linux-g++
-CXXFLAGS = -I/bgsys/drivers/ppcfloor
+CXXFLAGS = -g -O3 -I/bgsys/drivers/ppcfloor
 
 all: localreduce.PUSHPULL.8.10.32k	\
 	localreduce.PULL.8.10.32k	\
