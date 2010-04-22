@@ -1,6 +1,6 @@
 ///
-/// \file test/p2p/send/long-header-matrix.c
-/// \Matrixed "Long header" point-to-point PAMI_send() test
+/// \file test/p2p/send/shmem-matrix.c
+/// \Matrixed "shmem" point-to-point PAMI_send() test
 ///
 
 #include "sys/pami.h"
