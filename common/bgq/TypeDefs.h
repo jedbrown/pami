@@ -19,6 +19,9 @@
   #include "util/fifo/FifoPacket.h"
   #include "util/fifo/LinearFifo.h"
   #include "components/devices/workqueue/LocalBcastWQMessage.h"
+  #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
+  #include "components/devices/workqueue/LocalReduceWQMessage.h"
+  #include "components/devices/workqueue/LocalBcastWQMessage.h"
 //  #include "components/devices/bgq/P2PMcastAM.h"
   #include "components/devices/bgq/mu/MUDevice.h"
   #include "components/devices/bgq/mu/MUPacketModel.h"
@@ -71,8 +74,7 @@ namespace PAMI
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
 
-  /// \todo LocalReduceWQ or LocalAllreduceWQ?
-  typedef BGQNativeInterfaceAS <Device::LocalBcastWQModel, Barrier_Model,Device::LocalReduceWQModel> AllSidedShmemNI;
+  typedef BGQNativeInterfaceAS <ShmemDevice, Device::LocalBcastWQModel, Barrier_Model,Device::LocalAllreduceWQModel> AllSidedShmemNI;
 
 }
 

@@ -44,6 +44,7 @@ namespace PAMI
 
       inline void metadata(pami_metadata_t   *mdata)
         {
+          TRACE_ERR((stderr, "<%p>%s factory %p\n", this, __PRETTY_FUNCTION__,_factory));
           _factory->metadata(mdata);
         }
       inline pami_result_t generate(pami_xfer_t *xfer)
@@ -103,7 +104,7 @@ namespace PAMI
                                         T_Geometry                               *geometry,
                                         size_t                                    context_id)
         {
-          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+          TRACE_ERR((stderr, "<%p>%s _num_algo=%u, factory=%p, geometry=%p\n", this, __PRETTY_FUNCTION__,_num_algo,factory,geometry));
           _algo_list_store[_num_algo]._factory  = factory;
           _algo_list_store[_num_algo]._geometry = geometry;
           _algo_list[_num_algo]                 = &_algo_list_store[_num_algo];
@@ -114,7 +115,7 @@ namespace PAMI
                                              T_Geometry                                *geometry,
                                              size_t                                     context_id)
         {
-          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+          TRACE_ERR((stderr, "<%p>%s _num_algo_check=%u, factory=%p, geometry=%p\n", this, __PRETTY_FUNCTION__,_num_algo_check,factory,geometry));
           _algo_list_check_store[_num_algo_check]._factory  = factory;
           _algo_list_check_store[_num_algo_check]._geometry = geometry;
           _algo_list_check[_num_algo_check]                 = &_algo_list_check_store[_num_algo_check];
@@ -574,10 +575,11 @@ namespace PAMI
                                                 int               num1,
                                                 size_t            context_id)
         {
-          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+          TRACE_ERR((stderr, "<%p>%s, algs0=%p, num0=%u, mdata0=%p, algs1=%p, num1=%u, mdata1=%p\n", this, __PRETTY_FUNCTION__,algs0,num0,mdata0,algs1,num1,mdata1));
           AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
           for(int i=0; i<num0; i++)
               {
+            TRACE_ERR((stderr, "<%p> alist->_algo_list[%u]=%p, mdata0[%u]=%p\n", this, i, alist->_algo_list[i],i,mdata0?&mdata0[i]:NULL));
                 if(algs0)
                   algs0[i]   =(pami_algorithm_t) alist->_algo_list[i];
                 if(mdata0)
@@ -585,6 +587,7 @@ namespace PAMI
               }
           for(int i=0; i<num1; i++)
               {
+            TRACE_ERR((stderr, "<%p> alist->_algo_list_check[%u]=%p, mdata1[%u]=%p\n", this, i, alist->_algo_list_check[i],i,mdata1?&mdata1[i]:NULL));
                 if(algs1)
                   algs1[i] =(pami_algorithm_t) alist->_algo_list_check[i];
                 if(mdata1)

@@ -139,6 +139,7 @@ int main (int argc, char ** argv)
   {
     algorithm = (pami_algorithm_t*)
                 malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
+    TRACE_ERR((stderr, "%s PAMI_Geometry_algorithms_info\n", __PRETTY_FUNCTION__));
     result = PAMI_Geometry_algorithms_info(context,
                                           world_geometry,
                                           PAMI_XFER_BARRIER,
@@ -154,6 +155,7 @@ int main (int argc, char ** argv)
   pami_algorithm_t *bcastalgorithm=NULL;
   pami_metadata_t *metas=NULL;
   int bcastnum_algorithm[2] = {0};
+  TRACE_ERR((stderr, "%s PAMI_Geometry_algorithms_num\n", __PRETTY_FUNCTION__));
   result = PAMI_Geometry_algorithms_num(context,
                                        world_geometry,
                                        PAMI_XFER_BROADCAST,
@@ -174,6 +176,7 @@ int main (int argc, char ** argv)
     metas = (pami_metadata_t*)
       malloc(sizeof(pami_metadata_t) * bcastnum_algorithm[0]);
 
+    TRACE_ERR((stderr, "%s PAMI_Geometry_algorithms_info bcastnum_algorithm[0]=%u, metas=%p\n", __PRETTY_FUNCTION__,bcastnum_algorithm[0],metas));
     result = PAMI_Geometry_algorithms_info(context,
                                           world_geometry,
                                           PAMI_XFER_BROADCAST,
@@ -223,7 +226,11 @@ int main (int argc, char ** argv)
     else TRACE_ERR((stderr, "start test protocol: %s \n", metas[nalg].name));
 
     int i,j;
+#ifdef ENABLE_MAMBO_WORKAROUNDS  // doesn't support chars on MU
+    for(i=4; i<=BUFSIZE; i*=2)
+#else
     for(i=1; i<=BUFSIZE; i*=2)
+#endif
     {
       long long dataSent = i;
       int          niter = 100;

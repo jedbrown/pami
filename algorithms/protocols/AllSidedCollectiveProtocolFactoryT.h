@@ -95,6 +95,7 @@ namespace CCMI
 
       virtual void metadata(pami_metadata_t *mdata)
       {
+        TRACE_ADAPTOR((stderr,"%s , mdata=%p\n", __PRETTY_FUNCTION__,  mdata));
         get_metadata(mdata);
       }
     private:

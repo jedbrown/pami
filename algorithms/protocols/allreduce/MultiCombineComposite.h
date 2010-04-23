@@ -40,7 +40,7 @@ namespace CCMI
         {
           TRACE_ADAPTOR((stderr,"%s, type %#zX/%#zX, count %zu/%zu, op %#X, dt %#X\n", __PRETTY_FUNCTION__,
                          (size_t)cmd->cmd.xfer_allreduce.stype,(size_t)cmd->cmd.xfer_allreduce.rtype,
-                         cmd->cmd.xfer_allreduce.stypecount,cmd->cmd.xfer_allreduce.rtypecount,_op,_dt));
+                         cmd->cmd.xfer_allreduce.stypecount,cmd->cmd.xfer_allreduce.rtypecount,cmd->cmd.xfer_allreduce.op,cmd->cmd.xfer_allreduce.dt));
 
 
           /// \todo only supporting PAMI_BYTE right now

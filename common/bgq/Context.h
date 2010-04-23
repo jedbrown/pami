@@ -16,11 +16,8 @@
 #include "components/devices/generic/Device.h"
 #include "components/devices/misc/ProgressFunctionMsg.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
-#include "components/devices/workqueue/WQRingReduceMsg.h"
-#include "components/devices/workqueue/WQRingBcastMsg.h"
-#include "components/devices/workqueue/LocalAllreduceWQMessage.h"
-#include "components/devices/workqueue/LocalReduceWQMessage.h"
-#include "components/devices/workqueue/LocalBcastWQMessage.h"
+//#include "components/devices/workqueue/WQRingReduceMsg.h"
+//#include "components/devices/workqueue/WQRingBcastMsg.h"
 
 #include "components/atomic/gcc/GccBuiltin.h"
 #include "components/atomic/bgq/L2Counter.h"
@@ -48,6 +45,12 @@
 namespace PAMI
 {
   typedef CollRegistration::CCMIMultiRegistration < BGQGeometry, AllSidedShmemNI > ShmemCollectiveRegistration;
+  typedef CollRegistration::CCMIMultiCastRegistration < BGQGeometry, CCMI::Adaptor::Broadcast::MultiCast2Factory, AllSidedShmemNI > ShmemMcast2Registration;
+  typedef CollRegistration::CCMIMultiCastRegistration < BGQGeometry, CCMI::Adaptor::Broadcast::MultiCast3Factory, AllSidedShmemNI > ShmemMcast3Registration;
+
+  typedef CollRegistration::CCMIMultiRegistration < BGQGeometry, MUGlobalNI > MUCollectiveRegistration;
+  typedef CollRegistration::CCMIMultiCastRegistration < BGQGeometry, CCMI::Adaptor::Broadcast::MultiCast2Factory, MUGlobalNI > MUMcast2Registration;
+  typedef CollRegistration::CCMIMultiCastRegistration < BGQGeometry, CCMI::Adaptor::Broadcast::MultiCast3Factory, MUGlobalNI > MUMcast3Registration;
 
   typedef Mutex::CounterMutex<Counter::BGQ::L2NodeCounter>  ContextLock;
 
@@ -220,7 +223,12 @@ namespace PAMI
           _mm (addr, bytes),
           _sysdep (_mm),
           _lock(),
+          _mu_registration(NULL),
+          _mu_mcast2_registration(NULL),
+          _mu_mcast3_registration(NULL),
           _shmem_registration(NULL),
+          _shmem_mcast2_registration(NULL),
+          _shmem_mcast3_registration(NULL),
           _world_geometry(world_geometry),
           _status(PAMI_SUCCESS),
           _shmemMcastModel(NULL),
@@ -250,6 +258,22 @@ namespace PAMI
         {
         // Can't construct NI until device is init()'d.  Ctor into member storage.
            _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _client, _context, _contextid, _clientid);
+
+           _mu_mcast3_registration       = (MUMcast3Registration*) _mu_mcast3_registration_storage;
+           new (_mu_mcast3_registration)    MUMcast3Registration(*_global_mu_ni, client, (pami_context_t)this, id, clientid);
+
+           _mu_mcast3_registration->analyze(_contextid, _world_geometry);
+
+           _mu_mcast2_registration       = (MUMcast2Registration*) _mu_mcast2_registration_storage;
+           new (_mu_mcast2_registration)    MUMcast2Registration(*_global_mu_ni, client, (pami_context_t)this, id, clientid);
+
+           _mu_mcast2_registration->analyze(_contextid, _world_geometry);
+
+           _mu_registration              = (MUCollectiveRegistration*) _mu_registration_storage;
+           new (_mu_registration)           MUCollectiveRegistration(*_global_mu_ni, client, (pami_context_t)this, id, clientid);
+
+           _mu_registration->analyze(_contextid, _world_geometry);
+
         }
 
         if(__global.useshmem())
@@ -257,21 +281,32 @@ namespace PAMI
           if (__global.topology_local.size() > 1)
           {
             _shmemMcastModel         = (Device::LocalBcastWQModel*)_shmemMcastModel_storage;
-            _shmemMcombModel         = (Device::LocalReduceWQModel*)_shmemMcombModel_storage;
+            _shmemMcombModel         = (Device::LocalAllreduceWQModel*)_shmemMcombModel_storage;
             _shmemMsyncModel         = (Barrier_Model*)_shmemMsyncModel_storage;
 
             new (_shmemMsyncModel_storage)        Barrier_Model(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid),_status);
             new (_shmemMcastModel_storage)        Device::LocalBcastWQModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid),_status);
-            new (_shmemMcombModel_storage)        Device::LocalReduceWQModel(PAMI::Device::LocalReduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid),_status);
+            new (_shmemMcombModel_storage)        Device::LocalAllreduceWQModel(PAMI::Device::LocalAllreduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid),_status);
 
             _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
             new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid);
 
+            _shmem_registration              = (ShmemCollectiveRegistration*) _shmem_registration_storage;
+            new (_shmem_registration)           ShmemCollectiveRegistration(*_shmem_native_interface, client, (pami_context_t)this, id, clientid);
 
-            _shmem_registration      = (ShmemCollectiveRegistration*) _shmem_registration_storage;
-            new (_shmem_registration)             ShmemCollectiveRegistration(*_shmem_native_interface, client, (pami_context_t)this, id, clientid);
-  
             _shmem_registration->analyze(_contextid, _world_geometry);
+
+            _shmem_mcast3_registration       = (ShmemMcast3Registration*) _shmem_mcast3_registration_storage;
+            new (_shmem_mcast3_registration)    ShmemMcast3Registration(*_shmem_native_interface, client, (pami_context_t)this, id, clientid);
+
+            _shmem_mcast3_registration->analyze(_contextid, _world_geometry);
+
+            _shmem_mcast2_registration       = (ShmemMcast2Registration*) _shmem_mcast2_registration_storage;
+            new (_shmem_mcast2_registration)    ShmemMcast2Registration(*_shmem_native_interface, client, (pami_context_t)this, id, clientid);
+
+            //_shmem_mcast2_registration->analyze(_contextid, _world_geometry);
+
+
           }
           else TRACE_ERR((stderr, "topology does not support shmem\n"));
         }
@@ -756,11 +791,20 @@ namespace PAMI
       inline pami_result_t analyze(size_t         context_id,
                                   BGQGeometry    *geometry)
       {
+        pami_result_t result = PAMI_NERROR;
         if(__global.useshmem())
-          return _shmem_registration->analyze(context_id,geometry);
-        else 
-          PAMI_abortf("%s<%u>\n", __PRETTY_FUNCTION__, __LINE__);
-        return PAMI_UNIMPL;
+        { /// \todo any success is a success, ignore intermediate errors
+          result = _shmem_registration->analyze(context_id,geometry);
+          result = _shmem_mcast2_registration->analyze(context_id,geometry);
+          result = _shmem_mcast3_registration->analyze(context_id,geometry);
+        }
+        if(__global.useMU())
+        {  
+          result = _mu_registration->analyze(context_id,geometry);
+          result = _mu_mcast2_registration->analyze(context_id,geometry);
+          result = _mu_mcast3_registration->analyze(context_id,geometry);
+        }
+        return result;
       }
 
 
@@ -779,18 +823,28 @@ namespace PAMI
       MemoryAllocator<1024, 16>    _request;
       ContextLock                  _lock;
     public:
+      MUCollectiveRegistration    *_mu_registration;
+      MUMcast2Registration        *_mu_mcast2_registration;
+      MUMcast3Registration        *_mu_mcast3_registration;
       ShmemCollectiveRegistration *_shmem_registration;
+      ShmemMcast2Registration     *_shmem_mcast2_registration;
+      ShmemMcast3Registration     *_shmem_mcast3_registration;
       BGQGeometry                 *_world_geometry;
     private:
       pami_result_t                _status;
       Device::LocalBcastWQModel   *_shmemMcastModel;
       Barrier_Model               *_shmemMsyncModel;
-      Device::LocalReduceWQModel  *_shmemMcombModel;
+      Device::LocalAllreduceWQModel  *_shmemMcombModel;
       AllSidedShmemNI             *_shmem_native_interface;
+      uint8_t                      _mu_registration_storage[sizeof(MUCollectiveRegistration)];
+      uint8_t                      _mu_mcast2_registration_storage[sizeof(MUMcast2Registration)];
+      uint8_t                      _mu_mcast3_registration_storage[sizeof(MUMcast3Registration)];
       uint8_t                      _shmem_registration_storage[sizeof(ShmemCollectiveRegistration)];
+      uint8_t                      _shmem_mcast2_registration_storage[sizeof(ShmemMcast2Registration)];
+      uint8_t                      _shmem_mcast3_registration_storage[sizeof(ShmemMcast3Registration)];
       uint8_t                      _shmemMcastModel_storage[sizeof(Device::LocalBcastWQModel)];
       uint8_t                      _shmemMsyncModel_storage[sizeof(Barrier_Model)];
-      uint8_t                      _shmemMcombModel_storage[sizeof(Device::LocalReduceWQModel)];
+      uint8_t                      _shmemMcombModel_storage[sizeof(Device::LocalAllreduceWQModel)];
       uint8_t                      _shmem_native_interface_storage[sizeof(AllSidedShmemNI)];
       ProtocolAllocator            _protocol;
       PlatformDeviceList          *_devices;

@@ -20,29 +20,29 @@ const bool   PAMI::Device::MU::MUMulticombineModel::multicombine_model_op_suppor
 {
   const bool support[PAMI_DT_COUNT][PAMI_OP_COUNT] =
   {
-    // PAMI_UNDEFINED_OP, PAMI_NOOP, PAMI_MAX, PAMI_MIN, PAMI_SUM, PAMI_PROD, PAMI_LAND, PAMI_LOR, PAMI_LXOR, PAMI_BAND, PAMI_BOR, PAMI_BXOR, PAMI_MAXLOC, PAMI_MINLOC, PAMI_USERDEFINED_OP,
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_UNDEFINED_DT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_SIGNED_CHAR
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_UNSIGNED_CHAR
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_SIGNED_SHORT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_UNSIGNED_SHORT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_SIGNED_INT
-    {false,           false,    false,   true,    false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_UNSIGNED_INT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_SIGNED_LONG_LONG
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_UNSIGNED_LONG_LONG
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_FLOAT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_DOUBLE
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LONG_DOUBLE
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOGICAL
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_SINGLE_COMPLEX
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_DOUBLE_COMPLEX
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOC_2INT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOC_SHORT_INT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOC_FLOAT_INT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOC_DOUBLE_INT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOC_2FLOAT
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false},//PAMI_LOC_2DOUBLE
-    {false,           false,    false,   false,   false,   false,    false,    false,   false,    false,    false,   false,    false,      false,      false} //PAMI_USERDEFINED_DT
+// PAMI_UNDEFINED_OP, PAMI_NOOP, PAMI_MAX, PAMI_MIN, PAMI_SUM, PAMI_PROD, PAMI_LAND, PAMI_LOR, PAMI_LXOR, PAMI_BAND, PAMI_BOR, PAMI_BXOR, PAMI_MAXLOC, PAMI_MINLOC, PAMI_USERDEFINED_OP,
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNDEFINED_DT
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_CHAR
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_CHAR
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_SHORT
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_SHORT
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_INT
+    {false,           false,     false,    false,    false,    false,     false,     true,     false,     false,     true,     false,     false,       false,       false},//PAMI_UNSIGNED_INT
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_LONG_LONG
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_LONG_LONG
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_FLOAT
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_DOUBLE
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LONG_DOUBLE
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOGICAL
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SINGLE_COMPLEX
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_DOUBLE_COMPLEX
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2INT
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_SHORT_INT
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_FLOAT_INT
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_DOUBLE_INT
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2FLOAT
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2DOUBLE
+    {false,           false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false} //PAMI_USERDEFINED_DT
   };
   TRACE((stderr, "MUMulticombineModel::multicombine_model_op_support(%d, %d) = %d\n", dt, op, support[dt][op]));
   return(support[dt][op]);
@@ -87,7 +87,7 @@ Destination :
   {
 
 Op_Code :
-    MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_MIN,/// \todo not true? ignored for MUHWI_COLLECTIVE_TYPE_BROADCAST
+    MUHWI_COLLECTIVE_OP_CODE_OR,/// \todo not true? ignored for MUHWI_COLLECTIVE_TYPE_BROADCAST
 
 Word_Length:
     4,    /// \todo not true? ignored for MUHWI_COLLECTIVE_TYPE_BROADCAST

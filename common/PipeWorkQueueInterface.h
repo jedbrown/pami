@@ -66,7 +66,6 @@ namespace PAMI
             ///
             /// Only one consumer and producer are allowed. Still supports pipelining.
             /// Sets up a flat buffer of specified maximum size with an arbitrary "initial fill".
-            /// Buffer size must be power-of-two.
             /// Assumes the caller has placed buffer and (this) in appropriate memory
             /// for desired use - i.e. all in shared memory if to be used beyond this process.
             ///

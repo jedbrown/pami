@@ -37,6 +37,7 @@ namespace CCMI
           _user_cookie(cmd->cookie)
           {
             TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+          DO_DEBUG((templateName<T>()));
           }
         void done_fn( pami_context_t   context,
                       pami_result_t    result )
@@ -59,6 +60,7 @@ namespace CCMI
         _native(native)
       {
         TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+        DO_DEBUG((templateName<MetaDataFn>()));
         pami_dispatch_callback_fn fn;
         fn.multicast = (pami_dispatch_multicast_fn) cb_head;
         _native->setDispatch(fn, this);
@@ -102,6 +104,8 @@ namespace CCMI
 
       virtual void metadata(pami_metadata_t *mdata)
         {
+          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+          DO_DEBUG((templateName<MetaDataFn>()));
           get_metadata(mdata);
         }
 

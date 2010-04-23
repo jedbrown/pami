@@ -224,7 +224,7 @@ namespace PAMI
           _receive_state->optor = multicombine->optor;
           /// \todo map to MU dt/op/wordlength instead of hardcoding 4 byte MIN ;)
           _receive_state->mu_reset = true;
-          _receive_state->mu_dtype_optor = MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_MIN ;
+          _receive_state->mu_dtype_optor =  MUHWI_COLLECTIVE_OP_CODE_OR; //MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_MIN
           _receive_state->mu_word_length = 4;
         }
 
