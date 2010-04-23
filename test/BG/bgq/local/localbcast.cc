@@ -18,6 +18,7 @@ typedef double data_t;
 typedef long data_t;
 #endif
 
+// currently, only 4, 8, or 16 threads
 #ifndef NTHREADS
 #define NTHREADS 8
 #endif // ! NTHREADS
@@ -54,8 +55,11 @@ typedef long data_t;
 #define NAME    "pushpull"
 #endif // TEST_TYPE == PUSHPULL
 
+#if NTHREADS != 4 && NTHREADS != 8 && NTHREADS != 16
+#error Requires NTHREADS to be 4, 8, or 16
+#endif
 // use double / QPX regardless of datatype - assume size and alignment works...
-void push_memcpy(void **dst, size_t ndst, void *src, size_t len) {
+void qpx_memcast(void **dst, size_t ndst, void *src, size_t len) {
 	// assert(ndst == NTHREADS - 1);
 	register double *s = (double *)src;
 	register double *d0 = (double *)dst[0];
@@ -177,7 +181,7 @@ void *push_bcast(void *v) {
 	__sync_fetch_and_add(&pr->done, 1);
 	while (pr->done < NTHREADS);
 	if (r->root == r->participant) {
-		push_memcpy((void **)pr->dests, NTHREADS - 1,
+		qpx_memcast((void **)pr->dests, NTHREADS - 1,
 				r->source, r->count * sizeof(data_t));
 		pr->done = 0;
 	} else {
@@ -226,7 +230,7 @@ void *pushpull_bcast(void *v) {
 		pp.dests[x] = pr->dests[x] + off;
 	}
 	asm volatile ("msync" ::: "memory");
-	push_memcpy((void **)pp.dests, NTHREADS - 1, pp.src, len * sizeof(data_t));
+	qpx_memcast((void **)pp.dests, NTHREADS - 1, pp.src, len * sizeof(data_t));
 
 	if (r->root == r->participant) {
 		pr->done[1 - p] = 0;

@@ -18,6 +18,7 @@ typedef double data_t;
 typedef long data_t;
 #endif
 
+// currently, only 4, 8, or 16 threads
 #ifndef NTHREADS
 #define NTHREADS 8
 #endif // ! NTHREADS
@@ -52,6 +53,9 @@ typedef long data_t;
 #define NAME	"pushpull"
 #endif // TEST_TYPE == PUSHPULL
 
+#if NTHREADS != 4 && NTHREADS != 8 && NTHREADS != 16
+#error Requires NTHREADS to be 4, 8, or 16
+#endif
 void qpx_memcomb(void *dst, void **srcs, size_t nsrc, size_t len) {
 	// assert(nsrc == NTHREADS);
 	register double *d = (double *)dst;
