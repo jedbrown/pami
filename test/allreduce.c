@@ -28,13 +28,22 @@
 #define TEST_assert(expr)                assert(expr)
 #define TEST_assertf(expr, fmt...)       { if (!(expr)) TEST_abortf(fmt); }
 
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+ //#define FULL_TEST
+ #define COUNT      1024
+ #define MAXBUFSIZE COUNT*16
+ #define NITERLAT   50
+ #define NITERBW    10
+ #define CUTOFF     512
+#else
+ #define FULL_TEST
+ #define COUNT      1024
+ #define MAXBUFSIZE COUNT*16
+ #define NITERLAT   1000
+ #define NITERBW    10
+ #define CUTOFF     512
+#endif
 
-#define FULL_TEST
-#define COUNT      65536
-#define MAXBUFSIZE COUNT*16
-#define NITERLAT   1000
-#define NITERBW    10
-#define CUTOFF     65536
 
 pami_op op_array[] =
   {
@@ -443,7 +452,12 @@ int main(int argc, char*argv[])
     for(j=0;j<dt_count;j++)
       validTable[i][j]=0;
 
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+  validTable[OP_BOR][DT_UNSIGNED_INT]=1;
+#else
   validTable[OP_SUM][DT_SIGNED_INT]=1;
+#endif
+
 #endif
   TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 

@@ -12,11 +12,12 @@
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
-/// \todo #warning why doesn't MAMBO_WORKAROUNDS work here?
-#ifdef __pami_target_bgq__
+#ifdef ENABLE_MAMBO_WORKAROUNDS
 #define BUFSIZE 131072 // any more is too long on mambo
+#define NITER 10
 #else
 #define BUFSIZE 524288
+#define NITER 100
 #endif
 
 volatile unsigned       _g_barrier_active;
@@ -233,7 +234,7 @@ int main (int argc, char ** argv)
 #endif
     {
       long long dataSent = i;
-      int          niter = 100;
+      int          niter = NITER;
       _barrier(context, &barrier);
       ti = timer();
       for (j=0; j<niter; j++)

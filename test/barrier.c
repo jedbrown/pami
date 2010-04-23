@@ -8,6 +8,13 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+ #define NITER 100
+#else
+ #define NITER 10000
+#endif
+
+
 #define TRACE(x) //fprintf x
 
 #include <assert.h>
@@ -182,7 +189,7 @@ int main (int argc, char ** argv)
         if(!task_id)
           fprintf(stderr, "Test Barrier(%s) Performance %d of %d algorithms\n",
                   metas[algo].name,algo+1, num_algorithm[algorithm_type]);
-        int niter=10000;
+        int niter=NITER;
         _barrier(context, &barrier);
 
         ti=timer();
