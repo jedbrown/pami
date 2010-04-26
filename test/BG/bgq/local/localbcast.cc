@@ -35,6 +35,10 @@ typedef long data_t;
 #define TEST_TYPE	PUSH
 #endif // ! TEST_TYPE
 
+#ifndef VERBOSE
+#define VERBOSE	0
+#endif // !VERBOSE
+
 #define WARMUP 2
 
 #if TEST_TYPE == PUSH 
@@ -55,7 +59,7 @@ typedef long data_t;
 #define NAME    "pushpull"
 #endif // TEST_TYPE == PUSHPULL
 
-#if NTHREADS != 4 && NTHREADS != 8 && NTHREADS != 16
+#if NTHREADS != 4 && NTHREADS != 8 && NTHREADS != 16 && NTHREADS != 64
 #error Requires NTHREADS to be 4, 8, or 16
 #endif
 // use double / QPX regardless of datatype - assume size and alignment works...
@@ -70,7 +74,7 @@ void qpx_memcast(void **dst, size_t ndst, void *src, size_t len) {
 	register double *d4 = (double *)dst[4];
 	register double *d5 = (double *)dst[5];
 	register double *d6 = (double *)dst[6];
-#if NTHREADS == 16
+#if NTHREADS >= 16
 	register double *d7 = (double *)dst[7];
 	register double *d8 = (double *)dst[8];
 	register double *d9 = (double *)dst[9];
@@ -79,7 +83,10 @@ void qpx_memcast(void **dst, size_t ndst, void *src, size_t len) {
 	register double *d12 = (double *)dst[12];
 	register double *d13 = (double *)dst[13];
 	register double *d14 = (double *)dst[14];
-#endif // NTHREADS == 16
+#if NTHREADS > 16
+	register double *d15 = (double *)dst[15];
+#endif // NTHREADS > 16
+#endif // NTHREADS >= 16
 #endif // NTHREADS >= 8
 	size_t idx = 0;
 	size_t z = len / sizeof(double);
@@ -106,7 +113,7 @@ void qpx_memcast(void **dst, size_t ndst, void *src, size_t len) {
 			  ,"+b" (d5)
 			  ,"+b" (d6)
 			);
-#if NTHREADS == 16
+#if NTHREADS >= 16
 		asm volatile(
 			"qvstfdx 0, %1, %0;"
 			"qvstfdx 0, %2, %0;"
@@ -126,7 +133,14 @@ void qpx_memcast(void **dst, size_t ndst, void *src, size_t len) {
 			  ,"+b" (d13)
 			  ,"+b" (d14)
 			);
-#endif // NTHREADS == 16
+#if NTHREADS > 16
+		asm volatile(
+			"qvstfdx 0, %1, %0;"
+			:  "+r" (idx)
+			  ,"+b" (d15)
+			);
+#endif // NTHREADS > 16
+#endif // NTHREADS >= 16
 #endif // NTHREADS >= 8
 		idx += 4 * sizeof(double);
 		z -= 4;
@@ -175,14 +189,29 @@ void *push_bcast(void *v) {
 	struct bcast *r = (struct bcast *)v;
 	struct push_bcast *pr = (struct push_bcast *)r->cookie;
 	if (r->root != r->participant) {
+#if NTHREADS > 16
+		size_t n = r->participant;
+#else // !(NTHREADS > 16)
 		size_t n = r->participant - (r->participant > r->root ? 1 : 0);
+#endif // !(NTHREADS > 16)
 		pr->dests[n] = r->dest;
+#if NTHREADS > 16
+	} else {
+		pr->dests[r->participant] = r->dest; // need some dummy destination
+#endif // NTHREADS > 16
 	}
 	__sync_fetch_and_add(&pr->done, 1);
 	while (pr->done < NTHREADS);
 	if (r->root == r->participant) {
+#if NTHREADS > 16
+		size_t x;
+		for (x = 0; x < NTHREADS; x += 16) {
+			qpx_memcast((void **)&pr->dests[x], 16, r->source, r->count * sizeof(data_t));
+		}
+#else // !(NTHREADS > 16)
 		qpx_memcast((void **)pr->dests, NTHREADS - 1,
 				r->source, r->count * sizeof(data_t));
+#endif // !(NTHREADS > 16)
 		pr->done = 0;
 	} else {
 		while (pr->done);
@@ -216,8 +245,15 @@ void *pushpull_bcast(void *v) {
 	off = r->participant * len;
 	if (r->root == r->participant) {
 		pr->src = r->source;
+#if NTHREADS > 16
+		pr->dests[r->participant] = r->dest; // need some dummy destination
+#endif // NTHREADS > 16
 	} else {
+#if NTHREADS > 16
+		size_t n = r->participant;
+#else // !(NTHREADS > 16)
 		size_t n = r->participant - (r->participant > r->root ? 1 : 0);
+#endif // !(NTHREADS > 16)
 		pr->dests[n] = r->dest;
 	}
 
@@ -226,11 +262,21 @@ void *pushpull_bcast(void *v) {
 	while (pr->done[p] < NTHREADS);
 
 	pp.src = pr->src + off;
+#if NTHREADS > 16
+	for (x = 0; x < NTHREADS; ++x) {
+		pp.dests[x] = pr->dests[x] + off;
+	}
+	asm volatile ("msync" ::: "memory");
+	for (x = 0; x < NTHREADS; x += 16) {
+		qpx_memcast((void **)&pp.dests[x], 16, pp.src, len * sizeof(data_t));
+	}
+#else // !(NTHREADS > 16)
 	for (x = 0; x < NTHREADS - 1; ++x) {
 		pp.dests[x] = pr->dests[x] + off;
 	}
 	asm volatile ("msync" ::: "memory");
 	qpx_memcast((void **)pp.dests, NTHREADS - 1, pp.src, len * sizeof(data_t));
+#endif // !(NTHREADS > 16)
 
 	if (r->root == r->participant) {
 		pr->done[1 - p] = 0;
@@ -282,19 +328,21 @@ void *do_bcasts(void *v) {
 	size_t e = 0;
 	FUNC(&b);
 	if (b.participant == b.root) {
+#if !(NTHREADS > 16)
 		for (x = 0; x < BUFCNT * sizeof(data_t); ++x) {
 			if (((unsigned char *)b.dest)[x] != 0x0ff) {
 				++e;
-#ifdef VERBOSE
+#if VERBOSE
 				if (e <= (unsigned)VERBOSE) fprintf(stderr, "Error at byte dest[%d]: %u expected %u\n", x, ((unsigned char *)b.dest)[x], 0x0ff);
 #endif // VERBOSE
 			}
 		}
+#endif // !(NTHREADS > 16)
 	} else {
 		for (x = 0; x < BUFCNT * sizeof(data_t); ++x) {
 			if (((unsigned char *)b.dest)[x] != (x & 0x0ff)) {
 				++e;
-#ifdef VERBOSE
+#if VERBOSE
 				if (e <= (unsigned)VERBOSE) fprintf(stderr, "Error at byte dest[%d]: %u expected %u\n", x, ((unsigned char *)b.dest)[x], x & 0x0ff);
 #endif // VERBOSE
 			}
@@ -303,7 +351,7 @@ void *do_bcasts(void *v) {
 	for (x = 0; x < BUFCNT * sizeof(data_t); ++x) {
 		if (((unsigned char *)b.source)[x] != (x & 0x0ff)) {
 			++e;
-#ifdef VERBOSE
+#if VERBOSE
 			if (e <= (unsigned)VERBOSE) fprintf(stderr, "Error at byte source[%d]: %u expected %u\n", x, ((unsigned char *)b.source)[x], x & 0x0ff);
 #endif // VERBOSE
 		}

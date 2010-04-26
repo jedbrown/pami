@@ -6,7 +6,7 @@ CXXFLAGS = -g -O3 -I/bgsys/drivers/ppcfloor
 
 COPTS =
 
-all: localreduce.PUSHPULL.8.10.32k	\
+all:	localreduce.PUSHPULL.8.10.32k	\
 	localreduce.PULL.8.10.32k	\
 	localreduce.PUSHPULL.16.10.32k	\
 	localreduce.PULL.16.10.32k	\
@@ -17,44 +17,67 @@ all: localreduce.PUSHPULL.8.10.32k	\
 	localbcast.PULL.16.10.32k	\
 	localbcast.PUSHPULL.16.10.32k
 
-verify: localreduce.PUSHPULL.VERIFY	\
-	localreduce.PULL.VERIFY		\
-	localbcast.PUSH.VERIFY		\
-	localbcast.PULL.VERIFY		\
-	localbcast.PUSHPULL.VERIFY
+sow:	localbcast.PULL.16.10.256	\
+	localbcast.PULL.64.10.256	\
+	localbcast.PULL.16.10.1k	\
+	localbcast.PULL.64.10.1k	\
+	localbcast.PULL.16.10.8k	\
+	localbcast.PULL.16.10.64k	\
+	localbcast.PUSH.16.10.256	\
+	localbcast.PUSH.64.10.256	\
+	localbcast.PUSH.16.10.1k	\
+	localbcast.PUSH.64.10.1k	\
+	localbcast.PUSH.16.10.8k	\
+	localbcast.PUSH.16.10.64k	\
+	localbcast.PUSHPULL.16.10.256	\
+	localbcast.PUSHPULL.64.10.256	\
+	localbcast.PUSHPULL.16.10.1k	\
+	localbcast.PUSHPULL.64.10.1k	\
+	localbcast.PUSHPULL.16.10.8k	\
+	localbcast.PUSHPULL.16.10.64k	\
+	localreduce.PULL.16.10.256	\
+	localreduce.PULL.64.10.256	\
+	localreduce.PULL.16.10.64k	\
+	localreduce.PUSHPULL.16.10.256	\
+	localreduce.PUSHPULL.64.10.256	\
+	localreduce.PUSHPULL.16.10.64k
 
-%.PULL.8.10.32k: %.cc
+verify: localreduce.VERIFY.0.PUSHPULL.16.1k	\
+	localreduce.VERIFY.0.PULL.16.1k		\
+	localbcast.VERIFY.0.PUSH.16.1k		\
+	localbcast.VERIFY.0.PULL.16.1k		\
+	localbcast.VERIFY.0.PUSHPULL.16.1k
+	localreduce.VERIFY.0.PUSHPULL.64.1k	\
+	localbcast.VERIFY.0.PUSHPULL.64.1k
+
+################################################################################
+
+# <program>.{PUSH|PULL|PUSHPULL}.<NTHREADS>.<NITER>.<BUFCNT>
+localbcast.P%: localbcast.cc
 	$(CXX) $? -o $@ $(CXXFLAGS) $(COPTS) -lpthread \
-		-DNTHREADS=8 -DNITER=10 -DBUFCNT="(32*1024)" -DTEST_TYPE="PULL"
+		-DTEST_TYPE=$(wordlist 2,2,$(subst ., ,$@))	\
+		-DNTHREADS=$(wordlist 3,3,$(subst ., ,$@))	\
+		-DNITER=$(wordlist 4,4,$(subst ., ,$@))	\
+		-DBUFCNT="($(subst k,*1024,$(wordlist 5,5,$(subst ., ,$@))))"
 
-%.PUSH.8.10.32k: %.cc
+localreduce.P%: localreduce.cc
 	$(CXX) $? -o $@ $(CXXFLAGS) $(COPTS) -lpthread \
-		-DNTHREADS=8 -DNITER=10 -DBUFCNT="(32*1024)" -DTEST_TYPE="PUSH"
+		-DTEST_TYPE=$(wordlist 2,2,$(subst ., ,$@))	\
+		-DNTHREADS=$(wordlist 3,3,$(subst ., ,$@))	\
+		-DNITER=$(wordlist 4,4,$(subst ., ,$@))	\
+		-DBUFCNT="($(subst k,*1024,$(wordlist 5,5,$(subst ., ,$@))))"
 
-%.PUSHPULL.8.10.32k: %.cc
-	$(CXX) $? -o $@ $(CXXFLAGS) $(COPTS) -lpthread \
-		-DNTHREADS=8 -DNITER=10 -DBUFCNT="(32*1024)" -DTEST_TYPE="PUSHPULL"
-
-%.PULL.16.10.32k: %.cc
-	$(CXX) $? -o $@ $(CXXFLAGS) $(COPTS) -lpthread \
-		-DNTHREADS=16 -DNITER=10 -DBUFCNT="(32*1024)" -DTEST_TYPE="PULL"
-
-%.PUSH.16.10.32k: %.cc
-	$(CXX) $? -o $@ $(CXXFLAGS) $(COPTS) -lpthread \
-		-DNTHREADS=16 -DNITER=10 -DBUFCNT="(32*1024)" -DTEST_TYPE="PUSH"
-
-%.PUSHPULL.16.10.32k: %.cc
-	$(CXX) $? -o $@ $(CXXFLAGS) $(COPTS) -lpthread \
-		-DNTHREADS=16 -DNITER=10 -DBUFCNT="(32*1024)" -DTEST_TYPE="PUSHPULL"
-
-%.PUSH.VERIFY: %.cc
+# <program>.VERIFY.<VERBOSE>.{PUSH|PULL|PUSHPULL}.<NTHREADS>.<BUFCNT>
+localbcast.V%: localbcast.cc
 	$(CXX) $? -o $@ $(CXXFLAGS) $(COPTS) -lpthread -DVERIFY \
-		-DNTHREADS=8 -DNITER=10 -DBUFCNT="(32*1024)" -DTEST_TYPE="PUSH"
+		-DVERBOSE=$(wordlist 3,3,$(subst ., ,$@))	\
+		-DTEST_TYPE=$(wordlist 4,4,$(subst ., ,$@))	\
+		-DNTHREADS=$(wordlist 5,5,$(subst ., ,$@))	\
+		-DBUFCNT="($(subst k,*1024,$(wordlist 6,6,$(subst ., ,$@))))"
 
-%.PULL.VERIFY: %.cc
+localreduce.V%: localreduce.cc
 	$(CXX) $? -o $@ $(CXXFLAGS) $(COPTS) -lpthread -DVERIFY \
-		-DNTHREADS=8 -DNITER=10 -DBUFCNT="(32*1024)" -DTEST_TYPE="PULL"
-
-%.PUSHPULL.VERIFY: %.cc
-	$(CXX) $? -o $@ $(CXXFLAGS) $(COPTS) -lpthread -DVERIFY \
-		-DNTHREADS=8 -DNITER=10 -DBUFCNT="(32*1024)" -DTEST_TYPE="PUSHPULL"
+		-DVERBOSE=$(wordlist 3,3,$(subst ., ,$@))	\
+		-DTEST_TYPE=$(wordlist 4,4,$(subst ., ,$@))	\
+		-DNTHREADS=$(wordlist 5,5,$(subst ., ,$@))	\
+		-DBUFCNT="($(subst k,*1024,$(wordlist 6,6,$(subst ., ,$@))))"

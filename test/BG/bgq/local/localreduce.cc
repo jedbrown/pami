@@ -14,6 +14,10 @@
 
 #if DTYPE_DOUBLE
 typedef double data_t;
+typedef double qpx_vector_t[4] __attribute__((__aligned__(32)));
+static qpx_vector_t qpx_true = { 1.0, 1.0, 1.0, 1.0 };
+static qpx_vector_t qpx_false = { -1.0, -1.0, -1.0, -1.0 };
+static qpx_vector_t qpx_zero = { 0.0, 0.0, 0.0, 0.0 };
 #else
 typedef long data_t;
 #endif
@@ -35,6 +39,10 @@ typedef long data_t;
 #define TEST_TYPE	PULL
 #endif // ! TEST_TYPE
 
+#ifndef VERBOSE
+#define VERBOSE 0
+#endif // !VERBOSE
+
 #define WARMUP 2
 
 #if TEST_TYPE == PUSH
@@ -53,10 +61,15 @@ typedef long data_t;
 #define NAME	"pushpull"
 #endif // TEST_TYPE == PUSHPULL
 
-#if NTHREADS != 4 && NTHREADS != 8 && NTHREADS != 16
+#if NTHREADS != 4 && NTHREADS != 8 && NTHREADS != 16 && NTHREADS != 64
 #error Requires NTHREADS to be 4, 8, or 16
 #endif
-void qpx_memcomb(void *dst, void **srcs, size_t nsrc, size_t len) {
+void qpx_memcomb(void *dst, void **srcs, size_t nsrc, size_t len
+#if NTHREADS > 16
+						,double *continuation
+#endif // NTHREADS > 16
+								) {
+	register size_t z;
 	// assert(nsrc == NTHREADS);
 	register double *d = (double *)dst;
 	register double *s0 = (double *)srcs[0];
@@ -68,7 +81,7 @@ void qpx_memcomb(void *dst, void **srcs, size_t nsrc, size_t len) {
 	register double *s5 = (double *)srcs[5];
 	register double *s6 = (double *)srcs[6];
 	register double *s7 = (double *)srcs[7];
-#if NTHREADS == 16
+#if NTHREADS >= 16
 	register double *s8 = (double *)srcs[8];
 	register double *s9 = (double *)srcs[9];
 	register double *s10 = (double *)srcs[10];
@@ -77,14 +90,37 @@ void qpx_memcomb(void *dst, void **srcs, size_t nsrc, size_t len) {
 	register double *s13 = (double *)srcs[13];
 	register double *s14 = (double *)srcs[14];
 	register double *s15 = (double *)srcs[15];
-#endif // NTHREADS == 16
+#if NTHREADS > 16
+	z = 0;
+	asm volatile(
+		"qvlfdx 5, %0, %2;"
+		"qvlfdx 6, %1, %2;"
+		::  "b" (qpx_zero)
+		  ,"b" (continuation)
+		  ,"r" (z)
+		);
+#endif // NTHREADS > 16
+#endif // NTHREADS >= 16
 #endif // NTHREADS >= 8
 	size_t idx = 0;
-	size_t z = len / sizeof(double);
+	z = len / sizeof(double);
 	while (z) {
+#if NTHREADS > 16
+		asm volatile(
+			"qvlfdx 7, %0, %1;"
+			:  "+b" (d)
+			  ,"+r" (idx)
+			);
+#endif // NTHREADS > 16
 		asm volatile(
 			"qvlfdx 0, %1, %0;"
+#if NTHREADS > 16
+			"qvfsel 4, 6, 7, 5;"
+#endif // NTHREADS > 16
 			"qvlfdx 1, %2, %0;"
+#if NTHREADS > 16
+			"qvfadd 0, 0, 4;"
+#endif // NTHREADS > 16
 			"qvlfdx 2, %3, %0;"
 			"qvfadd 0, 0, 1;"
 			"qvlfdx 4, %4, %0;"
@@ -111,7 +147,7 @@ void qpx_memcomb(void *dst, void **srcs, size_t nsrc, size_t len) {
 			  ,"+b" (s6)
 			  ,"+b" (s7)
 			);
-#if NTHREADS == 16
+#if NTHREADS >= 16
 		asm volatile(
 			"qvlfdx 2, %1, %0;"
 			"qvfadd 0, 0, 4;"
@@ -139,7 +175,7 @@ void qpx_memcomb(void *dst, void **srcs, size_t nsrc, size_t len) {
 			  ,"+b" (s14)
 			  ,"+b" (s15)
 			);
-#endif // NTHREADS == 16
+#endif // NTHREADS >= 16
 #endif // NTHREADS >= 8
 		asm volatile(
 			"qvfadd 0, 0, 4;"
@@ -204,7 +240,15 @@ void *pull_reduce(void *v) {
 		__sync_fetch_and_add(&pr->done, 1);
 		while (pr->done < NTHREADS);
 
+#if NTHREADS > 16
+		size_t x;
+		for (x = 0; x < NTHREADS; x += 16) {
+			memcomb(r->dest, (void **)&pr->srcs[x], 16, r->count * sizeof(data_t),
+					(x != 0 ? qpx_true : qpx_false));
+		}
+#else // !(NTHREADS > 16)
 		memcomb(r->dest, (void **)pr->srcs, NTHREADS, r->count * sizeof(data_t));
+#endif // !(NTHREADS > 16)
 
 		pr->done = 0;
 	} else {
@@ -221,6 +265,16 @@ void *pushpull_reduce(void *v) {
 	struct pushpull_reduce *pr = (struct pushpull_reduce *)r->cookie;
 	struct pushpull_reduce pp;
 	size_t x, off, len;
+#if NTHREADS > 16
+	// divide into groups of 16, each group must do (NTHREADS / 16) passes,
+	// each pass with a different set of 16 sources but the same chunk of
+	// the destination. Within the group, the work is parallelized by 16.
+	// This means each thread is still doing 1/NTHREADS of the result, but
+	// it must split up the work into separate calls to qpx_memcomb(),
+	// to cover the NTHREADS/16 sets of 16 sources.
+	// On all except the first pass, the intermediate value must be loaded
+	// from the destination buffer.
+#endif // NTHREADS > 16
 	len = r->count / NTHREADS;
 	off = r->participant * len;
 	if (r->root == r->participant) {
@@ -237,8 +291,15 @@ void *pushpull_reduce(void *v) {
 	for (x = 0; x < NTHREADS; ++x) {
 		pp.srcs[x] = pr->srcs[x] + off;
 	}
-	asm volatile ("msync" ::: "memory");
+	asm volatile ("msync" ::: "memory"); // needed on every iter?
+#if NTHREADS > 16
+	for (x = 0; x < NTHREADS; x += 16) {
+		memcomb(pp.dst, (void **)&pp.srcs[x], 16, len * sizeof(data_t),
+				(x != 0 ? qpx_true : qpx_false));
+	}
+#else // !(NTHREADS > 16)
 	memcomb(pp.dst, (void **)pp.srcs, NTHREADS, len * sizeof(data_t));
+#endif // !(NTHREADS > 16)
 
 	if (r->root == r->participant) {
 		pr->done[1 - p] = 0;
@@ -269,8 +330,13 @@ void *do_reduces(void *v) {
 
 	for (x = 0; x < BUFCNT; ++x) {
 		r.source[x] = (data_t)x + 1;
+#if DTYPE_DOUBLE
+		r.dest[x] = -99999.99999;
+#endif // DTYPE_DOUBLE
 	}
-	memset((void *)r.dest, 0, BUFCNT * sizeof(data_t));
+#if ! DTYPE_DOUBLE
+	memset((void *)r.dest, -1, BUFCNT * sizeof(data_t));
+#endif // ! DTYPE_DOUBLE
 	fprintf(stderr, "Thread %2d starting... %p %p\n", t->id, r.source, r.dest);
 	__sync_fetch_and_add(&barrier1, 1);
 	while (barrier1 < NTHREADS);
@@ -293,7 +359,7 @@ void *do_reduces(void *v) {
 		for (x = 0; x < BUFCNT; ++x) {
 			if (r.dest[x] != ((data_t)x + 1) * NTHREADS) {
 				++e;
-#ifdef VERBOSE
+#if VERBOSE
 				if (e <= (unsigned)VERBOSE) fprintf(stderr, "Error at dest[%d]: %g expected %g\n", x, r.dest[x], ((data_t)x + 1) * NTHREADS);
 #endif // VERBOSE
 			}
@@ -302,7 +368,7 @@ void *do_reduces(void *v) {
 	for (x = 0; x < BUFCNT; ++x) {
 		if (r.source[x] != (data_t)x + 1) {
 			++e;
-#ifdef VERBOSE
+#if VERBOSE
 			if (e <= (unsigned)VERBOSE) fprintf(stderr, "Error at source[%d]: %g expected %g\n", x, r.source[x], ((data_t)x + 1));
 #endif // VERBOSE
 		}
