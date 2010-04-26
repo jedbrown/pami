@@ -101,7 +101,7 @@ namespace PAMI
           geometry->addCollective(PAMI_XFER_BROADCAST,&_ring_broadcast_reg,_context_id);
 
 	  // Add allreduce
-	  geometry->addCollective(PAMI_XFER_ALLREDUCE,&_binomial_allreduce_reg,_context_id);	  
+	  geometry->addCollective(PAMI_XFER_ALLREDUCE,&_binomial_allreduce_reg,_context_id);
 
           return PAMI_SUCCESS;
         }
