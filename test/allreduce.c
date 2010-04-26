@@ -44,7 +44,6 @@
  #define CUTOFF     512
 #endif
 
-
 pami_op op_array[] =
   {
     PAMI_MAX,
@@ -172,8 +171,8 @@ const char * dt_array_str[] =
 
 unsigned elemsize_array[] =
   {
-    2, // PAMI_SIGNED_CHAR,
-    2, // PAMI_UNSIGNED_CHAR,
+    1, // PAMI_SIGNED_CHAR,
+    1, // PAMI_UNSIGNED_CHAR,
     2, // PAMI_SIGNED_SHORT,
     2, // PAMI_UNSIGNED_SHORT,
     4, // PAMI_SIGNED_INT,
@@ -194,13 +193,12 @@ unsigned elemsize_array[] =
     16, // PAMI_LOC_2DOUBLE,
   };
 
-volatile unsigned       _g_barrier_active=0;
-volatile unsigned       _g_allreduce_active=0;
+volatile unsigned       _g_barrier_active;
+volatile unsigned       _g_allreduce_active;
 
 void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
-  TRACE((stderr,"%s %p/%u, %u \n",__PRETTY_FUNCTION__,active, *active,_g_barrier_active));
   (*active)--;
 }
 
@@ -216,14 +214,11 @@ static double timer()
 void cb_allreduce (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
-  TRACE((stderr,"%s %p/%u, %u \n",__PRETTY_FUNCTION__,active, *active,_g_allreduce_active));
   (*active)--;
 }
 
 void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
-  //static unsigned entryCount = 0;
-  TRACE((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_barrier_active));
   _g_barrier_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)barrier);
@@ -234,13 +229,11 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
   }
   while (_g_barrier_active)
     result = PAMI_Context_advance (context, 1);
-  TRACE((stderr,"%s done<%u> active %u\n",__PRETTY_FUNCTION__,entryCount,_g_barrier_active));
+
 }
 
 void _allreduce (pami_context_t context, pami_xfer_t *allreduce)
 {
-  //static unsigned entryCount = 0;
-  TRACE((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_allreduce_active));
   _g_allreduce_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)allreduce);
@@ -251,7 +244,7 @@ void _allreduce (pami_context_t context, pami_xfer_t *allreduce)
   }
   while (_g_allreduce_active)
     result = PAMI_Context_advance (context, 1);
-  TRACE((stderr,"%s done<%u> active %u\n",__PRETTY_FUNCTION__,entryCount,_g_allreduce_active));
+
 }
 
 
@@ -281,14 +274,12 @@ int main(int argc, char*argv[])
   pami_context_t context;
   pami_result_t  result = PAMI_ERROR;
   char          cl_string[] = "TEST";
-  TRACE((stderr,"%s\n",__PRETTY_FUNCTION__));
   result = PAMI_Client_initialize (cl_string, &client);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
     return 1;
   }
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
         { size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
   if (result != PAMI_SUCCESS)
@@ -308,7 +299,6 @@ int main(int argc, char*argv[])
   size_t task_id = configuration.value.intval;
   int    rank    = task_id;
   int i,j,root   = 0;
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   pami_geometry_t  world_geometry;
 
@@ -318,7 +308,6 @@ int main(int argc, char*argv[])
     fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
     return 1;
   }
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   int algorithm_type = 0;
   pami_algorithm_t *algorithm=NULL;
@@ -334,7 +323,6 @@ int main(int argc, char*argv[])
              result);
     return 1;
   }
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   if (num_algorithm[0])
   {
@@ -351,7 +339,6 @@ int main(int argc, char*argv[])
                                           0);
 
   }
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   pami_algorithm_t *allreducealgorithm=NULL;
   pami_metadata_t *metas=NULL;
@@ -368,7 +355,6 @@ int main(int argc, char*argv[])
              result);
     return 1;
   }
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   if (allreducenum_algorithm[0])
   {
@@ -394,7 +380,6 @@ int main(int argc, char*argv[])
       return 1;
     }
   }
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   unsigned** validTable=
     alloc2DContig(op_count,dt_count);
@@ -422,31 +407,13 @@ int main(int argc, char*argv[])
   validTable[OP_MIN][DT_DOUBLE_COMPLEX]=0;
   validTable[OP_PROD][DT_DOUBLE_COMPLEX]=0;
 
+  //  This one is failing using core math...we should find this bug.
+  validTable[OP_BAND][DT_DOUBLE]=0;
+
   /* Now add back the minloc/maxloc stuff */
   for(i=OP_MAXLOC; i<=OP_MINLOC; i++)
     for(j=DT_LOC_2INT; j<=DT_LOC_2DOUBLE; j++)
       validTable[i][j]=1;
-
-  /// \todo These fail using core math...we should find this bug.
-  validTable[OP_BAND][DT_DOUBLE]=0;
-#if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
-  validTable[OP_LAND][DT_FLOAT]=0; 
-  validTable[OP_LOR][DT_FLOAT]=0; 
-  validTable[OP_LXOR][DT_FLOAT]=0;
-  validTable[OP_BAND][DT_FLOAT]=0;
-  validTable[OP_BOR][DT_FLOAT]=0;
-  validTable[OP_BXOR][DT_FLOAT]=0;
-  validTable[OP_LAND][DT_DOUBLE]=0; 
-  validTable[OP_LOR][DT_DOUBLE]=0; 
-  validTable[OP_LXOR][DT_DOUBLE]=0; 
-  validTable[OP_BOR][DT_DOUBLE]=0; 
-  validTable[OP_BXOR][DT_DOUBLE]=0; 
-  validTable[OP_MAXLOC][DT_LOC_SHORT_INT]=0; 
-  validTable[OP_MINLOC][DT_LOC_SHORT_INT]=0; 
-  validTable[OP_MAXLOC][DT_LOC_DOUBLE_INT]=0; 
-  validTable[OP_MINLOC][DT_LOC_DOUBLE_INT]=0; 
-#endif
-
 #else
   for(i=0;i<op_count;i++)
     for(j=0;j<dt_count;j++)
@@ -490,6 +457,7 @@ int main(int argc, char*argv[])
     allreduce.cmd.xfer_allreduce.rtype     = PAMI_BYTE;
     allreduce.cmd.xfer_allreduce.rtypecount= 0;
 
+    //printf ("Calling Allreduce with sbuf %x, rbuf %x\n", sbuf, rbuf);
 
 
     for(dt=0; dt<1; dt++)
@@ -499,7 +467,7 @@ int main(int argc, char*argv[])
         {
           if(rank == root)
             printf("Running Allreduce: %s, %s\n",dt_array_str[dt], op_array_str[op]);
-          for(i=1; i<=COUNT; i*=2)
+          for(i=MIN_COUNT; i<=MAX_COUNT; i*=2)
           {
             long long dataSent = i*elemsize_array[dt];
             int niter;
@@ -512,8 +480,8 @@ int main(int argc, char*argv[])
             ti = timer();
             for (j=0; j<niter; j++)
             {
-              allreduce.cmd.xfer_allreduce.stypecount=dataSent;
-              allreduce.cmd.xfer_allreduce.rtypecount=dataSent;
+              allreduce.cmd.xfer_allreduce.stypecount=i;
+              allreduce.cmd.xfer_allreduce.rtypecount=i;
               allreduce.cmd.xfer_allreduce.dt=dt_array[dt];
               allreduce.cmd.xfer_allreduce.op=op_array[op];
               _allreduce(context, &allreduce);
