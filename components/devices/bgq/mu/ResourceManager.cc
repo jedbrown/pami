@@ -20,6 +20,8 @@
 
 #include "components/devices/bgq/mu/ResourceManager.h"
 #include "Global.h"
+#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/counter/CounterBarrier.h"
 
 #ifndef TRACE
 #define TRACE(x) //fprintf x
@@ -121,6 +123,7 @@ init ( ResourceType_t  type,
 {
   int rc = 0;
   uint32_t i, j;
+  bool master = false;
 
   _type = type;
   _mm = mm;
@@ -132,27 +135,38 @@ init ( ResourceType_t  type,
   //////////////////////////////////////////////////////////////////////////////
   //
   // Initialize the remote-get injection fifos:
+  // - Only do this if we are the first process on the node.
+  // - Other processes must wait until this is done, so enter a barrier
+  //   afterwards (at the end of this function).
   //
   //////////////////////////////////////////////////////////////////////////////
 
   // - Allocate space for the InjFifoSubGroup object for this subgroup and
   //   run its constructor.
-  char * fifoPtr[1];
-  uint32_t fifoSize[1];
-  Kernel_InjFifoAttributes_t fifoAttr[1];
+  
+  // Find our node's p and t coordinates (p is the relative process number,
+  // t is the thread within that process).  Only do this for p=0, t=0.
 
-  rc = posix_memalign ( (void**) & fifoPtr[0],
-                        INJ_FIFO_ALIGNMENT,
-                        DEFAULT_INJ_FIFO_DESC_COUNT *
-                        (sizeof(MUHWI_Descriptor_t) +
-                         sizeof(torus_packet_payload_t)));
-  PAMI_assert ( rc == 0 );
-
-  fifoSize[0] = DEFAULT_INJ_FIFO_DESC_COUNT * sizeof (MUHWI_Descriptor_t);
-  fifoAttr[0].RemoteGet = 1;
-  fifoAttr[0].System    = 0;
-
-  rc = _rgetInjFifoSubgroup.init ( 64, 1, (char **) & fifoPtr[0], &fifoSize[0], &fifoAttr[0] );
+  if ( (__global.mapping.p()==0) && (__global.mapping.t()==0) )
+    {
+      char * fifoPtr[1];
+      uint32_t fifoSize[1];
+      Kernel_InjFifoAttributes_t fifoAttr[1];
+      
+      rc = posix_memalign ( (void**) & fifoPtr[0],
+			    INJ_FIFO_ALIGNMENT,
+			    DEFAULT_INJ_FIFO_DESC_COUNT *
+			    (sizeof(MUHWI_Descriptor_t) +
+			     sizeof(torus_packet_payload_t)));
+      PAMI_assert ( rc == 0 );
+      
+      fifoSize[0] = DEFAULT_INJ_FIFO_DESC_COUNT * sizeof (MUHWI_Descriptor_t);
+      fifoAttr[0].RemoteGet = 1;
+      fifoAttr[0].System    = 0;
+      
+      rc = _rgetInjFifoSubgroup.init ( 64, 1, (char **) & fifoPtr[0], &fifoSize[0], &fifoAttr[0] );
+      master = true;
+    }
 
 
 
@@ -365,6 +379,22 @@ init ( ResourceType_t  type,
 
   rc = _batSubGroups[0]->setBaseAddress ( BAT_SHAREDCOUNTER_ENTRY_NUMBER,
                                           (void *)MUSPI_GetAtomicAddress (shared_counter_pa, MUHWI_ATOMIC_OPCODE_STORE_ADD_COHERENCE_ON_ZERO) );
+
+
+  //////////////////////////////////////////////////////////////////////////////
+  //
+  // Barrier among the nodes within the node.
+  //
+  //////////////////////////////////////////////////////////////////////////////
+
+  TRACE(("ResourceManager:  Initializing Barrier, pSize=%zu, master=%d\n",__global.personality.pSize(),master));
+  PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> barrier;
+  barrier.init(&__global.mm, 
+	       __global.personality.pSize(), 
+	       master );
+  TRACE(("ResourceManager: Entering Barrier\n"));
+  barrier.enter();
+  TRACE(("ResourceManager: Exiting Barrier\n"));
 
 
   return rc;
