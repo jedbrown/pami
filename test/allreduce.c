@@ -19,8 +19,15 @@
 #include <assert.h>
 #include "sys/pami.h"
 
+//define this if you want to validate the data for unsigned sums
+//#define CHECK_DATA
+
 #undef TRACE
 #define TRACE(x) //fprintf x
+
+// more verbose tracing
+#undef TRACEV
+#define TRACEV(x) //fprintf x
 
 #include <assert.h>
 #define TEST_abort()                       abort()
@@ -37,11 +44,11 @@
  #define CUTOFF     512
 #else
  #define FULL_TEST
- #define COUNT      1024
+ #define COUNT      65536
  #define MAXBUFSIZE COUNT*16
  #define NITERLAT   1000
  #define NITERBW    10
- #define CUTOFF     512
+ #define CUTOFF     65536
 #endif
 
 pami_op op_array[] =
@@ -85,8 +92,8 @@ pami_dt dt_array[] =
     PAMI_UNSIGNED_SHORT,
     PAMI_SIGNED_INT,
     PAMI_UNSIGNED_INT,
-    //PAMI_SIGNED_LONG_LONG,
-    //PAMI_UNSIGNED_LONG_LONG,
+    PAMI_SIGNED_LONG_LONG,
+    PAMI_UNSIGNED_LONG_LONG,
     PAMI_FLOAT,
     PAMI_DOUBLE,
     PAMI_LONG_DOUBLE,
@@ -109,8 +116,8 @@ enum dtNum
     DT_UNSIGNED_SHORT,
     DT_SIGNED_INT,
     DT_UNSIGNED_INT,
-    //    DT_SIGNED_LONG_LONG,
-    //DT_UNSIGNED_LONG_LONG,
+    DT_SIGNED_LONG_LONG,
+    DT_UNSIGNED_LONG_LONG,
     DT_FLOAT,
     DT_DOUBLE,
     DT_LONG_DOUBLE,
@@ -153,8 +160,8 @@ const char * dt_array_str[] =
     "PAMI_UNSIGNED_SHORT",
     "PAMI_SIGNED_INT",
     "PAMI_UNSIGNED_INT",
-    //"PAMI_SIGNED_LONG_LONG",
-    //"PAMI_UNSIGNED_LONG_LONG",
+    "PAMI_SIGNED_LONG_LONG",
+    "PAMI_UNSIGNED_LONG_LONG",
     "PAMI_FLOAT",
     "PAMI_DOUBLE",
     "PAMI_LONG_DOUBLE",
@@ -177,8 +184,8 @@ unsigned elemsize_array[] =
     2, // PAMI_UNSIGNED_SHORT,
     4, // PAMI_SIGNED_INT,
     4, // PAMI_UNSIGNED_INT,
-    //8, // PAMI_SIGNED_LONG_LONG,
-    //8, // PAMI_UNSIGNED_LONG_LONG,
+    8, // PAMI_SIGNED_LONG_LONG,
+    8, // PAMI_UNSIGNED_LONG_LONG,
     4, // PAMI_FLOAT,
     8, // PAMI_DOUBLE,
     8, // PAMI_LONG_DOUBLE,
@@ -199,7 +206,7 @@ volatile unsigned       _g_allreduce_active=0;
 void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
-  TRACE((stderr,"%s %p/%u, %u \n",__PRETTY_FUNCTION__,active, *active,_g_barrier_active));
+  TRACEV((stderr,"%s %p/%u, %u \n",__PRETTY_FUNCTION__,active, *active,_g_barrier_active));
   (*active)--;
 }
 
@@ -215,14 +222,14 @@ static double timer()
 void cb_allreduce (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
-  TRACE((stderr,"%s %p/%u, %u \n",__PRETTY_FUNCTION__,active, *active,_g_allreduce_active));
+  TRACEV((stderr,"%s %p/%u, %u \n",__PRETTY_FUNCTION__,active, *active,_g_allreduce_active));
   (*active)--;
 }
 
 void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
   //static unsigned entryCount = 0;
-  TRACE((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_barrier_active));
+  TRACEV((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_barrier_active));
   _g_barrier_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)barrier);
@@ -233,13 +240,13 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
   }
   while (_g_barrier_active)
     result = PAMI_Context_advance (context, 1);
-  TRACE((stderr,"%s done<%u> active %u\n",__PRETTY_FUNCTION__,entryCount,_g_barrier_active));
+  TRACEV((stderr,"%s done<%u> active %u\n",__PRETTY_FUNCTION__,entryCount,_g_barrier_active));
 }
 
 void _allreduce (pami_context_t context, pami_xfer_t *allreduce)
 {
   //static unsigned entryCount = 0;
-  TRACE((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_allreduce_active));
+  TRACEV((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_allreduce_active));
   _g_allreduce_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)allreduce);
@@ -250,7 +257,7 @@ void _allreduce (pami_context_t context, pami_xfer_t *allreduce)
   }
   while (_g_allreduce_active)
     result = PAMI_Context_advance (context, 1);
-  TRACE((stderr,"%s done<%u> active %u\n",__PRETTY_FUNCTION__,entryCount,_g_allreduce_active));
+  TRACEV((stderr,"%s done<%u> active %u\n",__PRETTY_FUNCTION__,entryCount,_g_allreduce_active));
 }
 
 
@@ -269,6 +276,7 @@ unsigned ** alloc2DContig(int nrows, int ncols)
   return array;
 }
 
+#ifdef CHECK_DATA
 void initialize_sndbuf (void *buf, int count, int op, int dt) {
 
   int i;
@@ -287,14 +295,14 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int nranks) {
     uint *rbuf = (uint *)  buf;
     for (i = 0; i < count; i++) {
       if (rbuf[i] != i * nranks)
-	return -1;
+        return -1;
     }
-    //printf ("Check Passes for count %d, op %d, dt %d\n", count, op, dt);
+    TRACE((stderr,"Check Passes for count %d, op %d, dt %d\n", count, op, dt));
   }
   
   return 0;
 }
-
+#endif
 
 int main(int argc, char*argv[])
 {
@@ -332,14 +340,16 @@ int main(int argc, char*argv[])
   }
   size_t task_id = configuration.value.intval;
 
-  /* configuration.name = PAMI_NUM_TASKS; */
-  /* result = PAMI_Configuration_query(client, &configuration); */
-  /* if (result != PAMI_SUCCESS) */
-  /* { */
-  /*   fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result); */
-  /*   return 1; */
-  /* } */
-  /* size_t nranks  = configuration.value.intval; */
+#ifdef CHECK_DATA
+  configuration.name = PAMI_NUM_TASKS; 
+  result = PAMI_Configuration_query(client, &configuration); 
+  if (result != PAMI_SUCCESS) 
+  { 
+    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result); 
+    return 1; 
+  } 
+  size_t nranks  = configuration.value.intval; 
+#endif
 
   int    rank    = task_id;
   int i,j,root   = 0;
@@ -462,9 +472,15 @@ int main(int argc, char*argv[])
     for(j=DT_LOC_2INT; j<=DT_LOC_2DOUBLE; j++)
       validTable[i][j]=1;
 
+  /// \todo These long long types reportedly fail in pgas, so disable for now.
+  for(i=0,j=DT_SIGNED_LONG_LONG; i<OP_COUNT;i++)validTable[i][j]=0;
+  for(i=0,j=DT_UNSIGNED_LONG_LONG; i<OP_COUNT;i++)validTable[i][j]=0;
+
   /// \todo These fail using core math...we should find this bug.
   validTable[OP_BAND][DT_DOUBLE]=0;
+
 #if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
+  /// \todo These fail using core math on bgq.
   validTable[OP_LAND][DT_FLOAT]=0; 
   validTable[OP_LOR][DT_FLOAT]=0; 
   validTable[OP_LXOR][DT_FLOAT]=0;
@@ -490,7 +506,7 @@ int main(int argc, char*argv[])
 #ifdef ENABLE_MAMBO_WORKAROUNDS
   validTable[OP_BOR][DT_UNSIGNED_INT]=1;
 #else
-  validTable[OP_SUM][DT_SIGNED_INT]=1;
+  validTable[OP_SUM][DT_UNSIGNED_INT]=1;
 #endif
 
 #endif
@@ -543,8 +559,9 @@ int main(int argc, char*argv[])
             else
               niter = NITERBW;
 
-	    //initialize_sndbuf (sbuf, i, op_array[op], dt_array[dt]);
-
+#ifdef CHECK_DATA
+            initialize_sndbuf (sbuf, i, op_array[op], dt_array[dt]);
+#endif
             _barrier(context, &barrier);
             ti = timer();
             for (j=0; j<niter; j++)
@@ -558,9 +575,12 @@ int main(int argc, char*argv[])
             tf = timer();
             _barrier(context, &barrier);
 
-	    //int rc = check_rcvbuf (rbuf, i, op_array[op], dt_array[dt], nranks);
-	    //assert (rc == 0);
-	    
+#ifdef CHECK_DATA
+            int rc = check_rcvbuf (rbuf, i, op_array[op], dt_array[dt], nranks);
+            //assert (rc == 0);
+            if(rc) fprintf(stderr, "FAILED validation\n");
+#endif
+            
             usec = (tf - ti)/(double)niter;
             if (rank == root)
             {
