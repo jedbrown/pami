@@ -29,7 +29,7 @@
  * <b>Context initialization</b>
  *
  * The maximum number of allowed contexts should be queried after the client
- * is initialized with the PAMI_Client_initialize() function. The contexts
+ * is initialized with the PAMI_Client_create() function. The contexts
  * are created with the PAMI_Context_createv() function. This function will
  * initialize an array of context opaque objects and will set the
  * "global endpoints" output parameter.  The "global endpoints" is the number
@@ -48,16 +48,16 @@
  * when the contexts are created. To obtain an endpoint opaque
  * object the application must invoke one of the two endpoint functions.
  *
- * - The application must invoke PAMI_Client_endpoint() to obtain an endpoint to
+ * - The application must invoke PAMI_Endpoint_create() to obtain an endpoint to
  *   address a specific context on a destination task.
- * - The application must invoke PAMI_Client_endpointv() to initialize an array
+ * - The application must invoke PAMI_Endpoint_createv() to initialize an array
  *   of endpoint opaque objects that address the local contexts on a destination task.
  *
  * <b>Endpoint identification</b>
  * Applications may prefer to use a unique integer to identify all endpoints
  * for a client. This can be accomplished by creating an array of
  * endpoint opaque objects and using the index into the array as the endpoint
- * identifier. The PAMI_Client_endpointv() function can be used to create the
+ * identifier. The PAMI_Endpoint_createv() function can be used to create the
  * array.
  *
  * \dontinclude examples/endpoint_table.c

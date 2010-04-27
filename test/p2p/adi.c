@@ -169,7 +169,7 @@ static pami_result_t SendLongHandoff(pami_context_t   context,
 
   pami_task_t remote_task = 1-task;
   size_t remote_context = (task+LONG_DISPATCH)&(num_contexts-1);
-  pami_endpoint_t dest = PAMI_Client_endpoint(client, remote_task, remote_context);
+  pami_endpoint_t dest = PAMI_Endpoint_create(client, remote_task, remote_context);
 
   pami_send_t parameters = { {{0,0}, {0,0}}, {0} };
   parameters.send.dispatch        = LONG_DISPATCH;
@@ -206,7 +206,7 @@ static void *SendLong(void *c)
   pami_work_t state;
   PAMI_Context_post(contexts[local_context], &state, SendLongHandoff, quad);
   while (!done.slong.send)
-    PAMI_Context_multiadvance(contexts, num_contexts, 1);
+    PAMI_Context_advancev(contexts, num_contexts, 1);
   return NULL;
 }
 
@@ -225,7 +225,7 @@ static pami_result_t SendShortHandoff(pami_context_t   context,
 
   pami_task_t remote_task = 1-task;
   size_t remote_context = (task+SHORT_DISPATCH)&(num_contexts-1);
-  pami_endpoint_t dest = PAMI_Client_endpoint(client, remote_task, remote_context);
+  pami_endpoint_t dest = PAMI_Endpoint_create(client, remote_task, remote_context);
 
   pami_send_immediate_t parameters = { {0,0}, {0,0}, 0 };
   parameters.dispatch        = SHORT_DISPATCH;
@@ -254,7 +254,7 @@ static void *SendShort(void *c)
   pami_work_t state;
   PAMI_Context_post(contexts[local_context], &state, SendShortHandoff, NULL);
   while (!done.sshort.send)
-    PAMI_Context_multiadvance(contexts, num_contexts, 1);
+    PAMI_Context_advancev(contexts, num_contexts, 1);
   return NULL;
 }
 
@@ -272,7 +272,7 @@ static void *advance(void* c)
          )
         )
     /* I'm using "13" for the poll-iterations just because I like the number */
-    PAMI_Context_multiadvance(contexts, num_contexts, 13);
+    PAMI_Context_advancev(contexts, num_contexts, 13);
 
   return NULL;
 }
@@ -289,7 +289,7 @@ static void init()
   pami_configuration_t query;
   pami_send_hint_t options = {consistency:1};
 
-  PAMI_Client_initialize("PAMId ADI Example", &client);
+  PAMI_Client_create("PAMId ADI Example", &client);
 
   query.name = PAMI_TASK_ID;
   PAMI_Configuration_query (client, &query);
@@ -366,7 +366,7 @@ int main()
       pthread_join(threads[2], NULL);
     }
 
-  PAMI_Client_finalize(client);
+  PAMI_Client_destroy(client);
   printf("Task=%zu           <DONE>\n", task);
   return 0;
 }

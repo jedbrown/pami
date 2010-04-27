@@ -1,6 +1,6 @@
 ///
 /// \file test/time/time.c
-/// \brief Simple PAMI_Wtime() test before PAMI_Client_initialize()
+/// \brief Simple PAMI_Wtime() test before PAMI_Client_create()
 ///
 
 #include "sys/pami.h"

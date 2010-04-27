@@ -17,7 +17,7 @@ int main ()
   size_t num_global_tasks;
   size_t num_global_endpoints;
 
-  PAMI_Client_initialize ("name", &client, &num_global_tasks);
+  PAMI_Client_create ("name", &client, &num_global_tasks);
 
   PAMI_Context_createv (client, context, 4, num_global_endpoints);
 
@@ -27,7 +27,7 @@ int main ()
   pami_endpoint_t * ptr = _endpoint;
   for (i=0; i<num_global_tasks; i++)
   {
-    ptr += PAMI_Client_endpointv (client, i, ptr);
+    ptr += PAMI_Endpoint_createv (client, i, ptr);
   }
 
   PAMI_Context_lock (context[0]);

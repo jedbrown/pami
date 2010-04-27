@@ -78,7 +78,7 @@ int main (int argc, char ** argv)
   char                  cl_string[] = "TEST";
   pami_result_t result = PAMI_ERROR;
 
-  result = PAMI_Client_initialize (cl_string, &client);
+  result = PAMI_Client_create (cl_string, &client);
   if (result != PAMI_SUCCESS)
   {
     fprintf(stderr, "Error. Unable to initialize pami client. result = %d\n", result);
@@ -225,7 +225,7 @@ int main (int argc, char ** argv)
 	 
 	  parameters.send.header.iov_base = (void *) header_ary[h];
 	  parameters.send.header.iov_len  = header_size_ary[h];
-	  parameters.send.dest = PAMI_Client_endpoint (client, n, 0);
+	  parameters.send.dest = PAMI_Endpoint_create (client, n, 0);
 
 	  fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask %zu no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, n, task_id, send_hard_hint, task_id, send_soft_hint, n, recv_hard_hint);
 
@@ -318,7 +318,7 @@ int main (int argc, char ** argv)
 	parameters.send.dispatch        = dispatch_ary_n[testcase];
 	parameters.send.header.iov_base = (void *) header_ary[h];
 	parameters.send.header.iov_len  = header_size_ary[h];
-	parameters.send.dest = PAMI_Client_endpoint (client, 0, 0);
+	parameters.send.dest = PAMI_Endpoint_create (client, 0, 0);
 
 	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> 0:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask 0 no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, task_id, send_hard_hint, task_id, send_soft_hint, recv_hard_hint);
 
@@ -369,7 +369,7 @@ int main (int argc, char ** argv)
 	parameters.send.dispatch        = dispatch_ary_0[testcase];
 	parameters.send.header.iov_base = (void *) header_ary[h];
 	parameters.send.header.iov_len  = header_size_ary[h];
-	parameters.send.dest = PAMI_Client_endpoint (client, n, 0);
+	parameters.send.dest = PAMI_Endpoint_create (client, n, 0);
 
 	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask %zu no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, n, task_id, send_hard_hint, task_id, send_soft_hint, n, recv_hard_hint);
 
@@ -401,7 +401,7 @@ int main (int argc, char ** argv)
       parameters.send.dispatch        = dispatch_ary_n[testcase];
       parameters.send.header.iov_base = (void *) header_ary[h];
       parameters.send.header.iov_len  = header_size_ary[h];
-      parameters.send.dest = PAMI_Client_endpoint (client, 0, 0);
+      parameters.send.dest = PAMI_Endpoint_create (client, 0, 0);
 
       fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> 0:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask 0 no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, task_id, send_hard_hint, task_id, send_soft_hint, recv_hard_hint);
 
@@ -443,7 +443,7 @@ int main (int argc, char ** argv)
 	parameters.send.dispatch        = dispatch_ary_0[testcase];
 	parameters.send.header.iov_base = (void *) header_ary[h];
 	parameters.send.header.iov_len  = header_size_ary[h];
-	parameters.send.dest = PAMI_Client_endpoint (client, n, 0);
+	parameters.send.dest = PAMI_Endpoint_create (client, n, 0);
 
 	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask %zu no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, n, task_id, send_hard_hint, task_id, send_soft_hint, n, recv_hard_hint);
 
@@ -508,7 +508,7 @@ int main (int argc, char ** argv)
       parameters.send.dispatch        = dispatch_ary_n[testcase];
       parameters.send.header.iov_base = (void *) header_ary[h];
       parameters.send.header.iov_len  = header_size_ary[h];
-      parameters.send.dest = PAMI_Client_endpoint (client, 0, 0);
+      parameters.send.dest = PAMI_Endpoint_create (client, 0, 0);
 
       fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> 0:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask 0 no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, task_id, send_hard_hint, task_id, send_soft_hint, recv_hard_hint);
 
@@ -544,7 +544,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  result = PAMI_Client_finalize (client);
+  result = PAMI_Client_destroy (client);
   if (result != PAMI_SUCCESS)
   {
     fprintf(stderr, "Error. Unable to finalize pami client. result = %d\n", result);

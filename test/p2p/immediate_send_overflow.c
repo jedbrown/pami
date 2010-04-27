@@ -73,7 +73,7 @@ int main (int argc, char ** argv)
   char                  cl_string[] = "TEST";
   pami_result_t result = PAMI_ERROR;
 
-  result = PAMI_Client_initialize (cl_string, &client);
+  result = PAMI_Client_create (cl_string, &client);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
@@ -204,11 +204,11 @@ int main (int argc, char ** argv)
 #ifdef TEST_CROSSTALK
     fprintf (stdout, "PAMI_Send_immediate() functional test [crosstalk]\n");
     fprintf (stdout, "\n");
-    parameters.dest = PAMI_Client_endpoint (client, 1, 1);
+    parameters.dest = PAMI_Endpoint_create (client, 1, 1);
 #else
     fprintf (stdout, "PAMI_Send_immediate() functional test\n");
     fprintf (stdout, "\n");
-    parameters.dest = PAMI_Client_endpoint (client, 1, 0);
+    parameters.dest = PAMI_Endpoint_create (client, 1, 0);
 #endif
 
     for (h=0; h<hsize; h++)
@@ -245,7 +245,7 @@ int main (int argc, char ** argv)
     size_t contextid = 0;
 #endif
 
-    parameters.dest = PAMI_Client_endpoint (client, 0, 0);
+    parameters.dest = PAMI_Endpoint_create (client, 0, 0);
     for (h=0; h<hsize; h++)
     {
       parameters.header.iov_len = header_bytes[h];
@@ -298,7 +298,7 @@ int main (int argc, char ** argv)
   }
 #endif
 
-  result = PAMI_Client_finalize (client);
+  result = PAMI_Client_destroy (client);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);

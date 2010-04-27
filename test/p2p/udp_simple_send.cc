@@ -226,9 +226,9 @@ int main (int argc, char ** argv)
 
   char clientname[] = "PAMI";
   pami_client_t client;
-  TRACE_ERR((stderr, "... before PAMI_Client_initialize()\n"));
-  PAMI_Client_initialize (clientname, &client);
-  TRACE_ERR((stderr, "...  after PAMI_Client_initialize()\n"));
+  TRACE_ERR((stderr, "... before PAMI_Client_create()\n"));
+  PAMI_Client_create (clientname, &client);
+  TRACE_ERR((stderr, "...  after PAMI_Client_create()\n"));
   pami_context_t context;
   TRACE_ERR((stderr, "... before PAMI_Context_create()\n"));
   { size_t _n = 1; PAMI_Context_createv (client, NULL, 0, &context, _n); }
@@ -278,8 +278,8 @@ int main (int argc, char ** argv)
 
    size_t val = argc;
 
-  pami_endpoint_t origin = PAMI_Client_endpoint (client, 0, 0);
-  pami_endpoint_t target = PAMI_Client_endpoint (client, 1, 0);
+  pami_endpoint_t origin = PAMI_Endpoint_create (client, 0, 0);
+  pami_endpoint_t target = PAMI_Endpoint_create (client, 1, 0);
 
 
    if (argc==1)
@@ -302,7 +302,7 @@ int main (int argc, char ** argv)
   }
         fprintf (stdout, "** Test completed. **\n");
 
-  PAMI_Client_finalize (client);
+  PAMI_Client_destroy (client);
 
   return 0;
 }

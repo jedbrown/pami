@@ -124,7 +124,7 @@ int con_test(size_t dispatch_id, pami_client_t client, pami_context_t context,
                         for (targ = 0; targ < numranks; ++targ) {
                                 unsigned t = ranks ? ranks[targ] : targ;
                                 if (t == rank) continue;
-                                send.send.dest = PAMI_Client_endpoint(client, t, 0);
+                                send.send.dest = PAMI_Endpoint_create(client, t, 0);
                                 PAMI_Send(context, &send);
                         }
                         while (sendflag < (int)numranks - 1) {

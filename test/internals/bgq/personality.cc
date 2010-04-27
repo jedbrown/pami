@@ -70,8 +70,8 @@ int main(int argc, char ** argv)
 
   char clientname[] = "PAMI";
   pami_client_t client;
-  fprintf(stderr, "PAMI_Client_initialize()\n");
-  PAMI_Client_initialize (clientname, &client);
+  fprintf(stderr, "PAMI_Client_create()\n");
+  PAMI_Client_create (clientname, &client);
   pami_context_t context;
   fprintf(stderr, "PAMI_Context_create()\n");
   { size_t _n = 1; PAMI_Context_createv (client, NULL, 0, &context, _n); }

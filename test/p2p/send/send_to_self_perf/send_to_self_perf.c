@@ -166,7 +166,7 @@ unsigned long long test (size_t sndlen, size_t myrank)
   //Allow warmup of 1 iteration
   for (i = 0; i <= ITERATIONS; i++)
   {
-    parameters.send.dest = PAMI_Client_endpoint (_g_client, myrank, 0);
+    parameters.send.dest = PAMI_Endpoint_create (_g_client, myrank, 0);
     TRACE_ERR((stderr, "(%zu)\n(%zu) Starting Iteration %d of size %zu\n", _my_rank, _my_rank, i, sndlen));
     if (i == 1)
       t1 = PAMI_Wtimebase();
@@ -199,7 +199,7 @@ int main ()
   char          cl_string[] = "TEST";
   pami_result_t  result = PAMI_ERROR;
 
-  result = PAMI_Client_initialize (cl_string, &_g_client);
+  result = PAMI_Client_create (cl_string, &_g_client);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize client. result = %d\n", result);

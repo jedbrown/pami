@@ -30,7 +30,7 @@ int main(int argc, char ** argv) {
         pami_client_t client;
         unsigned x;
 
-        status = PAMI_Client_initialize("multicast test", &client);
+        status = PAMI_Client_create("multicast test", &client);
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);
                 return 1;
@@ -115,7 +115,7 @@ int main(int argc, char ** argv) {
                 return 1;
         }
 
-        status = PAMI_Client_finalize(client);
+        status = PAMI_Client_destroy(client);
         if (status != PAMI_SUCCESS) {
                 fprintf(stderr, "Error. Unable to finalize pami client. result = %d\n", status);
                 return 1;

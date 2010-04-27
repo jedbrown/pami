@@ -98,7 +98,7 @@ int main(int argc, char ** argv) {
 	pami_context_t context[NUM_CONTEXTS];
 	int x, y;
 
-	result = PAMI_Client_initialize(cl_string, &client);
+	result = PAMI_Client_create(cl_string, &client);
 	if (result != PAMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to initialize pami client. "
 							"result = %d\n", result);
@@ -140,7 +140,7 @@ while (PAMI_Wtimebase() - t0 < 500000);
 		}
 	}
 
-	result = PAMI_Client_finalize(client);
+	result = PAMI_Client_destroy(client);
 	if (result != PAMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to finalize pami client. "
 						"result = %d\n", result);

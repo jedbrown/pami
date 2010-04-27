@@ -138,7 +138,7 @@ unsigned do_test (pami_context_t context)
   if (task_id == 0)
   {
     TRACE((stderr, "before send ...\n"));
-    parameters.send.dest = PAMI_Client_endpoint (g_client, 1, 0);
+    parameters.send.dest = PAMI_Endpoint_create (g_client, 1, 0);
     result = PAMI_Send (context, &parameters);
     TRACE((stderr, "... after send.\n"));
 
@@ -169,7 +169,7 @@ unsigned do_test (pami_context_t context)
     TRACE((stderr, "... after recv advance loop\n"));
 
     TRACE((stderr, "before send ...\n"));
-    parameters.send.dest = PAMI_Client_endpoint (g_client, 0, 0);
+    parameters.send.dest = PAMI_Endpoint_create (g_client, 0, 0);
     result = PAMI_Send (context, &parameters);
     TRACE((stderr, "... after send.\n"));
 
@@ -205,7 +205,7 @@ int main (int argc, char ** argv)
   char                  cl_string[] = "TEST";
   pami_result_t result = PAMI_ERROR;
 
-  result = PAMI_Client_initialize (cl_string, &g_client);
+  result = PAMI_Client_create (cl_string, &g_client);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
@@ -245,7 +245,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  result = PAMI_Client_finalize (g_client);
+  result = PAMI_Client_destroy (g_client);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);

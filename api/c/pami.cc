@@ -52,14 +52,14 @@ extern "C" pami_context_t PAMI_Client_getcontext(pami_client_t client, size_t co
 }
 #endif
 
-extern "C" pami_endpoint_t PAMI_Client_endpoint (pami_client_t client,
+extern "C" pami_endpoint_t PAMI_Endpoint_create (pami_client_t client,
                                                pami_task_t   task,
                                                size_t       offset)
 {
   return PAMI_ENDPOINT_INIT(client,task,offset);
 }
 
-extern "C" pami_result_t PAMI_Client_endpointv (pami_client_t     client,
+extern "C" pami_result_t PAMI_Endpoint_createv (pami_client_t     client,
                                               pami_task_t       task,
                                               pami_endpoint_t * endpoints,
                                               size_t         * count)
@@ -68,7 +68,7 @@ extern "C" pami_result_t PAMI_Client_endpointv (pami_client_t     client,
   return PAMI_ERROR;
 }
 
-extern "C" void PAMI_Client_endpoint_info (pami_endpoint_t   endpoint,
+extern "C" void PAMI_Endpoint_query (pami_endpoint_t   endpoint,
                                           pami_task_t     * task,
                                           size_t         * offset)
 {
@@ -236,9 +236,9 @@ extern "C" pami_result_t PAMI_Geometry_algorithms_num (pami_context_t context,
                                       lists_lengths);
 }
 
-/// \copydoc PAMI_Geometry_algorithms_info
+/// \copydoc PAMI_Geometry_query
 ///
-extern "C"  pami_result_t PAMI_Geometry_algorithms_info (pami_context_t context,
+extern "C"  pami_result_t PAMI_Geometry_query (pami_context_t context,
                                                        pami_geometry_t geometry,
                                                        pami_xfer_type_t   colltype,
                                                        pami_algorithm_t  *algs0,
@@ -962,18 +962,18 @@ extern "C" pami_result_t PAMI_Client_add_commthread_context(pami_client_t client
 
 #ifndef PAMI_LAPI_IMPL
 ///
-/// \copydoc PAMI_Client_initialize
+/// \copydoc PAMI_Client_create
 ///
-extern "C" pami_result_t PAMI_Client_initialize (const char * name,
+extern "C" pami_result_t PAMI_Client_create (const char * name,
                                                pami_client_t * client)
 {
   return PAMI::Client::generate (name, client);
 }
 
 ///
-/// \copydoc PAMI_Client_finalize
+/// \copydoc PAMI_Client_destroy
 ///
-extern "C" pami_result_t PAMI_Client_finalize (pami_client_t client)
+extern "C" pami_result_t PAMI_Client_destroy (pami_client_t client)
 {
   PAMI::Client::destroy ((PAMI::Client *) client);
   return PAMI_SUCCESS;
@@ -1084,9 +1084,9 @@ extern "C" pami_result_t PAMI_Context_advance (pami_context_t context, size_t ma
 }
 
 ///
-/// \copydoc PAMI_Context_multiadvance
+/// \copydoc PAMI_Context_advancev
 ///
-extern "C" pami_result_t PAMI_Context_multiadvance (pami_context_t context[],
+extern "C" pami_result_t PAMI_Context_advancev (pami_context_t context[],
                                                   size_t        count,
                                                   size_t        maximum)
 {
@@ -1197,9 +1197,9 @@ extern "C" pami_result_t PAMI_Rmw (pami_context_t      context,
 }
 
 ///
-/// \copydoc PAMI_Memregion_register
+/// \copydoc PAMI_Memregion_create
 ///
-extern "C" pami_result_t PAMI_Memregion_register (pami_context_t     context,
+extern "C" pami_result_t PAMI_Memregion_create (pami_context_t     context,
                                                 void            * address,
                                                 size_t            bytes,
                                                 pami_memregion_t * memregion)
@@ -1209,9 +1209,9 @@ extern "C" pami_result_t PAMI_Memregion_register (pami_context_t     context,
 }
 
 ///
-/// \copydoc PAMI_Memregion_deregister
+/// \copydoc PAMI_Memregion_destroy
 ///
-extern "C" pami_result_t PAMI_Memregion_deregister (pami_context_t   context,
+extern "C" pami_result_t PAMI_Memregion_destroy (pami_context_t   context,
                                                     pami_memregion_t memregion)
 {
     PAMI::Context   * ctx = (PAMI::Context *) context;

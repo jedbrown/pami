@@ -113,7 +113,7 @@ int main(int argc, char*argv[])
   char buf[BUFSIZE];
   char rbuf[BUFSIZE];
   char          cl_string[] = "TEST";
-  result = PAMI_Client_initialize (cl_string, &client);
+  result = PAMI_Client_create (cl_string, &client);
   if (result != PAMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
@@ -164,7 +164,7 @@ int main(int argc, char*argv[])
   {
     algorithm = (pami_algorithm_t*)
                 malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-    result = PAMI_Geometry_algorithms_info(context,
+    result = PAMI_Geometry_query(context,
                                           world_geometry,
                                           PAMI_XFER_BARRIER,
                                           algorithm,
@@ -208,7 +208,7 @@ int main(int argc, char*argv[])
       malloc(sizeof(pami_algorithm_t) * bcastnum_algorithm[0]);
    metas = (pami_metadata_t*)
       malloc(sizeof(pami_metadata_t) * bcastnum_algorithm[0]);
-    result = PAMI_Geometry_algorithms_info(context,
+    result = PAMI_Geometry_query(context,
                                           world_geometry,
                                           PAMI_XFER_AMBROADCAST,
                                           bcastalgorithm,
@@ -288,7 +288,7 @@ int main(int argc, char*argv[])
         return 1;
       }
 
-  result = PAMI_Client_finalize (client);
+  result = PAMI_Client_destroy (client);
   if (result != PAMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);

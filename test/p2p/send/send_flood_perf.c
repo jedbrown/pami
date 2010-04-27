@@ -106,7 +106,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
 
   pami_endpoint_t endpoint[ntasks];
   for (i=0; i<ntasks; i++)
-    endpoint[i] = PAMI_Client_endpoint (client, i, 0);
+    endpoint[i] = PAMI_Endpoint_create (client, i, 0);
 
   pami_send_t parameters;
   parameters.send.dest = endpoint[0];
@@ -175,9 +175,9 @@ int main (int argc, char ** argv)
 
   pami_client_t client;
   char clientname[]="PAMI";
-  TRACE_ERR((stderr, "... before PAMI_Client_initialize()\n"));
-  PAMI_Client_initialize (clientname, &client);
-  TRACE_ERR((stderr, "...  after PAMI_Client_initialize()\n"));
+  TRACE_ERR((stderr, "... before PAMI_Client_create()\n"));
+  PAMI_Client_create (clientname, &client);
+  TRACE_ERR((stderr, "...  after PAMI_Client_create()\n"));
   pami_context_t context;
   TRACE_ERR((stderr, "... before PAMI_Context_create()\n"));
   PAMI_Context_createv (client, NULL, 0, &context, 1);
@@ -286,7 +286,7 @@ int main (int argc, char ** argv)
       fprintf (stdout, "%s\n", str);
   }
 
-  PAMI_Client_finalize (client);
+  PAMI_Client_destroy (client);
 
   return 0;
 }

@@ -702,7 +702,7 @@ extern "C"
    * \param[in]  bytes     Number of bytes to register
    * \param[out] memregion Memory region object. Can be NULL.
    */
-  pami_result_t PAMI_Memregion_register (pami_context_t     context,
+  pami_result_t PAMI_Memregion_create (pami_context_t     context,
                                        void            * address,
                                        size_t            bytes,
                                        pami_memregion_t * memregion);
@@ -715,7 +715,7 @@ extern "C"
    * \param[in] context   PAMI application context
    * \param[in] memregion Memory region object
    */
-  pami_result_t PAMI_Memregion_deregister (pami_context_t   context,
+  pami_result_t PAMI_Memregion_destroy (pami_context_t   context,
                                          pami_memregion_t memregion);
 
   /**
@@ -1096,7 +1096,7 @@ extern "C"
    * \retval        PAMI_SUCCESS    algorithm is applicable to geometry.
    * \retval        ?????          Error in input arguments or not applicable.
    */
-  pami_result_t PAMI_Geometry_algorithms_info (pami_context_t context,
+  pami_result_t PAMI_Geometry_query (pami_context_t context,
                                              pami_geometry_t geometry,
                                              pami_xfer_type_t  colltype,
                                              pami_algorithm_t *algs0,
@@ -2309,7 +2309,7 @@ extern "C"
    * \param[in]  name   PAMI client unique name
    * \param[out] client Opaque client object
    */
-  pami_result_t PAMI_Client_initialize (const char   * name,
+  pami_result_t PAMI_Client_create (const char   * name,
                                       pami_client_t * client);
 
   /**
@@ -2320,7 +2320,7 @@ extern "C"
    *
    * \param[in] client PAMI client handle
    */
-  pami_result_t PAMI_Client_finalize (pami_client_t client);
+  pami_result_t PAMI_Client_destroy (pami_client_t client);
 
   /**
    * \brief Construct an endpoint to address communication destinations
@@ -2363,7 +2363,7 @@ extern "C"
    *
    * \returns Opaque endpoint object
    */
-  pami_endpoint_t PAMI_Client_endpoint (pami_client_t client,
+  pami_endpoint_t PAMI_Endpoint_create (pami_client_t client,
                                       pami_task_t   task,
                                       size_t       offset);
 
@@ -2391,7 +2391,7 @@ extern "C"
    * \retval PAMI_INVAL The number endpoints on the task is larger than the
    *                   size of endpoint array
    */
-  pami_result_t PAMI_Client_endpointv (pami_client_t     client,
+  pami_result_t PAMI_Endpoint_createv (pami_client_t     client,
                                      pami_task_t       task,
                                      pami_endpoint_t * endpoints,
                                      size_t         * count);
@@ -2400,7 +2400,7 @@ extern "C"
    * \brief Retrieve the client, task, and context offset associated with an endpoint
    *
    * The endpoint must have been previously initialized with the
-   * PAMI_Client_endpoint or PAMI_Client_endpointv function.
+   * PAMI_Endpoint_create or PAMI_Endpoint_createv function.
    *
    * \note This function may be replaced with a generated macro specific to the
    *       install platform if needed for performance reasons.
@@ -2409,7 +2409,7 @@ extern "C"
    * \param[out] task     Opaque destination task object
    * \param[out] offset   Destination context offset
    */
-  void PAMI_Client_endpoint_info (pami_endpoint_t   endpoint,
+  void PAMI_Endpoint_query (pami_endpoint_t   endpoint,
                                  pami_task_t     * task,
                                  size_t         * offset);
 
@@ -2572,7 +2572,7 @@ extern "C"
    * \param[in] count   Number of communication contexts
    * \param[in] maximum Maximum number of internal poll iterations on each context
    */
-  pami_result_t PAMI_Context_multiadvance (pami_context_t context[],
+  pami_result_t PAMI_Context_advancev (pami_context_t context[],
                                          size_t        count,
                                          size_t        maximum);
 

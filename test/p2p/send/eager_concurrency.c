@@ -84,7 +84,7 @@ usage:
         pami_client_t client;
         pami_context_t context;
 
-        result = PAMI_Client_initialize ("test", &client);
+        result = PAMI_Client_create ("test", &client);
         if (result != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
                 return 1;
@@ -211,7 +211,7 @@ usage:
                 fflush(stdout);
         }
 
-        result = PAMI_Client_finalize(client);
+        result = PAMI_Client_destroy(client);
         if (result != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
                 return 1;

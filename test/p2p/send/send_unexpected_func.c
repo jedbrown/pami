@@ -75,9 +75,9 @@ int main (int argc, char ** argv)
 
   pami_client_t client;
   char clientname[]="PAMI";
-  TRACE_ERR((stderr, "... before PAMI_Client_initialize()\n"));
-  PAMI_Client_initialize (clientname, &client);
-  TRACE_ERR((stderr, "...  after PAMI_Client_initialize()\n"));
+  TRACE_ERR((stderr, "... before PAMI_Client_create()\n"));
+  PAMI_Client_create (clientname, &client);
+  TRACE_ERR((stderr, "...  after PAMI_Client_create()\n"));
   pami_context_t context;
   TRACE_ERR((stderr, "... before PAMI_Context_create()\n"));
   PAMI_Context_createv (client, NULL, 0, &context, 1);
@@ -132,7 +132,7 @@ int main (int argc, char ** argv)
     volatile unsigned send_active = MSGCOUNT * 2;
 
     pami_send_t parameters;
-    parameters.send.dest            = PAMI_Client_endpoint (client, 0, 0);
+    parameters.send.dest            = PAMI_Endpoint_create (client, 0, 0);
     parameters.send.dispatch        = dispatch;
     parameters.send.header.iov_base = metadata;
     parameters.send.header.iov_len  = 32;
@@ -151,7 +151,7 @@ int main (int argc, char ** argv)
     while (send_active > 0) PAMI_Context_advance (context, 100);
   }
 
-  PAMI_Client_finalize (client);
+  PAMI_Client_destroy (client);
 
   return 0;
 }

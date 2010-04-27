@@ -1,6 +1,6 @@
 ///
 /// \file test/client/hello.c
-/// \brief Simple hello after PAMI_Client_initialize()
+/// \brief Simple hello after PAMI_Client_create()
 ///
 
 #include "sys/pami.h"
@@ -13,13 +13,13 @@ int main (int argc, char ** argv)
   pami_result_t result = PAMI_ERROR;
   char         cl_string[] = "TEST";
 
-  fprintf (stdout, "Before PAMI_Client_initialize()\n");
-  result = PAMI_Client_initialize (cl_string, &client);
-  fprintf (stdout, "After PAMI_Client_initialize(), result = %d\n", result);
+  fprintf (stdout, "Before PAMI_Client_create()\n");
+  result = PAMI_Client_create (cl_string, &client);
+  fprintf (stdout, "After PAMI_Client_create(), result = %d\n", result);
 
-  fprintf (stdout, "Before PAMI_Client_finalize()\n");
-  result = PAMI_Client_finalize (client);
-  fprintf (stdout, "After PAMI_Client_finalize(), result = %d\n", result);
+  fprintf (stdout, "Before PAMI_Client_destroy()\n");
+  result = PAMI_Client_destroy (client);
+  fprintf (stdout, "After PAMI_Client_destroy(), result = %d\n", result);
 
   return 0;
 };

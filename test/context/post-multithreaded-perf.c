@@ -153,7 +153,7 @@ int main (int argc, char ** argv)
     }
 
 
-  result = PAMI_Client_initialize (cl_string, &client);
+  result = PAMI_Client_create (cl_string, &client);
 
   if (result != PAMI_SUCCESS)
     {
@@ -183,7 +183,7 @@ int main (int argc, char ** argv)
           fprintf (stdout, "\n");
         }
 
-      result = PAMI_Client_finalize (client);
+      result = PAMI_Client_destroy (client);
 
       if (result != PAMI_SUCCESS)
         {
@@ -349,7 +349,7 @@ int main (int argc, char ** argv)
         }
     }
 
-  result = PAMI_Client_finalize (client);
+  result = PAMI_Client_destroy (client);
 
   if (result != PAMI_SUCCESS)
     {

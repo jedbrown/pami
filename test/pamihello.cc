@@ -13,7 +13,7 @@ int main(int argc, char ** argv) {
         pami_result_t status = PAMI_ERROR;
         const char *name = "multicombine test";
 
-        status = PAMI_Client_initialize(name, &client);
+        status = PAMI_Client_create(name, &client);
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);
                 return 1;
@@ -65,7 +65,7 @@ int main(int argc, char ** argv) {
                 return 1;
         }
 
-        status = PAMI_Client_finalize(client);
+        status = PAMI_Client_destroy(client);
         if (status != PAMI_SUCCESS) {
                 fprintf(stderr, "Error. Unable to finalize pami client. result = %d\n", status);
                 return 1;

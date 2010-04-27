@@ -86,7 +86,7 @@ unsigned long long test (size_t sndlen, size_t myrank)
   parameters.header.iov_len  = sizeof(msginfo);
   parameters.data.iov_base   = (void *)_sbuf; // send *something*
   parameters.data.iov_len    = sndlen;
-  parameters.dest = PAMI_Client_endpoint (_g_client, _my_rank, 0);
+  parameters.dest = PAMI_Endpoint_create (_g_client, _my_rank, 0);
 
   unsigned i;
   unsigned long long t1 = 0;
@@ -122,7 +122,7 @@ int main ()
   char          cl_string[] = "TEST";
   pami_result_t  result = PAMI_ERROR;
 
-  result = PAMI_Client_initialize (cl_string, &_g_client);
+  result = PAMI_Client_create (cl_string, &_g_client);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize client. result = %d\n", result);

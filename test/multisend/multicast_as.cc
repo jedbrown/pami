@@ -42,7 +42,7 @@ int main(int argc, char ** argv)
   pami_context_t context;
   pami_result_t status = PAMI_ERROR;
 
-  status = PAMI_Client_initialize("multicast test", &client);
+  status = PAMI_Client_create("multicast test", &client);
   if(status != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);
@@ -390,8 +390,8 @@ int main(int argc, char ** argv)
     return 1;
   }
 
-  DBG_FPRINTF((stderr, "PAMI_Client_finalize(client);\n"));
-  status = PAMI_Client_finalize(client);
+  DBG_FPRINTF((stderr, "PAMI_Client_destroy(client);\n"));
+  status = PAMI_Client_destroy(client);
   if(status != PAMI_SUCCESS)
   {
     fprintf(stderr, "Error. Unable to finalize pami client. result = %d\n", status);
