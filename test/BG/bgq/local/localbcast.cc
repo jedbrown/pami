@@ -4,42 +4,9 @@
 #include <pthread.h>
 #include "hwi/include/bqc/A2_inlines.h"
 
-#define Timebase()	GetTimeBase()
+//#define DTYPE_DOUBLE  0 // not yet supporting longs...
 
-#define PUSH		1
-#define PULL		2
-#define PUSHPULL	3
-
-#define DTYPE_DOUBLE	1
-
-#if DTYPE_DOUBLE
-typedef double data_t;
-#else
-typedef long data_t;
-#endif
-
-// currently, only 4, 8, or 16 threads
-#ifndef NTHREADS
-#define NTHREADS 8
-#endif // ! NTHREADS
-
-#ifndef BUFCNT
-#define BUFCNT	(1024)
-#endif // ! BUFCNT
-
-#ifndef NITER
-#define NITER	1000
-#endif // ! NITER
-
-#ifndef TEST_TYPE
-#define TEST_TYPE	PUSH
-#endif // ! TEST_TYPE
-
-#ifndef VERBOSE
-#define VERBOSE	0
-#endif // !VERBOSE
-
-#define WARMUP 2
+#include "local_coll.h"
 
 #if TEST_TYPE == PUSH 
 #define FUNC    push_bcast
@@ -300,8 +267,8 @@ void *do_bcasts(void *v) {
 	struct bcast b;
 	int x;
 
-	posix_memalign((void **)&b.source, 4 * sizeof(double), BUFCNT * sizeof(data_t));
-	posix_memalign((void **)&b.dest, 4 * sizeof(double), BUFCNT * sizeof(data_t));
+	posix_memalign((void **)&b.source, BUF_ALIGN, BUFCNT * sizeof(data_t));
+	posix_memalign((void **)&b.dest, BUF_ALIGN, BUFCNT * sizeof(data_t));
 	b.count = BUFCNT;
 	b.root = 0;
 	b.participant = t->id;
@@ -310,7 +277,9 @@ void *do_bcasts(void *v) {
 		((unsigned char *)b.source)[x] = x & 0x0ff;
 	}
 	memset((void *)b.dest, -1, BUFCNT * sizeof(data_t));
-	fprintf(stderr, "Thread %2d starting... %p %p\n", t->id, b.source, b.dest);
+	fprintf(stderr, "Thread %2d starting... %p %p (%zd %zd)\n", t->id,
+		b.source, b.dest,
+		L2SLICE(b.source), L2SLICE(b.dest));
 	__sync_fetch_and_add(&barrier1, 1);
 	while (barrier1 < NTHREADS);
 

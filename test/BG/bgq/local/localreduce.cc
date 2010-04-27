@@ -4,49 +4,12 @@
 #include <pthread.h>
 #include "hwi/include/bqc/A2_inlines.h"
 
-#define Timebase()	GetTimeBase()
+//#define DTYPE_DOUBLE	0 // not yet supporting longs...
 
-#define PUSH		1
-#define PULL		2
-#define PUSHPULL	3
-
-#define DTYPE_DOUBLE	1
-
-#if DTYPE_DOUBLE
-typedef double data_t;
-typedef double qpx_vector_t[4] __attribute__((__aligned__(32)));
-static qpx_vector_t qpx_true = { 1.0, 1.0, 1.0, 1.0 };
-static qpx_vector_t qpx_false = { -1.0, -1.0, -1.0, -1.0 };
-static qpx_vector_t qpx_zero = { 0.0, 0.0, 0.0, 0.0 };
-#else
-typedef long data_t;
-#endif
-
-// currently, only 4, 8, or 16 threads
-#ifndef NTHREADS
-#define NTHREADS 8
-#endif // ! NTHREADS
-
-#ifndef BUFCNT
-#define BUFCNT	(1024)
-#endif // ! BUFCNT
-
-#ifndef NITER
-#define NITER	1000
-#endif // ! NITER
-
-#ifndef TEST_TYPE
-#define TEST_TYPE	PULL
-#endif // ! TEST_TYPE
-
-#ifndef VERBOSE
-#define VERBOSE 0
-#endif // !VERBOSE
-
-#define WARMUP 2
+#include "local_coll.h"
 
 #if TEST_TYPE == PUSH
-#error no PUSH algorithm (yet?)
+#error no PUSH reduce algorithm (yet?)
 #endif // TEST_TYPE == PUSH
 
 #if TEST_TYPE == PULL
@@ -322,8 +285,8 @@ void *do_reduces(void *v) {
 	struct reduce r;
 	int x;
 
-	posix_memalign((void **)&r.source, 4 * sizeof(double), BUFCNT * sizeof(data_t));
-	posix_memalign((void **)&r.dest, 4 * sizeof(double), BUFCNT * sizeof(data_t));
+	posix_memalign((void **)&r.source, BUF_ALIGN, BUFCNT * sizeof(data_t));
+	posix_memalign((void **)&r.dest, BUF_ALIGN, BUFCNT * sizeof(data_t));
 	r.count = BUFCNT;
 	r.root = 0;
 	r.participant = t->id;
@@ -337,7 +300,9 @@ void *do_reduces(void *v) {
 #if ! DTYPE_DOUBLE
 	memset((void *)r.dest, -1, BUFCNT * sizeof(data_t));
 #endif // ! DTYPE_DOUBLE
-	fprintf(stderr, "Thread %2d starting... %p %p\n", t->id, r.source, r.dest);
+	fprintf(stderr, "Thread %2d starting... %p %p (%zd %zd)\n", t->id,
+		r.source, r.dest,
+		L2SLICE(r.source), L2SLICE(r.dest));
 	__sync_fetch_and_add(&barrier1, 1);
 	while (barrier1 < NTHREADS);
 
