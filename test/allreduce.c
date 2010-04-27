@@ -85,8 +85,8 @@ pami_dt dt_array[] =
     PAMI_UNSIGNED_SHORT,
     PAMI_SIGNED_INT,
     PAMI_UNSIGNED_INT,
-    PAMI_SIGNED_LONG_LONG,
-    PAMI_UNSIGNED_LONG_LONG,
+    //PAMI_SIGNED_LONG_LONG,
+    //PAMI_UNSIGNED_LONG_LONG,
     PAMI_FLOAT,
     PAMI_DOUBLE,
     PAMI_LONG_DOUBLE,
@@ -109,8 +109,8 @@ enum dtNum
     DT_UNSIGNED_SHORT,
     DT_SIGNED_INT,
     DT_UNSIGNED_INT,
-    DT_SIGNED_LONG_LONG,
-    DT_UNSIGNED_LONG_LONG,
+    //    DT_SIGNED_LONG_LONG,
+    //DT_UNSIGNED_LONG_LONG,
     DT_FLOAT,
     DT_DOUBLE,
     DT_LONG_DOUBLE,
@@ -153,8 +153,8 @@ const char * dt_array_str[] =
     "PAMI_UNSIGNED_SHORT",
     "PAMI_SIGNED_INT",
     "PAMI_UNSIGNED_INT",
-    "PAMI_SIGNED_LONG_LONG",
-    "PAMI_UNSIGNED_LONG_LONG",
+    //"PAMI_SIGNED_LONG_LONG",
+    //"PAMI_UNSIGNED_LONG_LONG",
     "PAMI_FLOAT",
     "PAMI_DOUBLE",
     "PAMI_LONG_DOUBLE",
@@ -177,8 +177,8 @@ unsigned elemsize_array[] =
     2, // PAMI_UNSIGNED_SHORT,
     4, // PAMI_SIGNED_INT,
     4, // PAMI_UNSIGNED_INT,
-    8, // PAMI_SIGNED_LONG_LONG,
-    8, // PAMI_UNSIGNED_LONG_LONG,
+    //8, // PAMI_SIGNED_LONG_LONG,
+    //8, // PAMI_UNSIGNED_LONG_LONG,
     4, // PAMI_FLOAT,
     8, // PAMI_DOUBLE,
     8, // PAMI_LONG_DOUBLE,
@@ -269,6 +269,32 @@ unsigned ** alloc2DContig(int nrows, int ncols)
   return array;
 }
 
+void initialize_sndbuf (void *buf, int count, int op, int dt) {
+
+  int i;
+  if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
+    uint *ibuf = (uint *)  buf;
+    for (i = 0; i < count; i++) {
+      ibuf[i] = i;      
+    }
+  }
+}
+
+int check_rcvbuf (void *buf, int count, int op, int dt, int nranks) {
+  
+  int i;
+  if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
+    uint *rbuf = (uint *)  buf;
+    for (i = 0; i < count; i++) {
+      if (rbuf[i] != i * nranks)
+	return -1;
+    }
+    //printf ("Check Passes for count %d, op %d, dt %d\n", count, op, dt);
+  }
+  
+  return 0;
+}
+
 
 int main(int argc, char*argv[])
 {
@@ -305,6 +331,16 @@ int main(int argc, char*argv[])
     return 1;
   }
   size_t task_id = configuration.value.intval;
+
+  configuration.name = PAMI_NUM_TASKS;
+  result = PAMI_Configuration_query(client, &configuration);
+  if (result != PAMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+    return 1;
+  }
+  size_t nranks  = configuration.value.intval;
+
   int    rank    = task_id;
   int i,j,root   = 0;
   TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
@@ -460,9 +496,6 @@ int main(int argc, char*argv[])
 #endif
   TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
-#endif
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
-
 #if 1
   int nalg;
   for(nalg=0; nalg<allreducenum_algorithm[algorithm_type]; nalg++)
@@ -510,6 +543,8 @@ int main(int argc, char*argv[])
             else
               niter = NITERBW;
 
+	    //initialize_sndbuf (sbuf, i, op_array[op], dt_array[dt]);
+
             _barrier(context, &barrier);
             ti = timer();
             for (j=0; j<niter; j++)
@@ -523,6 +558,9 @@ int main(int argc, char*argv[])
             tf = timer();
             _barrier(context, &barrier);
 
+	    //int rc = check_rcvbuf (rbuf, i, op_array[op], dt_array[dt], nranks);
+	    //assert (rc == 0);
+	    
             usec = (tf - ti)/(double)niter;
             if (rank == root)
             {
