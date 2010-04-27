@@ -332,14 +332,14 @@ int main(int argc, char*argv[])
   }
   size_t task_id = configuration.value.intval;
 
-  configuration.name = PAMI_NUM_TASKS;
-  result = PAMI_Configuration_query(client, &configuration);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
-    return 1;
-  }
-  size_t nranks  = configuration.value.intval;
+  /* configuration.name = PAMI_NUM_TASKS; */
+  /* result = PAMI_Configuration_query(client, &configuration); */
+  /* if (result != PAMI_SUCCESS) */
+  /* { */
+  /*   fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result); */
+  /*   return 1; */
+  /* } */
+  /* size_t nranks  = configuration.value.intval; */
 
   int    rank    = task_id;
   int i,j,root   = 0;
