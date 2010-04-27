@@ -231,6 +231,7 @@ void *pull_bcast(void *v) {
 		while (!pr->done);
 		memcpy(r->dest, pr->src, r->count * sizeof(data_t));
 		__sync_fetch_and_add(&pr->done, -1);
+		while (pr->done > 0);
 	}
 	return NULL;
 }
