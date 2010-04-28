@@ -283,12 +283,13 @@ volatile size_t barrier1 = 0;
 void *do_reduces(void *v) {
 	struct thread *t = (struct thread *)v;
 	struct reduce r;
+	void *buf1, *buf2;
 	int x;
 
-	posix_memalign((void **)&r.source, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
-	posix_memalign((void **)&r.dest, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
-	BUF_STAGGER(r.source);
-	BUF_STAGGER(r.dest);
+	posix_memalign(&buf1, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
+	posix_memalign(&buf1, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
+	BUF_STAGGER(r.source, buf1);
+	BUF_STAGGER(r.dest, buf2);
 	r.count = BUFCNT;
 	r.root = 0;
 	r.participant = t->id;
@@ -343,8 +344,8 @@ void *do_reduces(void *v) {
 	t->t = e;
 #endif // VERIFY
 
-	free(r.dest);
-	free(r.source);
+	free(buf1);
+	free(buf2);
 	return NULL;
 }
 

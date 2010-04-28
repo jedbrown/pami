@@ -36,14 +36,14 @@ typedef long data_t;
 #define BUF_ALIGN	L2SLICE_SPAN
 #define BUF_PAD		L2SLICE_SPAN
 #ifdef BUF_L2STAGGER
-#define BUF_STAGGER(buf)	{ buf += Kernel_PhysicalProcessorID() * L2SLICE_WIDTH; }
+#define BUF_STAGGER(buf,v)	{ buf = (data_t *)((char *)v + Kernel_PhysicalProcessorID() * L2SLICE_WIDTH); }
 #else // ! BUF_L2STAGGER
-#define BUF_STAGGER(buf)
+#define BUF_STAGGER(buf,v)	{ buf = (data_t *)v; }
 #endif // ! BUF_L2STAGGER
 
 #else // ! BUF_L2ALIGN && ! BUF_L2STAGGER
 
-#define BUF_STAGGER(buf)
+#define BUF_STAGGER(buf,v)	{ buf = (data_t *)v; }
 #define BUF_ALIGN	QPX_ALIGN
 #define BUF_PAD		0
 

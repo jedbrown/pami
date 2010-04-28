@@ -265,12 +265,13 @@ volatile size_t barrier1 = 0;
 void *do_bcasts(void *v) {
 	struct thread *t = (struct thread *)v;
 	struct bcast b;
+	void *buf1, *buf2;
 	int x;
 
-	posix_memalign((void **)&b.source, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
-	posix_memalign((void **)&b.dest, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
-	BUF_STAGGER(b.source);
-	BUF_STAGGER(b.dest);
+	posix_memalign(&buf1, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
+	posix_memalign(&buf2, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
+	BUF_STAGGER(b.source, buf1);
+	BUF_STAGGER(b.dest, buf2);
 	b.count = BUFCNT;
 	b.root = 0;
 	b.participant = t->id;
@@ -331,8 +332,8 @@ void *do_bcasts(void *v) {
 	t->t = e;
 #endif // VERIFY
 
-	free(b.dest);
-	free(b.source);
+	free(buf1);
+	free(buf2);
 	return NULL;
 }
 
