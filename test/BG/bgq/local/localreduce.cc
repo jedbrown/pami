@@ -287,7 +287,7 @@ void *do_reduces(void *v) {
 	int x;
 
 	posix_memalign(&buf1, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
-	posix_memalign(&buf1, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
+	posix_memalign(&buf2, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
 	BUF_STAGGER(r.source, buf1);
 	BUF_STAGGER(r.dest, buf2);
 	r.count = BUFCNT;
