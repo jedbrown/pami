@@ -39,7 +39,7 @@
   #endif
 
   #define TRACE_DATA(x) CCMI_ADAPTOR_DEBUG_trace_data x
-//#define TRACE_DATA(x) if((PAMI_SINGLE_COMPLEX == _dt) && (PAMI_SUM == _op)) CCMI_ADAPTOR_DEBUG_trace_data x
+// #define TRACE_DATA(x) if((PAMI_SINGLE_COMPLEX == _dt) && (PAMI_SUM == _op)) CCMI_ADAPTOR_DEBUG_trace_data x
 inline void CCMI_ADAPTOR_DEBUG_trace_data(const char* string, const char* buffer,unsigned size)
 {
   unsigned nChunks = size / 32;

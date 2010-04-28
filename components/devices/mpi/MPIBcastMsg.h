@@ -22,6 +22,10 @@
 #include "Topology.h"
 #include "components/devices/MulticastModel.h"
 
+#ifndef DO_DEBUG
+ #define DO_DEBUG(x) //x
+#endif
+
 #undef TRACE_DEVICE
 #ifndef TRACE_DEVICE
 #define TRACE_DEVICE(x) //fprintf x
@@ -122,13 +126,14 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
         else // we must be a dst_participant and we don't particularly care who is the root - just not me.
           _root = MPI_ANY_SOURCE;
 
-        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg client %#zX, context %zu, root %zu, iwq %p, rwq %p, bytes %zu/%zu/%zu\n",this,
-                      mcast->client, mcast->context, _root, _iwq, _rwq, _bytes,
+        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg client %#zX, context %zu, root %zu, dst size %zu, iwq %p, rwq %p, bytes %zu/%zu/%zu\n",this,
+                      mcast->client, mcast->context, _root, _dst->size(),  _iwq, _rwq, _bytes,
                       _iwq?_iwq->bytesAvailableToConsume():-1,
                       _rwq?_rwq->bytesAvailableToProduce():-1));
         bool iamroot = (_root == __global.mapping.task());
         if(iamroot)
         {
+          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg i am root\n",this));
           //_rwq = NULL;// \todo Why?  Can't a source (root) also be a destination?
 
           // no actual data to send, indicate we're done with a pending status (for advance)
@@ -139,9 +144,11 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
             // reset the _status to initialized after __setThreads
             _pendingStatus = PAMI::Device::Done; //setStatus(PAMI::Device::Done);
           }
+          DO_DEBUG(for(unsigned j=0; j<_dst->size(); ++j) fprintf(stderr,"<%p>MPIBcastMsg _dst[%u]=%zu, size %zu\n",this,j,(size_t)_dst->index2Rank(j),_dst->size()));
         }
         else // I must be a dst_participant
         {
+          TRACE_DEVICE((stderr,"<%p>MPIBcastMsg i am dst\n",this));
           //PAMI_assert(_dst->isRankMember(__global.mapping.task()));
           // no actual data to send, indicate we're done with a pending status (for advance)
           if((_rwq == NULL) && (_bytes == 0))
@@ -158,6 +165,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
 
       // virtual function
       pami_context_t postNext(bool devQueued) {
+        TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::postNext(%u)\n",this,(unsigned) devQueued));
         return _g_mpibcast_dev.__postNext<MPIBcastMsg>(this, devQueued);
       }
 
@@ -202,12 +210,14 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
         }
         int flag = 0;
         MPI_Status status;
-        //static unsigned count = 5; if(count) count--;
-        //if(count)TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() idx %zu/%zu, currBytes %zu, bytesLeft %zu, tag %d %s\n",this,
-        //              _idx, _dst->size(), _currBytes, thr->_bytesLeft, _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
+        DO_DEBUG(static unsigned count = 5);
+        DO_DEBUG(if(count) count--);
+        DO_DEBUG(if(count)TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() idx %zu/%zu, currBytes %zu, bytesLeft %zu, tag %d %s\n",this,
+                                        _idx, _dst->size(), _currBytes, thr->_bytesLeft, _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":"")));
         if(_req != MPI_REQUEST_NULL)
         {
           MPI_Test(&_req, &flag, &status);
+          DO_DEBUG(if(count)TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() MPI_Test(_req, flag=%d, status) %s;\n",this,flag,!flag?"EAGAIN":" ")));
           if(flag)
           {
             _req = MPI_REQUEST_NULL; // redundant?
@@ -235,6 +245,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
           if(_currBytes == 0)
           {
             _currBytes = _iwq->bytesAvailableToConsume();
+            if(_currBytes > 1024) _currBytes = 1024; // ??
             _currBuf = _iwq->bufferToConsume();
             _idx = 0;
           }
@@ -258,7 +269,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
           }
           TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__advanceThread() sending rc = %d, idx %zu, currBytes %zu, bytesLeft %zu, dst %zu, tag %d %s\n",this,
                         rc,_idx, _currBytes, thr->_bytesLeft, _dst->index2Rank(_idx), _tag,_req == MPI_REQUEST_NULL?"MPI_REQUEST_NULL":""));
-          //count = 5;
+          DO_DEBUG(count = 5);
           // error checking?
           ++_idx;
         }
@@ -300,7 +311,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
           {
             return PAMI_EAGAIN;
           }
-          //count = 5;
+          DO_DEBUG(count = 5);
           int rc = MPI_Irecv(_currBuf, _currBytes, MPI_BYTE,
                              _root, _tag,
                              _g_mpibcast_dev._mcast_communicator, &_req);
