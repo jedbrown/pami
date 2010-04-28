@@ -240,6 +240,7 @@ namespace PAMI
         {
           iov[0].iov_base = metadata;
           iov[0].iov_len  = 1;
+          tbytes          = 1;
         }
 #endif
 
@@ -467,6 +468,7 @@ namespace PAMI
         {
           iov[0].iov_base = metadata;
           iov[0].iov_len  = 1;
+          tbytes          = 1;
         }
 #endif
 

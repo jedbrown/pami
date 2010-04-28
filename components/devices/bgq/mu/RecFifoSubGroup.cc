@@ -56,7 +56,7 @@ init ( uint32_t subGroupId,
   uint32_t numFreeFifos;
   uint32_t fifoNum;
   Kernel_MemoryRegion_t  memRegion;
-  uint32_t groupId = subGroupId / BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP;
+  uint32_t groupId = subGroupId / BGQ_MU_NUM_FIFO_SUBGROUPS;
   uint64_t enableBits = 0;
 
   PAMI_assert_debug( subGroupId < BGQ_MU_NUM_FIFO_SUBGROUPS_PER_NODE );
