@@ -1,0 +1,3 @@
+[submodule "components/lapi"]
+	path = components/lapi
+	url = /afs/apd.pok.ibm.com/u/archerc/scratch/gitbox/lapi
