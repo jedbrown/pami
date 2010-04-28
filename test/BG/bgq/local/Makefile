@@ -2,7 +2,7 @@
 # showing the first "N" errors (maximum).
 
 CXX = /bgsys/drivers/ppcfloor/gnu-linux/bin/powerpc64-bgq-linux-g++
-CXXFLAGS = -g -O3 -I/bgsys/drivers/ppcfloor
+CXXFLAGS = -g -O3 -I/bgsys/drivers/ppcfloor -I/bgsys/drivers/ppcfloor/spi/include/kernel/cnk
 
 COPTS =
 

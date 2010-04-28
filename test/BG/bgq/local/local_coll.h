@@ -1,6 +1,8 @@
 #ifndef __test_BG_bgq_local_local_coll_h__
 #define __test_BG_bgq_local_local_coll_h__
 
+#include "spi/include/kernel/location.h"
+
 #define Timebase()	GetTimeBase()
 
 #define PUSH		1
@@ -29,12 +31,23 @@ typedef long data_t;
 #define L2SLICE_SPAN	(L2SLICE_WIDTH * L2SLICE_COUNT)
 #define L2SLICE(addr)	(((size_t)(addr) / L2SLICE_WIDTH) & (L2SLICE_COUNT - 1))
 
-#ifdef BUF_L2ALIGN
+#if defined(BUF_L2ALIGN) || defined(BUF_L2STAGGER)
+
 #define BUF_ALIGN	L2SLICE_SPAN
-// TBD: how to intentionally stagger buffer start addresses...
-#else // ! BUF_L2ALIGN
+#define BUF_PAD		L2SLICE_SPAN
+#ifdef BUF_L2STAGGER
+#define BUF_STAGGER(buf)	{ buf += Kernel_PhysicalProcessorID() * L2SLICE_WIDTH; }
+#else // ! BUF_L2STAGGER
+#define BUF_STAGGER(buf)
+#endif // ! BUF_L2STAGGER
+
+#else // ! BUF_L2ALIGN && ! BUF_L2STAGGER
+
+#define BUF_STAGGER(buf)
 #define BUF_ALIGN	QPX_ALIGN
-#endif // ! BUF_L2ALIGN
+#define BUF_PAD		0
+
+#endif // ! BUF_L2ALIGN && ! BUF_L2STAGGER
 
 // currently, only 4, 8, or 16 threads
 #ifndef NTHREADS

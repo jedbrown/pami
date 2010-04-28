@@ -285,8 +285,10 @@ void *do_reduces(void *v) {
 	struct reduce r;
 	int x;
 
-	posix_memalign((void **)&r.source, BUF_ALIGN, BUFCNT * sizeof(data_t));
-	posix_memalign((void **)&r.dest, BUF_ALIGN, BUFCNT * sizeof(data_t));
+	posix_memalign((void **)&r.source, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
+	posix_memalign((void **)&r.dest, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
+	BUF_STAGGER(r.source);
+	BUF_STAGGER(r.dest);
 	r.count = BUFCNT;
 	r.root = 0;
 	r.participant = t->id;

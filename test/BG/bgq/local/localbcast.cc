@@ -267,8 +267,10 @@ void *do_bcasts(void *v) {
 	struct bcast b;
 	int x;
 
-	posix_memalign((void **)&b.source, BUF_ALIGN, BUFCNT * sizeof(data_t));
-	posix_memalign((void **)&b.dest, BUF_ALIGN, BUFCNT * sizeof(data_t));
+	posix_memalign((void **)&b.source, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
+	posix_memalign((void **)&b.dest, BUF_ALIGN, BUFCNT * sizeof(data_t) + BUF_PAD);
+	BUF_STAGGER(b.source);
+	BUF_STAGGER(b.dest);
 	b.count = BUFCNT;
 	b.root = 0;
 	b.participant = t->id;
