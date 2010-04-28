@@ -4,7 +4,7 @@
  */
 
 #include <stdio.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
 #include "test/internals/multisend/multicast.h"

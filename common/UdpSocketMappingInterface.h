@@ -13,7 +13,7 @@
 #ifndef __common_UdpSocketMappingInterface_h__
 #define __common_UdpSocketMappingInterface_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <netinet/in.h>
 
 namespace PAMI

@@ -19,7 +19,7 @@
  *
  *
  */
-#include "sys/pami.h"
+#include <pami.h>
 #include "components/atomic/Counter.h"
 #include "Global.h"
 

@@ -4,7 +4,7 @@
 ///
 
 #include <stdio.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "components/devices/workqueue/WQRingReduceMsg.h"
 #include "components/devices/workqueue/LocalReduceWQMessage.h"

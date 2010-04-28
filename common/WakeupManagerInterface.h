@@ -5,7 +5,7 @@
 #ifndef __common_WakeupManagerInterface_h__
 #define __common_WakeupManagerInterface_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 
 namespace PAMI {
 namespace Interface {

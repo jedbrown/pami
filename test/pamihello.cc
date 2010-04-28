@@ -4,7 +4,7 @@
  */
 
 #include <stdio.h>
-#include "sys/pami.h"
+#include <pami.h>
 #include "Global.h"
 
 int main(int argc, char ** argv) {

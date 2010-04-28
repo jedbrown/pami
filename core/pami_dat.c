@@ -14,7 +14,7 @@
 /// this needs to be C code.
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "math/math_coremath.h"
 
 

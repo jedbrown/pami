@@ -11,7 +11,7 @@
  * \brief Collective Network Device implementation
  */
 #include "config.h"
-#include "sys/pami.h"
+#include <pami.h>
 #include "util/common.h"
 #include "SysDep.h"
 #include "components/atomic/bgp/LockBoxBarrier.h"

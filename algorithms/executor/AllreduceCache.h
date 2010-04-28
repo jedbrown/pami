@@ -1,7 +1,7 @@
 #ifndef __algorithms_executor_AllreduceCache_h__
 #define __algorithms_executor_AllreduceCache_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "algorithms/interfaces/Schedule.h"
 #include "algorithms/interfaces/Executor.h"
 #include "algorithms/ccmi.h"

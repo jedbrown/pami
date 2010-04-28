@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
-#include <sys/pami.h>
+#include <pami.h>
 
 
 #define SSIZE 4    /**< This is the size (in bytes) of the small send */

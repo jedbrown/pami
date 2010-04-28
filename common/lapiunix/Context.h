@@ -403,36 +403,21 @@ namespace PAMI
           return PAMI_UNIMPL;
         }
 
-      inline pami_result_t memregion_register_impl (void            * address,
-                                                   size_t            bytes,
-                                                   pami_memregion_t * memregion)
+      inline pami_result_t memregion_create_impl (void             * address,
+                                                  size_t             bytes_in,
+                                                  size_t           * bytes_out,
+                                                  pami_memregion_t * memregion)
         {
           assert(0);
           return PAMI_UNIMPL;
         }
 
-      inline pami_result_t memregion_deregister_impl (pami_memregion_t memregion)
+      inline pami_result_t memregion_destroy_impl (pami_memregion_t * memregion)
         {
           assert(0);
           return PAMI_UNIMPL;
         }
 
-
-      inline pami_result_t memregion_query_impl (pami_memregion_t    memregion,
-                                                void            ** address,
-                                                size_t           * bytes,
-                                                size_t           * task)
-        {
-          assert(0);
-          return PAMI_UNIMPL;
-        }
-
-
-      inline pami_result_t memregion_register_impl (pami_rmw_t * parameters)
-        {
-          assert(0);
-          return PAMI_UNIMPL;
-        }
 
       inline pami_result_t rput_impl (pami_rput_simple_t * parameters)
         {

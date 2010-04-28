@@ -14,7 +14,7 @@
 #ifndef __components_devices_lapiunix_oldlapiunixm2mmodel_h__
 #define __components_devices_lapiunix_oldlapiunixm2mmodel_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "components/devices/OldM2MModel.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
 #include "common/lapiunix/lapifunc.h"

@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 /** \brief The maximum number of sources based on the number of cores */
 #define MATH_MAX_NSRC	4

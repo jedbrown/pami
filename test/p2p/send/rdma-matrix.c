@@ -3,7 +3,7 @@
 /// \Matrixed "rdma" point-to-point PAMI_send() test
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 
 //#define ENABLE_TRACE

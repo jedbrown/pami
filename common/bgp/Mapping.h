@@ -13,7 +13,7 @@
 #ifndef __common_bgp_Mapping_h__
 #define __common_bgp_Mapping_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "Platform.h"
 #include "common/BaseMappingInterface.h"

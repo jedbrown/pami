@@ -18,7 +18,7 @@
 #include <sys/time.h>
 #include <assert.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 
 #define BUFSIZE 1048576
 

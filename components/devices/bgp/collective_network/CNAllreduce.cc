@@ -13,7 +13,7 @@
  */
 
 #include "config.h"
-#include "sys/pami.h"
+#include <pami.h>
 #include <util/common.h>
 #include "components/devices/bgp/collective_network/CNAllreduce.h"
 #include "components/devices/bgp/collective_network/CollectiveNetworkLib.h"

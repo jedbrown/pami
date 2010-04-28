@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "util/common.h"
 
 #ifdef __pami_target_bgq__

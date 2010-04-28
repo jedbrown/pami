@@ -14,7 +14,7 @@
 #ifndef __components_devices_lapiunix_lapiunixmessage_h__
 #define __components_devices_lapiunix_lapiunixmessage_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "util/common.h"
 #include "util/queue/Queue.h"
 #include "common/lapiunix/lapifunc.h"

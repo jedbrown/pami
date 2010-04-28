@@ -13,7 +13,7 @@
 #ifndef __common_lapiunix_Wtime_h__
 #define __common_lapiunix_Wtime_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <sys/time.h>
 #include "common/BaseTimeInterface.h"
 #include <stdio.h>

@@ -14,7 +14,7 @@
 #ifndef __components_devices_bgq_P2PMcastAM_h__
 #define __components_devices_bgq_P2PMcastAM_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "SysDep.h"
 #include "components/memory/MemoryAllocator.h"
 #include "PipeWorkQueue.h"

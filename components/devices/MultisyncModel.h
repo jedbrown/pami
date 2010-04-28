@@ -14,7 +14,7 @@
 #ifndef __components_devices_MultisyncModel_h__
 #define __components_devices_MultisyncModel_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "util/common.h"
 
 namespace PAMI

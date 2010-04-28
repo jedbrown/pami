@@ -17,7 +17,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 
 #define BUFSIZE 524288

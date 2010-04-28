@@ -11,7 +11,7 @@
 /// \brief Tables used by DCMF
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "math/bgp/collective_network/pami_bg_math.h"
 
 #ifndef PAMI_NO_OPTIMATH

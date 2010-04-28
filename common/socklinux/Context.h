@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "common/ContextInterface.h"
 
 #include "components/devices/generic/Device.h"
@@ -347,22 +347,15 @@ namespace PAMI
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t memregion_register_impl (void            * address,
-                                              size_t            bytes,
-                                              pami_memregion_t * memregion)
+      inline pami_result_t memregion_create_impl (void             * address,
+                                                  size_t             bytes_in,
+                                                  size_t           * bytes_out,
+                                                  pami_memregion_t * memregion)
       {
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t memregion_deregister_impl (pami_memregion_t memregion)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t memregion_query (pami_memregion_t    memregion,
-                                           void            ** address,
-                                           size_t           * bytes,
-                                           size_t           * task)
+      inline pami_result_t memregion_destroy_impl (pami_memregion_t * memregion)
       {
         return PAMI_UNIMPL;
       }

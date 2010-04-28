@@ -14,7 +14,7 @@
 
 #include <sys/uio.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "SysDep.h"
 #include "Arch.h"
@@ -26,6 +26,7 @@
 #include "components/devices/PacketInterface.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/shmem/ShmemMessage.h"
+#include "components/devices/shmem/shaddr/NoShaddr.h"
 #include "components/memory/MemoryAllocator.h"
 #include "util/fifo/LinearFifo.h"
 #include "util/fifo/FifoPacket.h"
@@ -61,9 +62,9 @@ namespace PAMI
       void                      * clientdata;
     } dispatch_t;
 
-    template < class T_Fifo >
-    class ShmemDevice : public Interface::BaseDevice< ShmemDevice<T_Fifo> >,
-        public Interface::PacketDevice<ShmemDevice<T_Fifo> >
+    template < class T_Fifo, class T_Shaddr = Shmem::NoShaddr >
+    class ShmemDevice : public Interface::BaseDevice< ShmemDevice<T_Fifo,T_Shaddr> >,
+        public Interface::PacketDevice<ShmemDevice<T_Fifo,T_Shaddr> >
     {
       protected:
 
@@ -361,9 +362,33 @@ namespace PAMI
             };
         };
 
+        // Inner system shared address information class
+        class SystemShaddrInfo
+        {
+          public:
+            inline SystemShaddrInfo (Memregion * origin_mr,
+                                     Memregion * target_mr,
+                                     size_t      origin_offset,
+                                     size_t      target_offset,
+                                     size_t      bytes) :
+              _origin_mr (*origin_mr),
+              _target_mr (*target_mr),
+              _origin_offset (origin_offset),
+              _target_offset (target_offset),
+              _bytes (bytes)
+            {
+            }
+
+            Memregion _origin_mr;
+            Memregion _target_mr;
+            size_t    _origin_offset;
+            size_t    _target_offset;
+            size_t    _bytes;
+        };
+
         inline ShmemDevice (size_t contextid, size_t nfifos, T_Fifo * fifo, size_t * fnum_hash) :
-            Interface::BaseDevice< ShmemDevice<T_Fifo> > (),
-            Interface::PacketDevice< ShmemDevice<T_Fifo> > (),
+            Interface::BaseDevice< ShmemDevice<T_Fifo,T_Shaddr> > (),
+            Interface::PacketDevice< ShmemDevice<T_Fifo,T_Shaddr> > (),
             _fifo (fifo),
             _total_fifos (nfifos),
             _fnum_hash (fnum_hash),
@@ -374,7 +399,8 @@ namespace PAMI
 #endif
             //__ueQ (),
             __sendQ (NULL),
-            _progress (NULL)
+            _progress (NULL),
+            shaddr ()
         {
           TRACE_ERR((stderr, "ShmemDevice() constructor\n"));
 
@@ -422,19 +448,45 @@ namespace PAMI
 
         // ------------------------------------------
 
+        static const bool shaddr_va_supported    = T_Shaddr::shaddr_va_supported;
+        static const bool shaddr_mr_supported    = T_Shaddr::shaddr_mr_supported;
+
+        static const bool shaddr_read_supported  = T_Shaddr::shaddr_read_supported;
+        static const bool shaddr_write_supported = T_Shaddr::shaddr_write_supported;
+
+        // ------------------------------------------
+
+        static const uint16_t system_ro_put_dispatch = (DISPATCH_SET_COUNT * DISPATCH_SET_SIZE) - 1;
+
         ///
-        /// \brief Regieter the receive function to dispatch when a packet arrives.
+        /// \brief Register the receive function to dispatch when a packet arrives.
         ///
-        /// \param[in] dispatch        Dispatch set identifier
-        /// \param[in] recv_func       Receive function to dispatch
-        /// \param[in] recv_func_parm  Receive function client data
+        /// \param[in]  set            Dispatch set identifier
+        /// \param[in]  recv_func      Receive function to dispatch
+        /// \param[in]  recv_func_parm Receive function client data
+        /// \param[out] id             Dispatch id for this registration
         ///
-        /// \return Dispatch id for this registration
+        /// \return registration result
         ///
         pami_result_t registerRecvFunction (size_t                      set,
-                                           Interface::RecvFunction_t   recv_func,
-                                           void                      * recv_func_parm,
-                                           uint16_t                  & id);
+                                            Interface::RecvFunction_t   recv_func,
+                                            void                      * recv_func_parm,
+                                            uint16_t                  & id);
+
+        ///
+        /// \brief Register the system receive function to dispatch when a packet arrives.
+        ///
+        /// System dispatch ids are allocated by the device.
+        ///
+        /// \param[in] recv_func      Receive function to dispatch
+        /// \param[in] recv_func_parm Receive function client data
+        /// \param[in] id             Dispatch id for this registration
+        ///
+        /// \return registration result
+        ///
+        pami_result_t registerSystemRecvFunction (Interface::RecvFunction_t   recv_func,
+                                                  void                      * recv_func_parm,
+                                                  uint16_t                    id);
 
         ///
         /// \brief Write a single packet into the injection fifo.
@@ -490,6 +542,10 @@ namespace PAMI
 
         pami_result_t post (size_t ififo, Shmem::SendQueue::Message * msg);
 
+        pami_result_t post (PAMI::Device::Generic::GenericThread * work);
+
+        //pami_result_t post (size_t ififo, Shmem::DoneQueue::Message * msg);
+
         ///
         /// \brief Check if the send queue to an injection fifo is empty
         ///
@@ -503,6 +559,12 @@ namespace PAMI
         inline size_t advance ();
 
         inline size_t fnum (size_t peer, size_t offset);
+        
+        inline size_t lastRecSequenceId (size_t fnum);
+
+        inline size_t lastInjSequenceId (size_t fnum);
+
+        inline bool activePackets (size_t fnum);
 
         ///
         /// \see PAMI::Device::Interface::RecvFunction_t
@@ -513,11 +575,24 @@ namespace PAMI
                                void   * recv_func_parm,
                                void   * cookie);
 
+        static int system_shaddr_read (void   * metadata,
+                                       void   * payload,
+                                       size_t   bytes,
+                                       void   * recv_func_parm,
+                                       void   * cookie);
+
+        static int system_shaddr_write (void   * metadata,
+                                        void   * payload,
+                                        size_t   bytes,
+                                        void   * recv_func_parm,
+                                        void   * cookie);
+
 
         T_Fifo * _fifo;         //< Injection fifo array for all node contexts
         size_t _total_fifos;    //< Injection fifo array size
         size_t * _fnum_hash;    //< Fifo number lookup table
         T_Fifo  * _rfifo;       //< Pointer to fifo to use as the reception fifo
+        size_t * _last_inj_sequence_id;
 
         Memory::MemoryManager *_mm;
         pami_client_t       _client;
@@ -534,6 +609,9 @@ namespace PAMI
         CircularQueue        __ueQ[DISPATCH_SET_COUNT];
         Shmem::SendQueue   * __sendQ;
         PAMI::Device::Generic::Device * _progress;
+        PAMI::Device::Generic::Device * _local_progress_device;
+
+        T_Shaddr          shaddr;
 
         size_t            _num_procs;
         size_t            _global_task;
@@ -545,25 +623,25 @@ namespace PAMI
         unsigned   _current_pkt_iov;
     };
 
-    template <class T_Fifo>
-    inline size_t ShmemDevice<T_Fifo>::getLocalRank()
+    template <class T_Fifo, class T_Shaddr>
+    inline size_t ShmemDevice<T_Fifo,T_Shaddr>::getLocalRank()
     {
       return _local_task;
     }
 
-    template <class T_Fifo>
-    inline pami_context_t ShmemDevice<T_Fifo>::getContext_impl()
+    template <class T_Fifo, class T_Shaddr>
+    inline pami_context_t ShmemDevice<T_Fifo,T_Shaddr>::getContext_impl()
     {
       return _context;
     }
 
-    template <class T_Fifo>
-    inline size_t ShmemDevice<T_Fifo>::getContextId_impl()
+    template <class T_Fifo, class T_Shaddr>
+    inline size_t ShmemDevice<T_Fifo,T_Shaddr>::getContextId_impl()
     {
       return _contextid;
     }
-    template <class T_Fifo>
-    inline size_t ShmemDevice<T_Fifo>::getContextOffset_impl()
+    template <class T_Fifo, class T_Shaddr>
+    inline size_t ShmemDevice<T_Fifo,T_Shaddr>::getContextOffset_impl()
     {
       return getContextId_impl();
     }
@@ -574,29 +652,29 @@ namespace PAMI
     /// \see fnum
     /// \param[in] fnum  Local injection fifo number
     ///
-    template <class T_Fifo>
-    inline bool ShmemDevice<T_Fifo>::isSendQueueEmpty (size_t fnum)
+    template <class T_Fifo, class T_Shaddr>
+    inline bool ShmemDevice<T_Fifo,T_Shaddr>::isSendQueueEmpty (size_t fnum)
     {
       return (__sendQ[fnum].size() == 0);
     }
 
-    template <class T_Fifo>
-    inline Shmem::SendQueue * ShmemDevice<T_Fifo>::getQS (size_t fnum)
+    template <class T_Fifo, class T_Shaddr>
+    inline Shmem::SendQueue * ShmemDevice<T_Fifo,T_Shaddr>::getQS (size_t fnum)
     {
       return &__sendQ[fnum];
     }
 
     /// \see PAMI::Device::Interface::PacketDevice::read()
-    template <class T_Fifo>
-    int ShmemDevice<T_Fifo>::read_impl (void * dst, size_t length, void * cookie)
+    template <class T_Fifo, class T_Shaddr>
+    int ShmemDevice<T_Fifo,T_Shaddr>::read_impl (void * dst, size_t length, void * cookie)
     {
       memcpy (dst, cookie, length);
       return 0;
     }
 
-    template <class T_Fifo>
+    template <class T_Fifo, class T_Shaddr>
     template <unsigned T_Niov>
-    pami_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+    pami_result_t ShmemDevice<T_Fifo,T_Shaddr>::writeSinglePacket (
       size_t         fnum,
       uint16_t       dispatch_id,
       void         * metadata,
@@ -630,6 +708,8 @@ namespace PAMI
           // "produce" the packet into the fifo.
           TRACE_ERR((stderr, "ShmemDevice<>::writeSinglePacket () .. before producePacket()\n"));
           _fifo[fnum].producePacket (pktid);
+          _last_inj_sequence_id[fnum] = pktid;
+          sequence = pktid;
 
           TRACE_ERR((stderr, "<< ShmemDevice<>::writeSinglePacket () .. PAMI_SUCCESS\n"));
           return PAMI_SUCCESS;
@@ -639,8 +719,8 @@ namespace PAMI
       return PAMI_EAGAIN;
     };
 
-    template <class T_Fifo>
-    pami_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+    template <class T_Fifo, class T_Shaddr>
+    pami_result_t ShmemDevice<T_Fifo,T_Shaddr>::writeSinglePacket (
       size_t         fnum,
       uint16_t       dispatch_id,
       void         * metadata,
@@ -670,6 +750,8 @@ namespace PAMI
 
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
+          _last_inj_sequence_id[fnum] = pktid;
+          sequence = pktid;
 
           TRACE_ERR((stderr, "(%zu) 2.ShmemDevice::writeSinglePacket (%zu, %d, %p, %p, %zu) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, iov, niov));
           return PAMI_SUCCESS;
@@ -679,8 +761,8 @@ namespace PAMI
       return PAMI_EAGAIN;
     };
 
-    template <class T_Fifo>
-    pami_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+    template <class T_Fifo, class T_Shaddr>
+    pami_result_t ShmemDevice<T_Fifo,T_Shaddr>::writeSinglePacket (
       size_t         fnum,
       uint16_t       dispatch_id,
       void         * metadata,
@@ -710,6 +792,8 @@ namespace PAMI
 
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
+          _last_inj_sequence_id[fnum] = pktid;
+          sequence = pktid;
 
           TRACE_ERR((stderr, "(%zu) 3.ShmemDevice::writeSinglePacket (%zu, %d, %p, %p, %zu) << CM_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload, length));
           return PAMI_SUCCESS;
@@ -719,8 +803,8 @@ namespace PAMI
       return PAMI_EAGAIN;
     };
 
-    template <class T_Fifo>
-    pami_result_t ShmemDevice<T_Fifo>::writeSinglePacket (
+    template <class T_Fifo, class T_Shaddr>
+    pami_result_t ShmemDevice<T_Fifo,T_Shaddr>::writeSinglePacket (
       size_t         fnum,
       uint16_t       dispatch_id,
       void         * metadata,
@@ -749,6 +833,8 @@ namespace PAMI
 
           // "produce" the packet into the fifo.
           _fifo[fnum].producePacket (pktid);
+          _last_inj_sequence_id[fnum] = pktid;
+          sequence = pktid;
 
           TRACE_ERR((stderr, "(%zu) 4.ShmemDevice::writeSinglePacket (%zu, %d, %p, %p) << PAMI_SUCCESS\n", __global.mapping.task(), fnum, dispatch_id, metadata, payload));
           return PAMI_SUCCESS;
@@ -759,8 +845,8 @@ namespace PAMI
     };
 
 
-    template <class T_Fifo>
-    size_t ShmemDevice<T_Fifo>::advance ()
+    template <class T_Fifo, class T_Shaddr>
+    size_t ShmemDevice<T_Fifo,T_Shaddr>::advance ()
     {
 #ifdef TRAP_ADVANCE_DEADLOCK
       static size_t iteration = 0;
@@ -846,12 +932,30 @@ namespace PAMI
       return events;
     }
 
-    template <class T_Fifo>
-    inline size_t ShmemDevice<T_Fifo>::fnum (size_t peer, size_t offset)
+    template <class T_Fifo, class T_Shaddr>
+    inline size_t ShmemDevice<T_Fifo,T_Shaddr>::fnum (size_t peer, size_t offset)
     {
       TRACE_ERR((stderr, ">> ShmemDevice::fnum(%zu, %zu), _fnum_hash = %p\n", peer, offset, _fnum_hash));
       TRACE_ERR((stderr, "<< ShmemDevice::fnum(%zu, %zu), _fnum_hash[%zu] = %zu\n", peer, offset, peer, _fnum_hash[peer]));
       return _fnum_hash[peer] + offset;
+    }
+    
+    template <class T_Fifo, class T_Shaddr>
+    inline size_t ShmemDevice<T_Fifo,T_Shaddr>::lastRecSequenceId (size_t fnum)
+    {
+      return _fifo[fnum].lastRecSequenceId ();
+    }
+    
+    template <class T_Fifo, class T_Shaddr>
+    inline size_t ShmemDevice<T_Fifo,T_Shaddr>::lastInjSequenceId (size_t fnum)
+    {
+      return _last_inj_sequence_id[fnum];
+    }
+    
+    template <class T_Fifo, class T_Shaddr>
+    inline bool ShmemDevice<T_Fifo,T_Shaddr>::activePackets (size_t fnum)
+    {
+      return (lastRecSequenceId (fnum) < lastInjSequenceId (fnum));
     }
   };
 };

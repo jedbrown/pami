@@ -14,7 +14,7 @@
 #ifndef __algorithms_executor_OldAllreduceBase_h__
 #define __algorithms_executor_OldAllreduceBase_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "algorithms/interfaces/Schedule.h"
 #include "algorithms/executor/Executor.h"
 #include "util/ccmi_debug.h"

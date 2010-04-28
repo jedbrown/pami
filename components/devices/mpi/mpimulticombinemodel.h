@@ -14,7 +14,7 @@
 #ifndef __components_devices_mpi_mpimulticombinemodel_h__
 #define __components_devices_mpi_mpimulticombinemodel_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "components/devices/MulticombineModel.h"
 
 namespace PAMI

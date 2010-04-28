@@ -18,7 +18,7 @@
 #include "components/devices/util/SubDeviceSuppt.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/FactoryInterface.h"
-#include "sys/pami.h"
+#include <pami.h>
 #include "components/devices/MulticombineModel.h"
 #include "math/math_coremath.h"
 #include "Global.h"

@@ -3,7 +3,7 @@
 /// \brief Simple hello after PAMI_Client_create()
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 
 

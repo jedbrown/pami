@@ -3,7 +3,7 @@
 /// \brief Simple PAMI_Context_lock() test
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 
 int main (int argc, char ** argv)

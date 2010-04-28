@@ -3,7 +3,7 @@
 /// \brief Simple PAMI_Wtimebase() test before PAMI_Client_create()
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 int main (int argc, char ** argv)
 {

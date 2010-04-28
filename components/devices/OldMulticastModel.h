@@ -14,7 +14,7 @@
 #ifndef __components_devices_OldMulticastModel_h__
 #define __components_devices_OldMulticastModel_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "algorithms/ccmi.h"
 
 namespace PAMI

@@ -17,7 +17,7 @@
 #include "SysDep.h"
 #include "PipeWorkQueue.h"
 #include "math/math_coremath.h"
-#include "sys/pami.h"
+#include <pami.h>
 #include "util/common.h"
 
 namespace PAMI

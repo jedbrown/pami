@@ -14,7 +14,7 @@
 #ifndef __components_devices_ManytomanyModel_h__
 #define __components_devices_ManytomanyModel_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "algorithms/ccmi.h"  //for PAMI_Callback_t...probably move this at some point
 namespace PAMI
 {

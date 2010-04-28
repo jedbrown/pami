@@ -14,7 +14,7 @@
 #ifndef __algorithms_interfaces_CollFactoryInterface_h__
 #define __algorithms_interfaces_CollFactoryInterface_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 
 namespace PAMI
 {

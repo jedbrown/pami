@@ -7,7 +7,7 @@
 #define __test_internals_multisend_multisync_h__
 
 #include <stdio.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "Topology.h"
 #include "Global.h"

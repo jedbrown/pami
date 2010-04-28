@@ -12,7 +12,7 @@
  */
 
 #include <stdio.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "Global.h"
 #include "util/queue/Queue.h"

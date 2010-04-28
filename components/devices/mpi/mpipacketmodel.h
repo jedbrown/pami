@@ -16,7 +16,7 @@
 
 #define USE_GCC_ICE_WORKAROUND
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "components/devices/PacketInterface.h"
 #include "components/devices/mpi/mpimessage.h"
 #include "errno.h"

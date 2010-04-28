@@ -13,7 +13,7 @@
 #ifndef __components_devices_bgq_commthread_WakeupRegion_h__
 #define __components_devices_bgq_commthread_WakeupRegion_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "spi/include/l2/atomic.h"
 #include "spi/include/kernel/memory.h"
 

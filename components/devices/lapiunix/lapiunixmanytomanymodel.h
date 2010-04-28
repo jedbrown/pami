@@ -14,7 +14,7 @@
 #ifndef __components_devices_lapiunix_lapiunixmanytomanymodel_h__
 #define __components_devices_lapiunix_lapiunixmanytomanymodel_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "components/devices/ManytomanyModel.h"
 
 namespace PAMI

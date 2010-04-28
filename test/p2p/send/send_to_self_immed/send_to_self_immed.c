@@ -19,7 +19,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 #define ITERATIONS 2
 //#define ITERATIONS 1000
 //#define ITERATIONS 100

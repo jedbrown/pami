@@ -3,7 +3,7 @@
 /// \brief ???
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <map>
 
 

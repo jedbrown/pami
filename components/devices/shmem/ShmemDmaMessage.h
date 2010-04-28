@@ -19,7 +19,7 @@
 
 #include "Arch.h"
 
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemMessage.h"
@@ -33,179 +33,408 @@ namespace PAMI
 {
   namespace Device
   {
-    template <class T_Device>
-    class ShmemDmaMessage : public ShmemMessage
+    namespace Shmem
     {
-      public:
-        inline ShmemDmaMessage (GenericDeviceMessageQueue *QS,
-                                pami_event_function   fn,
-                                void               * cookie,
-                                T_Device           * device,
-                                size_t               fifo,
-                                Memregion          * local_memregion,
-                                size_t               local_offset,
-                                Memregion          * remote_memregion,
-                                size_t               remote_offset,
-                                size_t               bytes) :
-            ShmemMessage (QS, fn, cookie, device->getContextId()),
-            _device (device),
-            _fifo (fifo),
-            _local_memregion (local_memregion),
-            _local_offset (local_offset),
-            _remote_memregion (remote_memregion),
-            _remote_offset (remote_offset),
-            _bytes (bytes)
-        {};
+      template <class T_Device, bool T_Ordered = false>
+      class DmaMessage : public SendQueue::Message
+      {
+        protected:
 
-      protected:
+          inline DmaMessage (pami_work_function    work_func,
+                             void                * work_cookie,
+                             pami_event_function   fn,
+                             void                * cookie,
+                             T_Device            * device,
+                             size_t                task,
+                             size_t                bytes,
+                             void                * local,
+                             void                * remote) :
+              SendQueue::Message (work_func, work_cookie, fn, cookie, device->getContextOffset()),
+              _device (device),
+              _task (task),
+              _bytes (bytes),
+              _local_va (local),
+              _remote_va (remote)
+          {};
 
-        T_Device           * _device;
-        size_t               _fifo;
-        Memregion          * _local_memregion;
-        size_t               _local_offset;
-        Memregion          * _remote_memregion;
-        size_t               _remote_offset;
-        size_t               _bytes;
+          inline DmaMessage (pami_work_function    work_func,
+                             void                * work_cookie,
+                             pami_event_function   fn,
+                             void                * cookie,
+                             T_Device            * device,
+                             size_t                fnum,
+                             size_t                bytes,
+                             Memregion           * local,
+                             Memregion           * remote,
+                             size_t                local_offset,
+                             size_t                remote_offset) :
+              SendQueue::Message (work_func, work_cookie, fn, cookie, device->getContextOffset()),
+              _device (device),
+              _fnum (fnum),
+              _bytes (bytes),
+              _local_mr (local),
+              _remote_mr (remote),
+              _local_offset (local_offset),
+              _remote_offset (remote_offset)
+          {};
 
-    };  // PAMI::Device::ShmemDmaMessage class
+          inline DmaMessage (pami_work_function    work_func,
+                             void                * work_cookie,
+                             pami_event_function   fn,
+                             void                * cookie,
+                             T_Device            * device,
+                             size_t                fnum,
+                             size_t                bytes,
+                             Memregion           * local,
+                             Memregion           * remote,
+                             size_t                local_offset,
+                             size_t                remote_offset,
+                             void                * payload_data,
+                             size_t                payload_length) :
+              SendQueue::Message (work_func, work_cookie, fn, cookie, device->getContextOffset()),
+              _device (device),
+              _fnum (fnum),
+              _bytes (bytes),
+              _local_mr (local),
+              _remote_mr (remote),
+              _local_offset (local_offset),
+              _remote_offset (remote_offset),
+              _packet_injected (false),
+              _length (payload_length)
+          {
+            memcpy ((void *)_data, payload_data, payload_length);
+          };
 
-    template <class T_Device>
-    class ShmemDmaPutMessage : public ShmemDmaMessage<T_Device>
-    {
-      public:
-        inline ShmemDmaPutMessage (pami_event_function   fn,
-                                   void               * cookie,
-                                   T_Device           * device,
-                                   size_t               fifo,
-                                   Memregion          * local_memregion,
-                                   size_t               local_offset,
-                                   Memregion          * remote_memregion,
-                                   size_t               remote_offset,
-                                   size_t               bytes) :
-            ShmemDmaMessage<T_Device> (fn, cookie, device, fifo,
-                                       local_memregion, local_offset,
-                                       remote_memregion, remote_offset, bytes)
-        {};
+          T_Device  * _device;
+          size_t      _task;
+          size_t      _fnum;
+          size_t      _bytes;
+          void      * _local_va;
+          void      * _remote_va;
 
-        DECL_ADVANCE_ROUTINE2(advancePut,ShmemDmaPutMessage,ShmemThread)
-        inline pami_result_t __advancePut (pami_context_t context, ShmemThread *thr)
-        {
-          // These constant-expression branch instructions will be optimized
-          // out by the compiler
-          if (Memregion::shared_address_read_supported &&
-              Memregion::shared_address_write_supported)
-            {
-              size_t sequence = this->_device->nextInjSequenceId (this->_fifo);
-              size_t last_rec_seq_id = this->_device->lastRecSequenceId (this->_fifo);
+          Memregion * _local_mr;
+          Memregion * _remote_mr;
+          size_t      _local_offset;
+          size_t      _remote_offset;
 
-              if (sequence - 1 <= last_rec_seq_id) //sequence id is carried by a pt-to-pt message before me
-                {
-                  this->_local_memregion->write (this->_local_offset, this->_remote_memregion, this->_remote_offset, this->_bytes);
-                  this->invokeCompletionFunction (context);
-                  return PAMI_SUCCESS;
-                }
-            }
-          else
-            {
+          // Used only by the "memory region read only put message"
+          pami_event_function   _done_fn;
+          void                * _done_cookie;
+          bool                  _packet_injected;
+          size_t                _sequence;
+          size_t                _length;
+          uint8_t               _data[T_Device::payload_size];
+
+          //PAMI::Device::Generic::GenericThread _done; // used for "done completion" queue
+      };  // PAMI::Device::Shmem::DmaMessage class
+
+
+      template <class T_Device, bool T_Ordered = false>
+      class PutDmaMessage : public DmaMessage<T_Device, T_Ordered>
+      {
+        protected:
+
+          ///
+          /// \note This static function is invoked by the thread object
+          /// \see SendQueue::Message::_work
+          ///
+          static pami_result_t __advance_va (pami_context_t context, void * cookie)
+          {
+            PutDmaMessage * msg = (PutDmaMessage *) cookie;
+            return msg->advance_va();
+          };
+
+          inline pami_result_t advance_va ()
+          {
+            // This constant-expression branch will be optimized out by the compiler
+            if (! T_Device::shared_address_write_supported)
               PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+
+            TRACE_ERR((stderr, ">> PutDmaMessage::advance_va()\n"));
+
+            if (T_Ordered == false)
+              {
+                this->_device->shaddr.write (this->_remote_va, this->_local_va, this->_bytes, this->_task);
+                this->setStatus (PAMI::Device::Done);
+                return PAMI_SUCCESS;
+              }
+            else
+              {
+                PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+              }
+
+            TRACE_ERR((stderr, "<< PutDmaMessage::advance_va(), return PAMI_EAGAIN\n"));
+            return PAMI_EAGAIN;
+          }
+
+          ///
+          /// \note This static function is invoked by the thread object
+          /// \see SendQueue::Message::_work
+          ///
+          static pami_result_t __advance_mr (pami_context_t context, void * cookie)
+          {
+            pami_result_t result;
+            PutDmaMessage * msg = (PutDmaMessage *) cookie;
+
+            // This constant-expression branch will be optimized out by the compiler
+            if (T_Device::shaddr_write_supported)
+              result = msg->advance_mr_readwrite();
+            else
+              result = msg->advance_mr_readonly(context);
+
+            return result;
+          };
+
+          inline pami_result_t advance_mr_readwrite ()
+          {
+            // This constant-expression branch will be optimized out by the compiler
+            if (! T_Device::shaddr_write_supported)
+              PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+
+            TRACE_ERR((stderr, ">> PutDmaMessage::advance_mr_readwrite()\n"));
+
+            if (T_Ordered == false || this->_device->activePackets(this->_fnum) == false)
+              {
+                this->_device->shaddr.write (this->_remote_mr, this->_remote_offset,
+                                             this->_local_mr, this->_local_offset,
+                                             this->_bytes);
+                this->setStatus (PAMI::Device::Done);
+
+                TRACE_ERR((stderr, "<< PutDmaMessage::advance_mr_readwrite(), return PAMI_SUCCESS\n"));
+                return PAMI_SUCCESS;
+              }
+
+            TRACE_ERR((stderr, "<< PutDmaMessage::advance_mr_readwrite(), return PAMI_EAGAIN\n"));
+            return PAMI_EAGAIN;
+          }
+
+          inline pami_result_t advance_mr_readonly (pami_context_t context)
+          {
+            TRACE_ERR((stderr, ">> PutDmaMessage::advance_mr_readonly()\n"));
+            
+            if (this->_packet_injected == false)
+            {
+              if (this->_device->writeSinglePacket (this->_fnum, T_Device::system_ro_put_dispatch,
+                                                    NULL, 0, (void *)this->_data,
+                                                    this->_length, this->_sequence) == PAMI_SUCCESS)
+              {
+                this->_packet_injected = true;
+
+                // Remove the message from the head of the "pending send" queue
+                // This will invoke the completion callback!
+                this->setStatus (PAMI::Device::Done);
+              }
+            }
+            else if (this->_sequence <= this->_device->lastRecSequenceId(this->_fnum))
+            {
+              // system ro put packet has been received and completed by the
+              // target task. This put message in done.
+              
+              // Invoke the completion callback for the put operation
+              if (this->_done_fn)
+                this->_done_fn (context, this->_done_cookie, PAMI_SUCCESS);
+              
+              // return 'success' which will remove the work object from the work queue.
+              TRACE_ERR((stderr, "<< PutDmaMessage::advance_mr_readonly(), return PAMI_SUCCESS\n"));
+              return PAMI_SUCCESS;
             }
 
-          return PAMI_EAGAIN;
-        };
-
-        inline int setThreads(ShmemThread **th)
-        {
-                ShmemThread *t;
-                int n;
-                _device->__getThreads(&t, &n);
-                int nt = 0;
-                // only one thread... for now...
-                t[nt].setMsg(this);
-                t[nt].setAdv(advancePut);
-                t[nt].setStatus(PAMI::Device::Ready);
-                __advancePut(_device->getContext(), t); // was this done by model?
-                ++nt;
-                *th = t;
-                return nt;
-        }
-
-        pami_context_t postNext(bool devQueued)
-        {
-                return _device->__postNext<ShmemDmaPutMessage>__postNext(this, devQueued);
-        }
-
-    };  // PAMI::Device::ShmemDmaPutMessage class
-
-    template <class T_Device>
-    class ShmemDmaGetMessage : public ShmemDmaMessage<T_Device>
-    {
-      public:
-        inline ShmemDmaGetMessage (pami_event_function   fn,
-                                   void               * cookie,
-                                   T_Device           * device,
-                                   size_t               fifo,
-                                   Memregion          * local_memregion,
-                                   size_t               local_offset,
-                                   Memregion          * remote_memregion,
-                                   size_t               remote_offset,
-                                   size_t               bytes) :
-            ShmemDmaMessage<T_Device> (fn, cookie, device, fifo,
-                                       local_memregion, local_offset,
-                                       remote_memregion, remote_offset, bytes)
-        {};
-
-        DECL_ADVANCE_ROUTINE2(advanceGet,ShmemDmaPutMessage,ShmemThread)
-        inline pami_result_t __advanceGet (pami_context_t context, ShmemThread *thr)
-        {
-          // These constant-expression branch instructions will be optimized
-          // out by the compiler
-          if (Memregion::shared_address_read_supported &&
-              Memregion::shared_address_write_supported)
-            {
-#warning FIX THESE NEXT TWO LINES
+            // Remain on the work queue
+            TRACE_ERR((stderr, "<< PutDmaMessage::advance_mr_readonly(), return PAMI_EAGAIN\n"));
+            return PAMI_EAGAIN;
+          }
 #if 0
-              size_t sequence = this->_device->nextInjSequenceId (this->_fifo);
-              size_t last_rec_seq_id = this->_device->lastRecSequenceId (this->_fifo);
+          static pami_result_t __advance_pending_done (pami_context_t context, void * cookie)
+          {
+            PutDmaMessage * msg = (PutDmaMessage *) cookie;
+            return msg->advance_pending_done();
+          };
 
-              if (sequence - 1 <= last_rec_seq_id) //sequence id is carried by a pt-to-pt message before me
-#endif
-                {
-                  this->_local_memregion->read (this->_local_offset, this->_remote_memregion, this->_remote_offset, this->_bytes);
-                  this->invokeCompletionFunction (context);
-                  return PAMI_SUCCESS;
-                }
-            }
-          else
+          inline pami_result_t advance_pending_done ()
+          {
+            TRACE_ERR((stderr, ">> PutDmaMessage::advance_pending_done()\n"));
+#if 0
+            size_t last_sequence_id = this->_device->lastRecSequenceId (this->_fnum);
+            if (last_sequence_id < this->_sequence)
             {
-              PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+              // The remote task has not processed the packet with the sequence
+              // number that this message is watching. Return PAMI_EAGAIN to
+              // remain on the work queue.
+              TRACE_ERR((stderr, "<< PutDmaMessage::advance_pending_done(), return PAMI_EAGAIN\n"));
+              return PAMI_EAGAIN;
             }
+#endif
+            // This (entire) message is done. Set the status to "done" to
+            // remove the "completion message" from the generic message queue
+            // and invoke the completion callback function and return
+            // PAMI_SUCESS to remove this "done work" from the generic work
+            // queue.
+            this->setStatus (PAMI::Device::Done);
 
-          return PAMI_EAGAIN;
-        };
+            TRACE_ERR((stderr, "<< PutDmaMessage::advance_pending_done(), return PAMI_SUCCESS\n"));
+            return PAMI_SUCCESS;
+          };
+#endif
+        public:
 
-        inline int setThreads(ShmemThread **th)
-        {
-                ShmemThread *t;
-                int n;
-                _device->__getThreads(&t, &n);
-                int nt = 0;
-                // only one thread... for now...
-                t[nt].setMsg(this);
-                t[nt].setAdv(advanceGet);
-                t[nt].setStatus(PAMI::Device::Ready);
-                __advancePut(_device->getContext(), t); // was this done by model?
-                ++nt;
-                *th = t;
-                return nt;
-        }
+          inline PutDmaMessage (pami_event_function   fn,
+                                void                * cookie,
+                                T_Device            * device,
+                                size_t                task,
+                                size_t                bytes,
+                                void                * local,
+                                void                * remote) :
+              DmaMessage<T_Device, T_Ordered> (PutDmaMessage::__advance_va,
+                                              (void *)this, fn, cookie,
+                                              device, task, bytes, local, remote)
+          {};
 
-        pami_context_t postNext(bool devQueued)
-        {
-                return _device->__postNext<ShmemDmaGetMessage>__postNext(this, devQueued);
-        }
-    };  // PAMI::Device::ShmemDmaGetMessage class
-  };    // PAMI::Device namespace
-};      // PAMI namespace
+          inline PutDmaMessage (pami_event_function   fn,
+                                void                * cookie,
+                                T_Device            * device,
+                                size_t                task,
+                                size_t                bytes,
+                                Memregion           * local,
+                                Memregion           * remote,
+                                size_t                local_offset,
+                                size_t                remote_offset) :
+              DmaMessage<T_Device, T_Ordered> (PutDmaMessage::__advance_mr, (void *)this,
+                                               fn, cookie,
+                                               device, task, bytes, local, remote,
+                                               local_offset, remote_offset)
+          {};
+
+          /// read-only put message .. sends a system message which causes the
+          /// remote task to complete the put operation.
+          inline PutDmaMessage (pami_event_function   fn,
+                                void                * cookie,
+                                T_Device            * device,
+                                size_t                task,
+                                size_t                bytes,
+                                Memregion           * local,
+                                Memregion           * remote,
+                                size_t                local_offset,
+                                size_t                remote_offset,
+                                void                * payload_data,
+                                size_t                payload_length) :
+              DmaMessage<T_Device, T_Ordered> (PutDmaMessage::__advance_mr, (void *)this,
+                                               //fn, cookie,
+                                               NULL, NULL,
+                                               device, task, bytes, local, remote,
+                                               local_offset, remote_offset,
+                                               payload_data, payload_length)
+          {
+            this->_done_fn      = fn;
+            this->_done_cookie  = cookie;
+          };
+
+      };  // PAMI::Device::Shmem::PutDmaMessage class
+
+
+      template <class T_Device, bool T_Ordered = false>
+      class GetDmaMessage : public DmaMessage<T_Device, T_Ordered>
+      {
+        protected:
+
+          ///
+          /// \note This static function is invoked by the thread object
+          /// \see SendQueue::Message::_work
+          ///
+          static pami_result_t __advance_va (pami_context_t context, void * cookie)
+          {
+            GetDmaMessage * msg = (GetDmaMessage *) cookie;
+            return msg->advance_va();
+          };
+
+          inline pami_result_t advance_va ()
+          {
+            // This constant-expression branch will be optimized out by the compiler
+            if (! T_Device::shared_address_read_supported)
+              PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+
+            TRACE_ERR((stderr, ">> GetDmaMessage::advance_va()\n"));
+
+            if (T_Ordered == false)
+              {
+                this->_device->shaddr.read (this->_local_va, this->_remote_va,
+                                this->_bytes, this->_task);
+                this->setStatus (PAMI::Device::Done);
+                return PAMI_SUCCESS;
+              }
+            else
+              {
+                PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+              }
+
+            TRACE_ERR((stderr, "<< GetDmaMessage::advance_va(), return PAMI_EAGAIN\n"));
+            return PAMI_EAGAIN;
+          }
+
+          ///
+          /// \note This static function is invoked by the thread object
+          /// \see SendQueue::Message::_work
+          ///
+          static pami_result_t __advance_mr (pami_context_t context, void * cookie)
+          {
+            GetDmaMessage * msg = (GetDmaMessage *) cookie;
+            return msg->advance_mr();
+          };
+
+          inline pami_result_t advance_mr ()
+          {
+            // This constant-expression branch will be optimized out by the compiler
+            if (! T_Device::shaddr_read_supported)
+              PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+
+            TRACE_ERR((stderr, ">> GetDmaMessage::advance_mr()\n"));
+
+            if (T_Ordered == false || this->_device->activePackets(this->_fnum) == false)
+              {
+                this->_device->shaddr.read (this->_local_mr, this->_local_offset,
+                                this->_remote_mr, this->_remote_offset,
+                                this->_bytes);
+                this->setStatus (PAMI::Device::Done);
+                return PAMI_SUCCESS;
+              }
+
+            TRACE_ERR((stderr, "<< GetDmaMessage::advance_mr(), return PAMI_EAGAIN\n"));
+            return PAMI_EAGAIN;
+          }
+
+
+        public:
+
+          inline GetDmaMessage (pami_event_function   fn,
+                                void                * cookie,
+                                T_Device            * device,
+                                size_t                task,
+                                size_t                bytes,
+                                void                * local,
+                                void                * remote) :
+              DmaMessage<T_Device, T_Ordered> (GetDmaMessage::__advance_va,
+                                              (void *)this, fn, cookie,
+                                              device, task, bytes, local, remote)
+          {};
+
+          inline GetDmaMessage (pami_event_function   fn,
+                                void                * cookie,
+                                T_Device            * device,
+                                size_t                fnum,
+                                size_t                bytes,
+                                Memregion           * local,
+                                Memregion           * remote,
+                                size_t                local_offset,
+                                size_t                remote_offset) :
+              DmaMessage<T_Device, T_Ordered> (GetDmaMessage::__advance_mr,
+                                              (void *)this, fn, cookie,
+                                              device, fnum, bytes, local, remote,
+                                              local_offset, remote_offset)
+          {};
+
+      };  // PAMI::Device::Shmem::DmaMessage class
+    };    // PAMI::Device::Shmem namespace
+  };      // PAMI::Device namespace
+};        // PAMI namespace
 #undef TRACE_ERR
 #endif // __components_devices_shmem_shmempacketmodel_h__
 

@@ -13,7 +13,7 @@
 #ifndef __common_NodeMappingInterface_h__
 #define __common_NodeMappingInterface_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 
 namespace PAMI
 {

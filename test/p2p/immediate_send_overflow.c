@@ -3,7 +3,7 @@
 /// \brief Simple point-to-point PAMI_Send_immediate() test
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 
 //#define TEST_CROSSTALK

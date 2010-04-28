@@ -23,13 +23,13 @@ namespace PAMI
 {
   namespace Device
   {
-    template <class T_Fifo>
-    pami_result_t ShmemDevice<T_Fifo>::init (size_t clientid,
-                                            size_t contextid,
-                                            pami_client_t     client,
-                                            pami_context_t    context,
-                                            PAMI::Memory::MemoryManager *mm,
-                                            PAMI::Device::Generic::Device * progress)
+    template <class T_Fifo, class T_Shaddr>
+    pami_result_t ShmemDevice<T_Fifo,T_Shaddr>::init (size_t clientid,
+                                             size_t contextid,
+                                             pami_client_t     client,
+                                             pami_context_t    context,
+                                             PAMI::Memory::MemoryManager *mm,
+                                             PAMI::Device::Generic::Device * progress)
     {
       TRACE_ERR((stderr, "(%zu) ShmemDevice::init ()\n", __global.mapping.task()));
       _client   = client;
@@ -37,6 +37,7 @@ namespace PAMI
       _contextid  = contextid;
       _mm = mm;
       _progress = progress;
+      _local_progress_device = &(Generic::Device::Factory::getDevice (progress, 0, contextid));
 
       unsigned i;
       __global.mapping.nodePeers (_num_procs);
@@ -53,8 +54,6 @@ namespace PAMI
       new (_rfifo) T_Fifo ();
       _rfifo->init (mm);
 
-      // barrier ?
-
       // Allocate memory for and construct the queue objects,
       // one for each context on the local node
       __sendQ = (Shmem::SendQueue *) malloc ((sizeof (Shmem::SendQueue) * _total_fifos));
@@ -63,6 +62,10 @@ namespace PAMI
         {
           new (&__sendQ[i]) Shmem::SendQueue (Generic::Device::Factory::getDevice (progress, 0, contextid));
         }
+
+      // Initialize the "last injection sequence id per fifo" array.
+      _last_inj_sequence_id = (size_t *) malloc (sizeof(size_t) * _total_fifos);
+      for (i=0; i<_total_fifos; i++) _last_inj_sequence_id[i] = (size_t) -1;
 
       // Initialize the registered receive function array to unexpected().
       // The array is limited to 256 dispatch ids because of the size of the
@@ -73,25 +76,28 @@ namespace PAMI
           _dispatch[i].clientdata = (void *)&__ueQ[i/DISPATCH_SET_SIZE];
         }
 
+      // Register system dispatch functions
+      registerSystemRecvFunction (system_shaddr_read, &shaddr, system_ro_put_dispatch);
+
       return PAMI_SUCCESS;
     }
 
-    template <class T_Fifo>
-    bool ShmemDevice<T_Fifo>::isInit_impl ()
+    template <class T_Fifo, class T_Shaddr>
+    bool ShmemDevice<T_Fifo,T_Shaddr>::isInit_impl ()
     {
       return true;
     }
 
     /// \see PAMI::Device::Interface::BaseDevice::peers()
-    template <class T_Fifo>
-    size_t ShmemDevice<T_Fifo>::peers_impl ()
+    template <class T_Fifo, class T_Shaddr>
+    size_t ShmemDevice<T_Fifo,T_Shaddr>::peers_impl ()
     {
       return _num_procs;
     }
 
     /// \see PAMI::Device::Interface::BaseDevice::task2peer()
-    template <class T_Fifo>
-    size_t ShmemDevice<T_Fifo>::task2peer_impl (size_t task)
+    template <class T_Fifo, class T_Shaddr>
+    size_t ShmemDevice<T_Fifo,T_Shaddr>::task2peer_impl (size_t task)
     {
       PAMI::Interface::Mapping::nodeaddr_t address;
       TRACE_ERR((stderr, ">> ShmemDevice::task2peer_impl(%zu)\n", task));
@@ -110,23 +116,14 @@ namespace PAMI
     }
 
     /// \see PAMI::Device::Interface::BaseDevice::isPeer()
-    template <class T_Fifo>
-    bool ShmemDevice<T_Fifo>::isPeer_impl (size_t task)
+    template <class T_Fifo, class T_Shaddr>
+    bool ShmemDevice<T_Fifo,T_Shaddr>::isPeer_impl (size_t task)
     {
       return __global.mapping.isPeer(task, _global_task);
     };
 
-    ///
-    /// \brief Regieter the receive function to dispatch when a packet arrives.
-    ///
-    /// \param[in] id              Dispatch set identifier
-    /// \param[in] recv_func       Receive function to dispatch
-    /// \param[in] recv_func_parm  Receive function client data
-    ///
-    /// \return Dispatch id for this registration
-    ///
-    template <class T_Fifo>
-    pami_result_t ShmemDevice<T_Fifo>::registerRecvFunction (size_t                      set,
+    template <class T_Fifo, class T_Shaddr>
+    pami_result_t ShmemDevice<T_Fifo,T_Shaddr>::registerRecvFunction (size_t                      set,
                                                             Interface::RecvFunction_t   recv_func,
                                                             void                      * recv_func_parm,
                                                             uint16_t                  & id)
@@ -164,7 +161,7 @@ namespace PAMI
         if (_dispatch[uepkt->id].function != unexpected)
         {
           // Invoke the registered dispatch function
-          TRACE_ERR((stderr, "   (%zu) ShmemDevice::registerRecvFunction() uepkt = %p, uepkt->id = %zu\n", __global.mapping.task(), uepkt, uepkt->id));
+          TRACE_ERR((stderr, "   (%zu) ShmemDevice::registerRecvFunction() uepkt = %p, uepkt->id = %d\n", __global.mapping.task(), uepkt, uepkt->id));
           _dispatch[uepkt->id].function (uepkt->meta,
                                          uepkt->data,
                                          uepkt->bytes,
@@ -187,8 +184,62 @@ namespace PAMI
       return PAMI_SUCCESS;
     };
 
-    template <class T_Fifo>
-    pami_result_t ShmemDevice<T_Fifo>::post (size_t fnum, Shmem::SendQueue::Message * msg)
+
+    template <class T_Fifo, class T_Shaddr>
+    pami_result_t ShmemDevice<T_Fifo,T_Shaddr>::registerSystemRecvFunction (Interface::RecvFunction_t   recv_func,
+                                                                            void                      * recv_func_parm,
+                                                                            uint16_t                    id)
+    {
+      TRACE_ERR((stderr, ">> (%zu) ShmemDevice::registerSystemRecvFunction(%p,%p,%d) .. DISPATCH_SET_COUNT = %d, _dispatch[%d].function = %p (== %p ?)\n", __global.mapping.task(), recv_func, recv_func_parm, id, DISPATCH_SET_COUNT, id, _dispatch[id].function, unexpected));
+
+      if (_dispatch[id].function != (Interface::RecvFunction_t) unexpected)
+      {
+        // Error .. this system dispatch id has already been registered.
+        PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        return PAMI_ERROR;
+      }
+
+      _dispatch[id].function   = recv_func;
+      _dispatch[id].clientdata = recv_func_parm;
+
+      TRACE_ERR((stderr, "   (%zu) ShmemDevice::registerSystemRecvFunction(), _dispatch[%d].function = %p, _dispatch[%d].clientdata = %p, this = %p\n", __global.mapping.task(), id, _dispatch[id].function, id, _dispatch[id].clientdata, this));
+
+
+      // Deliver any unexpected packets for registered dispatch ids. Stop at
+      // the first unexpected packet for an un-registered dispatch id.
+      UnexpectedPacket * uepkt = NULL;
+      size_t set = id / DISPATCH_SET_SIZE;
+      while ((uepkt = (UnexpectedPacket *) __ueQ[set].peek()) != NULL)
+      {
+        if (_dispatch[uepkt->id].function != unexpected)
+        {
+          // Invoke the registered dispatch function
+          TRACE_ERR((stderr, "   (%zu) ShmemDevice::registerSystemRecvFunction() uepkt = %p, uepkt->id = %d\n", __global.mapping.task(), uepkt, uepkt->id));
+          _dispatch[uepkt->id].function (uepkt->meta,
+                                         uepkt->data,
+                                         uepkt->bytes,
+                                         _dispatch[uepkt->id].clientdata,
+                                         uepkt->data);
+
+          // Remove the unexpected packet from the queue and free
+          __ueQ[set].dequeue();
+          free (uepkt);
+        }
+        else
+        {
+          // Stop unexpected queue processing.  This maintains packet order
+          // which is required for protocols such as eager.
+          break;
+        }
+      }
+
+      TRACE_ERR((stderr, "<< (%zu) ShmemDevice::registerSystemRecvFunction() => %d\n", __global.mapping.task(), id));
+      return PAMI_SUCCESS;
+    };
+
+
+    template <class T_Fifo, class T_Shaddr>
+    pami_result_t ShmemDevice<T_Fifo,T_Shaddr>::post (size_t fnum, Shmem::SendQueue::Message * msg)
     {
       TRACE_ERR((stderr, ">> (%zu) ShmemDevice::post(%zu, %p)\n", __global.mapping.task(), fnum, msg));
       __sendQ[fnum].post(msg);
@@ -196,8 +247,17 @@ namespace PAMI
       return PAMI_SUCCESS;
     };
 
-    template <class T_Fifo>
-    int ShmemDevice<T_Fifo>::unexpected (void   * metadata,
+    template <class T_Fifo, class T_Shaddr>
+    pami_result_t ShmemDevice<T_Fifo,T_Shaddr>::post (PAMI::Device::Generic::GenericThread * work)
+    {
+      TRACE_ERR((stderr, ">> (%zu) ShmemDevice::post(%p)\n", __global.mapping.task(), work));
+      _local_progress_device->postThread (work);
+      TRACE_ERR((stderr, "<< (%zu) ShmemDevice::post(%p)\n", __global.mapping.task(), work));
+      return PAMI_SUCCESS;
+    };
+
+    template <class T_Fifo, class T_Shaddr>
+    int ShmemDevice<T_Fifo,T_Shaddr>::unexpected (void   * metadata,
                                          void   * payload,
                                          size_t   bytes,
                                          void   * recv_func_parm,
@@ -212,7 +272,7 @@ namespace PAMI
         (UnexpectedPacket *) malloc (sizeof(UnexpectedPacket));
       new ((void *)uepkt) UnexpectedPacket (pkt);
 
-      TRACE_ERR((stderr, "   (%zu) ShmemDevice::unexpected(), uepkt = %p, uepkt->id = %zu\n", __global.mapping.task(), uepkt, uepkt->id));
+      TRACE_ERR((stderr, "   (%zu) ShmemDevice::unexpected(), uepkt = %p, uepkt->id = %d\n", __global.mapping.task(), uepkt, uepkt->id));
 
       CircularQueue * q = (CircularQueue *) recv_func_parm;
       q->enqueue ((CircularQueue::Element *) uepkt);
@@ -220,6 +280,56 @@ namespace PAMI
       //TRACE_ERR((stderr, "<< (%zu) ShmemDevice::unexpected(), q = %p\n", __global.mapping.task(), q));
       return 0;
     }
+
+    template <class T_Fifo, class T_Shaddr>
+    int ShmemDevice<T_Fifo,T_Shaddr>::system_shaddr_read (void   * metadata,
+                                                          void   * payload,
+                                                          size_t   bytes,
+                                                          void   * recv_func_parm,
+                                                          void   * cookie)
+    {
+      TRACE_ERR((stderr, ">> ShmemDevice::system_shaddr_read():%d .. recv_func_parm = %p\n", __LINE__, recv_func_parm));
+
+      T_Shaddr * shaddr = (T_Shaddr *) recv_func_parm;
+
+      typename ShmemDevice<T_Fifo,T_Shaddr>::SystemShaddrInfo * info =
+        (typename ShmemDevice<T_Fifo,T_Shaddr>::SystemShaddrInfo *) payload;
+
+      shaddr->read (&(info->_target_mr),
+                    info->_target_offset,
+                    &(info->_origin_mr),
+                    info->_origin_offset,
+                    info->_bytes);
+
+      TRACE_ERR((stderr, "<< ShmemDevice::system_shaddr_read():%d\n", __LINE__));
+      return 0;
+    }
+
+    template <class T_Fifo, class T_Shaddr>
+    int ShmemDevice<T_Fifo,T_Shaddr>::system_shaddr_write (void   * metadata,
+                                                           void   * payload,
+                                                           size_t   bytes,
+                                                           void   * recv_func_parm,
+                                                           void   * cookie)
+    {
+      TRACE_ERR((stderr, ">> ShmemDevice::system_shaddr_write():%d\n", __LINE__));
+
+      T_Shaddr * shaddr = (T_Shaddr *) recv_func_parm;
+
+      typename ShmemDevice<T_Fifo,T_Shaddr>::SystemShaddrInfo * info =
+        (typename ShmemDevice<T_Fifo,T_Shaddr>::SystemShaddrInfo *) payload;
+
+      shaddr->write (&(info->_origin_mr),
+                     info->_origin_offset,
+                     &(info->_target_mr),
+                     info->_target_offset,
+                     info->_bytes);
+
+      TRACE_ERR((stderr, "<< ShmemDevice::system_shaddr_write():%d\n", __LINE__));
+      return 0;
+    }
+
+
   };
 };
 #undef TRACE_ERR

@@ -9,7 +9,7 @@
 #ifndef __components_atomic_Barrier_h__
 #define __components_atomic_Barrier_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/atomic/Barrier.h

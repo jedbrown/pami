@@ -4,7 +4,7 @@
 ///
 
 #include <stdio.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "components/devices/misc/AtomicBarrierMsg.h"
 #include "components/atomic/bgq/L2Barrier.h"

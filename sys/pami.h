@@ -430,17 +430,34 @@ extern "C"
   /*****************************************************************************/
 
   /**
-   * \brief Common input parameters for all PAMI rma functions
+   * \brief Input parameters common to all rma transfers
    **/
   typedef struct
   {
     pami_endpoint_t       dest;      /**< Destination endpoint */
     pami_send_hint_t      hints;     /**< Hints for sending the message */
-    void               * local;     /**< Local transfer virtual address */
-    void               * remote;    /**< Remote transfer virtual address */
+    size_t               bytes;     /**< Data transfer size in bytes */
     void               * cookie;    /**< Argument to \b all event callbacks */
     pami_event_function   done_fn;   /**< Local completion event */
   } pami_rma_t;
+
+  /**
+   * \brief Input parameters for rma simple transfers
+   **/
+  typedef struct
+  {
+    void               * local;     /**< Local transfer virtual address */
+    void               * remote;    /**< Remote transfer virtual address */
+  } pami_rma_addr_t;
+
+  /**
+   * \brief Input parameters for rma typed transfers
+   */
+  typedef struct
+  {
+    pami_type_t           local;     /**< Data type of local buffer */
+    pami_type_t           remote;    /**< Data type of remote buffer */
+  } pami_rma_typed_t;
 
   /*****************************************************************************/
   /**
@@ -452,34 +469,35 @@ extern "C"
   /*****************************************************************************/
 
   /**
-   * \brief Input parameter structure for simple put transfers
+   * \brief Input parameters for rma put transfers
    */
   typedef struct
   {
-    pami_rma_t            rma;       /**< Common rma parameters */
-    struct
-    {
-      size_t             bytes;     /**< Data transfer size in bytes */
-      pami_event_function rdone_fn;  /**< Remote completion event - all local
+    pami_event_function   rdone_fn;  /**< Remote completion event - all local
                                          data has been received by remote task */
-    } put;                          /**< Parameters specific to put */
-  } pami_put_simple_t;
+  } pami_rma_put_t;
+
 
   /**
-   * \brief Input parameter structure for typed put transfers
+   * \brief Input parameters for simple put transfers
+   * \code
+   * pami_put_simple_t parameters;
+   * parameters.rma.dest     = ;
+   * parameters.rma.hints    = ;
+   * parameters.rma.bytes    = ;
+   * parameters.rma.cookie   = ;
+   * parameters.rma.done_fn  = ;
+   * parameters.addr.local   = ;
+   * parameters.addr.remote  = ;
+   * parameters.put.rdone_fn = ;
+   * \endcode
    */
   typedef struct
   {
     pami_rma_t            rma;       /**< Common rma parameters */
-    struct
-    {
-      size_t             bytes;     /**< Data transfer size in bytes */
-      pami_event_function rdone_fn;  /**< Remote completion event - all local
-                                       data has been received by remote task */
-      pami_type_t         local;     /**< Data type of local buffer */
-      pami_type_t         remote;    /**< Data type of remote buffer */
-    } put;                          /**< Parameters specific to put */
-  } pami_put_typed_t;
+    pami_rma_addr_t       addr;      /**< Simple rma address parameters */
+    pami_rma_put_t        put;       /**< Common put parameters */
+  } pami_put_simple_t;
 
   /**
    * \brief One-sided put operation for simple contiguous data transfer
@@ -489,6 +507,30 @@ extern "C"
    */
   pami_result_t PAMI_Put (pami_context_t      context,
                         pami_put_simple_t * parameters);
+
+  /**
+   * \brief Input parameters for simple typed put transfers
+   * \code
+   * pami_put_typed_t parameters;
+   * parameters.rma.dest     = ;
+   * parameters.rma.hints    = ;
+   * parameters.rma.bytes    = ;
+   * parameters.rma.cookie   = ;
+   * parameters.rma.done_fn  = ;
+   * parameters.addr.local   = ;
+   * parameters.addr.remote  = ;
+   * parameters.type.local   = ;
+   * parameters.type.remote  = ;
+   * parameters.put.rdone_fn = ;
+   * \endcode
+   */
+  typedef struct
+  {
+    pami_rma_t            rma;       /**< Common rma parameters */
+    pami_rma_addr_t       addr;      /**< Simple rma address parameters */
+    pami_rma_typed_t      type;      /**< Simple rma typed parameters */
+    pami_rma_put_t        put;       /**< Common put parameters */
+  } pami_put_typed_t;
 
   /**
    * \brief One-sided put operation for typed non-contiguous data transfer
@@ -513,29 +555,22 @@ extern "C"
 
   /**
    * \brief Input parameter structure for simple get transfers
+   * \code
+   * pami_get_simple_t parameters;
+   * parameters.rma.dest    = ;
+   * parameters.rma.hints   = ;
+   * parameters.rma.bytes   = ;
+   * parameters.rma.cookie  = ;
+   * parameters.rma.done_fn = ;
+   * parameters.addr.local  = ;
+   * parameters.addr.remote = ;
+   * \endcode
    */
   typedef struct
   {
     pami_rma_t            rma;       /**< Common rma parameters */
-    struct
-    {
-      size_t             bytes;     /**< Data transfer size in bytes */
-    } get;                          /**< Parameters specific to get */
+    pami_rma_addr_t       addr;      /**< Simple rma address parameters */
   } pami_get_simple_t;
-
-  /**
-   * \brief Input parameter structure for typed get transfers
-   */
-  typedef struct
-  {
-    pami_rma_t            rma;         /**< Common rma parameters */
-    struct
-    {
-      size_t             bytes;     /**< Data transfer size in bytes */
-      pami_type_t         local;     /**< Data type of local buffer */
-      pami_type_t         remote;    /**< Data type of remote buffer */
-    } get;                          /**< Parameters specific to get */
-  } pami_get_typed_t;
 
   /**
    * \brief One-sided get operation for simple contiguous data transfer
@@ -545,6 +580,28 @@ extern "C"
    */
   pami_result_t PAMI_Get (pami_context_t      context,
                         pami_get_simple_t * parameters);
+
+  /**
+   * \brief Input parameter structure for typed get transfers
+   * \code
+   * pami_get_typed_t parameters;
+   * parameters.rma.dest    = ;
+   * parameters.rma.hints   = ;
+   * parameters.rma.bytes   = ;
+   * parameters.rma.cookie  = ;
+   * parameters.rma.done_fn = ;
+   * parameters.addr.local  = ;
+   * parameters.addr.remote = ;
+   * parameters.type.local  = ;
+   * parameters.type.remote = ;
+   * \endcode
+   */
+  typedef struct
+  {
+    pami_rma_t            rma;       /**< Common rma parameters */
+    pami_rma_addr_t       addr;      /**< Simple rma address parameters */
+    pami_rma_typed_t      type;      /**< Simple rma typed parameters */
+  } pami_get_typed_t;
 
   /**
    * \brief One-sided get operation for typed non-contiguous data transfer
@@ -673,101 +730,124 @@ extern "C"
    */
   /*****************************************************************************/
 
-  typedef void * pami_memregion_t; /**< ??? */
-
   /**
-   * \brief Default "global" memory region
+   * \brief Memory region opaque object
    *
-   * The global memory region may be used in the one-sided operations to make use
-   * of the system-managed memory region support.
+   * A memory region must be created before it may be used. The opaque
+   * object may be directly transfered to a remote endpoint using the
+   * PAMI_Send() or PAMI_Send_immediate() interface.
    *
-   * User-managed memory regions may result in higher performance for one-sided
-   * operations due to system memory region caching, internal memory region
-   * exchange operations, and other implementation-specific management features.
+   * \see PAMI_Memregion_create
+   * \see PAMI_Memregion_destroy
    */
-  extern pami_memregion_t PAMI_MEMREGION_GLOBAL;
+  typedef size_t pami_memregion_t[8];
 
   /**
-   * \brief Register a local memory region for one sided operations
+   * \brief Create a local memory region for one sided operations
    *
    * The local memregion may be transfered, via a send message, to a remote task
    * to allow the remote task to perform one-sided operations with this local
    * task
    *
-   * \todo Define, exactly, what the sematics are if a NULL pointer is passed
-   *       as the memregion to initialize.
-   *
    * \param[in]  context   PAMI application context
-   * \param[in]  address   Virtual address of memory region
-   * \param[in]  bytes     Number of bytes to register
-   * \param[out] memregion Memory region object. Can be NULL.
+   * \param[in]  address   Base virtual address of the memory region
+   * \param[in]  bytes_in  Number of bytes requested
+   * \param[out] bytes_out Number of bytes granted
+   * \param[out] memregion Memory region object to initialize
+   *
+   * \retval PAMI_SUCCESS The entire memory region, or a portion of
+   *                      the memory region was pinned. The actual
+   *                      number of bytes pinned from the start of the
+   *                      buffer is returned in the \c bytes_out
+   *                      parameter. The memory region must be free'd with
+   *                      with PAMI_Memregion_destroy().
+   *
+   * \retval PAMI_EAGAIN  The memory region was not pinned due to an
+   *                      unavailable resource. The memory region does not
+   *                      need to be free'd with PAMI_Memregion_destroy().
+   *
+   * \retval PAMI_INVAL   An invalid parameter value was specified. The memory
+   *                      region does not need to be free'd with
+   *                      PAMI_Memregion_destroy().
+   *
+   * \retval PAMI_ERROR   The memory region was not pinned and does not need to
+   *                      be free'd with PAMI_Memregion_destroy().
    */
   pami_result_t PAMI_Memregion_create (pami_context_t     context,
-                                       void            * address,
-                                       size_t            bytes,
+                                       void             * address,
+                                       size_t             bytes_in,
+                                       size_t           * bytes_out,
                                        pami_memregion_t * memregion);
 
   /**
-   * \brief Deregister a local memory region for one sided operations
-   *
-   * It is illegal to deregister the "global" memory region.
+   * \brief Destroy a local memory region for one sided operations
    *
    * \param[in] context   PAMI application context
    * \param[in] memregion Memory region object
    */
-  pami_result_t PAMI_Memregion_destroy (pami_context_t   context,
-                                         pami_memregion_t memregion);
+  pami_result_t PAMI_Memregion_destroy (pami_context_t     context,
+                                        pami_memregion_t * memregion);
+
+  typedef struct
+  {
+    pami_memregion_t      * mr;     /**< Memory region */
+    size_t                  offset; /**< Offset from beginning of memory region */
+  } pami_rma_mr_t;
+
+  typedef struct
+  {
+    pami_rma_mr_t           local;  /**< Local memory region information */
+    pami_rma_mr_t           remote; /**< Remote memory region information */
+  } pami_rdma_t;
 
   /**
-   * \brief Query the attributes of a memory region
-   *
-   * \todo Should the communication context be an output parameter?
-   *
-   * \param[in]  context   PAMI application context
-   * \param[in]  memregion Memory region object
-   * \param[out] address   Base virtual address
-   * \param[out] bytes     Number of contiguous bytes from the base address
-   * \param[out] task      PAMI task that registered the memory region
-   */
-  pami_result_t PAMI_Memregion_query (pami_context_t      context,
-                                    pami_memregion_t    memregion,
-                                    void            ** address,
-                                    size_t           * bytes,
-                                    size_t           * task);
-
-
-  /**
-   * \brief Input parameter structure for simple rput transfers
+   * \brief Input parameter structure for simple rdma put transfers
+   * \code
+   * pami_rput_simple_t parameters;
+   * parameters.rma.dest           = ;
+   * parameters.rma.hints          = ;
+   * parameters.rma.bytes          = ;
+   * parameters.rma.cookie         = ;
+   * parameters.rma.done_fn        = ;
+   * parameters.rdma.local.mr      = ;
+   * parameters.rdma.local.offset  = ;
+   * parameters.rdma.remote.mr     = ;
+   * parameters.rdma.remote.offset = ;
+   * parameters.put.rdone_fn       = ;
+   * \endcode
    */
   typedef struct
   {
-    pami_rma_t              rma;       /**< Common rma parameters */
-    struct
-    {
-      pami_event_function   remote_fn; /**< Remote completion event - all local
-                                         data has been received by remote task */
-      pami_memregion_t      local_mr;  /**< Local buffer memory region */
-      pami_memregion_t      remote_mr; /**< Remote buffer memory region */
-    } rput;                           /**< Parameters specific to rput */
+    pami_rma_t            rma;       /**< Common rma parameters */
+    pami_rdma_t           rdma;      /**< Common rdma memregion parameters */
+    pami_rma_put_t        put;       /**< Common put parameters */
   } pami_rput_simple_t;
 
   /**
-   * \brief Input parameter structure for typed put transfers
+   * \brief Input parameter structure for typed rdma put transfers
+   * \code
+   * pami_rput_typed_t parameters;
+   * parameters.rma.dest           = ;
+   * parameters.rma.hints          = ;
+   * parameters.rma.bytes          = ;
+   * parameters.rma.cookie         = ;
+   * parameters.rma.done_fn        = ;
+   * parameters.rdma.local.mr      = ;
+   * parameters.rdma.local.offset  = ;
+   * parameters.rdma.remote.mr     = ;
+   * parameters.rdma.remote.offset = ;
+   * parameters.type.local         = ;
+   * parameters.type.remote        = ;
+   * parameters.put.rdone_fn       = ;
+   * \endcode
    */
   typedef struct
   {
-    pami_rma_t              rma;       /**< Common rma parameters */
-    struct
-    {
-      pami_event_function   remote_fn; /**< Remote completion event - all local
-                                           data has been received by remote task */
-      pami_type_t           local;     /**< Data type of local buffer */
-      pami_type_t           remote;    /**< Data type of remote buffer */
-      pami_memregion_t      local_mr;  /**< Local buffer memory region */
-      pami_memregion_t      remote_mr; /**< Remote buffer memory region */
-    } rput;                           /**< Parameters specific to rput */
+    pami_rma_t            rma;       /**< Common rma parameters */
+    pami_rdma_t           rdma;      /**< Common rdma memregion parameters */
+    pami_rma_typed_t      type;      /**< Common rma typed parameters */
+    pami_rma_put_t        put;       /**< Common put parameters */
   } pami_rput_typed_t;
-
 
   /**
    * \brief Simple put operation for one-sided contiguous data transfer.
@@ -786,35 +866,25 @@ extern "C"
   pami_result_t PAMI_Rput_typed (pami_context_t context, pami_rput_typed_t * parameters);
 
   /**
-   * \brief Input parameter structure for simple rput transfers
+   * \brief Input parameter structure for simple rdma get transfers
+   * \code
+   * pami_rget_simple_t parameters;
+   * parameters.rma.dest           = ;
+   * parameters.rma.hints          = ;
+   * parameters.rma.bytes          = ;
+   * parameters.rma.cookie         = ;
+   * parameters.rma.done_fn        = ;
+   * parameters.rdma.local.mr      = ;
+   * parameters.rdma.local.offset  = ;
+   * parameters.rdma.remote.mr     = ;
+   * parameters.rdma.remote.offset = ;
+   * \endcode
    */
   typedef struct
   {
-    pami_rma_t          rma;           /**< Common rma parameters */
-    struct
-    {
-      pami_memregion_t  local_mr;      /**< Local buffer memory region */
-      pami_memregion_t  remote_mr;     /**< Remote buffer memory region */
-      size_t           local_offset;
-      size_t           remote_offset;
-      size_t           bytes;         /**< Data transfer size in bytes */
-    } rget;                           /**< Parameters specific to rget */
+    pami_rma_t            rma;       /**< Common rma parameters */
+    pami_rdma_t           rdma;      /**< Common rdma memregion parameters */
   } pami_rget_simple_t;
-
-  /**
-   * \brief Input parameter structure for typed put transfers
-   */
-  typedef struct
-  {
-    pami_rma_t          rma;           /**< Common rma parameters */
-    struct
-    {
-      pami_type_t       local;         /**< Data type of local buffer */
-      pami_type_t       remote;        /**< Data type of remote buffer */
-      pami_memregion_t  local_mr;      /**< Local buffer memory region */
-      pami_memregion_t  remote_mr;     /**< Remote buffer memory region */
-    } rget;                           /**< Parameters specific to rget */
-  } pami_rget_typed_t;
 
   /**
    * \brief Simple get operation for one-sided contiguous data transfer.
@@ -823,6 +893,30 @@ extern "C"
    * \param[in] parameters Input parameters structure
    */
   pami_result_t PAMI_Rget (pami_context_t context, pami_rget_simple_t * parameters);
+
+  /**
+   * \brief Input parameter structure for typed rdma get transfers
+   * \code
+   * pami_rget_typed_t parameters;
+   * parameters.rma.dest           = ;
+   * parameters.rma.hints          = ;
+   * parameters.rma.bytes          = ;
+   * parameters.rma.cookie         = ;
+   * parameters.rma.done_fn        = ;
+   * parameters.rdma.local.mr      = ;
+   * parameters.rdma.local.offset  = ;
+   * parameters.rdma.remote.mr     = ;
+   * parameters.rdma.remote.offset = ;
+   * parameters.type.local         = ;
+   * parameters.type.remote        = ;
+   * \endcode
+   */
+  typedef struct
+  {
+    pami_rma_t            rma;       /**< Common rma parameters */
+    pami_rdma_t           rdma;      /**< Common rdma memregion parameters */
+    pami_rma_typed_t      type;      /**< Common rma typed parameters */
+  } pami_rget_typed_t;
 
   /**
    * \brief Get operation for data type specific one-sided data transfer.

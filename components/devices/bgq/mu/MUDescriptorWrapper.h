@@ -15,7 +15,7 @@
 
 #include <spi/include/mu/DescriptorWrapperXX.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 
 namespace PAMI
 {

@@ -3,7 +3,7 @@
 /// \brief Simple PAMI_Wtime() test before PAMI_Client_create()
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 #include <unistd.h>
 

@@ -161,16 +161,12 @@ namespace PAMI
 
       inline pami_result_t destroyContext_impl (pami_context_t context)
       {
-        //_context_list->lock ();
-        //_context_list->remove (context);
         return ((PAMI::Context *)context)->destroy ();
-        //_context_list->unlock ();
       }
 
       inline pami_result_t queryConfiguration_impl (pami_configuration_t * configuration)
       {
         pami_result_t result = PAMI_ERROR;
-
         switch (configuration->name)
           {
             case PAMI_NUM_CONTEXTS:
@@ -210,6 +206,8 @@ namespace PAMI
               }
               break;
             case PAMI_MEM_SIZE:
+            case PAMI_SEND_IMMEDIATE_MAX:
+            case PAMI_RECV_IMMEDIATE_MAX:
             default:
               break;
           }

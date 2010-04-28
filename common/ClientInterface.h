@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "util/queue/Queue.h"
 #include "Context.h"

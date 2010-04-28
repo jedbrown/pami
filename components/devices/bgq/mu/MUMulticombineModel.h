@@ -23,11 +23,11 @@
 #include "components/devices/MulticombineModel.h"
 
 #include "components/devices/bgq/mu/MUCollDevice.h"
-#include "components/devices/bgq/mu/MUInjFifoMessage.h"
+#include "components/devices/bgq/mu/msg/ShortInjFifoMessage.h"
 #include "components/devices/bgq/mu/Dispatch.h"
 #include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "Global.h"
 #include "PipeWorkQueue.h"
 #include "Topology.h"
@@ -78,7 +78,7 @@ namespace PAMI
       // State (request) implementation.  Caller should use uint8_t[MUMulticombine::sizeof_msg]
       typedef struct __mu_multicombine_statedata
       {
-        MUInjFifoMessage  message;
+        ShortInjFifoMessage  message;
         mcombine_recv_state_t      receive_state;
       } mu_multicombine_statedata_t;
 
@@ -138,12 +138,12 @@ namespace PAMI
                                           uint64_t               payloadPa,
                                           size_t                 bytes);
 
-        inline bool postPayload(MUInjFifoMessage& message,
+        inline bool postPayload(InjFifoMessage& message,
                                 unsigned connection_id,
                                 void* payload,
                                 size_t payload_length);
 
-        inline bool postShortPayload(MUInjFifoMessage& message,
+        inline bool postShortPayload(ShortInjFifoMessage& message,
                                      unsigned connection_id,
                                      void* payload,
                                      size_t payload_length);
@@ -249,7 +249,7 @@ namespace PAMI
 
       }; // PAMI::Device::MU::MUMulticombineModel::postMulticombine_impl
 
-      inline bool MUMulticombineModel::postShortPayload(MUInjFifoMessage &message,
+      inline bool MUMulticombineModel::postShortPayload(ShortInjFifoMessage &message,
                                                         unsigned connection_id,
                                                         void* payload,
                                                         size_t payload_length)
@@ -300,16 +300,19 @@ namespace PAMI
         {
           TRACE((stderr, "<%p>:MUMulticombineModel::postShortPayload().. nextInjectionDescriptor failed\n", this));
           // Construct a message and post to the device to be processed later.
-          new (&message) MUInjFifoMessage ();
+          new (&message) ShortInjFifoMessage ();
 
-          // Initialize the descriptor directly in the injection fifo.
+          message.copyPayload (payload, payload_length);
+          Kernel_MemoryRegion_t kmr;
+          Kernel_CreateMemoryRegion (&kmr, message.getPayload(), payload_length);
+
+          // Initialize the descriptor
           MUSPI_DescriptorBase * desc = message.getDescriptor ();
-          initializeDescriptor (desc, 0, 0);
+          initializeDescriptor (desc, (uint64_t)kmr.BasePa, payload_length);
 
           // Enable the "single packet message" bit so that it uses my iov src buffer
           desc->setSoftwareBit (1);
 
-          message.setSourceBuffer (payload, payload_length);
 
           // Put the metadata into the network header in the descriptor.
           MemoryFifoPacketHeader_t * hdr =
@@ -329,7 +332,7 @@ namespace PAMI
 
       }; // PAMI::Device::MU::MUMulticombineModel::postShortPayload
 
-      inline bool MUMulticombineModel::postPayload(MUInjFifoMessage &message,
+      inline bool MUMulticombineModel::postPayload(InjFifoMessage &message,
                                                    unsigned connection_id,
                                                    void* payload,
                                                    size_t payload_length)
@@ -385,7 +388,7 @@ namespace PAMI
         {
           TRACE((stderr, "<%p>:MUMulticombineModel::postPayload().. nextInjectionDescriptor failed\n", this));
           // Construct a message and post to the device to be processed later.
-          new (&message) MUInjFifoMessage ();
+          new (&message) InjFifoMessage ();
           //message.setSourceBuffer (payload, payload_length);
 
           // Initialize the descriptor directly in the injection fifo.

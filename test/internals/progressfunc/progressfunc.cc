@@ -12,7 +12,7 @@
  */
 
 #include <stdio.h>
-#include "sys/pami.h"
+#include <pami.h>
 //#include "Client.h"
 #include "Global.h"
 #include "components/devices/misc/ProgressFunctionMsg.h"

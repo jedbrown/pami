@@ -8,7 +8,7 @@
 /// 0 (hard)       | 0 (hard)       | short  | pass   | 
 
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 
 //#define ENABLE_TRACE

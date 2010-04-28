@@ -4,7 +4,7 @@
 ///
 
 #include <stdio.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "components/devices/mpi/MPIBcastMsg.h"
 #include "components/devices/mpi/mpimulticastprotocol.h"

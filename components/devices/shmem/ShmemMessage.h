@@ -14,7 +14,7 @@
 
 #include <sys/uio.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "util/common.h"
 #include "util/queue/Queue.h"

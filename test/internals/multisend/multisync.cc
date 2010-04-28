@@ -4,7 +4,7 @@
 ///
 
 #include <stdio.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "components/devices/misc/AtomicBarrierMsg.h"
 #include "test/internals/multisend/multisync.h"

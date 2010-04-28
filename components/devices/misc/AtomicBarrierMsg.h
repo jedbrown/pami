@@ -45,7 +45,7 @@
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/FactoryInterface.h"
 #include "components/atomic/Barrier.h"
-#include "sys/pami.h"
+#include <pami.h>
 
 namespace PAMI {
 namespace Device {

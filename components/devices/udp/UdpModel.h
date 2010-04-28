@@ -15,7 +15,7 @@
 #define __components_devices_udp_UdpModel_h__
 
 #include <sys/uio.h>
-#include "sys/pami.h"
+#include <pami.h>
 #include "components/devices/PacketInterface.h"
 #include "components/devices/udp/UdpMessage.h"
 #include "errno.h"

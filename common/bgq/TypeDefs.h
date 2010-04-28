@@ -16,6 +16,8 @@
 
   #include "components/devices/shmem/ShmemDevice.h"
   #include "components/devices/shmem/ShmemPacketModel.h"
+  #include "components/devices/shmem/ShmemDmaModel.h"
+  #include "components/devices/shmem/shaddr/BgqShaddrReadOnly.h"
   #include "util/fifo/FifoPacket.h"
   #include "util/fifo/LinearFifo.h"
   #include "components/devices/workqueue/LocalBcastWQMessage.h"
@@ -25,7 +27,7 @@
 //  #include "components/devices/bgq/P2PMcastAM.h"
   #include "components/devices/bgq/mu/MUDevice.h"
   #include "components/devices/bgq/mu/MUPacketModel.h"
-  #include "components/devices/bgq/mu/MUInjFifoMessage.h"
+  #include "components/devices/bgq/mu/MUDmaModel.h"
 
   #include "components/devices/bgq/mu/MUCollDevice.h"
   #include "components/devices/bgq/mu/MUMulticastModel.h"
@@ -34,7 +36,8 @@
 
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/composite/Composite.h"
-#include "p2p/protocols/get/Get.h"
+#include "p2p/protocols/rget/GetRdma.h"
+#include "p2p/protocols/rput/PutRdma.h"
 
 #include "components/atomic/bgq/L2Counter.h"
 #include "components/atomic/counter/CounterBarrier.h"
@@ -55,18 +58,13 @@ namespace PAMI
                                Device::MU::MUMultisyncModel,
                                Device::MU::MUMulticombineModel > MUGlobalNI;
 
-  //typedef Fifo::FifoPacket <32, 992> ShmemPacket;
-  //typedef Fifo::LinearFifo<Atomic::BGQ::L2ProcCounter, ShmemPacket, 16> ShmemFifo;
-  //typedef Device::Fifo::LinearFifo<Atomic::Pthread,ShmemPacket,16> ShmemFifo;
-  //typedef Fifo::LinearFifo<Atomic::BgqAtomic,ShmemPacket,16> ShmemFifo;
-
   typedef Fifo::FifoPacket <32, 512> ShmemPacket;
   typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
-  typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
-  typedef Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
+  typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgqShaddrReadOnly> ShmemDevice;
+  typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
+  typedef Device::Shmem::DmaModel<ShmemDevice> ShmemDmaModel;
 
-  typedef Protocol::Send::Eager <ShmemModel, ShmemDevice> EagerShmem;
-  typedef Protocol::Get::Get <ShmemModel, ShmemDevice> GetShmem;
+  typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice> EagerShmem;
 
 //  typedef Protocol::BGQ::P2PMcastAM<ShmemDevice, EagerShmem, Device::LocalBcastWQModel,Device::LocalBcastWQDevice> ActiveMessageMcast;
 

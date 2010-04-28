@@ -82,7 +82,7 @@
 #define GenericDeviceWorkQueue	PAMI::MutexedQueue<GenericDeviceMutex>
 #endif
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "components/memory/MemoryManager.h"
 #include "util/queue/GccThreadSafeMultiQueue.h"
 #include "util/queue/GccThreadSafeQueue.h"

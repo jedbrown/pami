@@ -19,7 +19,7 @@
 
 #include "Arch.h"
 
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemMessage.h"

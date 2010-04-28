@@ -23,11 +23,11 @@
 #include "components/devices/MultisyncModel.h"
 
 #include "components/devices/bgq/mu/MUCollDevice.h"
-#include "components/devices/bgq/mu/MUInjFifoMessage.h"
+#include "components/devices/bgq/mu/msg/InjFifoMessage.h"
 #include "components/devices/bgq/mu/Dispatch.h"
 #include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "Global.h"
 #include "PipeWorkQueue.h"
 #include "Topology.h"
@@ -68,7 +68,7 @@ namespace PAMI
       // State (request) implementation.  Caller should use uint8_t[MUMultisync::sizeof_msg]
       typedef struct __mu_multisync_statedata
       {
-        MUInjFifoMessage        message;
+        InjFifoMessage          message;
         msync_recv_state_t      receive_state;
       } mu_multisync_statedata_t;
 
@@ -189,7 +189,7 @@ namespace PAMI
         {
           TRACE((stderr, "<%p>:MUMultisyncModel::postMsginfo().. nextInjectionDescriptor failed\n", this));
           // Construct a message and post to the device to be processed later.
-          new (&state_data->message) MUInjFifoMessage (NULL, NULL, _device.getContext());
+          new (&state_data->message) InjFifoMessage (NULL, NULL, _device.getContext());
 
           // Initialize the descriptor directly in the injection fifo.
           MUSPI_DescriptorBase * desc = state_data->message.getDescriptor ();
@@ -203,7 +203,10 @@ namespace PAMI
           metadata->connection_id = multisync->connection_id;
 
           // Point the payload to the connection_id
-          state_data->message.setSourceBuffer (&metadata->connection_id, 4);
+          //state_data->message.setSourceBuffer (&metadata->connection_id, 4);
+          Kernel_MemoryRegion_t kmr;
+          Kernel_CreateMemoryRegion (&kmr, &metadata->connection_id, 4);
+          desc->setPayload((uint64_t) kmr.BasePa, 4);
 
           DUMP_DESCRIPTOR("MUMultisyncModel::postMsginfo().. before addToSendQ                ", desc);
           // Add this message to the send queue to be processed when there is

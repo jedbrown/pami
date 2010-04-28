@@ -14,7 +14,7 @@
 #ifndef __common_MemregionInterface_h__
 #define __common_MemregionInterface_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 
 namespace PAMI
 {
@@ -32,11 +32,8 @@ namespace PAMI
         ///
         /// \brief memory region constructor.
         ///
-        inline Memregion (pami_context_t context)
-        {
-          isSharedAddressReadSupported ();
-          isSharedAddressWriteSupported ();
-        };
+        inline  Memregion () {};
+        inline ~Memregion () {};
 
         ///
         /// \brief Create a memory region.
@@ -69,56 +66,27 @@ namespace PAMI
         /// \see PAMI_Memregion_create()
         ///
         inline pami_result_t createMemregion (size_t   * bytes_out,
-                                             size_t     bytes_in,
-                                             void     * base,
-                                             uint64_t   options);
+                                              size_t     bytes_in,
+                                              void     * base,
+                                              uint64_t   options);
 
         ///
         /// \attention All memory region derived classes \b must
         ///            implement the destroyMemregion_impl() method.
         ///
         inline pami_result_t destroyMemregion ();
-
-        ///
-        /// \attention All memory region derived classes \b must
-        ///            implement the getInfo_impl() method.
-        ///
-        inline pami_result_t getInfo (size_t * bytes, void ** base);
-
-        ///
-        /// \brief Get base virtual address
-        ///
-        /// Get the base virtual address stored within the memory region.
-        ///
-        /// \attention All memory region derived classes \b must
-        ///            implement the getBaseVirtualAddress_impl() method.
-        ///
-        /// \retval base Base virtual address
-        ///
-        inline void * getBaseVirtualAddress ();
-
-        inline bool isSharedAddressReadSupported ();
-
-        inline pami_result_t read (size_t   local_offset,
-                                  T      * remote_memregion,
-                                  size_t   remote_offset,
-                                  size_t   bytes);
-
-        inline bool isSharedAddressWriteSupported ();
-
-        inline pami_result_t write (size_t   local_offset,
-                                   T      * remote_memregion,
-                                   size_t   remote_offset,
-                                   size_t   bytes);
     };
 
     template <class T>
     inline pami_result_t Memregion<T>::createMemregion(size_t  * bytes_out,
-                                                      size_t    bytes_in,
-                                                      void    * base,
-                                                      uint64_t  options)
+                                                       size_t    bytes_in,
+                                                       void    * base,
+                                                       uint64_t  options)
     {
-      return static_cast<T*>(this)->createMemregion_impl(bytes_out, bytes_in, base, options);
+      return static_cast<T*>(this)->createMemregion_impl(bytes_out,
+                                                         bytes_in,
+                                                         base,
+                                                         options);
     }
 
     template <class T>
@@ -126,57 +94,9 @@ namespace PAMI
     {
       return static_cast<T*>(this)->destroyMemregion_impl();
     }
-
-    template <class T>
-    inline pami_result_t Memregion<T>::getInfo(size_t * bytes, void ** base)
-    {
-      return static_cast<T*>(this)->getInfo_impl(bytes, base);
-    }
-
-    template <class T>
-    inline void * Memregion<T>::getBaseVirtualAddress()
-    {
-      return static_cast<T*>(this)->getBaseVirtualAddress_impl();
-    }
-
-    template <class T>
-    inline bool Memregion<T>::isSharedAddressReadSupported()
-    {
-      return T::shared_address_read_supported;
-    };
-
-    template <class T>
-    inline pami_result_t Memregion<T>::read(size_t   local_offset,
-                                           T      * remote_memregion,
-                                           size_t   remote_offset,
-                                           size_t   bytes)
-    {
-      return static_cast<T*>(this)->read_impl(local_offset,
-                                              remote_memregion,
-                                              remote_offset,
-                                              bytes);
-    };
-
-    template <class T>
-    inline bool Memregion<T>::isSharedAddressWriteSupported()
-    {
-      return T::shared_address_write_supported;
-    };
-
-    template <class T>
-    inline pami_result_t Memregion<T>::write(size_t   local_offset,
-                                            T      * remote_memregion,
-                                            size_t   remote_offset,
-                                            size_t   bytes)
-    {
-      return static_cast<T*>(this)->write_impl(local_offset,
-                                               remote_memregion,
-                                               remote_offset,
-                                               bytes);
-    };
   };
 };
-#endif /* __pami__memregion_h__ */
+#endif /* __common_MemregionInterface_h__ */
 
 //
 // astyle info    http://astyle.sourceforge.net

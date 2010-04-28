@@ -10,7 +10,7 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = send
+SUBDIRS         = send get put rget rput
 NOTBUILT        = 
 APPS            = adi.${EXTENSION} dispatch.${EXTENSION} default-send.${EXTENSION} default-send-nplus1.${EXTENSION} immediate_send.${EXTENSION} immediate_send_overflow.${EXTENSION} send_latency.${EXTENSION} sendimmediate_latency.${EXTENSION} udp_simple_send.${EXTENSION}
 

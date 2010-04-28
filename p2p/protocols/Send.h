@@ -13,7 +13,7 @@
 #ifndef __p2p_protocols_Send_h__
 #define __p2p_protocols_Send_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 
 namespace PAMI
 {

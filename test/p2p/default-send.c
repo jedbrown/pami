@@ -3,7 +3,7 @@
 /// \brief Simple point-topoint PAMI_send() test
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 
 #define TEST_REMOTE_CALLBACK

@@ -20,7 +20,7 @@
 /// \see MUSPI_Pt2PtMemoryFIFODescriptor
 ///
 PAMI::Device::MU::MUPacketModel::MUPacketModel (MUDevice & device) :
-    Interface::PacketModel<MUPacketModel, MUDevice, sizeof(MUInjFifoMessage)> (device),
+    Interface::PacketModel<MUPacketModel, MUDevice, sizeof(ShortInjFifoMessage)> (device),
     _device (device),
     _wrapper_model (&_desc_model),
     _context (device.getContext())

@@ -3,7 +3,7 @@
 /// \brief Simple PAMI_Context_create() test for multiple contexts
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 
 

@@ -3,7 +3,7 @@
 /// \brief Ppoint-to-point PAMI_send() test using multiple contexts
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 #include <unistd.h>
 

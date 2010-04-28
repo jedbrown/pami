@@ -3,7 +3,7 @@
 /// \brief Simple test for basic commthread functionality
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>

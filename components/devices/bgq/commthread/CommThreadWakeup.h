@@ -13,7 +13,7 @@
 #ifndef __components_devices_bgq_commthread_CommThreadWakeup_h__
 #define __components_devices_bgq_commthread_CommThreadWakeup_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "components/devices/bgq/commthread/WakeupRegion.h"
 #include "components/devices/bgq/commthread/ContextSets.h"
 #include "common/bgq/Context.h"

@@ -20,7 +20,7 @@
 #include "common/UdpSocketMappingInterface.h"
 #include "common/SocketMappingInterface.h"
 #include "common/NodeMappingInterface.h"
-#include "sys/pami.h"
+#include <pami.h>
 #include <errno.h>
 #include <unistd.h>
 //#include <pmi.h>

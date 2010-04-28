@@ -13,7 +13,7 @@
 #ifndef __components_memory_MemoryManager_h__
 #define __components_memory_MemoryManager_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "util/common.h"
 #include <sys/mman.h>
 #include <errno.h>

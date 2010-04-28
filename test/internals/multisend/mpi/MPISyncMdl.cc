@@ -4,7 +4,7 @@
 ///
 
 #include <stdio.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "components/devices/mpi/MPISyncMsg.h"
 #include "test/internals/multisend/multisync.h"

@@ -15,7 +15,7 @@
 #define __algorithms_ccmi_h__
 
 #include <stdlib.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 
 // A debug thread id

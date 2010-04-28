@@ -14,7 +14,7 @@
 ///  \brief Generic Device base class for Messages
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "GenericDevicePlatform.h"
 
 namespace PAMI {

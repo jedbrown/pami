@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <assert.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 //define this if you want to validate the data for unsigned sums
 //#define CHECK_DATA

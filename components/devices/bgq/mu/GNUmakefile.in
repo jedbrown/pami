@@ -13,6 +13,6 @@ VPATH		= @abs_srcdir@
 SUBDIRS		=  
 NOTBUILT        =
 #BaseAddressTableSubGroup.cc  InjFifoSubGroup.cc  MUChannel.cc  MUDevice.cc  MUDmaModel.cc  MUPacketModel.cc  RecFifoSubGroup.cc  ResourceManager.cc MUMulticastModel.cc MUMultisyncModel.cc MUMulticombineModel.cc
-@LIBNAME@-""-DEVICE_SOURCES=BaseAddressTableSubGroup.cc InjFifoSubGroup.cc MUDevice.cc MUChannel.cc MUPacketModel.cc MUDmaModel.cc RecFifoSubGroup.cc ResourceManager.cc MUMulticastModel.cc MUMultisyncModel.cc MUMulticombineModel.cc
+@LIBNAME@-""-DEVICE_SOURCES=BaseAddressTableSubGroup.cc InjFifoSubGroup.cc MUDevice.cc MUChannel.cc MUPacketModel.cc RecFifoSubGroup.cc ResourceManager.cc MUMulticastModel.cc MUMultisyncModel.cc MUMulticombineModel.cc
 DEVICENAME     = @LIBNAME@-""-DEVICE
 include @abs_top_builddir@/Build.rules

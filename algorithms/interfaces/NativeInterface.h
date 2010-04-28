@@ -6,7 +6,7 @@
 #ifndef __algorithms_interfaces_NativeInterface_h__
 #define __algorithms_interfaces_NativeInterface_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 
 namespace CCMI {
   namespace Interfaces {

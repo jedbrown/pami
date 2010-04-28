@@ -3,7 +3,7 @@
 /// \brief Simple point-topoint PAMI_Dispatch_set() test
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 
 static void test_dispatch (

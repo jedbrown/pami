@@ -16,7 +16,7 @@
 
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/util/SubDeviceSuppt.h"
-#include "sys/pami.h"
+#include <pami.h>
 #include "Global.h"
 #include "PipeWorkQueue.h"
 #include "Topology.h"

@@ -10,7 +10,7 @@
 #include <string.h>
 #include <new>
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "common/ContextInterface.h"
 
 #include "components/devices/generic/Device.h"
@@ -28,10 +28,11 @@
 #include "SysDep.h"
 #include "Memregion.h"
 
+#include "p2p/protocols/RGet.h"
+#include "p2p/protocols/rget/GetRdma.h"
+#include "p2p/protocols/rput/PutRdma.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/composite/Composite.h"
-
-#include "p2p/protocols/get/Get.h"
 
 #include "TypeDefs.h"
 #include "algorithms/geometry/CCMIMultiRegistration.h"
@@ -245,8 +246,6 @@ namespace PAMI
 
         // Make sure the memory allocator is large enough for all
         // protocol classes.
-        COMPILE_TIME_ASSERT(sizeof(EagerShmem) <= ProtocolAllocator::objsize);
-        COMPILE_TIME_ASSERT(sizeof(GetShmem) <= ProtocolAllocator::objsize);
         COMPILE_TIME_ASSERT(sizeof(MUGlobalNI) <= ProtocolAllocator::objsize);
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -254,6 +253,14 @@ namespace PAMI
 
         _lock.init(&_mm);
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
+        
+        
+        Protocol::Get::GetRdma <Device::MU::MUDmaModel<false>, MUDevice> * rget_mu = NULL;
+        Protocol::Put::PutRdma <Device::MU::MUDmaModel<false>, MUDevice> * rput_mu = NULL;
+
+        Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice> * rget_shmem = NULL;
+        Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice> * rput_shmem = NULL;
+
         if(__global.useMU())
         {
         // Can't construct NI until device is init()'d.  Ctor into member storage.
@@ -274,8 +281,78 @@ namespace PAMI
 
            _mu_registration->analyze(_contextid, _world_geometry);
 
+          // Initialize mu rget and mu rput protocols.
+          pami_result_t result = PAMI_ERROR;
+
+          rget_mu = Protocol::Get::GetRdma <Device::MU::MUDmaModel<false>, MUDevice>::
+            generate (_devices->_mu[_contextid], _request, result);
+          if (result != PAMI_SUCCESS) rget_mu = NULL;
+
+          rput_mu = Protocol::Put::PutRdma <Device::MU::MUDmaModel<false>, MUDevice>::
+            generate (_devices->_mu[_contextid], _request, result);
+          if (result != PAMI_SUCCESS) rput_mu = NULL;
         }
 
+#if 0
+        // ----------------------------------------------------------------
+        // Initialize the memory region get protocol(s)
+        // ----------------------------------------------------------------
+       {
+         pami_result_t result = PAMI_ERROR;
+         if(__global.useMU() && __global.useshmem())
+         {
+        Protocol::Get::GetRdma <Device::MU::MUDmaModel<false>, MUDevice> * getmu =
+          Protocol::Get::GetRdma <Device::MU::MUDmaModel<false>, MUDevice>::
+            generate (_devices->_mu[_contextid], _request, result);
+//        if (result != PAMI_SUCCESS)
+//          getmu = Protocol::Get::NoRGet::generate (_context, _request);
+
+        Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice> * getshmem =
+          Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
+            generate (_devices->_shmem[_contextid], _request, result);
+//        if (result != PAMI_SUCCESS)
+//          getshmem = Protocol::Get::NoRGet::generate (_context, _request);
+
+        //_rget = (Protocol::Get::RGet *) Protocol::Get::CompositeRGet::
+        //_rget = Protocol::Get::CompositeRGet::
+          //generate (_request, getshmem, getmu, result);
+        _rget = (Protocol::Get::RGet *) Protocol::Get::Factory::
+                      generate (getshmem, getmu, _request, result);
+
+        Protocol::Put::PutRdma <Device::MU::MUDmaModel<false>, MUDevice> * putmu =
+          Protocol::Put::PutRdma <Device::MU::MUDmaModel<false>, MUDevice>::
+            generate (_devices->_mu[_contextid], _request, result);
+
+        Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice> * putshmem =
+          Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
+            generate (_devices->_shmem[_contextid], _request, result);
+
+        _rput = (Protocol::Put::RPut *) Protocol::Put::Factory::
+                      generate (putshmem, putmu, _request, result);
+
+         }
+         else if (__global.useshmem())
+         {
+        _rget = Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
+          generate (_devices->_shmem[_contextid], _request, result);
+//        if (result != PAMI_SUCCESS)
+//          _rget = Protocol::Get::NoGet::generate (_context, _request);
+
+        _rput = Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
+          generate (_devices->_shmem[_contextid], _request, result);
+//        if (result != PAMI_SUCCESS)
+//          _rget = Protocol::Get::NoGet::generate (_context, _request);
+         }
+         else
+         {
+        _rget = Protocol::Get::GetRdma <Device::MU::MUDmaModel<false>, MUDevice>::
+          generate (_devices->_mu[_contextid], _request, result);
+
+        _rput = Protocol::Put::PutRdma <Device::MU::MUDmaModel<false>, MUDevice>::
+          generate (_devices->_mu[_contextid], _request, result);
+         }
+       }
+#endif
         if(__global.useshmem())
         {
           if (__global.topology_local.size() > 1)
@@ -306,18 +383,49 @@ namespace PAMI
 
             //_shmem_mcast2_registration->analyze(_contextid, _world_geometry);
 
+            // Initialize shmem rget and shmem rput protocols.
+            pami_result_t result = PAMI_ERROR;
 
+            rget_shmem = Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
+              generate (_devices->_shmem[_contextid], _request, result);
+            if (result != PAMI_SUCCESS) rget_shmem = NULL;
+
+            rput_shmem = Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
+              generate (_devices->_shmem[_contextid], _request, result);
+            if (result != PAMI_SUCCESS) rput_shmem = NULL;
           }
           else TRACE_ERR((stderr, "topology does not support shmem\n"));
         }
 
-        /** \todo #warning This should not be here? */
-#if 0 // not working yet? not fully implemented?
-        pami_result_t result ;
-        _get = (void *) _request.allocateObject ();
-        new ((void *)_get) GetShmem(ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
-
-#endif
+        // Complete rget and rput protocol initialization
+        if (((rget_mu != NULL) && (rget_shmem != NULL)) &&
+            ((rput_mu != NULL) && (rput_shmem != NULL)))
+        {
+          // Create "composite" protocols
+          pami_result_t result = PAMI_ERROR;
+          _rget = (Protocol::Get::RGet *) Protocol::Get::Factory::
+                  generate (rget_shmem, rget_mu, _request, result);
+          _rput = (Protocol::Put::RPut *) Protocol::Put::Factory::
+                  generate (rput_shmem, rput_mu, _request, result);
+        }
+        else if (((rget_mu != NULL) && (rget_shmem == NULL)) &&
+                 ((rput_mu != NULL) && (rput_shmem == NULL)))
+        {
+          _rget = rget_mu;
+          _rput = rput_mu;
+        }
+        else if (((rget_mu == NULL) && (rget_shmem != NULL)) &&
+                 ((rput_mu == NULL) && (rput_shmem != NULL)))
+        {
+          _rget = rget_shmem;
+          _rput = rput_shmem;
+        }
+        else
+        {
+          // No shmem or mu rget-rput protocols available
+          _rget = Protocol::Get::NoRGet::generate (_request);
+          _rput = Protocol::Put::NoRPut::generate (_request);
+        }
 
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
@@ -389,7 +497,6 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
-
       inline pami_result_t send_impl (pami_send_t * parameters)
       {
         size_t id = (size_t)(parameters->send.dispatch);
@@ -423,7 +530,7 @@ namespace PAMI
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t put (pami_put_simple_t * parameters)
+      inline pami_result_t put_impl (pami_put_simple_t * parameters)
       {
         return PAMI_UNIMPL;
       }
@@ -433,7 +540,7 @@ namespace PAMI
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t get (pami_get_simple_t * parameters)
+      inline pami_result_t get_impl (pami_get_simple_t * parameters)
       {
 
         return PAMI_UNIMPL;
@@ -449,31 +556,31 @@ namespace PAMI
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t memregion_register_impl (void            * address,
-                                                    size_t            bytes,
-                                                    pami_memregion_t * memregion)
+      inline pami_result_t memregion_create_impl (void             * address,
+                                                  size_t             bytes_in,
+                                                  size_t           * bytes_out,
+                                                  pami_memregion_t * memregion)
       {
-        return PAMI_UNIMPL;
+        new ((void *) memregion) Memregion ();
+        Memregion * mr = (Memregion *) memregion;
+        return mr->createMemregion (bytes_out, bytes_in, address, 0);
       }
 
-      inline pami_result_t memregion_deregister_impl (pami_memregion_t memregion)
+      inline pami_result_t memregion_destroy_impl (pami_memregion_t * memregion)
       {
         // Memory regions do not need to be deregistered on BG/Q so this
         // interface is implemented as a noop.
         return PAMI_SUCCESS;
       }
 
-      inline pami_result_t memregion_query (pami_memregion_t    memregion,
-                                           void            ** address,
-                                           size_t           * bytes,
-                                           size_t           * task)
+      inline pami_result_t rput_impl (pami_rput_simple_t * parameters)
       {
-        return PAMI_UNIMPL;
-      }
+        TRACE_ERR((stderr, ">> rput_impl('simple')\n"));
 
-      inline pami_result_t rput (pami_rput_simple_t * parameters)
-      {
-        return PAMI_UNIMPL;
+        pami_result_t rc = _rput->simple (parameters);
+
+        TRACE_ERR((stderr, "<< rput_impl('simple') rc = %d\n",rc));
+        return rc;
       }
 
       inline pami_result_t rput_typed (pami_rput_typed_t * parameters)
@@ -481,19 +588,14 @@ namespace PAMI
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t rget (pami_rget_simple_t * parameters)
+      inline pami_result_t rget_impl (pami_rget_simple_t * parameters)
       {
-#if 0 // not implemented yet???
-        ((GetShmem*)_get)->getimpl (	parameters->rma.done_fn,
-                                     parameters->rma.cookie,
-                                     parameters->rma.dest,
-                                     parameters->rget.bytes,
-                                     (Memregion*)parameters->rget.local_mr,
-                                     (Memregion*)parameters->rget.remote_mr,
-                                     parameters->rget.local_offset,
-                                     parameters->rget.remote_offset);
-#endif
-        return PAMI_SUCCESS;
+        TRACE_ERR((stderr, ">> rget_impl('simple')\n"));
+
+        pami_result_t rc = _rget->simple (parameters);
+
+        TRACE_ERR((stderr, "<< rget_impl('simple') rc = %d\n",rc));
+        return rc;
       }
 
       inline pami_result_t rget_typed (pami_rget_typed_t * parameters)
@@ -628,13 +730,13 @@ namespace PAMI
                   if (options.no_long_header == 1)
                   {
                      _dispatch[id] = (Protocol::Send::Send *)
-                        Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
+                        Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
                         generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
                   }
                   else
                   {
                      _dispatch[id] = (Protocol::Send::Send *)
-                        Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+                        Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
                         generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
                   }
                }
@@ -654,8 +756,8 @@ namespace PAMI
                         Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
                         generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
 
-                     Protocol::Send::Eager <ShmemModel, ShmemDevice, false> * eagershmem =
-                        Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
+                     Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false> * eagershmem =
+                        Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
                         generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
 
                      _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
@@ -667,8 +769,8 @@ namespace PAMI
                         Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
                         generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
 
-                     Protocol::Send::Eager <ShmemModel, ShmemDevice, true> * eagershmem =
-                        Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+                     Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true> * eagershmem =
+                        Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
                         generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
 
                      _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
@@ -819,7 +921,8 @@ namespace PAMI
       SysDep                       _sysdep;
 
       void *                       _dispatch[1024];
-      void* _get; //use for now..remove later
+      Protocol::Get::RGet         *_rget;
+      Protocol::Put::RPut         *_rput;
       MemoryAllocator<1024, 16>    _request;
       ContextLock                  _lock;
     public:

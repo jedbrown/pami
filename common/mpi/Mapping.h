@@ -18,7 +18,7 @@
 #include "common/BaseMappingInterface.h"
 #include "common/TorusMappingInterface.h"
 #include "common/NodeMappingInterface.h"
-#include "sys/pami.h"
+#include <pami.h>
 #include "util/common.h"
 #include <mpi.h>
 #include <errno.h>

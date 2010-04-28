@@ -3,7 +3,7 @@
 /// \brief Multithreaded PAMI_Context_post() test
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>

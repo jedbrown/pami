@@ -13,7 +13,7 @@
 #ifndef __common_bgq_Wtime_h__
 #define __common_bgq_Wtime_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "common/BaseTimeInterface.h"
 

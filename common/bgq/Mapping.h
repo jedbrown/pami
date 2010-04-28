@@ -15,7 +15,7 @@
 
 #include <hwi/include/bqc/MU_PacketCommon.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "Platform.h"
 
 #include "common/BaseMappingInterface.h"

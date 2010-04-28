@@ -4,7 +4,7 @@
 ///
 
 #include <stdio.h>
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/FactoryInterface.h"

@@ -16,7 +16,7 @@
 
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/AdvanceThread.h"
-#include "sys/pami.h"
+#include <pami.h>
 #include "components/devices/FactoryInterface.h"
 
 typedef struct {

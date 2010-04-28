@@ -12,7 +12,7 @@
 #include "Context.h"
 #include "PipeWorkQueue.h"
 #include "Topology.h"
-#include "sys/pami.h"
+#include <pami.h>
 #include "util/common.h"
 
 
@@ -1200,24 +1200,24 @@ extern "C" pami_result_t PAMI_Rmw (pami_context_t      context,
 /// \copydoc PAMI_Memregion_create
 ///
 extern "C" pami_result_t PAMI_Memregion_create (pami_context_t     context,
-                                                void            * address,
-                                                size_t            bytes,
+                                                void             * address,
+                                                size_t             bytes_in,
+                                                size_t           * bytes_out,
                                                 pami_memregion_t * memregion)
 {
     PAMI::Context   * ctx = (PAMI::Context *) context;
-    return ctx->memregion_register(address, bytes, memregion);
+    return ctx->memregion_create (address, bytes_in, bytes_out, memregion);
 }
 
 ///
 /// \copydoc PAMI_Memregion_destroy
 ///
-extern "C" pami_result_t PAMI_Memregion_destroy (pami_context_t   context,
-                                                    pami_memregion_t memregion)
+extern "C" pami_result_t PAMI_Memregion_destroy (pami_context_t     context,
+                                                 pami_memregion_t * memregion)
 {
     PAMI::Context   * ctx = (PAMI::Context *) context;
-    return ctx->memregion_deregister(memregion);
+    return ctx->memregion_destroy (memregion);
 }
-
 
 ///
 /// \copydoc PAMI_Rput

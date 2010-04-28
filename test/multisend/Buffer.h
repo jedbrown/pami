@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 
 #include "PipeWorkQueue.h"
 #include "Topology.h"

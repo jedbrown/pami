@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 
 namespace PAMI
 {
@@ -52,16 +52,12 @@ namespace PAMI
 
         inline pami_result_t rmw (pami_rmw_t * parameters);
 
-        inline pami_result_t memregion_register (void            * address,
-                                                size_t            bytes,
-                                                pami_memregion_t * memregion);
+        inline pami_result_t memregion_create (void             * address,
+                                               size_t             bytes_in,
+                                               size_t           * bytes_out,
+                                               pami_memregion_t * memregion);
 
-        inline pami_result_t memregion_deregister (pami_memregion_t memregion);
-
-        inline pami_result_t memregion_query (pami_memregion_t    memregion,
-                                             void            ** address,
-                                             size_t           * bytes,
-                                             size_t           * task);
+        inline pami_result_t memregion_destroy (pami_memregion_t * memregion);
 
         inline pami_result_t rput (pami_rput_simple_t * parameters);
 
@@ -228,31 +224,21 @@ namespace PAMI
     }
 
     template <class T_Context>
-    pami_result_t Context<T_Context>::memregion_register (void            * address,
-                                                         size_t            bytes,
-                                                         pami_memregion_t * memregion)
+    pami_result_t Context<T_Context>::memregion_create (void             * address,
+                                                        size_t             bytes_in,
+                                                        size_t           * bytes_out,
+                                                        pami_memregion_t * memregion)
     {
-      return static_cast<T_Context*>(this)->memregion_register_impl(address,
-                                                                    bytes,
-                                                                    memregion);
+      return static_cast<T_Context*>(this)->memregion_create_impl(address,
+                                                                  bytes_in,
+                                                                  bytes_out,
+                                                                  memregion);
     }
 
     template <class T_Context>
-    pami_result_t Context<T_Context>::memregion_deregister (pami_memregion_t memregion)
+    pami_result_t Context<T_Context>::memregion_destroy (pami_memregion_t * memregion)
     {
-      return static_cast<T_Context*>(this)->memregion_deregister_impl(memregion);
-    }
-
-    template <class T_Context>
-    pami_result_t Context<T_Context>::memregion_query (pami_memregion_t    memregion,
-                                                      void            ** address,
-                                                      size_t           * bytes,
-                                                      size_t           * task)
-    {
-      return static_cast<T_Context*>(this)->memregion_query_impl(memregion,
-                                                                 address,
-                                                                 bytes,
-                                                                 task);
+      return static_cast<T_Context*>(this)->memregion_destroy_impl(memregion);
     }
 
     template <class T_Context>

@@ -22,7 +22,7 @@
 #include <builtins.h>
 #endif
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "Compiler.h"
 #include "Arch.h"
 

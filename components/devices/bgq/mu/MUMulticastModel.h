@@ -23,11 +23,11 @@
 #include "components/devices/MulticastModel.h"
 
 #include "components/devices/bgq/mu/MUCollDevice.h"
-#include "components/devices/bgq/mu/MUInjFifoMessage.h"
+#include "components/devices/bgq/mu/msg/ShortInjFifoMessage.h"
 #include "components/devices/bgq/mu/Dispatch.h"
 #include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "Global.h"
 #include "PipeWorkQueue.h"
 #include "Topology.h"
@@ -65,7 +65,7 @@ namespace PAMI
         struct            iovec iov[3];
         size_t            niov;
         uint8_t           msghead[sizeof(mu_multicast_msgdata_t().msgcount) + sizeof(mu_multicast_msgdata_t().msgpad)];
-        MUInjFifoMessage  message[2];
+        ShortInjFifoMessage  message[2];
       } mu_multicast_statedata_t;
 
       ///////////////////////////////////////////////////////////////////////////////
@@ -155,7 +155,7 @@ namespace PAMI
 
         /// \brief post a header (first packet) with metadata and possible msginfo and/or user data
         inline bool postHeader(mu_multicast_statedata_t* state,
-                               MUInjFifoMessage& message,
+                               ShortInjFifoMessage& message,
                                unsigned connection_id,
                                size_t total_length,
                                void* msginfo,
@@ -163,7 +163,7 @@ namespace PAMI
                                void* optional_payload = NULL,
                                size_t optional_payload_length = 0);
         /// \brief  post a packet with user data
-        inline bool postData(MUInjFifoMessage& message,
+        inline bool postData(InjFifoMessage& message,
                              unsigned connection_id,
                              void* payload,
                              size_t payload_length);
@@ -254,7 +254,7 @@ namespace PAMI
       }; // PAMI::Device::MU::MUMulticastModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
 
       inline bool MUMulticastModel::postHeader(mu_multicast_statedata_t      * state,
-                                               MUInjFifoMessage  & message,
+                                               ShortInjFifoMessage  & message,
                                                unsigned            connection_id,
                                                size_t              total_length,
                                                void*               msginfo,
@@ -322,11 +322,13 @@ namespace PAMI
         {
           TRACE((stderr, "<%p>:MUMulticastModel::postHeader().. nextInjectionDescriptor failed\n", this));
           // Construct a message and post to the device to be processed later.
-          new (&message) MUInjFifoMessage ();
+          new (&message) ShortInjFifoMessage ();
 
           // Initialize the descriptor in the message
           MUSPI_DescriptorBase * desc = message.getDescriptor ();
-          initializeDescriptor (desc, 0, 0);
+          Kernel_MemoryRegion_t kmr;
+          Kernel_CreateMemoryRegion (&kmr, message.getPayload(), total_length);
+          initializeDescriptor (desc, (uint64_t) kmr.BasePa, total_length);
 
           // Enable the "single packet message" bit so that it uses my iov src buffer
           desc->setSoftwareBit (1);
@@ -352,7 +354,8 @@ namespace PAMI
             state->niov++;
           }
 
-          message.setSourceBuffer (state->iov, state->niov);
+          //message.setSourceBuffer (state->iov, state->niov);
+          message.copyPayload (state->iov, state->niov);
 
           // Put the metadata into the network header in the descriptor.
           MemoryFifoPacketHeader_t * hdr =
@@ -375,7 +378,7 @@ namespace PAMI
 
       }; // PAMI::Device::MU::MUMulticastModel::postHeader
 
-      inline bool MUMulticastModel::postData(MUInjFifoMessage &message,
+      inline bool MUMulticastModel::postData(InjFifoMessage &message,
                                              unsigned connection_id,
                                              void* payload,
                                              size_t payload_length)
@@ -435,7 +438,7 @@ namespace PAMI
           TRACE((stderr, "<%p>:MUMulticastModel::postData().. nextInjectionDescriptor failed\n", this));
 
           // Construct a message and post to the device to be processed later.
-          new (&message) MUInjFifoMessage ();
+          new (&message) InjFifoMessage ();
 
           // Initialize the descriptor in the message
           MUSPI_DescriptorBase * desc = message.getDescriptor ();

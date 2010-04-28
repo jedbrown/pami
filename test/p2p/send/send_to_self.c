@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 
 static void recv_done (pami_context_t   context,
                        void          * cookie,

@@ -188,7 +188,7 @@
 #include "components/devices/generic/Message.h"
 #include "components/devices/FactoryInterface.h"
 #include "components/atomic/Mutex.h"
-#include "sys/pami.h"
+#include <pami.h>
 
 #ifndef PAMI_MAX_NUM_CLIENTS
 /** \todo PAMI_MAX_NUM_CLIENTS needs to be setup by pami.h */

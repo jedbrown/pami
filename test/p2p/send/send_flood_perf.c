@@ -17,7 +17,7 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 //#include "../../util.h"
 
 #define ITERATIONS 1

@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "common/ContextInterface.h"
 
 #include "components/devices/generic/Device.h"
@@ -30,6 +30,8 @@
 
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
+#include "components/devices/shmem/ShmemDmaModel.h"
+#include "components/devices/shmem/shaddr/BgpShaddr.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 
@@ -44,7 +46,8 @@
 #include "SysDep.h"
 #include "Memregion.h"
 
-#include "p2p/protocols/Send.h"
+#include "p2p/protocols/rget/GetRdma.h"
+#include "p2p/protocols/rput/PutRdma.h"
 #include "p2p/protocols/send/eager/Eager.h"
 //#include "p2p/protocols/send/adaptive/Adaptive.h"
 //#include "p2p/protocols/send/datagram/Datagram.h"
@@ -53,7 +56,7 @@
 #include "algorithms/geometry/CCMIMultiRegistration.h"
 
 #undef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) // fprintf x
 
 namespace PAMI
 {
@@ -64,8 +67,9 @@ namespace PAMI
   typedef Fifo::FifoPacket <16, 256> ShmemPacket;
   typedef Fifo::LinearFifo<Counter::BGP::LockBoxProcCounter, ShmemPacket, 128> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
-  typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
-  typedef Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
+  typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgpShaddr> ShmemDevice;
+  typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
+  typedef Device::Shmem::DmaModel<ShmemDevice> ShmemDmaModel;
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.
@@ -268,6 +272,26 @@ namespace PAMI
         TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
         _multi_registration->analyze(_contextid, _world_geometry);
         }
+        
+        // ----------------------------------------------------------------
+        // Initialize the rdma protocol(s)
+        // ----------------------------------------------------------------
+        pami_result_t result = PAMI_ERROR;
+        _rget = Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
+          generate (_devices->_shmem[_contextid], _protocol, result);
+        TRACE_ERR((stderr, "%s<%u>  result = %d\n", __PRETTY_FUNCTION__,__LINE__, result));
+        if (result != PAMI_SUCCESS)
+          _rget = Protocol::Get::NoRGet::generate (_protocol);
+
+        result = PAMI_ERROR;
+        _rput = Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
+          generate (_devices->_shmem[_contextid], _protocol, result);
+        TRACE_ERR((stderr, "%s<%u>  result = %d\n", __PRETTY_FUNCTION__,__LINE__, result));
+        if (result != PAMI_SUCCESS)
+          _rput = Protocol::Put::NoRPut::generate (_protocol);
+
+
+        
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
       }
@@ -409,31 +433,33 @@ namespace PAMI
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t memregion_register_impl (void            * address,
-                                              size_t            bytes,
-                                              pami_memregion_t * memregion)
+      inline pami_result_t memregion_create_impl (void            * address,
+                                                  size_t             bytes_in,
+                                                  size_t           * bytes_out,
+                                                  pami_memregion_t * memregion)
       {
-        return PAMI_UNIMPL;
+        COMPILE_TIME_ASSERT(sizeof(Memregion) <= sizeof(pami_memregion_t));
+
+        new ((void *) memregion) Memregion ();
+        Memregion * mr = (Memregion *) memregion;
+        return mr->createMemregion (bytes_out, bytes_in, address, 0);
       }
 
-      inline pami_result_t memregion_deregister_impl (pami_memregion_t memregion)
+      inline pami_result_t memregion_destroy_impl (pami_memregion_t * memregion)
       {
         // Memory regions do not need to be deregistered on BG/Q so this
         // interface is implemented as a noop.
         return PAMI_SUCCESS;
       }
 
-      inline pami_result_t memregion_query (pami_memregion_t    memregion,
-                                           void            ** address,
-                                           size_t           * bytes,
-                                           size_t           * task)
-      {
-        return PAMI_UNIMPL;
-      }
-
       inline pami_result_t rput (pami_rput_simple_t * parameters)
       {
-        return PAMI_UNIMPL;
+        TRACE_ERR((stderr, ">> rput_impl('simple')\n"));
+
+        pami_result_t rc = _rput->simple (parameters);
+
+        TRACE_ERR((stderr, "<< rput_impl('simple') rc = %d\n",rc));
+        return rc;
       }
 
       inline pami_result_t rput_typed (pami_rput_typed_t * parameters)
@@ -443,7 +469,12 @@ namespace PAMI
 
       inline pami_result_t rget (pami_rget_simple_t * parameters)
       {
-        return PAMI_UNIMPL;
+        TRACE_ERR((stderr, ">> rget_impl('simple')\n"));
+
+        pami_result_t rc = _rget->simple (parameters);
+
+        TRACE_ERR((stderr, "<< rget_impl('simple') rc = %d\n",rc));
+        return rc;
       }
 
       inline pami_result_t rget_typed (pami_rget_typed_t * parameters)
@@ -529,16 +560,15 @@ namespace PAMI
       }
 
 
-      inline pami_result_t dispatch_impl (size_t                     id,
-                                         pami_dispatch_callback_fn   fn,
-                                         void                     * cookie,
-                                         pami_send_hint_t            options)
+      inline pami_result_t dispatch_impl (size_t                      id,
+                                          pami_dispatch_callback_fn   fn,
+                                          void                      * cookie,
+                                          pami_send_hint_t            options)
       {
         pami_result_t result = PAMI_ERROR;
-        size_t index = (size_t) id;
-        TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zu] = %p\n", index, _dispatch[index]));
+        TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zu] = %p\n", id, _dispatch[id]));
 
-        if (_dispatch[index] == NULL)
+        if (_dispatch[id] == NULL)
           {
             TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
 
@@ -548,14 +578,14 @@ namespace PAMI
                 new (_dispatch[id])
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, false>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, false>
-                Protocol::Send::Eager <ShmemModel, ShmemDevice, false>
+                Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>
                 (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
               }
             else
               {
                 _dispatch[id] = _protocol.allocateObject ();
                 new (_dispatch[id])
-                Protocol::Send::Eager <ShmemModel, ShmemDevice, true>
+                Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, true>
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, true>
                 (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
@@ -570,7 +600,7 @@ namespace PAMI
               }
           }
 
-        TRACE_ERR((stderr, "<< dispatch_impl(), result = %zu, _dispatch[%zu] = %p\n", result, index, _dispatch[index]));
+        TRACE_ERR((stderr, "<< dispatch_impl(), result = %zu, _dispatch[%zu] = %p\n", result, id, _dispatch[id]));
         return result;
       }
 
@@ -635,7 +665,9 @@ namespace PAMI
       size_t        _clientid;
       size_t        _contextid;
 
-      PAMI::Memory::MemoryManager _mm;
+      Protocol::Get::RGet         * _rget;
+      Protocol::Put::RPut         * _rput;
+      PAMI::Memory::MemoryManager   _mm;
       SysDep _sysdep;
 
       // devices...

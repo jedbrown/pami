@@ -15,7 +15,7 @@
 #define __components_devices_MulticastModel_h__
 
 #include <sys/uio.h>
-#include "sys/pami.h"
+#include <pami.h>
 #include "util/common.h"
 
 namespace PAMI

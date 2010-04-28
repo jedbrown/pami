@@ -17,7 +17,7 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 
 #define MSGCOUNT 1
 //#define MSGCOUNT 16

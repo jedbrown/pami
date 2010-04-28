@@ -17,7 +17,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "../util.h"
 
 

@@ -14,7 +14,7 @@
 #ifndef __common_CollAdvisor_h__
 #define __common_CollAdvisor_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "util/compact_attributes.h"
 
 #define PAMI_MAX_PROTOCOLS                                                    20

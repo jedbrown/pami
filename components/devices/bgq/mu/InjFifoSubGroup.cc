@@ -16,7 +16,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "components/devices/bgq/mu/InjFifoSubGroup.h"
-#include "components/devices/bgq/mu/MUInjFifoMessage.h"
+#include "components/devices/bgq/mu/msg/InjFifoMessage.h"
 
 #include <spi/include/kernel/MU.h>
 #include <spi/include/kernel/memory.h>
@@ -279,7 +279,7 @@ advanceInternal ()
   //
   // Process all bits that are set in _waitToSendMask...
   //
-  MUInjFifoMessage * msg = NULL;
+  InjFifoMessage * msg = NULL;
   unsigned long long waitToSendMaskCopy = _waitToSendMask;
 
   for ( fnum = 0; waitToSendMaskCopy != 0; fnum++ )
@@ -292,7 +292,7 @@ advanceInternal ()
 
           while (1)
             {
-              msg = (MUInjFifoMessage *) _waitToSendQ[fnum].peekHead(); // Get first message
+              msg = (InjFifoMessage *) _waitToSendQ[fnum].peekHead(); // Get first message
 
               if (msg == NULL) // No more messages waiting to send on this fifo?
                 {

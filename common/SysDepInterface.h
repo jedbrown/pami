@@ -13,7 +13,7 @@
 #ifndef __common_SysDepInterface_h__
 #define __common_SysDepInterface_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "util/common.h"
 
 #include "components/memory/MemoryManager.h"

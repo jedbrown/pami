@@ -23,7 +23,7 @@
 #include "components/devices/PacketInterface.h"
 
 #include "components/devices/bgq/mu/MUDevice.h"
-#include "components/devices/bgq/mu/MUInjFifoMessage.h"
+#include "components/devices/bgq/mu/msg/ShortInjFifoMessage.h"
 #include "components/devices/bgq/mu/Dispatch.h"
 #include "components/devices/bgq/mu/MUDescriptorWrapper.h"
 
@@ -41,16 +41,14 @@ namespace PAMI
   {
     namespace MU
     {
-      class MUPacketModel : public Interface::PacketModel<MUPacketModel, MUDevice, sizeof(MUInjFifoMessage)>
+      class MUPacketModel : public Interface::PacketModel<MUPacketModel, MUDevice, sizeof(ShortInjFifoMessage)>
       {
         public:
 
           /// \see PAMI::Device::Interface::PacketModel::PacketModel
-          /// \see PAMI::Device::Interface::MessageModel::MessageModel
           MUPacketModel (MUDevice & device);
 
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
-          /// \see PAMI::Device::Interface::MessageModel::~MessageModel
           ~MUPacketModel ();
 
           static const bool   deterministic_packet_model         = true;
@@ -58,7 +56,7 @@ namespace PAMI
           static const size_t packet_model_metadata_bytes        = MUDevice::packet_metadata_size;
           static const size_t packet_model_multi_metadata_bytes  = MUDevice::packet_metadata_size;
           static const size_t packet_model_payload_bytes         = MUDevice::payload_size;
-          static const size_t packet_model_state_bytes           = sizeof(MUInjFifoMessage);
+          static const size_t packet_model_state_bytes           = sizeof(ShortInjFifoMessage);
 
           /// \see PAMI::Device::Interface::PacketModel::init
           pami_result_t init_impl (size_t                      dispatch,
@@ -295,16 +293,19 @@ namespace PAMI
           {
             TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. after nextInjectionDescriptor(), no space in fifo\n", T_Niov));
             // Construct a message and post to the device to be processed later.
-            MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
-            new (obj) MUInjFifoMessage (fn, cookie, _context);
+            ShortInjFifoMessage * obj = (ShortInjFifoMessage *) state;
+            new (obj) ShortInjFifoMessage (fn, cookie, _context);
             TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. before setSourceBuffer\n", T_Niov));
-            obj->setSourceBuffer (iov);
+            //obj->setSourceBuffer (iov);
 
             // Initialize the descriptor directly in the injection fifo.
             TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. before getDescriptor\n", T_Niov));
             MUSPI_DescriptorBase * desc = obj->getDescriptor ();
+            obj->copyPayload (iov, T_Niov);
+            Kernel_MemoryRegion_t kmr;
+            Kernel_CreateMemoryRegion (&kmr, obj->getPayload (), tbytes);
             TRACE((stderr, "MUPacketModel::postPacket_impl(%d) .. before initializeDescriptor\n", T_Niov));
-            initializeDescriptor (desc, target_task, target_offset, 0, 0);
+            initializeDescriptor (desc, target_task, target_offset, (uint64_t) kmr.BasePa, tbytes);
 
             // Copy the metadata into the network header in the descriptor.
             if (metasize > 0)
@@ -411,16 +412,19 @@ namespace PAMI
           {
             TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. after nextInjectionDescriptor(), no space in fifo\n"));
             // Construct a message and post to the device to be processed later.
-            MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
-            new (obj) MUInjFifoMessage (fn, cookie, _context);
+            ShortInjFifoMessage * obj = (ShortInjFifoMessage *) state;
+            new (obj) ShortInjFifoMessage (fn, cookie, _context);
             TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. before setSourceBuffer\n"));
-            obj->setSourceBuffer (payload, length);
+            //obj->setSourceBuffer (payload, length);
 
             // Initialize the descriptor directly in the injection fifo.
             TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. before getDescriptor\n"));
             MUSPI_DescriptorBase * desc = obj->getDescriptor ();
+            obj->copyPayload (payload, length);
+            Kernel_MemoryRegion_t kmr;
+            Kernel_CreateMemoryRegion (&kmr, obj->getPayload (), length);
             TRACE((stderr, "MUPacketModel::postPacket_impl(single) .. before initializeDescriptor\n"));
-            initializeDescriptor (desc, target_task, target_offset, 0, 0);
+            initializeDescriptor (desc, target_task, target_offset, (uint64_t) kmr.BasePa, length);
 
             // Copy the metadata into the network header in the descriptor.
             if (metasize > 0)
@@ -603,13 +607,13 @@ namespace PAMI
                 else
 #endif
                   {
-                    MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
+                    InjFifoMessage * obj = (InjFifoMessage *) state;
                     TRACE((stderr, "MUPacketModel::postMultiPacket_impl() .. descriptor is not done, create message (%p) and add to send queue\n", obj));
                     // The descriptor is not done (or was not checked). Save state
                     // information so that the progress of the decriptor can be checked
                     // later and the callback will be invoked when the descriptor is
                     // complete.
-                    new (obj) MUInjFifoMessage (fn, cookie, _context, sequenceNum);
+                    new (obj) InjFifoMessage (fn, cookie, _context, sequenceNum);
 
                     // Queue it.
                     _device.addToDoneQ (target_task, obj->getWrapper());
@@ -619,9 +623,9 @@ namespace PAMI
         else
           {
             // Construct a message and post to the device to be processed later.
-            MUInjFifoMessage * obj = (MUInjFifoMessage *) state;
-            new (obj) MUInjFifoMessage (fn, cookie, _context);
-            obj->setSourceBuffer (payload, length);
+            InjFifoMessage * obj = (InjFifoMessage *) state;
+            new (obj) InjFifoMessage (fn, cookie, _context);
+            //obj->setSourceBuffer (payload, length);
 
             // Initialize the descriptor directly in the injection fifo.
             MUSPI_DescriptorBase * desc = obj->getDescriptor ();

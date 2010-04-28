@@ -11,7 +11,7 @@
  * \brief ???
  */
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "util/compact_attributes.h"
 #include <stdarg.h>
 

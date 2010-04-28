@@ -15,7 +15,7 @@
 #ifndef __test_internals_topology_topology_test_h__
 #define __test_internals_topology_topology_test_h__
 
-#include "sys/pami.h"
+#include <pami.h>
 #include "Topology.h"
 #include "Global.h"
 

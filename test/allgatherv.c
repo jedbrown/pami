@@ -2,7 +2,7 @@
 /// \file test/allgatherv.c
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <stdio.h>

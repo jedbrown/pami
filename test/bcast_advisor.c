@@ -4,7 +4,7 @@
 ///
 
 #include "util/compact_attributes.h"
-#include "sys/pami.h"
+#include <pami.h>
 #include "common/CollAdvisor.h"
 #include <sys/time.h>
 #include <unistd.h>
