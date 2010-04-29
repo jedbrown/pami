@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <sys/uio.h>
 
-#include "pami_config.h"
+#include "pami_sys.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -775,7 +775,7 @@ extern "C"
    * \see PAMI_Memregion_create
    * \see PAMI_Memregion_destroy
    */
-  typedef size_t pami_memregion_t[8];
+  typedef uint8_t pami_memregion_t[PAMI_MEMREGION_SIZE_STATIC];
 
   /**
    * \brief Create a local memory region for one sided operations
@@ -2305,6 +2305,7 @@ extern "C"
     PAMI_WTIMEBASE_MHZ,      /**< Q : size_t : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from PAMI_Wtimebase to PAMI_Timer manually. */
     PAMI_WTICK,              /**< Q : double : This has the same definition as MPI_Wtick(). */
     PAMI_MEM_SIZE,           /**< Q : size_t : Size of the core main memory, in units of 1024^2 Bytes    */
+    PAMI_MEMREGION_SIZE,     /**< Q : size_t : Size of the pami_memregion_t handle in this implementation, in units of Bytes. */
     PAMI_SEND_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be transfered with the PAMI_Send_immediate() function. */
     PAMI_RECV_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be received, and provided to the application, in a dispatch function. */
     PAMI_PROCESSOR_NAME,     /**< Q : char[] : A unique name string for the calling process, and should be suitable for use by

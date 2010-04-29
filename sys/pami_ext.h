@@ -12,6 +12,15 @@
 #define PAMI_EXT_ATTR 1000 /**< starting value for extended attributes */
 #endif
 
+typedef struct pami_quad_t
+{
+    unsigned w0; /**< Word[0] */
+    unsigned w1; /**< Word[1] */
+    unsigned w2; /**< Word[2] */
+    unsigned w3; /**< Word[3] */
+}
+pami_quad_t __attribute__ ((__aligned__ (16)));
+
 typedef struct {
   int x; /**< X value */
   int y; /**< Y value */
