@@ -16,7 +16,7 @@
 #include "SysDep.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x) //fprintf x
 #endif
 
 namespace PAMI
@@ -161,7 +161,7 @@ namespace PAMI
         if (_dispatch[uepkt->id].function != unexpected)
         {
           // Invoke the registered dispatch function
-          TRACE_ERR((stderr, "   (%zu) ShmemDevice::registerRecvFunction() uepkt = %p, uepkt->id = %d\n", __global.mapping.task(), uepkt, uepkt->id));
+          TRACE_ERR((stderr, "   (%zu) ShmemDevice::registerRecvFunction() uepkt = %p, uepkt->id = %u\n", __global.mapping.task(), uepkt, uepkt->id));
           _dispatch[uepkt->id].function (uepkt->meta,
                                          uepkt->data,
                                          uepkt->bytes,
@@ -272,7 +272,7 @@ namespace PAMI
         (UnexpectedPacket *) malloc (sizeof(UnexpectedPacket));
       new ((void *)uepkt) UnexpectedPacket (pkt);
 
-      TRACE_ERR((stderr, "   (%zu) ShmemDevice::unexpected(), uepkt = %p, uepkt->id = %d\n", __global.mapping.task(), uepkt, uepkt->id));
+      TRACE_ERR((stderr, "   (%zu) ShmemDevice::unexpected(), uepkt = %p, uepkt->id = %u\n", __global.mapping.task(), uepkt, uepkt->id));
 
       CircularQueue * q = (CircularQueue *) recv_func_parm;
       q->enqueue ((CircularQueue::Element *) uepkt);

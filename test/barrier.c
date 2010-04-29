@@ -23,7 +23,7 @@
 #define TEST_assert(expr)                assert(expr)
 #define TEST_assertf(expr, fmt...)       { if (!(expr)) TEST_abortf(fmt); }
 
-volatile unsigned       _g_barrier_active;
+volatile unsigned       _g_barrier_active=0;
 
 void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
 {
@@ -41,7 +41,7 @@ static double timer()
 
 void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
-  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
+  TRACE((stderr, "%s:%d active:%d\n", __PRETTY_FUNCTION__, __LINE__,*(int*)clientdata));
   _g_barrier_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)barrier);
@@ -174,9 +174,14 @@ int main (int argc, char ** argv)
               tf=timer();
               usec = tf - ti;
 
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+              if(usec < 1800000.0 || usec > 2200000.0)
+                fprintf(stderr, "Barrier error: usec not between 1800000.0 and 2200000.0!\n");
+#else
               if(usec < 1800000.0 || usec > 2200000.0)
                 fprintf(stderr, "Barrier error: usec=%f want between %f and %f!\n",
                         usec, 1800000.0, 2200000.0);
+#endif
               else
                 fprintf(stderr, "Barrier correct!\n");
             }
@@ -200,8 +205,13 @@ int main (int argc, char ** argv)
         tf=timer();
         usec = tf - ti;
 
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+        if(!task_id)
+          fprintf(stderr,"barrier done\n");
+#else
         if(!task_id)
           fprintf(stderr,"barrier: time=%f usec\n", usec/(double)niter);
+#endif
       }
 
   result = PAMI_Context_destroy (context);

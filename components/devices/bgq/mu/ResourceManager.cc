@@ -387,14 +387,14 @@ init ( ResourceType_t  type,
   //
   //////////////////////////////////////////////////////////////////////////////
 
-  TRACE(("ResourceManager:  Initializing Barrier, pSize=%zu, master=%d\n",__global.personality.pSize(),master));
+  TRACE((stderr,"ResourceManager:  Initializing Barrier, pSize=%zu, master=%d\n",__global.personality.pSize(),master));
   PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> barrier;
   barrier.init(&__global.mm,
 	       __global.personality.pSize(),
 	       master );
-  TRACE(("ResourceManager: Entering Barrier\n"));
+  TRACE((stderr,"ResourceManager: Entering Barrier\n"));
   barrier.enter();
-  TRACE(("ResourceManager: Exiting Barrier\n"));
+  TRACE((stderr,"ResourceManager: Exiting Barrier\n"));
 
 
   return rc;

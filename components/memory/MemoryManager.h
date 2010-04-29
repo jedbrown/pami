@@ -114,6 +114,7 @@ namespace PAMI
             _offset += bytes;
             return PAMI_SUCCESS;
           }
+          *memptr = NULL;
           TRACE_ERR((stderr, "%s PAMI_ERROR !((%zu + %zu + %zu) <= %zu)\n",__PRETTY_FUNCTION__,_offset,pad,bytes,_size));
           return PAMI_ERROR;
         };

@@ -41,7 +41,7 @@ public:
                                                                         1, scope);
                 PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate L2 Atomic Counter");
                 // MUST NOT DO THIS! other procs might be already using it.
-                // TODO: find a way to ensure memory is zeroed once and only once.
+                /// \todo #warning: find a way to ensure memory is zeroed once and only once.
                 //fetch_and_clear_impl();
         }
 

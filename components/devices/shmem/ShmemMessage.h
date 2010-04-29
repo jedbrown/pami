@@ -23,7 +23,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x) //fprintf x
 #endif
 
 namespace PAMI
