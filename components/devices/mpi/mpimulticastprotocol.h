@@ -22,6 +22,8 @@
 #include "components/devices/MulticastModel.h"
 //#include <list>
 //#include "components/devices/mpi/mpicollectiveheader.h"
+#include "components/devices/mpi/mpidevice.h"
+extern PAMI::Device::MPIDevice _g_mpi_device;
 
 #undef TRACE_DEVICE
 #ifndef TRACE_DEVICE
@@ -137,7 +139,7 @@ namespace PAMI
             pami_dispatch_callback_fn fn;
             fn.p2p = dispatch_p2p;
             new (&_p2p_protocol) T_P2P_PROTOCOL(_dispatch_id, fn, (void*)this,
-                                                __global.mpi_device,
+                                                _g_mpi_device,
                                                 status);
             PAMI_assertf(status == PAMI_SUCCESS,"<%p>P2PMcastProto::register status=%d\n",this,status);
             return status;

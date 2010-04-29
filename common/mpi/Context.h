@@ -57,6 +57,8 @@
 #include "components/devices/mpi/mpimulticombinemodel.h"
 #include "components/devices/mpi/mpimanytomanymodel.h"
 
+extern PAMI::Device::MPIDevice _g_mpi_device;
+
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
@@ -270,8 +272,7 @@ namespace PAMI
         _mm (addr, bytes),
         _sysdep(_mm),
         _lock (),
-#warning This needs to be done elsewhere - not per-context if in __global!
-        _mpi(&__global.mpi_device),
+        _mpi(&_g_mpi_device),
         _world_geometry(world_geometry),
         _minterface(*_mpi, client, this, _contextid, clientid),
         _empty_advance(0),

@@ -18,6 +18,7 @@
 #include "components/devices/PacketInterface.h"
 #include "components/devices/mpi/mpimessage.h"
 #include "components/devices/generic/Device.h"
+#include "components/devices/FactoryInterface.h"
 #include <map>
 #include <list>
 #include "util/ccmi_debug.h"

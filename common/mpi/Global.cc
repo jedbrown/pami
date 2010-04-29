@@ -22,3 +22,6 @@ pami_coord_t PAMI::Topology::my_coords;
 
 #include "components/devices/misc/ProgressFunctionMsg.h"
 PAMI::Device::ProgressFunctionDev _g_progfunc_dev;
+
+#include "components/devices/mpi/mpidevice.h"
+PAMI::Device::MPIDevice _g_mpi_device;

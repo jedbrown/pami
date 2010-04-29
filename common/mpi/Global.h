@@ -24,7 +24,6 @@
 #include "Topology.h"
 #include "Wtime.h"
 #include <mpi.h>
-#include "components/devices/mpi/mpidevice.h"
 namespace PAMI
 {
     static void shutdownfunc()
@@ -88,7 +87,6 @@ namespace PAMI
       public:
         MPI        		    mpi; // First data member to initialize MPI first.
         PAMI::Mapping		mapping;
-    PAMI::Device::MPIDevice mpi_device;
 
   };   // class Global
 };     // namespace PAMI
