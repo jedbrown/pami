@@ -182,6 +182,7 @@
 
 #include "SysDep.h"
 #include "WakeupManager.h"
+#include "Global.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/generic/Message.h"
@@ -263,8 +264,10 @@ public:
         /// \param[in] num_ctx		Number of contexts for client
         ///
         inline Device(size_t client, size_t contextId, size_t num_ctx) :
+#if 0
         __GenericQueue(),
         __Threads(),
+#endif
 #ifndef QUEUE_NO_ITER
         __ThrIter(),
 #endif // !QUEUE_NO_ITER
@@ -283,11 +286,19 @@ public:
                 __context = ctx;
 		__mm = mm;
 		__allGds = devices;
-                __Threads.init(mm);
+
+#ifdef __pami_target_bgq__
+		__queues = (GenericDeviceQueues *)__global._wuRegion[client]->reserveWUSpace(context, sizeof(*__queues));
+#else // ! __pami_target_bgq__
+		__queues = NULL;
+		posix_memalign((void **)&__queues, 16, sizeof(*__queues));
+#endif // ! __pami_target_bgq__
+		PAMI_assertf(__queues, "Out of memory allocating generic device queues");
+                __queues->__Threads.init(mm);
+                __queues->__GenericQueue.init(mm);
 #ifndef QUEUE_NO_ITER
-		__Threads.iter_init(&__ThrIter);
+		__queues->__Threads.iter_init(&__ThrIter);
 #endif // !QUEUE_NO_ITER
-                __GenericQueue.init(mm);
                 return PAMI_SUCCESS;
         }
 
@@ -312,13 +323,13 @@ public:
                 //if (!__Threads.mutex()->tryAcquire()) continue;
 #ifndef QUEUE_NO_ITER
                 GenericThread *thr;
-		__Threads.iter_begin(&__ThrIter);
-		for (; __Threads.iter_check(&__ThrIter); __Threads.iter_end(&__ThrIter)) {
-			thr = (GenericThread *)__Threads.iter_current(&__ThrIter);
+		__queues->__Threads.iter_begin(&__ThrIter);
+		for (; __queues->__Threads.iter_check(&__ThrIter); __queues->__Threads.iter_end(&__ThrIter)) {
+			thr = (GenericThread *)__queues->__Threads.iter_current(&__ThrIter);
 #else // QUEUE_NO_ITER
 		GenericThread *thr, *nxtthr;
-		for (thr = (GenericThread *)__Threads.peekHead(); thr; thr = nxtthr) {
-			nxtthr = (GenericThread *)__Threads.nextElem(thr);
+		for (thr = (GenericThread *)__queues->__Threads.peekHead(); thr; thr = nxtthr) {
+			nxtthr = (GenericThread *)__queues->__Threads.nextElem(thr);
 #endif // QUEUE_NO_ITER
                         if (thr->getStatus() == PAMI::Device::Ready) {
                                 ++events;
@@ -326,9 +337,9 @@ public:
                                 if (rc != PAMI_EAGAIN) {
                                         // thr->setStatus(PAMI::Device::Complete);
 #ifndef QUEUE_NO_ITER
-                                        __Threads.iter_remove(&__ThrIter);
+                                        __queues->__Threads.iter_remove(&__ThrIter);
 #else // QUEUE_NO_ITER
-					__Threads.deleteElem(thr);
+					__queues->__Threads.deleteElem(thr);
 #endif // QUEUE_NO_ITER
                                         continue;
                                 }
@@ -336,9 +347,9 @@ public:
                                 ++events;
                                 // thread is like completion callback, dequeue first.
 #ifndef QUEUE_NO_ITER
-                                __Threads.iter_remove(&__ThrIter);
+                                __queues->__Threads.iter_remove(&__ThrIter);
 #else // QUEUE_NO_ITER
-				__Threads.deleteElem(thr);
+				__queues->__Threads.deleteElem(thr);
 #endif // QUEUE_NO_ITER
                                 thr->executeThread(__context);
                                 continue;
@@ -346,24 +357,24 @@ public:
                         // This allows a thread to be "completed" by something else...
                         if (thr->getStatus() == PAMI::Device::Complete) {
 #ifndef QUEUE_NO_ITER
-                                __Threads.iter_remove(&__ThrIter);
+                                __queues->__Threads.iter_remove(&__ThrIter);
 #else // QUEUE_NO_ITER
-				__Threads.deleteElem(thr);
+				__queues->__Threads.deleteElem(thr);
 #endif // QUEUE_NO_ITER
                                 continue;
                         }
                 }
-                //__Threads.mutex()->release();
+                //__queues->__Threads.mutex()->release();
 
                 //+ core_mutex.release();
 
                 // Now check everything on the completion queue...
                 GenericMessage *msg, *nxtmsg, *nxt;
-                for (msg = (GenericMessage *)__GenericQueue.peekHead(); msg; msg = nxtmsg) {
-                        nxtmsg = (GenericMessage *)__GenericQueue.nextElem(msg);
+                for (msg = (GenericMessage *)__queues->__GenericQueue.peekHead(); msg; msg = nxtmsg) {
+                        nxtmsg = (GenericMessage *)__queues->__GenericQueue.nextElem(msg);
                         if (msg->getStatus() == Done) {
                                 ++events;
-                                __GenericQueue.deleteElem(msg);
+                                __queues->__GenericQueue.deleteElem(msg);
                                 GenericDeviceMessageQueue *qs = msg->getQS();
                                 qs->dequeue(); // assert return == msg
                                 nxt = (PAMI::Device::Generic::GenericMessage *)qs->peek();
@@ -389,7 +400,7 @@ public:
         /// \param[in] thr	Thread object to post for advance work
         ///
         inline void postThread(GenericThread *thr) {
-                __Threads.enqueue((GenericDeviceWorkQueue::Element *)thr);
+                __queues->__Threads.enqueue((GenericDeviceWorkQueue::Element *)thr);
         }
 
         /// \brief Post a message to the generic-device queuing system
@@ -397,7 +408,7 @@ public:
         /// \param[in] msg	Message to be queued/completed.
         ///
         inline void postMsg(GenericMessage *msg) {
-                __GenericQueue.enqueue((GenericDeviceCompletionQueue::Element *)msg);
+                __queues->__GenericQueue.enqueue((GenericDeviceCompletionQueue::Element *)msg);
         }
 
         /// \brief accessor for the context-id associated with generic device slice
@@ -418,15 +429,19 @@ public:
         inline PAMI::Device::Generic::Device *getAllDevs() { return __allGds; }
 
 private:
-        /// \brief Storage for the queue for message completion
-        ///
-        /// Queue[1] is used by the Generic::Device to enqueue messages for completion.
-        /// By convention, queue[0] is used for attaching messages to a sub-device.
-        ///
-        GenericDeviceCompletionQueue __GenericQueue;
+	struct GenericDeviceQueues {
+        	/// \brief Storage for the queue for message completion
+        	///
+        	/// Queue[1] is used by the Generic::Device to enqueue messages for completion.
+        	/// By convention, queue[0] is used for attaching messages to a sub-device.
+        	///
+        	GenericDeviceCompletionQueue __GenericQueue;
 
-        /// \brief Storage for the queue of threads (a.k.a. work units)
-        GenericDeviceWorkQueue __Threads;
+        	/// \brief Storage for the queue of threads (a.k.a. work units)
+        	GenericDeviceWorkQueue __Threads;
+	};
+
+	GenericDeviceQueues *__queues;
 #ifndef QUEUE_NO_ITER
         GenericDeviceWorkQueue::Iterator __ThrIter;
 #endif // !QUEUE_NO_ITER

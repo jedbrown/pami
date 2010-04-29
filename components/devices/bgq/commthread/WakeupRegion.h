@@ -109,7 +109,7 @@ public:
                 if (_bytesUsed + l > _wu_region_len) {
                         return NULL;
                 }
-                v = ((char *)&_wakeup_region + _bytesUsed);
+                v = ((char *)_wakeup_region + _bytesUsed);
                 _bytesUsed += l;
 #endif
                 return v;
@@ -120,17 +120,19 @@ public:
         /// \param[in] ctx	(not used if WU_MULTICONTEXT)
         /// \param[out] base	Physical base address of memory block
         /// \param[out] mask	Address bit mask of memory block
-        /// \return	Pointer to WAC space.
         ///
         inline void getWURange(uint64_t ctx, uint64_t *base, uint64_t *mask) {
 #if WU_MULTICONTEXT
                 // assert(ctx0 is power-of-two and mctx is power-of-two);
                 // these are virtual addresses - WAC needs physical...
-                *base = _wu_memreg.BasePa + (ctx0 * sizeof(*_wakeup_region));
+                *base = _wu_memreg.BasePa +
+			((char *)_wakeup_region - (char *)_wu_memreg.BaseVa) +
+			(ctx0 * sizeof(*_wakeup_region));
                 *mask = ~(mctx * sizeof(*_wakeup_region) - 1); // assumes power of two
                 // assert((*base & ~*mask) == 0);
 #else
-                *base = (uint64_t)_wu_memreg.BasePa;
+                *base = (uint64_t)_wu_memreg.BasePa +
+			((char *)_wakeup_region - (char *)_wu_memreg.BaseVa);
                 *mask = ~(_wu_region_len - 1);
 #endif
         }

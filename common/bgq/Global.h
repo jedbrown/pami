@@ -33,6 +33,12 @@
 #include "Mapping.h"
 #include "Topology.h"
 #include "common/bgq/L2AtomicFactory.h"
+#include "components/devices/bgq/commthread/WakeupRegion.h"
+
+#ifndef PAMI_MAX_NUM_CLIENTS
+/** \todo PAMI_MAX_NUM_CLIENTS needs to be setup by pami.h */
+#define PAMI_MAX_NUM_CLIENTS    4
+#endif // !PAMI_MAX_NUM_CLIENTS
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -234,6 +240,7 @@ namespace PAMI
       PAMI::Mapping         mapping;
       PAMI::Atomic::BGQ::L2AtomicFactory l2atomicFactory;
       PAMI::Memory::MemoryManager mm;
+      PAMI::Device::CommThread::BgqWakeupRegion *_wuRegion[PAMI_MAX_NUM_CLIENTS];
 
     private:
 

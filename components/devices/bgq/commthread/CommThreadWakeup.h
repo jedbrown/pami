@@ -20,6 +20,7 @@
 #include <pthread.h>
 
 #include "hwi/include/bqc/A2_inlines.h"
+#include "spi/include/kernel/thread.h"
 
 #undef HAVE_WU_ARMWITHADDRESS
 
@@ -41,11 +42,6 @@
 }
 
 #endif // !HAVE_WU_ARMWITHADDRESS
-
-/// \todo #warning need CNK definition for Kernel_SnoopScheduler
-#define SNOOP_ALONE	(1)
-#define SNOOP_NOTALONE	(2)
-#define Kernel_SnoopScheduler()		(SNOOP_ALONE)
 
 #ifndef SCHED_COMM
 #define SCHED_COMM SCHED_RR
@@ -157,6 +153,7 @@ public:
                 posix_memalign((void **)&wu, 16, sizeof(*wu)); // one per client
                 new (wu) BgqWakeupRegion();
                 wu->init(clientid, num_ctx, mm);
+		__global._wuRegion[clientid] = wu;
 
                 for (x = 0; x < num_ctx; ++x) {
                         // one per context, but not otherwise tied to a context.
@@ -168,7 +165,7 @@ public:
         static void *commThread(void *cookie) {
                 BgqCommThread *thus = (BgqCommThread *)cookie;
                 pami_result_t r = thus->__commThread();
-                r = r; // avoid worning until we decide how to use result
+                r = r; // avoid warning until we decide how to use result
                 return NULL;
         }
 
@@ -278,9 +275,9 @@ more_work:		// lightweight enough.
                         // running in some syncopated "tag team" mode.
                         // TBD
 //re_evaluate:
-                        n = Kernel_SnoopScheduler();
+                        n = Kernel_SnoopNumThreads();
 
-                        if (n == 1) {
+                        if (n <= 1) {
                                 // we are alone
                                 if (events == 0) {
                                         // The wait can only detect new work.
