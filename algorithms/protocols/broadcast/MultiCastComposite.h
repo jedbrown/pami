@@ -100,8 +100,8 @@ namespace CCMI
       };
 
       /// \brief An all-sided multicast composite built on an active message
-      /// multicast.  
-      /// 
+      /// multicast.
+      ///
       /// It multisyncs before doing the active message multicast.
       /// When the multisync is complete, the root will multicast and the
       /// non-roots will have buffers ready to receive the data.
@@ -232,24 +232,24 @@ namespace CCMI
           composite->startMcast();
         }
 
-        static void dispatch_multicast_fn(const pami_quad_t     * msginfo,       // \param[in] msginfo    Metadata                                            
-                                          unsigned                msgcount,      // \param[in] msgcount Count of metadata                                     
-                                          unsigned                connection_id, // \param[in] connection_id  Stream ID of data                               
-                                          size_t                  root,          // \param[in] root        Sending task                                       
-                                          size_t                  sndlen,        // \param[in] sndlen      Length of data sent                                
-                                          void                  * clientdata,    // \param[in] clientdata  Opaque arg                                         
-                                          size_t                * rcvlen,        // \param[out] rcvlen     Length of data to receive                          
-                                          pami_pipeworkqueue_t ** rcvpwq,        // \param[out] rcvpwq     Where to put recv data                             
-                                          pami_callback_t       * cb_done)       // \param[out] cb_done    Completion callback to invoke when data received   
+        static void dispatch_multicast_fn(const pami_quad_t     * msginfo,       // \param[in] msginfo    Metadata
+                                          unsigned                msgcount,      // \param[in] msgcount Count of metadata
+                                          unsigned                connection_id, // \param[in] connection_id  Stream ID of data
+                                          size_t                  root,          // \param[in] root        Sending task
+                                          size_t                  sndlen,        // \param[in] sndlen      Length of data sent
+                                          void                  * clientdata,    // \param[in] clientdata  Opaque arg
+                                          size_t                * rcvlen,        // \param[out] rcvlen     Length of data to receive
+                                          pami_pipeworkqueue_t ** rcvpwq,        // \param[out] rcvpwq     Where to put recv data
+                                          pami_callback_t       * cb_done)       // \param[out] cb_done    Completion callback to invoke when data received
         {
           TRACE_ADAPTOR((stderr,"<%p>%s\n", clientdata,__PRETTY_FUNCTION__));
           MultiCastComposite2 * composite = (MultiCastComposite2 *)clientdata;
           composite->dispatch_multicast(rcvlen,  rcvpwq,  cb_done);
         }
 
-        void dispatch_multicast(size_t                * rcvlen,        // Length of data to receive                          
-                                pami_pipeworkqueue_t ** rcvpwq,        // Where to put recv data                             
-                                pami_callback_t       * cb_done)       // Completion callback to invoke when data received   
+        void dispatch_multicast(size_t                * rcvlen,        // Length of data to receive
+                                pami_pipeworkqueue_t ** rcvpwq,        // Where to put recv data
+                                pami_callback_t       * cb_done)       // Completion callback to invoke when data received
         {
           TRACE_ADAPTOR((stderr,"<%p>%s\n", this,__PRETTY_FUNCTION__));
           *rcvlen  = _bytes;
@@ -290,7 +290,7 @@ namespace CCMI
                              pami_event_function                    fn,
                              void                                 * cookie) :
         Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g),
-        _xfer_broadcast(cmd->cmd.xfer_broadcast), 
+        _xfer_broadcast(cmd->cmd.xfer_broadcast),
         _bytes(cmd->cmd.xfer_broadcast.typecount * 1), /// \todo presumed size of PAMI_BYTE?
         _buffer_size(0),
         _buffer(NULL)
@@ -364,7 +364,7 @@ namespace CCMI
           _native->multicombine(&_minfo);
         }
 
-        virtual unsigned restart (void *pcmd) 
+        virtual unsigned restart (void *pcmd)
         {
           pami_xfer_t *cmd = (pami_xfer_t *)pcmd;
 

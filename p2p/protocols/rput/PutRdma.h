@@ -146,7 +146,7 @@ namespace PAMI
                 TRACE_ERR((stderr, "   PutRdma::simple(), 'immediate' rput transfer was successful, invoke callback.\n"));
                 if (parameters->rma.done_fn)
                   parameters->rma.done_fn (_context, parameters->rma.cookie, PAMI_SUCCESS);
-                  
+
                 if (parameters->put.rdone_fn)
                 {
                   TRACE_ERR((stderr, "   PutRdma::simple(), attempt an 'immediate' rput zero-byte transfer.\n"));

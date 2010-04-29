@@ -212,7 +212,7 @@ namespace PAMI
                                        size_t                remote_offset)
           {
             TRACE_ERR((stderr, ">> postDmaPut_impl():%d\n", __LINE__));
-            
+
             if (! postDmaPut_impl (target_task, target_offset, bytes,
                                    local_memregion, local_offset,
                                    remote_memregion, remote_offset))

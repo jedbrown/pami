@@ -1,3 +1,7 @@
+/**
+ * \file test/BG/bgq/local/localbcast.cc
+ * \brief ???
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,17 +12,17 @@
 
 #include "local_coll.h"
 
-#if TEST_TYPE == PUSH 
+#if TEST_TYPE == PUSH
 #define FUNC    push_bcast
 #define STRUCT  push
-#define NAME    "push"  
-#endif // TEST_TYPE == PUSH 
+#define NAME    "push"
+#endif // TEST_TYPE == PUSH
 
-#if TEST_TYPE == PULL 
+#if TEST_TYPE == PULL
 #define FUNC    pull_bcast
 #define STRUCT  pull
-#define NAME    "pull"  
-#endif // TEST_TYPE == PULL 
+#define NAME    "pull"
+#endif // TEST_TYPE == PULL
 
 #if TEST_TYPE == PUSHPULL
 #define FUNC    pushpull_bcast

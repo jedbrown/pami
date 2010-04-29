@@ -34,14 +34,14 @@ namespace PAMI
       class Work : public PAMI::Device::Generic::GenericThread
       {
         public:
-        
+
           inline Work (pami_work_function   work_func,
                        void               * work_cookie) :
             PAMI::Device::Generic::GenericThread (work_func, work_cookie)
           {
           }
       };  // PAMI::Device::Shmem::Work class
-      
+
       template <class T_Device>
       class RecPacketWork : public Work
       {
@@ -89,9 +89,9 @@ namespace PAMI
             return PAMI_EAGAIN;
           };
 
-        
+
         public:
-        
+
           inline RecPacketWork (T_Device            * device,
                                 size_t                sequence,
                                 size_t                fnum,
@@ -105,7 +105,7 @@ namespace PAMI
             _done_cookie (cookie)
           {
           }
-        
+
           inline RecPacketWork (T_Device                * device,
                                 size_t                    sequence,
                                 size_t                    fnum,
@@ -117,14 +117,14 @@ namespace PAMI
             _msg (msg)
           {
           }
-          
+
           inline void setSequenceId (size_t sequence)
           {
             _sequence = sequence;
           }
-          
+
         protected:
-        
+
           T_Device                * _device;
           size_t                    _sequence;
           size_t                    _fnum;

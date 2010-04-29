@@ -44,9 +44,9 @@ namespace PAMI
               InjFifoMessage (function, cookie, context, sequenceNum)
           {
           }
-          
+
           inline ~ShortInjFifoMessage () {};
-          
+
           inline void * getPayload ()
           {
             return (void *) _payload;

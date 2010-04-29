@@ -283,13 +283,13 @@ void initialize_sndbuf (void *buf, int count, int op, int dt) {
   if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
     uint *ibuf = (uint *)  buf;
     for (i = 0; i < count; i++) {
-      ibuf[i] = i;      
+      ibuf[i] = i;
     }
   }
 }
 
 int check_rcvbuf (void *buf, int count, int op, int dt, int nranks) {
-  
+
   int i;
   if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
     uint *rbuf = (uint *)  buf;
@@ -299,7 +299,7 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int nranks) {
     }
     TRACE((stderr,"Check Passes for count %d, op %d, dt %d\n", count, op, dt));
   }
-  
+
   return 0;
 }
 #endif
@@ -341,14 +341,14 @@ int main(int argc, char*argv[])
   size_t task_id = configuration.value.intval;
 
 #ifdef CHECK_DATA
-  configuration.name = PAMI_NUM_TASKS; 
-  result = PAMI_Configuration_query(client, &configuration); 
-  if (result != PAMI_SUCCESS) 
-  { 
-    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result); 
-    return 1; 
-  } 
-  size_t nranks  = configuration.value.intval; 
+  configuration.name = PAMI_NUM_TASKS;
+  result = PAMI_Configuration_query(client, &configuration);
+  if (result != PAMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+    return 1;
+  }
+  size_t nranks  = configuration.value.intval;
 #endif
 
   int    rank    = task_id;
@@ -481,21 +481,21 @@ int main(int argc, char*argv[])
 
 #if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
   /// \todo These fail using core math on bgq.
-  validTable[OP_LAND][DT_FLOAT]=0; 
-  validTable[OP_LOR][DT_FLOAT]=0; 
+  validTable[OP_LAND][DT_FLOAT]=0;
+  validTable[OP_LOR][DT_FLOAT]=0;
   validTable[OP_LXOR][DT_FLOAT]=0;
   validTable[OP_BAND][DT_FLOAT]=0;
   validTable[OP_BOR][DT_FLOAT]=0;
   validTable[OP_BXOR][DT_FLOAT]=0;
-  validTable[OP_LAND][DT_DOUBLE]=0; 
-  validTable[OP_LOR][DT_DOUBLE]=0; 
-  validTable[OP_LXOR][DT_DOUBLE]=0; 
-  validTable[OP_BOR][DT_DOUBLE]=0; 
-  validTable[OP_BXOR][DT_DOUBLE]=0; 
-  validTable[OP_MAXLOC][DT_LOC_SHORT_INT]=0; 
-  validTable[OP_MINLOC][DT_LOC_SHORT_INT]=0; 
-  validTable[OP_MAXLOC][DT_LOC_DOUBLE_INT]=0; 
-  validTable[OP_MINLOC][DT_LOC_DOUBLE_INT]=0; 
+  validTable[OP_LAND][DT_DOUBLE]=0;
+  validTable[OP_LOR][DT_DOUBLE]=0;
+  validTable[OP_LXOR][DT_DOUBLE]=0;
+  validTable[OP_BOR][DT_DOUBLE]=0;
+  validTable[OP_BXOR][DT_DOUBLE]=0;
+  validTable[OP_MAXLOC][DT_LOC_SHORT_INT]=0;
+  validTable[OP_MINLOC][DT_LOC_SHORT_INT]=0;
+  validTable[OP_MAXLOC][DT_LOC_DOUBLE_INT]=0;
+  validTable[OP_MINLOC][DT_LOC_DOUBLE_INT]=0;
 #endif
 
 #else
@@ -580,7 +580,7 @@ int main(int argc, char*argv[])
             //assert (rc == 0);
             if(rc) fprintf(stderr, "FAILED validation\n");
 #endif
-            
+
             usec = (tf - ti)/(double)niter;
             if (rank == root)
             {

@@ -152,7 +152,7 @@ static void get_done (pami_context_t   context,
   get_info_t * info = (get_info_t *) cookie;
 
   fprintf (stderr, ">> 'get_done' callback, cookie = %p (info->value = %zu => %zu), result = %d\n", cookie, *(info->value), *(info->value)-1, result);
-  
+
   size_t status = 0; // success
   if (result != PAMI_SUCCESS)
   {
@@ -215,11 +215,11 @@ static void dispatch_rts (
 
   initialize_data (get->buffer, 0, BUFFERSIZE<<1);
   print_data (get->buffer, BUFFERSIZE<<2);
-  
+
   // Create a memregion for the data buffer.
   size_t bytes = 0;
   PAMI_Memregion_create (context, get->buffer, BUFFERSIZE>>2, &bytes, &(get->memregion));
-  
+
   // Perform the rdma get operation
   pami_rget_simple_t parameters;
   parameters.rma.dest    = rts->origin;
@@ -397,12 +397,12 @@ fprintf (stderr, "Wait for 'ack', _ack_active = %zu\n", _ack_active);
         return 1;
       }
     }
-    
+
     // Destroy the local memory region
     PAMI_Memregion_destroy (context[0], &(rts_info.memregion));
 
     free (send_buffer);
-    
+
     switch (_ack_status)
     {
       case 0:

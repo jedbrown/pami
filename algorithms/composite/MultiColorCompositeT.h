@@ -34,7 +34,7 @@ namespace CCMI
 	unsigned                 _nComplete;
 	unsigned                 _numColors;
 	unsigned                 _colors [NUMCOLORS];
-	
+
         ///
         ///  \brief Application callback to call when the broadcast has finished
         ///
@@ -81,8 +81,8 @@ namespace CCMI
 		       unsigned                                root,
 		       unsigned                                bytes,
 		       char                                  * src,
-		       char                                  * dst) 
-      {	
+		       char                                  * dst)
+      {
 	//fprintf(stderr, "%d: MultiColorCompositeT::intialize src %x dst %x\n", _native->myrank(), src, dst);
 	pwcfn (topology, bytes, _colors, _numColors);
 
@@ -132,7 +132,7 @@ namespace CCMI
 	  barrier->setDoneCallback(cb_barrier_done, this);
 	  barrier->start();
 	}
-	
+
 	return PAMI_SUCCESS;
       }
 

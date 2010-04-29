@@ -182,7 +182,7 @@ namespace PAMI
         size_t events = 0;
         events += PAMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
         if(__global.useshmem())
-        {  
+        {
             events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
             events += PAMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
             events += PAMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
@@ -253,8 +253,8 @@ namespace PAMI
 
         _lock.init(&_mm);
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
-        
-        
+
+
         Protocol::Get::GetRdma <Device::MU::MUDmaModel<false>, MUDevice> * rget_mu = NULL;
         Protocol::Put::PutRdma <Device::MU::MUDmaModel<false>, MUDevice> * rput_mu = NULL;
 
@@ -694,9 +694,9 @@ namespace PAMI
             bool no_shmem = options.no_shmem || (!__global.useshmem() && __global.useMU());
             bool use_shmem = options.use_shmem || (!__global.useMU() && __global.useshmem());
 
-            TRACE_ERR((stderr, "global.useshmem: %d, global.useMU: %d\n", 
+            TRACE_ERR((stderr, "global.useshmem: %d, global.useMU: %d\n",
                         (int)__global.useshmem(), (int)__global.useMU()));
-            TRACE_ERR((stderr, "optons.no_shmem: %d, options. use_shmem: %d, no_shmem: %d, use_shmem: %d\n", 
+            TRACE_ERR((stderr, "optons.no_shmem: %d, options. use_shmem: %d, no_shmem: %d, use_shmem: %d\n",
                         (int)options.no_shmem, (int)options.use_shmem, (int)no_shmem, (int)use_shmem));
             if (no_shmem == 1)
             {
@@ -831,7 +831,7 @@ namespace PAMI
         {
           TRACE_ERR((stderr, "Context::multicast_impl shmem multicast %p\n", mcastinfo));
           return _shmem_native_interface->multicast(mcastinfo); // Only have one multicast right now
-          
+
         }
         else if(__global.useMU())
          {
@@ -901,7 +901,7 @@ namespace PAMI
           result = _shmem_mcast3_registration->analyze(context_id,geometry);
         }
         if(__global.useMU())
-        {  
+        {
           result = _mu_registration->analyze(context_id,geometry);
           result = _mu_mcast2_registration->analyze(context_id,geometry);
           result = _mu_mcast3_registration->analyze(context_id,geometry);

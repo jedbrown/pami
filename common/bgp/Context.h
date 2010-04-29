@@ -257,7 +257,7 @@ namespace PAMI
         _native_interface   = (AllSidedNI*)_native_interface_storage;
         _multi_registration = (MultiCollectiveRegistration*) _multi_registration_storage;
 
-        if (__global.topology_local.size() > 1) 
+        if (__global.topology_local.size() > 1)
         {
         TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
         new (_mcastModel_storage)       Device::LocalBcastWQModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid),_status);
@@ -272,7 +272,7 @@ namespace PAMI
         TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
         _multi_registration->analyze(_contextid, _world_geometry);
         }
-        
+
         // ----------------------------------------------------------------
         // Initialize the rdma protocol(s)
         // ----------------------------------------------------------------
@@ -291,7 +291,7 @@ namespace PAMI
           _rput = Protocol::Put::NoRPut::generate (_protocol);
 
 
-        
+
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
       }

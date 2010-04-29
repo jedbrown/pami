@@ -1,3 +1,7 @@
+/**
+ * \file test/BG/bgq/local/localreduce.cc
+ * \brief ???
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

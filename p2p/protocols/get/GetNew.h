@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file p2p/protocols/get/Get.h
+/// \file p2p/protocols/get/GetNew.h
 /// \brief Get protocol devices that implement the 'dma' interface.
 ///
 /// The Get class defined in this file uses C++ templates
@@ -16,8 +16,8 @@
 /// C++ templates require all source code to be #include'd from a header file
 /// which can result in a single very large file.
 ///
-#ifndef __p2p_protocols_get_Get_h__
-#define __p2p_protocols_get_Get_h__
+#ifndef __p2p_protocols_get_GetNew_h__
+#define __p2p_protocols_get_GetNew_h__
 
 #include <string.h>
 

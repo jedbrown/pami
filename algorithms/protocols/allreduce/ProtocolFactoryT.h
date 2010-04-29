@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/allreduce/ProtocolFactoryT.h
+ * \brief ???
+ */
 #ifndef __algorithms_protocols_allreduce_ProtocolFactoryT_h__
 #define __algorithms_protocols_allreduce_ProtocolFactoryT_h__
 
@@ -53,15 +57,15 @@ namespace CCMI
 	    arcomposite->~T(); //Call destructor
 	    CollectiveProtocolFactoryT<T, get_metadata, C>::_alloc.returnObject(arcomposite);
 	  }
-	  
-	  T* obj = (T*)CollectiveProtocolFactoryT<T, get_metadata, C>::_alloc.allocateObject();	
+
+	  T* obj = (T*)CollectiveProtocolFactoryT<T, get_metadata, C>::_alloc.allocateObject();
 	  new (obj) T(CollectiveProtocolFactoryT<T, get_metadata, C>::_native,  // Native interface
 		      CollectiveProtocolFactoryT<T, get_metadata, C>::_cmgr,    // Connection Manager
 		      geometry,          // Geometry Object
 		      (pami_xfer_t*) cmd, // Parameters
 		      allreduce->cb_done,
 		      allreduce->cookie);
-	  
+
 	  //obj->setAlgorithmFactory(this); //Dont use restart just yet
 	  geometry->setAllreduceComposite(obj);
 	  return NULL;

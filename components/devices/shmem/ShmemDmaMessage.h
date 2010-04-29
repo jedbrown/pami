@@ -211,7 +211,7 @@ namespace PAMI
           inline pami_result_t advance_mr_readonly (pami_context_t context)
           {
             TRACE_ERR((stderr, ">> PutDmaMessage::advance_mr_readonly()\n"));
-            
+
             if (this->_packet_injected == false)
             {
               if (this->_device->writeSinglePacket (this->_fnum, T_Device::system_ro_put_dispatch,
@@ -229,11 +229,11 @@ namespace PAMI
             {
               // system ro put packet has been received and completed by the
               // target task. This put message in done.
-              
+
               // Invoke the completion callback for the put operation
               if (this->_done_fn)
                 this->_done_fn (context, this->_done_cookie, PAMI_SUCCESS);
-              
+
               // return 'success' which will remove the work object from the work queue.
               TRACE_ERR((stderr, "<< PutDmaMessage::advance_mr_readonly(), return PAMI_SUCCESS\n"));
               return PAMI_SUCCESS;

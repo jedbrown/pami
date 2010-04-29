@@ -277,9 +277,9 @@ int main (int argc, char ** argv)
   size_t n = 0;                              // controls task loop
   size_t s = 0;                              // controls send hints loop
   size_t r = 0;                              // controls recv hints loop
-  size_t send_hard_use_shmem_hint = 0;       // hard hint value of sending task 
+  size_t send_hard_use_shmem_hint = 0;       // hard hint value of sending task
   size_t send_soft_use_shmem_hint = 0;       // soft hint value of sending task
-  size_t send_hard_no_shmem_hint = 0;        // hard hint value of sending task 
+  size_t send_hard_no_shmem_hint = 0;        // hard hint value of sending task
   size_t send_soft_no_shmem_hint = 0;        // soft hint value of sending task
   size_t recv_use_shmem_hint = 0;            // hard hint value of receiving task
   size_t recv_no_shmem_hint = 0;             // hard hint value of receiving task
@@ -299,7 +299,7 @@ int main (int argc, char ** argv)
   size_t skip_ary[4][11] =       {{0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1},
                                   {0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1},
                                   {0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1},
-                                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};  
+                                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
 
   pami_send_t parameters;
   parameters.send.header.iov_base = header;
@@ -487,7 +487,7 @@ int main (int argc, char ** argv)
 
     for (r = 0; r < 4; r++) {
       for (s = 0; s < 11; s++) {
-	
+
 	// Skip scenarios that are expected to fail
 	if (skip_ary[r][s]) {
 	  continue;
@@ -499,14 +499,14 @@ int main (int argc, char ** argv)
 	  TRACE((stderr, "before send ...\n"));
 
 	  // Determine hint values
-	  send_hard_use_shmem_hint = (s >> 3) & 1;                 
+	  send_hard_use_shmem_hint = (s >> 3) & 1;
 	  send_soft_use_shmem_hint = (s >> 2) & 1;
-	  send_hard_no_shmem_hint = (s >> 1) & 1;                 
-	  send_soft_no_shmem_hint = s & 1;          
+	  send_hard_no_shmem_hint = (s >> 1) & 1;
+	  send_soft_no_shmem_hint = s & 1;
 	  recv_use_shmem_hint = (r >> 1) & 1;
 	  recv_no_shmem_hint = r & 1;
 
-	  parameters.send.dispatch        = dispatch_ary_0[r][s];	 
+	  parameters.send.dispatch        = dispatch_ary_0[r][s];
 	  parameters.send.dest = PAMI_Endpoint_create (client, n, 0);
 
 	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask %zu use shmem hard hint = %zu\n\t\ttask %zu no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, n, recv_use_shmem_hint, n, recv_no_shmem_hint);
@@ -711,7 +711,7 @@ int main (int argc, char ** argv)
 
     for (r = 0; r < 4; r++) {
       for (s = 0; s < 11; s++) {
-	
+
 	// Skip scenarios that are expected to fail
 	if (skip_ary[r][s]) {
 	  continue;
@@ -733,10 +733,10 @@ int main (int argc, char ** argv)
 	TRACE((stderr, "before send ...\n"));
 
 	// Determine hint values
-	send_hard_use_shmem_hint = (s >> 3) & 1;                 
+	send_hard_use_shmem_hint = (s >> 3) & 1;
 	send_soft_use_shmem_hint = (s >> 2) & 1;
-	send_hard_no_shmem_hint = (s >> 1) & 1;                 
-	send_soft_no_shmem_hint = s & 1;          
+	send_hard_no_shmem_hint = (s >> 1) & 1;
+	send_soft_no_shmem_hint = s & 1;
 	recv_use_shmem_hint = (r >> 1) & 1;
 	recv_no_shmem_hint = r & 1;
 
@@ -789,7 +789,7 @@ int main (int argc, char ** argv)
 
     for (r = 0; r < 4; r++) {
       for (s = 0; s < 11; s++) {
-	
+
 	// Skip scenarios we don't expect to result in a send fail
 	if (skip_ary[r][s]) {
 	  continue;
@@ -801,14 +801,14 @@ int main (int argc, char ** argv)
 	  TRACE((stderr, "before send ...\n"));
 
 	  // Determine hint values
-	  send_hard_use_shmem_hint = (s >> 3) & 1;                 
+	  send_hard_use_shmem_hint = (s >> 3) & 1;
 	  send_soft_use_shmem_hint = (s >> 2) & 1;
-	  send_hard_no_shmem_hint = (s >> 1) & 1;                 
-	  send_soft_no_shmem_hint = s & 1;          
+	  send_hard_no_shmem_hint = (s >> 1) & 1;
+	  send_soft_no_shmem_hint = s & 1;
 	  recv_use_shmem_hint = (r >> 1) & 1;
 	  recv_no_shmem_hint = r & 1;
 
-	  parameters.send.dispatch        = dispatch_ary_0[r][s];	 
+	  parameters.send.dispatch        = dispatch_ary_0[r][s];
 	  parameters.send.dest = PAMI_Endpoint_create (client, n, 0);
 
 	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask %zu use shmem hard hint = %zu\n\t\ttask %zu no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, n, recv_use_shmem_hint, n, recv_no_shmem_hint);
@@ -828,7 +828,7 @@ int main (int argc, char ** argv)
   {
     for (r = 0; r < 4; r++) {
       for (s = 0; s < 11; s++) {
-	
+
 	// Skip scenarios we don't expect to result in a send fail
 	if (skip_ary[r][s]) {
 	  continue;
@@ -837,10 +837,10 @@ int main (int argc, char ** argv)
 	TRACE((stderr, "before send ...\n"));
 
 	// Determine hint values
-	send_hard_use_shmem_hint = (s >> 3) & 1;                 
+	send_hard_use_shmem_hint = (s >> 3) & 1;
 	send_soft_use_shmem_hint = (s >> 2) & 1;
-	send_hard_no_shmem_hint = (s >> 1) & 1;                 
-	send_soft_no_shmem_hint = s & 1;          
+	send_hard_no_shmem_hint = (s >> 1) & 1;
+	send_soft_no_shmem_hint = s & 1;
 	recv_use_shmem_hint = (r >> 1) & 1;
 	recv_no_shmem_hint = r & 1;
 
@@ -880,7 +880,7 @@ int main (int argc, char ** argv)
   {
     for (r = 0; r < 4; r++) {
       for (s = 0; s < 11; s++) {
-	
+
 	// Skip scenarios we don't expect to result in a recv fail
 	if (skip_ary[r][s]) {
 	  continue;
@@ -892,14 +892,14 @@ int main (int argc, char ** argv)
 	  TRACE((stderr, "before send ...\n"));
 
 	  // Determine hint values
-	  send_hard_use_shmem_hint = (s >> 3) & 1;                 
+	  send_hard_use_shmem_hint = (s >> 3) & 1;
 	  send_soft_use_shmem_hint = (s >> 2) & 1;
-	  send_hard_no_shmem_hint = (s >> 1) & 1;                 
-	  send_soft_no_shmem_hint = s & 1;          
+	  send_hard_no_shmem_hint = (s >> 1) & 1;
+	  send_soft_no_shmem_hint = s & 1;
 	  recv_use_shmem_hint = (r >> 1) & 1;
 	  recv_no_shmem_hint = r & 1;
 
-	  parameters.send.dispatch        = dispatch_ary_0[r][s];	 
+	  parameters.send.dispatch        = dispatch_ary_0[r][s];
 	  parameters.send.dest = PAMI_Endpoint_create (client, n, 0);
 
 	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask %zu use shmem hard hint = %zu\n\t\ttask %zu no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, n, recv_use_shmem_hint, n, recv_no_shmem_hint);
@@ -934,7 +934,7 @@ int main (int argc, char ** argv)
   {
     for (r = 0; r < 4; r++) {
       for (s = 0; s < 11; s++) {
-	
+
 	// Skip scenarios that are expected to fail
 	if (skip_ary[r][s]) {
 	  continue;
@@ -956,10 +956,10 @@ int main (int argc, char ** argv)
 	TRACE((stderr, "before send ...\n"));
 
 	// Determine hint values
-	send_hard_use_shmem_hint = (s >> 3) & 1;                 
+	send_hard_use_shmem_hint = (s >> 3) & 1;
 	send_soft_use_shmem_hint = (s >> 2) & 1;
-	send_hard_no_shmem_hint = (s >> 1) & 1;                 
-	send_soft_no_shmem_hint = s & 1;          
+	send_hard_no_shmem_hint = (s >> 1) & 1;
+	send_soft_no_shmem_hint = s & 1;
 	recv_use_shmem_hint = (r >> 1) & 1;
 	recv_no_shmem_hint = r & 1;
 

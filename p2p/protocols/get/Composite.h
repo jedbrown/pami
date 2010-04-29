@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file p2p/protocols/get/CompositeGet.h
+/// \file p2p/protocols/get/Composite.h
 /// \brief Composite get protocol composed of multiple individual get protocols
 ///
 /// The Composite class defined in this file uses C++ templates and
@@ -15,8 +15,8 @@
 ///
 /// C++ templates require all source code to be #include'd from a header file.
 ///
-#ifndef __p2p_protocols_get_CompositeGet_h__
-#define __p2p_protocols_get_CompositeGet_h__
+#ifndef __p2p_protocols_get_Composite_h__
+#define __p2p_protocols_get_Composite_h__
 
 #include "p2p/protocols/GetInterface.h"
 

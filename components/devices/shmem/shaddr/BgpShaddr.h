@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/bgp/BgpShaddr.h
+ * \file components/devices/shmem/shaddr/BgpShaddr.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_bgp_BgpShaddr_h__
-#define __components_devices_shmem_bgp_BgpShaddr_h__
+#ifndef __components_devices_shmem_shaddr_BgpShaddr_h__
+#define __components_devices_shmem_shaddr_BgpShaddr_h__
 
 #include <errno.h>
 #include <fcntl.h>

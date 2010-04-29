@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/bgq/BgqShaddrReadWrite.h
+ * \file components/devices/shmem/shaddr/BgqShaddrReadWrite.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_bgq_BgqShaddrReadWrite_h__
-#define __components_devices_shmem_bgq_BgqShaddrReadWrite_h__
+#ifndef __components_devices_shmem_shaddr_BgqShaddrReadWrite_h__
+#define __components_devices_shmem_shaddr_BgqShaddrReadWrite_h__
 
 #include "components/devices/shmem/shaddr/BgqShaddr.h"
 #include "components/devices/shmem/shaddr/ShaddrInterface.h"

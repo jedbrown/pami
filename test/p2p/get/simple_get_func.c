@@ -138,7 +138,7 @@ static void get_done (pami_context_t   context,
   get_info_t * info = (get_info_t *) cookie;
 
   TRACE_ERR((stderr, ">> get_done() cookie = %p (info->value = %d => %d), result = %zu\n", cookie, *(info->value), *(info->value)-1, result));
-  
+
   size_t status = 0; // success
   if (result != PAMI_SUCCESS)
   {
@@ -363,9 +363,9 @@ fprintf (stderr, "Wait for 'ack', _ack_active = %zu\n", _ack_active);
         return 1;
       }
     }
-    
+
     free (send_buffer);
-    
+
     switch (_ack_status)
     {
       case 0:

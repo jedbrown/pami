@@ -87,9 +87,9 @@ namespace PAMI
             GetInterface (),
             _context (context)
           {}
-          
+
           inline ~NoGet () {};
-          
+
           pami_result_t get (pami_get_simple_t * parameters)
           {
             if (parameters->rma.done_fn)
@@ -97,7 +97,7 @@ namespace PAMI
 
             return PAMI_ERROR;
           }
-          
+
           pami_result_t get (pami_get_typed_t * parameters)
           {
             if (parameters->rma.done_fn)
@@ -105,9 +105,9 @@ namespace PAMI
 
             return PAMI_ERROR;
           }
-          
+
         protected:
-        
+
           pami_context_t _context;
 
       }; // PAMI::Protocol::NoGet class

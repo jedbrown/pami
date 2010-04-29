@@ -1,3 +1,7 @@
+/**
+ * \file test/BG/bgq/local/local_coll.h
+ * \brief ???
+ */
 #ifndef __test_BG_bgq_local_local_coll_h__
 #define __test_BG_bgq_local_local_coll_h__
 

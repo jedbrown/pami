@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file p2p/protocols/get/Get.h
+/// \file p2p/protocols/get/GetRdma.h
 /// \brief Get protocol factory for CDI devices that implement the 'dma' interface.
 ///
 /// The GetProtocolFactory class defined in this file uses C++ templates
@@ -18,8 +18,8 @@
 /// \b protocol for CDI dma devices defined here is split into \b three files
 /// for readability.
 ///
-#ifndef __p2p_protocols_get_Get_h__
-#define __p2p_protocols_get_Get_h__
+#ifndef __p2p_protocols_get_GetRdma_h__
+#define __p2p_protocols_get_GetRdma_h__
 
 #include <string.h>
 

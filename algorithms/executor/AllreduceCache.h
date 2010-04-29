@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/executor/AllreduceCache.h
+ * \brief ???
+ */
 #ifndef __algorithms_executor_AllreduceCache_h__
 #define __algorithms_executor_AllreduceCache_h__
 
@@ -154,12 +158,12 @@ namespace CCMI {
 	    (_pcache._sizeOfType    == sizeOfType) &&
 	    (_pcache._bytes         == count * sizeOfType))
           return;
-		
+
 	_pcache._op         = op;
 	_pcache._dt         = dt;
 	_pcache._count      = count;
-	_pcache._sizeOfType = sizeOfType;	
-	_pcache._bytes      = count * sizeOfType;	
+	_pcache._sizeOfType = sizeOfType;
+	_pcache._bytes      = count * sizeOfType;
 	updatePipelineWidth(pipelineWidth);
 
 	//printf ("In AllreduceCache::init bytes = %x\n", _pcache._bytes);
@@ -789,7 +793,7 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
 	CCMI_assert (pwq->bufferToProduce() != NULL);
 
 	//printf ("%d: Buffer for phase %d index %d is %x\n", _myrank, p, scount, pwq->bufferToProduce());
-      }  
+      }
     }
   }
 }

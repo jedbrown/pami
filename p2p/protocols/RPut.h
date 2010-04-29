@@ -86,14 +86,14 @@ namespace PAMI
           inline NoRPut () :
             RPut ()
           {}
-          
+
           inline ~NoRPut () {};
-          
+
           pami_result_t simple (pami_rput_simple_t * parameters)
           {
             return PAMI_ERROR;
           }
-          
+
           pami_result_t typed (pami_rput_typed_t * parameters)
           {
             return PAMI_ERROR;

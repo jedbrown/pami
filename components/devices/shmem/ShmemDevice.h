@@ -559,7 +559,7 @@ namespace PAMI
         inline size_t advance ();
 
         inline size_t fnum (size_t peer, size_t offset);
-        
+
         inline size_t lastRecSequenceId (size_t fnum);
 
         inline size_t lastInjSequenceId (size_t fnum);
@@ -939,19 +939,19 @@ namespace PAMI
       TRACE_ERR((stderr, "<< ShmemDevice::fnum(%zu, %zu), _fnum_hash[%zu] = %zu\n", peer, offset, peer, _fnum_hash[peer]));
       return _fnum_hash[peer] + offset;
     }
-    
+
     template <class T_Fifo, class T_Shaddr>
     inline size_t ShmemDevice<T_Fifo,T_Shaddr>::lastRecSequenceId (size_t fnum)
     {
       return _fifo[fnum].lastRecSequenceId ();
     }
-    
+
     template <class T_Fifo, class T_Shaddr>
     inline size_t ShmemDevice<T_Fifo,T_Shaddr>::lastInjSequenceId (size_t fnum)
     {
       return _last_inj_sequence_id[fnum];
     }
-    
+
     template <class T_Fifo, class T_Shaddr>
     inline bool ShmemDevice<T_Fifo,T_Shaddr>::activePackets (size_t fnum)
     {

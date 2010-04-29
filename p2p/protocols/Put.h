@@ -87,9 +87,9 @@ namespace PAMI
             Put (),
             _context (context)
           {}
-          
+
           inline ~NoPut () {};
-          
+
           pami_result_t simple (pami_put_simple_t * parameters)
           {
             //if (parameters->rma.done_fn)
@@ -97,7 +97,7 @@ namespace PAMI
 
             return PAMI_ERROR;
           }
-          
+
           pami_result_t typed (pami_put_typed_t * parameters)
           {
             //if (parameters->rma.done_fn)
@@ -105,9 +105,9 @@ namespace PAMI
 
             return PAMI_ERROR;
           }
-          
+
         protected:
-        
+
           pami_context_t _context;
 
       }; // PAMI::Protocol::NoPut class

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShaddrInterface.h
+ * \file components/devices/shmem/shaddr/ShaddrInterface.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_ShaddrInterface_h__
-#define __components_devices_shmem_ShaddrInterface_h__
+#ifndef __components_devices_shmem_shaddr_ShaddrInterface_h__
+#define __components_devices_shmem_shaddr_ShaddrInterface_h__
 
 #include <pami.h>
 

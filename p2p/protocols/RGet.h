@@ -86,14 +86,14 @@ namespace PAMI
           inline NoRGet () :
             RGet ()
           {}
-          
+
           inline ~NoRGet () {};
-          
+
           pami_result_t simple (pami_rget_simple_t * parameters)
           {
             return PAMI_ERROR;
           }
-          
+
           pami_result_t typed (pami_rget_typed_t * parameters)
           {
             return PAMI_ERROR;

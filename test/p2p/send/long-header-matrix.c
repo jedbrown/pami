@@ -5,7 +5,7 @@
 ///   send hints       recv hints     header    exp
 /// no long header | no long header    size    result   NOTES:
 /// ============== | ============== | ====== | ====== | ================================
-/// 0 (hard)       | 0 (hard)       | short  | pass   | 
+/// 0 (hard)       | 0 (hard)       | short  | pass   |
 
 
 #include <pami.h>
@@ -43,7 +43,7 @@ static void test_dispatch (
   recv->cookie   = cookie;
   recv->kind = PAMI_AM_KIND_SIMPLE;
   recv->data.simple.addr  = NULL;
-  recv->data.simple.bytes = 0;  
+  recv->data.simple.bytes = 0;
   TRACE((stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn));
 
   return;
@@ -149,7 +149,7 @@ int main (int argc, char ** argv)
     return 1;
   }
   size_t n = 0;                              // controls task loop
-  size_t send_hard_hint = 0;                 // hard hint value of sending task 
+  size_t send_hard_hint = 0;                 // hard hint value of sending task
   size_t send_soft_hint = 0;                 // soft hint value of sending task
   size_t recv_hard_hint = 0;                 // hard hint value of receiving task
 
@@ -211,8 +211,8 @@ int main (int argc, char ** argv)
 	TRACE((stderr, "before send ...\n"));
 
 	// Determine hint values
-	send_hard_hint = (testcase >> 2) & 1;                 
-	send_soft_hint = (testcase >> 1) & 1;          
+	send_hard_hint = (testcase >> 2) & 1;
+	send_soft_hint = (testcase >> 1) & 1;
 	recv_hard_hint = testcase & 1;
 
 	parameters.send.dispatch        = dispatch_ary_0[testcase];
@@ -222,7 +222,7 @@ int main (int argc, char ** argv)
 	  if ( h && ((testcase != 0) && (testcase != 2)) ) {
 	    continue;
 	  }
-	 
+
 	  parameters.send.header.iov_base = (void *) header_ary[h];
 	  parameters.send.header.iov_len  = header_size_ary[h];
 	  parameters.send.dest = PAMI_Endpoint_create (client, n, 0);
@@ -311,8 +311,8 @@ int main (int argc, char ** argv)
 	TRACE((stderr, "before send ...\n"));
 
 	// Determine hint values
-	send_hard_hint = (testcase >> 2) & 1;                 
-	send_soft_hint = (testcase >> 1) & 1;          
+	send_hard_hint = (testcase >> 2) & 1;
+	send_soft_hint = (testcase >> 1) & 1;
 	recv_hard_hint = testcase & 1;
 
 	parameters.send.dispatch        = dispatch_ary_n[testcase];
@@ -359,8 +359,8 @@ int main (int argc, char ** argv)
 	TRACE((stderr, "before send ...\n"));
 
 	// Determine hint values
-	send_hard_hint = (testcase >> 2) & 1;                 
-	send_soft_hint = (testcase >> 1) & 1;          
+	send_hard_hint = (testcase >> 2) & 1;
+	send_soft_hint = (testcase >> 1) & 1;
 	recv_hard_hint = testcase & 1;
 
 	// Only sending long headers
@@ -389,13 +389,13 @@ int main (int argc, char ** argv)
     for (testcase = 4; testcase < 6; testcase++) {
 
       // Only sending long headers
-      h = 1; 
+      h = 1;
 
       TRACE((stderr, "before send ...\n"));
 
       // Determine hint values
-      send_hard_hint = (testcase >> 2) & 1;                 
-      send_soft_hint = (testcase >> 1) & 1;          
+      send_hard_hint = (testcase >> 2) & 1;
+      send_soft_hint = (testcase >> 1) & 1;
       recv_hard_hint = testcase & 1;
 
       parameters.send.dispatch        = dispatch_ary_n[testcase];
@@ -433,8 +433,8 @@ int main (int argc, char ** argv)
 	TRACE((stderr, "before send ...\n"));
 
 	// Determine hint values
-	send_hard_hint = (testcase >> 2) & 1;                 
-	send_soft_hint = (testcase >> 1) & 1;          
+	send_hard_hint = (testcase >> 2) & 1;
+	send_soft_hint = (testcase >> 1) & 1;
 	recv_hard_hint = testcase & 1;
 
 	// Only sending long headers
@@ -498,11 +498,11 @@ int main (int argc, char ** argv)
       TRACE((stderr, "before send ...\n"));
 
       // Only sending long headers
-      h = 1; 
+      h = 1;
 
       // Determine hint values
-      send_hard_hint = (testcase >> 2) & 1;                 
-      send_soft_hint = (testcase >> 1) & 1;          
+      send_hard_hint = (testcase >> 2) & 1;
+      send_soft_hint = (testcase >> 1) & 1;
       recv_hard_hint = testcase & 1;
 
       parameters.send.dispatch        = dispatch_ary_n[testcase];

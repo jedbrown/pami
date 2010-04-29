@@ -48,7 +48,7 @@ namespace CCMI
 			  ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount,
 			  ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
 			  ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf);
-	    
+
             SyncBcastPost();
 
             PAMI_GEOMETRY_CLASS *geometry = ((PAMI_GEOMETRY_CLASS *)g);

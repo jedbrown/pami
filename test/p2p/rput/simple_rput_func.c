@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/rget/simple_rget_func.c
+/// \file test/p2p/rput/simple_rput_func.c
 /// \brief Simple point-to-point PAMI_Rget() test
 ///
 /// This test implements a very simple "rendezvous" communication and
@@ -73,9 +73,9 @@ static void dispatch_mr (
   fprintf (stderr, "   'mr' dispatch function %zu. tid = %d, header_addr = %p, header_size = %zu, pipe_addr = %p, pipe_size = %zu\n", cid, tid, header_addr, header_size, pipe_addr, pipe_size);
   memcpy ((void *) &_info[cid].mr[tid], pipe_addr, sizeof(pami_memregion_t));
   fprintf (stderr, "   'mr' dispatch function %zu. tid = %d\n", cid, tid);
-  
+
   _info[cid].exchange--;
-  
+
   fprintf (stderr, "<< 'mr' dispatch function %zu.\n", cid);
 
   return;
@@ -154,7 +154,7 @@ int main (int argc, char ** argv)
     }
     _info[i].exchange = num_tasks - 1;
     _info[i].zero = 0;
-    
+
     size_t bytes;
     result = PAMI_Memregion_create (context[i],
                                     (void *) &_info[i],
@@ -334,7 +334,7 @@ int main (int argc, char ** argv)
         }
       }
     }
-    
+
     /* All done ! */
   }
   else if (task_id < MAXTASKS)
@@ -354,7 +354,7 @@ int main (int argc, char ** argv)
           return 1;
         }
       }
-      
+
       fprintf (stderr, "Do a 'pong' rput operation to {0,0} from {%d,%zu}\n", task_id, cid);
       _info[cid].active = 1;
 
@@ -374,7 +374,7 @@ int main (int argc, char ** argv)
       parameters.rdma.remote.offset = ((size_t)&_info[0].pong[task_id]) - ((size_t)&_info[0]);
       parameters.rdma.remote.mr = &_info[0].mr[0];
       parameters.rma.dest       = PAMI_Endpoint_create (client, 0, 0);
-      
+
       pami_result_t result = PAMI_Rput (context[cid], &parameters);
       if (result != PAMI_SUCCESS)
       {

@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/executor/AllreduceBaseExec.h
+ * \brief ???
+ */
 #ifndef __algorithms_executor_AllreduceBaseExec_h__
 #define __algorithms_executor_AllreduceBaseExec_h__
 
@@ -704,8 +708,8 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecv
 
   // update state  (we dont support multiple sources per phase yet)
   _acache.incrementPhaseChunksRcvd(cdata->phase, cdata->srcPeIndex);
-  PAMI::PipeWorkQueue *pwq = _acache.getPhasePipeWorkQueues(cdata->phase, 
-							    cdata->srcPeIndex);  
+  PAMI::PipeWorkQueue *pwq = _acache.getPhasePipeWorkQueues(cdata->phase,
+							    cdata->srcPeIndex);
   pwq->consumeBytes (_acache.getBytes());
 
   //The send for the previous phase has finished and we have received
@@ -840,7 +844,7 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
   }
 
   *rcvlen    = sndlen;
-  PAMI::PipeWorkQueue *pwq = _acache.getPhasePipeWorkQueues(cdata->_phase, srcPeIndex);  
+  PAMI::PipeWorkQueue *pwq = _acache.getPhasePipeWorkQueues(cdata->_phase, srcPeIndex);
   pwq->reset();
   char * buf = pwq->bufferToProduce();
   CCMI_assert (buf != NULL);

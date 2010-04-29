@@ -143,7 +143,7 @@ init ( ResourceType_t  type,
 
   // - Allocate space for the InjFifoSubGroup object for this subgroup and
   //   run its constructor.
-  
+
   // Find our node's p and t coordinates (p is the relative process number,
   // t is the thread within that process).  Only do this for p=0, t=0.
 
@@ -152,18 +152,18 @@ init ( ResourceType_t  type,
       char * fifoPtr[1];
       uint32_t fifoSize[1];
       Kernel_InjFifoAttributes_t fifoAttr[1];
-      
+
       rc = posix_memalign ( (void**) & fifoPtr[0],
 			    INJ_FIFO_ALIGNMENT,
 			    DEFAULT_INJ_FIFO_DESC_COUNT *
 			    (sizeof(MUHWI_Descriptor_t) +
 			     sizeof(torus_packet_payload_t)));
       PAMI_assert ( rc == 0 );
-      
+
       fifoSize[0] = DEFAULT_INJ_FIFO_DESC_COUNT * sizeof (MUHWI_Descriptor_t);
       fifoAttr[0].RemoteGet = 1;
       fifoAttr[0].System    = 0;
-      
+
       rc = _rgetInjFifoSubgroup.init ( 64, 1, (char **) & fifoPtr[0], &fifoSize[0], &fifoAttr[0] );
       master = true;
     }
@@ -389,8 +389,8 @@ init ( ResourceType_t  type,
 
   TRACE(("ResourceManager:  Initializing Barrier, pSize=%zu, master=%d\n",__global.personality.pSize(),master));
   PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> barrier;
-  barrier.init(&__global.mm, 
-	       __global.personality.pSize(), 
+  barrier.init(&__global.mm,
+	       __global.personality.pSize(),
 	       master );
   TRACE(("ResourceManager: Entering Barrier\n"));
   barrier.enter();
