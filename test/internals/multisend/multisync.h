@@ -7,12 +7,14 @@
 #define __test_internals_multisend_multisync_h__
 
 #include <stdio.h>
-#include <pami.h>
 
 #include "Topology.h"
 #include "Global.h"
+#undef USE_COMMTHREADS
 
+#include "sys/pami.h"
 #include "memorymanager.h"
+#include "components/devices/generic/Device.h"
 
 namespace PAMI {
 namespace Test {

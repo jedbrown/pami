@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <pami.h>
 
-#include "components/devices/mpi/MPIBcastMsg.h"
 #include "test/internals/multisend/multicast.h"
+#include "components/devices/mpi/MPIBcastMsg.h"
 
 #ifndef TEST_BUF_SIZE
 #define TEST_BUF_SIZE	1024

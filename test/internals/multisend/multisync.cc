@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <pami.h>
 
-#include "components/devices/misc/AtomicBarrierMsg.h"
 #include "test/internals/multisend/multisync.h"
+#include "components/devices/misc/AtomicBarrierMsg.h"
 
 #define BARRIER1_NAME	"PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter>"
 #define BARRIER1_ISLOCAL	1

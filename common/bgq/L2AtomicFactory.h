@@ -15,12 +15,17 @@
 #include "components/memory/MemoryManager.h"
 #include "spi/include/kernel/memory.h"
 
+#define BGQ_WACREGION_SIZE	(64)	// the number of L2 Atomics (uint64_t)
+
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
 // These define the range of L2Atomics we're allowed to use.
-#define L2A_MAX_NUMNODEL2ATOMIC	16*256	///< max number of node-scope atomics
-#define L2A_MAX_NUMPROCL2ATOMIC	16*256	///< max number of proc(etc)-scope atomics
+// We might need extra space for the WAC Region. 
+// Must take into account (considerable) waste from large alignment value for WAC,
+// Using 2x as an upper-bound.
+#define L2A_MAX_NUMNODEL2ATOMIC	(16*256+2*64*BGQ_WACREGION_SIZE) ///< max number of node-scope atomics
+#define L2A_MAX_NUMPROCL2ATOMIC	(16*256)	///< max number of proc(etc)-scope atomics
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file common/bgq/L2AtomicFactory.h
@@ -67,11 +72,6 @@ namespace BGQ {
                 size_t coreXlat[NUM_CORES]; /**< translate process to core */
                 size_t coreShift;	/**< translate core to process */
         };
-        struct atomic_arena_t {
-                size_t size;	///< number of atomics
-                uint64_t *virt;	///< virtual address of memory
-                size_t next;	///< current number allocated
-        };
 
         class L2AtomicFactory {
         private:
@@ -80,11 +80,18 @@ namespace BGQ {
                 pami_task_t __masterRank;
                 size_t __numProc;
                 bool __isMasterRank;
-                atomic_arena_t _l2node;
-                atomic_arena_t _l2proc;
         public:
+		PAMI::Memory::MemoryManager __nodescoped_mm;
+		PAMI::Memory::MemoryManager __procscoped_mm;
+
                 L2AtomicFactory() { }
 
+		/// \brief Initialize the L2AtomicFactory
+		///
+		/// \param[in] mm	Shmem MemoryManager
+		/// \param[in] mapping	Mapping object
+		/// \param[in] local	Topology for tasks local to node
+		///
                 inline void init(PAMI::Memory::MemoryManager *mm,
                                 PAMI::Mapping *mapping, PAMI::Topology *local) {
                         pami_result_t rc;
@@ -101,27 +108,33 @@ namespace BGQ {
                         // and arrive at a common chunk of physical address memory
                         // which we all will use for allocating "L2Atomics" from.
                         // One sure way to do this is to allocate shared memory.
-                        _l2node.size = L2A_MAX_NUMNODEL2ATOMIC;
-                        _l2node.virt = NULL;
+			void *virt;
+			size_t size;
 
-            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-                        rc = mm->memalign((void **)&_l2node.virt, sizeof(uint64_t),
-                                        sizeof(uint64_t) * _l2node.size);
-                        PAMI_assertf(rc == PAMI_SUCCESS && _l2node.virt,
-                                "Failed to get shmem for _l2node, asked size %zu",
-                                sizeof(uint64_t) * _l2node.size);
-                        memset(_l2node.virt, 0, sizeof(uint64_t) * _l2node.size);
-                        _l2node.next = 0;
-
-                        _l2proc.size = L2A_MAX_NUMPROCL2ATOMIC;
-                        _l2proc.virt = NULL;
-                        irc = posix_memalign((void **)&_l2proc.virt, sizeof(uint64_t),
-                                        sizeof(uint64_t) * _l2proc.size);
-                        PAMI_assertf(irc == 0 && _l2proc.virt,
+                        size = L2A_MAX_NUMPROCL2ATOMIC;
+                        virt = NULL;
+                        irc = posix_memalign(&virt, sizeof(uint64_t),
+                                        sizeof(uint64_t) * size);
+                        PAMI_assertf(irc == 0 && virt,
                                 "Failed to get memory for _l2proc, asked size %zu",
-                                sizeof(uint64_t) * _l2proc.size);
-                        memset(_l2proc.virt, 0, sizeof(uint64_t) * _l2proc.size);
-                        _l2proc.next = 0;
+                                sizeof(uint64_t) * size);
+			/// \todo need to "register" this memory for use by L2 Atomic Ops
+                        memset(virt, 0, sizeof(uint64_t) * size);
+			__procscoped_mm.init(virt, size);
+
+                        size = L2A_MAX_NUMNODEL2ATOMIC;
+                        virt = NULL;
+
+                        rc = mm->memalign(&virt, sizeof(uint64_t),
+                                        sizeof(uint64_t) * size);
+                        PAMI_assertf(rc == PAMI_SUCCESS && virt,
+                                "Failed to get shmem for _l2node, asked size %zu",
+                                sizeof(uint64_t) * size);
+			/// \todo need to "register" this memory for use by L2 Atomic Ops
+
+			/// \todo need to coordinate clearing of shmem unless we know a barrier follows
+			// clearing of memory done after computing local params
+			__nodescoped_mm.init(virt, size);
 
                         // Compute all implementation parameters,
                         // i.e. fill-in _factory struct.
@@ -130,7 +143,7 @@ namespace BGQ {
                         size_t i;
 
                         /** \todo #warning This needs a proper CNK function for number of threads per process, when it exists... */
-                        int ncores = (64 / Kernel_ProcessCount());
+                        int ncores = (PAMI_MAX_PROC_PER_NODE / Kernel_ProcessCount());
                         // int ncores = Kernel_ThreadCount();
 
                         //int t = mapping->vnpeers(ranks);
@@ -177,6 +190,8 @@ namespace BGQ {
                         }
                         __numProc = _factory.numProc;
                         __isMasterRank = (__masterRank == mapping->task());
+                        local_barriered_shmemzero(virt, sizeof(uint64_t) * size,
+					__numProc, __isMasterRank);
                 }
 
                 ~L2AtomicFactory() {}
@@ -191,7 +206,7 @@ namespace BGQ {
                 /// callers must ensure all use the same order
                 inline pami_result_t l2x_alloc(void **p, int numAtomics, l2x_scope_t scope) {
                         int lockSpan = numAtomics;
-                        atomic_arena_t *arena;
+                        PAMI::Memory::MemoryManager *arena;
                         switch(scope) {
                         case L2A_NODE_SCOPE:
                         case L2A_NODE_PROC_SCOPE:
@@ -200,7 +215,7 @@ namespace BGQ {
                         case L2A_NODE_SMT_SCOPE:
                                 // Node-scoped L2Atomics...
                                 // barrier... ??
-                                arena = &_l2node;
+                                arena = &__nodescoped_mm;
                                 break;
                         case L2A_PROC_SCOPE:
                         case L2A_PROC_CORE_SCOPE:
@@ -211,32 +226,32 @@ namespace BGQ {
                                 // only return our specific lock(s).
                                 // ensure all get different L2Atomics
                                 lockSpan *= _factory.numProc;
-                                arena = &_l2proc;
+                                arena = &__procscoped_mm;
                                 break;
                         case L2A_CORE_SCOPE:
                         case L2A_CORE_SMT_SCOPE:
                                 /// \todo what are core-scoped atomics?
-                                arena = &_l2proc;
+                                arena = &__procscoped_mm;
                                 //break;
                         case L2A_SMT_SCOPE:
                                 /// \todo what are smt-scoped atomics?
-                                arena = &_l2proc;
+                                arena = &__procscoped_mm;
                                 //break;
                         case L2A_PTHREAD_SCOPE:
                                 /// \todo what are pthread-scoped atomics?
-                                arena = &_l2proc;
+                                arena = &__procscoped_mm;
                                 //break;
                         default:
                                 PAMI_abortf("Invalid L2Atomic scope");
                                 break;
                         }
-                        *p = NULL;
-                        if (arena->next + lockSpan > arena->size) {
+			uint64_t *v = NULL;
+			arena->memalign((void **)&v, sizeof(uint64_t),
+						lockSpan * sizeof(uint64_t));
+			if (v == NULL) {
                                 return PAMI_EAGAIN;
                         }
-                        size_t idx = arena->next;
-                        arena->next += lockSpan;
-                        int x;
+			int i;
                         switch(scope) {
                         case L2A_NODE_SCOPE:
                         case L2A_NODE_PROC_SCOPE:
@@ -245,9 +260,7 @@ namespace BGQ {
                         case L2A_NODE_SMT_SCOPE:
                                 // Node-scoped L2Atomics...
                                 // we get exactly what we asked for.
-                                for (x = 0; x < numAtomics; ++x) {
-					p[x] = &arena->virt[idx++];
-                                }
+				*p = v;
                                 // barrier... ??
                                 break;
                         case L2A_PROC_SCOPE:
@@ -256,10 +269,8 @@ namespace BGQ {
                         case L2A_PROC_PTHREAD_SCOPE:
                                 // Process-scoped L2Atomics...
                                 // Take our specific lock out of the entire block.
-                                idx += (numAtomics * _factory.myProc);
-                                for (x = 0; x < numAtomics; ++x) {
-					p[x] = &arena->virt[idx++];
-                                }
+                        	i = (numAtomics * _factory.myProc);
+				*p = &v[i];
                                 break;
                         case L2A_CORE_SCOPE:
                         case L2A_CORE_SMT_SCOPE:

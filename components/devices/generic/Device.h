@@ -287,11 +287,11 @@ public:
 		__mm = mm;
 		__allGds = devices;
 
-#ifdef __pami_target_bgq__
-		__queues = (GenericDeviceQueues *)__global._wuRegion[client]->reserveWUSpace(context, sizeof(*__queues));
-#else // ! __pami_target_bgq__
 		__queues = NULL;
-		posix_memalign((void **)&__queues, 16, sizeof(*__queues));
+#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
+		__global._wuRegion_mm[client]->memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
+#else // ! __pami_target_bgq__
+		posix_memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
 #endif // ! __pami_target_bgq__
 		PAMI_assertf(__queues, "Out of memory allocating generic device queues");
                 __queues->__Threads.init(mm);

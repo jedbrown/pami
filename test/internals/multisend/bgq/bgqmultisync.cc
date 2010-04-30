@@ -6,9 +6,9 @@
 #include <stdio.h>
 #include <pami.h>
 
+#include "test/internals/multisend/multisync.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 #include "components/atomic/bgq/L2Barrier.h"
-#include "test/internals/multisend/multisync.h"
 
 #define BARRIER1_NAME	"PAMI::Barrier::BGQ::L2NodeProcBarrier"
 #define	BARRIER1_ISLOCAL	1

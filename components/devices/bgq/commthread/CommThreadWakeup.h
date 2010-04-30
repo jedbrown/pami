@@ -139,7 +139,8 @@ public:
         // Should comm threads be started before Client initialize?
         //
         static inline BgqCommThread *generate(size_t clientid, size_t num_ctx,
-                                                        Memory::MemoryManager *mm) {
+                                                Memory::MemoryManager *genmm,
+                                                Memory::MemoryManager *l2xmm) {
                 BgqCommThread *devs;
                 BgqWakeupRegion *wu;
                 BgqContextPool *pool;
@@ -148,12 +149,12 @@ public:
                 posix_memalign((void **)&pool, 16, sizeof(*pool));
 
                 new (pool) BgqContextPool();
-                pool->init(clientid, num_ctx, mm);
+                pool->init(clientid, num_ctx, genmm);
 
                 posix_memalign((void **)&wu, 16, sizeof(*wu)); // one per client
                 new (wu) BgqWakeupRegion();
-                wu->init(clientid, num_ctx, mm);
-		__global._wuRegion[clientid] = wu;
+                wu->init(clientid, num_ctx, l2xmm);
+		__global._wuRegion_mm[clientid] = &wu->_wu_mm;
 
                 for (x = 0; x < num_ctx; ++x) {
                         // one per context, but not otherwise tied to a context.

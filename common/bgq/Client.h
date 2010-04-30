@@ -12,13 +12,6 @@
 #include "Context.h"
 #include <errno.h>
 
-// This enables compilation of the comm-thread code, but it will
-// not be used unless something calls PAMI_Client_add_commthread_context().
-// See test/BG/bgq/commthreads/single-context.c for example use.
-// However, if desired, compilation may be disabled by changing
-// the following to "#undef".
-#define USE_COMMTHREADS // define/undef
-
 #ifdef USE_COMMTHREADS
 #include "components/devices/bgq/commthread/CommThreadWakeup.h"
 #endif // USE_COMMTHREADS
@@ -141,12 +134,13 @@ namespace PAMI
 #ifdef USE_COMMTHREADS
         // Create one comm thread semi-opaque pointer. Internally, this may be
         // one-per-context (optimal advance scenario) or some other arrangement.
-        _commThreads = PAMI::Device::CommThread::BgqCommThread::generate(_clientid, n, &_mm);
+        _commThreads = PAMI::Device::CommThread::BgqCommThread::generate(_clientid, n, &_mm, &__global.l2atomicFactory.__nodescoped_mm);
         PAMI_assertf(_commThreads, "BgqCommThread::generate failed for _commThreads[%d]\n", n);
 #endif // USE_COMMTHREADS
         int x;
         TRACE_ERR((stderr, "BGQ::Client::createContext mm available %zu\n", _mm.available()));
         _platdevs.generate(_clientid, n, _mm);
+        // _platdevs.generate(_clientid, n, _mm, __global._wuRegion[_clientid]->_wu_mm);
 
         // This memset has been removed due to the amount of cycles it takes
         // on simulators.  Lower level initializers should be setting the
@@ -165,13 +159,16 @@ namespace PAMI
             _mm.memalign((void **)&base, 16, bytes);
             _mm.disable();
             PAMI_assertf(base != NULL, "out of sharedmemory in context create x=%d,n=%d,bytes=%zu,mm.size=%zu,mm.available=%zu\n", x, n, bytes, _mm.size(), _mm.available());
-            new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                             &_platdevs, base, bytes, _world_geometry);
 #ifdef USE_COMMTHREADS
             // Note, this is not inializing each comm thread but rather
-            // initializing comm threads for each context.
+            // initializing comm threads for each context. context[x] is not usable yet,
+	    // but it won't matter since this object can't do anything with it anyway.
+	    // This must initialize before the context, so that MemoryManagers are
+	    // setup.
             PAMI::Device::CommThread::BgqCommThread::initContext(_commThreads, _clientid, x, context[x]);
 #endif // USE_COMMTHREADS
+            new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
+                                             &_platdevs, base, bytes, _world_geometry);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }

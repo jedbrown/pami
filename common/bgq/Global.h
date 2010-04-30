@@ -40,6 +40,13 @@
 #define PAMI_MAX_NUM_CLIENTS    4
 #endif // !PAMI_MAX_NUM_CLIENTS
 
+// This enables compilation of the comm-thread code, but it will
+// not be used unless something calls PAMI_Client_add_commthread_context().
+// See test/BG/bgq/commthreads/single-context.c for example use.
+// However, if desired, compilation may be disabled by changing
+// the following to "#undef".
+#define USE_COMMTHREADS // define/undef
+
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
@@ -235,7 +242,7 @@ namespace PAMI
       PAMI::Mapping         mapping;
       PAMI::Atomic::BGQ::L2AtomicFactory l2atomicFactory;
       PAMI::Memory::MemoryManager mm;
-      PAMI::Device::CommThread::BgqWakeupRegion *_wuRegion[PAMI_MAX_NUM_CLIENTS];
+      PAMI::Memory::MemoryManager *_wuRegion_mm[PAMI_MAX_NUM_CLIENTS];
 
     private:
 

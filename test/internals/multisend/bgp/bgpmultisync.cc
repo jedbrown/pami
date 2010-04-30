@@ -6,10 +6,10 @@
 #include <stdio.h>
 #include <pami.h>
 
+#include "test/internals/multisend/multisync.h"
 #include "components/devices/bgp/global_interrupt/GIBarrierMsg.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 #include "components/atomic/bgp/LockBoxBarrier.h"
-#include "test/internals/multisend/multisync.h"
 
 #define BARRIER1_NAME	"PAMI::Device::BGP::giModel"
 #define BARRIER1_ISLOCAL	0

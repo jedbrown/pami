@@ -6,10 +6,10 @@
 #include <stdio.h>
 #include <pami.h>
 
+#include "test/internals/multisend/multicombine.h"
 #include "components/devices/workqueue/WQRingReduceMsg.h"
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
 #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
-#include "test/internals/multisend/multicombine.h"
 
 #ifndef TEST_BUF_SIZE
 #define TEST_BUF_SIZE	1024

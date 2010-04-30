@@ -12,6 +12,8 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 #include "Global.h"
+#undef USE_COMMTHREADS
+#include "components/devices/generic/Device.h"
 
 #include "memorymanager.h"
 

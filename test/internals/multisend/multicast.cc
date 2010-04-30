@@ -6,9 +6,9 @@
 #include <stdio.h>
 #include <pami.h>
 
+#include "test/internals/multisend/multicast.h"
 #include "components/devices/workqueue/WQRingBcastMsg.h"
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
-#include "test/internals/multisend/multicast.h"
 
 #ifndef TEST_BUF_SIZE
 #define TEST_BUF_SIZE	1024

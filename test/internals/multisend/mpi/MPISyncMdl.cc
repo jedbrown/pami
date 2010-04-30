@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <pami.h>
 
-#include "components/devices/mpi/MPISyncMsg.h"
 #include "test/internals/multisend/multisync.h"
+#include "components/devices/mpi/MPISyncMsg.h"
 
 int main(int argc, char ** argv)
 {

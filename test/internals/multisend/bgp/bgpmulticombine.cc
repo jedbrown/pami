@@ -6,10 +6,10 @@
 #include <stdio.h>
 #include <pami.h>
 
+#include "test/internals/multisend/multicombine.h"
 #include "components/devices/bgp/collective_network/CNAllreduceMsg.h"
 #include "components/devices/bgp/collective_network/CNAllreducePPMsg.h"
 #include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
-#include "test/internals/multisend/multicombine.h"
 
 #ifndef TEST_BUF_SIZE
 #define TEST_BUF_SIZE	1024

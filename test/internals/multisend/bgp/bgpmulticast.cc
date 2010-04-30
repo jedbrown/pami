@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <pami.h>
 
-#include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
 #include "test/internals/multisend/multicast.h"
+#include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
 
 #ifndef TEST_BUF_SIZE
 #define TEST_BUF_SIZE	1024
