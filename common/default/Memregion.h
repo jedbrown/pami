@@ -16,7 +16,7 @@ namespace PAMI
   {
     public:
       inline Memregion (pami_context_t context) :
-          Interface::Memregion<Memregion> (context),
+          Interface::Memregion<Memregion> (),
           _context (context)
       {
       }
