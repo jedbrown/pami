@@ -17,7 +17,7 @@
 #define NITER 10
 #else
 #define BUFSIZE 524288
-#define NITER 10
+#define NITER 100
 #endif
 
 volatile unsigned       _g_barrier_active;
@@ -241,7 +241,6 @@ int main (int argc, char ** argv)
       {
         broadcast.cmd.xfer_broadcast.typecount = i;
         _broadcast (context, &broadcast);
-	_barrier(context, &barrier);
       }
       tf = timer();
       _barrier(context, &barrier);
