@@ -284,6 +284,11 @@ namespace PAMI
           else
             msg->_p2p_msg._payloadsize1=0;
 
+	  PAMI_assert (msg != NULL);
+	  PAMI_assert (metadata != NULL);
+	  PAMI_assert (iov[0].iov_base != NULL);
+	  PAMI_assert (iov[1].iov_base != NULL);
+
           memcpy(&msg->_p2p_msg._metadata[0], metadata, metasize);
           memcpy(&msg->_p2p_msg._payload[0], iov[0].iov_base, iov[0].iov_len);
           if (T_Niov)

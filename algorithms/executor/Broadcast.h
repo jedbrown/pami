@@ -87,7 +87,7 @@ namespace CCMI
 
       void setSchedule (Interfaces::Schedule *ct, unsigned color)
       {
-            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+	TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
 	_color = color;
         _comm_schedule = ct;
         int nph, phase;
@@ -97,21 +97,21 @@ namespace CCMI
       }
 
       void setRoot(unsigned root) {
-            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+	TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
 	_root = root;
       }
 
       void  setBuffers (char *src, char *dst, int len)
       {
-        TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::setInfo() src %p, dst %p, len %d, _pwq %p\n",this, src, dst, len, &_pwq));
+        //fprintf(stderr, "%d: <%p>Executor::BroadcastExec::setInfo() src %p, dst %p, len %d, _pwq %p\n", _native->myrank(), this, src, dst, len, &_pwq);
         unsigned connid =  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
         _msend.connection_id = connid;
         _buflen = len;
         //Setup pipework queue
         _pwq.configure (NULL, src, len, 0);
-  _pwq.reset();
-        TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::setInfo() _pwq %p, bytes available %zu/%zu\n",this,&_pwq,
-                     _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
+	_pwq.reset();
+	//fprintf(stderr, "<%p>Executor::BroadcastExec::setInfo() _pwq %p, bytes available %zu/%zu\n",this,&_pwq,
+	//	_pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce());
       }
 
       //------------------------------------------
@@ -137,6 +137,7 @@ namespace CCMI
 
       void postReceives () {
         if(_native->myrank() == _root) return;
+	if (_buflen == 0) return; //we call callback in start
 
         pami_multicast_t mrecv;
         memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
@@ -144,8 +145,15 @@ namespace CCMI
         TRACE_FLOW((stderr,"postReceives bytes %d, rank %d\n",_buflen, _selftopology.index2Rank(0)));
         mrecv.src_participants   = NULL; //current mechanism to identify a non-root node
         mrecv.dst_participants   = (pami_topology_t *)&_selftopology;
-        mrecv.cb_done.function   = _cb_done;
-        mrecv.cb_done.clientdata = _clientdata;
+
+	if (_dsttopology.size() == 0) {
+	  mrecv.cb_done.function   = _cb_done;
+	  mrecv.cb_done.clientdata = _clientdata;
+	}
+	else {
+	  mrecv.cb_done.function   = NULL;
+	  mrecv.cb_done.clientdata = NULL;
+	}
         mrecv.dst    =  (pami_pipeworkqueue_t *)&_pwq;
         mrecv.src    =  NULL;
         mrecv.bytes  = _buflen;
@@ -162,15 +170,16 @@ namespace CCMI
 template <class T>
 inline void  CCMI::Executor::BroadcastExec<T>::start ()
 {
-  TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::start()\n",this));
+  //  fprintf(stderr, "<%p>Executor::BroadcastExec::start()\n",this);
 
   // Nothing to broadcast? We're done.
-  if((_buflen == 0) && _cb_done)
+  if((_buflen == 0) && _cb_done) {
     _cb_done (NULL, _clientdata, PAMI_SUCCESS);
-  else if(_native->myrank() == _root)
-  {
-    _pwq.produceBytes (_buflen);
+    return;
   }
+  
+  if(_native->myrank() == _root)
+    _pwq.produceBytes (_buflen);
   sendNext ();
 }
 
@@ -178,18 +187,17 @@ template <class T>
 inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
 {
   //CCMI_assert (_dsttopology.size() != 0); //We have nothing to send
-
   if(_dsttopology.size() == 0) {
-    _cb_done(NULL, _clientdata, PAMI_SUCCESS);
+    //_cb_done(NULL, _clientdata, PAMI_SUCCESS);
     return;
   }
 
-  TRACE_FLOW((stderr, "Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu\n",_buflen, _dsttopology.size()));
-  //for(unsigned i = 0; i < _dsttopology.size(); ++i) TRACE_FLOW((stderr,"dstrank[%d]=%d/%d\n",i,_dstranks[i],_dsttopology.index2Rank(i)));
-
-  //for(int dcount = 0; dcount < _nmessages; dcount++)
-  //TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::sendNext() send to %d for size %d\n",this, _dstranks[dcount], _curlen));
-
+  TRACE_FLOW((stderr, "%d: Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %d\n",
+	      _native->myrank(),
+	      _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
+  //for(unsigned i = 0; i < _dsttopology.size(); ++i) 
+  //fprintf(stderr,"dstrank[%d]=%d/%d\n",i,_dstranks[i],_dsttopology.index2Rank(i));
+  
   //Sending message header to setup receive of an async message
   _mdata._comm  = _comm;
   _mdata._root  = _root;
@@ -199,8 +207,8 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   _msend.dst_participants  = (pami_topology_t *)&_dsttopology;
   _msend.cb_done.function   = _cb_done;
   _msend.cb_done.clientdata = _clientdata;
-  _msend.dst   =   NULL;
   _msend.src    = (pami_pipeworkqueue_t *)&_pwq;
+  _msend.dst   =   NULL;
   _msend.bytes  = _buflen;
   _native->multicast(&_msend);
 }
@@ -220,6 +228,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
     sendNext ();
   }
   else {
+    //fprintf (stderr, "%d: Nothing to send, receive completion indicates completion\n", _native->myrank());
     cb_done->function   = _cb_done;
     cb_done->clientdata = _clientdata;
   }

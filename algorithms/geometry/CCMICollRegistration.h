@@ -63,22 +63,26 @@ namespace PAMI
         _context(context),
         _context_id(context_id),
         _dev(dev),
-        _msync_ni(dev, client,context,context_id,client_id),
-        _barrier_ni(dev, client,context,context_id,client_id),
-        _binom_broadcast_ni(dev, client,context,context_id,client_id),
-        _ring_broadcast_ni(dev, client,context,context_id,client_id),
-	_binom_allreduce_ni(dev, client,context,context_id,client_id),
+	_msync_ni           (dev, client,context,context_id,client_id),
+        _barrier_ni         (dev, client,context,context_id,client_id),
+        _binom_broadcast_ni (dev, client,context,context_id,client_id),
+        _ring_broadcast_ni  (dev, client,context,context_id,client_id),
+	_am_binom_bcast_ni  (dev, client,context,context_id,client_id),
+	_binom_allreduce_ni (dev, client,context,context_id,client_id),
         _connmgr(65535),
 	_rbconnmgr(NULL), //Doesnt use sysdeps
+	_csconnmgr(), //Doesnt use sysdeps
         _msync_reg(&_sconnmgr, &_msync_ni),
         _barrier_reg(NULL,&_barrier_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
         _binom_broadcast_reg(&_connmgr, &_binom_broadcast_ni),
 	_ring_broadcast_reg(&_connmgr, &_ring_broadcast_ni),
+	_am_binom_bcast_reg(&_csconnmgr, &_am_binom_bcast_ni),
 	_binomial_allreduce_reg(&_rbconnmgr, &_binom_allreduce_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead)
           {
             TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
 	    //set the mapid functions
             _barrier_reg.setMapIdToGeometry(mapidtogeometry);
+	    _am_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
             _binomial_allreduce_reg.setMapIdToGeometry(mapidtogeometry);
           }
 
@@ -99,6 +103,7 @@ namespace PAMI
           // Add Broadcasts
           geometry->addCollective(PAMI_XFER_BROADCAST,&_binom_broadcast_reg,_context_id);
           geometry->addCollective(PAMI_XFER_BROADCAST,&_ring_broadcast_reg,_context_id);
+          geometry->addCollective(PAMI_XFER_BROADCAST,&_am_binom_bcast_reg,_context_id);
 
 	  // Add allreduce
 	  geometry->addCollective(PAMI_XFER_ALLREDUCE,&_binomial_allreduce_reg,_context_id);
@@ -127,12 +132,14 @@ namespace PAMI
       T_NativeInterface1S                                    _barrier_ni;
       T_NativeInterfaceAS                                    _binom_broadcast_ni;
       T_NativeInterfaceAS                                    _ring_broadcast_ni;
+      T_NativeInterface1S                                    _am_binom_bcast_ni;
       T_NativeInterface1S                                    _binom_allreduce_ni;
 
       // CCMI Connection Manager Class
       CCMI::ConnectionManager::ColorGeometryConnMgr<SysDep>  _connmgr;
       CCMI::ConnectionManager::SimpleConnMgr<SysDep>         _sconnmgr;
       CCMI::ConnectionManager::RankBasedConnMgr<SysDep>      _rbconnmgr;
+      CCMI::ConnectionManager::CommSeqConnMgr                _csconnmgr;
 
       // CCMI Barrier Interface
       CCMI::Adaptor::Barrier::MultiSyncFactory               _msync_reg;
@@ -141,7 +148,8 @@ namespace PAMI
       // CCMI Binomial and Ring Broadcast
       CCMI::Adaptor::Broadcast::BinomialBcastFactory         _binom_broadcast_reg;
       CCMI::Adaptor::Broadcast::RingBcastFactory             _ring_broadcast_reg;
-
+      CCMI::Adaptor::Broadcast::AsyncBinomBcastFactory       _am_binom_bcast_reg;
+      
       CCMI::Adaptor::Allreduce::Binomial::Factory            _binomial_allreduce_reg;
     };
   };

@@ -846,8 +846,8 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
   *rcvlen    = sndlen;
   PAMI::PipeWorkQueue *pwq = _acache.getPhasePipeWorkQueues(cdata->_phase, srcPeIndex);
   pwq->reset();
-  char * buf = pwq->bufferToProduce();
-  CCMI_assert (buf != NULL);
+  //char * buf = pwq->bufferToProduce();
+  //CCMI_assert (buf != NULL);
   //printf ("%d: PWQ buffer 0x%x for phase %d index %d\n", _native->myrank(), buf, cdata->_phase, srcPeIndex);
 
   * rcvpwq    = (pami_pipeworkqueue_t *) pwq;

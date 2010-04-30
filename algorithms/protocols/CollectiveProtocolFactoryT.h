@@ -34,7 +34,7 @@ namespace CCMI
           _obj(native,cmgr,geometry,cmd,fn,cookie),
           _factory(factory),
           _user_done_fn(cmd->cb_done),
-          _user_cookie(cmd->cookie)
+	  _user_cookie(cmd->cookie)
           {
             TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
           DO_DEBUG((templateName<T>()));

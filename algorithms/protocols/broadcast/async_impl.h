@@ -14,9 +14,11 @@
 #ifndef __algorithms_protocols_broadcast_async_impl_h__
 #define __algorithms_protocols_broadcast_async_impl_h__
 
+#include "algorithms/schedule/MultinomialTree.h"
 #include "algorithms/schedule/BinomialTree.h"
 #include "algorithms/schedule/RingSchedule.h"
 #include "algorithms/protocols/broadcast/AsyncCompositeT.h"
+#include "algorithms/protocols/broadcast/AsyncBroadcastT.h"
 
 namespace CCMI
 {
@@ -28,6 +30,28 @@ namespace CCMI
       {
         // \todo:  fill in other metadata
         strcpy(&m->name[0],"CCMIAMBinomialBcast");
+      }
+
+      typedef AsyncBroadcastT <CCMI::Schedule::ListMultinomial,
+	CCMI::ConnectionManager::CommSeqConnMgr> AsyncBinomBcastComposite;
+      template<>
+	void AsyncBinomBcastComposite::create_schedule(void                        * buf,
+						       unsigned                      size,
+						       unsigned                      root,
+						       Interfaces::NativeInterface * native,
+						       PAMI_GEOMETRY_CLASS          * g)
+	{
+	  new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
+	}
+
+      typedef AsyncBroadcastFactoryT<AsyncBinomBcastComposite,
+	am_bcast_md,
+	CCMI::ConnectionManager::CommSeqConnMgr > AsyncBinomBcastFactory;
+
+      void old_am_bcast_md(pami_metadata_t *m)
+      {
+        // \todo:  fill in other metadata
+        strcpy(&m->name[0],"CCMIOldAMBinomialBcast");
       }
 
       typedef
@@ -45,7 +69,7 @@ namespace CCMI
         new (buf) CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>(map, g->nranks(), g->ranks());
       }
 
-      typedef AsyncCompositeFactoryT <AsyncBinomialComposite,am_bcast_md,PAMI_SYSDEP_CLASS,PAMI_COLL_MCAST_CLASS>
+      typedef AsyncCompositeFactoryT <AsyncBinomialComposite,old_am_bcast_md,PAMI_SYSDEP_CLASS,PAMI_COLL_MCAST_CLASS>
       AsyncBinomialFactory;
     };
   };
