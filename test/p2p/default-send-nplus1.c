@@ -50,10 +50,10 @@ unsigned validate (void * addr, size_t bytes, size_t test_n_plus_1)
       fprintf (stderr, "validate(%p,%zu) .. ERROR .. byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, bytes, bytes, reset_value[r], bytes, &byte[bytes], byte[bytes]);
       status = 0;
     }
-  }
 
-  // Print __recv_buffer
-  fprintf(stdout, "recv buffer[0:%zu] after send: %s\n", bytes, recv_str);
+    // Print __recv_buffer
+    fprintf(stdout, "recv buffer[0:%zu] after send: %s\n", bytes, recv_str);
+  }
 
   return status;
 }
@@ -89,7 +89,7 @@ static void test_dispatch (
   //(*active)--;
   //fprintf (stderr, "... dispatch function.  active = %zu\n", *active);
 
-  if (!validate(header_addr, header_size, 1))
+  if (!validate(header_addr, header_size, 0))
     fprintf (stderr, "validate header ERROR!\n");
 
   if (pipe_size == 0)
