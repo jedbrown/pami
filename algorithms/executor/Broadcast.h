@@ -192,11 +192,19 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
     return;
   }
 
-  TRACE_FLOW((stderr, "%d: Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %d\n",
-	      _native->myrank(),
-	      _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
-  //for(unsigned i = 0; i < _dsttopology.size(); ++i)
-  //fprintf(stderr,"dstrank[%d]=%d/%d\n",i,_dstranks[i],_dsttopology.index2Rank(i));
+#if 0
+  char tbuf[1024];
+  char sbuf[16384];
+  sprintf(sbuf, "%d: Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %d ",
+	  _native->myrank(),
+	  _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume());
+  for(unsigned i = 0; i < _dsttopology.size(); ++i) {
+    sprintf(tbuf, " dstrank[%d]=%d/%d ", i,_dstranks[i],_dsttopology.index2Rank(i));
+    strcat (sbuf, tbuf);
+  }
+
+  fprintf (stderr, "%s\n", sbuf);
+#endif
 
   //Sending message header to setup receive of an async message
   _mdata._comm  = _comm;
@@ -220,7 +228,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
  PAMI::PipeWorkQueue ** pwq,
  pami_callback_t      * cb_done)
 {
-  TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::notifyRecv() from %d\n",this, src));
+  fprintf(stderr, "<%p>Executor::BroadcastExec::notifyRecv() from %d\n",this, src);
 
   *pwq = &_pwq;
   if (_dsttopology.size() > 0) {
@@ -228,7 +236,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
     sendNext ();
   }
   else {
-    //fprintf (stderr, "%d: Nothing to send, receive completion indicates completion\n", _native->myrank());
+    fprintf (stderr, "%d: Nothing to send, receive completion indicates completion\n", _native->myrank());
     cb_done->function   = _cb_done;
     cb_done->clientdata = _clientdata;
   }
