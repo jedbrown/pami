@@ -228,7 +228,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
  PAMI::PipeWorkQueue ** pwq,
  pami_callback_t      * cb_done)
 {
-  fprintf(stderr, "<%p>Executor::BroadcastExec::notifyRecv() from %d\n",this, src);
+  //fprintf(stderr, "<%p>Executor::BroadcastExec::notifyRecv() from %d\n",this, src);
 
   *pwq = &_pwq;
   if (_dsttopology.size() > 0) {
@@ -236,7 +236,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
     sendNext ();
   }
   else {
-    fprintf (stderr, "%d: Nothing to send, receive completion indicates completion\n", _native->myrank());
+    //    fprintf (stderr, "%d: Nothing to send, receive completion indicates completion\n", _native->myrank());
     cb_done->function   = _cb_done;
     cb_done->clientdata = _clientdata;
   }
