@@ -159,7 +159,7 @@ int main (int argc, char ** argv)
   if (task_id == 0)
   {
     TRACE((stderr, "before send ...\n"));
-    parameters.send.dest = PAMI_Endpoint_create (client, 1, 0);
+    PAMI_Endpoint_create (client, 1, 0, &parameters.send.dest);
     result = PAMI_Send (context, &parameters);
     if (result != PAMI_SUCCESS)
     {
@@ -195,7 +195,7 @@ int main (int argc, char ** argv)
     TRACE((stderr, "... after recv advance loop\n"));
 
     TRACE((stderr, "before send ...\n"));
-    parameters.send.dest = PAMI_Endpoint_create (client, 0, 0);
+    PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
     result = PAMI_Send (context, &parameters);
     if (result != PAMI_SUCCESS)
     {
@@ -224,7 +224,7 @@ int main (int argc, char ** argv)
   if (task_id == 0)
   {
     TRACE((stderr, "before send ...\n"));
-    parameters.send.dest = PAMI_Endpoint_create (client, 1, 0);
+    PAMI_Endpoint_create (client, 1, 0, &parameters.send.dest);
     parameters.send.dispatch = 1;
     result = PAMI_Send (context, &parameters);
     if (result != PAMI_INVAL)

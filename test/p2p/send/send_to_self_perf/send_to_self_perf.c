@@ -166,7 +166,7 @@ unsigned long long test (size_t sndlen, size_t myrank)
   //Allow warmup of 1 iteration
   for (i = 0; i <= ITERATIONS; i++)
   {
-    parameters.send.dest = PAMI_Endpoint_create (_g_client, myrank, 0);
+    PAMI_Endpoint_create (_g_client, myrank, 0, &parameters.send.dest);
     TRACE_ERR((stderr, "(%zu)\n(%zu) Starting Iteration %d of size %zu\n", _my_rank, _my_rank, i, sndlen));
     if (i == 1)
       t1 = PAMI_Wtimebase();

@@ -106,7 +106,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
 
   pami_endpoint_t endpoint[ntasks];
   for (i=0; i<ntasks; i++)
-    endpoint[i] = PAMI_Endpoint_create (client, i, 0);
+    PAMI_Endpoint_create (client, i, 0, &endpoint[i]);
 
   pami_send_t parameters;
   parameters.send.dest = endpoint[0];

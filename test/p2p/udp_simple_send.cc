@@ -278,8 +278,9 @@ int main (int argc, char ** argv)
 
    size_t val = argc;
 
-  pami_endpoint_t origin = PAMI_Endpoint_create (client, 0, 0);
-  pami_endpoint_t target = PAMI_Endpoint_create (client, 1, 0);
+  pami_endpoint_t origin, target;
+  PAMI_Endpoint_create (client, 0, 0, &origin);
+  PAMI_Endpoint_create (client, 1, 0, &target);
 
 
    if (argc==1)

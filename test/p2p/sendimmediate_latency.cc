@@ -253,8 +253,9 @@ int main (int argc, char ** argv)
   unsigned long long cycles;
   double usec;
 
-  pami_endpoint_t origin = PAMI_Endpoint_create (client, 0, 0);
-  pami_endpoint_t target = PAMI_Endpoint_create (client, 1, 0);
+  pami_endpoint_t origin, target;
+  PAMI_Endpoint_create (client, 0, 0, &origin);
+  PAMI_Endpoint_create (client, 1, 0, &target);
 
   char str[10240];
 //	fprintf(stdout,"starting the test\n") ;

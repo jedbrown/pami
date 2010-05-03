@@ -190,17 +190,17 @@ int main (int argc, char ** argv)
 #ifdef TEST_CROSSTALK
     fprintf (stdout, "PAMI_Put('simple') functional test [crosstalk]\n");
     fprintf (stdout, "\n");
-    parameters.dest = PAMI_Endpoint_create (client, 1, 1);
+    PAMI_Endpoint_create (client, 1, 1, &parameters.dest);
 #else
     fprintf (stdout, "PAMI_Put('simple') functional test\n");
     fprintf (stdout, "\n");
-    parameters.dest = PAMI_Endpoint_create (client, 1, 0);
+    PAMI_Endpoint_create (client, 1, 0, &parameters.dest);
 #endif
 
 
     // Send a message to the target task
     info_t info;
-    info.origin = PAMI_Endpoint_create (client, 0, 0);
+    PAMI_Endpoint_create (client, 0, 0, &info.origin);
     info.dst = (void *) &_done;
 
     parameters.dispatch        = DISPATCH_ID;

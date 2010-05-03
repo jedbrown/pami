@@ -255,11 +255,11 @@ int main (int argc, char ** argv)
 #ifdef TEST_CROSSTALK
     fprintf (stdout, "PAMI_Send() functional test [crosstalk]\n");
     fprintf (stdout, "\n");
-    parameters.send.dest = PAMI_Endpoint_create (client, 1, 1);
+    PAMI_Endpoint_create (client, 1, 1, &parameters.send.dest);
 #else
     fprintf (stdout, "PAMI_Send() functional test [no crosstalk]\n");
     fprintf (stdout, "\n");
-    parameters.send.dest = PAMI_Endpoint_create (client, 1, 0);
+    PAMI_Endpoint_create (client, 1, 0, &parameters.send.dest);
 #endif
 
     for (r = 0; r < 2; r++) {           // reset value loop
@@ -312,7 +312,7 @@ int main (int argc, char ** argv)
 #else
     size_t contextid = 0;
 #endif
-    parameters.send.dest = PAMI_Endpoint_create (client, 0, 0);
+    PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 
     for (r = 0; r < 2; r++) {    // reset value loop
       for (h=0; h<hsize; h++)    // header size loop

@@ -169,7 +169,8 @@ static pami_result_t SendLongHandoff(pami_context_t   context,
 
   pami_task_t remote_task = 1-task;
   size_t remote_context = (task+LONG_DISPATCH)&(num_contexts-1);
-  pami_endpoint_t dest = PAMI_Endpoint_create(client, remote_task, remote_context);
+  pami_endpoint_t dest;
+  PAMI_Endpoint_create(client, remote_task, remote_context, &dest);
 
   pami_send_t parameters = { {{0,0}, {0,0}}, {0} };
   parameters.send.dispatch        = LONG_DISPATCH;
@@ -225,7 +226,8 @@ static pami_result_t SendShortHandoff(pami_context_t   context,
 
   pami_task_t remote_task = 1-task;
   size_t remote_context = (task+SHORT_DISPATCH)&(num_contexts-1);
-  pami_endpoint_t dest = PAMI_Endpoint_create(client, remote_task, remote_context);
+  pami_endpoint_t dest;
+  PAMI_Endpoint_create(client, remote_task, remote_context, &dest);
 
   pami_send_immediate_t parameters = { {0,0}, {0,0}, 0 };
   parameters.dispatch        = SHORT_DISPATCH;

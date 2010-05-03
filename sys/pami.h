@@ -2431,7 +2431,7 @@ extern "C"
    *   will process the communication operation.
    *
    * Point-to-point communication operations, such as send, put, and get, will
-   * address a destniation with the opaque endpoint object. Collective
+   * address a destination with the opaque endpoint object. Collective
    * communication operations are addressed by an opaque geometry object.
    *
    * The application may choose to write an endpoint table in shared memory to
@@ -2443,7 +2443,7 @@ extern "C"
    * another task.
    *
    * \internal The endpoint opaque object should not contain any pointers to
-   *           the local address space of a particular process as doing so will
+   *           the local address space of a particular process, as doing so will
    *           prevent the application from placing an array of endpoints in a
    *           shared memory area to be used, read-only, by all tasks with
    *           access to the shared memory area.
@@ -2451,15 +2451,15 @@ extern "C"
    * \note This function may be replaced with a generated macro specific to the
    *       install platform if needed for performance reasons.
    *
-   * \param[in] client Opaque destination client object
-   * \param[in] task   Opaque destination task object
-   * \param[in] offset Destination context offset
-   *
-   * \returns Opaque endpoint object
+   * \param[in]  client   Opaque destination client object
+   * \param[in]  task     Opaque destination task object
+   * \param[in]  offset   Destination context offset
+   * \param[out] endpoint Opaque endpoint object
    */
-  pami_endpoint_t PAMI_Endpoint_create (pami_client_t client,
-                                      pami_task_t   task,
-                                      size_t       offset);
+  pami_result_t PAMI_Endpoint_create (pami_client_t     client,
+                                      pami_task_t       task,
+                                      size_t            offset,
+                                      pami_endpoint_t * endpoint);
 
   /**
    * \example endpoint_table.c
@@ -2486,9 +2486,9 @@ extern "C"
    *                   size of endpoint array
    */
   pami_result_t PAMI_Endpoint_createv (pami_client_t     client,
-                                     pami_task_t       task,
-                                     pami_endpoint_t * endpoints,
-                                     size_t         * count);
+                                       pami_task_t       task,
+                                       pami_endpoint_t * endpoints,
+                                       size_t          * count);
 
   /**
    * \brief Retrieve the client, task, and context offset associated with an endpoint
@@ -2503,9 +2503,9 @@ extern "C"
    * \param[out] task     Opaque destination task object
    * \param[out] offset   Destination context offset
    */
-  void PAMI_Endpoint_query (pami_endpoint_t   endpoint,
-                                 pami_task_t     * task,
-                                 size_t         * offset);
+  pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
+                                     pami_task_t     * task,
+                                     size_t          * offset);
 
 
 

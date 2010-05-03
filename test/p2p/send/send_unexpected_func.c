@@ -132,7 +132,7 @@ int main (int argc, char ** argv)
     volatile unsigned send_active = MSGCOUNT * 2;
 
     pami_send_t parameters;
-    parameters.send.dest            = PAMI_Endpoint_create (client, 0, 0);
+    PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
     parameters.send.dispatch        = dispatch;
     parameters.send.header.iov_base = metadata;
     parameters.send.header.iov_len  = 32;

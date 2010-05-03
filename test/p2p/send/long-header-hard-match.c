@@ -198,7 +198,7 @@ int main (int argc, char ** argv)
       for ( h = 0; h < 2; h++) {
 	parameters.send.header.iov_base = (void *) header_ary[h];
 	parameters.send.header.iov_len  = header_size_ary[h];
-	parameters.send.dest = PAMI_Endpoint_create (client, 1, 0);
+	PAMI_Endpoint_create (client, 1, 0, &parameters.send.dest);
 
 	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n", &header_type_str[h][0], header_size_ary[h], task_id, soft_hint_ary[task_id]);
 	fprintf(stderr, "task %zu no_long_header hard hint = %zu\n", task_id, d);
@@ -249,7 +249,7 @@ int main (int argc, char ** argv)
 	parameters.send.dispatch = d;
 	parameters.send.header.iov_base = (void *) header_ary[h];
 	parameters.send.header.iov_len  = header_size_ary[h];
-	parameters.send.dest = PAMI_Endpoint_create (client, 0, 0);
+	PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 
 	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n", &header_type_str[h][0], header_size_ary[h], task_id, soft_hint_ary[task_id]);
 	fprintf(stderr, "task %zu no_long_header hard hint = %zu\n", task_id, d);
@@ -293,7 +293,7 @@ int main (int argc, char ** argv)
       for ( h = 0; h < 2; h++) {
 	parameters.send.header.iov_base = (void *) header_ary[h];
 	parameters.send.header.iov_len  = header_size_ary[h];
-	parameters.send.dest = PAMI_Endpoint_create (client, 1, 0);
+	PAMI_Endpoint_create (client, 1, 0, &parameters.send.dest);
 	parameters.send.hints.no_long_header = soft_hint_ary[d];
 
 	fprintf(stderr, "Sending %s (%zu bytes)from task %zu -> %zu:\n", &header_type_str[h][0],header_size_ary[h], task_id, soft_hint_ary[task_id]);
@@ -346,7 +346,7 @@ int main (int argc, char ** argv)
 	parameters.send.dispatch = d;
 	parameters.send.header.iov_base = (void *) header_ary[h];
 	parameters.send.header.iov_len  = header_size_ary[h];
-	parameters.send.dest = PAMI_Endpoint_create (client, 0, 0);
+	PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 	parameters.send.hints.no_long_header = soft_hint_ary[d];
 
 	fprintf(stderr, "Sending %s (%zu bytes)from task %zu -> %zu:\n", &header_type_str[h][0], header_size_ary[h], task_id, soft_hint_ary[task_id]);

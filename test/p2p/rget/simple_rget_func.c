@@ -354,11 +354,11 @@ int main (int argc, char ** argv)
 #ifdef TEST_CROSSTALK
     fprintf (stdout, "PAMI_Rget('simple') functional test [crosstalk]\n");
     fprintf (stdout, "\n");
-    parameters.dest = PAMI_Endpoint_create (client, 1, 1);
+    PAMI_Endpoint_create (client, 1, 1, &parameters.dest);
 #else
     fprintf (stdout, "PAMI_Rget('simple') functional test\n");
     fprintf (stdout, "\n");
-    parameters.dest = PAMI_Endpoint_create (client, 1, 0);
+    PAMI_Endpoint_create (client, 1, 0, &parameters.dest);
 #endif
 
 
@@ -371,7 +371,7 @@ int main (int argc, char ** argv)
 
     // Send an 'rts' message to the target task and provide the memory region
     rts_info_t rts_info;
-    rts_info.origin = PAMI_Endpoint_create (client, 0, 0);
+    PAMI_Endpoint_create (client, 0, 0, &rts_info.origin);
     rts_info.bytes  = BUFFERSIZE;
 
     // Create a memory region for this memoru buffer
