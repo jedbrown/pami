@@ -1,20 +1,19 @@
 ///
-/// \file test/p2p/default-send-nplus1.c
-/// \brief Simple point-to-point PAMI_send() test
+/// \file test/p2p/default-send.c
+/// \brief Simple point-topoint PAMI_send() test
 /// \validates that the n+1 byte remains unchanged
 ///
 
-#include <pami.h>
+#include "sys/pami.h"
 #include <stdio.h>
-
-#define TEST_REMOTE_CALLBACK
-#define TEST_CROSSTALK
+#include <string.h>
 
 uint8_t __recv_buffer[2048];
 char recv_str[2048];               // used to print __recv_buffer as string
 size_t __recv_size;
 size_t __data_errors;
 uint8_t reset_value[2] ={0, 255};  // reset value for each byte of __recv_buffer ...all 0's or all 1's (255)
+size_t reset_elements = 2;         // total number of reset values
 size_t r = 0;                      // used to loop over reset values
 
 unsigned validate (void * addr, size_t bytes, size_t test_n_plus_1)
@@ -90,7 +89,7 @@ static void test_dispatch (
   //(*active)--;
   //fprintf (stderr, "... dispatch function.  active = %zu\n", *active);
 
-  if (!validate(header_addr, header_size, 0))
+  if (!validate(header_addr, header_size, 1))
     fprintf (stderr, "validate header ERROR!\n");
 
   if (pipe_size == 0)
@@ -133,17 +132,43 @@ static void send_done_remote (pami_context_t   context,
 
 int main (int argc, char ** argv)
 {
+
+  // Determine which Device is being used
+  char * device;
+  size_t initial_device = 0;
+  size_t device_limit = 0;
+  device = getenv ("PAMI_DEVICE");
+  if (device != NULL) {
+    if (!strcmp(device, "M")) {
+      fprintf (stderr, "Only the MU device is initialized.\n");
+      initial_device = 0;
+      device_limit = 1;
+    } else if (!strcmp(device, "S")) {
+      fprintf (stderr, "Only the SHMem device is initialized.\n");
+      initial_device = 1;
+      device_limit = 2;
+    } else if (!strcmp(device, "B")) {
+      fprintf (stderr, "Both the MU and SHMem devices are initialized.\n");
+      initial_device = 0;
+      device_limit = 2;
+    } else {
+      fprintf (stderr, "ERROR:  PAMI_DEVICE = %s is unsupported. Valid values are:  M (MU only), S (SHMem only), B (both MU & SHMem)\n", device);
+      return 1;
+    }
+  } else {
+    fprintf (stderr, "ERROR:  PAMI_DEVICE = NULL. Set the PAMI_DEVICE environment variable to M (MU only), S (SHMem only) or B (both MU & SHMem)\n");
+    return 1;
+  }
+
   volatile size_t send_active = 1;
-#ifdef TEST_REMOTE_CALLBACK
-  send_active++;
-#endif
   volatile size_t recv_active = 1;
 
   __data_errors = 0;
 
   pami_client_t client;
+  pami_configuration_t configuration;
   pami_context_t context[2];
-  //pami_configuration_t * configuration = NULL;
+  
   char                  cl_string[] = "TEST";
   pami_result_t result = PAMI_ERROR;
 
@@ -154,18 +179,32 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-#ifdef TEST_CROSSTALK
-  result = PAMI_Context_createv(client, NULL, 0, context, 2);
-#else
-  result = PAMI_Context_createv(client, NULL, 0, context, 1);
-#endif
+  configuration.name = PAMI_NUM_CONTEXTS;
+  result = PAMI_Configuration_query(client, &configuration);
+  if (result != PAMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+    return 1;
+  }
+  size_t max_contexts = configuration.value.intval;
+  if (max_contexts > 0) {
+    fprintf (stderr, "Max number of contexts = %zu\n", max_contexts);
+  } else {
+    fprintf (stderr, "ERROR:  Max number of contexts (%zu) <= 0. Exiting\n", max_contexts);
+    return 1;
+  }
+
+  size_t num_contexts = 1;
+  if (max_contexts > 1) {
+    num_contexts = 2; // allows for cross talk
+  }
+    
+  result = PAMI_Context_createv(client, NULL, 0, context, num_contexts);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
     return 1;
   }
-
-  pami_configuration_t configuration;
 
   configuration.name = PAMI_TASK_ID;
   result = PAMI_Configuration_query(client, &configuration);
@@ -192,25 +231,30 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  size_t dispatch = 0;
+  //size_t dispatch = 0;
   pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   pami_send_hint_t options={0};
-  size_t i = 0;
-#ifdef TEST_CROSSTALK
-  for (i=0; i<2; i++)
-#endif
-  {
-    fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
-    result = PAMI_Dispatch_set (context[i],
-                               dispatch,
-                               fn,
-                               (void *)&recv_active,
-                               options);
-    if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
-      return 1;
+  size_t i, use_shmem = 0;
+
+  for (i = 0; i < num_contexts; i++) {
+    // For each context:
+    // Set up dispatch ID 0 for MU (use_shmem = 0, no_shmem = 1) 
+    // set up dispatch ID 1 for SHMem (use_shmem = 1, no_shmem = 0)
+ 
+    for (use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {
+      fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
+      options.use_shmem = use_shmem;
+      options.no_shmem = !use_shmem;
+      result = PAMI_Dispatch_set (context[i],
+				  use_shmem,
+				  fn,
+				  (void *)&recv_active,
+				  options);
+      if (result != PAMI_SUCCESS) {
+	fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
+	return 1;
+      }
     }
   }
 
@@ -240,160 +284,202 @@ int main (int argc, char ** argv)
   data_bytes[psize++] = 1024;
 
   pami_send_t parameters;
-  parameters.send.dispatch        = dispatch;
   parameters.send.header.iov_base = header;
   parameters.send.data.iov_base   = data;
   parameters.events.cookie        = (void *) &send_active;
   parameters.events.local_fn      = send_done_local;
-#ifdef TEST_REMOTE_CALLBACK
-  parameters.events.remote_fn     = send_done_remote;
-#else
-  parameters.events.remote_fn     = NULL;
-#endif
+
+  size_t xtalk = 0;
+  size_t remote_cb = 0;
+  
+  char device_str[2][50] = {"MU", "SHMem"};
+  char xtalk_str[2][50] = {"no crosstalk", "crosstalk"};
+  char callback_str[2][50] = {"no callback", "callback"};
+
   if (task_id == 0)
   {
-#ifdef TEST_CROSSTALK
-    fprintf (stdout, "PAMI_Send() functional test [crosstalk]\n");
-    fprintf (stdout, "\n");
-    parameters.send.dest = PAMI_Endpoint_create (client, 1, 1);
-#else
-    fprintf (stdout, "PAMI_Send() functional test [no crosstalk]\n");
-    fprintf (stdout, "\n");
-    parameters.send.dest = PAMI_Endpoint_create (client, 1, 0);
-#endif
+    for(use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {      // device loop  
+      for(xtalk = 0; xtalk < num_contexts; xtalk++) {                // xtalk loop
 
-    for (r = 0; r < 2; r++) {           // reset value loop
-      for (h=0; h<hsize; h++) {         // header size loop
+	// Skip running MU in Cross talk mode for now
+	if (xtalk && !use_shmem) {
+	  continue;
+	}
 
-	parameters.send.header.iov_len = header_bytes[h];
-	for (p=0; p<psize; p++) {       // payload size loop
-	  parameters.send.data.iov_len = data_bytes[p];
+	parameters.send.dispatch = use_shmem;
+	parameters.send.dest     = PAMI_Endpoint_create (client, 1, xtalk);
 
-	  fprintf (stderr, "################################### %zu %zu\n", header_bytes[h], data_bytes[p]);
-	  fprintf (stderr, "before send ...\n");
-	  result = PAMI_Send (context[0], &parameters);
-	  fprintf (stderr, "... after send.\n");
-
-	  fprintf (stderr, "before send-recv advance loop ... &send_active = %p, &recv_active = %p\n", &send_active, &recv_active);
-
-	  while (send_active || recv_active)
-	  {
-	    result = PAMI_Context_advance (context[0], 100);
-	    if (result != PAMI_SUCCESS)
-            {
-	      fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
-	      return 1;
-            }
-	  }
-	  send_active = 1;
-#ifdef TEST_REMOTE_CALLBACK
-	  send_active++;
-#endif
-
-	  if (recv_active == 0) {
-
-	    // Reset __recv_buffer
-	    for (i = 0; i < 2048; i++) {
-	      __recv_buffer[i] = reset_value[r];
-	    }
-
-	    recv_active = 1;
+	for (remote_cb = 0; remote_cb < 2; remote_cb++) { // remote callback loop
+	  if (remote_cb) {
+	    parameters.events.remote_fn     = send_done_remote;
+	  } else {
+	    parameters.events.remote_fn     = NULL;
 	  }
 
-	  fprintf (stderr, "... after send-recv advance loop\n");
-	} // end payload size loop
-      } // end header size loop
-    } // end reset value loop
+	  for (r = 0; r < reset_elements; r++) { // reset value loop
+	    for (h=0; h<hsize; h++) {
+	      parameters.send.header.iov_len = header_bytes[h];
+	      for (p=0; p<psize; p++) {
+		parameters.send.data.iov_len = data_bytes[p];
+
+		fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] %zu %zu (%d, 0) -> (1, %zu) =====\n\n", &device_str[use_shmem][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, xtalk);
+
+		fprintf (stderr, "before send ...\n");
+
+		if (remote_cb) {
+		  send_active++;
+		} 
+
+		result = PAMI_Send (context[0], &parameters);
+		fprintf (stderr, "... after send.\n");
+
+		fprintf (stderr, "before send-recv advance loop ... &send_active = %p, &recv_active = %p\n", &send_active, &recv_active);
+
+		while (send_active || recv_active) {
+		  result = PAMI_Context_advance (context[0], 100);
+
+		  if (result != PAMI_SUCCESS) {
+		    fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
+		    return 1;
+		  }
+		}
+
+		send_active = 1;
+		
+		if (recv_active == 0) {
+
+		  // Reset __recv_buffer
+		  for (i = 0; i < 2048; i++) {
+		    // Need special cases for transitioning from 0 <-> 255
+		    if ((h == hsize - 1) && (p == psize - 1)) {
+		      if (r == reset_elements - 1) { // time to loop back to 0
+			__recv_buffer[i] = reset_value[0];
+		      } else { // move to next reset value
+			__recv_buffer[i] = reset_value[r+1];
+		      }
+		    } else {
+		      __recv_buffer[i] = reset_value[r];
+		    }
+		  }
+
+		  recv_active = 1;
+		}
+
+		fprintf (stderr, "... after send-recv advance loop\n");
+	      } // end payload loop
+	    } // end header loop
+	  } // end reset value loop
+	} // end remote callback loop
+      } // end xtalk loop
+    } // end device loop
   } // end task = 0
-  else
-  {
-#ifdef TEST_REMOTE_CALLBACK
-    size_t contextid = 1;
-#else
-    size_t contextid = 0;
-#endif
-    parameters.send.dest = PAMI_Endpoint_create (client, 0, 0);
+  else {
+    for(use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {      // device loop
+      for(xtalk = 0; xtalk < num_contexts; xtalk++) {                // xtalk loop
 
-    for (r = 0; r < 2; r++) {    // reset value loop
-      for (h=0; h<hsize; h++)    // header size loop
-      {
-	parameters.send.header.iov_len = header_bytes[h];
-	for (p=0; p<psize; p++)  // payload size loop
-        {
-	  parameters.send.data.iov_len = data_bytes[p];
+	// Skip running MU in Cross talk mode for now
+	if (xtalk && !use_shmem) {
+	  continue;
+	}
 
-	  fprintf (stderr, "################################### %zu %zu\n", header_bytes[h], data_bytes[p]);
-	  fprintf (stderr, "before recv advance loop ... &recv_active = %p\n", &recv_active);
+	parameters.send.dispatch = use_shmem;
+	parameters.send.dest     = PAMI_Endpoint_create (client, 0, 0);
 
-	  while (recv_active != 0)
-	  {
-	    result = PAMI_Context_advance (context[contextid], 100);
-	    if (result != PAMI_SUCCESS)
-            {
-	      fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
-	      return 1;
-            }
-	    fprintf (stderr, "------ recv advance loop ... &recv_active = %p\n", &recv_active);
+	for (remote_cb = 0; remote_cb < 2; remote_cb++) { // remote callback loop
+
+	  if (remote_cb) {
+	    parameters.events.remote_fn     = send_done_remote;
+	  } else {
+	    parameters.events.remote_fn     = NULL;
 	  }
 
-	  if (recv_active == 0) {
+	  for (r = 0; r < 2; r++) {           // reset value loop
+	    for (h=0; h<hsize; h++) {
+	      parameters.send.header.iov_len = header_bytes[h];
+	      for (p=0; p<psize; p++) {
+		parameters.send.data.iov_len = data_bytes[p];
 
-	    // Reset __recv_buffer
-	    for (i = 0; i < 2048; i++) {
-	      __recv_buffer[i] = reset_value[r];
-	    }
+		fprintf (stderr, "before recv advance loop ... &recv_active = %p\n", &recv_active);
 
-	    recv_active = 1;
-	  }
+		while (recv_active != 0) {
+		  result = PAMI_Context_advance (context[xtalk], 100);
+		  if (result != PAMI_SUCCESS) {
+		    fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
+		    return 1;
+		  }
+		  fprintf (stderr, "------ recv advance loop ... &recv_active = %p\n", &recv_active);
+		}
 
-	  fprintf (stderr, "... after recv advance loop\n");
+		if (recv_active == 0) {
 
-	  fprintf (stderr, "before send ...\n");
-	  result = PAMI_Send (context[contextid], &parameters);
-	  fprintf (stderr, "... after send.\n");
+		  // Reset __recv_buffer
+		  for (i = 0; i < 2048; i++) {
+		    // Need special cases for transitioning from 0 <-> 255
+		    if ((h == hsize - 1) && (p == psize - 1)) {
+		      if (r == reset_elements - 1) { // time to loop back to 0
+			__recv_buffer[i] = reset_value[0];
+		      } else { // move to next reset value
+			__recv_buffer[i] = reset_value[r+1];
+		      }
+		    } else {
+		      __recv_buffer[i] = reset_value[r];
+		    }
+		  }
 
-	  fprintf (stderr, "before send advance loop ... &send_active = %p\n", &send_active);
-	  while (send_active)
-	    {
-	      result = PAMI_Context_advance (context[contextid], 100);
-	      if (result != PAMI_SUCCESS)
-	      {
-		fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
-		return 1;
-	      }
-	      fprintf (stderr, "------ send advance loop ... &send_active = %p\n", &send_active);
-	    }
-	  send_active = 1;
-#ifdef TEST_REMOTE_CALLBACK
-	  send_active++;
-#endif
-	  fprintf (stderr, "... after send advance loop\n");
-	} // end payload size loop
-      } // end header size loop
-    } // end reset value loop
-  } // end task = 1
+		  recv_active = 1;
+		}
+
+		
+		fprintf (stderr, "... after recv advance loop\n");
+
+		fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] %zu %zu (%d, %zu) -> (0, 0) =====\n\n", &device_str[use_shmem][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, xtalk);
+
+		fprintf (stderr, "before send ...\n");
+
+		if (remote_cb) {
+		  send_active++;
+		} 
+
+		result = PAMI_Send (context[xtalk], &parameters);
+		fprintf (stderr, "... after send.\n");
+
+		fprintf (stderr, "before send advance loop ... &send_active = %p\n", &send_active);
+
+		while (send_active) {
+		  result = PAMI_Context_advance (context[xtalk], 100);
+		  if (result != PAMI_SUCCESS) {
+		    fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
+		    return 1;
+		  }
+		  fprintf (stderr, "------ send advance loop ... &send_active = %p\n", &send_active);
+		}
+
+		send_active = 1;
+
+		fprintf (stderr, "... after send advance loop\n");
+	      } // end payload loop
+	    } // end header loop
+	  } // end reset value loop
+	} // end remote callback loop
+      } // end xtalk loop
+    } // end device loop
+  } // end task id != 0
 
 
-
-  result = PAMI_Context_destroy (context[0]);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
-    return 1;
+  // ====== CLEANUP ======
+	
+  for ( i = 0; i < num_contexts; i++) {
+    result = PAMI_Context_destroy (context[i]);
+    if (result != PAMI_SUCCESS) {
+	fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
+	return 1;
+    }
   }
-#ifdef TEST_CROSSTALK
-  result = PAMI_Context_destroy (context[1]);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
-    return 1;
-  }
-#endif
 
   result = PAMI_Client_destroy (client);
   if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to destroy pami client. result = %d\n", result);
     return 1;
   }
 
