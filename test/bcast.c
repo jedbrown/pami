@@ -241,7 +241,7 @@ int main (int argc, char ** argv)
       {
         broadcast.cmd.xfer_broadcast.typecount = i;
         _broadcast (context, &broadcast);
-	_barrier(context, &barrier);
+	//_barrier(context, &barrier);
       }
       tf = timer();
       _barrier(context, &barrier);
