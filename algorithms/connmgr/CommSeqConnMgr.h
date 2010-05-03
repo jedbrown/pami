@@ -14,8 +14,8 @@
 #ifndef __algorithms_connmgr_CommSeqConnMgr_h__
 #define __algorithms_connmgr_CommSeqConnMgr_h__
 
-#include "ConnectionManager.h"
-//#include "../CollOpT.h"
+#include "algorithms/connmgr/ConnectionManager.h"
+
 #include <map>
 
 ///
