@@ -138,7 +138,7 @@ int main (int argc, char ** argv)
   pami_client_t client;
   pami_configuration_t configuration;
   pami_context_t context[2];
-  
+
   char                  cl_string[] = "TEST";
   pami_result_t result = PAMI_ERROR;
 
@@ -168,7 +168,7 @@ int main (int argc, char ** argv)
   if (max_contexts > 1) {
     num_contexts = 2; // allows for cross talk
   }
-    
+
   result = PAMI_Context_createv(client, NULL, 0, context, num_contexts);
   if (result != PAMI_SUCCESS)
   {
@@ -209,9 +209,9 @@ int main (int argc, char ** argv)
 
   for (i = 0; i < num_contexts; i++) {
     // For each context:
-    // Set up dispatch ID 0 for MU (use_shmem = 0, no_shmem = 1) 
+    // Set up dispatch ID 0 for MU (use_shmem = 0, no_shmem = 1)
     // set up dispatch ID 1 for SHMem (use_shmem = 1, no_shmem = 0)
- 
+
     for (use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {
       fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
       options.use_shmem = use_shmem;
@@ -261,14 +261,14 @@ int main (int argc, char ** argv)
 
   size_t xtalk = 0;
   size_t remote_cb = 0;
-  
+
   char device_str[2][50] = {"MU", "SHMem"};
   char xtalk_str[2][50] = {"no crosstalk", "crosstalk"};
   char callback_str[2][50] = {"no callback", "callback"};
 
   if (task_id == 0)
   {
-    for(use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {      // device loop  
+    for(use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {      // device loop
       for(xtalk = 0; xtalk < num_contexts; xtalk++) {                // xtalk loop
 
 	// Skip running MU in Cross talk mode for now
@@ -297,7 +297,7 @@ int main (int argc, char ** argv)
 
 	      if (remote_cb) {
 		send_active++;
-	      } 
+	      }
 
 	      result = PAMI_Send (context[0], &parameters);
 	      fprintf (stderr, "... after send.\n");
@@ -368,7 +368,7 @@ int main (int argc, char ** argv)
 
 	      if (remote_cb) {
 		send_active++;
-	      } 
+	      }
 
 	      result = PAMI_Send (context[xtalk], &parameters);
 	      fprintf (stderr, "... after send.\n");
@@ -396,7 +396,7 @@ int main (int argc, char ** argv)
 
 
   // ====== CLEANUP ======
-	
+
   for ( i = 0; i < num_contexts; i++) {
     result = PAMI_Context_destroy (context[i]);
     if (result != PAMI_SUCCESS) {

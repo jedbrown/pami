@@ -1,7 +1,7 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2009, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
@@ -31,7 +31,7 @@ namespace CCMI
 
       pami_xfer_t          _opdesc;
     };
-    
+
     class EADescriptor : public PAMI::Queue::Element
     {
     public:
@@ -45,14 +45,14 @@ namespace CCMI
     enum {EANODATA = 0, EASTARTED, EACOMPLETED};
     enum {LocalPosted = 1, EarlyArrival};
     enum {TS_INPROGRESS = 1};
-    
+
     template <typename T_xfer, typename T_composite>
       class CollOpT : public PAMI::MatchQueueElem
       {
       protected:
 
         T_composite                 _composite __attribute__((__aligned__(16)));
-        T_xfer                      _xfer;   ///copy of calling parameters	
+        T_xfer                      _xfer;   ///copy of calling parameters
         unsigned                    _ntokens;/// number of tokens required
         unsigned                    _flags;  ///TokenBlocked,EarlyArrival,LocalPosted, OpCompleted
                                              ///ActiveMessage, NonBlockingCC etc.

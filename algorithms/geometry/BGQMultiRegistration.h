@@ -189,10 +189,10 @@ namespace PAMI
         {
           TRACE_ERR((stderr, "<%p> Shemem barrier composites\n", this));
           _shmem_barrier_composite =_shmem_msync_factory.generate(geometry, &xfer);
-  
+
           geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
                            (void*)_shmem_barrier_composite);
-  
+
           geometry->setKey(PAMI::Geometry::PAMI_GKEY_LOCALBARRIECOMPOSITE,
                            (void*)_shmem_barrier_composite);
         }
@@ -200,10 +200,10 @@ namespace PAMI
         {
           TRACE_ERR((stderr, "<%p> MU barrier composites\n", this));
           _mu_barrier_composite =_mu_msync_factory.generate(geometry, &xfer);
-  
+
           geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
                            (void*)_mu_barrier_composite);
-  
+
 //        geometry->setKey(PAMI::Geometry::PAMI_GKEY_LOCALBARRIECOMPOSITE,
 //                         (void*)_shmem_barrier_composite);
         }
@@ -229,7 +229,7 @@ namespace PAMI
           TRACE_ERR((stderr, "<%p> Register MU factories\n", this));
           // Add Barriers
           geometry->addCollective(PAMI_XFER_BARRIER,&_mu_msync_factory,_context_id);
-  
+
           // Add Broadcasts
           //geometry->addCollective(PAMI_XFER_BROADCAST,&_mu_mcast_factory,_context_id);
           geometry->addCollective(PAMI_XFER_BROADCAST,&_mu_mcast3_factory,_context_id);
@@ -280,15 +280,15 @@ namespace PAMI
       // Native Interface
       T_MUNativeInterface                            *_mu_ni;
 
-      // CCMI Barrier Interface                       
+      // CCMI Barrier Interface
       MUMultiSyncFactory                              _mu_msync_factory;
 
-      // CCMI Broadcast Interfaces                    
+      // CCMI Broadcast Interfaces
       MUMultiCastFactory                              _mu_mcast_factory;
       MUMultiCast2Factory                             _mu_mcast2_factory;
       MUMultiCast3Factory                             _mu_mcast3_factory;
 
-      // CCMI Allreduce Interface                     
+      // CCMI Allreduce Interface
       MUMultiCombineFactory                           _mu_mcomb_factory;
     };
 

@@ -1,3 +1,15 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file algorithms/protocols/broadcast/AsyncBroadcastT.h
+ * \brief ???
+ */
 
 #ifndef __algorithms_protocols_broadcast_AsyncBroadcastT_h__
 #define __algorithms_protocols_broadcast_AsyncBroadcastT_h__
@@ -23,7 +35,7 @@ namespace CCMI
       protected:
         CCMI::Executor::BroadcastExec<T_Conn>  _executor __attribute__((__aligned__(16)));
         T_Schedule                             _schedule;
-	
+
       public:
         ///
         /// \brief Constructor
@@ -113,11 +125,11 @@ namespace CCMI
 	    fn.multicast = (pami_dispatch_multicast_fn) cb_async;
 	    native->setDispatch(fn, this);
 	  }
-	  
+
 	  virtual ~AsyncBroadcastFactoryT ()
 	  {
 	  }
-	  
+
 	  /// NOTE: This is required to make "C" programs link successfully with virtual destructors
 	  void operator delete(void * p)
 	  {
@@ -136,36 +148,36 @@ namespace CCMI
 	    T_Composite* a_bcast = NULL;
 	    CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co = NULL;
 	    pami_broadcast_t *bcast_xfer = &((pami_xfer_t*)cmd)->cmd.xfer_broadcast;
-	    
-	    CCMI_assert(bcast_xfer->typecount <= 32768); 	    
-	    unsigned connid = _cmgr->updateConnectionId( ((PAMI_GEOMETRY_CLASS *)g)->comm() );	    
+
+	    CCMI_assert(bcast_xfer->typecount <= 32768);
+	    unsigned connid = _cmgr->updateConnectionId( ((PAMI_GEOMETRY_CLASS *)g)->comm() );
 	    //          dev->lock();
-	    
+
 	    if( _native->myrank() == bcast_xfer->root )
 	    {
 	      co = _free_pool.allocate(connid);
-	      
+
 	      pami_callback_t  cb_exec_done;
 	      cb_exec_done.function   = exec_done;
 	      cb_exec_done.clientdata = co;
-	      
+
 	      a_bcast = new (co->getComposite())
-		T_Composite ( _native, 
+		T_Composite ( _native,
 			      _cmgr,
-			      cb_exec_done, 
-			      (PAMI_GEOMETRY_CLASS *)g, 
-			      connid, 
+			      cb_exec_done,
+			      (PAMI_GEOMETRY_CLASS *)g,
+			      connid,
 			      bcast_xfer->root,
-			      bcast_xfer->buf, 
+			      bcast_xfer->buf,
 			      bcast_xfer->typecount);
-	      
+
 	      co->setXfer((pami_xfer_t*)cmd);
 	      co->setFlag(LocalPosted);
 	      co->setFactory(this);
 	      _active_queue.pushTail(co);
-	      
+
 	      //dev->unlock();
-	      
+
 	      a_bcast->executor().start();
 	    }
 	    else
@@ -176,7 +188,7 @@ namespace CCMI
 	      if(co)
 	      {
 		CCMI_assert(co->getFlags() & EarlyArrival);
-		
+
 		EADescriptor *ead = (EADescriptor *) co->getEAQ()->peekTail();
 		CCMI_assert(ead != NULL);
 		CCMI_assert(ead->bytes == bcast_xfer->typecount);
@@ -194,7 +206,7 @@ namespace CCMI
 		  ead->flag = EANODATA;
 		  co->getEAQ()->popTail();
 		  _ead_allocator.returnObject(ead);
-		  
+
 		  if(((pami_xfer_t *)cmd)->cb_done) {
 		    //		    dev->unlock();
 		    ((pami_xfer_t *)cmd)->cb_done(NULL, ((pami_xfer_t *)cmd)->cookie, PAMI_SUCCESS);
@@ -208,7 +220,7 @@ namespace CCMI
 		  co->setXfer((pami_xfer_t*)cmd);
 		  co->setFlag(LocalPosted);
 		  co->setFactory(this);
-		  
+
 		  a_bcast = co->getComposite();
 		}
 	      }
@@ -217,27 +229,27 @@ namespace CCMI
 	      else
 	      {
 		co = _free_pool.allocate(connid);
-		
+
 		pami_callback_t  cb_exec_done;
 		cb_exec_done.function   = exec_done;
 		cb_exec_done.clientdata = co;
 
 		a_bcast = new (co->getComposite())
-		  T_Composite ( _native, 
+		  T_Composite ( _native,
 				_cmgr,
-				cb_exec_done, 
-				(PAMI_GEOMETRY_CLASS *)g, 
-				connid, 
+				cb_exec_done,
+				(PAMI_GEOMETRY_CLASS *)g,
+				connid,
 				bcast_xfer->root,
-				bcast_xfer->buf, 
+				bcast_xfer->buf,
 				bcast_xfer->typecount);
-		
+
 		co->setXfer((pami_xfer_t*)cmd);
 		co->setFlag(LocalPosted);
 		co->setFactory(this);
 		_active_queue.pushTail(co);
 	      }
-	      
+
 	      //dev->unlock();
 	    }
 
@@ -257,14 +269,14 @@ namespace CCMI
 	  {
 	    AsyncBroadcastFactoryT *factory = (AsyncBroadcastFactoryT *) arg;
 	    //fprintf(stderr, "%d: <%#.8X>Broadcast::AsyncBroadcastFactoryT::cb_async()\n",factory->_native->myrank(), (int)factory);
-	    
+
 	    CollHeaderData *cdata = (CollHeaderData *) info;
 	    T_Composite* a_bcast = NULL;
-	    
+
 	    //PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
 	    //   factory->_cb_geometry(cdata->_comm);
 	    //  factory->_cb_geometry(conn_id >> CCMI::ConnectionManager::CommSeqConnMgr::SEQBITS);
-	    
+
 	    int comm = conn_id >> CCMI::ConnectionManager::CommSeqConnMgr::SEQBITS;
 	    PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(comm);
 	    if(geometry == NULL)
@@ -274,39 +286,39 @@ namespace CCMI
 	    }
 
 	    CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co = factory->_active_queue.find(conn_id);
-	    
+
 	    if(!co)
 	    {
 	      //fprintf (stderr, "Posted collective not found\n");
 	      co = factory->_free_pool.allocate(conn_id);
-	      
+
 	      pami_callback_t cb_exec_done;
 	      cb_exec_done.function = exec_done;
 	      cb_exec_done.clientdata = co;
-	      
+
 	      EADescriptor * ead = (EADescriptor *) factory->_ead_allocator.allocateObject();
 	      memcpy(&(ead->cdata), cdata, sizeof(cdata));
 	      ead->flag  = EASTARTED;
 	      ead->bytes = sndlen;
 	      if (sndlen)
 	      {
-		ead->buf   = (char *)factory->_eab_allocator.allocateObject();		
+		ead->buf   = (char *)factory->_eab_allocator.allocateObject();
 	      }
 
 	      a_bcast = new (co->getComposite())
-		T_Composite ( factory->_native, 
+		T_Composite ( factory->_native,
 			      factory->_cmgr,
-			      cb_exec_done, 
-			      geometry, 
-			      conn_id, 
-			      cdata->_root, 
-			      ead->buf, 
-			      sndlen);	      
+			      cb_exec_done,
+			      geometry,
+			      conn_id,
+			      cdata->_root,
+			      ead->buf,
+			      sndlen);
 
 	      co->getEAQ()->pushTail(ead);
 	      co->setFlag(EarlyArrival);
 
-	      factory->_active_queue.pushTail(co);	      
+	      factory->_active_queue.pushTail(co);
 	    }
 	    else
 	    {
@@ -323,26 +335,26 @@ namespace CCMI
 	    //We only support sndlen == rcvlen
 	    * rcvlen  = sndlen;
 
-	    return NULL; 
+	    return NULL;
 	  }
 
 	  static void exec_done (pami_context_t context, void *cd, pami_result_t err)
 	  {
 	    CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> * co =
               (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)cd;
-	   
+
 	    //fprintf (stderr, "%d: exec_done\n", ((AsyncBroadcastFactoryT *)co->getFactory())->_native->myrank());
- 
+
 	    pami_xfer_t *xfer = co->getXfer();
 	    pami_broadcast_t *bcast_xfer = &co->getXfer()->cmd.xfer_broadcast;
-	    
+
 	    unsigned     flag = co->getFlags();
-	    
+
 	    if (flag & LocalPosted)
 	    {
 	      EADescriptor *ead = (EADescriptor *) co->getEAQ()->popTail();
               AsyncBroadcastFactoryT *factory = (AsyncBroadcastFactoryT *)co->getFactory();
-	      
+
               if (flag & EarlyArrival)
 	      {
                 CCMI_assert(ead != NULL);
@@ -364,7 +376,7 @@ namespace CCMI
 
               if(xfer->cb_done)
 		xfer->cb_done(NULL, xfer->cookie, PAMI_SUCCESS);
-	      
+
               factory->_active_queue.deleteElem(co);
               factory->_free_pool.free(co);
             }

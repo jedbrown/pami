@@ -149,7 +149,7 @@ namespace PAMI
       CCMI::Adaptor::Broadcast::BinomialBcastFactory         _binom_broadcast_reg;
       CCMI::Adaptor::Broadcast::RingBcastFactory             _ring_broadcast_reg;
       CCMI::Adaptor::Broadcast::AsyncBinomBcastFactory       _am_binom_bcast_reg;
-      
+
       CCMI::Adaptor::Allreduce::Binomial::Factory            _binomial_allreduce_reg;
     };
   };

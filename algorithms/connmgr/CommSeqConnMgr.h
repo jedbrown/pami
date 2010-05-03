@@ -1,18 +1,18 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2009, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/connmgr/CommSeqConnMgrT.h
+ * \file algorithms/connmgr/CommSeqConnMgr.h
  * \brief ???
  */
 
-#ifndef __algorithms_connmgr_CommSeqConnMgrT_h__
-#define __algorithms_connmgr_CommSeqConnMgrT_h__
+#ifndef __algorithms_connmgr_CommSeqConnMgr_h__
+#define __algorithms_connmgr_CommSeqConnMgr_h__
 
 #include "ConnectionManager.h"
 //#include "../CollOpT.h"
