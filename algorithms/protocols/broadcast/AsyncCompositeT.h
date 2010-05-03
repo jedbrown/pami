@@ -110,7 +110,7 @@ namespace CCMI
       ///
       /// \brief Base factory class for broadcast factory implementations.
       ///
-      template <class T_Schedule, MetaDataFn get_metadata, class T_Sysdep, class T_Mcast>
+      template <class T_Composite, MetaDataFn get_metadata, class T_Sysdep, class T_Mcast>
       class AsyncCompositeFactoryT : public BroadcastFactory<T_Sysdep, T_Mcast, CCMI::ConnectionManager::RankBasedConnMgr<T_Sysdep> >
       {
       protected:
@@ -221,14 +221,14 @@ namespace CCMI
          char                      * src,
          unsigned                    bytes)
         {
-          T_Schedule* a_bcast = NULL;
+          T_Composite* a_bcast = NULL;
 
-          PAMI_assert(rsize > sizeof(T_Schedule));
+          PAMI_assert(rsize > sizeof(T_Composite));
 
           if(__global.mapping.task() == root)
           {
             a_bcast = new (request_buf)
-                      T_Schedule ( this->_sd, &this->_rbconnmgr,
+                      T_Composite ( this->_sd, &this->_rbconnmgr,
                           cb_done, consistency, this->_minterface,
                           geometry, root, src, bytes, &this->_execpool );
             a_bcast->executor().start();
@@ -249,7 +249,7 @@ namespace CCMI
               {
                 //The broadcast has arleady finished
                 elem->completeUnexpected();
-                ((T_Schedule*)elem->composite())->execpool()->freeAsync (elem, elem->bytes());
+                ((T_Composite*)elem->composite())->execpool()->freeAsync (elem, elem->bytes());
               }
             }
             /// not found post construct bcastqueue elem and executor and then
@@ -262,7 +262,7 @@ namespace CCMI
 
               //Create a new composite and post it to posted queue
               a_bcast = new (request_buf)
-                        T_Schedule (this->_sd, &this->_rbconnmgr,
+                        T_Composite (this->_sd, &this->_rbconnmgr,
                            cb_exec_done, consistency, this->_minterface,
                            geometry, root, src, bytes, &this->_execpool);
 
@@ -297,7 +297,7 @@ namespace CCMI
           PAMI::MatchQueue  &mqueue = geometry->asyncBcastPostQ();
           BcastQueueElem *elem = (BcastQueueElem *) mqueue.findAndDelete(cdata->_root);
 
-          T_Schedule *bcast = NULL;
+          T_Composite *bcast = NULL;
 
           if(!elem)
           {
@@ -310,9 +310,9 @@ namespace CCMI
             cb_exec_done.function = unexpected_done;
             cb_exec_done.clientdata = exec_request;
 
-            COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Schedule));
+            COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
             bcast = new (exec_request)
-                    T_Schedule (factory->_sd, &factory->_rbconnmgr,
+                    T_Composite (factory->_sd, &factory->_rbconnmgr,
                        cb_exec_done, PAMI_MATCH_CONSISTENCY, factory->_minterface,
                        geometry, cdata->_root, unexpbuf, sndlen, &factory->_execpool);
 
@@ -323,7 +323,7 @@ namespace CCMI
           else
           {
             CCMI_assert (elem->bytes() == sndlen);
-            bcast = (T_Schedule *) elem->composite();
+            bcast = (T_Composite *) elem->composite();
           }
 
           * pipewidth = sndlen + 1;
@@ -331,7 +331,7 @@ namespace CCMI
           * rcvlen  = sndlen;
           * rcvbuf  = elem->rcvbuf();
           //callback to be called by multisend interface. It will notify executor
-          cb_done->function   = T_Schedule::staticAsyncRecvFn;
+          cb_done->function   = T_Composite::staticAsyncRecvFn;
           cb_done->clientdata = bcast;
 
           return bcast->executor().getRecvRequest();
@@ -340,14 +340,14 @@ namespace CCMI
         static void unexpected_done (pami_context_t context, void *cd, pami_result_t err)
         {
 
-          CCMI::Adaptor::Broadcast::BcastQueueElem *bqe = ((T_Schedule *) cd)->bqelem();
+          CCMI::Adaptor::Broadcast::BcastQueueElem *bqe = ((T_Composite *) cd)->bqelem();
           TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AsyncCompositeFactoryT::unexpected_done() \n",bqe));
 
           bqe->setFinished();
           if(bqe->isPosted())
           {
             bqe->completeUnexpected();
-            ((T_Schedule*) cd)->execpool()->freeAsync (bqe, bqe->bytes());
+            ((T_Composite*) cd)->execpool()->freeAsync (bqe, bqe->bytes());
           }
         }
 
@@ -355,7 +355,7 @@ namespace CCMI
         {
 
           CCMI::Adaptor::Broadcast::BcastQueueElem *bqe =
-          ((T_Schedule *) cd)->bqelem();
+          ((T_Composite *) cd)->bqelem();
           TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AsyncCompositeFactoryT::posted_done() \n",bqe));
 
           bqe->completePosted();
@@ -401,14 +401,14 @@ namespace CCMI
 
           *pipewidth = sndlen+1;
 
-          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Schedule));
-          T_Schedule *bcast = new (request)
-                     T_Schedule (factory->_sd, &factory->_rbconnmgr,
+          COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
+          T_Composite *bcast = new (request)
+                     T_Composite (factory->_sd, &factory->_rbconnmgr,
                         cb_client_done, PAMI_MATCH_CONSISTENCY, factory->_minterface,
                         geometry, cdata->_root, *rcvbuf, *rcvlen, &factory->_execpool);
 
           //callback to be called by multisend interface
-          cb_done->function = T_Schedule::staticAsyncRecvFn;
+          cb_done->function = T_Composite::staticAsyncRecvFn;
           cb_done->clientdata = bcast;
 
           ///Support single color async broadcasts
