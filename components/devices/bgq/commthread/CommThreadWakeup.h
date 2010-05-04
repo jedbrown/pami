@@ -268,6 +268,7 @@ more_work:		// lightweight enough.
 				if (!lkd_ctx) {
 					// need to touch WAC region so we get a wakeup
 					_wakeup_region->touchWURange(0);
+					events = 0;
 					break;
 				}
                                 events = __advanceContextSet(lkd_ctx);
