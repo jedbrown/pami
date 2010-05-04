@@ -113,7 +113,7 @@ void barrier ()
   for(i=1; i< __barrier_size; ++i)  /// \todo This doesn't scale but it's simple
   {
     __barrier_next_task = (__barrier_next_task + 1) % __barrier_size;
-    __barrier_next_endpoint = PAMI_Endpoint_create (__barrier_client, __barrier_next_task, 0);
+    PAMI_Endpoint_create (__barrier_client, __barrier_next_task, 0, &__barrier_next_endpoint);
     parameters.dest            = __barrier_next_endpoint;
 
     TRACE_ERR((stderr, "     barrier(), before send, phase = %zu, __barrier_active[%zu] = %u, parameters.dest = 0x%08x\n", __barrier_phase, __barrier_phase, __barrier_active[__barrier_phase], parameters.dest));

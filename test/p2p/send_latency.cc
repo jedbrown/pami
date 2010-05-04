@@ -274,8 +274,9 @@ int main (int argc, char ** argv)
 
   char str[10240];
 
-  pami_endpoint_t origin = PAMI_Endpoint_create (client, origin_task, 0);
-  pami_endpoint_t target = PAMI_Endpoint_create (client, target_task, 0);
+  pami_endpoint_t origin, target;
+  PAMI_Endpoint_create (client, origin_task, 0, &origin);
+  PAMI_Endpoint_create (client, target_task, 0, &target);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
   size_t sndlen = 1;

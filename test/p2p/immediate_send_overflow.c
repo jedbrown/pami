@@ -204,11 +204,11 @@ int main (int argc, char ** argv)
 #ifdef TEST_CROSSTALK
     fprintf (stdout, "PAMI_Send_immediate() functional test [crosstalk]\n");
     fprintf (stdout, "\n");
-    parameters.dest = PAMI_Endpoint_create (client, 1, 1);
+    PAMI_Endpoint_create (client, 1, 1, &parameters.dest);
 #else
     fprintf (stdout, "PAMI_Send_immediate() functional test\n");
     fprintf (stdout, "\n");
-    parameters.dest = PAMI_Endpoint_create (client, 1, 0);
+    PAMI_Endpoint_create (client, 1, 0, &parameters.dest);
 #endif
 
     for (h=0; h<hsize; h++)
@@ -245,7 +245,7 @@ int main (int argc, char ** argv)
     size_t contextid = 0;
 #endif
 
-    parameters.dest = PAMI_Endpoint_create (client, 0, 0);
+    PAMI_Endpoint_create (client, 0, 0, &parameters.dest);
     for (h=0; h<hsize; h++)
     {
       parameters.header.iov_len = header_bytes[h];

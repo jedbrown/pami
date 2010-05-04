@@ -52,27 +52,29 @@ extern "C" pami_context_t PAMI_Client_getcontext(pami_client_t client, size_t co
 }
 #endif
 
-extern "C" pami_endpoint_t PAMI_Endpoint_create (pami_client_t client,
-                                               pami_task_t   task,
-                                               size_t       offset)
+extern "C" pami_result_t PAMI_Endpoint_create (pami_client_t     client,
+                                               pami_task_t       task,
+                                               size_t            offset,
+                                               pami_endpoint_t * endpoint)
 {
-  return PAMI_ENDPOINT_INIT(client,task,offset);
+  *endpoint = PAMI_ENDPOINT_INIT(client,task,offset);
+  return PAMI_SUCCESS;
 }
 
 extern "C" pami_result_t PAMI_Endpoint_createv (pami_client_t     client,
-                                              pami_task_t       task,
-                                              pami_endpoint_t * endpoints,
-                                              size_t         * count)
+                                                pami_task_t       task,
+                                                pami_endpoint_t * endpoints,
+                                                size_t          * count)
 {
-  abort();
-  return PAMI_ERROR;
+  return PAMI_UNIMPL;
 }
 
-extern "C" void PAMI_Endpoint_query (pami_endpoint_t   endpoint,
-                                          pami_task_t     * task,
-                                          size_t         * offset)
+extern "C" pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
+                                              pami_task_t     * task,
+                                              size_t          * offset)
 {
   PAMI_ENDPOINT_INFO(endpoint,*task,*offset);
+  return PAMI_SUCCESS;
 }
 
 

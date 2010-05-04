@@ -139,7 +139,7 @@ int main (int argc, char ** argv)
   for (iter=0; iter < 100; iter++)
   {
     fprintf (stderr, "before send ...\n");
-    parameters.send.dest = PAMI_Endpoint_create (client, task_id, 0);
+    PAMI_Endpoint_create (client, task_id, 0, &parameters.send.dest);
     result = PAMI_Send (context, &parameters);
     fprintf (stderr, "... after send.\n");
 

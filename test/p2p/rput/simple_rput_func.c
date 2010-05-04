@@ -234,7 +234,7 @@ int main (int argc, char ** argv)
     {
       if (tid != task_id)
       {
-        parameters.dest = PAMI_Endpoint_create (client, tid, cid);
+        PAMI_Endpoint_create (client, tid, cid, &parameters.dest);
         fprintf (stderr, "Before PAMI_Send_immediate()\n");
         PAMI_Send_immediate (context[cid], &parameters);
       }
@@ -292,7 +292,7 @@ int main (int argc, char ** argv)
         parameters.rdma.remote.offset = ((size_t)&_info[cid].ping[tid]) - ((size_t)&_info[cid]);
         if (tid != task_id)
         {
-          parameters.rma.dest       = PAMI_Endpoint_create (client, tid, cid);
+          PAMI_Endpoint_create (client, tid, cid, &parameters.rma.dest);
           parameters.rdma.remote.mr = &_info[cid].mr[tid];
           pami_result_t result = PAMI_Rput (context[0], &parameters);
           if (result != PAMI_SUCCESS)
@@ -373,7 +373,7 @@ int main (int argc, char ** argv)
       /* next, determine the offset to the 'pong' field */
       parameters.rdma.remote.offset = ((size_t)&_info[0].pong[task_id]) - ((size_t)&_info[0]);
       parameters.rdma.remote.mr = &_info[0].mr[0];
-      parameters.rma.dest       = PAMI_Endpoint_create (client, 0, 0);
+      PAMI_Endpoint_create (client, 0, 0, &parameters.rma.dest);
 
       pami_result_t result = PAMI_Rput (context[cid], &parameters);
       if (result != PAMI_SUCCESS)

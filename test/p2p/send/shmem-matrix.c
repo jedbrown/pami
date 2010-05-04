@@ -507,7 +507,7 @@ int main (int argc, char ** argv)
 	  recv_no_shmem_hint = r & 1;
 
 	  parameters.send.dispatch        = dispatch_ary_0[r][s];
-	  parameters.send.dest = PAMI_Endpoint_create (client, n, 0);
+	  PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
 
 	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask %zu use shmem hard hint = %zu\n\t\ttask %zu no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, n, recv_use_shmem_hint, n, recv_no_shmem_hint);
 
@@ -741,7 +741,7 @@ int main (int argc, char ** argv)
 	recv_no_shmem_hint = r & 1;
 
 	parameters.send.dispatch        = dispatch_ary_n[r][s];
-	parameters.send.dest = PAMI_Endpoint_create (client, 0, 0);
+	PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 
 	fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> 0:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask 0 use shmem hard hint = %zu\n\t\ttask 0 no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, recv_use_shmem_hint, recv_no_shmem_hint);
 
@@ -809,7 +809,7 @@ int main (int argc, char ** argv)
 	  recv_no_shmem_hint = r & 1;
 
 	  parameters.send.dispatch        = dispatch_ary_0[r][s];
-	  parameters.send.dest = PAMI_Endpoint_create (client, n, 0);
+	  PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
 
 	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask %zu use shmem hard hint = %zu\n\t\ttask %zu no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, n, recv_use_shmem_hint, n, recv_no_shmem_hint);
 
@@ -845,7 +845,7 @@ int main (int argc, char ** argv)
 	recv_no_shmem_hint = r & 1;
 
 	parameters.send.dispatch        = dispatch_ary_n[r][s];
-	parameters.send.dest = PAMI_Endpoint_create (client, 0, 0);
+	PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 
 	fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> 0:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask 0 use shmem hard hint = %zu\n\t\ttask 0 no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, recv_use_shmem_hint, recv_no_shmem_hint);
 
@@ -900,7 +900,7 @@ int main (int argc, char ** argv)
 	  recv_no_shmem_hint = r & 1;
 
 	  parameters.send.dispatch        = dispatch_ary_0[r][s];
-	  parameters.send.dest = PAMI_Endpoint_create (client, n, 0);
+	  PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
 
 	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask %zu use shmem hard hint = %zu\n\t\ttask %zu no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, n, recv_use_shmem_hint, n, recv_no_shmem_hint);
 
@@ -964,7 +964,7 @@ int main (int argc, char ** argv)
 	recv_no_shmem_hint = r & 1;
 
 	parameters.send.dispatch        = dispatch_ary_n[r][s];
-	parameters.send.dest = PAMI_Endpoint_create (client, 0, 0);
+	PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 
 	fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> 0:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask 0 use shmem hard hint = %zu\n\t\ttask 0 no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, recv_use_shmem_hint, recv_no_shmem_hint);
 

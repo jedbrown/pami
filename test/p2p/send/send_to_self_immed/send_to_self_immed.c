@@ -86,7 +86,7 @@ unsigned long long test (size_t sndlen, size_t myrank)
   parameters.header.iov_len  = sizeof(msginfo);
   parameters.data.iov_base   = (void *)_sbuf; // send *something*
   parameters.data.iov_len    = sndlen;
-  parameters.dest = PAMI_Endpoint_create (_g_client, _my_rank, 0);
+  PAMI_Endpoint_create (_g_client, _my_rank, 0, &parameters.dest);
 
   unsigned i;
   unsigned long long t1 = 0;

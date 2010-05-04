@@ -138,7 +138,7 @@ unsigned do_test (pami_context_t context)
   if (task_id == 0)
   {
     TRACE((stderr, "before send ...\n"));
-    parameters.send.dest = PAMI_Endpoint_create (g_client, 1, 0);
+    PAMI_Endpoint_create (g_client, 1, 0, &parameters.send.dest);
     result = PAMI_Send (context, &parameters);
     TRACE((stderr, "... after send.\n"));
 
@@ -169,7 +169,7 @@ unsigned do_test (pami_context_t context)
     TRACE((stderr, "... after recv advance loop\n"));
 
     TRACE((stderr, "before send ...\n"));
-    parameters.send.dest = PAMI_Endpoint_create (g_client, 0, 0);
+    PAMI_Endpoint_create (g_client, 0, 0, &parameters.send.dest);
     result = PAMI_Send (context, &parameters);
     TRACE((stderr, "... after send.\n"));
 
