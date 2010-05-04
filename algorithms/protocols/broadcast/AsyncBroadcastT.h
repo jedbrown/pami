@@ -320,6 +320,17 @@ namespace CCMI
 	      co->getEAQ()->pushTail(ead);
 	      co->setFlag(EarlyArrival);
 
+                pami_xfer_t cmd;
+
+                cmd.cb_done                  = cb_exec_done.function;
+                cmd.cookie                   = cb_exec_done.clientdata;
+                cmd.xfer_broadcast.type      = PAMI_BYTE;
+                cmd.xfer_broadcast.buf       = ead->buf;
+                cmd.xfer_broadcast.root      = cdata->_root;
+                cmd.xfer_broadcast.typecount = sndlen;
+
+                co->setXfer(&cmd);
+
 	      factory->_active_queue.pushTail(co);
 	    }
 	    else

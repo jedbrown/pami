@@ -54,7 +54,7 @@ namespace CCMI
       _comm_schedule(NULL),
       _comm(-1)
       {
-            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+            TRACE_ADAPTOR((stderr,"<%p>%s\n",this, __PRETTY_FUNCTION__));
       }
 
       BroadcastExec (Interfaces::NativeInterface  * mf,
@@ -71,7 +71,7 @@ namespace CCMI
       _color((unsigned) -1),
       _postReceives (post_recvs)
       {
-            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+            TRACE_ADAPTOR((stderr,"<%p>%s\n",this, __PRETTY_FUNCTION__));
         _clientdata        =  0;
         _root              =  (unsigned)-1;
         _buflen            =  0;
@@ -87,7 +87,7 @@ namespace CCMI
 
       void setSchedule (Interfaces::Schedule *ct, unsigned color)
       {
-	TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+	TRACE_ADAPTOR((stderr,"<%p>%s\n",this, __PRETTY_FUNCTION__));
 	_color = color;
         _comm_schedule = ct;
         int nph, phase;
@@ -97,7 +97,7 @@ namespace CCMI
       }
 
       void setRoot(unsigned root) {
-	TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+	TRACE_ADAPTOR((stderr,"<%p>%s\n",this, __PRETTY_FUNCTION__));
 	_root = root;
       }
 
@@ -142,7 +142,7 @@ namespace CCMI
         pami_multicast_t mrecv;
         memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
 
-        TRACE_FLOW((stderr,"postReceives bytes %d, rank %d\n",_buflen, _selftopology.index2Rank(0)));
+        TRACE_MSG((stderr,"postReceives bytes %d, rank %d\n",_buflen, _selftopology.index2Rank(0)));
         mrecv.src_participants   = NULL; //current mechanism to identify a non-root node
         mrecv.dst_participants   = (pami_topology_t *)&_selftopology;
 
@@ -159,6 +159,15 @@ namespace CCMI
         mrecv.bytes  = _buflen;
         _native->multicast(&mrecv);
       }
+      static void notifyRecvDone( pami_context_t   context,
+                                  void           * cookie,
+                                  pami_result_t    result )
+      {
+        TRACE_MSG ((stderr, "<%p>Executor::BroadcastExec::notifyRecvDone()\n",cookie));
+        BroadcastExec<T> *exec =  (BroadcastExec<T> *) cookie;
+        exec->sendNext();
+      }
+
 
     };  //-- BroadcastExec
   };   //-- Executor
@@ -177,7 +186,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::start ()
     _cb_done (NULL, _clientdata, PAMI_SUCCESS);
     return;
   }
-
+  
   if(_native->myrank() == _root)
     _pwq.produceBytes (_buflen);
   sendNext ();
@@ -188,7 +197,10 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
 {
   //CCMI_assert (_dsttopology.size() != 0); //We have nothing to send
   if(_dsttopology.size() == 0) {
-    //_cb_done(NULL, _clientdata, PAMI_SUCCESS);
+  TRACE_MSG((stderr, "%d: Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %d\n",
+	      _native->myrank(),
+	      _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
+	          //_cb_done(NULL, _clientdata, PAMI_SUCCESS);
     return;
   }
 
@@ -196,8 +208,8 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   char tbuf[1024];
   char sbuf[16384];
   sprintf(sbuf, "%d: Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %d ",
-	  _native->myrank(),
-	  _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume());
+         _native->myrank(),
+         _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume());
   for(unsigned i = 0; i < _dsttopology.size(); ++i) {
     sprintf(tbuf, " dstrank[%d]=%d/%d ", i,_dstranks[i],_dsttopology.index2Rank(i));
     strcat (sbuf, tbuf);
@@ -206,6 +218,10 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   fprintf (stderr, "%s\n", sbuf);
 #endif
 
+ TRACE_MSG((stderr, "%d: Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %d\n",
+	      _native->myrank(),
+	      _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
+  
   //Sending message header to setup receive of an async message
   _mdata._comm  = _comm;
   _mdata._root  = _root;
@@ -228,19 +244,24 @@ inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
  PAMI::PipeWorkQueue ** pwq,
  pami_callback_t      * cb_done)
 {
-  //fprintf(stderr, "<%p>Executor::BroadcastExec::notifyRecv() from %d\n",this, src);
+  TRACE_MSG ((stderr, "<%p>Executor::BroadcastExec::notifyRecv() from %d, dsttopology.size %zu\n",this, src, _dsttopology.size()));
 
   *pwq = &_pwq;
   if (_dsttopology.size() > 0) {
-    cb_done->function = NULL;  //There is a send here that will notify completion
-    sendNext ();
+    TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::notifyRecv() dsttopology.size %zu\n",this,_dsttopology.size()));
+    /// \todo this sendNext() should have worked but MPI platform didn't support it (yet).
+//    cb_done->function = NULL;  //There is a send here that will notify completion
+//    sendNext ();
+    cb_done->function = notifyRecvDone;
+    cb_done->clientdata = this;
   }
   else {
-    //    fprintf (stderr, "%d: Nothing to send, receive completion indicates completion\n", _native->myrank());
+    TRACE_FLOW((stderr, "%d: Nothing to send, receive completion indicates completion\n", _native->myrank()));
     cb_done->function   = _cb_done;
     cb_done->clientdata = _clientdata;
   }
 }
+
 
 
 #endif
