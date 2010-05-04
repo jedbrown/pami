@@ -83,6 +83,18 @@ public:
                 *mask = ~(_wu_region_len - 1);
         }
 
+        inline void touchWURange(uint64_t ctx) {
+		volatile uint64_t *addr, *end;
+		uint64_t val;
+
+		addr = (volatile uint64_t *)_wakeup_region;
+		end = addr + (_wu_region_len - _wu_mm.available()) / sizeof(uint64_t);
+		while (addr < end) {
+			val = *addr;
+			addr = addr + 128 / sizeof(uint64_t); // L1 CACHELINE SIZE...
+		}
+        }
+
 	PAMI::Memory::MemoryManager _wu_mm;
 
 private:

@@ -32,13 +32,13 @@
 #define USR_WAKEUP_BASE ((unsigned long *)(PHYMAP_MINADDR_L1P + 0x1c00))
 
 #define CNK_WAKEUP_SPI_FIRST_WAC	0	// TBD: get from CNK
-#define WU_ArmWithAddress(addr,mask) {			\
-	int thr = Kernel_PhysicalHWThreadID();		\
-	int reg = thr + CNK_WAKEUP_SPI_FIRST_WAC;	\
-	USR_WAKEUP_BASE[WAC_BASE(reg)] = addr;		\
-	USR_WAKEUP_BASE[WAC_ENABLE(reg)] = mask;	\
-	USR_WAKEUP_BASE[CLEAR_THREAD(reg)] = -1L;	\
-	USR_WAKEUP_BASE[SET_THREAD(reg)] = (_BN(thr) >> (32+CNK_WAKEUP_SPI_FIRST_WAC));\
+#define WU_ArmWithAddress(addr,mask) {				\
+	int thr = Kernel_PhysicalHWThreadID();			\
+	int reg = thr + CNK_WAKEUP_SPI_FIRST_WAC;		\
+	USR_WAKEUP_BASE[CLEAR_THREAD(thr)] = _BN(reg);		\
+	USR_WAKEUP_BASE[SET_THREAD(thr)] = (_BN(reg) >> 32);	\
+	USR_WAKEUP_BASE[WAC_BASE(reg)] = addr;			\
+	USR_WAKEUP_BASE[WAC_ENABLE(reg)] = mask;		\
 }
 
 #endif // !HAVE_WU_ARMWITHADDRESS
@@ -246,7 +246,7 @@ private:
 		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
 
                 pthread_setschedprio(self, max_pri);
-fprintf(stderr, "comm thread for context %04zx\n", _initCtxs);
+fprintf(stderr, "comm thread for context %04zx, ttyp=%016lx\n", _initCtxs, USR_WAKEUP_BASE[WAC_TTYPES]);
                 _ctxset->joinContextSet(_client, id, _initCtxs);
                 new_ctx = old_ctx = lkd_ctx = 0;
                 while (1) {
@@ -265,6 +265,11 @@ more_work:		// lightweight enough.
                         n = 0;
                         do {
                                 WU_ArmWithAddress(wu_start, wu_mask);
+				if (!lkd_ctx) {
+					// need to touch WAC region so we get a wakeup
+					_wakeup_region->touchWURange(0);
+					break;
+				}
                                 events = __advanceContextSet(lkd_ctx);
                         } while (events != 0 || ++n < max_loop);
 
