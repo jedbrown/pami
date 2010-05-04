@@ -312,6 +312,16 @@ namespace PAMI
                     return false;
                   }
                 }
+                else // bytes_to_write == 0
+                {
+                  TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), all packets were written\n"));
+
+                  // all packets were written to the fifo, invoke callback function
+                  if (fn) fn (_device.getContext(), cookie, PAMI_SUCCESS);
+
+                  TRACE_ERR((stderr, "<< %s:%d %s(), return true\n", __FILE__, __LINE__, __FUNCTION__));
+                  return true;
+                }
               }
 
             // send queue is not empty, construct a message and post to device
