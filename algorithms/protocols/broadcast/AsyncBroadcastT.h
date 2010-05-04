@@ -324,10 +324,10 @@ namespace CCMI
 
                 cmd.cb_done                  = cb_exec_done.function;
                 cmd.cookie                   = cb_exec_done.clientdata;
-                cmd.xfer_broadcast.type      = PAMI_BYTE;
-                cmd.xfer_broadcast.buf       = ead->buf;
-                cmd.xfer_broadcast.root      = cdata->_root;
-                cmd.xfer_broadcast.typecount = sndlen;
+                cmd.cmd.xfer_broadcast.type      = PAMI_BYTE;
+                cmd.cmd.xfer_broadcast.buf       = ead->buf;
+                cmd.cmd.xfer_broadcast.root      = cdata->_root;
+                cmd.cmd.xfer_broadcast.typecount = sndlen;
 
                 co->setXfer(&cmd);
 
