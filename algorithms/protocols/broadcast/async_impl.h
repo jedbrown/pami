@@ -33,7 +33,8 @@ namespace CCMI
       }
 
       typedef AsyncBroadcastT <CCMI::Schedule::ListMultinomial,
-	CCMI::ConnectionManager::CommSeqConnMgr> AsyncBinomBcastComposite;
+	//CCMI::ConnectionManager::CommSeqConnMgr> AsyncBinomBcastComposite;
+	CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AsyncBinomBcastComposite;
       template<>
 	void AsyncBinomBcastComposite::create_schedule(void                        * buf,
 						       unsigned                      size,
@@ -46,7 +47,8 @@ namespace CCMI
 
       typedef AsyncBroadcastFactoryT<AsyncBinomBcastComposite,
 	am_bcast_md,
-	CCMI::ConnectionManager::CommSeqConnMgr > AsyncBinomBcastFactory;
+	//CCMI::ConnectionManager::CommSeqConnMgr > AsyncBinomBcastFactory;
+	CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AsyncBinomBcastFactory;
 
       void old_am_bcast_md(pami_metadata_t *m)
       {

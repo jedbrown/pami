@@ -45,7 +45,6 @@ namespace CCMI
                          T_Conn                        * cmgr,
                          pami_callback_t                  cb_done,
                          PAMI_GEOMETRY_CLASS            * geometry,
-                         unsigned                        connid,
                          unsigned                        root,
                          char                          * src,
                          unsigned                        bytes) :
@@ -92,7 +91,12 @@ namespace CCMI
 	  ///
 	  /// \brief active asynchronuous broadcast queue
 	  ///
-	  CCMI::Adaptor::CollOpQueueT<pami_xfer_t, T_Composite> _active_queue;
+	  CCMI::Adaptor::CollOpQueueT<pami_xfer_t, T_Composite> _unexp_queue;
+
+	  ///
+	  /// \brief active asynchronuous broadcast queue
+	  ///
+	  CCMI::Adaptor::CollOpQueueT<pami_xfer_t, T_Composite> _posted_queue;
 
 	  ///
 	  /// \brief free memory pool for async broadcast operation objects
@@ -150,12 +154,12 @@ namespace CCMI
 	    pami_broadcast_t *bcast_xfer = &((pami_xfer_t*)cmd)->cmd.xfer_broadcast;
 
 	    CCMI_assert(bcast_xfer->typecount <= 32768);
-	    unsigned connid = _cmgr->updateConnectionId( ((PAMI_GEOMETRY_CLASS *)g)->comm() );
+	    //unsigned connid = _cmgr->updateConnectionId( ((PAMI_GEOMETRY_CLASS *)g)->comm() );
 	    //          dev->lock();
 
 	    if( _native->myrank() == bcast_xfer->root )
 	    {
-	      co = _free_pool.allocate(connid);
+	      co = _free_pool.allocate(bcast_xfer->root);
 
 	      pami_callback_t  cb_exec_done;
 	      cb_exec_done.function   = exec_done;
@@ -166,7 +170,6 @@ namespace CCMI
 			      _cmgr,
 			      cb_exec_done,
 			      (PAMI_GEOMETRY_CLASS *)g,
-			      connid,
 			      bcast_xfer->root,
 			      bcast_xfer->buf,
 			      bcast_xfer->typecount);
@@ -174,15 +177,14 @@ namespace CCMI
 	      co->setXfer((pami_xfer_t*)cmd);
 	      co->setFlag(LocalPosted);
 	      co->setFactory(this);
-	      _active_queue.pushTail(co);
-
+	      //_active_queue.pushTail(co);
 	      //dev->unlock();
 
 	      a_bcast->executor().start();
 	    }
 	    else
 	    {
-	      co = _active_queue.find(connid);
+	      co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)_unexp_queue.findAndDelete(bcast_xfer->root);
 
 	      /// Try to match in active queue
 	      if(co)
@@ -212,7 +214,7 @@ namespace CCMI
 		    ((pami_xfer_t *)cmd)->cb_done(NULL, ((pami_xfer_t *)cmd)->cookie, PAMI_SUCCESS);
 		    // dev->lock();
 		  }
-		  _active_queue.deleteElem(co);
+		  //_active_queue.deleteElem(co);
 		  _free_pool.free(co);
 		}
 		else
@@ -228,7 +230,7 @@ namespace CCMI
 	      /// queue it in active queue
 	      else
 	      {
-		co = _free_pool.allocate(connid);
+		co = _free_pool.allocate(bcast_xfer->root);
 
 		pami_callback_t  cb_exec_done;
 		cb_exec_done.function   = exec_done;
@@ -239,7 +241,6 @@ namespace CCMI
 				_cmgr,
 				cb_exec_done,
 				(PAMI_GEOMETRY_CLASS *)g,
-				connid,
 				bcast_xfer->root,
 				bcast_xfer->buf,
 				bcast_xfer->typecount);
@@ -247,13 +248,13 @@ namespace CCMI
 		co->setXfer((pami_xfer_t*)cmd);
 		co->setFlag(LocalPosted);
 		co->setFactory(this);
-		_active_queue.pushTail(co);
+		_posted_queue.pushTail(co);
 	      }
 
 	      //dev->unlock();
 	    }
 
-	    return a_bcast;
+	    return NULL; //a_bcast;
 	  }
 
 	  static PAMI_Request_t *   cb_async
@@ -277,7 +278,7 @@ namespace CCMI
 	    //   factory->_cb_geometry(cdata->_comm);
 	    //  factory->_cb_geometry(conn_id >> CCMI::ConnectionManager::CommSeqConnMgr::SEQBITS);
 
-	    int comm = conn_id >> CCMI::ConnectionManager::CommSeqConnMgr::SEQBITS;
+	    int comm = cdata->_comm; //conn_id >> CCMI::ConnectionManager::CommSeqConnMgr::SEQBITS;
 	    PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(comm);
 	    if(geometry == NULL)
 	    {
@@ -285,12 +286,13 @@ namespace CCMI
 	      PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, comm);
 	    }
 
-	    CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co = factory->_active_queue.find(conn_id);
+	    CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co = 
+	      (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) factory->_posted_queue.findAndDelete(cdata->_root);
 
 	    if(!co)
 	    {
 	      //fprintf (stderr, "Posted collective not found\n");
-	      co = factory->_free_pool.allocate(conn_id);
+	      co = factory->_free_pool.allocate(cdata->_root);
 
 	      pami_callback_t cb_exec_done;
 	      cb_exec_done.function = exec_done;
@@ -310,18 +312,16 @@ namespace CCMI
 			      factory->_cmgr,
 			      cb_exec_done,
 			      geometry,
-			      conn_id,
 			      cdata->_root,
 			      ead->buf,
 			      sndlen);
 
 	      //fprintf (stderr, "%d: Creating Unexp Execuor at %p\n", factory->_native->myrank(), &(a_bcast->executor()) );
-
 	      co->getEAQ()->pushTail(ead);
 	      co->setFlag(EarlyArrival);
 
-	      pami_xfer_t cmd;
-	      
+#if 0
+	      pami_xfer_t cmd;	      
 	      cmd.cb_done                  = cb_exec_done.function;
 	      cmd.cookie                   = cb_exec_done.clientdata;
 	      cmd.cmd.xfer_broadcast.type      = PAMI_BYTE;
@@ -329,9 +329,9 @@ namespace CCMI
 	      cmd.cmd.xfer_broadcast.root      = cdata->_root;
 	      cmd.cmd.xfer_broadcast.typecount = sndlen;
 	      co->setXfer(&cmd);
+#endif
 	      co->setFactory (factory);
-
-	      factory->_active_queue.pushTail(co);
+	      factory->_unexp_queue.pushTail(co);
 	    }
 	    else
 	    {
@@ -357,14 +357,14 @@ namespace CCMI
               (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)cd;
 	    
 	    //fprintf (stderr, "%d: exec_done\n", ((AsyncBroadcastFactoryT *)co->getFactory())->_native->myrank());
-	    
-	    pami_xfer_t *xfer = co->getXfer();
-	    pami_broadcast_t *bcast_xfer = &co->getXfer()->cmd.xfer_broadcast;
-	    
+	    	    
 	    unsigned     flag = co->getFlags();
 
 	    if (flag & LocalPosted)
 	    {
+	      pami_xfer_t *xfer = co->getXfer();
+	      pami_broadcast_t *bcast_xfer = &co->getXfer()->cmd.xfer_broadcast;
+
 	      EADescriptor *ead = (EADescriptor *) co->getEAQ()->popTail();
               AsyncBroadcastFactoryT *factory = (AsyncBroadcastFactoryT *)co->getFactory();
 	      
@@ -390,7 +390,7 @@ namespace CCMI
               if(xfer->cb_done)
 		xfer->cb_done(NULL, xfer->cookie, PAMI_SUCCESS);
 
-              factory->_active_queue.deleteElem(co);
+              //factory->_active_queue.deleteElem(co);
               factory->_free_pool.free(co);
             }
             else if (flag & EarlyArrival)

@@ -78,7 +78,7 @@ namespace PAMI
         _barrier_reg(NULL,&_barrier_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
         _binom_broadcast_reg(&_connmgr, &_binom_broadcast_ni),
 	_ring_broadcast_reg(&_connmgr, &_ring_broadcast_ni),
-	_as_binom_bcast_reg(&_csconnmgr, &_as_binom_bcast_ni),
+	_as_binom_bcast_reg(/*&_csconnmgr*/ &_rbconnmgr, &_as_binom_bcast_ni),
 	_active_binombcast_reg(&_rbconnmgr, &_active_binombcast_ni),
 	_binomial_allreduce_reg(&_rbconnmgr, &_binom_allreduce_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead)
           {
