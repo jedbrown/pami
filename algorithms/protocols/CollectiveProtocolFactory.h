@@ -36,9 +36,6 @@ namespace CCMI
         _cb_geometry = cb_geometry;
       }
 
-      void setAMBroadcastDispatch (pami_dispatch_ambroadcast_fn   cb_ambcast) {
-	_cb_ambcast = cb_ambcast;
-      }
 
       pami_geometry_t getGeometry(unsigned id) {
         CCMI_assert (_cb_geometry != NULL);
@@ -71,13 +68,8 @@ namespace CCMI
         return _cb_geometry;
       }
 
-      pami_dispatch_ambroadcast_fn getAMBroadcastDispatch () {
-	return _cb_ambcast;
-      }
-
     protected:
       pami_mapidtogeometry_fn              _cb_geometry;
-      pami_dispatch_ambroadcast_fn         _cb_ambcast;
     };
   };
 };

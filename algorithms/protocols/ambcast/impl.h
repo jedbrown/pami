@@ -11,11 +11,12 @@
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_broadcast_async_impl_h__
-#define __algorithms_protocols_broadcast_async_impl_h__
+#ifndef __algorithms_protocols_ambroadcast_impl_h__
+#define __algorithms_protocols_ambroadcast_impl_h__
 
 #include "algorithms/schedule/MultinomialTree.h"
 #include "algorithms/protocols/ambcast/AMBroadcastT.h"
+#include "algorithms/connmgr/RankBasedConnMgr.h"
 
 namespace CCMI
 {
@@ -30,7 +31,7 @@ namespace CCMI
       }
 
       typedef AMBroadcastT <CCMI::Schedule::ListMultinomial,
-	CCMI::ConnectionManager::CommSeqConnMgr> AMBinomBcastComposite;
+	CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AMBinomBcastComposite;
       template<>
 	void AMBinomBcastComposite::create_schedule(void                        * buf,
 						       unsigned                      size,
@@ -41,9 +42,9 @@ namespace CCMI
 	  new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
 	}
 
-      typedef CollectiveProtocolFactoryT<AMBinomBcastComposite,
+      typedef AMBroadcastFactoryT<AMBinomBcastComposite,
 	am_bcast_md,
-	CCMI::ConnectionManager::CommSeqConnMgr > AMBinomBcastFactory;
+	CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AMBinomBcastFactory;
       
     };
   };

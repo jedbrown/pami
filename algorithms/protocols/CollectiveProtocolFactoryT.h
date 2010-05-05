@@ -21,6 +21,7 @@ namespace CCMI
     template <class T, MetaDataFn get_metadata, class C>
       class CollectiveProtocolFactoryT: public CollectiveProtocolFactory
     {
+    public:
       class collObj
       {
       public:
@@ -44,12 +45,12 @@ namespace CCMI
         {
           _user_done_fn(context, _user_cookie, result);
         }
-        T                            _obj;
+      
+	T                            _obj;
         CollectiveProtocolFactoryT * _factory;
         pami_event_function          _user_done_fn;
         void                       * _user_cookie;
       };
-
 
     public:
       CollectiveProtocolFactoryT (C                           *cmgr,
