@@ -315,21 +315,21 @@ namespace CCMI
 			      ead->buf,
 			      sndlen);
 
-	      //	      fprintf (stderr, "%d: Creating Unexp Execuor at %p\n", factory->_native->myrank(), &(a_bcast->executor()) );
+	      //fprintf (stderr, "%d: Creating Unexp Execuor at %p\n", factory->_native->myrank(), &(a_bcast->executor()) );
 
 	      co->getEAQ()->pushTail(ead);
 	      co->setFlag(EarlyArrival);
 
-                pami_xfer_t cmd;
-
-                cmd.cb_done                  = cb_exec_done.function;
-                cmd.cookie                   = cb_exec_done.clientdata;
-                cmd.cmd.xfer_broadcast.type      = PAMI_BYTE;
-                cmd.cmd.xfer_broadcast.buf       = ead->buf;
-                cmd.cmd.xfer_broadcast.root      = cdata->_root;
-                cmd.cmd.xfer_broadcast.typecount = sndlen;
-
-                co->setXfer(&cmd);
+	      pami_xfer_t cmd;
+	      
+	      cmd.cb_done                  = cb_exec_done.function;
+	      cmd.cookie                   = cb_exec_done.clientdata;
+	      cmd.cmd.xfer_broadcast.type      = PAMI_BYTE;
+	      cmd.cmd.xfer_broadcast.buf       = ead->buf;
+	      cmd.cmd.xfer_broadcast.root      = cdata->_root;
+	      cmd.cmd.xfer_broadcast.typecount = sndlen;
+	      co->setXfer(&cmd);
+	      co->setFactory (factory);
 
 	      factory->_active_queue.pushTail(co);
 	    }
@@ -355,19 +355,19 @@ namespace CCMI
 	  {
 	    CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> * co =
               (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)cd;
-
+	    
 	    //fprintf (stderr, "%d: exec_done\n", ((AsyncBroadcastFactoryT *)co->getFactory())->_native->myrank());
-
+	    
 	    pami_xfer_t *xfer = co->getXfer();
 	    pami_broadcast_t *bcast_xfer = &co->getXfer()->cmd.xfer_broadcast;
-
+	    
 	    unsigned     flag = co->getFlags();
 
 	    if (flag & LocalPosted)
 	    {
 	      EADescriptor *ead = (EADescriptor *) co->getEAQ()->popTail();
               AsyncBroadcastFactoryT *factory = (AsyncBroadcastFactoryT *)co->getFactory();
-
+	      
               if (flag & EarlyArrival)
 	      {
                 CCMI_assert(ead != NULL);
@@ -401,7 +401,7 @@ namespace CCMI
             else
             {
               CCMI_assert(0);
-            }
+	    }
           }
 
       }; //- Async Composite Factory

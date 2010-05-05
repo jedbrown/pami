@@ -71,7 +71,7 @@ namespace CCMI
       _color((unsigned) -1),
       _postReceives (post_recvs)
       {
-            TRACE_ADAPTOR((stderr,"<%p>%s\n",this, __PRETTY_FUNCTION__));
+	TRACE_ADAPTOR((stderr,"<%p>%s\n",this, __PRETTY_FUNCTION__));
         _clientdata        =  0;
         _root              =  (unsigned)-1;
         _buflen            =  0;
@@ -94,6 +94,9 @@ namespace CCMI
         _comm_schedule->init (_root, BROADCAST_OP, phase, nph);
         CCMI_assert(_comm_schedule != NULL);
         _comm_schedule->getDstUnionTopology (&_dsttopology);
+
+	unsigned connid =  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
+        _msend.connection_id = connid;
       }
 
       void setRoot(unsigned root) {
@@ -104,8 +107,6 @@ namespace CCMI
       void  setBuffers (char *src, char *dst, int len)
       {
         //fprintf(stderr, "%d: <%p>Executor::BroadcastExec::setInfo() src %p, dst %p, len %d, _pwq %p\n", _native->myrank(), this, src, dst, len, &_pwq);
-        unsigned connid =  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
-        _msend.connection_id = connid;
         _buflen = len;
         //Setup pipework queue
         _pwq.configure (NULL, src, len, 0);
@@ -179,7 +180,7 @@ namespace CCMI
 template <class T>
 inline void  CCMI::Executor::BroadcastExec<T>::start ()
 {
-  //  fprintf(stderr, "<%p>Executor::BroadcastExec::start()\n",this);
+  //fprintf(stderr, "%d: <%p>Executor::BroadcastExec::start() count%d\n",_native->myrank(), this, _buflen);
 
   // Nothing to broadcast? We're done.
   if((_buflen == 0) && _cb_done) {
@@ -187,9 +188,14 @@ inline void  CCMI::Executor::BroadcastExec<T>::start ()
     return;
   }
   
-  if(_native->myrank() == _root)
+  if(_native->myrank() == _root) {
     _pwq.produceBytes (_buflen);
-  sendNext ();
+    sendNext ();
+  }
+  else if (_postReceives)
+    //Protocol will call postReceives() and then start()
+    //With the async callback the notifyrecv will call sendNext    
+    sendNext ();
 }
 
 template <class T>
@@ -197,10 +203,10 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
 {
   //CCMI_assert (_dsttopology.size() != 0); //We have nothing to send
   if(_dsttopology.size() == 0) {
-  TRACE_MSG((stderr, "%d: Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %d\n",
-	      _native->myrank(),
-	      _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
-	          //_cb_done(NULL, _clientdata, PAMI_SUCCESS);
+    TRACE_MSG((stderr, "%d: Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %d\n",
+	       _native->myrank(),
+	       _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
+    //_cb_done(NULL, _clientdata, PAMI_SUCCESS);
     return;
   }
 
@@ -210,7 +216,8 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   sprintf(sbuf, "%d: Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %d ",
          _native->myrank(),
          _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume());
-  for(unsigned i = 0; i < _dsttopology.size(); ++i) {
+  for(unsigned i = 0; i < _dsttopology.size(); ++i) 
+  {
     sprintf(tbuf, " dstrank[%d]=%d/%d ", i,_dstranks[i],_dsttopology.index2Rank(i));
     strcat (sbuf, tbuf);
   }
@@ -244,11 +251,11 @@ inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
  PAMI::PipeWorkQueue ** pwq,
  pami_callback_t      * cb_done)
 {
-  TRACE_MSG ((stderr, "<%p>Executor::BroadcastExec::notifyRecv() from %d, dsttopology.size %zu\n",this, src, _dsttopology.size()));
+  //fprintf(stderr, "<%p>Executor::BroadcastExec::notifyRecv() from %d, dsttopology.size %zu\n",this, src, _dsttopology.size());
 
   *pwq = &_pwq;
   if (_dsttopology.size() > 0) {
-    TRACE_FLOW ((stderr, "<%p>Executor::BroadcastExec::notifyRecv() dsttopology.size %zu\n",this,_dsttopology.size()));
+    //fprintf(stderr, "<%p>Executor::BroadcastExec::notifyRecv() dsttopology.size %zu\n",this,_dsttopology.size());
     /// \todo this sendNext() should have worked but MPI platform didn't support it (yet).
 //    cb_done->function = NULL;  //There is a send here that will notify completion
 //    sendNext ();
@@ -256,7 +263,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
     cb_done->clientdata = this;
   }
   else {
-    TRACE_FLOW((stderr, "%d: Nothing to send, receive completion indicates completion\n", _native->myrank()));
+    //fprintf(stderr, "%d: Nothing to send, receive completion indicates completion\n", _native->myrank());
     cb_done->function   = _cb_done;
     cb_done->clientdata = _clientdata;
   }

@@ -20,8 +20,8 @@
 #include <pami.h>
 
 
-#define BUFSIZE 524288
-#define NITER   1000
+#define BUFSIZE 262144
+#define NITER   100
 
 volatile unsigned       _g_barrier_active;
 volatile unsigned       _g_broadcast_active;
@@ -228,25 +228,29 @@ int main(int argc, char*argv[])
   broadcast.cmd.xfer_ambroadcast.stype        = PAMI_BYTE;
   broadcast.cmd.xfer_ambroadcast.stypecount   = 0;
 
-  if (rank == root)
+  int nalg = 0;
+  for(nalg=0; nalg<bcastnum_algorithm[0]; nalg++)
+  {
+    if (rank == root)
       {
-        printf("# Broadcast Bandwidth Test -- root = %d, %s\n", root, metas[0].name);
+        printf("# Broadcast Bandwidth Test -- root = %d, %s\n", root, metas[nalg].name);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
-
-  pami_collective_hint_t h={0};
-  pami_dispatch_callback_fn fn;
-  fn.ambroadcast = cb_bcast_recv;
-  PAMI_AMCollective_dispatch_set(context,
-                                bcastalgorithm[0],
-                                0,
-                                fn,
-                                NULL,
-                                h);
-
+    
+    pami_collective_hint_t h={0};
+    pami_dispatch_callback_fn fn;
+    fn.ambroadcast = cb_bcast_recv;
+    PAMI_AMCollective_dispatch_set(context,
+				   bcastalgorithm[nalg],
+				   0,
+				   fn,
+				   NULL,
+				   h);
+    broadcast.algorithm = bcastalgorithm[nalg];
+    
     _barrier (context, &barrier);
-  for(i=1; i<=BUFSIZE; i*=2)
+    for(i=1; i<=BUFSIZE; i*=2)
       {
         long long dataSent = i;
         unsigned     niter = NITER;
@@ -280,6 +284,7 @@ int main(int argc, char*argv[])
 
             }
       }
+  }
 
   result = PAMI_Context_destroy (context);
   if (result != PAMI_SUCCESS)
