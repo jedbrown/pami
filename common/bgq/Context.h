@@ -46,7 +46,7 @@
 namespace PAMI
 {
 
-  typedef Mutex::CounterMutex<Counter::BGQ::L2NodeCounter>  ContextLock;
+  typedef Mutex::CounterMutex<Counter::BGQ::L2ProcCounter>  ContextLock;
 
   typedef MemoryAllocator<2048, 16> ProtocolAllocator;
 

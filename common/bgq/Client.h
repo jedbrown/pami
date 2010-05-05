@@ -134,7 +134,8 @@ namespace PAMI
 #ifdef USE_COMMTHREADS
         // Create one comm thread semi-opaque pointer. Internally, this may be
         // one-per-context (optimal advance scenario) or some other arrangement.
-        _commThreads = PAMI::Device::CommThread::BgqCommThread::generate(_clientid, n, &_mm, &__global.l2atomicFactory.__nodescoped_mm);
+	/// \todo #warning need to fix node-scoped l2atomic mm so that it allows private alloc
+        _commThreads = PAMI::Device::CommThread::BgqCommThread::generate(_clientid, n, &_mm, &__global.l2atomicFactory.__procscoped_mm);
         PAMI_assertf(_commThreads, "BgqCommThread::generate failed for _commThreads[%d]\n", n);
 #endif // USE_COMMTHREADS
         int x;
@@ -180,6 +181,10 @@ namespace PAMI
 
       inline pami_result_t destroyContext_impl (pami_context_t context)
       {
+#ifdef USE_COMMTHREADS
+	// This removes all contexts... only needs to be called once.
+	PAMI::Device::CommThread::BgqCommThread::shutdown(_commThreads, _clientid);
+#endif // USE_COMMTHREADS
         //_context_list->lock ();
         //_context_list->remove (context);
         return ((PAMI::Context *)context)->destroy ();

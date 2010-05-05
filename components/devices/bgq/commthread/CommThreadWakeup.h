@@ -122,11 +122,22 @@ private:
         /// \brief Disarm the MU interrupt-through-Wakeup Unit
         ///
         inline void __disarmMU_WU() { }
+
+	inline void __do_wait() {
+		//uint64_t wac[64];
+
+		size_t n = 0; //_wakeup_region->copyWURange(wac);
+		//PAMI_assertf(n <= sizeof(wac), "Overflow wac save buf");
+		fprintf(stderr, "going idle... (%zd)\n", n);
+        	ppc_waitimpl();
+		fprintf(stderr, "woke up (%d)\n", 1); //_wakeup_region->cmpWURange(wac));
+	}
 public:
         BgqCommThread(BgqWakeupRegion *wu, BgqContextPool *pool, size_t clientid, size_t num_ctx) :
         _wakeup_region(wu),
         _ctxset(pool),
-        _client(clientid)
+        _client(clientid),
+	_thread(0)
         { }
 
         ~BgqCommThread() { }
@@ -147,14 +158,14 @@ public:
                 size_t x;
                 posix_memalign((void **)&devs, 16, num_ctx * sizeof(*devs));
                 posix_memalign((void **)&pool, 16, sizeof(*pool));
-
-                new (pool) BgqContextPool();
-                pool->init(clientid, num_ctx, genmm);
-
                 posix_memalign((void **)&wu, 16, sizeof(*wu)); // one per client
+
                 new (wu) BgqWakeupRegion();
                 wu->init(clientid, num_ctx, l2xmm);
 		__global._wuRegion_mm[clientid] = &wu->_wu_mm;
+
+                new (pool) BgqContextPool();
+                pool->init(clientid, num_ctx, genmm, &wu->_wu_mm);
 
                 for (x = 0; x < num_ctx; ++x) {
                         // one per context, but not otherwise tied to a context.
@@ -193,7 +204,6 @@ public:
 		BgqCommThread *thus = &devs[x];
 		thus->_initCtxs = m;	// this shold never be zero
 		pthread_attr_t attr;
-		pthread_t thread;	// do we need to save this for later?
 
 		status = pthread_attr_init(&attr);
 		if (status) {
@@ -223,15 +233,35 @@ public:
 			return PAMI_CHECK_ERRNO;
 		}
 
-		status = pthread_create(&thread, 0, commThread, thus);
+		thus->_shutdown = false;
+		status = pthread_create(&thus->_thread, 0, commThread, thus);
 		if (status) {
 			pthread_attr_destroy(&attr);
 			--_numActive;
+			thus->_thread = 0; // may not always be legal assignment?
 			errno = status;
 			return PAMI_CHECK_ERRNO;
 		}
 		return PAMI_SUCCESS;
         }
+
+        static inline pami_result_t shutdown(BgqCommThread *devs, size_t clientid) {
+		size_t x;
+                // all BgqCommThread objects have the same ContextSet object.
+                devs[0]._ctxset->rmAllContexts(clientid);
+		for (x = 0; x < _numActive; ++x) {
+			// kill is too harsh, provide orderly termination
+			//pthread_kill(devs[x]._thread, SIGTERM);
+			devs[x]._shutdown = 1;
+		}
+		// need to pthread_join() here? or is it too risky (might hang)?
+		for (x = 0; x < _numActive; ++x) {
+			void *status;
+			pthread_join(devs[x]._thread, &status);
+		}
+		_numActive = 0;
+		return PAMI_SUCCESS;
+	}
 
 private:
         inline pami_result_t __commThread() {
@@ -249,7 +279,7 @@ private:
 fprintf(stderr, "comm thread for context %04zx, ttyp=%016lx\n", _initCtxs, USR_WAKEUP_BASE[WAC_TTYPES]);
                 _ctxset->joinContextSet(_client, id, _initCtxs);
                 new_ctx = old_ctx = lkd_ctx = 0;
-                while (1) {
+                while (!_shutdown) {
                         //
 new_context_assignment:	// These are the same now, assuming the re-locking is
 more_work:		// lightweight enough.
@@ -272,7 +302,8 @@ more_work:		// lightweight enough.
 					break;
 				}
                                 events = __advanceContextSet(lkd_ctx);
-                        } while (events != 0 || ++n < max_loop);
+                        } while (!_shutdown && (events != 0 || ++n < max_loop));
+			if (_shutdown) break;
 
                         // Snoop the scheduler to see if other threads are competing.
                         // This should also include total number of threads on
@@ -294,12 +325,11 @@ more_work:		// lightweight enough.
                                         // while existing work waits for us to
                                         // advance it.
 #ifndef HAVE_WU_ARMWITHADDRESS
-fprintf(stderr, "going idle (%016zx %016zx)...\n", wu_start, wu_mask);
-                                        ppc_waitimpl();
-fprintf(stderr, "woke up\n");
+					__do_wait();
 #else // HAVE_WU_ARMWITHADDRESS
                                         ppc_waitimpl();
 #endif // HAVE_WU_ARMWITHADDRESS
+					if (_shutdown) break;
                                 }
                                 // need to re-evaluate things here?
                                 // goto re_evaluate;
@@ -317,23 +347,29 @@ fprintf(stderr, "woke up\n");
                                 //=== we get preempted here ===//
                                 pthread_setschedprio(self, max_pri);
 
+				if (_shutdown) break;
                                 _ctxset->joinContextSet(_client, id); // got new id now...
                                 // always assume context set changed... just simpler.
                                 goto new_context_assignment;
                         }
                 }
-                // not reached?
 
-                // must have unlocked before this... ??
-                // __lockContextSet(lkd_ctx, 0);
-                _ctxset->leaveContextSet(_client, id); // id invalid now
+		if (lkd_ctx) {
+                	__lockContextSet(lkd_ctx, 0);
+		}
+		if (id != (size_t)-1) {
+                	_ctxset->leaveContextSet(_client, id); // id invalid now
+		}
+fprintf(stderr, "comm thread terminated\n");
                 return PAMI_SUCCESS;
         }
 
         BgqWakeupRegion *_wakeup_region;	///< WAC memory for contexts (common)
         PAMI::Device::CommThread::BgqContextPool *_ctxset; ///< context set (common)
-        size_t _client;		///< client ID
-	uint64_t _initCtxs;	///< initial set of contexts to take
+        size_t _client;			///< client ID
+	uint64_t _initCtxs;		///< initial set of contexts to take
+	pthread_t _thread;		///< pthread identifier
+	volatile bool _shutdown;	///< request commthread to exit
 	static size_t _numActive;
 }; // class BgqCommThread
 

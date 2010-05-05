@@ -17,6 +17,16 @@
 #include "spi/include/l2/atomic.h"
 #include "spi/include/kernel/memory.h"
 
+#ifndef L1_CACHELINE_SIZE
+#define L1_CACHELINE_SIZE	64
+#endif // !L1_CACHELINE_SIZE
+
+#ifndef L2_CACHELINE_SIZE
+#define L2_CACHELINE_SIZE	128
+#endif // !L2_CACHELINE_SIZE
+
+#define WU_CACHELINE_SIZE	L1_CACHELINE_SIZE
+
 namespace PAMI {
 namespace Device {
 namespace CommThread {
@@ -91,9 +101,19 @@ public:
 		end = addr + (_wu_region_len - _wu_mm.available()) / sizeof(uint64_t);
 		while (addr < end) {
 			val = *addr;
-			addr = addr + 128 / sizeof(uint64_t); // L1 CACHELINE SIZE...
+			addr = addr + WU_CACHELINE_SIZE / sizeof(uint64_t);
 		}
         }
+
+	inline size_t copyWURange(uint64_t *buf) {
+		size_t n = _wu_region_len - _wu_mm.available();
+		memcpy(buf, _wakeup_region, n);
+		return n;
+	}
+
+	inline int cmpWURange(uint64_t *buf) {
+		return memcmp(buf, _wakeup_region, _wu_region_len - _wu_mm.available());
+	}
 
 	PAMI::Memory::MemoryManager _wu_mm;
 

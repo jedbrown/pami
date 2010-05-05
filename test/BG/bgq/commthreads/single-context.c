@@ -137,9 +137,17 @@ int main(int argc, char ** argv) {
 unsigned long long t0 = PAMI_Wtimebase();
 //fprintf(stderr, "Woke up after %lld cycles\n", (PAMI_Wtimebase() - t0));
 while (PAMI_Wtimebase() - t0 < 500000);
+fprintf(stderr, "Waking...\n");
 		}
 	}
 
+fprintf(stderr, "Sleeping...\n");
+{unsigned long long t0 = PAMI_Wtimebase();
+while (PAMI_Wtimebase() - t0 < 500000);}
+fprintf(stderr, "Finishing...\n");
+	for (x = 0; x < NUM_CONTEXTS; ++x) {
+		result = PAMI_Context_destroy(context[x]);
+	}
 	result = PAMI_Client_destroy(client);
 	if (result != PAMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to finalize pami client. "

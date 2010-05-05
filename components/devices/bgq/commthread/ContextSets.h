@@ -54,7 +54,7 @@ class BgqContextPool {
 				_lastset = 0;
 				if (++ni >= 2) break;
 #if 0 // this is not right, yet...
-				if (_notset) {
+				if (_sets[_nsets]) {
 					m |= __getOneContext(k);
 					++n;
 					continue;
@@ -111,20 +111,21 @@ public:
         _ncontexts(0),
         _mutex(),
         _sets(NULL),
-        _notset(0ULL),
         _nsets(0),
         _nactive(0),
         _lastset(0)
         {
         }
 
-        inline void init(size_t clientid, size_t nctx, Memory::MemoryManager *mm) {
+        inline void init(size_t clientid, size_t nctx,
+				Memory::MemoryManager *mm,
+				Memory::MemoryManager *setmm) {
                 _mutex.init(mm);
                 posix_memalign((void **)&_contexts, 16, nctx * sizeof(*_contexts));
                 PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_contexts");
-                posix_memalign((void **)&_sets, 16, nctx * sizeof(*_sets));
+                setmm->memalign((void **)&_sets, 16, (nctx + 1) * sizeof(*_sets));
                 PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_sets");
-		memset(_sets, 0, nctx * sizeof(*_sets));
+		memset(_sets, 0, (nctx + 1) * sizeof(*_sets));
                 _ncontexts_total = nctx;
                 _nsets = nctx;
         }
@@ -137,13 +138,22 @@ public:
                 _mutex.acquire();
 		size_t x = _ncontexts++;
                 _contexts[x] = (PAMI::Context *)ctx;
-		_notset |= (1ULL << x);
+		_sets[_nsets] |= (1ULL << x);
                 _mutex.release();
 		// presumably, a new comm thread is about to call joinContextSet(),
 		// but can we guarantee timing? May need a way to ensure that
-		// "_notset" will be checked.
+		// "_sets[_nsets]" will be checked.
                 return (1ULL << x);
         }
+
+        inline void rmAllContexts(size_t clientid) {
+		size_t x;
+                _mutex.acquire();
+		for (x = 0; x <= _nsets; ++x) {
+			_sets[x] = 0;
+		}
+                _mutex.release();
+	}
 
         PAMI::Context *getContext(size_t clientid, size_t contextix) {
                 return _contexts[contextix];
@@ -153,11 +163,11 @@ public:
                 _mutex.acquire();
                 uint64_t m = _sets[threadid] & ~ENABLE;
 #if 0
-		// should we check "_notset" and possibly pick up more contexts?
+		// should we check "_sets[_nsets]" and possibly pick up more contexts?
 		// or just trigger a "rejoin"?
 		if (!m) {
 			// must not cause thrashing, but try to get some contexts...
-			if (_notset || _ncontexts >= _nactive) {
+			if (_sets[_nsets] || _ncontexts >= _nactive) {
 				m = __rebalanceContexts();
 fprintf(stderr, "picking up extra contexts %04zx\n", m);
 				_sets[threadid] = m | ENABLE;
@@ -176,8 +186,8 @@ fprintf(stderr, "picking up extra contexts %04zx\n", m);
                 threadid = _nactive;
                 if (_nactive == 0) {
                         // take all? or just a few...
-                        m |= (_notset | initial);
-                        _notset = 0;
+                        m |= (_sets[_nsets] | initial);
+                        _sets[_nsets] = 0;
                         ++_nactive;
                 } else {
                         ++_nactive;
@@ -195,7 +205,7 @@ fprintf(stderr, "picking up extra contexts %04zx\n", m);
                 m &= ~ENABLE;
                 _sets[threadid] = 0;
                 if (_nactive == 0) {
-                        _notset |= m;
+                        _sets[_nsets] |= m;
                 } else {
 			__giveupContexts(m);
                 }
@@ -209,7 +219,6 @@ private:
 
         ContextSetMutex _mutex;
         uint64_t *_sets;	// protected by _mutex
-        uint64_t _notset;	// protected by _mutex
         size_t _nsets;		// protected by _mutex
         size_t _nactive;	// protected by _mutex
         size_t _lastset;	// protected by _mutex
