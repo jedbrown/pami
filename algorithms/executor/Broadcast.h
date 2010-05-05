@@ -81,6 +81,13 @@ namespace CCMI
         _msend.roles       = -1U;
       }
 
+      void setPostReceives (bool precv) {
+	_postReceives = precv;
+        pami_quad_t *info   =  (_postReceives)?(NULL):(pami_quad_t*)((void*)&_mdata);
+        _msend.msginfo     =  info;
+        _msend.msgcount    =  1;		
+      }
+
       //-----------------------------------------
       // --  Initialization routines
       //------------------------------------------

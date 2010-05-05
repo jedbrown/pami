@@ -109,13 +109,13 @@ namespace CCMI
 					  _cmgr,
 					  comm);
 
-	  exec->setSchedule (&_schedules[c], c);
 	  exec->setRoot (root);
 	  exec->setBuffers (src + aligned_bytes*c,
 			    dst + aligned_bytes*c,
 			    bytecounts[c]);
 	  exec->setDoneCallback (cb_composite_done, this);
-
+	  exec->setSchedule (&_schedules[c], c);
+	  
 	  addExecutor (exec);
 	  COMPILE_TIME_ASSERT(sizeof(_schedules[0]) >= sizeof(T_Sched));
 	}
