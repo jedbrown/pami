@@ -207,7 +207,7 @@ namespace PAMI
 //        geometry->setKey(PAMI::Geometry::PAMI_GKEY_LOCALBARRIECOMPOSITE,
 //                         (void*)_shmem_barrier_composite);
         }
-        else PAMI_abortf("No Shmem or MU?\n");
+	//        else PAMI_abortf("No Shmem or MU?\n");
 
         if((__global.useshmem()) && (__global.topology_local.size() > 1))
         {
