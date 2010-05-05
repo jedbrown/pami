@@ -395,7 +395,20 @@ init ( ResourceType_t  type,
   TRACE((stderr,"ResourceManager: Entering Barrier\n"));
   barrier.enter();
   TRACE((stderr,"ResourceManager: Exiting Barrier\n"));
-
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+  if(__global.personality.pSize() == 1)
+    { double seconds = 5; // wait 5 pseudo-seconds
+      double dseconds = ((double)seconds)/1000; //mambo seconds are loooong.
+      double start = PAMI_Wtime (), d=0;
+      TRACE((stderr, "%s sleep - %.0f,start %f < %f\n",__PRETTY_FUNCTION__,d,start,start+dseconds));
+      while (PAMI_Wtime() < (start+dseconds))
+      {
+	  for (int i=0; i<200000; ++i) ++d;
+	  TRACE((stderr, "%s sleep - %.0f, %f < %f\n",__PRETTY_FUNCTION__,d,PAMI_Wtime(),start+dseconds));
+      }
+      TRACE((stderr, "%s sleep - %.0f, start %f, end %f\n",__PRETTY_FUNCTION__,d,start,PAMI_Wtime()));
+    }
+#endif
 
   return rc;
 
