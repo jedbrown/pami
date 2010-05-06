@@ -57,7 +57,7 @@ namespace PAMI
           MPIM2MMessage * m2m = (MPIM2MMessage *)malloc(sizeof(MPIM2MMessage));
           PAMI_assert( m2m != NULL );
 
-          m2m->_context     = NULL;
+          m2m->_context     = 0;
           m2m->_dispatch_id = _dispatch_id;
           m2m->_conn        = connid;
 

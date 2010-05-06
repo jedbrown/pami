@@ -71,7 +71,7 @@ namespace PAMI
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
     typedef PAMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
 
-    // \todo I do not distinguish local vs non-local so no eager shmem protocol here... just EagerMPI
+    // \todo #warning I do not distinguish local vs non-local so no eager shmem protocol here... just EagerMPI
   typedef PAMI::Protocol::MPI::P2PMcastProto<MPIDevice,
                                             EagerMPI,
                                             PAMI::Device::MPIBcastMdl,
@@ -343,7 +343,7 @@ namespace PAMI
           unsigned i;
           for (i=0; i<maximum && events==0; i++)
               {
-#warning Does this _mpi device still belong here?
+/// \todo #warning Does this _mpi device still belong here?
         events += _mpi->advance_impl();
         events += _devices->advance(_clientid, _contextid);
 
@@ -597,7 +597,7 @@ namespace PAMI
       TRACE_ERR((stderr, ">> multicast_impl, _dispatch[%zu/%zu] = %p\n", id, mcastinfo->dispatch, _dispatch[id][0]));
       PAMI_assert_debug (_dispatch[id][0] != NULL);
 
-      // \todo A COMPLETE TEMPORARY HACK - since Mike gave us two dispatch table entries, we used the
+      // \todo #warning A COMPLETE TEMPORARY HACK - since Mike gave us two dispatch table entries, we used the
       // second (unused by mcast) entry to store an id of what we put in the first entry.  Now
       // we know what class to pull out of _dispatch[][0] and (eventually) what allocator to use.
       PAMI_assert_debug (_dispatch[id][1] > (void*)0 && _dispatch[id][1] < (void*)6);
@@ -608,7 +608,7 @@ namespace PAMI
         typedef uint8_t mcast_storage_t[P2PMcastProto::sizeof_msg];
         P2PMcastProto * multicast = (P2PMcastProto *) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, one sided multicast %p\n", multicast));
-        mcast_storage_t * msgbuf = (mcast_storage_t*)malloc(P2PMcastProto::sizeof_msg);/// \todo memleak
+        mcast_storage_t * msgbuf = (mcast_storage_t*)malloc(P2PMcastProto::sizeof_msg);/// \todo #warning memleak
         multicast->multicast(*msgbuf,mcastinfo);
       }
       else if(_dispatch[id][1] == (void*)3) // see HACK comment above
@@ -633,7 +633,7 @@ namespace PAMI
         PAMI::Device::MPIBcastMdl  * multicast = (PAMI::Device::MPIBcastMdl *) _dispatch[id][0];
         TRACE_ERR((stderr, ">> multicast_impl, all sided global multicast %p\n", multicast));
         mcast_storage_t * msgbuf = (mcast_storage_t*)malloc(PAMI::Device::MPIBcastMdl::sizeof_msg);/// \todo memleak
-        mcastinfo->client = this->_clientid;  // \todo:  this protocol is not consistent with the other protocols here
+        mcastinfo->client = this->_clientid;  // \todo #warning  this protocol is not consistent with the other protocols here
                                               // It assumes info->client is client_id.  The hack here is to fix up the
                                               // client.  this perturbs user storage
         multicast->postMulticast(*msgbuf,mcastinfo);
@@ -746,7 +746,7 @@ namespace PAMI
       // This is for communication off node
       if(_dispatch[(size_t)id][0] != NULL)
       {
-        PAMI_assertf(0,"Error:  Dispatch already set, id=%d\n", id);
+        PAMI_assertf(0,"Error:  Dispatch already set, id=%ld\n", id);
         goto result_error;
       }
       _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();

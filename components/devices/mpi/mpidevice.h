@@ -561,7 +561,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                   if( m2m->_done_fn )
                     (m2m->_done_fn)(NULL, m2m->_cookie,PAMI_SUCCESS);
                   free ( m2m );
-                  return NULL;
+                  return 0;
                 }
                 m2m->_buf     = buf;
                 m2m->_sizes   = sizes;

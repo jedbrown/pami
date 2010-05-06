@@ -241,7 +241,7 @@ namespace CCMI
         TRACE_ALERT((stderr,"<%p>Executor::AllreduceBaseExec<T_Conn>::ctor() ALERT:\n",this));
 
 	_msend.msginfo     = NULL;
-	_msend.msgcount    = NULL;
+	_msend.msgcount    = 0;
         _msend.roles       = -1U;
 
         _acache.setReduceConnectionManager (connmgr);
