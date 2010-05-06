@@ -314,6 +314,9 @@ int main (int argc, char ** argv)
 
   if (task_id == 0)
   {
+
+    fprintf(stderr, "======== Combinations of use shmem and no shmem hints that should pass  ========\n");
+
     // Create task unique dispatch sets 4 - 15
     options.use_shmem = 0;
     options.no_shmem = 1;
@@ -493,21 +496,26 @@ int main (int argc, char ** argv)
 	  continue;
 	}
 
+	// Determine hint values
+	send_hard_use_shmem_hint = (s >> 3) & 1;
+	send_soft_use_shmem_hint = (s >> 2) & 1;
+	send_hard_no_shmem_hint = (s >> 1) & 1;
+	send_soft_no_shmem_hint = s & 1;
+	recv_use_shmem_hint = (r >> 1) & 1;
+	recv_no_shmem_hint = r & 1;
+
+	parameters.send.dispatch        = dispatch_ary_0[r][s];
+
 	// Communicate with each task
 	for (n = 1; n < num_tasks; n++) {
 
 	  TRACE((stderr, "before send ...\n"));
 
-	  // Determine hint values
-	  send_hard_use_shmem_hint = (s >> 3) & 1;
-	  send_soft_use_shmem_hint = (s >> 2) & 1;
-	  send_hard_no_shmem_hint = (s >> 1) & 1;
-	  send_soft_no_shmem_hint = s & 1;
-	  recv_use_shmem_hint = (r >> 1) & 1;
-	  recv_no_shmem_hint = r & 1;
-
-	  parameters.send.dispatch        = dispatch_ary_0[r][s];
-	  PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	  result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	  if (result != PAMI_SUCCESS) {
+	    fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	    return 1;
+	  }
 
 	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask %zu use shmem hard hint = %zu\n\t\ttask %zu no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, n, recv_use_shmem_hint, n, recv_no_shmem_hint);
 
@@ -709,6 +717,12 @@ int main (int argc, char ** argv)
       return 1;
     }
 
+    result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+    if (result != PAMI_SUCCESS) {
+      fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+      return 1;
+    }
+
     for (r = 0; r < 4; r++) {
       for (s = 0; s < 11; s++) {
 
@@ -741,7 +755,6 @@ int main (int argc, char ** argv)
 	recv_no_shmem_hint = r & 1;
 
 	parameters.send.dispatch        = dispatch_ary_n[r][s];
-	PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 
 	fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> 0:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask 0 use shmem hard hint = %zu\n\t\ttask 0 no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, recv_use_shmem_hint, recv_no_shmem_hint);
 
@@ -787,6 +800,8 @@ int main (int argc, char ** argv)
   if (task_id == 0)
   {
 
+    fprintf(stderr, "======== Combinations of shmem hints that should result in send FAILS  ========\n");
+
     for (r = 0; r < 4; r++) {
       for (s = 0; s < 11; s++) {
 
@@ -795,21 +810,27 @@ int main (int argc, char ** argv)
 	  continue;
 	}
 
+	// Determine hint values
+	send_hard_use_shmem_hint = (s >> 3) & 1;
+	send_soft_use_shmem_hint = (s >> 2) & 1;
+	send_hard_no_shmem_hint = (s >> 1) & 1;
+	send_soft_no_shmem_hint = s & 1;
+	recv_use_shmem_hint = (r >> 1) & 1;
+	recv_no_shmem_hint = r & 1;
+
+	parameters.send.dispatch        = dispatch_ary_0[r][s];
+
 	// Communicate with each task
 	for (n = 1; n < num_tasks; n++) {
 
 	  TRACE((stderr, "before send ...\n"));
 
-	  // Determine hint values
-	  send_hard_use_shmem_hint = (s >> 3) & 1;
-	  send_soft_use_shmem_hint = (s >> 2) & 1;
-	  send_hard_no_shmem_hint = (s >> 1) & 1;
-	  send_soft_no_shmem_hint = s & 1;
-	  recv_use_shmem_hint = (r >> 1) & 1;
-	  recv_no_shmem_hint = r & 1;
 
-	  parameters.send.dispatch        = dispatch_ary_0[r][s];
-	  PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	 result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	  if (result != PAMI_SUCCESS) {
+	    fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	    return 1;
+	  }
 
 	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask %zu use shmem hard hint = %zu\n\t\ttask %zu no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, n, recv_use_shmem_hint, n, recv_no_shmem_hint);
 
@@ -826,6 +847,13 @@ int main (int argc, char ** argv)
   } // end task = 0
   else
   {
+
+    result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+    if (result != PAMI_SUCCESS) {
+      fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+      return 1;
+    }
+
     for (r = 0; r < 4; r++) {
       for (s = 0; s < 11; s++) {
 
@@ -845,7 +873,6 @@ int main (int argc, char ** argv)
 	recv_no_shmem_hint = r & 1;
 
 	parameters.send.dispatch        = dispatch_ary_n[r][s];
-	PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 
 	fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> 0:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask 0 use shmem hard hint = %zu\n\t\ttask 0 no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, recv_use_shmem_hint, recv_no_shmem_hint);
 
@@ -878,6 +905,9 @@ int main (int argc, char ** argv)
 
   if (task_id == 0)
   {
+
+    fprintf(stderr, "======== Combinations of shmem hints that should result in recv FAILS  ========\n");
+
     for (r = 0; r < 4; r++) {
       for (s = 0; s < 11; s++) {
 
@@ -886,21 +916,26 @@ int main (int argc, char ** argv)
 	  continue;
 	}
 
+	// Determine hint values
+	send_hard_use_shmem_hint = (s >> 3) & 1;
+	send_soft_use_shmem_hint = (s >> 2) & 1;
+	send_hard_no_shmem_hint = (s >> 1) & 1;
+	send_soft_no_shmem_hint = s & 1;
+	recv_use_shmem_hint = (r >> 1) & 1;
+	recv_no_shmem_hint = r & 1;
+
+	parameters.send.dispatch        = dispatch_ary_0[r][s];
+
 	// Communicate with each task
 	for (n = 1; n < num_tasks; n++) {
 
 	  TRACE((stderr, "before send ...\n"));
 
-	  // Determine hint values
-	  send_hard_use_shmem_hint = (s >> 3) & 1;
-	  send_soft_use_shmem_hint = (s >> 2) & 1;
-	  send_hard_no_shmem_hint = (s >> 1) & 1;
-	  send_soft_no_shmem_hint = s & 1;
-	  recv_use_shmem_hint = (r >> 1) & 1;
-	  recv_no_shmem_hint = r & 1;
-
-	  parameters.send.dispatch        = dispatch_ary_0[r][s];
-	  PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	  result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	  if (result != PAMI_SUCCESS) {
+	    fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	    return 1;
+	  }
 
 	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask %zu use shmem hard hint = %zu\n\t\ttask %zu no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, n, recv_use_shmem_hint, n, recv_no_shmem_hint);
 
@@ -932,6 +967,13 @@ int main (int argc, char ** argv)
   } // end task = 0
   else
   {
+
+    result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+    if (result != PAMI_SUCCESS) {
+      fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+      return 1;
+    }
+
     for (r = 0; r < 4; r++) {
       for (s = 0; s < 11; s++) {
 
@@ -964,7 +1006,6 @@ int main (int argc, char ** argv)
 	recv_no_shmem_hint = r & 1;
 
 	parameters.send.dispatch        = dispatch_ary_n[r][s];
-	PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 
 	fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> 0:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu no_shmem hard hint = %zu\n\t\ttask %zu no_shmem soft hint = %zu\n\t\ttask 0 use shmem hard hint = %zu\n\t\ttask 0 no shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, task_id, send_hard_no_shmem_hint, task_id, send_soft_no_shmem_hint, recv_use_shmem_hint, recv_no_shmem_hint);
 
