@@ -11,7 +11,7 @@
 #include <pami.h>
 #include <stdio.h>
 
-//#define ENABLE_TRACE
+#define ENABLE_TRACE
 
 #ifdef ENABLE_TRACE
 #define TRACE(x) fprintf x
@@ -176,6 +176,9 @@ int main (int argc, char ** argv)
 
   if (task_id == 0)
   {
+
+    fprintf(stderr, "====== Combinations of header sizes and no_long_header hints that should pass ======\n");
+
     // Create task unique dispatch sets 1 & 2
     options.no_long_header = 0;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
@@ -205,17 +208,24 @@ int main (int argc, char ** argv)
 
     for (testcase = 0; testcase < 6; testcase++) {
 
+      // Determine hint values
+      send_hard_hint = (testcase >> 2) & 1;
+      send_soft_hint = (testcase >> 1) & 1;
+      recv_hard_hint = testcase & 1;
+
+      parameters.send.dispatch        = dispatch_ary_0[testcase];
+
       // Communicate with each task
       for (n = 1; n < num_tasks; n++) {
 
 	TRACE((stderr, "before send ...\n"));
 
-	// Determine hint values
-	send_hard_hint = (testcase >> 2) & 1;
-	send_soft_hint = (testcase >> 1) & 1;
-	recv_hard_hint = testcase & 1;
+	result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	if (result != PAMI_SUCCESS) {
+	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	  return 1;
+	}
 
-	parameters.send.dispatch        = dispatch_ary_0[testcase];
 	for ( h = 0; h < 2; h++) {
 
 	  // Long headers only work for testcases 0 & 2
@@ -225,7 +235,6 @@ int main (int argc, char ** argv)
 
 	  parameters.send.header.iov_base = (void *) header_ary[h];
 	  parameters.send.header.iov_len  = header_size_ary[h];
-	  PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
 
 	  fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask %zu no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, n, task_id, send_hard_hint, task_id, send_soft_hint, n, recv_hard_hint);
 
@@ -285,9 +294,23 @@ int main (int argc, char ** argv)
       return 1;
     }
 
+    result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+    if (result != PAMI_SUCCESS) {
+      fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+      return 1;
+    }
+
     for (testcase = 0; testcase < 6; testcase++) {
 
       TRACE((stderr, "before send ...\n"));
+
+      // Determine hint values
+      send_hard_hint = (testcase >> 2) & 1;
+      send_soft_hint = (testcase >> 1) & 1;
+      recv_hard_hint = testcase & 1;
+
+      parameters.send.dispatch = dispatch_ary_n[testcase];
+
       for ( h = 0; h < 2; h++) {
 
 	// Long headers only work for testcases 0 & 2
@@ -310,15 +333,8 @@ int main (int argc, char ** argv)
 
 	TRACE((stderr, "before send ...\n"));
 
-	// Determine hint values
-	send_hard_hint = (testcase >> 2) & 1;
-	send_soft_hint = (testcase >> 1) & 1;
-	recv_hard_hint = testcase & 1;
-
-	parameters.send.dispatch        = dispatch_ary_n[testcase];
 	parameters.send.header.iov_base = (void *) header_ary[h];
 	parameters.send.header.iov_len  = header_size_ary[h];
-	PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 
 	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> 0:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask 0 no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, task_id, send_hard_hint, task_id, send_soft_hint, recv_hard_hint);
 
@@ -351,25 +367,32 @@ int main (int argc, char ** argv)
   if (task_id == 0)
   {
 
+    fprintf(stderr, "====== Combinations of header sizes and no_long_header hints that should result in send FAILS ======\n");
+
+    // Only sending long headers
+    h = 1;
+    parameters.send.header.iov_base = (void *) header_ary[h];
+    parameters.send.header.iov_len  = header_size_ary[h];
+
     for (testcase = 4; testcase < 6; testcase++) {
+
+      // Determine hint values
+      send_hard_hint = (testcase >> 2) & 1;
+      send_soft_hint = (testcase >> 1) & 1;
+      recv_hard_hint = testcase & 1;
+
+      parameters.send.dispatch        = dispatch_ary_0[testcase];
 
       // Communicate with each task
       for (n = 1; n < num_tasks; n++) {
 
 	TRACE((stderr, "before send ...\n"));
 
-	// Determine hint values
-	send_hard_hint = (testcase >> 2) & 1;
-	send_soft_hint = (testcase >> 1) & 1;
-	recv_hard_hint = testcase & 1;
-
-	// Only sending long headers
-	h = 1;
-
-	parameters.send.dispatch        = dispatch_ary_0[testcase];
-	parameters.send.header.iov_base = (void *) header_ary[h];
-	parameters.send.header.iov_len  = header_size_ary[h];
-	PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	if (result != PAMI_SUCCESS) {
+	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	  return 1;
+	}
 
 	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask %zu no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, n, task_id, send_hard_hint, task_id, send_soft_hint, n, recv_hard_hint);
 
@@ -386,10 +409,18 @@ int main (int argc, char ** argv)
   else
   {
 
-    for (testcase = 4; testcase < 6; testcase++) {
+    // Only sending long headers
+    h = 1;
+    parameters.send.header.iov_base = (void *) header_ary[h];
+    parameters.send.header.iov_len  = header_size_ary[h];
 
-      // Only sending long headers
-      h = 1;
+    result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+    if (result != PAMI_SUCCESS) {
+      fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+      return 1;
+    }
+
+    for (testcase = 4; testcase < 6; testcase++) {
 
       TRACE((stderr, "before send ...\n"));
 
@@ -399,9 +430,6 @@ int main (int argc, char ** argv)
       recv_hard_hint = testcase & 1;
 
       parameters.send.dispatch        = dispatch_ary_n[testcase];
-      parameters.send.header.iov_base = (void *) header_ary[h];
-      parameters.send.header.iov_len  = header_size_ary[h];
-      PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 
       fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> 0:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask 0 no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, task_id, send_hard_hint, task_id, send_soft_hint, recv_hard_hint);
 
@@ -420,6 +448,13 @@ int main (int argc, char ** argv)
   if (task_id == 0)
   {
 
+    fprintf(stderr, "====== Combinations of header sizes and no_long_header hints that should result in recv FAILS ======\n");
+
+    // Only sending long headers
+    h = 1;
+    parameters.send.header.iov_base = (void *) header_ary[h];
+    parameters.send.header.iov_len  = header_size_ary[h];
+
     for (testcase = 1; testcase < 4; testcase++) {
 
       // Skip testcase #2, (sending FAIL)
@@ -427,23 +462,26 @@ int main (int argc, char ** argv)
 	continue;
       }
 
+      // Determine hint values
+      send_hard_hint = (testcase >> 2) & 1;
+      send_soft_hint = (testcase >> 1) & 1;
+      recv_hard_hint = testcase & 1;
+
+      fprintf (stderr, "testcase = %zu, dispatch = %zu.\n", testcase, dispatch_ary_0[testcase]);
+
+      parameters.send.dispatch        = dispatch_ary_0[testcase];
+
       // Communicate with each task
       for (n = 1; n < num_tasks; n++) {
 
 	TRACE((stderr, "before send ...\n"));
 
-	// Determine hint values
-	send_hard_hint = (testcase >> 2) & 1;
-	send_soft_hint = (testcase >> 1) & 1;
-	recv_hard_hint = testcase & 1;
 
-	// Only sending long headers
-	h = 1;
-
-	parameters.send.dispatch        = dispatch_ary_0[testcase];
-	parameters.send.header.iov_base = (void *) header_ary[h];
-	parameters.send.header.iov_len  = header_size_ary[h];
-	PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	if (result != PAMI_SUCCESS) {
+	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	  return 1;
+	}
 
 	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask %zu no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, n, task_id, send_hard_hint, task_id, send_soft_hint, n, recv_hard_hint);
 
@@ -474,6 +512,16 @@ int main (int argc, char ** argv)
   else
   {
 
+    // Only sending long headers
+    h = 1;
+    parameters.send.header.iov_base = (void *) header_ary[h];
+    parameters.send.header.iov_len  = header_size_ary[h];
+
+    result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+    if (result != PAMI_SUCCESS) {
+      fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+      return 1;
+    }
 
     for (testcase = 1; testcase < 4; testcase++) {
 
@@ -497,18 +545,14 @@ int main (int argc, char ** argv)
 
       TRACE((stderr, "before send ...\n"));
 
-      // Only sending long headers
-      h = 1;
-
       // Determine hint values
       send_hard_hint = (testcase >> 2) & 1;
       send_soft_hint = (testcase >> 1) & 1;
       recv_hard_hint = testcase & 1;
 
+      fprintf (stderr, "testcase = %zu, dispatch = %zu.\n", testcase, dispatch_ary_n[testcase]);
+
       parameters.send.dispatch        = dispatch_ary_n[testcase];
-      parameters.send.header.iov_base = (void *) header_ary[h];
-      parameters.send.header.iov_len  = header_size_ary[h];
-      PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 
       fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> 0:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask 0 no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, task_id, send_hard_hint, task_id, send_soft_hint, recv_hard_hint);
 
