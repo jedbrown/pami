@@ -239,7 +239,8 @@ namespace PAMI
         // Compile-time assertions
         // ----------------------------------------------------------------
 
-        _lock.init(&_mm);
+        //_lock.init(&_mm);
+        _lock.init(__global._wuRegion_mm[_clientid]); // put context lock in WAC region
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 
 

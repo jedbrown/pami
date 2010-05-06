@@ -137,7 +137,8 @@ public:
         _wakeup_region(wu),
         _ctxset(pool),
         _client(clientid),
-	_thread(0)
+	_thread(0),
+	_shutdown(false)
         { }
 
         ~BgqCommThread() { }
@@ -247,13 +248,21 @@ public:
 
         static inline pami_result_t shutdown(BgqCommThread *devs, size_t clientid) {
 		size_t x;
-                // all BgqCommThread objects have the same ContextSet object.
-                devs[0]._ctxset->rmAllContexts(clientid);
+
+		if (_numActive == 0) {
+			return PAMI_SUCCESS;
+		}
+
+		// while touching _shutdown will not directly wakeup commthreads,
+		// our subsequent rmAllContexts() will...
 		for (x = 0; x < _numActive; ++x) {
 			// kill is too harsh, provide orderly termination
 			//pthread_kill(devs[x]._thread, SIGTERM);
-			devs[x]._shutdown = 1;
+			devs[x]._shutdown = true;
 		}
+                // all BgqCommThread objects have the same ContextSet object.
+                devs[0]._ctxset->rmAllContexts(clientid);
+
 		// need to pthread_join() here? or is it too risky (might hang)?
 		for (x = 0; x < _numActive; ++x) {
 			void *status;
@@ -284,25 +293,23 @@ fprintf(stderr, "comm thread for context %04zx, ttyp=%016lx\n", _initCtxs, USR_W
 new_context_assignment:	// These are the same now, assuming the re-locking is
 more_work:		// lightweight enough.
                         //
-                        new_ctx = _ctxset->getContextSet(_client, id);
-                        _wakeup_region->getWURange(new_ctx, &wu_start, &wu_mask);
 
                         __armMU_WU();
 
-                        // this only locks/unlocks what changed...
-                        __lockContextSet(lkd_ctx, new_ctx);
-                        old_ctx = new_ctx;
+			// doing this without 'new_ctx' depends on it being ignored...
+                        _wakeup_region->getWURange(0, &wu_start, &wu_mask);
+
                         n = 0;
-                        do {
-                                WU_ArmWithAddress(wu_start, wu_mask);
-				if (!lkd_ctx) {
-					// need to touch WAC region so we get a wakeup
-					_wakeup_region->touchWURange(0);
-					events = 0;
-					break;
-				}
+			events = 0;
+			do {
+                        	WU_ArmWithAddress(wu_start, wu_mask);
+                        	new_ctx = _ctxset->getContextSet(_client, id);
+
+                        	// this only locks/unlocks what changed...
+                        	__lockContextSet(lkd_ctx, new_ctx);
+                        	old_ctx = new_ctx;
                                 events = __advanceContextSet(lkd_ctx);
-                        } while (!_shutdown && (events != 0 || ++n < max_loop));
+                        } while (!_shutdown && lkd_ctx && (events != 0 || ++n < max_loop));
 			if (_shutdown) break;
 
                         // Snoop the scheduler to see if other threads are competing.

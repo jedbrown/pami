@@ -111,6 +111,7 @@ int main(int argc, char ** argv) {
 						"result = %d\n", NUM_CONTEXTS, result);
 		return 1;
 	}
+fprintf(stderr, "Starting...\n");
 	for (x = 0; x < NUM_CONTEXTS; ++x) {
 		result = PAMI_Client_add_commthread_context(client, context[x]);
 		if (result != PAMI_SUCCESS) {
@@ -158,4 +159,4 @@ fprintf(stderr, "Finishing...\n");
 	fprintf(stderr, "Success.\n");
 
 	return 0;
-};
+}
