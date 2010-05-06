@@ -277,7 +277,11 @@ int main (int argc, char ** argv)
 	}
 
 	parameters.send.dispatch = use_shmem;
-	PAMI_Endpoint_create (client, 1, xtalk, &parameters.send.dest);
+	result = PAMI_Endpoint_create (client, 1, xtalk, &parameters.send.dest);
+	if (result != PAMI_SUCCESS) {
+	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	  return 1;
+	}
 
 	for (remote_cb = 0; remote_cb < 2; remote_cb++) { // remote callback loop
 	  if (remote_cb) {
@@ -333,7 +337,11 @@ int main (int argc, char ** argv)
 	}
 
 	parameters.send.dispatch = use_shmem;
-	PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+	result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+	if (result != PAMI_SUCCESS) {
+	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	  return 1;
+	}
 
 	for (remote_cb = 0; remote_cb < 2; remote_cb++) { // remote callback loop
 
