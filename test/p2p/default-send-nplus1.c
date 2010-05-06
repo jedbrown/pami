@@ -20,17 +20,41 @@ unsigned validate (void * addr, size_t bytes, size_t test_n_plus_1)
 {
   unsigned status = 1;
   uint8_t * byte = (uint8_t *) addr;
+  uint8_t expected_value = 0;
+  size_t total_bytes = 0;
   size_t i, j = 0;
 
-  for (i=0; i<bytes; i++)
-  {
-    if (byte[i] != (uint8_t)i)
-    {
-      fprintf (stderr, "validate(%p,%zu) .. ERROR .. byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, bytes, i, (uint8_t)i, i, &byte[i], byte[i]);
+  // Verify data received as well as 0-minus-1 and n-plus-1 bytes
+  if (test_n_plus_1) {
+    total_bytes = bytes+2;
+  } else { // Only verify data received
+    total_bytes = bytes;
+  }
+
+  // Loop through recv_buffer
+  for (i=0; i<total_bytes; i++) {
+      
+    // Determine expected value
+    if (test_n_plus_1) {
+      // Ensure 0-minus-1 and n-plus-1 bytes equal the reset value
+      if ( (i == 0) || (i == total_bytes-1) ) {
+	expected_value = reset_value[r];	
+      } else { // Validate received data (__recv_buffer[1:bytes])
+	expected_value = (uint8_t)(i-1);
+      }
+    } else {
+      expected_value = (uint8_t)i;
+    }
+
+    // Verify current value
+    if (byte[i] != expected_value) {
+	  
+      fprintf (stderr, "validate(%p,%zu) .. ERROR .. byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, total_bytes, i, expected_value, i, &byte[i], byte[i]);
+      
       status = 0;
     }
 
-  // Print element to string to print later if desired
+    // Print element to string to print later if desired
     sprintf(&recv_str[j], "%d", byte[i]);
     if (byte[i] < 10) {
       j++;
@@ -41,19 +65,8 @@ unsigned validate (void * addr, size_t bytes, size_t test_n_plus_1)
     }
   }
 
-  // Add n-plus-1 byte to end of string so we can see what the default was
-  sprintf(&recv_str[j], "%d", byte[i]);
-
-  // Validate n-plus-1 byte (ensure it equals default value)
-  if (test_n_plus_1) {
-    if (byte[bytes] != reset_value[r]) {
-      fprintf (stderr, "validate(%p,%zu) .. ERROR .. byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, bytes, bytes, reset_value[r], bytes, &byte[bytes], byte[bytes]);
-      status = 0;
-    }
-
-    // Print __recv_buffer
-    fprintf(stdout, "recv buffer[0:%zu] after send: %s\n", bytes, recv_str);
-  }
+  // Print __recv_buffer
+  fprintf(stdout, "recv buffer[0:%zu] after send: %s\n", total_bytes-1, recv_str);
 
   return status;
 }
@@ -103,7 +116,7 @@ static void test_dispatch (
     recv->local_fn = recv_done;
     recv->cookie   = cookie;
     recv->kind = PAMI_AM_KIND_SIMPLE;
-    recv->data.simple.addr  = __recv_buffer;
+    recv->data.simple.addr  = &__recv_buffer[1];
     recv->data.simple.bytes = pipe_size;
     //fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn);
   }
@@ -307,7 +320,11 @@ int main (int argc, char ** argv)
 	}
 
 	parameters.send.dispatch = use_shmem;
-	PAMI_Endpoint_create (client, 1, xtalk, &parameters.send.dest);
+	result = PAMI_Endpoint_create (client, 1, xtalk, &parameters.send.dest);
+	if (result != PAMI_SUCCESS) {
+	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	  return 1;
+	}
 
 	for (remote_cb = 0; remote_cb < 2; remote_cb++) { // remote callback loop
 	  if (remote_cb) {
@@ -383,7 +400,11 @@ int main (int argc, char ** argv)
 	}
 
 	parameters.send.dispatch = use_shmem;
-	PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+	result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+	if (result != PAMI_SUCCESS) {
+	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	  return 1;
+	}
 
 	for (remote_cb = 0; remote_cb < 2; remote_cb++) { // remote callback loop
 
