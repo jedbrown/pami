@@ -101,7 +101,7 @@ void recv_once (pami_context_t context)
 
 unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, pami_task_t myrank, pami_endpoint_t origin, pami_endpoint_t target)
 {
-  TRACE_ERR((stderr, "(%zu) Do test ... sndlen = %zu\n", myrank, sndlen));
+  TRACE_ERR((stderr, "(%u) Do test ... sndlen = %zu\n", myrank, sndlen));
   _recv_active = 1;
   _recv_iteration = 0;
   _send_active = 1;
@@ -128,7 +128,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
     parameters.dest = target;
     for (i = 0; i < ITERATIONS; i++)
     {
-      TRACE_ERR((stderr, "(%zu) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
+      TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
       send_once (context, &parameters);
       _send_active = 1;
       recv_once (context);
@@ -140,7 +140,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
     parameters.dest = origin;
     for (i = 0; i < ITERATIONS; i++)
     {
-      TRACE_ERR((stderr, "(%zu) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
+      TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", myrank, i, sndlen));
       recv_once (context);
       _recv_active = 1;
       send_once (context, &parameters);
@@ -190,7 +190,7 @@ int main (int argc, char ** argv)
   pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   pami_send_hint_t options={0};
-  TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, recv_active = %zu\n", &_recv_active, _recv_active));
+  TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, recv_active = %u\n", &_recv_active, _recv_active));
   pami_result_t result = PAMI_Dispatch_set (context,
                                           _dispatch[_dispatch_count++],
                                           fn,

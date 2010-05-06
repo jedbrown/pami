@@ -457,13 +457,20 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
                 }
               else
                 {
-                  a = mapcache->torus.task2coords[i].a;
-                  b = mapcache->torus.task2coords[i].b;
-                  c = mapcache->torus.task2coords[i].c;
-                  d = mapcache->torus.task2coords[i].d;
-                  e = mapcache->torus.task2coords[i].e;
-                  p = mapcache->torus.task2coords[i].core;
-                  t = mapcache->torus.task2coords[i].thread;
+                  a = mapcache->torus.task2coords[i].a = (i / peerSize) % aSize;
+                  b = mapcache->torus.task2coords[i].b = (i / (peerSize * aSize)) % bSize;
+                  c = mapcache->torus.task2coords[i].c = (i / (peerSize * aSize * bSize)) % cSize;
+                  d = mapcache->torus.task2coords[i].d = (i / (peerSize * aSize * bSize * cSize)) % dSize;
+                  e = mapcache->torus.task2coords[i].e = (i / (peerSize * aSize * bSize * cSize * dSize)) % eSize;
+                  p = mapcache->torus.task2coords[i].core = (i / tSize) % pSize;
+                  t = mapcache->torus.task2coords[i].thread = i % tSize;
+/*                   a = mapcache->torus.task2coords[i].a; */
+/*                   b = mapcache->torus.task2coords[i].b; */
+/*                   c = mapcache->torus.task2coords[i].c; */
+/*                   d = mapcache->torus.task2coords[i].d; */
+/*                   e = mapcache->torus.task2coords[i].e; */
+/*                   p = mapcache->torus.task2coords[i].core; */
+/*                   t = mapcache->torus.task2coords[i].thread; */
                 }
 
 #else
