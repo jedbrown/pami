@@ -32,7 +32,7 @@ extern "C" size_t PAMI_Error_text (char * string, size_t length)
 ///
 /// \copydoc PAMI_Wtime
 ///
-double PAMI_Wtime ()
+extern "C" double PAMI_Wtime ()
 {
   return __global.time.time();
 }
@@ -40,7 +40,7 @@ double PAMI_Wtime ()
 ///
 /// \copydoc PAMI_Wtimebase
 ///
-unsigned long long PAMI_Wtimebase()
+extern "C" unsigned long long PAMI_Wtimebase()
 {
   return __global.time.timebase();
 }
