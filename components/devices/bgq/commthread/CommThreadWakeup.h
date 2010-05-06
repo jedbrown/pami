@@ -349,10 +349,12 @@ more_work:		// lightweight enough.
                                 __lockContextSet(lkd_ctx, 0);
 
                                 _ctxset->leaveContextSet(_client, id); // id invalid now
+fprintf(stderr, "stepping aside...\n");
 
                                 pthread_setschedprio(self, min_pri);
                                 //=== we get preempted here ===//
                                 pthread_setschedprio(self, max_pri);
+fprintf(stderr, "stepping back in...\n");
 
 				if (_shutdown) break;
                                 _ctxset->joinContextSet(_client, id); // got new id now...
