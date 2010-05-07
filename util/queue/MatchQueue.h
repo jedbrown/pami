@@ -97,6 +97,25 @@ namespace PAMI
 
         return NULL;
       }
+
+      MatchQueueElem   *find (unsigned key)
+      {
+	unsigned qid = key % NUMQS;
+	PAMI::Queue &queue = _localQ[qid];
+	MatchQueueElem *head = (MatchQueueElem *) queue.peekHead();
+	
+	while (head != NULL)
+	{
+	  if (head->key() == key)
+	  {
+	    ///Element was found in posted queue
+	    return  head;
+	  }
+	  head =  (MatchQueueElem *) head->next();
+	}
+	return NULL;
+      }
+
   };  //- MatchQueue
 };  //- PAMI
 

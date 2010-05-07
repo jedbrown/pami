@@ -236,7 +236,7 @@ namespace CCMI
           }
           else if(this->_isBuffered)
           {
-            PAMI::MatchQueue  & mqueue = geometry->asyncBcastUnexpQ();
+            PAMI::MatchQueue  & mqueue = geometry->asyncCollectiveUnexpQ();
             BcastQueueElem * elem = (BcastQueueElem *) mqueue.findAndDelete(root);
 
             /// Try to match in unexpected queue
@@ -268,7 +268,7 @@ namespace CCMI
 
               BcastQueueElem *elem = a_bcast->bqelem();
               elem->initPostMsg (bytes, src, cb_done);
-              geometry->asyncBcastPostQ().pushTail (elem);
+              geometry->asyncCollectivePostQ().pushTail (elem);
             }
           }
 
@@ -294,7 +294,7 @@ namespace CCMI
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
             factory->_cb_geometry(cdata->_comm);
 
-          PAMI::MatchQueue  &mqueue = geometry->asyncBcastPostQ();
+          PAMI::MatchQueue  &mqueue = geometry->asyncCollectivePostQ();
           BcastQueueElem *elem = (BcastQueueElem *) mqueue.findAndDelete(cdata->_root);
 
           T_Composite *bcast = NULL;
@@ -318,7 +318,7 @@ namespace CCMI
 
             elem = bcast->bqelem();
             elem->initUnexpMsg (sndlen, unexpbuf);
-            geometry->asyncBcastUnexpQ().pushTail (elem);
+            geometry->asyncCollectiveUnexpQ().pushTail (elem);
           }
           else
           {

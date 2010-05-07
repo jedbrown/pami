@@ -102,8 +102,13 @@ namespace CCMI
         CCMI_assert(_comm_schedule != NULL);
         _comm_schedule->getDstUnionTopology (&_dsttopology);
 
-	unsigned connid =  _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
-        _msend.connection_id = connid;
+	if(_connmgr)
+	  _msend.connection_id = _connmgr->getConnectionId(_comm, _root, _color, (unsigned)-1, (unsigned)-1);
+      }
+
+      void setConnectionID (unsigned cid) {
+	//Override the connection id from the connection manager
+	_msend.connection_id = cid;
       }
 
       void setRoot(unsigned root) {

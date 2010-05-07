@@ -93,8 +93,8 @@ namespace PAMI
       inline void                       freeAllocations ();
       inline void                       setGlobalContext(bool context);
       inline void                       setNumColors(unsigned numcolors);
-      inline MatchQueue                &asyncBcastPostQ();
-      inline MatchQueue                &asyncBcastUnexpQ();
+      inline MatchQueue                &asyncCollectivePostQ();
+      inline MatchQueue                &asyncCollectiveUnexpQ();
 
       // These are CCMI typed methods that introduce CCMI dependencies on
       // the geometry interface
@@ -334,15 +334,15 @@ namespace PAMI
     }
 
     template <class T_Geometry>
-    inline MatchQueue &Geometry<T_Geometry>::asyncBcastPostQ()
+    inline MatchQueue &Geometry<T_Geometry>::asyncCollectivePostQ()
     {
-      return static_cast<T_Geometry*>(this)->asyncBcastPostQ_impl();
+      return static_cast<T_Geometry*>(this)->asyncCollectivePostQ_impl();
     }
 
     template <class T_Geometry>
-    inline MatchQueue &Geometry<T_Geometry>::asyncBcastUnexpQ()
+    inline MatchQueue &Geometry<T_Geometry>::asyncCollectiveUnexpQ()
     {
-      return static_cast<T_Geometry*>(this)->asyncBcastUnexpQ_impl();
+      return static_cast<T_Geometry*>(this)->asyncCollectiveUnexpQ_impl();
     }
 #if 0
     template <class T_Geometry>

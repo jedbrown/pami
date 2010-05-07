@@ -362,14 +362,12 @@ namespace PAMI
           assert(0);
           return;
         }
-      inline MatchQueue               &asyncBcastPostQ_impl()
+      inline MatchQueue               &asyncCollectivePostQ_impl()
         {
-          assert(0);
           return _post;
         }
-      inline MatchQueue               &asyncBcastUnexpQ_impl()
+      inline MatchQueue               &asyncCollectiveUnexpQ_impl()
         {
-          assert(0);
           return _ue;
         }
 

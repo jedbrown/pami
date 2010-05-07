@@ -25,13 +25,6 @@ namespace CCMI
 {
   namespace Adaptor
   {
-    class LPDescritpor : public PAMI::Queue::Element
-    {
-    public:
-
-      pami_xfer_t          _opdesc;
-    };
-
     class EADescriptor : public PAMI::Queue::Element
     {
     public:
@@ -138,38 +131,6 @@ namespace CCMI
 
 
       template <typename T_xfer, typename T_composite>
-      class CollOpQueueT : public PAMI::MatchQueue
-      {
-
-        public :
-
-         ///\brief Find the first the element that has the key
-         CollOpT<T_xfer, T_composite>  *find (unsigned key)
-         {
-           unsigned qid = key % NUMQS;
-           PAMI::Queue &queue = _localQ[qid];
-           CollOpT<T_xfer, T_composite> *head = (CollOpT<T_xfer, T_composite> *) queue.peekHead();
-
-           while (head != NULL)
-           {
-             if (head->key() == key)
-             {
-               ///Element was found in posted queue
-               return  head;
-              }
-              head =  (CollOpT<T_xfer, T_composite> *) head->next();
-            }
-            return NULL;
-         }
-
-         void enqueue(CollOpT<T_xfer, T_composite> *) {
-
-            PAMI_assert(0);
-         }
-
-       };
-
-       template <typename T_xfer, typename T_composite>
        class CollOpPoolT : public PAMI::Queue
        {
 

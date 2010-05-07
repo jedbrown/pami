@@ -241,10 +241,11 @@ int main (int argc, char ** argv)
       {
         broadcast.cmd.xfer_broadcast.typecount = i;
         _broadcast (context, &broadcast);
-	//_barrier(context, &barrier);
+	//	_barrier(context, &barrier);
       }
-      tf = timer();
+      //Asyncbroadcast will complete at differnet times on different nodes.
       _barrier(context, &barrier);
+      tf = timer();
 
       usec = (tf - ti)/(double)niter;
       if (task_id == (size_t)root)
