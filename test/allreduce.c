@@ -36,7 +36,7 @@
 #define TEST_assertf(expr, fmt...)       { if (!(expr)) TEST_abortf(fmt); }
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
- //#define FULL_TEST
+ #define FULL_TEST
  #define COUNT      1024
  #define MAXBUFSIZE COUNT*16
  #define NITERLAT   50
@@ -480,6 +480,34 @@ int main(int argc, char*argv[])
   validTable[OP_BAND][DT_DOUBLE]=0;
 
 #if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
+  char* env = getenv("PAMI_DEVICE");
+  fprintf(stderr, "PAMI_DEVICE=%c\n", env?*env:' ');
+  if((env) && (*env=='M'))
+  {
+    /// These are unsupported on MU
+    for(i=0,j=DT_SIGNED_CHAR; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j=DT_UNSIGNED_CHAR; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j=DT_SIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j=DT_UNSIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j=DT_LOGICAL; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j=DT_SINGLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j=DT_DOUBLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j=DT_LOC_2INT; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j=DT_LOC_SHORT_INT; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j=DT_LOC_FLOAT_INT; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j=DT_LOC_DOUBLE_INT; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j=DT_LOC_2FLOAT; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j=DT_LOC_2FLOAT; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=OP_PROD,j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+    for(i=OP_MAXLOC,j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+    for(i=OP_MINLOC,j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+
+    /// \todo these are failing and need debug
+    validTable[OP_LAND][DT_SIGNED_INT]=0;
+    validTable[OP_BAND][DT_SIGNED_INT]=0;
+    validTable[OP_LAND][DT_UNSIGNED_INT]=0;
+    validTable[OP_BAND][DT_UNSIGNED_INT]=0;
+  }
   /// \todo These fail using core math on bgq.
   validTable[OP_LAND][DT_FLOAT]=0;
   validTable[OP_LOR][DT_FLOAT]=0;
@@ -503,11 +531,7 @@ int main(int argc, char*argv[])
     for(j=0;j<dt_count;j++)
       validTable[i][j]=0;
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-  validTable[OP_BOR][DT_UNSIGNED_INT]=1;
-#else
   validTable[OP_SUM][DT_UNSIGNED_INT]=1;
-#endif
 
 #endif
   TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));

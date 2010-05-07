@@ -48,6 +48,11 @@ namespace PAMI
 
     namespace MU
     {
+      /// \brief Map PAMI dt/op to MU op
+      const uint8_t mu_op(pami_dt dt, pami_op op);
+
+      /// \brief Map PAMI dt to a MU datatype size
+      const size_t  mu_size(pami_dt dt);
 
       ///////////////////////////////////////////////////////////////////////////////
       // Some structures that needed to be defined outside the class
@@ -222,10 +227,12 @@ namespace PAMI
 
           _receive_state->dtype = multicombine->dtype;
           _receive_state->optor = multicombine->optor;
-          /// \todo map to MU dt/op/wordlength instead of hardcoding 4 byte MIN ;)
           _receive_state->mu_reset = true;
-          _receive_state->mu_dtype_optor =  MUHWI_COLLECTIVE_OP_CODE_OR; //MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_MIN
-          _receive_state->mu_word_length = 4;
+
+          /// Map PAMI dt/op to MU op
+          _receive_state->mu_dtype_optor =  mu_op(multicombine->dtype, multicombine->optor);
+          /// Map PAMI dt to a MU work length
+          _receive_state->mu_word_length =  mu_size(multicombine->dtype);
         }
 
         TRACE((stderr, "<%p>:MUMulticombineModel::postMulticombine_impl() connection_id %#X, data length %zu/%p/%p, results length %zu/%p/%p\n",
