@@ -174,14 +174,9 @@ int main (int argc, char ** argv)
               tf=timer();
               usec = tf - ti;
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-              if(usec < 1800000.0 || usec > 2200000.0)
-                fprintf(stderr, "Barrier error: usec not between 1800000.0 and 2200000.0!\n");
-#else
               if(usec < 1800000.0 || usec > 2200000.0)
                 fprintf(stderr, "Barrier error: usec=%f want between %f and %f!\n",
                         usec, 1800000.0, 2200000.0);
-#endif
               else
                 fprintf(stderr, "Barrier correct!\n");
             }
@@ -205,13 +200,8 @@ int main (int argc, char ** argv)
         tf=timer();
         usec = tf - ti;
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-        if(!task_id)
-          fprintf(stderr,"barrier done\n");
-#else
         if(!task_id)
           fprintf(stderr,"barrier: time=%f usec\n", usec/(double)niter);
-#endif
       }
 
   result = PAMI_Context_destroy (context);

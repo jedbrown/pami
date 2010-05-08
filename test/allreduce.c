@@ -608,18 +608,12 @@ int main(int argc, char*argv[])
             usec = (tf - ti)/(double)niter;
             if (rank == root)
             {
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-              fprintf(stderr,"  %11lld %16d \n",
-                     dataSent,
-                     niter);
-#else
               printf("  %11lld %16d %14.1f %12.2f\n",
                      dataSent,
                      niter,
                      (double)1e6*(double)dataSent/(double)usec,
                      usec);
               fflush(stdout);
-#endif
             }
           }
         }

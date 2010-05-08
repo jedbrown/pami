@@ -250,17 +250,12 @@ int main (int argc, char ** argv)
       usec = (tf - ti)/(double)niter;
       if (task_id == (size_t)root)
       {
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-        printf("  %11lld\n",
-               dataSent);
-#else
         printf("  %11lld %16lld %14.1f %12.2f\n",
                dataSent,
                0LL,
                (double)1e6*(double)dataSent/(double)usec,
                usec);
         fflush(stdout);
-#endif
       }
       else TRACE_ERR((stderr, "end test protocol: %s, bytes %d \n", metas[nalg].name, i));
     }
