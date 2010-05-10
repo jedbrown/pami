@@ -1,6 +1,6 @@
 [submodule "components/lapi"]
 	path = components/lapi
-	url = /afs/apd.pok.ibm.com/u/archerc/scratch/gitbox/lapi
+	url = /u/cptbld/projects/lapi_percs.git
 [submodule "ade"]
 	path = ade
-	url = /afs/apd.pok.ibm.com/u/archerc/scratch/gitbox/ade/
+	url = /u/cptbld/projects/pami_ade.git
