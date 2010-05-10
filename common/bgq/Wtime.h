@@ -92,8 +92,9 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
 
       protected:
 
-        /// \brief BG/P compute node processors run at 850 MHz
-        static const double seconds_per_cycle = 1.176470588235294033e-09;
+        /// \brief BG/Q compute node processors run at 1.6ghz. This should be
+        // changed when we know for sure how fast they are running at...
+        static const double seconds_per_cycle = 6.25e-10;
         size_t _mhz;
     };	// class Time
 };	// namespace PAMI
