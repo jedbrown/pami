@@ -67,14 +67,14 @@ namespace PAMI
       // structure match
       COMPILE_TIME_ASSERT(sizeof(bgq_coords_t) == sizeof(MUHWI_Destination_t));
 
-      _coords.thread   = _t;
-      _coords.a        = _a;
-      _coords.b        = _b;
-      _coords.c        = _c;
-      _coords.d        = _d;
-      _coords.e        = _e;
-      _coords.reserved =  0;
-      _coords.core     = _p;
+      _coords.mapped.thread   = _t;
+      _coords.mapped.a        = _a;
+      _coords.mapped.b        = _b;
+      _coords.mapped.c        = _c;
+      _coords.mapped.d        = _d;
+      _coords.mapped.e        = _e;
+      _coords.mapped.reserved =  0;
+      _coords.mapped.core     = _p;
 
       //coord2node (_t, _a, _b, _c, _d, _e, _p,
       //            _nodeaddr.global, _nodeaddr.local);

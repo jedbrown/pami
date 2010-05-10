@@ -397,22 +397,16 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
        * that the entire 4 byte int is -1.
        */
       int rc = 0;
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-/// \todo #warning Need ranks2coords syscall!
-// rc = Kernel_Ranks2Coords((bgq_coords_t *)mapcache->torus.task2coords, fullSize);
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
 
-      /* The above system call is new in V1R3M0.  If it works, obtain info
-       * from the returned _mapcache.
-       */
+      uint64_t numentries;
+
+      rc = Kernel_RanksToCoords(fullSize * sizeof(*mapcache->torus.task2coords), (BG_CoordinateMapping_t *)mapcache->torus.task2coords, &numentries);
+      TRACE_ERR( (stderr, "Global::initializeMapCache() .. fullSize = %zu, numentries %zu\n", fullSize,numentries));
+
+      //BG_CoordinateMapping_t* map = (BG_CoordinateMapping_t *)mapcache->torus.task2coords;
+      //for(uint64_t x=0; x<numentries; x++) fprintf(stderr,"Global::initializeMapCache() index=%zu  a/b/c/d/e/core/thread:  a=%d, b=%d, c=%d, d=%d, e=%d,  core=%d, thread=%d\n", x, map[x].a, map[x].b, map[x].c, map[x].d, map[x].e, map[x].core, map[x].thread);
+
+      // If the syscall works, obtain info from the returned _mapcache.
       if (rc == 0)
         {
           /* Obtain the following information from the _mapcache:
@@ -423,7 +417,6 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
            * 4. Number of active ranks on each compute node.
            */
           size_t i;
-          TRACE_ERR( (stderr, "Global::initializeMapCache() .. fullSize = %zu\n", fullSize));
 
           _ll.network = _ur.network = PAMI_N_TORUS_NETWORK;
           _ll.u.n_torus.coords[0] = _ur.u.n_torus.coords[0] = personality.aCoord();
@@ -447,23 +440,23 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 
               if (personality._is_mambo)
                 {
-                  a = mapcache->torus.task2coords[i].a = (i / peerSize) % aSize;
-                  b = mapcache->torus.task2coords[i].b = (i / (peerSize * aSize)) % bSize;
-                  c = mapcache->torus.task2coords[i].c = (i / (peerSize * aSize * bSize)) % cSize;
-                  d = mapcache->torus.task2coords[i].d = (i / (peerSize * aSize * bSize * cSize)) % dSize;
-                  e = mapcache->torus.task2coords[i].e = (i / (peerSize * aSize * bSize * cSize * dSize)) % eSize;
-                  p = mapcache->torus.task2coords[i].core = (i / tSize) % pSize;
-                  t = mapcache->torus.task2coords[i].thread = i % tSize;
+                  a = mapcache->torus.task2coords[i].mapped.a = (i / peerSize) % aSize;
+                  b = mapcache->torus.task2coords[i].mapped.b = (i / (peerSize * aSize)) % bSize;
+                  c = mapcache->torus.task2coords[i].mapped.c = (i / (peerSize * aSize * bSize)) % cSize;
+                  d = mapcache->torus.task2coords[i].mapped.d = (i / (peerSize * aSize * bSize * cSize)) % dSize;
+                  e = mapcache->torus.task2coords[i].mapped.e = (i / (peerSize * aSize * bSize * cSize * dSize)) % eSize;
+                  p = mapcache->torus.task2coords[i].mapped.core = (i / tSize) % pSize;
+                  t = mapcache->torus.task2coords[i].mapped.thread = i % tSize;
                 }
               else
                 {
-                  a = mapcache->torus.task2coords[i].a = (i / peerSize) % aSize;
-                  b = mapcache->torus.task2coords[i].b = (i / (peerSize * aSize)) % bSize;
-                  c = mapcache->torus.task2coords[i].c = (i / (peerSize * aSize * bSize)) % cSize;
-                  d = mapcache->torus.task2coords[i].d = (i / (peerSize * aSize * bSize * cSize)) % dSize;
-                  e = mapcache->torus.task2coords[i].e = (i / (peerSize * aSize * bSize * cSize * dSize)) % eSize;
-                  p = mapcache->torus.task2coords[i].core = (i / tSize) % pSize;
-                  t = mapcache->torus.task2coords[i].thread = i % tSize;
+                  a = mapcache->torus.task2coords[i].mapped.a = (i / peerSize) % aSize;
+                  b = mapcache->torus.task2coords[i].mapped.b = (i / (peerSize * aSize)) % bSize;
+                  c = mapcache->torus.task2coords[i].mapped.c = (i / (peerSize * aSize * bSize)) % cSize;
+                  d = mapcache->torus.task2coords[i].mapped.d = (i / (peerSize * aSize * bSize * cSize)) % dSize;
+                  e = mapcache->torus.task2coords[i].mapped.e = (i / (peerSize * aSize * bSize * cSize * dSize)) % eSize;
+                  p = mapcache->torus.task2coords[i].mapped.core = (i / tSize) % pSize;
+                  t = mapcache->torus.task2coords[i].mapped.thread = i % tSize;
 /*                   a = mapcache->torus.task2coords[i].a; */
 /*                   b = mapcache->torus.task2coords[i].b; */
 /*                   c = mapcache->torus.task2coords[i].c; */
@@ -474,13 +467,13 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
                 }
 
 #else
-              a = mapcache->torus.task2coords[i].a;
-              b = mapcache->torus.task2coords[i].b;
-              c = mapcache->torus.task2coords[i].c;
-              d = mapcache->torus.task2coords[i].d;
-              e = mapcache->torus.task2coords[i].e;
-              p = mapcache->torus.task2coords[i].core;
-              t = mapcache->torus.task2coords[i].thread;
+              a = mapcache->torus.task2coords[i].mapped.a;
+              b = mapcache->torus.task2coords[i].mapped.b;
+              c = mapcache->torus.task2coords[i].mapped.c;
+              d = mapcache->torus.task2coords[i].mapped.d;
+              e = mapcache->torus.task2coords[i].mapped.e;
+              p = mapcache->torus.task2coords[i].mapped.core;
+              t = mapcache->torus.task2coords[i].mapped.thread;
 #endif
               TRACE_ERR( (stderr, "Global::initializeMapCache() .. i = %zu, {%zu %zu %zu %zu %zu %zu %zu}\n", i, a, b, c, d, e, p, t));
 
