@@ -44,6 +44,7 @@
 #endif // !HAVE_WU_ARMWITHADDRESS
 
 #ifndef SCHED_COMM
+/// \todo #warning No SCHED_COMM from CNK yet
 #define SCHED_COMM SCHED_RR
 #endif // !SCHED_COMM
 
@@ -235,9 +236,9 @@ public:
 		}
 
 		thus->_shutdown = false;
-		status = pthread_create(&thus->_thread, 0, commThread, thus);
+		status = pthread_create(&thus->_thread, &attr, commThread, thus);
+		pthread_attr_destroy(&attr);
 		if (status) {
-			pthread_attr_destroy(&attr);
 			--_numActive;
 			thus->_thread = 0; // may not always be legal assignment?
 			errno = status;
@@ -285,8 +286,8 @@ private:
 		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
 
                 pthread_setschedprio(self, max_pri);
-fprintf(stderr, "comm thread for context %04zx, ttyp=%016lx\n", _initCtxs, USR_WAKEUP_BASE[WAC_TTYPES]);
                 _ctxset->joinContextSet(_client, id, _initCtxs);
+fprintf(stderr, "comm thread %ld for context %04zx\n", self, _initCtxs);
                 new_ctx = old_ctx = lkd_ctx = 0;
                 while (!_shutdown) {
                         //
@@ -349,12 +350,12 @@ more_work:		// lightweight enough.
                                 __lockContextSet(lkd_ctx, 0);
 
                                 _ctxset->leaveContextSet(_client, id); // id invalid now
-fprintf(stderr, "stepping aside...\n");
+fprintf(stderr, "stepping aside... (%zd)\n", id);
 
                                 pthread_setschedprio(self, min_pri);
                                 //=== we get preempted here ===//
                                 pthread_setschedprio(self, max_pri);
-fprintf(stderr, "stepping back in...\n");
+fprintf(stderr, "stepping back in... (%d, %zd)\n", _shutdown, id);
 
 				if (_shutdown) break;
                                 _ctxset->joinContextSet(_client, id); // got new id now...

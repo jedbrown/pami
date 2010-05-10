@@ -21,8 +21,6 @@ namespace Device {
 namespace CommThread {
 
 class BgqContextPool {
-        static const uint64_t ENABLE = (1ULL << 63);
-
         typedef PAMI::Mutex::BGQ::L2ProcMutex ContextSetMutex;
 
 	// lock is held by caller...
@@ -42,7 +40,7 @@ class BgqContextPool {
 	}
 	// lock is held by caller...
 	// must ensure we complete, even if no contexts found.
-	// right now, assumes caller's _sets[] is zero... (!ENABLE)
+	// right now, assumes caller's _sets[] is zero... 
 	inline uint64_t __rebalanceContexts(uint64_t initial) {
 		uint64_t m = 0;
 		size_t desired = (_ncontexts + (_nactive - 1)) / _nactive;
@@ -62,18 +60,18 @@ class BgqContextPool {
 #endif
 			}
 			uint64_t k = _sets[_lastset];
-			if ((k & ENABLE)) {
-				k &= ~ENABLE;
+			if (_actm & (1 << _lastset)) {
 				if ((k & initial)) {
 					++n; // for now, assume 1 bit set in "initial"...
-					_sets[_lastset] = (k & ~initial) | ENABLE;
+					_sets[_lastset] = (k & ~initial);
 				} else if (k) {
 					// do not take their last context...
 					uint64_t mm = __getOneContext(k);
-					if (k && mm) {
+					k &= mm;
+					if (k) {
 						m |= mm;
 						++n;
-						_sets[_lastset] = (k | ENABLE);
+						_sets[_lastset] = k;
 					}
 				}
 			}
@@ -91,13 +89,18 @@ class BgqContextPool {
                         if (m & 1) {
                                 uint64_t n;
                                 // there must be one other... or else we hang here.
-                                do {
-                                        if (++_lastset >= _nsets) _lastset = 0;
-                                        n = _sets[_lastset];
-                                        if ((n & ENABLE)) {
+int count = 0;
+                                while (1) {
+                                        if (++_lastset >= _nsets) {
+						_lastset = 0;
+if (++count == 5) fprintf(stderr, "hung in __giveupContexts() %zd %zd %zd\n", _nactive, _nsets, x);
+					}
+                                        if ((_actm & (1 << _lastset))) {
+                                        	n = _sets[_lastset];
                                                 _sets[_lastset] = n | (1ULL << x);
+						break;
                                         }
-                                } while (!(n & ENABLE));
+                                }
                         }
                         m >>= 1;
                         ++x;
@@ -110,6 +113,7 @@ public:
         _ncontexts_total(0),
         _ncontexts(0),
         _mutex(),
+        _actm(0),
         _sets(NULL),
         _nsets(0),
         _nactive(0),
@@ -161,7 +165,7 @@ public:
 
         inline uint64_t getContextSet(size_t clientid, size_t threadid) {
                 _mutex.acquire();
-                uint64_t m = _sets[threadid] & ~ENABLE;
+                uint64_t m = _sets[threadid];
 #if 0
 		// should we check "_sets[_nsets]" and possibly pick up more contexts?
 		// or just trigger a "rejoin"?
@@ -170,7 +174,8 @@ public:
 			if (_sets[_nsets] || _ncontexts >= _nactive) {
 				m = __rebalanceContexts();
 fprintf(stderr, "picking up extra contexts %04zx\n", m);
-				_sets[threadid] = m | ENABLE;
+				_sets[threadid] = m;
+				_actm |= (1 << threadid);
 			}
 		}
 #endif
@@ -193,7 +198,8 @@ fprintf(stderr, "picking up extra contexts %04zx\n", m);
                         ++_nactive;
 			m |= __rebalanceContexts(initial);
                 }
-                _sets[threadid] = m | ENABLE;
+                _sets[threadid] = m;
+		_actm |= (1 << threadid);
                 _mutex.release();
         }
 
@@ -201,9 +207,9 @@ fprintf(stderr, "picking up extra contexts %04zx\n", m);
                 _mutex.acquire();
                 --_nactive;
                 uint64_t m = _sets[threadid];
-                // assert((m & ENABLE) != 0);
-                m &= ~ENABLE;
+                // assert((_actm & (1 << threadid)) != 0);
                 _sets[threadid] = 0;
+		_actm &= ~(1 << threadid);
                 if (_nactive == 0) {
                         _sets[_nsets] |= m;
                 } else {
@@ -218,6 +224,7 @@ private:
         size_t _ncontexts;
 
         ContextSetMutex _mutex;
+        uint64_t _actm;		// protected by _mutex
         uint64_t *_sets;	// protected by _mutex
         size_t _nsets;		// protected by _mutex
         size_t _nactive;	// protected by _mutex
