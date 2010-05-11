@@ -34,8 +34,10 @@ namespace PAMI
       ///
       /// \brief Eager simple send protocol class for reliable network devices.
       ///
-      /// \tparam T_Model   Template packet model class
-      /// \tparam T_Device  Template packet device class
+      /// \tparam T_Model      Packet model class
+      /// \tparam T_Device     Packet device class
+      /// \tparam T_LongHeader Enable/disable long header support
+      /// \tparam T_Connection Connection class
       ///
       /// \see PAMI::Device::Interface::PacketModel
       /// \see PAMI::Device::Interface::PacketDevice
@@ -53,7 +55,7 @@ namespace PAMI
           // connection hash id on the origin side.
           typedef struct __attribute__((__packed__)) protocol_match
           {
-            pami_task_t         task;
+            pami_task_t        task;
             uint16_t           offset;
           } protocol_match_t;
 
@@ -70,8 +72,8 @@ namespace PAMI
           {
             pkt_t                   pkt[3];
             protcol_metadata_t      metadata;  ///< Eager protocol envelope metadata
-            pami_event_function      local_fn;  ///< Application send injection completion callback
-            pami_event_function      remote_fn; ///< Application remote receive acknowledgement callback
+            pami_event_function     local_fn;  ///< Application send injection completion callback
+            pami_event_function     remote_fn; ///< Application remote receive acknowledgement callback
             void                  * cookie;    ///< Application callback cookie
             struct iovec            v[2];      ///< Iovec array used for transfers
             EagerSimpleProtocol   * eager;    ///< Eager protocol object
@@ -80,7 +82,7 @@ namespace PAMI
           typedef struct recv_state
           {
             pkt_t                   pkt;      ///< packet send state memory
-            pami_recv_t              info;     ///< Application receive information.
+            pami_recv_t             info;     ///< Application receive information.
             size_t                  received; ///< Number of bytes received.
             struct
             {
@@ -103,10 +105,10 @@ namespace PAMI
           /// \param[in]  device       Device that implements the message interface
           /// \param[out] status       Constructor status
           ///
-          inline EagerSimple (size_t                     dispatch,
+          inline EagerSimple (size_t                      dispatch,
                               pami_dispatch_callback_fn   dispatch_fn,
-                              void                     * cookie,
-                              T_Device                 & device,
+                              void                      * cookie,
+                              T_Device                  & device,
                               pami_result_t             & status) :
               _envelope_model (device),
               _longheader_model (device),
@@ -546,11 +548,10 @@ namespace PAMI
                               metadata->bytes,     // Number of msg bytes
                               (pami_recv_t *) &(state->info));
 
-            // Only handle simple receives .. until the non-contiguous support
-            // is available
-            PAMI_assert(state->info.kind == PAMI_AM_KIND_SIMPLE);
+            TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zu, state->info.type = %zu\n", metadata->bytes, state->info.type));
 
-            TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zu\n", metadata->bytes));
+            // Only contiguous receives are implemented
+            PAMI_assertf(state->info.type == PAMI_BYTE, "[%5d:%s] %s() - Only contiguous receives are implemented.\n", __LINE__, __FILE__, __FUNCTION__);
 
             if (unlikely(metadata->bytes == 0))
               {
@@ -839,30 +840,14 @@ namespace PAMI
             size_t nbyte = state->received;
 
             // Number of bytes left to copy into the destination buffer
-            size_t nleft = state->info.data.simple.bytes - nbyte;
+            size_t nleft = state->metadata.bytes - nbyte;
 
             TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), bytes received so far = %zu, bytes yet to receive = %zu, total bytes to receive = %zu, total bytes being sent = %zu\n", state->received, nleft, state->info.data.simple.bytes, state->metadata.bytes));
 
-            if (nleft > 0)
-              {
-                // Copy data from the packet buffer into the receive buffer.
-                if (nleft < bytes)
-                  {
-                    //memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, nleft);
-                    eager->_device.read ((uint8_t *)(state->info.data.simple.addr) + nbyte, nleft, cookie);
-
-                    // Update the receive state to prepate for another data packet.
-                    state->received += nleft;
-                  }
-                else
-                  {
-                    //memcpy ((uint8_t *)(state->info.data.simple.addr) + nbyte, payload, bytes);
-                    eager->_device.read ((uint8_t *)(state->info.data.simple.addr) + nbyte, bytes, cookie);
-
-                    // Update the receive state to prepate for another data packet.
-                    state->received += bytes;
-                  }
-              }
+            // Copy data from the packet payload into the destination buffer
+            size_t ncopy = MIN(nleft,bytes);
+            memcpy ((uint8_t *)(state->info.addr) + nbyte, payload, ncopy);
+            state->received += ncopy;
 
             TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), nbyte = %zu\n", nbyte));
 
@@ -914,7 +899,7 @@ namespace PAMI
           /// completion is not required, free the send state memory.
           ///
           static void send_complete (pami_context_t   context,
-                                     void          * cookie,
+                                     void           * cookie,
                                      pami_result_t    result)
           {
             TRACE_ERR((stderr, "EagerSimple::send_complete() >> \n"));

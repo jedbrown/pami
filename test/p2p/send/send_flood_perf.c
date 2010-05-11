@@ -83,9 +83,9 @@ static void test_dispatch (
   TRACE_ERR((stderr, "(%zu) long recvn", _my_rank));
   recv->local_fn = decrement;
   recv->cookie   = cookie;
-  recv->kind = PAMI_AM_KIND_SIMPLE;
-  recv->data.simple.addr  = (void *)_tmpbuffer;
-  recv->data.simple.bytes = pipe_size;
+  recv->type     = PAMI_BYTE;
+  recv->addr     = (void *)_tmpbuffer;
+  recv->offset   = 0;;
 }
 
 unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, size_t myrank, size_t ntasks)

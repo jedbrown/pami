@@ -39,9 +39,9 @@ static void test_dispatch (
 
   recv->local_fn = recv_done;
   recv->cookie   = cookie;
-  recv->kind = PAMI_AM_KIND_SIMPLE;
-  recv->data.simple.addr  = NULL;
-  recv->data.simple.bytes = 0;
+  recv->type     = PAMI_BYTE;
+  recv->addr     = NULL;
+  recv->offset   = 0;
   TRACE((stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn));
 
   return;

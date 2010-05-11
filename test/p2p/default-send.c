@@ -72,9 +72,9 @@ static void test_dispatch (
 
     recv->local_fn = recv_done;
     recv->cookie   = cookie;
-    recv->kind = PAMI_AM_KIND_SIMPLE;
-    recv->data.simple.addr  = __recv_buffer;
-    recv->data.simple.bytes = pipe_size;
+    recv->type     = PAMI_BYTE;
+    recv->addr     = __recv_buffer;
+    recv->offset   = 0;
     //fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn);
   }
 

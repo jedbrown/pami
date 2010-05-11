@@ -108,9 +108,9 @@ static void RecvLongCB(pami_context_t   context,
   void* buf = malloc(size);
   recv->local_fn = RecvLongDoneCB;
   recv->cookie   = buf;
-  recv->kind     = PAMI_AM_KIND_SIMPLE;
-  recv->data.simple.addr  = buf;
-  recv->data.simple.bytes = size;
+  recv->type     = PAMI_BYTE;
+  recv->addr     = buf;
+  recv->offset   = 0;
 
   printf("Task=%zu Channel=%p(%zu) <Got   long msg>   remote=%d msginfo=%x len=%zu\n",
          task, context, contextid, msginfo[0], msginfo[1], size);

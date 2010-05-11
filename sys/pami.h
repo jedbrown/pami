@@ -341,43 +341,30 @@ extern "C"
   } pami_recv_hint_t;
 
   /**
-   * \brief Active message kind identifier
-   */
-  typedef enum {
-    PAMI_AM_KIND_SIMPLE = 0, /**< Simple contiguous data transfer */
-    PAMI_AM_KIND_TYPED       /**< Typed, non-contiguous, data transfer */
-  } pami_am_kind_t;
-
-  /**
    * \brief Receive message structure
    *
    * This structure is initialized and then returned as an output parameter from
    * the active message dispatch callback to direct the pami runtime how to
    * receive the data stream.
    *
+   * When \c type is \c PAMI_BYTE, the receive buffer is contiguous and it
+   * must be large enough to hold the entire message. 
+   * 
+   * With non-contiguous \c type, the receive buffer in general must be large
+   * enough for the incoming message as well but \c type can be constructed
+   * in such a way that unwanted portions of the incoming are disposed into
+   * a circular junk buffer.
+   *
    * \see pami_dispatch_p2p_fn
    */
   typedef struct
   {
-    pami_recv_hint_t         hints;    /**< Hints for receiving the message */
+    pami_recv_hint_t        hints;    /**< Hints for receiving the message */
     void                  * cookie;   /**< Argument to \b all event callbacks */
-    pami_event_function      local_fn; /**< Local message completion event */
-    pami_am_kind_t           kind;     /**< Which kind receive is to be done */
-    union
-    {
-      struct
-      {
-        size_t              bytes;    /**< Number of bytes of data */
-        void              * addr;     /**< Starting address of the buffer */
-      } simple;                       /**< Contiguous buffer receive */
-      struct
-      {
-        size_t              bytes;    /**< Number of bytes of data */
-        void              * addr;     /**< Starting address of the buffer */
-        pami_type_t          type;     /**< Datatype */
-        size_t              offset;   /**< Starting offset of the type */
-      } typed;                        /**< Typed receive */
-    } data;                           /**< Receive message destination information */
+    pami_event_function     local_fn; /**< Local message completion event */
+    void                  * addr;     /**< Starting address of the buffer */
+    pami_type_t             type;     /**< Datatype */
+    size_t                  offset;   /**< Starting offset of the type */
   } pami_recv_t;
 
   /**
