@@ -14,6 +14,15 @@
 #ifndef __components_devices_bgq_mu2_Context_h__
 #define __components_devices_bgq_mu2_Context_h__
 
+#include <hwi/include/bqc/MU_PacketHeader.h>
+
+
+#include <spi/include/mu/InjFifo.h>
+#include <spi/include/mu/RecFifo.h>
+#include <spi/include/mu/DescriptorBaseXX.h>
+#include <spi/include/mu/DescriptorWrapperXX.h>
+#include <spi/include/mu/Pt2PtMemoryFIFODescriptorXX.h>
+
 #include "Global.h"
 
 #include "components/devices/BaseDevice.h"
@@ -34,6 +43,12 @@ namespace PAMI
       class Context : public Interface::BaseDevice<Context>, public Interface::PacketDevice<Context>
       {
         protected:
+
+          typedef struct
+          {
+            Interface::RecvFunction_t   f;
+            void                      * p;
+          } mu_dispatch_t;
 
           /// Total number of dispatch sets
           static const size_t dispatch_set_count = 256;
@@ -118,21 +133,21 @@ namespace PAMI
           /// parameters that are necessary for MU operations.
           ///
           /// \param[in] id_client The client identifier
-          /// \param[in] client    PAMI communication client
-          /// \param[in] context   PAMI communication context
+          // \param[in] client    PAMI communication client
+          // \param[in] context   PAMI communication context
           // \param[in] mm        Memory manager for this mu context
           ///
-          inline void init (size_t                  id_client,
-                            pami_client_t           client,
-                            pami_context_t          context
+          inline void init (size_t                  id_client//,
+                            //pami_client_t           client,
+                            //pami_context_t          context
                             //,Memory::MemoryManager * mm
                             )
           {
             _id_client = id_client;
 
             // Need to find a way to break this dependency...
-            _client = client;
-            _context = context;
+            //_client = client;
+            //_context = context;
 
             return;
           }
@@ -353,7 +368,8 @@ namespace PAMI
           /// \param[in] msg  Message object to be added to the send queue
           ///                 associated with the injection fifo number
           ///
-          inline void post (size_t fnum, MU::SendQueue::Message * msg)
+          inline void post (size_t fnum, //MU::SendQueue::Message
+                            void   * msg)
           {
             abort();
             return;
@@ -367,6 +383,9 @@ namespace PAMI
           size_t            _id_offset;
           size_t            _id_count;
           size_t            _id_client;
+
+
+          mu_dispatch_t     _dispatch[dispatch_set_count * dispatch_set_size];
 
       }; // class     PAMI::Device::MU::Context
     };   // namespace PAMI::Device::MU
