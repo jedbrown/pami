@@ -108,25 +108,21 @@ int main (int argc, char ** argv)
   size_t initial_device = 0;
   size_t device_limit = 0;
   device = getenv ("PAMI_DEVICE");
-  if (device != NULL) {
-    if (!strcmp(device, "M")) {
-      fprintf (stderr, "Only the MU device is initialized.\n");
-      initial_device = 0;
-      device_limit = 1;
-    } else if (!strcmp(device, "S")) {
-      fprintf (stderr, "Only the SHMem device is initialized.\n");
-      initial_device = 1;
-      device_limit = 2;
-    } else if (!strcmp(device, "B")) {
-      fprintf (stderr, "Both the MU and SHMem devices are initialized.\n");
-      initial_device = 0;
-      device_limit = 2;
-    } else {
-      fprintf (stderr, "ERROR:  PAMI_DEVICE = %s is unsupported. Valid values are:  M (MU only), S (SHMem only), B (both MU & SHMem)\n", device);
-      return 1;
-    }
+
+  if (!strcmp(device, "M")) {
+    fprintf (stderr, "Only the MU device is initialized.\n");
+    initial_device = 0;
+    device_limit = 1;
+  } else if (!strcmp(device, "S")) {
+    fprintf (stderr, "Only the SHMem device is initialized.\n");
+    initial_device = 1;
+    device_limit = 2;
+  } else if ( !strcmp(device, "B") || !strcmp(device, "") ) {
+    fprintf (stderr, "Both the MU and SHMem devices are initialized.\n");
+    initial_device = 0;
+    device_limit = 2;
   } else {
-    fprintf (stderr, "ERROR:  PAMI_DEVICE = NULL. Set the PAMI_DEVICE environment variable to M (MU only), S (SHMem only) or B (both MU & SHMem)\n");
+    fprintf (stderr, "ERROR:  PAMI_DEVICE = %s is unsupported. Valid values are:  M (MU only), S (SHMem only), B (both MU & SHMem)\n", device);
     return 1;
   }
 
