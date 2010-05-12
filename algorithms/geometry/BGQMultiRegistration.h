@@ -70,7 +70,10 @@ namespace PAMI
 
     //----------------------------------------------------------------------------
     typedef MetaData<__LINE__> ShmemMcombMetaData;
-    template<> const char* ShmemMcombMetaData::mstring="ShmemMultiCombComposite";
+    template<> const char*     ShmemMcombMetaData::mstring="ShmemMultiCombComposite";
+    template<> const pami_ca_t ShmemMcombMetaData::geometry ={{0xF0}};      // some meaningful bitmask
+    template<> const pami_ca_t ShmemMcombMetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
+    template<> const pami_ca_t ShmemMcombMetaData::misc     ={{0}};         // some meaningful bitmask
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Allreduce::MultiCombineComposite,
                                                               PAMI::CollRegistration::ShmemMcombMetaData::metadata,
@@ -78,7 +81,10 @@ namespace PAMI
 
     //----------------------------------------------------------------------------
     typedef MetaData<__LINE__> ShmemMcastMetaData;
-    template<> const char* ShmemMcastMetaData::mstring="ShmemMultiCastComposite";
+    template<> const char*     ShmemMcastMetaData::mstring="ShmemMultiCastComposite";
+    template<> const pami_ca_t ShmemMcastMetaData::geometry ={{0xF0}};      // some meaningful bitmask
+    template<> const pami_ca_t ShmemMcastMetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
+    template<> const pami_ca_t ShmemMcastMetaData::misc     ={{0}};         // some meaningful bitmask
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite,
                                                               PAMI::CollRegistration::ShmemMcastMetaData::metadata,
@@ -86,7 +92,10 @@ namespace PAMI
 
     //----------------------------------------------------------------------------
     typedef MetaData<__LINE__> ShmemMcast2MetaData;
-    template<> const char* ShmemMcast2MetaData::mstring="ShmemMultiCast2Composite";
+    template<> const char*     ShmemMcast2MetaData::mstring="ShmemMultiCast2Composite";
+    template<> const pami_ca_t ShmemMcast2MetaData::geometry ={{0xF0}};      // some meaningful bitmask
+    template<> const pami_ca_t ShmemMcast2MetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
+    template<> const pami_ca_t ShmemMcast2MetaData::misc     ={{0}};         // some meaningful bitmask
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite2,
                                                               PAMI::CollRegistration::ShmemMcast2MetaData::metadata,
@@ -94,7 +103,10 @@ namespace PAMI
 
     //----------------------------------------------------------------------------
     typedef MetaData<__LINE__> ShmemMcast3MetaData;
-    template<> const char* ShmemMcast3MetaData::mstring="ShmemMultiCast3Composite";
+    template<> const char*     ShmemMcast3MetaData::mstring="ShmemMultiCast3Composite";
+    template<> const pami_ca_t ShmemMcast3MetaData::geometry ={{0xF0}};      // some meaningful bitmask
+    template<> const pami_ca_t ShmemMcast3MetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
+    template<> const pami_ca_t ShmemMcast3MetaData::misc     ={{0}};         // some meaningful bitmask
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite3,
                                                               PAMI::CollRegistration::ShmemMcast3MetaData::metadata,
@@ -102,7 +114,10 @@ namespace PAMI
 
     //----------------------------------------------------------------------------
     typedef MetaData<__LINE__> MUMsyncMetaData;
-    template<> const char* MUMsyncMetaData::mstring="MUMultiSyncComposite";
+    template<> const char*     MUMsyncMetaData::mstring="MUMultiSyncComposite";
+    template<> const pami_ca_t MUMsyncMetaData::geometry ={{0xF0}};      // some meaningful bitmask
+    template<> const pami_ca_t MUMsyncMetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
+    template<> const pami_ca_t MUMsyncMetaData::misc     ={{0}};         // some meaningful bitmask
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Barrier::MultiSyncComposite,
                                                               PAMI::CollRegistration::MUMsyncMetaData::metadata,
@@ -110,7 +125,10 @@ namespace PAMI
 
     //----------------------------------------------------------------------------
     typedef MetaData<__LINE__> MUMcombMetaData;
-    template<> const char* MUMcombMetaData::mstring="MUMultiCombComposite";
+    template<> const char*     MUMcombMetaData::mstring="MUMultiCombComposite";
+    template<> const pami_ca_t MUMcombMetaData::geometry ={{0xF0}};      // some meaningful bitmask
+    template<> const pami_ca_t MUMcombMetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
+    template<> const pami_ca_t MUMcombMetaData::misc     ={{0}};         // some meaningful bitmask
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Allreduce::MultiCombineComposite,
                                                               PAMI::CollRegistration::MUMcombMetaData::metadata,
@@ -118,7 +136,10 @@ namespace PAMI
 
     //----------------------------------------------------------------------------
     typedef MetaData<__LINE__> MUMcastMetaData;
-    template<> const char* MUMcastMetaData::mstring="MUMultiCastComposite";
+    template<> const char*     MUMcastMetaData::mstring="MUMultiCastComposite";
+    template<> const pami_ca_t MUMcastMetaData::geometry ={{0xF0}};      // some meaningful bitmask
+    template<> const pami_ca_t MUMcastMetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
+    template<> const pami_ca_t MUMcastMetaData::misc     ={{0}};         // some meaningful bitmask
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite,
                                                               PAMI::CollRegistration::MUMcastMetaData::metadata,
@@ -126,7 +147,10 @@ namespace PAMI
 
     //----------------------------------------------------------------------------
     typedef MetaData<__LINE__> MUMcast2MetaData;
-    template<> const char* MUMcast2MetaData::mstring="MUMultiCast2Composite";
+    template<> const char*     MUMcast2MetaData::mstring="MUMultiCast2Composite";
+    template<> const pami_ca_t MUMcast2MetaData::geometry ={{0xF0}};      // some meaningful bitmask
+    template<> const pami_ca_t MUMcast2MetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
+    template<> const pami_ca_t MUMcast2MetaData::misc     ={{0}};         // some meaningful bitmask
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite2,
                                                               PAMI::CollRegistration::MUMcast2MetaData::metadata,
@@ -134,7 +158,10 @@ namespace PAMI
 
     //----------------------------------------------------------------------------
     typedef MetaData<__LINE__> MUMcast3MetaData;
-    template<> const char* MUMcast3MetaData::mstring="MUMultiCast3Composite";
+    template<> const char*     MUMcast3MetaData::mstring="MUMultiCast3Composite";
+    template<> const pami_ca_t MUMcast3MetaData::geometry ={{0xF0}};      // some meaningful bitmask
+    template<> const pami_ca_t MUMcast3MetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
+    template<> const pami_ca_t MUMcast3MetaData::misc     ={{0}};         // some meaningful bitmask
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite3,
                                                               PAMI::CollRegistration::MUMcast3MetaData::metadata,
