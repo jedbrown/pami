@@ -36,18 +36,21 @@ namespace PAMI
   {
 
     /// \brief A utility template to wrap meta data for our factories
-    /// Seems like a lot of work...
-    /// 'T' is for (presumed) future metadata calls
-    /// 'unique' allows re-definition of the metadata::mstring with the same T:
-    ///      typedef MetaData<T,0> MetaData0;
-    ///      typedef MetaData<T,1> MetaData1;
-    template<class T, int unique> class MetaData
+    /// 'unique' allows re-definition of the metadata statics
+    ///      typedef MetaData<0> MetaData0;
+    ///      typedef MetaData<1> MetaData1;
+    template<int unique> class MetaData
     {
     public:
-      static const char* mstring;
+      static const pami_ca_t geometry;     /**< geometry attributes                   */
+      static const pami_ca_t buffer  ;     /**< buffer attributes (contig, alignment) */
+      static const pami_ca_t misc    ;     /**< other attributes (i.e. threaded)      */
+      static const char *mstring     ;     /**< name of algorithm                     */
       static void metadata(pami_metadata_t *m)
       {
-        // \todo:  fill in other metadata -- T::metatdata()?
+        m->geometry = geometry;
+        m->buffer   = buffer;
+        m->misc     = misc;
         strncpy(&m->name[0],mstring,32);
       }
     };
@@ -55,15 +58,18 @@ namespace PAMI
     //----------------------------------------------------------------------------
     /// Declare our protocol factory templates and their metadata templates
     //----------------------------------------------------------------------------
-    typedef MetaData<CCMI::Adaptor::Barrier::MultiSyncComposite,0> ShmemMsyncMetaData;
-    template<> const char* ShmemMsyncMetaData::mstring="ShmemMultiSyncComposite";
+    typedef MetaData<__LINE__> ShmemMsyncMetaData;
+    template<> const char*     ShmemMsyncMetaData::mstring  ="ShmemMultiSyncComposite";
+    template<> const pami_ca_t ShmemMsyncMetaData::geometry ={{0xF0}};      // some meaningful bitmask
+    template<> const pami_ca_t ShmemMsyncMetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
+    template<> const pami_ca_t ShmemMsyncMetaData::misc     ={{0}};         // some meaningful bitmask
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Barrier::MultiSyncComposite,
                                                               PAMI::CollRegistration::ShmemMsyncMetaData::metadata,
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiSyncFactory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<CCMI::Adaptor::Allreduce::MultiCombineComposite,0> ShmemMcombMetaData;
+    typedef MetaData<__LINE__> ShmemMcombMetaData;
     template<> const char* ShmemMcombMetaData::mstring="ShmemMultiCombComposite";
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Allreduce::MultiCombineComposite,
@@ -71,7 +77,7 @@ namespace PAMI
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCombineFactory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<CCMI::Adaptor::Broadcast::MultiCastComposite,0> ShmemMcastMetaData;
+    typedef MetaData<__LINE__> ShmemMcastMetaData;
     template<> const char* ShmemMcastMetaData::mstring="ShmemMultiCastComposite";
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite,
@@ -79,7 +85,7 @@ namespace PAMI
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCastFactory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<CCMI::Adaptor::Broadcast::MultiCastComposite2,0> ShmemMcast2MetaData;
+    typedef MetaData<__LINE__> ShmemMcast2MetaData;
     template<> const char* ShmemMcast2MetaData::mstring="ShmemMultiCast2Composite";
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite2,
@@ -87,7 +93,7 @@ namespace PAMI
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCast2Factory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<CCMI::Adaptor::Broadcast::MultiCastComposite3,0> ShmemMcast3MetaData;
+    typedef MetaData<__LINE__> ShmemMcast3MetaData;
     template<> const char* ShmemMcast3MetaData::mstring="ShmemMultiCast3Composite";
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite3,
@@ -95,7 +101,7 @@ namespace PAMI
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCast3Factory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<CCMI::Adaptor::Barrier::MultiSyncComposite,1> MUMsyncMetaData;
+    typedef MetaData<__LINE__> MUMsyncMetaData;
     template<> const char* MUMsyncMetaData::mstring="MUMultiSyncComposite";
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Barrier::MultiSyncComposite,
@@ -103,7 +109,7 @@ namespace PAMI
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiSyncFactory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<CCMI::Adaptor::Allreduce::MultiCombineComposite,1> MUMcombMetaData;
+    typedef MetaData<__LINE__> MUMcombMetaData;
     template<> const char* MUMcombMetaData::mstring="MUMultiCombComposite";
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Allreduce::MultiCombineComposite,
@@ -111,7 +117,7 @@ namespace PAMI
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiCombineFactory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<CCMI::Adaptor::Broadcast::MultiCastComposite,1> MUMcastMetaData;
+    typedef MetaData<__LINE__> MUMcastMetaData;
     template<> const char* MUMcastMetaData::mstring="MUMultiCastComposite";
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite,
@@ -119,7 +125,7 @@ namespace PAMI
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiCastFactory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<CCMI::Adaptor::Broadcast::MultiCastComposite2,1> MUMcast2MetaData;
+    typedef MetaData<__LINE__> MUMcast2MetaData;
     template<> const char* MUMcast2MetaData::mstring="MUMultiCast2Composite";
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite2,
@@ -127,7 +133,7 @@ namespace PAMI
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiCast2Factory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<CCMI::Adaptor::Broadcast::MultiCastComposite3,1> MUMcast3MetaData;
+    typedef MetaData<__LINE__> MUMcast3MetaData;
     template<> const char* MUMcast3MetaData::mstring="MUMultiCast3Composite";
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite3,
