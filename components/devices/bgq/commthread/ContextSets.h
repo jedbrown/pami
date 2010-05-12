@@ -93,7 +93,7 @@ int count = 0;
                                 while (1) {
                                         if (++_lastset >= _nsets) {
 						_lastset = 0;
-if (++count == 5) fprintf(stderr, "hung in __giveupContexts() %zd %zd %zd\n", _nactive, _nsets, x);
+if (++count == 5) fprintf(stderr, "hung in __giveupContexts(%zx) %zd %zd %zd (%zx)\n", ctxs, _nactive, _nsets, x, _actm);
 					}
                                         if ((_actm & (1 << _lastset))) {
                                         	n = _sets[_lastset];
@@ -128,7 +128,7 @@ public:
                 posix_memalign((void **)&_contexts, 16, nctx * sizeof(*_contexts));
                 PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_contexts");
                 setmm->memalign((void **)&_sets, 16, (nctx + 1) * sizeof(*_sets));
-                PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_sets");
+                PAMI_assertf(_sets, "Out of memory for BgqContextPool::_sets");
 		memset(_sets, 0, (nctx + 1) * sizeof(*_sets));
                 _ncontexts_total = nctx;
                 _nsets = nctx;
@@ -186,9 +186,12 @@ fprintf(stderr, "picking up extra contexts %04zx\n", m);
         inline void joinContextSet(size_t clientid, size_t &threadid,
 						uint64_t initial = 0ULL) {
 
-                uint64_t m = 0;
+                uint64_t m = 0, n = 0;
                 _mutex.acquire();
-                threadid = _nactive;
+		while (n < 64 && (_actm & (1 << n)) != 0) {
+			++n;
+		}
+                threadid = n;
                 if (_nactive == 0) {
                         // take all? or just a few...
                         m |= (_sets[_nsets] | initial);
@@ -199,6 +202,7 @@ fprintf(stderr, "picking up extra contexts %04zx\n", m);
 			m |= __rebalanceContexts(initial);
                 }
                 _sets[threadid] = m;
+		// do not set bit until after calling __rebalanceContexts()
 		_actm |= (1 << threadid);
                 _mutex.release();
         }
@@ -209,6 +213,7 @@ fprintf(stderr, "picking up extra contexts %04zx\n", m);
                 uint64_t m = _sets[threadid];
                 // assert((_actm & (1 << threadid)) != 0);
                 _sets[threadid] = 0;
+		// must clear bit before calling __giveupContexts()
 		_actm &= ~(1 << threadid);
                 if (_nactive == 0) {
                         _sets[_nsets] |= m;

@@ -321,7 +321,7 @@ more_work:		// lightweight enough.
                         // running in some syncopated "tag team" mode.
                         // TBD
 //re_evaluate:
-                        n = Kernel_SnoopNumThreads();
+                        n = Kernel_SnoopRunnable();
 
                         if (n <= 1) {
                                 // we are alone
@@ -358,7 +358,7 @@ fprintf(stderr, "stepping aside... (%zd)\n", id);
 fprintf(stderr, "stepping back in... (%d, %zd)\n", _shutdown, id);
 
 				if (_shutdown) break;
-                                _ctxset->joinContextSet(_client, id); // got new id now...
+                		_ctxset->joinContextSet(_client, id, _initCtxs); // got id
                                 // always assume context set changed... just simpler.
                                 goto new_context_assignment;
                         }
