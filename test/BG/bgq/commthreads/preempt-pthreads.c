@@ -1,5 +1,5 @@
 ///
-/// \file test/BG/bgq/commthreads/single-context.c
+/// \file test/BG/bgq/commthreads/preempt-pthreads.c
 /// \brief Simple test for basic commthread functionality
 ///
 

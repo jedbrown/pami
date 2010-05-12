@@ -45,7 +45,7 @@ namespace CCMI
         {
           _user_done_fn(context, _user_cookie, result);
         }
-      
+
 	T                            _obj;
         CollectiveProtocolFactoryT * _factory;
         pami_event_function          _user_done_fn;

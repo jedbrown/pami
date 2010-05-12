@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/broadcast/AsyncBroadcastT.h
+ * \file algorithms/protocols/ambcast/AMBroadcastT.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_ambroadcast_AMBroadcastT_h__
-#define __algorithms_protocols_ambroadcast_AMBroadcastT_h__
+#ifndef __algorithms_protocols_ambcast_AMBroadcastT_h__
+#define __algorithms_protocols_ambcast_AMBroadcastT_h__
 
 #include "algorithms/ccmi.h"
 #include "algorithms/executor/Broadcast.h"
@@ -29,7 +29,7 @@ namespace CCMI
       ///
       /// \brief Asyc Broadcast Composite. It is single color right now
       ///
-      template <class T_Schedule, class T_Conn> 
+      template <class T_Schedule, class T_Conn>
 	class AMBroadcastT : public CCMI::Executor::Composite
       {
       protected:
@@ -65,9 +65,9 @@ namespace CCMI
 	void setRoot (unsigned root) {
 	  _root = root;
 	}
-	
+
 	void start() {
-	  _executor.setRoot (_root); 
+	  _executor.setRoot (_root);
 	  COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
           create_schedule(&_schedule, sizeof(_schedule), _root, _native, _geometry);
 	  _executor.setSchedule(&_schedule, 0);
@@ -114,13 +114,13 @@ namespace CCMI
 	}
 
 	virtual Executor::Composite * generate(pami_geometry_t              g,
-					       void                      * cmd) 
+					       void                      * cmd)
 	{
 	  TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
-          typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj *cobj = 
-	    (typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj *) 
+          typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj *cobj =
+	    (typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj *)
 	    CollectiveProtocolFactoryT<T, get_metadata, C>::_alloc.allocateObject();
-	  
+
 	  new (cobj) typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj
 	    (CollectiveProtocolFactoryT<T, get_metadata, C>::_native,  // Native interface
 	     CollectiveProtocolFactoryT<T, get_metadata, C>::_cmgr,    // Connection Manager
@@ -129,8 +129,8 @@ namespace CCMI
 	     CollectiveProtocolFactoryT<T, get_metadata, C>::done_fn,  // Intercept function
 	     cobj,              // Intercept cookie
 	     this);             // Factory
-	  
-	  cobj->_obj.start();	  
+
+	  cobj->_obj.start();
 	  return NULL;
 	}
 
@@ -153,9 +153,9 @@ namespace CCMI
 	   pami_pipeworkqueue_t ** rcvpwq,
 	   pami_callback_t       * cb_done)
 	{
-	  AMBroadcastFactoryT *factory = (AMBroadcastFactoryT *) arg;	  
+	  AMBroadcastFactoryT *factory = (AMBroadcastFactoryT *) arg;
 	  CollHeaderData *cdata = (CollHeaderData *) info;
-	  
+
 	  int comm = cdata->_comm;
 	  PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(comm);
 	  if(geometry == NULL)
@@ -163,11 +163,11 @@ namespace CCMI
 	    geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (comm);
 	    PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, comm);
 	  }
-	  
+
 	  pami_xfer_t broadcast;
 	  broadcast.algorithm = (size_t)-1;  ///Not used by the protocols
 	  broadcast.cmd.xfer_ambroadcast.user_header  = NULL;
-	  broadcast.cmd.xfer_ambroadcast.headerlen    = 0;	  
+	  broadcast.cmd.xfer_ambroadcast.headerlen    = 0;
 	  pami_type_t pt = PAMI_BYTE;
 	  broadcast.cmd.xfer_ambroadcast.stype = &pt;
 
@@ -185,10 +185,10 @@ namespace CCMI
 	     &broadcast.cb_done,
 	     &broadcast.cookie);
 
-	  typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj *cobj = 
-	    (typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj *) 
+	  typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj *cobj =
+	    (typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj *)
 	    factory->CollectiveProtocolFactoryT<T, get_metadata, C>::_alloc.allocateObject();
-	  
+
 	  new (cobj) typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj
 	    (factory->CollectiveProtocolFactoryT<T, get_metadata, C>::_native,  // Native interface
 	     factory->CollectiveProtocolFactoryT<T, get_metadata, C>::_cmgr,    // Connection Manager
@@ -203,12 +203,12 @@ namespace CCMI
 	  cobj->_obj.setRoot (cdata->_root);
 	  cobj->_obj.start();
 	  cobj->_obj.executor().notifyRecv(peer, *info, (PAMI::PipeWorkQueue **)rcvpwq, cb_done);
-	  
+
 	  //We only support sndlen == rcvlen
-	  * rcvlen  = sndlen;	  
+	  * rcvlen  = sndlen;
 	}
-	
-      }; //- AMBroadcastFactoryT      
+
+      }; //- AMBroadcastFactoryT
     };  //- end namespace AMBroadcast
   };  //- end namespace Adaptor
 };  //- end CCMI

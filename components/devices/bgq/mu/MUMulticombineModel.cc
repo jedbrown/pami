@@ -15,7 +15,7 @@
 #ifdef TRACE
   #undef TRACE
 #endif
-#define TRACE(x) //fprintf x 
+#define TRACE(x) //fprintf x
 
 #if 0  // extra debug - trace the op/dt strings
 #define TRACE_STRINGS 1
@@ -64,21 +64,21 @@ const uint8_t   PAMI::Device::MU::mu_op(pami_dt dt, pami_op op)
 {
   const pami_op op_check[PAMI_OP_COUNT] =
   {
-    PAMI_UNDEFINED_OP,    // PAMI_UNDEFINED_OP    
-    PAMI_NOOP,            // PAMI_NOOP            
-    PAMI_MAX,             // PAMI_MAX             
-    PAMI_MIN,             // PAMI_MIN             
-    PAMI_SUM,             // PAMI_SUM             
-    PAMI_PROD,            // PAMI_PROD            
-    PAMI_LAND,            // PAMI_LAND            
-    PAMI_LOR,             // PAMI_LOR             
-    PAMI_LXOR,            // PAMI_LXOR            
-    PAMI_BAND,            // PAMI_BAND            
-    PAMI_BOR,             // PAMI_BOR             
-    PAMI_BXOR,            // PAMI_BXOR            
-    PAMI_MAXLOC,          // PAMI_MAXLOC          
-    PAMI_MINLOC,          // PAMI_MINLOC          
-    PAMI_USERDEFINED_OP   // PAMI_USERDEFINED_OP  
+    PAMI_UNDEFINED_OP,    // PAMI_UNDEFINED_OP
+    PAMI_NOOP,            // PAMI_NOOP
+    PAMI_MAX,             // PAMI_MAX
+    PAMI_MIN,             // PAMI_MIN
+    PAMI_SUM,             // PAMI_SUM
+    PAMI_PROD,            // PAMI_PROD
+    PAMI_LAND,            // PAMI_LAND
+    PAMI_LOR,             // PAMI_LOR
+    PAMI_LXOR,            // PAMI_LXOR
+    PAMI_BAND,            // PAMI_BAND
+    PAMI_BOR,             // PAMI_BOR
+    PAMI_BXOR,            // PAMI_BXOR
+    PAMI_MAXLOC,          // PAMI_MAXLOC
+    PAMI_MINLOC,          // PAMI_MINLOC
+    PAMI_USERDEFINED_OP   // PAMI_USERDEFINED_OP
   };
 
 
@@ -118,28 +118,28 @@ const size_t   PAMI::Device::MU::mu_size(pami_dt dt)
 
   const pami_dt dt_check[PAMI_DT_COUNT] =
   {
-    PAMI_UNDEFINED_DT,       //PAMI_UNDEFINED_DT      
-    PAMI_SIGNED_CHAR,        //PAMI_SIGNED_CHAR       
-    PAMI_UNSIGNED_CHAR,      //PAMI_UNSIGNED_CHAR     
-    PAMI_SIGNED_SHORT,       //PAMI_SIGNED_SHORT      
-    PAMI_UNSIGNED_SHORT,     //PAMI_UNSIGNED_SHORT    
-    PAMI_SIGNED_INT,         //PAMI_SIGNED_INT        
-    PAMI_UNSIGNED_INT,       //PAMI_UNSIGNED_INT      
-    PAMI_SIGNED_LONG_LONG,   //PAMI_SIGNED_LONG_LONG  
+    PAMI_UNDEFINED_DT,       //PAMI_UNDEFINED_DT
+    PAMI_SIGNED_CHAR,        //PAMI_SIGNED_CHAR
+    PAMI_UNSIGNED_CHAR,      //PAMI_UNSIGNED_CHAR
+    PAMI_SIGNED_SHORT,       //PAMI_SIGNED_SHORT
+    PAMI_UNSIGNED_SHORT,     //PAMI_UNSIGNED_SHORT
+    PAMI_SIGNED_INT,         //PAMI_SIGNED_INT
+    PAMI_UNSIGNED_INT,       //PAMI_UNSIGNED_INT
+    PAMI_SIGNED_LONG_LONG,   //PAMI_SIGNED_LONG_LONG
     PAMI_UNSIGNED_LONG_LONG, //PAMI_UNSIGNED_LONG_LONG
-    PAMI_FLOAT,              //PAMI_FLOAT             
-    PAMI_DOUBLE,             //PAMI_DOUBLE            
-    PAMI_LONG_DOUBLE,        //PAMI_LONG_DOUBLE       
-    PAMI_LOGICAL,            //PAMI_LOGICAL           
-    PAMI_SINGLE_COMPLEX,     //PAMI_SINGLE_COMPLEX    
-    PAMI_DOUBLE_COMPLEX,     //PAMI_DOUBLE_COMPLEX    
-    PAMI_LOC_2INT,           //PAMI_LOC_2INT          
-    PAMI_LOC_SHORT_INT,      //PAMI_LOC_SHORT_INT     
-    PAMI_LOC_FLOAT_INT,      //PAMI_LOC_FLOAT_INT     
-    PAMI_LOC_DOUBLE_INT,     //PAMI_LOC_DOUBLE_INT    
-    PAMI_LOC_2FLOAT,         //PAMI_LOC_2FLOAT        
-    PAMI_LOC_2DOUBLE,        //PAMI_LOC_2DOUBLE       
-    PAMI_USERDEFINED_DT      //PAMI_USERDEFINED_DT    
+    PAMI_FLOAT,              //PAMI_FLOAT
+    PAMI_DOUBLE,             //PAMI_DOUBLE
+    PAMI_LONG_DOUBLE,        //PAMI_LONG_DOUBLE
+    PAMI_LOGICAL,            //PAMI_LOGICAL
+    PAMI_SINGLE_COMPLEX,     //PAMI_SINGLE_COMPLEX
+    PAMI_DOUBLE_COMPLEX,     //PAMI_DOUBLE_COMPLEX
+    PAMI_LOC_2INT,           //PAMI_LOC_2INT
+    PAMI_LOC_SHORT_INT,      //PAMI_LOC_SHORT_INT
+    PAMI_LOC_FLOAT_INT,      //PAMI_LOC_FLOAT_INT
+    PAMI_LOC_DOUBLE_INT,     //PAMI_LOC_DOUBLE_INT
+    PAMI_LOC_2FLOAT,         //PAMI_LOC_2FLOAT
+    PAMI_LOC_2DOUBLE,        //PAMI_LOC_2DOUBLE
+    PAMI_USERDEFINED_DT      //PAMI_USERDEFINED_DT
   };
   const size_t mu_size_table[PAMI_DT_COUNT] =
   {
@@ -167,7 +167,7 @@ const size_t   PAMI::Device::MU::mu_size(pami_dt dt)
     -1                          //PAMI_USERDEFINED_DT
   };
   TRACE((stderr, "MUMulticombineModel::mu_size(%d) = %zu %s\n", dt, mu_size_table[dt], dt_string(dt)));
-  PAMI_assert_debugf(dt_check[dt] == dt,"dt_check[dt] %u == dt %u\n",dt_check[dt],dt); 
+  PAMI_assert_debugf(dt_check[dt] == dt,"dt_check[dt] %u == dt %u\n",dt_check[dt],dt);
   return(mu_size_table[dt]);
 }
 
@@ -287,21 +287,21 @@ static const char* mu_op_string(uint8_t index)
 {
   const char* string[] =
   {
-    "MUHWI_COLLECTIVE_OP_CODE_AND                ", //MUHWI_COLLECTIVE_OP_CODE_AND                  
-    "MUHWI_COLLECTIVE_OP_CODE_OR                 ", //MUHWI_COLLECTIVE_OP_CODE_OR                   
-    "MUHWI_COLLECTIVE_OP_CODE_XOR                ", //MUHWI_COLLECTIVE_OP_CODE_XOR                  
+    "MUHWI_COLLECTIVE_OP_CODE_AND                ", //MUHWI_COLLECTIVE_OP_CODE_AND
+    "MUHWI_COLLECTIVE_OP_CODE_OR                 ", //MUHWI_COLLECTIVE_OP_CODE_OR
+    "MUHWI_COLLECTIVE_OP_CODE_XOR                ", //MUHWI_COLLECTIVE_OP_CODE_XOR
     "INVALID                                     ", // invalid
-    "MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_ADD       ", //MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_ADD         
-    "MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_MIN       ", //MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_MIN         
-    "MUHWI_COLLECTIVE_OP_CODE_UNSIGNED MAX       ", //MUHWI_COLLECTIVE_OP_CODE_UNSIGNED MAX         
+    "MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_ADD       ", //MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_ADD
+    "MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_MIN       ", //MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_MIN
+    "MUHWI_COLLECTIVE_OP_CODE_UNSIGNED MAX       ", //MUHWI_COLLECTIVE_OP_CODE_UNSIGNED MAX
     "INVALID                                     ", // invalid
-    "MUHWI_COLLECTIVE_OP_CODE_SIGNED_ADD         ", //MUHWI_COLLECTIVE_OP_CODE_SIGNED_ADD           
-    "MUHWI_COLLECTIVE_OP_CODE_SIGNED_MIN         ", //MUHWI_COLLECTIVE_OP_CODE_SIGNED_MIN           
-    "MUHWI_COLLECTIVE_OP_CODE_SIGNED_MAX         ", //MUHWI_COLLECTIVE_OP_CODE_SIGNED_MAX           
+    "MUHWI_COLLECTIVE_OP_CODE_SIGNED_ADD         ", //MUHWI_COLLECTIVE_OP_CODE_SIGNED_ADD
+    "MUHWI_COLLECTIVE_OP_CODE_SIGNED_MIN         ", //MUHWI_COLLECTIVE_OP_CODE_SIGNED_MIN
+    "MUHWI_COLLECTIVE_OP_CODE_SIGNED_MAX         ", //MUHWI_COLLECTIVE_OP_CODE_SIGNED_MAX
     "INVALID                                     ", // invalid
-    "MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_ADD ", //MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_ADD   
-    "MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MIN ", //MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MIN   
-    "MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MAX ", //MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MAX   
+    "MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_ADD ", //MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_ADD
+    "MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MIN ", //MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MIN
+    "MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MAX ", //MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MAX
     "INVALID                                     "  // invalid
   };
   return string[index];
@@ -310,28 +310,28 @@ static const char* dt_string(pami_dt index)
 {
   const char* string[PAMI_DT_COUNT] =
   {
-    "PAMI_UNDEFINED_DT",       //PAMI_UNDEFINED_DT      
-    "PAMI_SIGNED_CHAR",        //PAMI_SIGNED_CHAR       
-    "PAMI_UNSIGNED_CHAR",      //PAMI_UNSIGNED_CHAR     
-    "PAMI_SIGNED_SHORT",       //PAMI_SIGNED_SHORT      
-    "PAMI_UNSIGNED_SHORT",     //PAMI_UNSIGNED_SHORT    
-    "PAMI_SIGNED_INT",         //PAMI_SIGNED_INT        
-    "PAMI_UNSIGNED_INT",       //PAMI_UNSIGNED_INT      
-    "PAMI_SIGNED_LONG_LONG",   //PAMI_SIGNED_LONG_LONG  
+    "PAMI_UNDEFINED_DT",       //PAMI_UNDEFINED_DT
+    "PAMI_SIGNED_CHAR",        //PAMI_SIGNED_CHAR
+    "PAMI_UNSIGNED_CHAR",      //PAMI_UNSIGNED_CHAR
+    "PAMI_SIGNED_SHORT",       //PAMI_SIGNED_SHORT
+    "PAMI_UNSIGNED_SHORT",     //PAMI_UNSIGNED_SHORT
+    "PAMI_SIGNED_INT",         //PAMI_SIGNED_INT
+    "PAMI_UNSIGNED_INT",       //PAMI_UNSIGNED_INT
+    "PAMI_SIGNED_LONG_LONG",   //PAMI_SIGNED_LONG_LONG
     "PAMI_UNSIGNED_LONG_LONG", //PAMI_UNSIGNED_LONG_LONG
-    "PAMI_FLOAT",              //PAMI_FLOAT             
-    "PAMI_DOUBLE",             //PAMI_DOUBLE            
-    "PAMI_LONG_DOUBLE",        //PAMI_LONG_DOUBLE       
-    "PAMI_LOGICAL",            //PAMI_LOGICAL           
-    "PAMI_SINGLE_COMPLEX",     //PAMI_SINGLE_COMPLEX    
-    "PAMI_DOUBLE_COMPLEX",     //PAMI_DOUBLE_COMPLEX    
-    "PAMI_LOC_2INT",           //PAMI_LOC_2INT          
-    "PAMI_LOC_SHORT_INT",      //PAMI_LOC_SHORT_INT     
-    "PAMI_LOC_FLOAT_INT",      //PAMI_LOC_FLOAT_INT     
-    "PAMI_LOC_DOUBLE_INT",     //PAMI_LOC_DOUBLE_INT    
-    "PAMI_LOC_2FLOAT",         //PAMI_LOC_2FLOAT        
-    "PAMI_LOC_2DOUBLE",        //PAMI_LOC_2DOUBLE       
-    "PAMI_USERDEFINED_DT"      //PAMI_USERDEFINED_DT    
+    "PAMI_FLOAT",              //PAMI_FLOAT
+    "PAMI_DOUBLE",             //PAMI_DOUBLE
+    "PAMI_LONG_DOUBLE",        //PAMI_LONG_DOUBLE
+    "PAMI_LOGICAL",            //PAMI_LOGICAL
+    "PAMI_SINGLE_COMPLEX",     //PAMI_SINGLE_COMPLEX
+    "PAMI_DOUBLE_COMPLEX",     //PAMI_DOUBLE_COMPLEX
+    "PAMI_LOC_2INT",           //PAMI_LOC_2INT
+    "PAMI_LOC_SHORT_INT",      //PAMI_LOC_SHORT_INT
+    "PAMI_LOC_FLOAT_INT",      //PAMI_LOC_FLOAT_INT
+    "PAMI_LOC_DOUBLE_INT",     //PAMI_LOC_DOUBLE_INT
+    "PAMI_LOC_2FLOAT",         //PAMI_LOC_2FLOAT
+    "PAMI_LOC_2DOUBLE",        //PAMI_LOC_2DOUBLE
+    "PAMI_USERDEFINED_DT"      //PAMI_USERDEFINED_DT
   };
   return string[index];
 }
@@ -339,21 +339,21 @@ static const char* op_string(pami_op index)
 {
   const char* string[PAMI_OP_COUNT] =
   {
-    "PAMI_UNDEFINED_OP",    // PAMI_UNDEFINED_OP    
-    "PAMI_NOOP",            // PAMI_NOOP            
-    "PAMI_MAX",             // PAMI_MAX             
-    "PAMI_MIN",             // PAMI_MIN             
-    "PAMI_SUM",             // PAMI_SUM             
-    "PAMI_PROD",            // PAMI_PROD            
-    "PAMI_LAND",            // PAMI_LAND            
-    "PAMI_LOR",             // PAMI_LOR             
-    "PAMI_LXOR",            // PAMI_LXOR            
-    "PAMI_BAND",            // PAMI_BAND            
-    "PAMI_BOR",             // PAMI_BOR             
-    "PAMI_BXOR",            // PAMI_BXOR            
-    "PAMI_MAXLOC",          // PAMI_MAXLOC          
-    "PAMI_MINLOC",          // PAMI_MINLOC          
-    "PAMI_USERDEFINED_OP"   // PAMI_USERDEFINED_OP  
+    "PAMI_UNDEFINED_OP",    // PAMI_UNDEFINED_OP
+    "PAMI_NOOP",            // PAMI_NOOP
+    "PAMI_MAX",             // PAMI_MAX
+    "PAMI_MIN",             // PAMI_MIN
+    "PAMI_SUM",             // PAMI_SUM
+    "PAMI_PROD",            // PAMI_PROD
+    "PAMI_LAND",            // PAMI_LAND
+    "PAMI_LOR",             // PAMI_LOR
+    "PAMI_LXOR",            // PAMI_LXOR
+    "PAMI_BAND",            // PAMI_BAND
+    "PAMI_BOR",             // PAMI_BOR
+    "PAMI_BXOR",            // PAMI_BXOR
+    "PAMI_MAXLOC",          // PAMI_MAXLOC
+    "PAMI_MINLOC",          // PAMI_MINLOC
+    "PAMI_USERDEFINED_OP"   // PAMI_USERDEFINED_OP
   };
   return string[index];
 }

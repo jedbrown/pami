@@ -139,7 +139,7 @@ namespace CCMI
 	  unsigned getKey   (unsigned                 root,
 			     unsigned                 iconnid,
 			     PAMI_GEOMETRY_CLASS    * geometry,
-			     C                     ** connmgr) 
+			     C                     ** connmgr)
 	  {
 	    CCMI_abort();
 	    return root;
@@ -156,7 +156,7 @@ namespace CCMI
 	  void freeBuffer (unsigned size, char *buf) {
 	    if (size <= 32768)
 	      return _eab_allocator.returnObject(buf);
-	    
+
 	    free(buf);
 	  }
 
@@ -292,7 +292,7 @@ namespace CCMI
 	    CollHeaderData *cdata = (CollHeaderData *) info;
 	    T_Composite* a_bcast = NULL;
 
-	    int comm = cdata->_comm; 
+	    int comm = cdata->_comm;
 	    PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(comm);
 	    if(geometry == NULL)
 	    {
@@ -302,9 +302,9 @@ namespace CCMI
 
 	    C *cmgr = factory->_cmgr;
 	    unsigned key = factory->getKey (cdata->_root, conn_id, geometry, &cmgr);
-	    CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co = 
+	    CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
 	      (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().findAndDelete(key);
-	    
+
 	    if(!co)
 	    {
 	      co = factory->_free_pool.allocate(key);
@@ -360,9 +360,9 @@ namespace CCMI
 	  {
 	    CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> * co =
               (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)cd;
-	    
+
 	    //fprintf (stderr, "%d: exec_done for key %d\n", ((AsyncBroadcastFactoryT *)co->getFactory())->_native->myrank(), co->key());
-	    	    
+
 	    unsigned     flag = co->getFlags();
 
 	    if (flag & LocalPosted)
@@ -372,7 +372,7 @@ namespace CCMI
 
 	      EADescriptor *ead = (EADescriptor *) co->getEAQ()->popTail();
               AsyncBroadcastFactoryT *factory = (AsyncBroadcastFactoryT *)co->getFactory();
-	      
+
               if (flag & EarlyArrival)
 	      {
                 CCMI_assert(ead != NULL);

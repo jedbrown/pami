@@ -1,12 +1,12 @@
 ///
-/// \file test/p2p/send/rdma-matrix.c
+/// \file test/p2p/send/rdma-matrix-mv.c
 /// \Matrixed "rdma" point-to-point PAMI_send() test
 ///
 
 #include "sys/pami.h"
 #include <stdio.h>
 
-//      PAMI_HINT_DEFAULT = 0, This hint leaves the option up to the PAMI implementation to choose. 
+//      PAMI_HINT_DEFAULT = 0, This hint leaves the option up to the PAMI implementation to choose.
 //      PAMI_HINT_FORCE   = 1, This allows the user to force an option to be used.
 //      PAMI_HINT_DENY    = 2, The user can force the implementation to not use this option.
 //      PAMI_HINT_MAX     = 3, The largest hint value; it cannot actually be used.
@@ -278,9 +278,9 @@ int main (int argc, char ** argv)
   size_t n = 0;                              // controls task loop
   size_t s = 0;                              // controls send hints loop
   size_t r = 0;                              // controls recv hints loop
-  size_t send_hard_use_rdma_hint = 0;       // hard hint value of sending task 
+  size_t send_hard_use_rdma_hint = 0;       // hard hint value of sending task
   size_t send_soft_use_rdma_hint = 0;       // soft hint value of sending task
-  size_t send_hard_no_rdma_hint = 0;        // hard hint value of sending task 
+  size_t send_hard_no_rdma_hint = 0;        // hard hint value of sending task
   size_t send_soft_no_rdma_hint = 0;        // soft hint value of sending task
   size_t recv_use_rdma_hint = 0;            // hard hint value of receiving task
   size_t recv_no_rdma_hint = 0;             // hard hint value of receiving task
@@ -297,7 +297,7 @@ int main (int argc, char ** argv)
   // Init to skip failing scenarios ...enable failing scenarios later
   size_t skip_ary[3][12] =       {{0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0},
                                   {0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1},
-                                  {0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0}};  
+                                  {0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0}};
 
   pami_send_t parameters;
   parameters.send.header.iov_base = header;
@@ -396,15 +396,15 @@ int main (int argc, char ** argv)
 
     for (r = 0; r < 3; r++) {
       for (s = 0; s < 12; s++) {
-	
+
 	// Skip scenarios that are expected to fail
 	if (skip_ary[r][s]) {
 	  continue;
 	}
 
 	// Determine hint values
-	send_hard_use_rdma_hint = (s >> 2) & 3;                 
-	send_soft_use_rdma_hint = s & 3;      
+	send_hard_use_rdma_hint = (s >> 2) & 3;
+	send_soft_use_rdma_hint = s & 3;
 	recv_use_rdma_hint = r;
 
 	parameters.send.dispatch        = dispatch_ary_0[r][s];
@@ -538,7 +538,7 @@ int main (int argc, char ** argv)
 
     for (r = 0; r < 3; r++) {
       for (s = 0; s < 12; s++) {
-	
+
 	// Skip scenarios that are expected to fail
 	if (skip_ary[r][s]) {
 	  continue;
@@ -560,7 +560,7 @@ int main (int argc, char ** argv)
 	TRACE((stderr, "before send ...\n"));
 
 	// Determine hint values
-	send_hard_use_rdma_hint = (s >> 2) & 3;                 
+	send_hard_use_rdma_hint = (s >> 2) & 3;
 	send_soft_use_rdma_hint = (s & 3;
 	recv_use_rdma_hint = r;
 
@@ -603,9 +603,9 @@ int main (int argc, char ** argv)
     }
   }
 
-  // Execute send = 2,recv = 1 
+  // Execute send = 2,recv = 1
   skip_ary[1][8] = 0; skip_ary[1][9] = 0; skip_ary[1][11] = 0;
-  // Execute send = 1,recv = 2 
+  // Execute send = 1,recv = 2
   skip_ary[2][4] = 0; skip_ary[2][6] = 0; skip_ary[2][7] = 0;
 
   if (task_id == 0)
@@ -615,14 +615,14 @@ int main (int argc, char ** argv)
 
     for (r = 0; r < 3; r++) {
       for (s = 0; s < 12; s++) {
-	
+
 	// Skip scenarios we don't expect to result in a recv fail
 	if (skip_ary[r][s]) {
 	  continue;
 	}
 
 	// Determine hint values
-	send_hard_use_rdma_hint = (s >> 2) & 3;                 
+	send_hard_use_rdma_hint = (s >> 2) & 3;
 	send_soft_use_rdma_hint = s & 3;
 	recv_use_rdma_hint = r;
 
@@ -675,10 +675,10 @@ int main (int argc, char ** argv)
       fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
       return 1;
     }
-    
+
     for (r = 0; r < 3; r++) {
       for (s = 0; s < 12; s++) {
-	
+
 	// Skip scenarios that are expected to fail
 	if (skip_ary[r][s]) {
 	  continue;
@@ -700,8 +700,8 @@ int main (int argc, char ** argv)
 	TRACE((stderr, "before send ...\n"));
 
 	// Determine hint values
-	send_hard_use_rdma_hint = (s >> 2) & 3;                 
-	send_soft_use_rdma_hint = s & 3;      
+	send_hard_use_rdma_hint = (s >> 2) & 3;
+	send_soft_use_rdma_hint = s & 3;
 	recv_use_rdma_hint = r;
 
 	parameters.send.dispatch        = dispatch_ary_n[r][s];

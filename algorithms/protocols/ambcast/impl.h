@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/broadcast/async_impl.h
+ * \file algorithms/protocols/ambcast/impl.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_ambroadcast_impl_h__
-#define __algorithms_protocols_ambroadcast_impl_h__
+#ifndef __algorithms_protocols_ambcast_impl_h__
+#define __algorithms_protocols_ambcast_impl_h__
 
 #include "algorithms/schedule/MultinomialTree.h"
 #include "algorithms/protocols/ambcast/AMBroadcastT.h"
@@ -45,7 +45,7 @@ namespace CCMI
       typedef AMBroadcastFactoryT<AMBinomBcastComposite,
 	am_bcast_md,
 	CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AMBinomBcastFactory;
-      
+
     };
   };
 };

@@ -90,7 +90,7 @@ namespace PAMI
 	    _asrb_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
 	    _ascs_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
 	    _active_binombcast_reg.setMapIdToGeometry(mapidtogeometry);
-	    
+
             _binomial_allreduce_reg.setMapIdToGeometry(mapidtogeometry);
           }
 

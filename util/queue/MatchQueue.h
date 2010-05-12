@@ -103,7 +103,7 @@ namespace PAMI
 	unsigned qid = key % NUMQS;
 	PAMI::Queue &queue = _localQ[qid];
 	MatchQueueElem *head = (MatchQueueElem *) queue.peekHead();
-	
+
 	while (head != NULL)
 	{
 	  if (head->key() == key)

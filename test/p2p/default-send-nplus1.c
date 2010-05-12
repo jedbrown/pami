@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/default-send.c
+/// \file test/p2p/default-send-nplus1.c
 /// \brief Simple point-topoint PAMI_send() test
 /// \validates that the n+1 byte remains unchanged
 ///
@@ -33,12 +33,12 @@ unsigned validate (void * addr, size_t bytes, size_t test_n_plus_1)
 
   // Loop through recv_buffer
   for (i=0; i<total_bytes; i++) {
-      
+
     // Determine expected value
     if (test_n_plus_1) {
       // Ensure 0-minus-1 and n-plus-1 bytes equal the reset value
       if ( (i == 0) || (i == total_bytes-1) ) {
-	expected_value = reset_value[r];	
+	expected_value = reset_value[r];
       } else { // Validate received data (__recv_buffer[1:bytes])
 	expected_value = (uint8_t)(i-1);
       }
@@ -48,9 +48,9 @@ unsigned validate (void * addr, size_t bytes, size_t test_n_plus_1)
 
     // Verify current value
     if (byte[i] != expected_value) {
-	  
+
       fprintf (stderr, "validate(%p,%zu) .. ERROR .. byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, total_bytes, i, expected_value, i, &byte[i], byte[i]);
-      
+
       status = 0;
     }
 
@@ -151,7 +151,7 @@ int main (int argc, char ** argv)
   size_t initial_device = 0;
   size_t device_limit = 0;
   device = getenv ("PAMI_DEVICE");
- 
+
   if (!strcmp(device, "M")) {
     fprintf (stderr, "Only the MU device is initialized.\n");
     initial_device = 0;
@@ -178,7 +178,7 @@ int main (int argc, char ** argv)
   pami_client_t client;
   pami_configuration_t configuration;
   pami_context_t context[2];
-  
+
   char                  cl_string[] = "TEST";
   pami_result_t result = PAMI_ERROR;
 
@@ -208,7 +208,7 @@ int main (int argc, char ** argv)
   if (max_contexts > 1) {
     num_contexts = 2; // allows for cross talk
   }
-    
+
   result = PAMI_Context_createv(client, NULL, 0, context, num_contexts);
   if (result != PAMI_SUCCESS)
   {
@@ -249,9 +249,9 @@ int main (int argc, char ** argv)
 
   for (i = 0; i < num_contexts; i++) {
     // For each context:
-    // Set up dispatch ID 0 for MU (use_shmem = 0, no_shmem = 1) 
+    // Set up dispatch ID 0 for MU (use_shmem = 0, no_shmem = 1)
     // set up dispatch ID 1 for SHMem (use_shmem = 1, no_shmem = 0)
- 
+
     for (use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {
       fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
       options.use_shmem = use_shmem;
@@ -301,14 +301,14 @@ int main (int argc, char ** argv)
 
   size_t xtalk = 0;
   size_t remote_cb = 0;
-  
+
   char device_str[2][50] = {"MU", "SHMem"};
   char xtalk_str[2][50] = {"no crosstalk", "crosstalk"};
   char callback_str[2][50] = {"no callback", "callback"};
 
   if (task_id == 0)
   {
-    for(use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {      // device loop  
+    for(use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {      // device loop
       for(xtalk = 0; xtalk < num_contexts; xtalk++) {                // xtalk loop
 
 	// Skip running MU in Cross talk mode for now
@@ -342,7 +342,7 @@ int main (int argc, char ** argv)
 
 		if (remote_cb) {
 		  send_active++;
-		} 
+		}
 
 		result = PAMI_Send (context[0], &parameters);
 		fprintf (stderr, "... after send.\n");
@@ -359,7 +359,7 @@ int main (int argc, char ** argv)
 		}
 
 		send_active = 1;
-		
+
 		if (recv_active == 0) {
 
 		  // Reset __recv_buffer
@@ -447,7 +447,7 @@ int main (int argc, char ** argv)
 		  recv_active = 1;
 		}
 
-		
+
 		fprintf (stderr, "... after recv advance loop\n");
 
 		fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] %zu %zu (%d, %zu) -> (0, 0) =====\n\n", &device_str[use_shmem][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, xtalk);
@@ -456,7 +456,7 @@ int main (int argc, char ** argv)
 
 		if (remote_cb) {
 		  send_active++;
-		} 
+		}
 
 		result = PAMI_Send (context[xtalk], &parameters);
 		fprintf (stderr, "... after send.\n");
@@ -485,7 +485,7 @@ int main (int argc, char ** argv)
 
 
   // ====== CLEANUP ======
-	
+
   for ( i = 0; i < num_contexts; i++) {
     result = PAMI_Context_destroy (context[i]);
     if (result != PAMI_SUCCESS) {

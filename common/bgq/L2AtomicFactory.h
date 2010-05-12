@@ -21,7 +21,7 @@
 #define TRACE_ERR(x) //fprintf x
 
 // These define the range of L2Atomics we're allowed to use.
-// We might need extra space for the WAC Region. 
+// We might need extra space for the WAC Region.
 // Must take into account (considerable) waste from large alignment value for WAC,
 // Using 2x as an upper-bound.
 #define L2A_MAX_NUMNODEL2ATOMIC	(16*256+2*64*BGQ_WACREGION_SIZE) ///< max number of node-scope atomics

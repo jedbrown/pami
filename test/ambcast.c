@@ -237,7 +237,7 @@ int main(int argc, char*argv[])
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
-    
+
     pami_collective_hint_t h={0};
     pami_dispatch_callback_fn fn;
     fn.ambroadcast = cb_bcast_recv;
@@ -248,7 +248,7 @@ int main(int argc, char*argv[])
 				   NULL,
 				   h);
     broadcast.algorithm = bcastalgorithm[nalg];
-    
+
     _barrier (context, &barrier);
     for(i=1; i<=BUFSIZE; i*=2)
       {

@@ -85,7 +85,7 @@ namespace CCMI
 	_postReceives = precv;
         pami_quad_t *info   =  (_postReceives)?(NULL):(pami_quad_t*)((void*)&_mdata);
         _msend.msginfo     =  info;
-        _msend.msgcount    =  1;		
+        _msend.msgcount    =  1;
       }
 
       //-----------------------------------------
@@ -199,14 +199,14 @@ inline void  CCMI::Executor::BroadcastExec<T>::start ()
     _cb_done (NULL, _clientdata, PAMI_SUCCESS);
     return;
   }
-  
+
   if(_native->myrank() == _root) {
     _pwq.produceBytes (_buflen);
     sendNext ();
   }
   else if (_postReceives)
     //Protocol will call postReceives() and then start()
-    //With the async callback the notifyrecv will call sendNext    
+    //With the async callback the notifyrecv will call sendNext
     sendNext ();
 }
 
@@ -228,7 +228,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   sprintf(sbuf, "%d: Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %d ",
          _native->myrank(),
          _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume());
-  for(unsigned i = 0; i < _dsttopology.size(); ++i) 
+  for(unsigned i = 0; i < _dsttopology.size(); ++i)
   {
     sprintf(tbuf, " dstrank[%d]=%d/%d ", i,_dstranks[i],_dsttopology.index2Rank(i));
     strcat (sbuf, tbuf);
@@ -240,7 +240,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
  TRACE_MSG((stderr, "%d: Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %d\n",
 	      _native->myrank(),
 	      _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
-  
+
   //Sending message header to setup receive of an async message
   _mdata._comm  = _comm;
   _mdata._root  = _root;

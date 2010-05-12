@@ -348,8 +348,8 @@ extern "C"
    * receive the data stream.
    *
    * When \c type is \c PAMI_BYTE, the receive buffer is contiguous and it
-   * must be large enough to hold the entire message. 
-   * 
+   * must be large enough to hold the entire message.
+   *
    * With non-contiguous \c type, the receive buffer in general must be large
    * enough for the incoming message as well but \c type can be constructed
    * in such a way that unwanted portions of the incoming are disposed into

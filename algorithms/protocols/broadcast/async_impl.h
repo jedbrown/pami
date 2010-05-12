@@ -58,7 +58,7 @@ namespace CCMI
 	unsigned AsyncRBBinomBcastFactory::getKey(unsigned                                                root,
 						  unsigned                                                connid,
 						  PAMI_GEOMETRY_CLASS                                    *geometry,
-						  ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> **connmgr) 
+						  ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> **connmgr)
 	{
 	  return root;
 	}
@@ -83,13 +83,13 @@ namespace CCMI
 	unsigned AsyncCSBinomBcastFactory::getKey(unsigned                                   root,
 						  unsigned                                   connid,
 						  PAMI_GEOMETRY_CLASS                      * geometry,
-						  ConnectionManager::CommSeqConnMgr        **connmgr) 
+						  ConnectionManager::CommSeqConnMgr        **connmgr)
 	{
 	  if (connid != (unsigned)-1) {
 	    *connmgr = NULL; //use this key as connection id
-	    return connid;	  
+	    return connid;
 	  }
-	  return (*connmgr)->updateConnectionId( geometry->comm() );	  
+	  return (*connmgr)->updateConnectionId( geometry->comm() );
 	}
 
       void old_am_bcast_md(pami_metadata_t *m)
