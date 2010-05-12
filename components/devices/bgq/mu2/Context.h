@@ -22,13 +22,15 @@
 #include <spi/include/mu/DescriptorBaseXX.h>
 #include <spi/include/mu/DescriptorWrapperXX.h>
 #include <spi/include/mu/Pt2PtMemoryFIFODescriptorXX.h>
+#include <spi/include/kernel/MU.h>
 
 #include "Global.h"
 
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
-
 #include "components/devices/generic/Device.h"
+
+#define CONTEXT_ALLOCATES_RESOURCES   1
 
 namespace PAMI
 {
@@ -67,6 +69,18 @@ namespace PAMI
             abort();
             return 0;
           };
+
+#if CONTEXT_ALLOCATES_RESOURCES
+	  MUSPI_InjFifoSubGroup_t       _ififo_subgroup;
+	  MUSPI_RecFifoSubGroup_t       _rfifo_subgroup;
+	  char                        * _injFifoBuf;
+	  char                        * _recFifoBuf;
+	  unsigned                      _ififoid;
+	  unsigned                      _rfifoid;
+
+	  static const int INJ_MEMORY_FIFO_SIZE = 0xFFFFUL;
+	  static const int REC_MEMORY_FIFO_SIZE = 0xFFFFUL;
+#endif
 
         public:
 
@@ -123,6 +137,7 @@ namespace PAMI
                 _dispatch[i].f = noop;
                 _dispatch[i].p = (void *) i;
               }
+
           };
 
           ///
@@ -148,6 +163,65 @@ namespace PAMI
             // Need to find a way to break this dependency...
             //_client = client;
             //_context = context;
+
+#if CONTEXT_ALLOCATES_RESOURCES
+	    _ififoid = 0;
+	    Kernel_InjFifoAttributes_t injFifoAttrs;
+	    injFifoAttrs.RemoteGet = 0;
+	    injFifoAttrs.System    = 0;
+
+	    //TRACE(("main(): allocate injection fifos\n"));
+	    Kernel_AllocateInjFifos (0, 
+				     &_ififo_subgroup,
+				     1,
+				     &_ififoid, 
+				     &injFifoAttrs);
+    
+	    _injFifoBuf = (char *) malloc (65536);
+
+	    Kernel_MemoryRegion_t  mregionInj, mregionRec;
+	    Kernel_CreateMemoryRegion ( &mregionInj,
+					_injFifoBuf,
+					INJ_MEMORY_FIFO_SIZE + 1 );
+	    
+	    //TRACE(("main(): init injection fifo\n"));
+	    Kernel_InjFifoInit (&_ififo_subgroup, 
+				_ififoid, 
+				&mregionInj, 
+				(uint64_t) _injFifoBuf -
+				(uint64_t)mregionInj.BaseVa,
+				INJ_MEMORY_FIFO_SIZE);    
+	    
+	    _rfifoid = 0;
+	    Kernel_RecFifoAttributes_t recFifoAttrs[1];
+	    recFifoAttrs[0].System = 0;
+
+	    Kernel_AllocateRecFifos (0, 
+				     &_rfifo_subgroup, 
+				     1,
+				     &_rfifoid,
+				     recFifoAttrs);
+  
+	    _recFifoBuf = (char *) malloc (65536);
+	    Kernel_CreateMemoryRegion ( &mregionRec,
+					_recFifoBuf,
+					REC_MEMORY_FIFO_SIZE + 1 );
+
+	    //TRACE(("main(): init reception fifo\n"));
+	    Kernel_RecFifoInit    (& _rfifo_subgroup, _rfifoid, 
+				   &mregionRec, 
+				   (uint64_t)_recFifoBuf - (uint64_t)mregionRec.BaseVa, 
+				   REC_MEMORY_FIFO_SIZE);
+
+	    //Activate fifos
+	    Kernel_InjFifoActivate (&_ififo_subgroup, 1, &_ififoid, KERNEL_INJ_FIFO_ACTIVATE); 
+
+	    uint64_t recFifoEnableBits=0;  
+	    recFifoEnableBits |= ( 0x0000000000000001ULL << 
+				   ( 15 - ( (0/*sgid*/*BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) + 0/*RecFifoId*/ )) );
+	    Kernel_RecFifoEnable ( 0, /* Group ID */ 
+				   recFifoEnableBits );
+#endif
 
             return;
           }
@@ -325,7 +399,10 @@ namespace PAMI
                                  uint16_t         & rfifo,
                                  uint64_t         & map)
           {
-            abort();
+	    *ififo = MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup);
+	    rfifo = _rfifoid;
+	    map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM; //In loopback we send only on AM
+
             return  0;
           }
 
