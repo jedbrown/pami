@@ -22,8 +22,6 @@ pami_coord_t PAMI::Topology::my_coords;
 #include "components/devices/misc/ProgressFunctionMsg.h"
 PAMI::Device::ProgressFunctionDev _g_progfunc_dev;
 
-extern "C" void __libpami_dummy     () { abort(); }
-extern "C" void __cxa_pure_virtual  () __attribute__((weak, alias("__libpami_dummy")));
 //
 // astyle info    http://astyle.sourceforge.net
 //

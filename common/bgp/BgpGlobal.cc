@@ -42,5 +42,3 @@ PAMI::Device::BGP::CNAllreduce2PDevice _g_cnallreduce2p_dev(&_g_cncommon_dev);
 #include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
 PAMI::Device::BGP::CNBroadcastDevice _g_cnbroadcast_dev(&_g_cncommon_dev);
 
-extern "C" void __libpami_dummy     () { abort(); }
-extern "C" void __cxa_pure_virtual  () __attribute__((weak, alias("__libpami_dummy")));
