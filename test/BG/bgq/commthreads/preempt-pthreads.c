@@ -10,30 +10,35 @@ struct thread_data {
 	pami_context_t context;
 	pthread_mutex_t mutex;
 	pthread_t thread;
+	volatile int active;
 };
 
 void *user_pthread(void *cookie) {
 	struct thread_data *dat = (struct thread_data *)cookie;
 	pami_result_t rc;
 	int lrc;
+	int last = 0;
 	fprintf(stderr, "Ready as %ld ...\n", pthread_self());
 	while (run) {
-		rc = PAMI_Context_trylock(dat->context); // should cause wakeups...
-		if (rc == PAMI_SUCCESS) {
-			fprintf(stderr, "Taking over...\n");
-			do {
-				// why doesn't advance return "num events" anymore?
-				rc = PAMI_Context_advance(dat->context, 100);
-				lrc = pthread_mutex_trylock(&dat->mutex);
-				if (lrc == 0) {
-					pthread_mutex_unlock(&dat->mutex);
+		while (run && dat->active) {
+			if (last == 0) {
+				fprintf(stderr, "Taking over...\n");
+				last = 1;
+			}
+			rc = PAMI_Context_trylock(dat->context); // should cause wakeups...
+			if (rc == PAMI_SUCCESS) {
+				while (run && dat->active) {
+					// why doesn't advance return "num events" anymore?
+					rc = PAMI_Context_advance(dat->context, 100);
 				}
-			} while (run && lrc == 0);
-			rc = PAMI_Context_unlock(dat->context);
-			fprintf(stderr, "Giving back...\n");
-			lrc = pthread_mutex_lock(&dat->mutex);
-			pthread_mutex_unlock(&dat->mutex);
+				rc = PAMI_Context_unlock(dat->context);
+				fprintf(stderr, "Giving back...\n");
+			}
 		}
+		last = 0;
+		lrc = pthread_mutex_lock(&dat->mutex);
+		// now, active == 1 || run == 0
+		pthread_mutex_unlock(&dat->mutex);
 	}
 	fprintf(stderr, "All done...\n");
 	return NULL;
@@ -80,12 +85,14 @@ fprintf(stderr, "Starting...\n");
 			if (run) {
 				if (y & 2) {
 					for (x = 0; x < NUM_CONTEXTS; ++x) {
+						thr_data[x].active = 1;
 						pthread_mutex_unlock(&thr_data[x].mutex);
 					}
 				} else {
 					for (x = 0; x < NUM_CONTEXTS; ++x) {
 						// we shouldn't wait at all...
 						pthread_mutex_lock(&thr_data[x].mutex);
+						thr_data[x].active = 0;
 					}
 				}
 			} else {
@@ -93,6 +100,7 @@ fprintf(stderr, "Starting...\n");
 				for (x = 0; x < NUM_CONTEXTS; ++x) {
 					pthread_attr_t attr;
 					thr_data[x].context = context[x];
+					thr_data[x].active = 0;
 					pthread_mutex_init(&thr_data[x].mutex, NULL);
 					pthread_mutex_lock(&thr_data[x].mutex);
 					pthread_attr_init(&attr);
