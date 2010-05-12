@@ -390,8 +390,8 @@ init ( ResourceType_t  type,
   TRACE((stderr,"ResourceManager:  Initializing Barrier, pSize=%zu, master=%d\n",__global.personality.pSize(),master));
   PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> barrier;
   barrier.init(&__global.mm,
-	       __global.personality.pSize(),
-	       master );
+               __global.topology_local.size(),
+               master );
   TRACE((stderr,"ResourceManager: Entering Barrier\n"));
   barrier.enter();
   TRACE((stderr,"ResourceManager: Exiting Barrier\n"));
@@ -403,8 +403,8 @@ init ( ResourceType_t  type,
       TRACE((stderr, "%s sleep - %.0f,start %f < %f\n",__PRETTY_FUNCTION__,d,start,start+dseconds));
       while (PAMI_Wtime() < (start+dseconds))
       {
-	  for (int i=0; i<200000; ++i) ++d;
-	  TRACE((stderr, "%s sleep - %.0f, %f < %f\n",__PRETTY_FUNCTION__,d,PAMI_Wtime(),start+dseconds));
+          for (int i=0; i<200000; ++i) ++d;
+          TRACE((stderr, "%s sleep - %.0f, %f < %f\n",__PRETTY_FUNCTION__,d,PAMI_Wtime(),start+dseconds));
       }
       TRACE((stderr, "%s sleep - %.0f, start %f, end %f\n",__PRETTY_FUNCTION__,d,start,PAMI_Wtime()));
     }
