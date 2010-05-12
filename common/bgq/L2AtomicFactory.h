@@ -69,7 +69,7 @@ namespace BGQ {
                 size_t masterProc;	/**< chosen master process */
                 size_t numProc;		/**< num active processes */
                 size_t numCore;		/**< num active cores */
-                size_t coreXlat[NUM_CORES]; /**< translate process to core */
+                size_t coreXlat[PAMI_MAX_PROC_PER_NODE]; /**< translate process to core */
                 size_t coreShift;	/**< translate core to process */
         };
 
@@ -139,7 +139,7 @@ namespace BGQ {
                         // Compute all implementation parameters,
                         // i.e. fill-in _factory struct.
                         PAMI::Interface::Mapping::nodeaddr_t addr;
-                        pami_task_t ranks[NUM_CORES];
+                        pami_task_t ranks[PAMI_MAX_PROC_PER_NODE];
                         size_t i;
 
                         /** \todo #warning This needs a proper CNK function for number of threads per process, when it exists... */
