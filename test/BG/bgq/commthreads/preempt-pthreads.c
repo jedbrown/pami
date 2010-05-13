@@ -18,11 +18,15 @@ void *user_pthread(void *cookie) {
 	pami_result_t rc;
 	int lrc;
 	int last = 0;
-	fprintf(stderr, "Ready as %ld ...\n", pthread_self());
+	char buf[64];
+	sprintf(buf, "Ra %ld\n", pthread_self());
+	int bufl = strlen(buf);
+	write(2, buf, bufl);
 	while (run) {
 		while (run && dat->active) {
 			if (last == 0) {
-				fprintf(stderr, "Taking over...\n");
+				buf[0] = 'T'; buf[1] = 'o';
+				write(2, buf, bufl);
 				last = 1;
 			}
 			rc = PAMI_Context_trylock(dat->context); // should cause wakeups...
@@ -32,15 +36,18 @@ void *user_pthread(void *cookie) {
 					rc = PAMI_Context_advance(dat->context, 100);
 				}
 				rc = PAMI_Context_unlock(dat->context);
-				fprintf(stderr, "Giving back...\n");
+				// might as well just 'break' here...
 			}
 		}
 		last = 0;
+		buf[0] = 'G'; buf[1] = 'b';
+		write(2, buf, bufl);
 		lrc = pthread_mutex_lock(&dat->mutex);
 		// now, active == 1 || run == 0
 		pthread_mutex_unlock(&dat->mutex);
 	}
-	fprintf(stderr, "All done...\n");
+	buf[0] = 'A'; buf[1] = 'd';
+	write(2, buf, bufl);
 	return NULL;
 }
 
@@ -53,6 +60,9 @@ int main(int argc, char ** argv) {
 	pami_result_t result = PAMI_ERROR;
 	pami_context_t context[NUM_CONTEXTS];
 	int x, y;
+char buf[64];
+sprintf(buf, "St %ld\n", pthread_self());
+int bufl = strlen(buf);
 
 	result = PAMI_Client_create(cl_string, &client);
 	if (result != PAMI_SUCCESS) {
@@ -67,7 +77,7 @@ int main(int argc, char ** argv) {
 						"result = %d\n", NUM_CONTEXTS, result);
 		return 1;
 	}
-fprintf(stderr, "Starting...\n");
+write(2, buf, bufl);
 	for (x = 0; x < NUM_CONTEXTS; ++x) {
 		result = PAMI_Client_add_commthread_context(client, context[x]);
 		if (result != PAMI_SUCCESS) {
@@ -129,20 +139,25 @@ fprintf(stderr, "Starting...\n");
 		}
 
 		if (y + 1 < NUM_TESTRUNS) {
+buf[0] = 'S'; buf[1] = 'p';
+write(2, buf, bufl);
 			fprintf(stderr, "Sleeping...\n");
 //			sleep(5);
 unsigned long long t0 = PAMI_Wtimebase();
 //fprintf(stderr, "Woke up after %lld cycles\n", (PAMI_Wtimebase() - t0));
 while (PAMI_Wtimebase() - t0 < 500000);
-fprintf(stderr, "Waking...\n");
+buf[0] = 'W'; buf[1] = 'a';
+write(2, buf, bufl);
 		}
 	}
 	run = 0;
 
-fprintf(stderr, "Sleeping...\n");
+buf[0] = 'S'; buf[1] = 'p';
+write(2, buf, bufl);
 {unsigned long long t0 = PAMI_Wtimebase();
 while (PAMI_Wtimebase() - t0 < 500000);}
-fprintf(stderr, "Finishing...\n");
+buf[0] = 'F'; buf[1] = 'i';
+write(2, buf, bufl);
 	for (x = 0; x < NUM_CONTEXTS; ++x) {
 		pthread_mutex_unlock(&thr_data[x].mutex);
 	}
@@ -159,6 +174,8 @@ fprintf(stderr, "Finishing...\n");
 		return 1;
 	}
 
+buf[0] = 'S'; buf[1] = 'u';
+write(2, buf, bufl);
 	fprintf(stderr, "Success.\n");
 
 	return 0;

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
 #include <errno.h>
 
 /* dummy routine in case PAMI target doesn't provide real one */
@@ -39,8 +40,13 @@ post_info_t _info[NUM_CONTEXTS];
 
 pami_result_t do_work(pami_context_t context, void *cookie) {
 	post_info_t *info = (post_info_t *)cookie;
-	fprintf(stderr, "do_work(%d) by %ld on context %d: cookie = %p, %d -> %d\n",
+	char buf[128];
+	sprintf(buf, "do_work(%d) by %ld on context %d: cookie = %p, %d -> %d\n",
 				info->seq, pthread_self(), info->ctx, cookie, info->value, info->value - 1);
+	write(2, buf, strlen(buf));
+	// [f]printf() is susceptible to context switches...
+	//fprintf(stderr, "do_work(%d) by %ld on context %d: cookie = %p, %d -> %d\n",
+	//			info->seq, pthread_self(), info->ctx, cookie, info->value, info->value - 1);
 	--info->value;
 	return PAMI_SUCCESS;
 }

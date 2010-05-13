@@ -124,15 +124,6 @@ private:
         ///
         inline void __disarmMU_WU() { }
 
-	inline void __do_wait() {
-		//uint64_t wac[64];
-
-		size_t n = 0; //_wakeup_region->copyWURange(wac);
-		//PAMI_assertf(n <= sizeof(wac), "Overflow wac save buf");
-		fprintf(stderr, "going idle... (%zd)\n", n);
-        	ppc_waitimpl();
-		fprintf(stderr, "woke up (%d)\n", 1); //_wakeup_region->cmpWURange(wac));
-	}
 public:
         BgqCommThread(BgqWakeupRegion *wu, BgqContextPool *pool, size_t clientid, size_t num_ctx) :
         _wakeup_region(wu),
@@ -284,10 +275,14 @@ private:
                 uint64_t wu_start, wu_mask;
 		int min_pri = sched_get_priority_min(COMMTHREAD_SCHED);
 		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
+char buf[64];
+sprintf(buf, "ct %ld\n", pthread_self());
+int bufl = strlen(buf);
 
                 pthread_setschedprio(self, max_pri);
                 _ctxset->joinContextSet(_client, id, _initCtxs);
-fprintf(stderr, "comm thread %ld for context %04zx\n", self, _initCtxs);
+//fprintf(stderr, "comm thread %ld for context %04zx\n", self, _initCtxs);
+write(2, buf, bufl);
                 new_ctx = old_ctx = lkd_ctx = 0;
                 while (!_shutdown) {
                         //
@@ -333,7 +328,11 @@ more_work:		// lightweight enough.
                                         // while existing work waits for us to
                                         // advance it.
 #ifndef HAVE_WU_ARMWITHADDRESS
-					__do_wait();
+buf[0] = 'g'; buf[1] = 'i';
+write(2, buf, bufl);
+        				ppc_waitimpl();
+buf[0] = 'w'; buf[1] = 'u';
+write(2, buf, bufl);
 #else // HAVE_WU_ARMWITHADDRESS
                                         ppc_waitimpl();
 #endif // HAVE_WU_ARMWITHADDRESS
@@ -350,12 +349,14 @@ more_work:		// lightweight enough.
                                 __lockContextSet(lkd_ctx, 0);
 
                                 _ctxset->leaveContextSet(_client, id); // id invalid now
-fprintf(stderr, "stepping aside... (%zd)\n", id);
+buf[0] = 's'; buf[1] = 'a';
+write(2, buf, bufl);
 
                                 pthread_setschedprio(self, min_pri);
                                 //=== we get preempted here ===//
                                 pthread_setschedprio(self, max_pri);
-fprintf(stderr, "stepping back in... (%d, %zd)\n", _shutdown, id);
+buf[0] = 's'; buf[1] = 'b';
+write(2, buf, bufl);
 
 				if (_shutdown) break;
                 		_ctxset->joinContextSet(_client, id, _initCtxs); // got id
@@ -370,7 +371,8 @@ fprintf(stderr, "stepping back in... (%d, %zd)\n", _shutdown, id);
 		if (id != (size_t)-1) {
                 	_ctxset->leaveContextSet(_client, id); // id invalid now
 		}
-fprintf(stderr, "comm thread terminated\n");
+buf[0] = 't'; buf[1] = 't';
+write(2, buf, bufl);
                 return PAMI_SUCCESS;
         }
 
