@@ -163,6 +163,7 @@ init ( ResourceType_t  type,
       fifoSize[0] = DEFAULT_INJ_FIFO_DESC_COUNT * sizeof (MUHWI_Descriptor_t);
       fifoAttr[0].RemoteGet = 1;
       fifoAttr[0].System    = 0;
+      fifoAttr[0].Priority  = 0;
 
       rc = _rgetInjFifoSubgroup.init ( 64, 1, (char **) & fifoPtr[0], &fifoSize[0], &fifoAttr[0] );
       master = true;
@@ -224,6 +225,7 @@ init ( ResourceType_t  type,
           fifoSizes[j] = DEFAULT_INJ_FIFO_DESC_COUNT * sizeof (MUHWI_Descriptor_t);
           fifoAttrs[j].RemoteGet = 0;
           fifoAttrs[j].System    = 0;
+	  fifoAttrs[j].Priority  = 0;
 
           TRACE((stderr, "fifoPtrs[%u]=%p, fifoSizes=%u\n", j, fifoPtrs[j], fifoSizes[j]));
         }
