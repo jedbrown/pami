@@ -15,12 +15,15 @@
 //#include "components/memory/MemoryManager.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/bgq/mu2/Context.h"
+#include "components/devices/bgq/mu2/model/PacketModel.h"
 
 //#include "p2p/protocols/send/eager/Eager.h"
 
 typedef PAMI::Device::Generic::Device ProgressDevice;
 
 typedef PAMI::Device::MU::Context MuDevice;
+
+typedef PAMI::Device::MU::PacketModel MuPacketModel;
 
 //typedef PAMI::Protocol::Send::Eager<T_Model, MuDevice> MuEager;
 
@@ -40,6 +43,8 @@ int main(int argc, char ** argv)
   MuDevice mu (global, 0, 0, 1, progress);
   mu.init (0); // id_client
 
+
+  MuPacketModel model (mu);
 
 #if 0  // use pami protocols .. depends on pami.h types
   pami_result_t result;

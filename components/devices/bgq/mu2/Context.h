@@ -30,6 +30,9 @@
 #include "components/devices/PacketInterface.h"
 #include "components/devices/generic/Device.h"
 
+#include "components/devices/bgq/mu2/MemoryFifoPacketHeader.h"
+
+
 #define CONTEXT_ALLOCATES_RESOURCES   1
 
 namespace PAMI
@@ -83,16 +86,6 @@ namespace PAMI
 #endif
 
         public:
-
-          /// Number of software bytes in a single packet transfer, less the
-          /// number of bytes used internally by the MU::Context, available.
-          /// \todo replace with a constant from SPIs somewhere
-          static const size_t packet_metadata_size  = 17;
-
-          /// Number of software bytes in a multi-packet transfer, less the
-          /// number of bytes used internally by the MU::Context, available.
-          /// \todo replace with a constant from SPIs somewhere
-          static const size_t message_metadata_size = 13;
 
           /// Number of payload bytes available in a packet.
           /// \todo replace with a constant from SPIs somewhere
@@ -156,7 +149,7 @@ namespace PAMI
                             //pami_client_t           client,
                             //pami_context_t          context
                             //,Memory::MemoryManager * mm
-                            )
+                           )
           {
             _id_client = id_client;
 
@@ -386,22 +379,28 @@ namespace PAMI
           ///
           /// \param[in]  task   Destination task identifier
           /// \param[in]  offset Destination task context offset identifier
+          /// \param[out] dest   Destination task node coordinates
           /// \param[out] ififo  Pinned MUSPI injection fifo structure
           /// \param[out] rfifo  Reception fifo id to address the task+offset
           /// \param[out] map    Pinned MUSPI torus injection fifo map
+          /// \param[out] hintsABCD Pinned ABCD torus hints
+          /// \param[out] hintsE Pinned E torus hints
           ///
           /// \return Context-relative injection fifo number pinned to the
           ///         task+offset destination
           ///
-          inline size_t pinFifo (size_t             task,
-                                 size_t             offset,
-                                 MUSPI_InjFifo_t ** ififo,
-                                 uint16_t         & rfifo,
-                                 uint64_t         & map)
+          inline size_t pinFifo (size_t                task,
+                                 size_t                offset,
+                                 MUHWI_Destination_t & dest,
+                                 MUSPI_InjFifo_t    ** ififo,
+                                 uint16_t            & rfifo,
+                                 uint64_t            & map,
+                                 uint8_t             & hintsABCD,
+                                 uint8_t             & hintsE)
           {
-	    *ififo = MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup);
-	    rfifo = _rfifoid;
-	    map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM; //In loopback we send only on AM
+            *ififo = MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup);
+            rfifo = _rfifoid;
+            map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM; //In loopback we send only on AM
 
             return  0;
           }
@@ -460,7 +459,6 @@ namespace PAMI
           size_t            _id_offset;
           size_t            _id_count;
           size_t            _id_client;
-
 
           mu_dispatch_t     _dispatch[dispatch_set_count * dispatch_set_size];
 

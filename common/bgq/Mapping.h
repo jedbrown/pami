@@ -174,6 +174,20 @@ namespace PAMI
       return(MUHWI_Destination_t *) &_coords;
     };
 
+    ///
+    /// \brief Retrieve pointer to a mu destination structure for a specific task
+    ///
+    /// The intent here is to provide access to a mu destination structure
+    /// initialized to the coordinates of the destination node.
+    ///
+    /// \note Does not provide process, core, or hardware thread addressing.
+    ///
+    inline MUHWI_Destination_t * getMuDestinationTask (size_t task)
+    {
+      return(MUHWI_Destination_t *) & _mapcache.torus.task2coords[task];
+    };
+
+
 
 
     /////////////////////////////////////////////////////////////////////////
