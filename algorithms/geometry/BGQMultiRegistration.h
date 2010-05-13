@@ -35,136 +35,170 @@ namespace PAMI
   namespace CollRegistration
   {
 
-    /// \brief A utility template to wrap meta data for our factories
-    /// 'unique' allows re-definition of the metadata statics
-    ///      typedef MetaData<0> MetaData0;
-    ///      typedef MetaData<1> MetaData1;
-    template<int unique> class MetaData
-    {
-    public:
-      static const pami_ca_t geometry;     /**< geometry attributes                   */
-      static const pami_ca_t buffer  ;     /**< buffer attributes (contig, alignment) */
-      static const pami_ca_t misc    ;     /**< other attributes (i.e. threaded)      */
-      static const char *mstring     ;     /**< name of algorithm                     */
-      static void metadata(pami_metadata_t *m)
-      {
-        m->geometry = geometry;
-        m->buffer   = buffer;
-        m->misc     = misc;
-        strncpy(&m->name[0],mstring,32);
-      }
-    };
-
     //----------------------------------------------------------------------------
     /// Declare our protocol factory templates and their metadata templates
     //----------------------------------------------------------------------------
-    typedef MetaData<__LINE__> ShmemMsyncMetaData;
-    template<> const char*     ShmemMsyncMetaData::mstring  ="ShmemMultiSyncComposite";
-    template<> const pami_ca_t ShmemMsyncMetaData::geometry ={{0xF0}};      // some meaningful bitmask
-    template<> const pami_ca_t ShmemMsyncMetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
-    template<> const pami_ca_t ShmemMsyncMetaData::misc     ={{0}};         // some meaningful bitmask
+
+    //----------------------------------------------------------------------------
+    // Shmem allsided multisync
+    //----------------------------------------------------------------------------
+    void ShmemMsyncMetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0],"ShmemMultiSyncComposite",32);
+    }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Barrier::MultiSyncComposite,
-                                                              PAMI::CollRegistration::ShmemMsyncMetaData::metadata,
+                                                              ShmemMsyncMetaData,
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiSyncFactory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<__LINE__> ShmemMcombMetaData;
-    template<> const char*     ShmemMcombMetaData::mstring="ShmemMultiCombComposite";
-    template<> const pami_ca_t ShmemMcombMetaData::geometry ={{0xF0}};      // some meaningful bitmask
-    template<> const pami_ca_t ShmemMcombMetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
-    template<> const pami_ca_t ShmemMcombMetaData::misc     ={{0}};         // some meaningful bitmask
+    // Shmem allsided multicombine
+    //----------------------------------------------------------------------------
+    void ShmemMcombMetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0],"ShmemMultiCombComposite",32);
+    }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Allreduce::MultiCombineComposite,
-                                                              PAMI::CollRegistration::ShmemMcombMetaData::metadata,
+                                                              ShmemMcombMetaData,
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCombineFactory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<__LINE__> ShmemMcastMetaData;
-    template<> const char*     ShmemMcastMetaData::mstring="ShmemMultiCastComposite";
-    template<> const pami_ca_t ShmemMcastMetaData::geometry ={{0xF0}};      // some meaningful bitmask
-    template<> const pami_ca_t ShmemMcastMetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
-    template<> const pami_ca_t ShmemMcastMetaData::misc     ={{0}};         // some meaningful bitmask
+    // Shmem allsided multicast
+    //----------------------------------------------------------------------------
+    void ShmemMcastMetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0],"ShmemMultiCastComposite",32);
+    }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite,
-                                                              PAMI::CollRegistration::ShmemMcastMetaData::metadata,
+                                                              ShmemMcastMetaData,
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCastFactory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<__LINE__> ShmemMcast2MetaData;
-    template<> const char*     ShmemMcast2MetaData::mstring="ShmemMultiCast2Composite";
-    template<> const pami_ca_t ShmemMcast2MetaData::geometry ={{0xF0}};      // some meaningful bitmask
-    template<> const pami_ca_t ShmemMcast2MetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
-    template<> const pami_ca_t ShmemMcast2MetaData::misc     ={{0}};         // some meaningful bitmask
+    // Shmem allsided multicast built on active message multicast with an 
+    // synchronizing multisync 
+    //----------------------------------------------------------------------------
+    void ShmemMcast2MetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0],"ShmemMultiCast2Composite",32);
+    }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite2,
-                                                              PAMI::CollRegistration::ShmemMcast2MetaData::metadata,
+                                                              ShmemMcast2MetaData,
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCast2Factory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<__LINE__> ShmemMcast3MetaData;
-    template<> const char*     ShmemMcast3MetaData::mstring="ShmemMultiCast3Composite";
-    template<> const pami_ca_t ShmemMcast3MetaData::geometry ={{0xF0}};      // some meaningful bitmask
-    template<> const pami_ca_t ShmemMcast3MetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
-    template<> const pami_ca_t ShmemMcast3MetaData::misc     ={{0}};         // some meaningful bitmask
+    // Shmem allsided multicast built on multicombine (BOR)
+    //----------------------------------------------------------------------------
+    void ShmemMcast3MetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0],"ShmemMultiCast3Composite",32);
+    }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite3,
-                                                              PAMI::CollRegistration::ShmemMcast3MetaData::metadata,
+                                                              ShmemMcast3MetaData,
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCast3Factory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<__LINE__> MUMsyncMetaData;
-    template<> const char*     MUMsyncMetaData::mstring="MUMultiSyncComposite";
-    template<> const pami_ca_t MUMsyncMetaData::geometry ={{0xF0}};      // some meaningful bitmask
-    template<> const pami_ca_t MUMsyncMetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
-    template<> const pami_ca_t MUMsyncMetaData::misc     ={{0}};         // some meaningful bitmask
+    // MU allsided multisync
+    //----------------------------------------------------------------------------
+    void MUMsyncMetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0],"MUMultiSyncComposite",32);
+    }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Barrier::MultiSyncComposite,
-                                                              PAMI::CollRegistration::MUMsyncMetaData::metadata,
+                                                              MUMsyncMetaData,
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiSyncFactory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<__LINE__> MUMcombMetaData;
-    template<> const char*     MUMcombMetaData::mstring="MUMultiCombComposite";
-    template<> const pami_ca_t MUMcombMetaData::geometry ={{0xF0}};      // some meaningful bitmask
-    template<> const pami_ca_t MUMcombMetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
-    template<> const pami_ca_t MUMcombMetaData::misc     ={{0}};         // some meaningful bitmask
+    // MU allsided multicast
+    //----------------------------------------------------------------------------
+    void MUMcombMetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0],"MUMultiCombComposite",32);
+    }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Allreduce::MultiCombineComposite,
-                                                              PAMI::CollRegistration::MUMcombMetaData::metadata,
+                                                              MUMcombMetaData,
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiCombineFactory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<__LINE__> MUMcastMetaData;
-    template<> const char*     MUMcastMetaData::mstring="MUMultiCastComposite";
-    template<> const pami_ca_t MUMcastMetaData::geometry ={{0xF0}};      // some meaningful bitmask
-    template<> const pami_ca_t MUMcastMetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
-    template<> const pami_ca_t MUMcastMetaData::misc     ={{0}};         // some meaningful bitmask
+    // MU allsided multicast
+    //----------------------------------------------------------------------------
+    void MUMcastMetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0],"MUMultiCastComposite",32);
+    }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite,
-                                                              PAMI::CollRegistration::MUMcastMetaData::metadata,
+                                                              MUMcastMetaData,
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiCastFactory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<__LINE__> MUMcast2MetaData;
-    template<> const char*     MUMcast2MetaData::mstring="MUMultiCast2Composite";
-    template<> const pami_ca_t MUMcast2MetaData::geometry ={{0xF0}};      // some meaningful bitmask
-    template<> const pami_ca_t MUMcast2MetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
-    template<> const pami_ca_t MUMcast2MetaData::misc     ={{0}};         // some meaningful bitmask
+    // MU allsided multicast built on active message multicast with an 
+    // synchronizing multisync 
+    //----------------------------------------------------------------------------
+    void MUMcast2MetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0],"MUMultiCast2Composite",32);
+    }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite2,
-                                                              PAMI::CollRegistration::MUMcast2MetaData::metadata,
+                                                              MUMcast2MetaData,
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiCast2Factory;
 
     //----------------------------------------------------------------------------
-    typedef MetaData<__LINE__> MUMcast3MetaData;
-    template<> const char*     MUMcast3MetaData::mstring="MUMultiCast3Composite";
-    template<> const pami_ca_t MUMcast3MetaData::geometry ={{0xF0}};      // some meaningful bitmask
-    template<> const pami_ca_t MUMcast3MetaData::buffer   ={{0xF2|0xF3}}; // some meaningful bitmask
-    template<> const pami_ca_t MUMcast3MetaData::misc     ={{0}};         // some meaningful bitmask
+    // MU allsided multicast built on multicombine (BOR)
+    //----------------------------------------------------------------------------
+    void MUMcast3MetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0],"MUMultiCast3Composite",32);
+    }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT<CCMI::Adaptor::Broadcast::MultiCastComposite3,
-                                                              PAMI::CollRegistration::MUMcast3MetaData::metadata,
+                                                              MUMcast3MetaData,
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiCast3Factory;
 
     //----------------------------------------------------------------------------
