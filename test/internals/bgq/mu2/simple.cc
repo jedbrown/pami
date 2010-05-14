@@ -15,6 +15,8 @@
 //#include "components/memory/MemoryManager.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/bgq/mu2/Context.h"
+#include "components/devices/bgq/mu2/model/DmaModel.h"
+#include "components/devices/bgq/mu2/model/DmaModelMemoryFifoCompletion.h"
 #include "components/devices/bgq/mu2/model/PacketModel.h"
 #include "components/devices/bgq/mu2/model/PacketModelDeposit.h"
 #include "components/devices/bgq/mu2/model/PacketModelInterrupt.h"
@@ -28,6 +30,9 @@ typedef PAMI::Device::MU::Context MuDevice;
 //typedef PAMI::Device::MU::PacketModel MuPacketModel;
 //typedef PAMI::Device::MU::PacketModelDeposit MuPacketModel;
 typedef PAMI::Device::MU::PacketModelInterrupt MuPacketModel;
+
+//typedef PAMI::Device::MU::DmaModel MuDmaModel;
+typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 
 //typedef PAMI::Protocol::Send::Eager<T_Model, MuDevice> MuEager;
 
@@ -47,8 +52,9 @@ int main(int argc, char ** argv)
   MuDevice mu (global, 0, 0, 1, progress);
   mu.init (0); // id_client
 
-
-  MuPacketModel model (mu);
+  pami_result_t result;
+  MuPacketModel pkt (mu);
+  MuDmaModel dma (mu, result);
 
 #if 0  // use pami protocols .. depends on pami.h types
   pami_result_t result;

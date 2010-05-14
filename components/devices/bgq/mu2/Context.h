@@ -47,6 +47,14 @@ namespace PAMI
       ///
       class Context : public Interface::BaseDevice<Context>, public Interface::PacketDevice<Context>
       {
+        public:
+          typedef struct
+          {
+            pami_event_function fn;
+            void *              cookie;
+          } notify_t;
+
+
         protected:
 
           typedef struct
@@ -73,6 +81,22 @@ namespace PAMI
             return 0;
           };
 
+          /// \see PAMI::Device::Interface::RecvFunction_t
+          static int notify (void   * metadata,
+                             void   * payload,
+                             size_t   bytes,
+                             void   * recv_func_parm,
+                             void   * cookie)
+          {
+            notify_t * n = (notify_t *) payload;
+
+            n->fn (recv_func_parm, // a.k.a. "pami_context_t"
+                   n->cookie,
+                   PAMI_SUCCESS);
+
+            return 0;
+          };
+
 #if CONTEXT_ALLOCATES_RESOURCES
 	  MUSPI_InjFifoSubGroup_t       _ififo_subgroup;
 	  MUSPI_RecFifoSubGroup_t       _rfifo_subgroup;
@@ -90,6 +114,8 @@ namespace PAMI
           /// Number of payload bytes available in a packet.
           /// \todo replace with a constant from SPIs somewhere
           static const size_t payload_size          = 512;
+
+          static const uint16_t dispatch_system_notify = dispatch_set_count * dispatch_set_size - 1;
 
           ///
           /// \brief foo
@@ -125,7 +151,8 @@ namespace PAMI
             // replaced with an 'unexpected packet' function and queue.
             size_t i;
 
-            for (i = 0; i < MU::Context::dispatch_set_count * MU::Context::dispatch_set_size; i++)
+            size_t n = MU::Context::dispatch_set_count * MU::Context::dispatch_set_size;
+            for (i = 0; i < n; i++)
               {
                 _dispatch[i].f = noop;
                 _dispatch[i].p = (void *) i;
@@ -156,6 +183,16 @@ namespace PAMI
             // Need to find a way to break this dependency...
             //_client = client;
             //_context = context;
+
+            // ----------------------------------------------------------------
+            // Initialize any mu "system" dispatch functions
+            _dispatch[dispatch_system_notify].f = notify;
+            _dispatch[dispatch_system_notify].p = (void *) NULL; //_context;
+
+            //_dispatch[DISPATCH_SYSTEM_AVAILABLE].f = ;
+            //_dispatch[DISPATCH_SYSTEM_AVAILABLE].p = ;
+            // ----------------------------------------------------------------
+
 
 #if CONTEXT_ALLOCATES_RESOURCES
 	    _ififoid = 0;
@@ -359,6 +396,16 @@ namespace PAMI
             return false;
           }
 
+          /// \copydoc Mapping::getMuDestinationSelf
+          inline MUHWI_Destination_t * getMuDestinationSelf ()
+          {
+            return _global.mapping.getMuDestinationSelf();
+          };
+
+          inline uint16_t getRecptionFifoIdSelf ()
+          {
+            return _rfifoid;
+          };
 
           ///
           /// \brief
@@ -399,10 +446,43 @@ namespace PAMI
                                  uint8_t             & hintsE)
           {
             *ififo = MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup);
+            
+            // Calculate the destination recpetion fifo identifier based on
+            // the destination task+offset.  This is important for
+            // multi-context support.
             rfifo = _rfifoid;
-            map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM; //In loopback we send only on AM
+
+            // In loopback we send only on AM
+            map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
+            hintsABCD = MUHWI_PACKET_HINT_AM |
+                        MUHWI_PACKET_HINT_B_NONE |
+                        MUHWI_PACKET_HINT_C_NONE |
+                        MUHWI_PACKET_HINT_D_NONE;
+            hintsE    = MUHWI_PACKET_HINT_E_NONE;
 
             return  0;
+          }
+
+          ///
+          /// \param[in]  from_task   Origin task identifier
+          /// \param[in]  from_offset Origin task context offset identifier
+          /// \param[out] map         Pinned MUSPI torus injection fifo map
+          /// \param[out] hintsABCD   Pinned ABCD torus hints
+          /// \param[out] hintsE      Pinned E torus hints
+          ///
+          inline void pinInformation (size_t     from_task,
+                                      size_t     from_offset,
+                                      uint64_t & map,
+                                      uint8_t  & hintsABCD,
+                                      uint8_t  & hintsE)
+          {
+            // In loopback we send only on AM
+            map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
+            hintsABCD = MUHWI_PACKET_HINT_AM |
+                        MUHWI_PACKET_HINT_B_NONE |
+                        MUHWI_PACKET_HINT_C_NONE |
+                        MUHWI_PACKET_HINT_D_NONE;
+            hintsE    = MUHWI_PACKET_HINT_E_NONE;
           }
 
           ///
