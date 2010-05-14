@@ -26,52 +26,67 @@ namespace CCMI
 
     class CollectiveProtocolFactory
     {
-    public:
-      CollectiveProtocolFactory ()
-      {
-        _cb_geometry = NULL;
-      }
-
-      void setMapIdToGeometry(pami_mapidtogeometry_fn     cb_geometry) {
-        _cb_geometry = cb_geometry;
-      }
-
-
-      pami_geometry_t getGeometry(unsigned id) {
-        CCMI_assert (_cb_geometry != NULL);
-        return _cb_geometry (id);
-      }
-
-      virtual ~CollectiveProtocolFactory ()
-      {
-      }
-
-      /// NOTE: This is required to make "C" programs link successfully with virtual destructors
-      void operator delete(void * p)
-      {
-        CCMI_abort();
-      }
-
-      virtual Executor::Composite * generate(pami_geometry_t              geometry,
-                                             void                      * cmd) = 0;
-
-      virtual void metadata(pami_metadata_t *mdata) = 0;
-
-      virtual void setAsyncInfo (bool                          is_buffered,
-                                 pami_dispatch_callback_fn      cb_async,
-                                 pami_mapidtogeometry_fn        cb_geometry)
+      public:
+        CollectiveProtocolFactory ()
         {
+          TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+          _cb_geometry = NULL;
+        }
+
+        void setMapIdToGeometry(pami_mapidtogeometry_fn     cb_geometry)
+        {
+          TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+          _cb_geometry = cb_geometry;
+        }
+
+
+        pami_geometry_t getGeometry(unsigned id)
+        {
+          TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+          CCMI_assert (_cb_geometry != NULL);
+          return _cb_geometry (id);
+        }
+
+        virtual ~CollectiveProtocolFactory ()
+        {
+        }
+
+        /// NOTE: This is required to make "C" programs link successfully with virtual destructors
+        void operator delete(void * p)
+        {
+          CCMI_abort();
+        }
+
+        virtual Executor::Composite * generate(pami_geometry_t              geometry,
+                                               void                      * cmd) = 0;
+
+        virtual void metadata(pami_metadata_t *mdata) = 0;
+
+        virtual void setAsyncInfo (bool                          is_buffered,
+                                   pami_dispatch_callback_fn      cb_async,
+                                   pami_mapidtogeometry_fn        cb_geometry)
+        {
+          TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           PAMI_abort();
         };
 
-      pami_mapidtogeometry_fn getMapIdToGeometry() {
-        return _cb_geometry;
-      }
+        pami_mapidtogeometry_fn getMapIdToGeometry()
+        {
+          TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+          return _cb_geometry;
+        }
 
-    protected:
-      pami_mapidtogeometry_fn              _cb_geometry;
+      protected:
+        pami_mapidtogeometry_fn              _cb_geometry;
     };
   };
 };
 
 #endif
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

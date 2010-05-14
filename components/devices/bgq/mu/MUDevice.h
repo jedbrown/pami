@@ -546,7 +546,7 @@ int PAMI::Device::MU::MUDevice::advance()
   if ( _colRecvChannelFlag )
     events += _colChannel->advanceRecv();
 
-#if 1
+#if 0
   static size_t loopcount = 0;
   if(events) loopcount = 0;
   else if (loopcount++ > 100000) PAMI_abortf("Lots of advancing going on.\n");

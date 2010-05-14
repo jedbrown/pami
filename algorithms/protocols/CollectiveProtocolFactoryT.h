@@ -19,80 +19,80 @@ namespace CCMI
     typedef void      (*MetaDataFn)   (pami_metadata_t *m);
 
     template <class T, MetaDataFn get_metadata, class C>
-      class CollectiveProtocolFactoryT: public CollectiveProtocolFactory
+    class CollectiveProtocolFactoryT: public CollectiveProtocolFactory
     {
-    public:
-      class collObj
-      {
       public:
-        collObj(Interfaces::NativeInterface             * native,
-               C                                        * cmgr,
-               pami_geometry_t                            geometry,
-               pami_xfer_t                              * cmd,
-               pami_event_function                        fn,
-               void                                     * cookie,
-               CollectiveProtocolFactoryT               * factory):
-          _obj(native,cmgr,geometry,cmd,fn,cookie),
-          _factory(factory),
-          _user_done_fn(cmd->cb_done),
-	  _user_cookie(cmd->cookie)
-          {
-            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
-          DO_DEBUG((templateName<T>()));
-          }
-        void done_fn( pami_context_t   context,
-                      pami_result_t    result )
+        class collObj
         {
-          _user_done_fn(context, _user_cookie, result);
+          public:
+            collObj(Interfaces::NativeInterface             * native,
+                    C                                        * cmgr,
+                    pami_geometry_t                            geometry,
+                    pami_xfer_t                              * cmd,
+                    pami_event_function                        fn,
+                    void                                     * cookie,
+                    CollectiveProtocolFactoryT               * factory):
+                _obj(native, cmgr, geometry, cmd, fn, cookie),
+                _factory(factory),
+                _user_done_fn(cmd->cb_done),
+                _user_cookie(cmd->cookie)
+            {
+              TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::collObj()\n",this));
+              DO_DEBUG((templateName<T>()));
+            }
+            void done_fn( pami_context_t   context,
+                          pami_result_t    result )
+            {
+              _user_done_fn(context, _user_cookie, result);
+            }
+
+            T                            _obj;
+            CollectiveProtocolFactoryT * _factory;
+            pami_event_function          _user_done_fn;
+            void                       * _user_cookie;
+        };
+
+      public:
+        CollectiveProtocolFactoryT (C                           *cmgr,
+                                    Interfaces::NativeInterface *native,
+                                    pami_dispatch_multicast_fn   cb_head = NULL):
+            CollectiveProtocolFactory(),
+            _cmgr(cmgr),
+            _native(native)
+        {
+          TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT()\n",this));
+          DO_DEBUG((templateName<MetaDataFn>()));
+          pami_dispatch_callback_fn fn;
+          fn.multicast = (pami_dispatch_multicast_fn) cb_head;
+          _native->setDispatch(fn, this);
         }
 
-	T                            _obj;
-        CollectiveProtocolFactoryT * _factory;
-        pami_event_function          _user_done_fn;
-        void                       * _user_cookie;
-      };
-
-    public:
-      CollectiveProtocolFactoryT (C                           *cmgr,
-                                  Interfaces::NativeInterface *native,
-                                  pami_dispatch_multicast_fn   cb_head=NULL):
-        CollectiveProtocolFactory(),
-        _cmgr(cmgr),
-        _native(native)
-      {
-        TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
-        DO_DEBUG((templateName<MetaDataFn>()));
-        pami_dispatch_callback_fn fn;
-        fn.multicast = (pami_dispatch_multicast_fn) cb_head;
-        _native->setDispatch(fn, this);
-      }
-
-      virtual ~CollectiveProtocolFactoryT ()
-      {
-      }
-
-      /// NOTE: This is required to make "C" programs link successfully with virtual destructors
-      void operator delete(void * p)
-      {
-        CCMI_abort();
-      }
-
-      static void done_fn(pami_context_t  context,
-                          void           *clientdata,
-                          pami_result_t   res)
+        virtual ~CollectiveProtocolFactoryT ()
         {
-          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+        }
+
+        /// NOTE: This is required to make "C" programs link successfully with virtual destructors
+        void operator delete(void * p)
+        {
+          CCMI_abort();
+        }
+
+        static void done_fn(pami_context_t  context,
+                            void           *clientdata,
+                            pami_result_t   res)
+        {
           collObj *cobj = (collObj *)clientdata;
+          TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::done_fn()\n",cobj));
           cobj->done_fn(context, res);
           cobj->_factory->_alloc.returnObject(cobj);
         }
 
 
-      virtual Executor::Composite * generate(pami_geometry_t             geometry,
-                                             void                      * cmd)
+        virtual Executor::Composite * generate(pami_geometry_t             geometry,
+                                               void                      * cmd)
         {
-          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
           collObj *cobj = (collObj*) _alloc.allocateObject();
+          TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::generate()\n",cobj));
           new(cobj) collObj(_native,          // Native interface
                             _cmgr,            // Connection Manager
                             geometry,         // Geometry Object
@@ -103,18 +103,25 @@ namespace CCMI
           return (Executor::Composite *)&cobj->_obj;
         }
 
-      virtual void metadata(pami_metadata_t *mdata)
+        virtual void metadata(pami_metadata_t *mdata)
         {
-          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+          TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::metadata()\n",this));
           DO_DEBUG((templateName<MetaDataFn>()));
           get_metadata(mdata);
         }
 
-      C                                          * _cmgr;
-      Interfaces::NativeInterface                * _native;
-      PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;
+        C                                          * _cmgr;
+        Interfaces::NativeInterface                * _native;
+        PAMI::MemoryAllocator < sizeof(collObj), 16 >   _alloc;
     };
   };
 };
 
 #endif
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

@@ -12,9 +12,7 @@
  */
 #include "components/devices/bgq/mu/MUMulticombineModel.h"
 
-#ifdef TRACE
-  #undef TRACE
-#endif
+#undef TRACE
 #define TRACE(x) //fprintf x
 
 #if 0  // extra debug - trace the op/dt strings

@@ -16,9 +16,9 @@
 
 #include "components/memory/MemoryAllocator.h"
 
-#ifndef TRACE_ERR
-  #define TRACE_ERR(x) //fprintf x
-#endif
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+
 extern PAMI::Global __global;
 
 #define DISPATCH_START 0x10

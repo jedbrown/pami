@@ -23,54 +23,58 @@ namespace CCMI
       ///  \brief Base class for synchronous broadcasts
       ///
       template <int NUMCOLORS, class T_Sched, class T_Conn, Executor::GetColorsFn pwcfn>
-        class BcastMultiColorCompositeT : public Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
+      class BcastMultiColorCompositeT : public Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
       {
       public:
 
-      BcastMultiColorCompositeT(Interfaces::NativeInterface              * mf,
-                                T_Conn                                   * cmgr,
-                                pami_geometry_t                             g,
-                                void                                     * cmd,
-                                pami_event_function                         fn,
-                                void                                     * cookie):
+        BcastMultiColorCompositeT(Interfaces::NativeInterface              * mf,
+                                  T_Conn                                   * cmgr,
+                                  pami_geometry_t                             g,
+                                  void                                     * cmd,
+                                  pami_event_function                         fn,
+                                  void                                     * cookie):
         Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
-	  ( cmgr,
-            fn,
-            cookie,
-            mf,
-	    NUMCOLORS)
-          {
-            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
-	    Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::
-	      initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(),
-			  (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(0),
-			  ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.root,
-			  ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount,
-			  ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
-			  ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf);
+        ( cmgr,
+          fn,
+          cookie,
+          mf,
+          NUMCOLORS)
+        {
+          TRACE_ADAPTOR((stderr, "<%p>BcastMultiColorCompositeT()\n",this));
+          Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::
+          initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(),
+                      (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(0),
+                      ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.root,
+                      ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount,
+                      ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
+                      ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf);
 
-            SyncBcastPost();
+          SyncBcastPost();
 
-            PAMI_GEOMETRY_CLASS *geometry = ((PAMI_GEOMETRY_CLASS *)g);
-            CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
-              geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
-            barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
-            //barrier->setConsistency (consistency);
-            barrier->start();
-          }
+          PAMI_GEOMETRY_CLASS *geometry = ((PAMI_GEOMETRY_CLASS *)g);
+          CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
+                                                 geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
+          this->addBarrier(barrier);
+          barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
+          //barrier->setConsistency (consistency);
+          barrier->start();
+        }
 
-        void SyncBcastPost () {
-          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+        void SyncBcastPost ()
+        {
+          TRACE_ADAPTOR((stderr, "<%p>BcastMultiColorCompositeT::SyncBcastPost()\n",this));
           Executor::BroadcastExec<T_Conn> *exec = (Executor::BroadcastExec<T_Conn> *) Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::getExecutor(0);
           unsigned root = exec->getRoot();
 
-          if ( Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_native->myrank() != root) {
+          if (Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_native->myrank() != root)
+          {
             unsigned ncolors = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_numColors;
-
-	    //fprintf(stderr,"SyncBcastPost ncolors %d\n",ncolors);
-            for(unsigned c = 0; c < ncolors; c++) {
+            //fprintf(stderr,"SyncBcastPost ncolors %d\n",ncolors);
+            for (unsigned c = 0; c < ncolors; c++)
+            {
+              TRACE_ADAPTOR((stderr, "<%p>BcastMultiColorCompositeT::SyncBcastPost() post receives for color %u, root %u\n",this,c,root));
               Executor::BroadcastExec<T_Conn> *exec = (Executor::BroadcastExec<T_Conn> *) Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::getExecutor(c);
-	      exec->setPostReceives(true);
+              exec->setPostReceives(true);
               exec->postReceives();
             }
           }
@@ -82,3 +86,10 @@ namespace CCMI
 };
 
 #endif
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

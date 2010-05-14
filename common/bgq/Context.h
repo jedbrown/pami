@@ -37,9 +37,9 @@
 #include "TypeDefs.h"
 #include "algorithms/geometry/BGQMultiRegistration.h"
 
-#ifdef TRACE_ERR
+#include "algorithms/geometry/BGQCCMIRegistration.h"
+
 #undef TRACE_ERR
-#endif
 #define TRACE_ERR(x) //fprintf x
 
 
@@ -49,6 +49,13 @@ namespace PAMI
   typedef Mutex::CounterMutex<Counter::BGQ::L2ProcCounter>  ContextLock;
 
   typedef MemoryAllocator<2048, 16> ProtocolAllocator;
+
+  typedef CollRegistration::BGQ::CCMIRegistration<BGQGeometry,
+                                             MUNI,
+                                             MUNI_AS,
+                                             ShmemDevice,
+                                             MUDevice,
+                                             ProtocolAllocator> CCMIRegistration;
 
   /**
    * \brief Class containing all devices used on this platform.
@@ -218,6 +225,7 @@ namespace PAMI
           _sysdep (_mm),
           _lock(),
           _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >*) _multi_registration_storage),
+          _ccmi_registration((CCMIRegistration*)_ccmi_registration_storage),
           _world_geometry(world_geometry),
           _status(PAMI_SUCCESS),
           _shmemMcastModel(NULL),
@@ -226,6 +234,7 @@ namespace PAMI
           _shmem_native_interface(NULL),
           _devices(devices),
           _global_mu_ni(NULL)
+
       {
         TRACE_ERR((stderr,  "<%p>Context::Context() enter\n",this));
         // ----------------------------------------------------------------
@@ -267,6 +276,7 @@ namespace PAMI
           rput_mu = Protocol::Put::PutRdma <Device::MU::MUDmaModel<false>, MUDevice>::
             generate (_devices->_mu[_contextid], _request, result);
           if (result != PAMI_SUCCESS) rput_mu = NULL;
+
         }
 
 #if 0
@@ -329,10 +339,10 @@ namespace PAMI
          }
        }
 #endif
-        if(__global.useshmem())
-        {
-          // Can't construct these models on single process nodes (no shmem)
-          if (__global.topology_local.size() > 1)
+       if(__global.useshmem())
+       {
+         // Can't construct these models on single process nodes (no shmem)
+         if (__global.topology_local.size() > 1)
           {
             TRACE_ERR((stderr,  "<%p>Context::Context() construct shmem native interface and models\n",this));
             _shmemMcastModel         = (Device::LocalBcastWQModel*)_shmemMcastModel_storage;
@@ -342,6 +352,7 @@ namespace PAMI
             new (_shmemMsyncModel_storage)        Barrier_Model(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid),_status);
             new (_shmemMcastModel_storage)        Device::LocalBcastWQModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid),_status);
             new (_shmemMcombModel_storage)        Device::LocalAllreduceWQModel(PAMI::Device::LocalAllreduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid),_status);
+
 
             _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
             new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid);
@@ -360,11 +371,14 @@ namespace PAMI
           else TRACE_ERR((stderr, "topology does not support shmem\n"));
         }
 
-        TRACE_ERR((stderr,  "<%p>Context::Context() Register collectives(%p,%p,%p,%p,%zu,%zu\n",this, _shmem_native_interface, _global_mu_ni, client, this, id, clientid));
+       _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid,_devices->_shmem[_contextid],_devices->_mu[_contextid],_protocol);
+       _ccmi_registration->analyze(_contextid, _world_geometry);
+
+       TRACE_ERR((stderr,  "<%p>Context::Context() Register collectives(%p,%p,%p,%p,%zu,%zu\n",this, _shmem_native_interface, _global_mu_ni, client, this, id, clientid));
         // The multi registration will use shmem/mu if they are ctor'd above.
         _multi_registration       =  new (_multi_registration)
         CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >(_shmem_native_interface, _global_mu_ni, client, (pami_context_t)this, id, clientid);
-
+  
         _multi_registration->analyze(_contextid, _world_geometry);
 
         // Complete rget and rput protocol initialization
@@ -864,6 +878,7 @@ namespace PAMI
                                   BGQGeometry    *geometry)
       {
         pami_result_t result = PAMI_NERROR;
+        result = _ccmi_registration->analyze(context_id,geometry);
         result = _multi_registration->analyze(context_id,geometry);
         return result;
       }
@@ -886,6 +901,7 @@ namespace PAMI
       ContextLock                  _lock;
     public:
       CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >    *_multi_registration;
+      CCMIRegistration            *_ccmi_registration;
       BGQGeometry                 *_world_geometry;
     private:
       pami_result_t                _status;
@@ -893,6 +909,7 @@ namespace PAMI
       Barrier_Model               *_shmemMsyncModel;
       Device::LocalAllreduceWQModel  *_shmemMcombModel;
       AllSidedShmemNI             *_shmem_native_interface;
+      uint8_t                      _ccmi_registration_storage[sizeof(CCMIRegistration)];
       uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >)];
       uint8_t                      _shmemMcastModel_storage[sizeof(Device::LocalBcastWQModel)];
       uint8_t                      _shmemMsyncModel_storage[sizeof(Barrier_Model)];
@@ -902,6 +919,7 @@ namespace PAMI
       PlatformDeviceList          *_devices;
       MUGlobalNI                  *_global_mu_ni;
       uint8_t                      _global_mu_ni_storage[sizeof(MUGlobalNI)];
+
   }; // end PAMI::Context
 }; // end namespace PAMI
 

@@ -21,9 +21,7 @@
 #include <spi/include/kernel/MU.h>
 #include <spi/include/kernel/memory.h>
 
-#ifdef TRACE
 #undef TRACE
-#endif
 #define TRACE(x) //fprintf x
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -290,9 +288,12 @@ advanceInternal ()
         {
           waitToSendMaskCopy &= ~mask;   // Turn off the bit we are processing.
 
+          TRACE((stderr, "InjFifoSubGroup::advance() waitToSend Processing fnum %d, Bit 0x%08llx, Bits left=0x%08llx\n",
+                 fnum, mask, waitForDoneMaskCopy));
           while (1)
             {
               msg = (InjFifoMessage *) _waitToSendQ[fnum].peekHead(); // Get first message
+              TRACE((stderr, "InjFifoSubGroup::advance()  msg = %p\n", msg));
 
               if (msg == NULL) // No more messages waiting to send on this fifo?
                 {
@@ -313,6 +314,7 @@ advanceInternal ()
                       // This message has completed injecting descriptors.
                       _waitToSendQ[fnum].popHead();
 
+                      TRACE((stderr, "InjFifoSubGroup::advance()  msg %p is done (isCallbackDesired = %d)\n", msg, msg->isCallbackDesired()));
                       if (msg->isCallbackDesired ())
                         {
                           addToDoneQ (fnum, msg->getWrapper());
@@ -324,6 +326,7 @@ advanceInternal ()
                   // There is no spacae available in this injection fifo. Therefore,
                   // the message is not done and there is nothing left to process for
                   // this injection fifo.
+                  TRACE((stderr, "InjFifoSubGroup::advance()  msg %p is NOT done\n", msg));
                   break;
                 }
             }

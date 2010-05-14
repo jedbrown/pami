@@ -24,7 +24,6 @@
   #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
   #include "components/devices/workqueue/LocalReduceWQMessage.h"
   #include "components/devices/workqueue/LocalBcastWQMessage.h"
-//  #include "components/devices/bgq/P2PMcastAM.h"
   #include "components/devices/bgq/mu/MUDevice.h"
   #include "components/devices/bgq/mu/MUPacketModel.h"
   #include "components/devices/bgq/mu/MUDmaModel.h"
@@ -38,11 +37,13 @@
 #include "p2p/protocols/send/composite/Composite.h"
 #include "p2p/protocols/rget/GetRdma.h"
 #include "p2p/protocols/rput/PutRdma.h"
+#include "p2p/protocols/SendPWQ.h"
 
 #include "components/atomic/bgq/L2Counter.h"
 #include "components/atomic/counter/CounterBarrier.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 
+#include "common/NativeInterface.h"
 #include "common/bgq/NativeInterface.h"
 
 #include "algorithms/geometry/Geometry.h"
@@ -57,16 +58,24 @@ namespace PAMI
                                Device::MU::MUMulticastModel,
                                Device::MU::MUMultisyncModel,
                                Device::MU::MUMulticombineModel > MUGlobalNI;
-
+  
   typedef Fifo::FifoPacket <32, 512> ShmemPacket;
   typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgqShaddrReadOnly> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
   typedef Device::Shmem::DmaModel<ShmemDevice> ShmemDmaModel;
 
-  typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice> EagerShmem;
+  typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice> ShmemEagerBase;
+  typedef PAMI::Protocol::Send::SendPWQ < ShmemEagerBase > ShmemEager;
+  typedef PAMI::NativeInterfaceActiveMessage<ShmemEager> ShmemNI; // shmem over p2p eager
 
-//  typedef Protocol::BGQ::P2PMcastAM<ShmemDevice, EagerShmem, Device::LocalBcastWQModel,Device::LocalBcastWQDevice> ActiveMessageMcast;
+  typedef Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true> MUEagerBase;
+  typedef PAMI::Protocol::Send::SendPWQ < MUEagerBase > MUEager;
+  typedef PAMI::NativeInterfaceActiveMessage<MUEager> MUNI; // Mu over p2p eager
+  typedef PAMI::NativeInterfaceAllsided<MUEager> MUNI_AS; // Mu over p2p eager
+
+  typedef PAMI::NativeInterfaceActiveMessage< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI; // shmem + MU over p2p eager
+
 
   typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2NodeCounter> Barrier_Type;
 

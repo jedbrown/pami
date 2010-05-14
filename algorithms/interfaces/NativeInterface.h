@@ -14,34 +14,41 @@ namespace CCMI
   {
     class NativeInterface
     {
-    protected:
-      unsigned         _myrank;
-      unsigned         _numranks;
+      protected:
+        unsigned         _myrank;
+        unsigned         _numranks;
 
-    public:
-      NativeInterface(unsigned myrank,
-                      unsigned numranks): _myrank(myrank),_numranks(numranks){}
-      ///
-      /// \brief Virtual destructors make compilers happy.
-      ///
-      virtual inline ~NativeInterface() {};
+      public:
+        NativeInterface(unsigned myrank,
+                        unsigned numranks): _myrank(myrank), _numranks(numranks) {}
+        ///
+        /// \brief Virtual destructors make compilers happy.
+        ///
+        virtual inline ~NativeInterface() {};
 
-      unsigned myrank()   { return _myrank; }
-      unsigned numranks() { return _numranks; }
+        unsigned myrank()   { return _myrank; }
+        unsigned numranks() { return _numranks; }
 
-      /// \brief this call is called when an active message native interface is initialized and
-      /// is not supported on all sided native interfaces
-      virtual pami_result_t setDispatch(pami_dispatch_callback_fn fn,
-                                        void *cookie)
-      {
-        PAMI_abort();
-      }
-      virtual pami_result_t multicast(pami_multicast_t *mcast) = 0;
-      virtual pami_result_t multisync(pami_multisync_t *msync) = 0;
-      virtual pami_result_t multicombine(pami_multicombine_t *mcombine) = 0;
-      virtual pami_result_t manytomany(pami_manytomany_t *m2minfo) = 0;
+        /// \brief this call is called when an active message native interface is initialized and
+        /// is not supported on all sided native interfaces
+        virtual pami_result_t setDispatch(pami_dispatch_callback_fn fn,
+                                          void *cookie)
+        {
+          PAMI_abort();
+        }
+        virtual pami_result_t multicast(pami_multicast_t *mcast) = 0;
+        virtual pami_result_t multisync(pami_multisync_t *msync) = 0;
+        virtual pami_result_t multicombine(pami_multicombine_t *mcombine) = 0;
+        virtual pami_result_t manytomany(pami_manytomany_t *m2minfo) = 0;
     };
   };
 };
 
 #endif
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

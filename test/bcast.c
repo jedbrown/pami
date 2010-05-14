@@ -8,6 +8,10 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
+
+//define this if you want to validate the data
+#define CHECK_DATA
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -20,6 +24,7 @@
 #define NITER 100
 #endif
 
+size_t task_id;
 volatile unsigned       _g_barrier_active;
 volatile unsigned       _g_broadcast_active;
 
@@ -46,7 +51,8 @@ static double timer()
 
 void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
-  TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
+  static unsigned barrierCount = 0;
+  TRACE_ERR((stderr,"%s %u\n", __PRETTY_FUNCTION__,barrierCount));
   _g_barrier_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)barrier);
@@ -57,12 +63,15 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
   }
   while (_g_barrier_active)
     result = PAMI_Context_advance (context, 1);
+  TRACE_ERR((stderr, "%s exit %u\n", __PRETTY_FUNCTION__,barrierCount));
+  barrierCount++;
 
 }
 
 void _broadcast (pami_context_t context, pami_xfer_t *broadcast)
 {
-  TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
+  static unsigned broadcastCount = 0;
+  TRACE_ERR((stderr, "%s %u\n", __PRETTY_FUNCTION__,broadcastCount));
   _g_broadcast_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)broadcast);
@@ -73,8 +82,38 @@ void _broadcast (pami_context_t context, pami_xfer_t *broadcast)
   }
   while (_g_broadcast_active)
     result = PAMI_Context_advance (context, 1);
-
+  TRACE_ERR((stderr, "%s exit %u\n", __PRETTY_FUNCTION__,broadcastCount));
+  broadcastCount++;
 }
+#ifdef CHECK_DATA
+void initialize_sndbuf (void *buf, int bytes) {
+
+  char c = 0x00;
+  int i = bytes;
+  unsigned char *cbuf = (unsigned char *)  buf;
+  for (; i; i--) {
+    cbuf[i-1] = c++;
+  }
+}
+
+int check_rcvbuf (void *buf, int bytes) {
+
+  char c = 0x00;
+  int i = bytes;
+  unsigned char *cbuf = (unsigned char *)  buf;
+  for (; i; i--) {
+    if(cbuf[i-1] != c)
+    {
+      fprintf(stderr, "Check failed %.2u != %.2u \n",cbuf[i-1],c);
+      return -1;
+    }
+    c++;
+  }
+  TRACE_ERR((stderr,"Check Passes\n"));
+
+  return 0;
+}
+#endif
 
 int main (int argc, char ** argv)
 {
@@ -108,7 +147,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
     return 1;
   }
-  size_t task_id = configuration.value.intval;
+  task_id = configuration.value.intval;
 
 
   pami_geometry_t  world_geometry;
@@ -134,7 +173,7 @@ int main (int argc, char ** argv)
              result);
     return 1;
   }
-  TRACE_ERR((stderr, "%s task_id %zu, num_algorithm %u/%u\n", __PRETTY_FUNCTION__, task_id, num_algorithm[0],num_algorithm[1]));
+  TRACE_ERR((stderr, "%s task_id %zu, barrier num_algorithm %u/%u\n", __PRETTY_FUNCTION__, task_id, num_algorithm[0],num_algorithm[1]));
 
   if (num_algorithm[0])
   {
@@ -151,6 +190,11 @@ int main (int argc, char ** argv)
                                           NULL,
                                           0);
 
+  }
+  else 
+  {
+      fprintf(stderr,"ERROR. We need a working barrier to continue\n");
+      return 1;
   }
 
   pami_algorithm_t *bcastalgorithm=NULL;
@@ -194,6 +238,16 @@ int main (int argc, char ** argv)
               "result = %d\n", result);
       return 1;
     }
+    int i=0;
+    for(;i<bcastnum_algorithm[0];++i)
+    {
+      TRACE_ERR((stderr, "%s PAMI_Geometry_query metas[%d]=%s\n", __PRETTY_FUNCTION__,i,metas[i].name));
+    }
+  }
+  else
+  {
+    fprintf (stderr, "NOOP. No broadcasts defined\n");
+    return 0;
   }
 
   double ti, tf, usec;
@@ -202,6 +256,7 @@ int main (int argc, char ** argv)
   barrier.cb_done   = cb_barrier;
   barrier.cookie    = (void*)&_g_barrier_active;
   barrier.algorithm = algorithm[0];
+  TRACE_ERR((stderr, "%s barrier next\n", __PRETTY_FUNCTION__));
   _barrier(context, &barrier);
 
   int nalg = 0;
@@ -235,6 +290,12 @@ int main (int argc, char ** argv)
     {
       long long dataSent = i;
       int          niter = NITER;
+#ifdef CHECK_DATA
+      if (task_id == (size_t)root)
+        initialize_sndbuf (buf, i);
+      else
+        memset(buf, 0xFF, i);
+#endif
       _barrier(context, &barrier);
       ti = timer();
       for (j=0; j<niter; j++)
@@ -246,6 +307,9 @@ int main (int argc, char ** argv)
       //Asyncbroadcast will complete at differnet times on different nodes.
       _barrier(context, &barrier);
       tf = timer();
+#ifdef CHECK_DATA
+        check_rcvbuf (buf, i);
+#endif
 
       usec = (tf - ti)/(double)niter;
       if (task_id == (size_t)root)

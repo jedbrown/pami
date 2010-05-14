@@ -12,9 +12,7 @@
 ///
 #include "components/devices/bgq/mu/MUMulticastModel.h"
 
-#ifdef TRACE
-  #undef TRACE
-#endif
+#undef TRACE
 #define TRACE(x) //fprintf x
 
 /// \see MUMulticastModel

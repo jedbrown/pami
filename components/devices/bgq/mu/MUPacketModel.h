@@ -608,12 +608,12 @@ namespace PAMI
 #endif
                   {
                     InjFifoMessage * obj = (InjFifoMessage *) state;
-                    TRACE((stderr, "MUPacketModel::postMultiPacket_impl() .. descriptor is not done, create message (%p) and add to send queue\n", obj));
                     // The descriptor is not done (or was not checked). Save state
                     // information so that the progress of the decriptor can be checked
                     // later and the callback will be invoked when the descriptor is
                     // complete.
                     new (obj) InjFifoMessage (fn, cookie, _context, sequenceNum);
+                    TRACE((stderr, "MUPacketModel::postMultiPacket_impl() .. descriptor is not done, create message (%p/%p) and add to send queue target %d, fifo %d\n", obj,obj->getWrapper(), target_task, obj->getWrapper()->getFIFONum()));
 
                     // Queue it.
                     _device.addToDoneQ (target_task, obj->getWrapper());

@@ -26,7 +26,7 @@ namespace CCMI
     class Composite {
     public:
       //Base Composite class
-      Composite() {TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));}
+      Composite() {TRACE_ADAPTOR((stderr,"<%p>Executor::Composite()\n",this));}
 
       ///
       /// \brief Destructor
@@ -43,7 +43,7 @@ namespace CCMI
       /// \brief start a freshly constructed algorithm composite
       ///
       virtual void start() {
-            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+            TRACE_ADAPTOR((stderr,"<%p>Executor::Composite::start() DO NOTHING?\n",this));
         //Currently not all composites implement this method
 	//	CCMI_abort();
       }
@@ -96,7 +96,7 @@ namespace CCMI
 
       CompositeT () : Composite()
       {
-            TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+            TRACE_ADAPTOR((stderr,"<%p>Executor::CompositeT()\n",this));
         _barrier = NULL;
         for(int count = 0; count < MAX_EXECUTORS; count ++)
           _executors[count] = NULL;
@@ -128,6 +128,7 @@ namespace CCMI
 
       void addBarrier (T_Bar *exec)
       {
+        TRACE_ADAPTOR((stderr,"<%p>Executor::CompositeT::addBarrier()\n",this));
         _barrier = exec;
       }
 

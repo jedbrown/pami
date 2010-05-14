@@ -32,9 +32,7 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 
-#ifdef TRACE
-  #undef TRACE
-#endif
+#undef TRACE
 #define TRACE(x) //fprintf x
 
 

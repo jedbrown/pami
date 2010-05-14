@@ -12,9 +12,7 @@
  */
 #include "components/devices/bgq/mu/MUMultisyncModel.h"
 
-#ifdef TRACE
 #undef TRACE
-#endif
 #define TRACE(x) //fprintf x
 
 /// \see MUMultisyncModel

@@ -14,7 +14,7 @@
 #ifndef __algorithms_connmgr_ColorGeometryConnMgr_h__
 #define __algorithms_connmgr_ColorGeometryConnMgr_h__
 
-#include "algorithms/schedule/Rectangle.h"
+#include "algorithms/schedule/Color.h"
 
 namespace CCMI
 {

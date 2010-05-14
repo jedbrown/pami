@@ -29,9 +29,7 @@
 
 #include "util/queue/Queue.h"
 
-#ifdef TRACE
 #undef TRACE
-#endif
 #define TRACE(x) //fprintf x
 
 namespace PAMI
@@ -138,7 +136,7 @@ namespace PAMI
                                  MUHWI_Descriptor_t * desc )
           {
             int MU_fifoid = _fifoNumbers[fifoNum]; // Map fifoNum to an MU fifo num
-
+            TRACE((stderr, "InjFifoSubGroup::push() fifoNum %d, desc %p\n", fifoNum,  desc));
             MUSPI_InjFifo_t *fifoPtr = MUSPI_IdToInjFifo ( MU_fifoid,
                                                            &_fifoSubGroup );
 
@@ -175,7 +173,7 @@ namespace PAMI
             int fnum = desc.getFIFONum();
 
 #if 0
-            printf("push: wrapper=%p\n", &desc);
+            printf("push: wrapper=%p/%p\n", &desc,desc.getDescriptorPtr());
             desc.dump();
 #endif
 
@@ -196,6 +194,7 @@ namespace PAMI
                     //
                     int MU_fifoid =  _fifoNumbers[fnum];
 
+                    TRACE((stderr, "InjFifoSubGroup::push() ifndef OPTIMIZE_AGGREGATE_LATENCY fifoNum %d\n", MU_fifoid));
                     MUSPI_InjFifo_t *fifoPtr = MUSPI_IdToInjFifo ( MU_fifoid,
                                                                    &_fifoSubGroup );
 
@@ -214,6 +213,8 @@ namespace PAMI
                         // Set bit indicating this fifo has waiters.
                         //
                         desc.setSequenceNumber ( sequenceNum );
+
+                        TRACE((stderr, "InjFifoSubGroup::push() not done fnum %d, desc %p/%p, desc fifonum %d\n", fnum,&desc,desc.getDescriptorPtr(), desc.getFIFONum()));
 
                         if ( _waitForDoneQ[fnum].headPtr == NULL )
                           _waitForDoneQ[fnum].headPtr = &desc;
@@ -291,6 +292,7 @@ namespace PAMI
             int fnum         =  desc->getFIFONum();
             int MU_fifoid    =  _fifoNumbers[fnum];
 
+            TRACE((stderr, "InjFifoSubGroup::isDescriptorDone() fifoNum %d, desc %p\n", MU_fifoid,  desc));
             MUSPI_InjFifo_t *fifoPtr = MUSPI_IdToInjFifo ( MU_fifoid,
                                                            &_fifoSubGroup );
 
@@ -342,6 +344,8 @@ namespace PAMI
           inline void addToDoneQ (int                   subgroupFifoNumber,
                                   MUDescriptorWrapper * wrapper)
           {
+            TRACE((stderr, "InjFifoSubGroup::addToDoneQ() fifonm %d/%d, desc %p/%p\n",subgroupFifoNumber, wrapper->getFIFONum(),  wrapper, wrapper->getDescriptorPtr()));
+            wrapper->setFIFONum(subgroupFifoNumber); // not always set by caller, simple fix here...
             if ( _waitForDoneQ[subgroupFifoNumber].headPtr == NULL )
               _waitForDoneQ[subgroupFifoNumber].headPtr = wrapper;
             else

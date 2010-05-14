@@ -21,9 +21,7 @@ __thread bool       PAMI::Device::MU::MUDevice::_colSendChannelFlag;
 __thread bool       PAMI::Device::MU::MUDevice::_colRecvChannelFlag;
 #endif
 
-#ifdef TRACE
 #undef TRACE
-#endif
 #define TRACE(x) //fprintf x
 
 PAMI::Device::MU::MUDevice::MUDevice (size_t clientid, size_t ncontexts, size_t contextid) :
