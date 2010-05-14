@@ -304,7 +304,7 @@ namespace PAMI
           ///
           inline int advance_impl ()
           {
-            abort();
+            //abort();
             return 0;
           }
 
