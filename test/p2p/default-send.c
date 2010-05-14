@@ -109,21 +109,27 @@ int main (int argc, char ** argv)
   size_t device_limit = 0;
   device = getenv ("PAMI_DEVICE");
 
-  if (!strcmp(device, "M")) {
-    fprintf (stderr, "Only the MU device is initialized.\n");
-    initial_device = 0;
-    device_limit = 1;
-  } else if (!strcmp(device, "S")) {
-    fprintf (stderr, "Only the SHMem device is initialized.\n");
-    initial_device = 1;
-    device_limit = 2;
-  } else if ( !strcmp(device, "B") || !strcmp(device, "") ) {
-    fprintf (stderr, "Both the MU and SHMem devices are initialized.\n");
-    initial_device = 0;
-    device_limit = 2;
+  if (device != NULL) {
+    if (!strcmp(device, "M")) {
+      fprintf (stderr, "Only the MU device is initialized.\n");
+      initial_device = 0;
+      device_limit = 1;
+    } else if (!strcmp(device, "S")) {
+      fprintf (stderr, "Only the SHMem device is initialized.\n");
+      initial_device = 1;
+      device_limit = 2;
+    } else if ( !strcmp(device, "B") || !strcmp(device, "") ){
+      fprintf (stderr, "Both the MU and SHMem devices are initialized.\n");
+      initial_device = 0;
+      device_limit = 2;
+    } else {
+      fprintf (stderr, "ERROR:  PAMI_DEVICE = %s is unsupported. Valid values are:  M (MU only), S (SHMem only), B (both MU & SHMem)\n", device);
+      return 1;
+    }
   } else {
-    fprintf (stderr, "ERROR:  PAMI_DEVICE = %s is unsupported. Valid values are:  M (MU only), S (SHMem only), B (both MU & SHMem)\n", device);
-    return 1;
+      fprintf (stderr, "Both the MU and SHMem devices are initialized.\n");
+      initial_device = 0;
+      device_limit = 2;
   }
 
   volatile size_t send_active = 1;
@@ -149,7 +155,7 @@ int main (int argc, char ** argv)
   result = PAMI_Configuration_query(client, &configuration);
   if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+    fprintf (stderr, "Error. Unable to query configuration (%d). result = %d\n", configuration.name, result);
     return 1;
   }
   size_t max_contexts = configuration.value.intval;
@@ -176,7 +182,7 @@ int main (int argc, char ** argv)
   result = PAMI_Configuration_query(client, &configuration);
   if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+    fprintf (stderr, "Error. Unable to query configuration (%d). result = %d\n", configuration.name, result);
     return 1;
   }
   pami_task_t task_id = configuration.value.intval;
@@ -186,7 +192,7 @@ int main (int argc, char ** argv)
   result = PAMI_Configuration_query(client, &configuration);
   if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+    fprintf (stderr, "Error. Unable to query configuration (%d). result = %d\n", configuration.name, result);
     return 1;
   }
   size_t num_tasks = configuration.value.intval;
@@ -218,7 +224,7 @@ int main (int argc, char ** argv)
 				  (void *)&recv_active,
 				  options);
       if (result != PAMI_SUCCESS) {
-	fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
+	fprintf (stderr, "Error. Unable to register pami dispatch %zu on context %zu. result = %d\n", use_shmem, i, result);
 	return 1;
       }
     }
@@ -275,7 +281,7 @@ int main (int argc, char ** argv)
 	parameters.send.dispatch = use_shmem;
 	result = PAMI_Endpoint_create (client, 1, xtalk, &parameters.send.dest);
 	if (result != PAMI_SUCCESS) {
-	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed for task_id 1, context %zu with %d.\n", xtalk, result);
 	  return 1;
 	}
 
@@ -300,6 +306,11 @@ int main (int argc, char ** argv)
 	      }
 
 	      result = PAMI_Send (context[0], &parameters);
+	      if (result != PAMI_SUCCESS) {
+		fprintf (stderr, "ERROR:   PAMI_Send failed with rc = %d\n", result);
+		return 1;
+	      }
+
 	      fprintf (stderr, "... after send.\n");
 
 	      fprintf (stderr, "before send-recv advance loop ... &send_active = %p, &recv_active = %p\n", &send_active, &recv_active);
@@ -308,7 +319,7 @@ int main (int argc, char ** argv)
 		result = PAMI_Context_advance (context[0], 100);
 
 		if (result != PAMI_SUCCESS) {
-		  fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
+		  fprintf (stderr, "Error. Unable to advance pami context 0. result = %d\n", result);
 		  return 1;
 		}
 	      }
@@ -335,7 +346,7 @@ int main (int argc, char ** argv)
 	parameters.send.dispatch = use_shmem;
 	result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 	if (result != PAMI_SUCCESS) {
-	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed for task_id 0, context 0 with %d.\n", result);
 	  return 1;
 	}
 
@@ -357,7 +368,7 @@ int main (int argc, char ** argv)
 	      while (recv_active != 0) {
 		result = PAMI_Context_advance (context[xtalk], 100);
 		if (result != PAMI_SUCCESS) {
-		  fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
+		  fprintf (stderr, "Error. Unable to advance pami context %zu. result = %d\n", xtalk, result);
 		  return 1;
 		}
 		fprintf (stderr, "------ recv advance loop ... &recv_active = %p\n", &recv_active);
@@ -375,6 +386,11 @@ int main (int argc, char ** argv)
 	      }
 
 	      result = PAMI_Send (context[xtalk], &parameters);
+	      if (result != PAMI_SUCCESS) {
+		fprintf (stderr, "ERROR:   PAMI_Send failed with rc = %d\n", result);
+		return 1;
+	      
+}
 	      fprintf (stderr, "... after send.\n");
 
 	      fprintf (stderr, "before send advance loop ... &send_active = %p\n", &send_active);
@@ -382,7 +398,7 @@ int main (int argc, char ** argv)
 	      while (send_active) {
 		result = PAMI_Context_advance (context[xtalk], 100);
 		if (result != PAMI_SUCCESS) {
-		  fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
+		  fprintf (stderr, "Error. Unable to advance pami context %zu. result = %d\n", xtalk, result);
 		  return 1;
 		}
 		fprintf (stderr, "------ send advance loop ... &send_active = %p\n", &send_active);
@@ -404,7 +420,7 @@ int main (int argc, char ** argv)
   for ( i = 0; i < num_contexts; i++) {
     result = PAMI_Context_destroy (context[i]);
     if (result != PAMI_SUCCESS) {
-	fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
+      fprintf (stderr, "Error. Unable to destroy pami context %zu. result = %d\n", i, result);
 	return 1;
     }
   }
