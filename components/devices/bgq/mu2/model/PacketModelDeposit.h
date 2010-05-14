@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/bgq/mu2/PacketModel.h
+ * \file components/devices/bgq/mu2/PacketModelDeposit.h
  * \brief ???
  */
-#ifndef __components_devices_bgq_mu2_PacketModel_h__
-#define __components_devices_bgq_mu2_PacketModel_h__
+#ifndef __components_devices_bgq_mu2_PacketModelDeposit_h__
+#define __components_devices_bgq_mu2_PacketModelDeposit_h__
 
 #include "components/devices/bgq/mu2/model/PacketModelBase.h"
 
@@ -21,25 +21,27 @@ namespace PAMI
   {
     namespace MU
     {
-      class PacketModel : public MU::PacketModelBase<PacketModel>
+      class PacketModelDeposit : public MU::PacketModelBase<PacketModelDeposit>
       {
         public :
 
           /// \see PAMI::Device::Interface::PacketModel::PacketModel
-          inline PacketModel (MU::Context & device) :
-             MU::PacketModelBase<PacketModel> (device)
+          inline PacketModelDeposit (MU::Context & device) :
+             MU::PacketModelBase<PacketModelDeposit> (device)
           {
+            _singlepkt.desc[0].setDeposit(MUHWI_PACKET_DEPOSIT);
+            _multipkt.desc[0].setDeposit(MUHWI_PACKET_DEPOSIT);
           };
 
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
-          inline ~PacketModel () {};
+          inline ~PacketModelDeposit () {};
 
-      }; // PAMI::Device::MU::PacketModel class
+      }; // PAMI::Device::MU::PacketModelDeposit class
     };   // PAMI::Device::MU namespace
   };     // PAMI::Device namespace
 };       // PAMI namespace
 
-#endif // __components_devices_bgq_mu2_PacketModel_h__
+#endif // __components_devices_bgq_mu2_PacketModelDeposit_h__
 //
 // astyle info    http://astyle.sourceforge.net
 //

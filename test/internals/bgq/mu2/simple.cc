@@ -16,6 +16,8 @@
 #include "components/devices/generic/Device.h"
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/model/PacketModel.h"
+#include "components/devices/bgq/mu2/model/PacketModelDeposit.h"
+#include "components/devices/bgq/mu2/model/PacketModelInterrupt.h"
 
 //#include "p2p/protocols/send/eager/Eager.h"
 
@@ -23,7 +25,9 @@ typedef PAMI::Device::Generic::Device ProgressDevice;
 
 typedef PAMI::Device::MU::Context MuDevice;
 
-typedef PAMI::Device::MU::PacketModel MuPacketModel;
+//typedef PAMI::Device::MU::PacketModel MuPacketModel;
+//typedef PAMI::Device::MU::PacketModelDeposit MuPacketModel;
+typedef PAMI::Device::MU::PacketModelInterrupt MuPacketModel;
 
 //typedef PAMI::Protocol::Send::Eager<T_Model, MuDevice> MuEager;
 
