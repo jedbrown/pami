@@ -11,9 +11,13 @@
  * \brief Simple standalone MU software device test.
  */
 
-#include "common/bgq/Global.h"
+//#include "common/bgq/Global.h"
 //#include "components/memory/MemoryManager.h"
-#include "components/devices/generic/Device.h"
+//#include "components/devices/generic/Device.h"
+
+#include "common/bgq/BgqPersonality.h"
+#include "common/bgq/Mapping.h"
+
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/model/DmaModel.h"
 #include "components/devices/bgq/mu2/model/DmaModelMemoryFifoCompletion.h"
@@ -23,7 +27,7 @@
 
 //#include "p2p/protocols/send/eager/Eager.h"
 
-typedef PAMI::Device::Generic::Device ProgressDevice;
+//typedef PAMI::Device::Generic::Device ProgressDevice;
 
 typedef PAMI::Device::MU::Context MuDevice;
 
@@ -39,17 +43,22 @@ typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 int main(int argc, char ** argv)
 {
 
-  PAMI::Global global;
+ // PAMI::Global global;
   //PAMI::Memory::MemoryManager mm;
 
-  ProgressDevice progress (0, 0, 1);
-  progress.init (NULL,       // pami_context_t
-                 0,          // id_client
-                 0,          // id_offset
-                 NULL,//&mm,        // not used ???
-                 &progress); // "all generic devices"
+  PAMI::BgqPersonality personality;
+  PAMI::Mapping mapping (personality);
+  bgq_mapcache_t mapcache;
+  mapping.init (mapcache, personality);
 
-  MuDevice mu (global, 0, 0, 1, progress);
+//  ProgressDevice progress (0, 0, 1);
+//  progress.init (NULL,       // pami_context_t
+//                 0,          // id_client
+//                 0,          // id_offset
+//                 NULL,//&mm,        // not used ???
+//                 &progress); // "all generic devices"
+
+  MuDevice mu (mapping, 0, 0, 1);//, progress);
   mu.init (0); // id_client
 
   pami_result_t result;
@@ -67,7 +76,7 @@ int main(int argc, char ** argv)
 
 
   // advance
-  progress.advance ();
+//  progress.advance ();
   mu.advance ();
 
 

@@ -22,6 +22,24 @@ namespace PAMI
   {
     namespace MU
     {
+      ///
+      ///  network and mu headers, 32B
+      ///
+      /// +-------------------+--+----------------------------------+
+      /// | used by hw        |##| metadata available for           |
+      /// | 13B 1b            |##| single packet messages, 17B      |
+      /// +-------------------+--+----------------------------------+
+      /// unused by hw    ^    ^ dispatch id, 14b
+      /// 1b, 'single pkt'
+      ///
+      ///
+      /// +-------------------------+--+----------------------------+
+      /// | used by hw              |##| metadata available for     |
+      /// | 18B                     |##| multi-packet messages, 12B |
+      /// +-------------------------+--+----------------------------+
+      /// unused by hw    ^          ^ dispatch id, 16b
+      /// 1b, 'multi pkt'
+      ///
       class MemoryFifoPacketHeader : public MUHWI_PacketHeader_t
       {
         public:
@@ -36,11 +54,36 @@ namespace PAMI
           /// are set outside of this range.
           static const size_t packet_multipacket_metadata_size  = 12;
 
+          ///
+          /// \brief Set the 'single packet' attribute in a mu packet header
+          ///
+          /// The 'single packet' attribute is a single bit in the header which
+          /// is unused/unmodified by hardware. This bit is a hint to the type
+          /// of packet to be sent or received. A 'single packet' message has
+          /// additional bytes in the packet header which are unused and
+          /// unmodified by the mu hardware. This allows software to 'pack'
+          /// additional information into a 'single packet' header.
+          ///
+          /// \warning The single packet attribute must be set before the
+          ///          dispatch id is set.
+          ///
+          /// \see setDispatchId
+          /// \see getDispatchId
+          ///
+          /// \param[in] value  The 'single packet' attribute
+          ///
           inline void setSinglePacket (bool value)
           {
             messageUnitHeader.Packet_Types.Memory_FIFO.Unused1 = value;
           };
 
+          ///
+          /// \brief Retreive the 'single packet' attribute from a mu packet header
+          ///
+          /// \see setSinglePacket
+          ///
+          /// \return The 'single packet' attribute value
+          ///
           inline bool isSinglePacket ()
           {
             return messageUnitHeader.Packet_Types.Memory_FIFO.Unused1;
@@ -58,7 +101,6 @@ namespace PAMI
           /// \see setSinglePacket
           /// \see isSinglePacket
           ///
-          /// \param[in]
           /// \param[in] id  The dispatch identifier to set
           ///
           inline void setDispatchId (uint16_t id)
@@ -75,6 +117,20 @@ namespace PAMI
             return;
           };
 
+          ///
+          /// \brief Get the dispatch id from a mu packet header
+          ///
+          /// The dispatch id is in a different location depending on
+          /// the value of the "single packet" attribute of the header.
+          ///
+          /// \warning The single packet attribute must be set before this
+          ///          method is used.
+          ///
+          /// \see setSinglePacket
+          /// \see isSinglePacket
+          ///
+          /// \return The dispatch identifier
+          ///
           inline uint16_t getDispatchId ()
           {
             if (likely(isSinglePacket ()))

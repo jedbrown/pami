@@ -24,11 +24,10 @@
 #include <spi/include/mu/Pt2PtMemoryFIFODescriptorXX.h>
 #include <spi/include/kernel/MU.h>
 
-#include "Global.h"
+#include "Mapping.h"
 
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
-#include "components/devices/generic/Device.h"
 
 #include "components/devices/bgq/mu2/MemoryFifoPacketHeader.h"
 
@@ -98,15 +97,15 @@ namespace PAMI
           };
 
 #if CONTEXT_ALLOCATES_RESOURCES
-	  MUSPI_InjFifoSubGroup_t       _ififo_subgroup;
-	  MUSPI_RecFifoSubGroup_t       _rfifo_subgroup;
-	  char                        * _injFifoBuf;
-	  char                        * _recFifoBuf;
-	  unsigned                      _ififoid;
-	  unsigned                      _rfifoid;
+          MUSPI_InjFifoSubGroup_t       _ififo_subgroup;
+          MUSPI_RecFifoSubGroup_t       _rfifo_subgroup;
+          char                        * _injFifoBuf;
+          char                        * _recFifoBuf;
+          unsigned                      _ififoid;
+          unsigned                      _rfifoid;
 
-	  static const int INJ_MEMORY_FIFO_SIZE = 0xFFFFUL;
-	  static const int REC_MEMORY_FIFO_SIZE = 0xFFFFUL;
+          static const int INJ_MEMORY_FIFO_SIZE = 0xFFFFUL;
+          static const int REC_MEMORY_FIFO_SIZE = 0xFFFFUL;
 #endif
 
         public:
@@ -120,12 +119,8 @@ namespace PAMI
           ///
           /// \brief foo
           ///
-          /// \param[in] global    The global component is used by the
-          ///                      MU::Context to access the MU::Global
-          ///                      component to allocate and initialize MU
-          ///                      resources, as well as access the other
-          ///                      global components such as the Mapping
-          ///                      component
+          /// \param[in] mapping   The mapping component is used to translate
+          ///                      coordinates to task identifers, etc
           /// \param[in] id_base   The base identifier of the MU::Context with
           ///                      offset zero
           /// \param[in] id_offset Offset from the base identifier for this
@@ -134,15 +129,13 @@ namespace PAMI
           ///                      set - all context objects in a set share a
           ///                      common base identifier
           ///
-          inline Context (PAMI::Global    & global,
+          inline Context (PAMI::Mapping   & mapping,
                           size_t            id_base,
                           size_t            id_offset,
-                          size_t            id_count,
-                          Generic::Device & progress) :
+                          size_t            id_count) :
               Interface::BaseDevice<Context> (),
               Interface::PacketDevice<Context> (),
-              _global (global),
-              _progress (progress),
+              _mapping (mapping),
               _id_base (id_base),
               _id_offset (id_offset),
               _id_count (id_count)
@@ -152,6 +145,7 @@ namespace PAMI
             size_t i;
 
             size_t n = MU::Context::dispatch_set_count * MU::Context::dispatch_set_size;
+
             for (i = 0; i < n; i++)
               {
                 _dispatch[i].f = noop;
@@ -195,62 +189,62 @@ namespace PAMI
 
 
 #if CONTEXT_ALLOCATES_RESOURCES
-	    _ififoid = 0;
-	    Kernel_InjFifoAttributes_t injFifoAttrs;
-	    injFifoAttrs.RemoteGet = 0;
-	    injFifoAttrs.System    = 0;
+            _ififoid = 0;
+            Kernel_InjFifoAttributes_t injFifoAttrs;
+            injFifoAttrs.RemoteGet = 0;
+            injFifoAttrs.System    = 0;
 
-	    //TRACE(("main(): allocate injection fifos\n"));
-	    Kernel_AllocateInjFifos (0, 
-				     &_ififo_subgroup,
-				     1,
-				     &_ififoid, 
-				     &injFifoAttrs);
-    
-	    _injFifoBuf = (char *) malloc (65536);
+            //TRACE(("main(): allocate injection fifos\n"));
+            Kernel_AllocateInjFifos (0,
+                                     &_ififo_subgroup,
+                                     1,
+                                     &_ififoid,
+                                     &injFifoAttrs);
 
-	    Kernel_MemoryRegion_t  mregionInj, mregionRec;
-	    Kernel_CreateMemoryRegion ( &mregionInj,
-					_injFifoBuf,
-					INJ_MEMORY_FIFO_SIZE + 1 );
-	    
-	    //TRACE(("main(): init injection fifo\n"));
-	    Kernel_InjFifoInit (&_ififo_subgroup, 
-				_ififoid, 
-				&mregionInj, 
-				(uint64_t) _injFifoBuf -
-				(uint64_t)mregionInj.BaseVa,
-				INJ_MEMORY_FIFO_SIZE);    
-	    
-	    _rfifoid = 0;
-	    Kernel_RecFifoAttributes_t recFifoAttrs[1];
-	    recFifoAttrs[0].System = 0;
+            _injFifoBuf = (char *) malloc (65536);
 
-	    Kernel_AllocateRecFifos (0, 
-				     &_rfifo_subgroup, 
-				     1,
-				     &_rfifoid,
-				     recFifoAttrs);
-  
-	    _recFifoBuf = (char *) malloc (65536);
-	    Kernel_CreateMemoryRegion ( &mregionRec,
-					_recFifoBuf,
-					REC_MEMORY_FIFO_SIZE + 1 );
+            Kernel_MemoryRegion_t  mregionInj, mregionRec;
+            Kernel_CreateMemoryRegion ( &mregionInj,
+                                        _injFifoBuf,
+                                        INJ_MEMORY_FIFO_SIZE + 1 );
 
-	    //TRACE(("main(): init reception fifo\n"));
-	    Kernel_RecFifoInit    (& _rfifo_subgroup, _rfifoid, 
-				   &mregionRec, 
-				   (uint64_t)_recFifoBuf - (uint64_t)mregionRec.BaseVa, 
-				   REC_MEMORY_FIFO_SIZE);
+            //TRACE(("main(): init injection fifo\n"));
+            Kernel_InjFifoInit (&_ififo_subgroup,
+                                _ififoid,
+                                &mregionInj,
+                                (uint64_t) _injFifoBuf -
+                                (uint64_t)mregionInj.BaseVa,
+                                INJ_MEMORY_FIFO_SIZE);
 
-	    //Activate fifos
-	    Kernel_InjFifoActivate (&_ififo_subgroup, 1, &_ififoid, KERNEL_INJ_FIFO_ACTIVATE); 
+            _rfifoid = 0;
+            Kernel_RecFifoAttributes_t recFifoAttrs[1];
+            recFifoAttrs[0].System = 0;
 
-	    uint64_t recFifoEnableBits=0;  
-	    recFifoEnableBits |= ( 0x0000000000000001ULL << 
-				   ( 15 - ( (0/*sgid*/*BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) + 0/*RecFifoId*/ )) );
-	    Kernel_RecFifoEnable ( 0, /* Group ID */ 
-				   recFifoEnableBits );
+            Kernel_AllocateRecFifos (0,
+                                     &_rfifo_subgroup,
+                                     1,
+                                     &_rfifoid,
+                                     recFifoAttrs);
+
+            _recFifoBuf = (char *) malloc (65536);
+            Kernel_CreateMemoryRegion ( &mregionRec,
+                                        _recFifoBuf,
+                                        REC_MEMORY_FIFO_SIZE + 1 );
+
+            //TRACE(("main(): init reception fifo\n"));
+            Kernel_RecFifoInit    (& _rfifo_subgroup, _rfifoid,
+                                   &mregionRec,
+                                   (uint64_t)_recFifoBuf - (uint64_t)mregionRec.BaseVa,
+                                   REC_MEMORY_FIFO_SIZE);
+
+            //Activate fifos
+            Kernel_InjFifoActivate (&_ififo_subgroup, 1, &_ififoid, KERNEL_INJ_FIFO_ACTIVATE);
+
+            uint64_t recFifoEnableBits = 0;
+            recFifoEnableBits |= ( 0x0000000000000001ULL <<
+                                   ( 15 - ( (0/*sgid*/*BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) + 0/*RecFifoId*/ )) );
+            Kernel_RecFifoEnable ( 0, /* Group ID */
+                                   recFifoEnableBits );
 #endif
 
             return;
@@ -399,7 +393,8 @@ namespace PAMI
           /// \copydoc Mapping::getMuDestinationSelf
           inline MUHWI_Destination_t * getMuDestinationSelf ()
           {
-            return _global.mapping.getMuDestinationSelf();
+            //return _global.mapping.getMuDestinationSelf();
+            return _mapping.getMuDestinationSelf();
           };
 
           inline uint16_t getRecptionFifoIdSelf ()
@@ -446,7 +441,7 @@ namespace PAMI
                                  uint8_t             & hintsE)
           {
             *ififo = MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup);
-            
+
             // Calculate the destination recpetion fifo identifier based on
             // the destination task+offset.  This is important for
             // multi-context support.
@@ -533,8 +528,7 @@ namespace PAMI
 
         protected:
 
-          PAMI::Global    & _global;
-          Generic::Device & _progress;
+          PAMI::Mapping   & _mapping;
           size_t            _id_base;
           size_t            _id_offset;
           size_t            _id_count;

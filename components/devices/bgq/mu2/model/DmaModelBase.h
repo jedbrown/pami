@@ -135,6 +135,11 @@ namespace PAMI
       };
 
       template <class T_Model>
+      DmaModelBase<T_Model>::~DmaModelBase ()
+      {
+      };
+
+      template <class T_Model>
       bool DmaModelBase<T_Model>::postDmaPut_impl (size_t                target_task,
                                                    size_t                target_offset,
                                                    size_t                bytes,

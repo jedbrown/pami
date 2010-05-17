@@ -53,8 +53,7 @@ namespace PAMI
             for (id_offset = 0; id_offset < id_count; ++id_offset)
               {
                 new (&mu[i])
-                MU::Context (__global, id_base, id_offset, id_count,
-                             Generic::Device::Factory::getDevice (devices, id_client, id_offset));
+                MU::Context (__global.mapping, id_base, id_offset, id_count);
               }
 
             return mu;
