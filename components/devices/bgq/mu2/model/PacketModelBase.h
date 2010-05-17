@@ -47,7 +47,8 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
           virtual ~PacketModelBase () { /*PAMI_abort();*/ }
 
-          inline void processCompletion (size_t                fnum,
+          inline void processCompletion (void                * state,
+                                         size_t                fnum,
                                          MUSPI_InjFifo_t     * ififo,
                                          size_t                ndesc,
                                          MUHWI_Descriptor_t  * desc,
@@ -163,14 +164,16 @@ namespace PAMI
       };
 
       template <class T_Model>
-      void PacketModelBase<T_Model>::processCompletion (size_t                fnum,
+      void PacketModelBase<T_Model>::processCompletion (void                * state,
+                                                        size_t                fnum,
                                                         MUSPI_InjFifo_t     * ififo,
                                                         size_t                ndesc,
                                                         MUHWI_Descriptor_t  * desc,
                                                         pami_event_function   fn,
                                                         void                * cookie)
       {
-        static_cast<T_Model*>(this)->processCompletion_impl (fnum,
+        static_cast<T_Model*>(this)->processCompletion_impl (state,
+                                                             fnum,
                                                              ififo,
                                                              ndesc,
                                                              desc,
@@ -576,7 +579,7 @@ namespace PAMI
               }
 
             // Finish the completion processing and inject the descriptor(s)
-            processCompletion (fnum, ififo, ndesc, desc, fn, cookie);
+            processCompletion ((void *) state, fnum, ififo, ndesc, desc, fn, cookie);
           }
         else
           {

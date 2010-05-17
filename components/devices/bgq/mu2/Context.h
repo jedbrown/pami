@@ -30,6 +30,7 @@
 #include "components/devices/PacketInterface.h"
 
 #include "components/devices/bgq/mu2/MemoryFifoPacketHeader.h"
+#include "components/devices/bgq/mu2/msg/MessageQueue.h"
 
 
 #define CONTEXT_ALLOCATES_RESOURCES   1
@@ -524,10 +525,9 @@ namespace PAMI
           /// \param[in] msg  Message object to be added to the send queue
           ///                 associated with the injection fifo number
           ///
-          inline void post (size_t fnum, //MU::SendQueue::Message
-                            void   * msg)
+          inline void post (size_t fnum, MU::MessageQueue::Element * msg)
           {
-            abort();
+            _sendq[fnum].post(msg);
             return;
           }
 
@@ -540,6 +540,7 @@ namespace PAMI
           size_t            _id_client;
 
           mu_dispatch_t     _dispatch[dispatch_set_count * dispatch_set_size];
+          MU::MessageQueue  _sendq[4];
 
       }; // class     PAMI::Device::MU::Context
     };   // namespace PAMI::Device::MU

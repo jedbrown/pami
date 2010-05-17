@@ -14,6 +14,7 @@
 #define __components_devices_bgq_mu2_PacketModelMemoryFifoCompletion_h__
 
 #include "components/devices/bgq/mu2/model/PacketModelBase.h"
+#include "components/devices/bgq/mu2/msg/InjectDescriptorMessage.h"
 
 namespace PAMI
 {
@@ -30,6 +31,8 @@ namespace PAMI
              MU::PacketModelBase<PacketModelMemoryFifoCompletion> (device),
              _done (_device)
           {
+            COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage) <= packet_model_state_bytes);
+          
             MemoryFifoPacketHeader * hdr =
               (MemoryFifoPacketHeader *) & _done.desc[0].PacketHeader;
 
@@ -45,7 +48,8 @@ namespace PAMI
           inline ~PacketModelMemoryFifoCompletion () {};
 
           /// \see PAMI::Device::MU::PacketModelBase::processCompletion
-          inline void processCompletion_impl (size_t                fnum,
+          inline void processCompletion_impl (void                * state,
+                                              size_t                fnum,
                                               MUSPI_InjFifo_t     * ififo,
                                               size_t                ndesc,
                                               MUHWI_Descriptor_t  * desc,
@@ -74,40 +78,24 @@ namespace PAMI
 // !!!!
               MUSPI_InjFifoAdvanceDesc (ififo);
               MUSPI_InjFifoAdvanceDesc (ififo);
+              
+              return;
             }
-            else
-            {
-              // Perhaps there is only one descriptor slot available due to an
-              // injection fifo wrap event.
-              MUSPI_InjFifoAdvanceDesc (ififo);
+            
+            // Clone the completion model descriptor onto the stack
+            MemoryFifoDescriptor done;
+            _done.clone (&done);
 
-              MUHWI_Descriptor_t * desc;
-              void               * vaddr;
-              uint64_t             paddr;
+            // Copy the completion function+cookie into the packet header.
+            MU::Context::notify_t * hdr =
+              (MU::Context::notify_t *) & done.desc[0].PacketHeader;
+            hdr->fn = fn;
+            hdr->cookie = cookie;
 
-              size_t ndesc =
-                _device.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
-
-              if (likely(ndesc > 0))
-              {
-                // Clone the completion model descriptor into the injection fifo
-                MemoryFifoDescriptor * done = (MemoryFifoDescriptor *) desc;
-                _done.clone (done);
-
-                // Copy the completion function+cookie into the packet header.
-                MU::Context::notify_t * hdr =
-                  (MU::Context::notify_t *) & done->desc[0].PacketHeader;
-                hdr->fn = fn;
-                hdr->cookie = cookie;
-              }
-              else
-              {
-                // The injection fifo must be full. Create a "notification"
-                // message to post to the device.
-                PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
-              }
-
-            }
+            InjectDescriptorMessage * msg = (InjectDescriptorMessage *) state;
+            new (msg) InjectDescriptorMessage (ififo, & done.desc[0]);
+            
+            _device.post (fnum, msg);
           }
 
           MemoryFifoSelfDescriptor _done;

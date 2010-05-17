@@ -35,7 +35,8 @@ namespace PAMI
           inline ~PacketModel () {};
 
           /// \see PAMI::Device::MU::PacketModelBase::processCompletion
-          inline void processCompletion_impl (size_t                fnum,
+          inline void processCompletion_impl (void                * state,
+                                              size_t                fnum,
                                               MUSPI_InjFifo_t     * ififo,
                                               size_t                ndesc,
                                               MUHWI_Descriptor_t  * desc,
