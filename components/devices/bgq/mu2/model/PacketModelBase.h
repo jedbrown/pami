@@ -45,7 +45,7 @@ namespace PAMI
           PacketModelBase (MU::Context & device);
 
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
-          virtual ~PacketModelBase () { PAMI_abort(); }
+          virtual ~PacketModelBase () { /*PAMI_abort();*/ }
 
           public:
 
