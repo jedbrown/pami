@@ -27,53 +27,58 @@ namespace PAMI
       {
       public:
         /// \param[in] device                Manytomany device reference
-        ManytomanyModel (T_Device & device, pami_result_t &status) {
-                COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
-                status = PAMI_SUCCESS;
+        ManytomanyModel (T_Device & device, pami_result_t &status)
+        {
+          COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
+          status = PAMI_SUCCESS;
         };
         ~ManytomanyModel () {};
+        inline pami_result_t postManytomany(uint8_t (&state)[T_StateBytes],
+                                            pami_manytomany_t *m2minfo);
 
-        inline void setCallback (pami_dispatch_manytomany_fn cb_recv, void *arg);
-        inline void send  (pami_manytomany_t parameters);
-        inline void postRecv (uint8_t (&state)[T_StateBytes],
-                              const PAMI_Callback_t  * cb_done,
-                              unsigned                 connid,
-                              char                   * buf,
-                              unsigned               * sizes,
-                              unsigned               * offsets,
-                              unsigned               * counters,
-                              unsigned                 nranks,
-                              unsigned                 myindex);
       };
-      template <class T_Model, class T_Device, unsigned T_StateBytes>
-      void ManytomanyModel<T_Model, T_Device, T_StateBytes>::setCallback (pami_dispatch_manytomany_fn cb_recv,
-                                                                      void *arg)
-      {
-        static_cast<T_Model*>(this)->setCallback_impl(cb_recv, arg);
-      }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
-      void ManytomanyModel<T_Model, T_Device, T_StateBytes>::send (pami_manytomany_t parameters)
+      pami_result_t ManytomanyModel<T_Model, T_Device, T_StateBytes>::postManytomany(uint8_t (&state)[T_StateBytes], pami_manytomany_t *m2minfo)
+
       {
-        static_cast<T_Model*>(this)->send_impl(parameters);
+        return static_cast<T_Model*>(this)->postManytomany_impl(state, m2minfo);
       }
 
-      template <class T_Model, class T_Device, unsigned T_StateBytes>
-      void ManytomanyModel<T_Model, T_Device, T_StateBytes>::postRecv (uint8_t (&state)[T_StateBytes],
-                                                                   const PAMI_Callback_t  * cb_done,
-                                                                   unsigned                connid,
-                                                                   char                  * buf,
-                                                                   unsigned              * sizes,
-                                                                   unsigned              * offsets,
-                                                                   unsigned              * counters,
-                                                                   unsigned                nranks,
-                                                                   unsigned                myindex)
+
+      ///
+      /// \brief Add an active message dispatch to the multicast model.
+      ///
+      /// \todo Need A LOT MORE documentation on this interface and its use
+      ///
+      /// \param T_Model   Manytomany model template class
+      ///
+      /// \see Manytomany::Model
+      ///
+      /** \todo We probably need client and context passed to the model */
+      template <class T_Model,class T_Device,unsigned T_StateBytes>
+      class AMManytomanyModel : public ManytomanyModel<T_Model,T_Device,T_StateBytes>
       {
-        static_cast<T_Model*>(this)->postRecv_impl(state, cb_done, connid,
-                                                   buf, sizes, offsets, counters,
-                                                   nranks, myindex);
+      public:
+        AMManytomanyModel (T_Device &device, pami_result_t &status) :
+          ManytomanyModel<T_Model,T_Device,T_StateBytes> (device, status)
+          {
+          };
+        ~AMManytomanyModel ()
+          {
+          };
+        inline pami_result_t
+        registerManytomanyRecvFunction(int dispatch_id,
+                                       pami_dispatch_manytomany_fn recv_func,
+                                       void  *async_arg);
+      }; // class AMManytomanyModel
+      template <class T_Model,class T_Device,unsigned T_StateBytes>
+      pami_result_t AMManytomanyModel<T_Model,T_Device,T_StateBytes>::registerManytomanyRecvFunction (int dispatch_id, pami_dispatch_manytomany_fn recv_func, void *async_arg)
+      {
+        return static_cast<T_Model*>(this)->registerManytomanyRecvFunction_impl (dispatch_id, recv_func, async_arg);
       }
 
+      
     };
   };
 };
