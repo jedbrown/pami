@@ -17,6 +17,7 @@
 
 #include "common/bgq/BgqPersonality.h"
 #include "common/bgq/Mapping.h"
+#include "common/bgq/BgqMapCache.h"
 
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/model/DmaModel.h"
@@ -48,7 +49,7 @@ int main(int argc, char ** argv)
 
   PAMI::BgqPersonality personality;
   PAMI::Mapping mapping (personality);
-  bgq_mapcache_t mapcache;
+  PAMI::bgq_mapcache_t mapcache;
   mapping.init (mapcache, personality);
 
 //  ProgressDevice progress (0, 0, 1);

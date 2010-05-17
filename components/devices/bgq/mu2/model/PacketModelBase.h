@@ -25,6 +25,10 @@
 #include "components/devices/bgq/mu2/model/MultiMemoryFifoDescriptor.h"
 
 
+#include "components/devices/bgq/mu2/trace.h"
+#define DO_TRACE_ENTEREXIT 1
+#define DO_TRACE_DEBUG 1
+
 
 namespace PAMI
 {
@@ -136,6 +140,8 @@ namespace PAMI
           Interface::PacketModel < MU::PacketModelBase<T_Model>, MU::Context, 128 > (device),
           _device (device)
       {
+        TRACE_FN_ENTER();
+
         MemoryFifoPacketHeader * hdr = NULL;
 
         // Memory fifo descriptor '0' is for single packet transfers.
@@ -145,6 +151,8 @@ namespace PAMI
         // Memory fifo descriptor '1' is for multi-packet transfers.
         hdr = (MemoryFifoPacketHeader *) & _multipkt.desc[0].PacketHeader;
         hdr->setSinglePacket (false);
+
+        TRACE_FN_EXIT();
       };
 
       template <class T_Model>
@@ -154,6 +162,8 @@ namespace PAMI
                                                          Interface::RecvFunction_t   read_recv_func,
                                                          void                      * read_recv_func_parm)
       {
+        TRACE_FN_ENTER();
+
         // Register the direct dispatch function. The MU device will have access
         // to the packet payload in the memory fifo at the time the dispatch
         // function is invoked and can provide a direct pointer to the packet
@@ -172,8 +182,14 @@ namespace PAMI
             hdr = (MemoryFifoPacketHeader *) & _multipkt.desc[0].PacketHeader;
             hdr->setDispatchId (id);
 
+            TRACE_FORMAT("register packet handler success. dispatch id = %d", id);
+            TRACE_FN_EXIT();
+
             return PAMI_SUCCESS;
           }
+
+        TRACE_STRING("register packet handler FAILED. return PAMI_ERROR");
+        TRACE_FN_EXIT();
 
         return PAMI_ERROR;
       };
