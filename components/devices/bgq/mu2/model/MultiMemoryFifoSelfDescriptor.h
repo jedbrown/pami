@@ -36,7 +36,7 @@ namespace PAMI
             for (i = 0; i < T_Num; i++)
               {
                 this->desc[i].setRecFIFOId (device.getRecptionFifoIdSelf());
-                this->desc[i].setDestination (device.getMuDestinationSelf());
+                this->desc[i].setDestination (*(device.getMuDestinationSelf()));
 
                 // In loopback we send only on AM
                 this->desc[i].setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);

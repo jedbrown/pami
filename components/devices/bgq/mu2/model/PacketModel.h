@@ -34,6 +34,23 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
           inline ~PacketModel () {};
 
+          /// \see PAMI::Device::MU::PacketModelBase::processCompletion
+          inline void processCompletion_impl (size_t                fnum,
+                                              MUSPI_InjFifo_t     * ififo,
+                                              size_t                ndesc,
+                                              MUHWI_Descriptor_t  * desc,
+                                              pami_event_function   fn,
+                                              void                * cookie)
+          {
+            // Advance the injection fifo tail pointer. This action
+            // completes the injection operation.
+            uint64_t sequenceNum = 0; // suppress warning 
+            sequenceNum = MUSPI_InjFifoAdvanceDesc (ififo);
+// !!!!
+// add counter completion notification stuff
+// !!!!
+          }
+
       }; // PAMI::Device::MU::PacketModel class
     };   // PAMI::Device::MU namespace
   };     // PAMI::Device namespace

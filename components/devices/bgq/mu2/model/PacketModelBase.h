@@ -47,6 +47,13 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
           virtual ~PacketModelBase () { /*PAMI_abort();*/ }
 
+          inline void processCompletion (size_t                fnum,
+                                         MUSPI_InjFifo_t     * ififo,
+                                         size_t                ndesc,
+                                         MUHWI_Descriptor_t  * desc,
+                                         pami_event_function   fn,
+                                         void                * cookie);
+
           public:
 
           /// \see PAMI::Device::Interface::PacketModel::isPacketDeterministic
@@ -153,6 +160,22 @@ namespace PAMI
         hdr->setSinglePacket (false);
 
         TRACE_FN_EXIT();
+      };
+
+      template <class T_Model>
+      void PacketModelBase<T_Model>::processCompletion (size_t                fnum,
+                                                        MUSPI_InjFifo_t     * ififo,
+                                                        size_t                ndesc,
+                                                        MUHWI_Descriptor_t  * desc,
+                                                        pami_event_function   fn,
+                                                        void                * cookie)
+      {
+        static_cast<T_Model*>(this)->processCompletion_impl (fnum,
+                                                             ififo,
+                                                             ndesc,
+                                                             desc,
+                                                             fn,
+                                                             cookie);
       };
 
       template <class T_Model>
@@ -529,7 +552,7 @@ namespace PAMI
             // There is at least one descriptor slot available in the injection
             // fifo before a fifo-wrap event.
 
-            // Clone the single-packet model descriptor into the injection fifo
+            // Clone the multi-packet model descriptor into the injection fifo
             MemoryFifoDescriptor * memfifo = (MemoryFifoDescriptor *) desc;
             _multipkt.clone (memfifo);
 
@@ -552,13 +575,8 @@ namespace PAMI
                 memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_multipacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
-            // Finally, advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            uint64_t sequenceNum = 0; // suppress warning 
-            sequenceNum = MUSPI_InjFifoAdvanceDesc (ififo);
-// !!!!
-// add completion notification stuff
-// !!!!
+            // Finish the completion processing and inject the descriptor(s)
+            processCompletion (fnum, ififo, ndesc, desc, fn, cookie);
           }
         else
           {
@@ -568,7 +586,6 @@ namespace PAMI
 
         return true;
       };
-
 
     };   // PAMI::Device::MU namespace
   };     // PAMI::Device namespace
