@@ -143,6 +143,22 @@ namespace PAMI
             uint16_t * metadata = (uint16_t *) messageUnitHeader.Packet_Types.Memory_FIFO.Unused2;
             return metadata[0];
           };
+
+
+	  ///
+	  /// \brief Set the Metadata correspoding to this packet
+	  /// \param[in] metadata of the packet protocol
+	  /// \param[in] metadata size in bytes
+	  ///
+	  inline void setMetaData (void *metadata) { PAMI_abort(); }
+
+
+	  ///
+	  /// \brief Get the Metadata in the packet
+	  /// \retval pointer to the metadata
+	  ///
+	  inline void* getMetaData () { PAMI_abort(); return NULL; }
+
       };
     };   // PAMI::Device::MU namespace
   };     // PAMI::Device namespace

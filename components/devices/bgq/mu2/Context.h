@@ -335,8 +335,10 @@ namespace PAMI
           ///
           inline int advance_impl ()
           {
+	    unsigned events = advanceRecv();
+
             //abort();
-            return 0;
+            return events;
           }
 
           ///
@@ -356,6 +358,9 @@ namespace PAMI
           // ------------------------------------------------------------------
           // ------------------------------------------------------------------
 #endif
+
+	  inline unsigned advanceRecv();
+
 
           ///
           /// \brief
@@ -541,6 +546,49 @@ namespace PAMI
   };     // namespace PAMI::Device
 };       // namespace PAMI
 
+
+
+unsigned PAMI::Device::MU::Context::advanceRecv () {  
+  uint32_t wrap = 0;
+  uint32_t cur_bytes = 0;
+  uint32_t total_bytes = 0;
+  uint32_t cumulative_bytes = 0;
+  MemoryFifoPacketHeader *hdr = NULL;
+  unsigned packets = 0;
+
+  //TRACE((stderr, ">> RecFifoSubGroup::recFifoPoll(%p)\n", rfifo));
+  MUSPI_RecFifo_t * rfifo = MUSPI_IdToRecFifo (_rfifoid, &_rfifo_subgroup);
+
+  while ((total_bytes = MUSPI_getAvailableBytes (rfifo, &wrap)) != 0) {
+    if (wrap)   //Extra branch over older packet loop
+    {
+      hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketWrap (rfifo, &cur_bytes);	
+      void * metadata = hdr->getMetaData();	  	  
+      uint16_t id = hdr->getDispatchId();
+      _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
+      packets++;
+      
+      MUSPI_syncRecFifoHwHead (rfifo);
+    }
+    else {
+      cumulative_bytes = 0;      
+      while (cumulative_bytes < total_bytes )
+      {
+	hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketOptimized (rfifo, &cur_bytes);
+	void * metadata = hdr->getMetaData();	      
+	uint16_t id = hdr->getDispatchId();	      	      
+	cumulative_bytes += cur_bytes;	      
+	_dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
+	MUSPI_syncRecFifoHwHead (rfifo);
+	packets++;	      
+	// Touch head for next packet
+      }
+    }
+  }
+  
+  //TRACE((stderr, "<< RecFifoSubGroup::recFifoPoll(%p) .. packets = %d\n", rfifo, packets));
+  return packets;
+}
 
 #endif // __components_devices_bgq_mu2_Context_h__
 //
