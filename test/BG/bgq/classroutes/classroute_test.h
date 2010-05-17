@@ -2,9 +2,22 @@
 #include <spi/include/kernel/collective.h>
 #include "spi/include/mu/Classroute.h"
 #undef __INLINE__
-#define __INLINE__      static inline
+#define __INLINE__	static inline
 #include "spi/include/mu/Classroute_inlines.h"
 
+static int is_inside_rect(CR_RECT_T *comm, CR_COORD_T *co) {
+	int d;
+	for (d = 0; d < CR_NUM_DIMS; ++d) {
+		if (CR_COORD_DIM(co,d) < CR_COORD_DIM(CR_RECT_LL(comm),d)) return 0;
+		if (CR_COORD_DIM(co,d) > CR_COORD_DIM(CR_RECT_UR(comm),d)) return 0;
+	}
+	return 1;
+}
+
+static void allreduce(int id, void *sbuf, void *rbuf, int count, pami_dt dt, pami_op op) {
+}
+
+int main(int argc, char **argv) {
 	CR_RECT_T refcomm;
 	CR_COORD_T me;
 
@@ -93,7 +106,7 @@
 	int nexcl = 0;
 	if (np != (size_t)-1) {
 		int z = __MUSPI_rect_size(&communiv);
-		excluded = malloc(z * sizeof(CR_COORD_T));
+		excluded = malloc((z - np) * sizeof(CR_COORD_T));
 		// assert(excluded != NULL);
 
 		// \todo really discard previous pri_dim here?
@@ -102,6 +115,9 @@
 	} else {
 		commworld = communiv;
 	}
+	int world_id = 0; // where did CNK setup our commworld classroute?
+	int nClassRoutes = 16; // how many are really available to us?
+
 	// At this point, 'commworld' should be the circumscribing rectangle for the
 	// active nodes and 'excluded' (if not NULL and nexcl > 0) is the array of
 	// excluded nodes from 'commworld'.
@@ -117,54 +133,73 @@
 	void *crdata = NULL; // used by routines to keep track of classroute assignments
 
 	CR_RECT_T subcomm;
+	CR_COORD_T *subexcl;
+	int subnexcl;
+	uint32_t mask;
 	for (i = 0; i < nClassRoutes; ++i) {
 		if (i == 0) {
-			// Build this node's classroute for comm-world:
+			// Build this node's classroute for (dup of) comm-world:
 			subcomm = commworld;
+			subexcl = excluded;
+			subnexcl = nexcl;
 		} else {
 			// TBD: what sub-comms to build...
 		}
-		if (nexcl > 0) {
-			MUSPI_BuildNodeClassrouteSparse(&refcomm, &refroot, &me,
-							&commworld, excluded, nexcl,
+		if (is_inside_rect(&subcomm, &me)) {
+			if (subnexcl > 0) {
+				MUSPI_BuildNodeClassrouteSparse(&refcomm, &refroot, &me,
+							&commworld, subexcl, subnexcl,
 							NULL, pri_dim, &cr);
-		} else {
-			MUSPI_BuildNodeClassroute(&refcomm, &refroot, &me,
+			} else {
+				MUSPI_BuildNodeClassroute(&refcomm, &refroot, &me,
 							&commworld,
 							NULL, pri_dim, &cr);
+			}
+
+			// assume we are contributing data. sparse rectangles might need an if-check here.
+			cr.input |= BGQ_CLASS_INPUT_LINK_LOCAL;
+
+			// we use the "sub-comm" VC since there are actually only two.
+			cr.input |= BGQ_CLASS_INPUT_VC_SUBCOMM;
+
+			// Use SUBCOMM VC to avoid conflicts with SYSTEM.
+			mask = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
+							&commworld, &crdata);
+		} else {
+			// if I am not in this sub-comm, just allow any id...
+			mask = (uint64_t)-1;
+			cr.input = 0;
+			cr.output = 0;
 		}
 
-		// assume we are contributing data. sparse rectangles might need an if-check here.
-		cr.input |= BGQ_CLASS_INPUT_LINK_LOCAL;
+		allreduce(world_id, &mask, &mask,
+					1, PAMI_UNSIGNED_LONG_LONG, PAMI_BAND);
 
-		// we use the "sub-comm" VC since there are actually only two.
-		cr.input |= BGQ_CLASS_INPUT_VC_SUBCOMM;
-
-		// Use SUBCOMM VC to avoid conflicts with SYSTEM.
-		uint32_t mask = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
-			                                            &commworld, &crdata);
-		int id;
-		// If other nodes might be creating difference classroutes, need to do a
-		// collective operation here to get classroute ID.  But for this test we
-		// can just assume all nodes are doing the exact same thing.
-		//
-		// allreduce(&mask, OP_AND);
-		//
-		id = ffs(mask);
-		if (id == 0) {
-			    // fatal error - no classroute ids available
+		if (is_inside_rect(&subcomm, &me)) {
+			int id;
+			id = ffs(mask);
+			if (id == 0) {
+				// fatal error - no classroute ids available.
+				// we could just 'break' here, but all nodes must follow suit...
+			}
+			--id; // ffs() returns bit# + 1
+			classRouteIds[i] = id;
+			classRoutes[i] = cr;
+			classRouteSize[i] = __MUSPI_rect_size(&subcomm);
+			(void)MUSPI_SetClassrouteId(classRouteIds[i],
+						BGQ_CLASS_INPUT_VC_SUBCOMM,
+						&commworld, &crdata);
+		} else {
+			//classRouteIds[i] = -1;
+			//classRoutes[i] = cr;
+			classRouteSize[i] = 0;
 		}
-		--id; // ffs() returns bit# + 1
-		classRouteIds[i] = id;
-		classRoutes[i] = cr;
-		(void)MUSPI_SetClassrouteId(classRouteIds[i], BGQ_CLASS_INPUT_VC_SUBCOMM,
-			                                            &commworld, &crdata);
 	}
 
 	//=======================================================================
  
 	// Initialize all of the collective class routes
-	for (i=0; i<nClassRoutes; ++i) {
+	for (i = 0; i < nClassRoutes; ++i) {
 		rc = Kernel_SetCollectiveClassRoute(classRouteIds[i], &classRoutes[i]);
 		if (rc) {
 			printf("Kernel_SetCollectiveClassRoute for class route %u returned rc = %u\n",i, rc);
@@ -173,7 +208,19 @@
 	}
 	//=======================================================================
 
-	// Now test all the classroutes... TBD
+	// Now test all the classroutes...
+	for (i = 0; i < nClassRoutes; ++i) {
+		if (classRouteSize[i] == 0) continue; // barrier needed?
+
+		unsigned long long rbuf, sbuf;
+		sbuf = 1;
+		rbuf = -1;
+		allreduce(classRouteIds[i], &sbuf, &rbuf,
+					1, PAMI_UNSIGNED_LONG_LONG, PAMI_SUM);
+		if (rbuf != classRouteSize[i] * 1) {
+			// report error
+		}
+	}
 
 	//=======================================================================
 
@@ -182,12 +229,12 @@
 	// Deallocate all of the collective class routes
 	for (i = 0; i < nClassRoutes; ++i) {
 		MUSPI_ReleaseClassrouteId(classRouteIds[i], BGQ_CLASS_INPUT_VC_SUBCOMM,
-			                                            &commworld, &crdata);
+							&commworld, &crdata);
 		rc = Kernel_DeallocateCollectiveClassRoute(classRouteIds[i]);
 		if (rc) {
 			printf("Kernel_DeallocateCollectiveClassRoute for class route %u returned rc = %u\n",i, rc);
-			test_exit(1);
+			exit(1);
 		}
 	}
-
-
+	exit(0);
+}
