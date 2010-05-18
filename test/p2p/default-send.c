@@ -118,7 +118,7 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Only the SHMem device is initialized.\n");
       initial_device = 1;
       device_limit = 2;
-    } else if ( !strcmp(device, "B") || !strcmp(device, "") ){
+    } else if ( !strcmp(device, "B")){
       fprintf (stderr, "Both the MU and SHMem devices are initialized.\n");
       initial_device = 0;
       device_limit = 2;
