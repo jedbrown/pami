@@ -5,6 +5,49 @@
 #define __INLINE__	static inline
 #include "spi/include/mu/Classroute_inlines.h"
 
+int sprint_coord(char *buf, CR_COORD_T *co) {
+        char *s = buf;
+        char c = '(';
+        int x;
+        for (x = 0; x < CR_NUM_DIMS; ++x) {
+                s += sprintf(s, "%c%d", c, CR_COORD_DIM(co,x));
+                c = ',';
+        }
+        *s++ = ')';
+        *s = '\0'; 
+        return s - buf;
+}
+
+int sprint_rect(char *buf, CR_RECT_T *r) {
+        char *s = buf;
+
+        s += sprint_coord(s, CR_RECT_LL(r));
+        *s++ = ':';
+        s += sprint_coord(s, CR_RECT_UR(r));
+        return s - buf;
+}
+
+int sprint_map(char *buf, int *map) {
+	char *s = buf;
+	int i;
+	for (i = 0; i < CR_NUM_DIMS; ++i) {
+		*s++ = CR_DIM_NAMES[map[i]];
+	}
+	*s = '\0';
+	return (s - buf);
+}
+
+int coord2rank(int *map, CR_RECT_T *comm, CR_COORD_T *coord) {
+	int rank = 0;
+	int x, d;
+	for (x = 0; x < CR_NUM_DIMS; ++x) {
+		d = map[CR_NUM_DIMS - x - 1];
+		rank *= (CR_COORD_DIM(CR_RECT_UR(comm),d) - CR_COORD_DIM(CR_RECT_LL(comm),d) + 1);
+		rank += (CR_COORD_DIM(coord,d) - CR_COORD_DIM(CR_RECT_LL(comm),d));
+	}
+	return rank;
+}
+
 static int is_inside_rect(CR_RECT_T *comm, CR_COORD_T *co) {
 	int d;
 	for (d = 0; d < CR_NUM_DIMS; ++d) {
@@ -17,11 +60,33 @@ static int is_inside_rect(CR_RECT_T *comm, CR_COORD_T *co) {
 static void allreduce(int id, void *sbuf, void *rbuf, int count, pami_dt dt, pami_op op) {
 }
 
+void get_comm(int index, CR_RECT_T *world, CR_COORD_T *wexcl, int wnexcl,
+				CR_RECT_T *comm, CR_COORD_T **excl, int *nexcl) {
+		if (index == 0) {
+			// Build this node's classroute for (dup of) comm-world:
+			subcomm = commworld;
+			subexcl = excluded;
+			subnexcl = nexcl;
+		} else if (index == 1) {
+			// split into multiple disjoint comms... ???
+			// result: N disjoint comms (8?)
+		} else if ((index & 1) != 0) {
+			// split comm on specified dimension, if >= 2 in size
+			// result: 2 disjoint comms
+		} else {
+			// trim comm by 1 on specified dimensions...
+			// result: 1 comm excluding some nodes
+		}
+}
+
 int main(int argc, char **argv) {
 	CR_RECT_T refcomm;
 	CR_COORD_T me;
+	static char buf[1024];
+	char *s;
 
-	// initialize entire-block rectange:
+	// initialize entire-block rectange.
+	// Note: only a subset of these nodes may actually be running.
 	*CR_RECT_LL(&refcomm) = (CR_COORD_T){{0,0,0,0,0}};
 	*CR_RECT_UR(&refcomm) = (CR_COORD_T){{
 		pers->Network_Config.Anodes - 1,
@@ -50,7 +115,7 @@ int main(int argc, char **argv) {
 	MUSPI_PickWorldRoot(&refcomm, NULL, &refroot, &pri_dim);
 
 	size_t np = (size_t)-1;
-	char *s = getenv("BG_PROCESSESPERNODE");
+	s = getenv("BG_PROCESSESPERNODE");
 	if (s) {
 		np = stroul(s, NULL, 0);
 	}
@@ -84,6 +149,10 @@ int main(int argc, char **argv) {
 		*CR_RECT_UR(&communiv) = *CR_RECT_UR(&refcomm);
 
 	} else {
+		if (subblk.shape.core != 0) { // sub-node job... not supported
+			fprintf(stderr, "Sub-node jobs are not supported\n");
+			exit(1);
+		}
 
 		*CR_RECT_LL(&communiv) = (CR_COORD_T){{
 			subblk.corner.a,
@@ -99,8 +168,11 @@ int main(int argc, char **argv) {
 			subblk.corner.d + subblk.shape.d - 1,
 			subblk.corner.e + subblk.shape.e - 1
 		}};
+		// Note: still may not be running every node in rectangle...
 
 	}
+	int rank = coord2rank(map, &communiv, &me)
+
 	CR_RECT_T commworld;
 	CR_COORD_T *excluded = NULL;
 	int nexcl = 0;
@@ -115,6 +187,41 @@ int main(int argc, char **argv) {
 	} else {
 		commworld = communiv;
 	}
+
+	// if (verbose) {...
+	if (rank == 0) {
+		s = buf;
+		s += sprintf(s, "Booted block = ");
+		s += sprint_rect(s, &refcomm);
+		fprintf(stderr, "%s\n", buf);
+
+		s = buf;
+		s += sprintf(s, "Job circumscribing rectangle = ");
+		s += sprint_rect(s, &communiv);
+		fprintf(stderr, "%s\n", buf);
+
+		s = buf;
+		s += sprintf(s, "Comm-world = ");
+		s += sprint_rect(s, &commworld);
+		if (nexcl > 0) {
+			s += sprintf(s, "\n\texcluding\t");
+			for (i = 0; i < nexcl; ++i) {
+				if (i) {
+					s += sprintf(s, "\n\t\t\t");
+				}
+				s += sprint_coord(s, &excluded[i]);
+			}
+		}
+		fprintf(stderr, "%s\n", buf);
+	}
+	s = buf;
+	s += sprintf(s, "I am %d ", rank);
+	s += sprint_coord(s, &me);
+	s += sprintf(s, " using mapping ");
+	s += sprint_map(s, map);
+	fprintf(stderr, "%s\n", buf);
+	// ...}
+
 	int world_id = 0; // where did CNK setup our commworld classroute?
 	int nClassRoutes = 16; // how many are really available to us?
 
@@ -137,14 +244,8 @@ int main(int argc, char **argv) {
 	int subnexcl;
 	uint32_t mask;
 	for (i = 0; i < nClassRoutes; ++i) {
-		if (i == 0) {
-			// Build this node's classroute for (dup of) comm-world:
-			subcomm = commworld;
-			subexcl = excluded;
-			subnexcl = nexcl;
-		} else {
-			// TBD: what sub-comms to build...
-		}
+		get_comm(i, &commworld, excluded, nexcl,
+				&subcomm, &subexcl, &subnexcl);
 		if (is_inside_rect(&subcomm, &me)) {
 			if (subnexcl > 0) {
 				MUSPI_BuildNodeClassrouteSparse(&refcomm, &refroot, &me,
