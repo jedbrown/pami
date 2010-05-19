@@ -56,12 +56,11 @@ endif
 default: ${APPS}
 
 runmambo:
-	BG_SHAREDMEMSIZE=1 BG_PROCESSESPERNODE=4 @BGFLOOR@/scripts/runfctest.sh \
+	BG_SHAREDMEMSIZE=1 BG_PROCESSESPERNODE=4 BG_MEMSIZE=4096 @BGFLOOR@/scripts/runfctest.sh \
 	--ttype cnk \
 	--parmstest ${VPATH}/test.parms \
-	--program personality.cnk \
-	--svchost ${VPATH}/pers.svchost \
-	--numcores 16 \
+	--program ${APPS} \
+	--numcores 17 \
 	--script runMambo \
 	$(parms)
 
