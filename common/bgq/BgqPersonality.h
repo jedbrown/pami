@@ -73,6 +73,12 @@ namespace PAMI
         var = getenv("BG_MEMSIZE");
         TRACE_MAMBO((stderr, "BG_MEMSIZE %s\n", var ? var : "NULL"));
 
+	// this seems really lame...
+        if (Network_Config.Anodes == 0) Network_Config.Anodes = 1;
+        if (Network_Config.Bnodes == 0) Network_Config.Bnodes = 1;
+        if (Network_Config.Cnodes == 0) Network_Config.Cnodes = 1;
+        if (Network_Config.Dnodes == 0) Network_Config.Dnodes = 1;
+        if (Network_Config.Enodes == 0) Network_Config.Enodes = 1;
 
         TRACE_MAMBO((stderr, "BGQPersonality Kernel_Config.NodeConfig %#llX\n", (unsigned long long)(Kernel_Config.NodeConfig)));
         TRACE_MAMBO((stderr, "BGQPersonality Kernel_Config.TraceConfig %#llX\n", (unsigned long long)(Kernel_Config.TraceConfig)));
