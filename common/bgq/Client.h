@@ -135,7 +135,7 @@ namespace PAMI
         // Create one comm thread semi-opaque pointer. Internally, this may be
         // one-per-context (optimal advance scenario) or some other arrangement.
 	/// \todo #warning need to fix node-scoped l2atomic mm so that it allows private alloc
-        _commThreads = PAMI::Device::CommThread::BgqCommThread::generate(_clientid, n, &_mm, &__global.l2atomicFactory.__procscoped_mm);
+        _commThreads = PAMI::Device::CommThread::BgqCommThread::generate(_clientid, n, &_mm, &__global.l2atomicFactory.__nodescoped_mm);
         PAMI_assertf(_commThreads, "BgqCommThread::generate failed for _commThreads[%d]\n", n);
 #endif // USE_COMMTHREADS
         int x;

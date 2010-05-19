@@ -149,16 +149,18 @@ public:
                 BgqWakeupRegion *wu;
                 BgqContextPool *pool;
                 size_t x;
+		size_t me = __global.topology_local.rank2Index(__global.mapping.task());
+		size_t lsize = __global.topology_local.size();
                 posix_memalign((void **)&devs, 16, num_ctx * sizeof(*devs));
                 posix_memalign((void **)&pool, 16, sizeof(*pool));
                 posix_memalign((void **)&wu, 16, sizeof(*wu)); // one per client
 
                 new (wu) BgqWakeupRegion();
-                wu->init(clientid, num_ctx, l2xmm);
-		__global._wuRegion_mm[clientid] = &wu->_wu_mm;
+                wu->init(clientid, num_ctx, me, lsize, l2xmm);
+		__global._wuRegion_mms[clientid] = wu->getAllWUmm();
 
                 new (pool) BgqContextPool();
-                pool->init(clientid, num_ctx, genmm, &wu->_wu_mm);
+                pool->init(clientid, num_ctx, genmm, wu->getWUmm());
 
                 for (x = 0; x < num_ctx; ++x) {
                         // one per context, but not otherwise tied to a context.

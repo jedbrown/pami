@@ -37,8 +37,6 @@ public:
 
         BgqWakeupRegion() :
 	_wu_mm(),
-	_wakeup_region(NULL),
-	_wu_region_len(0),
         _wu_memreg()
         { }
 
@@ -51,7 +49,7 @@ public:
         /// \param[in] mm	L2Atomic/Shmem MemoryManager
         /// \return	Error code
         ///
-        inline pami_result_t init(size_t clientid, size_t nctx, Memory::MemoryManager *mm) {
+        inline pami_result_t init(size_t clientid, size_t nctx, size_t me, size_t lsize, Memory::MemoryManager *mm) {
                 size_t mctx = nctx;
                 // in order for WAC base/mask values to work, need to ensure alignment
                 // is such that power-of-two pairs of (ctx0,mctx) result in viable
@@ -60,7 +58,8 @@ public:
                 while (mctx & (mctx - 1)) ++mctx; // brute force - better way?
 
 		void *virt = NULL;
-		size_t size = mctx * BGQ_WACREGION_SIZE * sizeof(uint64_t);
+		size_t esize = mctx * BGQ_WACREGION_SIZE * sizeof(uint64_t);
+		size_t size = lsize * esize;
 		mm->memalign(&virt, size, size);
 		if (virt == NULL) {
 			return PAMI_ERROR;
@@ -70,12 +69,16 @@ public:
                         //mm->free(virt);
                         return PAMI_ERROR;
                 }
-		_wu_mm.init(virt, size);
-		_wakeup_region = virt;
-		_wu_region_len = size;
+		char *v = (char *)virt;
+		size_t i;
+		for (i = 0; i < lsize; ++i) {
+			_wu_mm[i].init(v, esize);
+			v += esize;
+		}
+		_wu_region_me = me;
 
-                // assert((_wu_region_len & (_wu_region_len - 1)) == 0); // power of 2
-                // assert((_wu_memreg.BasePa & (_wu_region_len - 1)) == 0); // aligned
+                // assert((size & (size - 1)) == 0); // power of 2
+                // assert((_wu_memreg.BasePa & (size - 1)) == 0); // aligned
                 return PAMI_SUCCESS;
         }
 
@@ -89,39 +92,24 @@ public:
         ///
         inline void getWURange(uint64_t ctx, uint64_t *base, uint64_t *mask) {
                 *base = (uint64_t)_wu_memreg.BasePa +
-			((char *)_wakeup_region - (char *)_wu_memreg.BaseVa);
-                *mask = ~(_wu_region_len - 1);
+			((char *)_wu_mm[_wu_region_me].base() - (char *)_wu_memreg.BaseVa);
+                *mask = ~(_wu_mm[_wu_region_me].size() - 1);
         }
 
-        inline void touchWURange(uint64_t ctx) {
-		volatile uint64_t *addr, *end;
-		uint64_t val;
-
-		addr = (volatile uint64_t *)_wakeup_region;
-		end = addr + (_wu_region_len - _wu_mm.available()) / sizeof(uint64_t);
-		while (addr < end) {
-			val = *addr;
-			addr = addr + WU_CACHELINE_SIZE / sizeof(uint64_t);
-		}
-        }
-
-	inline size_t copyWURange(uint64_t *buf) {
-		size_t n = _wu_region_len - _wu_mm.available();
-		memcpy(buf, _wakeup_region, n);
-		return n;
+	inline PAMI::Memory::MemoryManager *getWUmm(size_t process = (size_t)-1) {
+		if (process == (size_t)-1) process = _wu_region_me;
+		return &_wu_mm[process];
 	}
 
-	inline int cmpWURange(uint64_t *buf) {
-		return memcmp(buf, _wakeup_region, _wu_region_len - _wu_mm.available());
+	inline PAMI::Memory::MemoryManager *getAllWUmm() {
+		return &_wu_mm[0];
 	}
-
-	PAMI::Memory::MemoryManager _wu_mm;
 
 private:
         typedef uint64_t BgqWakeupRegionBuffer[BGQ_WACREGION_SIZE];
 
-        void *_wakeup_region;	///< memory for WAC for all contexts
-        size_t _wu_region_len;			///< length of total WAC region
+	PAMI::Memory::MemoryManager _wu_mm[PAMI_MAX_PROC_PER_NODE];
+	size_t _wu_region_me;	///< local process index into WAC regions
         Kernel_MemoryRegion_t _wu_memreg;	///< phy addr of WAC region
 }; // class BgqWakeupRegion
 

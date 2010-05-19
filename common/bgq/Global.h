@@ -242,7 +242,7 @@ namespace PAMI
       PAMI::Mapping         mapping;
       PAMI::Atomic::BGQ::L2AtomicFactory l2atomicFactory;
       PAMI::Memory::MemoryManager mm;
-      PAMI::Memory::MemoryManager *_wuRegion_mm[PAMI_MAX_NUM_CLIENTS];
+      PAMI::Memory::MemoryManager *_wuRegion_mms[PAMI_MAX_NUM_CLIENTS];
 
     private:
 
@@ -546,7 +546,8 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
           memcpy((void *)&cacheAnchorsPtr->activeURCorner, &_ur, sizeof(_ur));
           TRACE_ERR((stderr, "Global::initializeMapCache() numActiveRanksGlobal %zu,numActiveNodesGlobal %zu,max_rank %u, min_rank %u\n", numActiveRanksGlobal, numActiveNodesGlobal, max_rank, min_rank));
         }
-      else PAMI_abortf("Kernel_Ranks2Coords rc = %d\n", rc);
+      else PAMI_abortf("Kernel_RanksToCoords(%zd, %p, %p) rc = %d\n",
+		fullSize * sizeof(*mapcache->torus.task2coords), mapcache->torus.task2coords, &numentries, rc);
 
       // Initialize the node task2peer and peer2task caches.
       uint32_t hash;
