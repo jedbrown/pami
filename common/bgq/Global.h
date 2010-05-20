@@ -398,10 +398,10 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
        */
       int rc = 0;
 
-      uint64_t numentries;
+      //      uint64_t numentries;
 
-      rc = Kernel_RanksToCoords(fullSize * sizeof(*mapcache->torus.task2coords), (BG_CoordinateMapping_t *)mapcache->torus.task2coords, &numentries);
-      TRACE_ERR( (stderr, "Global::initializeMapCache() .. fullSize = %zu, numentries %zu\n", fullSize,numentries));
+      //      rc = Kernel_RanksToCoords(fullSize * sizeof(*mapcache->torus.task2coords), (BG_CoordinateMapping_t *)mapcache->torus.task2coords, &numentries);
+      //      TRACE_ERR( (stderr, "Global::initializeMapCache() .. fullSize = %zu, numentries %zu\n", fullSize,numentries));
 
       //BG_CoordinateMapping_t* map = (BG_CoordinateMapping_t *)mapcache->torus.task2coords;
       //for(uint64_t x=0; x<numentries; x++) fprintf(stderr,"Global::initializeMapCache() index=%zu  a/b/c/d/e/core/thread:  a=%d, b=%d, c=%d, d=%d, e=%d,  core=%d, thread=%d\n", x, map[x].a, map[x].b, map[x].c, map[x].d, map[x].e, map[x].core, map[x].thread);
@@ -546,8 +546,8 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
           memcpy((void *)&cacheAnchorsPtr->activeURCorner, &_ur, sizeof(_ur));
           TRACE_ERR((stderr, "Global::initializeMapCache() numActiveRanksGlobal %zu,numActiveNodesGlobal %zu,max_rank %u, min_rank %u\n", numActiveRanksGlobal, numActiveNodesGlobal, max_rank, min_rank));
         }
-      else PAMI_abortf("Kernel_RanksToCoords(%zd, %p, %p) rc = %d\n",
-		fullSize * sizeof(*mapcache->torus.task2coords), mapcache->torus.task2coords, &numentries, rc);
+      //      else PAMI_abortf("Kernel_RanksToCoords(%zd, %p, %p) rc = %d\n",
+      //		fullSize * sizeof(*mapcache->torus.task2coords), mapcache->torus.task2coords, &numentries, rc);
 
       // Initialize the node task2peer and peer2task caches.
       uint32_t hash;

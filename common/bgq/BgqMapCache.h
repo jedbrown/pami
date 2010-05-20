@@ -17,7 +17,7 @@
 
 #include "common/bgq/BgqPersonality.h"
 
-#include <spi/include/kernel/location.h>
+//#include <spi/include/kernel/location.h>
 
 /// \brief Creates valid index into _rankcache[].
 ///
@@ -46,18 +46,18 @@ namespace PAMI
   ///
   typedef union bgq_coords
   {
-    BG_CoordinateMapping_t mapped;
-//  struct
-//  {
-//    uint32_t thread   : 2; ///< Hardware thread id, 4 threads per core
-//    uint32_t a        : 6; ///< Torus 'a' dimension
-//    uint32_t b        : 6; ///< Torus 'b' dimension
-//    uint32_t c        : 6; ///< Torus 'c' dimension
-//    uint32_t d        : 6; ///< Torus 'd' dimension
-//    uint32_t e        : 1; ///< Torus 'e' dimension, two nodes per node card
-//    uint32_t reserved : 1; ///< Reserved - possibly to identify the 17th core
-//    uint32_t core     : 4; ///< Core id, 16 application cores per node
-//  };
+    //    BG_CoordinateMapping_t mapped;
+  struct
+  {
+    uint32_t thread   : 2; ///< Hardware thread id, 4 threads per core
+    uint32_t a        : 6; ///< Torus 'a' dimension
+    uint32_t b        : 6; ///< Torus 'b' dimension
+    uint32_t c        : 6; ///< Torus 'c' dimension
+    uint32_t d        : 6; ///< Torus 'd' dimension
+    uint32_t e        : 1; ///< Torus 'e' dimension, two nodes per node card
+    uint32_t reserved : 1; ///< Reserved - possibly to identify the 17th core
+    uint32_t core     : 4; ///< Core id, 16 application cores per node
+  } mapped;
     uint32_t   raw;          ///< Raw memory storage
   } bgq_coords_t;
 
