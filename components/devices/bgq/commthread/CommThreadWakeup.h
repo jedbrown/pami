@@ -156,7 +156,10 @@ public:
                 posix_memalign((void **)&wu, 16, sizeof(*wu)); // one per client
 
                 new (wu) BgqWakeupRegion();
-                wu->init(clientid, num_ctx, me, lsize, l2xmm);
+                pami_result_t rc = wu->init(clientid, num_ctx, me, lsize, l2xmm);
+		if (rc != PAMI_SUCCESS) {
+			PAMI_abortf("Failed to inialize BgqWakeupRegion - not enough shared memory?");
+		}
 		__global._wuRegion_mms[clientid] = wu->getAllWUmm();
 
                 new (pool) BgqContextPool();
