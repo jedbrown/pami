@@ -37,7 +37,7 @@
 namespace PAMI
 {
 #define BGQ_TDIMS 5
-#define BGQ_LDIMS 2
+#define BGQ_LDIMS 1
   class Mapping :
   public Interface::Mapping::Base<Mapping>,
   public Interface::Mapping::Torus<Mapping, BGQ_TDIMS>,
@@ -50,13 +50,12 @@ namespace PAMI
     Interface::Mapping::Torus<Mapping, BGQ_TDIMS>(),
     Interface::Mapping::Node<Mapping,BGQ_LDIMS> (),
     _pers(pers),
-    _task(0),
+    _task((size_t)-1),
     _a (_pers.aCoord()),
     _b (_pers.bCoord()),
     _c (_pers.cCoord()),
     _d (_pers.dCoord()),
     _e (_pers.eCoord()),
-    _p (_pers.pCoord()),
     _t (_pers.tCoord())
     {
       // ----------------------------------------------------------------
@@ -67,36 +66,18 @@ namespace PAMI
       // structure match
       COMPILE_TIME_ASSERT(sizeof(bgq_coords_t) == sizeof(MUHWI_Destination_t));
 
-      _coords.mapped.thread   = _t;
+      _coords.mapped.t        = _t;
       _coords.mapped.a        = _a;
       _coords.mapped.b        = _b;
       _coords.mapped.c        = _c;
       _coords.mapped.d        = _d;
       _coords.mapped.e        = _e;
       _coords.mapped.reserved =  0;
-      _coords.mapped.core     = _p;
 
-      //coord2node (_t, _a, _b, _c, _d, _e, _p,
-      //            _nodeaddr.global, _nodeaddr.local);
-
-      coord2node (_a, _b, _c, _d, _e, _p,_t,      //fix?
+      coord2node (_a, _b, _c, _d, _e, _t,      //fix?
                   _nodeaddr.global, _nodeaddr.local);
-      TRACE_MAMBO((stderr, "Mapping() coords(a,b,c,d,e,p,t):(%zu %zu %zu %zu %zu %zu %zu), node: (%#lX %#lX)\n", _a, _b, _c, _d, _e, _p, _t, _nodeaddr.global, _nodeaddr.local));
-      size_t
-        asize =_pers.aSize(),
-        bsize =_pers.bSize(),
-        csize =_pers.cSize(),
-        dsize =_pers.dSize(),
-      //  esize =_pers.eSize(),// eSize isn't currently used in the calculation so we get warnings
-        psize =_pers.pSize(),
-        tsize =_pers.tSize();
+      TRACE_MAMBO((stderr, "Mapping() coords(a,b,c,d,e,t):(%zu %zu %zu %zu %zu %zu), node: (%#lX %#lX)\n", _a, _b, _c, _d, _e, _t, _nodeaddr.global, _nodeaddr.local));
 
-      TRACE_MAMBO((stderr,"Mapping() size a/b/c/d/e/p/t = %zu/%zu/%zu/%zu/%zu/%zu/%zu\n", asize, bsize, csize, dsize, _pers.eSize(), psize, tsize));
-
-      _task = ESTIMATED_TASK(_a,_b,_c,_d,_e,_p,_t,
-                             asize,bsize,csize,dsize,(_pers.eSize()),psize,tsize); // esize isn't used but just in case...
-
-      TRACE_MAMBO((stderr,"Mapping() task %zu\n", _task));
     };
 
     inline ~Mapping ()
@@ -106,15 +87,14 @@ namespace PAMI
   protected:
     PAMI::BgqPersonality &_pers;
     size_t _task;
-    size_t _nodes;
-    size_t _peers;
+//    size_t _nodes;
+//    size_t _peers;
 
     size_t _a;
     size_t _b;
     size_t _c;
     size_t _d;
     size_t _e;
-    size_t _p;
     size_t _t;
 
     bgq_coords_t  _coords;
@@ -128,14 +108,13 @@ namespace PAMI
                             size_t   c,
                             size_t   d,
                             size_t   e,
-                            size_t   p,
                             size_t   t,
                             size_t & global,
                             size_t & local)
     {
       global = e | (d << 1) | (c << 7) | (b << 13) | (a << 19);
-      local  = p | (t << 4);
-      TRACE_ERR((stderr, "Mapping() coords2node((%zu %zu %zu %zu %zu %zu %zu),(%#lX %#lX)\n", a, b, c, d, e, p, t, global, local));
+      local  = t;
+      TRACE_ERR((stderr, "Mapping() coords2node((%zu %zu %zu %zu %zu %zu),(%#lX %#lX)\n", a, b, c, d, e, t, global, local));
     };
 
     inline void node2coord (size_t & a,
@@ -143,7 +122,6 @@ namespace PAMI
                             size_t & c,
                             size_t & d,
                             size_t & e,
-                            size_t & p,
                             size_t & t,
                             size_t   global,
                             size_t   local)
@@ -154,10 +132,9 @@ namespace PAMI
       b = (global >> 13) & 0x0000003f;
       a = global >> 19;
 
-      p = local & 0x0000000f;
-      t = local >> 4;
+      t = local;
 
-      TRACE_ERR((stderr, "Mapping() node2coord((%zu %zu %zu %zu %zu %zu %zu),(%#lX %#lX)\n", a, b, c, d, e, p, t, global, local));
+      TRACE_ERR((stderr, "Mapping() node2coord((%zu %zu %zu %zu %zu %zu),(%#lX %#lX)\n", a, b, c, d, e, t, global, local));
 
     };
 
@@ -246,9 +223,8 @@ namespace PAMI
       addr[2] = _c;
       addr[3] = _d;
       addr[4] = _e;
-      addr[5] = _p;
-      addr[6] = _t;
-      TRACE_ERR((stderr, "Mapping::torusAddr_impl(%zu, %zu, %zu, %zu, %zu, %zu, %zu} <<\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6]));
+      addr[5] = _t;
+      TRACE_ERR((stderr, "Mapping::torusAddr_impl(%zu, %zu, %zu, %zu, %zu, %zu}\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]));
     }
 
     ///
@@ -259,13 +235,13 @@ namespace PAMI
     ///
     inline pami_result_t task2torus_impl (size_t task, size_t (&addr)[BGQ_TDIMS])
     {
-      uint32_t abcdept = _mapcache.torus.task2coords[task].raw;
+      uint32_t abcdet = _mapcache.torus.task2coords[task].raw;
 
-      addr[0] = (abcdept >> 24) & 0x00000003f; // 'a' coordinate
-      addr[1] = (abcdept >> 18) & 0x00000003f; // 'b' coordinate
-      addr[2] = (abcdept >> 12) & 0x00000003f; // 'c' coordinate
-      addr[3] = (abcdept >>  6) & 0x00000003f; // 'd' coordinate
-      addr[4] = (abcdept >>  5) & 0x000000001; // 'e' coordinate
+      addr[0] = (abcdet >> 24) & 0x00000003f; // 'a' coordinate
+      addr[1] = (abcdet >> 18) & 0x00000003f; // 'b' coordinate
+      addr[2] = (abcdet >> 12) & 0x00000003f; // 'c' coordinate
+      addr[3] = (abcdet >>  6) & 0x00000003f; // 'd' coordinate
+      addr[4] = (abcdet >> 31); // 'e' coordinate
 
       TRACE_ERR((stderr, "Mapping::task2torus(%zu, {%zu, %zu, %zu, %zu, %zu}) <<\n", task, addr[0], addr[1], addr[2], addr[3], addr[4]));
       return PAMI_SUCCESS;
@@ -285,11 +261,10 @@ namespace PAMI
       addr[1] = (abcdept >> 18) & 0x00000003f; // 'b' coordinate
       addr[2] = (abcdept >> 12) & 0x00000003f; // 'c' coordinate
       addr[3] = (abcdept >>  6) & 0x00000003f; // 'd' coordinate
-      addr[4] = (abcdept >>  5) & 0x000000001; // 'e' coordinate
-      addr[5] = (abcdept)       & 0x00000000f; // 'p' coordinate
-      addr[6] = (abcdept >> 30) & 0x000000003; // 't' coordinate
+      addr[4] = (abcdept >> 31)              ; // 'e' coordinate
+      addr[5] = (abcdept)       & 0x00000003f; // 't' coordinate
 
-      TRACE_ERR((stderr, "Mapping::task2global(%zu, {%zu, %zu, %zu, %zu, %zu, %zu, %zu}) <<\n", task, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6]));
+      TRACE_ERR((stderr, "Mapping::task2global(%zu, {%zu, %zu, %zu, %zu, %zu, %zu}) <<\n", task, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]));
       return PAMI_SUCCESS;
     }
 
@@ -312,8 +287,7 @@ namespace PAMI
       size_t cSize = _pers.cSize();
       size_t dSize = _pers.dSize();
       size_t eSize = _pers.eSize();
-      size_t tSize = _pers.pSize();
-      size_t pSize = _pers.tSize();
+      size_t tSize = _pers.tSize();
 
       // Verify that the bgq address is valid.
       if (unlikely((addr[0] >= aSize) ||
@@ -321,15 +295,14 @@ namespace PAMI
                    (addr[2] >= cSize) ||
                    (addr[3] >= dSize) ||
                    (addr[4] >= eSize) ||
-                   (addr[6] >= tSize) ||
-                   (addr[5] >= pSize)))
+                   (addr[5] >= tSize)))
       {
         return PAMI_INVAL;
       }
 
       // Estimate the task id based on the bgq coordinates.
-      size_t hash = ESTIMATED_TASK(addr[0],addr[1],addr[2],addr[3],addr[4],addr[5],addr[6],
-                                   aSize,bSize,cSize,dSize,eSize,pSize,tSize);
+      size_t hash = ESTIMATED_TASK(addr[0],addr[1],addr[2],addr[3],addr[4],addr[5],
+                                   aSize,bSize,cSize,dSize,eSize,tSize);
 
       // Verify that the estimated task is mapped.
       if (unlikely(_mapcache.torus.coords2task[hash] == (unsigned) - 1))
@@ -339,7 +312,7 @@ namespace PAMI
 
       task = _mapcache.torus.coords2task[hash];
 
-      TRACE_ERR((stderr, "Mapping::torus2task_impl({%zu, %zu, %zu, %zu, %zu, %zu, %zu}, %zu) <<\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], task));
+      TRACE_ERR((stderr, "Mapping::torus2task_impl({%zu, %zu, %zu, %zu, %zu, %zu}, %zu) <<\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], task));
 
       return PAMI_SUCCESS;
     };
@@ -355,16 +328,15 @@ namespace PAMI
                                            pami_network type)
     {
       TRACE_ERR((stderr,"task2network %d\n",task));
-      uint32_t abcdept = _mapcache.torus.task2coords[task].raw;
+      uint32_t abcdet = _mapcache.torus.task2coords[task].raw;
       addr->network = PAMI_N_TORUS_NETWORK;
-      addr->u.n_torus.coords[0] = (abcdept >> 24) & 0x00000003f; // 'a' coordinate
-      addr->u.n_torus.coords[1] = (abcdept >> 18) & 0x00000003f; // 'b' coordinate
-      addr->u.n_torus.coords[2] = (abcdept >> 12) & 0x00000003f; // 'c' coordinate
-      addr->u.n_torus.coords[3] = (abcdept >>  6) & 0x00000003f; // 'd' coordinate
-      addr->u.n_torus.coords[4] = (abcdept >>  5) & 0x000000001; // 'e' coordinate
-      addr->u.n_torus.coords[5] = (abcdept)       & 0x00000000f; // 'p' coordinate
-      addr->u.n_torus.coords[6] = (abcdept >> 30) & 0x000000003; // 't' coordinate
-      TRACE_ERR((stderr, "Mapping::task2network_impl(%d, {%zu, %zu, %zu, %zu, %zu, %zu, %zu}, %d) <<\n", task, addr->u.n_torus.coords[0], addr->u.n_torus.coords[1], addr->u.n_torus.coords[2], addr->u.n_torus.coords[3], addr->u.n_torus.coords[4], addr->u.n_torus.coords[5], addr->u.n_torus.coords[6], addr->network));
+      addr->u.n_torus.coords[0] = (abcdet >> 24) & 0x00000003f; // 'a' coordinate
+      addr->u.n_torus.coords[1] = (abcdet >> 18) & 0x00000003f; // 'b' coordinate
+      addr->u.n_torus.coords[2] = (abcdet >> 12) & 0x00000003f; // 'c' coordinate
+      addr->u.n_torus.coords[3] = (abcdet >>  6) & 0x00000003f; // 'd' coordinate
+      addr->u.n_torus.coords[4] = (abcdet >> 31)              ; // 'e' coordinate
+      addr->u.n_torus.coords[5] = (abcdet)       & 0x00000003f; // 't' coordinate
+      TRACE_ERR((stderr, "Mapping::task2network_impl(%d, {%zu, %zu, %zu, %zu, %zu, %zu}, %d) <<\n", task, addr->u.n_torus.coords[0], addr->u.n_torus.coords[1], addr->u.n_torus.coords[2], addr->u.n_torus.coords[3], addr->u.n_torus.coords[4], addr->u.n_torus.coords[5], addr->network));
       return PAMI_SUCCESS;
     }
 
@@ -383,14 +355,12 @@ namespace PAMI
       size_t cSize = _pers.cSize();
       size_t dSize = _pers.dSize();
       size_t eSize = _pers.eSize();
-      size_t pSize = _pers.pSize();
       size_t tSize = _pers.tSize();
       size_t a = addr->u.n_torus.coords[0];
       size_t b = addr->u.n_torus.coords[1];
       size_t c = addr->u.n_torus.coords[2];
       size_t d = addr->u.n_torus.coords[3];
       size_t e = addr->u.n_torus.coords[4];
-      size_t p = addr->u.n_torus.coords[5];
       size_t t = addr->u.n_torus.coords[6];
       // Verify that the bgq address is valid.
       // TODO convert to "unlikely if"
@@ -399,14 +369,13 @@ namespace PAMI
           (c >= cSize) ||
           (d >= dSize) ||
           (e >= eSize) ||
-          (p >= pSize) ||
           (t >= tSize))
       {
         return PAMI_INVAL;
       }
 
-      size_t hash = ESTIMATED_TASK(a,b,c,d,e,p,t,
-                                   aSize,bSize,cSize,dSize,eSize,pSize,tSize);
+      size_t hash = ESTIMATED_TASK(a,b,c,d,e,t,
+                                   aSize,bSize,cSize,dSize,eSize,tSize);
 
       if (_mapcache.torus.coords2task[hash] == (uint32_t)-1)
       {
@@ -414,7 +383,7 @@ namespace PAMI
       }
       *task = _mapcache.torus.coords2task[hash];
       *type = PAMI_N_TORUS_NETWORK;
-      TRACE_ERR((stderr, "Mapping::network2task_impl({%zu, %zu, %zu, %zu, %zu, %zu, %zu}, %d, %d) <<\n", addr->u.n_torus.coords[0], addr->u.n_torus.coords[1], addr->u.n_torus.coords[2], addr->u.n_torus.coords[3], addr->u.n_torus.coords[4], addr->u.n_torus.coords[5], addr->u.n_torus.coords[6], *task, addr->network));
+      TRACE_ERR((stderr, "Mapping::network2task_impl({%zu, %zu, %zu, %zu, %zu, %zu}, %d, %d) <<\n", addr->u.n_torus.coords[0], addr->u.n_torus.coords[1], addr->u.n_torus.coords[2], addr->u.n_torus.coords[3], addr->u.n_torus.coords[4], addr->u.n_torus.coords[5], *task, addr->network));
       return PAMI_SUCCESS;
     }
 
@@ -432,7 +401,7 @@ namespace PAMI
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-// #warning implement this!
+/// \todo #warning implement this!
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -443,7 +412,7 @@ namespace PAMI
     /// \see PAMI::Interface::Mapping::Node::nodePeers()
     inline pami_result_t nodePeers_impl (size_t & peers)
     {
-      peers = _peers;
+      peers = _mapcache.local_size;
       return PAMI_SUCCESS;
     };
 
@@ -453,7 +422,7 @@ namespace PAMI
       uint32_t coord1 = _mapcache.torus.task2coords[task1].raw;
       uint32_t coord2 = _mapcache.torus.task2coords[task2].raw;
 
-      return ((coord1 & 0x3fffffe0) == (coord2 & 0x3fffffe0));
+      return ((coord1 & 0xbfffffc0) == (coord2 & 0xbfffffc0));
     }
 
     /// \see PAMI::Interface::Mapping::Node::nodeAddr()
@@ -475,13 +444,12 @@ namespace PAMI
       TRACE_ERR((stderr, "Mapping::coords(%x) >>\n", coords));
 
       // global coordinate is just the a,b,c,d,e torus coords.
-      address.global = (coords >> 5) & 0x01ffffff;
+      address.global = ((coords >> 5) & 0x01ffffff) | (coords >> 31);
 
       // local coordinate is the thread id (t) in the most significant
       // position followed by the core id (p) in the least significant
       // position.
-      address.local = (coords & 0x0000000f) |
-                      ((coords >> 26) & 0x00000030);
+      address.local = (coords & 0x0000003f);
 
       TRACE_ERR((stderr, "Mapping::task2node_impl(%zu, {%zu, %zu}) <<\n", task, address.global, address.local));
       return PAMI_SUCCESS;
@@ -497,8 +465,7 @@ namespace PAMI
       size_t cSize = _pers.cSize();
       size_t dSize = _pers.dSize();
       size_t eSize = _pers.eSize();
-      size_t tSize = _pers.pSize();
-      size_t pSize = _pers.tSize();
+      size_t tSize = _pers.tSize();
 
       // global coordinate is just the a,b,c,d,e torus coords.
       size_t aCoord =  address.global >> 19;
@@ -510,8 +477,7 @@ namespace PAMI
       // local coordinate is the thread id (t) in the most significant
       // position followed by the core id (p) in the least significant
       // position.
-      size_t tCoord = address.local >> 4;
-      size_t pCoord = address.local & 0x0000000f;
+      size_t tCoord = address.local;
 
       // Verify that the bgq address is valid.
       if (unlikely((aCoord >= aSize) ||
@@ -519,15 +485,14 @@ namespace PAMI
                    (cCoord >= cSize) ||
                    (dCoord >= dSize) ||
                    (eCoord >= eSize) ||
-                   (pCoord >= pSize) ||
                    (tCoord >= tSize)))
       {
         return PAMI_INVAL;
       }
 
       // Estimate the task id based on the bgq coordinates.
-      size_t hash = ESTIMATED_TASK(aCoord,bCoord,cCoord,dCoord,eCoord,pCoord,tCoord,
-                                   aSize,bSize,cSize,dSize,eSize,pSize,tSize);
+      size_t hash = ESTIMATED_TASK(aCoord,bCoord,cCoord,dCoord,eCoord,tCoord,
+                                   aSize,bSize,cSize,dSize,eSize,tSize);
       // Verify that the estimated task is mapped.
       if (unlikely(_mapcache.torus.coords2task[hash] == (unsigned)-1))
       {
@@ -545,26 +510,19 @@ namespace PAMI
       TRACE_ERR((stderr, "Mapping::node2peer_impl({%zu, %zu}, ...) >>\n", address.global, address.local));
 
       size_t tSize = _pers.tSize();
-      size_t pSize = _pers.pSize();
       //size_t peerSize = tSize * pSize;
 
-      // local coordinate is the thread id (t) in the most significant
-      // position followed by the core id (p) in the least significant
-      // position.
-      size_t tCoord = address.local >> 4;
-      size_t pCoord = address.local & 0x0000000f;
+      size_t tCoord = address.local;
 
       // Verify that the local node address is valid.
-//    if (unlikely((pCoord >= pSize) || (tCoord >= tSize)))
-//    {
-//      return PAMI_INVAL;
-//    }
-      TRACE_ERR((stderr, "Mapping::node2peer pSize %zu, peerSize %zu, pCoord=%zu/%zu\n", pSize,tSize * pSize,pCoord,(16/(tSize * pSize)) * (pCoord%(tSize * pSize))));
-      //pCoord = (16/peerSize) * (pCoord%peerSize); /// \todo numCores == 16?
+      if (unlikely(tCoord >= tSize))
+      {
+        return PAMI_INVAL;
+      }
 
       // Estimate the task id based on the bgq coordinates.
-      size_t hash = ESTIMATED_TASK(0,0,0,0,0,pCoord,tCoord,
-                                   1,1,1,1,1,pSize,tSize);
+      size_t hash = ESTIMATED_TASK(0,0,0,0,0,tCoord,
+                                   1,1,1,1,1,tSize);
 
       // Verify that the address hash is valid.
       if (unlikely(_mapcache.node.local2peer[hash] == (unsigned) - 1))
@@ -573,7 +531,6 @@ namespace PAMI
       }
 
       peer = _mapcache.node.local2peer[hash];
-      TRACE_ERR((stderr, "local2peer[%zu]=%zu\n",hash,_mapcache.node.local2peer[peer]));
 
       TRACE_ERR((stderr, "Mapping::node2peer_impl({%zu, %zu}, %zu) <<\n", address.global, address.local, peer));
       return PAMI_SUCCESS;
@@ -599,10 +556,6 @@ namespace PAMI
     {
       return _e;
     }
-    inline size_t p ()
-    {
-      return _p;
-    }
     inline size_t t ()
     {
       return _t;
@@ -620,29 +573,30 @@ pami_result_t PAMI::Mapping::init(bgq_mapcache_t &mapcache,
   _mapcache.size              = mapcache.size;
   _mapcache.local_size        = mapcache.local_size;
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-  if (_pers._is_mambo)
-  {
-    size_t
-    asize =_pers.aSize(),
-           bsize =_pers.bSize(),
-                  csize =_pers.cSize(),
-                         dsize =_pers.dSize(),
-                                esize =_pers.eSize(),
-                                       psize =_pers.pSize(),
-                                              tsize =_pers.tSize();
+  size_t
+    //asize =_pers.aSize(),// aSize isn't currently used in the calculation so we get warnings
+    bsize =_pers.bSize(),
+    csize =_pers.cSize(),
+    dsize =_pers.dSize(),
+    esize =_pers.eSize(),
+    tsize =_pers.tSize();
 
-    _mapcache.size = asize*bsize*csize*dsize*esize*psize*tsize;//_mapcache.local_size; /// \todo hack
-  }
-  else
-    _mapcache.size = _mapcache.local_size; /// \todo hack
-#else
-  _mapcache.size = _mapcache.local_size; /// \todo hack
-#endif
-  _peers = _mapcache.local_size;         /// \todo hack
+  TRACE_MAMBO((stderr,"Mapping() size a/b/c/d/e/t = %zu/%zu/%zu/%zu/%zu/%zu\n", _pers.aSize(), bsize, csize, dsize, esize, tsize));
 
-  TRACE_MAMBO((stderr,"Mapping::init() task %zu, size %zu, peers %zu\n", _task, _mapcache.size, _peers));
+  size_t hash = ESTIMATED_TASK(_a,_b,_c,_d,_e,_t, _pers.aSize(),bsize,csize,dsize,esize,tsize); // asize isn't used but just in case...
+
+  _task = _mapcache.torus.coords2task[hash];
+
+  TRACE_MAMBO((stderr,"Mapping::init() task %zu, estimated task %zu, size %zu, peers %zu\n", _task, hash, _mapcache.size, _mapcache.local_size));
+
   return PAMI_SUCCESS;
 }
 #undef TRACE_ERR
 #endif // __components_mapping_bgq_bgqmapping_h__
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//
