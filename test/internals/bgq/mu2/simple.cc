@@ -31,7 +31,7 @@
 
 //typedef PAMI::Device::Generic::Device ProgressDevice;
 
-typedef PAMI::Device::MU::Context MuDevice;
+typedef PAMI::Device::MU::Context MuContext;
 
 //typedef PAMI::Device::MU::PacketModel MuPacketModel;
 typedef PAMI::Device::MU::PacketModelMemoryFifoCompletion MuPacketModel;
@@ -41,7 +41,7 @@ typedef PAMI::Device::MU::PacketModelMemoryFifoCompletion MuPacketModel;
 //typedef PAMI::Device::MU::DmaModel MuDmaModel;
 typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 
-//typedef PAMI::Protocol::Send::Eager<T_Model, MuDevice> MuEager;
+//typedef PAMI::Protocol::Send::Eager<T_Model, MuContext> MuEager;
 
 int main(int argc, char ** argv)
 {
@@ -54,6 +54,8 @@ int main(int argc, char ** argv)
   PAMI::bgq_mapcache_t mapcache;
   mapping.init (mapcache, personality);
 
+  fprintf (stderr, "After mapping init\n");    
+
 //  ProgressDevice progress (0, 0, 1);
 //  progress.init (NULL,       // pami_context_t
 //                 0,          // id_client
@@ -61,12 +63,16 @@ int main(int argc, char ** argv)
 //                 NULL,//&mm,        // not used ???
 //                 &progress); // "all generic devices"
 
-  MuDevice mu (mapping, 0, 0, 1);//, progress);
+  MuContext mu (mapping, 0, 0, 1);//, progress);
   mu.init (0); // id_client
+
+  fprintf (stderr, "After mu init\n");
 
   pami_result_t result;
   MuPacketModel pkt (mu);
-  MuDmaModel dma (mu, result);
+  //MuDmaModel dma (mu, result);
+
+  fprintf (stderr, "After MuPacketModel init\n");
 
 #if 0  // use pami protocols .. depends on pami.h types
   pami_result_t result;

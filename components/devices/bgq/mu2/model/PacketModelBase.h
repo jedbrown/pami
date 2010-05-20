@@ -140,13 +140,13 @@ namespace PAMI
         protected:
           MemoryFifoDescriptor            _singlepkt;
           MemoryFifoDescriptor            _multipkt;
-          MU::Context                   & _device;
+          MU::Context                   & _context;
       };
 
       template <class T_Model>
       PacketModelBase<T_Model>::PacketModelBase (MU::Context & device) :
           Interface::PacketModel < MU::PacketModelBase<T_Model>, MU::Context, 128 > (device),
-          _device (device)
+          _context (device)
       {
         TRACE_FN_ENTER();
 
@@ -195,7 +195,7 @@ namespace PAMI
         // function is invoked and can provide a direct pointer to the packet
         // payload.
         uint16_t id = 0;
-        if (_device.registerPacketHandler (dispatch,
+        if (_context.registerPacketHandler (dispatch,
                                            direct_recv_func,
                                            direct_recv_func_parm,
                                            id))
@@ -228,6 +228,8 @@ namespace PAMI
                                                       size_t         metasize,
                                                       struct iovec   (&iov)[T_Niov])
       {
+	fprintf (stderr, "In post packet\n");
+
         MUHWI_Destination_t   dest;
         MUSPI_InjFifo_t     * ififo;
         uint16_t              rfifo;
@@ -235,15 +237,21 @@ namespace PAMI
         uint8_t               hintsABCD;
         uint8_t               hintsE;
 
-        size_t fnum = _device.pinFifo ((size_t) target_task, target_offset, dest,
-                                       &ififo, rfifo, map, hintsABCD, hintsE);
+        size_t fnum = _context.pinFifo ((size_t) target_task, 
+				       target_offset, 
+				       dest,
+                                       &ififo, 
+				       rfifo, 
+				       map, 
+				       hintsABCD, 
+				       hintsE);
 
         MUHWI_Descriptor_t * desc;
         void               * vaddr;
         uint64_t             paddr;
 
         size_t ndesc =
-          _device.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
+          _context.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
 
         if (likely(ndesc > 0))
           {
@@ -253,6 +261,8 @@ namespace PAMI
             // Clone the single-packet model descriptor into the injection fifo
             MemoryFifoDescriptor * memfifo = (MemoryFifoDescriptor *) desc;
             _singlepkt.clone (memfifo);
+
+	    fprintf (stderr, "After clone\n");
 
             // Initialize the injection fifo descriptor in-place.
             memfifo->initializeDescriptors (dest, map, hintsABCD, hintsE, rfifo);
@@ -266,7 +276,7 @@ namespace PAMI
 
             // Copy the payload into the immediate payload buffer.
             size_t i, tbytes = 0;
-            uint8_t * dst = vaddr;
+            uint8_t * dst = (uint8_t *)vaddr;
             for (i=0; i<T_Niov; i++)
             {
               memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
@@ -275,6 +285,8 @@ namespace PAMI
  
             // Set the payload information.
             memfifo->desc[0].setPayload (paddr, tbytes);
+
+	    fprintf(stderr, "Advance tail pointer\n");
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
@@ -304,7 +316,7 @@ namespace PAMI
         uint8_t               hintsABCD;
         uint8_t               hintsE;
 
-        size_t fnum = _device.pinFifo ((size_t) target_task, target_offset, dest,
+        size_t fnum = _context.pinFifo ((size_t) target_task, target_offset, dest,
                                        &ififo, rfifo, map, hintsABCD, hintsE);
 
         MUHWI_Descriptor_t * desc;
@@ -312,7 +324,7 @@ namespace PAMI
         uint64_t             paddr;
 
         size_t ndesc =
-          _device.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
+          _context.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
 
         if (likely(ndesc > 0))
           {
@@ -384,7 +396,7 @@ namespace PAMI
         uint8_t               hintsABCD;
         uint8_t               hintsE;
 
-        size_t fnum = _device.pinFifo ((size_t) target_task, target_offset, dest,
+        size_t fnum = _context.pinFifo ((size_t) target_task, target_offset, dest,
                                        &ififo, rfifo, map, hintsABCD, hintsE);
 
         MUHWI_Descriptor_t * desc;
@@ -392,7 +404,7 @@ namespace PAMI
         uint64_t             paddr;
 
         size_t ndesc =
-          _device.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
+          _context.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
 
         if (likely(ndesc > 0))
           {
@@ -464,7 +476,7 @@ namespace PAMI
         uint8_t               hintsABCD;
         uint8_t               hintsE;
 
-        size_t fnum = _device.pinFifo ((size_t) target_task, target_offset, dest,
+        size_t fnum = _context.pinFifo ((size_t) target_task, target_offset, dest,
                                        &ififo, rfifo, map, hintsABCD, hintsE);
 
 
@@ -473,7 +485,7 @@ namespace PAMI
         uint64_t             paddr;
 
         size_t ndesc =
-          _device.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
+          _context.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
 
         if (likely(ndesc > 0))
           {
@@ -539,7 +551,7 @@ namespace PAMI
         uint8_t               hintsABCD;
         uint8_t               hintsE;
 
-        size_t fnum = _device.pinFifo ((size_t) target_task, target_offset, dest,
+        size_t fnum = _context.pinFifo ((size_t) target_task, target_offset, dest,
                                        &ififo, rfifo, map, hintsABCD, hintsE);
 
 
@@ -548,7 +560,7 @@ namespace PAMI
         uint64_t             paddr;
 
         size_t ndesc =
-          _device.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
+          _context.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
 
         if (likely(ndesc > 0))
           {

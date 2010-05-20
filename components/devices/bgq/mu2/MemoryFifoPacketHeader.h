@@ -157,7 +157,16 @@ namespace PAMI
 	  /// \brief Get the Metadata in the packet
 	  /// \retval pointer to the metadata
 	  ///
-	  inline void* getMetaData () { PAMI_abort(); return NULL; }
+	  inline void* getMetaData () { 
+	    int maxmetasize = 0;
+	    if (likely(isSinglePacket()))
+	      maxmetasize = packet_singlepacket_metadata_size;
+	    else
+	      maxmetasize = packet_multipacket_metadata_size;
+	    
+	    //return the bottom maxmetasize bytes
+	    return (char *)this + (32 - maxmetasize);
+	  }
 
       };
     };   // PAMI::Device::MU namespace

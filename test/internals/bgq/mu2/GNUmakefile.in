@@ -13,7 +13,7 @@ FRAMEWORK       = pami
 VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        = 
-APPS            = simple-${FRAMEWORK}.${EXTENSION}
+APPS            = simple-${FRAMEWORK}.${EXTENSION} pingpong-${FRAMEWORK}.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
@@ -59,7 +59,7 @@ runmambo:
 	BG_SHAREDMEMSIZE=1 BG_PROCESSESPERNODE=4 BG_MEMSIZE=4096 @BGFLOOR@/scripts/runfctest.sh \
 	--ttype cnk \
 	--parmstest ${VPATH}/test.parms \
-	--program ${APPS} \
+	--program simple-${FRAMEWORK}.${EXTENSION} \
 	--numcores 17 \
 	--script runMambo \
 	$(parms)

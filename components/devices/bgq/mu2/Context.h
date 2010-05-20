@@ -102,11 +102,15 @@ namespace PAMI
           MUSPI_RecFifoSubGroup_t       _rfifo_subgroup;
           char                        * _injFifoBuf;
           char                        * _recFifoBuf;
+	  char                        * _lookAsideBuf;
+	  Kernel_MemoryRegion_t         _lookAsideMregion;
           unsigned                      _ififoid;
           unsigned                      _rfifoid;
 
-          static const int INJ_MEMORY_FIFO_SIZE = 0xFFFFUL;
-          static const int REC_MEMORY_FIFO_SIZE = 0xFFFFUL;
+          static const int INJ_MEMORY_FIFO_SIZE  = 0xFFFFUL;
+          static const int REC_MEMORY_FIFO_SIZE  = 0xFFFFUL;
+	  static const int INJ_MEMORY_FIFO_NDESC = 0x400;
+	  static const int LOOKASIDE_PAYLOAD_SIZE = 0x80;
 #endif
 
         public:
@@ -196,18 +200,23 @@ namespace PAMI
             injFifoAttrs.System    = 0;
 
             //TRACE(("main(): allocate injection fifos\n"));
-            Kernel_AllocateInjFifos (0,
+            Kernel_AllocateInjFifos (_mapping.p(),
                                      &_ififo_subgroup,
                                      1,
                                      &_ififoid,
                                      &injFifoAttrs);
 
-            _injFifoBuf = (char *) malloc (65536);
+            _injFifoBuf = (char *) malloc (INJ_MEMORY_FIFO_SIZE + 1);
+	    _lookAsideBuf = (char *) malloc ((INJ_MEMORY_FIFO_SIZE + 1) * 2); //lookaside buffer 2xdesc_size
 
             Kernel_MemoryRegion_t  mregionInj, mregionRec;
             Kernel_CreateMemoryRegion ( &mregionInj,
                                         _injFifoBuf,
                                         INJ_MEMORY_FIFO_SIZE + 1 );
+
+	    Kernel_CreateMemoryRegion ( &_lookAsideMregion,
+                                        _lookAsideBuf,
+                                        INJ_MEMORY_FIFO_NDESC*LOOKASIDE_PAYLOAD_SIZE);
 
             //TRACE(("main(): init injection fifo\n"));
             Kernel_InjFifoInit (&_ififo_subgroup,
@@ -221,7 +230,7 @@ namespace PAMI
             Kernel_RecFifoAttributes_t recFifoAttrs[1];
             recFifoAttrs[0].System = 0;
 
-            Kernel_AllocateRecFifos (0,
+            Kernel_AllocateRecFifos (_mapping.p(),
                                      &_rfifo_subgroup,
                                      1,
                                      &_rfifoid,
@@ -446,13 +455,16 @@ namespace PAMI
                                  uint8_t             & hintsABCD,
                                  uint8_t             & hintsE)
           {
+#if CONTEXT_ALLOCATES_RESOURCES
             *ififo = MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup);
+#endif
 
             // Calculate the destination recpetion fifo identifier based on
             // the destination task+offset.  This is important for
             // multi-context support.
-            rfifo = _rfifoid;
-
+///!!!! Works only on single node
+            rfifo = _rfifoid + task * 4 /*number of rec fifos per subgrp*/;
+///!!!!
             // In loopback we send only on AM
             map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
             hintsABCD = MUHWI_PACKET_HINT_AM |
@@ -513,9 +525,18 @@ namespace PAMI
                                                  MUHWI_Descriptor_t ** desc,
                                                  void               ** vaddr,
                                                  uint64_t            * paddr)
-          {
-            abort();
-            return 0;
+          {	    
+#if CONTEXT_ALLOCATES_RESOURCES
+	    MUSPI_InjFifo_t *ififo = MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup);
+            uint32_t seqno = MUSPI_InjFifoNextDesc(ififo, (void **)desc);
+	    uint32_t slotid = seqno % (INJ_MEMORY_FIFO_NDESC);
+	    *vaddr = (void *)(_lookAsideBuf + slotid * LOOKASIDE_PAYLOAD_SIZE);
+	    *paddr = (uint64_t)(*vaddr) - (uint64_t)_lookAsideMregion.BaseVa + (uint64_t)_lookAsideMregion.BasePa;
+	    return 1;
+#else
+	    PAMI_abort();
+	    return 0;
+#endif
           }
 
           ///
@@ -550,12 +571,13 @@ namespace PAMI
 
 
 unsigned PAMI::Device::MU::Context::advanceRecv () {  
+  unsigned packets = 0;
+#if CONTEXT_ALLOCATES_RESOURCES
   uint32_t wrap = 0;
   uint32_t cur_bytes = 0;
   uint32_t total_bytes = 0;
   uint32_t cumulative_bytes = 0;
   MemoryFifoPacketHeader *hdr = NULL;
-  unsigned packets = 0;
 
   //TRACE((stderr, ">> RecFifoSubGroup::recFifoPoll(%p)\n", rfifo));
   MUSPI_RecFifo_t * rfifo = MUSPI_IdToRecFifo (_rfifoid, &_rfifo_subgroup);
@@ -588,6 +610,7 @@ unsigned PAMI::Device::MU::Context::advanceRecv () {
   }
   
   //TRACE((stderr, "<< RecFifoSubGroup::recFifoPoll(%p) .. packets = %d\n", rfifo, packets));
+#endif
   return packets;
 }
 

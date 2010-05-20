@@ -29,7 +29,7 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketModel::PacketModel
           inline PacketModelMemoryFifoCompletion (MU::Context & device) :
              MU::PacketModelBase<PacketModelMemoryFifoCompletion> (device),
-             _done (_device)
+             _done (_context)
           {
             COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage) <= packet_model_state_bytes);
           
@@ -95,7 +95,7 @@ namespace PAMI
             InjectDescriptorMessage * msg = (InjectDescriptorMessage *) state;
             new (msg) InjectDescriptorMessage (ififo, & done.desc[0]);
             
-            _device.post (fnum, msg);
+            _context.post (fnum, msg);
           }
 
           MemoryFifoSelfDescriptor _done;
