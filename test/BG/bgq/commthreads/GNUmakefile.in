@@ -12,7 +12,8 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        = 
-APPS            = multi-context.${EXTENSION} preempt-pthreads.${EXTENSION}
+APPS            = multi-context.${EXTENSION} preempt-pthreads.${EXTENSION} \
+		multi-proc.${EXTENSION}
 include @abs_top_builddir@/Build.rules
 
 ifeq (@BUILDENV@,ade)
@@ -35,11 +36,15 @@ ifeq (@BUILDENV@,ade)
 else
 
 %.${EXTENSION}: %.c
-	${CROSS_CC} -I${INSTALL_DIR}/include ${CROSS_CFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+	${CROSS_CC} -I${INSTALL_DIR}/include ${CROSS_CFLAGS} $^ -o $@ ${CROSS_LDFLAGS} -L../../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+%.o: %.cc
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -c -o $@ ${CROSS_LDFLAGS} -L../../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
 %.${EXTENSION}: %.cc
 	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
 %.${EXTENSION}: %.cpp
 	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+
+$(APPS): misc-util.o
 
 endif
 
