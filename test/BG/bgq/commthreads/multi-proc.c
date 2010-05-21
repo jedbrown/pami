@@ -10,10 +10,9 @@ int main(int argc, char ** argv) {
 	char cl_string[] = "TEST";
 	pami_result_t result = PAMI_ERROR;
 	pami_context_t context[NUM_CONTEXTS];
+	size_t num_contexts;
 	int x, y;
 char buf[64];
-sprintf(buf, "St %ld\n", pthread_self());
-int bufl = strlen(buf);
 
 	result = PAMI_Client_create(cl_string, &client);
 	if (result != PAMI_SUCCESS) {
@@ -27,22 +26,30 @@ int bufl = strlen(buf);
 	result = PAMI_Configuration_query(client, &configuration);
 	pami_task_t task = configuration.value.intval;
 
-	result = PAMI_Context_createv(client, NULL, 0, &context[0], NUM_CONTEXTS);
+	configuration.name = PAMI_NUM_TASKS;
+	result = PAMI_Configuration_query(client, &configuration);
+	size_t ntasks = configuration.value.intval;
+sprintf(buf, "St %ld %d %zd\n", pthread_self(), task, ntasks);
+int bufl = strlen(buf);
+
+	num_contexts = TEST_Local_size();
+	if (num_contexts > NUM_CONTEXTS) num_contexts = NUM_CONTEXTS;
+	result = PAMI_Context_createv(client, NULL, 0, &context[0], num_contexts);
 	if (result != PAMI_SUCCESS) {
-		fprintf(stderr, "Error. Unable to create %d pami context. "
-						"result = %d\n", NUM_CONTEXTS, result);
+		fprintf(stderr, "Error. Unable to create %zd pami context. "
+						"result = %d\n", num_contexts, result);
 		return 1;
 	}
 
-	result = init_test_send(client, context, NUM_CONTEXTS);
+	result = init_test_send(client, context, num_contexts);
 	if (result != PAMI_SUCCESS) {
-		fprintf(stderr, "Error. Unable to init test %d pami contexts. "
-						"result = %d\n", NUM_CONTEXTS, result);
+		fprintf(stderr, "Error. Unable to init test %zd pami contexts. "
+						"result = %d\n", num_contexts, result);
 		return 1;
 	}
 
 write(2, buf, bufl);
-	for (x = 0; x < NUM_CONTEXTS; ++x) {
+	for (x = 0; x < num_contexts; ++x) {
 		result = PAMI_Client_add_commthread_context(client, context[x]);
 		if (result != PAMI_SUCCESS) {
 			fprintf(stderr, "Error. Unable to add commthread to context[%d]. "
@@ -51,11 +58,11 @@ write(2, buf, bufl);
 		}
 	}
 	for (y = 0; y < NUM_TESTRUNS; ++y) {
-		for (x = 0; x < NUM_CONTEXTS; ++x) {
-			_info[x].seq = (task * 1000) + y * NUM_CONTEXTS + x + 1;
+		for (x = 0; x < num_contexts; ++x) {
+			_info[x].seq = (task * 1000) + y * num_contexts + x + 1;
 		}
 
-		result = run_test_send(client, context, NUM_CONTEXTS);
+		result = run_test_send(client, context, num_contexts);
 		if (result != PAMI_SUCCESS) {
 			fprintf(stderr, "Error. Unable to run commthread test. "
 						"result = %d\n", result);
@@ -81,7 +88,7 @@ write(2, buf, bufl);
 while (PAMI_Wtimebase() - t0 < 500000);}
 buf[0] = 'F'; buf[1] = 'i';
 write(2, buf, bufl);
-	for (x = 0; x < NUM_CONTEXTS; ++x) {
+	for (x = 0; x < num_contexts; ++x) {
 		result = PAMI_Context_destroy(context[x]);
 	}
 	result = PAMI_Client_destroy(client);

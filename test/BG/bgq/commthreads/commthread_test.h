@@ -67,8 +67,12 @@ pami_result_t do_send(pami_context_t context, void *cookie) {
 //	sprintf(buf, "do_send(%d) by %ld on context %d: cookie = %p, %d -> %d\n",
 //				info->seq, pthread_self(), info->ctx, cookie, info->value, info->value - 1);
 //	write(2, buf, strlen(buf));
-	PAMI_Send(context, &info->send);
+	pami_result_t rc = PAMI_Send(context, &info->send);
+	if (rc != PAMI_SUCCESS) {
+fprintf(stderr, "failed sending %d\n", info->seq);
+	}
 
+	--info->value;
 	return PAMI_SUCCESS;
 }
 
@@ -83,6 +87,7 @@ void do_recv(pami_context_t context, void *cookie, void *hdr, size_t hdrlen,
 				*((typeof(info->seq) *)hdr));
 	write(2, buf, strlen(buf));
 	--info->value;
+if (info->value == (unsigned)-1) fprintf(stderr, "fault\n");
 }
 
 pami_result_t run_test(pami_client_t client, pami_context_t *ctx, size_t nctx) {
@@ -129,11 +134,17 @@ pami_result_t run_test(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 	return PAMI_SUCCESS;
 }
 
+static size_t disp_id[NUM_CONTEXTS];
+
 pami_result_t init_test_send(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 	int x;
 	pami_send_hint_t h = {0};
 	for (x = 0; x < nctx; ++x) {
-		PAMI_Dispatch_set(ctx[x], x, (pami_dispatch_callback_fn){do_recv}, (void *)&_info[x], h);
+		disp_id[x] = x;
+		pami_result_t rc = PAMI_Dispatch_set(ctx[x], disp_id[x], (pami_dispatch_callback_fn){do_recv}, (void *)&_info[x], h);
+		if (rc != PAMI_SUCCESS) {
+			fprintf(stderr, "Failed to set dispatch for context %d\n", x);
+		}
 	}
 	return PAMI_SUCCESS;
 }
@@ -141,36 +152,50 @@ pami_result_t init_test_send(pami_client_t client, pami_context_t *ctx, size_t n
 pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 	pami_result_t result;
 	int x;
+	size_t ix;
 	pami_send_hint_t h = {0};
+	size_t meix = TEST_Local_myindex();
 
-	for (x = 0; x < nctx; ++x) {
+	// even index sends, odd receives...
+	if (meix & 1) {
+		for (x = 0; x < nctx; ++x) {
+			++_info[x].value; // expecting a receive ...
+		}
+
+	} else {
+
+		for (x = 0; x < nctx; ++x) {
 		
-		// assert(_info[x].value == 0)
-		_info[x].ctx = x;
-		pami_task_t task = TEST_Local_index2task(x);
-		if (task == (pami_task_t)-1) continue;
+			// assert(_info[x].value == 0)
+			_info[x].ctx = x;
+			ix = meix + 1;
+			pami_task_t task = TEST_Local_index2task(ix);
+			if (task == (pami_task_t)-1) continue; // never?
 
-		++_info[x].value; // expecting a corresponding recv ...
-		_info[x].send.send.header.iov_base = &_info[x].seq;
-		_info[x].send.send.header.iov_len = sizeof(_info[x].seq);
-		_info[x].send.send.data.iov_base = NULL;
-		_info[x].send.send.data.iov_len = 0;
-		_info[x].send.send.dispatch = _info[x].ctx;
-		_info[x].send.send.hints = h;
-		_info[x].send.events.cookie = NULL;
-		_info[x].send.events.local_fn = NULL;
-		_info[x].send.events.remote_fn = NULL;
-		(void)PAMI_Endpoint_create(client, task, x, &_info[x].send.send.dest);
+			size_t targ = x;
 
-//		if (PAMI_Context_trylock(ctx[x])) {
-//			result = PAMI_Send(ctx[x], &_info[x].send);
-//		} else {
-			result = PAMI_Context_post(ctx[x], &_info[x].state, do_send, (void *)&_info[x]);
-//		}
-		if (result != PAMI_SUCCESS) {
-			fprintf(stderr, "Error. Unable to post work to pami context[%d]. "
-					"result = %d (%d)\n", x, result, errno);
-			return result;
+			++_info[x].value; // expecting call to posted func
+			_info[x].send.send.header.iov_base = &_info[x].seq;
+			_info[x].send.send.header.iov_len = sizeof(_info[x].seq);
+			_info[x].send.send.data.iov_base = NULL;
+			_info[x].send.send.data.iov_len = 0;
+			_info[x].send.send.dispatch = disp_id[x];
+			_info[x].send.send.hints = h;
+			_info[x].send.events.cookie = NULL;
+			_info[x].send.events.local_fn = NULL;
+			_info[x].send.events.remote_fn = NULL;
+			(void)PAMI_Endpoint_create(client, task, targ, &_info[x].send.send.dest);
+
+//			if (PAMI_Context_trylock(ctx[x])) {
+//				result = PAMI_Send(ctx[x], &_info[x].send);
+//			} else {
+				result = PAMI_Context_post(ctx[x], &_info[x].state, do_send, (void *)&_info[x]);
+//			}
+			if (result != PAMI_SUCCESS) {
+				fprintf(stderr, "Error. Unable to post work to pami context[%d]. "
+						"result = %d (%d)\n", x, result, errno);
+				return result;
+			}
 		}
 	}
 

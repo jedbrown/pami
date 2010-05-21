@@ -9,6 +9,10 @@ extern "C" {
 
 pami_task_t TEST_Local_index2task(size_t x);
 
+size_t TEST_Local_size();
+
+size_t TEST_Local_myindex();
+
 #ifdef __cplusplus
 }
 #endif
