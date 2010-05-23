@@ -289,7 +289,8 @@ public:
 
 		__queues = NULL;
 #if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-		__global._wuRegion_mm[client]->memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
+		size_t myix = __global.topology_local.rank2Index(__global.mapping.task());
+		__global._wuRegion_mms[client][myix].memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
 #else // ! __pami_target_bgq__
 		posix_memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
 #endif // ! __pami_target_bgq__

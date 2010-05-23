@@ -73,6 +73,16 @@ namespace PAMI
         var = getenv("BG_MEMSIZE");
         TRACE_MAMBO((stderr, "BG_MEMSIZE %s\n", var ? var : "NULL"));
 
+        // this seems really lame...
+        if (Network_Config.Anodes == 0) Network_Config.Anodes = 1;
+
+        if (Network_Config.Bnodes == 0) Network_Config.Bnodes = 1;
+
+        if (Network_Config.Cnodes == 0) Network_Config.Cnodes = 1;
+
+        if (Network_Config.Dnodes == 0) Network_Config.Dnodes = 1;
+
+        if (Network_Config.Enodes == 0) Network_Config.Enodes = 1;
 
         TRACE_MAMBO((stderr, "BGQPersonality Kernel_Config.NodeConfig %#llX\n", (unsigned long long)(Kernel_Config.NodeConfig)));
         TRACE_MAMBO((stderr, "BGQPersonality Kernel_Config.TraceConfig %#llX\n", (unsigned long long)(Kernel_Config.TraceConfig)));
@@ -166,30 +176,13 @@ namespace PAMI
 
         //size_t num_local_processes = Kernel_ProcessCount();
 
-        // Set the hw core id of this process [0..16]
-        _core = Kernel_PhysicalProcessorID();
+        // get the number of processes on a node (t dimension)
+        _tSize = Kernel_ProcessCount();
 
-        // get the number of active processes (peers) on this node [0..(p x t)]
-        size_t pCount = Kernel_ProcessCount();
+        // Set the t coord
+        _tCoord =  Kernel_MyTcoord();
 
-        // Set the number of active hardware threads on this node [0..3]
-        //_hwthreads = Kernel_PhysicalHWThreadID();
-        //_hwthreads = 1;
-        _hwthreads = (pCount + maxCores() - 1) / maxCores();
-
-        // Set the hardware thread id of this process [0..hwthreads]
-        _hwthread = Kernel_PhysicalHWThreadID();
-
-        // Set the number of active cores on this node [0..16]
-        _cores = pCount > maxCores() ? maxCores() : pCount;
-
-        // Set the id of this process [0..cores]
-        _pCoord = core() / (maxCores() / pSize());
-
-        // Set the id of this thread [0..tSize]
-        _tCoord = _hwthread / (maxThreads() / _hwthreads);
-
-        TRACE_MAMBO((stderr, "BGQPersonality() tid %zu, p %zu, t %zu, core %zu, thread %zu, pSize %zu, tSize %zu\n", tid(),  pCoord(),  tCoord(),  core(), thread(), pSize(), tSize()));
+        TRACE_MAMBO((stderr, "BGQPersonality() tid %zu, t %zu, core %zu, thread %zu, tSize %zu\n", tid(),  tCoord(),  core(), thread(), tSize()));
 
         _torusA = (bool) (ND_ENABLE_TORUS_DIM_A & Network_Config.NetFlags);
         _torusB = (bool) (ND_ENABLE_TORUS_DIM_B & Network_Config.NetFlags);
@@ -219,41 +212,51 @@ namespace PAMI
       ///
       /// \brief Retrieves the 'A' coordinate of the node
       ///
-      size_t aCoord() const { return Network_Config.Acoord; }
+      size_t aCoord() const
+      {
+        return Network_Config.Acoord;
+      }
 
       ///
       /// \brief Retrieves the 'B' coordinate of the node
       ///
-      size_t bCoord() const { return Network_Config.Bcoord; }
+      size_t bCoord() const
+      {
+        return Network_Config.Bcoord;
+      }
 
       ///
       /// \brief Retrieves the 'C' coordinate of the node
       ///
-      size_t cCoord() const { return Network_Config.Ccoord; }
+      size_t cCoord() const
+      {
+        return Network_Config.Ccoord;
+      }
 
       ///
       /// \brief Retrieves the 'D' coordinate of the node
       ///
-      size_t dCoord() const { return Network_Config.Dcoord; }
+      size_t dCoord() const
+      {
+        return Network_Config.Dcoord;
+      }
 
       ///
       /// \brief Retrieves the 'E' coordinate of the node
       ///
-      size_t eCoord() const { return Network_Config.Ecoord; }
+      size_t eCoord() const
+      {
+        return Network_Config.Ecoord;
+      }
 
       ///
       /// \brief Retrieves the core id of the node
       ///
       ///
-      size_t core() const { return _core; }
-
-      ///
-      /// \brief Retrieves the 'P' coordinate of the node
-      ///
-      /// a.k.a. the processor id starting at 0 and
-      /// incrementing to pSize. Not the same as hardware core!
-      ///
-      size_t pCoord() const { return _pCoord; }
+      size_t core() const
+      {
+        return Kernel_PhysicalProcessorID();
+      }
 
       ///
       /// \brief Retrieves the 'T' coordinate of the node
@@ -261,93 +264,121 @@ namespace PAMI
       /// a.k.a. the thread id on the core starting at 0 and
       /// incrementing to tSize.  Not the same as hwThread!
       ///
-      size_t tCoord() const { return _tCoord; }
+      size_t tCoord() const
+      {
+        return _tCoord;
+      }
 
       ///
       /// \brief Retrieves the 'hardware thread id' on the core
       ///
-      size_t thread() const { return _hwthread; }
+      size_t thread() const
+      {
+        return Kernel_ProcessorID();
+      }
 
       ///
       /// \brief Retrieves the 'thread id' on the node
       ///
-      size_t tid() const { return thread() + core()*maxThreads(); }
+      size_t tid() const
+      {
+        return Kernel_PhysicalHWThreadID();
+      }
 
       ///
       /// \brief Retrieves the size of the 'A' dimension.
       /// \note  Does not consider the mapping.
       ///
-      size_t aSize()  const { return Network_Config.Anodes; }
+      size_t aSize()  const
+      {
+        return Network_Config.Anodes;
+      }
 
       ///
       /// \brief Retrieves the size of the 'B' dimension.
       /// \note  Does not consider the mapping.
       ///
-      size_t bSize()  const { return Network_Config.Bnodes; }
+      size_t bSize()  const
+      {
+        return Network_Config.Bnodes;
+      }
 
       ///
       /// \brief Retrieves the size of the 'C' dimension.
       /// \note  Does not consider the mapping.
       ///
-      size_t cSize()  const { return Network_Config.Cnodes; }
+      size_t cSize()  const
+      {
+        return Network_Config.Cnodes;
+      }
 
       ///
       /// \brief Retrieves the size of the 'D' dimension.
       /// \note  Does not consider the mapping.
       ///
-      size_t dSize()  const { return Network_Config.Dnodes; }
+      size_t dSize()  const
+      {
+        return Network_Config.Dnodes;
+      }
 
       ///
       /// \brief Retrieves the size of the 'E' dimension.
       /// \note  Does not consider the mapping.
       ///
-      size_t eSize()  const { return Network_Config.Enodes; }
-
-      ///
-      /// \brief Retrieves the size of the 'P' dimension.
-      ///
-      /// The 'P' coordinate identifies the core
-      /// starting at 0 and incrementing to pSize.
-      ///
-      size_t pSize()  const { return _cores; }
-
-      ///
-      /// \brief Retrieves the max number of cores, not the number active
-      ///
-      size_t maxCores() const { return 16; }/// \todo max cores == 16?
-
-      ///
-      /// \brief Retrieves the max number of threads, not the number active
-      ///
-      size_t maxThreads() const { return 4; }/// \todo max threads == 4?
+      size_t eSize()  const
+      {
+        return Network_Config.Enodes;
+      }
 
       ///
       /// \brief Retrieves the size of the 'T' dimension.
       ///
-      /// The 'T' coordinate identifies the hardware thread.
+      /// The 'T' coordinate identifies the process
+      /// starting at 0 and incrementing to BG_PROCESSESPERNODE.
       ///
-      /// \note  Does not consider the mapping.
+      size_t tSize()  const
+      {
+        return _tSize;
+      }
+
       ///
-      size_t tSize()  const { return _hwthreads; }
+      /// \brief Retrieves the max number of cores, not the number active
+      ///
+      size_t maxCores() const
+      {
+        return 16;
+      }/// \todo max cores == 16?
+
+      ///
+      /// \brief Retrieves the max number of threads, not the number active
+      ///
+      size_t maxThreads() const
+      {
+        return 4;
+      }/// \todo max threads == 4?
 
       ///
       /// \brief Get the size of NODE memory
       /// \return _node_ memory size in MiB
       ///
-      size_t  memSize()  const { return DDR_Config.DDRSizeMB;}
+      size_t  memSize()  const
+      {
+        return DDR_Config.DDRSizeMB;
+      }
 
       ///
       /// \brief Gets the clock speed in MEGA-Hz
       /// \return MHz
       ///
-      size_t  clockMHz()  const { return Kernel_Config.FreqMHz; }
+      size_t  clockMHz()  const
+      {
+        return Kernel_Config.FreqMHz;
+      }
 
     protected:
 
       size_t _tCoord;
-      size_t _pCoord;
-      size_t _core;
-      size_t _hwthread;
+      size_t _tSize;
 
       bool   _torusA;
       bool   _torusB;
@@ -360,10 +391,8 @@ namespace PAMI
     protected:
 #endif
 
-      size_t _cores;
-      size_t _hwthreads;
-  };	// class BgqPersonality
-};	// namespace PAMI
+  };  // class BgqPersonality
+};  // namespace PAMI
 
 
 //PAMI::BgqPersonality::BgqPersonality ()

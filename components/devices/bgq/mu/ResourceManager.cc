@@ -39,7 +39,7 @@ getInfo()
 
 // \todo P2P_TYPPE and COLLECTIVE_TYPE (_type) configuration will differ in general
 
-  switch ( _mode )
+  switch (_mode)
     {
       case MINIMAL:
 
@@ -60,14 +60,14 @@ getInfo()
         PAMI_assert ( _injFifoInfo != NULL );
         _injFifoInfo->numSubGroups = MINIMAL_INJ_NUM_SUBGROUPS;
 
-        TRACE((stderr, "My Coords are: A=%zu, B=%zu, C=%zu, D=%zu, E=%zu, T=%zu, P=%zu, aSize=%zu, bSize=%zu, cSize=%zu, dSize=%zu, eSize=%zu, tSize=%zu, pSize=%zu\n",
-               __global.mapping.a(), __global.mapping.b(), __global.mapping.c(), __global.mapping.d(), __global.mapping.e(), __global.mapping.t(), __global.mapping.p(), __global.personality.aSize(), __global.personality.bSize(), __global.personality.cSize(), __global.personality.dSize(), __global.personality.eSize(), __global.personality.tSize(), __global.personality.pSize()))
+        TRACE((stderr, "My Coords are: A=%zu, B=%zu, C=%zu, D=%zu, E=%zu, T=%zu, aSize=%zu, bSize=%zu, cSize=%zu, dSize=%zu, eSize=%zu, tSize=%zu\n",
+               __global.mapping.a(), __global.mapping.b(), __global.mapping.c(), __global.mapping.d(), __global.mapping.e(), __global.mapping.t(), __global.personality.aSize(), __global.personality.bSize(), __global.personality.cSize(), __global.personality.dSize(), __global.personality.eSize(), __global.personality.tSize()))
         ;
 
         for (i = 0; i < MINIMAL_INJ_NUM_SUBGROUPS; i++)
           {
-            /// \todo For now, use 'p' coordinate (processor id) as the subgroup number
-            _injFifoInfo->subGroupInfo[i].subGroupId  = __global.mapping.p();
+            /// \todo For now, use 't' coordinate (processor id) as the subgroup number
+            _injFifoInfo->subGroupInfo[i].subGroupId  = __global.mapping.t();
             _injFifoInfo->subGroupInfo[i].numElements = MINIMAL_INJ_SUBGROUP_NUM_FIFOS;
           }
 
@@ -84,7 +84,7 @@ getInfo()
         for (i = 0; i < MINIMAL_REC_NUM_SUBGROUPS; i++)
           {
             /// \todo For now, use 'p' coordinate (processor id) as the subgroup number
-            _recFifoInfo->subGroupInfo[i].subGroupId  = __global.mapping.p();
+            _recFifoInfo->subGroupInfo[i].subGroupId  = __global.mapping.t();
             _recFifoInfo->subGroupInfo[i].numElements = MINIMAL_REC_SUBGROUP_NUM_FIFOS;
           }
 
@@ -101,7 +101,7 @@ getInfo()
 
         for (i = 0; i < MINIMAL_BAT_NUM_SUBGROUPS; i++)
           {
-            _batInfo->subGroupInfo[i].subGroupId  = __global.mapping.p();
+            _batInfo->subGroupInfo[i].subGroupId  = __global.mapping.t();
             _batInfo->subGroupInfo[i].numElements = MINIMAL_BAT_SUBGROUP_NUM_ENTRIES;
           }
 
@@ -144,20 +144,20 @@ init ( ResourceType_t  type,
   // - Allocate space for the InjFifoSubGroup object for this subgroup and
   //   run its constructor.
 
-  // Find our node's p and t coordinates (p is the relative process number,
-  // t is the thread within that process).  Only do this for p=0, t=0.
+  // Find our node's t coordinates (t is the relative process number). Only do this for t=0.
+  //
 
-  if ( (__global.mapping.p()==0) && (__global.mapping.t()==0) )
+  if (__global.mapping.t() == 0)
     {
       char * fifoPtr[1];
       uint32_t fifoSize[1];
       Kernel_InjFifoAttributes_t fifoAttr[1];
 
       rc = posix_memalign ( (void**) & fifoPtr[0],
-			    INJ_FIFO_ALIGNMENT,
-			    DEFAULT_INJ_FIFO_DESC_COUNT *
-			    (sizeof(MUHWI_Descriptor_t) +
-			     sizeof(torus_packet_payload_t)));
+                            INJ_FIFO_ALIGNMENT,
+                            DEFAULT_INJ_FIFO_DESC_COUNT *
+                            (sizeof(MUHWI_Descriptor_t) +
+                             sizeof(torus_packet_payload_t)));
       PAMI_assert ( rc == 0 );
 
       fifoSize[0] = DEFAULT_INJ_FIFO_DESC_COUNT * sizeof (MUHWI_Descriptor_t);
@@ -185,7 +185,7 @@ init ( ResourceType_t  type,
 
   // - Loop through each subgroup, initializing it.
 
-  for ( i = 0; i < _injFifoInfo->numSubGroups; i++ )
+  for (i = 0; i < _injFifoInfo->numSubGroups; i++)
     {
       uint32_t numElements = _injFifoInfo->subGroupInfo[i].numElements;
 
@@ -213,7 +213,7 @@ init ( ResourceType_t  type,
       // - Allocate space for each fifo - and the single packet payload buffer
       // - Set each fifo's size.
 
-      for ( j = 0; j < numElements; j++ )
+      for (j = 0; j < numElements; j++)
         {
           rc = posix_memalign ( (void**) & fifoPtrs[j],
                                 INJ_FIFO_ALIGNMENT,
@@ -225,7 +225,7 @@ init ( ResourceType_t  type,
           fifoSizes[j] = DEFAULT_INJ_FIFO_DESC_COUNT * sizeof (MUHWI_Descriptor_t);
           fifoAttrs[j].RemoteGet = 0;
           fifoAttrs[j].System    = 0;
-	  fifoAttrs[j].Priority  = 0;
+          fifoAttrs[j].Priority  = 0;
 
           TRACE((stderr, "fifoPtrs[%u]=%p, fifoSizes=%u\n", j, fifoPtrs[j], fifoSizes[j]));
         }
@@ -264,7 +264,7 @@ init ( ResourceType_t  type,
 
   // - Loop through each subgroup, initializing it.
 
-  for ( i = 0; i < _recFifoInfo->numSubGroups; i++ )
+  for (i = 0; i < _recFifoInfo->numSubGroups; i++)
     {
       uint32_t numElements = _recFifoInfo->subGroupInfo[i].numElements;
 
@@ -292,7 +292,7 @@ init ( ResourceType_t  type,
       // - Allocate space for each fifo.
       // - Set each fifo's size.
 
-      for ( j = 0; j < numElements; j++ )
+      for (j = 0; j < numElements; j++)
         {
           rc = posix_memalign ( (void**) & fifoPtrs[j], REC_FIFO_ALIGNMENT, DEFAULT_REC_FIFO_SIZE );
           PAMI_assert ( rc == 0 );
@@ -337,7 +337,7 @@ init ( ResourceType_t  type,
 
   // - Loop through each subgroup, initializing it.
 
-  for ( i = 0; i < _batInfo->numSubGroups; i++ )
+  for (i = 0; i < _batInfo->numSubGroups; i++)
     {
       uint32_t numElements = _batInfo->subGroupInfo[i].numElements;
 
@@ -389,27 +389,33 @@ init ( ResourceType_t  type,
   //
   //////////////////////////////////////////////////////////////////////////////
 
-  TRACE((stderr,"ResourceManager:  Initializing Barrier, pSize=%zu, master=%d\n",__global.personality.pSize(),master));
+  TRACE((stderr, "ResourceManager:  Initializing Barrier, size=%zu, master=%d\n", __global.topology_local.size(), master));
   PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> barrier;
   barrier.init(&__global.mm,
                __global.topology_local.size(),
                master );
-  TRACE((stderr,"ResourceManager: Entering Barrier\n"));
+  TRACE((stderr, "ResourceManager: Entering Barrier\n"));
   barrier.enter();
-  TRACE((stderr,"ResourceManager: Exiting Barrier\n"));
+  TRACE((stderr, "ResourceManager: Exiting Barrier\n"));
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-  if(__global.personality.pSize() == 1)
-    { double seconds = 5; // wait 5 pseudo-seconds
-      double dseconds = ((double)seconds)/1000; //mambo seconds are loooong.
-      double start = PAMI_Wtime (), d=0;
-      TRACE((stderr, "%s sleep - %.0f,start %f < %f\n",__PRETTY_FUNCTION__,d,start,start+dseconds));
-      while (PAMI_Wtime() < (start+dseconds))
-      {
-          for (int i=0; i<200000; ++i) ++d;
-          TRACE((stderr, "%s sleep - %.0f, %f < %f\n",__PRETTY_FUNCTION__,d,PAMI_Wtime(),start+dseconds));
-      }
-      TRACE((stderr, "%s sleep - %.0f, start %f, end %f\n",__PRETTY_FUNCTION__,d,start,PAMI_Wtime()));
+
+  if ((__global.personality.tSize() == 1) && (__global.mapping.size() != 1))
+    {
+      double seconds = 5; // wait 5 pseudo-seconds
+      double dseconds = ((double)seconds) / 1000; //mambo seconds are loooong.
+      double start = PAMI_Wtime (), d = 0;
+      TRACE((stderr, "%s sleep - %.0f,start %f < %f\n", __PRETTY_FUNCTION__, d, start, start + dseconds));
+
+      while (PAMI_Wtime() < (start + dseconds))
+        {
+          for (int i = 0; i < 200000; ++i) ++d;
+
+          TRACE((stderr, "%s sleep - %.0f, %f < %f\n", __PRETTY_FUNCTION__, d, PAMI_Wtime(), start + dseconds));
+        }
+
+      TRACE((stderr, "%s sleep - %.0f, start %f, end %f\n", __PRETTY_FUNCTION__, d, start, PAMI_Wtime()));
     }
+
 #endif
 
   return rc;

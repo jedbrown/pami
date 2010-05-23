@@ -52,6 +52,9 @@ int main(int argc, char ** argv)
   PAMI::BgqPersonality personality;
   PAMI::Mapping mapping (personality);
   PAMI::bgq_mapcache_t mapcache;
+
+  // Need to clear the mapcache here to avoid fatal warnings that it is being used uninitialized.
+  memset(&mapcache,0x00,sizeof(mapcache));
   mapping.init (mapcache, personality);
 
   fprintf (stderr, "After mapping init\n");    

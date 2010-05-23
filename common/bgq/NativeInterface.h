@@ -41,7 +41,12 @@ namespace PAMI
     virtual inline pami_result_t multicast    (pami_multicast_t    *);
     virtual inline pami_result_t multisync    (pami_multisync_t    *);
     virtual inline pami_result_t multicombine (pami_multicombine_t *);
-
+    virtual inline pami_result_t manytomany (pami_manytomany_t *)
+    {
+      PAMI_abort();
+      return PAMI_ERROR;
+    }
+    
     // Model-specific interfaces
     inline pami_result_t multicast    (uint8_t (&)[T_Mcast::sizeof_msg], pami_multicast_t    *);
     inline pami_result_t multisync    (uint8_t (&)[T_Msync::sizeof_msg], pami_multisync_t    *);

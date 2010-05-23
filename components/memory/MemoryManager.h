@@ -155,6 +155,17 @@ namespace PAMI
           return _size;
         };
 
+        ///
+        /// \brief Return the base address of the managed memory buffer
+        ///
+        /// \return    base address of the memory buffer
+        ///
+        inline void *base ()
+        {
+          PAMI_assert_debug(_base != NULL);
+          return _base;
+        };
+
       private:
         void * _base;
         size_t _size;
