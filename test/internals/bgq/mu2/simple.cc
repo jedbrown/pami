@@ -11,7 +11,7 @@
  * \brief Simple standalone MU software device test.
  */
 
-//#include "common/bgq/Global.h"
+#include "common/bgq/Global.h"
 //#include "components/memory/MemoryManager.h"
 //#include "components/devices/generic/Device.h"
 
@@ -43,6 +43,8 @@ typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 
 //typedef PAMI::Protocol::Send::Eager<T_Model, MuContext> MuEager;
 
+PAMI::Global __myGlobal;
+
 int main(int argc, char ** argv)
 {
 
@@ -51,15 +53,15 @@ int main(int argc, char ** argv)
  // PAMI::Global global;
   //PAMI::Memory::MemoryManager mm;
 
-  PAMI::BgqPersonality personality;
-  PAMI::Mapping mapping (personality);
-  PAMI::bgq_mapcache_t mapcache;
+//   PAMI::BgqPersonality personality;
+//   PAMI::Mapping mapping (personality);
+//   PAMI::bgq_mapcache_t mapcache;
 
-  // Need to clear the mapcache here to avoid fatal warnings that it is being used uninitialized.
-  memset(&mapcache,0x00,sizeof(mapcache));
-  mapping.init (mapcache, personality);
+//   // Need to clear the mapcache here to avoid fatal warnings that it is being used uninitialized.
+//   memset(&mapcache,0x00,sizeof(mapcache));
+//   mapping.init (mapcache, personality);
 
-  fprintf (stderr, "After mapping init\n");    
+//   fprintf (stderr, "After mapping init\n");    
 
 //  ProgressDevice progress (0, 0, 1);
 //  progress.init (NULL,       // pami_context_t
@@ -68,7 +70,7 @@ int main(int argc, char ** argv)
 //                 NULL,//&mm,        // not used ???
 //                 &progress); // "all generic devices"
 
-  MuContext mu (mapping, 0, 0, 1);//, progress);
+  MuContext mu (__myGlobal.mapping, 0, 0, 1);//, progress);
   mu.init (0); // id_client
 
   fprintf (stderr, "After mu init\n");
