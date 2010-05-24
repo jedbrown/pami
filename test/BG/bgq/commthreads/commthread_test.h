@@ -149,7 +149,7 @@ pami_result_t init_test_send(pami_client_t client, pami_context_t *ctx, size_t n
 	return PAMI_SUCCESS;
 }
 
-pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nctx) {
+pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nctx, int role) {
 	pami_result_t result;
 	int x;
 	size_t ix;
@@ -157,18 +157,18 @@ pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nc
 	size_t meix = TEST_Local_myindex();
 
 	// even index sends, odd receives...
-	if (meix & 1) {
+	if (role) { // receiver...
 		for (x = 0; x < nctx; ++x) {
 			++_info[x].value; // expecting a receive ...
 		}
 
-	} else {
+	} else { // sender...
 
 		for (x = 0; x < nctx; ++x) {
 		
 			// assert(_info[x].value == 0)
 			_info[x].ctx = x;
-			ix = meix + 1;
+			ix = meix ^ 1;
 			pami_task_t task = TEST_Local_index2task(ix);
 			if (task == (pami_task_t)-1) continue; // never?
 
