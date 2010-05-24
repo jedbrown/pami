@@ -259,7 +259,7 @@ namespace PAMI
 
             uint64_t recFifoEnableBits = 0;
             recFifoEnableBits |= ( 0x0000000000000001ULL <<
-                                   ( 15 - ((_mapping.p()/*sgid*/*BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) + _rfifoid/*RecFifoId*/ )) );
+                                   ( 15 - ((_mapping.t()/*sgid*/*BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) + _rfifoid/*RecFifoId*/ )) );
             Kernel_RecFifoEnable ( 0, /* Group ID */
                                    recFifoEnableBits );
 #endif

@@ -46,6 +46,8 @@ typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 int main(int argc, char ** argv)
 {
 
+  fprintf (stderr, "In main\n");
+
  // PAMI::Global global;
   //PAMI::Memory::MemoryManager mm;
 
