@@ -44,7 +44,10 @@ namespace PAMI
                 T_Packet ()
             {
               TRACE_ERR((stderr, "%s: size %zu, fifosize %d, sizeof(LinearFifoPacket) %zu, sizeof(T_Atomic) %zu\n", __PRETTY_FUNCTION__,  sizeof(*this),  T_FifoSize, sizeof(LinearFifoPacket),sizeof(T_Atomic)));
+#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
+#else // !__pami_target_bgq__
               setActive (false);
+#endif // !__pami_target_bgq__
             };
 
             inline ~LinearFifoPacket () {};
@@ -52,9 +55,15 @@ namespace PAMI
             inline void reset ()
             {
               T_Packet::clear();
+#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
+#else // !__pami_target_bgq__
               setActive (false);
+#endif // !__pami_target_bgq__
             };
 
+#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
+            static const size_t public_header_bytes = T_Packet::headerSize_impl;
+#else // !__pami_target_bgq__
             inline bool isActive ()
             {
               size_t * header = (size_t *) T_Packet::getHeader ();
@@ -70,6 +79,7 @@ namespace PAMI
             };
 
             static const size_t public_header_bytes = T_Packet::headerSize_impl - sizeof(size_t);
+#endif // !__pami_target_bgq__
         };
 
       public:
@@ -77,6 +87,10 @@ namespace PAMI
             Fifo<LinearFifo <T_Atomic, T_Packet, T_FifoSize>, T_Packet> (),
             _head (0),
             _tail (),
+#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
+	    _active(NULL),
+#else // !__pami_target_bgq__
+#endif // !__pami_target_bgq__
             _inj_wrap_count (0),
             _last_rec_sequence (0)
         {};
@@ -86,7 +100,7 @@ namespace PAMI
         ///
         /// \brief Initialize the linear fifo with a specific packet buffer.
         ///
-        inline void init_impl (Memory::MemoryManager *mm)
+        inline void init_impl (size_t clientid, Memory::MemoryManager *mm)
         {
           _head = 0;
           _tail.init (mm);
@@ -98,6 +112,14 @@ namespace PAMI
             {
               _packet[i].reset ();
             }
+#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
+	// since we currently wakeup all contexts if any are changed, this is fine.
+	size_t myix = __global.topology_local.rank2Index(__global.mapping.task());
+	__global._wuRegion_mms[clientid][myix].memalign((void **)&_active, sizeof(void *),
+						T_FifoSize * sizeof(*_active));
+	PAMI_assertf(_active, "Out of WAC Region memory allocating FIFO active flags");
+	memset((void *)_active, 0, T_FifoSize * sizeof(*_active));
+#endif // __pami_target_bgq__
         }
 
         inline T_Packet * nextInjPacket_impl (size_t & pktid)
@@ -118,8 +140,12 @@ namespace PAMI
         {
           //mem_barrier ();
           //mem_sync();
+#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
+	  if (_active[_head])
+#else // !__pami_target_bgq__
           TRACE_ERR((stderr, "(%zu) LinearFifo::nextRecPacket_impl() .. this = %p, _packet[%zu].isActive () = %d\n", __global.mapping.task(), this, _head, _packet[_head].isActive ()));
           if (_packet[_head].isActive ())
+#endif // !__pami_target_bgq__
             return (T_Packet *) &_packet[_head];
 
           return (T_Packet *) NULL;
@@ -127,10 +153,14 @@ namespace PAMI
 
         inline void consumePacket_impl ()
         {
+#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
+	  _active[_head] = false;
+#else // !__pami_target_bgq__
           TRACE_ERR((stderr, "(%zu) LinearFifo::consumePacket_impl() .. this = %p, _packet[%zu].isActive () = %d\n", __global.mapping.task(), this, _head, _packet[_head].isActive ()));
                     //mem_barrier ();
           //mem_sync();
           _packet[_head].setActive (false);
+#endif // !__pami_target_bgq__
           _last_rec_sequence++;
 
           _head++;
@@ -165,7 +195,11 @@ namespace PAMI
           // stale packet header/payload data.
           mem_barrier ();
           //mem_sync();
+#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
+	  _active[pktid] = true;
+#else // !__pami_target_bgq__
           _packet[pktid].setActive (true);
+#endif // !__pami_target_bgq__
           //mem_barrier ();
           //mem_sync();
 
@@ -194,6 +228,10 @@ namespace PAMI
         LinearFifoPacket _packet[T_FifoSize];
         size_t           _head;
         T_Atomic         _tail;
+#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
+	volatile bool	*_active;
+#else // !__pami_target_bgq__
+#endif // !__pami_target_bgq__
 
         size_t           _inj_wrap_count;
         size_t           _last_rec_sequence;

@@ -42,7 +42,7 @@ namespace PAMI
         ///
         /// \brief Initialize the fifo
         ///
-        inline void init (Memory::MemoryManager *mm);
+        inline void init (size_t clientid, Memory::MemoryManager *mm);
 
         inline size_t getPacketHeaderSize ();
         inline size_t getPacketPayloadSize ();
@@ -58,9 +58,9 @@ namespace PAMI
     };
 
     template <class T_Fifo, class T_Packet>
-    void Fifo<T_Fifo, T_Packet>::init (Memory::MemoryManager *mm)
+    void Fifo<T_Fifo, T_Packet>::init (size_t clientid, Memory::MemoryManager *mm)
     {
-      static_cast<T_Fifo*>(this)->init_impl (mm);
+      static_cast<T_Fifo*>(this)->init_impl (clientid, mm);
     }
 
     template <class T_Fifo, class T_Packet>

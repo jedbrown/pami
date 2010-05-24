@@ -63,10 +63,10 @@ pami_result_t do_work(pami_context_t context, void *cookie) {
 
 pami_result_t do_send(pami_context_t context, void *cookie) {
 	post_info_t *info = (post_info_t *)cookie;
-//	char buf[128];
-//	sprintf(buf, "do_send(%d) by %ld on context %d: cookie = %p, %d -> %d\n",
-//				info->seq, pthread_self(), info->ctx, cookie, info->value, info->value - 1);
-//	write(2, buf, strlen(buf));
+	char buf[128];
+	sprintf(buf, "do_send(%d) by %ld on context %d: cookie = %p, %d -> %d\n",
+				info->seq, pthread_self(), info->ctx, cookie, info->value, info->value - 1);
+	write(2, buf, strlen(buf));
 	pami_result_t rc = PAMI_Send(context, &info->send);
 	if (rc != PAMI_SUCCESS) {
 fprintf(stderr, "failed sending %d\n", info->seq);
