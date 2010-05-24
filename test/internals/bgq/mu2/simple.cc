@@ -71,7 +71,7 @@ int main(int argc, char ** argv)
 
   fprintf (stderr, "After mu init\n");
 
-  pami_result_t result;
+//  pami_result_t result;
   MuPacketModel pkt (mu);
   //MuDmaModel dma (mu, result);
 

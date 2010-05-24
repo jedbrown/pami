@@ -200,7 +200,7 @@ namespace PAMI
             injFifoAttrs.System    = 0;
 
             //TRACE(("main(): allocate injection fifos\n"));
-            Kernel_AllocateInjFifos (_mapping.p(),
+            Kernel_AllocateInjFifos (_mapping.t(),
                                      &_ififo_subgroup,
                                      1,
                                      &_ififoid,
@@ -230,7 +230,7 @@ namespace PAMI
             Kernel_RecFifoAttributes_t recFifoAttrs[1];
             recFifoAttrs[0].System = 0;
 
-            Kernel_AllocateRecFifos (_mapping.p(),
+            Kernel_AllocateRecFifos (_mapping.t(),
                                      &_rfifo_subgroup,
                                      1,
                                      &_rfifoid,
