@@ -107,8 +107,13 @@ namespace PAMI
           {
             if (likely(isSinglePacket ()))
               {
-                uint32_t * raw32 = (uint32_t *) this;
-                raw32[0] |= ((uint32_t) id) << 8;
+#if 0 //Whaky bit manipulation from Mike B!
+                //uint32_t * raw32 = (uint32_t *) this;
+                //raw32[0] |= ((uint32_t) id) << 8;
+#endif		
+		//Use the putoffset MSB 5 bits. So only 32 dispatches
+		//supported right now
+		messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_MSB=id;
                 return;
               }
 
@@ -135,9 +140,11 @@ namespace PAMI
           {
             if (likely(isSinglePacket ()))
               {
-                uint32_t * raw32 = (uint32_t *) this;
-                uint16_t id = (uint16_t) (raw32[0] >> 8);
-                return id & 0x01fff;
+                //uint32_t * raw32 = (uint32_t *) this;
+                //uint16_t id = (uint16_t) (raw32[0] >> 8);
+                //return id & 0x01fff;
+
+		return messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_MSB;
               }
 
             uint16_t * metadata = (uint16_t *) messageUnitHeader.Packet_Types.Memory_FIFO.Unused2;

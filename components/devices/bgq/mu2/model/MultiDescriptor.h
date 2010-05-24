@@ -28,7 +28,11 @@ namespace PAMI
 
           inline MultiDescriptor ()
           {
+	    memset(desc, 0, sizeof(desc));
+	    
             MUSPI_BaseDescriptorInfoFields_t base;
+	    memset(&base, 0, sizeof(base));
+
             base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
             base.Payload_Address = 0;
             base.Message_Length  = 0;
@@ -40,7 +44,6 @@ namespace PAMI
               {
                 desc[i].setBaseFields (&base);
               }
-
           };
 
           inline ~MultiDescriptor () {};
@@ -55,7 +58,7 @@ namespace PAMI
           };
 
 
-          MUSPI_DescriptorBase   desc[T_Num];
+          MUSPI_DescriptorBase   desc[T_Num] __attribute__((__aligned__(64)));
 
       }; // PAMI::Device::MU::MultiDescriptor class
 

@@ -45,6 +45,8 @@ namespace PAMI
 
             for (i = 0; i < T_Num; i++)
               {
+		this->desc[i].setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);	
+		this->desc[i].PacketHeader.NetworkHeader.pt2pt.Byte8.Size=16;
                 this->desc[i].setPt2PtFields (&pt2pt);
               }
 

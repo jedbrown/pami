@@ -16,6 +16,7 @@
 
 #include <hwi/include/bqc/MU_PacketHeader.h>
 
+#include <malloc.h>
 
 #include <spi/include/mu/InjFifo.h>
 #include <spi/include/mu/RecFifo.h>
@@ -206,8 +207,11 @@ namespace PAMI
                                      &_ififoid,
                                      &injFifoAttrs);
 
-            _injFifoBuf = (char *) malloc (INJ_MEMORY_FIFO_SIZE + 1);
+            _injFifoBuf = (char *) memalign (64, INJ_MEMORY_FIFO_SIZE + 1);
+	    assert ((((uint64_t)_injFifoBuf) % 64) == 0);
 	    _lookAsideBuf = (char *) malloc ((INJ_MEMORY_FIFO_SIZE + 1) * 2); //lookaside buffer 2xdesc_size
+
+	    memset(_injFifoBuf, 0, INJ_MEMORY_FIFO_SIZE + 1);
 
             Kernel_MemoryRegion_t  mregionInj, mregionRec;
             Kernel_CreateMemoryRegion ( &mregionInj,
@@ -236,7 +240,10 @@ namespace PAMI
                                      &_rfifoid,
                                      recFifoAttrs);
 
-            _recFifoBuf = (char *) malloc (65536);
+            _recFifoBuf = (char *)memalign (32, REC_MEMORY_FIFO_SIZE+1);
+	    assert ((((uint64_t)_recFifoBuf) % 32) == 0);
+	    memset(_recFifoBuf, 0, REC_MEMORY_FIFO_SIZE + 1);
+
             Kernel_CreateMemoryRegion ( &mregionRec,
                                         _recFifoBuf,
                                         REC_MEMORY_FIFO_SIZE + 1 );
@@ -252,7 +259,7 @@ namespace PAMI
 
             uint64_t recFifoEnableBits = 0;
             recFifoEnableBits |= ( 0x0000000000000001ULL <<
-                                   ( 15 - ( (0/*sgid*/*BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) + 0/*RecFifoId*/ )) );
+                                   ( 15 - ((_mapping.p()/*sgid*/*BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) + _rfifoid/*RecFifoId*/ )) );
             Kernel_RecFifoEnable ( 0, /* Group ID */
                                    recFifoEnableBits );
 #endif
@@ -343,7 +350,7 @@ namespace PAMI
           ///
           /// \copydoc Interface::BaseDevice::advance
           ///
-          inline int advance_impl ()
+          int advance_impl ()
           {
 	    unsigned events = advanceRecv();
 
@@ -369,7 +376,7 @@ namespace PAMI
           // ------------------------------------------------------------------
 #endif
 
-	  inline unsigned advanceRecv();
+	  unsigned advanceRecv();
 
 
           ///
@@ -467,10 +474,7 @@ namespace PAMI
 ///!!!!
             // In loopback we send only on AM
             map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
-            hintsABCD = MUHWI_PACKET_HINT_AM |
-                        MUHWI_PACKET_HINT_B_NONE |
-                        MUHWI_PACKET_HINT_C_NONE |
-                        MUHWI_PACKET_HINT_D_NONE;
+            hintsABCD = MUHWI_PACKET_HINT_AM;
             hintsE    = MUHWI_PACKET_HINT_E_NONE;
 
             return  0;
@@ -570,7 +574,7 @@ namespace PAMI
 
 
 
-unsigned PAMI::Device::MU::Context::advanceRecv () {  
+inline unsigned PAMI::Device::MU::Context::advanceRecv () {  
   unsigned packets = 0;
 #if CONTEXT_ALLOCATES_RESOURCES
   uint32_t wrap = 0;
@@ -586,27 +590,26 @@ unsigned PAMI::Device::MU::Context::advanceRecv () {
     if (wrap)   //Extra branch over older packet loop
     {
       hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketWrap (rfifo, &cur_bytes);	
-      void * metadata = hdr->getMetaData();	  	  
-      uint16_t id = hdr->getDispatchId();
-      _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
+      _dispatch[hdr->getDispatchId()].f(hdr->getMetaData(), hdr + 1, cur_bytes - 32, _dispatch[hdr->getDispatchId()].p, hdr + 1);
       packets++;
       
-      MUSPI_syncRecFifoHwHead (rfifo);
+      //fprintf(stderr, "Received packet wrap of size %d, total bytes %d\n",
+      //      cur_bytes, total_bytes);      
     }
     else {
       cumulative_bytes = 0;      
       while (cumulative_bytes < total_bytes )
       {
 	hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketOptimized (rfifo, &cur_bytes);
-	void * metadata = hdr->getMetaData();	      
-	uint16_t id = hdr->getDispatchId();	      	      
 	cumulative_bytes += cur_bytes;	      
-	_dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
-	MUSPI_syncRecFifoHwHead (rfifo);
+	_dispatch[hdr->getDispatchId()].f(hdr->getMetaData(), hdr + 1, cur_bytes - 32, _dispatch[hdr->getDispatchId()].p, hdr + 1);
 	packets++;	      
 	// Touch head for next packet
+	//	fprintf(stderr, "Received packet of size %d, cum bytes %d, total bytes %d\n",
+	//cur_bytes, cumulative_bytes, total_bytes);
       }
     }
+    MUSPI_syncRecFifoHwHead (rfifo);
   }
   
   //TRACE((stderr, "<< RecFifoSubGroup::recFifoPoll(%p) .. packets = %d\n", rfifo, packets));

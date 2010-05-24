@@ -228,8 +228,6 @@ namespace PAMI
                                                       size_t         metasize,
                                                       struct iovec   (&iov)[T_Niov])
       {
-	fprintf (stderr, "In post packet\n");
-
         MUHWI_Destination_t   dest;
         MUSPI_InjFifo_t     * ififo;
         uint16_t              rfifo;
@@ -238,13 +236,13 @@ namespace PAMI
         uint8_t               hintsE;
 
         size_t fnum = _context.pinFifo ((size_t) target_task, 
-				       target_offset, 
-				       dest,
-                                       &ififo, 
-				       rfifo, 
-				       map, 
-				       hintsABCD, 
-				       hintsE);
+					target_offset, 
+					dest,
+					&ififo, 
+					rfifo, 
+					map, 
+					hintsABCD, 
+					hintsE);
 
         MUHWI_Descriptor_t * desc;
         void               * vaddr;
@@ -261,8 +259,6 @@ namespace PAMI
             // Clone the single-packet model descriptor into the injection fifo
             MemoryFifoDescriptor * memfifo = (MemoryFifoDescriptor *) desc;
             _singlepkt.clone (memfifo);
-
-	    fprintf (stderr, "After clone\n");
 
             // Initialize the injection fifo descriptor in-place.
             memfifo->initializeDescriptors (dest, map, hintsABCD, hintsE, rfifo);
@@ -286,8 +282,8 @@ namespace PAMI
             // Set the payload information.
             memfifo->desc[0].setPayload (paddr, tbytes);
 
-	    fprintf(stderr, "Advance tail pointer\n");
-
+	    //fprintf(stderr, "Advance tail pointer, tbytes %d\n", tbytes);
+	    
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
             MUSPI_InjFifoAdvanceDesc (ififo);

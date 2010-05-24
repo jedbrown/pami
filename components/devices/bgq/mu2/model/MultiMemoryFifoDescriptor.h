@@ -33,18 +33,19 @@ namespace PAMI
               MultiPt2PtDescriptor<T_Num> ()
           {
             MUSPI_MemoryFIFODescriptorInfoFields_t memfifo;
+	    memset (&memfifo, 0, sizeof(memfifo));
+	    
             memfifo.Rec_FIFO_Id    = 0;
             memfifo.Rec_Put_Offset = 0;
             memfifo.Interrupt      = MUHWI_DESCRIPTOR_DO_NOT_INTERRUPT_ON_PACKET_ARRIVAL;
             memfifo.SoftwareBit    = 0;
-
+	    
             size_t i;
-
             for (i = 0; i < T_Num; i++)
-              {
-                this->desc[i].setMemoryFIFOFields (&memfifo);
-              }
-
+            {
+	      this->desc[i].setMemoryFIFOFields (&memfifo);
+	      this->desc[i].setMessageUnitPacketType (MUHWI_PACKET_TYPE_FIFO);
+	    }
           };
 
           inline ~MultiMemoryFifoDescriptor () {};
