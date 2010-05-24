@@ -41,6 +41,17 @@
 	USR_WAKEUP_BASE[WAC_ENABLE(reg)] = mask;		\
 }
 
+/// \todo #warning Need CNK method to enable MU "interrupts" through Wakeup Unit
+#define WU_ArmMU(bits) {				\
+	int thr = Kernel_PhysicalHWThreadID();		\
+	USR_WAKEUP_BASE[SET_THREAD(thr)] = _B4(52,(bits));\
+}
+
+#define WU_DisarmMU(bits) {				\
+	int thr = Kernel_PhysicalHWThreadID();		\
+	USR_WAKEUP_BASE[CLEAR_THREAD(thr)] = _B4(52,(bits));\
+}
+
 #endif // !HAVE_WU_ARMWITHADDRESS
 
 #ifndef SCHED_COMM
@@ -115,14 +126,17 @@ private:
                 return e;
         }
 
-/// \todo #warning Need CNK method to enable MU "interrupts" through Wakeup Unit
         /// \brief Arm the MU interrupt-through-Wakeup Unit
         ///
-        inline void __armMU_WU() { }
+        inline void __armMU_WU() {
+		WU_ArmMU(0x0f);
+	}
 
         /// \brief Disarm the MU interrupt-through-Wakeup Unit
         ///
-        inline void __disarmMU_WU() { }
+        inline void __disarmMU_WU() {
+		WU_DisarmMU(0x0f);
+	}
 
 public:
         BgqCommThread(BgqWakeupRegion *wu, BgqContextPool *pool, size_t clientid, size_t num_ctx) :
