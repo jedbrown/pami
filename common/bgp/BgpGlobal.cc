@@ -41,4 +41,3 @@ PAMI::Device::BGP::CNAllreducePPDevice _g_cnallreducepp_dev(&_g_cncommon_dev);
 PAMI::Device::BGP::CNAllreduce2PDevice _g_cnallreduce2p_dev(&_g_cncommon_dev);
 #include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
 PAMI::Device::BGP::CNBroadcastDevice _g_cnbroadcast_dev(&_g_cncommon_dev);
-

@@ -88,8 +88,8 @@ namespace PAMI
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCastFactory;
 
     //----------------------------------------------------------------------------
-    // Shmem allsided multicast built on active message multicast with an 
-    // synchronizing multisync 
+    // Shmem allsided multicast built on active message multicast with an
+    // synchronizing multisync
     //----------------------------------------------------------------------------
     void ShmemMcast2MetaData(pami_metadata_t *m)
     {
@@ -169,8 +169,8 @@ namespace PAMI
                                                               CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiCastFactory;
 
     //----------------------------------------------------------------------------
-    // MU allsided multicast built on active message multicast with an 
-    // synchronizing multisync 
+    // MU allsided multicast built on active message multicast with an
+    // synchronizing multisync
     //----------------------------------------------------------------------------
     void MUMcast2MetaData(pami_metadata_t *m)
     {

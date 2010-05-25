@@ -1,4 +1,3 @@
-
 #include <spi/include/kernel/collective.h>
 #include "spi/include/mu/Classroute.h"
 #undef __INLINE__
@@ -14,7 +13,7 @@ int sprint_coord(char *buf, CR_COORD_T *co) {
                 c = ',';
         }
         *s++ = ')';
-        *s = '\0'; 
+        *s = '\0';
         return s - buf;
 }
 
@@ -298,7 +297,7 @@ int main(int argc, char **argv) {
 	}
 
 	//=======================================================================
- 
+
 	// Initialize all of the collective class routes
 	for (i = 0; i < nClassRoutes; ++i) {
 		rc = Kernel_SetCollectiveClassRoute(classRouteIds[i], &classRoutes[i]);

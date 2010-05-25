@@ -389,7 +389,7 @@ int main (int argc, char ** argv)
 	      if (result != PAMI_SUCCESS) {
 		fprintf (stderr, "ERROR:   PAMI_Send failed with rc = %d\n", result);
 		return 1;
-	      
+
 }
 	      fprintf (stderr, "... after send.\n");
 

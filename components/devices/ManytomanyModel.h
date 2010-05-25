@@ -78,7 +78,7 @@ namespace PAMI
         return static_cast<T_Model*>(this)->registerManytomanyRecvFunction_impl (dispatch_id, recv_func, async_arg);
       }
 
-      
+
     };
   };
 };

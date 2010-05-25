@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/send/default-send-1.c
+/// \file test/p2p/send/default-send-1-mv.c
 /// \brief Ppoint-to-point PAMI_send() test using multiple contexts
 ///
 
@@ -158,7 +158,7 @@ unsigned do_test ()
   parameters.send.data.iov_len    = 0;
   parameters.events.cookie        = (void *) &send_active;
   parameters.events.local_fn      = send_done_local;
- 
+
   size_t xtalk = 0;
   size_t remote_cb = 0;
 
@@ -258,7 +258,7 @@ unsigned do_test ()
 	      return 1;
 	    }
 	  }
-    
+
 	  recv_active = 1;
 	  TRACE((stderr, "... after recv advance loop\n"));
 
@@ -350,7 +350,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  
+
   configuration.name = PAMI_NUM_CONTEXTS;
   result = PAMI_Configuration_query(g_client, &configuration);
   if (result != PAMI_SUCCESS)
@@ -380,7 +380,7 @@ int main (int argc, char ** argv)
   TRACE((stderr, "Before do_test.\n"));
   do_test ();
   TRACE((stderr, "After do_test.\n"));
- 
+
   // ====== CLEANUP ======
 
   size_t i = 0;

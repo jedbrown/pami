@@ -83,7 +83,7 @@ void do_recv(pami_context_t context, void *cookie, void *hdr, size_t hdrlen,
 	//assert(pipe == NULL && datlen == 0 && hdrlen == sizeof(info->seq));
 	char buf[128];
 	sprintf(buf, "do_recv(%d) by %ld on context %d: cookie = %p, %d\n",
-				info->seq, pthread_self(), info->ctx, cookie, 
+				info->seq, pthread_self(), info->ctx, cookie,
 				*((typeof(info->seq) *)hdr));
 	write(2, buf, strlen(buf));
 	--info->value;
@@ -165,7 +165,7 @@ pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nc
 	} else { // sender...
 
 		for (x = 0; x < nctx; ++x) {
-		
+
 			// assert(_info[x].value == 0)
 			_info[x].ctx = x;
 			ix = meix ^ 1;

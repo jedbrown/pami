@@ -1,5 +1,5 @@
-#ifndef __test_BG_bgq_commthreads_misc_util_h__
-#define __test_BG_bgq_commthreads_misc_util_h__
+#ifndef __test_BG_bgq_commthreads_misc-util_h__
+#define __test_BG_bgq_commthreads_misc-util_h__
 
 #include <sys/pami.h>
 

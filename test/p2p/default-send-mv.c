@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/default-send.c
+/// \file test/p2p/default-send-mv.c
 /// \brief Simple point-topoint PAMI_send() test
 ///
 
@@ -388,7 +388,7 @@ int main (int argc, char ** argv)
 	      if (result != PAMI_SUCCESS) {
 		fprintf (stderr, "ERROR:   PAMI_Send failed with rc = %d\n", result);
 		return 1;
-	      
+
 }
 	      fprintf (stderr, "... after send.\n");
 
