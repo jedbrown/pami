@@ -1,3 +1,19 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file test/BG/bgq/classroutes/classroute_test.h
+ * \brief ???
+ */
+
+#ifndef __test_BG_bgq_classroutes_classroute_test_h__
+#define __test_BG_bgq_classroutes_classroute_test_h__
+
 #include <spi/include/kernel/collective.h>
 #include "spi/include/mu/Classroute.h"
 #undef __INLINE__
@@ -338,3 +354,5 @@ int main(int argc, char **argv) {
 	}
 	exit(0);
 }
+
+#endif

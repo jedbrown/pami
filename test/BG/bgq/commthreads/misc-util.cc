@@ -1,3 +1,16 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file test/BG/bgq/commthreads/misc-util.cc
+ * \brief ???
+ */
+
 #include "Global.h"
 #include "misc-util.h"
 

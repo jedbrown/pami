@@ -1,5 +1,18 @@
-#ifndef __test_BG_bgq_commthreads_misc-util_h__
-#define __test_BG_bgq_commthreads_misc-util_h__
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file test/BG/bgq/commthreads/misc-util.h
+ * \brief ???
+ */
+
+#ifndef __test_BG_bgq_commthreads_misc_util_h__
+#define __test_BG_bgq_commthreads_misc_util_h__
 
 #include <sys/pami.h>
 
