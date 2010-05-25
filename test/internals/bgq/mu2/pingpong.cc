@@ -11,7 +11,7 @@
  * \brief Simple standalone MU software device test.
  */
 
-//#include "common/bgq/Global.h"
+#include "common/bgq/Global.h"
 //#include "components/memory/MemoryManager.h"
 //#include "components/devices/generic/Device.h"
 
@@ -49,12 +49,14 @@ int dispatch_fn    (void   * metadata,
 		    void   * recv_func_parm,
 		    void   * cookie)
 {
-  fprintf(stderr, "Received packet of size %d\n", bytes);	  
+  fprintf(stderr, "Received packet of size %lu\n", bytes);	  
   return 0;  
 }
 
 #define MAX_BUF_SIZE  1024
 #define MSG_SIZE      1
+
+PAMI::Global __myGlobal;
 
 int main(int argc, char ** argv)
 {
@@ -62,10 +64,10 @@ int main(int argc, char ** argv)
  // PAMI::Global global;
   //PAMI::Memory::MemoryManager mm;
 
-  PAMI::BgqPersonality personality;
-  PAMI::Mapping mapping (personality);
-  PAMI::bgq_mapcache_t mapcache;
-  mapping.init (mapcache, personality);
+  //PAMI::BgqPersonality personality;
+  //PAMI::Mapping mapping (personality);
+  //PAMI::bgq_mapcache_t mapcache;
+  //mapping.init (mapcache, personality);
 
   fprintf (stderr, "After mapping init\n");    
 
@@ -76,13 +78,13 @@ int main(int argc, char ** argv)
 //                 NULL,//&mm,        // not used ???
 //                 &progress); // "all generic devices"
 
-  MuContext mu (mapping, 0, 0, 1);//, progress) __attribute__((__aligned__(64)));
+  MuContext mu (__myGlobal.mapping, 0, 0, 1);//, progress) __attribute__((__aligned__(64)));
   mu.init (0); // id_client
 
   fprintf (stderr, "After mu init\n");
 
-  pami_result_t result;
-  MuPacketModel pkt(mu)__attribute__((__aligned__(64)));
+  //pami_result_t result;
+  MuPacketModel pkt(mu);
   //MuDmaModel dma (mu, result);
 
   pkt.init (0,
@@ -111,7 +113,7 @@ int main(int argc, char ** argv)
   struct iovec iov[1];
   iov[0].iov_base = buf;
   iov[0].iov_len  = MSG_SIZE;
-  pkt.postPacket (mapping.task(),
+  pkt.postPacket (__global.mapping.task(),
 		  0,
 		  (void *)metadata,
 		  4,
