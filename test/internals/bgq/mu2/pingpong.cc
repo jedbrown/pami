@@ -43,13 +43,17 @@ typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 
 //typedef PAMI::Protocol::Send::Eager<T_Model, MuContext> MuEager;
 
+#define MAX_ITER 10
+int npackets = 0;
+
 int dispatch_fn    (void   * metadata,
 		    void   * payload,
 		    size_t   bytes,
 		    void   * recv_func_parm,
 		    void   * cookie)
 {
-  fprintf(stderr, "Received packet of size %lu\n", bytes);	  
+  npackets ++;
+  //fprintf(stderr, "Received packet of size %lu\n", bytes);	  
   return 0;  
 }
 
@@ -113,17 +117,28 @@ int main(int argc, char ** argv)
   struct iovec iov[1];
   iov[0].iov_base = buf;
   iov[0].iov_len  = MSG_SIZE;
-  pkt.postPacket (__global.mapping.task(),
-		  0,
-		  (void *)metadata,
-		  4,
-		  iov);
 
-  fprintf (stderr, "after post packet\n");
-  
-  // advance
-  //  progress.advance ();
-  while (mu.advance() == 0);
+  unsigned long start = 0, end = 0;
+
+  for (int i = 0; i <= MAX_ITER; i++) {
+    if (i == 1)
+      start = GetTimeBase();
+
+    pkt.postPacket (__global.mapping.task(),
+		    0,
+		    (void *)metadata,
+		    4,
+		    iov);
+    
+    // advance
+    //  progress.advance ();
+    while (mu.advance() == 0);
+  }
+  end = GetTimeBase();
+
+  assert (npackets == MAX_ITER+1);
+
+  printf ("Pingpong time = %d cycles\n", (int)((end - start)/MAX_ITER));
 
   return 0;
 }
