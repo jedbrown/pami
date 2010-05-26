@@ -3,7 +3,7 @@
 int main(int argc, char **argv) {
 	CR_RECT_T refcomm;
 	CR_COORD_T me;
-	static char buf[1024];
+	static char buf[4096];
 	char *s;
 	Personality_t pers;
 
@@ -12,11 +12,19 @@ int main(int argc, char **argv) {
 		perror("Kernel_GetPersonality()");
 		exit(1);
 	}
+#if 0 // not currently needed?
+fprintf(stderr, "pers: (%d,%d,%d,%d,%d)\n",
+pers.Network_Config.Anodes,
+pers.Network_Config.Bnodes,
+pers.Network_Config.Cnodes,
+pers.Network_Config.Dnodes,
+pers.Network_Config.Enodes);
 	if (!pers.Network_Config.Anodes) pers.Network_Config.Anodes = 1;
 	if (!pers.Network_Config.Bnodes) pers.Network_Config.Bnodes = 1;
 	if (!pers.Network_Config.Cnodes) pers.Network_Config.Cnodes = 1;
 	if (!pers.Network_Config.Dnodes) pers.Network_Config.Dnodes = 1;
 	if (!pers.Network_Config.Enodes) pers.Network_Config.Enodes = 1;
+#endif
 
 	// initialize entire-block rectange.
 	// Note: only a subset of these nodes may actually be running.
@@ -41,6 +49,7 @@ int main(int argc, char **argv) {
 	CR_RECT_T communiv;
 	CR_COORD_T refroot;
 	int pri_dim;
+	int is_subblockjob;
 
 	// Pick a reasonable root node for comm-world:
 	// TBD: based on booted block or sub-block job?
@@ -48,12 +57,17 @@ int main(int argc, char **argv) {
 	MUSPI_PickWorldRoot(&refcomm, NULL, &refroot, &pri_dim);
 
 	size_t np = (size_t)-1;
-	s = getenv("BG_PROCESSESPERNODE");
+	size_t vn = 1;
+	s = getenv("BG_NP");
 	if (s) {
 		np = strtoul(s, NULL, 0);
 	}
+	s = getenv("BG_PROCESSESPERNODE");
+	if (s) {
+		vn = strtoul(s, NULL, 0);
+	}
 	int map[CR_NUM_DIMS];
-	s = getenv("BG_MAPPING");
+	s = getenv("BG_MAPFILE");
 	int i = 0;
 	if (s) {
 		// if [[ ${s} == +([A-ET]) ]]
@@ -74,44 +88,58 @@ int main(int argc, char **argv) {
 	}
 
 	BG_SubBlockDefinition_t subblk;
-	rc = Kernel_SubBlockDefinition(&subblk);
-	if (rc) { // no sub-block == use entire block
-
-		// initialize entire-block rectange:
-		*CR_RECT_LL(&communiv) = *CR_RECT_LL(&refcomm);
-		*CR_RECT_UR(&communiv) = *CR_RECT_UR(&refcomm);
-
-	} else {
+	is_subblockjob = Kernel_SubBlockDefinition(&subblk);
+	// the above is soon-to-be:
+	// BG_JobCoords_t subblk;
+	// is_subblockjob = Kernel_JobCoords(&subblk);
+	if (is_subblockjob) { // no sub-block == use entire block
 		if (subblk.shape.core < 16) { // sub-node job... not supported
 			fprintf(stderr, "Sub-node jobs are not supported\n");
 			exit(1);
 		}
-
-		*CR_RECT_LL(&communiv) = CR_COORD_INIT(
-			subblk.corner.a,
-			subblk.corner.b,
-			subblk.corner.c,
-			subblk.corner.d,
-			subblk.corner.e
-		);
-		*CR_RECT_UR(&communiv) = CR_COORD_INIT(
-			subblk.corner.a + subblk.shape.a - 1,
-			subblk.corner.b + subblk.shape.b - 1,
-			subblk.corner.c + subblk.shape.c - 1,
-			subblk.corner.d + subblk.shape.d - 1,
-			subblk.corner.e + subblk.shape.e - 1
-		);
-		// Note: still may not be running every node in rectangle...
-
 	}
+#if 0 // not currently needed?
+fprintf(stderr, "subblk: (%d,%d,%d,%d,%d)\n",
+subblk.shape.a,
+subblk.shape.b,
+subblk.shape.c,
+subblk.shape.d,
+subblk.shape.e);
+	if (!subblk.shape.a) subblk.shape.a = 1;
+	if (!subblk.shape.b) subblk.shape.b = 1;
+	if (!subblk.shape.c) subblk.shape.c = 1;
+	if (!subblk.shape.d) subblk.shape.d = 1;
+	if (!subblk.shape.e) subblk.shape.e = 1;
+#endif
+
+	*CR_RECT_LL(&communiv) = CR_COORD_INIT(
+		subblk.corner.a,
+		subblk.corner.b,
+		subblk.corner.c,
+		subblk.corner.d,
+		subblk.corner.e
+	);
+	*CR_RECT_UR(&communiv) = CR_COORD_INIT(
+		subblk.corner.a + subblk.shape.a - 1,
+		subblk.corner.b + subblk.shape.b - 1,
+		subblk.corner.c + subblk.shape.c - 1,
+		subblk.corner.d + subblk.shape.d - 1,
+		subblk.corner.e + subblk.shape.e - 1
+	);
+	// Note: still may not be running every node in rectangle...
 	int rank = coord2rank(map, &communiv, &me);
+	int univz = __MUSPI_rect_size(&communiv);
+	if (np != (size_t)-1) {
+		np = (np + vn - 1) / vn;
+	} else {
+		np = univz;
+	}
 
 	CR_RECT_T commworld;
 	CR_COORD_T *excluded = NULL;
 	int nexcl = 0;
-	if (np != (size_t)-1) {
-		int z = __MUSPI_rect_size(&communiv);
-		excluded = malloc((z - np) * sizeof(CR_COORD_T));
+	if (np < univz) {
+		excluded = malloc((univz - np) * sizeof(CR_COORD_T));
 		// assert(excluded != NULL);
 
 		// \todo really discard previous pri_dim here?
@@ -129,7 +157,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "%s\n", buf);
 
 		s = buf;
-		s += sprintf(s, "Job circumscribing rectangle = ");
+		s += sprintf(s, "Job -np %zd circumscribing rectangle = ", np);
 		s += sprint_rect(s, &communiv);
 		fprintf(stderr, "%s\n", buf);
 
@@ -152,6 +180,9 @@ int main(int argc, char **argv) {
 	s += sprint_coord(s, &me);
 	s += sprintf(s, " using mapping ");
 	s += sprint_map(s, map);
+{ char *_s = getenv("BG_SUB_BLOCK_SHAPE");
+sprintf(s, "\nBG_SUB_BLOCK_SHAPE=\"%s\"", _s ? _s : "");
+}
 	fprintf(stderr, "%s\n", buf);
 	// ...}
 
