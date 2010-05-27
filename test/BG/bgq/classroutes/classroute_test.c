@@ -87,11 +87,8 @@ pers.Network_Config.Enodes);
 		for (i = 0; i < CR_NUM_DIMS; ++i) map[i] = i;
 	}
 
-	BG_SubBlockDefinition_t subblk;
-	is_subblockjob = Kernel_SubBlockDefinition(&subblk);
-	// the above is soon-to-be:
-	// BG_JobCoords_t subblk;
-	// is_subblockjob = Kernel_JobCoords(&subblk);
+	BG_JobCoords_t subblk;
+	is_subblockjob = Kernel_JobCoords(&subblk);
 	if (is_subblockjob) { // no sub-block == use entire block
 		if (subblk.shape.core < 16) { // sub-node job... not supported
 			fprintf(stderr, "Sub-node jobs are not supported\n");
