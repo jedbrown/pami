@@ -14,7 +14,6 @@
 #define __components_devices_bgq_mu2_trace_h__
 
 
-
 static size_t __trace_fn_counter = -1;
 static char   __trace_indent_string[64] = { "                                                               " }; // 63 ' ' and 1 NULL
 

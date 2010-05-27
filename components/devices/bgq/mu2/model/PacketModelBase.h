@@ -23,6 +23,7 @@
 #include "components/devices/PacketInterface.h"
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/model/MultiMemoryFifoDescriptor.h"
+#include "components/devices/bgq/mu2/msg/InjectDescriptorMessage.h"
 
 
 #include "components/devices/bgq/mu2/trace.h"
@@ -37,12 +38,12 @@ namespace PAMI
     namespace MU
     {
       template <class T_Model>
-      class PacketModelBase : public Interface::PacketModel < MU::PacketModelBase<T_Model>, MU::Context, 128 >
+      class PacketModelBase : public Interface::PacketModel < MU::PacketModelBase<T_Model>, MU::Context, 256 >
       {
-          protected :
+        protected :
 
           /// \see PAMI::Device::Interface::PacketModel::PacketModel
-          PacketModelBase (MU::Context & device);
+          PacketModelBase (MU::Context & context);
 
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
           virtual ~PacketModelBase () { /*PAMI_abort();*/ }
@@ -55,7 +56,27 @@ namespace PAMI
                                          pami_event_function   fn,
                                          void                * cookie);
 
-          public:
+          inline void processCompletion_impl (void                * state,
+                                              size_t                fnum,
+                                              MUSPI_InjFifo_t     * ififo,
+                                              size_t                ndesc,
+                                              MUHWI_Descriptor_t  * desc,
+                                              pami_event_function   fn,
+                                              void                * cookie);
+
+          inline MU::MessageQueue::Element * createMessage (void                 * state,
+                                                            MUSPI_DescriptorBase & desc,
+                                                            MUSPI_InjFifo_t      * ififo,
+                                                            pami_event_function    fn,
+                                                            void                 * cookie);
+
+          inline MU::MessageQueue::Element * createMessage_impl (void                 * state,
+                                                                 MUSPI_DescriptorBase & desc,
+                                                                 MUSPI_InjFifo_t      * ififo,
+                                                                 pami_event_function    fn,
+                                                                 void                 * cookie);
+
+        public:
 
           /// \see PAMI::Device::Interface::PacketModel::isPacketDeterministic
           static const bool   deterministic_packet_model         = true;
@@ -75,7 +96,7 @@ namespace PAMI
           static const size_t packet_model_payload_bytes         = MU::Context::payload_size;
 
           /// \see PAMI::Device::Interface::PacketModel::getPacketTransferStateBytes
-          static const size_t packet_model_state_bytes           = 128;
+          static const size_t packet_model_state_bytes           = 256;
 
           /// \see PAMI::Device::Interface::PacketModel::init
           pami_result_t init_impl (size_t                      dispatch,
@@ -144,11 +165,12 @@ namespace PAMI
       };
 
       template <class T_Model>
-      PacketModelBase<T_Model>::PacketModelBase (MU::Context & device) :
-          Interface::PacketModel < MU::PacketModelBase<T_Model>, MU::Context, 128 > (device),
-          _context (device)
+      PacketModelBase<T_Model>::PacketModelBase (MU::Context & context) :
+          Interface::PacketModel < MU::PacketModelBase<T_Model>, MU::Context, 256 > (context),
+          _context (context)
       {
         TRACE_FN_ENTER();
+        COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= packet_model_state_bytes);
 
         MemoryFifoPacketHeader * hdr = NULL;
 
@@ -182,6 +204,54 @@ namespace PAMI
       };
 
       template <class T_Model>
+      void PacketModelBase<T_Model>::processCompletion_impl (void                * state,
+                                                             size_t                fnum,
+                                                             MUSPI_InjFifo_t     * ififo,
+                                                             size_t                ndesc,
+                                                             MUHWI_Descriptor_t  * desc,
+                                                             pami_event_function   fn,
+                                                             void                * cookie)
+          {
+            // Advance the injection fifo tail pointer. This action
+            // completes the injection operation.
+            uint64_t sequenceNum = 0; // suppress warning
+            sequenceNum = MUSPI_InjFifoAdvanceDesc (ififo);
+// !!!!
+// add counter completion notification stuff
+// !!!!
+          };
+
+
+      template <class T_Model>
+      MU::MessageQueue::Element * PacketModelBase<T_Model>::createMessage (void                 * state,
+                                                                           MUSPI_DescriptorBase & desc,
+                                                                           MUSPI_InjFifo_t      * ififo,
+                                                                           pami_event_function    fn,
+                                                                           void                 * cookie)
+      {
+        return static_cast<T_Model*>(this)->createMessage_impl (state, desc, ififo, fn, cookie);
+      };
+
+      template <class T_Model>
+      MU::MessageQueue::Element * PacketModelBase<T_Model>::createMessage_impl (void                 * state,
+                                                                                MUSPI_DescriptorBase & desc,
+                                                                                MUSPI_InjFifo_t      * ififo,
+                                                                                pami_event_function    fn,
+                                                                                void                 * cookie)
+          {
+            InjectDescriptorMessage<1> * msg = (InjectDescriptorMessage<1> *) state;
+            new (msg) InjectDescriptorMessage<1> (ififo);
+
+            // Copy the "data mover" descriptor into the message.
+            desc.clone (msg->desc[0]);
+
+            return (MU::MessageQueue::Element *) msg;
+          };
+
+
+
+
+      template <class T_Model>
       pami_result_t PacketModelBase<T_Model>::init_impl (size_t                      dispatch,
                                                          Interface::RecvFunction_t   direct_recv_func,
                                                          void                      * direct_recv_func_parm,
@@ -190,7 +260,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
-        // Register the direct dispatch function. The MU device will have access
+        // Register the direct dispatch function. The MU context will have access
         // to the packet payload in the memory fifo at the time the dispatch
         // function is invoked and can provide a direct pointer to the packet
         // payload.
@@ -344,11 +414,12 @@ namespace PAMI
             // Copy the payload into the immediate payload buffer.
             size_t i, tbytes = 0;
             uint8_t * dst = vaddr;
-            for (i=0; i<T_Niov; i++)
-            {
-              memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
-              tbytes += iov[i].iov_len;
-            } 
+
+            for (i = 0; i < T_Niov; i++)
+              {
+                memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
+                tbytes += iov[i].iov_len;
+              }
 
             // Set the payload information.
             memfifo->desc[0].setPayload (paddr, tbytes);
@@ -367,7 +438,7 @@ namespace PAMI
           }
         else
           {
-            // Create a message and post it to the device.
+            // Create a message and post it to the context.
             PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
           }
 
@@ -424,11 +495,12 @@ namespace PAMI
             // Copy the payload into the immediate payload buffer.
             size_t i, tbytes = 0;
             uint8_t * dst = (uint8_t *) vaddr;
-            for (i=0; i<niov; i++)
-            {
-              memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
-              tbytes += iov[i].iov_len;
-            } 
+
+            for (i = 0; i < niov; i++)
+              {
+                memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
+                tbytes += iov[i].iov_len;
+              }
 
             // Set the payload information.
             memfifo->desc[0].setPayload (paddr, tbytes);
@@ -447,7 +519,7 @@ namespace PAMI
           }
         else
           {
-            // Create a message and post it to the device.
+            // Create a message and post it to the context.
             PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
           }
 
@@ -522,7 +594,7 @@ namespace PAMI
           }
         else
           {
-            // Create a message and post it to the device.
+            // Create a message and post it to the context.
             PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
           }
 
@@ -591,7 +663,29 @@ namespace PAMI
           }
         else
           {
-            // Create a message and post it to the device.
+            MUHWI_Descriptor_t d;
+            MemoryFifoDescriptor * memfifo = (MemoryFifoDescriptor *) & d;
+            _multipkt.clone (memfifo);
+
+            // Initialize the injection fifo descriptor in-place.
+            memfifo->initializeDescriptors (dest, map, hintsABCD, hintsE, rfifo);
+
+            // Set the payload information.
+            memfifo->desc[0].setPayload (paddr, length);
+
+            // Copy the metadata into the packet header.
+            if (likely(metasize > 0))
+              {
+                uint8_t * hdr = (uint8_t *) & memfifo->desc[0].PacketHeader;
+                memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_multipacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
+              }
+
+            MU::MessageQueue::Element * msg =
+              createMessage (state, memfifo->desc[0], ififo);
+
+            _context.post (fnum, msg);
+
+            // Create a message and post it to the context.
             PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
           }
 
@@ -601,6 +695,9 @@ namespace PAMI
     };   // PAMI::Device::MU namespace
   };     // PAMI::Device namespace
 };       // PAMI namespace
+
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif // __components_devices_bgq_mu2_PacketModelBase_h__
 //
