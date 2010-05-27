@@ -17,10 +17,6 @@
 
 #include "components/devices/DmaInterface.h"
 #include "components/devices/bgq/mu2/Context.h"
-#include "components/devices/bgq/mu2/model/MultiDirectPutDescriptor.h"
-#include "components/devices/bgq/mu2/model/MultiRemoteInjectDescriptor.h"
-
-
 
 namespace PAMI
 {
@@ -40,6 +36,16 @@ namespace PAMI
           ~DmaModelBase ();
 
         public:
+
+          inline size_t initializeRemoteGetPayload (void                * vaddr,
+                                                    uint64_t              local_dst_pa,
+                                                    uint64_t              remote_src_pa,
+                                                    size_t                bytes,
+                                                    size_t                from_task,
+                                                    size_t                from_offset,
+                                                    pami_event_function   local_fn,
+                                                    void                * cookie);
+
 
           /// \see Device::Interface::DmaModel::getVirtualAddressSupported
           static const size_t dma_model_va_supported = false;
@@ -121,10 +127,11 @@ namespace PAMI
 
 
         protected:
-          DirectPutDescriptor            _dput;
-          RemoteInjectDescriptor         _rget;
+          MUSPI_DescriptorBase   _dput; // "direct put" used for postDmaPut_impl()
+          MUSPI_DescriptorBase   _rget; // "remote get" used for postDmaGet_impl()
+          MUSPI_DescriptorBase   _rput; // "remote put" _rget payload descriptor
 
-          MU::Context                  & _device;
+          MU::Context          & _device;
       };
 
       template <class T_Model>
@@ -132,12 +139,140 @@ namespace PAMI
           Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 128 > (device, status),
           _device (device)
       {
+        // Zero-out the descriptor models before initialization
+        memset((void *)&_dput, 0, sizeof(_dput));
+        memset((void *)&_rget, 0, sizeof(_rget));
+        memset((void *)&_rput, 0, sizeof(_rput));
+
+        // --------------------------------------------------------------------
+        // Set the common base descriptor fields
+        // --------------------------------------------------------------------
+        MUSPI_BaseDescriptorInfoFields_t base;
+        memset((void *)&base, 0, sizeof(base));
+
+        base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
+        base.Payload_Address = 0;
+        base.Message_Length  = 0;
+        base.Torus_FIFO_Map  = 0;
+        base.Dest.Destination.Destination = 0;
+
+        _dput.setBaseFields (&base);
+        _rget.setBaseFields (&base);
+        _rput.setBaseFields (&base);
+
+
+        // --------------------------------------------------------------------
+        // Set the common point-to-point descriptor fields
+        // --------------------------------------------------------------------
+        MUSPI_Pt2PtDescriptorInfoFields_t pt2pt;
+        memset((void *)&pt2pt, 0, sizeof(pt2pt));
+
+        pt2pt.Hints_ABCD = 0;
+        pt2pt.Skip       = 0;
+        pt2pt.Misc1 =
+          MUHWI_PACKET_USE_DETERMINISTIC_ROUTING |
+          MUHWI_PACKET_DO_NOT_DEPOSIT |
+          MUHWI_PACKET_DO_NOT_ROUTE_TO_IO_NODE;
+        pt2pt.Misc2 =
+          MUHWI_PACKET_VIRTUAL_CHANNEL_DETERMINISTIC;
+
+        _dput.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
+        _dput.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
+        _dput.setPt2PtFields (&pt2pt);
+        _rget.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
+        _rget.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
+        _rget.setPt2PtFields (&pt2pt);
+        _rput.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
+        _rput.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
+        _rput.setPt2PtFields (&pt2pt);
+
+
+        // --------------------------------------------------------------------
+        // Set the remote get descriptor fields
+        // --------------------------------------------------------------------
+        MUSPI_RemoteGetDescriptorInfoFields_t rget;
+        memset((void *)&rget, 0, sizeof(rget));
+
+        rget.Type             = MUHWI_PACKET_TYPE_GET;
+        rget.Rget_Inj_FIFO_Id = 0;
+        _rget.setRemoteGetFields (&rget);
+
+
+        // --------------------------------------------------------------------
+        // Set the direct put descriptor fields
+        // --------------------------------------------------------------------
+        MUSPI_DirectPutDescriptorInfoFields dput;
+        memset((void *)&dput, 0, sizeof(dput));
+
+        //dput.Rec_Payload_Base_Address_Id = ResourceManager::BAT_DEFAULT_ENTRY_NUMBER;
+        dput.Rec_Payload_Offset          = 0;
+        //dput.Rec_Counter_Base_Address_Id = ResourceManager::BAT_SHAREDCOUNTER_ENTRY_NUMBER;
+        dput.Rec_Counter_Offset          = 0;
+        dput.Pacing                      = MUHWI_PACKET_DIRECT_PUT_IS_NOT_PACED;
+
+        _dput.setDirectPutFields (&dput);
+        _dput.setRecCounterBaseAddressInfo (1, 0); // shared reception counter
+
+
+        // --------------------------------------------------------------------
+        // Set the remote put descriptor fields
+        // --------------------------------------------------------------------
+        _rput.setDirectPutFields (&dput);
+        _rput.setRecCounterBaseAddressInfo (1, 0); // shared reception counter
+        _rput.setDestination (*(_device.getMuDestinationSelf()));
       };
 
       template <class T_Model>
       DmaModelBase<T_Model>::~DmaModelBase ()
       {
       };
+
+      template <class T_Model>
+      inline size_t DmaModelBase<T_Model>::initializeRemoteGetPayload (
+        void                * vaddr,
+        uint64_t              local_dst_pa,
+        uint64_t              remote_src_pa,
+        size_t                bytes,
+        size_t                from_task,
+        size_t                from_offset,
+        pami_event_function   local_fn,
+        void                * cookie)
+      {
+        // Retreive the route information back to mu context "self"
+        uint64_t map;
+        uint8_t  hintsABCD;
+        uint8_t  hintsE;
+
+        _device.pinInformation (from_task,
+                                from_offset,
+                                map,
+                                hintsABCD,
+                                hintsE);
+
+        // Clone the remote direct put model descriptor into the payload
+        MUSPI_DescriptorBase * rput = (MUSPI_DescriptorBase *) vaddr;
+        _rput.clone (*rput);
+
+        //MUSPI_DescriptorBase * rput = (MUSPI_DescriptorBase *) & clone->desc[0];
+
+        // Set the payload of the direct put descriptor to be the physical
+        // address of the source buffer on the remote node (from the user's
+        // memory region).
+        rput->setPayload (remote_src_pa, bytes);
+
+        // Set the destination buffer address for the remote direct put.
+        rput->setRecPayloadBaseAddressInfo (0, local_dst_pa);
+
+        rput->setTorusInjectionFIFOMap (map);
+        rput->setHints (hintsABCD, hintsE);
+// !!!!
+// Allocate completion counter, set counter in rput descriptor, set completion function and cookie
+// !!!!
+
+        return sizeof(MUHWI_Descriptor_t);
+      };
+
+
 
       template <class T_Model>
       bool DmaModelBase<T_Model>::postDmaPut_impl (size_t                target_task,
@@ -228,16 +363,20 @@ namespace PAMI
             // There is at least one descriptor slot available in the injection
             // fifo before a fifo-wrap event.
 
-            // Clone the single-packet model descriptor into the injection fifo
-            DirectPutDescriptor * dput = (DirectPutDescriptor *) desc;
-            _dput.clone (dput);
+            // Clone the direct-put model descriptor into the injection fifo
+            MUSPI_DescriptorBase * dput = (MUSPI_DescriptorBase *) desc;
+            _dput.clone (*dput);
 
             // Initialize the injection fifo descriptor in-place.
             uint64_t local_pa  = (uint64_t) local_memregion->getBasePhysicalAddress ();
             uint64_t remote_pa = (uint64_t) remote_memregion->getBasePhysicalAddress ();
-            dput->initializeDescriptors (dest, map, hintsABCD, hintsE,
-                                         local_pa + local_offset, bytes,
-                                         0, remote_pa + remote_offset);
+
+            dput->setDestination (dest);
+            dput->setTorusInjectionFIFOMap (map);
+            dput->setHints (hintsABCD, hintsE);
+            dput->setPayload (local_pa + local_offset, bytes);
+            dput->setRecPayloadBaseAddressInfo (0, remote_pa + remote_offset);
+
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
@@ -361,17 +500,19 @@ namespace PAMI
             // fifo before a fifo-wrap event.
 
             size_t pbytes = static_cast<T_Model*>(this)->
-                            initializePayloadDescriptors (vaddr, local_dst_pa,
-                                                          remote_src_pa, bytes,
-                                                          local_fn, cookie);
+                            initializeRemoteGetPayload (vaddr, local_dst_pa,
+                                                        remote_src_pa, bytes,
+                                                        local_fn, cookie);
 
             // Clone the remote inject model descriptor into the injection fifo
-            RemoteInjectDescriptor * rget = (RemoteInjectDescriptor *) desc;
-            _rget.clone (rget);
+            MUSPI_DescriptorBase * rget = (MUSPI_DescriptorBase *) desc;
+            _rget.clone (*rget);
 
             // Initialize the injection fifo descriptor in-place.
-            rget->initializeDescriptors (dest, map, hintsABCD, hintsE,
-                                         paddr, pbytes);
+            rget->setDestination (dest);
+            rget->setTorusInjectionFIFOMap (map);
+            rget->setHints (hintsABCD, hintsE);
+            rget->setPayload (paddr, bytes);
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.

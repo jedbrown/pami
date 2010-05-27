@@ -26,33 +26,15 @@ namespace PAMI
         public :
 
           /// \see PAMI::Device::Interface::PacketModel::PacketModel
-          inline PacketModelDeposit (MU::Context & device) :
-             MU::PacketModelBase<PacketModelDeposit> (device)
+          inline PacketModelDeposit (MU::Context & context) :
+              MU::PacketModelBase<PacketModelDeposit> (context)
           {
-            _singlepkt.desc[0].setDeposit(MUHWI_PACKET_DEPOSIT);
-            _multipkt.desc[0].setDeposit(MUHWI_PACKET_DEPOSIT);
+            _singlepkt.setDeposit(MUHWI_PACKET_DEPOSIT);
+            _multipkt.setDeposit(MUHWI_PACKET_DEPOSIT);
           };
 
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
           inline ~PacketModelDeposit () {};
-
-          /// \see PAMI::Device::MU::PacketModelBase::processCompletion
-          inline void processCompletion_impl (void                * state,
-                                              size_t                fnum,
-                                              MUSPI_InjFifo_t     * ififo,
-                                              size_t                ndesc,
-                                              MUHWI_Descriptor_t  * desc,
-                                              pami_event_function   fn,
-                                              void                * cookie)
-          {
-            // Advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            uint64_t sequenceNum = 0; // suppress warning 
-            sequenceNum = MUSPI_InjFifoAdvanceDesc (ififo);
-// !!!!
-// add counter completion notification stuff
-// !!!!
-          }
 
       }; // PAMI::Device::MU::PacketModelDeposit class
     };   // PAMI::Device::MU namespace

@@ -26,25 +26,92 @@ namespace PAMI
       {
         public :
 
-          friend class MU::PacketModelBase<PacketModelMemoryFifoCompletion>;
-
           /// \see PAMI::Device::Interface::PacketModel::PacketModel
           inline PacketModelMemoryFifoCompletion (MU::Context & context) :
-             MU::PacketModelBase<PacketModelMemoryFifoCompletion> (context),
-             _done (_context)
+              MU::PacketModelBase<PacketModelMemoryFifoCompletion> (context)
           {
             COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= packet_model_state_bytes);
             COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<2>) <= packet_model_state_bytes);
 
-            MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader *) & _done.desc[0].PacketHeader;
+            // Zero-out the descriptor models before initialization
+            memset((void *)&_ack_to_self, 0, sizeof(_ack_to_self));
 
-            // Set the "notify" system dispatch identifier
-            hdr->setSinglePacket (true);
-            hdr->setDispatchId (MU::Context::dispatch_system_notify);
+
+            // ----------------------------------------------------------------
+            // Set the common base descriptor fields
+            // ----------------------------------------------------------------
+            MUSPI_BaseDescriptorInfoFields_t base;
+            memset((void *)&base, 0, sizeof(base));
+
+            base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
+            base.Payload_Address = 0;
+            base.Message_Length  = 0;
+            base.Torus_FIFO_Map  = 0;
+            base.Dest.Destination.Destination = 0;
+
+            _ack_to_self.setBaseFields (&base);
+
+
+            // ----------------------------------------------------------------
+            // Set the common point-to-point descriptor fields
+            // ----------------------------------------------------------------
+            MUSPI_Pt2PtDescriptorInfoFields_t pt2pt;
+            memset((void *)&pt2pt, 0, sizeof(pt2pt));
+
+            pt2pt.Hints_ABCD = 0;
+            pt2pt.Skip       = 0;
+            pt2pt.Misc1 =
+              MUHWI_PACKET_USE_DETERMINISTIC_ROUTING |
+              MUHWI_PACKET_DO_NOT_DEPOSIT |
+              MUHWI_PACKET_DO_NOT_ROUTE_TO_IO_NODE;
+            pt2pt.Misc2 =
+              MUHWI_PACKET_VIRTUAL_CHANNEL_DETERMINISTIC;
+
+            _ack_to_self.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
+            _ack_to_self.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
+            _ack_to_self.setPt2PtFields (&pt2pt);
+
+
+            // ----------------------------------------------------------------
+            // Set the common memory fifo descriptor fields
+            // ----------------------------------------------------------------
+            MUSPI_MemoryFIFODescriptorInfoFields_t memfifo;
+            memset ((void *)&memfifo, 0, sizeof(memfifo));
+
+            memfifo.Rec_FIFO_Id    = 0;
+            memfifo.Rec_Put_Offset = 0;
+            memfifo.Interrupt      = MUHWI_DESCRIPTOR_DO_NOT_INTERRUPT_ON_PACKET_ARRIVAL;
+            memfifo.SoftwareBit    = 0;
+
+            _ack_to_self.setMemoryFIFOFields (&memfifo);
+            _ack_to_self.setMessageUnitPacketType (MUHWI_PACKET_TYPE_FIFO);
+
+
+            // ----------------------------------------------------------------
+            // Initializ the memory fifo descriptor to route to "self"
+            // ----------------------------------------------------------------
+            _ack_to_self.setRecFIFOId (context.getRecptionFifoIdSelf());
+            _ack_to_self.setDestination (*(context.getMuDestinationSelf()));
+
+            // In loopback we send only on AM
+            _ack_to_self.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
+            _ack_to_self.setHints (MUHWI_PACKET_HINT_AM |
+                                   MUHWI_PACKET_HINT_B_NONE |
+                                   MUHWI_PACKET_HINT_C_NONE |
+                                   MUHWI_PACKET_HINT_D_NONE,
+                                   MUHWI_PACKET_HINT_E_NONE);
 
             // Set the payload information.
-            _done.desc[0].setPayload (0, 0);
+            _ack_to_self.setPayload (0, 0);
+
+
+            // ----------------------------------------------------------------
+            // Set the "notify" system dispatch identifier
+            // ----------------------------------------------------------------
+            MemoryFifoPacketHeader * hdr =
+              (MemoryFifoPacketHeader *) & _ack_to_self.PacketHeader;
+            hdr->setSinglePacket (true);
+            hdr->setDispatchId (MU::Context::dispatch_system_notify);
           };
 
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
@@ -53,13 +120,13 @@ namespace PAMI
         protected:
 
           /// \see PAMI::Device::MU::PacketModelBase::processCompletion
-          inline void processCompletion_impl (void                * state,
-                                              size_t                fnum,
-                                              MUSPI_InjFifo_t     * ififo,
-                                              size_t                ndesc,
-                                              MUHWI_Descriptor_t  * desc,
-                                              pami_event_function   fn,
-                                              void                * cookie)
+          inline void processCompletion_impl (void                 * state,
+                                              size_t                 fnum,
+                                              MUSPI_InjFifo_t      * ififo,
+                                              size_t                 ndesc,
+                                              MUSPI_DescriptorBase * desc,
+                                              pami_event_function    fn,
+                                              void                 * cookie)
           {
             if (likely(ndesc > 1))
               {
@@ -67,12 +134,11 @@ namespace PAMI
                 // "ack to self" memory fifo descriptor.
 
                 // Clone the completion model descriptor into the injection fifo
-                MemoryFifoDescriptor * done = (MemoryFifoDescriptor *) & desc[1];
-                _done.clone (done);
+                _ack_to_self.clone (desc[1]);
 
                 // Copy the completion function+cookie into the packet header.
                 MU::Context::notify_t * hdr =
-                  (MU::Context::notify_t *) & done->desc[0].PacketHeader;
+                  (MU::Context::notify_t *) & desc[1].PacketHeader;
                 hdr->fn = fn;
                 hdr->cookie = cookie;
 
@@ -92,15 +158,15 @@ namespace PAMI
 
             // Copy the "completion" descriptor into the message and initialize
             // the completion function+cookie in the packet header.
-            _done.desc[0].clone (msg->desc[0]);
+            _ack_to_self.clone (msg->desc[0]);
             MU::Context::notify_t * hdr =
               (MU::Context::notify_t *) & msg->desc[0].PacketHeader;
             hdr->fn = fn;
             hdr->cookie = cookie;
 
-            InjectDescriptorMessage * msg = (InjectDescriptorMessage *) state;
-            new (msg) InjectDescriptorMessage (ififo, & done.desc[0]);
-            
+            //InjectDescriptorMessage<1> * msg = (InjectDescriptorMessage<1> *) state;
+            //new (msg) InjectDescriptorMessage (ififo, & done.desc[0]);
+
             _context.post (fnum, msg);
           }
 
@@ -118,7 +184,7 @@ namespace PAMI
 
             // Copy the "completion" descriptor into the message and initialize
             // the completion function+cookie in the packet header.
-            _done.desc[0].clone (msg->desc[1]);
+            _ack_to_self.clone (msg->desc[1]);
             MU::Context::notify_t * hdr =
               (MU::Context::notify_t *) & msg->desc[1].PacketHeader;
             hdr->fn = fn;
@@ -127,7 +193,7 @@ namespace PAMI
             return (MU::MessageQueue::Element *) msg;
           };
 
-          MemoryFifoSelfDescriptor _done;
+          MUSPI_DescriptorBase _ack_to_self;
 
       }; // PAMI::Device::MU::PacketModelMemoryFifoCompletion class
     };   // PAMI::Device::MU namespace

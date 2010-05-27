@@ -26,33 +26,15 @@ namespace PAMI
         public :
 
           /// \see PAMI::Device::Interface::PacketModel::PacketModel
-          inline PacketModelInterrupt (MU::Context & device) :
-             MU::PacketModelBase<PacketModelInterrupt> (device)
+          inline PacketModelInterrupt (MU::Context & context) :
+              MU::PacketModelBase<PacketModelInterrupt> (context)
           {
-            _singlepkt.desc[0].setInterrupt(MUHWI_DESCRIPTOR_INTERRUPT_ON_PACKET_ARRIVAL);
-            _multipkt.desc[0].setInterrupt(MUHWI_DESCRIPTOR_INTERRUPT_ON_PACKET_ARRIVAL);
+            _singlepkt.setInterrupt(MUHWI_DESCRIPTOR_INTERRUPT_ON_PACKET_ARRIVAL);
+            _multipkt.setInterrupt(MUHWI_DESCRIPTOR_INTERRUPT_ON_PACKET_ARRIVAL);
           };
 
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
           inline ~PacketModelInterrupt () {};
-
-          /// \see PAMI::Device::MU::PacketModelBase::processCompletion
-          inline void processCompletion_impl (void                * state,
-                                              size_t                fnum,
-                                              MUSPI_InjFifo_t     * ififo,
-                                              size_t                ndesc,
-                                              MUHWI_Descriptor_t  * desc,
-                                              pami_event_function   fn,
-                                              void                * cookie)
-          {
-            // Advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            uint64_t sequenceNum = 0; // suppress warning 
-            sequenceNum = MUSPI_InjFifoAdvanceDesc (ififo);
-// !!!!
-// add counter completion notification stuff
-// !!!!
-          }
 
       }; // PAMI::Device::MU::PacketModelInterrupt class
     };   // PAMI::Device::MU namespace

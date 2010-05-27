@@ -26,10 +26,9 @@ namespace PAMI
         public :
 
           /// \see PAMI::Device::Interface::PacketModel::PacketModel
-          inline PacketModel (MU::Context & device) :
-              MU::PacketModelBase<PacketModel> (device)
-          {
-          };
+          inline PacketModel (MU::Context & context) :
+              MU::PacketModelBase<PacketModel> (context)
+          {};
 
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
           inline ~PacketModel () {};

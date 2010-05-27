@@ -22,7 +22,6 @@
 
 #include "components/devices/PacketInterface.h"
 #include "components/devices/bgq/mu2/Context.h"
-#include "components/devices/bgq/mu2/model/MultiMemoryFifoDescriptor.h"
 #include "components/devices/bgq/mu2/msg/InjectDescriptorMessage.h"
 
 
@@ -48,21 +47,21 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
           virtual ~PacketModelBase () { /*PAMI_abort();*/ }
 
-          inline void processCompletion (void                * state,
-                                         size_t                fnum,
-                                         MUSPI_InjFifo_t     * ififo,
-                                         size_t                ndesc,
-                                         MUHWI_Descriptor_t  * desc,
-                                         pami_event_function   fn,
-                                         void                * cookie);
+          inline void processCompletion (void                 * state,
+                                         size_t                 fnum,
+                                         MUSPI_InjFifo_t      * ififo,
+                                         size_t                 ndesc,
+                                         MUSPI_DescriptorBase * desc,
+                                         pami_event_function    fn,
+                                         void                 * cookie);
 
-          inline void processCompletion_impl (void                * state,
-                                              size_t                fnum,
-                                              MUSPI_InjFifo_t     * ififo,
-                                              size_t                ndesc,
-                                              MUHWI_Descriptor_t  * desc,
-                                              pami_event_function   fn,
-                                              void                * cookie);
+          inline void processCompletion_impl (void                 * state,
+                                              size_t                 fnum,
+                                              MUSPI_InjFifo_t      * ififo,
+                                              size_t                 ndesc,
+                                              MUSPI_DescriptorBase * desc,
+                                              pami_event_function    fn,
+                                              void                 * cookie);
 
           inline MU::MessageQueue::Element * createMessage (void                 * state,
                                                             MUSPI_DescriptorBase & desc,
@@ -159,8 +158,8 @@ namespace PAMI
 
 
         protected:
-          MemoryFifoDescriptor            _singlepkt;
-          MemoryFifoDescriptor            _multipkt;
+          MUSPI_DescriptorBase            _singlepkt;
+          MUSPI_DescriptorBase            _multipkt;
           MU::Context                   & _context;
       };
 
@@ -172,27 +171,90 @@ namespace PAMI
         TRACE_FN_ENTER();
         COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= packet_model_state_bytes);
 
+        // Zero-out the descriptor models before initialization
+        memset((void *)&_singlepkt, 0, sizeof(_singlepkt));
+        memset((void *)&_multipkt, 0, sizeof(_multipkt));
+
+        // --------------------------------------------------------------------
+        // Set the common base descriptor fields
+        // --------------------------------------------------------------------
+        MUSPI_BaseDescriptorInfoFields_t base;
+        memset((void *)&base, 0, sizeof(base));
+
+        base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
+        base.Payload_Address = 0;
+        base.Message_Length  = 0;
+        base.Torus_FIFO_Map  = 0;
+        base.Dest.Destination.Destination = 0;
+
+        _singlepkt.setBaseFields (&base);
+        _multipkt.setBaseFields (&base);
+
+
+        // --------------------------------------------------------------------
+        // Set the common point-to-point descriptor fields
+        // --------------------------------------------------------------------
+        MUSPI_Pt2PtDescriptorInfoFields_t pt2pt;
+        memset((void *)&pt2pt, 0, sizeof(pt2pt));
+
+        pt2pt.Hints_ABCD = 0;
+        pt2pt.Skip       = 0;
+        pt2pt.Misc1 =
+          MUHWI_PACKET_USE_DETERMINISTIC_ROUTING |
+          MUHWI_PACKET_DO_NOT_DEPOSIT |
+          MUHWI_PACKET_DO_NOT_ROUTE_TO_IO_NODE;
+        pt2pt.Misc2 =
+          MUHWI_PACKET_VIRTUAL_CHANNEL_DETERMINISTIC;
+
+        _singlepkt.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
+        _singlepkt.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
+        _singlepkt.setPt2PtFields (&pt2pt);
+        _multipkt.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
+        _multipkt.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
+        _multipkt.setPt2PtFields (&pt2pt);
+
+
+        // --------------------------------------------------------------------
+        // Set the common memory fifo descriptor fields
+        // --------------------------------------------------------------------
+        MUSPI_MemoryFIFODescriptorInfoFields_t memfifo;
+        memset ((void *)&memfifo, 0, sizeof(memfifo));
+
+        memfifo.Rec_FIFO_Id    = 0;
+        memfifo.Rec_Put_Offset = 0;
+        memfifo.Interrupt      = MUHWI_DESCRIPTOR_DO_NOT_INTERRUPT_ON_PACKET_ARRIVAL;
+        memfifo.SoftwareBit    = 0;
+
+        _singlepkt.setMemoryFIFOFields (&memfifo);
+        _singlepkt.setMessageUnitPacketType (MUHWI_PACKET_TYPE_FIFO);
+        _multipkt.setMemoryFIFOFields (&memfifo);
+        _multipkt.setMessageUnitPacketType (MUHWI_PACKET_TYPE_FIFO);
+
+
+        // --------------------------------------------------------------------
+        // Set the network header information in the descriptor models to
+        // differentiate between a single-packet transfer and a multi-packet
+        // transfer
+        // --------------------------------------------------------------------
         MemoryFifoPacketHeader * hdr = NULL;
 
-        // Memory fifo descriptor '0' is for single packet transfers.
-        hdr = (MemoryFifoPacketHeader *) & _singlepkt.desc[0].PacketHeader;
+        hdr = (MemoryFifoPacketHeader *) & _singlepkt.PacketHeader;
         hdr->setSinglePacket (true);
 
-        // Memory fifo descriptor '1' is for multi-packet transfers.
-        hdr = (MemoryFifoPacketHeader *) & _multipkt.desc[0].PacketHeader;
+        hdr = (MemoryFifoPacketHeader *) & _multipkt.PacketHeader;
         hdr->setSinglePacket (false);
 
         TRACE_FN_EXIT();
       };
 
       template <class T_Model>
-      void PacketModelBase<T_Model>::processCompletion (void                * state,
-                                                        size_t                fnum,
-                                                        MUSPI_InjFifo_t     * ififo,
-                                                        size_t                ndesc,
-                                                        MUHWI_Descriptor_t  * desc,
-                                                        pami_event_function   fn,
-                                                        void                * cookie)
+      void PacketModelBase<T_Model>::processCompletion (void                 * state,
+                                                        size_t                 fnum,
+                                                        MUSPI_InjFifo_t      * ififo,
+                                                        size_t                 ndesc,
+                                                        MUSPI_DescriptorBase * desc,
+                                                        pami_event_function    fn,
+                                                        void                 * cookie)
       {
         static_cast<T_Model*>(this)->processCompletion_impl (state,
                                                              fnum,
@@ -204,22 +266,22 @@ namespace PAMI
       };
 
       template <class T_Model>
-      void PacketModelBase<T_Model>::processCompletion_impl (void                * state,
-                                                             size_t                fnum,
-                                                             MUSPI_InjFifo_t     * ififo,
-                                                             size_t                ndesc,
-                                                             MUHWI_Descriptor_t  * desc,
-                                                             pami_event_function   fn,
-                                                             void                * cookie)
-          {
-            // Advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            uint64_t sequenceNum = 0; // suppress warning
-            sequenceNum = MUSPI_InjFifoAdvanceDesc (ififo);
+      void PacketModelBase<T_Model>::processCompletion_impl (void                 * state,
+                                                             size_t                 fnum,
+                                                             MUSPI_InjFifo_t      * ififo,
+                                                             size_t                 ndesc,
+                                                             MUSPI_DescriptorBase * desc,
+                                                             pami_event_function    fn,
+                                                             void                 * cookie)
+      {
+        // Advance the injection fifo tail pointer. This action
+        // completes the injection operation.
+        uint64_t sequenceNum = 0; // suppress warning
+        sequenceNum = MUSPI_InjFifoAdvanceDesc (ififo);
 // !!!!
 // add counter completion notification stuff
 // !!!!
-          };
+      };
 
 
       template <class T_Model>
@@ -238,15 +300,15 @@ namespace PAMI
                                                                                 MUSPI_InjFifo_t      * ififo,
                                                                                 pami_event_function    fn,
                                                                                 void                 * cookie)
-          {
-            InjectDescriptorMessage<1> * msg = (InjectDescriptorMessage<1> *) state;
-            new (msg) InjectDescriptorMessage<1> (ififo);
+      {
+        InjectDescriptorMessage<1> * msg = (InjectDescriptorMessage<1> *) state;
+        new (msg) InjectDescriptorMessage<1> (ififo);
 
-            // Copy the "data mover" descriptor into the message.
-            desc.clone (msg->desc[0]);
+        // Copy the "data mover" descriptor into the message.
+        desc.clone (msg->desc[0]);
 
-            return (MU::MessageQueue::Element *) msg;
-          };
+        return (MU::MessageQueue::Element *) msg;
+      };
 
 
 
@@ -265,17 +327,18 @@ namespace PAMI
         // function is invoked and can provide a direct pointer to the packet
         // payload.
         uint16_t id = 0;
+
         if (_context.registerPacketHandler (dispatch,
-                                           direct_recv_func,
-                                           direct_recv_func_parm,
-                                           id))
+                                            direct_recv_func,
+                                            direct_recv_func_parm,
+                                            id))
           {
             MemoryFifoPacketHeader * hdr = NULL;
 
-            hdr = (MemoryFifoPacketHeader *) & _singlepkt.desc[0].PacketHeader;
+            hdr = (MemoryFifoPacketHeader *) & _singlepkt.PacketHeader;
             hdr->setDispatchId (id);
 
-            hdr = (MemoryFifoPacketHeader *) & _multipkt.desc[0].PacketHeader;
+            hdr = (MemoryFifoPacketHeader *) & _multipkt.PacketHeader;
             hdr->setDispatchId (id);
 
             TRACE_FORMAT("register packet handler success. dispatch id = %d", id);
@@ -305,14 +368,14 @@ namespace PAMI
         uint8_t               hintsABCD;
         uint8_t               hintsE;
 
-        size_t fnum = _context.pinFifo ((size_t) target_task, 
-					target_offset, 
-					dest,
-					&ififo, 
-					rfifo, 
-					map, 
-					hintsABCD, 
-					hintsE);
+        size_t fnum = _context.pinFifo ((size_t) target_task,
+                                        target_offset,
+                                        dest,
+                                        &ififo,
+                                        rfifo,
+                                        map,
+                                        hintsABCD,
+                                        hintsE);
 
         MUHWI_Descriptor_t * desc;
         void               * vaddr;
@@ -327,33 +390,37 @@ namespace PAMI
             // fifo before a fifo-wrap event.
 
             // Clone the single-packet model descriptor into the injection fifo
-            MemoryFifoDescriptor * memfifo = (MemoryFifoDescriptor *) desc;
-            _singlepkt.clone (memfifo);
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
+            _singlepkt.clone (*memfifo);
 
             // Initialize the injection fifo descriptor in-place.
-            memfifo->initializeDescriptors (dest, map, hintsABCD, hintsE, rfifo);
+            memfifo->setDestination (dest);
+            memfifo->setTorusInjectionFIFOMap (map);
+            memfifo->setHints (hintsABCD, hintsE);
+            memfifo->setRecFIFOId (rfifo);
 
             // Copy the metadata into the packet header.
             if (likely(metasize > 0))
               {
-                uint8_t * hdr = (uint8_t *) & memfifo->desc[0].PacketHeader;
+                uint8_t * hdr = (uint8_t *) & memfifo->PacketHeader;
                 memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_singlepacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
             // Copy the payload into the immediate payload buffer.
             size_t i, tbytes = 0;
             uint8_t * dst = (uint8_t *)vaddr;
-            for (i=0; i<T_Niov; i++)
-            {
-              memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
-              tbytes += iov[i].iov_len;
-            }
- 
-            // Set the payload information.
-            memfifo->desc[0].setPayload (paddr, tbytes);
 
-	    //fprintf(stderr, "Advance tail pointer, tbytes %d\n", tbytes);
-	    
+            for (i = 0; i < T_Niov; i++)
+              {
+                memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
+                tbytes += iov[i].iov_len;
+              }
+
+            // Set the payload information.
+            memfifo->setPayload (paddr, tbytes);
+
+            //fprintf(stderr, "Advance tail pointer, tbytes %d\n", tbytes);
+
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
             MUSPI_InjFifoAdvanceDesc (ififo);
@@ -383,7 +450,7 @@ namespace PAMI
         uint8_t               hintsE;
 
         size_t fnum = _context.pinFifo ((size_t) target_task, target_offset, dest,
-                                       &ififo, rfifo, map, hintsABCD, hintsE);
+                                        &ififo, rfifo, map, hintsABCD, hintsE);
 
         MUHWI_Descriptor_t * desc;
         void               * vaddr;
@@ -398,16 +465,19 @@ namespace PAMI
             // fifo before a fifo-wrap event.
 
             // Clone the single-packet model descriptor into the injection fifo
-            MemoryFifoDescriptor * memfifo = (MemoryFifoDescriptor *) desc;
-            _singlepkt.clone (memfifo);
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
+            _singlepkt.clone (*memfifo);
 
             // Initialize the injection fifo descriptor in-place.
-            memfifo->initializeDescriptors (dest, map, hintsABCD, hintsE, rfifo);
+            memfifo->setDestination (dest);
+            memfifo->setTorusInjectionFIFOMap (map);
+            memfifo->setHints (hintsABCD, hintsE);
+            memfifo->setRecFIFOId (rfifo);
 
             // Copy the metadata into the packet header.
             if (likely(metasize > 0))
               {
-                uint8_t * hdr = (uint8_t *) & memfifo->desc[0].PacketHeader;
+                uint8_t * hdr = (uint8_t *) & memfifo->PacketHeader;
                 memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_singlepacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
@@ -422,7 +492,7 @@ namespace PAMI
               }
 
             // Set the payload information.
-            memfifo->desc[0].setPayload (paddr, tbytes);
+            memfifo->setPayload (paddr, tbytes);
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
@@ -464,7 +534,7 @@ namespace PAMI
         uint8_t               hintsE;
 
         size_t fnum = _context.pinFifo ((size_t) target_task, target_offset, dest,
-                                       &ififo, rfifo, map, hintsABCD, hintsE);
+                                        &ififo, rfifo, map, hintsABCD, hintsE);
 
         MUHWI_Descriptor_t * desc;
         void               * vaddr;
@@ -479,16 +549,19 @@ namespace PAMI
             // fifo before a fifo-wrap event.
 
             // Clone the single-packet model descriptor into the injection fifo
-            MemoryFifoDescriptor * memfifo = (MemoryFifoDescriptor *) desc;
-            _singlepkt.clone (memfifo);
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
+            _singlepkt.clone (*memfifo);
 
             // Initialize the injection fifo descriptor in-place.
-            memfifo->initializeDescriptors (dest, map, hintsABCD, hintsE, rfifo);
+            memfifo->setDestination (dest);
+            memfifo->setTorusInjectionFIFOMap (map);
+            memfifo->setHints (hintsABCD, hintsE);
+            memfifo->setRecFIFOId (rfifo);
 
             // Copy the metadata into the packet header.
             if (likely(metasize > 0))
               {
-                uint8_t * hdr = (uint8_t *) & memfifo->desc[0].PacketHeader;
+                uint8_t * hdr = (uint8_t *) & memfifo->PacketHeader;
                 memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_singlepacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
@@ -503,7 +576,7 @@ namespace PAMI
               }
 
             // Set the payload information.
-            memfifo->desc[0].setPayload (paddr, tbytes);
+            memfifo->setPayload (paddr, tbytes);
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
@@ -545,7 +618,7 @@ namespace PAMI
         uint8_t               hintsE;
 
         size_t fnum = _context.pinFifo ((size_t) target_task, target_offset, dest,
-                                       &ififo, rfifo, map, hintsABCD, hintsE);
+                                        &ififo, rfifo, map, hintsABCD, hintsE);
 
 
         MUHWI_Descriptor_t * desc;
@@ -561,19 +634,20 @@ namespace PAMI
             // fifo before a fifo-wrap event.
 
             // Clone the single-packet model descriptor into the injection fifo
-            MemoryFifoDescriptor * memfifo = (MemoryFifoDescriptor *) desc;
-            _singlepkt.clone (memfifo);
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
+            _singlepkt.clone (*memfifo);
 
             // Initialize the injection fifo descriptor in-place.
-            memfifo->initializeDescriptors (dest, map, hintsABCD, hintsE, rfifo);
-
-            // Set the payload information.
-            memfifo->desc[0].setPayload (paddr, length);
+            memfifo->setDestination (dest);
+            memfifo->setTorusInjectionFIFOMap (map);
+            memfifo->setHints (hintsABCD, hintsE);
+            memfifo->setRecFIFOId (rfifo);
+            memfifo->setPayload (paddr, length);
 
             // Copy the metadata into the packet header.
             if (likely(metasize > 0))
               {
-                uint8_t * hdr = (uint8_t *) & memfifo->desc[0].PacketHeader;
+                uint8_t * hdr = (uint8_t *) & memfifo->PacketHeader;
                 memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_singlepacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
@@ -620,7 +694,7 @@ namespace PAMI
         uint8_t               hintsE;
 
         size_t fnum = _context.pinFifo ((size_t) target_task, target_offset, dest,
-                                       &ififo, rfifo, map, hintsABCD, hintsE);
+                                        &ififo, rfifo, map, hintsABCD, hintsE);
 
 
         MUHWI_Descriptor_t * desc;
@@ -636,11 +710,14 @@ namespace PAMI
             // fifo before a fifo-wrap event.
 
             // Clone the multi-packet model descriptor into the injection fifo
-            MemoryFifoDescriptor * memfifo = (MemoryFifoDescriptor *) desc;
-            _multipkt.clone (memfifo);
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
+            _multipkt.clone (*memfifo);
 
             // Initialize the injection fifo descriptor in-place.
-            memfifo->initializeDescriptors (dest, map, hintsABCD, hintsE, rfifo);
+            memfifo->setDestination (dest);
+            memfifo->setTorusInjectionFIFOMap (map);
+            memfifo->setHints (hintsABCD, hintsE);
+            memfifo->setRecFIFOId (rfifo);
 
             // Determine the physical address of the source data.
             Kernel_MemoryRegion_t memregion;
@@ -649,12 +726,12 @@ namespace PAMI
                     ((uint64_t) payload - (uint64_t) memregion.BaseVa);
 
             // Set the payload information.
-            memfifo->desc[0].setPayload (paddr, length);
+            memfifo->setPayload (paddr, length);
 
             // Copy the metadata into the packet header.
             if (likely(metasize > 0))
               {
-                uint8_t * hdr = (uint8_t *) & memfifo->desc[0].PacketHeader;
+                uint8_t * hdr = (uint8_t *) & memfifo->PacketHeader;
                 memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_multipacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
@@ -663,25 +740,26 @@ namespace PAMI
           }
         else
           {
-            MUHWI_Descriptor_t d;
-            MemoryFifoDescriptor * memfifo = (MemoryFifoDescriptor *) & d;
+            //MUHWI_Descriptor_t d;
+            MUSPI_DescriptorBase memfifo;// = (MUSPI_DescriptorBase *) & d;
             _multipkt.clone (memfifo);
 
             // Initialize the injection fifo descriptor in-place.
-            memfifo->initializeDescriptors (dest, map, hintsABCD, hintsE, rfifo);
-
-            // Set the payload information.
-            memfifo->desc[0].setPayload (paddr, length);
+            memfifo.setDestination (dest);
+            memfifo.setTorusInjectionFIFOMap (map);
+            memfifo.setHints (hintsABCD, hintsE);
+            memfifo.setRecFIFOId (rfifo);
+            memfifo.setPayload (paddr, length);
 
             // Copy the metadata into the packet header.
             if (likely(metasize > 0))
               {
-                uint8_t * hdr = (uint8_t *) & memfifo->desc[0].PacketHeader;
+                uint8_t * hdr = (uint8_t *) & memfifo.PacketHeader;
                 memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_multipacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
               }
 
             MU::MessageQueue::Element * msg =
-              createMessage (state, memfifo->desc[0], ififo);
+              createMessage (state, memfifo, ififo);
 
             _context.post (fnum, msg);
 
