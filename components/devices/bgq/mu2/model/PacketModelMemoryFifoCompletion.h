@@ -32,6 +32,7 @@ namespace PAMI
           {
             COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= packet_model_state_bytes);
             COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<2>) <= packet_model_state_bytes);
+            COMPILE_TIME_ASSERT(sizeof(MU::Context::notify_t) <= MemoryFifoPacketHeader::packet_singlepacket_metadata_size);
 
             // Zero-out the descriptor models before initialization
             memset((void *)&_ack_to_self, 0, sizeof(_ack_to_self));

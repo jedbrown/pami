@@ -122,7 +122,7 @@ namespace PAMI
 
         uint64_t sequence =  MUSPI_InjFifoInject (_injfifo, (void *) & desc[0]);
 
-        TRACE_FORMAT("success = %zu", (sequence != ((uint64_t) - 1)));
+        TRACE_FORMAT("success = %d", (sequence != ((uint64_t) - 1)));
         TRACE_FN_EXIT();
         return (sequence != ((uint64_t) - 1));
       };
