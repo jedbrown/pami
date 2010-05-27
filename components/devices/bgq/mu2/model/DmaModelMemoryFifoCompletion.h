@@ -33,6 +33,7 @@ namespace PAMI
               MU::DmaModelBase<DmaModelMemoryFifoCompletion> (context, status)
           {
             COMPILE_TIME_ASSERT(sizeof(MU::Context::notify_t) <= MemoryFifoPacketHeader::packet_singlepacket_metadata_size);
+            COMPILE_TIME_ASSERT((sizeof(MUSPI_DescriptorBase)*2) <= MU::Context::LOOKASIDE_PAYLOAD_SIZE);
 
             // Zero-out the descriptor models before initialization
             memset((void *)&_ack_to_self, 0, sizeof(_ack_to_self));

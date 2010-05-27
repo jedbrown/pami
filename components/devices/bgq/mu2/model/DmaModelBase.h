@@ -139,6 +139,8 @@ namespace PAMI
           Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 128 > (device, status),
           _device (device)
       {
+        COMPILE_TIME_ASSERT(sizeof(MUSPI_DescriptorBase) <= MU::Context::LOOKASIDE_PAYLOAD_SIZE);
+
         // Zero-out the descriptor models before initialization
         memset((void *)&_dput, 0, sizeof(_dput));
         memset((void *)&_rget, 0, sizeof(_rget));
