@@ -1,3 +1,8 @@
+///
+/// \file test/BG/bgq/classroutes/classroute_test.c
+/// \brief Simple test for basic commthread functionality
+///
+
 #include "classroute_test.h"
 
 int main(int argc, char **argv) {
@@ -261,7 +266,7 @@ sprintf(s, "\nBG_SUB_BLOCK_SHAPE=\"%s\"", _s ? _s : "");
 	}
 
 	//=======================================================================
- 
+
 	// Initialize all of the collective class routes
 	for (i = 0; i < nClassRoutes; ++i) {
 		rc = Kernel_SetCollectiveClassRoute(classRouteIds[i], &classRoutes[i]);

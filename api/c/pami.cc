@@ -1287,4 +1287,3 @@ extern "C" pami_result_t PAMI_Resume_totask (pami_context_t   context,
   PAMI::Context * ctx = (PAMI::Context *) context;
   return ctx->resume_totask (dest, count);
 }
-
