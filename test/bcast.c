@@ -91,7 +91,7 @@ int main (int argc, char ** argv)
   }
   TRACE_ERR((stderr, "%s after client initialize\n", __PRETTY_FUNCTION__));
 
-        { size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
+        {  result = PAMI_Context_createv(client, NULL, 0, &context, 1); }
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
@@ -260,7 +260,7 @@ int main (int argc, char ** argv)
       else TRACE_ERR((stderr, "end test protocol: %s, bytes %d \n", metas[nalg].name, i));
     }
   }
-  result = PAMI_Context_destroy (context);
+  result = PAMI_Context_destroyv(&context, 1);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);

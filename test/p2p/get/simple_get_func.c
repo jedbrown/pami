@@ -232,10 +232,11 @@ int main (int argc, char ** argv)
   }
 
 #ifdef TEST_CROSSTALK
-  result = PAMI_Context_createv(client, NULL, 0, context, 2);
+  size_t num = 2;
 #else
-  result = PAMI_Context_createv(client, NULL, 0, context, 1);
+  size_t num = 1;
 #endif
+  result = PAMI_Context_createv(client, NULL, 0, context, num);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create pami context(s). result = %d\n", result);
@@ -405,20 +406,12 @@ fprintf (stderr, "Wait for 'rts', _rts_active = %zu, contextid = %zu\n", _rts_ac
   }
 fprintf (stderr, "Test completed .. cleanup\n");
 
-  result = PAMI_Context_destroy (context[0]);
+  result = PAMI_Context_destroyv(context, num);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
     return 1;
   }
-#ifdef TEST_CROSSTALK
-  result = PAMI_Context_destroy (context[1]);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
-    return 1;
-  }
-#endif
 
   result = PAMI_Client_destroy (client);
   if (result != PAMI_SUCCESS)

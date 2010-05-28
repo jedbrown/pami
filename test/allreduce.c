@@ -323,7 +323,7 @@ int main(int argc, char*argv[])
   }
   TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
-        { size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
+        {  result = PAMI_Context_createv(client, NULL, 0, &context, 1); }
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
@@ -621,7 +621,7 @@ int main(int argc, char*argv[])
   }
 #endif
 
-  result = PAMI_Context_destroy (context);
+  result = PAMI_Context_destroyv(&context, 1);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);

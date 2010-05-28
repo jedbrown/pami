@@ -1000,14 +1000,25 @@ extern "C" pami_result_t PAMI_Context_createv (pami_client_t          client,
 }
 
 ///
-/// \copydoc PAMI_Context_destroy
+/// \copydoc PAMI_Context_destroyv
 ///
-extern "C" pami_result_t PAMI_Context_destroy (pami_context_t context)
+extern "C" pami_result_t PAMI_Context_destroyv (pami_context_t* contexts,
+                                                size_t          ncontexts)
 {
-  PAMI::Context * ctx = (PAMI::Context *) context;
-  PAMI::Client  * client = (PAMI::Client *) ctx->getClient ();
+  PAMI_assert(contexts != NULL);
+  pami_result_t result = PAMI_SUCCESS;
 
-  return client->destroyContext (ctx);
+  for (size_t i = 0; i<ncontexts; ++i) {
+    PAMI_assert(contexts[i] != NULL);
+    PAMI::Context * ctx = (PAMI::Context *) contexts[i];
+    PAMI::Client  * client = (PAMI::Client *) ctx->getClient ();
+    pami_result_t rc = client->destroyContext (ctx);
+    contexts[i] = NULL;
+    if (result == PAMI_SUCCESS)
+      result = rc;
+  }
+
+  return result;
 }
 
 ///

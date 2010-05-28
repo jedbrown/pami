@@ -93,8 +93,8 @@ int main(int argc, char ** argv)
     return 1;
   }
   DBG_FPRINTF((stderr,"Client %p\n",client));
-  size_t n = 1;
-  status = PAMI_Context_createv(client, NULL, 0, &context, n);
+
+  status = PAMI_Context_createv(client, NULL, 0, &context, 1);
   if(status != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create pami context. result = %d\n", status);
@@ -268,8 +268,8 @@ int main(int argc, char ** argv)
     else fprintf(stderr,"PASS received %d expected metadata\n",_countNoData);
 
 // ------------------------------------------------------------------------
-  DBG_FPRINTF((stderr, "PAMI_Context_destroy(context);\n"));
-  status = PAMI_Context_destroy(context);
+  DBG_FPRINTF((stderr, "PAMI_Context_destroyv(&context, 1);\n"));
+  status = PAMI_Context_destroyv(&context, 1);
   if(status != PAMI_SUCCESS)
   {
     fprintf(stderr, "Error. Unable to destroy pami context. result = %d\n", status);

@@ -53,7 +53,7 @@ int main (int argc, char ** argv)
         return 1;
       }
 
-      { size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n); }
+      {  result = PAMI_Context_createv(client, NULL, 0, &context, 1); }
       if (result != PAMI_SUCCESS)
           {
             fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
@@ -146,7 +146,7 @@ int main (int argc, char ** argv)
         fprintf(stderr,"multisync: time=%f usec\n", usec/(double)niter);
 
 
-      result = PAMI_Context_destroy (context);
+      result = PAMI_Context_destroyv(&context, 1);
       if (result != PAMI_SUCCESS)
           {
             fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);

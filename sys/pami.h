@@ -2563,9 +2563,11 @@ extern "C"
    *          communication context from any thread after the context is
    *          destroyed.
    *
-   * \param[in] context PAMI communication context
+   * \param[in,out] contexts PAMI communication context list
+   * \param[in]     ncontexts The number of contexts in the list.
    */
-  pami_result_t PAMI_Context_destroy (pami_context_t context);
+  pami_result_t PAMI_Context_destroyv (pami_context_t* contexts,
+                                       size_t          ncontexts);
 
   /**
    * \brief Post work to a context, thread-safe

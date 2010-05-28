@@ -338,19 +338,14 @@ int main (int argc, char ** argv)
     }
 
 
-  for (i = 0; i < MAXTHREADS; i++)
+  result = PAMI_Context_destroyv(_context, max_threads);
+  if (result != PAMI_SUCCESS)
     {
-      result = PAMI_Context_destroy (_context[i]);
-
-      if (result != PAMI_SUCCESS)
-        {
-          fprintf (stderr, "Error. Unable to destroy context %zu. result = %d\n", i, result);
-          return 1;
-        }
+      fprintf (stderr, "Error. Unable to destroy context, result = %d\n", result);
+      return 1;
     }
 
   result = PAMI_Client_destroy (client);
-
   if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);

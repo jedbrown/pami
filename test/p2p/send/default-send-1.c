@@ -384,13 +384,10 @@ int main (int argc, char ** argv)
 
   // ====== CLEANUP ======
 
-  size_t i = 0;
-  for (i = 0; i < num_contexts; i++) {
-    result = PAMI_Context_destroy (context[i]);
-    if (result != PAMI_SUCCESS) {
-      fprintf (stderr, "Error. Unable to destroy pami context %zu. result = %d\n", i, result);
-	return 1;
-    }
+  result = PAMI_Context_destroyv(context, num_contexts);
+  if (result != PAMI_SUCCESS) {
+    fprintf (stderr, "Error. Unable to destroy context, result = %d\n", result);
+    return 1;
   }
 
   result = PAMI_Client_destroy (g_client);

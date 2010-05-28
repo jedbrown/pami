@@ -183,17 +183,14 @@ int main (int argc, char ** argv)
   }
 
   _endpoint[0].recv = 1;
-  {
-  size_t num = 2;
-  result = PAMI_Context_createv (client, configuration, 0, &context[0], num);
-  if (result != PAMI_SUCCESS || num != 2)
+  result = PAMI_Context_createv (client, configuration, 0, context, 2);
+  if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to create first pami context. result = %d\n", result);
     return 1;
   }
   _endpoint[0].context = context[0];
   _endpoint[1].context = context[1];
-  }
 
   _endpoint[1].recv = 1;
 
@@ -210,16 +207,10 @@ int main (int argc, char ** argv)
   endpoint ((void *)0);
 
 
-  result = PAMI_Context_destroy (_endpoint[0].context);
+  result = PAMI_Context_destroyv (context, 2);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to destroy first pami context. result = %d\n", result);
-    return 1;
-  }
-  result = PAMI_Context_destroy (_endpoint[1].context);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy second pami context. result = %d\n", result);
     return 1;
   }
 

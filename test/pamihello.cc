@@ -19,7 +19,7 @@ int main(int argc, char ** argv) {
                 return 1;
         }
 
-        { size_t _n = 1; status = PAMI_Context_createv(client, NULL, 0, &context, _n); }
+        {  status = PAMI_Context_createv(client, NULL, 0, &context, 1); }
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable to create pami context. result = %d\n", status);
                 return 1;
@@ -59,7 +59,7 @@ int main(int argc, char ** argv) {
         *s++ = '\0';
         fprintf(stderr, "Hello world from PAMI rank %zu of %zu %s\n", task_id, num_tasks, buf);
 
-        status = PAMI_Context_destroy(context);
+        status = PAMI_Context_destroyv(&context, 1);
         if (status != PAMI_SUCCESS) {
                 fprintf(stderr, "Error. Unable to destroy pami context. result = %d\n", status);
                 return 1;

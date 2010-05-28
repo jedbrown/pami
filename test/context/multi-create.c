@@ -24,24 +24,17 @@ int main (int argc, char ** argv)
   }
 
   size_t num = 2;
-  result = PAMI_Context_createv (client, configuration, 0, &context[0], num);
+  result = PAMI_Context_createv (client, configuration, 0, context, num);
   if (result != PAMI_SUCCESS || num != 2)
   {
     fprintf (stderr, "Error. Unable to create two pami context. result = %d\n", result);
     return 1;
   }
 
-  result = PAMI_Context_destroy (context[0]);
+  result = PAMI_Context_destroyv (context, num);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to destroy first pami context. result = %d\n", result);
-    return 1;
-  }
-
-  result = PAMI_Context_destroy (context[1]);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy second pami context. result = %d\n", result);
     return 1;
   }
 
