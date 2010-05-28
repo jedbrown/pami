@@ -179,9 +179,9 @@ int main (int argc, char ** argv)
   PAMI_Client_create (clientname, &client);
   TRACE_ERR((stderr, "...  after PAMI_Client_create()\n"));
   pami_context_t context;
-  TRACE_ERR((stderr, "... before PAMI_Context_create()\n"));
+  TRACE_ERR((stderr, "... before PAMI_Context_createv()\n"));
   PAMI_Context_createv (client, NULL, 0, &context, 1);
-  TRACE_ERR((stderr, "...  after PAMI_Context_create()\n"));
+  TRACE_ERR((stderr, "...  after PAMI_Context_createv()\n"));
 
   //TRACE_ERR((stderr, "... before barrier_init()\n"));
   //barrier_init (client, context, 0);

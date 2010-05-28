@@ -73,7 +73,7 @@ int main(int argc, char ** argv)
   fprintf(stderr, "PAMI_Client_create()\n");
   PAMI_Client_create (clientname, &client);
   pami_context_t context;
-  fprintf(stderr, "PAMI_Context_create()\n");
+  fprintf(stderr, "PAMI_Context_createv()\n");
   { size_t _n = 1; PAMI_Context_createv (client, NULL, 0, &context, _n); }
 
   pami_configuration_t configuration;
