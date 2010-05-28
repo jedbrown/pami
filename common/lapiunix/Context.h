@@ -24,30 +24,17 @@
 #include "algorithms/geometry/Geometry.h"
 
 // Components
+#include "components/devices/generic/Device.h"
 #include "components/devices/lapiunix/lapiunixdevice.h"
 #include "components/devices/lapiunix/lapiunixpacketmodel.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
-#include "p2p/protocols/send/eager/Eager.h"
-#include "SysDep.h"
-#include "components/devices/generic/Device.h"
-#include "components/devices/misc/ProgressFunctionMsg.h"
-#include "components/devices/misc/AtomicBarrierMsg.h"
-#include "components/devices/workqueue/WQRingReduceMsg.h"
-#include "components/devices/workqueue/WQRingBcastMsg.h"
-#include "components/devices/workqueue/LocalAllreduceWQMessage.h"
-#include "components/devices/workqueue/LocalReduceWQMessage.h"
-#include "components/devices/workqueue/LocalBcastWQMessage.h"
 #include "components/devices/lapiunix/lapiunixmulticastmodel.h"
 #include "components/devices/lapiunix/lapiunixmultisyncmodel.h"
 #include "components/devices/lapiunix/lapiunixmulticombinemodel.h"
 #include "components/devices/lapiunix/lapiunixmanytomanymodel.h"
-#include "components/devices/shmem/ShmemDevice.h"
-#include "components/devices/shmem/ShmemPacketModel.h"
-#include "components/atomic/counter/CounterMutex.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/lapi/include/Context.h"
 
 // P2P Protocols
-#include "p2p/protocols/send/eager/Eager.h"
 
 // Collective Protocols
 #include "algorithms/geometry/CCMICollRegistration.h"
@@ -56,15 +43,10 @@
 
 namespace PAMI
 {
-    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>  ContextLock;
-
   // Device Typedefs
   typedef Device::LAPIDevice                                          LAPIDevice;
-  typedef Fifo::FifoPacket <32, 512>                                  ShmemPacket;
-  typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128>      ShmemFifo;
-  typedef Device::ShmemDevice<ShmemFifo>                              ShmemDevice;
   // P2P Message Typedefs
-    typedef Device::LAPIMessage LAPIMessage;
+  typedef Device::LAPIMessage LAPIMessage;
 
   // "Old" Collective Typedefs
   typedef Device::OldLAPIMcastMessage                                 OldLAPIMcastMessage;
@@ -77,7 +59,7 @@ namespace PAMI
   typedef Device::LAPIM2MMessage                                      LAPIM2MMessage;
 
   // P2P Model Classes
-    typedef Device::LAPIPacketModel<LAPIDevice,LAPIMessage> LAPIPacketModel;
+
 
   // "New" Collective Model typedefs
   typedef Device::LAPIMultisyncModel<LAPIDevice,LAPIMsyncMessage>     LAPIMultisyncModel;
@@ -97,7 +79,6 @@ namespace PAMI
   typedef Geometry::Common                                            LAPIGeometry;
 
   // Protocol Typedefs
-    typedef PAMI::Protocol::Send::Eager <LAPIPacketModel,LAPIDevice> EagerLAPI;
 
   // "New" CCMI Protocol Typedefs
   typedef PAMI::LAPINativeInterface<LAPIDevice,
@@ -125,7 +106,7 @@ namespace PAMI
                                                 LAPIDevice,
                                                 SysDep> OldCCMICollreg;
   // Memory Allocator Typedefs
-    typedef MemoryAllocator<1024, 16> ProtocolAllocator;
+  typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
 
 /**
@@ -160,14 +141,6 @@ namespace PAMI
         // these calls create (allocate and construct) each element.
         // We don't know how these relate to contexts, they are semi-opaque.
         _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm, NULL);
-//	_shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-        _progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm, _generics);
-        _atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm, _generics);
-        _wqringreduce = PAMI::Device::WQRingReduceDev::Factory::generate(clientid, num_ctx, mm, _generics);
-        _wqringbcast = PAMI::Device::WQRingBcastDev::Factory::generate(clientid, num_ctx, mm, _generics);
-        _localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-        _localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-        _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
         return PAMI_SUCCESS;
     }
 
@@ -189,14 +162,6 @@ namespace PAMI
      */
     inline pami_result_t init(size_t clientid, size_t contextid, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm) {
         PAMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
-//	ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::ProgressFunctionDev::Factory::init(_progfunc, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::AtomicBarrierDev::Factory::init(_atombarr, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::WQRingReduceDev::Factory::init(_wqringreduce, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::LocalAllreduceWQDevice::Factory::init(_localallreduce, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
         return PAMI_SUCCESS;
     }
 
@@ -212,26 +177,9 @@ namespace PAMI
     inline size_t advance(size_t clientid, size_t contextid) {
         size_t events = 0;
         events += PAMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
-//	events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
-        events += PAMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
-        events += PAMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
-        events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
-        events += PAMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
-        events += PAMI::Device::LocalAllreduceWQDevice::Factory::advance(_localallreduce, clientid, contextid);
-        events += PAMI::Device::LocalBcastWQDevice::Factory::advance(_localbcast, clientid, contextid);
-        events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
         return events;
     }
-
-    PAMI::Device::Generic::Device *_generics; // need better name...
-//    ShmemDevice *_shmem;
-    PAMI::Device::ProgressFunctionDev *_progfunc;
-    PAMI::Device::AtomicBarrierDev *_atombarr;
-    PAMI::Device::WQRingReduceDev *_wqringreduce;
-    PAMI::Device::WQRingBcastDev *_wqringbcast;
-    PAMI::Device::LocalAllreduceWQDevice *_localallreduce;
-    PAMI::Device::LocalBcastWQDevice *_localbcast;
-    PAMI::Device::LocalReduceWQDevice *_localreduce;
+    PAMI::Device::Generic::Device        *_generics; // need better name...
   }; // class PlatformDeviceList
 
 
@@ -239,48 +187,90 @@ namespace PAMI
     {
     public:
     inline Context (pami_client_t                  client,
-                    size_t                        clientid,
-                    size_t                        id,
-                    size_t                        num,
-                    PlatformDeviceList *devices,
-                    void                         *addr,
-                    size_t                        bytes,
-                    LAPIGeometry                 *world_geometry,
-                    lapi_handle_t                 lapi_handle) :
+                    size_t                         clientid,
+                    char                          *clientname,
+                    size_t                         id,
+                    PlatformDeviceList            *devices,
+                    Memory::MemoryManager         *mm):
         Interface::Context<PAMI::Context> (client, id),
         _client (client),
         _clientid (clientid),
+        _clientname(clientname),
         _contextid (id),
-        _mm (addr, bytes),
-        _sysdep(_mm),
-        _lock (),
-        _world_geometry(world_geometry),
-        _minterface(_lapi_device,_client,this,_contextid,_clientid),
-        _empty_advance(0),
-        _lapi_handle(lapi_handle),
+        _world_geometry(NULL),
         _devices(devices)
       {
-        _lapi_device.init(&_mm, _clientid, 0, _context, _contextid);
-        _lapi_device.setLapiHandle(_lapi_handle);
+      }
 
-        _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
-        new(_pgas_collreg) PGASCollreg(client, (pami_context_t)this, id,_lapi_device);
-        _pgas_collreg->analyze(_contextid,_world_geometry);
-
-        _oldccmi_collreg=(OldCCMICollreg*) malloc(sizeof(*_oldccmi_collreg));
-        new(_oldccmi_collreg) OldCCMICollreg(client, (pami_context_t)this, id,_sysdep,_lapi_device);
-        _oldccmi_collreg->analyze(_contextid, _world_geometry);
-
-        _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
-        new(_ccmi_collreg) CCMICollreg(client, (pami_context_t)this, id,clientid,_lapi_device);
-        _ccmi_collreg->analyze(_contextid, _world_geometry);
-
-          // dispatch_impl relies on the table being initialized to NULL's.
-          memset(_dispatch, 0x00, sizeof(_dispatch));
-
-//	  _devices->dev_init(&_sysdep, _clientid, num, _context, _contextid);
-          _devices->init(_clientid, _contextid, _client, _context, &_mm);
+      inline void setWorldGeometry(LAPIGeometry *world_geometry)
+        {
+          _world_geometry = world_geometry;
         }
+
+      inline pami_result_t initP2P(size_t        *out_myrank,
+                                   size_t        *out_mysize,
+                                   lapi_handle_t *out_lapi_handle)
+        {
+          // Bring up the LAPI P2P Contexts
+          lapi_info_t  init_info;
+          memset(&init_info, 0, sizeof(init_info));
+          init_info.protocol_name  = _clientname;
+
+          // TODO: Honor the configuration passed in
+          int rc = LAPI__Init(&_lapi_handle, &init_info);
+          if (rc) {
+            RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Init failed with rc %d\n", rc);
+          }
+          _lapi_state = _Lapi_port[_lapi_handle];
+
+          // Initialize the lapi device for collectives
+          _lapi_device.init(_mm, _clientid, 0, _context, _contextid);
+          _lapi_device.setLapiHandle(_lapi_handle);
+
+          // Initialize Platform and Collective "per context" Devices
+          _devices->init(_clientid,_contextid,_client,_context,_mm);
+
+          // Query My Rank and My Size
+          // TODO:  Use LAPI Internals, instead of
+          // doing an upcall to LAPI
+          int orank=0, osz=0;
+          CheckLapiRC(lapi_qenv(_lapi_handle,
+                                NUM_TASKS,
+                                &osz));
+
+          CheckLapiRC(lapi_qenv(_lapi_handle,
+                                TASK_ID,
+                                &orank));
+
+          *out_mysize        = osz;
+          *out_myrank        = orank;
+          *out_lapi_handle   = _lapi_handle;
+
+          return PAMI_SUCCESS;
+        }
+
+      inline pami_result_t initP2PCollectives()
+        {
+          // Initalize Collective Registration
+          _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
+          new(_pgas_collreg) PGASCollreg(_client,_context,_contextid,_lapi_device);
+          _pgas_collreg->analyze(_contextid,_world_geometry);
+          return PAMI_SUCCESS;
+        }
+
+      inline pami_result_t initCollectives()
+        {
+          _oldccmi_collreg=(OldCCMICollreg*) malloc(sizeof(*_oldccmi_collreg));
+          new(_oldccmi_collreg) OldCCMICollreg(_client, _context,_contextid,_sd,_lapi_device);
+          _oldccmi_collreg->analyze(_contextid, _world_geometry);
+
+          _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
+          new(_ccmi_collreg) CCMICollreg(_client, (pami_context_t)this, _contextid ,_clientid,_lapi_device);
+          _ccmi_collreg->analyze(_contextid, _world_geometry);
+
+          return PAMI_SUCCESS;
+        }
+
 
       inline pami_client_t getClient_impl ()
         {
@@ -292,11 +282,13 @@ namespace PAMI
           return _contextid;
         }
 
-
       inline pami_result_t destroy_impl ()
         {
-          LAPI_Gfence (_lapi_handle);
-          CheckLapiRC(lapi_term(_lapi_handle));
+          LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
+          int rc = LAPI__Term(ep->my_hndl);
+          if (rc) {
+            RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Term failed with rc %d\n", rc);
+          }
           return PAMI_SUCCESS;
         }
 
@@ -312,6 +304,7 @@ namespace PAMI
 
       inline size_t advance_impl (size_t maximum, pami_result_t & result)
         {
+#if 0
           result = PAMI_SUCCESS;
           size_t events = 0;
           unsigned i;
@@ -319,52 +312,48 @@ namespace PAMI
               {
                 // don't we want this advanced too?
                 // events += _work.advance ();
-
                 events += _lapi_device.advance_impl();
                 events += _devices->advance(_clientid, _contextid);
               }
           return events;
+#endif
+          // Todo:  Add collective devices
+          // Todo:  Add Generic devices
+          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          result = (cp->*(cp->pAdvance))(maximum);
+          return 1;
         }
 
       inline pami_result_t lock_impl ()
         {
-          assert(0);
-          return PAMI_UNIMPL;
+          LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
+          return (ep->*(ep->pLock))();
         }
 
       inline pami_result_t trylock_impl ()
         {
-          assert(0);
-          return PAMI_UNIMPL;
+          LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
+          return (ep->*(ep->pTryLock))();
         }
 
       inline pami_result_t unlock_impl ()
         {
-          assert(0);
-          return PAMI_UNIMPL;
+          LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
+          return (ep->*(ep->pUnlock))();
         }
       inline pami_result_t send_impl (pami_send_t * parameters)
         {
-          size_t id = (size_t)(parameters->send.dispatch);
-          PAMI_assert_debug (_dispatch[id] != NULL);
-          PAMI::Protocol::Send::Send * send =
-            (PAMI::Protocol::Send::Send *) _dispatch[id];
-          send->simple (parameters);
+          assert(0);
           return PAMI_SUCCESS;
         }
 
-      inline pami_result_t send_impl (pami_send_immediate_t * parameters)
+      inline pami_result_t send_impl (pami_send_immediate_t * send)
         {
-          size_t id = (size_t)(parameters->dispatch);
-          TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zu] = %p\n", id, _dispatch[id]));
-          PAMI_assert_debug (_dispatch[id] != NULL);
-
-          PAMI::Protocol::Send::Send * send =
-            (PAMI::Protocol::Send::Send *) _dispatch[id];
-          send->immediate (parameters);
-
-          TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
-          return PAMI_SUCCESS;
+          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          return (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
+                                         send->header.iov_base, send->header.iov_len,
+                                         send->data.iov_base, send->data.iov_len,
+                                         *(send_hint_t *)&send->hints);
         }
 
       inline pami_result_t send_impl (pami_send_typed_t * parameters)
@@ -387,7 +376,11 @@ namespace PAMI
 
       inline pami_result_t get_impl (pami_get_simple_t * parameters)
         {
-          assert(0);
+          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          return (cp->*(cp->pGet))(parameters->rma.dest, parameters->addr.local, NULL,
+                                   parameters->addr.remote, NULL, parameters->rma.bytes,
+                                   *(send_hint_t*)&parameters->rma.hints, INTERFACE_PAMI,
+                                   (void *)parameters->rma.done_fn, parameters->rma.cookie, NULL, NULL);
           return PAMI_UNIMPL;
         }
 
@@ -552,8 +545,8 @@ namespace PAMI
         {
           // Select the native interface
           // call the multisync for the selected native interface.
-
-          return _minterface.multisync(msyncinfo);
+          assert(0);
+          return PAMI_UNIMPL;
         }
 
       inline pami_result_t multicombine_impl(pami_multicombine_t *mcombineinfo)
@@ -561,22 +554,14 @@ namespace PAMI
           assert(0);
           return PAMI_UNIMPL;
         }
-      inline pami_result_t dispatch_impl (size_t                     id,
-                                         pami_dispatch_callback_fn   fn,
-                                         void                     * cookie,
-                                         pami_send_hint_t            options)
+      inline pami_result_t dispatch_impl (size_t                      id,
+                                          pami_dispatch_callback_fn   fn,
+                                          void                      * cookie,
+                                          pami_send_hint_t            options)
         {
-          pami_result_t result        = PAMI_ERROR;
-#if 1
-          if (_dispatch[(size_t)id] != NULL) return PAMI_ERROR;
-          _dispatch[(size_t)id]      = (void *) _request.allocateObject ();
-          new (_dispatch[(size_t)id]) EagerLAPI (id,
-                                                 fn,
-                                                 cookie,
-                                                 _lapi_device,
-                                                 result);
-#endif
-          return result;
+          LapiImpl::Context  *cp = (LapiImpl::Context *)_lapi_state;
+          return (cp->*(cp->pDispatchSet))(id, (void *)fn.p2p, cookie,
+                                           *(send_hint_t *)&options, INTERFACE_PAMI);
         }
 
     inline pami_result_t dispatch_new_impl (size_t                     id,
@@ -584,44 +569,54 @@ namespace PAMI
                                            void                     * cookie,
                                            pami_dispatch_hint_t        options)
     {
+      assert(0);
       pami_result_t result        = PAMI_ERROR;
-      if(options.type == PAMI_P2P_SEND)
-      {
-        return dispatch_impl (id,
-                              fn,
-                              cookie,
-                              options.hint.send);
-      }
-        return result;
+      return result;
     }
+
+      inline lapi_state_t *getLapiState()
+        {
+          return _lapi_state;
+        }
 
 
     private:
-      std::map <unsigned, pami_geometry_t>   _geometry_id;
+      /*  PAMI Client Pointer associated with this PAMI Context */
       pami_client_t                          _client;
+
+      /*  Lapi State Object.  use this for direct access        */
+      lapi_state_t                          *_lapi_state;
+
+      /*  Context pointer to this client                        */
       pami_context_t                         _context;
-      size_t                                _clientid;
-      size_t                                _contextid;
-      void                                 *_dispatch[1024];
-      ProtocolAllocator                     _protocol;
-      Memory::MemoryManager                 _mm;
-      SysDep                                _sysdep;
-      ContextLock                           _lock;
-      MemoryAllocator<1024,16>              _request;
-      LAPIDevice                            _lapi_device;
+
+      /*  Context id (offset) of this context in the client     */
+      size_t                                 _contextid;
+
+      /*  Client id of this client                              */
+      size_t                                 _clientid;
+
+      /*  Pointer to the client name string                     */
+      char                                  *_clientname;
+
+      /*  Memory Manager Pointer                                */
+      Memory::MemoryManager                 *_mm;
+
+      /*  The over lapi device                                  */
+      LAPIDevice                             _lapi_device;
   public:
-    CCMICollreg                          *_ccmi_collreg;
-    PGASCollreg                          *_pgas_collreg;
-    OldCCMICollreg                       *_oldccmi_collreg;
-      LAPIGeometry                         *_world_geometry;
+      /*  Collective Registrations                              */
+      CCMICollreg                           *_ccmi_collreg;
+      PGASCollreg                           *_pgas_collreg;
+      OldCCMICollreg                        *_oldccmi_collreg;
+
+      /*  World Geometry Pointer for this context               */
+      LAPIGeometry                          *_world_geometry;
   private:
-    DefaultNativeInterface                _minterface;
-      unsigned                              _empty_advance;
-      int                                   _myrank;
-      int                                   _mysize;
-      unsigned                             *_ranklist;
-      lapi_handle_t                        _lapi_handle;
-      PlatformDeviceList *_devices;
+      lapi_handle_t                          _lapi_handle;
+      PlatformDeviceList                    *_devices;
+      SysDep                                 _sd;
+
     }; // end PAMI::Context
 }; // end namespace PAMI
 

@@ -27,6 +27,6 @@
 
 namespace PAMI
 {
-  typedef Interface::SysDep SysDep;
+  typedef Interface::NullSysDep SysDep;
 };
 #endif // __components_sysdep_lapi_lapisysdep_h__

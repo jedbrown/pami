@@ -50,6 +50,8 @@ namespace PAMI
 
         inline pami_result_t queryConfiguration (pami_configuration_t * configuration);
 
+        inline pami_result_t updateConfiguration (pami_configuration_t * configuration);
+
         inline pami_result_t geometry_world (pami_geometry_t * world_geometry);
 
         inline pami_result_t geometry_create_taskrange(pami_geometry_t       * geometry,
@@ -110,6 +112,12 @@ namespace PAMI
     pami_result_t Client<T_Client>::queryConfiguration (pami_configuration_t * configuration)
     {
       return static_cast<T_Client*>(this)->queryConfiguration_impl(configuration);
+    }
+
+    template <class T_Client>
+    pami_result_t Client<T_Client>::updateConfiguration (pami_configuration_t * configuration)
+    {
+      return static_cast<T_Client*>(this)->updateConfiguration_impl(configuration);
     }
 
     template <class T_Client>

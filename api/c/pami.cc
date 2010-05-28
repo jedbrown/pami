@@ -4,7 +4,7 @@
  */
 #ifndef PAMI_LAPI_IMPL
 #include "config.h"
-#endif
+#endif //PAMI_LAPI_IMPL
 
 #include "Global.h"
 #include "SysDep.h"
@@ -962,7 +962,6 @@ extern "C" pami_result_t PAMI_Client_add_commthread_context(pami_client_t client
 
 
 
-#ifndef PAMI_LAPI_IMPL
 ///
 /// \copydoc PAMI_Client_create
 ///
@@ -1028,7 +1027,9 @@ extern "C" pami_result_t PAMI_Configuration_query (pami_client_t         client,
 extern "C" pami_result_t PAMI_Configuration_update (pami_client_t         client,
                                                   pami_configuration_t * configuration)
 {
-  return PAMI_UNIMPL;
+  PAMI::Client * cln = (PAMI::Client *) client;
+
+  return cln->queryConfiguration (configuration);
 }
 
 ///
@@ -1287,4 +1288,3 @@ extern "C" pami_result_t PAMI_Resume_totask (pami_context_t   context,
   return ctx->resume_totask (dest, count);
 }
 
-#endif //PAMI_LAPI_IMPL

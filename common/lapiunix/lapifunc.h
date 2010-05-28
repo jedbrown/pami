@@ -20,6 +20,10 @@
 #include "components/lapi/include/lapi.h"
 #include "common/lapiunix/lapierror.h"
 
+// Define this to turn on dlopened lapi functions
+// #ifdef LAPI_DLOPEN
+
+
 class LapiFunc
 {
     public:
@@ -158,6 +162,9 @@ class LapiFunc
     private:
         void * import(const char *funcname);
 };
+
+#ifdef LAPI_DLOPEN
+
 #define lapi_addr_get LapiFunc::getInstance()->Addr_get
 #define lapi_addr_set LapiFunc::getInstance()->Addr_set
 #define lapi_address LapiFunc::getInstance()->Address
@@ -193,5 +200,46 @@ class LapiFunc
 #define lapi_purge_totask LapiFunc::getInstance()->Purge_totask
 #define lapi_resume_totask LapiFunc::getInstance()->Resume_totask
 #define lapi_setcntr_wstatus LapiFunc::getInstance()->Setcntr_wstatus
+
+#else
+
+#define lapi_addr_get LAPI_Addr_get
+#define lapi_addr_set LAPI_Addr_set
+#define lapi_address LAPI_Address
+#define lapi_address_init LAPI_Address_init
+#define lapi_address_init64 LAPI_Address_init64
+
+#define lapi_amsend LAPI_Amsend
+#define lapi_amsendv LAPI_Amsendv
+#define lapi_fence LAPI_Fence
+#define lapi_get LAPI_Get
+#define lapi_getcntr LAPI_Getcntr
+#define lapi_getv LAPI_Getv
+#define lapi_gfence LAPI_Gfence
+#define lapi_init LAPI_Init
+#define lapi_msg_string LAPI_Msg_string
+#define lapi_msgpoll LAPI_Msgpoll
+#define lapi_probe LAPI_Probe
+
+#define lapi_put LAPI_Put
+#define lapi_putv LAPI_Putv
+#define lapi_qenv LAPI_Qenv
+#define lapi_rmw LAPI_Rmw
+#define lapi_rmw64 LAPI_Rmw64
+#define lapi_senv LAPI_Senv
+#define lapi_setcntr LAPI_Setcntr
+#define lapi_term LAPI_Term
+
+#define lapi_util LAPI_Util
+#define lapi_waitcntr LAPI_Waitcntr
+#define lapi_xfer LAPI_Xfer
+
+#define lapi_nopoll_wait LAPI_Nopoll_wait
+#define lapi_purge_totask LAPI_Purge_totask
+#define lapi_resume_totask LAPI_Resume_totask
+#define lapi_setcntr_wstatus LAPI_Setcntr_wstatus
+
+#endif //LAPI_DLOPEN
+
 
 #endif
