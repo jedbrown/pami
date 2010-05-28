@@ -53,7 +53,9 @@ namespace PAMI
           static Eager * generate (size_t                     dispatch,
                                    pami_dispatch_callback_fn   dispatch_fn,
                                    void                     * cookie,
+                                   pami_endpoint_t             origin,
                                    T_Device                 & device,
+                                   pami_context_t             context,
                                    T_Allocator              & allocator,
                                    pami_result_t             & result)
           {
@@ -61,7 +63,7 @@ namespace PAMI
             COMPILE_TIME_ASSERT(sizeof(Eager) <= T_Allocator::objsize);
 
             Eager * eager = (Eager *) allocator.allocateObject ();
-            new ((void *)eager) Eager (dispatch, dispatch_fn, cookie, device, result);
+            new ((void *)eager) Eager (dispatch, dispatch_fn.p2p, cookie, origin, device, context, result);
             if (result != PAMI_SUCCESS)
             {
               allocator.returnObject (eager);
@@ -89,21 +91,26 @@ namespace PAMI
           /// \param[out] status      Constructor status
           ///
           inline Eager (size_t                     dispatch,
-                        pami_dispatch_callback_fn   dispatch_fn,
+                        pami_dispatch_p2p_fn   dispatch_fn,
                         void                     * cookie,
+                        pami_endpoint_t             origin,
                         T_Device                 & device,
+                        pami_context_t             context,
                         pami_result_t             & status) :
               PAMI::Protocol::Send::Send (),
               EagerImmediate<T_Model, T_Device> (dispatch,
                                                  dispatch_fn,
                                                  cookie,
                                                  device,
+                                                 context,
                                                  status),
               EagerSimple<T_Model, T_Device,
                           T_LongHeader, T_Connection> (dispatch,
                                                        dispatch_fn,
                                                        cookie,
+                                                       origin,
                                                        device,
+                                                       context,
                                                        status)
           {
           };

@@ -118,8 +118,6 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
           inline ~PacketModelMemoryFifoCompletion () {};
 
-        protected:
-
           /// \see PAMI::Device::MU::PacketModelBase::processCompletion
           inline void processCompletion_impl (void                 * state,
                                               size_t                 fnum,

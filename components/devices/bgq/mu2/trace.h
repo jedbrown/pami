@@ -19,11 +19,11 @@ static char   __trace_indent_string[64] = { "                                   
 
 #define TRACE_FN_ENTER() \
   if (DO_TRACE_ENTEREXIT) \
-    fprintf (stderr, "%s>> %s():%d\n", &__trace_indent_string[63-(++__trace_fn_counter<<1)], __FUNCTION__, __LINE__);
+    fprintf (stderr, "%s>> %s() [%s:%d]\n", &__trace_indent_string[63-(++__trace_fn_counter<<1)], __FUNCTION__, __FILE__, __LINE__);
 
 #define TRACE_FN_EXIT() \
   if (DO_TRACE_ENTEREXIT) \
-    fprintf (stderr, "%s<< %s():%d\n", &__trace_indent_string[63-(__trace_fn_counter--<<1)], __FUNCTION__, __LINE__);
+    fprintf (stderr, "%s<< %s() [%s:%d]\n", &__trace_indent_string[63-(__trace_fn_counter--<<1)], __FUNCTION__, __FILE__, __LINE__);
 
 #define TRACE_STRING(str) \
   if (DO_TRACE_DEBUG) \

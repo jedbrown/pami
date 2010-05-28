@@ -483,7 +483,7 @@ namespace PAMI
 
             // Copy the payload into the immediate payload buffer.
             size_t i, tbytes = 0;
-            uint8_t * dst = vaddr;
+            uint8_t * dst = (uint8_t *) vaddr;
 
             for (i = 0; i < T_Niov; i++)
               {
@@ -736,7 +736,7 @@ namespace PAMI
               }
 
             // Finish the completion processing and inject the descriptor(s)
-            processCompletion ((void *) state, fnum, ififo, ndesc, desc, fn, cookie);
+            processCompletion ((void *) state, fnum, ififo, ndesc, (MUSPI_DescriptorBase *)desc, fn, cookie);
           }
         else
           {
@@ -759,7 +759,7 @@ namespace PAMI
               }
 
             MU::MessageQueue::Element * msg =
-              createMessage (state, memfifo, ififo);
+              createMessage (state, memfifo, ififo, fn, cookie);
 
             _context.post (fnum, msg);
 

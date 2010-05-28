@@ -20,9 +20,8 @@
 
 #include "components/memory/MemoryAllocator.h"
 
-#ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
-#endif
+#undef TRACE_ERR
+#define TRACE_ERR(x)  //fprintf x
 
 namespace PAMI
 {
@@ -51,20 +50,12 @@ namespace PAMI
 
           typedef uint8_t pkt_t[T_Model::packet_model_state_bytes];
 
-          // This match information may be simplified by pre-computing the
-          // connection hash id on the origin side.
-          typedef struct __attribute__((__packed__)) protocol_match
-          {
-            pami_task_t        task;
-            uint16_t           offset;
-          } protocol_match_t;
-
           typedef struct __attribute__((__packed__)) protcol_metadata
           {
             size_t             bytes;     ///< Number of bytes of application data being sent
             size_t             metabytes; ///< Number of bytes of application metadata being sent
             void             * va_send;   ///< Virtual address of the send_state_t on the origin
-            protocol_match_t   match;
+            pami_endpoint_t    match;
           } protcol_metadata_t;
 
 
@@ -106,16 +97,19 @@ namespace PAMI
           /// \param[out] status       Constructor status
           ///
           inline EagerSimple (size_t                      dispatch,
-                              pami_dispatch_callback_fn   dispatch_fn,
+                              pami_dispatch_p2p_fn        dispatch_fn,
                               void                      * cookie,
+                              pami_endpoint_t             origin,
                               T_Device                  & device,
+                              pami_context_t              context,
                               pami_result_t             & status) :
               _envelope_model (device),
               _longheader_model (device),
               _data_model (device),
               _ack_model (device),
               _device (device),
-              _context (device.getContext()),
+              _context (context),
+              _origin (origin),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
               _connection (device)
@@ -134,7 +128,7 @@ namespace PAMI
             // enough to transfer the eager match information. This is used in the
             // various postMultiPacket() calls to transfer long header and data
             // messages.
-            COMPILE_TIME_ASSERT(sizeof(protocol_match_t) <= T_Model::packet_model_multi_metadata_bytes);
+            COMPILE_TIME_ASSERT(sizeof(pami_endpoint_t) <= T_Model::packet_model_multi_metadata_bytes);
 
             // Assert that the size of the packet payload area is large
             // enough to transfer a single virtual address. This is used in
@@ -144,9 +138,6 @@ namespace PAMI
             // ----------------------------------------------------------------
             // Compile-time assertions (end)
             // ----------------------------------------------------------------
-
-            _origin.task   = __global.mapping.task();
-            _origin.offset = device.getContextOffset();
 
             // The models must be registered in reverse order of use in case
             // the remote side is delayed in it's registrations and must save
@@ -206,8 +197,7 @@ namespace PAMI
             // metadata in the envelope packet.
             state->metadata.bytes        = parameters->send.data.iov_len;
             state->metadata.metabytes    = parameters->send.header.iov_len;
-            state->metadata.match.task   = _origin.task;
-            state->metadata.match.offset = _origin.offset;
+            state->metadata.match        = _origin;
 
             // Set the acknowledgement information to the virtual address of
             // send state object on the origin task if a local callback of the
@@ -272,7 +262,7 @@ namespace PAMI
                                                            task,
                                                            offset,
                                                            (void *) &(state->metadata.match),
-                                                           sizeof (protocol_match_t),
+                                                           sizeof (pami_endpoint_t),
                                                            parameters->send.header.iov_base,
                                                            parameters->send.header.iov_len);
                       }
@@ -332,7 +322,7 @@ namespace PAMI
                                                            task,
                                                            offset,
                                                            (void *) &(state->metadata.match),
-                                                           sizeof (protocol_match_t),
+                                                           sizeof (pami_endpoint_t),
                                                            parameters->send.header.iov_base,
                                                            parameters->send.header.iov_len);
                       }
@@ -399,7 +389,7 @@ namespace PAMI
                                                            task,
                                                            offset,
                                                            (void *) &(state->metadata.match),
-                                                           sizeof (protocol_match_t),
+                                                           sizeof (pami_endpoint_t),
                                                            parameters->send.header.iov_base,
                                                            parameters->send.header.iov_len);
                       }
@@ -457,7 +447,7 @@ namespace PAMI
                                                            task,
                                                            offset,
                                                            (void *) &(state->metadata.match),
-                                                           sizeof (protocol_match_t),
+                                                           sizeof (pami_endpoint_t),
                                                            parameters->send.header.iov_base,
                                                            parameters->send.header.iov_len);
                       }
@@ -485,7 +475,7 @@ namespace PAMI
                                              task,
                                              offset,
                                              (void *) &(state->metadata.match),
-                                             sizeof (protocol_match_t),
+                                             sizeof (pami_endpoint_t),
                                              parameters->send.data.iov_base,
                                              parameters->send.data.iov_len);
               }
@@ -506,9 +496,9 @@ namespace PAMI
           T_Device      & _device;
           pami_context_t   _context;
 
-          protocol_match_t _origin;
+          pami_endpoint_t  _origin;
 
-          pami_dispatch_callback_fn   _dispatch_fn;
+          pami_dispatch_p2p_fn   _dispatch_fn;
           void                     * _cookie;
 
           T_Connection              _connection;
@@ -537,10 +527,10 @@ namespace PAMI
                                         uint8_t            * header,
                                         recv_state_t       * state)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::process_envelope() .. match.task = %d, match.offset = %d, header = %p, header bytes = %zu\n", metadata->match.task, metadata->match.offset, header, metadata->metabytes));
+            TRACE_ERR((stderr, ">> EagerSimple::process_envelope() .. match = 0x%08x, header = %p, header bytes = %zu\n", metadata->match, header, metadata->metabytes));
 
             // Invoke the registered dispatch function.
-            _dispatch_fn.p2p (_context,            // Communication context
+            _dispatch_fn (_context,            // Communication context
                               _cookie,             // Dispatch cookie
                               header,              // Application metadata
                               metadata->metabytes, // Application metadata bytes
@@ -548,7 +538,7 @@ namespace PAMI
                               metadata->bytes,     // Number of msg bytes
                               (pami_recv_t *) &(state->info));
 
-            TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zu, state->info.type = %zu\n", metadata->bytes, state->info.type));
+            TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zu, state->info.type = %p\n", metadata->bytes, state->info.type));
 
             // Only contiguous receives are implemented
             PAMI_assertf(state->info.type == PAMI_BYTE, "[%5d:%s] %s() - Only contiguous receives are implemented.\n", __LINE__, __FILE__, __FUNCTION__);
@@ -566,20 +556,24 @@ namespace PAMI
 
                 TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. state->metadata.va_send = %p\n", state->metadata.va_send));
 
+                pami_task_t origin_task;
+                size_t      origin_offset;
+                PAMI_ENDPOINT_INFO(state->metadata.match,origin_task,origin_offset);
+
                 if (unlikely(state->metadata.va_send != NULL))
                   {
                     _ack_model.postPacket (state->pkt,
                                            receive_complete,
                                            (void *) state,
-                                           metadata->match.task,
-                                           metadata->match.offset,
+                                           origin_task,
+                                           origin_offset,
                                            NULL, 0,
                                            (void *) &(state->metadata.va_send),
                                            sizeof (send_state_t *));
                   }
                 else
                   {
-                    _connection.clear (metadata->match.task, metadata->match.offset);
+                    _connection.clear (origin_task, origin_offset);
                     freeRecvState (state);
                   }
               }
@@ -674,7 +668,7 @@ namespace PAMI
                 p = payload;
               }
 
-            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), m->match.task = %d, m->match.offset = %d, m->bytes = %zu, m->va_send = %p\n", m->match.task, m->match.offset, m->bytes, m->va_send));
+            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), m->match = 0x%08x, m->bytes = %zu, m->va_send = %p\n", m->match, m->bytes, m->va_send));
 
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
@@ -685,11 +679,13 @@ namespace PAMI
             state->metadata.va_send      = m->va_send;
             state->metadata.bytes        = m->bytes;
             state->metadata.metabytes    = m->metabytes;
-            state->metadata.match.task   = m->match.task;
-            state->metadata.match.offset = m->match.offset;
+            state->metadata.match        = m->match;
 
             // Set the eager connection.
-            eager->_connection.set (m->match.task, m->match.offset, (void *)state);
+            pami_task_t origin_task;
+            size_t      origin_offset;
+            PAMI_ENDPOINT_INFO(m->match,origin_task,origin_offset);
+            eager->_connection.set (origin_task, origin_offset, (void *)state);
 
             // The compiler will optimize out this constant expression
             // conditional and include this code block only when the long
@@ -782,10 +778,13 @@ namespace PAMI
 
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
-            protocol_match_t * match = (protocol_match_t *) metadata;
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), match->task = %d, match->offset = %d, bytes = %zu\n", match->task, match->offset, bytes));
+            pami_endpoint_t match = *((pami_endpoint_t *) metadata);
+            TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), match = 0x%08x, bytes = %zu\n", match, bytes));
 
-            recv_state_t * state = (recv_state_t *) eager->_connection.get (match->task, match->offset);
+            pami_task_t origin_task;
+            size_t      origin_offset;
+            PAMI_ENDPOINT_INFO(match,origin_task,origin_offset);
+            recv_state_t * state = (recv_state_t *) eager->_connection.get (origin_task, origin_offset);
 
             size_t n = MIN(bytes, state->longheader.bytes - state->longheader.offset);
 
@@ -831,10 +830,13 @@ namespace PAMI
           {
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
-            protocol_match_t * match = (protocol_match_t *) metadata;
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_message(), match->task = %d, match->offset = %d, bytes = %zu\n", match->task, match->offset, bytes));
+            pami_endpoint_t match = *((pami_endpoint_t *) metadata);
+            TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_message(), match = 0x%08x, bytes = %zu\n", match, bytes));
 
-            recv_state_t * state = (recv_state_t *) eager->_connection.get (match->task, match->offset);
+            pami_task_t origin_task;
+            size_t      origin_offset;
+            PAMI_ENDPOINT_INFO(match,origin_task,origin_offset);
+            recv_state_t * state = (recv_state_t *) eager->_connection.get (origin_task, origin_offset);
 
             // Number of bytes received so far.
             size_t nbyte = state->received;
@@ -842,7 +844,7 @@ namespace PAMI
             // Number of bytes left to copy into the destination buffer
             size_t nleft = state->metadata.bytes - nbyte;
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), bytes received so far = %zu, bytes yet to receive = %zu, total bytes to receive = %zu, total bytes being sent = %zu\n", state->received, nleft, state->info.data.simple.bytes, state->metadata.bytes));
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), bytes received so far = %zu, bytes yet to receive = %zu, total bytes being sent = %zu\n", state->received, nleft, state->metadata.bytes));
 
             // Copy data from the packet payload into the destination buffer
             size_t ncopy = MIN(nleft,bytes);
@@ -855,7 +857,7 @@ namespace PAMI
               {
                 // No more data packets will be received on this connection.
                 // Clear the connection data and prepare for the next message.
-                eager->_connection.clear (match->task, match->offset);
+                eager->_connection.clear (origin_task, origin_offset);
 
                 // No more data is to be written to the receive buffer.
                 // Invoke the receive done callback.
@@ -869,8 +871,8 @@ namespace PAMI
                     eager->_ack_model.postPacket (state->pkt,
                                                   receive_complete,
                                                   (void *) state,
-                                                  match->task,
-                                                  match->offset,
+                                                  origin_task,
+                                                  origin_offset,
                                                   (void *) NULL,
                                                   0,
                                                   (void *) &(state->metadata.va_send),
@@ -883,11 +885,11 @@ namespace PAMI
                     eager->freeRecvState (state);
                   }
 
-                TRACE_ERR((stderr, "<< dispatch_data_message(), match->task = %d ... receive completed\n", match->task));
+                TRACE_ERR((stderr, "<< dispatch_data_message(), origin_task = %d ... receive completed\n", origin_task));
                 return 0;
               }
 
-            TRACE_ERR((stderr, "<< dispatch_data_message(), match->task = %d ... wait for more data\n", match->task));
+            TRACE_ERR((stderr, "<< dispatch_data_message(), origin_task = %d ... wait for more data\n", origin_task));
             return 0;
           };
 
@@ -936,7 +938,10 @@ namespace PAMI
             recv_state_t * state = (recv_state_t *) cookie;
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) state->eager;
 
-            eager->_connection.clear (state->metadata.match.task, state->metadata.match.offset);
+            pami_task_t origin_task;
+            size_t      origin_offset;
+            PAMI_ENDPOINT_INFO(state->metadata.match,origin_task,origin_offset);
+            eager->_connection.clear (origin_task, origin_offset);
             eager->freeRecvState (state);
 
             TRACE_ERR((stderr, "EagerSimple::receive_complete() << \n"));

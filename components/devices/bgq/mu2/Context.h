@@ -79,7 +79,7 @@ namespace PAMI
                            void   * cookie)
           {
             fprintf (stderr, "Error. Dispatch to unregistered id (%zu).\n", (size_t) recv_func_parm);
-            abort();
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             return 0;
           };
 
@@ -289,7 +289,7 @@ namespace PAMI
                                 pami_context_t          context,
                                 size_t                  contextid)
           {
-            abort();
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             return 0;
           }
 
@@ -298,7 +298,7 @@ namespace PAMI
           ///
           inline pami_context_t getContext_impl ()
           {
-            abort();
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             return (pami_context_t) 0;
           }
 
@@ -307,7 +307,7 @@ namespace PAMI
           ///
           inline size_t getContextOffset_impl ()
           {
-            abort();
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             return 0;
           }
 
@@ -316,7 +316,7 @@ namespace PAMI
           ///
           inline bool isInit_impl ()
           {
-            abort();
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             return false;
           }
 
@@ -325,8 +325,9 @@ namespace PAMI
           ///
           inline size_t peers_impl ()
           {
-            abort();
-            return 0;
+            // All tasks are addressable "peers" to the MU, therefore the peer
+            // size is the same as the task size;
+            return _mapping.size();
           }
 
           ///
@@ -334,7 +335,7 @@ namespace PAMI
           ///
           inline size_t task2peer_impl (size_t task)
           {
-            abort();
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             return 0;
           }
 
@@ -343,8 +344,8 @@ namespace PAMI
           ///
           inline bool isPeer_impl (size_t task)
           {
-            abort();
-            return false;
+            // All tasks are addressable "peers" to the MU
+            return true; //mapping.isPeer(task, mapping.task());
           }
 
           ///
@@ -354,7 +355,6 @@ namespace PAMI
           {
             unsigned events = advanceRecv();
 
-            //abort();
             return events;
           }
 
@@ -363,7 +363,7 @@ namespace PAMI
           ///
           inline int read_impl (void * dst, size_t bytes, void * cookie)
           {
-            abort();
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             return 0;
           }
 
@@ -538,7 +538,7 @@ namespace PAMI
             *paddr = (uint64_t)(*vaddr) - (uint64_t)_lookAsideMregion.BaseVa + (uint64_t)_lookAsideMregion.BasePa;
             return 1;
 #else
-            PAMI_abort();
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             return 0;
 #endif
           }

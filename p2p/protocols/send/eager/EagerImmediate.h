@@ -23,7 +23,7 @@
 #include "util/common.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x) //fprintf x
 #endif
 
 namespace PAMI
@@ -100,13 +100,14 @@ namespace PAMI
           /// \param[in]  context      Origin communcation context
           /// \param[out] status       Constructor status
           ///
-          inline EagerImmediate (size_t                     dispatch,
-                                 pami_dispatch_callback_fn   dispatch_fn,
-                                 void                     * cookie,
-                                 T_Device                 & device,
-                                 pami_result_t             & status) :
+          inline EagerImmediate (size_t                 dispatch,
+                                 pami_dispatch_p2p_fn   dispatch_fn,
+                                 void                 * cookie,
+                                 T_Device             & device,
+                                 pami_context_t         context,
+                                 pami_result_t        & status) :
               _send_model (device),
-              _context (device.getContext()),
+              _context (context),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
               _device (device)
@@ -225,7 +226,7 @@ namespace PAMI
           T_Model                    _send_model;
 
           pami_context_t              _context;
-          pami_dispatch_callback_fn   _dispatch_fn;
+          pami_dispatch_p2p_fn   _dispatch_fn;
           void                     * _cookie;
           T_Device                 & _device;
 
@@ -258,7 +259,7 @@ namespace PAMI
             uint8_t * data = (uint8_t *)payload;
 
             // Invoke the registered dispatch function.
-            send->_dispatch_fn.p2p (send->_context,   // Communication context
+            send->_dispatch_fn (send->_context,   // Communication context
                                     send->_cookie,    // Dispatch cookie
                                     (void *) data,    // Application metadata
                                     m->metabytes,     // Metadata bytes
