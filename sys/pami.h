@@ -1148,7 +1148,7 @@ extern "C"
    * \param[in]     context       pami context
    * \param[in]     geometry      An input geometry to be analyzed.
    * \param[in]     coll_type     type of collective op.
-   * \param[in/out] lists_lengths array of 2 numbers representing all valid
+   * \param[in,out] lists_lengths array of 2 numbers representing all valid
    algorithms and optimized algorithms.
    * \retval        PAMI_SUCCESS   number of algorithms is determined.
    * \retval        ?????         There is an error with input parameters
@@ -1166,12 +1166,12 @@ extern "C"
    *
    * \param[in]     context        pami context
    * \param[in]     coll_type      type of collective op.
-   * \param[in/out] algs0          array of algorithms to query
-   * \param[in/out] mdata0         metadata array to be filled in if algorithms
+   * \param[in,out] algs0          array of algorithms to query
+   * \param[in,out] mdata0         metadata array to be filled in if algorithms
    *                               are applicable, can be NULL.
    * \param[in]     num0           number of algorithms to fill in.
-   * \param[in/out] algs1          array of algorithms to query
-   * \param[in/out] mdata1         metadata array to be filled in if algorithms
+   * \param[in,out] algs1          array of algorithms to query
+   * \param[in,out] mdata1         metadata array to be filled in if algorithms
    *                               are applicable, can be NULL.
    * \param[in]     num1           number of algorithms to fill in.
    * \retval        PAMI_SUCCESS    algorithm is applicable to geometry.
@@ -2553,17 +2553,13 @@ extern "C"
 
 
   /**
-   * \brief Destroy an independent communication context
-   *
-   * \todo Is is appropriate for the interface to allow contexts to be
-   *       individually destroyed when all contexts were created in a
-   *       single function?
+   * \brief Destroy the communication context
    *
    * \warning It is \b illegal to invoke any PAMI functions using the
    *          communication context from any thread after the context is
    *          destroyed.
    *
-   * \param[in,out] contexts PAMI communication context list
+   * \param[in,out] contexts  PAMI communication context list
    * \param[in]     ncontexts The number of contexts in the list.
    */
   pami_result_t PAMI_Context_destroyv (pami_context_t* contexts,
