@@ -172,7 +172,7 @@ public:
                 new (wu) BgqWakeupRegion();
                 pami_result_t rc = wu->init(clientid, num_ctx, me, lsize, l2xmm);
 		if (rc != PAMI_SUCCESS) {
-			PAMI_abortf("Failed to inialize BgqWakeupRegion - not enough shared memory?");
+			PAMI_abortf("Failed to initialize BgqWakeupRegion - not enough shared memory?");
 		}
 		__global._wuRegion_mms[clientid] = wu->getAllWUmm();
 

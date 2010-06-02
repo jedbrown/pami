@@ -377,6 +377,11 @@ namespace PAMI
         size_t bytes     = 2048 * 1024;
         //size_t pagesize  = 4096;
 
+	char *env = getenv("PAMI_CLIENT_SHMEMSIZE");
+	if (env) {
+		bytes = strtoull(env, NULL, 0) * 1024 * 1024;
+	}
+
         snprintf (shmemfile, 1023, "/pami-client-%s", _name);
 
         // Round up to the page size

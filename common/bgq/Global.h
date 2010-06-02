@@ -122,6 +122,11 @@ namespace PAMI
         // Round up to the page size
         size_t size = ((bytes + pagesize - 1) & ~(pagesize - 1)) + BGQ_GLOBAL_SHMEM_SIZE;
 
+	char *env = getenv("PAMI_GLOBAL_SHMEMSIZE");
+	if (env) {
+		size = strtoull(env, NULL, 0) * 1024 * 1024;
+	}
+
         int fd, rc;
 
         // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
