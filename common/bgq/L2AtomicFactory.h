@@ -24,7 +24,7 @@
 // We might need extra space for the WAC Region.
 // Must take into account (considerable) waste from large alignment value for WAC,
 // Using 2x as an upper-bound.
-#define L2A_MAX_NUMNODEL2ATOMIC	(16*256+2*64*BGQ_WACREGION_SIZE) ///< max number of node-scope atomics
+#define L2A_MAX_NUMNODEL2ATOMIC(nproc,nctx)	(16*256+(nproc)*(nctx)*BGQ_WACREGION_SIZE) ///< max number of node-scope atomics
 #define L2A_MAX_NUMPROCL2ATOMIC	(16*256)	///< max number of proc(etc)-scope atomics
 
 ////////////////////////////////////////////////////////////////////////
@@ -110,6 +110,7 @@ namespace BGQ {
                         // One sure way to do this is to allocate shared memory.
 			void *virt;
 			size_t size;
+                        size_t t = local->size();
 
                         size = L2A_MAX_NUMPROCL2ATOMIC;
                         virt = NULL;
@@ -122,7 +123,7 @@ namespace BGQ {
                         memset(virt, 0, sizeof(uint64_t) * size);
 			__procscoped_mm.init(virt, size);
 
-                        size = L2A_MAX_NUMNODEL2ATOMIC;
+                        size = L2A_MAX_NUMNODEL2ATOMIC(t,64);
                         virt = NULL;
 
                         rc = mm->memalign(&virt, sizeof(uint64_t),
@@ -148,7 +149,6 @@ namespace BGQ {
 
                         //int t = mapping->vnpeers(ranks);
                         // There should be a more elegent way to do this... yuk.
-                        size_t t = local->size();
                         for (i = 0; i < t; ++i) {
                                 ranks[i] = local->index2Rank(i);
                         }
