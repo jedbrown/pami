@@ -59,7 +59,7 @@
 #define DUMP_HEXDATA(s,b,n) //globalDumpHexData(s,b,n)
 void globalDumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints);
 
-#define BGQ_GLOBAL_SHMEM_SIZE	256*1024 ///< extra shmem for BGQ L2 Atomics and WAC
+#define BGQ_GLOBAL_SHMEM_SIZE(nproc,nctx)	L2A_MAX_NUMNODEL2ATOMIC(nproc,nctx) * sizeof(uint64_t); ///< extra shmem for BGQ L2 Atomics and WAC
 
 namespace PAMI
 {
@@ -120,7 +120,7 @@ namespace PAMI
         bytes = initializeMapCache(personality, NULL, ll, ur, min, max, true);
 
         // Round up to the page size
-        size_t size = ((bytes + pagesize - 1) & ~(pagesize - 1)) + BGQ_GLOBAL_SHMEM_SIZE;
+        size_t size = ((bytes + pagesize - 1) & ~(pagesize - 1)) + BGQ_GLOBAL_SHMEM_SIZE(64,64);
 
 	char *env = getenv("PAMI_GLOBAL_SHMEMSIZE");
 	if (env) {
