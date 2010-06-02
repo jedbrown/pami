@@ -53,7 +53,7 @@ namespace PAMI
         // This is used to build an initial "simple" mapping
         // Using rank and size
         rc = _contexts[0]->initP2P(&myrank, &mysize, &_main_lapi_handle);
-        if(rc) exit(1);
+        if(rc) {result=rc;  return;}
 
         // Initialize the mapping to be used for collectives
         __global.mapping.init(myrank, mysize);
