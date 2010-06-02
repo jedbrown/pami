@@ -106,16 +106,11 @@ namespace PAMI
           inline void setDispatchId (uint16_t id)
           {
             if (likely(isSinglePacket ()))
-              {
-#if 0 //Whaky bit manipulation from Mike B!
-                //uint32_t * raw32 = (uint32_t *) this;
-                //raw32[0] |= ((uint32_t) id) << 8;
-#endif		
-		//Use the putoffset MSB 5 bits. So only 32 dispatches
-		//supported right now
-		messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_MSB=id;
-                return;
-              }
+            {
+	      uint8_t *raw8 = (uint8_t *)(&messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_LSB);
+	      raw8[0] = id;
+	      return;
+	    }
 
             uint16_t * metadata = (uint16_t *) messageUnitHeader.Packet_Types.Memory_FIFO.Unused2;
             metadata[0] = id;
@@ -139,13 +134,10 @@ namespace PAMI
           inline uint16_t getDispatchId ()
           {
             if (likely(isSinglePacket ()))
-              {
-                //uint32_t * raw32 = (uint32_t *) this;
-                //uint16_t id = (uint16_t) (raw32[0] >> 8);
-                //return id & 0x01fff;
-
-		return messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_MSB;
-              }
+            {
+	      uint8_t *raw8 = (uint8_t *)(&messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_LSB);
+	      return (uint16_t)*raw8;
+	    }
 
             uint16_t * metadata = (uint16_t *) messageUnitHeader.Packet_Types.Memory_FIFO.Unused2;
             return metadata[0];
@@ -153,26 +145,30 @@ namespace PAMI
 
 
 	  ///
-	  /// \brief Set the Metadata correspoding to this packet
+	  /// \brief Set the Metadata correspoding to this
+	  /// packet. Metadata will be aligned to the input parameter
+	  /// bytes
 	  /// \param[in] metadata of the packet protocol
 	  /// \param[in] metadata size in bytes
 	  ///
-	  inline void setMetaData (void *metadata) { PAMI_abort(); }
-
+	  inline void setMetaData (void *metadata, int bytes) 
+	  { 
+	    messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_MSB = bytes;
+	    uint8_t *raw8 = (uint8_t *) this + 32 - bytes;
+	    uint8_t *src = (uint8_t *) metadata;
+	    
+	    while (bytes --) 
+	      *raw8 ++ = *src ++;
+	  }
 
 	  ///
 	  /// \brief Get the Metadata in the packet
 	  /// \retval pointer to the metadata
 	  ///
 	  inline void* getMetaData () { 
-	    int maxmetasize = 0;
-	    if (likely(isSinglePacket()))
-	      maxmetasize = packet_singlepacket_metadata_size;
-	    else
-	      maxmetasize = packet_multipacket_metadata_size;
-	    
+	    uint bytes=messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_MSB;
 	    //return the bottom maxmetasize bytes
-	    return (char *)this + (32 - maxmetasize);
+	    return (char *)this + (32 - bytes);
 	  }
 
       };

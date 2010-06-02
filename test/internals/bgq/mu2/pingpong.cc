@@ -46,6 +46,12 @@ typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 #define MAX_ITER 10
 int npackets = 0;
 
+#define METADATA_SIZE 8
+#define MAX_BUF_SIZE  1024
+#define MSG_SIZE      1
+
+unsigned long metaval = 0xdeadbeef;
+
 int dispatch_fn    (void   * metadata,
 		    void   * payload,
 		    size_t   bytes,
@@ -53,12 +59,11 @@ int dispatch_fn    (void   * metadata,
 		    void   * cookie)
 {
   npackets ++;
+  assert (*(unsigned long*)metadata == metaval);
   //fprintf(stderr, "Received packet of size %lu\n", bytes);	  
   return 0;  
 }
 
-#define MAX_BUF_SIZE  1024
-#define MSG_SIZE      1
 
 PAMI::Global __myGlobal;
 
@@ -108,10 +113,10 @@ int main(int argc, char ** argv)
                  result);
 #endif
 
-  char metadata[4];
+  char metadata[METADATA_SIZE];
   char buf[MAX_BUF_SIZE];
 
-  memset (metadata, 0, sizeof(metadata));
+  memcpy (metadata, &metaval, sizeof(metadata));
   memset (buf, 0, sizeof(buf));
 
   struct iovec iov[1];
@@ -127,7 +132,7 @@ int main(int argc, char ** argv)
     pkt.postPacket (__global.mapping.task(),
 		    0,
 		    (void *)metadata,
-		    4,
+		    METADATA_SIZE,
 		    iov);
     
     // advance

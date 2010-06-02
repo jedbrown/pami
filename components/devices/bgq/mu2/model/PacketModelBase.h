@@ -399,22 +399,20 @@ namespace PAMI
             memfifo->setHints (hintsABCD, hintsE);
             memfifo->setRecFIFOId (rfifo);
 
-            // Copy the metadata into the packet header.
-            if (likely(metasize > 0))
-              {
-                uint8_t * hdr = (uint8_t *) & memfifo->PacketHeader;
-                memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_singlepacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
-              }
+	    MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*) 
+	      &memfifo->PacketHeader;
+	    //Eliminated memcpy and an if branch
+	    hdr->setMetaData(metadata, metasize);
 
             // Copy the payload into the immediate payload buffer.
             size_t i, tbytes = 0;
             uint8_t * dst = (uint8_t *)vaddr;
 
             for (i = 0; i < T_Niov; i++)
-              {
-                memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
-              }
+            {
+	      memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
+	      tbytes += iov[i].iov_len;
+	    }
 
             // Set the payload information.
             memfifo->setPayload (paddr, tbytes);
@@ -474,12 +472,10 @@ namespace PAMI
             memfifo->setHints (hintsABCD, hintsE);
             memfifo->setRecFIFOId (rfifo);
 
-            // Copy the metadata into the packet header.
-            if (likely(metasize > 0))
-              {
-                uint8_t * hdr = (uint8_t *) & memfifo->PacketHeader;
-                memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_singlepacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
-              }
+	    MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*) 
+	      &memfifo->PacketHeader;
+	    //Eliminated memcpy and an if branch
+	    hdr->setMetaData(metadata, metasize);
 
             // Copy the payload into the immediate payload buffer.
             size_t i, tbytes = 0;
@@ -558,12 +554,10 @@ namespace PAMI
             memfifo->setHints (hintsABCD, hintsE);
             memfifo->setRecFIFOId (rfifo);
 
-            // Copy the metadata into the packet header.
-            if (likely(metasize > 0))
-              {
-                uint8_t * hdr = (uint8_t *) & memfifo->PacketHeader;
-                memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_singlepacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
-              }
+	    MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*) 
+	      &memfifo->PacketHeader;
+	    //Eliminated memcpy and an if branch
+	    hdr->setMetaData(metadata, metasize);
 
             // Copy the payload into the immediate payload buffer.
             size_t i, tbytes = 0;
@@ -644,12 +638,10 @@ namespace PAMI
             memfifo->setRecFIFOId (rfifo);
             memfifo->setPayload (paddr, length);
 
-            // Copy the metadata into the packet header.
-            if (likely(metasize > 0))
-              {
-                uint8_t * hdr = (uint8_t *) & memfifo->PacketHeader;
-                memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_singlepacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
-              }
+	    MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*) 
+	      &memfifo->PacketHeader;
+	    //Eliminated memcpy and an if branch
+	    hdr->setMetaData(metadata, metasize);
 
             // Copy the payload into the immediate payload buffer.
             memcpy (vaddr, payload, length);
@@ -728,12 +720,10 @@ namespace PAMI
             // Set the payload information.
             memfifo->setPayload (paddr, length);
 
-            // Copy the metadata into the packet header.
-            if (likely(metasize > 0))
-              {
-                uint8_t * hdr = (uint8_t *) & memfifo->PacketHeader;
-                memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_multipacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
-              }
+	    MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*) 
+	      &memfifo->PacketHeader;
+	    //Eliminated memcpy and an if branch
+	    hdr->setMetaData(metadata, metasize);
 
             // Finish the completion processing and inject the descriptor(s)
             processCompletion ((void *) state, fnum, ififo, ndesc, (MUSPI_DescriptorBase *)desc, fn, cookie);
@@ -751,12 +741,10 @@ namespace PAMI
             memfifo.setRecFIFOId (rfifo);
             memfifo.setPayload (paddr, length);
 
-            // Copy the metadata into the packet header.
-            if (likely(metasize > 0))
-              {
-                uint8_t * hdr = (uint8_t *) & memfifo.PacketHeader;
-                memcpy((void *) (hdr + (32 - MemoryFifoPacketHeader::packet_multipacket_metadata_size)), metadata, metasize); // <-- replace with an optimized MUSPI function.
-              }
+	    MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*) 
+	      &memfifo.PacketHeader;
+	    //Eliminated memcpy and an if branch
+	    hdr->setMetaData(metadata, metasize);
 
             MU::MessageQueue::Element * msg =
               createMessage (state, memfifo, ififo, fn, cookie);
