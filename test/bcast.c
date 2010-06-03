@@ -140,8 +140,8 @@ int main (int argc, char ** argv)
   {
     algorithm = (pami_algorithm_t*)
                 malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-    TRACE_ERR((stderr, "%s PAMI_Geometry_query\n", __PRETTY_FUNCTION__));
-    result = PAMI_Geometry_query(context,
+    TRACE_ERR((stderr, "%s PAMI_Geometry_algorithms_query\n", __PRETTY_FUNCTION__));
+    result = PAMI_Geometry_algorithms_query(context,
                                           world_geometry,
                                           PAMI_XFER_BARRIER,
                                           algorithm,
@@ -177,8 +177,8 @@ int main (int argc, char ** argv)
     metas = (pami_metadata_t*)
       malloc(sizeof(pami_metadata_t) * bcastnum_algorithm[0]);
 
-    TRACE_ERR((stderr, "%s PAMI_Geometry_query bcastnum_algorithm[0]=%u, metas=%p\n", __PRETTY_FUNCTION__,bcastnum_algorithm[0],metas));
-    result = PAMI_Geometry_query(context,
+    TRACE_ERR((stderr, "%s PAMI_Geometry_algorithms_query bcastnum_algorithm[0]=%u, metas=%p\n", __PRETTY_FUNCTION__,bcastnum_algorithm[0],metas));
+    result = PAMI_Geometry_algorithms_query(context,
                                           world_geometry,
                                           PAMI_XFER_BROADCAST,
                                           bcastalgorithm,

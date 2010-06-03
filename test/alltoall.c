@@ -207,7 +207,7 @@ int main(int argc, char*argv[])
   {
     algorithm = (pami_algorithm_t*)
                 malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-    result = PAMI_Geometry_query(context,
+    result = PAMI_Geometry_algorithms_query(context,
                                           world_geometry,
                                           PAMI_XFER_BARRIER,
                                           algorithm,
@@ -237,7 +237,7 @@ int main(int argc, char*argv[])
   {
     alltoallvalgorithm = (pami_algorithm_t*)
       malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-    result = PAMI_Geometry_query(context,
+    result = PAMI_Geometry_algorithms_query(context,
                                           world_geometry,
                                           PAMI_XFER_ALLTOALLV,
                                           alltoallvalgorithm,

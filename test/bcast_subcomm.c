@@ -152,7 +152,7 @@ int main(int argc, char*argv[])
   {
     world_algorithm = (pami_algorithm_t*)
       malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-    result = PAMI_Geometry_query(context,
+    result = PAMI_Geometry_algorithms_query(context,
                                           world_geometry,
                                           PAMI_XFER_BARRIER,
                                           world_algorithm,
@@ -221,7 +221,7 @@ int main(int argc, char*argv[])
         {
           bottom_bar_algorithm = (pami_algorithm_t*)
             malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-          result = PAMI_Geometry_query(context,
+          result = PAMI_Geometry_algorithms_query(context,
                                                 bottom_geometry,
                                                 PAMI_XFER_BARRIER,
                                                 bottom_bar_algorithm,
@@ -245,7 +245,7 @@ int main(int argc, char*argv[])
           bottom_bcast_algorithm = (pami_algorithm_t*)
             malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
 
-          result = PAMI_Geometry_query(context,
+          result = PAMI_Geometry_algorithms_query(context,
                                                 bottom_geometry,
                                                 PAMI_XFER_BROADCAST,
                                                 bottom_bcast_algorithm,
@@ -303,7 +303,7 @@ int main(int argc, char*argv[])
         {
           top_bar_algorithm = (pami_algorithm_t*)
             malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-          result = PAMI_Geometry_query(context,
+          result = PAMI_Geometry_algorithms_query(context,
                                                 top_geometry,
                                                 PAMI_XFER_BARRIER,
                                                 top_bar_algorithm,
@@ -328,7 +328,7 @@ int main(int argc, char*argv[])
         {
           top_bcast_algorithm = (pami_algorithm_t*)
             malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-          result = PAMI_Geometry_query(context,
+          result = PAMI_Geometry_algorithms_query(context,
                                                 top_geometry,
                                                 PAMI_XFER_BROADCAST,
                                                 top_bcast_algorithm,

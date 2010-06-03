@@ -238,9 +238,9 @@ extern "C" pami_result_t PAMI_Geometry_algorithms_num (pami_context_t context,
                                       lists_lengths);
 }
 
-/// \copydoc PAMI_Geometry_query
+/// \copydoc PAMI_Geometry_algorithms_query
 ///
-extern "C"  pami_result_t PAMI_Geometry_query (pami_context_t context,
+extern "C"  pami_result_t PAMI_Geometry_algorithms_query (pami_context_t context,
                                                        pami_geometry_t geometry,
                                                        pami_xfer_type_t   colltype,
                                                        pami_algorithm_t  *algs0,

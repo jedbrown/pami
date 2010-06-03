@@ -126,7 +126,7 @@ int main (int argc, char ** argv)
     metas = (pami_metadata_t*)
       malloc(sizeof(pami_metadata_t) * num_algorithm[0]);
 
-    result = PAMI_Geometry_query(context,
+    result = PAMI_Geometry_algorithms_query(context,
                                           world_geometry,
                                           PAMI_XFER_BARRIER,
                                           algorithm,

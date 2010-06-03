@@ -86,7 +86,7 @@ pami_result_t pami_advisor_repo_fill(pami_client_t client,
         malloc(sizeof(pami_metadata_t) * alg_list[algorithm_type]);
 #if 0
 
-      PAMI_Geometry_query(client,
+      PAMI_Geometry_algorithms_query(client,
                                    world_geometry,
                                    algorithm_type,
                                    algs,

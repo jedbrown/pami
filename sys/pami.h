@@ -1204,7 +1204,7 @@ extern "C"
    * \retval        PAMI_SUCCESS    algorithm is applicable to geometry.
    * \retval        ?????          Error in input arguments or not applicable.
    */
-  pami_result_t PAMI_Geometry_query (pami_context_t context,
+  pami_result_t PAMI_Geometry_algorithms_query (pami_context_t context,
                                              pami_geometry_t geometry,
                                              pami_xfer_type_t  colltype,
                                              pami_algorithm_t *algs0,

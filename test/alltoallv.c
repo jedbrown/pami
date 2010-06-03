@@ -208,7 +208,7 @@ int main(int argc, char*argv[])
   {
     algorithm = (pami_algorithm_t*)
                 malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-    result = PAMI_Geometry_query(context,
+    result = PAMI_Geometry_algorithms_query(context,
                                           algorithm,
                                           (pami_metadata_t*)NULL,
                                           num_algorithm[0],
@@ -236,7 +236,7 @@ int main(int argc, char*argv[])
   {
     algorithm = (pami_algorithm_t*)
                 malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-    result = PAMI_Geometry_query(context,
+    result = PAMI_Geometry_algorithms_query(context,
                                           alltoallvalgorithm,
                                           (pami_metadata_t*)NULL,
                                           alltoallvnum_algorithm[0],
