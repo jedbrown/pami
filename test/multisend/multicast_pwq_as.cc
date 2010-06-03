@@ -431,8 +431,8 @@ int main(int argc, char ** argv)
     return 1;
   }
 
-  DBG_FPRINTF((stderr, "PAMI_Client_destroy(client);\n"));
-  status = PAMI_Client_destroy(client);
+  DBG_FPRINTF((stderr, "PAMI_Client_destroy(&client);\n"));
+  status = PAMI_Client_destroy(&client);
   if(status != PAMI_SUCCESS)
   {
     fprintf(stderr, "Error. Unable to finalize pami client. result = %d\n", status);

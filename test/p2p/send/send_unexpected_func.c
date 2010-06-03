@@ -152,7 +152,7 @@ int main (int argc, char ** argv)
     while (send_active > 0) PAMI_Context_advance (context, 100);
   }
 
-  PAMI_Client_destroy (client);
+  PAMI_Client_destroy(&client);
 
   return 0;
 }

@@ -65,7 +65,7 @@ int main(int argc, char ** argv) {
                 return 1;
         }
 
-        status = PAMI_Client_destroy(client);
+        status = PAMI_Client_destroy(&client);
         if (status != PAMI_SUCCESS) {
                 fprintf(stderr, "Error. Unable to finalize pami client. result = %d\n", status);
                 return 1;

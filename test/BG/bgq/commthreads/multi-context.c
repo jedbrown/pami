@@ -70,7 +70,7 @@ int main(int argc, char ** argv) {
   buf[0] = 'F'; buf[1] = 'i';
   write(2, buf, bufl);
   result = PAMI_Context_destroyv(context, NUM_CONTEXTS);
-  result = PAMI_Client_destroy(client);
+  result = PAMI_Client_destroy(&client);
   if (result != PAMI_SUCCESS) {
     fprintf(stderr, "Error. Unable to finalize pami client. "
             "result = %d\n", result);

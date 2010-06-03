@@ -819,6 +819,9 @@ extern "C"
    *
    * \param[in] context   PAMI application context
    * \param[in] memregion Memory region object
+   *
+   * The memregion object will be changed to an invalid value so that
+   * it is clearly destroyed.
    */
   pami_result_t PAMI_Memregion_destroy (pami_context_t     context,
                                         pami_memregion_t * memregion);
@@ -1240,9 +1243,12 @@ extern "C"
    * \param[in] client   pami client
    * \param[in] geometry The geometry object to free
    * \retval PAMI_SUCCESS Memory free didn't fail
+   *
+   * The geometry handle will be changed to an invalid value so that
+   * it is clearly destroyed.
    */
-  pami_result_t PAMI_Geometry_destroy(pami_client_t    client,
-                                     pami_geometry_t  geometry);
+  pami_result_t PAMI_Geometry_destroy(pami_client_t     client,
+                                      pami_geometry_t * geometry);
 
   /**
    * \brief Create and post a non-blocking alltoall vector operation.
@@ -2143,8 +2149,11 @@ extern "C"
    * resources when the count hits zero.
    *
    * \param[in] type Type identifier to be destroyed
+   *
+   * The type handle will be changed to an invalid value so that it is
+   * clearly destroyed.
    */
-  pami_result_t PAMI_Type_destroy (pami_type_t type);
+  pami_result_t PAMI_Type_destroy (pami_type_t * type);
 
   /**
    * \brief Pack data from a non-contiguous buffer to a contiguous buffer
@@ -2441,8 +2450,8 @@ extern "C"
    *                       It happens when a job scheduler requires the client
    *                       name to match what's in the job description.
    */
-  pami_result_t PAMI_Client_create (const char   * name,
-                                      pami_client_t * client);
+  pami_result_t PAMI_Client_create (const char    * name,
+                                    pami_client_t * client);
 
   /**
    * \brief Finalize the PAMI runtime for a client program
@@ -2451,11 +2460,13 @@ extern "C"
    *          handle from any thread after the finalize function.
    *
    * \param[in] client PAMI client handle
-   *
    * \retval PAMI_SUCCESS  The client has been successfully destroyed.
    * \retval PAMI_INVAL    The client is invalid, e.g. already destroyed.
+   *
+   * The client handle will be changed to an invalid value so that it
+   * is clearly destroyed.
    */
-  pami_result_t PAMI_Client_destroy (pami_client_t client);
+  pami_result_t PAMI_Client_destroy (pami_client_t * client);
 
   /**
    * \brief Construct an endpoint to address communication destinations
@@ -2605,10 +2616,10 @@ extern "C"
    *                       errors in other parameters.
    */
   pami_result_t PAMI_Context_createv (pami_client_t          client,
-                                    pami_configuration_t   configuration[],
-                                    size_t                count,
-                                    pami_context_t       * context,
-                                    size_t                ncontexts);
+                                      pami_configuration_t   configuration[],
+                                      size_t                 count,
+                                      pami_context_t       * context,
+                                      size_t                 ncontexts);
 
 
   /**
@@ -2620,12 +2631,14 @@ extern "C"
    *
    * \param[in,out] contexts  PAMI communication context list
    * \param[in]     ncontexts The number of contexts in the list.
-   *
    * \retval PAMI_SUCCESS  The contexts have been destroyed.
    * \retval PAMI_INVAL    Some context is invalid, e.g. already destroyed.
+   *
+   * The context handles will be changed to an invalid value so that
+   * they are clearly destroyed.
    */
-  pami_result_t PAMI_Context_destroyv (pami_context_t* contexts,
-                                       size_t          ncontexts);
+  pami_result_t PAMI_Context_destroyv (pami_context_t * contexts,
+                                       size_t           ncontexts);
 
   /**
    * \brief Post work to a context, thread-safe
@@ -2655,10 +2668,10 @@ extern "C"
    * \retval PAMI_SUCCESS  The work has been posted.
    * \retval PAMI_INVAL    There were errors in the parameters.
    */
-  pami_result_t PAMI_Context_post (pami_context_t        context,
-                                 pami_work_t         * work,
-                                 pami_work_function    fn,
-                                 void               * cookie);
+  pami_result_t PAMI_Context_post (pami_context_t       context,
+                                   pami_work_t        * work,
+                                   pami_work_function   fn,
+                                   void               * cookie);
 
 
   /**

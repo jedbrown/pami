@@ -370,7 +370,7 @@ int main()
       pthread_join(threads[2], NULL);
     }
 
-  PAMI_Client_destroy(client);
+  PAMI_Client_destroy(&client);
   printf("Task=%zu           <DONE>\n", task);
   return 0;
 }

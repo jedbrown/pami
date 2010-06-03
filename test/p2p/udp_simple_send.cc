@@ -304,7 +304,7 @@ int main (int argc, char ** argv)
   }
         fprintf (stdout, "** Test completed. **\n");
 
-  PAMI_Client_destroy (client);
+  PAMI_Client_destroy(&client);
 
   return 0;
 }

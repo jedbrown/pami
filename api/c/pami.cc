@@ -209,10 +209,12 @@ extern "C" pami_result_t PAMI_Geometry_world (pami_client_t                clien
 /// \copydoc PAMI_Geometry_destroy
 ///
 extern "C" pami_result_t PAMI_Geometry_destroy(pami_client_t    client,
-                                   pami_geometry_t  geometry)
+                                               pami_geometry_t *geometry)
 {
   PAMI::Client * _client = (PAMI::Client *) client;
-  return _client->geometry_destroy (geometry);
+  pami_result_t rc = _client->geometry_destroy (*geometry);
+  *geometry = NULL;
+  return rc;
 }
 
 ///
@@ -406,8 +408,9 @@ extern "C" pami_result_t PAMI_Type_sizeof (pami_type_t type)
 ///
 /// \copydoc PAMI_Type_destroy
 ///
-extern "C" pami_result_t PAMI_Type_destroy (pami_type_t type)
+extern "C" pami_result_t PAMI_Type_destroy (pami_type_t *type)
 {
+  *type = NULL;
   return PAMI_UNIMPL;
 }
 
@@ -974,9 +977,10 @@ extern "C" pami_result_t PAMI_Client_create (const char * name,
 ///
 /// \copydoc PAMI_Client_destroy
 ///
-extern "C" pami_result_t PAMI_Client_destroy (pami_client_t client)
+extern "C" pami_result_t PAMI_Client_destroy (pami_client_t *client)
 {
-  PAMI::Client::destroy ((PAMI::Client *) client);
+  PAMI::Client::destroy ((PAMI::Client *) *client);
+  *client = NULL;
   return PAMI_SUCCESS;
 }
 

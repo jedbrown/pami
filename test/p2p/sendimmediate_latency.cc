@@ -282,7 +282,7 @@ int main (int argc, char ** argv)
       fprintf (stdout, "%s\n", str);
   }
 
-  PAMI_Client_destroy (client);
+  PAMI_Client_destroy(&client);
 
   return 0;
 }
