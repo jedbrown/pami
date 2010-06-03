@@ -223,9 +223,9 @@ namespace PAMI
     ///
     static void dispatch_p2p(pami_context_t       context_hdl,
                              void               * cookie,
-                             void               * header,
+                             const void         * header,
                              size_t               header_size,
-                             void               * data,
+                             const void         * data,
                              size_t               data_size,
                              pami_recv_t        * recv);
 
@@ -250,12 +250,12 @@ namespace PAMI
     ///
     /// \brief Received a p2p dispatch from another root (member function).
     ///
-    void dispatch(  pami_context_t       context_hdl,
-                    void               * header,
-                    size_t               header_size,
-                    void               * data,
-                    size_t               data_size,
-                    pami_recv_t        * recv);
+    void dispatch(pami_context_t       context_hdl,
+                  const void         * header,
+                  size_t               header_size,
+                  const void         * data,
+                  size_t               data_size,
+                  pami_recv_t        * recv);
 
     ///
     /// \brief Called as each p2p send is done.
@@ -341,9 +341,9 @@ namespace PAMI
     ///
     static void dispatch_p2p(pami_context_t       context_hdl,
                              void               * cookie,
-                             void               * header,
+                             const void         * header,
                              size_t               header_size,
-                             void               * data,
+                             const void         * data,
                              size_t               data_size,
                              pami_recv_t        * recv);
 
@@ -368,12 +368,12 @@ namespace PAMI
     ///
     /// \brief Received a p2p dispatch from another root (member function).
     ///
-    void dispatch(  pami_context_t       context_hdl,
-                    void               * header,
-                    size_t               header_size,
-                    void               * data,
-                    size_t               data_size,
-                    pami_recv_t        * recv);
+    void dispatch(pami_context_t       context_hdl,
+                  const void         * header,
+                  size_t               header_size,
+                  const void         * data,
+                  size_t               data_size,
+                  pami_recv_t        * recv);
 
     ///
     /// \brief Called as each p2p send is done.
@@ -677,9 +677,9 @@ namespace PAMI
   template <class T_Protocol>
   inline void NativeInterfaceAllsided<T_Protocol>::dispatch_p2p(pami_context_t       context_hdl,  /**< IN:  communication context handle */
                                                                 void               * cookie,       /**< IN:  dispatch cookie (pointer to protocol object)*/
-                                                                void               * header,       /**< IN:  header address  */
+                                                                const void         * header,       /**< IN:  header address  */
                                                                 size_t               header_size,  /**< IN:  header size     */
-                                                                void               * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                                                const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                                                                 size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
                                                                 pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
@@ -699,9 +699,9 @@ namespace PAMI
   ///
   template <class T_Protocol>
   inline void NativeInterfaceAllsided<T_Protocol>::dispatch(pami_context_t       context_hdl,  /**< IN:  communication context handle */
-                                                            void               * header,       /**< IN:  header address  */
+                                                            const void         * header,       /**< IN:  header address  */
                                                             size_t               header_size,  /**< IN:  header size     */
-                                                            void               * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                                            const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                                                             size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
                                                             pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
@@ -1024,9 +1024,9 @@ namespace PAMI
   template <class T_Protocol>
   inline void NativeInterfaceActiveMessage<T_Protocol>::dispatch_p2p(pami_context_t       context_hdl,  /**< IN:  communication context handle */
                                                                      void               * cookie,       /**< IN:  dispatch cookie (pointer to protocol object)*/
-                                                                     void               * header,       /**< IN:  header address  */
+                                                                     const void         * header,       /**< IN:  header address  */
                                                                      size_t               header_size,  /**< IN:  header size     */
-                                                                     void               * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                                                     const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                                                                      size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
                                                                      pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
@@ -1046,9 +1046,9 @@ namespace PAMI
   ///
   template <class T_Protocol>
   inline void NativeInterfaceActiveMessage<T_Protocol>::dispatch(pami_context_t       context_hdl,  /**< IN:  communication context handle */
-                                                                 void               * header,       /**< IN:  header address  */
+                                                                 const void         * header,       /**< IN:  header address  */
                                                                  size_t               header_size,  /**< IN:  header size     */
-                                                                 void               * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                                                 const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                                                                  size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
                                                                  pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {

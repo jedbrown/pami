@@ -407,14 +407,13 @@ extern "C"
    *
    * "pipe" has nothing to do with "PipeWorkQueue"s
    */
-  typedef void (*pami_dispatch_p2p_fn) (
-    pami_context_t        context,      /**< IN:  communication context which invoked the dispatch function */
-    void               * cookie,       /**< IN:  dispatch cookie */
-    void               * header_addr,  /**< IN:  header address  */
-    size_t               header_size,  /**< IN:  header size     */
-    void               * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-    size_t               data_size,    /**< IN:  number of byts of message data, valid regardless of message type */
-    pami_recv_t         * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
+  typedef void (*pami_dispatch_p2p_fn) (pami_context_t   context,      /**< IN:  communication context which invoked the dispatch function */
+                                        void           * cookie,       /**< IN:  dispatch cookie */
+                                        const void     * header_addr,  /**< IN:  header address  */
+                                        size_t           header_size,  /**< IN:  header size     */
+                                        const void     * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                        size_t           data_size,    /**< IN:  number of byts of message data, valid regardless of message type */
+                                        pami_recv_t    * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
 
   /** \} */ /* end of "active message" group */
 
@@ -1814,16 +1813,16 @@ extern "C"
    * \todo doxygen
    */
   typedef void (*pami_dispatch_ambroadcast_fn) (pami_context_t         context,
-                                               size_t                root,
-                                               pami_geometry_t        geometry,
-                                               const size_t          sndlen,
-                                               void                * user_header,
-                                               const size_t          headerlen,
-                                               void               ** rcvbuf,
-                                               pami_type_t          * rtype,
-                                               size_t              * rtypecount,
-                                               pami_event_function  * const cb_info,
-                                               void               ** cookie);
+                                                size_t                 root,
+                                                pami_geometry_t        geometry,
+                                                const size_t           sndlen,
+                                                const void           * user_header,
+                                                const size_t           headerlen,
+                                                void                ** rcvbuf,
+                                                pami_type_t          * rtype,
+                                                size_t               * rtypecount,
+                                                pami_event_function  * const cb_info,
+                                                void                ** cookie);
 
 
   /**
@@ -1869,15 +1868,15 @@ extern "C"
    *
    * \todo doxygen
    */
-  typedef void (*pami_dispatch_amscatter_fn) (size_t               root,
-                                             pami_geometry_t       geometry,
-                                             const unsigned       sndlen,
-                                             void               * user_header,
-                                             const size_t         headerlen,
-                                             void              ** rcvbuf,
-                                             pami_type_t         * rtype,
-                                             size_t             * rtypecount,
-                                             pami_event_function * const cb_info);
+  typedef void (*pami_dispatch_amscatter_fn) (size_t                 root,
+                                              pami_geometry_t        geometry,
+                                              const unsigned         sndlen,
+                                              const void           * user_header,
+                                              const size_t           headerlen,
+                                              void                ** rcvbuf,
+                                              pami_type_t          * rtype,
+                                              size_t               * rtypecount,
+                                              pami_event_function  * const cb_info);
 
   /**
    * \brief Create and post a non-blocking active message gather operation.
@@ -1927,15 +1926,15 @@ extern "C"
    *
    * \todo doxygen
    */
-  typedef void (*pami_dispatch_amgather_fn) (size_t               root,
-                                            pami_geometry_t       geometry_id,
-                                            const unsigned       sndlen,
-                                            void               * user_header,
-                                            const size_t         headerlen,
-                                            void              ** sndbuf,
-                                            pami_type_t         * stype,
-                                            size_t             * stypecount,
-                                            pami_event_function * const cb_info);
+  typedef void (*pami_dispatch_amgather_fn) (size_t                 root,
+                                             pami_geometry_t        geometry_id,
+                                             const unsigned         sndlen,
+                                             const void           * user_header,
+                                             const size_t           headerlen,
+                                             void                ** sndbuf,
+                                             pami_type_t          * stype,
+                                             size_t               * stypecount,
+                                             pami_event_function  * const cb_info);
 
   /**
    * \brief Create and post a non-blocking active message reduce operation.
@@ -1997,17 +1996,17 @@ extern "C"
    *
    * \todo doxygen
    */
-  typedef void (*pami_dispatch_amreduce_fn) (size_t               root,
-                                            pami_geometry_t       geometry_id,
-                                            const unsigned       sndlen,
-                                            pami_dt               dt,
-                                            pami_op               op,
-                                            void               * user_header,
-                                            const size_t         headerlen,
-                                            void              ** sndbuf,
-                                            pami_type_t         * stype,
-                                            size_t             * stypecount,
-                                            pami_event_function * const cb_info);
+  typedef void (*pami_dispatch_amreduce_fn) (size_t                 root,
+                                             pami_geometry_t        geometry_id,
+                                             const unsigned         sndlen,
+                                             pami_dt                dt,
+                                             pami_op                op,
+                                             const void           * user_header,
+                                             const size_t           headerlen,
+                                             void                ** sndbuf,
+                                             pami_type_t          * stype,
+                                             size_t               * stypecount,
+                                             pami_event_function  * const cb_info);
 
 
   typedef union

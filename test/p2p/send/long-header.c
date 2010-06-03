@@ -26,9 +26,9 @@ static void recv_done (pami_context_t   context,
 static void test_dispatch (
     pami_context_t        context,      /**< IN: PAMI context */
     void               * cookie,       /**< IN: dispatch cookie */
-    void               * header_addr,  /**< IN: header address */
+    const void         * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
-    void               * pipe_addr,    /**< IN: address of PAMI pipe buffer */
+    const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
     size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
     pami_recv_t         * recv)        /**< OUT: receive message structure */
 {

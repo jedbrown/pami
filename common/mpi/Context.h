@@ -746,7 +746,7 @@ namespace PAMI
       // This is for communication off node
       if(_dispatch[(size_t)id][0] != NULL)
       {
-        PAMI_assertf(0,"Error:  Dispatch already set, id=%ld\n", id);
+        PAMI_assertf(0,"Error:  Dispatch already set, id=%zd\n", id);
         goto result_error;
       }
       _dispatch[(size_t)id][0]      = (void *) _request.allocateObject ();

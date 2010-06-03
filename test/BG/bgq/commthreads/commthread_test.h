@@ -76,8 +76,13 @@ fprintf(stderr, "failed sending %d\n", info->seq);
 	return PAMI_SUCCESS;
 }
 
-void do_recv(pami_context_t context, void *cookie, void *hdr, size_t hdrlen,
-		void *pipe, size_t datlen, pami_recv_t *recv) {
+void do_recv(pami_context_t context,
+             void *cookie,
+             const void *hdr,
+             size_t hdrlen,
+             const void *pipe,
+             size_t datlen,
+             pami_recv_t *recv) {
 	// assert that it is immediate recv...
 	post_info_t *info = (post_info_t *)cookie;
 	//assert(pipe == NULL && datlen == 0 && hdrlen == sizeof(info->seq));

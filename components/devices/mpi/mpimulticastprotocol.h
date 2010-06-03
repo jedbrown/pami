@@ -272,13 +272,13 @@ namespace PAMI
         ///
         /// \brief Received a p2p dispatch from another src (static function).  Call the member function on the protocol.
         ///
-        static void dispatch_p2p(pami_context_t        context_hdl,  /**< IN:  communication context handle */
+        static void dispatch_p2p(pami_context_t       context_hdl,  /**< IN:  communication context handle */
                                  void               * cookie,       /**< IN:  dispatch cookie (pointer to protocol object)*/
-                                 void               * header,       /**< IN:  header address  */
+                                 const void         * header,       /**< IN:  header address  */
                                  size_t               header_size,  /**< IN:  header size     */
-                                 void               * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                 const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                                  size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
-                                 pami_recv_t         * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
+                                 pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
           {
             TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch_p2p header size %zu, data size %zu\n",cookie, header_size, data_size));
             P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL,T_MULTICAST_DEVICE> *p = (P2PMcastProto<T_P2P_DEVICE,T_P2P_PROTOCOL,T_MULTICAST_MODEL,T_MULTICAST_DEVICE> *)cookie;
@@ -293,12 +293,12 @@ namespace PAMI
         /// \brief Received a p2p dispatch from another src (member function).
         /// Call user's dispatch, allocate some storage and start all-sided multicast.
         ///
-        void dispatch(pami_context_t        context_hdl,  /**< IN:  communication context handle */
-                      void               * header,       /**< IN:  header address  */
+        void dispatch(pami_context_t       context_hdl,  /**< IN:  communication context handle */
+                      const void         * header,       /**< IN:  header address  */
                       size_t               header_size,  /**< IN:  header size     */
-                      void               * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                      const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                       size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
-                      pami_recv_t         * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
+                      pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
           {
             TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch() header size %zu, data size %zu\n",this, header_size, data_size));
 

@@ -16,7 +16,7 @@ uint8_t reset_value[2] ={0, 255};  // reset value for each byte of __recv_buffer
 size_t reset_elements = 2;         // total number of reset values
 size_t r = 0;                      // used to loop over reset values
 
-unsigned validate (void * addr, size_t bytes, size_t test_n_plus_1)
+unsigned validate (const void * addr, size_t bytes, size_t test_n_plus_1)
 {
   unsigned status = 1;
   uint8_t * byte = (uint8_t *) addr;
@@ -91,9 +91,9 @@ static void recv_done (pami_context_t   context,
 static void test_dispatch (
     pami_context_t        context,      /**< IN: PAMI context */
     void               * cookie,       /**< IN: dispatch cookie */
-    void               * header_addr,  /**< IN: header address */
+    const void         * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
-    void               * pipe_addr,    /**< IN: address of PAMI pipe buffer */
+    const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
     size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
     pami_recv_t         * recv)        /**< OUT: receive message structure */
 {

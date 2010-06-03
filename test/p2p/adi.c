@@ -91,11 +91,11 @@ static void RecvLongDoneCB(pami_context_t   context,
  * the available information set up the done call-back.
  */
 static void RecvLongCB(pami_context_t   context,
-                       void          * cookie,
-                       void          * _msginfo,
-                       size_t          msginfo_size,
-                       void          * _addr,
-                       size_t          size,
+                       void           * cookie,
+                       const void     * _msginfo,
+                       size_t           msginfo_size,
+                       const void     * _addr,
+                       size_t           size,
                        pami_recv_t    * recv)
 {
   assert(_addr == NULL);
@@ -123,11 +123,11 @@ static void RecvLongCB(pami_context_t   context,
  * and mark it done.
  */
 static void RecvShortCB(pami_context_t   context,
-                        void          * cookie,
-                        void          * _msginfo,
-                        size_t          msginfo_size,
-                        void          * _addr,
-                        size_t          size,
+                        void           * cookie,
+                        const void     * _msginfo,
+                        size_t           msginfo_size,
+                        const void     * _addr,
+                        size_t           size,
                         pami_recv_t    * recv)
 {
   assert(_addr != NULL);
