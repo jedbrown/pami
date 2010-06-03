@@ -26,7 +26,8 @@
 // re-initializes mm on subsequent calls. Caller ensures/expects size to be the same.
 //
 static inline pami_result_t initializeMemoryManager(const char *name, size_t bytes,
-                                        PAMI::Memory::MemoryManager &mm) {
+                                        PAMI::Memory::MemoryManager &mm,
+					size_t numparts = 0, bool ismaster = false) {
         static size_t _bytes = 0;
         static void *_ptr = NULL;
         char shmemfile[1024];
@@ -64,6 +65,13 @@ static inline pami_result_t initializeMemoryManager(const char *name, size_t byt
         } else {
                 // assert(bytes == _bytes || bytes == 0);
         }
+	if (numparts != 0) {
+		if (numparts > 1) {
+			local_barriered_shmemzero(_ptr, _bytes, numparts, ismaster);
+		} else {
+			memset(_ptr, 0, _bytes);
+		}
+	}
         mm.init(_ptr, _bytes);
 
         return PAMI_SUCCESS;

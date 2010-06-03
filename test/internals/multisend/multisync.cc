@@ -20,6 +20,16 @@ typedef PAMI::Device::AtomicBarrierDev Barrier_Device1;
 
 #undef BARRIER2_NAME
 
+#if 0
+#define MUTEX1_NAME	"AtomicMutexMdl<GccNodeCounter>"
+#define MUTEX1_ISLOCAL	1
+#include "components/devices/misc/AtomicMutexMsg.h"
+#include "components/atomic/counter/CounterMutex.h"
+typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccNodeCounter> Mutex_Type1;
+typedef PAMI::Device::AtomicMutexMdl<Mutex_Type1> Mutex_Model1;
+typedef PAMI::Device::AtomicMutexDev Mutex_Device1;
+#endif
+
 #define MEMMGR_SIZE	(128*1024)
 
 int main(int argc, char ** argv) {
@@ -83,6 +93,11 @@ int main(int argc, char ** argv) {
 	DO_BARRIER_TEST(BARRIER2_NAME, Barrier_Model2, Barrier_Device2, BARRIER2_ISLOCAL,
 		mm, task_id, num_tasks, context);
 #endif // BARRIER2_NAME
+
+#ifdef MUTEX1_NAME
+	DO_MUTEX_TEST(MUTEX1_NAME, Mutex_Model1, Mutex_Device1, MUTEX1_ISLOCAL,
+		mm, task_id, num_tasks, context);
+#endif // MUTEX1_NAME
 
 // ------------------------------------------------------------------------
 #if 0

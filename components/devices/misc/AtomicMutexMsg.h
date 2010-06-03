@@ -73,8 +73,8 @@ protected:
 		pami_multisync_t *msync) :
 	PAMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
 					msync->client, msync->context),
-	_mutex(mutex),
-	_role(msync->roles)
+	_role(msync->roles),
+	_mutex(mutex)
 	{
 		// assert(role == DEFAULT_ROLE);
 	}
@@ -109,11 +109,10 @@ public:
 
 	inline int setThreads(AtomicMutexThr **th) {
 		AtomicMutexThr *t = &_thr;
-		int n = 1;
 		t->setMsg(this);
-		if (_role == AtomicMutexMdl::LOCK_ROLE) {
+		if (_role == AtomicMutexMdl<T_Mutex>::LOCK_ROLE) {
 			t->setAdv(advanceAcquireThread);
-		} else if (_role == AtomicMutexMdl::UNLOCK_ROLE) {
+		} else if (_role == AtomicMutexMdl<T_Mutex>::UNLOCK_ROLE) {
 			t->setAdv(advanceReleaseThread);
 		} else {
 			PAMI_abortf("Internal error: invalid role in AtomicMutexMsg");
