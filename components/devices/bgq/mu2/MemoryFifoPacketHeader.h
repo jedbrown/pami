@@ -47,7 +47,7 @@ namespace PAMI
           /// Number of unused software bytes available in a single packet
           /// transfer. The dispatch identifier and other control data are
           /// are set outside of this range.
-          static const size_t packet_singlepacket_metadata_size = 17;
+	  static const size_t packet_singlepacket_metadata_size = 16;
 
           /// Number of unused software bytes available in a multi-packet
           /// transfer. The dispatch identifier and other control data are
@@ -84,10 +84,28 @@ namespace PAMI
           ///
           /// \return The 'single packet' attribute value
           ///
-          inline bool isSinglePacket ()
+          inline uint32_t isSinglePacket ()
           {
             return messageUnitHeader.Packet_Types.Memory_FIFO.Unused1;
           };
+
+	  inline void setHeaderInfo (uint16_t id, void *metadata, uint16_t metasize){
+	    //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
+	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
+	    *raw16 = (id | (metasize<<12));
+
+	    uint8_t *raw8 = (uint8_t *) this + 32 - metasize;
+	    uint8_t *src = (uint8_t *) metadata;
+	    //If metasize is a constant compiler will inline the memcpy
+	    memcpy(raw8, src, metasize);
+	  }
+
+	  inline void getHeaderInfo (uint16_t &id, void **metadata) {
+	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
+	    id = (*raw16)&0x3FFF; //Use 12bits for dispatch id
+	    *metadata = (char *)this + 32 - ((*raw16)>>12);
+	  }
+
 
           ///
           /// \brief Set the dispatch id in a mu packet header
@@ -105,15 +123,9 @@ namespace PAMI
           ///
           inline void setDispatchId (uint16_t id)
           {
-            if (likely(isSinglePacket ()))
-            {
-	      uint8_t *raw8 = (uint8_t *)(&messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_LSB);
-	      raw8[0] = id;
-	      return;
-	    }
-
-            uint16_t * metadata = (uint16_t *) messageUnitHeader.Packet_Types.Memory_FIFO.Unused2;
-            metadata[0] = id;
+	    //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
+	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
+	    *raw16 = (id & 0x3FFF);
             return;
           };
 
@@ -133,14 +145,9 @@ namespace PAMI
           ///
           inline uint16_t getDispatchId ()
           {
-            if (likely(isSinglePacket ()))
-            {
-	      uint8_t *raw8 = (uint8_t *)(&messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_LSB);
-	      return (uint16_t)*raw8;
-	    }
-
-            uint16_t * metadata = (uint16_t *) messageUnitHeader.Packet_Types.Memory_FIFO.Unused2;
-            return metadata[0];
+	    //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
+	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
+	    return (*raw16)&0x3FFF; //Use 14bits for dispatch id
           };
 
 
@@ -153,12 +160,14 @@ namespace PAMI
 	  ///
 	  inline void setMetaData (void *metadata, int bytes) 
 	  { 
-	    messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_MSB = bytes;
+	    //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
+	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
+	    
+	    *raw16 = ((*raw16) | (bytes<<12));
+
 	    uint8_t *raw8 = (uint8_t *) this + 32 - bytes;
 	    uint8_t *src = (uint8_t *) metadata;
-	    
-	    while (bytes --) 
-	      *raw8 ++ = *src ++;
+	    memcpy(raw8, src, bytes);
 	  }
 
 	  ///
@@ -166,7 +175,8 @@ namespace PAMI
 	  /// \retval pointer to the metadata
 	  ///
 	  inline void* getMetaData () { 
-	    uint bytes=messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_MSB;
+	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
+	    uint16_t bytes = (*raw16)>>12;
 	    //return the bottom maxmetasize bytes
 	    return (char *)this + (32 - bytes);
 	  }

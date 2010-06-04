@@ -59,13 +59,15 @@ int dispatch_fn    (void   * metadata,
 		    void   * cookie)
 {
   npackets ++;
-  assert (*(unsigned long*)metadata == metaval);
+  //assert (*(unsigned long*)metadata == metaval);
   //fprintf(stderr, "Received packet of size %lu\n", bytes);	  
   return 0;  
 }
 
+void pingpong (MuPacketModel &pkt, MuContext &mu);
 
 PAMI::Global __myGlobal;
+
 
 int main(int argc, char ** argv)
 {
@@ -93,7 +95,9 @@ int main(int argc, char ** argv)
   fprintf (stderr, "After mu init\n");
 
   //pami_result_t result;
-  MuPacketModel pkt(mu);
+  char pktbuf[sizeof(MuPacketModel)] __attribute__((__aligned__(32)));
+  MuPacketModel &pkt = *(new (pktbuf) MuPacketModel(mu));
+
   //MuDmaModel dma (mu, result);
 
   pkt.init (0,
@@ -113,6 +117,14 @@ int main(int argc, char ** argv)
                  result);
 #endif
 
+  pingpong (pkt, mu);
+
+  return 0;
+}
+
+
+void pingpong (MuPacketModel &pkt, MuContext &mu) {
+
   char metadata[METADATA_SIZE];
   char buf[MAX_BUF_SIZE];
 
@@ -124,10 +136,8 @@ int main(int argc, char ** argv)
   iov[0].iov_len  = MSG_SIZE;
 
   unsigned long start = 0, end = 0;
-
   for (int i = 0; i <= MAX_ITER; i++) {
-    if (i == 1)
-      start = GetTimeBase();
+    if (i == 1) start = GetTimeBase();
 
     pkt.postPacket (__global.mapping.task(),
 		    0,
@@ -140,10 +150,8 @@ int main(int argc, char ** argv)
     while (mu.advance() == 0);
   }
   end = GetTimeBase();
-
+  
   assert (npackets == MAX_ITER+1);
-
+  
   printf ("Pingpong time = %d cycles\n", (int)((end - start)/MAX_ITER));
-
-  return 0;
 }

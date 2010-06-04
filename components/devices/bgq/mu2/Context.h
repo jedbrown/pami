@@ -108,6 +108,8 @@ namespace PAMI
           Kernel_MemoryRegion_t         _lookAsideMregion;
           unsigned                      _ififoid;
           unsigned                      _rfifoid;
+	  MUSPI_InjFifo_t             * _ififo;
+	  MUSPI_RecFifo_t             * _rfifo;
 
           static const size_t INJ_MEMORY_FIFO_SIZE   = 0xFFFFUL;
           static const size_t REC_MEMORY_FIFO_SIZE   = 0xFFFFUL;
@@ -208,7 +210,7 @@ namespace PAMI
                                      &injFifoAttrs);
 
             _injFifoBuf = (char *) memalign (64, INJ_MEMORY_FIFO_SIZE + 1);
-            assert ((((uint64_t)_injFifoBuf) % 64) == 0);
+            PAMI_assert ((((uint64_t)_injFifoBuf) % 64) == 0);
             _lookAsideBuf = (char *) malloc ((INJ_MEMORY_FIFO_SIZE + 1) * 2); //lookaside buffer 2xdesc_size
 
             memset(_injFifoBuf, 0, INJ_MEMORY_FIFO_SIZE + 1);
@@ -241,7 +243,7 @@ namespace PAMI
                                      recFifoAttrs);
 
             _recFifoBuf = (char *)memalign (32, REC_MEMORY_FIFO_SIZE + 1);
-            assert ((((uint64_t)_recFifoBuf) % 32) == 0);
+            PAMI_assert ((((uint64_t)_recFifoBuf) % 32) == 0);
             memset(_recFifoBuf, 0, REC_MEMORY_FIFO_SIZE + 1);
 
             Kernel_CreateMemoryRegion ( &mregionRec,
@@ -262,6 +264,9 @@ namespace PAMI
                                    ( 15 - ((_mapping.t()/*sgid*/*BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) + _rfifoid/*RecFifoId*/ )) );
             Kernel_RecFifoEnable ( 0, /* Group ID */
                                    recFifoEnableBits );
+	    
+	    _ififo = MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup);
+	    _rfifo = MUSPI_IdToRecFifo(_rfifoid, &_rfifo_subgroup);
 #endif
 
             return;
@@ -463,8 +468,7 @@ namespace PAMI
                                  uint8_t             & hintsE)
           {
 #if CONTEXT_ALLOCATES_RESOURCES
-            *ififo = MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup);
-#endif
+            *ififo = _ififo;
 
             // Calculate the destination recpetion fifo identifier based on
             // the destination task+offset.  This is important for
@@ -476,7 +480,7 @@ namespace PAMI
             map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
             hintsABCD = MUHWI_PACKET_HINT_AM;
             hintsE    = MUHWI_PACKET_HINT_E_NONE;
-
+#endif
             return  0;
           }
 
@@ -531,7 +535,7 @@ namespace PAMI
                                                  uint64_t            * paddr)
           {
 #if CONTEXT_ALLOCATES_RESOURCES
-            MUSPI_InjFifo_t *ififo = MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup);
+            MUSPI_InjFifo_t *ififo = _ififo;
             uint32_t seqno = MUSPI_InjFifoNextDesc(ififo, (void **)desc);
             uint32_t slotid = seqno % (INJ_MEMORY_FIFO_NDESC);
             *vaddr = (void *)(_lookAsideBuf + slotid * LOOKASIDE_PAYLOAD_SIZE);
@@ -585,14 +589,18 @@ inline unsigned PAMI::Device::MU::Context::advanceRecv ()
   MemoryFifoPacketHeader *hdr = NULL;
 
   //TRACE((stderr, ">> RecFifoSubGroup::recFifoPoll(%p)\n", rfifo));
-  MUSPI_RecFifo_t * rfifo = MUSPI_IdToRecFifo (_rfifoid, &_rfifo_subgroup);
+  MUSPI_RecFifo_t * rfifo = _rfifo; 
 
   while ((total_bytes = MUSPI_getAvailableBytes (rfifo, &wrap)) != 0)
     {
       if (wrap)   //Extra branch over older packet loop
         {
           hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketWrap (rfifo, &cur_bytes);
-          _dispatch[hdr->getDispatchId()].f(hdr->getMetaData(), hdr + 1, cur_bytes - 32, _dispatch[hdr->getDispatchId()].p, hdr + 1);
+	  uint16_t id = 0;
+	  void *metadata;
+	  hdr->getHeaderInfo (id, &metadata);
+
+          _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
           packets++;
 
           //fprintf(stderr, "Received packet wrap of size %d, total bytes %d\n",
@@ -606,10 +614,13 @@ inline unsigned PAMI::Device::MU::Context::advanceRecv ()
             {
               hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketOptimized (rfifo, &cur_bytes);
               cumulative_bytes += cur_bytes;
-              _dispatch[hdr->getDispatchId()].f(hdr->getMetaData(), hdr + 1, cur_bytes - 32, _dispatch[hdr->getDispatchId()].p, hdr + 1);
+	      uint16_t id = 0;
+	      void *metadata;
+	      hdr->getHeaderInfo (id, &metadata);
+	      _dispatch[id].f(metadata, hdr+1, cur_bytes-32, _dispatch[id].p, hdr+1);
               packets++;
-              // Touch head for next packet
-              //	fprintf(stderr, "Received packet of size %d, cum bytes %d, total bytes %d\n",
+              //Touch head for next packet
+              //fprintf(stderr, "Received packet of size %d, cum bytes %d, total bytes %d\n",
               //cur_bytes, cumulative_bytes, total_bytes);
             }
         }

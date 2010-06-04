@@ -158,9 +158,9 @@ namespace PAMI
 
 
         protected:
-          MUSPI_DescriptorBase            _singlepkt;
-          MUSPI_DescriptorBase            _multipkt;
-          MU::Context                   & _context;
+          MUSPI_DescriptorBase            _singlepkt __attribute__((__aligned__(32)));
+	  MUSPI_DescriptorBase            _multipkt  __attribute__((__aligned__(32)));
+	  MU::Context                   & _context;
       };
 
       template <class T_Model>
@@ -390,8 +390,7 @@ namespace PAMI
             // fifo before a fifo-wrap event.
 
             // Clone the single-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
-            _singlepkt.clone (*memfifo);
+            MUSPI_DescriptorBase * memfifo = &_singlepkt; 
 
             // Initialize the injection fifo descriptor in-place.
             memfifo->setDestination (dest);
@@ -416,6 +415,9 @@ namespace PAMI
 
             // Set the payload information.
             memfifo->setPayload (paddr, tbytes);
+
+	    //Copy the model to the injection FIFO
+	    _singlepkt.clone (*(MUSPI_DescriptorBase *)desc);
 
             //fprintf(stderr, "Advance tail pointer, tbytes %d\n", tbytes);
 
