@@ -72,6 +72,7 @@ namespace PAMI
 	_ascs_binom_bcast_ni  (dev, client,context,context_id,client_id),
 	_active_binombcast_ni  (dev, client,context,context_id,client_id),
 	_binom_allreduce_ni (dev, client,context,context_id,client_id),
+	_alltoall_ni (dev, client, context, context_id, client_id),
         _connmgr(65535),
 	_rbconnmgr(NULL), //Doesnt use sysdeps
 	_csconnmgr(), //Doesnt use sysdeps
@@ -82,6 +83,7 @@ namespace PAMI
 	_asrb_binom_bcast_reg(&_rbconnmgr, &_asrb_binom_bcast_ni),
 	_ascs_binom_bcast_reg(&_csconnmgr, &_ascs_binom_bcast_ni),
 	_active_binombcast_reg(&_rbconnmgr, &_active_binombcast_ni),
+	_alltoall_reg(&_csconnmgr, &_alltoall_ni),
 	_binomial_allreduce_reg(&_rbconnmgr, &_binom_allreduce_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead)
           {
             TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
@@ -90,6 +92,7 @@ namespace PAMI
 	    _asrb_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
 	    _ascs_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
 	    _active_binombcast_reg.setMapIdToGeometry(mapidtogeometry);
+	    _alltoall_reg.setMapIdToGeometry(mapidtogeometry);
 
             _binomial_allreduce_reg.setMapIdToGeometry(mapidtogeometry);
           }
@@ -148,6 +151,7 @@ namespace PAMI
       T_NativeInterface1S                                    _ascs_binom_bcast_ni;
       T_NativeInterface1S                                    _active_binombcast_ni;
       T_NativeInterface1S                                    _binom_allreduce_ni;
+      T_NativeInterface1S                                    _alltoall_ni;
 
       // CCMI Connection Manager Class
       CCMI::ConnectionManager::ColorGeometryConnMgr<SysDep>  _connmgr;
@@ -167,6 +171,7 @@ namespace PAMI
       CCMI::Adaptor::AMBroadcast::AMBinomBcastFactory        _active_binombcast_reg;
 
       CCMI::Adaptor::Allreduce::Binomial::Factory            _binomial_allreduce_reg;
+      CCMI::Adaptor::Alltoall::All2AllFactory               _alltoall_reg;
     };
   };
 };
