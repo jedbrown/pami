@@ -15,7 +15,7 @@
  * I.e. make the local cores phase plugable with any schedule.
  */
 
-#include "algorithm/schedule/Color.h"
+#include "algorithms/schedule/Color.h"
 
 #ifndef __algorithms_schedule_Rectangle_h__
 #define __algorithms_schedule_Rectangle_h__

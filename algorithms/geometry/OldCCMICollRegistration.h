@@ -30,7 +30,7 @@
 #include "algorithms/protocols/allreduce/sync_impl.h"
 #include "algorithms/protocols/allreduce/async_impl.h"
 #include "algorithms/protocols/alltoall/impl.h"
-
+#include "algorithms/protocols/broadcast/old_multi_color_impl.h"
 
 
 namespace PAMI
