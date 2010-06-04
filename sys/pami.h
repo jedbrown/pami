@@ -28,6 +28,7 @@ extern "C"
     PAMI_INVAL,        /**< Invalid argument            */
     PAMI_UNIMPL,       /**< Function is not implemented */
     PAMI_EAGAIN,       /**< Not currently availible     */
+    PAMI_ENOMEM,       /**< Out of memory               */
     PAMI_SHUTDOWN,     /**< Task has shutdown           */
     PAMI_CHECK_ERRNO,  /**< Check the errno val         */
     PAMI_OTHER,        /**< Other undefined error       */
