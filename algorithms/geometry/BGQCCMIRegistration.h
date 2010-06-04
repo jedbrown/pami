@@ -315,6 +315,9 @@ namespace PAMI
 
               _active_binom_broadcast_factory = new (_active_binom_broadcast_factory_storage) CCMI::Adaptor::AMBroadcast::AMBinomBcastFactory(&_rbconnmgr, _active_binom_broadcast_ni);
 
+              _asrb_binom_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+              _ascs_binom_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+              _active_binom_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             }
 
           if ((__global.useshmem()) && (__global.topology_local.size() > 1))
@@ -345,9 +348,6 @@ namespace PAMI
 
           //set the mapid functions
 //      _barrier_reg.setMapIdToGeometry(mapidtogeometry);
-          _asrb_binom_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
-          _ascs_binom_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
-          _active_binom_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
 //
 //      _binomial_allreduce_reg.setMapIdToGeometry(mapidtogeometry);
           TRACE_ERR((stderr, "<%p>CCMIRegistration() exit\n", this));
@@ -367,17 +367,21 @@ namespace PAMI
 //      geometry->addCollective(PAMI_XFER_BARRIER,&_msync_reg,_context_id);
 //      geometry->addCollective(PAMI_XFER_BARRIER,&_barrier_reg,_context_id);
 
-          // Add Broadcasts
-          geometry->addCollective(PAMI_XFER_BROADCAST, _binom_broadcast_factory, _context_id);
-          geometry->addCollective(PAMI_XFER_BROADCAST, _ring_broadcast_factory,  _context_id);
-          geometry->addCollective(PAMI_XFER_BROADCAST, _ascs_binom_broadcast_factory, _context_id);
-          geometry->addCollective(PAMI_XFER_BROADCAST, _asrb_binom_broadcast_factory, _context_id);
+          if (__global.useMU())
+          {
+            // Add Broadcasts
+            geometry->addCollective(PAMI_XFER_BROADCAST, _binom_broadcast_factory, _context_id);
+            geometry->addCollective(PAMI_XFER_BROADCAST, _ring_broadcast_factory,  _context_id);
+            geometry->addCollective(PAMI_XFER_BROADCAST, _ascs_binom_broadcast_factory, _context_id);
+            geometry->addCollective(PAMI_XFER_BROADCAST, _asrb_binom_broadcast_factory, _context_id);
+
+            //AM Broadcast
+            geometry->addCollective(PAMI_XFER_AMBROADCAST,_active_binom_broadcast_factory, _context_id);
+          }
 
           // Add allreduce
 //      geometry->addCollective(PAMI_XFER_ALLREDUCE,&_binomial_allreduce_reg,_context_id);
 
-          //AM Broadcast
-          geometry->addCollective(PAMI_XFER_AMBROADCAST,_active_binom_broadcast_factory, _context_id);
 
           return PAMI_SUCCESS;
         }

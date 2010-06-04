@@ -55,7 +55,7 @@ namespace CCMI
               _native(native),
               _geometry((PAMI_GEOMETRY_CLASS *)g)
           {
-            TRACE_ADAPTOR ((stderr, "<%#.8X>Broadcast::AMBroadcastT() \n", (int)this));
+            TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AMBroadcastT() \n", this));
             _executor.setBuffers ((char *)cmd->cmd.xfer_ambroadcast.sndbuf,
                                   (char *)cmd->cmd.xfer_ambroadcast.sndbuf,
                                   cmd->cmd.xfer_ambroadcast.stypecount);
