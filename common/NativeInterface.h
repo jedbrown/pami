@@ -593,7 +593,9 @@ namespace PAMI
     TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::postMulticast_impl() state %p/%p\n",this,state,state_data));
     if(state_data->rcvpwq) _recvQ.pushTail(state_data); // only use recvQ if this mcast expects to receives data.
 
-    // Destinations may return now and wait for data to be dispatched
+    // Destinations may return now and wait for data to be dispatched 
+    /// \todo Handle metadata only?
+    /// \todo handle both pwq's null? Barrier?  
     if (!pwq) return PAMI_SUCCESS;
 
     void* payload = NULL;
@@ -1056,14 +1058,17 @@ namespace PAMI
     size_t bytes           = ((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->sndlen;
     size_t root            = ((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->root;
     PAMI::PipeWorkQueue   *rcvpwq;
-    pami_callback_t       cb_done;
+    pami_callback_t       cb_done = {NULL,NULL};
 
     TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::dispatch() header size %zu, data size %zu/%zu, connection_id %u, root %zu, recv %p\n", this, header_size, data_size, bytes, connection_id, root, recv));
 
+    // tolerate a null dispatch if there's no data (barrier?)
+    PAMI_assertf(((_mcast_dispatch_function == NULL) && (data_size == 0)) || (_mcast_dispatch_function != NULL),"fn %p, size %zu\n",_mcast_dispatch_function, data_size);
 
-    _mcast_dispatch_function(((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->msginfo, ((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->msgcount,
-                             connection_id, root, bytes, _mcast_dispatch_arg, &bytes,
-                             (pami_pipeworkqueue_t**)&rcvpwq, &cb_done);
+    if(_mcast_dispatch_function != NULL)
+      _mcast_dispatch_function(((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->msginfo, ((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->msgcount,
+                               connection_id, root, bytes, _mcast_dispatch_arg, &bytes,
+                               (pami_pipeworkqueue_t**)&rcvpwq, &cb_done);
 
     TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::dispatch() requested bytes %zu\n", this, bytes));
 
@@ -1086,6 +1091,7 @@ namespace PAMI
 
       // call original done
       /** \todo fix or remove this hack */
+      TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::done<%p>, cookie<%p>\n", this,cb_done.function,cb_done.clientdata));
       if (cb_done.function)
         (cb_done.function)(NULL,//PAMI_Client_getcontext(_client,_contextid),
                            cb_done.clientdata, PAMI_SUCCESS);
@@ -1102,8 +1108,6 @@ namespace PAMI
     recv->offset   = 0;
     recv->local_fn = cb_done.function;
     recv->cookie   = cb_done.clientdata;
-
-
 
   }
   template <class T_Protocol>

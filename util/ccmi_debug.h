@@ -18,12 +18,18 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-//#define TRACE_MSG(x) fprintf x
+//#define CCMI_TRACE_ALL 1
+
+#ifdef CCMI_TRACE_ALL
+  #define TRACE_MSG(x) fprintf x
+#endif
 #ifndef TRACE_MSG
   #define TRACE_MSG(x)
 #endif
 
-//#define CCMI_DEBUG 0
+#ifdef CCMI_TRACE_ALL
+  #define CCMI_DEBUG 1
+#endif
 
 #ifdef CCMI_DEBUG
 
@@ -86,45 +92,61 @@ inline void CCMI_ADAPTOR_DEBUG_trace_data(const char* string, const char* buffer
   #endif
 #endif
 
-//#define TRACE_FLOW(x) fprintf x
+#ifdef CCMI_TRACE_ALL
+  #define TRACE_FLOW(x) fprintf x
+#endif
 #ifndef TRACE_FLOW
   #define TRACE_FLOW(x)
 #endif
 
-//#define TRACE_INIT(x) fprintf x
+#ifdef CCMI_TRACE_ALL
+  #define TRACE_INIT(x) fprintf x
+#endif
 #ifndef TRACE_INIT
   #define TRACE_INIT(x)
 #endif
 
-//#define TRACE_ADVANCE(x) fprintf x
+#ifdef CCMI_TRACE_ALL
+  #define TRACE_ADVANCE(x) fprintf x
+#endif
 #ifndef TRACE_ADVANCE
   #define TRACE_ADVANCE(x)
 #endif
 
-//#define TRACE_REDUCEOP(x) fprintf x
+#ifdef CCMI_TRACE_ALL
+  #define TRACE_REDUCEOP(x) fprintf x
+#endif
 #ifndef TRACE_REDUCEOP
   #define TRACE_REDUCEOP(x)
 #endif
 
-//#define CCMI_DEBUG_SCHEDULE
-//#define TRACE_STATE(x) fprintf x
+#ifdef CCMI_TRACE_ALL
+  #define CCMI_DEBUG_SCHEDULE
+  #define TRACE_STATE(x) fprintf x
+#endif
 #ifndef TRACE_STATE
   #define TRACE_STATE(x)
 #endif
 
-//#define TRACE_SCHEDULE(x) fprintf x
+#ifdef CCMI_TRACE_ALL
+  #define TRACE_SCHEDULE(x) fprintf x
+#endif
 #ifndef TRACE_SCHEDULE
   #define TRACE_SCHEDULE(x)
 #endif
 
 // TRACE_ALERT helps (minimally) trace object ctor/resets that help determine whether
 // they're being reused appropriately.
-//#define TRACE_ALERT(x) fprintf x
+#ifdef CCMI_TRACE_ALL
+  #define TRACE_ALERT(x) fprintf x
+#endif
 #ifndef TRACE_ALERT
   #define TRACE_ALERT(x)
 #endif
 
-//#define TRACE_ADAPTOR(x) fprintf x
+#ifdef CCMI_TRACE_ALL
+  #define TRACE_ADAPTOR(x) fprintf x
+#endif
 #ifndef TRACE_ADAPTOR
   #define TRACE_ADAPTOR(x)
 #endif

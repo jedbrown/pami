@@ -232,7 +232,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
     return;
   }
 
-#if 0
+#ifdef CCMI_DEBUG
   char tbuf[1024];
   char sbuf[16384];
   sprintf(sbuf, "<%p>Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %zu\n",

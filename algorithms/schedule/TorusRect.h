@@ -22,9 +22,8 @@
 #include "algorithms/interfaces/Schedule.h"
 #include "common/TorusMappingInterface.h"
 #include "Global.h"
-//#define TRACE_ERR(x)  fprintf x
+
 //#define RECTBCAST_DEBUG   1
-#define TRACE_ERR(x)
 
 ///
 /// \brief This schedule implements the following broadcast algorithm
@@ -74,7 +73,7 @@ namespace CCMI
         _rect(rect),
         _map(map)
         {
-          TRACE_ERR((stderr, "In One Color Torus Rect Bcast Constructor\n"));
+          TRACE_SCHEDULE((stderr, "In One Color Torus Rect Bcast Constructor\n"));
           unsigned int i;
 
           PAMI_assert(_rect->type() == PAMI_COORD_TOPOLOGY);

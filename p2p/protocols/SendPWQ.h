@@ -133,8 +133,8 @@ namespace PAMI
         pami_result_t immediatePWQ(sendpwq_t* state, pami_context_t context, pami_send_immediate_t * parameters, PAMI::PipeWorkQueue * pwq)
         {
           TRACE_ERR((stderr, "<%p>SendPWQ::immediate() state %p, context %p, parameters %p, pwq %p\n",this, state, context, parameters, pwq));
-          size_t length = pwq->bytesAvailableToConsume();
-          void* payload = (void*)pwq->bufferToConsume();
+          size_t length = pwq? pwq->bytesAvailableToConsume() : 0;
+          void* payload = pwq?(void*)pwq->bufferToConsume(): NULL;
           TRACE_ERR((stderr, "<%p>SendPWQ::immediate() length %zd, payload %p\n",this,length,payload));
 
           // send it now if there is enough data in the pwq
@@ -180,8 +180,8 @@ namespace PAMI
         pami_result_t simplePWQ (sendpwq_t* state, pami_context_t context, pami_send_t * parameters, PAMI::PipeWorkQueue * pwq)
         {
           TRACE_ERR((stderr, "<%p>SendPWQ::simple() state %p, context %p, parameters %p, pwq %p\n",this, state, context, parameters, pwq));
-          size_t length = pwq->bytesAvailableToConsume();
-          void* payload = (void*)pwq->bufferToConsume();
+          size_t length = pwq? pwq->bytesAvailableToConsume() : 0;
+          void* payload = pwq?(void*)pwq->bufferToConsume(): NULL;
           TRACE_ERR((stderr, "<%p>SendPWQ::simple() length %zd, payload %p\n",this, length,payload));
 
           // send it now if there is enough data in the pwq

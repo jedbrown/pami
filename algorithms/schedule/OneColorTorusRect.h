@@ -20,9 +20,7 @@
 
 //#include "Rectangle.h"
 
-//#define TRACE_ERR(x)  fprintf x
 //#define RECTBCAST_DEBUG   1
-#define TRACE_ERR(x)
 
 ///
 /// \brief This schedule implements the following broadcast algorithm
@@ -80,7 +78,7 @@ namespace CCMI
                           pami_coord_t self,
                           unsigned color)
         {
-          TRACE_ERR((stderr, "In One Color Torus Rect Bcast Constructor\n"));
+          TRACE_SCHEDULE((stderr, "In One Color Torus Rect Bcast Constructor\n"));
           int i;
           _map = map;
           _rect = rect;
@@ -237,7 +235,7 @@ namespace CCMI
     start = _startphase;
     nphases = torus_dims + 2 - start; // 2: 1 for local comm if any, 1 for ghost
 
-    TRACE_ERR((stderr,
+    TRACE_SCHEDULE((stderr,
                "%d: Calling Init with color %d, root %d startphase %d\n",
                 MY_TASK, _color, root, _startphase));
   }

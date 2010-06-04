@@ -258,8 +258,8 @@ namespace PAMI
               TRACE_ERR((stderr, "<%p> Shemem barrier composites\n", this));
               _shmem_barrier_composite = _shmem_msync_factory.generate(geometry, &xfer);
 
-              geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
-                               (void*)_shmem_barrier_composite);
+//            geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
+//                             (void*)_shmem_barrier_composite);
 
               geometry->setKey(PAMI::Geometry::PAMI_GKEY_LOCALBARRIECOMPOSITE,
                                (void*)_shmem_barrier_composite);
@@ -269,11 +269,9 @@ namespace PAMI
               TRACE_ERR((stderr, "<%p> MU barrier composites\n", this));
               _mu_barrier_composite = _mu_msync_factory.generate(geometry, &xfer);
 
-              geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
-                               (void*)_mu_barrier_composite);
+//            geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
+//                             (void*)_mu_barrier_composite);
 
-//        geometry->setKey(PAMI::Geometry::PAMI_GKEY_LOCALBARRIECOMPOSITE,
-//                         (void*)_shmem_barrier_composite);
             }
 
           //        else PAMI_abortf("No Shmem or MU?\n");

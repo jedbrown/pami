@@ -9,10 +9,6 @@
 #include "algorithms/interfaces/Schedule.h"
 #include "algorithms/schedule/MultinomialMap.h"
 
-#undef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
-#define TRACE_ERR(x)
-
 namespace CCMI
 {
   namespace Schedule
@@ -90,7 +86,7 @@ namespace CCMI
         }
 
         if (nranks > 0)
-          TRACE_ERR ((stderr, "%d: phase %d, node %d\n", _map.getMyRank(), ph, nodes[0]));
+          TRACE_SCHEDULE ((stderr, "%d: phase %d, node %d\n", _map.getMyRank(), ph, nodes[0]));
       }
 
       /**
@@ -276,7 +272,7 @@ namespace CCMI
         for (unsigned count = 0; count < ndst; count ++)
         {
           dstranks[count]   = _map.getGlobalRank(dstranks[count]);
-          TRACE_ERR ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
+          TRACE_SCHEDULE ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
         }
 
         //Convert to a list topology of the accurate size
@@ -341,7 +337,7 @@ namespace CCMI
 
         for (unsigned count = 0; count < ntotal_dst; count ++) {
           dstranks[count]   = _map.getGlobalRank(dstranks[count]);
-          TRACE_ERR ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
+          TRACE_SCHEDULE ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(),phase,count,dstranks[count]));
         }
 
         //Convert to a list topology of the accurate size
