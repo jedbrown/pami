@@ -14,6 +14,8 @@
 #ifndef __common_bgq_TypeDefs_h__
 #define __common_bgq_TypeDefs_h__
 
+#include "util/ccmi_debug.h"
+
   #include "components/devices/shmem/ShmemDevice.h"
   #include "components/devices/shmem/ShmemPacketModel.h"
   #include "components/devices/shmem/ShmemDmaModel.h"

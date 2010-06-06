@@ -18,9 +18,9 @@
 #include <vector>
 #include "algorithms/interfaces/CollRegistrationInterface.h"
 #include "SysDep.h"
-#include "TypeDefs.h"
-
 #include "util/ccmi_debug.h"
+
+#include "TypeDefs.h"
 
 //#include "algorithms/protocols/barrier/impl.h"
 //#include "algorithms/protocols/allreduce/sync_impl.h"
@@ -38,7 +38,10 @@
 
 #include "algorithms/protocols/ambcast/AMBroadcastT.h"
 
-// CCMI Template implementations
+#include "algorithms/protocols/allreduce/MultiColorCompositeT.h"
+#include "algorithms/protocols/allreduce/ProtocolFactoryT.h"
+
+// CCMI Template implementations for BGQ
 namespace CCMI
 {
   namespace Adaptor
@@ -58,12 +61,12 @@ namespace CCMI
       }
 
 
-      typedef BarrierT <CCMI::Schedule::ListMultinomial,
+      typedef CCMI::Adaptor::Barrier::BarrierT <CCMI::Schedule::ListMultinomial,
       binomial_analyze> BinomialBarrier;
 
-      typedef BarrierFactoryT <BinomialBarrier,
+      typedef CCMI::Adaptor::Barrier::BarrierFactoryT <BinomialBarrier,
       binomial__barrier_md,
-      ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > BinomialBarrierFactory;
+      CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > BinomialBarrierFactory;
     };//Barrier
 
     namespace Broadcast
@@ -92,21 +95,21 @@ namespace CCMI
         strcpy(&m->name[0], "Ring_Broadcast");
       }
 
-      typedef BcastMultiColorCompositeT < 1,
+      typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT < 1,
       CCMI::Schedule::ListMultinomial,
       CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
       get_colors > BinomialBroadcastComposite;
 
-      typedef CollectiveProtocolFactoryT < BinomialBroadcastComposite,
+      typedef CCMI::Adaptor::CollectiveProtocolFactoryT < BinomialBroadcastComposite,
       binomial_broadcast_metadata,
       CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> > BinomialBroadcastFactory;
 
-      typedef BcastMultiColorCompositeT < 1,
+      typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT < 1,
       CCMI::Schedule::RingSchedule,
       CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
       get_colors > RingBroadcastComposite;
 
-      typedef CollectiveProtocolFactoryT < RingBroadcastComposite,
+      typedef CCMI::Adaptor::CollectiveProtocolFactoryT < RingBroadcastComposite,
       ring_broadcast_metadata,
       CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> > RingBroadcastFactory;
 
@@ -124,8 +127,9 @@ namespace CCMI
         strcpy(&m->name[0], "Async_CS_Binomial_Broadcast");
       }
 
-      typedef AsyncBroadcastT < CCMI::Schedule::ListMultinomial,
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT < CCMI::Schedule::ListMultinomial,
       CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AsyncRBBinomialBroadcastComposite;
+
       template<>
       void AsyncRBBinomialBroadcastComposite::create_schedule(void                        * buf,
                                                               unsigned                      size,
@@ -137,7 +141,7 @@ namespace CCMI
         new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
       }
 
-      typedef AsyncBroadcastFactoryT < AsyncRBBinomialBroadcastComposite,
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT < AsyncRBBinomialBroadcastComposite,
       am_rb_broadcast_metadata,
       CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AsyncRBBinomialBroadcastFactory;
 
@@ -151,7 +155,7 @@ namespace CCMI
         return root;
       }
 
-      typedef AsyncBroadcastT < CCMI::Schedule::ListMultinomial,
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT < CCMI::Schedule::ListMultinomial,
       CCMI::ConnectionManager::CommSeqConnMgr > AsyncCSBinomialBroadcastComposite;
       template<>
       void AsyncCSBinomialBroadcastComposite::create_schedule(void                        * buf,
@@ -164,7 +168,7 @@ namespace CCMI
         new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
       }
 
-      typedef AsyncBroadcastFactoryT < AsyncCSBinomialBroadcastComposite,
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT < AsyncCSBinomialBroadcastComposite,
       am_cs_broadcast_metadata,
       CCMI::ConnectionManager::CommSeqConnMgr > AsyncCSBinomialBroadcastFactory;
 
@@ -195,7 +199,7 @@ namespace CCMI
         strcpy(&m->name[0], "Binomial_AMBroadcast");
       }
 
-      typedef AMBroadcastT < CCMI::Schedule::ListMultinomial,
+      typedef CCMI::Adaptor::AMBroadcast::AMBroadcastT < CCMI::Schedule::ListMultinomial,
       CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AMBinomialBroadcastComposite;
       template<>
       void AMBinomialBroadcastComposite::create_schedule(void                        * buf,
@@ -208,11 +212,44 @@ namespace CCMI
         new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
       }
 
-      typedef AMBroadcastFactoryT < AMBinomialBroadcastComposite,
+      typedef CCMI::Adaptor::AMBroadcast::AMBroadcastFactoryT < AMBinomialBroadcastComposite,
       am_broadcast_metadata,
       CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AMBinomialBroadcastFactory;
 
     }//AMBroadcast
+    namespace Allreduce
+    {
+      /// New Binomial algorithms
+      /// class Binomial::Composite and Binomial::Factory
+      ///
+      /// \brief Binomial allreduce protocol
+      ///
+      /// Use the BinomialTreeSchedule
+      ///
+      namespace Binomial
+      {
+        void get_colors (PAMI::Topology             * t,
+                         unsigned                    bytes,
+                         unsigned                  * colors,
+                         unsigned                  & ncolors)
+        {
+          ncolors = 1;
+          colors[0] = CCMI::Schedule::NO_COLOR;
+        }
+
+        void binomial_allreduce_metadata(pami_metadata_t *m)
+        {
+          // \todo:  fill in other metadata
+          strcpy(&m->name[0],"Binomial_Allreduce");
+        }
+
+        typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT<1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
+        CCMI::Schedule::ListMultinomial,
+        CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+        get_colors> Composite;
+        typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT<Composite, binomial_allreduce_metadata, CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > Factory;
+      };//Binomial
+    };//Allreduce
   }//Adaptor
 }//CCMI
 
@@ -228,15 +265,15 @@ namespace PAMI
       template < class T_Geometry,
       class T_NativeInterfaceP2pActiveMessage, // Onesided/Active message on P2P protocol
       class T_NativeInterfaceP2pAllsided,      // Allsided on P2P protocol
-    class T_Local_Device,                    // Local (shmem) device
-    class T_Global_Device,                   // Global (MU) device
+      class T_Local_Device,                    // Local (shmem) device
+      class T_Global_Device,                   // Global (MU) device
       class T_Allocator >
       class CCMIRegistration :
       public CollRegistration < PAMI::CollRegistration::BGQ::CCMIRegistration < T_Geometry,
-      T_NativeInterfaceP2pActiveMessage,
-      T_NativeInterfaceP2pAllsided,
-        T_Local_Device,
-        T_Global_Device,
+      T_NativeInterfaceP2pActiveMessage, 
+      T_NativeInterfaceP2pAllsided,      
+      T_Local_Device,
+      T_Global_Device,
       T_Allocator > ,
       T_Geometry >
       {
@@ -251,8 +288,8 @@ namespace PAMI
         CollRegistration < PAMI::CollRegistration::BGQ::CCMIRegistration < T_Geometry,
         T_NativeInterfaceP2pActiveMessage,
         T_NativeInterfaceP2pAllsided,
-            T_Local_Device,
-            T_Global_Device,
+        T_Local_Device,
+        T_Global_Device,
         T_Allocator > ,
         T_Geometry > (),
         _client(client),
@@ -263,16 +300,20 @@ namespace PAMI
         _global_dev(gdev),
         _allocator(allocator),
         _binomial_barrier_composite(NULL),
-        _binomial_barrier_ni ((T_NativeInterfaceP2pActiveMessage*)&_binomial_barrier_ni_storage),
+        _binomial_barrier_ni          ((T_NativeInterfaceP2pActiveMessage*)&_binomial_barrier_ni_storage),
         _binomial_barrier_p2p_protocol(NULL),
-        _binomial_broadcast_ni ((T_NativeInterfaceP2pAllsided*)&_binomial_broadcast_ni_storage),
+        _binomial_broadcast_ni        ((T_NativeInterfaceP2pAllsided*)&_binomial_broadcast_ni_storage),
         _binomial_broadcast_p2p_protocol(NULL),
-        _ring_broadcast_ni  ((T_NativeInterfaceP2pAllsided*)&_ring_broadcast_ni_storage),
+        _ring_broadcast_ni            ((T_NativeInterfaceP2pAllsided*)&_ring_broadcast_ni_storage),
         _ring_broadcast_p2p_protocol(NULL),
         _asrb_binomial_broadcast_ni   ((T_NativeInterfaceP2pActiveMessage*)&_asrb_binomial_broadcast_ni_storage),
+        _asrb_binomial_broadcast_p2p_protocol(NULL),
         _ascs_binomial_broadcast_ni   ((T_NativeInterfaceP2pActiveMessage*)&_ascs_binomial_broadcast_ni_storage),
+        _ascs_binomial_broadcast_p2p_protocol(NULL),
         _active_binomial_broadcast_ni ((T_NativeInterfaceP2pActiveMessage*)&_active_binomial_broadcast_ni_storage),
-//    _binomial_allreduce_ni (gdev, client,context,context_id,client_id),
+        _active_binomial_broadcast_p2p_protocol(NULL),
+        _binomial_allreduce_ni        ((T_NativeInterfaceP2pActiveMessage*)&_binomial_allreduce_ni_storage),
+        _binomial_allreduce_p2p_protocol(NULL),
         _connmgr(65535),
         _rbconnmgr(NULL),
         _csconnmgr(),
@@ -282,7 +323,7 @@ namespace PAMI
         _asrb_binomial_broadcast_factory(NULL),
         _ascs_binomial_broadcast_factory(NULL),
         _active_binomial_broadcast_factory(NULL),
-//    _binomial_allreduce_reg(&_rbconnmgr, &_binomial_allreduce_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead)
+        _binomial_allreduce_factory(NULL),
         _shmem_p2p_protocol(NULL),
         _shmem_ni(NULL),
         _mu_p2p_protocol(NULL),
@@ -348,11 +389,19 @@ namespace PAMI
 
             _active_binomial_broadcast_factory = new (_active_binomial_broadcast_factory_storage) CCMI::Adaptor::AMBroadcast::AMBinomialBroadcastFactory(&_rbconnmgr, _active_binomial_broadcast_ni);
 
+            _binomial_allreduce_ni = (T_NativeInterfaceP2pActiveMessage*) new (_binomial_allreduce_ni_storage) T_NativeInterfaceP2pActiveMessage(client, context, context_id, client_id, dispatch);
+            fn.p2p = T_NativeInterfaceP2pActiveMessage::dispatch_p2p;
+            _binomial_allreduce_p2p_protocol = (MUEager*) MUEager::generate(dispatch, fn, (void*) _binomial_allreduce_ni, gdev, _allocator, result);
+            _binomial_allreduce_ni->setProtocol(_binomial_allreduce_p2p_protocol);
+
+            _binomial_allreduce_factory = new (_binomial_allreduce_factory_storage) CCMI::Adaptor::Allreduce::Binomial::Factory(&_rbconnmgr, _binomial_allreduce_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead);
+
             //set the mapid functions
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
             _asrb_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
           }
 
           if ((__global.useshmem()) && (__global.topology_local.size() > 1))
@@ -381,8 +430,6 @@ namespace PAMI
             _composite_ni->setProtocol(_composite_p2p_protocol);
           }
 
-//
-//      _binomial_allreduce_reg.setMapIdToGeometry(mapidtogeometry);
           TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration() exit\n", this));
         }
 
@@ -409,10 +456,10 @@ namespace PAMI
 
             //AM Broadcast
             geometry->addCollective(PAMI_XFER_AMBROADCAST,_active_binomial_broadcast_factory, _context_id);
-          }
 
-          // Add allreduce
-//      geometry->addCollective(PAMI_XFER_ALLREDUCE,&_binomial_allreduce_reg,_context_id);
+            // Add allreduce
+            geometry->addCollective(PAMI_XFER_ALLREDUCE,  _binomial_allreduce_factory,        _context_id);
+          }
 
 
           return PAMI_SUCCESS;
@@ -466,6 +513,10 @@ namespace PAMI
         MUEager                                    *_active_binomial_broadcast_p2p_protocol;
 
         // Allreduce Storage and Native Interface
+        T_NativeInterfaceP2pActiveMessage          *_binomial_allreduce_ni;
+        uint8_t                                     _binomial_allreduce_ni_storage[sizeof(T_NativeInterfaceP2pActiveMessage)];
+        MUEager                                    *_binomial_allreduce_p2p_protocol;
+
 //    T_NativeInterfaceP2pActiveMessage                                    _binomial_allreduce_ni;
 
         // CCMI Connection Manager Class
@@ -475,22 +526,24 @@ namespace PAMI
         CCMI::ConnectionManager::CommSeqConnMgr                      _csconnmgr;
 
         // CCMI Barrier Interface
-        CCMI::Adaptor::Barrier::BinomialBarrierFactory              *_binomial_barrier_factory;
+        CCMI::Adaptor::Barrier::BinomialBarrierFactory               *_binomial_barrier_factory;
         uint8_t                                                      _binomial_barrier_factory_storage[sizeof(CCMI::Adaptor::Broadcast::BinomialBroadcastFactory)];
 
         // CCMI Binomial and Ring Broadcast
-        CCMI::Adaptor::Broadcast::BinomialBroadcastFactory          *_binomial_broadcast_factory;
+        CCMI::Adaptor::Broadcast::BinomialBroadcastFactory           *_binomial_broadcast_factory;
         uint8_t                                                      _binomial_broadcast_factory_storage[sizeof(CCMI::Adaptor::Broadcast::BinomialBroadcastFactory)];
-        CCMI::Adaptor::Broadcast::RingBroadcastFactory              *_ring_broadcast_factory;
+        CCMI::Adaptor::Broadcast::RingBroadcastFactory               *_ring_broadcast_factory;
         uint8_t                                                      _ring_broadcast_factory_storage[sizeof(CCMI::Adaptor::Broadcast::RingBroadcastFactory)];
-        CCMI::Adaptor::Broadcast::AsyncRBBinomialBroadcastFactory   *_asrb_binomial_broadcast_factory;
+        CCMI::Adaptor::Broadcast::AsyncRBBinomialBroadcastFactory    *_asrb_binomial_broadcast_factory;
         uint8_t                                                      _asrb_binomial_broadcast_factory_storage[sizeof(CCMI::Adaptor::Broadcast::AsyncRBBinomialBroadcastFactory)];
-        CCMI::Adaptor::Broadcast::AsyncCSBinomialBroadcastFactory   *_ascs_binomial_broadcast_factory;
+        CCMI::Adaptor::Broadcast::AsyncCSBinomialBroadcastFactory    *_ascs_binomial_broadcast_factory;
         uint8_t                                                      _ascs_binomial_broadcast_factory_storage[sizeof(CCMI::Adaptor::Broadcast::AsyncCSBinomialBroadcastFactory)];
-        CCMI::Adaptor::AMBroadcast::AMBinomialBroadcastFactory      *_active_binomial_broadcast_factory;
+        CCMI::Adaptor::AMBroadcast::AMBinomialBroadcastFactory       *_active_binomial_broadcast_factory;
         uint8_t                                                      _active_binomial_broadcast_factory_storage[sizeof(CCMI::Adaptor::AMBroadcast::AMBinomialBroadcastFactory)];
-//
-//    CCMI::Adaptor::Allreduce::Binomial::Factory            _binomial_allreduce_reg;
+
+        // CCMI Binomial Allreduce
+        CCMI::Adaptor::Allreduce::Binomial::Factory                  *_binomial_allreduce_factory;
+        uint8_t                                                      _binomial_allreduce_factory_storage[sizeof(CCMI::Adaptor::Allreduce::Binomial::Factory)];
 
         // New p2p Native interface members:
         //  Shmem (only) over p2p eager

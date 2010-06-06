@@ -548,7 +548,7 @@ namespace PAMI
                               metadata->bytes,     // Number of msg bytes
                               (pami_recv_t *) &(state->info));
 
-            TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zu, state->info.type = %zu\n", metadata->bytes, state->info.type));
+            TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zu, state->info.type = %p\n", metadata->bytes, state->info.type));
 
             // Only contiguous receives are implemented
             PAMI_assertf(state->info.type == PAMI_BYTE, "[%5d:%s] %s() - Only contiguous receives are implemented.\n", __LINE__, __FILE__, __FUNCTION__);
@@ -842,7 +842,7 @@ namespace PAMI
             // Number of bytes left to copy into the destination buffer
             size_t nleft = state->metadata.bytes - nbyte;
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), bytes received so far = %zu, bytes yet to receive = %zu, total bytes to receive = %zu, total bytes being sent = %zu\n", state->received, nleft, state->info.data.simple.bytes, state->metadata.bytes));
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), bytes received so far = %zu, bytes yet to receive = %zu, total bytes to receive = %zu, total bytes being sent = %zu\n", state->received, nleft, state->longheader.bytes, state->metadata.bytes));
 
             // Copy data from the packet payload into the destination buffer
             size_t ncopy = MIN(nleft,bytes);

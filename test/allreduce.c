@@ -228,7 +228,7 @@ void cb_allreduce (void *ctxt, void * clientdata, pami_result_t err)
 
 void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
-  //static unsigned entryCount = 0;
+  static unsigned entryCount = 0;
   TRACEV((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_barrier_active));
   _g_barrier_active++;
   pami_result_t result;
@@ -241,12 +241,13 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
   while (_g_barrier_active)
     result = PAMI_Context_advance (context, 1);
   TRACEV((stderr,"%s done<%u> active %u\n",__PRETTY_FUNCTION__,entryCount,_g_barrier_active));
+  entryCount++;
 }
 
 void _allreduce (pami_context_t context, pami_xfer_t *allreduce)
 {
-  //static unsigned entryCount = 0;
-  TRACEV((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_allreduce_active));
+  static unsigned entryCount = 0;
+  TRACEV((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,entryCount,_g_allreduce_active));
   _g_allreduce_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)allreduce);
@@ -258,6 +259,7 @@ void _allreduce (pami_context_t context, pami_xfer_t *allreduce)
   while (_g_allreduce_active)
     result = PAMI_Context_advance (context, 1);
   TRACEV((stderr,"%s done<%u> active %u\n",__PRETTY_FUNCTION__,entryCount,_g_allreduce_active));
+  entryCount++;
 }
 
 

@@ -19,6 +19,11 @@
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
+#ifdef CCMI_TRACE_ALL
+  #undef TRACE_ERR
+  #define TRACE_ERR(x) fprintf x
+#endif
+ 
 extern PAMI::Global __global;
 
 #define DISPATCH_START 0x10
@@ -459,12 +464,12 @@ namespace PAMI
       obj->_user_callback.function(context,
                                    obj->_user_callback.clientdata,
                                    res);
-#ifdef CCMI_DEBUG
-    typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t* receive_state = (typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t*)_recvQ.peekHead();
-    while (receive_state && receive_state->connection_id != connection_id)
-      receive_state = (typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t*)_recvQ.nextElem(receive_state);
-    PAMI_assert(receive_state!=obj->_state._mcast); // all-sided and sync'd by MU so this shouldn't still be queued
-#endif
+//#ifdef CCMI_DEBUG
+//    typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t* receive_state = (typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t*)_recvQ.peekHead();
+//    while (receive_state && receive_state->connection_id != connection_id)
+//      receive_state = (typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t*)_recvQ.nextElem(receive_state);
+//    PAMI_assert(receive_state!=obj->_state._mcast); // all-sided and sync'd by MU so this shouldn't still be queued
+//#endif
 
     ni->_allocator.returnObject(obj);
   }

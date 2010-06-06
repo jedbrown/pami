@@ -20,6 +20,11 @@
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
+#ifdef CCMI_TRACE_ALL
+  #undef TRACE_ERR
+  #define TRACE_ERR(x) fprintf x
+#endif
+ 
 namespace PAMI
 {
   namespace Protocol
