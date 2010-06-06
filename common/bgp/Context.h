@@ -568,6 +568,8 @@ namespace PAMI
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zu] = %p\n", id, _dispatch[id]));
 
+        pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid,__global.mapping.task(),_contextid);
+
         if (_dispatch[id] == NULL)
           {
             TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
@@ -579,7 +581,7 @@ namespace PAMI
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, false>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, false>
                 Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>
-                (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
+                (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, result);
               }
             else
               {
@@ -588,7 +590,7 @@ namespace PAMI
                 Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, true>
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, true>
-                (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), result);
+                (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, result);
               }
 
             TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zu\n", result));

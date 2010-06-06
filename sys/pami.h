@@ -407,13 +407,14 @@ extern "C"
    *
    * "pipe" has nothing to do with "PipeWorkQueue"s
    */
-  typedef void (*pami_dispatch_p2p_fn) (pami_context_t   context,      /**< IN:  communication context which invoked the dispatch function */
-                                        void           * cookie,       /**< IN:  dispatch cookie */
-                                        const void     * header_addr,  /**< IN:  header address  */
-                                        size_t           header_size,  /**< IN:  header size     */
-                                        const void     * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-                                        size_t           data_size,    /**< IN:  number of byts of message data, valid regardless of message type */
-                                        pami_recv_t    * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
+  typedef void (*pami_dispatch_p2p_fn) (pami_context_t    context,      /**< IN:  communication context which invoked the dispatch function */
+                                        void            * cookie,       /**< IN:  dispatch cookie */
+                                        const void      * header_addr,  /**< IN:  header address  */
+                                        size_t            header_size,  /**< IN:  header size     */
+                                        const void      * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                        size_t            data_size,    /**< IN:  number of byts of message data, valid regardless of message type */
+                                        pami_endpoint_t   origin,       /**< IN:  Endpoint that originated the transfer */
+                                        pami_recv_t     * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
 
   /** \} */ /* end of "active message" group */
 

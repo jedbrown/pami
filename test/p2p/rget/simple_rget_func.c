@@ -131,7 +131,8 @@ static void dispatch_ack (
     size_t               header_size,  /**< IN: header size */
     const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
     size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
-    pami_recv_t        * recv)        /**< OUT: receive message structure */
+    pami_endpoint_t origin,
+pami_recv_t        * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
   fprintf (stderr, ">> 'ack' dispatch function.  cookie = %p (active: %zu), header_size = %zu, pipe_size = %zu, recv = %p\n", cookie, *active, header_size, pipe_size, recv);
@@ -196,7 +197,8 @@ static void dispatch_rts (
     size_t               header_size,  /**< IN: header size */
     const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
     size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
-    pami_recv_t        * recv)        /**< OUT: receive message structure */
+    pami_endpoint_t origin,
+pami_recv_t        * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
   fprintf (stderr, ">> 'rts' dispatch function.  cookie = %p (active: %zu), header_size = %zu, pipe_size = %zu, recv = %p\n", cookie, *active, header_size, pipe_size, recv);

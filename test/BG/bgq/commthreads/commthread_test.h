@@ -82,6 +82,7 @@ void do_recv(pami_context_t context,
              size_t hdrlen,
              const void *pipe,
              size_t datlen,
+             pami_endpoint_t origin,
              pami_recv_t *recv) {
 	// assert that it is immediate recv...
 	post_info_t *info = (post_info_t *)cookie;

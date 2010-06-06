@@ -90,13 +90,14 @@ static void RecvLongDoneCB(pami_context_t   context,
  * The data needs to be received into a malloced buffer.  We print out
  * the available information set up the done call-back.
  */
-static void RecvLongCB(pami_context_t   context,
-                       void           * cookie,
-                       const void     * _msginfo,
-                       size_t           msginfo_size,
-                       const void     * _addr,
-                       size_t           size,
-                       pami_recv_t    * recv)
+static void RecvLongCB(pami_context_t    context,
+                       void            * cookie,
+                       const void      * _msginfo,
+                       size_t            msginfo_size,
+                       const void      * _addr,
+                       size_t            size,
+                       pami_endpoint_t   origin,
+                       pami_recv_t     * recv)
 {
   assert(_addr == NULL);
   assert(size > 0);
@@ -122,13 +123,14 @@ static void RecvLongCB(pami_context_t   context,
  * The data is already received, so we just print out the information
  * and mark it done.
  */
-static void RecvShortCB(pami_context_t   context,
-                        void           * cookie,
-                        const void     * _msginfo,
-                        size_t           msginfo_size,
-                        const void     * _addr,
-                        size_t           size,
-                        pami_recv_t    * recv)
+static void RecvShortCB(pami_context_t    context,
+                        void            * cookie,
+                        const void      * _msginfo,
+                        size_t            msginfo_size,
+                        const void      * _addr,
+                        size_t            size,
+                        pami_endpoint_t   origin,
+                        pami_recv_t     * recv)
 {
   assert(_addr != NULL);
   assert(size > 0);

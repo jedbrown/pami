@@ -200,7 +200,8 @@ void latency_recvdone (pami_context_t context, void *clientdata, pami_result_t e
 void cb_recv_new(pami_context_t context, void *clientdata,
                         void *header_addr, size_t header_size,
                         void *pipe_addr, size_t pipe_size,
-                        pami_recv_t *recv) {
+                        pami_endpoint_t origin,
+pami_recv_t *recv) {
         if (pipe_addr != NULL) {
                 memcpy(rbuf, pipe_addr, pipe_size);
                 recvflag = 0;

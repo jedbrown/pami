@@ -112,6 +112,7 @@ static void test_dispatch (
     size_t               header_size,  /**< IN: header size */
     const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
     size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
+    pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
     pami_recv_t        * recv)         /**< OUT: receive message structure */
 {
   T_DISPATCH = PAMI_Wtimebase();

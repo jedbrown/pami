@@ -674,11 +674,13 @@ namespace PAMI
 
       inline pami_result_t dispatch_impl (size_t                     id,
                                          pami_dispatch_callback_fn   fn,
-                                         void                     * cookie,
+                                         void                      * cookie,
                                          pami_send_hint_t            options)
       {
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, "Context::dispatch_impl .. _dispatch[%zu] = %p, options = %#X\n", id, _dispatch[id], *(unsigned*)&options));
+
+        pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid,__global.mapping.task(),_contextid);
 
          if (_dispatch[id] == NULL)
          {
@@ -699,13 +701,13 @@ namespace PAMI
                   {
                      _dispatch[id] = (Protocol::Send::Send *)
                            Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
-                           generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
+                           generate (id, fn, cookie, _devices->_mu[_contextid], self, _protocol, result);
                   }
                   else
                   {
                      _dispatch[id] = (Protocol::Send::Send *)
                         Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
-                        generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
+                        generate (id, fn, cookie, _devices->_mu[_contextid], self, _protocol, result);
                   }
                }
                else
@@ -723,13 +725,13 @@ namespace PAMI
                   {
                      _dispatch[id] = (Protocol::Send::Send *)
                         Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
-                        generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                        generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
                   }
                   else
                   {
                      _dispatch[id] = (Protocol::Send::Send *)
                         Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
-                        generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                        generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
                   }
                }
                else
@@ -746,11 +748,11 @@ namespace PAMI
                   {
                      Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false> * eagermu =
                         Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
-                        generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
+                        generate (id, fn, cookie, _devices->_mu[_contextid], self, _protocol, result);
 
                      Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false> * eagershmem =
                         Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
-                        generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                        generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
 
                      _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
                         generate (eagershmem, eagermu, _protocol, result);
@@ -759,11 +761,11 @@ namespace PAMI
                   {
                      Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true> * eagermu =
                         Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
-                        generate (id, fn, cookie, _devices->_mu[_contextid], _protocol, result);
+                        generate (id, fn, cookie, _devices->_mu[_contextid], self, _protocol, result);
 
                      Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true> * eagershmem =
                         Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
-                        generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                        generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
 
                      _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
                         generate (eagershmem, eagermu, _protocol, result);

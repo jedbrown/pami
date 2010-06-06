@@ -116,10 +116,12 @@ namespace PAMI
       ni = (T_NativeInterface*) allocator.allocateObject ();
       new ((void*)ni) T_NativeInterface(client, context, context_id, client_id);
 
+      pami_endpoint_t origin = PAMI_ENDPOINT_INIT(client_id,__global.mapping.task(),context_id);
+
       // Construct the p2p protocol using the NI dispatch function and cookie
       pami_dispatch_callback_fn fn;
       fn.p2p = T_NativeInterface::dispatch_p2p;
-      protocol = (T_Protocol*) T_Protocol::generate(dispatch, fn, (void*) ni, device, allocator, result);
+      protocol = (T_Protocol*) T_Protocol::generate(dispatch, fn, (void*) ni, device, origin, allocator, result);
 
       // Set the protocol into the NI
       ni->setProtocol(dispatch, protocol);
@@ -174,13 +176,15 @@ namespace PAMI
       ni = (T_NativeInterface*) allocator.allocateObject ();
       new ((void*)ni) T_NativeInterface(client, context, context_id, client_id);
 
+      pami_endpoint_t origin = PAMI_ENDPOINT_INIT(client_id,__global.mapping.task(),context_id);
+
       // Construct the first p2p protocol using the NI dispatch function and cookie
       pami_dispatch_callback_fn fn;
       fn.p2p = T_NativeInterface::dispatch_p2p;
-      protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch, fn, (void*) ni, device1, allocator, result);
+      protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch, fn, (void*) ni, device1, origin, allocator, result);
 
       // Construct the second p2p protocol using the NI dispatch function and cookie
-      protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch, fn, (void*) ni, device2, allocator, result);
+      protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch, fn, (void*) ni, device2, origin, allocator, result);
 
       // Construct the composite from the two protocols
       Protocol::Send::SendPWQ<Protocol::Send::Send>* composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*) Protocol::Send::Factory::generate (protocol1,protocol2,allocator, result);
@@ -354,6 +358,7 @@ namespace PAMI
                              size_t               header_size,
                              const void         * data,
                              size_t               data_size,
+                             pami_endpoint_t      origin,
                              pami_recv_t        * recv);
 
     /// \brief set the protocol pointer.    We can't pass the protocol on the NI ctor because it's a
@@ -383,6 +388,7 @@ namespace PAMI
                   size_t               header_size,
                   const void         * data,
                   size_t               data_size,
+                  pami_endpoint_t      origin,
                   pami_recv_t        * recv);
 
     ///
@@ -473,6 +479,7 @@ namespace PAMI
                              size_t               header_size,
                              const void         * data,
                              size_t               data_size,
+                             pami_endpoint_t      origin,
                              pami_recv_t        * recv);
 
     /// \brief set the protocol pointer.    We can't pass the protocol on the NI ctor because it's a
@@ -502,6 +509,7 @@ namespace PAMI
                   size_t               header_size,
                   const void         * data,
                   size_t               data_size,
+                  pami_endpoint_t      origin,
                   pami_recv_t        * recv);
 
     ///
@@ -810,6 +818,7 @@ namespace PAMI
                                                                 size_t               header_size,  /**< IN:  header size     */
                                                                 const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                                                                 size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+                                                                pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
                                                                 pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
     TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::dispatch_p2p header size %zu, data size %zu\n", cookie, header_size, data_size));
@@ -819,6 +828,7 @@ namespace PAMI
                 header_size,
                 data,
                 data_size,
+                origin,
                 recv);
   }
   ///
@@ -832,6 +842,7 @@ namespace PAMI
                                                             size_t               header_size,  /**< IN:  header size     */
                                                             const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                                                             size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+                                                            pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
                                                             pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
 
@@ -1159,6 +1170,7 @@ namespace PAMI
                                                                      size_t               header_size,  /**< IN:  header size     */
                                                                      const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                                                                      size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+                                                                     pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
                                                                      pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
     TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::dispatch_p2p header size %zu, data size %zu\n", cookie, header_size, data_size));
@@ -1168,6 +1180,7 @@ namespace PAMI
                 header_size,
                 data,
                 data_size,
+                origin,
                 recv);
   }
   ///
@@ -1181,6 +1194,7 @@ namespace PAMI
                                                                  size_t               header_size,  /**< IN:  header size     */
                                                                  const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                                                                  size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+                                                                 pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
                                                                  pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
 

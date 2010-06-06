@@ -54,8 +54,9 @@ namespace PAMI
           ///
           typedef struct __attribute__((__packed__)) protocol_metadata
           {
-            uint16_t       databytes; ///< Number of bytes of data
-            uint16_t       metabytes; ///< Number of bytes of metadata
+            uint16_t        databytes; ///< Number of bytes of data
+            uint16_t        metabytes; ///< Number of bytes of metadata
+            pami_endpoint_t origin;    ///< Origin endpoint for transfer  
           } protocol_metadata_t;
 
           ///
@@ -96,20 +97,22 @@ namespace PAMI
           /// \param[in]  dispatch     Dispatch identifier
           /// \param[in]  dispatch_fn  Dispatch callback function
           /// \param[in]  cookie       Opaque application dispatch data
+          /// \param[in]  origin       Origin endpoint
           /// \param[in]  device       Device that implements the message interface
-          /// \param[in]  context      Origin communcation context
           /// \param[out] status       Constructor status
           ///
-          inline EagerImmediate (size_t                     dispatch,
+          inline EagerImmediate (size_t                      dispatch,
                                  pami_dispatch_callback_fn   dispatch_fn,
-                                 void                     * cookie,
-                                 T_Device                 & device,
+                                 void                      * cookie,
+                                 T_Device                  & device,
+                                 pami_endpoint_t             origin,
                                  pami_result_t             & status) :
               _send_model (device),
               _context (device.getContext()),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
-              _device (device)
+              _device (device),
+              _origin (origin)
           {
             // ----------------------------------------------------------------
             // Compile-time assertions
@@ -120,6 +123,9 @@ namespace PAMI
 
             // This protcol only works with deterministic models.
             COMPILE_TIME_ASSERT(T_Model::deterministic_packet_model == true);
+
+            // Ensure there is enough space in the packet metadata
+            COMPILE_TIME_ASSERT(sizeof(protocol_metadata_t) <= T_Model::packet_model_metadata_bytes);
 
             // ----------------------------------------------------------------
             // Compile-time assertions
@@ -150,6 +156,7 @@ namespace PAMI
             protocol_metadata_t metadata;
             metadata.databytes = parameters->data.iov_len;
             metadata.metabytes = parameters->header.iov_len;
+            metadata.origin    = _origin;
 
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. parameters->header.iov_len = %zu, parameters->data.iov_len = %zu dest:%x\n", parameters->header.iov_len, parameters->data.iov_len, parameters->dest));
 
@@ -190,6 +197,7 @@ namespace PAMI
               // will be left pointing to garbage.
               send->metadata.databytes = metadata.databytes;
               send->metadata.metabytes = metadata.metabytes;
+              send->metadata.origin    = metadata.origin;
 
               // Do the send!
               TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. post packet after failure, dest:0x%08x \n",parameters->dest));
@@ -222,12 +230,13 @@ namespace PAMI
 
           MemoryAllocator < sizeof(send_t), 16 > _allocator;
 
-          T_Model                    _send_model;
+          T_Model                     _send_model;
 
           pami_context_t              _context;
           pami_dispatch_callback_fn   _dispatch_fn;
-          void                     * _cookie;
-          T_Device                 & _device;
+          void                      * _cookie;
+          T_Device                  & _device;
+          pami_endpoint_t             _origin;
 
           ///
           /// \brief Direct single-packet send dispatch.
@@ -264,6 +273,7 @@ namespace PAMI
                                     m->metabytes,     // Metadata bytes
                                     (void *) (data + m->metabytes),  // payload data
                                     m->databytes,     // Total number of bytes
+                                    m->origin,        // Origin endpoint for the transfer
                                     (pami_recv_t *) NULL);
 
             TRACE_ERR ((stderr, "<< EagerImmediate::dispatch_send_direct()\n"));

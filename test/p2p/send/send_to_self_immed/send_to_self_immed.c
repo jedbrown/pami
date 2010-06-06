@@ -61,7 +61,8 @@ static void test_dispatch (
     size_t               header_size,  /**< IN: header size */
     const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
     size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
-    pami_recv_t         * recv)        /**< OUT: receive message structure */
+    pami_endpoint_t origin,
+pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
   TRACE_ERR((stderr, "Called dispatch function.  cookie = %p (active: %zu -> %zu), task = %zu, header_size = %zu, pipe_size = %zu, recv=%p\n", cookie, *active, *active-1, task, header_size, pipe_size,recv));

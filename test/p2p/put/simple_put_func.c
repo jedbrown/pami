@@ -68,7 +68,8 @@ static void dispatch_send (
     size_t               header_size,  /**< IN: header size */
     const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
     size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
-    pami_recv_t        * recv)        /**< OUT: receive message structure */
+    pami_endpoint_t origin,
+pami_recv_t        * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * value = (volatile size_t *) cookie;
   fprintf (stderr, ">> 'send' dispatch function.  cookie = %p (_done: %zu), header_size = %zu, pipe_size = %zu, recv = %p\n", cookie, *value, header_size, pipe_size, recv);

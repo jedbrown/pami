@@ -50,7 +50,8 @@ static void concurrency_recvdone(pami_context_t context, void *clientdata, pami_
 static void cb_recv_con(pami_context_t context, void *clientdata,
                         void *msginfo, size_t msginfolen,
                         void *pipe_addr, size_t pipe_size,
-                        pami_recv_t *recv) {
+                        pami_endpoint_t origin,
+pami_recv_t *recv) {
         struct test_msginfo *mi = (struct test_msginfo *)msginfo;
         int phase = mi->phase;
 

@@ -475,6 +475,8 @@ namespace PAMI
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result = %d\n", id, _dispatch[id], result));
 
+        pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid,__global.mapping.task(),_contextid);
+
         if (_dispatch[id] == NULL)
           {
             bool no_shmem  = options.no_shmem;
@@ -509,13 +511,13 @@ namespace PAMI
                 {
                   _dispatch[id] = (Protocol::Send::Send *)
                     Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
                 }
               else
                 {
                   _dispatch[id] = (Protocol::Send::Send *)
                     Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
                 }
 #else
               PAMI_abortf("No shmem protocols available.");
@@ -536,7 +538,7 @@ namespace PAMI
                 {
                   Protocol::Send::Eager <ShmemModel, ShmemDevice, false> * eager =
                     Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
 
                   _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
                       generate (eager, datagram, _protocol, result);
@@ -545,7 +547,7 @@ namespace PAMI
                 {
                   Protocol::Send::Eager <ShmemModel, ShmemDevice, true> * eager =
                     Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
+                      generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
 
                   _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
                       generate (eager, datagram, _protocol, result);

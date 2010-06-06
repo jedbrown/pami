@@ -30,7 +30,8 @@ static void test_dispatch (
     size_t               header_size,  /**< IN: header size */
     const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
     size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
-    pami_recv_t         * recv)        /**< OUT: receive message structure */
+    pami_endpoint_t origin,
+pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   TRACE((stderr, "Called dispatch function.  cookie = %p, active: %zu, header_addr = %p, header_size = %zu\n", cookie,  *((volatile size_t *) cookie), header_addr, header_size));
 
