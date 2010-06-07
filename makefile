@@ -1,4 +1,4 @@
-# these are the subdirectories to visit
+# these are the subdirectories to visit test
 EXPINC_SUBDIRS = ade
 EXPLIB_SUBDIRS = ade
 SUBDIRS        = ade
