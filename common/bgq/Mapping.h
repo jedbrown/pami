@@ -161,9 +161,10 @@ namespace PAMI
     ///
     inline void getMuDestinationTask (size_t task, MUHWI_Destination_t &dest, size_t &tcoord)
     {
-      uint32_t raw      = _mapcache.torus.task2coords[task].raw;
-      tcoord            = (size_t) raw & 0x0000003f; // 't' coordinate
-      *(uint32_t*)&dest = (raw & 0xffffffc0);
+      uint32_t raw = _mapcache.torus.task2coords[task].raw;
+      tcoord       = (size_t) raw & 0x0000003f; // 't' coordinate
+
+      dest.Destination.Destination = (raw & 0x3fffffc0) | (raw >> 31);; //Mask the MSB 6 bits (tcoord) and the LSB bit (ecoord)
     };
 
     /////////////////////////////////////////////////////////////////////////
