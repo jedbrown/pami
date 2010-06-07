@@ -45,7 +45,7 @@ extern "C"
    *
    * \param[in] context   PAMI communication context that invoked the callback
    * \param[in] cookie    Event callback application argument
-   * \param[in] result    Asynchronous result information 
+   * \param[in] result    Asynchronous result information
    */
   typedef void (*pami_event_function) ( pami_context_t   context,
                                        void          * cookie,
@@ -2660,7 +2660,7 @@ extern "C"
    * \param[in] context PAMI communication context
    * \param[in] maximum Maximum number of internal poll iterations
    *
-   * \retval PAMI_SUCCESS  An event has occurred and been processed. 
+   * \retval PAMI_SUCCESS  An event has occurred and been processed.
    * \retval PAMI_EAGAIN   No event has occurred.
    */
   pami_result_t PAMI_Context_advance (pami_context_t context, size_t maximum);
@@ -2695,7 +2695,7 @@ extern "C"
    * \param[in] context Array of PAMI communication contexts
    * \param[in] count   Number of communication contexts
    * \param[in] maximum Maximum number of internal poll iterations on each context
-   * \retval PAMI_SUCCESS  An event has occurred and been processed. 
+   * \retval PAMI_SUCCESS  An event has occurred and been processed.
    * \retval PAMI_EAGAIN   No event has occurred.
    */
   pami_result_t PAMI_Context_advancev (pami_context_t context[],

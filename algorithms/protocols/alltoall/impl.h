@@ -27,17 +27,16 @@ namespace CCMI
       {
         // \todo:  fill in other metadata
         strcpy(&m->name[0],"Alltoall");
-      }      
+      }
       typedef CCMI::Adaptor::All2AllProtocol All2AllProtocol;
       typedef CCMI::Adaptor::All2AllFactoryT <All2AllProtocol, getAlltoallMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllFactory;
 
       // old CCMI
       typedef CCMI::Adaptor::A2AProtocol <PAMI_COLL_M2M_CLASS, PAMI_SYSDEP_CLASS, size_t> AlltoallProtocol;
       typedef CCMI::Adaptor::AlltoallFactory <PAMI_COLL_M2M_CLASS, PAMI_SYSDEP_CLASS, size_t> AlltoallFactory;
-      
+
     };
   };
 };  //namespace CCMI::Adaptor::Alltoall
 
 #endif
-

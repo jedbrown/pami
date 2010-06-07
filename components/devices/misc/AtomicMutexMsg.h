@@ -1,10 +1,10 @@
-/* begin_generated_IBM_copyright_prolog			     */
-/*								  */
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2009, 2010			       */
-/* IBM CPL License						  */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
-/*								  */
+/*                                                                  */
 /* end_generated_IBM_copyright_prolog			       */
 /**
  * \file components/devices/misc/AtomicMutexMsg.h

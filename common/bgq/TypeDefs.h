@@ -58,7 +58,7 @@ namespace PAMI
                                Device::MU::MUMulticastModel,
                                Device::MU::MUMultisyncModel,
                                Device::MU::MUMulticombineModel > MUGlobalNI;
-  
+
   typedef Fifo::FifoPacket <32, 512> ShmemPacket;
   typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgqShaddrReadOnly> ShmemDevice;

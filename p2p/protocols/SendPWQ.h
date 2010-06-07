@@ -28,49 +28,49 @@ namespace PAMI
     {
       ///
       /// \brief Template class to extend point-to-point send with PWQ support.
-      /// 
+      ///
       /// \details Send side only.  Receive/dispatch still uses the protocol's
       /// flat buffer dispatch.
-      ///   
+      ///
       /// T_Protocol is assumed to be some send protocol:
       /// \see PAMI::Protocol::Send::Send
       ///
-      /// This class is NOT constructed, it is an extension of an existing 
+      /// This class is NOT constructed, it is an extension of an existing
       /// protocol that is used by casting the protocol to this class.
-      /// 
+      ///
       /// This was done because protocol constructor and factory generates
       /// are not standard so SendPWQ can't overload them.
-      /// 
+      ///
       /// Restrictions:
       /// Because it is NOT constructed, it may not define member data or
       /// new virtual member functions in this class
-      /// 
-      /// \todo Pass in a generic work device for posting instead of 
+      ///
+      /// \todo Pass in a generic work device for posting instead of
       /// using the c function - PAMI_Context_post()?  Hard to do without
       /// member data. Could be passed on each call and stored in sendpwq_t?
-      /// 
+      ///
       /// \example of usage:
-      /// 
+      ///
       /// // Define a protocol
       /// typedef Protocol::Send::...<> MyProtocol;
-      /// 
+      ///
       /// // Define a SendPWQ over this protocol
       /// typedef PAMI::Protocol::Send::SendPWQ < MyProtocol > MySendPWQ;
-      /// 
+      ///
       /// // Generate the protocol
       /// MySendPWQ *protocol = (MySendPWQ*) MySendPWQ::generate(...);
       ///
       /// NOTE: generate will call MyProtocol::generate and return MyProtocol*,
-      /// so it IS  necessary to cast it to MySendPWQ*.  This constructs 
-      /// MyProtocol but does not actually call any MySendPWQ constructor, 
+      /// so it IS  necessary to cast it to MySendPWQ*.  This constructs
+      /// MyProtocol but does not actually call any MySendPWQ constructor,
       /// thus the restrictions note above.
-      /// 
+      ///
       /// You may then call member functions on MySendPWQ or MyProtocol
-      /// 
+      ///
       /// protocol->immediatePWQ();  // Call new PWQ immediate on MySendPWQ.
-      /// 
+      ///
       /// protocol->immediate();    // Call regular p2p immediate send.
-      /// 
+      ///
       /// protocol->otherProtocolFunction(); // Call other protocol functions.
       ///
 
@@ -95,7 +95,7 @@ namespace PAMI
         ///
         /// \brief Async work function. Try to resend the data in the pwq if it's ready
         ///
-        /// \param[in]  context   Work context        
+        /// \param[in]  context   Work context
         /// \param[in]  cookie    Original send state to resend.
         ///
         static pami_result_t work_function(pami_context_t context, void *cookie)
@@ -119,7 +119,7 @@ namespace PAMI
           return PAMI_SUCCESS;
         }
         ///
-        /// \brief Start a new immediate send message with PWQ. If there is no 
+        /// \brief Start a new immediate send message with PWQ. If there is no
         /// data ready, post an async work function to retry later.
         ///
         /// \param[in]  task      Destination task.
@@ -161,7 +161,7 @@ namespace PAMI
         }
 
         ///
-        /// \brief Start a new simple send message with PWQ.  If there is no 
+        /// \brief Start a new simple send message with PWQ.  If there is no
         /// data ready, post an async work function to retry later.
         ///
         /// \param[in]  local_fn  Callback to invoke on local node when

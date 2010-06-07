@@ -378,7 +378,7 @@ namespace PAMI
         // The multi registration will use shmem/mu if they are ctor'd above.
         _multi_registration       =  new (_multi_registration)
         CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >(_shmem_native_interface, _global_mu_ni, client, (pami_context_t)this, id, clientid);
-  
+
         _multi_registration->analyze(_contextid, _world_geometry);
 
         // Complete rget and rput protocol initialization

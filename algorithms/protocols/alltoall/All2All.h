@@ -1,9 +1,9 @@
 /**
- * \file algorithms/protocols/broadcast/MultiCastComposite.h
+ * \file algorithms/protocols/alltoall/All2All.h
  * \brief Simple composite based on multicast
  */
-#ifndef __algorithms_protocols_all2all_h__
-#define __algorithms_protocols_all2all_h__
+#ifndef __algorithms_protocols_alltoall_All2All_h__
+#define __algorithms_protocols_alltoall_All2All_h__
 
 #include "algorithms/composite/Composite.h"
 #include "util/ccmi_util.h"
@@ -24,7 +24,7 @@ namespace CCMI
       pami_manytomany_t _m2m_info;
       pami_callback_t _my_cb_done;
       pami_callback_t _app_cb_done;
-      size_t _my_index;    
+      size_t _my_index;
       unsigned _donecount;
 
     public:
@@ -44,7 +44,7 @@ namespace CCMI
           size_t topo_size = PAMI_Topology_size(all);
           _my_index = PAMI_Topology_taskID2Index(all, self);
 
-        
+
           _my_cb_done.function = a2aDone;
           _my_cb_done.clientdata = this;
           _donecount = 0;
@@ -64,7 +64,7 @@ namespace CCMI
           _send.num_vecs = 1;
           _send.lengths = &(coll->cmd.xfer_alltoall.stypecount);
           _send.offsets = (size_t *) NULL;
-        
+
           PAMI_PipeWorkQueue_config_flat(_recv.buffer,
                                          coll->cmd.xfer_alltoall.rcvbuf,
                                          bytes,
@@ -113,7 +113,7 @@ namespace CCMI
       {
         All2AllProtocol *a2a = (All2AllProtocol*) arg;
         CCMI_assert(a2a != NULL);
-        
+
         // Msync is done, start the active message a2a
         a2a->startA2A();
       }
@@ -128,7 +128,7 @@ namespace CCMI
         cb_done->function   = _my_cb_done.function;
         cb_done->clientdata = _my_cb_done.clientdata;
       }
-      
+
       static void a2aDone(pami_context_t context,
                           void *arg,
                           pami_result_t err)
@@ -141,7 +141,7 @@ namespace CCMI
                                       a2a->_app_cb_done.clientdata,
                                       PAMI_SUCCESS);
       }
-      
+
     };
 
 
@@ -159,12 +159,12 @@ namespace CCMI
                      Interfaces::NativeInterface *native):
       CollectiveProtocolFactory(),
         _cmgr(cmgr),
-        _native(native)  
+        _native(native)
         {
           _fn.manytomany = cb_manytomany;
           _native->setDispatch(_fn, this);
         }
-      
+
       virtual ~All2AllFactoryT()
       {
       }
@@ -179,7 +179,7 @@ namespace CCMI
       {
         return g->comm();
       }
-      
+
       virtual void metadata(pami_metadata_t *mdata)
       {
         get_metadata(mdata);
@@ -205,7 +205,7 @@ namespace CCMI
                       (PAMI_GEOMETRY_CLASS *) g,
                       (pami_xfer_t *)op,
                       cb_exec_done);
-        
+
         coll_object->setXfer((pami_xfer_t *)op);
         coll_object->setFlag(LocalPosted);
         coll_object->setFactory(this);
@@ -234,7 +234,7 @@ namespace CCMI
         }
         C *cmgr = factory->_cmgr;
         unsigned key = factory->getKey(geometry, &cmgr);
-        
+
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *coll_object =
           (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)
           geometry->asyncCollectivePostQ().findAndDelete(key);
@@ -262,7 +262,7 @@ namespace CCMI
       }
     }; //- All2AllFactoryT
 
-    
+
   };
 };
 

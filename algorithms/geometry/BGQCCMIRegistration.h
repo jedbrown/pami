@@ -233,8 +233,8 @@ namespace PAMI
       class T_Allocator >
       class CCMIRegistration :
       public CollRegistration < PAMI::CollRegistration::BGQ::CCMIRegistration < T_Geometry,
-      T_NativeInterfaceP2pActiveMessage, 
-      T_NativeInterfaceP2pAllsided,      
+      T_NativeInterfaceP2pActiveMessage,
+      T_NativeInterfaceP2pAllsided,
         T_Local_Device,
         T_Global_Device,
       T_Allocator > ,

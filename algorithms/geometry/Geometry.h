@@ -24,7 +24,7 @@
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
-#undef TRACE_ERR2 
+#undef TRACE_ERR2
 #define TRACE_ERR2(x) //fprintf x
 
 #ifndef PAMI_GEOMETRY_NUMALGOLISTS

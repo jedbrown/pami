@@ -176,7 +176,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%p>Broadcast::MultiColorCompositeT::cb_barrier_done() numcolors %u, donecount %u, complete count %u\n", me,composite->_numColors,composite->_doneCount,composite->_nComplete));
           CCMI_assert (composite != NULL);
 
-          //printf ("In cb_barrier_done donec=%d\n", 
+          //printf ("In cb_barrier_done donec=%d\n",
           for (unsigned i = 0; i < composite->_numColors; ++i)
             {
               composite->getExecutor(i)->start();

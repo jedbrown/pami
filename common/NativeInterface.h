@@ -28,7 +28,7 @@ namespace PAMI
 
   ///
   /// \brief Provide a Native Interface over a point to point protocol
-  /// 
+  ///
   /// \details See classes below
   /// \see PAMI::NativeInterfaceBase
   /// \see PAMI::NativeInterfaceAllsided
@@ -36,32 +36,32 @@ namespace PAMI
   /// \see PAMI::Protocol::Send::SendPWQ
   /// \see PAMI::CollRegistration::BGQ:CCMIRegistration
   ///
-  /// \example of usage 
-  /// 
+  /// \example of usage
+  ///
   /// // Define a point to point protocol (
   ///
   /// typedef Protocol::Send::...<> MyProtocol;
-  /// 
+  ///
   /// // Define a SendPWQ over this protocol
   /// typedef PAMI::Protocol::Send::SendPWQ < MyProtocol > MySendPWQ;
-  /// 
+  ///
   /// // Construct the Native Interface - returns the NI dispatch id.
-  /// 
+  ///
   /// NativeInterfaceActiveMessage *ni = new NativeInterfaceActiveMessage(client, context, context_id, client_id, dispatch);
-  /// 
+  ///
   /// // Generate the protocol with the NI dispatch id and NI dispatch function and the NI pointer as a cookie
-  /// 
+  ///
   ///  pami_dispatch_callback_fn dispatch_fn;
   /// dispatch_fn.p2p = NativeInterfaceActiveMessage::dispatch_p2p;
-  /// 
+  ///
   /// MySendPWQ *protocol = (MySendPWQ*) MySendPWQ::generate(dispatch, dispatch_fn,(void*) ni,  ...);
   ///
   /// // Set the p2p protocol back in the Native Interface
-  /// 
+  ///
   /// ni->setProtocol(protocol);
   ///
   /// This sequence is necessary.  We can't pass the protocol on the NI ctor because it's a
-  /// chicken-n-egg problem.  NativeInterface  ctor needs a protocol. Protocol ctor needs a 
+  /// chicken-n-egg problem.  NativeInterface  ctor needs a protocol. Protocol ctor needs a
   /// dispatch function (NI::dispatch_p2p) and cookie (NI*).
   ///
 
@@ -75,14 +75,14 @@ namespace PAMI
   // \class NativeInterfaceBase
   // \brief The common base for both active message and all sided NI.
   // \details
-  //   - multicast_model_available_buffers_only: does not fully 
+  //   - multicast_model_available_buffers_only: does not fully
   //        support PipeWorkQueue's
-  //            
+  //
   //      - send side pwq is fully supported.
-  //      - receive side pwq in not fully supported.  We must have enough buffer 
-  //        in the receive pwq when dispatched to give the p2p protocol the 
+  //      - receive side pwq in not fully supported.  We must have enough buffer
+  //        in the receive pwq when dispatched to give the p2p protocol the
   //        necessary receive buffer.  We do not allocate receive buffers.
-  // 
+  //
   // \todo Possible enhancement - fully support receive pwq with an allocator? or
   //  write a receivePWQ p2p protocol extension like sendPWQ.
   //
@@ -135,7 +135,7 @@ namespace PAMI
       pami_quad_t           msginfo[multicast_model_msgcount_max];  ///< User's msginfo
     } metadata_t __attribute__ ((__aligned__ (16)));
 
-    // State (request) implementation.  
+    // State (request) implementation.
     class p2p_multicast_statedata_t : public Queue::Element
     {
       inline p2p_multicast_statedata_t() :
@@ -158,20 +158,20 @@ namespace PAMI
   //
   // \todo NativeInterfaceAllsided and NativeInterfaceActiveMessage duplicate
   // a lot of code.  Move it to NativeInterfaceBase or templatize it?
-  // 
+  //
   // \todo Short protocol?  Use immediate() instead of simple() based on length
   // and/or template parms.  SendPWQ already supports immediatePWQ().
-  // 
+  //
   //
 
   //
   // \class NativeInterfaceAllsided
   // \brief A pseudo all-sided native interface based on a p2p protocol
   // \details
-  //   - 'all sided' multicast because it does not call a user receive callback, 
-  // however it does require the user to ensure the 'receive' multicasts are 
+  //   - 'all sided' multicast because it does not call a user receive callback,
+  // however it does require the user to ensure the 'receive' multicasts are
   // called before the 'send'/root multicast so that data pwq's are available.
-  // 
+  //
   //
 
   template <class T_Protocol>
@@ -289,7 +289,7 @@ namespace PAMI
   // \details
   //   - inherits from all-sided and adds dispatch/active message capability
   //   - active message model
-  // 
+  //
   //
   template <class T_Protocol>
   class NativeInterfaceActiveMessage : public NativeInterfaceAllsided<T_Protocol>
@@ -446,7 +446,7 @@ namespace PAMI
                obj->_user_callback.function, obj->_user_callback.clientdata));
 
     if(obj->_type == NativeInterfaceBase<T_Protocol>::allocObj::MULTICAST)
-    { 
+    {
       // Punch the produce button on the rcvpwq
       typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t *state = (typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t*)obj->_state._mcast;
        TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::ni_client_done pwq<%p>->produce(%zu)\n",
@@ -593,9 +593,9 @@ namespace PAMI
     TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::postMulticast_impl() state %p/%p\n",this,state,state_data));
     if(state_data->rcvpwq) _recvQ.pushTail(state_data); // only use recvQ if this mcast expects to receives data.
 
-    // Destinations may return now and wait for data to be dispatched 
+    // Destinations may return now and wait for data to be dispatched
     /// \todo Handle metadata only?
-    /// \todo handle both pwq's null? Barrier?  
+    /// \todo handle both pwq's null? Barrier?
     if (!pwq) return PAMI_SUCCESS;
 
     void* payload = NULL;

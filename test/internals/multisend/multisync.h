@@ -181,7 +181,7 @@ private:
                 fprintf(stderr, "... completion callback for %s, done %d++ (seq %d)\n", thus->_name, thus->_done, *thus->_sema);
 		++(*thus->_sema);
                 ++thus->_done;
-		
+
         }
 
 public:
