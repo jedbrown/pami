@@ -23,10 +23,10 @@
   #undef TRACE_ERR
   #define TRACE_ERR(x) fprintf x
 #endif
- 
+
 extern PAMI::Global __global;
 
-#define DISPATCH_START 0x10
+#define DISPATCH_P2P_START 0x10
 
 namespace PAMI
 {
@@ -50,29 +50,85 @@ namespace PAMI
   /// // Define a SendPWQ over this protocol
   /// typedef PAMI::Protocol::Send::SendPWQ < MyProtocol > MySendPWQ;
   ///
-  /// // Construct the Native Interface - returns the NI dispatch id.
+  /// // Construct the Native Interface
   ///
-  /// NativeInterfaceActiveMessage *ni = new NativeInterfaceActiveMessage(client, context, context_id, client_id, dispatch);
+  /// NativeInterfaceActiveMessage *ni = new NativeInterfaceActiveMessage(client, context, context_id, client_id);
   ///
-  /// // Generate the protocol with the NI dispatch id and NI dispatch function and the NI pointer as a cookie
+  /// // Generate the protocol with the NI dispatch function and the NI pointer as a cookie
   ///
   ///  pami_dispatch_callback_fn dispatch_fn;
   /// dispatch_fn.p2p = NativeInterfaceActiveMessage::dispatch_p2p;
   ///
   /// MySendPWQ *protocol = (MySendPWQ*) MySendPWQ::generate(dispatch, dispatch_fn,(void*) ni,  ...);
   ///
-  /// // Set the p2p protocol back in the Native Interface
+  /// // Set the p2p dispatch id and protocol back in the Native Interface
   ///
-  /// ni->setProtocol(protocol);
+  /// ni->setProtocol(dispatch, protocol);
   ///
   /// This sequence is necessary.  We can't pass the protocol on the NI ctor because it's a
   /// chicken-n-egg problem.  NativeInterface  ctor needs a protocol. Protocol ctor needs a
   /// dispatch function (NI::dispatch_p2p) and cookie (NI*).
   ///
+  /// If we had a common ctor/generate and/or setDispatch on P2P protocols, we could do it differently.
+  ///
 
   namespace NativeInterfaceCommon // Common constants
   {
-    static size_t _id = DISPATCH_START;
+    static size_t _id = DISPATCH_P2P_START;
+    static size_t getNextDispatch()
+    {
+      TRACE_ERR((stderr, "<%p>NativeInterfaceCommon::getNextDispatch() %zu\n", (void*)NULL, _id));
+      return _id++;
+    }
+    /// \brief Construct a P2p Native Interface
+    /// \details
+    ///
+    ///  A native inteface is constructed from a given dispatch id
+    ///
+    ///  Then a P2P protocol is constructed from the device and using the 
+    ///  same dispatch id and using the native interface's dispatch function 
+    ///  and the native interface as a cookie.
+    ///
+    ///  Finally, the P2P protocol is set into the native interface.
+    ///
+    template<class T_Allocator, class T_NativeInterface,class T_Protocol,class T_Device> 
+    inline pami_result_t constructNativeInterface(T_Allocator        &allocator, 
+                                                  T_Device           &device, 
+                                                  T_NativeInterface *&ni,
+                                                  T_Protocol        *&protocol,
+                                                  pami_client_t       client, 
+                                                  pami_context_t      context, 
+                                                  size_t              context_id, 
+                                                  size_t              client_id,
+                                                  size_t              dispatch)
+    {
+      TRACE_ERR((stderr, "<%p>NativeInterfaceCommon::constructNativeInterface() \n", (void*)NULL));
+      DO_DEBUG((templateName<T_NativeInterface>()));
+      DO_DEBUG((templateName<T_Protocol>()));
+      DO_DEBUG((templateName<T_Device>()));
+
+      pami_result_t result = PAMI_ERROR;
+
+      COMPILE_TIME_ASSERT(sizeof(T_NativeInterface) <= T_Allocator::objsize);
+      COMPILE_TIME_ASSERT(sizeof(T_Protocol) <= T_Allocator::objsize);
+
+      // Get storage for the NI and construct it.
+      ni = (T_NativeInterface*) allocator.allocateObject ();
+      new ((void*)ni) T_NativeInterface(client, context, context_id, client_id);
+
+      // Get storage for the p2p protocol and construct it using the NI dispatch function and cookie
+      pami_dispatch_callback_fn fn;
+      fn.p2p = T_NativeInterface::dispatch_p2p;
+      protocol = (T_Protocol*) allocator.allocateObject ();
+      protocol = (T_Protocol*) T_Protocol::generate(dispatch, fn, (void*) ni, device, allocator, result);
+
+      // Set the protocol into the NI
+      ni->setProtocol(dispatch, protocol);
+
+      // Return 
+      return result;
+    }
+
   }
 
 
@@ -95,7 +151,7 @@ namespace PAMI
   template <class T_Protocol>
   class NativeInterfaceBase : public CCMI::Interfaces::NativeInterface
   {
-    public:
+  public:
     // Model-specific interfaces
     static const size_t multicast_sizeof_msg     = 1024;;///\todo T_Mcast::sizeof_msg - arbitrary - figure it out from data structures/protocol
     static const size_t multisync_sizeof_msg     = 1024;;///\todo T_Msync::sizeof_msg - arbitrary - figure it out from data structures/protocol
@@ -118,7 +174,10 @@ namespace PAMI
     class allocObj
     {
     public:
-      enum {MULTICAST,MULTICOMBINE,MULTISYNC,MANYTOMANY}  _type;
+      enum
+      {
+        MULTICAST,MULTICOMBINE,MULTISYNC,MANYTOMANY
+      }  _type;
       union
       {
         uint8_t             _mcast[multicast_sizeof_msg]; // p2p_multicast_statedata_t
@@ -185,7 +244,7 @@ namespace PAMI
   public:
 
     /// \brief ctor
-    inline NativeInterfaceAllsided(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, size_t &dispatch);
+    inline NativeInterfaceAllsided(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id);
     /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterface)
     virtual inline pami_result_t multicast    (pami_multicast_t    *);
     virtual inline pami_result_t multisync    (pami_multisync_t    *);
@@ -239,9 +298,10 @@ namespace PAMI
     ///
     /// I choose to ctor the NI, ctor the protocol, then manually set it with NI::setProtocol().
     ///
-    inline void setProtocol(T_Protocol* protocol)
+    inline void setProtocol(size_t dispatch, T_Protocol* protocol)
     {
-      TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::setProtocol(%p)\n", this, protocol));
+      TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::setProtocol(%zu, %p)\n", this, dispatch, protocol));
+      _mcast_dispatch = dispatch;
       _protocol = protocol;
     }
 
@@ -302,7 +362,7 @@ namespace PAMI
   public:
 
     /// \brief ctor
-    inline NativeInterfaceActiveMessage(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, size_t &dispatch);
+    inline NativeInterfaceActiveMessage(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id);
     /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterfaceActiveMessage)
     virtual inline pami_result_t multicast    (pami_multicast_t    *);
     virtual inline pami_result_t multisync    (pami_multisync_t    *);
@@ -357,9 +417,10 @@ namespace PAMI
     ///
     /// I choose to ctor the NI, ctor the protocol, then manually set it with NI::setProtocol().
     ///
-    inline void setProtocol(T_Protocol* protocol)
+    inline void setProtocol(size_t dispatch, T_Protocol* protocol)
     {
       TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::setProtocol(%p)\n", this, protocol));
+      _mcast_dispatch = dispatch;
       _protocol = protocol;
     }
 
@@ -425,7 +486,7 @@ namespace PAMI
   // Inline implementations
   //
   template <class T_Protocol>
-  inline NativeInterfaceAllsided<T_Protocol>::NativeInterfaceAllsided(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, size_t &dispatch):
+  inline NativeInterfaceAllsided<T_Protocol>::NativeInterfaceAllsided(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id):
   NativeInterfaceBase<T_Protocol>(),
   _allocator(),
   _protocol(NULL), /// must be set by setProtocol() before using the NI.
@@ -450,14 +511,14 @@ namespace PAMI
                ni, context, rdata, res,
                obj->_user_callback.function, obj->_user_callback.clientdata));
 
-    if(obj->_type == NativeInterfaceBase<T_Protocol>::allocObj::MULTICAST)
+    if (obj->_type == NativeInterfaceBase<T_Protocol>::allocObj::MULTICAST)
     {
       // Punch the produce button on the rcvpwq
       typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t *state = (typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t*)obj->_state._mcast;
-       TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::ni_client_done pwq<%p>->produce(%zu)\n",
-                  ni, state->rcvpwq, state->bytes));
-       if(state->rcvpwq) state->rcvpwq->produceBytes(state->bytes); /// \todo ? is this always the right byte count?
-       if(state->sndpwq) state->sndpwq->consumeBytes(state->bytes); /// \todo ? is this always the right byte count?
+      TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::ni_client_done pwq<%p>->produce(%zu)\n",
+                 ni, state->rcvpwq, state->bytes));
+      if (state->rcvpwq) state->rcvpwq->produceBytes(state->bytes); /// \todo ? is this always the right byte count?
+      if (state->sndpwq) state->sndpwq->consumeBytes(state->bytes); /// \todo ? is this always the right byte count?
     }
 
     if (obj->_user_callback.function)
@@ -596,7 +657,7 @@ namespace PAMI
     if (mcast->msgcount) memcpy(state_data->meta.msginfo, msgdata, mcast->msgcount * sizeof(typename NativeInterfaceBase<T_Protocol>::metadata_t().msginfo));
 
     TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::postMulticast_impl() state %p/%p\n",this,state,state_data));
-    if(state_data->rcvpwq) _recvQ.pushTail(state_data); // only use recvQ if this mcast expects to receives data.
+    if (state_data->rcvpwq) _recvQ.pushTail(state_data); // only use recvQ if this mcast expects to receives data.
 
     // Destinations may return now and wait for data to be dispatched
     /// \todo Handle metadata only?
@@ -791,15 +852,13 @@ namespace PAMI
   }
 
   template <class T_Protocol>
-  inline NativeInterfaceActiveMessage<T_Protocol>::NativeInterfaceActiveMessage(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, size_t &dispatch):
-  NativeInterfaceAllsided<T_Protocol>(client, context, context_id, client_id, dispatch),
-  _mcast_dispatch(NativeInterfaceCommon::_id++)
+  inline NativeInterfaceActiveMessage<T_Protocol>::NativeInterfaceActiveMessage(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id):
+  NativeInterfaceAllsided<T_Protocol>(client, context, context_id, client_id)
   {
     TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage()\n", this));
     DO_DEBUG((templateName<T_Protocol>()));
-    dispatch = _mcast_dispatch;
-  };
 
+  }
   template <class T_Protocol>
   inline void NativeInterfaceActiveMessage<T_Protocol>::ni_client_done(pami_context_t  context,
                                                                        void          *rdata,
@@ -812,13 +871,13 @@ namespace PAMI
                ni, context, rdata, res,
                obj->_user_callback.function, obj->_user_callback.clientdata));
 
-    if(obj->_type == NativeInterfaceBase<T_Protocol>::allocObj::MULTICAST)
-    { // Punch the produce button on the pwq
+    if (obj->_type == NativeInterfaceBase<T_Protocol>::allocObj::MULTICAST) // Punch the produce button on the pwq
+    {
       typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t *state = (typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t*)obj->_state._mcast;
-       TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::ni_client_done pwq<%p>->produce(%zu)\n",
-                  ni, state->rcvpwq, state->bytes));
-       if(state->rcvpwq) state->rcvpwq->produceBytes(state->bytes); /// \todo ? is this always the right byte count?
-       if(state->sndpwq) state->sndpwq->consumeBytes(state->bytes); /// \todo ? is this always the right byte count?
+      TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::ni_client_done pwq<%p>->produce(%zu)\n",
+                 ni, state->rcvpwq, state->bytes));
+      if (state->rcvpwq) state->rcvpwq->produceBytes(state->bytes); /// \todo ? is this always the right byte count?
+      if (state->sndpwq) state->sndpwq->consumeBytes(state->bytes); /// \todo ? is this always the right byte count?
     }
 
     if (obj->_user_callback.function)
@@ -914,6 +973,7 @@ namespace PAMI
 
     //_mcomb.postMulticombine(req->_state._mcomb, &m);
     return PAMI_SUCCESS;
+
   }
 
   template <class T_Protocol>
@@ -1020,6 +1080,7 @@ namespace PAMI
 
     return PAMI_SUCCESS;
 
+
   }; // NativeInterfaceActiveMessage<T_Protocol>::postMulticast_impl
 
   ///
@@ -1070,7 +1131,7 @@ namespace PAMI
     // tolerate a null dispatch if there's no data (barrier?)
     PAMI_assertf(((_mcast_dispatch_function == NULL) && (data_size == 0)) || (_mcast_dispatch_function != NULL),"fn %p, size %zu\n",_mcast_dispatch_function, data_size);
 
-    if(_mcast_dispatch_function != NULL)
+    if (_mcast_dispatch_function != NULL)
       _mcast_dispatch_function(((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->msginfo, ((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->msgcount,
                                connection_id, root, bytes, _mcast_dispatch_arg, &bytes,
                                (pami_pipeworkqueue_t**)&rcvpwq, &cb_done);
@@ -1114,6 +1175,7 @@ namespace PAMI
     recv->local_fn = cb_done.function;
     recv->cookie   = cb_done.clientdata;
 
+
   }
   template <class T_Protocol>
   inline void NativeInterfaceActiveMessage<T_Protocol>::sendDone ( pami_context_t   context,
@@ -1136,6 +1198,7 @@ namespace PAMI
     }
   }
 
+
 };
 
 #endif
@@ -1146,3 +1209,4 @@ namespace PAMI
 // astyle options --indent-switches --indent-namespaces --break-blocks
 // astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
 //
+

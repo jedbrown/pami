@@ -22,9 +22,6 @@
 
 #include "TypeDefs.h"
 
-//#include "algorithms/protocols/barrier/impl.h"
-//#include "algorithms/protocols/allreduce/sync_impl.h"
-//#include "algorithms/protocols/allreduce/async_impl.h"
 //#include "algorithms/protocols/alltoall/impl.h"
 
 #include "algorithms/schedule/MultinomialTree.h"
@@ -300,20 +297,6 @@ namespace PAMI
         _global_dev(gdev),
         _allocator(allocator),
         _binomial_barrier_composite(NULL),
-        _binomial_barrier_ni          ((T_NativeInterfaceP2pActiveMessage*)&_binomial_barrier_ni_storage),
-        _binomial_barrier_p2p_protocol(NULL),
-        _binomial_broadcast_ni        ((T_NativeInterfaceP2pAllsided*)&_binomial_broadcast_ni_storage),
-        _binomial_broadcast_p2p_protocol(NULL),
-        _ring_broadcast_ni            ((T_NativeInterfaceP2pAllsided*)&_ring_broadcast_ni_storage),
-        _ring_broadcast_p2p_protocol(NULL),
-        _asrb_binomial_broadcast_ni   ((T_NativeInterfaceP2pActiveMessage*)&_asrb_binomial_broadcast_ni_storage),
-        _asrb_binomial_broadcast_p2p_protocol(NULL),
-        _ascs_binomial_broadcast_ni   ((T_NativeInterfaceP2pActiveMessage*)&_ascs_binomial_broadcast_ni_storage),
-        _ascs_binomial_broadcast_p2p_protocol(NULL),
-        _active_binomial_broadcast_ni ((T_NativeInterfaceP2pActiveMessage*)&_active_binomial_broadcast_ni_storage),
-        _active_binomial_broadcast_p2p_protocol(NULL),
-        _binomial_allreduce_ni        ((T_NativeInterfaceP2pActiveMessage*)&_binomial_allreduce_ni_storage),
-        _binomial_allreduce_p2p_protocol(NULL),
         _connmgr(65535),
         _rbconnmgr(NULL),
         _csconnmgr(),
@@ -324,112 +307,46 @@ namespace PAMI
         _ascs_binomial_broadcast_factory(NULL),
         _active_binomial_broadcast_factory(NULL),
         _binomial_allreduce_factory(NULL),
-        _shmem_p2p_protocol(NULL),
-        _shmem_ni(NULL),
-        _mu_p2p_protocol(NULL),
-        _mu_ni(NULL),
         _composite_ni(NULL)
         {
 
           TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration()\n", this ));
 
-          if (__global.useMU())
-          {
-            pami_result_t result = PAMI_ERROR;
-            size_t dispatch = -1;
-
-            // MU over P2P eager protocol
-            _mu_ni = (MUNI*) new (_mu_ni_storage) MUNI(client, context, context_id, client_id, dispatch);
-
-            pami_dispatch_callback_fn fn;
-            fn.p2p = MUNI::dispatch_p2p;
-            _mu_p2p_protocol = (MUEager*) MUEager::generate(dispatch, fn, (void*) _mu_ni, gdev, _allocator, result);
-            _mu_ni->setProtocol(_mu_p2p_protocol);
-
-
-            _binomial_barrier_ni = (T_NativeInterfaceP2pActiveMessage*) new (_binomial_barrier_ni_storage) T_NativeInterfaceP2pActiveMessage(client, context, context_id, client_id, dispatch);
-            fn.p2p = T_NativeInterfaceP2pActiveMessage::dispatch_p2p;
-            _binomial_barrier_p2p_protocol = (MUEager*) MUEager::generate(dispatch, fn, (void*) _binomial_barrier_ni, gdev, _allocator, result);
-            _binomial_barrier_ni->setProtocol(_binomial_barrier_p2p_protocol);
-
-            _binomial_barrier_factory = new (_binomial_barrier_factory_storage) CCMI::Adaptor::Barrier::BinomialBarrierFactory(&_sconnmgr, _binomial_barrier_ni,(pami_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head);
-
-            _binomial_broadcast_ni = (T_NativeInterfaceP2pAllsided*) new (_binomial_broadcast_ni_storage) T_NativeInterfaceP2pAllsided(client, context, context_id, client_id, dispatch);
-            fn.p2p = T_NativeInterfaceP2pAllsided::dispatch_p2p;
-            _binomial_broadcast_p2p_protocol = (MUEager*) MUEager::generate(dispatch, fn, (void*) _binomial_broadcast_ni, gdev, _allocator, result);
-            _binomial_broadcast_ni->setProtocol(_binomial_broadcast_p2p_protocol);
-
-            _binomial_broadcast_factory = new (_binomial_broadcast_factory_storage) CCMI::Adaptor::Broadcast::BinomialBroadcastFactory(&_connmgr, _binomial_broadcast_ni);
-
-            _ring_broadcast_ni = (T_NativeInterfaceP2pAllsided*) new (_ring_broadcast_ni_storage) T_NativeInterfaceP2pAllsided(client, context, context_id, client_id, dispatch);
-            fn.p2p = T_NativeInterfaceP2pAllsided::dispatch_p2p;
-            _ring_broadcast_p2p_protocol = (MUEager*) MUEager::generate(dispatch, fn, (void*) _ring_broadcast_ni, gdev, _allocator, result);
-            _ring_broadcast_ni->setProtocol(_ring_broadcast_p2p_protocol);
-
-            _ring_broadcast_factory = new (_ring_broadcast_factory_storage) CCMI::Adaptor::Broadcast::RingBroadcastFactory(&_connmgr, _ring_broadcast_ni);
-
-            _ascs_binomial_broadcast_ni = (T_NativeInterfaceP2pActiveMessage*) new (_ascs_binomial_broadcast_ni_storage) T_NativeInterfaceP2pActiveMessage(client, context, context_id, client_id, dispatch);
-            fn.p2p = T_NativeInterfaceP2pActiveMessage::dispatch_p2p;
-            _ascs_binomial_broadcast_p2p_protocol = (MUEager*) MUEager::generate(dispatch, fn, (void*) _ascs_binomial_broadcast_ni, gdev, _allocator, result);
-            _ascs_binomial_broadcast_ni->setProtocol(_ascs_binomial_broadcast_p2p_protocol);
-
-            _ascs_binomial_broadcast_factory = new (_ascs_binomial_broadcast_factory_storage) CCMI::Adaptor::Broadcast::AsyncCSBinomialBroadcastFactory(&_csconnmgr, _ascs_binomial_broadcast_ni);
-
-            _asrb_binomial_broadcast_ni = (T_NativeInterfaceP2pActiveMessage*) new (_asrb_binomial_broadcast_ni_storage) T_NativeInterfaceP2pActiveMessage(client, context, context_id, client_id, dispatch);
-            fn.p2p = T_NativeInterfaceP2pActiveMessage::dispatch_p2p;
-            _asrb_binomial_broadcast_p2p_protocol = (MUEager*) MUEager::generate(dispatch, fn, (void*) _asrb_binomial_broadcast_ni, gdev, _allocator, result);
-            _asrb_binomial_broadcast_ni->setProtocol(_asrb_binomial_broadcast_p2p_protocol);
-
-            _asrb_binomial_broadcast_factory = new (_asrb_binomial_broadcast_factory_storage) CCMI::Adaptor::Broadcast::AsyncRBBinomialBroadcastFactory(&_rbconnmgr, _asrb_binomial_broadcast_ni);
-
-            _active_binomial_broadcast_ni = (T_NativeInterfaceP2pActiveMessage*) new (_active_binomial_broadcast_ni_storage) T_NativeInterfaceP2pActiveMessage(client, context, context_id, client_id, dispatch);
-            fn.p2p = T_NativeInterfaceP2pActiveMessage::dispatch_p2p;
-            _active_binomial_broadcast_p2p_protocol = (MUEager*) MUEager::generate(dispatch, fn, (void*) _active_binomial_broadcast_ni, gdev, _allocator, result);
-            _active_binomial_broadcast_ni->setProtocol(_active_binomial_broadcast_p2p_protocol);
-
-            _active_binomial_broadcast_factory = new (_active_binomial_broadcast_factory_storage) CCMI::Adaptor::AMBroadcast::AMBinomialBroadcastFactory(&_rbconnmgr, _active_binomial_broadcast_ni);
-
-            _binomial_allreduce_ni = (T_NativeInterfaceP2pActiveMessage*) new (_binomial_allreduce_ni_storage) T_NativeInterfaceP2pActiveMessage(client, context, context_id, client_id, dispatch);
-            fn.p2p = T_NativeInterfaceP2pActiveMessage::dispatch_p2p;
-            _binomial_allreduce_p2p_protocol = (MUEager*) MUEager::generate(dispatch, fn, (void*) _binomial_allreduce_ni, gdev, _allocator, result);
-            _binomial_allreduce_ni->setProtocol(_binomial_allreduce_p2p_protocol);
-
-            _binomial_allreduce_factory = new (_binomial_allreduce_factory_storage) CCMI::Adaptor::Allreduce::Binomial::Factory(&_rbconnmgr, _binomial_allreduce_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead);
-
-            //set the mapid functions
-            _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
-            _asrb_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
-            _ascs_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
-            _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
-            _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
-          }
-
-          if ((__global.useshmem()) && (__global.topology_local.size() > 1))
-          {
-            pami_result_t result = PAMI_ERROR;
-            size_t dispatch = -1;
-
-            // Shmem over P2P eager protocol
-            _shmem_ni = (ShmemNI*)new (_shmem_ni_storage) ShmemNI(client, context, context_id, client_id, dispatch);
-
-            pami_dispatch_callback_fn fn;
-            fn.p2p = ShmemNI::dispatch_p2p;
-            _shmem_p2p_protocol = (ShmemEager*)ShmemEager::generate(dispatch, fn, _shmem_ni, ldev, _allocator, result);
-            _shmem_ni->setProtocol(_shmem_p2p_protocol);
-          }
-
+          // Use composite MU/Shmem if both enabled and > 1 process per node
           if ((__global.useshmem()) && (__global.topology_local.size() > 1) && (__global.useMU()))
+          {
+            TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration() register composite\n", this ));
+          }
+          // Use MU if requested or only one process (some simple test scenario)
+          else if (__global.useMU() || (__global.topology_global.size() == 1))
+          {
+            TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration() register MU\n", this ));
+            // Setup MU factories
+            setupFactories<MUNI_AM, MUNI_AS,MUEager,MUDevice>(_global_dev);
+
+          }
+          // Use Shmem if requested and available ( > 1 process per node)
+          else if ((__global.useshmem()) && (__global.topology_local.size() > 1))
+          {
+            TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration() register shmem\n", this ));
+            // Setup Shmem factories
+            setupFactories<ShmemNI_AM,ShmemNI_AS,ShmemEager,ShmemDevice>(_local_dev);
+          }
+          // Disabled MU and can't use shmem (only 1 process per node)? Then abort.
+          else PAMI_abort();
+
+#if 0
           {
             pami_result_t result = PAMI_ERROR;
             size_t dispatch = -1;
             //  Composite (shmem+MU) native interface over p2p eager
             /// \todo I think dispatch id is a problem with two protocols/one NI.  Need to fix that.
-            _composite_ni = (CompositeNI*)new (_composite_ni_storage) CompositeNI(client, context, context_id, client_id, dispatch);
+            _composite_ni = (CompositeNI_AM*)new (_composite_ni_storage) CompositeNI_AM(client, context, context_id, client_id, dispatch);
 
             _composite_p2p_protocol = (PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send>*) Protocol::Send::Factory::generate (_shmem_p2p_protocol, _mu_p2p_protocol, _allocator, result);
             _composite_ni->setProtocol(_composite_p2p_protocol);
           }
-
+#endif
           TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration() exit\n", this));
         }
 
@@ -437,30 +354,26 @@ namespace PAMI
         {
           TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration::analyze_impl() context_id %zu, geometry %p\n", this, context_id, geometry));
 
-          if (__global.useMU())
-          {
-            pami_xfer_t xfer = {0};
-            _binomial_barrier_composite =_binomial_barrier_factory->generate(geometry,&xfer);
+          pami_xfer_t xfer = {0};
+          _binomial_barrier_composite =_binomial_barrier_factory->generate(geometry,&xfer);
 
-            geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
-                             (void*)_binomial_barrier_composite);
+          geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
+                           (void*)_binomial_barrier_composite);
 
-            // Add Barriers
-            geometry->addCollective(PAMI_XFER_BARRIER,    _binomial_barrier_factory,          _context_id);
+          // Add Barriers
+          geometry->addCollective(PAMI_XFER_BARRIER,    _binomial_barrier_factory,          _context_id);
 
-            // Add Broadcasts
-            geometry->addCollective(PAMI_XFER_BROADCAST,  _binomial_broadcast_factory,        _context_id);
-            geometry->addCollective(PAMI_XFER_BROADCAST,  _ring_broadcast_factory,            _context_id);
-            geometry->addCollective(PAMI_XFER_BROADCAST,  _ascs_binomial_broadcast_factory,   _context_id);
-            geometry->addCollective(PAMI_XFER_BROADCAST,  _asrb_binomial_broadcast_factory,   _context_id);
+          // Add Broadcasts
+          geometry->addCollective(PAMI_XFER_BROADCAST,  _binomial_broadcast_factory,        _context_id);
+          geometry->addCollective(PAMI_XFER_BROADCAST,  _ring_broadcast_factory,            _context_id);
+          geometry->addCollective(PAMI_XFER_BROADCAST,  _ascs_binomial_broadcast_factory,   _context_id);
+          geometry->addCollective(PAMI_XFER_BROADCAST,  _asrb_binomial_broadcast_factory,   _context_id);
 
-            //AM Broadcast
-            geometry->addCollective(PAMI_XFER_AMBROADCAST,_active_binomial_broadcast_factory, _context_id);
+          //AM Broadcast
+          geometry->addCollective(PAMI_XFER_AMBROADCAST,_active_binomial_broadcast_factory, _context_id);
 
-            // Add allreduce
-            geometry->addCollective(PAMI_XFER_ALLREDUCE,  _binomial_allreduce_factory,        _context_id);
-          }
-
+          // Add allreduce
+          geometry->addCollective(PAMI_XFER_ALLREDUCE,  _binomial_allreduce_factory,        _context_id);
 
           return PAMI_SUCCESS;
         }
@@ -473,6 +386,9 @@ namespace PAMI
         }
 
       public:
+
+        /// \todo use allocator instead of _storage?  Since they aren't always constructed, we waste memory now.
+
         pami_client_t                               _client;
         pami_context_t                              _context;
         size_t                                      _context_id;
@@ -486,39 +402,6 @@ namespace PAMI
         // Barrier Storage and Native Interface
         CCMI::Executor::Composite                  *_binomial_barrier_composite;
 
-        T_NativeInterfaceP2pActiveMessage          *_binomial_barrier_ni;
-        uint8_t                                     _binomial_barrier_ni_storage[sizeof(T_NativeInterfaceP2pActiveMessage)];
-        MUEager                                    *_binomial_barrier_p2p_protocol;
-
-
-        // Barrier Storage and Native Interface
-        T_NativeInterfaceP2pAllsided               *_binomial_broadcast_ni;
-        uint8_t                                     _binomial_broadcast_ni_storage[sizeof(T_NativeInterfaceP2pAllsided)];
-        MUEager                                    *_binomial_broadcast_p2p_protocol;
-
-        T_NativeInterfaceP2pAllsided               *_ring_broadcast_ni;
-        uint8_t                                     _ring_broadcast_ni_storage[sizeof(T_NativeInterfaceP2pAllsided)];
-        MUEager                                    *_ring_broadcast_p2p_protocol;
-
-        T_NativeInterfaceP2pActiveMessage          *_asrb_binomial_broadcast_ni;
-        uint8_t                                     _asrb_binomial_broadcast_ni_storage[sizeof(T_NativeInterfaceP2pActiveMessage)];
-        MUEager                                    *_asrb_binomial_broadcast_p2p_protocol;
-
-        T_NativeInterfaceP2pActiveMessage          *_ascs_binomial_broadcast_ni;
-        uint8_t                                     _ascs_binomial_broadcast_ni_storage[sizeof(T_NativeInterfaceP2pActiveMessage)];
-        MUEager                                    *_ascs_binomial_broadcast_p2p_protocol;
-
-        T_NativeInterfaceP2pActiveMessage          *_active_binomial_broadcast_ni;
-        uint8_t                                     _active_binomial_broadcast_ni_storage[sizeof(T_NativeInterfaceP2pActiveMessage)];
-        MUEager                                    *_active_binomial_broadcast_p2p_protocol;
-
-        // Allreduce Storage and Native Interface
-        T_NativeInterfaceP2pActiveMessage          *_binomial_allreduce_ni;
-        uint8_t                                     _binomial_allreduce_ni_storage[sizeof(T_NativeInterfaceP2pActiveMessage)];
-        MUEager                                    *_binomial_allreduce_p2p_protocol;
-
-//    T_NativeInterfaceP2pActiveMessage                                    _binomial_allreduce_ni;
-
         // CCMI Connection Manager Class
         CCMI::ConnectionManager::ColorGeometryConnMgr<SysDep>        _connmgr;
         CCMI::ConnectionManager::SimpleConnMgr<SysDep>               _sconnmgr;
@@ -527,38 +410,101 @@ namespace PAMI
 
         // CCMI Barrier Interface
         CCMI::Adaptor::Barrier::BinomialBarrierFactory               *_binomial_barrier_factory;
-        uint8_t                                                      _binomial_barrier_factory_storage[sizeof(CCMI::Adaptor::Broadcast::BinomialBroadcastFactory)];
 
-        // CCMI Binomial and Ring Broadcast
+        // CCMI Broadcasts
         CCMI::Adaptor::Broadcast::BinomialBroadcastFactory           *_binomial_broadcast_factory;
-        uint8_t                                                      _binomial_broadcast_factory_storage[sizeof(CCMI::Adaptor::Broadcast::BinomialBroadcastFactory)];
         CCMI::Adaptor::Broadcast::RingBroadcastFactory               *_ring_broadcast_factory;
-        uint8_t                                                      _ring_broadcast_factory_storage[sizeof(CCMI::Adaptor::Broadcast::RingBroadcastFactory)];
         CCMI::Adaptor::Broadcast::AsyncRBBinomialBroadcastFactory    *_asrb_binomial_broadcast_factory;
-        uint8_t                                                      _asrb_binomial_broadcast_factory_storage[sizeof(CCMI::Adaptor::Broadcast::AsyncRBBinomialBroadcastFactory)];
         CCMI::Adaptor::Broadcast::AsyncCSBinomialBroadcastFactory    *_ascs_binomial_broadcast_factory;
-        uint8_t                                                      _ascs_binomial_broadcast_factory_storage[sizeof(CCMI::Adaptor::Broadcast::AsyncCSBinomialBroadcastFactory)];
         CCMI::Adaptor::AMBroadcast::AMBinomialBroadcastFactory       *_active_binomial_broadcast_factory;
-        uint8_t                                                      _active_binomial_broadcast_factory_storage[sizeof(CCMI::Adaptor::AMBroadcast::AMBinomialBroadcastFactory)];
 
         // CCMI Binomial Allreduce
         CCMI::Adaptor::Allreduce::Binomial::Factory                  *_binomial_allreduce_factory;
-        uint8_t                                                      _binomial_allreduce_factory_storage[sizeof(CCMI::Adaptor::Allreduce::Binomial::Factory)];
 
         // New p2p Native interface members:
-        //  Shmem (only) over p2p eager
-        ShmemEager                  * _shmem_p2p_protocol;
-        ShmemNI                     * _shmem_ni;
-        uint8_t                       _shmem_ni_storage[sizeof(ShmemNI)];
-        //  MU (only) over p2p eager
-        MUEager                     * _mu_p2p_protocol;
-        MUNI                        * _mu_ni;
-        uint8_t                       _mu_ni_storage[sizeof(MUNI)];
 
         //  Composite (shmem+MU) native interface over p2p eager
         PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send>        * _composite_p2p_protocol;
-        CompositeNI                 * _composite_ni;
-        uint8_t                       _composite_ni_storage[sizeof(CompositeNI)];
+        CompositeNI_AM                 * _composite_ni;
+        uint8_t                       _composite_ni_storage[sizeof(CompositeNI_AM)];
+      private:
+        template<class T_NI, class T_Protocol, class T_Device, class T_Factory> 
+        void setupFactory(T_NI &ni, T_Device &device, T_Protocol &protocol, T_Factory *&factory)
+        {
+          pami_result_t       result = PAMI_ERROR;
+          size_t              dispatch = -1;
+
+          // Get the next dispatch id to use for this NI/protocol
+          dispatch = PAMI::NativeInterfaceCommon::getNextDispatch();
+
+          // Construct an active message native interface
+          result = NativeInterfaceCommon::constructNativeInterface(_allocator, device, ni, protocol, _client, _context, _context_id, _client_id, dispatch);
+          PAMI_assert(result == PAMI_SUCCESS);
+
+
+          // Allocate/Construct the factory using the NI
+          COMPILE_TIME_ASSERT(sizeof(T_Factory) <= T_Allocator::objsize);
+          factory = (T_Factory*) _allocator.allocateObject ();
+        }
+        template<class T_NI_ActiveMessage, class T_NI_Allsided, class T_Protocol, class T_Device> 
+        void setupFactories(T_Device &device)
+        {
+          T_NI_ActiveMessage *ni_am = NULL;
+          T_NI_Allsided      *ni_as = NULL;
+          T_Protocol         *protocol = NULL;
+
+          // The #define FACTORY is used to shorten the code and avoid copy/paste typo's
+
+          // ----------------------------------------------------
+          // Setup and Construct a binomial barrier factory from active message ni and p2p protocol
+          setupFactory(ni_am, device, protocol, _binomial_barrier_factory);
+          new ((void*)_binomial_barrier_factory) CCMI::Adaptor::Barrier::BinomialBarrierFactory(&_sconnmgr, ni_am,(pami_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head);
+          // ----------------------------------------------------
+
+          // ----------------------------------------------------
+          // Setup and Construct a binomial broadcast factory from allsided ni and p2p protocol
+          setupFactory(ni_as, device, protocol, _binomial_broadcast_factory);
+          new ((void*)_binomial_broadcast_factory) CCMI::Adaptor::Broadcast::BinomialBroadcastFactory(&_connmgr, ni_as);
+          // ----------------------------------------------------
+
+          // ----------------------------------------------------
+          // Setup and Construct a ring broadcast factory from allsided ni and p2p protocol
+          setupFactory(ni_as, device, protocol, _ring_broadcast_factory);
+          new ((void*)_ring_broadcast_factory) CCMI::Adaptor::Broadcast::RingBroadcastFactory(&_connmgr, ni_as);
+          // ----------------------------------------------------
+
+          // ----------------------------------------------------
+          // Setup and Construct an asynchronous, comm_id/seq_num binomial broadcast factory from active message ni and p2p protocol
+          setupFactory(ni_am, device, protocol, _ascs_binomial_broadcast_factory);
+          new ((void*)_ascs_binomial_broadcast_factory) CCMI::Adaptor::Broadcast::AsyncCSBinomialBroadcastFactory(&_csconnmgr, ni_am);
+          // ----------------------------------------------------
+
+          // ----------------------------------------------------
+          // Setup and Construct an asynchronous, rank based binomial broadcast factory from active message ni and p2p protocol
+          setupFactory(ni_am, device, protocol, _asrb_binomial_broadcast_factory);
+          new ((void*)_asrb_binomial_broadcast_factory) CCMI::Adaptor::Broadcast::AsyncRBBinomialBroadcastFactory(&_rbconnmgr, ni_am);
+          // ----------------------------------------------------
+
+          // ----------------------------------------------------
+          // Setup and Construct a rank based binomial active message broadcast factory from active message ni and p2p protocol
+          setupFactory(ni_am, device, protocol, _active_binomial_broadcast_factory);
+          new ((void*)_active_binomial_broadcast_factory) CCMI::Adaptor::AMBroadcast::AMBinomialBroadcastFactory(&_rbconnmgr, ni_am);
+          // ----------------------------------------------------
+
+          // ----------------------------------------------------
+          // Setup and Construct a binomial allreducefactory from active message ni and p2p protocol
+          setupFactory(ni_am, device, protocol, _binomial_allreduce_factory);
+          new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::Allreduce::Binomial::Factory(&_rbconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead);
+          // ----------------------------------------------------
+
+
+          //set the mapid functions
+          _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
+          _asrb_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+          _ascs_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+          _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+          _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
+        }
       };
     }; // BGQ
   }; // CollRegistration

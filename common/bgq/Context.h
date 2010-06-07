@@ -51,7 +51,7 @@ namespace PAMI
   typedef MemoryAllocator<2048, 16> ProtocolAllocator;
 
   typedef CollRegistration::BGQ::CCMIRegistration<BGQGeometry,
-                                             MUNI,
+                                             MUNI_AM,
                                              MUNI_AS,
                                              ShmemDevice,
                                              MUDevice,

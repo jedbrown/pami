@@ -151,21 +151,21 @@ namespace PAMI
             // The models must be registered in reverse order of use in case
             // the remote side is delayed in it's registrations and must save
             // unexpected packets until dispatch registration.
-            TRACE_ERR((stderr, "EagerSimple() register ack model\n"));
+            TRACE_ERR((stderr, "EagerSimple() register ack model dispatch %zu\n",dispatch));
             status = _ack_model.init (dispatch,
                                       dispatch_ack_direct, this,
                                       dispatch_ack_read, this);
             TRACE_ERR((stderr, "EagerSimple() ack model status = %d\n", status));
             if (status == PAMI_SUCCESS)
               {
-                TRACE_ERR((stderr, "EagerSimple() register data model\n"));
+                TRACE_ERR((stderr, "EagerSimple() register data model dispatch %zu\n",dispatch));
                 status = _data_model.init (dispatch,
                                            dispatch_data_message, this,
                                            dispatch_data_message, this);
                 TRACE_ERR((stderr, "EagerSimple() data model status = %d\n", status));
                 if (status == PAMI_SUCCESS)
                   {
-                    TRACE_ERR((stderr, "EagerSimple() register envelope  model\n"));
+                    TRACE_ERR((stderr, "EagerSimple() register envelope  model dispatch %zu\n",dispatch));
                     status = _envelope_model.init (dispatch,
                                                    dispatch_envelope_direct, this,
                                                    dispatch_envelope_read, this);
@@ -174,7 +174,7 @@ namespace PAMI
                     TRACE_ERR((stderr, "EagerSimple() 'long header' support enabled = %d\n", T_LongHeader));
                     if (T_LongHeader == true)
                       {
-                        TRACE_ERR((stderr, "EagerSimple() register 'long header'  model\n"));
+                        TRACE_ERR((stderr, "EagerSimple() register 'long header'  model dispatch %zu\n",dispatch));
                         status = _longheader_model.init (dispatch,
                                                          dispatch_longheader_message, this,
                                                          dispatch_longheader_message, this);

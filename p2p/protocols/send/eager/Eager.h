@@ -57,7 +57,7 @@ namespace PAMI
                                    T_Allocator              & allocator,
                                    pami_result_t             & result)
           {
-            TRACE_ERR((stderr, ">> Eager::generate()\n"));
+            TRACE_ERR((stderr, ">> Eager::generate() dispatch %zu\n",dispatch));
             COMPILE_TIME_ASSERT(sizeof(Eager) <= T_Allocator::objsize);
 
             Eager * eager = (Eager *) allocator.allocateObject ();
@@ -68,7 +68,7 @@ namespace PAMI
               eager = NULL;
             }
 
-            TRACE_ERR((stderr, "<< Eager::generate(), eager = %p, result = %d\n", eager, result));
+            TRACE_ERR((stderr, "<< Eager::generate(), eager = %p, result = %d, dispatch = %zu\n", eager, result, dispatch));
             return eager;
           }
 
