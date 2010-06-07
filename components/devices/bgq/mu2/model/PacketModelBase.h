@@ -390,8 +390,6 @@ namespace PAMI
             // fifo before a fifo-wrap event.
 
             // Clone the single-packet model descriptor into the injection fifo
-            //MUSPI_DescriptorBase * memfifo = &_singlepkt; 
-
 	    MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *)desc; 
 	    _singlepkt.clone (*(MUSPI_DescriptorBase *)desc);
 
@@ -419,12 +417,9 @@ namespace PAMI
             // Set the payload information.
             memfifo->setPayload (paddr, tbytes);
 
-	    //Copy the model to the injection FIFO
-	    //_singlepkt.clone (*(MUSPI_DescriptorBase *)desc);
-
             //fprintf(stderr, "Advance tail pointer, tbytes %d\n", tbytes);
-
-            // Finally, advance the injection fifo tail pointer. This action
+            
+	    // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
             MUSPI_InjFifoAdvanceDesc (ififo);
 

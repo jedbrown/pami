@@ -474,7 +474,10 @@ namespace PAMI
             // the destination task+offset.  This is important for
             // multi-context support.
 ///!!!! Works only on single node
-            rfifo = _rfifoid + task * 4 /*number of rec fifos per subgrp*/;
+            //rfifo = _rfifoid + task * 4 /*number of rec fifos per subgrp*/;
+	    size_t addr[6];
+	    dest = mapping.getMuDestinationTask(task);
+
 ///!!!!
             // In loopback we send only on AM
             map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
