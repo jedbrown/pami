@@ -48,7 +48,7 @@ namespace PAMI
 
         // Create an initial context for initialization
         rc = createOneContext(&_contexts[0],0);
-
+        if(rc) {result=rc;  return;}
         // Initialize Point to Point Communication
         // This is used to build an initial "simple" mapping
         // Using rank and size
@@ -103,7 +103,7 @@ namespace PAMI
         pami_result_t res;
         new (clientp) PAMI::Client (name, res);
         *client = (pami_client_t) clientp;
-        return PAMI_SUCCESS;
+        return res;
       }
 
     static void destroy_impl (pami_client_t client)
@@ -174,7 +174,6 @@ namespace PAMI
 
     inline pami_result_t queryConfiguration_impl (pami_configuration_t * configuration)
       {
-#ifdef OLD_CONFIG
         pami_result_t result = PAMI_ERROR;
         switch (configuration->name)
             {
@@ -186,6 +185,8 @@ namespace PAMI
                   configuration->value.intval = 0; // real value TBD
                   result = PAMI_SUCCESS;
                   break;
+#if 0
+                // These are passed to LAPI for now
                 case PAMI_TASK_ID:
                   configuration->value.intval = __global.mapping.task();
                   result = PAMI_SUCCESS;
@@ -194,6 +195,7 @@ namespace PAMI
                   configuration->value.intval = __global.mapping.size();
                   result = PAMI_SUCCESS;
                   break;
+#endif                  
                 case PAMI_CLOCK_MHZ:
                 case PAMI_WTIMEBASE_MHZ:
                   configuration->value.intval = __global.time.clockMHz();
@@ -208,10 +210,10 @@ namespace PAMI
                 default:
                   break;
             }
-        return result;
-#endif
-        // Todo:  Change if we have client and context queries
+        if(result == PAMI_SUCCESS)
+          return result;
 
+        // Todo:  Change if we have client and context queries
         // Lapi stores the configuration off the context
         // Use context 0 to query.  It should be created in the
         // current implementation because we create the
