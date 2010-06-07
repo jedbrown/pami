@@ -473,12 +473,10 @@ namespace PAMI
             // Calculate the destination recpetion fifo identifier based on
             // the destination task+offset.  This is important for
             // multi-context support.
-///!!!! Works only on single node
-            //rfifo = _rfifoid + task * 4 /*number of rec fifos per subgrp*/;
-	    size_t addr[6];
-	    dest = mapping.getMuDestinationTask(task);
+	    size_t tcoord = 0;
+	    _mapping.getMuDestinationTask(task, dest, tcoord);
+	    rfifo = _rfifoid + tcoord * 4 /*number of rec fifos per subgrp*/;
 
-///!!!!
             // In loopback we send only on AM
             map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
             hintsABCD = MUHWI_PACKET_HINT_AM;
