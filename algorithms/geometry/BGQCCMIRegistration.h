@@ -316,6 +316,8 @@ namespace PAMI
           if ((__global.useshmem()) && (__global.topology_local.size() > 1) && (__global.useMU()))
           {
             TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration() register composite\n", this ));
+            // Setup Composite MU/Shmem factories
+            setupFactories<CompositeNI_AM, CompositeNI_AS,ShmemEager, ShmemDevice, MUEager, MUDevice>(_local_dev,_global_dev);
           }
           // Use MU if requested or only one process (some simple test scenario)
           else if (__global.useMU() || (__global.topology_global.size() == 1))
@@ -335,18 +337,6 @@ namespace PAMI
           // Disabled MU and can't use shmem (only 1 process per node)? Then abort.
           else PAMI_abort();
 
-#if 0
-          {
-            pami_result_t result = PAMI_ERROR;
-            size_t dispatch = -1;
-            //  Composite (shmem+MU) native interface over p2p eager
-            /// \todo I think dispatch id is a problem with two protocols/one NI.  Need to fix that.
-            _composite_ni = (CompositeNI_AM*)new (_composite_ni_storage) CompositeNI_AM(client, context, context_id, client_id, dispatch);
-
-            _composite_p2p_protocol = (PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send>*) Protocol::Send::Factory::generate (_shmem_p2p_protocol, _mu_p2p_protocol, _allocator, result);
-            _composite_ni->setProtocol(_composite_p2p_protocol);
-          }
-#endif
           TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration() exit\n", this));
         }
 
@@ -438,7 +428,7 @@ namespace PAMI
           dispatch = PAMI::NativeInterfaceCommon::getNextDispatch();
 
           // Construct an active message native interface
-          result = NativeInterfaceCommon::constructNativeInterface(_allocator, device, ni, protocol, _client, _context, _context_id, _client_id, dispatch);
+          result = NativeInterfaceCommon::constructNativeInterface(_allocator, device, protocol, ni, _client, _context, _context_id, _client_id, dispatch);
           PAMI_assert(result == PAMI_SUCCESS);
 
 
@@ -494,6 +484,84 @@ namespace PAMI
           // ----------------------------------------------------
           // Setup and Construct a binomial allreducefactory from active message ni and p2p protocol
           setupFactory(ni_am, device, protocol, _binomial_allreduce_factory);
+          new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::Allreduce::Binomial::Factory(&_rbconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead);
+          // ----------------------------------------------------
+
+
+          //set the mapid functions
+          _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
+          _asrb_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+          _ascs_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+          _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+          _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
+        }
+        template<class T_NI, class T_Protocol1, class T_Device1, class T_Protocol2, class T_Device2, class T_Factory> 
+        void setupFactory(T_NI &ni, T_Device1 &device1, T_Protocol1 &protocol1, T_Device2 &device2, T_Protocol2 &protocol2, T_Factory *&factory)
+        {
+          pami_result_t       result = PAMI_ERROR;
+          size_t              dispatch = -1;
+
+          // Get the next dispatch id to use for this NI/protocol
+          dispatch = PAMI::NativeInterfaceCommon::getNextDispatch();
+
+          // Construct an active message native interface
+          result = NativeInterfaceCommon::constructNativeInterface(_allocator, device1, protocol1, device2, protocol2, ni, _client, _context, _context_id, _client_id, dispatch);
+          PAMI_assert(result == PAMI_SUCCESS);
+
+
+          // Allocate/Construct the factory using the NI
+          COMPILE_TIME_ASSERT(sizeof(T_Factory) <= T_Allocator::objsize);
+          factory = (T_Factory*) _allocator.allocateObject ();
+        }
+        template<class T_NI_ActiveMessage, class T_NI_Allsided, class T_Protocol1, class T_Device1, class T_Protocol2, class T_Device2> 
+        void setupFactories(T_Device1 &device1, T_Device2 &device2)
+        {
+          T_NI_ActiveMessage *ni_am = NULL;
+          T_NI_Allsided      *ni_as = NULL;
+          T_Protocol1         *protocol1 = NULL;
+          T_Protocol2         *protocol2 = NULL;
+
+          // The #define FACTORY is used to shorten the code and avoid copy/paste typo's
+
+          // ----------------------------------------------------
+          // Setup and Construct a binomial barrier factory from active message ni and p2p protocol
+          setupFactory(ni_am, device1, protocol1, device2, protocol2, _binomial_barrier_factory);
+          new ((void*)_binomial_barrier_factory) CCMI::Adaptor::Barrier::BinomialBarrierFactory(&_sconnmgr, ni_am,(pami_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head);
+          // ----------------------------------------------------
+
+          // ----------------------------------------------------
+          // Setup and Construct a binomial broadcast factory from allsided ni and p2p protocol
+          setupFactory(ni_as, device1, protocol1, device2, protocol2, _binomial_broadcast_factory);
+          new ((void*)_binomial_broadcast_factory) CCMI::Adaptor::Broadcast::BinomialBroadcastFactory(&_connmgr, ni_as);
+          // ----------------------------------------------------
+
+          // ----------------------------------------------------
+          // Setup and Construct a ring broadcast factory from allsided ni and p2p protocol
+          setupFactory(ni_as, device1, protocol1, device2, protocol2, _ring_broadcast_factory);
+          new ((void*)_ring_broadcast_factory) CCMI::Adaptor::Broadcast::RingBroadcastFactory(&_connmgr, ni_as);
+          // ----------------------------------------------------
+
+          // ----------------------------------------------------
+          // Setup and Construct an asynchronous, comm_id/seq_num binomial broadcast factory from active message ni and p2p protocol
+          setupFactory(ni_am, device1, protocol1, device2, protocol2, _ascs_binomial_broadcast_factory);
+          new ((void*)_ascs_binomial_broadcast_factory) CCMI::Adaptor::Broadcast::AsyncCSBinomialBroadcastFactory(&_csconnmgr, ni_am);
+          // ----------------------------------------------------
+
+          // ----------------------------------------------------
+          // Setup and Construct an asynchronous, rank based binomial broadcast factory from active message ni and p2p protocol
+          setupFactory(ni_am, device1, protocol1, device2, protocol2, _asrb_binomial_broadcast_factory);
+          new ((void*)_asrb_binomial_broadcast_factory) CCMI::Adaptor::Broadcast::AsyncRBBinomialBroadcastFactory(&_rbconnmgr, ni_am);
+          // ----------------------------------------------------
+
+          // ----------------------------------------------------
+          // Setup and Construct a rank based binomial active message broadcast factory from active message ni and p2p protocol
+          setupFactory(ni_am, device1, protocol1, device2, protocol2, _active_binomial_broadcast_factory);
+          new ((void*)_active_binomial_broadcast_factory) CCMI::Adaptor::AMBroadcast::AMBinomialBroadcastFactory(&_rbconnmgr, ni_am);
+          // ----------------------------------------------------
+
+          // ----------------------------------------------------
+          // Setup and Construct a binomial allreducefactory from active message ni and p2p protocol
+          setupFactory(ni_am, device1, protocol1, device2, protocol2, _binomial_allreduce_factory);
           new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::Allreduce::Binomial::Factory(&_rbconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead);
           // ----------------------------------------------------
 

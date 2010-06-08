@@ -83,7 +83,7 @@ namespace PAMI
     /// \brief Construct a P2p Native Interface
     /// \details
     ///
-    ///  A native inteface is constructed from a given dispatch id
+    ///  A native interface is constructed.
     ///
     ///  Then a P2P protocol is constructed from the device and using the 
     ///  same dispatch id and using the native interface's dispatch function 
@@ -94,8 +94,8 @@ namespace PAMI
     template<class T_Allocator, class T_NativeInterface,class T_Protocol,class T_Device> 
     inline pami_result_t constructNativeInterface(T_Allocator        &allocator, 
                                                   T_Device           &device, 
-                                                  T_NativeInterface *&ni,
                                                   T_Protocol        *&protocol,
+                                                  T_NativeInterface *&ni,
                                                   pami_client_t       client, 
                                                   pami_context_t      context, 
                                                   size_t              context_id, 
@@ -116,14 +116,73 @@ namespace PAMI
       ni = (T_NativeInterface*) allocator.allocateObject ();
       new ((void*)ni) T_NativeInterface(client, context, context_id, client_id);
 
-      // Get storage for the p2p protocol and construct it using the NI dispatch function and cookie
+      // Construct the p2p protocol using the NI dispatch function and cookie
       pami_dispatch_callback_fn fn;
       fn.p2p = T_NativeInterface::dispatch_p2p;
-      protocol = (T_Protocol*) allocator.allocateObject ();
       protocol = (T_Protocol*) T_Protocol::generate(dispatch, fn, (void*) ni, device, allocator, result);
 
       // Set the protocol into the NI
       ni->setProtocol(dispatch, protocol);
+
+      // Return 
+      return result;
+    }
+
+    /// \brief Construct a P2p Native Interface
+    /// \details
+    ///
+    ///  A native interface is constructed.
+    ///
+    ///  Two P2P protocols are constructed from the device and using the 
+    ///  same dispatch id and using the native interface's dispatch function 
+    ///  and the native interface as a cookie.
+    /// 
+    /// Then a composite protocol is constructed from the 2 protocols.
+    ///
+    ///  Finally, the composite protocol is set into the native interface.
+    ///
+    template<class T_Allocator, class T_NativeInterface,class T_Protocol1,class T_Device1,class T_Protocol2,class T_Device2> 
+    inline pami_result_t constructNativeInterface(T_Allocator        &allocator, 
+                                                  T_Device1           &device1, 
+                                                  T_Protocol1        *&protocol1,
+                                                  T_Device2           &device2, 
+                                                  T_Protocol2        *&protocol2,
+                                                  T_NativeInterface *&ni,
+                                                  pami_client_t       client, 
+                                                  pami_context_t      context, 
+                                                  size_t              context_id, 
+                                                  size_t              client_id,
+                                                  size_t              dispatch)
+    {
+      TRACE_ERR((stderr, "<%p>NativeInterfaceCommon::constructNativeInterface() \n", (void*)NULL));
+      DO_DEBUG((templateName<T_NativeInterface>()));
+      DO_DEBUG((templateName<T_Protocol>()));
+      DO_DEBUG((templateName<T_Device>()));
+
+      pami_result_t result = PAMI_ERROR;
+
+      COMPILE_TIME_ASSERT(sizeof(T_NativeInterface) <= T_Allocator::objsize);
+      COMPILE_TIME_ASSERT(sizeof(T_Protocol1) <= T_Allocator::objsize);
+      COMPILE_TIME_ASSERT(sizeof(T_Protocol2) <= T_Allocator::objsize);
+      COMPILE_TIME_ASSERT(sizeof(Protocol::Send::Send) <= T_Allocator::objsize);
+
+      // Get storage for the NI and construct it.
+      ni = (T_NativeInterface*) allocator.allocateObject ();
+      new ((void*)ni) T_NativeInterface(client, context, context_id, client_id);
+
+      // Construct the first p2p protocol using the NI dispatch function and cookie
+      pami_dispatch_callback_fn fn;
+      fn.p2p = T_NativeInterface::dispatch_p2p;
+      protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch, fn, (void*) ni, device1, allocator, result);
+
+      // Construct the second p2p protocol using the NI dispatch function and cookie
+      protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch, fn, (void*) ni, device2, allocator, result);
+
+      // Construct the composite from the two protocols
+      Protocol::Send::SendPWQ<Protocol::Send::Send>* composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*) Protocol::Send::Factory::generate (protocol1,protocol2,allocator, result);
+
+      // Set the composite protocol into the NI
+      ni->setProtocol(dispatch, composite);
 
       // Return 
       return result;
