@@ -145,6 +145,10 @@ namespace PAMI
         if(ncontexts > _maxctxts)
           return PAMI_ERROR;
 
+        // Set up return for first context
+        if(ncontexts > 0)
+          contexts[0] = (pami_context_t) _contexts[0];
+
         // Todo:  Configure Contexts
         // This should work, but crosstalk isn't enabled yet for lapi
         for(int i=1; i< ncontexts; i++)
