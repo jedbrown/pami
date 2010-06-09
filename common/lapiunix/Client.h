@@ -77,13 +77,24 @@ namespace PAMI
         // --> Ok to do collectives after here, build better mappings
         // -->
 
-        // Initialize the optimized collectives
-        _contexts[0]->initCollectives();
-
         // Fence the create
         // Todo:  remove this, does it violate the API?
         CheckLapiRC(lapi_gfence (_main_lapi_handle));
 
+        size_t min_rank, max_rank, num_local, *local_ranks;
+        generateMapCache(myrank,
+                         mysize,
+                         min_rank,
+                         max_rank,
+                         num_local,
+                         &local_ranks);
+        __global.mapping.set_mapcache(_mapcache,
+                                      _peers,
+                                      _npeers);
+        
+        // Initialize the optimized collectives
+        _contexts[0]->initCollectives();
+        
         // Return error code
         result                         = rc;
       }
@@ -93,6 +104,146 @@ namespace PAMI
         _lapiClientAlloc.returnObject(_lapiClient);
       }
 
+
+    static void map_cache_fn(pami_context_t   context,
+                             void           * cookie,
+                             pami_result_t    result)
+      {
+        int *flag = (int*)cookie;
+        *flag = 0;
+      }
+    
+    pami_result_t generateMapCache(size_t   myrank,
+                                   size_t   mysize,
+                                   size_t  &min_rank,
+                                   size_t  &max_rank,
+                                   size_t  &num_local,
+                                   size_t **local_ranks)
+      {
+        size_t  r,q,nSize,tSize;
+        int     err,nz,tz,str_len=128;
+        char   *host,*hosts,*s;
+
+        // local node process/rank info
+        _mapcache=(uint32_t*)malloc(sizeof(*_mapcache) * mysize);
+        PAMI_assertf(_mapcache != NULL, "memory alloc failed");
+        _peers = (size_t*)malloc(sizeof(*_peers) * mysize);
+        PAMI_assertf(_peers != NULL, "memory alloc failed");
+        host=(char*)malloc(str_len);
+        PAMI_assertf(host != NULL, "memory alloc failed");
+        hosts=(char*)malloc(str_len*mysize);
+        PAMI_assertf(hosts != NULL, "memory alloc failed");
+        err = gethostname(host, str_len);
+        PAMI_assertf(err == 0, "gethostname failed, errno %d", errno);
+
+        pami_xfer_type_t   colltype = PAMI_XFER_ALLGATHER;
+        pami_algorithm_t   alg;
+        pami_metadata_t    mdata;
+        pami_xfer_t        xfer;
+        pami_result_t      rc;
+        volatile int       flag = 1;
+        _world_geometry->algorithms_info(colltype,&alg,&mdata,1,NULL,NULL,0,0);
+        xfer.cb_done                        = map_cache_fn;
+        xfer.cookie                         = (void*)&flag;
+        xfer.algorithm                      = alg;
+        xfer.cmd.xfer_allgather.sndbuf      = host;
+        xfer.cmd.xfer_allgather.stype       = PAMI_BYTE;
+        xfer.cmd.xfer_allgather.stypecount  = str_len;
+        xfer.cmd.xfer_allgather.rcvbuf      = hosts;
+        xfer.cmd.xfer_allgather.rtype       = PAMI_BYTE;
+        xfer.cmd.xfer_allgather.rtypecount  = str_len;
+
+        _contexts[0]->collective(&xfer);
+        while(flag)
+          _contexts[0]->advance(10,rc);
+        
+        PAMI_assertf(err == 0, "allgather failed, err %d", err);
+
+        nSize = 0;
+        tSize = 1;
+        _npeers = 0;
+        for (r = 0; r < mysize; ++r) {
+          // search backwards for anyone with the same hostname...
+          for (q = r - 1; (int)q >= 0 && strcmp(hosts + str_len * r, hosts + str_len * q) != 0; --q);
+          if ((int)q >= 0) {
+            // already saw this hostname... add new peer...
+            uint32_t u = _mapcache[q];
+            uint32_t t = (u & 0x0000ffff) + 1;
+            _mapcache[r] = (u & 0xffff0000) | t;
+            if (t >= tSize) tSize = t + 1;
+          } else {
+            // new hostname... first one for that host... give it T=0
+            _mapcache[r] = (nSize << 16) | 0;
+            ++nSize;
+          }
+          if (strcmp(host, hosts + str_len * r) == 0) {
+            _peers[_npeers++] = r;
+          }
+        }
+        free(host);
+        free(hosts);
+
+        // if all ranks are local, then see if an ENV variable
+        // gives us permission to spice things up.
+        nz = tz = 0;
+        s = getenv("PAMI_MAPPING_TSIZE");
+        if (s) {
+          tz = strtol(s, NULL, 0);
+        }
+        s = getenv("PAMI_MAPPING_NSIZE");
+        if (s) {
+          nz = strtol(s, NULL, 0);
+        }
+        if (nSize == 1 && (nz > 0 || tz > 0)) {
+          uint32_t t = 0;
+          uint32_t n = 0;
+          if (nz > 0) {
+            tz = 0;
+            // remap using N-first sequence
+            nSize = nz;
+            for (r = 0; r < mysize; ++r) {
+              if (n >= nSize) { ++t; n = 0; }
+              _mapcache[r] = (n << 16) | t;
+              ++n;
+            }
+            tSize = t + 1;
+          } else if (tz > 0) {
+            // remap using T-first sequence
+            tSize = tz;
+            for (r = 0; r < mysize; ++r) {
+              if (t >= tSize) { ++n; t = 0; }
+              _mapcache[r] = (n << 16) | t;
+              ++t;
+            }
+            nSize = n + 1;
+          }
+          // now, must recompute _peers, _npeers...
+          _npeers = 0;
+          n = _mapcache[myrank] & 0xffff0000;
+          for (r = 0; r < mysize; ++r) {
+            if ((_mapcache[r] & 0xffff0000) == n) {
+              _peers[_npeers++] = r;
+            }
+          }
+        }
+
+        // local ranks could be represented as rectangle...
+        // but, let Global.h use Topology analyze if it wants.
+        *local_ranks = _peers;
+        num_local    = _npeers;
+        // global ranks could be represented as rectangle...
+        min_rank     = 0;
+        max_rank = mysize-1;
+        //
+        // At this point, _mapcache[rank] -> [index1]|[index2], where:
+        // (at target node)_peers[index2] -> rank
+        // coordinates = (index1,index2)
+
+        return PAMI_SUCCESS;
+      }
+
+
+    
     static pami_result_t generate_impl (const char * name, pami_client_t * client)
       {
         int rc = 0;
@@ -356,6 +507,15 @@ namespace PAMI
     // Array of PAMI Contexts associated with this Client
     PAMI::Context                               *_contexts[64];
 
+    // The rank map cache
+    uint32_t                                     *_mapcache;
+
+    // The local peers cache
+    size_t                                       *_peers;
+
+    // The number of local peers
+    size_t                                       _npeers;
+    
     // Maximum number of contexts
     size_t                                       _maxctxts;
 

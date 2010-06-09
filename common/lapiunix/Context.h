@@ -501,14 +501,14 @@ namespace PAMI
         return _geometry->algorithms_num(colltype, lists_lengths, _contextid);
         }
 
-      inline pami_result_t geometry_algorithms_info_impl (pami_geometry_t geometry,
-                                                         pami_xfer_type_t colltype,
-                                                       pami_algorithm_t  *algs0,
-                                                       pami_metadata_t   *mdata0,
-                                                       int               num0,
-                                                       pami_algorithm_t  *algs1,
-                                                       pami_metadata_t   *mdata1,
-                                                       int               num1)
+      inline pami_result_t geometry_algorithms_info_impl (pami_geometry_t    geometry,
+                                                          pami_xfer_type_t   colltype,
+                                                          pami_algorithm_t  *algs0,
+                                                          pami_metadata_t   *mdata0,
+                                                          int                num0,
+                                                          pami_algorithm_t  *algs1,
+                                                          pami_metadata_t   *mdata1,
+                                                          int                num1)
       {
         LAPIGeometry *_geometry = (LAPIGeometry*) geometry;
         return _geometry->algorithms_info(colltype,
