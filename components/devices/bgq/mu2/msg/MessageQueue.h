@@ -67,6 +67,7 @@ namespace PAMI
           inline bool advance ()
           {
             MU::MessageQueue::Element * msg = NULL;
+
             while ((msg = (MU::MessageQueue::Element *) dequeue()) != NULL)
               {
                 if (msg->advance())

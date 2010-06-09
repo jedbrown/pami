@@ -13,7 +13,7 @@
 #ifndef __components_devices_bgq_mu2_PacketModelInterrupt_h__
 #define __components_devices_bgq_mu2_PacketModelInterrupt_h__
 
-#include "components/devices/bgq/mu2/model/PacketModelBase.h"
+#include "components/devices/bgq/mu2/model/PacketModel.h"
 
 namespace PAMI
 {
@@ -21,13 +21,13 @@ namespace PAMI
   {
     namespace MU
     {
-      class PacketModelInterrupt : public MU::PacketModelBase<PacketModelInterrupt>
+      class PacketModelInterrupt : public MU::PacketModel
       {
         public :
 
           /// \see PAMI::Device::Interface::PacketModel::PacketModel
           inline PacketModelInterrupt (MU::Context & context) :
-              MU::PacketModelBase<PacketModelInterrupt> (context)
+              MU::PacketModel (context)
           {
             _singlepkt.setInterrupt(MUHWI_DESCRIPTOR_INTERRUPT_ON_PACKET_ARRIVAL);
             _multipkt.setInterrupt(MUHWI_DESCRIPTOR_INTERRUPT_ON_PACKET_ARRIVAL);

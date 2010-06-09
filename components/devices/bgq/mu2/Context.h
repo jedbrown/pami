@@ -30,6 +30,7 @@
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
 
+#include "components/devices/bgq/mu2/InjGroup.h"
 #include "components/devices/bgq/mu2/MemoryFifoPacketHeader.h"
 #include "components/devices/bgq/mu2/msg/MessageQueue.h"
 
@@ -42,7 +43,7 @@ namespace PAMI
   {
     namespace MU
     {
-      //
+      ///
       /// \todo Eliminate the need for this class to implement
       ///       Interface::BaseDevice and Interface::PacketDevice
       ///
@@ -55,7 +56,17 @@ namespace PAMI
             void *              cookie;
           } notify_t;
 
-          static const size_t LOOKASIDE_PAYLOAD_SIZE = 0x80;
+          typedef enum
+          {
+            PINFIFO_ALGORITHM_CACHED = 0,
+            PINFIFO_ALGORITHM_RUNTIME
+          } pinfifo_algorithm_t;
+
+          /// Total number of dispatch sets
+          static const size_t dispatch_set_count = 256;
+
+          /// Number of dispatch functions in a dispatch set
+          static const size_t dispatch_set_size  = 16;
 
         protected:
 
@@ -65,11 +76,6 @@ namespace PAMI
             void                      * p;
           } mu_dispatch_t;
 
-          /// Total number of dispatch sets
-          static const size_t dispatch_set_count = 256;
-
-          /// Number of dispatch functions in a dispatch set
-          static const size_t dispatch_set_size  = 16;
 
           /// \see PAMI::Device::Interface::RecvFunction_t
           static int noop (void   * metadata,
@@ -104,24 +110,38 @@ namespace PAMI
           MUSPI_RecFifoSubGroup_t       _rfifo_subgroup;
           char                        * _injFifoBuf;
           char                        * _recFifoBuf;
-          char                        * _lookAsideBuf;
+          InjGroup::immediate_payload_t * _lookAsideBuf;
           Kernel_MemoryRegion_t         _lookAsideMregion;
+          pami_event_function         * _lookAsideCompletionFn;
+          void                       ** _lookAsideCompletionCookie;
           unsigned                      _ififoid;
           unsigned                      _rfifoid;
-	  MUSPI_InjFifo_t             * _ififo;
 	  MUSPI_RecFifo_t             * _rfifo;
 
           static const size_t INJ_MEMORY_FIFO_SIZE   = 0xFFFFUL;
           static const size_t REC_MEMORY_FIFO_SIZE   = 0xFFFFUL;
           static const size_t INJ_MEMORY_FIFO_NDESC  = 0x400;
 #endif
+          InjGroup                      _inj_group;
 
         public:
 
-          /// Number of payload bytes available in a packet.
-          /// \todo replace with a constant from SPIs somewhere
-          static const size_t payload_size          = 512;
+          ///
+          /// \brief Number of bytes available in a packet payload.
+          /// \todo Replace with a constant from SPIs somewhere
+          ///
+          static const size_t packet_payload_size    = 512;
 
+          ///
+          /// \brief Number of bytes in each lookaside payload buffer element
+          ///
+          static const size_t immediate_payload_size = sizeof(MU::InjGroup::immediate_payload_t);
+
+          ///
+          /// \brief System notification dispatch identifier
+          ///
+          /// \see MU::Context::notify()
+          ///
           static const uint16_t dispatch_system_notify = dispatch_set_count * dispatch_set_size - 1;
 
           ///
@@ -210,8 +230,9 @@ namespace PAMI
                                      &injFifoAttrs);
 
             _injFifoBuf = (char *) memalign (64, INJ_MEMORY_FIFO_SIZE + 1);
-            PAMI_assert ((((uint64_t)_injFifoBuf) % 64) == 0);
-            _lookAsideBuf = (char *) malloc ((INJ_MEMORY_FIFO_SIZE + 1) * 2); //lookaside buffer 2xdesc_size
+            assert ((((uint64_t)_injFifoBuf) % 64) == 0);
+            _lookAsideBuf = (InjGroup::immediate_payload_t *)
+                            malloc ((INJ_MEMORY_FIFO_SIZE + 1) * sizeof(InjGroup::immediate_payload_t));
 
             memset(_injFifoBuf, 0, INJ_MEMORY_FIFO_SIZE + 1);
 
@@ -222,7 +243,18 @@ namespace PAMI
 
             Kernel_CreateMemoryRegion ( &_lookAsideMregion,
                                         _lookAsideBuf,
-                                        INJ_MEMORY_FIFO_NDESC*LOOKASIDE_PAYLOAD_SIZE);
+                                        INJ_MEMORY_FIFO_NDESC*MU::Context::immediate_payload_size);
+
+
+            // ----------------------------------------------------------------
+            // Allocate and initialize the "lookaside completion" array
+            // ----------------------------------------------------------------
+            _lookAsideCompletionFn = (pami_event_function *) malloc ((INJ_MEMORY_FIFO_NDESC + 1) * sizeof(pami_event_function));
+            memset(_lookAsideCompletionFn, 0, (INJ_MEMORY_FIFO_NDESC + 1) * sizeof(pami_event_function));
+            _lookAsideCompletionCookie = (void **) malloc ((INJ_MEMORY_FIFO_NDESC + 1) * sizeof(void *));
+            memset(_lookAsideCompletionCookie, 0, (INJ_MEMORY_FIFO_NDESC + 1) * sizeof(void *));
+
+
 
             //TRACE(("main(): init injection fifo\n"));
             Kernel_InjFifoInit (&_ififo_subgroup,
@@ -264,9 +296,21 @@ namespace PAMI
                                    ( 15 - ((_mapping.t()/*sgid*/*BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) + _rfifoid/*RecFifoId*/ )) );
             Kernel_RecFifoEnable ( 0, /* Group ID */
                                    recFifoEnableBits );
-	    
-	    _ififo = MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup);
-	    _rfifo = MUSPI_IdToRecFifo(_rfifoid, &_rfifo_subgroup);
+
+            _rfifo = MUSPI_IdToRecFifo(_rfifoid, &_rfifo_subgroup);
+
+            // ----------------------------------------------------------------
+            // Initialize the injection channel(s)
+            // ----------------------------------------------------------------
+            _inj_group.initialize (0,
+                                   MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup),
+                                   _lookAsideBuf,
+                                   (uint64_t)_lookAsideMregion.BasePa,
+                                   _lookAsideCompletionFn,
+                                   _lookAsideCompletionCookie,
+                                   INJ_MEMORY_FIFO_NDESC,
+                                   NULL);  // \todo This should be the pami_context_t
+
 #endif
 
             return;
@@ -385,9 +429,25 @@ namespace PAMI
 
 
           ///
-          /// \brief
+          /// \brief Register a packet handler function for a dispatch set
           ///
+          /// The function and cookie are invoked ...
           ///
+          /// The registration may fail if the requested dispatch set number is
+          /// greater than the number of allocated dispatch sets, or if there
+          /// are no free dispatch identifiers in the requested dispatch set
+          /// due to previous registrations on the requested dispatch set.
+          ///
+          /// \see MU::Context::dispatch_set_count
+          /// \see MU::Context::dispatch_set_size
+          ///
+          /// \param[in]  set    Dispatch set number
+          /// \param[in]  fn     Dispatch function
+          /// \param[in]  cookie Dispatch cookie
+          /// \param[out] id     Assigned MU dispatch identifier
+          ///
+          /// \retval true  Successful packet handler registration
+          /// \retval false Unsuccessful packet handler registration
           ///
           inline bool registerPacketHandler (size_t                      set,
                                              Interface::RecvFunction_t   fn,
@@ -420,10 +480,16 @@ namespace PAMI
           /// \copydoc Mapping::getMuDestinationSelf
           inline MUHWI_Destination_t * getMuDestinationSelf ()
           {
-            //return _global.mapping.getMuDestinationSelf();
             return _mapping.getMuDestinationSelf();
           };
 
+          ///
+          /// \brief Return the reception fifo id for this mu context
+          ///
+          /// \see MUHWI_MessageUnitHeader.Memory_FIFO.Rec_FIFO_Id
+          ///
+          /// \return Reception fifo identifier
+          ///
           inline uint16_t getRecptionFifoIdSelf ()
           {
             return _rfifoid;
@@ -438,38 +504,29 @@ namespace PAMI
           /// task+offset is pinned, and to provide MUSPI information needed
           /// to initialize and inject a descriptor.
           ///
-          /// \note The reception fifo id field of the packet header is only
-          ///       9 bits. Perhaps a reference to the descriptor to be pinned
-          ///       should be passed in and initialized instead of returning
-          ///       the reception fifo id and torus fifo map as output.
-          ///
           /// \see MUHWI_MessageUnitHeader.Memory_FIFO.Rec_FIFO_Id
           /// \see MUHWI_Descriptor_t.Torus_FIFO_Map
           ///
-          /// \param[in]  task   Destination task identifier
-          /// \param[in]  offset Destination task context offset identifier
-          /// \param[out] dest   Destination task node coordinates
-          /// \param[out] ififo  Pinned MUSPI injection fifo structure
-          /// \param[out] rfifo  Reception fifo id to address the task+offset
-          /// \param[out] map    Pinned MUSPI torus injection fifo map
+          /// \param[in]  task    Destination task identifier
+          /// \param[in]  offset  Destination task context offset identifier
+          /// \param[out] dest    Destination task node coordinates
+          /// \param[out] rfifo   Reception fifo id to address the task+offset
+          /// \param[out] map     Pinned MUSPI torus injection fifo map
           /// \param[out] hintsABCD Pinned ABCD torus hints
-          /// \param[out] hintsE Pinned E torus hints
+          /// \param[out] hintsE  Pinned E torus hints
           ///
           /// \return Context-relative injection fifo number pinned to the
           ///         task+offset destination
           ///
+          //template <pinfifo_algorithm_t T>
           inline size_t pinFifo (size_t                task,
                                  size_t                offset,
                                  MUHWI_Destination_t & dest,
-                                 MUSPI_InjFifo_t    ** ififo,
                                  uint16_t            & rfifo,
                                  uint64_t            & map,
                                  uint8_t             & hintsABCD,
                                  uint8_t             & hintsE)
           {
-#if CONTEXT_ALLOCATES_RESOURCES
-            *ififo = _ififo;
-
             // Calculate the destination recpetion fifo identifier based on
             // the destination task+offset.  This is important for
             // multi-context support.
@@ -481,7 +538,7 @@ namespace PAMI
             map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
             hintsABCD = MUHWI_PACKET_HINT_AM;
             hintsE    = MUHWI_PACKET_HINT_E_NONE;
-#endif
+
             return  0;
           }
 
@@ -508,58 +565,16 @@ namespace PAMI
           }
 
           ///
-          /// \brief
+          /// \brief Retrieve the injection channel associated with a fifo number
           ///
-          /// This method obtains the next available descriptor slot in the
-          /// injection fifo. MU model components may copy, or clone, a
-          /// partially initialized descriptor into the injection fifo, then
-          /// complete the descriptor initialization in the injection fifo, and
-          /// finally update the injection fifo tail pointer.
+          /// \param[in] fnum Injection fifo number
           ///
-          /// \todo Implement a version of this method that does not return
-          ///       \c vaddr and \c paddr as some usage scenarios do not need
-          ///       this information
+          /// \return A pointer to an injection channel object that may not be modified.
           ///
-          /// \param[in]  fnum  Context-relative injection fifo number
-          /// \param[out] desc  Next available descriptor slot in the fifo
-          /// \param[out] vaddr Virtual address of the look-aside payload
-          ///                   buffer associated with the descriptor slot
-          /// \param[out] paddr Physical address of \c vaddr
-          ///
-          /// \return   Number of available descriptor slots in the injection
-          ///           fifo before a fifo wrap event will occur
-          /// \retval 0 The injection fifo is full
-          ///
-          inline size_t nextInjectionDescriptor (size_t                fnum,
-                                                 MUHWI_Descriptor_t ** desc,
-                                                 void               ** vaddr,
-                                                 uint64_t            * paddr)
+          inline InjChannel * getInjectionChannel (size_t fnum)
           {
-#if CONTEXT_ALLOCATES_RESOURCES
-            MUSPI_InjFifo_t *ififo = _ififo;
-            uint32_t seqno = MUSPI_InjFifoNextDesc(ififo, (void **)desc);
-            uint32_t slotid = seqno % (INJ_MEMORY_FIFO_NDESC);
-            *vaddr = (void *)(_lookAsideBuf + slotid * LOOKASIDE_PAYLOAD_SIZE);
-            *paddr = (uint64_t)(*vaddr) - (uint64_t)_lookAsideMregion.BaseVa + (uint64_t)_lookAsideMregion.BasePa;
-            return 1;
-#else
-            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
-            return 0;
-#endif
-          }
-
-          ///
-          /// \brief
-          ///
-          /// \param[in] fnum Context-relative injection fifo number
-          /// \param[in] msg  Message object to be added to the send queue
-          ///                 associated with the injection fifo number
-          ///
-          inline void post (size_t fnum, MU::MessageQueue::Element * msg)
-          {
-            _sendq[fnum].post(msg);
-            return;
-          }
+            return (InjChannel *) _inj_group.channel[fnum];
+          };
 
         protected:
 
@@ -570,7 +585,6 @@ namespace PAMI
           size_t            _id_client;
 
           mu_dispatch_t     _dispatch[dispatch_set_count * dispatch_set_size];
-          MU::MessageQueue  _sendq[4];
 
       }; // class     PAMI::Device::MU::Context
     };   // namespace PAMI::Device::MU
@@ -633,6 +647,32 @@ inline unsigned PAMI::Device::MU::Context::advanceRecv ()
 #endif
   return packets;
 }
+
+
+
+#if 0
+///
+/// \brief pinFifo template specialization for runtime pin calculation
+///
+/// \todo Hook in to the MU::ResourceManager
+///
+/// \see MU::Context::pinFifo
+///
+template <>
+size_t PAMI::Device::MU::Context::pinFifo<PAMI::Device::MU::Context::pinfifo_algorithm_t::PINFIFO_ALGORITHM_RUNTIME> (size_t                task,
+    size_t                offset,
+    MUHWI_Destination_t & dest,
+    uint16_t            & rfifo,
+    uint64_t            & map,
+    uint8_t             & hintsABCD,
+    uint8_t             & hintsE)
+{
+  // return _resource_manager.pinFifo (...);
+  return 0;
+};
+#endif
+
+
 
 #endif // __components_devices_bgq_mu2_Context_h__
 //

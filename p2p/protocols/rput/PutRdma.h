@@ -97,15 +97,16 @@ namespace PAMI
         public:
 
           template <class T_Allocator>
-          static PutRdma * generate (T_Device      & device,
-                                     T_Allocator   & allocator,
-                                     pami_result_t & status)
+          static PutRdma * generate (T_Device       & device,
+                                     pami_context_t   context,
+                                     T_Allocator    & allocator,
+                                     pami_result_t  & status)
           {
             TRACE_ERR((stderr, ">> PutRdma::generate()\n"));
             COMPILE_TIME_ASSERT(sizeof(PutRdma) <= T_Allocator::objsize);
 
             PutRdma * put = (PutRdma *) allocator.allocateObject ();
-            new ((void *)put) PutRdma (device, status);
+            new ((void *)put) PutRdma (device, context, status);
 
             if (status != PAMI_SUCCESS)
               {
@@ -118,9 +119,9 @@ namespace PAMI
           }
 
 
-          inline PutRdma (T_Device & device, pami_result_t & status) :
+          inline PutRdma (T_Device & device, pami_context_t context, pami_result_t & status) :
               _model (device, status),
-              _context (device.getContext())
+              _context (context)
           {
             COMPILE_TIME_ASSERT(T_Model::dma_model_mr_supported == true);
           }

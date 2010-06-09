@@ -35,6 +35,13 @@ namespace PAMI
           /// \see PAMI::Device::Interface::DmaModel::DmaModel
           ~DmaModelBase ();
 
+          template <unsigned T_State, unsigned T_Desc>
+          inline void processCompletion (uint8_t                (&state)[T_State],
+                                         InjChannel           * channel,
+                                         pami_event_function    fn,
+                                         void                 * cookie,
+                                         MUSPI_DescriptorBase   (&desc)[T_Desc]);
+
         public:
 
           inline size_t initializeRemoteGetPayload (void                * vaddr,
@@ -131,15 +138,15 @@ namespace PAMI
           MUSPI_DescriptorBase   _rget; // "remote get" used for postDmaGet_impl()
           MUSPI_DescriptorBase   _rput; // "remote put" _rget payload descriptor
 
-          MU::Context          & _device;
+          MU::Context          & _context;
       };
 
       template <class T_Model>
       DmaModelBase<T_Model>::DmaModelBase (MU::Context & device, pami_result_t & status) :
           Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 128 > (device, status),
-          _device (device)
+          _context (device)
       {
-        COMPILE_TIME_ASSERT(sizeof(MUSPI_DescriptorBase) <= MU::Context::LOOKASIDE_PAYLOAD_SIZE);
+        COMPILE_TIME_ASSERT(sizeof(MUSPI_DescriptorBase) <= MU::Context::immediate_payload_size);
 
         // Zero-out the descriptor models before initialization
         memset((void *)&_dput, 0, sizeof(_dput));
@@ -221,12 +228,23 @@ namespace PAMI
         // --------------------------------------------------------------------
         _rput.setDirectPutFields (&dput);
         _rput.setRecCounterBaseAddressInfo (1, 0); // shared reception counter
-        _rput.setDestination (*(_device.getMuDestinationSelf()));
+        _rput.setDestination (*(_context.getMuDestinationSelf()));
       };
 
       template <class T_Model>
       DmaModelBase<T_Model>::~DmaModelBase ()
       {
+      };
+
+      template <class T_Model>
+      template <unsigned T_State, unsigned T_Desc>
+      void DmaModelBase<T_Model>::processCompletion (uint8_t                (&state)[T_State],
+                                                     InjChannel           * channel,
+                                                     pami_event_function    fn,
+                                                     void                 * cookie,
+                                                     MUSPI_DescriptorBase   (&desc)[T_Desc])
+      {
+        static_cast<T_Model*>(this)->processCompletion_impl (state, channel, fn, cookie, desc);
       };
 
       template <class T_Model>
@@ -245,11 +263,11 @@ namespace PAMI
         uint8_t  hintsABCD;
         uint8_t  hintsE;
 
-        _device.pinInformation (from_task,
-                                from_offset,
-                                map,
-                                hintsABCD,
-                                hintsE);
+        _context.pinInformation (from_task,
+                                 from_offset,
+                                 map,
+                                 hintsABCD,
+                                 hintsE);
 
         // Clone the remote direct put model descriptor into the payload
         MUSPI_DescriptorBase * rput = (MUSPI_DescriptorBase *) vaddr;
@@ -344,26 +362,28 @@ namespace PAMI
           }
 
         MUHWI_Destination_t   dest;
-        MUSPI_InjFifo_t     * ififo;
         uint16_t              rfifo; // not needed for direct put ?
         uint64_t              map;
         uint8_t               hintsABCD;
         uint8_t               hintsE;
 
-        size_t fnum = _device.pinFifo ((size_t) target_task, target_offset, dest,
-                                       &ififo, rfifo, map, hintsABCD, hintsE);
+        size_t fnum = _context.pinFifo (target_task,
+                                        target_offset,
+                                        dest,
+                                        rfifo,
+                                        map,
+                                        hintsABCD,
+                                        hintsE);
 
-        MUHWI_Descriptor_t * desc;
-        void               * vaddr; // not needed for direct put ?
-        uint64_t             paddr; // not needed for direct put ?
+        InjChannel * channel = _context.getInjectionChannel (fnum);
+        size_t ndesc = channel->getFreeDescriptorCountWithUpdate ();
 
-        size_t ndesc =
-          _device.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
-
-        if (likely(ndesc > 0))
+        if (likely(channel->isSendQueueEmpty() && ndesc > 0))
           {
             // There is at least one descriptor slot available in the injection
             // fifo before a fifo-wrap event.
+
+            MUHWI_Descriptor_t * desc = channel->getNextDescriptor ();
 
             // Clone the direct-put model descriptor into the injection fifo
             MUSPI_DescriptorBase * dput = (MUSPI_DescriptorBase *) desc;
@@ -379,7 +399,13 @@ namespace PAMI
             dput->setPayload (local_pa + local_offset, bytes);
             dput->setRecPayloadBaseAddressInfo (0, remote_pa + remote_offset);
 
+            // Finish the completion processing and inject the descriptor(s)
+            array_t<MUSPI_DescriptorBase, 1> * resized =
+              (array_t<MUSPI_DescriptorBase, 1> *) desc;
 
+            processCompletion (state, channel, local_fn, cookie, resized->array);
+
+#if 0
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
             uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (ififo);
@@ -408,12 +434,14 @@ namespace PAMI
                     new (msg) InjFifoMessage (local_fn, cookie, _context, sequenceNum);
 
                     // Queue it.
-                    _device.addToDoneQ (target_task, msg->getWrapper());
+                    _context.addToDoneQ (target_task, msg->getWrapper());
 #else
                     PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
 #endif
                   }
               }
+
+#endif
           }
         else
           {
@@ -480,26 +508,33 @@ namespace PAMI
         local_dst_pa += local_offset;
 
         MUHWI_Destination_t   dest;
-        MUSPI_InjFifo_t     * ififo;
-        uint16_t              rfifo; // not needed by remote inject
+        uint16_t              rfifo; // not needed for direct put ?
         uint64_t              map;
         uint8_t               hintsABCD;
         uint8_t               hintsE;
 
-        size_t fnum = _device.pinFifo ((size_t) target_task, target_offset, dest,
-                                       &ififo, rfifo, map, hintsABCD, hintsE);
+        size_t fnum = _context.pinFifo (target_task,
+                                        target_offset,
+                                        dest,
+                                        rfifo,
+                                        map,
+                                        hintsABCD,
+                                        hintsE);
 
-        MUHWI_Descriptor_t * desc;
-        void               * vaddr;
-        uint64_t             paddr;
+        InjChannel * channel = _context.getInjectionChannel (fnum);
+        size_t ndesc = channel->getFreeDescriptorCountWithUpdate ();
 
-        size_t ndesc =
-          _device.nextInjectionDescriptor (fnum, &desc, &vaddr, &paddr);
-
-        if (likely(ndesc > 0))
+        if (likely(channel->isSendQueueEmpty() && ndesc > 0))
           {
             // There is at least one descriptor slot available in the injection
             // fifo before a fifo-wrap event.
+
+            MUHWI_Descriptor_t * desc = channel->getNextDescriptor ();
+
+            void * vaddr;
+            uint64_t paddr;
+
+            channel->getDescriptorPayload (desc, vaddr, paddr);
 
             size_t pbytes = static_cast<T_Model*>(this)->
                             initializeRemoteGetPayload (vaddr, local_dst_pa,
@@ -518,7 +553,7 @@ namespace PAMI
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            MUSPI_InjFifoAdvanceDesc (ififo);
+            channel->injFifoAdvanceDesc();
           }
 
         return true;

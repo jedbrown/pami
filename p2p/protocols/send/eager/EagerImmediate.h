@@ -59,18 +59,6 @@ namespace PAMI
           } protocol_metadata_t;
 
           ///
-          /// \brief Shadow the \c pami_send_immediate_t parameter structure
-          ///
-          /// This allows the header+data iovec elements to be treated as a
-          /// two-element array of iovec structures, and therefore allows the
-          /// packet model to implement template specialization.
-          ///
-          typedef struct
-          {
-            struct iovec iov[2];
-          } parameters_iov_t;
-
-          ///
           /// \brief Sender-side state structure for immediate sends.
           ///
           /// If the immediate post to the device fails due to unavailable
@@ -156,14 +144,16 @@ namespace PAMI
 
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. task = %d, offset = %zu\n", task, offset));
 
-            // This shadow pointer allows template specialization on the iovecs
-            parameters_iov_t * const p = (parameters_iov_t *) parameters;
+            // This allows the header+data iovec elements to be treated as a
+            // two-element array of iovec structures, and therefore allows the
+            // packet model to implement template specialization.
+            array_t<struct iovec,2> * iov = (array_t<struct iovec,2> *) parameters;
 
             bool posted =
               _send_model.postPacket (task, offset,
                                       (void *) &metadata,
                                       sizeof (protocol_metadata_t),
-                                      p->iov);
+                                      iov->array);
 
             if (unlikely(!posted))
             {

@@ -124,12 +124,12 @@ int main(int argc, char ** argv)
 #endif
 
 #ifdef TEST_PUT_PROTOCOL
-  MuPut (mu, result);
+  MuPut (mu, NULL, result);
   fprintf (stderr, "After MuPut protocol constructor\n");
 #endif
 
 #ifdef TEST_GET_PROTOCOL
-  MuGet (mu, result);
+  MuGet (mu, NULL, result);
   fprintf (stderr, "After MuGet protocol constructor\n");
 #endif
 

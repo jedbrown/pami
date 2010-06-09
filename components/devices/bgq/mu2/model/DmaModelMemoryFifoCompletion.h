@@ -14,6 +14,7 @@
 #define __components_devices_bgq_mu2_DmaModelMemoryFifoCompletion_h__
 
 #include "components/devices/bgq/mu2/model/DmaModelBase.h"
+#include "components/devices/bgq/mu2/model/MemoryFifoCompletion.h"
 
 namespace PAMI
 {
@@ -30,10 +31,11 @@ namespace PAMI
 
           /// \see PAMI::Device::Interface::DmaModel::DmaModel
           inline DmaModelMemoryFifoCompletion (MU::Context & context, pami_result_t & status) :
-              MU::DmaModelBase<DmaModelMemoryFifoCompletion> (context, status)
+              MU::DmaModelBase<DmaModelMemoryFifoCompletion> (context, status),
+              _completion (context)
           {
             COMPILE_TIME_ASSERT(sizeof(MU::Context::notify_t) <= MemoryFifoPacketHeader::packet_singlepacket_metadata_size);
-            COMPILE_TIME_ASSERT((sizeof(MUSPI_DescriptorBase)*2) <= MU::Context::LOOKASIDE_PAYLOAD_SIZE);
+            COMPILE_TIME_ASSERT((sizeof(MUSPI_DescriptorBase)*2) <= MU::Context::immediate_payload_size);
 
             // Zero-out the descriptor models before initialization
             memset((void *)&_ack_to_self, 0, sizeof(_ack_to_self));
@@ -102,6 +104,17 @@ namespace PAMI
           /// \see PAMI::Device::Interface::DmaModel::~DmaModel
           inline ~DmaModelMemoryFifoCompletion () {};
 
+          template <unsigned T_State>
+          inline void processCompletion_impl (uint8_t                (&state)[T_State],
+                                              InjChannel           * channel,
+                                              pami_event_function    fn,
+                                              void                 * cookie,
+                                              MUSPI_DescriptorBase   (&desc)[1])
+          {
+            _completion.inject (state, channel, fn, cookie, desc);
+          };
+
+
           inline size_t initializeRemoteGetPayload (void                * vaddr,
                                                     uint64_t              local_dst_pa,
                                                     uint64_t              remote_src_pa,
@@ -149,6 +162,7 @@ namespace PAMI
 
           MUSPI_DescriptorBase _rput;
           MUSPI_DescriptorBase _ack_to_self;
+          MemoryFifoCompletion _completion;
 
       }; // PAMI::Device::MU::DmaModelMemoryFifoCompletion class
     };   // PAMI::Device::MU namespace

@@ -13,7 +13,7 @@
 #ifndef __components_devices_bgq_mu2_PacketModelDeposit_h__
 #define __components_devices_bgq_mu2_PacketModelDeposit_h__
 
-#include "components/devices/bgq/mu2/model/PacketModelBase.h"
+#include "components/devices/bgq/mu2/model/PacketModel.h"
 
 namespace PAMI
 {
@@ -21,13 +21,13 @@ namespace PAMI
   {
     namespace MU
     {
-      class PacketModelDeposit : public MU::PacketModelBase<PacketModelDeposit>
+      class PacketModelDeposit : public MU::PacketModel
       {
         public :
 
           /// \see PAMI::Device::Interface::PacketModel::PacketModel
           inline PacketModelDeposit (MU::Context & context) :
-              MU::PacketModelBase<PacketModelDeposit> (context)
+              MU::PacketModel (context)
           {
             _singlepkt.setDeposit(MUHWI_PACKET_DEPOSIT);
             _multipkt.setDeposit(MUHWI_PACKET_DEPOSIT);

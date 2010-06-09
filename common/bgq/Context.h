@@ -263,11 +263,11 @@ namespace PAMI
           pami_result_t result = PAMI_ERROR;
 
           rget_mu = Protocol::Get::GetRdma <Device::MU::MUDmaModel<false>, MUDevice>::
-            generate (_devices->_mu[_contextid], _request, result);
+            generate (_devices->_mu[_contextid], _context, _request, result);
           if (result != PAMI_SUCCESS) rget_mu = NULL;
 
           rput_mu = Protocol::Put::PutRdma <Device::MU::MUDmaModel<false>, MUDevice>::
-            generate (_devices->_mu[_contextid], _request, result);
+            generate (_devices->_mu[_contextid], _context, _request, result);
           if (result != PAMI_SUCCESS) rput_mu = NULL;
         }
 
@@ -352,11 +352,11 @@ namespace PAMI
             pami_result_t result = PAMI_ERROR;
 
             rget_shmem = Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
-              generate (_devices->_shmem[_contextid], _request, result);
+              generate (_devices->_shmem[_contextid], _context, _request, result);
             if (result != PAMI_SUCCESS) rget_shmem = NULL;
 
             rput_shmem = Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
-              generate (_devices->_shmem[_contextid], _request, result);
+              generate (_devices->_shmem[_contextid], _context, _request, result);
             if (result != PAMI_SUCCESS) rput_shmem = NULL;
           }
           else TRACE_ERR((stderr, "topology does not support shmem\n"));

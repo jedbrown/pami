@@ -12,8 +12,6 @@
  */
 
 #include "common/bgq/Global.h"
-//#include "components/memory/MemoryManager.h"
-//#include "components/devices/generic/Device.h"
 
 #include "common/bgq/BgqPersonality.h"
 #include "common/bgq/Mapping.h"
@@ -27,131 +25,201 @@
 #include "components/devices/bgq/mu2/model/PacketModelDeposit.h"
 #include "components/devices/bgq/mu2/model/PacketModelInterrupt.h"
 
-//#include "p2p/protocols/send/eager/Eager.h"
-
-//typedef PAMI::Device::Generic::Device ProgressDevice;
+#include "p2p/protocols/send/eager/Eager.h"
 
 typedef PAMI::Device::MU::Context MuContext;
 
-//typedef PAMI::Device::MU::PacketModel MuPacketModel;
-typedef PAMI::Device::MU::PacketModelMemoryFifoCompletion MuPacketModel;
+typedef PAMI::Device::MU::PacketModel MuPacketModel;
+//typedef PAMI::Device::MU::PacketModelMemoryFifoCompletion MuPacketModel;
 //typedef PAMI::Device::MU::PacketModelDeposit MuPacketModel;
 //typedef PAMI::Device::MU::PacketModelInterrupt MuPacketModel;
 
 //typedef PAMI::Device::MU::DmaModel MuDmaModel;
 typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 
-//typedef PAMI::Protocol::Send::Eager<T_Model, MuContext> MuEager;
+typedef PAMI::Protocol::Send::Eager<MuPacketModel, MuContext> MuEager;
 
 #define MAX_ITER 10
 int npackets = 0;
 
-#define METADATA_SIZE 8
-#define MAX_BUF_SIZE  1024
-#define MSG_SIZE      1
-
-unsigned long metaval = 0xdeadbeef;
-
-int dispatch_fn    (void   * metadata,
-		    void   * payload,
-		    size_t   bytes,
-		    void   * recv_func_parm,
-		    void   * cookie)
+void done_fn       (pami_context_t   context,
+                    void           * cookie,
+                    pami_result_t    result)
 {
-  npackets ++;
-  //assert (*(unsigned long*)metadata == metaval);
-  //fprintf(stderr, "Received packet of size %lu\n", bytes);	  
-  return 0;  
+  //fprintf (stderr, "done_fn() %zu -> %zu\n", *((size_t *)cookie), *((size_t *)cookie) - 1);
+  (*((size_t *)cookie))--;
 }
 
-void pingpong (MuPacketModel &pkt, MuContext &mu);
-
-PAMI::Global __myGlobal;
-
-
-int main(int argc, char ** argv)
+int dispatch_fn    (void   * metadata,
+                    void   * payload,
+                    size_t   bytes,
+                    void   * recv_func_parm,
+                    void   * cookie)
 {
-
- // PAMI::Global global;
-  //PAMI::Memory::MemoryManager mm;
-
-  //PAMI::BgqPersonality personality;
-  //PAMI::Mapping mapping (personality);
-  //PAMI::bgq_mapcache_t mapcache;
-  //mapping.init (mapcache, personality);
-
-  fprintf (stderr, "After mapping init\n");    
-
-//  ProgressDevice progress (0, 0, 1);
-//  progress.init (NULL,       // pami_context_t
-//                 0,          // id_client
-//                 0,          // id_offset
-//                 NULL,//&mm,        // not used ???
-//                 &progress); // "all generic devices"
-
-  MuContext mu (__myGlobal.mapping, 0, 0, 1);//, progress) __attribute__((__aligned__(64)));
-  mu.init (0); // id_client
-
-  fprintf (stderr, "After mu init\n");
-
-  //pami_result_t result;
-  char pktbuf[sizeof(MuPacketModel)] __attribute__((__aligned__(32)));
-  MuPacketModel &pkt = *(new (pktbuf) MuPacketModel(mu));
-
-  //MuDmaModel dma (mu, result);
-
-  pkt.init (0,
-	    dispatch_fn,
-	    NULL,
-	    NULL,
-	    NULL);
-
-  fprintf (stderr, "After MuPacketModel init\n");
-
-#if 0  // use pami protocols .. depends on pami.h types
-  pami_result_t result;
-  MuEager eager (10,      // dispatch set id
-                 recv,    //dispatch function
-                 NULL,    // dispatch cookie
-                 mu,      // "packet" device reference
-                 result);
-#endif
-
-  pingpong (pkt, mu);
-
+  npackets ++;
+  //fprintf(stderr, "Received packet of size %lu\n", bytes);
   return 0;
 }
 
+void recv (
+  pami_context_t        context,      /**< IN:  communication context which invoked the dispatch function */
+  void               * cookie,       /**< IN:  dispatch cookie */
+  void               * header_addr,  /**< IN:  header address  */
+  size_t               header_size,  /**< IN:  header size     */
+  void               * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+  size_t               data_size,    /**< IN:  number of byts of message data, valid regardless of message type */
+  pami_recv_t         * recv)        /**< OUT: receive message structure, only needed if addr is non-NULL */
+{
+  npackets ++;
+}
 
-void pingpong (MuPacketModel &pkt, MuContext &mu) {
+#define MAX_BUF_SIZE  1024
+#define MSG_SIZE      1
 
-  char metadata[METADATA_SIZE];
+PAMI::Global __myGlobal;
+
+template <typename T_Model, typename T_Protocol>
+void test (MuContext & mu, T_Model & model, T_Protocol & protocol, const char * label = "")
+{
+  char metadata[4];
   char buf[MAX_BUF_SIZE];
 
-  memcpy (metadata, &metaval, sizeof(metadata));
+  memset (metadata, 0, sizeof(metadata));
   memset (buf, 0, sizeof(buf));
 
   struct iovec iov[1];
   iov[0].iov_base = buf;
   iov[0].iov_len  = MSG_SIZE;
 
-  unsigned long start = 0, end = 0;
-  for (int i = 0; i <= MAX_ITER; i++) {
-    if (i == 1) start = GetTimeBase();
+  volatile size_t active = 0;
+  npackets = 0;
 
-    pkt.postPacket (__global.mapping.task(),
-		    0,
-		    (void *)metadata,
-		    METADATA_SIZE,
-		    iov);
-    
-    // advance
-    //  progress.advance ();
-    while (mu.advance() == 0);
-  }
+  unsigned long start = 0, end = 0;
+
+  // -------------------------------------------------------------------
+  // Test immediate packet model
+  // -------------------------------------------------------------------
+  for (int i = 0; i <= MAX_ITER; i++)
+    {
+      if (i == 1)
+        start = GetTimeBase();
+
+      model.postPacket (__global.mapping.task(),
+                        0,
+                        (void *)metadata,
+                        4,
+                        iov);
+    }
+
+  while (npackets != MAX_ITER) mu.advance();
+
   end = GetTimeBase();
-  
-  assert (npackets == MAX_ITER+1);
-  
-  printf ("Pingpong time = %d cycles\n", (int)((end - start)/MAX_ITER));
+
+  printf ("[%s] immediate pingpong time = %d cycles\n", label, (int)((end - start) / MAX_ITER));
+
+  // -------------------------------------------------------------------
+  // Test non-blocking packet model
+  // -------------------------------------------------------------------
+  typedef uint8_t state_t[MuPacketModel::packet_model_state_bytes];
+  state_t state[MAX_ITER];
+  npackets = 0;
+  start = 0;
+  end = 0;
+
+  for (int i = 0; i <= MAX_ITER; i++)
+    {
+      if (i == 1)
+        start = GetTimeBase();
+
+      model.postPacket (state[i],
+                        done_fn,
+                        (void *)&active,
+                        __global.mapping.task(),
+                        0,
+                        (void *)metadata,
+                        4,
+                        iov);
+    }
+
+  while (npackets != MAX_ITER) mu.advance();
+
+  end = GetTimeBase();
+
+  printf ("[%s] nonblocking pingpong time = %d cycles\n", label, (int)((end - start) / MAX_ITER));
+
+  // -------------------------------------------------------------------
+  // Test non-blocking send protocol
+  // -------------------------------------------------------------------
+#if 0
+  npackets = 0;
+  start = 0;
+  end = 0;
+
+  for (int i = 0; i <= MAX_ITER; i++)
+    {
+      if (i == 1)
+        start = GetTimeBase();
+
+      protocol.simple ();
+      pkt.postPacket (state[i],
+                      done_fn,
+                      (void *)&active,
+                      __global.mapping.task(),
+                      0,
+                      (void *)metadata,
+                      4,
+                      iov);
+    }
+
+  while (npackets != MAX_ITER) mu.advance();
+
+  end = GetTimeBase();
+
+  printf ("[%s] nonblocking pingpong time = %d cycles\n", label, (int)((end - start) / MAX_ITER));
+#endif
+}
+
+int main(int argc, char ** argv)
+{
+  MuContext mu (__myGlobal.mapping, 0, 0, 1);
+  mu.init (0); // id_client
+
+  fprintf (stderr, "After mu init\n");
+
+  uint8_t model0_buf[sizeof(PAMI::Device::MU::PacketModelMemoryFifoCompletion)] __attribute__((__aligned__(32)));
+  PAMI::Device::MU::PacketModelMemoryFifoCompletion &model0 = *(new (model0_buf) PAMI::Device::MU::PacketModelMemoryFifoCompletion(mu));
+
+  uint8_t model1_buf[sizeof(PAMI::Device::MU::PacketModel)] __attribute__((__aligned__(32)));
+  PAMI::Device::MU::PacketModel &model1 = *(new (model1_buf) PAMI::Device::MU::PacketModel(mu));
+
+  //pami_result_t result;
+  //MuDmaModel dma (mu, result);
+
+  model0.init (0,
+               dispatch_fn,
+               NULL,
+               NULL,
+               NULL);
+
+  model1.init (1,
+               dispatch_fn,
+               NULL,
+               NULL,
+               NULL);
+
+
+  pami_result_t result;
+  MuEager eager (10,      // dispatch set id
+                 recv,    //dispatch function
+                 NULL,    // dispatch cookie
+                 (pami_endpoint_t) 0,       // origin endpoint
+                 mu,      // "packet" device reference
+                 (pami_context_t) NULL,
+                 result);
+
+
+  test (mu, model0, eager, "memory fifo completion");
+  test (mu, model1, eager, "completion array");
+
+  return 0;
 }
