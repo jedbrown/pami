@@ -37,7 +37,7 @@
 #include "TypeDefs.h"
 #include "algorithms/geometry/BGQMultiRegistration.h"
 
-#include "algorithms/geometry/BGQCCMIRegistration.h"
+#include "algorithms/geometry/P2PCCMIRegistration.h"
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -50,7 +50,7 @@ namespace PAMI
 
   typedef MemoryAllocator<2048, 16> ProtocolAllocator;
 
-  typedef CollRegistration::BGQ::CCMIRegistration<BGQGeometry,
+  typedef CollRegistration::P2P::CCMIRegistration<BGQGeometry,
                                              MUNI_AM,
                                              MUNI_AS,
                                              ShmemDevice,

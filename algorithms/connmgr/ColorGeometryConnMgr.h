@@ -82,6 +82,12 @@ namespace CCMI
       {
         return getConnectionId_impl (comm, root, color, phase);
       }
+
+      virtual int getNumConnections_impl ()
+        {
+          return _numConnections;
+        }
+      
     private:
       size_t    _numConnections;
     };

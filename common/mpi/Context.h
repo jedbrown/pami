@@ -37,6 +37,8 @@
 #include "algorithms/geometry/CCMICollRegistration.h"
 #include "algorithms/geometry/PGASCollRegistration.h"
 #include "algorithms/geometry/OldCCMICollRegistration.h"
+#include "algorithms/geometry/P2PCCMIRegistration.h"
+
 #include "Mapping.h"
 #include <new>
 #include <map>
@@ -69,20 +71,23 @@ namespace PAMI
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice MPIDevice;
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
-    typedef PAMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
-
-    // \todo #warning I do not distinguish local vs non-local so no eager shmem protocol here... just EagerMPI
+    typedef PAMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> MPIEagerBase;
+    typedef PAMI::Protocol::Send::SendPWQ < MPIEagerBase >       MPIEager;
+  
+    // \todo #warning I do not distinguish local vs non-local so no eager shmem protocol here... just MPIEagerBase
   typedef PAMI::Protocol::MPI::P2PMcastProto<MPIDevice,
-                                            EagerMPI,
+                                            MPIEagerBase,
                                             PAMI::Device::MPIBcastMdl,
                                             PAMI::Device::MPIBcastDev> P2PMcastProto;
     typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>  ContextLock;
 
 #ifdef ENABLE_SHMEM_DEVICE
-    typedef Fifo::FifoPacket <64, 1024> ShmemPacket;
+    typedef Fifo::FifoPacket <64, 1024>                            ShmemPacket;
     typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
-    typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
-    typedef Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
+    typedef Device::ShmemDevice<ShmemFifo>                         ShmemDevice;
+    typedef Device::Shmem::PacketModel<ShmemDevice>                ShmemPacketModel;
+    typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice>  ShmemEagerBase;
+    typedef PAMI::Protocol::Send::SendPWQ < ShmemEagerBase >       ShmemEager;
 #endif
 
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
@@ -103,7 +108,17 @@ namespace PAMI
   typedef PAMI::Device::MPIOldm2mModel<PAMI::Device::MPIDevice,
                                       PAMI::Device::MPIMessage,
                                       size_t>                        MPIOldM2MModel;
+
   // "New" CCMI Typedefs/Coll Registration
+  typedef PAMI::NativeInterfaceActiveMessage<MPIEager>   MPIEagerNI_AM;
+  typedef PAMI::NativeInterfaceAllsided<MPIEager>        MPIEagerNI_AS;
+  typedef PAMI::NativeInterfaceActiveMessage<ShmemEager> ShmemEagerNI_AM;
+  typedef PAMI::NativeInterfaceAllsided<ShmemEager>      ShmemEagerNI_AS;
+  typedef PAMI::NativeInterfaceActiveMessage< Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AM;
+  typedef PAMI::NativeInterfaceAllsided< Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AS;
+
+
+  
   typedef PAMI::MPINativeInterface<MPIDevice,
                                   MPIMulticastModel,
                                   MPIMultisyncModel,
@@ -120,6 +135,23 @@ namespace PAMI
                                              DefaultNativeInterface,
                                              DefaultNativeInterfaceAS,
                                              MPIDevice> CCMICollreg;
+
+ typedef CollRegistration::P2P::CCMIRegistration<MPIGeometry,
+                                                 ShmemDevice,
+                                                 MPIDevice,
+                                                 ProtocolAllocator,
+                                                 ShmemEager,
+                                                 ShmemDevice,
+                                                 ShmemEagerNI_AM,
+                                                 ShmemEagerNI_AS,
+                                                 MPIEager,
+                                                 MPIDevice,
+                                                 MPIEagerNI_AM,
+                                                 MPIEagerNI_AS,
+                                                 CompositeNI_AM,
+                                                 CompositeNI_AS> P2PCCMICollreg;
+
+  
   // PGAS RT Typedefs/Coll Registration
   typedef PAMI::Device::MPIOldmulticastModel<PAMI::Device::MPIDevice,
                                             PAMI::Device::MPIMessage> MPIOldMcastModel;
@@ -293,6 +325,16 @@ namespace PAMI
         new(_ccmi_collreg) CCMICollreg(client, (pami_context_t)this, id,clientid,*_mpi);
         _ccmi_collreg->analyze(_contextid, _world_geometry);
 
+        _p2p_ccmi_collreg=(P2PCCMICollreg*) malloc(sizeof(*_p2p_ccmi_collreg));
+        new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,_context,_contextid,_clientid,
+                                              _devices->_shmem[_contextid],*_mpi,
+                                              _protocol,
+                                              0,1,
+                                              __global.topology_global.size(),
+                                              __global.topology_local.size());
+        _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
+
+        
 #ifdef USE_WAKEUP_VECTORS
           _wakeupManager.init(1, 0x57550000 | id); // check errors?
 #endif // USE_WAKEUP_VECTORS
@@ -680,7 +722,7 @@ namespace PAMI
               // "long header" option
               //
               _dispatch[id][0] = (Protocol::Send::Send *)
-                EagerMPI::generate (id, fn, cookie, *_mpi, _protocol, result);
+                MPIEagerBase::generate (id, fn, cookie, *_mpi, _protocol, result);
             }
             else if (options.use_shmem == 1)
             {
@@ -688,13 +730,13 @@ namespace PAMI
               if (options.no_long_header == 1)
                 {
                   _dispatch[id][0] = (Protocol::Send::Send *)
-                    Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
+                    Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
                       generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
                 }
               else
                 {
                   _dispatch[id][0] = (Protocol::Send::Send *)
-                    Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+                    Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
                       generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
                 }
             }
@@ -705,13 +747,13 @@ namespace PAMI
               // This mpi eager protocol code should be changed to respect the
               // "long header" option
               //
-              EagerMPI * eagermpi =
-                EagerMPI::generate (id, fn, cookie, *_mpi, _protocol, result);
+              MPIEagerBase * eagermpi =
+                MPIEagerBase::generate (id, fn, cookie, *_mpi, _protocol, result);
 #ifdef ENABLE_SHMEM_DEVICE
               if (options.no_long_header == 1)
                 {
-                  Protocol::Send::Eager <ShmemModel, ShmemDevice, false> * eagershmem =
-                    Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
+                  Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false> * eagershmem =
+                    Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
                       generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
 
                   _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
@@ -719,8 +761,8 @@ namespace PAMI
                 }
               else
                 {
-                  Protocol::Send::Eager <ShmemModel, ShmemDevice, true> * eagershmem =
-                    Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+                  Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true> * eagershmem =
+                    Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
                       generate (id, fn, cookie, _devices->_shmem[_contextid], _protocol, result);
 
                   _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
@@ -760,7 +802,7 @@ namespace PAMI
         if(options.hint.multicast.one_sided)
         {
           _dispatch[(size_t)id][1] = (void*) 2; // see HACK comments above
-          PAMI_assertf(_request.objsize >= sizeof(P2PMcastProto),"%zu >= %zu(%zu,%zu)\n",_request.objsize,sizeof(P2PMcastProto),sizeof(EagerMPI),sizeof(PAMI::Device::MPIBcastMdl));
+          PAMI_assertf(_request.objsize >= sizeof(P2PMcastProto),"%zu >= %zu(%zu,%zu)\n",_request.objsize,sizeof(P2PMcastProto),sizeof(MPIEagerBase),sizeof(PAMI::Device::MPIBcastMdl));
           new (_dispatch[(size_t)id][0]) P2PMcastProto(id, fn.multicast, cookie,
                                                        *_mpi,
                                                        PAMI::Device::MPIBcastDev::Factory::getDevice(_devices->_mpimcast, _clientid, _contextid),
@@ -841,15 +883,16 @@ namespace PAMI
       MemoryAllocator<4096,16>  _request;
       MPIDevice                *_mpi;
   public:
-    CCMICollreg               *_ccmi_collreg;
-    PGASCollreg               *_pgas_collreg;
-    OldCCMICollreg            *_oldccmi_collreg;
-      MPIGeometry              *_world_geometry;
+      CCMICollreg               *_ccmi_collreg;
+      P2PCCMICollreg            *_p2p_ccmi_collreg;
+      PGASCollreg               *_pgas_collreg;
+      OldCCMICollreg            *_oldccmi_collreg;
+      MPIGeometry               *_world_geometry;
   private:
-    DefaultNativeInterface    _minterface;
-      unsigned                  _empty_advance;
-      unsigned                 *_ranklist;
-      PlatformDeviceList *_devices;
+    DefaultNativeInterface       _minterface;
+      unsigned                   _empty_advance;
+      unsigned                  *_ranklist;
+      PlatformDeviceList        *_devices;
     }; // end PAMI::Context
 }; // end namespace PAMI
 

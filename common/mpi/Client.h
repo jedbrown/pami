@@ -223,6 +223,7 @@ namespace PAMI
                     _contexts[n]._pgas_collreg->analyze(n,new_geometry);
                     _contexts[n]._oldccmi_collreg->analyze(n,new_geometry);
                     _contexts[n]._ccmi_collreg->analyze(n,new_geometry);
+                    _contexts[n]._p2p_ccmi_collreg->analyze(n,new_geometry);
                   }
               *geometry=(MPIGeometry*) new_geometry;
               // todo:  deliver completion to the appropriate context

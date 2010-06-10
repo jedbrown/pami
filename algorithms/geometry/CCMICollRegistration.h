@@ -169,9 +169,9 @@ namespace PAMI
       CCMI::Adaptor::Broadcast::AsyncRBBinomBcastFactory     _asrb_binom_bcast_reg;
       CCMI::Adaptor::Broadcast::AsyncCSBinomBcastFactory     _ascs_binom_bcast_reg;
       CCMI::Adaptor::AMBroadcast::AMBinomBcastFactory        _active_binombcast_reg;
-
+      CCMI::Adaptor::Alltoall::All2AllFactory                _alltoall_reg;
       CCMI::Adaptor::Allreduce::Binomial::Factory            _binomial_allreduce_reg;
-      CCMI::Adaptor::Alltoall::All2AllFactory               _alltoall_reg;
+
     };
   };
 };

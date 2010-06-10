@@ -30,18 +30,19 @@ namespace CCMI
         strcpy(&m->name[0],"CCMIAMBinomialBcast");
       }
 
+      void create_schedule(void                        * buf,
+                           unsigned                      size,
+                           unsigned                      root,
+                           Interfaces::NativeInterface * native,
+                           PAMI_GEOMETRY_CLASS          * g)
+      {
+        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
+      }
+      
       typedef AMBroadcastT <CCMI::Schedule::ListMultinomial,
-	CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AMBinomBcastComposite;
-      template<>
-	void AMBinomBcastComposite::create_schedule(void                        * buf,
-						       unsigned                      size,
-						       unsigned                      root,
-						       Interfaces::NativeInterface * native,
-						       PAMI_GEOMETRY_CLASS          * g)
-	{
-	  new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
-	}
-
+                            CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+                            create_schedule> AMBinomBcastComposite;
+    
       typedef AMBroadcastFactoryT<AMBinomBcastComposite,
 	am_bcast_md,
 	CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AMBinomBcastFactory;

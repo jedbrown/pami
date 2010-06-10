@@ -29,7 +29,7 @@ namespace CCMI
       ///
       /// \brief Asyc Broadcast Composite. It is single color right now
       ///
-      template <class T_Schedule, class T_Conn>
+      template <class T_Schedule, class T_Conn, ScheduleFn create_schedule>
       class AMBroadcastT : public CCMI::Executor::Composite
       {
         protected:
@@ -75,16 +75,6 @@ namespace CCMI
             _executor.setSchedule(&_schedule, 0);
             _executor.start();
           }
-
-          ///
-          /// \brief initialize the schedule based on input geometry.
-          /// Template implementation must specialize this function.
-          ///
-          void  create_schedule(void                      * buf,
-                                unsigned                    size,
-                                unsigned                    root,
-                                Interfaces::NativeInterface * native,
-                                PAMI_GEOMETRY_CLASS        * g) {CCMI_abort();};
 
           CCMI::Executor::BroadcastExec<T_Conn> &executor()
           {

@@ -15,15 +15,13 @@
 #define __algorithms_protocols_CollectiveProtocolFactory_h__
 
 //#include "TypeDefs.h"
-#include "algorithms/interfaces/Executor.h"
-#include "algorithms/composite/Composite.h"
-
+#include  "algorithms/interfaces/Executor.h"
+#include  "algorithms/composite/Composite.h"
 namespace CCMI
 {
   namespace Adaptor
   {
-
-
+    
     class CollectiveProtocolFactory
     {
       public:

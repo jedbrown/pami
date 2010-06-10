@@ -38,59 +38,62 @@ namespace CCMI
         strcpy(&m->name[0],"CCMI_AMCS_BinomialBcast");
       }
 
-      typedef AsyncBroadcastT <CCMI::Schedule::ListMultinomial,
-	CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AsyncRBBinomBcastComposite;
-      template<>
-	void AsyncRBBinomBcastComposite::create_schedule(void                        * buf,
-						       unsigned                      size,
-						       unsigned                      root,
-						       Interfaces::NativeInterface * native,
-						       PAMI_GEOMETRY_CLASS          * g)
+      void create_schedule(void                        * buf,
+                           unsigned                      size,
+                           unsigned                      root,
+                           Interfaces::NativeInterface * native,
+                           PAMI_GEOMETRY_CLASS          * g)
 	{
 	  new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
 	}
+      
+      unsigned getKey(unsigned                                                root,
+                      unsigned                                                connid,
+                      PAMI_GEOMETRY_CLASS                                    *geometry,
+                      ConnectionManager::BaseConnectionManager              **connmgr)
+      {
+        return root;
+      }
+
+      unsigned getKey_as(unsigned                                   root,
+                         unsigned                                   connid,
+                         PAMI_GEOMETRY_CLASS                      * geometry,
+                         ConnectionManager::BaseConnectionManager **connmgr)
+      {
+        ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
+        if (connid != (unsigned)-1) {
+          *connmgr = NULL; //use this key as connection id
+          return connid;
+        }
+        return cm->updateConnectionId( geometry->comm() );
+      }
+      
+      typedef AsyncBroadcastT <CCMI::Schedule::ListMultinomial,
+                               CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+                               create_schedule>
+      AsyncRBBinomBcastComposite;
 
       typedef AsyncBroadcastFactoryT<AsyncRBBinomBcastComposite,
-	am_bcast_rb,
-	CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AsyncRBBinomBcastFactory;
-
-      template<>
-	unsigned AsyncRBBinomBcastFactory::getKey(unsigned                                                root,
-						  unsigned                                                connid,
-						  PAMI_GEOMETRY_CLASS                                    *geometry,
-						  ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> **connmgr)
-	{
-	  return root;
-	}
-
+                                     am_bcast_rb,
+                                     CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+                                     getKey>
+      AsyncRBBinomBcastFactory;
+    
+     
+      
       typedef AsyncBroadcastT <CCMI::Schedule::ListMultinomial,
-	CCMI::ConnectionManager::CommSeqConnMgr> AsyncCSBinomBcastComposite;
-      template<>
-	void AsyncCSBinomBcastComposite::create_schedule(void                        * buf,
-							 unsigned                      size,
-							 unsigned                      root,
-							 Interfaces::NativeInterface * native,
-							 PAMI_GEOMETRY_CLASS          * g)
-	{
-	  new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
-	}
+                               CCMI::ConnectionManager::CommSeqConnMgr,
+                               create_schedule >
+      AsyncCSBinomBcastComposite;
+
 
       typedef AsyncBroadcastFactoryT<AsyncCSBinomBcastComposite,
-	am_bcast_cs,
-	CCMI::ConnectionManager::CommSeqConnMgr > AsyncCSBinomBcastFactory;
+                                     am_bcast_cs,
+                                     CCMI::ConnectionManager::CommSeqConnMgr,
+                                     getKey_as>
+      AsyncCSBinomBcastFactory;
 
-      template<>
-	unsigned AsyncCSBinomBcastFactory::getKey(unsigned                                   root,
-						  unsigned                                   connid,
-						  PAMI_GEOMETRY_CLASS                      * geometry,
-						  ConnectionManager::CommSeqConnMgr        **connmgr)
-	{
-	  if (connid != (unsigned)-1) {
-	    *connmgr = NULL; //use this key as connection id
-	    return connid;
-	  }
-	  return (*connmgr)->updateConnectionId( geometry->comm() );
-	}
+
 
       void old_am_bcast_md(pami_metadata_t *m)
       {

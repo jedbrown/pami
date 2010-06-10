@@ -6,12 +6,32 @@
 #ifndef __algorithms_connmgr_ConnectionManager_h__
 #define __algorithms_connmgr_ConnectionManager_h__
 
+#include "TypeDefs.h"
+
 namespace CCMI
 {
   namespace ConnectionManager
   {
+
+    class BaseConnectionManager
+    {
+    public:
+      virtual void     setNumConnections (int nconn) =0;
+      virtual int      getNumConnections() = 0;
+      virtual unsigned getConnectionId (unsigned comm, unsigned root,
+                                        unsigned color, unsigned phase, unsigned dst) = 0;
+      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root,
+                                            unsigned src, unsigned phase, unsigned color) = 0;
+    };
+
+    typedef unsigned (*GetKeyFn)      (unsigned                root,
+                                       unsigned                connid,
+                                       PAMI_GEOMETRY_CLASS    *geometry,
+                                       ConnectionManager::BaseConnectionManager **connmgr);
+
+    
     template <class T_ConnectionManager>
-    class ConnectionManager
+    class ConnectionManager: public BaseConnectionManager
     {
     public:
       ConnectionManager () {}

@@ -32,9 +32,14 @@ namespace CCMI
         {
         }
 
-      inline void setNumConnections (size_t sz)
+      inline void setNumConnections_impl (size_t sz)
         {
           _numConnections = sz;
+        }
+
+      inline int getNumConnections_impl ()
+        {
+          return _numConnections;
         }
 
       inline unsigned getConnectionId_impl (unsigned comm,
@@ -54,6 +59,8 @@ namespace CCMI
         {
           return src;
         }
+
+      
     private:
       T_Sysdep *_sysdep;
       size_t    _numConnections;

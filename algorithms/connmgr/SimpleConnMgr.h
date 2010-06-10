@@ -64,8 +64,12 @@ namespace CCMI
       {
         _nconn = nconn;
       }
-
-
+      
+      virtual int getNumConnections_impl ()
+        {
+          return _nconn;
+        }
+      
     };
   };
 };

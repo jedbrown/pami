@@ -9,7 +9,9 @@
 #include "util/ccmi_util.h"
 #include "util/ccmi_debug.h"
 #include "algorithms/ccmi.h"
+#include "algorithms/interfaces/NativeInterface.h"
 #include "Topology.h"
+#include "TypeDefs.h"
 
 /*-------------------------------------------------*/
 /*     Basic utility classes collectives           */
@@ -17,6 +19,14 @@
 
 namespace CCMI
 {
+
+  typedef void      (*ScheduleFn)   (void                        * buf,
+                                     unsigned                      size,
+                                     unsigned                      root,
+                                     Interfaces::NativeInterface * native,
+                                     PAMI_GEOMETRY_CLASS         * g);
+  
+
   /**
    * \brief The different collective operations supported
    */

@@ -30,7 +30,7 @@ namespace PAMI
     OneSided=0,
     AllSided,
   }MPINativeInterfaceSemantics;
-  size_t        dispatch = DISPATCH_START-1;
+  static size_t        __g_mpi_dispatch = DISPATCH_START-1;
 
 
 
@@ -160,8 +160,8 @@ namespace PAMI
       // todo:  this is a temporary upcall until we can call the interface directly (it gets implemented)
 #if 1
       pami_dispatch_hint_t        options;
-      dispatch++;
-      _dispatch=dispatch;
+      __g_mpi_dispatch++;
+      _dispatch=__g_mpi_dispatch;
       memset(&options, 0, sizeof(options));
       options.type = PAMI_MULTICAST;
       if(T_Semantics == OneSided)
@@ -174,7 +174,7 @@ namespace PAMI
       else
         assert(0);
 
-      return PAMI_Dispatch_set_new(_context,dispatch,fn,cookie, options);
+      return PAMI_Dispatch_set_new(_context,__g_mpi_dispatch,fn,cookie, options);
 #else
     TRACE_ERR((stderr, "<%p>MPINativeInterface::setDispatch(%p, %p) id=%zu\n",
                this, fn.multicast,  cookie,  dispatch));

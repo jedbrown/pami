@@ -54,6 +54,18 @@ namespace CCMI
       /// \param comm the communicator id of the collective
       /// \param phase the phase of the collective operation
       ///
+      int getNumConnections_impl ()
+        {
+          PAMI_abort();
+          return 0;
+        }
+
+      void setNumConnections_impl (size_t sz)
+        {
+          PAMI_abort();
+          return;
+        }
+
 
       unsigned getConnectionId_impl (unsigned comm, unsigned root, unsigned color,
                                      unsigned phase, unsigned dst)
@@ -63,6 +75,13 @@ namespace CCMI
 
       }
 
+      unsigned getRecvConnectionId_impl (unsigned comm, unsigned root,
+                                         unsigned src, unsigned phase, unsigned color)
+      {
+        PAMI_abort();
+        return 0;
+      }
+      
       unsigned updateConnectionId (unsigned comm)
       {
         _comm_seq_map[comm] ++;

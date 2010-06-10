@@ -7,7 +7,7 @@
 #define __algorithms_interfaces_NativeInterface_h__
 
 #include <pami.h>
-
+#include "util/common.h"
 namespace CCMI
 {
   namespace Interfaces

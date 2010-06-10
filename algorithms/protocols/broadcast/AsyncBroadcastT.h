@@ -29,7 +29,8 @@ namespace CCMI
       ///
       /// \brief Asyc Broadcast Composite. It is single color right now
       ///
-      template <class T_Schedule, class T_Conn>
+      
+      template <class T_Schedule, class T_Conn, ScheduleFn create_schedule>
       class AsyncBroadcastT : public CCMI::Executor::Composite
       {
         protected:
@@ -64,19 +65,6 @@ namespace CCMI
             _executor.setSchedule (&_schedule, 0);
           }
 
-          ///
-          /// \brief initialize the schedule based on input geometry.
-          /// Template implementation must specialize this function.
-          ///
-          void  create_schedule(void                      * buf,
-                                unsigned                    size,
-                                unsigned                    root,
-                                Interfaces::NativeInterface * native,
-                                PAMI_GEOMETRY_CLASS        * g)
-          {
-            CCMI_abort();
-          };
-
           CCMI::Executor::BroadcastExec<T_Conn> &executor()
           {
             return _executor;
@@ -84,7 +72,7 @@ namespace CCMI
       }; //- AsyncBroadcastT
 
 
-      template <class T_Composite, MetaDataFn get_metadata, class C>
+      template <class T_Composite, MetaDataFn get_metadata, class C,  ConnectionManager::GetKeyFn getKey>
       class AsyncBroadcastFactoryT: public CollectiveProtocolFactory
       {
         protected:
@@ -133,23 +121,25 @@ namespace CCMI
             CCMI_abort();
           }
 
+          //Override the connection manager in this call
+          unsigned myGetKey   (unsigned                 root,
+                             unsigned                 iconnid,
+                             PAMI_GEOMETRY_CLASS    * geometry,
+                             C                     ** connmgr)
+          {
+            return getKey(root,
+                          iconnid,
+                          geometry,
+                          (ConnectionManager::BaseConnectionManager**)connmgr);
+          }
+
           virtual void metadata(pami_metadata_t *mdata)
           {
             TRACE_ADAPTOR((stderr, "<%p>AsyncBroadcastFactoryT::metadata()\n",this));
             DO_DEBUG((templateName<MetaDataFn>()));
             get_metadata(mdata);
           }
-
-          //Override the connection manager in this call
-          unsigned getKey   (unsigned                 root,
-                             unsigned                 iconnid,
-                             PAMI_GEOMETRY_CLASS    * geometry,
-                             C                     ** connmgr)
-          {
-            CCMI_abort();
-            return root;
-          }
-
+        
           char *allocateBuffer (unsigned size)
           {
             if (size <= 32768)
@@ -177,7 +167,10 @@ namespace CCMI
             //CCMI_assert(bcast_xfer->typecount <= 32768);
             PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
             C *cmgr = _cmgr;
-            unsigned key = getKey(bcast_xfer->root, (unsigned) - 1, (PAMI_GEOMETRY_CLASS*)g, &cmgr);
+            unsigned key = getKey(bcast_xfer->root,
+                                  (unsigned) - 1,
+                                  (PAMI_GEOMETRY_CLASS*)g,
+                                  (ConnectionManager::BaseConnectionManager**)&cmgr);
 
             //fprintf (stderr, "%d: Using Key %d\n", _native->myrank(), key);
 
@@ -314,7 +307,7 @@ namespace CCMI
               }
 
             C *cmgr = factory->_cmgr;
-            unsigned key = factory->getKey (cdata->_root, conn_id, geometry, &cmgr);
+            unsigned key = factory->myGetKey (cdata->_root, conn_id, geometry, &cmgr);
             CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
               (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().findAndDelete(key);
 

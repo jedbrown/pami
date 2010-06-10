@@ -50,6 +50,12 @@ namespace CCMI
       {
         return color;
       }
+
+      virtual int getNumConnections_impl ()
+        {
+          return MAX_COLORS;
+        }
+      
     };
   };
 };
