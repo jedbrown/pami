@@ -666,7 +666,7 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
       if (_scache->getNumDstRanks(i) > 0)
         {
           PAMI::Topology * topology = _scache->getDstTopology(i);
-          pami_task_t *dstranks;
+          pami_task_t *dstranks=NULL;
           topology->rankList(&dstranks);
 
           if (i <= _scache->getLastReducePhase())
