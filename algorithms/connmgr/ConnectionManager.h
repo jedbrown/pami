@@ -16,6 +16,9 @@ namespace CCMI
     class BaseConnectionManager
     {
     public:
+      BaseConnectionManager() {}
+      virtual ~BaseConnectionManager() {}
+
       virtual void     setNumConnections (int nconn) =0;
       virtual int      getNumConnections() = 0;
       virtual unsigned getConnectionId (unsigned comm, unsigned root,
