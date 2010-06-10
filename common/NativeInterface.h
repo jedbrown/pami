@@ -124,6 +124,10 @@ namespace PAMI
       // Set the protocol into the NI
       ni->setProtocol(dispatch, protocol);
 
+      // Workaround:  This gets rid of an unused warning with gcc
+      if(0)  
+	getNextDispatch();
+
       // Return 
       return result;
     }

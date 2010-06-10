@@ -487,7 +487,7 @@ namespace PAMI
             // ----------------------------------------------------
             // Setup and Construct a binomial barrier factory from active message ni and p2p protocol
             setupFactory(ni_am, device, protocol, _binomial_barrier_factory);
-            new ((void*)_binomial_barrier_factory) CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory(&_sconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head);
+            new ((void*)_binomial_barrier_factory) CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory(&_sconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::P2PBarrier::BinomialBarrier::cb_head);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
@@ -566,7 +566,7 @@ namespace PAMI
             // ----------------------------------------------------
             // Setup and Construct a binomial barrier factory from active message ni and p2p protocol
             setupFactory(ni_am, device1, protocol1, device2, protocol2, _binomial_barrier_factory);
-            new ((void*)_binomial_barrier_factory) CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory(&_sconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head);
+            new ((void*)_binomial_barrier_factory) CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory(&_sconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::P2PBarrier::BinomialBarrier::cb_head);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
@@ -602,7 +602,7 @@ namespace PAMI
             // ----------------------------------------------------
             // Setup and Construct a binomial allreducefactory from active message ni and p2p protocol
             setupFactory(ni_am, device1, protocol1, device2, protocol2, _binomial_allreduce_factory);
-            new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory(&_rbconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead);
+            new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory(&_rbconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::P2PAllreduce::Binomial::Composite::cb_receiveHead);
             // ----------------------------------------------------
 
 

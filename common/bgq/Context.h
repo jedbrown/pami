@@ -51,11 +51,19 @@ namespace PAMI
   typedef MemoryAllocator<2048, 16> ProtocolAllocator;
 
   typedef CollRegistration::P2P::CCMIRegistration<BGQGeometry,
-                                             MUNI_AM,
-                                             MUNI_AS,
-                                             ShmemDevice,
-                                             MUDevice,
-                                             ProtocolAllocator> CCMIRegistration;
+    ShmemDevice,
+    MUDevice,
+    ProtocolAllocator,
+    ShmemEager,
+    ShmemDevice,
+    ShmemNI_AM,
+    ShmemNI_AS,
+    MUEager,
+    MUDevice,
+    MUNI_AM,
+    MUNI_AS,
+    CompositeNI_AM,
+    CompositeNI_AS> CCMIRegistration;
 
   /**
    * \brief Class containing all devices used on this platform.
@@ -371,7 +379,7 @@ namespace PAMI
           else TRACE_ERR((stderr, "topology does not support shmem\n"));
         }
 
-       _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid,_devices->_shmem[_contextid],_devices->_mu[_contextid],_protocol);
+       _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid,_devices->_shmem[_contextid],_devices->_mu[_contextid],_protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size());
        _ccmi_registration->analyze(_contextid, _world_geometry);
 
        TRACE_ERR((stderr,  "<%p>Context::Context() Register collectives(%p,%p,%p,%p,%zu,%zu\n",this, _shmem_native_interface, _global_mu_ni, client, this, id, clientid));
