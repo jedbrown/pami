@@ -20,6 +20,8 @@
   static const char* mu_op_string(uint8_t index);
   static const char* dt_string(pami_dt index);
   static const char* op_string(pami_op index);
+  #undef TRACE
+  #define TRACE(x) fprintf x
 #else
   #define mu_op_string(x) "untraced"
   #define op_string(x) "untraced"
@@ -208,13 +210,13 @@ _wrapper_model (&_desc_model)
   {
 
     Op_Code :
-    MUHWI_COLLECTIVE_OP_CODE_OR,/// \todo not true? ignored for MUHWI_COLLECTIVE_TYPE_BROADCAST
+    MUHWI_COLLECTIVE_OP_CODE_OR,
 
     Word_Length:
-    4,    /// \todo not true? ignored for MUHWI_COLLECTIVE_TYPE_BROADCAST
+    4,    
 
     Class_Route:
-    0,    /// \todo global class route always 2 (arbitrary see MUCollDevice)?
+    0,    /// \todo global class route (arbitrary see MUCollDevice)?
 
     Misc:
     MUHWI_PACKET_VIRTUAL_CHANNEL_USER_COMM_WORLD |

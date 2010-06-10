@@ -33,9 +33,10 @@ namespace PAMI
     typedef enum
     {
       PAMI_GKEY_COLLFACTORY     = 0,
-      PAMI_GKEY_BARRIERCOMPOSITE0,
-      PAMI_GKEY_BARRIERCOMPOSITE1,
-      PAMI_GKEY_LOCALBARRIECOMPOSITE
+      PAMI_GKEY_BARRIERCOMPOSITE0,     // ?
+      PAMI_GKEY_BARRIERCOMPOSITE1,     // ?
+      PAMI_GKEY_LOCALBARRIERCOMPOSITE, // local sub-topologies only in the geometry
+      PAMI_GKEY_GLOBALBARRIERCOMPOSITE // global sub-topologes only in the geometry
     }keys_t;
 
     template <class T_Geometry>

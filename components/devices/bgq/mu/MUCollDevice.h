@@ -165,6 +165,12 @@ namespace PAMI
             TRACE((stderr, "<%p>MUCollDevice::addToDoneQ() \n", this));
             _injFifoSubGroup->addToDoneQ(_relativeFnum, wrapper);
           }
+          inline bool emptySendQ ()
+          {
+            unsigned long long waitToSendMaskCopy = _injFifoSubGroup->_waitToSendMask;
+            unsigned long long mask = _BN( _relativeFnum ); // The bit corresponding to the fifo we are
+            return(!(waitToSendMaskCopy & mask ));// Waiting to send on this fifo?
+          }
 
           inline void addToSendQ (PAMI::Queue::Element * msg)
           {

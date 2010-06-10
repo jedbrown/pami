@@ -381,15 +381,15 @@ namespace PAMI
           else TRACE_ERR((stderr, "topology does not support shmem\n"));
         }
 
+       TRACE_ERR((stderr,  "<%p>Context::Context() Register collectives(%p,%p,%p,%p,%zu,%zu\n",this, _shmem_native_interface, _global_mu_ni, client, this, id, clientid));
+       // The multi registration will use shmem/mu if they are ctor'd above.
+       _multi_registration       =  new (_multi_registration)
+       CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >(_shmem_native_interface, _global_mu_ni, client, (pami_context_t)this, id, clientid);
+       
+       _multi_registration->analyze(_contextid, _world_geometry);
+
        _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid,_devices->_shmem[_contextid],_devices->_mu[_contextid],_protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size());
        _ccmi_registration->analyze(_contextid, _world_geometry);
-
-       TRACE_ERR((stderr,  "<%p>Context::Context() Register collectives(%p,%p,%p,%p,%zu,%zu\n",this, _shmem_native_interface, _global_mu_ni, client, this, id, clientid));
-        // The multi registration will use shmem/mu if they are ctor'd above.
-        _multi_registration       =  new (_multi_registration)
-        CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >(_shmem_native_interface, _global_mu_ni, client, (pami_context_t)this, id, clientid);
-
-        _multi_registration->analyze(_contextid, _world_geometry);
 
         // Complete rget and rput protocol initialization
         if (((rget_mu != NULL) && (rget_shmem != NULL)) &&

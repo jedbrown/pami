@@ -576,7 +576,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 
 inline void globalDumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints)
 {
-  fprintf(stderr, "dumphex:%s:%p:%zu:\n\n", pstring, &buffer, n_ints);
+  fprintf(stderr, "dumphex:%s:%p/%p:%zu:\n\n", pstring, &buffer, buffer, sizeof(unsigned)*n_ints);
   unsigned nChunks = n_ints / 8;
 
   if (!buffer || !n_ints) return;

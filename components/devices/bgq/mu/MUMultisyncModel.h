@@ -158,10 +158,11 @@ namespace PAMI
         void               * payloadVa;
         void               * payloadPa;
 
-        if (_device.nextInjectionDescriptor (&injfifo,
+        if ((_device.emptySendQ ()) &&
+            (_device.nextInjectionDescriptor (&injfifo,
                                              &hwi_desc,
                                              &payloadVa,
-                                             &payloadPa))
+                                             &payloadPa)))
         {
           TRACE((stderr, "<%p>:MUMultisyncModel::postMsginfo().. nextInjectionDescriptor injfifo = %p, hwi_desc = %p, payloadVa = %p, payloadPa = %p\n", this, injfifo, hwi_desc, payloadVa, payloadPa));
           MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) hwi_desc;
