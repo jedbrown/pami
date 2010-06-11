@@ -263,6 +263,7 @@ namespace PAMI
 #ifdef ENABLE_SHMEM_DEVICE
         events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
 #endif
+#if 0        
         events += PAMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
         events += PAMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
         events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
@@ -272,6 +273,7 @@ namespace PAMI
         events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
         events += PAMI::Device::MPISyncDev::Factory::advance(_mpimsync, clientid, contextid);
         events += PAMI::Device::MPIBcastDev::Factory::advance(_mpimcast, clientid, contextid);
+#endif        
         return events;
     }
 
@@ -293,16 +295,22 @@ namespace PAMI
     class Context : public Interface::Context<PAMI::Context>
     {
     public:
-      inline Context (pami_client_t client, size_t clientid, size_t id, size_t num,
+      inline Context (pami_client_t          client,
+                      size_t                 clientid,
+                      size_t                 id,
+                      size_t                 num,
                                 PlatformDeviceList *devices,
-                                void * addr, size_t bytes,
-                                MPIGeometry *world_geometry) :
+                      void                  *addr,
+                      size_t                 bytes,
+                      MPIGeometry           *world_geometry,
+                      Memory::MemoryManager *mm) :
         Interface::Context<PAMI::Context> (client, id),
         _client (client),
+        _context(this),
         _clientid (clientid),
         _contextid (id),
-        _mm (addr, bytes),
-        _sysdep(_mm),
+        _mm (mm),
+        _sysdep(*_mm),
         _lock (),
         _mpi(&_g_mpi_device),
         _world_geometry(world_geometry),
@@ -313,6 +321,19 @@ namespace PAMI
           // dispatch_impl relies on the table being initialized to NULL's.
           memset(_dispatch, 0x00, sizeof(_dispatch));
 
+        
+#ifdef USE_WAKEUP_VECTORS
+          _wakeupManager.init(1, 0x57550000 | id); // check errors?
+#endif // USE_WAKEUP_VECTORS
+          _devices->init(_clientid, _contextid, _client, _context, _mm);
+          _mpi->init(_mm, _clientid, num, (pami_context_t)this, id);
+          _lock.init(_mm);
+          
+          // this barrier is here because the shared memory init
+          // needs to be synchronized
+          // we shoudl find a way to remove this
+          MPI_Barrier(MPI_COMM_WORLD);
+          
         _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
         new(_pgas_collreg) PGASCollreg(client, (pami_context_t)this, id,*_mpi);
         _pgas_collreg->analyze(_contextid,_world_geometry);
@@ -326,25 +347,17 @@ namespace PAMI
         _ccmi_collreg->analyze(_contextid, _world_geometry);
 
         _p2p_ccmi_collreg=(P2PCCMICollreg*) malloc(sizeof(*_p2p_ccmi_collreg));
-        new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,_context,_contextid,_clientid,
+          new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
+                                                _context,
+                                                _contextid,
+                                                _clientid,
                                               _devices->_shmem[_contextid],*_mpi,
                                               _protocol,
-                                              0,1,
+                                                0,
+                                                1,
                                               __global.topology_global.size(),
                                               __global.topology_local.size());
         _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
-
-        
-#ifdef USE_WAKEUP_VECTORS
-          _wakeupManager.init(1, 0x57550000 | id); // check errors?
-#endif // USE_WAKEUP_VECTORS
-          _devices->init(_clientid, _contextid, _client, _context, &_mm);
-          _mpi->init(&_mm, _clientid, num, (pami_context_t)this, id);
-          _lock.init(&_mm);
-
-          // this barrier is here because the shared memory init
-          // needs to be synchronized
-          // we shoudl find a way to remove this
           MPI_Barrier(MPI_COMM_WORLD);
         }
 
@@ -873,7 +886,7 @@ namespace PAMI
       size_t                    _contextid;
       void                     *_dispatch[1024][2];
       ProtocolAllocator         _protocol;
-      Memory::MemoryManager     _mm;
+      Memory::MemoryManager    *_mm;
       SysDep                    _sysdep;
       ContextLock _lock;
 

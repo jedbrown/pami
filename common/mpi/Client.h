@@ -121,7 +121,7 @@ namespace PAMI
                         _mm.disable();
                         PAMI_assertf(base != NULL, "out of sharedmemory in context create\n");
                         new (&_contexts[x]) PAMI::Context(this, _clientid, x, n,
-                                                        &_platdevs, base, bytes, _world_geometry);
+                                                          &_platdevs, base, bytes, _world_geometry, &_mm);
                         //_context_list->pushHead((QueueElem *)&context[x]);
                         //_context_list->unlock();
           _ncontexts = n;
@@ -306,8 +306,8 @@ namespace PAMI
                 }
           }
           // Failed to create shared memory .. fake it using the heap ??
+          PAMI_abort();
           _mm.init (malloc (n), n);
-
           return;
         }
 

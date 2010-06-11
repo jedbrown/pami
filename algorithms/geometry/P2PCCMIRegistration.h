@@ -44,7 +44,7 @@ namespace CCMI
       void binomial_barrier_md(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
-        strcpy(&m->name[0], "P2P CCMI Binomial_Barrier");
+        strcpy(&m->name[0], "P2P_CCMI Binom_Bar");
       }
 
       bool binomial_analyze (PAMI_GEOMETRY_CLASS *geometry)
@@ -80,14 +80,14 @@ namespace CCMI
       {
         // \todo:  fill in other metadata
         TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
-        strcpy(&m->name[0], "P2P CCMI Binomial_Broadcast");
+        strcpy(&m->name[0], "P2P_CCMI Binom_Bcast");
       }
 
       void ring_broadcast_metadata(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
         TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
-        strcpy(&m->name[0], "P2P CCMI Ring_Broadcast");
+        strcpy(&m->name[0], "P2P_CCMI Ring_Bcast");
       }
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -120,14 +120,14 @@ namespace CCMI
       {
         TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
         // \todo:  fill in other metadata
-        strcpy(&m->name[0], "P2P CCMI Async_RB_Binomial_Broadcast");
+        strcpy(&m->name[0], "P2P_CCMI AS_RB_Binom_Bcast");
       }
 
       void am_cs_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
         // \todo:  fill in other metadata
-        strcpy(&m->name[0], "P2P CCMI Async_CS_Binomial_Broadcast");
+        strcpy(&m->name[0], "P2P_CCMI AS_CS_Binom_Bcast");
       }
 
       void create_schedule(void                        * buf,
@@ -208,7 +208,7 @@ namespace CCMI
       {
         TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
         // \todo:  fill in other metadata
-        strcpy(&m->name[0], "P2P CCMI Binomial_AMBroadcast");
+        strcpy(&m->name[0], "P2P_CCMI Binom_AMBcast");
       }
 
       void create_schedule(void                        * buf,
@@ -258,7 +258,7 @@ namespace CCMI
         void binomial_allreduce_metadata(pami_metadata_t *m)
         {
           // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P CCMI Binomial_Allreduce");
+          strcpy(&m->name[0], "P2P_CCMI Binom_Allred");
         }
 
         typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT

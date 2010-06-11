@@ -115,6 +115,9 @@ namespace PAMI
 
       inline void init(PAMI::Memory::MemoryManager *mm)
       {
+        _head=NULL;
+        _tail=NULL;
+        _size=0;
       }
 
       inline void enqueue_impl (Element * element)

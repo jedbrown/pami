@@ -1065,6 +1065,8 @@ namespace PAMI
       payload = (void*)pwq->bufferToConsume();
 
     // Save the user's done callback
+    state_data->rcvpwq = NULL;
+    state_data->sndpwq = NULL;
     state_data->cb_done = mcast->cb_done;
 
     // Get the msginfo buffer/length and validate (assert) inputs
