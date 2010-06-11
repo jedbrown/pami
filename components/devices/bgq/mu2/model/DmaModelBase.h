@@ -37,7 +37,7 @@ namespace PAMI
 
           template <unsigned T_State, unsigned T_Desc>
           inline void processCompletion (uint8_t                (&state)[T_State],
-                                         InjChannel           * channel,
+                                         InjChannel           & channel,
                                          pami_event_function    fn,
                                          void                 * cookie,
                                          MUSPI_DescriptorBase   (&desc)[T_Desc]);
@@ -239,7 +239,7 @@ namespace PAMI
       template <class T_Model>
       template <unsigned T_State, unsigned T_Desc>
       void DmaModelBase<T_Model>::processCompletion (uint8_t                (&state)[T_State],
-                                                     InjChannel           * channel,
+                                                     InjChannel           & channel,
                                                      pami_event_function    fn,
                                                      void                 * cookie,
                                                      MUSPI_DescriptorBase   (&desc)[T_Desc])
@@ -375,15 +375,15 @@ namespace PAMI
                                         hintsABCD,
                                         hintsE);
 
-        InjChannel * channel = _context.getInjectionChannel (fnum);
-        size_t ndesc = channel->getFreeDescriptorCountWithUpdate ();
+        InjChannel & channel = _context.injectionGroup.channel[fnum];
+        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
 
-        if (likely(channel->isSendQueueEmpty() && ndesc > 0))
+        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
           {
             // There is at least one descriptor slot available in the injection
             // fifo before a fifo-wrap event.
 
-            MUHWI_Descriptor_t * desc = channel->getNextDescriptor ();
+            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
 
             // Clone the direct-put model descriptor into the injection fifo
             MUSPI_DescriptorBase * dput = (MUSPI_DescriptorBase *) desc;
@@ -521,20 +521,20 @@ namespace PAMI
                                         hintsABCD,
                                         hintsE);
 
-        InjChannel * channel = _context.getInjectionChannel (fnum);
-        size_t ndesc = channel->getFreeDescriptorCountWithUpdate ();
+        InjChannel & channel = _context.injectionGroup.channel[fnum];
+        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
 
-        if (likely(channel->isSendQueueEmpty() && ndesc > 0))
+        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
           {
             // There is at least one descriptor slot available in the injection
             // fifo before a fifo-wrap event.
 
-            MUHWI_Descriptor_t * desc = channel->getNextDescriptor ();
+            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
 
             void * vaddr;
             uint64_t paddr;
 
-            channel->getDescriptorPayload (desc, vaddr, paddr);
+            channel.getDescriptorPayload (desc, vaddr, paddr);
 
             size_t pbytes = static_cast<T_Model*>(this)->
                             initializeRemoteGetPayload (vaddr, local_dst_pa,
@@ -553,7 +553,7 @@ namespace PAMI
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            channel->injFifoAdvanceDesc();
+            channel.injFifoAdvanceDesc();
           }
 
         return true;

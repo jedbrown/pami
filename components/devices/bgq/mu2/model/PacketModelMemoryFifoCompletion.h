@@ -48,7 +48,7 @@ namespace PAMI
           /// \see PAMI::Device::MU::PacketModelBase::processCompletion
           template <unsigned T_State>
           inline void processCompletion_impl (uint8_t                (&state)[T_State],
-                                              InjChannel           * channel,
+                                              InjChannel           & channel,
                                               pami_event_function    fn,
                                               void                 * cookie,
                                               MUSPI_DescriptorBase   (&desc)[1])
@@ -61,7 +61,7 @@ namespace PAMI
           /// \see PAMI::Device::MU::PacketModelBase::createMessage
           template <unsigned T_State>
           inline MU::MessageQueue::Element * createMessage_impl (uint8_t                (&state)[T_State],
-                                                                 InjChannel           * channel,
+                                                                 InjChannel           & channel,
                                                                  pami_event_function    fn,
                                                                  void                 * cookie,
                                                                  MUSPI_DescriptorBase   (&desc)[1])

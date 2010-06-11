@@ -60,6 +60,12 @@ namespace PAMI
           /// \todo Move this up ... MUSPI ?
           static const size_t BGQ_MU_DESCRIPTOR_SIZE_IN_POW2 = 6;
 
+          inline InjChannel () :
+              _sendq_status (_dummy_status),
+              _completion_status (_dummy_status)
+          {
+          };
+
           ///
           /// \brief Injection channel constructor
           ///
@@ -239,6 +245,7 @@ namespace PAMI
             return completion_count;
           };
 
+          uint64_t               _dummy_status;        // Used only for array constructors
           uint64_t             & _sendq_status;        // The "send queue work" per channel status
           uint64_t             & _completion_status;   // The "completion work" per channel status
           uint64_t               _channel_set_bit;     // Bit setter mask for this channel

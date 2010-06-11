@@ -54,28 +54,11 @@ namespace PAMI
           ///
           inline InjGroup () :
               _sendqueue_status (0),
-              _completion_status (0),
-              _channel0 (_sendqueue_status, _completion_status, 0),
-              _channel1 (_sendqueue_status, _completion_status, 1),
-              _channel2 (_sendqueue_status, _completion_status, 2),
-              _channel3 (_sendqueue_status, _completion_status, 3),
-              _channel4 (_sendqueue_status, _completion_status, 4),
-              _channel5 (_sendqueue_status, _completion_status, 5),
-              _channel6 (_sendqueue_status, _completion_status, 6),
-              _channel7 (_sendqueue_status, _completion_status, 7),
-              _channel8 (_sendqueue_status, _completion_status, 8),
-              _channel9 (_sendqueue_status, _completion_status, 9)
+              _completion_status (0)
           {
-            channel[0] = &_channel0;
-            channel[1] = &_channel1;
-            channel[2] = &_channel2;
-            channel[3] = &_channel3;
-            channel[4] = &_channel4;
-            channel[5] = &_channel5;
-            channel[6] = &_channel6;
-            channel[7] = &_channel7;
-            channel[8] = &_channel8;
-            channel[9] = &_channel9;
+            size_t i;
+            for (i=0; i<10; i++)
+              new (&channel[i]) InjChannel (_sendqueue_status, _completion_status, i);
           };
 
           ///
@@ -106,8 +89,9 @@ namespace PAMI
           {
             PAMI_assert_debugf(fnum < 10, "%s<%d>\n", __FILE__, __LINE__);
 
-            channel[fnum]->initialize (f, immediate_vaddr, immediate_paddr,
-                                       completion_function, completion_cookie, n, channel_cookie);
+            channel[fnum].initialize (f, immediate_vaddr, immediate_paddr,
+                                      completion_function, completion_cookie,
+                                      n, channel_cookie);
           }
 
           ///
@@ -128,53 +112,42 @@ namespace PAMI
 
             if (likely(_completion_status != 0))
               {
-                events += _channel0.advanceCompletion ();
-                events += _channel1.advanceCompletion ();
-                events += _channel2.advanceCompletion ();
-                events += _channel3.advanceCompletion ();
-                events += _channel4.advanceCompletion ();
-                events += _channel5.advanceCompletion ();
-                events += _channel6.advanceCompletion ();
-                events += _channel7.advanceCompletion ();
-                events += _channel8.advanceCompletion ();
-                events += _channel9.advanceCompletion ();
+                events += channel[0].advanceCompletion ();
+                events += channel[1].advanceCompletion ();
+                events += channel[2].advanceCompletion ();
+                events += channel[3].advanceCompletion ();
+                events += channel[4].advanceCompletion ();
+                events += channel[5].advanceCompletion ();
+                events += channel[6].advanceCompletion ();
+                events += channel[7].advanceCompletion ();
+                events += channel[8].advanceCompletion ();
+                events += channel[9].advanceCompletion ();
               }
 
             if (unlikely(_sendqueue_status != 0))
               {
-                events += _channel0.advanceSendQueue ();
-                events += _channel1.advanceSendQueue ();
-                events += _channel2.advanceSendQueue ();
-                events += _channel3.advanceSendQueue ();
-                events += _channel4.advanceSendQueue ();
-                events += _channel5.advanceSendQueue ();
-                events += _channel6.advanceSendQueue ();
-                events += _channel7.advanceSendQueue ();
-                events += _channel8.advanceSendQueue ();
-                events += _channel9.advanceSendQueue ();
+                events += channel[0].advanceSendQueue ();
+                events += channel[1].advanceSendQueue ();
+                events += channel[2].advanceSendQueue ();
+                events += channel[3].advanceSendQueue ();
+                events += channel[4].advanceSendQueue ();
+                events += channel[5].advanceSendQueue ();
+                events += channel[6].advanceSendQueue ();
+                events += channel[7].advanceSendQueue ();
+                events += channel[8].advanceSendQueue ();
+                events += channel[9].advanceSendQueue ();
               }
 
             return events;
           }
 
-          /// Injection channel \b pointer array, \b not an array of injection channels
-          InjChannel * channel[10];
+          /// Injection channel array
+          InjChannel channel[10];
 
         protected:
 
-          uint64_t     _sendqueue_status;  // Send queue status, one bit for each channel
-          uint64_t     _completion_status; // Completion status, one bit for each channel
-
-          InjChannel   _channel0;
-          InjChannel   _channel1;
-          InjChannel   _channel2;
-          InjChannel   _channel3;
-          InjChannel   _channel4;
-          InjChannel   _channel5;
-          InjChannel   _channel6;
-          InjChannel   _channel7;
-          InjChannel   _channel8;
-          InjChannel   _channel9;
+          uint64_t   _sendqueue_status;  // Send queue status, one bit for each channel
+          uint64_t   _completion_status; // Completion status, one bit for each channel
 
       }; // class     PAMI::Device::MU::InjGroup
     };   // namespace PAMI::Device::MU

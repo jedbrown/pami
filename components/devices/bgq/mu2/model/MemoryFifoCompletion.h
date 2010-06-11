@@ -74,13 +74,13 @@ namespace PAMI
           ///
           template <unsigned T_State, unsigned T_Desc>
           inline void inject (uint8_t                (&state)[T_State],
-                              InjChannel           * channel,
+                              InjChannel           & channel,
                               pami_event_function    fn,
                               void                 * cookie,
                               MUSPI_DescriptorBase   (&desc)[T_Desc])
           {
             TRACE_FN_ENTER();
-            size_t ndesc = channel->getFreeDescriptorCount ();
+            size_t ndesc = channel.getFreeDescriptorCount ();
 
             if (likely(ndesc > T_Desc))
               {
@@ -97,7 +97,7 @@ namespace PAMI
                 size_t i;
 
                 for (i = 0; i < T_Desc + 1; i++)
-                  channel->injFifoAdvanceDesc (); // see todo
+                  channel.injFifoAdvanceDesc (); // see todo
 
                 TRACE_FN_EXIT();
                 return;
@@ -111,9 +111,9 @@ namespace PAMI
             size_t i;
 
             for (i = 0; i < T_Desc; i++)
-              channel->injFifoAdvanceDesc (); // see todo
+              channel.injFifoAdvanceDesc (); // see todo
 
-            channel->post (createSimpleMessage (state, channel, fn, cookie));
+            channel.post (createSimpleMessage (state, channel, fn, cookie));
             TRACE_FN_EXIT();
           }
 
@@ -131,7 +131,7 @@ namespace PAMI
           ///
           template <unsigned T_State, unsigned T_Desc>
           inline MU::MessageQueue::Element * createDescriptorMessage (uint8_t                (&state)[T_State],
-                                                                      InjChannel           * channel,
+                                                                      InjChannel           & channel,
                                                                       pami_event_function    fn,
                                                                       void                 * cookie,
                                                                       MUSPI_DescriptorBase   (&desc)[T_Desc])
@@ -170,7 +170,7 @@ namespace PAMI
           ///
           template <unsigned T_State>
           inline MU::MessageQueue::Element * createSimpleMessage (uint8_t                (&state)[T_State],
-                                                                  InjChannel           * channel,
+                                                                  InjChannel           & channel,
                                                                   pami_event_function    fn,
                                                                   void                 * cookie)
           {

@@ -35,22 +35,22 @@ namespace PAMI
 
           template <unsigned T_State, unsigned T_Desc>
           inline void processCompletion_impl (uint8_t                (&state)[T_State],
-                                              InjChannel           * channel,
+                                              InjChannel           & channel,
                                               pami_event_function    fn,
                                               void                 * cookie,
                                               MUSPI_DescriptorBase   (&desc)[T_Desc])
           {
             COMPILE_TIME_ASSERT(T_Desc == 1);
-            channel->setInjectionDescriptorNotification (fn, cookie, desc);
+            channel.setInjectionDescriptorNotification (fn, cookie, desc);
 
             // Advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            channel->injFifoAdvanceDesc ();
+            channel.injFifoAdvanceDesc ();
           };
 
           template <unsigned T_State, unsigned T_Desc>
           inline MU::MessageQueue::Element * createMessage_impl (uint8_t                (&state)[T_State],
-                                                                 InjChannel           * channel,
+                                                                 InjChannel           & channel,
                                                                  pami_event_function    fn,
                                                                  void                 * cookie,
                                                                  MUSPI_DescriptorBase   (&desc)[T_Desc])

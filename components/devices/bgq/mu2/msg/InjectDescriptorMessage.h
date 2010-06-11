@@ -43,7 +43,7 @@ namespace PAMI
           ///
           /// \param[in] injfifo Specific injection fifo for the descriptor(s)
           ///
-          inline InjectDescriptorMessage (InjChannel * channel) :
+          inline InjectDescriptorMessage (InjChannel & channel) :
               _channel (channel),
               _next (0),
               _fn (NULL),
@@ -54,7 +54,7 @@ namespace PAMI
             TRACE_FN_EXIT();
           };
 
-          inline InjectDescriptorMessage (InjChannel          * channel,
+          inline InjectDescriptorMessage (InjChannel          & channel,
                                           pami_event_function   fn,
                                           void                * cookie) :
               _channel (channel),
@@ -87,11 +87,11 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
 
-            size_t ndesc = _channel->getFreeDescriptorCountWithUpdate ();
+            size_t ndesc = _channel.getFreeDescriptorCountWithUpdate ();
 
             // Clone the message descriptors directly into the injection fifo.
             MUSPI_DescriptorBase * d =
-              (MUSPI_DescriptorBase *) _channel->getNextDescriptor ();
+              (MUSPI_DescriptorBase *) _channel.getNextDescriptor ();
 
             size_t i;
 
@@ -103,7 +103,7 @@ namespace PAMI
                 // Advance the injection fifo tail pointer. This will be
                 // moved outside the loop when an "advance multiple" is
                 // available.
-                _channel->injFifoAdvanceDesc ();
+                _channel.injFifoAdvanceDesc ();
               }
 
             _next += i;
@@ -112,7 +112,7 @@ namespace PAMI
 
             if ((T_Completion == true) && done && likely(_fn != NULL))
               {
-                _channel->setInjectionDescriptorNotification (_fn, _cookie, &d[i-1]);
+                _channel.setInjectionDescriptorNotification (_fn, _cookie, &d[i-1]);
               }
 
             TRACE_FORMAT("success = %d, _next = %zu, T_Num = %d", (_next == T_Num), _next, T_Num);
@@ -131,7 +131,7 @@ namespace PAMI
 
         protected:
 
-          InjChannel          * _channel;
+          InjChannel          & _channel;
           size_t                _next;
           pami_event_function   _fn;
           void                * _cookie;
@@ -147,7 +147,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
-        size_t ndesc = _channel->getFreeDescriptorCountWithUpdate ();
+        size_t ndesc = _channel.getFreeDescriptorCountWithUpdate ();
 
         if (likely(ndesc > 0))
           {
@@ -157,16 +157,16 @@ namespace PAMI
 
             // Clone the message descriptor directly into the injection fifo.
             MUSPI_DescriptorBase * d =
-              (MUSPI_DescriptorBase *) _channel->getNextDescriptor ();
+              (MUSPI_DescriptorBase *) _channel.getNextDescriptor ();
             desc[0].clone (*d);
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            _channel->injFifoAdvanceDesc ();
+            _channel.injFifoAdvanceDesc ();
 
             if (likely(_fn != NULL))
               {
-                _channel->setInjectionDescriptorNotification (_fn, _cookie, d);
+                _channel.setInjectionDescriptorNotification (_fn, _cookie, d);
               }
 
             TRACE_FN_EXIT();
@@ -185,7 +185,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
-        size_t ndesc = _channel->getFreeDescriptorCountWithUpdate ();
+        size_t ndesc = _channel.getFreeDescriptorCountWithUpdate ();
 
         if (likely(ndesc > 0))
           {
@@ -195,12 +195,12 @@ namespace PAMI
 
             // Clone the message descriptor directly into the injection fifo.
             MUSPI_DescriptorBase * d =
-              (MUSPI_DescriptorBase *) _channel->getNextDescriptor ();
+              (MUSPI_DescriptorBase *) _channel.getNextDescriptor ();
             desc[0].clone (*d);
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            _channel->injFifoAdvanceDesc ();
+            _channel.injFifoAdvanceDesc ();
 
             TRACE_FN_EXIT();
             return true;

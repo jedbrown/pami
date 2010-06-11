@@ -212,14 +212,14 @@ namespace PAMI
             // ----------------------------------------------------------------
             // Initialize the injection channel(s)
             // ----------------------------------------------------------------
-            _inj_group.initialize (0,
-                                   MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup),
-                                   _lookAsideBuf,
-                                   (uint64_t)_lookAsideMregion.BasePa,
-                                   _lookAsideCompletionFn,
-                                   _lookAsideCompletionCookie,
-                                   INJ_MEMORY_FIFO_NDESC,
-                                   NULL);  // \todo This should be the pami_context_t
+            injectionGroup.initialize (0,
+                                       MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup),
+                                       _lookAsideBuf,
+                                       (uint64_t)_lookAsideMregion.BasePa,
+                                       _lookAsideCompletionFn,
+                                       _lookAsideCompletionCookie,
+                                       INJ_MEMORY_FIFO_NDESC,
+                                       NULL);  // \todo This should be the pami_context_t
 
 #endif
 
@@ -312,7 +312,7 @@ namespace PAMI
           ///
           int advance_impl ()
           {
-            unsigned events  = _inj_group.advance ();
+            unsigned events  = injectionGroup.advance ();
             events          += receptionChannel.advance ();
 
             return events;
@@ -352,19 +352,7 @@ namespace PAMI
           {
             return _mapping.getMuDestinationSelf();
           };
-#if 0
-          ///
-          /// \brief Return the reception fifo id for this mu context
-          ///
-          /// \see MUHWI_MessageUnitHeader.Memory_FIFO.Rec_FIFO_Id
-          ///
-          /// \return Reception fifo identifier
-          ///
-          inline uint16_t getRecptionFifoIdSelf ()
-          {
-            return _rfifoid;
-          };
-#endif
+
           ///
           /// \brief
           ///
@@ -434,19 +422,8 @@ namespace PAMI
             hintsE    = MUHWI_PACKET_HINT_E_NONE;
           }
 
-          ///
-          /// \brief Retrieve the injection channel associated with a fifo number
-          ///
-          /// \param[in] fnum Injection fifo number
-          ///
-          /// \return A pointer to an injection channel object that may not be modified.
-          ///
-          inline InjChannel * getInjectionChannel (size_t fnum)
-          {
-            return (InjChannel *) _inj_group.channel[fnum];
-          };
-
-          RecChannel        receptionChannel;
+          RecChannel   receptionChannel; // Reception resources, public access
+          InjGroup     injectionGroup;   // Injection resources, public access
 
         protected:
 
@@ -467,7 +444,6 @@ namespace PAMI
           static const size_t REC_MEMORY_FIFO_SIZE   = 0xFFFFUL;
           static const size_t INJ_MEMORY_FIFO_NDESC  = 0x400;
 #endif
-          InjGroup          _inj_group;
 
           PAMI::Mapping   & _mapping;
           size_t            _id_base;
