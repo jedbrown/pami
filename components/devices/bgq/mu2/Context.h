@@ -31,8 +31,7 @@
 #include "components/devices/PacketInterface.h"
 
 #include "components/devices/bgq/mu2/InjGroup.h"
-#include "components/devices/bgq/mu2/MemoryFifoPacketHeader.h"
-#include "components/devices/bgq/mu2/msg/MessageQueue.h"
+#include "components/devices/bgq/mu2/RecChannel.h"
 
 
 #define CONTEXT_ALLOCATES_RESOURCES   1
@@ -50,81 +49,12 @@ namespace PAMI
       class Context : public Interface::BaseDevice<Context>, public Interface::PacketDevice<Context>
       {
         public:
-          typedef struct
-          {
-            pami_event_function fn;
-            void *              cookie;
-          } notify_t;
 
           typedef enum
           {
             PINFIFO_ALGORITHM_CACHED = 0,
             PINFIFO_ALGORITHM_RUNTIME
           } pinfifo_algorithm_t;
-
-          /// Total number of dispatch sets
-          static const size_t dispatch_set_count = 256;
-
-          /// Number of dispatch functions in a dispatch set
-          static const size_t dispatch_set_size  = 16;
-
-        protected:
-
-          typedef struct
-          {
-            Interface::RecvFunction_t   f;
-            void                      * p;
-          } mu_dispatch_t;
-
-
-          /// \see PAMI::Device::Interface::RecvFunction_t
-          static int noop (void   * metadata,
-                           void   * payload,
-                           size_t   bytes,
-                           void   * recv_func_parm,
-                           void   * cookie)
-          {
-            fprintf (stderr, "Error. Dispatch to unregistered id (%zu).\n", (size_t) recv_func_parm);
-            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
-            return 0;
-          };
-
-          /// \see PAMI::Device::Interface::RecvFunction_t
-          static int notify (void   * metadata,
-                             void   * payload,
-                             size_t   bytes,
-                             void   * recv_func_parm,
-                             void   * cookie)
-          {
-            notify_t * n = (notify_t *) payload;
-
-            n->fn (recv_func_parm, // a.k.a. "pami_context_t"
-                   n->cookie,
-                   PAMI_SUCCESS);
-
-            return 0;
-          };
-
-#if CONTEXT_ALLOCATES_RESOURCES
-          MUSPI_InjFifoSubGroup_t       _ififo_subgroup;
-          MUSPI_RecFifoSubGroup_t       _rfifo_subgroup;
-          char                        * _injFifoBuf;
-          char                        * _recFifoBuf;
-          InjGroup::immediate_payload_t * _lookAsideBuf;
-          Kernel_MemoryRegion_t         _lookAsideMregion;
-          pami_event_function         * _lookAsideCompletionFn;
-          void                       ** _lookAsideCompletionCookie;
-          unsigned                      _ififoid;
-          unsigned                      _rfifoid;
-	  MUSPI_RecFifo_t             * _rfifo;
-
-          static const size_t INJ_MEMORY_FIFO_SIZE   = 0xFFFFUL;
-          static const size_t REC_MEMORY_FIFO_SIZE   = 0xFFFFUL;
-          static const size_t INJ_MEMORY_FIFO_NDESC  = 0x400;
-#endif
-          InjGroup                      _inj_group;
-
-        public:
 
           ///
           /// \brief Number of bytes available in a packet payload.
@@ -137,12 +67,6 @@ namespace PAMI
           ///
           static const size_t immediate_payload_size = sizeof(MU::InjGroup::immediate_payload_t);
 
-          ///
-          /// \brief System notification dispatch identifier
-          ///
-          /// \see MU::Context::notify()
-          ///
-          static const uint16_t dispatch_system_notify = dispatch_set_count * dispatch_set_size - 1;
 
           ///
           /// \brief foo
@@ -168,18 +92,6 @@ namespace PAMI
               _id_offset (id_offset),
               _id_count (id_count)
           {
-            // Initialize the dispatch table. This 'noop' function will be
-            // replaced with an 'unexpected packet' function and queue.
-            size_t i;
-
-            size_t n = MU::Context::dispatch_set_count * MU::Context::dispatch_set_size;
-
-            for (i = 0; i < n; i++)
-              {
-                _dispatch[i].f = noop;
-                _dispatch[i].p = (void *) i;
-              }
-
           };
 
           ///
@@ -205,16 +117,6 @@ namespace PAMI
             // Need to find a way to break this dependency...
             //_client = client;
             //_context = context;
-
-            // ----------------------------------------------------------------
-            // Initialize any mu "system" dispatch functions
-            _dispatch[dispatch_system_notify].f = notify;
-            _dispatch[dispatch_system_notify].p = (void *) NULL; //_context;
-
-            //_dispatch[DISPATCH_SYSTEM_AVAILABLE].f = ;
-            //_dispatch[DISPATCH_SYSTEM_AVAILABLE].p = ;
-            // ----------------------------------------------------------------
-
 
 #if CONTEXT_ALLOCATES_RESOURCES
             _ififoid = 0;
@@ -298,6 +200,14 @@ namespace PAMI
                                    recFifoEnableBits );
 
             _rfifo = MUSPI_IdToRecFifo(_rfifoid, &_rfifo_subgroup);
+
+            // ----------------------------------------------------------------
+            // Initialize the reception channel
+            // ----------------------------------------------------------------
+            receptionChannel.initialize (_rfifoid,
+                                         _rfifo,
+                                         _mapping.getMuDestinationSelf(),
+                                         NULL);  // \todo This should be the pami_context_t
 
             // ----------------------------------------------------------------
             // Initialize the injection channel(s)
@@ -394,7 +304,7 @@ namespace PAMI
           inline bool isPeer_impl (size_t task)
           {
             // All tasks are addressable "peers" to the MU
-            return true; //mapping.isPeer(task, mapping.task());
+            return true;
           }
 
           ///
@@ -402,7 +312,8 @@ namespace PAMI
           ///
           int advance_impl ()
           {
-            unsigned events = advanceRecv();
+            unsigned events  = _inj_group.advance ();
+            events          += receptionChannel.advance ();
 
             return events;
           }
@@ -425,56 +336,15 @@ namespace PAMI
           // ------------------------------------------------------------------
 #endif
 
-          unsigned advanceRecv();
-
-
           ///
-          /// \brief Register a packet handler function for a dispatch set
-          ///
-          /// The function and cookie are invoked ...
-          ///
-          /// The registration may fail if the requested dispatch set number is
-          /// greater than the number of allocated dispatch sets, or if there
-          /// are no free dispatch identifiers in the requested dispatch set
-          /// due to previous registrations on the requested dispatch set.
-          ///
-          /// \see MU::Context::dispatch_set_count
-          /// \see MU::Context::dispatch_set_size
-          ///
-          /// \param[in]  set    Dispatch set number
-          /// \param[in]  fn     Dispatch function
-          /// \param[in]  cookie Dispatch cookie
-          /// \param[out] id     Assigned MU dispatch identifier
-          ///
-          /// \retval true  Successful packet handler registration
-          /// \retval false Unsuccessful packet handler registration
+          /// \copydoc MU::RecChannel::registerPacketHandler
           ///
           inline bool registerPacketHandler (size_t                      set,
                                              Interface::RecvFunction_t   fn,
                                              void                      * cookie,
                                              uint16_t                  & id)
           {
-            // There are DISPATCH_SET_COUNT sets of dispatch functions.
-            // There are DISPATCH_SET_SIZE  dispatch functions in each dispatch set.
-
-            if (set >= MU::Context::dispatch_set_count) return false;
-
-            unsigned i;
-
-            for (i = 0; i < MU::Context::dispatch_set_size; i++)
-              {
-                id = set * MU::Context::dispatch_set_size + i;
-
-                if (_dispatch[id].f == noop)
-                  {
-                    _dispatch[id].f = fn;
-                    _dispatch[id].p = cookie;
-
-                    return true;
-                  }
-              }
-
-            return false;
+            return receptionChannel.registerPacketHandler (set, fn, cookie, id);
           }
 
           /// \copydoc Mapping::getMuDestinationSelf
@@ -482,7 +352,7 @@ namespace PAMI
           {
             return _mapping.getMuDestinationSelf();
           };
-
+#if 0
           ///
           /// \brief Return the reception fifo id for this mu context
           ///
@@ -494,7 +364,7 @@ namespace PAMI
           {
             return _rfifoid;
           };
-
+#endif
           ///
           /// \brief
           ///
@@ -530,9 +400,9 @@ namespace PAMI
             // Calculate the destination recpetion fifo identifier based on
             // the destination task+offset.  This is important for
             // multi-context support.
-	    size_t tcoord = 0;
-	    _mapping.getMuDestinationTask(task, dest, tcoord);
-	    rfifo = _rfifoid + tcoord * 4 /*number of rec fifos per subgrp*/;
+            size_t tcoord = 0;
+            _mapping.getMuDestinationTask(task, dest, tcoord);
+            rfifo = _rfifoid + tcoord * 4 /*number of rec fifos per subgrp*/;
 
             // In loopback we send only on AM
             map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
@@ -576,7 +446,28 @@ namespace PAMI
             return (InjChannel *) _inj_group.channel[fnum];
           };
 
+          RecChannel        receptionChannel;
+
         protected:
+
+#if CONTEXT_ALLOCATES_RESOURCES
+          MUSPI_InjFifoSubGroup_t       _ififo_subgroup;
+          MUSPI_RecFifoSubGroup_t       _rfifo_subgroup;
+          char                        * _injFifoBuf;
+          char                        * _recFifoBuf;
+          InjGroup::immediate_payload_t * _lookAsideBuf;
+          Kernel_MemoryRegion_t         _lookAsideMregion;
+          pami_event_function         * _lookAsideCompletionFn;
+          void                       ** _lookAsideCompletionCookie;
+          unsigned                      _ififoid;
+          unsigned                      _rfifoid;
+          MUSPI_RecFifo_t             * _rfifo;
+
+          static const size_t INJ_MEMORY_FIFO_SIZE   = 0xFFFFUL;
+          static const size_t REC_MEMORY_FIFO_SIZE   = 0xFFFFUL;
+          static const size_t INJ_MEMORY_FIFO_NDESC  = 0x400;
+#endif
+          InjGroup          _inj_group;
 
           PAMI::Mapping   & _mapping;
           size_t            _id_base;
@@ -584,71 +475,10 @@ namespace PAMI
           size_t            _id_count;
           size_t            _id_client;
 
-          mu_dispatch_t     _dispatch[dispatch_set_count * dispatch_set_size];
-
       }; // class     PAMI::Device::MU::Context
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device
 };       // namespace PAMI
-
-
-
-inline unsigned PAMI::Device::MU::Context::advanceRecv ()
-{
-  unsigned packets = 0;
-#if CONTEXT_ALLOCATES_RESOURCES
-  uint32_t wrap = 0;
-  uint32_t cur_bytes = 0;
-  uint32_t total_bytes = 0;
-  uint32_t cumulative_bytes = 0;
-  MemoryFifoPacketHeader *hdr = NULL;
-
-  //TRACE((stderr, ">> RecFifoSubGroup::recFifoPoll(%p)\n", rfifo));
-  MUSPI_RecFifo_t * rfifo = _rfifo; 
-
-  while ((total_bytes = MUSPI_getAvailableBytes (rfifo, &wrap)) != 0)
-    {
-      if (wrap)   //Extra branch over older packet loop
-        {
-          hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketWrap (rfifo, &cur_bytes);
-	  uint16_t id = 0;
-	  void *metadata;
-	  hdr->getHeaderInfo (id, &metadata);
-
-          _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
-          packets++;
-
-          //fprintf(stderr, "Received packet wrap of size %d, total bytes %d\n",
-          //      cur_bytes, total_bytes);
-        }
-      else
-        {
-          cumulative_bytes = 0;
-
-          while (cumulative_bytes < total_bytes )
-            {
-              hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketOptimized (rfifo, &cur_bytes);
-              cumulative_bytes += cur_bytes;
-	      uint16_t id = 0;
-	      void *metadata;
-	      hdr->getHeaderInfo (id, &metadata);
-	      _dispatch[id].f(metadata, hdr+1, cur_bytes-32, _dispatch[id].p, hdr+1);
-              packets++;
-              //Touch head for next packet
-              //fprintf(stderr, "Received packet of size %d, cum bytes %d, total bytes %d\n",
-              //cur_bytes, cumulative_bytes, total_bytes);
-            }
-        }
-
-      MUSPI_syncRecFifoHwHead (rfifo);
-    }
-
-  //TRACE((stderr, "<< RecFifoSubGroup::recFifoPoll(%p) .. packets = %d\n", rfifo, packets));
-#endif
-  return packets;
-}
-
-
 
 #if 0
 ///

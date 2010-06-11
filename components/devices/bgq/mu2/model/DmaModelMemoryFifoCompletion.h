@@ -34,71 +34,7 @@ namespace PAMI
               MU::DmaModelBase<DmaModelMemoryFifoCompletion> (context, status),
               _completion (context)
           {
-            COMPILE_TIME_ASSERT(sizeof(MU::Context::notify_t) <= MemoryFifoPacketHeader::packet_singlepacket_metadata_size);
             COMPILE_TIME_ASSERT((sizeof(MUSPI_DescriptorBase)*2) <= MU::Context::immediate_payload_size);
-
-            // Zero-out the descriptor models before initialization
-            memset((void *)&_ack_to_self, 0, sizeof(_ack_to_self));
-
-            // ----------------------------------------------------------------
-            // Set the common base descriptor fields
-            // ----------------------------------------------------------------
-            MUSPI_BaseDescriptorInfoFields_t base;
-            memset((void *)&base, 0, sizeof(base));
-
-            base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
-            base.Payload_Address = 0;
-            base.Message_Length  = 0;
-            base.Torus_FIFO_Map  = 0;
-            base.Dest.Destination.Destination = 0;
-
-            _ack_to_self.setBaseFields (&base);
-
-
-            // ----------------------------------------------------------------
-            // Set the common point-to-point descriptor fields
-            // ----------------------------------------------------------------
-            MUSPI_Pt2PtDescriptorInfoFields_t pt2pt;
-            memset((void *)&pt2pt, 0, sizeof(pt2pt));
-
-            pt2pt.Hints_ABCD = 0;
-            pt2pt.Skip       = 0;
-            pt2pt.Misc1 =
-              MUHWI_PACKET_USE_DETERMINISTIC_ROUTING |
-              MUHWI_PACKET_DO_NOT_DEPOSIT |
-              MUHWI_PACKET_DO_NOT_ROUTE_TO_IO_NODE;
-            pt2pt.Misc2 =
-              MUHWI_PACKET_VIRTUAL_CHANNEL_DETERMINISTIC;
-
-            _ack_to_self.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
-            _ack_to_self.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
-            _ack_to_self.setPt2PtFields (&pt2pt);
-
-
-            // ----------------------------------------------------------------
-            // Set the memory fifo descriptor fields
-            // ----------------------------------------------------------------
-            MUSPI_MemoryFIFODescriptorInfoFields_t memfifo;
-            memset ((void *)&memfifo, 0, sizeof(memfifo));
-
-            memfifo.Rec_FIFO_Id    = 0;
-            memfifo.Rec_Put_Offset = 0;
-            memfifo.Interrupt      = MUHWI_DESCRIPTOR_DO_NOT_INTERRUPT_ON_PACKET_ARRIVAL;
-            memfifo.SoftwareBit    = 0;
-
-            _ack_to_self.setMemoryFIFOFields (&memfifo);
-            _ack_to_self.setMessageUnitPacketType (MUHWI_PACKET_TYPE_FIFO);
-            _ack_to_self.setRecFIFOId (context.getRecptionFifoIdSelf());
-            _ack_to_self.setDestination (*(context.getMuDestinationSelf()));
-
-
-            // ----------------------------------------------------------------
-            // Set the "notify" system dispatch identifier
-            // ----------------------------------------------------------------
-            MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader *) & _ack_to_self.PacketHeader;
-            hdr->setSinglePacket (true);
-            hdr->setDispatchId (MU::Context::dispatch_system_notify);
           };
 
           /// \see PAMI::Device::Interface::DmaModel::~DmaModel
@@ -140,28 +76,17 @@ namespace PAMI
             // Initialize the "ack to self" descriptor in the rget payload
             // ----------------------------------------------------------------
             MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) vaddr;
-            _ack_to_self.clone (desc[1]);
+            _completion.initializeNotifySelfDescriptor (desc[1], local_fn, cookie);
 
             desc[1].setTorusInjectionFIFOMap (desc[0].Torus_FIFO_Map);
             desc[1].setHints (desc[0].PacketHeader.NetworkHeader.pt2pt.Hints,
                               desc[0].PacketHeader.NetworkHeader.pt2pt.Byte2.Byte2); // is this right for 'E' hints?
-
-
-            // ----------------------------------------------------------------
-            // Copy the completion function+cookie into the packet header.
-            // ----------------------------------------------------------------
-            MU::Context::notify_t * hdr =
-              (MU::Context::notify_t *) & desc[1].PacketHeader;
-            hdr->fn = local_fn;
-            hdr->cookie = cookie;
 
             return pbytes + sizeof(MUHWI_Descriptor_t);
           };
 
         protected:
 
-          MUSPI_DescriptorBase _rput;
-          MUSPI_DescriptorBase _ack_to_self;
           MemoryFifoCompletion _completion;
 
       }; // PAMI::Device::MU::DmaModelMemoryFifoCompletion class

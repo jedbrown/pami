@@ -25,101 +25,39 @@ namespace PAMI
   {
     namespace MU
     {
-      class MemoryFifoCompletion : public MUSPI_DescriptorBase
+      class MemoryFifoCompletion
       {
+        private :
+
+          MU::Context & _context;
+
         public :
 
           /// \see PAMI::Device::Interface::PacketModel::PacketModel
-          inline MemoryFifoCompletion (MU::Context & context)
+          inline MemoryFifoCompletion (MU::Context & context) :
+              _context (context)
           {
             TRACE_FN_ENTER();
-            COMPILE_TIME_ASSERT(sizeof(MU::Context::notify_t) <= MemoryFifoPacketHeader::packet_singlepacket_metadata_size);
-
-            // Zero-out the descriptor models before initialization
-            memset((void *)this, 0, sizeof(MUSPI_DescriptorBase));
-
-
-            // ----------------------------------------------------------------
-            // Set the common base descriptor fields
-            // ----------------------------------------------------------------
-            MUSPI_BaseDescriptorInfoFields_t base;
-            memset((void *)&base, 0, sizeof(base));
-
-            base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
-            base.Payload_Address = 0;
-            base.Message_Length  = 0;
-            base.Torus_FIFO_Map  = 0;
-            base.Dest.Destination.Destination = 0;
-
-            setBaseFields (&base);
-
-
-            // ----------------------------------------------------------------
-            // Set the common point-to-point descriptor fields
-            // ----------------------------------------------------------------
-            MUSPI_Pt2PtDescriptorInfoFields_t pt2pt;
-            memset((void *)&pt2pt, 0, sizeof(pt2pt));
-
-            pt2pt.Hints_ABCD = 0;
-            pt2pt.Skip       = 0;
-            pt2pt.Misc1 =
-              MUHWI_PACKET_USE_DETERMINISTIC_ROUTING |
-              MUHWI_PACKET_DO_NOT_DEPOSIT |
-              MUHWI_PACKET_DO_NOT_ROUTE_TO_IO_NODE;
-            pt2pt.Misc2 =
-              MUHWI_PACKET_VIRTUAL_CHANNEL_DETERMINISTIC;
-
-            setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
-            PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
-            setPt2PtFields (&pt2pt);
-
-
-            // ----------------------------------------------------------------
-            // Set the common memory fifo descriptor fields
-            // ----------------------------------------------------------------
-            MUSPI_MemoryFIFODescriptorInfoFields_t memfifo;
-            memset ((void *)&memfifo, 0, sizeof(memfifo));
-
-            memfifo.Rec_FIFO_Id    = 0;
-            memfifo.Rec_Put_Offset = 0;
-            memfifo.Interrupt      = MUHWI_DESCRIPTOR_DO_NOT_INTERRUPT_ON_PACKET_ARRIVAL;
-            memfifo.SoftwareBit    = 0;
-
-            setMemoryFIFOFields (&memfifo);
-            setMessageUnitPacketType (MUHWI_PACKET_TYPE_FIFO);
-
-
-            // ----------------------------------------------------------------
-            // Initializ the memory fifo descriptor to route to "self"
-            // ----------------------------------------------------------------
-            setRecFIFOId (context.getRecptionFifoIdSelf());
-            setDestination (*(context.getMuDestinationSelf()));
-
-            // In loopback we send only on AM
-            setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
-            setHints (MUHWI_PACKET_HINT_AM |
-                      MUHWI_PACKET_HINT_B_NONE |
-                      MUHWI_PACKET_HINT_C_NONE |
-                      MUHWI_PACKET_HINT_D_NONE,
-                      MUHWI_PACKET_HINT_E_NONE);
-
-            // Set the payload information.
-            setPayload (0, 0);
-
-
-            // ----------------------------------------------------------------
-            // Set the "notify" system dispatch identifier
-            // ----------------------------------------------------------------
-            MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader *) & PacketHeader;
-            hdr->setSinglePacket (true);
-            hdr->setDispatchId (MU::Context::dispatch_system_notify);
-
             TRACE_FN_EXIT();
           };
 
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
           inline ~MemoryFifoCompletion () {};
+
+          ///
+          /// \brief Clone the "send to self" memfifo descriptor and set the notify information
+          ///
+          /// \param[in] desc   Descriptor to initialize
+          /// \param[in] fn     Notification event function
+          /// \param[in] cookie Notification event cookie
+          ///
+          inline void initializeNotifySelfDescriptor (MUSPI_DescriptorBase & desc,
+                                                      pami_event_function    fn,
+                                                      void                 * cookie)
+          {
+            _context.receptionChannel.initializeNotifySelfDescriptor (desc, fn, cookie);
+          };
+
 
           ///
           /// \brief Inject the data mover descriptor(s) and the memory fifo
@@ -152,13 +90,7 @@ namespace PAMI
 
                 // Clone the completion model descriptor into the injection fifo
                 MUSPI_DescriptorBase * d = (MUSPI_DescriptorBase *) desc;
-                clone (d[T_Desc]);
-
-                // Copy the completion function+cookie into the packet header.
-                MU::Context::notify_t * hdr =
-                  (MU::Context::notify_t *) & desc[T_Desc].PacketHeader;
-                hdr->fn = fn;
-                hdr->cookie = cookie;
+                initializeNotifySelfDescriptor (d[T_Desc], fn, cookie);
 
                 // Advance the injection fifo tail pointer. This action
                 // completes the injection operation.
@@ -219,11 +151,7 @@ namespace PAMI
 
             // Copy the "completion" descriptor into the message and initialize
             // the completion function+cookie in the packet header.
-            clone (msg->desc[T_Desc]);
-            MU::Context::notify_t * hdr =
-              (MU::Context::notify_t *) & msg->desc[T_Desc].PacketHeader;
-            hdr->fn = fn;
-            hdr->cookie = cookie;
+            initializeNotifySelfDescriptor (msg->desc[T_Desc], fn, cookie);
 
             TRACE_FN_EXIT();
             return (MU::MessageQueue::Element *) msg;
@@ -255,11 +183,7 @@ namespace PAMI
 
             // Copy the "completion" descriptor into the message and initialize
             // the completion function+cookie in the packet header.
-            clone (msg->desc[0]);
-            MU::Context::notify_t * hdr =
-              (MU::Context::notify_t *) & msg->desc[0].PacketHeader;
-            hdr->fn = fn;
-            hdr->cookie = cookie;
+            initializeNotifySelfDescriptor (msg->desc[0], fn, cookie);
 
             TRACE_FN_EXIT();
             return (MU::MessageQueue::Element *) msg;
