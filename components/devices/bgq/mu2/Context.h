@@ -33,6 +33,9 @@
 #include "components/devices/bgq/mu2/InjGroup.h"
 #include "components/devices/bgq/mu2/RecChannel.h"
 
+#include "components/devices/bgq/mu2/trace.h"
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 #define CONTEXT_ALLOCATES_RESOURCES   1
 
@@ -92,6 +95,8 @@ namespace PAMI
               _id_offset (id_offset),
               _id_count (id_count)
           {
+            TRACE_FN_ENTER();
+            TRACE_FN_EXIT();
           };
 
           ///
@@ -112,6 +117,7 @@ namespace PAMI
                             //,Memory::MemoryManager * mm
                            )
           {
+            TRACE_FN_ENTER();
             _id_client = id_client;
 
             // Need to find a way to break this dependency...
@@ -145,7 +151,7 @@ namespace PAMI
 
             Kernel_CreateMemoryRegion ( &_lookAsideMregion,
                                         _lookAsideBuf,
-                                        INJ_MEMORY_FIFO_NDESC*MU::Context::immediate_payload_size);
+                                        INJ_MEMORY_FIFO_NDESC*sizeof(InjGroup::immediate_payload_t));
 
 
             // ----------------------------------------------------------------
@@ -223,6 +229,7 @@ namespace PAMI
 
 #endif
 
+            TRACE_FN_EXIT();
             return;
           }
 
@@ -312,9 +319,12 @@ namespace PAMI
           ///
           int advance_impl ()
           {
+            TRACE_FN_ENTER();
+
             unsigned events  = injectionGroup.advance ();
             events          += receptionChannel.advance ();
 
+            TRACE_FN_EXIT();
             return events;
           }
 
@@ -344,7 +354,10 @@ namespace PAMI
                                              void                      * cookie,
                                              uint16_t                  & id)
           {
-            return receptionChannel.registerPacketHandler (set, fn, cookie, id);
+            TRACE_FN_ENTER();
+            bool status = receptionChannel.registerPacketHandler (set, fn, cookie, id);
+            TRACE_FN_EXIT();
+            return status;
           }
 
           /// \copydoc Mapping::getMuDestinationSelf
@@ -385,6 +398,8 @@ namespace PAMI
                                  uint8_t             & hintsABCD,
                                  uint8_t             & hintsE)
           {
+            TRACE_FN_ENTER();
+
             // Calculate the destination recpetion fifo identifier based on
             // the destination task+offset.  This is important for
             // multi-context support.
@@ -397,6 +412,8 @@ namespace PAMI
             hintsABCD = MUHWI_PACKET_HINT_AM;
             hintsE    = MUHWI_PACKET_HINT_E_NONE;
 
+            TRACE_FORMAT("(%zu,%zu) -> dest = %08x, rfifo = %d, map = %016lx, hintsABCD = %08x, hintsE = %08x", task, offset, *((uint32_t *) &dest), rfifo, map, hintsABCD, hintsE);
+            TRACE_FN_EXIT();
             return  0;
           }
 
@@ -413,6 +430,7 @@ namespace PAMI
                                       uint8_t  & hintsABCD,
                                       uint8_t  & hintsE)
           {
+            TRACE_FN_ENTER();
             // In loopback we send only on AM
             map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
             hintsABCD = MUHWI_PACKET_HINT_AM |
@@ -420,6 +438,9 @@ namespace PAMI
                         MUHWI_PACKET_HINT_C_NONE |
                         MUHWI_PACKET_HINT_D_NONE;
             hintsE    = MUHWI_PACKET_HINT_E_NONE;
+
+            TRACE_FORMAT("(%zu,%zu) -> map = %016lx, hintsABCD = %08x, hintsE = %08x", from_task, from_offset, map, hintsABCD, hintsE);
+            TRACE_FN_EXIT();
           }
 
           RecChannel   receptionChannel; // Reception resources, public access
@@ -478,7 +499,8 @@ size_t PAMI::Device::MU::Context::pinFifo<PAMI::Device::MU::Context::pinfifo_alg
 };
 #endif
 
-
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif // __components_devices_bgq_mu2_Context_h__
 //

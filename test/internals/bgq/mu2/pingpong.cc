@@ -56,8 +56,8 @@ int dispatch_fn    (void   * metadata,
                     void   * recv_func_parm,
                     void   * cookie)
 {
+  //fprintf(stderr, "Received packet: MAX_ITER = %d, npackets = %d -> %d\n", MAX_ITER, npackets, npackets+1);
   npackets ++;
-  //fprintf(stderr, "Received packet of size %lu\n", bytes);
   return 0;
 }
 
@@ -111,7 +111,7 @@ void test (MuContext & mu, T_Model & model, T_Protocol & protocol, const char * 
                         iov);
     }
 
-  while (npackets != MAX_ITER) mu.advance();
+  while (npackets != MAX_ITER+1) mu.advance();
 
   end = GetTimeBase();
 
@@ -141,7 +141,8 @@ void test (MuContext & mu, T_Model & model, T_Protocol & protocol, const char * 
                         iov);
     }
 
-  while (npackets != MAX_ITER) mu.advance();
+
+  while (npackets != MAX_ITER+1) mu.advance();
 
   end = GetTimeBase();
 
@@ -171,7 +172,7 @@ void test (MuContext & mu, T_Model & model, T_Protocol & protocol, const char * 
                       iov);
     }
 
-  while (npackets != MAX_ITER) mu.advance();
+  while (npackets != MAX_ITER+1) mu.advance();
 
   end = GetTimeBase();
 
@@ -195,13 +196,13 @@ int main(int argc, char ** argv)
   //pami_result_t result;
   //MuDmaModel dma (mu, result);
 
-  model0.init (0,
+  model0.init (100,
                dispatch_fn,
                NULL,
                NULL,
                NULL);
 
-  model1.init (1,
+  model1.init (101,
                dispatch_fn,
                NULL,
                NULL,

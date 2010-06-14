@@ -310,6 +310,8 @@ namespace PAMI
                                                       size_t         metasize,
                                                       struct iovec   (&iov)[T_Niov])
       {
+        TRACE_FN_ENTER();
+
         MUHWI_Destination_t   dest;
         uint16_t              rfifo;
         uint64_t              map;
@@ -369,11 +371,17 @@ namespace PAMI
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
+            //uint64_t sequence =
+              channel.injFifoAdvanceDesc ();
 
+            //bool done = channel.checkDescComplete (sequence);
+            //TRACE_FORMAT("done = %d", done);
+
+            TRACE_FN_EXIT();
             return true;
           }
 
+        TRACE_FN_EXIT();
         return false;
       };
 
@@ -388,6 +396,8 @@ namespace PAMI
                                                       size_t                metasize,
                                                       struct iovec          (&iov)[T_Niov])
       {
+        TRACE_FN_ENTER();
+
         MUHWI_Destination_t   dest;
         uint16_t              rfifo;
         uint64_t              map;
@@ -496,6 +506,7 @@ namespace PAMI
             channel.post (msg);
           }
 
+        TRACE_FN_EXIT();
         return true;
       };
 
@@ -510,6 +521,8 @@ namespace PAMI
                                                       struct iovec        * iov,
                                                       size_t                niov)
       {
+        TRACE_FN_ENTER();
+
         MUHWI_Destination_t   dest;
         uint16_t              rfifo;
         uint64_t              map;
@@ -619,6 +632,7 @@ namespace PAMI
             channel.post (msg);
           }
 
+        TRACE_FN_EXIT();
         return true;
       };
 
@@ -633,6 +647,8 @@ namespace PAMI
                                                       void                * payload,
                                                       size_t                length)
       {
+        TRACE_FN_ENTER();
+
         MUHWI_Destination_t   dest;
         uint16_t              rfifo;
         uint64_t              map;
@@ -724,6 +740,7 @@ namespace PAMI
             channel.post (msg);
           }
 
+        TRACE_FN_EXIT();
         return true;
       };
 
@@ -738,6 +755,8 @@ namespace PAMI
                                                            void                * payload,
                                                            size_t                length)
       {
+        TRACE_FN_ENTER();
+
         MUHWI_Destination_t   dest;
         uint16_t              rfifo;
         uint64_t              map;
@@ -807,6 +826,7 @@ namespace PAMI
             channel.post (msg);
           }
 
+        TRACE_FN_EXIT();
         return true;
       };
 

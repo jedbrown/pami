@@ -174,6 +174,10 @@ namespace PAMI
             hdr->setSinglePacket (true);
             hdr->setDispatchId (dispatch_system_notify);
 
+#if (DO_TRACE_DEBUG==1)
+            self.dump();
+#endif
+
             TRACE_FN_EXIT();
           };
 
@@ -337,6 +341,7 @@ namespace PAMI
                         uint16_t id = 0;
                         void *metadata;
                         hdr->getHeaderInfo (id, &metadata);
+                        TRACE_FORMAT("dispatch = %d, metadata = %p", id, metadata);
                         _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
                         packets++;
                         //Touch head for next packet

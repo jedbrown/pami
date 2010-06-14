@@ -20,6 +20,9 @@
 
 #include "components/devices/bgq/mu2/InjChannel.h"
 
+#include "components/devices/bgq/mu2/trace.h"
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 namespace PAMI
 {
@@ -56,9 +59,13 @@ namespace PAMI
               _sendqueue_status (0),
               _completion_status (0)
           {
+            TRACE_FN_ENTER();
+
             size_t i;
             for (i=0; i<10; i++)
               new (&channel[i]) InjChannel (_sendqueue_status, _completion_status, i);
+
+            TRACE_FN_EXIT();
           };
 
           ///
@@ -87,11 +94,15 @@ namespace PAMI
                                   size_t                 n,
                                   void                 * channel_cookie)
           {
+            TRACE_FN_ENTER();
+
             PAMI_assert_debugf(fnum < 10, "%s<%d>\n", __FILE__, __LINE__);
 
             channel[fnum].initialize (f, immediate_vaddr, immediate_paddr,
                                       completion_function, completion_cookie,
                                       n, channel_cookie);
+
+            TRACE_FN_EXIT();
           }
 
           ///
@@ -108,6 +119,9 @@ namespace PAMI
           ///
           inline size_t advance ()
           {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("_completion_status = %016lx, _sendqueue_status = %016lx", _completion_status, _sendqueue_status);
+
             size_t events = 0;
 
             if (likely(_completion_status != 0))
@@ -138,6 +152,7 @@ namespace PAMI
                 events += channel[9].advanceSendQueue ();
               }
 
+            TRACE_FN_EXIT();
             return events;
           }
 
@@ -153,6 +168,9 @@ namespace PAMI
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device
 };       // namespace PAMI
+
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif // __components_devices_bgq_mu2_InjGroup_h__
 //

@@ -15,6 +15,9 @@
 
 #include <hwi/include/bqc/MU_PacketHeader.h>
 
+#include "components/devices/bgq/mu2/trace.h"
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 namespace PAMI
 {
@@ -158,11 +161,11 @@ namespace PAMI
 	  /// \param[in] metadata of the packet protocol
 	  /// \param[in] metadata size in bytes
 	  ///
-	  inline void setMetaData (void *metadata, int bytes) 
-	  { 
+	  inline void setMetaData (void *metadata, int bytes)
+	  {
 	    //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
 	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
-	    
+
 	    *raw16 = ((*raw16) | (bytes<<12));
 
 	    uint8_t *raw8 = (uint8_t *) this + 32 - bytes;
@@ -174,7 +177,7 @@ namespace PAMI
 	  /// \brief Get the Metadata in the packet
 	  /// \retval pointer to the metadata
 	  ///
-	  inline void* getMetaData () { 
+	  inline void* getMetaData () {
 	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
 	    uint16_t bytes = (*raw16)>>12;
 	    //return the bottom maxmetasize bytes
@@ -185,6 +188,9 @@ namespace PAMI
     };   // PAMI::Device::MU namespace
   };     // PAMI::Device namespace
 };       // PAMI namespace
+
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif   // __components_devices_bgq_mu2_MemoryFifoPacketHeader_h__
 

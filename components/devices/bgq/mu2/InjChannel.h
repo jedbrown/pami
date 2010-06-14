@@ -170,6 +170,7 @@ namespace PAMI
           inline size_t advanceSendQueue ()
           {
             TRACE_FN_ENTER();
+            TRACE_FORMAT("_sendq_status = %016lx, _channel_set_bit = %016lx, _sendq_status & _channel_set_bit = %016lx", _sendq_status, _channel_set_bit, _sendq_status & _channel_set_bit);
 
             if (likely((_sendq_status & _channel_set_bit) == 0))
               {
@@ -184,6 +185,7 @@ namespace PAMI
             // fifo channel
             _sendq_status |= (_sendq.advance() << _channel_id);
 
+            TRACE_FORMAT("_sendq_status = %016lx", _sendq_status);
             TRACE_FN_EXIT();
             return 0; // huh?
           };
@@ -213,6 +215,8 @@ namespace PAMI
             TRACE_FN_ENTER();
             size_t completion_count = 0;
 
+            TRACE_FORMAT("_completion_status = %016lx, _channel_set_bit = %016lx, _completion_status & _channel_set_bit = %016lx", _completion_status, _channel_set_bit, _completion_status & _channel_set_bit);
+
             if (likely((_completion_status & _channel_set_bit) != 0))
               {
                 size_t start = 0; // get from mu spi somehow
@@ -222,6 +226,7 @@ namespace PAMI
 
                 for (i = 0; i < count; i++)
                   {
+                    TRACE_FORMAT("_completion_function[%zu] = %p", start+i, _completion_function[start+i]);
                     if (likely(_completion_function[start+i] != NULL))
                       {
                         _completion_function[start+i] (_channel_cookie,
@@ -231,6 +236,8 @@ namespace PAMI
                       }
                   }
 
+                TRACE_FORMAT("_completions_pending %zu -> %zu", _completions_pending, _completions_pending - completion_count);
+
                 // Update the count of active completion requests
                 _completions_pending -= completion_count;
 
@@ -239,6 +246,7 @@ namespace PAMI
 
                 // Re-set the completion bit for this injection fifo channel
                 _completion_status |= ((_completions_pending > 0) << _channel_id);
+                TRACE_FORMAT("_completion_status = %016lx (%zu, %zu)", _completion_status, _completions_pending, _channel_id);
               }
 
             TRACE_FN_EXIT();
@@ -276,7 +284,6 @@ namespace PAMI
             TRACE_FN_ENTER();
             uint64_t freeSpace = MUSPI_getFreeSpaceFromShadow (_ififo);
 
-            //size_t start = (size_t) MUSPI_getStartVa ((MUSPI_Fifo_t *)_ififo);
             size_t head  = (size_t) MUSPI_getHeadVa ((MUSPI_Fifo_t *)_ififo);
             size_t tail  = (size_t) MUSPI_getTailVa ((MUSPI_Fifo_t *)_ififo);
             TRACE_FORMAT("head = %zu, tail = %zu, freeSpace = %ld, _n = %zu", head, tail, freeSpace, _n);
@@ -292,7 +299,7 @@ namespace PAMI
             size_t end   = (size_t) MUSPI_getEndVa ((MUSPI_Fifo_t *)_ififo);
             TRACE_FORMAT("free descriptor count = %zu (end = %zu)", end - tail, end);
             TRACE_FN_EXIT();
-            return end - tail;
+            return (end - tail) >> BGQ_MU_DESCRIPTOR_SIZE_IN_POW2;
           };
 
           ///
@@ -332,10 +339,10 @@ namespace PAMI
           inline MUHWI_Descriptor_t * getNextDescriptor ()
           {
             TRACE_FN_ENTER();
-            MUHWI_Descriptor_t * msg = (MUHWI_Descriptor_t *) MUSPI_getTailVa(&_ififo->_fifo);
-            TRACE_FORMAT("msg = %p", msg);
+            MUHWI_Descriptor_t * desc = (MUHWI_Descriptor_t *) MUSPI_getTailVa((MUSPI_Fifo_t *)_ififo);
+            TRACE_FORMAT("desc = %p", desc);
             TRACE_FN_EXIT();
-            return msg;
+            return desc;
           };
 
           ///
@@ -413,13 +420,17 @@ namespace PAMI
             size_t offset = (size_t) desc - (size_t) MUSPI_getStartVa ((MUSPI_Fifo_t *)_ififo);
             size_t index = offset >> BGQ_MU_DESCRIPTOR_SIZE_IN_POW2;
 
+            TRACE_FORMAT("desc = %p, MUSPI_getStartVa() = %p, offset = %zu, index = %zu", desc, MUSPI_getStartVa ((MUSPI_Fifo_t *)_ififo), offset, index);
+
             _completion_function[index] = fn;
             _completion_cookie[index]   = cookie;
 
+            TRACE_FORMAT("_completions_pending = %zu, _completion_status = %016lx, _channel_set_bit = %016lx", _completions_pending, _completion_status, _channel_set_bit);
             _completions_pending++;
 
             // Turn on the completion status bit for this fifo
             _completion_status |= _channel_set_bit;
+            TRACE_FORMAT("_completions_pending = %zu, _completion_status = %016lx", _completions_pending, _completion_status);
             TRACE_FN_EXIT();
           };
 
@@ -451,8 +462,12 @@ namespace PAMI
           inline void post (MessageQueue::Element * msg)
           {
             TRACE_FN_ENTER();
+            TRACE_FORMAT("_sendq_status = 0x%016lx, _channel_set_bit = 0x%016lx", _sendq_status, _channel_set_bit);
+
             // Turn on the send queue status bit for this fifo
             _sendq_status |= _channel_set_bit;
+
+            TRACE_FORMAT("_sendq_status = 0x%016lx", _sendq_status);
 
             // Post the message to the send queue .. does not advance
             _sendq.post (msg);
