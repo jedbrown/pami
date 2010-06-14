@@ -19,6 +19,7 @@
 #include "Mapping.h"
 #include "common/lapiunix/lapifunc.h"
 #include "common/ContextInterface.h"
+#include "components/devices/BaseDevice.h"
 
 // Geometry
 #include "algorithms/geometry/Geometry.h"
@@ -35,18 +36,124 @@
 #include "components/lapi/include/Context.h"
 
 // P2P Protocols
+#include "p2p/protocols/Send.h"
+#include "p2p/protocols/SendPWQ.h"
+#include "p2p/protocols/send/eager/Eager.h"
+#include "p2p/protocols/send/composite/Composite.h"
+
+// P2P Shared memory protocols
+#include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemPacketModel.h"
+#include "components/atomic/gcc/GccBuiltin.h"
+#include "util/fifo/FifoPacket.h"
+#include "util/fifo/LinearFifo.h"
 
 // Collective Protocols
 #include "algorithms/geometry/CCMICollRegistration.h"
 #include "algorithms/geometry/PGASCollRegistration.h"
 #include "algorithms/geometry/OldCCMICollRegistration.h"
+#include "algorithms/geometry/P2PCCMIRegistration.h"
 
 namespace PAMI
 {
+  //  A simple wrapper class for Send, and LAPI "Device"
+  //  This class is a "dummy" device, used to wrapper the lapi state
+  //  object, and present it to the NativeInterface and Send
+  //  Protocols as a Proper PAMI device object.
+  //  This is used for the P2P Collectives "Over Send"
+  class DeviceWrapper: public PAMI::Device::Interface::BaseDevice<DeviceWrapper>
+  {
+  public:
+    DeviceWrapper():
+      _lapi_state(NULL)
+      {}
+    inline void          init(lapi_state_t *lapi_state) {_lapi_state=lapi_state;}
+    inline lapi_state_t *getState() { return _lapi_state;}
+  private:
+    lapi_state_t                          *_lapi_state;
+  };
+
+  //  An Implementation of a send protocol "Over LAPI internals"
+  //  This device implements the send protocol interface,
+  //  but uses the LAPI component internal objects.
+  //  This object could probably be put somewhere else, but
+  //  it has a limited use for P2P collectives at this point
+  class SendWrapper: public Protocol::Send::Send
+  {
+  public:
+    SendWrapper(size_t                      dispatch,
+                pami_dispatch_callback_fn   dispatch_fn,
+                void                      * cookie,
+                DeviceWrapper             & device,
+                pami_endpoint_t             origin,
+                pami_result_t             & result):
+      Send()
+      {
+        _lapi_state                = device.getState();
+        LapiImpl::Context *cp      = (LapiImpl::Context *)_lapi_state;
+        pami_send_hint_t   options;
+        memset(&options, 0, sizeof(options));
+        result = (cp->*(cp->pDispatchSet))(dispatch,
+                                           (void *)dispatch_fn.p2p,
+                                           cookie,
+                                           *(send_hint_t *)&options,
+                                           INTERFACE_PAMI);
+        return;
+      }
+    ~SendWrapper()
+      {
+      }
+    inline pami_result_t immediate(pami_send_immediate_t * send)
+      {
+        LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+        return (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
+                                       send->header.iov_base, send->header.iov_len,
+                                       send->data.iov_base, send->data.iov_len,
+                                       *(send_hint_t *)&send->hints);
+      }
+    inline pami_result_t simple (pami_send_t * parameters)
+      {
+        PAMI_abort();
+        return PAMI_SUCCESS;
+      }
+
+     template <class T_Allocator>
+     static inline SendWrapper * generate (size_t                      dispatch,
+                                           pami_dispatch_callback_fn   dispatch_fn,
+                                           void                      * cookie,
+                                           DeviceWrapper             & device,
+                                           pami_endpoint_t             origin,
+                                           T_Allocator               & allocator,
+                                           pami_result_t             & result)
+      {
+        COMPILE_TIME_ASSERT(sizeof(SendWrapper) <= T_Allocator::objsize);
+        SendWrapper * sw = (SendWrapper *) allocator.allocateObject ();
+        new ((void *)sw) SendWrapper (dispatch, dispatch_fn, cookie, device, origin, result);
+        if (result != PAMI_SUCCESS)
+            {
+              allocator.returnObject (sw);
+              sw = NULL;
+            }
+        return sw;
+      }
+  private:
+    lapi_state_t                          *_lapi_state;    
+  };
+
   // Device Typedefs
   typedef Device::LAPIDevice                                          LAPIDevice;
+  
   // P2P Message Typedefs
-  typedef Device::LAPIMessage LAPIMessage;
+  typedef PAMI::SendWrapper                                           LAPISendBase;
+  typedef PAMI::Protocol::Send::SendPWQ < LAPISendBase >              LAPISend;
+  
+  // Shared Memory P2P Typedefs
+  typedef Fifo::FifoPacket <64, 1024>                                 ShmemPacket;
+  typedef Fifo::LinearFifo<PAMI::Atomic::GccBuiltin, ShmemPacket,128> ShmemFifo;
+  typedef Device::ShmemDevice<ShmemFifo>                              ShmemDevice;
+  typedef Device::Shmem::PacketModel<ShmemDevice>                     ShmemPacketModel;
+  typedef Protocol::Send::Eager<ShmemPacketModel, ShmemDevice>        ShmemEagerBase;
+  typedef PAMI::Protocol::Send::SendPWQ<ShmemEagerBase>               ShmemEager;
 
   // "Old" Collective Typedefs
   typedef Device::OldLAPIMcastMessage                                 OldLAPIMcastMessage;
@@ -58,8 +165,7 @@ namespace PAMI
   typedef Device::LAPIMcombineMessage                                 LAPIMcombineMessage;
   typedef Device::LAPIM2MMessage                                      LAPIM2MMessage;
 
-  // P2P Model Classes
-
+  // P2P Model Classes:  None here, LAPI component implements p2p
 
   // "New" Collective Model typedefs
   typedef Device::LAPIMultisyncModel<LAPIDevice,LAPIMsyncMessage>     LAPIMultisyncModel;
@@ -74,6 +180,14 @@ namespace PAMI
   typedef PAMI::Device::LAPIOldm2mModel<LAPIDevice,
                                        OldLAPIM2MMessage,
                                        size_t>                        LAPIOldM2MModel;
+
+  // "OverP2P Collective Native Interface Typedefs
+  typedef PAMI::NativeInterfaceActiveMessage<LAPISend>                LAPISendNI_AM;
+  typedef PAMI::NativeInterfaceAllsided<LAPISend>                     LAPISendNI_AS;
+  typedef PAMI::NativeInterfaceActiveMessage<ShmemEager>              ShmemEagerNI_AM;
+  typedef PAMI::NativeInterfaceAllsided<ShmemEager>                   ShmemEagerNI_AS;
+  typedef PAMI::NativeInterfaceActiveMessage< Protocol::Send::SendPWQ<Protocol::Send::Send> > CompositeNI_AM;
+  typedef PAMI::NativeInterfaceAllsided< Protocol::Send::SendPWQ<Protocol::Send::Send> >      CompositeNI_AS;
 
   // Geometry Typedefs
   typedef Geometry::Common                                            LAPIGeometry;
@@ -107,7 +221,21 @@ namespace PAMI
                                                 SysDep> OldCCMICollreg;
   // Memory Allocator Typedefs
   typedef MemoryAllocator<1024, 16> ProtocolAllocator;
-
+  // Over P2P CCMI Protocol Typedefs
+  typedef CollRegistration::P2P::CCMIRegistration<LAPIGeometry,
+                                                  ShmemDevice,
+                                                  DeviceWrapper,
+                                                  ProtocolAllocator,
+                                                  ShmemEager,
+                                                  ShmemDevice,
+                                                  ShmemEagerNI_AM,
+                                                  ShmemEagerNI_AS,
+                                                  LAPISend,
+                                                  DeviceWrapper,
+                                                  LAPISendNI_AM,
+                                                  LAPISendNI_AS,
+                                                  CompositeNI_AM,
+                                                  CompositeNI_AS> P2PCCMICollreg;
 
 /**
  * \brief Class containing all devices used on this platform.
@@ -141,6 +269,7 @@ namespace PAMI
         // these calls create (allocate and construct) each element.
         // We don't know how these relate to contexts, they are semi-opaque.
         _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm, NULL);
+        _shmem    = ShmemDevice::Factory::generate(clientid, num_ctx, mm, _generics);
         return PAMI_SUCCESS;
     }
 
@@ -162,6 +291,7 @@ namespace PAMI
      */
     inline pami_result_t init(size_t clientid, size_t contextid, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm) {
         PAMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
+        ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
         return PAMI_SUCCESS;
     }
 
@@ -177,9 +307,11 @@ namespace PAMI
     inline size_t advance(size_t clientid, size_t contextid) {
         size_t events = 0;
         events += PAMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
+        events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
         return events;
     }
     PAMI::Device::Generic::Device        *_generics; // need better name...
+    ShmemDevice                          *_shmem;
   }; // class PlatformDeviceList
 
 
@@ -226,6 +358,7 @@ namespace PAMI
           // Initialize the lapi device for collectives
           _lapi_device.init(_mm, _clientid, 0, _context, _contextid);
           _lapi_device.setLapiHandle(_lapi_handle);
+          _lapi_device2.init(_lapi_state);
 
           // Initialize Platform and Collective "per context" Devices
           _devices->init(_clientid,_contextid,_client,_context,_mm);
@@ -268,6 +401,21 @@ namespace PAMI
           new(_ccmi_collreg) CCMICollreg(_client, (pami_context_t)this, _contextid ,_clientid,_lapi_device);
           _ccmi_collreg->analyze(_contextid, _world_geometry);
 
+          _p2p_ccmi_collreg=(P2PCCMICollreg*) malloc(sizeof(*_p2p_ccmi_collreg));
+          new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
+                                                _context,
+                                                _contextid,
+                                                _clientid,
+                                                _devices->_shmem[_contextid],
+                                                _lapi_device2,
+                                                _protocol,
+                                                0,
+                                                1,
+                                                __global.topology_global.size(),
+                                                __global.topology_local.size());
+          _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
+
+          
           return PAMI_SUCCESS;
         }
 
@@ -318,7 +466,8 @@ namespace PAMI
           return events;
 #endif
           // Todo:  Add collective devices
-          // Todo:  Add Generic devices
+          // Todo:  Fix number of iterations
+          _devices->advance(_clientid, _contextid);
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
           result = (cp->*(cp->pAdvance))(maximum);
           return 1;
@@ -579,7 +728,6 @@ namespace PAMI
           return _lapi_state;
         }
 
-
     private:
       /*  PAMI Client Pointer associated with this PAMI Context */
       pami_client_t                          _client;
@@ -602,21 +750,25 @@ namespace PAMI
       /*  Memory Manager Pointer                                */
       Memory::MemoryManager                 *_mm;
 
-      /*  The over lapi device                                  */
+      /*  Protocol allocator                                    */      
+      ProtocolAllocator                      _protocol;
+
+      /*  The over lapi devices                                 */
       LAPIDevice                             _lapi_device;
+      DeviceWrapper                          _lapi_device2;
   public:
       /*  Collective Registrations                              */
       CCMICollreg                           *_ccmi_collreg;
       PGASCollreg                           *_pgas_collreg;
       OldCCMICollreg                        *_oldccmi_collreg;
-
+      P2PCCMICollreg                        *_p2p_ccmi_collreg;
+      
       /*  World Geometry Pointer for this context               */
       LAPIGeometry                          *_world_geometry;
   private:
       lapi_handle_t                          _lapi_handle;
       PlatformDeviceList                    *_devices;
       SysDep                                 _sd;
-
     }; // end PAMI::Context
 }; // end namespace PAMI
 

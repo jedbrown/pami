@@ -427,6 +427,7 @@ namespace PAMI
                     _contexts[n]->_pgas_collreg->analyze(n,new_geometry);
                     _contexts[n]->_oldccmi_collreg->analyze(n,new_geometry);
                     _contexts[n]->_ccmi_collreg->analyze(n,new_geometry);
+                    _contexts[n]->_p2p_ccmi_collreg->analyze(n,new_geometry);
                   }
               *geometry=(LAPIGeometry*) new_geometry;
               // todo:  deliver completion to the appropriate context
@@ -495,6 +496,7 @@ namespace PAMI
                   }
             }
         // Failed to create shared memory .. fake it using the heap ??
+        PAMI_abort();
         _mm.init (malloc (n), n);
 
         return;

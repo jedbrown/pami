@@ -19,6 +19,9 @@
 #include "components/devices/lapiunix/lapiunixmessage.h"
 #include "common/lapiunix/lapifunc.h"
 #include "util/common.h"
+#include "Global.h"
+
+
 namespace PAMI
 {
   namespace Device
