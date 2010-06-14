@@ -17,13 +17,100 @@ extern "C"
   /**
    * \defgroup ext_percs PERCS specific extensions to core PAMI
    *
-   * Some brief documentation on percs extensions ...
+   * This extension defines features that are available only on PERCS and 
+   * InfiniBand platforms.
    * \{
    */
   /*****************************************************************************/
 
+  /** 
+   * \defgroup ext_attr Extended attributes for configuration 
+   *
+   * The attributes can be used in \ref PAMI_Context_createv (C), 
+   * \ref PAMI_Configuration_query (Q) or \ref PAMI_Configuration_update (U).
+   * Explicit cast from \ref pami_attribute_name_ext_t into
+   * \ref pami_attribute_name_t may be needed.
+   *
+   * \{
+   */
+
+  typedef enum {
+    /* Attribute             usage : type : default : description   */
+    PAMI_PERCS_ATTR = PAMI_EXT_ATTR,
+    PAMI_RELIABLE,          /**< CQ : bool : true : run in reliable mode */
+    PAMI_THREAD_SAFE,       /**< CQ : bool : true : run in thread-safe mode */
+    PAMI_RECEIVE_INTERRUPT, /**< CQU: bool : false: enable receive interrupt */
+    PAMI_ERROR_HANDLER,     /**< CQ : pami_error_handler_t : NULL : asynchronous error handler */
+    PAMI_STATISTICS,        /**<  Q : pami_statistics_t : N/A : retrieve communication statistics */
+  } pami_attribute_name_ext_t;
+
+  /** \} */ /* end of "ext_attr" group */
+  
+  /**
+   * \defgroup error_handler Asynchronous error handler
+   * \{
+   */
+  /**
+   * \brief PAMI asynchronous error handler
+   *
+   * In general, an asynchronous error handler should terminate the process when
+   * invoked. If the handler returns, the process will not function normally.
+   *
+   * \param [in]  context        The PAMI context
+   * \param [in]  result         The result (error code)
+   *
+   */
+  typedef void (pami_error_handler_t)( pami_context_t  context, 
+                                       pami_result_t   result);
+
+  /** \} */ /* end of "error_handler" group */
+          
+  /**
+   * \defgroup comm_stat Communication statistics
+   * \{
+   *
+   * \ref PAMI_Configuration_query with \c PAMI_STATISTICS returns in
+   * \ref pami_attribute_value_t.chararray a pointer to \ref pami_statistics_t
+   * whose memory is managed by PAMI internally. 
+   *
+   * \c counters field in \ref pami_statistics_t is a variable-length array.
+   */
+  
+  #define PAMI_COUNTER_NAME_LEN  40   /**< Maximum counter name length */
+
+  /**
+   * \brief Counter for statistics 
+   */
+  typedef struct 
+  {
+    char               name[PAMI_COUNTER_NAME_LEN]; /**< Counter name  */
+    unsigned long long value;                       /**< Counter value */
+  } pami_counter_t;
+
+  /**
+   * \brief Array of counters for statistics 
+   */
+  typedef struct 
+  {
+    int                count;       /**< Number of counters */
+    pami_counter_t     counters[1]; /**< Array of counters  */ 
+  } pami_statistics_t;
+  
+  /** \} */ /* end of "comm_stat" group */
+
+  /**
+   * \defgroup send_direct Send function exposing pipe buffer
+   * \{
+   */
+
   /**
    * \brief Callback to provide data at send side or consume data at receive side
+   *
+   * The user should not assume that the callbacks are invoked in order of 
+   * increasing \c offset or fixed \c pipe_size. When a packet is lost on an 
+   * unreliable network, the callback will be invoked for retransmission, 
+   * potentially at any previously used offset. Protocol headers can take
+   * some space in some packets, which means \c pipe_size can vary. 
    *
    * Returns number of bytes copied into pipe buffer at send side
    * or number of bytes copied out from pipe buffer at receive side.
@@ -32,7 +119,7 @@ extern "C"
    *
    * \param[in] context   PAMI communication context
    * \param[in] cookie    Event callback application argument
-   * \param[in] offset    Starting data offset (???)
+   * \param[in] offset    Starting data offset of the message
    * \param[in] pipe_addr Address of the PAMI pipe buffer
    * \param[in] pipe_size Size of the PAMI pipe buffer
    *
@@ -49,12 +136,11 @@ extern "C"
    */
   typedef struct
   {
-    pami_send_t             send;     /**< Common send parameters */
+    pami_send_immediate_t send;      /**< Common send parameters */
+    pami_send_event_t     events;    /**< Non-blocking event parameters */
     struct
     {
-      pami_data_function    data_fn;  /**< Data callback function */
-      pami_event_function   local_fn; /**< Local message completion event */
-      pami_event_function   remote_fn;/**< Remote message completion event ------ why is this needed ? */
+      pami_data_function    data_fn; /**< Data callback function */
     } direct;                        /**< Direct send parameters */
   } pami_send_direct_t;
 
@@ -66,40 +152,44 @@ extern "C"
    * the available network resources.
    *
    * The input parameters of the data callback will specify the output data
-   * address and the maximum data size in bytes. As a convenience, the pami
-   * client may query the configuration attribute \c DIRECT_SEND_LIMIT to
-   * obtain the maximum direct data size outside of the callback mechanism.
-   *
-   * Typically, the \c DIRECT_SEND_LIMIT is associated with a network
-   * attribute, such as a packet size.
+   * address and the maximum data size in bytes. The maximum data size can 
+   * vary between callbacks for the same message. 
    *
    * \see pami_data_function
    *
    * \param[in] context    PAMI communication context
    * \param[in] parameters Send direct parameter structure
+   *
+   * \retval PAMI_SUCCESS  The send request has been accepted.
+   * \retval PAMI_INVAL    The \c context or some input parameters are invalid. 
    */
   pami_result_t PAMI_Send_direct (pami_context_t       context,
                                 pami_send_direct_t * parameters);
 
+  /** \} */ /* end of "send_direct" group */
 
 
 
   /*****************************************************************************/
   /**
-   * \defgroup mutex_cond PAMI context mutext and condition
+   * \defgroup mutex_cond Context mutex and condition
    *
-   * Some brief documentation on active message stuff ...
+   * This extension defines more functions that are similar to 
+   * pthread_mutex_* and pthread_cond_* functions.
    * \{
    */
   /*****************************************************************************/
 
-  typedef void * pami_cond_t;
+  typedef void * pami_cond_t;  /**< Condition */
 
   /**
    * \brief Get the owner of the context lock
    *
    * \param[in]  context PAMI communication context
    * \param[out] owner   Owner of the context lock, compatible to pthread_t
+   *
+   * \retval PAMI_SUCCESS  The mutex owner has been retrieved.
+   * \retval PAMI_INVAL    The \c context or the \c owner pointer is invalid. 
    */
   pami_result_t PAMI_Mutex_getowner (pami_context_t context, unsigned long *owner);
 
@@ -111,6 +201,9 @@ extern "C"
    *
    * \param[in]  context PAMI communication context
    * \param[out] cond    The condition created
+   *
+   * \retval PAMI_SUCCESS  The condition has been created.
+   * \retval PAMI_INVAL    The \c context or the \c cond pointer is invalid. 
    */
   pami_result_t PAMI_Cond_create (pami_context_t context, pami_cond_t *cond);
 
@@ -121,6 +214,9 @@ extern "C"
    *
    * \param[in]  context PAMI communication context
    * \param[in]  cond    The condition to wait
+   *
+   * \retval PAMI_SUCCESS  The condition has been met.
+   * \retval PAMI_INVAL    The \c context or the \c cond is invalid. 
    */
   pami_result_t PAMI_Cond_wait (pami_context_t context, pami_cond_t cond);
 
@@ -131,6 +227,12 @@ extern "C"
    *
    * \param[in]  context PAMI communication context
    * \param[in]  cond    The condition to wait
+   * \param[in]  time    The time to wait
+   *
+   * \retval PAMI_SUCCESS  The condition has been met.
+   * \retval PAMI_EAGAIN   The wait time has expired.
+   * \retval PAMI_INVAL    The \c context, the \c cond or the \c time pointer 
+   *                       is invalid. 
    */
   pami_result_t PAMI_Cond_timedwait (pami_context_t context, pami_cond_t cond,
           struct timespec *time);
@@ -140,6 +242,9 @@ extern "C"
    *
    * \param[in]  context PAMI communication context
    * \param[in]  cond    The condition to signal
+   *
+   * \retval PAMI_SUCCESS  The signal has been delivered.
+   * \retval PAMI_INVAL    The \c context or the \c cond is invalid. 
    */
   pami_result_t PAMI_Cond_signal (pami_context_t context, pami_cond_t cond);
 
@@ -148,6 +253,9 @@ extern "C"
    *
    * \param[in]  context PAMI communication context
    * \param[in]  cond    The condition to sigal
+   *
+   * \retval PAMI_SUCCESS  The signal has been delivered.
+   * \retval PAMI_INVAL    The \c context or the \c cond is invalid. 
    */
   pami_result_t PAMI_Cond_broadcast (pami_context_t context, pami_cond_t cond);
 
@@ -156,6 +264,9 @@ extern "C"
    *
    * \param[in]  context PAMI communication context
    * \param[in]  cond    The condition to destroy
+   *
+   * \retval PAMI_SUCCESS  The condition has been destroyed.
+   * \retval PAMI_INVAL    The \c context or the \c cond is invalid. 
    */
   pami_result_t PAMI_Cond_destroy (pami_context_t context, pami_cond_t cond);
 
