@@ -574,6 +574,10 @@ namespace PAMI
     {
       return _t;
     }
+    inline size_t tSize ()
+    {
+      return _pers.tSize();
+    }
   };  // class Mapping
 };  // namespace PAMI
 

@@ -56,7 +56,7 @@ int dispatch_fn    (void   * metadata,
                     void   * recv_func_parm,
                     void   * cookie)
 {
-  //fprintf(stderr, "Received packet: MAX_ITER = %d, npackets = %d -> %d\n", MAX_ITER, npackets, npackets+1);
+  fprintf(stderr, "Received packet: recv_func_parm = %zu (%p), MAX_ITER = %d, npackets = %d -> %d\n", (size_t) recv_func_parm, recv_func_parm, MAX_ITER, npackets, npackets+1);
   npackets ++;
   return 0;
 }
@@ -79,7 +79,7 @@ void recv (
 PAMI::Global __myGlobal;
 
 template <typename T_Model, typename T_Protocol>
-void test (MuContext & mu, T_Model & model, T_Protocol & protocol, const char * label = "")
+void test (MuContext & mu0, MuContext & mu1, T_Model & model, T_Protocol & protocol, const char * label = "")
 {
   char metadata[4];
   char buf[MAX_BUF_SIZE];
@@ -105,13 +105,17 @@ void test (MuContext & mu, T_Model & model, T_Protocol & protocol, const char * 
         start = GetTimeBase();
 
       model.postPacket (__global.mapping.task(),
-                        0,
+                        1,
                         (void *)metadata,
                         4,
                         iov);
     }
 
-  while (npackets != MAX_ITER+1) mu.advance();
+  while (npackets != MAX_ITER+1)
+  {
+    mu0.advance();
+    mu1.advance();
+  }
 
   end = GetTimeBase();
 
@@ -135,14 +139,18 @@ void test (MuContext & mu, T_Model & model, T_Protocol & protocol, const char * 
                         done_fn,
                         (void *)&active,
                         __global.mapping.task(),
-                        0,
+                        1,
                         (void *)metadata,
                         4,
                         iov);
     }
 
 
-  while (npackets != MAX_ITER+1) mu.advance();
+  while (npackets != MAX_ITER+1)
+  {
+    mu0.advance();
+    mu1.advance();
+  }
 
   end = GetTimeBase();
 
@@ -182,31 +190,38 @@ void test (MuContext & mu, T_Model & model, T_Protocol & protocol, const char * 
 
 int main(int argc, char ** argv)
 {
-  MuContext mu (__myGlobal.mapping, 0, 0, 1);
-  mu.init (0); // id_client
+  MuContext mu0 (__myGlobal.mapping, 0, 0, 2);
+  mu0.init (0); // id_client
+
+  MuContext mu1 (__myGlobal.mapping, 0, 1, 2);
+  mu1.init (0); // id_client
 
   fprintf (stderr, "After mu init\n");
 
-  uint8_t model0_buf[sizeof(PAMI::Device::MU::PacketModelMemoryFifoCompletion)] __attribute__((__aligned__(32)));
-  PAMI::Device::MU::PacketModelMemoryFifoCompletion &model0 = *(new (model0_buf) PAMI::Device::MU::PacketModelMemoryFifoCompletion(mu));
+  uint8_t model00_buf[sizeof(PAMI::Device::MU::PacketModelMemoryFifoCompletion)] __attribute__((__aligned__(32)));
+  PAMI::Device::MU::PacketModelMemoryFifoCompletion &model00 = *(new (model00_buf) PAMI::Device::MU::PacketModelMemoryFifoCompletion(mu0));
 
-  uint8_t model1_buf[sizeof(PAMI::Device::MU::PacketModel)] __attribute__((__aligned__(32)));
-  PAMI::Device::MU::PacketModel &model1 = *(new (model1_buf) PAMI::Device::MU::PacketModel(mu));
+  uint8_t model01_buf[sizeof(PAMI::Device::MU::PacketModelMemoryFifoCompletion)] __attribute__((__aligned__(32)));
+  PAMI::Device::MU::PacketModelMemoryFifoCompletion &model01 = *(new (model01_buf) PAMI::Device::MU::PacketModelMemoryFifoCompletion(mu1));
+
+  uint8_t model10_buf[sizeof(PAMI::Device::MU::PacketModel)] __attribute__((__aligned__(32)));
+  PAMI::Device::MU::PacketModel &model10 = *(new (model10_buf) PAMI::Device::MU::PacketModel(mu0));
+
+  uint8_t model11_buf[sizeof(PAMI::Device::MU::PacketModel)] __attribute__((__aligned__(32)));
+  PAMI::Device::MU::PacketModel &model11 = *(new (model11_buf) PAMI::Device::MU::PacketModel(mu1));
+
+  fprintf (stderr, "After model constructors\n");
 
   //pami_result_t result;
   //MuDmaModel dma (mu, result);
 
-  model0.init (100,
-               dispatch_fn,
-               NULL,
-               NULL,
-               NULL);
+  model00.init (100, dispatch_fn, (void *) 100, NULL, NULL);
+  model01.init (100, dispatch_fn, (void *) 101, NULL, NULL);
 
-  model1.init (101,
-               dispatch_fn,
-               NULL,
-               NULL,
-               NULL);
+  model10.init (101, dispatch_fn, (void *) 100, NULL, NULL);
+  model11.init (101, dispatch_fn, (void *) 101, NULL, NULL);
+
+  fprintf (stderr, "After model init\n");
 
 
   pami_result_t result;
@@ -214,13 +229,15 @@ int main(int argc, char ** argv)
                  recv,    //dispatch function
                  NULL,    // dispatch cookie
                  (pami_endpoint_t) 0,       // origin endpoint
-                 mu,      // "packet" device reference
+                 mu0,      // "packet" device reference
                  (pami_context_t) NULL,
                  result);
 
+  fprintf (stderr, "After eager constructor\n");
 
-  test (mu, model0, eager, "memory fifo completion");
-  test (mu, model1, eager, "completion array");
+
+  test (mu0, mu1, model00, eager, "memory fifo completion");
+  test (mu0, mu1, model10, eager, "completion array");
 
   return 0;
 }

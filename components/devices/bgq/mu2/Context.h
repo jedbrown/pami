@@ -125,13 +125,16 @@ namespace PAMI
             //_context = context;
 
 #if CONTEXT_ALLOCATES_RESOURCES
+            uint32_t subgrpid = (64 / _mapping.tSize()) * _mapping.t() + _id_offset;
+            TRACE_FORMAT("_mapping.tSize() = %zu, _mapping.t() = %zu, _id_offset = %zu ==> subgrpid = %d", _mapping.tSize(), _mapping.t(), _id_offset, subgrpid);
+
             _ififoid = 0;
             Kernel_InjFifoAttributes_t injFifoAttrs;
             injFifoAttrs.RemoteGet = 0;
             injFifoAttrs.System    = 0;
 
             //TRACE(("main(): allocate injection fifos\n"));
-            Kernel_AllocateInjFifos (_mapping.t(),
+            Kernel_AllocateInjFifos (subgrpid,
                                      &_ififo_subgroup,
                                      1,
                                      &_ififoid,
@@ -176,11 +179,13 @@ namespace PAMI
             Kernel_RecFifoAttributes_t recFifoAttrs[1];
             recFifoAttrs[0].System = 0;
 
-            Kernel_AllocateRecFifos (_mapping.t(),
+
+            Kernel_AllocateRecFifos (subgrpid,
                                      &_rfifo_subgroup,
                                      1,
                                      &_rfifoid,
                                      recFifoAttrs);
+            TRACE_FORMAT("_rfifoid = %d", _rfifoid);
 
             _recFifoBuf = (char *)memalign (32, REC_MEMORY_FIFO_SIZE + 1);
             PAMI_assert ((((uint64_t)_recFifoBuf) % 32) == 0);
@@ -200,10 +205,10 @@ namespace PAMI
             Kernel_InjFifoActivate (&_ififo_subgroup, 1, &_ififoid, KERNEL_INJ_FIFO_ACTIVATE);
 
             uint64_t recFifoEnableBits = 0;
-            recFifoEnableBits |= ( 0x0000000000000001ULL <<
-                                   ( 15 - ((_mapping.t()/*sgid*/*BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) + _rfifoid/*RecFifoId*/ )) );
-            Kernel_RecFifoEnable ( 0, /* Group ID */
+            recFifoEnableBits |= ( 0x0000000000000001ULL << (15 - ((subgrpid & 0x03) << 2)));
+            Kernel_RecFifoEnable ( subgrpid >> 2, //0, /* Group ID */
                                    recFifoEnableBits );
+            TRACE_FORMAT("group = %d, recFifoEnableBits = 0x%016lx", subgrpid >> 2, recFifoEnableBits);
 
             _rfifo = MUSPI_IdToRecFifo(_rfifoid, &_rfifo_subgroup);
 
@@ -405,7 +410,9 @@ namespace PAMI
             // multi-context support.
             size_t tcoord = 0;
             _mapping.getMuDestinationTask(task, dest, tcoord);
-            rfifo = _rfifoid + tcoord * 4 /*number of rec fifos per subgrp*/;
+            //rfifo = _rfifoid + tcoord * 4 /*number of rec fifos per subgrp*/;
+            rfifo = (64 / _mapping.tSize()) * tcoord + (offset << 2);
+            TRACE_FORMAT("rfifo = %d", rfifo);
 
             // In loopback we send only on AM
             map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
