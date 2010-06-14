@@ -772,7 +772,7 @@ namespace PAMI
                       generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
 
                   _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
-                      generate (eagershmem, eagermpi, self, _protocol, result);
+                      generate (eagershmem, eagermpi, _protocol, result);
                 }
               else
                 {
@@ -781,7 +781,7 @@ namespace PAMI
                       generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
 
                   _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
-                      generate (eagershmem, eagermpi, self, _protocol, result);
+                      generate (eagershmem, eagermpi, _protocol, result);
                 }
 #else
               _dispatch[id][0] = eagermpi;

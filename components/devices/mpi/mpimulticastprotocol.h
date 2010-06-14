@@ -121,8 +121,9 @@ namespace PAMI
             // Construct a p2p protocol for dispatching
             pami_dispatch_callback_fn fn;
             fn.p2p = dispatch_p2p;
+            pami_endpoint_t origin = PAMI_ENDPOINT_INIT(_clientid, _task_id, _contextid);
             new (&_p2p_protocol) T_P2P_PROTOCOL(dispatch_id, fn, (void*)this,
-                                                p2p_device, status);
+                                                p2p_device, origin, status);
             TRACE_DEVICE((stderr,"<%p>P2PMcastProto status %d\n",this,status));
           }
 
@@ -278,6 +279,7 @@ namespace PAMI
                                  size_t               header_size,  /**< IN:  header size     */
                                  const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                                  size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+                                 pami_endpoint_t      origin,
                                  pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
           {
             TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch_p2p header size %zu, data size %zu\n",cookie, header_size, data_size));
@@ -287,6 +289,7 @@ namespace PAMI
                         header_size,
                         data,
                         data_size,
+                        origin,
                         recv);
           }
         ///
@@ -298,6 +301,7 @@ namespace PAMI
                       size_t               header_size,  /**< IN:  header size     */
                       const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                       size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+                      pami_endpoint_t      origin,
                       pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
           {
             TRACE_DEVICE((stderr,"<%p>P2PMcastProto::dispatch() header size %zu, data size %zu\n",this, header_size, data_size));
