@@ -95,7 +95,7 @@ void _broadcast (pami_context_t context, pami_xfer_t *broadcast)
 void initialize_sndbuf (void *buf, int bytes)
 {
 
-  char c = 0x00;
+  unsigned char c = 0x00;
   int i = bytes;
   unsigned char *cbuf = (unsigned char *)  buf;
 
@@ -108,7 +108,7 @@ void initialize_sndbuf (void *buf, int bytes)
 int check_rcvbuf (void *buf, int bytes)
 {
 
-  char c = 0x00;
+  unsigned char c = 0x00;
   int i = bytes;
   unsigned char *cbuf = (unsigned char *)  buf;
 
