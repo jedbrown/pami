@@ -172,7 +172,7 @@ namespace PAMI
             TRACE_FN_ENTER();
             TRACE_FORMAT("_sendq_status = %016lx, _channel_set_bit = %016lx, _sendq_status & _channel_set_bit = %016lx", _sendq_status, _channel_set_bit, _sendq_status & _channel_set_bit);
 
-            if (likely((_sendq_status & _channel_set_bit) == 0))
+            if (likely(_sendq.isEmpty()))
               {
                 TRACE_FN_EXIT();
                 return 0;
@@ -217,7 +217,7 @@ namespace PAMI
 
             TRACE_FORMAT("_completion_status = %016lx, _channel_set_bit = %016lx, _completion_status & _channel_set_bit = %016lx", _completion_status, _channel_set_bit, _completion_status & _channel_set_bit);
 
-            if (likely((_completion_status & _channel_set_bit) != 0))
+            if (likely(_completions_pending != 0))
               {
                 size_t start = 0; // get from mu spi somehow
                 size_t count = 0; // get from mu spi somehow
