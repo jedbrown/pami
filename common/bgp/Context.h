@@ -278,14 +278,14 @@ namespace PAMI
         // ----------------------------------------------------------------
         pami_result_t result = PAMI_ERROR;
         _rget = Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
-          generate (_devices->_shmem[_contextid], _protocol, result);
+          generate (_devices->_shmem[_contextid], _context, _protocol, result);
         TRACE_ERR((stderr, "%s<%u>  result = %d\n", __PRETTY_FUNCTION__,__LINE__, result));
         if (result != PAMI_SUCCESS)
           _rget = Protocol::Get::NoRGet::generate (_protocol);
 
         result = PAMI_ERROR;
         _rput = Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
-          generate (_devices->_shmem[_contextid], _protocol, result);
+          generate (_devices->_shmem[_contextid], _context, _protocol, result);
         TRACE_ERR((stderr, "%s<%u>  result = %d\n", __PRETTY_FUNCTION__,__LINE__, result));
         if (result != PAMI_SUCCESS)
           _rput = Protocol::Put::NoRPut::generate (_protocol);
@@ -581,7 +581,7 @@ namespace PAMI
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, false>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, false>
                 Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>
-                (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, result);
+                (id, fn.p2p, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, result);
               }
             else
               {
@@ -590,7 +590,7 @@ namespace PAMI
                 Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, true>
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, true>
-                (id, fn, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, result);
+                (id, fn.p2p, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, result);
               }
 
             TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zu\n", result));

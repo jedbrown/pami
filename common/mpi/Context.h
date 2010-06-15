@@ -73,7 +73,7 @@ namespace PAMI
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
     typedef PAMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> MPIEagerBase;
     typedef PAMI::Protocol::Send::SendPWQ < MPIEagerBase >       MPIEager;
-  
+
     // \todo #warning I do not distinguish local vs non-local so no eager shmem protocol here... just MPIEagerBase
   typedef PAMI::Protocol::MPI::P2PMcastProto<MPIDevice,
                                             MPIEagerBase,
@@ -118,7 +118,7 @@ namespace PAMI
   typedef PAMI::NativeInterfaceAllsided< Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AS;
 
 
-  
+
   typedef PAMI::MPINativeInterface<MPIDevice,
                                   MPIMulticastModel,
                                   MPIMultisyncModel,
@@ -151,7 +151,7 @@ namespace PAMI
                                                  CompositeNI_AM,
                                                  CompositeNI_AS> P2PCCMICollreg;
 
-  
+
   // PGAS RT Typedefs/Coll Registration
   typedef PAMI::Device::MPIOldmulticastModel<PAMI::Device::MPIDevice,
                                             PAMI::Device::MPIMessage> MPIOldMcastModel;
@@ -263,7 +263,7 @@ namespace PAMI
 #ifdef ENABLE_SHMEM_DEVICE
         events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
 #endif
-#if 0        
+#if 0
         events += PAMI::Device::ProgressFunctionDev::Factory::advance(_progfunc, clientid, contextid);
         events += PAMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
         events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
@@ -273,7 +273,7 @@ namespace PAMI
         events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
         events += PAMI::Device::MPISyncDev::Factory::advance(_mpimsync, clientid, contextid);
         events += PAMI::Device::MPIBcastDev::Factory::advance(_mpimcast, clientid, contextid);
-#endif        
+#endif
         return events;
     }
 
@@ -321,19 +321,19 @@ namespace PAMI
           // dispatch_impl relies on the table being initialized to NULL's.
           memset(_dispatch, 0x00, sizeof(_dispatch));
 
-        
+
 #ifdef USE_WAKEUP_VECTORS
           _wakeupManager.init(1, 0x57550000 | id); // check errors?
 #endif // USE_WAKEUP_VECTORS
           _devices->init(_clientid, _contextid, _client, _context, _mm);
           _mpi->init(_mm, _clientid, num, (pami_context_t)this, id);
           _lock.init(_mm);
-          
+
           // this barrier is here because the shared memory init
           // needs to be synchronized
           // we shoudl find a way to remove this
           MPI_Barrier(MPI_COMM_WORLD);
-          
+
         _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
         new(_pgas_collreg) PGASCollreg(client, (pami_context_t)this, id,*_mpi);
         _pgas_collreg->analyze(_contextid,_world_geometry);
@@ -737,7 +737,7 @@ namespace PAMI
               // "long header" option
               //
               _dispatch[id][0] = (Protocol::Send::Send *)
-                MPIEagerBase::generate (id, fn, cookie, *_mpi, self, _protocol, result);
+                MPIEagerBase::generate (id, fn.p2p, cookie, *_mpi, self, _context, _protocol, result);
             }
             else if (options.use_shmem == 1)
             {
@@ -746,13 +746,13 @@ namespace PAMI
                 {
                   _dispatch[id][0] = (Protocol::Send::Send *)
                     Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
+                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
                 }
               else
                 {
                   _dispatch[id][0] = (Protocol::Send::Send *)
                     Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
+                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
                 }
             }
             else
@@ -763,13 +763,13 @@ namespace PAMI
               // "long header" option
               //
               MPIEagerBase * eagermpi =
-                MPIEagerBase::generate (id, fn, cookie, *_mpi, self, _protocol, result);
+                MPIEagerBase::generate (id, fn.p2p, cookie, *_mpi, self, _context, _protocol, result);
 #ifdef ENABLE_SHMEM_DEVICE
               if (options.no_long_header == 1)
                 {
                   Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false> * eagershmem =
                     Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
+                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
 
                   _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
                       generate (eagershmem, eagermpi, _protocol, result);
@@ -778,7 +778,7 @@ namespace PAMI
                 {
                   Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true> * eagershmem =
                     Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
+                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
 
                   _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
                       generate (eagershmem, eagermpi, _protocol, result);

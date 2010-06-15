@@ -122,8 +122,8 @@ namespace PAMI
             pami_dispatch_callback_fn fn;
             fn.p2p = dispatch_p2p;
             pami_endpoint_t origin = PAMI_ENDPOINT_INIT(_clientid, _task_id, _contextid);
-            new (&_p2p_protocol) T_P2P_PROTOCOL(dispatch_id, fn, (void*)this,
-                                                p2p_device, origin, status);
+            new (&_p2p_protocol) T_P2P_PROTOCOL(dispatch_id, fn.p2p, (void*)this,
+                                                p2p_device, origin, context, status);
             TRACE_DEVICE((stderr,"<%p>P2PMcastProto status %d\n",this,status));
           }
 

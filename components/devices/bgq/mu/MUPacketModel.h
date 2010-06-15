@@ -69,7 +69,7 @@ namespace PAMI
           inline bool postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                        pami_event_function   fn,
                                        void               * cookie,
-                                       pami_task_t           target_task,
+                                       size_t           target_task,
                                        size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
@@ -81,7 +81,7 @@ namespace PAMI
           inline bool postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                        pami_event_function   fn,
                                        void               * cookie,
-                                       pami_task_t           target_task,
+                                       size_t           target_task,
                                        size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
@@ -91,7 +91,7 @@ namespace PAMI
           inline bool postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                        pami_event_function   fn,
                                        void               * cookie,
-                                       pami_task_t           target_task,
+                                       size_t           target_task,
                                        size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
@@ -100,7 +100,7 @@ namespace PAMI
 
           /// \see PAMI::Device::Interface::PacketModel::postPacket
           template <unsigned T_Niov>
-          inline bool postPacket_impl (pami_task_t     target_task,
+          inline bool postPacket_impl (size_t     target_task,
                                        size_t         target_offset,
                                        void         * metadata,
                                        size_t         metasize,
@@ -110,7 +110,7 @@ namespace PAMI
           inline bool postMultiPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                             pami_event_function   fn,
                                             void               * cookie,
-                                            pami_task_t           target_task,
+                                            size_t           target_task,
                                             size_t               target_offset,
                                             void               * metadata,
                                             size_t               metasize,
@@ -120,7 +120,7 @@ namespace PAMI
         protected:
 
           inline void initializeDescriptor (MUSPI_DescriptorBase * desc,
-                                            pami_task_t             target_task,
+                                            size_t             target_task,
                                             size_t                 target_offset,
                                             uint64_t               payloadPa,
                                             size_t                 bytes);
@@ -133,7 +133,7 @@ namespace PAMI
       };
 
       void MUPacketModel::initializeDescriptor (MUSPI_DescriptorBase * desc,
-                                                pami_task_t             target_task,
+                                                size_t             target_task,
                                                 size_t                 target_offset,
                                                 uint64_t               payloadPa,
                                                 size_t                 bytes)
@@ -159,7 +159,7 @@ namespace PAMI
         // This is terribly inefficient.
         MUHWI_Destination dst;
         size_t addr[BGQ_TDIMS + BGQ_LDIMS];
-        __global.mapping.task2global ((pami_task_t)target_task, addr);
+        __global.mapping.task2global ((size_t)target_task, addr);
         dst.Destination.A_Destination = addr[0];
         dst.Destination.B_Destination = addr[1];
         dst.Destination.C_Destination = addr[2];
@@ -200,7 +200,7 @@ namespace PAMI
       bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                            pami_event_function   fn,
                                            void               * cookie,
-                                           pami_task_t           target_task,
+                                           size_t           target_task,
                                            size_t               target_offset,
                                            void               * metadata,
                                            size_t               metasize,
@@ -215,7 +215,7 @@ namespace PAMI
       bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                            pami_event_function   fn,
                                            void               * cookie,
-                                           pami_task_t           target_task,
+                                           size_t           target_task,
                                            size_t               target_offset,
                                            void               * metadata,
                                            size_t               metasize,
@@ -343,7 +343,7 @@ namespace PAMI
       bool MUPacketModel::postPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                            pami_event_function   fn,
                                            void               * cookie,
-                                           pami_task_t           target_task,
+                                           size_t           target_task,
                                            size_t               target_offset,
                                            void               * metadata,
                                            size_t               metasize,
@@ -449,7 +449,7 @@ namespace PAMI
       };
 
       template <unsigned T_Niov>
-      bool MUPacketModel::postPacket_impl (pami_task_t     target_task,
+      bool MUPacketModel::postPacket_impl (size_t     target_task,
                                            size_t         target_offset,
                                            void         * metadata,
                                            size_t         metasize,
@@ -525,7 +525,7 @@ namespace PAMI
       bool MUPacketModel::postMultiPacket_impl (uint8_t              (&state)[MUPacketModel::packet_model_state_bytes],
                                                 pami_event_function   fn,
                                                 void               * cookie,
-                                                pami_task_t           target_task,
+                                                size_t           target_task,
                                                 size_t               target_offset,
                                                 void               * metadata,
                                                 size_t               metasize,

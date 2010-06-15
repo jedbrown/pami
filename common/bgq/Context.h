@@ -256,6 +256,8 @@ namespace PAMI
         // Compile-time assertions
         // ----------------------------------------------------------------
 
+        _self = PAMI_ENDPOINT_INIT(_clientid,__global.mapping.task(),_contextid);
+
         //_lock.init(&_mm);
 	size_t myix = __global.topology_local.rank2Index(__global.mapping.task());
         _lock.init(&__global._wuRegion_mms[_clientid][myix]); // put context lock in WAC region
@@ -278,11 +280,11 @@ namespace PAMI
           pami_result_t result = PAMI_ERROR;
 
           rget_mu = Protocol::Get::GetRdma <Device::MU::MUDmaModel<false>, MUDevice>::
-            generate (_devices->_mu[_contextid], _request, result);
+            generate (_devices->_mu[_contextid], _context, _request, result);
           if (result != PAMI_SUCCESS) rget_mu = NULL;
 
           rput_mu = Protocol::Put::PutRdma <Device::MU::MUDmaModel<false>, MUDevice>::
-            generate (_devices->_mu[_contextid], _request, result);
+            generate (_devices->_mu[_contextid], _context, _request, result);
           if (result != PAMI_SUCCESS) rput_mu = NULL;
 
         }
@@ -369,11 +371,11 @@ namespace PAMI
             pami_result_t result = PAMI_ERROR;
 
             rget_shmem = Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
-              generate (_devices->_shmem[_contextid], _request, result);
+              generate (_devices->_shmem[_contextid], _context, _request, result);
             if (result != PAMI_SUCCESS) rget_shmem = NULL;
 
             rput_shmem = Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
-              generate (_devices->_shmem[_contextid], _request, result);
+              generate (_devices->_shmem[_contextid], _context, _request, result);
             if (result != PAMI_SUCCESS) rput_shmem = NULL;
           }
           else TRACE_ERR((stderr, "topology does not support shmem\n"));
@@ -701,13 +703,13 @@ namespace PAMI
                   {
                      _dispatch[id] = (Protocol::Send::Send *)
                            Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
-                           generate (id, fn, cookie, _devices->_mu[_contextid], self, _protocol, result);
+                           generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, _protocol, result);
                   }
                   else
                   {
                      _dispatch[id] = (Protocol::Send::Send *)
                         Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
-                        generate (id, fn, cookie, _devices->_mu[_contextid], self, _protocol, result);
+                        generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, _protocol, result);
                   }
                }
                else
@@ -725,13 +727,13 @@ namespace PAMI
                   {
                      _dispatch[id] = (Protocol::Send::Send *)
                         Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
-                        generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
+                        generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
                   }
                   else
                   {
                      _dispatch[id] = (Protocol::Send::Send *)
                         Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
-                        generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
+                        generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
                   }
                }
                else
@@ -748,11 +750,11 @@ namespace PAMI
                   {
                      Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false> * eagermu =
                         Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
-                        generate (id, fn, cookie, _devices->_mu[_contextid], self, _protocol, result);
+                        generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, _protocol, result);
 
                      Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false> * eagershmem =
                         Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
-                        generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
+                        generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
 
                      _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
                         generate (eagershmem, eagermu, _protocol, result);
@@ -761,11 +763,11 @@ namespace PAMI
                   {
                      Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true> * eagermu =
                         Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
-                        generate (id, fn, cookie, _devices->_mu[_contextid], self, _protocol, result);
+                        generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, _protocol, result);
 
                      Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true> * eagershmem =
                         Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
-                        generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
+                        generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
 
                      _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
                         generate (eagershmem, eagermu, _protocol, result);
@@ -900,6 +902,7 @@ namespace PAMI
       pami_context_t               _context;
       size_t                       _clientid;
       size_t                       _contextid;
+      pami_endpoint_t              _self;
 
       PAMI::Memory::MemoryManager  _mm;
       SysDep                       _sysdep;

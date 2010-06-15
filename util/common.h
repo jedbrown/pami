@@ -251,11 +251,38 @@ inline void local_barriered_shmemzero(void *shmem, size_t len,
 }
 #endif // __local_barriered_shmemzero_fn__
 
-/// Templatized iovec array, used as pointer parameters in template specialization.
-template <unsigned T_Niov>
-struct iov
+///
+/// \brief Structure to resize, or cast, a pointer to a fixed size array type
+///
+/// Generic programming in C++ can specify the dimension of an array as a
+/// template parameter for a method. To change the dimension template parameter
+/// a different fixed size array type must be specified by the caller. C++
+/// doesn't provide any neat and tidy way of doing this kind of type conversion.
+/// The solution is to cast the pointer to a pointer to a structure that
+/// contains an array of the appropriate size, then specify this structure
+/// field as the parameter to the templatized method.
+///
+/// \code
+/// template <unsigned T_Size>
+/// void foo (uint8_t (&parameter)[T_Size])
+/// {
+///   fprintf (stderr, "The array size is: %d\n", T_Size);
+/// }
+///
+/// uint8_t bigarray[1024];
+/// foo (bigarray);       // prints: "The array size is: 1024"
+///
+/// array_t<uint8_t,16> * resized = (array_t<uint8_t,16> *) &bigarray[512];
+/// foo (resized->array); // prints: "The array size is: 16"
+/// \endcode
+///
+/// \tparam T Resized array type
+/// \tparam N Resized array element count
+///
+template <typename T, unsigned N>
+struct array_t
 {
-  struct iovec v[T_Niov];
+  T array[N];
 };
 
 
