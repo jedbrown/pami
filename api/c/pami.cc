@@ -1298,3 +1298,28 @@ extern "C" pami_result_t PAMI_Resume_totask (pami_context_t   context,
   PAMI::Context * ctx = (PAMI::Context *) context;
   return ctx->resume_totask (dest, count);
 }
+
+
+///
+/// \copydoc PAMI_Task2Network
+///
+extern "C" pami_result_t PAMI_Task2Network(pami_task_t task,
+                                           pami_coord_t *ntw)
+{
+#if defined(PLATFORM_BGP) || defined(PLATFORM_BGQ)  
+  return __global.mapping.task2network(task, ntw, PAMI_N_TORUS_NETWORK);
+#else
+  assert(0);
+#endif
+}
+
+
+///
+/// \copydoc PAMI_Network2Task
+///
+extern "C" pami_result_t PAMI_Network2Task(pami_coord_t ntw,
+                                           pami_task_t *task)
+{
+  pami_network type;
+  return __global.mapping.network2task(&ntw, task, &type);
+}
