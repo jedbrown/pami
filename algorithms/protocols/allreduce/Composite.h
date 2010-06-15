@@ -145,7 +145,7 @@ namespace CCMI
                           void                            * cd = NULL
                         )
         {
-          TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::initialize()\n",this));
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::Composite::initialize() count %u, dt %#X, op %#X, root %d\n",this, count, dtype, op, root));
           allreduce->setSendState(request);
           allreduce->setRoot( root );
           allreduce->setDataInfo(srcbuf, dstbuf);
