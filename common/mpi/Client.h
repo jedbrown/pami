@@ -305,8 +305,9 @@ namespace PAMI
                   return;
                 }
           }
+          // Abort if we *should* have created shmem, but allow single process nodes to continue
+          if(__global.topology_local.size() > 1) PAMI_abort();
           // Failed to create shared memory .. fake it using the heap ??
-          PAMI_abort();
           _mm.init (malloc (n), n);
           return;
         }
