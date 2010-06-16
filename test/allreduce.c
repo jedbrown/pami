@@ -20,6 +20,8 @@
 #include <assert.h>
 #include <pami.h>
 
+#include "math/math_coremath.h" // special datatype size structs
+
 //define this if you want to validate the data for unsigned sums
 #define CHECK_DATA
 
@@ -177,29 +179,30 @@ const char * dt_array_str[] =
     "PAMI_LOC_2DOUBLE"
   };
 
-  /// \todo Is elemsize_array right for all platforms? Probably not.
 unsigned elemsize_array[] =
   {
-    4, // PAMI_UNSIGNED_INT,
-    8, // PAMI_DOUBLE,
-    2, // PAMI_SIGNED_CHAR,
-    2, // PAMI_UNSIGNED_CHAR,
-    2, // PAMI_SIGNED_SHORT,
-    2, // PAMI_UNSIGNED_SHORT,
-    4, // PAMI_SIGNED_INT,
-    8, // PAMI_SIGNED_LONG_LONG,
-    8, // PAMI_UNSIGNED_LONG_LONG,
-    4, // PAMI_FLOAT,
-    8, // PAMI_LONG_DOUBLE,
-    4, // PAMI_LOGICAL,
-    8, // PAMI_SINGLE_COMPLEX,
-    1, // PAMI_DOUBLE_COMPLEX
-    8, // PAMI_LOC_2INT,
-    6, // PAMI_LOC_SHORT_INT,
-    8, // PAMI_LOC_FLOAT_INT,
-    12, // PAMI_LOC_DOUBLE_INT,
-    8,  // PAMI_LOC_2FLOAT,
-    16, // PAMI_LOC_2DOUBLE,
+    sizeof(unsigned int),       // PAMI_UNSIGNED_INT,
+    sizeof(double),             // PAMI_DOUBLE,
+    sizeof(char),               // PAMI_SIGNED_CHAR,
+    sizeof(unsigned char),      // PAMI_UNSIGNED_CHAR,
+    sizeof(short),              // PAMI_SIGNED_SHORT,
+    sizeof(unsigned short),     // PAMI_UNSIGNED_SHORT,
+    sizeof(int),                // PAMI_SIGNED_INT,
+    sizeof(long long),          // PAMI_SIGNED_LONG_LONG,
+    sizeof(unsigned long long), // PAMI_UNSIGNED_LONG_LONG,
+    sizeof(float),              // PAMI_FLOAT,
+    sizeof(long double),        // PAMI_LONG_DOUBLE,
+    sizeof(unsigned int),       // PAMI_LOGICAL,
+    (2 * sizeof(float)),        // PAMI_SINGLE_COMPLEX,
+    (2 * sizeof(double)),       // PAMI_DOUBLE_COMPLEX
+    // The following are from math/math_coremath.h structures
+    // \todo Correct or not?  At least they match internal math...
+    sizeof(int32_int32_t),      // PAMI_LOC_2INT,
+    sizeof(int16_int32_t),      // PAMI_LOC_SHORT_INT,
+    sizeof(fp32_int32_t),       // PAMI_LOC_FLOAT_INT,
+    sizeof(fp64_int32_t),       // PAMI_LOC_DOUBLE_INT,
+    sizeof(fp32_fp32_t),        // PAMI_LOC_2FLOAT,
+    sizeof(fp64_fp64_t),        // PAMI_LOC_2DOUBLE,
   };
 
 volatile unsigned       _g_barrier_active=0;
