@@ -516,6 +516,9 @@ int main(int argc, char*argv[])
     for(i= OP_PROD,   j=0; j<DT_COUNT;j++)validTable[i][j]=0;
     for(i= OP_MAXLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
     for(i= OP_MINLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+    // This works on MU so re-enable it
+    if((env) && (*env=='M'))
+      validTable[OP_BAND][DT_DOUBLE]=1;
   }
   if((env==NULL) || ((*env=='S') || (*env=='B')))
   {
