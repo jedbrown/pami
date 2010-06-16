@@ -496,48 +496,43 @@ int main(int argc, char*argv[])
 #if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
   char* env = getenv("PAMI_DEVICE");
   fprintf(stderr, "PAMI_DEVICE=%c\n", env?*env:' ');
-  if((env) && ((*env=='M') || (*env=='B')))
+  if((env==NULL) || ((*env=='M') || (*env=='B')))
   {
     /// These are unsupported on MU
-    for(i=0,j=DT_SIGNED_CHAR; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_UNSIGNED_CHAR; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_SIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_UNSIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOGICAL; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_SINGLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_DOUBLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOC_2INT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOC_SHORT_INT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOC_FLOAT_INT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOC_DOUBLE_INT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOC_2FLOAT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOC_2FLOAT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=OP_PROD,j=0; j<DT_COUNT;j++)validTable[i][j]=0;
-    for(i=OP_MAXLOC,j=0; j<DT_COUNT;j++)validTable[i][j]=0;
-    for(i=OP_MINLOC,j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+    for(i=0,j= DT_SIGNED_CHAR;    i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_UNSIGNED_CHAR;  i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_SIGNED_SHORT;   i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_UNSIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOGICAL;        i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_SINGLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_DOUBLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOC_2INT;       i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOC_SHORT_INT;  i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOC_FLOAT_INT;  i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOC_DOUBLE_INT; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOC_2FLOAT;     i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOC_2FLOAT;     i<OP_COUNT;i++)validTable[i][j]=0;
 
-    /// \todo these are failing and need debug
-    validTable[OP_LAND][DT_SIGNED_INT]=0;
-    validTable[OP_BAND][DT_SIGNED_INT]=0;
-    validTable[OP_LAND][DT_UNSIGNED_INT]=0;
-    validTable[OP_BAND][DT_UNSIGNED_INT]=0;
+    for(i= OP_PROD,   j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+    for(i= OP_MAXLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+    for(i= OP_MINLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
   }
-  /// \todo These fail using core math on bgq.
-  validTable[OP_LAND][DT_FLOAT]=0;
-  validTable[OP_LOR][DT_FLOAT]=0;
-  validTable[OP_LXOR][DT_FLOAT]=0;
-  validTable[OP_BAND][DT_FLOAT]=0;
-  validTable[OP_BOR][DT_FLOAT]=0;
-  validTable[OP_BXOR][DT_FLOAT]=0;
-  validTable[OP_LAND][DT_DOUBLE]=0;
-  validTable[OP_LOR][DT_DOUBLE]=0;
-  validTable[OP_LXOR][DT_DOUBLE]=0;
-  validTable[OP_BOR][DT_DOUBLE]=0;
-  validTable[OP_BXOR][DT_DOUBLE]=0;
-  validTable[OP_MAXLOC][DT_LOC_SHORT_INT]=0;
-  validTable[OP_MINLOC][DT_LOC_SHORT_INT]=0;
-  validTable[OP_MAXLOC][DT_LOC_DOUBLE_INT]=0;
-  validTable[OP_MINLOC][DT_LOC_DOUBLE_INT]=0;
+  if((env==NULL) || ((*env=='S') || (*env=='B')))
+  {
+    /// \todo These fail using shmem core math on bgq.
+    validTable[OP_LAND  ][DT_FLOAT         ]=0;
+    validTable[OP_LOR   ][DT_FLOAT         ]=0;
+    validTable[OP_LXOR  ][DT_FLOAT         ]=0;
+    validTable[OP_BAND  ][DT_FLOAT         ]=0;
+    validTable[OP_BOR   ][DT_FLOAT         ]=0;
+    validTable[OP_BXOR  ][DT_FLOAT         ]=0;
+    validTable[OP_LAND  ][DT_DOUBLE        ]=0;
+    validTable[OP_LOR   ][DT_DOUBLE        ]=0;
+    validTable[OP_LXOR  ][DT_DOUBLE        ]=0;
+    validTable[OP_BAND  ][DT_DOUBLE        ]=0;
+    validTable[OP_BOR   ][DT_DOUBLE        ]=0;
+    validTable[OP_BXOR  ][DT_DOUBLE        ]=0;
+  }
 #endif
 
 #else
