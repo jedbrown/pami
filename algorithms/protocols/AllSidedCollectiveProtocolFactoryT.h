@@ -37,7 +37,7 @@ namespace CCMI
         _user_done_fn(cmd->cb_done),
         _user_cookie(cmd->cookie)
         {
-          TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+              TRACE_ADAPTOR((stderr, "<%p>AllSidedCollectiveProtocolFactoryT::collObj()\n",this));
           DO_DEBUG((templateName<T>()));
         }
         T                                    _obj;
@@ -54,7 +54,7 @@ namespace CCMI
       _cmgr(cmgr),
       _native(native)
       {
-        TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
+      TRACE_ADAPTOR((stderr, "<%p>AllSidedCollectiveProtocolFactoryT()\n",this));
       }
 
       virtual ~AllSidedCollectiveProtocolFactoryT ()
@@ -71,8 +71,8 @@ namespace CCMI
                           void          * clientdata,
                           pami_result_t   res)
       {
-        TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
         collObj *cobj = (collObj *)clientdata;
+          TRACE_ADAPTOR((stderr, "<%p>AllSidedCollectiveProtocolFactoryT::done_fn()\n",cobj));
         cobj->_user_done_fn(context, cobj->_user_cookie, res);
         cobj->_factory->_alloc.returnObject(cobj);
       }
@@ -81,8 +81,8 @@ namespace CCMI
       virtual Executor::Composite * generate(pami_geometry_t             geometry,
                                              void                      * cmd)
       {
-        TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
         collObj *cobj = (collObj*)  _alloc.allocateObject();
+          TRACE_ADAPTOR((stderr, "<%p>AllSidedCollectiveProtocolFactoryT::generate()\n",cobj));
         new(cobj) collObj(_native,          // Native interface
                           _cmgr,            // Connection Manager
                           geometry,         // Geometry Object
@@ -108,3 +108,9 @@ namespace CCMI
 };//CCMI
 
 #endif
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

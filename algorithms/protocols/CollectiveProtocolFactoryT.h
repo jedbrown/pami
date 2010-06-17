@@ -8,6 +8,7 @@
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "algorithms/interfaces/NativeInterface.h"
 #include "components/memory/MemoryAllocator.h"
+#include "util/ccmi_util.h"
 
 namespace CCMI
 {
@@ -113,9 +114,10 @@ namespace CCMI
         C                                          * _cmgr;
         Interfaces::NativeInterface                * _native;
         PAMI::MemoryAllocator < sizeof(collObj), 16 >   _alloc;
-    };
-  };
-};
+    };//CollectiveProtocolFactoryT
+
+  };//Adaptor
+};//CCMI
 
 #endif
 //
