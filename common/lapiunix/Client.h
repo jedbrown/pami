@@ -13,7 +13,7 @@
 #include "common/ClientInterface.h"
 #include "common/lapiunix/Context.h"
 #include "algorithms/geometry/Geometry.h"
-#include "components/lapi/include/Client.h"
+#include "../lapi/include/Client.h"
 
 namespace PAMI
 {

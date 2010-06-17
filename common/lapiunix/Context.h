@@ -33,7 +33,7 @@
 #include "components/devices/lapiunix/lapiunixmultisyncmodel.h"
 #include "components/devices/lapiunix/lapiunixmulticombinemodel.h"
 #include "components/devices/lapiunix/lapiunixmanytomanymodel.h"
-#include "components/lapi/include/Context.h"
+#include "../lapi/include/Context.h"
 
 // P2P Protocols
 #include "p2p/protocols/Send.h"
@@ -111,10 +111,16 @@ namespace PAMI
                                        send->data.iov_base, send->data.iov_len,
                                        *(send_hint_t *)&send->hints);
       }
-    inline pami_result_t simple (pami_send_t * parameters)
+    inline pami_result_t simple (pami_send_t * simple)
       {
-        PAMI_abort();
-        return PAMI_SUCCESS;
+        LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+        return (cp->*(cp->pSend))(simple->send.dest, simple->send.dispatch,
+                simple->send.header.iov_base, simple->send.header.iov_len,
+                simple->send.data.iov_base, simple->send.data.iov_len,
+                *(send_hint_t *)&simple->send.hints, 
+                simple->events.local_fn, simple->events.remote_fn, 
+                simple->events.cookie,
+                NULL, NULL, NULL, NULL, NULL, INTERFACE_PAMI);
       }
 
      template <class T_Allocator>

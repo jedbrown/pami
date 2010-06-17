@@ -17,7 +17,7 @@
 #define __common_lapiunix_lapifunc_h__
 
 #include <stdlib.h>
-#include "components/lapi/include/lapi.h"
+#include "lapi.h"
 #include "common/lapiunix/lapierror.h"
 
 // Define this to turn on dlopened lapi functions
