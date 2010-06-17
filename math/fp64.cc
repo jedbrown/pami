@@ -52,6 +52,45 @@ void _pami_core_fp64_sum(double *dst, const double **srcs, int nsrc, int count) 
 #undef OP
 }
 
+void _pami_core_fp64_land(double *dst, const double **srcs, int nsrc, int count) {
+#define OP(a,b) ((a)&&(b))
+
+#define TYPE double
+#include "_N_src.x.h"
+#undef TYPE
+#undef OP
+}
+
+void _pami_core_fp64_lor(double *dst, const double **srcs, int nsrc, int count) {
+#define OP(a,b) ((a)||(b))
+
+#define TYPE double
+#include "_N_src.x.h"
+#undef TYPE
+#undef OP
+}
+
+void _pami_core_fp64_lxor(double *dst, const double **srcs, int nsrc, int count) {
+#define OP(a,b) (((a)&&!(b)) || (!(a)&&(b)))
+
+#define TYPE double
+#include "_N_src.x.h"
+#undef TYPE
+#undef OP
+}
+
+void _pami_core_fp64_band(double *dst, const double **srcs, int nsrc, int count) {
+	_pami_core_uint64_band((uint64_t *)dst, (const uint64_t **)srcs, nsrc, count);
+}
+
+void _pami_core_fp64_bor(double *dst, const double **srcs, int nsrc, int count) {
+	_pami_core_uint64_bor((uint64_t *)dst, (const uint64_t **)srcs, nsrc, count);
+}
+
+void _pami_core_fp64_bxor(double *dst, const double **srcs, int nsrc, int count) {
+	_pami_core_uint64_bxor((uint64_t *)dst, (const uint64_t **)srcs, nsrc, count);
+}
+
 void _pami_core_fp64_int32_maxloc(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count) {
         register int n = 0, m, o;
         for (n = 0; n < count; n++) {

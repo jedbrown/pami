@@ -125,6 +125,12 @@ extern void _pami_core_fp32_max(float *dst, const float **srcs, int nsrc, int co
 extern void _pami_core_fp32_min(float *dst, const float **srcs, int nsrc, int count);
 extern void _pami_core_fp32_prod(float *dst, const float **srcs, int nsrc, int count);
 extern void _pami_core_fp32_sum(float *dst, const float **srcs, int nsrc, int count);
+extern void _pami_core_fp32_land(float *dst, const float **srcs, int nsrc, int count);
+extern void _pami_core_fp32_lor(float *dst, const float **srcs, int nsrc, int count);
+extern void _pami_core_fp32_lxor(float *dst, const float **srcs, int nsrc, int count);
+extern void _pami_core_fp32_band(float *dst, const float **srcs, int nsrc, int count);
+extern void _pami_core_fp32_bor(float *dst, const float **srcs, int nsrc, int count);
+extern void _pami_core_fp32_bxor(float *dst, const float **srcs, int nsrc, int count);
 extern void _pami_core_fp32_int32_maxloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count);
 extern void _pami_core_fp32_fp32_maxloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count);
 extern void _pami_core_fp32_int32_minloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count);
@@ -133,6 +139,12 @@ extern void _pami_core_fp64_max(double *dst, const double **srcs, int nsrc, int 
 extern void _pami_core_fp64_min(double *dst, const double **srcs, int nsrc, int count);
 extern void _pami_core_fp64_prod(double *dst, const double **srcs, int nsrc, int count);
 extern void _pami_core_fp64_sum(double *dst, const double **srcs, int nsrc, int count);
+extern void _pami_core_fp64_land(double *dst, const double **srcs, int nsrc, int count);
+extern void _pami_core_fp64_lor(double *dst, const double **srcs, int nsrc, int count);
+extern void _pami_core_fp64_lxor(double *dst, const double **srcs, int nsrc, int count);
+extern void _pami_core_fp64_band(double *dst, const double **srcs, int nsrc, int count);
+extern void _pami_core_fp64_bor(double *dst, const double **srcs, int nsrc, int count);
+extern void _pami_core_fp64_bxor(double *dst, const double **srcs, int nsrc, int count);
 extern void _pami_core_fp64_int32_maxloc(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count);
 extern void _pami_core_fp64_fp64_maxloc(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count);
 extern void _pami_core_fp64_int32_minloc(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count);

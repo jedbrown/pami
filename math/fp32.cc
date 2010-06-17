@@ -52,6 +52,45 @@ void _pami_core_fp32_sum(float *dst, const float **srcs, int nsrc, int count) {
 #undef OP
 }
 
+void _pami_core_fp32_land(float *dst, const float **srcs, int nsrc, int count) {
+#define OP(a,b) ((a)&&(b))
+
+#define TYPE float
+#include "_N_src.x.h"
+#undef TYPE
+#undef OP
+}
+
+void _pami_core_fp32_lor(float *dst, const float **srcs, int nsrc, int count) {
+#define OP(a,b) ((a)||(b))
+
+#define TYPE float
+#include "_N_src.x.h"
+#undef TYPE
+#undef OP
+}
+
+void _pami_core_fp32_lxor(float *dst, const float **srcs, int nsrc, int count) {
+#define OP(a,b) (((a)&&!(b))||(!(a)&&(b)))
+
+#define TYPE float
+#include "_N_src.x.h"
+#undef TYPE
+#undef OP
+}
+
+void _pami_core_fp32_band(float *dst, const float **srcs, int nsrc, int count) {
+	_pami_core_uint32_band((uint32_t *)dst, (const uint32_t **)srcs, nsrc, count);
+}
+
+void _pami_core_fp32_bor(float *dst, const float **srcs, int nsrc, int count) {
+	_pami_core_uint32_bor((uint32_t *)dst, (const uint32_t **)srcs, nsrc, count);
+}
+
+void _pami_core_fp32_bxor(float *dst, const float **srcs, int nsrc, int count) {
+	_pami_core_uint32_bxor((uint32_t *)dst, (const uint32_t **)srcs, nsrc, count);
+}
+
 void _pami_core_fp32_int32_maxloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count) {
         register int n = 0, m, o;
         for (n = 0; n < count; n++) {
