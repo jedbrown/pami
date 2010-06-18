@@ -174,7 +174,7 @@ namespace CCMI
 
         return cm->updateConnectionId( geometry->comm() );
       }
-      
+
       typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
       < CCMI::Schedule::ListMultinomial,
         CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
@@ -188,12 +188,12 @@ namespace CCMI
         getKey >
       AsyncRBBinomialBroadcastFactory;
 
-      
+
       typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
       < CCMI::Schedule::ListMultinomial,
         CCMI::ConnectionManager::CommSeqConnMgr,
         create_schedule_as > AsyncCSBinomialBroadcastComposite;
-      
+
       typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT
       < AsyncCSBinomialBroadcastComposite,
         am_cs_broadcast_metadata,
@@ -552,7 +552,7 @@ namespace PAMI
             COMPILE_TIME_ASSERT(sizeof(T_Factory) <= T_Allocator::objsize);
             factory = (T_Factory*) _allocator.allocateObject ();
           }
-        
+
           template<class T_NI_ActiveMessage, class T_NI_Allsided, class T_Protocol1, class T_Device1, class T_Protocol2, class T_Device2>
           void setupFactories(T_Device1 &device1, T_Device2 &device2)
           {

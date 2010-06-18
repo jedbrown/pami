@@ -34,4 +34,3 @@ static char   __trace_indent_string[64] = { "                                   
     fprintf (stderr, "%s   %s():%d .. " fmt "\n", &__trace_indent_string[63-__trace_fn_counter], __FUNCTION__, __LINE__, __VA_ARGS__);
 
 #endif // __components_devices_bgq_mu2_trace_h__
-

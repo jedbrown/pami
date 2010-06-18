@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/bgq/mu2/DmaModelMemoryFifoCompletion.h
+ * \file components/devices/bgq/mu2/model/DmaModelMemoryFifoCompletion.h
  * \brief ???
  */
-#ifndef __components_devices_bgq_mu2_DmaModelMemoryFifoCompletion_h__
-#define __components_devices_bgq_mu2_DmaModelMemoryFifoCompletion_h__
+#ifndef __components_devices_bgq_mu2_model_DmaModelMemoryFifoCompletion_h__
+#define __components_devices_bgq_mu2_model_DmaModelMemoryFifoCompletion_h__
 
 #include "components/devices/bgq/mu2/model/DmaModelBase.h"
 #include "components/devices/bgq/mu2/model/MemoryFifoCompletion.h"
@@ -102,7 +102,3 @@ namespace PAMI
 // astyle options --indent-switches --indent-namespaces --break-blocks
 // astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
 //
-
-
-
-

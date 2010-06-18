@@ -25,7 +25,7 @@ namespace CCMI
                                      unsigned                      root,
                                      Interfaces::NativeInterface * native,
                                      PAMI_GEOMETRY_CLASS         * g);
-  
+
 
   /**
    * \brief The different collective operations supported

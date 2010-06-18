@@ -517,4 +517,3 @@ size_t PAMI::Device::MU::Context::pinFifo<PAMI::Device::MU::Context::pinfifo_alg
 // astyle options --indent-switches --indent-namespaces --break-blocks
 // astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
 //
-

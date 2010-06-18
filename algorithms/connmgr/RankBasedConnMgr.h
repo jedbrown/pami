@@ -60,7 +60,7 @@ namespace CCMI
           return src;
         }
 
-      
+
     private:
       T_Sysdep *_sysdep;
       size_t    _numConnections;

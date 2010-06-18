@@ -1310,7 +1310,7 @@ extern "C" pami_result_t PAMI_Resume_totask (pami_context_t   context,
 extern "C" pami_result_t PAMI_Task2Network(pami_task_t task,
                                            pami_coord_t *ntw)
 {
-#if defined(PLATFORM_BGP) || defined(PLATFORM_BGQ)  
+#if defined(PLATFORM_BGP) || defined(PLATFORM_BGQ)
   return __global.mapping.task2network(task, ntw, PAMI_N_TORUS_NETWORK);
 #else
   assert(0);

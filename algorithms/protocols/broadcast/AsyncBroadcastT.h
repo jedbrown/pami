@@ -29,7 +29,7 @@ namespace CCMI
       ///
       /// \brief Asyc Broadcast Composite. It is single color right now
       ///
-      
+
       template <class T_Schedule, class T_Conn, ScheduleFn create_schedule>
       class AsyncBroadcastT : public CCMI::Executor::Composite
       {
@@ -139,7 +139,7 @@ namespace CCMI
             DO_DEBUG((templateName<MetaDataFn>()));
             get_metadata(mdata);
           }
-        
+
           char *allocateBuffer (unsigned size)
           {
             if (size <= 32768)

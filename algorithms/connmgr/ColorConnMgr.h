@@ -55,7 +55,7 @@ namespace CCMI
         {
           return MAX_COLORS;
         }
-      
+
     };
   };
 };

@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/bgq/mu2/DmaModelBase.h
+ * \file components/devices/bgq/mu2/model/DmaModelBase.h
  * \brief ???
  */
-#ifndef __components_devices_bgq_mu2_DmaModelBase_h__
-#define __components_devices_bgq_mu2_DmaModelBase_h__
+#ifndef __components_devices_bgq_mu2_model_DmaModelBase_h__
+#define __components_devices_bgq_mu2_model_DmaModelBase_h__
 
 #include <spi/include/mu/DescriptorBaseXX.h>
 
@@ -571,5 +571,3 @@ namespace PAMI
 // astyle options --indent-switches --indent-namespaces --break-blocks
 // astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
 //
-
-

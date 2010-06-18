@@ -157,11 +157,11 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // MU allsided multicast built on active message multicast with an
     // synchronizing multisync
-    // 
-    // The necessary factory is defined here to implement the appropriate 
+    //
+    // The necessary factory is defined here to implement the appropriate
     // dispatch/notifyRecv.  We simply us a map<> to associate connection id's
     // with composites.  Since it's all-sided, this should be fine.
-    // 
+    //
     // Connection id's are based on incrementing CommSeqConnMgr id's.
     //----------------------------------------------------------------------------
     void MUMcast2MetaData(pami_metadata_t *m)
@@ -196,7 +196,7 @@ namespace PAMI
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::MUMultiCast2Factory::generate()\n", this));
 
         // The composite will ctor the connection manager and generate a unique connection id.
-        CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> *composite = 
+        CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> *composite =
           (CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> *)MUMultiCast2FactoryBase::generate(geometry,cmd);
 
         // Get the (updated and unique) connection id and store this new composite in the map[connection_id].
@@ -314,7 +314,7 @@ namespace PAMI
         if (__global.useMU())
         {
           _mu_msync_factory.setMapIdToGeometry(mapidtogeometry);
-          // Can't be ctor'd unless the NI was created 
+          // Can't be ctor'd unless the NI was created
           _mu_mcast2_factory = new (_mu_mcast2_factory_storage) MUMultiCast2Factory(&_csconnmgr, _mu_ni);
         }
 
@@ -348,7 +348,7 @@ namespace PAMI
 
             // Add Broadcasts
             geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast_factory, _context_id);
-//          geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast2_factory,_context_id); 
+//          geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast2_factory,_context_id);
             geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast3_factory,_context_id);
 
             // Add Allreduces
@@ -364,7 +364,7 @@ namespace PAMI
 
 
           /// \todo Since isGlobal() isn't implemented, do something myself...
-          /// Get a Nth global topology based on my local dim and if it's the same 
+          /// Get a Nth global topology based on my local dim and if it's the same
           /// size as the geometry topology, then the geometry topology must be "global".
           PAMI::Topology globalTopology;
           int t = (int) __global.mapping.t();
@@ -458,4 +458,3 @@ namespace PAMI
 // astyle options --indent-switches --indent-namespaces --break-blocks
 // astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
 //
-

@@ -46,7 +46,7 @@ namespace CCMI
 	{
 	  new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
 	}
-      
+
       unsigned getKey(unsigned                                                root,
                       unsigned                                                connid,
                       PAMI_GEOMETRY_CLASS                                    *geometry,
@@ -67,7 +67,7 @@ namespace CCMI
         }
         return cm->updateConnectionId( geometry->comm() );
       }
-      
+
       typedef AsyncBroadcastT <CCMI::Schedule::ListMultinomial,
                                CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
                                create_schedule>
@@ -78,9 +78,9 @@ namespace CCMI
                                      CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
                                      getKey>
       AsyncRBBinomBcastFactory;
-    
-     
-      
+
+
+
       typedef AsyncBroadcastT <CCMI::Schedule::ListMultinomial,
                                CCMI::ConnectionManager::CommSeqConnMgr,
                                create_schedule >

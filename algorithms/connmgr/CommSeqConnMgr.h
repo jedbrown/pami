@@ -81,7 +81,7 @@ namespace CCMI
         PAMI_abort();
         return 0;
       }
-      
+
       unsigned updateConnectionId (unsigned comm)
       {
         _comm_seq_map[comm] ++;

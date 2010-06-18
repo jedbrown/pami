@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/bgq/mu2/PacketModel.h
+ * \file components/devices/bgq/mu2/model/PacketModel.h
  * \brief ???
  */
-#ifndef __components_devices_bgq_mu2_PacketModel_h__
-#define __components_devices_bgq_mu2_PacketModel_h__
+#ifndef __components_devices_bgq_mu2_model_PacketModel_h__
+#define __components_devices_bgq_mu2_model_PacketModel_h__
 
 #include "components/devices/bgq/mu2/model/PacketModelBase.h"
 
@@ -79,7 +79,3 @@ namespace PAMI
 // astyle options --indent-switches --indent-namespaces --break-blocks
 // astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
 //
-
-
-
-

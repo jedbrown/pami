@@ -21,7 +21,7 @@ namespace CCMI
 {
   namespace Adaptor
   {
-    
+
     class CollectiveProtocolFactory
     {
       public:

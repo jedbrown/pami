@@ -71,22 +71,22 @@ namespace PAMI
   typedef PAMI::Protocol::Send::SendPWQ < ShmemEagerBase > ShmemEager;
 
   // shmem active message over p2p eager
-  typedef PAMI::NativeInterfaceActiveMessage<ShmemEager> ShmemNI_AM; 
+  typedef PAMI::NativeInterfaceActiveMessage<ShmemEager> ShmemNI_AM;
   // shmem allsided over p2p eager
-  typedef PAMI::NativeInterfaceAllsided<ShmemEager> ShmemNI_AS; 
+  typedef PAMI::NativeInterfaceAllsided<ShmemEager> ShmemNI_AS;
 
   typedef Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true> MUEagerBase;
   typedef PAMI::Protocol::Send::SendPWQ < MUEagerBase > MUEager;
 
   // MU active message over p2p eager
-  typedef PAMI::NativeInterfaceActiveMessage<MUEager> MUNI_AM; 
+  typedef PAMI::NativeInterfaceActiveMessage<MUEager> MUNI_AM;
   // MU allsided over p2p eager
-  typedef PAMI::NativeInterfaceAllsided<MUEager> MUNI_AS; 
+  typedef PAMI::NativeInterfaceAllsided<MUEager> MUNI_AS;
 
   // shmem + MU composite active message over p2p eager
-  typedef PAMI::NativeInterfaceActiveMessage< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AM; 
+  typedef PAMI::NativeInterfaceActiveMessage< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AM;
   // shmem + MU composite allsided over p2p eager
-  typedef PAMI::NativeInterfaceAllsided< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AS; 
+  typedef PAMI::NativeInterfaceAllsided< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AS;
 
 
   typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2NodeCounter> Barrier_Type;

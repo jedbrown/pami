@@ -213,7 +213,7 @@ _wrapper_model (&_desc_model)
     MUHWI_COLLECTIVE_OP_CODE_OR,
 
     Word_Length:
-    4,    
+    4,
 
     Class_Route:
     0,    /// \todo global class route (arbitrary see MUCollDevice)?

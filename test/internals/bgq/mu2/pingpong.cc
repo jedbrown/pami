@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/bgq/mu2/simple.cc
+ * \file test/internals/bgq/mu2/pingpong.cc
  * \brief Simple standalone MU software device test.
  */
 

@@ -87,7 +87,7 @@ namespace CCMI
         {
           return _numConnections;
         }
-      
+
     private:
       size_t    _numConnections;
     };
