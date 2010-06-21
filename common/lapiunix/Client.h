@@ -43,9 +43,6 @@ namespace PAMI
         // Initialize the shared memory manager
         initializeMemoryManager ();
 
-        // Generate the Device queues
-        _platdevs.generate(_clientid, _maxctxts, _mm);
-
         // Create an initial context for initialization
         rc = createOneContext(&_contexts[0],0);
         if(rc) {result=rc;  return;}
@@ -92,9 +89,17 @@ namespace PAMI
                                       _peers,
                                       _npeers);
 
+        // Generate the "generic" device queues
+	// We do this here because some devices need a properly initialized
+	// mapping to correctly build (like shmem device, for example.  shmem
+	// device requires to know the "local" nodes, so a proper mapping
+	// must be built).
+        _platdevs.generate(_clientid, _maxctxts, _mm);
+	_platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm);
+
         // Initialize the optimized collectives
         _contexts[0]->initCollectives();
-
+        
         // Return error code
         result                         = rc;
       }
@@ -112,7 +117,7 @@ namespace PAMI
         int *flag = (int*)cookie;
         *flag = 0;
       }
-
+    
     pami_result_t generateMapCache(size_t   myrank,
                                    size_t   mysize,
                                    size_t  &min_rank,
@@ -136,6 +141,8 @@ namespace PAMI
         err = gethostname(host, str_len);
         PAMI_assertf(err == 0, "gethostname failed, errno %d", errno);
 
+	
+	// Do an allgather to collect the map
         pami_xfer_type_t   colltype = PAMI_XFER_ALLGATHER;
         pami_algorithm_t   alg;
         pami_metadata_t    mdata;
@@ -153,10 +160,12 @@ namespace PAMI
         xfer.cmd.xfer_allgather.rtype       = PAMI_BYTE;
         xfer.cmd.xfer_allgather.rtypecount  = str_len;
 
+	// We can only advance the lapi device here because our other devices
+	// are not initialized;  they rely on the map that we are building.
         _contexts[0]->collective(&xfer);
         while(flag)
-          _contexts[0]->advance(10,rc);
-
+          _contexts[0]->advance_only_lapi(10,rc);
+        
         PAMI_assertf(err == 0, "allgather failed, err %d", err);
 
         nSize = 0;
@@ -243,7 +252,7 @@ namespace PAMI
       }
 
 
-
+    
     static pami_result_t generate_impl (const char * name, pami_client_t * client)
       {
         int rc = 0;
@@ -310,6 +319,7 @@ namespace PAMI
               contexts[i] = (pami_context_t*)_contexts[i];
               rc = createOneContext(&_contexts[i],i);
               rc = _contexts[i]->initP2P(&t_myrank, &t_mysize, &t_lhandle);
+	      _platdevs.init(_clientid,i,_client,(pami_context_t)_contexts[i],&_mm);
               if(rc) RETURN_ERR_PAMI(PAMI_ERROR, "createContext failed with rc %d\n", rc);
               _contexts[i]->setWorldGeometry(_world_geometry);
               _contexts[i]->initP2PCollectives();
@@ -350,7 +360,7 @@ namespace PAMI
                   configuration->value.intval = __global.mapping.size();
                   result = PAMI_SUCCESS;
                   break;
-#endif
+#endif                  
                 case PAMI_CLOCK_MHZ:
                 case PAMI_WTIMEBASE_MHZ:
                   configuration->value.intval = __global.time.clockMHz();
@@ -425,7 +435,6 @@ namespace PAMI
               for(size_t n=0; n<_ncontexts; n++)
                   {
                     _contexts[n]->_pgas_collreg->analyze(n,new_geometry);
-                    _contexts[n]->_oldccmi_collreg->analyze(n,new_geometry);
                     _contexts[n]->_ccmi_collreg->analyze(n,new_geometry);
                     _contexts[n]->_p2p_ccmi_collreg->analyze(n,new_geometry);
                   }
@@ -517,7 +526,7 @@ namespace PAMI
 
     // The number of local peers
     size_t                                       _npeers;
-
+    
     // Maximum number of contexts
     size_t                                       _maxctxts;
 

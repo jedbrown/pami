@@ -51,7 +51,6 @@
 // Collective Protocols
 #include "algorithms/geometry/CCMICollRegistration.h"
 #include "algorithms/geometry/PGASCollRegistration.h"
-#include "algorithms/geometry/OldCCMICollRegistration.h"
 #include "algorithms/geometry/P2PCCMIRegistration.h"
 
 namespace PAMI
@@ -82,7 +81,7 @@ namespace PAMI
   {
   public:
     SendWrapper(size_t                      dispatch,
-                pami_dispatch_callback_fn   dispatch_fn,
+                pami_dispatch_p2p_fn        dispatch_fn,
                 void                      * cookie,
                 DeviceWrapper             & device,
                 pami_endpoint_t             origin,
@@ -94,7 +93,7 @@ namespace PAMI
         pami_send_hint_t   options;
         memset(&options, 0, sizeof(options));
         result = (cp->*(cp->pDispatchSet))(dispatch,
-                                           (void *)dispatch_fn.p2p,
+                                           (void *)dispatch_fn,
                                            cookie,
                                            *(send_hint_t *)&options,
                                            INTERFACE_PAMI);
@@ -125,10 +124,11 @@ namespace PAMI
 
      template <class T_Allocator>
      static inline SendWrapper * generate (size_t                      dispatch,
-                                           pami_dispatch_callback_fn   dispatch_fn,
+                                           pami_dispatch_p2p_fn        dispatch_fn,
                                            void                      * cookie,
-                                           DeviceWrapper             & device,
+                                           PAMI::DeviceWrapper       & device,
                                            pami_endpoint_t             origin,
+					   pami_context_t              context,
                                            T_Allocator               & allocator,
                                            pami_result_t             & result)
       {
@@ -143,16 +143,16 @@ namespace PAMI
         return sw;
       }
   private:
-    lapi_state_t                          *_lapi_state;
+    lapi_state_t                          *_lapi_state;    
   };
 
   // Device Typedefs
   typedef Device::LAPIDevice                                          LAPIDevice;
-
+  
   // P2P Message Typedefs
   typedef PAMI::SendWrapper                                           LAPISendBase;
   typedef PAMI::Protocol::Send::SendPWQ < LAPISendBase >              LAPISend;
-
+  
   // Shared Memory P2P Typedefs
   typedef Fifo::FifoPacket <64, 1024>                                 ShmemPacket;
   typedef Fifo::LinearFifo<PAMI::Atomic::GccBuiltin, ShmemPacket,128> ShmemFifo;
@@ -219,12 +219,6 @@ namespace PAMI
                                              LAPIDevice,
                                              LAPINBCollManager> PGASCollreg;
 
-  // "Old" CCMI Protocol Typedefs
-  typedef CollRegistration::OldCCMIRegistration<LAPIGeometry,
-                                                LAPIOldMcastModel,
-                                                LAPIOldM2MModel,
-                                                LAPIDevice,
-                                                SysDep> OldCCMICollreg;
   // Memory Allocator Typedefs
   typedef MemoryAllocator<1024, 16> ProtocolAllocator;
   // Over P2P CCMI Protocol Typedefs
@@ -334,6 +328,7 @@ namespace PAMI
         _client (client),
         _clientid (clientid),
         _clientname(clientname),
+        _context((pami_context_t) this),
         _contextid (id),
         _world_geometry(NULL),
         _devices(devices)
@@ -366,9 +361,6 @@ namespace PAMI
           _lapi_device.setLapiHandle(_lapi_handle);
           _lapi_device2.init(_lapi_state);
 
-          // Initialize Platform and Collective "per context" Devices
-          _devices->init(_clientid,_contextid,_client,_context,_mm);
-
           // Query My Rank and My Size
           // TODO:  Use LAPI Internals, instead of
           // doing an upcall to LAPI
@@ -399,10 +391,6 @@ namespace PAMI
 
       inline pami_result_t initCollectives()
         {
-          _oldccmi_collreg=(OldCCMICollreg*) malloc(sizeof(*_oldccmi_collreg));
-          new(_oldccmi_collreg) OldCCMICollreg(_client, _context,_contextid,_sd,_lapi_device);
-          _oldccmi_collreg->analyze(_contextid, _world_geometry);
-
           _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
           new(_ccmi_collreg) CCMICollreg(_client, (pami_context_t)this, _contextid ,_clientid,_lapi_device);
           _ccmi_collreg->analyze(_contextid, _world_geometry);
@@ -415,13 +403,13 @@ namespace PAMI
                                                 _devices->_shmem[_contextid],
                                                 _lapi_device2,
                                                 _protocol,
-                                                0,
-                                                1,
+                                                1,  //use shared memory
+                                                1,  //use "global" device
                                                 __global.topology_global.size(),
                                                 __global.topology_local.size());
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 
-
+          
           return PAMI_SUCCESS;
         }
 
@@ -478,6 +466,12 @@ namespace PAMI
           result = (cp->*(cp->pAdvance))(maximum);
           return 1;
         }
+
+      inline size_t advance_only_lapi (size_t maximum, pami_result_t & result)
+	{
+          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          result = (cp->*(cp->pAdvance))(maximum);
+	}
 
       inline pami_result_t lock_impl ()
         {
@@ -756,7 +750,7 @@ namespace PAMI
       /*  Memory Manager Pointer                                */
       Memory::MemoryManager                 *_mm;
 
-      /*  Protocol allocator                                    */
+      /*  Protocol allocator                                    */      
       ProtocolAllocator                      _protocol;
 
       /*  The over lapi devices                                 */
@@ -766,9 +760,8 @@ namespace PAMI
       /*  Collective Registrations                              */
       CCMICollreg                           *_ccmi_collreg;
       PGASCollreg                           *_pgas_collreg;
-      OldCCMICollreg                        *_oldccmi_collreg;
       P2PCCMICollreg                        *_p2p_ccmi_collreg;
-
+      
       /*  World Geometry Pointer for this context               */
       LAPIGeometry                          *_world_geometry;
   private:
