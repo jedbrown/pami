@@ -168,8 +168,9 @@ namespace PAMI
         TRACE((stderr, "<%p>:MUMulticombineModel::initializeDescriptor(%p, %p, %zu)\n", this, desc, (void *)payloadPa, bytes));
 
         // opcode or datatype changed so we need to reset our model.
-        if (_receive_state->mu_reset)
+//        if (_receive_state->mu_reset)
         {
+          TRACE((stderr, "<%p>:MUMulticombineModel::initializeDescriptor() _receive_state->mu_dtype_optor %u, _receive_state->mu_word_length %u\n", this, _receive_state->mu_dtype_optor, _receive_state->mu_word_length));
           _desc_model.setOpCode(_receive_state->mu_dtype_optor);
           _desc_model.setWordLength(_receive_state->mu_word_length);
         }
@@ -217,7 +218,8 @@ namespace PAMI
         _receive_state->buffer = _receive_state->rcvpwq ? (uint8_t*)_receive_state->rcvpwq->bufferToProduce() : NULL; /// \todo assert something?
         _receive_state->received_length = 0;
 
-        if ((_receive_state->dtype != multicombine->dtype) || (_receive_state->optor != multicombine->optor))
+        /// \todo this doesn't make sense - looking in user storage?  remove it.
+//        if ((_receive_state->dtype != multicombine->dtype) || (_receive_state->optor != multicombine->optor))
         {
           TRACE((stderr, "<%p>:MUMulticombineModel::postMulticombine_imp dt %d, op %d, support %s\n", this,
                  multicombine->dtype, multicombine->optor, multicombine_model_op_support(multicombine->dtype, multicombine->optor) ? "true" : "false"));
@@ -260,16 +262,18 @@ namespace PAMI
                                                         size_t payload_length)
       {
         TRACE((stderr, "<%p>:MUMulticombineModel::postShortPayload()\n", this));
+        DUMP_HEXDATA("MUMulticombineModel::postShortPayload() payload",(uint32_t*)payload, payload_length/sizeof(unsigned));
 
         MUSPI_InjFifo_t    * injfifo;
         MUHWI_Descriptor_t * hwi_desc;
         void               * payloadVa;
         void               * payloadPa;
 
-        if (_device.nextInjectionDescriptor (&injfifo,
+        if ((_device.emptySendQ ()) &&
+            (_device.nextInjectionDescriptor (&injfifo,
                                              &hwi_desc,
                                              &payloadVa,
-                                             &payloadPa))
+                                             &payloadPa)))
         {
           TRACE((stderr, "<%p>:MUMulticombineModel::postShortPayload().. nextInjectionDescriptor injfifo = %p, hwi_desc = %p, payloadVa = %p, payloadPa = %p\n", this, injfifo, hwi_desc, payloadVa, payloadPa));
           MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) hwi_desc;
@@ -343,6 +347,7 @@ namespace PAMI
                                                    size_t payload_length)
       {
         TRACE((stderr, "<%p>:MUMulticombineModel::postPayload()\n", this));
+        DUMP_HEXDATA("MUMulticombineModel::postPayload() payload",(uint32_t*)payload, payload_length/sizeof(unsigned));
 
         // Determine the physical address of the source buffer.
         //
@@ -363,10 +368,11 @@ namespace PAMI
         void               * payloadVa;
         void               * payloadPa;
 
-        if (_device.nextInjectionDescriptor (&injfifo,
+        if ((_device.emptySendQ ()) &&
+            (_device.nextInjectionDescriptor (&injfifo,
                                              &hwi_desc,
                                              &payloadVa,
-                                             &payloadPa))
+                                             &payloadPa)))
         {
           TRACE((stderr, "<%p>:MUMulticombineModel::postPayload().. nextInjectionDescriptor injfifo = %p, hwi_desc = %p, payloadVa = %p, payloadPa = %p\n", this, injfifo, hwi_desc, payloadVa, payloadPa));
           MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) hwi_desc;
@@ -438,7 +444,8 @@ namespace PAMI
                                                       uint8_t * payload,
                                                       size_t    bytes)
       {
-        TRACE((stderr, "<%p>:MUMulticombineModel::processData()\n", this));
+        TRACE((stderr, "<%p>:MUMulticombineModel::processData() metadata %p, payload %p, bytes %zu\n", this, metadata, payload, bytes));
+        DUMP_HEXDATA("MUMulticombineModel::processData() payload",(uint32_t*)payload, bytes/sizeof(unsigned));
 
         mcombine_recv_state_t* receive_state = (mcombine_recv_state_t*)_recvQ.peekHead();
         // probably the head, but (unlikely) search if it isn't
@@ -449,6 +456,7 @@ namespace PAMI
         // Number of bytes left to copy into the destination buffer
         size_t nleft = receive_state->expected_length - receive_state->received_length;
 
+        TRACE((stderr, "<%p>:MUMulticombineModel::processData() nleft %zu, expected_length %zu, received_length %zu\n", this, nleft, receive_state->expected_length, receive_state->received_length));
         // Number of bytes left to copy from this packet
         if (nleft > bytes) nleft = bytes;
 
@@ -456,9 +464,11 @@ namespace PAMI
         {
           TRACE((stderr, "<%p>:MUMulticombineModel::processData memcpy(%p,%p,%zu)\n", this, receive_state->buffer, payload, nleft));
           memcpy (receive_state->buffer, payload, nleft);
+          DUMP_HEXDATA("MUMulticombineModel::processData() recv buffer",(uint32_t*)receive_state->buffer,nleft/sizeof(unsigned));
           //_device.read ((uint8_t *)(state->info.data.simple.addr) + nbyte, nleft, cookie);
 
           // Update the receive state
+          receive_state->buffer += nleft;
           receive_state->received_length += nleft;
           receive_state->rcvpwq->produceBytes(nleft);
 
@@ -505,6 +515,8 @@ namespace PAMI
       {
         metadata_t * m = (metadata_t*)metadata;
         TRACE ((stderr, "<%p>:MUMulticombineModel::dispatch(), bytes = %zu/%d, connection id %#X\n", arg, bytes, m->sndlen, m->connection_id));
+        DUMP_HEXDATA("MUMulticombineModel::dispatch() metadata",(uint32_t*)metadata, 3);
+        DUMP_HEXDATA("MUMulticombineModel::dispatch() payload",(uint32_t*)payload, bytes/sizeof(unsigned));
 
         MUMulticombineModel * model = (MUMulticombineModel *) arg;
         model->processData(m, (uint8_t*)payload, bytes);

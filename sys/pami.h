@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <sys/uio.h>
 
-#include "pami_config.h"
+#include "pami_sys.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -181,6 +181,28 @@ extern "C"
   /*****************************************************************************/
 
   /**
+   * \brief Options for bi-state dispatch hints
+   */
+  enum
+    {
+      PAMI_HINT2_OFF   = 0, /**< This turns the option off. */
+      PAMI_HINT2_ON    = 1, /**< This turns the option on. */
+    };
+
+  /**
+   * \brief Options for tri-state dispatch hints
+   *
+   * Several dispatch hints accept have a yes/no/maybe sort of
+   * approach.
+   */
+  enum
+    {
+      PAMI_HINT3_DEFAULT   = 0, /**< This hint leaves the option up to the PAMI implementation to choose. */
+      PAMI_HINT3_FORCE_ON  = 1, /**< This allows the user to force an option to be used. */
+      PAMI_HINT3_FORCE_OFF = 2, /**< The user can force the implementation to not use this option. */
+    };
+
+  /**
    * \brief Hints for sending a message
    *
    * \todo better names for the hints
@@ -188,20 +210,19 @@ extern "C"
    */
   typedef struct
   {
-    uint32_t consistency       : 1; /**< Force match ordering semantics                          */
-    uint32_t recv_immediate    : 1; /**< Assert that sends will result in an 'immediate' receive */
+    /* The following hints use the PAMI_HINT2_* values */
     uint32_t buffer_registered : 1; /**< Send and receive buffers are ready for RDMA operations  */
-    uint32_t use_rdma          : 1; /**< Assert/enable RDMA operations                           */
-    uint32_t no_rdma           : 1; /**< Disable RDMA operations                                 */
-    uint32_t no_local_copy     : 1; /**< Disable PAMI making a local copy of data                */
-    uint32_t interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
+    uint32_t consistency       : 1; /**< Force match ordering semantics                          */
     uint32_t high_priority     : 1; /**< Message is delivered with high priority,
-                                       which may result in out-of-order delivery                 */
+                                         which may result in out-of-order delivery               */
+    uint32_t interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
+    uint32_t no_local_copy     : 1; /**< Disable PAMI making a local copy of data                */
     uint32_t no_long_header    : 1; /**< Disable long header support                             */
-    uint32_t use_shmem         : 1; /**< Assert/enable shared memory optimizations               */
-    uint32_t no_shmem          : 1; /**< Disable shared memory optimizationss                    */
+    uint32_t recv_immediate    : 1; /**< Assert that sends will result in an 'immediate' receive */
 
-    uint32_t reserved          :21; /**< Unused at this time                                     */
+    /* The following hints use the PAMI_HINT3_* values */
+    uint32_t use_rdma          : 2; /**< Enable/Disable rdma operations                          */
+    uint32_t use_shmem         : 2; /**< Enable/Disable shared memory optimizations              */
   } pami_send_hint_t;
 
   typedef struct
@@ -754,7 +775,7 @@ extern "C"
    * \see PAMI_Memregion_create
    * \see PAMI_Memregion_destroy
    */
-  typedef size_t pami_memregion_t[8];
+  typedef uint8_t pami_memregion_t[PAMI_MEMREGION_SIZE_STATIC];
 
   /**
    * \brief Create a local memory region for one sided operations
@@ -798,6 +819,9 @@ extern "C"
    *
    * \param[in] context   PAMI application context
    * \param[in] memregion Memory region object
+   *
+   * The memregion object will be changed to an invalid value so that
+   * it is clearly destroyed.
    */
   pami_result_t PAMI_Memregion_destroy (pami_context_t     context,
                                         pami_memregion_t * memregion);
@@ -1219,9 +1243,12 @@ extern "C"
    * \param[in] client   pami client
    * \param[in] geometry The geometry object to free
    * \retval PAMI_SUCCESS Memory free didn't fail
+   *
+   * The geometry handle will be changed to an invalid value so that
+   * it is clearly destroyed.
    */
-  pami_result_t PAMI_Geometry_destroy(pami_client_t    client,
-                                     pami_geometry_t  geometry);
+  pami_result_t PAMI_Geometry_destroy(pami_client_t     client,
+                                      pami_geometry_t * geometry);
 
   /**
    * \brief Create and post a non-blocking alltoall vector operation.
@@ -2122,8 +2149,11 @@ extern "C"
    * resources when the count hits zero.
    *
    * \param[in] type Type identifier to be destroyed
+   *
+   * The type handle will be changed to an invalid value so that it is
+   * clearly destroyed.
    */
-  pami_result_t PAMI_Type_destroy (pami_type_t type);
+  pami_result_t PAMI_Type_destroy (pami_type_t * type);
 
   /**
    * \brief Pack data from a non-contiguous buffer to a contiguous buffer
@@ -2284,6 +2314,7 @@ extern "C"
     PAMI_WTIMEBASE_MHZ,      /**< Q : size_t : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from PAMI_Wtimebase to PAMI_Timer manually. */
     PAMI_WTICK,              /**< Q : double : This has the same definition as MPI_Wtick(). */
     PAMI_MEM_SIZE,           /**< Q : size_t : Size of the core main memory, in units of 1024^2 Bytes    */
+    PAMI_MEMREGION_SIZE,     /**< Q : size_t : Size of the pami_memregion_t handle in this implementation, in units of Bytes. */
     PAMI_SEND_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be transfered with the PAMI_Send_immediate() function. */
     PAMI_RECV_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be received, and provided to the application, in a dispatch function. */
     PAMI_PROCESSOR_NAME,     /**< Q : char[] : A unique name string for the calling process, and should be suitable for use by
@@ -2419,8 +2450,8 @@ extern "C"
    *                       It happens when a job scheduler requires the client
    *                       name to match what's in the job description.
    */
-  pami_result_t PAMI_Client_create (const char   * name,
-                                      pami_client_t * client);
+  pami_result_t PAMI_Client_create (const char    * name,
+                                    pami_client_t * client);
 
   /**
    * \brief Finalize the PAMI runtime for a client program
@@ -2429,11 +2460,13 @@ extern "C"
    *          handle from any thread after the finalize function.
    *
    * \param[in] client PAMI client handle
-   *
    * \retval PAMI_SUCCESS  The client has been successfully destroyed.
    * \retval PAMI_INVAL    The client is invalid, e.g. already destroyed.
+   *
+   * The client handle will be changed to an invalid value so that it
+   * is clearly destroyed.
    */
-  pami_result_t PAMI_Client_destroy (pami_client_t client);
+  pami_result_t PAMI_Client_destroy (pami_client_t * client);
 
   /**
    * \brief Construct an endpoint to address communication destinations
@@ -2583,10 +2616,10 @@ extern "C"
    *                       errors in other parameters.
    */
   pami_result_t PAMI_Context_createv (pami_client_t          client,
-                                    pami_configuration_t   configuration[],
-                                    size_t                count,
-                                    pami_context_t       * context,
-                                    size_t                ncontexts);
+                                      pami_configuration_t   configuration[],
+                                      size_t                 count,
+                                      pami_context_t       * context,
+                                      size_t                 ncontexts);
 
 
   /**
@@ -2598,12 +2631,14 @@ extern "C"
    *
    * \param[in,out] contexts  PAMI communication context list
    * \param[in]     ncontexts The number of contexts in the list.
-   *
    * \retval PAMI_SUCCESS  The contexts have been destroyed.
    * \retval PAMI_INVAL    Some context is invalid, e.g. already destroyed.
+   *
+   * The context handles will be changed to an invalid value so that
+   * they are clearly destroyed.
    */
-  pami_result_t PAMI_Context_destroyv (pami_context_t* contexts,
-                                       size_t          ncontexts);
+  pami_result_t PAMI_Context_destroyv (pami_context_t * contexts,
+                                       size_t           ncontexts);
 
   /**
    * \brief Post work to a context, thread-safe
@@ -2633,10 +2668,10 @@ extern "C"
    * \retval PAMI_SUCCESS  The work has been posted.
    * \retval PAMI_INVAL    There were errors in the parameters.
    */
-  pami_result_t PAMI_Context_post (pami_context_t        context,
-                                 pami_work_t         * work,
-                                 pami_work_function    fn,
-                                 void               * cookie);
+  pami_result_t PAMI_Context_post (pami_context_t       context,
+                                   pami_work_t        * work,
+                                   pami_work_function   fn,
+                                   void               * cookie);
 
 
   /**

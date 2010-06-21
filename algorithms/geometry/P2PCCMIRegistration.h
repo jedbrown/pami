@@ -71,7 +71,7 @@ namespace CCMI
                        unsigned                  * colors,
                        unsigned                  & ncolors)
       {
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         ncolors = 1;
         colors[0] = CCMI::Schedule::NO_COLOR;
       }
@@ -79,14 +79,14 @@ namespace CCMI
       void binomial_broadcast_metadata(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         strcpy(&m->name[0], "P2P_CCMI Binom_Bcast");
       }
 
       void ring_broadcast_metadata(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         strcpy(&m->name[0], "P2P_CCMI Ring_Bcast");
       }
 
@@ -118,14 +118,14 @@ namespace CCMI
 
       void am_rb_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         // \todo:  fill in other metadata
         strcpy(&m->name[0], "P2P_CCMI AS_RB_Binom_Bcast");
       }
 
       void am_cs_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         // \todo:  fill in other metadata
         strcpy(&m->name[0], "P2P_CCMI AS_CS_Binom_Bcast");
       }
@@ -136,7 +136,7 @@ namespace CCMI
                            Interfaces::NativeInterface * native,
                            PAMI_GEOMETRY_CLASS         * g)
       {
-        TRACE_ADAPTOR((stderr, "<%p>AsyncRBBinomialBroadcastComposite::create_schedule()\n", this));
+        TRACE_INIT((stderr, "<%p>AsyncRBBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
       }
 
@@ -145,7 +145,7 @@ namespace CCMI
                       PAMI_GEOMETRY_CLASS                                    *geometry,
                       ConnectionManager::BaseConnectionManager              **connmgr)
       {
-        TRACE_ADAPTOR((stderr, "<%p>AsyncRBBinomialBroadcastFactory::getKey()\n", this));
+        TRACE_INIT((stderr, "<%p>AsyncRBBinomialBroadcastFactory::getKey()\n",(void*)NULL));
         return root;
       }
 
@@ -155,7 +155,7 @@ namespace CCMI
                               Interfaces::NativeInterface * native,
                               PAMI_GEOMETRY_CLASS          * g)
       {
-        TRACE_ADAPTOR((stderr, "<%p>AsyncCSBinomialBroadcastComposite::create_schedule()\n", this));
+        TRACE_INIT((stderr, "<%p>AsyncCSBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
       }
 
@@ -164,7 +164,7 @@ namespace CCMI
                          PAMI_GEOMETRY_CLASS                      * geometry,
                          ConnectionManager::BaseConnectionManager **connmgr)
       {
-        TRACE_ADAPTOR((stderr, "<%p>AsyncCSBinomialBroadcastFactory::getKey\n", this));
+        TRACE_INIT((stderr, "<%p>AsyncCSBinomialBroadcastFactory::getKey\n",(void*)NULL));
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -174,7 +174,7 @@ namespace CCMI
 
         return cm->updateConnectionId( geometry->comm() );
       }
-      
+
       typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
       < CCMI::Schedule::ListMultinomial,
         CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
@@ -188,12 +188,12 @@ namespace CCMI
         getKey >
       AsyncRBBinomialBroadcastFactory;
 
-      
+
       typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
       < CCMI::Schedule::ListMultinomial,
         CCMI::ConnectionManager::CommSeqConnMgr,
         create_schedule_as > AsyncCSBinomialBroadcastComposite;
-      
+
       typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT
       < AsyncCSBinomialBroadcastComposite,
         am_cs_broadcast_metadata,
@@ -206,7 +206,7 @@ namespace CCMI
     {
       void am_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         // \todo:  fill in other metadata
         strcpy(&m->name[0], "P2P_CCMI Binom_AMBcast");
       }
@@ -217,7 +217,7 @@ namespace CCMI
                            Interfaces::NativeInterface * native,
                            PAMI_GEOMETRY_CLASS          * g)
       {
-        TRACE_ADAPTOR((stderr, "<%p>AMBinomialBroadcastComposite::create_schedule()\n", this));
+        TRACE_INIT((stderr, "<%p>AMBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
       }
 
@@ -364,12 +364,12 @@ namespace PAMI
             _binomial_allreduce_factory(NULL),
             _composite_ni(NULL)
           {
-            TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration()\n", this ));
+            TRACE_INIT((stderr, "<%p>CCMIRegistration()\n", this ));
             if ((use_shmem) && (local_size > 1) && (use_p2p))
               {
                 // Use composite P2P/Shmem if both enabled and > 1 process per node
                 // Setup Composite P2p/Shmem factories
-                TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration() register composite\n", this ));
+                TRACE_INIT((stderr, "<%p>CCMIRegistration() register composite\n", this ));
                 setupFactories<T_CompositeNI_AM,
                                T_CompositeNI_AS,
                                T_ShmemEager,
@@ -381,7 +381,7 @@ namespace PAMI
               {
                 // Use P2P if requested or only one process (some simple test scenario)
                 // Setup P2P factories
-                TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration() register MU\n", this ));
+                TRACE_INIT((stderr, "<%p>CCMIRegistration() register MU\n", this ));
                 setupFactories<T_P2PNI_AM,
                                T_P2PNI_AS,
                                T_P2PEager,
@@ -391,7 +391,7 @@ namespace PAMI
               {
                 // Use Shmem if requested and available ( > 1 process per node)
                 // Setup Shmem factories
-                TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration() register shmem\n", this ));
+                TRACE_INIT((stderr, "<%p>CCMIRegistration() register shmem\n", this ));
                 setupFactories<T_ShmemNI_AM,
                                T_ShmemNI_AS,
                                T_ShmemEager,
@@ -399,12 +399,12 @@ namespace PAMI
               }
             // Disabled MU and can't use shmem (only 1 process per node)? Then abort.
             else PAMI_abort();
-            TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration() exit\n", this));
+            TRACE_INIT((stderr, "<%p>CCMIRegistration() exit\n", this));
           }
 
           inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
           {
-            TRACE_ADAPTOR((stderr,
+            TRACE_INIT((stderr,
                            "<%p>CCMIRegistration::analyze_impl() context_id %zu, geometry %p\n",
                            this,
                            context_id,
@@ -443,7 +443,7 @@ namespace PAMI
           static pami_geometry_t mapidtogeometry (int comm)
           {
             pami_geometry_t g = geometry_map[comm];
-            TRACE_ADAPTOR((stderr, "<%p>CCMIRegistration::mapidtogeometry()\n", g));
+            TRACE_INIT((stderr, "<%p>CCMIRegistration::mapidtogeometry()\n", g));
             return g;
           }
 
@@ -552,7 +552,7 @@ namespace PAMI
             COMPILE_TIME_ASSERT(sizeof(T_Factory) <= T_Allocator::objsize);
             factory = (T_Factory*) _allocator.allocateObject ();
           }
-        
+
           template<class T_NI_ActiveMessage, class T_NI_Allsided, class T_Protocol1, class T_Device1, class T_Protocol2, class T_Device2>
           void setupFactories(T_Device1 &device1, T_Device2 &device2)
           {

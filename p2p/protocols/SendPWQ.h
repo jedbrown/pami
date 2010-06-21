@@ -24,7 +24,7 @@
   #undef TRACE_ERR
   #define TRACE_ERR(x) fprintf x
 #endif
- 
+
 namespace PAMI
 {
   namespace Protocol

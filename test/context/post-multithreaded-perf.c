@@ -183,7 +183,7 @@ int main (int argc, char ** argv)
           fprintf (stdout, "\n");
         }
 
-      result = PAMI_Client_destroy (client);
+      result = PAMI_Client_destroy(&client);
 
       if (result != PAMI_SUCCESS)
         {
@@ -345,7 +345,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-  result = PAMI_Client_destroy (client);
+  result = PAMI_Client_destroy(&client);
   if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);

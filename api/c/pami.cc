@@ -209,10 +209,12 @@ extern "C" pami_result_t PAMI_Geometry_world (pami_client_t                clien
 /// \copydoc PAMI_Geometry_destroy
 ///
 extern "C" pami_result_t PAMI_Geometry_destroy(pami_client_t    client,
-                                   pami_geometry_t  geometry)
+                                               pami_geometry_t *geometry)
 {
   PAMI::Client * _client = (PAMI::Client *) client;
-  return _client->geometry_destroy (geometry);
+  pami_result_t rc = _client->geometry_destroy (*geometry);
+  *geometry = NULL;
+  return rc;
 }
 
 ///
@@ -406,8 +408,9 @@ extern "C" pami_result_t PAMI_Type_sizeof (pami_type_t type)
 ///
 /// \copydoc PAMI_Type_destroy
 ///
-extern "C" pami_result_t PAMI_Type_destroy (pami_type_t type)
+extern "C" pami_result_t PAMI_Type_destroy (pami_type_t *type)
 {
+  *type = NULL;
   return PAMI_UNIMPL;
 }
 
@@ -974,9 +977,10 @@ extern "C" pami_result_t PAMI_Client_create (const char * name,
 ///
 /// \copydoc PAMI_Client_destroy
 ///
-extern "C" pami_result_t PAMI_Client_destroy (pami_client_t client)
+extern "C" pami_result_t PAMI_Client_destroy (pami_client_t *client)
 {
-  PAMI::Client::destroy ((PAMI::Client *) client);
+  PAMI::Client::destroy ((PAMI::Client *) *client);
+  *client = NULL;
   return PAMI_SUCCESS;
 }
 
@@ -1297,4 +1301,29 @@ extern "C" pami_result_t PAMI_Resume_totask (pami_context_t   context,
 {
   PAMI::Context * ctx = (PAMI::Context *) context;
   return ctx->resume_totask (dest, count);
+}
+
+
+///
+/// \copydoc PAMI_Task2Network
+///
+extern "C" pami_result_t PAMI_Task2Network(pami_task_t task,
+                                           pami_coord_t *ntw)
+{
+#if defined(PLATFORM_BGP) || defined(PLATFORM_BGQ)
+  return __global.mapping.task2network(task, ntw, PAMI_N_TORUS_NETWORK);
+#else
+  assert(0);
+#endif
+}
+
+
+///
+/// \copydoc PAMI_Network2Task
+///
+extern "C" pami_result_t PAMI_Network2Task(pami_coord_t ntw,
+                                           pami_task_t *task)
+{
+  pami_network type;
+  return __global.mapping.network2task(&ntw, task, &type);
 }

@@ -116,7 +116,7 @@ int check_rcvbuf (void *buf, int bytes)
     {
       if (cbuf[i-1] != c)
         {
-          fprintf(stderr, "Check failed %.2u != %.2u \n", cbuf[i-1], c);
+          fprintf(stderr, "Check(%d) failed <%p>buf[%d]=%.2u != %.2u \n",bytes,buf,i-1, cbuf[i-1], c);
           return -1;
         }
 
@@ -365,7 +365,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-  result = PAMI_Client_destroy (client);
+  result = PAMI_Client_destroy(&client);
 
   if (result != PAMI_SUCCESS)
     {

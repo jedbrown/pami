@@ -223,6 +223,7 @@ void PAMI::Device::MU::dumpDescriptor(const char* string, const MUHWI_Descriptor
       fprintf(stderr, "hdr->Destination.Destination.C_Destination %#X\n", chdr->Destination.Destination.C_Destination);
       fprintf(stderr, "hdr->Destination.Destination.D_Destination %#X\n", chdr->Destination.Destination.D_Destination);
       fprintf(stderr, "hdr->Destination.Destination.E_Destination %#X\n", chdr->Destination.Destination.E_Destination);
+      fprintf(stderr, "hdr->Byte8.Byte8                           %#X\n", chdr->Byte8.Byte8                          );
       fprintf(stderr, "hdr->Byte8.Packet_Type                     %#X\n", chdr->Byte8.Packet_Type                    );
       fprintf(stderr, "hdr->Byte8.Size                            %#X\n", chdr->Byte8.Size                           );
       fprintf(stderr, "hdr->Injection_Info.Skip                   %#X\n", chdr->Injection_Info.Skip                  );

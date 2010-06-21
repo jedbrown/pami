@@ -168,7 +168,7 @@ namespace CCMI
                           void                            * cd = NULL
                         )
         {
-          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::initialize()\n",this));
+          TRACE_ADAPTOR((stderr,"<%p>Allreduce::AsyncComposite::initialize() count %u, dtype %#X, op %#X, root %d\n",this, count, dtype, op, root));
           allreduce->setSendState(request);
           allreduce->setRoot( root );
           allreduce->setDataInfo(srcbuf, dstbuf);

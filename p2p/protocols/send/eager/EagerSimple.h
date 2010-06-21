@@ -20,9 +20,8 @@
 
 #include "components/memory/MemoryAllocator.h"
 
-#ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
-#endif
+#undef TRACE_ERR
+#define TRACE_ERR(x)  //fprintf x
 
 namespace PAMI
 {
@@ -56,7 +55,7 @@ namespace PAMI
             size_t             bytes;     ///< Number of bytes of application data being sent
             size_t             metabytes; ///< Number of bytes of application metadata being sent
             void             * va_send;   ///< Virtual address of the send_state_t on the origin
-            pami_endpoint_t    origin;    ///< Endpoint that originated the transfer 
+            pami_endpoint_t    origin;    ///< Endpoint that originated the transfer
           } protocol_metadata_t;
 
 
@@ -92,26 +91,29 @@ namespace PAMI
           /// \brief Eager simple send protocol constructor.
           ///
           /// \param[in]  dispatch     Dispatch identifier
-          /// \param[in]  dispatch_fn  Dispatch callback function
+          /// \param[in]  dispatch_fn  Point-to-point dispatch callback function
           /// \param[in]  cookie       Opaque application dispatch data
           /// \param[in]  device       Device that implements the message interface
+          /// \param[in]  origin       Origin endpoint
+          /// \param[in]  context      Origin communcation context
           /// \param[out] status       Constructor status
           ///
-          inline EagerSimple (size_t                      dispatch,
-                              pami_dispatch_callback_fn   dispatch_fn,
-                              void                      * cookie,
-                              T_Device                  & device,
-                              pami_endpoint_t             origin,
-                              pami_result_t             & status) :
+          inline EagerSimple (size_t                 dispatch,
+                              pami_dispatch_p2p_fn   dispatch_fn,
+                              void                 * cookie,
+                              T_Device             & device,
+                              pami_endpoint_t        origin,
+                              pami_context_t         context,
+                              pami_result_t        & status) :
               _envelope_model (device),
               _longheader_model (device),
               _data_model (device),
               _ack_model (device),
               _device (device),
-              _context (device.getContext()),
+              _origin (origin),
+              _context (context),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
-              _origin (origin),
               _connection (device)
           {
             // ----------------------------------------------------------------
@@ -494,12 +496,11 @@ namespace PAMI
           T_Model          _data_model;
           T_Model          _ack_model;
           T_Device       & _device;
+          pami_endpoint_t  _origin;
           pami_context_t   _context;
 
-
-          pami_dispatch_callback_fn   _dispatch_fn;
+          pami_dispatch_p2p_fn   _dispatch_fn;
           void                     * _cookie;
-          pami_endpoint_t  _origin;
 
           T_Connection              _connection;
 
@@ -530,7 +531,7 @@ namespace PAMI
             TRACE_ERR((stderr, ">> EagerSimple::process_envelope() .. origin = 0x%08x, header = %p, header bytes = %zu\n", metadata->origin, header, metadata->metabytes));
 
             // Invoke the registered dispatch function.
-            _dispatch_fn.p2p (_context,            // Communication context
+            _dispatch_fn (_context,            // Communication context
                               _cookie,             // Dispatch cookie
                               header,              // Application metadata
                               metadata->metabytes, // Application metadata bytes

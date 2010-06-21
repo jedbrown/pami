@@ -50,19 +50,20 @@ namespace PAMI
         public:
 
           template <class T_Allocator>
-          static Eager * generate (size_t                      dispatch,
-                                   pami_dispatch_callback_fn   dispatch_fn,
-                                   void                      * cookie,
-                                   T_Device                  & device,
-                                   pami_endpoint_t             origin,
-                                   T_Allocator               & allocator,
-                                   pami_result_t             & result)
+          static Eager * generate (size_t                 dispatch,
+                                   pami_dispatch_p2p_fn   dispatch_fn,
+                                   void                 * cookie,
+                                   T_Device             & device,
+                                   pami_endpoint_t        origin,
+                                   pami_context_t         context,
+                                   T_Allocator          & allocator,
+                                   pami_result_t        & result)
           {
             TRACE_ERR((stderr, ">> Eager::generate() dispatch %zu\n",dispatch));
             COMPILE_TIME_ASSERT(sizeof(Eager) <= T_Allocator::objsize);
 
             Eager * eager = (Eager *) allocator.allocateObject ();
-            new ((void *)eager) Eager (dispatch, dispatch_fn, cookie, device, origin, result);
+            new ((void *)eager) Eager (dispatch, dispatch_fn, cookie, device, origin, context, result);
             if (result != PAMI_SUCCESS)
             {
               allocator.returnObject (eager);
@@ -81,24 +82,26 @@ namespace PAMI
           ///       conversions.
           ///
           /// \param[in]  dispatch    Dispatch identifier
-          /// \param[in]  dispatch_fn Dispatch callback function
+          /// \param[in]  dispatch_fn Point-to-point dispatch callback function
           /// \param[in]  cookie      Opaque application dispatch data
           /// \param[in]  device      Device that implements the message interface
           /// \param[in]  origin      Origin endpoint
           /// \param[out] status      Constructor status
           ///
-          inline Eager (size_t                      dispatch,
-                        pami_dispatch_callback_fn   dispatch_fn,
-                        void                      * cookie,
-                        T_Device                  & device,
-                        pami_endpoint_t             origin,
-                        pami_result_t             & status) :
+          inline Eager (size_t                 dispatch,
+                        pami_dispatch_p2p_fn   dispatch_fn,
+                        void                 * cookie,
+                        T_Device             & device,
+                        pami_endpoint_t        origin,
+                        pami_context_t         context,
+                        pami_result_t        & status) :
               PAMI::Protocol::Send::Send (),
               EagerImmediate<T_Model, T_Device> (dispatch,
                                                  dispatch_fn,
                                                  cookie,
                                                  device,
                                                  origin,
+                                                 context,
                                                  status),
               EagerSimple<T_Model, T_Device,
                           T_LongHeader, T_Connection> (dispatch,
@@ -106,6 +109,7 @@ namespace PAMI
                                                        cookie,
                                                        device,
                                                        origin,
+                                                       context,
                                                        status)
           {
           };

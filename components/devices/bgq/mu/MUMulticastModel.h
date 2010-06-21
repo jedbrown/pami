@@ -53,7 +53,7 @@ namespace PAMI
       typedef struct __attribute__((__packed__)) __mu_multicast_msgdata
       {
         unsigned          msgcount;
-        unsigned          msgpad[3];
+        unsigned          msgpad[7]; /// \todo pad to 32 bytes to workaround unknown payload length problem
         pami_quad_t        msginfo;
       } mu_multicast_msgdata_t __attribute__ ((__aligned__ (16)));
 
@@ -225,7 +225,7 @@ namespace PAMI
         else
         { // post >= 2 packets- the msginfo header packet and the data (multi-)packet
           postHeader(state_data, state_data->message[0], mcast->connection_id,
-                     msgsize, msgdata, mcast->msgcount);
+                     msgsize, msgdata, mcast->msgcount, NULL, length);
           postData(state_data->message[1], mcast->connection_id,
                    payload, length);
         }
@@ -260,7 +260,7 @@ namespace PAMI
                                                void*               payload,
                                                size_t              payload_length)
       {
-        TRACE((stderr, "<%p>:MUMulticastModel::postHeader()\n", this));
+        TRACE((stderr, "<%p>:MUMulticastModel::postHeader() connection_id %u, total_length %zu, msgcount %u, payload %p, payload_length %zu\n", this,connection_id, total_length, msgcount, payload,payload_length));
 
         MUSPI_InjFifo_t    * injfifo;
         MUHWI_Descriptor_t * hwi_desc;
@@ -268,10 +268,11 @@ namespace PAMI
         void               * payloadPa;
 
         // Check if we can inject directly to to fifo
-        if (_device.nextInjectionDescriptor (&injfifo,
+        if ((_device.emptySendQ ()) &&
+            (_device.nextInjectionDescriptor (&injfifo,
                                              &hwi_desc,
                                              &payloadVa,
-                                             &payloadPa))
+                                             &payloadPa)))
         {
           TRACE((stderr, "<%p>:MUMulticastModel::postHeader().. nextInjectionDescriptor injfifo = %p, hwi_desc = %p, payloadVa = %p, payloadPa = %p\n", this, injfifo, hwi_desc, payloadVa, payloadPa));
           MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) hwi_desc;
@@ -281,6 +282,13 @@ namespace PAMI
 
           // First the msgcount
           *(unsigned*)data = msgcount;
+          *(((unsigned*)data)+1) = 0xB0BCF001;//debug
+          *(((unsigned*)data)+2) = 0xB0BCF002;//debug
+          *(((unsigned*)data)+3) = 0xB0BCF003;//debug
+          *(((unsigned*)data)+4) = 0xB0BCF004;//debug
+          *(((unsigned*)data)+5) = 0xB0BCF005;//debug
+          *(((unsigned*)data)+6) = 0xB0BCF006;//debug
+          *(((unsigned*)data)+7) = 0xB0BCF007;//debug
           // Skip the msgcount and padding
           data += sizeof(mu_multicast_msgdata_t().msgcount) + sizeof(mu_multicast_msgdata_t().msgpad);
 
@@ -288,15 +296,18 @@ namespace PAMI
           size_t msglength = msgcount * sizeof(mu_multicast_msgdata_t().msginfo);
           TRACE((stderr, "<%p>:MUMulticastModel::postHeader()..msginfo memcpy(%p,%p,%zu)\n", this, data, msginfo, msglength));
           memcpy (data, msginfo, msglength);
+          DUMP_HEXDATA("MUMulticastModel::postHeader()",(uint32_t*)payloadVa, (sizeof(mu_multicast_msgdata_t().msgcount) + sizeof(mu_multicast_msgdata_t().msgpad) + msglength)/sizeof(unsigned));
           data += msglength;
 
           // Now the (optional) payload
-          TRACE((stderr, "<%p>:MUMulticastModel::postHeader()..payload memcpy(%p,%p,%zu)\n", this, data, payload, payload_length));
+          TRACE((stderr, "<%p>:MUMulticastModel::postHeader()..payload memcpy(%p,%p,%zu)\n", this, data, payload, payload?payload_length:0));
 
-          if (payload_length) memcpy (data, payload, payload_length);
+          if (payload) memcpy (data, payload, payload_length);
+          DUMP_HEXDATA("MUMulticastModel::postHeader()",(uint32_t*)data,payload?payload_length/sizeof(unsigned):0);
 
           // Initialize the descriptor directly in the injection fifo.
           initializeDescriptor (desc, (uint64_t) payloadPa, total_length);
+          DUMP_HEXDATA("MUMulticastModel::postHeader() payload",(uint32_t*)payloadVa, total_length/sizeof(unsigned));
 
           // Put the metadata into the network header in the descriptor.
           MemoryFifoPacketHeader_t * hdr =
@@ -308,6 +319,7 @@ namespace PAMI
           metadata->root          = __global.mapping.task();
           metadata->sndlen        = payload_length;
 
+          DUMP_HEXDATA("MUMulticastModel::postHeader() header",(uint32_t*)hdr, sizeof(MemoryFifoPacketHeader_t)/sizeof(unsigned));
           // Advance the injection fifo descriptor tail which actually enables
           // the MU hardware to process the descriptor and send the packet on the torus.
           DUMP_DESCRIPTOR("MUMulticastModel::postHeader().. before MUSPI_InjFifoAdvanceDesc()", desc);
@@ -337,18 +349,21 @@ namespace PAMI
           state->niov = 1;
           state->iov[0].iov_base = state->msghead;
           state->iov[0].iov_len = sizeof(state->msghead);
+          DUMP_HEXDATA("MUMulticastModel::postHeader() msghead",(uint32_t*)state->iov[0].iov_base, state->iov[0].iov_len/sizeof(unsigned));
 
           if (msgcount) /// \todo if! then set a bit in metadata and don't send any msghead?
           {
             state->iov[1].iov_base = msginfo;
             state->iov[1].iov_len = msgcount * sizeof(mu_multicast_msgdata_t().msginfo);
+            DUMP_HEXDATA("MUMulticastModel::postHeader() msginfo",(uint32_t*)state->iov[1].iov_base, state->iov[1].iov_len/sizeof(unsigned));
             state->niov++;
           }
 
-          if (payload_length)
+          if (payload)
           {
             state->iov[state->niov].iov_base = payload;
             state->iov[state->niov].iov_len = payload_length;
+            DUMP_HEXDATA("MUMulticastModel::postHeader() payload",(uint32_t*)state->iov[state->niov].iov_base, state->iov[state->niov].iov_len/sizeof(unsigned));
             state->niov++;
           }
 
@@ -381,7 +396,7 @@ namespace PAMI
                                              void* payload,
                                              size_t payload_length)
       {
-        TRACE((stderr, "<%p>:MUMulticastModel::postData()\n", this));
+        TRACE((stderr, "<%p>:MUMulticastModel::postData() connection_id %u, payload %p, payload_length %zu\n", this,connection_id, payload, payload_length));
 
         // Determine the physical address of the source buffer.
         //
@@ -402,13 +417,16 @@ namespace PAMI
         void               * payloadVa;
         void               * payloadPa;
 
-        if (_device.nextInjectionDescriptor (&injfifo,
+        if ((_device.emptySendQ ()) &&
+            (_device.nextInjectionDescriptor (&injfifo,
                                              &hwi_desc,
                                              &payloadVa,
-                                             &payloadPa))
+                                             &payloadPa)))
         {
-          TRACE((stderr, "<%p>:MUMulticastModel::postData().. nextInjectionDescriptor injfifo = %p, hwi_desc = %p, payloadVa = %p, payloadPa = %p\n", this, injfifo, hwi_desc, payloadVa, payloadPa));
+          TRACE((stderr, "<%p>:MUMulticastModel::postData().. nextInjectionDescriptor injfifo = %p, hwi_desc = %p, payload = %p, payloadVa = %p, payloadPa = %p, paddr = %p\n", this, injfifo, hwi_desc, payload, payloadVa, payloadPa, (void*)paddr));
           MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) hwi_desc;
+
+          DUMP_HEXDATA("MUMulticastModel::postData() payload",(uint32_t*)payload, payload_length/sizeof(unsigned));
 
           // Initialize the descriptor directly in the injection fifo.
           initializeDescriptor (desc, paddr, payload_length);
@@ -434,6 +452,7 @@ namespace PAMI
         else
         {
           TRACE((stderr, "<%p>:MUMulticastModel::postData().. nextInjectionDescriptor failed\n", this));
+          DUMP_HEXDATA("MUMulticastModel::postData() payload",(uint32_t*)paddr, payload_length/sizeof(unsigned));
 
           // Construct a message and post to the device to be processed later.
           new (&message) InjFifoMessage ();
@@ -467,7 +486,7 @@ namespace PAMI
                                                    mu_multicast_msgdata_t  * msgdata,
                                                    size_t       bytes)
       {
-        TRACE((stderr, "<%p>:MUMulticastModel::processHeader() msgcount = %d\n", this, msgdata->msgcount));
+        TRACE((stderr, "<%p>:MUMulticastModel::processHeader() msgcount = %d, bytes = %zu\n", this, msgdata->msgcount, bytes));
 
 
         // Only one active (receive) connection id at a time
@@ -537,6 +556,7 @@ namespace PAMI
         TRACE((stderr, "<%p>:MUMulticastModel::processData() metadata %p, payload %p, bytes %zu, nleft %zu\n",
                this, metadata, payload, bytes, (_receive_state.expected_length - _receive_state.received_length)));
 
+        DUMP_HEXDATA("MUMulticastModel::processData() payload",(uint32_t*)payload, bytes/sizeof(unsigned));
 
         PAMI_assertf(_receive_state.active, "connection_id %#X/%#X\n", _receive_state.connection_id, metadata->connection_id);
 
@@ -550,9 +570,11 @@ namespace PAMI
         {
           TRACE((stderr, "<%p>:MUMulticastModel::processData memcpy(%p,%p,%zu)\n", this, _receive_state.buffer, payload, nleft));
           memcpy (_receive_state.buffer, payload, nleft);
+          DUMP_HEXDATA("MUMulticastModel::processData() recv buffer",(uint32_t*)_receive_state.buffer,nleft/sizeof(unsigned));
           //_device.read ((uint8_t *)(state->info.data.simple.addr) + nbyte, nleft, cookie);
 
           // Update the receive state
+          _receive_state.buffer += nleft;
           _receive_state.received_length += nleft;
           _receive_state.rcvpwq->produceBytes(nleft);
 
@@ -585,7 +607,9 @@ namespace PAMI
       {
         metadata_t * m = (metadata_t*)metadata;
 
-        TRACE ((stderr, "<%p>:MUMulticastModel::dispatch(), root = %d, bytes = %zu/%d, connection id %#X\n", arg, (m->root), bytes, m->sndlen, m->connection_id));
+        TRACE ((stderr, "<%p>:MUMulticastModel::dispatch(),cookie = %p, root = %d, bytes = %zu/%d, connection id %#X\n", arg, cookie, (m->root), bytes, m->sndlen, m->connection_id));
+        DUMP_HEXDATA("MUMulticastModel::dispatch() metadata",(uint32_t*)metadata, 3);
+        DUMP_HEXDATA("MUMulticastModel::dispatch() payload",(uint32_t*)payload, bytes/sizeof(unsigned));
 
         MUMulticastModel * model = (MUMulticastModel *) arg;
         /// \todo I could use two dispatches instead of an if?

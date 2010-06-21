@@ -6,6 +6,10 @@
 #define __algorithms_protocols_broadcast_MultiCastComposite_h__
 
 #include "algorithms/composite/Composite.h"
+
+#include "algorithms/connmgr/SimpleConnMgr.h"
+#include "algorithms/connmgr/CommSeqConnMgr.h"
+
 #include "util/ccmi_util.h"
 
 
@@ -106,6 +110,7 @@ namespace CCMI
       /// When the multisync is complete, the root will multicast and the
       /// non-roots will have buffers ready to receive the data.
       ///
+      template <class T_Geometry>
       class MultiCastComposite2 : public CCMI::Executor::Composite
       {
       protected:
@@ -129,7 +134,7 @@ namespace CCMI
           free(_buffer);
         }
         MultiCastComposite2 (Interfaces::NativeInterface          * mInterface,
-                             ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS>     * cmgr,
+                             ConnectionManager::CommSeqConnMgr    * cmgr,
                              pami_geometry_t                        g,
                              pami_xfer_t                          * cmd,
                              pami_event_function                    fn,
@@ -184,7 +189,9 @@ namespace CCMI
           _minfo.context            = 0; /// \todo ?
           //_minfo.cb_done.function   = _cb_done;
           //_minfo.cb_done.clientdata = _clientdata;
-          _minfo.connection_id      = 0; /// \todo ?
+          T_Geometry *bgqGeometry = (T_Geometry *)g;
+          unsigned comm = bgqGeometry->comm();
+          _minfo.connection_id      =  cmgr->updateConnectionId(comm);
           _minfo.roles              = -1U;
           _minfo.dst_participants   = (pami_topology_t *)&_destinations;
           _minfo.src_participants   = (pami_topology_t *)&_root;
@@ -202,9 +209,9 @@ namespace CCMI
           _msync.roles              = -1U;
           _msync.participants       = (pami_topology_t *)&_all;
 
-          pami_dispatch_callback_fn lfn;
-          lfn.multicast = dispatch_multicast_fn;
-          _native->setDispatch(lfn, this);
+//        pami_dispatch_callback_fn lfn;
+//        lfn.multicast = dispatch_multicast_fn;
+//        _native->setDispatch(lfn, this);
 
         }
         virtual void start()
@@ -236,27 +243,27 @@ namespace CCMI
           composite->startMcast();
         }
 
-        static void dispatch_multicast_fn(const pami_quad_t     * msginfo,       // \param[in] msginfo    Metadata
-                                          unsigned                msgcount,      // \param[in] msgcount Count of metadata
-                                          unsigned                connection_id, // \param[in] connection_id  Stream ID of data
-                                          size_t                  root,          // \param[in] root        Sending task
-                                          size_t                  sndlen,        // \param[in] sndlen      Length of data sent
-                                          void                  * clientdata,    // \param[in] clientdata  Opaque arg
-                                          size_t                * rcvlen,        // \param[out] rcvlen     Length of data to receive
-                                          pami_pipeworkqueue_t ** rcvpwq,        // \param[out] rcvpwq     Where to put recv data
-                                          pami_callback_t       * cb_done)       // \param[out] cb_done    Completion callback to invoke when data received
+//      static void dispatch_multicast_fn(const pami_quad_t     * msginfo,       // \param[in] msginfo    Metadata
+//                                        unsigned                msgcount,      // \param[in] msgcount Count of metadata
+//                                        unsigned                connection_id, // \param[in] connection_id  Stream ID of data
+//                                        size_t                  root,          // \param[in] root        Sending task
+//                                        size_t                  sndlen,        // \param[in] sndlen      Length of data sent
+//                                        void                  * clientdata,    // \param[in] clientdata  Opaque arg
+//                                        size_t                * rcvlen,        // \param[out] rcvlen     Length of data to receive
+//                                        pami_pipeworkqueue_t ** rcvpwq,        // \param[out] rcvpwq     Where to put recv data
+//                                        pami_callback_t       * cb_done)       // \param[out] cb_done    Completion callback to invoke when data received
+//      {
+//        TRACE_ADAPTOR((stderr,"<%p>%s\n", clientdata,__PRETTY_FUNCTION__));
+//        MultiCastComposite2 * composite = (MultiCastComposite2 *)clientdata;
+//        composite->dispatch_multicast(rcvlen,  rcvpwq,  cb_done);
+//      }
+//
+        void notifyRecv(size_t                  root,          // \param[in]  root       Sending task
+                        const pami_quad_t      *msginfo,       // \param[in]  msginfo    Metadata
+                        pami_pipeworkqueue_t ** rcvpwq,        // \param[out] rcvpwq     Where to put recv data
+                        pami_callback_t       * cb_done)       // \param[out] cb_done    Completion callback to invoke when data received
         {
-          TRACE_ADAPTOR((stderr,"<%p>%s\n", clientdata,__PRETTY_FUNCTION__));
-          MultiCastComposite2 * composite = (MultiCastComposite2 *)clientdata;
-          composite->dispatch_multicast(rcvlen,  rcvpwq,  cb_done);
-        }
-
-        void dispatch_multicast(size_t                * rcvlen,        // Length of data to receive
-                                pami_pipeworkqueue_t ** rcvpwq,        // Where to put recv data
-                                pami_callback_t       * cb_done)       // Completion callback to invoke when data received
-        {
-          TRACE_ADAPTOR((stderr,"<%p>%s\n", this,__PRETTY_FUNCTION__));
-          *rcvlen  = _bytes;
+          TRACE_ADAPTOR((stderr,"<%p>%s root %zu\n", this,__PRETTY_FUNCTION__, root));
           *rcvpwq  = (pami_pipeworkqueue_t *)&_dst;
           cb_done->function   = _cb_done;
           cb_done->clientdata = _clientdata;

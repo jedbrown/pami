@@ -32,7 +32,7 @@ namespace CCMI
                                        PAMI_GEOMETRY_CLASS    *geometry,
                                        ConnectionManager::BaseConnectionManager **connmgr);
 
-    
+
     template <class T_ConnectionManager>
     class ConnectionManager: public BaseConnectionManager
     {

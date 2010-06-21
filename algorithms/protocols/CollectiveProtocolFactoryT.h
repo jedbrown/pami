@@ -8,6 +8,7 @@
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "algorithms/interfaces/NativeInterface.h"
 #include "components/memory/MemoryAllocator.h"
+#include "util/ccmi_util.h"
 
 namespace CCMI
 {
@@ -32,10 +33,10 @@ namespace CCMI
                     pami_event_function                        fn,
                     void                                     * cookie,
                     CollectiveProtocolFactoryT               * factory):
-                _obj(native, cmgr, geometry, cmd, fn, cookie),
                 _factory(factory),
                 _user_done_fn(cmd->cb_done),
-                _user_cookie(cmd->cookie)
+	      _user_cookie(cmd->cookie),
+                _obj(native, cmgr, geometry, cmd, fn, cookie)
             {
               TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::collObj()\n",this));
               DO_DEBUG((templateName<T>()));
@@ -46,10 +47,10 @@ namespace CCMI
               _user_done_fn(context, _user_cookie, result);
             }
 
-            T                            _obj;
             CollectiveProtocolFactoryT * _factory;
             pami_event_function          _user_done_fn;
             void                       * _user_cookie;
+            T                            _obj;
         };
 
       public:
@@ -113,9 +114,10 @@ namespace CCMI
         C                                          * _cmgr;
         Interfaces::NativeInterface                * _native;
         PAMI::MemoryAllocator < sizeof(collObj), 16 >   _alloc;
-    };
-  };
-};
+    };//CollectiveProtocolFactoryT
+
+  };//Adaptor
+};//CCMI
 
 #endif
 //

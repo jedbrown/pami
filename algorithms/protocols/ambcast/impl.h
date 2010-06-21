@@ -38,11 +38,11 @@ namespace CCMI
       {
         new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
       }
-      
+
       typedef AMBroadcastT <CCMI::Schedule::ListMultinomial,
                             CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
                             create_schedule> AMBinomBcastComposite;
-    
+
       typedef AMBroadcastFactoryT<AMBinomBcastComposite,
 	am_bcast_md,
 	CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AMBinomBcastFactory;

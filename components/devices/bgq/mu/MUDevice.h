@@ -237,6 +237,7 @@ namespace PAMI
             TRACE((stderr, ">> MUDevice::nextInjectionDescriptor() .. _p2pChannel[%d]->pinFifo (%zu) = %d\n", _p2pSendChannelIndex, target_rank, _p2pChannel[_p2pSendChannelIndex]->pinFifo (target_rank)));
 
             if (!_p2pChannel[_p2pSendChannelIndex]->isEmptyMsgQ(fnum)) return false;
+            if (!emptySendQ(target_rank)) return false;
 
             TRACE((stderr, "   MUDevice::nextInjectionDescriptor() .. before getSubGroupAndRelativeFifoNum()\n"));
             InjFifoSubGroup *injFifoSubGroup = NULL;
@@ -265,6 +266,22 @@ namespace PAMI
                                            &relativeFnum);
 
             injFifoSubGroup->addToDoneQ(relativeFnum, wrapper);
+          }
+
+          inline bool emptySendQ (size_t                target_rank)
+          {
+            InjFifoSubGroup * injFifoSubGroup = NULL;
+            uint32_t          relativeFnum = 0;
+
+            uint32_t fnum = _p2pChannel[_p2pSendChannelIndex]->pinFifo (target_rank);
+
+            getSubGroupAndRelativeFifoNum (fnum,
+                                           &injFifoSubGroup,
+                                           &relativeFnum);
+
+            unsigned long long waitToSendMaskCopy = injFifoSubGroup->_waitToSendMask;
+            unsigned long long mask = _BN( relativeFnum ); // The bit corresponding to the fifo we are
+            return(!(waitToSendMaskCopy & mask ));// Waiting to send on this fifo?
           }
 
           inline void addToSendQ (size_t                target_rank,

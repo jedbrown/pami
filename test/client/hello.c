@@ -18,7 +18,7 @@ int main (int argc, char ** argv)
   fprintf (stdout, "After PAMI_Client_create(), result = %d\n", result);
 
   fprintf (stdout, "Before PAMI_Client_destroy()\n");
-  result = PAMI_Client_destroy (client);
+  result = PAMI_Client_destroy(&client);
   fprintf (stdout, "After PAMI_Client_destroy(), result = %d\n", result);
 
   return 0;

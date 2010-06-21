@@ -269,6 +269,8 @@ OPTIMIZED_fp64_fp64_minloc
 [PAMI_LAND][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_land,
 [PAMI_LAND][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_land,
 [PAMI_LAND][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_land,
+[PAMI_LAND][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_land,
+[PAMI_LAND][PAMI_DOUBLE][0] =		(void*)_pami_core_fp64_land,
 
 [PAMI_LOR][PAMI_SIGNED_CHAR][0] =	(void*)_pami_core_int8_lor,
 [PAMI_LOR][PAMI_UNSIGNED_CHAR][0] =	(void*)_pami_core_uint8_lor,
@@ -278,6 +280,8 @@ OPTIMIZED_fp64_fp64_minloc
 [PAMI_LOR][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_lor,
 [PAMI_LOR][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_lor,
 [PAMI_LOR][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_lor,
+[PAMI_LOR][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_lor,
+[PAMI_LOR][PAMI_DOUBLE][0] =		(void*)_pami_core_fp64_lor,
 
 [PAMI_LXOR][PAMI_SIGNED_CHAR][0] =	(void*)_pami_core_int8_lxor,
 [PAMI_LXOR][PAMI_UNSIGNED_CHAR][0] =	(void*)_pami_core_uint8_lxor,
@@ -287,6 +291,8 @@ OPTIMIZED_fp64_fp64_minloc
 [PAMI_LXOR][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_lxor,
 [PAMI_LXOR][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_lxor,
 [PAMI_LXOR][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_lxor,
+[PAMI_LXOR][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_lxor,
+[PAMI_LXOR][PAMI_DOUBLE][0] =		(void*)_pami_core_fp64_lxor,
 
 [PAMI_BAND][PAMI_SIGNED_CHAR][0] =	(void*)_pami_core_int8_band,
 [PAMI_BAND][PAMI_UNSIGNED_CHAR][0] =	(void*)_pami_core_uint8_band,
@@ -296,6 +302,8 @@ OPTIMIZED_fp64_fp64_minloc
 [PAMI_BAND][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_band,
 [PAMI_BAND][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_band,
 [PAMI_BAND][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_band,
+[PAMI_BAND][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_band,
+[PAMI_BAND][PAMI_DOUBLE][0] =		(void*)_pami_core_fp64_band,
 
 [PAMI_BOR][PAMI_SIGNED_CHAR][0] =	(void*)_pami_core_int8_bor,
 [PAMI_BOR][PAMI_UNSIGNED_CHAR][0] =	(void*)_pami_core_uint8_bor,
@@ -305,6 +313,8 @@ OPTIMIZED_fp64_fp64_minloc
 [PAMI_BOR][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_bor,
 [PAMI_BOR][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_bor,
 [PAMI_BOR][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_bor,
+[PAMI_BOR][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_bor,
+[PAMI_BOR][PAMI_DOUBLE][0] =		(void*)_pami_core_fp64_bor,
 
 [PAMI_BXOR][PAMI_SIGNED_CHAR][0] =	(void*)_pami_core_int8_bxor,
 [PAMI_BXOR][PAMI_UNSIGNED_CHAR][0] =	(void*)_pami_core_uint8_bxor,
@@ -314,6 +324,8 @@ OPTIMIZED_fp64_fp64_minloc
 [PAMI_BXOR][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_bxor,
 [PAMI_BXOR][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_bxor,
 [PAMI_BXOR][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_bxor,
+[PAMI_BXOR][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_bxor,
+[PAMI_BXOR][PAMI_DOUBLE][0] =		(void*)_pami_core_fp64_bxor,
 
 [PAMI_MAXLOC][PAMI_LOC_2INT][0] =	(void*)_pami_core_int32_int32_maxloc,
 [PAMI_MAXLOC][PAMI_LOC_SHORT_INT][0] =	(void*)_pami_core_int16_int32_maxloc,

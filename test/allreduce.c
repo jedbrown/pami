@@ -15,12 +15,15 @@
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/time.h>
 #include <assert.h>
 #include <pami.h>
 
+#include "math/math_coremath.h" // special datatype size structs
+
 //define this if you want to validate the data for unsigned sums
-//#define CHECK_DATA
+#define CHECK_DATA
 
 #undef TRACE
 #define TRACE(x) //fprintf x
@@ -53,9 +56,9 @@
 
 pami_op op_array[] =
   {
+    PAMI_SUM,
     PAMI_MAX,
     PAMI_MIN,
-    PAMI_SUM,
     PAMI_PROD,
     PAMI_LAND,
     PAMI_LOR,
@@ -68,9 +71,9 @@ pami_op op_array[] =
   };
 enum opNum
   {
+    OP_SUM,
     OP_MAX,
     OP_MIN,
-    OP_SUM,
     OP_PROD,
     OP_LAND,
     OP_LOR,
@@ -86,16 +89,16 @@ int op_count = OP_COUNT;
 
 pami_dt dt_array[] =
   {
+    PAMI_UNSIGNED_INT,
+    PAMI_DOUBLE,
     PAMI_SIGNED_CHAR,
     PAMI_UNSIGNED_CHAR,
     PAMI_SIGNED_SHORT,
     PAMI_UNSIGNED_SHORT,
     PAMI_SIGNED_INT,
-    PAMI_UNSIGNED_INT,
     PAMI_SIGNED_LONG_LONG,
     PAMI_UNSIGNED_LONG_LONG,
     PAMI_FLOAT,
-    PAMI_DOUBLE,
     PAMI_LONG_DOUBLE,
     PAMI_LOGICAL,
     PAMI_SINGLE_COMPLEX,
@@ -110,16 +113,16 @@ pami_dt dt_array[] =
 
 enum dtNum
   {
+    DT_UNSIGNED_INT,
+    DT_DOUBLE,
     DT_SIGNED_CHAR,
     DT_UNSIGNED_CHAR,
     DT_SIGNED_SHORT,
     DT_UNSIGNED_SHORT,
     DT_SIGNED_INT,
-    DT_UNSIGNED_INT,
     DT_SIGNED_LONG_LONG,
     DT_UNSIGNED_LONG_LONG,
     DT_FLOAT,
-    DT_DOUBLE,
     DT_LONG_DOUBLE,
     DT_LOGICAL,
     DT_SINGLE_COMPLEX,
@@ -137,9 +140,9 @@ int dt_count = DT_COUNT;
 
 const char * op_array_str[] =
   {
+    "PAMI_SUM",
     "PAMI_MAX",
     "PAMI_MIN",
-    "PAMI_SUM",
     "PAMI_PROD",
     "PAMI_LAND",
     "PAMI_LOR",
@@ -154,16 +157,16 @@ const char * op_array_str[] =
 
 const char * dt_array_str[] =
   {
+    "PAMI_UNSIGNED_INT",
+    "PAMI_DOUBLE",
     "PAMI_SIGNED_CHAR",
     "PAMI_UNSIGNED_CHAR",
     "PAMI_SIGNED_SHORT",
     "PAMI_UNSIGNED_SHORT",
     "PAMI_SIGNED_INT",
-    "PAMI_UNSIGNED_INT",
     "PAMI_SIGNED_LONG_LONG",
     "PAMI_UNSIGNED_LONG_LONG",
     "PAMI_FLOAT",
-    "PAMI_DOUBLE",
     "PAMI_LONG_DOUBLE",
     "PAMI_LOGICAL",
     "PAMI_SINGLE_COMPLEX",
@@ -178,30 +181,34 @@ const char * dt_array_str[] =
 
 unsigned elemsize_array[] =
   {
-    2, // PAMI_SIGNED_CHAR,
-    2, // PAMI_UNSIGNED_CHAR,
-    2, // PAMI_SIGNED_SHORT,
-    2, // PAMI_UNSIGNED_SHORT,
-    4, // PAMI_SIGNED_INT,
-    4, // PAMI_UNSIGNED_INT,
-    8, // PAMI_SIGNED_LONG_LONG,
-    8, // PAMI_UNSIGNED_LONG_LONG,
-    4, // PAMI_FLOAT,
-    8, // PAMI_DOUBLE,
-    8, // PAMI_LONG_DOUBLE,
-    4, // PAMI_LOGICAL,
-    8, // PAMI_SINGLE_COMPLEX,
-    1, // PAMI_DOUBLE_COMPLEX
-    8, // PAMI_LOC_2INT,
-    6, // PAMI_LOC_SHORT_INT,
-    8, // PAMI_LOC_FLOAT_INT,
-    12, // PAMI_LOC_DOUBLE_INT,
-    8,  // PAMI_LOC_2FLOAT,
-    16, // PAMI_LOC_2DOUBLE,
+    sizeof(unsigned int),       // PAMI_UNSIGNED_INT,
+    sizeof(double),             // PAMI_DOUBLE,
+    sizeof(char),               // PAMI_SIGNED_CHAR,
+    sizeof(unsigned char),      // PAMI_UNSIGNED_CHAR,
+    sizeof(short),              // PAMI_SIGNED_SHORT,
+    sizeof(unsigned short),     // PAMI_UNSIGNED_SHORT,
+    sizeof(int),                // PAMI_SIGNED_INT,
+    sizeof(long long),          // PAMI_SIGNED_LONG_LONG,
+    sizeof(unsigned long long), // PAMI_UNSIGNED_LONG_LONG,
+    sizeof(float),              // PAMI_FLOAT,
+    sizeof(long double),        // PAMI_LONG_DOUBLE,
+    sizeof(unsigned int),       // PAMI_LOGICAL,
+    (2 * sizeof(float)),        // PAMI_SINGLE_COMPLEX,
+    (2 * sizeof(double)),       // PAMI_DOUBLE_COMPLEX
+    // The following are from math/math_coremath.h structures
+    // \todo Correct or not?  At least they match internal math...
+    sizeof(int32_int32_t),      // PAMI_LOC_2INT,
+    sizeof(int16_int32_t),      // PAMI_LOC_SHORT_INT,
+    sizeof(fp32_int32_t),       // PAMI_LOC_FLOAT_INT,
+    sizeof(fp64_int32_t),       // PAMI_LOC_DOUBLE_INT,
+    sizeof(fp32_fp32_t),        // PAMI_LOC_2FLOAT,
+    sizeof(fp64_fp64_t),        // PAMI_LOC_2DOUBLE,
   };
 
 volatile unsigned       _g_barrier_active=0;
 volatile unsigned       _g_allreduce_active=0;
+size_t task_id;
+int    rank;
 
 void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
 {
@@ -281,6 +288,7 @@ unsigned ** alloc2DContig(int nrows, int ncols)
 #ifdef CHECK_DATA
 void initialize_sndbuf (void *buf, int count, int op, int dt) {
 
+  TRACEV((stderr,"Initialize count %d, op %d, dt %d, size %u/%u\n", count, op, dt,elemsize_array[dt], count * elemsize_array[dt]));
   int i;
   if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
     uint *ibuf = (uint *)  buf;
@@ -288,21 +296,25 @@ void initialize_sndbuf (void *buf, int count, int op, int dt) {
       ibuf[i] = i;
     }
   }
+  else memset(buf,  rank,  count * elemsize_array[dt]);
 }
 
 int check_rcvbuf (void *buf, int count, int op, int dt, int nranks) {
 
-  int i;
+  int i, err = 0;
   if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
     uint *rbuf = (uint *)  buf;
     for (i = 0; i < count; i++) {
       if (rbuf[i] != i * nranks)
-        return -1;
+      {
+        fprintf(stderr,"Check(%u) failed rbuf[%d] %u != %u\n",count,i,rbuf[1],i*nranks);
+        err = -1;
+      }
     }
     TRACE((stderr,"Check Passes for count %d, op %d, dt %d\n", count, op, dt));
   }
 
-  return 0;
+  return err;
 }
 #endif
 
@@ -340,7 +352,7 @@ int main(int argc, char*argv[])
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
     return 1;
   }
-  size_t task_id = configuration.value.intval;
+  task_id = configuration.value.intval;
 
 #ifdef CHECK_DATA
   configuration.name = PAMI_NUM_TASKS;
@@ -353,7 +365,7 @@ int main(int argc, char*argv[])
   size_t nranks  = configuration.value.intval;
 #endif
 
-  int    rank    = task_id;
+  rank    = task_id;
   int i,j,root   = 0;
   TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
@@ -484,48 +496,46 @@ int main(int argc, char*argv[])
 #if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
   char* env = getenv("PAMI_DEVICE");
   fprintf(stderr, "PAMI_DEVICE=%c\n", env?*env:' ');
-  if((env) && (*env=='M'))
+  if((env==NULL) || ((*env=='M') || (*env=='B')))
   {
     /// These are unsupported on MU
-    for(i=0,j=DT_SIGNED_CHAR; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_UNSIGNED_CHAR; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_SIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_UNSIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOGICAL; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_SINGLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_DOUBLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOC_2INT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOC_SHORT_INT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOC_FLOAT_INT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOC_DOUBLE_INT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOC_2FLOAT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j=DT_LOC_2FLOAT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=OP_PROD,j=0; j<DT_COUNT;j++)validTable[i][j]=0;
-    for(i=OP_MAXLOC,j=0; j<DT_COUNT;j++)validTable[i][j]=0;
-    for(i=OP_MINLOC,j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+    for(i=0,j= DT_SIGNED_CHAR;    i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_UNSIGNED_CHAR;  i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_SIGNED_SHORT;   i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_UNSIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOGICAL;        i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_SINGLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_DOUBLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOC_2INT;       i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOC_SHORT_INT;  i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOC_FLOAT_INT;  i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOC_DOUBLE_INT; i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOC_2FLOAT;     i<OP_COUNT;i++)validTable[i][j]=0;
+    for(i=0,j= DT_LOC_2FLOAT;     i<OP_COUNT;i++)validTable[i][j]=0;
 
-    /// \todo these are failing and need debug
-    validTable[OP_LAND][DT_SIGNED_INT]=0;
-    validTable[OP_BAND][DT_SIGNED_INT]=0;
-    validTable[OP_LAND][DT_UNSIGNED_INT]=0;
-    validTable[OP_BAND][DT_UNSIGNED_INT]=0;
+    for(i= OP_PROD,   j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+    for(i= OP_MAXLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+    for(i= OP_MINLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+    // This works on MU so re-enable it
+    if((env) && (*env=='M'))
+      validTable[OP_BAND][DT_DOUBLE]=1;
   }
-  /// \todo These fail using core math on bgq.
-  validTable[OP_LAND][DT_FLOAT]=0;
-  validTable[OP_LOR][DT_FLOAT]=0;
-  validTable[OP_LXOR][DT_FLOAT]=0;
-  validTable[OP_BAND][DT_FLOAT]=0;
-  validTable[OP_BOR][DT_FLOAT]=0;
-  validTable[OP_BXOR][DT_FLOAT]=0;
-  validTable[OP_LAND][DT_DOUBLE]=0;
-  validTable[OP_LOR][DT_DOUBLE]=0;
-  validTable[OP_LXOR][DT_DOUBLE]=0;
-  validTable[OP_BOR][DT_DOUBLE]=0;
-  validTable[OP_BXOR][DT_DOUBLE]=0;
-  validTable[OP_MAXLOC][DT_LOC_SHORT_INT]=0;
-  validTable[OP_MINLOC][DT_LOC_SHORT_INT]=0;
-  validTable[OP_MAXLOC][DT_LOC_DOUBLE_INT]=0;
-  validTable[OP_MINLOC][DT_LOC_DOUBLE_INT]=0;
+  if((env==NULL) || ((*env=='S') || (*env=='B')))
+  {
+    /// \todo These fail using shmem core math on bgq.
+    validTable[OP_LAND  ][DT_FLOAT         ]=0;
+    validTable[OP_LOR   ][DT_FLOAT         ]=0;
+    validTable[OP_LXOR  ][DT_FLOAT         ]=0;
+    validTable[OP_BAND  ][DT_FLOAT         ]=0;
+    validTable[OP_BOR   ][DT_FLOAT         ]=0;
+    validTable[OP_BXOR  ][DT_FLOAT         ]=0;
+    validTable[OP_LAND  ][DT_DOUBLE        ]=0;
+    validTable[OP_LOR   ][DT_DOUBLE        ]=0;
+    validTable[OP_LXOR  ][DT_DOUBLE        ]=0;
+    validTable[OP_BAND  ][DT_DOUBLE        ]=0;
+    validTable[OP_BOR   ][DT_DOUBLE        ]=0;
+    validTable[OP_BXOR  ][DT_DOUBLE        ]=0;
+  }
 #endif
 
 #else
@@ -630,7 +640,7 @@ int main(int argc, char*argv[])
     return 1;
   }
 
-  result = PAMI_Client_destroy (client);
+  result = PAMI_Client_destroy(&client);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);

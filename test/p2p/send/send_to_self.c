@@ -112,7 +112,7 @@ int main (int argc, char ** argv)
   size_t dispatch = 0;
   pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
-  pami_send_hint_t options={0};
+  pami_send_hint_t options={};
   fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
   result = PAMI_Dispatch_set (context,
                              dispatch,
@@ -165,7 +165,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  result = PAMI_Client_destroy (client);
+  result = PAMI_Client_destroy(&client);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);

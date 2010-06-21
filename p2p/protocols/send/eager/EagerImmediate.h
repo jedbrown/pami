@@ -23,7 +23,7 @@
 #include "util/common.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x) //fprintf x
 #endif
 
 namespace PAMI
@@ -56,20 +56,8 @@ namespace PAMI
           {
             uint16_t        databytes; ///< Number of bytes of data
             uint16_t        metabytes; ///< Number of bytes of metadata
-            pami_endpoint_t origin;    ///< Origin endpoint for transfer  
+            pami_endpoint_t origin;    ///< Origin endpoint for transfer
           } protocol_metadata_t;
-
-          ///
-          /// \brief Shadow the \c pami_send_immediate_t parameter structure
-          ///
-          /// This allows the header+data iovec elements to be treated as a
-          /// two-element array of iovec structures, and therefore allows the
-          /// packet model to implement template specialization.
-          ///
-          typedef struct
-          {
-            struct iovec iov[2];
-          } parameters_iov_t;
 
           ///
           /// \brief Sender-side state structure for immediate sends.
@@ -95,20 +83,22 @@ namespace PAMI
           /// \brief Eager immediate send protocol constructor.
           ///
           /// \param[in]  dispatch     Dispatch identifier
-          /// \param[in]  dispatch_fn  Dispatch callback function
+          /// \param[in]  dispatch_fn  Point-to-point dispatch callback function
           /// \param[in]  cookie       Opaque application dispatch data
-          /// \param[in]  origin       Origin endpoint
           /// \param[in]  device       Device that implements the message interface
+          /// \param[in]  origin       Origin endpoint
+          /// \param[in]  context      Origin communcation context
           /// \param[out] status       Constructor status
           ///
-          inline EagerImmediate (size_t                      dispatch,
-                                 pami_dispatch_callback_fn   dispatch_fn,
-                                 void                      * cookie,
-                                 T_Device                  & device,
-                                 pami_endpoint_t             origin,
-                                 pami_result_t             & status) :
+          inline EagerImmediate (size_t                 dispatch,
+                                 pami_dispatch_p2p_fn   dispatch_fn,
+                                 void                 * cookie,
+                                 T_Device             & device,
+                                 pami_endpoint_t        origin,
+                                 pami_context_t         context,
+                                 pami_result_t        & status) :
               _send_model (device),
-              _context (device.getContext()),
+              _context (context),
               _dispatch_fn (dispatch_fn),
               _cookie (cookie),
               _device (device),
@@ -162,14 +152,16 @@ namespace PAMI
 
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. task = %d, offset = %zu\n", task, offset));
 
-            // This shadow pointer allows template specialization on the iovecs
-            parameters_iov_t * const p = (parameters_iov_t *) parameters;
+            // This allows the header+data iovec elements to be treated as a
+            // two-element array of iovec structures, and therefore allows the
+            // packet model to implement template specialization.
+            array_t<struct iovec,2> * iov = (array_t<struct iovec,2> *) parameters;
 
             bool posted =
               _send_model.postPacket (task, offset,
                                       (void *) &metadata,
                                       sizeof (protocol_metadata_t),
-                                      p->iov);
+                                      iov->array);
 
             if (unlikely(!posted))
             {
@@ -230,13 +222,12 @@ namespace PAMI
 
           MemoryAllocator < sizeof(send_t), 16 > _allocator;
 
-          T_Model                     _send_model;
-
-          pami_context_t              _context;
-          pami_dispatch_callback_fn   _dispatch_fn;
-          void                      * _cookie;
-          T_Device                  & _device;
-          pami_endpoint_t             _origin;
+          T_Model                _send_model;
+          pami_context_t         _context;
+          pami_dispatch_p2p_fn   _dispatch_fn;
+          void                 * _cookie;
+          T_Device             & _device;
+          pami_endpoint_t        _origin;
 
           ///
           /// \brief Direct single-packet send dispatch.
@@ -267,7 +258,7 @@ namespace PAMI
             uint8_t * data = (uint8_t *)payload;
 
             // Invoke the registered dispatch function.
-            send->_dispatch_fn.p2p (send->_context,   // Communication context
+            send->_dispatch_fn (send->_context,   // Communication context
                                     send->_cookie,    // Dispatch cookie
                                     (void *) data,    // Application metadata
                                     m->metabytes,     // Metadata bytes

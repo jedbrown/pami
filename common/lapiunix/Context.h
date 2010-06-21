@@ -143,16 +143,16 @@ namespace PAMI
         return sw;
       }
   private:
-    lapi_state_t                          *_lapi_state;    
+    lapi_state_t                          *_lapi_state;
   };
 
   // Device Typedefs
   typedef Device::LAPIDevice                                          LAPIDevice;
-  
+
   // P2P Message Typedefs
   typedef PAMI::SendWrapper                                           LAPISendBase;
   typedef PAMI::Protocol::Send::SendPWQ < LAPISendBase >              LAPISend;
-  
+
   // Shared Memory P2P Typedefs
   typedef Fifo::FifoPacket <64, 1024>                                 ShmemPacket;
   typedef Fifo::LinearFifo<PAMI::Atomic::GccBuiltin, ShmemPacket,128> ShmemFifo;
@@ -421,7 +421,7 @@ namespace PAMI
                                                 __global.topology_local.size());
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 
-          
+
           return PAMI_SUCCESS;
         }
 
@@ -756,7 +756,7 @@ namespace PAMI
       /*  Memory Manager Pointer                                */
       Memory::MemoryManager                 *_mm;
 
-      /*  Protocol allocator                                    */      
+      /*  Protocol allocator                                    */
       ProtocolAllocator                      _protocol;
 
       /*  The over lapi devices                                 */
@@ -768,7 +768,7 @@ namespace PAMI
       PGASCollreg                           *_pgas_collreg;
       OldCCMICollreg                        *_oldccmi_collreg;
       P2PCCMICollreg                        *_p2p_ccmi_collreg;
-      
+
       /*  World Geometry Pointer for this context               */
       LAPIGeometry                          *_world_geometry;
   private:

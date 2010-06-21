@@ -399,7 +399,8 @@ init ( ResourceType_t  type,
   TRACE((stderr, "ResourceManager: Exiting Barrier\n"));
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 
-  if ((__global.personality.tSize() == 1) && (__global.mapping.size() != 1))
+  // If multi-node, need to sleep
+  if (__global.mapping.size() > __global.personality.tSize())
     {
       double seconds = 5; // wait 5 pseudo-seconds
       double dseconds = ((double)seconds) / 1000; //mambo seconds are loooong.

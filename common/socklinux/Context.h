@@ -479,12 +479,12 @@ namespace PAMI
 
         if (_dispatch[id] == NULL)
           {
-            bool no_shmem  = options.no_shmem;
+            bool no_shmem  = (options.use_shmem == PAMI_HINT3_FORCE_OFF);
 #ifndef ENABLE_SHMEM_DEVICE
             no_shmem = true;
 #endif
 
-            bool use_shmem = options.use_shmem;
+            bool use_shmem = (options.use_shmem == PAMI_HINT3_FORCE_ON);
 #ifdef ENABLE_UDP_DEVICE
             use_shmem = true;
 #endif
@@ -503,7 +503,7 @@ namespace PAMI
               PAMI_abortf("No non-shmem protocols available.");
 #endif
             }
-            else if (options.use_shmem == 1)
+            else if (options.use_shmem == PAMI_HINT3_FORCE_ON)
             {
               // Register only the "shmem" eager protocol
 #ifdef ENABLE_SHMEM_DEVICE

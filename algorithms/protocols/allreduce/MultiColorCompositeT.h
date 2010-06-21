@@ -29,7 +29,7 @@ namespace CCMI
     /// \brief configuration flags/options for creating the factory
     namespace Allreduce
     {
-      //-- Composite
+      //-- MultiColorCompositeT
       /// \brief The Composite for the Allreduce (and reduce)
       /// kernel executor.
       ///
@@ -64,6 +64,13 @@ namespace CCMI
                mf,
                NUMCOLORS)
           {
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::ctor() count %zu, dt %#X, op %#X\n", this,((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
+                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op));
+            /// \todo only supporting PAMI_BYTE right now
+            PAMI_assertf((((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype == PAMI_BYTE)&&(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype == PAMI_BYTE),"Not PAMI_BYTE? %#zX %#zX\n",(size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,(size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype);
+
+            PAMI_Type_sizeof(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL
+
             coremath func;
             unsigned sizeOfType;
             CCMI::Adaptor::Allreduce::getReduceFunction(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,
@@ -72,7 +79,10 @@ namespace CCMI
                                                         sizeOfType,
                                                         func);
             //For now assume stypecount == rtypecount
-            unsigned bytes = sizeOfType * ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount;
+            unsigned bytes = ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
+
+            /// \todo only supporting PAMI_BYTE right now, so better be a valid count of dt's
+            PAMI_assertf(!(bytes%sizeOfType),"Not a valid PAMI_BYTE count of dt[%#X] bytes %u, sizeOfType %u\n",((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,bytes,sizeOfType);
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::
             initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(),
@@ -88,7 +98,7 @@ namespace CCMI
               {
                 T_Exec *allreduce = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(c);
                 initialize(allreduce,
-                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
+                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount/sizeOfType, /// \todo presumed PAMI_BYTE count, convert to dt count
                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,
                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op);
                 allreduce->reset();
@@ -108,8 +118,8 @@ namespace CCMI
           /// Default Destructor
           virtual ~MultiColorCompositeT()
           {
-            TRACE_ALERT((stderr, "<%p>Allreduce::Composite::dtor() ALERT:\n", this));
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::Composite::dtor()\n", this));
+            TRACE_ALERT((stderr, "<%p>Allreduce::MultiColorCompositeT::dtor() ALERT:\n", this));
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::dtor()\n", this));
           }
 
           void operator delete (void *p)
@@ -128,7 +138,7 @@ namespace CCMI
                             unsigned                          pipelineWidth = 0)// none specified, calculate it
           {
 
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::Composite::initialize()\n", this));
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::initialize() count %u, dt %#X, op %#X\n", this, count, dtype, op));
 
             if ((op != allreduce->getOp()) || (dtype != allreduce->getDt()) ||
                 (count != allreduce->getCount()))
@@ -166,7 +176,7 @@ namespace CCMI
 
           unsigned computePipelineWidth (unsigned count, unsigned sizeOfType, unsigned min_pwidth)
           {
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::Composite::computePipelineWidth() count %#X, size %#X, min %#X\n", this,
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::computePipelineWidth() count %#X, size %#X, min %#X\n", this,
                            count, sizeOfType, min_pwidth));
             unsigned pwidth = min_pwidth;
 
@@ -179,7 +189,7 @@ namespace CCMI
             else if (count * sizeOfType > 16 * pwidth)
               pwidth *= 4;
 
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::Composite::computePipelineWidth() pwidth %#X\n", this,
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::computePipelineWidth() pwidth %#X\n", this,
                            pwidth));
             return pwidth;
           }
@@ -190,7 +200,7 @@ namespace CCMI
           ///
           virtual unsigned restart   ( void *cmd )
           {
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::Composite::restart()\n", this));
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::restart()\n", this));
 
             for (unsigned c = 0; c <  Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::_numColors; c++)
               {
@@ -214,7 +224,7 @@ namespace CCMI
           {
             CCMI_abort();
 
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::Composite::start()\n", this));
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::start()\n", this));
             //Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(0)->start();
           }
 
@@ -232,8 +242,7 @@ namespace CCMI
            pami_pipeworkqueue_t ** rcvpwq,
            PAMI_Callback_t       * cb_done)
           {
-            TRACE_ADAPTOR((stderr,
-                           "<%p>Allreduce::Factory::cb_receiveHead peer %d, conn_id %d\n",
+            TRACE_ADAPTOR((stderr,"<%p>Allreduce::MultiColorCompositeT::cb_receiveHead peer %d, conn_id %d\n",
                            arg, peer, conn_id));
             CCMI_assert (info && arg);
             CollHeaderData  *cdata = (CollHeaderData *) info;
@@ -254,7 +263,7 @@ namespace CCMI
                                                           cb_done);
           };
 
-      };  //-- Composite
+      };  //-- MultiColorCompositeT
     };
   };
 }; // namespace CCMI::Adaptor::Allreduce

@@ -12,6 +12,15 @@
 #define PAMI_EXT_ATTR 1000 /**< starting value for extended attributes */
 #endif
 
+typedef struct pami_quad_t
+{
+    unsigned w0; /**< Word[0] */
+    unsigned w1; /**< Word[1] */
+    unsigned w2; /**< Word[2] */
+    unsigned w3; /**< Word[3] */
+}
+pami_quad_t __attribute__ ((__aligned__ (16)));
+
 typedef struct {
   int x; /**< X value */
   int y; /**< Y value */
@@ -73,6 +82,24 @@ typedef enum {
 
   typedef pami_quad_t pami_pipeworkqueue_t[8];
   typedef pami_quad_t pami_pipeworkqueue_ext_t[2];
+
+  /**
+   * \brief Map a task to a network address expressed as coordinates.
+   *
+   * \param[in] task	Id of the rank or task.
+   * \param[out] ntw	coordinate object to be filled out.
+   */
+  pami_result_t PAMI_Task2Network(pami_task_t task,
+                                  pami_coord_t *ntw);
+
+  /**
+   * \brief Map a network address expressed as coordinates into a task.
+   *
+   * \param[in] ntw	coordinate object to map to a task.
+   * \param[out] task	Id of the rank or task to be assigned.
+   */
+  pami_result_t PAMI_Network2Task(pami_coord_t ntw,
+                                  pami_task_t *task);
 
   /**
    * \brief Configure for Shared Circular Buffer variety.
