@@ -10,8 +10,8 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS		= ${PAMI_PLATFORM} ${TARGET}
-SOURCES		= pami.cc pamip2p.cc
-DEVICENAME	= 
-COPTS		+= -I ${VPATH}/${PAMI_PLATFORM}
+SUBDIRS		= @TARGET@
+NOTBUILT        =
+@LIBNAME@-""-CAPI_SOURCES=pami_ext.cc
+DEVICENAME     = @LIBNAME@-""-CAPI
 include @abs_top_builddir@/Build.rules
