@@ -10,7 +10,7 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS		= ${PAMI_PLATFORM} ${TARGET}
+SUBDIRS		= ${PAMI_PLATFORM}
 SOURCES		= pami.cc pamip2p.cc
 DEVICENAME	= 
 COPTS		+= -I ${VPATH}/${PAMI_PLATFORM}
