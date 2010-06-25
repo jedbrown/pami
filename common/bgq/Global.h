@@ -237,6 +237,13 @@ namespace PAMI
       {
         return _useMU;
       }
+      /// \todo temp function while MU2 isn't complete
+      inline bool useMU(bool flag)
+      {
+        bool oldFlag = _useMU;
+        _useMU = flag;
+        return oldFlag;
+      }
     private:
 
       inline size_t initializeMapCache (BgqPersonality  & personality,
