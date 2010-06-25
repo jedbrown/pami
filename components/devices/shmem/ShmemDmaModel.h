@@ -221,7 +221,7 @@ namespace PAMI
               {
                 // Attempt to inject a "request to reverse get" packet into the
                 // fifo. The target task will receive this packet, perform a
-                // shared address write, then "consume" the packet from the
+                // shared address read, then "consume" the packet from the
                 // fifo. At this point the "last reception sequence identifier"
                 // will be less than or equal to the sequence identifier of the
                 // "request to reverse get" packet, the put operation will be
@@ -244,13 +244,22 @@ namespace PAMI
                                                  sizeof(typename T_Device::SystemShaddrInfo),
                                                  sequence) == PAMI_SUCCESS)
                   {
-                    // Create a "completion message" on the done queue and wait
-                    // until the target task has completed the put operation.
-                    RecPacketWork<T_Device> * work = (RecPacketWork<T_Device> *) state;
-                    new (work) RecPacketWork<T_Device> (&_device, sequence, fnum, local_fn, cookie);
-                    _device.post (work);
+                    if (likely(local_fn != NULL))
+                    {
+                      // Create a "completion message" on the done queue and wait
+                      // until the target task has completed the put operation.
+                      RecPacketWork<T_Device> * work = (RecPacketWork<T_Device> *) state;
+                      new (work) RecPacketWork<T_Device> (&_device, sequence, fnum, local_fn, cookie);
+                      _device.post (work);
 
-                    TRACE_ERR((stderr, "<< postDmaPut_impl():%d .. return false\n", __LINE__));
+                      TRACE_ERR((stderr, "<< postDmaPut_impl():%d .. return false\n", __LINE__));
+                      return false;
+                    }
+
+                    // The put operation is considered complete because the
+                    // "request to reverse get" packet was successfully written
+                    // into the fifo and no completion function was specified.
+                    TRACE_ERR((stderr, "<< postDmaPut_impl():%d .. return true\n", __LINE__));
                     return false;
                   }
                 }
@@ -278,7 +287,7 @@ namespace PAMI
             }
             else
             {
-              if (local_fn) local_fn (_context, cookie, PAMI_SUCCESS);
+              if (likely(local_fn != NULL)) local_fn (_context, cookie, PAMI_SUCCESS);
               TRACE_ERR((stderr, "<< postDmaPut_impl():%d .. return true\n", __LINE__));
               return true;
             }
