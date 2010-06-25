@@ -12,7 +12,8 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        = 
-APPS            = NativeInterface.${EXTENSION} bgqmultisync.${EXTENSION}
+#APPS            = NativeInterface.${EXTENSION} bgqmultisync.${EXTENSION}
+APPS            =
 
 include @abs_top_builddir@/Build.rules
 

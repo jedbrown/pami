@@ -21,7 +21,7 @@
 #include "components/devices/bgq/mu2/model/DmaModel.h"
 #include "components/devices/bgq/mu2/model/DmaModelMemoryFifoCompletion.h"
 #include "components/devices/bgq/mu2/model/PacketModel.h"
-#include "components/devices/bgq/mu2/model/PacketModelMemoryFifoCompletion.h"
+//#include "components/devices/bgq/mu2/model/PacketModelMemoryFifoCompletion.h"
 #include "components/devices/bgq/mu2/model/PacketModelDeposit.h"
 #include "components/devices/bgq/mu2/model/PacketModelInterrupt.h"
 
@@ -199,11 +199,11 @@ int main(int argc, char ** argv)
 
   fprintf (stderr, "After mu init\n");
 
-  uint8_t model00_buf[sizeof(PAMI::Device::MU::PacketModelMemoryFifoCompletion)] __attribute__((__aligned__(32)));
-  PAMI::Device::MU::PacketModelMemoryFifoCompletion &model00 = *(new (model00_buf) PAMI::Device::MU::PacketModelMemoryFifoCompletion(mu0));
+//  uint8_t model00_buf[sizeof(PAMI::Device::MU::PacketModelMemoryFifoCompletion)] __attribute__((__aligned__(32)));
+//  PAMI::Device::MU::PacketModelMemoryFifoCompletion &model00 = *(new (model00_buf) PAMI::Device::MU::PacketModelMemoryFifoCompletion(mu0));
 
-  uint8_t model01_buf[sizeof(PAMI::Device::MU::PacketModelMemoryFifoCompletion)] __attribute__((__aligned__(32)));
-  PAMI::Device::MU::PacketModelMemoryFifoCompletion &model01 = *(new (model01_buf) PAMI::Device::MU::PacketModelMemoryFifoCompletion(mu1));
+//  uint8_t model01_buf[sizeof(PAMI::Device::MU::PacketModelMemoryFifoCompletion)] __attribute__((__aligned__(32)));
+//  PAMI::Device::MU::PacketModelMemoryFifoCompletion &model01 = *(new (model01_buf) PAMI::Device::MU::PacketModelMemoryFifoCompletion(mu1));
 
   uint8_t model10_buf[sizeof(PAMI::Device::MU::PacketModel)] __attribute__((__aligned__(32)));
   PAMI::Device::MU::PacketModel &model10 = *(new (model10_buf) PAMI::Device::MU::PacketModel(mu0));
@@ -216,8 +216,8 @@ int main(int argc, char ** argv)
   //pami_result_t result;
   //MuDmaModel dma (mu, result);
 
-  model00.init (100, dispatch_fn, (void *) 100, NULL, NULL);
-  model01.init (100, dispatch_fn, (void *) 101, NULL, NULL);
+//  model00.init (100, dispatch_fn, (void *) 100, NULL, NULL);
+//  model01.init (100, dispatch_fn, (void *) 101, NULL, NULL);
 
   model10.init (101, dispatch_fn, (void *) 100, NULL, NULL);
   model11.init (101, dispatch_fn, (void *) 101, NULL, NULL);
@@ -237,7 +237,7 @@ int main(int argc, char ** argv)
   fprintf (stderr, "After eager constructor\n");
 
 
-  test (mu0, mu1, model00, eager, "memory fifo completion");
+//  test (mu0, mu1, model00, eager, "memory fifo completion");
   test (mu0, mu1, model10, eager, "completion array");
 
   return 0;

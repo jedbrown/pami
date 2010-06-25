@@ -26,22 +26,52 @@ namespace PAMI
     namespace MU
     {
       ///
-      ///  network and mu headers, 32B
+      ///  ' ' = used by hardware
+      ///  '.' = available for software
+      ///  's' = available for single packet only
+      ///  '?' = "is single packet"
+      ///  'm' = single packet metadata offset
+      ///  'd' = single packet dispatch
+      ///  'D' = multi-packet dispatch (available for single packet)
+      ///  'M' = multi-packet metadata offset (available for single packet)
       ///
-      /// +-------------------+--+----------------------------------+
-      /// | used by hw        |##| metadata available for           |
-      /// | 13B 1b            |##| single packet messages, 17B      |
-      /// +-------------------+--+----------------------------------+
-      /// unused by hw    ^    ^ dispatch id, 14b
-      /// 1b, 'single pkt'
+      ///      +--------+ pt2pt network header, 12 bytes
+      /// B 00 |        |
+      /// B 01 |        |
+      ///   .. |        |
+      ///   .. |        |
+      ///   .. |        |
+      ///   .. |        |
+      ///   .. |        |
+      ///   .. |        |
+      ///   .. |        |
+      ///   .. |        |
+      /// B 10 |        |
+      /// B 11 |        |
+      ///      +--------+
       ///
-      ///
-      /// +-------------------------+--+----------------------------+
-      /// | used by hw              |##| metadata available for     |
-      /// | 18B                     |##| multi-packet messages, 12B |
-      /// +-------------------------+--+----------------------------+
-      /// unused by hw    ^          ^ dispatch id, 16b
-      /// 1b, 'multi pkt'
+      ///      +--------+ message unit header, 20 bytes
+      /// B 12 |        |
+      /// B 13 |  ?sssss|
+      /// B 14 |mmmmdddd|
+      /// B 15 |dddddddd|
+      /// B 16 |ssssssss|
+      /// B 17 |ssssssss|
+      /// B 18 |MMMMDDDD|
+      ///   .. |DDDDDDDD|
+      ///   .. |........|
+      ///   .. |........|
+      ///   .. |........|
+      ///   .. |........|
+      ///   .. |........|
+      ///   .. |........|
+      ///   .. |........|
+      ///   .. |........|
+      ///   .. |........|
+      ///   .. |........|
+      ///   .. |........|
+      /// B 31 |........|
+      ///      +--------+
       ///
       class MemoryFifoPacketHeader : public MUHWI_PacketHeader_t
       {
@@ -50,7 +80,7 @@ namespace PAMI
           /// Number of unused software bytes available in a single packet
           /// transfer. The dispatch identifier and other control data are
           /// are set outside of this range.
-	  static const size_t packet_singlepacket_metadata_size = 16;
+          static const size_t packet_singlepacket_metadata_size = 16;
 
           /// Number of unused software bytes available in a multi-packet
           /// transfer. The dispatch identifier and other control data are
@@ -92,22 +122,33 @@ namespace PAMI
             return messageUnitHeader.Packet_Types.Memory_FIFO.Unused1;
           };
 
-	  inline void setHeaderInfo (uint16_t id, void *metadata, uint16_t metasize){
-	    //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
-	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
-	    *raw16 = (id | (metasize<<12));
+          inline void setHeaderInfo (uint16_t id, void *metadata, uint16_t metasize)
+          {
+            uint16_t offset = metasize - 1;
 
-	    uint8_t *raw8 = (uint8_t *) this + 32 - metasize;
-	    uint8_t *src = (uint8_t *) metadata;
-	    //If metasize is a constant compiler will inline the memcpy
-	    memcpy(raw8, src, metasize);
-	  }
+            //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
+            uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket() * 4));
+            *raw16 = (id | (offset << 12));
 
-	  inline void getHeaderInfo (uint16_t &id, void **metadata) {
-	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
-	    id = (*raw16)&0x3FFF; //Use 12bits for dispatch id
-	    *metadata = (char *)this + 32 - ((*raw16)>>12);
-	  }
+            uint8_t *raw8 = (uint8_t *) this + 31 - offset;
+            uint8_t *src = (uint8_t *) metadata;
+            //If metasize is a constant compiler will inline the memcpy
+            memcpy(raw8, src, metasize);
+          }
+
+          inline void getHeaderInfo (uint16_t &id, void **metadata)
+          {
+            TRACE_FN_ENTER();
+
+            uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket() * 4));
+            TRACE_FORMAT("this = %p, isSinglePacket() = %d, raw16 = %p", (void *) this, isSinglePacket(), (void *) raw16);
+
+            id = (*raw16) & 0x0FFF; //Use 12bits for dispatch id
+            *metadata = (char *)this + 31 - ((*raw16) >> 12);
+            TRACE_FORMAT("*raw16 = %d, ((*raw16)>>12) = %d, id = %d, metadata = %p", *raw16, ((*raw16) >> 12), id, *metadata);
+
+            TRACE_FN_EXIT();
+          }
 
 
           ///
@@ -126,9 +167,9 @@ namespace PAMI
           ///
           inline void setDispatchId (uint16_t id)
           {
-	    //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
-	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
-	    *raw16 = (id & 0x3FFF);
+            //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
+            uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket() * 4));
+            *raw16 = (id & 0x0FFF);
             return;
           };
 
@@ -148,41 +189,51 @@ namespace PAMI
           ///
           inline uint16_t getDispatchId ()
           {
-	    //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
-	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
-	    return (*raw16)&0x3FFF; //Use 14bits for dispatch id
+            //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
+            uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket() * 4));
+            return (*raw16)&0x0FFF; //Use 12 bits for dispatch id
           };
 
 
-	  ///
-	  /// \brief Set the Metadata correspoding to this
-	  /// packet. Metadata will be aligned to the input parameter
-	  /// bytes
-	  /// \param[in] metadata of the packet protocol
-	  /// \param[in] metadata size in bytes
-	  ///
-	  inline void setMetaData (void *metadata, int bytes)
-	  {
-	    //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
-	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
+          ///
+          /// \brief Set the Metadata correspoding to this
+          /// packet. Metadata will be aligned to the input parameter
+          /// bytes
+          /// \param[in] metadata of the packet protocol
+          /// \param[in] metadata size in bytes
+          ///
+          inline void setMetaData (void *metadata, int bytes)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("metadata = %p, bytes = %d", metadata, bytes);
+            TRACE_HEXDATA(this, 32);
 
-	    *raw16 = ((*raw16) | (bytes<<12));
+            //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
+            uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket() * 4));
 
-	    uint8_t *raw8 = (uint8_t *) this + 32 - bytes;
-	    uint8_t *src = (uint8_t *) metadata;
-	    memcpy(raw8, src, bytes);
-	  }
+            uint16_t offset = bytes - 1;
 
-	  ///
-	  /// \brief Get the Metadata in the packet
-	  /// \retval pointer to the metadata
-	  ///
-	  inline void* getMetaData () {
-	    uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket()*4));
-	    uint16_t bytes = (*raw16)>>12;
-	    //return the bottom maxmetasize bytes
-	    return (char *)this + (32 - bytes);
-	  }
+            *raw16 = ((*raw16) | (offset << 12));
+
+            uint8_t *raw8 = (uint8_t *) this + 31 - offset;
+            uint8_t *src = (uint8_t *) metadata;
+            memcpy(raw8, src, bytes);
+
+            TRACE_HEXDATA(this, 32);
+            TRACE_FN_EXIT();
+          }
+
+          ///
+          /// \brief Get the Metadata in the packet
+          /// \retval pointer to the metadata
+          ///
+          inline void* getMetaData ()
+          {
+            uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket() * 4));
+            uint16_t offset = (*raw16) >> 12;
+            //return the bottom maxmetasize bytes
+            return (char *)this + (31 - offset);
+          }
 
       };
     };   // PAMI::Device::MU namespace

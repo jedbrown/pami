@@ -16,6 +16,10 @@
 #include "components/devices/bgq/mu2/model/DmaModelBase.h"
 #include "components/devices/bgq/mu2/model/MemoryFifoCompletion.h"
 
+#include "components/devices/bgq/mu2/trace.h"
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
+
 namespace PAMI
 {
   namespace Device
@@ -40,17 +44,6 @@ namespace PAMI
           /// \see PAMI::Device::Interface::DmaModel::~DmaModel
           inline ~DmaModelMemoryFifoCompletion () {};
 
-          template <unsigned T_State>
-          inline void processCompletion_impl (uint8_t                (&state)[T_State],
-                                              InjChannel           & channel,
-                                              pami_event_function    fn,
-                                              void                 * cookie,
-                                              MUSPI_DescriptorBase   (&desc)[1])
-          {
-            _completion.inject (state, channel, fn, cookie, desc);
-          };
-
-
           inline size_t initializeRemoteGetPayload (void                * vaddr,
                                                     uint64_t              local_dst_pa,
                                                     uint64_t              remote_src_pa,
@@ -60,29 +53,51 @@ namespace PAMI
                                                     pami_event_function   local_fn,
                                                     void                * cookie)
           {
+            TRACE_FN_ENTER();
+
+            // Retreive the route information back to mu context "self"
+            uint64_t map;
+            uint8_t  hintsABCD;
+            uint8_t  hintsE;
+
+            _context.pinInformation (from_task,
+                                     from_offset,
+                                     map,
+                                     hintsABCD,
+                                     hintsE);
+
+            MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) vaddr;
+
             // ----------------------------------------------------------------
             // Initialize the "data mover" descriptor in the rget payload
             // ----------------------------------------------------------------
-            MU::DmaModelBase<DmaModelMemoryFifoCompletion> * parent =
-              (MU::DmaModelBase<DmaModelMemoryFifoCompletion> *) this;
+            // Clone the remote direct put model descriptor into the payload
+            _rput.clone (desc[0]);
 
-            size_t pbytes =
-              parent->initializeRemoteGetPayload (vaddr, local_dst_pa, remote_src_pa,
-                                                  bytes, from_task, from_offset,
-                                                  local_fn, cookie);
+            // Set the payload of the direct put descriptor to be the physical
+            // address of the source buffer on the remote node (from the user's
+            // memory region).
+            desc[0].setPayload (remote_src_pa, bytes);
 
+            // Set the destination buffer address for the remote direct put.
+            desc[0].setRecPayloadBaseAddressInfo (0, local_dst_pa);
+
+            desc[0].setTorusInjectionFIFOMap (map);  // is this needed ?
+            desc[0].setHints (hintsABCD, hintsE);    // is this needed ?
 
             // ----------------------------------------------------------------
             // Initialize the "ack to self" descriptor in the rget payload
             // ----------------------------------------------------------------
-            MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) vaddr;
             _completion.initializeNotifySelfDescriptor (desc[1], local_fn, cookie);
 
-            desc[1].setTorusInjectionFIFOMap (desc[0].Torus_FIFO_Map);
-            desc[1].setHints (desc[0].PacketHeader.NetworkHeader.pt2pt.Hints,
+            desc[1].setTorusInjectionFIFOMap (desc[0].Torus_FIFO_Map); // is this needed ?
+            desc[1].setHints (desc[0].PacketHeader.NetworkHeader.pt2pt.Hints, // is this needed ?
                               desc[0].PacketHeader.NetworkHeader.pt2pt.Byte2.Byte2); // is this right for 'E' hints?
 
-            return pbytes + sizeof(MUHWI_Descriptor_t);
+            TRACE_HEXDATA(desc,128);
+            TRACE_FN_EXIT();
+
+            return sizeof(MUHWI_Descriptor_t) * 2;
           };
 
         protected:
@@ -93,6 +108,9 @@ namespace PAMI
     };   // PAMI::Device::MU namespace
   };     // PAMI::Device namespace
 };       // PAMI namespace
+
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
 #endif // __components_devices_bgq_mu2_DmaModelMemoryFifoCompletion_h__
 //

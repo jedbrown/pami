@@ -55,7 +55,9 @@ namespace PAMI
                                                       pami_event_function    fn,
                                                       void                 * cookie)
           {
+            TRACE_FN_ENTER();
             _context.receptionChannel.initializeNotifySelfDescriptor (desc, fn, cookie);
+            TRACE_FN_EXIT();
           };
 
 
@@ -82,6 +84,7 @@ namespace PAMI
             TRACE_FN_ENTER();
             size_t ndesc = channel.getFreeDescriptorCount ();
 
+            TRACE_FORMAT("ndesc = %zu, T_Desc = %d", ndesc, T_Desc);
             if (likely(ndesc > T_Desc))
               {
                 // There is enough space in the injection fifo to add the
@@ -91,12 +94,13 @@ namespace PAMI
                 // Clone the completion model descriptor into the injection fifo
                 MUSPI_DescriptorBase * d = (MUSPI_DescriptorBase *) desc;
                 initializeNotifySelfDescriptor (d[T_Desc], fn, cookie);
+                TRACE_HEXDATA(d,64*(T_Desc+1));
 
                 // Advance the injection fifo tail pointer. This action
                 // completes the injection operation.
                 size_t i;
 
-                for (i = 0; i < T_Desc + 1; i++)
+                for (i = 0; i <= T_Desc; i++)
                   channel.injFifoAdvanceDesc (); // see todo
 
                 TRACE_FN_EXIT();

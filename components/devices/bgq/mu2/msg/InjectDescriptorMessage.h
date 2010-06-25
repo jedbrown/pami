@@ -94,6 +94,7 @@ namespace PAMI
               (MUSPI_DescriptorBase *) _channel.getNextDescriptor ();
 
             size_t i;
+            uint64_t sequence = 0;
 
             for (i = 0; i < ndesc && (_next + i) < T_Num; i++)
               {
@@ -103,7 +104,7 @@ namespace PAMI
                 // Advance the injection fifo tail pointer. This will be
                 // moved outside the loop when an "advance multiple" is
                 // available.
-                _channel.injFifoAdvanceDesc ();
+                sequence = _channel.injFifoAdvanceDesc ();
               }
 
             _next += i;
@@ -112,7 +113,7 @@ namespace PAMI
 
             if ((T_Completion == true) && done && likely(_fn != NULL))
               {
-                _channel.setInjectionDescriptorNotification (_fn, _cookie, &d[i-1]);
+                _channel.addCompletionEvent (_state, _fn, _cookie, sequence);
               }
 
             TRACE_FORMAT("success = %d, _next = %zu, T_Num = %d", (_next == T_Num), _next, T_Num);
@@ -135,10 +136,11 @@ namespace PAMI
           size_t                _next;
           pami_event_function   _fn;
           void                * _cookie;
+          uint8_t               _state[InjChannel::completion_event_state_bytes];
 
       }; // class     PAMI::Device::MU::InjectDescriptorMessage
 
-
+#if 0
       ///
       /// \brief Single descriptor advance with completion template specialization
       ///
@@ -209,6 +211,7 @@ namespace PAMI
         TRACE_FN_EXIT();
         return false;
       };
+#endif
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device
 };       // namespace PAMI

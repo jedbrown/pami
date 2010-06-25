@@ -59,7 +59,9 @@ namespace PAMI
                              void   * cookie)
           {
             TRACE_FN_ENTER();
-            notify_t * n = (notify_t *) payload;
+            notify_t * n = (notify_t *) metadata;
+
+            TRACE_FORMAT("n->fn = %p, n->cookie = %p .. &(n->fn) = %p, &(n->cookie) = %p", n->fn, n->cookie, &(n->fn), &(n->cookie));
 
             n->fn (recv_func_parm, // a.k.a. "pami_context_t"
                    n->cookie,
@@ -94,16 +96,13 @@ namespace PAMI
           /// \brief Reception channel constructor
           ///
           inline RecChannel (size_t id = 0) :
+              self (),
               _channel_id (id),
               _channel_cookie (NULL),
               _rfifo (NULL)
           {
             TRACE_FN_ENTER();
             COMPILE_TIME_ASSERT(sizeof(notify_t) <= MemoryFifoPacketHeader::packet_singlepacket_metadata_size);
-
-            // Zero-out the descriptor models before initialization
-            memset((void *)&self, 0, sizeof(MUSPI_DescriptorBase));
-
 
             // ----------------------------------------------------------------
             // Set the common base descriptor fields
@@ -169,14 +168,23 @@ namespace PAMI
             // ----------------------------------------------------------------
             // Set the "notify" system dispatch identifier
             // ----------------------------------------------------------------
+            TRACE_HEXDATA(&self, 64);
             MemoryFifoPacketHeader * hdr =
               (MemoryFifoPacketHeader *) & self.PacketHeader;
             hdr->setSinglePacket (true);
             hdr->setDispatchId (dispatch_system_notify);
+            TRACE_HEXDATA(&self, 64);
 
-#if (DO_TRACE_DEBUG==1)
-            self.dump();
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+            // mambo does not process zero byte memfifo packets.
+            TRACE_STRING("mambo workaround!");
+            Kernel_MemoryRegion_t  mregion;
+            Kernel_CreateMemoryRegion ( &mregion, this, 1 );
+            self.setPayload ((uint64_t)mregion.BasePa, 1);
 #endif
+
+            TRACE_STRING("construct 'notify self' descriptor");
+            TRACE_HEXDATA(&self, 64);
 
             TRACE_FN_EXIT();
           };
@@ -206,6 +214,8 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
 
+            TRACE_FORMAT("rfifo_id = %d, rfifo = %p, dest = 0x%08x, channel_cookie = %p", rfifo_id, rfifo, *((uint32_t *)dest), channel_cookie);
+
             _rfifo_id = rfifo_id;
             _rfifo    = rfifo;
 
@@ -229,6 +239,9 @@ namespace PAMI
             self.setRecFIFOId (rfifo_id);
             self.setDestination (*dest);
 
+            TRACE_STRING("initialize 'notify self' descriptor");
+            TRACE_HEXDATA(&self, 64);
+
             TRACE_FN_EXIT();
           };
 
@@ -238,13 +251,21 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
 
+            TRACE_FORMAT("self = %p, desc = %p, fn = %p, cookie = %p", (void *)&self, (void *)&desc, (void *)fn, cookie);
+
             // Clone the "self" descriptor
             self.clone (desc);
 
+            TRACE_HEXDATA(&desc, 64);
+
             // Copy the completion function+cookie into the packet header.
-            notify_t * hdr = (notify_t *) & desc.PacketHeader;
-            hdr->fn = fn;
-            hdr->cookie = cookie;
+            MemoryFifoPacketHeader * hdr =
+              (MemoryFifoPacketHeader *) & desc.PacketHeader;
+
+            notify_t notify = {fn, cookie};
+            hdr->setMetaData((void *)&notify, sizeof(notify_t));
+
+            TRACE_HEXDATA(&desc, 64);
 
             TRACE_FN_EXIT();
           };
@@ -337,11 +358,14 @@ namespace PAMI
                     while (cumulative_bytes < total_bytes )
                       {
                         hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketOptimized (rfifo, &cur_bytes);
+
+                        TRACE_HEXDATA(hdr, 64);
+
                         cumulative_bytes += cur_bytes;
                         uint16_t id = 0;
                         void *metadata;
                         hdr->getHeaderInfo (id, &metadata);
-                        TRACE_FORMAT("dispatch = %d, metadata = %p", id, metadata);
+                        TRACE_FORMAT("dispatch = %d, metadata = %p, hdr+1 = %p, cur_bytes-32 = %d", id, metadata, hdr + 1, cur_bytes - 32);
                         _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
                         packets++;
                         //Touch head for next packet
@@ -359,7 +383,7 @@ namespace PAMI
 
           // Memory fifo descriptor initialized to send to the reception
           // fifo in this reception channel
-          MUSPI_DescriptorBase   self;
+          MUSPI_Pt2PtMemoryFIFODescriptor self;
 
         private:
 

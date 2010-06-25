@@ -111,7 +111,7 @@ namespace PAMI
           // \param[in] context   PAMI communication context
           // \param[in] mm        Memory manager for this mu context
           ///
-          inline void init (size_t                  id_client//,
+          inline pami_result_t init (size_t                  id_client//,
                             //pami_client_t           client,
                             //pami_context_t          context
                             //,Memory::MemoryManager * mm
@@ -215,7 +215,7 @@ namespace PAMI
             // ----------------------------------------------------------------
             // Initialize the reception channel
             // ----------------------------------------------------------------
-            receptionChannel.initialize (_rfifoid,
+            receptionChannel.initialize (subgrpid*4 + _rfifoid,
                                          _rfifo,
                                          _mapping.getMuDestinationSelf(),
                                          NULL);  // \todo This should be the pami_context_t
@@ -226,7 +226,7 @@ namespace PAMI
             injectionGroup.initialize (0,
                                        MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup),
                                        _lookAsideBuf,
-                                       (uint64_t)_lookAsideMregion.BasePa,
+                                       ((uint64_t)_lookAsideBuf-(uint64_t)_lookAsideMregion.BaseVa)+(uint64_t)_lookAsideMregion.BasePa,
                                        _lookAsideCompletionFn,
                                        _lookAsideCompletionCookie,
                                        INJ_MEMORY_FIFO_NDESC,
@@ -235,7 +235,7 @@ namespace PAMI
 #endif
 
             TRACE_FN_EXIT();
-            return;
+            return PAMI_SUCCESS;
           }
 
 #if 1
@@ -419,7 +419,7 @@ namespace PAMI
             size_t tcoord = 0;
             _mapping.getMuDestinationTask(task, dest, tcoord);
             //rfifo = _rfifoid + tcoord * 4 /*number of rec fifos per subgrp*/;
-            rfifo = (64 / _mapping.tSize()) * tcoord + (offset << 2);
+            rfifo = (256 / _mapping.tSize()) * tcoord + (offset << 2);
             TRACE_FORMAT("rfifo = %d", rfifo);
 
             // In loopback we send only on AM

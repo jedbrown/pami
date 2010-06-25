@@ -133,7 +133,7 @@ namespace PAMI
         if(__global.useMU())
         {
          TRACE_ERR((stderr,"device init: MU\n"));
-        _mu = MUDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        _mu = Device::MU::Factory::generate(clientid, num_ctx, mm, _generics);
         }
          TRACE_ERR((stderr,"device init: done!\n"));
         return PAMI_SUCCESS;
@@ -171,7 +171,7 @@ namespace PAMI
 //      PAMI::Device::WQRingBcastDev::Factory::init(_wqringbcast, clientid, contextid, clt, ctx, mm, _generics);
         if(__global.useMU())
         {
-         MUDevice::Factory::init(_mu, clientid, contextid, clt, ctx, mm, _generics);
+         Device::MU::Factory::init(_mu, clientid, contextid, clt, ctx, mm, _generics);
         }
         return PAMI_SUCCESS;
       }
@@ -201,7 +201,7 @@ namespace PAMI
 //      events += PAMI::Device::WQRingReduceDev::Factory::advance(_wqringreduce, clientid, contextid);
 //      events += PAMI::Device::WQRingBcastDev::Factory::advance(_wqringbcast, clientid, contextid);
         if(__global.useMU())
-           events += MUDevice::Factory::advance(_mu, clientid, contextid);
+           events += Device::MU::Factory::advance(_mu, clientid, contextid);
         return events;
       }
 
@@ -232,7 +232,7 @@ namespace PAMI
           _mm (addr, bytes),
           _sysdep (_mm),
           _lock(),
-          _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >*) _multi_registration_storage),
+//          _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >*) _multi_registration_storage),
           _ccmi_registration((CCMIRegistration*)_ccmi_registration_storage),
           _world_geometry(world_geometry),
           _status(PAMI_SUCCESS),
@@ -240,8 +240,8 @@ namespace PAMI
           _shmemMsyncModel(NULL),
           _shmemMcombModel(NULL),
           _shmem_native_interface(NULL),
-          _devices(devices),
-          _global_mu_ni(NULL)
+          _devices(devices)//,
+          //_global_mu_ni(NULL)
 
       {
         TRACE_ERR((stderr,  "<%p>Context::Context() enter\n",this));
@@ -251,7 +251,7 @@ namespace PAMI
 
         // Make sure the memory allocator is large enough for all
         // protocol classes.
-        COMPILE_TIME_ASSERT(sizeof(MUGlobalNI) <= ProtocolAllocator::objsize);
+//        COMPILE_TIME_ASSERT(sizeof(MUGlobalNI) <= ProtocolAllocator::objsize);
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
@@ -264,8 +264,8 @@ namespace PAMI
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 
 
-        Protocol::Get::GetRdma <Device::MU::MUDmaModel<false>, MUDevice> * rget_mu = NULL;
-        Protocol::Put::PutRdma <Device::MU::MUDmaModel<false>, MUDevice> * rput_mu = NULL;
+        Protocol::Get::GetRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rget_mu = NULL;
+        Protocol::Put::PutRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rput_mu = NULL;
 
         Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice> * rget_shmem = NULL;
         Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice> * rput_shmem = NULL;
@@ -274,16 +274,16 @@ namespace PAMI
         {
           TRACE_ERR((stderr,  "<%p>Context::Context() construct mu native interface\n",this));
           // Can't construct NI until device is init()'d.  Ctor into member storage.
-          _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _client, _context, _contextid, _clientid);
+//          _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(MUDevice::Factory::getDevice(_devices->_mu, _clientid, _contextid), _client, _context, _contextid, _clientid);
 
           // Initialize mu rget and mu rput protocols.
           pami_result_t result = PAMI_ERROR;
 
-          rget_mu = Protocol::Get::GetRdma <Device::MU::MUDmaModel<false>, MUDevice>::
+          rget_mu = Protocol::Get::GetRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice>::
             generate (_devices->_mu[_contextid], _context, _request, result);
           if (result != PAMI_SUCCESS) rget_mu = NULL;
 
-          rput_mu = Protocol::Put::PutRdma <Device::MU::MUDmaModel<false>, MUDevice>::
+          rput_mu = Protocol::Put::PutRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice>::
             generate (_devices->_mu[_contextid], _context, _request, result);
           if (result != PAMI_SUCCESS) rput_mu = NULL;
 
@@ -383,10 +383,10 @@ namespace PAMI
 
        TRACE_ERR((stderr,  "<%p>Context::Context() Register collectives(%p,%p,%p,%p,%zu,%zu\n",this, _shmem_native_interface, _global_mu_ni, client, this, id, clientid));
        // The multi registration will use shmem/mu if they are ctor'd above.
-       _multi_registration       =  new (_multi_registration)
-       CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >(_shmem_native_interface, _global_mu_ni, client, (pami_context_t)this, id, clientid);
-
-       _multi_registration->analyze(_contextid, _world_geometry);
+ //      _multi_registration       =  new (_multi_registration)
+//       CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >(_shmem_native_interface, _global_mu_ni, client, (pami_context_t)this, id, clientid);
+       
+   //    _multi_registration->analyze(_contextid, _world_geometry);
 
        _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid,_devices->_shmem[_contextid],_devices->_mu[_contextid],_protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size());
        _ccmi_registration->analyze(_contextid, _world_geometry);
@@ -702,13 +702,13 @@ namespace PAMI
                   if (options.no_long_header == 1)
                   {
                      _dispatch[id] = (Protocol::Send::Send *)
-                           Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
+                           Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, false>::
                            generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, _protocol, result);
                   }
                   else
                   {
                      _dispatch[id] = (Protocol::Send::Send *)
-                        Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
+                        Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, true>::
                         generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, _protocol, result);
                   }
                }
@@ -748,8 +748,8 @@ namespace PAMI
                {
                   if (options.no_long_header == 1)
                   {
-                     Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false> * eagermu =
-                        Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, false>::
+                     Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, false> * eagermu =
+                        Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, false>::
                         generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, _protocol, result);
 
                      Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false> * eagershmem =
@@ -761,8 +761,8 @@ namespace PAMI
                   }
                   else
                   {
-                     Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true> * eagermu =
-                        Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true>::
+                     Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, true> * eagermu =
+                        Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, true>::
                         generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, _protocol, result);
 
                      Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true> * eagershmem =
@@ -804,8 +804,10 @@ namespace PAMI
             TRACE_ERR((stderr, "Context::dispatch_new_impl multicast %zu\n", id));
             if (_dispatch[id] == NULL)
             {
+#if 0
             _dispatch[id] = (void *)_global_mu_ni; // Only have one multicast right now
             return _global_mu_ni->setDispatch(fn, cookie);
+#endif
             }
 
          }
@@ -857,9 +859,10 @@ namespace PAMI
         }
         else if(__global.useMU())
          {
-
+#if 0
         TRACE_ERR((stderr, "Context::multisync_impl mu multisync %p\n", msyncinfo));
         return _global_mu_ni->multisync(msyncinfo); // Only have one multisync right now
+#endif
         }
         else
           PAMI_abortf("%s<%u>\n", __PRETTY_FUNCTION__, __LINE__);
@@ -877,9 +880,10 @@ namespace PAMI
         }
          else if(__global.useMU())
          {
-
+#if 0
         TRACE_ERR((stderr, "Context::multicombine_impl multicombine %p\n", mcombineinfo));
         return _global_mu_ni->multicombine(mcombineinfo);// Only have one multicombine right now
+#endif
         }
         else
           PAMI_abortf("%s<%u>\n", __PRETTY_FUNCTION__, __LINE__);
@@ -891,7 +895,7 @@ namespace PAMI
       {
         pami_result_t result = PAMI_NERROR;
         result = _ccmi_registration->analyze(context_id,geometry);
-        result = _multi_registration->analyze(context_id,geometry);
+        //result = _multi_registration->analyze(context_id,geometry);
         return result;
       }
 
@@ -913,7 +917,7 @@ namespace PAMI
       MemoryAllocator<1024, 16>    _request;
       ContextLock                  _lock;
     public:
-      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >    *_multi_registration;
+//      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >    *_multi_registration;
       CCMIRegistration            *_ccmi_registration;
       BGQGeometry                 *_world_geometry;
     private:
@@ -923,15 +927,15 @@ namespace PAMI
       Device::LocalAllreduceWQModel  *_shmemMcombModel;
       AllSidedShmemNI             *_shmem_native_interface;
       uint8_t                      _ccmi_registration_storage[sizeof(CCMIRegistration)];
-      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >)];
+//      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >)];
       uint8_t                      _shmemMcastModel_storage[sizeof(Device::LocalBcastWQModel)];
       uint8_t                      _shmemMsyncModel_storage[sizeof(Barrier_Model)];
       uint8_t                      _shmemMcombModel_storage[sizeof(Device::LocalAllreduceWQModel)];
       uint8_t                      _shmem_native_interface_storage[sizeof(AllSidedShmemNI)];
       ProtocolAllocator            _protocol;
       PlatformDeviceList          *_devices;
-      MUGlobalNI                  *_global_mu_ni;
-      uint8_t                      _global_mu_ni_storage[sizeof(MUGlobalNI)];
+//      MUGlobalNI                  *_global_mu_ni;
+//      uint8_t                      _global_mu_ni_storage[sizeof(MUGlobalNI)];
 
   }; // end PAMI::Context
 }; // end namespace PAMI

@@ -30,17 +30,11 @@ namespace PAMI
         protected :
 
           /// \see PAMI::Device::Interface::DmaModel::DmaModel
+          /// \todo set base address table information int he direct put descriptor(s)
           DmaModelBase (MU::Context & device, pami_result_t & status);
 
           /// \see PAMI::Device::Interface::DmaModel::DmaModel
           ~DmaModelBase ();
-
-          template <unsigned T_State, unsigned T_Desc>
-          inline void processCompletion (uint8_t                (&state)[T_State],
-                                         InjChannel           & channel,
-                                         pami_event_function    fn,
-                                         void                 * cookie,
-                                         MUSPI_DescriptorBase   (&desc)[T_Desc]);
 
         public:
 
@@ -213,6 +207,7 @@ namespace PAMI
         MUSPI_DirectPutDescriptorInfoFields dput;
         memset((void *)&dput, 0, sizeof(dput));
 
+        // TODO - need base address table stuff fromt he resource manager
         //dput.Rec_Payload_Base_Address_Id = ResourceManager::BAT_DEFAULT_ENTRY_NUMBER;
         dput.Rec_Payload_Offset          = 0;
         //dput.Rec_Counter_Base_Address_Id = ResourceManager::BAT_SHAREDCOUNTER_ENTRY_NUMBER;
@@ -221,6 +216,7 @@ namespace PAMI
 
         _dput.setDirectPutFields (&dput);
         _dput.setRecCounterBaseAddressInfo (1, 0); // shared reception counter
+        _dput.setMessageUnitPacketType (MUHWI_PACKET_TYPE_PUT);
 
 
         // --------------------------------------------------------------------
@@ -229,22 +225,12 @@ namespace PAMI
         _rput.setDirectPutFields (&dput);
         _rput.setRecCounterBaseAddressInfo (1, 0); // shared reception counter
         _rput.setDestination (*(_context.getMuDestinationSelf()));
+        _rput.setMessageUnitPacketType (MUHWI_PACKET_TYPE_PUT);
       };
 
       template <class T_Model>
       DmaModelBase<T_Model>::~DmaModelBase ()
       {
-      };
-
-      template <class T_Model>
-      template <unsigned T_State, unsigned T_Desc>
-      void DmaModelBase<T_Model>::processCompletion (uint8_t                (&state)[T_State],
-                                                     InjChannel           & channel,
-                                                     pami_event_function    fn,
-                                                     void                 * cookie,
-                                                     MUSPI_DescriptorBase   (&desc)[T_Desc])
-      {
-        static_cast<T_Model*>(this)->processCompletion_impl (state, channel, fn, cookie, desc);
       };
 
       template <class T_Model>
@@ -399,25 +385,16 @@ namespace PAMI
             dput->setPayload (local_pa + local_offset, bytes);
             dput->setRecPayloadBaseAddressInfo (0, remote_pa + remote_offset);
 
-            // Finish the completion processing and inject the descriptor(s)
-            array_t<MUSPI_DescriptorBase, 1> * resized =
-              (array_t<MUSPI_DescriptorBase, 1> *) desc;
-
-            processCompletion (state, channel, local_fn, cookie, resized->array);
-
-#if 0
-            // Finally, advance the injection fifo tail pointer. This action
+            // Advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            uint64_t sequenceNum = MUSPI_InjFifoAdvanceDesc (ififo);
+            uint64_t sequence = channel.injFifoAdvanceDesc ();
 
             // Set up completion notification if required
-            if (local_fn != NULL)
+            if (likely(local_fn != NULL))
               {
 #ifndef OPTIMIZE_AGGREGATE_LATENCY // replace with a template parameter?
                 // Check if the descriptor is done.
-                uint32_t rc = MUSPI_CheckDescComplete (ififo, sequenceNum);
-
-                if (likely(rc == 1))
+                if (likely(channel.checkDescComplete (sequence) == true))
                   {
                     //local_fn (_context, cookie, PAMI_SUCCESS); // Descriptor is done...notify.
                     local_fn (NULL, cookie, PAMI_SUCCESS); // Descriptor is done...notify.
@@ -429,22 +406,16 @@ namespace PAMI
                     // information so that the progress of the decriptor can be checked
                     // later and the callback will be invoked when the descriptor is
                     // complete.
-#if 0
-                    InjFifoMessage * msg = (InjFifoMessage *) state;
-                    new (msg) InjFifoMessage (local_fn, cookie, _context, sequenceNum);
 
-                    // Queue it.
-                    _context.addToDoneQ (target_task, msg->getWrapper());
-#else
-                    PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
-#endif
+                    // Add a completion event for the sequence number associated with
+                    // the descriptor that was injected.
+                    channel.addCompletionEvent (state, local_fn, cookie, sequence);
                   }
               }
-
-#endif
           }
         else
           {
+            // Construct and post a message
             PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
           }
 
@@ -539,6 +510,7 @@ namespace PAMI
             size_t pbytes = static_cast<T_Model*>(this)->
                             initializeRemoteGetPayload (vaddr, local_dst_pa,
                                                         remote_src_pa, bytes,
+                                                        target_task, target_offset,
                                                         local_fn, cookie);
 
             // Clone the remote inject model descriptor into the injection fifo
@@ -549,7 +521,7 @@ namespace PAMI
             rget->setDestination (dest);
             rget->setTorusInjectionFIFOMap (map);
             rget->setHints (hintsABCD, hintsE);
-            rget->setPayload (paddr, bytes);
+            rget->setPayload (paddr, pbytes);
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.

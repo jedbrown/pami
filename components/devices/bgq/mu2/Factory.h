@@ -52,7 +52,7 @@ namespace PAMI
             // Instantiate the mu context objects
             for (id_offset = 0; id_offset < id_count; ++id_offset)
               {
-                new (&mu[i])
+                new (&mu[id_offset])
                 MU::Context (__global.mapping, id_base, id_offset, id_count);
               }
 
@@ -70,7 +70,7 @@ namespace PAMI
                                                  Memory::MemoryManager * mm,
                                                  Generic::Device       * progress)
           {
-            return getDevice_impl (devices, clientid, contextid).init (clientid, client, context);
+            return getDevice_impl (devices, clientid, contextid).init (clientid);
           };
 
           ///

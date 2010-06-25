@@ -17,6 +17,7 @@
 #include <spi/include/mu/InjFifo.h>
 
 #include "components/devices/bgq/mu2/msg/MessageQueue.h"
+#include "components/devices/bgq/mu2/msg/CompletionEvent.h"
 
 #include "components/devices/bgq/mu2/trace.h"
 #define DO_TRACE_ENTEREXIT 0
@@ -40,7 +41,7 @@ namespace PAMI
       /// This allows the injection group to correctly specify the status
       /// variable references, which allows the injection group to quickley
       /// determine if any injection channels in the injection group need
-      /// to be advanced/
+      /// to be advanced.
       ///
       /// \see MU::InjGroup
       ///
@@ -92,9 +93,6 @@ namespace PAMI
               _ififo (NULL),
               _immediate_vaddr (NULL),
               _immediate_paddr (0),
-              _completion_function (NULL),
-              _completion_cookie (NULL),
-              _completions_pending (0),
               _n (0)
           {
             TRACE_FN_ENTER();
@@ -135,14 +133,13 @@ namespace PAMI
                                   void                 * channel_cookie)
           {
             TRACE_FN_ENTER();
-            _channel_cookie = channel_cookie;
 
+            _channel_cookie = channel_cookie;
             _ififo = f;
             _immediate_vaddr = immediate_vaddr;
             _immediate_paddr = immediate_paddr;
-            _completion_function = completion_function;
-            _completion_cookie = completion_cookie;
             _n = n;
+
             TRACE_FN_EXIT();
           };
 
@@ -206,10 +203,10 @@ namespace PAMI
           ///
           /// \todo Injection fifo head/tail updates to determine completion range
           ///
-          /// \see PAMI::Device::MU::InjChannel::setInjectionDescriptorNotification()
+          /// \see PAMI::Device::MU::InjChannel::addCompletionEvent()
           ///
           /// \return Number of completion functions invoked
-          //
+          ///
           inline size_t advanceCompletion ()
           {
             TRACE_FN_ENTER();
@@ -217,37 +214,39 @@ namespace PAMI
 
             TRACE_FORMAT("_completion_status = %016lx, _channel_set_bit = %016lx, _completion_status & _channel_set_bit = %016lx", _completion_status, _channel_set_bit, _completion_status & _channel_set_bit);
 
-            if (likely(_completions_pending != 0))
-              {
-                size_t start = 0; // get from mu spi somehow
-                size_t count = 0; // get from mu spi somehow
+            if (unlikely(_completionq.isEmpty()))
+            {
+              TRACE_FN_EXIT();
+              return 0;
+            }
 
-                size_t i;
 
-                for (i = 0; i < count; i++)
-                  {
-                    TRACE_FORMAT("_completion_function[%zu] = %p", start+i, _completion_function[start+i]);
-                    if (likely(_completion_function[start+i] != NULL))
-                      {
-                        _completion_function[start+i] (_channel_cookie,
-                                                       _completion_cookie[start+i],
-                                                       PAMI_SUCCESS);
-                        completion_count++;
-                      }
-                  }
+            // Read the mu descriptor count from hardware
+            uint64_t current = MUSPI_getHwDescCount (_ififo);
 
-                TRACE_FORMAT("_completions_pending %zu -> %zu", _completions_pending, _completions_pending - completion_count);
+            // Update the descriptor count shadow
+            _ififo->descCount = current;
 
-                // Update the count of active completion requests
-                _completions_pending -= completion_count;
+            CompletionEvent * event = (CompletionEvent *) _completionq.peek();
+            while (event != NULL && event->isDone(current))
+            {
+              // Pop from the queue before invoking the completion function as
+              // function may reuse the storage occupied by the completion
+              // event object;
+              _completionq.pop();
+              event->invoke();
+              completion_count++;
 
-                // Turn off completion bit for this injection fifo channel
-                _completion_status &= _channel_unset_bit;
+              // Get the next completion event
+              event = (CompletionEvent *) _completionq.peek();
+            }
 
-                // Re-set the completion bit for this injection fifo channel
-                _completion_status |= ((_completions_pending > 0) << _channel_id);
-                TRACE_FORMAT("_completion_status = %016lx (%zu, %zu)", _completion_status, _completions_pending, _channel_id);
-              }
+            // Turn off completion bit for this injection fifo channel
+            _completion_status &= _channel_unset_bit;
+
+            // Re-set the completion bit for this injection fifo channel
+            _completion_status |= ((_completionq.isEmpty()==false) << _channel_id);
+            TRACE_FORMAT("_completion_status = %016lx (%d, %zu)", _completion_status, _completionq.isEmpty(), _channel_id);
 
             TRACE_FN_EXIT();
             return completion_count;
@@ -266,12 +265,13 @@ namespace PAMI
           MUSPI_InjFifo_t      * _ififo;               // MU injection fifo
           immediate_payload_t  * _immediate_vaddr;     // Virtual address of the payload array
           uint64_t               _immediate_paddr;     // Physical address of the payload array
-          pami_event_function  * _completion_function; // Array of completion functions
-          void                ** _completion_cookie;   // Array of completion cookies
-          size_t                 _completions_pending; // Number of active completion requests
+
+          PAMI::Queue            _completionq;
           size_t                 _n;                   // Number of elements in the arrays
 
         public:
+
+          static const size_t completion_event_state_bytes = sizeof(CompletionEvent);
 
           /// \brief The number of contiguous free descriptors after the tail of the injection fifo
           ///
@@ -359,6 +359,7 @@ namespace PAMI
             size_t start = (size_t) MUSPI_getStartVa ((MUSPI_Fifo_t *)_ififo);
             size_t index = ((size_t) desc - start) >> BGQ_MU_DESCRIPTOR_SIZE_IN_POW2;
             size_t offset = index * sizeof(immediate_payload_t);
+            TRACE_FORMAT("desc = %zu, start = %zu, index = %zu, offset = %zu", (size_t)desc, start, index, offset);
 
             vaddr = (void *) & _immediate_vaddr[index];
             paddr = (uint64_t) (_immediate_paddr + offset);
@@ -379,8 +380,12 @@ namespace PAMI
           inline uint64_t injFifoAdvanceDesc ()
           {
             TRACE_FN_ENTER();
+
+            TRACE_HEXDATA((void *)MUSPI_getTailVa(&_ififo->_fifo),BGQ_MU_DESCRIPTOR_SIZE_IN_BYTES*2);
             uint64_t sequence = MUSPI_InjFifoAdvanceDesc (_ififo);
+            TRACE_HEXDATA((void *)MUSPI_getTailVa(&_ififo->_fifo),BGQ_MU_DESCRIPTOR_SIZE_IN_BYTES*2);
             TRACE_FORMAT("sequence = %zu", sequence);
+
             TRACE_FN_EXIT();
             return sequence;
           };
@@ -404,36 +409,35 @@ namespace PAMI
           }
 
           ///
-          /// \brief Set an event for an injection fifo descriptor index
+          /// \brief Add a sequence number completion event
           ///
-          /// Updates the injection group completion status bit for the channel
+          /// \tparam T_StateBytes Number of byte in the state array, must be <= completion_event_state_bytes
           ///
-          /// \param[in] fn       Completion event function
-          /// \param[in] cookie   Completion event cookie
-          /// \param[in] desc     Descriptor to monitor for completion
+          /// \param[in] state  Memory provided to track the state of the completion event
+          /// \param[in] fn     Completion event function
+          /// \param[in] cookie Completion event cookie
           ///
-          inline void setInjectionDescriptorNotification (pami_event_function    fn,
-                                                          void                 * cookie,
-                                                          MUSPI_DescriptorBase * desc)
+          /// \see InjChannel::completion_event_state_bytes
+          ///
+          template <unsigned T_StateBytes>
+          inline void addCompletionEvent (uint8_t               (&state)[T_StateBytes],
+                                          pami_event_function    fn,
+                                          void                 * cookie,
+                                          uint64_t               sequence)
           {
             TRACE_FN_ENTER();
-            size_t offset = (size_t) desc - (size_t) MUSPI_getStartVa ((MUSPI_Fifo_t *)_ififo);
-            size_t index = offset >> BGQ_MU_DESCRIPTOR_SIZE_IN_POW2;
+            COMPILE_TIME_ASSERT(sizeof(CompletionEvent) <= T_StateBytes);
 
-            TRACE_FORMAT("desc = %p, MUSPI_getStartVa() = %p, offset = %zu, index = %zu", desc, MUSPI_getStartVa ((MUSPI_Fifo_t *)_ififo), offset, index);
+            CompletionEvent * event =
+              new (state) CompletionEvent (fn, _channel_cookie, cookie, sequence);
 
-            _completion_function[index] = fn;
-            _completion_cookie[index]   = cookie;
-
-            TRACE_FORMAT("_completions_pending = %zu, _completion_status = %016lx, _channel_set_bit = %016lx", _completions_pending, _completion_status, _channel_set_bit);
-            _completions_pending++;
+            _completionq.enqueue (event);
 
             // Turn on the completion status bit for this fifo
             _completion_status |= _channel_set_bit;
-            TRACE_FORMAT("_completions_pending = %zu, _completion_status = %016lx", _completions_pending, _completion_status);
+
             TRACE_FN_EXIT();
           };
-
 
           ///
           /// \brief Send queue empty status

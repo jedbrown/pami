@@ -25,7 +25,7 @@
 #include "components/devices/bgq/mu2/model/DmaModel.h"
 #include "components/devices/bgq/mu2/model/DmaModelMemoryFifoCompletion.h"
 #include "components/devices/bgq/mu2/model/PacketModel.h"
-#include "components/devices/bgq/mu2/model/PacketModelMemoryFifoCompletion.h"
+//#include "components/devices/bgq/mu2/model/PacketModelMemoryFifoCompletion.h"
 #include "components/devices/bgq/mu2/model/PacketModelDeposit.h"
 #include "components/devices/bgq/mu2/model/PacketModelInterrupt.h"
 
@@ -37,8 +37,8 @@
 
 typedef PAMI::Device::MU::Context MuContext;
 
-//typedef PAMI::Device::MU::PacketModel MuPacketModel;
-typedef PAMI::Device::MU::PacketModelMemoryFifoCompletion MuPacketModel;
+typedef PAMI::Device::MU::PacketModel MuPacketModel;
+//typedef PAMI::Device::MU::PacketModelMemoryFifoCompletion MuPacketModel;
 //typedef PAMI::Device::MU::PacketModelDeposit MuPacketModel;
 //typedef PAMI::Device::MU::PacketModelInterrupt MuPacketModel;
 

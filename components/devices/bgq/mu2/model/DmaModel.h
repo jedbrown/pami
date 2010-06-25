@@ -33,20 +33,6 @@ namespace PAMI
           /// \see PAMI::Device::Interface::DmaModel::~DmaModel
           inline ~DmaModel () {};
 
-          template <unsigned T_State>
-          inline void processCompletion_impl (uint8_t                (&state)[T_State],
-                                              InjChannel           & channel,
-                                              pami_event_function    fn,
-                                              void                 * cookie,
-                                              MUSPI_DescriptorBase   (&desc)[1])
-          {
-            channel.setInjectionDescriptorNotification (fn, cookie, desc);
-
-            // Advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
-          };
-
       }; // PAMI::Device::MU::DmaModel class
     };   // PAMI::Device::MU namespace
   };     // PAMI::Device namespace

@@ -26,14 +26,17 @@
   #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
   #include "components/devices/workqueue/LocalReduceWQMessage.h"
   #include "components/devices/workqueue/LocalBcastWQMessage.h"
-  #include "components/devices/bgq/mu/MUDevice.h"
-  #include "components/devices/bgq/mu/MUPacketModel.h"
-  #include "components/devices/bgq/mu/MUDmaModel.h"
 
-  #include "components/devices/bgq/mu/MUCollDevice.h"
-  #include "components/devices/bgq/mu/MUMulticastModel.h"
-  #include "components/devices/bgq/mu/MUMultisyncModel.h"
-  #include "components/devices/bgq/mu/MUMulticombineModel.h"
+  #include "components/devices/bgq/mu2/Factory.h"
+  #include "components/devices/bgq/mu2/Context.h"
+  #include "components/devices/bgq/mu2/model/PacketModel.h"
+  #include "components/devices/bgq/mu2/model/DmaModel.h"
+  #include "components/devices/bgq/mu2/model/DmaModelMemoryFifoCompletion.h"
+
+//  #include "components/devices/bgq/mu/MUCollDevice.h"
+//  #include "components/devices/bgq/mu/MUMulticastModel.h"
+//  #include "components/devices/bgq/mu/MUMultisyncModel.h"
+//  #include "components/devices/bgq/mu/MUMulticombineModel.h"
 
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/composite/Composite.h"
@@ -55,11 +58,12 @@ namespace PAMI
 {
   typedef Geometry::Common                     BGQGeometry;
 
-  typedef Device::MU::MUCollDevice MUDevice;
-  typedef BGQNativeInterface < MUDevice,
-                               Device::MU::MUMulticastModel,
-                               Device::MU::MUMultisyncModel,
-                               Device::MU::MUMulticombineModel > MUGlobalNI;
+  typedef Device::MU::Context MUDevice;
+  //typedef Device::MU::MUCollDevice MUDevice;
+//  typedef BGQNativeInterface < MUDevice,
+  //                             Device::MU::MUMulticastModel,
+    //                           Device::MU::MUMultisyncModel,
+      //                         Device::MU::MUMulticombineModel > MUGlobalNI;
 
   typedef Fifo::FifoPacket <32, 512> ShmemPacket;
   typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
@@ -75,7 +79,7 @@ namespace PAMI
   // shmem allsided over p2p eager
   typedef PAMI::NativeInterfaceAllsided<ShmemEager> ShmemNI_AS;
 
-  typedef Protocol::Send::Eager <Device::MU::MUPacketModel, MUDevice, true> MUEagerBase;
+  typedef Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, true> MUEagerBase;
   typedef PAMI::Protocol::Send::SendPWQ < MUEagerBase > MUEager;
 
   // MU active message over p2p eager
