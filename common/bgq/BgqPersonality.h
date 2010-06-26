@@ -342,6 +342,46 @@ namespace PAMI
       }
 
       ///
+      /// \brief Retrieves the torus vs mesh status of the 'A' dimension.
+      ///
+      bool isTorusA()  const
+      {
+        return _torusA;
+      }
+
+      ///
+      /// \brief Retrieves the torus vs mesh status of the 'B' dimension.
+      ///
+      bool isTorusB()  const
+      {
+        return _torusB;
+      }
+
+      ///
+      /// \brief Retrieves the torus vs mesh status of the 'C' dimension.
+      ///
+      bool isTorusC()  const
+      {
+        return _torusC;
+      }
+
+      ///
+      /// \brief Retrieves the torus vs mesh status of the 'D' dimension.
+      ///
+      bool isTorusD()  const
+      {
+        return _torusD;
+      }
+
+      ///
+      /// \brief Retrieves the torus vs mesh status of the 'E' dimension.
+      ///
+      bool isTorusE()  const
+      {
+        return _torusE;
+      }
+
+      ///
       /// \brief Retrieves the max number of cores, not the number active
       ///
       size_t maxCores() const

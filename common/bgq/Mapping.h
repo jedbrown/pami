@@ -159,12 +159,47 @@ namespace PAMI
     ///
     /// \note Does not provide process, core, or hardware thread addressing.
     ///
-    inline void getMuDestinationTask (size_t task, MUHWI_Destination_t &dest, size_t &tcoord)
+    inline void getMuDestinationTask (size_t               task, 
+				      MUHWI_Destination_t &dest, 
+				      size_t              &tcoord,
+				      uint32_t            &fifoPin)
     {
       uint32_t raw = _mapcache.torus.task2coords[task].raw;
       tcoord       = (size_t) raw & 0x0000003f; // 't' coordinate
 
-      dest.Destination.Destination = (raw & 0x3fffffc0) | (raw >> 31);; //Mask the MSB 6 bits (tcoord) and the LSB bit (ecoord)
+      // raw & 0x1f7df7c0 turns off the e, reserved, and t coordinate bits, AND
+      // the high bit of A, B, C, and D which are used for the fifoPin.
+      // OR in the e coord at the LSB.
+      dest.Destination.Destination = (raw & 0x1f7df7c0) | (raw >> 31);
+
+      // Extract the MSB from each of A, B, C, and D, and construct the
+      // number used for fifo pinning.  Should be a number between 0 and 9,
+      // inclusive.
+      fifoPin = ( ( (raw & 0x20000000) >> 26 ) |
+		  ( (raw & 0x00800000) >> 21 ) |
+		  ( (raw & 0x00020000) >> 16 ) |
+		  ( (raw & 0x00000800) >> 11 ) );
+    };
+
+    ///
+    /// \brief Set Fifo Pinning Info into the Mapcache
+    ///
+    /// The intent here is to provide access to a mu destination structure
+    /// initialized to the coordinates of the destination node.
+    ///
+    /// \note Does not provide process, core, or hardware thread addressing.
+    ///
+    inline void setFifoPin ( size_t   task, 
+			     uint16_t fifo )
+    {
+      // OR in the fifo pin bits.
+      // The LSB 4 bits of the fifo pin are placed into the high order bit of
+      // the A, B, C, and D coords in the structure.
+      _mapcache.torus.task2coords[task].raw |= 
+	( ((fifo & 0x8) << 26) | 
+	  ((fifo & 0x4) << 21) |
+	  ((fifo & 0x2) << 16) |
+	  ((fifo & 0x1) << 11) );
     };
 
     /////////////////////////////////////////////////////////////////////////

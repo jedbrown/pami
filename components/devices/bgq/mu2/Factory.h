@@ -17,8 +17,11 @@
 #include "Global.h"
 
 #include "components/devices/FactoryInterface.h"
+#include "components/devices/bgq/mu2/global/Global.h"
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/generic/Device.h"
+
+extern PAMI::Device::MU::Global __MUGlobal;
 
 namespace PAMI
 {
@@ -38,6 +41,9 @@ namespace PAMI
                                                      Memory::MemoryManager         & mm,
                                                      PAMI::Device::Generic::Device * devices)
           {
+	    // Initialize the MU resources for all contexts for this client
+	    __MUGlobal.getMuRM().initializeContexts( id_client, id_count );
+
             // Allocate an array of mu contexts, one for each pami context
             // in this _task_ (from heap, not from shared memory)
             MU::Context * mu;

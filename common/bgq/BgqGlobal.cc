@@ -22,6 +22,13 @@ pami_coord_t PAMI::Topology::my_coords;
 #include "components/devices/misc/ProgressFunctionMsg.h"
 PAMI::Device::ProgressFunctionDev _g_progfunc_dev;
 
+#include "common/bgq/ResourceManager.h"
+PAMI::ResourceManager __pamiRM;
+
+#include "components/devices/bgq/mu2/global/Global.h"
+PAMI::Device::MU::Global __MUGlobal ( __pamiRM, __global.mapping, __global.personality );
+
+
 //
 // astyle info    http://astyle.sourceforge.net
 //

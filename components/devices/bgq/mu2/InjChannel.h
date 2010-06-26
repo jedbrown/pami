@@ -15,6 +15,7 @@
 #define __components_devices_bgq_mu2_InjChannel_h__
 
 #include <spi/include/mu/InjFifo.h>
+#include <spi/include/mu/DescriptorBaseXX.h>
 
 #include "components/devices/bgq/mu2/msg/MessageQueue.h"
 #include "components/devices/bgq/mu2/msg/CompletionEvent.h"
@@ -310,6 +311,7 @@ namespace PAMI
           inline size_t getFreeDescriptorCountWithUpdate ()
           {
             TRACE_FN_ENTER();
+
             uint64_t freeSpace = MUSPI_getFreeSpaceFromShadow (_ififo);
 
             if (unlikely(freeSpace == 0))

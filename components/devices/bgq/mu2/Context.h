@@ -30,6 +30,8 @@
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
 
+#include "components/devices/bgq/mu2/global/Global.h"
+#include "components/devices/bgq/mu2/InjChannel.h"
 #include "components/devices/bgq/mu2/InjGroup.h"
 #include "components/devices/bgq/mu2/RecChannel.h"
 
@@ -37,7 +39,9 @@
 #define DO_TRACE_ENTEREXIT 0
 #define DO_TRACE_DEBUG     0
 
-#define CONTEXT_ALLOCATES_RESOURCES   1
+#define CONTEXT_ALLOCATES_RESOURCES   0
+
+extern PAMI::Device::MU::Global __MUGlobal;
 
 namespace PAMI
 {
@@ -70,6 +74,21 @@ namespace PAMI
           ///
           static const size_t immediate_payload_size = sizeof(MU::InjGroup::immediate_payload_t);
 
+	  ///
+	  /// \brief Torus Injection Fifo Map Values
+	  ///
+	  uint64_t pinTorusInjFifoMap[10];
+
+	  ///
+	  /// \brief Hints for Loopback
+	  ///
+	  uint8_t pinHintsABCD[10];
+	  uint8_t pinHintsE[10];
+
+	  ///
+	  /// \brief Reverse Fifo Pin array
+	  ///
+	  uint32_t injFifoPinReverse[10];
 
           ///
           /// \brief foo
@@ -90,12 +109,71 @@ namespace PAMI
                           size_t            id_count) :
               Interface::BaseDevice<Context> (),
               Interface::PacketDevice<Context> (),
+ 	      _rm ( __MUGlobal.getMuRM() ),
               _mapping (mapping),
               _id_base (id_base),
               _id_offset (id_offset),
-              _id_count (id_count)
+	      _id_count (id_count)
           {
             TRACE_FN_ENTER();
+	    ///
+	    /// \brief Torus Injection Fifo Map Values
+	    ///
+	    pinTorusInjFifoMap[0] = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
+	    pinTorusInjFifoMap[1] = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP;
+	    pinTorusInjFifoMap[2] = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BM;
+	    pinTorusInjFifoMap[3] = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BP;
+	    pinTorusInjFifoMap[4] = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CM;
+	    pinTorusInjFifoMap[5] = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CP;
+	    pinTorusInjFifoMap[6] = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DM;
+	    pinTorusInjFifoMap[7] = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DP;
+	    pinTorusInjFifoMap[8] = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM;
+	    pinTorusInjFifoMap[9] = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP;
+	    
+	    ///
+	    /// \brief Hints for Loopback
+	    ///
+	    pinHintsABCD[0] = MUHWI_PACKET_HINT_AM;
+	    pinHintsABCD[1] = MUHWI_PACKET_HINT_AP;
+	    pinHintsABCD[2] = MUHWI_PACKET_HINT_BM;
+	    pinHintsABCD[3] = MUHWI_PACKET_HINT_BP;
+	    pinHintsABCD[4] = MUHWI_PACKET_HINT_CM;
+	    pinHintsABCD[5] = MUHWI_PACKET_HINT_CP;
+	    pinHintsABCD[6] = MUHWI_PACKET_HINT_DM;
+	    pinHintsABCD[7] = MUHWI_PACKET_HINT_DP;
+	    pinHintsABCD[8] = MUHWI_PACKET_HINT_A_NONE | 
+	      MUHWI_PACKET_HINT_B_NONE |
+	      MUHWI_PACKET_HINT_C_NONE | 
+	      MUHWI_PACKET_HINT_D_NONE;
+	    pinHintsABCD[9] = MUHWI_PACKET_HINT_A_NONE | 
+	      MUHWI_PACKET_HINT_B_NONE | 
+	      MUHWI_PACKET_HINT_C_NONE | 
+	      MUHWI_PACKET_HINT_D_NONE;
+      
+	    pinHintsE[0] = MUHWI_PACKET_HINT_E_NONE;
+	    pinHintsE[1] = MUHWI_PACKET_HINT_E_NONE;
+	    pinHintsE[2] = MUHWI_PACKET_HINT_E_NONE;
+	    pinHintsE[3] = MUHWI_PACKET_HINT_E_NONE;
+	    pinHintsE[4] = MUHWI_PACKET_HINT_E_NONE;
+	    pinHintsE[5] = MUHWI_PACKET_HINT_E_NONE;
+	    pinHintsE[6] = MUHWI_PACKET_HINT_E_NONE;
+	    pinHintsE[7] = MUHWI_PACKET_HINT_E_NONE;
+	    pinHintsE[8] = MUHWI_PACKET_HINT_EP;
+	    pinHintsE[9] = MUHWI_PACKET_HINT_EM;
+
+	    // Reverse the fifo pin.
+	    // For example, if pinned to fifo 0 (AM), output is pinned to fifo 1 (AP).
+	    injFifoPinReverse[0] = 1;
+	    injFifoPinReverse[0] = 0;
+	    injFifoPinReverse[0] = 3;
+	    injFifoPinReverse[0] = 2;
+	    injFifoPinReverse[0] = 5;
+	    injFifoPinReverse[0] = 4;
+	    injFifoPinReverse[0] = 7;
+	    injFifoPinReverse[0] = 6;
+	    injFifoPinReverse[0] = 9;
+	    injFifoPinReverse[0] = 8;
+
             TRACE_FN_EXIT();
           };
 
@@ -119,6 +197,13 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
             _id_client = id_client;
+
+	    // Map the PAMI client ID to the resource manager's client ID.
+	    // The PAMI client ID is assigned on a first-come-first-served
+	    // basis PAMI_Client_create() is called.  We need an ID that
+	    // corresponds to the clients named on PAMI_CLIENTNAMES so the
+	    // resource manager knows which client we are talking about.
+	    _rm_id_client = _rm.mapClientIdToRmClientId ( id_client );
 
             // Need to find a way to break this dependency...
             //_client = client;
@@ -232,6 +317,75 @@ namespace PAMI
                                        INJ_MEMORY_FIFO_NDESC,
                                        NULL);  // \todo This should be the pami_context_t
 
+#else
+	    // Resource Manager allocates the resources.
+	    
+	    // Construct arrays of Inj and Rec fifo pointers.
+	    _rm.getNumFifosPerContext(  _rm_id_client,
+				       &_numInjFifos,
+				       &_numRecFifos );
+	    _injFifos = (MUSPI_InjFifo_t**)malloc( _numInjFifos * sizeof(MUSPI_InjFifo_t*) );
+	    PAMI_assertf( _injFifos != NULL, "The heap is full.\n" );
+
+	    _recFifos = (MUSPI_RecFifo_t**)malloc( _numRecFifos * sizeof(MUSPI_RecFifo_t*) );
+	    PAMI_assertf( _recFifos != NULL, "The heap is full.\n" );
+
+	    _globalRecFifoIds = (uint32_t *)malloc( _numRecFifos * sizeof(uint32_t) );
+	    PAMI_assertf( _globalRecFifoIds != NULL, "The heap is full.\n" );
+
+	    _rm.getInjFifosForContext( _rm_id_client,
+				       _id_offset,
+				       _numInjFifos,
+				       _injFifos );
+
+	    _rm.getRecFifosForContext( _rm_id_client,
+				       _id_offset,
+				       _numRecFifos,
+				       _recFifos,
+				       _globalRecFifoIds );
+
+	    // Get arrays of the following:
+	    // 1. Lookaside payload buffers virtual addresses
+	    // 2. Lookaside payload buffers physical addresses
+	    // 3. Lookaside completion function pointers
+	    // 4. Lookaside completion cookies
+	    // 5. Pin Injection Fifo Map that maps from the optimal 10 inj fifos
+	    //    to the actual number of fifos.
+	    _lookAsidePayloadVAs = _rm.getLookAsidePayloadBufferVAs( _rm_id_client,
+								     _id_offset );
+	    _lookAsidePayloadPAs = _rm.getLookAsidePayloadBufferPAs( _rm_id_client,
+								     _id_offset );
+	    _lookAsideCompletionFnPtrs = _rm.getLookAsideCompletionFnPtrs( _rm_id_client,
+									   _id_offset );
+	    _lookAsideCompletionCookiePtrs = _rm.getLookAsideCompletionCookiePtrs( _rm_id_client,
+										   _id_offset );
+
+	    _pinInjFifoMap = _rm.getPinInjFifoMap( _numInjFifos );
+
+	    TRACE_FORMAT("_pinInjFifoMap = %p\n", _pinInjFifoMap);
+
+            // Initialize the injection channel(s) inside the injection group
+	    size_t fifo;
+	    for ( fifo=0; fifo<_numInjFifos; fifo++ )
+	      {
+		injectionGroup.initialize (fifo,
+					   _injFifos[fifo],
+					   (InjGroup::immediate_payload_t*)
+					     _lookAsidePayloadVAs[fifo],
+					   _lookAsidePayloadPAs[fifo],
+					   _lookAsideCompletionFnPtrs[fifo],
+					   _lookAsideCompletionCookiePtrs[fifo],
+					   _rm.getMaxNumDescInInjFifo(),
+					   NULL);  // \todo This should be the pami_context_t
+	      }
+
+            // ----------------------------------------------------------------
+            // Initialize the reception channel
+            // ----------------------------------------------------------------
+            receptionChannel.initialize (_globalRecFifoIds[0],
+                                         _recFifos[0],
+                                         _mapping.getMuDestinationSelf(),
+                                         NULL);  // \todo This should be the pami_context_t
 #endif
 
             TRACE_FN_EXIT();
@@ -380,13 +534,17 @@ namespace PAMI
           };
 
           ///
-          /// \brief
+          /// \brief Pin Fifo (from Self to Destination)
           ///
           /// The pinFifo method is used for two purposes: to retrieve the
           /// context-relative injection fifo identification number of the
           /// injection fifo to which communication with the destination
           /// task+offset is pinned, and to provide MUSPI information needed
           /// to initialize and inject a descriptor.
+	  ///
+	  /// This is a "pinFromSelf" direction.  The data is assumed to 
+	  /// be travelling from ourself to the task/offset destination.
+	  ///
           ///
           /// \see MUHWI_MessageUnitHeader.Memory_FIFO.Rec_FIFO_Id
           /// \see MUHWI_Descriptor_t.Torus_FIFO_Map
@@ -395,6 +553,8 @@ namespace PAMI
           /// \param[in]  offset  Destination task context offset identifier
           /// \param[out] dest    Destination task node coordinates
           /// \param[out] rfifo   Reception fifo id to address the task+offset
+	  ///                     This is a global id that can be put into
+	  ///                     the descriptor.
           /// \param[out] map     Pinned MUSPI torus injection fifo map
           /// \param[out] hintsABCD Pinned ABCD torus hints
           /// \param[out] hintsE  Pinned E torus hints
@@ -417,19 +577,80 @@ namespace PAMI
             // the destination task+offset.  This is important for
             // multi-context support.
             size_t tcoord = 0;
-            _mapping.getMuDestinationTask(task, dest, tcoord);
-            //rfifo = _rfifoid + tcoord * 4 /*number of rec fifos per subgrp*/;
-            rfifo = (256 / _mapping.tSize()) * tcoord + (offset << 2);
-            TRACE_FORMAT("rfifo = %d", rfifo);
+	    uint32_t fifoPin = 0;
+            _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin );
 
-            // In loopback we send only on AM
-            map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
-            hintsABCD = MUHWI_PACKET_HINT_AM;
-            hintsE    = MUHWI_PACKET_HINT_E_NONE;
+            rfifo = _rm.getPinRecFifo( _id_client, offset, tcoord );
+            TRACE_FORMAT("client=%zu, context=%zu, tcoord=%zu, rfifo = %u", _id_client, offset, tcoord, rfifo);
 
-            TRACE_FORMAT("(%zu,%zu) -> dest = %08x, rfifo = %d, map = %016lx, hintsABCD = %08x, hintsE = %08x", task, offset, *((uint32_t *) &dest), rfifo, map, hintsABCD, hintsE);
+	    map = pinTorusInjFifoMap[fifoPin];
+
+	    // In loopback we specify hints.
+            hintsABCD = pinHintsABCD[fifoPin];
+            hintsE    = pinHintsE[fifoPin];
+
+            TRACE_FORMAT("(destTask %zu, destOffset %zu) -> dest = %08x, rfifo = %d, optimalFifoPin = %u, actualFifoPin = %u, map = %016lx, hintsABCD = %02x, hintsE = %02x, pinInjFifoMap[]=%u,%u,%u,%u,%u,%u,%u,%u,%u,%u", task, offset, *((uint32_t *) &dest), rfifo, fifoPin, _pinInjFifoMap[fifoPin],map, hintsABCD, hintsE, _pinInjFifoMap[0],_pinInjFifoMap[1],_pinInjFifoMap[2],_pinInjFifoMap[3],_pinInjFifoMap[4],_pinInjFifoMap[5],_pinInjFifoMap[6],_pinInjFifoMap[7],_pinInjFifoMap[8],_pinInjFifoMap[9]);
             TRACE_FN_EXIT();
-            return  0;
+
+            return  _pinInjFifoMap[fifoPin];
+          }
+
+          ///
+          /// \brief Pin Fifo (to Self from Remote)
+          ///
+          /// The pinFifo method is used for two purposes: to retrieve the
+          /// context-relative injection fifo identification number of the
+          /// injection fifo to which communication with the remote
+          /// task+offset is pinned, and to provide MUSPI information needed
+          /// to initialize and inject a descriptor.
+	  ///
+	  /// This is a "pinToSelf" direction.  The info returned is to be
+	  /// put into a descriptor that is injected on the remote node.
+	  /// Data is assumed to be travelling from the specified task/offset
+	  /// to ourself.
+          ///
+          /// \see MUHWI_MessageUnitHeader.Memory_FIFO.Rec_FIFO_Id
+          /// \see MUHWI_Descriptor_t.Torus_FIFO_Map
+          ///
+          /// \param[in]  task    Remote task identifier
+          /// \param[out] map     Pinned MUSPI torus injection fifo map
+          /// \param[out] hintsABCD Pinned ABCD torus hints
+          /// \param[out] hintsE  Pinned E torus hints
+          ///
+          /// \return Remote Get Injection Fifo Number (0-9) to use on the
+	  ///         remote node to inject the descriptor that sends data
+	  ///         back to our node.
+          ///
+          //template <pinfifo_algorithm_t T>
+          inline size_t pinFifoToSelf (size_t                task,
+				       uint64_t            & map,
+				       uint8_t             & hintsABCD,
+				       uint8_t             & hintsE)
+          {
+            TRACE_FN_ENTER();
+
+	    // Get the fifo pin value as if we are sending to the remote node.
+	    // The "toSelf" pin will be the reverse.
+            size_t tcoord = 0;
+	    uint32_t fifoPin = 0;
+	    MUHWI_Destination_t dest;
+	    
+            _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin );
+
+	    // Reverse the fifoPin to the opposite direction.
+	    fifoPin = injFifoPinReverse[fifoPin];
+
+	    // Use the reversed fifoPin to determine the map and hints.
+	    map = pinTorusInjFifoMap[fifoPin];
+
+	    // In loopback we specify hints.
+            hintsABCD = pinHintsABCD[fifoPin];
+            hintsE    = pinHintsE[fifoPin];
+
+            TRACE_FORMAT("RemoteTask %zu, optimalFifoPin = %u, actualFifoPin = %u, map = %016lx, hintsABCD = %02x, hintsE = %02x, pinInjFifoMap[]=%u,%u,%u,%u,%u,%u,%u,%u,%u,%u", task, fifoPin, _pinInjFifoMap[fifoPin],map, hintsABCD, hintsE, _pinInjFifoMap[0],_pinInjFifoMap[1],_pinInjFifoMap[2],_pinInjFifoMap[3],_pinInjFifoMap[4],_pinInjFifoMap[5],_pinInjFifoMap[6],_pinInjFifoMap[7],_pinInjFifoMap[8],_pinInjFifoMap[9]);
+            TRACE_FN_EXIT();
+
+            return  _pinInjFifoMap[fifoPin];
           }
 
           ///
@@ -479,15 +700,30 @@ namespace PAMI
           static const size_t INJ_MEMORY_FIFO_SIZE   = 0xFFFFUL;
           static const size_t REC_MEMORY_FIFO_SIZE   = 0xFFFFUL;
           static const size_t INJ_MEMORY_FIFO_NDESC  = 0x400;
+#else
+	  // Resource Manager allocates resources
+	  size_t                 _numInjFifos;
+	  size_t                 _numRecFifos;
+	  MUSPI_InjFifo_t      **_injFifos;
+	  MUSPI_RecFifo_t      **_recFifos;
+	  uint32_t              *_globalRecFifoIds;
+	  char                 **_lookAsidePayloadVAs;
+	  uint64_t              *_lookAsidePayloadPAs;
+	  pami_event_function  **_lookAsideCompletionFnPtrs;
+	  void                ***_lookAsideCompletionCookiePtrs; 
+	  const uint8_t         *_pinInjFifoMap;
+
 #endif
 
+	  ResourceManager & _rm; // MU Global Resource Manager
           PAMI::Mapping   & _mapping;
           size_t            _id_base;
           size_t            _id_offset;
           size_t            _id_count;
           size_t            _id_client;
+	  size_t            _rm_id_client;
 
-      }; // class     PAMI::Device::MU::Context
+      }; // class     PAMI::Device::MU::Context      
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device
 };       // namespace PAMI

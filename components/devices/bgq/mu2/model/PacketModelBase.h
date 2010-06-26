@@ -290,6 +290,7 @@ namespace PAMI
                                         hintsE);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
+
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
 
         if (likely(channel.isSendQueueEmpty() && ndesc > 0))
@@ -335,7 +336,7 @@ namespace PAMI
 #endif
             // Set the payload information.
             memfifo->setPayload (paddr, tbytes);
-
+	    //MUSPI_DescriptorDumpHex((char*)"JEFF: Descriptor",desc);
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
             //uint64_t sequence =

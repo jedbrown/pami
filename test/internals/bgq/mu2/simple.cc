@@ -20,6 +20,10 @@
 #include "common/bgq/BgqPersonality.h"
 #include "common/bgq/Mapping.h"
 #include "common/bgq/BgqMapCache.h"
+#include "common/bgq/ResourceManager.h"
+
+#include "components/devices/bgq/mu2/global/Global.h"
+#include "components/devices/bgq/mu2/global/ResourceManager.h"
 
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/model/DmaModel.h"
@@ -70,7 +74,9 @@ static void recv_fn (
 }
 #endif
 
-PAMI::Global __myGlobal;
+// PAMI::Global __myGlobal;
+// PAMI::ResourceManager __pamiRM;
+// PAMI::Device::MU::Global __MUGlobal ( __pamiRM, __myGlobal.mapping, __myGlobal.personality );
 
 int main(int argc, char ** argv)
 {
@@ -97,11 +103,14 @@ int main(int argc, char ** argv)
 //                 NULL,//&mm,        // not used ???
 //                 &progress); // "all generic devices"
 
-  MuContext mu (__myGlobal.mapping, 0, 0, 1);
+  // Initialize the MU resources for all contexts for this client
+  __MUGlobal.getMuRM().initializeContexts( 0 /*id_client*/, 1 /*id_count*/ );
+
+  MuContext mu (__global.mapping, 0, 0, 1);
   mu.init (0); // id_client
   fprintf (stderr, "After mu init\n");
 
-  pami_endpoint_t self = PAMI_ENDPOINT_INIT(0,__myGlobal.mapping.task(),0);
+  pami_endpoint_t self = PAMI_ENDPOINT_INIT(0,__global.mapping.task(),0);
 
 
   pami_result_t result;

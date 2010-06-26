@@ -17,6 +17,9 @@
 #include "common/bgq/Mapping.h"
 #include "common/bgq/BgqMapCache.h"
 
+#include "components/devices/bgq/mu2/global/Global.h"
+#include "components/devices/bgq/mu2/global/ResourceManager.h"
+
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/model/DmaModel.h"
 #include "components/devices/bgq/mu2/model/DmaModelMemoryFifoCompletion.h"
@@ -77,7 +80,9 @@ void recv (
 #define MAX_BUF_SIZE  1024
 #define MSG_SIZE      1
 
-PAMI::Global __myGlobal;
+// PAMI::Global __myGlobal;
+// PAMI::ResourceManager __pamiRM;
+// PAMI::Device::MU::Global __MUGlobal ( __pamiRM, __myGlobal.mapping, __myGlobal.personality );
 
 template <typename T_Model, typename T_Protocol>
 void test (MuContext & mu0, MuContext & mu1, T_Model & model, T_Protocol & protocol, const char * label = "")
@@ -191,10 +196,13 @@ void test (MuContext & mu0, MuContext & mu1, T_Model & model, T_Protocol & proto
 
 int main(int argc, char ** argv)
 {
-  MuContext mu0 (__myGlobal.mapping, 0, 0, 2);
+  // Initialize the MU resources for all contexts for this client
+  __MUGlobal.getMuRM().initializeContexts( 0 /*id_client*/, 2 /*id_count*/ );
+
+  MuContext mu0 (__global.mapping, 0, 0, 2);
   mu0.init (0); // id_client
 
-  MuContext mu1 (__myGlobal.mapping, 0, 1, 2);
+  MuContext mu1 (__global.mapping, 0, 1, 2);
   mu1.init (0); // id_client
 
   fprintf (stderr, "After mu init\n");
