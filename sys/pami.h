@@ -2514,16 +2514,6 @@ extern "C"
                                       pami_endpoint_t * endpoint);
 
   /**
-   * \example endpoint_table.c
-   * This example demonstrates how to construct an endpoint table containing
-   * all endpoints in the system. The endpoint table can then be used, in
-   * concert with a wrapper function, as a way to address all endpoints as
-   * monotonically increasing integers.
-   *
-   * \todo Move the doxygen comment block somewhere else
-   */
-
-  /**
    * \brief Construct an endpoint for each context in a task
    *
    * This function may be used to initialize an array of all endpoints for a

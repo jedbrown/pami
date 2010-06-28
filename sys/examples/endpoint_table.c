@@ -1,56 +1,84 @@
-/**
- * \file sys/examples/endpoint_table.c
- * \brief ???
- */
+#include <pami.h>
+#include <stdio.h>
+
 pami_endpoint_t * _endpoint;
 
-pami_result_t send_id (pami_context_t context, size_t target, pami_send_t * parameters)
+static void createEndpointTable (pami_client_t client)
 {
-  parameters->dest = _endpoint[target];
+  pami_configuration_t configuration;
+  configuration.name = PAMI_NUM_TASKS;
+  pami_result_t result =
+    PAMI_Configuration_query(client, &configuration);
+  if (result != PAMI_SUCCESS)
+  {
+    fprintf (stderr, "Unable to query PAMI_NUM_TASKS\n");
+    abort();
+  }
+
+  size_t global_tasks = configuration.value.intval;
+
+  _endpoint =
+    (pami_endpoint_t *) malloc (sizeof(pami_endpoint_t) *
+                                global_tasks * 4);
+
+  size_t i, n = 0;
+  pami_endpoint_t * ptr = _endpoint;
+  for (i=0; i<global_tasks; i++)
+  {
+    PAMI_Endpoint_createv (client, i, ptr, &n);
+    ptr += n;
+  }
+};
+
+static void decrement (pami_context_t   context,
+                       void           * cookie,
+                       pami_result_t    result)
+{
+  volatile size_t * value = (volatile size_t *) cookie;
+  (*value)--;
+};
+
+
+static pami_result_t send_endpoint (pami_context_t   context,
+                                    size_t           target,
+                                    pami_send_t    * parameters)
+{
+  parameters->send.dest = _endpoint[target];
   return PAMI_Send (context, parameters);
-}
+};
 
 int main ()
 {
   pami_client_t client;
   pami_context_t context[4];
-  size_t num_global_tasks;
-  size_t num_global_endpoints;
 
-  PAMI_Client_create ("name", &client, &num_global_tasks);
+  PAMI_Client_create ("name", &client);
 
-  PAMI_Context_createv (client, context, 4, num_global_endpoints);
+  PAMI_Context_createv (client, NULL, 0, context, 4);
 
-  _endpoint = (pami_endpoint_t *) malloc (sizeof(pami_endpoint_t) * num_global_endpoints);
-
-  size_t i, n;
-  pami_endpoint_t * ptr = _endpoint;
-  for (i=0; i<num_global_tasks; i++)
-  {
-    ptr += PAMI_Endpoint_createv (client, i, ptr);
-  }
+  createEndpointTable (client);
 
   PAMI_Context_lock (context[0]);
 
   uint8_t header[16];
   uint8_t data[1024];
-
   volatile size_t active = 1;
+
   pami_send_t parameters;
-  parameters.send.dispatch = 0;
+  parameters.send.dispatch        = 0;
   parameters.send.header.iov_base = header;
   parameters.send.header.iov_len  = 16;
   parameters.send.data.iov_base   = data;
   parameters.send.data.iov_len    = 1024;
-  parameters.events.cookie   = (void *) &active;
-  parameters.events.local_fn = decrement;
+  parameters.events.cookie        = (void *) &active;
+  parameters.events.local_fn      = decrement;
 
   /* Send a message to endpoint "42" */
-  send_id (context[0], 42, parameters);
+  send_endpoint (context[0], 42, &parameters);
 
-  while (active) PAMI_Context_advance (context[0]);
+  while (active) PAMI_Context_advance (context[0], 100);
 
   PAMI_Context_unlock (context[0]);
 
   return 0;
-}
+};
