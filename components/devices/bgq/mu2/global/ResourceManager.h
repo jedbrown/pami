@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <hwi/include/bqc/MU_Macros.h>
+#include <hwi/include/bqc/classroute.h>
 #include <spi/include/mu/InjFifo.h>
 #include <spi/include/mu/RecFifo.h>
 #include <spi/include/mu/Addressing.h>
@@ -64,7 +65,7 @@ namespace PAMI
       static const size_t optimalNumRecFifosPerContext = 1;
 
       ///
-      /// \brief Point-to-Point Fifo Pin Map Values
+      /// \brief Point-to-Point Injection Fifo Pin Map Values
       ///
       /// There are 10 arrays of 10 elements each.
       /// The 1st array is for when there is 1 inj fifo in the context.
@@ -89,6 +90,30 @@ namespace PAMI
 	  { 0,1,2,3,4,5,6,7,0,1 },   // 8 Inj fifo in the context
 	  { 0,1,2,3,4,5,6,7,8,0 },   // 9 Inj fifo in the context
 	  { 0,1,2,3,4,5,6,7,8,9 } }; // 10 Inj fifos in the context
+
+      ///
+      /// \brief Point-to-Point Broadcast Fifo Pin Map Values
+      ///
+      /// There are 10 arrays of 16 elements each.
+      /// The 1st array is for when there is 1 inj fifo in the context.
+      /// The 2nd array is for when there are 2 inj fifos in the context.
+      /// ...
+      /// The 10th array is for when there are 10 inj fifos in the context.
+      ///
+      /// The second dimension is indexed by the collective class route Id (0..15)
+      /// to select the injection fifo to use for this class route.
+      ///
+      static const uint8_t pinBroadcastFifoMap[numTorusDirections][BGQ_COLL_CLASS_MAX_CLASSROUTES] =
+	{ { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },   // 1 Inj fifo in the context
+	  { 0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1 },   // 2 Inj fifo in the context
+	  { 0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0 },   // 3 Inj fifo in the context
+	  { 0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3 },   // 4 Inj fifo in the context
+	  { 0,1,2,3,4,0,1,2,3,4,0,1,2,3,4,0 },   // 5 Inj fifo in the context
+	  { 0,1,2,3,4,5,0,1,2,3,4,5,0,1,2,3 },   // 6 Inj fifo in the context
+	  { 0,1,2,3,4,5,6,0,1,2,3,4,5,6,0,1 },   // 7 Inj fifo in the context
+	  { 0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7 },   // 8 Inj fifo in the context
+	  { 0,1,2,3,4,5,6,7,8,0,1,2,3,4,5,6 },   // 9 Inj fifo in the context
+	  { 0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5 } }; // 10 Inj fifos in the context
 
       typedef struct muResources
       {
@@ -195,6 +220,9 @@ namespace PAMI
 	inline void getNumFifosPerContext( size_t  rmClientId,
 				    size_t *numInjFifos,
 				    size_t *numRecFifos );
+
+	inline const uint8_t *getPinBroadcastFifoMap( size_t numInjFifos )
+	  { return &(pinBroadcastFifoMap[numInjFifos-1][0]); }
 
 	inline const uint8_t *getPinInjFifoMap( size_t numInjFifos )
 	  { return &(pinInjFifoMap[numInjFifos-1][0]); }

@@ -362,7 +362,9 @@ namespace PAMI
 
             _pinInjFifoMap = _rm.getPinInjFifoMap( _numInjFifos );
 
-            TRACE_FORMAT("_pinInjFifoMap = %p\n", _pinInjFifoMap);
+	    _pinBroadcastFifoMap = _rm.getPinBroadcastFifoMap( _numInjFifos );
+
+            TRACE_FORMAT("_pinInjFifoMap = %p, _pinBroadcastFifoMap = %p\n", _pinInjFifoMap,_pinBroadcastFifoMap);
 
             // Initialize the injection channel(s) inside the injection group
             size_t fifo;
@@ -533,6 +535,39 @@ namespace PAMI
           {
             return _mapping.getMuDestinationSelf();
           };
+
+          ///
+          /// \brief Pin Broadcast Fifo
+          ///
+          /// The pinBroadcastFifo method is used for two purposes: to retrieve the
+          /// global MU reception fifo identification number to receive the result
+          /// of a broadcast, and the injection fifo inject the broadcast descriptor
+	  /// into.  The injection fifo is determined by mapping the specified
+	  /// class route ID to one of the injection fifos in this context.
+          ///
+          /// \see MUHWI_MessageUnitHeader.Memory_FIFO.Rec_FIFO_Id
+          ///
+          /// \param[in]  classRouteId  The class route ID used by the broadcast.
+          /// \param[out] rfifo   Reception fifo id to receive the result of a
+	  ///                     memory fifo broadcast.
+          ///
+          /// \return Context-relative injection fifo number pinned to the
+          ///         specified class route ID.
+          ///
+          inline size_t pinBroadcastFifo ( uint32_t  classRouteId,
+					   uint16_t &rfifo)
+          {
+            TRACE_FN_ENTER();
+
+            // Return the destination reception fifo number for the 
+	    // broadcast...our context's fifo.
+	    rfifo = _globalRecFifoIds[0];
+
+            TRACE_FORMAT("ClassrouteId = %u, rfifo = %u, actualFifoPin = %u, pinBroadcastFifoMap[]=%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u", classRouteId, rfifo, _pinBroadcastFifoMap[classRouteId], _pinBroadcastFifoMap[0], _pinBroadcastFifoMap[1], _pinBroadcastFifoMap[2], _pinBroadcastFifoMap[3], _pinBroadcastFifoMap[4], _pinBroadcastFifoMap[5], _pinBroadcastFifoMap[6], _pinBroadcastFifoMap[7], _pinBroadcastFifoMap[8], _pinBroadcastFifoMap[9],_pinBroadcastFifoMap[10],_pinBroadcastFifoMap[11],_pinBroadcastFifoMap[12],_pinBroadcastFifoMap[13],_pinBroadcastFifoMap[14],_pinBroadcastFifoMap[15]);
+            TRACE_FN_EXIT();
+
+            return  _pinBroadcastFifoMap[classRouteId];
+          }
 
           ///
           /// \brief Pin Fifo (from Self to Destination)
@@ -718,6 +753,7 @@ namespace PAMI
           pami_event_function  **_lookAsideCompletionFnPtrs;
           void                ***_lookAsideCompletionCookiePtrs;
           const uint8_t         *_pinInjFifoMap;
+          const uint8_t         *_pinBroadcastFifoMap;
 
 #endif
 
