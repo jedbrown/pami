@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/default-send-nplus1.c
+/// \file test/p2p/default-send-nplus1-mv.c
 /// \brief Simple point-topoint PAMI_send() test
 /// \validates that the n+1 byte remains unchanged
 ///
@@ -250,24 +250,24 @@ int main (int argc, char ** argv)
   //size_t dispatch = 0;
   pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
-  pami_send_hint_t options={};
-  size_t i, use_shmem = 0;
+  pami_send_hint_t options={0};
+  size_t i, dev = 0;
 
   for (i = 0; i < num_contexts; i++) {
     // For each context:
-    // Set up dispatch ID 0 for MU (use_shmem = 0, no_shmem = 1)
-    // set up dispatch ID 1 for SHMem (use_shmem = 1, no_shmem = 0)
+    // Set up dispatch ID 0 for MU (use_shmem = 2)
+    // set up dispatch ID 1 for SHMem (use_shmem = 1)
 
-    for (use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {
+    for (dev = initial_device; dev < device_limit; dev++) {
       fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
-      options.use_shmem = use_shmem ? PAMI_HINT3_FORCE_ON : PAMI_HINT3_FORCE_OFF;
+      options.use_shmem = 2 - dev;
       result = PAMI_Dispatch_set (context[i],
-				  use_shmem,
+				  dev,
 				  fn,
 				  (void *)&recv_active,
 				  options);
       if (result != PAMI_SUCCESS) {
-	fprintf (stderr, "Error. Unable to register pami dispatch %zu on context %zu. result = %d\n", use_shmem, i, result);
+	fprintf (stderr, "Error. Unable to register pami dispatch %zu on context %zu. result = %d\n", dev, i, result);
 	return 1;
       }
     }
@@ -313,15 +313,15 @@ int main (int argc, char ** argv)
 
   if (task_id == 0)
   {
-    for(use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {      // device loop
-      for(xtalk = 0; xtalk < num_contexts; xtalk++) {                // xtalk loop
+    for(dev = initial_device; dev < device_limit; dev++) {      // device loop
+      for(xtalk = 0; xtalk < num_contexts; xtalk++) {           // xtalk loop
 
 	// Skip running MU in Cross talk mode for now
-	if (xtalk && !use_shmem) {
+	if (xtalk && !strcmp(device_str[dev], "MU")) {
 	  continue;
 	}
 
-	parameters.send.dispatch = use_shmem;
+	parameters.send.dispatch = dev;
 	result = PAMI_Endpoint_create (client, 1, xtalk, &parameters.send.dest);
 	if (result != PAMI_SUCCESS) {
 	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed for task_id 1, context %zu with %d.\n", xtalk, result);
@@ -341,7 +341,7 @@ int main (int argc, char ** argv)
 	      for (p=0; p<psize; p++) {
 		parameters.send.data.iov_len = data_bytes[p];
 
-		fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] %zu %zu (%d, 0) -> (1, %zu) =====\n\n", &device_str[use_shmem][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, xtalk);
+		fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] %zu %zu (%d, 0) -> (1, %zu) =====\n\n", &device_str[dev][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, xtalk);
 
 		fprintf (stderr, "before send ...\n");
 
@@ -398,15 +398,15 @@ int main (int argc, char ** argv)
     } // end device loop
   } // end task = 0
   else {
-    for(use_shmem = initial_device; use_shmem < device_limit; use_shmem++) {      // device loop
-      for(xtalk = 0; xtalk < num_contexts; xtalk++) {                // xtalk loop
+    for(dev = initial_device; dev < device_limit; dev++) {      // device loop
+      for(xtalk = 0; xtalk < num_contexts; xtalk++) {           // xtalk loop
 
 	// Skip running MU in Cross talk mode for now
-	if (xtalk && !use_shmem) {
+	if (xtalk && !strcmp(device_str[dev], "MU")) {
 	  continue;
 	}
 
-	parameters.send.dispatch = use_shmem;
+	parameters.send.dispatch = dev;
 	result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 	if (result != PAMI_SUCCESS) {
 	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed for task_id 0, context 0 with %d.\n", result);
@@ -460,7 +460,7 @@ int main (int argc, char ** argv)
 
 		fprintf (stderr, "... after recv advance loop\n");
 
-		fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] %zu %zu (%d, %zu) -> (0, 0) =====\n\n", &device_str[use_shmem][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, xtalk);
+		fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] %zu %zu (%d, %zu) -> (0, 0) =====\n\n", &device_str[dev][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, xtalk);
 
 		fprintf (stderr, "before send ...\n");
 
