@@ -48,24 +48,18 @@ namespace PAMI
                                                     uint64_t              local_dst_pa,
                                                     uint64_t              remote_src_pa,
                                                     size_t                bytes,
-                                                    size_t                from_task,
-                                                    size_t                from_offset,
+                                                    uint64_t              map,
+                                                    uint8_t               hintsABCD,
+                                                    uint8_t               hintsE,
                                                     pami_event_function   local_fn,
                                                     void                * cookie)
           {
             TRACE_FN_ENTER();
 
             // Retreive the route information back to mu context "self"
-            uint64_t map;
-            uint8_t  hintsABCD;
-            uint8_t  hintsE;
 
-            _context.pinInformation (from_task,
-                                     from_offset,
-                                     map,
-                                     hintsABCD,
-                                     hintsE);
 
+            // The "immediate" payload contains the remote descriptors
             MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *) vaddr;
 
             // ----------------------------------------------------------------
@@ -80,21 +74,25 @@ namespace PAMI
             desc[0].setPayload (remote_src_pa, bytes);
 
             // Set the destination buffer address for the remote direct put.
-            desc[0].setRecPayloadBaseAddressInfo (0, local_dst_pa);
+            //
+            // The global BAT id is constant .. should only need to set
+            // the "offset" (second parameter) here.
+            desc[0].setRecPayloadBaseAddressInfo (_context.getGlobalBatId(), local_dst_pa);
 
-            desc[0].setTorusInjectionFIFOMap (map);  // is this needed ?
-            desc[0].setHints (hintsABCD, hintsE);    // is this needed ?
+            // Set the pinned fifo/map/hint information
+            desc[0].setTorusInjectionFIFOMap (map);
+            desc[0].setHints (hintsABCD, hintsE);
 
             // ----------------------------------------------------------------
             // Initialize the "ack to self" descriptor in the rget payload
             // ----------------------------------------------------------------
             _completion.initializeNotifySelfDescriptor (desc[1], local_fn, cookie);
 
-            desc[1].setTorusInjectionFIFOMap (desc[0].Torus_FIFO_Map); // is this needed ?
-            desc[1].setHints (desc[0].PacketHeader.NetworkHeader.pt2pt.Hints, // is this needed ?
-                              desc[0].PacketHeader.NetworkHeader.pt2pt.Byte2.Byte2); // is this right for 'E' hints?
+            // Set the pinned fifo/map/hint information
+            desc[1].setTorusInjectionFIFOMap (map);
+            desc[1].setHints (hintsABCD, hintsE);
 
-            TRACE_HEXDATA(desc,128);
+            TRACE_HEXDATA(desc, 128);
             TRACE_FN_EXIT();
 
             return sizeof(MUHWI_Descriptor_t) * 2;

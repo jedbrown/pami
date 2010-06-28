@@ -18,6 +18,10 @@
 #include "components/devices/DmaInterface.h"
 #include "components/devices/bgq/mu2/Context.h"
 
+#include "components/devices/bgq/mu2/trace.h"
+#define DO_TRACE_ENTEREXIT 1
+#define DO_TRACE_DEBUG     1
+
 namespace PAMI
 {
   namespace Device
@@ -154,10 +158,6 @@ namespace PAMI
         memset((void *)&base, 0, sizeof(base));
 
         base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
-        base.Payload_Address = 0;
-        base.Message_Length  = 0;
-        base.Torus_FIFO_Map  = 0;
-        base.Dest.Destination.Destination = 0;
 
         _dput.setBaseFields (&base);
         _rget.setBaseFields (&base);
@@ -170,8 +170,6 @@ namespace PAMI
         MUSPI_Pt2PtDescriptorInfoFields_t pt2pt;
         memset((void *)&pt2pt, 0, sizeof(pt2pt));
 
-        pt2pt.Hints_ABCD = 0;
-        pt2pt.Skip       = 0;
         pt2pt.Misc1 =
           MUHWI_PACKET_USE_DETERMINISTIC_ROUTING |
           MUHWI_PACKET_DO_NOT_DEPOSIT |
@@ -196,8 +194,7 @@ namespace PAMI
         MUSPI_RemoteGetDescriptorInfoFields_t rget;
         memset((void *)&rget, 0, sizeof(rget));
 
-        rget.Type             = MUHWI_PACKET_TYPE_GET;
-        rget.Rget_Inj_FIFO_Id = 0;
+        rget.Type = MUHWI_PACKET_TYPE_GET;
         _rget.setRemoteGetFields (&rget);
 
 
@@ -207,15 +204,14 @@ namespace PAMI
         MUSPI_DirectPutDescriptorInfoFields dput;
         memset((void *)&dput, 0, sizeof(dput));
 
-        // TODO - need base address table stuff fromt he resource manager
-        //dput.Rec_Payload_Base_Address_Id = ResourceManager::BAT_DEFAULT_ENTRY_NUMBER;
+        dput.Rec_Payload_Base_Address_Id = _context.getGlobalBatId();
         dput.Rec_Payload_Offset          = 0;
-        //dput.Rec_Counter_Base_Address_Id = ResourceManager::BAT_SHAREDCOUNTER_ENTRY_NUMBER;
+        dput.Rec_Counter_Base_Address_Id = _context.getGlobalBatId();
         dput.Rec_Counter_Offset          = 0;
         dput.Pacing                      = MUHWI_PACKET_DIRECT_PUT_IS_NOT_PACED;
 
         _dput.setDirectPutFields (&dput);
-        _dput.setRecCounterBaseAddressInfo (1, 0); // shared reception counter
+
         _dput.setMessageUnitPacketType (MUHWI_PACKET_TYPE_PUT);
 
 
@@ -223,7 +219,7 @@ namespace PAMI
         // Set the remote put descriptor fields
         // --------------------------------------------------------------------
         _rput.setDirectPutFields (&dput);
-        _rput.setRecCounterBaseAddressInfo (1, 0); // shared reception counter
+
         _rput.setDestination (*(_context.getMuDestinationSelf()));
         _rput.setMessageUnitPacketType (MUHWI_PACKET_TYPE_PUT);
       };
@@ -334,6 +330,8 @@ namespace PAMI
                                                    Memregion           * remote_memregion,
                                                    size_t                remote_offset)
       {
+        TRACE_FN_ENTER();
+
         if (unlikely(bytes == 0)) // eliminate this branch with a template parameter?
           {
             // A zero-byte put is defined to be complete after a dma pingpong. This
@@ -343,6 +341,7 @@ namespace PAMI
                                     local_memregion, local_offset,
                                     remote_memregion, remote_offset);
 #else
+            TRACE_FN_EXIT();
             return false;
 #endif
           }
@@ -383,7 +382,12 @@ namespace PAMI
             dput->setTorusInjectionFIFOMap (map);
             dput->setHints (hintsABCD, hintsE);
             dput->setPayload (local_pa + local_offset, bytes);
-            dput->setRecPayloadBaseAddressInfo (0, remote_pa + remote_offset);
+
+            // The global BAT id is constant .. should only need to set
+            // the "offset" (second parameter) here.
+            dput->setRecPayloadBaseAddressInfo (_context.getGlobalBatId(), remote_pa + remote_offset);
+
+            TRACE_HEXDATA(dput, sizeof(MUHWI_Descriptor_t));
 
             // Advance the injection fifo tail pointer. This action
             // completes the injection operation.
@@ -419,6 +423,7 @@ namespace PAMI
             PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
           }
 
+        TRACE_FN_EXIT();
         return true;
       };
 
@@ -499,19 +504,7 @@ namespace PAMI
           {
             // There is at least one descriptor slot available in the injection
             // fifo before a fifo-wrap event.
-
             MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
-
-            void * vaddr;
-            uint64_t paddr;
-
-            channel.getDescriptorPayload (desc, vaddr, paddr);
-
-            size_t pbytes = static_cast<T_Model*>(this)->
-                            initializeRemoteGetPayload (vaddr, local_dst_pa,
-                                                        remote_src_pa, bytes,
-                                                        target_task, target_offset,
-                                                        local_fn, cookie);
 
             // Clone the remote inject model descriptor into the injection fifo
             MUSPI_DescriptorBase * rget = (MUSPI_DescriptorBase *) desc;
@@ -521,6 +514,24 @@ namespace PAMI
             rget->setDestination (dest);
             rget->setTorusInjectionFIFOMap (map);
             rget->setHints (hintsABCD, hintsE);
+
+            // Determine the remote pinning information
+            size_t rfifo =
+              _context.pinFifoToSelf (target_task, map, hintsABCD, hintsE);
+
+            // Set the remote injection fifo identifier
+            rget->setRemoteGetInjFIFOId (rfifo);
+
+            // Initialize the rget payload descriptor(s)
+            void * vaddr;
+            uint64_t paddr;
+            channel.getDescriptorPayload (desc, vaddr, paddr);
+            size_t pbytes = static_cast<T_Model*>(this)->
+                            initializeRemoteGetPayload (vaddr, local_dst_pa,
+                                                        remote_src_pa, bytes,
+                                                        map, hintsABCD, hintsE,
+                                                        local_fn, cookie);
+
             rget->setPayload (paddr, pbytes);
 
             // Finally, advance the injection fifo tail pointer. This action
@@ -534,6 +545,9 @@ namespace PAMI
     };   // PAMI::Device::MU namespace
   };     // PAMI::Device namespace
 };       // PAMI namespace
+
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
 #endif // __components_devices_bgq_mu2_DmaModelBase_h__
 //
