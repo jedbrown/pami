@@ -435,7 +435,7 @@ namespace PAMI
               for(size_t n=0; n<_ncontexts; n++)
                   {
                     _contexts[n]->_pgas_collreg->analyze(n,new_geometry);
-                    _contexts[n]->_ccmi_collreg->analyze(n,new_geometry);
+		    //                    _contexts[n]->_ccmi_collreg->analyze(n,new_geometry);
                     _contexts[n]->_p2p_ccmi_collreg->analyze(n,new_geometry);
                   }
               *geometry=(LAPIGeometry*) new_geometry;

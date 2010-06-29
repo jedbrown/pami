@@ -355,6 +355,7 @@ namespace PAMI
             RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Init failed with rc %d\n", rc);
           }
           _lapi_state = _Lapi_port[_lapi_handle];
+	  lapi_senv(_lapi_handle, INTERRUPT_SET, false);
 
           // Initialize the lapi device for collectives
           _lapi_device.init(_mm, _clientid, 0, _context, _contextid);
@@ -391,9 +392,9 @@ namespace PAMI
 
       inline pami_result_t initCollectives()
         {
-          _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
-          new(_ccmi_collreg) CCMICollreg(_client, (pami_context_t)this, _contextid ,_clientid,_lapi_device);
-          _ccmi_collreg->analyze(_contextid, _world_geometry);
+	  //	  _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
+	  //	  new(_ccmi_collreg) CCMICollreg(_client, (pami_context_t)this, _contextid ,_clientid,_lapi_device);
+	  //	  _ccmi_collreg->analyze(_contextid, _world_geometry);
 
           _p2p_ccmi_collreg=(P2PCCMICollreg*) malloc(sizeof(*_p2p_ccmi_collreg));
           new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
@@ -758,7 +759,7 @@ namespace PAMI
       DeviceWrapper                          _lapi_device2;
   public:
       /*  Collective Registrations                              */
-      CCMICollreg                           *_ccmi_collreg;
+      //      CCMICollreg                           *_ccmi_collreg;
       PGASCollreg                           *_pgas_collreg;
       P2PCCMICollreg                        *_p2p_ccmi_collreg;
       
