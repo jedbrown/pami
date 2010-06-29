@@ -17,12 +17,13 @@
 #include "components/atomic/Counter.h"
 #include "util/common.h"
 
+
 namespace PAMI
 {
   namespace Atomic
   {
     ///
-    /// \brief CRTP interface for gcc builtins atomic objects.
+    /// \brief CRTP interface implementation for gcc builtins atomic objects.
     ///
     class GccBuiltin : public Interface::Counter <GccBuiltin>
     {
@@ -54,7 +55,7 @@ namespace PAMI
         inline size_t fetch_and_inc_impl ()
         {
           return __sync_fetch_and_add (&_atom, 1);
-         // return _atom++;
+          // return _atom++;
         };
 
         /// \see PAMI::Atomic::Interface::Counter::fetch_and_dec
@@ -91,5 +92,13 @@ namespace PAMI
   };
 };
 
-
 #endif // __components_atomic_gcc_gccbuiltin_h__
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//
+

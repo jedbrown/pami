@@ -21,7 +21,8 @@
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
-#include "p2p/protocols/send/eager/ConnectionArray.h"
+
+#include "components/connection/ConnectionArray.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) fprintf x
@@ -42,7 +43,7 @@ namespace PAMI
       /// \see PAMI::Device::Interface::PacketModel
       /// \see PAMI::Device::Interface::PacketDevice
       ///
-      template < class T_Model, class T_Device, bool T_LongHeader = true, class T_Connection = ConnectionArray<T_Device> >
+      template < class T_Model, class T_Device, bool T_LongHeader = true, class T_Connection = Connection::Array<T_Device> >
       class Eager : public PAMI::Protocol::Send::Send,
           public EagerImmediate<T_Model, T_Device>,
           public EagerSimple<T_Model, T_Device, T_LongHeader, T_Connection>

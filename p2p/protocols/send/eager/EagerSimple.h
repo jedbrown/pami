@@ -574,7 +574,7 @@ namespace PAMI
                   }
                 else
                   {
-                    _connection.clear (task, offset);
+                    _connection.clear (metadata->origin);
                     freeRecvState (state);
                   }
               }
@@ -669,11 +669,7 @@ namespace PAMI
                 p = payload;
               }
 
-            pami_task_t task;
-            size_t offset;
-            PAMI_ENDPOINT_INFO(m->origin,task,offset);
-
-            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), origin task = %d, origin offset = %d, m->bytes = %zu, m->va_send = %p\n", task, offset, m->bytes, m->va_send));
+            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), origin = 0x%08x, m->bytes = %zu, m->va_send = %p\n", m->origin, m->bytes, m->va_send));
 
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
@@ -687,7 +683,7 @@ namespace PAMI
             state->metadata.origin    = m->origin;
 
             // Set the eager connection.
-            eager->_connection.set (task, offset, (void *)state);
+            eager->_connection.set (m->origin, (void *)state);
 
             // The compiler will optimize out this constant expression
             // conditional and include this code block only when the long
@@ -781,13 +777,10 @@ namespace PAMI
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
             pami_endpoint_t origin = *((pami_endpoint_t *) metadata);
-            pami_task_t task;
-            size_t offset;
-            PAMI_ENDPOINT_INFO(origin,task,offset);
 
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), origin task = %d, origin offset = %d, bytes = %zu\n", task, offset, bytes));
+            TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), origin = 0x%08x, bytes = %zu\n", origin, bytes));
 
-            recv_state_t * state = (recv_state_t *) eager->_connection.get (task, offset);
+            recv_state_t * state = (recv_state_t *) eager->_connection.get (origin);
 
             size_t n = MIN(bytes, state->longheader.bytes - state->longheader.offset);
 
@@ -840,7 +833,7 @@ namespace PAMI
 
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_message(), origin task = %d, origin offset = %d, bytes = %zu\n", task, offset, bytes));
 
-            recv_state_t * state = (recv_state_t *) eager->_connection.get (task, offset);
+            recv_state_t * state = (recv_state_t *) eager->_connection.get (origin);
 
             // Number of bytes received so far.
             size_t nbyte = state->received;
@@ -861,7 +854,7 @@ namespace PAMI
               {
                 // No more data packets will be received on this connection.
                 // Clear the connection data and prepare for the next message.
-                eager->_connection.clear (task, offset);
+                eager->_connection.clear (origin);
 
                 // No more data is to be written to the receive buffer.
                 // Invoke the receive done callback.
@@ -942,11 +935,7 @@ namespace PAMI
             recv_state_t * state = (recv_state_t *) cookie;
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) state->eager;
 
-            pami_task_t task;
-            size_t offset;
-            PAMI_ENDPOINT_INFO(state->metadata.origin,task,offset);
-
-            eager->_connection.clear (task, offset);
+            eager->_connection.clear (state->metadata.origin);
             eager->freeRecvState (state);
 
             TRACE_ERR((stderr, "EagerSimple::receive_complete() << \n"));

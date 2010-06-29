@@ -19,8 +19,9 @@
 #define __p2p_protocols_send_datagram_Datagram_h__
 
 #include "p2p/protocols/Send.h"
-#include "p2p/protocols/send/eager/ConnectionArray.h"
 #include "p2p/protocols/send/datagram/DTimer.h"
+
+#include "components/connection/ConnectionArray.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
