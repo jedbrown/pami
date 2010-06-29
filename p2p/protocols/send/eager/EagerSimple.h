@@ -669,11 +669,7 @@ namespace PAMI
                 p = payload;
               }
 
-            pami_task_t task;
-            size_t offset;
-            PAMI_ENDPOINT_INFO(m->origin,task,offset);
-
-            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), origin task = %d, origin offset = %zu, m->metabytes = %zu, m->bytes = %zu, m->va_send = %p\n", task, offset, m->metabytes, m->bytes, m->va_send));
+            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), origin = 0x%08x, m->bytes = %zu, m->va_send = %p\n", m->origin, m->bytes, m->va_send));
 
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
@@ -703,7 +699,6 @@ namespace PAMI
 
                 if (unlikely((header_bytes) > (T_Model::packet_model_payload_bytes - pbytes)))
                   {
-PAMI_assert_debug (header_bytes < 10240);
                     state->longheader.addr   = (uint8_t *) malloc(header_bytes);
                     state->longheader.bytes  = header_bytes;
                     state->longheader.offset = 0;
@@ -783,11 +778,7 @@ PAMI_assert_debug (header_bytes < 10240);
 
             pami_endpoint_t origin = *((pami_endpoint_t *) metadata);
 
-<<<<<<< HEAD
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), origin = 0x%08x, bytes = %zu\n", origin, bytes));
-=======
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), origin task = %d, origin offset = %zu, bytes = %zu\n", task, offset, bytes));
->>>>>>> Trac #123: Add completion processing
 
             recv_state_t * state = (recv_state_t *) eager->_connection.get (origin);
 

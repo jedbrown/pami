@@ -27,6 +27,10 @@ namespace PAMI
     template <class T_Device>
     class Array : public Interface<Connection::Array<T_Device>, T_Device>
     {
+      private:
+
+        static const size_t _maximum_context_count = 4;
+
       protected:
 
         inline void ** getArray () { return _array; };
@@ -82,11 +86,18 @@ namespace PAMI
         {
           TRACE_FN_ENTER();
 
-          size_t index = endpoint2index (key);
+          size_t task, offset;
+          PAMI_ENDPOINT_INFO(key, task, offset)
 
-          TRACE_FORMAT("this = %p, _array = %p, _array[%zu] = %p", this, _array, index, _array[index]);
+          size_t peer = _device.task2peer (task);
+
+          PAMI_assert_debug(offset < _maximum_context_count);
+
+          size_t index = (peer << 2) | offset; // shift because of _maximum_context_count
+
+          TRACE_FORMAT("task = %zu, offset = %zu, peer = %zu, _array[%zu] = %p", task, offset, peer, index, _array[index]);
+
           PAMI_assert_debug(_array[index] == NULL);
-
           _array[index] = value;
 
           TRACE_FN_EXIT();
@@ -96,9 +107,17 @@ namespace PAMI
         {
           TRACE_FN_ENTER();
 
-          size_t index = endpoint2index (key);
+          size_t task, offset;
+          PAMI_ENDPOINT_INFO(key, task, offset)
 
-          TRACE_FORMAT("this = %p, _array = %p, _array[%zu] = %p", this, _array, index, _array[index]);
+          size_t peer = _device.task2peer (task);
+
+          PAMI_assert_debug(offset < _maximum_context_count);
+
+          size_t index = (peer << 2) | offset; // shift because of _maximum_context_count
+
+          TRACE_FORMAT("task = %zu, offset = %zu, peer = %zu, _array[%zu] = %p", task, offset, peer, index, _array[index]);
+
           PAMI_assert_debug(_array[index] != NULL);
 
           TRACE_FN_EXIT();
@@ -109,9 +128,16 @@ namespace PAMI
         {
           TRACE_FN_ENTER();
 
-          size_t index = endpoint2index (key);
+          size_t task, offset;
+          PAMI_ENDPOINT_INFO(key, task, offset)
 
-          TRACE_FORMAT("this = %p, _array = %p, _array[%zu] = %p", this, _array, index, _array[index]);
+          size_t peer = _device.task2peer (task);
+
+          PAMI_assert_debug(offset < _maximum_context_count);
+
+          size_t index = (peer << 2) | offset; // shift because of _maximum_context_count
+
+          TRACE_FORMAT("task = %zu, offset = %zu, peer = %zu, _array[%zu] = %p -> NULL", task, offset, peer, index, _array[index]);
 
           _array[index] = NULL;
 
