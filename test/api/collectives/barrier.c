@@ -8,45 +8,13 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
 #define NITER 100
-#else
-#define NITER 10000
-#endif
-
-
-#define TRACE(x) //fprintf x
-
 #include <assert.h>
-#define TEST_abort()                       abort()
-#define TEST_abortf(fmt...)                { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); fprintf(stderr, fmt); abort(); }
-#define TEST_assert(expr)                assert(expr)
-#define TEST_assertf(expr, fmt...)       { if (!(expr)) TEST_abortf(fmt); }
 
-#ifdef __pami_target_bgq__
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-// sleep() doesn't appear to work in mambo right now.  A hackey simulation...
-#define sleep(x) _mamboSleep(x, __LINE__)
-unsigned _mamboSleep(unsigned seconds, unsigned from)
-{
-    double dseconds = ((double)seconds)/1000; //mambo seconds are loooong.
-    double start = PAMI_Wtime (), d=0;
-    while (PAMI_Wtime() < (start+dseconds))
-    {
-      int i=0;
-      for (; i<200000; ++i) ++d;
-      TRACE((stderr, "%s:%d sleep - %.0f, start %f, %f < %f\n",__PRETTY_FUNCTION__,from,d,start,PAMI_Wtime(),start+dseconds));
-    }
-  return 0;
-}
-#endif
-#endif
 
 volatile unsigned       _g_barrier_active = 0;
-
 void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
 {
-  TRACE((stderr, "%s: active:%d\n", __PRETTY_FUNCTION__,*(int*)clientdata));
   int * active = (int *) clientdata;
   (*active)--;
 }
@@ -61,7 +29,6 @@ static double timer()
 void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
     static unsigned barrierCount = 0;
-  TRACE((stderr, "%s:%u active:%d\n", __PRETTY_FUNCTION__,barrierCount, _g_barrier_active));
   _g_barrier_active++;
   pami_result_t result;
   result = PAMI_Collective(context, (pami_xfer_t*)barrier);
@@ -74,7 +41,6 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
 
   while (_g_barrier_active)
     result = PAMI_Context_advance (context, 1);
-  TRACE((stderr, "%s:%u exit\n", __PRETTY_FUNCTION__, barrierCount));
   barrierCount++;
 }
 
@@ -82,32 +48,28 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
 
 int main (int argc, char ** argv)
 {
-  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
+  /* Docs1:  Client and Context Create */
   pami_client_t  client;
   pami_context_t context;
   pami_result_t  result = PAMI_ERROR;
   char          cl_string[] = "TEST";
   result = PAMI_Client_create (cl_string, &client);
-
   if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
       return 1;
     }
-
-  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
-
-  {  result = PAMI_Context_createv(client, NULL, 0, &context, 1); }
-
+  
+  result = PAMI_Context_createv(client, NULL, 0, &context, 1);
   if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
       return 1;
     }
+  /* Docs2:  Client and Context Create Done */
+  
 
-  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
-
-
+  /* Docs3:  Query Task ID */
   pami_configuration_t configuration;
   configuration.name = PAMI_TASK_ID;
   result = PAMI_Configuration_query(client, &configuration);
@@ -117,13 +79,11 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
       return 1;
     }
-
   size_t task_id = configuration.value.intval;
-  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
-
-
   pami_geometry_t  world_geometry;
+  /* Docs4:  Done Query Task ID */
 
+  /* Docs5:  Get a reference to the geometry world object */
   result = PAMI_Geometry_world (client, &world_geometry);
 
   if (result != PAMI_SUCCESS)
@@ -131,9 +91,9 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
       return 1;
     }
+  /* Docs6:  We now have a geometry world object */
 
-  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
-
+  /* Docs7:  Query the world object for the number of barrier algorithms */
   int algorithm_type = 0;
   pami_algorithm_t *algorithm = NULL;
   int num_algorithm[2] = {0};
@@ -142,61 +102,50 @@ int main (int argc, char ** argv)
                                         PAMI_XFER_BARRIER,
                                         num_algorithm);
 
-  if (result != PAMI_SUCCESS)
+  if (result != PAMI_SUCCESS || num_algorithm[0]==0)
     {
       fprintf (stderr,
-               "Error. Unable to query barrier algorithm. result = %d\n",
+               "Error. Unable to query barrier algorithm, or no algorithms available result = %d\n",
                result);
       return 1;
     }
+  /* Docs8:  Query the world object for the number of barrier algorithms */
 
-  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
+
+  /* Docs9:  Query the world object to generate the algorithm object */
   pami_metadata_t *metas = NULL;
-
-  if (num_algorithm[0])
-    {
-      algorithm = (pami_algorithm_t*)
-                  malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-      metas = (pami_metadata_t*)
-              malloc(sizeof(pami_metadata_t) * num_algorithm[0]);
-
-      result = PAMI_Geometry_algorithms_query(context,
-                                              world_geometry,
-                                              PAMI_XFER_BARRIER,
-                                              algorithm,
-                                              metas,
-                                              num_algorithm[0],
-                                              NULL,
-                                              NULL,
-                                              0);
-
-    }
-
+  algorithm = (pami_algorithm_t*)
+    malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
+  metas = (pami_metadata_t*)
+    malloc(sizeof(pami_metadata_t) * num_algorithm[0]);
+  result = PAMI_Geometry_algorithms_query(context,
+                                          world_geometry,
+                                          PAMI_XFER_BARRIER,
+                                          algorithm,
+                                          metas,
+                                          num_algorithm[0],
+                                          NULL,
+                                          NULL,
+                                          0);
   if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to get query algorithm. result = %d\n", result);
       return 1;
     }
+  /* Docs10:  Query the world object to generate the algorithm object */
 
-  TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
 
+  /* Docs11:  Issue the test barrier */
   pami_xfer_t barrier;
   barrier.cb_done   = cb_barrier;
   barrier.cookie    = (void*) & _g_barrier_active;
   barrier.algorithm = algorithm[0];
-
   if (!task_id)
     fprintf(stderr, "Test Default Barrier(%s)\n", metas[0].name);
-
   _barrier(context, &barrier);
-//if(!task_id)
-//  fprintf(stderr, "Test Barrier 2, then correctness\n");
-  barrier.algorithm = algorithm[0];
-  _barrier(context, &barrier);
-  _barrier(context, &barrier);
+  /* Docs12:  Issue the test barrier */
 
   int algo;
-
   for (algo = 0; algo < num_algorithm[algorithm_type]; algo++)
     {
       double ti, tf, usec;
@@ -219,9 +168,7 @@ int main (int argc, char ** argv)
         }
       else
         {
-          TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
           sleep(2);
-          TRACE((stderr, "%s:%d\n", __PRETTY_FUNCTION__, __LINE__));
           _barrier(context, &barrier);
         }
 
