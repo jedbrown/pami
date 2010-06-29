@@ -699,7 +699,6 @@ namespace PAMI
 
                 if (unlikely((header_bytes) > (T_Model::packet_model_payload_bytes - pbytes)))
                   {
-PAMI_assert_debug (header_bytes < 10240);
                     state->longheader.addr   = (uint8_t *) malloc(header_bytes);
                     state->longheader.bytes  = header_bytes;
                     state->longheader.offset = 0;
