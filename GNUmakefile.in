@@ -10,7 +10,7 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS	= components p2p algorithms math util api core common/$(TARGET) common/default sys/examples
+SUBDIRS	= components p2p algorithms math util api core common/$(TARGET) common/default #sys/examples
 #SUBDIRS		= components p2p math util api
 NOTBUILT        =
 include @abs_top_builddir@/Build.rules
