@@ -12,12 +12,14 @@
 #include <assert.h>
 
 
+/* Docs17: the done callback */
 volatile unsigned       _g_barrier_active = 0;
 void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;
 }
+/* Docs18:  the done callback */
 
 static double timer()
 {
@@ -26,6 +28,7 @@ static double timer()
   return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
+/* Docs15:  The _barrier code to post the barrier */
 void _barrier (pami_context_t context, pami_xfer_t *barrier)
 {
     static unsigned barrierCount = 0;
@@ -43,12 +46,13 @@ void _barrier (pami_context_t context, pami_xfer_t *barrier)
     result = PAMI_Context_advance (context, 1);
   barrierCount++;
 }
+/* Docs16:  The _barrier code to post the barrier */
 
 
 
 int main (int argc, char ** argv)
 {
-  /* Docs1:  Client and Context Create */
+  /* Docs01:  Client and Context Create */
   pami_client_t  client;
   pami_context_t context;
   pami_result_t  result = PAMI_ERROR;
@@ -66,10 +70,10 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
       return 1;
     }
-  /* Docs2:  Client and Context Create Done */
+  /* Docs02:  Client and Context Create Done */
   
 
-  /* Docs3:  Query Task ID */
+  /* Docs03:  Query Task ID */
   pami_configuration_t configuration;
   configuration.name = PAMI_TASK_ID;
   result = PAMI_Configuration_query(client, &configuration);
@@ -81,9 +85,9 @@ int main (int argc, char ** argv)
     }
   size_t task_id = configuration.value.intval;
   pami_geometry_t  world_geometry;
-  /* Docs4:  Done Query Task ID */
+  /* Docs04:  Done Query Task ID */
 
-  /* Docs5:  Get a reference to the geometry world object */
+  /* Docs05:  Get a reference to the geometry world object */
   result = PAMI_Geometry_world (client, &world_geometry);
 
   if (result != PAMI_SUCCESS)
@@ -91,9 +95,9 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
       return 1;
     }
-  /* Docs6:  We now have a geometry world object */
+  /* Docs06:  We now have a geometry world object */
 
-  /* Docs7:  Query the world object for the number of barrier algorithms */
+  /* Docs07:  Query the world object for the number of barrier algorithms */
   int algorithm_type = 0;
   pami_algorithm_t *algorithm = NULL;
   int num_algorithm[2] = {0};
@@ -109,10 +113,10 @@ int main (int argc, char ** argv)
                result);
       return 1;
     }
-  /* Docs8:  Query the world object for the number of barrier algorithms */
+  /* Docs08:  Query the world object for the number of barrier algorithms */
 
 
-  /* Docs9:  Query the world object to generate the algorithm object */
+  /* Docs09:  Query the world object to generate the algorithm object */
   pami_metadata_t *metas = NULL;
   algorithm = (pami_algorithm_t*)
     malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
@@ -143,6 +147,8 @@ int main (int argc, char ** argv)
   if (!task_id)
     fprintf(stderr, "Test Default Barrier(%s)\n", metas[0].name);
   _barrier(context, &barrier);
+  if (!task_id)
+    fprintf(stderr, "Barrier Done(%s)\n", metas[0].name);
   /* Docs12:  Issue the test barrier */
 
   int algo;
@@ -189,6 +195,8 @@ int main (int argc, char ** argv)
                 metas[algo].name, usec / (double)niter);
     }
 
+
+  /* Docs13: Clean up the context */  
   result = PAMI_Context_destroyv(&context, 1);
 
   if (result != PAMI_SUCCESS)
@@ -198,13 +206,13 @@ int main (int argc, char ** argv)
     }
 
   result = PAMI_Client_destroy(&client);
-
   if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
       return 1;
     }
-
+  /* Docs14: Clean up the context */  
+  
   free(metas);
   return 0;
 };
