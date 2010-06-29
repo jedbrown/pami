@@ -209,8 +209,22 @@ namespace PAMI
 	  return &(_globalInjSubGroups[subgroup]._injfifos[fifoId]);
 	}
 
+	/// \brief Get Global Base Address Table Id
+	///
+	/// This base address table entry has a zero value stored in it so
+	/// that the physical address can be used as a put offset or counter offset.
+	///
 	inline uint32_t getGlobalBatId ()
 	{ return _globalBatIds[0]; }
+
+	/// \brief Get Shared Counter Base Address Table Id
+	/// 
+	/// This base address table entry has an atomic address of a
+	/// reception counter that is shared...the counter's value is
+	/// not useful (ignored).  The counter offset in the descriptor
+	/// can be zero.
+	inline uint32_t getSharedCounterBatId ()
+	{ return _globalBatIds[1]; }
 	  
 	inline size_t mapClientIdToRmClientId ( size_t clientId );
 
@@ -313,7 +327,7 @@ namespace PAMI
 				    uint32_t                         **globalBatIds);
 	inline void allocateGlobalResources();
 	inline void allocateGlobalInjFifos();
-	inline void allocateGlobalBaseAddressTableEntry();
+	inline void allocateGlobalBaseAddressTableEntries();
 	inline void allocateGlobalRecFifos();
 	inline void allocateContextResources( size_t rmClientId,
 					      size_t contextOffset );
@@ -1266,31 +1280,70 @@ uint32_t PAMI::Device::MU::ResourceManager::setupBatIds(
 // 
 // Allocate resources needed before main().  These include:
 // -  1 base address table entry in subgroup 64 or 65, initialized to 0.
+// -  1 base address table entry in subgroup 64 or 65, initialized to the atomic
+//    address of a shared counter, whose value is ignored.
 //
-void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntry()
+void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
 {
   uint32_t numBatIdsSetup;
   int32_t  rc;
   
   numBatIdsSetup = setupBatIds( 64, // Starting subgroup
 				65, // Ending subgroup
-				1,  // Number of BAT ids
+				2,  // Number of BAT ids
 				true, // Use shared memory
 				&_globalBatSubGroups,
 				&_globalBatIds );
-  PAMI_assertf( (_calculateSizeOnly == 1) || (_allocateOnly == 1) || (numBatIdsSetup == 1), "Only %u base address Ids were set up.  Expected 1.\n",numBatIdsSetup );
+  PAMI_assertf( (_calculateSizeOnly == 1) || (_allocateOnly == 1) || (numBatIdsSetup == 2), "Only %u base address Ids were set up.  Expected 2.\n",numBatIdsSetup );
 
-  if ( (_calculateSizeOnly == 1) || (_allocateOnly == 1) ) return;
+  // Incorporate the size of the shared counter into the shared memory space requirement.
+  if ( _calculateSizeOnly == 1 )
+    {
+      _memSize += sizeof(uint64_t) + 16;
+      TRACE((stderr,"MU ResourceManager: allocateGlobalBaseAddressTableEntries: _memSize = %zu\n",_memSize));
+      return;
 
-  // Set the BAT slot to a 0 physical address.
+    } // End: _calculateOnly
+      
+  // Allocate space for the shared counter in shared memory.
+  uint64_t *sharedCounterPtr;
+  allocateMemory( true /*useSharedMemory*/, (void **)(&sharedCounterPtr), 8, sizeof(uint64_t) );
+  TRACE((stderr,"MU ResourceManager: allocateGlobalBaseAddressTableEntries: Shared counter address = %p\n",sharedCounterPtr));
+  PAMI_assertf( sharedCounterPtr != NULL, "Shared memory is full.\n" );
+
+  if ( _allocateOnly == 1 ) return;
+
+  // Set the first BAT slot to a 0 physical address.
   uint32_t batSubgroup = ( _globalBatIds[0] / BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP ) - 64;
   uint8_t  batId       = _globalBatIds[0] % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
   rc = MUSPI_SetBaseAddress ( &_globalBatSubGroups[batSubgroup],
 			      batId,
 			      0 /* MUHWI_BaseAddress_t */ );
-  TRACE((stderr,"MU ResourceManager: allocateGlobalBaseAddressTableEntry: batSubgroup=%u, batId=%u, rc=%d\n",batSubgroup, batId, rc));
+  TRACE((stderr,"MU ResourceManager: allocateGlobalBaseAddressTableEntry: Zero BAT entry: Relative batSubgroup=%u, Relative batId=%u, Global batId=%u, rc=%d\n",batSubgroup, batId, _globalBatIds[0], rc));
   PAMI_assertf( rc == 0, "MUSPI_SetBaseAddress failed with rc=%d\n",rc );
 
+  // Set the second BAT slot to the atomic physical address of the shared counter.
+  Kernel_MemoryRegion_t memRegion;
+  rc = Kernel_CreateMemoryRegion ( &memRegion,
+				   sharedCounterPtr,
+				   sizeof(uint64_t) );
+  PAMI_assertf( rc == 0, "Kernel_CreateMemoryRegion failed with rc=%d\n",rc );
+
+  uint64_t sharedCounterPA = (uint64_t)memRegion.BasePa +
+    ((uint64_t)sharedCounterPtr - (uint64_t)memRegion.BaseVa);
+
+  batSubgroup = ( _globalBatIds[1] / BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP ) - 64;
+  batId       = _globalBatIds[1] % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
+
+  uint64_t sharedCounterBATvalue = (uint64_t)MUSPI_GetAtomicAddress (
+					       sharedCounterPA, 
+					       MUHWI_ATOMIC_OPCODE_STORE_ADD_COHERENCE_ON_ZERO);
+
+  rc = MUSPI_SetBaseAddress ( &_globalBatSubGroups[batSubgroup],
+			      batId,
+			      sharedCounterBATvalue );
+  TRACE((stderr,"MU ResourceManager: allocateGlobalBaseAddressTableEntry: Shared Counter BAT entry: Relative batSubgroup=%u, Relative batId=%u, Global batId=%u, rc=%d, Shared Counter PA=0x%lx, BAT value = 0x%lx\n",batSubgroup, batId, _globalBatIds[1], rc, sharedCounterPA, sharedCounterBATvalue ));
+  PAMI_assertf( rc == 0, "MUSPI_SetBaseAddress failed with rc=%d\n",rc );
   
 } // End: allocateGlobalBaseAddressTableEntry()
 
@@ -1483,7 +1536,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
   //   Then, shared memory is set up so it can be allocated-from.
   _calculateSizeOnly = 1;
   allocateGlobalInjFifos();
-  allocateGlobalBaseAddressTableEntry();
+  allocateGlobalBaseAddressTableEntries();
   setupSharedMemory();
 
   // The master process allocates space for AND initializes the resources, while
@@ -1506,7 +1559,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
     _allocateOnly = 1;
 
   allocateGlobalInjFifos();
-  allocateGlobalBaseAddressTableEntry();
+  allocateGlobalBaseAddressTableEntries();
 
   // Allocate process-scoped resources.
   _calculateSizeOnly = 0;
