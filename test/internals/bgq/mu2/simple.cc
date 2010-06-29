@@ -107,7 +107,7 @@ int main(int argc, char ** argv)
   __MUGlobal.getMuRM().initializeContexts( 0 /*id_client*/, 1 /*id_count*/ );
 
   MuContext mu (__global.mapping, 0, 0, 1);
-  mu.init (0); // id_client
+  mu.init (0, NULL); // id_client, mu context "cookie" (usually pami_context_t)
   fprintf (stderr, "After mu init\n");
 
   pami_endpoint_t self = PAMI_ENDPOINT_INIT(0,__global.mapping.task(),0);

@@ -206,7 +206,7 @@ namespace PAMI
 
         dput.Rec_Payload_Base_Address_Id = _context.getGlobalBatId();
         dput.Rec_Payload_Offset          = 0;
-        dput.Rec_Counter_Base_Address_Id = _context.getGlobalBatId();
+        dput.Rec_Counter_Base_Address_Id = _context.getSharedCounterBatId();
         dput.Rec_Counter_Offset          = 0;
         dput.Pacing                      = MUHWI_PACKET_DIRECT_PUT_IS_NOT_PACED;
 

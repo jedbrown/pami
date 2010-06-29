@@ -184,16 +184,11 @@ namespace PAMI
           /// Interface::BaseDevice::init interface and only specifies
           /// parameters that are necessary for MU operations.
           ///
-          /// \param[in] id_client The client identifier
-          // \param[in] client    PAMI communication client
-          // \param[in] context   PAMI communication context
-          // \param[in] mm        Memory manager for this mu context
+          /// \param[in] id_client           The client identifier
+          /// \param[in] mu_context_cookie   MU context cookie delivered in callbacks
           ///
-          inline pami_result_t init (size_t                  id_client//,
-                                     //pami_client_t           client,
-                                     //pami_context_t          context
-                                     //,Memory::MemoryManager * mm
-                                    )
+          inline pami_result_t init (size_t   id_client,
+                                     void   * mu_context_cookie)
           {
             TRACE_FN_ENTER();
             _id_client = id_client;
@@ -388,7 +383,7 @@ namespace PAMI
             receptionChannel.initialize (_globalRecFifoIds[0],
                                          _recFifos[0],
                                          _mapping.getMuDestinationSelf(),
-                                         NULL);  // \todo This should be the pami_context_t
+                                         mu_context_cookie);
 #endif
 
             TRACE_FN_EXIT();
@@ -559,7 +554,7 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
 
-            // Return the destination reception fifo number for the 
+            // Return the destination reception fifo number for the
 	    // broadcast...our context's fifo.
 	    rfifo = _globalRecFifoIds[0];
 
@@ -718,6 +713,11 @@ namespace PAMI
           inline uint32_t getGlobalBatId ()
           {
             return _rm.getGlobalBatId();
+          };
+
+          inline uint32_t getSharedCounterBatId ()
+          {
+            return _rm.getSharedCounterBatId();
           };
 
           RecChannel   receptionChannel; // Reception resources, public access

@@ -61,7 +61,7 @@ namespace PAMI
             TRACE_FN_ENTER();
             notify_t * n = (notify_t *) metadata;
 
-            TRACE_FORMAT("n->fn = %p, n->cookie = %p .. &(n->fn) = %p, &(n->cookie) = %p", n->fn, n->cookie, &(n->fn), &(n->cookie));
+            TRACE_FORMAT("recv_func_parm = %p, n->fn = %p, n->cookie = %p .. &(n->fn) = %p, &(n->cookie) = %p", recv_func_parm, n->fn, n->cookie, &(n->fn), &(n->cookie));
 
             n->fn (recv_func_parm, // a.k.a. "pami_context_t"
                    n->cookie,
