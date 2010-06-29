@@ -19,7 +19,7 @@
 #include "components/devices/bgq/mu/MUMultisyncModel.h"
 #include "components/devices/bgq/mu/MUMulticombineModel.h"
 #include "common/bgq/NativeInterface.h"
-#include "../../../util.h"
+#include "../../util.h"
 
 #include <hwi/include/bqc/nd_500_dcr.h>
 

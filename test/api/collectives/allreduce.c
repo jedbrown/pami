@@ -307,7 +307,7 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int nranks) {
     for (i = 0; i < count; i++) {
       if (rbuf[i] != i * nranks)
       {
-        fprintf(stderr,"Check(%d) failed rbuf[%d] %lu != %u\n",count,i,rbuf[1],i*nranks);
+        fprintf(stderr,"Check(%d) failed rbuf[%d] %zd != %u\n",count,i,rbuf[1],i*nranks);
         err = -1;
       }
     }
