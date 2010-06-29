@@ -11,7 +11,7 @@
  * \brief Simple all-sided multicast test using pwq's to chain operations.
  */
 
-#include "test/multisend/Buffer.h"
+#include "Buffer.h"
 
 #include "Global.h"
 #include <unistd.h>

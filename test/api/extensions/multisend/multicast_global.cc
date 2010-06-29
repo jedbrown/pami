@@ -11,7 +11,7 @@
  * \brief Simple multicast tests.
  */
 
-#include "test/multisend/Buffer.h"
+#include "Buffer.h"
 
 #include "Global.h"
 #include <unistd.h>

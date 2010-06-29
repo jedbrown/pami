@@ -291,7 +291,7 @@ void initialize_sndbuf (void *buf, int count, int op, int dt) {
   TRACEV((stderr,"Initialize count %d, op %d, dt %d, size %u/%u\n", count, op, dt,elemsize_array[dt], count * elemsize_array[dt]));
   int i;
   if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
-    uint *ibuf = (uint *)  buf;
+    size_t *ibuf = (size_t *)  buf;
     for (i = 0; i < count; i++) {
       ibuf[i] = i;
     }
@@ -303,11 +303,11 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int nranks) {
 
   int i, err = 0;
   if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
-    uint *rbuf = (uint *)  buf;
+    size_t *rbuf = (size_t *)  buf;
     for (i = 0; i < count; i++) {
       if (rbuf[i] != i * nranks)
       {
-        fprintf(stderr,"Check(%u) failed rbuf[%d] %u != %u\n",count,i,rbuf[1],i*nranks);
+        fprintf(stderr,"Check(%d) failed rbuf[%d] %lu != %u\n",count,i,rbuf[1],i*nranks);
         err = -1;
       }
     }

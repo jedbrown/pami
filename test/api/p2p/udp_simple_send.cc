@@ -18,8 +18,6 @@
 #include <assert.h>
 
 #include <pami.h>
-#include "../util.h"
-
 
 #define ITERATIONS 100
 //#define ITERATIONS 1

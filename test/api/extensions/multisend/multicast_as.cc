@@ -13,7 +13,7 @@
 
 #define DEBUG_RANK (unsigned)-1
 
-#include "test/multisend/Buffer.h"
+#include "Buffer.h"
 
 #include "Global.h"
 #include <unistd.h>

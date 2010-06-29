@@ -17,7 +17,6 @@
 #include <assert.h>
 
 #include <pami.h>
-#include "../util.h"
 
 //#define ITERATIONS 10
 //#define ITERATIONS 1000
@@ -177,9 +176,9 @@ int main (int argc, char ** argv)
   { size_t _n = 1; PAMI_Context_createv (client, NULL, 0, &context, _n); }
   TRACE_ERR((stderr, "...  after PAMI_Context_createv()\n"));
 
-  TRACE_ERR((stderr, "... before barrier_init()\n"));
-  barrier_init (client, context, 0);
-  TRACE_ERR((stderr, "...  after barrier_init()\n"));
+//  TRACE_ERR((stderr, "... before barrier_init()\n"));
+//  barrier_init (client, context, 0);
+//  TRACE_ERR((stderr, "...  after barrier_init()\n"));
 
 //  printf("size of size_t:%d\n", sizeof(size_t));
 
@@ -247,7 +246,7 @@ int main (int argc, char ** argv)
     fflush (stdout);
   }
 
-  barrier ();
+//  barrier ();
 
   for (unsigned i = 0; i < 10000000;i++){};
 

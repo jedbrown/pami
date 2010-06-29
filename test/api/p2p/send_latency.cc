@@ -17,7 +17,6 @@
 #include <assert.h>
 
 #include <pami.h>
-#include "../util.h"
 
 #define ITERATIONS 100
 //#define ITERATIONS 1000
@@ -137,7 +136,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
   parameters.events.local_fn      = decrement;
   parameters.events.remote_fn     = NULL;
 
-  barrier ();
+//  barrier ();
 
   unsigned i;
   unsigned long long t1 = PAMI_Wtimebase();
@@ -196,9 +195,9 @@ int main (int argc, char ** argv)
   { size_t _n = 1; PAMI_Context_createv (client, NULL, 0, &context, _n); }
   TRACE_ERR((stderr, "...  after PAMI_Context_createv()\n"));
 
-  TRACE_ERR((stderr, "... before barrier_init()\n"));
-  barrier_init (client, context, 0);
-  TRACE_ERR((stderr, "...  after barrier_init()\n"));
+//  TRACE_ERR((stderr, "... before barrier_init()\n"));
+//  barrier_init (client, context, 0);
+//  TRACE_ERR((stderr, "...  after barrier_init()\n"));
 
 
   /* Register the protocols to test */
@@ -268,7 +267,7 @@ int main (int argc, char ** argv)
     fflush (stdout);
   }
 
-  barrier ();
+//  barrier ();
 
   unsigned long long cycles;
   double usec;
