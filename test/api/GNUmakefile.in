@@ -12,6 +12,35 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = client collectives context extensions p2p time endpoint
 NOTBUILT        = 
-APPS            =
+APPS            = init.${EXTENSION} init_coll.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
+
+ifeq (@BUILDENV@,ade)
+%.${EXTENSION}: %.c
+	cp ${CROSS_CRT1} .
+	cp ${CROSS_CRTI} .
+	cp ${CROSS_CRTN} .
+	${CROSS_CC} -I${INSTALL_DIR}/include  ${CROSS_CFLAGS} $< -o $@ ${CROSS_LDFLAGS} -lm -L${CROSS_TOOLCHAIN_LDPATH} @POELIB@ @IBMMPILIB@ 
+	rm `basename ${CROSS_CRT1}`
+	rm `basename ${CROSS_CRTI}`
+	rm `basename ${CROSS_CRTN}`
+%.${EXTENSION}: %.cc
+	cp ${CROSS_CRT1} .
+	cp ${CROSS_CRTI} .
+	cp ${CROSS_CRTN} .
+	${CROSS_CXX} -I${INSTALL_DIR}/include  ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -lm -L${CROSS_TOOLCHAIN_LDPATH} @POELIB@ @IBMMPILIB@ 
+	rm `basename ${CROSS_CRT1}`
+	rm `basename ${CROSS_CRTI}`
+	rm `basename ${CROSS_CRTN}`
+else
+
+%.${EXTENSION}: %.c
+	${CROSS_CC} -I${INSTALL_DIR}/include ${CROSS_CFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+%.${EXTENSION}: %.cc
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+%.${EXTENSION}: %.cpp
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+endif
+
+default: ${APPS}

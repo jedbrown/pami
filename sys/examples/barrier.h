@@ -7,14 +7,27 @@
 
 /**
  * \example barrier.c
+ * \ref init_util.h
+ *
  * \dontinclude barrier.c
  *
  * <b>A simple barrier test case</b>
  *
- *  This example demonstrates how to issue a barrier collective call
- *  on the world geometry.  This simple test only uses one context
- *  and one client. We must first initialize PAMI clients and contexts
- *  for communication
+ * This example demonstrates how to issue a barrier collective call
+ * on the world geometry.  This simple test only uses one context
+ * and one client. We must first initialize PAMI clients and contexts
+ * for communication.
+ *
+ * This test case uses common utility routines for context creation
+ * For the common initialization routines, see the following:
+ *
+ * \ref init_util.h
+ * \ref init.c
+ *
+ * For collective initialization routines, see the following:
+ *
+ * \ref coll_util.h
+ * \ref init_coll.c
  *
  * \par
  * \skipline Docs01
