@@ -9,12 +9,12 @@ int main (int argc, char ** argv)
 {
   pami_client_t        client;
   pami_context_t       context;
-  pami_result_t        result = PAMI_ERROR;
   size_t               num_contexts=1;
   pami_task_t          task_id=0;
   size_t               num_tasks=0;
-  pami_geometry_t      world_geometry;
+  double               ti, tf;
 
+  ti=timer();
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
                      NULL,           /* Clientname=default */
@@ -33,5 +33,7 @@ int main (int argc, char ** argv)
   if(rc==1)
     return 1;
   
+  tf = timer();
+
   return 0;
 };

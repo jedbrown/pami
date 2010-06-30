@@ -10,9 +10,7 @@ int main (int argc, char ** argv)
 {
   pami_client_t        client;
   pami_context_t       context;
-  pami_result_t        result = PAMI_ERROR;
   size_t               num_contexts=1;
-  pami_configuration_t configuration;
   pami_task_t          task_id;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
@@ -26,7 +24,9 @@ int main (int argc, char ** argv)
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   pami_xfer_t          barrier;
   volatile unsigned    poll_flag=0;
+  double               tf, ti;
   
+  ti=timer();
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
                      NULL,           /* Clientname=default */
@@ -66,7 +66,7 @@ int main (int argc, char ** argv)
   rc = pami_shutdown(&client,&context,&num_contexts); 
   if(rc==1)
     return 1;
-  
+  tf=timer();
   free(always_works_algo);
   free(always_works_md);
   free(must_query_algo);
