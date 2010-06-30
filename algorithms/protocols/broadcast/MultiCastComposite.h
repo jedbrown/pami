@@ -360,7 +360,7 @@ namespace CCMI
 #ifdef ENABLE_MAMBO_WORKAROUNDS  // doesn't support chars on MU
           _minfo.dtype              = PAMI_UNSIGNED_INT;
           _minfo.count              = _bytes/4;
-          PAMI_assertf(!(_bytes%4),"Multiple of 4 bytes only");
+/// \todo PAMI_assertf(!(_bytes%4),"Multiple of 4 bytes only");
 #else
           _minfo.dtype              = PAMI_UNSIGNED_CHAR;
           _minfo.count              = _bytes;

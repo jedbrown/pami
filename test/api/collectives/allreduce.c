@@ -365,26 +365,10 @@ int main(int argc, char*argv[])
         for(i= OP_PROD,   j=0; j<DT_COUNT;j++)validTable[i][j]=0;
         for(i= OP_MAXLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
         for(i= OP_MINLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
-        // This works on MU so re-enable it
-        if((env) && (*env=='M'))
-          validTable[OP_BAND][DT_DOUBLE]=1;
       }
-  if((env==NULL) || ((*env=='S') || (*env=='B')))
-      {
-        /// \todo These fail using shmem core math on bgq.
-        validTable[OP_LAND  ][DT_FLOAT         ]=0;
-        validTable[OP_LOR   ][DT_FLOAT         ]=0;
-        validTable[OP_LXOR  ][DT_FLOAT         ]=0;
-        validTable[OP_BAND  ][DT_FLOAT         ]=0;
-        validTable[OP_BOR   ][DT_FLOAT         ]=0;
-        validTable[OP_BXOR  ][DT_FLOAT         ]=0;
-        validTable[OP_LAND  ][DT_DOUBLE        ]=0;
-        validTable[OP_LOR   ][DT_DOUBLE        ]=0;
-        validTable[OP_LXOR  ][DT_DOUBLE        ]=0;
-        validTable[OP_BAND  ][DT_DOUBLE        ]=0;
-        validTable[OP_BOR   ][DT_DOUBLE        ]=0;
-        validTable[OP_BXOR  ][DT_DOUBLE        ]=0;
-      }
+  // This works on bgq so re-enable it
+  if((env) && (*env=='M'))
+    validTable[OP_BAND][DT_DOUBLE]=1;
 #endif
 
 #else
