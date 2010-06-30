@@ -37,7 +37,8 @@ int main (int argc, char ** argv)
                      &num_tasks);    /* number of tasks    */
   if(rc==1)
     return 1;
-
+  
+  /* Docs01:  Initialize the Geometry */
   rc = query_geometry_world(client,
                             context,
                             &world_geometry,
@@ -47,13 +48,16 @@ int main (int argc, char ** argv)
                             &always_works_md,
                             &must_query_algo,
                             &must_query_md);
+  /* Docs02:  Initialize the Geometry */
   if(rc==1)
     return 1;
- 
+
+  /* Docs03:  Issue the collective */
   barrier.cb_done   = cb_done;
   barrier.cookie    = (void*) & poll_flag;
   barrier.algorithm = always_works_algo[0];
   rc = blocking_coll(context, &barrier, &poll_flag);
+  /* Docs04:  Issue the collective */
   if(rc==1)
     return 1;
 

@@ -15,13 +15,15 @@
 #define __test_api_coll_util_h__
 
 
-
+/* Docs09:  Done/Decrement call */
 void cb_done (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;
 }
+/* Docs10:  Done/Decrement call */
 
+/* Docs07:  Blocking Collective Call */
 int blocking_coll (pami_context_t      context,
                    pami_xfer_t        *coll,
                    volatile unsigned  *active)
@@ -38,6 +40,8 @@ int blocking_coll (pami_context_t      context,
     result = PAMI_Context_advance (context, 1);
   return 0;
 }
+/* Docs08:  Blocking Collective Call */
+
 #include<assert.h>
 int query_geometry_world(pami_client_t       client,
                          pami_context_t      context,
@@ -49,15 +53,18 @@ int query_geometry_world(pami_client_t       client,
                          pami_algorithm_t  **must_query_alg,
                          pami_metadata_t   **must_query_md)
 {
+  
   pami_result_t     result           = PAMI_SUCCESS;
-
+  /* Docs01:  Get the World Geometry */
   result = PAMI_Geometry_world (client,world_geometry);
   if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to get world geometry: result = %d\n", result);
       return 1;
     }
-  
+  /* Docs02:  Get the World Geometry */
+
+  /* Docs03:  Query the number of algorithms */
   result = PAMI_Geometry_algorithms_num(context,
                                         *world_geometry,
                                         xfer_type,
@@ -70,11 +77,14 @@ int query_geometry_world(pami_client_t       client,
                result);
       return 1;
     }
-
+  /* Docs04:  Query the number of algorithms */
+  
   *always_works_alg = (pami_algorithm_t*)malloc(sizeof(pami_algorithm_t)*num_algorithm[0]);
   *always_works_md  = (pami_metadata_t*)malloc(sizeof(pami_metadata_t)*num_algorithm[0]);
   *must_query_alg   = (pami_algorithm_t*)malloc(sizeof(pami_algorithm_t)*num_algorithm[1]);
   *must_query_md    = (pami_metadata_t*)malloc(sizeof(pami_metadata_t)*num_algorithm[1]);
+
+  /* Docs05:  Query the algorithm lists */
   result = PAMI_Geometry_algorithms_query(context,
                                           *world_geometry,
                                           xfer_type,
@@ -84,6 +94,7 @@ int query_geometry_world(pami_client_t       client,
                                           *must_query_alg,
                                           *must_query_md,
                                           num_algorithm[1]);
+  /* Docs06:  Query the algorithm lists */
   if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to get query algorithm. result = %d\n", result);

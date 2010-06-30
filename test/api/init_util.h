@@ -32,8 +32,7 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
   if(clientname == NULL)
     clientname = cl_string;
 
-  /* Docs01:  Common Routines for Initializing PAMI */
-  /* Create the client */
+  /* Docs01:  Create the client */
   result = PAMI_Client_create (clientname, client);
   if (result != PAMI_SUCCESS)
       {
@@ -41,9 +40,9 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
                  clientname,result);
         return 1;
       }
-  /* Docs02:  Common Routines for Initializing PAMI */
+  /* Docs02:  Create the client */
 
-  
+  /* Docs03:  Create the client */
   l_configuration.name = PAMI_NUM_CONTEXTS;
   result = PAMI_Configuration_query(client, &l_configuration);
   if (result != PAMI_SUCCESS)
@@ -74,7 +73,9 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
         return 1;
       }
   *num_tasks = l_configuration.value.intval;
+  /* Docs04:  Create the client */
   
+  /* Docs05:  Create the client */
   result = PAMI_Context_createv(*client, configuration, num_config, context, *num_contexts);
   if (result != PAMI_SUCCESS)
       {
@@ -82,6 +83,7 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
                  result);
         return 1;
       }
+  /* Docs06:  Create the client */
   return 0;
 }
 
@@ -90,6 +92,7 @@ int pami_shutdown(pami_client_t        * client,          /* in/out:  client    
                   size_t               * num_contexts)    /* in/out:  num_contexts*/
 {
   pami_result_t result;
+  /* Docs07:  Destroy the client and contexts */
   result = PAMI_Context_destroyv(context, 1);
   if (result != PAMI_SUCCESS)
     {
@@ -103,6 +106,7 @@ int pami_shutdown(pami_client_t        * client,          /* in/out:  client    
       fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
       return 1;
     }
+  /* Docs08:  Destroy the client and contexts*/
   return 0;
 }
 
