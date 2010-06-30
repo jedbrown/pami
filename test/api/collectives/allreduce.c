@@ -203,7 +203,7 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id) {
 
   int i;
   if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
-    size_t *ibuf = (size_t *)  buf;
+    unsigned int *ibuf = (unsigned int *)  buf;
     for (i = 0; i < count; i++) {
       ibuf[i] = i;
     }
@@ -215,11 +215,11 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks) {
 
   int i, err = 0;
   if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
-    size_t *rbuf = (size_t *)  buf;
+    unsigned int *rbuf = (unsigned int *)  buf;
     for (i = 0; i < count; i++) {
       if (rbuf[i] != i * num_tasks)
       {
-        fprintf(stderr,"Check(%d) failed rbuf[%d] %zd != %u\n",count,i,rbuf[1],i*num_tasks);
+        fprintf(stderr,"Check(%d) failed rbuf[%d] %u != %u\n",count,i,rbuf[1],i*num_tasks);
         err = -1;
       }
     }
