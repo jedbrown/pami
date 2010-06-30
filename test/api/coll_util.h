@@ -50,8 +50,7 @@ int query_geometry_world(pami_client_t       client,
                          pami_metadata_t   **must_query_md)
 {
   pami_result_t     result           = PAMI_SUCCESS;
-  int               algorithm_type   = 0;
-  
+
   result = PAMI_Geometry_world (client,world_geometry);
   if (result != PAMI_SUCCESS)
     {
@@ -104,9 +103,7 @@ int query_geometry(pami_client_t       client,
                    pami_metadata_t   **must_query_md)
 {
   pami_result_t     result           = PAMI_SUCCESS;
-  int               algorithm_type   = 0;
-  
-  
+
   result = PAMI_Geometry_algorithms_num(context,
                                         geometry,
                                         xfer_type,
