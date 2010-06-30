@@ -144,7 +144,7 @@ int main(int argc, char*argv[])
 
   int algorithm_type = 0;
   pami_algorithm_t *world_algorithm = NULL;
-  int num_algorithm[2] = {0};
+  size_t num_algorithm[2] = {0};
   result = PAMI_Geometry_algorithms_num(context,
                                         world_geometry,
                                         PAMI_XFER_BARRIER,
@@ -439,7 +439,7 @@ int main(int argc, char*argv[])
 //              for(alg=0; alg<num_algorithm[algorithm_type]; alg++)
           {
             if (rank == roots[k])
-              fprintf(stderr, "Trying algorithm %d of %d\n", alg + 1, num_algorithm[algorithm_type]);
+              fprintf(stderr, "Trying algorithm %d of %zd\n", alg + 1, num_algorithm[algorithm_type]);
 
             _barrier (context, barriers[k]);
 

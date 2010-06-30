@@ -28,13 +28,10 @@ int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t       context;
-  pami_result_t        result = PAMI_ERROR;
   size_t               num_contexts=1;
-  pami_configuration_t configuration;
   pami_task_t          task_id;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
-  int                  algo;
   
   /* Barrier variables */
   size_t               barrier_num_algorithm[2];
@@ -53,10 +50,8 @@ int main(int argc, char*argv[])
   pami_algorithm_t    *bcast_must_query_algo;
   pami_metadata_t     *bcast_must_query_md;
   pami_xfer_type_t     bcast_xfer = PAMI_XFER_BROADCAST;
-  pami_xfer_t          broadcast;
   volatile unsigned    bcast_poll_flag=0;
 
-  int                  nalg = 0;
   double               ti, tf, usec;
   char                 buf[BUFSIZE];
   
@@ -118,7 +113,7 @@ int main(int argc, char*argv[])
   pami_xfer_t            newbcast;
 
   size_t                 set[2];
-  int                    id, root=0, geom_init = 1;
+  int                    id, root=0;
   size_t                 half        = num_tasks/2;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
   
@@ -148,7 +143,7 @@ int main(int argc, char*argv[])
   else
       {
         int i=0;
-        int iter;
+        int iter=0;;
         if((task_id%2)==0)
             {
               for (i = 0; i < num_tasks; i++)

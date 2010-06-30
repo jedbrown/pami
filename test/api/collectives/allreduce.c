@@ -233,13 +233,10 @@ int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t       context;
-  pami_result_t        result = PAMI_ERROR;
   size_t               num_contexts=1;
-  pami_configuration_t configuration;
   pami_task_t          task_id;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
-  int                  algo;
 
   /* Barrier variables */
   size_t               barrier_num_algorithm[2];

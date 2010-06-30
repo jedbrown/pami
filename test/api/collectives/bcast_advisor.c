@@ -131,7 +131,7 @@ int main (int argc, char ** argv)
 
   int algorithm_type = 0;
   pami_algorithm_t *algorithm = NULL;
-  int num_algorithm[2] = {0};
+  size_t num_algorithm[2] = {0};
   result = PAMI_Geometry_algorithms_num(context,
                                         world_geometry,
                                         PAMI_XFER_BARRIER,
@@ -163,7 +163,7 @@ int main (int argc, char ** argv)
 
   pami_algorithm_t *bcastalgorithm = NULL;
   pami_metadata_t *metas = NULL;
-  int bcastnum_algorithm[2] = {0};
+  size_t bcastnum_algorithm[2] = {0};
   result = PAMI_Geometry_algorithms_num(context,
                                         world_geometry,
                                         PAMI_XFER_BROADCAST,
