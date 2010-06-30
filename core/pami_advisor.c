@@ -56,7 +56,7 @@ pami_result_t pami_advisor_repo_fill(pami_client_t client,
                                    pami_context_t context,
                                    pami_xfer_type_t xfer_type)
 {
-  int alg_list[2] = {0};
+  size_t alg_list[2] = {0};
   int algorithm_type = 0; // always works list
   pami_result_t result;
   pami_geometry_t world_geometry;
