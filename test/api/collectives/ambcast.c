@@ -11,20 +11,11 @@
  * \brief ???
  */
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <unistd.h>
-#include <sys/time.h>
-#include <pami.h>
-
+#include "../pami_util.h"
 
 #define BUFSIZE 262144
 #define NITER   100
 
-volatile unsigned       _g_barrier_active;
-volatile unsigned       _g_broadcast_active;
 volatile unsigned       _g_total_broadcasts;
 char                   *_g_recv_buffer;
 
@@ -33,7 +24,6 @@ void cb_ambcast_done (void *context, void * clientdata, pami_result_t err)
   _g_total_broadcasts++;
   free(clientdata);
 }
-
 
 void cb_bcast_recv  (pami_context_t         context,
                      size_t                root,
@@ -47,7 +37,6 @@ void cb_bcast_recv  (pami_context_t         context,
                      pami_event_function  * const cb_info,
                      void                ** cookie)
 {
-
   *rcvbuf                        = malloc(sndlen);
   *rtype                         = PAMI_BYTE;
   *rtypecount                    = sndlen;
@@ -55,196 +44,104 @@ void cb_bcast_recv  (pami_context_t         context,
   *cookie                        = (void*) * rcvbuf;
 }
 
-static double timer()
-{
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
-}
-
-void cb_barrier (void *context, void * clientdata, pami_result_t res)
-{
-  int * active = (int *) clientdata;
-  (*active)--;
-}
-
-void cb_broadcast (void *context, void * clientdata, pami_result_t res)
-{
-  int * active = (int *) clientdata;
-  (*active)--;
-}
-
-void _barrier (pami_context_t context, pami_xfer_t *barrier)
-{
-  _g_barrier_active++;
-  pami_result_t result;
-  result = PAMI_Collective(context, (pami_xfer_t*)barrier);
-
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
-      exit(1);
-    }
-
-  while (_g_barrier_active)
-    result = PAMI_Context_advance (context, 1);
-
-}
-
-
-void _broadcast (pami_context_t context, pami_xfer_t *broadcast)
-{
-  _g_broadcast_active++;
-  pami_result_t result;
-  result = PAMI_Collective(context, (pami_xfer_t*)broadcast);
-
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable to issue broadcast collective. result = %d\n", result);
-      exit(1);
-    }
-}
-
-
-
 int main(int argc, char*argv[])
 {
-  double tf, ti, usec;
-  pami_client_t  client;
-  pami_context_t context;
-  pami_result_t  result = PAMI_ERROR;
-  char buf[BUFSIZE];
-  char rbuf[BUFSIZE];
-  char          cl_string[] = "TEST";
-  result = PAMI_Client_create (cl_string, &client);
-
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
-      return 1;
-    }
-
-  {  result = PAMI_Context_createv(client, NULL, 0, &context, 1); }
-
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
-      return 1;
-    }
-
+  pami_client_t        client;
+  pami_context_t       context;
+  pami_result_t        result = PAMI_ERROR;
+  size_t               num_contexts=1;
   pami_configuration_t configuration;
-  configuration.name = PAMI_TASK_ID;
-  result = PAMI_Configuration_query(client, &configuration);
+  pami_task_t          task_id;
+  size_t               num_tasks;
+  pami_geometry_t      world_geometry;
+  int                  algo;
+  
+  /* Barrier variables */
+  size_t               barrier_num_algorithm[2];
+  pami_algorithm_t    *bar_always_works_algo;
+  pami_metadata_t     *bar_always_works_md;
+  pami_algorithm_t    *bar_must_query_algo;
+  pami_metadata_t     *bar_must_query_md;
+  pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
+  pami_xfer_t          barrier;
+  volatile unsigned    bar_poll_flag=0;
+  
+  /* Ambcast variables */
+  size_t               ambcast_num_algorithm[2];
+  pami_algorithm_t    *ambcast_always_works_algo;
+  pami_metadata_t     *ambcast_always_works_md;
+  pami_algorithm_t    *ambcast_must_query_algo;
+  pami_metadata_t     *ambcast_must_query_md;
+  pami_xfer_type_t     ambcast_xfer = PAMI_XFER_AMBROADCAST;
+  pami_xfer_t          ambroadcast;
+  volatile unsigned    ambcast_poll_flag=0;
 
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
-      return 1;
-    }
+  int                  i,j,root=0,nalg = 0;
+  double               ti, tf, usec;
+  char                 buf[BUFSIZE];
+  char                 rbuf[BUFSIZE];
+  
+   /*  Initialize PAMI */
+  int rc = pami_init(&client,        /* Client             */
+                     &context,       /* Context            */
+                     NULL,           /* Clientname=default */
+                     &num_contexts,  /* num_contexts       */
+                     NULL,           /* null configuration */
+                     0,              /* no configuration   */
+                     &task_id,       /* task id            */
+                     &num_tasks);    /* number of tasks    */
+  if(rc==1)
+    return 1;
 
-  size_t task_id = configuration.value.intval;
+  /*  Query the world geometry for barrier algorithms */
+  rc = query_geometry_world(client,
+                            context,
+                            &world_geometry,
+                            barrier_xfer,
+                            barrier_num_algorithm,
+                            &bar_always_works_algo,
+                            &bar_always_works_md,
+                            &bar_must_query_algo,
+                            &bar_must_query_md);
+  if(rc==1)
+    return 1;
 
+  /*  Query the world geometry for ambroadcast algorithms */
+  rc = query_geometry_world(client,
+                            context,
+                            &world_geometry,
+                            ambcast_xfer,
+                            ambcast_num_algorithm,
+                            &ambcast_always_works_algo,
+                            &ambcast_always_works_md,
+                            &ambcast_must_query_algo,
+                            &ambcast_must_query_md);
+  if(rc==1)
+    return 1;
 
-  pami_geometry_t  world_geometry;
-  result = PAMI_Geometry_world (client, &world_geometry);
-
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
-      return 1;
-    }
-
-  pami_algorithm_t *algorithm = NULL;
-  int num_algorithm[2] = {0};
-  result = PAMI_Geometry_algorithms_num(context,
-                                        world_geometry,
-                                        PAMI_XFER_BARRIER,
-                                        num_algorithm);
-
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr,
-               "Error. Unable to query barrier algorithm. result = %d\n",
-               result);
-      return 1;
-    }
-
-  if (num_algorithm[0])
-    {
-      algorithm = (pami_algorithm_t*)
-                  malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-      result = PAMI_Geometry_algorithms_query(context,
-                                              world_geometry,
-                                              PAMI_XFER_BARRIER,
-                                              algorithm,
-                                              (pami_metadata_t*)NULL,
-                                              num_algorithm[0],
-                                              NULL,
-                                              NULL,
-                                              0);
-
-    }
-
-  unsigned     rank = task_id;
-  unsigned i, j, root = 0;
   _g_recv_buffer = rbuf;
 
-  pami_xfer_t barrier;
-  barrier.cb_done   = cb_barrier;
-  barrier.cookie    = (void*) & _g_barrier_active;
-  barrier.algorithm = algorithm[0];
-  _barrier(context, &barrier);
+  
+  barrier.cb_done     = cb_done;
+  barrier.cookie      = (void*) &bar_poll_flag;
+  barrier.algorithm   = bar_always_works_algo[0];
+  blocking_coll(context, &barrier,&bar_poll_flag);
 
-  pami_algorithm_t *bcastalgorithm = NULL;
-  pami_metadata_t *metas = NULL;
-  int bcastnum_algorithm[2] = {0};
-  result = PAMI_Geometry_algorithms_num(context,
-                                        world_geometry,
-                                        PAMI_XFER_AMBROADCAST,
-                                        bcastnum_algorithm);
 
-  if (result != PAMI_SUCCESS)
+  ambroadcast.cb_done   = cb_done;
+  ambroadcast.cookie    = (void*) & ambcast_poll_flag;
+  ambroadcast.algorithm = ambcast_always_works_algo[0];
+  ambroadcast.cmd.xfer_ambroadcast.user_header  = NULL;
+  ambroadcast.cmd.xfer_ambroadcast.headerlen    = 0;
+  ambroadcast.cmd.xfer_ambroadcast.sndbuf       = buf;
+  ambroadcast.cmd.xfer_ambroadcast.stype        = PAMI_BYTE;
+  ambroadcast.cmd.xfer_ambroadcast.stypecount   = 0;
+
+  for (nalg = 0; nalg < ambcast_num_algorithm[0]; nalg++)
     {
-      fprintf (stderr,
-               "Error. Unable to query bcast algorithm. result = %d\n",
-               result);
-      return 1;
-    }
-
-  if (bcastnum_algorithm[0])
-    {
-      bcastalgorithm = (pami_algorithm_t*)
-                       malloc(sizeof(pami_algorithm_t) * bcastnum_algorithm[0]);
-      metas = (pami_metadata_t*)
-              malloc(sizeof(pami_metadata_t) * bcastnum_algorithm[0]);
-      result = PAMI_Geometry_algorithms_query(context,
-                                              world_geometry,
-                                              PAMI_XFER_AMBROADCAST,
-                                              bcastalgorithm,
-                                              metas,
-                                              bcastnum_algorithm[0],
-                                              NULL,
-                                              NULL,
-                                              0);
-    }
-
-  pami_xfer_t broadcast;
-  broadcast.cb_done   = cb_broadcast;
-  broadcast.cookie    = (void*) & _g_broadcast_active;
-  broadcast.algorithm = bcastalgorithm[0];
-  broadcast.cmd.xfer_ambroadcast.user_header  = NULL;
-  broadcast.cmd.xfer_ambroadcast.headerlen    = 0;
-  broadcast.cmd.xfer_ambroadcast.sndbuf       = buf;
-  broadcast.cmd.xfer_ambroadcast.stype        = PAMI_BYTE;
-  broadcast.cmd.xfer_ambroadcast.stypecount   = 0;
-
-  int nalg = 0;
-
-  for (nalg = 0; nalg < bcastnum_algorithm[0]; nalg++)
-    {
-      if (rank == root)
+      if (task_id == root)
         {
-          printf("# Broadcast Bandwidth Test -- root = %d, %s\n", root, metas[nalg].name);
+          printf("# Broadcast Bandwidth Test -- root = %d, %s\n", root, ambcast_always_works_md[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
@@ -253,34 +150,31 @@ int main(int argc, char*argv[])
       pami_dispatch_callback_fn fn;
       fn.ambroadcast = cb_bcast_recv;
       PAMI_AMCollective_dispatch_set(context,
-                                     bcastalgorithm[nalg],
+                                     ambcast_always_works_algo[nalg],
                                      0,
                                      fn,
                                      NULL,
                                      h);
-      broadcast.algorithm = bcastalgorithm[nalg];
-
-      _barrier (context, &barrier);
+      ambroadcast.algorithm = ambcast_always_works_algo[nalg];
+      blocking_coll(context, &barrier,&bar_poll_flag);
 
       for (i = 1; i <= BUFSIZE; i *= 2)
         {
           long long dataSent = i;
           unsigned     niter = NITER;
-
-          if (rank == root)
+          if (task_id == root)
             {
               ti = timer();
-
               for (j = 0; j < niter; j++)
                 {
-                  broadcast.cmd.xfer_ambroadcast.stypecount = i;
-                  _broadcast (context, &broadcast);
+                  ambroadcast.cmd.xfer_ambroadcast.stypecount = i;
+                  blocking_coll (context, &ambroadcast, &ambcast_poll_flag);
                 }
 
-              while (_g_broadcast_active)
+              while (ambcast_poll_flag)
                 result = PAMI_Context_advance (context, 1);
 
-              _barrier(context, &barrier);
+              blocking_coll(context, &barrier,&bar_poll_flag);
               tf = timer();
               usec = (tf - ti) / (double)niter;
               printf("  %11lld %16lld %14.1f %12.2f\n",
@@ -296,29 +190,19 @@ int main(int argc, char*argv[])
                 result = PAMI_Context_advance (context, 1);
 
               _g_total_broadcasts = 0;
-              _barrier(context, &barrier);
-
+              blocking_coll (context, &ambroadcast, &ambcast_poll_flag);
             }
         }
     }
 
-  result = PAMI_Context_destroyv(&context, 1);
-
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
-      return 1;
-    }
-
-  result = PAMI_Client_destroy(&client);
-
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
-      return 1;
-    }
-
-  free(algorithm);
-  free(bcastalgorithm);
+  rc = pami_shutdown(&client,&context,&num_contexts);
+  free(bar_always_works_algo);
+  free(bar_always_works_md);
+  free(bar_must_query_algo);
+  free(bar_must_query_md);
+  free(ambcast_always_works_algo);
+  free(ambcast_always_works_md);
+  free(ambcast_must_query_algo);
+  free(ambcast_must_query_md);
   return 0;
 }

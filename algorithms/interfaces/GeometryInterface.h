@@ -136,16 +136,16 @@ namespace PAMI
 
       // API support
       inline pami_result_t algorithms_num(pami_xfer_type_t  colltype,
-                                         int             *lists_lengths,
+                                         size_t             *lists_lengths,
                                          size_t           context_id);
 
       inline pami_result_t algorithms_info (pami_xfer_type_t   colltype,
                                            pami_algorithm_t  *algs0,
                                            pami_metadata_t   *mdata0,
-                                           int               num0,
+                                           size_t               num0,
                                            pami_algorithm_t  *algs1,
                                            pami_metadata_t   *mdata1,
-                                           int               num1,
+                                           size_t               num1,
                                            size_t            context_id);
 
 
@@ -485,7 +485,7 @@ namespace PAMI
 
     template <class T_Geometry>
     inline pami_result_t Geometry<T_Geometry>::algorithms_num(pami_xfer_type_t  colltype,
-                                                             int             *lists_lengths,
+                                                             size_t             *lists_lengths,
                                                              size_t           context_id)
     {
       return static_cast<T_Geometry*>(this)->algorithms_num_impl(colltype,lists_lengths,context_id);
@@ -495,10 +495,10 @@ namespace PAMI
     inline pami_result_t  Geometry<T_Geometry>::algorithms_info (pami_xfer_type_t   colltype,
                                                                 pami_algorithm_t  *algs0,
                                                                 pami_metadata_t   *mdata0,
-                                                                int               num0,
+                                                                size_t               num0,
                                                                 pami_algorithm_t  *algs1,
                                                                 pami_metadata_t   *mdata1,
-                                                                int               num1,
+                                                                size_t               num1,
                                                                 size_t            context_id)
     {
       return static_cast<T_Geometry*>(this)->algorithms_info_impl(colltype,

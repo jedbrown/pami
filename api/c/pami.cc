@@ -232,7 +232,7 @@ extern "C" pami_result_t PAMI_Collective (pami_context_t   context,
 extern "C" pami_result_t PAMI_Geometry_algorithms_num (pami_context_t context,
                                                      pami_geometry_t geometry,
                                                      pami_xfer_type_t coll_type,
-                                                     int              lists_lengths[2])
+                                                     size_t              lists_lengths[2])
 {
   PAMI::Context * ctx = (PAMI::Context *) context;
   return ctx->geometry_algorithms_num (geometry,
@@ -247,10 +247,10 @@ extern "C"  pami_result_t PAMI_Geometry_algorithms_query (pami_context_t context
                                                        pami_xfer_type_t   colltype,
                                                        pami_algorithm_t  *algs0,
                                                        pami_metadata_t   *mdata0,
-                                                       int               num0,
+                                                       size_t             num0,
                                                        pami_algorithm_t  *algs1,
                                                        pami_metadata_t   *mdata1,
-                                                       int               num1)
+                                                       size_t               num1)
 {
   PAMI::Context * ctx = (PAMI::Context *) context;
   return ctx->geometry_algorithms_info (geometry,

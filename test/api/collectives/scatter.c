@@ -3,184 +3,88 @@
 /// \brief Simple Barrier test
 ///
 
-#include <pami.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <stdio.h>
+#include "../pami_util.h"
 
 #define BUFSIZE 524288
-volatile unsigned       _g_barrier_active;
-volatile unsigned       _g_scatter_active;
-
-void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
-{
-  int * active = (int *) clientdata;
-  (*active)--;
-}
-
-void cb_scatter (void *ctxt, void * clientdata, pami_result_t err)
-{
-    int * active = (int *) clientdata;
-    (*active)--;
-}
-
-static double timer()
-{
-    struct timeval tv;
-    gettimeofday(&tv,NULL);
-    return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
-}
-
-void _barrier (pami_context_t context, pami_xfer_t *barrier)
-{
-  _g_barrier_active++;
-  pami_result_t result;
-  result = PAMI_Collective(context, (pami_xfer_t*)barrier);
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
-      exit(1);
-    }
-  while (_g_barrier_active)
-    result = PAMI_Context_advance (context, 1);
-
-}
-
-void _scatter (pami_context_t context, pami_xfer_t *scatter)
-{
-  _g_scatter_active++;
-  pami_result_t result;
-  result = PAMI_Collective(context, (pami_xfer_t*)scatter);
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable to issue scatter collective. result = %d\n", result);
-      exit(1);
-    }
-  while (_g_scatter_active)
-    result = PAMI_Context_advance (context, 1);
-
-}
 
 int main (int argc, char ** argv)
 {
-  pami_client_t  client;
-  pami_context_t context;
-  pami_result_t  result = PAMI_ERROR;
-  char          cl_string[] = "TEST";
-  result = PAMI_Client_create (cl_string, &client);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
-        return 1;
-      }
-
-        {  result = PAMI_Context_createv(client, NULL, 0, &context, 1); }
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
-        return 1;
-      }
-
-
+  pami_client_t        client;
+  pami_context_t       context;
+  pami_result_t        result = PAMI_ERROR;
+  size_t               num_contexts=1;
   pami_configuration_t configuration;
-  configuration.name = PAMI_TASK_ID;
-  result = PAMI_Configuration_query(client, &configuration);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
-        return 1;
-      }
-  size_t task_id = configuration.value.intval;
+  pami_task_t          task_id;
+  size_t               num_tasks;
+  pami_geometry_t      world_geometry;
+  int                  algo;
+  
+  /* Barrier variables */
+  size_t               barrier_num_algorithm[2];
+  pami_algorithm_t    *bar_always_works_algo;
+  pami_metadata_t     *bar_always_works_md;
+  pami_algorithm_t    *bar_must_query_algo;
+  pami_metadata_t     *bar_must_query_md;
+  pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
+  pami_xfer_t          barrier;
+  volatile unsigned    bar_poll_flag=0;
+  
+  /* Scatter variables */
+  size_t               scatter_num_algorithm[2];
+  pami_algorithm_t    *scatter_always_works_algo;
+  pami_metadata_t     *scatter_always_works_md;
+  pami_algorithm_t    *scatter_must_query_algo;
+  pami_metadata_t     *scatter_must_query_md;
+  pami_xfer_type_t     scatter_xfer = PAMI_XFER_SCATTER;
+  pami_xfer_t          scatter;
+  volatile unsigned    scatter_poll_flag=0;
 
-
-  configuration.name = PAMI_NUM_TASKS;
-  result = PAMI_Configuration_query(client, &configuration);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
-        return 1;
-      }
-  size_t sz = configuration.value.intval;
-
-  pami_geometry_t  world_geometry;
-
-  result = PAMI_Geometry_world (client, &world_geometry);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
-        return 1;
-      }
-
-  pami_algorithm_t *algorithm=NULL;
-  int num_algorithm[2] = {0};
-  result = PAMI_Geometry_algorithms_num(context,
-                                       world_geometry,
-                                       PAMI_XFER_BARRIER,
-                                       num_algorithm);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr,
-             "Error. Unable to query barrier algorithm. result = %d\n",
-             result);
+  double               ti, tf, usec;
+  
+  /*  Initialize PAMI */
+  int rc = pami_init(&client,        /* Client             */
+                     &context,       /* Context            */
+                     NULL,           /* Clientname=default */
+                     &num_contexts,  /* num_contexts       */
+                     NULL,           /* null configuration */
+                     0,              /* no configuration   */
+                     &task_id,       /* task id            */
+                     &num_tasks);    /* number of tasks    */
+  if(rc==1)
     return 1;
-  }
 
-  if (num_algorithm[0])
-  {
-    algorithm = (pami_algorithm_t*)
-                malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-    result = PAMI_Geometry_algorithms_query(context,
-                                          world_geometry,
-                                          PAMI_XFER_BARRIER,
-                                          algorithm,
-                                          (pami_metadata_t*)NULL,
-                                          num_algorithm[0],
-                                          NULL,
-                                          NULL,
-                                          0);
-
-  }
-
-  pami_algorithm_t *scatteralgorithm=NULL;
-  int scatternum_algorithm[2] = {0};
-  result = PAMI_Geometry_algorithms_num(context,
-                                       world_geometry,
-                                       PAMI_XFER_SCATTER,
-                                       scatternum_algorithm);
-
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr,
-             "Error. Unable to query scatter algorithm. result = %d\n",
-             result);
+  /*  Query the world geometry for barrier algorithms */
+  rc = query_geometry_world(client,
+                            context,
+                            &world_geometry,
+                            barrier_xfer,
+                            barrier_num_algorithm,
+                            &bar_always_works_algo,
+                            &bar_always_works_md,
+                            &bar_must_query_algo,
+                            &bar_must_query_md);
+  if(rc==1)
     return 1;
-  }
 
-  if (scatternum_algorithm[0])
-  {
-    scatteralgorithm = (pami_algorithm_t*)
-      malloc(sizeof(pami_algorithm_t) * scatternum_algorithm[0]);
-
-    result = PAMI_Geometry_algorithms_query(context,
-                                          world_geometry,
-                                          PAMI_XFER_SCATTER,
-                                          scatteralgorithm,
-                                          (pami_metadata_t*)NULL,
-                                          scatternum_algorithm[0],
-                                          NULL,
-                                          NULL,
-                                          0);
-  }
-
-  double ti, tf, usec;
-  char *buf    = (char*)malloc(BUFSIZE*sz);
-  char *rbuf   = (char*)malloc(BUFSIZE*sz);
-  pami_xfer_t barrier;
-  barrier.cb_done   = cb_barrier;
-  barrier.cookie    = (void*)&_g_barrier_active;
-  barrier.algorithm = algorithm[0];
-  _barrier(context, &barrier);
-
+  /*  Query the world geometry for scatter algorithms */
+  rc = query_geometry_world(client,
+                            context,
+                            &world_geometry,
+                            scatter_xfer,
+                            scatter_num_algorithm,
+                            &scatter_always_works_algo,
+                            &scatter_always_works_md,
+                            &scatter_must_query_algo,
+                            &scatter_must_query_md);
+  if(rc==1)
+    return 1;
+  
+  char *buf         = (char*)malloc(BUFSIZE*num_tasks);
+  char *rbuf        = (char*)malloc(BUFSIZE*num_tasks);
+  barrier.cb_done   = cb_done;
+  barrier.cookie    = (void*)&bar_poll_flag;
+  barrier.algorithm = bar_always_works_algo[0];
+  blocking_coll(context,&barrier,&bar_poll_flag);
 
   size_t root = 0;
   if (task_id == root)
@@ -190,10 +94,9 @@ int main (int argc, char ** argv)
         printf("# -----------      -----------    -----------    ---------\n");
       }
 
-  pami_xfer_t scatter;
-  scatter.cb_done    = cb_scatter;
-  scatter.cookie     = (void*)&_g_scatter_active;
-  scatter.algorithm  = scatteralgorithm[0];
+  scatter.cb_done    = cb_done;
+  scatter.cookie     = (void*)&scatter_poll_flag;
+  scatter.algorithm  = scatter_num_algorithm[0];
   scatter.cmd.xfer_scatter.root       = root;
   scatter.cmd.xfer_scatter.sndbuf     = buf;
   scatter.cmd.xfer_scatter.stype      = PAMI_BYTE;
@@ -207,16 +110,16 @@ int main (int argc, char ** argv)
       {
         long long dataSent = i;
         int          niter = 100;
-        _barrier(context, &barrier);
+        blocking_coll(context,&barrier,&bar_poll_flag);
         ti = timer();
         for (j=0; j<niter; j++)
             {
               scatter.cmd.xfer_scatter.stypecount = i;
               scatter.cmd.xfer_scatter.rtypecount = i;
-              _scatter (context, &scatter);
+              blocking_coll(context,&scatter,&scatter_poll_flag);
             }
         tf = timer();
-        _barrier(context, &barrier);
+        blocking_coll(context,&barrier,&bar_poll_flag);
 
         usec = (tf - ti)/(double)niter;
         if (task_id == root)
@@ -229,21 +132,14 @@ int main (int argc, char ** argv)
               fflush(stdout);
             }
       }
-
-  result = PAMI_Context_destroyv(&context, 1);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
-        return 1;
-      }
-
-  result = PAMI_Client_destroy(&client);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
-        return 1;
-      }
-  free(scatteralgorithm);
-  free(algorithm);
+  rc = pami_shutdown(&client,&context,&num_contexts);
+  free(bar_always_works_algo);
+  free(bar_always_works_md);
+  free(bar_must_query_algo);
+  free(bar_must_query_md);
+  free(scatter_always_works_algo);
+  free(scatter_always_works_md);
+  free(scatter_must_query_algo);
+  free(scatter_must_query_md);
   return 0;
 };

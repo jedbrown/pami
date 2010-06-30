@@ -10,19 +10,7 @@
  * \file test/alltoall.c
  * \brief ???
  */
-
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <unistd.h>
-#include <sys/time.h>
-#include <pami.h>
-
-
-//#define TRACE(x) printf x;fflush(stdout);
-#define TRACE(x)
-
+#include "../pami_util.h"
 
 #define MAX_COMM_SIZE 16
 #define MSGSIZE       4096
@@ -35,8 +23,6 @@
 //#define CHCK_BUFS
 #define CHCK_BUFS(s,r)    check_bufs(s,r)
 
-volatile unsigned       _g_barrier_active;
-volatile unsigned       _g_alltoallv_active;
 
 char sbuf[BUFSIZE];
 char rbuf[BUFSIZE];
@@ -75,199 +61,92 @@ void check_bufs(size_t sz, size_t myrank)
       }
 }
 
-static double timer()
-{
-    struct timeval tv;
-    gettimeofday(&tv,NULL);
-    return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
-}
-
-
-void cb_barrier (pami_context_t ctxt, void * clientdata, pami_result_t err)
-{
-  int * active = (int *) clientdata;
-  (*active)--;
-}
-
-void cb_alltoallv (pami_context_t ctxt, void * clientdata, pami_result_t res)
-{
-  int * active = (int *) clientdata;
-  TRACE(("%d: cb_alltoallv active:%d(%p)\n",PAMI_Rank(),*active,active));
-  (*active)--;
-}
-
-
-void _barrier (pami_context_t context, pami_xfer_t *barrier)
-{
-  _g_barrier_active++;
-  pami_result_t result;
-  result = PAMI_Collective(context, (pami_xfer_t*)barrier);
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
-      exit(1);
-    }
-  while (_g_barrier_active)
-    result = PAMI_Context_advance (context, 1);
-
-}
-
-
-void _alltoallv (pami_context_t    context,
-                 pami_xfer_t *xfer,
-                 char            *sndbuf,
-                 size_t          *sndlens,
-                 size_t          *sdispls,
-                 char            *rcvbuf,
-                 size_t          *rcvlens,
-                 size_t          *rdispls )
-{
-  pami_result_t result;
-  _g_alltoallv_active++;
-  xfer->cmd.xfer_alltoallv.sndbuf        = sndbuf;
-  xfer->cmd.xfer_alltoallv.stype         = PAMI_BYTE;
-  xfer->cmd.xfer_alltoallv.stypecounts   = sndlens;
-  xfer->cmd.xfer_alltoallv.sdispls       = sdispls;
-  xfer->cmd.xfer_alltoallv.rcvbuf        = rcvbuf;
-  xfer->cmd.xfer_alltoallv.rtype         = PAMI_BYTE;
-  xfer->cmd.xfer_alltoallv.rtypecounts   = rcvlens;
-  xfer->cmd.xfer_alltoallv.rdispls       = rdispls;
-  result = PAMI_Collective (NULL, (pami_xfer_t*)xfer);
-  while (_g_alltoallv_active)
-    result = PAMI_Context_advance (context, 1);
-}
-
 
 int main(int argc, char*argv[])
 {
-  pami_client_t  client;
-  pami_context_t context;
-  pami_result_t  result = PAMI_ERROR;
-  char          cl_string[] = "TEST";
-  double ti, tf, usec;
-  result = PAMI_Client_create (cl_string, &client);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
-        return 1;
-      }
-
-        {  result = PAMI_Context_createv(client, NULL, 0, &context, 1); }
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
-        return 1;
-      }
-
-
+  pami_client_t        client;
+  pami_context_t       context;
+  pami_result_t        result = PAMI_ERROR;
+  size_t               num_contexts=1;
   pami_configuration_t configuration;
-  configuration.name = PAMI_TASK_ID;
-  result = PAMI_Configuration_query(client, &configuration);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
-        return 1;
-      }
-  size_t task_id = configuration.value.intval;
+  pami_task_t          task_id;
+  size_t               num_tasks;
+  pami_geometry_t      world_geometry;
+  int                  algo;
+  
+  /* Barrier variables */
+  size_t               barrier_num_algorithm[2];
+  pami_algorithm_t    *bar_always_works_algo;
+  pami_metadata_t     *bar_always_works_md;
+  pami_algorithm_t    *bar_must_query_algo;
+  pami_metadata_t     *bar_must_query_md;
+  pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
+  volatile unsigned    bar_poll_flag=0;
+  
+  /* Alltoallv variables */
+  size_t               alltoallv_num_algorithm[2];
+  pami_algorithm_t    *alltoallv_always_works_algo;
+  pami_metadata_t     *alltoallv_always_works_md;
+  pami_algorithm_t    *alltoallv_must_query_algo;
+  pami_metadata_t     *alltoallv_must_query_md;
+  pami_xfer_type_t     alltoallv_xfer = PAMI_XFER_ALLTOALLV;
+  volatile unsigned    alltoallv_poll_flag=0;
 
-  configuration.name = PAMI_NUM_TASKS;
-  result = PAMI_Configuration_query(client, &configuration);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
-        return 1;
-      }
-  size_t sz = configuration.value.intval;
+  int                  nalg = 0;
+  double               ti, tf, usec;
+  pami_xfer_t          barrier;
+  pami_xfer_t          alltoallv;
 
-
-  pami_geometry_t  world_geometry;
-
-  result = PAMI_Geometry_world (client, &world_geometry);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
-        return 1;
-      }
-
-  pami_algorithm_t *algorithm=NULL;
-  int num_algorithm[2] = {0};
-  result = PAMI_Geometry_algorithms_num(context,
-                                       world_geometry,
-                                       PAMI_XFER_BARRIER,
-                                       num_algorithm);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr,
-             "Error. Unable to query barrier algorithm. result = %d\n",
-             result);
+  /*  Initialize PAMI */
+  int rc = pami_init(&client,        /* Client             */
+                     &context,       /* Context            */
+                     NULL,           /* Clientname=default */
+                     &num_contexts,  /* num_contexts       */
+                     NULL,           /* null configuration */
+                     0,              /* no configuration   */
+                     &task_id,       /* task id            */
+                     &num_tasks);    /* number of tasks    */
+  if(rc==1)
     return 1;
-  }
 
-  if (num_algorithm[0])
-  {
-    algorithm = (pami_algorithm_t*)
-                malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-    result = PAMI_Geometry_algorithms_query(context,
-                                          world_geometry,
-                                          PAMI_XFER_BARRIER,
-                                          algorithm,
-                                          (pami_metadata_t*)NULL,
-                                          num_algorithm[0],
-                                          NULL,
-                                          NULL,
-                                          0);
-
-  }
-
-
-  pami_algorithm_t *alltoallvalgorithm=NULL;
-  int             alltoallvnum_algorithm[2];
-  result = PAMI_Geometry_algorithms_num(context,
-                                       world_geometry,
-                                       PAMI_XFER_ALLTOALLV,
-                                       alltoallvnum_algorithm);
-
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to query alltoallv algorithm. result = %d\n", result);
+  /*  Query the world geometry for barrier algorithms */
+  rc = query_geometry_world(client,
+                            context,
+                            &world_geometry,
+                            barrier_xfer,
+                            barrier_num_algorithm,
+                            &bar_always_works_algo,
+                            &bar_always_works_md,
+                            &bar_must_query_algo,
+                            &bar_must_query_md);
+  if(rc==1)
     return 1;
-  }
 
-  if (num_algorithm[0])
-  {
-    alltoallvalgorithm = (pami_algorithm_t*)
-      malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-    result = PAMI_Geometry_algorithms_query(context,
-                                          world_geometry,
-                                          PAMI_XFER_ALLTOALLV,
-                                          alltoallvalgorithm,
-                                          (pami_metadata_t*)NULL,
-                                          alltoallvnum_algorithm[0],
-                                          NULL,
-                                          NULL,
-                                          0);
+  /*  Query the world geometry for alltoallv algorithms */
+  rc = query_geometry_world(client,
+                            context,
+                            &world_geometry,
+                            alltoallv_xfer,
+                            alltoallv_num_algorithm,
+                            &alltoallv_always_works_algo,
+                            &alltoallv_always_works_md,
+                            &alltoallv_must_query_algo,
+                            &alltoallv_must_query_md);
+  if(rc==1)
+    return 1;
 
-  }
+  barrier.cb_done   = cb_done;
+  barrier.cookie    = (void*)&bar_poll_flag;
+  barrier.algorithm = bar_always_works_algo[0];
 
-  assert ( sz < MAX_COMM_SIZE );
-
-  pami_xfer_t barrier;
-  barrier.cb_done   = cb_barrier;
-  barrier.cookie    = (void*)&_g_barrier_active;
-  barrier.algorithm = algorithm[0];
-
-  pami_xfer_t alltoallv;
-  alltoallv.cb_done    = cb_alltoallv;
-  alltoallv.cookie     = (void*)&_g_alltoallv_active;
-  alltoallv.algorithm  = alltoallvalgorithm[0];
-
-
-
+  alltoallv.cb_done    = cb_done;
+  alltoallv.cookie     = (void*)&alltoallv_poll_flag;
+  alltoallv.algorithm  = alltoallv_always_works_algo[0];
 
   size_t i,j;
   if (task_id == 0)
       {
-        printf("# Alltoallv Bandwidth Test(size:%zu) %p\n",sz, cb_alltoallv);
+        printf("# Alltoallv Bandwidth Test(size:%zu) %p\n",num_tasks, cb_done);
           printf("# Size(bytes)           cycles    bytes/sec      usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
       }
@@ -277,32 +156,32 @@ int main(int argc, char*argv[])
       {
           long long dataSent = i;
           size_t niter = (i < 1024 ? 100 : 10);
-          for ( j = 0; j < sz; j++ )
+          for ( j = 0; j < num_tasks; j++ )
             {
               sndlens[j] = rcvlens[j] = i;
               sdispls[j] = rdispls[j] = i * j;
               INIT_BUFS( j );
             }
+          blocking_coll(context,&barrier,&bar_poll_flag);
 
-          _barrier (context, &barrier);
           ti = timer();
-
           for (j=0; j<niter; j++)
               {
-                _alltoallv ( context,
-                             &alltoallv,
-                             sbuf,
-                             sndlens,
-                             sdispls,
-                             rbuf,
-                             rcvlens,
-                             rdispls );
+                alltoallv.cmd.xfer_alltoallv.sndbuf        = sbuf;
+                alltoallv.cmd.xfer_alltoallv.stype         = PAMI_BYTE;
+                alltoallv.cmd.xfer_alltoallv.stypecounts   = sndlens;
+                alltoallv.cmd.xfer_alltoallv.sdispls       = sdispls;
+                alltoallv.cmd.xfer_alltoallv.rcvbuf        = rbuf;
+                alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_BYTE;
+                alltoallv.cmd.xfer_alltoallv.rtypecounts   = rcvlens;
+                alltoallv.cmd.xfer_alltoallv.rdispls       = rdispls;
+                blocking_coll(context,&alltoallv,&alltoallv_poll_flag);
               }
           tf = timer();
 
-          CHCK_BUFS(sz, task_id);
+          CHCK_BUFS(num_tasks, task_id);
 
-          _barrier (context, &barrier);
+          blocking_coll(context,&barrier,&bar_poll_flag);
 
           usec = (tf - ti)/(double)niter;
           if (task_id == 0)
@@ -316,22 +195,15 @@ int main(int argc, char*argv[])
                   fflush(stdout);
               }
       }
+  rc = pami_shutdown(&client,&context,&num_contexts);
+  free(bar_always_works_algo);
+  free(bar_always_works_md);
+  free(bar_must_query_algo);
+  free(bar_must_query_md);
+  free(alltoallv_always_works_algo);
+  free(alltoallv_always_works_md);
+  free(alltoallv_must_query_algo);
+  free(alltoallv_must_query_md);
 
-  result = PAMI_Context_destroyv(&context, 1);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
-        return 1;
-      }
-
-  result = PAMI_Client_destroy(&client);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
-        return 1;
-      }
-
-  free(algorithm);
-  free(alltoallvalgorithm);
   return 0;
 }

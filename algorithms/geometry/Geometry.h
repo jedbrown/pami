@@ -125,7 +125,7 @@ namespace PAMI
           _num_algo_check++;
           return PAMI_SUCCESS;
         }
-      inline pami_result_t lengths(int             *lists_lengths)
+      inline pami_result_t lengths(size_t             *lists_lengths)
         {
           TRACE_ERR((stderr, "<%p>AlgoLists::lengths()\n", this));
           lists_lengths[0] = _num_algo;
@@ -558,7 +558,7 @@ namespace PAMI
         }
 
       pami_result_t algorithms_num_impl(pami_xfer_type_t  colltype,
-                                       int             *lengths,
+                                       size_t             *lengths,
                                        size_t           context_id)
         {
           TRACE_ERR((stderr, "<%p>Common::algorithms_num_impl()\n", this));
@@ -570,15 +570,15 @@ namespace PAMI
       inline pami_result_t algorithms_info_impl (pami_xfer_type_t   colltype,
                                                 pami_algorithm_t  *algs0,
                                                 pami_metadata_t   *mdata0,
-                                                int               num0,
+                                                 size_t               num0,
                                                 pami_algorithm_t  *algs1,
                                                 pami_metadata_t   *mdata1,
-                                                int               num1,
+                                                size_t             num1,
                                                 size_t            context_id)
         {
           TRACE_ERR((stderr, "<%p>Common::algorithms_info_impl(), algs0=%p, num0=%u, mdata0=%p, algs1=%p, num1=%u, mdata1=%p\n", this, algs0,num0,mdata0,algs1,num1,mdata1));
           AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
-          for(int i=0; i<num0; i++)
+          for(size_t i=0; i<num0; i++)
               {
             TRACE_ERR((stderr, "<%p> alist->_algo_list[%u]=%p, mdata0[%u]=%p\n", this, i, alist->_algo_list[i],i,mdata0?&mdata0[i]:NULL));
                 if(algs0)
@@ -586,7 +586,7 @@ namespace PAMI
                 if(mdata0)
                   alist->_algo_list[i]->metadata(&mdata0[i]);
               }
-          for(int i=0; i<num1; i++)
+          for(size_t i=0; i<num1; i++)
               {
             TRACE_ERR((stderr, "<%p> alist->_algo_list_check[%u]=%p, mdata1[%u]=%p\n", this, i, alist->_algo_list_check[i],i,mdata1?&mdata1[i]:NULL));
                 if(algs1)

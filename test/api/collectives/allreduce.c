@@ -11,32 +11,12 @@
  * \brief ???
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/time.h>
-#include <assert.h>
-#include <pami.h>
-
+#include "../pami_util.h"
 #include "math/math_coremath.h" // special datatype size structs
+
 
 //define this if you want to validate the data for unsigned sums
 #define CHECK_DATA
-
-#undef TRACE
-#define TRACE(x) //fprintf x
-
-// more verbose tracing
-#undef TRACEV
-#define TRACEV(x) //fprintf x
-
-#include <assert.h>
-#define TEST_abort()                       abort()
-#define TEST_abortf(fmt...)                { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); fprintf(stderr, fmt); abort(); }
-#define TEST_assert(expr)                assert(expr)
-#define TEST_assertf(expr, fmt...)       { if (!(expr)) TEST_abortf(fmt); }
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
  #define FULL_TEST
@@ -205,73 +185,6 @@ unsigned elemsize_array[] =
     sizeof(fp64_fp64_t),        // PAMI_LOC_2DOUBLE,
   };
 
-volatile unsigned       _g_barrier_active=0;
-volatile unsigned       _g_allreduce_active=0;
-size_t task_id;
-int    rank;
-
-void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
-{
-  int * active = (int *) clientdata;
-  TRACEV((stderr,"%s %p/%u, %u \n",__PRETTY_FUNCTION__,active, *active,_g_barrier_active));
-  (*active)--;
-}
-
-
-static double timer()
-{
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
-}
-
-
-void cb_allreduce (void *ctxt, void * clientdata, pami_result_t err)
-{
-  int * active = (int *) clientdata;
-  TRACEV((stderr,"%s %p/%u, %u \n",__PRETTY_FUNCTION__,active, *active,_g_allreduce_active));
-  (*active)--;
-}
-
-void _barrier (pami_context_t context, pami_xfer_t *barrier)
-{
-  static unsigned entryCount = 0;
-  TRACEV((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,++entryCount,_g_barrier_active));
-  _g_barrier_active++;
-  pami_result_t result;
-  result = PAMI_Collective(context, (pami_xfer_t*)barrier);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to issue barrier collective. result = %d\n", result);
-    exit(1);
-  }
-  while (_g_barrier_active)
-    result = PAMI_Context_advance (context, 1);
-  TRACEV((stderr,"%s done<%u> active %u\n",__PRETTY_FUNCTION__,entryCount,_g_barrier_active));
-  entryCount++;
-}
-
-void _allreduce (pami_context_t context, pami_xfer_t *allreduce)
-{
-  static unsigned entryCount = 0;
-  TRACEV((stderr,"%s<%u> %u\n",__PRETTY_FUNCTION__,entryCount,_g_allreduce_active));
-  _g_allreduce_active++;
-  pami_result_t result;
-  result = PAMI_Collective(context, (pami_xfer_t*)allreduce);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to issue allreduce collective. result = %d\n", result);
-    exit(1);
-  }
-  while (_g_allreduce_active)
-    result = PAMI_Context_advance (context, 1);
-  TRACEV((stderr,"%s done<%u> active %u\n",__PRETTY_FUNCTION__,entryCount,_g_allreduce_active));
-  entryCount++;
-}
-
-
-
-
 unsigned ** alloc2DContig(int nrows, int ncols)
 {
   int i;
@@ -286,9 +199,8 @@ unsigned ** alloc2DContig(int nrows, int ncols)
 }
 
 #ifdef CHECK_DATA
-void initialize_sndbuf (void *buf, int count, int op, int dt) {
+void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id) {
 
-  TRACEV((stderr,"Initialize count %d, op %d, dt %d, size %u/%u\n", count, op, dt,elemsize_array[dt], count * elemsize_array[dt]));
   int i;
   if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
     size_t *ibuf = (size_t *)  buf;
@@ -296,22 +208,21 @@ void initialize_sndbuf (void *buf, int count, int op, int dt) {
       ibuf[i] = i;
     }
   }
-  else memset(buf,  rank,  count * elemsize_array[dt]);
+  else memset(buf,  task_id,  count * elemsize_array[dt]);
 }
 
-int check_rcvbuf (void *buf, int count, int op, int dt, int nranks) {
+int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks) {
 
   int i, err = 0;
   if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
     size_t *rbuf = (size_t *)  buf;
     for (i = 0; i < count; i++) {
-      if (rbuf[i] != i * nranks)
+      if (rbuf[i] != i * num_tasks)
       {
-        fprintf(stderr,"Check(%d) failed rbuf[%d] %zd != %u\n",count,i,rbuf[1],i*nranks);
+        fprintf(stderr,"Check(%d) failed rbuf[%d] %zd != %u\n",count,i,rbuf[1],i*num_tasks);
         err = -1;
       }
     }
-    TRACE((stderr,"Check Passes for count %d, op %d, dt %d\n", count, op, dt));
   }
 
   return err;
@@ -320,140 +231,81 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int nranks) {
 
 int main(int argc, char*argv[])
 {
-  double tf,ti,usec;
+  pami_client_t        client;
+  pami_context_t       context;
+  pami_result_t        result = PAMI_ERROR;
+  size_t               num_contexts=1;
+  pami_configuration_t configuration;
+  pami_task_t          task_id;
+  size_t               num_tasks;
+  pami_geometry_t      world_geometry;
+  int                  algo;
+
+  /* Barrier variables */
+  size_t               barrier_num_algorithm[2];
+  pami_algorithm_t    *bar_always_works_algo;
+  pami_metadata_t     *bar_always_works_md;
+  pami_algorithm_t    *bar_must_query_algo;
+  pami_metadata_t     *bar_must_query_md;
+  pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
+  volatile unsigned    bar_poll_flag=0;
+
+  /* Allreduce variables */
+  size_t               allreduce_num_algorithm[2];
+  pami_algorithm_t    *allreduce_always_works_algo;
+  pami_metadata_t     *allreduce_always_works_md;
+  pami_algorithm_t    *allreduce_must_query_algo;
+  pami_metadata_t     *allreduce_must_query_md;
+  pami_xfer_type_t     allreduce_xfer = PAMI_XFER_ALLREDUCE;
+  volatile unsigned    allreduce_poll_flag=0;
+
+  int                  root=0, i, j, nalg = 0;
+  double               ti, tf, usec;
+  pami_xfer_t          barrier;
+  pami_xfer_t          allreduce;
+
+
   char sbuf[MAXBUFSIZE];
   char rbuf[MAXBUFSIZE];
-  int  op, dt;
-  pami_client_t  client;
-  pami_context_t context;
-  pami_result_t  result = PAMI_ERROR;
-  char          cl_string[] = "TEST";
-  TRACE((stderr,"%s\n",__PRETTY_FUNCTION__));
-  result = PAMI_Client_create (cl_string, &client);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
+  int op, dt;
+
+  /*  Initialize PAMI */
+  int rc = pami_init(&client,        /* Client             */
+                     &context,       /* Context            */
+                     NULL,           /* Clientname=default */
+                     &num_contexts,  /* num_contexts       */
+                     NULL,           /* null configuration */
+                     0,              /* no configuration   */
+                     &task_id,       /* task id            */
+                     &num_tasks);    /* number of tasks    */
+  if(rc==1)
     return 1;
-  }
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
-        {  result = PAMI_Context_createv(client, NULL, 0, &context, 1); }
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
+  /*  Query the world geometry for barrier algorithms */
+  rc = query_geometry_world(client,
+                            context,
+                            &world_geometry,
+                            barrier_xfer,
+                            barrier_num_algorithm,
+                            &bar_always_works_algo,
+                            &bar_always_works_md,
+                            &bar_must_query_algo,
+                            &bar_must_query_md);
+  if(rc==1)
     return 1;
-  }
 
-  pami_configuration_t configuration;
-  configuration.name = PAMI_TASK_ID;
-  result = PAMI_Configuration_query(client, &configuration);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+  /*  Query the world geometry for allreduce algorithms */
+  rc = query_geometry_world(client,
+                            context,
+                            &world_geometry,
+                            allreduce_xfer,
+                            allreduce_num_algorithm,
+                            &allreduce_always_works_algo,
+                            &allreduce_always_works_md,
+                            &allreduce_must_query_algo,
+                            &allreduce_must_query_md);
+  if(rc==1)
     return 1;
-  }
-  task_id = configuration.value.intval;
-
-#ifdef CHECK_DATA
-  configuration.name = PAMI_NUM_TASKS;
-  result = PAMI_Configuration_query(client, &configuration);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
-    return 1;
-  }
-  size_t nranks  = configuration.value.intval;
-#endif
-
-  rank    = task_id;
-  int i,j,root   = 0;
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
-
-  pami_geometry_t  world_geometry;
-
-  result = PAMI_Geometry_world (client, &world_geometry);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to get world geometry. result = %d\n", result);
-    return 1;
-  }
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
-
-  int algorithm_type = 0;
-  pami_algorithm_t *algorithm=NULL;
-  int num_algorithm[2] = {0};
-  result = PAMI_Geometry_algorithms_num(context,
-                                       world_geometry,
-                                       PAMI_XFER_BARRIER,
-                                       num_algorithm);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr,
-             "Error. Unable to query barrier algorithm. result = %d\n",
-             result);
-    return 1;
-  }
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
-
-  if (num_algorithm[0])
-  {
-    algorithm = (pami_algorithm_t*)
-                malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-    result = PAMI_Geometry_algorithms_query(context,
-                                          world_geometry,
-                                          PAMI_XFER_BARRIER,
-                                          algorithm,
-                                          (pami_metadata_t*)NULL,
-                                          num_algorithm[0],
-                                          NULL,
-                                          NULL,
-                                          0);
-
-  }
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
-
-  pami_algorithm_t *allreducealgorithm=NULL;
-  pami_metadata_t *metas=NULL;
-  int allreducenum_algorithm[2] = {0};
-  result = PAMI_Geometry_algorithms_num(context,
-                                       world_geometry,
-                                       PAMI_XFER_ALLREDUCE,
-                                       allreducenum_algorithm);
-
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr,
-             "Error. Unable to query allreduce algorithm. result = %d\n",
-             result);
-    return 1;
-  }
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
-
-  if (allreducenum_algorithm[0])
-  {
-    allreducealgorithm = (pami_algorithm_t*)
-      malloc(sizeof(pami_algorithm_t) * allreducenum_algorithm[0]);
-    metas = (pami_metadata_t*)
-      malloc(sizeof(pami_metadata_t) * allreducenum_algorithm[0]);
-
-    result = PAMI_Geometry_algorithms_query(context,
-                                          world_geometry,
-                                          PAMI_XFER_ALLREDUCE,
-                                          allreducealgorithm,
-                                          metas,
-                                          allreducenum_algorithm[0],
-                                          NULL,
-                                          NULL,
-                                          0);
-
-    if (result != PAMI_SUCCESS)
-    {
-      fprintf(stderr, "Error. Unable to query allreduce algorithm attributes."
-              "result = %d\n", result);
-      return 1;
-    }
-  }
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
   unsigned** validTable=
     alloc2DContig(op_count,dt_count);
@@ -494,48 +346,48 @@ int main(int argc, char*argv[])
   validTable[OP_BAND][DT_DOUBLE]=0;
 
 #if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
+
   char* env = getenv("PAMI_DEVICE");
   fprintf(stderr, "PAMI_DEVICE=%c\n", env?*env:' ');
   if((env==NULL) || ((*env=='M') || (*env=='B')))
-  {
-    /// These are unsupported on MU
-    for(i=0,j= DT_SIGNED_CHAR;    i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j= DT_UNSIGNED_CHAR;  i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j= DT_SIGNED_SHORT;   i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j= DT_UNSIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j= DT_LOGICAL;        i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j= DT_SINGLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j= DT_DOUBLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j= DT_LOC_2INT;       i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j= DT_LOC_SHORT_INT;  i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j= DT_LOC_FLOAT_INT;  i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j= DT_LOC_DOUBLE_INT; i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j= DT_LOC_2FLOAT;     i<OP_COUNT;i++)validTable[i][j]=0;
-    for(i=0,j= DT_LOC_2FLOAT;     i<OP_COUNT;i++)validTable[i][j]=0;
-
-    for(i= OP_PROD,   j=0; j<DT_COUNT;j++)validTable[i][j]=0;
-    for(i= OP_MAXLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
-    for(i= OP_MINLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
-    // This works on MU so re-enable it
-    if((env) && (*env=='M'))
-      validTable[OP_BAND][DT_DOUBLE]=1;
-  }
+      {
+        /// These are unsupported on MU
+        for(i=0,j= DT_SIGNED_CHAR;    i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_UNSIGNED_CHAR;  i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_SIGNED_SHORT;   i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_UNSIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_LOGICAL;        i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_SINGLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_DOUBLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_LOC_2INT;       i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_LOC_SHORT_INT;  i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_LOC_FLOAT_INT;  i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_LOC_DOUBLE_INT; i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_LOC_2FLOAT;     i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_LOC_2FLOAT;     i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i= OP_PROD,   j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+        for(i= OP_MAXLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+        for(i= OP_MINLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
+        // This works on MU so re-enable it
+        if((env) && (*env=='M'))
+          validTable[OP_BAND][DT_DOUBLE]=1;
+      }
   if((env==NULL) || ((*env=='S') || (*env=='B')))
-  {
-    /// \todo These fail using shmem core math on bgq.
-    validTable[OP_LAND  ][DT_FLOAT         ]=0;
-    validTable[OP_LOR   ][DT_FLOAT         ]=0;
-    validTable[OP_LXOR  ][DT_FLOAT         ]=0;
-    validTable[OP_BAND  ][DT_FLOAT         ]=0;
-    validTable[OP_BOR   ][DT_FLOAT         ]=0;
-    validTable[OP_BXOR  ][DT_FLOAT         ]=0;
-    validTable[OP_LAND  ][DT_DOUBLE        ]=0;
-    validTable[OP_LOR   ][DT_DOUBLE        ]=0;
-    validTable[OP_LXOR  ][DT_DOUBLE        ]=0;
-    validTable[OP_BAND  ][DT_DOUBLE        ]=0;
-    validTable[OP_BOR   ][DT_DOUBLE        ]=0;
-    validTable[OP_BXOR  ][DT_DOUBLE        ]=0;
-  }
+      {
+        /// \todo These fail using shmem core math on bgq.
+        validTable[OP_LAND  ][DT_FLOAT         ]=0;
+        validTable[OP_LOR   ][DT_FLOAT         ]=0;
+        validTable[OP_LXOR  ][DT_FLOAT         ]=0;
+        validTable[OP_BAND  ][DT_FLOAT         ]=0;
+        validTable[OP_BOR   ][DT_FLOAT         ]=0;
+        validTable[OP_BXOR  ][DT_FLOAT         ]=0;
+        validTable[OP_LAND  ][DT_DOUBLE        ]=0;
+        validTable[OP_LOR   ][DT_DOUBLE        ]=0;
+        validTable[OP_LXOR  ][DT_DOUBLE        ]=0;
+        validTable[OP_BAND  ][DT_DOUBLE        ]=0;
+        validTable[OP_BOR   ][DT_DOUBLE        ]=0;
+        validTable[OP_BXOR  ][DT_DOUBLE        ]=0;
+      }
 #endif
 
 #else
@@ -546,30 +398,25 @@ int main(int argc, char*argv[])
   validTable[OP_SUM][DT_UNSIGNED_INT]=1;
 
 #endif
-  TRACE((stderr,"%s<%d>\n",__PRETTY_FUNCTION__,__LINE__));
 
-#if 1
-  int nalg;
-  for(nalg=0; nalg<allreducenum_algorithm[algorithm_type]; nalg++)
+  for(nalg=0; nalg<allreduce_num_algorithm[0]; nalg++)
   {
-    if (rank == root)
+    if (task_id == root)
     {
       printf("# Allreduce Bandwidth Test -- root = %d protocol: %s\n", root,
-             metas[nalg].name);
+             allreduce_always_works_md[nalg].name);
       printf("# Size(bytes)           cycles    bytes/sec    usec\n");
       printf("# -----------      -----------    -----------    ---------\n");
     }
 
-    pami_xfer_t barrier;
-    barrier.cb_done   = cb_barrier;
-    barrier.cookie    = (void*)&_g_barrier_active;
-    barrier.algorithm = algorithm[0];
-    _barrier(context, &barrier);
+    barrier.cb_done   = cb_done;
+    barrier.cookie    = (void*)&bar_poll_flag;
+    barrier.algorithm = bar_always_works_algo[0];
+    blocking_coll(context,&barrier,&bar_poll_flag);
 
-    pami_xfer_t allreduce;
-    allreduce.cb_done   = cb_allreduce;
-    allreduce.cookie    = (void*)&_g_allreduce_active;
-    allreduce.algorithm = allreducealgorithm[nalg];
+    allreduce.cb_done   = cb_done;
+    allreduce.cookie    = (void*)&allreduce_poll_flag;
+    allreduce.algorithm = allreduce_always_works_algo[nalg];
     allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
     allreduce.cmd.xfer_allreduce.stype     = PAMI_BYTE;
     allreduce.cmd.xfer_allreduce.stypecount= 0;
@@ -584,7 +431,7 @@ int main(int argc, char*argv[])
       {
         if(validTable[op][dt])
         {
-          if(rank == root)
+          if(task_id == root)
             printf("Running Allreduce: %s, %s\n",dt_array_str[dt], op_array_str[op]);
           for(i=1; i<=COUNT; i*=2)
           {
@@ -596,9 +443,9 @@ int main(int argc, char*argv[])
               niter = NITERBW;
 
 #ifdef CHECK_DATA
-            initialize_sndbuf (sbuf, i, op_array[op], dt_array[dt]);
+            initialize_sndbuf (sbuf, i, op_array[op], dt_array[dt], task_id);
 #endif
-            _barrier(context, &barrier);
+            blocking_coll(context,&barrier,&bar_poll_flag);
             ti = timer();
             for (j=0; j<niter; j++)
             {
@@ -606,19 +453,19 @@ int main(int argc, char*argv[])
               allreduce.cmd.xfer_allreduce.rtypecount=dataSent;
               allreduce.cmd.xfer_allreduce.dt=dt_array[dt];
               allreduce.cmd.xfer_allreduce.op=op_array[op];
-              _allreduce(context, &allreduce);
+              blocking_coll(context, &allreduce, &allreduce_poll_flag);
             }
             tf = timer();
-            _barrier(context, &barrier);
+            blocking_coll(context,&barrier,&bar_poll_flag);
 
 #ifdef CHECK_DATA
-            int rc = check_rcvbuf (rbuf, i, op_array[op], dt_array[dt], nranks);
+            int rc = check_rcvbuf (rbuf, i, op_array[op], dt_array[dt], num_tasks);
             //assert (rc == 0);
             if(rc) fprintf(stderr, "FAILED validation\n");
 #endif
 
             usec = (tf - ti)/(double)niter;
-            if (rank == root)
+            if (task_id == root)
             {
               printf("  %11lld %16d %14.1f %12.2f\n",
                      dataSent,
@@ -631,23 +478,15 @@ int main(int argc, char*argv[])
         }
       }
   }
-#endif
+  rc = pami_shutdown(&client,&context,&num_contexts);
+  free(bar_always_works_algo);
+  free(bar_always_works_md);
+  free(bar_must_query_algo);
+  free(bar_must_query_md);
+  free(allreduce_always_works_algo);
+  free(allreduce_always_works_md);
+  free(allreduce_must_query_algo);
+  free(allreduce_must_query_md);
 
-  result = PAMI_Context_destroyv(&context, 1);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
-    return 1;
-  }
-
-  result = PAMI_Client_destroy(&client);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
-    return 1;
-  }
-  free(metas);
-  free(algorithm);
-  free(allreducealgorithm);
   return 0;
 }

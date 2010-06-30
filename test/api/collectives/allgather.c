@@ -3,199 +3,89 @@
 /// \brief Simple Barrier test
 ///
 
-#include <pami.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <stdio.h>
+#include "../pami_util.h"
 
 #define BUFSIZE 524288
-volatile unsigned       _g_barrier_active;
-volatile unsigned       _g_allgather_active;
-
-void cb_barrier (void *ctxt, void * clientdata, pami_result_t err)
-{
-  int * active = (int *) clientdata;
-  (*active)--;
-}
-
-void cb_allgather (void *ctxt, void * clientdata, pami_result_t err)
-{
-  int * active = (int *) clientdata;
-  (*active)--;
-}
-
-static double timer()
-{
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
-}
-
-void _barrier (pami_context_t context, pami_xfer_t *barrier)
-{
-  _g_barrier_active++;
-  pami_result_t result;
-  result = PAMI_Collective(context, (pami_xfer_t*)barrier);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf(stderr,
-            "Error. Unable to issue barrier collective. result = %d\n",
-            result);
-    exit(1);
-  }
-  while (_g_barrier_active)
-    result = PAMI_Context_advance (context, 1);
-
-}
-
-void _allgather (pami_context_t context, pami_xfer_t *allgather)
-{
-  _g_allgather_active++;
-  pami_result_t result;
-  result = PAMI_Collective(context, (pami_xfer_t*)allgather);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf(stderr,
-            "Error. Unable to issue allgather collective. result = %d\n",
-            result);
-    exit(1);
-  }
-  while (_g_allgather_active)
-    result = PAMI_Context_advance (context, 1);
-
-}
 
 int main (int argc, char ** argv)
 {
-  pami_client_t  client;
-  pami_context_t context;
-  pami_result_t  result = PAMI_ERROR;
-  char          cl_string[] = "TEST";
-  result = PAMI_Client_create (cl_string, &client);
-
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf(stderr,
-            "Error. Unable to initialize pami client. result = %d\n",
-            result);
-    return 1;
-  }
-
-  {  result = PAMI_Context_createv(client, NULL, 0, &context, 1); }
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf(stderr,
-            "Error. Unable to create pami context. result = %d\n",
-            result);
-    return 1;
-  }
-
-
+  pami_client_t        client;
+  pami_context_t       context;
+  pami_result_t        result = PAMI_ERROR;
+  size_t               num_contexts=1;
   pami_configuration_t configuration;
-  configuration.name = PAMI_TASK_ID;
-  result = PAMI_Configuration_query(client, &configuration);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf(stderr,
-            "Error. Unable query configuration (%d). result = %d\n",
-            configuration.name, result);
+  pami_task_t          task_id;
+  size_t               num_tasks;
+  pami_geometry_t      world_geometry;
+  int                  algo;
+  
+  /* Barrier variables */
+  size_t               barrier_num_algorithm[2];
+  pami_algorithm_t    *bar_always_works_algo;
+  pami_metadata_t     *bar_always_works_md;
+  pami_algorithm_t    *bar_must_query_algo;
+  pami_metadata_t     *bar_must_query_md;
+  pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
+  volatile unsigned    bar_poll_flag=0;
+  
+  /* Allgather variables */
+  size_t               allgather_num_algorithm[2];
+  pami_algorithm_t    *allgather_always_works_algo;
+  pami_metadata_t     *allgather_always_works_md;
+  pami_algorithm_t    *allgather_must_query_algo;
+  pami_metadata_t     *allgather_must_query_md;
+  pami_xfer_type_t     allgather_xfer = PAMI_XFER_ALLGATHER;
+  volatile unsigned    allgather_poll_flag=0;
+
+  int                  nalg = 0;
+  double               ti, tf, usec;
+  pami_xfer_t          barrier;
+  pami_xfer_t          allgather;
+
+  /*  Initialize PAMI */
+  int rc = pami_init(&client,        /* Client             */
+                     &context,       /* Context            */
+                     NULL,           /* Clientname=default */
+                     &num_contexts,  /* num_contexts       */
+                     NULL,           /* null configuration */
+                     0,              /* no configuration   */
+                     &task_id,       /* task id            */
+                     &num_tasks);    /* number of tasks    */
+  if(rc==1)
     return 1;
-  }
 
-  size_t task_id = configuration.value.intval;
-
-  configuration.name = PAMI_NUM_TASKS;
-  result = PAMI_Configuration_query(client, &configuration);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf(stderr,
-            "Error. Unable query configuration (%d). result = %d\n",
-            configuration.name, result);
+  /*  Query the world geometry for barrier algorithms */
+  rc = query_geometry_world(client,
+                            context,
+                            &world_geometry,
+                            barrier_xfer,
+                            barrier_num_algorithm,
+                            &bar_always_works_algo,
+                            &bar_always_works_md,
+                            &bar_must_query_algo,
+                            &bar_must_query_md);
+  if(rc==1)
     return 1;
-  }
-  size_t sz = configuration.value.intval;
 
-
-  pami_geometry_t  world_geometry;
-
-  result = PAMI_Geometry_world (client, &world_geometry);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf(stderr, "Error. Unable to get world geometry. result = %d\n",
-            result);
+  /*  Query the world geometry for allgather algorithms */
+  rc = query_geometry_world(client,
+                            context,
+                            &world_geometry,
+                            allgather_xfer,
+                            allgather_num_algorithm,
+                            &allgather_always_works_algo,
+                            &allgather_always_works_md,
+                            &allgather_must_query_algo,
+                            &allgather_must_query_md);
+  if(rc==1)
     return 1;
-  }
 
-  pami_algorithm_t *algorithm=NULL;
-  int num_algorithm[2] = {0};
-  result = PAMI_Geometry_algorithms_num(context,
-                                       world_geometry,
-                                       PAMI_XFER_BARRIER,
-                                       num_algorithm);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr,
-             "Error. Unable to query barrier algorithm. result = %d\n",
-             result);
-    return 1;
-  }
-
-  if (num_algorithm[0])
-  {
-    algorithm = (pami_algorithm_t*)
-                malloc(sizeof(pami_algorithm_t) * num_algorithm[0]);
-    result = PAMI_Geometry_algorithms_query(context,
-                                          world_geometry,
-                                          PAMI_XFER_BARRIER,
-                                          algorithm,
-                                          (pami_metadata_t*)NULL,
-                                          num_algorithm[0],
-                                          NULL,
-                                          NULL,
-                                          0);
-
-  }
-
-  pami_algorithm_t *allgatheralgorithm=NULL;
-  int allgathernum_algorithm[2] = {0};
-  result = PAMI_Geometry_algorithms_num(context,
-                                       world_geometry,
-                                       PAMI_XFER_ALLGATHER,
-                                       allgathernum_algorithm);
-
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr,
-             "Error. Unable to query allgather algorithm. result = %d\n",
-             result);
-    return 1;
-  }
-
-  if (allgathernum_algorithm[0])
-  {
-    allgatheralgorithm = (pami_algorithm_t*)
-      malloc(sizeof(pami_algorithm_t) * allgathernum_algorithm[0]);
-
-    result = PAMI_Geometry_algorithms_query(context,
-                                          world_geometry,
-                                          PAMI_XFER_ALLGATHER,
-                                          allgatheralgorithm,
-                                          (pami_metadata_t*)NULL,
-                                          allgathernum_algorithm[0],
-                                          NULL,
-                                          NULL,
-                                          0);
-  }
-
-
-  double ti, tf, usec;
-  char *buf = (char*)malloc(BUFSIZE*sz);
-  char *rbuf = (char*)malloc(BUFSIZE*sz);
-  pami_xfer_t barrier;
-  barrier.cb_done   = cb_barrier;
-  barrier.cookie    = (void*)&_g_barrier_active;
-  barrier.algorithm = algorithm[0];
-  _barrier(context, &barrier);
+  char *buf         = (char*)malloc(BUFSIZE*num_tasks);
+  char *rbuf        = (char*)malloc(BUFSIZE*num_tasks);
+  barrier.cb_done   = cb_done;
+  barrier.cookie    = (void*)&bar_poll_flag;
+  barrier.algorithm = bar_always_works_algo[0];
+  blocking_coll(context,&barrier,&bar_poll_flag);
 
 
   if (task_id == 0)
@@ -205,10 +95,9 @@ int main (int argc, char ** argv)
     printf("# -----------      -----------    -----------    ---------\n");
   }
 
-  pami_xfer_t allgather;
-  allgather.cb_done    = cb_allgather;
-  allgather.cookie     = (void*)&_g_allgather_active;
-  allgather.algorithm  = allgatheralgorithm[0];
+  allgather.cb_done    = cb_done;
+  allgather.cookie     = (void*)&allgather_poll_flag;
+  allgather.algorithm  = allgather_always_works_algo[0];
   allgather.cmd.xfer_allgather.sndbuf     = buf;
   allgather.cmd.xfer_allgather.stype      = PAMI_BYTE;
   allgather.cmd.xfer_allgather.stypecount = 0;
@@ -221,16 +110,16 @@ int main (int argc, char ** argv)
   {
     long long dataSent = i;
     int          niter = 100;
-    _barrier(context, &barrier);
+    blocking_coll(context, &barrier, &bar_poll_flag);
     ti = timer();
     for (j=0; j<niter; j++)
     {
       allgather.cmd.xfer_allgather.stypecount = i;
       allgather.cmd.xfer_allgather.rtypecount = i;
-      _allgather (context, &allgather);
+      blocking_coll (context, &allgather, &allgather_poll_flag);
     }
     tf = timer();
-    _barrier(context, &barrier);
+    blocking_coll(context, &barrier, &bar_poll_flag);
 
     usec = (tf - ti)/(double)niter;
     if (task_id == 0)
@@ -243,22 +132,15 @@ int main (int argc, char ** argv)
       fflush(stdout);
     }
   }
-
-  result = PAMI_Context_destroyv(&context, 1);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
-    return 1;
-  }
-
-  result = PAMI_Client_destroy(&client);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
-    return 1;
-  }
-  free(algorithm);
-  free(allgatheralgorithm);
+  rc = pami_shutdown(&client,&context,&num_contexts);
+  free(bar_always_works_algo);
+  free(bar_always_works_md);
+  free(bar_must_query_algo);
+  free(bar_must_query_md);
+  free(allgather_always_works_algo);
+  free(allgather_always_works_md);
+  free(allgather_must_query_algo);
+  free(allgather_must_query_md);
 
   return 0;
 };
