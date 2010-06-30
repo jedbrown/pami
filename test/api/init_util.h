@@ -28,7 +28,7 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
   char                 cl_string[]   = "TEST";
   pami_configuration_t l_configuration;
   size_t               max_contexts;
-  
+
   if(clientname == NULL)
     clientname = cl_string;
 
@@ -52,7 +52,7 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
         return 1;
       }
   max_contexts = l_configuration.value.intval;
-  *num_tasks = MIN(*num_tasks,max_contexts);
+  *num_tasks = (*num_tasks<max_contexts)?*num_tasks:max_contexts;
 
   l_configuration.name = PAMI_TASK_ID;
   result = PAMI_Configuration_query(client, &l_configuration);
@@ -74,7 +74,7 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
       }
   *num_tasks = l_configuration.value.intval;
   /* Docs04:  Create the client */
-  
+
   /* Docs05:  Create the client */
   result = PAMI_Context_createv(*client, configuration, num_config, context, *num_contexts);
   if (result != PAMI_SUCCESS)
