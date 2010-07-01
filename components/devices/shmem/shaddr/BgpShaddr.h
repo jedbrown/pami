@@ -411,8 +411,8 @@ void * PAMI::Device::Shmem::BgpShaddr::p2v (size_t     peer,
 
   uint32_t paddr_round_down = paddr & ~(window_size - 1);
   uint32_t paddr_offset     = paddr &  (window_size - 1);
-  uint32_t actualsize;       // window size returned by setProcessWindow indexed by target core
-  TRACE_ERR((stderr, "   BgpShaddr::p2v():%d .. window_size = %d, paddr_round_down = 0x%08x, paddr_offset = %d, actualsize = %d\n", __LINE__, window_size, paddr_round_down, paddr_offset, actualsize));
+  uint32_t actualsize       = window_size; // window size returned by setProcessWindow indexed by target core
+  TRACE_ERR((stderr, "   BgpShaddr::p2v():%d .. window_size = %d, paddr_round_down = 0x%08x, paddr_offset = %d, actualsize = %u\n", __LINE__, window_size, paddr_round_down, paddr_offset, actualsize));
 
   TRACE_ERR((stderr, "   BgpShaddr::p2v():%d .. & _window[%zu] = %p .. _window[%zu].tlbslot = %d, _window[%zu].last_vaddr = %p, _window[%zu].last_paddr = %p\n", __LINE__, peer, &_window[peer], peer, _window[peer].tlbslot, peer, (void *) _window[peer].last_vaddr, peer, (void *) _window[peer].last_paddr));
   if (paddr_round_down != _window[peer].last_paddr)
@@ -431,6 +431,7 @@ void * PAMI::Device::Shmem::BgpShaddr::p2v (size_t     peer,
 
   bytes = actualsize - paddr_offset;
   void * va = (void *)(_window[peer].last_vaddr + paddr_offset);
+  TRACE_ERR((stderr, "   BgpShaddr::p2v():%d .. paddr_offset = %d, actualsize = %u  Bytes=%zu\n", __LINE__, paddr_offset, actualsize, bytes));
 
   return va;
 }
