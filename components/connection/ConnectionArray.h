@@ -140,7 +140,7 @@ namespace PAMI
 
 
     template <class T_Device>
-    class PAMI::Connection::Interface<PAMI::Connection::Array<T_Device>, T_Device>::Manager
+    typename PAMI::Connection::Interface<PAMI::Connection::Array<T_Device>, T_Device>::Manager
     PAMI::Connection::Array<T_Device>::_manager;
   };
 };
