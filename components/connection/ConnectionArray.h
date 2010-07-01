@@ -56,10 +56,10 @@ namespace PAMI
             }
           else
             {
-              size_t bytes = sizeof(Array *) * device.peers();
+              size_t bytes = sizeof(void *) * device.peers() * _maximum_context_count;
               _array = (void **) malloc (bytes);
               memset((void *)_array, 0, bytes);
-              TRACE_FORMAT("_array = %p", _array);
+              TRACE_FORMAT("_array = %p, device.peers() = %zu, _maximum_context_count = %zu -> bytes = %zu", _array, device.peers(), _maximum_context_count, bytes);
               _manager.set (&device, this);
             }
 
@@ -81,7 +81,7 @@ namespace PAMI
 
           size_t index = (peer << 2) | offset; // shift because of _maximum_context_count
 
-          TRACE_FORMAT("task = %zu, offset = %zu, peer = %zu, _array[%zu] = %p", task, offset, peer, index, _array[index]);
+          TRACE_FORMAT("this = %p, _array = %p, task = %zu, offset = %zu, peer = %zu, _array[%zu] = %p", this, _array, task, offset, peer, index, _array[index]);
 
           PAMI_assert_debug(_array[index] == NULL);
           _array[index] = value;
