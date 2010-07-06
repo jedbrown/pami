@@ -20,6 +20,13 @@
 #include "components/devices/bgq/mu2/global/Global.h"
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/generic/Device.h"
+#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/counter/CounterBarrier.h"
+
+#ifdef TRACE
+#undef TRACE
+#endif
+#define TRACE(x) //fprintf x
 
 extern PAMI::Device::MU::Global __MUGlobal;
 
@@ -61,6 +68,53 @@ namespace PAMI
                 new (&mu[id_offset])
                 MU::Context (__global.mapping, id_base, id_offset, id_count);
               }
+
+	    // Barrier among all nodes to ensure that the resources for this client
+	    // are ready on all of the nodes.
+	    // - Barrier among the processes on this node
+	    // - Barrier among other nodes
+	    // - Barrier among the processes on this node
+
+	    bool master;
+	    (__global.mapping.t() == 0) ? master=true : master=false;
+
+	    TRACE((stderr, "MU::Context::generate_impl: Initializing local barrier, size=%zu, master=%d\n", __global.topology_local.size(), master));
+	    PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> barrier;
+	    barrier.init(&__global.mm,
+			 __global.topology_local.size(),
+			 master );
+
+	    TRACE((stderr, "ResourceManager: Entering Local Barrier\n"));
+	    barrier.enter();
+	    TRACE((stderr, "ResourceManager: Exiting Local Barrier\n"));
+
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+
+	    // \todo Replace this with a real MU barrier when it is available
+
+	    // If multi-node, and master, need to sleep
+	    if ( master && (__global.mapping.size() > __global.personality.tSize()) )
+	      {
+		double seconds = 5; // wait 5 pseudo-seconds
+		double dseconds = ((double)seconds) / 1000; //mambo seconds are loooong.
+		double start = PAMI_Wtime (), d = 0;
+		TRACE((stderr, "%s sleep - %.0f,start %f < %f\n", __PRETTY_FUNCTION__, d, start, start + dseconds));
+  
+		while (PAMI_Wtime() < (start + dseconds))
+		  {
+		    for (int i = 0; i < 200000; ++i) ++d;
+		    
+		    TRACE((stderr, "%s sleep - %.0f, %f < %f\n", __PRETTY_FUNCTION__, d, PAMI_Wtime(), start + dseconds));
+		  }
+		
+		TRACE((stderr, "%s sleep - %.0f, start %f, end %f\n", __PRETTY_FUNCTION__, d, start, PAMI_Wtime()));
+	      }
+	    
+#endif
+
+	    TRACE((stderr, "ResourceManager: Entering Local Barrier\n"));
+	    barrier.enter();
+	    TRACE((stderr, "ResourceManager: Exiting Local Barrier\n"));
 
             return mu;
           };
