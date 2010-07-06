@@ -561,6 +561,11 @@ namespace PAMI
           return 0;
         }
 
+      inline size_t getContextCount_impl ()
+        {
+          return 1; // pami-lapi only supports one context
+        }
+
       PAMI::Memory::MemoryManager                *_mm;
       pami_context_t                              _context;
       size_t                                     _offset;

@@ -60,6 +60,7 @@ namespace PAMI
           inline pami_context_t getContext ();
 
           inline size_t getContextOffset ();
+          inline size_t getContextCount ();
 
           ///
           /// \brief Is the device initialized?
@@ -121,6 +122,12 @@ namespace PAMI
       inline size_t BaseDevice<T_Device>::getContextOffset ()
       {
         return static_cast<T_Device*>(this)->getContextOffset_impl();
+      }
+
+      template <class T_Device>
+      inline size_t BaseDevice<T_Device>::getContextCount ()
+      {
+        return static_cast<T_Device*>(this)->getContextCount_impl();
       }
 
       template <class T_Device>

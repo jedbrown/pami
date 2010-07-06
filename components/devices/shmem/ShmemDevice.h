@@ -329,7 +329,7 @@ namespace PAMI
               // Instantiate the shared memory devices
               for (i = 0; i < n; ++i)
                 {
-                  new (&devices[i]) ShmemDevice (i, total_fifos_on_node, all_fifos, peer_fnum);
+                  new (&devices[i]) ShmemDevice (i, n, total_fifos_on_node, all_fifos, peer_fnum);
                 }
 
               TRACE_ERR((stderr, "<< ShmemDevice::Factory::generate_impl()\n"));
@@ -386,13 +386,14 @@ namespace PAMI
             size_t    _bytes;
         };
 
-        inline ShmemDevice (size_t contextid, size_t nfifos, T_Fifo * fifo, size_t * fnum_hash) :
+        inline ShmemDevice (size_t contextid, size_t ncontexts, size_t nfifos, T_Fifo * fifo, size_t * fnum_hash) :
             Interface::BaseDevice< ShmemDevice<T_Fifo,T_Shaddr> > (),
             Interface::PacketDevice< ShmemDevice<T_Fifo,T_Shaddr> > (),
             _fifo (fifo),
             _total_fifos (nfifos),
             _fnum_hash (fnum_hash),
             _contextid (contextid),
+            _ncontexts (ncontexts),
 #ifdef EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
             __ndQ (),
             __ndpkt (),
@@ -437,6 +438,7 @@ namespace PAMI
 
         inline size_t getContextId_impl ();
         inline size_t getContextOffset_impl ();
+        inline size_t getContextCount_impl ();
 
         // ------------------------------------------
 
@@ -598,6 +600,7 @@ namespace PAMI
         pami_client_t       _client;
         pami_context_t      _context;
         size_t             _contextid;
+        size_t             _ncontexts;
 
         dispatch_t  _dispatch[DISPATCH_SET_COUNT*DISPATCH_SET_SIZE];
 
@@ -644,6 +647,12 @@ namespace PAMI
     inline size_t ShmemDevice<T_Fifo,T_Shaddr>::getContextOffset_impl()
     {
       return getContextId_impl();
+    }
+
+    template <class T_Fifo, class T_Shaddr>
+    inline size_t ShmemDevice<T_Fifo,T_Shaddr>::getContextCount_impl()
+    {
+      return _ncontexts;
     }
 
     ///

@@ -126,6 +126,11 @@ size_t PAMI::Device::MU::MUDevice::getContextOffset_impl ()
   return _contextid;
 }
 
+size_t PAMI::Device::MU::MUDevice::getContextCount_impl ()
+{
+  return _ncontexts;
+}
+
 bool PAMI::Device::MU::MUDevice::isInit_impl()
 {
   return _initialized;

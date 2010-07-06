@@ -151,6 +151,9 @@ namespace PAMI
           /// \copydoc PAMI::Device::Interface::BaseDevice::getContextOffset
           size_t getContextOffset_impl ();
 
+          /// \copydoc PAMI::Device::Interface::BaseDevice::getContextCount
+          size_t getContextCount_impl ();
+
           /// \copydoc PAMI::Device::Interface::BaseDevice::isInit
           bool isInit_impl ();
 

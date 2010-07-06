@@ -61,11 +61,12 @@ namespace PAMI
     {
     public:
       static const size_t packet_payload_size = 224;
-      inline MPIDevice () :
+      inline MPIDevice (size_t ncontext = 1) :
       Interface::BaseDevice<MPIDevice> (),
       Interface::PacketDevice<MPIDevice>(),
       _dispatch_id(0),
-      _curMcastTag(MULTISYNC_TAG)
+      _curMcastTag(MULTISYNC_TAG),
+      _ncontexts (ncontext)
       {
         // \todo These MPI functions should probably move out of the constructor if we keep this class
         MPI_Comm_dup(MPI_COMM_WORLD,&_communicator);
@@ -82,7 +83,7 @@ static inline MPIDevice *generate_impl(size_t clientid, size_t num_ctx, Memory::
         int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
         PAMI_assertf(rc == 0, "posix_memalign failed for MPIDevice[%zu], errno=%d\n", num_ctx, errno);
         for (x = 0; x < num_ctx; ++x) {
-                new (&devs[x]) MPIDevice();
+                new (&devs[x]) MPIDevice(num_ctx);
         }
         return devs;
 }
@@ -188,6 +189,12 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
       inline size_t getContextOffset_impl ()
       {
         return _contextid;
+      };
+
+      inline size_t getContextCount_impl ()
+      {
+        PAMI_assertf(_ncontexts > 0, "invalid number of contexts .. %zu\n", _ncontexts);
+        return _ncontexts;
       };
 
       inline bool isInit_impl ()
@@ -765,6 +772,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
       int                                       _curMcastTag;
       pami_context_t                             _context;
       size_t                                    _contextid;
+      size_t                                    _ncontexts;
     };
 #undef DISPATCH_SET_SIZE
   };

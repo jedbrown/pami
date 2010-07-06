@@ -27,20 +27,30 @@ namespace PAMI
     template <class T_Device>
     class Array : public Interface<Connection::Array<T_Device>, T_Device>
     {
-      private:
-
-        static const size_t _maximum_context_count = 4;
-
       protected:
 
         inline void ** getArray () { return _array; };
+
+        inline size_t endpoint2index (pami_endpoint_t endpoint)
+        {
+          TRACE_FN_ENTER();
+          size_t task, offset;
+          PAMI_ENDPOINT_INFO(endpoint, task, offset);
+
+          size_t peer = _device.task2peer (task);
+          size_t index = peer + offset * _npeers;
+          TRACE_FORMAT("endpoint = 0x%08x, task = %zu, offset = %zu, peer = %zu, index = %zu", (unsigned) endpoint, task, offset, peer, index)
+          TRACE_FN_EXIT();
+          return index;
+        };
 
       public:
 
         inline Array (T_Device & device) :
             Interface<Connection::Array<T_Device>, T_Device> (device),
             _device (device),
-            _array (NULL)
+            _array (NULL),
+            _npeers (device.peers())
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT("this = %p, &_manager = %p", this, & _manager);
@@ -56,10 +66,10 @@ namespace PAMI
             }
           else
             {
-              size_t bytes = sizeof(void *) * device.peers() * _maximum_context_count;
+              size_t bytes = sizeof(void *) * device.peers() * device.getContextCount();
               _array = (void **) malloc (bytes);
               memset((void *)_array, 0, bytes);
-              TRACE_FORMAT("_array = %p, device.peers() = %zu, _maximum_context_count = %zu -> bytes = %zu", _array, device.peers(), _maximum_context_count, bytes);
+              TRACE_FORMAT("_array = %p, bytes = %zu", _array, bytes);
               _manager.set (&device, this);
             }
 
@@ -72,18 +82,11 @@ namespace PAMI
         {
           TRACE_FN_ENTER();
 
-          size_t task, offset;
-          PAMI_ENDPOINT_INFO(key, task, offset)
+          size_t index = endpoint2index (key);
 
-          size_t peer = _device.task2peer (task);
-
-          PAMI_assert_debug(offset < _maximum_context_count);
-
-          size_t index = (peer << 2) | offset; // shift because of _maximum_context_count
-
-          TRACE_FORMAT("this = %p, _array = %p, task = %zu, offset = %zu, peer = %zu, _array[%zu] = %p", this, _array, task, offset, peer, index, _array[index]);
-
+          TRACE_FORMAT("this = %p, _array = %p, _array[%zu] = %p", this, _array, index, _array[index]);
           PAMI_assert_debug(_array[index] == NULL);
+
           _array[index] = value;
 
           TRACE_FN_EXIT();
@@ -93,17 +96,9 @@ namespace PAMI
         {
           TRACE_FN_ENTER();
 
-          size_t task, offset;
-          PAMI_ENDPOINT_INFO(key, task, offset)
+          size_t index = endpoint2index (key);
 
-          size_t peer = _device.task2peer (task);
-
-          PAMI_assert_debug(offset < _maximum_context_count);
-
-          size_t index = (peer << 2) | offset; // shift because of _maximum_context_count
-
-          TRACE_FORMAT("task = %zu, offset = %zu, peer = %zu, _array[%zu] = %p", task, offset, peer, index, _array[index]);
-
+          TRACE_FORMAT("this = %p, _array = %p, _array[%zu] = %p", this, _array, index, _array[index]);
           PAMI_assert_debug(_array[index] != NULL);
 
           TRACE_FN_EXIT();
@@ -114,16 +109,9 @@ namespace PAMI
         {
           TRACE_FN_ENTER();
 
-          size_t task, offset;
-          PAMI_ENDPOINT_INFO(key, task, offset)
+          size_t index = endpoint2index (key);
 
-          size_t peer = _device.task2peer (task);
-
-          PAMI_assert_debug(offset < _maximum_context_count);
-
-          size_t index = (peer << 2) | offset; // shift because of _maximum_context_count
-
-          TRACE_FORMAT("task = %zu, offset = %zu, peer = %zu, _array[%zu] = %p -> NULL", task, offset, peer, index, _array[index]);
+          TRACE_FORMAT("this = %p, _array = %p, _array[%zu] = %p", this, _array, index, _array[index]);
 
           _array[index] = NULL;
 
@@ -134,6 +122,7 @@ namespace PAMI
 
         T_Device  & _device;
         void     ** _array;
+        size_t      _npeers;
 
         static typename PAMI::Connection::Interface<PAMI::Connection::Array<T_Device>, T_Device>::Manager _manager;
     };

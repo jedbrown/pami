@@ -283,6 +283,14 @@ namespace PAMI
           }
 
           ///
+          /// \copydoc Interface::BaseDevice::getContextCount
+          ///
+          inline size_t getContextCount_impl ()
+          {
+            return _id_count;
+          }
+
+          ///
           /// \copydoc Interface::BaseDevice::isInit
           ///
           inline bool isInit_impl ()
