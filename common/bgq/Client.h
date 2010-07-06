@@ -305,11 +305,42 @@ namespace PAMI
 
         if(geometry != NULL)
         {
+#ifdef ENABLE_MU_CLASSROUTES
+          BGQGeometry *gp = new(geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
+                                    &__global.mapping,
+                                    id,
+                                    slice_count,
+                                    rank_slices);
+	  // This still doesn't handle cases where the global "part" of
+	  // a VN-mode geometry can be represented by a rectangle or comm-world:
+	  // (yuk)
+	  //    gp->getTopology(0)->subTopologyNthGlobal(&topo, 0);
+	  //    if (topo.size() == ???) setKey(0)
+	  //    else {
+	  //        topo.convertTopology(COORD);
+	  //        if (topo.type() == COORD) {
+	  //            geomOptimize(...);
+	  //        }
+	  //    }
+	  //
+	  if (gp->nranks() == __global.topology_global.size())
+	  {
+	    gp->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, (void *)(0 + 1));
+	  }
+	  // did the geometry ctor convert the Topology to rectangle?
+	  // we need it to do that...
+	  else if (gp->getTopology(0)->type() == PAMI_COORD_TOPOLOGY)
+	  {
+	    __MUGlobal._muRM.geomOptimize(gp, _clientid, ctxt->getId(), ctxt,
+	                                          id, gp->getTopology(0));
+	  }
+#else
           new(geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
                                     &__global.mapping,
                                     id,
                                     slice_count,
                                             rank_slices);
+#endif
           for(size_t n=0; n<_ncontexts; n++)
           {
             _contexts[n].analyze(n,(BGQGeometry*)geometry);

@@ -191,8 +191,403 @@ namespace PAMI
 	  // DUMMY CODE:
 /* 	  initializeContexts(0,1); */
 /* 	  initializeContexts(1,2); */
+#ifdef ENABLE_MU_CLASSROUTES
+#warning Need to pass down MemoryManager from __global ctor...
+	  // This init code is performed ONCE per process and is shared by
+	  // all clients and their contexts...
+	  _cr_mtx.init(mm);
+
+	  // This non-blocking mutex may need to be initialized later/elsewhere,
+	  // since it requires a device object and the generic device.
+	  pami_result_t status = PAMI_ERROR;
+	AtomicMutexMdl<L2NodeMutex> _cr_mtx;
+	  new (&_cr_mtx) AtomicMutexMdl<L2NodeMutex>(device, status);
+	  PAMI_assertf(status == PAMI_SUCCESS, "Failed to construct non-blocking mutex");
+
+	  // Note, we NEVER use BGQ_CLASS_INPUT_VC_USER. Only BGQ_CLASS_INPUT_VC_SUBCOMM.
+
+	  uint32_t crs[BGQ_COLL_CLASS_MAX_CLASSROUTES];
+	  uint32_t ncr;
+	  rc = Kernel_QueryCollectiveClassRoutes(&ncr, crs, sizeof(crs));
+	  // first, locally "block-out" any already reserved classroutes...
+	  // we take the "last" N ids, where "N" is some number we get from a
+	  // resource manager - TBD.
+	  uint32_t N = ncr; // take all, until we know otherwise...
+	  if (N > ncr) N = ncr;
+	  MUSPI_InitClassrouteIds(&crs[ncr - N], N, &_crdata);
+	  for (x = ncr - N; x < N; ++x)
+	  {
+	    Kernel_AllocateCollectiveClassRoute(crs[x]);
+	  }
+
+	  // next, add classroute #0 (user comm-world) which is
+	  // pre-fabricated by controlsystem and CNK (not in free list, above).
+	  // but, we need to cnostruct the rectangle for it ourself...
+
+	  // this code should be very similar to classroute_test.c
+	  // Get all the rectangles and coords we need to describe the system.
+	  *CR_RECT_LL(&_refcomm) = CR_COORD_INIT(0,0,0,0,0);
+	  *CR_RECT_UR(&_refcomm) = CR_COORD_INIT(
+	    _pers.Network_Config.Anodes - 1,
+	    _pers.Network_Config.Bnodes - 1,
+	    _pers.Network_Config.Cnodes - 1,
+	    _pers.Network_Config.Dnodes - 1,
+	    _pers.Network_Config.Enodes - 1
+	  );
+	  // CR_COORD_T _mycoord;
+	  _mycoord = CR_COORD_INIT(
+	    _pers.Network_Config.Acoord,
+	    _pers.Network_Config.Bcoord,
+	    _pers.Network_Config.Ccoord,
+	    _pers.Network_Config.Dcoord,
+	    _pers.Network_Config.Ecoord
+	  );
+	  MUSPI_PickWorldRoot(&_refcomm, NULL, &_refroot, &_pri_dim);
+	  s = getenv("BG_MAPFILE");
+	  int i = 0;
+	  if (s)
+	  {
+	    char *x, *m = CR_DIM_NAMES;
+	    for (; *s; ++s)
+	    {
+	    if (*s == 'T') continue;
+	    x = strchr(m, *s);
+	    if (!x) break;
+	    map[i++] = (x - m);
+	    }
+	  }
+	  if (i != CR_NUM_DIMS)
+	  {
+	    // error - invalid map string, or an actual map file...
+	    // no classroutes supported (no MU collectives at all?)
+	    // \todo #warning need to handle mapfiles somehow
+
+	    // for now, just use simple 1:1 mapping
+	    for (i = 0; i < CR_NUM_DIMS; ++i) map[i] = i;
+	  }
+	  BG_JobCoords_t subblk;
+	  i = Kernel_JobCoords(&subblk);
+	  if (is_subblockjob)
+	  {
+	    PAMI_assertf(subblk.shape.core == 16, "Sub-node jobs not supported");
+	  }
+	  *CR_RECT_LL(&_communiv) = CR_COORD_INIT(
+	    subblk.corner.a,
+	    subblk.corner.b,
+	    subblk.corner.c,
+	    subblk.corner.d,
+	    subblk.corner.e
+	  );
+	  *CR_RECT_UR(&_communiv) = CR_COORD_INIT(
+	    subblk.corner.a + subblk.shape.a - 1,
+	    subblk.corner.b + subblk.shape.b - 1,
+	    subblk.corner.c + subblk.shape.c - 1,
+	    subblk.corner.d + subblk.shape.d - 1,
+	    subblk.corner.e + subblk.shape.e - 1
+	  );
+	  size_t univz = __MUSPI_rect_size(&_communiv);
+	  // now, factor in any -np...
+	  s = getenv("BG_NP");
+	  if (s)
+	  {
+	    int n = strtoul(s, NULL, 0);
+	    s = getenv("BG_PROCESSESPERNODE");
+	    if (s)
+	    {
+	      int v = strtoul(s, NULL, 0);
+	      n = (n + v - 1) / v;
+	    }
+	    _np = n;
+	  }
+	  else
+	  {
+	    _np = __MUSPI_rect_size(&_communiv);
+	  }
+	  if (_np < univz) { // must exclude some nodes...
+	    _excluded = malloc((univz - _np) * sizeof(CR_COORD_T));
+	    // assert(_excluded != NULL);
+
+	    // Note, this discard previous _pri_dim... is that ok?
+	    MUSPI_MakeNpRectMap(&_communiv, _np, _map,
+	            &_commworld, _excluded, &_nexcl, &_pri_dim);
+	  }
+	  else
+	  {
+	    // do we really need so many rectangles?
+	    _commworld = _communiv;
+	  }
+	  // could do: new (t) Topology(CR_RECT_LL(&_commworld),
+	  //                              CR_RECT_UR(&_commworld), ... );
+	  //
+	  // Must be able to determine if a geometry is "comm world"
+	  // (taking into account excluded nodes), but otherwise every
+	  // classroute will be a full rectangle.
+	  // (how will commworld (topology) be represented in those cases?)
+
+	  // Caution: this is abnormal use of the classroute API.
+	  // This sets up our tables for a pre-existing classroute for the
+	  // entire job. So, we only update our table, we don't write DCRs
+	  // or any such thing.
+	  MUSPI_SetClassrouteId(0, BGQ_CLASS_INPUT_VC_SUBCOMM, &_commworld, &_crdata);
+	  // do we need to place this rectangle someplace? like the "world geom" topology?
+
+	  // Now, we should be ready to get requests for classroutes...
+	  // via the geomOptimize() method below...
+#endif
 
 	} // End: ResourceManager Default Constructor
+#ifdef ENABLE_MU_CLASSROUTES
+	// Note, we NEVER use BGQ_CLASS_INPUT_VC_USER. Only BGQ_CLASS_INPUT_VC_SUBCOMM.
+	struct cr_cookie
+	{
+	  PAMI::Geometry::Common *geom;
+	  unsigned geom_id;
+	  PAMI::Topology *topo;
+	  MUDevice *thus;
+	  pami_multisync_t msync;
+	  char mbuf[_cr_mtx.msg_size];
+	  pami_xfer_t xfer;
+	  uint64_t abuf[3];
+	  uint64_t bbuf[3];
+	};
+	static const void *CR_GKEY_FAIL = (void *)0xdeafbeef; // 0xbadc0ffee0ddf00d...
+
+	// this code should be very similar to classroute_test.c,
+	// however, this must be non-blocking code so we have to
+	// do this as work posted to context(s).
+	// we only need one attempt per geometry, so use a special value
+	// to indicate "can't". Note, this routine will be called several times
+	// for a given geometry, during create. Once for each potential algorithm.
+	// but the answer we get is valid for all algorithms, so don't keep trying.
+	inline pami_result_t geomOptimize(PAMI::Geometry::Common *geom,
+	    size_t clientid, size_t contextid, pami_context_t context,
+	    unsigned geom_id, PAMI::Topology *topo)
+	{
+	  // need some way to reset this so that we can optimize
+	  // after having previously said "de-optimize"...
+	  void *val = geom->getKey(AMI::Geometry::PAMI_GKEY_CLASSROUTE);
+	  if (val)
+	  {
+	    return PAMI_SUCCESS;
+	  }
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, CR_GKEY_FAIL);
+
+	  // must handle "comm world" here, which might not be a rectangle...
+	  if (topo->type() != PAMI_COORD_TOPOLOGY) return -1;
+	  // This topology is part of the geometry, so we know it won't
+	  // "go away" after this method returns...
+	  cr_cookie *cookie = malloc(sizeof(cr_cookie)); // how to alloc?
+	  cookie->topo = topo;
+	  cookie->thus = this;
+	  cookie->msync.client = clientid;
+	  cookie->msync.context = contextid;
+	  cookie->geom = geom;
+	  cookie->abuf[1] = geom_id;
+	  cookie->abuf[2] = ~geom_id;
+	  cookie->xfer.cmd.xfer_allreduce.sndbuf = &cookie->abuf[0];
+	  cookie->xfer.cmd.xfer_allreduce.stype = PAMI_TYPE_NULL;
+	  cookie->xfer.cmd.xfer_allreduce.stypecount = sizeof(cookie->abuf);
+	  cookie->xfer.cmd.xfer_allreduce.rcvbuf = &cookie->bbuf[0];
+	  cookie->xfer.cmd.xfer_allreduce.rtype = PAMI_TYPE_NULL;
+	  cookie->xfer.cmd.xfer_allreduce.rtypecount = sizeof(cookie->bbuf);
+	  cookie->xfer.cmd.xfer_allreduce.dt = PAMI_UNSIGNED_LONG_LONG;
+	  cookie->xfer.cmd.xfer_allreduce.op = PAMI_BAND;
+	  // tell geometry completion to wait for us...
+	  geom->addCompletion();
+	  start_over(context, cookie, PAMI_SUCCESS);
+	  return PAMI_SUCCESS;
+	}
+
+	// a.k.a. Geometry_destroy... this happens to be immediate and local...
+	// but, do we need the MU Coll device mutex? (_cr_mtx)
+	inline pami_result_t geomDeoptimize(PAMI::Geometry::Common *geom,
+	    size_t clientid, size_t contextid, pami_context_t context,
+	    unsigned geom_id, PAMI::Topology *topo)
+	{
+	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
+	  if (val && val != CR_GKEY_FAIL)
+	  {
+	    CR_RECT_T rect;
+	    topo->rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
+	    int id = (int)((uintptr_t)val & 0xffffffff) - 1;
+	    int last = MUSPI_ReleaseClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
+	                                                        &rect, &_crdata);
+	    if (last)
+	    {
+	      // This "frees" the id to others... don't want that.
+	      // rc = Kernel_DeallocateCollectiveClassRoute(id);
+	      // it is probably OK to leave the old one around,
+	      // else need to be sure what value we can set it to
+	      // and not have CNK think it is "free"...
+	          // rc = Kernel_SetCollectiveClassRoute(id, &cr);
+	    }
+	  }
+	  // never attempt to optimize this geometry for classroutes...
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, CR_GKEY_FAIL);
+	  return PAMI_SUCCESS;
+	}
+
+	static void start_over(pami_context_t ctx, void *cookie, pami_result_t result)
+	{
+	  if (result != PAMI_SUCCESS && result != PAMI_EAGAIN)
+	  {
+	    // tell geometry completion "we're done"...
+	    geom->rmCompletion(ctx, result);
+	    free(cookie);
+	    return; // mutex error?!
+	  }
+	  cr_cookie *crck = (cr_cookie *)cookie;
+	  crck->msync.cb_done = { got_mutex, crck };
+	  crck->msync.roles = _cr_mtx.LOCK_ROLE;
+	  rc = _cr_mtx.postMultisync(crck->mbuf, &crck->msync);
+	  if (rc != PAMI_SUCCESS)
+	  {
+	    // this frees 'cookie' if needed...
+	    // this also tells geom we're done.
+	    got_mutex(ctx, cookie, rc); // should this retry?
+	    return;
+	  }
+	}
+
+	static void got_mutex(pami_context_t ctx, void *cookie, pami_result_t result)
+	{
+	  if (result != PAMI_SUCCESS)
+	  {
+	    // tell geometry completion "we're done"...
+	    geom->rmCompletion(ctx, result);
+	    free(cookie);
+	    return; // mutex error?! cleanup?
+	  }
+	  // we now "own" this device class instance, on the entire node.
+	  cr_cookie *crck = (cr_cookie *)cookie;
+
+	  if (crck->geom_id > *_lowest_geom_id)
+	  {
+	    // we should not be trying right now, let another...
+	    release_mutex(ctx, cookie, PAMI_SUCCESS);
+	    start_over(ctx, cookie, PAMI_EAGAIN);
+	    return;
+	  }
+	  *_lowest_geom_id = crck->geom_id;
+
+	  // for now, this is only for true rectangles... (_nexcl == 0)
+	  CR_RECT_T rect;
+	  crck->topo->rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
+	  ClassRoute_t cr;
+	  MUSPI_BuildNodeClassroute(&_refcomm, &_refroot, &_my_coord,
+	        &rect,
+	        _map, _pri_dim, &cr);
+	  cr.input |= BGQ_CLASS_INPUT_LINK_LOCAL;
+	  cr.input |= BGQ_CLASS_INPUT_VC_SUBCOMM;
+	  // TBD: _crdata must be in shared memory!
+	  mask = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
+	            &rect, &_crdata);
+	  // is this true? can we be sure ALL nodes got the same result?
+	  // if so, and we are re-using existing classroute, then we can skip
+	  // the allreduce...
+	  crck->abuf[0] = mask & ~CR_MATCH_RECT_FLAG;
+	  if (mask & CR_MATCH_RECT_FLAG)
+	  {
+	    crck->bbuf = crck->abuf; // "nil" allreduce
+	    // this frees 'cookie' if needed...
+	    // this also tells geom we're done.
+	    cr_allreduce_done(ctx, cookie, PAMI_SUCCESS);
+	    return;
+	  }
+	  // Now, must perform an "allreduce(&mask, 1, PAMI_LONGLONG, PAMI_AND)"
+	  // This cannot happen until the new geom actually has algorithms,
+	  // so we must do a non-blocking spin until algorithm[ALLREDUCE][0] exists.
+	  cr_allreduce_check(ctx, cookie);
+	}
+
+	// Would be better if we could post a persistent work function...
+	// Loop in this function until the geometry is initialized enough to
+	// have the "default" allreduce algorithm. Hint: it won't be us.
+	//
+	static void cr_allreduce_check(pami_context_t ctx, void *cookie)
+	{
+	  cr_cookie *crck = (cr_cookie *)cookie;
+	  pami_algorithm_t *algo = NULL;
+	  PAMI_Geometry_algorithms_query(ctx, crck->geom, PAMI_XFER_ALLREDUCE,
+	                                        &algo, NULL, 1, NULL, NULL, 0);
+	  if (!algo)
+	  {
+	    PAMI_Context_post(ctx, crck->post, cr_allreduce_check, cookie);
+	  }
+	  else
+	  {
+	    crck->xfer.cb_done = cr_allreduce_done;
+	    crck->xfer.cookie = crck;
+	    crck->xfer.algorithm = algo;
+	    // because of circular dependencies, can't dereference the context here,
+	    // so we must use the C API. Would be best to directly setup MU Coll
+	    // descriptor and inject, but this is currently on the new geom which
+	    // has no classroute, and if we use the parent then we have to do something
+	    // special to get the non-member nodes involved, since the parent members
+	    // that are not part of the sub-geometry don't even call analyze...
+	    rc = PAMI_Collective(ctx, &crck->xfer);
+	    if (rc != PAMI_SUCCESS)
+	    {
+	      // this frees 'cookie' if needed...
+	      // this also tells geom we're done.
+	      cr_allreduce_done(ctx, cookie, rc); // should this retry?
+	      return;
+	    }
+	  }
+	}
+
+	static void cr_allreduce_done(pami_context_t ctx, void *cookie, pami_result_t result)
+	{
+	  if (result != PAMI_SUCCESS)
+	  {
+	    // tell geometry completion "we're done"...
+	    geom->rmCompletion(ctx, result);
+	    free(cookie); // don't do this if it retries...
+	    return; // need cleanup??? retry?
+	  }
+	  cr_cookie *crck = (cr_cookie *)cookie;
+
+	  if (crck->bbuf[1] != crck->abuf[1] ||
+	      crck->bbuf[2] != crck->abuf[2])
+	      {
+	    // failed (collided), must reset and start over...
+	    release_mutex(ctx, cookie, PAMI_SUCCESS);
+	    start_over(ctx, cookie, PAMI_EAGAIN);
+	    return;
+	  }
+
+	  id = ffs(crck->bbuf[0]);
+	  if (id)
+	  {
+	    --id; // ffs() returns bit# + 1
+	    int first = MUSPI_SetClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
+	          &rect, &_crdata);
+	    // Note: need to detect if classroute was already programmed...
+	    if (first)
+	    {
+	          rc = Kernel_SetCollectiveClassRoute(id, &cr);
+	    }
+	    // how does this ever get freed up?
+	    geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, (void *)(id + 1));
+	  }
+	  // we got the answer we needed... no more trying...
+	  *_lowest_geom_id = UINT_MAX;
+	  release_mutex(ctx, cookie, PAMI_SUCCESS);
+	  // tell geometry completion "we're done"...
+	  geom->rmCompletion(ctx, PAMI_SUCCESS);
+	  free(cookie);
+	}
+
+	inline void release_mutex(pami_context_t ctx, void *cookie, pami_result_t result)
+	{
+	  cr_cookie *crck = (cr_cookie *)cookie;
+	  crck->msync.cb_done = { NULL, NULL };
+	  crck->msync.roles = _cr_mtx.UNLOCK_ROLE;
+	  rc = _cr_mtx.postMultisync(crck->mbuf, &crck->msync);
+	  // no such thing as failure... nore is there any delay...
+	  // mutex is now unlocked, so we are "done" in every way that matters.
+	}
+#endif
 
         // \brief Get Per Process PAMI Max Number of Contexts
 	inline size_t getPerProcessMaxPamiResources ( size_t RmClientId )
@@ -341,6 +736,21 @@ namespace PAMI
 	PAMI::ResourceManager &_pamiRM;
 	PAMI::Mapping         &_mapping;
 	PAMI::BgqPersonality  &_pers;
+#ifdef ENABLE_MU_CLASSROUTES
+	L2NodeMutex _cr_mtx;
+	CR_RECT_T _refcomm;
+	CR_COORD_T _refroot;
+	int _pri_dim;
+	int _map[CR_NUM_DIMS];
+	CR_RECT_T _communiv;
+	size_t _np;
+	CR_RECT_T _commworld;
+	CR_COORD_T *_excluded = NULL;
+	int _nexcl = 0;
+	unsigned *_lowest_geom_id; // in shared memory! (protected by _cr_mtx)
+	void *_crdata = NULL; // used by routines to keep track of
+	                      // classroute assignments - persistent!
+#endif
 	size_t  _tSize;
 	ssize_t _aSizeHalved;
 	ssize_t _bSizeHalved;
