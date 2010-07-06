@@ -1726,7 +1726,7 @@ extern "C"
    * \retval     0            Success
    *
    * \todo doxygen
-   * \todo discuss collapsing PAMI_dt into type type.
+   * \todo discuss collapsing pami_dt into type type.
    */
   typedef struct
   {
@@ -1761,7 +1761,7 @@ extern "C"
    * \retval     0            Success
    *
    * \todo doxygen
-   * \todo discuss collapsing PAMI_dt into type type.
+   * \todo discuss collapsing pami_dt into type type.
    */
   typedef struct
   {
@@ -2767,4 +2767,4 @@ extern "C"
 };
 #endif
 
-#endif /* __pami__h__ */
+#endif /* __pami_h__ */
