@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/alltoall.c
+ * \file test/api/collectives/alltoall.c
  * \brief ???
  */
 #include "../pami_util.h"
@@ -70,7 +70,7 @@ int main(int argc, char*argv[])
   pami_task_t          task_id;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
-  
+
   /* Barrier variables */
   size_t               barrier_num_algorithm[2];
   pami_algorithm_t    *bar_always_works_algo;
@@ -79,7 +79,7 @@ int main(int argc, char*argv[])
   pami_metadata_t     *bar_must_query_md;
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   volatile unsigned    bar_poll_flag=0;
-  
+
   /* Alltoallv variables */
   size_t               alltoallv_num_algorithm[2];
   pami_algorithm_t    *alltoallv_always_works_algo;

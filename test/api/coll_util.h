@@ -53,7 +53,7 @@ int query_geometry_world(pami_client_t       client,
                          pami_algorithm_t  **must_query_alg,
                          pami_metadata_t   **must_query_md)
 {
-  
+
   pami_result_t     result           = PAMI_SUCCESS;
   /* Docs01:  Get the World Geometry */
   result = PAMI_Geometry_world (client,world_geometry);
@@ -69,7 +69,7 @@ int query_geometry_world(pami_client_t       client,
                                         *world_geometry,
                                         xfer_type,
                                         num_algorithm);
-  
+
   if (result != PAMI_SUCCESS || num_algorithm[0]==0)
     {
       fprintf (stderr,
@@ -78,7 +78,7 @@ int query_geometry_world(pami_client_t       client,
       return 1;
     }
   /* Docs04:  Query the number of algorithms */
-  
+
   *always_works_alg = (pami_algorithm_t*)malloc(sizeof(pami_algorithm_t)*num_algorithm[0]);
   *always_works_md  = (pami_metadata_t*)malloc(sizeof(pami_metadata_t)*num_algorithm[0]);
   *must_query_alg   = (pami_algorithm_t*)malloc(sizeof(pami_algorithm_t)*num_algorithm[1]);
@@ -119,7 +119,7 @@ int query_geometry(pami_client_t       client,
                                         geometry,
                                         xfer_type,
                                         num_algorithm);
-  
+
   if (result != PAMI_SUCCESS || num_algorithm[0]==0)
     {
       fprintf (stderr,

@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_tick.h
+ * \file sys/examples/tick.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_tick_h__
-#define __sys_examples_pami_tick_h__
+#ifndef __examples_tick_h__
+#define __examples_tick_h__
 
 /**
  * \example tick.c

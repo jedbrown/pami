@@ -1,10 +1,10 @@
 ///
-/// \file test/BG/bgq/commthreads/commthread_test.h
+/// \file test/internals/BG/bgq/commthreads/commthread_test.h
 /// \brief Simple test for basic commthread functionality
 ///
 
-#ifndef __test_BG_bgq_commthreads_commthread_test_h__
-#define __test_BG_bgq_commthreads_commthread_test_h__
+#ifndef __test_internals_BG_bgq_commthreads_commthread_test_h__
+#define __test_internals_BG_bgq_commthreads_commthread_test_h__
 
 #include <pami.h>
 #include <stdio.h>

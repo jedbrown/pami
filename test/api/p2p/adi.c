@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/p2p/adi.c
+ * \file test/api/p2p/adi.c
  *
  * \brief This is an example of the sort of functions expected to be
  *        used in an MPICH2 ADI

@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_ambcast.h
+ * \file sys/examples/ambcast.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_ambcast_h__
-#define __sys_examples_pami_ambcast_h__
+#ifndef __examples_ambcast_h__
+#define __examples_ambcast_h__
 
 /**
  * \example ambcast.c

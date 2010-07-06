@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_send_unexpected_func.h
+ * \file sys/examples/send_unexpected_func.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_send_unexpected_func_h__
-#define __sys_examples_pami_send_unexpected_func_h__
+#ifndef __examples_send_unexpected_func_h__
+#define __examples_send_unexpected_func_h__
 
 /**
  * \example send_unexpected_func.c

@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_timebase.h
+ * \file sys/examples/timebase.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_timebase_h__
-#define __sys_examples_pami_timebase_h__
+#ifndef __examples_timebase_h__
+#define __examples_timebase_h__
 
 /**
  * \example timebase.c

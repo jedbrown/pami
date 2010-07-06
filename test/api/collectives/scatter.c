@@ -1,5 +1,5 @@
 ///
-/// \file test/scatter.c
+/// \file test/api/collectives/scatter.c
 /// \brief Simple Barrier test
 ///
 
@@ -15,7 +15,7 @@ int main (int argc, char ** argv)
   pami_task_t          task_id;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
-  
+
   /* Barrier variables */
   size_t               barrier_num_algorithm[2];
   pami_algorithm_t    *bar_always_works_algo;
@@ -25,7 +25,7 @@ int main (int argc, char ** argv)
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   pami_xfer_t          barrier;
   volatile unsigned    bar_poll_flag=0;
-  
+
   /* Scatter variables */
   size_t               scatter_num_algorithm[2];
   pami_algorithm_t    *scatter_always_works_algo;
@@ -37,7 +37,7 @@ int main (int argc, char ** argv)
   volatile unsigned    scatter_poll_flag=0;
 
   double               ti, tf, usec;
-  
+
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -75,7 +75,7 @@ int main (int argc, char ** argv)
                             &scatter_must_query_md);
   if(rc==1)
     return 1;
-  
+
   char *buf         = (char*)malloc(BUFSIZE*num_tasks);
   char *rbuf        = (char*)malloc(BUFSIZE*num_tasks);
   barrier.cb_done   = cb_done;

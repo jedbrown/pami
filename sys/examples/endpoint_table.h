@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_endpoint_table.h
+ * \file sys/examples/endpoint_table.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_endpoint_table_h__
-#define __sys_examples_pami_endpoint_table_h__
+#ifndef __examples_endpoint_table_h__
+#define __examples_endpoint_table_h__
 
 /**
  * \example endpoint_table.c

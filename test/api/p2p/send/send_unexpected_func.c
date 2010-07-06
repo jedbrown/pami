@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/p2p/send/send_unexpected_func.c
+ * \file test/api/p2p/send/send_unexpected_func.c
  * \brief ???
  */
 #include <stdio.h>

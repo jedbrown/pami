@@ -1,3 +1,8 @@
+/**
+ * \file test/api/endpoint/endpoint_table.c
+ * \brief ???
+ */
+
 #include <pami.h>
 #include <stdio.h>
 

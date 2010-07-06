@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/init.h
+ * \file test/api/init_util.h
  * \brief ???
  */
 
@@ -111,4 +111,3 @@ int pami_shutdown(pami_client_t        * client,          /* in/out:  client    
 }
 
 #endif /* __test_api_init_h__ */
-

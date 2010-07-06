@@ -25,7 +25,7 @@ int main (int argc, char ** argv)
   pami_xfer_t          barrier;
   volatile unsigned    poll_flag=0;
   double               tf, ti;
-  
+
   ti=timer();
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -37,7 +37,7 @@ int main (int argc, char ** argv)
                      &num_tasks);    /* number of tasks    */
   if(rc==1)
     return 1;
-  
+
   /* Docs01:  Initialize the Geometry */
   rc = query_geometry_world(client,
                             context,
@@ -61,13 +61,13 @@ int main (int argc, char ** argv)
   if(rc==1)
     return 1;
 
-  
+
   fprintf(stderr, "Hello PAMI Collective World:  task_id=%d, size=%zd\n",
           task_id,
           num_tasks);
 
-  
-  rc = pami_shutdown(&client,&context,&num_contexts); 
+
+  rc = pami_shutdown(&client,&context,&num_contexts);
   if(rc==1)
     return 1;
   tf=timer();

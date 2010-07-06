@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_bcast_subcomm2.h
+ * \file sys/examples/bcast_subcomm2.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_bcast_subcomm2_h__
-#define __sys_examples_pami_bcast_subcomm2_h__
+#ifndef __examples_bcast_subcomm2_h__
+#define __examples_bcast_subcomm2_h__
 
 /**
  * \example bcast_subcomm2.c

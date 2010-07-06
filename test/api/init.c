@@ -35,11 +35,11 @@ int main (int argc, char ** argv)
   /* Docs04:  Print job information */
 
   /* Docs05:  Shutdown PAMI Clients and Contexts */
-  rc = pami_shutdown(&client,&context,&num_contexts); 
+  rc = pami_shutdown(&client,&context,&num_contexts);
   if(rc==1)
     return 1;
   /* Docs06:  Shutdown PAMI Clients and Contexts */
-  
+
   tf = timer();
 
   return 0;

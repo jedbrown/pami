@@ -1,5 +1,5 @@
 /**
- * \file test/BG/bgq/local/localbcast.cc
+ * \file test/internals/BG/bgq/local/localbcast.cc
  * \brief ???
  */
 #include <stdio.h>

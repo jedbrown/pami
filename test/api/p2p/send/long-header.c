@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/send/long-header.c
+/// \file test/api/p2p/send/long-header.c
 /// \brief "Long header" point-to-point PAMI_send() test
 ///
 

@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_adi.h
+ * \file sys/examples/adi.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_adi_h__
-#define __sys_examples_pami_adi_h__
+#ifndef __examples_adi_h__
+#define __examples_adi_h__
 
 /**
  * \example adi.c

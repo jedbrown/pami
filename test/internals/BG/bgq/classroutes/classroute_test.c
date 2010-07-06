@@ -1,5 +1,5 @@
 ///
-/// \file test/BG/bgq/classroutes/classroute_test.c
+/// \file test/internals/BG/bgq/classroutes/classroute_test.c
 /// \brief Simple test for basic commthread functionality
 ///
 

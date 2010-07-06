@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-/// \file test/atomics/bgq/bgqcompilation.cc
+/// \file test/internals/atomics/bgq/bgqcompilation.cc
 /// \brief Basic comilation test to ensure objects do not get broken accidentally
 ///
 /// This program should never be run!

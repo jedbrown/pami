@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 /**
- * \file test/p2p/send/eager_concurrency.c
+ * \file test/api/p2p/send/eager_concurrency.c
  *
  * \brief Multpiple processes send and recveive to/from all the rest.
  */

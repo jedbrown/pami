@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_bcast_advisor.h
+ * \file sys/examples/bcast_advisor.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_bcast_advisor_h__
-#define __sys_examples_pami_bcast_advisor_h__
+#ifndef __examples_bcast_advisor_h__
+#define __examples_bcast_advisor_h__
 
 /**
  * \example bcast_advisor.c

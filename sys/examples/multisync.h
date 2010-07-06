@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_multisync.h
+ * \file sys/examples/multisync.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_multisync_h__
-#define __sys_examples_pami_multisync_h__
+#ifndef __examples_multisync_h__
+#define __examples_multisync_h__
 
 /**
  * \example multisync.c

@@ -1,5 +1,5 @@
 ///
-/// \file test/barrier.c
+/// \file test/api/collectives/barrier.c
 /// \brief Simple Barrier test
 ///
 
@@ -29,7 +29,7 @@ int main (int argc, char ** argv)
   volatile unsigned    poll_flag=0;
 
   int                  algo;
-  
+
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
                      NULL,           /* Clientname=default */
@@ -52,7 +52,7 @@ int main (int argc, char ** argv)
                             &must_query_md);
   if(rc==1)
     return 1;
- 
+
   barrier.cb_done   = cb_done;
   barrier.cookie    = (void*) & poll_flag;
   barrier.algorithm = always_works_algo[0];
@@ -61,7 +61,7 @@ int main (int argc, char ** argv)
   rc = blocking_coll(context, &barrier, &poll_flag);
   if(rc==1)
     return 1;
-  
+
   if (!task_id)
     fprintf(stderr, "Barrier Done(%s)\n", always_works_md[0].name);
 
@@ -108,10 +108,10 @@ int main (int argc, char ** argv)
                 always_works_md[algo].name, usec / (double)niter);
     }
 
-  rc = pami_shutdown(&client,&context,&num_contexts); 
+  rc = pami_shutdown(&client,&context,&num_contexts);
   if(rc==1)
     return 1;
-  
+
   free(always_works_algo);
   free(always_works_md);
   free(must_query_algo);

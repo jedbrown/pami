@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/util.h
+ * \file test/internals/util.h
  * \brief ???
  */
 
-#ifndef __test_util_h__
-#define __test_util_h__
+#ifndef __test_internals_util_h__
+#define __test_internals_util_h__
 
 #include <unistd.h>
 #include <stdlib.h>

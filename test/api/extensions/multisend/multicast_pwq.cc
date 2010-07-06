@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multicast_pwq.cc
+ * \file test/api/extensions/multisend/multicast_pwq.cc
  * \brief Simple multicast test using pwq's to chain operations.
  */
 

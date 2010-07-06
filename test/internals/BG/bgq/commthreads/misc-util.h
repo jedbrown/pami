@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/BG/bgq/commthreads/misc-util.h
+ * \file test/internals/BG/bgq/commthreads/misc-util.h
  * \brief ???
  */
 
-#ifndef __test_BG_bgq_commthreads_misc_util_h__
-#define __test_BG_bgq_commthreads_misc_util_h__
+#ifndef __test_internals_BG_bgq_commthreads_misc_util_h__
+#define __test_internals_BG_bgq_commthreads_misc_util_h__
 
 #include <sys/pami.h>
 

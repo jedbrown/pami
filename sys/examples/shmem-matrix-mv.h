@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_shmem-matrix-mv.h
+ * \file sys/examples/shmem-matrix-mv.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_shmem-matrix-mv_h__
-#define __sys_examples_pami_shmem-matrix-mv_h__
+#ifndef __examples_shmem_matrix_mv_h__
+#define __examples_shmem_matrix_mv_h__
 
 /**
  * \example shmem-matrix-mv.c

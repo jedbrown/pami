@@ -2,8 +2,8 @@
  * \file sys/examples/init.h
  * \brief PAMI code examples
  */
-#ifndef __sys_examples_init_h__
-#define __sys_examples_init_h__
+#ifndef __examples_init_h__
+#define __examples_init_h__
 
 /**
  * \example init_coll.c
@@ -32,7 +32,7 @@
  * and a list of collectives that must be queried before use.  This example
  * focuses on the "always works" collectives.  In addition, this call returns
  * metadata for each collective.
- * 
+ *
  * \par
  * \skipline Docs01
  * \until    Docs02
@@ -96,7 +96,7 @@
  * and an algorithm to use.  In this case, we will just use the first algorithm
  * in the list.  The appliation cookie is set to a flag that will indicate
  * if the barrier is currently active or not.
- 
+
  * The _barrier call emulates a blocking barrier via a nonblocking barrier
  * by issuing the barrier and then calling advance until the barrier has
  * finished.  The \b PAMI_Collective() call is used to start the barrier,

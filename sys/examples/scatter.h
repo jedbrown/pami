@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_scatter.h
+ * \file sys/examples/scatter.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_scatter_h__
-#define __sys_examples_pami_scatter_h__
+#ifndef __examples_scatter_h__
+#define __examples_scatter_h__
 
 /**
  * \example scatter.c

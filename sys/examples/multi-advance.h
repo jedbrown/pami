@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_multi-advance.h
+ * \file sys/examples/multi-advance.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_multi-advance_h__
-#define __sys_examples_pami_multi-advance_h__
+#ifndef __examples_multi_advance_h__
+#define __examples_multi_advance_h__
 
 /**
  * \example multi-advance.c

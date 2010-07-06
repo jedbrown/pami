@@ -1,5 +1,5 @@
 ///
-/// \file test/context/advance.c
+/// \file test/api/context/advance.c
 /// \brief Simple PAMI_Context_advance() test
 ///
 

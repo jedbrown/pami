@@ -1,5 +1,5 @@
 ///
-/// \file test/context/post.c
+/// \file test/api/context/post.c
 /// \brief Simple PAMI_Context_post() test
 ///
 

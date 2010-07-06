@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multicast.cc
+ * \file test/api/extensions/multisend/multicast.cc
  * \brief Simple multicast tests.
  */
 

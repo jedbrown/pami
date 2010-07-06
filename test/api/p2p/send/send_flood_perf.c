@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/p2p/send/send_flood_perf.c
+ * \file test/api/p2p/send/send_flood_perf.c
  * \brief ???
  */
 #include <stdio.h>

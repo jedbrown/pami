@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_rdma-matrix.h
+ * \file sys/examples/rdma-matrix.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_rdma-matrix_h__
-#define __sys_examples_pami_rdma-matrix_h__
+#ifndef __examples_rdma_matrix_h__
+#define __examples_rdma_matrix_h__
 
 /**
  * \example rdma-matrix.c

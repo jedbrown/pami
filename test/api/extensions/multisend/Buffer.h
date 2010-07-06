@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/Buffer.h
+ * \file test/api/extensions/multisend/Buffer.h
  * \brief Multicast test buffer support class
  */
-#ifndef __test_multisend_Buffer_h__
-#define __test_multisend_Buffer_h__
+#ifndef __test_api_extensions_multisend_Buffer_h__
+#define __test_api_extensions_multisend_Buffer_h__
 
 #include <stdio.h>
 

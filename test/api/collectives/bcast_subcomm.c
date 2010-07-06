@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/bcast_subcomm.c
+ * \file test/api/collectives/bcast_subcomm.c
  * \brief ???
  */
 
@@ -32,7 +32,7 @@ int main(int argc, char*argv[])
   pami_task_t          task_id;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
-  
+
   /* Barrier variables */
   size_t               barrier_num_algorithm[2];
   pami_algorithm_t    *bar_always_works_algo;
@@ -42,7 +42,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   pami_xfer_t          barrier;
   volatile unsigned    bar_poll_flag=0;
-  
+
   /* Bcast variables */
   size_t               bcast_num_algorithm[2];
   pami_algorithm_t    *bcast_always_works_algo;
@@ -54,7 +54,7 @@ int main(int argc, char*argv[])
 
   double               ti, tf, usec;
   char                 buf[BUFSIZE];
-  
+
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -93,7 +93,7 @@ int main(int argc, char*argv[])
   if(rc==1)
     return 1;
 
-  
+
   /*  Create the subgeometry */
   pami_geometry_range_t *range;
   int                    rangecount;
@@ -116,14 +116,14 @@ int main(int argc, char*argv[])
   int                    id, root=0;
   size_t                 half        = num_tasks/2;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
-  
+
   char *method = getenv("BCAST_TEST_SPLIT_METHOD");
   if(!(method && !strcmp(method, "1")))
       {
         if (task_id>=0 && task_id<=half-1)
             {
               range[0].lo = 0;
-              range[0].hi = half-1;              
+              range[0].hi = half-1;
               set[0]   = 1;
               set[1]   = 0;
               id       = 1;
@@ -206,13 +206,13 @@ int main(int argc, char*argv[])
                       &q_newbcast_algo,
                       &q_newbcast_md);
   if(rc==1)
-    return 1;  
+    return 1;
 
   /*  Set up world barrier */
   barrier.cb_done   = cb_done;
   barrier.cookie    = (void*) &bar_poll_flag;
   barrier.algorithm = bar_always_works_algo[0];
-  
+
   /*  Set up sub geometry barrier */
   newbarrier.cb_done   = cb_done;
   newbarrier.cookie    = (void*) &bar_poll_flag;
@@ -241,8 +241,8 @@ int main(int argc, char*argv[])
       if (set[k])
         {
           fflush(stdout);
-          blocking_coll(context, &newbarrier,&bar_poll_flag);         
-          
+          blocking_coll(context, &newbarrier,&bar_poll_flag);
+
           for (i = 1; i <= BUFSIZE; i *= 2)
             {
               long long dataSent = i;

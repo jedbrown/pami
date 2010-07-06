@@ -1,5 +1,5 @@
 /**
- * \file test/time/tick.c
+ * \file test/api/time/tick.c
  * \brief Simple PAMI_Wtick() test before PAMI_Client_create()
  */
 

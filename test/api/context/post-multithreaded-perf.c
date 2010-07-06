@@ -1,5 +1,5 @@
 ///
-/// \file test/context/post-multithreaded-perf.c
+/// \file test/api/context/post-multithreaded-perf.c
 /// \brief Multithreaded PAMI_Context_post() performance test
 ///
 /// \todo There is a slight difference in the reported post times in the case

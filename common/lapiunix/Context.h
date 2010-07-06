@@ -116,8 +116,8 @@ namespace PAMI
         return (cp->*(cp->pSend))(simple->send.dest, simple->send.dispatch,
                 simple->send.header.iov_base, simple->send.header.iov_len,
                 simple->send.data.iov_base, simple->send.data.iov_len,
-                *(send_hint_t *)&simple->send.hints, 
-                simple->events.local_fn, simple->events.remote_fn, 
+                *(send_hint_t *)&simple->send.hints,
+                simple->events.local_fn, simple->events.remote_fn,
                 simple->events.cookie,
                 NULL, NULL, NULL, NULL, NULL, INTERFACE_PAMI);
       }
@@ -143,16 +143,16 @@ namespace PAMI
         return sw;
       }
   private:
-    lapi_state_t                          *_lapi_state;    
+    lapi_state_t                          *_lapi_state;
   };
 
   // Device Typedefs
   typedef Device::LAPIDevice                                          LAPIDevice;
-  
+
   // P2P Message Typedefs
   typedef PAMI::SendWrapper                                           LAPISendBase;
   typedef PAMI::Protocol::Send::SendPWQ < LAPISendBase >              LAPISend;
-  
+
   // Shared Memory P2P Typedefs
   typedef Fifo::FifoPacket <64, 1024>                                 ShmemPacket;
   typedef Fifo::LinearFifo<PAMI::Atomic::GccBuiltin, ShmemPacket,128> ShmemFifo;
@@ -410,7 +410,7 @@ namespace PAMI
                                                 __global.topology_local.size());
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 
-          
+
           return PAMI_SUCCESS;
         }
 
@@ -751,7 +751,7 @@ namespace PAMI
       /*  Memory Manager Pointer                                */
       Memory::MemoryManager                 *_mm;
 
-      /*  Protocol allocator                                    */      
+      /*  Protocol allocator                                    */
       ProtocolAllocator                      _protocol;
 
       /*  The over lapi devices                                 */
@@ -762,7 +762,7 @@ namespace PAMI
       //      CCMICollreg                           *_ccmi_collreg;
       PGASCollreg                           *_pgas_collreg;
       P2PCCMICollreg                        *_p2p_ccmi_collreg;
-      
+
       /*  World Geometry Pointer for this context               */
       LAPIGeometry                          *_world_geometry;
   private:

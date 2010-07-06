@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/default-send-mv.c
+/// \file test/api/p2p/default-send.c
 /// \brief Simple point-topoint PAMI_send() test
 ///
 

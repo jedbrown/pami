@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/BG/bgq/classroutes/classroute_test.h
+ * \file test/internals/BG/bgq/classroutes/classroute_test.h
  * \brief ???
  */
 
-#ifndef __test_BG_bgq_classroutes_classroute_test_h__
-#define __test_BG_bgq_classroutes_classroute_test_h__
+#ifndef __test_internals_BG_bgq_classroutes_classroute_test_h__
+#define __test_internals_BG_bgq_classroutes_classroute_test_h__
 
 #include <spi/include/kernel/process.h>
 

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multicast_local.cc
+ * \file test/api/extensions/multisend/multicast_local.cc
  * \brief Simple multicast tests on local topology.
  */
 

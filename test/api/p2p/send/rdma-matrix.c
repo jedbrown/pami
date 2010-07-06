@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/send/rdma-matrix.c
+/// \file test/api/p2p/send/rdma-matrix.c
 /// \Matrixed "rdma" point-to-point PAMI_send() test
 ///
 

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/bcast_subcomm2.c
+ * \file test/api/collectives/bcast_subcomm2.c
  * \brief ???
  */
 

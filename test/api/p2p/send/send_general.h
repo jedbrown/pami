@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/p2p/send/send_general.h
+ * \file test/api/p2p/send/send_general.h
  * \brief some generally-useful setups for send tests
  */
 
-#ifndef __test_p2p_send_send_general_h__
-#define __test_p2p_send_send_general_h__
+#ifndef __test_api_p2p_send_send_general_h__
+#define __test_api_p2p_send_send_general_h__
 
 #include <stdio.h>
 #include <stdlib.h>

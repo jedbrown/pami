@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_multi-create.h
+ * \file sys/examples/multi-create.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_multi-create_h__
-#define __sys_examples_pami_multi-create_h__
+#ifndef __examples_multi_create_h__
+#define __examples_multi_create_h__
 
 /**
  * \example multi-create.c

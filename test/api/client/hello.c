@@ -1,5 +1,5 @@
 ///
-/// \file test/client/hello.c
+/// \file test/api/client/hello.c
 /// \brief Simple hello after PAMI_Client_create()
 ///
 

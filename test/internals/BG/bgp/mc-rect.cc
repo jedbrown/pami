@@ -1,5 +1,5 @@
 ///
-/// \file test/BG/bgp/mc-rect.cc
+/// \file test/internals/BG/bgp/mc-rect.cc
 /// \brief Simple Bcast test
 ///
 

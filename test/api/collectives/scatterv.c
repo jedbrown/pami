@@ -1,5 +1,5 @@
 ///
-/// \file test/scatterv.c
+/// \file test/api/collectives/scatterv.c
 /// \brief Simple Allgatherv test
 ///
 
@@ -15,7 +15,7 @@ int main (int argc, char ** argv)
   pami_task_t          task_id;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
-  
+
   /* Barrier variables */
   size_t               barrier_num_algorithm[2];
   pami_algorithm_t    *bar_always_works_algo;
@@ -24,7 +24,7 @@ int main (int argc, char ** argv)
   pami_metadata_t     *bar_must_query_md;
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   volatile unsigned    bar_poll_flag=0;
-  
+
   /* Scatterv variables */
   size_t               scatterv_num_algorithm[2];
   pami_algorithm_t    *scatterv_always_works_algo;

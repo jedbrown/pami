@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-/// \file test/atomics/bgp/bgpcompilation.cc
+/// \file test/internals/atomics/bgp/bgpcompilation.cc
 /// \brief BG/P comilation test to ensure objects do not get broken accidentally
 ///
 /// This program should never be run!

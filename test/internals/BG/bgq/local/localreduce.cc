@@ -1,5 +1,5 @@
 /**
- * \file test/BG/bgq/local/localreduce.cc
+ * \file test/internals/BG/bgq/local/localreduce.cc
  * \brief ???
  */
 #include <stdio.h>

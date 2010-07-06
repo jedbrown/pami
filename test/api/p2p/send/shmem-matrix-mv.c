@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/send/shmem-matrix-mv.c
+/// \file test/api/p2p/send/shmem-matrix-mv.c
 /// \Matrixed "shmem" point-to-point PAMI_send() test
 ///
 

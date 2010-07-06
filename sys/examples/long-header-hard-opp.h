@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_long-header-hard-opp.h
+ * \file sys/examples/long-header-hard-opp.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_long-header-hard-opp_h__
-#define __sys_examples_pami_long-header-hard-opp_h__
+#ifndef __examples_long_header_hard_opp_h__
+#define __examples_long_header_hard_opp_h__
 
 /**
  * \example long-header-hard-opp.c

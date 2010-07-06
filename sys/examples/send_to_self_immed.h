@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_send_to_self_immed.h
+ * \file sys/examples/send_to_self_immed.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_send_to_self_immed_h__
-#define __sys_examples_pami_send_to_self_immed_h__
+#ifndef __examples_send_to_self_immed_h__
+#define __examples_send_to_self_immed_h__
 
 /**
  * \example send_to_self_immed.c

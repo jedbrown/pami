@@ -1,5 +1,5 @@
 ///
-/// \file test/context/multi-create.c
+/// \file test/api/context/multi-create.c
 /// \brief Simple PAMI_Context_createv() test for multiple contexts
 ///
 

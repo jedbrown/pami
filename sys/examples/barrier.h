@@ -1,9 +1,9 @@
 /**
- * \file sys/examples/pami_barrier.h
+ * \file sys/examples/barrier.h
  * \brief PAMI code examples
  */
-#ifndef __sys_barrier_pami_barrier_h__
-#define __sys_examples_pami_barrier_h__
+#ifndef __examples_barrier_h__
+#define __examples_barrier_h__
 
 /**
  * \example barrier.c

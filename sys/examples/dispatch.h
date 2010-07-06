@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_dispatch.h
+ * \file sys/examples/dispatch.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_dispatch_h__
-#define __sys_examples_pami_dispatch_h__
+#ifndef __examples_dispatch_h__
+#define __examples_dispatch_h__
 
 /**
  * \example dispatch.c

@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/send/long-header-hard-match.c
+/// \file test/api/p2p/send/long-header-hard-match.c
 /// \Matrixed "Long header" point-to-point PAMI_send() test
 ///
 ///   send hints       recv hints     header    exp

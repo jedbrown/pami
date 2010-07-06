@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_post.h
+ * \file sys/examples/post.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_post_h__
-#define __sys_examples_pami_post_h__
+#ifndef __examples_post_h__
+#define __examples_post_h__
 
 /**
  * \example post.c

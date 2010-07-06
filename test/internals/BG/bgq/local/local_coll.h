@@ -1,9 +1,9 @@
 /**
- * \file test/BG/bgq/local/local_coll.h
+ * \file test/internals/BG/bgq/local/local_coll.h
  * \brief ???
  */
-#ifndef __test_BG_bgq_local_local_coll_h__
-#define __test_BG_bgq_local_local_coll_h__
+#ifndef __test_internals_BG_bgq_local_local_coll_h__
+#define __test_internals_BG_bgq_local_local_coll_h__
 
 #include "spi/include/kernel/location.h"
 

@@ -1,5 +1,5 @@
 ///
-/// \file test/context/create.c
+/// \file test/api/context/create.c
 /// \brief Simple PAMI_Context_createv() test
 ///
 

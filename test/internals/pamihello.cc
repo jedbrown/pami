@@ -1,5 +1,5 @@
 /**
- * \file test/pamihello.cc
+ * \file test/internals/pamihello.cc
  * \brief ???
  */
 

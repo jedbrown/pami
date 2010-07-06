@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_hello.h
+ * \file sys/examples/hello.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_hello_h__
-#define __sys_examples_pami_hello_h__
+#ifndef __examples_hello_h__
+#define __examples_hello_h__
 
 /**
  * \example hello.c

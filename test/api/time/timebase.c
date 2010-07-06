@@ -1,5 +1,5 @@
 ///
-/// \file test/time/timebase.c
+/// \file test/api/time/timebase.c
 /// \brief Simple PAMI_Wtimebase() test before PAMI_Client_create()
 ///
 

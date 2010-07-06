@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/rput/simple_rput_func.c
+/// \file test/api/p2p/rput/simple_rput_func.c
 /// \brief Simple point-to-point PAMI_Rget() test
 ///
 /// This test implements a very simple "rendezvous" communication and

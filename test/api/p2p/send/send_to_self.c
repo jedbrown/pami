@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/send/send_to_self.c
+/// \file test/api/p2p/send/send_to_self.c
 /// \brief "send to self" point-to-point PAMI_Send() test
 ///
 

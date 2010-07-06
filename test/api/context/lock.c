@@ -1,5 +1,5 @@
 ///
-/// \file test/context/lock.c
+/// \file test/api/context/lock.c
 /// \brief Simple PAMI_Context_lock() test
 ///
 

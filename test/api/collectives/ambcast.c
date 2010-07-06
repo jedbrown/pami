@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/ambcast.c
+ * \file test/api/collectives/ambcast.c
  * \brief ???
  */
 
@@ -53,7 +53,7 @@ int main(int argc, char*argv[])
   pami_task_t          task_id;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
-  
+
   /* Barrier variables */
   size_t               barrier_num_algorithm[2];
   pami_algorithm_t    *bar_always_works_algo;
@@ -63,7 +63,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   pami_xfer_t          barrier;
   volatile unsigned    bar_poll_flag=0;
-  
+
   /* Ambcast variables */
   size_t               ambcast_num_algorithm[2];
   pami_algorithm_t    *ambcast_always_works_algo;
@@ -78,7 +78,7 @@ int main(int argc, char*argv[])
   double               ti, tf, usec;
   char                 buf[BUFSIZE];
   char                 rbuf[BUFSIZE];
-  
+
    /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -119,7 +119,7 @@ int main(int argc, char*argv[])
 
   _g_recv_buffer = rbuf;
 
-  
+
   barrier.cb_done     = cb_done;
   barrier.cookie      = (void*) &bar_poll_flag;
   barrier.algorithm   = bar_always_works_algo[0];

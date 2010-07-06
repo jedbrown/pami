@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_default-send-1.h
+ * \file sys/examples/default-send-1.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_default-send-1_h__
-#define __sys_examples_pami_default-send-1_h__
+#ifndef __examples_default_send_1_h__
+#define __examples_default_send_1_h__
 
 /**
  * \example default-send-1.c

@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_allgatherv.h
+ * \file sys/examples/allgatherv.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_allgatherv_h__
-#define __sys_examples_pami_allgatherv_h__
+#ifndef __examples_allgatherv_h__
+#define __examples_allgatherv_h__
 
 /**
  * \example allgatherv.c

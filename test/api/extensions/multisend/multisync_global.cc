@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multisync_global.cc
+ * \file test/api/extensions/multisend/multisync_global.cc
  * \brief Simple multisync tests.
  */
 

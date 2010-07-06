@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/BG/bgq/commthreads/misc-util.cc
+ * \file test/internals/BG/bgq/commthreads/misc-util.cc
  * \brief ???
  */
 

@@ -1,5 +1,5 @@
 ///
-/// \file test/bcast_advisor.c
+/// \file test/api/collectives/bcast_advisor.c
 /// \brief Simple Bcast test with advisor functionality
 ///
 

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/p2p/send/send_concurrency.h
+ * \file test/api/p2p/send/send_concurrency.h
  * \brief Common routines and items for concurrency tests
  */
 
-#ifndef __test_p2p_send_send_concurrency_h__
-#define __test_p2p_send_send_concurrency_h__
+#ifndef __test_api_p2p_send_send_concurrency_h__
+#define __test_api_p2p_send_send_concurrency_h__
 
 #include "send_general.h"
 

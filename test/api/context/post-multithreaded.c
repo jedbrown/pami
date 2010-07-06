@@ -1,5 +1,5 @@
 ///
-/// \file test/context/post-multithreaded.c
+/// \file test/api/context/post-multithreaded.c
 /// \brief Multithreaded PAMI_Context_post() test
 ///
 

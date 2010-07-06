@@ -1,5 +1,5 @@
 ///
-/// \file test/BG/bgq/commthreads/multi-context.c
+/// \file test/internals/BG/bgq/commthreads/multi-context.c
 /// \brief Simple test for basic commthread functionality
 ///
 

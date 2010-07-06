@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-/// \file test/atomics/compilation.h
+/// \file test/internals/atomics/compilation.h
 /// \brief Basic comilation helper macros
 ///
 
-#ifndef __test_atomics_compilation_h__
-#define __test_atomics_compilation_h__
+#ifndef __test_internals_atomics_compilation_h__
+#define __test_internals_atomics_compilation_h__
 
 #include <stdio.h>
 #include "util/common.h"

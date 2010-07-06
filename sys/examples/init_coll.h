@@ -1,9 +1,9 @@
 /**
- * \file sys/examples/init.h
+ * \file sys/examples/init_coll.h
  * \brief PAMI code examples
  */
-#ifndef __sys_examples_init_h__
-#define __sys_examples_init_h__
+#ifndef __examples_init_coll_h__
+#define __examples_init_coll_h__
 
 /**
  * \example init.c
@@ -70,7 +70,7 @@
  * number of contexts available to create.  This code queries for the max number
  * of contexts, the task id, and the total number of tasks in this client's
  * resource allocation.  The task id is the unique task number for this job
- * The task number can be used for geometry and endpoint creation.  
+ * The task number can be used for geometry and endpoint creation.
  *
  * \par
  * \skipline Docs03

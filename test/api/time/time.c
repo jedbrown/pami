@@ -1,5 +1,5 @@
 ///
-/// \file test/time/time.c
+/// \file test/api/time/time.c
 /// \brief Simple PAMI_Wtime() test before PAMI_Client_create()
 ///
 

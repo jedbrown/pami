@@ -1,5 +1,5 @@
 ///
-/// \file test/context/multi-advance.c
+/// \file test/api/context/multi-advance.c
 /// \brief Simple PAMI_Context_advance() multiple test
 ///
 

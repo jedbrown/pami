@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/multisend/multicombine_global.cc
+ * \file test/api/extensions/multisend/multicombine_global.cc
  * \brief Simple multicombine tests.
  */
 

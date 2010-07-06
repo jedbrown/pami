@@ -3,8 +3,8 @@
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_simple_send_immediate_h__
-#define __sys_examples_simple_send_immediate_h__
+#ifndef __examples_simple_send_immediate_h__
+#define __examples_simple_send_immediate_h__
 
 /**
  * \example simple-send-immediate.c

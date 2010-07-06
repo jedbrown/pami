@@ -1,5 +1,5 @@
 ///
-/// \file test/p2p/dispatch.c
+/// \file test/api/p2p/dispatch.c
 /// \brief Simple point-topoint PAMI_Dispatch_set() test
 ///
 

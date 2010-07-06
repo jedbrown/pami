@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/p2p/send/send_to_self_perf/send_to_self_perf.c
+ * \file test/api/p2p/send/send_to_self_perf/send_to_self_perf.c
  * \brief Test PAMI_Send(), sending via loopback to ourself.
  *
  * The test starts with message size 0, and increases it up to the

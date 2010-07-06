@@ -1,10 +1,10 @@
 /**
- * \file sys/examples/pami_post-multithreaded.h
+ * \file sys/examples/post-multithreaded.h
  * \brief PAMI code examples
  */
 
-#ifndef __sys_examples_pami_post-multithreaded_h__
-#define __sys_examples_pami_post-multithreaded_h__
+#ifndef __examples_post_multithreaded_h__
+#define __examples_post_multithreaded_h__
 
 /**
  * \example post-multithreaded.c

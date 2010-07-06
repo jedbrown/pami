@@ -1,5 +1,5 @@
 ///
-/// \file test/BG/bgq/commthreads/multi-proc.c
+/// \file test/internals/BG/bgq/commthreads/multi-proc.c
 /// \brief Simple test for basic commthread functionality using multiple processes per node
 ///
 
