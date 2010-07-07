@@ -42,7 +42,7 @@ typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 
 typedef PAMI::Protocol::Send::Eager<MuPacketModel, MuContext> MuEager;
 
-#define MAX_ITER 1000
+#define MAX_ITER 20
 int npackets = 0;
 
 void done_fn       (pami_context_t   context,
