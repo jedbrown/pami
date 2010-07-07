@@ -104,7 +104,7 @@ int main(int argc, char ** argv)
 //                 &progress); // "all generic devices"
 
   // Initialize the MU resources for all contexts for this client
-  __MUGlobal.getMuRM().initializeContexts( 0 /*id_client*/, 1 /*id_count*/ );
+  __MUGlobal.getMuRM().initializeContexts( 0 /*id_client*/, 1 /*id_count*/, NULL /* generic::Devices */ );
 
   MuContext mu (__global.mapping, 0, 0, 1);
   mu.init (0, NULL); // id_client, mu context "cookie" (usually pami_context_t)

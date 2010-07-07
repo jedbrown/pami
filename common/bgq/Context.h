@@ -16,6 +16,7 @@
 #include "components/devices/generic/Device.h"
 #include "components/devices/misc/ProgressFunctionMsg.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
+#include "components/devices/misc/AtomicMutexMsg.h"
 //#include "components/devices/workqueue/WQRingReduceMsg.h"
 //#include "components/devices/workqueue/WQRingBcastMsg.h"
 
@@ -89,7 +90,8 @@ namespace PAMI
       _localallreduce(NULL),
       _localbcast(NULL),
       _localreduce(NULL),
-      _mu(NULL)
+      _mu(NULL),
+      _atmmtx(NULL)
       { }
 
       /**
@@ -135,6 +137,8 @@ namespace PAMI
          TRACE_ERR((stderr,"device init: MU\n"));
         _mu = Device::MU::Factory::generate(clientid, num_ctx, mm, _generics);
         }
+        _atmmtx = PAMI::Device::AtomicMutexDev::Factory::generate(clientid, num_ctx, mm, _generics);
+	PAMI_assertf(_atmmtx == _generics, "AtomicMutexDev must be a NillSubDevice");
          TRACE_ERR((stderr,"device init: done!\n"));
         return PAMI_SUCCESS;
       }
@@ -173,6 +177,7 @@ namespace PAMI
         {
          Device::MU::Factory::init(_mu, clientid, contextid, clt, ctx, mm, _generics);
         }
+        PAMI::Device::AtomicMutexDev::Factory::init(_atmmtx, clientid, contextid, clt, ctx, mm, _generics);
         return PAMI_SUCCESS;
       }
 
@@ -203,6 +208,7 @@ namespace PAMI
         if(__global.useMU())
            events += Device::MU::Factory::advance(_mu, clientid, contextid);
         return events;
+        events += Device::AtomicMutexDev::Factory::advance(_atmmtx, clientid, contextid);
       }
 
       PAMI::Device::Generic::Device *_generics; // need better name...
@@ -215,6 +221,7 @@ namespace PAMI
       PAMI::Device::LocalBcastWQDevice *_localbcast;
       PAMI::Device::LocalReduceWQDevice *_localreduce;
       MUDevice *_mu;
+      PAMI::Device::AtomicMutexDev *_atmmtx;
   }; // class PlatformDeviceList
 
   class Context : public Interface::Context<PAMI::Context>

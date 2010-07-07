@@ -58,10 +58,11 @@ namespace PAMI
 	/////////////////////////////////////////////////////////////////////////
 	Global ( PAMI::ResourceManager &pamiRM,
 		 PAMI::Mapping         &mapping,
-		 PAMI::BgqPersonality  &pers ) :
+		 PAMI::BgqPersonality  &pers,
+		 PAMI::Memory::MemoryManager   &mm ) :
 	  _pamiRM( pamiRM ),
 	  _mapping( mapping ),
-	  _muRM( pamiRM, mapping, pers )
+	  _muRM( pamiRM, mapping, pers, mm )
 	{
 	} // End: Global Default Constructor
 	  

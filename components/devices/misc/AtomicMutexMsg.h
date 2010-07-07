@@ -52,6 +52,7 @@ namespace Device {
 
 template <class T_Mutex> class AtomicMutexMsg;
 template <class T_Mutex> class AtomicMutexMdl;
+template <class T_Mutex> class SharedAtomicMutexMdl;
 typedef PAMI::Device::Generic::GenericAdvanceThread AtomicMutexThr;
 typedef PAMI::Device::Generic::MultiSendQSubDevice<AtomicMutexThr,1,true> AtomicMutexQue;
 // This device is never instantiated
@@ -67,6 +68,7 @@ public:
 
 protected:
 	friend class AtomicMutexMdl<T_Mutex>;
+	friend class SharedAtomicMutexMdl<T_Mutex>;
 
 	AtomicMutexMsg(GenericDeviceMessageQueue *Generic_QS,
 		T_Mutex *mutex,
@@ -155,6 +157,33 @@ private:
 	AtomicMutexQue _queue;
 }; // class AtomicMutexMdl
 
+template <class T_Mutex>
+class SharedAtomicMutexMdl : public PAMI::Device::Interface::MultisyncModel<SharedAtomicMutexMdl<T_Mutex>,
+					    AtomicMutexDev,sizeof(AtomicMutexMsg<T_Mutex>) > {
+public:
+	static const size_t sizeof_msg = sizeof(AtomicMutexMsg<T_Mutex>);
+	static const unsigned LOCK_ROLE = AtomicMutexMdl<T_Mutex>::LOCK_ROLE;
+	static const unsigned UNLOCK_ROLE = AtomicMutexMdl<T_Mutex>::UNLOCK_ROLE;
+
+	SharedAtomicMutexMdl(AtomicMutexDev &device, T_Mutex *mtx, pami_result_t &status) :
+	  PAMI::Device::Interface::MultisyncModel<SharedAtomicMutexMdl<T_Mutex>,
+			AtomicMutexDev,sizeof(AtomicMutexMsg<T_Mutex>) >(device, status),
+	_gd(&device),
+	_mutex(mtx)
+	{
+		// mutex was initialized by caller, probably shared between many models.
+		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
+	}
+
+	inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
+					       pami_multisync_t *msync);
+
+private:
+	PAMI::Device::Generic::Device *_gd;
+	T_Mutex *_mutex;
+	AtomicMutexQue _queue;
+}; // class SharedAtomicMutexMdl
+
 }; //-- Device
 }; //-- PAMI
 
@@ -178,6 +207,31 @@ inline pami_result_t PAMI::Device::AtomicMutexMdl<T_Mutex>::postMultisync_impl(u
 	if (msync->roles == UNLOCK_ROLE) {
 		// in this case, unlock never blocks so don't need 'state'
 		_mutex.release();
+		return PAMI_SUCCESS;
+	}
+	return PAMI_ERROR;
+}
+
+template <class T_Mutex>
+inline pami_result_t PAMI::Device::SharedAtomicMutexMdl<T_Mutex>::postMultisync_impl(uint8_t (&state)[sizeof_msg],
+										 pami_multisync_t *msync) {
+	if (msync->roles == LOCK_ROLE) {
+		if (_mutex->tryAcquire()) {
+			if (msync->cb_done.function) {
+				pami_context_t ctx = _gd->getContext();
+				msync->cb_done.function(ctx, msync->cb_done.clientdata, PAMI_SUCCESS);
+			}
+			return PAMI_SUCCESS;
+		}
+		// must "continue" current mutex, not start new one!
+		AtomicMutexMsg<T_Mutex> *msg;
+		msg = new (&state) AtomicMutexMsg<T_Mutex>(_queue.getQS(), _mutex, msync);
+		_queue.__post<AtomicMutexMsg<T_Mutex> >(msg);
+		return PAMI_SUCCESS;
+	}
+	if (msync->roles == UNLOCK_ROLE) {
+		// in this case, unlock never blocks so don't need 'state'
+		_mutex->release();
 		return PAMI_SUCCESS;
 	}
 	return PAMI_ERROR;

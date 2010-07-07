@@ -49,7 +49,7 @@ namespace PAMI
                                                      PAMI::Device::Generic::Device * devices)
           {
 	    // Initialize the MU resources for all contexts for this client
-	    __MUGlobal.getMuRM().initializeContexts( id_client, id_count );
+	    __MUGlobal.getMuRM().initializeContexts( id_client, id_count, devices );
 
             // Allocate an array of mu contexts, one for each pami context
             // in this _task_ (from heap, not from shared memory)

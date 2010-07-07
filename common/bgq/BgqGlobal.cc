@@ -26,7 +26,7 @@ PAMI::Device::ProgressFunctionDev _g_progfunc_dev;
 PAMI::ResourceManager __pamiRM;
 
 #include "components/devices/bgq/mu2/global/Global.h"
-PAMI::Device::MU::Global __MUGlobal ( __pamiRM, __global.mapping, __global.personality );
+PAMI::Device::MU::Global __MUGlobal ( __pamiRM, __global.mapping, __global.personality, __global.mm );
 
 
 //

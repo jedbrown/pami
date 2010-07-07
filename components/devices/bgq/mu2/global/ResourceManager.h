@@ -44,6 +44,14 @@
 #include <common/bgq/ResourceManager.h>
 #include <common/bgq/BgqPersonality.h>
 #include <components/devices/bgq/mu2/InjGroup.h>
+#include <components/devices/generic/Device.h>
+
+#ifdef ENABLE_MU_CLASSROUTES
+#include "components/atomic/bgq/L2Mutex.h"
+#include "components/devices/misc/AtomicMutexMsg.h"
+typedef PAMI::Mutex::BGQ::L2NodeMutex MUCR_mutex_t;
+typedef PAMI::Device::SharedAtomicMutexMdl<MUCR_mutex_t> MUCR_mutex_model_t;
+#endif
 
 #ifdef TRACE
 #undef TRACE
@@ -168,7 +176,8 @@ namespace PAMI
 	/////////////////////////////////////////////////////////////////////////
 	ResourceManager ( PAMI::ResourceManager &pamiRM,
 			  PAMI::Mapping         &mapping,
-			  PAMI::BgqPersonality  &pers )  : 
+			  PAMI::BgqPersonality  &pers,
+			  PAMI::Memory::MemoryManager   &mm )  : 
 	  _pamiRM( pamiRM ),
 	  _mapping( mapping ),
 	  _pers( pers ),
@@ -192,17 +201,10 @@ namespace PAMI
 /* 	  initializeContexts(0,1); */
 /* 	  initializeContexts(1,2); */
 #ifdef ENABLE_MU_CLASSROUTES
-#warning Need to pass down MemoryManager from __global ctor...
 	  // This init code is performed ONCE per process and is shared by
 	  // all clients and their contexts...
-	  _cr_mtx.init(mm);
-
-	  // This non-blocking mutex may need to be initialized later/elsewhere,
-	  // since it requires a device object and the generic device.
-	  pami_result_t status = PAMI_ERROR;
-	AtomicMutexMdl<L2NodeMutex> _cr_mtx;
-	  new (&_cr_mtx) AtomicMutexMdl<L2NodeMutex>(device, status);
-	  PAMI_assertf(status == PAMI_SUCCESS, "Failed to construct non-blocking mutex");
+	  _cr_mtx.init(&mm);
+	  _cr_mtx_mdls = (MUCR_mutex_model_t *)malloc(_pamiRM.getNumClients() * sizeof(*_cr_mtx_mdls));
 
 	  // Note, we NEVER use BGQ_CLASS_INPUT_VC_USER. Only BGQ_CLASS_INPUT_VC_SUBCOMM.
 
@@ -345,7 +347,8 @@ namespace PAMI
 	  PAMI::Topology *topo;
 	  MUDevice *thus;
 	  pami_multisync_t msync;
-	  char mbuf[_cr_mtx.msg_size];
+	  MUCR_mutex_model_t *cr_mtx_mdl;
+	  char mbuf[MUCR_mutex_model_t::msg_size];
 	  pami_xfer_t xfer;
 	  uint64_t abuf[3];
 	  uint64_t bbuf[3];
@@ -379,6 +382,7 @@ namespace PAMI
 	  cr_cookie *cookie = malloc(sizeof(cr_cookie)); // how to alloc?
 	  cookie->topo = topo;
 	  cookie->thus = this;
+	  cookie->cr_mtx_mdl = &_cr_mtx_mdls[clientid][contextid];
 	  cookie->msync.client = clientid;
 	  cookie->msync.context = contextid;
 	  cookie->geom = geom;
@@ -438,8 +442,8 @@ namespace PAMI
 	  }
 	  cr_cookie *crck = (cr_cookie *)cookie;
 	  crck->msync.cb_done = { got_mutex, crck };
-	  crck->msync.roles = _cr_mtx.LOCK_ROLE;
-	  rc = _cr_mtx.postMultisync(crck->mbuf, &crck->msync);
+	  crck->msync.roles = MUCR_mutex_model_t::LOCK_ROLE;
+	  rc = crck->cr_mtx_mdl->postMultisync(crck->mbuf, &crck->msync);
 	  if (rc != PAMI_SUCCESS)
 	  {
 	    // this frees 'cookie' if needed...
@@ -582,8 +586,8 @@ namespace PAMI
 	{
 	  cr_cookie *crck = (cr_cookie *)cookie;
 	  crck->msync.cb_done = { NULL, NULL };
-	  crck->msync.roles = _cr_mtx.UNLOCK_ROLE;
-	  rc = _cr_mtx.postMultisync(crck->mbuf, &crck->msync);
+	  crck->msync.roles = MUCR_mutex_model_t::UNLOCK_ROLE;
+	  rc = crck->cr_mtx_mdl->postMultisync(crck->mbuf, &crck->msync);
 	  // no such thing as failure... nore is there any delay...
 	  // mutex is now unlocked, so we are "done" in every way that matters.
 	}
@@ -624,7 +628,8 @@ namespace PAMI
 	inline size_t mapClientIdToRmClientId ( size_t clientId );
 
 	inline void initializeContexts( size_t rmClientId,
-				 size_t numContexts );
+				 size_t numContexts,
+                                 PAMI::Device::Generic::Device * devices );
 
 	inline void getNumFifosPerContext( size_t  rmClientId,
 				    size_t *numInjFifos,
@@ -737,7 +742,8 @@ namespace PAMI
 	PAMI::Mapping         &_mapping;
 	PAMI::BgqPersonality  &_pers;
 #ifdef ENABLE_MU_CLASSROUTES
-	L2NodeMutex _cr_mtx;
+	MUCR_mutex_t _cr_mtx; // each context has MUCR_mutex_model_t pointing to this
+	MUCR_mutex_model_t *_cr_mtx_mdls;
 	CR_RECT_T _refcomm;
 	CR_COORD_T _refroot;
 	int _pri_dim;
@@ -2218,7 +2224,8 @@ TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadMem
 
 
 void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
-							    size_t numContexts )
+							    size_t numContexts,
+                                                            PAMI::Device::Generic::Device * devices )
 {
   size_t i;
 
@@ -2328,6 +2335,16 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 	    }
 	}
     }
+#ifdef ENABLE_MU_CLASSROUTES
+    _cr_mtx_mdls[rmClientId] = malloc(numContexts * sizeof(*_cr_mtx_mdls[rmClientId]));
+    for (i = 0; i < numContexts; i++)
+    {
+	  pami_result_t status = PAMI_ERROR;
+	  AtomicMutexDev *device = PAMI::Device::AtomicMutexDev::Factory::getDevice(devices, rmClientId, i);
+	  new (&_cr_mtx_mdls[rmClientId][i]) MUCR_mutex_model_t(device, &_cr_mtx, status);
+	  PAMI_assertf(status == PAMI_SUCCESS, "Failed to construct non-blocking mutex client %d context %d", rmClientId, i);
+    }
+#endif
 
 } // End: initializeContexts()
 
