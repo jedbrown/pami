@@ -303,6 +303,7 @@ namespace PAMI
       {
         TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
 
+        PAMI::Context *ctxt = (PAMI::Context *)context;
         if(geometry != NULL)
         {
 #ifdef ENABLE_MU_CLASSROUTES
@@ -311,6 +312,7 @@ namespace PAMI
                                     id,
                                     slice_count,
                                     rank_slices);
+	  PAMI::Topology *topo = (PAMI::Topology *)gp->getTopology(0);
 	  // This still doesn't handle cases where the global "part" of
 	  // a VN-mode geometry can be represented by a rectangle or comm-world:
 	  // (yuk)
@@ -329,10 +331,10 @@ namespace PAMI
 	  }
 	  // did the geometry ctor convert the Topology to rectangle?
 	  // we need it to do that...
-	  else if (gp->getTopology(0)->type() == PAMI_COORD_TOPOLOGY)
+	  else if (topo->type() == PAMI_COORD_TOPOLOGY)
 	  {
-	    __MUGlobal._muRM.geomOptimize(gp, _clientid, ctxt->getId(), ctxt,
-	                                          id, gp->getTopology(0));
+	    __MUGlobal.getMuRM().geomOptimize(gp, _clientid, ctxt->getId(), ctxt,
+	                                          id, topo);
 	  }
 #else
           new(geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
@@ -348,7 +350,6 @@ namespace PAMI
               /// \todo  deliver completion to the appropriate context
         }
         BGQGeometry *bargeom = (BGQGeometry*)parent;
-        PAMI::Context *ctxt = (PAMI::Context *)context;
         bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
         return PAMI_SUCCESS;
       }

@@ -30,6 +30,8 @@
 
 #endif // __FWEXT__
 
+#undef ENABLE_MU_CLASSROUTES
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "Mapping.h"

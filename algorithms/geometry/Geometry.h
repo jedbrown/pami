@@ -31,6 +31,8 @@
 #define PAMI_GEOMETRY_NUMALGOLISTS 64
 #endif
 
+typedef PAMI::Counter::GccProcCounter GeomCompCtr;
+
 namespace PAMI
 {
   namespace Geometry
@@ -131,6 +133,64 @@ namespace PAMI
           if (!PAMI_ISEVEN(_topos[0].size()))
             pami_ca_set(&_attributes, PAMI_GEOMETRY_ODD);
 
+        }
+ 
+       /// \brief Convenience callback used by geometry completion sub-events
+       ///
+       /// Each sub-event must invoke this when finished, and the final (user) completion
+       /// will be invoked once all have checked in.
+       ///
+       /// \param[in] ctx       The context on which competion is ocurring
+       /// \param[in] cookie    The geometry object
+       /// \param[in] result    Status of this completion (error or success)
+       ///
+       static void _done_cb(pami_context_t ctx, void *cookie, pami_result_t result)
+        {
+                PAMI::Geometry::Common *thus = (PAMI::Geometry::Common *)cookie;
+                thus->rmCompletion(ctx, result);
+        }
+
+       /// \brief Setup completion for geometry create
+       ///
+       /// Note: this is valid for both the parent and (new) sub-geometry,
+       /// during the create. If any of the geometry event items returns an
+       /// error, this callback will be invoked with that error (last error seen).
+       ///
+       /// \param[in] fn                The completion function to call
+       /// \param[in] cookie    Opaque user data for callback
+       ///
+       inline void setCompletion(pami_event_function fn, void *cookie)
+        {
+                _cb_done = (pami_callback_t){fn, cookie};
+                _cb_result = PAMI_SUCCESS;
+        }
+ 
+       /// \brief Add one completion event to geometry
+       ///
+       /// This is called each time some work has been started on which
+       /// geometry create completion depends (must wait).
+       ///
+       inline void addCompletion()
+        {
+                _comp.fetch_and_inc();
+        }
+ 
+       /// \brief Remove one completion event (cancel or "done")
+       ///
+       /// Note: this is valid for both the parent and (new) sub-geometry,
+       /// during the create.
+       ///
+       /// \param[in] ctx       The context on which competion is ocurring
+       /// \param[in] result    Status of this completion (error or success)
+       ///
+       inline void rmCompletion(pami_context_t ctx, pami_result_t result)
+        {
+                if (result != PAMI_SUCCESS) _cb_result = result;
+                if (_comp.fetch_and_dec() == 0) {
+                        if (_cb_done.function) {
+                                _cb_done.function(ctx, _cb_done.clientdata, _cb_result);
+                        }
+                }
         }
 
       inline pami_topology_t* getTopology_impl(int topo_num)
@@ -549,6 +609,9 @@ namespace PAMI
       int                                          _mytopo;
       pami_task_t                                   _virtual_rank;
       pami_ca_t                                     _attributes;
+      pami_callback_t _cb_done;
+      pami_result_t _cb_result;
+      GeomCompCtr _comp;
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace PAMI

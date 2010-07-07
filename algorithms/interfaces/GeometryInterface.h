@@ -19,6 +19,7 @@
 #include "util/queue/MatchQueue.h"
 #include "Mapping.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
+#include "GeometryPlatform.h"
 
 #define CCMI_EXECUTOR_TYPE void*
 #define COMPOSITE_TYPE void*
@@ -36,7 +37,8 @@ namespace PAMI
       PAMI_GKEY_BARRIERCOMPOSITE0,     // ?
       PAMI_GKEY_BARRIERCOMPOSITE1,     // ?
       PAMI_GKEY_LOCALBARRIERCOMPOSITE, // local sub-topologies only in the geometry
-      PAMI_GKEY_GLOBALBARRIERCOMPOSITE // global sub-topologes only in the geometry
+      PAMI_GKEY_GLOBALBARRIERCOMPOSITE, // global sub-topologes only in the geometry
+      PAMI_GKEY_PLATEXTENSIONS
     }keys_t;
 
     template <class T_Geometry>
