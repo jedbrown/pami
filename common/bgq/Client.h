@@ -315,37 +315,13 @@ namespace PAMI
                                     id,
                                     slice_count,
                                     rank_slices);
-	  PAMI::Topology *topo = (PAMI::Topology *)gp->getTopology(0);
 	  bargeom->addCompletion(); // for sub-geometry completion (if any)
 	  gp->setCompletion(bargeom->_done_cb, (void *)bargeom);
 	  gp->addCompletion();        // ensure completion doesn't happen until
 			              // all have been analyzed.
-	  // This still doesn't handle cases where the global "part" of
-	  // a VN-mode geometry can be represented by a rectangle, or comm-world
-	  // with a -np. Maybe need:
-	  // (yuk)
-	  //    gp->getTopology(0)->subTopologyNthGlobal(&topo, 0);
-	  //    if (topo.size() == ???) setKey(0)
-	  //    else {
-	  //        topo.convertTopology(COORD);
-	  //        if (topo.type() == COORD) {
-	  //            geomOptimize(...);
-	  //        }
-	  //    }
 	  // Should this all just be done after analyze?? That avoids the
 	  // the problem where allreduce doesn't exist yet.
-	  if (gp->nranks() == __global.topology_global.size())
-	  {
-	    gp->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, (void *)(0 + 1));
-	  }
-	  // did the geometry ctor convert the Topology to rectangle?
-	  // we need it to do that...
-	  // other flags (env vars, etc) might be used to also decide optimize
-	  else if (topo->type() == PAMI_COORD_TOPOLOGY)
-	  {
-	    __MUGlobal.getMuRM().geomOptimize(gp, _clientid, ctxt->getId(), ctxt,
-	                                          id, topo);
-	  }
+	  __MUGlobal.getMuRM().geomOptimize(gp, _clientid, ctxt->getId(), ctxt);
           for (size_t n = 0; n < _ncontexts; n++)
           {
             _contexts[n].analyze(n, (BGQGeometry *)geometry);
@@ -392,8 +368,13 @@ namespace PAMI
 
       inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
       {
+#ifdef ENABLE_MU_CLASSROUTES
+        BGQGeometry *gp = (BGQGeometry *)geometry;
+	return __MUGlobal.getMuRM().geomDeoptimize(gp);
+#else
         PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
         return PAMI_UNIMPL;
+#endif
       }
 
     protected:

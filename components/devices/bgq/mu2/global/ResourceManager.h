@@ -370,16 +370,45 @@ namespace PAMI
 	// for a given geometry, during create. Once for each potential algorithm.
 	// but the answer we get is valid for all algorithms, so don't keep trying.
 	inline pami_result_t geomOptimize(PAMI::Geometry::Common *geom,
-	    size_t clientid, size_t contextid, pami_context_t context,
-	    unsigned geom_id, PAMI::Topology *topo)
+	    size_t clientid, size_t contextid, pami_context_t context)
 	{
 	  // need some way to reset this so that we can optimize
 	  // after having previously said "de-optimize"...
+	  // See geomReoptimize(...) under #if 0
 	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
 	  if (val)
 	  {
 	    return PAMI_SUCCESS;
 	  }
+
+	  // check for comm-world and just use well-known classroute id "0"...
+	  // This still doesn't handle cases where the global "part" of
+	  // a VN-mode geometry can be represented by a rectangle, or comm-world
+	  // with a -np. Maybe need:
+	  // (yuk)
+	  //    geom->getTopology(0)->subTopologyNthGlobal(&topo, 0);
+	  //    if (topo.size() == num_global_nodes) {
+	  //        setKey(0);
+	  //        return;
+	  //    }
+	  //    topo.convertTopology(COORD);
+	  //    if (topo.type() != COORD) {
+	  //        return ... // can't optimize
+	  //    }
+	  if (geom->nranks() == __global.topology_global.size())
+	  {
+	    geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, (void *)(0 + 1));
+	    return PAMI_SUCCESS;
+	  }
+	  PAMI::Topology *topo = (PAMI::Topology *)geom->getTopology(0);
+	  // for now, just bail-out if not a rectangle...
+	  // we could try to convert to rectangle, etc.
+	  if (topo->type() != PAMI_COORD_TOPOLOGY)
+	  {
+	    return PAMI_SUCCESS; // not really failure, just can't/won't do it.
+	  }
+	  unsigned geom_id = geom->comm();
+
 	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, CR_GKEY_FAIL);
 
 	  // must handle "comm world" here, which might not be a rectangle...
@@ -411,14 +440,13 @@ namespace PAMI
 
 	// a.k.a. Geometry_destroy... this happens to be immediate and local...
 	// but, do we need the MU Coll device mutex? (_cr_mtx)
-	inline pami_result_t geomDeoptimize(PAMI::Geometry::Common *geom,
-	    size_t clientid, size_t contextid, pami_context_t context,
-	    unsigned geom_id, PAMI::Topology *topo)
+	inline pami_result_t geomDeoptimize(PAMI::Geometry::Common *geom)
 	{
 	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
 	  if (val && val != CR_GKEY_FAIL)
 	  {
 	    CR_RECT_T rect;
+	    PAMI::Topology *topo = (PAMI::Topology *)geom->getTopology(0);
 	    topo->rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
 	    int id = (int)((uintptr_t)val & 0xffffffff) - 1;
 	    int last = MUSPI_ReleaseClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
@@ -430,13 +458,30 @@ namespace PAMI
 	      // it is probably OK to leave the old one around,
 	      // else need to be sure what value we can set it to
 	      // and not have CNK think it is "free"...
-	          // rc = Kernel_SetCollectiveClassRoute(id, &cr);
+	      // cr = (some bit pattern);
+	      // rc = Kernel_SetCollectiveClassRoute(id, &cr);
+	      // for now, this code will just overwrite the bits next
+	      // time this id gets used.
 	    }
 	  }
 	  // never attempt to optimize this geometry for classroutes...
 	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, CR_GKEY_FAIL);
 	  return PAMI_SUCCESS;
 	}
+
+#if 0
+	inline pami_result_t geomReoptimize(PAMI::Geometry::Common *geom,
+	    size_t clientid, size_t contextid, pami_context_t context)
+	{
+	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
+	  if (val && val != CR_GKEY_FAIL)
+	  {
+	    return PAMI_SUCCESS; // already optimized
+	  }
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, 0); // same as nonexistent
+	  return geomOptimize(geom, clientid, contextid, context);
+	}
+#endif
 
 	static void start_over(pami_context_t ctx, void *cookie, pami_result_t result)
 	{
