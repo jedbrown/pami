@@ -42,7 +42,7 @@ typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 
 typedef PAMI::Protocol::Send::Eager<MuPacketModel, MuContext> MuEager;
 
-#define MAX_ITER 10
+#define MAX_ITER 1000
 int npackets = 0;
 
 void done_fn       (pami_context_t   context,
@@ -59,7 +59,7 @@ int dispatch_fn    (void   * metadata,
                     void   * recv_func_parm,
                     void   * cookie)
 {
-  fprintf(stderr, "Received packet: recv_func_parm = %zu (%p), MAX_ITER = %d, npackets = %d -> %d\n", (size_t) recv_func_parm, recv_func_parm, MAX_ITER, npackets, npackets+1);
+  //fprintf(stderr, "Received packet: recv_func_parm = %zu (%p), MAX_ITER = %d, npackets = %d -> %d\n", (size_t) recv_func_parm, recv_func_parm, MAX_ITER, npackets, npackets+1);
   npackets ++;
   return 0;
 }
@@ -85,7 +85,7 @@ void recv (
 // PAMI::Device::MU::Global __MUGlobal ( __pamiRM, __myGlobal.mapping, __myGlobal.personality );
 
 template <typename T_Model, typename T_Protocol>
-void test (MuContext & mu0, MuContext & mu1, T_Model & model, T_Protocol & protocol, const char * label = "")
+void test (MuContext & mu0, T_Model & model, T_Protocol & protocol, const char * label = "")
 {
   char metadata[4];
   char buf[MAX_BUF_SIZE];
@@ -111,17 +111,16 @@ void test (MuContext & mu0, MuContext & mu1, T_Model & model, T_Protocol & proto
         start = GetTimeBase();
 
       model.postPacket (__global.mapping.task(),
-                        1,
+                        0,
                         (void *)metadata,
                         4,
                         iov);
-    }
 
-  while (npackets != MAX_ITER+1)
-  {
-    mu0.advance();
-    mu1.advance();
-  }
+      while (npackets == 0) {
+	mu0.advance();
+      }
+      npackets = 0;
+    }
 
   end = GetTimeBase();
 
@@ -145,21 +144,18 @@ void test (MuContext & mu0, MuContext & mu1, T_Model & model, T_Protocol & proto
                         done_fn,
                         (void *)&active,
                         __global.mapping.task(),
-                        1,
+                        0,
                         (void *)metadata,
                         4,
                         iov);
+      while (npackets == 0) {
+	mu0.advance();
+      }
+      npackets = 0;
     }
-
-
-  while (npackets != MAX_ITER+1)
-  {
-    mu0.advance();
-    mu1.advance();
-  }
-
+  
   end = GetTimeBase();
-
+  
   printf ("[%s] nonblocking pingpong time = %d cycles\n", label, (int)((end - start) / MAX_ITER));
 
   // -------------------------------------------------------------------
@@ -202,11 +198,8 @@ int main(int argc, char ** argv)
   MuContext mu0 (__global.mapping, 0, 0, 2);
   mu0.init (0, NULL); // id_client, mu context "cookie" (usually pami_context_t)
 
-  MuContext mu1 (__global.mapping, 0, 1, 2);
-  mu1.init (0, NULL); // id_client, mu context "cookie" (usually pami_context_t)
-
   fprintf (stderr, "After mu init\n");
-
+  
 //  uint8_t model00_buf[sizeof(PAMI::Device::MU::PacketModelMemoryFifoCompletion)] __attribute__((__aligned__(32)));
 //  PAMI::Device::MU::PacketModelMemoryFifoCompletion &model00 = *(new (model00_buf) PAMI::Device::MU::PacketModelMemoryFifoCompletion(mu0));
 
@@ -215,9 +208,9 @@ int main(int argc, char ** argv)
 
   uint8_t model10_buf[sizeof(PAMI::Device::MU::PacketModel)] __attribute__((__aligned__(32)));
   PAMI::Device::MU::PacketModel &model10 = *(new (model10_buf) PAMI::Device::MU::PacketModel(mu0));
-
+  
   uint8_t model11_buf[sizeof(PAMI::Device::MU::PacketModel)] __attribute__((__aligned__(32)));
-  PAMI::Device::MU::PacketModel &model11 = *(new (model11_buf) PAMI::Device::MU::PacketModel(mu1));
+  PAMI::Device::MU::PacketModel &model11 = *(new (model11_buf) PAMI::Device::MU::PacketModel(mu0));
 
   fprintf (stderr, "After model constructors\n");
 
@@ -245,8 +238,7 @@ int main(int argc, char ** argv)
   fprintf (stderr, "After eager constructor\n");
 
 
-//  test (mu0, mu1, model00, eager, "memory fifo completion");
-  test (mu0, mu1, model10, eager, "completion array");
+  test (mu0, model10, eager, "completion array");
 
   return 0;
 }

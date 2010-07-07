@@ -290,11 +290,10 @@ namespace PAMI
                                         hintsE);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
+        bool isfree = channel.hasFreeSpaceWithUpdate ();
 
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
-
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
-          {
+        if (likely(channel.isSendQueueEmpty() && isfree))
+	  {
             // There is at least one descriptor slot available in the injection
             // fifo before a fifo-wrap event.
 

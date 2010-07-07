@@ -274,6 +274,25 @@ namespace PAMI
 
           static const size_t completion_event_state_bytes = sizeof(CompletionEvent);
 
+	  ///
+	  /// \brief Returns if we have a single slot available in FIFO
+	  ///
+	  inline bool  hasFreeSpace() {
+	    return (MUSPI_getFreeSpaceFromShadow (_ififo) != 0);
+	  }
+
+	  /// \brief Returns if we have a single slot available in
+	  /// FIFO. If no space is available MU SRAM is read
+	  ///
+	  inline bool  hasFreeSpaceWithUpdate() {
+	    uint64_t freespace =  MUSPI_getFreeSpaceFromShadow (_ififo);
+	    
+	    if (freespace == 0) 
+	      freespace = _ififo->freeSpace = MUSPI_getHwFreeSpace (_ififo);
+	    
+	    return (freespace != 0);	    
+	  }
+
           /// \brief The number of contiguous free descriptors after the tail of the injection fifo
           ///
           /// Reads the shadow value and, if zero, updates from the hardware
