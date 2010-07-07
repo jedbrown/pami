@@ -303,18 +303,26 @@ namespace PAMI
       {
         TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
 
-        PAMI::Context *ctxt = (PAMI::Context *)context;
-        if(geometry != NULL)
-        {
 #ifdef ENABLE_MU_CLASSROUTES
+        PAMI::Context *ctxt = (PAMI::Context *)context;
+        BGQGeometry *bargeom = (BGQGeometry *)parent;
+	bargeom->setCompletion(fn, cookie);
+	bargeom->addCompletion(); // for subsequent barrier...
+        if (geometry != NULL)
+        {
           BGQGeometry *gp = new(geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
                                     &__global.mapping,
                                     id,
                                     slice_count,
                                     rank_slices);
 	  PAMI::Topology *topo = (PAMI::Topology *)gp->getTopology(0);
+	  bargeom->addCompletion(); // for sub-geometry completion (if any)
+	  gp->setCompletion(bargeom->_done_cb, (void *)bargeom);
+	  gp->addCompletion();        // ensure completion doesn't happen until
+			              // all have been analyzed.
 	  // This still doesn't handle cases where the global "part" of
-	  // a VN-mode geometry can be represented by a rectangle or comm-world:
+	  // a VN-mode geometry can be represented by a rectangle, or comm-world
+	  // with a -np. Maybe need:
 	  // (yuk)
 	  //    gp->getTopology(0)->subTopologyNthGlobal(&topo, 0);
 	  //    if (topo.size() == ???) setKey(0)
@@ -324,25 +332,36 @@ namespace PAMI
 	  //            geomOptimize(...);
 	  //        }
 	  //    }
-	  //
+	  // Should this all just be done after analyze?? That avoids the
+	  // the problem where allreduce doesn't exist yet.
 	  if (gp->nranks() == __global.topology_global.size())
 	  {
 	    gp->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, (void *)(0 + 1));
 	  }
 	  // did the geometry ctor convert the Topology to rectangle?
 	  // we need it to do that...
+	  // other flags (env vars, etc) might be used to also decide optimize
 	  else if (topo->type() == PAMI_COORD_TOPOLOGY)
 	  {
 	    __MUGlobal.getMuRM().geomOptimize(gp, _clientid, ctxt->getId(), ctxt,
 	                                          id, topo);
 	  }
+          for (size_t n = 0; n < _ncontexts; n++)
+          {
+            _contexts[n].analyze(n, (BGQGeometry *)geometry);
+          }
+          /// \todo  deliver completion to the appropriate context
+	  gp->rmCompletion(context, PAMI_SUCCESS); // this might complete now...
+        }
+        bargeom->default_barrier(bargeom->_done_cb, (void *)bargeom, ctxt->getId(), context);
 #else
+        if(geometry != NULL)
+        {
           new(geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
                                     &__global.mapping,
                                     id,
                                     slice_count,
                                             rank_slices);
-#endif
           for(size_t n=0; n<_ncontexts; n++)
           {
             _contexts[n].analyze(n,(BGQGeometry*)geometry);
@@ -350,7 +369,9 @@ namespace PAMI
               /// \todo  deliver completion to the appropriate context
         }
         BGQGeometry *bargeom = (BGQGeometry*)parent;
+        PAMI::Context *ctxt = (PAMI::Context *)context;
         bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+#endif
         return PAMI_SUCCESS;
       }
 
