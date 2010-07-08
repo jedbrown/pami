@@ -53,7 +53,7 @@ namespace PAMI
 	// This must return immediately (must not enqueue non-blocking ops).
 	// Passing a NULL context should ensure that.
 	__MUGlobal.getMuRM().geomOptimize(_world_geometry, _clientid, 0, NULL);
-	// Now, subsequent 'analize' done on this geom will know that MU Coll is avail.
+	// Now, subsequent 'analyze' done on this geom will know that MU Coll is avail.
 #endif
 
         result = PAMI_SUCCESS;

@@ -363,6 +363,36 @@ namespace PAMI
                            (void*)_shmem_barrier_composite);
 
 
+#ifdef ENABLE_MU_CLASSROUTES
+	  // might need to delay this check until after the geometry "completes"...
+	  void *val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
+	  if (val && val != PAMI_CR_GKEY_FAIL) {
+            _mu_barrier_composite = _mu_msync_factory.generate(geometry, &xfer);
+
+            geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
+                             (void*)_mu_barrier_composite);
+            // Add Barriers
+            geometry->addCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
+
+            // Add Broadcasts
+            geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory,_context_id);
+            geometry->addCollective(PAMI_XFER_BROADCAST, &_mu_mcast3_factory,_context_id);
+
+            // Add Allreduces
+            geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
+	  } else if (!val) {
+	    // nothing is known, yet. hook in to completion and try later...
+	    /// \todo #warning Need to hook-in to geometry completion
+	    // An alternative is to always add the MU Coll protocols, but make
+	    // them "optional" and when the user queries to see if it is usable,
+	    // check the geometry for a classroute then. We could even separate
+	    // the optimize from the create, such that the user has to call
+	    // optimize after the create completes. But then we still need
+	    // to make the protocols "optional" or have a separate analyze phase
+	    // as part of the optimize.
+	  }
+#else
+/// \todo #warning This check for "world" is not valid
           /// \todo Since isGlobal() isn't implemented, do something myself...
           /// Get a Nth global topology based on my local dim and if it's the same
           /// size as the geometry topology, then the geometry topology must be "global".
@@ -388,6 +418,7 @@ namespace PAMI
             // Add Allreduces
             geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
           }
+#endif
         }
 
         return PAMI_SUCCESS;
