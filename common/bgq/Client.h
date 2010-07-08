@@ -49,6 +49,12 @@ namespace PAMI
         _world_range.lo=0;
         _world_range.hi=__global.mapping.size()-1;
         new(_world_geometry_storage) BGQGeometry(NULL, &__global.mapping,0, 1,&_world_range);
+#ifdef ENABLE_MU_CLASSROUTES
+	// This must return immediately (must not enqueue non-blocking ops).
+	// Passing a NULL context should ensure that.
+	__MUGlobal.getMuRM().geomOptimize(_world_geometry, _clientid, 0, NULL);
+	// Now, subsequent 'analize' done on this geom will know that MU Coll is avail.
+#endif
 
         result = PAMI_SUCCESS;
       }

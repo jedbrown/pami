@@ -206,6 +206,8 @@ namespace PAMI
 #ifdef ENABLE_MU_CLASSROUTES
 	  // This init code is performed ONCE per process and is shared by
 	  // all clients and their contexts...
+	  __global.topology_global.subTopologyNthGlobal(&_node_topo, 0);
+
 	  _cr_mtx.init(&mm);
 	  _cr_mtx_mdls = (MUCR_mutex_model_t **)malloc(_pamiRM.getNumClients() * sizeof(*_cr_mtx_mdls));
 
@@ -351,7 +353,7 @@ namespace PAMI
 	  ResourceManager *thus;
 	  PAMI::Geometry::Common *geom;
 	  unsigned geom_id;
-	  PAMI::Topology *topo;
+	  PAMI::Topology topo;
 	  pami_multisync_t msync;
 	  MUCR_mutex_model_t *cr_mtx_mdl;
 	  uint8_t mbuf[MUCR_mutex_model_t::sizeof_msg];
@@ -360,7 +362,6 @@ namespace PAMI
 	  uint64_t bbuf[3];
 	  pami_work_t post;
 	};
-	#define CR_GKEY_FAIL ((void *)0xdeadbeef) // or 0xbadc0ffee0ddf00d...
 
 	// this code should be very similar to classroute_test.c,
 	// however, this must be non-blocking code so we have to
@@ -382,42 +383,46 @@ namespace PAMI
 	  }
 
 	  // check for comm-world and just use well-known classroute id "0"...
-	  // This still doesn't handle cases where the global "part" of
-	  // a VN-mode geometry can be represented by a rectangle, or comm-world
-	  // with a -np. Maybe need:
-	  // (yuk)
-	  //    geom->getTopology(0)->subTopologyNthGlobal(&topo, 0);
-	  //    if (topo.size() == num_global_nodes) {
-	  //        setKey(0);
-	  //        return;
-	  //    }
-	  //    topo.convertTopology(COORD);
-	  //    if (topo.type() != COORD) {
-	  //        return ... // can't optimize
-	  //    }
+
+	  // simple check - works for all numbers of processes-per-node
 	  if (geom->nranks() == __global.topology_global.size())
 	  {
 	    geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, (void *)(0 + 1));
 	    return PAMI_SUCCESS;
 	  }
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, PAMI_CR_GKEY_FAIL);
 	  PAMI::Topology *topo = (PAMI::Topology *)geom->getTopology(0);
 	  // for now, just bail-out if not a rectangle...
-	  // we could try to convert to rectangle, etc.
+	  // we could try to convert to rectangle, or see if subTopologyNthGlobal
+	  // produces a rectangle, etc.
 	  if (topo->type() != PAMI_COORD_TOPOLOGY)
 	  {
 	    return PAMI_SUCCESS; // not really failure, just can't/won't do it.
 	  }
+
+	  // a more-exhaustive check for "comm-world" equivalent classroute...
+	  PAMI::Topology node_topo;
+	  topo->subTopologyNthGlobal(&node_topo, 0);
+	  CR_RECT_T rect1, rect2;
+	  node_topo.rectSeg(CR_RECT_LL(&rect1), CR_RECT_UR(&rect1));
+	  _node_topo.rectSeg(CR_RECT_LL(&rect2), CR_RECT_UR(&rect2));
+	  if (__MUSPI_rect_compare(&rect1, &rect2) == 0) {
+	    geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, (void *)(0 + 1));
+	    return PAMI_SUCCESS;
+	  }
+
+	  // we could do even more checking and allow more geometries...
+
 	  unsigned geom_id = geom->comm();
 
-	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, CR_GKEY_FAIL);
+	  // from this point, we must have a valid context.
+	  PAMI_assertf(context != NULL, "geomOptimize called on non-world w/o context");
 
-	  // must handle "comm world" here, which might not be a rectangle...
-	  if (topo->type() != PAMI_COORD_TOPOLOGY) return PAMI_INVAL;
 	  // This topology is part of the geometry, so we know it won't
 	  // "go away" after this method returns...
 	  cr_cookie *cookie = (cr_cookie *)malloc(sizeof(cr_cookie)); // how to alloc?
 	  cookie->thus = this;
-	  cookie->topo = topo;
+	  cookie->topo = node_topo;
 	  cookie->cr_mtx_mdl = &_cr_mtx_mdls[clientid][contextid];
 	  cookie->msync.client = clientid;
 	  cookie->msync.context = contextid;
@@ -443,29 +448,29 @@ namespace PAMI
 	inline pami_result_t geomDeoptimize(PAMI::Geometry::Common *geom)
 	{
 	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
-	  if (val && val != CR_GKEY_FAIL)
+	  if (val && val != PAMI_CR_GKEY_FAIL)
 	  {
-	    CR_RECT_T rect;
-	    PAMI::Topology *topo = (PAMI::Topology *)geom->getTopology(0);
-	    topo->rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
 	    int id = (int)((uintptr_t)val & 0xffffffff) - 1;
-	    int last = MUSPI_ReleaseClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
-	                                                        &rect, &_crdata);
-	    if (last)
+	    if (id != 0) // never free classroute 0 - a.k.a. comm-world
 	    {
-	      // This "frees" the id to others... don't want that.
-	      // rc = Kernel_DeallocateCollectiveClassRoute(id);
-	      // it is probably OK to leave the old one around,
-	      // else need to be sure what value we can set it to
-	      // and not have CNK think it is "free"...
-	      // cr = (some bit pattern);
-	      // rc = Kernel_SetCollectiveClassRoute(id, &cr);
-	      // for now, this code will just overwrite the bits next
-	      // time this id gets used.
+	      int last = MUSPI_ReleaseClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
+	                                                        NULL, &_crdata);
+	      if (last)
+	      {
+	        // This "frees" the id to others... don't want that.
+	        // rc = Kernel_DeallocateCollectiveClassRoute(id);
+	        // it is probably OK to leave the old one around,
+	        // else need to be sure what value we can set it to
+	        // and not have CNK think it is "free"...
+	        // cr = (some bit pattern);
+	        // rc = Kernel_SetCollectiveClassRoute(id, &cr);
+	        // for now, this code will just overwrite the bits next
+	        // time this id gets used.
+	      }
 	    }
 	  }
 	  // never attempt to optimize this geometry for classroutes...
-	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, CR_GKEY_FAIL);
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, PAMI_CR_GKEY_FAIL);
 	  return PAMI_SUCCESS;
 	}
 
@@ -474,11 +479,11 @@ namespace PAMI
 	    size_t clientid, size_t contextid, pami_context_t context)
 	{
 	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
-	  if (val && val != CR_GKEY_FAIL)
+	  if (val && val != PAMI_CR_GKEY_FAIL)
 	  {
 	    return PAMI_SUCCESS; // already optimized
 	  }
-	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, 0); // same as nonexistent
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, NULL); // same as nonexistent
 	  return geomOptimize(geom, clientid, contextid, context);
 	}
 #endif
@@ -528,7 +533,7 @@ namespace PAMI
 
 	  // for now, this is only for true rectangles... (_nexcl == 0)
 	  CR_RECT_T rect;
-	  crck->topo->rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
+	  crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
 	  // TBD: _crdata must be in shared memory!
 	  uint32_t mask = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
 	            &rect, &crck->thus->_crdata);
@@ -615,7 +620,7 @@ namespace PAMI
 	  {
 	    --id; // ffs() returns bit# + 1
 	    CR_RECT_T rect;
-	    crck->topo->rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
+	    crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
 	    int first = MUSPI_SetClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
 	          &rect, &crck->thus->_crdata);
 	    // Note: need to detect if classroute was already programmed...
@@ -804,6 +809,7 @@ namespace PAMI
 #ifdef ENABLE_MU_CLASSROUTES
 	MUCR_mutex_t _cr_mtx; // each context has MUCR_mutex_model_t pointing to this
 	MUCR_mutex_model_t **_cr_mtx_mdls;
+	PAMI::Topology _node_topo;
 	CR_RECT_T _refcomm;
 	CR_COORD_T _refroot;
 	CR_COORD_T _mycoord;

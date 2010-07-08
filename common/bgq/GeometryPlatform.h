@@ -17,4 +17,7 @@
 #define PAMI_GKEY_PLATEXTENSIONS       \
        PAMI_GKEY_CLASSROUTE,
 
+/// \brief The value used to indicate no classroute, diff from not yet optimized
+#define PAMI_CR_GKEY_FAIL	((void *)0xbadc0ffee0ddf00d)
+
 #endif // __common_bgq_GeometryPlatform_h__
