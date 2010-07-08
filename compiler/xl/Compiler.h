@@ -23,12 +23,13 @@
  */
 
 #include "builtins.h"
-#define __sync_fetch_and_or(x,y)	__fetch_and_or((volatile unsigned int *)x,y)
-#define __sync_fetch_and_and(x,y)	__fetch_and_and((volatile unsigned int *)x,y)
-#define __sync_fetch_and_add(x,y)	__fetch_and_add((volatile int *)x,y)
-#define __sync_fetch_and_sub(x,y)	__fetch_and_add((volatile int *)x,-(y))
-#define __sync_fetch_and_swap(x,y)	__fetch_and_swap((volatile int *)x,y)
 #ifdef __64BIT__
+#define __sync_fetch_and_or(x,y)	__fetch_and_orlp((volatile unsigned long *)x,y)
+#define __sync_fetch_and_and(x,y)	__fetch_and_andlp((volatile unsigned long *)x,y)
+#define __sync_fetch_and_add(x,y)	__fetch_and_addlp((volatile long *)x,y)
+#define __sync_fetch_and_sub(x,y)	__fetch_and_addlp((volatile long *)x,-(y))
+#define __sync_fetch_and_swap(x,y)	__fetch_and_swaplp((volatile long *)x,y)
+
 #define __sync_bool_compare_and_swap(x,y,z) ({		\
 	bool _b;					\
 	long _y = (long)y;				\
@@ -41,6 +42,11 @@
 	_y;						\
 })
 #else	// 32-bit
+#define __sync_fetch_and_or(x,y)	__fetch_and_or((volatile unsigned int *)x,y)
+#define __sync_fetch_and_and(x,y)	__fetch_and_and((volatile unsigned int *)x,y)
+#define __sync_fetch_and_add(x,y)	__fetch_and_add((volatile int *)x,y)
+#define __sync_fetch_and_sub(x,y)	__fetch_and_add((volatile int *)x,-(y))
+#define __sync_fetch_and_swap(x,y)	__fetch_and_swap((volatile int *)x,y)
 #define __sync_bool_compare_and_swap(x,y,z) ({		\
 	bool _b;					\
 	int _y = (int)y;				\
