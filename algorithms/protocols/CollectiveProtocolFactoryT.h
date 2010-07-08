@@ -51,6 +51,7 @@ namespace CCMI
             pami_event_function          _user_done_fn;
             void                       * _user_cookie;
             T                            _obj;
+            unsigned                     _connection_id;
         };
 
       public:

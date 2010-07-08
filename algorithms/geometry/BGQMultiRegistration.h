@@ -196,17 +196,38 @@ namespace PAMI
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::MUMultiCast2Factory::generate()\n", this));
 
         // The composite will ctor the connection manager and generate a unique connection id.
-        CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> *composite =
-          (CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> *)MUMultiCast2FactoryBase::generate(geometry,cmd);
+        collObj *cobj = (collObj*) _alloc.allocateObject();
+        TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::generate()\n",cobj));
+        new(cobj) collObj(_native,          // Native interface
+                          _cmgr,            // Connection Manager
+                          geometry,         // Geometry Object
+                          (pami_xfer_t*)cmd, // Parameters
+                          done_fn,          // Intercept function
+                          cobj,             // Intercept cookie
+                          this);            // Factory
+
+        CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> *composite = &cobj->_obj;
 
         // Get the (updated and unique) connection id and store this new composite in the map[connection_id].
         BGQGeometry *bgqGeometry = (BGQGeometry *)geometry;
         unsigned comm = bgqGeometry->comm();
-        unsigned connection_id = _cmgr->getConnectionId (comm, 0,0,0,0);
-        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::MUMultiCast2Factory::generate() map comm %u, connection_id %u, composite %p\n", this,comm, connection_id, composite));
-        composite_map[connection_id] = composite;
+        cobj->_connection_id = _cmgr->getConnectionId (comm, 0,0,0,0);
+        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::MUMultiCast2Factory::generate() map comm %u, connection_id %u, composite %p\n", this,comm, cobj->_connection_id, composite));
+        _composite_map[cobj->_connection_id] = composite;
         return composite;
       }
+      static void done_fn(pami_context_t  context,
+                          void           *clientdata,
+                          pami_result_t   res)
+      {
+        collObj *cobj = (collObj *)clientdata;
+        TRACE_ADAPTOR((stderr, "<%p>PAMI::CollRegistration::MUMultiCast2Factory::done_fn()\n",cobj));
+        cobj->done_fn(context, res);
+        MUMultiCast2Factory* factory = (MUMultiCast2Factory*) cobj->_factory;
+        factory->_composite_map.erase(cobj->_connection_id);
+        cobj->_factory->_alloc.returnObject(cobj);
+      }
+
 
       ///
       /// \brief multicast dispatch - call the factory notifyRecvHead
@@ -239,7 +260,7 @@ namespace PAMI
                           pami_callback_t       * cb_done)       // \param[out] cb_done    Completion callback to invoke when data received
       {
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::MUMultiCast2Factory::notifyRecvHead() msgcount %u, connection_id %u, root %zu, sndlen %zu\n",this,msgcount,connection_id,root,sndlen));
-        CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> *composite = composite_map[connection_id];
+        CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> *composite = _composite_map[connection_id];
         PAMI_assertf(composite,"connection_id %u, root %zu\n",connection_id, root);
         *rcvlen = sndlen;  // Not passed or set by notifyRecv? Just assume everything sent will be received
         return composite->notifyRecv (root,
@@ -247,8 +268,7 @@ namespace PAMI
                                       rcvpwq,
                                       cb_done);
       };
-      std::map<unsigned,CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> * > composite_map;
-
+      std::map<unsigned,CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> * > _composite_map;
     };
 
     //----------------------------------------------------------------------------
