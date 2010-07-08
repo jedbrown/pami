@@ -466,8 +466,8 @@ namespace PAMI
           ///
           inline size_t task2peer_impl (size_t task)
           {
-            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
-            return 0;
+            // All tasks are addressable "peers" to the MU
+            return task;
           }
 
           ///
