@@ -197,7 +197,7 @@ void test (MuContext & mu0, MuContext & mu1, T_Model & model, T_Protocol & proto
 int main(int argc, char ** argv)
 {
   // Initialize the MU resources for all contexts for this client
-  __MUGlobal.getMuRM().initializeContexts( 0 /*id_client*/, 2 /*id_count*/ );
+  __MUGlobal.getMuRM().initializeContexts( 0 /*id_client*/, 2 /*id_count*/, NULL /* Generic Device */ );
 
   MuContext mu0 (__global.mapping, 0, 0, 2);
   mu0.init (0, NULL); // id_client, mu context "cookie" (usually pami_context_t)
