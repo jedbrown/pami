@@ -321,6 +321,9 @@ namespace PAMI
 			              // all have been analyzed.
 	  // Should this all just be done after analyze?? That avoids the
 	  // the problem where allreduce doesn't exist yet.
+	  // But, the analyze functions (that depend on geomOptimize) must
+	  // run *after* optimize *completes*, so need some way to hook-in
+	  // to the completion callback(s).
 	  __MUGlobal.getMuRM().geomOptimize(gp, _clientid, ctxt->getId(), ctxt);
           for (size_t n = 0; n < _ncontexts; n++)
           {
