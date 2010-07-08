@@ -324,8 +324,8 @@ namespace PAMI
             uint8_t * dst = (uint8_t *)vaddr;
 
             for (i = 0; i < T_Niov; i++)
-              {
-                memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
+              {		
+		memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
                 tbytes += iov[i].iov_len;
               }
 
