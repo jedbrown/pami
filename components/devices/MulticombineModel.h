@@ -37,7 +37,7 @@ namespace PAMI
             public:
                 /// \param[in] device                Multicombine device reference
                 MulticombineModel (T_Device &device, pami_result_t &status) {
-                        COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
+                        COMPILE_TIME_ASSERT(T_Model::sizeof_msg <= T_StateBytes);
                         status = PAMI_SUCCESS;
                 };
                 ~MulticombineModel () {};

@@ -18,7 +18,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-//#define CCMI_TRACE_ALL 1
+#define CCMI_TRACE_ALL 1
 
 #ifdef CCMI_TRACE_ALL
   #define TRACE_MSG(x) fprintf x

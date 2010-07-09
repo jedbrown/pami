@@ -36,8 +36,8 @@
 #include "components/devices/bgq/mu2/RecChannel.h"
 
 #include "components/devices/bgq/mu2/trace.h"
-#define DO_TRACE_ENTEREXIT 0
-#define DO_TRACE_DEBUG     0
+#define DO_TRACE_ENTEREXIT 1
+#define DO_TRACE_DEBUG     1
 
 #define CONTEXT_ALLOCATES_RESOURCES   0
 
@@ -484,12 +484,12 @@ namespace PAMI
           ///
           int advance_impl ()
           {
-            TRACE_FN_ENTER();
+//            TRACE_FN_ENTER();
 
             unsigned events  = injectionGroup.advance ();
             events          += receptionChannel.advance ();
 
-            TRACE_FN_EXIT();
+//            TRACE_FN_EXIT();
             return events;
           }
 
@@ -529,6 +529,15 @@ namespace PAMI
           inline MUHWI_Destination_t * getMuDestinationSelf ()
           {
             return _mapping.getMuDestinationSelf();
+          };
+
+          /// \copydoc Mapping::getMuDestinationTask
+          inline void getMuDestinationTask (size_t               task, 
+                    MUHWI_Destination_t &dest, 
+                    size_t              &tcoord,
+                    uint32_t            &fifoPin)
+          {
+            return _mapping.getMuDestinationTask(task, dest, tcoord, fifoPin);
           };
 
           ///

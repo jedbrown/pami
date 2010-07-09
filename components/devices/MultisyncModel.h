@@ -36,7 +36,7 @@ namespace PAMI
         /// \param[in] device                Multisync device reference
         MultisyncModel (T_Device &device, pami_result_t &status)
           {
-            COMPILE_TIME_ASSERT(T_Model::sizeof_msg == T_StateBytes);
+            COMPILE_TIME_ASSERT(T_Model::sizeof_msg <= T_StateBytes);
             status = PAMI_SUCCESS;
           };
         ~MultisyncModel ()
