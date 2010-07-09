@@ -15,6 +15,7 @@
 #define __algorithms_geometry_Algorithm_h__
 
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
+#include <map>
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
