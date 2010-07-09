@@ -35,6 +35,15 @@
 #include "components/devices/lapiunix/lapiunixmanytomanymodel.h"
 #include "../lapi/include/Context.h"
 
+// CAU Components
+#include "components/devices/cau/caudevice.h"
+#include "components/devices/cau/caumessage.h"
+#include "components/devices/cau/caumulticastmodel.h"
+#include "components/devices/cau/caumultisyncmodel.h"
+#include "components/devices/cau/caumulticombinemodel.h"
+#include "components/devices/cau/caumulticombinemodel.h"
+#include "components/devices/cau/NativeInterface.h"
+
 // P2P Protocols
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/SendPWQ.h"
@@ -52,6 +61,7 @@
 #include "algorithms/geometry/CCMICollRegistration.h"
 #include "algorithms/geometry/PGASCollRegistration.h"
 #include "algorithms/geometry/P2PCCMIRegistration.h"
+#include "algorithms/geometry/CAUCollRegistration.h"
 
 namespace PAMI
 {
@@ -148,6 +158,7 @@ namespace PAMI
 
   // Device Typedefs
   typedef Device::LAPIDevice                                          LAPIDevice;
+  typedef Device::CAUDevice                                           CAUDevice;
 
   // P2P Message Typedefs
   typedef PAMI::SendWrapper                                           LAPISendBase;
@@ -171,6 +182,11 @@ namespace PAMI
   typedef Device::LAPIMcombineMessage                                 LAPIMcombineMessage;
   typedef Device::LAPIM2MMessage                                      LAPIM2MMessage;
 
+  typedef Device::CAUMsyncMessage                                     CAUMsyncMessage;
+  typedef Device::CAUMcastMessage                                     CAUMcastMessage;
+  typedef Device::CAUMcombineMessage                                  CAUMcombineMessage;
+  typedef Device::CAUM2MMessage                                       CAUM2MMessage;
+
   // P2P Model Classes:  None here, LAPI component implements p2p
 
   // "New" Collective Model typedefs
@@ -179,6 +195,11 @@ namespace PAMI
   typedef Device::LAPIMulticombineModel<LAPIDevice,
                                        LAPIMcombineMessage>           LAPIMulticombineModel;
   typedef Device::LAPIManytomanyModel<LAPIDevice,LAPIM2MMessage>      LAPIManytomanyModel;
+
+  typedef Device::CAUMultisyncModel<CAUDevice,CAUMsyncMessage>        CAUMultisyncModel;
+  typedef Device::CAUMulticastModel<CAUDevice,CAUMcastMessage>        CAUMulticastModel;
+  typedef Device::CAUMulticombineModel<CAUDevice,
+                                       CAUMcombineMessage>            CAUMulticombineModel;
 
   // "Old" Collective Model Typedefs
   typedef PAMI::Device::LAPIOldmulticastModel<LAPIDevice,
@@ -219,6 +240,9 @@ namespace PAMI
                                              LAPIDevice,
                                              LAPINBCollManager> PGASCollreg;
 
+
+
+
   // Memory Allocator Typedefs
   typedef MemoryAllocator<1024, 16> ProtocolAllocator;
   // Over P2P CCMI Protocol Typedefs
@@ -237,6 +261,17 @@ namespace PAMI
                                                   CompositeNI_AM,
                                                   CompositeNI_AS> P2PCCMICollreg;
 
+  // "New" CCMI Protocol Typedefs
+  typedef PAMI::CAU::CAUNativeInterface<CAUDevice,
+                                   CAUMulticastModel,
+                                   CAUMultisyncModel,
+                                   CAUMulticombineModel>   CAUNativeInterface;
+
+  typedef CollRegistration::CAU::CAURegistration<LAPIGeometry,
+                                                 ShmemDevice,
+                                                 CAUDevice,
+                                                 ShmemEagerNI_AM,
+                                                 CAUNativeInterface> CAUCollreg;
 /**
  * \brief Class containing all devices used on this platform.
  *
@@ -361,6 +396,7 @@ namespace PAMI
           _lapi_device.init(_mm, _clientid, 0, _context, _contextid);
           _lapi_device.setLapiHandle(_lapi_handle);
           _lapi_device2.init(_lapi_state);
+          _cau_device.init(_lapi_state);
 
           // Query My Rank and My Size
           // TODO:  Use LAPI Internals, instead of
@@ -409,11 +445,19 @@ namespace PAMI
                                                 __global.topology_global.size(),
                                                 __global.topology_local.size());
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
-
-
+          
+          _cau_collreg=(CAUCollreg*) malloc(sizeof(*_cau_collreg));
+          new(_cau_collreg) CAUCollreg(_client,
+                                       _context,
+                                       _contextid,
+                                       _clientid,
+                                       _devices->_shmem[_contextid],
+                                       _cau_device,
+                                       __global.topology_global.size(),
+                                       __global.topology_local.size());
+          _cau_collreg->analyze(_contextid, _world_geometry);
           return PAMI_SUCCESS;
         }
-
 
       inline pami_client_t getClient_impl ()
         {
@@ -757,11 +801,13 @@ namespace PAMI
       /*  The over lapi devices                                 */
       LAPIDevice                             _lapi_device;
       DeviceWrapper                          _lapi_device2;
+      CAUDevice                              _cau_device;
   public:
       /*  Collective Registrations                              */
-      //      CCMICollreg                           *_ccmi_collreg;
+      // CCMICollreg                           *_ccmi_collreg;
       PGASCollreg                           *_pgas_collreg;
       P2PCCMICollreg                        *_p2p_ccmi_collreg;
+      CAUCollreg                            *_cau_collreg;
 
       /*  World Geometry Pointer for this context               */
       LAPIGeometry                          *_world_geometry;
