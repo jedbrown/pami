@@ -217,7 +217,7 @@ namespace PAMI
   typedef PAMI::NativeInterfaceAllsided< Protocol::Send::SendPWQ<Protocol::Send::Send> >      CompositeNI_AS;
 
   // Geometry Typedefs
-  typedef Geometry::Common                                            LAPIGeometry;
+  typedef Geometry::Lapi                                              LAPIGeometry;
 
   // Protocol Typedefs
 

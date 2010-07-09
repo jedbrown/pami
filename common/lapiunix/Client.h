@@ -427,7 +427,7 @@ namespace PAMI
         if(geometry != NULL)
             {
               new_geometry = (LAPIGeometry*)_geometryAlloc.allocateObject();
-              new(new_geometry) LAPIGeometry((PAMI::Geometry::Common*)parent,
+              new(new_geometry) LAPIGeometry((LAPIGeometry*)parent,
                                              &__global.mapping,
                                              id,
                                              slice_count,

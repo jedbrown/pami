@@ -47,14 +47,15 @@ namespace PAMI
                                                                       T_NBCollMgr>,
                               T_Geometry>
       {
-        typedef PGBarrierExec<TSPColl::Barrier<T_Mcast>, T_Mcast, T_Device> BarExec;
-        typedef PGAllgatherExec<TSPColl::Allgather<T_Mcast>, T_Mcast, T_Device> AllgatherExec;
-        typedef PGAllgathervExec<TSPColl::Allgatherv<T_Mcast>, T_Mcast, T_Device> AllgathervExec;
-        typedef PGScatterExec<TSPColl::Scatter<T_Mcast>, T_Mcast, T_Device,TSPColl::Barrier<T_Mcast> > ScatterExec;
-        typedef PGScattervExec<TSPColl::Scatterv<T_Mcast>, T_Mcast, T_Device,TSPColl::Barrier<T_Mcast> > ScattervExec;
-        typedef PGAllreduceExec<TSPColl::Allreduce::Long<T_Mcast>, T_Mcast, T_Device> AllreduceExec;
-        typedef PGAllreduceExec<TSPColl::Allreduce::Short<T_Mcast>, T_Mcast, T_Device> ShortAllreduceExec;
-        typedef PGBroadcastExec<TSPColl::BinomBcast<T_Mcast>, T_Mcast, T_Device> BroadcastExec;
+        typedef PGBarrierExec<T_Geometry,TSPColl::Barrier<T_Mcast>, T_Mcast, T_Device> BarExec;
+        typedef PGAllgatherExec<T_Geometry,TSPColl::Allgather<T_Mcast>, T_Mcast, T_Device> AllgatherExec;
+        typedef PGAllgathervExec<T_Geometry,TSPColl::Allgatherv<T_Mcast>, T_Mcast, T_Device> AllgathervExec;
+        typedef PGScatterExec<T_Geometry,TSPColl::Scatter<T_Mcast>, T_Mcast, T_Device,TSPColl::Barrier<T_Mcast> > ScatterExec;
+        typedef PGScattervExec<T_Geometry,TSPColl::Scatterv<T_Mcast>, T_Mcast, T_Device,TSPColl::Barrier<T_Mcast> > ScattervExec;
+        typedef PGAllreduceExec<T_Geometry,TSPColl::Allreduce::Long<T_Mcast>, T_Mcast, T_Device> AllreduceExec;
+        typedef PGAllreduceExec<T_Geometry,TSPColl::Allreduce::Short<T_Mcast>, T_Mcast, T_Device> ShortAllreduceExec;
+        typedef PGBroadcastExec<T_Geometry,TSPColl::BinomBcast<T_Mcast>, T_Mcast, T_Device> BroadcastExec;
+
         typedef PGFactory<TSPColl::Barrier<T_Mcast>,T_Mcast,T_Device,BarExec,BarrierString> BarrierFactory;
         typedef PGFactory<TSPColl::Allgather<T_Mcast>,T_Mcast,T_Device,AllgatherExec,AllgatherString>  AllgatherFactory;
         typedef PGFactory<TSPColl::Allgatherv<T_Mcast>,T_Mcast,T_Device,AllgathervExec,AllgathervString> AllgathervFactory;

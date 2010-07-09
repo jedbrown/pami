@@ -11,8 +11,8 @@
  * \brief ???
  */
 
-#ifndef __algorithms_geometry_Geometry_h__
-#define __algorithms_geometry_Geometry_h__
+#ifndef __algorithms_geometry_LapiGeometry_h__
+#define __algorithms_geometry_LapiGeometry_h__
 
 #include "Topology.h"
 #include "Mapping.h"
@@ -35,32 +35,32 @@ namespace PAMI
 {
   namespace Geometry
   {
-    class Common :
-      public Geometry<PAMI::Geometry::Common>
+    class Lapi :
+      public Geometry<PAMI::Geometry::Lapi>
     {
     public:
-      inline Common(Mapping                *mapping,
+      inline Lapi(Mapping                *mapping,
                     pami_task_t             *ranks,
                     pami_task_t              nranks,
                     unsigned                comm,
                     unsigned                numcolors,
                     bool                    globalcontext):
-        Geometry<PAMI::Geometry::Common>(mapping,
+        Geometry<PAMI::Geometry::Lapi>(mapping,
                                         ranks,
                                         nranks,
                                         comm,
                                         numcolors,
                                         globalcontext)
         {
-          TRACE_ERR((stderr, "<%p>Common()\n", this));
+          TRACE_ERR((stderr, "<%p>Lapi()\n", this));
           pami_ca_unset_all(&_attributes);
         }
-      inline Common (Geometry<PAMI::Geometry::Common> *parent,
+      inline Lapi (Geometry<PAMI::Geometry::Lapi> *parent,
                      Mapping                         *mapping,
                      unsigned                         comm,
                      int                              numranges,
                      pami_geometry_range_t             rangelist[]):
-        Geometry<PAMI::Geometry::Common>(parent,
+        Geometry<PAMI::Geometry::Lapi>(parent,
                                         mapping,
                                         comm,
                                         numranges,
@@ -68,7 +68,7 @@ namespace PAMI
         _kvstore(),
         _commid(comm)
         {
-          TRACE_ERR((stderr, "<%p>Common(parent)\n", this));
+          TRACE_ERR((stderr, "<%p>Lapi(parent)\n", this));
           int i, j, k, size;
           pami_task_t nranks;
 
@@ -302,11 +302,11 @@ namespace PAMI
         }
 
 
-      static inline Common   *getCachedGeometry_impl(unsigned comm)
+      static inline Lapi   *getCachedGeometry_impl(unsigned comm)
         {
-          return (Common*)PAMI::cached_geometry[comm];
+          return (Lapi*)PAMI::cached_geometry[comm];
         }
-      static inline void               updateCachedGeometry_impl(Common *geometry,
+      static inline void               updateCachedGeometry_impl(Lapi *geometry,
                                                                  unsigned comm)
         {
           assert(geometry!=NULL);
@@ -365,10 +365,10 @@ namespace PAMI
           return value;
         }
 
-      inline AlgoLists<Geometry<PAMI::Geometry::Common> > * algorithms_get_lists(size_t context_id,
+      inline AlgoLists<Geometry<PAMI::Geometry::Lapi> > * algorithms_get_lists(size_t context_id,
                                                                                 pami_xfer_type_t  colltype)
         {
-          TRACE_ERR((stderr, "<%p>Common::algorithms_get_lists()\n", this));
+          TRACE_ERR((stderr, "<%p>Lapi::algorithms_get_lists()\n", this));
           switch(colltype)
               {
                   case PAMI_XFER_BROADCAST:
@@ -436,8 +436,8 @@ namespace PAMI
                                              CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                              size_t                                     context_id)
         {
-          TRACE_ERR((stderr, "<%p>Common::addCollective_impl()\n", this));
-          AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
+          TRACE_ERR((stderr, "<%p>Lapi::addCollective_impl()\n", this));
+          AlgoLists<Geometry<PAMI::Geometry::Lapi> > * alist = algorithms_get_lists(context_id, colltype);
           alist->addCollective(factory, this, context_id);
           return PAMI_SUCCESS;
         }
@@ -446,8 +446,8 @@ namespace PAMI
                                                   CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                                   size_t                                     context_id)
         {
-          TRACE_ERR((stderr, "<%p>Common::addCollectiveCheck_impl()\n", this));
-          AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
+          TRACE_ERR((stderr, "<%p>Lapi::addCollectiveCheck_impl()\n", this));
+          AlgoLists<Geometry<PAMI::Geometry::Lapi> > * alist = algorithms_get_lists(context_id, colltype);
           alist->addCollectiveCheck(factory, this, context_id);
           return PAMI_SUCCESS;
         }
@@ -456,8 +456,8 @@ namespace PAMI
                                        size_t             *lengths,
                                        size_t           context_id)
         {
-          TRACE_ERR((stderr, "<%p>Common::algorithms_num_impl()\n", this));
-          AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
+          TRACE_ERR((stderr, "<%p>Lapi::algorithms_num_impl()\n", this));
+          AlgoLists<Geometry<PAMI::Geometry::Lapi> > * alist = algorithms_get_lists(context_id, colltype);
           alist->lengths(lengths);
           return PAMI_SUCCESS;
         }
@@ -471,8 +471,8 @@ namespace PAMI
                                                 size_t             num1,
                                                 size_t            context_id)
         {
-          TRACE_ERR((stderr, "<%p>Common::algorithms_info_impl(), algs0=%p, num0=%u, mdata0=%p, algs1=%p, num1=%u, mdata1=%p\n", this, algs0,num0,mdata0,algs1,num1,mdata1));
-          AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
+          TRACE_ERR((stderr, "<%p>Lapi::algorithms_info_impl(), algs0=%p, num0=%u, mdata0=%p, algs1=%p, num1=%u, mdata1=%p\n", this, algs0,num0,mdata0,algs1,num1,mdata1));
+          AlgoLists<Geometry<PAMI::Geometry::Lapi> > * alist = algorithms_get_lists(context_id, colltype);
           for(size_t i=0; i<num0; i++)
               {
             TRACE_ERR((stderr, "<%p> alist->_algo_list[%u]=%p, mdata0[%u]=%p\n", this, i, alist->_algo_list[i],i,mdata0?&mdata0[i]:NULL));
@@ -497,7 +497,7 @@ namespace PAMI
                                    size_t                   ctxt_id,
                                    pami_context_t            context)
         {
-          TRACE_ERR((stderr, "<%p>Common::default_barrier()\n", this));
+          TRACE_ERR((stderr, "<%p>Lapi::default_barrier()\n", this));
           pami_xfer_t cmd;
           cmd.cb_done=cb_done;
           cmd.cookie =cookie;
@@ -506,32 +506,32 @@ namespace PAMI
 
 
     private:
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allreduces[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _broadcasts[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _reduces[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathers[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _allreduces[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _broadcasts[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _reduces[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _allgathers[PAMI_GEOMETRY_NUMALGOLISTS];
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathervs[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgatherv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatters[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scattervs[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _allgathervs[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _allgatherv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _scatters[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _scattervs[PAMI_GEOMETRY_NUMALGOLISTS];
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatterv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathers[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathervs[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gatherv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _scatterv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _gathers[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _gathervs[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _gatherv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoalls[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallvs[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _ambroadcasts[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _alltoalls[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _alltoallvs[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _alltoallv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _ambroadcasts[PAMI_GEOMETRY_NUMALGOLISTS];
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amscatters[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amgathers[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amreduces[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scans[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _amscatters[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _amgathers[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _amreduces[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _scans[PAMI_GEOMETRY_NUMALGOLISTS];
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _barriers[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _barriers[PAMI_GEOMETRY_NUMALGOLISTS];
 
       std::map <int, void*>                        _kvstore;
       int                                          _commid;

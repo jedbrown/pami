@@ -6,8 +6,6 @@
 #include <pami.h>
 #include <map>
 
-
-
 namespace PAMI
 {
   std::map<unsigned, pami_geometry_t> geometry_map;
