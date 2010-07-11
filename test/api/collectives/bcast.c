@@ -7,8 +7,14 @@
 
 //define this if you want to validate the data
 #define CHECK_DATA
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+#define BUFSIZE 131072 // any more is too long on mambo
+#define NITER 10
+#else
 #define BUFSIZE 524288
 #define NITER 100
+#endif
+
 
 void initialize_sndbuf (void *buf, int bytes)
 {
