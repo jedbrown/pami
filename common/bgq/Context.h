@@ -41,7 +41,7 @@
 #include "algorithms/geometry/P2PCCMIRegistration.h"
 
 #undef TRACE_ERR
-#define TRACE_ERR(x) fprintf x
+#define TRACE_ERR(x) //fprintf x
 
 
 namespace PAMI

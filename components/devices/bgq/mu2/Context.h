@@ -36,8 +36,8 @@
 #include "components/devices/bgq/mu2/RecChannel.h"
 
 #include "components/devices/bgq/mu2/trace.h"
-#define DO_TRACE_ENTEREXIT 1
-#define DO_TRACE_DEBUG     1
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 #define CONTEXT_ALLOCATES_RESOURCES   0
 

@@ -17,7 +17,7 @@
 #include "components/memory/MemoryAllocator.h"
 
 #undef TRACE_ERR
-#define TRACE_ERR(x) fprintf x
+#define TRACE_ERR(x) //fprintf x
 
 #ifdef CCMI_TRACE_ALL
   #undef TRACE_ERR
