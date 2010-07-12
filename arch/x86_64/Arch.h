@@ -18,13 +18,8 @@
 
 // Here go things specific to this processor architecture
 
-inline void mem_sync()
-{
-  // todo:  implement
-}
-
+#define mem_sync()    __sync_synchronize()
 #define mem_isync()   mem_sync()
+#define mem_barrier() __sync_synchronize()
 
-
-
-#endif // __pami_arch_i386_h__
+#endif // __arch_x86_64_Arch_h__
