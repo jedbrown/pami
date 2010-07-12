@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/geometry/CAURegistration.h
+ * \file algorithms/geometry/CAUCollRegistration.h
  * \brief ???
  */
 
-#ifndef __algorithms_geometry_CAURegistration_h__
-#define __algorithms_geometry_CAURegistration_h__
+#ifndef __algorithms_geometry_CAUCollRegistration_h__
+#define __algorithms_geometry_CAUCollRegistration_h__
 
 #include <map>
 #include <vector>

@@ -1,5 +1,5 @@
 ///
-/// \file components/devices/lapiunix/regTable.cc
+/// \file components/devices/cau/cauregTable.cc
 /// \brief ???
 ///
 

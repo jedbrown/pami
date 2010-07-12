@@ -1,10 +1,10 @@
 /*
- * \file common/cau/NativeInterface.h
+ * \file components/devices/cau/NativeInterface.h
  * \brief ???
  */
 
-#ifndef __common_cau_NativeInterface_h__
-#define __common_cau_NativeInterface_h__
+#ifndef __components_devices_cau_NativeInterface_h__
+#define __components_devices_cau_NativeInterface_h__
 
 #include "util/ccmi_util.h"
 
@@ -24,16 +24,16 @@
 
 namespace PAMI
 {
-  namespace CAU 
+  namespace CAU
   {
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
     class CAUNativeInterface : public CCMI::Interfaces::NativeInterface
   {
   public:
-    inline CAUNativeInterface(T_Device       &device, 
-			      pami_client_t   client, 
-			      pami_context_t  context, 
-			      size_t          context_id, 
+    inline CAUNativeInterface(T_Device       &device,
+			      pami_client_t   client,
+			      pami_context_t  context,
+			      size_t          context_id,
 			      size_t          client_id,
 			      pami_task_t     task_id,
 			      size_t          num_tasks);
@@ -67,7 +67,7 @@ namespace PAMI
       pami_callback_t       _user_callback;
     };
 
-    PAMI::MemoryAllocator<sizeof(allocObj),16> _allocator; 
+    PAMI::MemoryAllocator<sizeof(allocObj),16> _allocator;
     pami_result_t                              _mcast_status;
     pami_result_t                              _msync_status;
     pami_result_t                              _mcomb_status;

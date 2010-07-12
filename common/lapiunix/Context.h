@@ -445,7 +445,7 @@ namespace PAMI
                                                 __global.topology_global.size(),
                                                 __global.topology_local.size());
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
-          
+
           _cau_collreg=(CAUCollreg*) malloc(sizeof(*_cau_collreg));
           new(_cau_collreg) CAUCollreg(_client,
                                        _context,

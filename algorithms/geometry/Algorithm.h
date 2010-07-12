@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/geometry/Geometry.h
+ * \file algorithms/geometry/Algorithm.h
  * \brief ???
  */
 
