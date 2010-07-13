@@ -377,7 +377,7 @@ namespace PAMI
                                T_P2PEager,
                                T_P2PDevice>(_local_dev, _global_dev);
               }
-            else if (use_p2p || (global_size == 1))
+            else if (use_p2p)
               {
                 // Use P2P if requested or only one process (some simple test scenario)
                 // Setup P2P factories
@@ -397,8 +397,7 @@ namespace PAMI
                                T_ShmemEager,
                                T_ShmemDevice>(_local_dev);
               }
-            // Disabled MU and can't use shmem (only 1 process per node)? Then abort.
-            else PAMI_abort();
+            // Disabled MU and can't use shmem (only 1 process per node)? Then setup nothing
             TRACE_INIT((stderr, "<%p>CCMIRegistration() exit\n", this));
           }
 
@@ -411,32 +410,37 @@ namespace PAMI
                            geometry));
 
             pami_xfer_t xfer = {0};
-            _binomial_barrier_composite = _binomial_barrier_factory->generate(geometry, &xfer);
-
-            geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
-                             (void*)_binomial_barrier_composite);
-
-            geometry->addCollective(PAMI_XFER_BARRIER,
-                                    _binomial_barrier_factory,
-                                    _context_id);
-            geometry->addCollective(PAMI_XFER_BROADCAST,
-                                    _binomial_broadcast_factory,
-                                    _context_id);
-            geometry->addCollective(PAMI_XFER_BROADCAST,
-                                    _ring_broadcast_factory,
-                                    _context_id);
-            geometry->addCollective(PAMI_XFER_BROADCAST,
-                                    _ascs_binomial_broadcast_factory,
-                                    _context_id);
-            geometry->addCollective(PAMI_XFER_BROADCAST,
-                                    _asrb_binomial_broadcast_factory,
-                                    _context_id);
-            geometry->addCollective(PAMI_XFER_AMBROADCAST,
-                                    _active_binomial_broadcast_factory,
-                                    _context_id);
-            geometry->addCollective(PAMI_XFER_ALLREDUCE,
-                                    _binomial_allreduce_factory,
-                                    _context_id);
+            if (_binomial_barrier_factory == NULL) // nothing setup?
+              ; // then do nothing - no shmem on 1 process per node (and other protocol is disabled)
+            else
+              {
+              _binomial_barrier_composite = _binomial_barrier_factory->generate(geometry, &xfer);
+  
+              geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
+                               (void*)_binomial_barrier_composite);
+  
+              geometry->addCollective(PAMI_XFER_BARRIER,
+                                      _binomial_barrier_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_BROADCAST,
+                                      _binomial_broadcast_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_BROADCAST,
+                                      _ring_broadcast_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_BROADCAST,
+                                      _ascs_binomial_broadcast_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_BROADCAST,
+                                      _asrb_binomial_broadcast_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_AMBROADCAST,
+                                      _active_binomial_broadcast_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_ALLREDUCE,
+                                      _binomial_allreduce_factory,
+                                      _context_id);
+              }
             return PAMI_SUCCESS;
           }
 
