@@ -222,7 +222,7 @@ namespace PAMI
 
           MemoryAllocator < sizeof(send_t), 16 > _allocator;
 
-          T_Model                _send_model;
+          T_Model                _send_model __attribute__((__aligned__(32)));
           pami_context_t         _context;
           pami_dispatch_p2p_fn   _dispatch_fn;
           void                 * _cookie;
