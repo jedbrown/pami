@@ -98,7 +98,7 @@ namespace PAMI
                   // memory from the heap instead.
                   //
                   // TODO - verify the run mode is actually SMP.
-                  posix_memalign ((void **)&_memptr, 16, bytes);
+                  rc = posix_memalign ((void **)&_memptr, 16, bytes);
                   memset (_memptr, 0, bytes);
                   _memsize = bytes;
                   TRACE_ERR((stderr, "Global() .. FAILED, fake shmem on the heap, _memptr = %p, _memsize = %zu\n", _memptr, _memsize));

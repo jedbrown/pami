@@ -6,7 +6,7 @@
 #define __common_socklinux_Context_h__
 
 #define ENABLE_SHMEM_DEVICE
-#define ENABLE_UDP_DEVICE
+//#define ENABLE_UDP_DEVICE
 
 #include <stdlib.h>
 #include <string.h>
@@ -45,7 +45,9 @@
 //#include "Memregion.h"
 
 #include "p2p/protocols/send/eager/Eager.h"
+#ifdef ENABLE_UDP_DEVICE
 #include "p2p/protocols/send/datagram/Datagram.h"
+#endif
 #include "p2p/protocols/send/composite/Composite.h"
 
 #include "p2p/protocols/get/Get.h"
@@ -63,7 +65,7 @@ namespace PAMI
 #endif
 
 #ifdef ENABLE_SHMEM_DEVICE
-  typedef Fifo::FifoPacket <16, 240> ShmemPacket;
+  typedef Fifo::FifoPacket <sizeof(void*)*4, 240> ShmemPacket;
   typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
@@ -511,13 +513,13 @@ namespace PAMI
                 {
                   _dispatch[id] = (Protocol::Send::Send *)
                     Protocol::Send::Eager <ShmemModel, ShmemDevice, false>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
+                      generate (id, fn.p2p, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, _protocol, result);
                 }
               else
                 {
                   _dispatch[id] = (Protocol::Send::Send *)
                     Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
-                      generate (id, fn, cookie, _devices->_shmem[_contextid], self, _protocol, result);
+                      generate (id, fn.p2p, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, _protocol, result);
                 }
 #else
               PAMI_abortf("No shmem protocols available.");

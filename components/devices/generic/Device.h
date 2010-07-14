@@ -292,7 +292,7 @@ public:
 		size_t myix = __global.topology_local.rank2Index(__global.mapping.task());
 		__global._wuRegion_mms[client][myix].memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
 #else // ! __pami_target_bgq__
-		posix_memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
+		int rc = posix_memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
 #endif // ! __pami_target_bgq__
 		PAMI_assertf(__queues, "Out of memory allocating generic device queues");
                 __queues->__Threads.init(mm);

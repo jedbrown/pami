@@ -404,7 +404,7 @@ namespace PAMI
       }
 
       inline pami_result_t network2task_impl(const pami_coord_t *addr,
-                                                size_t *task,
+                                                pami_task_t *task,
                                                 pami_network *type)
       {
         std::cout << "network2task not supported" << std::endl;
