@@ -131,8 +131,10 @@ namespace PAMI {
 			head = _head;
 			tail = _tail;
 			size = _size;
-			_head = _tail = NULL;
-			_size = 0;
+			if (head) {
+				_head = _tail = NULL;
+				_size = 0;
+			}
 		}
 
 		inline void appendAll_impl(T_Element *head, T_Element *tail, size_t size) {

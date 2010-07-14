@@ -205,8 +205,10 @@ namespace PAMI
 	head = _head;
 	tail = _tail;
 	size = _size;
-	_head = _tail = NULL;
-	_size = 0;
+	if (head) {
+	  _head = _tail = NULL;
+	  _size = 0;
+	}
       }
 
       /// \copydoc PAMI::Interface::QueueInterface::appendAll
