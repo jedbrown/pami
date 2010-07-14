@@ -48,19 +48,11 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
       if (header->counter != b->_counter || b->_phase >= b->_numphases)
         b->internalerror (header, __LINE__);
     }
-
   b->_cmplt[header->phase].counter = header->counter;
-  if(pipe_addr)
-    {
-      memcpy(b->_rbuf[header->phase],
-             pipe_addr,
-             data_size);
-      CollExchange::cb_recvcomplete(context,
-                                    &b->_cmplt[header->phase],
-                                    PAMI_SUCCESS);
 
-    }
-  else
+  if(pipe_addr)
+    memcpy(b->_rbuf[header->phase],pipe_addr,data_size);
+  else if(recv)
     {
       memset(&recv->hints, 0, sizeof(recv->hints));
       recv->cookie        = &b->_cmplt[header->phase];
@@ -68,7 +60,9 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
       recv->addr          = (char*)b->_rbuf[header->phase];
       recv->type          = PAMI_BYTE;
       recv->offset        = 0;
+      return;
     }
+  CollExchange::cb_recvcomplete(context,&b->_cmplt[header->phase],PAMI_SUCCESS);
 }
 
 
@@ -97,15 +91,8 @@ void TSPColl::Scatter<T_NI>::cb_incoming(pami_context_t    context,
          header->tag, header->id, base0, s));
 
   if(pipe_addr)
-    {
-      memcpy(s->_rbuf,
-             pipe_addr,
-             data_size);
-      Scatter::cb_recvcomplete(context,
-                               s,
-                               PAMI_SUCCESS);
-    }
-  else
+      memcpy(s->_rbuf,pipe_addr,data_size);
+  else if (recv)
     {
       memset(&recv->hints, 0, sizeof(recv->hints));
       recv->cookie        = s;
@@ -115,7 +102,9 @@ void TSPColl::Scatter<T_NI>::cb_incoming(pami_context_t    context,
       recv->offset        = 0;
       TRACE((stderr, "SCATTER/v: <%d,%d> INCOMING RETURING base=%p ptr=%p\n",
              header->tag, header->id, base0, s));
+      return;
     }
+  Scatter::cb_recvcomplete(context,s,PAMI_SUCCESS);
 }
 
 
