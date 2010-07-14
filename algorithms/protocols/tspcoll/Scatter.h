@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "algorithms/ccmi.h" // for PAMI_Request_t
 #include "algorithms/protocols/tspcoll/NBColl.h"
 #include "util/common.h"
 
@@ -31,8 +30,8 @@
 
 namespace TSPColl
 {
-  template <class T_Mcast>
-  class Scatter: public NBColl<T_Mcast>
+  template <class T_NI>
+  class Scatter: public NBColl<T_NI>
   {
   protected:
     static const int MAX_CONCURRENCY=10;
@@ -40,13 +39,11 @@ namespace TSPColl
   public:
     Scatter      (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff);
     void reset   (int root, const void * sbuf, void * rbuf, size_t length);
-    virtual void kick    (T_Mcast *mcast_iface);
+    virtual void kick    (T_NI *p2p_iface);
     virtual bool isdone  (void) const { return _complete >= _counter; }
-    static void amsend_reg  (T_Mcast *mcast_iface, void *cd);
+    static void amsend_reg  (T_NI *p2p_iface, void *cd);
   protected:
-    PAMI_Request_t                       *_req;
-    PAMI_Request_t                       _rreq;
-    T_Mcast       *_mcast_iface;
+    T_NI       *_p2p_iface;
     const char    * _sbuf;         /* send buffer    */
     void          * _rbuf;         /* receive buffer */
     size_t          _length;       /* msg length     */
@@ -67,26 +64,24 @@ namespace TSPColl
     _header;
 
   protected:
-    //    pami_olddispatch_multicast_fn cb_incoming;
-
-    static  pami_quad_t * cb_incoming(const pami_quad_t  * hdr,
-                                         unsigned          count,
-                                         unsigned          peer,
-                                         unsigned          sndlen,
-                                         unsigned          conn_id,
-                                         void            * arg,
-                                         unsigned        * rcvlen,
-                                         char           ** rcvbuf,
-                                         unsigned        * pipewidth,
-                                         PAMI_Callback_t * cb_done);
+    static inline void cb_incoming(pami_context_t    context,
+                                   void            * cookie,
+                                   const void      * header_addr,
+                                   size_t            header_size,
+                                   const void      * pipe_addr,
+                                   size_t            data_size,
+                                   pami_endpoint_t   origin,
+                                   pami_recv_t     * recv);
     static void cb_recvcomplete (pami_context_t context, void *arg, pami_result_t err);
     static void cb_senddone(pami_context_t context, void *arg, pami_result_t err);
   };
 };
-template <class T_Mcast>
-inline void TSPColl::Scatter<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface, void *cd)
+template <class T_NI>
+inline void TSPColl::Scatter<T_NI>::amsend_reg  (T_NI *p2p_iface, void *cd)
     {
-      mcast_iface->setCallback(TSPColl::Scatter<T_Mcast>::cb_incoming, cd);
+      pami_dispatch_callback_fn fn;
+      fn.p2p = TSPColl::Scatter<T_NI>::cb_incoming;
+      p2p_iface->setSendDispatch(fn, cd);
     }
 /* **************************************************************** */
 /*                    Scatterv                                      */
@@ -94,14 +89,14 @@ inline void TSPColl::Scatter<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface, void *
 
 namespace TSPColl
 {
-  template <class T_Mcast>
-  class Scatterv: public Scatter<T_Mcast>
+  template <class T_NI>
+  class Scatterv: public Scatter<T_NI>
   {
   public:
     Scatterv (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff):
-      Scatter<T_Mcast> (comm, tag, instID, tagoff), _lengths(0) { }
+      Scatter<T_NI> (comm, tag, instID, tagoff), _lengths(0) { }
     void reset (int root, const void * sbuf, void * rbuf, size_t * lengths);
-    virtual void kick (T_Mcast *mcast_iface);
+    virtual void kick (T_NI *p2p_iface);
   protected:
     size_t * _lengths;
   };
@@ -121,10 +116,10 @@ namespace TSPColl
 /* **************************************************************** */
 /*                 Scatterv constructor                             */
 /* **************************************************************** */
-template<class T_Mcast>
-TSPColl::Scatter<T_Mcast>::Scatter (PAMI_GEOMETRY_CLASS * comm, NBTag tag,
+template<class T_NI>
+TSPColl::Scatter<T_NI>::Scatter (PAMI_GEOMETRY_CLASS * comm, NBTag tag,
                            int instID, int tagoff):
-  NBColl<T_Mcast> (comm, tag, instID, NULL, NULL)
+  NBColl<T_NI> (comm, tag, instID, NULL, NULL)
 {
   _counter         = 0;
   _complete        = 0;
@@ -145,8 +140,8 @@ TSPColl::Scatter<T_Mcast>::Scatter (PAMI_GEOMETRY_CLASS * comm, NBTag tag,
 /* **************************************************************** */
 /*               reset the scatterv routine                         */
 /* **************************************************************** */
-template<class T_Mcast>
-void TSPColl::Scatter<T_Mcast>::
+template<class T_NI>
+void TSPColl::Scatter<T_NI>::
 reset (int root, const void * sbuf, void * rbuf, size_t length)
 {
   _isroot = ((size_t)root == this->_comm->virtrank());
@@ -160,13 +155,12 @@ reset (int root, const void * sbuf, void * rbuf, size_t length)
 /* **************************************************************** */
 /*              kick the scatter routine                            */
 /* **************************************************************** */
-template<class T_Mcast>
-void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
+template<class T_NI>
+void TSPColl::Scatter<T_NI>::kick(T_NI *p2p_iface)
 {
-  _mcast_iface = mcast_iface;
+  _p2p_iface = p2p_iface;
   TRACE((stderr, "SCATTER KICK START\n"));
   if (!_isroot) return;
-  _req = (PAMI_Request_t*) malloc(this->_comm->size()*sizeof(PAMI_Request_t));
   for (size_t i=0; i < this->_comm->size(); i++)
     if (i == this->_comm->virtrank())
       {
@@ -175,34 +169,29 @@ void TSPColl::Scatter<T_Mcast>::kick(T_Mcast *mcast_iface)
       }
     else
       {
-      unsigned        hints   = PAMI_PT_TO_PT_SUBTASK;
-      unsigned        ranks   = this->_comm->absrankof (i);
-      PAMI_Callback_t cb_done;
-      cb_done.function        = cb_senddone;
-      cb_done.clientdata      = &this->_header;
-
-      void * r = NULL;
       TRACE((stderr, "SCATTER KICK sbuf=%p hdr=%p, tag=%d id=%d\n",
              this->_sbuf, &this->_header,this->_header.tag, this->_header.id));
-      mcast_iface->send (&_req[i],
-                         &cb_done,
-                         PAMI_MATCH_CONSISTENCY,
-                         (pami_quad_t*)&this->_header,
-                         PAMIQuad_sizeof(this->_header),
-                         0,
-                         (char*)(this->_sbuf + i * this->_length),
-                         (unsigned)this->_length,
-                         &hints,
-                         &ranks,
-                         1);
+
+      pami_send_t p_send;
+      p_send.send.header.iov_base  = &this->_header;
+      p_send.send.header.iov_len   = sizeof(this->_header);
+      p_send.send.data.iov_base    = (char*)(this->_sbuf + i * this->_length);
+      p_send.send.data.iov_len     = this->_length;
+      p_send.send.dispatch         = -1;
+      memset(&p_send.send.hints, 0, sizeof(p_send.send.hints));
+      p_send.send.dest             = this->_comm->absrankof (i);
+      p_send.events.cookie         = &this->_header;
+      p_send.events.local_fn       = this->cb_senddone;
+      p_send.events.remote_fn      = NULL;
+      p2p_iface->send(&p_send);
       }
 }
 
 /* **************************************************************** */
 /*               send completion in scatter                         */
 /* **************************************************************** */
-template<class T_Mcast>
-void TSPColl::Scatter<T_Mcast>::cb_senddone (pami_context_t context, void *arg, pami_result_t err)
+template<class T_NI>
+void TSPColl::Scatter<T_NI>::cb_senddone (pami_context_t context, void *arg, pami_result_t err)
 {
   Scatter * self = ((struct scatter_header *)arg)->self;
   /* LOCK */
@@ -214,7 +203,6 @@ void TSPColl::Scatter<T_Mcast>::cb_senddone (pami_context_t context, void *arg, 
   /* UNLOCK */
   if (self->_cb_complete)
       {
-          free(self->_req);
           self->_cb_complete (NULL, self->_arg, PAMI_SUCCESS);
       }
 }
@@ -222,8 +210,8 @@ void TSPColl::Scatter<T_Mcast>::cb_senddone (pami_context_t context, void *arg, 
 /* **************************************************************** */
 /*               reset the scatterv routine                         */
 /* **************************************************************** */
-template<class T_Mcast>
-void TSPColl::Scatterv<T_Mcast>::
+template<class T_NI>
+void TSPColl::Scatterv<T_NI>::
 reset (int root, const void * sbuf, void * rbuf, size_t * lengths)
 {
   this->_isroot = ((size_t)root == this->_comm->virtrank());
@@ -240,16 +228,15 @@ reset (int root, const void * sbuf, void * rbuf, size_t * lengths)
 /* **************************************************************** */
 /*             kick the scatterv routine                            */
 /* **************************************************************** */
-template<class T_Mcast>
-void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
+template<class T_NI>
+void TSPColl::Scatterv<T_NI>::kick(T_NI *p2p_iface)
 {
-  this->_mcast_iface = mcast_iface;
+  this->_p2p_iface = p2p_iface;
   if (!this->_isroot) return;
   assert (this->_lengths != NULL && this->_sbuf != NULL);
   TRACE((stderr, "SCATTERV KICK ctr=%d cplt=%d\n",
          this->_counter, this->_complete));
 
-  this->_req = (PAMI_Request_t*) malloc(this->_comm->size()*sizeof(PAMI_Request_t));
   for (size_t i=0; i < this->_comm->size(); i++)
       {
         const char * s = this->_sbuf; for (unsigned j=0; j<i; j++) s += this->_lengths[j];
@@ -265,23 +252,18 @@ void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
             }
         else
             {
-              unsigned        hints   = PAMI_PT_TO_PT_SUBTASK;
-              unsigned        ranks   = this->_comm->absrankof (i);
-              PAMI_Callback_t cb_done;
-              cb_done.function        = this->cb_senddone;
-              cb_done.clientdata      = &this->_header;
-              void * r = NULL;
-              mcast_iface->send (&this->_req[i],
-                                 &cb_done,
-                                 PAMI_MATCH_CONSISTENCY,
-                                 (pami_quad_t*)&this->_header,
-                                 PAMIQuad_sizeof(this->_header),
-                                 0,
-                                 (char*)(s),
-                                 (unsigned)this->_lengths[i],
-                                 &hints,
-                                 &ranks,
-                                 1);
+              pami_send_t p_send;
+              p_send.send.header.iov_base  = &this->_header;
+              p_send.send.header.iov_len   =  sizeof(this->_header);
+              p_send.send.data.iov_base    = (void*)s;
+              p_send.send.data.iov_len     = this->_lengths[i];
+              p_send.send.dispatch         = -1;
+              memset(&p_send.send.hints, 0, sizeof(p_send.send.hints));
+              p_send.send.dest             = this->_comm->absrankof(i);
+              p_send.events.cookie         = &this->_header;
+              p_send.events.local_fn       = this->cb_senddone;
+              p_send.events.remote_fn      = NULL;
+              p2p_iface->send(&p_send);
             }
       }
 }
@@ -290,8 +272,8 @@ void TSPColl::Scatterv<T_Mcast>::kick(T_Mcast *mcast_iface)
 /* **************************************************************** */
 /*           active message reception complete                      */
 /* **************************************************************** */
-template<class T_Mcast>
-void TSPColl::Scatter<T_Mcast>::cb_recvcomplete (pami_context_t context, void *arg, pami_result_t err)
+template<class T_NI>
+void TSPColl::Scatter<T_NI>::cb_recvcomplete (pami_context_t context, void *arg, pami_result_t err)
 {
   Scatter * s = (Scatter *) arg;
   s->_complete++;

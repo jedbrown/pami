@@ -13,7 +13,7 @@
 #include "components/devices/MulticastModel.h"
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/MulticombineModel.h"
-
+#include "p2p/protocols/SendPWQ.h"
 #include "components/memory/MemoryAllocator.h"
 
 #undef TRACE_ERR
@@ -57,17 +57,17 @@ namespace PAMI
   /// // Generate the protocol with the NI dispatch function and the NI pointer as a cookie
   ///
   ///  pami_dispatch_callback_fn dispatch_fn;
-  /// dispatch_fn.p2p = NativeInterfaceActiveMessage::dispatch_p2p;
+  /// dispatch_fn.p2p = NativeInterfaceActiveMessage::dispatch_mcast;
   ///
   /// MySendPWQ *protocol = (MySendPWQ*) MySendPWQ::generate(dispatch, dispatch_fn,(void*) ni,  ...);
   ///
   /// // Set the p2p dispatch id and protocol back in the Native Interface
   ///
-  /// ni->setProtocol(dispatch, protocol);
+  /// ni->setMcastProtocol(dispatch, protocol);
   ///
   /// This sequence is necessary.  We can't pass the protocol on the NI ctor because it's a
   /// chicken-n-egg problem.  NativeInterface  ctor needs a protocol. Protocol ctor needs a
-  /// dispatch function (NI::dispatch_p2p) and cookie (NI*).
+  /// dispatch function (NI::dispatch_mcast) and cookie (NI*).
   ///
   /// If we had a common ctor/generate and/or setDispatch on P2P protocols, we could do it differently.
   ///
@@ -94,13 +94,12 @@ namespace PAMI
     template<class T_Allocator, class T_NativeInterface,class T_Protocol,class T_Device>
     inline pami_result_t constructNativeInterface(T_Allocator        &allocator,
                                                   T_Device           &device,
-                                                  T_Protocol        *&protocol,
                                                   T_NativeInterface *&ni,
                                                   pami_client_t       client,
                                                   pami_context_t      context,
                                                   size_t              context_id,
-                                                  size_t              client_id,
-                                                  size_t              dispatch)
+                                                  size_t              client_id)
+
     {
       TRACE_ERR((stderr, "<%p>NativeInterfaceCommon::constructNativeInterface() \n", (void*)NULL));
       DO_DEBUG((templateName<T_NativeInterface>()));
@@ -112,19 +111,39 @@ namespace PAMI
       COMPILE_TIME_ASSERT(sizeof(T_NativeInterface) <= T_Allocator::objsize);
       COMPILE_TIME_ASSERT(sizeof(T_Protocol) <= T_Allocator::objsize);
 
-      // Get storage for the NI and construct it.
+
+      // Construct the p2p protocol using the NI dispatch function and cookie
+      // This sets up the multicast protocol
       ni = (T_NativeInterface*) allocator.allocateObject ();
       new ((void*)ni) T_NativeInterface(client, context, context_id, client_id);
 
-      pami_endpoint_t origin = PAMI_ENDPOINT_INIT(client_id,__global.mapping.task(),context_id);
+      pami_dispatch_callback_fn  fn;
+      pami_endpoint_t            origin   = PAMI_ENDPOINT_INIT(client_id,__global.mapping.task(),context_id);
+      size_t                     dispatch = getNextDispatch();
+      fn.p2p                              = T_NativeInterface::dispatch_mcast;
+      T_Protocol                *protocol = (T_Protocol*) T_Protocol::generate(dispatch,
+                                                                               fn.p2p,
+                                                                               (void*) ni,
+                                                                               device,
+                                                                               origin,
+                                                                               context,
+                                                                               allocator,
+                                                                               result);
+      ni->setMcastProtocol(dispatch, protocol);
 
       // Construct the p2p protocol using the NI dispatch function and cookie
-      pami_dispatch_callback_fn fn;
-      fn.p2p = T_NativeInterface::dispatch_p2p;
-      protocol = (T_Protocol*) T_Protocol::generate(dispatch, fn.p2p, (void*) ni, device, origin, context, allocator, result);
+      dispatch  = getNextDispatch();
+      fn.p2p    = T_NativeInterface::dispatch_send;
+      protocol  = (T_Protocol*) T_Protocol::generate(dispatch,
+                                                     fn.p2p,
+                                                     (void*) ni,
+                                                     device,
+                                                     origin,
+                                                     context,
+                                                     allocator,
+                                                     result);
+      ni->setSendProtocol(dispatch, protocol);
 
-      // Set the protocol into the NI
-      ni->setProtocol(dispatch, protocol);
 
       // Workaround:  This gets rid of an unused warning with gcc
       if(0)
@@ -150,15 +169,13 @@ namespace PAMI
     template<class T_Allocator, class T_NativeInterface,class T_Protocol1,class T_Device1,class T_Protocol2,class T_Device2>
     inline pami_result_t constructNativeInterface(T_Allocator        &allocator,
                                                   T_Device1           &device1,
-                                                  T_Protocol1        *&protocol1,
                                                   T_Device2           &device2,
-                                                  T_Protocol2        *&protocol2,
                                                   T_NativeInterface *&ni,
                                                   pami_client_t       client,
                                                   pami_context_t      context,
                                                   size_t              context_id,
-                                                  size_t              client_id,
-                                                  size_t              dispatch)
+                                                  size_t              client_id)
+
     {
       TRACE_ERR((stderr, "<%p>NativeInterfaceCommon::constructNativeInterface() \n", (void*)NULL));
       DO_DEBUG((templateName<T_NativeInterface>()));
@@ -179,18 +196,34 @@ namespace PAMI
       pami_endpoint_t origin = PAMI_ENDPOINT_INIT(client_id,__global.mapping.task(),context_id);
 
       // Construct the first p2p protocol using the NI dispatch function and cookie
-      pami_dispatch_callback_fn fn;
-      fn.p2p = T_NativeInterface::dispatch_p2p;
-      protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch, fn.p2p, (void*) ni, device1, origin, context, allocator, result);
-
-      // Construct the second p2p protocol using the NI dispatch function and cookie
-      protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch, fn.p2p, (void*) ni, device2, origin, context, allocator, result);
-
+      pami_dispatch_callback_fn  fn;
+      size_t                     dispatch  = getNextDispatch();
+      fn.p2p                               = T_NativeInterface::dispatch_mcast;
+      T_Protocol1               *protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch,
+                                                                                  fn.p2p,
+                                                                                  (void*) ni,
+                                                                                  device1,
+                                                                                  origin,
+                                                                                  context,
+                                                                                  allocator,
+                                                                                  result);
+      T_Protocol2               *protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
+                                                                                  fn.p2p,
+                                                                                  (void*) ni,
+                                                                                  device2,
+                                                                                  origin,
+                                                                                  context,
+                                                                                  allocator,
+                                                                                  result);
       // Construct the composite from the two protocols
-      Protocol::Send::SendPWQ<Protocol::Send::Send>* composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*) Protocol::Send::Factory::generate (protocol1,protocol2,allocator, result);
-
+      Protocol::Send::SendPWQ<Protocol::Send::Send>* composite =
+        (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
+        Protocol::Send::Factory::generate(protocol1,
+                                          protocol2,
+                                          allocator,
+                                          result);
       // Set the composite protocol into the NI
-      ni->setProtocol(dispatch, composite);
+      ni->setMcastProtocol(dispatch, composite);
 
       // Return
       return result;
@@ -321,8 +354,17 @@ namespace PAMI
       PAMI_abort();
       return PAMI_ERROR;
     }
+    virtual inline pami_result_t send (pami_send_t * parameters);
+    virtual inline pami_result_t sendPWQ(pami_context_t       context,
+                                         pami_send_t         *parameters,
+                                         PAMI::PipeWorkQueue *pwq);
+
     /// \brief initial to set the mcast dispatch
     virtual inline pami_result_t setDispatch (pami_dispatch_callback_fn fn, void *cookie);
+    virtual inline pami_result_t setSendDispatch(pami_dispatch_callback_fn  fn,
+                                                 void                      *cookie);
+    virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_callback_fn  fn,
+                                                    void                      *cookie);
 
     inline pami_result_t multicast    (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],    pami_multicast_t    *);
     inline pami_result_t multisync    (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multisync_sizeof_msg],    pami_multisync_t    *);
@@ -352,25 +394,41 @@ namespace PAMI
     ///
     /// \todo If we had a protocol::setDispatch after ctor, we could do this internally.
     ///
-    static void dispatch_p2p(pami_context_t       context_hdl,
-                             void               * cookie,
-                             const void         * header,
-                             size_t               header_size,
-                             const void         * data,
-                             size_t               data_size,
-                             pami_endpoint_t      origin,
-                             pami_recv_t        * recv);
+    static void dispatch_mcast(pami_context_t       context_hdl,
+                               void               * cookie,
+                               const void         * header,
+                               size_t               header_size,
+                               const void         * data,
+                               size_t               data_size,
+                               pami_endpoint_t      origin,
+                               pami_recv_t        * recv);
+    static void dispatch_send(pami_context_t       context_hdl,
+                              void               * cookie,
+                              const void         * header,
+                              size_t               header_size,
+                              const void         * data,
+                              size_t               data_size,
+                              pami_endpoint_t      origin,
+                              pami_recv_t        * recv);
+
 
     /// \brief set the protocol pointer.    We can't pass the protocol on the NI ctor because it's a
-    /// chicken-n-egg problem.  NI ctor needs a protocol. Protocol ctor needs a dispatch fn (NI::dispatch_p2p) and cookie (NI*).
+    /// chicken-n-egg problem.  NI ctor needs a protocol. Protocol ctor needs a dispatch fn (NI::dispatch_mcast) and cookie (NI*).
     ///
-    /// I choose to ctor the NI, ctor the protocol, then manually set it with NI::setProtocol().
+    /// I choose to ctor the NI, ctor the protocol, then manually set it with NI::setMcastProtocol().
     ///
-    inline void setProtocol(size_t dispatch, T_Protocol* protocol)
+    inline void setMcastProtocol(size_t dispatch, T_Protocol* protocol)
     {
-      TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::setProtocol(%zu, %p)\n", this, dispatch, protocol));
+      TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::setMcastProtocol(%zu, %p)\n", this, dispatch, protocol));
       _mcast_dispatch = dispatch;
-      _protocol = protocol;
+      _mcast_protocol = protocol;
+    }
+
+    inline void setSendProtocol(size_t dispatch, T_Protocol* protocol)
+    {
+      TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::setMcastProtocol(%zu, %p)\n", this, dispatch, protocol));
+      _send_dispatch = dispatch;
+      _send_protocol = protocol;
     }
 
   private:
@@ -383,13 +441,13 @@ namespace PAMI
     ///
     /// \brief Received a p2p dispatch from another root (member function).
     ///
-    void dispatch(pami_context_t       context_hdl,
-                  const void         * header,
-                  size_t               header_size,
-                  const void         * data,
-                  size_t               data_size,
-                  pami_endpoint_t      origin,
-                  pami_recv_t        * recv);
+    void handle_mcast(pami_context_t       context_hdl,
+                      const void         * header,
+                      size_t               header_size,
+                      const void         * data,
+                      size_t               data_size,
+                      pami_endpoint_t      origin,
+                      pami_recv_t        * recv);
 
     ///
     /// \brief Called as each p2p send is done.
@@ -403,18 +461,19 @@ namespace PAMI
     PAMI::MemoryAllocator < sizeof(typename NativeInterfaceBase<T_Protocol>::allocObj), 16 > _allocator;  // Allocator
 
 
-    T_Protocol             *_protocol;
-
-    pami_client_t           _client;
-    pami_context_t          _context;
-    size_t                  _contextid;
-    size_t                  _clientid;
-
+    T_Protocol                           *_mcast_protocol;
+    T_Protocol                           *_send_protocol;
+    pami_client_t                         _client;
+    pami_context_t                        _context;
+    size_t                                _contextid;
+    size_t                                _clientid;
     pami_dispatch_multicast_fn            _mcast_dispatch_function;
     void                                * _mcast_dispatch_arg;
     size_t                                _mcast_dispatch;
+    pami_dispatch_p2p_fn                  _send_dispatch_function;
+    void                                * _send_dispatch_arg;
+    size_t                                _send_dispatch;
     Queue                                 _recvQ;
-    //std::map<unsigned,NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t*, std::less<unsigned>, __gnu_cxx::malloc_allocator<std::pair<const unsigned,NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t*> > >      _recvQ;            // _recvQ[connection_id]
   }; // class NativeInterfaceAllsided
 
   //
@@ -441,8 +500,16 @@ namespace PAMI
       PAMI_abort();
       return PAMI_ERROR;
     }
+    virtual inline pami_result_t send (pami_send_t * parameters);
+    virtual inline pami_result_t sendPWQ(pami_context_t       context,
+                                         pami_send_t         *parameters,
+                                         PAMI::PipeWorkQueue *pwq);
     /// \brief initialize to set the mcast dispatch
     virtual inline pami_result_t setDispatch (pami_dispatch_callback_fn fn, void *cookie);
+    virtual inline pami_result_t setSendDispatch(pami_dispatch_callback_fn  fn,
+                                                 void                      *cookie);
+    virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_callback_fn  fn,
+                                                    void                      *cookie);
 
     inline pami_result_t multicast    (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],    pami_multicast_t    *);
     inline pami_result_t multisync    (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multisync_sizeof_msg],    pami_multisync_t    *);
@@ -473,25 +540,41 @@ namespace PAMI
     ///
     /// \todo If we had a protocol::setDispatch after ctor, we could do this internally.
     ///
-    static void dispatch_p2p(pami_context_t       context_hdl,
-                             void               * cookie,
-                             const void         * header,
-                             size_t               header_size,
-                             const void         * data,
-                             size_t               data_size,
-                             pami_endpoint_t      origin,
-                             pami_recv_t        * recv);
+    static void dispatch_mcast(pami_context_t     context_hdl,
+                               void               * cookie,
+                               const void         * header,
+                               size_t               header_size,
+                               const void         * data,
+                               size_t               data_size,
+                               pami_endpoint_t      origin,
+                               pami_recv_t        * recv);
+
+    static void dispatch_send(pami_context_t      context_hdl,
+                              void               * cookie,
+                              const void         * header,
+                              size_t               header_size,
+                              const void         * data,
+                              size_t               data_size,
+                              pami_endpoint_t      origin,
+                              pami_recv_t        * recv);
 
     /// \brief set the protocol pointer.    We can't pass the protocol on the NI ctor because it's a
-    /// chicken-n-egg problem.  NI ctor needs a protocol. Protocol ctor needs a dispatch fn (NI::dispatch_p2p) and cookie (NI*).
+    /// chicken-n-egg problem.  NI ctor needs a protocol. Protocol ctor needs a dispatch fn (NI::dispatch_mcast) and cookie (NI*).
     ///
-    /// I choose to ctor the NI, ctor the protocol, then manually set it with NI::setProtocol().
+    /// I choose to ctor the NI, ctor the protocol, then manually set it with NI::setMcastProtocol().
     ///
-    inline void setProtocol(size_t dispatch, T_Protocol* protocol)
+    inline void setMcastProtocol(size_t dispatch, T_Protocol* protocol)
     {
-      TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::setProtocol(%p)\n", this, protocol));
+      TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::setMcastProtocol(%p)\n", this, protocol));
       _mcast_dispatch = dispatch;
-      _protocol = protocol;
+      _mcast_protocol = protocol;
+    }
+
+    inline void setSendProtocol(size_t dispatch, T_Protocol* protocol)
+    {
+      TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::setMcastProtocol(%p)\n", this, protocol));
+      _send_dispatch = dispatch;
+      _send_protocol = protocol;
     }
 
   private:
@@ -504,13 +587,13 @@ namespace PAMI
     ///
     /// \brief Received a p2p dispatch from another root (member function).
     ///
-    void dispatch(pami_context_t       context_hdl,
-                  const void         * header,
-                  size_t               header_size,
-                  const void         * data,
-                  size_t               data_size,
-                  pami_endpoint_t      origin,
-                  pami_recv_t        * recv);
+    void handle_mcast(pami_context_t       context_hdl,
+                      const void         * header,
+                      size_t               header_size,
+                      const void         * data,
+                      size_t               data_size,
+                      pami_endpoint_t      origin,
+                      pami_recv_t        * recv);
 
     ///
     /// \brief Called as each p2p send is done.
@@ -519,37 +602,20 @@ namespace PAMI
                            void          *  cookie,
                            pami_result_t    result );
 
-
-
     PAMI::MemoryAllocator < sizeof(typename NativeInterfaceBase<T_Protocol>::allocObj), 16 > _allocator;  // Allocator
-
-
-    T_Protocol             *_protocol;
-
-    pami_client_t           _client;
-    pami_context_t          _context;
-    size_t                  _contextid;
-    size_t                  _clientid;
-
-    pami_dispatch_multicast_fn            _mcast_dispatch_function;
-    void                                * _mcast_dispatch_arg;
-    size_t                                _mcast_dispatch;
+    T_Protocol                 *_mcast_protocol;
+    T_Protocol                 *_send_protocol;
+    pami_client_t               _client;
+    pami_context_t              _context;
+    size_t                      _contextid;
+    size_t                      _clientid;
+    pami_dispatch_multicast_fn  _mcast_dispatch_function;
+    void                       *_mcast_dispatch_arg;
+    size_t                      _mcast_dispatch;
+    pami_dispatch_p2p_fn        _send_dispatch_function;
+    void                       *_send_dispatch_arg;
+    size_t                      _send_dispatch;
   }; // class NativeInterfaceActiveMessage
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -557,14 +623,18 @@ namespace PAMI
   // Inline implementations
   //
   template <class T_Protocol>
-  inline NativeInterfaceAllsided<T_Protocol>::NativeInterfaceAllsided(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id):
-  NativeInterfaceBase<T_Protocol>(),
-  _allocator(),
-  _protocol(NULL), /// must be set by setProtocol() before using the NI.
-  _client(client),
-  _context(context),
-  _contextid(context_id),
-  _clientid(client_id)
+  inline NativeInterfaceAllsided<T_Protocol>::NativeInterfaceAllsided(pami_client_t  client,
+                                                                      pami_context_t context,
+                                                                      size_t         context_id,
+                                                                      size_t         client_id):
+    NativeInterfaceBase<T_Protocol>(),
+    _allocator(),
+    _mcast_protocol(NULL), /// must be set by setMcastProtocol() before using the NI.
+    _send_protocol(NULL), /// must be set by setMcastProtocol() before using the NI.
+    _client(client),
+    _context(context),
+    _contextid(context_id),
+    _clientid(client_id)
   {
     TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided()\n", this));
     DO_DEBUG((templateName<T_Protocol>()));
@@ -619,6 +689,23 @@ namespace PAMI
     PAMI_abortf("<%p>NativeInterfaceAllsided::setDispatch(%p, %p)\n", this, fn.multicast,  cookie);
     return PAMI_ERROR;
   }
+
+  template <class T_Protocol>
+  inline pami_result_t NativeInterfaceAllsided<T_Protocol>::setSendDispatch (pami_dispatch_callback_fn fn, void *cookie)
+  {
+    this->_send_dispatch_arg      = cookie;
+    this->_send_dispatch_function = fn.p2p;
+    return PAMI_ERROR;
+  }
+
+  template <class T_Protocol>
+  inline pami_result_t NativeInterfaceAllsided<T_Protocol>::setSendPWQDispatch (pami_dispatch_callback_fn fn, void *cookie)
+  {
+    PAMI_abort();
+    return PAMI_ERROR;
+  }
+
+
 
   template <class T_Protocol>
   inline pami_result_t NativeInterfaceAllsided<T_Protocol>::multicast (pami_multicast_t *mcast)
@@ -689,6 +776,21 @@ namespace PAMI
     //_mcomb.postMulticombine(req->_state._mcomb, &m);
     return PAMI_SUCCESS;
   }
+
+   template <class T_Protocol>
+   inline pami_result_t NativeInterfaceAllsided<T_Protocol>::send (pami_send_t * parameters)
+   {
+     PAMI_abort();
+     return PAMI_ERROR;
+   }
+   template <class T_Protocol>
+   inline pami_result_t NativeInterfaceAllsided<T_Protocol>::sendPWQ(pami_context_t       context,
+                                                                     pami_send_t         *parameters,
+                                                                     PAMI::PipeWorkQueue *pwq)
+   {
+     PAMI_abort();
+     return PAMI_ERROR;
+   }
 
   template <class T_Protocol>
   inline pami_result_t NativeInterfaceAllsided<T_Protocol>::postMulticast_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],
@@ -794,7 +896,7 @@ namespace PAMI
 
       TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::<%p>send(%u(%zu,%zu))\n", this, _protocol, state_data->parameters.send.dest, (size_t) taskList[i], mcast->context));
 
-      if (result == PAMI_SUCCESS) result = _protocol->simplePWQ(&state_data->sendpwq,_context, &state_data->parameters, pwq);
+      if (result == PAMI_SUCCESS) result = _mcast_protocol->simplePWQ(&state_data->sendpwq,_context, &state_data->parameters, pwq);
 
       TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::send(%zu) result %u\n", this, (size_t) taskList[i], result));
     }
@@ -812,38 +914,53 @@ namespace PAMI
   /// Call the member function on the protocol.
   ///
   template <class T_Protocol>
-  inline void NativeInterfaceAllsided<T_Protocol>::dispatch_p2p(pami_context_t       context_hdl,  /**< IN:  communication context handle */
-                                                                void               * cookie,       /**< IN:  dispatch cookie (pointer to protocol object)*/
-                                                                const void         * header,       /**< IN:  header address  */
-                                                                size_t               header_size,  /**< IN:  header size     */
-                                                                const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-                                                                size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
-                                                                pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
-                                                                pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
+  inline void NativeInterfaceAllsided<T_Protocol>::dispatch_mcast(pami_context_t       context_hdl,  /**< IN:  communication context handle */
+                                                                  void               * cookie,       /**< IN:  dispatch cookie (pointer to protocol object)*/
+                                                                  const void         * header,       /**< IN:  header address  */
+                                                                  size_t               header_size,  /**< IN:  header size     */
+                                                                  const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                                                  size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+                                                                  pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
+                                                                  pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
-    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::dispatch_p2p header size %zu, data size %zu\n", cookie, header_size, data_size));
+    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::dispatch_mcast header size %zu, data size %zu\n", cookie, header_size, data_size));
     NativeInterfaceAllsided<T_Protocol> *p = (NativeInterfaceAllsided<T_Protocol> *)cookie;
-    p->dispatch(context_hdl,
-                header,
-                header_size,
-                data,
-                data_size,
-                origin,
-                recv);
+    p->handle_mcast(context_hdl,
+                    header,
+                    header_size,
+                    data,
+                    data_size,
+                    origin,
+                    recv);
   }
+
+  template <class T_Protocol>
+  inline void NativeInterfaceAllsided<T_Protocol>::dispatch_send(pami_context_t       context_hdl,  /**< IN:  communication context handle */
+                                                                 void               * cookie,       /**< IN:  dispatch cookie (pointer to protocol object)*/
+                                                                 const void         * header,       /**< IN:  header address  */
+                                                                 size_t               header_size,  /**< IN:  header size     */
+                                                                 const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                                                 size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+                                                                 pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
+                                                                 pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
+  {
+    PAMI_abort();
+  }
+
+
   ///
   /// \brief Received a p2p dispatch from another root (member function).
   /// Call user's dispatch
   /// \see PAMI::Protocol::Send::Send::..?
   ///
   template <class T_Protocol>
-  inline void NativeInterfaceAllsided<T_Protocol>::dispatch(pami_context_t       context_hdl,  /**< IN:  communication context handle */
-                                                            const void         * header,       /**< IN:  header address  */
-                                                            size_t               header_size,  /**< IN:  header size     */
-                                                            const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-                                                            size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
-                                                            pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
-                                                            pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
+  inline void NativeInterfaceAllsided<T_Protocol>::handle_mcast(pami_context_t       context_hdl,  /**< IN:  communication context handle */
+                                                                     const void         * header,       /**< IN:  header address  */
+                                                                     size_t               header_size,  /**< IN:  header size     */
+                                                                     const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                                                     size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+                                                                     pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
+                                                                     pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
 
     unsigned connection_id = ((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->connection_id;
@@ -980,6 +1097,22 @@ namespace PAMI
   }
 
   template <class T_Protocol>
+  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::setSendDispatch (pami_dispatch_callback_fn fn, void *cookie)
+  {
+    this->_send_dispatch_arg      = cookie;
+    this->_send_dispatch_function = fn.p2p;
+    return PAMI_SUCCESS;
+  }
+
+  template <class T_Protocol>
+  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::setSendPWQDispatch (pami_dispatch_callback_fn fn, void *cookie)
+  {
+    PAMI_abort();
+    return PAMI_SUCCESS;
+  }
+
+
+  template <class T_Protocol>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::multicast (pami_multicast_t *mcast)
   {
     typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)_allocator.allocateObject();
@@ -1049,6 +1182,22 @@ namespace PAMI
     return PAMI_SUCCESS;
 
   }
+   template <class T_Protocol>
+   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::send (pami_send_t * parameters)
+   {
+     pami_send_t s   = *parameters;
+     s.send.dispatch = _send_dispatch;
+     return _send_protocol->simple(&s);
+   }
+   template <class T_Protocol>
+   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::sendPWQ(pami_context_t       context,
+                                                                          pami_send_t         *parameters,
+                                                                          PAMI::PipeWorkQueue *pwq)
+   {
+     PAMI_abort();
+     return PAMI_ERROR;
+   }
+
 
   template <class T_Protocol>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::postMulticast_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],
@@ -1145,7 +1294,7 @@ namespace PAMI
 
       TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::<%p>send(%u(%zu,%zu))\n", this, _protocol, state_data->parameters.send.dest, (size_t) taskList[i], mcast->context));
 
-      if (result == PAMI_SUCCESS) result = _protocol->simplePWQ(&state_data->sendpwq,_context,&state_data->parameters,pwq);
+      if (result == PAMI_SUCCESS) result = _mcast_protocol->simplePWQ(&state_data->sendpwq,_context,&state_data->parameters,pwq);
 
       TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::send(%zu) result %u\n", this, (size_t) taskList[i], result));
     }
@@ -1164,7 +1313,7 @@ namespace PAMI
   /// Call the member function on the protocol.
   ///
   template <class T_Protocol>
-  inline void NativeInterfaceActiveMessage<T_Protocol>::dispatch_p2p(pami_context_t       context_hdl,  /**< IN:  communication context handle */
+  inline void NativeInterfaceActiveMessage<T_Protocol>::dispatch_mcast(pami_context_t       context_hdl,  /**< IN:  communication context handle */
                                                                      void               * cookie,       /**< IN:  dispatch cookie (pointer to protocol object)*/
                                                                      const void         * header,       /**< IN:  header address  */
                                                                      size_t               header_size,  /**< IN:  header size     */
@@ -1173,29 +1322,53 @@ namespace PAMI
                                                                      pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
                                                                      pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::dispatch_p2p header size %zu, data size %zu\n", cookie, header_size, data_size));
+    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::dispatch_mcast header size %zu, data size %zu\n", cookie, header_size, data_size));
     NativeInterfaceActiveMessage<T_Protocol> *p = (NativeInterfaceActiveMessage<T_Protocol> *)cookie;
-    p->dispatch(context_hdl,
-                header,
-                header_size,
-                data,
-                data_size,
-                origin,
-                recv);
+    p->handle_mcast(context_hdl,
+                    header,
+                    header_size,
+                    data,
+                    data_size,
+                    origin,
+                    recv);
   }
+
+
+  template <class T_Protocol>
+  inline void NativeInterfaceActiveMessage<T_Protocol>::dispatch_send(pami_context_t       context_hdl,  /**< IN:  communication context handle */
+                                                                     void               * cookie,       /**< IN:  dispatch cookie (pointer to protocol object)*/
+                                                                     const void         * header,       /**< IN:  header address  */
+                                                                     size_t               header_size,  /**< IN:  header size     */
+                                                                     const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                                                     size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+                                                                     pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
+                                                                     pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
+  {
+    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::dispatch_mcast header size %zu, data size %zu\n", cookie, header_size, data_size));
+    NativeInterfaceActiveMessage<T_Protocol> *p = (NativeInterfaceActiveMessage<T_Protocol> *)cookie;
+    p->_send_dispatch_function(context_hdl,
+                               p->_send_dispatch_arg,
+                               header,
+                               header_size,
+                               data,
+                               data_size,
+                               origin,
+                               recv);
+  }
+
   ///
   /// \brief Received a p2p dispatch from another root (member function).
   /// Call user's dispatch
   /// \see PAMI::Protocol::Send::Send::..?
   ///
   template <class T_Protocol>
-  inline void NativeInterfaceActiveMessage<T_Protocol>::dispatch(pami_context_t       context_hdl,  /**< IN:  communication context handle */
-                                                                 const void         * header,       /**< IN:  header address  */
-                                                                 size_t               header_size,  /**< IN:  header size     */
-                                                                 const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-                                                                 size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
-                                                                 pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
-                                                                 pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
+  inline void NativeInterfaceActiveMessage<T_Protocol>::handle_mcast(pami_context_t       context_hdl,  /**< IN:  communication context handle */
+                                                                     const void         * header,       /**< IN:  header address  */
+                                                                     size_t               header_size,  /**< IN:  header size     */
+                                                                     const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                                                     size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+                                                                     pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
+                                                                     pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
 
     // Call user's dispatch to get receive pwq and cb_done.

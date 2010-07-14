@@ -45,7 +45,7 @@ namespace TSPColl
   /*   Managing non-blocking collectives at runtime.             */
   /* The manager is a singleton.                                 */
   /* *********************************************************** */
-  template <class T_Mcast>
+  template <class T_NI>
   class NBCollManager
   {
   public:
@@ -55,70 +55,70 @@ namespace TSPColl
 
     NBCollManager(void);
     void initialize ();
-    NBColl<T_Mcast> * find (NBTag tag, int id); /* find an existing instance */
-    NBColl<T_Mcast> * allocate (PAMI_GEOMETRY_CLASS *, NBTag tag);
-    void     multisend_reg (NBTag tag,T_Mcast *mcast_iface);
+    NBColl<T_NI> * find (NBTag tag, int id); /* find an existing instance */
+    NBColl<T_NI> * allocate (PAMI_GEOMETRY_CLASS *, NBTag tag);
+    void     multisend_reg (NBTag tag,T_NI *p2p_iface);
 
   private:
     /* ------------ */
     /* data members */
     /* ------------ */
 
-    Vector<NBColl<T_Mcast> *>        * _taglist[MAXTAG];
-    NBCollFactory<T_Mcast>             _factory;
+    Vector<NBColl<T_NI> *>        * _taglist[MAXTAG];
+    NBCollFactory<T_NI>             _factory;
   private:
   };
 
 
-  template <class T_Mcast>
+  template <class T_NI>
   void
-  TSPColl::NBCollManager<T_Mcast>::multisend_reg (NBTag tag,T_Mcast *mcast_iface)
+  TSPColl::NBCollManager<T_NI>::multisend_reg (NBTag tag,T_NI *p2p_iface)
   {
     switch (tag)
         {
             case BarrierTag:
             {
-              TSPColl::Barrier<T_Mcast>::amsend_reg(mcast_iface, this);
+              TSPColl::Barrier<T_NI>::amsend_reg(p2p_iface, this);
               break;
             }
             case AllgatherTag:
             {
-              TSPColl::Allgather<T_Mcast>::amsend_reg(mcast_iface, this);
+              TSPColl::Allgather<T_NI>::amsend_reg(p2p_iface, this);
               break;
             }
             case AllgathervTag:
             {
-              TSPColl::Allgatherv<T_Mcast>::amsend_reg(mcast_iface, this);
+              TSPColl::Allgatherv<T_NI>::amsend_reg(p2p_iface, this);
               break;
             }
             case BcastTag:
             {
-              TSPColl::BinomBcast<T_Mcast>::amsend_reg(mcast_iface, this);
+              TSPColl::BinomBcast<T_NI>::amsend_reg(p2p_iface, this);
               break;
             }
             case BcastTag2:
             {
-              TSPColl::ScBcast<T_Mcast>::amsend_reg(mcast_iface, this);
+              TSPColl::ScBcast<T_NI>::amsend_reg(p2p_iface, this);
               break;
             }
             case ShortAllreduceTag:
             {
-              TSPColl::Allreduce::Short<T_Mcast>::amsend_reg(mcast_iface, this);
+              TSPColl::Allreduce::Short<T_NI>::amsend_reg(p2p_iface, this);
               break;
             }
             case LongAllreduceTag:
             {
-              TSPColl::Allreduce::Long<T_Mcast>::amsend_reg(mcast_iface, this);
+              TSPColl::Allreduce::Long<T_NI>::amsend_reg(p2p_iface, this);
               break;
             }
             case ScatterTag:
             {
-              TSPColl::Scatter<T_Mcast>::amsend_reg(mcast_iface, this);
+              TSPColl::Scatter<T_NI>::amsend_reg(p2p_iface, this);
               break;
             }
             case ScattervTag:
             {
-              TSPColl::Scatterv<T_Mcast>::amsend_reg(mcast_iface, this);
+              TSPColl::Scatterv<T_NI>::amsend_reg(p2p_iface, this);
               break;
             }
             case GatherTag:
@@ -158,13 +158,13 @@ namespace TSPColl
 /* ************************************************************************ */
 /*          NBColl life cycle manager: singleton initializer                */
 /* ************************************************************************ */
-  template <class T_Mcast>
-  void TSPColl::NBCollManager<T_Mcast>::initialize (void)
+  template <class T_NI>
+  void TSPColl::NBCollManager<T_NI>::initialize (void)
   {
     for (int i=0; i<MAXTAG; i++)
       {
-        _taglist [i] = (Vector<NBColl<T_Mcast> *> *) malloc (sizeof(Vector<NBColl<T_Mcast> *>));
-        new (_taglist[i]) Vector<NBColl<T_Mcast> *> ();
+        _taglist [i] = (Vector<NBColl<T_NI> *> *) malloc (sizeof(Vector<NBColl<T_NI> *>));
+        new (_taglist[i]) Vector<NBColl<T_NI> *> ();
       }
   }
 
@@ -172,17 +172,17 @@ namespace TSPColl
 /* ************************************************************************ */
 /*           NBColl life cycle manager: constructor                         */
 /* ************************************************************************ */
-  template <class T_Mcast>
-  TSPColl::NBCollManager<T_Mcast>::NBCollManager (void)
+  template <class T_NI>
+  TSPColl::NBCollManager<T_NI>::NBCollManager (void)
   {
   }
 
 /* ************************************************************************ */
 /*              find an instance                                            */
 /* ************************************************************************ */
-  template <class T_Mcast>
-  TSPColl::NBColl<T_Mcast> *
-  TSPColl::NBCollManager<T_Mcast>::find (NBTag tag, int id)
+  template <class T_NI>
+  TSPColl::NBColl<T_NI> *
+  TSPColl::NBCollManager<T_NI>::find (NBTag tag, int id)
   {
     assert (0 <= tag && tag < MAXTAG);
     return (*_taglist[tag])[id];
@@ -191,13 +191,13 @@ namespace TSPColl
 /* ************************************************************************ */
 /*            reserve an instance or create a new one                       */
 /* ************************************************************************ */
-  template <class T_Mcast>
-  TSPColl::NBColl<T_Mcast> *
-  TSPColl::NBCollManager<T_Mcast>::allocate (PAMI_GEOMETRY_CLASS * comm, NBTag tag)
+  template <class T_NI>
+  TSPColl::NBColl<T_NI> *
+  TSPColl::NBCollManager<T_NI>::allocate (PAMI_GEOMETRY_CLASS * comm, NBTag tag)
   {
     assert (0 <= tag && tag < MAXTAG);
     int nextID = _taglist[tag]->size();
-    NBColl<T_Mcast> * retval = _factory.create (comm, tag, nextID);
+    NBColl<T_NI> * retval = _factory.create (comm, tag, nextID);
     (*_taglist[tag])[nextID] = retval;
     return retval;
   }

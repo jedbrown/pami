@@ -18,7 +18,6 @@
 #define __algorithms_protocols_tspcoll_CollExchange_h__
 
 #include "util/ccmi_debug.h"
-#include "algorithms/ccmi.h" //for request type
 #include "algorithms/protocols/tspcoll/NBColl.h"
 
 //#define DEBUG_TSPCOLL 1
@@ -37,8 +36,8 @@
 namespace TSPColl
 {
 
-  template<class T_Mcast>
-  class CollExchange: public NBColl<T_Mcast>
+  template<class T_NI>
+  class CollExchange: public NBColl<T_NI>
   {
   protected:
     //    static const int MAX_PHASES=64;
@@ -48,9 +47,9 @@ namespace TSPColl
     /* ------------------------------ */
     /*  public API                    */
     /* ------------------------------ */
-    virtual void  kick             (T_Mcast *mcast_iface);
+    virtual void  kick             (T_NI *p2p_iface);
     virtual bool  isdone           () const;
-    static void   amsend_reg       (T_Mcast *mcast_iface, void *cd);
+    static void   amsend_reg       (T_NI *p2p_iface, void *cd);
   protected:
 
     CollExchange                   (PAMI_GEOMETRY_CLASS *, NBTag,
@@ -66,30 +65,20 @@ namespace TSPColl
     /*  local functions               */
     /* ------------------------------ */
 
-    void          send                     (int phase,T_Mcast*mcast_iface);
-    //static inline CCMI::MultiSend::DCMF_OldRecvMulticast cb_incoming;
-    static inline pami_quad_t *cb_incoming(const pami_quad_t  * hdr,
-                                          unsigned          count,
-                                          unsigned          peer,
-                                          unsigned          sndlen,
-                                          unsigned          conn_id,
-                                          void            * arg,
-                                          unsigned        * rcvlen,
-                                          char           ** rcvbuf,
-                                          unsigned        * pipewidth,
-                                          PAMI_Callback_t * cb_done);
+    void          send                     (int phase,T_NI*p2p_iface);
 
+    static inline void cb_incoming(pami_context_t    context,
+                                   void            * cookie,
+                                   const void      * header_addr,
+                                   size_t            header_size,
+                                   const void      * pipe_addr,
+                                   size_t            data_size,
+                                   pami_endpoint_t   origin,
+                                   pami_recv_t     * recv);
     static void   cb_recvcomplete (pami_context_t context, void * arg, pami_result_t error);
     static void   cb_senddone     (pami_context_t, void*, pami_result_t);
   protected:
-    /* ------------------------------ */
-    /* static: set by constructor     */
-    /* ------------------------------ */
-    PAMI_Request_t                       _req[MAX_PHASES];
-    PAMI_Request_t                       _rreq[MAX_PHASES];
-
-    T_Mcast                            *_mcast_iface;
-
+    T_NI                            *_p2p_iface;
     int          _numphases;
 
     /* ------------------------------ */
@@ -153,11 +142,12 @@ namespace TSPColl
 /* *********************************************************************** */
 /*                  register collexchange                                  */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline void TSPColl::CollExchange<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface, void* cd)
+template <class T_NI>
+inline void TSPColl::CollExchange<T_NI>::amsend_reg  (T_NI *p2p_iface, void* cd)
 {
-
-  mcast_iface->setCallback(cb_incoming, cd);
+  pami_dispatch_callback_fn fn;
+  fn.p2p = cb_incoming;
+  p2p_iface->setSendDispatch(fn, cd);
   // __pgasrt_tsp_amsend_reg (PGASRT_TSP_AMSEND_COLLEXCHANGE, cb_incoming);
 }
 
@@ -166,12 +156,12 @@ inline void TSPColl::CollExchange<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface, v
 /* *********************************************************************** */
 /*                  CollExchange constructor                               */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline TSPColl::CollExchange<T_Mcast>::
+template <class T_NI>
+inline TSPColl::CollExchange<T_NI>::
 CollExchange (PAMI_GEOMETRY_CLASS * comm,
                        NBTag tag, int id, int offset,
                        bool strict, pami_event_function cb_complete, void *arg):
-NBColl<T_Mcast> (comm, tag, id, cb_complete, arg), _strict(strict)
+NBColl<T_NI> (comm, tag, id, cb_complete, arg), _strict(strict)
 {
   _counter         = 0;
   _numphases       = -100 * tag;
@@ -201,8 +191,8 @@ NBColl<T_Mcast> (comm, tag, id, cb_complete, arg), _strict(strict)
 /* *********************************************************************** */
 /*    reinitialize the state machine for another collective execution      */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline void TSPColl::CollExchange<T_Mcast>::reset()
+template <class T_NI>
+inline void TSPColl::CollExchange<T_NI>::reset()
 {
   _sendstarted = _sendcomplete = 0;
   _counter++;
@@ -212,11 +202,11 @@ inline void TSPColl::CollExchange<T_Mcast>::reset()
 /* *********************************************************************** */
 /*                   kick the state machine (make progress)                */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline void TSPColl::CollExchange<T_Mcast>::kick(T_Mcast *mcast_iface)
+template <class T_NI>
+inline void TSPColl::CollExchange<T_NI>::kick(T_NI *p2p_iface)
 {
   /* continued ATOMIC (code should be entered with mutex already locked */
-  _mcast_iface = mcast_iface;
+  _p2p_iface = p2p_iface;
   for (; _phase < _numphases; _phase++)
     {
       /* ---------------------------------------------------- */
@@ -230,7 +220,7 @@ inline void TSPColl::CollExchange<T_Mcast>::kick(T_Mcast *mcast_iface)
             {
               int phase = _phase;
               MUTEX_UNLOCK(&_mutex);
-              send(phase,mcast_iface);
+              send(phase,p2p_iface);
               return;
             }
           else
@@ -318,8 +308,8 @@ inline void TSPColl::CollExchange<T_Mcast>::kick(T_Mcast *mcast_iface)
 /* *********************************************************************** */
 /*    advance the progress engine                                          */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline bool TSPColl::CollExchange<T_Mcast>::isdone() const
+template <class T_NI>
+inline bool TSPColl::CollExchange<T_NI>::isdone() const
 {
     TRACE((stderr, "Is done:  _phase=%d sendcomplete=%d, numphase=%d\n",
            _phase, _sendcomplete, _numphases));
@@ -329,56 +319,43 @@ inline bool TSPColl::CollExchange<T_Mcast>::isdone() const
 /* *********************************************************************** */
 /*                     send an active message                              */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline void TSPColl::CollExchange<T_Mcast>::send (int phase, T_Mcast *mcast_iface)
+template <class T_NI>
+inline void TSPColl::CollExchange<T_NI>::send (int phase, T_NI *p2p_iface)
 {
-  TRACE((stderr, "SEND tag=%d ctr=%d phase=%d tgt=%d nbytes=%d, mcast_iface=%p\n",
+  TRACE((stderr, "SEND tag=%d ctr=%d phase=%d tgt=%d nbytes=%d, p2p_iface=%p\n",
          _tag, _counter, phase,
-         _dest[phase], _sbufln[phase],mcast_iface));
+         _dest[phase], _sbufln[phase],p2p_iface));
   _header[phase].counter = _counter;
   assert (_dest[phase] != -1);
- #if 0
-  void * r = __pgasrt_tsp_amsend (_dest[phase],
-                                  & _header[phase].hdr,
-                                  (__pgasrt_local_addr_t) _sbuf[phase],
-                                  _sbufln[phase],
-                                  CollExchange::cb_senddone,
-                                  &_cmplt[phase]);
-#endif
-  unsigned        hints   = PAMI_PT_TO_PT_SUBTASK;
-  unsigned        ranks   = _dest[phase];
-  PAMI_Callback_t cb_done;
-  cb_done.function   = CollExchange::cb_senddone;
-  cb_done.clientdata = &_cmplt[phase];
-  void *r = NULL;
-  TRACE((stderr, "SEND MCAST_IFACE %p: tag=%d id=%d,hdr=%p count=%d\n",
-         ((int*)mcast_iface)[0],
+
+  TRACE((stderr, "SEND P2P_IFACE %p: tag=%d id=%d,hdr=%p count=%d\n",
+         ((int*)p2p_iface)[0],
          _header[phase].tag,
          _header[phase].id,
          &_header[phase],
          PAMIQuad_sizeof(_header[phase])));
 
-  mcast_iface->send (&_req[phase],
-                     &cb_done,
-                     PAMI_MATCH_CONSISTENCY,
-                     (pami_quad_t*)& _header[phase],
-                     PAMIQuad_sizeof(_header[phase]),
-                     phase,
-                     (char*)_sbuf[phase],
-                     (unsigned)_sbufln[phase],
-                     &hints,
-                     &ranks,
-                     1);
-  TRACE((stderr, "SEND finished\n"));
+  pami_send_t s;
+  s.send.header.iov_base  = &_header[phase];
+  s.send.header.iov_len   =  sizeof(_header[phase]);
+  s.send.data.iov_base    = _sbuf[phase];
+  s.send.data.iov_len     = _sbufln[phase];
+  s.send.dispatch         = -1;
+  memset(&s.send.hints, 0, sizeof(s.send.hints));
+  s.send.dest             = _dest[phase];
+  s.events.cookie         = &_cmplt[phase];
+  s.events.local_fn       = CollExchange::cb_senddone;
+  s.events.remote_fn      = NULL;
 
-  assert (r == NULL);
+  p2p_iface->send(&s);
+  TRACE((stderr, "SEND finished\n"));
 }
 
 /* *********************************************************************** */
 /*                             send complete                               */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (pami_context_t context, void * arg, pami_result_t err)
+template <class T_NI>
+inline void TSPColl::CollExchange<T_NI>::cb_senddone (pami_context_t context, void * arg, pami_result_t err)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   MUTEX_LOCK(&base->_mutex);
@@ -390,16 +367,16 @@ inline void TSPColl::CollExchange<T_Mcast>::cb_senddone (pami_context_t context,
          base->_phase, base->_numphases,
          base->_dest[base->_phase], base->_sbufln[base->_phase],
          base->_sendcomplete));
-  base->kick(base->_mcast_iface);
+  base->kick(base->_p2p_iface);
 }
 
 
 /* *********************************************************************** */
 /*                  active message reception complete                      */
 /* *********************************************************************** */
-template <class T_Mcast>
+template <class T_NI>
 inline void
-TSPColl::CollExchange<T_Mcast>::cb_recvcomplete (pami_context_t context, void * arg, pami_result_t error)
+TSPColl::CollExchange<T_NI>::cb_recvcomplete (pami_context_t context, void * arg, pami_result_t error)
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   unsigned  phase = ((CompleteHelper *) arg)->phase;
@@ -414,22 +391,22 @@ TSPColl::CollExchange<T_Mcast>::cb_recvcomplete (pami_context_t context, void * 
          base->_tag,
          base->_counter, base->_phase, phase, base->_recvcomplete[phase]));
   if (base->_cb_recv1[phase]) base->_cb_recv1[phase](base, phase);
-  base->kick(base->_mcast_iface);
+  base->kick(base->_p2p_iface);
 }
 
 /* *********************************************************************** */
 /*      something bad happened. We print the state as best as we can.      */
 /* *********************************************************************** */
-template <class T_Mcast>
+template <class T_NI>
 inline void
-TSPColl::CollExchange<T_Mcast>::internalerror (AMHeader * header, int lineno)
+TSPColl::CollExchange<T_NI>::internalerror (AMHeader * header, int lineno)
 {
   if (header)
     fprintf (stderr, "CollExchange internal: line=%d "
              "tag=%d id=%d phase=%d/%d ctr=%d "
              "header: tag=%d id=%d phase=%d ctr=%d\n",
              lineno,
-             NBColl<T_Mcast>::_tag, NBColl<T_Mcast>::_instID,
+             NBColl<T_NI>::_tag, NBColl<T_NI>::_instID,
              _phase, _numphases, _counter,
              header->tag, header->id, header->phase,
              header->counter);
@@ -437,7 +414,7 @@ TSPColl::CollExchange<T_Mcast>::internalerror (AMHeader * header, int lineno)
     fprintf (stderr, "CollExchange internal: line=%d "
              "tag=%d id=%d phase=%d/%d ctr=%d\n",
              lineno,
-             NBColl<T_Mcast>::_tag, NBColl<T_Mcast>::_instID,
+             NBColl<T_NI>::_tag, NBColl<T_NI>::_instID,
              _phase, _numphases, _counter);
   abort();
 }

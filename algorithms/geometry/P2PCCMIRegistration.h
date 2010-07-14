@@ -14,274 +14,12 @@
 #ifndef __algorithms_geometry_P2PCCMIRegistration_h__
 #define __algorithms_geometry_P2PCCMIRegistration_h__
 
-#include <map>
-#include <vector>
-#include "SysDep.h"
-#include "util/ccmi_debug.h"
-#include "TypeDefs.h"
-#include "algorithms/interfaces/CollRegistrationInterface.h"
-#include "algorithms/schedule/MultinomialTree.h"
-#include "algorithms/schedule/RingSchedule.h"
-#include "algorithms/connmgr/ColorGeometryConnMgr.h"
-#include "algorithms/protocols/CollectiveProtocolFactoryT.h"
-#include "algorithms/protocols/broadcast/BcastMultiColorCompositeT.h"
-#include "algorithms/protocols/barrier/BarrierT.h"
-#include "algorithms/protocols/broadcast/AsyncBroadcastT.h"
-#include "algorithms/protocols/ambcast/AMBroadcastT.h"
-#include "algorithms/protocols/allreduce/MultiColorCompositeT.h"
-#include "algorithms/protocols/allreduce/ProtocolFactoryT.h"
-#include "p2p/protocols/SendPWQ.h"
-#include "common/NativeInterface.h"
-
-
-// CCMI Template implementations for P2P
-namespace CCMI
-{
-  namespace Adaptor
-  {
-    namespace P2PBarrier
-    {
-      void binomial_barrier_md(pami_metadata_t *m)
-      {
-        // \todo:  fill in other metadata
-        strcpy(&m->name[0], "P2P_CCMI Binom_Bar");
-      }
-
-      bool binomial_analyze (PAMI_GEOMETRY_CLASS *geometry)
-      {
-        return true;
-      }
-
-      typedef CCMI::Adaptor::Barrier::BarrierT
-      < CCMI::Schedule::ListMultinomial,
-        binomial_analyze >
-      BinomialBarrier;
-
-      typedef CCMI::Adaptor::Barrier::BarrierFactoryT
-      < BinomialBarrier,
-        binomial_barrier_md,
-        CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> >
-      BinomialBarrierFactory;
-    };//Barrier
-
-    namespace P2PBroadcast
-    {
-      void get_colors (PAMI::Topology             * t,
-                       unsigned                    bytes,
-                       unsigned                  * colors,
-                       unsigned                  & ncolors)
-      {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        ncolors = 1;
-        colors[0] = CCMI::Schedule::NO_COLOR;
-      }
-
-      void binomial_broadcast_metadata(pami_metadata_t *m)
-      {
-        // \todo:  fill in other metadata
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        strcpy(&m->name[0], "P2P_CCMI Binom_Bcast");
-      }
-
-      void ring_broadcast_metadata(pami_metadata_t *m)
-      {
-        // \todo:  fill in other metadata
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        strcpy(&m->name[0], "P2P_CCMI Ring_Bcast");
-      }
-
-      typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
-      < 1,
-        CCMI::Schedule::ListMultinomial,
-        CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
-        get_colors >
-      BinomialBroadcastComposite;
-
-      typedef CCMI::Adaptor::CollectiveProtocolFactoryT
-      < BinomialBroadcastComposite,
-        binomial_broadcast_metadata,
-        CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> >
-      BinomialBroadcastFactory;
-
-      typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
-      < 1,
-        CCMI::Schedule::RingSchedule,
-        CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
-        get_colors >
-      RingBroadcastComposite;
-
-      typedef CCMI::Adaptor::CollectiveProtocolFactoryT
-      < RingBroadcastComposite,
-        ring_broadcast_metadata,
-        CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> >
-      RingBroadcastFactory;
-
-      void am_rb_broadcast_metadata(pami_metadata_t *m)
-      {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        // \todo:  fill in other metadata
-        strcpy(&m->name[0], "P2P_CCMI AS_RB_Binom_Bcast");
-      }
-
-      void am_cs_broadcast_metadata(pami_metadata_t *m)
-      {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        // \todo:  fill in other metadata
-        strcpy(&m->name[0], "P2P_CCMI AS_CS_Binom_Bcast");
-      }
-
-      void create_schedule(void                        * buf,
-                           unsigned                      size,
-                           unsigned                      root,
-                           Interfaces::NativeInterface * native,
-                           PAMI_GEOMETRY_CLASS         * g)
-      {
-        TRACE_INIT((stderr, "<%p>AsyncRBBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
-        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
-      }
-
-      unsigned getKey(unsigned                                                root,
-                      unsigned                                                connid,
-                      PAMI_GEOMETRY_CLASS                                    *geometry,
-                      ConnectionManager::BaseConnectionManager              **connmgr)
-      {
-        TRACE_INIT((stderr, "<%p>AsyncRBBinomialBroadcastFactory::getKey()\n",(void*)NULL));
-        return root;
-      }
-
-      void create_schedule_as(void                        * buf,
-                              unsigned                      size,
-                              unsigned                      root,
-                              Interfaces::NativeInterface * native,
-                              PAMI_GEOMETRY_CLASS          * g)
-      {
-        TRACE_INIT((stderr, "<%p>AsyncCSBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
-        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
-      }
-
-      unsigned getKey_as(unsigned                                   root,
-                         unsigned                                   connid,
-                         PAMI_GEOMETRY_CLASS                      * geometry,
-                         ConnectionManager::BaseConnectionManager **connmgr)
-      {
-        TRACE_INIT((stderr, "<%p>AsyncCSBinomialBroadcastFactory::getKey\n",(void*)NULL));
-        ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
-        if (connid != (unsigned) - 1)
-          {
-            *connmgr = NULL; //use this key as connection id
-            return connid;
-          }
-
-        return cm->updateConnectionId( geometry->comm() );
-      }
-
-      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
-      < CCMI::Schedule::ListMultinomial,
-        CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
-        create_schedule>
-      AsyncRBBinomialBroadcastComposite;
-
-      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT
-      < AsyncRBBinomialBroadcastComposite,
-        am_rb_broadcast_metadata,
-        CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
-        getKey >
-      AsyncRBBinomialBroadcastFactory;
-
-
-      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
-      < CCMI::Schedule::ListMultinomial,
-        CCMI::ConnectionManager::CommSeqConnMgr,
-        create_schedule_as > AsyncCSBinomialBroadcastComposite;
-
-      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT
-      < AsyncCSBinomialBroadcastComposite,
-        am_cs_broadcast_metadata,
-        CCMI::ConnectionManager::CommSeqConnMgr,
-        getKey_as> AsyncCSBinomialBroadcastFactory;
-
-    }//Broadcast
-
-    namespace P2PAMBroadcast
-    {
-      void am_broadcast_metadata(pami_metadata_t *m)
-      {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        // \todo:  fill in other metadata
-        strcpy(&m->name[0], "P2P_CCMI Binom_AMBcast");
-      }
-
-      void create_schedule(void                        * buf,
-                           unsigned                      size,
-                           unsigned                      root,
-                           Interfaces::NativeInterface * native,
-                           PAMI_GEOMETRY_CLASS          * g)
-      {
-        TRACE_INIT((stderr, "<%p>AMBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
-        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
-      }
-
-      typedef CCMI::Adaptor::AMBroadcast::AMBroadcastT
-      < CCMI::Schedule::ListMultinomial,
-        CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
-        create_schedule>
-      AMBinomialBroadcastComposite;
-
-
-      typedef CCMI::Adaptor::AMBroadcast::AMBroadcastFactoryT
-      < AMBinomialBroadcastComposite,
-        am_broadcast_metadata,
-        CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >
-      AMBinomialBroadcastFactory;
-
-    }//AMBroadcast
-    namespace P2PAllreduce
-    {
-      /// New Binomial algorithms
-      /// class Binomial::Composite and Binomial::Factory
-      ///
-      /// \brief Binomial allreduce protocol
-      ///
-      /// Use the BinomialTreeSchedule
-      ///
-      namespace Binomial
-      {
-        void get_colors (PAMI::Topology             * t,
-                         unsigned                    bytes,
-                         unsigned                  * colors,
-                         unsigned                  & ncolors)
-        {
-          ncolors = 1;
-          colors[0] = CCMI::Schedule::NO_COLOR;
-        }
-
-        void binomial_allreduce_metadata(pami_metadata_t *m)
-        {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Binom_Allred");
-        }
-
-        typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT
-        < 1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
-          CCMI::Schedule::ListMultinomial,
-          CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
-          get_colors > Composite;
-
-        typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
-        < Composite,
-          binomial_allreduce_metadata,
-          CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >
-        Factory;
-      };//Binomial
-    };//Allreduce
-  }//Adaptor
-}//CCMI
+#include "algorithms/geometry/P2PCCMIRegInfo.h"
 
 // Collective Registration for CCMI protocols for p2p
 namespace PAMI
 {
   extern std::map<unsigned, pami_geometry_t> geometry_map;
-
   namespace CollRegistration
   {
     namespace P2P
@@ -453,80 +191,72 @@ namespace PAMI
 
         private:
           template<class T_NI, class T_Protocol, class T_Device, class T_Factory>
-          void setupFactory(T_NI       &ni,
+          void setupFactory(T_NI      *&ni,
                             T_Device   &device,
-                            T_Protocol &protocol,
                             T_Factory *&factory)
           {
-            pami_result_t       result = PAMI_ERROR;
+            pami_result_t       result   = PAMI_ERROR;
             size_t              dispatch = -1;
-
-            // Get the next dispatch id to use for this NI/protocol
-            dispatch = PAMI::NativeInterfaceCommon::getNextDispatch();
-
-            // Construct an active message native interface
-            result = NativeInterfaceCommon::constructNativeInterface(_allocator,
-                                                                     device,
-                                                                     protocol,
-                                                                     ni,
-                                                                     _client,
-                                                                     _context,
-                                                                     _context_id,
-                                                                     _client_id,
-                                                                     dispatch);
+            result = NativeInterfaceCommon::constructNativeInterface<T_Allocator,
+                                                                     T_NI,
+                                                                     T_Protocol,
+                                                                     T_Device>(_allocator,
+                                                                               device,
+                                                                               ni,
+                                                                               _client,
+                                                                               _context,
+                                                                               _context_id,
+                                                                               _client_id);
             PAMI_assert(result == PAMI_SUCCESS);
-            // Allocate/Construct the factory using the NI
             COMPILE_TIME_ASSERT(sizeof(T_Factory) <= T_Allocator::objsize);
             factory = (T_Factory*) _allocator.allocateObject ();
           }
-          template<class T_NI_ActiveMessage, class T_NI_Allsided, class T_Protocol, class T_Device>
+
+        template<class T_NI_ActiveMessage, class T_NI_Allsided, class T_Protocol, class T_Device>
           void setupFactories(T_Device &device)
           {
             T_NI_ActiveMessage *ni_am = NULL;
             T_NI_Allsided      *ni_as = NULL;
-            T_Protocol         *protocol = NULL;
-
-            // The #define FACTORY is used to shorten the code and avoid copy/paste typo's
 
             // ----------------------------------------------------
             // Setup and Construct a binomial barrier factory from active message ni and p2p protocol
-            setupFactory(ni_am, device, protocol, _binomial_barrier_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory>(ni_am, device,_binomial_barrier_factory);
             new ((void*)_binomial_barrier_factory) CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory(&_sconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::P2PBarrier::BinomialBarrier::cb_head);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct a binomial broadcast factory from allsided ni and p2p protocol
-            setupFactory(ni_as, device, protocol, _binomial_broadcast_factory);
+            setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory>(ni_as, device,  _binomial_broadcast_factory);
             new ((void*)_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory(&_connmgr, ni_as);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct a ring broadcast factory from allsided ni and p2p protocol
-            setupFactory(ni_as, device, protocol, _ring_broadcast_factory);
+            setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory>(ni_as, device,  _ring_broadcast_factory);
             new ((void*)_ring_broadcast_factory) CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory(&_connmgr, ni_as);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num binomial broadcast factory from active message ni and p2p protocol
-            setupFactory(ni_am, device, protocol, _ascs_binomial_broadcast_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::AsyncCSBinomialBroadcastFactory>(ni_am, device,  _ascs_binomial_broadcast_factory);
             new ((void*)_ascs_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::AsyncCSBinomialBroadcastFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, rank based binomial broadcast factory from active message ni and p2p protocol
-            setupFactory(ni_am, device, protocol, _asrb_binomial_broadcast_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory>(ni_am, device,  _asrb_binomial_broadcast_factory);
             new ((void*)_asrb_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory(&_rbconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct a rank based binomial active message broadcast factory from active message ni and p2p protocol
-            setupFactory(ni_am, device, protocol, _active_binomial_broadcast_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAMBroadcast::AMBinomialBroadcastFactory>(ni_am, device,  _active_binomial_broadcast_factory);
             new ((void*)_active_binomial_broadcast_factory) CCMI::Adaptor::P2PAMBroadcast::AMBinomialBroadcastFactory(&_rbconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct a binomial allreducefactory from active message ni and p2p protocol
-            setupFactory(ni_am, device, protocol, _binomial_allreduce_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllreduce::Binomial::Factory>(ni_am, device,  _binomial_allreduce_factory);
             new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory(&_rbconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::P2PAllreduce::Binomial::Composite::cb_receiveHead);
             // ----------------------------------------------------
 
@@ -538,17 +268,36 @@ namespace PAMI
             _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
           }
-          template<class T_NI, class T_Protocol1, class T_Device1, class T_Protocol2, class T_Device2, class T_Factory>
-          void setupFactory(T_NI &ni, T_Device1 &device1, T_Protocol1 &protocol1, T_Device2 &device2, T_Protocol2 &protocol2, T_Factory *&factory)
+
+          template<class T_NI,
+                   class T_Protocol1,
+                   class T_Device1,
+                   class T_Protocol2,
+                   class T_Device2,
+                   class T_Factory>
+          void setupFactory(T_NI        *&ni,
+                            T_Device1    &device1,
+                            T_Device2    &device2,
+                            T_Factory   *&factory)
           {
             pami_result_t       result = PAMI_ERROR;
             size_t              dispatch = -1;
 
-            // Get the next dispatch id to use for this NI/protocol
-            dispatch = PAMI::NativeInterfaceCommon::getNextDispatch();
-
             // Construct an active message native interface
-            result = NativeInterfaceCommon::constructNativeInterface(_allocator, device1, protocol1, device2, protocol2, ni, _client, _context, _context_id, _client_id, dispatch);
+            result = NativeInterfaceCommon::constructNativeInterface
+              <T_Allocator,
+               T_NI,
+               T_Protocol1,
+               T_Device1,
+               T_Protocol2,
+               T_Device2>(_allocator,
+                         device1,
+                         device2,
+                         ni,
+                         _client,
+                         _context,
+                         _context_id,
+                         _client_id);
             PAMI_assert(result == PAMI_SUCCESS);
 
 
@@ -557,57 +306,94 @@ namespace PAMI
             factory = (T_Factory*) _allocator.allocateObject ();
           }
 
-          template<class T_NI_ActiveMessage, class T_NI_Allsided, class T_Protocol1, class T_Device1, class T_Protocol2, class T_Device2>
-          void setupFactories(T_Device1 &device1, T_Device2 &device2)
+          template<class T_NI_ActiveMessage,
+                   class T_NI_Allsided,
+                   class T_Protocol1,
+                   class T_Device1,
+                   class T_Protocol2,
+                   class T_Device2>
+          void setupFactories(T_Device1 &device1,
+                              T_Device2 &device2)
           {
+
             T_NI_ActiveMessage *ni_am = NULL;
             T_NI_Allsided      *ni_as = NULL;
-            T_Protocol1         *protocol1 = NULL;
-            T_Protocol2         *protocol2 = NULL;
 
-            // The #define FACTORY is used to shorten the code and avoid copy/paste typo's
+            // Setup Barriers
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory>(ni_am,
+                                                                            device1,
+                                                                            device2,
+                                                                            _binomial_barrier_factory);
+            new ((void*)_binomial_barrier_factory)
+              CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory(&_sconnmgr,
+                                                                ni_am,
+                                                                (pami_dispatch_multicast_fn)CCMI::Adaptor::P2PBarrier::BinomialBarrier::cb_head);
 
-            // ----------------------------------------------------
-            // Setup and Construct a binomial barrier factory from active message ni and p2p protocol
-            setupFactory(ni_am, device1, protocol1, device2, protocol2, _binomial_barrier_factory);
-            new ((void*)_binomial_barrier_factory) CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory(&_sconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::P2PBarrier::BinomialBarrier::cb_head);
-            // ----------------------------------------------------
 
-            // ----------------------------------------------------
-            // Setup and Construct a binomial broadcast factory from allsided ni and p2p protocol
-            setupFactory(ni_as, device1, protocol1, device2, protocol2, _binomial_broadcast_factory);
-            new ((void*)_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory(&_connmgr, ni_as);
-            // ----------------------------------------------------
+            // Setup Broadcasts
+#define SETUPFACTORY(NI, NI_VAR, FACT, FACT_VAR, CONNMGR) setupFactory<NI, \
+                                                                       T_Protocol1, \
+                                                                       T_Device1, \
+                                                                       T_Protocol2, \
+                                                                       T_Device2, \
+                                                                       FACT >(NI_VAR, device1, device2, FACT_VAR); \
+                                                          new ((void*)FACT_VAR) FACT(&CONNMGR, NI_VAR);
+            SETUPFACTORY(T_NI_Allsided,
+                         ni_as,
+                         CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory,
+                         _binomial_broadcast_factory,
+                         _connmgr);
 
-            // ----------------------------------------------------
-            // Setup and Construct a ring broadcast factory from allsided ni and p2p protocol
-            setupFactory(ni_as, device1, protocol1, device2, protocol2, _ring_broadcast_factory);
-            new ((void*)_ring_broadcast_factory) CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory(&_connmgr, ni_as);
-            // ----------------------------------------------------
+            SETUPFACTORY(T_NI_Allsided,
+                         ni_as,
+                         CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory,
+                         _ring_broadcast_factory,
+                         _connmgr);
 
-            // ----------------------------------------------------
-            // Setup and Construct an asynchronous, comm_id/seq_num binomial broadcast factory from active message ni and p2p protocol
-            setupFactory(ni_am, device1, protocol1, device2, protocol2, _ascs_binomial_broadcast_factory);
-            new ((void*)_ascs_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::AsyncCSBinomialBroadcastFactory(&_csconnmgr, ni_am);
-            // ----------------------------------------------------
+            SETUPFACTORY(T_NI_ActiveMessage,
+                         ni_am,
+                         CCMI::Adaptor::P2PBroadcast::AsyncCSBinomialBroadcastFactory,
+                         _ascs_binomial_broadcast_factory,
+                         _csconnmgr);
 
-            // ----------------------------------------------------
-            // Setup and Construct an asynchronous, rank based binomial broadcast factory from active message ni and p2p protocol
-            setupFactory(ni_am, device1, protocol1, device2, protocol2, _asrb_binomial_broadcast_factory);
-            new ((void*)_asrb_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory(&_rbconnmgr, ni_am);
-            // ----------------------------------------------------
+            SETUPFACTORY(T_NI_ActiveMessage,
+                         ni_am,
+                         CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory,
+                         _asrb_binomial_broadcast_factory,
+                         _rbconnmgr);
 
-            // ----------------------------------------------------
-            // Setup and Construct a rank based binomial active message broadcast factory from active message ni and p2p protocol
-            setupFactory(ni_am, device1, protocol1, device2, protocol2, _active_binomial_broadcast_factory);
-            new ((void*)_active_binomial_broadcast_factory) CCMI::Adaptor::P2PAMBroadcast::AMBinomialBroadcastFactory(&_rbconnmgr, ni_am);
-            // ----------------------------------------------------
+            SETUPFACTORY(T_NI_ActiveMessage,
+                         ni_am,
+                         CCMI::Adaptor::P2PAMBroadcast::AMBinomialBroadcastFactory,
+                         _active_binomial_broadcast_factory,
+                         _rbconnmgr);
 
-            // ----------------------------------------------------
-            // Setup and Construct a binomial allreducefactory from active message ni and p2p protocol
-            setupFactory(ni_am, device1, protocol1, device2, protocol2, _binomial_allreduce_factory);
-            new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory(&_rbconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::P2PAllreduce::Binomial::Composite::cb_receiveHead);
-            // ----------------------------------------------------
+            SETUPFACTORY(T_NI_ActiveMessage,
+                         ni_am,
+                         CCMI::Adaptor::P2PAllreduce::Binomial::Factory,
+                         _binomial_allreduce_factory,
+                         _rbconnmgr);
+#undef SETUPFACTORY
+
+            // Setup Allreduce
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PAllreduce::Binomial::Factory>(ni_am,
+                                                                         device1,
+                                                                         device2,
+                                                                         _binomial_allreduce_factory);
+            new ((void*)_binomial_allreduce_factory)
+              CCMI::Adaptor::P2PAllreduce::Binomial::Factory(&_rbconnmgr,
+                                                             ni_am,
+                                                             (pami_dispatch_multicast_fn)CCMI::Adaptor::P2PAllreduce::Binomial::Composite::cb_receiveHead);
 
 
             //set the mapid functions

@@ -33,13 +33,13 @@
 
 namespace TSPColl
 {
-  template <class T_Mcast>
-  class Barrier: public CollExchange<T_Mcast>
+  template <class T_NI>
+  class Barrier: public CollExchange<T_NI>
   {
   public:
     void * operator new (size_t, void * addr)    { return addr; }
     Barrier (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
-    void reset () { CollExchange<T_Mcast>::reset(); }
+    void reset () { CollExchange<T_NI>::reset(); }
   private:
     char _dummy;
   };
@@ -49,10 +49,10 @@ namespace TSPColl
 /*                 constructor                                             */
 /* *********************************************************************** */
 
-template <class T_Mcast>
-inline TSPColl::Barrier<T_Mcast>::
+template <class T_NI>
+inline TSPColl::Barrier<T_NI>::
 Barrier (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
-  CollExchange<T_Mcast> (comm, tag, instID, offset, false)
+  CollExchange<T_NI> (comm, tag, instID, offset, false)
 {
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
   this->_sendcomplete = this->_numphases;

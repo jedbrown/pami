@@ -17,21 +17,18 @@
 /* *********************************************************************** */
 /*                   incoming active message                               */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline pami_quad_t * TSPColl::CollExchange<T_Mcast>::cb_incoming(const pami_quad_t  * hdr,
-                                                                unsigned          count,
-                                                                unsigned          peer,
-                                                                unsigned          sndlen,
-                                                                unsigned          conn_id,
-                                                                void            * arg,
-                                                                unsigned        * rcvlen,
-                                                                char           ** rcvbuf,
-                                                                unsigned        * pipewidth,
-                                                                PAMI_Callback_t * cb_done)
-
+template<class T_NI>
+inline void TSPColl::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
+                                                     void            * cookie,
+                                                     const void      * header_addr,
+                                                     size_t            header_size,
+                                                     const void      * pipe_addr,
+                                                     size_t            data_size,
+                                                     pami_endpoint_t   origin,
+                                                     pami_recv_t     * recv)
 {
-  struct AMHeader * header = (struct AMHeader *) hdr;
-  NBCollManager<T_Mcast> *mc = (NBCollManager<T_Mcast>*) arg;
+  struct AMHeader * header = (struct AMHeader *) header_addr;
+  NBCollManager<T_NI> *mc = (NBCollManager<T_NI>*) cookie;
   void * base0 =  mc->find (header->tag, header->id);
   if (base0 == NULL)
     CCMI_FATALERROR (-1, "incoming: cannot find coll=<%d,%d>",
@@ -53,20 +50,25 @@ inline pami_quad_t * TSPColl::CollExchange<T_Mcast>::cb_incoming(const pami_quad
     }
 
   b->_cmplt[header->phase].counter = header->counter;
+  if(pipe_addr)
+    {
+      memcpy(b->_rbuf[header->phase],
+             pipe_addr,
+             data_size);
+      CollExchange::cb_recvcomplete(context,
+                                    &b->_cmplt[header->phase],
+                                    PAMI_SUCCESS);
 
-  // multisend stuff
-  *rcvbuf             = (char*)b->_rbuf[header->phase];
-  *rcvlen             = sndlen;
-  *pipewidth          = sndlen;
-  cb_done->function   = CollExchange::cb_recvcomplete;
-  cb_done->clientdata = &b->_cmplt[header->phase];
-
-  //  *completionHandler = &CollExchange::cb_recvcomplete;
-  //  *arg = &b->_cmplt[header->phase];
-  //  __pgasrt_local_addr_t z = (__pgasrt_local_addr_t) b->_rbuf[header->phase];
-  //  if (z == NULL) b->internalerror (header, __LINE__);
-  //  return z;
-  return (pami_quad_t*)&b->_rreq[header->phase];
+    }
+  else
+    {
+      memset(&recv->hints, 0, sizeof(recv->hints));
+      recv->cookie        = &b->_cmplt[header->phase];
+      recv->local_fn      = CollExchange::cb_recvcomplete;
+      recv->addr          = (char*)b->_rbuf[header->phase];
+      recv->type          = PAMI_BYTE;
+      recv->offset        = 0;
+    }
 }
 
 
@@ -74,24 +76,18 @@ inline pami_quad_t * TSPColl::CollExchange<T_Mcast>::cb_incoming(const pami_quad
 /* **************************************************************** */
 /*            incoming active message                               */
 /* **************************************************************** */
-//__pgasrt_local_addr_t TSPColl::Scatter::
-//cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
-//	     void (** completionHandler)(void *, void *),
-//	     void ** arg)
-template<class T_Mcast>
-pami_quad_t * TSPColl::Scatter<T_Mcast>::cb_incoming(const pami_quad_t  * hdr,
-                                               unsigned          count,
-                                               unsigned          peer,
-                                               unsigned          sndlen,
-                                               unsigned          conn_id,
-                                               void            * arg,
-                                               unsigned        * rcvlen,
-                                               char           ** rcvbuf,
-                                               unsigned        * pipewidth,
-                                               PAMI_Callback_t * cb_done)
+template<class T_NI>
+void TSPColl::Scatter<T_NI>::cb_incoming(pami_context_t    context,
+                                         void            * cookie,
+                                         const void      * header_addr,
+                                         size_t            header_size,
+                                         const void      * pipe_addr,
+                                         size_t            data_size,
+                                         pami_endpoint_t   origin,
+                                         pami_recv_t     * recv)
 {
-  struct scatter_header * header = (struct scatter_header *) hdr;
-  NBCollManager<T_Mcast> *mc = (NBCollManager<T_Mcast>*) arg;
+  struct scatter_header * header = (struct scatter_header *) header_addr;
+  NBCollManager<T_NI> *mc = (NBCollManager<T_NI>*) cookie;
   void * base0 =  mc->find (header->tag, header->id);
   if (base0 == NULL)
     CCMI_FATALERROR (-1, "Scatter/v: <%d,%d> is undefined",
@@ -100,18 +96,26 @@ pami_quad_t * TSPColl::Scatter<T_Mcast>::cb_incoming(const pami_quad_t  * hdr,
   TRACE((stderr, "SCATTER/v: <%d,%d> INCOMING base=%p ptr=%p\n",
          header->tag, header->id, base0, s));
 
-    // multisend stuff
-  *rcvbuf             = (char*)s->_rbuf;
-  *rcvlen             = sndlen;
-  *pipewidth          = sndlen;
-  cb_done->function   = Scatter::cb_recvcomplete;
-  cb_done->clientdata = s;
-
-  TRACE((stderr, "SCATTER/v: <%d,%d> INCOMING RETURING base=%p ptr=%p\n",
-         header->tag, header->id, base0, s));
-
-
-  return (pami_quad_t*)&s->_rreq;
+  if(pipe_addr)
+    {
+      memcpy(s->_rbuf,
+             pipe_addr,
+             data_size);
+      Scatter::cb_recvcomplete(context,
+                               s,
+                               PAMI_SUCCESS);
+    }
+  else
+    {
+      memset(&recv->hints, 0, sizeof(recv->hints));
+      recv->cookie        = s;
+      recv->local_fn      = Scatter::cb_recvcomplete;
+      recv->addr          = s->_rbuf;
+      recv->type          = PAMI_BYTE;
+      recv->offset        = 0;
+      TRACE((stderr, "SCATTER/v: <%d,%d> INCOMING RETURING base=%p ptr=%p\n",
+             header->tag, header->id, base0, s));
+    }
 }
 
 

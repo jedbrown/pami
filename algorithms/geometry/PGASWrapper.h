@@ -27,7 +27,7 @@ namespace PAMI
     // around the PGAS RT classes
 
     // --------------  PGAS Wrapper base class -------------
-    template <class T_Geometry, class T_TSPColl, class T_Mcast, class T_Device, class T_TSPCollBarrier = void*>
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device, class T_TSPCollBarrier = void*>
     class PGExec:public CCMI::Executor::Composite
     {
     public:
@@ -35,10 +35,10 @@ namespace PAMI
       virtual void setcmd(T_TSPColl        *collexch,
                           pami_xfer_t       *cmd,
                           T_Device         *dev,
-                          T_Mcast          *model,
+                          T_P2P_NI          *model,
                           T_TSPCollBarrier *collbarrier,
                           pami_geometry_t    geometry,
-                          T_Mcast          *barmodel)
+                          T_P2P_NI          *barmodel)
         {
 
           _cmd         = cmd;
@@ -53,15 +53,15 @@ namespace PAMI
       pami_xfer_t                      *_cmd;
       T_TSPColl                       *_collexch;
       T_Device                        *_dev;
-      T_Mcast                         *_model;
+      T_P2P_NI                         *_model;
       T_TSPCollBarrier                *_collbarrier;
-      T_Mcast                         *_barmodel;
+      T_P2P_NI                         *_barmodel;
       T_Geometry                      *_geometry;
     };
 
     // --------------  PGAS Factory base class -------------
     template <class       T_TSPColl,
-              class       T_Mcast,
+              class       T_P2P_NI,
               class       T_Device,
               class       T_Exec,
               const char *T_MDString,
@@ -70,15 +70,15 @@ namespace PAMI
     {
     public:
       PGFactory<T_TSPColl,
-                T_Mcast,
+                T_P2P_NI,
                 T_Device,
                 T_Exec,
                 T_MDString,
                 T_TSPCollBarrier>(T_Device         *dev,
-                                  T_Mcast          *model,
+                                  T_P2P_NI          *model,
                                   T_TSPColl        *coll,
                                   T_TSPCollBarrier *collbarrier = NULL,
-                                  T_Mcast          *barmodel    = NULL  ):
+                                  T_P2P_NI          *barmodel    = NULL  ):
         _coll(coll),
         _dev(dev),
         _model(model),
@@ -105,14 +105,14 @@ namespace PAMI
       T_Exec            _exec;
       T_TSPColl        *_coll;
       T_Device         *_dev;
-      T_Mcast          *_model;
-      T_Mcast          *_barmodel;
+      T_P2P_NI          *_model;
+      T_P2P_NI          *_barmodel;
       T_TSPCollBarrier *_collbarrier;
     };
 
     // --------------  PGAS Barrier wrapper classes -------------
-    template <class T_Geometry, class T_TSPColl, class T_Mcast, class T_Device>
-    class PGBarrierExec:public PGExec<T_Geometry,T_TSPColl,T_Mcast,T_Device>
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device>
+    class PGBarrierExec:public PGExec<T_Geometry,T_TSPColl,T_P2P_NI,T_Device>
     {
     public:
       virtual void start()
@@ -124,8 +124,8 @@ namespace PAMI
         }
     };
     // --------------  PGAS Allgather wrapper classes -------------
-    template <class T_Geometry, class T_TSPColl, class T_Mcast, class T_Device>
-    class PGAllgatherExec:public PGExec<T_Geometry,T_TSPColl,T_Mcast,T_Device>
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device>
+    class PGAllgatherExec:public PGExec<T_Geometry,T_TSPColl,T_P2P_NI,T_Device>
     {
     public:
       virtual void start()
@@ -140,8 +140,8 @@ namespace PAMI
     };
 
     // --------------  PGAS Allgatherv wrapper classes -------------
-    template <class T_Geometry, class T_TSPColl, class T_Mcast, class T_Device>
-    class PGAllgathervExec:public PGExec<T_Geometry,T_TSPColl,T_Mcast,T_Device>
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device>
+    class PGAllgathervExec:public PGExec<T_Geometry,T_TSPColl,T_P2P_NI,T_Device>
     {
     public:
       virtual void start()
@@ -156,8 +156,8 @@ namespace PAMI
     };
 
     // --------------  PGAS Scatter wrapper classes -------------
-    template <class T_Geometry, class T_TSPColl, class T_Mcast, class T_Device, class T_TSPCollBarrier >
-    class PGScatterExec:public PGExec<T_Geometry,T_TSPColl,T_Mcast,T_Device,T_TSPCollBarrier>
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device, class T_TSPCollBarrier >
+    class PGScatterExec:public PGExec<T_Geometry,T_TSPColl,T_P2P_NI,T_Device,T_TSPCollBarrier>
     {
     public:
       virtual void start()
@@ -179,8 +179,8 @@ namespace PAMI
     };
 
     // --------------  PGAS Scatterv wrapper classes -------------
-    template <class T_Geometry, class T_TSPColl, class T_Mcast, class T_Device, class T_TSPCollBarrier >
-    class PGScattervExec:public PGExec<T_Geometry,T_TSPColl,T_Mcast,T_Device,T_TSPCollBarrier>
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device, class T_TSPCollBarrier >
+    class PGScattervExec:public PGExec<T_Geometry,T_TSPColl,T_P2P_NI,T_Device,T_TSPCollBarrier>
     {
     public:
       virtual void start()
@@ -202,8 +202,8 @@ namespace PAMI
     };
 
     // --------------  PGAS Allreduce wrapper classes -------------
-    template <class T_Geometry, class T_TSPColl, class T_Mcast, class T_Device>
-    class PGAllreduceExec:public PGExec<T_Geometry,T_TSPColl,T_Mcast,T_Device>
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device>
+    class PGAllreduceExec:public PGExec<T_Geometry,T_TSPColl,T_P2P_NI,T_Device>
     {
     public:
       virtual void start()
@@ -220,8 +220,8 @@ namespace PAMI
     };
 
     // --------------  PGAS Broadcast wrapper classes -------------
-    template <class T_Geometry, class T_TSPColl, class T_Mcast, class T_Device>
-    class PGBroadcastExec:public PGExec<T_Geometry,T_TSPColl,T_Mcast,T_Device>
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device>
+    class PGBroadcastExec:public PGExec<T_Geometry,T_TSPColl,T_P2P_NI,T_Device>
     {
     public:
       virtual void start()

@@ -44,7 +44,18 @@ namespace PAMI
     /// \brief this call is called when the native interface is
     /// initialized to set the mcast dispatch
     virtual inline pami_result_t setDispatch (pami_dispatch_callback_fn fn, void *cookie);
-
+    virtual inline pami_result_t setSendDispatch(pami_dispatch_callback_fn fn,
+                                                 void *cookie)
+      {
+        PAMI_abort();
+        return PAMI_ERROR;
+      }
+    virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_callback_fn fn,
+                                                    void *cookie)
+      {
+        PAMI_abort();
+        return PAMI_ERROR;
+      }
     /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterface)
     virtual inline pami_result_t multicast    (pami_multicast_t    *);
     virtual inline pami_result_t multisync    (pami_multisync_t    *);
@@ -54,6 +65,19 @@ namespace PAMI
       PAMI_abort();
       return PAMI_ERROR;
     }
+    virtual inline pami_result_t send (pami_send_t * parameters)
+      {
+        PAMI_abort();
+        return PAMI_ERROR;
+      }
+    virtual inline pami_result_t sendPWQ(pami_context_t       context,
+                                         pami_send_t         *parameters,
+                                         PAMI::PipeWorkQueue *pwq)
+      {
+        PAMI_abort();
+        return PAMI_ERROR;
+      }
+
     // Model-specific interfaces
     inline pami_result_t multicast    (uint8_t (&)[T_Mcast::sizeof_msg], pami_multicast_t    *);
     inline pami_result_t multisync    (uint8_t (&)[T_Msync::sizeof_msg], pami_multisync_t    *);

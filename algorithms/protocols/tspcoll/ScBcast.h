@@ -41,25 +41,25 @@
 namespace TSPColl
 {
 
-  template <class T_Mcast>
-  class ScBcast: public NBColl<T_Mcast>
+  template <class T_NI>
+  class ScBcast: public NBColl<T_NI>
   {
   public:
     void * operator new (size_t, void * addr) { return addr; }
     ScBcast (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff);
     void reset (int root, const void * sbuf, void *buf, size_t);
-    virtual void kick (T_Mcast *mcast_iface);
+    virtual void kick (T_NI *p2p_iface);
     virtual bool isdone (void) const;
-    static void amsend_reg  (T_Mcast *mcast_iface, void *cd);
+    static void amsend_reg  (T_NI *p2p_iface, void *cd);
   protected:
-    T_Mcast *_mcast_iface;
+    T_NI *_p2p_iface;
   private:
     size_t             *_lengths;
-    Scatterv<T_Mcast>   _scatterv;
-    Barrier<T_Mcast>    _barrier;
-    Barrier<T_Mcast>    _barrier2;
-    Barrier<T_Mcast>    _barrier3;
-    Allgatherv<T_Mcast> _allgatherv;
+    Scatterv<T_NI>   _scatterv;
+    Barrier<T_NI>    _barrier;
+    Barrier<T_NI>    _barrier2;
+    Barrier<T_NI>    _barrier3;
+    Allgatherv<T_NI> _allgatherv;
 
   private:
     static void scattercomplete(pami_context_t context, void *arg, pami_result_t res);
@@ -73,10 +73,10 @@ namespace TSPColl
 /* *********************************************************************** */
 /*                    broadcast constructor                                */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline TSPColl::ScBcast<T_Mcast>::
+template <class T_NI>
+inline TSPColl::ScBcast<T_NI>::
 ScBcast(PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
-               NBColl<T_Mcast> (comm, tag, instID, NULL, NULL),
+               NBColl<T_NI> (comm, tag, instID, NULL, NULL),
                _scatterv (comm, tag, instID,
                           (size_t)&_scatterv - (size_t) this + tagoff),
                _barrier (comm, tag, instID,
@@ -105,8 +105,8 @@ ScBcast(PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
 /*               reset the broadcast                                       */
 /* *********************************************************************** */
 
-template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::
+template <class T_NI>
+inline void TSPColl::ScBcast<T_NI>::
 reset (int root, const void * sbuf, void *rbuf, size_t len)
 {
   int myoffset = -1;
@@ -131,53 +131,53 @@ reset (int root, const void * sbuf, void *rbuf, size_t len)
 /* *********************************************************************** */
 /*              start the broadcast rolling                                */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::kick (T_Mcast *mcast_iface)
+template <class T_NI>
+inline void TSPColl::ScBcast<T_NI>::kick (T_NI *p2p_iface)
 {
   TRACE((stderr, "%d: SCBCAST kick\n", PGASRT_MYNODE));
-  _mcast_iface = mcast_iface;
-  _barrier.kick(mcast_iface);
+  _p2p_iface = p2p_iface;
+  _barrier.kick(p2p_iface);
 }
 
 /* *********************************************************************** */
 /*               first phase is complete: start allgather                  */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::scattercomplete(pami_context_t context, void *arg, pami_result_t res)
+template <class T_NI>
+inline void TSPColl::ScBcast<T_NI>::scattercomplete(pami_context_t context, void *arg, pami_result_t res)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST scattercomplete\n", PGASRT_MYNODE));
   assert (self != NULL);
   // self->_barrier2.kick();
-  self->_allgatherv.kick(self->_mcast_iface);
+  self->_allgatherv.kick(self->_p2p_iface);
 }
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::barriercomplete(pami_context_t context, void *arg, pami_result_t res)
+template <class T_NI>
+inline void TSPColl::ScBcast<T_NI>::barriercomplete(pami_context_t context, void *arg, pami_result_t res)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST barriercomplete\n", PGASRT_MYNODE));
   assert (self != NULL);
-  self->_scatterv.kick(self->_mcast_iface);
+  self->_scatterv.kick(self->_p2p_iface);
 }
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::barrier2complete(pami_context_t context, void *arg, pami_result_t res)
+template <class T_NI>
+inline void TSPColl::ScBcast<T_NI>::barrier2complete(pami_context_t context, void *arg, pami_result_t res)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST barrier2complete\n", PGASRT_MYNODE));
   assert (self != NULL);
-  self->_allgatherv.kick(self->_mcast_iface);
+  self->_allgatherv.kick(self->_p2p_iface);
 }
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::barrier3complete(pami_context_t context, void *arg, pami_result_t res)
+template <class T_NI>
+inline void TSPColl::ScBcast<T_NI>::barrier3complete(pami_context_t context, void *arg, pami_result_t res)
 {
   TRACE((stderr, "%d: SCBCAST barrier3complete\n", PGASRT_MYNODE));
   // ScBcast * self = (ScBcast *) arg;
@@ -185,28 +185,28 @@ inline void TSPColl::ScBcast<T_Mcast>::barrier3complete(pami_context_t context, 
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::allgathervcomplete(pami_context_t context, void *arg, pami_result_t res)
+template <class T_NI>
+inline void TSPColl::ScBcast<T_NI>::allgathervcomplete(pami_context_t context, void *arg, pami_result_t res)
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST agvcomplete\n", PGASRT_MYNODE));
   assert (self != NULL);
-  // self->_barrier3.kick(_mcast_iface);
+  // self->_barrier3.kick(_p2p_iface);
 }
 
 /* *********************************************************************** */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline bool TSPColl::ScBcast<T_Mcast>::isdone (void) const
+template <class T_NI>
+inline bool TSPColl::ScBcast<T_NI>::isdone (void) const
 {
   return _allgatherv.isdone();
   // return _barrier3.isdone();
 }
-template <class T_Mcast>
-inline void TSPColl::ScBcast<T_Mcast>::amsend_reg  (T_Mcast *mcast_iface, void *cd)
+template <class T_NI>
+inline void TSPColl::ScBcast<T_NI>::amsend_reg  (T_NI *p2p_iface, void *cd)
 {
   assert(0);
-  //   mcast_iface->setCallback(cb_incoming, cd);
+  //   p2p_iface->setCallback(cb_incoming, cd);
   // __pgasrt_tsp_amsend_reg (PGASRT_TSP_AMSEND_COLLEXCHANGE, cb_incoming);
 }
 

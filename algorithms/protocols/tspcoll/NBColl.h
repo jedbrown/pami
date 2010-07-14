@@ -48,7 +48,7 @@ namespace TSPColl
             pami_event_function cb_complete, void *arg);
 
   public:
-    virtual void  kick  (T_mcast *mcast_iface) {};
+    virtual void  kick  (T_mcast *p2p_iface) {};
     virtual bool isdone () const { return false; } /* check completion */
     int instID () const { return _instID; }
     int tag    () const { return _tag;    }
@@ -68,8 +68,8 @@ namespace TSPColl
 /* ************************************************************************ */
 /*                 non-blocking collective constructor                      */
 /* ************************************************************************ */
-  template <class T_Mcast>
-  TSPColl::NBColl<T_Mcast>::NBColl (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID,
+  template <class T_NI>
+  TSPColl::NBColl<T_NI>::NBColl (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID,
                                     pami_event_function cb_complete, void *arg):
     _comm (comm), _tag (tag), _instID (instID),
     _cb_complete (cb_complete), _arg(arg)
@@ -78,8 +78,8 @@ namespace TSPColl
 
 /* ************************************************************************ */
 /* ************************************************************************ */
-  template <class T_Mcast>
-  void TSPColl::NBColl<T_Mcast>::setComplete (pami_event_function cb_complete, void *arg)
+  template <class T_NI>
+  void TSPColl::NBColl<T_NI>::setComplete (pami_event_function cb_complete, void *arg)
   {
     _cb_complete = cb_complete;
     _arg = arg;

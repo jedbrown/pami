@@ -93,7 +93,7 @@ int main (int argc, char ** argv)
 
   scatter.cb_done    = cb_done;
   scatter.cookie     = (void*)&scatter_poll_flag;
-  scatter.algorithm  = scatter_num_algorithm[0];
+  scatter.algorithm  = scatter_always_works_algo[0];
   scatter.cmd.xfer_scatter.root       = root;
   scatter.cmd.xfer_scatter.sndbuf     = buf;
   scatter.cmd.xfer_scatter.stype      = PAMI_BYTE;

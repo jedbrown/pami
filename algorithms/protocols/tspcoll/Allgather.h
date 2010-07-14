@@ -37,8 +37,8 @@
 
 namespace TSPColl
 {
-  template <class T_Mcast>
-  class Allgather: public CollExchange<T_Mcast>
+  template <class T_NI>
+  class Allgather: public CollExchange<T_NI>
   {
   public:
     static
@@ -53,10 +53,10 @@ namespace TSPColl
 /* *********************************************************************** */
 /*                   Allgather constructor                                 */
 /* *********************************************************************** */
-template <class T_Mcast>
-inline TSPColl::Allgather<T_Mcast>::Allgather (PAMI_GEOMETRY_CLASS *comm, NBTag tag,
+template <class T_NI>
+inline TSPColl::Allgather<T_NI>::Allgather (PAMI_GEOMETRY_CLASS *comm, NBTag tag,
                                       int instID, int offset):
-  CollExchange<T_Mcast> (comm, tag, instID, offset, false)
+  CollExchange<T_NI> (comm, tag, instID, offset, false)
 {
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
   for (int i=0; i< this->_numphases; i++)
@@ -77,9 +77,9 @@ inline TSPColl::Allgather<T_Mcast>::Allgather (PAMI_GEOMETRY_CLASS *comm, NBTag 
 /*              start a new allgather operation                     */
 /* **************************************************************** */
 
-template <class T_Mcast>
+template <class T_NI>
 inline
-void TSPColl::Allgather<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t nbytes)
+void TSPColl::Allgather<T_NI>::reset (const void *sbuf, void *rbuf, size_t nbytes)
 {
   /* --------------------------------------------------- */
   /*    copy source buffer to dest buffer                */
@@ -117,6 +117,6 @@ void TSPColl::Allgather<T_Mcast>::reset (const void *sbuf, void *rbuf, size_t nb
         }
     }
 
-  CollExchange<T_Mcast>::reset();
+  CollExchange<T_NI>::reset();
 }
 #endif

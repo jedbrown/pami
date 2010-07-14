@@ -40,8 +40,8 @@ namespace TSPColl
     /*      short allreduce (up to 1000 bytes of exchanged data)           */
     /* ******************************************************************* */
 
-    template<class T_Mcast>
-    class Short: public CollExchange<T_Mcast>
+    template<class T_NI>
+    class Short: public CollExchange<T_NI>
     {
     public:
       static const int MAXBUF = 1000;
@@ -53,8 +53,8 @@ namespace TSPColl
                   pami_dt             dt,
                   unsigned            nelems);
     protected:
-      static void cb_switchbuf (CollExchange<T_Mcast> *, unsigned phase);
-      static void cb_allreduce (CollExchange<T_Mcast> *, unsigned phase);
+      static void cb_switchbuf (CollExchange<T_NI> *, unsigned phase);
+      static void cb_allreduce (CollExchange<T_NI> *, unsigned phase);
     protected:
       int           _nelems, _logMaxBF;
       void        * _dbuf;
@@ -71,8 +71,8 @@ namespace TSPColl
     /* ******************************************************************* */
     /* long allreduce (extra data buffer, message xfer permit protocol)    */
     /* ******************************************************************* */
-    template<class T_Mcast>
-    class Long: public CollExchange<T_Mcast>
+    template<class T_NI>
+    class Long: public CollExchange<T_NI>
     {
     public:
       void * operator new (size_t, void * addr) { return addr; }
@@ -83,7 +83,7 @@ namespace TSPColl
                   pami_op op, pami_dt dt, unsigned nelems);
 
     protected:
-      static void cb_allreduce (CollExchange<T_Mcast> *, unsigned phase);
+      static void cb_allreduce (CollExchange<T_NI> *, unsigned phase);
 
     protected:
       int           _nelems, _logMaxBF;
@@ -108,10 +108,10 @@ namespace TSPColl
 /* ************************************************************************* */
 /*                      start a short allreduce                              */
 /* ************************************************************************* */
-template <class T_Mcast>
-TSPColl::Allreduce::Short<T_Mcast>::
+template <class T_NI>
+TSPColl::Allreduce::Short<T_NI>::
 Short (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
-       CollExchange<T_Mcast> (comm, tag, instID, offset, false)
+       CollExchange<T_NI> (comm, tag, instID, offset, false)
 {
   _dbuf   = NULL;
   _nelems = 0;
@@ -179,11 +179,11 @@ Short (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
 /* ************************************************************************* */
 /*                     allreduce executor                                    */
 /* ************************************************************************* */
-template <class T_Mcast>
-void TSPColl::Allreduce::Short<T_Mcast>::
-cb_allreduce (CollExchange<T_Mcast> *coll, unsigned phase)
+template <class T_NI>
+void TSPColl::Allreduce::Short<T_NI>::
+cb_allreduce (CollExchange<T_NI> *coll, unsigned phase)
 {
-  TSPColl::Allreduce::Short<T_Mcast> * ar = (TSPColl::Allreduce::Short<T_Mcast> *) coll;
+  TSPColl::Allreduce::Short<T_NI> * ar = (TSPColl::Allreduce::Short<T_NI> *) coll;
   int c = (ar->_counter+1) & 1;
   void * inputs[] = {ar->_dbuf, ar->_phasebuf[phase][c]};
   //  ar->_cb_allreduce (ar->_dbuf, ar->_phasebuf[phase][c], ar->_nelems);
@@ -192,11 +192,11 @@ cb_allreduce (CollExchange<T_Mcast> *coll, unsigned phase)
 
 }
 
-template <class T_Mcast>
-void TSPColl::Allreduce::Short<T_Mcast>::
-cb_switchbuf (CollExchange<T_Mcast> * coll, unsigned phase)
+template <class T_NI>
+void TSPColl::Allreduce::Short<T_NI>::
+cb_switchbuf (CollExchange<T_NI> * coll, unsigned phase)
 {
-  TSPColl::Allreduce::Short<T_Mcast> * ar = (TSPColl::Allreduce::Short<T_Mcast> *) coll;
+  TSPColl::Allreduce::Short<T_NI> * ar = (TSPColl::Allreduce::Short<T_NI> *) coll;
   int c = (++(ar->_bufctr[phase])) & 1;
   ar->_rbuf[phase] = ar->_phasebuf[phase][c];
 }
@@ -204,8 +204,8 @@ cb_switchbuf (CollExchange<T_Mcast> * coll, unsigned phase)
 /* ************************************************************************* */
 /*                     start an allreduce operation                          */
 /* ************************************************************************* */
-template <class T_Mcast>
-void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
+template <class T_NI>
+void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
                                        void               * dbuf,
                                        pami_op              op,
                                        pami_dt              dt,
@@ -275,7 +275,7 @@ void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
 #endif
 
   //  _cb_allreduce = getcallback (op, dt);
-  TSPColl::CollExchange<T_Mcast>::reset();
+  TSPColl::CollExchange<T_NI>::reset();
 }
 
 
@@ -290,10 +290,10 @@ void TSPColl::Allreduce::Short<T_Mcast>::reset (const void         * sbuf,
 /* ************************************************************************* */
 /*                       start a long allreduce                              */
 /* ************************************************************************* */
-template <class T_Mcast>
-TSPColl::Allreduce::Long<T_Mcast>::
+template <class T_NI>
+TSPColl::Allreduce::Long<T_NI>::
 Long (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
-  CollExchange<T_Mcast> (comm, tag, instID, offset, false)
+  CollExchange<T_NI> (comm, tag, instID, offset, false)
 {
   _tmpbuf = NULL;
   _dbuf = NULL;
@@ -391,11 +391,11 @@ Long (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
 /* ************************************************************************* */
 /*                     allreduce executor                                    */
 /* ************************************************************************* */
-template <class T_Mcast>
-void TSPColl::Allreduce::Long<T_Mcast>::
-cb_allreduce (CollExchange<T_Mcast> *coll, unsigned phase)
+template <class T_NI>
+void TSPColl::Allreduce::Long<T_NI>::
+cb_allreduce (CollExchange<T_NI> *coll, unsigned phase)
 {
-  TSPColl::Allreduce::Long<T_Mcast> * ar = (TSPColl::Allreduce::Long<T_Mcast> *) coll;
+  TSPColl::Allreduce::Long<T_NI> * ar = (TSPColl::Allreduce::Long<T_NI> *) coll;
   void * inputs[] = {ar->_dbuf, ar->_tmpbuf};
   //  ar->_cb_allreduce (ar->_dbuf, ar->_tmpbuf, ar->_nelems);
   ar->_cb_allreduce (ar->_dbuf, inputs, 2, ar->_nelems);
@@ -404,8 +404,8 @@ cb_allreduce (CollExchange<T_Mcast> *coll, unsigned phase)
 /* ************************************************************************* */
 /*                      start a long allreduce operation                     */
 /* ************************************************************************* */
-template <class T_Mcast>
-void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf,
+template <class T_NI>
+void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
                                       void               * dbuf,
                                       pami_op              op,
                                       pami_dt              dt,
@@ -466,7 +466,7 @@ void TSPColl::Allreduce::Long<T_Mcast>::reset (const void         * sbuf,
 
   assert (phase == this->_numphases);
   //  _cb_allreduce = getcallback (op, dt);
-  TSPColl::CollExchange<T_Mcast>::reset();
+  TSPColl::CollExchange<T_NI>::reset();
 }
 
 

@@ -155,9 +155,11 @@ namespace PAMI
   // PGAS RT Typedefs/Coll Registration
   typedef PAMI::Device::MPIOldmulticastModel<PAMI::Device::MPIDevice,
                                             PAMI::Device::MPIMessage> MPIOldMcastModel;
-  typedef TSPColl::NBCollManager<MPIOldMcastModel> MPINBCollManager;
+  typedef TSPColl::NBCollManager<MPIEagerNI_AM> MPINBCollManager;
   typedef CollRegistration::PGASRegistration<MPIGeometry,
-                                             MPIOldMcastModel,
+                                             MPIEagerNI_AM,
+                                             ProtocolAllocator,
+                                             MPIEager,
                                              MPIDevice,
                                              MPINBCollManager> PGASCollreg;
 
@@ -348,7 +350,7 @@ namespace PAMI
         _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 
         _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
-        new(_pgas_collreg) PGASCollreg(client, (pami_context_t)this, id,*_mpi);
+        new(_pgas_collreg) PGASCollreg(client, (pami_context_t)this, id,clientid,_protocol,*_mpi);
         _pgas_collreg->analyze(_contextid,_world_geometry);
 
         _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
