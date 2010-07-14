@@ -31,20 +31,12 @@ typedef struct post_info {
 } post_info_t;
 
 #ifndef NUM_CONTEXTS
-#define NUM_CONTEXTS	2
+#define NUM_CONTEXTS	4
 #endif /* ! NUM_CONTEXTS */
 
 #ifndef NUM_TESTRUNS
-#define NUM_TESTRUNS	3
+#define NUM_TESTRUNS	8
 #endif /* ! NUM_TESTRUNS */
-
-#ifndef NUM_TESTPROCS
-#define NUM_TESTPROCS	2
-#endif /* ! NUM_TESTPROCS */
-
-#if NUM_CONTEXTS < NUM_TESTPROCS
-#error Must have at least as many contexts as local processes
-#endif
 
 post_info_t _info[NUM_CONTEXTS];
 

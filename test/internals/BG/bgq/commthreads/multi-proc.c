@@ -3,6 +3,11 @@
 /// \brief Simple test for basic commthread functionality using multiple processes per node
 ///
 
+// override the normal defaults
+#ifndef NUM_CONTEXTS
+#define NUM_CONTEXTS	2
+#endif // NUM_CONTEXTS
+
 #include "commthread_test.h"
 
 int main(int argc, char ** argv) {
