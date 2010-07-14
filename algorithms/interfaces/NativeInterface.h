@@ -36,25 +36,36 @@ namespace CCMI
                                           void *cookie)
         {
           PAMI_abort();
+          return PAMI_ERROR;
         }
         virtual pami_result_t setSendDispatch(pami_dispatch_callback_fn fn,
                                               void *cookie)
         {
           PAMI_abort();
+          return PAMI_ERROR;
         }
         virtual pami_result_t setSendPWQDispatch(pami_dispatch_callback_fn fn,
                                                  void *cookie)
         {
           PAMI_abort();
+          return PAMI_ERROR;
         }
         virtual pami_result_t multicast(pami_multicast_t *mcast) = 0;
         virtual pami_result_t multisync(pami_multisync_t *msync) = 0;
         virtual pami_result_t multicombine(pami_multicombine_t *mcombine) = 0;
         virtual pami_result_t manytomany(pami_manytomany_t *m2minfo) = 0;
-        virtual pami_result_t send (pami_send_t * parameters) = 0;
+        virtual pami_result_t send (pami_send_t * parameters)
+        {
+          PAMI_abort();
+          return PAMI_ERROR;
+        }
         virtual pami_result_t sendPWQ(pami_context_t       context,
                                       pami_send_t         *parameters,
-                                      PAMI::PipeWorkQueue *pwq) = 0;
+                                      PAMI::PipeWorkQueue *pwq)
+        {
+          PAMI_abort();
+          return PAMI_ERROR;
+        }
     };
   };
 };

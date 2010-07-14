@@ -78,6 +78,11 @@ namespace PAMI
       {}
     inline void          init(lapi_state_t *lapi_state) {_lapi_state=lapi_state;}
     inline lapi_state_t *getState() { return _lapi_state;}
+    inline int advance_impl()
+      {
+        LapiImpl::Context *cp      = (LapiImpl::Context *)_lapi_state;
+        return (cp->*(cp->pAdvance))(1);
+      }
   private:
     lapi_state_t                          *_lapi_state;
   };
@@ -231,20 +236,25 @@ namespace PAMI
                                              DefaultNativeInterface,
                                              LAPIDevice> CCMICollreg;
 
+  // Memory Allocator Typedefs
+  typedef MemoryAllocator<1024, 16> ProtocolAllocator;
+
+
   // PGAS RT Typedefs/Coll Registration
   typedef PAMI::Device::LAPIOldmulticastModel<LAPIDevice,
                                              OldLAPIMcastMessage> LAPIOldMcastModel;
-  typedef TSPColl::NBCollManager<LAPIOldMcastModel> LAPINBCollManager;
+
+  typedef TSPColl::NBCollManager<LAPISendNI_AM> LAPINBCollManager;
   typedef CollRegistration::PGASRegistration<LAPIGeometry,
-                                             LAPIOldMcastModel,
-                                             LAPIDevice,
+                                             LAPISendNI_AM,
+                                             ProtocolAllocator,
+                                             LAPISend,
+                                             DeviceWrapper,
                                              LAPINBCollManager> PGASCollreg;
 
 
 
 
-  // Memory Allocator Typedefs
-  typedef MemoryAllocator<1024, 16> ProtocolAllocator;
   // Over P2P CCMI Protocol Typedefs
   typedef CollRegistration::P2P::CCMIRegistration<LAPIGeometry,
                                                   ShmemDevice,
@@ -421,7 +431,7 @@ namespace PAMI
         {
           // Initalize Collective Registration
           _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
-          new(_pgas_collreg) PGASCollreg(_client,_context,_contextid,_lapi_device);
+          new(_pgas_collreg) PGASCollreg(_client,_context,_contextid,_clientid,_protocol,_lapi_device2);
           _pgas_collreg->analyze(_contextid,_world_geometry);
           return PAMI_SUCCESS;
         }
