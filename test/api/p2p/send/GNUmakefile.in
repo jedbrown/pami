@@ -10,9 +10,9 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = send_to_self_perf send_to_self_immed 
-NOTBUILT        = 
-APPS            = send_to_self.${EXTENSION} long-header.${EXTENSION} long-header-matrix.${EXTENSION} shmem-matrix.${EXTENSION} rdma-matrix.${EXTENSION} default-send-1.${EXTENSION} send_flood_perf.${EXTENSION} send_unexpected_func.${EXTENSION}
+SUBDIRS         = send_to_self_perf send_to_self_immed
+NOTBUILT        =
+APPS            = send_to_self.${EXTENSION} long-header.${EXTENSION} long-header-matrix.${EXTENSION} shmem-matrix.${EXTENSION} rdma-matrix.${EXTENSION} default-send-1.${EXTENSION} send_flood_perf.${EXTENSION} send_unexpected_func.${EXTENSION} send_immediate_pingpong_ring.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
@@ -21,7 +21,7 @@ ifeq (@BUILDENV@,ade)
 	cp ${CROSS_CRT1} .
 	cp ${CROSS_CRTI} .
 	cp ${CROSS_CRTN} .
-	${CROSS_CC} -I${INSTALL_DIR}/include ${CROSS_CFLAGS} $< -o $@ ${CROSS_LDFLAGS} -lm -L${CROSS_TOOLCHAIN_LDPATH} @POELIB@ @IBMMPILIB@ 
+	${CROSS_CC} -I${INSTALL_DIR}/include ${CROSS_CFLAGS} $< -o $@ ${CROSS_LDFLAGS} -lm -L${CROSS_TOOLCHAIN_LDPATH} @POELIB@ @IBMMPILIB@
 	rm `basename ${CROSS_CRT1}`
 	rm `basename ${CROSS_CRTI}`
 	rm `basename ${CROSS_CRTN}`
@@ -29,7 +29,7 @@ ifeq (@BUILDENV@,ade)
 	cp ${CROSS_CRT1} .
 	cp ${CROSS_CRTI} .
 	cp ${CROSS_CRTN} .
-	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -lm -L${CROSS_TOOLCHAIN_LDPATH} @POELIB@ @IBMMPILIB@ 
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -lm -L${CROSS_TOOLCHAIN_LDPATH} @POELIB@ @IBMMPILIB@
 	rm `basename ${CROSS_CRT1}`
 	rm `basename ${CROSS_CRTI}`
 	rm `basename ${CROSS_CRTN}`
