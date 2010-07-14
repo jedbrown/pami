@@ -213,13 +213,18 @@ public:
 	/// \copydoc PAMI::Interface::QueueInterface::removeAll
 	inline void removeAll_impl(Element *&head, Element *&tail, size_t &size)
 	{
-		_mutex.acquire();
-		head = _head;
-		tail = _tail;
-		size = _size;
-		_head = _tail = NULL;
-		_size = 0;
-		_mutex.release();
+		if (_head) {
+			_mutex.acquire();
+			head = _head;
+			tail = _tail;
+			size = _size;
+			_head = _tail = NULL;
+			_size = 0;
+			_mutex.release();
+		} else {
+			head = tail = NULL;
+			size = 0;
+		}
 	}
 
 	/// \copydoc PAMI::Interface::QueueInterface::appendAll
