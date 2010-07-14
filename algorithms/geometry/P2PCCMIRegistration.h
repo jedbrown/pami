@@ -196,7 +196,6 @@ namespace PAMI
                             T_Factory *&factory)
           {
             pami_result_t       result   = PAMI_ERROR;
-            size_t              dispatch = -1;
             result = NativeInterfaceCommon::constructNativeInterface<T_Allocator,
                                                                      T_NI,
                                                                      T_Protocol,
@@ -281,8 +280,6 @@ namespace PAMI
                             T_Factory   *&factory)
           {
             pami_result_t       result = PAMI_ERROR;
-            size_t              dispatch = -1;
-
             // Construct an active message native interface
             result = NativeInterfaceCommon::constructNativeInterface
               <T_Allocator,
