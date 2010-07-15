@@ -150,8 +150,9 @@ namespace PAMI
             _mgr.multisend_reg(TSPColl::BarrierTag,        _barrier);
           }
 
-      inline pami_result_t analyze_impl(size_t context_id,T_Geometry *geometry)
+      inline pami_result_t analyze_impl(size_t context_id,T_Geometry *geometry, int phase)
         {
+	  if (phase != 0) return PAMI_SUCCESS;
 
           _nb_barrier    = (TSPColl::Barrier<T_P2P_NI>*)_mgr.allocate (geometry, TSPColl::BarrierTag);
           _nb_allgather  = (TSPColl::Allgather<T_P2P_NI>*)_mgr.allocate (geometry, TSPColl::AllgatherTag);

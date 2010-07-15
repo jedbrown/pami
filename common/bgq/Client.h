@@ -52,7 +52,7 @@ namespace PAMI
 #ifdef ENABLE_MU_CLASSROUTES
 	// This must return immediately (must not enqueue non-blocking ops).
 	// Passing a NULL context should ensure that.
-	__MUGlobal.getMuRM().geomOptimize(_world_geometry, _clientid, 0, NULL);
+	__MUGlobal.getMuRM().geomOptimize(_world_geometry, _clientid, 0, NULL, NULL, NULL);
 	// Now, subsequent 'analyze' done on this geom will know that MU Coll is avail.
 #endif
 
@@ -308,38 +308,6 @@ namespace PAMI
                                                          void                 * cookie)
       {
         TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-
-#ifdef ENABLE_MU_CLASSROUTES
-        PAMI::Context *ctxt = (PAMI::Context *)context;
-        BGQGeometry *bargeom = (BGQGeometry *)parent;
-	bargeom->setCompletion(fn, cookie);
-	bargeom->addCompletion(); // for subsequent barrier...
-        if (geometry != NULL)
-        {
-          BGQGeometry *gp = new(geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
-                                    &__global.mapping,
-                                    id,
-                                    slice_count,
-                                    rank_slices);
-	  bargeom->addCompletion(); // for sub-geometry completion (if any)
-	  gp->setCompletion(bargeom->_done_cb, (void *)bargeom);
-	  gp->addCompletion();        // ensure completion doesn't happen until
-			              // all have been analyzed.
-	  // Should this all just be done after analyze?? That avoids the
-	  // the problem where allreduce doesn't exist yet.
-	  // But, the analyze functions (that depend on geomOptimize) must
-	  // run *after* optimize *completes*, so need some way to hook-in
-	  // to the completion callback(s).
-	  __MUGlobal.getMuRM().geomOptimize(gp, _clientid, ctxt->getId(), ctxt);
-          for (size_t n = 0; n < _ncontexts; n++)
-          {
-            _contexts[n].analyze(n, (BGQGeometry *)geometry);
-          }
-          /// \todo  deliver completion to the appropriate context
-	  gp->rmCompletion(context, PAMI_SUCCESS); // this might complete now...
-        }
-        bargeom->default_barrier(bargeom->_done_cb, (void *)bargeom, ctxt->getId(), context);
-#else
         if(geometry != NULL)
         {
           new(geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
@@ -349,14 +317,13 @@ namespace PAMI
                                             rank_slices);
           for(size_t n=0; n<_ncontexts; n++)
           {
-            _contexts[n].analyze(n,(BGQGeometry*)geometry);
+            _contexts[n].analyze(n,(BGQGeometry*)geometry, 0);
           }
               /// \todo  deliver completion to the appropriate context
         }
         BGQGeometry *bargeom = (BGQGeometry*)parent;
         PAMI::Context *ctxt = (PAMI::Context *)context;
         bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
-#endif
         return PAMI_SUCCESS;
       }
 
@@ -374,6 +341,69 @@ namespace PAMI
         PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
         return PAMI_SUCCESS;
       }
+
+#ifdef ENABLE_MU_CLASSROUTES
+      static void _geom_opt_finish(pami_context_t context, void *cookie, pami_result_t err)
+      {
+        BGQGeometry *gp = (BGQGeometry *)cookie;
+        PAMI::Context *ctxt = (PAMI::Context *)context;
+	if (err == PAMI_SUCCESS)
+	{
+	  Client *thus = (Client *)ctxt->getClient();
+          for (size_t n = 0; n < thus->_ncontexts; n++)
+          {
+            thus->_contexts[n].analyze(n, gp, 1);
+          }
+        }
+	gp->rmCompletion(context, err);
+      }
+
+      inline pami_result_t geometry_query(pami_geometry_t geometry,
+						pami_configuration_t *configuration)
+      {
+	if (configuration->name != PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
+	// is it stored in geometry? or just inplied?
+	// configuration->value.intval = gp->???;
+	void *v = geom->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
+	configuration->value.intval = (v != NULL && v != PAMI_CR_GKEY_FAIL);
+      }
+
+      inline pami_result_t geometry_update(pami_geometry_t geometry,
+						pami_configuration_t *configuration,
+						pami_context_t context,
+                                                pami_event_function fn,
+                                                void *cookie)
+      {
+	if (configuration->name != PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
+        BGQGeometry *gp = (BGQGeometry *)geometry;
+	// check if already done?
+	// if (configuration->value.intval == gp->???) return PAMI_SUCCESS;
+        PAMI::Context *ctxt = (PAMI::Context *)context;
+	if (configuration->value.intval != 0)
+	{
+	  gp->setCompletion(fn, cookie);
+	  gp->addCompletion();        // ensure completion doesn't happen until
+			              // all have been analyzed.
+	  pami_result_t rc = __MUGlobal.getMuRM().geomOptimize(gp, _clientid, ctxt->getId(),
+				context, _geom_opt_finish, (void *)geometry);
+	}
+	else
+	{
+	  pami_result_t rc = __MUGlobal.getMuRM().geomDeoptimize(gp);
+	  if (rc == PAMI_SUCCESS)
+	  {
+            for (size_t n = 0; n < _ncontexts; n++)
+            {
+              _contexts[n].analyze(n, (BGQGeometry *)geometry, -1);
+            }
+          }
+	  if (fn) {
+		fn(context, cookie, rc);
+	  }
+	}
+	return rc;
+      }
+#endif
 
       inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
       {

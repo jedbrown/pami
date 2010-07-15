@@ -361,6 +361,7 @@ namespace PAMI
 	  uint64_t abuf[3];
 	  uint64_t bbuf[3];
 	  pami_work_t post;
+	  pami_callback_t cb_done;
 	};
 
 	// this code should be very similar to classroute_test.c,
@@ -371,7 +372,8 @@ namespace PAMI
 	// for a given geometry, during create. Once for each potential algorithm.
 	// but the answer we get is valid for all algorithms, so don't keep trying.
 	inline pami_result_t geomOptimize(PAMI::Geometry::Common *geom,
-	    size_t clientid, size_t contextid, pami_context_t context)
+	    size_t clientid, size_t contextid, pami_context_t context,
+	    pami_event_function fn, void *clientdata)
 	{
 	  // need some way to reset this so that we can optimize
 	  // after having previously said "de-optimize"...
@@ -422,6 +424,7 @@ namespace PAMI
 	  // "go away" after this method returns...
 	  cr_cookie *cookie = (cr_cookie *)malloc(sizeof(cr_cookie)); // how to alloc?
 	  cookie->thus = this;
+	  cookie->cb_done = (pami_callback_t){fn, clientdata};
 	  cookie->topo = node_topo;
 	  cookie->cr_mtx_mdl = &_cr_mtx_mdls[clientid][contextid];
 	  cookie->msync.client = clientid;
@@ -493,6 +496,7 @@ namespace PAMI
 	  cr_cookie *crck = (cr_cookie *)cookie;
 	  if (result != PAMI_SUCCESS && result != PAMI_EAGAIN)
 	  {
+	    if (crck->cb_done.function) crck->cb_done.function(ctx, crck->cb_done.clientdata, result);
 	    // tell geometry completion "we're done"...
 	    crck->geom->rmCompletion(ctx, result);
 	    free(cookie);
@@ -516,6 +520,7 @@ namespace PAMI
 	  cr_cookie *crck = (cr_cookie *)cookie;
 	  if (result != PAMI_SUCCESS)
 	  {
+	    if (crck->cb_done.function) crck->cb_done.function(ctx, crck->cb_done.clientdata, result);
 	    // tell geometry completion "we're done"...
 	    crck->geom->rmCompletion(ctx, result);
 	    free(cookie);
@@ -600,6 +605,7 @@ namespace PAMI
 	  cr_cookie *crck = (cr_cookie *)cookie;
 	  if (result != PAMI_SUCCESS)
 	  {
+	    if (crck->cb_done.function) crck->cb_done.function(ctx, crck->cb_done.clientdata, result);
 	    // tell geometry completion "we're done"...
 	    crck->geom->rmCompletion(ctx, result);
 	    free(cookie); // don't do this if it retries...
@@ -641,6 +647,7 @@ namespace PAMI
 	  // we got the answer we needed... no more trying...
 	  *crck->thus->_lowest_geom_id = 0xffffffff;
 	  crck->thus->release_mutex(ctx, cookie, PAMI_SUCCESS);
+	  if (crck->cb_done.function) crck->cb_done.function(ctx, crck->cb_done.clientdata, PAMI_SUCCESS);
 	  // tell geometry completion "we're done"...
 	  crck->geom->rmCompletion(ctx, PAMI_SUCCESS);
 	  free(cookie);

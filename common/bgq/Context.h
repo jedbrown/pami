@@ -905,10 +905,11 @@ namespace PAMI
       };
 
       inline pami_result_t analyze(size_t         context_id,
-                                  BGQGeometry    *geometry)
+                                  BGQGeometry    *geometry,
+				  int phase = 0)
       {
         pami_result_t result = PAMI_NERROR;
-        result = _ccmi_registration->analyze(context_id,geometry);
+        result = _ccmi_registration->analyze(context_id,geometry, phase);
 
         bool muFlag = __global.useMU(false); /// \todo temp function while MU2 isn't complete
 

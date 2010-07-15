@@ -28,14 +28,16 @@ namespace PAMI
         {
         }
       inline pami_result_t analyze(size_t         context_id,
-                                  T_Geometry    *geometry);
+                                  T_Geometry    *geometry,
+				  int phase = 0);
     };
 
     template <class T_Collregistration, class T_Geometry>
     inline pami_result_t CollRegistration<T_Collregistration,T_Geometry>::analyze(size_t      context_id,
-                                                                                 T_Geometry *geometry)
+                                                                                 T_Geometry *geometry,
+										 int phase)
     {
-      return static_cast<T_Collregistration*>(this)->analyze_impl(context_id, geometry);
+      return static_cast<T_Collregistration*>(this)->analyze_impl(context_id, geometry, phase);
     }
   }; // namespace CollRegistration
 }; // namespace PAMI

@@ -90,8 +90,9 @@ namespace PAMI
           {
           }
 
-        inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
+        inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
         {
+	  if (phase != 0) return PAMI_SUCCESS;
           _barrier_registration.generate(&_barrier_composite,
                                          sizeof(CCMI_Executor_t),
                                          _context,

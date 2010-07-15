@@ -340,13 +340,16 @@ namespace PAMI
 
       }
 
-      inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
+      inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
       {
         /// \todo These are really 'must query' protocols and should not be added to the regular protocol list
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() context_id %zu, geometry %p, msync %p, mcast %p, mcomb %p\n", this, context_id, geometry, &_shmem_msync_factory, &_shmem_mcast_factory, &_shmem_mcomb_factory));
         pami_xfer_t xfer = {0};
         PAMI::Topology * topology = (PAMI::Topology*) geometry->getTopology(0);
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology: size() %zu, isLocal() %u, isGlobal #u\n", this, topology->size(),  topology->isLocal()));//,  topology->isGlobal()));
+#ifdef ENABLE_MU_CLASSROUTES
+if (phase == 0) {
+#endif
 
         if ((__global.useshmem()) && (__global.topology_local.size() > 1))
         {
@@ -384,33 +387,27 @@ namespace PAMI
 
 
 #ifdef ENABLE_MU_CLASSROUTES
-	  // might need to delay this check until after the geometry "completes"...
-	  void *val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
-	  if (val && val != PAMI_CR_GKEY_FAIL) {
-            _mu_barrier_composite = _mu_msync_factory.generate(geometry, &xfer);
+} else if (phase == 1) {
+	    // might need to delay this check until after the geometry "completes"...
+	    void *val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
+	    if (val && val != PAMI_CR_GKEY_FAIL) {
+              _mu_barrier_composite = _mu_msync_factory.generate(geometry, &xfer);
 
-            geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
+              geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
                              (void*)_mu_barrier_composite);
-            // Add Barriers
-            geometry->addCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
+              // Add Barriers
+              geometry->addCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
 
-            // Add Broadcasts
-            geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory,_context_id);
-            geometry->addCollective(PAMI_XFER_BROADCAST, &_mu_mcast3_factory,_context_id);
+              // Add Broadcasts
+              geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory,_context_id);
+              geometry->addCollective(PAMI_XFER_BROADCAST, &_mu_mcast3_factory,_context_id);
 
-            // Add Allreduces
-            geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
-	  } else if (!val) {
-	    // nothing is known, yet. hook in to completion and try later...
-	    /// \todo #warning Need to hook-in to geometry completion
-	    // An alternative is to always add the MU Coll protocols, but make
-	    // them "optional" and when the user queries to see if it is usable,
-	    // check the geometry for a classroute then. We could even separate
-	    // the optimize from the create, such that the user has to call
-	    // optimize after the create completes. But then we still need
-	    // to make the protocols "optional" or have a separate analyze phase
-	    // as part of the optimize.
-	  }
+              // Add Allreduces
+              geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
+	    }
+} else if (phase == -1) {
+		// remove MU collectives algorithms...
+}
 #else
 /// \todo #warning This check for "world" is not valid
           /// \todo Since isGlobal() isn't implemented, do something myself...

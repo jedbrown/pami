@@ -57,9 +57,10 @@ namespace PAMI
         _msync_reg.setMapIdToGeometry(mapidtogeometry);
       }
 
-      inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
+      inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
       {
         TRACE_ERR((stderr, "<%p>%s context_id %zu, geometry %p, msync %p, mcast %p, mcomb %p\n", this, __PRETTY_FUNCTION__, context_id, geometry,&_msync_reg, &_mcast_reg, &_mcomb_reg));
+        if (phase != 0) return PAMI_SUCCESS;
         pami_xfer_t xfer = {0};
         _barrier_composite =_msync_reg.generate(geometry, &xfer);
 
@@ -133,9 +134,10 @@ namespace PAMI
         DO_DEBUG((templateName<T_NativeInterfaceAS>()));
       }
 
-      inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
+      inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
       {
         TRACE_ERR((stderr, "<%p>%s context_id %zu, geometry %p, mcast %p\n", this, __PRETTY_FUNCTION__, context_id, geometry,&_mcast_reg));
+	if (phase != 0) return PAMI_SUCCESS;
 
         // Add Broadcasts
         geometry->addCollective(PAMI_XFER_BROADCAST,&_mcast_reg,_context_id);

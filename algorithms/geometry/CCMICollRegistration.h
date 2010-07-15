@@ -97,9 +97,10 @@ namespace PAMI
             _binomial_allreduce_reg.setMapIdToGeometry(mapidtogeometry);
           }
 
-        inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
+        inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
         {
           TRACE_ERR((stderr, "<%p>%s context_id %zu, geometry %p\n", this, __PRETTY_FUNCTION__, context_id, geometry));
+	  if (phase != 0) return PAMI_SUCCESS;
           pami_xfer_t xfer = {0};
           _barrier_composite =_barrier_reg.generate(geometry,
                                                     &xfer);
