@@ -41,8 +41,6 @@
 
 #define CONTEXT_ALLOCATES_RESOURCES   0
 
-#define SINGLE_NODE 1
-
 extern PAMI::Device::MU::Global __MUGlobal;
 
 namespace PAMI
@@ -699,13 +697,8 @@ namespace PAMI
             // Use the reversed fifoPin to determine the map and hints.
             map = pinTorusInjFifoMap[fifoPin];
 
-#if SINGLE_NODE
-	    hintsABCD = MUHWI_PACKET_HINT_AM; //pinHintsABCD[fifoPin];
-	    hintsE    = MUHWI_PACKET_HINT_E_NONE; //pinHintsE[fifoPin];  // In loopback we specify hints.
-#else	    
-	    hintsABCD = 0; //pinHintsABCD[fifoPin];
-	    hintsE    = MUHWI_PACKET_HINT_E_NONE; //pinHintsE[fifoPin];	      
-#endif
+	    hintsABCD = pinHintsABCD[fifoPin];
+	    hintsE    = pinHintsE[fifoPin];  // In loopback we specify hints.
 
             TRACE_FORMAT("RemoteTask %zu, optimalFifoPin = %u, actualFifoPin = %u, map = %016lx, hintsABCD = %02x, hintsE = %02x, pinInjFifoMap[]=%u,%u,%u,%u,%u,%u,%u,%u,%u,%u", task, fifoPin, _pinInjFifoMap[fifoPin], map, hintsABCD, hintsE, _pinInjFifoMap[0], _pinInjFifoMap[1], _pinInjFifoMap[2], _pinInjFifoMap[3], _pinInjFifoMap[4], _pinInjFifoMap[5], _pinInjFifoMap[6], _pinInjFifoMap[7], _pinInjFifoMap[8], _pinInjFifoMap[9]);
             TRACE_FN_EXIT();
