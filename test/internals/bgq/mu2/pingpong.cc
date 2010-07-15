@@ -43,6 +43,7 @@ typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 typedef PAMI::Protocol::Send::Eager<MuPacketModel, MuContext> MuEager;
 
 #define MAX_ITER 1000
+#define WARMUP   10
 int npackets = 0;
 
 void done_fn       (pami_context_t   context,
@@ -102,15 +103,27 @@ void test (MuContext & mu0, T_Model & model, T_Protocol & protocol, const char *
 
   unsigned long start = 0, end = 0;
 
+  Personality_t pers;
+  Kernel_GetPersonality(&pers, sizeof(pers));
+  
+  int neighbor = __global.mapping.task();  
+  if (__global.mapping.size() > 0) {
+    if (__global.mapping.task() == 0)
+      neighbor = 1;
+    else if (__global.mapping.task() == 1)
+      neighbor = 0;
+    else return; //This is a 2 process test
+  }
+
   // -------------------------------------------------------------------
   // Test immediate packet model
   // -------------------------------------------------------------------
-  for (int i = 0; i <= MAX_ITER; i++)
+  for (int i = 0; i < MAX_ITER + WARMUP; i++)
     {
-      if (i == 1)
+      if (i == WARMUP)
         start = GetTimeBase();
 
-      model.postPacket (__global.mapping.task(),
+      model.postPacket (neighbor,
                         0,
                         (void *)metadata,
                         4,
@@ -135,15 +148,15 @@ void test (MuContext & mu0, T_Model & model, T_Protocol & protocol, const char *
   start = 0;
   end = 0;
 
-  for (int i = 0; i <= MAX_ITER; i++)
+  for (int i = 0; i < MAX_ITER+WARMUP; i++)
     {
-      if (i == 1)
+      if (i == WARMUP)
         start = GetTimeBase();
 
       model.postPacket (state[i],
                         done_fn,
                         (void *)&active,
-                        __global.mapping.task(),
+                        neighbor, //__global.mapping.task(),
                         0,
                         (void *)metadata,
                         4,

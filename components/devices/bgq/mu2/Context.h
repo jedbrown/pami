@@ -41,6 +41,8 @@
 
 #define CONTEXT_ALLOCATES_RESOURCES   0
 
+#define SINGLE_NODE 1
+
 extern PAMI::Device::MU::Global __MUGlobal;
 
 namespace PAMI
@@ -130,49 +132,64 @@ namespace PAMI
             pinTorusInjFifoMap[8] = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM;
             pinTorusInjFifoMap[9] = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP;
 
-            ///
-            /// \brief Hints for Loopback
-            ///
-            pinHintsABCD[0] = MUHWI_PACKET_HINT_AM;
-            pinHintsABCD[1] = MUHWI_PACKET_HINT_AP;
-            pinHintsABCD[2] = MUHWI_PACKET_HINT_BM;
-            pinHintsABCD[3] = MUHWI_PACKET_HINT_BP;
-            pinHintsABCD[4] = MUHWI_PACKET_HINT_CM;
-            pinHintsABCD[5] = MUHWI_PACKET_HINT_CP;
-            pinHintsABCD[6] = MUHWI_PACKET_HINT_DM;
-            pinHintsABCD[7] = MUHWI_PACKET_HINT_DP;
-            pinHintsABCD[8] = MUHWI_PACKET_HINT_A_NONE |
-                              MUHWI_PACKET_HINT_B_NONE |
-                              MUHWI_PACKET_HINT_C_NONE |
-                              MUHWI_PACKET_HINT_D_NONE;
-            pinHintsABCD[9] = MUHWI_PACKET_HINT_A_NONE |
-                              MUHWI_PACKET_HINT_B_NONE |
-                              MUHWI_PACKET_HINT_C_NONE |
-                              MUHWI_PACKET_HINT_D_NONE;
+	    Personality_t pers;
+	    Kernel_GetPersonality(&pers, sizeof(pers));
 
-            pinHintsE[0] = MUHWI_PACKET_HINT_E_NONE;
-            pinHintsE[1] = MUHWI_PACKET_HINT_E_NONE;
-            pinHintsE[2] = MUHWI_PACKET_HINT_E_NONE;
-            pinHintsE[3] = MUHWI_PACKET_HINT_E_NONE;
-            pinHintsE[4] = MUHWI_PACKET_HINT_E_NONE;
-            pinHintsE[5] = MUHWI_PACKET_HINT_E_NONE;
-            pinHintsE[6] = MUHWI_PACKET_HINT_E_NONE;
-            pinHintsE[7] = MUHWI_PACKET_HINT_E_NONE;
-            pinHintsE[8] = MUHWI_PACKET_HINT_EP;
-            pinHintsE[9] = MUHWI_PACKET_HINT_EM;
+	    uint nodes = pers.Network_Config.Anodes *
+	      pers.Network_Config.Bnodes *
+	      pers.Network_Config.Cnodes *
+	      pers.Network_Config.Dnodes *
+	      pers.Network_Config.Enodes;
+	     
+	    if (nodes > 1) {
+	      memset (pinHintsABCD, 0, sizeof(pinHintsABCD));
+	      memset (pinHintsE, 0, sizeof(pinHintsE));
+	    }
+	    else {
+	      ///
+	      /// \brief Hints for Loopback
+	      ///
+	      pinHintsABCD[0] = MUHWI_PACKET_HINT_AM;
+	      pinHintsABCD[1] = MUHWI_PACKET_HINT_AP;
+	      pinHintsABCD[2] = MUHWI_PACKET_HINT_BM;
+	      pinHintsABCD[3] = MUHWI_PACKET_HINT_BP;
+	      pinHintsABCD[4] = MUHWI_PACKET_HINT_CM;
+	      pinHintsABCD[5] = MUHWI_PACKET_HINT_CP;
+	      pinHintsABCD[6] = MUHWI_PACKET_HINT_DM;
+	      pinHintsABCD[7] = MUHWI_PACKET_HINT_DP;
+	      pinHintsABCD[8] = MUHWI_PACKET_HINT_A_NONE |
+		MUHWI_PACKET_HINT_B_NONE |
+		MUHWI_PACKET_HINT_C_NONE |
+		MUHWI_PACKET_HINT_D_NONE;
+	      pinHintsABCD[9] = MUHWI_PACKET_HINT_A_NONE |
+		MUHWI_PACKET_HINT_B_NONE |
+		MUHWI_PACKET_HINT_C_NONE |
+		MUHWI_PACKET_HINT_D_NONE;
+	      
+	      pinHintsE[0] = MUHWI_PACKET_HINT_E_NONE;
+	      pinHintsE[1] = MUHWI_PACKET_HINT_E_NONE;
+	      pinHintsE[2] = MUHWI_PACKET_HINT_E_NONE;
+	      pinHintsE[3] = MUHWI_PACKET_HINT_E_NONE;
+	      pinHintsE[4] = MUHWI_PACKET_HINT_E_NONE;
+	      pinHintsE[5] = MUHWI_PACKET_HINT_E_NONE;
+	      pinHintsE[6] = MUHWI_PACKET_HINT_E_NONE;
+	      pinHintsE[7] = MUHWI_PACKET_HINT_E_NONE;
+	      pinHintsE[8] = MUHWI_PACKET_HINT_EP;
+	      pinHintsE[9] = MUHWI_PACKET_HINT_EM;
+	    }
 
-            // Reverse the fifo pin.
-            // For example, if pinned to fifo 0 (AM), output is pinned to fifo 1 (AP).
-            injFifoPinReverse[0] = 1;
-            injFifoPinReverse[0] = 0;
-            injFifoPinReverse[0] = 3;
-            injFifoPinReverse[0] = 2;
-            injFifoPinReverse[0] = 5;
-            injFifoPinReverse[0] = 4;
-            injFifoPinReverse[0] = 7;
-            injFifoPinReverse[0] = 6;
-            injFifoPinReverse[0] = 9;
-            injFifoPinReverse[0] = 8;
+	    // Reverse the fifo pin.
+	    // For example, if pinned to fifo 0 (AM), output is pinned to fifo 1 (AP).
+	    injFifoPinReverse[0] = 1;
+	    injFifoPinReverse[1] = 0;
+            injFifoPinReverse[2] = 3;
+            injFifoPinReverse[3] = 2;
+            injFifoPinReverse[4] = 5;
+            injFifoPinReverse[5] = 4;
+            injFifoPinReverse[6] = 7;
+            injFifoPinReverse[7] = 6;
+            injFifoPinReverse[8] = 9;
+            injFifoPinReverse[9] = 8;
 
             TRACE_FN_EXIT();
           };
@@ -622,16 +639,15 @@ namespace PAMI
 
             rfifo = _rm.getPinRecFifo( _id_client, offset, tcoord );
             TRACE_FORMAT("client=%zu, context=%zu, tcoord=%zu, rfifo = %u", _id_client, offset, tcoord, rfifo);
-
             map = pinTorusInjFifoMap[fifoPin];
 
-            // In loopback we specify hints.
-            hintsABCD = pinHintsABCD[fifoPin];
-            hintsE    = pinHintsE[fifoPin];
+	    // In loopback we specify hints.
+	    hintsABCD = pinHintsABCD[fifoPin];
+	    hintsE    = pinHintsE[fifoPin];
 
             TRACE_FORMAT("(destTask %zu, destOffset %zu) -> dest = %08x, rfifo = %d, optimalFifoPin = %u, actualFifoPin = %u, map = %016lx, hintsABCD = %02x, hintsE = %02x, pinInjFifoMap[]=%u,%u,%u,%u,%u,%u,%u,%u,%u,%u", task, offset, *((uint32_t *) &dest), rfifo, fifoPin, _pinInjFifoMap[fifoPin], map, hintsABCD, hintsE, _pinInjFifoMap[0], _pinInjFifoMap[1], _pinInjFifoMap[2], _pinInjFifoMap[3], _pinInjFifoMap[4], _pinInjFifoMap[5], _pinInjFifoMap[6], _pinInjFifoMap[7], _pinInjFifoMap[8], _pinInjFifoMap[9]);
             TRACE_FN_EXIT();
-
+	    
             return  _pinInjFifoMap[fifoPin];
           }
 
@@ -683,9 +699,13 @@ namespace PAMI
             // Use the reversed fifoPin to determine the map and hints.
             map = pinTorusInjFifoMap[fifoPin];
 
-            // In loopback we specify hints.
-            hintsABCD = pinHintsABCD[fifoPin];
-            hintsE    = pinHintsE[fifoPin];
+#if SINGLE_NODE
+	    hintsABCD = MUHWI_PACKET_HINT_AM; //pinHintsABCD[fifoPin];
+	    hintsE    = MUHWI_PACKET_HINT_E_NONE; //pinHintsE[fifoPin];  // In loopback we specify hints.
+#else	    
+	    hintsABCD = 0; //pinHintsABCD[fifoPin];
+	    hintsE    = MUHWI_PACKET_HINT_E_NONE; //pinHintsE[fifoPin];	      
+#endif
 
             TRACE_FORMAT("RemoteTask %zu, optimalFifoPin = %u, actualFifoPin = %u, map = %016lx, hintsABCD = %02x, hintsE = %02x, pinInjFifoMap[]=%u,%u,%u,%u,%u,%u,%u,%u,%u,%u", task, fifoPin, _pinInjFifoMap[fifoPin], map, hintsABCD, hintsE, _pinInjFifoMap[0], _pinInjFifoMap[1], _pinInjFifoMap[2], _pinInjFifoMap[3], _pinInjFifoMap[4], _pinInjFifoMap[5], _pinInjFifoMap[6], _pinInjFifoMap[7], _pinInjFifoMap[8], _pinInjFifoMap[9]);
             TRACE_FN_EXIT();
