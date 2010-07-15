@@ -25,6 +25,10 @@
 
 // A cheat to override GenericDeviceWorkQueue, etc...
 #include "GenericDevicePlatform.h" // prevent later inclusion...
+#include "Topology.h"
+#include "Global.h"
+#undef USE_COMMTHREADS
+
 #if defined(GCCSAFE) && !defined(QUEUE_NAME)
 #define QUEUE_NAME	"GccThreadSafeQueue<GccProcCounter>"
 #include "components/atomic/counter/CounterMutex.h"
