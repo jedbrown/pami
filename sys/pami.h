@@ -2941,10 +2941,9 @@ extern "C"
    * \param[in]  configuration List of configurable attributes and values
    * \param[in]  num_configs   Number of configurations, may be zero
    * \param[out] context       Array of communication contexts to initialize
-   * \param[in]  ncontexts     num contexts requested (in), created (out)
+   * \param[in]  ncontexts     Number of contexts to be created
    *
-   * \retval PAMI_SUCCESS  Contexts have been created. The number of contexts
-   *                       created could be less the number requested.
+   * \retval PAMI_SUCCESS  Contexts have been created.
    * \retval PAMI_INVAL    Configuration could not be satisified or there were
    *                       errors in other parameters.
    */
