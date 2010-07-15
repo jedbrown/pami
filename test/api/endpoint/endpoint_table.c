@@ -26,12 +26,15 @@ static void createEndpointTable (pami_client_t client)
     (pami_endpoint_t *) malloc (sizeof(pami_endpoint_t) *
                                 global_tasks * 4);
 
-  size_t i, n = 0;
+  size_t i, n, size = global_tasks * 4;
   pami_endpoint_t * ptr = _endpoint;
+  n = size;
   for (i=0; i<global_tasks; i++)
   {
     PAMI_Endpoint_createv (client, i, ptr, &n);
     ptr += n;
+    size -= n;
+    n = size;
   }
 };
 
