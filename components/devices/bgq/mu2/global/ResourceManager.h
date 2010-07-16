@@ -199,11 +199,12 @@ namespace PAMI
 
 	  // Set up the global resources
 	  allocateGlobalResources();
-
+	  TRACE((stderr,"MU ResourceManager: Done allocating global resources\n"));
 	  // DUMMY CODE:
 /* 	  initializeContexts(0,1); */
 /* 	  initializeContexts(1,2); */
 #ifdef ENABLE_MU_CLASSROUTES
+	  TRACE((stderr,"MU ResourceManager: Inside ENABLE_MU_CLASSROUTES code\n"));
 	  // This init code is performed ONCE per process and is shared by
 	  // all clients and their contexts...
 	  __global.topology_global.subTopologyNthGlobal(&_node_topo, 0);
@@ -344,7 +345,7 @@ namespace PAMI
 	  // Now, we should be ready to get requests for classroutes...
 	  // via the geomOptimize() method below...
 #endif
-
+	  TRACE((stderr,"MU ResourceManager: Exiting constructor\n"));
 	} // End: ResourceManager Default Constructor
 #ifdef ENABLE_MU_CLASSROUTES
 	// Note, we NEVER use BGQ_CLASS_INPUT_VC_USER. Only BGQ_CLASS_INPUT_VC_SUBCOMM.
@@ -1562,14 +1563,22 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 
       if ( numFree > numLeftToAllocate ) numFree = numLeftToAllocate;
 
+      Kernel_InjFifoAttributes_t *fifoAttrs = 
+	(Kernel_InjFifoAttributes_t *)malloc( numFree * sizeof(Kernel_InjFifoAttributes_t) );
+      PAMI_assertf( fifoAttrs != NULL, "The heap is full.\n" );
+      for (fifo=0; fifo<numFree; fifo++)
+	memcpy(&fifoAttrs[fifo],fifoAttr,sizeof(Kernel_InjFifoAttributes_t));
+
       // Allocate the fifos
       rc = Kernel_AllocateInjFifos( subgroup,
 				    &((*subgroups)[subgroupIndex]),
 				    numFree,
 				    freeIds,
-				    fifoAttr );
-      PAMI_assertf( rc == 0, "Kernel_AllocateInjFifos failed with rc=%d.\n",rc );
+				    fifoAttrs );
+      PAMI_assertf( rc == 0, "Kernel_AllocateInjFifos failed with rc=%d, errno=%d.\n",rc,errno );
       TRACE((stderr,"MU ResourceManager: setupInjFifos: Allocated subgroup ptr = %p\n",&((*subgroups)[subgroupIndex])));
+
+      free(fifoAttrs); fifoAttrs=NULL;
 
       // Init the MU MMIO for the fifos.
       for (fifo=0; fifo<numFree; fifo++)
@@ -1740,7 +1749,8 @@ uint32_t PAMI::Device::MU::ResourceManager::setupBatIds(
       rc = Kernel_AllocateBaseAddressTable( subgroup,
 					    &((*subgroups)[subgroupIndex]),
 					    numFree,
-					    freeIds );
+					    freeIds,
+					    0 /* "User" access */);
       PAMI_assertf( rc == 0, "Kernel_AllocateBaseAddressTable failed with rc=%d\n",rc );
       TRACE((stderr,"MU ResourceManager: setupBatIds: Allocated subgroup ptr = %p\n",&((*subgroups)[subgroupIndex])));
 
@@ -1941,14 +1951,22 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
 
       if ( numFree > numLeftToAllocate ) numFree = numLeftToAllocate;
 
+      Kernel_RecFifoAttributes_t *fifoAttrs = 
+	(Kernel_RecFifoAttributes_t *)malloc( numFree * sizeof(Kernel_RecFifoAttributes_t) );
+      PAMI_assertf( fifoAttrs != NULL, "The heap is full.\n" );
+      for (fifo=0; fifo<numFree; fifo++)
+	memcpy(&fifoAttrs[fifo],fifoAttr,sizeof(Kernel_RecFifoAttributes_t));
+
       // Allocate the fifos
       rc = Kernel_AllocateRecFifos( subgroup,
 				    &((*subgroups)[subgroupIndex]),
 				    numFree,
 				    freeIds,
-				    fifoAttr );
+				    fifoAttrs );
       PAMI_assertf( rc == 0, "Kernel_AllocateRecFifos failed with rc=%d.\n",rc );
       TRACE((stderr,"MU ResourceManager: setupRecFifos: Allocated subgroup ptr = %p\n",&((*subgroups)[subgroupIndex])));
+
+      free(fifoAttrs); fifoAttrs=NULL;
       
       uint64_t enableBits = 0;
 
