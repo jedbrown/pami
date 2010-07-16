@@ -82,7 +82,8 @@ init ( uint32_t subGroupId,
   rc = Kernel_AllocateBaseAddressTable ( subGroupId,
                                          &_baseAddressTableSubGroup,
                                          numEntries,
-                                         _entryNumbers );
+                                         _entryNumbers,
+					 0 /* "User" access is needed */);
 
   TRACE(("BatSubGroup init(): Allocate returned rc=%d for subgroup %u\n",
          rc,

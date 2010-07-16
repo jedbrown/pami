@@ -237,7 +237,7 @@ init ( ResourceType_t  type,
                                         fifoPtrs,
                                         fifoSizes,
                                         fifoAttrs );
-
+      TRACE(("ResourceManager.cc: inj init returned rc=%d,subgroupid=%u,num=%u\n",rc,_injFifoInfo->subGroupInfo[i].subGroupId,numElements));
       if (rc) break;
 
       TRACE((stderr, "Initialized InjFifoSubGroups for subgroup %u\n", _injFifoInfo->subGroupInfo[i].subGroupId));
@@ -310,6 +310,7 @@ init ( ResourceType_t  type,
                                         fifoSizes,
                                         fifoAttrs,
                                         dispatch );
+      TRACE(("ResourceManager.cc: rec init returned rc=%d,subgroupid=%u,num=%u\n",rc,_recFifoInfo->subGroupInfo[i].subGroupId,numElements));
 
       if (rc) break;
 
@@ -352,6 +353,7 @@ init ( ResourceType_t  type,
 
       rc = _batSubGroups[i]->init ( _batInfo->subGroupInfo[i].subGroupId,
                                     numElements );
+      TRACE(("ResourceManager.cc: bat init returned rc=%d,subgroupid=%u,num=%u\n",rc,_batInfo->subGroupInfo[i].subGroupId,numElements));
 
       if (rc) break;
 
