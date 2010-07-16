@@ -31,6 +31,7 @@
 #define PAMI_GEOMETRY_NUMALGOLISTS 64
 #endif
 
+#include "components/atomic/gcc/GccCounter.h"
 typedef PAMI::Counter::GccProcCounter GeomCompCtr;
 
 namespace PAMI
