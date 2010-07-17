@@ -968,6 +968,8 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
   size_t addr[BGQ_TDIMS];
   _mapping.task2torus( task, addr );
 
+  TRACE((stderr,"MU ResourceManager: pinFifo: task=%zu,destA=%zu, B=%zu, C=%zu, D=%zu, E=%zu\n",task,addr[0],addr[1],addr[2],addr[3],addr[4]));
+
   // Calculate the signed number of hops between our task and the destination task
   // in each dimension
   ssize_t dA = addr[0] - ourA;
@@ -975,6 +977,8 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
   ssize_t dC = addr[2] - ourC;
   ssize_t dD = addr[3] - ourD;
   ssize_t dE = addr[4] - ourE;
+
+  TRACE((stderr,"MU ResourceManager: pinFifo: ourA=%zu,ourB=%zu,ourC=%zu,ourD=%zu,ourE=%zu, dA=%zd,dB=%zd,dC=%zd,dD=%zd,dE=%zd\n",ourA,ourB,ourC,ourD,ourE,dA,dB,dC,dD,dE));
 
   // If communicating only along the A dimension, select either the A- or A+ fifo
   if ( dB == 0 && dC == 0 && dD == 0 && dE == 0 )
@@ -1058,6 +1062,8 @@ void PAMI::Device::MU::ResourceManager::initFifoPin()
   _isTorusC    = _pers.isTorusC();
   _isTorusD    = _pers.isTorusD();
   _isTorusE    = _pers.isTorusE();
+
+  TRACE((stderr,"MU ResourceManager:: initFifoPin:  aH=%zd,bH=%zd,cH=%zd,dH=%zd,eH=%zd, aT=%d,bT=%d,cT=%d,dT=%d,eT=%d\n",_aSizeHalved,_bSizeHalved,_cSizeHalved,_dSizeHalved,_eSizeHalved,_isTorusA,_isTorusB,_isTorusC,_isTorusD,_isTorusE));
 
   for ( task=0; task<numTasks; task++ )
     {
@@ -1996,6 +2002,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
 	}
 
       // Enable the fifos.
+      TRACE((stderr,"MU ResourceManager: setupRecFifos: Enabling RecFifos in group %u, bits 0x%lx\n",subgroup/BGQ_MU_NUM_REC_FIFO_SUBGROUPS,enableBits));
       rc = Kernel_RecFifoEnable( subgroup/BGQ_MU_NUM_REC_FIFO_SUBGROUPS,
 				 enableBits );
       PAMI_assertf( rc == 0, "Kernel_RecFifoEnable failed with rc=%d\n",rc );
@@ -2173,7 +2180,7 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
       mask = mask >> 1;
     }
   uint16_t myRelativeGlobalFifoId = _clientResources[rmClientId].recResources[contextOffset].globalFifoIds[0] - ( myStartingSubgroup * BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP);
-  TRACE((stderr,"MU ResourceManager: allocateContextResources: rmClientId=%zu, contextOffset=%zu, globalFifoIds[0]=%u, myStartingSubgroup=%u, myRelativeGlobalFifoId=%u\n",rmClientId,contextOffset,_clientResources[rmClientId].recResources[contextOffset].globalFifoIds[0],myStartingSubgroup,myRelativeGlobalFifoId));
+  TRACE((stderr,"MU ResourceManager: allocateContextResources: rmClientId=%zu, contextOffset=%zu, globalFifoIds[0]=%u, myStartingSubgroup=%u, myRelativeRecFifoGlobalFifoId=%u\n",rmClientId,contextOffset,_clientResources[rmClientId].recResources[contextOffset].globalFifoIds[0],myStartingSubgroup,myRelativeGlobalFifoId));
 
   for ( t=0; t<tSize; t++ )
     {

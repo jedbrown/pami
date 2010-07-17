@@ -48,8 +48,41 @@ namespace PAMI
                                                      Memory::MemoryManager         & mm,
                                                      PAMI::Device::Generic::Device * devices)
           {
-	    // Initialize the MU resources for all contexts for this client
-	    __MUGlobal.getMuRM().initializeContexts( id_client, id_count, devices );
+	    // Set up a local barrier (needed below).
+	    bool master;
+	    size_t myTask        = __global.mapping.t();
+	    size_t numLocalTasks = __global.topology_local.size();
+	    (myTask == 0) ? master=true : master=false;
+
+	    TRACE((stderr, "MU::Context::generate_impl: Initializing local barrier, size=%zu, master=%d\n", numLocalTasks, master));
+	    PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> barrier;
+	    barrier.init(&__global.mm,
+			 numLocalTasks,
+			 master );
+
+	    //
+	    // The MU resource manager requires that only one task on the local node
+	    // initialize their contexts at a time to prevent race conditions
+	    // in the MU SPIs.  To enforce this, loop through each task on the
+	    // local node performing a local barrier.  During each loop iteration,
+	    // only one task performs the init.
+	    size_t task;
+
+	    TRACE((stderr,"MU Factory: Entering local barrier before context create loop\n"));
+	    barrier.enter();
+	    TRACE((stderr,"MU Factory: Exiting  local barrier before context create loop\n"));
+
+	    for ( task=0; task<numLocalTasks; task++)
+	      {
+		if ( myTask == task ) // Is it my turn to initialize?
+		  {
+		    // Initialize the MU resources for all contexts for this client
+		    __MUGlobal.getMuRM().initializeContexts( id_client, id_count, devices );
+		  }
+		TRACE((stderr,"MU Factory: Entering local barrier. Initializing task=%zu\n",task));
+		barrier.enter();
+		TRACE((stderr,"MU Factory: Exiting  local barrier. Initializing task=%zu\n",task));
+	      }
 
             // Allocate an array of mu contexts, one for each pami context
             // in this _task_ (from heap, not from shared memory)
@@ -63,30 +96,20 @@ namespace PAMI
             size_t id_offset, id_base = 0;
 
             // Instantiate the mu context objects
-            for (id_offset = 0; id_offset < id_count; ++id_offset)
-              {
-                new (&mu[id_offset])
-                MU::Context (__global.mapping, id_base, id_offset, id_count);
-              }
+	    for (id_offset = 0; id_offset < id_count; ++id_offset)
+	      {
+		new (&mu[id_offset])
+		  MU::Context (__global.mapping, id_base, id_offset, id_count);
+	      }
 
 	    // Barrier among all nodes to ensure that the resources for this client
 	    // are ready on all of the nodes.
 	    // - Barrier among the processes on this node
 	    // - Barrier among other nodes
 	    // - Barrier among the processes on this node
-
-	    bool master;
-	    (__global.mapping.t() == 0) ? master=true : master=false;
-
-	    TRACE((stderr, "MU::Context::generate_impl: Initializing local barrier, size=%zu, master=%d\n", __global.topology_local.size(), master));
-	    PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> barrier;
-	    barrier.init(&__global.mm,
-			 __global.topology_local.size(),
-			 master );
-
-	    TRACE((stderr, "ResourceManager: Entering Local Barrier\n"));
+	    TRACE((stderr,"MU Factory: Entering local barrier after creating contexts\n"));
 	    barrier.enter();
-	    TRACE((stderr, "ResourceManager: Exiting Local Barrier\n"));
+	    TRACE((stderr,"MU Factory: Exiting  local barrier after creating contexts\n"));
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 
@@ -112,9 +135,9 @@ namespace PAMI
 	    
 #endif
 
-	    TRACE((stderr, "ResourceManager: Entering Local Barrier\n"));
+	    TRACE((stderr, "MU Factory: Entering Local Barrier after global barrier\n"));
 	    barrier.enter();
-	    TRACE((stderr, "ResourceManager: Exiting Local Barrier\n"));
+	    TRACE((stderr, "MU Factory: Exiting Local Barrier after global barrier\n"));
 
             return mu;
           };

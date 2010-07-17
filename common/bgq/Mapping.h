@@ -286,10 +286,11 @@ namespace PAMI
     {
       uint32_t abcdet = _mapcache.torus.task2coords[task].raw;
 
-      addr[0] = (abcdet >> 24) & 0x00000003f; // 'a' coordinate
-      addr[1] = (abcdet >> 18) & 0x00000003f; // 'b' coordinate
-      addr[2] = (abcdet >> 12) & 0x00000003f; // 'c' coordinate
-      addr[3] = (abcdet >>  6) & 0x00000003f; // 'd' coordinate
+      // Mask off the high bit of ABCD, since it is used for fifo pinning.
+      addr[0] = (abcdet >> 24) & 0x00000001f; // 'a' coordinate
+      addr[1] = (abcdet >> 18) & 0x00000001f; // 'b' coordinate
+      addr[2] = (abcdet >> 12) & 0x00000001f; // 'c' coordinate
+      addr[3] = (abcdet >>  6) & 0x00000001f; // 'd' coordinate
       addr[4] = (abcdet >> 31); // 'e' coordinate
 
       TRACE_ERR((stderr, "Mapping::task2torus(%zu, {%zu, %zu, %zu, %zu, %zu}) <<\n", task, addr[0], addr[1], addr[2], addr[3], addr[4]));
@@ -306,10 +307,11 @@ namespace PAMI
     {
       uint32_t abcdept = _mapcache.torus.task2coords[task].raw;
 
-      addr[0] = (abcdept >> 24) & 0x00000003f; // 'a' coordinate
-      addr[1] = (abcdept >> 18) & 0x00000003f; // 'b' coordinate
-      addr[2] = (abcdept >> 12) & 0x00000003f; // 'c' coordinate
-      addr[3] = (abcdept >>  6) & 0x00000003f; // 'd' coordinate
+      // Mask off the high bit of ABCD since it is used for fifo pinning.
+      addr[0] = (abcdept >> 24) & 0x00000001f; // 'a' coordinate
+      addr[1] = (abcdept >> 18) & 0x00000001f; // 'b' coordinate
+      addr[2] = (abcdept >> 12) & 0x00000001f; // 'c' coordinate
+      addr[3] = (abcdept >>  6) & 0x00000001f; // 'd' coordinate
       addr[4] = (abcdept >> 31)              ; // 'e' coordinate
       addr[5] = (abcdept)       & 0x00000003f; // 't' coordinate
 
@@ -379,10 +381,11 @@ namespace PAMI
       TRACE_ERR((stderr,"task2network %d\n",task));
       uint32_t abcdet = _mapcache.torus.task2coords[task].raw;
       addr->network = PAMI_N_TORUS_NETWORK;
-      addr->u.n_torus.coords[0] = (abcdet >> 24) & 0x00000003f; // 'a' coordinate
-      addr->u.n_torus.coords[1] = (abcdet >> 18) & 0x00000003f; // 'b' coordinate
-      addr->u.n_torus.coords[2] = (abcdet >> 12) & 0x00000003f; // 'c' coordinate
-      addr->u.n_torus.coords[3] = (abcdet >>  6) & 0x00000003f; // 'd' coordinate
+      // Mask off the high bit of ABCD since it is used for fifo pinning.
+      addr->u.n_torus.coords[0] = (abcdet >> 24) & 0x00000001f; // 'a' coordinate
+      addr->u.n_torus.coords[1] = (abcdet >> 18) & 0x00000001f; // 'b' coordinate
+      addr->u.n_torus.coords[2] = (abcdet >> 12) & 0x00000001f; // 'c' coordinate
+      addr->u.n_torus.coords[3] = (abcdet >>  6) & 0x00000001f; // 'd' coordinate
       addr->u.n_torus.coords[4] = (abcdet >> 31)              ; // 'e' coordinate
       addr->u.n_torus.coords[5] = (abcdet)       & 0x00000003f; // 't' coordinate
       TRACE_ERR((stderr, "Mapping::task2network_impl(%d, {%zu, %zu, %zu, %zu, %zu, %zu}, %d) <<\n", task, addr->u.n_torus.coords[0], addr->u.n_torus.coords[1], addr->u.n_torus.coords[2], addr->u.n_torus.coords[3], addr->u.n_torus.coords[4], addr->u.n_torus.coords[5], addr->network));
@@ -471,7 +474,11 @@ namespace PAMI
       uint32_t coord1 = _mapcache.torus.task2coords[task1].raw;
       uint32_t coord2 = _mapcache.torus.task2coords[task2].raw;
 
-      return ((coord1 & 0xbfffffc0) == (coord2 & 0xbfffffc0));
+      return ((coord1 & 0x9f7df7c0) == (coord2 & 0x9f7df7c0));
+      // The above bit masks take the following into account:
+      // - Ignore the reserved bit
+      // - Ignore the high order bit of ABCD - it is used to store the fifo pin value
+      // - Ignore the t coord
     }
 
     /// \see PAMI::Interface::Mapping::Node::nodeAddr()
@@ -493,7 +500,11 @@ namespace PAMI
       TRACE_ERR((stderr, "Mapping::coords(%x) >>\n", coords));
 
       // global coordinate is just the a,b,c,d,e torus coords.
-      address.global = ((coords >> 5) & 0x01ffffff) | (coords >> 31);
+      // We shift the coords by 5 to eliminate the tcoord and to
+      // leave room to insert the ecoord in the bottom bit.
+      // We also mask off the high bit of ABCD which is used for
+      // fifo pinning.
+      address.global = ((coords >> 5) & 0xfbefbe) | (coords >> 31);
 
       // local coordinate is the thread id (t) in the most significant
       // position followed by the core id (p) in the least significant
