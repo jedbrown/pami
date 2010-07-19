@@ -271,6 +271,8 @@ namespace PAMI
 // Allocate completion counter, set counter in rput descriptor, set completion function and cookie
 // !!!!
 
+	//MUSPI_DescriptorDumpHex((char *)"Remote Put", rput);
+
         return sizeof(MUHWI_Descriptor_t);
       };
 
@@ -522,24 +524,33 @@ namespace PAMI
             // Set the remote injection fifo identifier
             rget->setRemoteGetInjFIFOId (rfifo);
 
+	    //MUSPI_DescriptorDumpHex((char *)"Remote Get", desc);
+
             // Initialize the rget payload descriptor(s)
             void * vaddr;
             uint64_t paddr;
             channel.getDescriptorPayload (desc, vaddr, paddr);
             size_t pbytes = static_cast<T_Model*>(this)->
-                            initializeRemoteGetPayload (vaddr, local_dst_pa,
-                                                        remote_src_pa, bytes,
-                                                        map, hintsABCD, hintsE,
-                                                        local_fn, cookie);
+                            initializeRemoteGetPayload (vaddr, 
+							local_dst_pa,
+                                                        remote_src_pa, 
+							bytes,
+							map, 
+							hintsABCD, 
+							hintsE,
+                                                        local_fn, 
+							cookie);
 
             rget->setPayload (paddr, pbytes);
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
             channel.injFifoAdvanceDesc();
+
+	    return true;
           }
 
-        return true;
+        return false;
       };
 
     };   // PAMI::Device::MU namespace

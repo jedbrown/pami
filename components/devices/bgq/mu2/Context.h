@@ -703,7 +703,7 @@ namespace PAMI
             TRACE_FORMAT("RemoteTask %zu, optimalFifoPin = %u, actualFifoPin = %u, map = %016lx, hintsABCD = %02x, hintsE = %02x, pinInjFifoMap[]=%u,%u,%u,%u,%u,%u,%u,%u,%u,%u", task, fifoPin, _pinInjFifoMap[fifoPin], map, hintsABCD, hintsE, _pinInjFifoMap[0], _pinInjFifoMap[1], _pinInjFifoMap[2], _pinInjFifoMap[3], _pinInjFifoMap[4], _pinInjFifoMap[5], _pinInjFifoMap[6], _pinInjFifoMap[7], _pinInjFifoMap[8], _pinInjFifoMap[9]);
             TRACE_FN_EXIT();
 
-            return  _pinInjFifoMap[fifoPin];
+            return  _pinInjFifoMap[fifoPin] + 513; //Point to subgroup 64
           }
 
           ///
@@ -722,12 +722,9 @@ namespace PAMI
             TRACE_FN_ENTER();
             // In loopback we send only on AM
             map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
-            hintsABCD = MUHWI_PACKET_HINT_AM |
-                        MUHWI_PACKET_HINT_B_NONE |
-                        MUHWI_PACKET_HINT_C_NONE |
-                        MUHWI_PACKET_HINT_D_NONE;
+            hintsABCD = MUHWI_PACKET_HINT_AM;
             hintsE    = MUHWI_PACKET_HINT_E_NONE;
-
+	    
             TRACE_FORMAT("(%zu,%zu) -> map = %016lx, hintsABCD = %08x, hintsE = %08x", from_task, from_offset, map, hintsABCD, hintsE);
             TRACE_FN_EXIT();
           }

@@ -45,14 +45,14 @@ namespace PAMI
           inline ~DmaModelMemoryFifoCompletion () {};
 
           inline size_t initializeRemoteGetPayload (void                * vaddr,
-                                                    uint64_t              local_dst_pa,
-                                                    uint64_t              remote_src_pa,
-                                                    size_t                bytes,
-                                                    uint64_t              map,
-                                                    uint8_t               hintsABCD,
-                                                    uint8_t               hintsE,
-                                                    pami_event_function   local_fn,
-                                                    void                * cookie)
+						    uint64_t              local_dst_pa,
+						    uint64_t              remote_src_pa,
+						    size_t                bytes,
+						    uint64_t              map,
+						    uint8_t               hintsABCD,
+						    uint8_t               hintsE,
+						    pami_event_function   local_fn,
+						    void                * cookie)
           {
             TRACE_FN_ENTER();
 
@@ -91,6 +91,9 @@ namespace PAMI
             // Set the pinned fifo/map/hint information
             desc[1].setTorusInjectionFIFOMap (map);
             desc[1].setHints (hintsABCD, hintsE);
+
+	    //MUSPI_DescriptorDumpHex((char *)"Remote Put", &desc[0]);
+	    //MUSPI_DescriptorDumpHex((char *)"Fifo Completion", &desc[1]);
 
             TRACE_HEXDATA(desc, 128);
             TRACE_FN_EXIT();
