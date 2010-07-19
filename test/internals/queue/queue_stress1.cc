@@ -33,6 +33,7 @@
 #include "util/queue/MutexedQueue.h"
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
+#include "Global.h"
 
 static inline pid_t gettid() {
 	return syscall(SYS_gettid);
@@ -282,6 +283,10 @@ int main(int argc, char **argv) {
 	//extern int optind;
 	extern char *optarg;
 
+	if (__global.topology_local.size() != 1) {
+		fprintf(stderr, "Run only as 1 process per node\n");
+		exit(1);
+	}
 	while ((x = getopt(argc, argv, "e:p:q:s:")) != EOF) {
 		switch(x) {
 		case 'e':
