@@ -75,7 +75,7 @@ namespace PAMI
           {
           }
 
-          inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry)
+        inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
           {
             return PAMI_SUCCESS;
           }
