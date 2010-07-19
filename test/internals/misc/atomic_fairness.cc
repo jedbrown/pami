@@ -110,7 +110,11 @@ void *slave(void *v) {
 	int r = t->rank;
 	size_t mhz = __global.time.clockMHz();
 	size_t duration = TEST_DURATION * (mhz ? mhz : 1600) * 1000000;
+#if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
 	fprintf(stderr, "thread starting %d (%d %d)\n", Kernel_PhysicalProcessorID(), r, c);
+#else
+	fprintf(stderr, "thread starting (%d %d)\n", r, c);
+#endif
 
 	unsigned long long t0, t1;
 	t1 = t0 = __global.time.timebase();
