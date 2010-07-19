@@ -63,6 +63,15 @@
 #include "algorithms/geometry/P2PCCMIRegistration.h"
 #include "algorithms/geometry/CAUCollRegistration.h"
 
+#ifdef _COLLSHM
+// Collective shmem device 
+#include "components/memory/shmem/CollSharedMemoryManager.h"
+#include "components/atomic/xlc/XlcBuiltinT.h"
+#include "components/devices/cshmem/CollShmDevice.h"
+#include "algorithms/geometry/CCMICSMultiRegistration.h"
+#include "CSNativeInterface.h"
+#endif
+
 namespace PAMI
 {
   //  A simple wrapper class for Send, and LAPI "Device"
@@ -282,6 +291,19 @@ namespace PAMI
                                                  CAUDevice,
                                                  ShmemEagerNI_AM,
                                                  CAUNativeInterface> CAUCollreg;
+#ifdef _COLLSHM
+  // Collective Shmem Protocol Typedefs
+  typedef PAMI::Atomic::XlcBuiltinT<long>                                        LAPICSAtomic;
+  typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,COLLSHM_SEGSZ,COLLSHM_PAGESZ,
+                                    COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ>            LAPICSMemoryManager;
+  typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic, LAPICSMemoryManager, 
+                             COLLSHM_DEVICE_NUMSYNCS, COLLSHM_DEVICE_SYNCCOUNT>  LAPICSDevice;
+  typedef PAMI::Device::CollShm::CollShmModel<LAPICSDevice, LAPICSMemoryManager> LAPICollShmModel;
+  typedef PAMI::CSNativeInterface<LAPICollShmModel>                              LAPICSNativeInterface;
+  typedef PAMI::CollRegistration::CCMICSMultiRegistration<LAPIGeometry, 
+                   LAPICSNativeInterface, LAPICSMemoryManager, LAPICollShmModel> LAPICollShmCollreg;
+#endif
+
 /**
  * \brief Class containing all devices used on this platform.
  *
@@ -466,6 +488,20 @@ namespace PAMI
                                        __global.topology_global.size(),
                                        __global.topology_local.size());
           _cau_collreg->analyze(_contextid, _world_geometry);
+
+#ifdef _COLLSHM
+         // only enable collshm for context 0
+          if (_contextid == 0)
+          {
+            _coll_shm_collreg = (LAPICollShmCollreg *) malloc(sizeof(*_coll_shm_collreg));
+            new(_coll_shm_collreg) LAPICollShmCollreg(_client, _clientid, _context, _contextid,
+                PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, _clientid, _contextid));
+            _coll_shm_collreg->analyze(0, _world_geometry);
+          }
+          else
+            _coll_shm_collreg = NULL;
+#endif // _COLLSHM
+
           return PAMI_SUCCESS;
         }
 
@@ -818,6 +854,9 @@ namespace PAMI
       PGASCollreg                           *_pgas_collreg;
       P2PCCMICollreg                        *_p2p_ccmi_collreg;
       CAUCollreg                            *_cau_collreg;
+#ifdef _COLLSHM
+      LAPICollShmCollreg                    *_coll_shm_collreg;
+#endif
 
       /*  World Geometry Pointer for this context               */
       LAPIGeometry                          *_world_geometry;

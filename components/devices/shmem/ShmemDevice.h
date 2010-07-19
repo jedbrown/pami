@@ -317,7 +317,7 @@ namespace PAMI
               // Allocate a shared memory segment for _all_ of the fifos for
               // _all_ of the contexts
               T_Fifo * all_fifos = NULL;
-              size = ((sizeof(T_Fifo) + 15) & 0xfff0) * total_fifos_on_node;
+              size = ((sizeof(T_Fifo) + 15) & 0xfffffff0) * total_fifos_on_node;
               mm.memalign ((void **)&all_fifos, 16, size);
 
               // Allocate an array of shared memory devices, one for each

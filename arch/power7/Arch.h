@@ -18,4 +18,8 @@
 
 // Here go things specific to this processor architecture
 
+#define mem_sync() __sync()
+#define mem_isync() __isync()
+#define mem_barrier() __lwsync()
+
 #endif // __pami_arch_power7_h__

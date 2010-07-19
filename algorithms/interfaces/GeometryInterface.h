@@ -39,6 +39,7 @@ namespace PAMI
       PAMI_GKEY_LOCALBARRIERCOMPOSITE, // local sub-topologies only in the geometry
       PAMI_GKEY_GLOBALBARRIERCOMPOSITE, // global sub-topologes only in the geometry
       PAMI_GKEY_PLATEXTENSIONS
+      PAMI_GKEY_GEOMETRYCSNI           // native interface for coll shm device
     }keys_t;
 
     template <class T_Geometry>

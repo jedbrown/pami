@@ -438,6 +438,10 @@ namespace PAMI
 		    //                    _contexts[n]->_ccmi_collreg->analyze(n,new_geometry);
                     _contexts[n]->_p2p_ccmi_collreg->analyze(n,new_geometry);
                     _contexts[n]->_cau_collreg->analyze(n,new_geometry);
+#ifdef _COLLSHM
+                    // coll shm device is currently only enabled for world_geometry
+                    // _contexts[n]->_coll_shm_collreg->analyze(n, new_geometry);
+#endif // _COLLSHM
                   }
               *geometry=(LAPIGeometry*) new_geometry;
               // todo:  deliver completion to the appropriate context
@@ -483,7 +487,7 @@ namespace PAMI
     inline void initializeMemoryManager ()
       {
         char   shmemfile[1024];
-        size_t bytes     = 1024*1024;
+        size_t bytes     = 8192*1024;
         size_t pagesize  = 4096;
 
         snprintf (shmemfile, 1023, "/pami-client-%s", _lapiClient->GetName());
