@@ -372,7 +372,7 @@ if (phase == 0) {
             // Add Broadcasts
             geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast_factory, _context_id);
 //          geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast2_factory,_context_id);
-            geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast3_factory,_context_id);
+//          geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast3_factory,_context_id);
 
             // Add Allreduces
             geometry->addCollective(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
