@@ -362,10 +362,12 @@ namespace PAMI
 						pami_configuration_t *configuration)
       {
 	if (configuration->name != PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
-	// is it stored in geometry? or just inplied?
+	// is it stored in geometry? or just implied by key/vals?
 	// configuration->value.intval = gp->???;
-	void *v = geom->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
-	configuration->value.intval = (v != NULL && v != PAMI_CR_GKEY_FAIL);
+	void *v1 = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
+	void *v2 = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
+	configuration->value.intval = (v1 != NULL && v1 != PAMI_CR_GKEY_FAIL) ||
+					(v2 != NULL && v2 != PAMI_CR_GKEY_FAIL);
       }
 
       inline pami_result_t geometry_update(pami_geometry_t geometry,

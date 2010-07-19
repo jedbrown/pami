@@ -389,14 +389,8 @@ if (phase == 0) {
 #ifdef ENABLE_MU_CLASSROUTES
 } else if (phase == 1) {
 	    // might need to delay this check until after the geometry "completes"...
-	    void *val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
+	    void *val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
 	    if (val && val != PAMI_CR_GKEY_FAIL) {
-              _mu_barrier_composite = _mu_msync_factory.generate(geometry, &xfer);
-
-              geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
-                             (void*)_mu_barrier_composite);
-              // Add Barriers
-              geometry->addCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
 
               // Add Broadcasts
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory,_context_id);
@@ -404,6 +398,15 @@ if (phase == 0) {
 
               // Add Allreduces
               geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
+	    }
+	    val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
+	    if (val && val != PAMI_CR_GKEY_FAIL) {
+              _mu_barrier_composite = _mu_msync_factory.generate(geometry, &xfer);
+
+              geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
+                             (void*)_mu_barrier_composite);
+              // Add Barriers
+              geometry->addCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
 	    }
 } else if (phase == -1) {
 		// remove MU collectives algorithms...

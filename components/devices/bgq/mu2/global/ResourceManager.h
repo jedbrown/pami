@@ -223,11 +223,24 @@ namespace PAMI
 	  // resource manager - TBD.
 	  uint32_t N = ncr; // take all, until we know otherwise...
 	  if (N > ncr) N = ncr;
-	  MUSPI_InitClassrouteIds(&crs[ncr - N], N, &_crdata);
+	  MUSPI_InitClassrouteIds(&crs[ncr - N], N, 0, &_cncrdata);
 	  uint32_t x;
 	  for (x = ncr - N; x < N; ++x)
 	  {
 	    Kernel_AllocateCollectiveClassRoute(crs[x]);
+	  }
+	  rc = Kernel_QueryGlobalInterruptClassRoutes(&ncr, crs, sizeof(crs));
+	  rc = rc;
+	  // first, locally "block-out" any already reserved classroutes...
+	  // we take the "last" N ids, where "N" is some number we get from a
+	  // resource manager - TBD.
+	  uint32_t N = ncr; // take all, until we know otherwise...
+	  if (N > ncr) N = ncr;
+	  MUSPI_InitClassrouteIds(&crs[ncr - N], N, 1, &_gicrdata);
+	  uint32_t x;
+	  for (x = ncr - N; x < N; ++x)
+	  {
+	    Kernel_AllocateGlobalInterruptClassRoute(crs[x], NULL);
 	  }
 
 	  // next, add classroute #0 (user comm-world) which is
@@ -339,7 +352,8 @@ namespace PAMI
 	  // This sets up our tables for a pre-existing classroute for the
 	  // entire job. So, we only update our table, we don't write DCRs
 	  // or any such thing.
-	  MUSPI_SetClassrouteId(0, BGQ_CLASS_INPUT_VC_SUBCOMM, &_commworld, &_crdata);
+	  MUSPI_SetClassrouteId(0, BGQ_CLASS_INPUT_VC_SUBCOMM, &_commworld, &_cncrdata);
+	  MUSPI_SetClassrouteId(0, BGQ_CLASS_INPUT_VC_SUBCOMM, &_commworld, &_gicrdata);
 	  // do we need to place this rectangle someplace? like the "world geom" topology?
 
 	  // Now, we should be ready to get requests for classroutes...
@@ -379,8 +393,8 @@ namespace PAMI
 	  // need some way to reset this so that we can optimize
 	  // after having previously said "de-optimize"...
 	  // See geomReoptimize(...) under #if 0
-	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
-	  if (val)
+	  if (geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE) ||
+	  	geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE)
 	  {
 	    return PAMI_SUCCESS;
 	  }
@@ -390,10 +404,12 @@ namespace PAMI
 	  // simple check - works for all numbers of processes-per-node
 	  if (geom->nranks() == __global.topology_global.size())
 	  {
-	    geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, (void *)(0 + 1));
+	    geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, (void *)(0 + 1));
+	    geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, (void *)(0 + 1));
 	    return PAMI_SUCCESS;
 	  }
-	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, PAMI_CR_GKEY_FAIL);
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, PAMI_CR_GKEY_FAIL);
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, PAMI_CR_GKEY_FAIL);
 	  PAMI::Topology *topo = (PAMI::Topology *)geom->getTopology(0);
 	  // for now, just bail-out if not a rectangle...
 	  // we could try to convert to rectangle, or see if subTopologyNthGlobal
@@ -410,7 +426,8 @@ namespace PAMI
 	  node_topo.rectSeg(CR_RECT_LL(&rect1), CR_RECT_UR(&rect1));
 	  _node_topo.rectSeg(CR_RECT_LL(&rect2), CR_RECT_UR(&rect2));
 	  if (__MUSPI_rect_compare(&rect1, &rect2) == 0) {
-	    geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, (void *)(0 + 1));
+	    geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, (void *)(0 + 1));
+	    geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, (void *)(0 + 1));
 	    return PAMI_SUCCESS;
 	  }
 
@@ -451,14 +468,14 @@ namespace PAMI
 	// but, do we need the MU Coll device mutex? (_cr_mtx)
 	inline pami_result_t geomDeoptimize(PAMI::Geometry::Common *geom)
 	{
-	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
+	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
 	  if (val && val != PAMI_CR_GKEY_FAIL)
 	  {
 	    int id = (int)((uintptr_t)val & 0xffffffff) - 1;
 	    if (id != 0) // never free classroute 0 - a.k.a. comm-world
 	    {
 	      int last = MUSPI_ReleaseClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
-	                                                        NULL, &_crdata);
+	                                                        NULL, &_cncrdata);
 	      if (last)
 	      {
 	        // This "frees" the id to others... don't want that.
@@ -473,8 +490,23 @@ namespace PAMI
 	      }
 	    }
 	  }
+	  val = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
+	  if (val && val != PAMI_CR_GKEY_FAIL)
+	  {
+	    int id = (int)((uintptr_t)val & 0xffffffff) - 1;
+	    if (id != 0) // never free classroute 0 - a.k.a. comm-world
+	    {
+	      int last = MUSPI_ReleaseClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
+	                                                        NULL, &_gicrdata);
+	      if (last)
+	      {
+	        // see Coll case above...
+	      }
+	    }
+	  }
 	  // never attempt to optimize this geometry for classroutes...
-	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, PAMI_CR_GKEY_FAIL);
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, PAMI_CR_GKEY_FAIL);
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, PAMI_CR_GKEY_FAIL);
 	  return PAMI_SUCCESS;
 	}
 
@@ -482,12 +514,18 @@ namespace PAMI
 	inline pami_result_t geomReoptimize(PAMI::Geometry::Common *geom,
 	    size_t clientid, size_t contextid, pami_context_t context)
 	{
-	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE);
+	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
 	  if (val && val != PAMI_CR_GKEY_FAIL)
 	  {
 	    return PAMI_SUCCESS; // already optimized
 	  }
-	  geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, NULL); // same as nonexistent
+	  val = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
+	  if (val && val != PAMI_CR_GKEY_FAIL)
+	  {
+	    return PAMI_SUCCESS; // already optimized
+	  }
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, NULL); // same as nonexistent
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, NULL); // same as nonexistent
 	  return geomOptimize(geom, clientid, contextid, context);
 	}
 #endif
@@ -540,13 +578,17 @@ namespace PAMI
 	  // for now, this is only for true rectangles... (_nexcl == 0)
 	  CR_RECT_T rect;
 	  crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
-	  // TBD: _crdata must be in shared memory!
-	  uint32_t mask = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
-	            &rect, &crck->thus->_crdata);
+	  // TBD: _cncrdata must be in shared memory!
+	  uint32_t mask1 = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
+	            &rect, &crck->thus->_cncrdata);
+	  uint32_t mask2 = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
+	            &rect, &crck->thus->_gicrdata);
 	  // is this true? can we be sure ALL nodes got the same result?
 	  // if so, and we are re-using existing classroute, then we can skip
 	  // the allreduce...
-	  crck->abuf[0] = mask & ~CR_MATCH_RECT_FLAG;
+	  crck->abuf[0] = (mask1 & ~CR_MATCH_RECT_FLAG) |
+	  		((mask2 & ~CR_MATCH_RECT_FLAG) << 32);
+#if 0 // can't do this with two indepoendent masks (GI+Coll)?
 	  if (mask & CR_MATCH_RECT_FLAG)
 	  {
 	    crck->bbuf[0] = crck->abuf[0]; // "nil" allreduce
@@ -557,6 +599,7 @@ namespace PAMI
 	    cr_allreduce_done(ctx, cookie, PAMI_SUCCESS);
 	    return;
 	  }
+#endif
 	  // Now, must perform an "allreduce(&mask, 1, PAMI_LONGLONG, PAMI_AND)"
 	  // This cannot happen until the new geom actually has algorithms,
 	  // so we must do a non-blocking spin until algorithm[ALLREDUCE][0] exists.
@@ -622,6 +665,7 @@ namespace PAMI
 	    return;
 	  }
 
+	  ClassRoute_t cr = {0};
 	  uint32_t id = ffs(crck->bbuf[0]);
 	  if (id)
 	  {
@@ -629,11 +673,10 @@ namespace PAMI
 	    CR_RECT_T rect;
 	    crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
 	    int first = MUSPI_SetClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
-	          &rect, &crck->thus->_crdata);
+	          &rect, &crck->thus->_cncrdata);
 	    // Note: need to detect if classroute was already programmed...
 	    if (first)
 	    {
-	      ClassRoute_t cr;
 	      MUSPI_BuildNodeClassroute(&crck->thus->_refcomm, &crck->thus->_refroot,
 	            &crck->thus->_mycoord, &rect,
 	            crck->thus->_map, crck->thus->_pri_dim, &cr);
@@ -643,7 +686,31 @@ namespace PAMI
 	      rc = rc;
 	    }
 	    // how does this ever get freed up?
-	    crck->geom->setKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTE, (void *)(id + 1));
+	    crck->geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, (void *)(id + 1));
+	  }
+	  id = ffs(crck->bbuf[0] >> 32);
+	  if (id)
+	  {
+	    --id; // ffs() returns bit# + 1
+	    CR_RECT_T rect;
+	    crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
+	    int first = MUSPI_SetClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
+	          &rect, &crck->thus->_gicrdata);
+	    // Note: need to detect if classroute was already programmed...
+	    if (first)
+	    {
+	      if (!cr.input) {
+	        MUSPI_BuildNodeClassroute(&crck->thus->_refcomm, &crck->thus->_refroot,
+	            &crck->thus->_mycoord, &rect,
+	            crck->thus->_map, crck->thus->_pri_dim, &cr);
+	        cr.input |= BGQ_CLASS_INPUT_LINK_LOCAL;
+	        cr.input |= BGQ_CLASS_INPUT_VC_SUBCOMM;
+	      }
+	      int rc = Kernel_SetGlobalInterruptClassRoute(id, &cr);
+	      rc = rc;
+	    }
+	    // how does this ever get freed up?
+	    crck->geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, (void *)(id + 1));
 	  }
 	  // we got the answer we needed... no more trying...
 	  *crck->thus->_lowest_geom_id = 0xffffffff;
@@ -829,8 +896,9 @@ namespace PAMI
 	CR_COORD_T *_excluded;
 	int _nexcl;
 	unsigned *_lowest_geom_id; // in shared memory! (protected by _cr_mtx)
-	void *_crdata; // used by MUSPI routines to keep track of
+	void *_cncrdata; // used by MUSPI routines to keep track of
 	               // classroute assignments - persistent!
+	void *_gicrdata; // (ditto)
 #endif
 	size_t  _tSize;
 	ssize_t _aSizeHalved;
