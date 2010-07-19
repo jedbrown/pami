@@ -308,6 +308,11 @@ namespace PAMI
                                                          void                 * cookie)
       {
         TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+#ifdef ENABLE_MU_CLASSROUTES
+	for (x = 0; x < nconfig; ++x) {
+		if (configuration[x].name == PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
+	}
+#endif
         if(geometry != NULL)
         {
           new(geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
@@ -337,6 +342,11 @@ namespace PAMI
                                                         pami_event_function     fn,
                                                         void                 * cookie)
       {
+#ifdef ENABLE_MU_CLASSROUTES
+	for (x = 0; x < nconfig; ++x) {
+		if (configuration[x].name == PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
+	}
+#endif
         // todo:  implement this routine
         PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
         return PAMI_SUCCESS;
