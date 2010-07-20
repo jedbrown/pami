@@ -335,7 +335,7 @@ namespace PAMI
 
             for (size_t n = 0; n < _ncontexts; n++)
               {
-                _contexts[n].analyze(n, (BGQGeometry*)geometry, 0);
+                _contexts[n].analyze(n, (BGQGeometry*)new_geometry, 0);
               }
             *geometry = (pami_geometry_t) new_geometry;
 

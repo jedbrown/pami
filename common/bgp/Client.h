@@ -267,7 +267,7 @@ namespace PAMI
                                             rank_slices);
           for(size_t n=0; n<_ncontexts; n++)
           {
-            _contexts[n].analyze(n,(BGPGeometry*)geometry);
+            _contexts[n].analyze(n,(BGPGeometry*)new_geometry);
           }
           *geometry = (pami_geometry_t) new_geometry;
           /// \todo  deliver completion to the appropriate context
