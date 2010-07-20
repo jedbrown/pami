@@ -193,7 +193,7 @@ int main(int argc, char*argv[])
                 result = PAMI_Context_advance (context, 1);
 
               _g_total_broadcasts = 0;
-              blocking_coll (context, &ambroadcast, &ambcast_poll_flag);
+              blocking_coll(context, &barrier,&bar_poll_flag);
             }
         }
     }
