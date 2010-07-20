@@ -91,7 +91,7 @@ namespace PAMI
 	      TRACE_ERR2((stderr, "<%p>AlgoLists()\n", this));
 	      // Clear the algorithm list
 	      memset(&_algo_list[0], 0, sizeof(_algo_list));
-	      memset(&_algo_list[0], 0, sizeof(_algo_list_check));
+	      memset(&_algo_list_check[0], 0, sizeof(_algo_list_check));
 	      memset(&_algo_list_store[0], 0, sizeof(_algo_list_store));
 	      memset(&_algo_list_check_store[0], 0, sizeof(_algo_list_check_store));
 	    }
