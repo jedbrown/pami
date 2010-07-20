@@ -189,14 +189,19 @@ namespace PAMI
 	  _perProcessOptimalPamiResources( NULL ),
 	  _globalRecSubGroups( NULL )
 	{
+	 // Only initialize global MU resources if we are using the MU
+	 // Otherwise, machine checks will result when touching the
+	 // MU MMIO storage.
+	 if ( __global.useMU() )
+	 {
 	  // For each task, cache the optimal fifo pin in the mapcache.
 	  initFifoPin();
-
+	      
 	  // Calculate the following for each client
 	  calculatePerProcessMaxPamiResources();
 	  calculatePerProcessOptimalPamiResources();
 	  calculatePerCorePerProcessPerClientMUResources();
-
+	  
 	  // Set up the global resources
 	  allocateGlobalResources();
 	  TRACE((stderr,"MU ResourceManager: Done allocating global resources\n"));
@@ -360,6 +365,7 @@ namespace PAMI
 	  // via the geomOptimize() method below...
 #endif
 	  TRACE((stderr,"MU ResourceManager: Exiting constructor\n"));
+	 } // End: UseMU
 	} // End: ResourceManager Default Constructor
 #ifdef ENABLE_MU_CLASSROUTES
 	// Note, we NEVER use BGQ_CLASS_INPUT_VC_USER. Only BGQ_CLASS_INPUT_VC_SUBCOMM.
