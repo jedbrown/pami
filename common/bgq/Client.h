@@ -322,10 +322,12 @@ namespace PAMI
           }
 
 #endif
+        BGQGeometry              *new_geometry;
 
         if (geometry != NULL)
           {
-            new(geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
+            new_geometry=(BGQGeometry*) malloc(sizeof(*new_geometry)); /// \todo use allocator
+            new(new_geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
                                       &__global.mapping,
                                       id,
                                       slice_count,
@@ -335,6 +337,7 @@ namespace PAMI
               {
                 _contexts[n].analyze(n, (BGQGeometry*)geometry, 0);
               }
+            *geometry = (pami_geometry_t) new_geometry;
 
             /// \todo  deliver completion to the appropriate context
           }
