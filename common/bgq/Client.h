@@ -46,14 +46,14 @@ namespace PAMI
         // Get some shared memory for this client
         initializeMemoryManager ();
 
-        _world_range.lo=0;
-        _world_range.hi=__global.mapping.size()-1;
-        new(_world_geometry_storage) BGQGeometry(NULL, &__global.mapping,0, 1,&_world_range);
+        _world_range.lo = 0;
+        _world_range.hi = __global.mapping.size() - 1;
+        new(_world_geometry_storage) BGQGeometry(NULL, &__global.mapping, 0, 1, &_world_range);
 #ifdef ENABLE_MU_CLASSROUTES
-	// This must return immediately (must not enqueue non-blocking ops).
-	// Passing a NULL context should ensure that.
-	__MUGlobal.getMuRM().geomOptimize(_world_geometry, _clientid, 0, NULL, NULL, NULL);
-	// Now, subsequent 'analyze' done on this geom will know that MU Coll is avail.
+        // This must return immediately (must not enqueue non-blocking ops).
+        // Passing a NULL context should ensure that.
+        __MUGlobal.getMuRM().geomOptimize(_world_geometry, _clientid, 0, NULL, NULL, NULL);
+        // Now, subsequent 'analyze' done on this geom will know that MU Coll is avail.
 #endif
 
         result = PAMI_SUCCESS;
@@ -112,9 +112,9 @@ namespace PAMI
       }
 
       inline pami_result_t createContext_impl (pami_configuration_t   configuration[],
-                                              size_t                count,
-                                              pami_context_t       * context,
-                                              size_t                ncontexts)
+                                               size_t                count,
+                                               pami_context_t       * context,
+                                               size_t                ncontexts)
       {
         TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         //_context_list->lock ();
@@ -140,7 +140,7 @@ namespace PAMI
 #ifdef USE_COMMTHREADS
         // Create one comm thread semi-opaque pointer. Internally, this may be
         // one-per-context (optimal advance scenario) or some other arrangement.
-	/// \todo #warning need to fix node-scoped l2atomic mm so that it allows private alloc
+        /// \todo #warning need to fix node-scoped l2atomic mm so that it allows private alloc
         _commThreads = PAMI::Device::CommThread::BgqCommThread::generate(_clientid, n, &_mm, &__global.l2atomicFactory.__nodescoped_mm);
         PAMI_assertf(_commThreads, "BgqCommThread::generate failed for _commThreads[%d]\n", n);
 #endif // USE_COMMTHREADS
@@ -169,13 +169,13 @@ namespace PAMI
 #ifdef USE_COMMTHREADS
             // Note, this is not inializing each comm thread but rather
             // initializing comm threads for each context. context[x] is not usable yet,
-	    // but it won't matter since this object can't do anything with it anyway.
-	    // This must initialize before the context, so that MemoryManagers are
-	    // setup.
+            // but it won't matter since this object can't do anything with it anyway.
+            // This must initialize before the context, so that MemoryManagers are
+            // setup.
             PAMI::Device::CommThread::BgqCommThread::initContext(_commThreads, _clientid, x, context[x]);
 #endif // USE_COMMTHREADS
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                             &_platdevs, base, bytes, _world_geometry);
+                                              &_platdevs, base, bytes, _world_geometry);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
@@ -188,8 +188,8 @@ namespace PAMI
       inline pami_result_t destroyContext_impl (pami_context_t context)
       {
 #ifdef USE_COMMTHREADS
-	// This removes all contexts... only needs to be called once.
-	PAMI::Device::CommThread::BgqCommThread::shutdown(_commThreads, _clientid);
+        // This removes all contexts... only needs to be called once.
+        PAMI::Device::CommThread::BgqCommThread::shutdown(_commThreads, _clientid);
 #endif // USE_COMMTHREADS
         //_context_list->lock ();
         //_context_list->remove (context);
@@ -199,14 +199,18 @@ namespace PAMI
 
 #ifdef USE_COMMTHREADS
       // This is not standard interface... yet?
-      inline pami_result_t addContextToCommThreadPool(pami_context_t ctx) {
+      inline pami_result_t addContextToCommThreadPool(pami_context_t ctx)
+      {
 #if 0
-	// hook for testing...
-	if (ctx == NULL) {
-		return PAMI::Device::CommThread::BgqCommThread::wakeUp(_commThreads, _clientid);
-	} else
+
+        // hook for testing...
+        if (ctx == NULL)
+          {
+            return PAMI::Device::CommThread::BgqCommThread::wakeUp(_commThreads, _clientid);
+          }
+        else
 #endif // !HAVE_WU_ARMWITHADDRESS
-        return PAMI::Device::CommThread::BgqCommThread::addContext(_commThreads, _clientid, ctx);
+          return PAMI::Device::CommThread::BgqCommThread::addContext(_commThreads, _clientid, ctx);
       }
 #endif // USE_COMMTHREADS
 
@@ -217,11 +221,13 @@ namespace PAMI
         switch (configuration->name)
           {
             case PAMI_NUM_CONTEXTS:
+
               /// \todo #80 #99 Remove this when the DMA supports >1 context.
               if (__global.useMU())
                 configuration->value.intval = 1;
               else
                 configuration->value.intval = 64;
+
               result = PAMI_SUCCESS;
               break;
             case PAMI_CONST_CONTEXTS:
@@ -299,33 +305,40 @@ namespace PAMI
       }
 
       inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
-                                                         pami_geometry_t         parent,
-                                                         unsigned               id,
-                                                         pami_geometry_range_t * rank_slices,
-                                                         size_t                 slice_count,
-                                                         pami_context_t          context,
-                                                         pami_event_function     fn,
-                                                         void                 * cookie)
+                                                          pami_geometry_t         parent,
+                                                          unsigned               id,
+                                                          pami_geometry_range_t * rank_slices,
+                                                          size_t                 slice_count,
+                                                          pami_context_t          context,
+                                                          pami_event_function     fn,
+                                                          void                 * cookie)
       {
         TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
 #ifdef ENABLE_MU_CLASSROUTES
-	for (x = 0; x < nconfig; ++x) {
-		if (configuration[x].name == PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
-	}
-#endif
-        if(geometry != NULL)
-        {
-          new(geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
-                                    &__global.mapping,
-                                    id,
-                                    slice_count,
-                                            rank_slices);
-          for(size_t n=0; n<_ncontexts; n++)
+
+        for (x = 0; x < nconfig; ++x)
           {
-            _contexts[n].analyze(n,(BGQGeometry*)geometry, 0);
+            if (configuration[x].name == PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
           }
-              /// \todo  deliver completion to the appropriate context
-        }
+
+#endif
+
+        if (geometry != NULL)
+          {
+            new(geometry) BGQGeometry((PAMI::Geometry::Common*)parent,
+                                      &__global.mapping,
+                                      id,
+                                      slice_count,
+                                      rank_slices);
+
+            for (size_t n = 0; n < _ncontexts; n++)
+              {
+                _contexts[n].analyze(n, (BGQGeometry*)geometry, 0);
+              }
+
+            /// \todo  deliver completion to the appropriate context
+          }
+
         BGQGeometry *bargeom = (BGQGeometry*)parent;
         PAMI::Context *ctxt = (PAMI::Context *)context;
         bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
@@ -334,18 +347,21 @@ namespace PAMI
 
 
       inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       * geometry,
-                                                        pami_geometry_t         parent,
-                                                        unsigned               id,
-                                                        pami_task_t           * tasks,
-                                                        size_t                 task_count,
-                                                        pami_context_t          context,
-                                                        pami_event_function     fn,
-                                                        void                 * cookie)
+                                                         pami_geometry_t         parent,
+                                                         unsigned               id,
+                                                         pami_task_t           * tasks,
+                                                         size_t                 task_count,
+                                                         pami_context_t          context,
+                                                         pami_event_function     fn,
+                                                         void                 * cookie)
       {
 #ifdef ENABLE_MU_CLASSROUTES
-	for (x = 0; x < nconfig; ++x) {
-		if (configuration[x].name == PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
-	}
+
+        for (x = 0; x < nconfig; ++x)
+          {
+            if (configuration[x].name == PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
+          }
+
 #endif
         // todo:  implement this routine
         PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
@@ -357,63 +373,73 @@ namespace PAMI
       {
         BGQGeometry *gp = (BGQGeometry *)cookie;
         PAMI::Context *ctxt = (PAMI::Context *)context;
-	if (err == PAMI_SUCCESS)
-	{
-	  Client *thus = (Client *)ctxt->getClient();
-          for (size_t n = 0; n < thus->_ncontexts; n++)
+
+        if (err == PAMI_SUCCESS)
           {
-            thus->_contexts[n].analyze(n, gp, 1);
+            Client *thus = (Client *)ctxt->getClient();
+
+            for (size_t n = 0; n < thus->_ncontexts; n++)
+              {
+                thus->_contexts[n].analyze(n, gp, 1);
+              }
           }
-        }
-	gp->rmCompletion(context, err);
+
+        gp->rmCompletion(context, err);
       }
 
       inline pami_result_t geometry_query(pami_geometry_t geometry,
-						pami_configuration_t *configuration)
+                                          pami_configuration_t *configuration)
       {
-	if (configuration->name != PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
-	// is it stored in geometry? or just implied by key/vals?
-	// configuration->value.intval = gp->???;
-	void *v1 = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
-	void *v2 = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
-	configuration->value.intval = (v1 != NULL && v1 != PAMI_CR_GKEY_FAIL) ||
-					(v2 != NULL && v2 != PAMI_CR_GKEY_FAIL);
+        if (configuration->name != PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
+
+        // is it stored in geometry? or just implied by key/vals?
+        // configuration->value.intval = gp->???;
+        void *v1 = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
+        void *v2 = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
+        configuration->value.intval = (v1 != NULL && v1 != PAMI_CR_GKEY_FAIL) ||
+                                      (v2 != NULL && v2 != PAMI_CR_GKEY_FAIL);
       }
 
       inline pami_result_t geometry_update(pami_geometry_t geometry,
-						pami_configuration_t *configuration,
-						pami_context_t context,
-                                                pami_event_function fn,
-                                                void *cookie)
+                                           pami_configuration_t *configuration,
+                                           pami_context_t context,
+                                           pami_event_function fn,
+                                           void *cookie)
       {
-	if (configuration->name != PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
+        if (configuration->name != PAMI_GEOMETRY_OPTIMIZE) return PAMI_INVAL;
+
         BGQGeometry *gp = (BGQGeometry *)geometry;
-	// check if already done?
-	// if (configuration->value.intval == gp->???) return PAMI_SUCCESS;
+        // check if already done?
+        // if (configuration->value.intval == gp->???) return PAMI_SUCCESS;
         PAMI::Context *ctxt = (PAMI::Context *)context;
-	if (configuration->value.intval != 0)
-	{
-	  gp->setCompletion(fn, cookie);
-	  gp->addCompletion();        // ensure completion doesn't happen until
-			              // all have been analyzed.
-	  pami_result_t rc = __MUGlobal.getMuRM().geomOptimize(gp, _clientid, ctxt->getId(),
-				context, _geom_opt_finish, (void *)geometry);
-	}
-	else
-	{
-	  pami_result_t rc = __MUGlobal.getMuRM().geomDeoptimize(gp);
-	  if (rc == PAMI_SUCCESS)
-	  {
-            for (size_t n = 0; n < _ncontexts; n++)
-            {
-              _contexts[n].analyze(n, (BGQGeometry *)geometry, -1);
-            }
+
+        if (configuration->value.intval != 0)
+          {
+            gp->setCompletion(fn, cookie);
+            gp->addCompletion();        // ensure completion doesn't happen until
+            // all have been analyzed.
+            pami_result_t rc = __MUGlobal.getMuRM().geomOptimize(gp, _clientid, ctxt->getId(),
+                                                                 context, _geom_opt_finish, (void *)geometry);
           }
-	  if (fn) {
-		fn(context, cookie, rc);
-	  }
-	}
-	return rc;
+        else
+          {
+            pami_result_t rc = __MUGlobal.getMuRM().geomDeoptimize(gp);
+
+            if (rc == PAMI_SUCCESS)
+              {
+                for (size_t n = 0; n < _ncontexts; n++)
+                  {
+                    _contexts[n].analyze(n, (BGQGeometry *)geometry, -1);
+                  }
+              }
+
+            if (fn)
+              {
+                fn(context, cookie, rc);
+              }
+          }
+
+        return rc;
       }
 #endif
 
@@ -421,7 +447,7 @@ namespace PAMI
       {
 #ifdef ENABLE_MU_CLASSROUTES
         BGQGeometry *gp = (BGQGeometry *)geometry;
-	return __MUGlobal.getMuRM().geomDeoptimize(gp);
+        return __MUGlobal.getMuRM().geomDeoptimize(gp);
 #else
         PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
         return PAMI_UNIMPL;
@@ -462,10 +488,12 @@ namespace PAMI
         size_t bytes     = 2048 * 1024;
         //size_t pagesize  = 4096;
 
-	char *env = getenv("PAMI_CLIENT_SHMEMSIZE");
-	if (env) {
-		bytes = strtoull(env, NULL, 0) * 1024 * 1024;
-	}
+        char *env = getenv("PAMI_CLIENT_SHMEMSIZE");
+
+        if (env)
+          {
+            bytes = strtoull(env, NULL, 0) * 1024 * 1024;
+          }
 
         snprintf (shmemfile, 1023, "/pami-client-%s", _name);
 
@@ -479,8 +507,10 @@ namespace PAMI
         // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
 
         rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
+
         if (rc == -1)
           fprintf(stderr, "BGQ::Client shm_open(<%s>,O_RDWR) rc = %d, errno = %d, %s\n", shmemfile,  rc,  errno,  strerror(errno));
+
         TRACE_ERR((stderr,  "BGQ::Client() shm_open %d\n", rc));
 
         void * ptr = NULL;
