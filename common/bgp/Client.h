@@ -255,9 +255,12 @@ namespace PAMI
       {
         TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
 
+        BGPGeometry              *new_geometry;
+
         if(geometry != NULL)
         {
-          new(geometry) BGPGeometry((PAMI::Geometry::Common*)parent,
+          new_geometry=(BGPGeometry*) malloc(sizeof(*new_geometry)); /// \todo use allocator
+          new(new_geometry) BGPGeometry((PAMI::Geometry::Common*)parent,
                                     &__global.mapping,
                                     id,
                                     slice_count,
@@ -266,7 +269,8 @@ namespace PAMI
           {
             _contexts[n].analyze(n,(BGPGeometry*)geometry);
           }
-              /// \todo  deliver completion to the appropriate context
+          *geometry = (pami_geometry_t) new_geometry;
+          /// \todo  deliver completion to the appropriate context
         }
         BGPGeometry *bargeom = (BGPGeometry*)parent;
         PAMI::Context *ctxt = (PAMI::Context *)context;
