@@ -73,6 +73,13 @@ namespace PAMI
       _coords.mapped.d        = _d;
       _coords.mapped.e        = _e;
       _coords.mapped.reserved =  0;
+      
+      _MUcoords.Destination.Reserved2     = 0;
+      _MUcoords.Destination.A_Destination = _a;
+      _MUcoords.Destination.B_Destination = _b;
+      _MUcoords.Destination.C_Destination = _c;
+      _MUcoords.Destination.D_Destination = _d;
+      _MUcoords.Destination.E_Destination = _e;
 
       coord2node (_a, _b, _c, _d, _e, _t,      //fix?
                   _nodeaddr.global, _nodeaddr.local);
@@ -97,7 +104,9 @@ namespace PAMI
     size_t _e;
     size_t _t;
 
+    // The _coords do not match the _MUcoords.  So, we have two versions of it.
     bgq_coords_t  _coords;
+    MUHWI_Destination_t _MUcoords;
     Interface::Mapping::nodeaddr_t _nodeaddr;
 
     bgq_mapcache_t _mapcache;
@@ -148,7 +157,7 @@ namespace PAMI
     ///
     inline MUHWI_Destination_t * getMuDestinationSelf ()
     {
-      return(MUHWI_Destination_t *) &_coords;
+      return(MUHWI_Destination_t *) &_MUcoords;
     };
 
     ///
