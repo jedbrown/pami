@@ -41,7 +41,7 @@
 #include "algorithms/geometry/P2PCCMIRegistration.h"
 
 #undef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) fprintf x
 
 
 namespace PAMI
@@ -908,6 +908,7 @@ namespace PAMI
                                   BGQGeometry    *geometry,
 				  int phase = 0)
       {
+	TRACE_ERR((stderr,"analyze geometry %p, registration %p\n",geometry,_ccmi_registration));
         pami_result_t result = PAMI_NERROR;
         result = _ccmi_registration->analyze(context_id,geometry, phase);
 

@@ -18,7 +18,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) fprintf x
 #endif
 
 namespace PAMI
@@ -398,6 +398,7 @@ namespace PAMI
         BGQGeometry *bargeom = (BGQGeometry*)parent;
         PAMI::Context *ctxt = (PAMI::Context *)context;
         bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+
 #endif
         TRACE_ERR((stderr,  "%s exit geometry %p/%p\n", __PRETTY_FUNCTION__,geometry,*geometry));
         return PAMI_SUCCESS;

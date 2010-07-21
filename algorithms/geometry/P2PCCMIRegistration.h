@@ -15,7 +15,8 @@
 #define __algorithms_geometry_P2PCCMIRegistration_h__
 
 #include "algorithms/geometry/P2PCCMIRegInfo.h"
-
+#undef TRACE_INIT
+#define TRACE_INIT(x) fprintf x
 // Collective Registration for CCMI protocols for p2p
 namespace PAMI
 {
@@ -102,10 +103,11 @@ namespace PAMI
             _binomial_allreduce_factory(NULL),
             _composite_ni(NULL)
           {
-            TRACE_INIT((stderr, "<%p>CCMIRegistration()\n", this ));
+            TRACE_INIT((stderr, "<%p>CCMIRegistration() use_shmem %s, use_p2p %s, local_size %zu, global_size %zu\n", this, use_shmem? "true":"false",use_p2p?"true":"false",local_size,global_size ));
             if ((use_shmem) && (local_size > 1) && (use_p2p))
               {
-                // Use composite P2P/Shmem if both enabled and > 1 process per node
+		TRACE_INIT((stderr, "<%p>CCMIRegistration() use composite\n",this));                
+		// Use composite P2P/Shmem if both enabled and > 1 process per node
                 // Setup Composite P2p/Shmem factories
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() register composite\n", this ));
                 setupFactories<T_CompositeNI_AM,
@@ -117,6 +119,7 @@ namespace PAMI
               }
             else if (use_p2p)
               {
+		TRACE_INIT((stderr, "<%p>CCMIRegistration() use p2p\n",this)); 
                 // Use P2P if requested or only one process (some simple test scenario)
                 // Setup P2P factories
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() register MU\n", this ));
@@ -127,6 +130,7 @@ namespace PAMI
               }
             else if ((use_shmem) && (local_size > 1))
               {
+		TRACE_INIT((stderr, "<%p>CCMIRegistration() use shmem\n",this));
                 // Use Shmem if requested and available ( > 1 process per node)
                 // Setup Shmem factories
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() register shmem\n", this ));
@@ -153,7 +157,8 @@ namespace PAMI
               ; // then do nothing - no shmem on 1 process per node (and other protocol is disabled)
             else
               {
-              _binomial_barrier_composite = _binomial_barrier_factory->generate(geometry, &xfer);
+		TRACE_INIT((stderr, "<%p>CCMIRegistration::analyze() add\n",this));               
+		_binomial_barrier_composite = _binomial_barrier_factory->generate(geometry, &xfer);
   
               geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
                                (void*)_binomial_barrier_composite);
@@ -446,6 +451,8 @@ namespace PAMI
     }; // P2P
   }; // CollRegistration
 }; // PAMI
+#undef TRACE_INIT
+#define TRACE_INIT(x)
 #endif
 //
 // astyle info    http://astyle.sourceforge.net

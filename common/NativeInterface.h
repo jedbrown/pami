@@ -871,7 +871,7 @@ namespace PAMI
     state_data->parameters.events.local_fn = sendDone;
     state_data->parameters.events.remote_fn = NULL;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::<%p>send() data %zu, header %zu\n", this, _protocol, state_data->parameters.send.data.iov_len, state_data->parameters.send.header.iov_len));
+    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::<%p>send() data %zu, header %zu\n", this, _mcast_protocol, state_data->parameters.send.data.iov_len, state_data->parameters.send.header.iov_len));
 
     for (unsigned i = 0; i < size; ++i)
     {
@@ -894,7 +894,7 @@ namespace PAMI
                                      mcast->context, /// \todo what context do I target?
                                      &state_data->parameters.send.dest);
 
-      TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::<%p>send(%u(%zu,%zu))\n", this, _protocol, state_data->parameters.send.dest, (size_t) taskList[i], mcast->context));
+      TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::<%p>send(%u(%zu,%zu))\n", this, _mcast_protocol, state_data->parameters.send.dest, (size_t) taskList[i], mcast->context));
 
       if (result == PAMI_SUCCESS) result = _mcast_protocol->simplePWQ(&state_data->sendpwq,_context, &state_data->parameters, pwq);
 
@@ -1269,7 +1269,7 @@ namespace PAMI
     state_data->parameters.events.local_fn = sendDone;
     state_data->parameters.events.remote_fn = NULL;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::<%p>send() data %zu, header %zu\n", this, _protocol, state_data->parameters.send.data.iov_len, state_data->parameters.send.header.iov_len));
+    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::<%p>send() data %zu, header %zu\n", this, _mcast_protocol, state_data->parameters.send.data.iov_len, state_data->parameters.send.header.iov_len));
 
     for (unsigned i = 0; i < size; ++i)
     {
@@ -1292,7 +1292,7 @@ namespace PAMI
                                      mcast->context, /// \todo what context do I target?
                                      &state_data->parameters.send.dest);
 
-      TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::<%p>send(%u(%zu,%zu))\n", this, _protocol, state_data->parameters.send.dest, (size_t) taskList[i], mcast->context));
+      TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::<%p>send(%u(%zu,%zu))\n", this, _mcast_protocol, state_data->parameters.send.dest, (size_t) taskList[i], mcast->context));
 
       if (result == PAMI_SUCCESS) result = _mcast_protocol->simplePWQ(&state_data->sendpwq,_context,&state_data->parameters,pwq);
 

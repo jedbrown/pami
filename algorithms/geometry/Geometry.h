@@ -22,7 +22,7 @@
 #include <map>
 
 #undef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) fprintf x
 
 #undef TRACE_ERR2
 #define TRACE_ERR2(x) //fprintf x
@@ -418,11 +418,13 @@ namespace PAMI
         }
       inline void                       setKey_impl(keys_t key, void*value)
         {
+          TRACE_ERR((stderr, "<%p>Common::setKey(%d, %p)\n", this, key, value));
           _kvstore[key]=value;
         }
       inline void                      *getKey_impl(keys_t key)
         {
           void * value = _kvstore[key];
+          TRACE_ERR((stderr, "<%p>Common::getKey(%d, %p)\n", this, key, value));
           return value;
         }
 
@@ -532,11 +534,11 @@ namespace PAMI
                                                 size_t             num1,
                                                 size_t            context_id)
         {
-          TRACE_ERR((stderr, "<%p>Common::algorithms_info_impl(), algs0=%p, num0=%u, mdata0=%p, algs1=%p, num1=%u, mdata1=%p\n", this, algs0,num0,mdata0,algs1,num1,mdata1));
+          TRACE_ERR((stderr, "<%p>Common::algorithms_info_impl(), algs0=%p, num0=%zu, mdata0=%p, algs1=%p, num1=%zu, mdata1=%p\n", this, algs0,num0,mdata0,algs1,num1,mdata1));
           AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
           for(size_t i=0; i<num0; i++)
               {
-            TRACE_ERR((stderr, "<%p> alist->_algo_list[%u]=%p, mdata0[%u]=%p\n", this, i, alist->_algo_list[i],i,mdata0?&mdata0[i]:NULL));
+            TRACE_ERR((stderr, "<%p> alist->_algo_list[%zu]=%p, mdata0[%zu]=%p\n", this, i, alist->_algo_list[i],i,mdata0?&mdata0[i]:NULL));
                 if(algs0)
                   algs0[i]   =(pami_algorithm_t) alist->_algo_list[i];
                 if(mdata0)
@@ -544,7 +546,7 @@ namespace PAMI
               }
           for(size_t i=0; i<num1; i++)
               {
-            TRACE_ERR((stderr, "<%p> alist->_algo_list_check[%u]=%p, mdata1[%u]=%p\n", this, i, alist->_algo_list_check[i],i,mdata1?&mdata1[i]:NULL));
+            TRACE_ERR((stderr, "<%p> alist->_algo_list_check[%zu]=%p, mdata1[%zu]=%p\n", this, i, alist->_algo_list_check[i],i,mdata1?&mdata1[i]:NULL));
                 if(algs1)
                   algs1[i] =(pami_algorithm_t) alist->_algo_list_check[i];
                 if(mdata1)
