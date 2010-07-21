@@ -179,8 +179,8 @@ namespace PAMI
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
-
-        TRACE_ERR((stderr,  "%s exit\n", __PRETTY_FUNCTION__));
+        _ncontexts = (size_t)n;
+        TRACE_ERR((stderr,  "%s ncontexts %zu exit\n", __PRETTY_FUNCTION__,_ncontexts));
 
         return PAMI_SUCCESS;
       }
@@ -313,7 +313,7 @@ namespace PAMI
                                                           pami_event_function     fn,
                                                           void                 * cookie)
       {
-        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+        TRACE_ERR((stderr,  "%s enter geometry %p/%p\n", __PRETTY_FUNCTION__,geometry,*geometry));
 #ifdef ENABLE_MU_CLASSROUTES
 
         for (x = 0; x < nconfig; ++x)
@@ -333,8 +333,10 @@ namespace PAMI
                                       slice_count,
                                       rank_slices);
 
+            TRACE_ERR((stderr,  "%s analyze %zu geometry %p\n", __PRETTY_FUNCTION__,_ncontexts,new_geometry));
             for (size_t n = 0; n < _ncontexts; n++)
               {
+              TRACE_ERR((stderr,  "%s analyze %p geometry %p\n", __PRETTY_FUNCTION__,&_contexts[n],new_geometry));
                 _contexts[n].analyze(n, (BGQGeometry*)new_geometry, 0);
               }
             *geometry = (pami_geometry_t) new_geometry;
@@ -345,6 +347,7 @@ namespace PAMI
         BGQGeometry *bargeom = (BGQGeometry*)parent;
         PAMI::Context *ctxt = (PAMI::Context *)context;
         bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        TRACE_ERR((stderr,  "%s exit geometry %p/%p\n", __PRETTY_FUNCTION__,geometry,*geometry));
         return PAMI_SUCCESS;
       }
 
