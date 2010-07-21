@@ -382,11 +382,11 @@ namespace PAMI
                 }
 
               // If we have > 1 node, use MU
-              if (__global.useMU() && (__global.topology_local.size() != __global.topology_global.size()))
+              if (__global.useMU() && !topology->isLocal())// && (__global.topology_local.size() != __global.topology_global.size()) )
                 {
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU global barrier\n", this));
                   geometry->setKey(PAMI::Geometry::PAMI_GKEY_GLOBALBARRIERCOMPOSITE,
-                                   (void*)_shmem_barrier_composite);
+                                   (void*)_mu_barrier_composite);
 
 
 #ifdef ENABLE_MU_CLASSROUTES
@@ -425,16 +425,23 @@ namespace PAMI
                 }
 
 #else
-/// \todo #warning This check for "world" is not valid
-                  /// \todo Since isGlobal() isn't implemented, do something myself...
-                  /// Get a Nth global topology based on my local dim and if it's the same
-                  /// size as the geometry topology, then the geometry topology must be "global".
+                  /// Get a Nth global topology based on my local dim and see if this geometry is 
+                  /// matches, then the geometry topology is usable by MU 
+                  /// \todo Temporary - does not handle class routes...
                   PAMI::Topology globalTopology;
                   int t = (int) __global.mapping.t();
                   topology->subTopologyNthGlobal(&globalTopology, t);
 
-                  // If the geometry is all global nodes, we can use pure MU composites.
-                  if (topology->size() == globalTopology.size()) //(topology->isGlobal())
+                  /// \todo we don't support sub geometries so sizes must also match.
+                  bool useMu = topology->size() == globalTopology.size()? true : false;
+
+
+                  for(unsigned i = 0; useMu && (i < topology->size()); ++i)
+                    if(!(globalTopology.isRankMember(topology->index2Rank(i))))
+                      useMu = false;
+
+                  // If we can use pure MU composites, add them
+                  if (useMu)
                     {
                       TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Global MU factories\n", this));
                       _mu_barrier_composite = _mu_msync_factory.generate(geometry, &xfer);
