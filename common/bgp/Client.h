@@ -153,8 +153,8 @@ namespace PAMI
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
-
-        TRACE_ERR((stderr,  "%s exit\n", __PRETTY_FUNCTION__));
+        _ncontexts = (size_t)n;
+        TRACE_ERR((stderr,  "%s ncontexts %zu exit\n", __PRETTY_FUNCTION__,_ncontexts));
 
         return PAMI_SUCCESS;
       }
