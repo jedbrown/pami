@@ -778,7 +778,7 @@ namespace PAMI
 
             pami_endpoint_t origin = *((pami_endpoint_t *) metadata);
 
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), origin task = %d, origin offset = %zu, bytes = %zu\n", task, offset, bytes));
+            TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), origin = 0x%08x, bytes = %zu\n", origin, bytes));
 
             recv_state_t * state = (recv_state_t *) eager->_connection.get (origin);
 
@@ -848,7 +848,7 @@ namespace PAMI
             memcpy ((uint8_t *)(state->info.addr) + nbyte, payload, ncopy);
             state->received += ncopy;
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), nbyte = %zu\n", nbyte));
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), nbyte = %zu, bytes = %zu, state->metadata.bytes = %zu\n", nbyte, bytes, state->metadata.bytes));
 
             if (nbyte + bytes >= state->metadata.bytes)
               {
