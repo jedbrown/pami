@@ -53,6 +53,11 @@ pami_result_t do_work(pami_context_t context, void *cookie) {
 	return PAMI_SUCCESS;
 }
 
+void done_send(pami_context_t context, void *cookie, pami_result_t err) {
+	post_info_t *info = (post_info_t *)cookie;
+	--info->value;
+}
+
 pami_result_t do_send(pami_context_t context, void *cookie) {
 	post_info_t *info = (post_info_t *)cookie;
 	char buf[128];
@@ -63,8 +68,6 @@ pami_result_t do_send(pami_context_t context, void *cookie) {
 	if (rc != PAMI_SUCCESS) {
 fprintf(stderr, "failed sending %d\n", info->seq);
 	}
-
-	--info->value;
 	return PAMI_SUCCESS;
 }
 
@@ -105,9 +108,9 @@ pami_result_t run_test(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 		}
 	}
 
-	const unsigned long long timeout = 500000;
-	unsigned long long t0, t1;
-	t0 = PAMI_Wtimebase();
+	const unsigned long long timeout = 500000; // abort after 10x of these, cycles
+	unsigned long long t0, t1, t2;
+	t0 = t1 = PAMI_Wtimebase();
 	int busy;
 	int stuck = 0;
 	do {
@@ -115,18 +118,18 @@ pami_result_t run_test(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 		if (!busy) break;
 
 		// should complete without ever calling advance...
-		t1 = PAMI_Wtimebase();
-		if (t1 - t0 >= timeout) {
+		t2 = PAMI_Wtimebase();
+		if (t2 - t1 >= timeout) {
 			static char buf[1024];
 			char *s = buf;
 			for (x = 0; x < nctx; ++x) {
 				s += sprintf(s, " [%d]=%d", _info[x].seq, _info[x].value);
 			}
 			fprintf(stderr, "No progress after %lld cycles...? %s\n",
-									timeout, buf);
+									t2 - t0, buf);
 			// abort... ?
 			if (++stuck > 10) return PAMI_ERROR;
-			t0 = t1;
+			t1 = t2;
 		}
 	} while (busy);
 	return PAMI_SUCCESS;
@@ -138,7 +141,7 @@ pami_result_t init_test_send(pami_client_t client, pami_context_t *ctx, size_t n
 	int x;
 	pami_send_hint_t h = {0};
 	for (x = 0; x < nctx; ++x) {
-		disp_id[x] = x;
+		disp_id[x] = 0;
 		pami_result_t rc = PAMI_Dispatch_set(ctx[x], disp_id[x], (pami_dispatch_callback_fn){do_recv}, (void *)&_info[x], h);
 		if (rc != PAMI_SUCCESS) {
 			fprintf(stderr, "Failed to set dispatch for context %d\n", x);
@@ -172,15 +175,15 @@ pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nc
 
 			size_t targ = x;
 
-			++_info[x].value; // expecting call to posted func
+			++_info[x].value; // expecting send
 			_info[x].send.send.header.iov_base = &_info[x].seq;
 			_info[x].send.send.header.iov_len = sizeof(_info[x].seq);
 			_info[x].send.send.data.iov_base = NULL;
 			_info[x].send.send.data.iov_len = 0;
 			_info[x].send.send.dispatch = disp_id[x];
 			_info[x].send.send.hints = h;
-			_info[x].send.events.cookie = NULL;
-			_info[x].send.events.local_fn = NULL;
+			_info[x].send.events.cookie = (void *)&_info[x];
+			_info[x].send.events.local_fn = done_send;
 			_info[x].send.events.remote_fn = NULL;
 			(void)PAMI_Endpoint_create(client, task, targ, &_info[x].send.send.dest);
 
@@ -197,9 +200,9 @@ pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nc
 		}
 	}
 
-	const unsigned long long timeout = 500000;
-	unsigned long long t0, t1;
-	t0 = PAMI_Wtimebase();
+	const unsigned long long timeout = 50000000; // abort after 10x of these, cycles
+	unsigned long long t0, t1, t2;
+	t0 = t1 = PAMI_Wtimebase();
 	int busy;
 	int stuck = 0;
 	do {
@@ -207,18 +210,18 @@ pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nc
 		if (!busy) break;
 
 		// should complete without ever calling advance...
-		t1 = PAMI_Wtimebase();
-		if (t1 - t0 >= timeout) {
+		t2 = PAMI_Wtimebase();
+		if (t2 - t1 >= timeout) {
 			static char buf[1024];
 			char *s = buf;
 			for (x = 0; x < nctx; ++x) {
 				s += sprintf(s, " [%d]=%d", _info[x].seq, _info[x].value);
 			}
 			fprintf(stderr, "No progress after %lld cycles...? %s\n",
-									timeout, buf);
+									t2 - t0, buf);
 			// abort... ?
 			if (++stuck > 10) return PAMI_ERROR;
-			t0 = t1;
+			t1 = t2;
 		}
 	} while (busy);
 	return PAMI_SUCCESS;
