@@ -20,6 +20,7 @@ void cb_done (void *ctxt, void * clientdata, pami_result_t err)
 {
   int * active = (int *) clientdata;
   (*active)--;
+  fprintf (stderr, "%s: %d\n", __PRETTY_FUNCTION__, *active);
 }
 /* Docs10:  Done/Decrement call */
 
@@ -30,6 +31,7 @@ int blocking_coll (pami_context_t      context,
 {
   pami_result_t result;
   (*active)++;
+  fprintf (stderr, "%s: %d\n", __PRETTY_FUNCTION__, *active);
   result = PAMI_Collective(context, coll);
   if (result != PAMI_SUCCESS)
     {

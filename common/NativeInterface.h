@@ -179,8 +179,10 @@ namespace PAMI
     {
       TRACE_ERR((stderr, "<%p>NativeInterfaceCommon::constructNativeInterface() \n", (void*)NULL));
       DO_DEBUG((templateName<T_NativeInterface>()));
-      DO_DEBUG((templateName<T_Protocol>()));
-      DO_DEBUG((templateName<T_Device>()));
+      DO_DEBUG((templateName<T_Protocol1>()));
+      DO_DEBUG((templateName<T_Protocol2>()));
+      DO_DEBUG((templateName<T_Device1>()));
+      DO_DEBUG((templateName<T_Device2>()));
 
       pami_result_t result = PAMI_ERROR;
 

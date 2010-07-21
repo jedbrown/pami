@@ -347,6 +347,9 @@ namespace PAMI
           pami_xfer_t xfer = {0};
           PAMI::Topology * topology = (PAMI::Topology*) geometry->getTopology(0);
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology: size() %zu, isLocal() %u, isGlobal #u\n", this, topology->size(),  topology->isLocal()));//,  topology->isGlobal()));
+          DO_DEBUG(for(unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u\n", this, i, topology->index2Rank(i)););
+            
+
 #ifdef ENABLE_MU_CLASSROUTES
 
           if (phase == 0)
@@ -381,7 +384,7 @@ namespace PAMI
                     }
                 }
 
-              // If we have > 1 node, use MU
+              // If we have > 1 node, check MU
               if (__global.useMU() && !topology->isLocal())// && (__global.topology_local.size() != __global.topology_global.size()) )
                 {
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU global barrier\n", this));
