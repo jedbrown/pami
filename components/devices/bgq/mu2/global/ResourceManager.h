@@ -396,11 +396,11 @@ namespace PAMI
 	    size_t clientid, size_t contextid, pami_context_t context,
 	    pami_event_function fn, void *clientdata)
 	{
-	  // need some way to reset this so that we can optimize
-	  // after having previously said "de-optimize"...
-	  // See geomReoptimize(...) under #if 0
-	  if (geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE) ||
-	  	geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE)
+	  // we always try to optimize, since this is called only once
+	  // per geometry (per change in PAMI_GEOMETRY_OPTIMIZE config)
+	  // however, if already fully optimized, don't bother.
+	  if (geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE) &&
+	  	geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE))
 	  {
 	    return PAMI_SUCCESS;
 	  }
@@ -414,8 +414,9 @@ namespace PAMI
 	    geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, (void *)(0 + 1));
 	    return PAMI_SUCCESS;
 	  }
-	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, PAMI_CR_GKEY_FAIL);
-	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, PAMI_CR_GKEY_FAIL);
+
+	  /// \todo #warning needs to be modified to work with -np comm-worlds
+
 	  PAMI::Topology *topo = (PAMI::Topology *)geom->getTopology(0);
 	  // for now, just bail-out if not a rectangle...
 	  // we could try to convert to rectangle, or see if subTopologyNthGlobal
@@ -510,31 +511,10 @@ namespace PAMI
 	      }
 	    }
 	  }
-	  // never attempt to optimize this geometry for classroutes...
-	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, PAMI_CR_GKEY_FAIL);
-	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, PAMI_CR_GKEY_FAIL);
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, NULL);
+	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, NULL);
 	  return PAMI_SUCCESS;
 	}
-
-#if 0
-	inline pami_result_t geomReoptimize(PAMI::Geometry::Common *geom,
-	    size_t clientid, size_t contextid, pami_context_t context)
-	{
-	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
-	  if (val && val != PAMI_CR_GKEY_FAIL)
-	  {
-	    return PAMI_SUCCESS; // already optimized
-	  }
-	  val = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
-	  if (val && val != PAMI_CR_GKEY_FAIL)
-	  {
-	    return PAMI_SUCCESS; // already optimized
-	  }
-	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, NULL); // same as nonexistent
-	  geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, NULL); // same as nonexistent
-	  return geomOptimize(geom, clientid, contextid, context);
-	}
-#endif
 
 	static void start_over(pami_context_t ctx, void *cookie, pami_result_t result)
 	{
@@ -584,11 +564,19 @@ namespace PAMI
 	  // for now, this is only for true rectangles... (_nexcl == 0)
 	  CR_RECT_T rect;
 	  crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
-	  // TBD: _cncrdata must be in shared memory!
-	  uint32_t mask1 = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
+	  /// \todo #warning _cncrdata (_gicrdata) must be in shared memory!
+	  uint32_t mask1 = 0, mask2 = 0;
+
+	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
+	  if (val && val != PAMI_CR_GKEY_FAIL)
+	    mask1 = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
 	            &rect, &crck->thus->_cncrdata);
-	  uint32_t mask2 = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
+
+	  val = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
+	  if (val && val != PAMI_CR_GKEY_FAIL)
+	    mask2 = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
 	            &rect, &crck->thus->_gicrdata);
+
 	  // is this true? can we be sure ALL nodes got the same result?
 	  // if so, and we are re-using existing classroute, then we can skip
 	  // the allreduce...
@@ -607,47 +595,31 @@ namespace PAMI
 	  }
 #endif
 	  // Now, must perform an "allreduce(&mask, 1, PAMI_LONGLONG, PAMI_AND)"
-	  // This cannot happen until the new geom actually has algorithms,
-	  // so we must do a non-blocking spin until algorithm[ALLREDUCE][0] exists.
-	  cr_allreduce_check(ctx, cookie);
-	}
-
-	// Would be better if we could post a persistent work function...
-	// Loop in this function until the geometry is initialized enough to
-	// have the "default" allreduce algorithm. Hint: it won't be us.
-	//
-	static pami_result_t cr_allreduce_check(pami_context_t ctx, void *cookie)
-	{
-	  cr_cookie *crck = (cr_cookie *)cookie;
 	  pami_algorithm_t algo = 0;
 	  PAMI_Geometry_algorithms_query(ctx, crck->geom, PAMI_XFER_ALLREDUCE,
 	                                        &algo, NULL, 1, NULL, NULL, 0);
 	  if (!algo)
 	  {
-	    PAMI_Context_post(ctx, &crck->post, cr_allreduce_check, cookie);
-	    // return PAMI_EAGAIN;
+	    cr_allreduce_done(ctx, cookie, PAMI_ERROR);
+	    return;
 	  }
-	  else
+	  crck->xfer.cb_done = cr_allreduce_done;
+	  crck->xfer.cookie = crck;
+	  crck->xfer.algorithm = algo;
+	  // because of circular dependencies, can't dereference the context here,
+	  // so we must use the C API. Would be best to directly setup MU Coll
+	  // descriptor and inject, but this is currently on the new geom which
+	  // has no classroute, and if we use the parent then we have to do something
+	  // special to get the non-member nodes involved, since the parent members
+	  // that are not part of the sub-geometry don't even call analyze...
+	  pami_result_t rc = PAMI_Collective(ctx, &crck->xfer);
+	  if (rc != PAMI_SUCCESS)
 	  {
-	    crck->xfer.cb_done = cr_allreduce_done;
-	    crck->xfer.cookie = crck;
-	    crck->xfer.algorithm = algo;
-	    // because of circular dependencies, can't dereference the context here,
-	    // so we must use the C API. Would be best to directly setup MU Coll
-	    // descriptor and inject, but this is currently on the new geom which
-	    // has no classroute, and if we use the parent then we have to do something
-	    // special to get the non-member nodes involved, since the parent members
-	    // that are not part of the sub-geometry don't even call analyze...
-	    pami_result_t rc = PAMI_Collective(ctx, &crck->xfer);
-	    if (rc != PAMI_SUCCESS)
-	    {
-	      // this frees 'cookie' if needed...
-	      // this also tells geom we're done.
-	      cr_allreduce_done(ctx, cookie, rc); // should this retry?
-	      return rc;
-	    }
+	    // this frees 'cookie' if needed...
+	    // this also tells geom we're done.
+	    cr_allreduce_done(ctx, cookie, rc); // should this retry?
+	    return;
 	  }
-	  return PAMI_SUCCESS;
 	}
 
 	static void cr_allreduce_done(pami_context_t ctx, void *cookie, pami_result_t result)
@@ -672,7 +644,7 @@ namespace PAMI
 	  }
 
 	  ClassRoute_t cr = {0};
-	  uint32_t id = ffs(crck->bbuf[0]);
+	  uint32_t id = ffs(crck->bbuf[0] & 0x0000ffff);
 	  if (id)
 	  {
 	    --id; // ffs() returns bit# + 1
@@ -694,7 +666,7 @@ namespace PAMI
 	    // how does this ever get freed up?
 	    crck->geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, (void *)(id + 1));
 	  }
-	  id = ffs(crck->bbuf[0] >> 32);
+	  id = ffs((crck->bbuf[0] >> 32) & 0x0000ffff);
 	  if (id)
 	  {
 	    --id; // ffs() returns bit# + 1
