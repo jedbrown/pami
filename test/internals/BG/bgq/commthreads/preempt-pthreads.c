@@ -84,6 +84,7 @@ int main(int argc, char ** argv) {
 						"result = %d\n", NUM_CONTEXTS, result);
 		return 1;
 	}
+	test_init();
 	write(2, buf, bufl);
 	for (x = 0; x < NUM_CONTEXTS; ++x) {
 		result = PAMI_Client_add_commthread_context(client, context[x]);
@@ -146,25 +147,14 @@ int main(int argc, char ** argv) {
 		}
 
 		if (y + 1 < NUM_TESTRUNS) {
-			buf[0] = 'S'; buf[1] = 'p';
-			write(2, buf, bufl);
 			fprintf(stderr, "Sleeping...\n");
-			//			sleep(5);
-			unsigned long long t0 = PAMI_Wtimebase();
-			//fprintf(stderr, "Woke up after %lld cycles\n", (PAMI_Wtimebase() - t0));
-			while (PAMI_Wtimebase() - t0 < 500000);
-			buf[0] = 'W'; buf[1] = 'a';
-			write(2, buf, bufl);
+			do_sleep(buf, bufl, "Wa", 5);
 		}
 	}
 	run = 0;
 
-	buf[0] = 'S'; buf[1] = 'p';
-	write(2, buf, bufl);
-	{unsigned long long t0 = PAMI_Wtimebase();
-		while (PAMI_Wtimebase() - t0 < 500000);}
-	buf[0] = 'F'; buf[1] = 'i';
-	write(2, buf, bufl);
+	do_sleep(buf, bufl, "Fi", 5);
+
 	for (x = 0; x < NUM_CONTEXTS; ++x) {
 		pthread_mutex_unlock(&thr_data[x].mutex);
 	}

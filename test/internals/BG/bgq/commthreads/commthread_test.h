@@ -40,6 +40,47 @@ typedef struct post_info {
 
 post_info_t _info[NUM_CONTEXTS];
 
+#ifdef EVICT_BUF_SIZE
+#include <assert.h>
+uint64_t *evict_buf = NULL;
+#ifndef EVICT_ITER_SIZE
+#define EVICT_ITER_SIZE	(EVICT_BUF_SIZE / 8)
+#endif // !EVICT_ITER_SIZE
+#endif // EVICT_BUF_SIZE
+
+void test_init() {
+#ifdef EVICT_BUF_SIZE
+	if (!evict_buf) {
+		posix_memalign((void **)&evict_buf, sizeof(*evict_buf), EVICT_BUF_SIZE * sizeof(*evict_buf));
+		assert(evict_buf);
+	}
+#endif // EVICT_BUF_SIZE
+}
+
+void do_sleep(char *buf, int bufl, char *end, size_t number) {
+	buf[0] = 'S'; buf[1] = 'p';
+	write(2, buf, bufl);
+#ifdef EVICT_BUF_SIZE
+	static int evx = 0;
+#endif // EVICT_BUF_SIZE
+	{unsigned long long t0 = PAMI_Wtimebase();
+	unsigned long long some_num = number * 100000;
+	while (PAMI_Wtimebase() - t0 < some_num) {
+#ifdef EVICT_BUF_SIZE
+		int evz = evx;
+		int evy = evz + EVICT_ITER_SIZE;
+		if (evy >= EVICT_BUF_SIZE) evy -= EVICT_BUF_SIZE;
+		for (; evz != evy;) {
+			++evict_buf[evz];
+			if (++evz >= EVICT_BUF_SIZE) evz -= EVICT_BUF_SIZE;
+		}
+		evx = evz;
+#endif // EVICT_BUF_SIZE
+	}}
+	buf[0] = end[0]; buf[1] = end[1];
+	write(2, buf, bufl);
+}
+
 pami_result_t do_work(pami_context_t context, void *cookie) {
 	post_info_t *info = (post_info_t *)cookie;
 	char buf[128];
@@ -140,6 +181,7 @@ static size_t disp_id[NUM_CONTEXTS];
 pami_result_t init_test_send(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 	int x;
 	pami_send_hint_t h = {0};
+	test_init();
 	for (x = 0; x < nctx; ++x) {
 		disp_id[x] = 0;
 		pami_result_t rc = PAMI_Dispatch_set(ctx[x], disp_id[x], (pami_dispatch_callback_fn){do_recv}, (void *)&_info[x], h);
