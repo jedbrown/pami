@@ -261,8 +261,8 @@ namespace CCMI
           _phaseVec[index].totalChunksRcvd += val;
 
           TRACE_INIT((stderr, "%d: Incrementing chunk recvd for phase %d srcidx %d final val %d\n",
-                        _myrank, index, jindex,
-                        _phaseVec[index].chunksRcvd[jindex]));
+                      _myrank, index, jindex,
+                      _phaseVec[index].chunksRcvd[jindex]));
         }
         void                  incrementPhaseChunksSent(unsigned index, unsigned val = 1)
         {
@@ -417,11 +417,11 @@ namespace CCMI
               _phaseVec[_dstPhase].mrecv[0].dst = (pami_pipeworkqueue_t *) & _phaseVec[_dstPhase].pwqs[0];
 
               TRACE_INIT((stderr, "<%p>Executor::AllreduceState::setDstBuf(%p) dstPhase(%#X) _phaseVec[_dstPhase].recvBufs(%p)\n",
-                            this,
-                            *pdstbuf,
-                            _dstPhase,
-                            *_phaseVec[_dstPhase].recvBufs
-                           ));
+                          this,
+                          *pdstbuf,
+                          _dstPhase,
+                          *_phaseVec[_dstPhase].recvBufs
+                         ));
             }
         }
 
@@ -443,7 +443,7 @@ namespace CCMI
           if ((_receiveAllocationSize) > limit)
             {
               TRACE_INIT((stderr, "<%p>Executor::AllreduceState::freeAllocations(%#.8X) ALERT: Allocation freed, %p(%#X bytes), %p(%#X bytes)\n", this,
-                            limit, _scheduleAllocation, _scheduleAllocationSize, _receiveAllocation, _receiveAllocationSize));
+                          limit, _scheduleAllocation, _scheduleAllocationSize, _receiveAllocation, _receiveAllocationSize));
 
 #ifdef CCMI_DEBUG
               memset(_scheduleAllocation, 0xFB, _scheduleAllocationSize);
@@ -526,7 +526,7 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::updatePipelineWidth
       if (lastChunk > _lastChunk)
         {
           TRACE_INIT((stderr, "<%p>Executor::AllreduceCache::updatePipelineWidth ALERT: Pipelining grew %#X > %#X\n",
-                        this, lastChunk, _lastChunk));
+                      this, lastChunk, _lastChunk));
           _isConfigChanged = true;
         }
 
@@ -540,15 +540,15 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::updatePipelineWidth
     }
 
   TRACE_INIT((stderr, "<%p>Executor:AllreduceCache::updatePipelineWidth() bytes:%#X "
-                "pwidth:%#X lastChunk:%#X fullCount:%#X lastCount:%#X \n", this,
-                bytes, _pcache._pipewidth, _lastChunk, _fullChunkCount,
-                _lastChunkCount));
+              "pwidth:%#X lastChunk:%#X fullCount:%#X lastCount:%#X \n", this,
+              bytes, _pcache._pipewidth, _lastChunk, _fullChunkCount,
+              _lastChunkCount));
 
   // We can reuse our existing buffer allocations if we aren't > the allocated size.
   if (bytes > _sizeOfBuffers)
     {
       TRACE_INIT((stderr, "<%p>Executor:AllreduceCache::updatePipelineWidth ALERT: Buffers too small %#X < %#X\n",
-                    this, _sizeOfBuffers, bytes));
+                  this, _sizeOfBuffers, bytes));
       _isConfigChanged = true;
     }
 
@@ -666,7 +666,7 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
       if (_scache->getNumDstRanks(i) > 0)
         {
           PAMI::Topology * topology = _scache->getDstTopology(i);
-          pami_task_t *dstranks=NULL;
+          pami_task_t *dstranks = NULL;
           topology->rankList(&dstranks);
 
           if (i <= _scache->getLastReducePhase())
@@ -762,11 +762,11 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
     }
 
   TRACE_INIT((stderr, "<%p>Executor::AllreduceCache::setupReceives() _bufs:%p all[0]:%p all[1]:%p all[2]:%p all[3]:%p all[4]:%p tempbuf:%p\n",
-                this,
-                _bufs, _all_recvBufs[0],
-                _all_recvBufs[1], _all_recvBufs[2],
-                _all_recvBufs[3], _all_recvBufs[4],
-                 _tempBuf));
+              this,
+              _bufs, _all_recvBufs[0],
+              _all_recvBufs[1], _all_recvBufs[2],
+              _all_recvBufs[3], _all_recvBufs[4],
+              _tempBuf));
 
   _isConfigChanged = false;
 
@@ -790,8 +790,8 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
         {
           for (unsigned scount = 0; scount < _scache->getNumSrcRanks(p); scount ++)
             {
-            TRACE_INIT((stderr, "<%p>Executor::AllreduceCache::setupReceives() p:%u, scount: %u, _phaseVec[p].recvBufs[scount]:%p, _all_recvBufs[%u]: %p\n",
-                          this, p, scount, _phaseVec[p].recvBufs[scount],p*scount,_all_recvBufs[p*scount]));
+              TRACE_INIT((stderr, "<%p>Executor::AllreduceCache::setupReceives() p:%u, scount: %u, _phaseVec[p].recvBufs[scount]:%p, _all_recvBufs[%u]: %p\n",
+                          this, p, scount, _phaseVec[p].recvBufs[scount], p*scount, _all_recvBufs[p*scount]));
 //        PAMI_Request_t *request = getRecvReq() + nextRecvData;
               AC_RecvCallbackData *rdata = getRecvClient(nextRecvData);
               rdata->allreduce        = _executor;
@@ -818,7 +818,7 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
               pwq->reset();
               CCMI_assert (pwq->bufferToProduce() != NULL);
 
-              TRACE_INIT((stderr, "<%p>Executor::AllreduceCache::setupReceives() Buffer for phase %d index %d is %p\n",this, p, scount, pwq->bufferToProduce()));
+              TRACE_INIT((stderr, "<%p>Executor::AllreduceCache::setupReceives() Buffer for phase %d index %d is %p\n", this, p, scount, pwq->bufferToProduce()));
             }
         }
     }

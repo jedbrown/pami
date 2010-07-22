@@ -62,7 +62,7 @@ namespace CCMI
               _phasevec[count][_iteration] -= _cache.getSrcTopology(count)->size();
 
               TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::decrementVector phase %d, nranks %zu, vec %d\n",
-                         this, count, _cache.getSrcTopology(count)->size(),  _phasevec[count][_iteration]));
+                          this, count, _cache.getSrcTopology(count)->size(),  _phasevec[count][_iteration]));
             }
 
           _senddone  =   false;
@@ -97,7 +97,7 @@ namespace CCMI
             _srctopology(ninterface->myrank())
         {
           TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::::ctor(nranks %d,comm %X,connid %d)\n",
-                     this, nranks, comm, connid));
+                      this, nranks, comm, connid));
           _start          =  0;
           _phase          =  0;
           _nphases        =  0;
@@ -162,12 +162,12 @@ inline void CCMI::Executor::BarrierExec::sendNext()
 {
   CCMI_assert(_phase <= (_start + _nphases));
   TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext _phase %d, _start %d, _nphases %d\n",
-             this, _phase, _start, _nphases));
+              this, _phase, _start, _nphases));
 
   if (_phase == (_start + _nphases))
     {
       TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext DONE _cb_done %p, _phase %d, _clientdata %p\n",
-                 this, _cb_done, _phase, _clientdata));
+                  this, _cb_done, _phase, _clientdata));
 
       if (_cb_done) _cb_done(NULL, _clientdata, PAMI_SUCCESS);
 
@@ -189,7 +189,7 @@ inline void CCMI::Executor::BarrierExec::sendNext()
       topology->rankList(&dstranks);
       CCMI_assert (dstranks != NULL);
 
-      TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext dstranks %p\n", this,dstranks));
+      TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext dstranks %p\n", this, dstranks));
 
       for (int count = 0; count < ndest; count++)
         TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext _phase %d, ndest %d, _dstranks[count] %u, _connid %d, _clientdata %p\n", this, _phase, ndest, dstranks[count], _connid, _clientdata));
@@ -252,7 +252,7 @@ inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
   _phasevec[hdr->_phase][hdr->_iteration] ++;
 
   TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::notifyRecv phase %d/%d(%d,%d), vec %d expected vec %zu\n", this,
-             hdr->_phase,_phase,_start,_nphases, _phasevec[hdr->_phase][hdr->_iteration],  _cache.getSrcTopology(hdr->_phase)->size()));
+              hdr->_phase, _phase, _start, _nphases, _phasevec[hdr->_phase][hdr->_iteration],  _cache.getSrcTopology(hdr->_phase)->size()));
 
   //Start has not been called, just record recv and return
   if (_phase == _start + _nphases)

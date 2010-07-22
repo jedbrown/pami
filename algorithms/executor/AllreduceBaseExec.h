@@ -495,7 +495,7 @@ template <class T_Conn>
 inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
 {
   TRACE_ADVANCE ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::advance _curPhase %d,_endPhase %d,_curIdx %d\n", this,
-                   _curPhase, _scache.getEndPhase(), _curIdx));
+                  _curPhase, _scache.getEndPhase(), _curIdx));
 
   CCMI_assert_debug (_initialized);
   CCMI_assert_debug (_sState.sndClientData.isDone == true);
@@ -654,11 +654,11 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
   dst_topology->rankList(&dstranks);
 
   TRACE_MSG ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::sendMessage connid %#X curphase:%#X "
-               "bytes:%#X destPe:%#X ndst %zu cData:%p \n",
-               this,
-               _acache.getPhaseSendConnectionId (sphase),
-               sphase, bytes, dstranks[0], dst_topology->size(),
-               &s_state->sndInfo));
+              "bytes:%#X destPe:%#X ndst %zu cData:%p \n",
+              this,
+              _acache.getPhaseSendConnectionId (sphase),
+              sphase, bytes, dstranks[0], dst_topology->size(),
+              &s_state->sndInfo));
 
   _native->multicast (&_msend);
 }
@@ -707,7 +707,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecv
   AC_RecvCallbackData * cdata = (AC_RecvCallbackData *)(&info);
 
   TRACE_MSG ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecv %#X, %#X\n",
-               this, cdata->phase, cdata->srcPeIndex));
+              this, cdata->phase, cdata->srcPeIndex));
 
   // update state  (we dont support multiple sources per phase yet)
   _acache.incrementPhaseChunksRcvd(cdata->phase, cdata->srcPeIndex);
@@ -729,7 +729,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifySendDone
 {
   // update state
   TRACE_MSG((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifySendDone, cur phase %#X\n",
-              this, _curPhase));
+             this, _curPhase));
 
   AC_SendCallbackData * cdata = (AC_SendCallbackData *)(&info);
   cdata->isDone = true;
@@ -756,19 +756,19 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
   CollHeaderData *cdata = (CollHeaderData*) info;
 
   TRACE_MSG((stderr, "%d: <%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead() count: %#X "
-              "connID:%#X phase:%#X root:%#X local root:%#X src %#X sndlen %#X,_state->getBytes():%#X "
-              "_state->getPipelineWidth():%#X \n",
-              _native->myrank(),
-              this,
-              count,
-              conn_id,
-              cdata->_phase,
-              (int) cdata->_root,
-              _scache.getRoot(),
-              peer,
-              sndlen,
-              _acache.getBytes(),
-              _acache.getPipelineWidth()));
+             "connID:%#X phase:%#X root:%#X local root:%#X src %#X sndlen %#X,_state->getBytes():%#X "
+             "_state->getPipelineWidth():%#X \n",
+             _native->myrank(),
+             this,
+             count,
+             conn_id,
+             cdata->_phase,
+             (int) cdata->_root,
+             _scache.getRoot(),
+             peer,
+             sndlen,
+             _acache.getBytes(),
+             _acache.getPipelineWidth()));
 
   CCMI_assert_debug(cdata->_comm == _commID);
   CCMI_assert_debug(cdata->_root == (unsigned) _scache.getRoot());
@@ -795,8 +795,8 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
              (cdata->_phase < (unsigned)_scache.getEndPhase()))
         {
           TRACE_MSG((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead "
-                      "no src in phase %#X\n",
-                      this, cdata->_phase));
+                     "no src in phase %#X\n",
+                     this, cdata->_phase));
           cdata->_phase++;
         }
     }
@@ -804,7 +804,7 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
   CCMI_assert(_scache.getNumSrcRanks(cdata->_phase) > 0);
 
   TRACE_MSG ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead phase %#X, numsrcranks %#X\n",
-               this, cdata->_phase, _scache.getNumSrcRanks(cdata->_phase)));
+              this, cdata->_phase, _scache.getNumSrcRanks(cdata->_phase)));
 
   int srcPeIndex = -1;
   int idx = 0;
