@@ -112,6 +112,7 @@ namespace CCMI {
         _hnranks = 1 << nph;
 
         _xR      = (unsigned) -1;
+        TRACE_SCHEDULE((stderr,"LinearMap(myrank %u) _x0 %u,_xN %u,_xR %u,_xM %u,_nranks %u,_hnranks %u, getMyRank() %u\n",myrank,_x0,_xN,_xR,_xM,_nranks,_hnranks, getMyRank()));
       }
 
       void setRoot (unsigned r) {
@@ -219,6 +220,8 @@ namespace CCMI {
           }
 #endif
         _myindex = myrank;
+        TRACE_SCHEDULE((stderr, "ListMap(myrank %u) _nranks %u,_hnranks %u,_rootindex %u,_myindex %u, getMyRank() %u\n", 
+                        myrank, _nranks,_hnranks,_rootindex,_myindex,getMyRank()));
       }
 
       void setRoot (unsigned gr) {
@@ -227,6 +230,8 @@ namespace CCMI {
             _rootindex = count;
             break;
           }
+          TRACE_SCHEDULE((stderr, "setRoot(root %u) _nranks %u,_hnranks %u,_rootindex %u,_myindex %u\n", 
+                         gr, _nranks,_hnranks,_rootindex,_myindex));
       }
 
       ///
@@ -278,6 +283,7 @@ namespace CCMI {
       unsigned getGlobalRank (unsigned relrank) {
         relrank += _rootindex;
         if(relrank >= _nranks) relrank -= _nranks;
+        TRACE_SCHEDULE((stderr, "getGlobalRank(relrank %u) _ranks[%u] %u\n", relrank, relrank, _ranks[relrank]));
         return _ranks[relrank];
       }
 

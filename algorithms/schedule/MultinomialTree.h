@@ -196,7 +196,7 @@ namespace CCMI
             Schedule (),
             _maxphases(0)
         {
-          TRACE_SCHEDULE((stderr,  "<%p> %s\n", this, __PRETTY_FUNCTION__));
+          TRACE_SCHEDULE((stderr,  "<%p>MultinomialTreeT ()\n", this));
         }
 
         /**
@@ -432,9 +432,9 @@ namespace CCMI
  */
 template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
-MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(myrank, topology)
+MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(topology->rank2Index(myrank), topology)
 {
-  TRACE_SCHEDULE((stderr,  "<%p> %s myrank %u, nranks %zu, c %u\n", this, __PRETTY_FUNCTION__,myrank, topology->size(), c));
+  TRACE_SCHEDULE((stderr,  "<%p>MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(myrank, topology) myrank %u, nranks %zu, c %u\n", this,myrank, topology->size(), c));
   DO_DEBUG(for(unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, topology->index2Rank(i)););
   initBinoSched();
 }
@@ -451,11 +451,11 @@ template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
 MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks): _topology(ranks, nranks), _map()
 {
-  TRACE_SCHEDULE((stderr,  "<%p> %s myrank %u, nranks %u\n", this, __PRETTY_FUNCTION__,myrank,nranks));
+  TRACE_SCHEDULE((stderr,  "<%p> MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks): _topology(ranks, nranks), _map() myrank %u, nranks %u\n", this,myrank,nranks));
   DO_DEBUG(for(unsigned i = 0; i < _topology.size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, _topology.index2Rank(i)););
   CCMI_assert (_topology.type() == PAMI_LIST_TOPOLOGY);
 
-  new (&_map) M (myrank, &_topology);
+  new (&_map) M (_topology.rank2Index(myrank), &_topology);
   initBinoSched();
 }
 
@@ -486,7 +486,8 @@ setupContext(unsigned &startph, unsigned &nph)
   np = _nphbino;
   _auxrecvph = NO_PHASES;
   _auxsendph = NO_PHASES;
-
+  TRACE_SCHEDULE((stderr,"<%p> setupContext() _map.getMyRank() %u, _map.isPeerProc(_map.getMyRank()) %u,  _map.isAuxProc(_map.getMyRank()) %u\n",this,
+                         _map.getMyRank(),_map.isPeerProc(_map.getMyRank()), _map.isAuxProc(_map.getMyRank())));
   if (_map.isPeerProc(_map.getMyRank()))
     {
       /* non-power of two */

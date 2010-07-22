@@ -22,7 +22,7 @@
 #include <map>
 
 #undef TRACE_ERR
-#define TRACE_ERR(x) fprintf x
+#define TRACE_ERR(x) //fprintf x
 
 #undef TRACE_ERR2
 #define TRACE_ERR2(x) //fprintf x

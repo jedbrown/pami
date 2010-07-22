@@ -16,7 +16,7 @@
 
 #include "algorithms/geometry/P2PCCMIRegInfo.h"
 #undef TRACE_INIT
-#define TRACE_INIT(x) fprintf x
+#define TRACE_INIT(x) //fprintf x
 // Collective Registration for CCMI protocols for p2p
 namespace PAMI
 {

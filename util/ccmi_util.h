@@ -86,7 +86,7 @@ inline void operator delete(void* pointer0, void* pointer)
 
 // \brief do some debug code
 #undef DO_DEBUG
-#define DO_DEBUG(x) x
+#define DO_DEBUG(x) //x
 
 /// \brief Trace the template name: eg.
 /// DO_DEBUG((templateName<T_Mcast>()));

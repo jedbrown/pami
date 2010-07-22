@@ -233,8 +233,6 @@ int main(int argc, char*argv[])
     {
       if (task_id == root)
         {
-          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root,
-                 newbar_md[0].name);
           printf("# Broadcast Bandwidth Test -- root = %d\n", (int)root);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
@@ -243,14 +241,12 @@ int main(int argc, char*argv[])
       if (set[k])
         {
           fflush(stdout);
-          fprintf(stderr, "Start new geometry barrier %d\n", __LINE__);
           blocking_coll(context, &newbarrier,&bar_poll_flag);
 
           for (i = 1; i <= BUFSIZE; i *= 2)
             {
               long long dataSent = i;
               int          niter = 100;
-              fprintf(stderr, "Start new geometry barrier %d\n", __LINE__);
               blocking_coll(context, &newbarrier,&bar_poll_flag);
               ti = timer();
 
@@ -263,7 +259,6 @@ int main(int argc, char*argv[])
                 }
 
               tf = timer();
-              fprintf(stderr, "Start new geometry barrier %d\n", __LINE__);
               blocking_coll(context, &newbarrier,&bar_poll_flag);
               usec = (tf - ti) / (double)niter;
 
@@ -278,13 +273,10 @@ int main(int argc, char*argv[])
                 }
             }
         }
-      fprintf(stderr, "Start barrier %d\n", __LINE__);
       blocking_coll(context, &barrier,&bar_poll_flag);
-      fprintf(stderr, "Start barrier %d\n", __LINE__);
       blocking_coll(context, &barrier,&bar_poll_flag);
       fflush(stderr);
     }
-  fprintf(stderr, "Start barrier %d\n", __LINE__);
   blocking_coll(context, &barrier,&bar_poll_flag);
 
   rc = pami_shutdown(&client,&context,&num_contexts);
