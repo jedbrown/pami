@@ -108,8 +108,8 @@ namespace CCMI
               _schedule->getDstTopology(count, &dst_topology);
               ntotal_dst += dst_topology.size();
 
-              TRACE_SCHEDULE((stderr, "Schedule Cache take_1 phase %d ndst %zu dstrank %zu\n", count,
-                              dst_topology.size(), dstranks[0]));
+              TRACE_SCHEDULE((stderr, "Schedule Cache take_1 phase %d ndst %zu dstrank %u/%zu\n", count,
+                              dst_topology.size(), dst_topology.index2Rank(0),  dstranks[0]));
             }
 
           _ntotalsrcranks = ntotal_src;
