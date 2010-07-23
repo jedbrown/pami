@@ -41,6 +41,44 @@ namespace PAMI
       class Factory : public Interface::FactoryInterface<MU::Factory, MU::Context, PAMI::Device::Generic::Device>
       {
         public:
+	static inline int32_t myMUSPI_GIBarrierInit ( 
+						     MUSPI_GIBarrier_t                    *GIBarrier,
+						     uint32_t                              classRouteId )
+	  {
+	    uint64_t system;
+	    uint64_t dcr_value;
+	    
+	    MUSPI_assert ( GIBarrier != NULL );
+	    MUSPI_assert ( classRouteId < BGQ_GI_CLASS_MAX_CLASSROUTES );
+	    
+	    /* Determine whether this class route is for "system" use or for "user" use.
+	     * This will dictate whether we use privileged or non-privileged MU MMIO
+	     * addresses.
+	     *
+	     * Initialize a mask to assume it is for "system" use.
+	     * This will be used to mask against the privileged addresses.
+	     * So, for "system" use, it won't turn off the privileged bit.
+	     */
+	    system = 0xFFFFFFFFFFFFFFFFULL;
+	    dcr_value = DCRReadUser(MU_DCR(SYS_BARRIER));
+	    if ( (dcr_value & ( 1 << (BGQ_GI_CLASS_MAX_CLASSROUTES-1-classRouteId) ) ) == 0 )
+	      system = ~PHYMAP_PRIVILEGEDOFFSET;
+	    
+	    /* Point to the first group's control registers, and offset into that by the
+	     * classRouteId to get the control and status register pointers.  The
+	     * registers are mirrored in all subgroups, so it does not matter which 
+	     * subgroup we use.
+	     */
+	    GIBarrier->controlRegPtr = (uint64_t*)(BGQ_MU_GI_CONTROL_OFFSET(0,classRouteId) & system);
+	    GIBarrier->statusRegPtr  = (uint64_t*)(BGQ_MU_GI_STATUS_OFFSET(0,classRouteId)  & system);
+	    
+	    GIBarrier->classRouteId  = classRouteId; /* Save the class route id */
+	    
+	    /* Set the state based on the current contents of the control register */
+	    GIBarrier->state = *(GIBarrier->controlRegPtr) & 0x7;
+	    
+	    return 0;
+	  }
 
           ///
           /// \copydoc Interface::Factory::generate
@@ -128,8 +166,8 @@ namespace PAMI
 		    MUSPI_GIBarrier_t commworld_barrier;
 		    rc = Kernel_GetGlobalBarrierUserClassRouteId( &classRouteId );
 		    PAMI_assert(rc==0);
-		    rc = MUSPI_GIBarrierInit ( &commworld_barrier,
-					       classRouteId );
+		    rc = myMUSPI_GIBarrierInit ( &commworld_barrier,
+						 classRouteId );
 		    PAMI_assert(rc==0);
 		    rc = Kernel_GetGlobalBarrierUserClassRouteId( &classRouteId );
 		    TRACE((stderr,"MU Factory: enter global barrier on class route %u\n",classRouteId));
