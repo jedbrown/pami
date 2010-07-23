@@ -144,6 +144,7 @@ public:
         _ctxset(pool),
         _client(clientid),
 	_thread(0),
+	_falseWU(0),
 	_shutdown(false)
         { }
 
@@ -275,11 +276,14 @@ public:
                 devs[0]._ctxset->rmAllContexts(clientid);
 
 		// need to pthread_join() here? or is it too risky (might hang)?
+		size_t fwu = 0;
 		for (x = 0; x < _numActive; ++x) {
 			void *status;
 			pthread_join(devs[x]._thread, &status);
+			fwu += devs[x]._falseWU;
 		}
 		_numActive = 0;
+fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
 		return PAMI_SUCCESS;
 	}
 
@@ -287,7 +291,7 @@ private:
         inline pami_result_t __commThread() {
                 // should/can this use the internal (C++) interface?
                 uint64_t new_ctx, old_ctx, lkd_ctx;
-                size_t n, events;
+                size_t n, events, ev_since_wu;
                 size_t max_loop = 100; // \todo need some heuristic or tunable for max loops
                 size_t id; // our current commthread id, among active ones.
                 pthread_t self = pthread_self();
@@ -303,6 +307,7 @@ int bufl = strlen(buf);
 //fprintf(stderr, "comm thread %ld for context %04zx\n", self, _initCtxs);
 write(2, buf, bufl);
                 new_ctx = old_ctx = lkd_ctx = 0;
+		ev_since_wu = 0;
                 while (!_shutdown) {
                         //
 new_context_assignment:	// These are the same now, assuming the re-locking is
@@ -322,8 +327,10 @@ more_work:		// lightweight enough.
 
                         	// this only locks/unlocks what changed...
                         	__lockContextSet(lkd_ctx, new_ctx);
+				if (old_ctx != new_ctx) ev_since_wu += 1;
                         	old_ctx = new_ctx;
                                 events = __advanceContextSet(lkd_ctx);
+				ev_since_wu += events;
                         } while (!_shutdown && lkd_ctx && (events != 0 || ++n < max_loop));
 			if (_shutdown) break;
 
@@ -346,6 +353,7 @@ more_work:		// lightweight enough.
                                         // we could wait forever for new work
                                         // while existing work waits for us to
                                         // advance it.
+					if (ev_since_wu == 0 && lkd_ctx) ++_falseWU;
 #ifndef HAVE_WU_ARMWITHADDRESS
 buf[0] = 'g'; buf[1] = 'i';
 write(2, buf, bufl);
@@ -355,6 +363,7 @@ write(2, buf, bufl);
 #else // HAVE_WU_ARMWITHADDRESS
                                         ppc_waitimpl();
 #endif // HAVE_WU_ARMWITHADDRESS
+					ev_since_wu = 0;
 					if (_shutdown) break;
                                 }
                                 // need to re-evaluate things here?
@@ -400,6 +409,7 @@ write(2, buf, bufl);
         size_t _client;			///< client ID
 	uint64_t _initCtxs;		///< initial set of contexts to take
 	pthread_t _thread;		///< pthread identifier
+	size_t _falseWU;		///< perf counter for false wakeups
 	volatile bool _shutdown;	///< request commthread to exit
 	static size_t _numActive;
 }; // class BgqCommThread
