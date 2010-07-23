@@ -72,35 +72,270 @@ namespace PAMI
     namespace MU
     {
       static const size_t numTorusDirections           = BGQ_TDIMS<<1; // 10 directions
+      static const size_t numFifoPinIndices            = 16;
       static const size_t optimalNumInjFifosPerContext = numTorusDirections;
       static const size_t optimalNumRecFifosPerContext = 1;
 
       ///
       /// \brief Point-to-Point Injection Fifo Pin Map Values
       ///
-      /// There are 10 arrays of 10 elements each.
-      /// The 1st array is for when there is 1 inj fifo in the context.
-      /// The 2nd array is for when there are 2 inj fifos in the context.
+      /// There are 10 pinInfoEntries, one for each "number of inj fifos in the context".
+      /// The 1st entry is for when there is 1 inj fifo in the context.
+      /// The 2nd entry is for when there are 2 inj fifos in the context.
       /// ...
-      /// The 10th array is for when there are 10 inj fifos in the context.
+      /// The 10th entry is for when there are 10 inj fifos in the context.
       ///
-      /// The Context PinFifo function choose an inj fifo (0..9) that is
+      /// Within each entry, there are two arrays of 16 elements each.
+      /// The torusInjFifoMaps array contains torus inj fifo map bits, 10
+      /// for the torus directions, and 6 local transfers.
+      /// The injFifoIds array contains inj fifo numbers to be used for the 10
+      /// torus directions and 6 locals.
+      /// The reason these are paired like this is to optimize context
+      /// pinFifo()'s access to this info.  We want all of this info to be in
+      /// one L2 cache line.  Each context will "get" one of these pairs
+      /// and use it in its pinFifo().
+      /// 
+      /// The Context PinFifo function chooses an inj fifo (0..9) that is
       /// optimal for sending to the destination, assuming there are 10
       /// inj fifos in the context.  Then, it indexes into
-      /// the appropriate map array, based on how many inj fifos are in
-      /// the context, to get the actual fifo number to pin to.
+      /// the appropriate injFifoIds array, based on how many inj fifos are actually in
+      /// the context, to get the actual fifo number to pin to.  It then indexes
+      /// into the torusInjFifoMaps array to get that value for the descriptor.
       ///
-      static const uint8_t pinInjFifoMap[numTorusDirections][numTorusDirections] =
-	{ { 0,0,0,0,0,0,0,0,0,0 },   // 1 Inj fifo in the context
-	  { 0,1,0,1,0,1,0,1,0,1 },   // 2 Inj fifo in the context
-	  { 0,1,2,0,1,2,0,1,2,0 },   // 3 Inj fifo in the context
-	  { 0,1,2,3,0,1,2,3,0,1 },   // 4 Inj fifo in the context
-	  { 0,1,2,3,4,0,1,2,3,4 },   // 5 Inj fifo in the context
-	  { 0,1,2,3,4,5,0,1,2,3 },   // 6 Inj fifo in the context
-	  { 0,1,2,3,4,5,6,0,1,2 },   // 7 Inj fifo in the context
-	  { 0,1,2,3,4,5,6,7,0,1 },   // 8 Inj fifo in the context
-	  { 0,1,2,3,4,5,6,7,8,0 },   // 9 Inj fifo in the context
-	  { 0,1,2,3,4,5,6,7,8,9 } }; // 10 Inj fifos in the context
+      /// For torus transfers, the array index is 0..9, corresponding to A-,A+,...,E-,E+.
+      /// For local transfers, the array index is 10..15, derived from the destination's
+      /// T coordinate (to spread the local transfers among as many of the actual
+      /// imFifos fifos as possible.
+      /// In either case, the value in the injFifoIds array at that index is the inj fifo
+      /// number to use to inject a descriptor for that transfer.
+      ///
+      /// One additional twist:
+      /// For the 10 torus imFifos (1st 10 array elements), the A- maps to element
+      /// 0, A+ to element 1, etc.  But, when there are less than 10 actual imFifos,
+      /// the remaining directions must map to imFifos that have already been
+      /// used for a direction.  We want this to be spread evenly so that all imFifos
+      /// are kept evenly busy, so the values in the array will be adjusted during
+      /// runtime initialization based on our T coordinate.
+      ///
+      /// For example, if there are 8 actual imFifos, the first 8 fifopin array values
+      /// would be 0,1,2,3,4,5,6,7, saying that for messages traveling in the 
+      /// A-,A+,B-,B+,C-,C+,D-,D+ directions, those imFifos will be used.
+      /// But, for messages needing to travel in the E- or E+ direction, which
+      /// imFifos do we use?  We set those 2 values to 0 and 1, implying that 
+      /// imFifos 0 and 1 will take those messages.  But, this puts added pressure
+      /// on imFifos 0 and 1.  To alleviate this, those 2 values will be
+      /// adjusted based on our T coordinate.  We add our 2*T coordinate (2 being
+      /// the number of over-stressed fifos) to the values in the table (0,1) 
+      /// and mod it with the number of fifos (8) to give a value in the range 0..7,
+      /// depending on our T.  Thus, T=0 will use imFifos 0 and 1, while T=1 will
+      /// use imFifos 2 and 3, and so on.
+      ///
+      /// For the last 6 elements of the injFifoIds array (for local transfers), we do a 
+      /// similar distribution among 6 of the imFifos.  Note we are limited to
+      /// 6 for local transfers since there are only 6 more slots in the 16 element
+      /// array left for us to use...the fifoPin value we store in the map cache
+      /// can only be in the range 0..15.  We try to evenly distribute the local 
+      /// traffic among all of the imFifos so that the imFifos chosen for local
+      /// traffic in each process are not always the same, thereby more evenly
+      /// impacting the effect of local traffic across all of the directions.  
+      /// So, we adjust the last 6 values in the array by adding 6*T to each array
+      /// element and then mod'ing the result with #fifos.  For example, if there
+      /// are 10 imFifos, the array elements initially are set to 0,1,2,3,4,5.  
+      /// For a process with T=0, those are the imFifos that are used to send 
+      /// local messages to the different T destinations.  For a process with T=1,
+      /// they are set to 6,7,8,9,0,1.
+      ///
+      // There will be numTorusDirections of these structures packed in an array...
+      typedef struct pinInfoEntry
+      {
+	uint16_t injFifoIds[numFifoPinIndices];
+	uint16_t torusInjFifoMaps[numFifoPinIndices];
+      } __attribute__((__packed__)) pinInfoEntry_t;
+
+      // Later, this will be used to initialize the structures by copying it into them...
+      static const uint16_t pinInfo[2*numTorusDirections][numFifoPinIndices] =
+	{
+	  // 1 inj fifo in the context
+	  { 0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0 },   // injFifoIds array
+	  { MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 }, // torus inj fifo map array
+	  // 2 inj fifo in the context
+	  { 0,1,0,1,0,1,0,1,0,1,  0,1,0,1,0,1 },   // injFifoIds array
+	  { MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 }, // torus inj fifo map array
+	  // 3 inj fifo in the context
+	  { 0,1,2,0,1,2,0,1,2,0,  1,2,0,1,2,0 },   // injFifoIds array
+	  { MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 }, // torus inj fifo map array
+	  // 4 inj fifo in the context
+	  { 0,1,2,3,0,1,2,3,0,1,  2,3,0,1,2,3 },   // injFifoIds array
+	  { MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 }, // torus inj fifo map array
+	  // 5 inj fifo in the context
+	  { 0,1,2,3,4,0,1,2,3,4,  0,1,2,3,4,0 },   // injFifoIds array
+	  { MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 }, // torus inj fifo map array
+	  // 6 inj fifo in the context
+	  { 0,1,2,3,4,5,0,1,2,3,  4,5,0,1,2,3 },   // injFifoIds array
+	  { MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 }, // torus inj fifo map array
+	  // 7 inj fifo in the context
+	  { 0,1,2,3,4,5,6,0,1,2,  3,4,5,6,0,1 },   // injFifoIds array
+	  { MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 }, // torus inj fifo map array
+	  // 8 inj fifo in the context
+	  { 0,1,2,3,4,5,6,7,0,1,  2,3,4,5,6,7 },   // injFifoIds array
+	  { MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 }, // torus inj fifo map array
+	  // 9 inj fifo in the context
+	  { 0,1,2,3,4,5,6,7,8,0,  1,2,3,4,5,6 },   // injFifoIds array
+	  { MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 }, // torus inj fifo map array
+	  // 10 inj fifo in the context
+	  { 0,1,2,3,4,5,6,7,8,9,  0,1,2,3,4,5 },    // injFifoIds array
+	  { MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0,
+	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 } // torus inj fifo map array
+	};
 
       ///
       /// \brief Point-to-Point Broadcast Fifo Pin Map Values
@@ -114,7 +349,12 @@ namespace PAMI
       /// The second dimension is indexed by the collective class route Id (0..15)
       /// to select the injection fifo to use for this class route.
       ///
-      static const uint8_t pinBroadcastFifoMap[numTorusDirections][BGQ_COLL_CLASS_MAX_CLASSROUTES] =
+      /// Note that the values in the slots beyond the actual number of fifos
+      /// are adjusted during runtime initialization based on our T coordinate, 
+      /// in order to more evenly distribute the impact of these broadcasts across
+      /// the imFifos.
+      ///
+      static const uint16_t pinBroadcastFifoMap[numTorusDirections][BGQ_COLL_CLASS_MAX_CLASSROUTES] =
 	{ { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },   // 1 Inj fifo in the context
 	  { 0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1 },   // 2 Inj fifo in the context
 	  { 0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0 },   // 3 Inj fifo in the context
@@ -753,11 +993,28 @@ namespace PAMI
 				    size_t *numInjFifos,
 				    size_t *numRecFifos );
 
-	inline const uint8_t *getPinBroadcastFifoMap( size_t numInjFifos )
-	  { return &(pinBroadcastFifoMap[numInjFifos-1][0]); }
+	inline uint16_t *getPinBroadcastFifoMap( size_t numInjFifos )
+	  { return &(_pinBroadcastFifoMap[numInjFifos-1][0]); }
 
-	inline const uint8_t *getPinInjFifoMap( size_t numInjFifos )
-	  { return &(pinInjFifoMap[numInjFifos-1][0]); }
+	inline pinInfoEntry_t *getPinInfo( size_t numInjFifos )
+	  { return &(_pinInfo[numInjFifos-1]); }
+
+	inline pinInfoEntry_t *getRgetPinInfo()
+	  {
+	    // Fill in the global rget fifo IDs.
+	    // Couldn't do this during global init without a barrier,
+	    // so doing it here instead, after the barrier.
+	    uint32_t i;
+	    for ( i=0; i<numFifoPinIndices; i++ )
+	      {
+		_rgetPinInfo->injFifoIds[i] = 
+		  _globalRgetInjFifoIds[ _pinInfo[9].injFifoIds[i] ];
+	      }
+	    
+	    TRACE((stderr,"MU Context: getRgetPinInfo: _rgetPinInfo->injFifoIds[] = %u,%u,%u,%u,%u,%u,%u,%u,%u,%u, %u,%u,%u,%u,%u,%u\n",_rgetPinInfo->injFifoIds[0],_rgetPinInfo->injFifoIds[1],_rgetPinInfo->injFifoIds[2],_rgetPinInfo->injFifoIds[3],_rgetPinInfo->injFifoIds[4],_rgetPinInfo->injFifoIds[5],_rgetPinInfo->injFifoIds[6],_rgetPinInfo->injFifoIds[7],_rgetPinInfo->injFifoIds[8],_rgetPinInfo->injFifoIds[9],_rgetPinInfo->injFifoIds[10],_rgetPinInfo->injFifoIds[11],_rgetPinInfo->injFifoIds[12],_rgetPinInfo->injFifoIds[13],_rgetPinInfo->injFifoIds[14],_rgetPinInfo->injFifoIds[15]));
+	    
+	    return _rgetPinInfo; 
+	  }
 
 	inline uint16_t getPinRecFifo( size_t rmClientId,
 				       size_t contextOffset,
@@ -792,6 +1049,9 @@ namespace PAMI
 	  { return _clientResources[rmClientId].injResources[contextOffset].lookAsideCompletionCookiePtrs; }
 	inline size_t getMaxNumDescInInjFifo()
 	{ return ( _pamiRM.getInjFifoSize() / sizeof( MUHWI_Descriptor_t ) ) -1; }
+
+	inline uint32_t *getRgetInjFifoIds()
+	  { return _globalRgetInjFifoIds; }
 
       private:
 	inline uint16_t chooseFifo (size_t  sourceDim, 
@@ -878,6 +1138,18 @@ namespace PAMI
 	               // classroute assignments - persistent!
 	void *_gicrdata; // (ditto)
 #endif
+	// _pinInfo is an array of entries.  Each entry has info for when there
+	// are a specific number of inj fifos in the context.
+	// There are 10 entries, for 1 fifo, 2 fifos, ..., 10 fifos.
+	pinInfoEntry_t *_pinInfo;
+
+	// _rgetPinInfo is a single entry set of global rget inj fifo Ids.
+	// The first 10 ids are for torus transfers.
+	// The last 6 are for local transfers.
+	pinInfoEntry_t *_rgetPinInfo;
+
+	uint16_t _pinBroadcastFifoMap[numTorusDirections][BGQ_COLL_CLASS_MAX_CLASSROUTES];
+	
 	size_t  _tSize;
 	ssize_t _aSizeHalved;
 	ssize_t _bSizeHalved;
@@ -1010,9 +1282,9 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
   size_t ourD = _mapping.d();
   size_t ourE = _mapping.e();
 
-  // Get the destination task's torus coords
-  size_t addr[BGQ_TDIMS];
-  _mapping.task2torus( task, addr );
+  // Get the destination task's torus coords (addr[0..4]) and t coordinate (addr[5]).
+  size_t addr[BGQ_TDIMS + BGQ_LDIMS];
+  _mapping.task2global( task, addr );
 
   TRACE((stderr,"MU ResourceManager: pinFifo: task=%zu,destA=%zu, B=%zu, C=%zu, D=%zu, E=%zu\n",task,addr[0],addr[1],addr[2],addr[3],addr[4]));
 
@@ -1024,7 +1296,13 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
   ssize_t dD = addr[3] - ourD;
   ssize_t dE = addr[4] - ourE;
 
-  TRACE((stderr,"MU ResourceManager: pinFifo: ourA=%zu,ourB=%zu,ourC=%zu,ourD=%zu,ourE=%zu, dA=%zd,dB=%zd,dC=%zd,dD=%zd,dE=%zd\n",ourA,ourB,ourC,ourD,ourE,dA,dB,dC,dD,dE));
+  TRACE((stderr,"MU ResourceManager: pinFifo: ourA=%zu,ourB=%zu,ourC=%zu,ourD=%zu,ourE=%zu, dA=%zd,dB=%zd,dC=%zd,dD=%zd,dE=%zd,t=%zd\n",ourA,ourB,ourC,ourD,ourE,dA,dB,dC,dD,dE,addr[5]));
+
+  // If local, select the fifo based on the T coordinate.
+  if ( dA == 0 && dB == 0 && dC == 0 && dD == 0 && dE == 0 )
+    {
+      return ( 10 + (addr[5] % 6) );
+    }
 
   // If communicating only along the A dimension, select either the A- or A+ fifo
   if ( dB == 0 && dC == 0 && dD == 0 && dE == 0 )
@@ -1092,10 +1370,26 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
 /// that task, and cache it in the mapcache.  This will be used later during
 /// fifo pinning.
 ///
+/// The high-order bit of the A,B,C, and D coordinate in each map cache entry
+/// will house this optimal fifo number.  This gives us 4 bits for a total of
+/// 16 possible values.  
+/// - Values 0-9 for torus transfers, indicating which of the 10 inj fifos to use.
+/// - Values 10-15 for local transfers, indicating which of 6 inj fifos to use
+///   (ran out of bits, or it would also be 10 values).
+///
+/// In addition to calculating the above "fifoPin" value for the mapcache,
+/// adjust the pinInjFifoMap and pinBroadcastFifoMap arrays based on our
+/// T coordinate.  Refer to the details in the comments where each
+/// of these arrays is delcared.
+///
 void PAMI::Device::MU::ResourceManager::initFifoPin()
 {
   size_t numTasks = _mapping.size();
+  size_t i;
+  size_t startingAdjustmentIndex;
+  size_t tcoord = _mapping.t();
   size_t task;
+  size_t numFifos;
 
   _aSizeHalved = _pers.aSize()>>1;
   _bSizeHalved = _pers.bSize()>>1;
@@ -1119,6 +1413,113 @@ void PAMI::Device::MU::ResourceManager::initFifoPin()
       
       _mapping.setFifoPin( task, fifo );
     }
+
+  // Copy the pinInfo arrary into this process' storage.  These contain 
+  // initial fifo pin values that will be modified later.
+  posix_memalign ( (void **)&_pinInfo, 64, numTorusDirections * sizeof(pinInfoEntry_t) );
+  PAMI_assertf( _pinInfo != NULL, "The heap is full.\n" );
+
+  memcpy ( _pinInfo, pinInfo, numTorusDirections * sizeof(pinInfoEntry_t) );
+  memcpy ( _pinBroadcastFifoMap, pinBroadcastFifoMap, sizeof(_pinBroadcastFifoMap) );
+
+  // Adjust the local injFifoIds (array elements 10-15) based on our T coordinate.
+  // This is an attempt to spread the local traffic among all of the inj fifos.
+  // Refer to comments where pinInfo is declared.
+  for ( numFifos=1; numFifos <= numTorusDirections; numFifos++ )
+    {
+      for ( i=10; i<16; i++ )
+	{
+	  _pinInfo[numFifos-1].injFifoIds[i] = 
+	    ( _pinInfo[numFifos-1].injFifoIds[i] + ( 6*tcoord ) ) % numFifos;
+	}
+    }
+  // Adjust the torus injFifoIds so the directions that don't have
+  // their own inj fifo map to one of the other fifos based on our T coordinate.
+  // Refer to comments where pinInjFifoMap is declared.
+  TRACE((stderr,"MU ResourceManager: initFifoPin: Adjusted pinInjFifoMap values:\n"));
+  for ( numFifos=1; numFifos <= numTorusDirections; numFifos++ )
+    {
+      // Only adjust the directions that are unbalanced.
+      // For example, if there are 4 inj fifos, the first 8 values are
+      // balanced (0,1,2,3,0,1,2,3) but the last 2 are not, and need to be
+      // adjusted.  T=0 will set them to (0,1), T=1 will set them to (2,3), 
+      // T=2 will set them to (0,1), and so on.  In this case, the
+      // startingAdjustmentIndex is 8, so that only indices 8 and 9 are adjusted.
+      startingAdjustmentIndex = 
+	numTorusDirections - 
+	( numTorusDirections - 
+	  ( (numTorusDirections / numFifos) * numFifos ) );
+      for ( i=startingAdjustmentIndex; i<numTorusDirections; i++ )
+	{
+	  // Note:  numTorusDirections-startingAdjustmentIndex is the number of overstressed fifos.
+	  _pinInfo[numFifos-1].injFifoIds[i] = 
+	    ( _pinInfo[numFifos-1].injFifoIds[i] + 
+	      ( (numTorusDirections-startingAdjustmentIndex)*tcoord ) ) % numFifos;
+	}
+      TRACE((stderr,"For %zu fifos: %u,%u,%u,%u,%u,%u,%u,%u,%u,%u, %u,%u,%u,%u,%u,%u\n",
+	     numFifos,
+	     _pinInfo[numFifos-1].injFifoIds[0],
+	     _pinInfo[numFifos-1].injFifoIds[1],
+	     _pinInfo[numFifos-1].injFifoIds[2],
+	     _pinInfo[numFifos-1].injFifoIds[3],
+	     _pinInfo[numFifos-1].injFifoIds[4],
+	     _pinInfo[numFifos-1].injFifoIds[5],
+	     _pinInfo[numFifos-1].injFifoIds[6],
+	     _pinInfo[numFifos-1].injFifoIds[7],
+	     _pinInfo[numFifos-1].injFifoIds[8],
+	     _pinInfo[numFifos-1].injFifoIds[9],
+	     _pinInfo[numFifos-1].injFifoIds[10],
+	     _pinInfo[numFifos-1].injFifoIds[11],
+	     _pinInfo[numFifos-1].injFifoIds[12],
+	     _pinInfo[numFifos-1].injFifoIds[13],
+	     _pinInfo[numFifos-1].injFifoIds[14],
+	     _pinInfo[numFifos-1].injFifoIds[15]));
+    }
+
+  // Adjust the torus pinBroadcastFifoMap values so the class routes that don't have
+  // their own inj fifo map to one of the other fifos based on our T coordinate.
+  // Refer to comments where pinBroadcastFifoMap is declared.
+  TRACE((stderr,"MU ResourceManager: initFifoPin: Adjusted pinBroadcastFifoMap values:\n"));
+  for ( numFifos=1; numFifos <= numTorusDirections; numFifos++ )
+    {
+      // Only adjust the class routes that are unbalanced.
+      // For example, if there are 5 inj fifos, the first 15 values are
+      // balanced (0,1,2,3,4,0,1,2,3,4,0,1,2,3,4) but the last 1 is not, and it needs to be
+      // adjusted.  T=0 will set it to 0, T=1 will set it to 1, 
+      // T=2 will set it to 2, and so on.  In this case, the
+      // startingAdjustmentIndex is 15, so that only index 15 is adjusted.
+      startingAdjustmentIndex = 
+	BGQ_COLL_CLASS_MAX_CLASSROUTES - 
+	( BGQ_COLL_CLASS_MAX_CLASSROUTES - 
+	  ( (BGQ_COLL_CLASS_MAX_CLASSROUTES / numFifos) * numFifos ) );
+      for ( i=startingAdjustmentIndex; i<BGQ_COLL_CLASS_MAX_CLASSROUTES; i++ )
+	{
+	  // Note:  BGQ_COLL_CLASS_MAX_CLASSROUTES-startingAdjustmentIndex is the
+	  //        number of overstressed fifos.
+	  _pinBroadcastFifoMap[numFifos-1][i] = 
+	    ( _pinBroadcastFifoMap[numFifos-1][i] + 
+	      ( (BGQ_COLL_CLASS_MAX_CLASSROUTES-startingAdjustmentIndex)*tcoord ) ) % numFifos;
+	}
+      TRACE((stderr,"For %zu fifos: %u,%u,%u,%u,%u,%u,%u,%u,%u,%u, %u,%u,%u,%u,%u,%u\n",
+	     numFifos,
+	     _pinBroadcastFifoMap[numFifos-1][0],
+	     _pinBroadcastFifoMap[numFifos-1][1],
+	     _pinBroadcastFifoMap[numFifos-1][2],
+	     _pinBroadcastFifoMap[numFifos-1][3],
+	     _pinBroadcastFifoMap[numFifos-1][4],
+	     _pinBroadcastFifoMap[numFifos-1][5],
+	     _pinBroadcastFifoMap[numFifos-1][6],
+	     _pinBroadcastFifoMap[numFifos-1][7],
+	     _pinBroadcastFifoMap[numFifos-1][8],
+	     _pinBroadcastFifoMap[numFifos-1][9],
+	     _pinBroadcastFifoMap[numFifos-1][10],
+	     _pinBroadcastFifoMap[numFifos-1][11],
+	     _pinBroadcastFifoMap[numFifos-1][12],
+	     _pinBroadcastFifoMap[numFifos-1][13],
+	     _pinBroadcastFifoMap[numFifos-1][14],
+	     _pinBroadcastFifoMap[numFifos-1][15]));
+    }
+
 
 } // End: initFifoPin()
 
@@ -1718,6 +2119,26 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
 				 &_globalRgetInjFifoPtrs,
 				 &_globalRgetInjFifoIds );
   PAMI_assertf( (_calculateSizeOnly == 1) || (_allocateOnly == 1) || (numFifosSetup == 10), "Only %u injection fifos were set up.  Expected 10.\n",numFifosSetup );
+
+  // Set up the remote get fifo pin information entry.
+  // 0.  Allocate space for the entry.
+  // 1.  Copy the torus_inj_fifo_map array to the entry.
+  // 2.  Initialize the fifo numbers to the global rget fifo numbers.
+  //     Use the same relative rget fifos as the 9 normal fifos.
+  if ( _calculateSizeOnly == 1 ) return;
+
+  allocateMemory( false /*do not useSharedMemory*/, 
+		  (void **)(&_rgetPinInfo), 
+		  64, 
+		  sizeof(*_rgetPinInfo) );
+  TRACE((stderr,"MU ResourceManager: allocateGlobalInjFifos: _rgetPinInfo = %p\n",_rgetPinInfo));
+  PAMI_assertf ( _rgetPinInfo != NULL, "The heap is full.\n" );
+
+  memcpy ( &_rgetPinInfo->torusInjFifoMaps[0],
+	   &_pinInfo[9].torusInjFifoMaps[0],
+	   sizeof(_rgetPinInfo->torusInjFifoMaps) );
+
+  TRACE((stderr,"MU ResourceManager: allocateGlobalInjFifos: _rgetPinInfo->torusInjFifoMaps{} = 0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x, 0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n",_rgetPinInfo->torusInjFifoMaps[0],_rgetPinInfo->torusInjFifoMaps[1],_rgetPinInfo->torusInjFifoMaps[2],_rgetPinInfo->torusInjFifoMaps[3],_rgetPinInfo->torusInjFifoMaps[4],_rgetPinInfo->torusInjFifoMaps[5],_rgetPinInfo->torusInjFifoMaps[6],_rgetPinInfo->torusInjFifoMaps[7],_rgetPinInfo->torusInjFifoMaps[8],_rgetPinInfo->torusInjFifoMaps[9],_rgetPinInfo->torusInjFifoMaps[10],_rgetPinInfo->torusInjFifoMaps[11],_rgetPinInfo->torusInjFifoMaps[12],_rgetPinInfo->torusInjFifoMaps[13],_rgetPinInfo->torusInjFifoMaps[14],_rgetPinInfo->torusInjFifoMaps[15]));
 
 } // End: allocateGlobalInjFifos()
 

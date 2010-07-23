@@ -242,14 +242,10 @@ namespace PAMI
       {
         // Retreive the route information back to mu context "self"
         uint64_t map;
-        uint8_t  hintsABCD;
-        uint8_t  hintsE;
 
         _context.pinInformation (from_task,
                                  from_offset,
-                                 map,
-                                 hintsABCD,
-                                 hintsE);
+                                 map);
 
         // Clone the remote direct put model descriptor into the payload
         MUSPI_DescriptorBase * rput = (MUSPI_DescriptorBase *) vaddr;
@@ -266,7 +262,6 @@ namespace PAMI
         rput->setRecPayloadBaseAddressInfo (0, local_dst_pa);
 
         rput->setTorusInjectionFIFOMap (map);
-        rput->setHints (hintsABCD, hintsE);
 // !!!!
 // Allocate completion counter, set counter in rput descriptor, set completion function and cookie
 // !!!!
@@ -351,16 +346,12 @@ namespace PAMI
         MUHWI_Destination_t   dest;
         uint16_t              rfifo; // not needed for direct put ?
         uint64_t              map;
-        uint8_t               hintsABCD;
-        uint8_t               hintsE;
 
         size_t fnum = _context.pinFifo (target_task,
                                         target_offset,
                                         dest,
                                         rfifo,
-                                        map,
-                                        hintsABCD,
-                                        hintsE);
+                                        map);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
@@ -382,7 +373,6 @@ namespace PAMI
 
             dput->setDestination (dest);
             dput->setTorusInjectionFIFOMap (map);
-            dput->setHints (hintsABCD, hintsE);
             dput->setPayload (local_pa + local_offset, bytes);
 
             // The global BAT id is constant .. should only need to set
@@ -488,16 +478,12 @@ namespace PAMI
         MUHWI_Destination_t   dest;
         uint16_t              rfifo; // not needed for direct put ?
         uint64_t              map;
-        uint8_t               hintsABCD;
-        uint8_t               hintsE;
 
         size_t fnum = _context.pinFifo (target_task,
                                         target_offset,
                                         dest,
                                         rfifo,
-                                        map,
-                                        hintsABCD,
-                                        hintsE);
+                                        map);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
@@ -515,11 +501,10 @@ namespace PAMI
             // Initialize the injection fifo descriptor in-place.
             rget->setDestination (dest);
             rget->setTorusInjectionFIFOMap (map);
-            rget->setHints (hintsABCD, hintsE);
 
             // Determine the remote pinning information
             size_t rfifo =
-              _context.pinFifoToSelf (target_task, map, hintsABCD, hintsE);
+              _context.pinFifoToSelf (target_task, map);
 
             // Set the remote injection fifo identifier
             rget->setRemoteGetInjFIFOId (rfifo);
@@ -536,8 +521,6 @@ namespace PAMI
                                                         remote_src_pa, 
 							bytes,
 							map, 
-							hintsABCD, 
-							hintsE,
                                                         local_fn, 
 							cookie);
 

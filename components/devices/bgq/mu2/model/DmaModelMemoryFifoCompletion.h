@@ -49,8 +49,6 @@ namespace PAMI
 						    uint64_t              remote_src_pa,
 						    size_t                bytes,
 						    uint64_t              map,
-						    uint8_t               hintsABCD,
-						    uint8_t               hintsE,
 						    pami_event_function   local_fn,
 						    void                * cookie)
           {
@@ -79,18 +77,16 @@ namespace PAMI
             // the "offset" (second parameter) here.
             desc[0].setRecPayloadBaseAddressInfo (_context.getGlobalBatId(), local_dst_pa);
 
-            // Set the pinned fifo/map/hint information
+            // Set the pinned fifo/map information
             desc[0].setTorusInjectionFIFOMap (map);
-            desc[0].setHints (hintsABCD, hintsE);
 
             // ----------------------------------------------------------------
             // Initialize the "ack to self" descriptor in the rget payload
             // ----------------------------------------------------------------
             _completion.initializeNotifySelfDescriptor (desc[1], local_fn, cookie);
 
-            // Set the pinned fifo/map/hint information
+            // Set the pinned fifo/map information
             desc[1].setTorusInjectionFIFOMap (map);
-            desc[1].setHints (hintsABCD, hintsE);
 
 	    //MUSPI_DescriptorDumpHex((char *)"Remote Put", &desc[0]);
 	    //MUSPI_DescriptorDumpHex((char *)"Fifo Completion", &desc[1]);

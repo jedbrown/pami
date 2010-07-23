@@ -22,6 +22,8 @@
 #include "components/devices/generic/Device.h"
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
+#include "spi/include/kernel/gi.h"
+#include "spi/include/mu/GIBarrier.h"
 
 #ifdef TRACE
 #undef TRACE
@@ -48,6 +50,7 @@ namespace PAMI
                                                      Memory::MemoryManager         & mm,
                                                      PAMI::Device::Generic::Device * devices)
           {
+	    int32_t rc;
 	    // Set up a local barrier (needed below).
 	    bool master;
 	    size_t myTask        = __global.mapping.t();
@@ -87,7 +90,7 @@ namespace PAMI
             // Allocate an array of mu contexts, one for each pami context
             // in this _task_ (from heap, not from shared memory)
             MU::Context * mu;
-            int rc = posix_memalign((void **) & mu, 16, sizeof(*mu) * id_count);
+            rc = posix_memalign((void **) & mu, 16, sizeof(*mu) * id_count);
             PAMI_assertf(rc == 0, "posix_memalign failed for mu[%zu], errno=%d\n", id_count, errno);
 
 // !!!!
@@ -111,30 +114,49 @@ namespace PAMI
 	    barrier.enter();
 	    TRACE((stderr,"MU Factory: Exiting  local barrier after creating contexts\n"));
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
 
 	    // \todo Replace this with a real MU barrier when it is available
-
-	    // If multi-node, and master, need to sleep
+	    // If multi-node, and master, need to barrier
 	    if ( master && (__global.mapping.size() > __global.personality.tSize()) )
 	      {
-		double seconds = 5; // wait 5 pseudo-seconds
-		double dseconds = ((double)seconds) / 1000; //mambo seconds are loooong.
-		double start = PAMI_Wtime (), d = 0;
-		TRACE((stderr, "%s sleep - %.0f,start %f < %f\n", __PRETTY_FUNCTION__, d, start, start + dseconds));
-  
-		while (PAMI_Wtime() < (start + dseconds))
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+		if (!__global.personality._is_mambo)
+#endif
 		  {
-		    for (int i = 0; i < 200000; ++i) ++d;
-		    
-		    TRACE((stderr, "%s sleep - %.0f, %f < %f\n", __PRETTY_FUNCTION__, d, PAMI_Wtime(), start + dseconds));
+		    // Do an MU barrier
+		    uint32_t classRouteId = 0;
+		    MUSPI_GIBarrier_t commworld_barrier;
+		    rc = Kernel_GetGlobalBarrierUserClassRouteId( &classRouteId );
+		    PAMI_assert(rc==0);
+		    rc = MUSPI_GIBarrierInit ( &commworld_barrier,
+					       classRouteId );
+		    PAMI_assert(rc==0);
+		    rc = Kernel_GetGlobalBarrierUserClassRouteId( &classRouteId );
+		    TRACE((stderr,"MU Factory: enter global barrier on class route %u\n",classRouteId));
+		    rc = MUSPI_GIBarrierEnterAndWait ( &commworld_barrier );
+		    PAMI_assert(rc==0);
 		  }
-		
-		TRACE((stderr, "%s sleep - %.0f, start %f, end %f\n", __PRETTY_FUNCTION__, d, start, PAMI_Wtime()));
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+		else
+		  {
+		    double seconds = 20; // wait 20 pseudo-seconds
+		    double dseconds = ((double)seconds) / 1000; //mambo seconds are loooong.
+		    double start = PAMI_Wtime (), d = 0;
+		    TRACE((stderr, "%s sleep - %.0f,start %f < %f\n", __PRETTY_FUNCTION__, d, start, start + dseconds));
+		    
+		    while (PAMI_Wtime() < (start + dseconds))
+		      {
+			for (int i = 0; i < 200000; ++i) ++d;
+			
+			TRACE((stderr, "%s sleep - %.0f, %f < %f\n", __PRETTY_FUNCTION__, d, PAMI_Wtime(), start + dseconds));
+		      }
+		    
+		    TRACE((stderr, "%s sleep - %.0f, start %f, end %f\n", __PRETTY_FUNCTION__, d, start, PAMI_Wtime()));
+		  }
+#endif
+		TRACE((stderr,"MU Factory: exit global barier\n"));
 	      }
 	    
-#endif
-
 	    TRACE((stderr, "MU Factory: Entering Local Barrier after global barrier\n"));
 	    barrier.enter();
 	    TRACE((stderr, "MU Factory: Exiting Local Barrier after global barrier\n"));

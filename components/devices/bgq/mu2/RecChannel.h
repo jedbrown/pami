@@ -153,15 +153,6 @@ namespace PAMI
             self.setMemoryFIFOFields (&memfifo);
             self.setMessageUnitPacketType (MUHWI_PACKET_TYPE_FIFO);
 
-
-            // In loopback we send only on AM
-            self.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
-            self.setHints (MUHWI_PACKET_HINT_AM |
-                           MUHWI_PACKET_HINT_B_NONE |
-                           MUHWI_PACKET_HINT_C_NONE |
-                           MUHWI_PACKET_HINT_D_NONE,
-                           MUHWI_PACKET_HINT_E_NONE);
-
             // Set the payload information.
             self.setPayload (0, 0);
 

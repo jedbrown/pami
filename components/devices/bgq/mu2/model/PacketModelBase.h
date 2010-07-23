@@ -278,16 +278,12 @@ namespace PAMI
         MUHWI_Destination_t   dest;
         uint16_t              rfifo;
         uint64_t              map;
-        uint8_t               hintsABCD;
-        uint8_t               hintsE;
 
         size_t fnum = _context.pinFifo (target_task,
                                         target_offset,
                                         dest,
                                         rfifo,
-                                        map,
-                                        hintsABCD,
-                                        hintsE);
+                                        map);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
         bool isfree = channel.hasFreeSpaceWithUpdate ();
@@ -311,7 +307,6 @@ namespace PAMI
             // Initialize the injection fifo descriptor in-place.
             memfifo->setDestination (dest);
             memfifo->setTorusInjectionFIFOMap (map);
-            memfifo->setHints (hintsABCD, hintsE);
             memfifo->setRecFIFOId (rfifo);
 
             MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
@@ -368,11 +363,9 @@ namespace PAMI
         MUHWI_Destination_t   dest;
         uint16_t              rfifo;
         uint64_t              map;
-        uint8_t               hintsABCD;
-        uint8_t               hintsE;
 
         size_t fnum = _context.pinFifo (target_task, target_offset, dest,
-                                        rfifo, map, hintsABCD, hintsE);
+                                        rfifo, map);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
@@ -397,7 +390,6 @@ namespace PAMI
             // Initialize the injection fifo descriptor in-place.
             memfifo->setDestination (dest);
             memfifo->setTorusInjectionFIFOMap (map);
-            memfifo->setHints (hintsABCD, hintsE);
             memfifo->setRecFIFOId (rfifo);
 
             MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
@@ -471,7 +463,6 @@ namespace PAMI
             // Initialize the injection fifo descriptor in-place.
             msg->desc[0].setDestination (dest);
             msg->desc[0].setTorusInjectionFIFOMap (map);
-            msg->desc[0].setHints (hintsABCD, hintsE);
             msg->desc[0].setRecFIFOId (rfifo);
             msg->desc[0].setPayload (paddr, tbytes);
 
@@ -506,11 +497,9 @@ namespace PAMI
         MUHWI_Destination_t   dest;
         uint16_t              rfifo;
         uint64_t              map;
-        uint8_t               hintsABCD;
-        uint8_t               hintsE;
 
         size_t fnum = _context.pinFifo (target_task, target_offset, dest,
-                                        rfifo, map, hintsABCD, hintsE);
+                                        rfifo, map);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
@@ -534,7 +523,6 @@ namespace PAMI
             // Initialize the injection fifo descriptor in-place.
             memfifo->setDestination (dest);
             memfifo->setTorusInjectionFIFOMap (map);
-            memfifo->setHints (hintsABCD, hintsE);
             memfifo->setRecFIFOId (rfifo);
 
             MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
@@ -605,7 +593,6 @@ namespace PAMI
             // Initialize the injection fifo descriptor in-place.
             msg->desc[0].setDestination (dest);
             msg->desc[0].setTorusInjectionFIFOMap (map);
-            msg->desc[0].setHints (hintsABCD, hintsE);
             msg->desc[0].setRecFIFOId (rfifo);
             msg->desc[0].setPayload (paddr, tbytes);
 
@@ -640,11 +627,9 @@ namespace PAMI
         MUHWI_Destination_t   dest;
         uint16_t              rfifo;
         uint64_t              map;
-        uint8_t               hintsABCD;
-        uint8_t               hintsE;
 
         size_t fnum = _context.pinFifo (target_task, target_offset, dest,
-                                        rfifo, map, hintsABCD, hintsE);
+                                        rfifo, map);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
@@ -668,7 +653,6 @@ namespace PAMI
             // Initialize the injection fifo descriptor in-place.
             memfifo->setDestination (dest);
             memfifo->setTorusInjectionFIFOMap (map);
-            memfifo->setHints (hintsABCD, hintsE);
             memfifo->setRecFIFOId (rfifo);
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
@@ -717,7 +701,6 @@ namespace PAMI
             // Initialize the injection fifo descriptor in-place.
             msg->desc[0].setDestination (dest);
             msg->desc[0].setTorusInjectionFIFOMap (map);
-            msg->desc[0].setHints (hintsABCD, hintsE);
             msg->desc[0].setRecFIFOId (rfifo);
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
@@ -757,8 +740,6 @@ namespace PAMI
         MUHWI_Destination_t   dest;
         uint16_t              rfifo;
         uint64_t              map;
-        uint8_t               hintsABCD;
-        uint8_t               hintsE;
 
         // Determine the physical address of the source data.
         Kernel_MemoryRegion_t memregion;
@@ -767,7 +748,7 @@ namespace PAMI
                          ((uint64_t) payload - (uint64_t) memregion.BaseVa);
 
         size_t fnum = _context.pinFifo (target_task, target_offset, dest,
-                                        rfifo, map, hintsABCD, hintsE);
+                                        rfifo, map);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
@@ -786,7 +767,6 @@ namespace PAMI
             // Initialize the injection fifo descriptor in-place.
             memfifo->setDestination (dest);
             memfifo->setTorusInjectionFIFOMap (map);
-            memfifo->setHints (hintsABCD, hintsE);
             memfifo->setRecFIFOId (rfifo);
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
@@ -828,7 +808,6 @@ namespace PAMI
             // Initialize the injection fifo descriptor in-place.
             msg->desc[0].setDestination (dest);
             msg->desc[0].setTorusInjectionFIFOMap (map);
-            msg->desc[0].setHints (hintsABCD, hintsE);
             msg->desc[0].setRecFIFOId (rfifo);
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
