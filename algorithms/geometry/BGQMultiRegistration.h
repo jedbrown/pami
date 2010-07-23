@@ -348,8 +348,6 @@ namespace PAMI
           PAMI::Topology * topology = (PAMI::Topology*) geometry->getTopology(0);
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology: size() %zu, isLocal() %u, isGlobal #u\n", this, topology->size(),  topology->isLocal()));//,  topology->isGlobal()));
           DO_DEBUG(for(unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u\n", this, i, topology->index2Rank(i)););
-          return PAMI_SUCCESS;
-            
 
 #ifdef ENABLE_MU_CLASSROUTES
 

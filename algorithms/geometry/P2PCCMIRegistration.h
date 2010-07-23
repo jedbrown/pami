@@ -15,8 +15,7 @@
 #define __algorithms_geometry_P2PCCMIRegistration_h__
 
 #include "algorithms/geometry/P2PCCMIRegInfo.h"
-#undef TRACE_INIT
-#define TRACE_INIT(x) //fprintf x
+
 // Collective Registration for CCMI protocols for p2p
 namespace PAMI
 {
@@ -451,8 +450,7 @@ namespace PAMI
     }; // P2P
   }; // CollRegistration
 }; // PAMI
-#undef TRACE_INIT
-#define TRACE_INIT(x)
+
 #endif
 //
 // astyle info    http://astyle.sourceforge.net
