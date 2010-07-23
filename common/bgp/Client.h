@@ -161,9 +161,28 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+      // DEPRECATED!
       inline pami_result_t destroyContext_impl (pami_context_t context)
       {
         return ((PAMI::Context *)context)->destroy ();
+      }
+
+      inline pami_result_t destroyContext_impl (pami_context_t *context, size_t ncontexts)
+      {
+	PAMI_assertf(ncontexts == _ncontexts, "destroyContext called without all contexts");
+        pami_result_t res = PAMI_SUCCESS;
+	size_t i;
+	for (i = 0; i < _ncontexts; ++i)
+	{
+	  context[i] = NULL;
+	  PAMI::Context * ctx = &_contexts[i];
+	  pami_result_t rc = ctx->destroy ();
+	  if (rc != PAMI_SUCCESS) res = rc;
+	}
+	free(_contexts);
+	_contexts = NULL;
+	_ncontexts = 0;
+        return res;
       }
 
     inline pami_result_t query_impl (pami_configuration_t configuration[],

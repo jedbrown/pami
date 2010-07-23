@@ -330,12 +330,30 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+    // DEPRECATED!
     inline pami_result_t destroyContext_impl (pami_context_t context)
       {
         PAMI::Context *c = (PAMI::Context*) context;
         pami_result_t rc = PAMI_SUCCESS;
         rc               = c->destroy();
         _contextAlloc.returnObject(context);
+        return rc;
+      }
+    inline pami_result_t destroyContext_impl (pami_context_t *context, size_t ncontexts)
+      {
+	PAMI_assertf(ncontexts == _ncontexts, "destroyContext called without all contexts");
+	size_t i;
+        pami_result_t rc = PAMI_SUCCESS;
+	for (i = 0; i < _ncontexts; ++i)
+	  {
+            context[i]       = NULL;
+            PAMI::Context *c = _contexts[i];
+            _contexts[i]     = NULL;
+            pami_result_t r  = c->destroy();
+	    if (r != PAMI_SUCCESS) rc = r;
+            _contextAlloc.returnObject((void *)c);
+          }
+	_ncontexts = 0;
         return rc;
       }
 

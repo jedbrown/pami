@@ -1050,16 +1050,13 @@ extern "C" pami_result_t PAMI_Context_destroyv (pami_context_t* contexts,
   PAMI_assert(contexts != NULL);
   pami_result_t result = PAMI_SUCCESS;
 
-  for (size_t i = 0; i<ncontexts; ++i) {
-    PAMI_assert(contexts[i] != NULL);
-    PAMI::Context * ctx = (PAMI::Context *) contexts[i];
+  // have to fudge a client object out of this, since the API is not symmetrical
+  if (ncontexts >= 1)
+  {
+    PAMI::Context * ctx = (PAMI::Context *) contexts[0];
     PAMI::Client  * client = (PAMI::Client *) ctx->getClient ();
-    pami_result_t rc = client->destroyContext (ctx);
-    contexts[i] = NULL;
-    if (result == PAMI_SUCCESS)
-      result = rc;
+    result = client->destroyContext (contexts, ncontexts);
   }
-
   return result;
 }
 

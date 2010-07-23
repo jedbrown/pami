@@ -187,16 +187,34 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+      // DEPRECATED!
       inline pami_result_t destroyContext_impl (pami_context_t context)
       {
+	PAMI_abortf("single context destroy not supported");
+      }
+      inline pami_result_t destroyContext_impl (pami_context_t *context, size_t ncontexts)
+      {
+	PAMI_assertf(ncontexts == _ncontexts, "destroyContext called without all contexts");
+	// for (i = 0.._ncontexts) PAMI_assertf(context[i] == _contexts[i], "...");
 #ifdef USE_COMMTHREADS
-        // This removes all contexts... only needs to be called once.
         PAMI::Device::CommThread::BgqCommThread::shutdown(_commThreads, _clientid);
 #endif // USE_COMMTHREADS
-        //_context_list->lock ();
-        //_context_list->remove (context);
-        return ((PAMI::Context *)context)->destroy ();
-        //_context_list->unlock ();
+        pami_result_t res = PAMI_SUCCESS;
+	size_t i;
+	for (i = 0; i < _ncontexts; ++i)
+	{
+	  context[i] = NULL;
+	  PAMI::Context * ctx = &_contexts[i];
+          //_context_list->lock ();
+          //_context_list->remove (context);
+	  pami_result_t rc = ctx->destroy ();
+          //_context_list->unlock ();
+	  if (rc != PAMI_SUCCESS) res = rc;
+	}
+	free(_contexts);
+	_contexts = NULL;
+	_ncontexts = 0;
+        return res;
       }
 
 #ifdef USE_COMMTHREADS

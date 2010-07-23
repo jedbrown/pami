@@ -49,7 +49,8 @@ namespace PAMI
                                            pami_context_t       * context,
                                            size_t                ncontexts);
 
-        inline pami_result_t destroyContext (pami_context_t context);
+        inline pami_result_t destroyContext (pami_context_t context); // deprecated
+        inline pami_result_t destroyContext (pami_context_t *context, size_t ncontexts);
 
         inline pami_result_t query(pami_configuration_t  configuration[],
                                    size_t                num_configs);
@@ -118,6 +119,11 @@ namespace PAMI
     inline pami_result_t Client<T_Client>::destroyContext (pami_context_t context)
     {
       return static_cast<T_Client*>(this)->destroyContext_impl(context);
+    }
+    template <class T_Client>
+    inline pami_result_t Client<T_Client>::destroyContext (pami_context_t *context, size_t ncontexts)
+    {
+      return static_cast<T_Client*>(this)->destroyContext_impl(context, ncontexts);
     }
 
     template <class T_Client>
