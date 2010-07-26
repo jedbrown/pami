@@ -441,7 +441,7 @@ namespace PAMI
 	  calculatePerProcessMaxPamiResources();
 	  calculatePerProcessOptimalPamiResources();
 	  calculatePerCorePerProcessPerClientMUResources();
-	  
+
 	  // Set up the global resources
 	  allocateGlobalResources();
 	  TRACE((stderr,"MU ResourceManager: Done allocating global resources\n"));
@@ -951,13 +951,41 @@ namespace PAMI
 	}
 #endif
 
-        // \brief Get Per Process PAMI Max Number of Contexts
+        // \brief Get Per Process PAMI Max Number of Contexts For A Client
 	inline size_t getPerProcessMaxPamiResources ( size_t RmClientId )
 	{ return _perProcessMaxPamiResources[RmClientId].numContexts; }
+
+        // \brief Get Per Process PAMI Max Number of Contexts Across All Clients
+	inline size_t getPerProcessMaxPamiResources ( )
+	{ 
+	  size_t rmClientId;
+	  size_t numClients       = _pamiRM.getNumClients();
+	  size_t totalNumContexts = 0;
+
+	  for ( rmClientId=0; rmClientId<numClients; rmClientId++ )
+	    totalNumContexts += _perProcessMaxPamiResources[rmClientId].numContexts;
+
+	  TRACE((stderr,"MU Context: getPerProcessMaxPamiResourcesAcrossAllClients = %zu\n",totalNumContexts));
+	  return totalNumContexts;
+	}
 	  
-        // \brief Get Per Process PAMI Optimal Number of Contexts
+        // \brief Get Per Process PAMI Optimal Number of Contexts For A Client
 	inline size_t getPerProcessOptimalPamiResources ( size_t RmClientId )
 	{ return _perProcessOptimalPamiResources[RmClientId].numContexts; }
+
+        // \brief Get Per Process PAMI Optimal Number of Contexts Across All Clients
+	inline size_t getPerProcessOptimalPamiResources ( )
+	{ 
+	  size_t rmClientId;
+	  size_t numClients       = _pamiRM.getNumClients();
+	  size_t totalNumContexts = 0;
+
+	  for ( rmClientId=0; rmClientId<numClients; rmClientId++ )
+	    totalNumContexts += _perProcessOptimalPamiResources[rmClientId].numContexts;
+
+	  TRACE((stderr,"MU Context: getPerProcessOptimalPamiResourcesAcrossAllClients = %zu\n",totalNumContexts));
+	  return totalNumContexts;
+	}
 	
 	inline MUSPI_InjFifo_t * getGlobalCombiningInjFifoPtr ()
 	{
