@@ -311,6 +311,14 @@ public:
 			return PAMI_SUCCESS;
 		}
 
+		// assert devs[0]._ctxset->_nactive == 0...
+		// will that be true? commthreads with no contexts will
+		// still be in the waitimpl loop. We really should confirm
+		// that all commthreads have reached the "zero contexts"
+		// state, though. In that case, the commthread needs to
+		// give some feedback telling us how many contexts it
+		// thinks it has.
+
 		for (x = 0; x < _numActive; ++x) {
 			devs[x]._shutdown = true;
 			// touching _shutdown will not directly wakeup commthreads,
@@ -332,9 +340,11 @@ public:
 			// Maybe we don't really care about the pthread join?
 			// We do need it for statistics gathering, though.
 
-			// pthread_kill(devs[x]._thread, SIGUSR1);
-			// pthread_kill(devs[x]._thread, SIGTERM);
-			// 
+			// Note, should not get here unless all clients/contexts
+			// have been destroyed, so in that case the commthreads
+			// can just be terminated - they are all totally inactive.
+			pthread_kill(devs[x]._thread, SIGTERM);
+			// There is no point to the _shutdown = true if using SIGTERM
 		}
 
 		// need to pthread_join() here? or is it too risky (might hang)?
