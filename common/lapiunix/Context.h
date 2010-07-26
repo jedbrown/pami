@@ -453,7 +453,7 @@ namespace PAMI
         {
           // Initalize Collective Registration
           _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
-          new(_pgas_collreg) PGASCollreg(_client,_context,_contextid,_clientid,_protocol,_lapi_device2);
+          new(_pgas_collreg) PGASCollreg(_client,_context,_clientid,_contextid,_protocol,_lapi_device2);
           _pgas_collreg->analyze(_contextid,_world_geometry);
           return PAMI_SUCCESS;
         }

@@ -12,8 +12,8 @@
  *
  */
 
-#include "algorithms/schedule/TorusRect.h"
-
+//#include "algorithms/schedule/TorusRect.h"
+/// \todo #warning remove this part?
 
 #ifndef __GNUC__
 /**

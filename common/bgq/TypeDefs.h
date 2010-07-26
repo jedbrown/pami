@@ -58,10 +58,15 @@
 
 #include "algorithms/geometry/Geometry.h"
 
+#define PAMI_GEOMETRY_CLASS    PAMI::Geometry::Common
+
+#include "algorithms/geometry/PGASCollRegistration.h"
 
 namespace PAMI
 {
   typedef Geometry::Common                     BGQGeometry;
+
+  typedef MemoryAllocator<2048, 16> ProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
 
   typedef Device::MU::Context MUDevice;
   //typedef Device::MU::MUCollDevice MUDevice;
@@ -92,6 +97,15 @@ namespace PAMI
   // MU allsided over p2p eager
   typedef PAMI::NativeInterfaceAllsided<MUEager> MUNI_AS;
 
+  // PGAS over MU
+  typedef TSPColl::NBCollManager<MUNI_AM> MU_NBCollManager;
+  typedef CollRegistration::PGASRegistration<BGQGeometry,
+                                             MUNI_AM,
+                                             ProtocolAllocator,
+                                             MUEager,
+                                             MUDevice,
+                                             MU_NBCollManager> MU_PGASCollreg;
+
   // shmem + MU composite active message over p2p eager
   typedef PAMI::NativeInterfaceActiveMessage< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AM;
   // shmem + MU composite allsided over p2p eager
@@ -110,6 +124,6 @@ namespace PAMI
 //#define PAMI_COLL_M2M_CLASS
 //#define PAMI_COLL_SYSDEP_CLASS SysDep
 //#define PAMI_NATIVEINTERFACE
-#define PAMI_GEOMETRY_CLASS    PAMI::BGQGeometry
+//#define PAMI_GEOMETRY_CLASS    PAMI::BGQGeometry
 
 #endif

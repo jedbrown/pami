@@ -350,7 +350,7 @@ namespace PAMI
         _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 
         _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
-        new(_pgas_collreg) PGASCollreg(client, (pami_context_t)this, id,clientid,_protocol,*_mpi);
+        new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi);
         _pgas_collreg->analyze(_contextid,_world_geometry);
 
         _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));

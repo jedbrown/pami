@@ -49,8 +49,6 @@ namespace PAMI
 
   typedef Mutex::CounterMutex<Counter::BGQ::L2ProcCounter>  ContextLock;
 
-  typedef MemoryAllocator<2048, 16> ProtocolAllocator;
-
   typedef CollRegistration::P2P::CCMIRegistration<BGQGeometry,
     ShmemDevice,
     MUDevice,
@@ -248,8 +246,8 @@ namespace PAMI
           _shmemMcombModel(NULL),
           _shmem_native_interface(NULL),
           _devices(devices),
-          _global_mu_ni(NULL)
-
+          _global_mu_ni(NULL),
+          _pgas_mu_registration(NULL)
       {
         TRACE_ERR((stderr,  "<%p>Context::Context() enter\n",this));
         // ----------------------------------------------------------------
@@ -293,6 +291,8 @@ namespace PAMI
           rput_mu = Protocol::Put::PutRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice>::
             generate (_devices->_mu[_contextid], _context, _request, result);
           if (result != PAMI_SUCCESS) rput_mu = NULL;
+
+          _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this,_clientid,_contextid, _protocol,Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid));
 
         }
 
@@ -404,6 +404,8 @@ namespace PAMI
 
        _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid,_devices->_shmem[_contextid],_devices->_mu[_contextid],_protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size());
        _ccmi_registration->analyze(_contextid, _world_geometry);
+
+       if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, _world_geometry);
 
         // Complete rget and rput protocol initialization
         if (((rget_mu != NULL) && (rget_shmem != NULL)) &&
@@ -918,6 +920,8 @@ namespace PAMI
 
         __global.useMU(muFlag); /// \todo temp function while MU2 isn't complete
 
+        if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, _world_geometry);
+
         return result;
       }
 
@@ -1004,6 +1008,8 @@ namespace PAMI
       PlatformDeviceList          *_devices;
       MUGlobalNI                  *_global_mu_ni;
       uint8_t                      _global_mu_ni_storage[sizeof(MUGlobalNI)];
+      MU_PGASCollreg              *_pgas_mu_registration;
+      uint8_t                      _pgas_mu_registration_storage[sizeof(MU_PGASCollreg)];
 
   }; // end PAMI::Context
 }; // end namespace PAMI

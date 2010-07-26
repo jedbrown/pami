@@ -27,14 +27,14 @@ namespace PAMI
   namespace CollRegistration
   {
 
-    extern const char BarrierString[]        = "PGAS_Barrier";
-    extern const char AllgatherString[]      = "PGAS_Allgather";
-    extern const char AllgathervString[]     = "PGAS_Allgatherv";
-    extern const char ScatterString[]        = "PGAS_Scatter";
-    extern const char ScattervString[]       = "PGAS_Scatterv";
-    extern const char AllreduceString[]      = "PGAS_Allreduce";
-    extern const char ShortAllreduceString[] = "PGAS_ShortAllreduce";
-    extern const char BroadcastString[]      = "PGAS_Broadcast";
+    extern const char BarrierString[]        ;
+    extern const char AllgatherString[]      ;
+    extern const char AllgathervString[]     ;
+    extern const char ScatterString[]        ;
+    extern const char ScattervString[]       ;
+    extern const char AllreduceString[]      ;
+    extern const char ShortAllreduceString[] ;
+    extern const char BroadcastString[]      ;
 
 
     template <class T_Geometry,
@@ -113,8 +113,6 @@ namespace PAMI
         _shortallreduce(NULL),
         _barrier(NULL)
           {
-            T_P2P_NI           *ni_am    = NULL;
-            size_t              dispatch = -1;
             pami_result_t       result   = PAMI_SUCCESS;
 
 
