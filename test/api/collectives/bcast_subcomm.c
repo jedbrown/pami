@@ -218,10 +218,14 @@ int main(int argc, char*argv[])
   newbarrier.cookie    = (void*) &bar_poll_flag;
   newbarrier.algorithm = newbar_algo[0];
 
+  int nalg;
+  for (nalg = 0; nalg < newbcast_num_algo[0]; nalg++)
+    {
+
   /*  Set up sub geometry bcast */
   newbcast.cb_done                      = cb_done;
   newbcast.cookie                       = (void*) &bcast_poll_flag;
-  newbcast.algorithm                    = newbcast_algo[0];
+  newbcast.algorithm                    = newbcast_algo[nalg];
   newbcast.cmd.xfer_broadcast.root      = root;
   newbcast.cmd.xfer_broadcast.buf       = buf;
   newbcast.cmd.xfer_broadcast.type      = PAMI_BYTE;
@@ -231,15 +235,16 @@ int main(int argc, char*argv[])
   int             i, j, k;
   for (k = 1; k >= 0; k--)
     {
-      if (task_id == root)
+      if (set[k])
         {
-          printf("# Broadcast Bandwidth Test -- root = %d\n", (int)root);
+        if (task_id == root)
+        {
+          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root,
+                 newbcast_md[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
 
-      if (set[k])
-        {
           fflush(stdout);
           blocking_coll(context, &newbarrier,&bar_poll_flag);
 
@@ -276,6 +281,7 @@ int main(int argc, char*argv[])
       blocking_coll(context, &barrier,&bar_poll_flag);
       blocking_coll(context, &barrier,&bar_poll_flag);
       fflush(stderr);
+    }
     }
   blocking_coll(context, &barrier,&bar_poll_flag);
 
