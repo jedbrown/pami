@@ -121,27 +121,34 @@ public:
         {
         }
 
-        inline void init(size_t clientid, size_t nctx,
+        inline void init(size_t nsets, size_t nctx,
 				Memory::MemoryManager *mm,
 				Memory::MemoryManager *setmm) {
                 _mutex.init(mm);
                 posix_memalign((void **)&_contexts, 16, nctx * sizeof(*_contexts));
                 PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_contexts");
-                setmm->memalign((void **)&_sets, 16, (nctx + 1) * sizeof(*_sets));
+                setmm->memalign((void **)&_sets, 16, (nsets + 1) * sizeof(*_sets));
                 PAMI_assertf(_sets, "Out of memory for BgqContextPool::_sets");
-		memset(_sets, 0, (nctx + 1) * sizeof(*_sets));
+		memset(_sets, 0, (nsets + 1) * sizeof(*_sets));
                 _ncontexts_total = nctx;
-                _nsets = nctx;
+                _nsets = nsets;
         }
 
 	// caller promises to be single-threaded (?)
-        inline uint64_t addContext(size_t clientid, pami_context_t ctx) {
-                if (_ncontexts >= _ncontexts_total) {
-                        return 0ULL;
-                }
+        inline uint64_t addContext(pami_context_t ctx) {
                 _mutex.acquire();
-		size_t x = _ncontexts++;
+		size_t x;
+		for (x = 0; x < _ncontexts_total; ++x) {
+			if (_contexts[x] == NULL) {
+				break;
+			}
+		}
+		if (x >= _ncontexts_total) {
+			// should never happen
+                        return 0ULL;
+		}
                 _contexts[x] = (PAMI::Context *)ctx;
+		++_ncontexts;
 		_sets[_nsets] |= (1ULL << x);
                 _mutex.release();
 		// presumably, a new comm thread is about to call joinContextSet(),
@@ -150,20 +157,33 @@ public:
                 return (1ULL << x);
         }
 
-        inline void rmAllContexts(size_t clientid) {
-		size_t x;
+        inline void rmContexts(pami_context_t *ctxs, size_t nctx) {
+		size_t x, y;
+		uint64_t mask = 0;
                 _mutex.acquire();
-		for (x = 0; x <= _nsets; ++x) {
-			_sets[x] = 0;
+		for (y = 0; y < nctx; ++y) {
+			for (x = 0; x < _ncontexts_total; ++x) {
+				if (_contexts[x] == ctxs[y]) {
+					_contexts[x] = NULL;
+					--_ncontexts;
+					mask |= (1ULL << x);
+				}
+			}
 		}
+		for (x = 0; x <= _nsets; ++x) {
+			_sets[x] &= ~mask;
+		}
+		// maybe should rebalance?
+		// also, caller probably needs to wait until all the contexts
+		// are released (i.e. lock released).
                 _mutex.release();
 	}
 
-        PAMI::Context *getContext(size_t clientid, size_t contextix) {
+        PAMI::Context *getContext(size_t contextix) {
                 return _contexts[contextix];
         }
 
-        inline uint64_t getContextSet(size_t clientid, size_t threadid) {
+        inline uint64_t getContextSet(size_t threadid) {
                 _mutex.acquire();
                 uint64_t m = _sets[threadid];
 #if 0
@@ -183,7 +203,7 @@ fprintf(stderr, "picking up extra contexts %04zx\n", m);
 		return m;
         }
 
-        inline void joinContextSet(size_t clientid, size_t &threadid,
+        inline void joinContextSet(size_t &threadid,
 						uint64_t initial = 0ULL) {
 
                 uint64_t m = 0, n = 0;
@@ -207,7 +227,7 @@ fprintf(stderr, "picking up extra contexts %04zx\n", m);
                 _mutex.release();
         }
 
-        inline void leaveContextSet(size_t clientid, size_t &threadid) {
+        inline void leaveContextSet(size_t &threadid) {
                 _mutex.acquire();
                 --_nactive;
                 uint64_t m = _sets[threadid];

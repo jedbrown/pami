@@ -199,7 +199,8 @@ namespace PAMI
         PAMI_assertf(ncontexts == _ncontexts, "destroyContext(%p,%zu) called without all contexts (expected %zu contexts)", context, ncontexts, _ncontexts);
         // for (i = 0.._ncontexts) PAMI_assertf(context[i] == _contexts[i], "...");
 #ifdef USE_COMMTHREADS
-        PAMI::Device::CommThread::BgqCommThread::shutdown(_commThreads, _clientid);
+        // This removes all contexts... only needs to be called once.
+        PAMI::Device::CommThread::BgqCommThread::rmContexts(_commThreads, _clientid, _contexts, _ncontexts);
 #endif // USE_COMMTHREADS
         pami_result_t res = PAMI_SUCCESS;
         size_t i;

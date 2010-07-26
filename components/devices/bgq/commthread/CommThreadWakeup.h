@@ -111,7 +111,7 @@ private:
                 x = 0;
                 while (m) {
                         if (m & 1) {
-                                r = _ctxset->getContext(_client, x)->trylock();
+                                r = _ctxset->getContext(x)->trylock();
                                 if (r == PAMI_SUCCESS) {
                                         l |= (1ULL << x);
 					_ctxset->getContext(_client, x)->cleanupAffinity(true);
@@ -135,7 +135,7 @@ private:
                 x = 0;
                 while (m) {
                         if (m & 1) {
-                                e += _ctxset->getContext(_client, x)->advance(1, r);
+                                e += _ctxset->getContext(x)->advance(1, r);
                                 r = r; // avoid warning until we figure out what to do with result
                         }
                         m >>= 1;
@@ -157,10 +157,9 @@ private:
 	}
 
 public:
-        BgqCommThread(BgqWakeupRegion *wu, BgqContextPool *pool, size_t clientid, size_t num_ctx) :
+        BgqCommThread(BgqWakeupRegion *wu, BgqContextPool *pool, size_t num_ctx) :
         _wakeup_region(wu),
         _ctxset(pool),
-        _client(clientid),
 	_thread(0),
 	_falseWU(0),
 	_shutdown(false)
@@ -168,6 +167,8 @@ public:
 
         ~BgqCommThread() { }
 
+	// Called from __global...
+	//
         // This isn't really a device, only using this for convenience but
         // perhaps it should not be part of PlatformDeviceList?
         //
@@ -175,7 +176,7 @@ public:
         // But then we have trouble keeping contexts contiguous.
         // Should comm threads be started before Client initialize?
         //
-        static inline BgqCommThread *generate(size_t clientid, size_t num_ctx,
+        static inline BgqCommThread *generate(size_t num_ctx,
                                                 Memory::MemoryManager *genmm,
                                                 Memory::MemoryManager *l2xmm) {
                 BgqCommThread *devs;
@@ -184,23 +185,24 @@ public:
                 size_t x;
 		size_t me = __global.topology_local.rank2Index(__global.mapping.task());
 		size_t lsize = __global.topology_local.size();
-                posix_memalign((void **)&devs, 16, num_ctx * sizeof(*devs));
+		_maxActive = Kernel_ProcessorCount() - 1;
+                posix_memalign((void **)&devs, 16, _maxActive * sizeof(*devs));
                 posix_memalign((void **)&pool, 16, sizeof(*pool));
                 posix_memalign((void **)&wu, 16, sizeof(*wu)); // one per client
 
                 new (wu) BgqWakeupRegion();
-                pami_result_t rc = wu->init(clientid, num_ctx, me, lsize, l2xmm);
+                pami_result_t rc = wu->init(num_ctx, me, lsize, l2xmm);
 		if (rc != PAMI_SUCCESS) {
 			PAMI_abortf("Failed to initialize BgqWakeupRegion - not enough shared memory?");
 		}
-		__global._wuRegion_mms[clientid] = wu->getAllWUmm();
+		__global._wuRegion_mms = wu->getAllWUmm();
 
                 new (pool) BgqContextPool();
-                pool->init(clientid, num_ctx, genmm, wu->getWUmm());
+                pool->init(_maxActive, num_ctx, genmm, wu->getWUmm());
 
-                for (x = 0; x < num_ctx; ++x) {
+                for (x = 0; x < _maxActive; ++x) {
                         // one per context, but not otherwise tied to a context.
-                        new (&devs[x]) BgqCommThread(wu, pool, clientid, num_ctx);
+                        new (&devs[x]) BgqCommThread(wu, pool, num_ctx);
                 }
                 return devs;
         }
@@ -225,11 +227,16 @@ public:
         static inline pami_result_t addContext(BgqCommThread *devs, size_t clientid,
                                         pami_context_t context) {
                 // all BgqCommThread objects have the same ContextSet object.
-                uint64_t m = devs[0]._ctxset->addContext(clientid, context);
+                uint64_t m = devs[0]._ctxset->addContext(context);
 		if (m == 0) {
 			return PAMI_EAGAIN; // closest thing to ENOSPC ?
 		}
 		int status;
+		if (_numActive >= _maxActive) {
+			// silently ignore attempts to create more commthtreads than
+			// processors.
+			return PAMI_SUCCESS;
+		}
 		// we assume this is single-threaded so no locking required...
 		size_t x = _numActive++;
 		BgqCommThread *thus = &devs[x];
@@ -276,22 +283,59 @@ public:
 		return PAMI_SUCCESS;
         }
 
-        static inline pami_result_t shutdown(BgqCommThread *devs, size_t clientid) {
+        static inline pami_result_t rmContexts(BgqCommThread *devs, size_t clientid,
+						pami_context_t *ctxs, size_t nctx) {
+		size_t x;
+		if (_numActive == 0) {
+			return PAMI_SUCCESS;
+		}
+
+                // all BgqCommThread objects have the same ContextSet object.
+
+		// This should wakeup all commthreads, and any one holding
+		// this context should release it...
+                devs[0]._ctxset->rmContexts(ctxs, nctx);
+
+		// wait here for all contexts to get released? must only
+		// wait for all commthreads to release, not for other threads
+		// that might have the context locked - how to tell?
+		// Maybe the caller knows best?
+
+		return PAMI_SUCCESS;
+	}
+
+        static inline pami_result_t shutdown(BgqCommThread *devs) {
 		size_t x;
 
 		if (_numActive == 0) {
 			return PAMI_SUCCESS;
 		}
 
-		// while touching _shutdown will not directly wakeup commthreads,
-		// our subsequent rmAllContexts() will...
 		for (x = 0; x < _numActive; ++x) {
-			// kill is too harsh, provide orderly termination
-			//pthread_kill(devs[x]._thread, SIGTERM);
 			devs[x]._shutdown = true;
+			// touching _shutdown will not directly wakeup commthreads,
+			// so must do something... tbd
+
+			// If the target commthread is in waitimpl, we can
+			// easily wake it.
+
+			// If the thread is in pthread_setschedprio(min)
+			// then it has released all locks and may be safely
+			// terminated.
+
+			// However, we can't tell which case applies.
+			// If we can just get both cases to wake up, the
+			// thread will notice the shutdown and exit.
+			// But if it is in setsched the problem is that
+			// most likely some other thread has preempted it
+			// and so the pthread_join below may hang(?)
+			// Maybe we don't really care about the pthread join?
+			// We do need it for statistics gathering, though.
+
+			// pthread_kill(devs[x]._thread, SIGUSR1);
+			// pthread_kill(devs[x]._thread, SIGTERM);
+			// 
 		}
-                // all BgqCommThread objects have the same ContextSet object.
-                devs[0]._ctxset->rmAllContexts(clientid);
 
 		// need to pthread_join() here? or is it too risky (might hang)?
 		size_t fwu = 0;
@@ -319,7 +363,7 @@ private:
 DEBUG_INIT();
 
                 pthread_setschedprio(self, max_pri);
-                _ctxset->joinContextSet(_client, id, _initCtxs);
+                _ctxset->joinContextSet(id, _initCtxs);
 //fprintf(stderr, "comm thread %ld for context %04zx\n", self, _initCtxs);
 DEBUG_WRITE('c','t');
                 new_ctx = old_ctx = lkd_ctx = 0;
@@ -339,7 +383,7 @@ more_work:		// lightweight enough.
 			events = 0;
 			do {
                         	WU_ArmWithAddress(wu_start, wu_mask);
-                        	new_ctx = _ctxset->getContextSet(_client, id);
+                        	new_ctx = _ctxset->getContextSet(id);
 
                         	// this only locks/unlocks what changed...
                         	__lockContextSet(lkd_ctx, new_ctx);
@@ -386,7 +430,7 @@ DEBUG_WRITE('w','u');
                                 // this only locks/unlocks what changed...
                                 __lockContextSet(lkd_ctx, 0);
 
-                                _ctxset->leaveContextSet(_client, id); // id invalid now
+                                _ctxset->leaveContextSet(id); // id invalid now
 DEBUG_WRITE('s','a');
 
                                 pthread_setschedprio(self, min_pri);
@@ -395,7 +439,7 @@ DEBUG_WRITE('s','a');
 DEBUG_WRITE('s','b');
 
 				if (_shutdown) break;
-                		_ctxset->joinContextSet(_client, id, _initCtxs); // got id
+                		_ctxset->joinContextSet(id, _initCtxs); // got id
                                 // always assume context set changed... just simpler.
                                 goto new_context_assignment;
                         }
@@ -405,7 +449,7 @@ DEBUG_WRITE('s','b');
                 	__lockContextSet(lkd_ctx, 0);
 		}
 		if (id != (size_t)-1) {
-                	_ctxset->leaveContextSet(_client, id); // id invalid now
+                	_ctxset->leaveContextSet(id); // id invalid now
 		}
 DEBUG_WRITE('t','t');
                 return PAMI_SUCCESS;
@@ -413,12 +457,12 @@ DEBUG_WRITE('t','t');
 
         BgqWakeupRegion *_wakeup_region;	///< WAC memory for contexts (common)
         PAMI::Device::CommThread::BgqContextPool *_ctxset; ///< context set (common)
-        size_t _client;			///< client ID
 	uint64_t _initCtxs;		///< initial set of contexts to take
 	pthread_t _thread;		///< pthread identifier
 	size_t _falseWU;		///< perf counter for false wakeups
 	volatile bool _shutdown;	///< request commthread to exit
 	static size_t _numActive;
+	static size_t _maxActive;
 }; // class BgqCommThread
 
 }; // namespace CommThread
@@ -426,6 +470,7 @@ DEBUG_WRITE('t','t');
 }; // namespace PAMI
 
 size_t PAMI::Device::CommThread::BgqCommThread::_numActive = 0;
+size_t PAMI::Device::CommThread::BgqCommThread::_maxActive = 0;
 
 #undef DEBUG_INIT
 #undef DEBUG_WRITE
