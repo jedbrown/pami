@@ -180,6 +180,15 @@ int main(int argc, char*argv[])
             }
 
       }
+  // Delay root tasks, and emulate that he's doing "other"
+  // message passing.  This will cause the geometry_create
+  // request from other nodes to be unexpected.
+  if(task_id == root)
+    {
+      sleep(1);
+      PAMI_Context_advance (context, 1000);
+    }
+  
   rc = create_and_query_geometry(client,
                                  context,
                                  PAMI_NULL_GEOMETRY,
