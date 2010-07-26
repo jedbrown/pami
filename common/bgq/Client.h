@@ -63,7 +63,9 @@ namespace PAMI
       {
       }
 
-      static pami_result_t generate_impl (const char * name, pami_client_t * client)
+      static pami_result_t generate_impl (const char * name, pami_client_t * client,
+					  pami_configuration_t   configuration[],
+					  size_t                 num_configs)
       {
         TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         pami_result_t result;
@@ -214,67 +216,72 @@ namespace PAMI
       }
 #endif // USE_COMMTHREADS
 
-      inline pami_result_t queryConfiguration_impl (pami_configuration_t * configuration)
+    inline pami_result_t query_impl (pami_configuration_t configuration[],
+                                     size_t               num_configs)
       {
-        pami_result_t result = PAMI_ERROR;
-
-        switch (configuration->name)
+        pami_result_t result = PAMI_SUCCESS;
+        size_t i;
+        for(i=0; i<num_configs; i++)
           {
-            case PAMI_NUM_CONTEXTS:
+            switch (configuration[i].name)
+              {
+                case PAMI_CLIENT_NUM_CONTEXTS:
 
-              /// \todo #80 #99 Remove this when the DMA supports >1 context.
-              if (__global.useMU())
-                configuration->value.intval = 1;
-              else
-                configuration->value.intval = 64;
-
-              result = PAMI_SUCCESS;
-              break;
-            case PAMI_CONST_CONTEXTS:
-              configuration->value.intval = true;
-              result = PAMI_SUCCESS;
-              break;
-            case PAMI_TASK_ID:
-              configuration->value.intval = __global.mapping.task();
-              result = PAMI_SUCCESS;
-              break;
-            case PAMI_NUM_TASKS:
-              configuration->value.intval = __global.mapping.size();
-              result = PAMI_SUCCESS;
-              break;
-            case PAMI_CLOCK_MHZ:
-            case PAMI_WTIMEBASE_MHZ:
-              configuration->value.intval = __global.time.clockMHz();
-              result = PAMI_SUCCESS;
-              break;
-            case PAMI_WTICK:
-              configuration->value.doubleval = __global.time.tick();
-              result = PAMI_SUCCESS;
-              break;
-            case PAMI_PROCESSOR_NAME:
-            {
-              int rc;
-              char* pn = __global.processor_name;
-              /// \todo This should be more descriptive and the
-              /// snprintf() should be run at init only.  This is
-              /// the BGP DCMF version:
-              /// "Rank 0 of 128 (0,0,0,0)  R00-M0-N10-J01"
-              rc = snprintf(pn, 128, "Task %zu of %zu", __global.mapping.task(), __global.mapping.size());
-              pn[128-1] = 0;
-              configuration->value.chararray = pn;
-
-              if (rc > 0)
-                result = PAMI_SUCCESS;
-            }
-            break;
-            case PAMI_MEM_SIZE:
-            default:
-              break;
+                  /// \todo #80 #99 Remove this when the DMA supports >1 context.
+                  if (__global.useMU())
+                    configuration[i].value.intval = 1;
+                  else
+                    configuration[i].value.intval = 64;
+                  break;
+                case PAMI_CLIENT_CONST_CONTEXTS:
+                  configuration[i].value.intval = true;
+                  break;
+                case PAMI_CLIENT_TASK_ID:
+                  configuration[i].value.intval = __global.mapping.task();
+                  break;
+                case PAMI_CLIENT_NUM_TASKS:
+                  configuration[i].value.intval = __global.mapping.size();
+                  break;
+                case PAMI_CLIENT_CLOCK_MHZ:
+                case PAMI_CLIENT_WTIMEBASE_MHZ:
+                  configuration[i].value.intval = __global.time.clockMHz();
+                  break;
+                case PAMI_CLIENT_WTICK:
+                  configuration[i].value.doubleval = __global.time.tick();
+                  break;
+                case PAMI_CLIENT_PROCESSOR_NAME:
+                {
+                  int rc;
+                  char* pn = __global.processor_name;
+                  /// \todo This should be more descriptive and the
+                  /// snprintf() should be run at init only.  This is
+                  /// the BGP DCMF version:
+                  /// "Rank 0 of 128 (0,0,0,0)  R00-M0-N10-J01"
+                  rc = snprintf(pn, 128, "Task %zu of %zu", __global.mapping.task(), __global.mapping.size());
+                  pn[128-1] = 0;
+                  configuration[i].value.chararray = pn;
+                  if (rc <= 0)
+                    result = PAMI_INVAL;
+                }
+                break;
+                case PAMI_CLIENT_MEM_SIZE:
+                default:
+                  result = PAMI_INVAL;
+              }
           }
-
         return result;
       }
+    
+    inline pami_result_t update_impl (pami_configuration_t configuration[],
+                                      size_t               num_configs)
+      {
+        return PAMI_INVAL;
+      }
+      
+    
 
+
+    
       // the friend clause is actually global, but this helps us remember why...
       //friend class PAMI::Device::Generic::Device;
       //friend class pami.cc
@@ -305,6 +312,8 @@ namespace PAMI
       }
 
       inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
+							  pami_configuration_t   configuration[],
+							  size_t                 num_configs,
                                                           pami_geometry_t         parent,
                                                           unsigned               id,
                                                           pami_geometry_range_t * rank_slices,
@@ -396,6 +405,8 @@ namespace PAMI
 
 
       inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       * geometry,
+							 pami_configuration_t   configuration[],
+							 size_t                 num_configs,
                                                          pami_geometry_t         parent,
                                                          unsigned               id,
                                                          pami_task_t           * tasks,

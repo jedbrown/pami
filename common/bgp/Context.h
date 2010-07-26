@@ -659,8 +659,56 @@ namespace PAMI
         return _multi_registration->analyze(context_id,geometry);
       }
 
-
-    private:
+    
+      inline pami_result_t dispatch_query_impl(size_t                dispatch,
+                                               pami_configuration_t  configuration[],
+                                               size_t                num_configs)
+      {
+        pami_result_t result = PAMI_SUCCESS;
+        size_t i;
+        for(i=0; i<num_configs; i++)
+          {
+            switch (configuration[i].name)
+              {
+                case PAMI_DISPATCH_SEND_IMMEDIATE_MAX:
+                case PAMI_DISPATCH_RECV_IMMEDIATE_MAX:
+                default:
+                  result = PAMI_INVAL;
+              }
+          }
+        return result;
+      }
+    
+      inline pami_result_t dispatch_update_impl(size_t                dispatch,
+                                                pami_configuration_t  configuration[],
+                                                size_t                num_configs)
+      {
+        return PAMI_INVAL;
+      }
+    
+      inline pami_result_t query_impl(pami_configuration_t  configuration[],
+                                      size_t                num_configs)
+        {
+          pami_result_t result = PAMI_SUCCESS;
+          size_t i;
+          for(i=0; i<num_configs; i++)
+            {
+              switch (configuration[i].name)
+                {
+                  case PAMI_CONTEXT_DISPATCH_ID_MAX:
+                  default:
+                    result = PAMI_INVAL;
+                }
+            }
+          return result;
+        }
+      
+      inline pami_result_t update_impl(pami_configuration_t  configuration[],
+                                       size_t                num_configs)
+        {
+          return PAMI_INVAL;
+        }
+  private:
 
       pami_client_t  _client;
       pami_context_t _context;

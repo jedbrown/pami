@@ -14,7 +14,7 @@ int main (int argc, char ** argv)
   char         cl_string[] = "TEST";
 
   fprintf (stdout, "Before PAMI_Client_create()\n");
-  result = PAMI_Client_create (cl_string, &client);
+  result = PAMI_Client_create (cl_string, &client, NULL, 0);
   fprintf (stdout, "After PAMI_Client_create(), result = %d\n", result);
 
   fprintf (stdout, "Before PAMI_Client_destroy()\n");

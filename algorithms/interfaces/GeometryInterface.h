@@ -70,19 +70,26 @@ namespace PAMI
       inline unsigned                   getAsyncAllreduceMode();
       inline unsigned                   incrementAllreduceIteration();
       inline unsigned                   comm();
-      inline pami_task_t                 *ranks();
-      inline pami_task_t                 *ranks_sizet();
-      inline pami_task_t                 nranks();
-      inline pami_task_t                 myIdx();
+      inline pami_task_t               *ranks();
+      inline pami_task_t               *ranks_sizet();
+      inline pami_task_t                nranks();
+      inline pami_task_t                myIdx();
       inline void                       generatePermutation();
       inline void                       freePermutation();
       inline unsigned                  *permutation();
-      inline pami_topology_t* getTopology(int topo_num);
-      inline int myTopologyId();
-      inline int getNumTopos();
+      inline pami_topology_t           *getTopology(int topo_num);
+      inline int                        myTopologyId();
+      inline int                        getNumTopos();
       inline void                       generatePermutation_sizet();
       inline void                       freePermutation_sizet();
-      inline pami_task_t                 *permutation_sizet();
+      inline pami_task_t               *permutation_sizet();
+      inline pami_result_t              query(pami_configuration_t  configuration[],
+                                              size_t                num_configs);
+      inline pami_result_t              update(pami_configuration_t  configuration[],
+                                               size_t                num_configs,
+                                               pami_context_t        context,
+                                               pami_event_function   fn,
+                                               void                 *cookie);
 /** \todo  need to replace by attributes */
 #if 1
       // no need for these as they are embedded inside attributes
@@ -531,6 +538,27 @@ namespace PAMI
       return static_cast<T_Geometry*>(this)->addCollectiveCheck_impl(xfer_type,factory,context_id);
     }
 
+    template <class T_Geometry>
+    inline pami_result_t Geometry<T_Geometry>::update(pami_configuration_t  configuration[],
+                                                      size_t                num_configs,
+                                                      pami_context_t        context,
+                                                      pami_event_function   fn,
+                                                      void                 *cookie)
+    {
+      return static_cast<T_Geometry*>(this)->update_impl(configuration,
+                                                         num_configs,
+                                                         context,
+                                                         fn,
+                                                         cookie);      
+    }
+
+
+    template <class T_Geometry>
+    inline pami_result_t Geometry<T_Geometry>::query(pami_configuration_t  configuration[],
+                                                     size_t                num_configs)      
+    {
+      return static_cast<T_Geometry*>(this)->query_impl(configuration, num_configs);
+    }
 
 
 

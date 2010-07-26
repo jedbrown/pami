@@ -169,6 +169,8 @@ int create_and_query_geometry(pami_client_t           client,
   pami_result_t result;
   int           geom_init=1;
   result = PAMI_Geometry_create_taskrange (client,
+                                           NULL,
+                                           0,
                                            new_geometry,
                                            parent_geometry,
                                            id,

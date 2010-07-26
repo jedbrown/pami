@@ -93,7 +93,7 @@ int main(int argc, char*argv[])
   double        tf, ti, usec;
   char          buf[BUFSIZE];
   char          cl_string[] = "TEST";
-  result = PAMI_Client_create (cl_string, &client);
+  result = PAMI_Client_create (cl_string, &client, NULL, 0);
 
   if (result != PAMI_SUCCESS)
     {
@@ -111,8 +111,8 @@ int main(int argc, char*argv[])
 
 
   pami_configuration_t configuration;
-  configuration.name = PAMI_TASK_ID;
-  result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_TASK_ID;
+  result = PAMI_Client_query(client, &configuration, 1);
 
   if (result != PAMI_SUCCESS)
     {
@@ -122,8 +122,8 @@ int main(int argc, char*argv[])
 
   size_t rank = configuration.value.intval;
 
-  configuration.name = PAMI_NUM_TASKS;
-  result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_NUM_TASKS;
+  result = PAMI_Client_query(client, &configuration, 1);
 
   if (result != PAMI_SUCCESS)
     {
@@ -215,6 +215,8 @@ int main(int argc, char*argv[])
         }
 
       result = PAMI_Geometry_create_taskrange (client,
+                                               NULL,
+                                               0,
                                                &bottom_geometry,
                                                world_geometry,
                                                1,
@@ -320,6 +322,8 @@ int main(int argc, char*argv[])
         }
 
       result = PAMI_Geometry_create_taskrange (client,
+                                               NULL,
+                                               0,
                                                &top_geometry,
                                                world_geometry,
                                                2,

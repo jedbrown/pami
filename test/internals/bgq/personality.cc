@@ -71,7 +71,7 @@ int main(int argc, char ** argv)
   char clientname[] = "PAMI";
   pami_client_t client;
   fprintf(stderr, "PAMI_Client_create()\n");
-  PAMI_Client_create (clientname, &client);
+  PAMI_Client_create (clientname, &client, NULL, 0);
   pami_context_t context;
   fprintf(stderr, "PAMI_Context_createv()\n");
   { size_t _n = 1; PAMI_Context_createv (client, NULL, 0, &context, _n); }
@@ -79,20 +79,20 @@ int main(int argc, char ** argv)
   pami_configuration_t configuration;
   pami_result_t result;
 
-  configuration.name = PAMI_TASK_ID;
-  result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_TASK_ID;
+  result = PAMI_Client_query(client, &configuration,1);
   size_t my_rank = configuration.value.intval;
-  fprintf(stderr, "PAMI_TASK_ID %zu\n",my_rank);
+  fprintf(stderr, "PAMI_CLIENT_TASK_ID %zu\n",my_rank);
 
-  configuration.name = PAMI_NUM_TASKS;
-  result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_NUM_TASKS;
+  result = PAMI_Client_query(client, &configuration, 1);
   size_t num_tasks = configuration.value.intval;
-  fprintf(stderr, "PAMI_NUM_TASKS %zu\n",num_tasks);
+  fprintf(stderr, "PAMI_CLIENT_NUM_TASKS %zu\n",num_tasks);
 
-  configuration.name = PAMI_WTICK;
-  result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_WTICK;
+  result = PAMI_Client_query(client, &configuration,1);
   double tick = configuration.value.doubleval;
-  fprintf(stderr, "PAMI_WTICK %f\n",tick);
+  fprintf(stderr, "PAMI_CLIENT_WTICK %f\n",tick);
 
   fprintf(stderr,"GOODBYE from task %zu/%zu\n",task_id,my_rank);
 

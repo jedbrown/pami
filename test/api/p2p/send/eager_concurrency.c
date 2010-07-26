@@ -84,7 +84,7 @@ usage:
         pami_client_t client;
         pami_context_t context;
 
-        result = PAMI_Client_create ("test", &client);
+        result = PAMI_Client_create ("test", &client, NULL, 0);
         if (result != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
                 return 1;
@@ -96,15 +96,15 @@ usage:
                 return 1;
         }
         pami_configuration_t configuration;
-        configuration.name = PAMI_TASK_ID;
-        result = PAMI_Configuration_query(client, &configuration);
+        configuration.name = PAMI_CLIENT_TASK_ID;
+        result = PAMI_Client_query(client, &configuration,1);
         if (result != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
                 return 1;
         }
         size_t task_id = configuration.value.intval;
-        configuration.name = PAMI_NUM_TASKS;
-        result = PAMI_Configuration_query(client, &configuration);
+        configuration.name = PAMI_CLIENT_NUM_TASKS;
+        result = PAMI_Client_query(client, &configuration,1);
         if (result != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
                 return 1;

@@ -293,25 +293,25 @@ static void init()
   pami_configuration_t query;
   pami_send_hint_t options = {consistency:1};
 
-  PAMI_Client_create("PAMId ADI Example", &client);
+  PAMI_Client_create("PAMId ADI Example", &client, NULL, 0);
 
-  query.name = PAMI_TASK_ID;
-  PAMI_Configuration_query (client, &query);
+  query.name = PAMI_CLIENT_TASK_ID;
+  PAMI_Client_query (client, &query,1);
   task = query.value.intval;
 
-  query.name = PAMI_NUM_TASKS;
-  PAMI_Configuration_query (client, &query);
+  query.name = PAMI_CLIENT_NUM_TASKS;
+  PAMI_Client_query (client, &query,1);
   size = query.value.intval;
   assert(size > 1);
 
-  query.name = PAMI_NUM_CONTEXTS;
-  PAMI_Configuration_query (client, &query);
+  query.name = PAMI_CLIENT_NUM_CONTEXTS;
+  PAMI_Client_query (client, &query,1);
   num_contexts = query.value.intval;
   assert(num_contexts <= MAX_CONTEXTS);
   assert((num_contexts&(num_contexts-1)) == 0);
 
-  query.name = PAMI_CONST_CONTEXTS;
-  PAMI_Configuration_query (client, &query);
+  query.name = PAMI_CLIENT_CONST_CONTEXTS;
+  PAMI_Client_query (client, &query,1);
   assert(query.value.intval);
 
   query.value.intval = 1;

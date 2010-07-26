@@ -11,12 +11,12 @@ pami_endpoint_t * _endpoint;
 static void createEndpointTable (pami_client_t client)
 {
   pami_configuration_t configuration;
-  configuration.name = PAMI_NUM_TASKS;
+  configuration.name = PAMI_CLIENT_NUM_TASKS;
   pami_result_t result =
-    PAMI_Configuration_query(client, &configuration);
+    PAMI_Client_query(client, &configuration,1);
   if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Unable to query PAMI_NUM_TASKS\n");
+    fprintf (stderr, "Unable to query PAMI_CLIENT_NUM_TASKS\n");
     abort();
   }
 
@@ -60,7 +60,7 @@ int main ()
   pami_client_t client;
   pami_context_t context[4];
 
-  PAMI_Client_create ("name", &client);
+  PAMI_Client_create ("name", &client, NULL, 0);
 
   PAMI_Context_createv (client, NULL, 0, context, 4);
 

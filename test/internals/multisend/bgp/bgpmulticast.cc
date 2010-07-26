@@ -24,7 +24,7 @@ int main(int argc, char ** argv) {
 #if 0
         pami_client_t client;
         pami_result_t status = PAMI_ERROR;
-        status = PAMI_Client_create("multicast test", &client);
+        status = PAMI_Client_create("multicast test", &client, NULL, 0);
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);
                 return 1;
@@ -38,8 +38,8 @@ int main(int argc, char ** argv) {
 
         pami_configuration_t configuration;
 
-        configuration.name = PAMI_TASK_ID;
-        status = PAMI_Configuration_query(client, &configuration);
+        configuration.name = PAMI_CLIENT_TASK_ID;
+        status = PAMI_Client_query(client, &configuration,1);
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
                 return 1;
@@ -47,8 +47,8 @@ int main(int argc, char ** argv) {
         task_id = configuration.value.intval;
         //fprintf(stderr, "My task id = %zu\n", task_id);
 
-        configuration.name = PAMI_NUM_TASKS;
-        status = PAMI_Configuration_query(client, &configuration);
+        configuration.name = PAMI_CLIENT_NUM_TASKS;
+        status = PAMI_Client_query(client, &configuration,1);
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
                 return 1;

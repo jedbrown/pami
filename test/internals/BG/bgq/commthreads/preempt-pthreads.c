@@ -63,15 +63,15 @@ int main(int argc, char ** argv) {
 	sprintf(buf, "St %ld\n", pthread_self());
 	int bufl = strlen(buf);
 
-	result = PAMI_Client_create(cl_string, &client);
+	result = PAMI_Client_create(cl_string, &client, NULL, 0);
 	if (result != PAMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to initialize pami client. "
 						"result = %d\n", result);
 		return 1;
 	}
 	pami_configuration_t configuration;
-	configuration.name = PAMI_NUM_TASKS;
-	result = PAMI_Configuration_query(client, &configuration);
+	configuration.name = PAMI_CLIENT_NUM_TASKS;
+	result = PAMI_Client_query(client, &configuration,1);
 	pami_task_t ntasks = configuration.value.intval;
 	if (ntasks != 1) {
 		fprintf(stderr, "Must be run with one task\n");

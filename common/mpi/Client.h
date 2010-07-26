@@ -23,7 +23,10 @@ namespace PAMI
         {
           MPI_Finalize();
         }
-      inline Client (const char * name, pami_result_t & result) :
+      inline Client (const char           *name,
+                     pami_result_t        &result,
+                     pami_configuration_t  configuration[],
+                     size_t                num_configs) :
         Interface::Client<PAMI::Client>(name, result),
         _client ((pami_client_t) this),
         _references (1),
@@ -57,7 +60,10 @@ namespace PAMI
         {
         }
 
-      static pami_result_t generate_impl (const char * name, pami_client_t * client)
+      static pami_result_t generate_impl (const char           *name,
+                                          pami_client_t        *client,
+                                          pami_configuration_t  configuration[],
+                                          size_t                num_configs)
         {
           int rc = 0;
           PAMI::Client * clientp;
@@ -65,7 +71,7 @@ namespace PAMI
           assert(clientp != NULL);
           memset ((void *)clientp, 0x00, sizeof(PAMI::Client));
           pami_result_t res;
-          new (clientp) PAMI::Client (name, res);
+          new (clientp) PAMI::Client (name, res, configuration, num_configs);
           *client = (pami_client_t) clientp;
           return PAMI_SUCCESS;
         }
@@ -135,45 +141,49 @@ namespace PAMI
           return PAMI_SUCCESS;
         }
 
-        inline pami_result_t queryConfiguration_impl (pami_configuration_t * configuration)
+      inline pami_result_t query_impl (pami_configuration_t configuration[],
+                                       size_t               num_configs)
         {
-                pami_result_t result = PAMI_ERROR;
-
-                switch (configuration->name)
+          size_t i;
+          pami_result_t result = PAMI_SUCCESS;
+          for(i=0; i<num_configs; i++)
+            {
+                switch (configuration[i].name)
                 {
-                case PAMI_NUM_CONTEXTS:
-                        configuration->value.intval = 1; // real value TBD
-                        result = PAMI_SUCCESS;
+                case PAMI_CLIENT_NUM_CONTEXTS:
+                        configuration[i].value.intval = 1; // real value TBD
                         break;
-                case PAMI_CONST_CONTEXTS:
-                        configuration->value.intval = 0; // real value TBD
-                        result = PAMI_SUCCESS;
+                case PAMI_CLIENT_CONST_CONTEXTS:
+                        configuration[i].value.intval = 1; // real value TBD
                         break;
-                case PAMI_TASK_ID:
-                        configuration->value.intval = __global.mapping.task();
-                        result = PAMI_SUCCESS;
+                case PAMI_CLIENT_TASK_ID:
+                        configuration[i].value.intval = __global.mapping.task();
                         break;
-                case PAMI_NUM_TASKS:
-                        configuration->value.intval = __global.mapping.size();
-                        result = PAMI_SUCCESS;
+                case PAMI_CLIENT_NUM_TASKS:
+                        configuration[i].value.intval = __global.mapping.size();
                         break;
-                case PAMI_CLOCK_MHZ:
-                case PAMI_WTIMEBASE_MHZ:
-                        configuration->value.intval = __global.time.clockMHz();
-                        result = PAMI_SUCCESS;
+                case PAMI_CLIENT_CLOCK_MHZ:
+                case PAMI_CLIENT_WTIMEBASE_MHZ:
+                        configuration[i].value.intval = __global.time.clockMHz();
                         break;
-                case PAMI_WTICK:
-                        configuration->value.doubleval =__global.time.tick();
-                        result = PAMI_SUCCESS;
+                case PAMI_CLIENT_WTICK:
+                        configuration[i].value.doubleval =__global.time.tick();
                         break;
-                case PAMI_MEM_SIZE:
-                case PAMI_PROCESSOR_NAME:
+                case PAMI_CLIENT_MEM_SIZE:
+                case PAMI_CLIENT_PROCESSOR_NAME:
                 default:
-                        break;
+                  result = PAMI_INVAL;
                 }
-                return result;
+            }
+          return result;
         }
 
+      inline pami_result_t update_impl (pami_configuration_t configuration[],
+                                        size_t               num_configs)
+        {
+          return PAMI_INVAL;
+        }
+      
         inline size_t getNumContexts()
         {
                 return _ncontexts;
@@ -198,15 +208,17 @@ namespace PAMI
         *world_geometry = _world_geometry;
         return PAMI_SUCCESS;
       }
-
-    inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
-                                                       pami_geometry_t         parent,
-                                                       unsigned               id,
-                                                       pami_geometry_range_t * rank_slices,
-                                                       size_t                 slice_count,
-                                                       pami_context_t          context,
-                                                       pami_event_function     fn,
-                                                       void                 * cookie)
+      
+    inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       *geometry,
+                                                        pami_configuration_t   configuration[],
+                                                        size_t                 num_configs,
+                                                        pami_geometry_t        parent,
+                                                        unsigned               id,
+                                                        pami_geometry_range_t *rank_slices,
+                                                        size_t                 slice_count,
+                                                        pami_context_t         context,
+                                                        pami_event_function    fn,
+                                                        void                  *cookie)
       {
         MPIGeometry              *new_geometry;
 
@@ -235,14 +247,16 @@ namespace PAMI
       }
 
 
-    inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       * geometry,
-                                                      pami_geometry_t         parent,
-                                                      unsigned               id,
-                                                      pami_task_t           * tasks,
-                                                      size_t                 task_count,
-                                                      pami_context_t          context,
-                                                      pami_event_function     fn,
-                                                      void                 * cookie)
+    inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       *geometry,
+                                                       pami_configuration_t   configuration[],
+                                                       size_t                 num_configs,
+                                                       pami_geometry_t        parent,
+                                                       unsigned               id,
+                                                       pami_task_t           *tasks,
+                                                       size_t                 task_count,
+                                                       pami_context_t         context,
+                                                       pami_event_function    fn,
+                                                       void                  *cookie)
       {
         // todo:  implement this routine
         PAMI_abort();

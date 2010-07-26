@@ -565,6 +565,21 @@ namespace PAMI
           return _barriers[ctxt_id]._algo_list[0]->generate(&cmd);
         }
 
+      pami_result_t update_impl(pami_configuration_t  configuration[],
+                                size_t                num_configs,
+                                pami_context_t        context,
+                                pami_event_function   fn,
+                                void                 *cookie)
+        {
+          return PAMI_UNIMPL;
+        }
+      pami_result_t query_impl(pami_configuration_t  configuration[],
+                               size_t                num_configs)
+        {
+          return PAMI_UNIMPL;
+        }
+
+      
 
     private:
       AlgoLists<Geometry<PAMI::Geometry::Common> >  _allreduces[PAMI_GEOMETRY_NUMALGOLISTS];

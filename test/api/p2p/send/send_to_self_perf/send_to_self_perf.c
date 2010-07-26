@@ -200,7 +200,7 @@ int main ()
   char          cl_string[] = "TEST";
   pami_result_t  result = PAMI_ERROR;
 
-  result = PAMI_Client_create (cl_string, &_g_client);
+  result = PAMI_Client_create (cl_string, &_g_client, NULL, 0);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize client. result = %d\n", result);
@@ -216,8 +216,8 @@ int main ()
 
   pami_configuration_t configuration;
 
-  configuration.name = PAMI_TASK_ID;
-  result = PAMI_Configuration_query (_g_context, &configuration);
+  configuration.name = PAMI_CLIENT_TASK_ID;
+  result = PAMI_Client_query (_g_context, &configuration,1);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration task ID (%d). result = %d\n", configuration.name, result);
@@ -227,8 +227,8 @@ int main ()
   fprintf (stderr, "My task id = %zu\n", task_id);
   _my_rank = task_id;
 
-  configuration.name = PAMI_NUM_TASKS;
-  result = PAMI_Configuration_query (_g_context, &configuration);
+  configuration.name = PAMI_CLIENT_NUM_TASKS;
+  result = PAMI_Client_query (_g_context, &configuration,1);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration NumTasks (%d). result = %d\n", configuration.name, result);

@@ -163,12 +163,12 @@ int main (int argc, char ** argv)
   pami_context_t context;
   pami_result_t  result = PAMI_ERROR;
   char cl_string[] = "TEST";
-  result = PAMI_Client_create (cl_string, &client);
+  result = PAMI_Client_create (cl_string, &client, NULL, 0);
   { size_t _n = 1; result = PAMI_Context_createv(client, NULL, 0, &context, _n);}
 
   pami_configuration_t configuration;
-  configuration.name = PAMI_TASK_ID;
-  result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_TASK_ID;
+  result = PAMI_Client_query(client, &configuration, 1);
 
   task_id = configuration.value.intval;
   if (argc != 5)

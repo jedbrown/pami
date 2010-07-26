@@ -33,7 +33,7 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
     clientname = cl_string;
 
   /* Docs01:  Create the client */
-  result = PAMI_Client_create (clientname, client);
+  result = PAMI_Client_create (clientname, client, NULL, 0);
   if (result != PAMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to initialize pami client %s: result = %d\n",
@@ -43,8 +43,8 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
   /* Docs02:  Create the client */
 
   /* Docs03:  Create the client */
-  l_configuration.name = PAMI_NUM_CONTEXTS;
-  result = PAMI_Configuration_query(*client, &l_configuration);
+  l_configuration.name = PAMI_CLIENT_NUM_CONTEXTS;
+  result = PAMI_Client_query(*client, &l_configuration,1);
   if (result != PAMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to query configuration.name=(%d): result = %d\n",
@@ -54,8 +54,8 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
   max_contexts = l_configuration.value.intval;
   *num_tasks = (*num_tasks<max_contexts)?*num_tasks:max_contexts;
 
-  l_configuration.name = PAMI_TASK_ID;
-  result = PAMI_Configuration_query(*client, &l_configuration);
+  l_configuration.name = PAMI_CLIENT_TASK_ID;
+  result = PAMI_Client_query(*client, &l_configuration,1);
   if (result != PAMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to query configuration.name=(%d): result = %d\n",
@@ -64,8 +64,8 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
       }
   *task_id = l_configuration.value.intval;
 
-  l_configuration.name = PAMI_NUM_TASKS;
-  result = PAMI_Configuration_query(*client, &l_configuration);
+  l_configuration.name = PAMI_CLIENT_NUM_TASKS;
+  result = PAMI_Client_query(*client, &l_configuration,1);
   if (result != PAMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to query configuration.name=(%d): result = %d\n",

@@ -133,6 +133,77 @@ extern "C"
     pami_dt;
 
 
+  /**
+   * \brief Query the data type
+   *
+   * \param[in]  dt   PAMI reduction data type
+   * \param[out] size The size of the data operand
+   *
+   * \retval PAMI_SUCCESS  The query was successful
+   * \retval PAMI_INVAL    The query was rejected due to invalid parameters.
+   */
+  pami_result_t PAMI_Dt_query (pami_dt dt, size_t *size);
+
+
+  /*****************************************************************************/
+  /**
+   * \defgroup configuration pami configuration interface
+   *
+   * Some brief documentation on configuration stuff ...
+   * \{
+   */
+  /*****************************************************************************/
+
+  typedef char* pami_user_key_t;   /**< Char string as configuration key */
+  typedef char* pami_user_value_t; /**< Char string as configuration value */
+  typedef struct
+  {
+    pami_user_key_t    key;   /**< The configuration key   */
+    pami_user_value_t  value; /**< The configuration value */
+  } pami_user_config_t;
+
+  /**
+   * This enum contains ALL possible attributes for all hardware
+   */
+  typedef enum {
+    /* Attribute            Query / Update                                 */
+    PAMI_CLIENT_CLOCK_MHZ,          /**< Q : size_t : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
+    PAMI_CLIENT_CONST_CONTEXTS,     /**< Q : size_t : All processes will return the same PAMI_CLIENT_NUM_CONTEXTS */
+    PAMI_CLIENT_HWTHREADS_AVAILABLE,/**< Q : size_t : The number of HW threads available to a process without over-subscribing (at least 1) */
+    PAMI_CLIENT_MEMREGION_SIZE,     /**< Q : size_t : Size of the pami_memregion_t handle in this implementation, in units of Bytes. */
+    PAMI_CLIENT_MEM_SIZE,           /**< Q : size_t : Size of the core main memory, in units of 1024^2 Bytes    */
+    PAMI_CLIENT_NUM_TASKS,          /**< Q : size_t : Total number of tasks        */
+    PAMI_CLIENT_NUM_CONTEXTS,       /**< Q : size_t : The maximum number of contexts allowed on this process */
+    PAMI_CLIENT_PROCESSOR_NAME,     /**< Q : char[] : A unique name string for the calling process, and should be suitable for use by
+                                              MPI_Get_processor_name(). The storage should *not* be freed by the caller. */
+    PAMI_CLIENT_TASK_ID,            /**< Q : size_t : ID of this task (AKA "rank") */
+    PAMI_CLIENT_WTIMEBASE_MHZ,      /**< Q : size_t : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from PAMI_Wtimebase to PAMI_Timer manually. */
+    PAMI_CLIENT_WTICK,              /**< Q : double : This has the same definition as MPI_Wtick(). */
+    PAMI_CONTEXT_DISPATCH_ID_MAX,   /**< Q : size_t : Maximum allowed dispatch id, see PAMI_Dispatch_set() */
+    PAMI_DISPATCH_RECV_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be received, and provided to the application, in a dispatch function. */
+    PAMI_DISPATCH_SEND_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be transfered with the PAMI_Send_immediate() function. */
+    PAMI_GEOMETRY_OPTIMIZE,         /**< Q : bool : Populate the geometry algorithms list with hardware optimized algorithms.  If the algorithms list
+                                            *       is not optimized, point to point routines only will be present, and hardware resources will be released */
+  } pami_attribute_name_t;
+
+  typedef union
+  {
+    size_t      intval;
+    double      doubleval;
+    const char* chararray;
+  } pami_attribute_value_t;
+
+#define PAMI_EXT_ATTR 1000 /**< starting value for extended attributes */
+
+  /**
+   * \brief General purpose configuration structure.
+   */
+  typedef struct
+  {
+    pami_attribute_name_t  name;  /**< Attribute type */
+    pami_attribute_value_t value; /**< Attribute value */
+  } pami_configuration_t;
+  
   /*****************************************************************************/
   /**
    * \defgroup CA Compact attributes
@@ -223,11 +294,12 @@ extern "C"
     /* The following hints use the PAMI_HINT3_* values */
     uint32_t use_rdma          : 2; /**< Enable/Disable rdma operations                          */
     uint32_t use_shmem         : 2; /**< Enable/Disable shared memory optimizations              */
+    uint32_t multicontext      : 2; /**< Parallelize communication across multiple contexts      */
   } pami_send_hint_t;
 
   typedef struct
   {
-    uint32_t reserved          :32; /**< Unused at this time                                     */
+    uint32_t multicontext      : 2; /**< Parallelize communication across multiple contexts      */
   } pami_collective_hint_t;
 
 
@@ -284,13 +356,13 @@ extern "C"
    * was set with the \c recv_immediate hint bit enabled. This hint asserts
    * that all receives with the dispatch id will not exceed a certain limit.
    *
-   * The implementation configuration attribute \c PAMI_RECV_IMMEDIATE_MAX
+   * The implementation configuration attribute \c PAMI_DISPATCH_RECV_IMMEDIATE_MAX
    * defines the maximum size of data buffers that can be completely received
    * with a single dispatch callback. Typically this limit is associated with
    * a network resource attribute, such as a packet size.
    *
    * \see pami_send_hint_t
-   * \see PAMI_Configuration_query
+   * \see PAMI_Dispatch_query
    *
    * \param[in] context    PAMI communication context
    * \param[in] parameters Send simple parameter structure
@@ -305,10 +377,10 @@ extern "C"
    * \brief Immediate active message send for small contiguous data
    *
    * The blocking send is only valid for small data buffers. The implementation
-   * configuration attribute \c PAMI_SEND_IMMEDIATE_MAX defines the upper
+   * configuration attribute \c PAMI_DISPATCH_SEND_IMMEDIATE_MAX defines the upper
    * bounds for the size of data buffers, including header data, that can be
    * sent with this function. This function will return an error if a data
-   * buffer larger than the \c PAMI_SEND_IMMEDIATE_MAX is attempted.
+   * buffer larger than the \c PAMI_DISPATCH_SEND_IMMEDIATE_MAX is attempted.
    *
    * This function provides a low-latency send that can be optimized by the
    * specific pami implementation. If network resources are immediately
@@ -323,13 +395,13 @@ extern "C"
    * asserts that all receives with the dispatch id will not exceed a certain
    * limit.
    *
-   * The implementation configuration attribute \c PAMI_RECV_IMMEDIATE_MAX
+   * The implementation configuration attribute \c PAMI_DISPATCH_RECV_IMMEDIATE_MAX
    * defines the maximum size of data buffers that can be completely received
    * with a single dispatch callback. Typically this limit is associated with
    * a network resource attribute, such as a packet size.
    *
    * \see pami_send_hint_t
-   * \see PAMI_Configuration_query
+   * \see PAMI_Dispatch_query
    *
    * \todo Better define send parameter structure so done callback is not required
    * \todo Define configuration attribute for the size limit
@@ -424,7 +496,7 @@ extern "C"
    * \note The maximum number of bytes that may be immediately received can be
    *       queried with the \c PAMI_RECV_IMMEDIATE configuration attribute.
    *
-   * \see PAMI_Configuration_query
+   * \see PAMI_Dispatch_query
    *
    * "pipe" has nothing to do with "PipeWorkQueue"s
    */
@@ -775,7 +847,7 @@ extern "C"
    * \see PAMI_Memregion_create
    * \see PAMI_Memregion_destroy
    */
-  typedef uint8_t pami_memregion_t[PAMI_MEMREGION_SIZE_STATIC];
+  typedef uint8_t pami_memregion_t[PAMI_CLIENT_MEMREGION_SIZE_STATIC];
 
   /**
    * \brief Create a local memory region for one sided operations
@@ -1094,6 +1166,7 @@ extern "C"
     PAMI_XFER_SCATTERV,
     PAMI_XFER_SCATTERV_INT,
     PAMI_XFER_BARRIER,
+    PAMI_XFER_FENCE,
     PAMI_XFER_ALLTOALL,
     PAMI_XFER_ALLTOALLV,
     PAMI_XFER_ALLTOALLV_INT,
@@ -1118,17 +1191,28 @@ extern "C"
   }
     pami_geometry_range_t;
 
+
+  extern pami_geometry_t PAMI_NULL_GEOMETRY;
   /**
    * \brief Initialize the geometry
    *        A synchronizing operation will take place during geometry_initialize
    *        on the parent geometry
-   *        If the output geometry "geometry" is NULL, then no geometry will be
+   *        If the output geometry "geometry" pointer is NULL, then no geometry will be
    *        created, however, all nodes in the parent must participate in the
    *        geometry_initialize operation, even if they do not create a geometry
    *
-   * \param[in]  client         pami client
+   *        If a geometry is created without a parent geometry (parent is set to
+   *        PAMI_NULL_GEOMETRY),then an "immediate" geometry will be created.
+   *        In this case, the new geometry will be created and synchronized,
+   *        However, the new geometry cannot take advantage of optimized collectives
+   *        from the parent in the creation of the new geometry.  This kind of
+   *        geometry create may not be as optimal as when a parent has been provided
+   *
+   * \param[in]  client          pami client
+   * \param[in]  configuration   List of configurable attributes and values
+   * \param[in]  num_configs     The number of configuration elements
    * \param[out] geometry        Opaque geometry object to initialize
-   * \param[in] parent          Parent geometry containing all the nodes in the task list
+   * \param[in]  parent          Parent geometry containing all the nodes in the task list
    * \param[in]  id              Identifier for this geometry
    *                             which uniquely represents this geometry(if tasks overlap)
    * \param[in]  task_slices     Array of node slices participating in the geometry
@@ -1140,27 +1224,38 @@ extern "C"
    * \param[in]  cookie          user cookie to deliver with the callback
    */
 
-  pami_result_t PAMI_Geometry_create_taskrange (pami_client_t                client,
-                                        pami_geometry_t            * geometry,
-                                              pami_geometry_t              parent,
-                                        unsigned                    id,
-                                        pami_geometry_range_t      * task_slices,
-                                              size_t                      slice_count,
-                                              pami_context_t               context,
-                                              pami_event_function          fn,
-                                              void                      * cookie);
-
-   /**
+  pami_result_t PAMI_Geometry_create_taskrange (pami_client_t           client,
+                                                pami_configuration_t    configuration[],
+                                                size_t                  num_configs,
+                                                pami_geometry_t       * geometry,
+                                                pami_geometry_t         parent,
+                                                unsigned                id,
+                                                pami_geometry_range_t * task_slices,
+                                                size_t                  slice_count,
+                                                pami_context_t          context,
+                                                pami_event_function     fn,
+                                                void                  * cookie);
+  /**
    * \brief Initialize the geometry
    *        A synchronizing operation will take place during geometry_initialize
    *        on the parent geometry
-   *        If the output geometry "geometry" is NULL, then no geometry will be
+   *        If the output geometry "geometry" pointer is NULL, then no geometry will be
    *        created, however, all nodes in the parent must participate in the
    *        geometry_initialize operation, even if they do not create a geometry
    *
-   * \param[in]  client         pami client
+   *        If a geometry is created without a parent geometry (parent is set to
+   *        PAMI_NULL_GEOMETRY),then an "immediate" geometry will be created.
+   *        In this case, the new geometry will be created and synchronized,
+   *        However, the new geometry cannot take advantage of optimized collectives
+   *        from the parent in the creation of the new geometry.  This kind of
+   *        geometry create may not be as optimal as when a parent has been provided
+   *
+   *
+   * \param[in]  client          pami client
+   * \param[in]  configuration   List of configurable attributes and values
+   * \param[in]  num_configs     The number of configuration elements
    * \param[out] geometry        Opaque geometry object to initialize
-   * \param[in] parent          Parent geometry containing all the nodes in the task list
+   * \param[in]  parent          Parent geometry containing all the nodes in the task list
    * \param[in]  id              Identifier for this geometry
    *                             which uniquely represents this geometry(if tasks overlap)
    * \param[in]  tasks           Array of tasks to build the geometry list
@@ -1172,15 +1267,17 @@ extern "C"
    * \param[in]  cookie          user cookie to deliver with the callback
    */
 
-  pami_result_t PAMI_Geometry_create_tasklist (pami_client_t                client,
-                                             pami_geometry_t            * geometry,
-                                             pami_geometry_t              parent,
-                                             unsigned                    id,
-                                             pami_task_t                * tasks,
-                                             size_t                      task_count,
-                                             pami_context_t               context,
-                                             pami_event_function          fn,
-                                             void                      * cookie);
+  pami_result_t PAMI_Geometry_create_tasklist (pami_client_t               client,
+                                               pami_configuration_t        configuration[],
+                                               size_t                      num_configs,
+                                               pami_geometry_t           * geometry,
+                                               pami_geometry_t             parent,
+                                               unsigned                    id,
+                                               pami_task_t               * tasks,
+                                               size_t                      task_count,
+                                               pami_context_t              context,
+                                               pami_event_function         fn,
+                                               void                      * cookie);
 
   /**
    * \brief Initialize the geometry
@@ -1793,6 +1890,54 @@ extern "C"
 
 
   /**
+   * \brief Create and post a non-blocking fence operation.
+   * The fence operation
+   *
+   * Use this subroutine to enforce order on PAMI calls.  It can also be used for
+   * "batch message completion"  This is a one sided collective call, meaning that the
+   * collective can be issued from a single node issuing the fence.
+   * On completion of this operation, it is assumed that all PAMI communication associated
+   * with the current context from all participants in the geometry have quiesced.
+   * Although the context is local, the geometry represents a set of tasks 
+   * that were associated with it at geometry_create  time, all of which
+   * must participate in this operation for it to complete. This is a
+   * data fence, which means that the data movement is complete. This is not an operation
+   * fence, which would need to include active message completion handlers
+   * completing on the target.  A common operation to implement "complete geometry fence"
+   * operation would be for all tasks to call a fence operation on a geometry,
+   * followed by a barrier.
+   *
+   * Any pt2pt transfers issued to one of the endpoints covered by the geometry cannot
+   * start until all pt2pt transfers to the endpoints in the geometry complete.
+   *
+   * *  "Task based" geometry fence will fence point to point and collective
+   *    operations to all addressable endpoints for the respective outstanding
+   *    point to point and collective operations.
+   *
+   * *  For point to point, all communication outstanding endpoints will be fenced
+   *    for the context
+   *
+   * *  For collectives, all collectives pending on the current context will be
+   *    fenced. These collectives only address endpoints on the same context offset
+   *    as the issuing context ("cross talk" does not apply to collectives) on
+   *    all remote nodes. 
+   *
+   * *  The user must use the "done function" of the pami_fence to ensure completion
+   *    of outstanding operations, before issuing the next operation.  The user
+   *    can post subsequent operations in the done function.
+   *    This is an example of an ordered, correct fence flow:
+   *    1)  put
+   *    2)  fence --> advance until done callback is called
+   *    3)  get
+   *    Note that the done callback on the fence must have completed to guarantee
+   *    proper data consistency.
+   */
+  typedef struct
+  {
+  } pami_fence_t;
+
+
+  /**
    * \brief Create and post a non-blocking active message broadcast operation.
    * The Active Message broadcast operation ...
    *
@@ -2060,6 +2205,7 @@ extern "C"
     pami_amreduce_t         xfer_amreduce;
     pami_scan_t             xfer_scan;
     pami_barrier_t          xfer_barrier;
+    pami_fence_t            xfer_fence;
     } pami_collective_t;
 
   typedef struct
@@ -2067,13 +2213,23 @@ extern "C"
     pami_event_function       cb_done;
     void                   * cookie;
     pami_algorithm_t          algorithm;
+    pami_collective_hint_t    options;
     pami_collective_t         cmd;
   } pami_xfer_t;
 
   pami_result_t PAMI_Collective (pami_context_t context, pami_xfer_t *cmd);
 
-#define PAMI_BYTE NULL
 
+  /**
+   * \brief A PAMI Datatype that represents a contigous data layout
+   *
+   *  This is a contiguous type object that does not need to be
+   *  explicitly created using PAMI_Type_create.  It can be used
+   *  in transfers where a pami_type_t is accepted to specify contiguous
+   *  bytes.  This can be used for both collective and point to point
+   *  communication.
+   */
+  extern pami_type_t PAMI_BYTE;
   /**
    * \brief Create a new type for noncontiguous transfers
    *
@@ -2239,7 +2395,7 @@ extern "C"
    * \note The maximum allowed dispatch id attribute, \c PAMI_DISPATCH_ID_MAX,
    *       can be queried with the configuration interface
    *
-   * \see PAMI_Configuration_query
+   * \see PAMI_Dispatch_query
    *
    * \param[in] context    PAMI communication context
    * \param[in] dispatch   Dispatch identifier to initialize
@@ -2283,92 +2439,136 @@ extern "C"
                                              pami_collective_hint_t      options);
   /** \} */ /* end of "dispatch" group */
 
-  /*****************************************************************************/
-  /**
-   * \defgroup configuration pami configuration interface
-   *
-   * Some brief documentation on configuration stuff ...
-   * \{
-   */
-  /*****************************************************************************/
-
-  typedef char* pami_user_key_t;   /**< Char string as configuration key */
-  typedef char* pami_user_value_t; /**< Char string as configuration value */
-  typedef struct
-  {
-    pami_user_key_t    key;   /**< The configuration key   */
-    pami_user_value_t  value; /**< The configuration value */
-  } pami_user_config_t;
-
-  /**
-   * This enum contains ALL possible attributes for all hardware
-   */
-  typedef enum {
-    /* Attribute            Query / Update                                 */
-    PAMI_TASK_ID,            /**< Q : size_t : ID of this task (AKA "rank") */
-    PAMI_NUM_TASKS,          /**< Q : size_t : Total number of tasks        */
-    PAMI_NUM_CONTEXTS,       /**< Q : size_t : The maximum number of contexts allowed on this process */
-    PAMI_CONST_CONTEXTS,     /**< Q : size_t : All processes will return the same PAMI_NUM_CONTEXTS */
-    PAMI_HWTHREADS_AVAILABLE,/**< Q : size_t : The number of HW threads available to a process without over-subscribing (at least 1) */
-    PAMI_CLOCK_MHZ,          /**< Q : size_t : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
-    PAMI_WTIMEBASE_MHZ,      /**< Q : size_t : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from PAMI_Wtimebase to PAMI_Timer manually. */
-    PAMI_WTICK,              /**< Q : double : This has the same definition as MPI_Wtick(). */
-    PAMI_MEM_SIZE,           /**< Q : size_t : Size of the core main memory, in units of 1024^2 Bytes    */
-    PAMI_MEMREGION_SIZE,     /**< Q : size_t : Size of the pami_memregion_t handle in this implementation, in units of Bytes. */
-    PAMI_SEND_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be transfered with the PAMI_Send_immediate() function. */
-    PAMI_RECV_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be received, and provided to the application, in a dispatch function. */
-    PAMI_PROCESSOR_NAME,     /**< Q : char[] : A unique name string for the calling process, and should be suitable for use by
-                                              MPI_Get_processor_name(). The storage should *not* be freed by the caller. */
-    PAMI_DISPATCH_ID_MAX,    /**< Q : size_t : Maximum allowed dispatch id, see PAMI_Dispatch_set() */
-  } pami_attribute_name_t;
-
-  typedef union
-  {
-    size_t      intval;
-    double      doubleval;
-    const char* chararray;
-  } pami_attribute_value_t;
-
-#define PAMI_EXT_ATTR 1000 /**< starting value for extended attributes */
-
-  /**
-   * \brief General purpose configuration structure.
-   */
-  typedef struct
-  {
-    pami_attribute_name_t  name;  /**< Attribute type */
-    pami_attribute_value_t value; /**< Attribute value */
-  } pami_configuration_t;
-
-
   /**
    * \brief Query the value of an attribute
    *
-   * \param [in]     client        The PAMI client
+   * \param [in]     dispatch       The PAMI dispatch
    * \param [in,out] configuration  The configuration attribute of interest
-   *
-   * \note
+   * \param [in]     num_configs    The number of configuration elements
    *
    * \retval PAMI_SUCCESS  The query has completed successfully.
    * \retval PAMI_INVAL    The query has failed due to invalid parameters.
    */
-  pami_result_t PAMI_Configuration_query (pami_client_t client,
-                                        pami_configuration_t * configuration);
+  pami_result_t PAMI_Dispatch_query (pami_context_t        context,
+                                     size_t                dispatch,
+                                     pami_configuration_t  configuration[],
+                                     size_t                num_configs);
 
   /**
    * \brief Update the value of an attribute
    *
-   * \param [in] client       The PAMI client
-   * \param [in] configuration The configuration attribute to update
-   *
-   * \note
+   * \param [in] dispatch       The PAMI dispatch
+   * \param [in] configuration  The configuration attribute to update
+   * \param [in] num_configs    The number of configuration elements
    *
    * \retval PAMI_SUCCESS  The update has completed successfully.
    * \retval PAMI_INVAL    The update has failed due to invalid parameters.
    *                       For example, trying to update a read-only attribute.
    */
-  pami_result_t PAMI_Configuration_update (pami_client_t client,
-                                         pami_configuration_t * configuration);
+  pami_result_t PAMI_Dispatch_update (pami_context_t        context,
+                                      size_t                dispatch,
+                                      pami_configuration_t  configuration[],
+                                      size_t                num_configs);
+
+  /**
+   * \brief Query the value of an attribute
+   *
+   * \param [in]     client         The PAMI client
+   * \param [in,out] configuration  The configuration attribute of interest
+   * \param [in]     num_configs    The number of configuration elements
+   *
+   * \retval PAMI_SUCCESS  The query has completed successfully.
+   * \retval PAMI_INVAL    The query has failed due to invalid parameters.
+   */
+  pami_result_t PAMI_Client_query (pami_client_t         client,
+                                   pami_configuration_t  configuration[],
+                                   size_t                num_configs);
+
+  /**
+   * \brief Update the value of an attribute
+   *
+   * \param [in] client         The PAMI client
+   * \param [in] configuration  The configuration attribute to update
+   * \param [in] num_configs    The number of configuration elements
+   *
+   * \retval PAMI_SUCCESS  The update has completed successfully.
+   * \retval PAMI_INVAL    The update has failed due to invalid parameters.
+   *                       For example, trying to update a read-only attribute.
+   */
+  pami_result_t PAMI_Client_update (pami_client_t         client,
+                                    pami_configuration_t  configuration[],
+                                    size_t                num_configs);
+
+
+    /**
+   * \brief Query the value of an attribute
+   *
+   * \param [in]     context        The PAMI context
+   * \param [in,out] configuration  The configuration attribute of interest
+   * \param [in]     num_configs    The number of configuration elements
+   *
+   * \retval PAMI_SUCCESS  The query has completed successfully.
+   * \retval PAMI_INVAL    The query has failed due to invalid parameters.
+   */
+  pami_result_t PAMI_Context_query (pami_context_t        context,
+                                    pami_configuration_t  configuration[],
+                                    size_t                num_configs);
+
+  /**
+   * \brief Update the value of an attribute
+   *
+   * \param [in] context        The PAMI context
+   * \param [in] configuration  The configuration attribute to update
+   * \param [in] num_configs    The number of configuration elements
+   *
+   * \retval PAMI_SUCCESS  The update has completed successfully.
+   * \retval PAMI_INVAL    The update has failed due to invalid parameters.
+   *                       For example, trying to update a read-only attribute.
+   */
+  pami_result_t PAMI_Context_update (pami_context_t        context,
+                                     pami_configuration_t  configuration[],
+                                     size_t                num_configs);
+
+
+
+  /**
+   * \brief Query the value of an attribute
+   *
+   * \param [in]     geometry       The PAMI geometry
+   * \param [in,out] configuration  The configuration attribute of interest
+   * \param [in]     num_configs    The number of configuration elements
+   *
+   * \retval PAMI_SUCCESS  The query has completed successfully.
+   * \retval PAMI_INVAL    The query has failed due to invalid parameters.
+   */
+  pami_result_t PAMI_Geometry_query (pami_geometry_t       geometry,
+                                     pami_configuration_t  configuration[],
+                                     size_t                num_configs);
+
+  /**
+   * \brief Update the value of an attribute
+   *
+   * \param [in] geometry      The PAMI geometry
+   * \param [in] configuration The configuration attribute to update
+   * \param [in] num_configs   The number of configuration elements
+   * \param[in]  context       context to deliver async callback to
+   * \param[in]  fn            event function to call when geometry has been created
+   * \param[in]  cookie        user cookie to deliver with the callback
+   *
+   * \note This is a collective call, and the configuration variable
+   *       must be set collectively
+   *
+   * \retval PAMI_SUCCESS  The update has completed successfully.
+   * \retval PAMI_INVAL    The update has failed due to invalid parameters.
+   *                       For example, trying to update a read-only attribute.
+   */
+  pami_result_t PAMI_Geometry_update (pami_geometry_t       geometry,
+                                      pami_configuration_t  configuration[],
+                                      size_t                num_configs,
+                                      pami_context_t        context,
+                                      pami_event_function   fn,
+                                      void                 *cookie);
+
 
   /**
    * \brief Provides the detailed description of the most recent pami result.
@@ -2444,14 +2644,18 @@ extern "C"
    *
    * \param[in]  name   PAMI client unique name
    * \param[out] client Opaque client object
+   * \param[in]  configuration objects for the client
+   * \param [in] num_configs    The number of configuration elements
    *
    * \retval PAMI_SUCCESS  The client has been successfully created.
    * \retval PAMI_INVAL    The client name has been rejected by the runtime.
    *                       It happens when a job scheduler requires the client
    *                       name to match what's in the job description.
    */
-  pami_result_t PAMI_Client_create (const char    * name,
-                                    pami_client_t * client);
+  pami_result_t PAMI_Client_create (const char           *name,
+                                    pami_client_t        *client,
+                                    pami_configuration_t  configuration[],
+                                    size_t                num_configs);
 
   /**
    * \brief Finalize the PAMI runtime for a client program
@@ -2577,9 +2781,28 @@ extern "C"
    * - Progress may be driven concurrently among contexts, by using multiple
    *   threads, as desired by the application
    * - <b>All contexts created by a client must be advanced by the application
-   *   to prevent deadlocks</b>
-   *
-   * \note The progress rule may be relaxed in future versions of the interface
+   *   to prevent deadlocks.  This is the "all advance" rule</b>
+   * - The rationale for the "all-advance" rule is that for a point to point
+   *   send or a collective operation, a communication is posted to a
+   *   context, and delivered to a context on a remote task. The internals
+   *   of the messaging layer could implement "horizontal" parallelism by
+   *   injecting data or processing across multiple contexts associated with
+   *   the client. Consequently, data can be received across multiple contexts.
+   *   To guarantee progress of a single operation, every context must be advanced
+   *   by the user.
+   * - The user application/client of pami may have more knowledge about
+   *   the communication patterns and the "all advance" rule can be relaxed.
+   *   To do this the user can specify special hints to disable "horizontal",
+   *   or cross context parallelism. Refer to pami_send_hint_t, and the
+   *   "multicontext" option.  This option must be switched "off" to disable
+   *   parallelization and the "all advance rule".
+   * - The task based geometry constructor implies all contexts are included
+   *   in the geometry, with a single participant per task. All contexts must
+   *   be advanced during a collective operation.  However, the user can specify
+   *   special hints to disable "horizontal", or cross context parallelsm.
+   *   Refer to pami_collective_hint_t, and the
+   *   "multicontext" option.  This option must be switched "off" to disable
+   *   parallelization and the "all advance rule".
    *
    * \par Thread considerations
    *       Applications map, or "apply", threading resources to contexts.
@@ -2596,7 +2819,7 @@ extern "C"
    *
    * \param[in]  client        Client handle
    * \param[in]  configuration List of configurable attributes and values
-   * \param[in]  count         Number of configurations, may be zero
+   * \param[in]  num_configs   Number of configurations, may be zero
    * \param[out] context       Array of communication contexts to initialize
    * \param[in]  ncontexts     num contexts requested (in), created (out)
    *
@@ -2607,7 +2830,7 @@ extern "C"
    */
   pami_result_t PAMI_Context_createv (pami_client_t          client,
                                       pami_configuration_t   configuration[],
-                                      size_t                 count,
+                                      size_t                 num_configs,
                                       pami_context_t       * context,
                                       size_t                 ncontexts);
 

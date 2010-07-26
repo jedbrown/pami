@@ -74,7 +74,7 @@ int main (int argc, char ** argv)
   char                  cl_string[] = "TEST";
   pami_result_t result = PAMI_ERROR;
 
-  result = PAMI_Client_create (cl_string, &client);
+  result = PAMI_Client_create (cl_string, &client, NULL, 0);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
@@ -95,8 +95,8 @@ int main (int argc, char ** argv)
 
   pami_configuration_t configuration;
 
-  configuration.name = PAMI_TASK_ID;
-  result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_TASK_ID;
+  result = PAMI_Client_query(client, &configuration,1);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -105,8 +105,8 @@ int main (int argc, char ** argv)
   pami_task_t task_id = configuration.value.intval;
   fprintf (stderr, "My task id = %d\n", task_id);
 
-  configuration.name = PAMI_NUM_TASKS;
-  result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_NUM_TASKS;
+  result = PAMI_Client_query(client, &configuration,1);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
@@ -119,27 +119,6 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. This test requires 2 tasks. Number of tasks in this job: %zu\n", num_tasks);
     return 1;
   }
-
-  configuration.name = PAMI_SEND_IMMEDIATE_MAX;
-  result = PAMI_Configuration_query(client, &configuration);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
-    return 1;
-  }
-  size_t send_immediate_max = configuration.value.intval;
-  fprintf (stderr, "Maximum number of bytes that can be transfered with the XMI_Send_immediate() function = %zu\n", send_immediate_max);
-
-  configuration.name = PAMI_RECV_IMMEDIATE_MAX;
-  result = PAMI_Configuration_query(client, &configuration);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
-    return 1;
-  }
-  size_t recv_immediate_max = configuration.value.intval;
-  fprintf (stderr, "Maximum number of bytes that can be received, and provided to the application, in a dispatch function = %zu\n", recv_immediate_max);
-
   size_t dispatch = 0;
   pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
@@ -175,6 +154,27 @@ int main (int argc, char ** argv)
     }
   }
 
+  configuration.name = PAMI_DISPATCH_SEND_IMMEDIATE_MAX;
+  result = PAMI_Dispatch_query(context[0],dispatch, &configuration,1);
+  if (result != PAMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+    return 1;
+  }
+  size_t send_immediate_max = configuration.value.intval;
+  fprintf (stderr, "Maximum number of bytes that can be transfered with the XMI_Send_immediate() function = %zu\n", send_immediate_max);
+
+  configuration.name = PAMI_DISPATCH_RECV_IMMEDIATE_MAX;
+  result = PAMI_Dispatch_query(context[0],dispatch, &configuration,1);
+  if (result != PAMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
+    return 1;
+  }
+  size_t recv_immediate_max = configuration.value.intval;
+  fprintf (stderr, "Maximum number of bytes that can be received, and provided to the application, in a dispatch function = %zu\n", recv_immediate_max);
+
+  
   char header_string[1024];
   char data_string[1024];
 

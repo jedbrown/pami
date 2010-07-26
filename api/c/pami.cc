@@ -15,7 +15,11 @@
 #include <pami.h>
 #include "util/common.h"
 
-
+extern "C"
+{
+  pami_type_t PAMI_BYTE = 0;
+  pami_geometry_t PAMI_NULL_GEOMETRY = 0;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from pami_misc.h                                                  //
@@ -149,18 +153,22 @@ extern "C" pami_result_t PAMI_Fence_task (pami_context_t        context,
 ///
 /// \copydoc PAMI_Geometry_create_taskrange
 ///
-extern "C" pami_result_t PAMI_Geometry_create_taskrange (pami_client_t                client,
-                                      pami_geometry_t            * geometry,
-                                                       pami_geometry_t              parent,
-                                      unsigned                    id,
-                                                       pami_geometry_range_t      * task_slices,
-                                                       size_t                      slice_count,
-                                                       pami_context_t               context,
-                                                       pami_event_function          fn,
-                                                       void                      * cookie)
+extern "C" pami_result_t PAMI_Geometry_create_taskrange (pami_client_t           client,
+                                                         pami_configuration_t    configuration[],
+                                                         size_t                  num_configs,
+                                                         pami_geometry_t       * geometry,
+                                                         pami_geometry_t         parent,
+                                                         unsigned                id,
+                                                         pami_geometry_range_t * task_slices,
+                                                         size_t                  slice_count,
+                                                         pami_context_t          context,
+                                                         pami_event_function     fn,
+                                                         void                  * cookie)
 {
   PAMI::Client * _client = (PAMI::Client *) client;
   return _client->geometry_create_taskrange (geometry,
+                                             configuration,
+                                             num_configs,
                                              parent,
                                              id,
                                              task_slices,
@@ -173,18 +181,22 @@ extern "C" pami_result_t PAMI_Geometry_create_taskrange (pami_client_t          
 ///
 /// \copydoc PAMI_Geometry_create_taskrange
 ///
-extern "C" pami_result_t PAMI_Geometry_create_tasklist (pami_client_t                client,
-                                                      pami_geometry_t            * geometry,
-                                                      pami_geometry_t              parent,
-                                                      unsigned                    id,
-                                                      pami_task_t                * tasks,
-                                                      size_t                      task_count,
-                                                      pami_context_t               context,
-                                                      pami_event_function          fn,
-                                                      void                      * cookie)
+extern "C" pami_result_t PAMI_Geometry_create_tasklist (pami_client_t               client,
+                                                        pami_configuration_t        configuration[],
+                                                        size_t                      num_configs,
+                                                        pami_geometry_t           * geometry,
+                                                        pami_geometry_t             parent,
+                                                        unsigned                    id,
+                                                        pami_task_t               * tasks,
+                                                        size_t                      task_count,
+                                                        pami_context_t              context,
+                                                        pami_event_function         fn,
+                                                        void                      * cookie)
 {
   PAMI::Client * _client = (PAMI::Client *) client;
   return _client->geometry_create_tasklist (geometry,
+                                            configuration,
+                                            num_configs,
                                             parent,
                                             id,
                                             tasks,
@@ -193,6 +205,32 @@ extern "C" pami_result_t PAMI_Geometry_create_tasklist (pami_client_t           
                                             fn,
                                             cookie);
 }
+
+
+
+extern "C" pami_result_t PAMI_Geometry_query (pami_geometry_t       geometry,
+                                              pami_configuration_t  configuration[],
+                                              size_t                num_configs)
+{
+  PAMI_GEOMETRY_CLASS* _geometry = (PAMI_GEOMETRY_CLASS *) geometry;
+  return _geometry->query(configuration, num_configs);
+}
+
+///
+/// \copydoc PAMI_Geometry_world
+///
+extern "C"  pami_result_t PAMI_Geometry_update (pami_geometry_t       geometry,
+                                                pami_configuration_t  configuration[],
+                                                size_t                num_configs,
+                                                pami_context_t        context,
+                                                pami_event_function   fn,
+                                                void                 *cookie)
+{
+  PAMI_GEOMETRY_CLASS* _geometry = (PAMI_GEOMETRY_CLASS *) geometry;
+  return _geometry->update(configuration, num_configs, context, fn, cookie);
+}
+
+
 
 
 ///
@@ -963,15 +1001,15 @@ extern "C" pami_result_t PAMI_Client_add_commthread_context(pami_client_t client
 #endif // USE_COMMTHREADS
 
 
-
-
 ///
 /// \copydoc PAMI_Client_create
 ///
-extern "C" pami_result_t PAMI_Client_create (const char * name,
-                                               pami_client_t * client)
+extern "C" pami_result_t PAMI_Client_create (const char           *name,
+                                             pami_client_t        *client,
+                                             pami_configuration_t  configuration[],
+                                             size_t                num_configs)
 {
-  return PAMI::Client::generate (name, client);
+  return PAMI::Client::generate (name, client, configuration, num_configs);
 }
 
 ///
@@ -1026,26 +1064,74 @@ extern "C" pami_result_t PAMI_Context_destroyv (pami_context_t* contexts,
 }
 
 ///
-/// \copydoc PAMI_Configuration_query
+/// \copydoc PAMI_Client_query
 ///
-extern "C" pami_result_t PAMI_Configuration_query (pami_client_t         client,
-                                                 pami_configuration_t * configuration)
+extern "C" pami_result_t PAMI_Client_query (pami_client_t         client,
+                                            pami_configuration_t  configuration[],
+                                            size_t                num_configs)
 {
   PAMI::Client * cln = (PAMI::Client *) client;
 
-  return cln->queryConfiguration (configuration);
+  return cln->query(configuration,num_configs);
 }
 
 ///
-/// \copydoc PAMI_Configuration_update
+/// \copydoc PAMI_Client_update
 ///
-extern "C" pami_result_t PAMI_Configuration_update (pami_client_t         client,
-                                                  pami_configuration_t * configuration)
+extern "C" pami_result_t PAMI_Client_update (pami_client_t         client,
+                                             pami_configuration_t  configuration[],
+                                             size_t                num_configs)
 {
   PAMI::Client * cln = (PAMI::Client *) client;
-
-  return cln->queryConfiguration (configuration);
+  return cln->update(configuration,num_configs);
 }
+
+///
+/// \copydoc PAMI_Dispatch_query
+///
+extern "C" pami_result_t PAMI_Dispatch_query (pami_context_t        context,
+                                              size_t                dispatch,
+                                              pami_configuration_t  configuration[],
+                                              size_t                num_configs)
+{
+    PAMI::Context * ctx = (PAMI::Context *) context;
+    return ctx->dispatch_query (dispatch, configuration, num_configs);
+}
+
+///
+/// \copydoc PAMI_Dispatch_update
+///
+extern "C" pami_result_t PAMI_Dispatch_update (pami_context_t        context,
+                                               size_t                dispatch,
+                                               pami_configuration_t  configuration[],
+                                               size_t                num_configs)
+{
+  PAMI::Context * ctx = (PAMI::Context *) context;
+  return ctx->dispatch_update(dispatch, configuration, num_configs);
+}
+
+
+
+///
+/// \copydoc PAMI_Context_query
+///
+extern "C" pami_result_t PAMI_Context_query (pami_context_t        context,
+                                             pami_configuration_t  configuration[],
+                                             size_t                num_configs)
+{
+  PAMI::Context * ctx = (PAMI::Context *) context;
+  return ctx->query(configuration, num_configs);
+}
+
+extern "C" pami_result_t PAMI_Context_update (pami_context_t        context,
+                                              pami_configuration_t  configuration[],
+                                              size_t                num_configs)
+{
+  PAMI::Context * ctx = (PAMI::Context *) context;
+  return ctx->update(configuration, num_configs);
+}
+
+
 
 ///
 /// \copydoc PAMI_Dispatch_set
@@ -1326,4 +1412,10 @@ extern "C" pami_result_t PAMI_Network2Task(pami_coord_t ntw,
 {
   pami_network type;
   return __global.mapping.network2task(&ntw, task, &type);
+}
+
+
+extern "C" pami_result_t PAMI_Dt_query (pami_dt dt, size_t *size)
+{
+  return PAMI_UNIMPL;
 }

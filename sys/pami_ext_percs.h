@@ -26,8 +26,6 @@ extern "C"
   /**
    * \defgroup ext_attr Extended attributes for configuration
    *
-   * The attributes can be used in \ref PAMI_Context_createv (C),
-   * \ref PAMI_Configuration_query (Q) or \ref PAMI_Configuration_update (U).
    * Explicit cast from \ref pami_attribute_name_ext_t into
    * \ref pami_attribute_name_t may be needed.
    *
@@ -37,11 +35,11 @@ extern "C"
   typedef enum {
     /* Attribute             usage : type : default : description   */
     PAMI_PERCS_ATTR = PAMI_EXT_ATTR,
-    PAMI_RELIABLE,          /**< CQ : bool : true : run in reliable mode */
-    PAMI_THREAD_SAFE,       /**< CQ : bool : true : run in thread-safe mode */
-    PAMI_RECEIVE_INTERRUPT, /**< CQU: bool : false: enable receive interrupt */
-    PAMI_ERROR_HANDLER,     /**< CQ : pami_error_handler_t : NULL : asynchronous error handler */
-    PAMI_STATISTICS,        /**<  Q : pami_statistics_t : N/A : retrieve communication statistics */
+    PAMI_CLIENT_RELIABLE,          /**< CQ : bool : true : run in reliable mode */
+    PAMI_CLIENT_THREAD_SAFE,       /**< CQ : bool : true : run in thread-safe mode */
+    PAMI_CLIENT_RECEIVE_INTERRUPT, /**< CQU: bool : false: enable receive interrupt */
+    PAMI_CLIENT_ERROR_HANDLER,     /**< CQ : pami_error_handler_t : NULL : asynchronous error handler */
+    PAMI_CLIENT_STATISTICS,        /**<  Q : pami_statistics_t : N/A : retrieve communication statistics */
   } pami_attribute_name_ext_t;
 
   /** \} */ /* end of "ext_attr" group */
@@ -69,7 +67,7 @@ extern "C"
    * \defgroup comm_stat Communication statistics
    * \{
    *
-   * \ref PAMI_Configuration_query with \c PAMI_STATISTICS returns in
+   * \ref PAMI_Client_query with \c PAMI_STATISTICS returns in
    * \ref pami_attribute_value_t.chararray a pointer to \ref pami_statistics_t
    * whose memory is managed by PAMI internally.
    *

@@ -125,6 +125,20 @@ namespace PAMI
                                                   pami_dispatch_callback_fn   fn,
                                                   void                     * cookie,
                                                   pami_collective_hint_t      options);
+      inline pami_result_t dispatch_query(size_t                dispatch,
+                                          pami_configuration_t  configuration[],
+                                          size_t                num_configs);
+
+      inline pami_result_t dispatch_update(size_t                dispatch,
+                                           pami_configuration_t  configuration[],
+                                           size_t                num_configs);
+
+      inline pami_result_t query(pami_configuration_t  configuration[],
+                                 size_t                num_configs);
+
+      inline pami_result_t update(pami_configuration_t  configuration[],
+                                  size_t                num_configs);
+
     }; // end class PAMI::Context::Context
 
     template <class T_Context>
@@ -403,6 +417,43 @@ namespace PAMI
                                                                        cookie,
                                                                        options);
     }
+
+    template <class T_Context>
+    pami_result_t Context<T_Context>::dispatch_query(size_t                dispatch,
+                                                     pami_configuration_t  configuration[],
+                                                     size_t                num_configs)
+    {
+      return static_cast<T_Context*>(this)->dispatch_query_impl(dispatch,
+                                                                configuration,
+                                                                num_configs);
+    }
+
+    template <class T_Context>
+    pami_result_t Context<T_Context>::dispatch_update(size_t                dispatch,
+                                                      pami_configuration_t  configuration[],
+                                                      size_t                num_configs)
+    {
+      return static_cast<T_Context*>(this)->dispatch_update_impl(dispatch,
+                                                                 configuration,
+                                                                 num_configs);
+    }
+
+    template <class T_Context>
+    pami_result_t Context<T_Context>::query(pami_configuration_t  configuration[],
+                                            size_t                num_configs)
+    {
+      return static_cast<T_Context*>(this)->query_impl(configuration,
+                                                       num_configs);
+    }
+
+    template <class T_Context>
+    pami_result_t Context<T_Context>::update(pami_configuration_t  configuration[],
+                                             size_t                num_configs)
+    {
+      return static_cast<T_Context*>(this)->update_impl(configuration,
+                                                        num_configs);
+    }
+
   }; // end namespace Interface
 }; // end namespace PAMI
 

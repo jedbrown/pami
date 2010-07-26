@@ -233,7 +233,7 @@ int main (int argc, char ** argv)
   pami_client_t client;
   char clientname[]="PAMI";
   TRACE_ERR((stderr, "... before PAMI_Client_create()\n"));
-  PAMI_Client_create (clientname, &client);
+  PAMI_Client_create (clientname, &client, NULL, 0);
   TRACE_ERR((stderr, "...  after PAMI_Client_create()\n"));
   pami_context_t context;
   TRACE_ERR((stderr, "... before PAMI_Context_createv()\n"));
@@ -283,16 +283,16 @@ int main (int argc, char ** argv)
 
   pami_configuration_t configuration;
 
-  configuration.name = PAMI_TASK_ID;
-  result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_TASK_ID;
+  result = PAMI_Client_query(client, &configuration,1);
   _task = configuration.value.intval;
 
-  configuration.name = PAMI_NUM_TASKS;
-  result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_NUM_TASKS;
+  result = PAMI_Client_query(client, &configuration,1);
   _size = configuration.value.intval;
 
-  configuration.name = PAMI_WTICK;
-  result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_WTICK;
+  result = PAMI_Client_query(client, &configuration,1);
   double tick = configuration.value.doubleval;
 
 #if 0

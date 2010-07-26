@@ -154,10 +154,10 @@ namespace PAMI
         xfer.cookie                         = (void*)&flag;
         xfer.algorithm                      = alg;
         xfer.cmd.xfer_allgather.sndbuf      = host;
-        xfer.cmd.xfer_allgather.stype       = PAMI_BYTE;
+        xfer.cmd.xfer_allgather.stype       = &PAMI_BYTE;
         xfer.cmd.xfer_allgather.stypecount  = str_len;
         xfer.cmd.xfer_allgather.rcvbuf      = hosts;
-        xfer.cmd.xfer_allgather.rtype       = PAMI_BYTE;
+        xfer.cmd.xfer_allgather.rtype       = &PAMI_BYTE;
         xfer.cmd.xfer_allgather.rtypecount  = str_len;
 
 	// We can only advance the lapi device here because our other devices
@@ -253,7 +253,9 @@ namespace PAMI
 
 
 
-    static pami_result_t generate_impl (const char * name, pami_client_t * client)
+    static pami_result_t generate_impl (const char * name, pami_client_t * client,
+                                        pami_configuration_t   configuration[],
+                                        size_t                 num_configs)
       {
         int rc = 0;
         PAMI::Client * clientp;
@@ -337,59 +339,52 @@ namespace PAMI
         return rc;
       }
 
-    inline pami_result_t queryConfiguration_impl (pami_configuration_t * configuration)
+    inline pami_result_t query_impl (pami_configuration_t configuration[],
+                                     size_t               num_configs)
       {
-        pami_result_t result = PAMI_ERROR;
-        switch (configuration->name)
-            {
-                case PAMI_NUM_CONTEXTS:
-                  configuration->value.intval = 1; // real value TBD
-                  result = PAMI_SUCCESS;
+        pami_result_t result = PAMI_SUCCESS;
+        size_t i;
+        for(i=0; i<num_configs; i++)
+          {
+            switch (configuration[i].name)
+              {
+                case PAMI_CLIENT_NUM_CONTEXTS:
+                  configuration[i].value.intval = 1; // real value TBD
                   break;
-                case PAMI_CONST_CONTEXTS:
-                  configuration->value.intval = 0; // real value TBD
-                  result = PAMI_SUCCESS;
+                case PAMI_CLIENT_CONST_CONTEXTS:
+                  configuration[i].value.intval = 0; // real value TBD
                   break;
-#if 0
-                // These are passed to LAPI for now
-                case PAMI_TASK_ID:
-                  configuration->value.intval = __global.mapping.task();
-                  result = PAMI_SUCCESS;
+                case PAMI_CLIENT_TASK_ID:
+                  configuration[i].value.intval = __global.mapping.task();
                   break;
-                case PAMI_NUM_TASKS:
-                  configuration->value.intval = __global.mapping.size();
-                  result = PAMI_SUCCESS;
+                case PAMI_CLIENT_NUM_TASKS:
+                  configuration[i].value.intval = __global.mapping.size();
                   break;
-#endif
-                case PAMI_CLOCK_MHZ:
-                case PAMI_WTIMEBASE_MHZ:
-                  configuration->value.intval = __global.time.clockMHz();
-                  result = PAMI_SUCCESS;
+                case PAMI_CLIENT_CLOCK_MHZ:
+                case PAMI_CLIENT_WTIMEBASE_MHZ:
+                  configuration[i].value.intval = __global.time.clockMHz();
                   break;
-                case PAMI_WTICK:
-                  configuration->value.doubleval =__global.time.tick();
-                  result = PAMI_SUCCESS;
+                case PAMI_CLIENT_WTICK:
+                  configuration[i].value.doubleval =__global.time.tick();
                   break;
-                case PAMI_MEM_SIZE:
-                case PAMI_PROCESSOR_NAME:
+                case PAMI_CLIENT_MEM_SIZE:
+                case PAMI_CLIENT_PROCESSOR_NAME:
                 default:
-                  break;
-            }
-        if(result == PAMI_SUCCESS)
-          return result;
-
-        // Todo:  Change if we have client and context queries
-        // Lapi stores the configuration off the context
-        // Use context 0 to query.  It should be created in the
-        // current implementation because we create the
-        // context at client create time
-        lapi_state_t *lp = _contexts[0]->getLapiState();
-        LapiImpl::Context *cp = (LapiImpl::Context *)lp;
-        return (cp->*(cp->pConfigQuery))(configuration);
+                {
+                  pami_result_t rc;
+                  lapi_state_t *lp = _contexts[0]->getLapiState();
+                  LapiImpl::Context *cp = (LapiImpl::Context *)lp;
+                  rc = (cp->*(cp->pConfigQuery))(configuration);
+                  if(rc != PAMI_SUCCESS)
+                    result = PAMI_INVAL;
+                }
+              }
+          }
+        return result;
       }
 
-
-    inline pami_result_t updateConfiguration_impl (pami_configuration_t * configuration)
+    inline pami_result_t update_impl (pami_configuration_t configuration[],
+                                      size_t               num_configs)
       {
         // Todo:  Change if we have client and context queries
 
@@ -414,6 +409,8 @@ namespace PAMI
       }
 
     inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
+                                                        pami_configuration_t    configuration[],
+                                                        size_t                  num_configs,
                                                         pami_geometry_t         parent,
                                                         unsigned                id,
                                                         pami_geometry_range_t * rank_slices,
@@ -453,6 +450,8 @@ namespace PAMI
       }
 
     inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       * geometry,
+                                                       pami_configuration_t    configuration[],
+                                                       size_t                  num_configs,
                                                        pami_geometry_t         parent,
                                                        unsigned                id,
                                                        pami_task_t           * tasks,

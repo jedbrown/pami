@@ -29,7 +29,10 @@ namespace PAMI
 
         inline ~Client () {}
 
-        static pami_result_t generate (const char * name, pami_client_t * client);
+        static pami_result_t generate (const char           *name,
+                                       pami_client_t        *client,
+                                       pami_configuration_t  configuration[],
+                                       size_t                num_configs);
 
         static void destroy (pami_client_t client);
 
@@ -48,37 +51,46 @@ namespace PAMI
 
         inline pami_result_t destroyContext (pami_context_t context);
 
-        inline pami_result_t queryConfiguration (pami_configuration_t * configuration);
+        inline pami_result_t query(pami_configuration_t  configuration[],
+                                   size_t                num_configs);
 
-        inline pami_result_t updateConfiguration (pami_configuration_t * configuration);
+        inline pami_result_t update(pami_configuration_t configuration[],
+                                    size_t               num_configs);
 
         inline pami_result_t geometry_world (pami_geometry_t * world_geometry);
 
-        inline pami_result_t geometry_create_taskrange(pami_geometry_t       * geometry,
-                                                      pami_geometry_t         parent,
+        inline pami_result_t geometry_create_taskrange(pami_geometry_t       *geometry,
+                                                       pami_configuration_t   configuration[],
+                                                       size_t                 num_configs,
+                                                       pami_geometry_t        parent,
+                                                       unsigned               id,
+                                                       pami_geometry_range_t *rank_slices,
+                                                       size_t                 slice_count,
+                                                       pami_context_t         context,
+                                                       pami_event_function    fn,
+                                                       void                  *cookie);
+      
+        inline pami_result_t geometry_create_tasklist(pami_geometry_t       *geometry,
+                                                      pami_configuration_t   configuration[],
+                                                      size_t                 num_configs,
+                                                      pami_geometry_t        parent,
                                                       unsigned               id,
-                                                      pami_geometry_range_t * rank_slices,
-                                                      size_t                 slice_count,
-                                                      pami_context_t          context,
-                                                      pami_event_function     fn,
-                                                      void                 * cookie);
-
-        inline pami_result_t geometry_create_tasklist(pami_geometry_t       * geometry,
-                                                     pami_geometry_t         parent,
-                                                     unsigned               id,
-                                                     pami_task_t           * tasks,
-                                                     size_t                 task_count,
-                                                     pami_context_t          context,
-                                                     pami_event_function     fn,
-                                                     void                 * cookie);
+                                                      pami_task_t           *tasks,
+                                                      size_t                 task_count,
+                                                      pami_context_t         context,
+                                                      pami_event_function    fn,
+                                                      void                  *cookie);
 
         inline pami_result_t geometry_destroy(pami_geometry_t geometry);
     }; // end class PAMI::Client::Client
 
     template <class T_Client>
-    pami_result_t Client<T_Client>::generate (const char * name, pami_client_t * client)
+    pami_result_t Client<T_Client>::generate (const char           *name,
+                                              pami_client_t        *client,
+                                              pami_configuration_t  configuration[],
+                                              size_t                num_configs)
     {
-      return T_Client::generate_impl(name, client);
+      return T_Client::generate_impl(name, client, configuration, num_configs);
     }
 
     template <class T_Client>
@@ -109,15 +121,17 @@ namespace PAMI
     }
 
     template <class T_Client>
-    pami_result_t Client<T_Client>::queryConfiguration (pami_configuration_t * configuration)
+    pami_result_t Client<T_Client>::query(pami_configuration_t configuration[],
+                                          size_t               num_configs)
     {
-      return static_cast<T_Client*>(this)->queryConfiguration_impl(configuration);
+      return static_cast<T_Client*>(this)->query_impl(configuration,num_configs);
     }
 
     template <class T_Client>
-    pami_result_t Client<T_Client>::updateConfiguration (pami_configuration_t * configuration)
+    pami_result_t Client<T_Client>::update(pami_configuration_t configuration[],
+                                           size_t               num_configs)
     {
-      return static_cast<T_Client*>(this)->updateConfiguration_impl(configuration);
+      return static_cast<T_Client*>(this)->update_impl(configuration,num_configs);
     }
 
     template <class T_Client>
@@ -127,16 +141,20 @@ namespace PAMI
     }
 
     template <class T_Client>
-    pami_result_t Client<T_Client>::geometry_create_taskrange (pami_geometry_t       * geometry,
-                                                              pami_geometry_t         parent,
-                                                              unsigned               id,
-                                                              pami_geometry_range_t * task_slices,
-                                                              size_t                 slice_count,
-                                                              pami_context_t          context,
-                                                              pami_event_function     fn,
-                                                              void                 * cookie)
+    pami_result_t Client<T_Client>::geometry_create_taskrange (pami_geometry_t       *geometry,
+                                                               pami_configuration_t   configuration[],
+                                                               size_t                 num_configs,
+                                                               pami_geometry_t        parent,
+                                                               unsigned               id,
+                                                               pami_geometry_range_t *task_slices,
+                                                               size_t                 slice_count,
+                                                               pami_context_t         context,
+                                                               pami_event_function    fn,
+                                                               void                  *cookie)
     {
       return static_cast<T_Client*>(this)->geometry_create_taskrange_impl(geometry,
+                                                                          configuration,
+                                                                          num_configs,
                                                                           parent,
                                                                           id,
                                                                           task_slices,
@@ -147,23 +165,27 @@ namespace PAMI
     }
 
     template <class T_Client>
-    pami_result_t Client<T_Client>::geometry_create_tasklist (pami_geometry_t       * geometry,
-                                                             pami_geometry_t         parent,
-                                                             unsigned               id,
-                                                             pami_task_t           * tasks,
-                                                             size_t                 task_count,
-                                                             pami_context_t          context,
-                                                             pami_event_function     fn,
-                                                             void                 * cookie)
+    pami_result_t Client<T_Client>::geometry_create_tasklist (pami_geometry_t       *geometry,
+                                                              pami_configuration_t   configuration[],
+                                                              size_t                 num_configs,
+                                                              pami_geometry_t        parent,
+                                                              unsigned               id,
+                                                              pami_task_t           *tasks,
+                                                              size_t                 task_count,
+                                                              pami_context_t         context,
+                                                              pami_event_function    fn,
+                                                              void                  *cookie)
     {
       return static_cast<T_Client*>(this)->geometry_create_tasklist_impl(geometry,
-                                                                          parent,
-                                                                          id,
-                                                                          tasks,
-                                                                          task_count,
-                                                                          context,
-                                                                          fn,
-                                                                          cookie);
+                                                                         configuration,
+                                                                         num_configs,
+                                                                         parent,
+                                                                         id,
+                                                                         tasks,
+                                                                         task_count,
+                                                                         context,
+                                                                         fn,
+                                                                         cookie);
     }
 
     template <class T_Client>

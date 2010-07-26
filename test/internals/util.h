@@ -138,12 +138,12 @@ void barrier_init (pami_client_t client, pami_context_t context, size_t dispatch
 
   pami_configuration_t configuration;
 
-  configuration.name = PAMI_TASK_ID;
-  pami_result_t result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_TASK_ID;
+  pami_result_t result = PAMI_Client_query(client, &configuration,1);
   __barrier_task = configuration.value.intval;
 
-  configuration.name = PAMI_NUM_TASKS;
-  result = PAMI_Configuration_query(client, &configuration);
+  configuration.name = PAMI_CLIENT_NUM_TASKS;
+  result = PAMI_Client_query(client, &configuration, 1);
   __barrier_size = configuration.value.intval;
 
   TRACE_ERR((stderr,"__barrier_size:%zu __barrier_task:%zu\n",__barrier_size, __barrier_task));

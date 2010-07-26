@@ -819,6 +819,83 @@ namespace PAMI
           return _lapi_state;
         }
 
+      inline pami_result_t dispatch_query_impl(size_t                dispatch,
+                                               pami_configuration_t  configuration[],
+                                               size_t                num_configs)
+        {
+          pami_result_t result = PAMI_SUCCESS;
+          size_t i;
+          for(i=0; i<num_configs; i++)
+            {
+              switch (configuration[i].name)
+                {
+                  default:
+                  {
+                    pami_result_t rc;
+                    lapi_state_t *lp      = getLapiState();
+                    LapiImpl::Context *cp = (LapiImpl::Context *)lp;
+                    rc = (cp->*(cp->pConfigQuery))(configuration);
+                    if(rc != PAMI_SUCCESS)
+                      result = PAMI_INVAL;
+                  }
+                }
+            }
+          return result;
+        }
+      
+      inline pami_result_t dispatch_update_impl(size_t                dispatch,
+                                                pami_configuration_t  configuration[],
+                                                size_t                num_configs)
+        {
+          pami_result_t result = PAMI_SUCCESS;
+          size_t i;
+          for(i=0; i<num_configs; i++)
+            {
+              switch (configuration[i].name)
+                {
+                  default:
+                  {
+                    pami_result_t rc;
+                    lapi_state_t *lp      = getLapiState();
+                    LapiImpl::Context *cp = (LapiImpl::Context *)lp;
+                    rc = (cp->*(cp->pConfigQuery))(configuration);
+                    if(rc != PAMI_SUCCESS)
+                      result = PAMI_INVAL;
+                  }
+                }
+            }
+          return result;
+        }
+
+      inline pami_result_t query_impl(pami_configuration_t  configuration[],
+                                      size_t                num_configs)
+        {
+          pami_result_t result = PAMI_SUCCESS;
+          size_t i;
+          for(i=0; i<num_configs; i++)
+            {
+              switch (configuration[i].name)
+                {
+                  default:
+                  {
+                    pami_result_t rc;
+                    lapi_state_t *lp      = getLapiState();
+                    LapiImpl::Context *cp = (LapiImpl::Context *)lp;
+                    rc = (cp->*(cp->pConfigQuery))(configuration);
+                    if(rc != PAMI_SUCCESS)
+                      result = PAMI_INVAL;
+                  }
+                }
+            }
+          return result;
+        }
+      
+      inline pami_result_t update_impl(pami_configuration_t  configuration[],
+                                       size_t                num_configs)
+        {
+          return PAMI_INVAL;
+        }
+      
     private:
       /*  PAMI Client Pointer associated with this PAMI Context */
       pami_client_t                          _client;

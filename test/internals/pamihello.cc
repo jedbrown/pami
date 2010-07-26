@@ -13,7 +13,7 @@ int main(int argc, char ** argv) {
         pami_result_t status = PAMI_ERROR;
         const char *name = "multicombine test";
 
-        status = PAMI_Client_create(name, &client);
+        status = PAMI_Client_create(name, &client, NULL, 0);
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);
                 return 1;
@@ -27,16 +27,16 @@ int main(int argc, char ** argv) {
 
         pami_configuration_t configuration;
 
-        configuration.name = PAMI_TASK_ID;
-        status = PAMI_Configuration_query(client, &configuration);
+        configuration.name = PAMI_CLIENT_TASK_ID;
+        status = PAMI_Client_query(client, &configuration, 1);
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
                 return 1;
         }
         size_t task_id = configuration.value.intval;
 
-        configuration.name = PAMI_NUM_TASKS;
-        status = PAMI_Configuration_query(client, &configuration);
+        configuration.name = PAMI_CLIENT_NUM_TASKS;
+        status = PAMI_Client_query(client, &configuration, 1);
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
                 return 1;
