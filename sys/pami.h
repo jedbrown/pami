@@ -2650,15 +2650,21 @@ extern "C"
    * This includes applications, libraries, and other middleware. Some example
    * client names may include: "MPI", "UPC", "OpenSHMEM", and "ARMCI"
    *
+   * \note Client creation may be a synchronizing event, but is not required
+   *       to be implemented as a synchonizing event. Application code must
+   *       not make any assumption about synchronization during client
+   *       creation, and therefore must create clients in the same order in
+   *       all processes of the job.
+   *
    * A communication context must be created before any data transfer functions
    * may be invoked.
    *
    * \see PAMI_Context_createv
    *
-   * \param[in]  name   PAMI client unique name
-   * \param[out] client Opaque client object
-   * \param[in]  configuration objects for the client
-   * \param [in] num_configs    The number of configuration elements
+   * \param[in]  name           PAMI client unique name
+   * \param[out] client         Opaque client object
+   * \param[in]  configuration  objects for the client
+   * \param[in]  num_configs    The number of configuration elements
    *
    * \retval PAMI_SUCCESS  The client has been successfully created.
    * \retval PAMI_INVAL    The client name has been rejected by the runtime.
