@@ -143,7 +143,7 @@ int main (int argc, char ** argv)
   char         cl_string[] = "TEST";
   pami_result_t result = PAMI_ERROR;
   size_t i;
-  long long int max_threads = 0;
+  long long int max_threads = 8;
 
   TRACE((stderr, ">> main (), max_threads = %lld\n", max_threads));
 
