@@ -1165,12 +1165,16 @@ extern "C"
     PAMI_XFER_SCATTER,
     PAMI_XFER_SCATTERV,
     PAMI_XFER_SCATTERV_INT,
+    PAMI_XFER_GATHER,
+    PAMI_XFER_GATHERV,
+    PAMI_XFER_GATHERV_INT,
     PAMI_XFER_BARRIER,
     PAMI_XFER_FENCE,
     PAMI_XFER_ALLTOALL,
     PAMI_XFER_ALLTOALLV,
     PAMI_XFER_ALLTOALLV_INT,
     PAMI_XFER_SCAN,
+    PAMI_XFER_REDUCE_SCATTER,
     PAMI_XFER_AMBROADCAST,
     PAMI_XFER_AMSCATTER,
     PAMI_XFER_AMGATHER,
@@ -2193,9 +2197,9 @@ extern "C"
     pami_scatter_t          xfer_scatter;
     pami_scatterv_t         xfer_scatterv;
     pami_scatterv_int_t     xfer_scatterv_int;
-    pami_scatter_t          xfer_gather;
-    pami_scatter_t          xfer_gatherv;
-    pami_scatterv_t         xfer_gatherv_int;
+    pami_gather_t           xfer_gather;
+    pami_gatherv_t          xfer_gatherv;
+    pami_gatherv_int_t      xfer_gatherv_int;
     pami_alltoall_t         xfer_alltoall;
     pami_alltoallv_t        xfer_alltoallv;
     pami_alltoallv_int_t    xfer_alltoallv_int;
@@ -2206,6 +2210,7 @@ extern "C"
     pami_scan_t             xfer_scan;
     pami_barrier_t          xfer_barrier;
     pami_fence_t            xfer_fence;
+    pami_reduce_scatter_t   xfer_reduce_scatter;
     } pami_collective_t;
 
   typedef struct
@@ -2404,13 +2409,13 @@ extern "C"
    * \param[in] options    Dispatch registration assertions
    *
    */
-  //#ifdef __pami_target_mpi__
+  /* #ifdef __pami_target_mpi__ */
   pami_result_t PAMI_Dispatch_set_new(pami_context_t              context,
                                  size_t                     dispatch,
                                  pami_dispatch_callback_fn   fn,
                                  void                     * cookie,
                                  pami_dispatch_hint_t        options);
-  //#endif
+  /* #endif */
   pami_result_t PAMI_Dispatch_set (pami_context_t              context,
                                  size_t                     dispatch,
                                  pami_dispatch_callback_fn   fn,
