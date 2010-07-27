@@ -56,10 +56,18 @@ void * thread_main (void * arg)
 
   TRACE((stderr, "   thread_main (%zu) .. 0\n", id));
 
+  /* signal thread is ready */
+  _thread_state[id] = 1;
+  
+  /* wait until main thread is ready */
+  while (_main_state == 0);
+
+  TRACE((stderr, "   thread_main (%zu) .. 1, _value[id] = %zu\n", id, _value[id]));
+
   /* Lock this context */
   pami_result_t result = PAMI_Context_lock (context);
 
-  TRACE((stderr, "   thread_main (%zu) .. 1\n", id));
+  TRACE((stderr, "   thread_main (%zu) .. 2\n", id));
 
   if (result != PAMI_SUCCESS)
     {
@@ -67,13 +75,6 @@ void * thread_main (void * arg)
       exit(1);
     }
 
-  /* signal thread is ready */
-  _thread_state[id] = 1;
-
-  /* wait until main thread is ready */
-  while (_main_state == 0);
-
-  TRACE((stderr, "   thread_main (%zu) .. 2, _value[id] = %zu\n", id, _value[id]));
 
   while (_value[id] > 0)
     {
@@ -218,7 +219,7 @@ int main (int argc, char ** argv)
         }
 
       /* Create the "helper" or "endpoint" threads */
-      pthread_t thread[max_threads];
+      pthread_t thread[MAXTHREADS];
       int rc = 0;
       size_t t, num_threads = 0;
 
