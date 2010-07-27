@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/bcast_subcomm.c
+ * \file test/api/collectives/bcast_subcomm_noparent.c
  * \brief ???
  */
 
@@ -188,7 +188,7 @@ int main(int argc, char*argv[])
       sleep(1);
       PAMI_Context_advance (context, 1000);
     }
-  
+
   rc = create_and_query_geometry(client,
                                  context,
                                  PAMI_NULL_GEOMETRY,

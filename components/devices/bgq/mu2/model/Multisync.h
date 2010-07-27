@@ -52,14 +52,14 @@ namespace PAMI
         typedef uint8_t packet_state_t[AllreducePacketModel::packet_model_state_bytes];
 
         // Metadata passed in the (single-packet) header
-        typedef struct __attribute__((__packed__)) 
+        typedef struct __attribute__((__packed__))
         {
           uint32_t              connection_id;  ///< Collective connection id
-          uint32_t              debug;                                           
+          uint32_t              debug;
         } header_metadata_t;
 
         // State (request) implementation.  Callers should use uint8_t[MU::MultisyncModel::sizeof_msg]
-        typedef struct 
+        typedef struct
         {
           packet_state_t          pkt;          ///< packet send state memory
 
@@ -74,7 +74,7 @@ namespace PAMI
         /// \see PAMI::Device::Interface::MultisyncModel::~MultisyncModel
         ~MultisyncModel () {};
 
-        /// \brief Multisync model constants/attributes  
+        /// \brief Multisync model constants/attributes
 //      static const bool   Multisync_model_all_sided               = false;
         static const bool   Multisync_model_active_message          = true;
         static const bool   Multisync_model_available_buffers_only  = true;
@@ -192,7 +192,7 @@ namespace PAMI
                                             0, //_route,
                                             &state_data->header_metadata,
                                             sizeof(header_metadata_t),
-                                            (void*)NULL, 
+                                            (void*)NULL,
                                             0);
 
         TRACE_FORMAT( "connection_id %#X, debug %#X exit\n", msync->connection_id, state_data->header_metadata.debug);

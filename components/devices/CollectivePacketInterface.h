@@ -180,7 +180,7 @@ namespace PAMI
         /// function depending on the packet device "requires read" attribute.
         ///
         /// \todo remove the 'read' from collective packets?
-        /// 
+        ///
         /// \see PAMI::Device::Interface::PacketDevice::readData()
         ///
         /// \param[in] dispatch              Dispatch set identifier

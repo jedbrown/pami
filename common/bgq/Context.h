@@ -237,7 +237,7 @@ namespace PAMI
           _mm (addr, bytes),
           _sysdep (_mm),
           _lock(),
-          _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >*) _multi_registration_storage), 
+          _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >*) _multi_registration_storage),
           _ccmi_registration((CCMIRegistration*)_ccmi_registration_storage),
           _world_geometry(world_geometry),
           _status(PAMI_SUCCESS),
@@ -393,11 +393,11 @@ namespace PAMI
 
 //       bool muFlag = __global.useMU(false); /// \todo temp function while MU2 isn't complete
 
-       /// \todo while MU2 isn't complete, hack in shmem ni 
+       /// \todo while MU2 isn't complete, hack in shmem ni
 
        _multi_registration       =  new (_multi_registration)
        CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >(_shmem_native_interface, _global_mu_ni, client, (pami_context_t)this, id, clientid);
-       
+
        _multi_registration->analyze(_contextid, _world_geometry);
 
 //       __global.useMU(muFlag); /// \todo temp function while MU2 isn't complete
@@ -966,7 +966,7 @@ namespace PAMI
             }
           return result;
         }
-      
+
       inline pami_result_t update_impl(pami_configuration_t  configuration[],
                                        size_t                num_configs)
         {
@@ -989,7 +989,7 @@ namespace PAMI
       MemoryAllocator<1024, 16>    _request;
       ContextLock                  _lock;
     public:
-      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI,MUGlobalNI >    *_multi_registration; 
+      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI,MUGlobalNI >    *_multi_registration;
       CCMIRegistration            *_ccmi_registration;
       BGQGeometry                 *_world_geometry;
     private:
@@ -999,7 +999,7 @@ namespace PAMI
       Device::LocalAllreduceWQModel  *_shmemMcombModel;
       AllSidedShmemNI             *_shmem_native_interface;
       uint8_t                      _ccmi_registration_storage[sizeof(CCMIRegistration)];
-      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >)];   
+      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >)];
       uint8_t                      _shmemMcastModel_storage[sizeof(Device::LocalBcastWQModel)];
       uint8_t                      _shmemMsyncModel_storage[sizeof(Barrier_Model)];
       uint8_t                      _shmemMcombModel_storage[sizeof(Device::LocalAllreduceWQModel)];

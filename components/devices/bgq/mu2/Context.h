@@ -488,8 +488,8 @@ namespace PAMI
           };
 
           /// \copydoc Mapping::getMuDestinationTask
-          inline void getMuDestinationTask (size_t               task, 
-                    MUHWI_Destination_t &dest, 
+          inline void getMuDestinationTask (size_t               task,
+                    MUHWI_Destination_t &dest,
                     size_t              &tcoord,
                     uint32_t            &fifoPin)
           {
@@ -578,7 +578,7 @@ namespace PAMI
 
             TRACE_FORMAT("(destTask %zu, destOffset %zu) -> dest = %08x, rfifo = %d, optimalFifoPin = %u, actualFifoPin = %u, map = %016lx, injFifoIds[]=%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u", task, offset, *((uint32_t *) &dest), rfifo, fifoPin, _pinInfo->injFifoIds[fifoPin], map, _pinInfo->injFifoIds[0], _pinInfo->injFifoIds[1], _pinInfo->injFifoIds[2], _pinInfo->injFifoIds[3], _pinInfo->injFifoIds[4], _pinInfo->injFifoIds[5], _pinInfo->injFifoIds[6], _pinInfo->injFifoIds[7], _pinInfo->injFifoIds[8], _pinInfo->injFifoIds[9], _pinInfo->injFifoIds[10], _pinInfo->injFifoIds[11], _pinInfo->injFifoIds[12], _pinInfo->injFifoIds[13], _pinInfo->injFifoIds[14], _pinInfo->injFifoIds[15] );
             TRACE_FN_EXIT();
-	    
+
             return  _pinInfo->injFifoIds[fifoPin];
           }
 
@@ -645,7 +645,7 @@ namespace PAMI
             TRACE_FN_ENTER();
             // In loopback we send only on AM
             map =  MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM;
-	    
+
             TRACE_FORMAT("(%zu,%zu) -> map = %016lx\n", from_task, from_offset, map);
             TRACE_FN_EXIT();
           }

@@ -137,8 +137,8 @@ namespace PAMI
           MUHWI_Destination_t dest;
           size_t              tcoord;
           uint32_t            fifoPin;
-          _context.getMuDestinationTask (root, 
-                                         dest, 
+          _context.getMuDestinationTask (root,
+                                         dest,
                                          tcoord,
                                          fifoPin);
           _singlepkt.setDestination(dest);
@@ -169,8 +169,8 @@ namespace PAMI
           MUHWI_Destination_t dest;
           size_t              tcoord;
           uint32_t            fifoPin;
-          _context.getMuDestinationTask (root, 
-                                         dest, 
+          _context.getMuDestinationTask (root,
+                                         dest,
                                          tcoord,
                                          fifoPin);
           _singlepkt.setDestination(dest);
@@ -202,8 +202,8 @@ namespace PAMI
           MUHWI_Destination_t dest;
           size_t              tcoord;
           uint32_t            fifoPin;
-          _context.getMuDestinationTask (root, 
-                                         dest, 
+          _context.getMuDestinationTask (root,
+                                         dest,
                                          tcoord,
                                          fifoPin);
           _singlepkt.setDestination(dest);
@@ -235,8 +235,8 @@ namespace PAMI
           MUHWI_Destination_t dest;
           size_t              tcoord;
           uint32_t            fifoPin;
-          _context.getMuDestinationTask (root, 
-                                         dest, 
+          _context.getMuDestinationTask (root,
+                                         dest,
                                          tcoord,
                                          fifoPin);
           _multipkt.setDestination(dest);
@@ -299,7 +299,7 @@ namespace PAMI
 
         collective.Op_Code = MUHWI_COLLECTIVE_OP_CODE_SIGNED_ADD;/// \todo Ignored for T_Collective == MUHWI_COLLECTIVE_TYPE_BROADCAST
         collective.Word_Length = 0; /// \todo Ignored for T_Collective == MUHWI_COLLECTIVE_TYPE_BROADCAST
-        collective.Class_Route = 0; 
+        collective.Class_Route = 0;
         collective.Misc = T_Channel | T_Collective;
         collective.Skip = 0;
 

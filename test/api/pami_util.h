@@ -36,7 +36,7 @@ static double timer()
 #ifdef __pami_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) 
+#define TRACE_ERR(x)
 #endif
 // sleep() doesn't appear to work in mambo right now.  A hackey simulation...
 #define sleep(x) _mamboSleep(x, __LINE__)

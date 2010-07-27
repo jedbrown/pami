@@ -220,7 +220,7 @@ namespace CCMI {
           }
 #endif
         _myindex = myrank;
-        TRACE_SCHEDULE((stderr, "ListMap(myrank %u) _nranks %u,_hnranks %u,_rootindex %u,_myindex %u, getMyRank() %u\n", 
+        TRACE_SCHEDULE((stderr, "ListMap(myrank %u) _nranks %u,_hnranks %u,_rootindex %u,_myindex %u, getMyRank() %u\n",
                         myrank, _nranks,_hnranks,_rootindex,_myindex,getMyRank()));
       }
 
@@ -230,7 +230,7 @@ namespace CCMI {
             _rootindex = count;
             break;
           }
-          TRACE_SCHEDULE((stderr, "setRoot(root %u) _nranks %u,_hnranks %u,_rootindex %u,_myindex %u\n", 
+          TRACE_SCHEDULE((stderr, "setRoot(root %u) _nranks %u,_hnranks %u,_rootindex %u,_myindex %u\n",
                          gr, _nranks,_hnranks,_rootindex,_myindex));
       }
 

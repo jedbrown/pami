@@ -53,7 +53,7 @@ namespace PAMI
         typedef uint8_t packet_state_t[T_PacketModel::packet_model_state_bytes];
 
         // Metadata passed in the (single-packet) header
-        typedef struct __attribute__((__packed__)) 
+        typedef struct __attribute__((__packed__))
         {
           uint32_t              connection_id;  ///< Collective connection id
           uint32_t              root;           ///< Root of the collective
@@ -61,7 +61,7 @@ namespace PAMI
         } header_metadata_t;
 
         // State (request) implementation.  Callers should use uint8_t[MU::MulticombineModel::sizeof_msg]
-        typedef struct 
+        typedef struct
         {
           packet_state_t          pkt;          ///< packet send state memory
 
@@ -81,7 +81,7 @@ namespace PAMI
         {
         };
 
-        /// \brief Multicombine model constants/attributes  
+        /// \brief Multicombine model constants/attributes
 //      static const bool   Multicombine_model_all_sided               = false;
         static const bool   Multicombine_model_active_message          = true;
         static const bool   Multicombine_model_available_buffers_only  = true;
@@ -261,7 +261,7 @@ namespace PAMI
                                               mu_size(mcomb->dtype),
                                               &state_data->header_metadata,
                                               sizeof(header_metadata_t),
-                                              payload, 
+                                              payload,
                                               length);
           }
           else  // > one packet of payload
@@ -275,7 +275,7 @@ namespace PAMI
                                                    mu_size(mcomb->dtype),
                                                    &state_data->header_metadata,
                                                    sizeof(header_metadata_t),
-                                                   payload, 
+                                                   payload,
                                                    length);
           }
         } // T_PWQ_support==false
@@ -454,8 +454,8 @@ namespace PAMI
         return string[index];
       }
 #define mu_op_string(x) _mu_op_string_(x)
-#define op_string(x)    _op_string_(x)   
-#define dt_string(x)    _dt_string_(x)   
+#define op_string(x)    _op_string_(x)
+#define dt_string(x)    _dt_string_(x)
 #undef TRACE
 #define TRACE(x) //fprintf x
 #else

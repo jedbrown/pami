@@ -1,7 +1,7 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2010, 2010                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
@@ -113,7 +113,7 @@ namespace PAMI
 							const char ***subStringConfigValuePtrs,
 							size_t        numSubStringConfigValues,
 							const char   *defaultSubStringConfigValue );
-      
+
       inline void   getClientNames( const char *clientNamesConfigValueString );
 
       inline void   getClientWeights( const char *clientWeightsConfigValueString );
@@ -189,7 +189,7 @@ size_t PAMI::ResourceManager::getConfigValueSize_t( const char    *configName,
 
 } // End: getConfigValueSize_t()
 
-  
+
 char * PAMI::ResourceManager::getConfigValueString( const char *configName )
 {
   char *outputString;
@@ -203,13 +203,13 @@ char * PAMI::ResourceManager::getConfigValueString( const char *configName )
   outputString = getenv( configName );
 
 #endif
-  
+
   return outputString;
 
 } // End: getConfigValueString()
 
 
-void PAMI::ResourceManager::getSubStringsFromConfigValueString( 
+void PAMI::ResourceManager::getSubStringsFromConfigValueString(
 						 const char   *configName,
 						 const char   *configValueString,
 						 char        **configValueStringCopy,
@@ -394,7 +394,7 @@ void PAMI::ResourceManager::getConfig()
   char *clientWeightsConfigValueString;
   size_t i;
 
-  // Get MUSPI_NUMINJFIFOS 
+  // Get MUSPI_NUMINJFIFOS
   _numSpiUserInjFifosPerProcess    = getConfigValueSize_t( "MUSPI_NUMINJFIFOS",
 							   numSpiUserInjFifosPerProcessDefault );
 
@@ -425,15 +425,15 @@ void PAMI::ResourceManager::getConfig()
       TRACE((stderr,"PAMI ResourceManager: ClientName[%zu]=%s, Weight=%lu\n",i,_clientNamesPtrs[i],_clientWeights[i]));
     }
 
-  // Get PAMI_RGETINJFIFOSIZE 
+  // Get PAMI_RGETINJFIFOSIZE
   _rgetInjFifoSize = getConfigValueSize_t( "PAMI_RGETINJFIFOSIZE",
 					   rgetInjFifoSizeDefault );
 
-  // Get PAMI_INJFIFOSIZE 
+  // Get PAMI_INJFIFOSIZE
   _injFifoSize = getConfigValueSize_t( "PAMI_INJFIFOSIZE",
 				       injFifoSizeDefault );
 
-  // Get PAMI_RECFIFOSIZE 
+  // Get PAMI_RECFIFOSIZE
   _recFifoSize = getConfigValueSize_t( "PAMI_RECFIFOSIZE",
 				       recFifoSizeDefault );
 

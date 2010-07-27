@@ -39,14 +39,14 @@ namespace PAMI
           };
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::~CollectivePacketModel
-          inline ~AllreducePacketModel () 
+          inline ~AllreducePacketModel ()
           {
             TRACE_FN_ENTER();
             TRACE_FN_EXIT();
           };
 
       }; // PAMI::Device::MU::AllreducePacketModel class
-          
+
     };   // PAMI::Device::MU namespace
   };     // PAMI::Device namespace
 };       // PAMI namespace

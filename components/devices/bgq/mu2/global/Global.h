@@ -1,7 +1,7 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2010, 2010                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
@@ -15,8 +15,8 @@
 ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __components_devices_bgq_mu_global_Global_h__
-#define __components_devices_bgq_mu_global_Global_h__
+#ifndef __components_devices_bgq_mu2_global_Global_h__
+#define __components_devices_bgq_mu2_global_Global_h__
 
 #ifdef __FWEXT__
 
@@ -52,7 +52,7 @@ namespace PAMI
       class Global
       {
         public:
-	
+
 	//////////////////////////////////////////////////////////////////////////
 	///
 	/// \brief MU Global Default Constructor
@@ -67,7 +67,7 @@ namespace PAMI
 	  _muRM( pamiRM, mapping, pers, mm )
 	{
 	} // End: Global Default Constructor
-	  
+
 	PAMI::ResourceManager &getPamiRM()  { return _pamiRM;  }
 	PAMI::Mapping         &getMapping() { return _mapping; }
 	ResourceManager       &getMuRM()    { return _muRM;    }
@@ -84,7 +84,7 @@ namespace PAMI
 	PAMI::ResourceManager &_pamiRM;
 	PAMI::Mapping         &_mapping;
 	ResourceManager        _muRM;
-	
+
       }; // Global class
     }; // MU     namespace
   };   // Device namespace

@@ -516,12 +516,12 @@ namespace PAMI
             uint64_t paddr;
             channel.getDescriptorPayload (desc, vaddr, paddr);
             size_t pbytes = static_cast<T_Model*>(this)->
-                            initializeRemoteGetPayload (vaddr, 
+                            initializeRemoteGetPayload (vaddr,
 							local_dst_pa,
-                                                        remote_src_pa, 
+                                                        remote_src_pa,
 							bytes,
-							map, 
-                                                        local_fn, 
+							map,
+                                                        local_fn,
 							cookie);
 
             rget->setPayload (paddr, pbytes);

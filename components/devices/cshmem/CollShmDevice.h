@@ -31,13 +31,13 @@
 #define TRACE_ERR(x) // fprintf x
 
 #undef TRACE_DBG
-#define TRACE_DBG(x) // printf x 
+#define TRACE_DBG(x) // printf x
 
 #undef PAMI_ASSERT
 #define PAMI_ASSERT(x) assert(x)
 
 #undef INLINE
-#define INLINE 
+#define INLINE
 //#define INLINE inline
 
 namespace PAMI {
@@ -55,10 +55,10 @@ typedef enum {
     MultiCast,
     MultiSync,
     MultiCombine
-} collshm_msgtype_t; 
+} collshm_msgtype_t;
 
-template <typename T_Multi> 
-struct message_type 
+template <typename T_Multi>
+struct message_type
 {
    static const unsigned msgtype = Generic;
 };
@@ -67,8 +67,8 @@ template <> struct message_type<pami_multisync_t> { static const collshm_msgtype
 template <> struct message_type<pami_multicombine_t> { static const collshm_msgtype_t msgtype = MultiCombine; };
 
 ///
-/// \brief BaseCollShmMessage provides the getMsgType method inherited by 
-///        all collective shm messages in the device message queue. 
+/// \brief BaseCollShmMessage provides the getMsgType method inherited by
+///        all collective shm messages in the device message queue.
 ///
 class BaseCollShmMessage : public PAMI::Device::Generic::GenericMessage {
 
@@ -94,14 +94,14 @@ class CollShmMessage : public BaseCollShmMessage {
     public:
 
         ///
-        /// \brief Constructor for common collective shmem message 
+        /// \brief Constructor for common collective shmem message
         ///
         INLINE CollShmMessage(GenericDeviceMessageQueue *device, T_Multi *multi):
           BaseCollShmMessage (device, multi->cb_done, multi->client, multi->context),
           _multi (multi)
         {
           //TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-          _msgtype =  message_type< T_Multi >::msgtype; 
+          _msgtype =  message_type< T_Multi >::msgtype;
         }
 
         INLINE pami_context_t postNext(bool devQueued) {
@@ -110,12 +110,12 @@ class CollShmMessage : public BaseCollShmMessage {
         }
 
         ///
-        /// \brief get the multi* calling parameters, read only by using a pointer to const     
+        /// \brief get the multi* calling parameters, read only by using a pointer to const
         ///
         INLINE T_Multi *getMulti() { return _multi; }
 
     private:
-        T_Multi *_multi; 
+        T_Multi *_multi;
 }; // class CollShmMessage
 
 ///
@@ -125,13 +125,13 @@ class CollShmMessage : public BaseCollShmMessage {
 ///        between an active posted message, a thread and a collective shared memory channel
 ///        Template parameters T_NumSyncs and T_SyncCount define the circular queue usage of the threads
 ///        The array of threads are divided in to T_NumSyncs consecutive groups, each consisting of T_SyncCount
-///        threads. Each group of threads has a corresponding barrier counters in shared memory. Whenever a 
-///        task completes the whole group of threads locally, it checks in the corresponding barrier. The 
+///        threads. Each group of threads has a corresponding barrier counters in shared memory. Whenever a
+///        task completes the whole group of threads locally, it checks in the corresponding barrier. The
 ///        group of threads can be reused when the barrier completes. Both T_NumSyncs and T_SyncCount must be
-///        power of two. 
+///        power of two.
 ///
 template <class T_Atomic, class T_MemoryManager, unsigned T_NumSyncs, unsigned T_SyncCount>
-class CollShmDevice : public GenericDeviceMessageQueue 
+class CollShmDevice : public GenericDeviceMessageQueue
 {
 
 public:
@@ -198,18 +198,18 @@ public:
         prepData();
       }
 
-      INLINE void combineData(void *dst, void *src, size_t len, int flag, pami_op op, pami_dt dt) 
+      INLINE void combineData(void *dst, void *src, size_t len, int flag, pami_op op, pami_dt dt)
       {
         if (flag) {
           coremath func = MATH_OP_FUNCS(dt, op, 2);
           int dtshift  = pami_dt_shift[dt];
           void * buf[] = { dst, src };
           unsigned count = len >> dtshift;
-  
+
           func (dst, buf, 2, count);
 
         } else {
-          memcpy (dst, src, len); 
+          memcpy (dst, src, len);
         }
       }
 
@@ -221,10 +221,10 @@ public:
       INLINE void prepData() { }
 
       INLINE window_content_t getContent() { return _ctrl.content; }
-      INLINE void setContent(window_content_t content) 
-      { 
+      INLINE void setContent(window_content_t content)
+      {
         mem_barrier(); // lwsync();
-        _ctrl.content = content; 
+        _ctrl.content = content;
       }
 
       INLINE int getSyncflag() { return _ctrl.sync_flag; }
@@ -232,7 +232,7 @@ public:
 
       INLINE size_t getCmpl() { return _ctrl.cmpl_cntr.fetch(); }
       ///
-      /// \brief Increment completion counter 
+      /// \brief Increment completion counter
       ///
       INLINE void setCmpl()
       {
@@ -242,7 +242,7 @@ public:
       }
 
       ///
-      /// \brief Set data available flag and completion counter to watch for 
+      /// \brief Set data available flag and completion counter to watch for
       ///        when consumers all finished using the data
       ///
       INLINE pami_result_t setAvail(unsigned avail_value, unsigned cmpl_value)
@@ -254,7 +254,7 @@ public:
         PAMI_ASSERT(_ctrl.avail_flag != avail_value);
         _ctrl.avail_flag = avail_value;
 
-        // immediate satisfaction 
+        // immediate satisfaction
         if (_ctrl.cmpl_cntr.fetch() == 1) {
           _ctrl.cmpl_cntr.clear();
           if (_ctrl.content == XMEMATT) returnBuffer(NULL);
@@ -264,12 +264,12 @@ public:
       }
 
       ///
-      /// \brief Check the availibilty of the data or buffer 
+      /// \brief Check the availibilty of the data or buffer
       ///
       INLINE pami_result_t isAvail(unsigned value)
       {
         if (_ctrl.avail_flag != value) return PAMI_EAGAIN;
-      
+
         mem_isync(); //isync();
         return PAMI_SUCCESS;
       }
@@ -283,9 +283,9 @@ public:
       /// \parma _csmm  pointer to memeory manager in case a shared memory buffer is needed
       ///
       /// \return length of data produced into the window
-      ///         -1 indicates there is no data buffer 
+      ///         -1 indicates there is no data buffer
       ///          associated with the window and no memory
-      ///          manager specified, or no memory available 
+      ///          manager specified, or no memory available
 
       INLINE size_t produceData(PAMI::PipeWorkQueue &src, size_t length, T_MemoryManager *csmm)
       {
@@ -300,7 +300,7 @@ public:
           memcpy (_data.immediate_data, src.bufferToConsume(), _len);
           src.consumeBytes(_len);
           _ctrl.content = IMMEDIATE;
-  
+
         } else if (reqbytes <= XMEM_THRESH) {
 
           _len = MIN(reqbytes, COLLSHM_BUFSZ);
@@ -314,7 +314,7 @@ public:
           memcpy (_buf, src.bufferToConsume(), _len);
           src.consumeBytes(_len);
           _ctrl.content = COPYINOUT;
- 
+
         } else {
 #ifdef __64BIT__
           _css_shmem_reg_info_t  reg;
@@ -381,11 +381,11 @@ public:
       }
 
       ///
-      /// \brief Consumer consumes data, PipeWorkQueue version, destination is a pipeworkqueue 
+      /// \brief Consumer consumes data, PipeWorkQueue version, destination is a pipeworkqueue
       ///
       INLINE size_t consumeData(PAMI::PipeWorkQueue &dest, size_t length, int combine_flag, pami_op op, pami_dt dt)
       {
-        if (dest.bytesAvailableToProduce() < MIN(length, _len)) return 0; 
+        if (dest.bytesAvailableToProduce() < MIN(length, _len)) return 0;
         size_t reqbytes = MIN (length, dest.bytesAvailableToProduce());
         size_t len      = MIN (reqbytes, _len);
         char *src;
@@ -469,7 +469,7 @@ public:
       ///
       /// \brief Get data buffer, can be used to directly manipulate data from multiple windows
       ///
-      INLINE char *getBuffer(T_MemoryManager *csmm) 
+      INLINE char *getBuffer(T_MemoryManager *csmm)
       {
          char *buf = NULL;
          switch (_ctrl.content)
@@ -482,7 +482,7 @@ public:
                if (NULL != csmm) {
                  _buf = (char *)csmm->getDataBuffer(1);
                }
-               PAMI_ASSERT(_buf); 
+               PAMI_ASSERT(_buf);
              }
 
              buf = _buf;
@@ -509,9 +509,9 @@ public:
        }
 
        ///
-       /// \brief Return data buffer, only really needed to detach buffer in Xmem attach case 
+       /// \brief Return data buffer, only really needed to detach buffer in Xmem attach case
        ///
-       INLINE void returnBuffer(char *buf) 
+       INLINE void returnBuffer(char *buf)
        {
 #ifdef __64BIT__
          PAMI_ASSERT (_ctrl.content == XMEMATT);
@@ -532,7 +532,7 @@ public:
     } __attribute__((__aligned__(CACHEBLOCKSZ) ));  // class CollShmWindow
 
 
-    class CollShmThread : public PAMI::Device::Generic::GenericAdvanceThread 
+    class CollShmThread : public PAMI::Device::Generic::GenericAdvanceThread
     {
        public:
 
@@ -554,21 +554,21 @@ public:
             BOTH
           } collshm_role_t;
 
-          static pami_result_t advanceThread(pami_context_t context, void *thr) 
+          static pami_result_t advanceThread(pami_context_t context, void *thr)
           {
              CollShmThread *t = (CollShmThread *) thr;
              return t->_advanceThread(context);
-          } 
+          }
 
           // children in the returned array are in ascending order
-          static void getchildren_knary(uint8_t rank, uint8_t k, uint8_t tasks, 
+          static void getchildren_knary(uint8_t rank, uint8_t k, uint8_t tasks,
                    uint8_t *children, uint8_t *numchildren, uint8_t *parent)
           {
             int i;
             PAMI_ASSERT(k);
             if (rank * k + 1 > tasks)
               *numchildren = 0;
-            else 
+            else
               *numchildren = MIN((tasks - (rank * k +1)), k);
             for (i =0 ; i< *numchildren; i++) {
               children[i]= rank*k+1+i;
@@ -592,14 +592,14 @@ public:
           _arank(device->getRank()),
           _nranks(device->getSize()),
           _device(device)
-          { 
+          {
              setAdv(advanceThread);
           }
 
           ///
-          /// \brief Reset some of the fields of the Threas object 
+          /// \brief Reset some of the fields of the Threas object
           ///
-          INLINE void resetThread() 
+          INLINE void resetThread()
           {
             _step        = 0;
             _action      = NOACTION;
@@ -618,14 +618,14 @@ public:
           //   *children  = _children;
           }
 
-          /// 
-          /// \brief setSchedule 
           ///
-          INLINE void setSchedule(int parent, int nchildren, int *children) 
+          /// \brief setSchedule
+          ///
+          INLINE void setSchedule(int parent, int nchildren, int *children)
           {
           //  _parent    = parent;
           //  _nchildren = nchildren;
-          //  for (int i = 0; i < nchildren; ++i) 
+          //  for (int i = 0; i < nchildren; ++i)
           //     _children[i] = children[i];
           }
 
@@ -644,10 +644,10 @@ public:
           ///
           INLINE unsigned int getIdx() { return _idx; }
 
-          /// 
+          ///
           /// \brief progress engine for the collective shmem device
           ///
-          INLINE pami_result_t _advanceThread(pami_context_t context) 
+          INLINE pami_result_t _advanceThread(pami_context_t context)
           {
 
             pami_result_t rc = PAMI_SUCCESS;
@@ -655,13 +655,13 @@ public:
             BaseCollShmMessage *msg = (BaseCollShmMessage *)getMsg();
             CollShmWindow  *window;
             int pollcnt = 10;
-       
-            // common action handling 
+
+            // common action handling
             switch (_action) {
-              case NOACTION: // just started 
+              case NOACTION: // just started
                 break;
- 
-              case CSOSYNC:  
+
+              case CSOSYNC:
                 while (_partners && pollcnt--) {
                   for (unsigned partner = 0x1, i = 0; i < _nranks; ++i, partner <<= 1) {
                     if (_partners & partner) {
@@ -677,9 +677,9 @@ public:
                 break;
 
               case SHAREWITH:
-                window = _device->getWindow(0, _arank, _idx);  
+                window = _device->getWindow(0, _arank, _idx);
                 if (window->getCmpl() != 1) return PAMI_EAGAIN;
-                window->setCmpl(); 
+                window->setCmpl();
                 if (window->getContent() == CollShmWindow::XMEMATT) window->returnBuffer(NULL);
                 break;
 
@@ -689,9 +689,9 @@ public:
                   if (_partners & (0x1 <<partner))
                   {
                      window = _device->getWindow(0,partner,_idx);
-                    if (window->isAvail(_target_cntr) == PAMI_SUCCESS) 
+                    if (window->isAvail(_target_cntr) == PAMI_SUCCESS)
                       _partners = _partners & (~(0x1 << partner)) ;
-                    else  
+                    else
                       return PAMI_EAGAIN;
                   }
                 }
@@ -719,23 +719,23 @@ public:
                   PAMI_ASSERT(0);
                   break;
               }
-            } 
+            }
 
             // return thread to device
             if (rc == PAMI_SUCCESS) _device->setThreadAvail(getIdx());
             return rc;
           }
 
-          INLINE void _setPartners() 
+          INLINE void _setPartners()
           {
             _partners        = 0x0;
             for (int j = 0; j < _nchildren; ++j) {
               _partners = _partners | (0x1 << ((_children[j] + _root) % _nranks ));
             }
-              
+
           }
 
-          INLINE void _setRole() 
+          INLINE void _setRole()
           {
             if (_parent != (unsigned char)-1 && _nchildren > 0)
                _role = BOTH;
@@ -748,18 +748,18 @@ public:
           }
 
           ///
-          /// \brief Type specific thread initialization 
-          ///        Some of the initialization is probably redundant 
+          /// \brief Type specific thread initialization
+          ///        Some of the initialization is probably redundant
           ///
           INLINE void initThread( collshm_msgtype_t msgtype )
           {
              unsigned char k = _nranks-1;
-             size_t root; 
+             size_t root;
              PAMI::Topology *topo;
              pami_multicast_t *mcast;
              pami_multicombine_t *mcombine;
 
-             switch (msgtype) 
+             switch (msgtype)
              {
                case MultiCast:
                  mcast  = (pami_multicast_t *) static_cast<CollShmMessage<pami_multicast_t, CollShmDevice> *>(_msg)->getMulti();
@@ -768,15 +768,15 @@ public:
                  _len   = mcast->bytes;
                  _wlen  = 0;
                  // Need to compare flat XMEM_ATTACH vs. pipeline tree COPYINOUT
-                 // if (_len > XMEM_THRESH) k = _nranks-1; 
+                 // if (_len > XMEM_THRESH) k = _nranks-1;
                  break;
-               case MultiCombine: 
+               case MultiCombine:
                  mcombine = (pami_multicombine_t *) static_cast<CollShmMessage<pami_multicombine_t, CollShmDevice> *>(_msg)->getMulti();
                  topo     = (PAMI::Topology *)mcombine->results_participants;
                  root     = _device->getTopo()->rank2Index(topo->index2Rank(0));
                  _len     = mcombine->count << pami_dt_shift[mcombine->dtype] ;
                  _wlen    = 0;
-                 /// \todo need to handle (_len > XMEM_THRESH) case 
+                 /// \todo need to handle (_len > XMEM_THRESH) case
                  break;
                case MultiSync:
                  _sync_flag    = 1;
@@ -791,14 +791,14 @@ public:
 
              TRACE_DBG(("root = %d, _root = %d\n", (int)root, (int)_root));
 
-             if (root != _root) 
+             if (root != _root)
              {
-               // recalculate tree structure               
+               // recalculate tree structure
                _root = root;
                getchildren_knary(_rrank, MIN(k, _nranks-1), _nranks, &_children[0], &(_nchildren), &(_parent));
              }
              _setRole(); // _role may change even if _root does not change
-          }  
+          }
 
           ///
           /// \brief Further progress on multisync
@@ -822,7 +822,7 @@ public:
                   if (_partners & partner) {
                     window = _device->getWindow(0, i, _idx);
                     if (window->getSyncflag() == _sync_flag) {
-                      _partners ^= partner; 
+                      _partners ^= partner;
                       pollcnt = 10;
                     } else break;
                   }
@@ -868,7 +868,7 @@ public:
             TRACE_DBG(("shm_reduce %d\n", _idx));
 
             while (_len != 0) {
-              if (_role == CHILD) { 
+              if (_role == CHILD) {
                 _wlen = window->produceData(*(PAMI::PipeWorkQueue *)mcombine->data, _len, _device->getSysdep());
                 PAMI_ASSERT(_wlen >= 0);
                 if (_wlen == 0) return PAMI_EAGAIN;
@@ -881,7 +881,7 @@ public:
                 }
               } else {  // PARENT or BOTH
                 if (_action == READFROM) {
-                  if (_wlen > 0) {  // skip reduction if result of previous round has not been consumed 
+                  if (_wlen > 0) {  // skip reduction if result of previous round has not been consumed
                     for (i = 0; i < _nchildren; ++i) {
                       prank = (_children[i] + _root) % _nranks;
                       CollShmWindow *pwindow = _device->getWindow(0, prank, _idx);
@@ -895,10 +895,10 @@ public:
                   if (_role == BOTH) {
                     _action = SHAREWITH;
                     rc = window->setAvail(_step, 2);
-                    if (rc != PAMI_SUCCESS) break; 
+                    if (rc != PAMI_SUCCESS) break;
                   } else { // PARENT
-                    size_t len = window->consumeData(*(PAMI::PipeWorkQueue *)mcombine->results, _wlen, 0, PAMI_UNDEFINED_OP, PAMI_UNDEFINED_DT);               
-                    if (len == 0) { 
+                    size_t len = window->consumeData(*(PAMI::PipeWorkQueue *)mcombine->results, _wlen, 0, PAMI_UNDEFINED_OP, PAMI_UNDEFINED_DT);
+                    if (len == 0) {
                       _wlen = len;
                       return PAMI_EAGAIN;
                     }
@@ -954,7 +954,7 @@ public:
             TRACE_DBG(("shm_bcast %d\n", _idx));
 
             while (_len != 0) {
-              if (_role == PARENT) { 
+              if (_role == PARENT) {
                 _wlen = window->produceData(*(PAMI::PipeWorkQueue *)mcast->src, _len, _device->getSysdep());
                 PAMI_ASSERT(_wlen >= 0);
                 _len  -= _wlen;
@@ -1004,15 +1004,15 @@ public:
           }
 
        protected:
-          unsigned char  _idx;    
+          unsigned char  _idx;
           unsigned       _step;
           collshm_action_t _action;
           collshm_mask_t _partners;
           unsigned char  _sync_flag;
-          unsigned char  _target_cntr; 
+          unsigned char  _target_cntr;
           size_t         _len;
           size_t         _wlen;
-          uint8_t        _root; 
+          uint8_t        _root;
           uint8_t        _rrank;               // relative on node rank
           uint8_t        _arank;               // absolute on node rank
           uint8_t        _nranks;              // total number of on node ranks for the topology
@@ -1255,7 +1255,7 @@ public:
             // needs to recheck if it is the last one to take care of race condition
             if (arrived == (increment == 1 ? _ntasks-1 : 1)) {
               for (int grp = 0; grp < _ntasks; ++grp) {
-                 for (int w = 0; w < _synccounts; ++w)  
+                 for (int w = 0; w < _synccounts; ++w)
                   (_wgroups[grp]->windows[idx*_synccounts + w]).clearCtrl();
               }
             }
@@ -1320,7 +1320,7 @@ public:
             if (!_nactive && _threadm.getStatus() == PAMI::Device::Idle) {
               _threadm.setStatus(PAMI::Device::Ready);
               g[x].postThread(&_threadm);
-            } 
+            }
             TRACE_DBG(("%d message initalized\n", _nactive));
           }
 
@@ -1373,17 +1373,17 @@ public:
 
         INLINE void incActiveMsg() { ++_nactive; }
         INLINE void decActiveMsg() { --_nactive; }
- 
+
         INLINE size_t getRank() { return _tid; }
         INLINE size_t getSize() { return _ntasks; }
-        INLINE PAMI::Topology *getTopo() {return _topo;} 
+        INLINE PAMI::Topology *getTopo() {return _topo;}
 
 protected:
         PAMI::Topology                *_topo;
         T_MemoryManager               *_csmm;   ///< collective shmem memory manager
         PAMI::Device::Generic::Device *_generics; ///< generic device arrays
         CollShmThread _threads[_numchannels];   ///< Threads for active posted messages on device
-        PAMI::Device::Generic::GenericAdvanceThread 
+        PAMI::Device::Generic::GenericAdvanceThread
                          _threadm; // this thread is not associated with shared memory channel
                                    // it is a pure work item making sure enqueued message gets
                                    // a chance to run
@@ -1407,10 +1407,10 @@ protected:
 typedef PAMI::Device::Generic::Device NillCollShmDevice;
 
 template <class T_CollShmDevice, class T_MemoryManager>
-class CollShmModel : 
-   public PAMI::Device::Interface::MulticastModel<CollShmModel<T_CollShmDevice, T_MemoryManager>,NillCollShmDevice,sizeof(CollShmMessage<pami_multicast_t, T_CollShmDevice>)>, 
-   public PAMI::Device::Interface::MultisyncModel<CollShmModel<T_CollShmDevice, T_MemoryManager>,NillCollShmDevice,sizeof(CollShmMessage<pami_multisync_t, T_CollShmDevice>)>, 
-   public PAMI::Device::Interface::MulticombineModel<CollShmModel<T_CollShmDevice, T_MemoryManager>,NillCollShmDevice,sizeof(CollShmMessage<pami_multicombine_t, T_CollShmDevice>)> 
+class CollShmModel :
+   public PAMI::Device::Interface::MulticastModel<CollShmModel<T_CollShmDevice, T_MemoryManager>,NillCollShmDevice,sizeof(CollShmMessage<pami_multicast_t, T_CollShmDevice>)>,
+   public PAMI::Device::Interface::MultisyncModel<CollShmModel<T_CollShmDevice, T_MemoryManager>,NillCollShmDevice,sizeof(CollShmMessage<pami_multisync_t, T_CollShmDevice>)>,
+   public PAMI::Device::Interface::MulticombineModel<CollShmModel<T_CollShmDevice, T_MemoryManager>,NillCollShmDevice,sizeof(CollShmMessage<pami_multicombine_t, T_CollShmDevice>)>
 {
 public:
         static const size_t sizeof_msg              = sizeof(CollShmMessage<collshm_multi_t, T_CollShmDevice>);
@@ -1437,14 +1437,14 @@ public:
         INLINE pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
                                                pami_multisync_t *msync);
         INLINE pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg],
-                                               pami_multicombine_t *mcombine); 
+                                               pami_multicombine_t *mcombine);
 private:
         unsigned _peer;
         unsigned _npeers;
 
         pami_result_t           _status;
 
-        T_CollShmDevice         _csdevice;  
+        T_CollShmDevice         _csdevice;
 
 }; // class CollShmModel
 

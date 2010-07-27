@@ -380,7 +380,7 @@ public:
                                 GenericDeviceMessageQueue *qs = msg->getQS();
                                 // replace dequeue by remove to support multiple active messages in queue
                                 // qs->dequeue(); // assert return == msg
-                                qs->remove(msg); 
+                                qs->remove(msg);
                                 nxt = (PAMI::Device::Generic::GenericMessage *)qs->peek();
                                 if (nxt) nxt->postNext(true); // virtual function
                                 msg->executeCallback(__context);

@@ -271,17 +271,17 @@ namespace PAMI
           }
         return result;
       }
-    
+
     inline pami_result_t update_impl (pami_configuration_t configuration[],
                                       size_t               num_configs)
       {
         return PAMI_INVAL;
       }
-      
-    
 
 
-    
+
+
+
       // the friend clause is actually global, but this helps us remember why...
       //friend class PAMI::Device::Generic::Device;
       //friend class pami.cc

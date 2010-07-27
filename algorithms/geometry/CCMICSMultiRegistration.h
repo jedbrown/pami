@@ -92,7 +92,7 @@ namespace PAMI
                                       size_t              context_id,
                                       // PAMI::Context       *contexts,
                                       PAMI::Device::Generic::Device &devs) :
-      CollRegistration<PAMI::CollRegistration::CCMICSMultiRegistration<T_Geometry, T_CSNativeInterface, 
+      CollRegistration<PAMI::CollRegistration::CCMICSMultiRegistration<T_Geometry, T_CSNativeInterface,
                                                      T_CSMemoryManager, T_CSModel>, T_Geometry> (),
       _client(client),
       _client_id(client_id),
@@ -115,7 +115,7 @@ namespace PAMI
 
         // only support single node for now
         PAMI_assert(context_id == 0);
-        
+
         PAMI::Topology *cs_topo = (PAMI::Topology *) (geometry->getTopology(0));
 
         if (cs_topo->size() > 1) {
@@ -135,9 +135,9 @@ namespace PAMI
           geometry->addCollective(PAMI_XFER_BARRIER,&_msync_reg,context_id);
           geometry->addCollective(PAMI_XFER_BROADCAST,&_mcast_reg,context_id);
           geometry->addCollective(PAMI_XFER_REDUCE,&_mcomb_reg,context_id);
-        } 
+        }
 
-        return PAMI_SUCCESS; 
+        return PAMI_SUCCESS;
       }
 
       static pami_geometry_t mapidtogeometry (int comm)

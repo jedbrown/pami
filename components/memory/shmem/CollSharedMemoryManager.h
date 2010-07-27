@@ -31,7 +31,7 @@
 
 #ifndef TRACE_DBG
 #define TRACE_DBG(x)  // printf x
-#endif 
+#endif
 
 #ifndef PAMI_ASSERT
 #define PAMI_ASSERT(x) assert(x)
@@ -44,16 +44,16 @@ namespace PAMI
 
     ///
     /// \brief Memory manager class for collective shared memory optimization
-    ///        The shared memory region is composed of a contorl region, a region for 
+    ///        The shared memory region is composed of a contorl region, a region for
     ///        control structures of collective operations, and a region for data
-    ///        buffers of collective operations. 
+    ///        buffers of collective operations.
     ///        T_SegSz is the size of the entire region managered by the memory manager
     ///        T_PageSz is the page size backing the shared memory region
     ///        T_WindowSz is the size of allocation unit for collective operation control structures
-    ///        T_ShmBufSz is the size of shared memory data buffers 
+    ///        T_ShmBufSz is the size of shared memory data buffers
 
     template <class T_Atomic, unsigned T_SegSz, unsigned T_PageSz, unsigned T_WindowSz, unsigned T_ShmBufSz>
-    class CollSharedMemoryManager 
+    class CollSharedMemoryManager
     {
       public:
 
@@ -104,7 +104,7 @@ namespace PAMI
           _localrank = rank;
           _localsize = size;
           int lrank;
-   
+
 #ifdef _POSIX_SHM_OPEN
           _shm_id = shm_open(COLLSHM_KEY, O_CREAT|O_RDWR, 0600);
           if( _shm_id != -1) {
@@ -121,7 +121,7 @@ namespace PAMI
             return PAMI_ERROR;
           }
 #else
-          unsigned req_segs = 1000; // for xmem attach 
+          unsigned req_segs = 1000; // for xmem attach
 
           _shm_id = shmget(COLLSHM_KEY, _size, IPC_CREAT | IPC_EXCL | 0600);
           if (_shm_id != -1) {
@@ -147,7 +147,7 @@ namespace PAMI
 #endif /* _POSIX_SHM_OPEN */
           if (!_localrank) {
 
-            // both shm_open and shmget should guarantee initial 
+            // both shm_open and shmget should guarantee initial
             // content of the shared memory to be zero
             // _collshm->ready_count = 0;
             // _collshm->term_count  = 0;
@@ -186,7 +186,7 @@ namespace PAMI
         }
 
 
-        ~CollSharedMemoryManager() 
+        ~CollSharedMemoryManager()
         {
             // placeholder for other cleanup work
 
@@ -201,8 +201,8 @@ namespace PAMI
 
         ///
         /// \brief Get a whole chunk of INIT_BUFCNT new data buffers from the pool
-        ///        Hold buffer pool lock. 
-        /// 
+        ///        Hold buffer pool lock.
+        ///
         /// \return A chunk of INIT_BUFCNT new data buffers chained together
         ///
 
@@ -218,7 +218,7 @@ namespace PAMI
 
           if ((char *)(new_bufs + COLLSHM_INIT_BUFCNT) > ((char *)_collshm + _size)) {
             TRACE_ERR(("Run out of shm data bufs, base=%lp, buffer_memory=%lp, boundary=%lp, end=%lp\n",
-                        _collshm, _collshm->buffer_memory, (char *)_collshm+_size, 
+                        _collshm, _collshm->buffer_memory, (char *)_collshm+_size,
                         (char *)(new_bufs+COLLSHM_INIT_BUFCNT)));
             PAMI_ASSERT(0);
             return NULL;
@@ -241,15 +241,15 @@ namespace PAMI
 
 
         ///
-        /// \brief get shm data buffers either from the free list or from the pool 
+        /// \brief get shm data buffers either from the free list or from the pool
         ///        when free list is empty. No lock is held, rely on atomic operation
-        ///        to guarantee integrity 
+        ///        to guarantee integrity
         ///
         /// \param count Number of buffers requested
         ///
         /// \return point to list of shmem data buffers
         ///
-               
+
         databuf_t *getDataBuffer (unsigned count)
         {
 
@@ -264,9 +264,9 @@ namespace PAMI
             cur = (databuf_t * volatile)_collshm->free_buffer_list;
             if (cur == NULL)
             {
-              tmp   = _get_data_buf_from_pool();   // Allocate a whold chunk of INIT_BUFCNT new buffers from the pool 
+              tmp   = _get_data_buf_from_pool();   // Allocate a whold chunk of INIT_BUFCNT new buffers from the pool
               cur   = tmp + count - buf_count - 1; // End of the list satisfying the requirement
-              next  = cur->next;                   // Extra buffers that should be put into free list 
+              next  = cur->next;                   // Extra buffers that should be put into free list
 
               cur->next = buffers;                 // Merge with buffers already allocated
               buffers = tmp;
@@ -303,7 +303,7 @@ namespace PAMI
                TRACE_DBG(("exit cur = %p, cur->next = %p and _collshm->free_buffer_list = %p\n",
                          cur, next, _collshm->free_buffer_list));
             }
-            if (cur == NULL) continue;  // may need to start over 
+            if (cur == NULL) continue;  // may need to start over
 
             TRACE_DBG(("end cur = %p\n", cur));
             cur->next = buffers;
@@ -317,9 +317,9 @@ namespace PAMI
         }
 
 
-        /// 
+        ///
         /// \brief Return a list of shm data buf to the free list
-        ///        
+        ///
         /// \param data_buf pointer to data bufs returned
         ///
 
@@ -347,8 +347,8 @@ namespace PAMI
 
         ///
         /// \brief Get a whole chunk of INIT_CTLCNT new ctrl struct from the pool
-        ///        Hold buffer pool lock. 
-        /// 
+        ///        Hold buffer pool lock.
+        ///
         /// \return A chunk of INIT_CTLCNT new ctrl struct chained together
         ///
 
@@ -358,7 +358,7 @@ namespace PAMI
           // require implementation of check_lock and clear_lock in atomic class
           // while(COLLSHM_CHECK_LOCK((atomic_p)&(_collshm->ctlstr_pool_lock), 0, 1));
           while(!_collshm->ctlstr_pool_lock.compare_and_swap((size_t)0, (size_t)1)) yield();
-          // is mem_isync() equivalent to isync() on PERCS ? 
+          // is mem_isync() equivalent to isync() on PERCS ?
           mem_isync();
           ctlstr_t *ctlstr   = _collshm->ctlstr_pool;
           ctlstr_t *tmp      = _collshm->ctlstr_pool;
@@ -388,15 +388,15 @@ namespace PAMI
         }
 
         ///
-        /// \brief get shm ctrl structs either from the free list or from the pool 
+        /// \brief get shm ctrl structs either from the free list or from the pool
         ///        when free list is empty. No lock is held, rely on atomic operation
-        ///        to guarantee integrity 
+        ///        to guarantee integrity
         ///
         /// \param count Number of ctrl structs requested
         ///
         /// \return point to list of shmem ctrl structs
         ///
-               
+
         ctlstr_t *getCtrlStr (unsigned count)
         {
 
@@ -412,9 +412,9 @@ namespace PAMI
             cur = (ctlstr_t * volatile)_collshm->free_ctlstr_list;
             if (cur == NULL)
             {
-              tmp   = _get_ctrl_str_from_pool();       // Allocate a whold chunk of INIT_CTLCNT new buffers from the pool 
+              tmp   = _get_ctrl_str_from_pool();       // Allocate a whold chunk of INIT_CTLCNT new buffers from the pool
               cur   = tmp + count - ctlstr_count - 1;  // End of the list satisfying the requirement
-              next  = cur->next;                       // Extra buffers that should be put into free list 
+              next  = cur->next;                       // Extra buffers that should be put into free list
 
               cur->next = (ctlstr_t *)ctlstr;                    // Merge with ctrl structs already allocated
               ctlstr   = tmp;
@@ -441,7 +441,7 @@ namespace PAMI
                  next = cur->next;
                TRACE_DBG(("cur = %lx\n", cur));
             }
-            if (cur == NULL) continue;  // may need to start over 
+            if (cur == NULL) continue;  // may need to start over
 
             cur->next = (ctlstr_t *)ctlstr;
             ctlstr = cur;
@@ -453,18 +453,18 @@ namespace PAMI
           return (ctlstr_t *)ctlstr;
         }
 
-        // hack for getting per geometry shared memory region, need to determine this information 
+        // hack for getting per geometry shared memory region, need to determine this information
         // geometry creation allreduce
-        ctlstr_t *getWGCtrlStr() 
-        { 
+        ctlstr_t *getWGCtrlStr()
+        {
           TRACE_DBG(("WGCtrlStr = %x\n", ((ctlstr_t *)_collshm->ctlstr_memory + (_localsize -1))));
-          return ((ctlstr_t *)_collshm->ctlstr_memory + (_localsize -1)); 
-        } 
+          return ((ctlstr_t *)_collshm->ctlstr_memory + (_localsize -1));
+        }
 
 
-        /// 
+        ///
         /// \brief Return a list of shm ctrl struct to the free list
-        ///        
+        ///
         /// \param ctlstr pointer to a list of ctrl structs to be returned
         ///
 
@@ -475,7 +475,7 @@ namespace PAMI
 
           ctlstr_t *tmp = ctlstr;
 
-          while (tmp->next != NULL) { 
+          while (tmp->next != NULL) {
             tmp = tmp->next;
             -- _nctrlstrs;
           }
@@ -495,7 +495,7 @@ namespace PAMI
         size_t     _nctrlstrs;
         size_t     _ndatabufs;
         int        _shm_id;
-        collshm_t *_collshm;       // base pointer of the shared memory segment 
+        collshm_t *_collshm;       // base pointer of the shared memory segment
         size_t     _localrank;      // rank in the local topology
         size_t     _localsize;      // size of the local topology
 

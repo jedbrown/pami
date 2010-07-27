@@ -73,7 +73,7 @@ namespace PAMI
       _coords.mapped.d        = _d;
       _coords.mapped.e        = _e;
       _coords.mapped.reserved =  0;
-      
+
       _MUcoords.Destination.Reserved2     = 0;
       _MUcoords.Destination.A_Destination = _a;
       _MUcoords.Destination.B_Destination = _b;
@@ -168,8 +168,8 @@ namespace PAMI
     ///
     /// \note Does not provide process, core, or hardware thread addressing.
     ///
-    inline void getMuDestinationTask (size_t               task, 
-				      MUHWI_Destination_t &dest, 
+    inline void getMuDestinationTask (size_t               task,
+				      MUHWI_Destination_t &dest,
 				      size_t              &tcoord,
 				      uint32_t            &fifoPin)
     {
@@ -198,14 +198,14 @@ namespace PAMI
     ///
     /// \note Does not provide process, core, or hardware thread addressing.
     ///
-    inline void setFifoPin ( size_t   task, 
+    inline void setFifoPin ( size_t   task,
 			     uint16_t fifo )
     {
       // OR in the fifo pin bits.
       // The LSB 4 bits of the fifo pin are placed into the high order bit of
       // the A, B, C, and D coords in the structure.
-      _mapcache.torus.task2coords[task].raw |= 
-	( ((fifo & 0x8) << 26) | 
+      _mapcache.torus.task2coords[task].raw |=
+	( ((fifo & 0x8) << 26) |
 	  ((fifo & 0x4) << 21) |
 	  ((fifo & 0x2) << 16) |
 	  ((fifo & 0x1) << 11) );

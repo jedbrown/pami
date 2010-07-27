@@ -183,7 +183,7 @@ namespace PAMI
         {
           return PAMI_INVAL;
         }
-      
+
         inline size_t getNumContexts()
         {
                 return _ncontexts;
@@ -208,7 +208,7 @@ namespace PAMI
         *world_geometry = _world_geometry;
         return PAMI_SUCCESS;
       }
-      
+
     inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       *geometry,
                                                         pami_configuration_t   configuration[],
                                                         size_t                 num_configs,

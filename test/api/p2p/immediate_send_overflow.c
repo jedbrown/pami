@@ -174,7 +174,7 @@ int main (int argc, char ** argv)
   size_t recv_immediate_max = configuration.value.intval;
   fprintf (stderr, "Maximum number of bytes that can be received, and provided to the application, in a dispatch function = %zu\n", recv_immediate_max);
 
-  
+
   char header_string[1024];
   char data_string[1024];
 

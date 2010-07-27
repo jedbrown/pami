@@ -105,8 +105,8 @@ void test (MuContext & mu0, T_Model & model, T_Protocol & protocol, const char *
 
   Personality_t pers;
   Kernel_GetPersonality(&pers, sizeof(pers));
-  
-  int neighbor = __global.mapping.task();  
+
+  int neighbor = __global.mapping.task();
   if (__global.mapping.size() > 0) {
     if (__global.mapping.task() == 0)
       neighbor = 1;
@@ -166,9 +166,9 @@ void test (MuContext & mu0, T_Model & model, T_Protocol & protocol, const char *
       }
       npackets = 0;
     }
-  
+
   end = GetTimeBase();
-  
+
   printf ("[%s] nonblocking pingpong time = %d cycles\n", label, (int)((end - start) / MAX_ITER));
 
   // -------------------------------------------------------------------
@@ -212,7 +212,7 @@ int main(int argc, char ** argv)
   mu0.init (0, NULL); // id_client, mu context "cookie" (usually pami_context_t)
 
   fprintf (stderr, "After mu init\n");
-  
+
 //  uint8_t model00_buf[sizeof(PAMI::Device::MU::PacketModelMemoryFifoCompletion)] __attribute__((__aligned__(32)));
 //  PAMI::Device::MU::PacketModelMemoryFifoCompletion &model00 = *(new (model00_buf) PAMI::Device::MU::PacketModelMemoryFifoCompletion(mu0));
 
@@ -221,7 +221,7 @@ int main(int argc, char ** argv)
 
   uint8_t model10_buf[sizeof(PAMI::Device::MU::PacketModel)] __attribute__((__aligned__(32)));
   PAMI::Device::MU::PacketModel &model10 = *(new (model10_buf) PAMI::Device::MU::PacketModel(mu0));
-  
+
   uint8_t model11_buf[sizeof(PAMI::Device::MU::PacketModel)] __attribute__((__aligned__(32)));
   PAMI::Device::MU::PacketModel &model11 = *(new (model11_buf) PAMI::Device::MU::PacketModel(mu0));
 

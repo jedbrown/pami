@@ -203,7 +203,7 @@ extern "C"
     pami_attribute_name_t  name;  /**< Attribute type */
     pami_attribute_value_t value; /**< Attribute value */
   } pami_configuration_t;
-  
+
   /*****************************************************************************/
   /**
    * \defgroup CA Compact attributes
@@ -1898,7 +1898,7 @@ extern "C"
    * collective can be issued from a single node issuing the fence.
    * On completion of this operation, it is assumed that all PAMI communication associated
    * with the current context from all participants in the geometry have quiesced.
-   * Although the context is local, the geometry represents a set of tasks 
+   * Although the context is local, the geometry represents a set of tasks
    * that were associated with it at geometry_create  time, all of which
    * must participate in this operation for it to complete. This is a
    * data fence, which means that the data movement is complete. This is not an operation
@@ -1920,7 +1920,7 @@ extern "C"
    * *  For collectives, all collectives pending on the current context will be
    *    fenced. These collectives only address endpoints on the same context offset
    *    as the issuing context ("cross talk" does not apply to collectives) on
-   *    all remote nodes. 
+   *    all remote nodes.
    *
    * *  The user must use the "done function" of the pami_fence to ensure completion
    *    of outstanding operations, before issuing the next operation.  The user

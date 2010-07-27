@@ -1,7 +1,7 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2010, 2010                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
@@ -17,8 +17,8 @@
 ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __components_devices_bgq_mu_global_ResourceManager_h__
-#define __components_devices_bgq_mu_global_ResourceManager_h__
+#ifndef __components_devices_bgq_mu2_global_ResourceManager_h__
+#define __components_devices_bgq_mu2_global_ResourceManager_h__
 
 #ifdef __FWEXT__
 
@@ -94,7 +94,7 @@ namespace PAMI
       /// pinFifo()'s access to this info.  We want all of this info to be in
       /// one L2 cache line.  Each context will "get" one of these pairs
       /// and use it in its pinFifo().
-      /// 
+      ///
       /// The Context PinFifo function chooses an inj fifo (0..9) that is
       /// optimal for sending to the destination, assuming there are 10
       /// inj fifos in the context.  Then, it indexes into
@@ -118,30 +118,30 @@ namespace PAMI
       /// runtime initialization based on our T coordinate.
       ///
       /// For example, if there are 8 actual imFifos, the first 8 fifopin array values
-      /// would be 0,1,2,3,4,5,6,7, saying that for messages traveling in the 
+      /// would be 0,1,2,3,4,5,6,7, saying that for messages traveling in the
       /// A-,A+,B-,B+,C-,C+,D-,D+ directions, those imFifos will be used.
       /// But, for messages needing to travel in the E- or E+ direction, which
-      /// imFifos do we use?  We set those 2 values to 0 and 1, implying that 
+      /// imFifos do we use?  We set those 2 values to 0 and 1, implying that
       /// imFifos 0 and 1 will take those messages.  But, this puts added pressure
       /// on imFifos 0 and 1.  To alleviate this, those 2 values will be
       /// adjusted based on our T coordinate.  We add our 2*T coordinate (2 being
-      /// the number of over-stressed fifos) to the values in the table (0,1) 
+      /// the number of over-stressed fifos) to the values in the table (0,1)
       /// and mod it with the number of fifos (8) to give a value in the range 0..7,
       /// depending on our T.  Thus, T=0 will use imFifos 0 and 1, while T=1 will
       /// use imFifos 2 and 3, and so on.
       ///
-      /// For the last 6 elements of the injFifoIds array (for local transfers), we do a 
+      /// For the last 6 elements of the injFifoIds array (for local transfers), we do a
       /// similar distribution among 6 of the imFifos.  Note we are limited to
       /// 6 for local transfers since there are only 6 more slots in the 16 element
       /// array left for us to use...the fifoPin value we store in the map cache
-      /// can only be in the range 0..15.  We try to evenly distribute the local 
+      /// can only be in the range 0..15.  We try to evenly distribute the local
       /// traffic among all of the imFifos so that the imFifos chosen for local
       /// traffic in each process are not always the same, thereby more evenly
-      /// impacting the effect of local traffic across all of the directions.  
+      /// impacting the effect of local traffic across all of the directions.
       /// So, we adjust the last 6 values in the array by adding 6*T to each array
       /// element and then mod'ing the result with #fifos.  For example, if there
-      /// are 10 imFifos, the array elements initially are set to 0,1,2,3,4,5.  
-      /// For a process with T=0, those are the imFifos that are used to send 
+      /// are 10 imFifos, the array elements initially are set to 0,1,2,3,4,5.
+      /// For a process with T=0, those are the imFifos that are used to send
       /// local messages to the different T destinations.  For a process with T=1,
       /// they are set to 6,7,8,9,0,1.
       ///
@@ -350,7 +350,7 @@ namespace PAMI
       /// to select the injection fifo to use for this class route.
       ///
       /// Note that the values in the slots beyond the actual number of fifos
-      /// are adjusted during runtime initialization based on our T coordinate, 
+      /// are adjusted during runtime initialization based on our T coordinate,
       /// in order to more evenly distribute the impact of these broadcasts across
       /// the imFifos.
       ///
@@ -386,7 +386,7 @@ namespace PAMI
 	uint64_t                 *lookAsidePayloadPAs;
 	Kernel_MemoryRegion_t    *lookAsidePayloadMemoryRegions;
 	pami_event_function     **lookAsideCompletionFnPtrs;
-	void                   ***lookAsideCompletionCookiePtrs; 
+	void                   ***lookAsideCompletionCookiePtrs;
       } injFifoResources_t;
 
       typedef struct recFifoResources
@@ -411,7 +411,7 @@ namespace PAMI
       class ResourceManager
       {
       public:
-	
+
 	//////////////////////////////////////////////////////////////////////////
 	///
 	/// \brief PAMI Resource Manager Default Constructor
@@ -420,7 +420,7 @@ namespace PAMI
 	ResourceManager ( PAMI::ResourceManager &pamiRM,
 			  PAMI::Mapping         &mapping,
 			  PAMI::BgqPersonality  &pers,
-			  PAMI::Memory::MemoryManager   &mm )  : 
+			  PAMI::Memory::MemoryManager   &mm )  :
 	  _pamiRM( pamiRM ),
 	  _mapping( mapping ),
 	  _pers( pers ),
@@ -436,7 +436,7 @@ namespace PAMI
 	 {
 	  // For each task, cache the optimal fifo pin in the mapcache.
 	  initFifoPin();
-	      
+
 	  // Calculate the following for each client
 	  calculatePerProcessMaxPamiResources();
 	  calculatePerProcessOptimalPamiResources();
@@ -957,7 +957,7 @@ namespace PAMI
 
         // \brief Get Per Process PAMI Max Number of Contexts Across All Clients
 	inline size_t getPerProcessMaxPamiResources ( )
-	{ 
+	{
 	  size_t rmClientId;
 	  size_t numClients       = _pamiRM.getNumClients();
 	  size_t totalNumContexts = 0;
@@ -968,14 +968,14 @@ namespace PAMI
 	  TRACE((stderr,"MU Context: getPerProcessMaxPamiResourcesAcrossAllClients = %zu\n",totalNumContexts));
 	  return totalNumContexts;
 	}
-	  
+
         // \brief Get Per Process PAMI Optimal Number of Contexts For A Client
 	inline size_t getPerProcessOptimalPamiResources ( size_t RmClientId )
 	{ return _perProcessOptimalPamiResources[RmClientId].numContexts; }
 
         // \brief Get Per Process PAMI Optimal Number of Contexts Across All Clients
 	inline size_t getPerProcessOptimalPamiResources ( )
-	{ 
+	{
 	  size_t rmClientId;
 	  size_t numClients       = _pamiRM.getNumClients();
 	  size_t totalNumContexts = 0;
@@ -986,7 +986,7 @@ namespace PAMI
 	  TRACE((stderr,"MU Context: getPerProcessOptimalPamiResourcesAcrossAllClients = %zu\n",totalNumContexts));
 	  return totalNumContexts;
 	}
-	
+
 	inline MUSPI_InjFifo_t * getGlobalCombiningInjFifoPtr ()
 	{
 	  uint32_t subgroup = (_globalInjFifoIds[0] / BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP) - 64;
@@ -1003,14 +1003,14 @@ namespace PAMI
 	{ return _globalBatIds[0]; }
 
 	/// \brief Get Shared Counter Base Address Table Id
-	/// 
+	///
 	/// This base address table entry has an atomic address of a
 	/// reception counter that is shared...the counter's value is
 	/// not useful (ignored).  The counter offset in the descriptor
 	/// can be zero.
 	inline uint32_t getSharedCounterBatId ()
 	{ return _globalBatIds[1]; }
-	  
+
 	inline size_t mapClientIdToRmClientId ( size_t clientId );
 
 	inline void initializeContexts( size_t rmClientId,
@@ -1035,13 +1035,13 @@ namespace PAMI
 	    uint32_t i;
 	    for ( i=0; i<numFifoPinIndices; i++ )
 	      {
-		_rgetPinInfo->injFifoIds[i] = 
+		_rgetPinInfo->injFifoIds[i] =
 		  _globalRgetInjFifoIds[ _pinInfo[9].injFifoIds[i] ];
 	      }
-	    
+
 	    TRACE((stderr,"MU Context: getRgetPinInfo: _rgetPinInfo->injFifoIds[] = %u,%u,%u,%u,%u,%u,%u,%u,%u,%u, %u,%u,%u,%u,%u,%u\n",_rgetPinInfo->injFifoIds[0],_rgetPinInfo->injFifoIds[1],_rgetPinInfo->injFifoIds[2],_rgetPinInfo->injFifoIds[3],_rgetPinInfo->injFifoIds[4],_rgetPinInfo->injFifoIds[5],_rgetPinInfo->injFifoIds[6],_rgetPinInfo->injFifoIds[7],_rgetPinInfo->injFifoIds[8],_rgetPinInfo->injFifoIds[9],_rgetPinInfo->injFifoIds[10],_rgetPinInfo->injFifoIds[11],_rgetPinInfo->injFifoIds[12],_rgetPinInfo->injFifoIds[13],_rgetPinInfo->injFifoIds[14],_rgetPinInfo->injFifoIds[15]));
-	    
-	    return _rgetPinInfo; 
+
+	    return _rgetPinInfo;
 	  }
 
 	inline uint16_t getPinRecFifo( size_t rmClientId,
@@ -1059,7 +1059,7 @@ namespace PAMI
 					   size_t            numRecFifos,
 					   MUSPI_RecFifo_t **recFifoPtrs,
 					   uint32_t         *globalFifoIds );
-	
+
 	inline char **getLookAsidePayloadBufferVAs( size_t rmClientId,
 						    size_t contextOffset )
 	  { return _clientResources[rmClientId].injResources[contextOffset].lookAsidePayloadPtrs; }
@@ -1082,7 +1082,7 @@ namespace PAMI
 	  { return _globalRgetInjFifoIds; }
 
       private:
-	inline uint16_t chooseFifo (size_t  sourceDim, 
+	inline uint16_t chooseFifo (size_t  sourceDim,
 				    ssize_t hops,
 				    ssize_t sizeHalved,
 				    bool    isTorus);
@@ -1103,8 +1103,8 @@ namespace PAMI
 	inline void calculatePerCorePerProcessPerClientMUResources();
 	inline void setupSharedMemory();
 	inline void allocateMemory( bool    useSharedMemory,
-				    void ** memptr, 
-				    size_t  alignment, 
+				    void ** memptr,
+				    size_t  alignment,
 				    size_t  bytes );
 	inline uint32_t setupInjFifos( uint32_t startingSubgroup,
 				       uint32_t endingSubgroup,
@@ -1177,7 +1177,7 @@ namespace PAMI
 	pinInfoEntry_t *_rgetPinInfo;
 
 	uint16_t _pinBroadcastFifoMap[numTorusDirections][BGQ_COLL_CLASS_MAX_CLASSROUTES];
-	
+
 	size_t  _tSize;
 	ssize_t _aSizeHalved;
 	ssize_t _bSizeHalved;
@@ -1241,7 +1241,7 @@ namespace PAMI
 ///
 /// Select an injection fifo (0..9) based on inputs.
 ///
-uint16_t PAMI::Device::MU::ResourceManager::chooseFifo (size_t  sourceDim, 
+uint16_t PAMI::Device::MU::ResourceManager::chooseFifo (size_t  sourceDim,
 							ssize_t hops,
 							ssize_t sizeHalved,
 							bool    isTorus)
@@ -1335,7 +1335,7 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
   // If communicating only along the A dimension, select either the A- or A+ fifo
   if ( dB == 0 && dC == 0 && dD == 0 && dE == 0 )
   {
-    return ( chooseFifo (ourA, 
+    return ( chooseFifo (ourA,
 			 dA,
 			 _aSizeHalved,
 			 _isTorusA) ? 0 : 1 ); // Return A- if chooseFifo
@@ -1345,7 +1345,7 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
   // If communicating only along the B dimension, select either the B- or B+ fifo
   if ( dA == 0 && dC == 0 && dD == 0 && dE == 0 )
   {
-    return ( chooseFifo (ourB, 
+    return ( chooseFifo (ourB,
 			 dB,
 			 _bSizeHalved,
 			 _isTorusB) ? 2 : 3 ); // Return B- if chooseFifo
@@ -1355,7 +1355,7 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
   // If communicating only along the C dimension, select either the C- or C+ fifo
   if ( dA == 0 && dB == 0 && dD == 0 && dE == 0 )
   {
-    return ( chooseFifo (ourC, 
+    return ( chooseFifo (ourC,
 			 dC,
 			 _cSizeHalved,
 			 _isTorusC) ? 4 : 5 ); // Return C- if chooseFifo
@@ -1365,7 +1365,7 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
   // If communicating only along the D dimension, select either the D- or D+ fifo
   if ( dA == 0 && dB == 0 && dC == 0 && dE == 0 )
   {
-    return ( chooseFifo (ourD, 
+    return ( chooseFifo (ourD,
 			 dD,
 			 _dSizeHalved,
 			 _isTorusD) ? 6 : 7 ); // Return D- if chooseFifo
@@ -1375,7 +1375,7 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
   // If communicating only along the E dimension, select either the E- or E+ fifo
   if ( dA == 0 && dB == 0 && dC == 0 && dD == 0 )
   {
-    return ( chooseFifo (ourE, 
+    return ( chooseFifo (ourE,
 			 dE,
 			 _eSizeHalved,
 			 _isTorusE) ? 8 : 9 ); // Return E- if chooseFifo
@@ -1400,7 +1400,7 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
 ///
 /// The high-order bit of the A,B,C, and D coordinate in each map cache entry
 /// will house this optimal fifo number.  This gives us 4 bits for a total of
-/// 16 possible values.  
+/// 16 possible values.
 /// - Values 0-9 for torus transfers, indicating which of the 10 inj fifos to use.
 /// - Values 10-15 for local transfers, indicating which of 6 inj fifos to use
 ///   (ran out of bits, or it would also be 10 values).
@@ -1437,12 +1437,12 @@ void PAMI::Device::MU::ResourceManager::initFifoPin()
     {
       uint16_t fifo = pinFifo( task );
       PAMI_assert( fifo < 16 );
-      TRACE((stderr,"MU ResourceManager: initFifoPin: task=%zu, fifo=%u\n",task,fifo));      
-      
+      TRACE((stderr,"MU ResourceManager: initFifoPin: task=%zu, fifo=%u\n",task,fifo));
+
       _mapping.setFifoPin( task, fifo );
     }
 
-  // Copy the pinInfo arrary into this process' storage.  These contain 
+  // Copy the pinInfo arrary into this process' storage.  These contain
   // initial fifo pin values that will be modified later.
   posix_memalign ( (void **)&_pinInfo, 64, numTorusDirections * sizeof(pinInfoEntry_t) );
   PAMI_assertf( _pinInfo != NULL, "The heap is full.\n" );
@@ -1457,7 +1457,7 @@ void PAMI::Device::MU::ResourceManager::initFifoPin()
     {
       for ( i=10; i<16; i++ )
 	{
-	  _pinInfo[numFifos-1].injFifoIds[i] = 
+	  _pinInfo[numFifos-1].injFifoIds[i] =
 	    ( _pinInfo[numFifos-1].injFifoIds[i] + ( 6*tcoord ) ) % numFifos;
 	}
     }
@@ -1470,18 +1470,18 @@ void PAMI::Device::MU::ResourceManager::initFifoPin()
       // Only adjust the directions that are unbalanced.
       // For example, if there are 4 inj fifos, the first 8 values are
       // balanced (0,1,2,3,0,1,2,3) but the last 2 are not, and need to be
-      // adjusted.  T=0 will set them to (0,1), T=1 will set them to (2,3), 
+      // adjusted.  T=0 will set them to (0,1), T=1 will set them to (2,3),
       // T=2 will set them to (0,1), and so on.  In this case, the
       // startingAdjustmentIndex is 8, so that only indices 8 and 9 are adjusted.
-      startingAdjustmentIndex = 
-	numTorusDirections - 
-	( numTorusDirections - 
+      startingAdjustmentIndex =
+	numTorusDirections -
+	( numTorusDirections -
 	  ( (numTorusDirections / numFifos) * numFifos ) );
       for ( i=startingAdjustmentIndex; i<numTorusDirections; i++ )
 	{
 	  // Note:  numTorusDirections-startingAdjustmentIndex is the number of overstressed fifos.
-	  _pinInfo[numFifos-1].injFifoIds[i] = 
-	    ( _pinInfo[numFifos-1].injFifoIds[i] + 
+	  _pinInfo[numFifos-1].injFifoIds[i] =
+	    ( _pinInfo[numFifos-1].injFifoIds[i] +
 	      ( (numTorusDirections-startingAdjustmentIndex)*tcoord ) ) % numFifos;
 	}
       TRACE((stderr,"For %zu fifos: %u,%u,%u,%u,%u,%u,%u,%u,%u,%u, %u,%u,%u,%u,%u,%u\n",
@@ -1513,19 +1513,19 @@ void PAMI::Device::MU::ResourceManager::initFifoPin()
       // Only adjust the class routes that are unbalanced.
       // For example, if there are 5 inj fifos, the first 15 values are
       // balanced (0,1,2,3,4,0,1,2,3,4,0,1,2,3,4) but the last 1 is not, and it needs to be
-      // adjusted.  T=0 will set it to 0, T=1 will set it to 1, 
+      // adjusted.  T=0 will set it to 0, T=1 will set it to 1,
       // T=2 will set it to 2, and so on.  In this case, the
       // startingAdjustmentIndex is 15, so that only index 15 is adjusted.
-      startingAdjustmentIndex = 
-	BGQ_COLL_CLASS_MAX_CLASSROUTES - 
-	( BGQ_COLL_CLASS_MAX_CLASSROUTES - 
+      startingAdjustmentIndex =
+	BGQ_COLL_CLASS_MAX_CLASSROUTES -
+	( BGQ_COLL_CLASS_MAX_CLASSROUTES -
 	  ( (BGQ_COLL_CLASS_MAX_CLASSROUTES / numFifos) * numFifos ) );
       for ( i=startingAdjustmentIndex; i<BGQ_COLL_CLASS_MAX_CLASSROUTES; i++ )
 	{
 	  // Note:  BGQ_COLL_CLASS_MAX_CLASSROUTES-startingAdjustmentIndex is the
 	  //        number of overstressed fifos.
-	  _pinBroadcastFifoMap[numFifos-1][i] = 
-	    ( _pinBroadcastFifoMap[numFifos-1][i] + 
+	  _pinBroadcastFifoMap[numFifos-1][i] =
+	    ( _pinBroadcastFifoMap[numFifos-1][i] +
 	      ( (BGQ_COLL_CLASS_MAX_CLASSROUTES-startingAdjustmentIndex)*tcoord ) ) % numFifos;
 	}
       TRACE((stderr,"For %zu fifos: %u,%u,%u,%u,%u,%u,%u,%u,%u,%u, %u,%u,%u,%u,%u,%u\n",
@@ -1553,7 +1553,7 @@ void PAMI::Device::MU::ResourceManager::initFifoPin()
 
 
 // \brief Calculate Per Core MU Resources Based On Availability
-// 
+//
 // Determine how many MU resources have already been consumed by the SPI user.
 // The core with the minimum number of available MU resources is our model.
 // Calculate the available MU resources per core:
@@ -1566,8 +1566,8 @@ void PAMI::Device::MU::ResourceManager::calculatePerCoreMUResourcesBasedOnAvaila
   size_t i;
   int32_t rc;
   uint32_t fifoids[BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP];
-  
-  // Examine each core's MU resources (not 17th core), and determine the 
+
+  // Examine each core's MU resources (not 17th core), and determine the
   // minimum over all of the cores.
   uint32_t group;        // Global group number
   uint32_t subgroup = 0; // Global subgroup number
@@ -1609,7 +1609,7 @@ void PAMI::Device::MU::ResourceManager::calculatePerCoreMUResourcesBasedOnAvaila
 
 
 // \brief Calculate Per Core MU Resources Based On Configuration
-// 
+//
 // Determine how many resources per core are reserved for the SPI user based on
 // the specified configuration info.
 // Calculate the available resources per core:
@@ -1618,21 +1618,21 @@ void PAMI::Device::MU::ResourceManager::calculatePerCoreMUResourcesBasedOnAvaila
 void PAMI::Device::MU::ResourceManager::calculatePerCoreMUResourcesBasedOnConfig()
 {
   size_t numSpiUserInjFifosPerProcess = _pamiRM.getNumSpiUserInjFifosPerProcess();
-  size_t numSpiUserInjFifos = 
+  size_t numSpiUserInjFifos =
     numSpiUserInjFifosPerProcess / _pamiRM.getNumCoresPerProcess();
   if ( ( numSpiUserInjFifos == 0 ) && ( numSpiUserInjFifosPerProcess > 0 ) )
     numSpiUserInjFifos = 1;
 
   numSpiUserInjFifos = numSpiUserInjFifos * _pamiRM.getNumProcessesPerCore();
- 
+
   size_t numSpiUserRecFifosPerProcess = _pamiRM.getNumSpiUserRecFifosPerProcess();
-  size_t numSpiUserRecFifos = 
+  size_t numSpiUserRecFifos =
     numSpiUserRecFifosPerProcess / _pamiRM.getNumCoresPerProcess();
   if ( ( numSpiUserRecFifos == 0 ) && ( numSpiUserRecFifosPerProcess > 0 ) )
     numSpiUserRecFifos = 1;
 
   numSpiUserRecFifos = numSpiUserRecFifos * _pamiRM.getNumProcessesPerCore();
- 
+
   _perCoreMUResourcesBasedOnConfig.numInjFifos = BGQ_MU_NUM_INJ_FIFOS_PER_GROUP - numSpiUserInjFifos;
 
   _perCoreMUResourcesBasedOnConfig.numRecFifos = BGQ_MU_NUM_REC_FIFOS_PER_GROUP - numSpiUserRecFifos;
@@ -1678,7 +1678,7 @@ void PAMI::Device::MU::ResourceManager::calculatePerCorePerProcessMUResources()
 
   size_t numProcessesPerCore = _pamiRM.getNumProcessesPerCore();
 
-  _perCorePerProcessMUResources.numInjFifos = 
+  _perCorePerProcessMUResources.numInjFifos =
     _perCoreMUResources.numInjFifos / numProcessesPerCore;
 
   PAMI_assertf( _perCorePerProcessMUResources.numInjFifos > 0, "No injection fifos available for PAMI\n" );
@@ -1692,7 +1692,7 @@ void PAMI::Device::MU::ResourceManager::calculatePerCorePerProcessMUResources()
 }
 
 
-void PAMI::Device::MU::ResourceManager::dividePAMIResourceAmongClients( 
+void PAMI::Device::MU::ResourceManager::dividePAMIResourceAmongClients(
 						       pamiResources_t &resourceValue,
 						       size_t           numClients,
 						       pamiResources_t *clientResource )
@@ -1701,23 +1701,23 @@ void PAMI::Device::MU::ResourceManager::dividePAMIResourceAmongClients(
   size_t i;
   for (i=0; i<numClients; i++)
     {
-      double numContexts = ( (double)resourceValue.numContexts * 
+      double numContexts = ( (double)resourceValue.numContexts *
 			     (double)_pamiRM.getClientWeight(i) ) / (double)100;
       size_t numContexts_int = numContexts;
       if ( ( numContexts - (double)numContexts_int ) >= 0.5 ) numContexts_int++; // Round up.
       if ( numContexts_int == 0 ) numContexts_int = 1; // Don't let it be zero.
-      while ( ( resourceRemaining - numContexts_int ) < 
+      while ( ( resourceRemaining - numContexts_int ) <
 	      ( numClients - i - 1 ) ) // Not enough remain to go around?
 	numContexts_int--;
       if ( numContexts_int > resourceRemaining )
 	numContexts_int = resourceRemaining;
       resourceRemaining -= numContexts_int;
-      clientResource[i].numContexts = numContexts_int;  
+      clientResource[i].numContexts = numContexts_int;
     }
 }
 
 
-void PAMI::Device::MU::ResourceManager::divideMUResourceAmongClients( 
+void PAMI::Device::MU::ResourceManager::divideMUResourceAmongClients(
 						       muResources_t &resourceValue,
 						       size_t         numClients,
 						       muResources_t *clientResource )
@@ -1727,36 +1727,36 @@ void PAMI::Device::MU::ResourceManager::divideMUResourceAmongClients(
   size_t i;
   for (i=0; i<numClients; i++)
     {
-      double numInjFifos = ( (double)resourceValue.numInjFifos * 
+      double numInjFifos = ( (double)resourceValue.numInjFifos *
 			     (double)_pamiRM.getClientWeight(i) ) / (double)100;
       size_t numInjFifos_int = numInjFifos;
       if ( ( numInjFifos - (double)numInjFifos_int ) >= 0.5 ) numInjFifos_int++; // Round up.
       if ( numInjFifos_int == 0 ) numInjFifos_int = 1; // Don't let it be zero.
-      while ( ( resourceRemaining - numInjFifos_int ) < 
+      while ( ( resourceRemaining - numInjFifos_int ) <
 	      ( numClients - i - 1 ) ) // Not enough remain to go around?
 	numInjFifos_int--;
       if ( numInjFifos_int > resourceRemaining )
 	numInjFifos_int = resourceRemaining;
       resourceRemaining -= numInjFifos_int;
-      clientResource[i].numInjFifos = numInjFifos_int;  
+      clientResource[i].numInjFifos = numInjFifos_int;
     }
 
   // Divide Number of Reception Fifos
   resourceRemaining = resourceValue.numRecFifos;
   for (i=0; i<numClients; i++)
     {
-      double numRecFifos = ( (double)resourceValue.numRecFifos * 
+      double numRecFifos = ( (double)resourceValue.numRecFifos *
 			     (double)_pamiRM.getClientWeight(i) ) / (double)100;
       size_t numRecFifos_int = numRecFifos;
       if ( ( numRecFifos - (double)numRecFifos_int ) >= 0.5 ) numRecFifos_int++; // Round up.
       if ( numRecFifos_int == 0 ) numRecFifos_int = 1; // Don't let it be zero.
-      while ( ( resourceRemaining - numRecFifos_int ) < 
+      while ( ( resourceRemaining - numRecFifos_int ) <
 	      ( numClients - i - 1 ) ) // Not enough remain to go around?
 	numRecFifos_int--;
       if ( numRecFifos_int > resourceRemaining )
 	numRecFifos_int = resourceRemaining;
       resourceRemaining -= numRecFifos_int;
-      clientResource[i].numRecFifos = numRecFifos_int;  
+      clientResource[i].numRecFifos = numRecFifos_int;
     }
 }
 
@@ -1775,9 +1775,9 @@ void PAMI::Device::MU::ResourceManager::calculatePerProcessMaxPamiResources()
 
   // Compute the max number of contexts per process as the minimum of the
   // number of inj and rec fifos per process.
-  size_t totalNumInjFifosPerProcess = _perCorePerProcessMUResources.numInjFifos * 
+  size_t totalNumInjFifosPerProcess = _perCorePerProcessMUResources.numInjFifos *
                                         _pamiRM.getNumCoresPerProcess();
-  size_t totalNumRecFifosPerProcess = _perCorePerProcessMUResources.numRecFifos * 
+  size_t totalNumRecFifosPerProcess = _perCorePerProcessMUResources.numRecFifos *
                                         _pamiRM.getNumCoresPerProcess();
   pamiResources_t maxContextsPerProcess;
   maxContextsPerProcess.numContexts = totalNumInjFifosPerProcess;
@@ -1820,7 +1820,7 @@ void PAMI::Device::MU::ResourceManager::calculatePerProcessOptimalPamiResources(
       clientOptimalNumInjFifosPerContext--;
     }
   PAMI_assertf ( clientOptimalNumInjFifosPerContext > 0, "Not enough injection fifos are available.\n" );
-  
+
   size_t clientOptimalNumRecFifosPerContext = optimalNumRecFifosPerContext;
   size_t numRecFifosPerCore = _perCorePerProcessMUResources.numRecFifos;
   while (1)
@@ -1830,7 +1830,7 @@ void PAMI::Device::MU::ResourceManager::calculatePerProcessOptimalPamiResources(
       clientOptimalNumRecFifosPerContext--;
     }
   PAMI_assertf ( clientOptimalNumRecFifosPerContext > 0, "Not enough reception fifos are available.\n" );
-  
+
   // Calculate optimal number of contexts per process as the minimum of the
   // Inj and Rec.
   numContextsPerCore = numInjContextsPerCore;
@@ -1862,7 +1862,7 @@ void PAMI::Device::MU::ResourceManager::calculatePerCorePerProcessPerClientMURes
   divideMUResourceAmongClients( _perCorePerProcessMUResources,
 				numClients,
 				_perCorePerProcessPerClientMUResources );
-				
+
   for (i=0; i<numClients; i++)
     {
       TRACE((stderr,"MU ResourceManager: _perCorePerProcessPerClientMUResources[%lu].numInjFifos = %lu, .numRecFifos = %lu\n",i,_perCorePerProcessPerClientMUResources[i].numInjFifos,_perCorePerProcessPerClientMUResources[i].numRecFifos));
@@ -1894,7 +1894,7 @@ void PAMI::Device::MU::ResourceManager::setupSharedMemory()
 	{
 	  ptr = mmap( NULL, _memSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	  TRACE((stderr, "MU ResourceManager: setupSharedMemory: After mmap, ptr = %p\n", ptr));
-	  
+
 	  if (ptr != MAP_FAILED)
 	    {
 	      TRACE((stderr, "MU ResourceManager: setupSharedMemory: Shmem file <%s> %zu bytes mapped at %p\n", shmemfile, _memSize, ptr));
@@ -1907,7 +1907,7 @@ void PAMI::Device::MU::ResourceManager::setupSharedMemory()
 	    }
 	}
     }
-  
+
   // There is not shared memory...
   if (rc == -1)
     {
@@ -1926,8 +1926,8 @@ void PAMI::Device::MU::ResourceManager::setupSharedMemory()
 
 
 void PAMI::Device::MU::ResourceManager::allocateMemory( bool    useSharedMemory,
-							void ** memptr, 
-							size_t  alignment, 
+							void ** memptr,
+							size_t  alignment,
 							size_t  bytes )
 {
   if ( useSharedMemory )
@@ -1966,9 +1966,9 @@ void PAMI::Device::MU::ResourceManager::allocateMemory( bool    useSharedMemory,
 //                               This array is malloc'd and initialized
 //                               by this function, and this pointer is set
 //                               to point to that array.
-// 
+//
 // \retval  numFifosSetUp
-// 
+//
 uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
                        uint32_t startingSubgroup,
 		       uint32_t endingSubgroup,
@@ -1993,7 +1993,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 
   if ( _calculateSizeOnly == 1 )
     {
-      _memSize += outputStructuresSize + 
+      _memSize += outputStructuresSize +
 	            fifoPtrsArraySize  +
 	            fifosSize +
                     fifoIdsSize;
@@ -2001,7 +2001,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
       return 0;
 
     } // End: _calculateOnly
-      
+
   // Allocate space for the output structures
   allocateMemory( useSharedMemory, (void **)(subgroups), 16, outputStructuresSize );
   TRACE((stderr,"MU ResourceManager: setupInjFifos: subgroups ptr = %p\n",*subgroups));
@@ -2020,7 +2020,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
       if ( useSharedMemory ) PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "Shared memory is full.\n" )
       else PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "The heap is full.\n" );
     }
-  
+
   allocateMemory( useSharedMemory, (void **)(globalFifoIds), 16, fifoIdsSize );
   TRACE((stderr,"MU ResourceManager: setupInjFifos: globalFifoIds ptr = %p\n",*globalFifoIds));
   if ( useSharedMemory ) PAMI_assertf ( *globalFifoIds != NULL, "Shared memory is full.\n" )
@@ -2044,7 +2044,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 
       if ( numFree > numLeftToAllocate ) numFree = numLeftToAllocate;
 
-      Kernel_InjFifoAttributes_t *fifoAttrs = 
+      Kernel_InjFifoAttributes_t *fifoAttrs =
 	(Kernel_InjFifoAttributes_t *)malloc( numFree * sizeof(Kernel_InjFifoAttributes_t) );
       PAMI_assertf( fifoAttrs != NULL, "The heap is full.\n" );
       for (fifo=0; fifo<numFree; fifo++)
@@ -2069,16 +2069,16 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 					   (*fifoPtrs)[fifoIndex+fifo],
 					   fifoSize );
 	  PAMI_assertf( rc == 0, "Kernel_CreateMemoryRegion failed with rc=%d\n",rc );
-	
+
 	  rc = Kernel_InjFifoInit( &((*subgroups)[subgroupIndex]),
 				   freeIds[fifo],
 				   &memRegion,
 				   (uint64_t)(*fifoPtrs)[fifoIndex+fifo] -
 				   (uint64_t)memRegion.BaseVa,
-				   fifoSize-1 );    
+				   fifoSize-1 );
 	  PAMI_assertf( rc == 0, "Kernel_InjFifoInit failed with rc=%d\n",rc );
 
-	  (*globalFifoIds)[fifoIndex+fifo] = 
+	  (*globalFifoIds)[fifoIndex+fifo] =
 	    subgroup * BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP + freeIds[fifo];
 	  TRACE((stderr,"MU ResourceManager: setupInjFifos: Initialized subgroup ptr = %p, id=%u, fifoSize=%zu, globalId = %u\n",&((*subgroups)[subgroupIndex]), freeIds[fifo], fifoSize, (*globalFifoIds)[fifoIndex+fifo] ));
 	}
@@ -2105,7 +2105,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 
 
 // \brief Allocate Global Injection Fifos
-// 
+//
 // Allocate resources needed before main().  These include:
 // -  1 collective combining injection fifo (in subgroup 65).
 // - 10 remote get injection fifos (8 in subgroup 64, 2 in subgroup 65).
@@ -2114,11 +2114,11 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
 {
   uint32_t numFifosSetup;
   Kernel_InjFifoAttributes_t  fifoAttr;
-  
+
   // Set up the combining collective fifo
-  
+
   memset( &fifoAttr, 0x00, sizeof(fifoAttr) );
-  
+
   numFifosSetup = setupInjFifos( 64, // Starting subgroup
 				 65, // Ending subgroup
 				 1,  // Number of fifos
@@ -2129,14 +2129,14 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
 				 &_globalInjFifoPtrs,
 				 &_globalInjFifoIds );
   PAMI_assertf( (_calculateSizeOnly == 1) || (_allocateOnly == 1) || (numFifosSetup == 1), "Only %u injection fifos were set up.  Expected 1.\n",numFifosSetup );
-  
+
   // Set up the remote get fifos
-  
+
   memset( &fifoAttr, 0x00, sizeof(fifoAttr) );
-  
+
   fifoAttr.RemoteGet = 1;
   fifoAttr.Priority  = 1;
-  
+
   numFifosSetup = setupInjFifos( 64, // Starting subgroup
 				 65, // Ending subgroup
 				 10, // Number of fifos
@@ -2155,9 +2155,9 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
   //     Use the same relative rget fifos as the 9 normal fifos.
   if ( _calculateSizeOnly == 1 ) return;
 
-  allocateMemory( false /*do not useSharedMemory*/, 
-		  (void **)(&_rgetPinInfo), 
-		  64, 
+  allocateMemory( false /*do not useSharedMemory*/,
+		  (void **)(&_rgetPinInfo),
+		  64,
 		  sizeof(*_rgetPinInfo) );
   TRACE((stderr,"MU ResourceManager: allocateGlobalInjFifos: _rgetPinInfo = %p\n",_rgetPinInfo));
   PAMI_assertf ( _rgetPinInfo != NULL, "The heap is full.\n" );
@@ -2189,9 +2189,9 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
 //                               This array is malloc'd and initialized
 //                               by this function, and this pointer is set
 //                               to point to that array.
-// 
+//
 // \retval  numBatIdssSetUp
-// 
+//
 uint32_t PAMI::Device::MU::ResourceManager::setupBatIds(
                        uint32_t                           startingSubgroup,
 		       uint32_t                           endingSubgroup,
@@ -2216,7 +2216,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupBatIds(
       return 0;
 
     } // End: _calculateOnly
-      
+
   // Allocate space for the output structures
   allocateMemory( useSharedMemory, (void **)(subgroups), 16, outputStructuresSize );
   TRACE((stderr,"MU ResourceManager: setupBatIds: subgroups ptr = %p\n",*subgroups));
@@ -2258,7 +2258,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupBatIds(
       // Calculate the global BAT ID and return it.
       for ( batId=0; batId<numFree; batId++ )
 	{
-	  (*globalBatIds)[batIdIndex+batId] = 
+	  (*globalBatIds)[batIdIndex+batId] =
 	    subgroup * BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP + freeIds[batId];
 	  TRACE((stderr,"MU ResourceManager: setupBatIds: Initialized subgroup ptr = %p, id=%u, globalId = %u\n",&((*subgroups)[subgroupIndex]), freeIds[batId], (*globalBatIds)[batIdIndex+batId] ));
 	}
@@ -2278,7 +2278,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupBatIds(
 
 
 // \brief Allocate Global Base Address Table Entry
-// 
+//
 // Allocate resources needed before main().  These include:
 // -  1 base address table entry in subgroup 64 or 65, initialized to 0.
 // -  1 base address table entry in subgroup 64 or 65, initialized to the atomic
@@ -2288,7 +2288,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
 {
   uint32_t numBatIdsSetup;
   int32_t  rc;
-  
+
   numBatIdsSetup = setupBatIds( 64, // Starting subgroup
 				65, // Ending subgroup
 				2,  // Number of BAT ids
@@ -2305,7 +2305,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
       return;
 
     } // End: _calculateOnly
-      
+
   // Allocate space for the shared counter in shared memory.
   uint64_t *sharedCounterPtr;
   allocateMemory( true /*useSharedMemory*/, (void **)(&sharedCounterPtr), 8, sizeof(uint64_t) );
@@ -2337,7 +2337,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
   batId       = _globalBatIds[1] % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
 
   uint64_t sharedCounterBATvalue = (uint64_t)MUSPI_GetAtomicAddress (
-					       sharedCounterPA, 
+					       sharedCounterPA,
 					       MUHWI_ATOMIC_OPCODE_STORE_ADD_COHERENCE_ON_ZERO);
 
   rc = MUSPI_SetBaseAddress ( &_globalBatSubGroups[batSubgroup],
@@ -2345,7 +2345,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
 			      sharedCounterBATvalue );
   TRACE((stderr,"MU ResourceManager: allocateGlobalBaseAddressTableEntry: Shared Counter BAT entry: Relative batSubgroup=%u, Relative batId=%u, Global batId=%u, rc=%d, Shared Counter PA=0x%lx, BAT value = 0x%lx\n",batSubgroup, batId, _globalBatIds[1], rc, sharedCounterPA, sharedCounterBATvalue ));
   PAMI_assertf( rc == 0, "MUSPI_SetBaseAddress failed with rc=%d\n",rc );
-  
+
 } // End: allocateGlobalBaseAddressTableEntry()
 
 
@@ -2374,9 +2374,9 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
 //                               This array is malloc'd and initialized
 //                               by this function, and this pointer is set
 //                               to point to that array.
-// 
+//
 // \retval  numFifosSetUp
-// 
+//
 uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
                        uint32_t startingSubgroup,
 		       uint32_t endingSubgroup,
@@ -2401,7 +2401,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
 
   if ( _calculateSizeOnly == 1 )
     {
-      _memSize += outputStructuresSize + 
+      _memSize += outputStructuresSize +
 	            fifoPtrsArraySize  +
 	            fifosSize +
                     fifoIdsSize;
@@ -2409,7 +2409,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
       return 0;
 
     } // End: _calculateOnly
-      
+
   // Allocate space for the output structures
   allocateMemory( useSharedMemory, (void **)(subgroups), 16, outputStructuresSize );
   TRACE((stderr,"MU ResourceManager: setupRecFifos: subgroups ptr = %p\n",*subgroups));
@@ -2428,7 +2428,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
       if ( useSharedMemory ) PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "Shared memory is full.\n" )
       else PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "The heap is full.\n" );
     }
-  
+
   allocateMemory( useSharedMemory, (void **)(globalFifoIds), 16, fifoIdsSize );
   TRACE((stderr,"MU ResourceManager: setupRecFifos: globalFifoIds ptr = %p\n",*globalFifoIds));
   if ( useSharedMemory ) PAMI_assertf ( *globalFifoIds != NULL, "Shared memory is full.\n" )
@@ -2452,7 +2452,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
 
       if ( numFree > numLeftToAllocate ) numFree = numLeftToAllocate;
 
-      Kernel_RecFifoAttributes_t *fifoAttrs = 
+      Kernel_RecFifoAttributes_t *fifoAttrs =
 	(Kernel_RecFifoAttributes_t *)malloc( numFree * sizeof(Kernel_RecFifoAttributes_t) );
       PAMI_assertf( fifoAttrs != NULL, "The heap is full.\n" );
       for (fifo=0; fifo<numFree; fifo++)
@@ -2468,7 +2468,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
       TRACE((stderr,"MU ResourceManager: setupRecFifos: Allocated subgroup ptr = %p\n",&((*subgroups)[subgroupIndex])));
 
       free(fifoAttrs); fifoAttrs=NULL;
-      
+
       uint64_t enableBits = 0;
 
       // Init the MU MMIO for the fifos.
@@ -2479,20 +2479,20 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
 					   (*fifoPtrs)[fifoIndex+fifo],
 					   fifoSize );
 	  PAMI_assertf( rc == 0, "Kernel_CreateMemoryRegion failed with rc=%d\n",rc );
-	
+
 	  rc = Kernel_RecFifoInit( &((*subgroups)[subgroupIndex]),
 				   freeIds[fifo],
 				   &memRegion,
 				   (uint64_t)(*fifoPtrs)[fifoIndex+fifo] -
 				   (uint64_t)memRegion.BaseVa,
-				   fifoSize-1 );    
+				   fifoSize-1 );
 	  PAMI_assertf( rc == 0, "Kernel_RecFifoInit failed with rc=%d\n",rc );
 
-	  (*globalFifoIds)[fifoIndex+fifo] = 
+	  (*globalFifoIds)[fifoIndex+fifo] =
 	    subgroup * BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP + freeIds[fifo];
 	  TRACE((stderr,"MU ResourceManager: setupRecFifos: Initialized subgroup ptr = %p, id=%u, fifoSize=%zu, globalId = %u\n",&((*subgroups)[subgroupIndex]), freeIds[fifo], fifoSize, (*globalFifoIds)[fifoIndex+fifo] ));
 
-	  enableBits |= 0x8000ULL >> 
+	  enableBits |= 0x8000ULL >>
 	    ( (subgroup % BGQ_MU_NUM_REC_FIFO_SUBGROUPS)*BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP + freeIds[fifo] );
 	}
 
@@ -2517,7 +2517,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
 
 
 // \brief Allocate Global Reception Fifos
-// 
+//
 // Allocate resources needed before main().  These include:
 // -  N reception fifos, where N is in the range 1..256.  All available reception
 //    fifos will be allocated at this time.
@@ -2528,7 +2528,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalRecFifos()
 
 
 // \brief Allocate Global Resources
-// 
+//
 // Allocate resources needed before main().  These include:
 // - 10 remote get injection fifos (8 in subgroup 64, 2 in subgroup 65).
 // -  1 collective combining injection fifo (in subgroup 65).
@@ -2551,7 +2551,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
 
   // The master process allocates space for AND initializes the resources, while
   // all other processes just allocate space for the resources.  The idea is that
-  // all processes on the node perform the allocation so they know what the 
+  // all processes on the node perform the allocation so they know what the
   // addresses are...since they allocate the resources in the same sequence, they
   // all get the same addresses.  Only the master actually initializes that storage.
   // When the storage is shared memory, there are multiple processes.  The
@@ -2623,18 +2623,18 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
   size_t   numInjFifos = _perContextMUResources[rmClientId].numInjFifos;
   Kernel_InjFifoAttributes_t  injFifoAttr;
   uint32_t fifo;
-  size_t lookAsidePayloadBufferSize = (_pamiRM.getInjFifoSize() / sizeof(MUHWI_Descriptor_t)) * 
+  size_t lookAsidePayloadBufferSize = (_pamiRM.getInjFifoSize() / sizeof(MUHWI_Descriptor_t)) *
     sizeof(InjGroup::immediate_payload_t);
-  size_t lookAsideCompletionFnArraySize = (_pamiRM.getInjFifoSize() / sizeof(MUHWI_Descriptor_t)) * 
+  size_t lookAsideCompletionFnArraySize = (_pamiRM.getInjFifoSize() / sizeof(MUHWI_Descriptor_t)) *
     sizeof(pami_event_function);
-  size_t lookAsideCompletionCookieArraySize = (_pamiRM.getInjFifoSize() / sizeof(MUHWI_Descriptor_t)) * 
+  size_t lookAsideCompletionCookieArraySize = (_pamiRM.getInjFifoSize() / sizeof(MUHWI_Descriptor_t)) *
     sizeof(void *);
 
   // Set up the injection fifos for this context
-  
+
   memset( &injFifoAttr, 0x00, sizeof(injFifoAttr) );
-  
-  numFifosSetup = setupInjFifos( 
+
+  numFifosSetup = setupInjFifos(
 		    _clientResources[rmClientId].startingSubgroupIds[contextOffset],
 		    _clientResources[rmClientId].endingSubgroupIds[contextOffset],
 		    numInjFifos,
@@ -2646,11 +2646,11 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
 		    &(_clientResources[rmClientId].injResources[contextOffset].globalFifoIds) );
   PAMI_assertf( numFifosSetup == numInjFifos, "Only %u injection fifos were set up.  Expected %zu.\n",numFifosSetup,numInjFifos );
   // Set up the reception fifos for this context
-  
+
   Kernel_RecFifoAttributes_t  recFifoAttr;
   memset( &recFifoAttr, 0x00, sizeof(recFifoAttr) );
-  
-  numFifosSetup = setupRecFifos( 
+
+  numFifosSetup = setupRecFifos(
 		    _clientResources[rmClientId].startingSubgroupIds[contextOffset],
 		    _clientResources[rmClientId].endingSubgroupIds[contextOffset],
 		    _perContextMUResources[rmClientId].numRecFifos,
@@ -2704,9 +2704,9 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
 
   // Set up array of pointers to the lookaside payload buffers.  There is pointer per inj fifo.
   char **lookAsidePayloadPtrs;
-  allocateMemory( false, // Use heap 
-		  (void **)(&lookAsidePayloadPtrs), 
-		  16, 
+  allocateMemory( false, // Use heap
+		  (void **)(&lookAsidePayloadPtrs),
+		  16,
 		  numInjFifos * sizeof(char**) );
   TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadPtrs = %p\n",lookAsidePayloadPtrs));
   PAMI_assertf( lookAsidePayloadPtrs != NULL, "The heap is full.\n" );
@@ -2717,8 +2717,8 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
   for ( fifo=0; fifo<numInjFifos; fifo++ )
     {
       allocateMemory( false, // Use heap
-		      (void **)&(lookAsidePayloadPtrs[fifo]), 
-		      32, 
+		      (void **)&(lookAsidePayloadPtrs[fifo]),
+		      32,
 		      lookAsidePayloadBufferSize );
       TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadPtr[%u] = %p\n",fifo,lookAsidePayloadPtrs[fifo]));
       PAMI_assertf ( lookAsidePayloadPtrs[fifo] != NULL, "The heap is full.\n" );
@@ -2728,9 +2728,9 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
   // We need this to get the physical addresses of the lookaside payload buffers.
   // There is 1 memory region per lookaside buffer (ie. per inj fifo).
   Kernel_MemoryRegion_t *lookAsidePayloadMemoryRegions;
-  allocateMemory( false, // Use heap 
-		  (void **)(&lookAsidePayloadMemoryRegions), 
-		  16, 
+  allocateMemory( false, // Use heap
+		  (void **)(&lookAsidePayloadMemoryRegions),
+		  16,
 		  numInjFifos * sizeof(Kernel_MemoryRegion_t) );
 TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadMemoryRegions = %p\n",lookAsidePayloadMemoryRegions));
   PAMI_assertf( lookAsidePayloadMemoryRegions != NULL, "The heap is full.\n" );
@@ -2744,13 +2744,13 @@ TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadMem
 				       lookAsidePayloadBufferSize );
       PAMI_assertf( rc==0, "Kernel_CreateMemoryRegion failed with rc=%d\n",rc);
     }
-  
+
   // Set up array of lookaside payload buffer physical addresses.
   // There is 1 PA for each lookaside buffer (ie. for each inj fifo).
   uint64_t *lookAsidePayloadPAs;
-  allocateMemory( false, // Use heap 
-		  (void **)(&lookAsidePayloadPAs), 
-		  16, 
+  allocateMemory( false, // Use heap
+		  (void **)(&lookAsidePayloadPAs),
+		  16,
 		  numInjFifos * sizeof(uint64_t) );
   TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadPAs = %p\n",lookAsidePayloadPAs));
   PAMI_assertf( lookAsidePayloadPAs != NULL, "The heap is full.\n" );
@@ -2765,13 +2765,13 @@ TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadMem
 	(uint64_t)lookAsidePayloadMemoryRegions[fifo].BasePa;
       TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadPAs[%u] = 0x%lx\n",fifo,lookAsidePayloadPAs[fifo]));
     }
-  
+
   // Set up array of pointers to lookaside completion function arrays.
   // There is 1 pointer for each inj fifo.
   pami_event_function **lookAsideCompletionFnPtrs;
-  allocateMemory( false, // Use heap 
-		  (void **)(&lookAsideCompletionFnPtrs), 
-		  16, 
+  allocateMemory( false, // Use heap
+		  (void **)(&lookAsideCompletionFnPtrs),
+		  16,
 		  numInjFifos * sizeof(pami_event_function *) );
   TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsideCompletionFnPtrs = %p\n",lookAsideCompletionFnPtrs));
   PAMI_assertf( lookAsideCompletionFnPtrs != NULL, "The heap is full.\n" );
@@ -2782,20 +2782,20 @@ TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadMem
   for ( fifo=0; fifo<numInjFifos; fifo++ )
     {
       allocateMemory( false, // Use heap
-		      (void **)&(lookAsideCompletionFnPtrs[fifo]), 
-		      16, 
+		      (void **)&(lookAsideCompletionFnPtrs[fifo]),
+		      16,
 		      lookAsideCompletionFnArraySize );
       TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsideCompletionFnPtrs[%u] = %p\n",fifo,lookAsideCompletionFnPtrs[fifo]));
       PAMI_assertf ( lookAsideCompletionFnPtrs[fifo] != NULL, "The heap is full.\n" );
-      memset( lookAsideCompletionFnPtrs[fifo], 0x00, lookAsideCompletionFnArraySize ); 
+      memset( lookAsideCompletionFnPtrs[fifo], 0x00, lookAsideCompletionFnArraySize );
     }
-  
+
   // Set up array of pointers to lookaside completion cookie arrays.
   // There is 1 pointer for each inj fifo.
   void ***lookAsideCompletionCookiePtrs;
-  allocateMemory( false, // Use heap 
-		  (void **)(&lookAsideCompletionCookiePtrs), 
-		  16, 
+  allocateMemory( false, // Use heap
+		  (void **)(&lookAsideCompletionCookiePtrs),
+		  16,
 		  numInjFifos * sizeof(void **) );
   TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsideCompletionCookiePtrs = %p\n",lookAsideCompletionCookiePtrs));
   PAMI_assertf( lookAsideCompletionCookiePtrs != NULL, "The heap is full.\n" );
@@ -2806,12 +2806,12 @@ TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadMem
   for ( fifo=0; fifo<numInjFifos; fifo++ )
     {
       allocateMemory( false, // Use heap
-		      (void **)&(lookAsideCompletionCookiePtrs[fifo]), 
-		      16, 
+		      (void **)&(lookAsideCompletionCookiePtrs[fifo]),
+		      16,
 		      lookAsideCompletionCookieArraySize );
       TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsideCompletionCookiePtrs[%u] = %p\n",fifo,lookAsideCompletionCookiePtrs[fifo]));
       PAMI_assertf ( lookAsideCompletionCookiePtrs[fifo] != NULL, "The heap is full.\n" );
-      memset( lookAsideCompletionCookiePtrs[fifo], 0x00, lookAsideCompletionCookieArraySize ); 
+      memset( lookAsideCompletionCookiePtrs[fifo], 0x00, lookAsideCompletionCookieArraySize );
     }
 
 } // End: allocateContextResources()
@@ -2825,8 +2825,8 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 
   _clientResources[rmClientId].numContexts = numContexts;
 
-  _clientResources[rmClientId].pinRecFifo = (uint16_t*)malloc( _mapping.tSize() * 
-							       numContexts * 
+  _clientResources[rmClientId].pinRecFifo = (uint16_t*)malloc( _mapping.tSize() *
+							       numContexts *
 							       sizeof(uint16_t) );
   PAMI_assertf( _clientResources[rmClientId].pinRecFifo, "The heap is full.\n" );
 
@@ -2849,9 +2849,9 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 
   TRACE((stderr,"MU ResourceManager: initializeContexts: RmClientId=%zu, numCoresPerProcess = %zu, numContextsPerCore = %zu\n",rmClientId,numCoresPerProcess,numContextsPerCore));
 
-  _perContextMUResources[rmClientId].numInjFifos = 
+  _perContextMUResources[rmClientId].numInjFifos =
     _perCorePerProcessPerClientMUResources[rmClientId].numInjFifos / numContextsPerCore;
-  _perContextMUResources[rmClientId].numRecFifos = 
+  _perContextMUResources[rmClientId].numRecFifos =
     _perCorePerProcessPerClientMUResources[rmClientId].numRecFifos / numContextsPerCore;
 
   PAMI_assertf( _perContextMUResources[rmClientId].numInjFifos, "Not enough injection fifos are available\n" );
@@ -2885,7 +2885,7 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 	{
 	  startingSubgroup++;
 	  subgroupMask = subgroupMask >> 1;  // Shift to next subgroup.
-	  if ( subgroupMask == 0 ) 
+	  if ( subgroupMask == 0 )
 	    {
 	      startingSubgroup = 0;
 	      subgroupMask = 0x8000000000000000ULL; // Wrap
@@ -2917,7 +2917,7 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
       else
 	{
 	  startingSubgroup = endingSubgroup + 1; // Note: subgroupMask is already here.
-	  while ( startingSubgroup & 0x3 ) 
+	  while ( startingSubgroup & 0x3 )
 	    {
 	      startingSubgroup++;
 	      subgroupMask = subgroupMask >> 1;
@@ -2963,15 +2963,15 @@ void PAMI::Device::MU::ResourceManager::getInjFifosForContext( size_t           
   size_t fifo;
   for ( fifo=0; fifo<numInjFifos; fifo++ )
     {
-      uint32_t globalFifoId     = 
+      uint32_t globalFifoId     =
 	_clientResources[rmClientId].injResources[contextOffset].globalFifoIds[fifo];
       uint32_t globalSubgroup   = globalFifoId / BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP;
-      uint32_t relativeSubgroup = globalSubgroup - 
+      uint32_t relativeSubgroup = globalSubgroup -
 	_clientResources[rmClientId].startingSubgroupIds[contextOffset];
-      uint32_t relativeFifo     = globalFifoId - 
+      uint32_t relativeFifo     = globalFifoId -
 	(globalSubgroup * BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP);
 
-      injFifoPtrs[fifo] = 
+      injFifoPtrs[fifo] =
 	&( _clientResources[rmClientId].
 	   injResources[contextOffset].
 	   subgroups[relativeSubgroup].
@@ -2993,14 +2993,14 @@ void PAMI::Device::MU::ResourceManager::getRecFifosForContext( size_t           
   size_t fifo;
   for ( fifo=0; fifo<numRecFifos; fifo++ )
     {
-      uint32_t globalFifoId     = 
+      uint32_t globalFifoId     =
 	_clientResources[rmClientId].recResources[contextOffset].globalFifoIds[fifo];
       uint32_t globalSubgroup   = globalFifoId / BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP;
       uint32_t relativeSubgroup = globalSubgroup - _clientResources[rmClientId].startingSubgroupIds[contextOffset];
-      uint32_t relativeFifo     = globalFifoId - 
+      uint32_t relativeFifo     = globalFifoId -
 	(globalSubgroup * BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP);
 
-      recFifoPtrs[fifo] = 
+      recFifoPtrs[fifo] =
 	&( _clientResources[rmClientId].
 	   recResources[contextOffset].
 	   subgroups[relativeSubgroup].

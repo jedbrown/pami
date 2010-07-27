@@ -52,7 +52,7 @@ namespace PAMI
         typedef uint8_t packet_state_t[BroadcastPacketModel::packet_model_state_bytes];
 
         // Metadata passed in the (single-packet) header
-        typedef struct __attribute__((__packed__)) 
+        typedef struct __attribute__((__packed__))
         {
           uint32_t              connection_id;  ///< Collective connection id
           uint32_t              root;           ///< Root of the collective
@@ -61,13 +61,13 @@ namespace PAMI
         } header_metadata_t;
 
         // Metadata passed in the (multi-packet) data packet(s)
-        typedef struct __attribute__((__packed__)) 
+        typedef struct __attribute__((__packed__))
         {
           uint32_t              connection_id;  ///< Collective connection id
         } data_metadata_t;
 
         // State (request) implementation.  Callers should use uint8_t[MU::MulticastModel::sizeof_msg]
-        typedef struct 
+        typedef struct
         {
           packet_state_t          pkt[2];          ///< packet send state memory
 
@@ -87,7 +87,7 @@ namespace PAMI
         /// \see PAMI::Device::Interface::MulticastModel::~MulticastModel
         ~MulticastModel (){};
 
-        /// \brief Multicast model constants/attributes  
+        /// \brief Multicast model constants/attributes
 //      static const bool   multicast_model_all_sided               = false;
         static const bool   multicast_model_active_message          = true;
         static const bool   multicast_model_available_buffers_only  = true;
@@ -271,7 +271,7 @@ namespace PAMI
                                                   0, //_route,
                                                   &state_data->header_metadata,
                                                   sizeof(header_metadata_t),
-                                                  payload, 
+                                                  payload,
                                                   length);
             }
             else  // > one packet of payload
@@ -282,7 +282,7 @@ namespace PAMI
                                                   0, //_route,
                                                   &state_data->header_metadata,
                                                   sizeof(header_metadata_t),
-                                                  payload, 
+                                                  payload,
                                                   packet_model_payload_bytes /*or packet_model_immediate_max*/);
               _data_model.postMultiCollectivePacket (state_data->pkt[1],
                                                      NULL,
@@ -290,7 +290,7 @@ namespace PAMI
                                                      0, //_route,
                                                      &state_data->data_metadata,
                                                      sizeof(data_metadata_t),
-                                                     ((char*)payload) + packet_model_payload_bytes /*or packet_model_immediate_max*/, 
+                                                     ((char*)payload) + packet_model_payload_bytes /*or packet_model_immediate_max*/,
                                                      length-packet_model_payload_bytes /*or packet_model_immediate_max*/);
             }
           } // T_Msgdata_support==false
@@ -320,11 +320,11 @@ namespace PAMI
                                                   0, //_route,
                                                   &state_data->header_metadata,
                                                   sizeof(header_metadata_t),
-                                                  state_data->iov); 
+                                                  state_data->iov);
             }
             else // > one packet
             {
-              // first packet contains msgdata 
+              // first packet contains msgdata
               state_data->iov[0].iov_base = msgdata;
               state_data->iov[0].iov_len  = msglength;
               state_data->iov[1].iov_base = payload;
@@ -335,7 +335,7 @@ namespace PAMI
                                                   0, //_route,
                                                   &state_data->header_metadata,
                                                   sizeof(header_metadata_t),
-                                                  state_data->iov); 
+                                                  state_data->iov);
 
               _data_model.postMultiCollectivePacket (state_data->pkt[1],
                                                      NULL,
@@ -343,7 +343,7 @@ namespace PAMI
                                                      0, //_route,
                                                      &state_data->data_metadata,
                                                      sizeof(data_metadata_t),
-                                                     (char*)payload+state_data->iov[1].iov_len, 
+                                                     (char*)payload+state_data->iov[1].iov_len,
                                                      length-state_data->iov[1].iov_len);
             }
 

@@ -355,7 +355,7 @@ namespace PAMI
             {
 #endif
 
-              if ((__global.useshmem()) && (__global.topology_local.size() > 1) 
+              if ((__global.useshmem()) && (__global.topology_local.size() > 1)
                   && (__global.topology_local.size() == topology->size()) ) /// \todo shmem doesn't seem to work on subnode topologies?
                 {
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Shmem local barrier\n", this));
@@ -428,8 +428,8 @@ namespace PAMI
                 }
 
 #else
-                  /// Get a Nth global topology based on my local dim and see if this geometry is 
-                  /// matches, then the geometry topology is usable by MU 
+                  /// Get a Nth global topology based on my local dim and see if this geometry is
+                  /// matches, then the geometry topology is usable by MU
                   /// \todo Temporary - does not handle class routes...
                   PAMI::Topology globalTopology;
                   int t = (int) __global.mapping.t();

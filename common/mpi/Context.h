@@ -932,7 +932,7 @@ namespace PAMI
         {
           return PAMI_INVAL;
         }
-      
+
     private:
       std::map <unsigned, pami_geometry_t>   _geometry_id;
       pami_client_t              _client;

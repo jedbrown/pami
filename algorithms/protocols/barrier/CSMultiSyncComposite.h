@@ -1,5 +1,5 @@
 /**
- * \file algorithms/protocols/barrier/MultiSyncComposite.h
+ * \file algorithms/protocols/barrier/CSMultiSyncComposite.h
  * \brief Simple composite based on multisync
  */
 #ifndef __algorithms_protocols_barrier_CSMultiSyncComposite_h__
@@ -31,7 +31,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
 
           // setDoneCallback(fn, cookie);
- 
+
           _native = (Interfaces::NativeInterface *)_geometry->getKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI);
 
          _minfo.cb_done.function   = fn;

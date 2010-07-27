@@ -549,13 +549,13 @@ namespace PAMI
                                                          num_configs,
                                                          context,
                                                          fn,
-                                                         cookie);      
+                                                         cookie);
     }
 
 
     template <class T_Geometry>
     inline pami_result_t Geometry<T_Geometry>::query(pami_configuration_t  configuration[],
-                                                     size_t                num_configs)      
+                                                     size_t                num_configs)
     {
       return static_cast<T_Geometry*>(this)->query_impl(configuration, num_configs);
     }

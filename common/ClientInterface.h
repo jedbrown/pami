@@ -69,7 +69,7 @@ namespace PAMI
                                                        pami_context_t         context,
                                                        pami_event_function    fn,
                                                        void                  *cookie);
-      
+
         inline pami_result_t geometry_create_tasklist(pami_geometry_t       *geometry,
                                                       pami_configuration_t   configuration[],
                                                       size_t                 num_configs,

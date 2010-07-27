@@ -64,7 +64,7 @@
 #include "algorithms/geometry/CAUCollRegistration.h"
 
 #ifdef _COLLSHM
-// Collective shmem device 
+// Collective shmem device
 #include "components/memory/shmem/CollSharedMemoryManager.h"
 #include "components/atomic/xlc/XlcBuiltinT.h"
 #include "components/devices/cshmem/CollShmDevice.h"
@@ -296,11 +296,11 @@ namespace PAMI
   typedef PAMI::Atomic::XlcBuiltinT<long>                                        LAPICSAtomic;
   typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,COLLSHM_SEGSZ,COLLSHM_PAGESZ,
                                     COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ>            LAPICSMemoryManager;
-  typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic, LAPICSMemoryManager, 
+  typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic, LAPICSMemoryManager,
                              COLLSHM_DEVICE_NUMSYNCS, COLLSHM_DEVICE_SYNCCOUNT>  LAPICSDevice;
   typedef PAMI::Device::CollShm::CollShmModel<LAPICSDevice, LAPICSMemoryManager> LAPICollShmModel;
   typedef PAMI::CSNativeInterface<LAPICollShmModel>                              LAPICSNativeInterface;
-  typedef PAMI::CollRegistration::CCMICSMultiRegistration<LAPIGeometry, 
+  typedef PAMI::CollRegistration::CCMICSMultiRegistration<LAPIGeometry,
                    LAPICSNativeInterface, LAPICSMemoryManager, LAPICollShmModel> LAPICollShmCollreg;
 #endif
 
@@ -842,7 +842,7 @@ namespace PAMI
             }
           return result;
         }
-      
+
       inline pami_result_t dispatch_update_impl(size_t                dispatch,
                                                 pami_configuration_t  configuration[],
                                                 size_t                num_configs)
@@ -889,13 +889,13 @@ namespace PAMI
             }
           return result;
         }
-      
+
       inline pami_result_t update_impl(pami_configuration_t  configuration[],
                                        size_t                num_configs)
         {
           return PAMI_INVAL;
         }
-      
+
     private:
       /*  PAMI Client Pointer associated with this PAMI Context */
       pami_client_t                          _client;

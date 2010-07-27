@@ -105,7 +105,7 @@ namespace PAMI
             TRACE_INIT((stderr, "<%p>CCMIRegistration() use_shmem %s, use_p2p %s, local_size %zu, global_size %zu\n", this, use_shmem? "true":"false",use_p2p?"true":"false",local_size,global_size ));
             if ((use_shmem) && (local_size > 1) && (use_p2p))
               {
-		TRACE_INIT((stderr, "<%p>CCMIRegistration() use composite\n",this));                
+		TRACE_INIT((stderr, "<%p>CCMIRegistration() use composite\n",this));
 		// Use composite P2P/Shmem if both enabled and > 1 process per node
                 // Setup Composite P2p/Shmem factories
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() register composite\n", this ));
@@ -118,7 +118,7 @@ namespace PAMI
               }
             else if (use_p2p)
               {
-		TRACE_INIT((stderr, "<%p>CCMIRegistration() use p2p\n",this)); 
+		TRACE_INIT((stderr, "<%p>CCMIRegistration() use p2p\n",this));
                 // Use P2P if requested or only one process (some simple test scenario)
                 // Setup P2P factories
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() register MU\n", this ));
@@ -156,12 +156,12 @@ namespace PAMI
               ; // then do nothing - no shmem on 1 process per node (and other protocol is disabled)
             else
               {
-		TRACE_INIT((stderr, "<%p>CCMIRegistration::analyze() add\n",this));               
+		TRACE_INIT((stderr, "<%p>CCMIRegistration::analyze() add\n",this));
 		_binomial_barrier_composite = _binomial_barrier_factory->generate(geometry, &xfer);
-  
+
               geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
                                (void*)_binomial_barrier_composite);
-  
+
               geometry->addCollective(PAMI_XFER_BARRIER,
                                       _binomial_barrier_factory,
                                       _context_id);

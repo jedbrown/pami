@@ -41,16 +41,16 @@ namespace PAMI
       class Factory : public Interface::FactoryInterface<MU::Factory, MU::Context, PAMI::Device::Generic::Device>
       {
         public:
-	static inline int32_t myMUSPI_GIBarrierInit ( 
+	static inline int32_t myMUSPI_GIBarrierInit (
 						     MUSPI_GIBarrier_t                    *GIBarrier,
 						     uint32_t                              classRouteId )
 	  {
 	    uint64_t system;
 	    uint64_t dcr_value;
-	    
+
 	    MUSPI_assert ( GIBarrier != NULL );
 	    MUSPI_assert ( classRouteId < BGQ_GI_CLASS_MAX_CLASSROUTES );
-	    
+
 	    /* Determine whether this class route is for "system" use or for "user" use.
 	     * This will dictate whether we use privileged or non-privileged MU MMIO
 	     * addresses.
@@ -63,20 +63,20 @@ namespace PAMI
 	    dcr_value = DCRReadUser(MU_DCR(SYS_BARRIER));
 	    if ( (dcr_value & ( 1 << (BGQ_GI_CLASS_MAX_CLASSROUTES-1-classRouteId) ) ) == 0 )
 	      system = ~PHYMAP_PRIVILEGEDOFFSET;
-	    
+
 	    /* Point to the first group's control registers, and offset into that by the
 	     * classRouteId to get the control and status register pointers.  The
-	     * registers are mirrored in all subgroups, so it does not matter which 
+	     * registers are mirrored in all subgroups, so it does not matter which
 	     * subgroup we use.
 	     */
 	    GIBarrier->controlRegPtr = (uint64_t*)(BGQ_MU_GI_CONTROL_OFFSET(0,classRouteId) & system);
 	    GIBarrier->statusRegPtr  = (uint64_t*)(BGQ_MU_GI_STATUS_OFFSET(0,classRouteId)  & system);
-	    
+
 	    GIBarrier->classRouteId  = classRouteId; /* Save the class route id */
-	    
+
 	    /* Set the state based on the current contents of the control register */
 	    GIBarrier->state = *(GIBarrier->controlRegPtr) & 0x7;
-	    
+
 	    return 0;
 	  }
 
@@ -181,20 +181,20 @@ namespace PAMI
 		    double dseconds = ((double)seconds) / 1000; //mambo seconds are loooong.
 		    double start = PAMI_Wtime (), d = 0;
 		    TRACE((stderr, "%s sleep - %.0f,start %f < %f\n", __PRETTY_FUNCTION__, d, start, start + dseconds));
-		    
+
 		    while (PAMI_Wtime() < (start + dseconds))
 		      {
 			for (int i = 0; i < 200000; ++i) ++d;
-			
+
 			TRACE((stderr, "%s sleep - %.0f, %f < %f\n", __PRETTY_FUNCTION__, d, PAMI_Wtime(), start + dseconds));
 		      }
-		    
+
 		    TRACE((stderr, "%s sleep - %.0f, start %f, end %f\n", __PRETTY_FUNCTION__, d, start, PAMI_Wtime()));
 		  }
 #endif
 		TRACE((stderr,"MU Factory: exit global barier\n"));
 	      }
-	    
+
 	    TRACE((stderr, "MU Factory: Entering Local Barrier after global barrier\n"));
 	    barrier.enter();
 	    TRACE((stderr, "MU Factory: Exiting Local Barrier after global barrier\n"));

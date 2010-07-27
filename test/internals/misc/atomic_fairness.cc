@@ -1,13 +1,13 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2009                               */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
 /* IBM CPL License                                                  */
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file perf/spi/lockbox-fair.c
+ * \file test/internals/misc/atomic_fairness.cc
  * \brief ???
  */
 
@@ -22,7 +22,7 @@
  * Each core starts, and ends, independently. So start and end times of each core
  * may not (will not) coincide.
  *
- * Runs the stress test for TEST_DURATION seconds. 
+ * Runs the stress test for TEST_DURATION seconds.
  *
  * May be run on any partition size, each node will independently test the lockbox.
  * In this way, a statistically more-interesting set of results may be seen (as exact

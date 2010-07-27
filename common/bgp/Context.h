@@ -659,7 +659,7 @@ namespace PAMI
         return _multi_registration->analyze(context_id,geometry);
       }
 
-    
+
       inline pami_result_t dispatch_query_impl(size_t                dispatch,
                                                pami_configuration_t  configuration[],
                                                size_t                num_configs)
@@ -678,14 +678,14 @@ namespace PAMI
           }
         return result;
       }
-    
+
       inline pami_result_t dispatch_update_impl(size_t                dispatch,
                                                 pami_configuration_t  configuration[],
                                                 size_t                num_configs)
       {
         return PAMI_INVAL;
       }
-    
+
       inline pami_result_t query_impl(pami_configuration_t  configuration[],
                                       size_t                num_configs)
         {
@@ -702,7 +702,7 @@ namespace PAMI
             }
           return result;
         }
-      
+
       inline pami_result_t update_impl(pami_configuration_t  configuration[],
                                        size_t                num_configs)
         {

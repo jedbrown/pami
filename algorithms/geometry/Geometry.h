@@ -135,7 +135,7 @@ namespace PAMI
             pami_ca_set(&_attributes, PAMI_GEOMETRY_ODD);
 
         }
- 
+
        /// \brief Convenience callback used by geometry completion sub-events
        ///
        /// Each sub-event must invoke this when finished, and the final (user) completion
@@ -165,7 +165,7 @@ namespace PAMI
                 _cb_done = (pami_callback_t){fn, cookie};
                 _cb_result = PAMI_SUCCESS;
         }
- 
+
        /// \brief Add one completion event to geometry
        ///
        /// This is called each time some work has been started on which
@@ -175,7 +175,7 @@ namespace PAMI
         {
                 _comp.fetch_and_inc();
         }
- 
+
        /// \brief Remove one completion event (cancel or "done")
        ///
        /// Note: this is valid for both the parent and (new) sub-geometry,
@@ -581,7 +581,7 @@ namespace PAMI
           return PAMI_UNIMPL;
         }
 
-      
+
 
     private:
       AlgoLists<Geometry<PAMI::Geometry::Common> >  _allreduces[PAMI_GEOMETRY_NUMALGOLISTS];

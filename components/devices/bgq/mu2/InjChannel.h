@@ -286,11 +286,11 @@ namespace PAMI
 	  ///
 	  inline bool  hasFreeSpaceWithUpdate() {
 	    uint64_t freespace =  MUSPI_getFreeSpaceFromShadow (_ififo);
-	    
-	    if (freespace == 0) 
+
+	    if (freespace == 0)
 	      freespace = _ififo->freeSpace = MUSPI_getHwFreeSpace (_ififo);
-	    
-	    return (freespace != 0);	    
+
+	    return (freespace != 0);
 	  }
 
           /// \brief The number of contiguous free descriptors after the tail of the injection fifo
