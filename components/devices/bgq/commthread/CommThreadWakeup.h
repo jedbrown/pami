@@ -294,12 +294,23 @@ public:
 
 		// This should wakeup all commthreads, and any one holding
 		// this context should release it...
-                devs[0]._ctxset->rmContexts(ctxs, nctx);
+                uint64_t mask = devs[0]._ctxset->rmContexts(ctxs, nctx);
 
 		// wait here for all contexts to get released? must only
 		// wait for all commthreads to release, not for other threads
 		// that might have the context locked - how to tell?
 		// Maybe the caller knows best?
+
+		// wait for commthreads to unlock contexts we removed.
+		// is this guaranteed to complete?
+		// is this guaranteed not to race with locker?
+		// do we need some sort of "generation counter" barrier?
+		do {    
+			uint64_t lmask = 0;
+			for (x = 0; x < _numActive; ++x) {
+				lmask |= devs[x]._lockCtxs;
+			}
+		} while (lmask & mask);
 
 		return PAMI_SUCCESS;
 	}
@@ -399,6 +410,7 @@ more_work:		// lightweight enough.
                         	__lockContextSet(lkd_ctx, new_ctx);
 				if (old_ctx != new_ctx) ev_since_wu += 1;
                         	old_ctx = new_ctx;
+				_lockCtxs = lkd_ctx;
                                 events = __advanceContextSet(lkd_ctx);
 				ev_since_wu += events;
                         } while (!_shutdown && lkd_ctx && (events != 0 || ++n < max_loop));
@@ -439,6 +451,7 @@ DEBUG_WRITE('w','u');
 
                                 // this only locks/unlocks what changed...
                                 __lockContextSet(lkd_ctx, 0);
+				_lockCtxs = lkd_ctx;
 
                                 _ctxset->leaveContextSet(id); // id invalid now
 DEBUG_WRITE('s','a');
@@ -457,6 +470,7 @@ DEBUG_WRITE('s','b');
 
 		if (lkd_ctx) {
                 	__lockContextSet(lkd_ctx, 0);
+			_lockCtxs = lkd_ctx;
 		}
 		if (id != (size_t)-1) {
                 	_ctxset->leaveContextSet(id); // id invalid now
@@ -468,6 +482,7 @@ DEBUG_WRITE('t','t');
         BgqWakeupRegion *_wakeup_region;	///< WAC memory for contexts (common)
         PAMI::Device::CommThread::BgqContextPool *_ctxset; ///< context set (common)
 	uint64_t _initCtxs;		///< initial set of contexts to take
+	uint64_t _lockCtxs;		///< set of contexts we have locked
 	pthread_t _thread;		///< pthread identifier
 	size_t _falseWU;		///< perf counter for false wakeups
 	volatile bool _shutdown;	///< request commthread to exit

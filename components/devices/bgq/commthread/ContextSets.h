@@ -157,7 +157,7 @@ public:
                 return (1ULL << x);
         }
 
-        inline void rmContexts(pami_context_t *ctxs, size_t nctx) {
+        inline uint64_t rmContexts(pami_context_t *ctxs, size_t nctx) {
 		size_t x, y;
 		uint64_t mask = 0;
                 _mutex.acquire();
@@ -177,6 +177,7 @@ public:
 		// also, caller probably needs to wait until all the contexts
 		// are released (i.e. lock released).
                 _mutex.release();
+		return mask;
 	}
 
         PAMI::Context *getContext(size_t contextix) {
