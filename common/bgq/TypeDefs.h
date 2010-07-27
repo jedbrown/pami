@@ -105,6 +105,14 @@ namespace PAMI
                                              MUEager,
                                              MUDevice,
                                              MU_NBCollManager> MU_PGASCollreg;
+  // PGAS over Shmem
+  typedef TSPColl::NBCollManager<ShmemNI_AM> Shmem_NBCollManager;
+  typedef CollRegistration::PGASRegistration<BGQGeometry,
+                                             ShmemNI_AM,
+                                             ProtocolAllocator,
+                                             ShmemEager,
+                                             ShmemDevice,
+                                             Shmem_NBCollManager> Shmem_PGASCollreg;
 
   // shmem + MU composite active message over p2p eager
   typedef PAMI::NativeInterfaceActiveMessage< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AM;

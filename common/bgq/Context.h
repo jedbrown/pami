@@ -247,7 +247,8 @@ namespace PAMI
           _shmem_native_interface(NULL),
           _devices(devices),
           _global_mu_ni(NULL),
-          _pgas_mu_registration(NULL)
+          _pgas_mu_registration(NULL),
+          _pgas_shmem_registration(NULL)
       {
         TRACE_ERR((stderr,  "<%p>Context::Context() enter\n",this));
         // ----------------------------------------------------------------
@@ -384,6 +385,8 @@ namespace PAMI
             rput_shmem = Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
               generate (_devices->_shmem[_contextid], _context, _request, result);
             if (result != PAMI_SUCCESS) rput_shmem = NULL;
+
+            _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this,_clientid,_contextid, _protocol,ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid));
           }
           else TRACE_ERR((stderr, "topology does not support shmem\n"));
         }
@@ -405,6 +408,9 @@ namespace PAMI
        _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid,_devices->_shmem[_contextid],_devices->_mu[_contextid],_protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size());
        _ccmi_registration->analyze(_contextid, _world_geometry);
 
+       // Can only use shmem pgas if the geometry is all local tasks, so check the topology
+       if(_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(0))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry);
+       // Can always use MU if it's available
        if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, _world_geometry);
 
         // Complete rget and rput protocol initialization
@@ -920,7 +926,11 @@ namespace PAMI
 
         __global.useMU(muFlag); /// \todo temp function while MU2 isn't complete
 
-        if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, _world_geometry);
+        
+        // Can only use shmem pgas if the geometry is all local tasks, so check the topology
+        if(_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal()) _pgas_shmem_registration->analyze(_contextid, geometry);
+        // Can always use MU if it's available
+        if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid,geometry);
 
         return result;
       }
@@ -1010,6 +1020,8 @@ namespace PAMI
       uint8_t                      _global_mu_ni_storage[sizeof(MUGlobalNI)];
       MU_PGASCollreg              *_pgas_mu_registration;
       uint8_t                      _pgas_mu_registration_storage[sizeof(MU_PGASCollreg)];
+      Shmem_PGASCollreg           *_pgas_shmem_registration;
+      uint8_t                      _pgas_shmem_registration_storage[sizeof(Shmem_PGASCollreg)];
 
   }; // end PAMI::Context
 }; // end namespace PAMI
