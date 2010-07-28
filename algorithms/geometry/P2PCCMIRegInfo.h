@@ -30,6 +30,7 @@
 #include "algorithms/protocols/ambcast/AMBroadcastT.h"
 #include "algorithms/protocols/allreduce/MultiColorCompositeT.h"
 #include "algorithms/protocols/allreduce/ProtocolFactoryT.h"
+#include "algorithms/protocols/allreduce/AsyncAllreduceT.h"
 #include "p2p/protocols/SendPWQ.h"
 #include "common/NativeInterface.h"
 
@@ -271,6 +272,54 @@ namespace CCMI
           binomial_allreduce_metadata,
           CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >
         Factory;
+
+       unsigned getKey(unsigned                                   root,
+                       unsigned                                   connid,
+                       PAMI_GEOMETRY_CLASS                      * geometry,
+                       ConnectionManager::BaseConnectionManager **connmgr)
+       {
+         if (connid != (unsigned)-1)
+         {
+           *connmgr = NULL; //use this key as connection id
+           return connid;
+         }
+         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
+         return cm->updateConnectionId( geometry->comm() );
+       }
+
+       /// New asynchronous CommSeq binomial allreduce algorithms
+       /// class Binomial::AsyncAllreduceT and Binomial::AsyncAllreduceFactoryT
+       ///
+       /// \brief Binomial allreduce protocol
+       ///
+       /// Use the BinomialTreeSchedule
+       ///
+       void ascs_binomial_allreduce_metadata(pami_metadata_t *m)
+       {
+          // \todo:  fill in other metadata
+          strcpy(&m->name[0],"CCMI_ASCS_BinomialAllreduce");
+       }
+
+       typedef CCMI::Adaptor::Allreduce::AsyncAllreduceT<CCMI::Schedule::ListMultinomial,
+         CCMI::ConnectionManager::CommSeqConnMgr, pami_allreduce_t>
+         AsyncCSBinomAllreduceComposite;
+       typedef CCMI::Adaptor::Allreduce::AsyncAllreduceFactoryT<AsyncCSBinomAllreduceComposite,
+         ascs_binomial_allreduce_metadata, CCMI::ConnectionManager::CommSeqConnMgr,
+         pami_allreduce_t, getKey> AsyncCSBinomAllreduceFactory;
+
+       void ascs_binomial_reduce_metadata(pami_metadata_t *m)
+       {
+         // \todo:  fill in other metadata
+         strcpy(&m->name[0],"CCMI_ASCS_BinomialReduce");
+       }
+
+       typedef CCMI::Adaptor::Allreduce::AsyncAllreduceT<CCMI::Schedule::ListMultinomial,
+         CCMI::ConnectionManager::CommSeqConnMgr, pami_reduce_t>
+         AsyncCSBinomReduceComposite;
+       typedef CCMI::Adaptor::Allreduce::AsyncAllreduceFactoryT<AsyncCSBinomReduceComposite,
+         ascs_binomial_reduce_metadata, CCMI::ConnectionManager::CommSeqConnMgr,
+         pami_reduce_t, getKey> AsyncCSBinomReduceFactory;
+
       };//Binomial
     };//Allreduce
   }//Adaptor

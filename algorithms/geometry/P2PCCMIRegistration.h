@@ -100,6 +100,8 @@ namespace PAMI
             _ascs_binomial_broadcast_factory(NULL),
             _active_binomial_broadcast_factory(NULL),
             _binomial_allreduce_factory(NULL),
+            _ascs_binomial_allreduce_factory(NULL),
+            _ascs_binomial_reduce_factory(NULL),
             _composite_ni(NULL)
           {
             TRACE_INIT((stderr, "<%p>CCMIRegistration() use_shmem %s, use_p2p %s, local_size %zu, global_size %zu\n", this, use_shmem? "true":"false",use_p2p?"true":"false",local_size,global_size ));
@@ -161,6 +163,8 @@ namespace PAMI
 
               geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
                                (void*)_binomial_barrier_composite);
+  
+              _csconnmgr.setSequence(geometry->comm());
 
               geometry->addCollective(PAMI_XFER_BARRIER,
                                       _binomial_barrier_factory,
@@ -182,6 +186,12 @@ namespace PAMI
                                       _context_id);
               geometry->addCollective(PAMI_XFER_ALLREDUCE,
                                       _binomial_allreduce_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_ALLREDUCE,
+                                      _ascs_binomial_allreduce_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_REDUCE,
+                                      _ascs_binomial_reduce_factory,
                                       _context_id);
               }
             return PAMI_SUCCESS;
@@ -264,6 +274,17 @@ namespace PAMI
             new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory(&_rbconnmgr, ni_am, (pami_dispatch_multicast_fn)CCMI::Adaptor::P2PAllreduce::Binomial::Composite::cb_receiveHead);
             // ----------------------------------------------------
 
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num binomial  allreduce factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory>(ni_am, device,_ascs_binomial_allreduce_factory);
+            new ((void*)_ascs_binomial_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num binomial  allreduce factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory>(ni_am, device, _ascs_binomial_reduce_factory);
+            new ((void*)_ascs_binomial_reduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
 
             //set the mapid functions
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
@@ -271,6 +292,8 @@ namespace PAMI
             _ascs_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_binomial_reduce_factory->setMapIdToGeometry(mapidtogeometry);
           }
 
           template<class T_NI,
@@ -397,6 +420,27 @@ namespace PAMI
                                                              ni_am,
                                                              (pami_dispatch_multicast_fn)CCMI::Adaptor::P2PAllreduce::Binomial::Composite::cb_receiveHead);
 
+            // Setup and Construct an asynchronous, comm_id/seq_num binomial  allreduce factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory>(ni_am, 
+                                    device1,device2,_ascs_binomial_allreduce_factory);
+            new ((void*)_ascs_binomial_allreduce_factory) 
+              CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num binomial reduce factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory>(ni_am, 
+                                device1, device2, _ascs_binomial_reduce_factory);
+            new ((void*)_ascs_binomial_reduce_factory) 
+              CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory(&_csconnmgr, ni_am);
 
             //set the mapid functions
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
@@ -404,6 +448,8 @@ namespace PAMI
             _ascs_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_binomial_reduce_factory->setMapIdToGeometry(mapidtogeometry);
           }
 
       private:
@@ -439,6 +485,10 @@ namespace PAMI
 
           // CCMI Binomial Allreduce
           CCMI::Adaptor::P2PAllreduce::Binomial::Factory                  *_binomial_allreduce_factory;
+
+          // CCMI Async [All]Reduce
+          CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory  *_ascs_binomial_allreduce_factory;
+          CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory     *_ascs_binomial_reduce_factory;
 
           // New p2p Native interface members:
 

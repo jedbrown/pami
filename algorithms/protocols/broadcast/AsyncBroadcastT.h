@@ -234,6 +234,7 @@ namespace CCMI
                             ((pami_xfer_t *)cmd)->cb_done(NULL, ((pami_xfer_t *)cmd)->cookie, PAMI_SUCCESS);
                           }
 
+                        co->getComposite()->~T_Composite();
                         _free_pool.free(co);
                       }
                     else

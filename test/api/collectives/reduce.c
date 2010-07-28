@@ -7,21 +7,32 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/allreduce.c
+ * \file test/api/collectives/reduce.c
  * \brief ???
  */
 
 #include "../pami_util.h"
+#include "math/math_coremath.h" // special datatype size structs
+
 
 //define this if you want to validate the data for unsigned sums
 #define CHECK_DATA
 
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+ #define FULL_TEST
+ #define COUNT      1024
+ #define MAXBUFSIZE COUNT*16
+ #define NITERLAT   50
+ #define NITERBW    10
+ #define CUTOFF     512
+#else
  #define FULL_TEST
  #define COUNT      65536
  #define MAXBUFSIZE COUNT*16
- #define NITERLAT   100
+ #define NITERLAT   1000
  #define NITERBW    10
  #define CUTOFF     65536
+#endif
 
 pami_op op_array[] =
   {
@@ -148,6 +159,31 @@ const char * dt_array_str[] =
     "PAMI_LOC_2DOUBLE"
   };
 
+unsigned elemsize_array[] =
+  {
+    sizeof(unsigned int),       // PAMI_UNSIGNED_INT,
+    sizeof(double),             // PAMI_DOUBLE,
+    sizeof(char),               // PAMI_SIGNED_CHAR,
+    sizeof(unsigned char),      // PAMI_UNSIGNED_CHAR,
+    sizeof(short),              // PAMI_SIGNED_SHORT,
+    sizeof(unsigned short),     // PAMI_UNSIGNED_SHORT,
+    sizeof(int),                // PAMI_SIGNED_INT,
+    sizeof(long long),          // PAMI_SIGNED_LONG_LONG,
+    sizeof(unsigned long long), // PAMI_UNSIGNED_LONG_LONG,
+    sizeof(float),              // PAMI_FLOAT,
+    sizeof(long double),        // PAMI_LONG_DOUBLE,
+    sizeof(unsigned int),       // PAMI_LOGICAL,
+    (2 * sizeof(float)),        // PAMI_SINGLE_COMPLEX,
+    (2 * sizeof(double)),       // PAMI_DOUBLE_COMPLEX
+    // The following are from math/math_coremath.h structures
+    // \todo Correct or not?  At least they match internal math...
+    sizeof(int32_int32_t),      // PAMI_LOC_2INT,
+    sizeof(int16_int32_t),      // PAMI_LOC_SHORT_INT,
+    sizeof(fp32_int32_t),       // PAMI_LOC_FLOAT_INT,
+    sizeof(fp64_int32_t),       // PAMI_LOC_DOUBLE_INT,
+    sizeof(fp32_fp32_t),        // PAMI_LOC_2FLOAT,
+    sizeof(fp64_fp64_t),        // PAMI_LOC_2DOUBLE,
+  };
 
 unsigned ** alloc2DContig(int nrows, int ncols)
 {
@@ -172,12 +208,7 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id) {
       ibuf[i] = i;
     }
   }
-  else
-    {
-      size_t sz;
-      PAMI_Dt_query (dt, &sz);
-      memset(buf,  task_id,  count * sz);
-    }
+  else memset(buf,  task_id,  count * elemsize_array[dt]);
 }
 
 int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks) {
@@ -216,19 +247,19 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   volatile unsigned    bar_poll_flag=0;
 
-  /* Allreduce variables */
-  size_t               allreduce_num_algorithm[2];
-  pami_algorithm_t    *allreduce_always_works_algo;
-  pami_metadata_t     *allreduce_always_works_md;
-  pami_algorithm_t    *allreduce_must_query_algo;
-  pami_metadata_t     *allreduce_must_query_md;
-  pami_xfer_type_t     allreduce_xfer = PAMI_XFER_ALLREDUCE;
-  volatile unsigned    allreduce_poll_flag=0;
+  /* Reduce variables */
+  size_t               reduce_num_algorithm[2];
+  pami_algorithm_t    *reduce_always_works_algo;
+  pami_metadata_t     *reduce_always_works_md;
+  pami_algorithm_t    *reduce_must_query_algo;
+  pami_metadata_t     *reduce_must_query_md;
+  pami_xfer_type_t     reduce_xfer = PAMI_XFER_REDUCE;
+  volatile unsigned    reduce_poll_flag=0;
 
   int                  root=0, i, j, nalg = 0;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
-  pami_xfer_t          allreduce;
+  pami_xfer_t          reduce;
 
 
   char sbuf[MAXBUFSIZE];
@@ -260,16 +291,16 @@ int main(int argc, char*argv[])
   if(rc==1)
     return 1;
 
-  /*  Query the world geometry for allreduce algorithms */
+  /*  Query the world geometry for reduce algorithms */
   rc = query_geometry_world(client,
                             context,
                             &world_geometry,
-                            allreduce_xfer,
-                            allreduce_num_algorithm,
-                            &allreduce_always_works_algo,
-                            &allreduce_always_works_md,
-                            &allreduce_must_query_algo,
-                            &allreduce_must_query_md);
+                            reduce_xfer,
+                            reduce_num_algorithm,
+                            &reduce_always_works_algo,
+                            &reduce_always_works_md,
+                            &reduce_must_query_algo,
+                            &reduce_must_query_md);
   if(rc==1)
     return 1;
 
@@ -322,7 +353,6 @@ int main(int argc, char*argv[])
         for(i=0,j= DT_UNSIGNED_CHAR;  i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_SIGNED_SHORT;   i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_UNSIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
-        for(i=0,j= DT_FLOAT;          i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_LOGICAL;        i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_SINGLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_DOUBLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
@@ -350,12 +380,12 @@ int main(int argc, char*argv[])
 
 #endif
 
-  for(nalg=0; nalg<allreduce_num_algorithm[0]; nalg++)
+  for(nalg=0; nalg<reduce_num_algorithm[0]; nalg++)
   {
-    if (task_id == root)
+    if (task_id == 0)
     {
-      printf("# Allreduce Bandwidth Test -- root = %d protocol: %s\n", root,
-             allreduce_always_works_md[nalg].name);
+      printf("# Reduce Bandwidth Test -- root = %d protocol: %s\n", root,
+             reduce_always_works_md[nalg].name);
       printf("# Size(bytes)           cycles    bytes/sec    usec\n");
       printf("# -----------      -----------    -----------    ---------\n");
     }
@@ -365,17 +395,14 @@ int main(int argc, char*argv[])
     barrier.algorithm = bar_always_works_algo[0];
     blocking_coll(context,&barrier,&bar_poll_flag);
 
-    allreduce.cb_done   = cb_done;
-    allreduce.cookie    = (void*)&allreduce_poll_flag;
-    allreduce.algorithm = allreduce_always_works_algo[nalg];
-    allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
-    allreduce.cmd.xfer_allreduce.stype     = PAMI_BYTE;
-    allreduce.cmd.xfer_allreduce.stypecount= 0;
-    allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
-    allreduce.cmd.xfer_allreduce.rtype     = PAMI_BYTE;
-    allreduce.cmd.xfer_allreduce.rtypecount= 0;
-
-
+    reduce.cb_done   = cb_done;
+    reduce.cookie    = (void*)&reduce_poll_flag;
+    reduce.algorithm = reduce_always_works_algo[nalg];
+    reduce.cmd.xfer_reduce.sndbuf    = sbuf;
+    reduce.cmd.xfer_reduce.stype     = PAMI_BYTE;
+    reduce.cmd.xfer_reduce.stypecount= 0;
+    reduce.cmd.xfer_reduce.rtype     = PAMI_BYTE;
+    reduce.cmd.xfer_reduce.rtypecount= 0;
 
     for(dt=0; dt<dt_count; dt++)
       for(op=0; op<op_count; op++)
@@ -383,12 +410,10 @@ int main(int argc, char*argv[])
         if(validTable[op][dt])
         {
           if(task_id == root)
-            printf("Running Allreduce: %s, %s\n",dt_array_str[dt], op_array_str[op]);
+            printf("Running Reduce: %s, %s\n",dt_array_str[dt], op_array_str[op]);
           for(i=1; i<=COUNT; i*=2)
           {
-            size_t sz;
-            PAMI_Dt_query (dt_array[dt], &sz);
-            long long dataSent = i*sz;
+            long long dataSent = i*elemsize_array[dt];
             int niter;
             if(dataSent < CUTOFF)
               niter = NITERLAT;
@@ -400,21 +425,33 @@ int main(int argc, char*argv[])
 #endif
             blocking_coll(context,&barrier,&bar_poll_flag);
             ti = timer();
+            root = 0;
             for (j=0; j<niter; j++)
             {
-              allreduce.cmd.xfer_allreduce.stypecount=dataSent;
-              allreduce.cmd.xfer_allreduce.rtypecount=dataSent;
-              allreduce.cmd.xfer_allreduce.dt=dt_array[dt];
-              allreduce.cmd.xfer_allreduce.op=op_array[op];
-              blocking_coll(context, &allreduce, &allreduce_poll_flag);
+              reduce.cmd.xfer_reduce.root    = root;
+              if (task_id == root)
+                reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
+              else
+                reduce.cmd.xfer_reduce.rcvbuf    = NULL;
+              reduce.cmd.xfer_reduce.stypecount=dataSent;
+              reduce.cmd.xfer_reduce.rtypecount=dataSent;
+              reduce.cmd.xfer_reduce.dt=dt_array[dt];
+              reduce.cmd.xfer_reduce.op=op_array[op];
+              blocking_coll(context, &reduce, &reduce_poll_flag);
+
+              if (j < niter-1)
+                root = (root+1)%num_tasks;
             }
             tf = timer();
             blocking_coll(context,&barrier,&bar_poll_flag);
 
 #ifdef CHECK_DATA
-            int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
-            //assert (rc == 0);
-            if(rc) fprintf(stderr, "FAILED validation\n");
+            if (task_id == root) 
+            {
+              int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
+              //assert (rc == 0);
+              if(rc) fprintf(stderr, "FAILED validation\n");
+            }
 #endif
 
             usec = (tf - ti)/(double)niter;
@@ -436,10 +473,10 @@ int main(int argc, char*argv[])
   free(bar_always_works_md);
   free(bar_must_query_algo);
   free(bar_must_query_md);
-  free(allreduce_always_works_algo);
-  free(allreduce_always_works_md);
-  free(allreduce_must_query_algo);
-  free(allreduce_must_query_md);
+  free(reduce_always_works_algo);
+  free(reduce_always_works_md);
+  free(reduce_must_query_algo);
+  free(reduce_must_query_md);
 
   return 0;
 }

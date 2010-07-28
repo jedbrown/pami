@@ -50,6 +50,7 @@ namespace CCMI
         unsigned                    _flags;  ///TokenBlocked,EarlyArrival,LocalPosted, OpCompleted
                                              ///ActiveMessage, NonBlockingCC etc.
         void                        *_collfac;///pointer to collective registration/factory
+        PAMI_GEOMETRY_CLASS         *_geometry ;///pointer to geometry
         PAMI::Queue                  _eaq;    ///early arrival queue, should be matchqueue to support multiple early arrivals
 
       public:
@@ -62,6 +63,7 @@ namespace CCMI
         _ntokens(0),
         _flags(0),
         _collfac(NULL),
+        _geometry(NULL),
         _eaq()
         {
         }
@@ -74,6 +76,16 @@ namespace CCMI
         void setFactory(void *factoryp)
         {
           _collfac = factoryp;
+        }
+
+        PAMI_GEOMETRY_CLASS *getGeometry ()
+        {
+          return _geometry;
+        }
+
+        void setGeometry (PAMI_GEOMETRY_CLASS *geometry)
+        {
+          _geometry = geometry;
         }
 
         T_composite *getComposite()

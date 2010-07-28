@@ -33,19 +33,22 @@ namespace CCMI
     {
 
     public :
-    static const unsigned COMMBITS=11;
-    static const unsigned SEQBITS =11;
-    static const unsigned PHABITS =10;
-    static const unsigned COMMMASK=0x7FF;
-    static const unsigned SEQMASK =0x7FF;
+    static const unsigned _commbits=11;
+    static const unsigned _seqbits =11;
+    static const unsigned _phabits =10;
+    static const unsigned _commmask=0x7FF;
+    static const unsigned _seqmask =0x7FF;
 
     protected:
       std::map<unsigned, unsigned>  _comm_seq_map;
+      unsigned                      _connid;
+      int                           _nconn;
 
     public:
 
       /// Constructor
-      CommSeqConnMgr () : ConnectionManager<CommSeqConnMgr> ()
+      CommSeqConnMgr (unsigned connid = (unsigned) -1) : ConnectionManager<CommSeqConnMgr> (),
+      _connid(connid)
       {
       }
 
@@ -54,45 +57,45 @@ namespace CCMI
       /// \param comm the communicator id of the collective
       /// \param phase the phase of the collective operation
       ///
-      int getNumConnections_impl ()
-        {
-          PAMI_abort();
-          return 0;
-        }
-
-      void setNumConnections_impl (size_t sz)
-        {
-          PAMI_abort();
-          return;
-        }
-
 
       unsigned getConnectionId_impl (unsigned comm, unsigned root, unsigned color,
                                      unsigned phase, unsigned dst)
       {
-         unsigned cid = (((comm & COMMMASK) << SEQBITS) | (_comm_seq_map[comm] & SEQMASK));
+         if (_connid != (unsigned)-1) return _connid;
+         unsigned cid = (((comm & _commmask) << _seqbits) | (_comm_seq_map[comm] & _seqmask));
          return cid;
 
       }
 
-      unsigned getRecvConnectionId_impl (unsigned comm, unsigned root,
-                                         unsigned src, unsigned phase, unsigned color)
+      unsigned getRecvConnectionId_impl (unsigned comm, unsigned root, unsigned src, unsigned phase, 
+                                    unsigned color)
       {
-        PAMI_abort();
-        return 0;
+         if (_connid != (unsigned)-1) return _connid;
+         unsigned cid = (((comm & _commmask) << _seqbits) | (_comm_seq_map[comm] & _seqmask));
+         return cid;
+      }
+
+      void setNumConnections_impl(int nconn)
+      {
+        _nconn = nconn;
+      }
+
+      int getNumConnections_impl ()
+      {
+         return _nconn;
       }
 
       unsigned updateConnectionId (unsigned comm)
       {
         _comm_seq_map[comm] ++;
-        _comm_seq_map[comm] &= COMMMASK;
-        unsigned cid = (((comm & COMMMASK) << SEQBITS) | (_comm_seq_map[comm] & SEQMASK));
+        _comm_seq_map[comm] &= _commmask;
+        unsigned cid = (((comm & _commmask) << _seqbits) | (_comm_seq_map[comm] & _seqmask));
         return cid;
       }
 
       void setSequence (unsigned comm)
       {
-	//XMI_assert(_comm_seq_map.size() < (0x1 << COMMBITS));
+	//XMI_assert(_comm_seq_map.size() < (0x1 << _commbits));
 	_comm_seq_map[comm] = 0;
       }
     };
