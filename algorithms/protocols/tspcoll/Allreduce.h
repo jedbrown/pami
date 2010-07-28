@@ -51,7 +51,7 @@ namespace TSPColl
                   void              * d,
                   pami_op             op,
                   pami_dt             dt,
-                  unsigned            nelems);
+                  unsigned            bytes);
     protected:
       static void cb_switchbuf (CollExchange<T_NI> *, unsigned phase);
       static void cb_allreduce (CollExchange<T_NI> *, unsigned phase);
@@ -77,10 +77,8 @@ namespace TSPColl
     public:
       void * operator new (size_t, void * addr) { return addr; }
       Long (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
-      //      void reset (const void * s, void * d,
-      //		  __pgasrt_ops_t op, __pgasrt_dtypes_t dt, unsigned nelems);
       void reset (const void * s, void * d,
-                  pami_op op, pami_dt dt, unsigned nelems);
+                  pami_op op, pami_dt dt, unsigned bytes);
 
     protected:
       static void cb_allreduce (CollExchange<T_NI> *, unsigned phase);
@@ -206,10 +204,10 @@ cb_switchbuf (CollExchange<T_NI> * coll, unsigned phase)
 /* ************************************************************************* */
 template <class T_NI>
 void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
-                                       void               * dbuf,
-                                       pami_op              op,
-                                       pami_dt              dt,
-                                       unsigned             nelems)
+                                             void               * dbuf,
+                                             pami_op              op,
+                                             pami_dt              dt,
+                                             unsigned             bytes)
 {
   assert (sbuf != NULL);
   assert (dbuf != NULL);
@@ -217,14 +215,13 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
   /* --------------------------------------------------- */
   /*         copy source to destination if necessary     */
   /* --------------------------------------------------- */
-
   _dbuf   = dbuf;
-  _nelems = nelems;
   unsigned datawidth;
   //  size_t datawidth = datawidthof (dt);
-  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, nelems, datawidth,_cb_allreduce);
-  assert (nelems * datawidth < sizeof(PhaseBufType));
-  if (sbuf != dbuf) memcpy (dbuf, sbuf, nelems * datawidth);
+  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, _nelems, datawidth,_cb_allreduce);
+  _nelems = bytes/datawidth;
+  assert (bytes < sizeof(PhaseBufType));
+  if (sbuf != dbuf) memcpy (dbuf, sbuf, bytes);
 
   int maxBF = 1<<_logMaxBF; /* largest power of 2 that fits into comm */
   int nonBF = this->_comm->size() - maxBF; /* comm->size() - largest power of 2 */
@@ -237,7 +234,7 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
   if (nonBF > 0)   /* phase 0: gather buffers from ranks > n2prev */
     {
       this->_sbuf    [phase] = (rank >= maxBF) ? dbuf  : NULL;
-      this->_sbufln  [phase] = nelems * datawidth;
+      this->_sbufln  [phase] = bytes;
       phase ++;
     }
 
@@ -248,7 +245,7 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
   for (int i=0; i<_logMaxBF; i++)   /* middle phases: butterfly pattern */
     {
       this->_sbuf    [phase] = (rank < maxBF) ? dbuf  : NULL;
-      this->_sbufln  [phase] = nelems * datawidth;
+      this->_sbufln  [phase] = bytes;
       phase ++;
     }
 
@@ -261,7 +258,7 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
     {
       this->_sbuf    [phase] = (rank < nonBF)  ? dbuf  : NULL;
       this->_rbuf    [phase] = (rank >= maxBF) ? dbuf  : NULL;
-      this->_sbufln  [phase] = nelems * datawidth;
+      this->_sbufln  [phase] = bytes;
       phase ++;
     }
 
@@ -296,7 +293,7 @@ Long (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   CollExchange<T_NI> (comm, tag, instID, offset, false)
 {
   _tmpbuf = NULL;
-  _dbuf = NULL;
+  _dbuf   = NULL;
   _nelems = 0;
   for (_logMaxBF = 0; (size_t)(1<<(_logMaxBF+1)) <= this->_comm->size(); _logMaxBF++) ;
   int maxBF  = 1<<_logMaxBF;
@@ -409,7 +406,7 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
                                       void               * dbuf,
                                       pami_op              op,
                                       pami_dt              dt,
-                                      unsigned             nelems)
+                                      unsigned             bytes)
 {
   assert (sbuf != NULL);
   assert (dbuf != NULL);
@@ -419,12 +416,13 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
   /* --------------------------------------------------- */
 
   _dbuf   = dbuf;
-  _nelems = nelems;
+  _nelems = 0;
   //  size_t datawidth = datawidthof (dt);
   unsigned datawidth;
-  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, nelems, datawidth,_cb_allreduce);
-  if (sbuf != dbuf) memcpy (dbuf, sbuf, nelems * datawidth);
-  if (_tmpbuf) free (_tmpbuf); _tmpbuf = malloc (nelems * datawidth);
+  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, _nelems, datawidth,_cb_allreduce);
+  _nelems = bytes/datawidth;
+  if (sbuf != dbuf) memcpy (dbuf, sbuf, bytes);
+  if (_tmpbuf) free (_tmpbuf); _tmpbuf = malloc (bytes);
   if (!_tmpbuf) CCMI_FATALERROR (-1, "Allreduce: memory allocation error");
 
   /* --------------------------------------------------- */
@@ -442,7 +440,7 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
       phase ++;
       this->_sbuf    [phase] = (rank >= maxBF) ? _dbuf : NULL;
       this->_rbuf    [phase] = (rank < nonBF)  ? _tmpbuf : NULL;
-      this->_sbufln  [phase] = nelems * datawidth;
+      this->_sbufln  [phase] = bytes;
       phase ++;
     }
 
@@ -451,7 +449,7 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
       phase ++;
       this->_sbuf    [phase] = (rank < maxBF) ? _dbuf : NULL;
       this->_rbuf    [phase] = (rank < maxBF) ? _tmpbuf : NULL;
-      this->_sbufln  [phase] = nelems * datawidth;
+      this->_sbufln  [phase] = bytes;
       phase ++;
     }
 
@@ -460,7 +458,7 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
       phase ++;
       this->_sbuf    [phase] = (rank < nonBF)  ? _dbuf  : NULL;
       this->_rbuf    [phase] = (rank >= maxBF) ? _dbuf  : NULL;
-      this->_sbufln  [phase] = nelems * datawidth;
+      this->_sbufln  [phase] = bytes;
       phase ++;
     }
 

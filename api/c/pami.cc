@@ -95,9 +95,6 @@ extern "C" pami_result_t PAMI_Context_post (pami_context_t        context,
   return ctx->post (work, fn, cookie);
 }
 
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from pami_fence.h                                                 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -1411,8 +1408,17 @@ extern "C" pami_result_t PAMI_Network2Task(pami_coord_t ntw,
   return __global.mapping.network2task(&ntw, task, &type);
 }
 
-
+namespace CCMI { namespace Adaptor { namespace Allreduce {
+      extern void getReduceFunction(pami_dt, pami_op, unsigned,
+                                    unsigned&, coremath&);
+    }}};
 extern "C" pami_result_t PAMI_Dt_query (pami_dt dt, size_t *size)
 {
-  return PAMI_UNIMPL;
+  coremath cb_allreduce  = NULL;
+  pami_op  op            = PAMI_NOOP;
+  unsigned nelems        = 0;
+  unsigned sz            = 0;
+  CCMI::Adaptor::Allreduce::getReduceFunction(dt,op,nelems,sz,cb_allreduce);
+  *size = sz;
+  return PAMI_SUCCESS;
 }
