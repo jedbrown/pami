@@ -353,6 +353,7 @@ int main(int argc, char*argv[])
         for(i=0,j= DT_UNSIGNED_CHAR;  i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_SIGNED_SHORT;   i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_UNSIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_FLOAT;          i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_LOGICAL;        i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_SINGLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_DOUBLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
