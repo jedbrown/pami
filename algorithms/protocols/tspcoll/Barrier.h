@@ -43,12 +43,34 @@ namespace TSPColl
   private:
     char _dummy;
   };
+
+
+  template <class T_NI>
+  class BarrierUE: public Barrier<T_NI>
+  {
+  public:
+    void * operator new (size_t, void * addr)    { return addr; }
+    BarrierUE (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset):
+      Barrier<T_NI>(comm,tag,instID,offset){}
+    void reset () { CollExchange<T_NI>::reset(); }
+    static void   amsend_reg       (T_NI *p2p_iface, void *cd);
+  private:
+    char _dummy;
+  };
 };
+
+template <class T_NI>
+inline void TSPColl::BarrierUE<T_NI>::amsend_reg  (T_NI *p2p_iface, void* cd)
+{
+  pami_dispatch_callback_fn fn;
+  fn.p2p = CollExchange<T_NI>::cb_incoming_ue;
+  p2p_iface->setSendDispatch(fn, cd);
+}
+
 
 /* *********************************************************************** */
 /*                 constructor                                             */
 /* *********************************************************************** */
-
 template <class T_NI>
 inline TSPColl::Barrier<T_NI>::
 Barrier (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
@@ -66,7 +88,7 @@ Barrier (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
     {
       this->_dest[i]      = comm->absrankof((this->_comm->virtrank() + (1<<i))%this->_comm->size());
       this->_sbuf[i]      = &_dummy;
-      this->_sbufln[i]    = 1;
+      this->_sbufln[i]    = 0;
       this->_rbuf[i]      = &_dummy;
     }
 

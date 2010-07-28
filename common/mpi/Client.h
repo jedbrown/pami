@@ -239,7 +239,7 @@ namespace PAMI
                                                         pami_event_function    fn,
                                                         void                  *cookie)
       {
-        MPIGeometry              *new_geometry;
+        MPIGeometry              *new_geometry = NULL;
 
         if(geometry != NULL)
             {
@@ -252,16 +252,23 @@ namespace PAMI
               for(size_t n=0; n<_ncontexts; n++)
                   {
                     _contexts[n]._pgas_collreg->analyze(n,new_geometry);
+                    _contexts[n]._p2p_ccmi_collreg->analyze(n,new_geometry);
                     _contexts[n]._oldccmi_collreg->analyze(n,new_geometry);
                     _contexts[n]._ccmi_collreg->analyze(n,new_geometry);
-                    _contexts[n]._p2p_ccmi_collreg->analyze(n,new_geometry);
                   }
               *geometry=(MPIGeometry*) new_geometry;
               // todo:  deliver completion to the appropriate context
             }
         MPIGeometry *bargeom = (MPIGeometry*)parent;
-        PAMI::Context *ctxt = (PAMI::Context *)context;
-        bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        PAMI::Context *ctxt  = (PAMI::Context *)context;
+        if(bargeom)
+          {
+            bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+          }
+        else
+          {
+            new_geometry->ue_barrier(fn, cookie, ctxt->getId(), context);
+          }
         return PAMI_SUCCESS;
       }
 

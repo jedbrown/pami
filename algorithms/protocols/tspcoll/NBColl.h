@@ -24,6 +24,7 @@ namespace TSPColl
   enum NBTag
   {
     BarrierTag=0,
+    BarrierUETag,
     AllgatherTag,
     AllgathervTag,
     ScatterTag,

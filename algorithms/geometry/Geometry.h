@@ -567,6 +567,18 @@ namespace PAMI
           return _barriers[ctxt_id]._algo_list[0]->generate(&cmd);
         }
 
+      pami_result_t ue_barrier(pami_event_function     cb_done,
+                               void                   *cookie,
+                               size_t                  ctxt_id,
+                               pami_context_t          context)
+        {
+          TRACE_ERR((stderr, "<%p>Common::ue_barrier()\n", this));
+          pami_xfer_t cmd;
+          cmd.cb_done=cb_done;
+          cmd.cookie =cookie;
+          return _ue_barrier.generate(&cmd);
+        }
+
       pami_result_t update_impl(pami_configuration_t  configuration[],
                                 size_t                num_configs,
                                 pami_context_t        context,
@@ -581,6 +593,11 @@ namespace PAMI
           return PAMI_UNIMPL;
         }
 
+      void setUEBarrier(CCMI::Adaptor::CollectiveProtocolFactory *f)
+        {
+          _ue_barrier._factory  =f;
+          _ue_barrier._geometry =this;
+        }
 
 
     private:
@@ -610,26 +627,27 @@ namespace PAMI
       AlgoLists<Geometry<PAMI::Geometry::Common> >  _scans[PAMI_GEOMETRY_NUMALGOLISTS];
 
       AlgoLists<Geometry<PAMI::Geometry::Common> >  _barriers[PAMI_GEOMETRY_NUMALGOLISTS];
+      Algorithm<PAMI::Geometry::Common>             _ue_barrier;
 
-      std::map <int, void*>                        _kvstore;
-      int                                          _commid;
-      int                                          _numranges;
+      std::map <int, void*>                         _kvstore;
+      int                                           _commid;
+      int                                           _numranges;
       pami_task_t                                   _rank;
-      MatchQueue                                   _ue;
-      MatchQueue                                   _post;
+      MatchQueue                                    _ue;
+      MatchQueue                                    _post;
       pami_task_t                                  *_ranks;
-      void                                        *_allreduce_storage[2];
-      void                                        *_allreduce[2];
-      unsigned                                     _allreduce_async_mode;
-      unsigned                                     _allreduce_iteration;
+      void                                         *_allreduce_storage[2];
+      void                                         *_allreduce[2];
+      unsigned                                      _allreduce_async_mode;
+      unsigned                                      _allreduce_iteration;
       PAMI::Topology                               *_topos;
-      int                                          _numtopos;
-      int                                          _mytopo;
+      int                                           _numtopos;
+      int                                           _mytopo;
       pami_task_t                                   _virtual_rank;
       pami_ca_t                                     _attributes;
-      pami_callback_t _cb_done;
-      pami_result_t _cb_result;
-      GeomCompCtr _comp;
+      pami_callback_t                               _cb_done;
+      pami_result_t                                 _cb_result;
+      GeomCompCtr                                   _comp;
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace PAMI

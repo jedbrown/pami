@@ -13,6 +13,7 @@ namespace PAMI
   namespace CollRegistration
   {
     extern const char BarrierString[]        = "PGAS_Barrier";
+    extern const char BarrierUEString[]      = "PGAS_UEBarrier";
     extern const char AllgatherString[]      = "PGAS_Allgather";
     extern const char AllgathervString[]     = "PGAS_Allgatherv";
     extern const char ScatterString[]        = "PGAS_Scatter";

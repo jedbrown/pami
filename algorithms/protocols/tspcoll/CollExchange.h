@@ -59,14 +59,12 @@ namespace TSPColl
     void          reset            (void);
 
 
-  private:
+  public:
 
     /* ------------------------------ */
     /*  local functions               */
     /* ------------------------------ */
-
     void          send                     (int phase,T_NI*p2p_iface);
-
     static inline void cb_incoming(pami_context_t    context,
                                    void            * cookie,
                                    const void      * header_addr,
@@ -75,6 +73,14 @@ namespace TSPColl
                                    size_t            data_size,
                                    pami_endpoint_t   origin,
                                    pami_recv_t     * recv);
+    static inline void cb_incoming_ue(pami_context_t    context,
+                                      void            * cookie,
+                                      const void      * header_addr,
+                                      size_t            header_size,
+                                      const void      * pipe_addr,
+                                      size_t            data_size,
+                                      pami_endpoint_t   origin,
+                                      pami_recv_t     * recv);
     static void   cb_recvcomplete (pami_context_t context, void * arg, pami_result_t error);
     static void   cb_senddone     (pami_context_t, void*, pami_result_t);
   protected:
@@ -104,8 +110,6 @@ namespace TSPColl
     int          _recvcomplete[MAX_PHASES]; /* #recv complete in each phase  */
     int          _cbcomplete  [MAX_PHASES]; /* #callbacks complete           */
     bool         _strict;                   /* early incoming msgs not perm. */
-
-  private:
 
     /* ------------------------------ */
     /*      active message helpers    */

@@ -64,6 +64,14 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
         new (b) Barrier<T_NI> (comm, tag, instID, 0);
         return b;
       }
+    case BarrierUETag:
+      {
+        NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(BarrierUE<T_NI>));
+        assert (b != NULL);
+        memset (b, 0, sizeof(BarrierUE<T_NI>));
+        new (b) BarrierUE<T_NI> (comm, tag, instID, 0);
+        return b;
+      }
     case AllgatherTag:
       {
         NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Allgather<T_NI>));

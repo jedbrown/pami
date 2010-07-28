@@ -336,7 +336,12 @@ namespace PAMI
           // we shoudl find a way to remove this
           MPI_Barrier(MPI_COMM_WORLD);
 
-        _p2p_ccmi_collreg=(P2PCCMICollreg*) malloc(sizeof(*_p2p_ccmi_collreg));
+          _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
+          new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi);
+          _pgas_collreg->analyze(_contextid,_world_geometry);
+          _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
+
+          _p2p_ccmi_collreg=(P2PCCMICollreg*) malloc(sizeof(*_p2p_ccmi_collreg));
           new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
                                                 _context,
                                                 _contextid,
@@ -347,19 +352,18 @@ namespace PAMI
                                                 1,
                                               __global.topology_global.size(),
                                               __global.topology_local.size());
-        _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
+          _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 
-        _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
-        new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi);
-        _pgas_collreg->analyze(_contextid,_world_geometry);
+          _oldccmi_collreg=(OldCCMICollreg*) malloc(sizeof(*_oldccmi_collreg));
+          new(_oldccmi_collreg) OldCCMICollreg(client, (pami_context_t)this, id,_sysdep,*_mpi);
+          _oldccmi_collreg->analyze(_contextid, _world_geometry);
 
-        _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
-        new(_ccmi_collreg) CCMICollreg(client, (pami_context_t)this, id,clientid,*_mpi);
-        _ccmi_collreg->analyze(_contextid, _world_geometry);
+          _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
+          new(_ccmi_collreg) CCMICollreg(client, (pami_context_t)this, id,clientid,*_mpi);
+          _ccmi_collreg->analyze(_contextid, _world_geometry);
 
-        _oldccmi_collreg=(OldCCMICollreg*) malloc(sizeof(*_oldccmi_collreg));
-        new(_oldccmi_collreg) OldCCMICollreg(client, (pami_context_t)this, id,_sysdep,*_mpi);
-        _oldccmi_collreg->analyze(_contextid, _world_geometry);
+
+
 
           MPI_Barrier(MPI_COMM_WORLD);
         }

@@ -16,6 +16,7 @@
 
 
 #include "algorithms/protocols/tspcoll/NBCollFactory.h"
+#include "components/devices/generic/Device.h"
 
 namespace TSPColl
 {
@@ -52,20 +53,24 @@ namespace TSPColl
     /* ---------------- */
     /* external API     */
     /* ---------------- */
-
     NBCollManager(void);
-    void initialize ();
-    NBColl<T_NI> * find (NBTag tag, int id); /* find an existing instance */
-    NBColl<T_NI> * allocate (PAMI_GEOMETRY_CLASS *, NBTag tag);
-    void     multisend_reg (NBTag tag,T_NI *p2p_iface);
-
+    void          initialize ();
+    void          setGenericDevice(PAMI::Device::Generic::Device *g);
+    NBColl<T_NI> *find(NBTag tag, int id); /* find an existing instance */
+    void         *find_ue(NBTag tag, int id); /* find an existing instance */
+    NBColl<T_NI> *allocate(PAMI_GEOMETRY_CLASS *, NBTag tag, int id);
+    void          allocate_ue(NBTag tag, int id, void*);
+    void          delete_ue(NBTag tag, int id);
+    void          multisend_reg(NBTag tag,T_NI *p2p_iface);
+    pami_result_t postWork(PAMI::Device::Generic::GenericThread *work);
   private:
     /* ------------ */
     /* data members */
     /* ------------ */
-
     Vector<NBColl<T_NI> *>        * _taglist[MAXTAG];
+    Vector<void *>                * _ue_taglist[MAXTAG];
     NBCollFactory<T_NI>             _factory;
+    PAMI::Device::Generic::Device * _genericDevice;
   private:
   };
 
@@ -81,6 +86,12 @@ namespace TSPColl
               TSPColl::Barrier<T_NI>::amsend_reg(p2p_iface, this);
               break;
             }
+            case BarrierUETag:
+            {
+              TSPColl::BarrierUE<T_NI>::amsend_reg(p2p_iface, this);
+              break;
+            }
+
             case AllgatherTag:
             {
               TSPColl::Allgather<T_NI>::amsend_reg(p2p_iface, this);
@@ -165,7 +176,16 @@ namespace TSPColl
       {
         _taglist [i] = (Vector<NBColl<T_NI> *> *) malloc (sizeof(Vector<NBColl<T_NI> *>));
         new (_taglist[i]) Vector<NBColl<T_NI> *> ();
+
+        _ue_taglist [i] = (Vector<void *> *) malloc (sizeof(Vector<void *>));
+        new (_ue_taglist[i]) Vector<void *> ();
       }
+  }
+
+  template <class T_NI>
+  void TSPColl::NBCollManager<T_NI>::setGenericDevice(PAMI::Device::Generic::Device *g)
+  {
+    _genericDevice=g;
   }
 
 
@@ -188,19 +208,56 @@ namespace TSPColl
     return (*_taglist[tag])[id];
   }
 
+  template <class T_NI>
+  void * TSPColl::NBCollManager<T_NI>::find_ue (NBTag tag, int id)
+  {
+    assert (0 <= tag && tag < MAXTAG);
+    return (*_ue_taglist[tag])[id];
+  }
+
 /* ************************************************************************ */
 /*            reserve an instance or create a new one                       */
 /* ************************************************************************ */
   template <class T_NI>
   TSPColl::NBColl<T_NI> *
-  TSPColl::NBCollManager<T_NI>::allocate (PAMI_GEOMETRY_CLASS * comm, NBTag tag)
+  TSPColl::NBCollManager<T_NI>::allocate (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int id)
   {
     assert (0 <= tag && tag < MAXTAG);
-    int nextID = _taglist[tag]->size();
+//    int nextID = _taglist[tag]->size();
+    int nextID = id;
     NBColl<T_NI> * retval = _factory.create (comm, tag, nextID);
+    assert((*_taglist[tag])[nextID] == NULL);
     (*_taglist[tag])[nextID] = retval;
     return retval;
   }
+
+
+/* ************************************************************************ */
+/*            allocate a dummy collective in the ue queue                   */
+/* ************************************************************************ */
+
+  template <class T_NI>
+  void TSPColl::NBCollManager<T_NI>::allocate_ue (NBTag tag, int id, void *val)
+  {
+    assert (0 <= tag && tag < MAXTAG);
+    (*_ue_taglist[tag])[id] = val;
+  }
+
+  template <class T_NI>
+  void TSPColl::NBCollManager<T_NI>::delete_ue (NBTag tag, int id)
+  {
+    assert (0 <= tag && tag < MAXTAG);
+    (*_ue_taglist[tag])[id] = NULL;
+  }
+
+  template <class T_NI>
+  pami_result_t TSPColl::NBCollManager<T_NI>::postWork(PAMI::Device::Generic::GenericThread *work)
+  {
+    _genericDevice->postThread(work);
+    return PAMI_SUCCESS;
+  }
+
+
 };
 
 
