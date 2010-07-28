@@ -503,6 +503,20 @@ namespace PAMI
           cmd.cookie =cookie;
           return _barriers[ctxt_id]._algo_list[0]->generate(&cmd);
         }
+
+      pami_result_t ue_barrier(pami_event_function     cb_done,
+                               void                   *cookie,
+                               size_t                  ctxt_id,
+                               pami_context_t          context)
+        {
+          TRACE_ERR((stderr, "<%p>Common::ue_barrier()\n", this));
+          pami_xfer_t cmd;
+          cmd.cb_done=cb_done;
+          cmd.cookie =cookie;
+          return _ue_barrier.generate(&cmd);
+        }
+
+      
       pami_result_t update_impl(pami_configuration_t  configuration[],
                                 size_t                num_configs,
                                 pami_context_t        context,
@@ -515,6 +529,11 @@ namespace PAMI
                                size_t                num_configs)
         {
           return PAMI_UNIMPL;
+        }
+      void setUEBarrier(CCMI::Adaptor::CollectiveProtocolFactory *f)
+        {
+          _ue_barrier._factory  =f;
+          _ue_barrier._geometry =this;
         }
 
 
@@ -545,7 +564,8 @@ namespace PAMI
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _scans[PAMI_GEOMETRY_NUMALGOLISTS];
 
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _barriers[PAMI_GEOMETRY_NUMALGOLISTS];
-
+      Algorithm<PAMI::Geometry::Lapi>             _ue_barrier;
+      
       std::map <int, void*>                        _kvstore;
       int                                          _commid;
       int                                          _numranges;

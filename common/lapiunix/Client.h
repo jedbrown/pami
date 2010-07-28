@@ -437,7 +437,7 @@ namespace PAMI
                                                         pami_event_function     fn,
                                                         void                  * cookie)
       {
-        LAPIGeometry              *new_geometry;
+        LAPIGeometry              *new_geometry = NULL;
 
         if(geometry != NULL)
             {
@@ -462,8 +462,15 @@ namespace PAMI
               // todo:  deliver completion to the appropriate context
             }
         LAPIGeometry *bargeom = (LAPIGeometry*)parent;
-        PAMI::Context *ctxt = (PAMI::Context *)context;
-        bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        PAMI::Context *ctxt  = (PAMI::Context *)context;
+        if(bargeom)
+          {
+            bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+          }
+        else
+          {
+            new_geometry->ue_barrier(fn, cookie, ctxt->getId(), context);
+          }
         return PAMI_SUCCESS;
       }
 
