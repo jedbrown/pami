@@ -35,17 +35,20 @@ namespace PAMI
 	  Interface::AMMulticastModel < CAUMulticastModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, status)
 	  {};
 
-	  inline pami_result_t registerMcastRecvFunction_impl (int                        dispatch_id,
+	  inline pami_result_t registerMcastRecvFunction_impl (int                         dispatch_id,
 							       pami_dispatch_multicast_fn  recv_func,
-							       void                      *async_arg)
+							       void                       *async_arg)
 	    {
+              PAMI_abort();
               return PAMI_SUCCESS;
 	    }
 
 
 	  inline pami_result_t postMulticast_impl (uint8_t (&state)[mcast_model_state_bytes],
-						   pami_multicast_t *mcast)
+						   pami_multicast_t *mcast,
+                                                   void             *devinfo)
 	    {
+              PAMI_abort();
               return PAMI_SUCCESS;
 	    }
       };

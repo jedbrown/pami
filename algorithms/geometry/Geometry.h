@@ -194,10 +194,26 @@ namespace PAMI
                 }
         }
 
+      inline bool isLocalMasterParticipant_impl()
+        {
+          PAMI_abort();
+        }
+
       inline pami_topology_t* getTopology_impl(int topo_num)
         {
           return (pami_topology_t *)(&_topos[topo_num]);
         }
+
+      inline pami_topology_t* getLocalTopology_impl()
+        {
+          PAMI_abort();
+        }
+
+      inline pami_topology_t* getLocalMasterTopology_impl()
+        {
+          PAMI_abort();
+        }
+      
       inline int myTopologyId_impl()
         {
           return _mytopo;

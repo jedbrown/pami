@@ -51,6 +51,11 @@ namespace PAMI
           return _atom;
         };
 
+        inline size_t fetch_and_add (size_t inc)
+        {
+           return __sync_fetch_and_add(&_atom, inc);
+        };
+
         /// \see PAMI::Atomic::Interface::Counter::fetch_and_inc
         inline size_t fetch_and_inc_impl ()
         {

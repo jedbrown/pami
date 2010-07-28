@@ -19,13 +19,19 @@
 #define NUM_SMT 1
 
 #ifdef _COLLSHM
+#if defined(__64BIT__) && !defined(_LAPI_LINUX)
 extern "C" {
 #include "zcmem.h"
 }
+#endif
 
 #define CACHEBLOCKSZ 128
+#if defined(__64BIT__) && !defined(_LAPI_LINUX)
 // #define XMEM_THRESH  32768
 #define XMEM_THRESH  (32768*4096)
+#else
+#define XMEM_THRESH ULONG_MAX
+#endif
 
 #define COLLSHM_DEVICE_NUMSYNCS 2
 #define COLLSHM_DEVICE_SYNCCOUNT 16

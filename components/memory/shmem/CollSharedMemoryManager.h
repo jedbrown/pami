@@ -256,12 +256,13 @@ namespace PAMI
           PAMI_ASSERT(count < COLLSHM_INIT_BUFCNT);
 
           unsigned buf_count = 0;
-          databuf_t * volatile cur;
+          databuf_t * cur;
           databuf_t *next, *tmp, *buffers = NULL;
 
           while (buf_count < count)
           {
-            cur = (databuf_t * volatile)_collshm->free_buffer_list;
+            // cur = (databuf_t *)_collshm->free_buffer_list;
+            cur = (databuf_t *)_collshm->buffer_list->fetch();
             if (cur == NULL)
             {
               tmp   = _get_data_buf_from_pool();   // Allocate a whold chunk of INIT_BUFCNT new buffers from the pool
@@ -272,10 +273,13 @@ namespace PAMI
               buffers = tmp;
 
               cur = tmp + COLLSHM_INIT_BUFCNT - 1;            // End of the newly allocated chunk
-              cur->next = (databuf_t *)_collshm->free_buffer_list; // Merge with free list
+              // Merge with free list
+              // cur->next = (databuf_t *)_collshm->free_buffer_list;
+              cur->next = (databuf_t *)_collshm->buffer_list->fetch();
               // while(!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_buffer_list), (long *)&(cur->next), (long)next));
-              while(!_collshm->buffer_list->compare_and_swap((long *)(&(cur->next)), (long)next)) {
-                 cur->next = (databuf_t *)_collshm->free_buffer_list;
+              while(!_collshm->buffer_list->compare_and_swap((size_t)cur->next, (size_t)next)) {
+                 //cur->next = (databuf_t *)_collshm->free_buffer_list;
+                 cur->next = (databuf_t *)_collshm->buffer_list->fetch();
               }
 
               buf_count = count;
@@ -288,12 +292,13 @@ namespace PAMI
                         cur, next, _collshm->free_buffer_list));
 
             //while (!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_buffer_list),(long *)&cur, (long)next))
-            while (!_collshm->buffer_list->compare_and_swap((long *)(&cur), (long)next))
+            while (!_collshm->buffer_list->compare_and_swap((size_t)cur, (size_t)next))
             {
                TRACE_DBG(("entry cur = %p, cur->next = %p and _collshm->free_buffer_list = %p\n",
                      cur, next, _collshm->free_buffer_list));
 
-               cur = (databuf_t * volatile)_collshm->free_buffer_list;
+               // cur = (databuf_t *)_collshm->free_buffer_list;
+               cur = (databuf_t *)_collshm->buffer_list->fetch();
 
                if (cur == NULL)
                  next = NULL;  // take care of the case in which free list becomes empty
@@ -307,7 +312,7 @@ namespace PAMI
 
             TRACE_DBG(("end cur = %p\n", cur));
             cur->next = buffers;
-            buffers = cur;
+            buffers = (databuf_t *)cur;
             buf_count ++;
           }
 
@@ -334,11 +339,13 @@ namespace PAMI
             tmp = tmp->next;
             --_ndatabufs;
           }
-          tmp->next = _collshm->free_buffer_list;
+          // tmp->next = _collshm->free_buffer_list;
+          tmp->next = (databuf_t *)_collshm->buffer_list->fetch();
 
           //while(!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_buffer_list),(long *)&(tmp->next), (long)tmp));
-          while(!_collshm->buffer_list->compare_and_swap((long *)(&(tmp->next)), (long)tmp)) {
-            tmp->next = _collshm->free_buffer_list;
+          while(!_collshm->buffer_list->compare_and_swap((size_t)tmp->next, (size_t)tmp)) {
+            //tmp->next = _collshm->free_buffer_list;
+            tmp->next = (databuf_t *)_collshm->buffer_list->fetch();
           }
 
           TRACE_DBG(("_ndatabufs = %d\n", _ndatabufs));
@@ -403,13 +410,14 @@ namespace PAMI
           PAMI_ASSERT(count < COLLSHM_INIT_CTLCNT);
 
           unsigned ctlstr_count = 0;
-          ctlstr_t * volatile cur;
+          ctlstr_t * cur;
           ctlstr_t *next, *tmp, *ctlstr = NULL;
 
           // TRACE_DBG(("_collshm->free_ctlstr_list = %lx\n", _collshm->free_ctlstr_list));
           while (ctlstr_count < count)
           {
-            cur = (ctlstr_t * volatile)_collshm->free_ctlstr_list;
+            // cur = (ctlstr_t * )_collshm->free_ctlstr_list;
+            cur = (ctlstr_t *)_collshm->ctlstr_list->fetch();
             if (cur == NULL)
             {
               tmp   = _get_ctrl_str_from_pool();       // Allocate a whold chunk of INIT_CTLCNT new buffers from the pool
@@ -420,10 +428,14 @@ namespace PAMI
               ctlstr   = tmp;
 
               cur = tmp + COLLSHM_INIT_CTLCNT - 1;             // End of the newly allocated chunk
-              cur->next = (ctlstr_t *)_collshm->free_ctlstr_list; // Merge with free list
+              // Merge with free list
+              // cur->next = (ctlstr_t *)_collshm->free_ctlstr_list;
+              cur->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
+
               // while(!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_ctlstr_list),(long *)&(cur->next), (long)next));
-              while(!_collshm->ctlstr_list->compare_and_swap((long *)(&(cur->next)), (long)next)) {
-                cur->next = (ctlstr_t *)_collshm->free_ctlstr_list;
+              while(!_collshm->ctlstr_list->compare_and_swap((size_t)cur->next, (size_t)next)) {
+                // cur->next = (ctlstr_t *)_collshm->free_ctlstr_list;
+                cur->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
               }
 
               ctlstr_count = count;
@@ -432,9 +444,10 @@ namespace PAMI
 
             next = cur->next;
             //while (!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_ctlstr_list),(long *)&cur, (long)next))
-            while (!_collshm->ctlstr_list->compare_and_swap((long *)(&cur), (long)next))
+            while (!_collshm->ctlstr_list->compare_and_swap((size_t)cur, (size_t)next))
             {
-               cur = (ctlstr_t * volatile)_collshm->free_ctlstr_list;
+               // cur = (ctlstr_t * )_collshm->free_ctlstr_list;
+               cur = (ctlstr_t *)_collshm->ctlstr_list->fetch();
                if (cur == NULL)
                  next = NULL;  // take care of the case in which free list becomes empty
                else
@@ -444,7 +457,7 @@ namespace PAMI
             if (cur == NULL) continue;  // may need to start over
 
             cur->next = (ctlstr_t *)ctlstr;
-            ctlstr = cur;
+            ctlstr = (ctlstr_t *)cur;
             ctlstr_count ++;
           }
 
@@ -479,11 +492,13 @@ namespace PAMI
             tmp = tmp->next;
             -- _nctrlstrs;
           }
-          tmp->next = _collshm->free_ctlstr_list;
+          //tmp->next = _collshm->free_ctlstr_list;
+          tmp->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
 
           // while(!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_ctlstr_list),(long *)&(tmp->next), (long)tmp));
-          while(!_collshm->ctlstr_list->compare_and_swap((long *)(&(tmp->next)), (long)tmp)) {
-            tmp->next =  _collshm->free_ctlstr_list;
+          while(!_collshm->ctlstr_list->compare_and_swap((size_t)tmp->next, (size_t)tmp)) {
+            // tmp->next =  _collshm->free_ctlstr_list;
+            tmp->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
           }
 
           TRACE_DBG(("_nctrlstrs = %d\n", _nctrlstrs));

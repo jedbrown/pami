@@ -25,7 +25,6 @@
 #include "components/devices/FactoryInterface.h"
 #include "components/memory/shmem/CollSharedMemoryManager.h"
 #include "common/default/PipeWorkQueue.h"
-#include "components/atomic/xlc/XlcBuiltinT.h"
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
@@ -167,7 +166,11 @@ public:
       /// \brief for xmem or shared address
       ///
       typedef struct xmem_descriptor_t {
+#if defined(__64BIT__) && !defined(_LAPI_LINUX)
         volatile _css_mem_hndl_t hndl;
+#else
+        volatile int             hndl;
+#endif
         volatile char            *src;
       } xmem_descriptor_t;
 
@@ -316,7 +319,7 @@ public:
           _ctrl.content = COPYINOUT;
 
         } else {
-#ifdef __64BIT__
+#if  defined(__64BIT__) && !defined(_LAPI_LINUX)
           _css_shmem_reg_info_t  reg;
           // PAMI_ASSERT( XMEM );
           reg.command  = CSS_SHMEM_REG;
@@ -361,7 +364,7 @@ public:
           _ctrl.content = COPYINOUT;
 
         } else {
-#ifdef __64BIT__
+#if  defined(__64BIT__) && !defined(_LAPI_LINUX)
           _css_shmem_reg_info_t  reg;
           //PAMI_ASSERT( XMEM );
           reg.command  = CSS_SHMEM_REG;
@@ -397,7 +400,7 @@ public:
           case COPYINOUT:
             combineData(dest.bufferToProduce(), _buf, len, combine_flag, op, dt);
             break;
-#ifdef __64BIT__
+#if  defined(__64BIT__) && !defined(_LAPI_LINUX)
           case XMEMATT:
             // PAMI_ASSERT( XMEM );
             PAMI_ASSERT( _data.xmem_data.hndl != ZCMEM_HNDL_NULL);
@@ -440,7 +443,7 @@ public:
           case COPYINOUT:
             combineData(dest, _buf, len, combine_flag, op, dt);
             break;
-#ifdef __64BIT__
+#if defined(__64BIT__) && !defined(_LAPI_LINUX)
           case XMEMATT:
             // PAMI_ASSERT( XMEM );
             PAMI_ASSERT( _data.xmem_data.hndl != ZCMEM_HNDL_NULL);
@@ -487,7 +490,7 @@ public:
 
              buf = _buf;
              break;
-#ifdef __64BIT__
+#if defined(__64BIT__) && !defined(_LAPI_LINUX)
            case XMEMATT:
              // PAMI_ASSERT( XMEM );
              PAMI_ASSERT( _data.xmem_data.hndl != ZCMEM_HNDL_NULL);
@@ -513,7 +516,7 @@ public:
        ///
        INLINE void returnBuffer(char *buf)
        {
-#ifdef __64BIT__
+#if defined(__64BIT__) && !defined(_LAPI_LINUX)
          PAMI_ASSERT (_ctrl.content == XMEMATT);
          PAMI_ASSERT( _data.xmem_data.hndl != ZCMEM_HNDL_NULL);
 
@@ -1090,6 +1093,9 @@ public:
             {
               //bzero(_wgroups[i],sizeof(collshm_wgroup_t)); // need to create window explictly ?
               //_wgroups[i]->next       = ctlstr;
+              if(!_wgroups[i])
+                fprintf(stderr, "Error:  _wgroups[%d] is NULL\n", i);
+              PAMI_assert(_wgroups[i]);
               _wgroups[i]->context_id = _gid;
               _wgroups[i]->num_tasks  = _ntasks;
               _wgroups[i]->task_rank  = i;
@@ -1209,7 +1215,7 @@ public:
         ///
         /// \return Number of threads/channels in the device
         ///
-        INLINE unsigned getNumThreads() { return _numchannels(); }
+        INLINE unsigned getNumThreads() { return _numchannels; }
 
         /// \brief Acessor for thread objects for this send queue
         ///        Get the next available thread from the device
@@ -1433,11 +1439,14 @@ public:
         }
 
         INLINE pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                               pami_multicast_t *mcast);
+                                               pami_multicast_t *mcast,
+                                               void             *devinfo=NULL);
         INLINE pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
-                                               pami_multisync_t *msync);
+                                               pami_multisync_t *msync,
+                                               void             *devinfo=NULL);
         INLINE pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg],
-                                               pami_multicombine_t *mcombine);
+                                               pami_multicombine_t *mcombine,
+                                               void             *devinfo=NULL);
 private:
         unsigned _peer;
         unsigned _npeers;
@@ -1450,7 +1459,8 @@ private:
 
 template <class T_CollShmDevice, class T_MemoryManager>
 INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager> ::postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                                  pami_multicast_t *mcast) {
+                                                  pami_multicast_t *mcast,
+                                                  void             *devinfo) {
         // PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
         // unsigned rootpeer = __global.topology_local.rank2Index(src_topo->index2Rank(0));
         CollShmMessage<pami_multicast_t, T_CollShmDevice> *msg =
@@ -1461,8 +1471,8 @@ INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager> ::postMultic
 
 template <class T_CollShmDevice, class T_MemoryManager>
 INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager>::postMultisync_impl(uint8_t (&state)[sizeof_msg],
-                                                  pami_multisync_t *msync) {
-
+                                                  pami_multisync_t *msync,
+                                                  void             *devinfo) {
         CollShmMessage<pami_multisync_t, T_CollShmDevice> *msg =
           new (&state) CollShmMessage<pami_multisync_t, T_CollShmDevice> (&_csdevice, msync);
         _csdevice.postMsg(msg);
@@ -1471,7 +1481,8 @@ INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager>::postMultisy
 
 template <class T_CollShmDevice, class T_MemoryManager>
 INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager>::postMulticombine_impl(uint8_t (&state)[sizeof_msg],
-                                                  pami_multicombine_t *mcombine) {
+                                                  pami_multicombine_t *mcombine,
+                                                  void             *devinfo) {
         // PAMI::Topology *src_topo = (PAMI::Topology *)mcombine->data_participants;
         // unsigned rootpeer = __global.topology_local.rank2Index(src_topo->index2Rank(0));
         CollShmMessage<pami_multicombine_t, T_CollShmDevice> *msg =

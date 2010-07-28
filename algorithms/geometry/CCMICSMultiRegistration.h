@@ -22,7 +22,7 @@
 #include "SysDep.h"
 #include "TypeDefs.h"
 #include "components/devices/cshmem/CollShmDevice.h"
-#include "CSNativeInterface.h"
+#include "components/devices/NativeInterface.h"
 #include "algorithms/interfaces/CollRegistrationInterface.h"
 #include "algorithms/protocols/allreduce/CSMultiCombineComposite.h"
 #include "algorithms/protocols/broadcast/CSMultiCastComposite.h"
@@ -104,7 +104,6 @@ namespace PAMI
         TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
         //set the mapid functions
         _msync_reg.setMapIdToGeometry(mapidtogeometry);
-
         _csmm.init(__global.mapping.task(), __global.mapping.size());
       }
 
@@ -127,7 +126,7 @@ namespace PAMI
 
           T_CSModel *cs_model = new T_CSModel(&_devs, geometry->comm(), cs_topo, &_csmm);
 
-          T_CSNativeInterface *ni = new T_CSNativeInterface(*cs_model, _client, _client_id, _context, _context_id);
+          T_CSNativeInterface *ni = new T_CSNativeInterface(*cs_model, _client, _client_id, _context, _context_id, 0, 0);
           geometry->setKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI, ni);
 
           TRACE_ERR((stderr, "<%p>%s context_id %zu, geometry %p\n", this, __PRETTY_FUNCTION__, context_id, geometry));

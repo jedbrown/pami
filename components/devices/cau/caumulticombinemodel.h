@@ -32,7 +32,8 @@ namespace PAMI
 	  Interface::MulticombineModel < CAUMulticombineModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, status)
 	  {};
 	  inline pami_result_t postMulticombine_impl (uint8_t (&state)[multicombine_model_state_bytes],
-						      pami_multicombine_t *mcombine)
+						      pami_multicombine_t *mcombine,
+                                                      void                *devinfo)
 	    {
               PAMI_abort();
               return PAMI_SUCCESS;

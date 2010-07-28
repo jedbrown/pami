@@ -42,7 +42,6 @@
 #include "components/devices/cau/caumultisyncmodel.h"
 #include "components/devices/cau/caumulticombinemodel.h"
 #include "components/devices/cau/caumulticombinemodel.h"
-#include "components/devices/cau/NativeInterface.h"
 
 // P2P Protocols
 #include "p2p/protocols/Send.h"
@@ -67,11 +66,17 @@
 #ifdef _COLLSHM
 // Collective shmem device
 #include "components/memory/shmem/CollSharedMemoryManager.h"
+#ifdef _LAPI_LINUX
+#include "components/atomic/gcc/GccBuiltin.h"
+#else
 #include "components/atomic/xlc/XlcBuiltinT.h"
+#endif
 #include "components/devices/cshmem/CollShmDevice.h"
 #include "algorithms/geometry/CCMICSMultiRegistration.h"
-#include "CSNativeInterface.h"
 #endif
+
+#include "components/devices/NativeInterface.h"
+
 
 namespace PAMI
 {
@@ -291,32 +296,41 @@ namespace PAMI
                                                   CompositeNI_AM,
                                                   CompositeNI_AS> P2PCCMICollreg;
 
-  // "New" CCMI Protocol Typedefs
-  typedef PAMI::CAU::CAUNativeInterface<CAUDevice,
-                                        CAUMulticastModel,
-                                        CAUMultisyncModel,
-                                        CAUMulticombineModel>   CAUNativeInterface;
-
-  typedef CollRegistration::CAU::CAURegistration<LAPIGeometry,
-                                                 ShmemDevice,
-                                                 CAUDevice,
-                                                 ShmemEagerNI_AM,
-                                                 CAUNativeInterface> CAUCollreg;
-
-  typedef Geometry::ClassRouteId<LAPIGeometry> LAPIClassRouteId;
 
 #ifdef _COLLSHM
   // Collective Shmem Protocol Typedefs
+#ifdef _LAPI_LINUX
+  typedef PAMI::Atomic::GccBuiltin                                               LAPICSAtomic;
+#else
   typedef PAMI::Atomic::XlcBuiltinT<long>                                        LAPICSAtomic;
+#endif
   typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,COLLSHM_SEGSZ,COLLSHM_PAGESZ,
                                     COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ>            LAPICSMemoryManager;
   typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic, LAPICSMemoryManager,
                              COLLSHM_DEVICE_NUMSYNCS, COLLSHM_DEVICE_SYNCCOUNT>  LAPICSDevice;
   typedef PAMI::Device::CollShm::CollShmModel<LAPICSDevice, LAPICSMemoryManager> LAPICollShmModel;
-  typedef PAMI::CSNativeInterface<LAPICollShmModel>                              LAPICSNativeInterface;
+  typedef PAMI::Device::CSNativeInterface<LAPICollShmModel>                      LAPICSNativeInterface;
   typedef PAMI::CollRegistration::CCMICSMultiRegistration<LAPIGeometry,
                    LAPICSNativeInterface, LAPICSMemoryManager, LAPICollShmModel> LAPICollShmCollreg;
 #endif
+
+  // "New" CCMI Protocol Typedefs
+  typedef PAMI::Device::DeviceNativeInterface<CAUDevice,
+                                              CAUMulticastModel,
+                                              CAUMultisyncModel,
+                                              CAUMulticombineModel>   CAUNativeInterface;
+
+  typedef CollRegistration::CAU::CAURegistration<LAPIGeometry,
+                                                 PAMI::Device::Generic::Device,
+                                                 CAUDevice,
+                                                 LAPICSNativeInterface,
+                                                 CAUNativeInterface,
+                                                 LAPICollShmModel,
+                                                 LAPICSMemoryManager>  CAUCollreg;
+
+  typedef Geometry::ClassRouteId<LAPIGeometry> LAPIClassRouteId;
+
+
 
 /**
  * \brief Class containing all devices used on this platform.
@@ -442,7 +456,7 @@ namespace PAMI
           _lapi_device.init(_mm, _clientid, 0, _context, _contextid);
           _lapi_device.setLapiHandle(_lapi_handle);
           _lapi_device2.init(_lapi_state);
-          _cau_device.init(_lapi_state);
+          _cau_device.init(_lapi_state,_lapi_handle, _client, _context);
 
           // Query My Rank and My Size
           // TODO:  Use LAPI Internals, instead of
@@ -491,19 +505,8 @@ namespace PAMI
                                                 __global.topology_global.size(),
                                                 __global.topology_local.size());
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
-
-          _cau_collreg=(CAUCollreg*) malloc(sizeof(*_cau_collreg));
-          new(_cau_collreg) CAUCollreg(_client,
-                                       _context,
-                                       _contextid,
-                                       _clientid,
-                                       _devices->_shmem[_contextid],
-                                       _cau_device,
-                                       __global.topology_global.size(),
-                                       __global.topology_local.size());
-          _cau_collreg->analyze(_contextid, _world_geometry);
-
-#ifdef _COLLSHM
+#if 0
+//#ifdef _COLLSHM
          // only enable collshm for context 0
           if (_contextid == 0)
           {
@@ -515,6 +518,19 @@ namespace PAMI
           else
             _coll_shm_collreg = NULL;
 #endif // _COLLSHM
+
+          _cau_collreg=(CAUCollreg*) malloc(sizeof(*_cau_collreg));
+          new(_cau_collreg) CAUCollreg(_client,
+                                       _context,
+                                       _contextid,
+                                       _clientid,
+                                       *_devices->_generics,
+                                       _cau_device,
+                                       __global.mapping,
+                                       _lapi_handle);
+          // We analyze global here to get the proper device specific info
+          _cau_collreg->analyze_global(_contextid, _world_geometry, 0xFFFFFFFF);
+
 
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
           return PAMI_SUCCESS;
@@ -954,7 +970,8 @@ namespace PAMI
       PGASCollreg                           *_pgas_collreg;
       P2PCCMICollreg                        *_p2p_ccmi_collreg;
       CAUCollreg                            *_cau_collreg;
-#ifdef _COLLSHM
+#if 0
+//#ifdef _COLLSHM
       LAPICollShmCollreg                    *_coll_shm_collreg;
 #endif
 

@@ -82,11 +82,11 @@ namespace PAMI
           return __fetch_and_add((volatile int *)&_atom, val);
         }
 
-        bool compare_and_swap_impl (T compare, T swap);
+        inline bool compare_and_swap_impl (T compare, T swap);
 
-        using Interface::Counter<XlcBuiltinT < T > >::compare_and_swap;
+        // using Interface::Counter<XlcBuiltinT < T > >::compare_and_swap;
 
-        int compare_and_swap (T *compare, T swap);
+        // inline int compare_and_swap (T *compare, T swap);
 
       protected:
 
@@ -94,57 +94,61 @@ namespace PAMI
     };
 
     template <class T>
-    int XlcBuiltinT<T>::compare_and_swap (T *compare, T swap)
-    {
-    return __compare_and_swap((volatile int *)&_atom, (int *)compare, swap);
-    }
-
-    template <class T>
-    bool XlcBuiltinT<T>::compare_and_swap_impl (T compare, T swap)
+    inline bool XlcBuiltinT<T>::compare_and_swap_impl (T compare, T swap)
     {
       T compare_val = compare;
       return __compare_and_swap ((volatile int *)&_atom, (int *)&compare_val, swap);
     };
 
+/*
+    template <class T>
+    inline int XlcBuiltinT<T>::compare_and_swap (T *compare, T swap)
+    {
+    return __compare_and_swap((volatile int *)&_atom, (int *)compare, swap);
+    }
+*/
+
 #ifdef __64BIT__
     template <>
-    long XlcBuiltinT<long>::fetch_and_inc_impl ()
+    inline long XlcBuiltinT<long>::fetch_and_inc_impl ()
     {
       return __fetch_and_addlp(&_atom, 1);
     };
 
     template <>
-    long XlcBuiltinT<long>::fetch_and_dec_impl ()
+    inline long XlcBuiltinT<long>::fetch_and_dec_impl ()
     {
       return __fetch_and_addlp(&_atom, -1);
     };
 
     template<>
-    long XlcBuiltinT<long>::fetch_and_clear_impl()
+    inline long XlcBuiltinT<long>::fetch_and_clear_impl()
     {
       return __fetch_and_andlp((volatile unsigned long *)&_atom, 0);
     };
 
 
     template <>
-    long XlcBuiltinT<long>::fetch_and_add(long val)
+    inline long XlcBuiltinT<long>::fetch_and_add(long val)
     {
       return __fetch_and_addlp(&_atom, val);
     }
 
     template<>
-    bool XlcBuiltinT<long>::compare_and_swap_impl(long compare, long swap)
+    inline bool XlcBuiltinT<long>::compare_and_swap_impl(long compare, long swap)
     {
       long compare_val = compare;
 
       return __compare_and_swaplp (&_atom, &compare_val, swap);
     }
 
+/*
     template<>
-    int XlcBuiltinT<long>::compare_and_swap(long *compare, long swap)
+    inline int XlcBuiltinT<long>::compare_and_swap(long *compare, long swap)
     {
     return __compare_and_swaplp(&_atom, compare, swap);
     }
+*/
 #endif
 
 

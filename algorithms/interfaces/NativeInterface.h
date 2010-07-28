@@ -50,10 +50,10 @@ namespace CCMI
           PAMI_abort();
           return PAMI_ERROR;
         }
-        virtual pami_result_t multicast(pami_multicast_t *mcast) = 0;
-        virtual pami_result_t multisync(pami_multisync_t *msync) = 0;
-        virtual pami_result_t multicombine(pami_multicombine_t *mcombine) = 0;
-        virtual pami_result_t manytomany(pami_manytomany_t *m2minfo) = 0;
+        virtual pami_result_t multicast(pami_multicast_t *mcast, void *devinfo=NULL) = 0;
+        virtual pami_result_t multisync(pami_multisync_t *msync, void *devinfo=NULL) = 0;
+        virtual pami_result_t multicombine(pami_multicombine_t *mcombine, void *devinfo=NULL) = 0;
+        virtual pami_result_t manytomany(pami_manytomany_t *m2minfo, void *devinfo=NULL) = 0;
         virtual pami_result_t send (pami_send_t * parameters)
         {
           PAMI_abort();

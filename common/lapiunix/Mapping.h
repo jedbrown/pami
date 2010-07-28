@@ -86,16 +86,13 @@ namespace PAMI
       }
     inline bool isPeer_impl (size_t task1, size_t task2)
       {
-        /** \todo isPeer does not support PAMI_MAPPING_TSIZE */
-        // this really needs to be global, but if we only check locally it
-        // will at least work for Topology.
-        size_t peer;
-        Interface::Mapping::nodeaddr_t addr;
-        task2node_impl(task1, addr);
-        pami_result_t err1 = node2peer_impl(addr, peer);
-        task2node_impl(task2, addr);
-        pami_result_t err2 = node2peer_impl(addr, peer);
-        return (err1 == PAMI_SUCCESS && err2 == PAMI_SUCCESS);
+        Interface::Mapping::nodeaddr_t addr1, addr2;
+        task2node_impl(task1, addr1);
+        task2node_impl(task2, addr2);
+        if(addr1.global == addr2.global)
+          return true;
+
+        return false;
       }
     inline void nodeAddr_impl (Interface::Mapping::nodeaddr_t & address)
       {
@@ -104,9 +101,9 @@ namespace PAMI
       }
     inline pami_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
       {
-        uint32_t x = _mapcache[task];
+        uint32_t x     = _mapcache[task];
         address.global = x >> 16;
-        address.local = x & 0x0000ffff;
+        address.local  = x & 0x0000ffff;
         return PAMI_SUCCESS;
       }
     inline pami_result_t node2task_impl (Interface::Mapping::nodeaddr_t & address, size_t & task)
@@ -122,15 +119,19 @@ namespace PAMI
         // never happens?
         return PAMI_ERROR;
       }
+
+    inline pami_result_t task2peer_impl(size_t task, size_t &peer)
+      {
+        Interface::Mapping::nodeaddr_t address;
+        task2node(task,address);
+        node2peer(address,peer);
+        return PAMI_SUCCESS;
+      }
+
     inline pami_result_t node2peer_impl (Interface::Mapping::nodeaddr_t & address, size_t & peer)
       {
-        size_t x, r = address.local;
-        for (x = 0; x < _npeers && r != _peers[x]; ++x);
-        if (x < _npeers) {
-          peer = x;
-          return PAMI_SUCCESS;
-        }
-        return PAMI_ERROR;
+        peer = address.local;
+        return PAMI_SUCCESS;
       }
     inline void torusAddr_impl (size_t (&addr)[LAPI_TDIMS])
       {

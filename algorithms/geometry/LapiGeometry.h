@@ -58,14 +58,16 @@ namespace PAMI
                    Mapping                        *mapping,
                    unsigned                        comm,
                    int                             numranges,
-                   pami_geometry_range_t           rangelist[]):
+                   pami_geometry_range_t           rangelist[],
+                   int                             gen_topo=1):
         Geometry<PAMI::Geometry::Lapi>(parent,
                                        mapping,
                                        comm,
                                        numranges,
                                        rangelist),
         _kvstore(),
-        _commid(comm)
+        _commid(comm),
+        _participant(false)
         {
           PAMI::Topology *cur         = NULL;
           PAMI::Topology *prev        = NULL;
@@ -119,8 +121,23 @@ namespace PAMI
           _global_all_topo   = new_topo;
           _local_master_topo = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
           _local_topo        = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
-          _global_all_topo->subTopologyLocalMaster(_local_master_topo);
-          _global_all_topo->subTopologyLocalToMe(_local_topo);
+          if(gen_topo)
+            {
+              _global_all_topo->subTopologyLocalMaster(_local_master_topo);
+              _global_all_topo->subTopologyLocalToMe(_local_topo);
+              // Check to see if we are are a participant on the tree/cau network
+              pami_task_t    *rl        = NULL;
+              uint            num_tasks = _local_master_topo->size();
+              pami_result_t   rc        = _local_master_topo->rankList(&rl);
+              for(int k=0; k<num_tasks; k++)
+                if(rl[k] == _rank)
+                  {
+                    _participant = true;
+                    break;
+                  }
+            }
+//          PAMI_assert(_local_topo->size() != 0);
+//          PAMI_assert(_local_master_topo->size() != 0);
 
           PAMI::geometry_map[_commid]=this;
           pami_result_t rc = _global_all_topo->rankList(&_ranks);
@@ -132,31 +149,23 @@ namespace PAMI
 
       inline void regenTopo()
         {
-          int nranks = _global_all_topo->size();
-
-          // Delete any rank lists that have been generated
-          // for the subtopologies
-          pami_task_t *rl;
-          if(_local_master_topo->size() > 1)
-              {
-                pami_result_t rc = _local_master_topo->rankList(&rl);
-                if(rc == PAMI_SUCCESS)
-                  free(rl);
-              }
-          if(_local_topo->size() > 1)
-              {
-                pami_result_t rc = _local_topo->rankList(&rl);
-                if(rc == PAMI_SUCCESS)
-                  free(rl);
-              }
-          _global_all_topo->~Topology();
-          _local_master_topo->~Topology();
-          _local_topo->~Topology();
-
-          // regenerate the optimized subtopologies
-          new(_global_all_topo)Topology(_ranks, nranks);
           _global_all_topo->subTopologyLocalMaster(_local_master_topo);
           _global_all_topo->subTopologyLocalToMe(_local_topo);
+          // Check to see if we are are a participant on the tree/cau network
+          pami_task_t    *rl        = NULL;
+          uint            num_tasks = _local_master_topo->size();
+          pami_result_t   rc        = _local_master_topo->rankList(&rl);
+          for(int k=0; k<num_tasks; k++)
+            if(rl[k] == _rank)
+              {
+                _participant = true;
+                break;
+              }
+        }
+
+      inline bool isLocalMasterParticipant_impl()
+        {
+          return _participant;
         }
 
 
@@ -584,6 +593,7 @@ namespace PAMI
       void                                       *_allreduce[2];
       unsigned                                    _allreduce_async_mode;
       unsigned                                    _allreduce_iteration;
+      bool                                        _participant;
       pami_task_t                                 _virtual_rank;
 
       PAMI::Topology                             *_global_all_topo;

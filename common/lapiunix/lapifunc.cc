@@ -55,7 +55,11 @@ const char *lapi_cmd_list[] = {
     "LAPI_Nopoll_wait",
     "LAPI_Purge_totask",
     "LAPI_Resume_totask",
-    "LAPI_Setcntr_wstatus"
+    "LAPI_Setcntr_wstatus",
+    "LAPI_Cau_group_create",
+    "LAPI_Cau_group_destroy",
+    "LAPI_Cau_multicast",
+    "LAPI_Cau_reduce"
 };
 
 enum {
@@ -89,7 +93,11 @@ enum {
     I_Nopoll_wait,
     I_Purge_totask,
     I_Resume_totask,
-    I_Setcntr_wstatus
+    I_Setcntr_wstatus,
+    I_Cau_group_create,
+    I_Cau_group_destroy,
+    I_Cau_multicast,
+    I_Cau_reduce
 };
 
 LapiFunc *LapiFunc::instance = NULL;
@@ -144,6 +152,11 @@ LapiFunc::LapiFunc()
     purge_totask_hndlr = NULL;
     resume_totask_hndlr = NULL;
     setcntr_wstatus_hndlr = NULL;
+
+    cau_group_create_hndlr = NULL;
+    cau_group_destroy_hndlr = NULL;
+    cau_multicast_hndlr = NULL;
+    cau_reduce_hndlr = NULL;
 }
 
 LapiFunc::~LapiFunc()
@@ -244,6 +257,14 @@ int LapiFunc::load()
     setcntr_wstatus_hndlr = (lapi_setcntr_wstatus_hndlr *) import(lapi_cmd_list[I_Setcntr_wstatus]);
     PAMI_assert(setcntr_wstatus_hndlr);
 
+    cau_group_create_hndlr = (lapi_cau_group_create_hndlr *) import(lapi_cmd_list[I_Cau_group_create]);
+    PAMI_assert(cau_group_create_hndlr);
+    cau_group_destroy_hndlr = (lapi_cau_group_destroy_hndlr *) import(lapi_cmd_list[I_Cau_group_destroy]);
+    PAMI_assert(cau_group_destroy_hndlr);
+    cau_multicast_hndlr = (lapi_cau_multicast_hndlr *) import(lapi_cmd_list[I_Cau_multicast]);
+    PAMI_assert(cau_multicast_hndlr);
+    cau_reduce_hndlr = (lapi_cau_reduce_hndlr *) import(lapi_cmd_list[I_Cau_reduce]);
+    PAMI_assert(cau_reduce_hndlr);
     return 0;
 }
 
@@ -409,6 +430,35 @@ int LapiFunc::Setcntr_wstatus(lapi_handle_t hndl, lapi_cntr_t *cntr, int val, ui
 {
     return(setcntr_wstatus_hndlr(hndl, cntr, val, dest, dest_status));
 }
+
+
+int LapiFunc::Cau_group_create(lapi_handle_t hndl, uint group_id,uint num_tasks, uint *task_list)
+{
+    return(cau_group_create_hndlr(hndl,group_id,num_tasks,task_list));
+}
+
+int LapiFunc::Cau_group_destroy(lapi_handle_t hndl, uint group_id)
+{
+    return(cau_group_destroy_hndlr(hndl,group_id));
+}
+
+int LapiFunc::Cau_multicast(lapi_handle_t hndl, uint group,
+                            int hdr_hdl, void *hdr, uint hdr_len, void *data, ulong data_len,
+                            compl_hndlr_t done, void *cookie)
+{
+    return(cau_multicast_hndlr(hndl,group,hdr_hdl,hdr,hdr_len,data,data_len,done,cookie));
+}
+
+int LapiFunc::Cau_reduce(lapi_handle_t hndl, uint group,
+                         int hdr_hdl, void *hdr, uint hdr_len, void *data, ulong data_len,
+                         cau_reduce_op_t op, compl_hndlr_t done, void *cookie)
+{
+    return(cau_reduce_hndlr(hndl,group,hdr_hdl,hdr,hdr_len,data,data_len,op,done,cookie));
+}
+
+
+
+
 
 void * LapiFunc::import(const char * funcname)
 {

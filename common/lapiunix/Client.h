@@ -59,7 +59,14 @@ namespace PAMI
         _world_geometry = (LAPIGeometry*)_geometryAlloc.allocateObject();
         _world_range.lo = 0;
         _world_range.hi = mysize-1;
-        new(_world_geometry) LAPIGeometry(NULL, &__global.mapping,0, 1,&_world_range);
+        new(_world_geometry) LAPIGeometry(NULL,
+                                          &__global.mapping,
+                                          0,
+                                          1,
+                                          &_world_range,
+                                          0); // This tells the geometry not to build
+                                              // the optimized topologies.  we can
+                                              // generate them after building a mapping
         _contexts[0]->setWorldGeometry(_world_geometry);
 
         // Initialize "Safe" Collectives, which will be used

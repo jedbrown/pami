@@ -95,6 +95,19 @@ namespace PAMI
           /// \param[out] peer    peer identifier
           ///
           inline pami_result_t node2peer (nodeaddr_t & address, size_t & peer);
+
+
+          ///
+          /// \brief Peer identifier associated with a specific task
+          ///
+          /// The local peer identifier monotonically increases from zero to
+          /// PAMI::Mapping::Interface::Node.nodePeers() - 1.
+          ///
+          /// \param[in]  task    task identifier
+          /// \param[out] peer    peer identifier
+          ///
+          inline pami_result_t task2peer(size_t task, size_t &peer);
+
       };	// class Node
 
       template <class T_Mapping, unsigned T_Dimensions>
@@ -138,6 +151,13 @@ namespace PAMI
       {
         return static_cast<T_Mapping*>(this)->node2peer_impl (address, peer);
       }
+
+      template <class T_Mapping, unsigned T_Dimensions>
+      inline pami_result_t Node<T_Mapping,T_Dimensions>::task2peer(size_t task, size_t &peer)
+      {
+        return static_cast<T_Mapping*>(this)->task2peer_impl (task, peer);
+      }
+
     };	// namespace Mapping
   };	// namespace Interface
 };	// namespace PAMI

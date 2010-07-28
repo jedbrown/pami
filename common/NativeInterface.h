@@ -346,10 +346,10 @@ namespace PAMI
     /// \brief ctor
     inline NativeInterfaceAllsided(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id);
     /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterface)
-    virtual inline pami_result_t multicast    (pami_multicast_t    *);
-    virtual inline pami_result_t multisync    (pami_multisync_t    *);
-    virtual inline pami_result_t multicombine (pami_multicombine_t *);
-    virtual inline pami_result_t manytomany   (pami_manytomany_t   *)
+    virtual inline pami_result_t multicast    (pami_multicast_t    *, void *devinfo=NULL);
+    virtual inline pami_result_t multisync    (pami_multisync_t    *, void *devinfo=NULL);
+    virtual inline pami_result_t multicombine (pami_multicombine_t *, void *devinfo=NULL);
+    virtual inline pami_result_t manytomany   (pami_manytomany_t   *, void *devinfo=NULL)
     {
       PAMI_abort();
       return PAMI_ERROR;
@@ -366,10 +366,10 @@ namespace PAMI
     virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_callback_fn  fn,
                                                     void                      *cookie);
 
-    inline pami_result_t multicast    (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],    pami_multicast_t    *);
-    inline pami_result_t multisync    (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multisync_sizeof_msg],    pami_multisync_t    *);
-    inline pami_result_t multicombine (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multicombine_sizeof_msg], pami_multicombine_t *);
-    inline pami_result_t manytomany   (uint8_t (&)[NativeInterfaceBase<T_Protocol>::manytomany_sizeof_msg],   pami_manytomany_t   *)
+    inline pami_result_t multicast    (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],    pami_multicast_t    *, void *devinfo=NULL);
+    inline pami_result_t multisync    (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multisync_sizeof_msg],    pami_multisync_t    *, void *devinfo=NULL);
+    inline pami_result_t multicombine (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multicombine_sizeof_msg], pami_multicombine_t *, void *devinfo=NULL);
+    inline pami_result_t manytomany   (uint8_t (&)[NativeInterfaceBase<T_Protocol>::manytomany_sizeof_msg],   pami_manytomany_t   *, void *devinfo=NULL)
     {
       PAMI_abort();
       return PAMI_ERROR;
@@ -436,7 +436,8 @@ namespace PAMI
     /// \brief common internal impl of postMulticast over p2p
     ///
     pami_result_t postMulticast_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],
-                                     pami_multicast_t *mcast);
+                                     pami_multicast_t *mcast,
+                                     void             *devinfo=NULL);
 
     ///
     /// \brief Received a p2p dispatch from another root (member function).
@@ -492,10 +493,10 @@ namespace PAMI
     /// \brief ctor
     inline NativeInterfaceActiveMessage(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id);
     /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterfaceActiveMessage)
-    virtual inline pami_result_t multicast    (pami_multicast_t    *);
-    virtual inline pami_result_t multisync    (pami_multisync_t    *);
-    virtual inline pami_result_t multicombine (pami_multicombine_t *);
-    virtual inline pami_result_t manytomany   (pami_manytomany_t   *)
+    virtual inline pami_result_t multicast    (pami_multicast_t    *, void *devinfo=NULL);
+    virtual inline pami_result_t multisync    (pami_multisync_t    *, void *devinfo=NULL);
+    virtual inline pami_result_t multicombine (pami_multicombine_t *, void *devinfo=NULL);
+    virtual inline pami_result_t manytomany   (pami_manytomany_t   *, void *devinfo=NULL)
     {
       PAMI_abort();
       return PAMI_ERROR;
@@ -511,10 +512,10 @@ namespace PAMI
     virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_callback_fn  fn,
                                                     void                      *cookie);
 
-    inline pami_result_t multicast    (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],    pami_multicast_t    *);
-    inline pami_result_t multisync    (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multisync_sizeof_msg],    pami_multisync_t    *);
-    inline pami_result_t multicombine (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multicombine_sizeof_msg], pami_multicombine_t *);
-    inline pami_result_t manytomany   (uint8_t (&)[NativeInterfaceBase<T_Protocol>::manytomany_sizeof_msg],   pami_manytomany_t   *)
+    inline pami_result_t multicast    (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],    pami_multicast_t    *, void *devinfo=NULL);
+    inline pami_result_t multisync    (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multisync_sizeof_msg],    pami_multisync_t    *, void *devinfo=NULL);
+    inline pami_result_t multicombine (uint8_t (&)[NativeInterfaceBase<T_Protocol>::multicombine_sizeof_msg], pami_multicombine_t *, void *devinfo=NULL);
+    inline pami_result_t manytomany   (uint8_t (&)[NativeInterfaceBase<T_Protocol>::manytomany_sizeof_msg],   pami_manytomany_t   *, void *devinfo=NULL)
     {
       PAMI_abort();
       return PAMI_ERROR;
@@ -582,7 +583,8 @@ namespace PAMI
     /// \brief common internal impl of postMulticast over p2p
     ///
     pami_result_t postMulticast_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],
-                                     pami_multicast_t *mcast);
+                                     pami_multicast_t *mcast,
+                                     void             *devinfo=NULL);
 
     ///
     /// \brief Received a p2p dispatch from another root (member function).
@@ -695,7 +697,7 @@ namespace PAMI
 
 
   template <class T_Protocol>
-  inline pami_result_t NativeInterfaceAllsided<T_Protocol>::multicast (pami_multicast_t *mcast)
+  inline pami_result_t NativeInterfaceAllsided<T_Protocol>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
     typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol>::allocObj::MULTICAST;
@@ -721,7 +723,7 @@ namespace PAMI
 
 
   template <class T_Protocol>
-  inline pami_result_t NativeInterfaceAllsided<T_Protocol>::multisync(pami_multisync_t *msync)
+  inline pami_result_t NativeInterfaceAllsided<T_Protocol>::multisync(pami_multisync_t *msync, void *devinfo)
   {
     typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol>::allocObj::MULTISYNC;
@@ -743,7 +745,7 @@ namespace PAMI
 
 
   template <class T_Protocol>
-  inline pami_result_t NativeInterfaceAllsided<T_Protocol>::multicombine (pami_multicombine_t *mcomb)
+  inline pami_result_t NativeInterfaceAllsided<T_Protocol>::multicombine (pami_multicombine_t *mcomb, void *devinfo)
   {
     typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol>::allocObj::MULTICOMBINE;
@@ -781,7 +783,8 @@ namespace PAMI
 
   template <class T_Protocol>
   inline pami_result_t NativeInterfaceAllsided<T_Protocol>::postMulticast_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],
-                                                                               pami_multicast_t *mcast)
+                                                                               pami_multicast_t *mcast,
+                                                                               void             *devinfo)
   {
     pami_result_t result;
     COMPILE_TIME_ASSERT(sizeof(typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t) <= NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg);
@@ -1087,7 +1090,7 @@ namespace PAMI
 
 
   template <class T_Protocol>
-  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::multicast (pami_multicast_t *mcast)
+  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
     typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)this->_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol>::allocObj::MULTICAST;
@@ -1113,7 +1116,7 @@ namespace PAMI
 
 
   template <class T_Protocol>
-  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::multisync(pami_multisync_t *msync)
+  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::multisync(pami_multisync_t *msync, void *devinfo)
   {
     typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)this->_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol>::allocObj::MULTISYNC;
@@ -1135,7 +1138,7 @@ namespace PAMI
 
 
   template <class T_Protocol>
-  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::multicombine (pami_multicombine_t *mcomb)
+  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::multicombine (pami_multicombine_t *mcomb, void *devinfo)
   {
     typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)this->_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol>::allocObj::MULTICOMBINE;
@@ -1175,7 +1178,8 @@ namespace PAMI
 
   template <class T_Protocol>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::postMulticast_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],
-                                                                                    pami_multicast_t *mcast)
+                                                                                    pami_multicast_t *mcast,
+                                                                                    void             *devinfo)
   {
     TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::postMulticast_impl\n", this));
     pami_result_t result;

@@ -38,19 +38,19 @@ namespace PAMI
     inline BGQNativeInterfaceAS(T_Device &device, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id);
 
     /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterface)
-    virtual inline pami_result_t multicast    (pami_multicast_t    *);
-    virtual inline pami_result_t multisync    (pami_multisync_t    *);
-    virtual inline pami_result_t multicombine (pami_multicombine_t *);
-    virtual inline pami_result_t manytomany (pami_manytomany_t *)
+    virtual inline pami_result_t multicast    (pami_multicast_t    *,void *devinfo=NULL);
+    virtual inline pami_result_t multisync    (pami_multisync_t    *,void *devinfo=NULL);
+    virtual inline pami_result_t multicombine (pami_multicombine_t *,void *devinfo=NULL);
+    virtual inline pami_result_t manytomany (pami_manytomany_t *,void *devinfo=NULL)
     {
       PAMI_abort();
       return PAMI_ERROR;
     }
 
     // Model-specific interfaces
-    inline pami_result_t multicast    (uint8_t (&)[T_Mcast::sizeof_msg], pami_multicast_t    *);
-    inline pami_result_t multisync    (uint8_t (&)[T_Msync::sizeof_msg], pami_multisync_t    *);
-    inline pami_result_t multicombine (uint8_t (&)[T_Mcomb::sizeof_msg], pami_multicombine_t *);
+    inline pami_result_t multicast    (uint8_t (&)[T_Mcast::sizeof_msg], pami_multicast_t    *,void *devinfo=NULL);
+    inline pami_result_t multisync    (uint8_t (&)[T_Msync::sizeof_msg], pami_multisync_t    *,void *devinfo=NULL);
+    inline pami_result_t multicombine (uint8_t (&)[T_Mcomb::sizeof_msg], pami_multicombine_t *,void *devinfo=NULL);
 
     static const size_t multicast_sizeof_msg     = T_Mcast::sizeof_msg;
     static const size_t multisync_sizeof_msg     = T_Msync::sizeof_msg;
@@ -209,7 +209,7 @@ namespace PAMI
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGQNativeInterfaceAS<T_Device,T_Mcast, T_Msync, T_Mcomb>::multicast (pami_multicast_t *mcast)
+  inline pami_result_t BGQNativeInterfaceAS<T_Device,T_Mcast, T_Msync, T_Mcomb>::multicast (pami_multicast_t *mcast,void *devinfo)
   {
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
@@ -233,7 +233,7 @@ namespace PAMI
 
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync(pami_multisync_t *msync)
+  inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync(pami_multisync_t *msync,void *devinfo)
   {
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
@@ -254,7 +254,7 @@ namespace PAMI
 
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicombine (pami_multicombine_t *mcomb)
+  inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicombine (pami_multicombine_t *mcomb,void *devinfo)
   {
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
@@ -275,7 +275,7 @@ namespace PAMI
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicast (uint8_t (&state)[T_Mcast::sizeof_msg],
-                                                                     pami_multicast_t *mcast)
+											     pami_multicast_t *mcast,void *devinfo)
   {
     TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicast(%p,%p) connection id %u, msgcount %u, bytes %zu\n", this, &state, mcast, mcast->connection_id, mcast->msgcount, mcast->bytes));
     DO_DEBUG((templateName<T_Mcast>()));
@@ -287,7 +287,7 @@ namespace PAMI
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],
-                                                                     pami_multisync_t *msync)
+											     pami_multisync_t *msync,void *devinfo)
   {
     TRACE_ERR((stderr, "<%p>BGQNativeInterface::multisync(%p,%p) connection id %u\n", this, &state, msync, msync->connection_id));
     DO_DEBUG((templateName<T_Msync>()));
@@ -297,7 +297,7 @@ namespace PAMI
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicombine (uint8_t (&state)[T_Mcomb::sizeof_msg],
-                                                                        pami_multicombine_t *mcomb)
+												pami_multicombine_t *mcomb,void *devinfo)
   {
     TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicombine(%p,%p) connection id %u, count %zu, dt %#X, op %#X\n", this, &state, mcomb, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor));
     DO_DEBUG((templateName<T_Mcomb>()));

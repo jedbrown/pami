@@ -71,7 +71,15 @@ class LapiFunc
         typedef int (lapi_resume_totask_hndlr)(lapi_handle_t hndl, css_task_t dest);
         typedef int (lapi_setcntr_wstatus_hndlr)(lapi_handle_t hndl, lapi_cntr_t *cntr, int val, uint *dest, int *dest_status);
 
-    private:
+        typedef int (lapi_cau_group_create_hndlr)(lapi_handle_t hndl, uint group_id,uint num_tasks, uint *task_list);
+        typedef int (lapi_cau_group_destroy_hndlr)(lapi_handle_t hndl, uint group_id);
+        typedef int (lapi_cau_multicast_hndlr)(lapi_handle_t hndl, uint group,
+                                               int hdr_hdl, void *hdr, uint hdr_len, void *data, ulong data_len,
+                                               compl_hndlr_t done, void *cookie);
+        typedef int (lapi_cau_reduce_hndlr)(lapi_handle_t hndl, uint group,
+                                            int hdr_hdl, void *hdr, uint hdr_len, void *data, ulong data_len,
+                                            cau_reduce_op_t op, compl_hndlr_t done, void *cookie);
+      private:
         void *dlopen_file;
 
         lapi_addr_get_hndlr *addr_get_hndlr;
@@ -109,6 +117,11 @@ class LapiFunc
         lapi_purge_totask_hndlr *purge_totask_hndlr;
         lapi_resume_totask_hndlr *resume_totask_hndlr;
         lapi_setcntr_wstatus_hndlr *setcntr_wstatus_hndlr;
+
+        lapi_cau_group_create_hndlr *cau_group_create_hndlr;
+        lapi_cau_group_destroy_hndlr *cau_group_destroy_hndlr;
+        lapi_cau_multicast_hndlr *cau_multicast_hndlr;
+        lapi_cau_reduce_hndlr *cau_reduce_hndlr;
 
     private:
         LapiFunc();
@@ -159,7 +172,15 @@ class LapiFunc
         int Resume_totask(lapi_handle_t hndl, css_task_t dest);
         int Setcntr_wstatus(lapi_handle_t hndl, lapi_cntr_t *cntr, int val, uint *dest, int *dest_status);
 
-    private:
+        int (Cau_group_create)(lapi_handle_t hndl, uint group_id,uint num_tasks, uint *task_list);
+        int (Cau_group_destroy)(lapi_handle_t hndl, uint group_id);
+        int (Cau_multicast)(lapi_handle_t hndl, uint group,
+                            int hdr_hdl, void *hdr, uint hdr_len, void *data, ulong data_len,
+                            compl_hndlr_t done, void *cookie);
+        int (Cau_reduce)(lapi_handle_t hndl, uint group,
+                         int hdr_hdl, void *hdr, uint hdr_len, void *data, ulong data_len,
+                         cau_reduce_op_t op, compl_hndlr_t done, void *cookie);
+      private:
         void * import(const char *funcname);
 };
 
@@ -201,6 +222,11 @@ class LapiFunc
 #define lapi_resume_totask LapiFunc::getInstance()->Resume_totask
 #define lapi_setcntr_wstatus LapiFunc::getInstance()->Setcntr_wstatus
 
+#define lapi_cau_group_create LapiFunc::getInstance()->Cau_group_create;
+#define lapi_cau_group_destroy LapiFunc::getInstance()->Cau_group_destroy;
+#define lapi_cau_multicast LapiFunc::getInstance()->Cau_multicast;
+#define lapi_cau_reduce LapiFunc::getInstance()->Cau_reduce;
+
 #else
 
 #define lapi_addr_get LAPI_Addr_get
@@ -238,6 +264,11 @@ class LapiFunc
 #define lapi_purge_totask LAPI_Purge_totask
 #define lapi_resume_totask LAPI_Resume_totask
 #define lapi_setcntr_wstatus LAPI_Setcntr_wstatus
+
+#define lapi_cau_group_create LAPI_Cau_group_create
+#define lapi_cau_group_destroy LAPI_Cau_group_destroy
+#define lapi_cau_multicast LAPI_Cau_multicast
+#define lapi_cau_reduce LAPI_Cau_reduce
 
 #endif //LAPI_DLOPEN
 
