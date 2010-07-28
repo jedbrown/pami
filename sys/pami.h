@@ -1373,11 +1373,11 @@ extern "C"
   typedef struct
   {
     char                     * sndbuf;
-    pami_type_t               * stype;
+    pami_type_t                stype;
     size_t                   * stypecounts;
     size_t                   * sdispls;
     char                     * rcvbuf;
-    pami_type_t               * rtype;
+    pami_type_t                rtype;
     size_t                   * rtypecounts;
     size_t                   * rdispls;
   } pami_alltoallv_t;
@@ -1404,11 +1404,11 @@ extern "C"
   typedef struct
   {
     char                    * sndbuf;
-    pami_type_t              * stype;
+    pami_type_t               stype;
     int                     * stypecounts;
     int                     * sdispls;
     char                    * rcvbuf;
-    pami_type_t              * rtype;
+    pami_type_t               rtype;
     int                     * rtypecounts;
     int                     * rdispls;
   } pami_alltoallv_int_t;
@@ -1434,10 +1434,10 @@ extern "C"
   typedef struct
   {
     char                      * sndbuf;
-    pami_type_t                * stype;
+    pami_type_t                 stype;
     size_t                      stypecount;
     char                      * rcvbuf;
-    pami_type_t                * rtype;
+    pami_type_t                 rtype;
     size_t                      rtypecount;
   } pami_alltoall_t;
 
@@ -1463,13 +1463,13 @@ extern "C"
   {
     size_t                     root;
     char                     * sndbuf;
-    pami_type_t               * stype;
+    pami_type_t                stype;
     size_t                     stypecount;
     char                     * rcvbuf;
-    pami_type_t               * rtype;
+    pami_type_t                rtype;
     size_t                     rtypecount;
-    pami_dt                     dt;
-    pami_op                     op;
+    pami_dt                    dt;
+    pami_op                    op;
   } pami_reduce_t;
 
   /**
@@ -1495,14 +1495,14 @@ extern "C"
   typedef struct
   {
     char                    * sndbuf;
-    pami_type_t              * stype;
+    pami_type_t               stype;
     size_t                    stypecount;
     char                    * rcvbuf;
-    pami_type_t              * rtype;
+    pami_type_t               rtype;
     size_t                    rtypecount;
     size_t                  * rcounts;
-    pami_dt                    dt;
-    pami_op                    op;
+    pami_dt                   dt;
+    pami_op                   op;
   } pami_reduce_scatter_t;
 
   /**
@@ -1524,7 +1524,7 @@ extern "C"
   {
     size_t                      root;
     char                      * buf;
-    pami_type_t                * type;
+    pami_type_t                 type;
     size_t                      typecount;
   } pami_broadcast_t;
 
@@ -1549,10 +1549,10 @@ extern "C"
   typedef struct
   {
     char                      * sndbuf;
-    pami_type_t                * stype;
+    pami_type_t                 stype;
     size_t                      stypecount;
     char                      * rcvbuf;
-    pami_type_t                * rtype;
+    pami_type_t                 rtype;
     size_t                      rtypecount;
   } pami_allgather_t;
 
@@ -1580,10 +1580,10 @@ extern "C"
   {
     size_t                      root;
     char                      * sndbuf;
-    pami_type_t                * stype;
+    pami_type_t                 stype;
     size_t                      stypecount;
     char                      * rcvbuf;
-    pami_type_t                * rtype;
+    pami_type_t                 rtype;
     size_t                      rtypecount;
   } pami_gather_t;
 
@@ -1612,10 +1612,10 @@ extern "C"
   {
     size_t                     root;
     char                     * sndbuf;
-    pami_type_t               * stype;
+    pami_type_t                stype;
     size_t                     stypecount;
     char                     * rcvbuf;
-    pami_type_t               * rtype;
+    pami_type_t                rtype;
     size_t                   * rtypecounts;
     size_t                   * rdispls;
   } pami_gatherv_t;
@@ -1645,10 +1645,10 @@ extern "C"
   {
     size_t                     root;
     char                     * sndbuf;
-    pami_type_t               * stype;
+    pami_type_t                stype;
     int                        stypecount;
     char                     * rcvbuf;
-    pami_type_t               * rtype;
+    pami_type_t                rtype;
     int                      * rtypecounts;
     int                      * rdispls;
   } pami_gatherv_int_t;
@@ -1676,10 +1676,10 @@ extern "C"
   typedef struct
   {
     char                     * sndbuf;
-    pami_type_t               * stype;
+    pami_type_t                stype;
     size_t                     stypecount;
     char                     * rcvbuf;
-    pami_type_t               * rtype;
+    pami_type_t                rtype;
     size_t                   * rtypecounts;
     size_t                   * rdispls;
   } pami_allgatherv_t;
@@ -1706,10 +1706,10 @@ extern "C"
   typedef struct
   {
     char                     * sndbuf;
-    pami_type_t               * stype;
+    pami_type_t                stype;
     int                        stypecount;
     char                     * rcvbuf;
-    pami_type_t               * rtype;
+    pami_type_t                rtype;
     int                      * rtypecounts;
     int                      * rdispls;
   } pami_allgatherv_int_t;
@@ -1738,10 +1738,10 @@ extern "C"
   {
     size_t                      root;
     char                      * sndbuf;
-    pami_type_t                * stype;
+    pami_type_t                 stype;
     size_t                      stypecount;
     char                      * rcvbuf;
-    pami_type_t                * rtype;
+    pami_type_t                 rtype;
     size_t                      rtypecount;
   } pami_scatter_t;
 
@@ -1768,11 +1768,11 @@ extern "C"
   {
     size_t                      root;
     char                      * sndbuf;
-    pami_type_t                * stype;
+    pami_type_t                 stype;
     size_t                    * stypecounts;
     size_t                    * sdispls;
     char                      * rcvbuf;
-    pami_type_t                * rtype;
+    pami_type_t                 rtype;
     size_t                      rtypecount;
   } pami_scatterv_t;
 
@@ -1799,11 +1799,11 @@ extern "C"
   {
     size_t                      root;
     char                      * sndbuf;
-    pami_type_t                * stype;
+    pami_type_t                 stype;
     int                       * stypecounts;
     int                       * sdispls;
     char                      * rcvbuf;
-    pami_type_t                * rtype;
+    pami_type_t                 rtype;
     int                         rtypecount;
   } pami_scatterv_int_t;
 
@@ -1832,13 +1832,13 @@ extern "C"
   typedef struct
   {
     char                     * sndbuf;
-    pami_type_t               * stype;
+    pami_type_t                stype;
     size_t                     stypecount;
     char                     * rcvbuf;
-    pami_type_t               * rtype;
+    pami_type_t                rtype;
     size_t                     rtypecount;
-    pami_dt                     dt;
-    pami_op                     op;
+    pami_dt                    dt;
+    pami_op                    op;
   } pami_allreduce_t;
 
 
@@ -1867,13 +1867,13 @@ extern "C"
   typedef struct
   {
     char                     * sndbuf;
-    pami_type_t               * stype;
+    pami_type_t                stype;
     size_t                     stypecount;
     char                     * rcvbuf;
-    pami_type_t               * rtype;
+    pami_type_t                rtype;
     size_t                     rtypecount;
-    pami_dt                     dt;
-    pami_op                     op;
+    pami_dt                    dt;
+    pami_op                    op;
     int                        exclusive;
   } pami_scan_t;
 
@@ -1970,7 +1970,7 @@ extern "C"
     void                      * user_header;
     size_t                      headerlen;
     void                      * sndbuf;
-    pami_type_t                * stype;
+    pami_type_t                 stype;
     size_t                      stypecount;
   } pami_ambroadcast_t;
   /**
@@ -2026,7 +2026,7 @@ extern "C"
     void                      * headers;
     size_t                      headerlen;
     void                      * sndbuf;
-    pami_type_t                * stype;
+    pami_type_t                 stype;
     size_t                      stypecount;
   } pami_amscatter_t;
   /**
@@ -2084,7 +2084,7 @@ extern "C"
     void                      * headers;
     size_t                      headerlen;
     void                      * rcvbuf;
-    pami_type_t                * rtype;
+    pami_type_t                 rtype;
     size_t                      rtypecount;
   } pami_amgather_t;
   /**
@@ -2145,10 +2145,10 @@ extern "C"
     void                      * user_header;
     size_t                      headerlen;
     void                      * rcvbuf;
-    pami_type_t                * rtype;
+    pami_type_t                 rtype;
     size_t                      rtypecount;
-    pami_dt                      dt;
-    pami_op                      op;
+    pami_dt                     dt;
+    pami_op                     op;
   } pami_amreduce_t;
 
   /**

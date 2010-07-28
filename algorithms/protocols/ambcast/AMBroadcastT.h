@@ -173,7 +173,7 @@ namespace CCMI
              NULL,                 // User header, NULL for now
              0,                    // 0 sized for now
              &broadcast.cmd.xfer_ambroadcast.sndbuf,
-             broadcast.cmd.xfer_ambroadcast.stype,
+             &broadcast.cmd.xfer_ambroadcast.stype,
              &broadcast.cmd.xfer_ambroadcast.stypecount,
              &broadcast.cb_done,
              &broadcast.cookie);
