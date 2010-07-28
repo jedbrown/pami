@@ -1007,6 +1007,10 @@ namespace PAMI
         (cb_done.function)(NULL,//PAMI_Client_getcontext(_client,_contextid),
                            cb_done.clientdata, PAMI_SUCCESS);
 
+// #warning \todo if it's 0 byte, no recv structure should be delivered
+      if(recv != NULL)
+        memset(recv, 0,sizeof(*recv));
+
       return;
     }
 
@@ -1415,6 +1419,11 @@ namespace PAMI
       if (cb_done.function)
         (cb_done.function)(NULL,//PAMI_Client_getcontext(_client,_contextid),
                            cb_done.clientdata, PAMI_SUCCESS);
+
+// #warning \todo if it's 0 byte, no recv structure should be delivered
+      if(recv != NULL)
+        memset(recv, 0,sizeof(*recv));
+
 
       return;
     }
