@@ -44,12 +44,13 @@ public:
 
         /// \brief Initialize Wakeup Region for client
         ///
-        /// \param[in] clientid	Client ID being initialized
         /// \param[in] nctx	Number of contexts being created for client
+        /// \param[in] me	My index in local topology
+        /// \param[in] lsize	Local size (local topology size)
         /// \param[in] mm	L2Atomic/Shmem MemoryManager
         /// \return	Error code
         ///
-        inline pami_result_t init(size_t clientid, size_t nctx, size_t me, size_t lsize, Memory::MemoryManager *mm) {
+        inline pami_result_t init(size_t nctx, size_t me, size_t lsize, Memory::MemoryManager *mm) {
                 size_t mctx = nctx;
                 // in order for WAC base/mask values to work, need to ensure alignment
                 // is such that power-of-two pairs of (ctx0,mctx) result in viable

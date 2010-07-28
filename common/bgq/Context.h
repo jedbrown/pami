@@ -277,8 +277,7 @@ namespace PAMI
         _self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
 
         //_lock.init(&_mm);
-        size_t myix = __global.topology_local.rank2Index(__global.mapping.task());
-        _lock.init(&__global._wuRegion_mms[_clientid][myix]); // put context lock in WAC region
+        _lock.init(__global._wuRegion_mm); // put context lock in WAC region
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 
 

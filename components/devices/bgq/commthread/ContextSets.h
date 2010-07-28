@@ -181,7 +181,9 @@ public:
 	}
 
         PAMI::Context *getContext(size_t contextix) {
-                return _contexts[contextix];
+		PAMI::Context *c = _contexts[contextix];
+		PAMI_assert_debugf(c, "Internal error: NULL context[%zd] assigned to commthread", contextix);
+                return c;
         }
 
         inline uint64_t getContextSet(size_t threadid) {

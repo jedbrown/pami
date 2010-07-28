@@ -139,13 +139,6 @@ namespace PAMI
 
         int rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
         PAMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
-#ifdef USE_COMMTHREADS
-        // Create one comm thread semi-opaque pointer. Internally, this may be
-        // one-per-context (optimal advance scenario) or some other arrangement.
-        /// \todo #warning need to fix node-scoped l2atomic mm so that it allows private alloc
-        _commThreads = PAMI::Device::CommThread::BgqCommThread::generate(_clientid, n, &_mm, &__global.l2atomicFactory.__nodescoped_mm);
-        PAMI_assertf(_commThreads, "BgqCommThread::generate failed for _commThreads[%d]\n", n);
-#endif // USE_COMMTHREADS
         int x;
         TRACE_ERR((stderr, "BGQ::Client::createContext mm available %zu\n", _mm.available()));
         _platdevs.generate(_clientid, n, _mm);
@@ -174,7 +167,7 @@ namespace PAMI
             // but it won't matter since this object can't do anything with it anyway.
             // This must initialize before the context, so that MemoryManagers are
             // setup.
-            PAMI::Device::CommThread::BgqCommThread::initContext(_commThreads, _clientid, x, context[x]);
+            PAMI::Device::CommThread::BgqCommThread::initContext(__global._commThreads, _clientid, x, context[x]);
 #endif // USE_COMMTHREADS
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
                                               &_platdevs, base, bytes, _world_geometry);
@@ -200,7 +193,7 @@ namespace PAMI
         // for (i = 0.._ncontexts) PAMI_assertf(context[i] == _contexts[i], "...");
 #ifdef USE_COMMTHREADS
         // This removes all contexts... only needs to be called once.
-        PAMI::Device::CommThread::BgqCommThread::rmContexts(_commThreads, _clientid, _contexts, _ncontexts);
+        PAMI::Device::CommThread::BgqCommThread::rmContexts(__global._commThreads, _clientid, (void **)_contexts, _ncontexts);
 #endif // USE_COMMTHREADS
         pami_result_t res = PAMI_SUCCESS;
         size_t i;
@@ -227,16 +220,7 @@ namespace PAMI
       // This is not standard interface... yet?
       inline pami_result_t addContextToCommThreadPool(pami_context_t ctx)
       {
-#if 0
-
-        // hook for testing...
-        if (ctx == NULL)
-          {
-            return PAMI::Device::CommThread::BgqCommThread::wakeUp(_commThreads, _clientid);
-          }
-        else
-#endif // !HAVE_WU_ARMWITHADDRESS
-          return PAMI::Device::CommThread::BgqCommThread::addContext(_commThreads, _clientid, ctx);
+          return PAMI::Device::CommThread::BgqCommThread::addContext(__global._commThreads, _clientid, ctx);
       }
 #endif // USE_COMMTHREADS
 
@@ -670,9 +654,6 @@ namespace PAMI
       pami_geometry_range_t         _world_range;
 
       Memory::MemoryManager _mm;
-#ifdef USE_COMMTHREADS
-      PAMI::Device::CommThread::BgqCommThread *_commThreads;
-#endif // USE_COMMTHREADS
 
 	/// \page env_vars Environment Variables
 	///

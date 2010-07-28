@@ -113,12 +113,11 @@ namespace PAMI
               _packet[i].reset ();
             }
 #if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-  // since we currently wakeup all contexts if any are changed, this is fine.
-  size_t myix = __global.topology_local.rank2Index(__global.mapping.task());
-  __global._wuRegion_mms[clientid][myix].memalign((void **)&_active, sizeof(void *),
-            T_FifoSize * sizeof(*_active));
-  PAMI_assertf(_active, "Out of WAC Region memory allocating FIFO active flags");
-  memset((void *)_active, 0, T_FifoSize * sizeof(*_active));
+	// since we currently wakeup all contexts if any are changed, this is fine.
+	__global._wuRegion_mm->memalign((void **)&_active, sizeof(void *),
+						T_FifoSize * sizeof(*_active));
+	PAMI_assertf(_active, "Out of WAC Region memory allocating FIFO active flags");
+	memset((void *)_active, 0, T_FifoSize * sizeof(*_active));
 #endif // __pami_target_bgq__
         }
 
