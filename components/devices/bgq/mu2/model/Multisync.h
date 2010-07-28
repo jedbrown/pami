@@ -186,15 +186,21 @@ namespace PAMI
         PAMI_assert(_connection[msync->connection_id] == NULL);
         _connection[msync->connection_id] = state_data;
 
+        Topology* topology = (Topology*)msync->participants;
+        pami_task_t root = topology->index2Rank(0);
+
         _header_model.postCollectivePacket (state_data->pkt,
                                             NULL,
                                             NULL,
                                             0, //_route,
+                                            root,
+                                            MUHWI_COLLECTIVE_OP_CODE_OR,
+                                            sizeof(unsigned int),
                                             &state_data->header_metadata,
                                             sizeof(header_metadata_t),
-                                            (void*)NULL,
-                                            0);
-
+                                            &state_data->header_metadata, // bogus payload for OR
+                                            4);
+  
         TRACE_FORMAT( "connection_id %#X, debug %#X exit\n", msync->connection_id, state_data->header_metadata.debug);
 
         TRACE_FN_EXIT();
