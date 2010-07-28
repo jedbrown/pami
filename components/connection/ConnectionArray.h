@@ -24,13 +24,9 @@ namespace PAMI
 {
   namespace Connection
   {
-    template <class T_Device>
-    class Array : public Interface<Connection::Array<T_Device>, T_Device>
+    template <class T_Device, unsigned T_MaxContexts = 64>
+    class Array : public Interface<Connection::Array<T_Device, T_MaxContexts>, T_Device>
     {
-      private:
-
-        static const size_t _maximum_context_count = 4; // this needs to be changed to allow for more than 4 contexts
-
       protected:
 
         inline void ** getArray () { return _array; };
@@ -41,7 +37,7 @@ namespace PAMI
           size_t task, offset;
           PAMI_ENDPOINT_INFO(endpoint, task, offset);
 
-          PAMI_assert_debug(offset < _maximum_context_count);
+          PAMI_assert_debug(offset < T_MaxContexts);
 
           size_t peer = _device.task2peer (task);
           size_t index = peer + offset * _npeers;
@@ -131,13 +127,13 @@ namespace PAMI
         void     ** _array;
         size_t      _npeers;
 
-        static typename PAMI::Connection::Interface<PAMI::Connection::Array<T_Device>, T_Device>::Manager _manager;
+        static typename PAMI::Connection::Interface<PAMI::Connection::Array<T_Device,T_MaxContexts>, T_Device>::Manager _manager;
     };
 
 
-    template <class T_Device>
-    typename PAMI::Connection::Interface<PAMI::Connection::Array<T_Device>, T_Device>::Manager
-    PAMI::Connection::Array<T_Device>::_manager;
+    template <class T_Device, unsigned T_MaxContexts>
+    typename PAMI::Connection::Interface<PAMI::Connection::Array<T_Device,T_MaxContexts>, T_Device>::Manager
+    PAMI::Connection::Array<T_Device,T_MaxContexts>::_manager;
   };
 };
 
