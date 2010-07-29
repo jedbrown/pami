@@ -221,6 +221,9 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks) {
       {
         fprintf(stderr,"Check(%d) failed rbuf[%d] %u != %u\n",count,i,rbuf[1],i*num_tasks);
         err = -1;
+#ifndef FULL_TEST
+       return err;
+#endif
       }
     }
   }
