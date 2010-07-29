@@ -202,7 +202,7 @@ unsigned ** alloc2DContig(int nrows, int ncols)
 void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id) {
 
   int i;
-  if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
+  if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_UNSIGNED_INT) {
     unsigned int *ibuf = (unsigned int *)  buf;
     for (i = 0; i < count; i++) {
       ibuf[i] = i;
@@ -214,7 +214,7 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id) {
 int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks) {
 
   int i, err = 0;
-  if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
+  if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_UNSIGNED_INT) {
     unsigned int *rbuf = (unsigned int *)  buf;
     for (i = 0; i < count; i++) {
       if (rbuf[i] != i * num_tasks)
@@ -353,6 +353,7 @@ int main(int argc, char*argv[])
         for(i=0,j= DT_UNSIGNED_CHAR;  i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_SIGNED_SHORT;   i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_UNSIGNED_SHORT; i<OP_COUNT;i++)validTable[i][j]=0;
+        for(i=0,j= DT_FLOAT;          i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_LOGICAL;        i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_SINGLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_DOUBLE_COMPLEX; i<OP_COUNT;i++)validTable[i][j]=0;
@@ -424,7 +425,7 @@ int main(int argc, char*argv[])
               niter = NITERBW;
 
 #ifdef CHECK_DATA
-            initialize_sndbuf (sbuf, i, op_array[op], dt_array[dt], task_id);
+            initialize_sndbuf (sbuf, i, op, dt, task_id);
 #endif
             blocking_coll(context,&barrier,&bar_poll_flag);
             ti = timer();
@@ -440,7 +441,7 @@ int main(int argc, char*argv[])
             blocking_coll(context,&barrier,&bar_poll_flag);
 
 #ifdef CHECK_DATA
-            int rc = check_rcvbuf (rbuf, i, op_array[op], dt_array[dt], num_tasks);
+            int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
             //assert (rc == 0);
             if(rc) fprintf(stderr, "FAILED validation\n");
 #endif
