@@ -175,7 +175,7 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id) {
   else
     {
       size_t sz;
-      PAMI_Dt_query (dt, &sz);
+      PAMI_Dt_query (dt_array[dt], &sz);
       memset(buf,  task_id,  count * sz);
     }
 }
