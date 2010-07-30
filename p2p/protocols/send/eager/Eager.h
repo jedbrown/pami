@@ -60,16 +60,17 @@ namespace PAMI
                                    T_Allocator          & allocator,
                                    pami_result_t        & result)
           {
-            TRACE_ERR((stderr, ">> Eager::generate() dispatch %zu\n",dispatch));
+            TRACE_ERR((stderr, ">> Eager::generate() dispatch %zu\n", dispatch));
             COMPILE_TIME_ASSERT(sizeof(Eager) <= T_Allocator::objsize);
 
             Eager * eager = (Eager *) allocator.allocateObject ();
             new ((void *)eager) Eager (dispatch, dispatch_fn, cookie, device, origin, context, result);
+
             if (result != PAMI_SUCCESS)
-            {
-              allocator.returnObject (eager);
-              eager = NULL;
-            }
+              {
+                allocator.returnObject (eager);
+                eager = NULL;
+              }
 
             TRACE_ERR((stderr, "<< Eager::generate(), eager = %p, result = %d, dispatch = %zu\n", eager, result, dispatch));
             return eager;
@@ -104,14 +105,14 @@ namespace PAMI
                                                  origin,
                                                  context,
                                                  status),
-              EagerSimple<T_Model, T_Device,
-                          T_LongHeader, T_Connection> (dispatch,
-                                                       dispatch_fn,
-                                                       cookie,
-                                                       device,
-                                                       origin,
-                                                       context,
-                                                       status)
+              EagerSimple < T_Model, T_Device,
+              T_LongHeader, T_Connection > (dispatch,
+                                            dispatch_fn,
+                                            cookie,
+                                            device,
+                                            origin,
+                                            context,
+                                            status)
           {
           };
 
@@ -120,8 +121,37 @@ namespace PAMI
           /// \note This is required to make "C" programs link successfully with virtual destructors
           inline void operator delete(void * p)
           {
-            PAMI_abortf("%s<%d>\n",__FILE__,__LINE__);
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
           }
+
+          ///
+          /// \brief Query the value of one or more attributes
+          ///
+          /// \see PAMI::Protocol::Send::getAttributes
+          ///
+          virtual pami_result_t getAttributes (pami_configuration_t  configuration[],
+                                               size_t                num_configs)
+          {
+            size_t i;
+
+            for (i = 0; i < num_configs; i++)
+              {
+                switch (configuration[i].name)
+                  {
+                    case PAMI_DISPATCH_RECV_IMMEDIATE_MAX:
+                      configuration[i].value.intval = T_Model::packet_model_payload_bytes;
+                      break;
+                    case PAMI_DISPATCH_SEND_IMMEDIATE_MAX:
+                      configuration[i].value.intval = T_Model::packet_model_immediate_bytes;
+                      break;
+                    default:
+                      return PAMI_INVAL;
+                      break;
+                  };
+              };
+
+            return PAMI_SUCCESS;
+          };
 
           ///
           /// \brief Start a new immediate send operation.

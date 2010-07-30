@@ -44,57 +44,41 @@ namespace PAMI
           /// \note This is required to make "C" programs link successfully with virtual destructors
           inline void operator delete(void * p)
           {
-            PAMI_abortf("%s<%d>\n",__FILE__,__LINE__);
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
           }
+
+          ///
+          /// \brief Query the value of one or more attributes
+          ///
+          /// \param [in,out] configuration  The configuration attribute(s) of interest
+          /// \param [in]     num_configs    The number of configuration elements
+          ///
+          /// \see PAMI_Dispatch_query()
+          ///
+          /// \retval PAMI_SUCCESS  The query has completed successfully.
+          /// \retval PAMI_INVAL    The query has failed due to invalid parameters.
+          ///
+          virtual pami_result_t getAttributes (pami_configuration_t  configuration[],
+                                               size_t                num_configs) = 0;
 
           ///
           /// \brief Start a new immediate send message.
           ///
-          /// \param[in]  task      Destination task.
-          /// \param[in]  src       Send data buffer.
-          /// \param[in]  bytes     Send data length in bytes.
-          /// \param[in]  msginfo   Opaque application header information.
-          /// \param[in]  mbytes    Number of opaque application header bytes.
+          /// \param[in] parameters Immediate send parameter structure
           ///
-#if 0
-          virtual pami_result_t immediate (pami_task_t           task,
-                                          void               * src,
-                                          size_t               bytes,
-                                          void               * msginfo,
-                                          size_t               mbytes) = 0;
-#endif
           virtual pami_result_t immediate (pami_send_immediate_t * parameters) = 0;
 
           ///
           /// \brief Start a new simple send message.
           ///
-          /// \param[in]  local_fn  Callback to invoke on local node when
-          ///                       message local source data is completely sent.
-          /// \param[in]  remote_fn Callback to invoke on local node when
-          ///                       message is completely received on remote node.
-          /// \param[in]  cookie    Opaque application callback data.
-          /// \param[in]  task      Destination task.
-          /// \param[in]  bytes     Send data length in bytes.
-          /// \param[in]  src       Send data buffer.
-          /// \param[in]  msginfo   Opaque application header information.
-          /// \param[in]  mbytes    Number of msginfo bytes.
+          /// \param[in] parameters Simple send parameter structure
           ///
-#if 0
-          virtual pami_result_t simple (pami_event_function   local_fn,
-                                       pami_event_function   remote_fn,
-                                       void               * cookie,
-                                       pami_task_t           task,
-                                       void               * src,
-                                       size_t               bytes,
-                                       void               * msginfo,
-                                       size_t               mbytes) = 0;
-#endif
           virtual pami_result_t simple (pami_send_t * parameters) = 0;
 
-      }; // PAMI::Protocol::Send class
-    }; // PAMI::Protocol::Send class
-  };   // PAMI::Protocol namespace
-};     // PAMI namespace
+      }; // PAMI::Protocol::Send::Send class
+    };   // PAMI::Protocol::Send namespace
+  };     // PAMI::Protocol namespace
+};       // PAMI namespace
 
 #endif // __pami_p2p_protocols_send_h__
 

@@ -43,6 +43,7 @@ namespace PAMI
       static const size_t packet_model_metadata_bytes       = T_Device::metadata_size;
       static const size_t packet_model_multi_metadata_bytes = T_Device::metadata_size;
       static const size_t packet_model_payload_bytes        = T_Device::payload_size;
+      static const size_t packet_model_immediate_bytes      = 0;
       static const size_t    packet_model_state_bytes       = sizeof(T_Message);
 
       pami_result_t init_impl (size_t                      dispatch,

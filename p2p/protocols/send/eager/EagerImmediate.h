@@ -57,7 +57,7 @@ namespace PAMI
             uint16_t        databytes; ///< Number of bytes of data
             uint16_t        metabytes; ///< Number of bytes of metadata
             pami_endpoint_t origin;    ///< Origin endpoint for transfer
-          } protocol_metadata_t;
+        } protocol_metadata_t;
 
           ///
           /// \brief Sender-side state structure for immediate sends.
@@ -73,8 +73,8 @@ namespace PAMI
             uint8_t                    data[T_Model::packet_model_payload_bytes]; ///< Packed data
             pkt_t                      pkt;
             protocol_metadata_t        metadata;
-            EagerImmediate<T_Model,
-                           T_Device> * pf;  ///< Eager immediate protocol
+            EagerImmediate < T_Model,
+            T_Device > * pf; ///< Eager immediate protocol
           } send_t;
 
         public:
@@ -132,9 +132,17 @@ namespace PAMI
           {
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() >>\n"));
 
+#ifdef ERROR_CHECKS
+
+            if (T_Model::packet_model_immediate_bytes <
+                (parameters->data.iov_len + parameters->header.iov_len))
+              return PAMI_INVAL;
+
+#endif
+
             pami_task_t task;
             size_t offset;
-            PAMI_ENDPOINT_INFO(parameters->dest,task,offset);
+            PAMI_ENDPOINT_INFO(parameters->dest, task, offset);
 
             // Verify that this task is addressable by this packet device
             if (!_device.isPeer(task)) return PAMI_ERROR;
@@ -155,59 +163,59 @@ namespace PAMI
             // This allows the header+data iovec elements to be treated as a
             // two-element array of iovec structures, and therefore allows the
             // packet model to implement template specialization.
-            array_t<struct iovec,2> * iov = (array_t<struct iovec,2> *) parameters;
+            array_t<struct iovec, 2> * iov = (array_t<struct iovec, 2> *) parameters;
 
             bool posted =
               _send_model.postPacket (task, offset,
-                                      (void *) &metadata,
+                                      (void *) & metadata,
                                       sizeof (protocol_metadata_t),
                                       iov->array);
 
             if (unlikely(!posted))
-            {
-              // For some reason the packet could not be immediately posted.
-              // Allocate memory, pack the user data and metadata, and attempt
-              // a regular (non-blocking) post.
-              TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. immediate post packet unsuccessful.\n"));
+              {
+                // For some reason the packet could not be immediately posted.
+                // Allocate memory, pack the user data and metadata, and attempt
+                // a regular (non-blocking) post.
+                TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. immediate post packet unsuccessful.\n"));
 
-              // Allocate memory for a protocol send state object. A pointer to
-              // this object is used as the "cookie" for the send_complete()
-              // event function.
-              send_t * send = (send_t *) _allocator.allocateObject ();
+                // Allocate memory for a protocol send state object. A pointer to
+                // this object is used as the "cookie" for the send_complete()
+                // event function.
+                send_t * send = (send_t *) _allocator.allocateObject ();
 
-              // Save a pointer to the protocol in order to later free the
-              // protocol send state memory allocated above.
-              send->pf = this;
+                // Save a pointer to the protocol in order to later free the
+                // protocol send state memory allocated above.
+                send->pf = this;
 
-              // Copy the application header and application data into a
-              // temporary buffer in the protocol send state object.
-              memcpy (&(send->data[0]), parameters->header.iov_base, metadata.metabytes);
-              memcpy (&(send->data[metadata.metabytes]), parameters->data.iov_base, metadata.databytes);
+                // Copy the application header and application data into a
+                // temporary buffer in the protocol send state object.
+                memcpy (&(send->data[0]), parameters->header.iov_base, metadata.metabytes);
+                memcpy (&(send->data[metadata.metabytes]), parameters->data.iov_base, metadata.databytes);
 
-              // Copy the metadata off the stack because this stack frame will
-              // disappear when this method returns and the model send state
-              // will be left pointing to garbage.
-              send->metadata.databytes = metadata.databytes;
-              send->metadata.metabytes = metadata.metabytes;
-              send->metadata.origin    = metadata.origin;
+                // Copy the metadata off the stack because this stack frame will
+                // disappear when this method returns and the model send state
+                // will be left pointing to garbage.
+                send->metadata.databytes = metadata.databytes;
+                send->metadata.metabytes = metadata.metabytes;
+                send->metadata.origin    = metadata.origin;
 
-              // Do the send!
-              TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. post packet after failure, dest:0x%08x \n",parameters->dest));
+                // Do the send!
+                TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. post packet after failure, dest:0x%08x \n", parameters->dest));
 
-              _send_model.postPacket (send->pkt,
-                                      send_complete,
-                                      send,
-                                      task,
-                                      offset,
-                                      (void *) &(send->metadata),
-                                      sizeof (protocol_metadata_t),
-                                      (void *) &(send->data[0]),
-                                      metadata.databytes+metadata.metabytes);
-            }
+                _send_model.postPacket (send->pkt,
+                                        send_complete,
+                                        send,
+                                        task,
+                                        offset,
+                                        (void *) &(send->metadata),
+                                        sizeof (protocol_metadata_t),
+                                        (void *) &(send->data[0]),
+                                        metadata.databytes + metadata.metabytes);
+              }
             else
-            {
-              TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. immediate post packet successful.\n"));
-            }
+              {
+                TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. immediate post packet successful.\n"));
+              }
 
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() <<\n"));
             return PAMI_SUCCESS;
@@ -259,13 +267,13 @@ namespace PAMI
 
             // Invoke the registered dispatch function.
             send->_dispatch_fn (send->_context,   // Communication context
-                                    send->_cookie,    // Dispatch cookie
-                                    (void *) data,    // Application metadata
-                                    m->metabytes,     // Metadata bytes
-                                    (void *) (data + m->metabytes),  // payload data
-                                    m->databytes,     // Total number of bytes
-                                    m->origin,        // Origin endpoint for the transfer
-                                    (pami_recv_t *) NULL);
+                                send->_cookie,    // Dispatch cookie
+                                (void *) data,    // Application metadata
+                                m->metabytes,     // Metadata bytes
+                                (void *) (data + m->metabytes),  // payload data
+                                m->databytes,     // Total number of bytes
+                                m->origin,        // Origin endpoint for the transfer
+                                (pami_recv_t *) NULL);
 
             TRACE_ERR ((stderr, "<< EagerImmediate::dispatch_send_direct()\n"));
             return 0;

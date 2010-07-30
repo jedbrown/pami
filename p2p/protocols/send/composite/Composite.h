@@ -101,6 +101,46 @@ namespace PAMI
           }
 
           ///
+          /// \brief Query the value of one or more attributes
+          ///
+          /// \see PAMI::Protocol::Send::getAttributes
+          ///
+          virtual pami_result_t getAttributes (pami_configuration_t  configuration[],
+                                               size_t                num_configs)
+          {
+            pami_result_t result;
+            size_t tmp, i;
+
+            for (i = 0; i < num_configs; i++)
+              {
+                switch (configuration[i].name)
+                  {
+                    case PAMI_DISPATCH_RECV_IMMEDIATE_MAX:
+                    case PAMI_DISPATCH_SEND_IMMEDIATE_MAX:
+                      result = _primary->getAttributes (&configuration[i], 1);
+
+                      if (result != PAMI_SUCCESS) return result;
+
+                      tmp = configuration[i].value.intval;
+
+                      result = _secondary->getAttributes (&configuration[i], 1);
+
+                      if (result != PAMI_SUCCESS) return result;
+
+                      if (tmp < configuration[i].value.intval)
+                        configuration[i].value.intval = tmp;
+
+                      break;
+                    default:
+                      return PAMI_INVAL;
+                      break;
+                  };
+              };
+
+            return PAMI_SUCCESS;
+          };
+
+          ///
           /// \brief Start a new immediate send operation.
           ///
           /// \see PAMI::Protocol::Send::immediate

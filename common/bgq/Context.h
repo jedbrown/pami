@@ -926,7 +926,7 @@ namespace PAMI
 
         __global.useMU(muFlag); /// \todo temp function while MU2 isn't complete
 
-        
+
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if(_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal()) _pgas_shmem_registration->analyze(_contextid, geometry);
         // Can always use MU if it's available
@@ -939,19 +939,9 @@ namespace PAMI
                                                pami_configuration_t  configuration[],
                                                size_t                num_configs)
       {
-        pami_result_t result = PAMI_SUCCESS;
-        size_t i;
-        for(i=0; i<num_configs; i++)
-          {
-            switch (configuration[i].name)
-              {
-                case PAMI_DISPATCH_SEND_IMMEDIATE_MAX:
-                case PAMI_DISPATCH_RECV_IMMEDIATE_MAX:
-                default:
-                  result = PAMI_INVAL;
-              }
-          }
-        return result;
+        PAMI::Protocol::Send::Send * send =
+          (PAMI::Protocol::Send::Send *) _dispatch[dispatch];
+        return send->getAttributes (configuration, num_configs);
       }
 
     inline pami_result_t dispatch_update_impl(size_t                dispatch,

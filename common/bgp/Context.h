@@ -664,19 +664,9 @@ namespace PAMI
                                                pami_configuration_t  configuration[],
                                                size_t                num_configs)
       {
-        pami_result_t result = PAMI_SUCCESS;
-        size_t i;
-        for(i=0; i<num_configs; i++)
-          {
-            switch (configuration[i].name)
-              {
-                case PAMI_DISPATCH_SEND_IMMEDIATE_MAX:
-                case PAMI_DISPATCH_RECV_IMMEDIATE_MAX:
-                default:
-                  result = PAMI_INVAL;
-              }
-          }
-        return result;
+        PAMI::Protocol::Send::Send * send =
+          (PAMI::Protocol::Send::Send *) _dispatch[dispatch];
+        return send->getAttributes (configuration, num_configs);
       }
 
       inline pami_result_t dispatch_update_impl(size_t                dispatch,

@@ -66,8 +66,8 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketModel::getPacketPayloadBytes
           static const size_t packet_model_payload_bytes         = MU::Context::packet_payload_size;
 
-          /// \see PAMI::Device::Interface::PacketModel::getPacketImmediateMax
-          static const size_t packet_model_immediate_max         = MU::Context::immediate_payload_size;
+          /// \see PAMI::Device::Interface::PacketModel::getPacketImmediateBytes
+          static const size_t packet_model_immediate_bytes       = MU::Context::immediate_payload_size;
 
           /// \see PAMI::Device::Interface::PacketModel::getPacketTransferStateBytes
           static const size_t packet_model_state_bytes           = 1024 + MU::InjChannel::completion_event_state_bytes;
@@ -289,7 +289,7 @@ namespace PAMI
         bool isfree = channel.hasFreeSpaceWithUpdate ();
 
         if (likely(channel.isSendQueueEmpty() && isfree))
-	  {
+          {
             // There is at least one descriptor slot available in the injection
             // fifo before a fifo-wrap event.
 
@@ -320,7 +320,7 @@ namespace PAMI
 
             for (i = 0; i < T_Niov; i++)
               {
-		memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
+                memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
                 tbytes += iov[i].iov_len;
               }
 
@@ -330,7 +330,7 @@ namespace PAMI
 #endif
             // Set the payload information.
             memfifo->setPayload (paddr, tbytes);
-	    //MUSPI_DescriptorDumpHex((char*)"JEFF: Descriptor",desc);
+            //MUSPI_DescriptorDumpHex((char*)"JEFF: Descriptor",desc);
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
             //uint64_t sequence =

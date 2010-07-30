@@ -210,6 +210,31 @@ namespace PAMI
           static const size_t getPacketPayloadBytes ();
 
           ///
+          /// \brief Returns the maximum immediate payload bytes attribute of this model.
+          ///
+          /// Packet-based network hardware may provide the capability to
+          /// inject a packet immediately if network resources are available.
+          /// This attribute specifies the maximum number of bytes that may be
+          /// immediately sent in the packet payload using the 'immediate'
+          /// postPacket method, which does not have a callback, of the
+          /// packet model interface.
+          ///
+          /// A packet model implementation may return zero as the number of
+          /// packet immediate payload bytes supported.
+          ///
+          /// \attention All packet model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'size_t packet_model_immediate_bytes'.
+          ///
+          /// C++ code using templates to specify the model may statically
+          /// access the 'packet_model_immediate_bytes' constant.
+          ///
+          /// \note The \c packet_model_immediate_bytes value may be different
+          ///       than the \c packet_model_payload_bytes value
+          ///
+          static const size_t getPacketImmediateBytes ();
+
+          ///
           /// \brief Returns the transfer state bytes attribute of this model.
           ///
           /// Typically a packet device will require some amount of temporary
@@ -241,10 +266,10 @@ namespace PAMI
           /// \param[in] read_recv_func_parm   Receive function clientdata for read-access packet devices
           ///
           pami_result_t init (size_t           dispatch,
-                             RecvFunction_t   direct_recv_func,
-                             void           * direct_recv_func_parm,
-                             RecvFunction_t   read_recv_func,
-                             void           * read_recv_func_parm);
+                              RecvFunction_t   direct_recv_func,
+                              void           * direct_recv_func_parm,
+                              RecvFunction_t   read_recv_func,
+                              void           * read_recv_func_parm);
 
           ///
           /// \brief Immediate post of a single packet transfer operation.
@@ -511,6 +536,12 @@ namespace PAMI
       }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
+      const size_t PacketModel<T_Model, T_Device, T_StateBytes>::getPacketImmediateBytes ()
+      {
+        return T_Model::packet_model_immediate_bytes;
+      }
+
+      template <class T_Model, class T_Device, unsigned T_StateBytes>
       const size_t PacketModel<T_Model, T_Device, T_StateBytes>::getPacketTransferStateBytes ()
       {
         return T_Model::packet_model_state_bytes;
@@ -518,10 +549,10 @@ namespace PAMI
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       pami_result_t PacketModel<T_Model, T_Device, T_StateBytes>::init (size_t           dispatch,
-                                                                       RecvFunction_t   direct_recv_func,
-                                                                       void           * direct_recv_func_parm,
-                                                                       RecvFunction_t   read_recv_func,
-                                                                       void           * read_recv_func_parm)
+                                                                        RecvFunction_t   direct_recv_func,
+                                                                        void           * direct_recv_func_parm,
+                                                                        RecvFunction_t   read_recv_func,
+                                                                        void           * read_recv_func_parm)
       {
         return static_cast<T_Model*>(this)->init_impl (dispatch,
                                                        direct_recv_func,
