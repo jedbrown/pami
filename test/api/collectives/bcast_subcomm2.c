@@ -423,66 +423,67 @@ int main(int argc, char*argv[])
   int             i, j, k;
   {
     int nalg = 0;
+
     for (nalg = 0; nalg < num_algorithm[algorithm_type]; nalg++)
-    {
+      {
         top_broadcast.algorithm = top_bcast_algorithm[nalg];
         bottom_broadcast.algorithm = bottom_bcast_algorithm[nalg];
 
-  for (k = 0; k <= 1; k++)
-    {
-      _barrier (context, &world_barrier);
-
-      if (rank == roots[k])
-        {
-          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", (int)roots[k],k==1?top_bcast_md[nalg].name:bottom_bcast_md[nalg].name);
-          printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-          printf("# -----------      -----------    -----------    ---------\n");
-        }
-
-      if (set[k])
-        {
-          printf("Participant:  %d\n", (int)rank);
-          fflush(stdout);
-          _barrier (context, barriers[k]);
+        for (k = 0; k <= 1; k++)
           {
+            _barrier (context, &world_barrier);
 
-            _barrier (context, barriers[k]);
-
-            for (i = 1; i <= BUFSIZE; i *= 2)
+            if (rank == roots[k])
               {
-                long long dataSent = i;
-                int          niter = 100;
-                _barrier (context, barriers[k]);
-                ti = timer();
-
-                for (j = 0; j < niter; j++)
-                  {
-                    broadcasts[k]->cmd.xfer_broadcast.root      = roots[k];
-                    broadcasts[k]->cmd.xfer_broadcast.buf       = buf;
-                    broadcasts[k]->cmd.xfer_broadcast.typecount = i;
-                    _broadcast(context, broadcasts[k]);
-                  }
-
-                tf = timer();
-                _barrier (context, barriers[k]);
-                usec = (tf - ti) / (double)niter;
-
-                if (rank == roots[k])
-                  {
-                    printf("  %11lld %16lld %14.1f %12.2f\n",
-                           dataSent,
-                           0LL,
-                           (double)1e6*(double)dataSent / (double)usec,
-                           usec);
-                    fflush(stdout);
-                  }
+                printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", (int)roots[k], k == 1 ? top_bcast_md[nalg].name : bottom_bcast_md[nalg].name);
+                printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+                printf("# -----------      -----------    -----------    ---------\n");
               }
-          }
-        }
 
-      _barrier (context, &world_barrier);
-    }
-        }
+            if (set[k])
+              {
+                printf("Participant:  %d\n", (int)rank);
+                fflush(stdout);
+                _barrier (context, barriers[k]);
+                {
+
+                  _barrier (context, barriers[k]);
+
+                  for (i = 1; i <= BUFSIZE; i *= 2)
+                    {
+                      long long dataSent = i;
+                      int          niter = 100;
+                      _barrier (context, barriers[k]);
+                      ti = timer();
+
+                      for (j = 0; j < niter; j++)
+                        {
+                          broadcasts[k]->cmd.xfer_broadcast.root      = roots[k];
+                          broadcasts[k]->cmd.xfer_broadcast.buf       = buf;
+                          broadcasts[k]->cmd.xfer_broadcast.typecount = i;
+                          _broadcast(context, broadcasts[k]);
+                        }
+
+                      tf = timer();
+                      _barrier (context, barriers[k]);
+                      usec = (tf - ti) / (double)niter;
+
+                      if (rank == roots[k])
+                        {
+                          printf("  %11lld %16lld %14.1f %12.2f\n",
+                                 dataSent,
+                                 0LL,
+                                 (double)1e6*(double)dataSent / (double)usec,
+                                 usec);
+                          fflush(stdout);
+                        }
+                    }
+                }
+              }
+
+            _barrier (context, &world_barrier);
+          }
+      }
   }
   _barrier (context, &world_barrier);
 

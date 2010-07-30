@@ -101,7 +101,7 @@ int main (int argc, char ** argv)
 
   pami_configuration_t configuration;
   configuration.name = PAMI_CLIENT_TASK_ID;
-  result = PAMI_Client_query(client, &configuration,1);
+  result = PAMI_Client_query(client, &configuration, 1);
 
   if (result != PAMI_SUCCESS)
     {
@@ -235,7 +235,7 @@ int main (int argc, char ** argv)
 
       if (task_id == (size_t)root)
         {
-          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root,metas[nalg].name);
+          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root, metas[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }

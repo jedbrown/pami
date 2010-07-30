@@ -39,12 +39,13 @@ int check_rcvbuf (void *buf, int bytes)
     {
       if (cbuf[i-1] != c)
         {
-          fprintf(stderr, "Check(%d) failed <%p>buf[%d]=%.2u != %.2u \n",bytes,buf,i-1, cbuf[i-1], c);
+          fprintf(stderr, "Check(%d) failed <%p>buf[%d]=%.2u != %.2u \n", bytes, buf, i - 1, cbuf[i-1], c);
           return -1;
         }
 
       c++;
     }
+
   return 0;
 }
 
@@ -52,7 +53,7 @@ int main (int argc, char ** argv)
 {
   pami_client_t        client;
   pami_context_t       context;
-  size_t               num_contexts=1;
+  size_t               num_contexts = 1;
   pami_task_t          task_id;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
@@ -64,7 +65,7 @@ int main (int argc, char ** argv)
   pami_algorithm_t    *bar_must_query_algo;
   pami_metadata_t     *bar_must_query_md;
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
-  volatile unsigned    bar_poll_flag=0;
+  volatile unsigned    bar_poll_flag = 0;
 
   /* Bcast variables */
   size_t               bcast_num_algorithm[2];
@@ -73,7 +74,7 @@ int main (int argc, char ** argv)
   pami_algorithm_t    *bcast_must_query_algo;
   pami_metadata_t     *bcast_must_query_md;
   pami_xfer_type_t     bcast_xfer = PAMI_XFER_BROADCAST;
-  volatile unsigned    bcast_poll_flag=0;
+  volatile unsigned    bcast_poll_flag = 0;
 
   int                  nalg = 0;
   double               ti, tf, usec;
@@ -91,7 +92,8 @@ int main (int argc, char ** argv)
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
                      &num_tasks);    /* number of tasks    */
-  if(rc==1)
+
+  if (rc == 1)
     return 1;
 
   /*  Query the world geometry for barrier algorithms */
@@ -104,7 +106,8 @@ int main (int argc, char ** argv)
                             &bar_always_works_md,
                             &bar_must_query_algo,
                             &bar_must_query_md);
-  if(rc==1)
+
+  if (rc == 1)
     return 1;
 
   /*  Query the world geometry for broadcast algorithms */
@@ -117,19 +120,20 @@ int main (int argc, char ** argv)
                             &bcast_always_works_md,
                             &bcast_must_query_algo,
                             &bcast_must_query_md);
-  if(rc==1)
+
+  if (rc == 1)
     return 1;
 
   barrier.cb_done   = cb_done;
-  barrier.cookie    = (void*) &bar_poll_flag;
+  barrier.cookie    = (void*) & bar_poll_flag;
   barrier.algorithm = bar_always_works_algo[0];
-  blocking_coll(context, &barrier,&bar_poll_flag);
+  blocking_coll(context, &barrier, &bar_poll_flag);
 
   for (nalg = 0; nalg < bcast_num_algorithm[0]; nalg++)
     {
       int         root = 0;
       broadcast.cb_done                      = cb_done;
-      broadcast.cookie                       = (void*) &bcast_poll_flag;
+      broadcast.cookie                       = (void*) & bcast_poll_flag;
       broadcast.algorithm                    = bcast_always_works_algo[nalg];
       broadcast.cmd.xfer_broadcast.root      = root;
       broadcast.cmd.xfer_broadcast.buf       = buf;
@@ -138,23 +142,26 @@ int main (int argc, char ** argv)
 
       if (task_id == (size_t)root)
         {
-          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root,bcast_always_works_md[nalg].name);
+          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root, bcast_always_works_md[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
 
       int i, j;
+
       for (i = 1; i <= BUFSIZE; i *= 2)
         {
           long long dataSent = i;
           int          niter = NITER;
 #ifdef CHECK_DATA
+
           if (task_id == (size_t)root)
             initialize_sndbuf (buf, i);
           else
             memset(buf, 0xFF, i);
+
 #endif
-          blocking_coll(context, &barrier,&bar_poll_flag);
+          blocking_coll(context, &barrier, &bar_poll_flag);
           ti = timer();
 
           for (j = 0; j < niter; j++)
@@ -162,12 +169,14 @@ int main (int argc, char ** argv)
               broadcast.cmd.xfer_broadcast.typecount = i;
               blocking_coll (context, &broadcast, &bcast_poll_flag);
             }
-          blocking_coll(context, &barrier,&bar_poll_flag);
+
+          blocking_coll(context, &barrier, &bar_poll_flag);
           tf = timer();
 #ifdef CHECK_DATA
           check_rcvbuf (buf, i);
 #endif
           usec = (tf - ti) / (double)niter;
+
           if (task_id == (size_t)root)
             {
               printf("  %11lld %16lld %14.1f %12.2f\n",
@@ -179,7 +188,8 @@ int main (int argc, char ** argv)
             }
         }
     }
-  rc = pami_shutdown(&client,&context,&num_contexts);
+
+  rc = pami_shutdown(&client, &context, &num_contexts);
   free(bar_always_works_algo);
   free(bar_always_works_md);
   free(bar_must_query_algo);
