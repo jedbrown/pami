@@ -85,15 +85,19 @@ int main (int argc, char ** argv)
   barrier.algorithm = bar_always_works_algo[0];
   blocking_coll(context,&barrier,&bar_poll_flag);
 
+  {
+    int nalg = 0;
+    for (nalg = 0; nalg < allgatherv_num_algorithm[0]; nalg++)
+    {
   if (task_id == 0)
       {
-        printf("# Allgatherv Bandwidth Test -- root\n");
+        printf("# Allgatherv Bandwidth Test -- protocol: %s\n", allgatherv_always_works_md[nalg].name);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
   allgatherv.cb_done    = cb_done;
   allgatherv.cookie     = (void*)&allgatherv_poll_flag;
-  allgatherv.algorithm  = allgatherv_always_works_algo[0];
+  allgatherv.algorithm  = allgatherv_always_works_algo[nalg];
   allgatherv.cmd.xfer_allgatherv.sndbuf     = buf;
   allgatherv.cmd.xfer_allgatherv.stype      = PAMI_BYTE;
   allgatherv.cmd.xfer_allgatherv.stypecount = 0;
@@ -129,7 +133,9 @@ int main (int argc, char ** argv)
               fflush(stdout);
             }
       }
-  rc = pami_shutdown(&client,&context,&num_contexts);
+          }
+}
+    rc = pami_shutdown(&client,&context,&num_contexts);
   free(bar_always_works_algo);
   free(bar_always_works_md);
   free(bar_must_query_algo);

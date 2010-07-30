@@ -26,6 +26,8 @@
 
 char sbuf[BUFSIZE];
 char rbuf[BUFSIZE];
+
+/// \todo #warning remove alltoallv code...
 size_t sndlens[ MAX_COMM_SIZE ];
 size_t sdispls[ MAX_COMM_SIZE ];
 size_t rcvlens[ MAX_COMM_SIZE ];
@@ -80,18 +82,18 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   volatile unsigned    bar_poll_flag=0;
 
-  /* Alltoallv variables */
-  size_t               alltoallv_num_algorithm[2];
-  pami_algorithm_t    *alltoallv_always_works_algo;
-  pami_metadata_t     *alltoallv_always_works_md;
-  pami_algorithm_t    *alltoallv_must_query_algo;
-  pami_metadata_t     *alltoallv_must_query_md;
-  pami_xfer_type_t     alltoallv_xfer = PAMI_XFER_ALLTOALLV;
-  volatile unsigned    alltoallv_poll_flag=0;
+  /* Alltoall variables */
+  size_t               alltoall_num_algorithm[2];
+  pami_algorithm_t    *alltoall_always_works_algo;
+  pami_metadata_t     *alltoall_always_works_md;
+  pami_algorithm_t    *alltoall_must_query_algo;
+  pami_metadata_t     *alltoall_must_query_md;
+  pami_xfer_type_t     alltoall_xfer = PAMI_XFER_ALLTOALL;
+  volatile unsigned    alltoall_poll_flag=0;
 
   double               ti, tf, usec;
   pami_xfer_t          barrier;
-  pami_xfer_t          alltoallv;
+  pami_xfer_t          alltoall;
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
@@ -118,16 +120,16 @@ int main(int argc, char*argv[])
   if(rc==1)
     return 1;
 
-  /*  Query the world geometry for alltoallv algorithms */
+  /*  Query the world geometry for alltoall algorithms */
   rc = query_geometry_world(client,
                             context,
                             &world_geometry,
-                            alltoallv_xfer,
-                            alltoallv_num_algorithm,
-                            &alltoallv_always_works_algo,
-                            &alltoallv_always_works_md,
-                            &alltoallv_must_query_algo,
-                            &alltoallv_must_query_md);
+                            alltoall_xfer,
+                            alltoall_num_algorithm,
+                            &alltoall_always_works_algo,
+                            &alltoall_always_works_md,
+                            &alltoall_must_query_algo,
+                            &alltoall_must_query_md);
   if(rc==1)
     return 1;
 
@@ -135,18 +137,22 @@ int main(int argc, char*argv[])
   barrier.cookie    = (void*)&bar_poll_flag;
   barrier.algorithm = bar_always_works_algo[0];
 
-  alltoallv.cb_done    = cb_done;
-  alltoallv.cookie     = (void*)&alltoallv_poll_flag;
-  alltoallv.algorithm  = alltoallv_always_works_algo[0];
+  alltoall.cb_done    = cb_done;
+  alltoall.cookie     = (void*)&alltoall_poll_flag;
 
+  {
+    int nalg = 0;
+    for (nalg = 0; nalg < alltoall_num_algorithm[0]; nalg++)
+    {
   size_t i,j;
   if (task_id == 0)
       {
-        printf("# Alltoallv Bandwidth Test(size:%zu) %p\n",num_tasks, cb_done);
+         printf("# Alltoall Bandwidth Test(size:%zu) %p, protocol: %s\n",num_tasks, cb_done, alltoall_always_works_md[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec      usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
       }
 
+  alltoall.algorithm  = alltoall_always_works_algo[nalg];
 
   for(i=1; i<=MSGSIZE; i*=2)
       {
@@ -163,15 +169,13 @@ int main(int argc, char*argv[])
           ti = timer();
           for (j=0; j<niter; j++)
               {
-                alltoallv.cmd.xfer_alltoallv.sndbuf        = sbuf;
-                alltoallv.cmd.xfer_alltoallv.stype         = PAMI_BYTE;
-                alltoallv.cmd.xfer_alltoallv.stypecounts   = sndlens;
-                alltoallv.cmd.xfer_alltoallv.sdispls       = sdispls;
-                alltoallv.cmd.xfer_alltoallv.rcvbuf        = rbuf;
-                alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_BYTE;
-                alltoallv.cmd.xfer_alltoallv.rtypecounts   = rcvlens;
-                alltoallv.cmd.xfer_alltoallv.rdispls       = rdispls;
-                blocking_coll(context,&alltoallv,&alltoallv_poll_flag);
+                alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
+                alltoall.cmd.xfer_alltoall.stype         = PAMI_BYTE;
+                alltoall.cmd.xfer_alltoall.stypecount    = i;
+                alltoall.cmd.xfer_alltoall.rcvbuf        = rbuf;
+                alltoall.cmd.xfer_alltoall.rtype         = PAMI_BYTE;
+                alltoall.cmd.xfer_alltoall.rtypecount    = i;
+                blocking_coll(context,&alltoall,&alltoall_poll_flag);
               }
           tf = timer();
 
@@ -191,15 +195,17 @@ int main(int argc, char*argv[])
                   fflush(stdout);
               }
       }
+      }
+  }
   rc = pami_shutdown(&client,&context,&num_contexts);
   free(bar_always_works_algo);
   free(bar_always_works_md);
   free(bar_must_query_algo);
   free(bar_must_query_md);
-  free(alltoallv_always_works_algo);
-  free(alltoallv_always_works_md);
-  free(alltoallv_must_query_algo);
-  free(alltoallv_must_query_md);
+  free(alltoall_always_works_algo);
+  free(alltoall_always_works_md);
+  free(alltoall_must_query_algo);
+  free(alltoall_must_query_md);
 
   return 0;
 }

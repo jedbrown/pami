@@ -137,16 +137,20 @@ int main(int argc, char*argv[])
 
   alltoallv.cb_done    = cb_done;
   alltoallv.cookie     = (void*)&alltoallv_poll_flag;
-  alltoallv.algorithm  = alltoallv_always_works_algo[0];
 
+  {
+    int nalg = 0;
+    for (nalg = 0; nalg < alltoallv_num_algorithm[0]; nalg++)
+    {
   size_t i,j;
   if (task_id == 0)
       {
-        printf("# Alltoallv Bandwidth Test(size:%zu) %p\n",num_tasks, cb_done);
+    printf("# Alltoallv Bandwidth Test(size:%zu) %p, protocol: %s\n",num_tasks, cb_done, alltoallv_always_works_md[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec      usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
       }
 
+  alltoallv.algorithm  = alltoallv_always_works_algo[nalg];
 
   for(i=1; i<=MSGSIZE; i*=2)
       {
@@ -191,6 +195,8 @@ int main(int argc, char*argv[])
                   fflush(stdout);
               }
       }
+      }
+  }
   rc = pami_shutdown(&client,&context,&num_contexts);
   free(bar_always_works_algo);
   free(bar_always_works_md);

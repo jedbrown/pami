@@ -86,17 +86,21 @@ int main (int argc, char ** argv)
   barrier.algorithm = bar_always_works_algo[0];
   blocking_coll(context,&barrier,&bar_poll_flag);
 
+  {
+    int nalg = 0;
+    for (nalg = 0; nalg < scatterv_num_algorithm[0]; nalg++)
+    {
   size_t root = 0;
   if (task_id == root)
       {
-        printf("# Scatterv Bandwidth Test -- \n");
+        printf("# Scatterv Bandwidth Test -- protocol: %s\n", scatterv_always_works_md[nalg].name);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 
   scatterv.cb_done                       = cb_done;
   scatterv.cookie                        = (void*)&scatterv_poll_flag;
-  scatterv.algorithm                     = scatterv_always_works_algo[0];
+  scatterv.algorithm                     = scatterv_always_works_algo[nalg];
   scatterv.cmd.xfer_scatterv.root        = root;
   scatterv.cmd.xfer_scatterv.sndbuf      = buf;
   scatterv.cmd.xfer_scatterv.stype       = PAMI_BYTE;
@@ -139,7 +143,8 @@ int main (int argc, char ** argv)
               fflush(stdout);
             }
       }
-
+          }
+  }
   rc = pami_shutdown(&client,&context,&num_contexts);
   free(bar_always_works_algo);
   free(bar_always_works_md);

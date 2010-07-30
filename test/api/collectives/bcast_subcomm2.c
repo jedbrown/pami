@@ -186,6 +186,7 @@ int main(int argc, char*argv[])
   pami_geometry_range_t    *bottom_range;
   pami_algorithm_t         *bottom_bar_algorithm = NULL;
   pami_algorithm_t         *bottom_bcast_algorithm = NULL;
+  pami_metadata_t          *bottom_bcast_md = NULL;
   pami_xfer_t            bottom_barrier;
   pami_xfer_t          bottom_broadcast;
 
@@ -193,6 +194,7 @@ int main(int argc, char*argv[])
   pami_geometry_range_t    *top_range;
   pami_algorithm_t         *top_bar_algorithm = NULL;
   pami_algorithm_t         *top_bcast_algorithm = NULL;
+  pami_metadata_t          *top_bcast_md = NULL;
   pami_xfer_t            top_barrier;
   pami_xfer_t          top_broadcast;
   int                   geom_init = 1;
@@ -392,7 +394,7 @@ int main(int argc, char*argv[])
                                                   top_geometry,
                                                   PAMI_XFER_BROADCAST,
                                                   top_bcast_algorithm,
-                                                  (pami_metadata_t*)NULL,
+                                                  top_bcast_md,
                                                   num_algorithm[0],
                                                   NULL,
                                                   NULL,
@@ -419,6 +421,12 @@ int main(int argc, char*argv[])
   pami_xfer_t *broadcasts [] = {&bottom_broadcast, &top_broadcast};
   size_t           roots[] = {0, 1};
   int             i, j, k;
+  {
+    int nalg = 0;
+    for (nalg = 0; nalg < num_algorithm[algorithm_type]; nalg++)
+    {
+        top_broadcast.algorithm = top_bcast_algorithm[nalg];
+        bottom_broadcast.algorithm = bottom_bcast_algorithm[nalg];
 
   for (k = 0; k <= 1; k++)
     {
@@ -426,7 +434,7 @@ int main(int argc, char*argv[])
 
       if (rank == roots[k])
         {
-          printf("# Broadcast Bandwidth Test -- root = %d\n", (int)roots[k]);
+          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", (int)roots[k],k==1?top_bcast_md[nalg].name:bottom_bcast_md[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
@@ -436,14 +444,7 @@ int main(int argc, char*argv[])
           printf("Participant:  %d\n", (int)rank);
           fflush(stdout);
           _barrier (context, barriers[k]);
-          int alg = 0;
-          // todo:  fix so that we use the right algorithm array for each comm
-          // the code as is should work for simple splits assuming some
-          // network symmetry
-//              for(alg=0; alg<num_algorithm[algorithm_type]; alg++)
           {
-            if (rank == roots[k])
-              fprintf(stderr, "Trying algorithm %d of %zd\n", alg + 1, num_algorithm[algorithm_type]);
 
             _barrier (context, barriers[k]);
 
@@ -481,7 +482,8 @@ int main(int argc, char*argv[])
 
       _barrier (context, &world_barrier);
     }
-
+        }
+  }
   _barrier (context, &world_barrier);
 
   result = PAMI_Context_destroyv(&context, 1);

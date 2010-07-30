@@ -138,8 +138,7 @@ int main (int argc, char ** argv)
 
       if (task_id == (size_t)root)
         {
-          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root,
-                 bcast_always_works_md[nalg].name);
+          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root,bcast_always_works_md[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }

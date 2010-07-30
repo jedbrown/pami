@@ -384,8 +384,7 @@ int main(int argc, char*argv[])
   {
     if (task_id == 0)
     {
-      printf("# Reduce Bandwidth Test -- root = %d protocol: %s\n", root,
-             reduce_always_works_md[nalg].name);
+      printf("# Reduce Bandwidth Test -- root = %d protocol: %s\n", root,reduce_always_works_md[nalg].name);
       printf("# Size(bytes)           cycles    bytes/sec    usec\n");
       printf("# -----------      -----------    -----------    ---------\n");
     }

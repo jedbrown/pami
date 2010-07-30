@@ -239,8 +239,7 @@ int main(int argc, char*argv[])
         {
         if (task_id == root)
         {
-          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root,
-                 newbcast_md[nalg].name);
+          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root,newbcast_md[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
