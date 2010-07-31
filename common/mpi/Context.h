@@ -38,6 +38,7 @@
 #include "algorithms/geometry/PGASCollRegistration.h"
 #include "algorithms/geometry/OldCCMICollRegistration.h"
 #include "algorithms/geometry/P2PCCMIRegistration.h"
+#include "algorithms/geometry/ClassRouteID.h"
 
 #include "Mapping.h"
 #include <new>
@@ -168,6 +169,9 @@ namespace PAMI
                                                 MPIOldM2MModel,
                                                 MPIDevice,
                                                 SysDep> OldCCMICollreg;
+
+  typedef Geometry::ClassRouteId<MPIGeometry> MPIClassRouteId;
+
 
 /**
  * \brief Class containing all devices used on this platform.

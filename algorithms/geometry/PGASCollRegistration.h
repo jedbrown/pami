@@ -104,6 +104,7 @@ namespace PAMI
         _context(context),
         _client_id(client_id),
         _context_id(context_id),
+        _reduce_val(0),
         _dev(dev),
         _proto_alloc(proto_alloc),
         _bcast(NULL),
@@ -230,6 +231,18 @@ namespace PAMI
           return PAMI_SUCCESS;
         }
 
+        inline pami_result_t analyze_local_impl(size_t context_id,T_Geometry *geometry, uint64_t *out)
+          {
+            *out = _reduce_val;
+            return analyze(context_id, geometry, 0);
+          }
+
+        inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t in)
+          {
+            return PAMI_SUCCESS;
+          }
+
+        
         inline pami_result_t setGenericDevice(PAMI::Device::Generic::Device *g)
           {
             _mgr.setGenericDevice(g);
@@ -248,7 +261,7 @@ namespace PAMI
       size_t                      _client_id;
       size_t                      _context_id;
       T_NBCollMgr                 _mgr;
-
+      uint64_t                    _reduce_val;
       // Native Interface
       T_Device                   &_dev;
       T_Allocator                &_proto_alloc;
@@ -263,7 +276,6 @@ namespace PAMI
       T_P2P_NI                   *_shortallreduce;
       T_P2P_NI                   *_barrier;
       T_P2P_NI                   *_barrier_ue;
-
 
 
       PAMI::MemoryAllocator<sizeof(Factories),16> _allocator;

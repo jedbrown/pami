@@ -66,6 +66,7 @@ namespace PAMI
         _client(client),
         _context(context),
         _context_id(context_id),
+        _reduce_val(0),
         _sd(sd),
         _dev(dev),
         _barrier(dev),
@@ -111,16 +112,26 @@ namespace PAMI
           geometry->addCollective(PAMI_XFER_AMBROADCAST,&_ambcast_registration,_context_id);
           return PAMI_SUCCESS;
         }
+        inline pami_result_t analyze_local_impl(size_t context_id,T_Geometry *geometry, uint64_t *out)
+          {
+            *out = _reduce_val;
+            return analyze(context_id, geometry, 0);
+          }
 
+        inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t in)
+          {
+            return PAMI_SUCCESS;
+          }
       static pami_geometry_t mapidtogeometry (int comm)
         {
           pami_geometry_t g = geometry_map[comm];
           return g;
         }
     public:
-      pami_client_t               _client;
-      pami_context_t              _context;
+      pami_client_t              _client;
+      pami_context_t             _context;
       size_t                     _context_id;
+      uint64_t                   _reduce_val;  
       T_Sysdep                  &_sd;
       T_Device                  &_dev;
 

@@ -34,12 +34,13 @@ namespace PAMI
     typedef enum
     {
       PAMI_GKEY_COLLFACTORY     = 0,
-      PAMI_GKEY_BARRIERCOMPOSITE0,     // ?
-      PAMI_GKEY_BARRIERCOMPOSITE1,     // ?
-      PAMI_GKEY_LOCALBARRIERCOMPOSITE, // local sub-topologies only in the geometry
+      PAMI_GKEY_BARRIERCOMPOSITE0,      // ?
+      PAMI_GKEY_BARRIERCOMPOSITE1,      // ?
+      PAMI_GKEY_LOCALBARRIERCOMPOSITE,  // local sub-topologies only in the geometry
       PAMI_GKEY_GLOBALBARRIERCOMPOSITE, // global sub-topologes only in the geometry
+      PAMI_GKEY_CLASSROUTEID,           // class route id
       PAMI_GKEY_PLATEXTENSIONS
-      PAMI_GKEY_GEOMETRYCSNI           // native interface for coll shm device
+      PAMI_GKEY_GEOMETRYCSNI            // native interface for coll shm device
     }keys_t;
 
     template <class T_Geometry>

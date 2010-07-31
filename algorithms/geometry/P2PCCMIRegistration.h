@@ -86,6 +86,7 @@ namespace PAMI
             _context(context),
             _context_id(context_id),
             _client_id(client_id),
+            _reduce_val(0),
             _local_dev(ldev),
             _global_dev(gdev),
             _allocator(allocator),
@@ -197,6 +198,19 @@ namespace PAMI
             return PAMI_SUCCESS;
           }
 
+        inline pami_result_t analyze_local_impl(size_t context_id,T_Geometry *geometry, uint64_t *out)
+          {
+            *out = _reduce_val;
+            return analyze(context_id, geometry, 0);
+          }
+        
+        inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t in)
+          {
+            return PAMI_SUCCESS;
+          }
+
+
+        
           static pami_geometry_t mapidtogeometry (int comm)
           {
             pami_geometry_t g = geometry_map[comm];
@@ -458,6 +472,7 @@ namespace PAMI
           pami_context_t                                               _context;
           size_t                                                       _context_id;
           size_t                                                       _client_id;
+          uint64_t                                                     _reduce_val;
 
           // Protocol device(s) and allocator
           T_Local_Device                                              &_local_dev;
