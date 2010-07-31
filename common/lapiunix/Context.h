@@ -62,6 +62,7 @@
 #include "algorithms/geometry/PGASCollRegistration.h"
 #include "algorithms/geometry/P2PCCMIRegistration.h"
 #include "algorithms/geometry/CAUCollRegistration.h"
+#include "algorithms/geometry/ClassRouteId.h"
 
 #ifdef _COLLSHM
 // Collective shmem device
@@ -298,6 +299,9 @@ namespace PAMI
                                                  CAUDevice,
                                                  ShmemEagerNI_AM,
                                                  CAUNativeInterface> CAUCollreg;
+
+  typedef Geometry::ClassRouteId<LAPIGeometry> LAPIClassRouteId;
+
 #ifdef _COLLSHM
   // Collective Shmem Protocol Typedefs
   typedef PAMI::Atomic::XlcBuiltinT<long>                                        LAPICSAtomic;
@@ -509,6 +513,7 @@ namespace PAMI
             _coll_shm_collreg = NULL;
 #endif // _COLLSHM
 
+          _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);          
           return PAMI_SUCCESS;
         }
 

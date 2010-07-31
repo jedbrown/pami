@@ -138,7 +138,7 @@ namespace PAMI
           {
             return PAMI_SUCCESS;
           }
-        
+
       static pami_geometry_t mapidtogeometry (int comm)
         {
           pami_geometry_t g = geometry_map[comm];
@@ -150,7 +150,7 @@ namespace PAMI
       pami_client_t                                          _client;
       pami_context_t                                         _context;
       size_t                                                 _context_id;
-      size_t                                                 _reduce_val;         
+      uint64_t                                               _reduce_val;
 
       // Barrier Storage
       CCMI::Executor::Composite                             *_barrier_composite;

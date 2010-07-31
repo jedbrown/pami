@@ -38,7 +38,7 @@
 #include "algorithms/geometry/PGASCollRegistration.h"
 #include "algorithms/geometry/OldCCMICollRegistration.h"
 #include "algorithms/geometry/P2PCCMIRegistration.h"
-#include "algorithms/geometry/ClassRouteID.h"
+#include "algorithms/geometry/ClassRouteId.h"
 
 #include "Mapping.h"
 #include <new>

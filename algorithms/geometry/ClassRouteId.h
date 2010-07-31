@@ -61,18 +61,6 @@ namespace PAMI
                               pami_result_t    result )
         {
           ClassRouteId     *c        = (ClassRouteId *)cookie;
-          int               x        = ffs(c->_result[0])-1;
-          uint64_t         *key      = (uint64_t *)malloc(sizeof(uint64_t));
-          if(x!=(int)0xFFFFFFFF)
-            {
-              (*c->_bitmask)        &=(~(0x1<<x));
-              *key                   = x;
-            }
-          else
-            *key = -1;          
-          c->_geometry->setKey(PAMI_GKEY_CLASSROUTEID, key);
-
-
           c->_result_cb_done(context,c->_result_cookie,&c->_result[0],c->_geometry,result);
           c->_user_cb_done(context, c->_user_cookie, result);
           free(c);
@@ -82,8 +70,8 @@ namespace PAMI
                                  void           * cookie,
                                  pami_result_t    result )
         {
-          ClassRouteId                        *c  = (ClassRouteId *)cookie;
           pami_xfer_t                          ar;
+          ClassRouteId                        *c  = (ClassRouteId *)cookie;
           ar.cb_done                              = get_cr_done;
           ar.cookie                               = c;
           // algorithm not needed here
@@ -93,7 +81,7 @@ namespace PAMI
           ar.cmd.xfer_allreduce.stypecount        = sizeof(*c->_bitmask)*c->_count;
           ar.cmd.xfer_allreduce.rcvbuf            = (char*)c->_result;
           ar.cmd.xfer_allreduce.rtype             = PAMI_BYTE;
-          ar.cmd.xfer_allreduce.rtypecount        = sizeof(c->_result)*c->_count;
+          ar.cmd.xfer_allreduce.rtypecount        = sizeof(*c->_result)*c->_count;
           ar.cmd.xfer_allreduce.dt                = PAMI_UNSIGNED_LONG_LONG;
           ar.cmd.xfer_allreduce.op                = PAMI_BAND;
           c->_ar_algo->generate(&ar);

@@ -264,7 +264,7 @@ namespace PAMI
         if(geometry != NULL)
           {
             new_geometry=(MPIGeometry*) malloc(sizeof(*new_geometry));
-            new(new_geometry)MPIGeometry((PAMI::Geometry::Common*)parent,
+            new(new_geometry)MPIGeometry((MPIGeometry*)parent,
                                          &__global.mapping,
                                          id,
                                          slice_count,

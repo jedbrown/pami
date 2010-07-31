@@ -426,6 +426,22 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+
+    static void cr_func(pami_context_t  context,
+                        void           *cookie,
+                        uint64_t       *reduce_result,
+                        LAPIGeometry   *g,
+                        pami_result_t   result )
+      {
+        Client *c = (Client*)cookie;
+        for(size_t n=0; n<c->_ncontexts; n++)
+          {
+            c->_contexts[n]->_pgas_collreg->analyze_global(n,g,reduce_result[0]);
+            c->_contexts[n]->_p2p_ccmi_collreg->analyze_global(n,g,reduce_result[1]);
+            c->_contexts[n]->_cau_collreg->analyze_global(n,g,reduce_result[2]);
+          }
+      }
+
     inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
                                                         pami_configuration_t    configuration[],
                                                         size_t                  num_configs,
@@ -438,42 +454,83 @@ namespace PAMI
                                                         void                  * cookie)
       {
         LAPIGeometry              *new_geometry = NULL;
-
+        uint64_t                  to_reduce[3];
+        // If our new geometry is NOT NULL, we will create a new geometry
+        // for this client.  This new geometry will be populated with a
+        // set of algorithms.
         if(geometry != NULL)
-            {
-              new_geometry = (LAPIGeometry*)_geometryAlloc.allocateObject();
-              new(new_geometry) LAPIGeometry((LAPIGeometry*)parent,
-                                             &__global.mapping,
-                                             id,
-                                             slice_count,
-                                             rank_slices);
-              for(size_t n=0; n<_ncontexts; n++)
-                  {
-                    _contexts[n]->_pgas_collreg->analyze(n,new_geometry);
-		    //                    _contexts[n]->_ccmi_collreg->analyze(n,new_geometry);
-                    _contexts[n]->_p2p_ccmi_collreg->analyze(n,new_geometry);
-                    _contexts[n]->_cau_collreg->analyze(n,new_geometry);
+          {
+            new_geometry=(LAPIGeometry*) malloc(sizeof(*new_geometry));
+            new(new_geometry)LAPIGeometry((LAPIGeometry*)parent,
+                                         &__global.mapping,
+                                         id,
+                                         slice_count,
+                                         rank_slices);
+            for(size_t n=0; n<_ncontexts; n++)
+              {
+                _contexts[n]->_pgas_collreg->analyze_local(n,new_geometry,&to_reduce[0]);
+                _contexts[n]->_p2p_ccmi_collreg->analyze_local(n,new_geometry,&to_reduce[1]);
+                _contexts[n]->_cau_collreg->analyze_local(n,new_geometry,&to_reduce[2]);
 #ifdef _COLLSHM
                     // coll shm device is currently only enabled for world_geometry
                     // _contexts[n]->_coll_shm_collreg->analyze(n, new_geometry);
 #endif // _COLLSHM
-                  }
-              *geometry=(LAPIGeometry*) new_geometry;
-              // todo:  deliver completion to the appropriate context
-            }
-        LAPIGeometry *bargeom = (LAPIGeometry*)parent;
-        PAMI::Context *ctxt  = (PAMI::Context *)context;
-        if(bargeom)
+              }
+            *geometry=(LAPIGeometry*) new_geometry;
+          }
+
+        // Now we must take care of the synchronization of this new geometry
+        // First, if a new geometry is created, we will perform an allreduce
+        // on the new geometry.
+        // If we have a parent geometry, we perform synchronization on that
+        // geometry.  If we don't have a parent geometry, we perform an
+        // "unexpected" barrier on only the new geometry.  In either case,
+        // any node creating a new geometry will allocate a class route.
+        // When the synchronization is completed (barrier or uebarrier), it
+        // will chain into an allreduce operation, which performs the allocation
+        // of the classroute.  When the classroute has been allocated,
+        // The "done" event is delivered to the user.
+        LAPIGeometry      *bargeom = (LAPIGeometry*)parent;
+        PAMI::Context    *ctxt    = (PAMI::Context *)context;
+        if(new_geometry)
           {
-            bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+            pami_algorithm_t  alg;
+            new_geometry->algorithms_info(PAMI_XFER_ALLREDUCE,
+                                          &alg,
+                                          NULL,
+                                          1,
+                                          NULL,
+                                          NULL,
+                                          0,
+                                          ctxt->getId());
+            Geometry::Algorithm<LAPIGeometry> *ar_algo = (Geometry::Algorithm<LAPIGeometry> *)alg;
+            LAPIClassRouteId *cr = (LAPIClassRouteId *)malloc(sizeof(LAPIClassRouteId));
+            new(cr)LAPIClassRouteId(ar_algo,
+                                   new_geometry,
+                                   to_reduce,
+                                   3,
+                                   cr_func,
+                                   (void*)this,
+                                   fn,
+                                   cookie);
+            if(bargeom)
+              bargeom->default_barrier(LAPIClassRouteId::get_classroute, cr, ctxt->getId(), context);
+            else
+              new_geometry->ue_barrier(LAPIClassRouteId::get_classroute, cr, ctxt->getId(), context);
           }
         else
           {
-            new_geometry->ue_barrier(fn, cookie, ctxt->getId(), context);
+            if(bargeom)
+              bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+            else
+              {
+                // Null parent and null new geometry?  Why are you here?
+                return PAMI_INVAL;
+              }
           }
         return PAMI_SUCCESS;
       }
-
+      
     inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       * geometry,
                                                        pami_configuration_t    configuration[],
                                                        size_t                  num_configs,

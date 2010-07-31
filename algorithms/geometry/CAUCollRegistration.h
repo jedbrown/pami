@@ -70,6 +70,7 @@ namespace PAMI
             _context(context),
             _context_id(context_id),
             _client_id(client_id),
+            _reduce_val((-1)&(~0x1)),
             _local_dev(ldev),
             _global_dev(gdev)
           {
@@ -80,10 +81,30 @@ namespace PAMI
             return PAMI_SUCCESS;
           }
 
+        inline pami_result_t analyze_local_impl(size_t context_id,T_Geometry *geometry, uint64_t *out)
+          {
+            *out = _reduce_val;
+            return analyze(context_id, geometry, 0);
+          }
+
+        inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t in)
+          {
+            int               x        = ffs(in)-1;
+            uint64_t         *key      = (uint64_t *)malloc(sizeof(uint64_t));
+            if(x!=(int)0xFFFFFFFF)
+                {
+                  _reduce_val         &=(~(0x1<<x));
+                  *key                 = x;
+                }
+            else
+              *key = -1;
+            geometry->setKey(Geometry::PAMI_GKEY_CLASSROUTEID, key);
+            return PAMI_SUCCESS;
+          }
+        
           static pami_geometry_t mapidtogeometry (int comm)
           {
             pami_geometry_t g = geometry_map[comm];
-            TRACE_INIT((stderr, "<%p>CAURegistration::mapidtogeometry()\n", g));
             return g;
           }
       private:
@@ -92,6 +113,7 @@ namespace PAMI
           pami_context_t                                               _context;
           size_t                                                       _context_id;
           size_t                                                       _client_id;
+          uint64_t                                                     _reduce_val;
 
           // Protocol device(s) and allocator
           T_Local_Device                                              &_local_dev;
