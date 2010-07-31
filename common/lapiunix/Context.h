@@ -145,6 +145,13 @@ namespace PAMI
                 simple->events.cookie,
                 NULL, NULL, NULL, NULL, NULL, INTERFACE_PAMI);
       }
+    inline pami_result_t getAttributes (pami_configuration_t  configuration[],
+                                        size_t                num_configs)
+      {
+        PAMI_abort();
+        return PAMI_INVAL;
+      }
+
 
      template <class T_Allocator>
      static inline SendWrapper * generate (size_t                      dispatch,
