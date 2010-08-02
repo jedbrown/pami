@@ -25,6 +25,9 @@ namespace PAMI
 
         inline Time () :
             Interface::BaseTime<Time> (),
+#ifdef __IBMCPP__
+            seconds_per_cycle(6.25e-10),
+#endif
             _mhz(0)
         {};
 
@@ -94,7 +97,12 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
 
         /// \brief BG/Q compute node processors run at 1.6ghz. This should be
         // changed when we know for sure how fast they are running at...
+#ifdef __IBMCPP__
+        /// \todo Remove this when XL handles the other code.
+        double seconds_per_cycle;
+#else
         static const double seconds_per_cycle = 6.25e-10;
+#endif
         size_t _mhz;
     };	// class Time
 };	// namespace PAMI

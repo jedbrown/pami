@@ -191,6 +191,7 @@ namespace PAMI
       inline pami_result_t destroyContext_impl (pami_context_t context)
       {
 	PAMI_abortf("single context destroy not supported");
+        return PAMI_ERROR;
       }
       inline pami_result_t destroyContext_impl (pami_context_t *context, size_t ncontexts)
       {
