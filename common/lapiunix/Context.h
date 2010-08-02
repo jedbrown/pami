@@ -290,9 +290,9 @@ namespace PAMI
 
   // "New" CCMI Protocol Typedefs
   typedef PAMI::CAU::CAUNativeInterface<CAUDevice,
-                                   CAUMulticastModel,
-                                   CAUMultisyncModel,
-                                   CAUMulticombineModel>   CAUNativeInterface;
+                                        CAUMulticastModel,
+                                        CAUMultisyncModel,
+                                        CAUMulticombineModel>   CAUNativeInterface;
 
   typedef CollRegistration::CAU::CAURegistration<LAPIGeometry,
                                                  ShmemDevice,

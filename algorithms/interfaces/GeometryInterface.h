@@ -66,10 +66,6 @@ namespace PAMI
       }
 
       // These methods were originally from the CCMI Geometry class
-      inline int                        getColorsArray();
-      inline void                       setAsyncAllreduceMode(unsigned value);
-      inline unsigned                   getAsyncAllreduceMode();
-      inline unsigned                   incrementAllreduceIteration();
       inline unsigned                   comm();
       inline pami_task_t               *ranks();
       inline pami_task_t               *ranks_sizet();
@@ -79,8 +75,6 @@ namespace PAMI
       inline void                       freePermutation();
       inline unsigned                  *permutation();
       inline pami_topology_t           *getTopology(int topo_num);
-      inline int                        myTopologyId();
-      inline int                        getNumTopos();
       inline void                       generatePermutation_sizet();
       inline void                       freePermutation_sizet();
       inline pami_task_t               *permutation_sizet();
@@ -175,46 +169,9 @@ namespace PAMI
     }; // class Geometry
 
     template <class T_Geometry>
-    inline int Geometry<T_Geometry>::getColorsArray()
-    {
-      return static_cast<T_Geometry*>(this)->getColorsArray_impl();
-    }
-
-
-    template <class T_Geometry>
     inline pami_topology_t* Geometry<T_Geometry>::getTopology(int topo_num)
     {
       return static_cast<T_Geometry*>(this)->getTopology_impl(topo_num);
-    }
-    template <class T_Geometry>
-    inline int Geometry<T_Geometry>::myTopologyId()
-    {
-      return static_cast<T_Geometry*>(this)->myTopologyId_impl();
-    }
-    template <class T_Geometry>
-    inline int Geometry<T_Geometry>::getNumTopos()
-    {
-      return static_cast<T_Geometry*>(this)->getNumTopos_impl();
-    }
-
-
-    template <class T_Geometry>
-    inline void Geometry<T_Geometry>::setAsyncAllreduceMode(unsigned value)
-    {
-      static_cast<T_Geometry*>(this)->setAsyncAllreduceMode_impl(value);
-    }
-
-    template <class T_Geometry>
-    inline unsigned Geometry<T_Geometry>::getAsyncAllreduceMode()
-    {
-      return static_cast<T_Geometry*>(this)->getAsyncAllreduceMode_impl();
-    }
-
-
-    template <class T_Geometry>
-    inline unsigned Geometry<T_Geometry>::incrementAllreduceIteration()
-    {
-      return static_cast<T_Geometry*>(this)->incrementAllreduceIteration_impl();
     }
 
     template <class T_Geometry>

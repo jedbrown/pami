@@ -241,6 +241,13 @@ namespace PAMI
       ///
       inline void subTopologyNthGlobal(T_Topology *_new, int n);
 
+      /// \brief create topology from all Nth offsets locally
+      ///
+      /// \param[out] _new	Where to build topology
+      ///
+      inline void subTopologyLocalMaster(T_Topology *_new);
+
+
       /// \brief reduce dimensions of topology (cube -> plane, etc)
       ///
       /// The 'fmt' param is a pattern indicating which dimensions
@@ -448,6 +455,12 @@ namespace PAMI
       void Topology<T_Topology>::subTopologyNthGlobal(T_Topology *_new, int n)
     {
       return static_cast<T_Topology*>(this)->subTopologyNthGlobal_impl(_new, n);
+    }
+
+    template <class T_Topology>
+      void Topology<T_Topology>::subTopologyLocalMaster(T_Topology *_new)
+    {
+      return static_cast<T_Topology*>(this)->subTopologyLocalMaster_impl(_new);
     }
 
     template <class T_Topology>

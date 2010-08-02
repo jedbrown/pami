@@ -39,150 +39,166 @@ namespace PAMI
       public Geometry<PAMI::Geometry::Lapi>
     {
     public:
-      inline Lapi(Mapping                *mapping,
-                    pami_task_t             *ranks,
-                    pami_task_t              nranks,
-                    unsigned                comm,
-                    unsigned                numcolors,
-                    bool                    globalcontext):
+      inline Lapi(Mapping       *mapping,
+                  pami_task_t   *ranks,
+                  pami_task_t    nranks,
+                  unsigned       comm,
+                  unsigned       numcolors,
+                  bool           globalcontext):
         Geometry<PAMI::Geometry::Lapi>(mapping,
-                                        ranks,
-                                        nranks,
-                                        comm,
-                                        numcolors,
-                                        globalcontext)
+                                       ranks,
+                                       nranks,
+                                       comm,
+                                       numcolors,
+                                       globalcontext)
         {
-          TRACE_ERR((stderr, "<%p>Lapi()\n", this));
-          pami_ca_unset_all(&_attributes);
         }
+
       inline Lapi (Geometry<PAMI::Geometry::Lapi> *parent,
-                     Mapping                         *mapping,
-                     unsigned                         comm,
-                     int                              numranges,
-                     pami_geometry_range_t             rangelist[]):
+                   Mapping                        *mapping,
+                   unsigned                        comm,
+                   int                             numranges,
+                   pami_geometry_range_t           rangelist[]):
         Geometry<PAMI::Geometry::Lapi>(parent,
-                                        mapping,
-                                        comm,
-                                        numranges,
-                                        rangelist),
+                                       mapping,
+                                       comm,
+                                       numranges,
+                                       rangelist),
         _kvstore(),
         _commid(comm)
         {
-          TRACE_ERR((stderr, "<%p>Lapi(parent)\n", this));
-          int i, j, k, size;
-          pami_task_t nranks;
+          PAMI::Topology *cur         = NULL;
+          PAMI::Topology *prev        = NULL;
+          PAMI::Topology *new_topo    = NULL;
+          PAMI::Topology *free_topo   = NULL;
+          _rank                       = mapping->task();
 
-          pami_ca_unset_all(&_attributes);
-
-          size = 0;
-          nranks = 0;
-          _mytopo = 0;
-          _rank = mapping->task();
-          _numtopos =  numranges + 1;
-
-          _topos = new PAMI::Topology[_numtopos];
-
-          for (i = 0; i < numranges; i++)
-            nranks += (rangelist[i].hi - rangelist[i].lo + 1);
-
-          _ranks = (pami_task_t*)malloc(nranks * sizeof(pami_task_t));
-
-          for (k = 0, i = 0; i < numranges; i++)
+#if 0
+          // Currently, union topologies are not supported by the topology class
+          // To reduce storage, we don't want to create a range list
+          // When union topologies are supported for unions of range lists,
+          // we can re-enable this code
+          if(0)
               {
-                size = rangelist[i].hi - rangelist[i].lo + 1;
+                PAMI::Topology *_temp_topo  = (PAMI::Topology *)malloc((numranges)*sizeof(PAMI::Topology));
+                for(int i=0; i<numranges; i++)
+                  new(&_temp_topo[i])Topology(rangelist[i].lo, rangelist[i].hi);
 
-                for (j = 0; j < size; j++, k++)
+                prev = &_temp_topo[0];
+                for(int i=1; i<numranges; i++)
                     {
-                      _ranks[k] = rangelist[i].lo + j;
-                      if (_ranks[k] == (pami_task_t) _rank)
-                        _virtual_rank = k;
+                      cur      = &_temp_topo[i];
+                      new_topo = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
+                      prev->unionTopology(new_topo, cur);
+                      prev = new_topo;
+                      if(free_topo)
+                        free(free_topo);
+                      free_topo = new_topo;
                     }
+                free(_temp_topo);
+              }
+          else
+#endif
+              {
+                pami_task_t nranks = 0;
+                int i,j,k;
+                for (i = 0; i < numranges; i++)
+                  nranks += (rangelist[i].hi - rangelist[i].lo + 1);
+
+                _ranks = (pami_task_t*)malloc(nranks * sizeof(pami_task_t));
+                for (k = 0, i = 0; i < numranges; i++)
+                    {
+                      pami_task_t size = rangelist[i].hi - rangelist[i].lo + 1;
+                      for (j = 0; j < size; j++, k++)
+                        _ranks[k] = rangelist[i].lo + j;
+                    }
+                new_topo = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
+                new(new_topo)Topology(_ranks, nranks);
               }
 
-          // this creates the topology including all subtopologies
-          new(&_topos[0]) PAMI::Topology(_ranks, nranks);
-
-          // now build up the individual subtopologies
-          for (i = 1; i < _numtopos; i++)
-              {
-                new(&_topos[i]) PAMI::Topology(rangelist[i-1].lo, rangelist[i-1].hi);
-                size = rangelist[i-1].hi - rangelist[i-1].lo + 1;
-
-                for (j = 0; j < size; j++)
-                    {
-                      if ((rangelist[i-1].lo + j) == (pami_task_t) _rank)
-                        _mytopo = i;
-                    }
-              }
+          _global_all_topo   = new_topo;
+          _local_master_topo = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
+          _local_topo        = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
+          _global_all_topo->subTopologyLocalMaster(_local_master_topo);
+          _global_all_topo->subTopologyLocalToMe(_local_topo);
 
           PAMI::geometry_map[_commid]=this;
+          pami_result_t rc = _global_all_topo->rankList(&_ranks);
+          assert(rc == PAMI_SUCCESS);
+          _virtual_rank    =  _global_all_topo->rank2Index(_rank);
+          assert(_virtual_rank != -1);
           updateCachedGeometry(this, _commid);
-
-          // now we should set the attributes of the topologies or geometry
-          // i guess we should have attributes per topo and per geometry
-          // \todo need to do the following per topology maybe
-          if (_topos[0].isRectSeg())
-            pami_ca_set(&_attributes, PAMI_GEOMETRY_RECT);
-          // \todo isGlobal is not yet implemented
-          //          if (_topos[0].isGlobal())
-          //            pami_ca_set(&attributes, PAMI_GEOMETRY_GLOBAL);
-          if (PAMI_ISPOF2(_topos[0].size()))
-            pami_ca_set(&_attributes, PAMI_GEOMETRY_POF2);
-          if (!PAMI_ISEVEN(_topos[0].size()))
-            pami_ca_set(&_attributes, PAMI_GEOMETRY_ODD);
-
         }
+
+      inline void regenTopo()
+        {
+          int nranks = _global_all_topo->size();
+
+          // Delete any rank lists that have been generated
+          // for the subtopologies
+          pami_task_t *rl;
+          if(_local_master_topo->size() > 1)
+              {
+                pami_result_t rc = _local_master_topo->rankList(&rl);
+                if(rc == PAMI_SUCCESS)
+                  free(rl);
+              }
+          if(_local_topo->size() > 1)
+              {
+                pami_result_t rc = _local_topo->rankList(&rl);
+                if(rc == PAMI_SUCCESS)
+                  free(rl);
+              }
+          _global_all_topo->~Topology();
+          _local_master_topo->~Topology();
+          _local_topo->~Topology();
+
+          // regenerate the optimized subtopologies
+          new(_global_all_topo)Topology(_ranks, nranks);
+          _global_all_topo->subTopologyLocalMaster(_local_master_topo);
+          _global_all_topo->subTopologyLocalToMe(_local_topo);
+        }
+
 
       inline pami_topology_t* getTopology_impl(int topo_num)
         {
-          return (pami_topology_t *)(&_topos[topo_num]);
+          if(topo_num == 0)
+            return (pami_topology_t*)_global_all_topo;
+          else
+            PAMI_abort();
         }
-      inline int myTopologyId_impl()
+
+      inline unsigned                  comm_impl()
         {
-          return _mytopo;
+          return _commid;
         }
-      inline int getNumTopos_impl()
-        {
-          return _numtopos;
-        }
-      inline int                       getColorsArray_impl()
-        {
-          assert(0);
-          return 0;
-        }
-      inline void                      setAsyncAllreduceMode_impl(unsigned value)
-        {
-          _allreduce_async_mode = value;
-        }
-      inline unsigned                  getAsyncAllreduceMode_impl()
-        {
-          return _allreduce_async_mode;
-        }
+
       inline unsigned                  incrementAllreduceIteration_impl()
         {
           _allreduce_iteration ^= _allreduce_async_mode; // "increment" with defined mode
           return _allreduce_iteration;
         }
-      inline unsigned                  comm_impl()
-        {
-          return _commid;
-        }
+
       inline pami_task_t  *ranks_impl()
         {
           return _ranks;
         }
+
       inline pami_task_t *ranks_sizet_impl()
         {
           return _ranks;
         }
+
       inline pami_task_t nranks_impl()
         {
-          return _topos[0].size();
+          return _global_all_topo->size();
         }
+
       inline pami_task_t myIdx_impl()
         {
-          return _topos[0].rank2Index(_rank);
+          return _global_all_topo->rank2Index(_rank);
         }
+
       inline void                      generatePermutation_impl()
         {
           return;
@@ -192,10 +208,12 @@ namespace PAMI
         {
           return;
         }
+
       inline pami_task_t *permutation_impl()
         {
           return _ranks;
         }
+
       inline void                      generatePermutation_sizet_impl()
         {
           return;
@@ -247,7 +265,6 @@ namespace PAMI
         }
       inline void                      freeAllocations_impl()
         {
-          delete [] _topos;
           return;
         }
       inline void                      setGlobalContext_impl(bool context)
@@ -316,7 +333,7 @@ namespace PAMI
       // These methods were originally from the PGASRT Communicator class
       inline pami_task_t size_impl(void)
         {
-          return _topos[0].size();
+          return _global_all_topo->size();
         }
       inline pami_task_t rank_impl(void)
         {
@@ -330,30 +347,11 @@ namespace PAMI
 
       inline pami_task_t absrankof_impl(int rank)
         {
-          // the following was written assuming range topologies, must change
-          // implementation to account for other topologies
-          int i, range_size, rank_left = rank;
-          pami_task_t first, last;
-          for(i = 1; i < _numtopos; i++)
-              {
-                pami_result_t result = _topos[i].rankRange(&first, &last);
-                PAMI_assert(result == PAMI_SUCCESS);
-                range_size = _topos[i].size();
-                rank_left -= range_size;
-                if(rank_left <= 0)
-                    {
-                      if(rank_left == 0)
-                        continue;
-
-                      int offset = range_size + rank_left;
-                      return first + offset;
-                    }
-              }
-          return -1;
+          return _global_all_topo->index2Rank(rank);
         }
       inline pami_task_t virtrankof_impl (int rank)
         {
-          return _topos[0].rank2Index(rank);
+          return _global_all_topo->rank2Index(rank);
         }
       inline void                       setKey_impl(keys_t key, void*value)
         {
@@ -566,22 +564,23 @@ namespace PAMI
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _barriers[PAMI_GEOMETRY_NUMALGOLISTS];
       Algorithm<PAMI::Geometry::Lapi>             _ue_barrier;
       
-      std::map <int, void*>                        _kvstore;
-      int                                          _commid;
-      int                                          _numranges;
-      pami_task_t                                   _rank;
-      MatchQueue                                   _ue;
-      MatchQueue                                   _post;
-      pami_task_t                                  *_ranks;
-      void                                        *_allreduce_storage[2];
-      void                                        *_allreduce[2];
-      unsigned                                     _allreduce_async_mode;
-      unsigned                                     _allreduce_iteration;
-      PAMI::Topology                               *_topos;
-      int                                          _numtopos;
-      int                                          _mytopo;
-      pami_task_t                                   _virtual_rank;
-      pami_ca_t                                     _attributes;
+      std::map <int, void*>                       _kvstore;
+      int                                         _commid;
+      pami_task_t                                 _rank;
+      MatchQueue                                  _ue;
+      MatchQueue                                  _post;
+      pami_task_t                                *_ranks;
+      void                                       *_allreduce_storage[2];
+      void                                       *_allreduce[2];
+      unsigned                                    _allreduce_async_mode;
+      unsigned                                    _allreduce_iteration;
+      pami_task_t                                 _virtual_rank;
+
+      PAMI::Topology                             *_global_all_topo;
+      PAMI::Topology                             *_local_master_topo;
+      PAMI::Topology                             *_local_topo;
+
+
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace PAMI

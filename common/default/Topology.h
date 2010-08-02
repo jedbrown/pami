@@ -799,10 +799,15 @@ namespace PAMI {
     /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a list topology
     ///
     pami_result_t rankList_impl(pami_task_t **list) {
-      if (__type != PAMI_LIST_TOPOLOGY) {
-        return PAMI_UNIMPL;
+      if (__type == PAMI_LIST_TOPOLOGY) {
+        *list = topo_ranklist;
+        return PAMI_SUCCESS;
       }
-      *list = topo_ranklist;
+      else if(__type == PAMI_SINGLE_TOPOLOGY) {
+            *list = &topo_rank;
+          }
+      else
+        return PAMI_UNIMPL;
       return PAMI_SUCCESS;
     }
 
@@ -1120,6 +1125,53 @@ namespace PAMI {
         _new->__size = 0;
       }
     }
+
+
+    /// \brief create topology from all Nth offsets locally
+    ///
+    /// \param[out] _new	Where to build topology
+    ///
+    void subTopologyLocalMaster_impl(PAMI::Topology *_new) {
+      if (likely(__type == PAMI_COORD_TOPOLOGY)) {
+        PAMI_abort();
+        // may produce empty topology, if "n" is out of range.
+      } else {
+        // the hard way... impractical?
+        size_t s = __size;
+        pami_task_t *rl = (pami_task_t *)malloc(s * sizeof(*rl));
+        size_t k = 0;
+        pami_task_t r;
+        PAMI::Interface::Mapping::nodeaddr_t a;
+        size_t i;
+        uint32_t g = 0xFFFFFFFF;
+        for (i = 0; i < s; ++i) {
+          r = index2Rank(i);
+          mapping->task2node(r, a);
+          if(a.global != g)
+              {
+                // new node
+                rl[k++] = r;
+                g = a.global;
+              }
+        }
+        if (k == 1) {
+          _new->__type = PAMI_SINGLE_TOPOLOGY;
+          _new->__size = 1;
+          _new->topo_rank = rl[0];
+          free(rl);
+          return;
+        }
+        if (k > 1) {
+          _new->__type = PAMI_LIST_TOPOLOGY;
+          _new->topo_ranklist = rl;
+          _new->__size = k;
+          return;
+        }
+        _new->__type = PAMI_EMPTY_TOPOLOGY;
+        _new->__size = 0;
+      }
+    }
+
 
     /// \brief reduce dimensions of topology (cube -> plane, etc)
     ///

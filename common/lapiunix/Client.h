@@ -67,13 +67,7 @@ namespace PAMI
         // collectives and to set up token management for collectives
         _contexts[0]->initP2PCollectives();
 
-        // #warning:  TODO, here is where we want to have a more
-        // sophisticated mapping, use P2P collectives to
-        // rebuild a better mapping for optimized collectives
-
         // --> Ok to do collectives after here, build better mappings
-        // -->
-
         // Fence the create
         // Todo:  remove this, does it violate the API?
         CheckLapiRC(lapi_gfence (_main_lapi_handle));
@@ -88,6 +82,7 @@ namespace PAMI
         __global.mapping.set_mapcache(_mapcache,
                                       _peers,
                                       _npeers);
+        PAMI::Topology::static_init(&__global.mapping);
 
         // Generate the "generic" device queues
 	// We do this here because some devices need a properly initialized
@@ -96,6 +91,10 @@ namespace PAMI
 	// must be built).
         _platdevs.generate(_clientid, _maxctxts, _mm);
 	_platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm);
+
+        // Now that we have a new mapping, we want to regenerate the topologies
+        // to use the optimized geometries
+        _world_geometry->regenTopo();
 
         // Initialize the optimized collectives
         _contexts[0]->initCollectives();
@@ -191,50 +190,6 @@ namespace PAMI
         }
         free(host);
         free(hosts);
-
-        // if all ranks are local, then see if an ENV variable
-        // gives us permission to spice things up.
-        nz = tz = 0;
-        s = getenv("PAMI_MAPPING_TSIZE");
-        if (s) {
-          tz = strtol(s, NULL, 0);
-        }
-        s = getenv("PAMI_MAPPING_NSIZE");
-        if (s) {
-          nz = strtol(s, NULL, 0);
-        }
-        if (nSize == 1 && (nz > 0 || tz > 0)) {
-          uint32_t t = 0;
-          uint32_t n = 0;
-          if (nz > 0) {
-            tz = 0;
-            // remap using N-first sequence
-            nSize = nz;
-            for (r = 0; r < mysize; ++r) {
-              if (n >= nSize) { ++t; n = 0; }
-              _mapcache[r] = (n << 16) | t;
-              ++n;
-            }
-            tSize = t + 1;
-          } else if (tz > 0) {
-            // remap using T-first sequence
-            tSize = tz;
-            for (r = 0; r < mysize; ++r) {
-              if (t >= tSize) { ++n; t = 0; }
-              _mapcache[r] = (n << 16) | t;
-              ++t;
-            }
-            nSize = n + 1;
-          }
-          // now, must recompute _peers, _npeers...
-          _npeers = 0;
-          n = _mapcache[myrank] & 0xffff0000;
-          for (r = 0; r < mysize; ++r) {
-            if ((_mapcache[r] & 0xffff0000) == n) {
-              _peers[_npeers++] = r;
-            }
-          }
-        }
 
         // local ranks could be represented as rectangle...
         // but, let Global.h use Topology analyze if it wants.
