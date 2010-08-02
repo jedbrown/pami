@@ -80,7 +80,7 @@ namespace CCMI
         _schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(0), 0),
         _cmgr(cmgr)
         {
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::AsyncAllreduceT() \n",(int)this));
+          TRACE_ADAPTOR ((stderr, "<%p>Allreduce::AsyncAllreduceT() \n",this));
 
           unsigned root = (unsigned)-1;
           coremath func;
@@ -117,7 +117,7 @@ namespace CCMI
         _schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(0), 0),
         _cmgr(cmgr)
         {
-          TRACE_ADAPTOR ((stderr, "<%#.8X>Allreduce::AsyncAllreduceT() \n",(int)this));
+          TRACE_ADAPTOR ((stderr, "<%p>Allreduce::AsyncAllreduceT() \n",this));
           unsigned sizeOfType;
           coremath func;
 
