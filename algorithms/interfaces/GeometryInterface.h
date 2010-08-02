@@ -75,6 +75,8 @@ namespace PAMI
       inline void                       freePermutation();
       inline unsigned                  *permutation();
       inline pami_topology_t           *getTopology(int topo_num);
+      inline pami_topology_t           *getLocalTopology();
+      inline pami_topology_t           *getLocalMasterTopology();
       inline void                       generatePermutation_sizet();
       inline void                       freePermutation_sizet();
       inline pami_task_t               *permutation_sizet();
@@ -172,6 +174,18 @@ namespace PAMI
     inline pami_topology_t* Geometry<T_Geometry>::getTopology(int topo_num)
     {
       return static_cast<T_Geometry*>(this)->getTopology_impl(topo_num);
+    }
+
+    template <class T_Geometry>
+    inline pami_topology_t* Geometry<T_Geometry>::getLocalTopology()
+    {
+      return static_cast<T_Geometry*>(this)->getLocalTopology_impl();
+    }
+
+    template <class T_Geometry>
+    inline pami_topology_t* Geometry<T_Geometry>::getLocalMasterTopology()
+    {
+      return static_cast<T_Geometry*>(this)->getLocalMasterTopology_impl();
     }
 
     template <class T_Geometry>

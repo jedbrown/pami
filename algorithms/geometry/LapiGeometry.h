@@ -168,6 +168,16 @@ namespace PAMI
             PAMI_abort();
         }
 
+      inline pami_topology_t* getLocalTopology_impl()
+        {
+          return (pami_topology_t*)_local_topo;
+        }
+
+      inline pami_topology_t* getLocalMasterTopology_impl()
+        {
+          return (pami_topology_t*)_local_master_topo;
+        }
+
       inline unsigned                  comm_impl()
         {
           return _commid;
