@@ -89,12 +89,15 @@ namespace PAMI
           enum {SIMPLE,IMMEDIATE}   type;
           union
           {
-            pami_send_immediate_t       *immediate;
-            pami_send_t                 *simple;
+            pami_send_immediate_t       immediate;
+            pami_send_t                 simple;
           }                         send;
           PAMI::PipeWorkQueue      *pwq;
           SendPWQ                  *pthis;
-
+          PAMI::Topology            dst_participants;
+          pami_client_t             client;
+          size_t                    contextid;
+          size_t                    clientid;
         } sendpwq_t;
 
         ///
@@ -112,13 +115,13 @@ namespace PAMI
           {
 //            if(state->pwq->bytesAvailableToConsume() < state->send.immediate->data.iov_len)
 //              return PAMI_EAGAIN; // this doesn't actually re-queue the work?
-            state->pthis->immediatePWQ(state, context, state->send.immediate, state->pwq);
+            state->pthis->immediatePWQ(state, context);
           }
           else
           {
 //            if(state->pwq->bytesAvailableToConsume() < state->send.simple->send.data.iov_len)
 //              return PAMI_EAGAIN; // this doesn't actually re-queue the work?
-            state->pthis->simplePWQ(state, context, state->send.simple, state->pwq);
+            state->pthis->simplePWQ(state, context);
           }
           TRACE_ERR((stderr, "<%p>SendPWQ::work_function() exit context %p, cookie %p\n",state->pthis,context, cookie));
           return PAMI_SUCCESS;
@@ -135,9 +138,12 @@ namespace PAMI
         ///
         /// \param[in]  pwq       A pipe work queue to use for the data buffer
         ///
-        pami_result_t immediatePWQ(sendpwq_t* state, pami_context_t context, pami_send_immediate_t * parameters, PAMI::PipeWorkQueue * pwq)
+        pami_result_t immediatePWQ(sendpwq_t* state, pami_context_t context)
         {
-          TRACE_ERR((stderr, "<%p>SendPWQ::immediate() state %p, context %p, parameters %p, pwq %p\n",this, state, context, parameters, pwq));
+          pami_send_immediate_t * parameters = &state->send.immediate;
+          PAMI::PipeWorkQueue * pwq = state->pwq;
+
+          TRACE_ERR((stderr, "<%p>SendPWQ::immediate() state %p, context %p, parameters %p, pwq %p, dest %u\n",this, state, context, parameters, pwq, parameters->dest));
           size_t length = pwq? pwq->bytesAvailableToConsume() : 0;
           void* payload = pwq?(void*)pwq->bufferToConsume(): NULL;
           TRACE_ERR((stderr, "<%p>SendPWQ::immediate() length %zd, payload %p\n",this,length,payload));
@@ -145,17 +151,34 @@ namespace PAMI
           // send it now if there is enough data in the pwq
           if (length >= parameters->data.iov_len)
           {
+            pami_result_t result;
             parameters->data.iov_base = payload;
             parameters->data.iov_len = length;
+            size_t size = state->dst_participants.size();
+            for (unsigned i = 0; i < size; ++i)
+            {
+              pami_task_t task = state->dst_participants.index2Rank(i);
 
-            return this->immediate (parameters);
+              if(task == __global.mapping.task()) /// \todo don't use global? remove myself from topo in caller?
+                continue;
+
+              result = PAMI_Endpoint_create ((pami_client_t) state->client, /// \todo client is ignored on the endpoint?  client isn't a pami_client_t
+                                             task,
+                                             state->contextid, /// \todo what context do I target?
+                                             &parameters->dest);
+
+              TRACE_ERR((stderr, "<%p>:SendPWQ::immediate() send(%u(%zu,%zu))\n", this, parameters->dest, (size_t) task, state->contextid));
+              result = this->immediate (parameters);
+              TRACE_ERR((stderr, "<%p>:SendPWQ::immediate() result %u\n", this, result));
+
+            }
+            return result;
+
           }
           // not enough data to send yet, post it to the context work queue for later processing
           TRACE_ERR((stderr, "<%p>SendPWQ::immediate() queue it on context %p\n",this,context));
           state->type = sendpwq_t::IMMEDIATE;
           state->pthis = this;
-          state->send.immediate = parameters;
-          state->pwq = pwq;
 
           /// \todo Pass in a generic/work device so we can directly post
           return PAMI_Context_post (context,(pami_work_t*)state, work_function, (void *) state);
@@ -182,9 +205,12 @@ namespace PAMI
         ///
         /// \param[in]  pwq       A pipe work queue to use for the data buffer
         ///
-        pami_result_t simplePWQ (sendpwq_t* state, pami_context_t context, pami_send_t * parameters, PAMI::PipeWorkQueue * pwq)
+        pami_result_t simplePWQ (sendpwq_t* state, pami_context_t context)
         {
-          TRACE_ERR((stderr, "<%p>SendPWQ::simple() state %p, context %p, parameters %p, pwq %p\n",this, state, context, parameters, pwq));
+          pami_send_t * parameters = &state->send.simple;
+          PAMI::PipeWorkQueue * pwq = state->pwq;
+
+          TRACE_ERR((stderr, "<%p>SendPWQ::simple() state %p, context %p, parameters %p, pwq %p, dest %u\n",this, state, context, parameters, pwq, parameters->send.dest));
           size_t length = pwq? pwq->bytesAvailableToConsume() : 0;
           void* payload = pwq?(void*)pwq->bufferToConsume(): NULL;
           TRACE_ERR((stderr, "<%p>SendPWQ::simple() length %zd, payload %p\n",this, length,payload));
@@ -192,17 +218,38 @@ namespace PAMI
           // send it now if there is enough data in the pwq
           if (length >= parameters->send.data.iov_len)
           {
+          }
+          // send it now if there is enough data in the pwq
+          if (length >= parameters->send.data.iov_len)
+          {
+            pami_result_t result;
             parameters->send.data.iov_base = payload;
             parameters->send.data.iov_len = length;
+            size_t size = state->dst_participants.size();
+            for (unsigned i = 0; i < size; ++i)
+            {
+              pami_task_t task = state->dst_participants.index2Rank(i);
 
-            return this->simple (parameters);
+              if(task == __global.mapping.task()) /// \todo don't use global? remove myself from topo in caller?
+                continue;
+
+              result = PAMI_Endpoint_create ((pami_client_t) state->client, /// \todo client is ignored on the endpoint?  client isn't a pami_client_t
+                                             task,
+                                             state->contextid, /// \todo what context do I target?
+                                             &parameters->send.dest);
+
+              TRACE_ERR((stderr, "<%p>:SendPWQ::simple() send(%u(%zu,%zu))\n", this, parameters->send.dest, (size_t) task, state->contextid));
+              result =  this->simple (parameters);
+              TRACE_ERR((stderr, "<%p>:SendPWQ::simple() result %u\n", this, result));
+
+            }
+            return result;
+
           }
           // not enough data to send yet, post it to the context work queue for later processing
           TRACE_ERR((stderr, "<%p>SendPWQ::simple() queue it on context %p\n",this, context));
           state->type = sendpwq_t::SIMPLE;
           state->pthis = this;
-          state->send.simple = parameters;
-          state->pwq = pwq;
 
           /// \todo Pass in a generic/work device so we can directly post
           return PAMI_Context_post (context, (pami_work_t*)state, work_function, (void *) state);

@@ -312,11 +312,9 @@ namespace PAMI
       unsigned               connection_id;
       size_t                 bytes;
       PAMI::PipeWorkQueue   *rcvpwq;
-      PAMI::PipeWorkQueue   *sndpwq;
       unsigned               doneCountDown;
       pami_callback_t        cb_done;
       metadata_t             meta;
-      pami_send_t            parameters;
       typename T_Protocol::sendpwq_t        sendpwq;
     } ;
   }; // NativeInterfaceBase
@@ -460,9 +458,9 @@ namespace PAMI
 
 
 
+    protected:
+    
     PAMI::MemoryAllocator < sizeof(typename NativeInterfaceBase<T_Protocol>::allocObj), 16 > _allocator;  // Allocator
-
-
     T_Protocol                           *_mcast_protocol;
     T_Protocol                           *_send_protocol;
     pami_client_t                         _client;
@@ -568,15 +566,15 @@ namespace PAMI
     inline void setMcastProtocol(size_t dispatch, T_Protocol* protocol)
     {
       TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::setMcastProtocol(%p)\n", this, protocol));
-      _mcast_dispatch = dispatch;
-      _mcast_protocol = protocol;
+      this->_mcast_dispatch = dispatch;
+      this->_mcast_protocol = protocol;
     }
 
     inline void setSendProtocol(size_t dispatch, T_Protocol* protocol)
     {
       TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::setMcastProtocol(%p)\n", this, protocol));
-      _send_dispatch = dispatch;
-      _send_protocol = protocol;
+      this->_send_dispatch = dispatch;
+      this->_send_protocol = protocol;
     }
 
   private:
@@ -604,19 +602,6 @@ namespace PAMI
                            void          *  cookie,
                            pami_result_t    result );
 
-    PAMI::MemoryAllocator < sizeof(typename NativeInterfaceBase<T_Protocol>::allocObj), 16 > _allocator;  // Allocator
-    T_Protocol                 *_mcast_protocol;
-    T_Protocol                 *_send_protocol;
-    pami_client_t               _client;
-    pami_context_t              _context;
-    size_t                      _contextid;
-    size_t                      _clientid;
-    pami_dispatch_multicast_fn  _mcast_dispatch_function;
-    void                       *_mcast_dispatch_arg;
-    size_t                      _mcast_dispatch;
-    pami_dispatch_p2p_fn        _send_dispatch_function;
-    void                       *_send_dispatch_arg;
-    size_t                      _send_dispatch;
   }; // class NativeInterfaceActiveMessage
 
 
@@ -661,7 +646,7 @@ namespace PAMI
       TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::ni_client_done pwq<%p>->produce(%zu)\n",
                  ni, state->rcvpwq, state->bytes));
       if (state->rcvpwq) state->rcvpwq->produceBytes(state->bytes); /// \todo ? is this always the right byte count?
-      if (state->sndpwq) state->sndpwq->consumeBytes(state->bytes); /// \todo ? is this always the right byte count?
+      if (state->sendpwq.pwq) state->sendpwq.pwq->consumeBytes(state->bytes); /// \todo ? is this always the right byte count?
     }
 
     if (obj->_user_callback.function)
@@ -815,7 +800,7 @@ namespace PAMI
 
     state_data->connection_id = mcast->connection_id;
     state_data->rcvpwq        = (PAMI::PipeWorkQueue*)mcast->dst;
-    state_data->sndpwq        = (PAMI::PipeWorkQueue*)mcast->src;
+    state_data->sendpwq.pwq   = (PAMI::PipeWorkQueue*)mcast->src;
     state_data->bytes         = length;
     // Save the user's done callback
     state_data->cb_done = mcast->cb_done;
@@ -849,60 +834,44 @@ namespace PAMI
                       sizeof(typename NativeInterfaceBase<T_Protocol>::metadata_t().msgcount) + (mcast->msgcount * sizeof(typename NativeInterfaceBase<T_Protocol>::metadata_t().msginfo));
 
     // Send the multicast to each destination
+    state_data->sendpwq.dst_participants = *((PAMI::Topology*)mcast->dst_participants);
 
-    // \todo indexToRank() doesn't always work so convert a local copy to a list topology...
-    PAMI::Topology l_dst_participants = *((PAMI::Topology*)mcast->dst_participants);
-    l_dst_participants.convertTopology(PAMI_LIST_TOPOLOGY);
+    state_data->doneCountDown = state_data->sendpwq.dst_participants.size();
 
-    pami_task_t *taskList = NULL;
-    l_dst_participants.rankList(&taskList);
-    size_t  size    = l_dst_participants.size();
+    // Am I a destination?  Handle it.
+    if (state_data->sendpwq.dst_participants.isRankMember(this->myrank())) 
+    {
+      state_data->doneCountDown--;// don't send to myself
+      PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
 
-    state_data->doneCountDown = size;
+      TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided pwq<%p> length %zu/%zu\n", this,rcvpwq,rcvpwq->bytesAvailableToProduce(),length));
+      if (rcvpwq && (rcvpwq->bytesAvailableToProduce() >= length)) // copy it if desired
+      {
+        memcpy(rcvpwq->bufferToProduce(), payload, length);
+      }
+      else; /// \todo now what??? Move this to completion?
+    }
 
-    state_data->parameters.send.hints = (pami_send_hint_t)
+    state_data->sendpwq.send.simple.send.hints = (pami_send_hint_t)
     {
       0
     };
-    state_data->parameters.send.data.iov_base = payload;
-    state_data->parameters.send.data.iov_len = length;
-    state_data->parameters.send.header.iov_base = &state_data->meta;
-    state_data->parameters.send.header.iov_len = msgsize;
-    state_data->parameters.send.dispatch = mcast->dispatch;
-    state_data->parameters.events.cookie = state_data;
-    state_data->parameters.events.local_fn = sendDone;
-    state_data->parameters.events.remote_fn = NULL;
+    state_data->sendpwq.send.simple.send.data.iov_base = payload;
+    state_data->sendpwq.send.simple.send.data.iov_len = length;
+    state_data->sendpwq.send.simple.send.header.iov_base = &state_data->meta;
+    state_data->sendpwq.send.simple.send.header.iov_len = msgsize;
+    state_data->sendpwq.send.simple.send.dispatch = mcast->dispatch;
+    state_data->sendpwq.send.simple.events.cookie = state_data;
+    state_data->sendpwq.send.simple.events.local_fn = sendDone;
+    state_data->sendpwq.send.simple.events.remote_fn = NULL;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::<%p>send() data %zu, header %zu\n", this, _mcast_protocol, state_data->parameters.send.data.iov_len, state_data->parameters.send.header.iov_len));
+    state_data->sendpwq.client    = _client;
+    state_data->sendpwq.clientid  = _clientid;
+    state_data->sendpwq.contextid = _contextid;
 
-    for (unsigned i = 0; i < size; ++i)
-    {
-      if (taskList[i] == this->myrank()) // Am I a destination?
-      {
-        state_data->doneCountDown--;// don't send to myself
-        PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
+    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::<%p>send() data %zu, header %zu\n", this, _mcast_protocol, state_data->sendpwq.send.simple.send.data.iov_len, state_data->sendpwq.send.simple.send.header.iov_len));
 
-        TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided<%d>::pwq<%p>\n", this, __LINE__,rcvpwq));
-        if (rcvpwq && (rcvpwq->bytesAvailableToProduce() >= length)) // copy it if desired
-        {
-          memcpy(rcvpwq->bufferToProduce(), payload, length);
-//          rcvpwq->produceBytes(length);
-        }
-        continue;
-      }
-
-      result = PAMI_Endpoint_create ((pami_client_t) mcast->client, /// \todo client is ignored on the endpoint?  client isn't a pami_client_t
-                                     taskList[i],
-                                     mcast->context, /// \todo what context do I target?
-                                     &state_data->parameters.send.dest);
-
-      TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::<%p>send(%u(%zu,%zu))\n", this, _mcast_protocol, state_data->parameters.send.dest, (size_t) taskList[i], mcast->context));
-
-      if (result == PAMI_SUCCESS) result = _mcast_protocol->simplePWQ(&state_data->sendpwq,_context, &state_data->parameters, pwq);
-
-      TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::send(%zu) result %u\n", this, (size_t) taskList[i], result));
-    }
-
+    result = _mcast_protocol->simplePWQ(&state_data->sendpwq,_context);
 
     TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::postMulticast_impl() dispatch %zu, connection_id %#X exit\n",
                this, mcast->dispatch, mcast->connection_id));
@@ -970,6 +939,7 @@ namespace PAMI
     //size_t root            = ((NativeInterfaceBase<T_Protocol>::metadata_t*)header)->root;
     PAMI::PipeWorkQueue   *rcvpwq;
     pami_callback_t       cb_done;
+    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::handle_mcast()  header size %zu, data size %zu/%zu, connection_id %u, root %u, origin %u, recv %p\n", this, header_size, data_size, bytes, connection_id, ((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->root,origin, recv));
 
     typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t* receive_state = (typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t*)_recvQ.peekHead();
     // probably the head, but (unlikely) search if it isn't
@@ -980,7 +950,7 @@ namespace PAMI
     bytes   = receive_state->bytes;
     rcvpwq  = receive_state->rcvpwq;
     cb_done = receive_state->cb_done;
-    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::dispatch() header size %zu, data size %zu/%zu, connection_id %u, root %u, recv %p, receive_state %p\n", this, header_size, data_size, bytes, connection_id, ((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->root, recv, receive_state));
+    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::handle_mcast()  header size %zu, data size %zu/%zu, connection_id %u, root %u, recv %p, receive_state %p\n", this, header_size, data_size, bytes, connection_id, ((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->root, recv, receive_state));
 
     _recvQ.deleteElem(receive_state);
 
@@ -990,12 +960,12 @@ namespace PAMI
     // No data or immediate data? We're done.
     if ((bytes == 0) || (recv == NULL) || (data != NULL))
     {
-      TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::dispatch() immediate\n", this));
+      TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::handle_mcast()  immediate\n", this));
 
       if (data && bytes)
       {
         /// \todo An assertion probably isn't the best choice...
-        TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided<%d>::pwq<%p>\n", this, __LINE__,rcvpwq));
+        TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided<%d>::handle_mcast()  pwq<%p>\n", this, __LINE__,rcvpwq));
         PAMI_assertf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
         memcpy(rcvpwq->bufferToProduce(), data, bytes);
 //        rcvpwq->produceBytes(data_size);
@@ -1015,7 +985,7 @@ namespace PAMI
     }
 
     // multicast_model_available_buffers_only semantics: If you're receiving data then the pwq must be available
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided<%d>::pwq<%p>\n", this, __LINE__,rcvpwq));
+    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided<%d>::handle_mcast() pwq<%p>\n", this, __LINE__,rcvpwq));
     PAMI_assert(multicast_model_available_buffers_only && (rcvpwq->bytesAvailableToProduce() >= data_size));
 
     recv->addr     = rcvpwq->bufferToProduce();
@@ -1023,10 +993,8 @@ namespace PAMI
     recv->offset   = 0;
     recv->local_fn = cb_done.function;
     recv->cookie   = cb_done.clientdata;
-
-
-
   }
+
   template <class T_Protocol>
   inline void NativeInterfaceAllsided<T_Protocol>::sendDone ( pami_context_t   context,
                                                               void          *  cookie,
@@ -1074,7 +1042,7 @@ namespace PAMI
       TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::ni_client_done pwq<%p>->produce(%zu)\n",
                  ni, state->rcvpwq, state->bytes));
       if (state->rcvpwq) state->rcvpwq->produceBytes(state->bytes); /// \todo ? is this always the right byte count?
-      if (state->sndpwq) state->sndpwq->consumeBytes(state->bytes); /// \todo ? is this always the right byte count?
+      if (state->sendpwq.pwq) state->sendpwq.pwq->consumeBytes(state->bytes); /// \todo ? is this always the right byte count?
     }
 
     if (obj->_user_callback.function)
@@ -1090,7 +1058,7 @@ namespace PAMI
   {
 
     TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::setDispatch(%p, %p) id=%zu\n",
-               this, fn.multicast,  cookie,  _mcast_dispatch));
+               this, fn.multicast,  cookie,  this->_mcast_dispatch));
     DO_DEBUG((templateName<T_Protocol>()));
 
     this->_mcast_dispatch_arg = cookie;
@@ -1121,7 +1089,7 @@ namespace PAMI
   template <class T_Protocol>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::multicast (pami_multicast_t *mcast)
   {
-    typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)_allocator.allocateObject();
+    typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)this->_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol>::allocObj::MULTICAST;
     req->_ni               = this;
     req->_user_callback    = mcast->cb_done;
@@ -1132,9 +1100,9 @@ namespace PAMI
     //          interface so we don't need to copy
     pami_multicast_t  m     = *mcast;
 
-    m.dispatch =  _mcast_dispatch; // \todo ? Not really used in C++ objects?
-    m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
-    m.context  =  _contextid;// \todo ? Why doesn't caller set this?
+    m.dispatch =  this->_mcast_dispatch; // \todo ? Not really used in C++ objects?
+    m.client   =  this->_clientid;   // \todo ? Why doesn't caller set this?
+    m.context  =  this->_contextid;// \todo ? Why doesn't caller set this?
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
@@ -1147,7 +1115,7 @@ namespace PAMI
   template <class T_Protocol>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::multisync(pami_multisync_t *msync)
   {
-    typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)_allocator.allocateObject();
+    typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)this->_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol>::allocObj::MULTISYNC;
     req->_ni               = this;
     req->_user_callback    = msync->cb_done;
@@ -1156,8 +1124,8 @@ namespace PAMI
 
     pami_multisync_t  m     = *msync;
 
-    m.client   =  _clientid;
-    m.context  =  _contextid;
+    m.client   =  this->_clientid;
+    m.context  =  this->_contextid;
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
@@ -1169,7 +1137,7 @@ namespace PAMI
   template <class T_Protocol>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::multicombine (pami_multicombine_t *mcomb)
   {
-    typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)_allocator.allocateObject();
+    typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)this->_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol>::allocObj::MULTICOMBINE;
     req->_ni               = this;
     req->_user_callback    = mcomb->cb_done;
@@ -1178,8 +1146,8 @@ namespace PAMI
 
     pami_multicombine_t  m     = *mcomb;
 
-    m.client   =  _clientid;
-    m.context  =  _contextid;
+    m.client   =  this->_clientid;
+    m.context  =  this->_contextid;
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
@@ -1192,8 +1160,8 @@ namespace PAMI
    inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::send (pami_send_t * parameters)
    {
      pami_send_t s   = *parameters;
-     s.send.dispatch = _send_dispatch;
-     return _send_protocol->simple(&s);
+     s.send.dispatch = this->_send_dispatch;
+     return this->_send_protocol->simple(&s);
    }
    template <class T_Protocol>
    inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::sendPWQ(pami_context_t       context,
@@ -1209,7 +1177,7 @@ namespace PAMI
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol>::postMulticast_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg],
                                                                                     pami_multicast_t *mcast)
   {
-    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::postMulticast_impl\n", this));
+    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::postMulticast_impl\n", this));
     pami_result_t result;
     COMPILE_TIME_ASSERT(sizeof(typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t) <= NativeInterfaceBase<T_Protocol>::multicast_sizeof_msg);
 
@@ -1230,10 +1198,15 @@ namespace PAMI
     if (length)
       payload = (void*)pwq->bufferToConsume();
 
+    state_data->connection_id = mcast->connection_id;
+    state_data->rcvpwq        = (PAMI::PipeWorkQueue*)mcast->dst;
+    state_data->sendpwq.pwq   = (PAMI::PipeWorkQueue*)mcast->src;
+    state_data->bytes         = length;
     // Save the user's done callback
-    state_data->rcvpwq = NULL;
-    state_data->sndpwq = NULL;
     state_data->cb_done = mcast->cb_done;
+
+//    state_data->rcvpwq = NULL;
+//    state_data->sendpwq.pwq  = NULL;
 
     // Get the msginfo buffer/length and validate (assert) inputs
     void* msgdata = (void*)mcast->msginfo;
@@ -1251,60 +1224,45 @@ namespace PAMI
                       sizeof(typename NativeInterfaceBase<T_Protocol>::metadata_t().msgcount) + (mcast->msgcount * sizeof(typename NativeInterfaceBase<T_Protocol>::metadata_t().msginfo));
 
     // Send the multicast to each destination
+    // Send the multicast to each destination
+    state_data->sendpwq.dst_participants = *((PAMI::Topology*)mcast->dst_participants);
 
-    // \todo indexToRank() doesn't always work so convert a local copy to a list topology...
-    PAMI::Topology l_dst_participants = *((PAMI::Topology*)mcast->dst_participants);
-    l_dst_participants.convertTopology(PAMI_LIST_TOPOLOGY);
+    state_data->doneCountDown = state_data->sendpwq.dst_participants.size();
 
-    pami_task_t *taskList = NULL;
-    l_dst_participants.rankList(&taskList);
-    size_t  size    = l_dst_participants.size();
+    // Am I a destination?  Handle it.
+    if (state_data->sendpwq.dst_participants.isRankMember(this->myrank())) 
+    {
+      state_data->doneCountDown--;// don't send to myself
+      PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
 
-    state_data->doneCountDown = size;
+      TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage pwq<%p> length %zu/%zu\n", this,rcvpwq,rcvpwq->bytesAvailableToProduce(),length));
+      if (rcvpwq && (rcvpwq->bytesAvailableToProduce() >= length)) // copy it if desired
+      {
+        memcpy(rcvpwq->bufferToProduce(), payload, length);
+      }
+      else; /// \todo now what??? Move this to completion?
+    }
 
-    state_data->parameters.send.hints = (pami_send_hint_t)
+    state_data->sendpwq.send.simple.send.hints = (pami_send_hint_t)
     {
       0
     };
-    state_data->parameters.send.data.iov_base = payload;
-    state_data->parameters.send.data.iov_len = length;
-    state_data->parameters.send.header.iov_base = &state_data->meta;
-    state_data->parameters.send.header.iov_len = msgsize;
-    state_data->parameters.send.dispatch = _mcast_dispatch;
-    state_data->parameters.events.cookie = state_data;
-    state_data->parameters.events.local_fn = sendDone;
-    state_data->parameters.events.remote_fn = NULL;
+    state_data->sendpwq.send.simple.send.data.iov_base = payload;
+    state_data->sendpwq.send.simple.send.data.iov_len = length;
+    state_data->sendpwq.send.simple.send.header.iov_base = &state_data->meta;
+    state_data->sendpwq.send.simple.send.header.iov_len = msgsize;
+    state_data->sendpwq.send.simple.send.dispatch = mcast->dispatch;
+    state_data->sendpwq.send.simple.events.cookie = state_data;
+    state_data->sendpwq.send.simple.events.local_fn = sendDone;
+    state_data->sendpwq.send.simple.events.remote_fn = NULL;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::<%p>send() data %zu, header %zu, dest size %zu\n", this, _mcast_protocol, state_data->parameters.send.data.iov_len, state_data->parameters.send.header.iov_len, size));
+    state_data->sendpwq.client    = this->_client;
+    state_data->sendpwq.clientid  = this->_clientid;
+    state_data->sendpwq.contextid = this->_contextid;
 
-    for (unsigned i = 0; i < size; ++i)
-    {
-      if (taskList[i] == this->myrank()) // Am I a destination?
-      {
-        state_data->doneCountDown--;// don't send to myself
-        PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
+    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::<%p>send() data %zu, header %zu\n", this, this->_mcast_protocol, state_data->sendpwq.send.simple.send.data.iov_len, state_data->sendpwq.send.simple.send.header.iov_len));
 
-        TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided<%d>::pwq<%p>\n", this, __LINE__,rcvpwq));
-        if (rcvpwq && (rcvpwq->bytesAvailableToProduce() >= length)) // copy it if desired
-        {
-          memcpy(rcvpwq->bufferToProduce(), payload, length);
-//          rcvpwq->produceBytes(length);
-        }
-        continue;
-      }
-
-      result = PAMI_Endpoint_create ((pami_client_t) mcast->client, /// \todo client is ignored on the endpoint?  client isn't a pami_client_t
-                                     taskList[i],
-                                     mcast->context, /// \todo what context do I target?
-                                     &state_data->parameters.send.dest);
-
-      TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::<%p>send(%u(%zu,%zu))\n", this, _mcast_protocol, state_data->parameters.send.dest, (size_t) taskList[i], mcast->context));
-
-      if (result == PAMI_SUCCESS) result = _mcast_protocol->simplePWQ(&state_data->sendpwq,_context,&state_data->parameters,pwq);
-
-      TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::send(%zu) result %u\n", this, (size_t) taskList[i], result));
-    }
-
+    result = this->_mcast_protocol->simplePWQ(&state_data->sendpwq,this->_context);
 
     TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::postMulticast_impl() dispatch %zu, connection_id %#X exit\n",
                this, mcast->dispatch, mcast->connection_id));
@@ -1384,17 +1342,17 @@ namespace PAMI
     PAMI::PipeWorkQueue   *rcvpwq;
     pami_callback_t       cb_done = {NULL,NULL};
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::dispatch() header size %zu, data size %zu/%zu, connection_id %u, root %zu, recv %p\n", this, header_size, data_size, bytes, connection_id, root, recv));
+    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::handle_mcast()  header size %zu, data size %zu/%zu, connection_id %u, root %zu, recv %p\n", this, header_size, data_size, bytes, connection_id, root, recv));
 
     // tolerate a null dispatch if there's no data (barrier?)
-    PAMI_assertf(((_mcast_dispatch_function == NULL) && (data_size == 0)) || (_mcast_dispatch_function != NULL),"fn %p, size %zu\n",_mcast_dispatch_function, data_size);
+    PAMI_assertf(((this->_mcast_dispatch_function == NULL) && (data_size == 0)) || (this->_mcast_dispatch_function != NULL),"fn %p, size %zu\n",this->_mcast_dispatch_function, data_size);
 
-    if (_mcast_dispatch_function != NULL)
-      _mcast_dispatch_function(((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->msginfo, ((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->msgcount,
-                               connection_id, root, bytes, _mcast_dispatch_arg, &bytes,
+    if (this->_mcast_dispatch_function != NULL)
+      this->_mcast_dispatch_function(((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->msginfo, ((typename NativeInterfaceBase<T_Protocol>::metadata_t*)header)->msgcount,
+                               connection_id, root, bytes, this->_mcast_dispatch_arg, &bytes,
                                (pami_pipeworkqueue_t**)&rcvpwq, &cb_done);
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::dispatch() requested bytes %zu\n", this, bytes));
+    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::handle_mcast()  requested bytes %zu\n", this, bytes));
 
     // I don't think send/recv lets us receive less than was sent, so assert they gave us enough buffer/pwq...
     PAMI_assert_debugf(bytes == data_size, "bytes %zu == %zu data_size\n", bytes, data_size);
@@ -1402,20 +1360,20 @@ namespace PAMI
     // No data or immediate data? We're done.
     if ((bytes == 0) || (recv == NULL) || (data != NULL))
     {
-      TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::dispatch() immediate\n", this));
+      TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::handle_mcast()  immediate\n", this));
 
       if (data && bytes)
       {
         /// \todo An assertion probably isn't the best choice...
-        TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage<%d>::pwq<%p>\n", this, __LINE__,rcvpwq));
+        TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage<%d>::handle_mcast()  pwq<%p>\n", this, __LINE__,rcvpwq));
         PAMI_assertf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
         memcpy(rcvpwq->bufferToProduce(), data, bytes);
-//        rcvpwq->produceBytes(data_size);
+        rcvpwq->produceBytes(data_size);
       }
 
       // call original done
       /** \todo fix or remove this hack */
-      TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::done<%p>, cookie<%p>\n", this,cb_done.function,cb_done.clientdata));
+      TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::handle_mcast() done<%p>, cookie<%p>\n", this,cb_done.function,cb_done.clientdata));
       if (cb_done.function)
         (cb_done.function)(NULL,//PAMI_Client_getcontext(_client,_contextid),
                            cb_done.clientdata, PAMI_SUCCESS);
@@ -1424,19 +1382,29 @@ namespace PAMI
       if(recv != NULL)
         memset(recv, 0,sizeof(*recv));
 
-
       return;
     }
 
-    // multicast_model_available_buffers_only semantics: If you're receiving data then the pwq must be available
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided<%d>::pwq<%p>\n", this, __LINE__,rcvpwq));
-    PAMI_assert(multicast_model_available_buffers_only && (rcvpwq->bytesAvailableToProduce() >= data_size));
+    // We have to intercept the callback to punch buttons on the rcv pwq.
+    typename NativeInterfaceBase<T_Protocol>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol>::allocObj *)this->_allocator.allocateObject();
+    pami_callback_t       ni_cb_done = {ni_client_done,req};
+
+    req->_type              = NativeInterfaceBase<T_Protocol>::allocObj::MULTICAST;
+    req->_ni               = this;
+    req->_user_callback    = cb_done;
+
+    typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t *state = (typename NativeInterfaceBase<T_Protocol>::p2p_multicast_statedata_t*)req->_state._mcast;
+    state->bytes       = bytes;
+    state->rcvpwq      = rcvpwq;
+    state->sendpwq.pwq = NULL;
+
+    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::handle_mcast(%p) connection id %u, bytes %zu\n", this, req, connection_id, bytes));
 
     recv->addr     = rcvpwq->bufferToProduce();
     recv->type     = PAMI_BYTE;
     recv->offset   = 0;
-    recv->local_fn = cb_done.function;
-    recv->cookie   = cb_done.clientdata;
+    recv->local_fn = ni_cb_done.function;
+    recv->cookie   = ni_cb_done.clientdata;
 
 
   }
