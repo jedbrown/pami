@@ -199,7 +199,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
 
       inline bool isInit_impl ()
       {
-        assert(0);
+        PAMI_abort();
         return false;
       };
       inline bool isReliableNetwork ()
@@ -316,7 +316,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                                         MULTISYNC_TAG,
                                         _communicator,
                                         &m->_reqs[m->_phase]);
-                assert(mpi_rc == MPI_SUCCESS);
+                PAMI_assert(mpi_rc == MPI_SUCCESS);
                 m->_sendStarted = true;
               }
           if(m->_sendDone == false)
@@ -348,7 +348,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
 
         flag = 0;
         int rc = MPI_Iprobe (MPI_ANY_SOURCE, MPI_ANY_TAG, _communicator, &flag, &sts);
-        assert (rc == MPI_SUCCESS);
+        PAMI_assert(rc == MPI_SUCCESS);
         if(flag)
         {
           events++;
@@ -364,7 +364,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
               int rc = MPI_Recv(&msg->_p2p_msg,nbytes,MPI_BYTE,sts.
                                 MPI_SOURCE,sts.MPI_TAG,
                                 _communicator,&sts);
-              assert(rc == MPI_SUCCESS);
+              PAMI_assert(rc == MPI_SUCCESS);
               size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
               TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zu\n",
                              this, nbytes,dispatch_id));
@@ -387,7 +387,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
               int rc = MPI_Recv(&msg->_p2p_msg,nbytes,MPI_BYTE,sts.
                                 MPI_SOURCE,sts.MPI_TAG,
                                 _communicator,&sts);
-              assert(rc == MPI_SUCCESS);
+              PAMI_assert(rc == MPI_SUCCESS);
               size_t dispatch_id      = msg->_p2p_msg._dispatch_id;
               TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl MPI_Recv nbytes %d, dispatch_id %zu\n",
                              this, nbytes,dispatch_id));
@@ -407,7 +407,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
               OldMPIMcastMessage *msg = (OldMPIMcastMessage *) malloc (nbytes);
-              assert(msg != NULL);
+              PAMI_assert(msg != NULL);
               int rc = MPI_Recv(msg,nbytes,MPI_BYTE,sts.MPI_SOURCE,sts.MPI_TAG, _communicator,&sts);
               PAMI_assert (rc == MPI_SUCCESS);
               unsigned         rcvlen;
@@ -446,10 +446,10 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                                &rcvbuf,
                                &pwidth,
                                &cb_done);
-                assert(rcvlen <= (size_t)msg->_size);
+                PAMI_assert(rcvlen <= (size_t)msg->_size);
 //                          mcast = (OldMPIMcastRecvMessage*)malloc(sizeof(*mcast));
                 mcast = &_m_store;
-                assert(mcast != NULL);
+                PAMI_assert(mcast != NULL);
                 mcast->_conn     = msg->_conn;
                 mcast->_done_fn  = cb_done.function;
                 mcast->_cookie   = cb_done.clientdata;
@@ -645,7 +645,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
 
       inline size_t task2peer_impl (size_t task)
       {
-        assert(task < _peers);
+        PAMI_assert(task < _peers);
         return task;
       }
 

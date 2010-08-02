@@ -1668,7 +1668,7 @@ private:
 
                 dispatch_rts_direct(channel, metadata, p, bytes, recv_func_parm);
 #else
-                assert(0);
+                PAMI_abort();
 #endif
                 return 0;
         }
@@ -1698,7 +1698,7 @@ private:
 
                 dispatch_ack_direct(channel, metadata, p, bytes, recv_func_parm);
 #else
-                assert(0);
+                PAMI_abort();
 #endif
                 return 0;
         }
@@ -1729,7 +1729,7 @@ private:
                 dispatch_rts_ack_direct(channel, metadata, p, bytes,
                                 recv_func_parm);
 #else
-                assert(0);
+                PAMI_abort();
 #endif
                 return 0;
         }
@@ -1760,7 +1760,7 @@ private:
                 dispatch_rts_data_direct(channel, metadata, p, bytes,
                                 recv_func_parm);
 #else
-                assert(0);
+                PAMI_abort();
 #endif
                 return 0;
         }
@@ -1790,7 +1790,7 @@ private:
 
                 dispatch_data_read(channel, metadata, p, bytes, recv_func_parm);
 #else
-                assert(0);
+                PAMI_abort();
 #endif
                 return 0;
         }
@@ -1821,7 +1821,7 @@ private:
                 dispatch_short_data_read(channel, metadata, p, bytes,
                                 recv_func_parm);
 #else
-                assert(0);
+                PAMI_abort();
 #endif
                 return 0;
         };

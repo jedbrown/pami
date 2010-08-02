@@ -61,7 +61,7 @@ extern "C" void __pgasrt_tspcoll_comm_init (void)
 extern "C" __pgasrt_thread_t __pgasrt_tspcoll_comm_rank (int commID)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   return (__pgasrt_thread_t) _tspcoll[commID]->rank();
 }
 
@@ -73,7 +73,7 @@ extern "C" __pgasrt_thread_t
 __pgasrt_tspcoll_comm_rankof (int commID, __pgasrt_thread_t rank)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   return (__pgasrt_thread_t) _tspcoll[commID]->absrankof(rank);
 }
 
@@ -84,7 +84,7 @@ __pgasrt_tspcoll_comm_rankof (int commID, __pgasrt_thread_t rank)
 extern "C" __pgasrt_thread_t __pgasrt_tspcoll_comm_size (int commID)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   return (__pgasrt_thread_t) _tspcoll[commID]->size();
 }
 
@@ -138,7 +138,7 @@ extern "C" void __pgasrt_tspcoll_comm_block   (int            newID,
                                                int            ncomms)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   _tspcoll[0]->barrier();
 
   TSPColl::Communicator * c = NULL;
@@ -159,7 +159,7 @@ extern "C" void __pgasrt_tspcoll_comm_block   (int            newID,
 extern "C" void __pgasrt_tspcoll_barrier (int commID)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   _tspcoll[commID]->barrier();
 }
 
@@ -173,7 +173,7 @@ extern "C" void __pgasrt_tspcoll_allgather (int commID,
                                             size_t bufsize)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   _tspcoll[commID]->allgather (sbuf, rbuf, bufsize);
 }
 
@@ -187,7 +187,7 @@ extern "C" void __pgasrt_tspcoll_allgatherv (int commID,
                                              size_t * lengths)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   _tspcoll[commID]->allgatherv (sbuf, rbuf, lengths);
 }
 
@@ -202,7 +202,7 @@ extern "C" void __pgasrt_tspcoll_scatter (int commID,
                                           size_t bufsize)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   _tspcoll[commID]->scatter (root, sbuf, rbuf, bufsize);
 }
 
@@ -217,7 +217,7 @@ extern "C" void __pgasrt_tspcoll_scatterv (int commID,
                                            size_t * lengths)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   _tspcoll[commID]->scatterv (root, sbuf, rbuf, lengths);
 }
 
@@ -232,7 +232,7 @@ extern "C" void __pgasrt_tspcoll_bcast (int commID,
                                         size_t bufsize)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   _tspcoll[commID]->bcast (root, sbuf, rbuf, bufsize);
 }
 
@@ -247,7 +247,7 @@ extern "C" void __pgasrt_tspcoll_allreduce   (int               commID,
                                               unsigned          nelems)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   _tspcoll[commID]->allreduce (sbuf,rbuf,op,dtype,nelems);
 }
 
@@ -261,7 +261,7 @@ extern "C" void __pgasrt_tspcoll_gather (int commID,
                                          size_t bufsize)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   _tspcoll[commID]->gather (root, sbuf, rbuf, bufsize);
 }
 
@@ -276,6 +276,6 @@ extern "C" void __pgasrt_tspcoll_gatherv (int commID,
                                           size_t * lengths)
 {
   if (!_initialized)__pgasrt_fatalerror (-1,"tspcoll not initialized");
-  assert (_tspcoll != NULL);
+  PAMI_assert(_tspcoll != NULL);
   _tspcoll[commID]->gatherv (root, sbuf, rbuf, lengths);
 }

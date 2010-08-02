@@ -161,7 +161,7 @@ private:
 
 inline pami_result_t LocalBcastWQModel::postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                                   pami_multicast_t *mcast) {
-        // assert((src_topo .U. dst_topo).size() == _npeers);
+        // PAMI_assert((src_topo .U. dst_topo).size() == _npeers);
         // use roles to determine root status
         PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
         unsigned rootpeer = __global.topology_local.rank2Index(src_topo->index2Rank(0));

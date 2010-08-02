@@ -171,7 +171,7 @@ private:
 }; // class LocalAllreduceWQModel
 
 inline pami_result_t LocalAllreduceWQModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb) {
-        // assert((data_topo .U. results_topo).size() == _npeers);
+        // PAMI_assert((data_topo .U. results_topo).size() == _npeers);
         int dtshift = pami_dt_shift[mcomb->dtype];
         coremath func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
 

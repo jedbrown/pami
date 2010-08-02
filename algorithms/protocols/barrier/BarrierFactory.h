@@ -156,7 +156,7 @@ namespace CCMI
             geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry(cdata->_comm);
             PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
           }
-          assert(geometry != NULL);
+          PAMI_assert(geometry != NULL);
 
           T *composite = (T*) geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE0);
           CCMI_assert (composite != NULL);

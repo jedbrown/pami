@@ -487,7 +487,7 @@ extern "C" pami_result_t PAMI_Type_unpack (pami_type_t dst_type,
 void PAMI_PipeWorkQueue_config_circ(pami_pipeworkqueue_t *wq,
                                    size_t bufsize)
 {
-    assert (0);
+    PAMI_abort();
 }
 
 ///
@@ -497,7 +497,7 @@ void PAMI_PipeWorkQueue_config_circ_usr(pami_pipeworkqueue_t *wq,
                                        char                *buffer,
                                        size_t               bufsize)
 {
-    assert(0);
+    PAMI_abort();
 }
 
 ///
@@ -508,7 +508,7 @@ void PAMI_PipeWorkQueue_config_flat(pami_pipeworkqueue_t *wq,
                                    size_t               bufsize,
                                    size_t               bufinit)
 {
-    assert(0);
+    PAMI_abort();
 }
 
 ///
@@ -520,7 +520,7 @@ void PAMI_PipeWorkQueue_config_noncontig(pami_pipeworkqueue_t *wq,
                                         size_t               typecount,
                                         size_t               typeinit)
 {
-    assert(0);
+    PAMI_abort();
 }
 
 ///
@@ -735,7 +735,7 @@ int PAMI_PipeWorkQueue_available(pami_pipeworkqueue_t *wq)
 ///
 void PAMI_Topology_create(pami_topology_t *topo)
 {
-    assert(0);
+    PAMI_abort();
 }
 
 ///
@@ -744,7 +744,7 @@ void PAMI_Topology_create(pami_topology_t *topo)
 void PAMI_Topology_create_rect(pami_topology_t *topo,
                               pami_coord_t *ll, pami_coord_t *ur, unsigned char *tl)
 {
-    assert(0);
+    PAMI_abort();
 }
 
 ///
@@ -757,7 +757,7 @@ void PAMI_Topology_create_axial(pami_topology_t *topo,
                                unsigned char *dir,
                                unsigned char *tl)
 {
-  assert(0);
+  PAMI_abort();
 }
 
 ///
@@ -765,7 +765,7 @@ void PAMI_Topology_create_axial(pami_topology_t *topo,
 ///
 void PAMI_Topology_create_task(pami_topology_t *topo, pami_task_t rank)
 {
-    assert(0);
+    PAMI_abort();
 }
 
 ///
@@ -789,7 +789,7 @@ void PAMI_Topology_create_list(pami_topology_t *topo, pami_task_t *ranks, size_t
 ///
 void PAMI_Topology_destroy(pami_topology_t *topo)
 {
-    assert(0);
+    PAMI_abort();
 }
 
 ///

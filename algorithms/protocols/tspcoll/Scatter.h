@@ -233,7 +233,7 @@ void TSPColl::Scatterv<T_NI>::kick(T_NI *p2p_iface)
 {
   this->_p2p_iface = p2p_iface;
   if (!this->_isroot) return;
-  assert (this->_lengths != NULL && this->_sbuf != NULL);
+  PAMI_assert(this->_lengths != NULL && this->_sbuf != NULL);
   TRACE((stderr, "SCATTERV KICK ctr=%d cplt=%d\n",
          this->_counter, this->_complete));
 

@@ -188,8 +188,8 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming_ue(pami_context_t    contex
          b->_phase, b->_numphases,
          header->counter, header->phase));
 
-  assert (b->_header[0].id == header->id);
-  assert (b->_numphases > 0);
+  PAMI_assert(b->_header[0].id == header->id);
+  PAMI_assert(b->_numphases > 0);
   if (b->_strict)
     {
       if (header->counter != b->_counter || b->_phase >= b->_numphases)
@@ -239,8 +239,8 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
          b->_phase, b->_numphases,
          header->counter, header->phase));
 
-  assert (b->_header[0].id == header->id);
-  assert (b->_numphases > 0);
+  PAMI_assert(b->_header[0].id == header->id);
+  PAMI_assert(b->_numphases > 0);
   if (b->_strict)
     {
       if (header->counter != b->_counter || b->_phase >= b->_numphases)

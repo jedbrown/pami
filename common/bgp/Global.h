@@ -74,7 +74,7 @@ namespace PAMI
           void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
           if (ptr == MAP_FAILED) {
                 PAMI_assertf(errno == ENOMEM, "mmap(NULL, %zu, PROT_READ | PROT_WRITE, MAP_SHARED, %d, 0) failed, errno = %d\n", n, fd, errno);
-                // assert(mode == SMP)
+                // PAMI_assert(mode == SMP)
                 close(fd);
                 shm_unlink(shmemfile);
                 fd = -1;

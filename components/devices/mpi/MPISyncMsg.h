@@ -142,12 +142,12 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
         int n;
         _g_mpisync_dev.__getThreads(&t, &n);
         int nt = 0;
-        // assert(nt < n);
+        // PAMI_assert(nt < n);
         t[nt].setMsg(this);
         t[nt].setAdv(advanceThread);
         t[nt].setStatus(PAMI::Device::Ready);
         ++nt;
-        // assert(nt > 0? && nt < n);
+        // PAMI_assert(nt > 0? && nt < n);
         _nThreads = nt;
         TRACE_DEVICE((stderr,"<%p>MPISyncMsg::__setThreads(%d) _nThreads %d\n",this,
                       n,nt));

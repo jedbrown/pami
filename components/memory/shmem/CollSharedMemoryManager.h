@@ -34,7 +34,7 @@
 #endif
 
 #ifndef PAMI_ASSERT
-#define PAMI_ASSERT(x) assert(x)
+#define PAMI_ASSERT(x) PAMI_assert(x)
 #endif
 
 namespace PAMI

@@ -132,7 +132,7 @@ namespace CCMI
                 PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
               }
 
-            assert(geometry != NULL);
+            PAMI_assert(geometry != NULL);
             BarrierT *composite = (BarrierT*) geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
             CCMI_assert (composite != NULL);
             TRACE_INIT((stderr, "<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",

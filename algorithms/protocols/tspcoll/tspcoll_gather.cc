@@ -47,7 +47,7 @@ TSPColl::Gather::Gather (Communicator * comm, NBTag tag, int id, int tagoff):
 void TSPColl::Gather::
 reset (int root, const void * sbuf, void * rbuf, size_t length)
 {
-  assert (rbuf != NULL && sbuf != NULL);
+  PAMI_assert(rbuf != NULL && sbuf != NULL);
   Communicator * comm = TSPColl::_commlist[_commID];
   _root          = root;
   _rbuf          = rbuf;

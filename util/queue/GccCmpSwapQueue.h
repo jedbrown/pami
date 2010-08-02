@@ -101,7 +101,7 @@ public:
 			t = u;
 		} while ((u = __sync_val_compare_and_swap(&_tail, t, e)) != t);
 		if (t) {
-			// assert(t->next == NULL);
+			// PAMI_assert(t->next == NULL);
 			t->setNext(e); // t->next was NULL...
 		} else {
 			// q->tail already set to 'e'...
@@ -163,7 +163,7 @@ public:
 			t = u;
 		} while ((u = __sync_val_compare_and_swap(&_tail, t, tail)) != t);
 		if (t) {
-			// assert(t->next == NULL);
+			// PAMI_assert(t->next == NULL);
 			t->setNext(head); // t->next was NULL...
 		} else {
 			// q->tail already set

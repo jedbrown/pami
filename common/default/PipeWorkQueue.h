@@ -258,7 +258,7 @@ public:
         /// consumed by each consumer to zero.
         ///
         inline void barrier_reset_impl(unsigned participants, bool master) {
-                // assert(_isize == 0);
+                // PAMI_assert(_isize == 0);
                 local_barriered_shmemzero((void *)_sharedqueue, sizeof(*_sharedqueue),
                                                 participants, master);
         }

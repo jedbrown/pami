@@ -97,7 +97,7 @@ namespace PAMI
       int registerRecvFunction (Interface::RecvFunction_t  recv_func,
                                 void                      *recv_func_parm)
         {
-          assert(recv_func != NULL);
+          PAMI_assert(recv_func != NULL);
           _dispatch_table[_dispatch_id].recv_func=recv_func;
           _dispatch_table[_dispatch_id].recv_func_parm=recv_func_parm;
           _dispatch_lookup[_dispatch_id]=_dispatch_table[_dispatch_id];
@@ -146,7 +146,7 @@ namespace PAMI
 
       inline bool isInit_impl ()
         {
-          assert(0);
+          PAMI_abort();
           return false;
         };
       inline bool isReliableNetwork ()
@@ -171,7 +171,7 @@ namespace PAMI
       // Implement Packet Device Routines
       inline int    read_impl(void * dst, size_t bytes, void * cookie)
         {
-          assert(0);
+          PAMI_abort();
           return -1;
         }
 
@@ -182,7 +182,7 @@ namespace PAMI
 
       inline size_t task2peer_impl (size_t task)
         {
-          assert(task < _peers);
+          PAMI_assert(task < _peers);
           return task;
         }
 
@@ -466,7 +466,7 @@ namespace PAMI
                                &rcvbuf,
                                &pwidth,
                                &cb_done);
-                assert(rcvlen <= (size_t)msg->_size);
+                PAMI_assert(rcvlen <= (size_t)msg->_size);
                 mcast->_conn        = msg->_conn;
                 mcast->_done_fn     = cb_done.function;
                 mcast->_cookie      = cb_done.clientdata;
@@ -541,7 +541,7 @@ namespace PAMI
                 *comp_h                 = __pami_lapi_mcast_done_fn;
                 *uinfo                  = (void*)req;
                 ri->ret_flags           = LAPI_LOCAL_STATE;
-                assert(r != NULL);
+                PAMI_assert(r != NULL);
                 if (!r) ri->ctl_flags   = LAPI_BURY_MSG;
               }
           _dev->unlock();

@@ -574,7 +574,7 @@ namespace PAMI
 	  }
 	  if (_np < univz) { // must exclude some nodes...
 	    _excluded = (CR_COORD_T *)malloc((univz - _np) * sizeof(CR_COORD_T));
-	    // assert(_excluded != NULL);
+	    // PAMI_assert(_excluded != NULL);
 
 	    // Note, this discards previous _pri_dim... is that ok?
 	    MUSPI_MakeNpRectMap(&_communiv, _np, _map,

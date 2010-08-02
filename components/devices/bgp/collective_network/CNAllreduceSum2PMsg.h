@@ -206,7 +206,7 @@ public:
                         __advanceRcp(&t[nt]);
                         ++nt;
                 }
-                // assert(nt > 0? && nt < n);
+                // PAMI_assert(nt > 0? && nt < n);
                 *th = t;
                 return nt;
         }
@@ -321,7 +321,7 @@ public:
         _dispatch_id_e(_g_cnallreduce2p_dev.newDispID()),
         _dispatch_id_m(_g_cnallreduce2p_dev.newDispID())
         {
-                // assert(device == _g_cnallreduce2p_dev);
+                // PAMI_assert(device == _g_cnallreduce2p_dev);
                 _me = __global.mapping.task();
                 _ewq.setConsumers(1, 0);
                 _ewq.setProducers(1, 0);

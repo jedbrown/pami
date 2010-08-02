@@ -34,7 +34,7 @@
 #define TRACE_DBG(x) // printf x
 
 #undef PAMI_ASSERT
-#define PAMI_ASSERT(x) assert(x)
+#define PAMI_ASSERT(x) PAMI_assert(x)
 
 #undef INLINE
 #define INLINE
@@ -1427,7 +1427,7 @@ public:
         _csdevice(device, commid, topology, csmm, csmm->getWGCtrlStr())
         {
             //TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-            // assert(device == _g_l_bcastwq_dev);
+            // PAMI_assert(device == _g_l_bcastwq_dev);
 
             _csdevice.getWindow(0,0,0); // just simple checking
         }

@@ -141,7 +141,7 @@ public:
                         __advanceRcp(&t[nt]);
                         ++nt;
                 }
-                // assert(nt > 0? && nt < n);
+                // PAMI_assert(nt > 0? && nt < n);
                 *th = t;
                 return nt;
         }
@@ -228,7 +228,7 @@ public:
         CNBroadcastModel(CNBroadcastDevice &device, pami_result_t &status) :
         PAMI::Device::Interface::MulticastModel<CNBroadcastModel,CNBroadcastDevice,sizeof(CNBroadcastMessage)>(device,status)
         {
-                // assert(device == _g_cnbroadcast_dev);
+                // PAMI_assert(device == _g_cnbroadcast_dev);
                 _dispatch_id = _g_cnbroadcast_dev.newDispID();
                 _me = __global.mapping.task();
         }

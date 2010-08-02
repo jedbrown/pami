@@ -126,7 +126,7 @@ void setup(int argc, char **argv, unsigned override_default_max_count = 0)
   MPI_Comm_rank(MPI_COMM_WORLD, (int*)&rank);
 
   ranks = (unsigned *)malloc(size * sizeof(unsigned));
-  assert ( ranks );
+  PAMI_assert( ranks );
 
   static struct option lopts[] = {
     {"help",        no_argument,      NULL, 'h'},
@@ -240,7 +240,7 @@ void allocate_buffers()
   // Padded so we can put padding around data and check for out of bounds overflows
   allocSrcBuf = (unsigned *)malloc(bytes + 5*sizeof(unsigned));
   allocDstBuf = (unsigned *)malloc(bytes + 5*sizeof(unsigned));
-  assert ( allocSrcBuf && allocDstBuf );
+  PAMI_assert( allocSrcBuf && allocDstBuf );
   srcbuf = allocSrcBuf + 4;
   dstbuf = allocDstBuf + 4;
   allocSrcBuf[0] = allocSrcBuf[1] = allocSrcBuf[2] = allocSrcBuf[3] =

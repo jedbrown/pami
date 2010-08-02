@@ -99,7 +99,7 @@ LapiFunc * LapiFunc::getInstance()
         instance = new LapiFunc();
         int rc = instance->load();
         // FixMe: error handling
-        assert(rc == 0);
+        PAMI_assert(rc == 0);
     }
     return instance;
 }
@@ -177,71 +177,71 @@ int LapiFunc::load()
 
     // FixMe: error handling
     addr_get_hndlr = (lapi_addr_get_hndlr *) import(lapi_cmd_list[I_Addr_get]);
-    assert(addr_get_hndlr);
+    PAMI_assert(addr_get_hndlr);
     addr_set_hndlr = (lapi_addr_set_hndlr *) import(lapi_cmd_list[I_Addr_set]);
-    assert(addr_set_hndlr);
+    PAMI_assert(addr_set_hndlr);
     address_hndlr = (lapi_address_hndlr *) import(lapi_cmd_list[I_Address]);
-    assert(address_hndlr);
+    PAMI_assert(address_hndlr);
     address_init_hndlr = (lapi_address_init_hndlr *) import(lapi_cmd_list[I_Address_init]);
-    assert(address_init_hndlr);
+    PAMI_assert(address_init_hndlr);
     address_init64_hndlr = (lapi_address_init64_hndlr *) import(lapi_cmd_list[I_Address_init64]);
-    assert(address_init64_hndlr);
+    PAMI_assert(address_init64_hndlr);
 
     amsend_hndlr = (lapi_amsend_hndlr *) import(lapi_cmd_list[I_Amsend]);
-    assert(amsend_hndlr);
+    PAMI_assert(amsend_hndlr);
     amsendv_hndlr = (lapi_amsendv_hndlr *) import(lapi_cmd_list[I_Amsendv]);
-    assert(amsendv_hndlr);
+    PAMI_assert(amsendv_hndlr);
     fence_hndlr = (lapi_fence_hndlr *) import(lapi_cmd_list[I_Fence]);
-    assert(fence_hndlr);
+    PAMI_assert(fence_hndlr);
     get_hndlr = (lapi_get_hndlr *) import(lapi_cmd_list[I_Get]);
-    assert(get_hndlr);
+    PAMI_assert(get_hndlr);
     getcntr_hndlr = (lapi_getcntr_hndlr*) import(lapi_cmd_list[I_Getcntr]);
-    assert(getcntr_hndlr);
+    PAMI_assert(getcntr_hndlr);
     getv_hndlr = (lapi_getv_hndlr *) import(lapi_cmd_list[I_Getv]);
-    assert(getv_hndlr);
+    PAMI_assert(getv_hndlr);
     gfence_hndlr = (lapi_gfence_hndlr *) import(lapi_cmd_list[I_Gfence]);
-    assert(gfence_hndlr);
+    PAMI_assert(gfence_hndlr);
     init_hndlr = (lapi_init_hndlr *) import(lapi_cmd_list[I_Init]);
-    assert(init_hndlr);
+    PAMI_assert(init_hndlr);
     msg_string_hndlr = (lapi_msg_string_hndlr *) import(lapi_cmd_list[I_Msg_string]);
-    assert(msg_string_hndlr);
+    PAMI_assert(msg_string_hndlr);
     msgpoll_hndlr = (lapi_msgpoll_hndlr *) import(lapi_cmd_list[I_Msgpoll]);
-    assert(msgpoll_hndlr);
+    PAMI_assert(msgpoll_hndlr);
     probe_hndlr = (lapi_probe_hndlr*) import(lapi_cmd_list[I_Probe]);
-    assert(probe_hndlr);
+    PAMI_assert(probe_hndlr);
 
     put_hndlr = (lapi_put_hndlr *) import(lapi_cmd_list[I_Put]);
-    assert(put_hndlr);
+    PAMI_assert(put_hndlr);
     putv_hndlr = (lapi_putv_hndlr *) import(lapi_cmd_list[I_Putv]);
-    assert(putv_hndlr);
+    PAMI_assert(putv_hndlr);
     qenv_hndlr = (lapi_qenv_hndlr *) import(lapi_cmd_list[I_Qenv]);
-    assert(qenv_hndlr);
+    PAMI_assert(qenv_hndlr);
     rmw_hndlr = (lapi_rmw_hndlr *) import(lapi_cmd_list[I_Rmw]);
-    assert(rmw_hndlr);
+    PAMI_assert(rmw_hndlr);
     rmw64_hndlr = (lapi_rmw64_hndlr *) import(lapi_cmd_list[I_Rmw64]);
-    assert(rmw64_hndlr);
+    PAMI_assert(rmw64_hndlr);
     senv_hndlr = (lapi_senv_hndlr *) import(lapi_cmd_list[I_Senv]);
-    assert(senv_hndlr);
+    PAMI_assert(senv_hndlr);
     setcntr_hndlr = (lapi_setcntr_hndlr *) import(lapi_cmd_list[I_Setcntr]);
-    assert(setcntr_hndlr);
+    PAMI_assert(setcntr_hndlr);
     term_hndlr = (lapi_term_hndlr *) import(lapi_cmd_list[I_Term]);
-    assert(term_hndlr);
+    PAMI_assert(term_hndlr);
 
     util_hndlr = (lapi_util_hndlr *) import(lapi_cmd_list[I_Util]);
-    assert(util_hndlr);
+    PAMI_assert(util_hndlr);
     waitcntr_hndlr = (lapi_waitcntr_hndlr *) import(lapi_cmd_list[I_Waitcntr]);
-    assert(waitcntr_hndlr);
+    PAMI_assert(waitcntr_hndlr);
     xfer_hndlr = (lapi_xfer_hndlr *) import(lapi_cmd_list[I_Xfer]);
-    assert(xfer_hndlr);
+    PAMI_assert(xfer_hndlr);
 
     nopoll_wait_hndlr = (lapi_nopoll_wait_hndlr *) import(lapi_cmd_list[I_Nopoll_wait]);
-    assert(nopoll_wait_hndlr);
+    PAMI_assert(nopoll_wait_hndlr);
     purge_totask_hndlr = (lapi_purge_totask_hndlr *) import(lapi_cmd_list[I_Purge_totask]);
-    assert(purge_totask_hndlr);
+    PAMI_assert(purge_totask_hndlr);
     resume_totask_hndlr = (lapi_resume_totask_hndlr *) import(lapi_cmd_list[I_Resume_totask]);
-    assert(resume_totask_hndlr);
+    PAMI_assert(resume_totask_hndlr);
     setcntr_wstatus_hndlr = (lapi_setcntr_wstatus_hndlr *) import(lapi_cmd_list[I_Setcntr_wstatus]);
-    assert(setcntr_wstatus_hndlr);
+    PAMI_assert(setcntr_wstatus_hndlr);
 
     return 0;
 }

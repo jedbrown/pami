@@ -47,7 +47,7 @@ namespace PAMI
       return result.d;
     }
 #else
-    static inline uint64_t tb() { assert(0); return 0;}
+    static inline uint64_t tb() { PAMI_abort(); return 0;}
 #endif
 
     static unsigned long timeGetTime( void )

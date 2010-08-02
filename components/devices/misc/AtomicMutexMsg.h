@@ -78,7 +78,7 @@ protected:
 	_role(msync->roles),
 	_mutex(mutex)
 	{
-		// assert(role == DEFAULT_ROLE);
+		// PAMI_assert(role == DEFAULT_ROLE);
 	}
 
 protected:

@@ -75,7 +75,7 @@ protected:
                                         msync->client, msync->context),
         _barrier(barrier)
         {
-                // assert(role == DEFAULT_ROLE);
+                // PAMI_assert(role == DEFAULT_ROLE);
         }
 
 protected:

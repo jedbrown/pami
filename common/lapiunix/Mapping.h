@@ -76,7 +76,7 @@ namespace PAMI
       }
     inline pami_result_t nodeTasks_impl (size_t global, size_t & tasks)
       {
-        assert(0);
+        PAMI_abort();
         return PAMI_UNIMPL;
       }
     inline pami_result_t nodePeers_impl (size_t & peers)

@@ -196,9 +196,9 @@ private:
 
 inline pami_result_t LocalReduceWQModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb) {
         PAMI::Topology *results_topo = (PAMI::Topology *)mcomb->results_participants;
-        // assert((data_topo .U. results_topo).size() == _npeers);
+        // PAMI_assert((data_topo .U. results_topo).size() == _npeers);
         // This is a LOCAL reduce, results_topo must be a valid local rank!
-        // assert(_g_topology_local->rank2Index(results_topo->index2Rank(0)) != -1);
+        // PAMI_assert(_g_topology_local->rank2Index(results_topo->index2Rank(0)) != -1);
         int dtshift = pami_dt_shift[mcomb->dtype];
         coremath func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
         unsigned rootpeer = __global.topology_local.rank2Index(results_topo->index2Rank(0));

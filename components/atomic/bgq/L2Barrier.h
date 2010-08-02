@@ -150,7 +150,7 @@ public:
                 // process.
 
                 _barrier.init(mm, PAMI::Atomic::BGQ::L2A_NODE_CORE_SCOPE);
-                // assert(m .iff. me == masterProc());
+                // PAMI_assert(m .iff. me == masterProc());
                 _barrier._master = __global.l2atomicFactory.masterProc() << __global.l2atomicFactory.coreShift();
                 _barrier._coreshift = 0;
                 _barrier._nparties = __global.l2atomicFactory.numCore();
@@ -171,7 +171,7 @@ public:
                 // participate.
 
                 _barrier.init(mm, PAMI::Atomic::BGQ::L2A_NODE_PROC_SCOPE);
-                // assert(m .iff. me == masterProc());
+                // PAMI_assert(m .iff. me == masterProc());
                 _barrier._master = __global.l2atomicFactory.coreXlat(__global.l2atomicFactory.masterProc()) >> __global.l2atomicFactory.coreShift();
                 _barrier._coreshift = __global.l2atomicFactory.coreShift();
                 _barrier._nparties = __global.l2atomicFactory.numProc();

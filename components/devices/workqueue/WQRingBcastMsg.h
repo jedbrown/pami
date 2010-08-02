@@ -70,7 +70,7 @@ public:
                 int n;
                 qs->__getThreads(&t, &n);
                 int nt = 0;
-                // assert(nt < n);
+                // PAMI_assert(nt < n);
                 _nThreads = 1; // must predict total number of threads
                 t[nt].setMsg(this);
                 t[nt].setAdv(advanceThread);
@@ -82,7 +82,7 @@ public:
 #endif // USE_WAKEUP_VECTORS
                 __advanceThread(&t[nt]);
                 ++nt;
-                // assert(nt > 0? && nt < n);
+                // PAMI_assert(nt > 0? && nt < n);
                 *th = t;
                 return nt;
         }

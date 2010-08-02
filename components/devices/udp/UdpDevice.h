@@ -240,7 +240,7 @@ namespace PAMI
 
       inline size_t task2peer_impl (size_t task)
       {
-        assert(task < __global.mapping.size());
+        PAMI_assert(task < __global.mapping.size());
         return task;
       }
       inline void post(size_t task, UdpSendMessage* msg)

@@ -196,7 +196,7 @@ namespace PAMI
             options.hint.multicast.global    = 1;
           }
       else
-        assert(0);
+        PAMI_abort();
 
       return PAMI_Dispatch_set_new(_context,__g_mpi_dispatch,fn,cookie, options);
 #else

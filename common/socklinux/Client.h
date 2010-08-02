@@ -63,7 +63,7 @@ namespace PAMI
           //if ((client = __client_list->contains (name)) == NULL)
           //{
             rc = posix_memalign((void **)&clientp, 16, sizeof (PAMI::Client));
-            if (rc != 0) assert(0);
+            if (rc != 0) PAMI_abort();
             memset ((void *)clientp, 0x00, sizeof(PAMI::Client));
             new (clientp) PAMI::Client (name, result);
             *client = clientp;

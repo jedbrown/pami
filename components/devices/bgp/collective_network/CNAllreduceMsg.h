@@ -153,7 +153,7 @@ public:
                         __advanceRcp(&t[nt]);
                         ++nt;
                 }
-                // assert(nt > 0? && nt < n);
+                // PAMI_assert(nt > 0? && nt < n);
                 *th = t;
                 return nt;
         }
@@ -230,7 +230,7 @@ public:
         CNAllreduceModel(CNAllreduceDevice &device,pami_result_t &status) :
         PAMI::Device::Interface::MulticombineModel<CNAllreduceModel,CNAllreduceDevice,sizeof(CNAllreduceMessage)>(device,status)
         {
-                // assert(device == _g_cnallreduce_dev);
+                // PAMI_assert(device == _g_cnallreduce_dev);
                 _dispatch_id = _g_cnallreduce_dev.newDispID();
                 _me = __global.mapping.task();
                 // at least one must do this
@@ -254,7 +254,7 @@ inline void CNAllreduceMessage::__completeThread(CNAllreduceThread *thr) {
 // Permit a NULL results_topo to mean "everyone" (i.e. "root == -1")
 inline pami_result_t CNAllreduceModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb) {
         PAMI::Device::BGP::CNAllreduceSetup &tas = PAMI::Device::BGP::CNAllreduceSetup::getCNAS(mcomb->dtype, mcomb->optor);
-        // assert(tas._pre == NULL);
+        // PAMI_assert(tas._pre == NULL);
         if (tas._pre) {
                 return PAMI_ERROR;
         }

@@ -134,7 +134,7 @@ public:
                         __advanceRcp(&t[nt]);
                         ++nt;
                 }
-                // assert(nt > 0? && nt < n);
+                // PAMI_assert(nt > 0? && nt < n);
                 *th = t;
                 return nt;
         }
@@ -204,7 +204,7 @@ public:
         CNAllreducePPModel(CNAllreducePPDevice &device, pami_result_t &status) :
         PAMI::Device::Interface::MulticombineModel<CNAllreducePPModel,CNAllreducePPDevice,sizeof(CNAllreducePPMessage)>(device,status)
         {
-                // assert(device == _g_cnallreducepp_dev);
+                // PAMI_assert(device == _g_cnallreducepp_dev);
                 _dispatch_id = _g_cnallreducepp_dev.newDispID();
                 _me = __global.mapping.task();
         }
@@ -227,7 +227,7 @@ inline void CNAllreducePPMessage::__completeThread(CNAllreducePPThread *thr) {
 inline pami_result_t CNAllreducePPModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb) {
         PAMI::Device::BGP::CNAllreduceSetup &tas =
                 PAMI::Device::BGP::CNAllreduceSetup::getCNAS(mcomb->dtype, mcomb->optor);
-        // assert(tas._pre != NULL);
+        // PAMI_assert(tas._pre != NULL);
         if (!tas._pre || !tas._post) {
 PAMI_abort();
                 return PAMI_ERROR;

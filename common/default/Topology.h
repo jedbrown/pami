@@ -1068,7 +1068,7 @@ namespace PAMI {
       } else {
         // the hard way...
         pami_task_t rank = 0;
-        // assert(c0->network == PAMI_N_TORUS_NETWORK);
+        // PAMI_assert(c0->network == PAMI_N_TORUS_NETWORK);
         rc = COORDS2RANK(c0, &rank);
         return isRankMember(rank);
       }
@@ -1102,7 +1102,7 @@ namespace PAMI {
         size_t i;
         for (i = 0; i < s; ++i) {
           r = index2Rank(i);
-          // assert(r != -1);
+          // PAMI_assert(r != -1);
           mapping->task2node(r, a);
           if (a.local == (size_t)n) {
             rl[k++] = r;

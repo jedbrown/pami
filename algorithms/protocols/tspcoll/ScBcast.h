@@ -98,7 +98,7 @@ ScBcast(PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
   _barrier2.setComplete (barrier2complete, this);
   _barrier3.setComplete (barrier3complete, this);
   _allgatherv.setComplete (allgathervcomplete, this);
-  assert (_lengths != NULL);
+  PAMI_assert(_lengths != NULL);
 }
 
 /* *********************************************************************** */
@@ -118,7 +118,7 @@ reset (int root, const void * sbuf, void *rbuf, size_t len)
       current += (_lengths[i] = MIN (pernodelen, len - current));
     }
 
-  assert (myoffset != -1);
+  PAMI_assert(myoffset != -1);
   TRACE((stderr, "%d: SCBCAST reset (root=%d sbuf=%p rbuf=%p len=%d)\n",
          PGASRT_MYNODE, root, sbuf, rbuf, len));
   _scatterv.reset (root, sbuf, (char *)rbuf + myoffset, this->_lengths);
@@ -147,7 +147,7 @@ inline void TSPColl::ScBcast<T_NI>::scattercomplete(pami_context_t context, void
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST scattercomplete\n", PGASRT_MYNODE));
-  assert (self != NULL);
+  PAMI_assert(self != NULL);
   // self->_barrier2.kick();
   self->_allgatherv.kick(self->_p2p_iface);
 }
@@ -159,7 +159,7 @@ inline void TSPColl::ScBcast<T_NI>::barriercomplete(pami_context_t context, void
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST barriercomplete\n", PGASRT_MYNODE));
-  assert (self != NULL);
+  PAMI_assert(self != NULL);
   self->_scatterv.kick(self->_p2p_iface);
 }
 
@@ -170,7 +170,7 @@ inline void TSPColl::ScBcast<T_NI>::barrier2complete(pami_context_t context, voi
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST barrier2complete\n", PGASRT_MYNODE));
-  assert (self != NULL);
+  PAMI_assert(self != NULL);
   self->_allgatherv.kick(self->_p2p_iface);
 }
 
@@ -190,7 +190,7 @@ inline void TSPColl::ScBcast<T_NI>::allgathervcomplete(pami_context_t context, v
 {
   ScBcast * self = (ScBcast *) arg;
   TRACE((stderr, "%d: SCBCAST agvcomplete\n", PGASRT_MYNODE));
-  assert (self != NULL);
+  PAMI_assert(self != NULL);
   // self->_barrier3.kick(_p2p_iface);
 }
 
@@ -205,7 +205,7 @@ inline bool TSPColl::ScBcast<T_NI>::isdone (void) const
 template <class T_NI>
 inline void TSPColl::ScBcast<T_NI>::amsend_reg  (T_NI *p2p_iface, void *cd)
 {
-  assert(0);
+  PAMI_abort();
   //   p2p_iface->setCallback(cb_incoming, cd);
   // __pgasrt_tsp_amsend_reg (PGASRT_TSP_AMSEND_COLLEXCHANGE, cb_incoming);
 }

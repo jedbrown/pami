@@ -136,7 +136,7 @@ namespace TSPColl
             case GathervTag:
             default:
             {
-              assert (0);
+              PAMI_abort();
             }
         }
   }
@@ -151,7 +151,7 @@ namespace TSPColl
   template <class T>
   T & TSPColl::Vector<T>::operator[](int idx)
   {
-    assert (idx >= 0);
+    PAMI_assert(idx >= 0);
     if (idx>=_max)
         {
           int oldmax = _max;
@@ -204,14 +204,14 @@ namespace TSPColl
   TSPColl::NBColl<T_NI> *
   TSPColl::NBCollManager<T_NI>::find (NBTag tag, int id)
   {
-    assert (0 <= tag && tag < MAXTAG);
+    PAMI_assert(0 <= tag && tag < MAXTAG);
     return (*_taglist[tag])[id];
   }
 
   template <class T_NI>
   void * TSPColl::NBCollManager<T_NI>::find_ue (NBTag tag, int id)
   {
-    assert (0 <= tag && tag < MAXTAG);
+    PAMI_assert(0 <= tag && tag < MAXTAG);
     return (*_ue_taglist[tag])[id];
   }
 
@@ -222,11 +222,11 @@ namespace TSPColl
   TSPColl::NBColl<T_NI> *
   TSPColl::NBCollManager<T_NI>::allocate (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int id)
   {
-    assert (0 <= tag && tag < MAXTAG);
+    PAMI_assert(0 <= tag && tag < MAXTAG);
 //    int nextID = _taglist[tag]->size();
     int nextID = id;
     NBColl<T_NI> * retval = _factory.create (comm, tag, nextID);
-    assert((*_taglist[tag])[nextID] == NULL);
+    PAMI_assert((*_taglist[tag])[nextID] == NULL);
     (*_taglist[tag])[nextID] = retval;
     return retval;
   }
@@ -239,14 +239,14 @@ namespace TSPColl
   template <class T_NI>
   void TSPColl::NBCollManager<T_NI>::allocate_ue (NBTag tag, int id, void *val)
   {
-    assert (0 <= tag && tag < MAXTAG);
+    PAMI_assert(0 <= tag && tag < MAXTAG);
     (*_ue_taglist[tag])[id] = val;
   }
 
   template <class T_NI>
   void TSPColl::NBCollManager<T_NI>::delete_ue (NBTag tag, int id)
   {
-    assert (0 <= tag && tag < MAXTAG);
+    PAMI_assert(0 <= tag && tag < MAXTAG);
     (*_ue_taglist[tag])[id] = NULL;
   }
 

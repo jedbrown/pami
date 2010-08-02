@@ -211,7 +211,7 @@ fprintf(stderr, "picking up extra contexts %04zx\n", m);
                 _mutex.acquire();
                 --_nactive;
                 uint64_t m = _sets[threadid];
-                // assert((_actm & (1 << threadid)) != 0);
+                // PAMI_assert((_actm & (1 << threadid)) != 0);
                 _sets[threadid] = 0;
 		// must clear bit before calling __giveupContexts()
 		_actm &= ~(1 << threadid);

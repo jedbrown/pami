@@ -39,7 +39,7 @@ namespace PAMI
         strncpy (_name, name, sizeof(_name) - 1);
 
         _clientid = next_client_id++;
-        // assert(_clientid < PAMI_MAX_NUM_CLIENTS);
+        // PAMI_assert(_clientid < PAMI_MAX_NUM_CLIENTS);
 
         // Get some shared memory for this client
         initializeMemoryManager ();
@@ -49,7 +49,7 @@ namespace PAMI
         MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
         MPI_Comm_size(MPI_COMM_WORLD,&_mysize);
         _world_geometry=(MPIGeometry*) malloc(sizeof(*_world_geometry));
-        assert(_world_geometry);
+        PAMI_assert(_world_geometry);
         _world_range.lo=0;
         _world_range.hi=_mysize-1;
         new(_world_geometry) MPIGeometry(NULL, &__global.mapping,0, 1,&_world_range);
@@ -68,7 +68,7 @@ namespace PAMI
         int rc = 0;
         PAMI::Client * clientp;
         clientp = (PAMI::Client *)malloc(sizeof (PAMI::Client));
-        assert(clientp != NULL);
+        PAMI_assert(clientp != NULL);
         memset ((void *)clientp, 0x00, sizeof(PAMI::Client));
         pami_result_t res;
         new (clientp) PAMI::Client (name, res, configuration, num_configs);

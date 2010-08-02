@@ -77,8 +77,8 @@ public:
 		}
 		_wu_region_me = me;
 
-                // assert((size & (size - 1)) == 0); // power of 2
-                // assert((_wu_memreg.BasePa & (size - 1)) == 0); // aligned
+                // PAMI_assert((size & (size - 1)) == 0); // power of 2
+                // PAMI_assert((_wu_memreg.BasePa & (size - 1)) == 0); // aligned
                 return PAMI_SUCCESS;
         }
 

@@ -54,7 +54,7 @@ namespace CCMI
                                             unsigned color, unsigned phase, unsigned dst=(unsigned)-1)
       {
 
-        assert(_numConnections != 0);
+        PAMI_assert(_numConnections != 0);
 
         unsigned connid = 0;
 
@@ -72,7 +72,7 @@ namespace CCMI
         else if(color == 6)
           connid = comm | color5;
         else
-          assert(color <= 6);
+          PAMI_assert(color <= 6);
 
         return connid;
       }

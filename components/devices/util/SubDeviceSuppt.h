@@ -411,7 +411,7 @@ public:
                 n = static_cast<T_Message *>(msg)->setThreads(&t);
                 size_t x = msg->getContextId();
                 if (!devQueued && msg->getStatus() == PAMI::Device::Done) {
-                        // assert(g[x].getContext() != NULL);
+                        // PAMI_assert(g[x].getContext() != NULL);
                         return g[x].getContext();
                 }
                 size_t numctx = g[x].nContexts();
@@ -446,10 +446,10 @@ public:
                 // GenericDeviceMessageQueue *qs = (GenericDeviceMessageQueue *)msg->getQS();
                 // the above would allow an implementation to vary where the queue is...
 
-                // assert(qs == this);
+                // PAMI_assert(qs == this);
                 bool first = (!Use_Queue || peek() == NULL);
                 // If !Use_Queue, there must never be a message queued...
-                // assert(Use_Queue || peek() == NULL);
+                // PAMI_assert(Use_Queue || peek() == NULL);
                 if (first) {
                         pami_context_t ctx = __postNext<T_Message>(msg, false);
                         if (ctx) {
@@ -618,7 +618,7 @@ public:
                 n = static_cast<T_Message *>(msg)->setThreads(&t);
                 size_t x = msg->getContextId();
                 if (!devQueued && msg->getStatus() == PAMI::Device::Done) {
-                        // assert(g[x].getContext() != NULL);
+                        // PAMI_assert(g[x].getContext() != NULL);
                         return g[x].getContext();
                 }
                 size_t numctx = g[x].nContexts();
@@ -644,7 +644,7 @@ public:
         template <class T_Message, class T_Thread>
         inline void __post(PAMI::Device::Generic::GenericMessage *msg) {
                 // GenericDeviceMessageQueue *qs = (GenericDeviceMessageQueue *)msg->getQS();
-                // assert(qs == this);
+                // PAMI_assert(qs == this);
 
                 bool first = (peek() == NULL);
                 if (first) {

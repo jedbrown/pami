@@ -209,8 +209,8 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
                                              pami_dt              dt,
                                              unsigned             bytes)
 {
-  assert (sbuf != NULL);
-  assert (dbuf != NULL);
+  PAMI_assert(sbuf != NULL);
+  PAMI_assert(dbuf != NULL);
 
   /* --------------------------------------------------- */
   /*         copy source to destination if necessary     */
@@ -220,7 +220,7 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
   //  size_t datawidth = datawidthof (dt);
   CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, _nelems, datawidth,_cb_allreduce);
   _nelems = bytes/datawidth;
-  assert (bytes < sizeof(PhaseBufType));
+  PAMI_assert(bytes < sizeof(PhaseBufType));
   if (sbuf != dbuf) memcpy (dbuf, sbuf, bytes);
 
   int maxBF = 1<<_logMaxBF; /* largest power of 2 that fits into comm */
@@ -262,7 +262,7 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
       phase ++;
     }
 
-  assert (phase == this->_numphases);
+  PAMI_assert(phase == this->_numphases);
 
 #ifdef DEBUG_ALLREDUCE
   printf ("%d: ", rank);
@@ -408,8 +408,8 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
                                       pami_dt              dt,
                                       unsigned             bytes)
 {
-  assert (sbuf != NULL);
-  assert (dbuf != NULL);
+  PAMI_assert(sbuf != NULL);
+  PAMI_assert(dbuf != NULL);
 
   /* --------------------------------------------------- */
   /*         copy source to destination if necessary     */
@@ -462,7 +462,7 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
       phase ++;
     }
 
-  assert (phase == this->_numphases);
+  PAMI_assert(phase == this->_numphases);
   //  _cb_allreduce = getcallback (op, dt);
   TSPColl::CollExchange<T_NI>::reset();
 }

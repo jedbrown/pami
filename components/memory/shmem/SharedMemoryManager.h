@@ -100,7 +100,7 @@ namespace PAMI
                                            size_t    bytes)
         {
           // Currently, shmem areas are not "free'd".
-          assert((alignment & (alignment - 1)) == 0);
+          PAMI_assert((alignment & (alignment - 1)) == 0);
 
           void * addr = NULL;
           size_t pad = 0;

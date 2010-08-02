@@ -162,7 +162,7 @@ public:
         giModel(giDevice &device, pami_result_t &status) :
         PAMI::Device::Interface::MultisyncModel<giModel,giDevice,sizeof(giMessage)>(device,status)
         {
-                // assert(device == _g_gibarrier_dev);
+                // PAMI_assert(device == _g_gibarrier_dev);
                 // if we need sysdep, use _g_gibarrier_dev.getSysdep()...
         }
 
@@ -176,7 +176,7 @@ private:
 }; // namespace PAMI
 
 inline pami_result_t PAMI::Device::BGP::giModel::postMultisync_impl(uint8_t (&state)[sizeof_msg], pami_multisync_t *msync) {
-        // assert(participants == ctor topology)
+        // PAMI_assert(participants == ctor topology)
         giMessage *msg;
 
         msg = new (&state) giMessage(_g_gibarrier_dev.getQS(), msync);

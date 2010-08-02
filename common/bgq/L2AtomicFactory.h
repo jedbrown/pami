@@ -164,7 +164,7 @@ namespace BGQ {
                         // 2 |    2    |  -   |  -  |
                         // 3 |    3    |  -   |  -  |
                         //
-                        // assert((ncores & (ncores - 1) == 0);
+                        // PAMI_assert((ncores & (ncores - 1) == 0);
                         int shift = ffs(ncores);
                         PAMI_assertf(shift > 0, "Internal error: no cores in process?");
                         --shift;

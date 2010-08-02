@@ -595,7 +595,7 @@ namespace PAMI
         }
       inline pami_result_t send_impl (pami_send_t * parameters)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_SUCCESS;
         }
 
@@ -610,19 +610,19 @@ namespace PAMI
 
       inline pami_result_t send_impl (pami_send_typed_t * parameters)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t put_impl (pami_put_simple_t * parameters)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t put_typed_impl (pami_put_typed_t * parameters)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
@@ -638,13 +638,13 @@ namespace PAMI
 
       inline pami_result_t get_typed_impl (pami_get_typed_t * parameters)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t rmw_impl (pami_rmw_t * parameters)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
@@ -653,69 +653,69 @@ namespace PAMI
                                                   size_t           * bytes_out,
                                                   pami_memregion_t * memregion)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t memregion_destroy_impl (pami_memregion_t * memregion)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
 
       inline pami_result_t rput_impl (pami_rput_simple_t * parameters)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t rput_typed_impl (pami_rput_typed_t * parameters)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t rget_impl (pami_rget_simple_t * parameters)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t rget_typed_impl (pami_rget_typed_t * parameters)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t purge_totask_impl (size_t * dest, size_t count)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t resume_totask_impl (size_t * dest, size_t count)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t fence_begin_impl ()
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t fence_end_impl ()
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t fence_all_impl (pami_event_function   done_fn,
                                           void               * cookie)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
@@ -723,7 +723,7 @@ namespace PAMI
                                             void               * cookie,
                                             size_t               task)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
@@ -777,19 +777,19 @@ namespace PAMI
                                                   int            *numRoles,
                                                   int            *replRole)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t multicast_impl(pami_multicast_t *mcastinfo)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t manytomany_impl(pami_manytomany_t *m2minfo)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
@@ -797,13 +797,13 @@ namespace PAMI
         {
           // Select the native interface
           // call the multisync for the selected native interface.
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
 
       inline pami_result_t multicombine_impl(pami_multicombine_t *mcombineinfo)
         {
-          assert(0);
+          PAMI_abort();
           return PAMI_UNIMPL;
         }
       inline pami_result_t dispatch_impl (size_t                      id,
@@ -821,7 +821,7 @@ namespace PAMI
                                            void                     * cookie,
                                            pami_dispatch_hint_t        options)
     {
-      assert(0);
+      PAMI_abort();
       pami_result_t result        = PAMI_ERROR;
       return result;
     }

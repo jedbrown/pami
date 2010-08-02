@@ -147,7 +147,7 @@ namespace PAMI {
 				t = u;
 			} while ((u = __sync_val_compare_and_swap(&_tail, t, e)) != t);
 			if (t) {
-				// assert(t->next == NULL);
+				// PAMI_assert(t->next == NULL);
 				t->setNext(e, T_ElemNum); // t->next was NULL...
 			} else {
 				// q->tail already set to 'e'...
@@ -287,10 +287,10 @@ namespace PAMI {
 
 			qt = main->_tail;
 			if (qt) {
-				// assert(qt->_next == NULL);
+				// PAMI_assert(qt->_next == NULL);
 				qt->setNext(h, T_ElemNum);
 			} else {
-				// assert(main->_head == NULL);
+				// PAMI_assert(main->_head == NULL);
 				main->_head = h;
 			}
 			main->_tail = t;

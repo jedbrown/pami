@@ -246,11 +246,11 @@ inline void TSPColl::CollExchange<T_NI>::kick(T_NI *p2p_iface)
 
       if (_rbuf[_phase] == NULL)
         {
-          assert (_cb_recv2[_phase] == NULL);
+          PAMI_assert(_cb_recv2[_phase] == NULL);
           _recvcomplete[_phase]++;          /* no receive, no callback */
           _cbcomplete[_phase]++;
-          assert (_recvcomplete[_phase] <= _counter);
-          assert (_cbcomplete[_phase] <= _counter);
+          PAMI_assert(_recvcomplete[_phase] <= _counter);
+          PAMI_assert(_cbcomplete[_phase] <= _counter);
           continue;
         }
 
@@ -330,7 +330,7 @@ inline void TSPColl::CollExchange<T_NI>::send (int phase, T_NI *p2p_iface)
          _tag, _counter, phase,
          _dest[phase], _sbufln[phase],p2p_iface));
   _header[phase].counter = _counter;
-  assert (_dest[phase] != -1);
+  PAMI_assert(_dest[phase] != -1);
 
   TRACE((stderr, "SEND P2P_IFACE %p: tag=%d id=%d,hdr=%p count=%d\n",
          ((int*)p2p_iface)[0],

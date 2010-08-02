@@ -111,7 +111,7 @@ protected:
                         __advanceRcp(&t[nt]);
                         ++nt;
                 }
-                // assert(nt > 0? && nt < n);
+                // PAMI_assert(nt > 0? && nt < n);
                 return nt;
         }
 

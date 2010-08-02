@@ -208,7 +208,7 @@ namespace PAMI
         }
       inline int                       getColorsArray_impl()
         {
-          assert(0);
+          PAMI_abort();
           return 0;
         }
       inline void                      setAsyncAllreduceMode_impl(unsigned value)
@@ -264,7 +264,7 @@ namespace PAMI
 
       inline void                      freePermutation_sizet_impl()
         {
-          assert(0);
+          PAMI_abort();
           return;
         }
       inline pami_task_t *permutation_sizet_impl()
@@ -274,32 +274,32 @@ namespace PAMI
 
       inline bool                      isRectangle_impl()
         {
-          assert(0);
+          PAMI_abort();
           return false;
         }
       inline bool                      isTorus_impl()
         {
-          assert(0);
+          PAMI_abort();
           return false;
         }
       inline bool                      isTree_impl()
         {
-          assert(0);
+          PAMI_abort();
           return false;
         }
       inline bool                      isGlobalContext_impl()
         {
-          assert(0);
+          PAMI_abort();
           return false;
         }
       inline bool                      isGI_impl()
         {
-          assert(0);
+          PAMI_abort();
           return false;
         }
       inline unsigned                  getNumColors_impl()
         {
-          assert(0);
+          PAMI_abort();
           return 0;
         }
       inline unsigned                  getAllreduceIteration_impl()
@@ -313,12 +313,12 @@ namespace PAMI
         }
       inline void                      setGlobalContext_impl(bool context)
         {
-          assert(0);
+          PAMI_abort();
           return;
         }
       inline void                      setNumColors_impl(unsigned numcolors)
         {
-          assert(0);
+          PAMI_abort();
           return;
         }
       inline MatchQueue               &asyncCollectivePostQ_impl()
@@ -370,7 +370,7 @@ namespace PAMI
       static inline void               updateCachedGeometry_impl(Common *geometry,
                                                                  unsigned comm)
         {
-          assert(geometry!=NULL);
+          PAMI_assert(geometry!=NULL);
           PAMI::cached_geometry[comm]=(void*)geometry;
         }
 

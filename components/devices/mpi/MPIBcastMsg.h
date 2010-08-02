@@ -183,7 +183,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
         t[nt]._bytesLeft = _bytes;
         __advanceThread(&t[nt]);
         ++nt;
-        // assert(nt > 0? && nt < n);
+        // PAMI_assert(nt > 0? && nt < n);
         TRACE_DEVICE((stderr,"<%p>MPIBcastMsg::__setThreads(%d) _nThreads %d, bytes left %zu\n",this,
                       n,nt,t[nt]._bytesLeft));
         *th = t;

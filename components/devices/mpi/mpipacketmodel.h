@@ -156,7 +156,7 @@ namespace PAMI
                           _device._communicator,
                           &msg->_request);
           _device.enqueue(msg);
-          assert(rc == MPI_SUCCESS);
+          PAMI_assert(rc == MPI_SUCCESS);
 #endif
           return true;
         };
@@ -203,7 +203,7 @@ namespace PAMI
                           _device._communicator,
                           &msg->_request);
           _device.enqueue(msg);
-          assert(rc == MPI_SUCCESS);
+          PAMI_assert(rc == MPI_SUCCESS);
 #endif
           return true;
         };
@@ -249,7 +249,7 @@ namespace PAMI
                           _device._communicator,
                           &msg->_request);
           _device.enqueue(msg);
-          assert(rc == MPI_SUCCESS);
+          PAMI_assert(rc == MPI_SUCCESS);
 #endif
           return true;
         };
@@ -308,7 +308,7 @@ namespace PAMI
                           _device._communicator,
                           &msg->_request);
           _device.enqueue(msg);
-          assert(rc == MPI_SUCCESS);
+          PAMI_assert(rc == MPI_SUCCESS);
 #endif
           return true;
         }
@@ -355,7 +355,7 @@ namespace PAMI
                           _device._communicator,
                           &msg->_request);
           _device.enqueue(msg);
-          assert(rc == MPI_SUCCESS);
+          PAMI_assert(rc == MPI_SUCCESS);
 #endif
           return true;
         };

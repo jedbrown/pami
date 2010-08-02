@@ -68,7 +68,7 @@ namespace TSPColl
 inline TSPColl::BlockingBarrier::
 BlockingBarrier (Communicator * comm, int tag, int id)
 {
-  assert (comm != NULL);
+  PAMI_assert(comm != NULL);
   _numphases = -1; for (int n=2*comm->size()-1; n>0; n>>=1) _numphases++;
   for (int i=0; i<_numphases; i++)
     {
@@ -135,9 +135,9 @@ cb_incoming (const struct __pgasrt_AMHeader_t * hdr,
   struct AMHeader * h = (struct AMHeader *) hdr;
   // BlockingBarrier * b = (BlockingBarrier *)TagList::get (h->tag, h->id);
   BlockingBarrier * b = NULL;
-  assert (b != NULL);
-  assert (b->_header[0].id == h->id);
-  assert (h->phase < b->_numphases);
+  PAMI_assert(b != NULL);
+  PAMI_assert(b->_header[0].id == h->id);
+  PAMI_assert(h->phase < b->_numphases);
   b->_recvcomplete[h->phase]++;
   *completionHandler = NULL;
   *arg = NULL;

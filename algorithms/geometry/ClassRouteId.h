@@ -52,7 +52,7 @@ namespace PAMI
         _user_cb_done(user_cb_done),
         _user_cookie(user_cookie)
         {
-          assert(count <= _max_reductions);
+          PAMI_assert(count <= _max_reductions);
           memcpy(_inval,_bitmask,count*sizeof(uint64_t));
         }
 

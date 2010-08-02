@@ -27,7 +27,7 @@ PAMI_CollectiveRequest_t              *recvRequests=NULL;
 void recv_callback(void* cd, PAMI_Error_t *err)
 {
   TRACE_TEST_VERBOSE((stderr,"%s:%s nreceived_countdown %d\n", argv0,__PRETTY_FUNCTION__,nreceived_countdown));
-  assert(nreceived_countdown);
+  PAMI_assert(nreceived_countdown);
   nreceived_countdown--;
 }
 void * recvBcast (unsigned          root,
@@ -44,7 +44,7 @@ void * recvBcast (unsigned          root,
   cb_info->function = recv_callback;
   cb_info->clientdata = NULL;
 
-  assert (narrived < (unsigned)repetitions);
+  PAMI_assert(narrived < (unsigned)repetitions);
   return recvRequests[narrived ++];
 }
 
@@ -75,7 +75,7 @@ inline void onesidedbcast_advance (unsigned * srcbuf, unsigned src_count, unsign
 inline void onesidedbcast_advance_repetitions(unsigned * srcbuf, unsigned src_count, unsigned root, unsigned onesided_repetitions)
 {
   TRACE_TEST_VERBOSE((stderr, "%s:%s   src %p, count %d, root %d repetitions %d\n", argv0,__PRETTY_FUNCTION__, srcbuf, src_count, root, onesided_repetitions));
-  assert(nreceived_countdown);
+  PAMI_assert(nreceived_countdown);
   if(rank == root)
   {
     for(unsigned i = 0; i < onesided_repetitions; i++) onesidedbcast_advance (srcbuf,src_count,root);
@@ -87,7 +87,7 @@ inline void onesidedbcast_advance_repetitions(unsigned * srcbuf, unsigned src_co
       CCMI_Generic_adaptor_advance();
       //TRACE_TEST_VERBOSE((stderr,"%s:%s advancing nreceived_countdown %d\n", argv0,__PRETTY_FUNCTION__, nreceived_countdown));
     }
-    assert(narrived == (unsigned)onesided_repetitions); narrived = 0; // reset narrived onesided bcasts
+    PAMI_assert(narrived == (unsigned)onesided_repetitions); narrived = 0; // reset narrived onesided bcasts
   }
 }
 
@@ -117,9 +117,9 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
     exit(0);
   }
 
-  assert((unsigned)(repetitions * sizeof(PAMI_CollectiveRequest_t)) > 0);
+  PAMI_assert((unsigned)(repetitions * sizeof(PAMI_CollectiveRequest_t)) > 0);
   recvRequests = (PAMI_CollectiveRequest_t *)malloc(repetitions * sizeof(PAMI_CollectiveRequest_t));
-  assert(recvRequests);
+  PAMI_assert(recvRequests);
   return;
 }
 

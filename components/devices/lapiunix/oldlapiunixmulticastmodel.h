@@ -78,7 +78,7 @@ namespace PAMI
                 if(info_count > 2)
                     {
                       fprintf(stderr, "FIX:  The lapiunix adaptor only supports up to 2 quads\n");
-                      assert(0);
+                      PAMI_abort();
                     }
                 memcpy (&msg._info[0],& info[0], info_count *sizeof (pami_quad_t));
               }
@@ -107,7 +107,7 @@ namespace PAMI
                               buf,
                               size);
 #endif
-                      assert (hints[count] == PAMI_PT_TO_PT_SUBTASK);
+                      PAMI_assert(hints[count] == PAMI_PT_TO_PT_SUBTASK);
                       lapi_xfer_t xfer_struct;
                       xfer_struct.Am.Xfer_type = LAPI_AM_LW_XFER;
                       xfer_struct.Am.flags     = 0;
@@ -133,7 +133,7 @@ namespace PAMI
                               buf,
                               size);
 #endif
-                      assert (hints[count] == PAMI_PT_TO_PT_SUBTASK);
+                      PAMI_assert(hints[count] == PAMI_PT_TO_PT_SUBTASK);
                       lapi_xfer_t xfer_struct;
                       xfer_struct.Am.Xfer_type = LAPI_AM_XFER;
                       xfer_struct.Am.flags     = 0;

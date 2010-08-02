@@ -175,7 +175,7 @@ namespace PAMI
                                      &injFifoAttrs);
 
             _injFifoBuf = (char *) memalign (64, INJ_MEMORY_FIFO_SIZE + 1);
-            assert ((((uint64_t)_injFifoBuf) % 64) == 0);
+            PAMI_assert((((uint64_t)_injFifoBuf) % 64) == 0);
             _lookAsideBuf = (InjGroup::immediate_payload_t *)
                             malloc ((INJ_MEMORY_FIFO_SIZE + 1) * sizeof(InjGroup::immediate_payload_t));
 

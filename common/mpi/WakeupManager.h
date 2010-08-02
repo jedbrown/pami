@@ -68,7 +68,7 @@ namespace PAMI {
                         op.sem_num = ((z >> SEMNO_BITS) & MAX_SEMNO) - 1;
                         op.sem_op = 1;	// "up" the semaphore
                         op.sem_flg = IPC_NOWAIT; // just in case...
-                        // assert(_semSet == (z & MAX_SEMID));
+                        // PAMI_assert(_semSet == (z & MAX_SEMID));
                         int err = semop(_semSet, &op, 1);
                         if (err < 0) {
                                 return PAMI_ERROR;
@@ -83,7 +83,7 @@ namespace PAMI {
                         int sem_num = ((z >> SEMNO_BITS) & MAX_SEMNO) - 1;
                         // a.val = 0;
                         a = 0;
-                        // assert(_semSet == (z & MAX_SEMID));
+                        // PAMI_assert(_semSet == (z & MAX_SEMID));
                         int err = semctl(_semSet, sem_num, SETVAL, &a);
                         if (err < 0) {
                                 return PAMI_ERROR;
@@ -97,7 +97,7 @@ namespace PAMI {
                         op.sem_num = ((z >> SEMNO_BITS) & MAX_SEMNO) - 1;
                         op.sem_op = -1; // 'down' the semaphore
                         op.sem_flg = 0;
-                        // assert(_semSet == (z & MAX_SEMID));
+                        // PAMI_assert(_semSet == (z & MAX_SEMID));
                         int err = semop(_semSet, &op, 1);
                         if (err < 0) {
                                 return PAMI_ERROR;
@@ -112,7 +112,7 @@ namespace PAMI {
                         op.sem_num = ((z >> SEMNO_BITS) & MAX_SEMNO) - 1;
                         op.sem_op = -1; // 'down' the semaphore
                         op.sem_flg = IPC_NOWAIT;
-                        // assert(_semSet == (z & MAX_SEMID));
+                        // PAMI_assert(_semSet == (z & MAX_SEMID));
                         int err = semop(_semSet, &op, 1);
                         if (err == EAGAIN) {
                                 return PAMI_EAGAIN;
@@ -127,7 +127,7 @@ namespace PAMI {
                 inline pami_result_t poll_impl(void *v) {
                         size_t z = (size_t)v;
                         int s = ((z >> SEMNO_BITS) & MAX_SEMNO) - 1;
-                        // assert(_semSet == (z & MAX_SEMID));
+                        // PAMI_assert(_semSet == (z & MAX_SEMID));
                         int err = semctl(_semSet, s, GETVAL);
                         if (err < 0) {
                                 return PAMI_ERROR;
