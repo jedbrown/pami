@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <assert.h>
+#include "util/common.h"
 #include "lapierror.h"
 
 const char *lapi_cmd_list[] = {
