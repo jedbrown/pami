@@ -97,7 +97,5 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
         static const double seconds_per_cycle;
         size_t _mhz;
     };	// class Time
-  const double Time::seconds_per_cycle = 6.25e-10;
-
 };	// namespace PAMI
 #endif // __components_time_bgq_bgqtime_h__
