@@ -100,7 +100,8 @@ namespace PAMI
                                                      void                      *arg);
         /// \see PAMI::Device::Interface::MulticombineModel::postMulticombine
         pami_result_t postMulticombine_impl(uint8_t (&state)[MulticombineModel<T_PacketModel, T_Msgdata_support,T_PWQ_support>::sizeof_msg],
-                                            pami_multicombine_t *mcomb);
+                                            pami_multicombine_t *mcomb,
+					    void                *devinfo = NULL);
 
       protected:
         /// \brief Map PAMI dt/op to MU op
@@ -187,7 +188,8 @@ namespace PAMI
 
       template <class T_PacketModel, bool T_Msgdata_support, bool T_PWQ_support>
       inline pami_result_t MulticombineModel<T_PacketModel, T_Msgdata_support,T_PWQ_support>::postMulticombine_impl(uint8_t (&state)[MulticombineModel::sizeof_msg],
-                                                                                                                    pami_multicombine_t *mcomb)
+                                                                                                                    pami_multicombine_t *mcomb,
+														    void                *devinfo)
       {
         TRACE_FN_ENTER();
 

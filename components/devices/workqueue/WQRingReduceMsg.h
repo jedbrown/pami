@@ -205,7 +205,7 @@ public:
 
         inline void reset_impl() {}
 
-        inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb);
+  inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb, void *devinfo=NULL);
 
 private:
 	PAMI::Device::Generic::Device *_gd;
@@ -214,7 +214,7 @@ private:
         PAMI::PipeWorkQueue _wq[PAMI_MAX_PROC_PER_NODE];
 }; // class WQRingReduceMdl
 
-inline pami_result_t WQRingReduceMdl::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb) {
+  inline pami_result_t WQRingReduceMdl::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb, void *devinfo) {
         PAMI::Topology *data_topo = (PAMI::Topology *)mcomb->data_participants;
         PAMI::Topology *results_topo = (PAMI::Topology *)mcomb->results_participants;
         // data_participants will be all local nodes...

@@ -196,7 +196,8 @@ public:
         }
 
         inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                               pami_multicast_t *mcast);
+                                                pami_multicast_t *mcast,
+                                                void *devinfo);
 
 private:
 	PAMI::Device::Generic::Device *_gd;
@@ -206,7 +207,8 @@ private:
 }; // class WQRingBcastMdl
 
 inline pami_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                               pami_multicast_t *mcast) {
+                                                        pami_multicast_t *mcast,
+                                                        void * devinfo) {
         PAMI::Topology *dst_topo = (PAMI::Topology *)mcast->dst_participants;
         PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
         size_t root = src_topo->index2Rank(0); // assert size(0 == 1...

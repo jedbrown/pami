@@ -43,14 +43,16 @@ namespace PAMI
           {
           };
         inline pami_result_t postMulticast(uint8_t (&state)[T_StateBytes],
-                                           pami_multicast_t *mcast);
+                                           pami_multicast_t *mcast,
+                                           void             *devinfo=NULL);
       }; // class MulticastModel
 
       template <class T_Model,class T_Device,unsigned T_StateBytes>
       pami_result_t MulticastModel<T_Model,T_Device, T_StateBytes>::postMulticast(uint8_t (&state)[T_StateBytes],
-                                                                         pami_multicast_t *mcast)
+                                                                                  pami_multicast_t *mcast,
+                                                                                  void             *devinfo)
       {
-        return static_cast<T_Model*>(this)->postMulticast_impl(state, mcast);
+        return static_cast<T_Model*>(this)->postMulticast_impl(state, mcast, devinfo);
       }
 
       ///
@@ -74,15 +76,15 @@ namespace PAMI
         ~AMMulticastModel ()
           {
           };
-        inline pami_result_t registerMcastRecvFunction (int                        dispatch_id,
-                                                       pami_dispatch_multicast_fn  recv_func,
-                                                       void                      *async_arg);
+        inline pami_result_t registerMcastRecvFunction (int                         dispatch_id,
+                                                        pami_dispatch_multicast_fn  recv_func,
+                                                        void                       *async_arg);
       }; // class AMMulticastModel
       template <class T_Model,class T_Device,unsigned T_StateBytes>
       pami_result_t AMMulticastModel<T_Model,T_Device,
-                                    T_StateBytes>::registerMcastRecvFunction (int                        dispatch_id,
-                                                                                               pami_dispatch_multicast_fn  recv_func,
-                                                                                               void                      *async_arg)
+                                    T_StateBytes>::registerMcastRecvFunction (int                         dispatch_id,
+                                                                              pami_dispatch_multicast_fn  recv_func,
+                                                                              void                       *async_arg)
       {
         return static_cast<T_Model*>(this)->registerMcastRecvFunction_impl (dispatch_id,
                                                                             recv_func,

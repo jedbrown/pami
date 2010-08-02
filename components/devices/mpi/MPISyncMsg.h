@@ -245,13 +245,15 @@ protected:
       }
 
       inline pami_result_t postMultisync_impl(uint8_t         (&state)[sizeof_msg],
-                                             pami_multisync_t *msync);
+                                              pami_multisync_t *msync,
+                                              void *devinfo = NULL);
 
     private:
     }; // class MPISyncMdl
 
     inline pami_result_t MPISyncMdl::postMultisync_impl(uint8_t         (&state)[sizeof_msg],
-                                                       pami_multisync_t *msync)
+                                                        pami_multisync_t *msync,
+                                                        void             *devinfo)
     {
       TRACE_DEVICE((stderr,"<%p>MPISyncMdl::postMulticast() connection_id %d, request %p\n",this,
                     msync->connection_id, &state));

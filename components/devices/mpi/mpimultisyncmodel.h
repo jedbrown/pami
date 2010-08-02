@@ -37,7 +37,8 @@ namespace PAMI
         }
 
       pami_result_t postMultisync (uint8_t         (&state)[msync_model_state_bytes],
-                                  pami_multisync_t *msync)
+                                   pami_multisync_t *msync,
+                                   void             *devinfo=NULL)
         {
           pami_result_t      rc     = PAMI_SUCCESS;
           MPIMsyncMessage *msg     = (MPIMsyncMessage *) state;

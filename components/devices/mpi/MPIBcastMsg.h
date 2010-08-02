@@ -351,13 +351,15 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
       }
 
       inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                             pami_multicast_t *mcast);
+                                              pami_multicast_t *mcast,
+                                              void             *devinfo);
 
     private:
     }; // class MPIBcastMdl
 
     inline pami_result_t MPIBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                                        pami_multicast_t *mcast)
+                                                         pami_multicast_t *mcast,
+                                                         void *devinfo)
     {
       TRACE_DEVICE((stderr,"<%p>MPIBcastMdl::postMulticast() dispatch %zu, connection_id %d, msgcount %d, bytes %zu, request %p\n",this,
                     mcast->dispatch, mcast->connection_id, mcast->msgcount, mcast->bytes, &state));

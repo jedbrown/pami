@@ -89,7 +89,8 @@ namespace PAMI
 
         /// \see PAMI::Device::Interface::MultisyncModel::postMultisync
         pami_result_t postMultisync_impl(uint8_t (&state)[MultisyncModel<T_Msgdata_support,T_PWQ_support>::sizeof_msg],
-                                         pami_multisync_t *msync);
+                                         pami_multisync_t *msync,
+					 void             *devinfo=NULL);
 
       protected:
         static unsigned getNextDispatch()
@@ -167,7 +168,8 @@ namespace PAMI
 
       template <bool T_Msgdata_support, bool T_PWQ_support>
       inline pami_result_t MultisyncModel<T_Msgdata_support,T_PWQ_support>::postMultisync_impl(uint8_t (&state)[MultisyncModel::sizeof_msg],
-                                                                                               pami_multisync_t *msync)
+                                                                                               pami_multisync_t *msync,
+											       void             *devinfo)
       {
         TRACE_FN_ENTER();
 

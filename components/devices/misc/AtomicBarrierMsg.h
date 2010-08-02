@@ -136,7 +136,8 @@ public:
         }
 
         inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
-                                               pami_multisync_t *msync);
+                                                pami_multisync_t *msync,
+                                                void *devinfo=NULL);
 
 private:
 	PAMI::Device::Generic::Device *_gd;
@@ -149,7 +150,8 @@ private:
 
 template <class T_Barrier>
 inline pami_result_t PAMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl(uint8_t (&state)[sizeof_msg],
-                                                                                 pami_multisync_t *msync) {
+                                                                                   pami_multisync_t *msync,
+                                                                                   void *devinfo) {
         _barrier.pollInit();
         // See if we can complete the barrier immediately...
         for (int x = 0; x < 32; ++x) {

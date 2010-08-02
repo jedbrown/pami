@@ -106,7 +106,8 @@ namespace PAMI
                                                      void                      *arg);
         /// \see PAMI::Device::Interface::MulticastModel::postMulticast
         pami_result_t postMulticast_impl(uint8_t (&state)[MulticastModel<T_Msgdata_support,T_PWQ_support>::sizeof_msg],
-                                         pami_multicast_t *mcast);
+                                         pami_multicast_t *mcast,
+					 void             *devinfo=NULL);
 
       protected:
         /// \brief MU dispatch function
@@ -199,7 +200,8 @@ namespace PAMI
 
       template <bool T_Msgdata_support, bool T_PWQ_support>
       inline pami_result_t MulticastModel<T_Msgdata_support,T_PWQ_support>::postMulticast_impl(uint8_t (&state)[MulticastModel::sizeof_msg],
-                                                                                               pami_multicast_t *mcast)
+                                                                                               pami_multicast_t *mcast,
+											       void             *devinfo)
       {
         TRACE_FN_ENTER();
 

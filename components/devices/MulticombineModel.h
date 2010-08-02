@@ -42,15 +42,16 @@ namespace PAMI
                 };
                 ~MulticombineModel () {};
                 inline pami_result_t postMulticombine (uint8_t (&state)[T_StateBytes],
-                                                pami_multicombine_t *mcomb);
+                                                       pami_multicombine_t *mcomb,
+                                                       void                *devinfo=NULL);
             }; // class MulticombineModel
 
             template <class T_Model,class T_Device, unsigned T_StateBytes>
-            pami_result_t MulticombineModel<T_Model,T_Device, T_StateBytes>::postMulticombine(
-                                                        uint8_t (&state)[T_StateBytes],
-                                                        pami_multicombine_t *mcomb)
+            pami_result_t MulticombineModel<T_Model,T_Device, T_StateBytes>::postMulticombine(uint8_t (&state)[T_StateBytes],
+                                                                                              pami_multicombine_t *mcomb,
+                                                                                              void                *devinfo)
             {
-              return static_cast<T_Model*>(this)->postMulticombine_impl(state, mcomb);
+              return static_cast<T_Model*>(this)->postMulticombine_impl(state, mcomb, devinfo);
             }
 
         }; // namespace Interface

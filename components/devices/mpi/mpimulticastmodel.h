@@ -48,7 +48,8 @@ namespace PAMI
                 }
 
       inline pami_result_t postMulticast_impl (uint8_t (&state)[mcast_model_state_bytes],
-                                              pami_multicast_t *mcast)
+                                               pami_multicast_t *mcast,
+                                               void *devinfo)
                 {
           pami_result_t      rc         = PAMI_SUCCESS;
           MPIMcastMessage  *msg        = (MPIMcastMessage *) state;

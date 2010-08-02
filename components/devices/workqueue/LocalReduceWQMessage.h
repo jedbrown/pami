@@ -184,7 +184,7 @@ public:
                 }
         }
 
-        inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb);
+  inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb, void *devinfo = NULL);
 
 private:
 	PAMI::Device::Generic::Device *_gd;
@@ -194,7 +194,7 @@ private:
 	LocalReduceWQPendQ _queue;
 }; // class LocalReduceWQModel
 
-inline pami_result_t LocalReduceWQModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb) {
+  inline pami_result_t LocalReduceWQModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb, void *devinfo) {
         PAMI::Topology *results_topo = (PAMI::Topology *)mcomb->results_participants;
         // PAMI_assert((data_topo .U. results_topo).size() == _npeers);
         // This is a LOCAL reduce, results_topo must be a valid local rank!

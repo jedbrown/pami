@@ -36,7 +36,8 @@ namespace PAMI
 
 
           inline pami_result_t postMulticombine_impl (uint8_t (&state)[multicombine_model_state_bytes],
-                                                     pami_multicombine_t *mcombine)
+                                                      pami_multicombine_t *mcombine,
+                                                      void *devinfo)
                 {
 
               return PAMI_SUCCESS;

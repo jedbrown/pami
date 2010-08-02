@@ -44,14 +44,16 @@ namespace PAMI
 
           };
         inline pami_result_t postMultisync(uint8_t (&state)[T_StateBytes],
-                                          pami_multisync_t *msync);
+                                           pami_multisync_t *msync,
+                                           void             *devinfo = NULL);
       }; // class MultisyncModel
 
       template <class T_Model,class T_Device, unsigned T_StateBytes>
       pami_result_t MultisyncModel<T_Model,T_Device,T_StateBytes>::postMultisync(uint8_t (&state)[T_StateBytes],
-                                                                        pami_multisync_t *msync)
+                                                                                 pami_multisync_t *msync,
+                                                                                 void             *devinfo)
       {
-        return static_cast<T_Model*>(this)->postMultisync_impl(state, msync);
+        return static_cast<T_Model*>(this)->postMultisync_impl(state, msync, devinfo);
       }
 
     }; // namespace Interface

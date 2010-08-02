@@ -150,7 +150,8 @@ public:
         }
 
         inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                               pami_multicast_t *mcast);
+                                                pami_multicast_t *mcast,
+                                                void             *devinfo=NULL);
 private:
 	PAMI::Device::Generic::Device *_gd;
         PAMI::Device::WorkQueue::SharedWorkQueue _shared;
@@ -160,7 +161,8 @@ private:
 }; // class LocalBcastWQModel
 
 inline pami_result_t LocalBcastWQModel::postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                                  pami_multicast_t *mcast) {
+                                                           pami_multicast_t *mcast,
+                                                           void *devinfo) {
         // PAMI_assert((src_topo .U. dst_topo).size() == _npeers);
         // use roles to determine root status
         PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
