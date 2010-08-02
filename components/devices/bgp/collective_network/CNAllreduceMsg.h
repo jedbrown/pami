@@ -237,7 +237,7 @@ public:
                 PAMI::Device::BGP::CNAllreduceSetup::initCNAS();
         }
 
-        inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb);
+        inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb, void *devinfo=NULL);
 
 private:
         size_t _me;
@@ -252,7 +252,7 @@ inline void CNAllreduceMessage::__completeThread(CNAllreduceThread *thr) {
 }
 
 // Permit a NULL results_topo to mean "everyone" (i.e. "root == -1")
-inline pami_result_t CNAllreduceModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb) {
+inline pami_result_t CNAllreduceModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb, void *devinfo) {
         PAMI::Device::BGP::CNAllreduceSetup &tas = PAMI::Device::BGP::CNAllreduceSetup::getCNAS(mcomb->dtype, mcomb->optor);
         // PAMI_assert(tas._pre == NULL);
         if (tas._pre) {

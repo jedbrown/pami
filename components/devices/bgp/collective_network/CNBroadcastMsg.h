@@ -233,7 +233,7 @@ public:
                 _me = __global.mapping.task();
         }
 
-        inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg], pami_multicast_t *mcast);
+        inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg], pami_multicast_t *mcast, void *devinfo=NULL);
 
 private:
         size_t _me;
@@ -247,7 +247,7 @@ inline void CNBroadcastMessage::__completeThread(CNBroadcastThread *thr) {
         }
 }
 
-inline pami_result_t CNBroadcastModel::postMulticast_impl(uint8_t (&state)[sizeof_msg], pami_multicast_t *mcast) {
+inline pami_result_t CNBroadcastModel::postMulticast_impl(uint8_t (&state)[sizeof_msg], pami_multicast_t *mcast, void *devinfo) {
         PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
         PAMI::Topology *dst_topo = (PAMI::Topology *)mcast->dst_participants;
         bool doData = (!src_topo || src_topo->isRankMember(_me));
