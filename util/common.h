@@ -251,6 +251,9 @@ inline void local_barriered_shmemzero(void *shmem, size_t len,
 }
 #endif // __local_barriered_shmemzero_fn__
 
+// XL C++ needs to see this prototype
+extern void __sync_synchronize();
+
 ///
 /// \brief Structure to resize, or cast, a pointer to a fixed size array type
 ///
