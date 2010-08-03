@@ -237,7 +237,7 @@ namespace PAMI
               _completionq.pop();
               event->invoke();
               completion_count++;
-
+	      TRACE_FORMAT("Completing event %p, current=%lu\n",event,current);
               // Get the next completion event
               event = (CompletionEvent *) _completionq.peek();
             }
@@ -295,7 +295,7 @@ namespace PAMI
 
           /// \brief The number of contiguous free descriptors after the tail of the injection fifo
           ///
-          /// Reads the shadow value and, if zero, updates from the hardware
+          /// Reads the shadow freespace value.  It does not update from the HW.
           ///
           /// \todo implement this!
           ///
@@ -304,20 +304,26 @@ namespace PAMI
             TRACE_FN_ENTER();
             uint64_t freeSpace = MUSPI_getFreeSpaceFromShadow (_ififo);
 
-            size_t head  = (size_t) MUSPI_getHeadVa ((MUSPI_Fifo_t *)_ififo);
-            size_t tail  = (size_t) MUSPI_getTailVa ((MUSPI_Fifo_t *)_ififo);
-            TRACE_FORMAT("head = %zu, tail = %zu, freeSpace = %ld, _n = %zu", head, tail, freeSpace, _n);
+	    if ( freeSpace == 0 )
+	      {
+		TRACE_FN_EXIT();
+		return 0;
+	      }
 
-            if (((tail + freeSpace) % _n) == (head % _n))
+            size_t tail  = (size_t) MUSPI_getTailVa ((MUSPI_Fifo_t *)_ififo);
+            size_t end   = (size_t) MUSPI_getEndVa ((MUSPI_Fifo_t *)_ififo);
+
+            TRACE_FORMAT("tail = 0x%lx, end = 0x%lx, freeSpace = %lu, freeSpace << BGQ_MU_DESCRIPTOR_SIZE_IN_POW2 = %lu\n", tail, end, freeSpace, freeSpace << BGQ_MU_DESCRIPTOR_SIZE_IN_POW2);
+
+            if ( (tail + (freeSpace << BGQ_MU_DESCRIPTOR_SIZE_IN_POW2)) <= end )
               {
                 // No free space wrap, empty fifo, or full fifo
-                TRACE_FORMAT("free descriptor count = %ld", freeSpace);
+                TRACE_FORMAT("No wrap.  Free descriptor count = %ld\n", freeSpace);
                 TRACE_FN_EXIT();
                 return freeSpace;
               }
 
-            size_t end   = (size_t) MUSPI_getEndVa ((MUSPI_Fifo_t *)_ififo);
-            TRACE_FORMAT("free descriptor count = %zu (end = %zu)", end - tail, end);
+            TRACE_FORMAT("Wrap.  Free descriptor count = %zu\n", (end - tail) >> BGQ_MU_DESCRIPTOR_SIZE_IN_POW2);
             TRACE_FN_EXIT();
             return (end - tail) >> BGQ_MU_DESCRIPTOR_SIZE_IN_POW2;
           };
@@ -335,16 +341,19 @@ namespace PAMI
 
             if (unlikely(freeSpace == 0))
               {
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-                TRACE_STRING("mambo workaround!");
-                _ififo->freeSpace = _n; // mambo doesn't implement the MUSPI correctly
-#else
+		// The following mambo workaround appears to work in mambo now...removing.
+/* #ifdef ENABLE_MAMBO_WORKAROUNDS */
+/*                 TRACE_STRING("mambo workaround!"); */
+/* 		TRACE_FORMAT("getFreeDescriptorCountWithUpdate:  setting freeSpace shadow to %zu.  Actual HW freespace is %lu\n",_n,MUSPI_getHwFreeSpace(_ififo)); */
+/*                 _ififo->freeSpace = _n; // mambo doesn't implement the MUSPI correctly */
+/* #else */
                 _ififo->freeSpace = MUSPI_getHwFreeSpace (_ififo);
-#endif
+		TRACE_FORMAT("getFreeDescriptorCountWithUpdate:  setting freeSpace shadow to %lu\n",_ififo->freeSpace);
+/* #endif */
               }
 
             size_t n = getFreeDescriptorCount ();
-            TRACE_FORMAT("free descriptor count = %zu", n);
+            TRACE_FORMAT("getFreeDescriptorCountWithUpdate: free descriptor count = %zu\n", n);
             TRACE_FN_EXIT();
             return n;
           };
@@ -456,6 +465,8 @@ namespace PAMI
 
             // Turn on the completion status bit for this fifo
             _completion_status |= _channel_set_bit;
+	    
+	    TRACE_FORMAT("Enqueue completion:  state = %p\n",state);
 
             TRACE_FN_EXIT();
           };

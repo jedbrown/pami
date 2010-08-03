@@ -206,7 +206,7 @@ namespace PAMI
             TRACE_FN_ENTER();
 
             TRACE_FORMAT("rfifo_id = %d, rfifo = %p, dest = 0x%08x, channel_cookie = %p", rfifo_id, rfifo, *((uint32_t *)dest), channel_cookie);
-
+	    TRACE_FORMAT("startva=%p, startpa=0x%lx, size-1 = %lx\n",rfifo->_fifo.va_start,rfifo->_fifo.pa_start,rfifo->_fifo.size_1);
             _rfifo_id = rfifo_id;
             _rfifo    = rfifo;
 
@@ -326,13 +326,15 @@ namespace PAMI
             MemoryFifoPacketHeader *hdr = NULL;
 
             MUSPI_RecFifo_t * rfifo = _rfifo;
-            TRACE_FORMAT("MUSPI_RecFifo_t * = %p", rfifo);
+	    TRACE_FORMAT("MUSPI_RecFifo_t * = %p", rfifo);
 
             while ((total_bytes = MUSPI_getAvailableBytes (rfifo, &wrap)) != 0)
               {
                 if (wrap)   //Extra branch over older packet loop
                   {
                     hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketWrap (rfifo, &cur_bytes);
+		    TRACE_HEXDATA(hdr, 64);
+
                     uint16_t id = 0;
                     void *metadata;
                     hdr->getHeaderInfo (id, &metadata);

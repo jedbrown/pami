@@ -88,6 +88,7 @@ namespace PAMI
             TRACE_FN_ENTER();
 
             size_t ndesc = _channel.getFreeDescriptorCountWithUpdate ();
+	    TRACE_FORMAT("InjectDescriptorMessage:  advance:  ndesc=%zu\n",ndesc);
 
             // Clone the message descriptors directly into the injection fifo.
             MUSPI_DescriptorBase * d =

@@ -70,7 +70,7 @@ namespace PAMI
 
             while ((msg = (MU::MessageQueue::Element *) dequeue()) != NULL)
               {
-                if (msg->advance())
+                if (msg->advance() == false)
                   {
                     push (msg);
                     return true;
