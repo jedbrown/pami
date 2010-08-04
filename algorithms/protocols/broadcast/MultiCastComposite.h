@@ -357,7 +357,7 @@ namespace CCMI
           _minfo.data               = (pami_pipeworkqueue_t *)&_data;
           _minfo.results            = (pami_pipeworkqueue_t *)&_results;
           _minfo.optor              = PAMI_BOR;
-#ifdef ENABLE_MAMBO_WORKAROUNDS  // doesn't support chars on MU
+#ifdef __pami_target_bgq__  // doesn't support chars on MU
           _minfo.dtype              = PAMI_UNSIGNED_INT;
           _minfo.count              = _bytes/4;
 /// \todo PAMI_assertf(!(_bytes%4),"Multiple of 4 bytes only");
