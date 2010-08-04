@@ -298,7 +298,7 @@ namespace PAMI
         memset((void *)&collective, 0, sizeof(collective));
 
         collective.Op_Code = MUHWI_COLLECTIVE_OP_CODE_SIGNED_ADD;/// \todo Ignored for T_Collective == MUHWI_COLLECTIVE_TYPE_BROADCAST
-        collective.Word_Length = 0; /// \todo Ignored for T_Collective == MUHWI_COLLECTIVE_TYPE_BROADCAST
+        collective.Word_Length = 4; /// \todo Ignored for T_Collective == MUHWI_COLLECTIVE_TYPE_BROADCAST
         collective.Class_Route = 0;
         collective.Misc = T_Channel | T_Collective;
         collective.Skip = 0;
@@ -342,6 +342,10 @@ namespace PAMI
         hdr = (MemoryFifoPacketHeader *) & _multipkt.PacketHeader;
         hdr->setSinglePacket (false);
 
+        TRACE_FORMAT("<Collective %u/ Channel %u>", T_Collective, T_Channel);
+        //MUSPI_DescriptorDumpHex((char *)"_singlepkt", &_singlepkt);
+        //MUSPI_DescriptorDumpHex((char *)"_multipkt ", &_multipkt);
+
         TRACE_FN_EXIT();
       };
 
@@ -373,7 +377,10 @@ namespace PAMI
           hdr = (MemoryFifoPacketHeader *) & _multipkt.PacketHeader;
           hdr->setDispatchId (id);
 
-          TRACE_FORMAT("register packet handler success. dispatch id = %d", id);
+          TRACE_FORMAT("<%u/%u> register packet handler success. dispatch id = %d", T_Collective, T_Channel, id);
+          
+          //MUSPI_DescriptorDumpHex((char *)"_singlepkt", &_singlepkt);
+          //MUSPI_DescriptorDumpHex((char *)"_multipkt ", &_multipkt);
           TRACE_FN_EXIT();
 
           return PAMI_SUCCESS;
@@ -415,7 +422,7 @@ namespace PAMI
           uint64_t paddr = 0;
 
           channel.getDescriptorPayload (desc, vaddr, paddr);
-          TRACE_FORMAT("desc = %p, vaddr = %p, paddr = %ld (%p)", desc, vaddr, paddr, (void *)paddr);
+          TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
 
           // Clone the single-packet model descriptor into the injection fifo
           MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
@@ -691,7 +698,8 @@ namespace PAMI
           // Copy the payload into the immediate payload buffer.
           memcpy (vaddr, payload, length);
 
-          TRACE_FORMAT("desc = %p, vaddr = %p, payload = %p, length = %zu", desc, vaddr, payload, length);
+          TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, payload = %p, length = %zu", T_Collective, T_Channel, desc, vaddr, payload, length);
+          //MUSPI_DescriptorDumpHex((char *)"desc", desc);
           // Finally, advance the injection fifo tail pointer. This action
           // completes the injection operation.
           channel.injFifoAdvanceDesc ();
@@ -732,7 +740,7 @@ namespace PAMI
           msg->desc[0].setPayload (paddr, length);
 #endif
 
-          TRACE_FORMAT("desc = %p, paddr = %ld, payload = %p, length = %zu", & msg->desc[0], paddr, payload, length);
+          TRACE_FORMAT("<%u/%u> desc = %p, paddr = %ld, payload = %p, length = %zu", T_Collective, T_Channel, & msg->desc[0], paddr, payload, length);
           // Copy the metadata into the packet header.
           MemoryFifoPacketHeader * hdr =
           (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
