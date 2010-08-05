@@ -445,24 +445,12 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
           for (i = 0; i < fullSize; i++)
             {
 
-#if 0 //def ENABLE_MAMBO_WORKAROUNDS
-
-              e = mapcache->torus.task2coords[i].mapped.e = (i / peerSize) % eSize;
-              d = mapcache->torus.task2coords[i].mapped.d = (i / (peerSize * eSize)) % dSize;
-              c = mapcache->torus.task2coords[i].mapped.c = (i / (peerSize * eSize * dSize)) % cSize;
-              b = mapcache->torus.task2coords[i].mapped.b = (i / (peerSize * eSize * dSize * cSize)) % bSize;
-              a = mapcache->torus.task2coords[i].mapped.a = (i / (peerSize * eSize * dSize * cSize * bSize)) % aSize;
-              t = mapcache->torus.task2coords[i].mapped.t = i % tSize;
-              PAMI_assertf((i == ESTIMATED_TASK(a, b, c, d, e, t, aSize, bSize, cSize, dSize, eSize, tSize)), "Task %zu == Estimated task %zu\n", i, ESTIMATED_TASK(a, b, c, d, e, t, aSize, bSize, cSize, dSize, eSize, tSize));
-
-#else
               a = mapcache->torus.task2coords[i].mapped.a;
               b = mapcache->torus.task2coords[i].mapped.b;
               c = mapcache->torus.task2coords[i].mapped.c;
               d = mapcache->torus.task2coords[i].mapped.d;
               e = mapcache->torus.task2coords[i].mapped.e;
               t = mapcache->torus.task2coords[i].mapped.t;
-#endif
               TRACE_ERR( (stderr, "Global::initializeMapCache() task = %zu, estimated task = %zu, coords{%zu,%zu,%zu,%zu,%zu,%zu}\n", i, ESTIMATED_TASK(a, b, c, d, e, t, aSize, bSize, cSize, dSize, eSize, tSize), a, b, c, d, e, t));
 
               // Set the bit corresponding to the physical node of this rank,

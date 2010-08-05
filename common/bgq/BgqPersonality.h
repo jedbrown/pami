@@ -35,15 +35,11 @@
 #include <kernel/location.h>
 #include <kernel/process.h>
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-#undef TRACE_MAMBO
-#define TRACE_MAMBO(x) //fprintf x
-#else
-#undef TRACE_MAMBO
-#define TRACE_MAMBO(x)
-#endif
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
 
 //#define FAKE_PERSONALITY
+
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 #include <hwi/include/bqc/nd_500_dcr.h>
 #endif
@@ -56,6 +52,7 @@ namespace PAMI
 
       BgqPersonality ()
       {
+
         Personality_t * p = (Personality_t *) this;
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
@@ -64,15 +61,33 @@ namespace PAMI
 
         _is_mambo = false; // Indicates whether mambo is being used
 
-        char* var = getenv("BG_PROCESSESPERNODE");
-        TRACE_MAMBO((stderr, "BG_PROCESSESPERNODE %s\n", var ? var : "NULL"));
+        uint64_t p1 = Kernel_Config.NodeConfig & PERS_ENABLE_Mambo;
 
-        var = getenv("BG_SHAREDMEMSIZE");
-        TRACE_MAMBO((stderr, "BG_SHAREDMEMSIZE %s\n", var ? var : "NULL"));
+        if(p1) _is_mambo = true;
 
-        var = getenv("BG_MEMSIZE");
-        TRACE_MAMBO((stderr, "BG_MEMSIZE %s\n", var ? var : "NULL"));
+        TRACE_ERR((stderr, "BGQPersonality Kernel_Config.NodeConfig %#llX\n", (unsigned long long)(Kernel_Config.NodeConfig)));
+        TRACE_ERR((stderr, "BGQPersonality Kernel_Config.TraceConfig %#llX\n", (unsigned long long)(Kernel_Config.TraceConfig)));
+        TRACE_ERR((stderr, "BGQPersonality Network_Config.MuFlags %#llX\n", (unsigned long long)(Network_Config.MuFlags)));
+        TRACE_ERR((stderr, "BGQPersonality Network_Config.NetFlags %#llX\n", (unsigned long long)(Network_Config.NetFlags)));
 
+        TRACE_ERR((stderr, "BGQPersonality is mambo enabled: %s\n", _is_mambo ? "true" : "false"));
+
+        TRACE_ERR((stderr, "Network_Config Coord A = %#x\n", Network_Config.Acoord));
+        TRACE_ERR((stderr, "Network_Config Coord B = %#x\n", Network_Config.Bcoord));
+        TRACE_ERR((stderr, "Network_Config Coord C = %#x\n", Network_Config.Ccoord));
+        TRACE_ERR((stderr, "Network_Config Coord D = %#x\n", Network_Config.Dcoord));
+        TRACE_ERR((stderr, "Network_Config Coord E = %#x\n", Network_Config.Ecoord));
+
+        TRACE_ERR((stderr, "Network_Config Nodes A = %#x\n", Network_Config.Anodes));
+        TRACE_ERR((stderr, "Network_Config Nodes B = %#x\n", Network_Config.Bnodes));
+        TRACE_ERR((stderr, "Network_Config Nodes C = %#x\n", Network_Config.Cnodes));
+        TRACE_ERR((stderr, "Network_Config Nodes D = %#x\n", Network_Config.Dnodes));
+        TRACE_ERR((stderr, "Network_Config Nodes E = %#x\n", Network_Config.Enodes));
+
+        if (_is_mambo)
+          fprintf(stderr, "Running mambo circumventions\n");
+
+#if 0 // no longer need to set personality from ND 500 if using runmm correctly
         // this seems really lame...
         if (Network_Config.Anodes == 0) Network_Config.Anodes = 1;
 
@@ -84,40 +99,18 @@ namespace PAMI
 
         if (Network_Config.Enodes == 0) Network_Config.Enodes = 1;
 
-        TRACE_MAMBO((stderr, "BGQPersonality Kernel_Config.NodeConfig %#llX\n", (unsigned long long)(Kernel_Config.NodeConfig)));
-        TRACE_MAMBO((stderr, "BGQPersonality Kernel_Config.TraceConfig %#llX\n", (unsigned long long)(Kernel_Config.TraceConfig)));
-        TRACE_MAMBO((stderr, "BGQPersonality Network_Config.MuFlags %#llX\n", (unsigned long long)(Network_Config.MuFlags)));
-        TRACE_MAMBO((stderr, "BGQPersonality Network_Config.NetFlags %#llX\n", (unsigned long long)(Network_Config.NetFlags)));
-
-        uint64_t p1 = Kernel_Config.NodeConfig & PERS_ENABLE_Mambo;
-
-        if (p1) _is_mambo = true;
-
-        TRACE_MAMBO((stderr, "BGQPersonality is mambo enabled: %s\n", _is_mambo ? "true" : "false"));
-
-        TRACE_MAMBO((stderr, "Network_Config Coord A = %#x\n", Network_Config.Acoord));
-        TRACE_MAMBO((stderr, "Network_Config Coord B = %#x\n", Network_Config.Bcoord));
-        TRACE_MAMBO((stderr, "Network_Config Coord C = %#x\n", Network_Config.Ccoord));
-        TRACE_MAMBO((stderr, "Network_Config Coord D = %#x\n", Network_Config.Dcoord));
-        TRACE_MAMBO((stderr, "Network_Config Coord E = %#x\n", Network_Config.Ecoord));
-
-        TRACE_MAMBO((stderr, "Network_Config Nodes A = %#x\n", Network_Config.Anodes));
-        TRACE_MAMBO((stderr, "Network_Config Nodes B = %#x\n", Network_Config.Bnodes));
-        TRACE_MAMBO((stderr, "Network_Config Nodes C = %#x\n", Network_Config.Cnodes));
-        TRACE_MAMBO((stderr, "Network_Config Nodes D = %#x\n", Network_Config.Dnodes));
-        TRACE_MAMBO((stderr, "Network_Config Nodes E = %#x\n", Network_Config.Enodes));
-
         if (_is_mambo)
-          {
+        {
+          fprintf(stderr, "Running mambo circumventions\n");
+
             unsigned dcr_num = ND_500_DCR_base + ND_500_DCR__CTRL_COORDS_offset;
 
-            // funky code to avoid "unused variable" warning when TRACE_MAMBO is off.
+            // funky code to avoid "unused variable" warning when TRACE_ERR is off.
             unsigned long long dcr = 0;
             dcr = DCRReadUser(dcr_num);
 
-            TRACE_MAMBO((stderr, "BGQPersonality() NODE_COORDINATES DCR = 0x%016llx\n", dcr));
+            TRACE_ERR((stderr, "BGQPersonality() NODE_COORDINATES DCR = 0x%016llx\n", dcr));
 
-#if 0 // no longer need to set personality from ND 500 if using runmm correctly
             Network_Config.Acoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_A_get(dcr);
             Network_Config.Bcoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_B_get(dcr);
             Network_Config.Ccoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_C_get(dcr);
@@ -129,19 +122,18 @@ namespace PAMI
             Network_Config.Cnodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_C_get(dcr) + 1;
             Network_Config.Dnodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_D_get(dcr) + 1;
             Network_Config.Enodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_E_get(dcr) + 1;
-#endif
 
-            TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_A = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_A_get(dcr)));
-            TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_B = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_B_get(dcr)));
-            TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_C = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_C_get(dcr)));
-            TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_D = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_D_get(dcr)));
-            TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_E = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_E_get(dcr)));
+            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_A = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_A_get(dcr)));
+            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_B = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_B_get(dcr)));
+            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_C = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_C_get(dcr)));
+            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_D = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_D_get(dcr)));
+            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_E = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_E_get(dcr)));
 
-            TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_A = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_A_get(dcr)));
-            TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_B = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_B_get(dcr)));
-            TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_C = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_C_get(dcr)));
-            TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_D = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_D_get(dcr)));
-            TRACE_MAMBO((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_E = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_E_get(dcr)));
+            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_A = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_A_get(dcr)));
+            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_B = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_B_get(dcr)));
+            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_C = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_C_get(dcr)));
+            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_D = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_D_get(dcr)));
+            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_E = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_E_get(dcr)));
 
             PAMI_assertf(Network_Config.Acoord < Network_Config.Anodes, "assert Network_Config.Acoord(%#X) < Network_Config.Anodes(%#X)\n", Network_Config.Acoord, Network_Config.Anodes);
             PAMI_assertf(Network_Config.Bcoord < Network_Config.Bnodes, "assert Network_Config.Bcoord(%#X) < Network_Config.Bnodes(%#X)\n", Network_Config.Bcoord, Network_Config.Bnodes);
@@ -149,6 +141,7 @@ namespace PAMI
             PAMI_assertf(Network_Config.Dcoord < Network_Config.Dnodes, "assert Network_Config.Dcoord(%#X) < Network_Config.Dnodes(%#X)\n", Network_Config.Dcoord, Network_Config.Dnodes);
             PAMI_assertf(Network_Config.Ecoord < Network_Config.Enodes, "assert Network_Config.Ecoord(%#X) < Network_Config.Enodes(%#X)\n", Network_Config.Ecoord, Network_Config.Enodes);
           }
+#endif
 
 #else // no mambo workarounds..
 
@@ -182,7 +175,7 @@ namespace PAMI
         // Set the t coord
         _tCoord =  Kernel_MyTcoord();
 
-        TRACE_MAMBO((stderr, "BGQPersonality() tid %zu, t %zu, core %zu, thread %zu, tSize %zu\n", tid(),  tCoord(),  core(), thread(), tSize()));
+        TRACE_ERR((stderr, "BGQPersonality() tid %zu, t %zu, core %zu, thread %zu, tSize %zu\n", tid(),  tCoord(),  core(), thread(), tSize()));
 
         _torusA = (bool) (ND_ENABLE_TORUS_DIM_A & Network_Config.NetFlags);
         _torusB = (bool) (ND_ENABLE_TORUS_DIM_B & Network_Config.NetFlags);
@@ -190,7 +183,7 @@ namespace PAMI
         _torusD = (bool) (ND_ENABLE_TORUS_DIM_D & Network_Config.NetFlags);
         _torusE = (bool) (ND_ENABLE_TORUS_DIM_E & Network_Config.NetFlags);
 
-        TRACE_MAMBO((stderr, "BGQPersonality() _torusA %d, _torusB %d, _torusC %d, _torusD %d, _torusE %d\n", _torusA, _torusB, _torusC, _torusD, _torusE));
+        TRACE_ERR((stderr, "BGQPersonality() _torusA %d, _torusB %d, _torusC %d, _torusD %d, _torusE %d\n", _torusA, _torusB, _torusC, _torusD, _torusE));
 
       };
 
@@ -441,7 +434,6 @@ namespace PAMI
 #if 0
 void PAMI::BgqPersonality::location (char location[], size_t size)
 {
-#if 0
   _BGP_Personality_t * p = (_BGP_Personality_t *) this;
   char tmp[BGPPERSONALITY_MAX_LOCATION+1];
   BGP_Personality_getLocationString(p, tmp);
@@ -449,12 +441,10 @@ void PAMI::BgqPersonality::location (char location[], size_t size)
   snprintf (location, MIN(size, BGPPERSONALITY_MAX_LOCATION), " %s", tmp);
 
   return;
-#endif
 };
 
 void PAMI::BgqPersonality::dumpPersonality ()
 {
-#if 0
   _BGP_Personality_t * p = (_BGP_Personality_t *) this;
   int i, tmp;
 
@@ -555,7 +545,6 @@ void PAMI::BgqPersonality::dumpPersonality ()
   printf(" NFSMountDir:          > %s < \n", p->Ethernet_Config.NFSMountDir  );
 
   return;
-#endif
 };
 #endif
 #endif // __pami_components_sysdep_bgq_bgqpersonnality_h__

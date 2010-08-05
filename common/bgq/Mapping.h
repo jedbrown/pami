@@ -83,7 +83,7 @@ namespace PAMI
 
       coord2node (_a, _b, _c, _d, _e, _t,      //fix?
                   _nodeaddr.global, _nodeaddr.local);
-      TRACE_MAMBO((stderr, "Mapping() coords(a,b,c,d,e,t):(%zu %zu %zu %zu %zu %zu), node: (%#lX %#lX)\n", _a, _b, _c, _d, _e, _t, _nodeaddr.global, _nodeaddr.local));
+      TRACE_ERR((stderr, "Mapping() coords(a,b,c,d,e,t):(%zu %zu %zu %zu %zu %zu), node: (%#lX %#lX)\n", _a, _b, _c, _d, _e, _t, _nodeaddr.global, _nodeaddr.local));
 
     };
 
@@ -654,13 +654,13 @@ pami_result_t PAMI::Mapping::init(bgq_mapcache_t &mapcache,
     esize =_pers.eSize(),
     tsize =_pers.tSize();
 
-  TRACE_MAMBO((stderr,"Mapping() size a/b/c/d/e/t = %zu/%zu/%zu/%zu/%zu/%zu\n", _pers.aSize(), bsize, csize, dsize, esize, tsize));
+  TRACE_ERR((stderr,"Mapping() size a/b/c/d/e/t = %zu/%zu/%zu/%zu/%zu/%zu\n", _pers.aSize(), bsize, csize, dsize, esize, tsize));
 
   size_t hash = ESTIMATED_TASK(_a,_b,_c,_d,_e,_t, _pers.aSize(),bsize,csize,dsize,esize,tsize); // asize isn't used but just in case...
 
   _task = _mapcache.torus.coords2task[hash];
 
-  TRACE_MAMBO((stderr,"Mapping::init() task %zu, estimated task %zu, size %zu, peers %zu\n", _task, hash, _mapcache.size, _mapcache.local_size));
+  TRACE_ERR((stderr,"Mapping::init() task %zu, estimated task %zu, size %zu, peers %zu\n", _task, hash, _mapcache.size, _mapcache.local_size));
 
   return PAMI_SUCCESS;
 }

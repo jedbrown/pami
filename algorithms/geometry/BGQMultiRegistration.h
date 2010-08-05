@@ -88,39 +88,6 @@ namespace PAMI
     ShmemMcastMetaData,
     CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCastFactory;
 
-    //----------------------------------------------------------------------------
-    // Shmem allsided multicast built on active message multicast with an
-    // synchronizing multisync
-    //  Unused - but leave it here until we finalize the shmem device
-    //----------------------------------------------------------------------------
-    void ShmemMcast2MetaData(pami_metadata_t *m)
-    {
-//      pami_ca_set(&(m->geometry), 0);
-      pami_ca_set(&(m->buffer), 0);
-      pami_ca_set(&(m->misc), 0);
-//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
-      strncpy(&m->name[0], "ShmemMultiCast2Composite", 32);
-    }
-
-    typedef CCMI::Adaptor::CollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry>,
-    ShmemMcast2MetaData,
-    CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCast2Factory;
-
-    //----------------------------------------------------------------------------
-    // Shmem allsided multicast built on multicombine (BOR)
-    //----------------------------------------------------------------------------
-    void ShmemMcast3MetaData(pami_metadata_t *m)
-    {
-//      pami_ca_set(&(m->geometry), 0);
-      pami_ca_set(&(m->buffer), 0);
-      pami_ca_set(&(m->misc), 0);
-//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
-      strncpy(&m->name[0], "ShmemMultiCast3Composite", 32);
-    }
-
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite3,
-    ShmemMcast3MetaData,
-    CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCast3Factory;
 
     //----------------------------------------------------------------------------
     // MU allsided multisync
@@ -272,23 +239,6 @@ namespace PAMI
     };
 
     //----------------------------------------------------------------------------
-    // MU allsided multicast built on multicombine (BOR)
-    //----------------------------------------------------------------------------
-    void MUMcast3MetaData(pami_metadata_t *m)
-    {
-//      pami_ca_set(&(m->geometry), 0);
-      pami_ca_set(&(m->buffer), 0);
-      pami_ca_set(&(m->misc), 0);
-//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
-      strncpy(&m->name[0], "MUMultiCast3Composite", 32);
-    }
-
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite3,
-    MUMcast3MetaData,
-    CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiCast3Factory;
-
-
-    //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
     //----------------------------------------------------------------------------
     template <class T_Geometry, class T_ShmemNativeInterface, class T_MUNativeInterface>
@@ -313,13 +263,10 @@ namespace PAMI
             _shmem_ni(shmem_ni),
             _shmem_msync_factory(&_sconnmgr, _shmem_ni),
             _shmem_mcast_factory(&_sconnmgr, _shmem_ni),
-//    _shmem_mcast2_factory(&_sconnmgr, _shmem_ni),
-            _shmem_mcast3_factory(&_sconnmgr, _shmem_ni),
             _shmem_mcomb_factory(&_sconnmgr, _shmem_ni),
             _mu_ni(mu_ni),
             _mu_msync_factory(&_sconnmgr, _mu_ni),
             _mu_mcast2_factory(NULL),
-            _mu_mcast3_factory(&_sconnmgr, _mu_ni),
             _mu_mcomb_factory(&_sconnmgr, _mu_ni)
         {
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()\n", this));
@@ -376,8 +323,6 @@ namespace PAMI
 
                       // Add Broadcasts
                       geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast_factory, _context_id);
-//          geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast2_factory,_context_id);
-//          geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast3_factory,_context_id);
 
                       // Add Allreduces
                       geometry->addCollective(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
@@ -404,7 +349,6 @@ namespace PAMI
 
                       // Add Broadcasts
                       geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory, _context_id);
-                      geometry->addCollective(PAMI_XFER_BROADCAST, &_mu_mcast3_factory, _context_id);
 
                       // Add Allreduces
                       geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
@@ -456,7 +400,6 @@ namespace PAMI
 
                       // Add Broadcasts
                       geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory, _context_id);
-                      geometry->addCollective(PAMI_XFER_BROADCAST, &_mu_mcast3_factory, _context_id);
 
                       // Add Allreduces
                       geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
@@ -498,8 +441,6 @@ namespace PAMI
 
         // CCMI Broadcast Interfaces
         ShmemMultiCastFactory                           _shmem_mcast_factory;
-//    ShmemMultiCast2Factory                          _shmem_mcast2_factory;
-        ShmemMultiCast3Factory                          _shmem_mcast3_factory;
 
         // CCMI Allreduce Interface
         ShmemMultiCombineFactory                        _shmem_mcomb_factory;
@@ -514,7 +455,6 @@ namespace PAMI
         // CCMI Broadcast Interfaces
         MUMultiCast2Factory                            *_mu_mcast2_factory;
         uint8_t                                         _mu_mcast2_factory_storage[sizeof(MUMultiCast2Factory)];
-        MUMultiCast3Factory                             _mu_mcast3_factory;
 
         // CCMI Allreduce Interface
         MUMultiCombineFactory                           _mu_mcomb_factory;

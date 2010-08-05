@@ -214,14 +214,6 @@ int main(int argc, char ** argv)
     status = nativeInterface.multicast(&mcast); // this version of ni allocates/frees our request storage for us.
   }
 
-  if (dst_subtopology.isRankMember(task_id)) ;
-  else
-  {
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-    mamboSleep(10);
-#endif // ENABLE_MAMBO_WORKAROUNDS
-  }
-
   DBG_FPRINTF((stderr,"%s:before advance\n",__PRETTY_FUNCTION__));
   while (_doneCountdown)
   {
@@ -262,9 +254,6 @@ int main(int argc, char ** argv)
       fprintf(stderr, "<%3.3d>PASS bytesConsumed = %zu, bytesProduced = %zu\n",__LINE__, bytesConsumed, bytesProduced);
   }
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-  mamboSleep(5);
-#endif // ENABLE_MAMBO_WORKAROUNDS
   DBG_FPRINTF((stderr, "%s:%s: task %zu exiting\n",__FILE__,__PRETTY_FUNCTION__, task_id));
   return 0;
 // ------------------------------------------------------------------------

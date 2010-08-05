@@ -167,11 +167,14 @@ namespace PAMI
             TRACE_HEXDATA(&self, 64);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-            // mambo does not process zero byte memfifo packets.
-            TRACE_STRING("mambo workaround!");
-            Kernel_MemoryRegion_t  mregion;
-            Kernel_CreateMemoryRegion ( &mregion, this, 1 );
-            self.setPayload ((uint64_t)mregion.BasePa, 1);
+            if (__global.personality._is_mambo) /// \todo mambo hack
+            {
+              // mambo does not process zero byte memfifo packets.
+              TRACE_STRING("mambo workaround!");
+              Kernel_MemoryRegion_t  mregion;
+              Kernel_CreateMemoryRegion ( &mregion, this, 1 );
+              self.setPayload ((uint64_t)mregion.BasePa, 1);
+            }
 #endif
 
             TRACE_STRING("construct 'notify self' descriptor");

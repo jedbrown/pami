@@ -33,24 +33,35 @@ static double timer()
 #include "init_util.h"
 #include "coll_util.h"
 
-#ifdef __pami_target_bgq__
-#ifdef ENABLE_MAMBO_WORKAROUNDS
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)
 #endif
+
+// Testcase delay/sleep function (n seconds)
+#define delayTest(n) sleep(n)
+
+// Redefine delay/sleep for bgq mambo workarounds
+#ifdef __pami_target_bgq__
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+extern unsigned __isMambo();
 // sleep() doesn't appear to work in mambo right now.  A hackey simulation...
-#define sleep(x) _mamboSleep(x, __LINE__)
+#undef delayTest 
+#define delayTest(n) _mamboSleep(n, __LINE__)
 unsigned _mamboSleep(unsigned seconds, unsigned from)
 {
-  double dseconds = ((double)seconds)/1000; //mambo seconds are loooong.
-  double start = PAMI_Wtime (), d=0;
-  while (PAMI_Wtime() < (start+dseconds))
+  if (__isMambo()) /// \todo mambo hack
   {
-    int i=0;
-    for (; i<200000; ++i) ++d;
-    TRACE_ERR((stderr, "%s:%d sleep - %.0f, start %f, %f < %f\n",__PRETTY_FUNCTION__,from,d,start,PAMI_Wtime(),start+dseconds));
+    double dseconds = ((double)seconds)/1000; //mambo seconds are loooong.
+    double start = PAMI_Wtime (), d=0;
+    while (PAMI_Wtime() < (start+dseconds))
+    {
+      int i=0;
+      for (; i<200000; ++i) ++d;
+      TRACE_ERR((stderr, "%s:%d sleep - %.0f, start %f, %f < %f\n",__PRETTY_FUNCTION__,from,d,start,PAMI_Wtime(),start+dseconds));
+    }
+    return 0;
   }
-  return 0;
+  else return sleep(seconds);
 }
 #endif
 #endif

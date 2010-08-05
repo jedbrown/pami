@@ -176,7 +176,7 @@ namespace PAMI
         }
 #ifdef ENABLE_MAMBO_WORKAROUNDS
         // Mambo can not handle zero-byte payloads.
-        if (bytes == 0)
+        if ((__global.personality._is_mambo) && (bytes == 0))
         {
           payloadPa = (uint64_t) &desc->PacketHeader;
           bytes  = _receive_state->mu_word_length;

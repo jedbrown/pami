@@ -18,21 +18,12 @@
 //define this if you want to validate the data for unsigned sums
 #define CHECK_DATA
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-#define FULL_TEST
-#define COUNT      1024
-#define MAXBUFSIZE COUNT*16
-#define NITERLAT   50
-#define NITERBW    10
-#define CUTOFF     512
-#else
 #define FULL_TEST
 #define COUNT      65536
 #define MAXBUFSIZE COUNT*16
 #define NITERLAT   1000
 #define NITERBW    10
 #define CUTOFF     65536
-#endif
 
 pami_op op_array[] =
 {

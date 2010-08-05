@@ -48,19 +48,22 @@ PAMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
   _rget_desc_model.setRemoteGetFields( &rget );
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-  // These are requried in order to work around mambo bugs
-
-  // TODO - Calculate the best torusInjectionFifoMap.
-  // For now, hard code to A-minus direction.
-  _rget_desc_model.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
-
-  // TODO - Calculate the best torus hints.
-  // For now, hard code to A-minus direction.
-  _rget_desc_model.setHints ( MUHWI_PACKET_HINT_AM |
-                              MUHWI_PACKET_HINT_B_NONE |
-                              MUHWI_PACKET_HINT_C_NONE |
-                              MUHWI_PACKET_HINT_D_NONE,
-                              MUHWI_PACKET_HINT_E_NONE );
+  if (__global.personality._is_mambo)
+  {
+    // These are requried in order to work around mambo bugs
+  
+    // TODO - Calculate the best torusInjectionFifoMap.
+    // For now, hard code to A-minus direction.
+    _rget_desc_model.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
+  
+    // TODO - Calculate the best torus hints.
+    // For now, hard code to A-minus direction.
+    _rget_desc_model.setHints ( MUHWI_PACKET_HINT_AM |
+                                MUHWI_PACKET_HINT_B_NONE |
+                                MUHWI_PACKET_HINT_C_NONE |
+                                MUHWI_PACKET_HINT_D_NONE,
+                                MUHWI_PACKET_HINT_E_NONE );
+  }
 #endif
 
 
@@ -107,19 +110,22 @@ PAMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
   _rput_desc_model.setRecCounterBaseAddressInfo (1, 0);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-  // These are requried in order to work around mambo bugs
-
-  // TODO - Calculate the best torusInjectionFifoMap.
-  // For now, hard code to A-minus direction.
-  _rput_desc_model.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
-
-  // TODO - Calculate the best torus hints.
-  // For now, hard code to A-minus direction.
-  _rput_desc_model.setHints ( MUHWI_PACKET_HINT_AM |
-                              MUHWI_PACKET_HINT_B_NONE |
-                              MUHWI_PACKET_HINT_C_NONE |
-                              MUHWI_PACKET_HINT_D_NONE,
-                              MUHWI_PACKET_HINT_E_NONE );
+  if (__global.personality._is_mambo)
+  {
+    // These are requried in order to work around mambo bugs
+  
+    // TODO - Calculate the best torusInjectionFifoMap.
+    // For now, hard code to A-minus direction.
+    _rput_desc_model.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
+  
+    // TODO - Calculate the best torus hints.
+    // For now, hard code to A-minus direction.
+    _rput_desc_model.setHints ( MUHWI_PACKET_HINT_AM |
+                                MUHWI_PACKET_HINT_B_NONE |
+                                MUHWI_PACKET_HINT_C_NONE |
+                                MUHWI_PACKET_HINT_D_NONE,
+                                MUHWI_PACKET_HINT_E_NONE );
+  }
 #endif
 
 
@@ -153,19 +159,22 @@ PAMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
   _rmem_desc_model.setDestination (dst);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-  // These are requried in order to work around mambo bugs
-
-  // TODO - Calculate the best torusInjectionFifoMap.
-  // For now, hard code to A-minus direction.
-  _rmem_desc_model.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
-
-  // TODO - Calculate the best torus hints.
-  // For now, hard code to A-minus direction.
-  _rmem_desc_model.setHints ( MUHWI_PACKET_HINT_AM |
-                              MUHWI_PACKET_HINT_B_NONE |
-                              MUHWI_PACKET_HINT_C_NONE |
-                              MUHWI_PACKET_HINT_D_NONE,
-                              MUHWI_PACKET_HINT_E_NONE );
+  if (__global.personality._is_mambo)
+  {
+    // These are requried in order to work around mambo bugs
+  
+    // TODO - Calculate the best torusInjectionFifoMap.
+    // For now, hard code to A-minus direction.
+    _rmem_desc_model.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
+  
+    // TODO - Calculate the best torus hints.
+    // For now, hard code to A-minus direction.
+    _rmem_desc_model.setHints ( MUHWI_PACKET_HINT_AM |
+                                MUHWI_PACKET_HINT_B_NONE |
+                                MUHWI_PACKET_HINT_C_NONE |
+                                MUHWI_PACKET_HINT_D_NONE,
+                                MUHWI_PACKET_HINT_E_NONE );
+  }
 #endif
 
 
@@ -190,19 +199,22 @@ PAMI::Device::MU::MUDmaModel::MUDmaModel (MUDevice & device) :
   _dput_desc_model.setRecCounterBaseAddressInfo (1, 0);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-  // These are requried in order to work around mambo bugs
-
-  // TODO - Calculate the best torusInjectionFifoMap.
-  // For now, hard code to A-minus direction.
-  _dput_desc_model.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
-
-  // TODO - Calculate the best torus hints.
-  // For now, hard code to A-minus direction.
-  _dput_desc_model.setHints ( MUHWI_PACKET_HINT_AM |
-                              MUHWI_PACKET_HINT_B_NONE |
-                              MUHWI_PACKET_HINT_C_NONE |
-                              MUHWI_PACKET_HINT_D_NONE,
-                              MUHWI_PACKET_HINT_E_NONE );
+  if (__global.personality._is_mambo)
+  {
+    // These are requried in order to work around mambo bugs
+  
+    // TODO - Calculate the best torusInjectionFifoMap.
+    // For now, hard code to A-minus direction.
+    _dput_desc_model.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
+  
+    // TODO - Calculate the best torus hints.
+    // For now, hard code to A-minus direction.
+    _dput_desc_model.setHints ( MUHWI_PACKET_HINT_AM |
+                                MUHWI_PACKET_HINT_B_NONE |
+                                MUHWI_PACKET_HINT_C_NONE |
+                                MUHWI_PACKET_HINT_D_NONE,
+                                MUHWI_PACKET_HINT_E_NONE );
+  }
 #endif
 };
 

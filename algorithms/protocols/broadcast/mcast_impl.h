@@ -36,28 +36,6 @@ namespace CCMI
                                                  mcast_broadcast_md,
                                                  ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MultiCastFactory;
 
-// Needs to be updated for Trac #180 if it's to be used.
-//    void mcast2_broadcast_md(pami_metadata_t *m)
-//    {
-//      TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
-//      // \todo:  fill in other metadata
-//      strcpy(&m->name[0],"CCMIMcast2Broadcast");
-//    }
-//
-//    typedef AllSidedCollectiveProtocolFactoryT<MultiCastComposite2,
-//                                               mcast2_broadcast_md,
-//                                               ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MultiCast2Factory;
-
-      void mcast3_broadcast_md(pami_metadata_t *m)
-      {
-        TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
-        // \todo:  fill in other metadata
-        strcpy(&m->name[0],"CCMIMcast3Broadcast");
-      }
-
-      typedef AllSidedCollectiveProtocolFactoryT<MultiCastComposite3,
-                                                 mcast3_broadcast_md,
-                                                 ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MultiCast3Factory;
     };
   };
 };

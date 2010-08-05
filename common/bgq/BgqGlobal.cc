@@ -30,6 +30,10 @@ PAMI::Device::MU::Global __MUGlobal ( __pamiRM, __global.mapping, __global.perso
 
 const double PAMI::Time::seconds_per_cycle = 6.25e-10;
 
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+extern "C" unsigned __isMambo() {return __global.personality._is_mambo? 1:0;};
+#endif
+
 //
 // astyle info    http://astyle.sourceforge.net
 //

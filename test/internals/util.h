@@ -21,40 +21,12 @@
 #include <pami.h>
 #include "util/common.h"
 
-#ifdef __pami_target_bgq__
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-  #include "Global.h"
-#endif
-#endif
-
 #include <unistd.h>
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-#ifdef __pami_target_bgq__
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-// sleep() doesn't appear to work in mambo right now.  A hackey simulation...
-#define mamboSleep(x) _mamboSleep(x, __LINE__)
-unsigned _mamboSleep(unsigned seconds, unsigned from)
-{
-  if (__global.personality._is_mambo)
-  {
-    double dseconds = ((double)seconds)/1000; //mambo seconds are loooong.
-    double start = PAMI_Wtime (), d=0;
-    while (PAMI_Wtime() < (start+dseconds))
-    {
-      for (int i=0; i<200000; ++i) ++d;
-      TRACE_ERR((stderr, "%s:%d sleep - %.0f, start %f, %f < %f\n",__PRETTY_FUNCTION__,from,d,start,PAMI_Wtime(),start+dseconds));
-    }
-  }
-  else
-    sleep(seconds);
-  return 0;
-}
-#endif
-#endif
 
 unsigned __barrier_active[2];
 size_t __barrier_phase;
@@ -170,16 +142,6 @@ void barrier_init (pami_client_t client, pami_context_t context, size_t dispatch
     fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
     PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
   }
-#ifdef __pami_target_bgq__
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-  // Give other tasks a chance to init the MU device by sleeping
-  if (__global.personality._is_mambo) /// \todo mambo hack
-  {
-    fprintf(stderr, "%s:%s sleep(15) hack to allow mambo to init the MU\n",__FILE__,__PRETTY_FUNCTION__);
-    mamboSleep(5);
-  }
-#endif
-#endif
   barrier();
   TRACE_ERR((stderr, "... exit barrier_init()\n"));
 }

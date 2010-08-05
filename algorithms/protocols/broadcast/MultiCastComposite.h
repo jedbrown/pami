@@ -270,6 +270,11 @@ namespace CCMI
         }
 
       };
+
+
+
+#if 0 /// old test protocol - not needed.
+      /// 
       /// \brief An all-sided multicast composite built on an all-sided
       /// multicombine ('binary or' operation).
       ///
@@ -357,13 +362,15 @@ namespace CCMI
           _minfo.data               = (pami_pipeworkqueue_t *)&_data;
           _minfo.results            = (pami_pipeworkqueue_t *)&_results;
           _minfo.optor              = PAMI_BOR;
-#ifdef __pami_target_bgq__  // doesn't support chars on MU
-          _minfo.dtype              = PAMI_UNSIGNED_INT;
-          _minfo.count              = _bytes/4;
-/// \todo PAMI_assertf(!(_bytes%4),"Multiple of 4 bytes only");
-#else
           _minfo.dtype              = PAMI_UNSIGNED_CHAR;
           _minfo.count              = _bytes;
+#ifdef __pami_target_bgq__  // doesn't support chars on MU
+          /// \todo this isn't 100%
+          if (!((PAMI::Topology*)_geometry->getTopology(0))->isLocal())
+          {
+            _minfo.dtype              = PAMI_UNSIGNED_INT;
+            _minfo.count              = _bytes/4;
+          }
 #endif
         }
 
@@ -433,18 +440,21 @@ namespace CCMI
           _minfo.data               = (pami_pipeworkqueue_t *)&_data;
           _minfo.results            = (pami_pipeworkqueue_t *)&_results;
           _minfo.optor              = PAMI_BOR;
-#ifdef ENABLE_MAMBO_WORKAROUNDS  // doesn't support chars on MU
-          _minfo.dtype              = PAMI_UNSIGNED_INT;
-          _minfo.count              = _bytes/4;
-          PAMI_assertf(!(_bytes%4),"Multiple of 4 bytes only");
-#else
           _minfo.dtype              = PAMI_UNSIGNED_CHAR;
           _minfo.count              = _bytes;
+#ifdef __pami_target_bgq__  // doesn't support chars on MU
+          /// \todo this isn't 100%
+          if (!((PAMI::Topology*)_geometry->getTopology(0))->isLocal())
+          {
+            _minfo.dtype              = PAMI_UNSIGNED_INT;
+            _minfo.count              = _bytes/4;
+          }
 #endif
           return 0;
         };
 
       };
+#endif
 
 
     };

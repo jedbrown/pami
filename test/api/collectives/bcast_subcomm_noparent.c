@@ -194,7 +194,7 @@ int main(int argc, char*argv[])
   // request from other nodes to be unexpected.
   if (task_id == root)
     {
-      sleep(1);
+      delayTest(1);
       PAMI_Context_advance (context, 1000);
     }
 

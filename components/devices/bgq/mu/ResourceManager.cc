@@ -400,7 +400,7 @@ init ( ResourceType_t  type,
   barrier.enter();
   TRACE((stderr, "ResourceManager: Exiting Barrier\n"));
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-
+  if (__global.personality._is_mambo)
   // If multi-node, need to sleep
   if (__global.mapping.size() > __global.personality.tSize())
     {

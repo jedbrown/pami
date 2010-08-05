@@ -453,7 +453,8 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
           // Mambo does not support zero-byte packets
-          tbytes = MAX(1, tbytes);
+          if (__global.personality._is_mambo)
+            tbytes = MAX(1, tbytes);
 #endif
           // Set the payload information.
           memfifo->setPayload (paddr, tbytes);
@@ -489,7 +490,8 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
           // Mambo does not support zero-byte packets
-          tbytes = MAX(1, tbytes);
+          if (__global.personality._is_mambo)
+            tbytes = MAX(1, tbytes);
 #endif
 
           // Determine the physical address of the (temporary) payload
@@ -576,7 +578,8 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
           // Mambo does not support zero-byte packets
-          tbytes = MAX(1, tbytes);
+          if (__global.personality._is_mambo)
+            tbytes = MAX(1, tbytes);
 #endif
           // Set the payload information.
           memfifo->setPayload (paddr, tbytes);
@@ -613,7 +616,8 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
           // Mambo does not support zero-byte packets
-          tbytes = MAX(1, tbytes);
+          if (__global.personality._is_mambo)
+            tbytes = MAX(1, tbytes);
 #endif
 
           // Determine the physical address of the (temporary) payload
@@ -685,10 +689,11 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
           // Mambo does not support zero-byte packets
-          memfifo->setPayload (paddr, MAX(1, length));
-#else
-          memfifo->setPayload (paddr, length);
+          if (__global.personality._is_mambo)
+            memfifo->setPayload (paddr, MAX(1, length));
+          else
 #endif
+          memfifo->setPayload (paddr, length);
 
           MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
                                         & memfifo->PacketHeader;
@@ -735,10 +740,11 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
           // Mambo does not support zero-byte packets
-          msg->desc[0].setPayload (paddr, MAX(1, length));
-#else
-          msg->desc[0].setPayload (paddr, length);
+          if (__global.personality._is_mambo)
+            msg->desc[0].setPayload (paddr, MAX(1, length));
+          else
 #endif
+          msg->desc[0].setPayload (paddr, length);
 
           TRACE_FORMAT("<%u/%u> desc = %p, paddr = %ld, payload = %p, length = %zu", T_Collective, T_Channel, & msg->desc[0], paddr, payload, length);
           // Copy the metadata into the packet header.
@@ -798,10 +804,11 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
           // Mambo does not support zero-byte packets
-          memfifo->setPayload (paddr, MAX(1, length));
-#else
-          memfifo->setPayload (paddr, length);
+          if (__global.personality._is_mambo)
+            memfifo->setPayload (paddr, MAX(1, length));
+          else
 #endif
+          memfifo->setPayload (paddr, length);
 
           MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
                                         & memfifo->PacketHeader;
@@ -841,10 +848,11 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
           // Mambo does not support zero-byte packets
-          msg->desc[0].setPayload (paddr, MAX(1, length));
-#else
-          msg->desc[0].setPayload (paddr, length);
+          if (__global.personality._is_mambo)
+            msg->desc[0].setPayload (paddr, MAX(1, length));
+          else
 #endif
+          msg->desc[0].setPayload (paddr, length);
 
           // Post the message to the injection channel
           channel.post (msg);

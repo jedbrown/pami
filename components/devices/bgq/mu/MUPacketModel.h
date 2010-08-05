@@ -234,7 +234,7 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
         // Mambo can not handle zero-byte payloads.
-        if (tbytes == 0)
+        if ((__global.personality._is_mambo) && (tbytes == 0))
         {
           iov[0].iov_base = metadata;
           iov[0].iov_len  = 1;
@@ -359,7 +359,7 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
         // Mambo can not handle zero-byte payloads.
-        if (length == 0)
+        if ((__global.personality._is_mambo) && (length == 0))
         {
           payload = metadata;
           length  = 1;
@@ -468,7 +468,7 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
         // Mambo can not handle zero-byte payloads.
-        if (tbytes == 0)
+        if ((__global.personality._is_mambo) && (tbytes == 0))
         {
           iov[0].iov_base = metadata;
           iov[0].iov_len  = 1;
@@ -536,7 +536,7 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
         // Mambo can not handle zero-byte payloads.
-        if (length == 0)
+        if ((__global.personality._is_mambo) && (length == 0))
         {
           payload = metadata;
           length = 1;

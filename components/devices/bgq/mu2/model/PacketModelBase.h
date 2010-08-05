@@ -326,7 +326,8 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
-            tbytes = MAX(1, tbytes);
+            if (__global.personality._is_mambo) /// \todo mambo hack
+              tbytes = MAX(1, tbytes);
 #endif
             // Set the payload information.
             memfifo->setPayload (paddr, tbytes);
@@ -413,7 +414,8 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
-            tbytes = MAX(1, tbytes);
+            if (__global.personality._is_mambo) /// \todo mambo hack
+              tbytes = MAX(1, tbytes);
 #endif
             // Set the payload information.
             memfifo->setPayload (paddr, tbytes);
@@ -449,7 +451,8 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
-            tbytes = MAX(1, tbytes);
+            if (__global.personality._is_mambo) /// \todo mambo hack
+              tbytes = MAX(1, tbytes);
 #endif
 
             // Determine the physical address of the (temporary) payload
@@ -542,7 +545,8 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
-            tbytes = MAX(1, tbytes);
+            if (__global.personality._is_mambo) /// \todo mambo hack
+              tbytes = MAX(1, tbytes);
 #endif
             // Set the payload information.
             memfifo->setPayload (paddr, tbytes);
@@ -579,7 +583,8 @@ namespace PAMI
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
-            tbytes = MAX(1, tbytes);
+            if (__global.personality._is_mambo) /// \todo mambo hack
+              tbytes = MAX(1, tbytes);
 #endif
 
             // Determine the physical address of the (temporary) payload
@@ -656,10 +661,11 @@ namespace PAMI
             memfifo->setRecFIFOId (rfifo);
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
-            memfifo->setPayload (paddr, MAX(1, length));
-#else
-            memfifo->setPayload (paddr, length);
+            if (__global.personality._is_mambo) /// \todo mambo hack
+              memfifo->setPayload (paddr, MAX(1, length));
+            else
 #endif
+            memfifo->setPayload (paddr, length);
 
             MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
                                           & memfifo->PacketHeader;
@@ -704,10 +710,11 @@ namespace PAMI
             msg->desc[0].setRecFIFOId (rfifo);
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
-            msg->desc[0].setPayload (paddr, MAX(1, length));
-#else
-            msg->desc[0].setPayload (paddr, length);
+            if (__global.personality._is_mambo) /// \todo mambo hack
+              msg->desc[0].setPayload (paddr, MAX(1, length));
+            else
 #endif
+            msg->desc[0].setPayload (paddr, length);
 
             // Copy the metadata into the packet header.
             MemoryFifoPacketHeader * hdr =
@@ -770,10 +777,11 @@ namespace PAMI
             memfifo->setRecFIFOId (rfifo);
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
-            memfifo->setPayload (paddr, MAX(1, length));
-#else
-            memfifo->setPayload (paddr, length);
+            if (__global.personality._is_mambo) /// \todo mambo hack
+              memfifo->setPayload (paddr, MAX(1, length));
+            else
 #endif
+            memfifo->setPayload (paddr, length);
 
             MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
                                           & memfifo->PacketHeader;
@@ -811,10 +819,11 @@ namespace PAMI
             msg->desc[0].setRecFIFOId (rfifo);
 #ifdef ENABLE_MAMBO_WORKAROUNDS
             // Mambo does not support zero-byte packets
-            msg->desc[0].setPayload (paddr, MAX(1, length));
-#else
-            msg->desc[0].setPayload (paddr, length);
+            if (__global.personality._is_mambo) /// \todo mambo hack
+              msg->desc[0].setPayload (paddr, MAX(1, length));
+            else
 #endif
+            msg->desc[0].setPayload (paddr, length);
 
             // Post the message to the injection channel
             channel.post (msg);

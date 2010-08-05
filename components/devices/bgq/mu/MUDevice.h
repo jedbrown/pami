@@ -40,8 +40,6 @@
 #endif
 #define DUMP_DESCRIPTOR(x,d) //dumpDescriptor(x,d)
 
-//#define ENABLE_MAMBO_WORKAROUNDS
-
 /// \brief Number of dispatch sets
 ///
 /// There are DISPATCH_SET_COUNT possible dispatch IDs.

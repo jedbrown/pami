@@ -92,7 +92,7 @@ int main (int argc, char ** argv)
         }
       else
         {
-          sleep(2);
+          delayTest(2);
           blocking_coll(context, &barrier, &poll_flag);
         }
 

@@ -80,9 +80,7 @@ namespace PAMI
               }
             }
           }
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-          fprintf(stderr,"%s:%d Failed to create shared memory (rc=%d, ptr=%p, n=%zu) errno %d %s\n",__FILE__,__LINE__, rc, ptr, n, errno, strerror(errno));
-#endif
+          TRACE_ERR((stderr,"%s:%d Failed to create shared memory (rc=%d, ptr=%p, n=%zu) errno %d %s\n",__FILE__,__LINE__, rc, ptr, n, errno, strerror(errno)));
           TRACE_ERR((stderr, "SharedMemoryManager() .. FAILED, fake shmem on the heap\n"));
 
 #ifdef USE_MEMALIGN

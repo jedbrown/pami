@@ -13,13 +13,8 @@
 
 #include "../pami_util.h"
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-#define BUFSIZE 131072 // any more is too long on mambo
-#define NITER   10
-#else
 #define BUFSIZE 262144
 #define NITER   100
-#endif
 
 volatile unsigned       _g_total_broadcasts;
 char                   *_g_recv_buffer;

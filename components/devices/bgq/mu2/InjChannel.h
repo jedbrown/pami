@@ -340,17 +340,10 @@ namespace PAMI
             uint64_t freeSpace = MUSPI_getFreeSpaceFromShadow (_ififo);
 
             if (unlikely(freeSpace == 0))
-              {
-		// The following mambo workaround appears to work in mambo now...removing.
-/* #ifdef ENABLE_MAMBO_WORKAROUNDS */
-/*                 TRACE_STRING("mambo workaround!"); */
-/* 		TRACE_FORMAT("getFreeDescriptorCountWithUpdate:  setting freeSpace shadow to %zu.  Actual HW freespace is %lu\n",_n,MUSPI_getHwFreeSpace(_ififo)); */
-/*                 _ififo->freeSpace = _n; // mambo doesn't implement the MUSPI correctly */
-/* #else */
-                _ififo->freeSpace = MUSPI_getHwFreeSpace (_ififo);
-		TRACE_FORMAT("getFreeDescriptorCountWithUpdate:  setting freeSpace shadow to %lu\n",_ififo->freeSpace);
-/* #endif */
-              }
+            {
+              _ififo->freeSpace = MUSPI_getHwFreeSpace (_ififo);
+              TRACE_FORMAT("getFreeDescriptorCountWithUpdate:  setting freeSpace shadow to %lu\n",_ififo->freeSpace);
+            }
 
             size_t n = getFreeDescriptorCount ();
             TRACE_FORMAT("getFreeDescriptorCountWithUpdate: free descriptor count = %zu\n", n);

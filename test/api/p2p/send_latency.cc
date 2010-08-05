@@ -36,6 +36,11 @@
 #define TRACE_ERR(x)  //fprintf x
 #endif
 
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+extern "C" unsigned __isMambo();
+#endif
+
+
 volatile unsigned _send_active;
 volatile unsigned _recv_active;
 volatile unsigned _recv_iteration;
@@ -279,7 +284,7 @@ int main (int argc, char ** argv)
   PAMI_Endpoint_create (client, target_task, 0, &target);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-  size_t sndlen = 1;
+  size_t sndlen = __isMambo()? 1 : 0;
 #else
   size_t sndlen = 0;
 #endif
