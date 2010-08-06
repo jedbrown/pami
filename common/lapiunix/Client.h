@@ -277,7 +277,7 @@ namespace PAMI
               rc = createOneContext(&_contexts[i],i);
               rc = _contexts[i]->initP2P(&t_myrank, &t_mysize, &t_lhandle);
 	      _platdevs.init(_clientid,i,_client,(pami_context_t)_contexts[i],&_mm);
-              if(rc) RETURN_ERR_PAMI(PAMI_ERROR, "createContext failed with rc %d\n", rc);
+              if(rc) RETURN_ERR_PAMI(ERR_ERROR, "createContext failed with rc %d\n", rc);
               _contexts[i]->setWorldGeometry(_world_geometry);
               _contexts[i]->initP2PCollectives();
               _contexts[i]->initCollectives();
@@ -344,11 +344,11 @@ namespace PAMI
                 case PAMI_CLIENT_PROCESSOR_NAME:
                 default:
                 {
-                  pami_result_t rc;
+                  internal_error_t rc;
                   lapi_state_t *lp = _contexts[0]->getLapiState();
                   LapiImpl::Context *cp = (LapiImpl::Context *)lp;
                   rc = (cp->*(cp->pConfigQuery))(configuration);
-                  if(rc != PAMI_SUCCESS)
+                  if(rc != SUCCESS)
                     result = PAMI_INVAL;
                 }
               }
@@ -367,7 +367,8 @@ namespace PAMI
         // context at client create time
         lapi_state_t *lp = _contexts[0]->getLapiState();
         LapiImpl::Context *cp = (LapiImpl::Context *)lp;
-        return (cp->*(cp->pConfigUpdate))(configuration);
+        internal_error_t rc = (cp->*(cp->pConfigUpdate))(configuration);
+        return PAMI_RC(rc);
       }
 
     inline PAMI::Context *getContext(size_t ctx)

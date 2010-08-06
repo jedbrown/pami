@@ -117,11 +117,12 @@ namespace PAMI
         LapiImpl::Context *cp      = (LapiImpl::Context *)_lapi_state;
         pami_send_hint_t   options;
         memset(&options, 0, sizeof(options));
-        result = (cp->*(cp->pDispatchSet))(dispatch,
+        internal_error_t rc = (cp->*(cp->pDispatchSet))(dispatch,
                                            (void *)dispatch_fn,
                                            cookie,
                                            *(send_hint_t *)&options,
                                            INTERFACE_PAMI);
+        result = PAMI_RC(rc);
         return;
       }
     ~SendWrapper()
@@ -130,21 +131,23 @@ namespace PAMI
     inline pami_result_t immediate(pami_send_immediate_t * send)
       {
         LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-        return (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
+        internal_error_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
                                        send->header.iov_base, send->header.iov_len,
                                        send->data.iov_base, send->data.iov_len,
                                        *(send_hint_t *)&send->hints);
+        return PAMI_RC(rc);
       }
     inline pami_result_t simple (pami_send_t * simple)
       {
         LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-        return (cp->*(cp->pSend))(simple->send.dest, simple->send.dispatch,
+        internal_error_t rc = (cp->*(cp->pSend))(simple->send.dest, simple->send.dispatch,
                 simple->send.header.iov_base, simple->send.header.iov_len,
                 simple->send.data.iov_base, simple->send.data.iov_len,
                 *(send_hint_t *)&simple->send.hints,
                 simple->events.local_fn, simple->events.remote_fn,
                 simple->events.cookie,
                 NULL, NULL, NULL, NULL, NULL, INTERFACE_PAMI);
+        return PAMI_RC(rc);
       }
     inline pami_result_t getAttributes (pami_configuration_t  configuration[],
                                         size_t                num_configs)
@@ -430,7 +433,7 @@ namespace PAMI
           // TODO: Honor the configuration passed in
           int rc = LAPI__Init(&_lapi_handle, &init_info);
           if (rc) {
-            RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Init failed with rc %d\n", rc);
+            RETURN_ERR_PAMI(ERR_ERROR, "LAPI__Init failed with rc %d\n", rc);
           }
           _lapi_state = _Lapi_port[_lapi_handle];
 	  lapi_senv(_lapi_handle, INTERRUPT_SET, false);
@@ -532,7 +535,7 @@ namespace PAMI
           LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
           int rc = LAPI__Term(ep->my_hndl);
           if (rc) {
-            RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Term failed with rc %d\n", rc);
+            RETURN_ERR_PAMI(ERR_ERROR, "LAPI__Term failed with rc %d\n", rc);
           }
           return PAMI_SUCCESS;
         }
@@ -566,32 +569,37 @@ namespace PAMI
           // Todo:  Fix number of iterations
           _devices->advance(_clientid, _contextid);
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          result = (cp->*(cp->pAdvance))(maximum);
+          internal_error_t rc = (cp->*(cp->pAdvance))(maximum);
+          result = PAMI_RC(rc);
           return 1;
         }
 
       inline size_t advance_only_lapi (size_t maximum, pami_result_t & result)
 	{
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          result = (cp->*(cp->pAdvance))(maximum);
+          internal_error_t rc = (cp->*(cp->pAdvance))(maximum);
+          result = PAMI_RC(rc);
 	}
 
       inline pami_result_t lock_impl ()
         {
           LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
-          return (ep->*(ep->pLock))();
+          internal_error_t rc = (ep->*(ep->pLock))();
+          return PAMI_RC(rc);
         }
 
       inline pami_result_t trylock_impl ()
         {
           LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
-          return (ep->*(ep->pTryLock))();
+          internal_error_t rc = (ep->*(ep->pTryLock))();
+          return PAMI_RC(rc);
         }
 
       inline pami_result_t unlock_impl ()
         {
           LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
-          return (ep->*(ep->pUnlock))();
+          internal_error_t rc = (ep->*(ep->pUnlock))();
+          return PAMI_RC(rc);
         }
       inline pami_result_t send_impl (pami_send_t * parameters)
         {
@@ -602,10 +610,11 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_immediate_t * send)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          return (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
+          internal_error_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
                                          send->header.iov_base, send->header.iov_len,
                                          send->data.iov_base, send->data.iov_len,
                                          *(send_hint_t *)&send->hints);
+          return PAMI_RC(rc);
         }
 
       inline pami_result_t send_impl (pami_send_typed_t * parameters)
@@ -629,11 +638,11 @@ namespace PAMI
       inline pami_result_t get_impl (pami_get_simple_t * parameters)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          return (cp->*(cp->pGet))(parameters->rma.dest, parameters->addr.local, NULL,
+          internal_error_t rc = (cp->*(cp->pGet))(parameters->rma.dest, parameters->addr.local, NULL,
                                    parameters->addr.remote, NULL, parameters->rma.bytes,
                                    *(send_hint_t*)&parameters->rma.hints, INTERFACE_PAMI,
                                    (void *)parameters->rma.done_fn, parameters->rma.cookie, NULL, NULL);
-          return PAMI_UNIMPL;
+          return PAMI_RC(rc);
         }
 
       inline pami_result_t get_typed_impl (pami_get_typed_t * parameters)
@@ -812,8 +821,10 @@ namespace PAMI
                                           pami_send_hint_t            options)
         {
           LapiImpl::Context  *cp = (LapiImpl::Context *)_lapi_state;
-          return (cp->*(cp->pDispatchSet))(id, (void *)fn.p2p, cookie,
-                                           *(send_hint_t *)&options, INTERFACE_PAMI);
+          internal_error_t rc =
+              (cp->*(cp->pDispatchSet))(id, (void *)fn.p2p, cookie,
+                      *(send_hint_t *)&options, INTERFACE_PAMI);
+          return PAMI_RC(rc);
         }
 
     inline pami_result_t dispatch_new_impl (size_t                     id,
@@ -843,11 +854,11 @@ namespace PAMI
                 {
                   default:
                   {
-                    pami_result_t rc;
+                    internal_error_t rc;
                     lapi_state_t *lp      = getLapiState();
                     LapiImpl::Context *cp = (LapiImpl::Context *)lp;
                     rc = (cp->*(cp->pConfigQuery))(configuration);
-                    if(rc != PAMI_SUCCESS)
+                    if(rc != SUCCESS)
                       result = PAMI_INVAL;
                   }
                 }
@@ -867,11 +878,11 @@ namespace PAMI
                 {
                   default:
                   {
-                    pami_result_t rc;
+                    internal_error_t rc;
                     lapi_state_t *lp      = getLapiState();
                     LapiImpl::Context *cp = (LapiImpl::Context *)lp;
                     rc = (cp->*(cp->pConfigQuery))(configuration);
-                    if(rc != PAMI_SUCCESS)
+                    if(rc != SUCCESS)
                       result = PAMI_INVAL;
                   }
                 }
@@ -890,11 +901,11 @@ namespace PAMI
                 {
                   default:
                   {
-                    pami_result_t rc;
+                    internal_error_t rc;
                     lapi_state_t *lp      = getLapiState();
                     LapiImpl::Context *cp = (LapiImpl::Context *)lp;
                     rc = (cp->*(cp->pConfigQuery))(configuration);
-                    if(rc != PAMI_SUCCESS)
+                    if(rc != SUCCESS)
                       result = PAMI_INVAL;
                   }
                 }
