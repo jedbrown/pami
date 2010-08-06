@@ -513,7 +513,7 @@ namespace PAMI
             _coll_shm_collreg = NULL;
 #endif // _COLLSHM
 
-          _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);          
+          _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
           return PAMI_SUCCESS;
         }
 

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/geometry/ClassRouteID.h
+ * \file algorithms/geometry/ClassRouteId.h
  * \brief ???
  */
 
-#ifndef __algorithms_geometry_ClassRouteID_h__
-#define __algorithms_geometry_ClassRouteID_h__
+#ifndef __algorithms_geometry_ClassRouteId_h__
+#define __algorithms_geometry_ClassRouteId_h__
 
 #include "algorithms/geometry/Algorithm.h"
 
@@ -21,7 +21,7 @@ namespace PAMI
   namespace Geometry
   {
 
-    
+
     template <class T_Geometry>
     class ClassRouteId
     {
@@ -33,7 +33,7 @@ namespace PAMI
                                         T_Geometry     *geometry,
                                         pami_result_t   result );
 
-      
+
     public:
       ClassRouteId<T_Geometry>(Algorithm<T_Geometry>    *ar_algo,
                                T_Geometry               *geometry,
@@ -97,7 +97,7 @@ namespace PAMI
       void                   *_user_cookie;
       uint64_t                _result[_max_reductions];
       uint64_t                _inval[_max_reductions];
-      
+
     };
 
   };

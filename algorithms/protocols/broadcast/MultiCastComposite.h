@@ -274,7 +274,7 @@ namespace CCMI
 
 
 #if 0 /// old test protocol - not needed.
-      /// 
+      ///
       /// \brief An all-sided multicast composite built on an all-sided
       /// multicombine ('binary or' operation).
       ///

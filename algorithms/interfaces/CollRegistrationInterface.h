@@ -39,7 +39,7 @@ namespace PAMI
       inline pami_result_t analyze_local(size_t         context_id,
                                          T_Geometry    *geometry,
                                          uint64_t      *out_val);
-      
+
       /**
        *  Once a global reduction or exchange has happened on the
        *  unsigned integer, the integer is passed into the analyze_global
@@ -55,8 +55,8 @@ namespace PAMI
       inline pami_result_t analyze(size_t         context_id,
                                    T_Geometry    *geometry,
                                    int            phase=0);
-      
-      
+
+
     };
 
     template <class T_Collregistration, class T_Geometry>

@@ -88,11 +88,11 @@ namespace PAMI
             if (__global.personality._is_mambo)
             {
               // These are requried in order to work around mambo bugs
-  
+
               // TODO - Calculate the best torusInjectionFifoMap.
               // For now, hard code to A-minus direction.
               _rget_desc_model.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
-  
+
               // TODO - Calculate the best torus hints.
               // For now, hard code to A-minus direction.
               _rget_desc_model.setHints ( MUHWI_PACKET_HINT_AM |
@@ -150,11 +150,11 @@ namespace PAMI
             if (__global.personality._is_mambo)
             {
               // These are requried in order to work around mambo bugs
-  
+
               // TODO - Calculate the best torusInjectionFifoMap.
               // For now, hard code to A-minus direction.
               _rput_desc_model.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
-  
+
               // TODO - Calculate the best torus hints.
               // For now, hard code to A-minus direction.
               _rput_desc_model.setHints ( MUHWI_PACKET_HINT_AM |
@@ -212,11 +212,11 @@ namespace PAMI
             if (__global.personality._is_mambo)
             {
               // These are requried in order to work around mambo bugs
-  
+
               // TODO - Calculate the best torusInjectionFifoMap.
               // For now, hard code to A-minus direction.
               _rmem_desc_model.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
-  
+
               // TODO - Calculate the best torus hints.
               // For now, hard code to A-minus direction.
               _rmem_desc_model.setHints ( MUHWI_PACKET_HINT_AM |
@@ -252,11 +252,11 @@ namespace PAMI
             if (__global.personality._is_mambo)
             {
               // These are requried in order to work around mambo bugs
-  
+
               // TODO - Calculate the best torusInjectionFifoMap.
               // For now, hard code to A-minus direction.
               _dput_desc_model.setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM);
-  
+
               // TODO - Calculate the best torus hints.
               // For now, hard code to A-minus direction.
               _dput_desc_model.setHints ( MUHWI_PACKET_HINT_AM |

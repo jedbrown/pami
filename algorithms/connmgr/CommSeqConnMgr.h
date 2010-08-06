@@ -67,7 +67,7 @@ namespace CCMI
 
       }
 
-      unsigned getRecvConnectionId_impl (unsigned comm, unsigned root, unsigned src, unsigned phase, 
+      unsigned getRecvConnectionId_impl (unsigned comm, unsigned root, unsigned src, unsigned phase,
                                     unsigned color)
       {
          if (_connid != (unsigned)-1) return _connid;

@@ -45,7 +45,7 @@ static double timer()
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 extern unsigned __isMambo();
 // sleep() doesn't appear to work in mambo right now.  A hackey simulation...
-#undef delayTest 
+#undef delayTest
 #define delayTest(n) _mamboSleep(n, __LINE__)
 unsigned _mamboSleep(unsigned seconds, unsigned from)
 {

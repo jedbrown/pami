@@ -378,7 +378,7 @@ namespace PAMI
           hdr->setDispatchId (id);
 
           TRACE_FORMAT("<%u/%u> register packet handler success. dispatch id = %d", T_Collective, T_Channel, id);
-          
+
           //MUSPI_DescriptorDumpHex((char *)"_singlepkt", &_singlepkt);
           //MUSPI_DescriptorDumpHex((char *)"_multipkt ", &_multipkt);
           TRACE_FN_EXIT();

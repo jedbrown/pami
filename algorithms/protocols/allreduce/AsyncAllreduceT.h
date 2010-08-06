@@ -21,7 +21,7 @@
 #include "algorithms/protocols/CollOpT.h"
 
 //  #define DEBUG(x) fprintf x
-#define DEBUG(x) 
+#define DEBUG(x)
 
 namespace CCMI
 {
@@ -65,7 +65,7 @@ namespace CCMI
         unsigned                                   _bytes;
 
         public:
-         
+
         ///
         /// \brief Constructor
         ///
@@ -142,7 +142,7 @@ namespace CCMI
           return _executor;
         }
 
-        T_Conn *connmgr() 
+        T_Conn *connmgr()
         {
           return _cmgr;
         }
@@ -205,7 +205,7 @@ namespace CCMI
 	    get_metadata(mdata);
 	  }
 
-          C *getConnMgr() 
+          C *getConnMgr()
           {
             return _cmgr;
           }
@@ -238,7 +238,7 @@ namespace CCMI
 	  }
 
 	  virtual Executor::Composite * generate(pami_geometry_t              g,
-						 void                      * cmd) 
+						 void                      * cmd)
           {
 	    T_Composite* a_composite = NULL;
 	    CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co = NULL;
@@ -302,7 +302,7 @@ namespace CCMI
             DEBUG((stderr, "key = %d, start executor in generate()\n", key);)
             a_composite->executor().start();
 
-	    return NULL; 
+	    return NULL;
 	  }
 
 	  static PAMI_Request_t    * cb_async
@@ -386,7 +386,7 @@ namespace CCMI
 	    }
 
             DEBUG((stderr, "key = %d, calling notifyRecvHead in cb_async()\n", key);)
-	    return a_composite->executor().notifyRecvHead(info, count, 
+	    return a_composite->executor().notifyRecvHead(info, count,
                                  conn_id, peer, sndlen, arg, rcvlen,
                                  rcvpwq, cb_done);
 	  }
@@ -420,7 +420,7 @@ namespace CCMI
               CCMI_assert(co->getComposite()->connmgr() != factory->getConnMgr());
               delete co->getComposite()->connmgr();
             }
-  
+
             // free the executor composite
             co->getComposite()->~T_Composite();
 

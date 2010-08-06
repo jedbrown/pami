@@ -1,5 +1,5 @@
 ///
-/// \file test/api/collectives/multisync.c
+/// \file test/internals/collectives/multisync.c
 /// \brief Simple Multisync test
 ///
 

@@ -101,7 +101,7 @@ namespace PAMI
             geometry->setKey(Geometry::PAMI_GKEY_CLASSROUTEID, key);
             return PAMI_SUCCESS;
           }
-        
+
           static pami_geometry_t mapidtogeometry (int comm)
           {
             pami_geometry_t g = geometry_map[comm];

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/allreduce.c
+ * \file test/internals/collectives/allreduce.c
  * \brief ???
  */
 

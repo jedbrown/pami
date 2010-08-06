@@ -485,7 +485,7 @@ namespace PAMI
           }
         return PAMI_SUCCESS;
       }
-      
+
     inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       * geometry,
                                                        pami_configuration_t    configuration[],
                                                        size_t                  num_configs,

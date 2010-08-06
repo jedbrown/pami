@@ -58,7 +58,7 @@ void * thread_main (void * arg)
 
   /* signal thread is ready */
   _thread_state[id] = 1;
-  
+
   /* wait until main thread is ready */
   while (_main_state == 0);
 

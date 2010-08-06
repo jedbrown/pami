@@ -458,7 +458,7 @@ namespace PAMI
 
             // Turn on the completion status bit for this fifo
             _completion_status |= _channel_set_bit;
-	    
+
 	    TRACE_FORMAT("Enqueue completion:  state = %p\n",state);
 
             TRACE_FN_EXIT();

@@ -131,7 +131,7 @@ namespace PAMI
       pami_client_t              _client;
       pami_context_t             _context;
       size_t                     _context_id;
-      uint64_t                   _reduce_val;  
+      uint64_t                   _reduce_val;
       T_Sysdep                  &_sd;
       T_Device                  &_dev;
 

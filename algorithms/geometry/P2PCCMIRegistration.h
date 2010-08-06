@@ -164,7 +164,7 @@ namespace PAMI
 
               geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
                                (void*)_binomial_barrier_composite);
-  
+
               _csconnmgr.setSequence(geometry->comm());
 
               geometry->addCollective(PAMI_XFER_BARRIER,
@@ -203,14 +203,14 @@ namespace PAMI
             *out = _reduce_val;
             return analyze(context_id, geometry, 0);
           }
-        
+
         inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t in)
           {
             return PAMI_SUCCESS;
           }
 
 
-        
+
           static pami_geometry_t mapidtogeometry (int comm)
           {
             pami_geometry_t g = geometry_map[comm];
@@ -440,9 +440,9 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory>(ni_am, 
+                         CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory>(ni_am,
                                     device1,device2,_ascs_binomial_allreduce_factory);
-            new ((void*)_ascs_binomial_allreduce_factory) 
+            new ((void*)_ascs_binomial_allreduce_factory)
               CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory(&_csconnmgr, ni_am);
 
             // Setup and Construct an asynchronous, comm_id/seq_num binomial reduce factory from active message ni and p2p protocol
@@ -451,9 +451,9 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory>(ni_am, 
+                         CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory>(ni_am,
                                 device1, device2, _ascs_binomial_reduce_factory);
-            new ((void*)_ascs_binomial_reduce_factory) 
+            new ((void*)_ascs_binomial_reduce_factory)
               CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory(&_csconnmgr, ni_am);
 
             //set the mapid functions

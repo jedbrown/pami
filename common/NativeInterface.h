@@ -459,7 +459,7 @@ namespace PAMI
 
 
     protected:
-    
+
     PAMI::MemoryAllocator < sizeof(typename NativeInterfaceBase<T_Protocol>::allocObj), 16 > _allocator;  // Allocator
     T_Protocol                           *_mcast_protocol;
     T_Protocol                           *_send_protocol;
@@ -839,7 +839,7 @@ namespace PAMI
     state_data->doneCountDown = state_data->sendpwq.dst_participants.size();
 
     // Am I a destination?  Handle it.
-    if (state_data->sendpwq.dst_participants.isRankMember(this->myrank())) 
+    if (state_data->sendpwq.dst_participants.isRankMember(this->myrank()))
     {
       state_data->doneCountDown--;// don't send to myself
       PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
@@ -1230,7 +1230,7 @@ namespace PAMI
     state_data->doneCountDown = state_data->sendpwq.dst_participants.size();
 
     // Am I a destination?  Handle it.
-    if (state_data->sendpwq.dst_participants.isRankMember(this->myrank())) 
+    if (state_data->sendpwq.dst_participants.isRankMember(this->myrank()))
     {
       state_data->doneCountDown--;// don't send to myself
       PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;

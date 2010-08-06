@@ -242,7 +242,7 @@ namespace PAMI
             return PAMI_SUCCESS;
           }
 
-        
+
         inline pami_result_t setGenericDevice(PAMI::Device::Generic::Device *g)
           {
             _mgr.setGenericDevice(g);

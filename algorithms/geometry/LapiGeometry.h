@@ -524,7 +524,7 @@ namespace PAMI
           return _ue_barrier.generate(&cmd);
         }
 
-      
+
       pami_result_t update_impl(pami_configuration_t  configuration[],
                                 size_t                num_configs,
                                 pami_context_t        context,
@@ -573,7 +573,7 @@ namespace PAMI
 
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _barriers[PAMI_GEOMETRY_NUMALGOLISTS];
       Algorithm<PAMI::Geometry::Lapi>             _ue_barrier;
-      
+
       std::map <int, void*>                       _kvstore;
       int                                         _commid;
       pami_task_t                                 _rank;

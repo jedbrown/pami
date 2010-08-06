@@ -243,8 +243,8 @@ namespace PAMI
             c->_contexts[n]._ccmi_collreg->analyze_global(n,g,reduce_result[3]);
           }
       }
-      
-    
+
+
     inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       *geometry,
                                                         pami_configuration_t   configuration[],
                                                         size_t                 num_configs,

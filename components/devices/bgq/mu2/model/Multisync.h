@@ -202,7 +202,7 @@ namespace PAMI
                                             sizeof(header_metadata_t),
                                             &state_data->header_metadata, // bogus payload for OR
                                             4);
-  
+
         TRACE_FORMAT( "connection_id %#X, debug %#X exit\n", msync->connection_id, state_data->header_metadata.debug);
 
         TRACE_FN_EXIT();
