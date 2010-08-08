@@ -92,6 +92,35 @@ namespace CCMI
           _native->multicombine(&_minfo);
         }
       };
+
+
+
+
+      /// \brief All sided allreduce over active message multicombines
+      /// A local device will chain into a global multicombine
+      class MultiCombineComposite2Device : public CCMI::Executor::Composite
+      {
+      public:
+        MultiCombineComposite2Device (Interfaces::NativeInterface                         *mInterface,
+                                      ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> *cmgr,
+                                      pami_geometry_t                                      g,
+                                      pami_xfer_t                                         *cmd,
+                                      pami_event_function                                  fn,
+                                      void                                                *cookie) :
+          Composite()
+          {
+          }
+        
+        virtual void start()
+          {
+          }
+      };
+      
+
+
+
+
+      
     };
   };
 };

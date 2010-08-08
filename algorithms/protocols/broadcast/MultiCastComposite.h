@@ -271,7 +271,30 @@ namespace CCMI
 
       };
 
-
+      /// \brief All sided broadcast over active message multicasts
+      /// A local device will chain into a global multicast
+      template <class T_Geometry>
+      class MultiCastComposite2Device : public CCMI::Executor::Composite
+      {
+      public:
+        ~MultiCastComposite2Device()
+        {
+        }
+        MultiCastComposite2Device (Interfaces::NativeInterface                         *mInterface,
+                                   ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> *cmgr,
+                                   pami_geometry_t                                      g,
+                                   pami_xfer_t                                         *cmd,
+                                   pami_event_function                                  fn,
+                                   void                                                *cookie) :
+          Composite()
+          {
+            PAMI_abort();
+          }
+        virtual void start()
+          {
+            PAMI_abort();
+          }
+      };
 
 #if 0 /// old test protocol - not needed.
       ///
