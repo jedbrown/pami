@@ -106,9 +106,7 @@ namespace CCMI
               _cmgr(cmgr),
               _native(native)
           {
-            pami_dispatch_callback_fn fn;
-            fn.multicast = (pami_dispatch_multicast_fn) cb_async;
-            native->setDispatch(fn, this);
+            native->setMulticastDispatch(cb_async, this);
           }
 
           virtual ~AsyncBroadcastFactoryT ()
@@ -281,12 +279,12 @@ namespace CCMI
             return NULL; //a_bcast;
           }
 
-          static PAMI_Request_t    * cb_async
+          static void cb_async
           (const pami_quad_t     * info,
            unsigned                count,
            unsigned                conn_id,
-           unsigned                peer,
-           unsigned                sndlen,
+           size_t                  peer,
+           size_t                  sndlen,
            void                  * arg,
            size_t                * rcvlen,
            pami_pipeworkqueue_t ** rcvpwq,
@@ -361,7 +359,7 @@ namespace CCMI
             //We only support sndlen == rcvlen
             * rcvlen  = sndlen;
 
-            return NULL;
+            return;
           }
 
           static void exec_done (pami_context_t context, void *cd, pami_result_t err)

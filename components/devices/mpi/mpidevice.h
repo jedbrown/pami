@@ -24,6 +24,10 @@
 #include "util/ccmi_debug.h"
 #include "SysDep.h"
 
+#include "components/devices/MulticastModel.h"
+#include "components/devices/MulticombineModel.h"
+#include "components/devices/MultisyncModel.h"
+
 #undef TRACE_DEVICE
   #define TRACE_DEVICE(x) //fprintf x
 

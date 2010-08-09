@@ -118,11 +118,11 @@ namespace CCMI
 	    _myexecutor.notifyRecv (src, metadata, NULL, NULL);
 	  }
 
-          static void *   cb_head   (const pami_quad_t    * info,
+          static void    cb_head   (const pami_quad_t    * info,
                                      unsigned              count,
                                      unsigned              conn_id,
-                                     unsigned              peer,
-                                     unsigned              sndlen,
+                                     size_t                peer,
+                                     size_t                sndlen,
                                      void                * arg,
                                      size_t              * rcvlen,
                                      pami_pipeworkqueue_t **recvpwq,
@@ -162,7 +162,7 @@ namespace CCMI
             //Override poly morphism
             composite->_myexecutor.notifyRecv (peer, *info, NULL, 0);
 
-            return NULL;
+            return;
           }
       }; //-BarrierT
 

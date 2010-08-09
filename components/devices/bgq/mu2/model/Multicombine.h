@@ -24,6 +24,8 @@
 #include "components/memory/MemoryAllocator.h"
 
 #include "components/devices/bgq/mu2/trace.h"
+
+#include "components/devices/MulticombineModel.h"
 #define DO_TRACE_ENTEREXIT 0
 #define DO_TRACE_DEBUG     0
 

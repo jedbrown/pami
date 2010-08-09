@@ -64,9 +64,7 @@ namespace CCMI
         {
           TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT()\n",this));
           DO_DEBUG((templateName<MetaDataFn>()));
-          pami_dispatch_callback_fn fn;
-          fn.multicast = (pami_dispatch_multicast_fn) cb_head;
-          _native->setDispatch(fn, this);
+          _native->setMulticastDispatch(cb_head, this);
         }
 
         virtual ~CollectiveProtocolFactoryT ()

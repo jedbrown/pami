@@ -149,9 +149,7 @@ namespace TSPColl
 template <class T_NI>
 inline void TSPColl::CollExchange<T_NI>::amsend_reg  (T_NI *p2p_iface, void* cd)
 {
-  pami_dispatch_callback_fn fn;
-  fn.p2p = cb_incoming;
-  p2p_iface->setSendDispatch(fn, cd);
+  p2p_iface->setSendDispatch(cb_incoming, cd);
   // __pgasrt_tsp_amsend_reg (PGASRT_TSP_AMSEND_COLLEXCHANGE, cb_incoming);
 }
 

@@ -9,6 +9,11 @@
 #include <pami.h>
 #include "util/common.h"
 #include "PipeWorkQueue.h"
+#include "components/devices/MulticastModel.h"
+#include "components/devices/MultisyncModel.h"
+#include "components/devices/MulticombineModel.h"
+#include "components/devices/ManytomanyModel.h"
+
 namespace CCMI
 {
   namespace Interfaces
@@ -32,19 +37,25 @@ namespace CCMI
 
         /// \brief this call is called when an active message native interface is initialized and
         /// is not supported on all sided native interfaces
-        virtual pami_result_t setDispatch(pami_dispatch_callback_fn fn,
+        virtual pami_result_t setMulticastDispatch(pami_dispatch_multicast_fn fn,
                                           void *cookie)
         {
           PAMI_abort();
           return PAMI_ERROR;
         }
-        virtual pami_result_t setSendDispatch(pami_dispatch_callback_fn fn,
+        virtual pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_fn fn,
+                                          void *cookie)
+        {
+          PAMI_abort();
+          return PAMI_ERROR;
+        }
+        virtual pami_result_t setSendDispatch(pami_dispatch_p2p_fn fn,
                                               void *cookie)
         {
           PAMI_abort();
           return PAMI_ERROR;
         }
-        virtual pami_result_t setSendPWQDispatch(pami_dispatch_callback_fn fn,
+        virtual pami_result_t setSendPWQDispatch(pami_dispatch_p2p_fn fn,
                                                  void *cookie)
         {
           PAMI_abort();

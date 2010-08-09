@@ -19,6 +19,67 @@
 #include <pami.h>
 #include "util/common.h"
 
+/**
+ * \brief Multisend interfaces.
+ *
+ * A multisend operation allows many message passing transactions to
+ * be performed in the same call to amortize software overheads.  It
+ * has two flavors
+ *
+ *   - multicast, which sends the same buffer to a list of processors
+ *     and also supports depost-bit torus line broadcasts
+ *
+ *   - manytomany, which sends different offsets from the same buffer
+ *     to a list of processors
+ *
+ * As reductions have a single source buffer and destination buffer,
+ * we have extended the multicast call to support reductions.
+ *
+ * Each multisend operation carries a connection id to identify the
+ * data on the reciever.
+ *
+ * In a multisend operation the cores are typically involved at the
+ * end-points. Moreover the processor lists can be created on the fly.
+ */
+
+
+  /******************************************************************************
+   *       Multicombine Personalized reduction
+   ******************************************************************************/
+  /**
+   * \brief structure defining interface to Multicombine
+   *
+   * The recv callback, and associated metadata parameters, are not valid for all
+   * multicombines. Depending on the kind of multicombine being registered, it may
+   * require that the recv callback be either NULL or valid. If the recv callback
+   * is NULL then the metadata parameters should also be NULL (0) when inoking
+   * the multicombine.
+   *
+   * data and results parameters may not always be required, depending on role (and other?).
+   * For example, if a call the a multicombine specifies a single role of, say, "injection",
+   * then the results parameters are not needed. Details of this are specified by the
+   * type of multicombine being registered/used.
+   */
+  typedef struct
+  {
+    size_t               client;	      /**< client to operate within */
+    size_t               context;	      /**< primary context to operate within */
+    pami_callback_t       cb_done;             /**< User's completion callback */
+    unsigned             connection_id;    /**< A connection is a distinct stream of
+                                              traffic. The connection id identifies the
+                                              connection */
+    unsigned             roles;		      /**< bitmap of roles to perform */
+    pami_pipeworkqueue_t *data;		      /**< Data source */
+    pami_topology_t      *data_participants;   /**< Tasks contributing data */
+    pami_pipeworkqueue_t *results;	      /**< Results destination */
+    pami_topology_t      *results_participants;/**< Tasks receiving results */
+    pami_op               optor;		      /**< Operation to perform on data */
+    pami_dt               dtype;		      /**< Datatype of elements */
+    size_t               count;		      /**< Number of elements */
+  } pami_multicombine_t;
+
+
+
 namespace PAMI
 {
     namespace Device

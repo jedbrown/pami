@@ -183,9 +183,7 @@ namespace CCMI
 	  _cmgr(cmgr),
 	  _native(native)
 	  {
-	    pami_dispatch_callback_fn fn;
-	    fn.multicast = (pami_dispatch_multicast_fn) cb_async;
-	    native->setDispatch(fn, this);
+	    native->setMulticastDispatch(cb_async, this);
 	  }
 
 	  virtual ~AsyncAllreduceFactoryT ()
@@ -305,12 +303,12 @@ namespace CCMI
 	    return NULL;
 	  }
 
-	  static PAMI_Request_t    * cb_async
+	  static void cb_async
 	    (const pami_quad_t     * info,
 	     unsigned                count,
 	     unsigned                conn_id,
-	     unsigned                peer,
-	     unsigned                sndlen,
+	     size_t                  peer,
+	     size_t                  sndlen,
 	     void                  * arg,
 	     size_t                * rcvlen,
 	     pami_pipeworkqueue_t ** rcvpwq,
@@ -386,9 +384,10 @@ namespace CCMI
 	    }
 
             DEBUG((stderr, "key = %d, calling notifyRecvHead in cb_async()\n", key);)
-	    return a_composite->executor().notifyRecvHead(info, count,
+	    a_composite->executor().notifyRecvHead(info, count,
                                  conn_id, peer, sndlen, arg, rcvlen,
                                  rcvpwq, cb_done);
+            return;
 	  }
 
 	  static void exec_done (pami_context_t context, void *cd, pami_result_t err)

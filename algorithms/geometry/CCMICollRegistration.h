@@ -78,14 +78,14 @@ namespace PAMI
 	_rbconnmgr(NULL), //Doesnt use sysdeps
 	_csconnmgr(), //Doesnt use sysdeps
         _msync_reg(&_sconnmgr, &_msync_ni),
-        _barrier_reg(NULL,&_barrier_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
+        _barrier_reg(NULL,&_barrier_ni, CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
         _binom_broadcast_reg(&_connmgr, &_binom_broadcast_ni),
 	_ring_broadcast_reg(&_connmgr, &_ring_broadcast_ni),
 	_asrb_binom_bcast_reg(&_rbconnmgr, &_asrb_binom_bcast_ni),
 	_ascs_binom_bcast_reg(&_csconnmgr, &_ascs_binom_bcast_ni),
 	_active_binombcast_reg(&_rbconnmgr, &_active_binombcast_ni),
 	_alltoall_reg(&_csconnmgr, &_alltoall_ni),
-	_binomial_allreduce_reg(&_rbconnmgr, &_binom_allreduce_ni, (pami_dispatch_multicast_fn)CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead)
+	_binomial_allreduce_reg(&_rbconnmgr, &_binom_allreduce_ni, CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead)
           {
             TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
 	    //set the mapid functions

@@ -231,12 +231,12 @@ namespace CCMI
           ///
           /// \brief Generate a non-blocking allreduce message.
           ///
-          static pami_quad_t *   cb_receiveHead
+          static void  cb_receiveHead
           (const pami_quad_t     * info,
            unsigned               count,
            unsigned               conn_id,
-           unsigned               peer,
-           unsigned               sndlen,
+           size_t                 peer,
+           size_t                 sndlen,
            void                 * arg,
            size_t               * rcvlen,
            pami_pipeworkqueue_t ** rcvpwq,
@@ -256,11 +256,12 @@ namespace CCMI
             T_Exec *executor = composite->getExecutor(0);
             CCMI_assert (executor != NULL);
 
-            return(pami_quad_t*)executor->notifyRecvHead (info,      count,
+            executor->notifyRecvHead (info,      count,
                                                           conn_id,   peer,
                                                           sndlen,    arg,
                                                           rcvlen,    rcvpwq,
                                                           cb_done);
+            return;
           };
 
       };  //-- MultiColorCompositeT

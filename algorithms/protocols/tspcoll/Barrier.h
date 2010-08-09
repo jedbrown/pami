@@ -62,9 +62,7 @@ namespace TSPColl
 template <class T_NI>
 inline void TSPColl::BarrierUE<T_NI>::amsend_reg  (T_NI *p2p_iface, void* cd)
 {
-  pami_dispatch_callback_fn fn;
-  fn.p2p = CollExchange<T_NI>::cb_incoming_ue;
-  p2p_iface->setSendDispatch(fn, cd);
+  p2p_iface->setSendDispatch(CollExchange<T_NI>::cb_incoming_ue, cd);
 }
 
 

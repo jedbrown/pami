@@ -152,7 +152,7 @@ namespace CCMI
       pami_mapidtogeometry_fn _cb_geometry;
       C *_cmgr;
       Interfaces::NativeInterface *_native;
-      pami_dispatch_callback_fn _fn;
+      pami_dispatch_manytomany_fn _fn;
       CCMI::Adaptor::CollOpPoolT<pami_xfer_t, T_Composite> _free_pool;
     public:
     All2AllFactoryT(C *cmgr,
@@ -161,8 +161,8 @@ namespace CCMI
         _cmgr(cmgr),
         _native(native)
         {
-          _fn.manytomany = cb_manytomany;
-          _native->setDispatch(_fn, this);
+          _fn = cb_manytomany;
+          _native->setManytomanyDispatch(_fn, this);
         }
 
       virtual ~All2AllFactoryT()

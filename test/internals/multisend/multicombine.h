@@ -17,6 +17,8 @@
 
 #include "memorymanager.h"
 
+#include "components/devices/MulticombineModel.h"
+
 namespace PAMI {
 namespace Test {
 namespace Multisend {

@@ -79,9 +79,7 @@ namespace TSPColl
 template <class T_NI>
 inline void TSPColl::Scatter<T_NI>::amsend_reg  (T_NI *p2p_iface, void *cd)
     {
-      pami_dispatch_callback_fn fn;
-      fn.p2p = TSPColl::Scatter<T_NI>::cb_incoming;
-      p2p_iface->setSendDispatch(fn, cd);
+      p2p_iface->setSendDispatch(TSPColl::Scatter<T_NI>::cb_incoming, cd);
     }
 /* **************************************************************** */
 /*                    Scatterv                                      */

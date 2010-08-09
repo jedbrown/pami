@@ -41,19 +41,24 @@ namespace PAMI
                                    pami_task_t     taskid,
                                    size_t          num_tasks);
 
-      virtual inline pami_result_t setDispatch (pami_dispatch_callback_fn  fn,
+      virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_fn  fn,
                                                 void                      *cookie)
         {
           PAMI_abort();
           return PAMI_ERROR;
         }
-      virtual inline pami_result_t setSendDispatch(pami_dispatch_callback_fn  fn,
+      virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_fn fn, void *cookie)
+      {
+        PAMI_abort();
+        return PAMI_ERROR;
+      }
+      virtual inline pami_result_t setSendDispatch(pami_dispatch_p2p_fn  fn,
                                                    void                      *cookie)
         {
           PAMI_abort();
           return PAMI_ERROR;
         }
-      virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_callback_fn fn,
+      virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_p2p_fn fn,
                                                       void *cookie)
         {
           PAMI_abort();

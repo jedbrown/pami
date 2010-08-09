@@ -17,6 +17,48 @@
 #include <pami.h>
 #include "util/common.h"
 
+/**
+ * \brief Multisend interfaces.
+ *
+ * A multisend operation allows many message passing transactions to
+ * be performed in the same call to amortize software overheads.  It
+ * has two flavors
+ *
+ *   - multicast, which sends the same buffer to a list of processors
+ *     and also supports depost-bit torus line broadcasts
+ *
+ *   - manytomany, which sends different offsets from the same buffer
+ *     to a list of processors
+ *
+ * As reductions have a single source buffer and destination buffer,
+ * we have extended the multicast call to support reductions.
+ *
+ * Each multisend operation carries a connection id to identify the
+ * data on the reciever.
+ *
+ * In a multisend operation the cores are typically involved at the
+ * end-points. Moreover the processor lists can be created on the fly.
+ */
+
+
+  /******************************************************************************
+   *       Multisync Personalized synchronization/coordination
+   ******************************************************************************/
+
+  /**
+   * \brief structure defining interface to Multisync
+   */
+  typedef struct
+  {
+    size_t             client;	        /**< client to operate within */
+    size_t             context;	        /**< primary context to operate within */
+    pami_callback_t     cb_done;		/**< User's completion callback */
+    unsigned           connection_id;	/**< (remove?) differentiate data streams */
+    unsigned           roles;		/**< bitmap of roles to perform */
+    pami_topology_t    *participants;	/**< Tasks involved in synchronization */
+  } pami_multisync_t;
+
+
 namespace PAMI
 {
   namespace Device

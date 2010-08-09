@@ -100,7 +100,12 @@ namespace PAMI
 
     /// \brief this call is called when the native interface is
     /// initialized to set the mcast dispatch
-    virtual inline pami_result_t setDispatch (pami_dispatch_callback_fn fn, void *cookie);
+    virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie);
+    virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_fn fn, void *cookie)
+    {
+      PAMI_abort();
+      return PAMI_ERROR;
+    }
 
   private:
 
@@ -179,14 +184,14 @@ namespace PAMI
 
   /// \brief this call is called when the native interface is initialized
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGPNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::setDispatch (pami_dispatch_callback_fn fn, void *cookie)
+  inline pami_result_t BGPNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie)
   {
     static size_t dispatch = DISPATCH_START;
 
     TRACE_ERR((stderr, "<%p>BGPNativeInterface::setDispatch(%p, %p) id=%zu\n",
-               this, fn.multicast,  cookie,  dispatch));
+               this, fn,  cookie,  dispatch));
 
-    pami_result_t result = this->_mcast.registerMcastRecvFunction(dispatch, fn.multicast, cookie);
+    pami_result_t result = this->_mcast.registerMcastRecvFunction(dispatch, fn, cookie);
 
     this->_dispatch = dispatch;
     dispatch ++;

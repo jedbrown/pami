@@ -125,7 +125,7 @@ int main(int argc, char ** argv)
 
   uint8_t mcast_state[PAMI::Device::MU::MUMulticastModel::sizeof_msg];
 
-  status = nativeInterface.setDispatch(fn, _cookie);
+  status = nativeInterface.setMulticastDispatch(fn, _cookie);
 
 
   _cb_done.function   = &_done_cb;

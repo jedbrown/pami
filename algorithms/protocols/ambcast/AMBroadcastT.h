@@ -91,7 +91,7 @@ namespace CCMI
         public:
           AMBroadcastFactoryT (C                           *cmgr,
                                Interfaces::NativeInterface *native):
-              CollectiveProtocolFactoryT<T, get_metadata, C>(cmgr, native, (pami_dispatch_multicast_fn)cb_head)
+              CollectiveProtocolFactoryT<T, get_metadata, C>(cmgr, native,cb_head)
           {
           }
 
@@ -138,8 +138,8 @@ namespace CCMI
           (const pami_quad_t     * info,
            unsigned               count,
            unsigned               conn_id,
-           unsigned               peer,
-           unsigned               sndlen,
+           size_t                 peer,
+           size_t                 sndlen,
            void                 * arg,
            size_t               * rcvlen,
            pami_pipeworkqueue_t ** rcvpwq,
