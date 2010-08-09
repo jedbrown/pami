@@ -61,6 +61,22 @@ namespace CCMI
 
       void  * getAlgorithmFactory() { return _afactory; }
 
+      
+      /**
+       * \brief notify when a message has been recived
+       * \param src : source of the message
+       * \param buf : address of the pipeworkqueue to produce incoming message
+       * \param cb_done: completion callback
+       * \param cookie: hint to which executor this recv is for in a multi executor composite
+       */
+      virtual void   notifyRecv     (unsigned              src,
+                                     const pami_quad_t   & metadata,
+                                     PAMI::PipeWorkQueue ** pwq,
+                                     pami_callback_t      * cb_done,
+				     void                 * cookie) {
+	//Currently not all composites implement this method
+        CCMI_abort();
+      }
 
     protected:
       ///

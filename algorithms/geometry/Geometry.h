@@ -31,7 +31,10 @@
 #define PAMI_GEOMETRY_NUMALGOLISTS 64
 #endif
 
+#include "UnexpBarrierQueueElement.h"
+
 #include "components/atomic/gcc/GccCounter.h"
+#include "components/memory/MemoryAllocator.h"
 typedef PAMI::Counter::GccProcCounter GeomCompCtr;
 
 namespace PAMI
@@ -134,6 +137,12 @@ namespace PAMI
           if (!PAMI_ISEVEN(_topos[0].size()))
             pami_ca_set(&_attributes, PAMI_GEOMETRY_ODD);
 
+	  UnexpBarrierQueueElement *ueb = NULL;
+	  while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL ) {
+	    CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((keys_t)ueb->getAlgorithm());
+	    c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
+	    _ueb_allocator.returnObject(ueb);
+	  }
         }
 
        /// \brief Convenience callback used by geometry completion sub-events
@@ -385,10 +394,19 @@ namespace PAMI
         }
       static inline void               updateCachedGeometry_impl(Common *geometry,
                                                                  unsigned comm)
-        {
-          PAMI_assert(geometry!=NULL);
-          PAMI::cached_geometry[comm]=(void*)geometry;
-        }
+      {
+	PAMI_assert(geometry!=NULL);
+	PAMI::cached_geometry[comm]=(void*)geometry;
+      }
+      
+      static inline void registerUnexpBarrier_impl (unsigned comm, pami_quad_t &info, 
+						    unsigned peer, unsigned algorithm)
+      {
+	UnexpBarrierQueueElement *ueb = (UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
+
+	new (ueb) UnexpBarrierQueueElement (comm, info, peer, algorithm);
+	_ueb_queue.pushTail(ueb);
+      }
 
       // These methods were originally from the PGASRT Communicator class
       inline pami_task_t size_impl(void)
@@ -664,6 +682,17 @@ namespace PAMI
       pami_callback_t                               _cb_done;
       pami_result_t                                 _cb_result;
       GeomCompCtr                                   _comp;
+      
+      ///
+      /// \brief memory allocator for early arrival barrier messages
+      //
+      static PAMI::MemoryAllocator < sizeof(UnexpBarrierQueueElement), 16 > _ueb_allocator;
+      
+      ///
+      /// \brief static match queue to store unexpected barrier messages
+      ///
+      static PAMI::MatchQueue                                          _ueb_queue;
+
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace PAMI

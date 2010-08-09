@@ -204,6 +204,15 @@ extern "C" pami_result_t PAMI_Geometry_create_tasklist (pami_client_t           
 }
 
 
+///
+/// \brief memory allocator for early arrival barrier messages
+/// 
+PAMI::MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement),16> PAMI_GEOMETRY_CLASS::_ueb_allocator;
+
+///
+/// \brief static match queue to store unexpected barrier messages
+///
+PAMI::MatchQueue                                          PAMI_GEOMETRY_CLASS::_ueb_queue;
 
 extern "C" pami_result_t PAMI_Geometry_query (pami_geometry_t       geometry,
                                               pami_configuration_t  configuration[],

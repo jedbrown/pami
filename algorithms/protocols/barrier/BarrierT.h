@@ -109,6 +109,14 @@ namespace CCMI
             _myexecutor.start();
           }
 
+	  virtual void   notifyRecv  (unsigned              src,
+				      const pami_quad_t   & metadata,
+				      PAMI::PipeWorkQueue ** pwq,
+				      pami_callback_t      * cb_done,
+				      void                 * cookie) 
+	  {
+	    _myexecutor.notifyRecv (src, metadata, NULL, NULL);
+	  }
 
           static void *   cb_head   (const pami_quad_t    * info,
                                      unsigned              count,
@@ -125,26 +133,34 @@ namespace CCMI
             CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arg;
 
             PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
+	    
+	    *rcvlen    = 0;
+            *recvpwq   = 0;
+            cb_done->function    = NULL;
+            cb_done->clientdata = NULL;	    
 
             if (geometry == NULL)
               {
                 geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (cdata->_comm);
-                PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
+		
+		if (geometry!= NULL)
+		  PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
+		else {
+		  //Geoemtry doesnt exist
+		  PAMI_GEOMETRY_CLASS::registerUnexpBarrier(cdata->_comm, (pami_quad_t&)*info, peer, 
+							    (unsigned) PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
+		  return NULL;
+		}		
               }
-
+	    
             PAMI_assert(geometry != NULL);
             BarrierT *composite = (BarrierT*) geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
             CCMI_assert (composite != NULL);
             TRACE_INIT((stderr, "<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",
                         factory, cdata->_comm, composite));
-
+	    
             //Override poly morphism
             composite->_myexecutor.notifyRecv (peer, *info, NULL, 0);
-
-            *rcvlen    = 0;
-            *recvpwq   = 0;
-            cb_done->function    = NULL;
-            cb_done->clientdata = NULL;
 
             return NULL;
           }

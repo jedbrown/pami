@@ -133,6 +133,9 @@ namespace PAMI
       static inline void                updateCachedGeometry (T_Geometry *geometry,
                                                               unsigned comm);
 
+      static inline void                registerUnexpBarrier(unsigned comm, pami_quad_t &info,
+							     unsigned peer, unsigned algorithm);
+
       // These methods were originally from the PGASRT Communicator class
       inline pami_task_t                 size       (void);
       inline pami_task_t                 rank       (void);
@@ -433,6 +436,13 @@ namespace PAMI
                                                                          unsigned comm)
     {
       return T_Geometry::updateCachedGeometry_impl(geometry, comm);
+    }
+
+    template <class T_Geometry>
+      inline void Geometry<T_Geometry>::registerUnexpBarrier (unsigned comm, pami_quad_t &info, 
+							      unsigned peer, unsigned algorithm)
+    {
+      return T_Geometry::registerUnexpBarrier_impl(comm, info, peer, algorithm);
     }
 
     // These methods were originally from the PGASRT Communicator class
