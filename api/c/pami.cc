@@ -361,18 +361,6 @@ extern "C" pami_result_t PAMI_Multicombine(pami_multicombine_t *mcombineinfo)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//#ifdef __pami_target_mpi__
-extern "C" pami_result_t PAMI_Dispatch_set_new(pami_context_t  context,
-                                 size_t                     dispatch,
-                                 pami_dispatch_callback_fn   fn,
-                                 void                     * cookie,
-                                 pami_dispatch_hint_t        options)
-  {
-    PAMI::Context * ctx = (PAMI::Context *) context;
-    return ctx->dispatch_new(dispatch, fn, cookie, options);
-  }
-//#endif
-
 ///
 /// \copydoc PAMI_AMCollective_dispatch_set
 ///

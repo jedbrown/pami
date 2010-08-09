@@ -2409,13 +2409,6 @@ extern "C"
    * \param[in] options    Dispatch registration assertions
    *
    */
-  /* #ifdef __pami_target_mpi__ */
-  pami_result_t PAMI_Dispatch_set_new(pami_context_t              context,
-                                 size_t                     dispatch,
-                                 pami_dispatch_callback_fn   fn,
-                                 void                     * cookie,
-                                 pami_dispatch_hint_t        options);
-  /* #endif */
   pami_result_t PAMI_Dispatch_set (pami_context_t              context,
                                  size_t                     dispatch,
                                  pami_dispatch_callback_fn   fn,

@@ -1,6 +1,6 @@
 /*
  * \file common/mpi/NativeInterface.h
- * \brief ???
+ * \brief 
  */
 
 #ifndef __common_mpi_NativeInterface_h__
@@ -181,47 +181,19 @@ namespace PAMI
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
   inline pami_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::setDispatch (pami_dispatch_callback_fn fn, void *cookie)
       {
-      // todo:  this is a temporary upcall until we can call the interface directly (it gets implemented)
-#if 1
-      pami_dispatch_hint_t        options;
       __g_mpi_dispatch++;
       _dispatch=__g_mpi_dispatch;
-      memset(&options, 0, sizeof(options));
-      options.type = PAMI_MULTICAST;
-      if(T_Semantics == OneSided)
-        options.hint.multicast.one_sided = 1;
-      else if(T_Semantics == AllSided)
-          {
-            options.hint.multicast.all_sided = 1;
-            options.hint.multicast.global    = 1;
-          }
-      else
-        PAMI_abort();
-
-      return PAMI_Dispatch_set_new(_context,__g_mpi_dispatch,fn,cookie, options);
-#else
     TRACE_ERR((stderr, "<%p>MPINativeInterface::setDispatch(%p, %p) id=%zu\n",
-               this, fn.multicast,  cookie,  dispatch));
+               this, fn.multicast,  cookie,  _dispatch));
 
-    pami_result_t result = _mcast.registerMcastRecvFunction(dispatch, fn.multicast, cookie);
+    pami_result_t result = _mcast.registerMcastRecvFunction(_dispatch, fn.multicast, cookie);
 
-      _dispatch = dispatch;
-      dispatch ++;
     return result;
-#endif
     }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
   inline pami_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::multicast (pami_multicast_t *mcast, void *devinfo)
       {
-
-#if 1
-        // todo:  temporary fix, upcall, and we shouldn't be putting in the client/dispatch for the user
-        mcast->client   = (size_t)_client;
-	mcast->context  = _contextid;
-        mcast->dispatch = _dispatch;
-        return PAMI_Multicast(mcast);
-#else
 
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
@@ -241,7 +213,6 @@ namespace PAMI
     m.cb_done.clientdata   =  req;
 
     return _mcast.postMulticast(req->_state._mcast, &m);
-#endif
       }
 
 
