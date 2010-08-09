@@ -766,94 +766,6 @@ typedef enum {
  */
 
   /**
-   * \brief Determine role information for a multisend protocol
-   *
-   * Roles are numbered 0..(N-1). The roles field of the multisend call structs
-   * is a bitmask of the roles to be used, LSB is role 0. The meanings of roles
-   * is defined by the actual multisend, or family of multisends. For example,
-   * The BG/P Collective Network multisends define role 0 as the injection role
-   * and role 1 as reception. Note, this is not the same as root/non-root or
-   * source/destination - sender/receiver (in a multicast). Since data locality
-   * is important for roles such as injection/reception, roles are generally
-   * expected to conform to the pattern that role 0 will be reading from the
-   * source/data buffer and role (N-1) will be writing to the destination/results buffer.
-   *
-   * Roles also specify how to assign roles when there are more processes than roles.
-   * The "R" (replication role) indicates which role to replicate for any additional
-   * processes. Beyond that, each additional process would not call the multisend.
-   * Role information (numRoles and ReplRole) is determined from the class that
-   * was registered. So a typical procedure to generate a multicombine would be:
-   *
-   *	model->getRoles(&numRoles, &replRole);
-   *	// analyze and select role(s)
-   *	model->postXXX(..., roles, ...);
-   *
-   * Role information is static so the analysis of roles might be done at
-   * registration/init time and carried forward. If that is not the case, we may
-   * need to add additional params or perhaps even split this out by multi* type.
-   * For example, if there is not a 1:1 relationship between model (registration)
-   * and message/device, then some other way must be found to determine the roles
-   * before calling model->postXXX(). This might require passing some or all of
-   * the postXXX() parameters into the getRoles() call (i.e. pass in the param struct).
-   * Or, perhaps postXXX() returns the role information and then roles must be set
-   * after postXXX(), but this creates problems not only with optimizations but
-   * also because postXXX() often starts the message and roles must be known by that time.
-   * Perhaps, postXXX() passes generic role info, such as "I am #2 of 4" and let
-   * postXXX setup roles according to some standard algorithm. But that may not
-   * allow for special treatment based on locality of data or other work assigned
-   * to that core.
-   *
-   * Example: numRoles = 2 and replRole = -1 (e.g. Tree device, injection/reception)
-   *	One participant, closest to the input data, uses role "0". Another
-   *	participant (closest to the results) uses role "1". If there is only one
-   *	(local) participant, i.e. SMP mode, then the role is "0|1" (both roles).
-   *
-   * It is expected that the caller of a multisend has some knowledge of the type
-   * of multisend being performed. This is required in order to even setup
-   * topologies, let alone roles. There is much context required to make a
-   * multisend call, so adding the roles as a dependency of the context should
-   * not be overly restrictive.
-   *
-   * \param[in] context		The context in which the dispatch was registered
-   * \param[in] registration	The dispatch (model) to be analyzed
-   * \param[out] numRoles	The number of different roles supported/required
-   * \param[out] replRole	The role to replicate for additional participants,
-   *				or -1 if no additional roles are used.
-   * \return	success or failure
-   */
-  pami_result_t PAMI_Multisend_getroles(pami_context_t  context,
-                                      size_t         dispatch,
-                                      int           *numRoles,
-                                      int           *replRole);
-
-  /**
-   * \brief Hints for multicast
-   *
-   * \todo better names for the hints
-   * \todo better documentation for the hints
-   */
-  typedef struct
-  {
-    /* The first 3 are mutually exclusive                                                        */
-    uint32_t global            : 1; /**< A global (all tasks) multicast                          */
-    uint32_t local             : 1; /**< A local (to this task) multicast                        */
-    uint32_t spanning          : 1; /**< A spanning (one task per local set) multicast           */
-    uint32_t subtopology       : 1; /**< An arbitrary subtopology (use
-                                                  pami_dispatch_hint_t.config field for topology) */
-
-    /* The next 2 are mutually exclusive and may be used w/wo active_message enabled             */
-    uint32_t all_sided         : 1; /**< All-sided multicast                                     */
-    uint32_t one_sided         : 1; /**< One-sided multicast                                     */
-
-    uint32_t active_message    : 1; /**< Active message, must specify dispatch function          */
-
-    uint32_t collective        : 1; /**< Bogus hint to select collective device                  */
-    uint32_t ring_wq           : 1; /**< Bogus hint to select WQRingBcastMdl                     */
-
-    uint32_t reserved          :24; /**< Unused at this time                                     */
-  } pami_multicast_hint_t;
-
-  /**
    * \brief Recv callback for Multicast
    *
    * Note, certain flavors of Multicast do not use a Receive Callback and
@@ -912,8 +824,7 @@ typedef enum {
                                                   the data being sent, for one-sided. */
     unsigned            msgcount;          /**< info count*/
   } pami_multicast_t;
-  pami_result_t PAMI_Multicast(pami_multicast_t *mcastinfo);
-
+  
 
   /**  Deprecated Multicast:  To be deleted soon!!! */
   /**********************************************************************/
@@ -1031,18 +942,6 @@ typedef enum {
   } pami_manytomanybuf_t;
 
   /**
-   * \brief Hints for manytomany
-   *
-   * \todo better names for the hints
-   * \todo better documentation for the hints
-   */
-  typedef struct
-  {
-    uint32_t global            : 1; /**< Force match ordering semantics                          */
-    uint32_t local             : 1; /**< Assert that all sends will be synchronously received    */
-    uint32_t reserved          :30; /**< Unused at this time                                     */
-  } pami_manytomany_hint_t;
-  /**
    * \brief Callback for Manytomany Receive operations
    *
    * Note, certain flavors of ManyToMany do not use a Receive Callback and
@@ -1099,31 +998,10 @@ typedef enum {
     unsigned             metacount;	     /**< metadata count*/
   } pami_manytomany_t;
 
-  /**
-   * \brief Initiate a ManyToMany
-   *
-   * \param[in] m2minfo	Paramters for ManyToMany operation to be performed
-   * \return	PAMI_SUCCESS or error code
-   */
-  pami_result_t PAMI_Manytomany(pami_manytomany_t *m2minfo);
 
   /******************************************************************************
    *       Multisync Personalized synchronization/coordination
    ******************************************************************************/
-
-
-  /**
-   * \brief Hints for multisync
-   *
-   * \todo better names for the hints
-   * \todo better documentation for the hints
-   */
-  typedef struct
-  {
-    uint32_t global            : 1; /**< Force match ordering semantics                          */
-    uint32_t local             : 1; /**< Assert that all sends will be synchronously received    */
-    uint32_t reserved          :30; /**< Unused at this time                                     */
-  } pami_multisync_hint_t;
 
   /**
    * \brief structure defining interface to Multisync
@@ -1137,17 +1015,6 @@ typedef enum {
     unsigned           roles;		/**< bitmap of roles to perform */
     pami_topology_t    *participants;	/**< Tasks involved in synchronization */
   } pami_multisync_t;
-  /**
-   * \brief Barriers and the like.
-   *
-   * All participants make this call. So, there is no "send" or "recv"
-   * distinction needed.
-   *
-   * \param[in] msyncinfo	Struct of all params needed to perform operation
-   * \return	PAMI_SUCCESS or error codes
-   */
-  pami_result_t PAMI_Multisync(pami_multisync_t *msyncinfo);
-
 
   /******************************************************************************
    *       Multicombine Personalized reduction
@@ -1168,13 +1035,6 @@ typedef enum {
    */
   typedef struct
   {
-    uint32_t global            : 1; /**< Force match ordering semantics                          */
-    uint32_t local             : 1; /**< Assert that all sends will be synchronously received    */
-    uint32_t reserved          :30; /**< Unused at this time                                     */
-  } pami_multicombine_hint_t;
-
-  typedef struct
-  {
     size_t               client;	      /**< client to operate within */
     size_t               context;	      /**< primary context to operate within */
     pami_callback_t       cb_done;             /**< User's completion callback */
@@ -1191,20 +1051,6 @@ typedef enum {
     size_t               count;		      /**< Number of elements */
   } pami_multicombine_t;
 
-  /**
-   * \brief Allreduce, Reduce, etc. (may include some specialized Broadcasts, too)
-   *
-   * All participants make this call. So, there is no "send" or "recv"
-   * distinction needed. Send and/or recv are determined by calling task's
-   * membership in respective Topologies, as well as requirements of underlying
-   * hardware.
-   *
-   * All participants == {data_participants .U. results_participants}.
-   *
-   * \param[in] mcombineinfo	Struct of all params needed to perform operation
-   * \return	PAMI_SUCCESS or error codes
-   */
-  pami_result_t PAMI_Multicombine(pami_multicombine_t *mcombineinfo);
 
   /*****************************************************************************/
   /**
@@ -1215,23 +1061,16 @@ typedef enum {
    */
   /*****************************************************************************/
 
-  extern int pami_dt_shift[PAMI_DT_COUNT];
+  extern int pami_dt_shift[PAMI_DT_COUNT]; /// \todo what is this and is it really an extension?
 
 
-#define PAMI_DISPATCH_EXTEND         pami_dispatch_multicast_fn   multicast;  \
-                                    pami_dispatch_manytomany_fn  manytomany;
+#define PAMI_DISPATCH_EXTEND          pami_dispatch_multicast_fn   multicast;\
+                                      pami_dispatch_manytomany_fn  manytomany; 
 
 
-#define PAMI_DISPATCH_TYPE_EXTEND     PAMI_MULTICAST,    /**< Multicast                   */ \
-                                     PAMI_MULTISYNC,    /**< Multisync                   */ \
-                                     PAMI_MULTICOMBINE, /**< Multicombine                */ \
-                                     PAMI_MANYTOMANY,   /**< Manytomany                  */
+#define PAMI_DISPATCH_TYPE_EXTEND
 
-#define PAMI_HINT_EXTEND        pami_multicast_hint_t      multicast;     \
-                               pami_multisync_hint_t      multisync;     \
-                               pami_multicombine_hint_t   multicombine;  \
-                               pami_manytomany_hint_t     manytomany;
-
+#define PAMI_HINT_EXTEND
 
 
 #endif

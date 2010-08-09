@@ -606,53 +606,6 @@ namespace PAMI
         return result;
       }
 
-      inline pami_result_t dispatch_new_impl (size_t                     id,
-                                             pami_dispatch_callback_fn   fn,
-                                             void                     * cookie,
-                                             pami_dispatch_hint_t        options)
-      {
-        pami_result_t result        = PAMI_ERROR;
-        if(options.type == PAMI_P2P_SEND)
-        {
-          return dispatch_impl (id,
-                                fn,
-                                cookie,
-                                options.hint.send);
-        }
-          //TRACE_ERR((stderr, "<< dispatch_new_impl(), result = %zu, _dispatch[%zu] = %p\n", result, index, _dispatch[index]));
-          return result;
-      }
-
-      inline pami_result_t multisend_getroles_impl(size_t          dispatch,
-                                                  int            *numRoles,
-                                                  int            *replRole)
-      {
-        return PAMI_UNIMPL;
-      };
-
-      inline pami_result_t multicast_impl(pami_multicast_t *mcastinfo)
-      {
-        return PAMI_UNIMPL;
-      };
-
-
-      inline pami_result_t manytomany_impl(pami_manytomany_t *m2minfo)
-      {
-        return PAMI_UNIMPL;
-      };
-
-
-      inline pami_result_t multisync_impl(pami_multisync_t *msyncinfo)
-      {
-        return PAMI_UNIMPL;
-      };
-
-
-      inline pami_result_t multicombine_impl(pami_multicombine_t *mcombineinfo)
-      {
-        return PAMI_UNIMPL;
-      };
-
       inline pami_result_t analyze(size_t         context_id,
                                   BGPGeometry    *geometry)
       {

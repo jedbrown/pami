@@ -97,29 +97,10 @@ namespace PAMI
 
         inline pami_result_t collective (pami_xfer_t * parameters);
 
-        inline pami_result_t multisend_getroles(size_t          dispatch,
-                                               int            *numRoles,
-                                               int            *replRole);
-
-        inline pami_result_t multicast(pami_multicast_t *mcastinfo);
-
-        inline pami_result_t manytomany(pami_manytomany_t *m2minfo);
-
-        inline pami_result_t multisync(pami_multisync_t *msyncinfo);
-
-        inline pami_result_t multicombine(pami_multicombine_t *mcombineinfo);
-
-
         inline pami_result_t dispatch (size_t                     dispatch,
                                       pami_dispatch_callback_fn   fn,
                                       void                     * cookie,
                                       pami_send_hint_t            options);
-        //#ifdef __pami_target_mpi__
-        inline pami_result_t dispatch_new (size_t                 dispatch,
-                                          pami_dispatch_callback_fn   fn,
-                                          void                     * cookie,
-                                          pami_dispatch_hint_t        options);
-        //#endif
         inline pami_result_t amcollective_dispatch(pami_algorithm_t            algorithm,
                                                   size_t                     dispatch,
                                                   pami_dispatch_callback_fn   fn,
@@ -355,38 +336,6 @@ namespace PAMI
     }
 
     template <class T_Context>
-    pami_result_t Context<T_Context>::multisend_getroles(size_t          dispatch,
-                                                        int            *numRoles,
-                                                        int            *replRole)
-    {
-        return static_cast<T_Context*>(this)->multisend_getroles_impl(dispatch,numRoles,replRole);
-    }
-
-    template <class T_Context>
-    pami_result_t Context<T_Context>::multicast(pami_multicast_t *mcastinfo)
-    {
-        return static_cast<T_Context*>(this)->multicast_impl(mcastinfo);
-    }
-
-    template <class T_Context>
-    pami_result_t Context<T_Context>::manytomany(pami_manytomany_t *m2minfo)
-    {
-        return static_cast<T_Context*>(this)->manytomany_impl(m2minfo);
-    }
-
-    template <class T_Context>
-    pami_result_t Context<T_Context>::multisync(pami_multisync_t *msyncinfo)
-    {
-        return static_cast<T_Context*>(this)->multisync_impl(msyncinfo);
-    }
-
-    template <class T_Context>
-    pami_result_t Context<T_Context>::multicombine(pami_multicombine_t *mcombineinfo)
-    {
-        return static_cast<T_Context*>(this)->multicombine_impl(mcombineinfo);
-    }
-
-    template <class T_Context>
     pami_result_t Context<T_Context>::dispatch (size_t                     dispatch,
                                                pami_dispatch_callback_fn   fn,
                                                void                     * cookie,
@@ -394,16 +343,7 @@ namespace PAMI
     {
         return static_cast<T_Context*>(this)->dispatch_impl(dispatch,fn,cookie,options);
     }
-//#ifdef __pami_target_mpi__
-    template <class T_Context>
-    pami_result_t Context<T_Context>::dispatch_new (size_t                 dispatch,
-                                               pami_dispatch_callback_fn   fn,
-                                               void                     * cookie,
-                                               pami_dispatch_hint_t        options)
-    {
-        return static_cast<T_Context*>(this)->dispatch_new_impl(dispatch,fn,cookie,options);
-    }
-//#endif
+
     template <class T_Context>
     pami_result_t Context<T_Context>::amcollective_dispatch(pami_algorithm_t            algorithm,
                                                            size_t                     dispatch,

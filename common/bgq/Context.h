@@ -802,116 +802,6 @@ namespace PAMI
         return result;
       }
 
-      inline pami_result_t dispatch_new_impl (size_t                     id,
-                                             pami_dispatch_callback_fn   fn,
-                                             void                     * cookie,
-                                             pami_dispatch_hint_t        options)
-      {
-         pami_result_t result        = PAMI_ERROR;
-
-         if (options.type == PAMI_P2P_SEND)
-         {
-            return dispatch_impl (id,
-                                  fn,
-                                  cookie,
-                                  options.hint.send);
-         }
-         if(__global.useshmem())
-         {
-           return PAMI_UNIMPL; // no shmem active message yet
-         }
-         else if(__global.useMU())
-         {
-
-            TRACE_ERR((stderr, "Context::dispatch_new_impl multicast %zu\n", id));
-            if (_dispatch[id] == NULL)
-            {
-#if 0
-            _dispatch[id] = (void *)_global_mu_ni; // Only have one multicast right now
-            return _global_mu_ni->setDispatch(fn, cookie);
-#endif
-            }
-
-         }
-         else
-            return PAMI_UNIMPL;
-         return result;
-      }
-
-      inline pami_result_t multisend_getroles_impl(size_t          dispatch,
-                                             int            *numRoles,
-                                             int            *replRole)
-      {
-        return PAMI_UNIMPL;
-      };
-
-      inline pami_result_t multicast_impl(pami_multicast_t *mcastinfo)
-      {
-        if(__global.useshmem())
-        {
-          TRACE_ERR((stderr, "Context::multicast_impl shmem multicast %p\n", mcastinfo));
-          return _shmem_native_interface->multicast(mcastinfo); // Only have one multicast right now
-
-        }
-        else if(__global.useMU())
-         {
-        TRACE_ERR((stderr, "Context::multicast_impl mu multicast %zu, %p\n", mcastinfo->dispatch, mcastinfo));
-        CCMI::Interfaces::NativeInterface * ni = (CCMI::Interfaces::NativeInterface *) _dispatch[mcastinfo->dispatch];
-        return ni->multicast(mcastinfo); // this version of ni allocates/frees our request storage for us.
-        }
-        else
-          PAMI_abortf("%s<%u>\n", __PRETTY_FUNCTION__, __LINE__);
-        return PAMI_UNIMPL;
-      };
-
-
-      inline pami_result_t manytomany_impl(pami_manytomany_t *m2minfo)
-      {
-        PAMI_abortf("%s<%u>\n", __PRETTY_FUNCTION__, __LINE__);
-        return PAMI_UNIMPL;
-      };
-
-
-      inline pami_result_t multisync_impl(pami_multisync_t *msyncinfo)
-      {
-        if(__global.useshmem())
-        {
-          TRACE_ERR((stderr, "Context::multisync_impl shmem multisync %p\n", msyncinfo));
-          return _shmem_native_interface->multisync(msyncinfo); // Only have one multisync right now
-        }
-        else if(__global.useMU())
-         {
-#if 0
-        TRACE_ERR((stderr, "Context::multisync_impl mu multisync %p\n", msyncinfo));
-        return _global_mu_ni->multisync(msyncinfo); // Only have one multisync right now
-#endif
-        }
-        else
-          PAMI_abortf("%s<%u>\n", __PRETTY_FUNCTION__, __LINE__);
-
-        return PAMI_UNIMPL;
-      };
-
-
-      inline pami_result_t multicombine_impl(pami_multicombine_t *mcombineinfo)
-      {
-        if(__global.useshmem())
-        {
-          TRACE_ERR((stderr, "Context::multicombine_impl shmem multicombine %p\n", mcombineinfo));
-          return _shmem_native_interface->multicombine(mcombineinfo); // Only have one multicombine right now
-        }
-         else if(__global.useMU())
-         {
-#if 0
-        TRACE_ERR((stderr, "Context::multicombine_impl multicombine %p\n", mcombineinfo));
-        return _global_mu_ni->multicombine(mcombineinfo);// Only have one multicombine right now
-#endif
-        }
-        else
-          PAMI_abortf("%s<%u>\n", __PRETTY_FUNCTION__, __LINE__);
-        return PAMI_UNIMPL;
-      };
-
       inline pami_result_t analyze(size_t         context_id,
                                   BGQGeometry    *geometry,
 				  int phase = 0)
@@ -988,11 +878,9 @@ namespace PAMI
       Protocol::Put::RPut         *_rput;
       MemoryAllocator<1024, 16>    _request;
       ContextLock                  _lock;
-    public:
       CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI,MUGlobalNI >    *_multi_registration;
       CCMIRegistration            *_ccmi_registration;
       BGQGeometry                 *_world_geometry;
-    private:
       pami_result_t                _status;
       Device::LocalBcastWQModel   *_shmemMcastModel;
       Barrier_Model               *_shmemMsyncModel;

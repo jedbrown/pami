@@ -798,39 +798,6 @@ namespace PAMI
                                           _contextid);
         }
 
-      inline pami_result_t multisend_getroles_impl(size_t          dispatch,
-                                                  int            *numRoles,
-                                                  int            *replRole)
-        {
-          PAMI_abort();
-          return PAMI_UNIMPL;
-        }
-
-      inline pami_result_t multicast_impl(pami_multicast_t *mcastinfo)
-        {
-          PAMI_abort();
-          return PAMI_UNIMPL;
-        }
-
-      inline pami_result_t manytomany_impl(pami_manytomany_t *m2minfo)
-        {
-          PAMI_abort();
-          return PAMI_UNIMPL;
-        }
-
-      inline pami_result_t multisync_impl(pami_multisync_t *msyncinfo)
-        {
-          // Select the native interface
-          // call the multisync for the selected native interface.
-          PAMI_abort();
-          return PAMI_UNIMPL;
-        }
-
-      inline pami_result_t multicombine_impl(pami_multicombine_t *mcombineinfo)
-        {
-          PAMI_abort();
-          return PAMI_UNIMPL;
-        }
       inline pami_result_t dispatch_impl (size_t                      id,
                                           pami_dispatch_callback_fn   fn,
                                           void                      * cookie,
@@ -842,16 +809,6 @@ namespace PAMI
                       *(send_hint_t *)&options, INTERFACE_PAMI);
           return PAMI_RC(rc);
         }
-
-    inline pami_result_t dispatch_new_impl (size_t                     id,
-                                           pami_dispatch_callback_fn   fn,
-                                           void                     * cookie,
-                                           pami_dispatch_hint_t        options)
-    {
-      PAMI_abort();
-      pami_result_t result        = PAMI_ERROR;
-      return result;
-    }
 
       inline lapi_state_t *getLapiState()
         {

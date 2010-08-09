@@ -299,64 +299,6 @@ extern "C"  pami_result_t PAMI_Geometry_algorithms_query (pami_context_t context
 ///
 
 ////////////////////////////////////////////////////////////////////////////////
-// Functions from pami_multisend.h                                             //
-////////////////////////////////////////////////////////////////////////////////
-
-
-///
-/// \copydoc PAMI_Multisend_getroles
-///
-extern "C" pami_result_t PAMI_Multisend_getroles(pami_context_t   context,
-                                               size_t          dispatch,
-                                               int            *numRoles,
-                                               int            *replRole)
-{
-  PAMI::Context * ctx = (PAMI::Context *) context;
-  return ctx->multisend_getroles (dispatch,numRoles,replRole);
-}
-
-///
-/// \copydoc PAMI_Multicast
-///
-extern "C" pami_result_t PAMI_Multicast(pami_multicast_t *mcastinfo)
-{
-  PAMI::Client *clnt = (PAMI::Client *)mcastinfo->client;
-  PAMI::Context *ctx = clnt->getContext(mcastinfo->context);
-  return ctx->multicast (mcastinfo);
-}
-
-///
-/// \copydoc PAMI_Manytomany
-///
-extern "C" pami_result_t PAMI_Manytomany(pami_manytomany_t *m2minfo)
-{
-  PAMI::Client *clnt = (PAMI::Client *)m2minfo->client;
-  PAMI::Context *ctx = clnt->getContext(m2minfo->context);
-  return ctx->manytomany (m2minfo);
-}
-
-///
-/// \copydoc PAMI_Multisync
-///
-extern "C" pami_result_t PAMI_Multisync(pami_multisync_t *msyncinfo)
-{
-  PAMI::Client *clnt = (PAMI::Client *)msyncinfo->client;
-  PAMI::Context *ctx = clnt->getContext(msyncinfo->context);
-  return ctx->multisync (msyncinfo);
-}
-
-///
-/// \copydoc PAMI_Multicombine
-///
-extern "C" pami_result_t PAMI_Multicombine(pami_multicombine_t *mcombineinfo)
-{
-  PAMI::Client *clnt = (PAMI::Client *)mcombineinfo->client;
-  PAMI::Context *ctx = clnt->getContext(mcombineinfo->context);
-  return ctx->multicombine (mcombineinfo);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
 // Functions from pami_dispatch.h                                              //
 ////////////////////////////////////////////////////////////////////////////////
 

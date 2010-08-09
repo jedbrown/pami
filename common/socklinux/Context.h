@@ -562,52 +562,6 @@ namespace PAMI
         return result;
       }
 
-    inline pami_result_t dispatch_new_impl (size_t                     id,
-                                           pami_dispatch_callback_fn   fn,
-                                           void                     * cookie,
-                                           pami_dispatch_hint_t        options)
-    {
-      pami_result_t result        = PAMI_ERROR;
-      if(options.type == PAMI_P2P_SEND)
-      {
-        return dispatch_impl (id,
-                              fn,
-                              cookie,
-                              options.hint.send);
-      }
-        return result;
-    }
-
-      inline pami_result_t multisend_getroles(size_t          dispatch,
-                                             int            *numRoles,
-                                             int            *replRole)
-      {
-        return PAMI_UNIMPL;
-      };
-
-      inline pami_result_t multicast(pami_multicast_t *mcastinfo)
-      {
-        return PAMI_UNIMPL;
-      };
-
-
-      inline pami_result_t manytomany(pami_manytomany_t *m2minfo)
-      {
-        return PAMI_UNIMPL;
-      };
-
-
-      inline pami_result_t multisync(pami_multisync_t *msyncinfo)
-      {
-        return PAMI_UNIMPL;
-      };
-
-
-      inline pami_result_t multicombine(pami_multicombine_t *mcombineinfo)
-      {
-        return PAMI_UNIMPL;
-      };
-
       inline pami_result_t dispatch_query_impl(size_t                dispatch,
                                                pami_configuration_t  configuration[],
                                                size_t                num_configs)
