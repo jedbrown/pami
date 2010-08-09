@@ -161,8 +161,6 @@ namespace PAMI
 		if (!__global.personality._is_mambo)
 #endif
 		  {
-		    // \todo Temporary hack:  Delay, helps circumvent issues.  Must debug...
-		    Delay(2ULL * 1600ULL * 1000000ULL);
 		    // Do an MU barrier
 		    uint32_t classRouteId = 0;
 		    MUSPI_GIBarrier_t commworld_barrier;
