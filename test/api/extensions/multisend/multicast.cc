@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/extensions/multisend/multicast.cc
- * \brief Simple multicast tests.
+ * \brief Simple multicast tests. DEPRECATED
  */
 
 #include "Buffer.h"
@@ -19,6 +19,7 @@
   #define TEST_BUF_SIZE	32
 #endif // TEST_BUF_SIZE
 
+#warning DEPRECATED. Update your build
 
 static PAMI::Test::Buffer<TEST_BUF_SIZE> _buffer;
 

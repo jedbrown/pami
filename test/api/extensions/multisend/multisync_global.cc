@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/extensions/multisend/multisync_global.cc
- * \brief Simple multisync tests.
+ * \brief Simple multisync tests. DEPRECATED
  */
 
 
@@ -17,6 +17,7 @@
 
 #define DBG_FPRINTF(x) //fprintf x
 
+#warning DEPRECATED. Update your build
 
 static int           _doneCountdown;
 pami_callback_t       _cb_done;

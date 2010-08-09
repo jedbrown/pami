@@ -10,7 +10,7 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = multisend toplogy
+SUBDIRS         = toplogy #multisend
 NOTBUILT        = 
 APPS            =
 

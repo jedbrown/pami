@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/extensions/multisend/multicast_as.cc
- * \brief Simple all-sided multicast tests.
+ * \brief Simple all-sided multicast tests. DEPRECATED
  */
 
 #define DEBUG_RANK (unsigned)-1
@@ -21,6 +21,7 @@
   #define TEST_BUF_SIZE	32
 #endif // TEST_BUF_SIZE
 
+#warning DEPRECATED. Update your build
 
 static PAMI::Test::Buffer<TEST_BUF_SIZE> _buffer;
 

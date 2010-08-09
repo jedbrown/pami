@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/extensions/multisend/multicombine_global.cc
- * \brief Simple multicombine tests.
+ * \brief Simple multicombine tests. DEPRECATED
  */
 
 
@@ -20,6 +20,8 @@
 #ifndef TEST_BUF_SIZE
   #define TEST_BUF_SIZE	32
 #endif // TEST_BUF_SIZE
+
+#warning DEPRECATED. Update your build
 
 static PAMI::Test::Buffer<TEST_BUF_SIZE> _buffer;
 
