@@ -446,6 +446,7 @@ namespace PAMI
               bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry,
 							ctxt->getId(), context);
 	    }
+	    new_geometry->processUnexpBarrier();
         }
         else
         {
@@ -472,7 +473,7 @@ namespace PAMI
                 _contexts[n].analyze(n, (BGQGeometry*)new_geometry, 0);
               }
             *geometry = (pami_geometry_t) new_geometry;
-
+	    new_geometry->processUnexpBarrier();
             /// \todo  deliver completion to the appropriate context
           }
 
