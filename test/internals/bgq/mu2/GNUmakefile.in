@@ -13,7 +13,9 @@ FRAMEWORK       = pami
 VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        = 
-APPS            = simple-${FRAMEWORK}.${EXTENSION} pingpong-${FRAMEWORK}.${EXTENSION} messagerate-${FRAMEWORK}.${EXTENSION}
+APPS            = simple-${FRAMEWORK}.${EXTENSION} pingpong-${FRAMEWORK}.${EXTENSION} \
+		messagerate-${FRAMEWORK}.${EXTENSION}
+#		geom_classroutes-${FRAMEWORK}.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
