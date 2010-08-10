@@ -149,7 +149,7 @@ namespace CCMI
 		  //Geoemtry doesnt exist
 		  PAMI_GEOMETRY_CLASS::registerUnexpBarrier(cdata->_comm, (pami_quad_t&)*info, peer, 
 							    (unsigned) PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
-		  return NULL;
+		  return;
 		}		
               }
 	    
