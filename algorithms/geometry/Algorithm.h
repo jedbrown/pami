@@ -16,6 +16,8 @@
 
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include <map>
+#include "components/memory/MemoryAllocator.h"
+#include "algorithms/geometry/UnexpBarrierQueueElement.h"
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -28,6 +30,16 @@ namespace PAMI
 {
   extern std::map<unsigned, pami_geometry_t> geometry_map;
   extern std::map<unsigned, pami_geometry_t> cached_geometry;
+
+  ///
+  /// \brief memory allocator for early arrival barrier messages
+  //
+  extern PAMI::MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16 > _ueb_allocator;
+  
+  ///
+  /// \brief static match queue to store unexpected barrier messages
+  ///
+  extern PAMI::MatchQueue                                          _ueb_queue;
 
   namespace Geometry
   {

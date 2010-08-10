@@ -125,6 +125,8 @@ namespace PAMI
 	  //AM Broadcast
 	  geometry->addCollective(PAMI_XFER_AMBROADCAST,&_active_binombcast_reg,_context_id);
 
+	  geometry->setUEBarrier(&_barrier_reg);
+
           return PAMI_SUCCESS;
         }
 

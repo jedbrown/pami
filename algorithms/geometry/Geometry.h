@@ -136,13 +136,6 @@ namespace PAMI
             pami_ca_set(&_attributes, PAMI_GEOMETRY_POF2);
           if (!PAMI_ISEVEN(_topos[0].size()))
             pami_ca_set(&_attributes, PAMI_GEOMETRY_ODD);
-
-	  UnexpBarrierQueueElement *ueb = NULL;
-	  while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL ) {
-	    CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((keys_t)ueb->getAlgorithm());
-	    c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
-	    _ueb_allocator.returnObject(ueb);
-	  }
         }
 
        /// \brief Convenience callback used by geometry completion sub-events
@@ -406,6 +399,15 @@ namespace PAMI
 
 	new (ueb) UnexpBarrierQueueElement (comm, info, peer, algorithm);
 	_ueb_queue.pushTail(ueb);
+      }
+
+      inline void processUnexpBarrier_impl () {
+	UnexpBarrierQueueElement *ueb = NULL;
+	while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL ) {
+	  CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((keys_t)ueb->getAlgorithm());
+	  c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
+	  _ueb_allocator.returnObject(ueb);
+	}
       }
 
       // These methods were originally from the PGASRT Communicator class
@@ -683,16 +685,6 @@ namespace PAMI
       pami_result_t                                 _cb_result;
       GeomCompCtr                                   _comp;
       
-      ///
-      /// \brief memory allocator for early arrival barrier messages
-      //
-      static PAMI::MemoryAllocator < sizeof(UnexpBarrierQueueElement), 16 > _ueb_allocator;
-      
-      ///
-      /// \brief static match queue to store unexpected barrier messages
-      ///
-      static PAMI::MatchQueue                                          _ueb_queue;
-
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace PAMI
