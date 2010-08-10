@@ -298,14 +298,14 @@ private:
                 uint64_t wu_start, wu_mask;
 		int min_pri = sched_get_priority_min(COMMTHREAD_SCHED);
 		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
-char buf[64];
-sprintf(buf, "ct %ld\n", pthread_self());
-int bufl = strlen(buf);
+//char buf[64];
+//sprintf(buf, "ct %ld\n", pthread_self());
+//int bufl = strlen(buf);
 
                 pthread_setschedprio(self, max_pri);
                 _ctxset->joinContextSet(_client, id, _initCtxs);
 //fprintf(stderr, "comm thread %ld for context %04zx\n", self, _initCtxs);
-write(2, buf, bufl);
+//write(2, buf, bufl);
                 new_ctx = old_ctx = lkd_ctx = 0;
 		ev_since_wu = 0;
                 while (!_shutdown) {
@@ -355,11 +355,11 @@ more_work:		// lightweight enough.
                                         // advance it.
 					if (ev_since_wu == 0 && lkd_ctx) ++_falseWU;
 #ifndef HAVE_WU_ARMWITHADDRESS
-buf[0] = 'g'; buf[1] = 'i';
-write(2, buf, bufl);
+//buf[0] = 'g'; buf[1] = 'i';
+//write(2, buf, bufl);
         				ppc_waitimpl();
-buf[0] = 'w'; buf[1] = 'u';
-write(2, buf, bufl);
+//buf[0] = 'w'; buf[1] = 'u';
+//write(2, buf, bufl);
 #else // HAVE_WU_ARMWITHADDRESS
                                         ppc_waitimpl();
 #endif // HAVE_WU_ARMWITHADDRESS
@@ -377,14 +377,14 @@ write(2, buf, bufl);
                                 __lockContextSet(lkd_ctx, 0);
 
                                 _ctxset->leaveContextSet(_client, id); // id invalid now
-buf[0] = 's'; buf[1] = 'a';
-write(2, buf, bufl);
+//buf[0] = 's'; buf[1] = 'a';
+//write(2, buf, bufl);
 
                                 pthread_setschedprio(self, min_pri);
                                 //=== we get preempted here ===//
                                 pthread_setschedprio(self, max_pri);
-buf[0] = 's'; buf[1] = 'b';
-write(2, buf, bufl);
+//buf[0] = 's'; buf[1] = 'b';
+//write(2, buf, bufl);
 
 				if (_shutdown) break;
                 		_ctxset->joinContextSet(_client, id, _initCtxs); // got id
@@ -399,8 +399,8 @@ write(2, buf, bufl);
 		if (id != (size_t)-1) {
                 	_ctxset->leaveContextSet(_client, id); // id invalid now
 		}
-buf[0] = 't'; buf[1] = 't';
-write(2, buf, bufl);
+//buf[0] = 't'; buf[1] = 't';
+//write(2, buf, bufl);
                 return PAMI_SUCCESS;
         }
 
