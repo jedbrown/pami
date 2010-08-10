@@ -443,16 +443,16 @@ namespace PAMI
             }
 	    else
 	    {
-              bargeom->default_barrier(_geom_finish, (void *)new_geometry,
-							ctxt->getId(), context);	    
+              bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry,
+							ctxt->getId(), context);
 	    }
-	    new_geometry->processUnexpBarrier();
         }
         else
         {
 	  // non-participant members of parent won't know if new geom exists...
           bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
 	}
+
 #else
         BGQGeometry              *new_geometry;
 
@@ -473,15 +473,14 @@ namespace PAMI
               }
             *geometry = (pami_geometry_t) new_geometry;
 
-	    new_geometry->processUnexpBarrier();
             /// \todo  deliver completion to the appropriate context
           }
 
         BGQGeometry *bargeom = (BGQGeometry*)parent;
         PAMI::Context *ctxt = (PAMI::Context *)context;
         bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
-#endif
 
+#endif
         TRACE_ERR((stderr,  "%s exit geometry %p/%p\n", __PRETTY_FUNCTION__,geometry,*geometry));
         return PAMI_SUCCESS;
       }
