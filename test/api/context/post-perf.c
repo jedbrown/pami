@@ -18,6 +18,20 @@
 extern pami_result_t PAMI_Client_add_commthread_context(pami_client_t client, pami_context_t context);
 
 
+#ifndef __pami_target_bgq__
+#include <pthread.h>
+static void*
+advance(void* arg)
+{
+  pami_context_t context = *(pami_context_t*)arg;
+  /* printf("%s:%d  context=%p\n", __FUNCTION__, __LINE__, context); */
+  for (;;)
+    PAMI_Context_advance(context, (size_t)-1);
+  return NULL;
+}
+#endif
+
+
 static pami_result_t
 posted(pami_context_t context, void *cookie)
 {
@@ -95,6 +109,9 @@ main(int argc, char **argv)
   pami_client_t  client;
   pami_context_t contexts[NCONTEXTS];
   size_t ncontexts = NCONTEXTS;
+#ifndef __pami_target_bgq__
+  pthread_t threads[NCONTEXTS];
+#endif
 
   rc = PAMI_Client_create("TEST", &client, NULL, 0);
   assert(rc == PAMI_SUCCESS);
@@ -134,13 +151,17 @@ main(int argc, char **argv)
 
 
   {
-#ifdef __pami_target_bgq__
     size_t context;
     for (context = 1; context<ncontexts; ++context) {
+#ifdef __pami_target_bgq__
       rc = PAMI_Client_add_commthread_context(client, contexts[context]);
       assert(rc == PAMI_SUCCESS);
-    }
+#else
+      int result;
+      result = pthread_create(&threads[context], NULL, advance, &contexts[context]);
+      assert(result == 0);
 #endif
+    }
 
     uint64_t posted_time, done_time;
     test(contexts, ncontexts, ITERATIONS>>4, &posted_time, &done_time);
@@ -158,11 +179,13 @@ main(int argc, char **argv)
   }
 
 
+#ifdef __pami_target_bgq__
   rc = PAMI_Context_destroyv(contexts, ncontexts);
   assert(rc == PAMI_SUCCESS);
 
   rc = PAMI_Client_destroy(&client);
   assert(rc == PAMI_SUCCESS);
+#endif
 
   return 0;
 };
