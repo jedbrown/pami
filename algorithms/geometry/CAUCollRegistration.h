@@ -20,6 +20,7 @@
 #include "algorithms/protocols/barrier/MultiSyncComposite.h"
 #include "algorithms/protocols/broadcast/MultiCastComposite.h"
 #include "algorithms/protocols/allreduce/MultiCombineComposite.h"
+#include "algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h"
 #include "common/lapiunix/lapifunc.h"
 
 // Collective Registration for CAU protocols for p2p

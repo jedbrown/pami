@@ -19,6 +19,7 @@
 #include "util/queue/MatchQueue.h"
 #include "common/lapiunix/lapifunc.h"
 #include "TypeDefs.h"
+#include "components/memory/MemoryAllocator.h"
 #include <list>
 
 namespace PAMI

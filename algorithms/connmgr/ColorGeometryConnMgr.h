@@ -15,7 +15,7 @@
 #define __algorithms_connmgr_ColorGeometryConnMgr_h__
 
 #include "algorithms/schedule/Color.h"
-
+#include "algorithms/connmgr/ConnectionManager.h"
 namespace CCMI
 {
   namespace ConnectionManager

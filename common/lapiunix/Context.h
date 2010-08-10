@@ -57,7 +57,6 @@
 #include "util/fifo/LinearFifo.h"
 
 // Collective Protocols
-#include "algorithms/geometry/CCMICollRegistration.h"
 #include "algorithms/geometry/PGASCollRegistration.h"
 #include "algorithms/geometry/P2PCCMIRegistration.h"
 #include "algorithms/geometry/CAUCollRegistration.h"
@@ -250,17 +249,7 @@ namespace PAMI
   typedef Geometry::Lapi                                              LAPIGeometry;
 
   // Protocol Typedefs
-
-  // "New" CCMI Protocol Typedefs
-  typedef PAMI::LAPINativeInterface<LAPIDevice,
-                                   LAPIMulticastModel,
-                                   LAPIMultisyncModel,
-                                   LAPIMulticombineModel>              DefaultNativeInterface;
-  typedef CollRegistration::CCMIRegistration<LAPIGeometry,
-                                             DefaultNativeInterface,
-                                             DefaultNativeInterface,
-                                             LAPIDevice> CCMICollreg;
-
+  
   // Memory Allocator Typedefs
   typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
@@ -488,10 +477,6 @@ namespace PAMI
 
       inline pami_result_t initCollectives()
         {
-	  //	  _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
-	  //	  new(_ccmi_collreg) CCMICollreg(_client, (pami_context_t)this, _contextid ,_clientid,_lapi_device);
-	  //	  _ccmi_collreg->analyze(_contextid, _world_geometry);
-
           _p2p_ccmi_collreg=(P2PCCMICollreg*) malloc(sizeof(*_p2p_ccmi_collreg));
           new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
                                                 _context,
@@ -923,7 +908,6 @@ namespace PAMI
       CAUDevice                              _cau_device;
   public:
       /*  Collective Registrations                              */
-      // CCMICollreg                           *_ccmi_collreg;
       PGASCollreg                           *_pgas_collreg;
       P2PCCMICollreg                        *_p2p_ccmi_collreg;
       CAUCollreg                            *_cau_collreg;
