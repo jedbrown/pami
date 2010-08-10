@@ -27,7 +27,7 @@ int main (int argc, char ** argv)
 {
   pami_client_t client;
   pami_context_t context[2];
-  pami_configuration_t * configuration = NULL;
+  pami_configuration_t configuration;
   char                  cl_string[] = "TEST";
   pami_result_t result = PAMI_ERROR;
 
@@ -38,8 +38,16 @@ int main (int argc, char ** argv)
     return 1;
   }
 
+  configuration.name = PAMI_CLIENT_NUM_CONTEXTS;
+  result = PAMI_Client_query(client, &configuration, 1);
+  if (configuration.value.intval < 2)
+  {
+    fprintf (stderr, "Error. Multi-context not supported. PAMI_CLIENT_NUM_CONTEXTS = %zu\n", configuration.value.intval);
+    return 1;
+  }
+
   size_t num = 2;
-  result = PAMI_Context_createv (client, configuration, 0, context, num);
+  result = PAMI_Context_createv (client, &configuration, 0, context, num);
   if (result != PAMI_SUCCESS || num != 2)
   {
     fprintf (stderr, "Error. Unable to create two pami context. result = %d\n", result);

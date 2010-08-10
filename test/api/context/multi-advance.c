@@ -10,8 +10,8 @@
 int main (int argc, char ** argv)
 {
   pami_client_t client;
-  pami_context_t context[2];
-  pami_configuration_t * configuration = NULL;
+  pami_context_t * context;
+  pami_configuration_t configuration;
   char                  cl_string[] = "TEST";
   pami_result_t result = PAMI_ERROR;
 
@@ -22,26 +22,30 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  size_t num = 2;
-  result = PAMI_Context_createv (client, configuration, 0, context, num);
-  if (result != PAMI_SUCCESS || num != 2)
+  configuration.name = PAMI_CLIENT_NUM_CONTEXTS;
+  result = PAMI_Client_query(client, &configuration, 1);
+  size_t num = configuration.value.intval;
+
+  fprintf (stderr, "PAMI_CLIENT_NUM_CONTEXTS = %zu\n", num);
+  context = (pami_context_t *) malloc(sizeof(pami_context_t)*num);
+
+  size_t tmp = num;
+  result = PAMI_Context_createv (client, &configuration, 0, context, num);
+  if (result != PAMI_SUCCESS || num != tmp)
   {
-    fprintf (stderr, "Error. Unable to create both pami context. result = %d\n", result);
+    fprintf (stderr, "Error. Unable to create %zu pami context(s). result = %d\n", tmp, result);
     return 1;
   }
 
-  if (result == PAMI_SUCCESS)
+  size_t i;
+  for (i=0; i<num; i++)
   {
-    fprintf (stdout, "Before PAMI_Context_advance()\n");
-    result = PAMI_Context_advance (context[0], 1);
-    fprintf (stdout, " After PAMI_Context_advance(), result = %d\n", result);
-  }
-
-  if (result == PAMI_SUCCESS)
-  {
-    fprintf (stdout, "Before PAMI_Context_advance()\n");
-    result = PAMI_Context_advance (context[1], 1);
-    fprintf (stdout, " After PAMI_Context_advance(), result = %d\n", result);
+    if (result == PAMI_SUCCESS)
+    {
+      fprintf (stdout, "Before PAMI_Context_advance(), context = %zu\n", i);
+      result = PAMI_Context_advance (context[1], 1);
+      fprintf (stdout, " After PAMI_Context_advance(), context = %zu, result = %d\n", i, result);
+    }
   }
 
   result = PAMI_Context_destroyv (context, num);

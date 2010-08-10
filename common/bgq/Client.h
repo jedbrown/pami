@@ -127,15 +127,15 @@ namespace PAMI
             return PAMI_ERROR;
           }
 
-        if (_ncontexts + n > 4)
-          {
-            n = 4 - _ncontexts;
-          }
-
-        if (n <= 0)   // impossible?
-          {
-            return PAMI_ERROR;
-          }
+        /// \todo #99 Remove this hack and replace with a device interface
+        size_t peers, max;
+        __global.mapping.nodePeers (peers);
+        max = MIN(4,(64/peers));
+        if (ncontexts > (64 / peers))
+        {
+          return PAMI_INVAL;
+        }
+        n = ncontexts;
 
         int rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
         PAMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
@@ -195,8 +195,8 @@ namespace PAMI
       }
       inline pami_result_t destroyContext_impl (pami_context_t *context, size_t ncontexts)
       {
-	PAMI_assertf(ncontexts == _ncontexts, "destroyContext called without all contexts");
-	// for (i = 0.._ncontexts) PAMI_assertf(context[i] == _contexts[i], "...");
+  PAMI_assertf(ncontexts == _ncontexts, "destroyContext(%p,%zu) called without all contexts (expected %zu contexts)", context, ncontexts, _ncontexts);
+  // for (i = 0.._ncontexts) PAMI_assertf(context[i] == _contexts[i], "...");
 #ifdef USE_COMMTHREADS
         PAMI::Device::CommThread::BgqCommThread::shutdown(_commThreads, _clientid);
 #endif // USE_COMMTHREADS
@@ -239,18 +239,15 @@ namespace PAMI
                                      size_t               num_configs)
       {
         pami_result_t result = PAMI_SUCCESS;
-        size_t i;
+        size_t i, peers = 0;
         for(i=0; i<num_configs; i++)
           {
             switch (configuration[i].name)
               {
                 case PAMI_CLIENT_NUM_CONTEXTS:
-
-                  /// \todo #80 #99 Remove this when the DMA supports >1 context.
-                  if (__global.useMU())
-                    configuration[i].value.intval = 1;
-                  else
-                    configuration[i].value.intval = 64;
+                  /// \todo #99 Remove this hack and replace with a device interface
+                  __global.mapping.nodePeers (peers);
+                  configuration[i].value.intval = MIN(4,(64/peers));
                   break;
                 case PAMI_CLIENT_CONST_CONTEXTS:
                   configuration[i].value.intval = true;
