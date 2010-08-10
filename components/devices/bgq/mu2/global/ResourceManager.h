@@ -54,6 +54,7 @@ typedef PAMI::Mutex::BGQ::L2NodeMutex MUCR_mutex_t;
 typedef PAMI::Device::SharedAtomicMutexMdl<MUCR_mutex_t> MUCR_mutex_model_t;
 #include <spi/include/kernel/collective.h>
 #include <spi/include/mu/Classroute_inlines.h>
+#include <spi/include/kernel/gi.h>
 #endif
 
 #ifdef TRACE
@@ -479,10 +480,9 @@ namespace PAMI
 	  // first, locally "block-out" any already reserved classroutes...
 	  // we take the "last" N ids, where "N" is some number we get from a
 	  // resource manager - TBD.
-	  uint32_t N = ncr; // take all, until we know otherwise...
+	  N = ncr; // take all, until we know otherwise...
 	  if (N > ncr) N = ncr;
 	  MUSPI_InitClassrouteIds(&crs[ncr - N], N, 1, &_gicrdata);
-	  uint32_t x;
 	  for (x = ncr - N; x < N; ++x)
 	  {
 	    Kernel_AllocateGlobalInterruptClassRoute(crs[x], NULL);
@@ -807,12 +807,12 @@ namespace PAMI
 	  /// \todo #warning _cncrdata (_gicrdata) must be in shared memory!
 	  uint32_t mask1 = 0, mask2 = 0;
 
-	  void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
+	  void *val = crck->geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
 	  if (val && val != PAMI_CR_GKEY_FAIL)
 	    mask1 = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
 	            &rect, &crck->thus->_cncrdata);
 
-	  val = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
+	  val = crck->geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
 	  if (val && val != PAMI_CR_GKEY_FAIL)
 	    mask2 = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
 	            &rect, &crck->thus->_gicrdata);
@@ -820,8 +820,8 @@ namespace PAMI
 	  // is this true? can we be sure ALL nodes got the same result?
 	  // if so, and we are re-using existing classroute, then we can skip
 	  // the allreduce...
-	  crck->abuf[0] = (mask1 & ~CR_MATCH_RECT_FLAG) |
-	  		((mask2 & ~CR_MATCH_RECT_FLAG) << 32);
+	  crck->abuf[0] = ((uint64_t)mask1 & ~CR_MATCH_RECT_FLAG) |
+	  		(((uint64_t)mask2 & ~CR_MATCH_RECT_FLAG) << 32);
 #if 0 // can't do this with two indepoendent masks (GI+Coll)?
 	  if (mask & CR_MATCH_RECT_FLAG)
 	  {

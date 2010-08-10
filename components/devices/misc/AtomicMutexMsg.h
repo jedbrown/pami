@@ -176,7 +176,7 @@ public:
 	}
 
 	inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
-					       pami_multisync_t *msync);
+					       pami_multisync_t *msync, void *devinfo);
 
 private:
 	PAMI::Device::Generic::Device *_gd;
@@ -214,7 +214,7 @@ inline pami_result_t PAMI::Device::AtomicMutexMdl<T_Mutex>::postMultisync_impl(u
 
 template <class T_Mutex>
 inline pami_result_t PAMI::Device::SharedAtomicMutexMdl<T_Mutex>::postMultisync_impl(uint8_t (&state)[sizeof_msg],
-										 pami_multisync_t *msync) {
+										 pami_multisync_t *msync, void *devinfo) {
 	if (msync->roles == LOCK_ROLE) {
 		if (_mutex->tryAcquire()) {
 			if (msync->cb_done.function) {

@@ -330,6 +330,71 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+#ifdef ENABLE_MU_CLASSROUTES
+      static void _geom_newopt_start(pami_context_t context, void *cookie, pami_result_t err)
+      {
+	BGQGeometry *gp = (BGQGeometry *)cookie;
+	if (err != PAMI_SUCCESS)
+	{
+	  _geom_newopt_finish(context, cookie, err);
+	  return;
+	}
+        PAMI::Context *ctxt = (PAMI::Context *)context;
+        Client *thus = (Client *)ctxt->getClient();
+        pami_result_t rc = __MUGlobal.getMuRM().geomOptimize(gp, thus->_clientid,
+					ctxt->getId(), context, _geom_newopt_finish, cookie);
+	if (rc != PAMI_SUCCESS)
+	{
+	  _geom_newopt_finish(context, cookie, rc);
+	  return;
+	}
+      }
+
+      static void _geom_opt_finish(pami_context_t context, void *cookie, pami_result_t err)
+      {
+        BGQGeometry *gp = (BGQGeometry *)cookie;
+        PAMI::Context *ctxt = (PAMI::Context *)context;
+
+	/// \todo #warning must destroy the new geometry on error
+        if (err == PAMI_SUCCESS)
+        {
+            Client *thus = (Client *)ctxt->getClient();
+
+            for (size_t n = 0; n < thus->_ncontexts; n++)
+            {
+                thus->_contexts[n].analyze(n, gp, 1);
+            }
+        }
+
+	// non-fatal errors - do not destroy geometry (caller might have different plans)
+        gp->rmCompletion(context, err);
+      }
+
+      static void _geom_newopt_finish(pami_context_t context, void *cookie, pami_result_t err)
+      {
+        BGQGeometry *gp = (BGQGeometry *)cookie;
+        //PAMI::Context *ctxt = (PAMI::Context *)context;
+
+        if (err == PAMI_SUCCESS)
+        {
+          gp->addCompletion();
+	  _geom_opt_finish(context, cookie, err);
+          gp->rmCompletion(context, err); // completion happens here instead of
+					  // inside _geom_opt_finish().
+					  // trivial diff, right now.
+	  return;
+        }
+
+	/// \todo #warning must destroy the new geometry on error
+	// but, how to do that while we're standing on it...
+        gp->rmCompletion(context, err);
+	// we have to assume geomOptimize() cleaned up after itself, but
+	// what else do we need to cleanup? What might the analyze phases
+	// have done? Right now, nothing does proper cleanup...
+	// gp->~BGQGeometry(); ???
+      }
+#endif
+
       inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
 							  pami_configuration_t   configuration[],
 							  size_t                 num_configs,
@@ -345,7 +410,7 @@ namespace PAMI
 #ifdef ENABLE_MU_CLASSROUTES
 
 	// simple for now: only PAMI_GEOMETRY_OPTIMIZE
-        if (num_config != 0 && (num_config > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
+        if (num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
         {
           return PAMI_INVAL;
         }
@@ -374,14 +439,14 @@ namespace PAMI
             new_geometry->setCompletion(fn, cookie);
             new_geometry->addCompletion(); // ensure completion doesn't happen until
             				   // all have been analyzed (_geom_opt_finish).
-	    if (num_config) // must be PAMI_GEOMETRY_OPTIMIZE...
+	    if (num_configs) // must be PAMI_GEOMETRY_OPTIMIZE...
 	    {
-              bargeom->default_barrier(_geom_opt_start, (void *)new_geometry,
+              bargeom->default_barrier(_geom_newopt_start, (void *)new_geometry,
 							ctxt->getId(), context);
             }
 	    else
 	    {
-              bargeom->default_barrier(_geom_finish, (void *)new_geometry,
+              bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry,
 							ctxt->getId(), context);
 	    }
         }
@@ -438,7 +503,7 @@ namespace PAMI
 #ifdef ENABLE_MU_CLASSROUTES
 
 	// simple for now: only PAMI_GEOMETRY_OPTIMIZE, and not allowed here.
-        if (num_config)
+        if (num_configs)
           {
             return PAMI_INVAL;
           }
@@ -450,69 +515,6 @@ namespace PAMI
       }
 
 #ifdef ENABLE_MU_CLASSROUTES
-      static void _geom_newopt_start(pami_context_t context, void *cookie, pami_result_t err)
-      {
-	BGQGeometry *gp = (BGQGeometry *)cookie;
-	if (err != PAMI_SUCCESS)
-	{
-	  _geom_newopt_finish(context, cookie, err);
-	  return;
-	}
-        PAMI::Context *ctxt = (PAMI::Context *)context;
-        Client *thus = (Client *)ctxt->getClient();
-        pami_result_t rc = __MUGlobal.getMuRM().geomOptimize(gp, thus->_clientid,
-					ctxt->getId(), context, _geom_newopt_finish, cookie);
-	if (rc != PAMI_SUCCESS)
-	{
-	  _geom_newopt_finish(context, cookie, rc);
-	  return;
-	}
-      }
-
-      static void _geom_opt_finish(pami_context_t context, void *cookie, pami_result_t err)
-      {
-        BGQGeometry *gp = (BGQGeometry *)cookie;
-        PAMI::Context *ctxt = (PAMI::Context *)context;
-
-	/// \todo #warning must destroy the new geometry on error
-        if (err == PAMI_SUCCESS)
-        {
-            Client *thus = (Client *)ctxt->getClient();
-
-            for (size_t n = 0; n < thus->_ncontexts; n++)
-            {
-                thus->_contexts[n].analyze(n, gp, 1);
-            }
-        }
-
-	// non-fatal errors - do not destroy geometry (caller might have different plans)
-        gp->rmCompletion(context, err);
-      }
-
-      static void _geom_newopt_finish(pami_context_t context, void *cookie, pami_result_t err)
-      {
-        BGQGeometry *gp = (BGQGeometry *)cookie;
-        PAMI::Context *ctxt = (PAMI::Context *)context;
-
-        if (err == PAMI_SUCCESS)
-        {
-          gp->addCompletion();
-	  _geom_opt_finish(context, cookie, err);
-          gp->rmCompletion(context, err); // completion happens here instead of
-					  // inside _geom_opt_finish().
-					  // trivial diff, right now.
-	  return;
-        }
-
-	/// \todo #warning must destroy the new geometry on error
-	// but, how to do that while we're standing on it...
-        gp->rmCompletion(context, err);
-	// we have to assume geomOptimize() cleaned up after itself, but
-	// what else do we need to cleanup? What might the analyze phases
-	// have done? Right now, nothing does proper cleanup...
-	// gp->~BGQGeometry(); ???
-      }
-
       inline pami_result_t geometry_query_impl(pami_geometry_t geometry,
                                           pami_configuration_t configuration[],
 					  size_t num_configs)
@@ -522,6 +524,7 @@ namespace PAMI
 		return PAMI_INVAL;
 	}
 
+        BGQGeometry *geom = (BGQGeometry *)geometry;
         // is it stored in geometry? or just implied by key/vals?
         // configuration[0].value.intval = gp->???;
         void *v1 = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
@@ -547,12 +550,13 @@ namespace PAMI
 	// it becomes much more complicated - must detect errors and "roll back".
         BGQGeometry *gp = (BGQGeometry *)geometry;
         PAMI::Context *ctxt = (PAMI::Context *)context;
+        pami_result_t rc = PAMI_SUCCESS;
         if (configuration[0].value.intval != 0)
           {
             gp->setCompletion(fn, cookie);
             gp->addCompletion();        // ensure completion doesn't happen until
             				// all have been analyzed (_geom_opt_finish).
-            pami_result_t rc = __MUGlobal.getMuRM().geomOptimize(gp, _clientid,
+            rc = __MUGlobal.getMuRM().geomOptimize(gp, _clientid,
 				ctxt->getId(), context, _geom_opt_finish, (void *)gp);
           }
         else
