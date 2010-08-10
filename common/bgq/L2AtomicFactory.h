@@ -96,6 +96,7 @@ namespace BGQ {
                                 PAMI::Mapping *mapping, PAMI::Topology *local) {
                         pami_result_t rc;
                         int irc;
+			uint64_t krc;
 
 			/// \todo The must be re-worked for >4G Nodes, since we won't
 			/// have enough TLBs to map all of memory for L2 Atomic use.
@@ -119,7 +120,10 @@ namespace BGQ {
                         PAMI_assertf(irc == 0 && virt,
                                 "Failed to get memory for _l2proc, asked size %zu",
                                 sizeof(uint64_t) * size);
-			/// \todo need to "register" this memory for use by L2 Atomic Ops
+			krc = Kernel_L2AtomicsAllocate(virt, sizeof(uint64_t) * size);
+                        PAMI_assertf(krc == 0,
+				"Failed to map process L2 Atomic region %p (%zd): %d",
+				virt, sizeof(uint64_t) * size, errno);
                         memset(virt, 0, sizeof(uint64_t) * size);
 			__procscoped_mm.init(virt, size);
 
@@ -131,7 +135,10 @@ namespace BGQ {
                         PAMI_assertf(rc == PAMI_SUCCESS && virt,
                                 "Failed to get shmem for _l2node, asked size %zu",
                                 sizeof(uint64_t) * size);
-			/// \todo need to "register" this memory for use by L2 Atomic Ops
+			krc = Kernel_L2AtomicsAllocate(virt, sizeof(uint64_t) * size);
+                        PAMI_assertf(krc == 0,
+				"Failed to map shared L2 Atomic region %p (%zd): %d",
+				virt, sizeof(uint64_t) * size, errno);
 
 			/// \todo need to coordinate clearing of shmem unless we know a barrier follows
 			// clearing of memory done after computing local params
