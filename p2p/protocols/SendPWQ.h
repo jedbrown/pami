@@ -151,7 +151,7 @@ namespace PAMI
           // send it now if there is enough data in the pwq
           if (length >= parameters->data.iov_len)
           {
-            pami_result_t result;
+            pami_result_t result = PAMI_SUCCESS;
             parameters->data.iov_base = payload;
             parameters->data.iov_len = length;
             size_t size = state->dst_participants.size();
@@ -222,7 +222,7 @@ namespace PAMI
           // send it now if there is enough data in the pwq
           if (length >= parameters->send.data.iov_len)
           {
-            pami_result_t result;
+            pami_result_t result = PAMI_SUCCESS;
             parameters->send.data.iov_base = payload;
             parameters->send.data.iov_len = length;
             size_t size = state->dst_participants.size();

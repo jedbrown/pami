@@ -242,7 +242,7 @@ namespace CCMI
            pami_pipeworkqueue_t ** rcvpwq,
            PAMI_Callback_t       * cb_done)
           {
-            TRACE_ADAPTOR((stderr,"<%p>Allreduce::MultiColorCompositeT::cb_receiveHead peer %d, conn_id %d\n",
+            TRACE_ADAPTOR((stderr,"<%p>Allreduce::MultiColorCompositeT::cb_receiveHead peer %zd, conn_id %d\n",
                            arg, peer, conn_id));
             CCMI_assert (info && arg);
             CollHeaderData  *cdata = (CollHeaderData *) info;
