@@ -283,7 +283,7 @@ public:
 			fwu += devs[x]._falseWU;
 		}
 		_numActive = 0;
-fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
+// fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
 		return PAMI_SUCCESS;
 	}
 
