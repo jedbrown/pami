@@ -303,6 +303,7 @@ namespace PAMI
           }
           *geometry = (pami_geometry_t) new_geometry;
           /// \todo  deliver completion to the appropriate context
+	  new_geometry->processUnexpBarrier();
         }
         BGPGeometry *bargeom = (BGPGeometry*)parent;
         PAMI::Context *ctxt = (PAMI::Context *)context;

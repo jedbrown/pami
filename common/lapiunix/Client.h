@@ -439,6 +439,7 @@ namespace PAMI
                     // _contexts[n]->_coll_shm_collreg->analyze(n, new_geometry);
 #endif // _COLLSHM
               }
+	    new_geometry->processUnexpBarrier();
             *geometry=(LAPIGeometry*) new_geometry;
           }
 

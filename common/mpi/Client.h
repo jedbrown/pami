@@ -276,6 +276,7 @@ namespace PAMI
                 _contexts[n]._oldccmi_collreg->analyze_local(n,new_geometry,&to_reduce[2]);
                 _contexts[n]._ccmi_collreg->analyze_local(n,new_geometry,&to_reduce[3]);
               }
+	
 	    new_geometry->processUnexpBarrier();
 
             *geometry=(MPIGeometry*) new_geometry;
