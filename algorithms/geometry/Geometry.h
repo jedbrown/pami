@@ -31,8 +31,7 @@
 #define PAMI_GEOMETRY_NUMALGOLISTS 64
 #endif
 
-#include "UnexpBarrierQueueElement.h"
-
+#include "algorithms/geometry/UnexpBarrierQueueElement.h"
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/memory/MemoryAllocator.h"
 typedef PAMI::Counter::GccProcCounter GeomCompCtr;

@@ -14,7 +14,7 @@
 #ifndef __algorithms_protocols_tspcoll_NBColl_h__
 #define __algorithms_protocols_tspcoll_NBColl_h__
 
-#include "algorithms/geometry/Geometry.h"
+#include "TypeDefs.h"
 
 namespace TSPColl
 {

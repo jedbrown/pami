@@ -31,6 +31,12 @@
 #define PAMI_GEOMETRY_NUMALGOLISTS 64
 #endif
 
+#include "algorithms/geometry/UnexpBarrierQueueElement.h"
+#include "components/atomic/gcc/GccCounter.h"
+#include "components/memory/MemoryAllocator.h"
+typedef PAMI::Counter::GccProcCounter GeomCompCtr;
+
+
 namespace PAMI
 {
   namespace Geometry
@@ -349,6 +355,26 @@ namespace PAMI
           PAMI::cached_geometry[comm]=(void*)geometry;
         }
 
+      static inline void registerUnexpBarrier_impl (unsigned comm, pami_quad_t &info, 
+						    unsigned peer, unsigned algorithm)
+      {
+	UnexpBarrierQueueElement *ueb = (UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
+
+	new (ueb) UnexpBarrierQueueElement (comm, info, peer, algorithm);
+	_ueb_queue.pushTail(ueb);
+      }
+
+      inline void processUnexpBarrier_impl () {
+	UnexpBarrierQueueElement *ueb = NULL;
+	while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL ) {
+	  CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((keys_t)ueb->getAlgorithm());
+	  c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
+	  _ueb_allocator.returnObject(ueb);
+	}
+      }
+
+
+      
       // These methods were originally from the PGASRT Communicator class
       inline pami_task_t size_impl(void)
         {
