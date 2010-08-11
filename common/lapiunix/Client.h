@@ -59,7 +59,8 @@ namespace PAMI
         _world_geometry = (LAPIGeometry*)_geometryAlloc.allocateObject();
         _world_range.lo = 0;
         _world_range.hi = mysize-1;
-        new(_world_geometry) LAPIGeometry(NULL,
+        new(_world_geometry) LAPIGeometry((pami_client_t) this,
+                                          NULL,
                                           &__global.mapping,
                                           0,
                                           1,
@@ -424,11 +425,12 @@ namespace PAMI
         if(geometry != NULL)
           {
             new_geometry=(LAPIGeometry*) malloc(sizeof(*new_geometry));
-            new(new_geometry)LAPIGeometry((LAPIGeometry*)parent,
-                                         &__global.mapping,
-                                         id,
-                                         slice_count,
-                                         rank_slices);
+            new(new_geometry)LAPIGeometry((pami_client_t)this,
+                                          (LAPIGeometry*)parent,
+                                          &__global.mapping,
+                                          id,
+                                          slice_count,
+                                          rank_slices);
             for(size_t n=0; n<_ncontexts; n++)
               {
                 _contexts[n]->_pgas_collreg->analyze_local(n,new_geometry,&to_reduce[0]);
