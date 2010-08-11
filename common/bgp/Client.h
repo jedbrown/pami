@@ -169,19 +169,19 @@ namespace PAMI
 
       inline pami_result_t destroyContext_impl (pami_context_t *context, size_t ncontexts)
       {
-	PAMI_assertf(ncontexts == _ncontexts, "destroyContext called without all contexts");
+  PAMI_assertf(ncontexts == _ncontexts, "destroyContext called without all contexts");
         pami_result_t res = PAMI_SUCCESS;
-	size_t i;
-	for (i = 0; i < _ncontexts; ++i)
-	{
-	  context[i] = NULL;
-	  PAMI::Context * ctx = &_contexts[i];
-	  pami_result_t rc = ctx->destroy ();
-	  if (rc != PAMI_SUCCESS) res = rc;
-	}
-	free(_contexts);
-	_contexts = NULL;
-	_ncontexts = 0;
+  size_t i;
+  for (i = 0; i < _ncontexts; ++i)
+  {
+    context[i] = NULL;
+    PAMI::Context * ctx = &_contexts[i];
+    pami_result_t rc = ctx->destroy ();
+    if (rc != PAMI_SUCCESS) res = rc;
+  }
+  free(_contexts);
+  _contexts = NULL;
+  _ncontexts = 0;
         return res;
       }
 
@@ -224,10 +224,10 @@ namespace PAMI
                     result = PAMI_INVAL;
                 }
                 break;
+                case PAMI_CLIENT_HWTHREADS_AVAILABLE:
+                  configuration[i].value.intval = 4 / __global.mapping.tSize();
+                  break;
                 case PAMI_CLIENT_MEM_SIZE:
-                  // #warning todo:  these should be dispatch scoped
-                case PAMI_DISPATCH_SEND_IMMEDIATE_MAX:
-                case PAMI_DISPATCH_RECV_IMMEDIATE_MAX:
                 default:
                   result = PAMI_INVAL;
               }
@@ -293,7 +293,7 @@ namespace PAMI
         {
           new_geometry=(BGPGeometry*) malloc(sizeof(*new_geometry)); /// \todo use allocator
           new(new_geometry) BGPGeometry(_client,
-				    (PAMI::Geometry::Common*)parent,
+            (PAMI::Geometry::Common*)parent,
                                     &__global.mapping,
                                     id,
                                     slice_count,
@@ -304,7 +304,7 @@ namespace PAMI
           }
           *geometry = (pami_geometry_t) new_geometry;
           /// \todo  deliver completion to the appropriate context
-	  new_geometry->processUnexpBarrier();
+    new_geometry->processUnexpBarrier();
         }
         BGPGeometry *bargeom = (BGPGeometry*)parent;
         PAMI::Context *ctxt = (PAMI::Context *)context;
@@ -330,20 +330,20 @@ namespace PAMI
       }
 
     inline pami_result_t geometry_query_impl (pami_geometry_t        geometry,
-					      pami_configuration_t   configuration[],
-					      size_t                 num_configs)
+                pami_configuration_t   configuration[],
+                size_t                 num_configs)
       {
-	return PAMI_UNIMPL;
+  return PAMI_UNIMPL;
       }
 
     inline pami_result_t geometry_update_impl (pami_geometry_t        geometry,
-					       pami_configuration_t   configuration[],
-					       size_t                 num_configs,
-					       pami_context_t         context,
-					       pami_event_function    fn,
-					       void                 * cookie)
+                 pami_configuration_t   configuration[],
+                 size_t                 num_configs,
+                 pami_context_t         context,
+                 pami_event_function    fn,
+                 void                 * cookie)
       {
-	return PAMI_UNIMPL;
+  return PAMI_UNIMPL;
       }
 
     inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
