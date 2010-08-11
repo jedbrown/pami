@@ -59,9 +59,9 @@ extern "C"
    *
    * \param[in] context   PAMI communication context running function
    * \param[in] cookie    Application argument
-   * \return	PAMI_SUCCESS causes function to dequeue (stop running)
-   *		PAMI_EAGAIN causes function to remain queued and is called on next advance
-   * 		(any other value) causes function to dequeue and (optionally) report error
+   * \return PAMI_SUCCESS causes function to dequeue (stop running)
+   *         PAMI_EAGAIN causes function to remain queued and is called on next advance
+   *         (any other value) causes function to dequeue and (optionally) report error
    */
   typedef pami_result_t (*pami_work_function)(pami_context_t context, void *cookie);
 
@@ -2392,28 +2392,34 @@ extern "C"
   } pami_dispatch_hint_t;
 
   /**
-   * \brief Initialize the dispatch functions for a dispatch id.
+   * \brief Initialize the dispatch function for a dispatch identifier.
    *
    * This is a local, non-collective operation. There is no communication
    * between tasks.
    *
-   * \note The maximum allowed dispatch id attribute, \c PAMI_DISPATCH_ID_MAX,
-   *       can be queried with the configuration interface
+   * It is \b illegal for the user to specify different hint assertions for the
+   * same client, context offset, and dispatch identifier on different tasks.
+   * However, there is no specific error check that will prevent specifying
+   * different hint assertions. The result of a communication operation using
+   * mismatched hint assertions is \em undefined.
    *
-   * \see PAMI_Dispatch_query
+   * \note The maximum allowed dispatch identifier attribute,
+   *       \c PAMI_CONTEXT_DISPATCH_ID_MAX, can be queried with the
+   *       configuration interface
+   *
+   * \see PAMI_Context_query
    *
    * \param[in] context    PAMI communication context
    * \param[in] dispatch   Dispatch identifier to initialize
    * \param[in] fn         Dispatch receive function
    * \param[in] cookie     Dispatch function cookie
    * \param[in] options    Dispatch registration assertions
-   *
    */
   pami_result_t PAMI_Dispatch_set (pami_context_t              context,
-                                 size_t                     dispatch,
-                                 pami_dispatch_callback_fn   fn,
-                                 void                     * cookie,
-                                 pami_send_hint_t            options);
+                                   size_t                      dispatch,
+                                   pami_dispatch_callback_fn   fn,
+                                   void                      * cookie,
+                                   pami_send_hint_t            options);
 
   /**
    * \brief Initialize the dispatch functions for a dispatch id.
