@@ -658,6 +658,11 @@ namespace PAMI
 	  /// \todo #warning needs to be modified to work with -np comm-worlds
 
 	  PAMI::Topology *topo = (PAMI::Topology *)geom->getTopology(0);
+	  // try to convert to a rectangle... will NO-OP if already rectangle...
+	  // this will change the topology in the geometry... should be OK but
+	  // if there are other ways to optimize we need to avoid thrashing.
+	  (void)topo->convertTopology(PAMI_COORD_TOPOLOGY);
+
 	  // for now, just bail-out if not a rectangle...
 	  // we could try to convert to rectangle, or see if subTopologyNthGlobal
 	  // produces a rectangle, etc.

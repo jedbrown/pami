@@ -330,14 +330,16 @@ namespace PAMI
 #ifdef ENABLE_MU_CLASSROUTES
       static void _geom_newopt_start(pami_context_t context, void *cookie, pami_result_t err)
       {
-	BGQGeometry *gp = (BGQGeometry *)cookie;
+fprintf(stderr, "_geom_newopt_start(%p, %p, %d)\n", context, cookie, err);
+	PAMI_assertf(context, "Geometry create barrier callback with NULL context");
 	if (err != PAMI_SUCCESS)
 	{
 	  _geom_newopt_finish(context, cookie, err);
 	  return;
 	}
-        PAMI::Context *ctxt = (PAMI::Context *)context;
-        Client *thus = (Client *)ctxt->getClient();
+	BGQGeometry *gp = (BGQGeometry *)cookie;
+	PAMI::Context *ctxt = (PAMI::Context *)context;
+	Client *thus = (Client *)ctxt->getClient();
         pami_result_t rc = __MUGlobal.getMuRM().geomOptimize(gp, thus->_clientid,
 					ctxt->getId(), context, _geom_newopt_finish, cookie);
 	if (rc != PAMI_SUCCESS)
@@ -349,7 +351,9 @@ namespace PAMI
 
       static void _geom_opt_finish(pami_context_t context, void *cookie, pami_result_t err)
       {
+fprintf(stderr, "_geom_opt_finish(%p, %p, %d)\n", context, cookie, err);
         BGQGeometry *gp = (BGQGeometry *)cookie;
+if (context) {
         PAMI::Context *ctxt = (PAMI::Context *)context;
 
 	/// \todo #warning must destroy the new geometry on error
@@ -362,6 +366,7 @@ namespace PAMI
                 thus->_contexts[n].analyze(n, gp, 1);
             }
         }
+}
 
 	// non-fatal errors - do not destroy geometry (caller might have different plans)
         gp->rmCompletion(context, err);
@@ -369,6 +374,7 @@ namespace PAMI
 
       static void _geom_newopt_finish(pami_context_t context, void *cookie, pami_result_t err)
       {
+fprintf(stderr, "_geom_newopt_finish(%p, %p, %d)\n", context, cookie, err);
         BGQGeometry *gp = (BGQGeometry *)cookie;
         //PAMI::Context *ctxt = (PAMI::Context *)context;
 
