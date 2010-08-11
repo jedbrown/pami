@@ -529,8 +529,9 @@ namespace PAMI
         // configuration[0].value.intval = gp->???;
         void *v1 = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
         void *v2 = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
-        configuration[0].value.intval = (v1 != NULL && v1 != PAMI_CR_GKEY_FAIL) ||
-                                      (v2 != NULL && v2 != PAMI_CR_GKEY_FAIL);
+	int b1 = (v1 != NULL && v1 != PAMI_CR_GKEY_FAIL);
+	int b2 = (v2 != NULL && v2 != PAMI_CR_GKEY_FAIL);
+        configuration[0].value.intval = b1 | (b2 << 1);
 	return PAMI_SUCCESS;
       }
 

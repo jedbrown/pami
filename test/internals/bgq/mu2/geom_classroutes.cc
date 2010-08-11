@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <pami.h>
 
-#include "Client.h"
+//#include "Client.h"
 
 int main(int argc, char ** argv) {
         pami_context_t context;
@@ -54,12 +54,23 @@ int main(int argc, char ** argv) {
 	pami_geometry_t world_geometry;
 	status = PAMI_Geometry_world(client, &world_geometry);
 
-	//configuration.name = PAMI_GEOMETRY_OPTIMIZE;
+#if 1
+	configuration.name = PAMI_GEOMETRY_OPTIMIZE;
+        status = PAMI_Geometry_query(world_geometry, &configuration, 1);
+        if (status != PAMI_SUCCESS) {
+                fprintf (stderr, "Error. Unable query to geom configuration (%d). result = %d\n", configuration.name, status);
+                return 1;
+        }
+	printf("World geometry is%s optimized (%zd)\n",
+		configuration.value.intval ? "" : " not",
+		configuration.value.intval);
+#else
 	PAMI::BGQGeometry *geom = (PAMI::BGQGeometry *)world_geometry;
 	void *val = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
 	printf("World geometry %s classroute (%ld)\n",
 		val ? "has" : "does not have",
 		(long int)val - 1);
+#endif
 
 // ------------------------------------------------------------------------
         status = PAMI_Context_destroyv(&context, 1);
