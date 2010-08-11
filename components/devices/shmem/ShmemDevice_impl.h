@@ -108,11 +108,7 @@ namespace PAMI
       __global.mapping.node2peer (address, peer);
       TRACE_ERR((stderr, "<< ShmemDevice::task2peer_impl(%zu), peer = %zu\n", task, peer));
 
-#ifdef __bgq__
-      return task; //hack
-#else
       return peer;
-#endif
     }
 
     /// \see PAMI::Device::Interface::BaseDevice::isPeer()

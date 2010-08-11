@@ -149,12 +149,12 @@ namespace PAMI
           {
             TRACE_ERR((stderr, ">> Composite::immediate()\n"));
             pami_result_t result = _primary->immediate (parameters);
-            TRACE_ERR((stderr, "   Composite::immediate(), primary result = %d\n", result));
+            TRACE_ERR((stderr, "   Composite::immediate(), destination endpoint = 0x%08x, primary result = %d\n", parameters->dest, result));
 
             if (result != PAMI_SUCCESS)
               {
                 result = _secondary->immediate (parameters);
-                TRACE_ERR((stderr, "   Composite::immediate(), secondary result = %d\n", result));
+                TRACE_ERR((stderr, "   Composite::immediate(), destination endpoint = 0x%08x, secondary result = %d\n", parameters->dest, result));
               }
 
             TRACE_ERR((stderr, "<< Composite::immediate()\n"));
@@ -170,12 +170,12 @@ namespace PAMI
           {
             TRACE_ERR((stderr, ">> Composite::simple()\n"));
             pami_result_t result = _primary->simple (parameters);
-            TRACE_ERR((stderr, "   Composite::simple(), primary result = %d\n", result));
+            TRACE_ERR((stderr, "   Composite::simple(), destination endpoint = 0x%08x, primary result = %d\n", parameters->send.dest, result));
 
             if (result != PAMI_SUCCESS)
               {
                 result = _secondary->simple (parameters);
-                TRACE_ERR((stderr, "   Composite::simple(), secondary result = %d\n", result));
+                TRACE_ERR((stderr, "   Composite::simple(), destination endpoint = 0x%08x, secondary result = %d\n", parameters->send.dest, result));
               }
 
             TRACE_ERR((stderr, "<< Composite::simple()\n"));
