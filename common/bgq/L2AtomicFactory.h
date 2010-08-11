@@ -98,13 +98,6 @@ namespace BGQ {
                         int irc;
 			uint64_t krc;
 
-			/// \todo The must be re-worked for >4G Nodes, since we won't
-			/// have enough TLBs to map all of memory for L2 Atomic use.
-			if (mapping->task() == 0) {
-				fprintf(stderr, "NOTICE: L2AtomicFactory currently "
-						"requires MEMSIZE <= 4G\n");
-			}
-
                         // Must coordinate with all other processes on this node,
                         // and arrive at a common chunk of physical address memory
                         // which we all will use for allocating "L2Atomics" from.
