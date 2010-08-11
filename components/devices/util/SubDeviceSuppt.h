@@ -418,8 +418,8 @@ public:
                 g[x].postMsg(msg);
                 while (n > 0) {
                         if (t->getStatus() != PAMI::Device::Complete) {
-                                if (++x >= numctx) x = 0;
                                 g[x].postThread(t);
+                                if (++x >= numctx) x = 0;
                         }
                         ++t;
                         --n;
@@ -625,8 +625,8 @@ public:
                 g[x].postMsg(msg);
                 while (n > 0) {
                         if (t->getStatus() != PAMI::Device::Complete) {
-                                if (++x >= numctx) x = 0;
                                 g[x].postThread(t);
+                                if (++x >= numctx) x = 0;
                         }
                         ++t;
                         --n;
