@@ -81,13 +81,7 @@ namespace PAMI
       inline void                       generatePermutation_sizet();
       inline void                       freePermutation_sizet();
       inline pami_task_t               *permutation_sizet();
-      inline pami_result_t              query(pami_configuration_t  configuration[],
-                                              size_t                num_configs);
-      inline pami_result_t              update(pami_configuration_t  configuration[],
-                                               size_t                num_configs,
-                                               pami_context_t        context,
-                                               pami_event_function   fn,
-                                               void                 *cookie);
+      inline pami_client_t		getClient();
 /** \todo  need to replace by attributes */
 #if 1
       // no need for these as they are embedded inside attributes
@@ -264,6 +258,12 @@ namespace PAMI
     inline pami_task_t *Geometry<T_Geometry>::permutation_sizet()
     {
       return static_cast<T_Geometry*>(this)->permutation_sizet_impl();
+    }
+
+    template <class T_Geometry>
+    inline pami_client_t Geometry<T_Geometry>::getClient()
+    {
+      return static_cast<T_Geometry*>(this)->getClient_impl();
     }
 
 /** \todo replace by attributes */
@@ -534,30 +534,6 @@ namespace PAMI
     {
       return static_cast<T_Geometry*>(this)->addCollectiveCheck_impl(xfer_type,factory,context_id);
     }
-
-    template <class T_Geometry>
-    inline pami_result_t Geometry<T_Geometry>::update(pami_configuration_t  configuration[],
-                                                      size_t                num_configs,
-                                                      pami_context_t        context,
-                                                      pami_event_function   fn,
-                                                      void                 *cookie)
-    {
-      return static_cast<T_Geometry*>(this)->update_impl(configuration,
-                                                         num_configs,
-                                                         context,
-                                                         fn,
-                                                         cookie);
-    }
-
-
-    template <class T_Geometry>
-    inline pami_result_t Geometry<T_Geometry>::query(pami_configuration_t  configuration[],
-                                                     size_t                num_configs)
-    {
-      return static_cast<T_Geometry*>(this)->query_impl(configuration, num_configs);
-    }
-
-
 
   }; // namespace Geometry
 }; // namespace PAMI

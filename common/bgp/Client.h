@@ -44,7 +44,7 @@ namespace PAMI
 
         _world_range.lo=0;
         _world_range.hi=__global.mapping.size()-1;
-        new(_world_geometry_storage) BGPGeometry(NULL, &__global.mapping,0, 1,&_world_range);
+        new(_world_geometry_storage) BGPGeometry(_client, NULL, &__global.mapping,0, 1,&_world_range);
 
         result = PAMI_SUCCESS;
       }
@@ -292,7 +292,8 @@ namespace PAMI
         if(geometry != NULL)
         {
           new_geometry=(BGPGeometry*) malloc(sizeof(*new_geometry)); /// \todo use allocator
-          new(new_geometry) BGPGeometry((PAMI::Geometry::Common*)parent,
+          new(new_geometry) BGPGeometry(_client,
+				    (PAMI::Geometry::Common*)parent,
                                     &__global.mapping,
                                     id,
                                     slice_count,
@@ -328,6 +329,22 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+    inline pami_result_t geometry_query_impl (pami_geometry_t        geometry,
+					      pami_configuration_t   configuration[],
+					      size_t                 num_configs)
+      {
+	return PAMI_UNIMPL;
+      }
+
+    inline pami_result_t geometry_update_impl (pami_geometry_t        geometry,
+					       pami_configuration_t   configuration[],
+					       size_t                 num_configs,
+					       pami_context_t         context,
+					       pami_event_function    fn,
+					       void                 * cookie)
+      {
+	return PAMI_UNIMPL;
+      }
 
     inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
       {

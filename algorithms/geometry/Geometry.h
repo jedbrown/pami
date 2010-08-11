@@ -44,7 +44,8 @@ namespace PAMI
       public Geometry<PAMI::Geometry::Common>
     {
     public:
-      inline Common(Mapping                *mapping,
+      inline Common(pami_client_t           client,
+		    Mapping                *mapping,
                     pami_task_t             *ranks,
                     pami_task_t              nranks,
                     unsigned                comm,
@@ -55,12 +56,14 @@ namespace PAMI
                                         nranks,
                                         comm,
                                         numcolors,
-                                        globalcontext)
+                                        globalcontext),
+	_client(client)
         {
           TRACE_ERR((stderr, "<%p>Common()\n", this));
           pami_ca_unset_all(&_attributes);
         }
-      inline Common (Geometry<PAMI::Geometry::Common> *parent,
+      inline Common (pami_client_t                    client,
+		     Geometry<PAMI::Geometry::Common> *parent,
                      Mapping                         *mapping,
                      unsigned                         comm,
                      int                              numranges,
@@ -71,7 +74,8 @@ namespace PAMI
                                         numranges,
                                         rangelist),
         _kvstore(),
-        _commid(comm)
+        _commid(comm),
+	_client(client)
         {
           TRACE_ERR((stderr, "<%p>Common(parent)\n", this));
           int i, j, k, size;
@@ -614,18 +618,9 @@ namespace PAMI
           return _ue_barrier.generate(&cmd);
         }
 
-      pami_result_t update_impl(pami_configuration_t  configuration[],
-                                size_t                num_configs,
-                                pami_context_t        context,
-                                pami_event_function   fn,
-                                void                 *cookie)
+      pami_client_t getClient_impl()
         {
-          return PAMI_UNIMPL;
-        }
-      pami_result_t query_impl(pami_configuration_t  configuration[],
-                               size_t                num_configs)
-        {
-          return PAMI_UNIMPL;
+          return _client;
         }
 
       void setUEBarrier(CCMI::Adaptor::CollectiveProtocolFactory *f)
@@ -666,6 +661,7 @@ namespace PAMI
 
       std::map <int, void*>                         _kvstore;
       int                                           _commid;
+      pami_client_t                                 _client;
       int                                           _numranges;
       pami_task_t                                   _rank;
       MatchQueue                                    _ue;

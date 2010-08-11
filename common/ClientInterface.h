@@ -82,6 +82,17 @@ namespace PAMI
                                                       pami_event_function    fn,
                                                       void                  *cookie);
 
+	inline pami_result_t geometry_query(pami_geometry_t       geometry,
+					    pami_configuration_t  configuration[],
+					    size_t                num_configs);
+
+	inline pami_result_t geometry_update(pami_geometry_t       geometry,
+					     pami_configuration_t  configuration[],
+					     size_t                num_configs,
+					     pami_context_t        context,
+					     pami_event_function   fn,
+					     void                 *cookie);
+
         inline pami_result_t geometry_destroy(pami_geometry_t geometry);
     }; // end class PAMI::Client::Client
 
@@ -192,6 +203,32 @@ namespace PAMI
                                                                          context,
                                                                          fn,
                                                                          cookie);
+    }
+
+    template <class T_Client>
+    pami_result_t Client<T_Client>::geometry_query(pami_geometry_t       geometry,
+						   pami_configuration_t  configuration[],
+						   size_t                num_configs)
+    {
+      return static_cast<T_Client*>(this)->geometry_query_impl(geometry,
+                                                               configuration,
+                                                               num_configs);
+    }
+
+    template <class T_Client>
+    pami_result_t Client<T_Client>::geometry_update(pami_geometry_t       geometry,
+						    pami_configuration_t  configuration[],
+						    size_t                num_configs,
+						    pami_context_t        context,
+						    pami_event_function   fn,
+						    void                 *cookie)
+    {
+      return static_cast<T_Client*>(this)->geometry_update_impl(geometry,
+                                                                configuration,
+                                                                num_configs,
+								context,
+								fn,
+								cookie);
     }
 
     template <class T_Client>

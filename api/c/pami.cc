@@ -209,7 +209,8 @@ extern "C" pami_result_t PAMI_Geometry_query (pami_geometry_t       geometry,
                                               size_t                num_configs)
 {
   PAMI_GEOMETRY_CLASS* _geometry = (PAMI_GEOMETRY_CLASS *) geometry;
-  return _geometry->query(configuration, num_configs);
+  PAMI::Client * _client = (PAMI::Client *)_geometry->getClient();
+  return _client->geometry_query(geometry, configuration, num_configs);
 }
 
 ///
@@ -223,7 +224,8 @@ extern "C"  pami_result_t PAMI_Geometry_update (pami_geometry_t       geometry,
                                                 void                 *cookie)
 {
   PAMI_GEOMETRY_CLASS* _geometry = (PAMI_GEOMETRY_CLASS *) geometry;
-  return _geometry->update(configuration, num_configs, context, fn, cookie);
+  PAMI::Client * _client = (PAMI::Client *)_geometry->getClient();
+  return _client->geometry_update(geometry, configuration, num_configs, context, fn, cookie);
 }
 
 

@@ -283,6 +283,22 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+    inline pami_result_t geometry_query_impl (pami_geometry_t        geometry,
+					      pami_configuration_t   configuration[],
+					      size_t                 num_configs)
+      {
+	return PAMI_UNIMPL;
+      }
+
+    inline pami_result_t geometry_update_impl (pami_geometry_t        geometry,
+					       pami_configuration_t   configuration[],
+					       size_t                 num_configs,
+					       pami_context_t         context,
+					       pami_event_function    fn,
+					       void                 * cookie)
+      {
+	return PAMI_UNIMPL;
+      }
 
     inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
       {

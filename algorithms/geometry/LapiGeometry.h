@@ -45,7 +45,8 @@ namespace PAMI
       public Geometry<PAMI::Geometry::Lapi>
     {
     public:
-      inline Lapi(Mapping       *mapping,
+      inline Lapi(pami_client_t  client,
+		  Mapping       *mapping,
                   pami_task_t   *ranks,
                   pami_task_t    nranks,
                   unsigned       comm,
@@ -56,11 +57,13 @@ namespace PAMI
                                        nranks,
                                        comm,
                                        numcolors,
-                                       globalcontext)
+                                       globalcontext),
+	_client(client)
         {
         }
 
-      inline Lapi (Geometry<PAMI::Geometry::Lapi> *parent,
+      inline Lapi (pami_client_t                   client,
+		   Geometry<PAMI::Geometry::Lapi> *parent,
                    Mapping                        *mapping,
                    unsigned                        comm,
                    int                             numranges,
@@ -73,6 +76,7 @@ namespace PAMI
                                        rangelist),
         _kvstore(),
         _commid(comm),
+        _client(client),
         _participant(false)
         {
           PAMI::Topology *cur         = NULL;
@@ -560,18 +564,9 @@ namespace PAMI
         }
 
 
-      pami_result_t update_impl(pami_configuration_t  configuration[],
-                                size_t                num_configs,
-                                pami_context_t        context,
-                                pami_event_function   fn,
-                                void                 *cookie)
+      pami_client_t getClient_impl()
         {
-          return PAMI_UNIMPL;
-        }
-      pami_result_t query_impl(pami_configuration_t  configuration[],
-                               size_t                num_configs)
-        {
-          return PAMI_UNIMPL;
+          return _client;
         }
       void setUEBarrier(CCMI::Adaptor::CollectiveProtocolFactory *f)
         {
@@ -611,6 +606,7 @@ namespace PAMI
 
       std::map <int, void*>                       _kvstore;
       int                                         _commid;
+      pami_client_t                               _client;
       pami_task_t                                 _rank;
       MatchQueue                                  _ue;
       MatchQueue                                  _post;
