@@ -330,7 +330,6 @@ namespace PAMI
 #ifdef ENABLE_MU_CLASSROUTES
       static void _geom_newopt_start(pami_context_t context, void *cookie, pami_result_t err)
       {
-fprintf(stderr, "_geom_newopt_start(%p, %p, %d)\n", context, cookie, err);
 	PAMI_assertf(context, "Geometry create barrier callback with NULL context");
 	if (err != PAMI_SUCCESS)
 	{
@@ -353,7 +352,7 @@ fprintf(stderr, "_geom_newopt_start(%p, %p, %d)\n", context, cookie, err);
       {
 fprintf(stderr, "_geom_opt_finish(%p, %p, %d)\n", context, cookie, err);
         BGQGeometry *gp = (BGQGeometry *)cookie;
-if (context) {
+if (context) { // HACK! until no one calls completion with NULL context!
         PAMI::Context *ctxt = (PAMI::Context *)context;
 
 	/// \todo #warning must destroy the new geometry on error
@@ -374,7 +373,6 @@ if (context) {
 
       static void _geom_newopt_finish(pami_context_t context, void *cookie, pami_result_t err)
       {
-fprintf(stderr, "_geom_newopt_finish(%p, %p, %d)\n", context, cookie, err);
         BGQGeometry *gp = (BGQGeometry *)cookie;
         //PAMI::Context *ctxt = (PAMI::Context *)context;
 

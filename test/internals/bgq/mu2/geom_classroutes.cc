@@ -97,6 +97,7 @@ int main(int argc, char ** argv) {
 			}
 			if (g_done == 1) {
 				g_done = 0;
+fprintf(stderr, "calling PAMI_Geometry_update...\n");
 				status = PAMI_Geometry_update(geom, &configuration, 1,
 							context, g_done_fn, &g_done);
 			}
