@@ -132,13 +132,11 @@ main(int argc, char **argv)
     ncontexts = MIN(ncontexts, configuration.value.intval);
 #endif
 
-/* We don't use this because HWTHREADS_AVAILABLE isn't implemented */
-#if 0
     configuration.name = PAMI_CLIENT_HWTHREADS_AVAILABLE;
     rc = PAMI_Client_query(client, &configuration, 1);
     assert(rc == PAMI_SUCCESS);
+    printf("ncontexts=%zu   PAMI_CLIENT_HWTHREADS_AVAILABLE=%zu\n", ncontexts, configuration.value.intval);
     ncontexts = MIN(ncontexts, configuration.value.intval);
-#endif
   }
 
   assert(ncontexts > 1);
