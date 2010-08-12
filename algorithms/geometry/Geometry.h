@@ -192,7 +192,7 @@ namespace PAMI
        inline void rmCompletion(pami_context_t ctx, pami_result_t result)
         {
                 if (result != PAMI_SUCCESS) _cb_result = result;
-                if (_comp.fetch_and_dec() == 0) {
+                if (_comp.fetch_and_dec() == 1) {
                         if (_cb_done.function) {
                                 _cb_done.function(ctx, _cb_done.clientdata, _cb_result);
                         }

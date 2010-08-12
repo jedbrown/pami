@@ -454,6 +454,7 @@ namespace PAMI
 	  // This init code is performed ONCE per process and is shared by
 	  // all clients and their contexts...
 	  __global.topology_global.subTopologyNthGlobal(&_node_topo, 0);
+	  _node_topo.convertTopology(PAMI_COORD_TOPOLOGY);
 
 	  _cr_mtx.init(&mm);
 	  _cr_mtx_mdls = (MUCR_mutex_model_t **)malloc(_pamiRM.getNumClients() * sizeof(*_cr_mtx_mdls));
@@ -642,6 +643,7 @@ namespace PAMI
 	  if (geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE) &&
 	  	geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE))
 	  {
+	    if (fn) fn(context, clientdata, PAMI_SUCCESS);
 	    return PAMI_SUCCESS;
 	  }
 
@@ -652,6 +654,7 @@ namespace PAMI
 	  {
 	    geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, (void *)(0 + 1));
 	    geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, (void *)(0 + 1));
+	    if (fn) fn(context, clientdata, PAMI_SUCCESS);
 	    return PAMI_SUCCESS;
 	  }
 
@@ -668,6 +671,7 @@ namespace PAMI
 	  // produces a rectangle, etc.
 	  if (topo->type() != PAMI_COORD_TOPOLOGY)
 	  {
+	    if (fn) fn(context, clientdata, PAMI_SUCCESS);
 	    return PAMI_SUCCESS; // not really failure, just can't/won't do it.
 	  }
 
@@ -680,7 +684,15 @@ namespace PAMI
 	  if (__MUSPI_rect_compare(&rect1, &rect2) == 0) {
 	    geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, (void *)(0 + 1));
 	    geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, (void *)(0 + 1));
+	    if (fn) fn(context, clientdata, PAMI_SUCCESS);
 	    return PAMI_SUCCESS;
+	  }
+
+	  /// \todo Only the primary task of the node should continue past this point,
+	  /// the rest must wait for that task to share the results.
+	  if (__global.mapping.task() != __global.topology_local.index2Rank(0)) {
+		// must somehow wait and then gather results from primary task...
+		return PAMI_SUCCESS;
 	  }
 
 	  // we could do even more checking and allow more geometries...

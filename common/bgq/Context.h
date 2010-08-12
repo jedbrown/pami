@@ -820,7 +820,11 @@ namespace PAMI
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if(_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal()) _pgas_shmem_registration->analyze(_contextid, geometry);
         // Can always use MU if it's available
+#ifdef ENABLE_MU_CLASSROUTES
+        if (phase == 0 && _pgas_mu_registration) _pgas_mu_registration->analyze(_contextid,geometry);
+#else
         if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid,geometry);
+#endif
 
         return result;
       }
