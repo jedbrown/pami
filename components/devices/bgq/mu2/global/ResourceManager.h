@@ -450,6 +450,12 @@ namespace PAMI
 /* 	  initializeContexts(0,1); */
 /* 	  initializeContexts(1,2); */
 #ifdef ENABLE_MU_CLASSROUTES
+	  // might want more shmem here, to use for coordinating locals in VN.
+	  // possibly changing this to a structure.
+	  mm.memalign((void **)&_lowest_geom_id, sizeof(void *), 1 * sizeof(void *));
+	  PAMI_assertf(_lowest_geom_id, "Failed to get shmem for _lowest_geom_id");
+	  *_lowest_geom_id = 0xffffffff;
+
 	  TRACE((stderr,"MU ResourceManager: Inside ENABLE_MU_CLASSROUTES code\n"));
 	  // This init code is performed ONCE per process and is shared by
 	  // all clients and their contexts...
@@ -825,15 +831,15 @@ namespace PAMI
 	  uint32_t mask1 = 0, mask2 = 0;
 
 	  void *val = crck->geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
-	  if (val && val != PAMI_CR_GKEY_FAIL)
+	  if (!val || val == PAMI_CR_GKEY_FAIL) {
 	    mask1 = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
 	            &rect, &crck->thus->_cncrdata);
-
+	  }
 	  val = crck->geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
-	  if (val && val != PAMI_CR_GKEY_FAIL)
+	  if (!val || val == PAMI_CR_GKEY_FAIL) {
 	    mask2 = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
 	            &rect, &crck->thus->_gicrdata);
-
+	  }
 	  // is this true? can we be sure ALL nodes got the same result?
 	  // if so, and we are re-using existing classroute, then we can skip
 	  // the allreduce...
