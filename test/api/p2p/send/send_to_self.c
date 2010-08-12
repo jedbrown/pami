@@ -7,6 +7,8 @@
 
 #include <pami.h>
 
+uint8_t _garbage[1024];
+
 static void recv_done (pami_context_t   context,
                        void          * cookie,
                        pami_result_t    result)
@@ -27,12 +29,14 @@ static void test_dispatch (
 pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zu, header_addr = %p, pipe_addr = %p\n", cookie, *active, header_addr, pipe_addr);
+  fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zu, header_addr = %p, pipe_addr = %p, pipe_size = %zu\n", cookie, *active, header_addr, pipe_addr, pipe_size);
+
+  if (pipe_size > 1024) exit(1);
 
   recv->local_fn = recv_done;
   recv->cookie   = cookie;
   recv->type     = PAMI_BYTE;
-  recv->addr     = NULL;
+  recv->addr     = _garbage;
   recv->offset   = 0;
   fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn);
 

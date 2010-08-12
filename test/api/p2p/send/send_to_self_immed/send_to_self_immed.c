@@ -175,6 +175,16 @@ int main ()
     return 1;
   }
 
+  size_t immediate_send_limit = IMMEDIATE_SEND_LIMIT;
+  configuration.name = PAMI_DISPATCH_SEND_IMMEDIATE_MAX;
+  result = PAMI_Dispatch_query (_g_context, dispatch, &configuration,1);
+  if (result != PAMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable query configuration PAMI_DISPATCH_SEND_IMMEDIATE_MAX (%d). result = %d\n", configuration.name, result);
+  }
+  immediate_send_limit = configuration.value.intval;
+  fprintf (stderr, "immediate_send_limit = %zu\n", immediate_send_limit);
+
   double clockMHz = 1600.0;
 
 /*   /\* Register the protocols to test *\/ */
@@ -268,12 +278,36 @@ int main ()
         _sbuf[j]=j*5+3;
       }
 
-    // Limit the sndlen to <= IMMEDIATE_SEND_LIMIT bytes,
-    // which is the range for send_immediate.
     size_t sndlen;
     for (sndlen = 0;
-         sndlen < BUFSIZE && sndlen<=IMMEDIATE_SEND_LIMIT;
+         sndlen < BUFSIZE && sndlen<immediate_send_limit;
          sndlen = sndlen*3/2+1)
+    {
+      int index = 0;
+      index += sprintf (&str[index], "%10zd ", sndlen);
+
+      unsigned i;
+      for (i=0; i<_protocol_count; i++)
+      {
+        /* warmup */
+        //test (&_protocol[i], sndlen, _my_rank);
+
+        cycles = test (sndlen, _my_rank);
+        usec   = cycles/clockMHz;
+
+        // Check the buffer.
+        unsigned j;
+        for (j=0; j<sndlen; j++)
+        {
+          if (_sbuf[j] != _rbuf[j]) printf("Data Miscompare at size %zu, _sbuf[%u] = 0x%02x, _rbuf = 0x%02x\n",sndlen, j, _sbuf[j], _rbuf[j]);
+        }
+
+        index += sprintf (&str[index], "%10lld %8.4f  ", cycles, usec);
+      }
+
+      fprintf (stdout, "%s\n", str);
+    }
+    sndlen = immediate_send_limit;
     {
       int index = 0;
       index += sprintf (&str[index], "%10zd ", sndlen);
