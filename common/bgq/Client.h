@@ -532,6 +532,7 @@ if (context) { // HACK! until no one calls completion with NULL context!
             }
             *geometry = (pami_geometry_t) new_geometry;
 
+#ifdef ENABLE_MU_CLASSROUTES
             /// \todo  deliver completion to the appropriate context
             new_geometry->setCompletion(fn, cookie);
             new_geometry->addCompletion(); // ensure completion doesn't happen until
@@ -546,6 +547,9 @@ if (context) { // HACK! until no one calls completion with NULL context!
               bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry,
                                                            ctxt->getId(), context);
             }
+#else
+            bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+#endif
             new_geometry->processUnexpBarrier();
         }
         else
