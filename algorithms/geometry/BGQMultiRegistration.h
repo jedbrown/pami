@@ -393,11 +393,12 @@ if (phase == 0) {
 #ifdef ENABLE_MU_CLASSROUTES
 
 } else if (phase == -1) {
-#if 0
+
                   // remove MU collectives algorithms... TBD
                   geometry->rmCollective(PAMI_XFER_BROADCAST, _mu_mcast2_factory, _context_id);
                   geometry->rmCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
                   geometry->rmCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
+#if 0
 		 // How to destroy this composite?
                  geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1, NULL);
 #endif // if 0
