@@ -300,6 +300,23 @@ namespace PAMI {
                         // (void)__analyzeCoordsList();
                 }
 
+		/// \brief clone constructor (all)
+		///
+		/// Creates a fully-independent copy of a topology (re-mallocs any storage)
+		///
+		/// \param[in] topo		Topology to replicate
+		///
+		Topology(Topology *topo) {
+			memcpy(this, topo, sizeof(*topo));
+			// right now, the only type that allocates additional storage is PAMI_LIST_TOPOLOGY
+			if (topo->__type == PAMI_LIST_TOPOLOGY) {
+				topo_ranklist = (pami_task_t *)malloc(__size * sizeof(*topo_ranklist));
+				PAMI_assertf(topo_ranklist, "Out of memory in Topology clone ctor");
+				memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
+			}
+		}
+		
+
                 /// \brief accessor for size of a Topology object
                 /// \return	size of PAMI::Topology
                 static const unsigned size_of_impl() { return sizeof(Topology); }
