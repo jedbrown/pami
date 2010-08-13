@@ -17,6 +17,77 @@ static void g_done_fn(pami_context_t ctx, void *cookie, pami_result_t err) {
 	}
 }
 
+// All members of 'parent' must call this (and no others).
+// Assumes only one context.
+void do_one_geometry(pami_client_t client, pami_task_t my_task,
+		pami_geometry_range_t *range, pami_geometry_t parent,
+		pami_context_t *contexts, size_t ncontexts) {
+
+	static unsigned id = 300;
+	pami_result_t status;
+	pami_geometry_t geom = NULL, *gp;
+        pami_configuration_t configuration;
+	configuration.name = PAMI_GEOMETRY_OPTIMIZE;
+
+	int g_done = 0;
+	// hack to avoid barrier callbacks with NULL contexts...
+
+	if (my_task < range->lo || my_task > range->hi) {
+		gp = NULL;
+	} else {
+		gp = &geom;
+	}
+	// HACK: don't optimize in create to avoid callbacks with NULL context (Trac #240)
+	status = PAMI_Geometry_create_taskrange(client, NULL, 0, gp,
+				parent, id, range, 1, contexts[0], g_done_fn, &g_done);
+	++id;
+	if (status != PAMI_SUCCESS) {
+		fprintf (stderr, "Error. Failed to create geom %d. result = %d\n",
+									id, status);
+		return;
+	}
+	while (!g_done) {
+		PAMI_Context_advance(contexts[0], 100);
+	}
+	if (g_done < 0) {
+		fprintf(stderr, "Failed to create geometry %u [%zd..%zd] %d\n",
+						id, range->lo, range->hi, -g_done);
+		return;
+	}
+	if (!geom) {
+		// Not part of new geometry... we're done
+		return;
+	}
+	g_done = 0;
+	configuration.value.intval = 1;
+	status = PAMI_Geometry_update(geom, &configuration, 1,
+					contexts[0], g_done_fn, &g_done);
+        if (status != PAMI_SUCCESS) {
+	fprintf (stderr, "Error. Failed to optimize geom %d. result = %d\n", id, status);
+		return;
+	}
+	while (!g_done) {
+		PAMI_Context_advance(contexts[0], 100);
+	}
+	if (g_done < 0) {
+		fprintf(stderr, "Failed to optimize geometry %u [%zd..%zd] %d\n",
+						id, range->lo, range->hi, -g_done);
+		return;
+	}
+	status = PAMI_Geometry_query(geom, &configuration, 1);
+	if (status != PAMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable query to geom %d configuration (%d). "
+				"result = %d\n", id, configuration.name, status);
+		return;
+	}
+	if (my_task == range->lo) {
+		printf("Geometry %d [%zd..%zd] is%s optimized (%zx)\n",
+					id, range->lo, range->hi,
+					configuration.value.intval ? "" : " not",
+					configuration.value.intval);
+	}
+}
+
 int main(int argc, char ** argv) {
         pami_context_t context;
         size_t task_id;
@@ -24,7 +95,7 @@ int main(int argc, char ** argv) {
 
         pami_client_t client;
         pami_result_t status = PAMI_ERROR;
-        status = PAMI_Client_create("multisync test", &client, NULL, 0);
+        status = PAMI_Client_create("TEST", &client, NULL, 0);
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);
                 return 1;
@@ -74,66 +145,19 @@ int main(int argc, char ** argv) {
 		configuration.value.intval);
 
 	pami_geometry_range_t range;
-	range.lo = 0;
-	range.hi = __global.topology_global.size() - 1;
-	unsigned id = 300;
 
-	while (range.lo < range.hi) {
-		pami_geometry_t geom = NULL;
-		configuration.value.intval = 1;
-		int g_done = 0;
-		// hack to avoid barrier callbacks with NULL contexts...
-		if (__global.mapping.task() > range.hi) {
-			status = PAMI_Geometry_create_taskrange(client, NULL, 0, NULL,
-				world_geometry, id, &range, 1, context, g_done_fn, &g_done);
-        		if (status != PAMI_SUCCESS) {
-                		fprintf (stderr, "Error. Failed to create geom %d. result = %d\n", id, status);
-       			} else {
-				while (!g_done) {
-					PAMI_Context_advance(context, 100);
-				}
-				if (g_done < 0) {
-					fprintf(stderr, "Failed to create geometry %u [%zd..%zd] %d\n",
-							id, range.lo, range.hi, -g_done);
-				}
-			}
-		} else {
-			status = PAMI_Geometry_create_taskrange(client, NULL, 0, &geom,
-				world_geometry, id, &range, 1, context, g_done_fn, &g_done);
-        		if (status == PAMI_SUCCESS) {
-				while (!g_done) {
-					PAMI_Context_advance(context, 100);
-				}
-				if (g_done == 1) {
-					g_done = 0;
-					status = PAMI_Geometry_update(geom, &configuration, 1,
-							context, g_done_fn, &g_done);
-				}
-       			}
-        		if (status != PAMI_SUCCESS) {
-                		fprintf (stderr, "Error. Failed to create geom %d. result = %d\n", id, status);
-       			} else {
-				while (!g_done) {
-					PAMI_Context_advance(context, 100);
-				}
-				if (g_done < 0) {
-					fprintf(stderr, "Failed to create geometry %u [%zd..%zd] %d\n",
-							id, range.lo, range.hi, -g_done);
-				} else {
-        				status = PAMI_Geometry_query(geom, &configuration, 1);
-        				if (status != PAMI_SUCCESS) {
-                				fprintf (stderr, "Error. Unable query to geom %d configuration (%d). result = %d\n", id, configuration.name, status);
-        				} else {
-						printf("Geometry %d [%zd..%zd] is%s optimized (%zx)\n",
-							id, range.lo, range.hi,
-							configuration.value.intval ? "" : " not",
-							configuration.value.intval);
-					}
-				}
-			}
+	size_t ntasks = num_tasks;
+	while (ntasks > 1) {
+		range.lo = 0;
+		range.hi = ntasks - 1;
+		do_one_geometry(client, task_id, &range, world_geometry, &context, 1);
+		if (ntasks < num_tasks / 2) {
+			range.lo = num_tasks - ntasks;
+			range.hi = num_tasks - 1;
+			do_one_geometry(client, task_id, &range, world_geometry, &context, 1);
 		}
-		range.hi = ((range.hi + 1) / 2) - 1;
-		++id;
+
+		ntasks /= 2;
 	}
 
 // ------------------------------------------------------------------------
