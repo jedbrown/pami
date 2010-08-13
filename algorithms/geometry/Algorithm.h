@@ -97,6 +97,7 @@ namespace PAMI
     template <class T_Geometry>
     class AlgoLists
     {
+      static const int MAX_NUM_ALGO = 16;
       public:
         AlgoLists():
             _num_algo(0),
@@ -120,6 +121,27 @@ namespace PAMI
           _num_algo++;
           return PAMI_SUCCESS;
         }
+        inline pami_result_t rmCollective(CCMI::Adaptor::CollectiveProtocolFactory *factory,
+                                           T_Geometry                               *geometry,
+                                           size_t                                    context_id)
+        {
+	  int i;
+	  for (i = 0; i < _num_algo; ++i)
+	  {
+	    if (_algo_list[i]->_factory == factory)
+	    {
+	      PAMI_assertf(_algo_list_store[i]._factory == factory,
+			"Internal consistency error on algorithm list");
+	      size_t n = _num_algo - i - 1;
+	      if (n)
+	      {
+	        memcpy(&_algo_list[i], &_algo_list[i + 1], n * sizeof(_algo_list[0]));
+	        memcpy(&_algo_list_store[i], &_algo_list_store[i + 1], n * sizeof(_algo_list_store[0]));
+	      }
+	      --_num_algo;
+	  }
+          return PAMI_SUCCESS;
+        }
         inline pami_result_t addCollectiveCheck(CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                                 T_Geometry                                *geometry,
                                                 size_t                                     context_id)
@@ -140,10 +162,10 @@ namespace PAMI
         }
         int                     _num_algo;
         int                     _num_algo_check;
-        Algorithm<T_Geometry>  *_algo_list[16];
-        Algorithm<T_Geometry>  *_algo_list_check[16];
-        Algorithm<T_Geometry>   _algo_list_store[16];
-        Algorithm<T_Geometry>   _algo_list_check_store[16];
+        Algorithm<T_Geometry>  *_algo_list[MAX_NUM_ALGO];
+        Algorithm<T_Geometry>  *_algo_list_check[MAX_NUM_ALGO];
+        Algorithm<T_Geometry>   _algo_list_store[MAX_NUM_ALGO];
+        Algorithm<T_Geometry>   _algo_list_check_store[MAX_NUM_ALGO];
     };
   };
 };

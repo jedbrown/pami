@@ -588,6 +588,16 @@ namespace PAMI
           return PAMI_SUCCESS;
         }
 
+      inline pami_result_t rmCollective_impl(pami_xfer_type_t                            colltype,
+                                             CCMI::Adaptor::CollectiveProtocolFactory  *factory,
+                                             size_t                                     context_id)
+        {
+          TRACE_ERR((stderr, "<%p>Common::rmCollective_impl()\n", this));
+          AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(context_id, colltype);
+          alist->rmCollective(factory, this, context_id);
+          return PAMI_SUCCESS;
+        }
+
       inline pami_result_t addCollectiveCheck_impl(pami_xfer_type_t                            colltype,
                                                   CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                                   size_t                                     context_id)
