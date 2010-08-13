@@ -401,17 +401,22 @@ namespace PAMI
        _multi_registration       =  new (_multi_registration)
        CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >(_shmem_native_interface, _global_mu_ni, client, (pami_context_t)this, id, clientid);
 
-       _multi_registration->analyze(_contextid, _world_geometry);
+       _multi_registration->analyze(_contextid, _world_geometry, 0);
+#ifdef ENABLE_MU_CLASSROUTES
+       // for now, this is the only registration that has a phase 1...
+       // We know that _world_geometry is always "optimized" at create time.
+       _multi_registration->analyze(_contextid, _world_geometry, 1);
+#endif
 
 //       __global.useMU(muFlag); /// \todo temp function while MU2 isn't complete
 
        _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid,_devices->_shmem[_contextid],_devices->_mu[_contextid],_protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size());
-       _ccmi_registration->analyze(_contextid, _world_geometry);
+       _ccmi_registration->analyze(_contextid, _world_geometry, 0);
 
        // Can only use shmem pgas if the geometry is all local tasks, so check the topology
-       if(_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(0))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry);
+       if(_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(0))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry, 0);
        // Can always use MU if it's available
-       if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, _world_geometry);
+       if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, _world_geometry, 0);
 
         // Complete rget and rput protocol initialization
         if (((rget_mu != NULL) && (rget_shmem != NULL)) &&
@@ -812,18 +817,18 @@ namespace PAMI
 
         bool muFlag = __global.useMU(false); /// \todo temp function while MU2 isn't complete
 
-        result = _multi_registration->analyze(context_id,geometry);
+        result = _multi_registration->analyze(context_id,geometry, phase);
 
         __global.useMU(muFlag); /// \todo temp function while MU2 isn't complete
 
 
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
-        if(_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal()) _pgas_shmem_registration->analyze(_contextid, geometry);
+        if(_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal()) _pgas_shmem_registration->analyze(_contextid, geometry, phase);
         // Can always use MU if it's available
 #ifdef ENABLE_MU_CLASSROUTES
-        if (phase == 0 && _pgas_mu_registration) _pgas_mu_registration->analyze(_contextid,geometry);
+        if (phase == 0 && _pgas_mu_registration) _pgas_mu_registration->analyze(_contextid,geometry, phase);
 #else
-        if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid,geometry);
+        if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid,geometry, phase);
 #endif
 
         return result;
