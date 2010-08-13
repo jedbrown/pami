@@ -2546,6 +2546,10 @@ extern "C"
   /**
    * \brief Update the value of an attribute
    *
+   * WARNING - Changing a Geometry configuration attribute may fundamentally
+   * alter the Geometry. Any saved knownledge (for example, algorithm lists)
+   * must be discarded and re-queried after a call to PAMI_Geometry_update().
+   *
    * \param [in] geometry      The PAMI geometry
    * \param [in] configuration The configuration attribute to update
    * \param [in] num_configs   The number of configuration elements
