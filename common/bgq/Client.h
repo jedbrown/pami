@@ -495,6 +495,69 @@ if (context) { // HACK! until no one calls completion with NULL context!
       }
 
 
+      inline pami_result_t geometry_create_topology_impl(pami_geometry_t       *geometry,
+                                                         pami_configuration_t   configuration[],
+                                                         size_t                 num_configs,
+                                                         pami_geometry_t        parent,
+                                                         unsigned               id,
+                                                         pami_topology_t       *topology,
+                                                         pami_context_t         context,
+                                                         pami_event_function    fn,
+                                                         void                  *cookie)
+      {
+        TRACE_ERR((stderr,  "%s enter geometry %p/%p\n", __PRETTY_FUNCTION__,geometry,*geometry));
+        // simple for now: only PAMI_GEOMETRY_OPTIMIZE
+        if (num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
+        {
+          return PAMI_INVAL;
+        }
+        BGQGeometry *new_geometry;
+        BGQGeometry *bargeom = (BGQGeometry *)parent;
+        PAMI::Context *ctxt = (PAMI::Context *)context;
+
+        if (geometry != NULL)
+        {
+            new_geometry = (BGQGeometry *)malloc(sizeof(*new_geometry)); /// \todo use allocator
+            new (new_geometry) BGQGeometry(_client,
+				      (PAMI::Geometry::Common *)parent,
+                                      &__global.mapping,
+                                      id,
+                                      (PAMI::Topology *)topology);
+
+            TRACE_ERR((stderr,  "%s analyze %zu geometry %p\n", __PRETTY_FUNCTION__,_ncontexts,new_geometry));
+            for (size_t n = 0; n < _ncontexts; n++)
+            {
+              TRACE_ERR((stderr,  "%s analyze %p geometry %p\n", __PRETTY_FUNCTION__,&_contexts[n],new_geometry));
+                _contexts[n].analyze(n, new_geometry, 0);
+            }
+            *geometry = (pami_geometry_t) new_geometry;
+
+            /// \todo  deliver completion to the appropriate context
+            new_geometry->setCompletion(fn, cookie);
+            new_geometry->addCompletion(); // ensure completion doesn't happen until
+                                           // all have been analyzed (_geom_opt_finish).
+            if (num_configs) // must be PAMI_GEOMETRY_OPTIMIZE...
+            {
+              bargeom->default_barrier(_geom_newopt_start, (void *)new_geometry,
+                                                           ctxt->getId(), context);
+            }
+            else
+            {
+              bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry,
+                                                           ctxt->getId(), context);
+            }
+            new_geometry->processUnexpBarrier();
+        }
+        else
+        {
+          // non-participant members of parent won't know if new geom exists...
+          bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        }
+        TRACE_ERR((stderr,  "%s exit geometry %p/%p\n", __PRETTY_FUNCTION__,geometry,*geometry));
+        return PAMI_SUCCESS;
+      }
+
+
       inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       * geometry,
                pami_configuration_t   configuration[],
                size_t                 num_configs,

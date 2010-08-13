@@ -312,6 +312,41 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+    inline pami_result_t geometry_create_topology_impl(pami_geometry_t       * geometry,
+                                                       pami_configuration_t   configuration[],
+                                                       size_t                 num_configs,
+                                                       pami_geometry_t         parent,
+                                                       unsigned               id,
+                                                       pami_topology_t       * topology,
+                                                       pami_context_t          context,
+                                                       pami_event_function     fn,
+                                                       void                 * cookie)
+      {
+        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+
+        BGPGeometry              *new_geometry;
+
+        if(geometry != NULL)
+        {
+          new_geometry=(BGPGeometry*) malloc(sizeof(*new_geometry)); /// \todo use allocator
+          new(new_geometry) BGPGeometry(_client,
+            (PAMI::Geometry::Common*)parent,
+                                    &__global.mapping,
+                                    id,
+                                    (PAMI::Topology *)topology);
+          for(size_t n=0; n<_ncontexts; n++)
+          {
+            _contexts[n].analyze(n,(BGPGeometry*)new_geometry);
+          }
+          *geometry = (pami_geometry_t) new_geometry;
+          /// \todo  deliver completion to the appropriate context
+    new_geometry->processUnexpBarrier();
+        }
+        BGPGeometry *bargeom = (BGPGeometry*)parent;
+        PAMI::Context *ctxt = (PAMI::Context *)context;
+        bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        return PAMI_SUCCESS;
+      }
 
     inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       * geometry,
                                                         pami_configuration_t   configuration[],

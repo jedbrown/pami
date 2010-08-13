@@ -853,5 +853,34 @@ typedef enum {
 
 #define PAMI_HINT_EXTEND
 
+  /**
+   * \brief Initialize the geometry using a topology
+   *
+   * Same semantics as the other PAMI_Geometry_create_* routines.
+   *
+   * \param[in]  client          pami client
+   * \param[in]  configuration   List of configurable attributes and values
+   * \param[in]  num_configs     The number of configuration elements
+   * \param[out] geometry        Opaque geometry object to initialize
+   * \param[in]  parent          Parent geometry containing all the nodes in the task list
+   * \param[in]  id              Identifier for this geometry
+   *                             which uniquely represents this geometry(if tasks overlap)
+   * \param[in]  topology        The topology that describes the members
+   * \param[in]  context         context to deliver async callback to
+   * \param[in]  fn              event function to call when geometry has been created 
+   * \param[in]  cookie          user cookie to deliver with the callback
+   *
+   * \see PAMI_Geometry_create_taskrange
+   */
+  pami_result_t PAMI_Geometry_create_topology(pami_client_t           client,
+                                              pami_configuration_t    configuration[],
+                                              size_t                  num_configs,
+                                              pami_geometry_t        *geometry,
+                                              pami_geometry_t         parent,
+                                              unsigned                id,
+                                              pami_topology_t        *topology,
+                                              pami_context_t          context,
+                                              pami_event_function     fn,
+                                              void                   *cookie);
 
 #endif

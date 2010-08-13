@@ -203,6 +203,32 @@ extern "C" pami_result_t PAMI_Geometry_create_tasklist (pami_client_t           
                                             cookie);
 }
 
+///
+/// \copydoc PAMI_Geometry_create_taskrange
+///
+extern "C" pami_result_t PAMI_Geometry_create_topology(pami_client_t           client,
+                                                       pami_configuration_t    configuration[],
+                                                       size_t                  num_configs,
+                                                       pami_geometry_t       * geometry,
+                                                       pami_geometry_t         parent,
+                                                       unsigned                id,
+                                                       pami_topology_t       * topology,
+                                                       pami_context_t          context,
+                                                       pami_event_function     fn,
+                                                       void                  * cookie)
+{
+  PAMI::Client * _client = (PAMI::Client *) client;
+  return _client->geometry_create_topology(geometry,
+                                           configuration,
+                                           num_configs,
+                                           parent,
+                                           id,
+                                           topology,
+                                           context,
+                                           fn,
+                                           cookie);
+}
+
 
 extern "C" pami_result_t PAMI_Geometry_query (pami_geometry_t       geometry,
                                               pami_configuration_t  configuration[],

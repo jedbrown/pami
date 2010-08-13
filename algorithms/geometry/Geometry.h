@@ -140,6 +140,50 @@ namespace PAMI
           if (!PAMI_ISEVEN(_topos[0].size()))
             pami_ca_set(&_attributes, PAMI_GEOMETRY_ODD);
         }
+      inline Common (pami_client_t                    client,
+		     Geometry<PAMI::Geometry::Common> *parent,
+                     Mapping                         *mapping,
+                     unsigned                         comm,
+                     PAMI::Topology                  *topology):
+        Geometry<PAMI::Geometry::Common>(parent,
+                                        mapping,
+                                        comm,
+                                        topology),
+        _kvstore(),
+        _commid(comm),
+	_client(client)
+        {
+          TRACE_ERR((stderr, "<%p>Common(parent)\n", this));
+
+          pami_ca_unset_all(&_attributes);
+
+          _mytopo = 0;
+          _rank = mapping->task();
+          _numtopos =  1;
+
+          _topos = new PAMI::Topology[_numtopos];
+
+          // this creates the topology including all subtopologies
+          new (&_topos[0]) PAMI::Topology(topology);
+
+          // don't know yet what the individual subtopologies would be...
+
+          PAMI::geometry_map[_commid]=this;
+          updateCachedGeometry(this, _commid);
+
+          // now we should set the attributes of the topologies or geometry
+          // i guess we should have attributes per topo and per geometry
+          // \todo need to do the following per topology maybe
+          if (_topos[0].isRectSeg())
+            pami_ca_set(&_attributes, PAMI_GEOMETRY_RECT);
+          // \todo isGlobal is not yet implemented
+          //          if (_topos[0].isGlobal())
+          //            pami_ca_set(&attributes, PAMI_GEOMETRY_GLOBAL);
+          if (PAMI_ISPOF2(_topos[0].size()))
+            pami_ca_set(&_attributes, PAMI_GEOMETRY_POF2);
+          if (!PAMI_ISEVEN(_topos[0].size()))
+            pami_ca_set(&_attributes, PAMI_GEOMETRY_ODD);
+        }
 
        /// \brief Convenience callback used by geometry completion sub-events
        ///

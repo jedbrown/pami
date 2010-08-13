@@ -335,6 +335,21 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+    inline pami_result_t geometry_create_topology_impl(pami_geometry_t       *geometry,
+                                                       pami_configuration_t   configuration[],
+                                                       size_t                 num_configs,
+                                                       pami_geometry_t        parent,
+                                                       unsigned               id,
+                                                       pami_topology_t       *topology,
+                                                       pami_context_t         context,
+                                                       pami_event_function    fn,
+                                                       void                  *cookie)
+      {
+        // todo:  implement this routine
+        PAMI_abort();
+
+        return PAMI_SUCCESS;
+      }
 
     inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       *geometry,
                                                        pami_configuration_t   configuration[],

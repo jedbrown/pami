@@ -64,6 +64,13 @@ namespace PAMI
       {
         TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
       }
+      inline Geometry (Geometry  *parent,
+                       Mapping   *mapping,
+                       unsigned   comm,
+                       PAMI::Topology *topo)
+      {
+        TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+      }
 
       // These methods were originally from the CCMI Geometry class
       inline unsigned                   comm();

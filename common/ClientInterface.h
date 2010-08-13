@@ -82,6 +82,16 @@ namespace PAMI
                                                       pami_event_function    fn,
                                                       void                  *cookie);
 
+        inline pami_result_t geometry_create_topology(pami_geometry_t       *geometry,
+                                                      pami_configuration_t   configuration[],
+                                                      size_t                 num_configs,
+                                                      pami_geometry_t        parent,
+                                                      unsigned               id,
+                                                      pami_topology_t       *topology,
+                                                      pami_context_t         context,
+                                                      pami_event_function    fn,
+                                                      void                  *cookie);
+
 	inline pami_result_t geometry_query(pami_geometry_t       geometry,
 					    pami_configuration_t  configuration[],
 					    size_t                num_configs);
@@ -200,6 +210,28 @@ namespace PAMI
                                                                          id,
                                                                          tasks,
                                                                          task_count,
+                                                                         context,
+                                                                         fn,
+                                                                         cookie);
+    }
+
+    template <class T_Client>
+    pami_result_t Client<T_Client>::geometry_create_topology(pami_geometry_t       *geometry,
+                                                             pami_configuration_t   configuration[],
+                                                             size_t                 num_configs,
+                                                             pami_geometry_t        parent,
+                                                             unsigned               id,
+                                                             pami_topology_t       *topology,
+                                                             pami_context_t         context,
+                                                             pami_event_function    fn,
+                                                             void                  *cookie)
+    {
+      return static_cast<T_Client*>(this)->geometry_create_topology_impl(geometry,
+                                                                         configuration,
+                                                                         num_configs,
+                                                                         parent,
+                                                                         id,
+                                                                         topology,
                                                                          context,
                                                                          fn,
                                                                          cookie);
