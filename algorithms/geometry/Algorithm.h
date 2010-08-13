@@ -139,6 +139,7 @@ namespace PAMI
 	        memcpy(&_algo_list_store[i], &_algo_list_store[i + 1], n * sizeof(_algo_list_store[0]));
 	      }
 	      --_num_algo;
+	    }
 	  }
           return PAMI_SUCCESS;
         }
