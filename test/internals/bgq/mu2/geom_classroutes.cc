@@ -140,9 +140,11 @@ int main(int argc, char ** argv) {
                 fprintf (stderr, "Error. Unable query to geom configuration (%d). result = %d\n", configuration.name, status);
                 return 1;
         }
-	printf("World geometry is%s optimized (%zx)\n",
-		configuration.value.intval ? "" : " not",
-		configuration.value.intval);
+	if (task_id == 0) {
+		printf("World geometry is%s optimized (%zx)\n",
+			configuration.value.intval ? "" : " not",
+			configuration.value.intval);
+	}
 
 	pami_geometry_range_t range;
 
@@ -151,7 +153,7 @@ int main(int argc, char ** argv) {
 		range.lo = 0;
 		range.hi = ntasks - 1;
 		do_one_geometry(client, task_id, &range, world_geometry, &context, 1);
-		if (ntasks < num_tasks / 2) {
+		if (ntasks <= num_tasks / 2) {
 			range.lo = num_tasks - ntasks;
 			range.hi = num_tasks - 1;
 			do_one_geometry(client, task_id, &range, world_geometry, &context, 1);
