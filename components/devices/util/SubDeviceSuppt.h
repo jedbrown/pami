@@ -343,9 +343,8 @@ public:
         /// \return	error code
         ///
         inline pami_result_t __init(size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
-                if (contextId == 0) {
-                        _generics[client] = devices;
-                }
+                // assert(_generics[client] == NULL || _generics[client] == devices);
+                _generics[client] = devices;
                 return PAMI_SUCCESS;
         }
 
