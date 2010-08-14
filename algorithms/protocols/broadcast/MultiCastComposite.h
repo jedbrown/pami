@@ -8,6 +8,7 @@
 #include "algorithms/composite/Composite.h"
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/connmgr/CommSeqConnMgr.h"
+#include "algorithms/protocols/CollectiveProtocolFactoryT.h"
 #include "util/ccmi_util.h"
 
 
