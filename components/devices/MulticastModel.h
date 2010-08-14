@@ -72,7 +72,7 @@
                                                   the data being sent, for one-sided. */
     unsigned            msgcount;          /**< info count*/
   } pami_multicast_t;
-  
+
   /**
    * \brief Recv callback for Multicast
    *

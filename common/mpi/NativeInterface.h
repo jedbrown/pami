@@ -1,6 +1,6 @@
 /*
  * \file common/mpi/NativeInterface.h
- * \brief 
+ * \brief
  */
 
 #ifndef __common_mpi_NativeInterface_h__

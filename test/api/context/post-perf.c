@@ -1,5 +1,5 @@
 /*
- *  \file test/api/context/post-multithreaded-perf.c
+ *  \file test/api/context/post-perf.c
  *  \brief PAMI_Context_post() performance test using comm-threads
  */
 

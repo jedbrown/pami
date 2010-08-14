@@ -262,7 +262,7 @@ namespace PAMI
         {
           PAMI_abort();
         }
-      
+
       inline int myTopologyId_impl()
         {
           return _mytopo;
@@ -438,8 +438,8 @@ namespace PAMI
 	PAMI_assert(geometry!=NULL);
 	PAMI::cached_geometry[comm]=(void*)geometry;
       }
-      
-      static inline void registerUnexpBarrier_impl (unsigned comm, pami_quad_t &info, 
+
+      static inline void registerUnexpBarrier_impl (unsigned comm, pami_quad_t &info,
 						    unsigned peer, unsigned algorithm)
       {
 	UnexpBarrierQueueElement *ueb = (UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
@@ -733,7 +733,7 @@ namespace PAMI
       pami_callback_t                               _cb_done;
       pami_result_t                                 _cb_result;
       GeomCompCtr                                   _comp;
-      
+
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace PAMI

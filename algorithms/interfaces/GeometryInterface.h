@@ -136,7 +136,7 @@ namespace PAMI
 
       static inline void                registerUnexpBarrier(unsigned comm, pami_quad_t &info,
 							     unsigned peer, unsigned algorithm);
-      
+
       inline void                       processUnexpBarrier();
 
       // These methods were originally from the PGASRT Communicator class
@@ -203,7 +203,7 @@ namespace PAMI
     {
       return static_cast<T_Geometry*>(this)->isLocalMasterParticipant_impl();
     }
-    
+
     template <class T_Geometry>
     inline unsigned Geometry<T_Geometry>::comm()
     {
@@ -451,7 +451,7 @@ namespace PAMI
     }
 
     template <class T_Geometry>
-      inline void Geometry<T_Geometry>::registerUnexpBarrier (unsigned comm, pami_quad_t &info, 
+      inline void Geometry<T_Geometry>::registerUnexpBarrier (unsigned comm, pami_quad_t &info,
 							      unsigned peer, unsigned algorithm)
     {
       return T_Geometry::registerUnexpBarrier_impl(comm, info, peer, algorithm);

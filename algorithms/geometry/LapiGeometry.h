@@ -359,7 +359,7 @@ namespace PAMI
           PAMI::cached_geometry[comm]=(void*)geometry;
         }
 
-      static inline void registerUnexpBarrier_impl (unsigned comm, pami_quad_t &info, 
+      static inline void registerUnexpBarrier_impl (unsigned comm, pami_quad_t &info,
 						    unsigned peer, unsigned algorithm)
       {
 	UnexpBarrierQueueElement *ueb = (UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
@@ -378,7 +378,7 @@ namespace PAMI
       }
 
 
-      
+
       // These methods were originally from the PGASRT Communicator class
       inline pami_task_t size_impl(void)
         {

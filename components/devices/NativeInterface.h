@@ -1,9 +1,9 @@
-/* * \file components/device/NativeInterface.h
+/* * \file components/devices/NativeInterface.h
  * \brief ???
  */
 
-#ifndef __components_device_NativeInterface_h__
-#define __components_device_NativeInterface_h__
+#ifndef __components_devices_NativeInterface_h__
+#define __components_devices_NativeInterface_h__
 
 #include "algorithms/interfaces/NativeInterface.h"
 #include "util/ccmi_util.h"

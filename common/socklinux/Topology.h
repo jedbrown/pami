@@ -315,7 +315,7 @@ namespace PAMI {
 				memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
 			}
 		}
-		
+
 
                 /// \brief accessor for size of a Topology object
                 /// \return	size of PAMI::Topology

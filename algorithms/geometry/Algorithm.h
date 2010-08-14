@@ -35,7 +35,7 @@ namespace PAMI
   /// \brief memory allocator for early arrival barrier messages
   //
   extern PAMI::MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16 > _ueb_allocator;
-  
+
   ///
   /// \brief static match queue to store unexpected barrier messages
   ///

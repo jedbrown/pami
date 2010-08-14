@@ -249,7 +249,7 @@ namespace PAMI
   typedef Geometry::Lapi                                              LAPIGeometry;
 
   // Protocol Typedefs
-  
+
   // Memory Allocator Typedefs
   typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 

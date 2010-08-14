@@ -203,7 +203,7 @@ namespace PAMI
             Allreduce::MultiCombineFactory  *allreduce_reg = (Allreduce::MultiCombineFactory*)_factory_allocator.allocateObject();
             new(allreduce_reg) Allreduce::MultiCombineFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[0]);
             geometryInfo->_allreduce                       = allreduce_reg;
-            
+
             // Add the geometry info to the geometry
             geometry->setKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI, ni);
             geometry->addCollective(PAMI_XFER_BARRIER,barrier_reg,context_id);
@@ -265,7 +265,7 @@ namespace PAMI
             // We populate this device specific information into the geometry
             // The protocol will query for the device specific information,
             // and pass this into the M-* api during communication
-            
+
             PAMI::Device::CAUGeometryInfo *gi
               = (PAMI::Device::CAUGeometryInfo *)_cau_geom_allocator.allocateObject();
             new(gi)PAMI::Device::CAUGeometryInfo(key,

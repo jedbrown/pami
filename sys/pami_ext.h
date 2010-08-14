@@ -867,7 +867,7 @@ typedef enum {
    *                             which uniquely represents this geometry(if tasks overlap)
    * \param[in]  topology        The topology that describes the members
    * \param[in]  context         context to deliver async callback to
-   * \param[in]  fn              event function to call when geometry has been created 
+   * \param[in]  fn              event function to call when geometry has been created
    * \param[in]  cookie          user cookie to deliver with the callback
    *
    * \see PAMI_Geometry_create_taskrange

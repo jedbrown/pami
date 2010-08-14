@@ -110,17 +110,17 @@ namespace CCMI
           Composite()
           {
           }
-        
+
         virtual void start()
           {
           }
       };
-      
 
 
 
 
-      
+
+
     };
   };
 };

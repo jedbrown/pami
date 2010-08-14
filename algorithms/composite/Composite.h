@@ -61,7 +61,7 @@ namespace CCMI
 
       void  * getAlgorithmFactory() { return _afactory; }
 
-      
+
       /**
        * \brief notify when a message has been recived
        * \param src : source of the message
