@@ -212,7 +212,7 @@ namespace PAMI
   typedef Device::LAPIM2MMessage                                      LAPIM2MMessage;
 
   typedef Device::CAUMsyncMessage                                     CAUMsyncMessage;
-  typedef Device::CAUMcastMessage                                     CAUMcastMessage;
+  typedef Device::CAUMcastSendMessage                                 CAUMcastSendMessage;
   typedef Device::CAUMcombineMessage                                  CAUMcombineMessage;
   typedef Device::CAUM2MMessage                                       CAUM2MMessage;
 
@@ -226,7 +226,7 @@ namespace PAMI
   typedef Device::LAPIManytomanyModel<LAPIDevice,LAPIM2MMessage>      LAPIManytomanyModel;
 
   typedef Device::CAUMultisyncModel<CAUDevice,CAUMsyncMessage>        CAUMultisyncModel;
-  typedef Device::CAUMulticastModel<CAUDevice,CAUMcastMessage>        CAUMulticastModel;
+  typedef Device::CAUMulticastModel<CAUDevice,CAUMcastSendMessage>    CAUMulticastModel;
   typedef Device::CAUMulticombineModel<CAUDevice,
                                        CAUMcombineMessage>            CAUMulticombineModel;
 

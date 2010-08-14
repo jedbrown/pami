@@ -146,16 +146,16 @@ namespace PAMI
           if (ri->udata_one_pkt_ptr)
             {
               TRACE((stderr, "cau_red_handler: POSTING MULTICAST %d\n", seqno));
-              int rc =
-                lapi_cau_multicast(ms->_device.getHdl(),            // lapi handle
-                                   gi->_cau_id,                     // group id
-                                   ms->_dispatch_mcast_id,          // dispatch id
-                                   &m->_xfer_data[0],               // header
-                                   sizeof(m->_xfer_data),           // header len
-                                   &m->_reduce_val,                 // data
-                                   sizeof(m->_reduce_val),          // data size
-                                   cau_mcast_send_done,             // done cb
-                                   m);                              // clientdata
+              
+              CheckLapiRC(lapi_cau_multicast(ms->_device.getHdl(),            // lapi handle
+                                             gi->_cau_id,                     // group id
+                                             ms->_dispatch_mcast_id,          // dispatch id
+                                             &m->_xfer_data[0],               // header
+                                             sizeof(m->_xfer_data),           // header len
+                                             &m->_reduce_val,                 // data
+                                             sizeof(m->_reduce_val),          // data size
+                                             cau_mcast_send_done,             // done cb
+                                             m));                              // clientdata
               r             = NULL;
               *comp_h       = NULL;
               ri->ret_flags = LAPI_SEND_REPLY;
@@ -172,8 +172,9 @@ namespace PAMI
         Interface::MultisyncModel<CAUMultisyncModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>(device,status),
         _device(device)
           {
-            _dispatch_red_id   = _device.registerDispatch(cau_red_handler, this);
-            _dispatch_mcast_id = _device.registerDispatch(cau_mcast_handler, this);
+            TRACE((stderr, "CAU:  Registering Dispatch Handler:  %p %p\n", cau_red_handler, cau_mcast_handler));
+            _dispatch_red_id   = _device.registerSyncDispatch(cau_red_handler, this);
+            _dispatch_mcast_id = _device.registerSyncDispatch(cau_mcast_handler, this);
             status             = PAMI_SUCCESS;
           }
 
@@ -214,15 +215,15 @@ namespace PAMI
               if (m != NULL)
                 {
                   TRACE((stderr, "CAU:  Multicast\n"));
-                  int rc = lapi_cau_multicast(_device.getHdl(),            // lapi handle
-                                              gi->_cau_id,                 // group id
-                                              _dispatch_mcast_id,          // dispatch id
-                                              &m->_xfer_data[0],           // header
-                                              sizeof(m->_xfer_data),       // header len
-                                              &m->_reduce_val,             // data
-                                              sizeof(m->_reduce_val),      // data size
-                                              cau_mcast_send_done,         // done cb
-                                              m);                          // clientdata
+                  CheckLapiRC(lapi_cau_multicast(_device.getHdl(),            // lapi handle
+                                                 gi->_cau_id,                 // group id
+                                                 _dispatch_mcast_id,          // dispatch id
+                                                 &m->_xfer_data[0],           // header
+                                                 sizeof(m->_xfer_data),       // header len
+                                                 &m->_reduce_val,             // data
+                                                 sizeof(m->_reduce_val),      // data size
+                                                 cau_mcast_send_done,         // done cb
+                                                 m));                          // clientdata
                   return PAMI_SUCCESS;
                 }
             }
@@ -251,16 +252,16 @@ namespace PAMI
           if(tl[0] != _device.taskid())
             {
               TRACE((stderr, "CAU:  Reduce\n"));
-              rc = lapi_cau_reduce(_device.getHdl(),         // lapi handle
-                                   gi->_cau_id,              // group id
-                                   _dispatch_red_id,         // dispatch id
-                                   &m->_xfer_data[0],        // header
-                                   sizeof(m->_xfer_data),    // header_len
-                                   &m->_reduce_val,          // data
-                                   sizeof(m->_reduce_val),   // data size
-                                   red,                      // reduction op
-                                   cau_red_send_done,        // send completion handler
-                                   m);                       // cookie
+              CheckLapiRC(lapi_cau_reduce(_device.getHdl(),         // lapi handle
+                                          gi->_cau_id,              // group id
+                                          _dispatch_red_id,         // dispatch id
+                                          &m->_xfer_data[0],        // header
+                                          sizeof(m->_xfer_data),    // header_len
+                                          &m->_reduce_val,          // data
+                                          sizeof(m->_reduce_val),   // data size
+                                          red,                      // reduction op
+                                          cau_red_send_done,        // send completion handler
+                                          m));                       // cookie
             }
           TRACE((stderr, "CAU:  Pushing Tail\n"));
           gi->_posted.pushTail((MatchQueueElem*)m);

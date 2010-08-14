@@ -17,7 +17,8 @@
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
-#define DISPATCH_START 0x10
+#define DISPATCH_START_DEVICE  16
+#define DISPATCH_START_COLLSHM 32
 
 namespace PAMI
 {
@@ -42,10 +43,9 @@ namespace PAMI
                                    size_t          num_tasks);
 
       virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_fn  fn,
-                                                void                      *cookie)
+                                                         void                       *cookie)
         {
-          PAMI_abort();
-          return PAMI_ERROR;
+          return _mcast.registerMcastRecvFunction(_dispatch,fn,cookie);
         }
       virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_fn fn, void *cookie)
       {
@@ -105,12 +105,12 @@ namespace PAMI
       public:
         union
         {
-          uint8_t             _mcast[T_Mcast::sizeof_msg];
-          uint8_t             _msync[T_Msync::sizeof_msg];
-          uint8_t             _mcomb[T_Mcomb::sizeof_msg];
+          uint8_t              _mcast[T_Mcast::sizeof_msg];
+          uint8_t              _msync[T_Msync::sizeof_msg];
+          uint8_t              _mcomb[T_Mcomb::sizeof_msg];
         } _state;
         DeviceNativeInterface *_ni;
-        pami_callback_t      _user_callback;
+        pami_callback_t        _user_callback;
       };
 
       PAMI::MemoryAllocator<sizeof(allocObj),16> _allocator;  // Allocator
@@ -119,15 +119,15 @@ namespace PAMI
       pami_result_t              _msync_status;
       pami_result_t              _mcomb_status;
 
-      T_Mcast                   _mcast;
-      T_Msync                   _msync;
-      T_Mcomb                   _mcomb;
+      T_Mcast                    _mcast;
+      T_Msync                    _msync;
+      T_Mcomb                    _mcomb;
 
-      unsigned                  _dispatch;
+      unsigned                   _dispatch;
       pami_client_t              _client;
       pami_context_t             _context;
-      size_t                    _contextid;
-      size_t                    _clientid;
+      size_t                     _contextid;
+      size_t                     _clientid;
     }; // class DeviceNativeInterface
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -149,7 +149,7 @@ namespace PAMI
       _mcast(device,_mcast_status),
       _msync(device,_msync_status),
       _mcomb(device,_mcomb_status),
-      _dispatch(0),
+      _dispatch(DISPATCH_START_DEVICE),
       _client(client),
       _context(context),
       _contextid(context_id),
@@ -338,7 +338,7 @@ namespace PAMI
       CCMI::Interfaces::NativeInterface(task_id, num_tasks),
       _allocator(),
       _model(model),
-      _dispatch(DISPATCH_START),
+      _dispatch(DISPATCH_START_COLLSHM),
       _client(client),
       _context(context),
       _contextid(context_id),

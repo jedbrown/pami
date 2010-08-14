@@ -26,12 +26,120 @@ namespace PAMI
 {
   namespace Device
   {
-    class CAUMcastMessage
+    class CAUMcastSendMessage
     {
     public:
-      unsigned toimpl;
+      CAUMcastSendMessage(size_t                client,
+                          size_t                context,
+                          size_t                dispatch,
+                          pami_event_function   fn,
+                          void                 *cookie,
+                          unsigned              connection_id,
+                          unsigned              roles,
+                          size_t                bytes,
+                          PipeWorkQueue        *src_pwq,
+                          Topology             *src_participants,
+                          PipeWorkQueue        *dst_pwq,
+                          Topology             *dst_participants,
+                          const pami_quad_t    *msginfo,
+                          unsigned              msgcount,
+                          void                 *device,
+                          void                 *devinfo):
+        _client(client),
+        _context(context),
+        _dispatch(dispatch),
+        _fn(fn),
+        _cookie(cookie),
+        _connection_id(connection_id),
+        _roles(roles),
+        _bytes(bytes),
+        _src_pwq(src_pwq),
+        _src_participants(src_participants),
+        _dst_pwq(dst_pwq),
+        _dst_participants(dst_participants),
+        _msginfo(msginfo),
+        _msgcount(msgcount),
+        _xfer_msghdr(NULL),
+        _device(device),
+        _devinfo(devinfo)
+        {
+          
+        }
+      void *allocateHeader(size_t sz)
+        {
+          _xfer_msghdr = malloc(sz);
+        }
+
+      void freeHeader()
+        {
+          free(_xfer_msghdr);
+        }
+      size_t                _client;
+      size_t                _context;
+      size_t                _dispatch;
+      pami_event_function   _fn;
+      void                 *_cookie;
+      unsigned              _connection_id;
+      unsigned              _roles;
+      size_t                _bytes;
+      PipeWorkQueue        *_src_pwq;
+      Topology             *_src_participants;
+      PipeWorkQueue        *_dst_pwq;
+      Topology             *_dst_participants;
+      const pami_quad_t    *_msginfo;
+      unsigned              _msgcount;
+      void                 *_xfer_msghdr;
+      void                 *_device;
+      void                 *_devinfo;
     };
 
+    class CAUMcastRecvMessage
+    {      
+    public:
+      CAUMcastRecvMessage(pami_callback_t  cb_done,
+                          void            *target_buf, 
+                          size_t           buflen,
+                          PipeWorkQueue   *pwq,
+                          pami_context_t   context):
+        _cb_done(cb_done),
+        _target_buf(target_buf),
+        _side_buf(NULL),
+        _buflen(buflen),
+        _pwq(pwq),
+        _bytesProduced(0),
+        _context(context)
+        {
+        }
+
+
+      CAUMcastRecvMessage(pami_callback_t  cb_done,
+                          void            *target_buf, 
+                          size_t           buflen,
+                          PipeWorkQueue   *pwq,
+                          pami_context_t   context,
+                          int              alloc):
+        _cb_done(cb_done),
+        _target_buf(target_buf),
+        _side_buf(malloc(buflen)),
+        _buflen(buflen),
+        _bytesProduced(0),
+        _pwq(pwq)
+        {
+        }
+      pami_callback_t            _cb_done;
+      void                      *_target_buf;
+      void                      *_side_buf;
+      size_t                     _buflen;
+      size_t                     _bytesProduced;
+      PipeWorkQueue             *_pwq;
+      pami_context_t             _context;
+    };
+    
+
+
+
+
+    
     class CAUMsyncMessage : MatchQueueElem
     {
     public:

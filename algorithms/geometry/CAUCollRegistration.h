@@ -21,6 +21,7 @@
 #include "algorithms/protocols/broadcast/MultiCastComposite.h"
 #include "algorithms/protocols/allreduce/MultiCombineComposite.h"
 #include "algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h"
+#include "algorithms/protocols/CollectiveProtocolFactoryT.h"
 #include "common/lapiunix/lapifunc.h"
 
 // Collective Registration for CAU protocols for p2p
@@ -53,9 +54,10 @@ namespace PAMI
         {
           strncpy(&m->name[0], "CAU MultiCastComposite", 32);
         }
-        typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS>,
-                                                                    McastMetaData,
-                                                                    CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> >
+        typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT
+        < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS>,
+          McastMetaData,
+          CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> >
         MultiCastFactory;
       };
 
@@ -196,7 +198,11 @@ namespace PAMI
 
             //  ----->  Broadcast
             Broadcast::MultiCastFactory  *broadcast_reg    = (Broadcast::MultiCastFactory*)_factory_allocator.allocateObject();
-            new(broadcast_reg) Broadcast::MultiCastFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[0]);
+            new(broadcast_reg) Broadcast::MultiCastFactory(&_sconnmgr,
+                                                           (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[0],
+                                                           false,  // local protocols are not active message (2 sided), will not register
+                                                           (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[2],
+                                                           true);  // global protocols ARE active message, will register async
             geometryInfo->_broadcast                       = broadcast_reg;
 
             //  ----->  Allreduce
