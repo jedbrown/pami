@@ -42,7 +42,7 @@ namespace CCMI
         ///
         virtual CCMI::Executor::Composite *generate
         (PAMI_CollectiveRequest_t  * request,
-         PAMI_Callback_t             cb_done,
+         pami_callback_t             cb_done,
          pami_consistency_t          consistency,
          PAMI_GEOMETRY_CLASS       * geometry,
          char                     * srcbuf,
@@ -140,7 +140,7 @@ namespace CCMI
                                                  unsigned        * rcvlen,
                                                  char           ** rcvbuf,
                                                  unsigned        * pipewidth,
-                                                 PAMI_Callback_t * cb_done)
+                                                 pami_callback_t * cb_done)
         {
           TRACE_ADAPTOR((stderr,
                          "<%p>Allreduce::Factory::cb_receiveHead peer %d, conn_id %d\n",
