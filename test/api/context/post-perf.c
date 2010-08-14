@@ -3,8 +3,8 @@
  *  \brief PAMI_Context_post() performance test using comm-threads
  */
 
-#define NCONTEXTS  2
-#define ITERATIONS (1<<17)
+#define NCONTEXTS  64
+#define ITERATIONS (1<<15)
 
 
 #define NDEBUG
@@ -124,22 +124,23 @@ main(int argc, char **argv)
     assert(rc == PAMI_SUCCESS);
     assert(configuration.value.intval != 0);
 
-/* We don't use this because NUM_CONTEXTS always returns 1 */
-#if 0
     configuration.name = PAMI_CLIENT_NUM_CONTEXTS;
     rc = PAMI_Client_query(client, &configuration, 1);
     assert(rc == PAMI_SUCCESS);
+    printf("PAMI_CLIENT_NUM_CONTEXTS=%zu\n", configuration.value.intval);
     ncontexts = MIN(ncontexts, configuration.value.intval);
-#endif
+    assert(ncontexts>1);
 
     configuration.name = PAMI_CLIENT_HWTHREADS_AVAILABLE;
     rc = PAMI_Client_query(client, &configuration, 1);
     assert(rc == PAMI_SUCCESS);
-    printf("ncontexts=%zu   PAMI_CLIENT_HWTHREADS_AVAILABLE=%zu\n", ncontexts, configuration.value.intval);
+    printf("PAMI_CLIENT_HWTHREADS_AVAILABLE=%zu\n", configuration.value.intval);
     ncontexts = MIN(ncontexts, configuration.value.intval);
+
+    printf("ncontexts=%zu\n", ncontexts);
+    assert(ncontexts>1);
   }
 
-  assert(ncontexts > 1);
   pami_configuration_t params = {
   name  : PAMI_CLIENT_CONST_CONTEXTS,
   value : { intval : 1, },
