@@ -64,6 +64,8 @@ namespace PAMI
     } node;
     size_t  size;
     size_t  local_size;//hack
+    size_t  lowestTCoordOnMyNode;
+    size_t  numActiveNodesGlobal;
   } bgq_mapcache_t;
 
   class BgqMapCache

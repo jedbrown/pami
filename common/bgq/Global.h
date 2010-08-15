@@ -296,11 +296,18 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
     volatile pami_task_t minRank;       // Smallest valid rank
     volatile pami_coord_t activeLLCorner;
     volatile pami_coord_t activeURCorner;
+    volatile size_t       lowestTCoordOnMyNode;
   } cacheAnchors_t;
 
   //size_t myRank;
 
 
+
+  size_t aCoord = personality.aCoord ();
+  size_t bCoord = personality.bCoord ();
+  size_t cCoord = personality.cCoord ();
+  size_t dCoord = personality.dCoord ();
+  size_t eCoord = personality.eCoord ();
   size_t tCoord = personality.tCoord ();
 
   size_t aSize  = personality.aSize ();
@@ -310,7 +317,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
   size_t eSize  = personality.eSize ();
   size_t tSize  = personality.tSize ();
 
-  TRACE_ERR( (stderr, "Global::initializeMapCache() .. t=%zu size{%zu %zu %zu %zu %zu %zu}\n", tCoord, aSize, bSize, cSize, dSize, eSize, tSize));
+  TRACE_ERR( (stderr, "Global::initializeMapCache() .. myCoords{%zu %zu %zu %zu %zu %zu} size{%zu %zu %zu %zu %zu %zu}\n", aCoord, bCoord, cCoord, dCoord, eCoord, tCoord, aSize, bSize, cSize, dSize, eSize, tSize));
 
   // Calculate the number of potential tasks in this partition.
   size_t fullSize = aSize * bSize * cSize * dSize * eSize * tSize;
@@ -425,6 +432,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
            * 3. _rankcache (the reverse of _mapcache).  It is indexed by
            *    coordinates and contains the rank.
            * 4. Number of active ranks on each compute node.
+	   * 5. Lowest T coordinate on our node.
            */
           size_t i;
 
@@ -438,13 +446,13 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 
           size_t numActiveRanksGlobal = fullSize;
           size_t numActiveNodesGlobal = 0;
+	  size_t lowestTCoordOnMyNode = 999999999;
 
           max_rank = fullSize - 1;
           min_rank = 0;
 
           for (i = 0; i < fullSize; i++)
             {
-
               a = mapcache->torus.task2coords[i].mapped.a;
               b = mapcache->torus.task2coords[i].mapped.b;
               c = mapcache->torus.task2coords[i].mapped.c;
@@ -452,6 +460,11 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
               e = mapcache->torus.task2coords[i].mapped.e;
               t = mapcache->torus.task2coords[i].mapped.t;
               TRACE_ERR( (stderr, "Global::initializeMapCache() task = %zu, estimated task = %zu, coords{%zu,%zu,%zu,%zu,%zu,%zu}\n", i, ESTIMATED_TASK(a, b, c, d, e, t, aSize, bSize, cSize, dSize, eSize, tSize), a, b, c, d, e, t));
+
+	      // Track the lowest T coord on our node
+	      if ( (a==aCoord) && (b==bCoord) && (c==cCoord) && (d==dCoord) && (e==eCoord) &&
+		   (t < lowestTCoordOnMyNode) )
+		lowestTCoordOnMyNode = t;
 
               // Set the bit corresponding to the physical node of this rank,
               // indicating that we have found a rank on that node.
@@ -499,8 +512,10 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 
             }
 
+	  // Record information in the common cacheAnchors structure.
           cacheAnchorsPtr->numActiveRanksGlobal = numActiveRanksGlobal;
           cacheAnchorsPtr->numActiveNodesGlobal = numActiveNodesGlobal;
+	  cacheAnchorsPtr->lowestTCoordOnMyNode  = lowestTCoordOnMyNode;
 
           free(narray);
           narray = NULL;
@@ -508,7 +523,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
           cacheAnchorsPtr->minRank = min_rank;
           memcpy((void *)&cacheAnchorsPtr->activeLLCorner, &_ll, sizeof(_ll));
           memcpy((void *)&cacheAnchorsPtr->activeURCorner, &_ur, sizeof(_ur));
-          TRACE_ERR((stderr, "Global::initializeMapCache() numActiveRanksGlobal %zu,numActiveNodesGlobal %zu,max_rank %u, min_rank %u\n", numActiveRanksGlobal, numActiveNodesGlobal, max_rank, min_rank));
+          TRACE_ERR((stderr, "Global::initializeMapCache() numActiveRanksGlobal %zu,numActiveNodesGlobal %zu,max_rank %u, min_rank %u, lowestTCoordOnMyNode %zu\n", numActiveRanksGlobal, numActiveNodesGlobal, max_rank, min_rank, lowestTCoordOnMyNode ));
         }
       else PAMI_abortf("Kernel_RanksToCoords(%zd, %p, %p) rc = %d\n", fullSize * sizeof(*mapcache->torus.task2coords), mapcache->torus.task2coords, &numentries, rc);
 
@@ -563,8 +578,10 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   mapcache->size = cacheAnchorsPtr->numActiveRanksGlobal;
   mapcache->local_size = cacheAnchorsPtr->numActiveRanksLocal;
+  mapcache->lowestTCoordOnMyNode = cacheAnchorsPtr->lowestTCoordOnMyNode;
+  mapcache->numActiveNodesGlobal= cacheAnchorsPtr->numActiveNodesGlobal;
 
-  TRACE_ERR( (stderr, "Global::initializeMapCache() .. size: %zu local_size:%zu\n", mapcache->size, mapcache->local_size));
+  TRACE_ERR( (stderr, "Global::initializeMapCache() .. size: %zu local_size:%zu lowestTCoordOnMyNode %zu\n", mapcache->size, mapcache->local_size,mapcache->lowestTCoordOnMyNode ));
 
   return 0;
 };

@@ -93,7 +93,7 @@ namespace PAMI
 	    bool master;
 	    size_t myTask        = __global.mapping.t();
 	    size_t numLocalTasks = __global.topology_local.size();
-	    (myTask == 0) ? master=true : master=false;
+	    ( myTask == __global.mapping.lowestT() ) ? master=true : master=false;
 
 	    TRACE((stderr, "MU::Context::generate_impl: Initializing local barrier, size=%zu, master=%d\n", numLocalTasks, master));
 	    PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> barrier;
@@ -153,9 +153,8 @@ namespace PAMI
 	    TRACE((stderr,"MU Factory: Exiting  local barrier after creating contexts\n"));
 
 
-	    // \todo Replace this with a real MU barrier when it is available
 	    // If multi-node, and master, need to barrier
-	    if ( master && (__global.mapping.size() > __global.personality.tSize()) )
+	    if ( master && (__global.mapping.numActiveNodes() > 1) )
 	      {
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 		if (!__global.personality._is_mambo)

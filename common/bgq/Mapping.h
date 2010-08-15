@@ -633,6 +633,27 @@ namespace PAMI
     {
       return _pers.tSize();
     }
+
+    // \brief Get Lowest T Coordinate on This Node
+    inline size_t lowestT ()
+    {
+      return _mapcache.lowestTCoordOnMyNode;
+    }
+
+    // \brief Return Whether We Are The Lowest T Coordinate on This Node
+    inline bool isLowestT ()
+    {
+      if ( _mapcache.lowestTCoordOnMyNode == _t ) 
+	return true;
+      else
+	return false;
+    }
+
+    // \brief Get Number of Active Nodes
+    inline size_t numActiveNodes ()
+    {
+      return _mapcache.numActiveNodesGlobal;
+    }
   };  // class Mapping
 };  // namespace PAMI
 
@@ -645,6 +666,8 @@ pami_result_t PAMI::Mapping::init(bgq_mapcache_t &mapcache,
   _mapcache.node.peer2task    = mapcache.node.peer2task;
   _mapcache.size              = mapcache.size;
   _mapcache.local_size        = mapcache.local_size;
+  _mapcache.lowestTCoordOnMyNode   = mapcache.lowestTCoordOnMyNode;
+  _mapcache.numActiveNodesGlobal   = mapcache.numActiveNodesGlobal;
 
   size_t
     //asize =_pers.aSize(),// aSize isn't currently used in the calculation so we get warnings

@@ -74,6 +74,12 @@ namespace PAMI
           ///
           static const size_t immediate_payload_size = sizeof(MU::InjGroup::immediate_payload_t);
 
+	  ///
+	  /// \brief Initial Value for Combining Inj Fifo Number
+	  ///        This indicates this value has not been set.
+	  ///
+	  static const size_t combiningInjFifoIdNotSet = 0xFFFF;
+
           ///
           /// \brief Reverse Fifo Pin array
           ///
@@ -98,11 +104,13 @@ namespace PAMI
                           size_t            id_count) :
               Interface::BaseDevice<Context> (),
               Interface::PacketDevice<Context> (),
+	      _pamiRM ( __MUGlobal.getPamiRM() ),
               _rm ( __MUGlobal.getMuRM() ),
               _mapping (mapping),
               _id_base (id_base),
               _id_offset (id_offset),
-              _id_count (id_count)
+ 	      _id_count (id_count),
+	      _combiningInjFifo (combiningInjFifoIdNotSet)
           {
             TRACE_FN_ENTER();
 
@@ -152,7 +160,7 @@ namespace PAMI
             // basis PAMI_Client_create() is called.  We need an ID that
             // corresponds to the clients named on PAMI_CLIENTNAMES so the
             // resource manager knows which client we are talking about.
-            _rm_id_client = _rm.mapClientIdToRmClientId ( id_client );
+            _rm_id_client = _pamiRM.mapClientIdToRmClientId ( id_client );
 
             // Need to find a way to break this dependency...
             //_client = client;
@@ -333,6 +341,33 @@ namespace PAMI
                                            NULL);  // \todo This should be the pami_context_t
               }
 
+	    // ----------------------------------------------------------------
+	    // If this context is supposed to use the combining injection
+	    // fifo, then 
+	    // 1.  Store the context-relative fifo number.
+	    // 2.  Initialize the next slot in the injectionGroup with this
+	    //     injection channel.
+	    // Do this if
+	    // 1. This client is the one that can use MU combining collectives.
+	    // 2. This task is the lowest T coordinate on the node.
+	    // 3. This is context 0 in this client.
+	    // ----------------------------------------------------------------
+	    if ( ( _pamiRM.doesClientOptimizeCombiningCollectivesInMU( _rm_id_client ) ) &&
+		 ( _mapping.isLowestT() ) &&
+		 ( _id_offset == 0 ) )
+	      {
+		_combiningInjFifo = _numInjFifos;
+		injectionGroup.initialize (_combiningInjFifo,   /* fnum */
+					   _rm.getGlobalCombiningInjFifoPtr (),
+					   NULL,   /* immediate_vaddr */
+					   0ULL,   /* immediate_paddr */
+					   NULL,   /* completion_function */
+					   NULL,   /* completion_cookie */
+					   0,      /* n - dimension of above arrays */
+					   NULL ); /* channel_cookie */
+		TRACE_FORMAT("Context::init():  Context is controlling combining InjChannel.  Context-relative InjFifo Id = %u, t=%zu\n",_combiningInjFifo, _mapping.t());
+	      }
+
             // ----------------------------------------------------------------
             // Initialize the reception channel
             // ----------------------------------------------------------------
@@ -496,12 +531,71 @@ namespace PAMI
             return _mapping.getMuDestinationTask(task, dest, tcoord, fifoPin);
           };
 
+	  ///
+	  /// \brief Return Whether This Context Is Using the MU for Combining Operations
+	  ///
+	  inline bool doesContextOptimizeCombiningCollectivesInMU ()
+	    {
+	      if ( _combiningInjFifo != combiningInjFifoIdNotSet )
+		return true;
+	      else
+		return false;
+	    }
+
+	  ///
+          /// \brief Pin Combining Fifo
+          ///
+          /// The pinCombiningFifo method is used to retrieve 
+	  /// 1.  The context-relative combining injection fifo number.
+	  /// 2.  The global MU reception fifo identification number to receive
+	  ///     the result of the combining operation.
+	  ///
+	  /// This function will assert if called on a context that is not
+	  /// managing the combining injection fifo.
+          ///
+          /// \see MUHWI_MessageUnitHeader.Memory_FIFO.Rec_FIFO_Id
+          ///
+	  /// \param[in]  task  The task id whose reception fifo is to receive
+	  ///                   the result of the combining collective.  This
+	  ///                   will be the same reception fifo on all nodes
+	  ///                   participating in the collective.
+          /// \param[out] rfifo   Reception fifo id to receive the result of a
+	  ///                     memory fifo combine.
+	  ///
+          /// \return  Context-relative injection fifo Id of the combining 
+	  ///          injection fifo.
+	  ///          Reception fifo id to receive the result of a 
+	  ///          memory fifo combining operation.
+          ///
+          inline uint16_t pinCombiningFifo ( size_t    task,
+					     uint16_t &rfifo )
+	    {
+	      TRACE_FN_ENTER();
+
+	      PAMI_assertf ( _combiningInjFifo != combiningInjFifoIdNotSet,
+			     "pinCombiningFifo: Trying to use combining injection fifo in an invalid context");
+
+	      // Calculate the destination reception fifo identifier based on
+	      // the destination task.
+	      size_t addr[BGQ_TDIMS + BGQ_LDIMS];
+	      _mapping.task2global ((pami_task_t)task, addr);
+	      size_t tcoord = addr[5];
+
+	      rfifo = _rm.getPinRecFifo( _id_client,
+					 0,          /*offset*/
+					 tcoord );
+	      TRACE_FORMAT("client=%zu, context=%zu, tcoord=%zu, rfifo = %u", _id_client, (size_t)0, tcoord, rfifo);
+	      TRACE_FN_EXIT();
+
+	      return _combiningInjFifo;
+	    }
+
           ///
           /// \brief Pin Broadcast Fifo
           ///
           /// The pinBroadcastFifo method is used for two purposes: to retrieve the
           /// global MU reception fifo identification number to receive the result
-          /// of a broadcast, and the injection fifo inject the broadcast descriptor
+          /// of a broadcast, and the injection fifo to inject the broadcast descriptor
 	  /// into.  The injection fifo is determined by mapping the specified
 	  /// class route ID to one of the injection fifos in this context.
           ///
@@ -703,13 +797,17 @@ namespace PAMI
 
 #endif
 
-          ResourceManager & _rm; // MU Global Resource Manager
+	  PAMI::ResourceManager & _pamiRM; // PAMI Resource Manager
+	  ResourceManager & _rm; // MU Global Resource Manager
           PAMI::Mapping   & _mapping;
           size_t            _id_base;
           size_t            _id_offset;
           size_t            _id_count;
           size_t            _id_client;
           size_t            _rm_id_client;
+	  uint32_t          _combiningInjFifo;       // Context-relative fifo id.
+	                                             // Initialized to combiningInjFifoIdNotSet
+                                                     // if this context does not manage it.
 
       }; // class     PAMI::Device::MU::Context
     };   // namespace PAMI::Device::MU

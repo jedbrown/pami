@@ -2016,11 +2016,14 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 
   if ( _calculateSizeOnly == 1 )
     {
-      _memSize += outputStructuresSize +
-	            fifoPtrsArraySize  +
-	            fifosSize +
-                    fifoIdsSize;
-      TRACE((stderr,"MU ResourceManager: setupInjFifos: _memSize = %zu\n",_memSize));
+      if ( useSharedMemory )
+	{
+	  _memSize += outputStructuresSize +
+	              fifoPtrsArraySize  +
+              	      fifosSize +
+	              fifoIdsSize;
+	  TRACE((stderr,"MU ResourceManager: setupInjFifos: _memSize = %zu\n",_memSize));
+	}
       return 0;
 
     } // End: _calculateOnly
@@ -2130,8 +2133,8 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 // \brief Allocate Global Injection Fifos
 //
 // Allocate resources needed before main().  These include:
-// -  1 collective combining injection fifo (in subgroup 65).
-// - 10 remote get injection fifos (8 in subgroup 64, 2 in subgroup 65).
+// -  1 collective combining injection fifo (somewhere in subgroup 64 or 65).
+// - 10 remote get injection fifos (somewhere in subgroups 64 and 65).
 //
 void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
 {
@@ -2147,7 +2150,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
 				 1,  // Number of fifos
 				 _pamiRM.getInjFifoSize(),
 				 &fifoAttr,
-				 true, // Use shared memory
+				 false, // Do not use shared memory
 				 &_globalInjSubGroups,
 				 &_globalInjFifoPtrs,
 				 &_globalInjFifoIds );
@@ -2586,7 +2589,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
   // processes that only allocate the storage.
 
   _calculateSizeOnly = 0;
-  if ( _mapping.t() == 0)
+  if ( _mapping.t() == _mapping.lowestT() ) // Master?
     _allocateOnly = 0;
   else
     _allocateOnly = 1;
@@ -2612,30 +2615,6 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
   PAMI_assertf ( _perContextMUResources != NULL, "The heap is full.\n" );
 
 } // End: allocateGlobalResources()
-
-
-// \todo Map input clientId to the client name, and lookup the name, returning
-//       the clientId used by the RM as the RmClientId.  For now, assume the
-//       input clientId matches the RmClientId.
-size_t PAMI::Device::MU::ResourceManager::mapClientIdToRmClientId ( size_t clientId )
-{
-#if 1
-  return clientId;
-#else
-  char *nameForClientId = ???  // Get clientId's name
-    size_t client;
-  size_t numClients = _pamiRM.getNumClients();
-  for ( client=0; client<numClients; client++ )
-    {
-      char *clientName = _pamiRM.getClientName( client );
-      if ( strcmp( clientName, nameForClientId) == 0 )
-	return client;
-    }
-  // The client names specified on PAMI_CLIENTNAMES don't match the
-  // specified client name.
-  PAMI_assertf( 0, "Client name %s specified on PAMI_Client_create() does not match any of the client names specified on PAMI_CLIENTNAMES.\n", nameForClientId );
-#endif
-} // End: mapClientIdToRmClientId()
 
 
 void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClientId,

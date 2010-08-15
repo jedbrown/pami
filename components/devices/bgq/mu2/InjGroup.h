@@ -62,7 +62,7 @@ namespace PAMI
             TRACE_FN_ENTER();
 
             size_t i;
-            for (i=0; i<10; i++)
+            for (i=0; i<11; i++)
               new (&channel[i]) InjChannel (_sendqueue_status, _completion_status, i);
 
             TRACE_FN_EXIT();
@@ -96,12 +96,11 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
 
-            PAMI_assert_debugf(fnum < 10, "%s<%d>\n", __FILE__, __LINE__);
+            PAMI_assert_debugf(fnum < 11, "%s<%d>\n", __FILE__, __LINE__);
 
             channel[fnum].initialize (f, immediate_vaddr, immediate_paddr,
                                       completion_function, completion_cookie,
                                       n, channel_cookie);
-
             TRACE_FN_EXIT();
           }
 
@@ -114,6 +113,11 @@ namespace PAMI
           /// 32-tasks/node, will attempt to advance the unitialized channels
           /// and will return immediately because the status bit for these
           /// channels will always be zero.
+	  ///
+	  /// In the context that is managing the combining injection fifo,
+	  /// the last channel in the array is that channel, so it will be
+	  /// advanced.  In the other contexts, the uninitialized channel will
+	  /// be advanced, which essentially does nothing.
           ///
           /// This allows the common case run modes to eliminate a for-loop.
           ///
@@ -136,6 +140,7 @@ namespace PAMI
                 events += channel[7].advanceCompletion ();
                 events += channel[8].advanceCompletion ();
                 events += channel[9].advanceCompletion ();
+                events += channel[10].advanceCompletion ();
               }
 
             if (unlikely(_sendqueue_status != 0))
@@ -150,6 +155,7 @@ namespace PAMI
                 events += channel[7].advanceSendQueue ();
                 events += channel[8].advanceSendQueue ();
                 events += channel[9].advanceSendQueue ();
+                events += channel[10].advanceSendQueue ();
               }
 
             TRACE_FN_EXIT();
@@ -157,7 +163,7 @@ namespace PAMI
           }
 
           /// Injection channel array
-          InjChannel channel[10];
+          InjChannel channel[11];
 
         protected:
 
