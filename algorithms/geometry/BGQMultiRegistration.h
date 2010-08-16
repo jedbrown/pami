@@ -313,8 +313,6 @@ if (phase == 0) {
                   if (topology->isLocal())
                     {
                       TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Local Shmem factories\n", this));
-                      geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
-                                       (void*)_shmem_barrier_composite);
 
                       // Add Barriers
                       geometry->addCollective(PAMI_XFER_BARRIER, &_shmem_msync_factory, _context_id);
@@ -367,8 +365,6 @@ if (phase == 0) {
                       TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Global MU factories\n", this));
                       _mu_barrier_composite = _mu_msync_factory.generate(geometry, &xfer);
 
-                      geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
-                                       (void*)_mu_barrier_composite);
                       // Add Barriers
                       geometry->addCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
 #ifdef ENABLE_MU_CLASSROUTES
@@ -398,10 +394,6 @@ if (phase == 0) {
                   geometry->rmCollective(PAMI_XFER_BROADCAST, _mu_mcast2_factory, _context_id);
                   geometry->rmCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
                   geometry->rmCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
-#if 0
-		 // How to destroy this composite?
-                 geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1, NULL);
-#endif // if 0
 }
 #endif
 
