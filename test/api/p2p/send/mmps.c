@@ -43,10 +43,10 @@ PAMI_Client_add_commthread_context(pami_client_t client, pami_context_t context)
 
 static pami_client_t  client;
 static pami_context_t contexts[NCONTEXTS];
-static volatile size_t recv_list[MAX_SIZE];
-static volatile size_t send_list[MAX_SIZE];
+static volatile size_t recv_list[MAX_SIZE] = {0};
+static volatile size_t send_list[MAX_SIZE] = {0};
 static size_t ncontexts = NCONTEXTS;
-static size_t rank, size;
+static size_t rank=99, size=(size_t)-1;
 #ifndef __pami_target_bgq__
 static pthread_t threads[NCONTEXTS];
 #endif
@@ -59,8 +59,10 @@ advance(void* arg)
 {
   pami_context_t context = *(pami_context_t*)arg;
   /* printf("%s:%d  context=%p\n", __FUNCTION__, __LINE__, context); */
-  for (;;)
-    PAMI_Context_advance(context, (size_t)-1);
+  for (;;) {
+    rc = PAMI_Context_advance(context, (size_t)-1);
+    assert(rc == PAMI_SUCCESS);
+  }
   return NULL;
 }
 #endif
@@ -70,8 +72,9 @@ static pami_result_t
 send(pami_context_t context, void *_dest)
 {
   const size_t mod = ncontexts>>1;
+  pami_result_t rc;
   size_t dest = (size_t)_dest;
-  TRACE_ERR("running posted work  dest=%zu arg=%p\n", dest, _dest);
+  TRACE_ERR("running posted work  dest=%zu[%zu] arg=%p\n", dest, (rank%mod)+mod, _dest);
 
   struct
   {
@@ -90,8 +93,10 @@ send(pami_context_t context, void *_dest)
   },
   dispatch : DISPATCH,
   };
-  PAMI_Endpoint_create(client, dest, (rank%mod)+mod, &params.dest);
-  PAMI_Send_immediate(context, &params);
+  rc = PAMI_Endpoint_create(client, dest, (rank%mod)+mod, &params.dest);
+  assert(rc == PAMI_SUCCESS);
+  rc = PAMI_Send_immediate(context, &params);
+  assert(rc == PAMI_SUCCESS);
 
   ++send_list[dest];
   return PAMI_SUCCESS;
@@ -117,7 +122,7 @@ recv(pami_context_t    context,
   rc = PAMI_Endpoint_query(_sender, &sender, &contextid);
   assert(rc == PAMI_SUCCESS);
 
-  TRACE_ERR("dest=%zu\n", (size_t)sender);
+  TRACE_ERR("dest=%zu[%zu] contextid=%zu\n", (size_t)sender, contextid, (size_t)_contextid);
   ++recv_list[sender];
 }
 
@@ -129,20 +134,19 @@ master()
 
   const size_t mod = ncontexts>>1;
   size_t dest;
+  pami_result_t rc;
   size_t iteration, i;
-  pami_work_t work_list[WINDOW];
+  pami_work_t work_list[WINDOW][size];
 
   for (iteration=0; iteration<ITERATIONS; ++iteration) {
-    memset((void*)send_list, 0, MAX_SIZE*sizeof(size_t));
-    memset((void*)recv_list, 0, MAX_SIZE*sizeof(size_t));
-
     TRACE_ERR("starting sends  interation=%zu\n", iteration);
     for (i=0; i<WINDOW; ++i) {
       for (dest=1; dest<size; ++dest) {
         size_t contextid = dest%mod;
         pami_context_t context = contexts[contextid];
-        TRACE_ERR("Posting work  dest=%zu arg=%p\n", dest, (void*)dest);
-        PAMI_Context_post(context, &work_list[i], send, (void*)dest);
+        TRACE_ERR("Posting work  contextid=%zu dest=%zu arg=%p iteration=%zu window=%zu\n", contextid, dest, (void*)dest, iteration, i);
+        rc = PAMI_Context_post(context, &work_list[i][dest], send, (void*)dest);
+        assert(rc == PAMI_SUCCESS);
       }
     }
 
@@ -150,9 +154,9 @@ master()
     /* Check that everything is done */
     for (dest=1; dest<size; ++dest) {
       TRACE_ERR("           interation=%zu dest=%zu\n", iteration, dest);
-      while(send_list[dest] != WINDOW);
+      while(send_list[dest] != WINDOW*(iteration+1));
       TRACE_ERR("send done  interation=%zu dest=%zu\n", iteration, dest);
-      while(recv_list[dest] != WINDOW);
+      while(recv_list[dest] != WINDOW*(iteration+1));
       TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
     }
   }
@@ -167,28 +171,31 @@ worker()
 
   const size_t mod = ncontexts>>1;
   const size_t dest = 0;
+  pami_result_t rc;
   size_t iteration, i;
-  pami_work_t work_list[WINDOW];
+  pami_work_t work_list[WINDOW][1];
 
   for (iteration=0; iteration<ITERATIONS; ++iteration) {
-    memset((void*)send_list, 0, MAX_SIZE*sizeof(size_t));
-    memset((void*)recv_list, 0, MAX_SIZE*sizeof(size_t));
-
     TRACE_ERR("starting sends  interation=%zu\n", iteration);
     for (i=0; i<WINDOW; ++i) {
-      size_t contextid = dest%mod;
-      pami_context_t context = contexts[contextid];
-      TRACE_ERR("Posting work  dest=%zu arg=%p\n", dest, (void*)dest);
-      PAMI_Context_post(context, &work_list[i], send, (void*)dest);
+      {
+        size_t contextid = dest%mod;
+        pami_context_t context = contexts[contextid];
+        TRACE_ERR("Posting work  contextid=%zu dest=%zu arg=%p iteration=%zu window=%zu\n", contextid, dest, (void*)dest, iteration, i);
+        rc = PAMI_Context_post(context, &work_list[i][dest], send, (void*)dest);
+        assert(rc == PAMI_SUCCESS);
+      }
     }
 
     /* Check that everything is done */
     TRACE_ERR("Starting completion check  interation=%zu\n", iteration);
-    TRACE_ERR("           interation=%zu dest=%zu\n", iteration, dest);
-    while(send_list[dest] != WINDOW);
-    TRACE_ERR("send done  interation=%zu dest=%zu\n", iteration, dest);
-    while(recv_list[dest] != WINDOW);
-    TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
+    {
+      TRACE_ERR("           interation=%zu dest=%zu\n", iteration, dest);
+      while(send_list[dest] != WINDOW*(iteration+1));
+      TRACE_ERR("send done  interation=%zu dest=%zu\n", iteration, dest);
+      while(recv_list[dest] != WINDOW*(iteration+1));
+      TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
+    }
   }
 }
 
@@ -240,7 +247,7 @@ init()
   value : { intval : 1, },
   };
   rc = PAMI_Context_createv(client, &params, 1, contexts, ncontexts);
-  TRACE_ERR("%d = PAMI_Context_createv(%p, {PAMI_CLIENT_CONST_CONTEXTS = 1}, 1, %p, %zu);\n", rc, client, contexts, ncontexts);
+  TRACE_ERR("%d = PAMI_Context_createv(client=%p, {PAMI_CLIENT_CONST_CONTEXTS = 1}, contexts=%p, ncontexts=%zu);\n", rc, client, contexts, ncontexts);
   assert(rc == PAMI_SUCCESS);
 
   for (i=0; i<ncontexts; ++i) {
