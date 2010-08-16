@@ -6,8 +6,8 @@
 #define  TRACE_ON
 
 #define NCONTEXTS  64      /* The maximum number of contexts */
-#define WINDOW     2       /* The number of sends/recvs before a "wait" */
-#define ITERATIONS 1       /* The number of windows exectuted */
+#define WINDOW     16      /* The number of sends/recvs before a "wait" */
+#define ITERATIONS (1<<5)  /* The number of windows exectuted */
 #define HEADER     16      /* Size of header */
 #define DATA       0       /* Size of data */
 #define MAX_SIZE   32      /* The number of processes that can participate */
@@ -62,7 +62,7 @@ advance(void* arg)
 {
   pami_result_t rc;
   pami_context_t context = *(pami_context_t*)arg;
-  /* printf("%s:%d  context=%p\n", __FUNCTION__, __LINE__, context); */
+  TRACE_ERR("context=%p\n", context);
   for (;;) {
     rc = PAMI_Context_advance(context, (size_t)-1);
     assert(rc == PAMI_SUCCESS);
@@ -158,9 +158,9 @@ master()
     /* Check that everything is done */
     for (dest=1; dest<size; ++dest) {
       TRACE_ERR("           interation=%zu dest=%zu\n", iteration, dest);
-      while(send_list[dest] != WINDOW*(iteration+1));
+      while(send_list[dest] < WINDOW*(iteration+1));
       TRACE_ERR("send done  interation=%zu dest=%zu\n", iteration, dest);
-      while(recv_list[dest] != WINDOW*(iteration+1));
+      while(recv_list[dest] < WINDOW*(iteration+1));
       TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
     }
   }
@@ -195,9 +195,9 @@ worker()
     TRACE_ERR("Starting completion check  interation=%zu\n", iteration);
     {
       TRACE_ERR("           interation=%zu dest=%zu\n", iteration, dest);
-      while(send_list[dest] != WINDOW*(iteration+1));
+      while(send_list[dest] < WINDOW*(iteration+1));
       TRACE_ERR("send done  interation=%zu dest=%zu\n", iteration, dest);
-      while(recv_list[dest] != WINDOW*(iteration+1));
+      while(recv_list[dest] < WINDOW*(iteration+1));
       TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
     }
   }
@@ -242,7 +242,6 @@ init()
   ncontexts = MIN(ncontexts, query);
 
   ncontexts &= ~(size_t)1;  /* Make it even */
-  printf("ncontexts=%zu\n", ncontexts);
   assert(ncontexts>1); /* There must be at least 2 */
   assert((ncontexts&1) == 0); /* There must be an even number */
 
