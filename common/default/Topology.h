@@ -1100,6 +1100,8 @@ namespace PAMI {
 
     /// \brief create topology from all Nth ranks globally
     ///
+    /// \todo #warning This is broken - depends on existence of task2node().local == n
+    ///
     /// \param[out] _new	Where to build topology
     /// \param[in] n	Which local rank to select on each node
     ///
@@ -1144,6 +1146,9 @@ namespace PAMI {
 
 
     /// \brief create topology from all Nth offsets locally
+    ///
+    /// \todo #warning This is broken - it depends on special ordering in index2Rank()
+    /// \todo #warning This is redundant - fix NthGlobal instead!
     ///
     /// \param[out] _new	Where to build topology
     ///
