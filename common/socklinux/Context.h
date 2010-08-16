@@ -13,15 +13,7 @@
 
 #include <pami.h>
 #include "common/ContextInterface.h"
-
-#include "components/devices/generic/Device.h"
-#include "components/devices/misc/ProgressFunctionMsg.h"
-#include "components/devices/misc/AtomicBarrierMsg.h"
-#include "components/devices/workqueue/WQRingReduceMsg.h"
-#include "components/devices/workqueue/WQRingBcastMsg.h"
-#include "components/devices/workqueue/LocalAllreduceWQMessage.h"
-#include "components/devices/workqueue/LocalReduceWQMessage.h"
-#include "components/devices/workqueue/LocalBcastWQMessage.h"
+#include "common/default/Context.h"
 
 #ifdef ENABLE_UDP_DEVICE
 #include "components/devices/udp/UdpDevice.h"
@@ -50,7 +42,6 @@
 #endif
 #include "p2p/protocols/send/composite/Composite.h"
 
-#include "p2p/protocols/get/Get.h"
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
 #endif
@@ -199,19 +190,19 @@ namespace PAMI
     PAMI::Device::LocalReduceWQDevice *_localreduce;
   }; // class PlatformDeviceList
 
-  class Context : public Interface::Context<PAMI::Context>
+  class Context : public Interface::Context<PAMI::Context>,
+                  public Common::Context<PlatformDeviceList>
   {
     public:
+
+      friend class Interface::Context<PAMI::Context>;
+
       inline Context (pami_client_t client, size_t clientid, size_t contextid, size_t num,
                       PlatformDeviceList *devices, void * addr, size_t bytes) :
           Interface::Context<PAMI::Context> (client, contextid),
-          _client (client),
-          _context ((pami_context_t)this),
-          _clientid (clientid),
-          _contextid (contextid),
+          Common::Context<PlatformDeviceList> (client, clientid, contextid, num, devices),
           _mm (addr, bytes),
-          _sysdep (_mm),
-          _devices(devices)
+          _sysdep (_mm)
       {
         TRACE_ERR((stderr, ">> Context::Context()\n"));
         // ----------------------------------------------------------------
@@ -222,263 +213,27 @@ namespace PAMI
         // Compile-time assertions
         // ----------------------------------------------------------------
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
+
         TRACE_ERR((stderr, "<< Context::Context()\n"));
       }
 
-      inline pami_client_t getClient_impl ()
-      {
-        return _client;
-      }
-
-      inline size_t getId_impl ()
-      {
-        return _contextid;
-      }
-
-      inline pami_result_t destroy_impl ()
-      {
-        //return PAMI_UNIMPL;
-        return PAMI_SUCCESS;
-      }
-
-      inline pami_result_t post_impl (pami_work_t *state, pami_work_function work_fn, void * cookie)
-      {
-        PAMI::Device::Generic::GenericThread *work;
-        COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
-        work = new (state) PAMI::Device::Generic::GenericThread(work_fn, cookie);
-        work->setStatus(PAMI::Device::OneShot);
-        _devices->_generics[_contextid].postThread(work);
-        return PAMI_SUCCESS;
-      }
-
-      inline size_t advance_impl (size_t maximum, pami_result_t & result)
-      {
-//          result = PAMI_EAGAIN;
-        result = PAMI_SUCCESS;
-        size_t events = 0;
-        unsigned i;
-
-        //std::cout << "<" << __global.mapping.task() << ">: advance  max= " << maximum << std::endl;
-        for (i = 0; i < maximum && events == 0; i++)
-          {
-                events += _devices->advance(_clientid, _contextid);
-          }
-        //std::cout << "<" << __global.mapping.task() << ">: advance  events= " << events << std::endl;
-
-        if (events > 0) result = PAMI_SUCCESS;
-
-        return events;
-      }
-
-      inline pami_result_t lock_impl ()
-      {
-        //_lock.acquire ();
-        return PAMI_SUCCESS;
-      }
-
-      inline pami_result_t trylock_impl ()
-      {
-        //if (_lock.tryAcquire ()) {
-                return PAMI_SUCCESS;
-        //}
-        //return PAMI_EAGAIN;
-      }
-
-      inline pami_result_t unlock_impl ()
-      {
-        //_lock.release ();
-        return PAMI_SUCCESS;
-      }
-
-      inline pami_result_t send_impl (pami_send_t * parameters)
-      {
-        size_t id = (size_t)(parameters->send.dispatch);
-        TRACE_ERR((stderr, ">> send_impl('simple'), _dispatch[%zu] = %p\n", id, _dispatch[id]));
-        PAMI_assert_debug (_dispatch[id] != NULL);
-
-        PAMI::Protocol::Send::Send * send =
-          (PAMI::Protocol::Send::Send *) _dispatch[id];
-        send->simple (parameters);
-
-        TRACE_ERR((stderr, "<< send_impl('simple')\n"));
-        return PAMI_SUCCESS;
-      }
-
-      inline pami_result_t send_impl (pami_send_immediate_t * parameters)
-      {
-        size_t id = (size_t)(parameters->dispatch);
-        TRACE_ERR((stderr, ">> send_impl('immediate'), _dispatch[%zu] = %p\n", id, _dispatch[id]));
-        PAMI_assert_debug (_dispatch[id] != NULL);
-
-        PAMI::Protocol::Send::Send * send =
-          (PAMI::Protocol::Send::Send *) _dispatch[id];
-        send->immediate (parameters);
-
-        TRACE_ERR((stderr, "<< send_impl('immediate')\n"));
-        return PAMI_SUCCESS;
-      }
-
-      inline pami_result_t send_impl (pami_send_typed_t * parameters)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t put (pami_put_simple_t * parameters)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t put_typed (pami_put_typed_t * parameters)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t get (pami_get_simple_t * parameters)
-      {
-
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t get_typed (pami_get_typed_t * parameters)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t rmw (pami_rmw_t * parameters)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t memregion_create_impl (void             * address,
-                                                  size_t             bytes_in,
-                                                  size_t           * bytes_out,
-                                                  pami_memregion_t * memregion)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t memregion_destroy_impl (pami_memregion_t * memregion)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t rput (pami_rput_simple_t * parameters)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t rput_typed (pami_rput_typed_t * parameters)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t rget (pami_rget_simple_t * parameters)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t rget_typed (pami_rget_typed_t * parameters)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t purge_totask (size_t *dest, size_t count)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t resume_totask (size_t *dest, size_t count)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t fence_begin ()
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t fence_end ()
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t fence_all (pami_event_function   done_fn,
-                                     void               * cookie)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t fence_task (pami_event_function   done_fn,
-                                      void               * cookie,
-                                      size_t               task)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t geometry_initialize (pami_geometry_t       * geometry,
-                                               unsigned               id,
-                                               pami_geometry_range_t * rank_slices,
-                                               size_t                 slice_count)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t geometry_world (pami_geometry_t * world_geometry)
-      {
-        return PAMI_UNIMPL;
-      }
-
-
-      inline pami_result_t geometry_finalize (pami_geometry_t geometry)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t collective (pami_xfer_t * parameters)
-      {
-        return PAMI_UNIMPL;
-      }
-
-    inline pami_result_t amcollective_dispatch_impl (pami_algorithm_t            algorithm,
-                                                    size_t                     dispatch,
-                                                    pami_dispatch_callback_fn   fn,
-                                                    void                     * cookie,
-                                                    pami_collective_hint_t      options)
-      {
-        PAMI_abort();
-        return PAMI_SUCCESS;
-      }
-
-      inline pami_result_t geometry_algorithms_num_impl (pami_geometry_t geometry,
-                                                        pami_xfer_type_t ctype,
-                                                        size_t *lists_lengths)
-      {
-        return PAMI_UNIMPL;
-      }
-
-      inline pami_result_t geometry_algorithms_info_impl (pami_geometry_t geometry,
-                                                           pami_xfer_type_t colltype,
-                                                       pami_algorithm_t  *algs0,
-                                                       pami_metadata_t   *mdata0,
-                                                       size_t               num0,
-                                                       pami_algorithm_t  *algs1,
-                                                       pami_metadata_t   *mdata1,
-                                                       size_t               num1)
-      {
-        PAMI_abort();
-        return PAMI_SUCCESS;
-      }
-
-      inline pami_result_t dispatch_impl (size_t                     id,
-                                         pami_dispatch_callback_fn   fn,
-                                         void                     * cookie,
-                                         pami_send_hint_t            options)
+      inline pami_result_t dispatch_impl (size_t                      id,
+                                          pami_dispatch_callback_fn   fn,
+                                          void                      * cookie,
+                                          pami_send_hint_t            options)
       {
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result = %d\n", id, _dispatch[id], result));
 
         pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid,__global.mapping.task(),_contextid);
 
+        Protocol::Send::Send * send =
+          Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+            generate (id, fn.p2p, cookie,
+                      ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, _protocol, result);
+
+        _dispatch.set (id, send, send);
+/*
         if (_dispatch[id] == NULL)
           {
             bool no_shmem  = (options.use_shmem == PAMI_HINT3_FORCE_OFF);
@@ -557,67 +312,18 @@ namespace PAMI
             }
 #endif
           }
-
+*/
         TRACE_ERR((stderr, "<< socklinux::dispatch_impl .. result = %d\n", result));
         return result;
       }
 
-      inline pami_result_t dispatch_query_impl(size_t                dispatch,
-                                               pami_configuration_t  configuration[],
-                                               size_t                num_configs)
-      {
-        PAMI::Protocol::Send::Send * send =
-          (PAMI::Protocol::Send::Send *) _dispatch[dispatch];
-        return send->getAttributes (configuration, num_configs);
-      }
-
-    inline pami_result_t dispatch_update_impl(size_t                dispatch,
-                                                pami_configuration_t  configuration[],
-                                                size_t                num_configs)
-      {
-        return PAMI_INVAL;
-      }
-
-      inline pami_result_t query_impl(pami_configuration_t  configuration[],
-                                      size_t                num_configs)
-      {
-          pami_result_t result = PAMI_SUCCESS;
-          size_t i;
-          for(i=0; i<num_configs; i++)
-            {
-              switch (configuration[i].name)
-                {
-                  case PAMI_CONTEXT_DISPATCH_ID_MAX:
-                  default:
-                    result = PAMI_INVAL;
-                }
-            }
-          return result;
-      }
-
-      inline pami_result_t update_impl(pami_configuration_t  configuration[],
-                                       size_t                num_configs)
-      {
-        return PAMI_INVAL;
-      }
     private:
-
-      pami_client_t  _client;
-      pami_context_t _context;
-      size_t        _clientid;
-      size_t        _contextid;
 
       PAMI::Memory::MemoryManager _mm;  // TODO why do I have to do this for sys dep?
       SysDep _sysdep;
 
-      void * _dispatch[1024];
-      //void* _get; //use for now..remove later
       MemoryAllocator<1024, 16> _request;
-
-
-      //ContextLock _lock;
       ProtocolAllocator _protocol;
-      PlatformDeviceList *_devices;
 
   }; // end PAMI::Context
 }; // end namespace PAMI

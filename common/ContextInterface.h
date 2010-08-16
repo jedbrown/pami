@@ -78,9 +78,9 @@ namespace PAMI
         inline pami_result_t fence_all (pami_event_function   done_fn,
                                        void               * cookie);
 
-        inline pami_result_t fence_task (pami_event_function   done_fn,
-                                        void               * cookie,
-                                        size_t               task);
+        inline pami_result_t fence_endpoint (pami_event_function   done_fn,
+                                             void                * cookie,
+                                             pami_endpoint_t       endpoint);
 
       inline pami_result_t geometry_algorithms_num (pami_geometry_t geometry,
                                                    pami_xfer_type_t ctype,
@@ -292,11 +292,11 @@ namespace PAMI
     }
 
     template <class T_Context>
-    pami_result_t Context<T_Context>::fence_task (pami_event_function   done_fn,
-                                                 void               * cookie,
-                                                 size_t               task)
+    pami_result_t Context<T_Context>::fence_endpoint (pami_event_function   done_fn,
+                                                      void                * cookie,
+                                                      pami_endpoint_t       endpoint)
     {
-      return static_cast<T_Context*>(this)->fence_task_impl(done_fn, cookie, task);
+      return static_cast<T_Context*>(this)->fence_endpoint_impl(done_fn, cookie, endpoint);
     }
 
     template <class T_Context>

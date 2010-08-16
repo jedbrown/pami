@@ -133,13 +133,13 @@ extern "C" pami_result_t PAMI_Fence_all (pami_context_t        context,
 ///
 /// \copydoc PAMI_Fence_task
 ///
-extern "C" pami_result_t PAMI_Fence_task (pami_context_t        context,
-                                        pami_event_function   done_fn,
-                                        void               * cookie,
-                                        size_t               task)
+extern "C" pami_result_t PAMI_Fence_endpoint (pami_context_t        context,
+                                              pami_event_function   done_fn,
+                                              void                * cookie,
+                                              pami_endpoint_t       endpoint)
 {
   PAMI::Context * ctx = (PAMI::Context *) context;
-  return ctx->fence_task (done_fn, cookie, task);
+  return ctx->fence_endpoint (done_fn, cookie, endpoint);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

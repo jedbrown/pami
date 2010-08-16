@@ -167,7 +167,7 @@ namespace PAMI
                                            void                      * cookie,
                                            PAMI::DeviceWrapper       & device,
                                            pami_endpoint_t             origin,
-					   pami_context_t              context,
+             pami_context_t              context,
                                            T_Allocator               & allocator,
                                            pami_result_t             & result)
       {
@@ -439,7 +439,7 @@ namespace PAMI
             RETURN_ERR_PAMI(ERR_ERROR, "LAPI__Init failed with rc %d\n", rc);
           }
           _lapi_state = _Lapi_port[_lapi_handle];
-	  lapi_senv(_lapi_handle, INTERRUPT_SET, false);
+    lapi_senv(_lapi_handle, INTERRUPT_SET, false);
 
           // Initialize the lapi device for collectives
           _lapi_device.init(_mm, _clientid, 0, _context, _contextid);
@@ -576,11 +576,11 @@ namespace PAMI
         }
 
       inline size_t advance_only_lapi (size_t maximum, pami_result_t & result)
-	{
+  {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
           internal_error_t rc = (cp->*(cp->pAdvance))(maximum);
           result = PAMI_RC(rc);
-	}
+  }
 
       inline pami_result_t lock_impl ()
         {
@@ -729,9 +729,9 @@ namespace PAMI
           return PAMI_UNIMPL;
         }
 
-      inline  pami_result_t fence_task_impl (pami_event_function   done_fn,
-                                            void               * cookie,
-                                            size_t               task)
+      inline  pami_result_t fence_endpoint_impl (pami_event_function   done_fn,
+                                                 void                * cookie,
+                                                 pami_endpoint_t       endpoint)
         {
           PAMI_abort();
           return PAMI_UNIMPL;

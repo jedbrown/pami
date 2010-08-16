@@ -104,9 +104,9 @@ namespace PAMI
      * Device arrays are semi-opaque (we don't know how many
      * elements each has).
      *
-     * \param[in] clientid	Client ID (index)
-     * \param[in] num_ctx	Number of contexts being created
-     * \param[in] mm		MemeoryManager for use in generating devices
+     * \param[in] clientid  Client ID (index)
+     * \param[in] num_ctx Number of contexts being created
+     * \param[in] mm    MemeoryManager for use in generating devices
      */
     inline pami_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
       TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
@@ -140,11 +140,11 @@ namespace PAMI
      * the 'this' pointer actually points to the array - each device knows whether
      * that is truly an array and how many elements it contains.
      *
-     * \param[in] clientid	Client ID (index)
-     * \param[in] contextid	Context ID (index)
-     * \param[in] clt		Client opaque entity
-     * \param[in] ctx		Context opaque entity
-     * \param[in] sd		SysDep object
+     * \param[in] clientid  Client ID (index)
+     * \param[in] contextid Context ID (index)
+     * \param[in] clt   Client opaque entity
+     * \param[in] ctx   Context opaque entity
+     * \param[in] sd    SysDep object
      */
     inline pami_result_t init(size_t clientid, size_t contextid, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm) {
       TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
@@ -171,8 +171,8 @@ namespace PAMI
      * since device arrays are semi-opaque (we don't know how many
      * elements each has) we call a more-general interface here.
      *
-     * \param[in] clientid	Client ID (index)
-     * \param[in] contextid	Context ID (index)
+     * \param[in] clientid  Client ID (index)
+     * \param[in] contextid Context ID (index)
      */
     inline size_t advance(size_t clientid, size_t contextid) {
         size_t events = 0;
@@ -508,9 +508,9 @@ namespace PAMI
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t fence_task (pami_event_function   done_fn,
-                                      void               * cookie,
-                                      size_t               task)
+      inline pami_result_t fence_endpoint (pami_event_function   done_fn,
+                                           void                * cookie,
+                                           pami_endpoint_t       endpoint)
       {
         return PAMI_UNIMPL;
       }

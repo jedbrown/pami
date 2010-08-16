@@ -598,9 +598,9 @@ namespace PAMI
           return PAMI_UNIMPL;
         }
 
-      inline  pami_result_t fence_task_impl (pami_event_function   done_fn,
-                                            void               * cookie,
-                                            size_t               task)
+      inline  pami_result_t fence_endpoint_impl (pami_event_function   done_fn,
+                                                 void                * cookie,
+                                                 pami_endpoint_t       endpoint)
         {
           PAMI_abort();
           return PAMI_UNIMPL;

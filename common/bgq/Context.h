@@ -136,7 +136,7 @@ namespace PAMI
         _mu = Device::MU::Factory::generate(clientid, num_ctx, mm, _generics);
         }
         _atmmtx = PAMI::Device::AtomicMutexDev::Factory::generate(clientid, num_ctx, mm, _generics);
-	PAMI_assertf(_atmmtx == _generics, "AtomicMutexDev must be a NillSubDevice");
+  PAMI_assertf(_atmmtx == _generics, "AtomicMutexDev must be a NillSubDevice");
          TRACE_ERR((stderr,"device init: done!\n"));
         return PAMI_SUCCESS;
       }
@@ -267,7 +267,7 @@ namespace PAMI
         _self = PAMI_ENDPOINT_INIT(_clientid,__global.mapping.task(),_contextid);
 
         //_lock.init(&_mm);
-	size_t myix = __global.topology_local.rank2Index(__global.mapping.task());
+  size_t myix = __global.topology_local.rank2Index(__global.mapping.task());
         _lock.init(&__global._wuRegion_mms[_clientid][myix]); // put context lock in WAC region
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 
@@ -652,9 +652,9 @@ namespace PAMI
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t fence_task (pami_event_function   done_fn,
-                                      void               * cookie,
-                                      size_t               task)
+      inline pami_result_t fence_endpoint (pami_event_function   done_fn,
+                                           void                * cookie,
+                                           pami_endpoint_t       endpoint)
       {
         return PAMI_UNIMPL;
       }
@@ -875,9 +875,9 @@ namespace PAMI
 
       inline pami_result_t analyze(size_t         context_id,
                                   BGQGeometry    *geometry,
-				  int phase = 0)
+          int phase = 0)
       {
-	TRACE_ERR((stderr,"analyze geometry %p, registration %p\n",geometry,_ccmi_registration));
+  TRACE_ERR((stderr,"analyze geometry %p, registration %p\n",geometry,_ccmi_registration));
         pami_result_t result = PAMI_NERROR;
         result = _ccmi_registration->analyze(context_id,geometry, phase);
 

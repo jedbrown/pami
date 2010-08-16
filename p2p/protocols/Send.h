@@ -76,6 +76,29 @@ namespace PAMI
           virtual pami_result_t simple (pami_send_t * parameters) = 0;
 
       }; // PAMI::Protocol::Send::Send class
+
+      class Error : public Send
+      {
+        public:
+          inline Error () {};
+          virtual ~Error () {};
+          virtual pami_result_t getAttributes (pami_configuration_t  configuration[],
+                                               size_t                num_configs)
+          {
+            return PAMI_INVAL;
+          };
+
+          virtual pami_result_t immediate (pami_send_immediate_t * parameters)
+          {
+            return PAMI_ERROR;
+          };
+
+          virtual pami_result_t simple (pami_send_t * parameters)
+          {
+            return PAMI_ERROR;
+          };
+
+      }; // PAMI::Protocol::Send::Error class
     };   // PAMI::Protocol::Send namespace
   };     // PAMI::Protocol namespace
 };       // PAMI namespace
