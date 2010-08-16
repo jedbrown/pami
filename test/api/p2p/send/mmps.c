@@ -37,8 +37,11 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <pami.h>
+#undef __pami_target_bgq__ /** \todo Use the BGQ extentions when they are working better */
+#ifdef __pami_target_bgq__
 extern pami_result_t
 PAMI_Client_add_commthread_context(pami_client_t client, pami_context_t context);
+#endif
 
 
 static pami_client_t  client;
@@ -57,6 +60,7 @@ static pthread_t threads[NCONTEXTS];
 static void*
 advance(void* arg)
 {
+  pami_result_t rc;
   pami_context_t context = *(pami_context_t*)arg;
   /* printf("%s:%d  context=%p\n", __FUNCTION__, __LINE__, context); */
   for (;;) {
