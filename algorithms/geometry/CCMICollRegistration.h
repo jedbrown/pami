@@ -106,8 +106,13 @@ namespace PAMI
           _barrier_composite =_barrier_reg.generate(geometry,
                                                     &xfer);
 
-          geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
+          geometry->setKey(context_id, 
+                           PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1,
                            (void*)_barrier_composite);
+          // Set geometry-wide, across contexts, UE barrier \todo multi-context support
+          geometry->setKey(PAMI::Geometry::PAMI_GKEY_UEBARRIERCOMPOSITE1,
+                           (void*)_barrier_composite);
+          
 
           // Add Barriers
           geometry->addCollective(PAMI_XFER_BARRIER,&_msync_reg,_context_id);

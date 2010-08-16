@@ -162,8 +162,16 @@ namespace PAMI
 		TRACE_INIT((stderr, "<%p>CCMIRegistration::analyze() add\n",this));
 		_binomial_barrier_composite = _binomial_barrier_factory->generate(geometry, &xfer);
 
-              geometry->setKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1,
+              geometry->setKey(context_id, 
+                               PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1,
                                (void*)_binomial_barrier_composite);
+
+              if(context_id == 0) /// \todo multi-context support
+              {
+                // Set geometry-wide, across contexts, UE barrier
+                geometry->setKey(PAMI::Geometry::PAMI_GKEY_UEBARRIERCOMPOSITE1,
+                                 (void*)_binomial_barrier_composite);
+              }
 
               _csconnmgr.setSequence(geometry->comm());
 

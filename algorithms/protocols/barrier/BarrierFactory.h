@@ -110,7 +110,8 @@ namespace CCMI
 
           {
             PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
-            return (Executor::Composite *) g->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE0);
+            return (Executor::Composite *) g->getKey((size_t)0, /// \todo does NOT support multicontext
+                                                     PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE0);
           }
 
 
@@ -158,7 +159,8 @@ namespace CCMI
           }
           PAMI_assert(geometry != NULL);
 
-          T *composite = (T*) geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE0);
+          T *composite = (T*) geometry->getKey((size_t)0, /// \todo does NOT support multicontext
+                                               PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE0);
           CCMI_assert (composite != NULL);
           TRACE_INIT((stderr,"<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",
                       factory,cdata->_comm,composite));

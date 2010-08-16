@@ -28,6 +28,7 @@
 #define TRACE_ERR2(x) //fprintf x
 
 #ifndef PAMI_GEOMETRY_NUMALGOLISTS
+/// \todo PAMI_GEOMETRY_NUMALGOLISTS == max number of contexts??
 #define PAMI_GEOMETRY_NUMALGOLISTS 64
 #endif
 
@@ -371,7 +372,7 @@ namespace PAMI
       inline void processUnexpBarrier_impl () {
 	UnexpBarrierQueueElement *ueb = NULL;
 	while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL ) {
-	  CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((keys_t)ueb->getAlgorithm());
+	  CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((keys_t)ueb->getAlgorithm());/// \todo does NOT support multicontext keystore
 	  c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
 	  _ueb_allocator.returnObject(ueb);
 	}
@@ -402,13 +403,24 @@ namespace PAMI
         {
           return _global_all_topo->rank2Index(rank);
         }
-      inline void                       setKey_impl(keys_t key, void*value)
+      inline void                       setKey_impl(gkeys_t key, void*value)
         {
           _kvstore[key]=value;
         }
-      inline void                      *getKey_impl(keys_t key)
+      inline void                      *getKey_impl(gkeys_t key)
         {
           void * value = _kvstore[key];
+          return value;
+        }
+      inline void                       setKey_impl(size_t context_id, ckeys_t key, void*value)
+        {
+          PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
+          _kvcstore[context_id,key]=value;
+        }
+      inline void                      *getKey_impl(size_t context_id, ckeys_t key)
+        {
+          PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
+          void * value = _kvcstore[context_id,key];
           return value;
         }
 
@@ -604,7 +616,8 @@ namespace PAMI
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _barriers[PAMI_GEOMETRY_NUMALGOLISTS];
       Algorithm<PAMI::Geometry::Lapi>             _ue_barrier;
 
-      std::map <int, void*>                       _kvstore;
+      std::map <int, void*>                         _kvstore;                              // global/geometry key store
+      std::map <int, void*>                         _kvcstore[PAMI_GEOMETRY_NUMALGOLISTS]; // per context key store
       int                                         _commid;
       pami_client_t                               _client;
       pami_task_t                                 _rank;

@@ -34,14 +34,19 @@ namespace PAMI
     typedef enum
     {
       PAMI_GKEY_COLLFACTORY     = 0,
-      PAMI_GKEY_BARRIERCOMPOSITE0,      // ?
-      PAMI_GKEY_BARRIERCOMPOSITE1,      // CCMI barrier cache
       PAMI_GKEY_LOCALBARRIERCOMPOSITE,  // local sub-topologies only in the geometry
       PAMI_GKEY_GLOBALBARRIERCOMPOSITE, // global sub-topologes only in the geometry
+      PAMI_GKEY_UEBARRIERCOMPOSITE1,    // CCMI ue barrier (PAMI_CKEY_BARRIERCOMPOSITE1)
       PAMI_GKEY_CLASSROUTEID,           // class route id
       PAMI_GKEY_PLATEXTENSIONS
       PAMI_GKEY_GEOMETRYCSNI            // native interface for coll shm device
-    }keys_t;
+    } gkeys_t;                          // global keystore keys
+    typedef enum
+    {
+      PAMI_CKEY_COLLFACTORY     = 0,
+      PAMI_CKEY_BARRIERCOMPOSITE0,      // ?
+      PAMI_CKEY_BARRIERCOMPOSITE1,      // CCMI barrier cache
+    } ckeys_t;                          // context keystore keys
 
     template <class T_Geometry>
       class Geometry
@@ -145,8 +150,10 @@ namespace PAMI
       inline pami_task_t                 virtrank   (void);
       inline pami_task_t                 absrankof  (int rank);
       inline pami_task_t                 virtrankof (int rank);
-      inline void                       setKey(keys_t key, void*value);
-      inline void                      *getKey(keys_t key);
+      inline void                       setKey(gkeys_t key, void*value);
+      inline void                       setKey(size_t context_id, ckeys_t key, void*value);
+      inline void                      *getKey(gkeys_t key);
+      inline void                      *getKey(size_t context_id, ckeys_t key);
 
       // API support
       inline pami_result_t algorithms_num(pami_xfer_type_t  colltype,
@@ -490,14 +497,24 @@ namespace PAMI
       return static_cast<T_Geometry*>(this)->virtrankof_impl(rank);
     }
     template <class T_Geometry>
-    inline void                        Geometry<T_Geometry>::setKey (keys_t key, void *value)
+    inline void                        Geometry<T_Geometry>::setKey (gkeys_t key, void *value)
     {
       static_cast<T_Geometry*>(this)->setKey_impl(key, value);
     }
     template <class T_Geometry>
-    inline void*                       Geometry<T_Geometry>::getKey (keys_t key)
+    inline void                        Geometry<T_Geometry>::setKey (size_t context_id, ckeys_t key, void *value)
+    {
+      static_cast<T_Geometry*>(this)->setKey_impl(context_id, key, value);
+    }
+    template <class T_Geometry>
+    inline void*                       Geometry<T_Geometry>::getKey (gkeys_t key)
     {
       return static_cast<T_Geometry*>(this)->getKey_impl(key);
+    }
+    template <class T_Geometry>
+    inline void*                       Geometry<T_Geometry>::getKey (size_t context_id, ckeys_t key)
+    {
+      return static_cast<T_Geometry*>(this)->getKey_impl(context_id, key);
     }
 
     template <class T_Geometry>

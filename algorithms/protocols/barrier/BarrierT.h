@@ -48,7 +48,8 @@ namespace CCMI
             // Use the cached barrier or generate a new one if the cached barrier doesn't exist
             TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
             PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
-            Executor::Composite *c = (Executor::Composite *) g->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
+            Executor::Composite *c = (Executor::Composite *) g->getKey((size_t)0, /// \todo does NOT support multicontext
+                                                                       PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1);
 
             if (!c)
               c = CollectiveProtocolFactoryT<T, get_metadata, C>::generate(geometry, cmd);
@@ -148,13 +149,14 @@ namespace CCMI
 		else {
 		  //Geoemtry doesnt exist
 		  PAMI_GEOMETRY_CLASS::registerUnexpBarrier(cdata->_comm, (pami_quad_t&)*info, peer,
-							    (unsigned) PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
+							    (unsigned) PAMI::Geometry::PAMI_GKEY_UEBARRIERCOMPOSITE1);
 		  return;
 		}
               }
 
             PAMI_assert(geometry != NULL);
-            BarrierT *composite = (BarrierT*) geometry->getKey(PAMI::Geometry::PAMI_GKEY_BARRIERCOMPOSITE1);
+            BarrierT *composite = (BarrierT*) geometry->getKey((size_t)0, /// \todo does NOT support multicontext
+                                                                PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1);
             CCMI_assert (composite != NULL);
             TRACE_INIT((stderr, "<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",
                         factory, cdata->_comm, composite));
