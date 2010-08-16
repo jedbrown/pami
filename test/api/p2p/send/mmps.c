@@ -3,11 +3,11 @@
  *  \brief PAMI_Context_post() performance test using comm-threads
  */
 
-#define  TRACE_ON
+/* #define  TRACE_ON */
 
 #define NCONTEXTS  64      /* The maximum number of contexts */
-#define WINDOW     16      /* The number of sends/recvs before a "wait" */
 #define ITERATIONS (1<<5)  /* The number of windows exectuted */
+#define WINDOW     16      /* The number of sends/recvs before a "wait" */
 #define HEADER     16      /* Size of header */
 #define DATA       0       /* Size of data */
 #define MAX_SIZE   32      /* The number of processes that can participate */
@@ -131,10 +131,14 @@ recv(pami_context_t    context,
 }
 
 
-static double
+static void
 master()
 {
-  TRACE_ERR("Starting master\n");
+  const size_t msgs = ITERATIONS*WINDOW*(size-1);
+  printf("+++Test: ITERATIONS=%u  WINDOW=%u  Remotes=%zu  Bi-Dir Msgs=%zu  HEADER=%u  DATA=%u\n",
+         ITERATIONS, WINDOW, size-1, msgs, HEADER, DATA);
+  double start, time;
+  start = PAMI_Wtime();
 
   const size_t mod = ncontexts>>1;
   size_t dest;
@@ -164,7 +168,11 @@ master()
       TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
     }
   }
-  return 0.0;
+
+  time = PAMI_Wtime()-start;
+  printf("---Communication complete on process %zu (%g seconds)\n", rank, time);
+  printf("+++Results: %zu bi-directional messages in %g seconds is %g MMPS\n",
+         msgs, time, msgs/(time*1e6));
 }
 
 
@@ -172,6 +180,8 @@ static void
 worker()
 {
   TRACE_ERR("Starting worker\n");
+  double start, time;
+  start = PAMI_Wtime();
 
   const size_t mod = ncontexts>>1;
   const size_t dest = 0;
@@ -201,6 +211,9 @@ worker()
       TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
     }
   }
+
+  time = PAMI_Wtime() - start;
+  printf("---Communication complete on process %zu (%g seconds)\n", rank, time);
 }
 
 
@@ -230,6 +243,7 @@ init()
   rank = client_query(client, PAMI_CLIENT_TASK_ID).value.intval;
   size = client_query(client, PAMI_CLIENT_NUM_TASKS).value.intval;
   assert(size > 1);
+  size = MIN(size, MAX_SIZE);
 
   assert(client_query(client, PAMI_CLIENT_CONST_CONTEXTS).value.intval != 0);
 
@@ -308,8 +322,6 @@ main(int argc, char **argv)
     worker();
   else
     ;
-
-  TRACE_ERR("Comm done on this process\n");
 
 #ifdef __pami_target_bgq__
   pami_result_t rc;
