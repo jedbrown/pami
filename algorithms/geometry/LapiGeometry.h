@@ -372,13 +372,11 @@ namespace PAMI
       inline void processUnexpBarrier_impl () {
 	UnexpBarrierQueueElement *ueb = NULL;
 	while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL ) {
-	  CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((keys_t)ueb->getAlgorithm());/// \todo does NOT support multicontext keystore
+	  CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((gkeys_t)ueb->getAlgorithm());/// \todo does NOT support multicontext keystore
 	  c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
 	  _ueb_allocator.returnObject(ueb);
 	}
       }
-
-
 
       // These methods were originally from the PGASRT Communicator class
       inline pami_task_t size_impl(void)
@@ -412,15 +410,19 @@ namespace PAMI
           void * value = _kvstore[key];
           return value;
         }
+
       inline void                       setKey_impl(size_t context_id, ckeys_t key, void*value)
         {
           PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
-          _kvcstore[context_id,key]=value;
+          TRACE_ERR((stderr, "<%p>Common::setKey(%d, %p)\n", this, key, value));
+          _kvcstore[context_id][key]=value;
         }
+
       inline void                      *getKey_impl(size_t context_id, ckeys_t key)
         {
           PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
-          void * value = _kvcstore[context_id,key];
+          void * value = _kvcstore[context_id][key];
+          TRACE_ERR((stderr, "<%p>Common::getKey(%d, %p)\n", this, key, value));
           return value;
         }
 
