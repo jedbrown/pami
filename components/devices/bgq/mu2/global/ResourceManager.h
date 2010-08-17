@@ -731,10 +731,10 @@ namespace PAMI
 	  cookie->abuf[2] = ~geom_id;
 	  cookie->xfer.cmd.xfer_allreduce.sndbuf = (char *)&cookie->abuf[0];
 	  cookie->xfer.cmd.xfer_allreduce.stype = PAMI_BYTE;
-	  cookie->xfer.cmd.xfer_allreduce.stypecount = CR_ALLREDUCE_DT_CT;
+	  cookie->xfer.cmd.xfer_allreduce.stypecount = sizeof(cookie->abuf);
 	  cookie->xfer.cmd.xfer_allreduce.rcvbuf = (char *)&cookie->bbuf[0];
 	  cookie->xfer.cmd.xfer_allreduce.rtype = PAMI_BYTE;
-	  cookie->xfer.cmd.xfer_allreduce.rtypecount = CR_ALLREDUCE_DT_CT;
+	  cookie->xfer.cmd.xfer_allreduce.rtypecount = sizeof(cookie->bbuf);
 	  cookie->xfer.cmd.xfer_allreduce.dt = PAMI_UNSIGNED_LONG_LONG;
 	  cookie->xfer.cmd.xfer_allreduce.op = PAMI_BAND;
 	  // tell geometry completion to wait for us...
