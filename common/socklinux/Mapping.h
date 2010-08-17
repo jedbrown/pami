@@ -464,6 +464,12 @@ namespace PAMI
        return PAMI_SUCCESS;
      }
 
+     /// \see PAMI::Interface::Mapping::Node::isLocal()
+     inline bool isLocal_impl (size_t task)
+     {
+       return isPeer (task, task_impl());
+     }
+
      ///
      /// \brief Determines if two tasks are located on the same node
      ///
@@ -529,5 +535,5 @@ namespace PAMI
      }
 
    }; // class Mapping
-};	// namespace PAMI
+};  // namespace PAMI
 #endif // __common_socklinux_Mapping_h__

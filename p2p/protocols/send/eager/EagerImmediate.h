@@ -145,7 +145,7 @@ namespace PAMI
             PAMI_ENDPOINT_INFO(parameters->dest, task, offset);
 
             // Verify that this task is addressable by this packet device
-            if (!_device.isPeer(task)) return PAMI_ERROR;
+            if (unlikely(_device.isPeer(task) == false)) return PAMI_ERROR;
 
             // Specify the protocol metadata to send with the application
             // metadata in the packet. This metadata is copied

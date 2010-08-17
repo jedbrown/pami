@@ -186,7 +186,7 @@ namespace PAMI
             PAMI_ENDPOINT_INFO(parameters->send.dest,task,offset);
 
             // Verify that this task is addressable by this packet device
-            if (!_device.isPeer (task)) return PAMI_ERROR;
+            if (unlikely(_device.isPeer (task) == false)) return PAMI_ERROR;
 
             // Allocate memory to maintain the state of the send.
             send_state_t * state = allocateSendState ();

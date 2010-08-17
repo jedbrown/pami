@@ -201,6 +201,10 @@ namespace PAMI
                 peers = _npeers;
                 return PAMI_SUCCESS;
         }
+      inline bool isLocal_impl (size_t task)
+      {
+        return isPeer (task, task_impl());
+      }
       inline bool isPeer_impl (size_t task1, size_t task2)
         {
                 /** \todo isPeer does not support PAMI_MAPPING_TSIZE */
@@ -336,5 +340,5 @@ namespace PAMI
                 return PAMI_ERROR;
         }
     }; // class Mapping
-};	// namespace PAMI
+};  // namespace PAMI
 #endif // __components_mapping_mpi_mpimapping_h__

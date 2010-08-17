@@ -52,6 +52,11 @@ namespace PAMI
           inline pami_result_t nodePeers (size_t & peers);
 
           ///
+          /// \brief Determines if a task is located on the same node as the calling task
+          ///
+          inline bool isLocal (size_t task);
+
+          ///
           /// \brief Determines if two tasks are located on the same node
           ///
           inline bool isPeer (size_t task1, size_t task2);
@@ -108,7 +113,7 @@ namespace PAMI
           ///
           inline pami_result_t task2peer(size_t task, size_t &peer);
 
-      };	// class Node
+      };  // class Node
 
       template <class T_Mapping, unsigned T_Dimensions>
       inline pami_result_t Node<T_Mapping,T_Dimensions>::nodeTasks (size_t global, size_t & tasks)
@@ -120,6 +125,12 @@ namespace PAMI
       inline pami_result_t Node<T_Mapping,T_Dimensions>::nodePeers (size_t & peers)
       {
         return static_cast<T_Mapping*>(this)->nodePeers_impl (peers);
+      }
+
+      template <class T_Mapping, unsigned T_Dimensions>
+      inline bool Node<T_Mapping,T_Dimensions>::isLocal (size_t task)
+      {
+        return static_cast<T_Mapping*>(this)->isLocal_impl (task);
       }
 
       template <class T_Mapping, unsigned T_Dimensions>
@@ -158,7 +169,7 @@ namespace PAMI
         return static_cast<T_Mapping*>(this)->task2peer_impl (task, peer);
       }
 
-    };	// namespace Mapping
-  };	// namespace Interface
-};	// namespace PAMI
+    };  // namespace Mapping
+  };  // namespace Interface
+};  // namespace PAMI
 #endif // __components_mapping_nodemapping_h__

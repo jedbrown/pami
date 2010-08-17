@@ -29,21 +29,21 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
-#define PAMI_BGP_NETWORK_DIMS	3
-#define PAMI_BGP_LOCAL_DIMS	1
+#define PAMI_BGP_NETWORK_DIMS 3
+#define PAMI_BGP_LOCAL_DIMS 1
 
 /// \brief how to get the global part of an estimated task
-#define ESTIMATED_TASK_GLOBAL(x,y,z,t,xSize,ySize,zSize,tSize)	\
+#define ESTIMATED_TASK_GLOBAL(x,y,z,t,xSize,ySize,zSize,tSize)  \
           ESTIMATED_TASK(x,y,z,0,xSize,ySize,zSize,1)
 
 /// \brief how to get the local part of an estimated task
-#define ESTIMATED_TASK_LOCAL(x,y,z,t,xSize,ySize,zSize,tSize)	\
+#define ESTIMATED_TASK_LOCAL(x,y,z,t,xSize,ySize,zSize,tSize) \
           (t)
 
 /// \brief how to get the estimated task back from global+local
 ///
 /// This is closely tied to ESTIMATED_TASK_GLOBAL and ESTIMATED_TASK_LOCAL!
-#define ESTIMATED_TASK_NODE(global,local,xSize,ySize,zSize,tSize)	\
+#define ESTIMATED_TASK_NODE(global,local,xSize,ySize,zSize,tSize) \
           ((local * xSize * ySize * zSize) + global)
 
 namespace PAMI
@@ -154,9 +154,14 @@ namespace PAMI
           return _size;
         }
 #endif
+        /// \see PAMI::Interface::Mapping::Node::isLocal()
+        inline bool isLocal_impl (size_t task)
+        {
+          return isPeer (task, task_impl());
+        }
+
         ///
-        /// \brief Determines if two global tasks are located on the same physical node.
-        /// \see PAMI::Interface::Mapping::Base::isPeer()
+        /// \see PAMI::Interface::Mapping::Node::isPeer()
         ///
         inline bool isPeer_impl (size_t task1, size_t task2)
         {
@@ -499,8 +504,8 @@ namespace PAMI
           TRACE_ERR((stderr,"Mapping::node2peer_impl(%zu, %zu, %zu) <<\n", addr.global, addr.local, peer));
           return PAMI_SUCCESS;
         }
-    };	// class Mapping
-};	// namespace PAMI
+    };  // class Mapping
+};  // namespace PAMI
 
 pami_result_t PAMI::Mapping::init(PAMI::BgpMapCache &mapcache,
                                 PAMI::BgpPersonality &personality)

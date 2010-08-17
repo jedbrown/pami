@@ -115,7 +115,7 @@ namespace PAMI
     template <class T_Fifo, class T_Shaddr>
     bool ShmemDevice<T_Fifo,T_Shaddr>::isPeer_impl (size_t task)
     {
-      return __global.mapping.isPeer(task, _global_task);
+      return __global.mapping.isLocal(task);
     };
 
     template <class T_Fifo, class T_Shaddr>

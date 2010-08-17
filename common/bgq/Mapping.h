@@ -169,9 +169,9 @@ namespace PAMI
     /// \note Does not provide process, core, or hardware thread addressing.
     ///
     inline void getMuDestinationTask (size_t               task,
-				      MUHWI_Destination_t &dest,
-				      size_t              &tcoord,
-				      uint32_t            &fifoPin)
+                                      MUHWI_Destination_t &dest,
+                                      size_t              &tcoord,
+                                      uint32_t            &fifoPin)
     {
       uint32_t raw = _mapcache.torus.task2coords[task].raw;
       tcoord       = (size_t) raw & 0x0000003f; // 't' coordinate
@@ -185,9 +185,9 @@ namespace PAMI
       // number used for fifo pinning.  Should be a number between 0 and 9,
       // inclusive.
       fifoPin = ( ( (raw & 0x20000000) >> 26 ) |
-		  ( (raw & 0x00800000) >> 21 ) |
-		  ( (raw & 0x00020000) >> 16 ) |
-		  ( (raw & 0x00000800) >> 11 ) );
+                  ( (raw & 0x00800000) >> 21 ) |
+                  ( (raw & 0x00020000) >> 16 ) |
+                  ( (raw & 0x00000800) >> 11 ) );
     };
 
     ///
@@ -199,16 +199,16 @@ namespace PAMI
     /// \note Does not provide process, core, or hardware thread addressing.
     ///
     inline void setFifoPin ( size_t   task,
-			     uint16_t fifo )
+                             uint16_t fifo )
     {
       // OR in the fifo pin bits.
       // The LSB 4 bits of the fifo pin are placed into the high order bit of
       // the A, B, C, and D coords in the structure.
       _mapcache.torus.task2coords[task].raw |=
-	( ((fifo & 0x8) << 26) |
-	  ((fifo & 0x4) << 21) |
-	  ((fifo & 0x2) << 16) |
-	  ((fifo & 0x1) << 11) );
+        ( ((fifo & 0x8) << 26) |
+          ((fifo & 0x4) << 21) |
+          ((fifo & 0x2) << 16) |
+          ((fifo & 0x1) << 11) );
     };
 
     /////////////////////////////////////////////////////////////////////////
@@ -477,6 +477,12 @@ namespace PAMI
       return PAMI_SUCCESS;
     };
 
+    /// \see PAMI::Interface::Mapping::Node::isLocal()
+    inline bool isLocal_impl (size_t task)
+    {
+      return isPeer (task, task_impl());
+    }
+
     /// \see PAMI::Interface::Mapping::Node::isPeer()
     inline bool isPeer_impl (size_t task1, size_t task2)
     {
@@ -643,10 +649,10 @@ namespace PAMI
     // \brief Return Whether We Are The Lowest T Coordinate on This Node
     inline bool isLowestT ()
     {
-      if ( _mapcache.lowestTCoordOnMyNode == _t ) 
-	return true;
+      if ( _mapcache.lowestTCoordOnMyNode == _t )
+        return true;
       else
-	return false;
+        return false;
     }
 
     // \brief Get Number of Active Nodes
