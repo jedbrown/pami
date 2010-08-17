@@ -50,7 +50,7 @@
 #include "algorithms/geometry/Geometry.h"
 #include "components/atomic/bgq/L2Mutex.h"
 #include "components/devices/misc/AtomicMutexMsg.h"
-typedef PAMI::Mutex::BGQ::L2NodeMutex MUCR_mutex_t;
+typedef PAMI::Mutex::BGQ::L2ProcMutex MUCR_mutex_t;
 typedef PAMI::Device::SharedAtomicMutexMdl<MUCR_mutex_t> MUCR_mutex_model_t;
 #include <spi/include/kernel/collective.h>
 #include <spi/include/mu/Classroute_inlines.h>
@@ -616,18 +616,20 @@ namespace PAMI
 	} // End: ResourceManager Default Constructor
 #ifdef ENABLE_MU_CLASSROUTES
 	// Note, we NEVER use BGQ_CLASS_INPUT_VC_USER. Only BGQ_CLASS_INPUT_VC_SUBCOMM.
+	#define CR_ALLREDUCE_DT_CT 3
 	struct cr_cookie
 	{
 	  ResourceManager *thus;
 	  PAMI::Geometry::Common *geom;
+	  bool master;
 	  unsigned geom_id;
 	  PAMI::Topology topo;
 	  pami_multisync_t msync;
 	  MUCR_mutex_model_t *cr_mtx_mdl;
 	  uint8_t mbuf[MUCR_mutex_model_t::sizeof_msg];
 	  pami_xfer_t xfer;
-	  uint64_t abuf[3];
-	  uint64_t bbuf[3];
+	  uint64_t abuf[CR_ALLREDUCE_DT_CT];
+	  uint64_t bbuf[CR_ALLREDUCE_DT_CT];
 	  pami_work_t post;
 	  pami_callback_t cb_done;
 	};
@@ -682,8 +684,13 @@ namespace PAMI
 	  }
 
 	  // a more-exhaustive check for "comm-world" equivalent classroute...
-	  PAMI::Topology node_topo;
-	  topo->subTopologyNthGlobal(&node_topo, 0);
+	  PAMI::Topology node_topo, local_topo;
+ 	  topo->subTopologyNthGlobal(&node_topo, 0);
+	  topo->subTopologyLocalToMe(&local_topo);
+	  // assert(local_topo.size() > 0);
+	  bool master = (__global.mapping.task() == local_topo.index2Rank(0));
+	  /// \todo #warning must confirm that T==0 exists in rectangle...
+
 	  CR_RECT_T rect1, rect2;
 	  node_topo.rectSeg(CR_RECT_LL(&rect1), CR_RECT_UR(&rect1));
 	  _node_topo.rectSeg(CR_RECT_LL(&rect2), CR_RECT_UR(&rect2));
@@ -694,12 +701,10 @@ namespace PAMI
 	    return PAMI_SUCCESS;
 	  }
 
-	  /// \todo Only the primary task of the node should continue past this point,
-	  /// the rest must wait for that task to share the results.
-	  if (__global.mapping.task() != __global.topology_local.index2Rank(0)) {
-		// must somehow wait and then gather results from primary task...
-		return PAMI_SUCCESS;
-	  }
+	  /// \todo Only the primary task of the node should actually alter MU DCRs...
+	  // Need to also ensure that no one uses this classroute until all nodes'
+	  // DCRs have been set. This requires a "global" barrier after this,
+	  // which means two barriers total in the case of geometry_create.
 
 	  // we could do even more checking and allow more geometries...
 
@@ -712,20 +717,22 @@ namespace PAMI
 	  // "go away" after this method returns...
 	  cr_cookie *cookie = (cr_cookie *)malloc(sizeof(cr_cookie)); // how to alloc?
 	  cookie->thus = this;
+	  cookie->master = master;
 	  cookie->cb_done = (pami_callback_t){fn, clientdata};
 	  cookie->topo = node_topo;
 	  cookie->cr_mtx_mdl = &_cr_mtx_mdls[clientid][contextid];
 	  cookie->msync.client = clientid;
 	  cookie->msync.context = contextid;
 	  cookie->geom = geom;
+	  cookie->geom_id = geom_id;
 	  cookie->abuf[1] = geom_id;
 	  cookie->abuf[2] = ~geom_id;
 	  cookie->xfer.cmd.xfer_allreduce.sndbuf = (char *)&cookie->abuf[0];
 	  cookie->xfer.cmd.xfer_allreduce.stype = PAMI_BYTE;
-	  cookie->xfer.cmd.xfer_allreduce.stypecount = sizeof(cookie->abuf);
+	  cookie->xfer.cmd.xfer_allreduce.stypecount = CR_ALLREDUCE_DT_CT;
 	  cookie->xfer.cmd.xfer_allreduce.rcvbuf = (char *)&cookie->bbuf[0];
 	  cookie->xfer.cmd.xfer_allreduce.rtype = PAMI_BYTE;
-	  cookie->xfer.cmd.xfer_allreduce.rtypecount = sizeof(cookie->bbuf);
+	  cookie->xfer.cmd.xfer_allreduce.rtypecount = CR_ALLREDUCE_DT_CT;
 	  cookie->xfer.cmd.xfer_allreduce.dt = PAMI_UNSIGNED_LONG_LONG;
 	  cookie->xfer.cmd.xfer_allreduce.op = PAMI_BAND;
 	  // tell geometry completion to wait for us...
@@ -894,12 +901,13 @@ namespace PAMI
 	    // tell geometry completion "we're done"...
 	    crck->geom->rmCompletion(ctx, result);
 	    free(cookie); // don't do this if it retries...
+	    // release mutex?!
 	    return; // need cleanup??? retry?
 	  }
 
 	  if (crck->bbuf[1] != crck->abuf[1] ||
 	      crck->bbuf[2] != crck->abuf[2])
-	      {
+	  {
 	    // failed (collided), must reset and start over...
 	    crck->thus->release_mutex(ctx, cookie, PAMI_SUCCESS);
 	    start_over(ctx, cookie, PAMI_EAGAIN);
@@ -907,58 +915,26 @@ namespace PAMI
 	  }
 
 	  ClassRoute_t cr = {0};
-	  uint32_t id = ffs(crck->bbuf[0] & 0x0000ffff);
-	  if (id)
-	  {
-	    --id; // ffs() returns bit# + 1
-	    CR_RECT_T rect;
-	    crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
-	    int first = MUSPI_SetClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
-	          &rect, &crck->thus->_cncrdata);
-	    // Note: need to detect if classroute was already programmed...
-	    if (first)
-	    {
-	      MUSPI_BuildNodeClassroute(&crck->thus->_refcomm, &crck->thus->_refroot,
-	            &crck->thus->_mycoord, &rect,
-	            crck->thus->_map, crck->thus->_pri_dim, &cr);
-	      cr.input |= BGQ_CLASS_INPUT_LINK_LOCAL;
-	      cr.input |= BGQ_CLASS_INPUT_VC_SUBCOMM;
-	      int rc = Kernel_SetCollectiveClassRoute(id, &cr);
-	      rc = rc;
-	    }
-	    // how does this ever get freed up?
-	    crck->geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE, (void *)(id + 1));
-	  }
-	  id = ffs((crck->bbuf[0] >> 32) & 0x0000ffff);
-	  if (id)
-	  {
-	    --id; // ffs() returns bit# + 1
-	    CR_RECT_T rect;
-	    crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
-	    int first = MUSPI_SetClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
-	          &rect, &crck->thus->_gicrdata);
-	    // Note: need to detect if classroute was already programmed...
-	    if (first)
-	    {
-	      if (!cr.input) {
-	        MUSPI_BuildNodeClassroute(&crck->thus->_refcomm, &crck->thus->_refroot,
-	            &crck->thus->_mycoord, &rect,
-	            crck->thus->_map, crck->thus->_pri_dim, &cr);
-	        cr.input |= BGQ_CLASS_INPUT_LINK_LOCAL;
-	        cr.input |= BGQ_CLASS_INPUT_VC_SUBCOMM;
-	      }
-	      int rc = Kernel_SetGlobalInterruptClassRoute(id, &cr);
-	      rc = rc;
-	    }
-	    // how does this ever get freed up?
-	    crck->geom->setKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE, (void *)(id + 1));
-	  }
+	  crck->thus->set_classroute(crck->bbuf[0] & 0x0000ffff, crck, &cr,
+					PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
+	  crck->thus->set_classroute((crck->bbuf[0] >> 32) & 0x0000ffff, crck, &cr,
+					PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
 	  // we got the answer we needed... no more trying...
 	  *crck->thus->_lowest_geom_id = 0xffffffff;
 	  crck->thus->release_mutex(ctx, cookie, PAMI_SUCCESS);
-	  if (crck->cb_done.function) crck->cb_done.function(ctx, crck->cb_done.clientdata, PAMI_SUCCESS);
+	  pami_result_t rc = crck->geom->default_barrier(cr_barrier_done, cookie,
+							crck->msync.context, ctx);
+	  if (rc != PAMI_SUCCESS) {
+	    cr_barrier_done(ctx, cookie, rc);
+	  }
+	}
+
+	static void cr_barrier_done(pami_context_t ctx, void *cookie, pami_result_t result)
+	{
+	  cr_cookie *crck = (cr_cookie *)cookie;
+	  if (crck->cb_done.function) crck->cb_done.function(ctx, crck->cb_done.clientdata, result);
 	  // tell geometry completion "we're done"...
-	  crck->geom->rmCompletion(ctx, PAMI_SUCCESS);
+	  crck->geom->rmCompletion(ctx, result);
 	  free(cookie);
 	}
 
@@ -971,6 +947,42 @@ namespace PAMI
 	  rc = rc;
 	  // no such thing as failure... nore is there any delay...
 	  // mutex is now unlocked, so we are "done" in every way that matters.
+	}
+
+	// Only holder of mutex calls this... thread safe in process.
+	inline void set_classroute(uint32_t mask, cr_cookie *crck, ClassRoute_t *cr, PAMI::Geometry::keys_t key) {
+	  uint32_t id = ffs(mask);
+	  bool gi = (key == PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
+	  void **envpp = (gi ? &_gicrdata : &_cncrdata);
+	  if (id)
+	  {
+	    --id; // ffs() returns bit# + 1
+	    CR_RECT_T rect;
+	    crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
+	    int first = MUSPI_SetClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
+								&rect, envpp);
+	    // Note: need to detect if classroute was already programmed...
+	    if (crck->master && first)
+	    {
+	      if (!cr->input) {
+	        MUSPI_BuildNodeClassroute(&_refcomm, &_refroot, &_mycoord, &rect,
+							_map, _pri_dim, cr);
+	        cr->input |= BGQ_CLASS_INPUT_LINK_LOCAL;
+	        cr->input |= BGQ_CLASS_INPUT_VC_SUBCOMM;
+	      }
+	      int rc;
+	      if (gi) {
+	        rc = Kernel_SetGlobalInterruptClassRoute(id, cr);
+	      } else {
+	        rc = Kernel_SetCollectiveClassRoute(id, cr);
+	      }
+	      rc = rc; // until error checking
+	    }
+	    crck->geom->setKey(key, (void *)(id + 1));
+	    if (!gi) {
+	      //crck->geom->setKey(..., (void *)(id + 1));
+	    }
+	  }
 	}
 #endif
 
