@@ -953,7 +953,7 @@ namespace PAMI
 	}
 
 	// Only holder of mutex calls this... thread safe in process.
-	inline void set_classroute(uint32_t mask, cr_cookie *crck, ClassRoute_t *cr, PAMI::Geometry::keys_t key) {
+	inline void set_classroute(uint32_t mask, cr_cookie *crck, ClassRoute_t *cr, PAMI::Geometry::gkeys_t key) {
 	  uint32_t id = ffs(mask);
 	  bool gi = (key == PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
 	  void **envpp = (gi ? &_gicrdata : &_cncrdata);
@@ -983,7 +983,7 @@ namespace PAMI
 	    }
 	    crck->geom->setKey(key, (void *)(id + 1));
 	    if (!gi) {
-	      crck->geom->setKey(PAMI_GKEY_MCOMB_CLASSROUTEID, (void *)(id + 1));
+	      crck->geom->setKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID, (void *)(id + 1));
 	    }
 	  }
 	}
