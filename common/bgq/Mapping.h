@@ -189,6 +189,16 @@ namespace PAMI
                   ( (raw & 0x00020000) >> 16 ) |
                   ( (raw & 0x00000800) >> 11 ) );
     };
+    inline void getMuDestinationTask (size_t               task,
+                                      MUHWI_Destination_t &dest)
+    {
+      uint32_t raw = _mapcache.torus.task2coords[task].raw;
+
+      // raw & 0x1f7df7c0 turns off the e, reserved, and t coordinate bits, AND
+      // the high bit of A, B, C, and D which are used for the fifoPin.
+      // OR in the e coord at the LSB.
+      dest.Destination.Destination = (raw & 0x1f7df7c0) | (raw >> 31);
+    };
 
     ///
     /// \brief Set Fifo Pinning Info into the Mapcache

@@ -290,10 +290,10 @@ namespace PAMI
         inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
         {
           /// \todo These are really 'must query' protocols and should not be added to the regular protocol list
-          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() context_id %zu, geometry %p, msync %p, mcast %p, mcomb %p\n", this, context_id, geometry, &_shmem_msync_factory, &_shmem_mcast_factory, &_shmem_mcomb_factory));
+          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() phase %d, context_id %zu, geometry %p, msync %p, mcast %p, mcomb %p\n", this, phase, context_id, geometry, &_shmem_msync_factory, &_shmem_mcast_factory, &_shmem_mcomb_factory));
           pami_xfer_t xfer = {0};
           PAMI::Topology * topology = (PAMI::Topology*) geometry->getTopology(0);
-          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology: size() %zu, isLocal() %u, isGlobal #u\n", this, topology->size(),  topology->isLocal()));//,  topology->isGlobal()));
+          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology: size() %zu, isLocal() %u, isGlobal #u\n", this, topology->size(),  topology->isLocalToMe()));//,  topology->isGlobal()));
           DO_DEBUG(for(unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u\n", this, i, topology->index2Rank(i)););
 
 #ifdef ENABLE_MU_CLASSROUTES
@@ -310,7 +310,7 @@ if (phase == 0) {
                                    (void*)_shmem_barrier_composite);
 
                   // If the geometry is all local nodes, we can use pure shmem composites.
-                  if (topology->isLocal())
+                  if (topology->isLocalToMe())
                     {
                       TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Local Shmem factories\n", this));
 
@@ -331,26 +331,30 @@ if (phase == 0) {
 
 #endif
               // If we have > 1 node, check MU
-              if (__global.useMU() && !topology->isLocal())// && (__global.topology_local.size() != __global.topology_global.size()) )
+              if (__global.useMU() && !topology->isLocalToMe())
                 {
-                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU global barrier\n", this));
-                  geometry->setKey(PAMI::Geometry::PAMI_GKEY_GLOBALBARRIERCOMPOSITE,
-                                   (void*)_mu_barrier_composite);
+                  /// Remember, this is 'pure' MU - we won't do any shmem - so only one process per node
+                  /// on the same T dimension.
 
-                  /// Get a Nth global topology based on my local dim and see if this geometry is
-                  /// matches, then the geometry topology is usable by MU
-                  /// \todo Temporary - does not handle class routes...
+                  /// Get a Nth global topology based on my local T dim, this will slice the
+                  /// subgeometry across nodes
                   PAMI::Topology globalTopology;
                   int t = (int) __global.mapping.t();
                   topology->subTopologyNthGlobal(&globalTopology, t);
 
-                  /// \todo we don't support sub geometries so sizes must also match.
+                  /// A simple check (of sizes) to see if this subgeometry is all global,
+                  /// then the geometry topology is usable by MU.
+                  //
+                  // (subTopologyNthGlobal won't truly slice by T, it will use a relative 
+                  // subtask number.  However, we only get class route ID's on truly
+                  // rectangular subtopologies. So this slice + a class route id check (later)
+                  // is good enough.)
                   bool useMu = topology->size() == globalTopology.size()? true : false;
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() useMu = %u (size %zu/%zu)\n", this, useMu, topology->size(),globalTopology.size()));
 
-
-                  for(unsigned i = 0; useMu && (i < topology->size()); ++i)
-                    if(!(globalTopology.isRankMember(topology->index2Rank(i))))
-                      useMu = false;
+//                for(unsigned i = 0; useMu && (i < topology->size()); ++i)
+//                  if(!(globalTopology.isRankMember(topology->index2Rank(i))))
+//                    useMu = false;
 
                   // If we can use pure MU composites, add them
                   if (useMu)
@@ -362,8 +366,11 @@ if (phase == 0) {
                     {
 		      // Only register protocols if we got a classroute
 #endif
-                      TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Global MU factories\n", this));
+                      TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU barrier\n", this));
                       _mu_barrier_composite = _mu_msync_factory.generate(geometry, &xfer);
+
+                      geometry->setKey(PAMI::Geometry::PAMI_GKEY_GLOBALBARRIERCOMPOSITE,
+                                       (void*)_mu_barrier_composite);
 
                       // Add Barriers
                       geometry->addCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
@@ -376,6 +383,7 @@ if (phase == 0) {
 		      // Only register protocols if we got a classroute
 #endif
 
+                      TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU bcast\n", this));
                       // Add Broadcasts
                       geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory, _context_id);
 #ifdef ENABLE_MU_CLASSROUTES
@@ -385,7 +393,10 @@ if (phase == 0) {
                     {
 #endif
 
+                    // Direct MU allreduce only on one context per node (lowest T, context 0)
+                    if((__global.mapping.isLowestT()) && (_context_id == 0))
                       // Add Allreduces
+                      TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU allreduce\n", this));
                       geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
 #ifdef ENABLE_MU_CLASSROUTES
                     }

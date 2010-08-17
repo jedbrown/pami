@@ -541,6 +541,11 @@ namespace PAMI
           {
             return _mapping.getMuDestinationTask(task, dest, tcoord, fifoPin);
           };
+          inline void getMuDestinationTask (size_t               task,
+                    MUHWI_Destination_t &dest)
+          {
+            return _mapping.getMuDestinationTask(task, dest);
+          };
 
 	  ///
 	  /// \brief Return Whether This Context Is Using the MU for Combining Operations
