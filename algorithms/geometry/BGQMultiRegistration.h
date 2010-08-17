@@ -370,6 +370,7 @@ if (phase == 0) {
 #ifdef ENABLE_MU_CLASSROUTES
                     }
                   val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
+
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
 		      // Only register protocols if we got a classroute

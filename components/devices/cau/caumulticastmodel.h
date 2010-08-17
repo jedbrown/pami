@@ -159,7 +159,7 @@ namespace PAMI
           size_t              root     = msghdr->root;
           CAUMulticastModel   *mc      = (CAUMulticastModel*) CAUDevice::getClientData(did);
           PAMI_GEOMETRY_CLASS *g       = (PAMI_GEOMETRY_CLASS*)mc->_device.mapidtogeometry(gid);
-          CAUGeometryInfo     *gi      = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTEID);
+          CAUGeometryInfo     *gi      = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
           void                *r       = NULL;
           lapi_return_info_t  *ri      = (lapi_return_info_t *) retinfo;
 

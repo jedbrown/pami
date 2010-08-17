@@ -37,7 +37,7 @@ namespace PAMI
     namespace MU
     {
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      class CollectivePacketModelBase : public Interface::CollectivePacketModel < MU::CollectivePacketModelBase<T_Model,T_Collective, T_Channel>, MU::Context, 1024 + MU::InjChannel::completion_event_state_bytes, uint8_t, uint8_t, uint8_t>
+      class CollectivePacketModelBase : public Interface::CollectivePacketModel < MU::CollectivePacketModelBase<T_Model,T_Collective, T_Channel>, MU::Context, 1024 + MU::InjChannel::completion_event_state_bytes, uint32_t, uint8_t, uint8_t>
       {
       protected :
 
@@ -86,7 +86,7 @@ namespace PAMI
         inline bool postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
                                                pami_event_function   fn,
                                                void                * cookie,
-                                               uint8_t               route,
+                                               uint32_t              route,
                                                void                * metadata,
                                                size_t                metasize,
                                                struct iovec          (&iov)[T_Niov]);
@@ -95,7 +95,7 @@ namespace PAMI
         inline bool postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
                                                pami_event_function   fn,
                                                void                * cookie,
-                                               uint8_t               route,
+                                               uint32_t              route,
                                                void                * metadata,
                                                size_t                metasize,
                                                struct iovec        * iov,
@@ -105,7 +105,7 @@ namespace PAMI
         inline bool postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
                                                pami_event_function   fn,
                                                void                * cookie,
-                                               uint8_t               route,
+                                               uint32_t              route,
                                                void                * metadata,
                                                size_t                metasize,
                                                void                * payload,
@@ -115,7 +115,7 @@ namespace PAMI
         inline bool postMultiCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
                                                     pami_event_function   fn,
                                                     void                * cookie,
-                                                    uint8_t               route,
+                                                    uint32_t              route,
                                                     void                * metadata,
                                                     size_t                metasize,
                                                     void                * payload,
@@ -126,7 +126,7 @@ namespace PAMI
         inline bool postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
                                                pami_event_function   fn,
                                                void                * cookie,
-                                               uint8_t               route,
+                                               uint32_t              route,
                                                size_t                root,
                                                uint8_t               op,
                                                uint8_t               dt,
@@ -157,7 +157,7 @@ namespace PAMI
         inline bool postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
                                                pami_event_function   fn,
                                                void                * cookie,
-                                               uint8_t               route,
+                                               uint32_t              route,
                                                size_t                root,
                                                uint8_t               op,
                                                uint8_t               dt,
@@ -190,7 +190,7 @@ namespace PAMI
         inline bool postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
                                                pami_event_function   fn,
                                                void                * cookie,
-                                               uint8_t               route,
+                                               uint32_t              route,
                                                size_t                root,
                                                uint8_t               op,
                                                uint8_t               dt,
@@ -223,7 +223,7 @@ namespace PAMI
         inline bool postMultiCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
                                                     pami_event_function   fn,
                                                     void                * cookie,
-                                                    uint8_t               route,
+                                                    uint32_t              route,
                                                     size_t                root,
                                                     uint8_t               op,
                                                     uint8_t               dt,
@@ -264,7 +264,7 @@ namespace PAMI
 
       template <class T_Model,unsigned T_Collective, unsigned T_Channel>
       CollectivePacketModelBase<T_Model,T_Collective,T_Channel>::CollectivePacketModelBase (MU::Context & context, void * cookie) :
-      Interface::CollectivePacketModel < MU::CollectivePacketModelBase<T_Model,T_Collective,T_Channel>, MU::Context, 1024 + MU::InjChannel::completion_event_state_bytes, uint8_t, uint8_t, uint8_t > (context),
+      Interface::CollectivePacketModel < MU::CollectivePacketModelBase<T_Model,T_Collective,T_Channel>, MU::Context, 1024 + MU::InjChannel::completion_event_state_bytes, uint32_t, uint8_t, uint8_t > (context),
       _context (context),
       _cookie (cookie)
       {
@@ -397,7 +397,7 @@ namespace PAMI
       bool CollectivePacketModelBase<T_Model,T_Collective,T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
                                                                                                  pami_event_function   fn,
                                                                                                  void                * cookie,
-                                                                                                 uint8_t               route,
+                                                                                                 uint32_t              route,
                                                                                                  void                * metadata,
                                                                                                  size_t                metasize,
                                                                                                  struct iovec          (&iov)[T_Niov])
@@ -526,7 +526,7 @@ namespace PAMI
       bool CollectivePacketModelBase<T_Model,T_Collective,T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
                                                                                                  pami_event_function   fn,
                                                                                                  void                * cookie,
-                                                                                                 uint8_t               route,
+                                                                                                 uint32_t              route,
                                                                                                  void                * metadata,
                                                                                                  size_t                metasize,
                                                                                                  struct iovec        * iov,
@@ -652,7 +652,7 @@ namespace PAMI
       bool CollectivePacketModelBase<T_Model,T_Collective,T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
                                                                                                  pami_event_function   fn,
                                                                                                  void                * cookie,
-                                                                                                 uint8_t               route,
+                                                                                                 uint32_t              route,
                                                                                                  void                * metadata,
                                                                                                  size_t                metasize,
                                                                                                  void                * payload,
@@ -766,7 +766,7 @@ namespace PAMI
       bool CollectivePacketModelBase<T_Model,T_Collective,T_Channel>::postMultiCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
                                                                                                       pami_event_function   fn,
                                                                                                       void                * cookie,
-                                                                                                      uint8_t               route,
+                                                                                                      uint32_t              route,
                                                                                                       void                * metadata,
                                                                                                       size_t                metasize,
                                                                                                       void                * payload,

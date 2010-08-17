@@ -67,7 +67,7 @@ namespace PAMI
 
           // Next, search the posted queue for a message with the incoming seq number
           // A message must always be found because the reduction is synchronizing!
-          CAUGeometryInfo    *gi  = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTEID);
+          CAUGeometryInfo    *gi  = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
           CAUMsyncMessage    *m   = (CAUMsyncMessage *)gi->_posted.findAndDelete(seqno);
           void               *r   = NULL;
           lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
@@ -113,7 +113,7 @@ namespace PAMI
           PAMI_GEOMETRY_CLASS *g       = (PAMI_GEOMETRY_CLASS*)ms->_device.mapidtogeometry(gid);
 
           // Next, search the posted queue for a message with the incoming seq number
-          CAUGeometryInfo    *gi  = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_CLASSROUTEID);
+          CAUGeometryInfo    *gi  = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
           CAUMsyncMessage    *m   = (CAUMsyncMessage *)gi->_posted.findAndDelete(seqno);
           void               *r   = NULL;
           lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;

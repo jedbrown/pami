@@ -37,7 +37,6 @@ namespace PAMI
       PAMI_GKEY_LOCALBARRIERCOMPOSITE,  // local sub-topologies only in the geometry
       PAMI_GKEY_GLOBALBARRIERCOMPOSITE, // global sub-topologes only in the geometry
       PAMI_GKEY_UEBARRIERCOMPOSITE1,    // CCMI ue barrier (PAMI_CKEY_BARRIERCOMPOSITE1)
-      PAMI_GKEY_CLASSROUTEID,           // class route id
       PAMI_GKEY_MCAST_CLASSROUTEID,     // Multicast class route id
       PAMI_GKEY_MCOMB_CLASSROUTEID,     // Multicombine class route id
       PAMI_GKEY_MSYNC_CLASSROUTEID,     // Multisync class route id

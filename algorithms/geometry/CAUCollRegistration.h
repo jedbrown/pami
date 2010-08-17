@@ -277,7 +277,9 @@ namespace PAMI
             new(gi)PAMI::Device::CAUGeometryInfo(key,
                                                  geometry->comm(),
                                                  local_master_topo);
-            geometry->setKey(Geometry::PAMI_GKEY_CLASSROUTEID,gi);
+            geometry->setKey(Geometry::PAMI_GKEY_MCAST_CLASSROUTEID,gi);
+            geometry->setKey(Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID,gi);
+            geometry->setKey(Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID,gi);
 
             // Complete the final analysis and population of the geometry structure
             // with the algorithm list

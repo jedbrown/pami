@@ -42,171 +42,175 @@ namespace PAMI
       // \details
       //   - active message model
       //   - uses MU memfifo
-      //   - global (uses global class route)
       //   - one destination task per node
       //   - does not fully support PipeWorkQueue (Multicombine_model_available_buffers_only)
       ///////////////////////////////////////////////////////////////////////////////
       template <class T_PacketModel, bool T_Msgdata_support, bool T_PWQ_support>
-      class MulticombineModel : public Interface::MulticombineModel < MulticombineModel<T_PacketModel, T_Msgdata_support,T_PWQ_support>, MU::Context, 2048 /*sizeof(state_data_t)*/ >
+      class MulticombineModel : public Interface::MulticombineModel < MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>, MU::Context, 2048 /*sizeof(state_data_t)*/ >
       {
 
-      protected:
+        protected:
 
-        typedef uint8_t packet_state_t[T_PacketModel::packet_model_state_bytes];
+          typedef uint8_t packet_state_t[T_PacketModel::packet_model_state_bytes];
 
-        // Metadata passed in the (single-packet) header
-        typedef struct __attribute__((__packed__))
-        {
-          uint32_t              connection_id;  ///< Collective connection id
-          uint32_t              root;           ///< Root of the collective
-          uint32_t              sndlen;         ///< Number of bytes of application data
-        } header_metadata_t;
+          // Metadata passed in the (single-packet) header
+          typedef struct __attribute__((__packed__))
+          {
+            uint32_t              connection_id;  ///< Collective connection id
+            uint32_t              root;           ///< Root of the collective
+            uint32_t              sndlen;         ///< Number of bytes of application data
+          } header_metadata_t;
 
-        // State (request) implementation.  Callers should use uint8_t[MU::MulticombineModel::sizeof_msg]
-        typedef struct
-        {
-          packet_state_t          pkt;          ///< packet send state memory
+          // State (request) implementation.  Callers should use uint8_t[MU::MulticombineModel::sizeof_msg]
+          typedef struct
+          {
+            packet_state_t          pkt;          ///< packet send state memory
 
-          header_metadata_t       header_metadata;
+            header_metadata_t       header_metadata;
 
-          size_t                  remaining_length;
-          PAMI::PipeWorkQueue   * rcvpwq;
-          uint8_t               * buffer;
-          pami_callback_t         cb_done;
-        } state_data_t;
+            size_t                  remaining_length;
+            PAMI::PipeWorkQueue   * rcvpwq;
+            uint8_t               * buffer;
+            pami_callback_t         cb_done;
+          } state_data_t;
 
 
-      public:
+        public:
 
-        /// \see PAMI::Device::Interface::MulticombineModel::~MulticombineModel
-        ~MulticombineModel ()
-        {
-        };
+          /// \see PAMI::Device::Interface::MulticombineModel::~MulticombineModel
+          ~MulticombineModel ()
+          {
+          };
 
-        /// \brief Multicombine model constants/attributes
+          /// \brief Multicombine model constants/attributes
 //      static const bool   Multicombine_model_all_sided               = false;
-        static const bool   Multicombine_model_active_message          = true;
-        static const bool   Multicombine_model_available_buffers_only  = true;
+          static const bool   Multicombine_model_active_message          = true;
+          static const bool   Multicombine_model_available_buffers_only  = true;
 
-        static const size_t sizeof_msg                              = 2048 /*sizeof(state_data_t)*/;
-        static const size_t packet_model_payload_bytes              = T_PacketModel::packet_model_payload_bytes;
-        static const size_t packet_model_immediate_max              = T_PacketModel::packet_model_immediate_max;
+          static const size_t sizeof_msg                              = 2048 /*sizeof(state_data_t)*/;
+          static const size_t packet_model_payload_bytes              = T_PacketModel::packet_model_payload_bytes;
+          static const size_t packet_model_immediate_max              = T_PacketModel::packet_model_immediate_max;
 
-        static const size_t Multicombine_model_msgcount_max            = (packet_model_payload_bytes /*or packet_model_immediate_max*/ / sizeof(pami_quad_t));
-        static const size_t Multicombine_model_bytes_max               = (uint32_t) - 1; // protocol_metadata_t::sndlen
-        static const size_t Multicombine_model_connection_id_max       = (uint32_t) - 1; // protocol_metadata_t::connection_id \todo 64 bit?
+          static const size_t Multicombine_model_msgcount_max            = (packet_model_payload_bytes /*or packet_model_immediate_max*/ / sizeof(pami_quad_t));
+          static const size_t Multicombine_model_bytes_max               = (uint32_t) - 1; // protocol_metadata_t::sndlen
+          static const size_t Multicombine_model_connection_id_max       = (uint32_t) - 1; // protocol_metadata_t::connection_id \todo 64 bit?
 
-        /// \see PAMI::Device::Interface::MulticombineModel::registermcombRecvFunction
-        pami_result_t registermcombRecvFunction_impl(int                        dispatch_id,
-                                                     pami_dispatch_multicast_fn  func,
-                                                     void                      *arg);
-        /// \see PAMI::Device::Interface::MulticombineModel::postMulticombine
-        pami_result_t postMulticombine_impl(uint8_t (&state)[MulticombineModel<T_PacketModel, T_Msgdata_support,T_PWQ_support>::sizeof_msg],
-                                            pami_multicombine_t *mcomb,
-					    void                *devinfo = NULL);
+          /// \see PAMI::Device::Interface::MulticombineModel::registermcombRecvFunction
+          pami_result_t registermcombRecvFunction_impl(int                        dispatch_id,
+                                                       pami_dispatch_multicast_fn  func,
+                                                       void                      *arg);
+          /// \see PAMI::Device::Interface::MulticombineModel::postMulticombine
+          pami_result_t postMulticombine_impl(uint8_t (&state)[MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::sizeof_msg],
+                                              pami_multicombine_t *mcomb,
+                                              void                *devinfo = NULL);
 
-      protected:
-        /// \brief Map PAMI dt/op to MU op
-        const uint8_t mu_op(pami_dt dt, pami_op op);
+        protected:
+          /// \brief Map PAMI dt/op to MU op
+          const uint8_t mu_op(pami_dt dt, pami_op op);
 
-        /// \brief Map PAMI dt to a MU datatype size
-        const size_t  mu_size(pami_dt dt);
+          /// \brief Map PAMI dt to a MU datatype size
+          const size_t  mu_size(pami_dt dt);
 
-        static unsigned getNextDispatch()
-        {
-          static unsigned _id = 0x81;
-          TRACE_FN_ENTER();
-          TRACE_FORMAT("%u\n",(_id+1)&&0xFF);
-          TRACE_FN_EXIT();
-          return ++_id&&0xFF;
-        }
-        /// \brief MU dispatch function
-        inline static int dispatch_data (void   * metadata,
-                                         void   * payload,
-                                         size_t   bytes,
-                                         void   * arg,
-                                         void   * cookie);
-        /// \brief Process user data packets
-        inline void processData   (state_data_t *state_data,
-                                   uint8_t      *payload,
-                                   size_t        bytes);
+          static unsigned getNextDispatch()
+          {
+            static unsigned _id = 0x81;
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("%u\n", (_id + 1) && 0xFF);
+            TRACE_FN_EXIT();
+            return ++_id && 0xFF;
+          }
+          /// \brief MU dispatch function
+          inline static int dispatch_data (void   * metadata,
+                                           void   * payload,
+                                           size_t   bytes,
+                                           void   * arg,
+                                           void   * cookie);
+          /// \brief Process user data packets
+          inline void processData   (state_data_t *state_data,
+                                     uint8_t      *payload,
+                                     size_t        bytes);
 
-      private:
-        MU::Context                                & _device;
-        pami_task_t                                  _task_id;
+        private:
+          MU::Context                                & _device;
+          pami_task_t                                  _task_id;
 
-        unsigned                                     _route; /// \todo get route from geometry? not member data
-
-        T_PacketModel                         _data_model;
+          T_PacketModel                         _data_model;
 
 //        T_Connection                                 _connection; ///\todo ConnectionArray isn't appropriate...
-        std::map<unsigned,state_data_t * >             _connection;
+          std::map<unsigned, state_data_t * >             _connection;
 
-      public:
+        public:
 
-        /// \see PAMI::Device::Interface::MulticombineModel::MulticombineModel
-        MulticombineModel (MU::Context & device, pami_result_t &status) :
-        Interface::MulticombineModel < MulticombineModel<T_PacketModel, T_Msgdata_support,T_PWQ_support>, MU::Context, 2048 /*sizeof(state_data_t)*/ > (device, status),
-        _device (device),
-        _task_id(__global.mapping.task()),
-        _route(0), /// \todo class route support
-        _data_model (device)
-        //        _connection (device)
-        {
-          TRACE_FN_ENTER();
-          // ----------------------------------------------------------------
-          // Compile-time assertions
-          // ----------------------------------------------------------------
+          /// \see PAMI::Device::Interface::MulticombineModel::MulticombineModel
+          MulticombineModel (MU::Context & device, pami_result_t &status) :
+              Interface::MulticombineModel < MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>, MU::Context, 2048 /*sizeof(state_data_t)*/ > (device, status),
+              _device (device),
+              _task_id(__global.mapping.task()),
+              _data_model (device)
+              //        _connection (device)
+          {
+            TRACE_FN_ENTER();
+            // ----------------------------------------------------------------
+            // Compile-time assertions
+            // ----------------------------------------------------------------
 
-          // This protocol only works with reliable networks.
-          COMPILE_TIME_ASSERT(T_PacketModel::reliable_packet_model == true);
+            // This protocol only works with reliable networks.
+            COMPILE_TIME_ASSERT(T_PacketModel::reliable_packet_model == true);
 
-          // This protocol only works with deterministic models.
-          COMPILE_TIME_ASSERT(T_PacketModel::deterministic_packet_model == true);
+            // This protocol only works with deterministic models.
+            COMPILE_TIME_ASSERT(T_PacketModel::deterministic_packet_model == true);
 
-          // Assert that the size of the packet metadata area is large
-          // enough to transfer the eager match information. This is used in the
-          // various postMultiPacket() calls to transfer long header and data
-          // messages.
-          COMPILE_TIME_ASSERT(sizeof(pami_endpoint_t) <= T_PacketModel::packet_model_multi_metadata_bytes);
+            // Assert that the size of the packet metadata area is large
+            // enough to transfer the eager match information. This is used in the
+            // various postMultiPacket() calls to transfer long header and data
+            // messages.
+            COMPILE_TIME_ASSERT(sizeof(pami_endpoint_t) <= T_PacketModel::packet_model_multi_metadata_bytes);
 
-          // Assert that the size of the packet payload area is large
-          // enough to transfer a single virtual address. This is used in
-          // the postPacket() calls to transfer the ack information.
-          COMPILE_TIME_ASSERT(sizeof(void *) <= T_PacketModel::packet_model_payload_bytes);
+            // Assert that the size of the packet payload area is large
+            // enough to transfer a single virtual address. This is used in
+            // the postPacket() calls to transfer the ack information.
+            COMPILE_TIME_ASSERT(sizeof(void *) <= T_PacketModel::packet_model_payload_bytes);
 
-          // ----------------------------------------------------------------
-          // Compile-time assertions (end)
-          // ----------------------------------------------------------------
-          unsigned dispatch_id = getNextDispatch();
+            // ----------------------------------------------------------------
+            // Compile-time assertions (end)
+            // ----------------------------------------------------------------
+            unsigned dispatch_id = getNextDispatch();
 
-          status = _data_model.init (dispatch_id,
-                                     dispatch_data, this,
-                                     NULL,NULL);
-          TRACE_FORMAT( "data model status = %d\n", status);
-          TRACE_FN_EXIT();
-        }
+            status = _data_model.init (dispatch_id,
+                                       dispatch_data, this,
+                                       NULL, NULL);
+            TRACE_FORMAT( "data model status = %d\n", status);
+            TRACE_FN_EXIT();
+          }
       };
 
       template <class T_PacketModel, bool T_Msgdata_support, bool T_PWQ_support>
-      inline pami_result_t MulticombineModel<T_PacketModel, T_Msgdata_support,T_PWQ_support>::postMulticombine_impl(uint8_t (&state)[MulticombineModel::sizeof_msg],
-                                                                                                                    pami_multicombine_t *mcomb,
-														    void                *devinfo)
+      inline pami_result_t MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::postMulticombine_impl(uint8_t (&state)[MulticombineModel::sizeof_msg],
+          pami_multicombine_t *mcomb,
+          void                *devinfo)
       {
         TRACE_FN_ENTER();
+
+#ifdef ENABLE_MU_CLASSROUTES
+        uint32_t classRoute = (uint32_t)(size_t)devinfo; // convert platform independent void* to bgq uint32_t classroute
+#else
+        uint32_t classRoute = 0;
+#endif
+
+        TRACE_FORMAT( "connection_id %#X, class route %#X\n", mcomb->connection_id, classRoute);
 
         PAMI::PipeWorkQueue *pwq = (PAMI::PipeWorkQueue *)mcomb->data;
         size_t length = pwq ? pwq->bytesAvailableToConsume() : 0;
 
-        if (T_PWQ_support==false)
-        {
-          // If you're sending data, it must all be ready in the pwq.
-          //PAMI_assert(
-        }
+        if (T_PWQ_support == false)
+          {
+            // If you're sending data, it must all be ready in the pwq.
+            //PAMI_assert(
+          }
         else
-        {
-          PAMI_abortf("T_PWQ_support not supported yet\n");
-        }
+          {
+            PAMI_abortf("T_PWQ_support not supported yet\n");
+          }
 
         TRACE_FORMAT( "<%p>:MU::MulticombineModel::postMulticombine_impl() connection_id %#X, count %zu, bytes %zu, pwq %p/%p\n",
                       this, mcomb->connection_id,
@@ -224,9 +228,9 @@ namespace PAMI
         PAMI_assert(resultsTopology->size() == dataTopology->size() || resultsTopology->size() == 1); /// \todo based on T_PacketModel?
 
         if (resultsTopology->isRankMember(_task_id))
-        {
-          state_data->remaining_length = length;  // I get output data
-        }
+          {
+            state_data->remaining_length = length;  // I get output data
+          }
         else state_data->remaining_length = length;  // I don't get any data
 
         pami_task_t root = resultsTopology->index2Rank(0);
@@ -237,7 +241,7 @@ namespace PAMI
 
         state_data->cb_done = mcomb->cb_done;
         state_data->rcvpwq = (PAMI::PipeWorkQueue*)mcomb->results;
-        state_data->buffer = state_data->rcvpwq?(uint8_t*)state_data->rcvpwq->bufferToProduce():NULL;
+        state_data->buffer = state_data->rcvpwq ? (uint8_t*)state_data->rcvpwq->bufferToProduce() : NULL;
 
         // Set the connection state
 //        PAMI_assert(_connection.get(mcomb->connection_id) == NULL);
@@ -245,44 +249,44 @@ namespace PAMI
         PAMI_assert(_connection[mcomb->connection_id] == NULL);
         _connection[mcomb->connection_id] = state_data;
 
-        if (T_PWQ_support==false)
-        {
-          if (length)
+        if (T_PWQ_support == false)
           {
-            payload = (void*)pwq->bufferToConsume();
-            pwq->consumeBytes(length);
-          }
+            if (length)
+              {
+                payload = (void*)pwq->bufferToConsume();
+                pwq->consumeBytes(length);
+              }
 
-          // Post the Multicombine to the device in one or more packets
-          if (length <= packet_model_payload_bytes /*or packet_model_immediate_max*/) // one packet
-          {
-            _data_model.postCollectivePacket (state_data->pkt,
-                                              NULL,
-                                              NULL,
-                                              0, //_route,
-                                              root,
-                                              mu_op(mcomb->dtype, mcomb->optor),
-                                              mu_size(mcomb->dtype),
-                                              &state_data->header_metadata,
-                                              sizeof(header_metadata_t),
-                                              payload,
-                                              length);
-          }
-          else  // > one packet of payload
-          {
-            _data_model.postMultiCollectivePacket (state_data->pkt,
-                                                   NULL,
-                                                   NULL,
-                                                   0, //_route,
-                                                   root,
-                                                   mu_op(mcomb->dtype, mcomb->optor),
-                                                   mu_size(mcomb->dtype),
-                                                   &state_data->header_metadata,
-                                                   sizeof(header_metadata_t),
-                                                   payload,
-                                                   length);
-          }
-        } // T_PWQ_support==false
+            // Post the Multicombine to the device in one or more packets
+            if (length <= packet_model_payload_bytes /*or packet_model_immediate_max*/) // one packet
+              {
+                _data_model.postCollectivePacket (state_data->pkt,
+                                                  NULL,
+                                                  NULL,
+                                                  classRoute,
+                                                  root,
+                                                  mu_op(mcomb->dtype, mcomb->optor),
+                                                  mu_size(mcomb->dtype),
+                                                  &state_data->header_metadata,
+                                                  sizeof(header_metadata_t),
+                                                  payload,
+                                                  length);
+              }
+            else  // > one packet of payload
+              {
+                _data_model.postMultiCollectivePacket (state_data->pkt,
+                                                       NULL,
+                                                       NULL,
+                                                       classRoute,
+                                                       root,
+                                                       mu_op(mcomb->dtype, mcomb->optor),
+                                                       mu_size(mcomb->dtype),
+                                                       &state_data->header_metadata,
+                                                       sizeof(header_metadata_t),
+                                                       payload,
+                                                       length);
+              }
+          } // T_PWQ_support==false
 
         TRACE_FORMAT( "<%p>:MU::MulticombineModel::postMulticombine_impl() connection_id %#X exit\n",
                       this, mcomb->connection_id);
@@ -300,19 +304,19 @@ namespace PAMI
       /// \see PAMI::Device::Interface::RecvFunction_t
       ///
       template <class T_PacketModel, bool T_Msgdata_support, bool T_PWQ_support>
-      int MulticombineModel<T_PacketModel, T_Msgdata_support,T_PWQ_support>::dispatch_data   (void   * metadata,
-                                                                                              void   * payload,
-                                                                                              size_t   bytes,
-                                                                                              void   * arg,
-                                                                                              void   * cookie)
+      int MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::dispatch_data   (void   * metadata,
+          void   * payload,
+          size_t   bytes,
+          void   * arg,
+          void   * cookie)
       {
         TRACE_FN_ENTER();
-        TRACE_HEXDATA(metadata,16);
-        TRACE_HEXDATA(payload,32);
+        TRACE_HEXDATA(metadata, 16);
+        TRACE_HEXDATA(payload, 32);
 
         header_metadata_t * m = (header_metadata_t *)metadata;
 
-        MulticombineModel<T_PacketModel, T_Msgdata_support,T_PWQ_support> * model = (MulticombineModel<T_PacketModel, T_Msgdata_support,T_PWQ_support> *) arg;
+        MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support> * model = (MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support> *) arg;
 
         TRACE_FORMAT( "<%p>:MulticombineModel::dispatch(),cookie = %p, root = %d, bytes = %zu/%d, connection id %u/%#X\n", arg, cookie, (m->root), bytes, m->sndlen, m->connection_id, m->connection_id);
 
@@ -327,9 +331,9 @@ namespace PAMI
       }; // PAMI::Device::MU::MulticombineModel::dispatch_data
 
       template <class T_PacketModel, bool T_Msgdata_support, bool T_PWQ_support>
-      inline void MulticombineModel<T_PacketModel, T_Msgdata_support,T_PWQ_support>::processData   (state_data_t * state_data,
-                                                                                                    uint8_t * payload,
-                                                                                                    size_t    bytes)
+      inline void MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::processData   (state_data_t * state_data,
+          uint8_t * payload,
+          size_t    bytes)
       {
         TRACE_FN_ENTER();
         header_metadata_t   *  header = &state_data->header_metadata;
@@ -344,15 +348,15 @@ namespace PAMI
         if (nleft > bytes) nleft = bytes;
 
         if (nleft) // copy data and update receive state_data
-        {
-          TRACE_FORMAT( "<%p>:MulticombineModel::processData memcpy(%p,%p,%zu)\n", this, state_data->buffer, payload, nleft);
-          memcpy (state_data->buffer, payload, nleft);
+          {
+            TRACE_FORMAT( "<%p>:MulticombineModel::processData memcpy(%p,%p,%zu)\n", this, state_data->buffer, payload, nleft);
+            memcpy (state_data->buffer, payload, nleft);
 
-          // Update the receive state_data
-          state_data->buffer += nleft;
-          state_data->remaining_length -= nleft;
-          state_data->rcvpwq->produceBytes(nleft);
-        }
+            // Update the receive state_data
+            state_data->buffer += nleft;
+            state_data->remaining_length -= nleft;
+            state_data->rcvpwq->produceBytes(nleft);
+          }
         else ;  /// toss unwanted data?
 
         // Decrement the original bytes sent by the bytes just received...
@@ -360,17 +364,18 @@ namespace PAMI
         // not receive all data sent (tossing some).
         header->sndlen -= MIN(header->sndlen, (uint32_t)bytes);
 
-        if (header->sndlen==0)
-        {
-          _connection.erase(header->connection_id);
-          //_connection.clear(header->connection_id);
+        if (header->sndlen == 0)
+          {
+            _connection.erase(header->connection_id);
+            //_connection.clear(header->connection_id);
 
-          // Invoke the receive done callback.
-          if (state_data->cb_done.function)
-            state_data->cb_done.function (0,//_device.getContext(), ///\todo why does this assert?
-                                     state_data->cb_done.clientdata,
-                                     PAMI_SUCCESS);
-        }
+            // Invoke the receive done callback.
+            if (state_data->cb_done.function)
+              state_data->cb_done.function (0,//_device.getContext(), ///\todo why does this assert?
+                                            state_data->cb_done.clientdata,
+                                            PAMI_SUCCESS);
+          }
+
         TRACE_FN_EXIT();
         return ;
       }; // PAMI::Device::MU::MulticombineModel::processData
@@ -497,7 +502,7 @@ namespace PAMI
             {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2DOUBLE
             {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false} //PAMI_USERDEFINED_DT
           };
-          TRACE((stderr, "Multicombine::multicombine_model_op_support(%d, %d) = %s\n", dt, op, support[dt][op]?"true":"false"));
+          TRACE((stderr, "Multicombine::multicombine_model_op_support(%d, %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
           return(support[dt][op]);
         }
 
@@ -505,7 +510,7 @@ namespace PAMI
 
       }
       template <class T_PacketModel, bool T_Msgdata_support, bool T_PWQ_support>
-      inline const uint8_t   MulticombineModel<T_PacketModel, T_Msgdata_support,T_PWQ_support>::mu_op(pami_dt dt, pami_op op)
+      inline const uint8_t   MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::mu_op(pami_dt dt, pami_op op)
       {
         const pami_op op_check[PAMI_OP_COUNT] =
         {
@@ -555,13 +560,13 @@ namespace PAMI
           {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_LOC_2DOUBLE
           {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0} //PAMI_USERDEFINED_DT
         };
-        TRACE((stderr, "Multicombine::mu_op(%d, %d) = %#X, %s->%s\n", dt, op, mu_op_table[dt][op],op_string(op),mu_op_string((mu_op_table[dt][op])>>4)));
-        PAMI_assert_debugf(op_check[op] == op,"op_check[op] %u == op %u\n",op_check[op],op);
+        TRACE((stderr, "Multicombine::mu_op(%d, %d) = %#X, %s->%s\n", dt, op, mu_op_table[dt][op], op_string(op), mu_op_string((mu_op_table[dt][op]) >> 4)));
+        PAMI_assert_debugf(op_check[op] == op, "op_check[op] %u == op %u\n", op_check[op], op);
         return(mu_op_table[dt][op]);
       }
 
       template <class T_PacketModel, bool T_Msgdata_support, bool T_PWQ_support>
-      inline const size_t    MulticombineModel<T_PacketModel, T_Msgdata_support,T_PWQ_support>::mu_size(pami_dt dt)
+      inline const size_t    MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::mu_size(pami_dt dt)
       {
 
         const pami_dt dt_check[PAMI_DT_COUNT] =
@@ -615,7 +620,7 @@ namespace PAMI
           -1                          //PAMI_USERDEFINED_DT
         };
         TRACE((stderr, "Multicombine::mu_size(%d) = %zu %s\n", dt, mu_size_table[dt], dt_string(dt)));
-        PAMI_assert_debugf(dt_check[dt] == dt,"dt_check[dt] %u == dt %u\n",dt_check[dt],dt);
+        PAMI_assert_debugf(dt_check[dt] == dt, "dt_check[dt] %u == dt %u\n", dt_check[dt], dt);
         return(mu_size_table[dt]);
       }
 #undef TRACE
