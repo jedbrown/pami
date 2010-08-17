@@ -600,8 +600,8 @@ if (context) { // HACK! until no one calls completion with NULL context!
         BGQGeometry *geom = (BGQGeometry *)geometry;
         // is it stored in geometry? or just implied by key/vals?
         // configuration[0].value.intval = gp->???;
-        void *v1 = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
-        void *v2 = geom->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
+        void *v1 = geom->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
+        void *v2 = geom->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
 	int b1 = (v1 != PAMI_CR_GKEY_FAIL ? (int)((uintptr_t)v1 & 0x0ff) : 0);
 	int b2 = (v2 != PAMI_CR_GKEY_FAIL ? (int)((uintptr_t)v2 & 0x0ff) : 0);
         configuration[0].value.intval = b1 | (b2 << 8);

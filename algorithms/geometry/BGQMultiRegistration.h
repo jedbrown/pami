@@ -357,7 +357,7 @@ if (phase == 0) {
                     {
 #ifdef ENABLE_MU_CLASSROUTES
 		  void *val;
-                  val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_BGQGI_CLASSROUTE);
+                  val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
 		      // Only register protocols if we got a classroute
@@ -369,7 +369,7 @@ if (phase == 0) {
                       geometry->addCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
 #ifdef ENABLE_MU_CLASSROUTES
                     }
-                  val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_BGQCOLL_CLASSROUTE);
+                  val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
 		      // Only register protocols if we got a classroute
@@ -377,6 +377,12 @@ if (phase == 0) {
 
                       // Add Broadcasts
                       geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory, _context_id);
+#ifdef ENABLE_MU_CLASSROUTES
+                    }
+                  val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
+                  if (val && val != PAMI_CR_GKEY_FAIL)
+                    {
+#endif
 
                       // Add Allreduces
                       geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);

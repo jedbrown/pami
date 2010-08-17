@@ -14,9 +14,7 @@
 #define __common_bgq_GeometryPlatform_h__
 
 /// \brief Extensions to enum keys_t
-#define PAMI_GKEY_PLATEXTENSIONS	\
-       PAMI_GKEY_BGQCOLL_CLASSROUTE,	\
-       PAMI_GKEY_BGQGI_CLASSROUTE,
+#define PAMI_GKEY_PLATEXTENSIONS
 
 /// \brief The value used to indicate no classroute, diff from not yet optimized
 #define PAMI_CR_GKEY_FAIL	((void *)0xbadc0ffee0ddf00d)
