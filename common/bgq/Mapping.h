@@ -480,7 +480,7 @@ namespace PAMI
     /// \see PAMI::Interface::Mapping::Node::isLocal()
     inline bool isLocal_impl (size_t task)
     {
-      return isPeer (task, task_impl());
+      return _mapcache.torus.task2coords[task].mapped.reserved;
     }
 
     /// \see PAMI::Interface::Mapping::Node::isPeer()

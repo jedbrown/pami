@@ -36,11 +36,15 @@ namespace PAMI
   ///
   /// This structure takes 32-bits on any 32/64 bit system. The a, b, c,
   /// and d fields are the same size and in the same location as the MU
-  /// descriptor structure. The thread/core fields are sized for 16 cores
-  /// with 4 hardware threads each, though the reserved bit can be stolen
-  /// for the 17th core if it needs a rank. The e dimension is sized to the
-  /// current node-layout maximum, though the MU hardware supports the full
+  /// descriptor structure. The e dimension is sized to the current
+  /// node-layout maximum (1 bit), though the MU hardware supports the full
   /// 6 bits.
+  ///
+  /// 1.  The reserved bit is used by BGQ Mapping to indicate whether the
+  ///     task is local to our node.  1=Local, 0=Not local.
+  /// 2.  The high-order bit of the A, B, C, and D dimensions is used to
+  ///     produce a 4 bit value that contains the optimal MU injection fifo
+  ///     number (see pinFifo).
   ///
   /// \see MUHWI_Destination_t
   ///

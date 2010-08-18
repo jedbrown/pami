@@ -461,10 +461,18 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
               t = mapcache->torus.task2coords[i].mapped.t;
               TRACE_ERR( (stderr, "Global::initializeMapCache() task = %zu, estimated task = %zu, coords{%zu,%zu,%zu,%zu,%zu,%zu}\n", i, ESTIMATED_TASK(a, b, c, d, e, t, aSize, bSize, cSize, dSize, eSize, tSize), a, b, c, d, e, t));
 
-	      // Track the lowest T coord on our node
-	      if ( (a==aCoord) && (b==bCoord) && (c==cCoord) && (d==dCoord) && (e==eCoord) &&
-		   (t < lowestTCoordOnMyNode) )
-		lowestTCoordOnMyNode = t;
+	      // If this task is local to our node
+	      // 1. Track the lowest T coord on our node
+	      // 2. Track whether this task is local to our node.  This is stored in
+	      //    the "reserved" bit of the coords structure.
+	      // 
+	      if ( (a==aCoord) && (b==bCoord) && (c==cCoord) && (d==dCoord) && (e==eCoord) )
+		{
+		  if ( t < lowestTCoordOnMyNode )
+		    lowestTCoordOnMyNode = t;
+
+		  mapcache->torus.task2coords[i].mapped.reserved = 1;
+		}
 
               // Set the bit corresponding to the physical node of this rank,
               // indicating that we have found a rank on that node.
