@@ -22,6 +22,8 @@
 #include "hwi/include/bqc/A2_inlines.h"
 #include "spi/include/kernel/thread.h"
 
+#undef DEBUG_COMMTHREADS // Enable debug messages here
+
 #undef HAVE_WU_ARMWITHADDRESS
 
 #ifndef HAVE_WU_ARMWITHADDRESS
@@ -62,6 +64,20 @@
 #define COMMTHREAD_SCHED	SCHED_COMM
 //#define COMMTHREAD_SCHED	SCHED_FIFO
 //#define COMMTHREAD_SCHED	SCHED_OTHER
+
+#ifdef DEBUG_COMMTHREADS
+#define DEBUG_INIT()						\
+		char __dbgbuf[64];				\
+		sprintf(__dbgbuf, "xx %ld\n", pthread_self());	\
+		int __dbgbufl = strlen(__dbgbuf);
+
+#define DEBUG_WRITE(a,b)				\
+		__dbgbuf[0] = a; __dbgbuf[1] = b;	\
+		write(2, __dbgbuf, __dbgbufl);
+#else // ! DEBUG_COMMTHREADS
+#define DEBUG_INIT()
+#define DEBUG_WRITE(a,b)
+#endif // ! DEBUG_COMMTHREADS
 
 namespace PAMI {
 namespace Device {
@@ -300,14 +316,12 @@ private:
                 uint64_t wu_start, wu_mask;
 		int min_pri = sched_get_priority_min(COMMTHREAD_SCHED);
 		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
-//char buf[64];
-//sprintf(buf, "ct %ld\n", pthread_self());
-//int bufl = strlen(buf);
+DEBUG_INIT();
 
                 pthread_setschedprio(self, max_pri);
                 _ctxset->joinContextSet(_client, id, _initCtxs);
 //fprintf(stderr, "comm thread %ld for context %04zx\n", self, _initCtxs);
-//write(2, buf, bufl);
+DEBUG_WRITE('c','t');
                 new_ctx = old_ctx = lkd_ctx = 0;
 		ev_since_wu = 0;
                 while (!_shutdown) {
@@ -356,15 +370,9 @@ more_work:		// lightweight enough.
                                         // while existing work waits for us to
                                         // advance it.
 					if (ev_since_wu == 0 && lkd_ctx) ++_falseWU;
-#ifndef HAVE_WU_ARMWITHADDRESS
-//buf[0] = 'g'; buf[1] = 'i';
-//write(2, buf, bufl);
+DEBUG_WRITE('g','i');
         				ppc_waitimpl();
-//buf[0] = 'w'; buf[1] = 'u';
-//write(2, buf, bufl);
-#else // HAVE_WU_ARMWITHADDRESS
-                                        ppc_waitimpl();
-#endif // HAVE_WU_ARMWITHADDRESS
+DEBUG_WRITE('w','u');
 					ev_since_wu = 0;
 					if (_shutdown) break;
                                 }
@@ -379,14 +387,12 @@ more_work:		// lightweight enough.
                                 __lockContextSet(lkd_ctx, 0);
 
                                 _ctxset->leaveContextSet(_client, id); // id invalid now
-//buf[0] = 's'; buf[1] = 'a';
-//write(2, buf, bufl);
+DEBUG_WRITE('s','a');
 
                                 pthread_setschedprio(self, min_pri);
                                 //=== we get preempted here ===//
                                 pthread_setschedprio(self, max_pri);
-//buf[0] = 's'; buf[1] = 'b';
-//write(2, buf, bufl);
+DEBUG_WRITE('s','b');
 
 				if (_shutdown) break;
                 		_ctxset->joinContextSet(_client, id, _initCtxs); // got id
@@ -401,8 +407,7 @@ more_work:		// lightweight enough.
 		if (id != (size_t)-1) {
                 	_ctxset->leaveContextSet(_client, id); // id invalid now
 		}
-//buf[0] = 't'; buf[1] = 't';
-//write(2, buf, bufl);
+DEBUG_WRITE('t','t');
                 return PAMI_SUCCESS;
         }
 
@@ -421,5 +426,8 @@ more_work:		// lightweight enough.
 }; // namespace PAMI
 
 size_t PAMI::Device::CommThread::BgqCommThread::_numActive = 0;
+
+#undef DEBUG_INIT
+#undef DEBUG_WRITE
 
 #endif // __components_devices_bgq_commthread_CommThread_h__
