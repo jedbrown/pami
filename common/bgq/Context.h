@@ -248,7 +248,9 @@ namespace PAMI
           _devices(devices),
           _global_mu_ni(NULL),
           _pgas_mu_registration(NULL),
-          _pgas_shmem_registration(NULL)
+          _pgas_shmem_registration(NULL),
+          _dummy_disable(false),
+          _dummy_disabled(false)
       {
         TRACE_ERR((stderr,  "<%p>Context::Context() enter\n",this));
         // ----------------------------------------------------------------
@@ -807,6 +809,70 @@ namespace PAMI
         return result;
       }
 
+	/// \brief Dummy work function to keep context advance returning "busy"
+	///
+	/// \see pami_work_function
+	///
+	static pami_result_t _dummy_work_fn(pami_context_t ctx, void *cookie)
+	{
+		Context *thus = (Context *)cookie;
+		if (!thus->_dummy_disable)
+		{
+			return PAMI_EAGAIN;
+		}
+		else
+		{
+			thus->_dummy_disabled = true;
+			// Note: dequeue happens sometime after return...
+			// So all participants must lock the context to
+			// ensure an atomic view of the above variables.
+			return PAMI_SUCCESS;
+		}
+	}
+
+      /// \brief BGQ-only method to fix any problems with hardware affinity to core/thread
+      ///
+      /// This method is (initially) to address a problem with MU interrupts having
+      /// hardware affinity to a core. This means that if a commthread is advancing
+      /// a context from a "foriegn" core it cannot depend on the WakeUp Unit to
+      /// wake up a waitimpl instruction and so we have to effectively disable the
+      /// wait. This is done by posting a dummy (persistent) function on the generic
+      /// device which will cause the return value of advance to always be "1", which
+      /// will prevent the commthread from going into wait.
+      ///
+      /// Caller holds the context lock.
+      ///
+      /// \param[in] acquire	True if acquiring the context,
+      ///			false means the context is being released.
+      ///
+      inline void cleanupAffinity(bool acquire)
+      {
+	bool affinity;
+#if 0
+	affinity = (Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).affinity() == Kernel_PhysicalProcessorID());
+#else
+	affinity = false;
+#endif
+	bool enqueue = (acquire && !affinity);
+	bool cancel = (enqueue && _dummy_disable && !_dummy_disabled);
+	bool dequeue = (!acquire);
+	if (cancel)
+	{
+		_dummy_disable = _dummy_disabled = false;
+	}
+	else if (enqueue)
+	{
+		_dummy_disable = _dummy_disabled = false;
+		PAMI::Device::Generic::GenericThread *work = new (&_dummy_work)
+				PAMI::Device::Generic::GenericThread(_dummy_work_fn, this);
+		_devices->_generics[_contextid].postThread(work);
+	}
+	else if (dequeue)
+	{
+		_dummy_disable = true;
+	}
+      }
+
       inline pami_result_t analyze(size_t         context_id,
                                   BGQGeometry    *geometry,
 				  int phase = 0)
@@ -910,6 +976,9 @@ namespace PAMI
       Shmem_PGASCollreg           *_pgas_shmem_registration;
       uint8_t                      _pgas_shmem_registration_storage[sizeof(Shmem_PGASCollreg)];
 
+      bool _dummy_disable;
+      bool _dummy_disabled;
+      PAMI::Device::Generic::GenericThread _dummy_work;
   }; // end PAMI::Context
 }; // end namespace PAMI
 

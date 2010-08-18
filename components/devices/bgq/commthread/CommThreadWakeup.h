@@ -83,6 +83,7 @@ private:
                 x = 0;
                 while (m) {
                         if (m & 1) {
+				_ctxset->getContext(_client, x)->cleanupAffinity(false);
                                 r = _ctxset->getContext(_client, x)->unlock();
                                 l &= ~(1ULL << x);
                         }
@@ -97,6 +98,7 @@ private:
                                 r = _ctxset->getContext(_client, x)->trylock();
                                 if (r == PAMI_SUCCESS) {
                                         l |= (1ULL << x);
+					_ctxset->getContext(_client, x)->cleanupAffinity(true);
                                 }
                         }
                         m >>= 1;
