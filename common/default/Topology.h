@@ -1113,19 +1113,35 @@ namespace PAMI {
         // the hard way... impractical?
 
         size_t s = __size;
+	typedef size_t tb_t[2];
         pami_task_t *rl = (pami_task_t *)malloc(s * sizeof(*rl));
+        tb_t *tb = (tb_t *)malloc(s * sizeof(tb_t));
+	memset(tb, 0, s * sizeof(tb_t));
         size_t k = 0;
         pami_task_t r;
         PAMI::Interface::Mapping::nodeaddr_t a;
-        size_t i;
+        size_t i, j, l = 0;
         for (i = 0; i < s; ++i) {
           r = index2Rank(i);
           // PAMI_assert(r != -1);
           mapping->task2node(r, a);
-          if (a.local == (size_t)n) {
-            rl[k++] = r;
-          }
+	  for (j = 0; j <= l; ++j) {
+		if (j == l) {
+			tb[j][0] = a.global;
+			++l;
+//			goto there; // compiler should optimize into this...
+		}
+		if (a.global == tb[j][0]) {
+//there:
+			if (tb[j][1] == n) {
+				rl[k++] = r;
+			}
+			++tb[j][1];
+			break;
+		}
+	  }
         }
+	free(tb);
         if (k == 1) {
           _new->__type = PAMI_SINGLE_TOPOLOGY;
           _new->__size = 1;
@@ -1141,6 +1157,7 @@ namespace PAMI {
         }
         _new->__type = PAMI_EMPTY_TOPOLOGY;
         _new->__size = 0;
+        free(rl);
       }
     }
 
