@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <pami.h>
-#undef __pami_target_bgq__ /** \todo Use the BGQ extentions when they are working better */
+
 #ifdef __pami_target_bgq__
 extern pami_result_t
 PAMI_Client_add_commthread_context(pami_client_t client, pami_context_t context);
