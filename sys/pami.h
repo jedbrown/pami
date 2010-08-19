@@ -792,7 +792,8 @@ extern "C"
   {
     PAMI_RMW_ASSIGNMENT_SET   = 0x0010, /**< =  operation */
     PAMI_RMW_ASSIGNMENT_ADD   = 0x0020, /**< += operation */
-    PAMI_RMW_ASSIGNMENT_OR    = 0x0040  /**< |= operation */
+    PAMI_RMW_ASSIGNMENT_OR    = 0x0040, /**< |= operation */
+    PAMI_RMW_ASSIGNMENT_AND   = 0x0080  /**< &= operation */
   } pami_rmw_assignment_t;
 
   /** \brief Atomic rmw comparison type */
@@ -805,6 +806,7 @@ extern "C"
   typedef struct
   {
     pami_rma_t               rma;       /**< Common rma parameters */
+    pami_rma_addr_t          addr;      /**< Rma addresses parameters */
     struct
     {
       pami_rmw_comparison_t  compare;   /**< read-modify-write comparison type */
@@ -814,16 +816,16 @@ extern "C"
       {
         struct
         {
-          uint32_t          value;     /**< 32-bit data value */
-          uint32_t          test;      /**< 32-bit test value */
-        } uint32;                      /**< 32-bit rmw input parameters */
+          int32_t            value;     /**< 32-bit data value */
+          int32_t            test;      /**< 32-bit test value */
+        } int32;                        /**< 32-bit rmw input parameters */
         struct
         {
-          uint64_t          value;     /**< 64-bit data value */
-          uint64_t          test;      /**< 64-bit test value */
-        } uint64;                      /**< 64-bit rmw input parameters */
+          int64_t            value;     /**< 64-bit data value */
+          int64_t            test;      /**< 64-bit test value */
+        } int64;                        /**< 64-bit rmw input parameters */
       } input;
-    } rmw;                             /**< Parameters specific to rmw */
+    } rmw;                              /**< Parameters specific to rmw */
   } pami_rmw_t;
 
   /**
@@ -834,7 +836,7 @@ extern "C"
    * generic logical atomic operation:
    *
    * \code
-   * *result = *remote; (*remote COMPARISON test) ? *remote ASSIGNMENT value;
+   * *local = *remote; (*remote COMPARISON test) ? *remote ASSIGNMENT value;
    * \endcode
    *
    * \warning All read-modify-write operations are \b unordered relative
@@ -846,29 +848,36 @@ extern "C"
    * \par PAMI_RMW_KIND_UINT32 | PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_ADD
    *      "32-bit unsigned integer fetch-and-add operation"
    * \code
-   * uint32_t *result, *remote, value, test;
-   * *result = *remote; *remote += value;
+   * uint32_t *local, *remote, value, test;
+   * *local = *remote; *remote += value;
    * \endcode
    *
    * \par PAMI_RMW_KIND_UINT32 | PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_OR
    *      "32-bit unsigned integer fetch-and-or operation"
    * \code
-   * uint32_t *result, *remote, value, test;
-   * *result = *remote; *remote |= value;
+   * uint32_t *local, *remote, value, test;
+   * *local = *remote; *remote |= value;
+   * \endcode
+   *
+   * \par PAMI_RMW_KIND_UINT32 | PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_AND
+   *      "32-bit unsigned integer fetch-and-and operation"
+   * \code
+   * uint32_t *local, *remote, value, test;
+   * *local = *remote; *remote &= value;
    * \endcode
    *
    * \par PAMI_RMW_KIND_UINT64 | PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_SET
    *      "64-bit unsigned integer swap (fetch-and-set) operation"
    * \code
-   * uint64_t *result, *remote, value, test;
-   * *result = *remote; *remote = value;
+   * uint64_t *local, *remote, value, test;
+   * *local = *remote; *remote = value;
    * \endcode
    *
    * \par PAMI_RMW_KIND_UINT64 | PAMI_RMW_COMPARISON_EQUAL | PAMI_RMW_ASSIGNMENT_SET
    *      "64-bit unsigned integer compare-and-swap operation"
    * \code
-   * uint64_t *result, *remote, value, test;
-   * *result = *remote; (*remote == test) ? *remote = value;
+   * uint64_t *local, *remote, value, test;
+   * *local = *remote; (*remote == test) ? *remote = value;
    * \endcode
    *
    * \param[in] context    PAMI communication context
