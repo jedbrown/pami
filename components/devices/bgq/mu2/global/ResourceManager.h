@@ -2100,6 +2100,8 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
       PAMI_assertf( rc==0, "Kernel_QueryInjFifos failed with rc=%d.\n",rc );
       TRACE((stderr,"MU ResourceManager: setupInjFifos: subgroup = %u, numFree = %u\n",subgroup,numFree));
 
+      if ( numFree == 0 ) continue; // Nothing free in this subgroup?  Go to next.
+
       if ( numFree > numLeftToAllocate ) numFree = numLeftToAllocate;
 
       Kernel_InjFifoAttributes_t *fifoAttrs =
@@ -2519,6 +2521,8 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
 				 freeIds );
       PAMI_assertf( rc==0, "Kernel_QueryRecFifos failed with rc=%d.\n",rc );
       TRACE((stderr,"MU ResourceManager: setupRecFifos: subgroup = %u, numFree = %u\n",subgroup,numFree));
+
+      if ( numFree == 0 ) continue; // Nothing free in this subgroup?  Go to next.
 
       if ( numFree > numLeftToAllocate ) numFree = numLeftToAllocate;
 
