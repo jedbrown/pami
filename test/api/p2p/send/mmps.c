@@ -129,6 +129,42 @@ recv(pami_context_t    context,
 
 
 static void
+check_complete_list(volatile size_t *count, size_t iteration)
+{
+  while(*count < WINDOW*(iteration+1)) {
+#ifndef USE_THREADS
+    PAMI_Context_advancev(contexts, ncontexts, 1);
+#endif
+  }
+}
+
+
+static void
+check_complete(size_t dest, size_t iteration)
+{
+  TRACE_ERR("           interation=%zu dest=%zu\n", iteration, dest);
+  check_complete_list(&send_list[dest], iteration);
+  TRACE_ERR("send done  interation=%zu dest=%zu\n", iteration, dest);
+  check_complete_list(&recv_list[dest], iteration);
+  TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
+}
+
+
+static void
+post_work(size_t dest, size_t iteration, size_t window, pami_work_t *work)
+{
+  const size_t mod = ncontexts>>1;
+  pami_result_t rc;
+
+  size_t contextid = dest%mod;
+  pami_context_t context = contexts[contextid];
+  TRACE_ERR("Posting work  contextid=%zu dest=%zu arg=%p iteration=%zu window=%zu\n", contextid, dest, (void*)dest, iteration, window);
+  rc = PAMI_Context_post(context, work, send, (void*)dest);
+  assert(rc == PAMI_SUCCESS);
+}
+
+
+static void
 master()
 {
   const size_t msgs = ITERATIONS*WINDOW*(size-1);
@@ -137,9 +173,7 @@ master()
   double start, time;
   start = PAMI_Wtime();
 
-  const size_t mod = ncontexts>>1;
   size_t dest;
-  pami_result_t rc;
   size_t iteration, i;
   pami_work_t work_list[WINDOW][size];
 
@@ -147,30 +181,14 @@ master()
     TRACE_ERR("starting sends  interation=%zu\n", iteration);
     for (i=0; i<WINDOW; ++i) {
       for (dest=1; dest<size; ++dest) {
-        size_t contextid = dest%mod;
-        pami_context_t context = contexts[contextid];
-        TRACE_ERR("Posting work  contextid=%zu dest=%zu arg=%p iteration=%zu window=%zu\n", contextid, dest, (void*)dest, iteration, i);
-        rc = PAMI_Context_post(context, &work_list[i][dest], send, (void*)dest);
-        assert(rc == PAMI_SUCCESS);
+        post_work(dest, iteration, i, &work_list[i][dest]);
       }
     }
 
     TRACE_ERR("Starting completion check  interation=%zu\n", iteration);
     /* Check that everything is done */
     for (dest=1; dest<size; ++dest) {
-      TRACE_ERR("           interation=%zu dest=%zu\n", iteration, dest);
-      while(send_list[dest] < WINDOW*(iteration+1)) {
-#ifndef USE_THREADS
-        PAMI_Context_advancev(contexts, ncontexts, 1);
-#endif
-      }
-      TRACE_ERR("send done  interation=%zu dest=%zu\n", iteration, dest);
-      while(recv_list[dest] < WINDOW*(iteration+1)) {
-#ifndef USE_THREADS
-        PAMI_Context_advancev(contexts, ncontexts, 1);
-#endif
-      }
-      TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
+      check_complete(dest, iteration);
     }
   }
 
@@ -188,9 +206,7 @@ worker()
   double start, time;
   start = PAMI_Wtime();
 
-  const size_t mod = ncontexts>>1;
   const size_t dest = 0;
-  pami_result_t rc;
   size_t iteration, i;
   pami_work_t work_list[WINDOW][1];
 
@@ -198,30 +214,14 @@ worker()
     TRACE_ERR("starting sends  interation=%zu\n", iteration);
     for (i=0; i<WINDOW; ++i) {
       {
-        size_t contextid = dest%mod;
-        pami_context_t context = contexts[contextid];
-        TRACE_ERR("Posting work  contextid=%zu dest=%zu arg=%p iteration=%zu window=%zu\n", contextid, dest, (void*)dest, iteration, i);
-        rc = PAMI_Context_post(context, &work_list[i][dest], send, (void*)dest);
-        assert(rc == PAMI_SUCCESS);
+        post_work(dest, iteration, i, &work_list[i][dest]);
       }
     }
 
     /* Check that everything is done */
     TRACE_ERR("Starting completion check  interation=%zu\n", iteration);
     {
-      TRACE_ERR("           interation=%zu dest=%zu\n", iteration, dest);
-      while(send_list[dest] < WINDOW*(iteration+1)) {
-#ifndef USE_THREADS
-        PAMI_Context_advancev(contexts, ncontexts, 1);
-#endif
-      }
-      TRACE_ERR("send done  interation=%zu dest=%zu\n", iteration, dest);
-      while(recv_list[dest] < WINDOW*(iteration+1)) {
-#ifndef USE_THREADS
-        PAMI_Context_advancev(contexts, ncontexts, 1);
-#endif
-      }
-      TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
+      check_complete(dest, iteration);
     }
   }
 
