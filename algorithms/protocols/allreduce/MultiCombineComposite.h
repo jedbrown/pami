@@ -28,6 +28,7 @@ namespace CCMI
         PAMI::PipeWorkQueue                  _srcPwq;
         PAMI::PipeWorkQueue                  _dstPwq;
         pami_multicombine_t                  _minfo;
+        void                               * _deviceInfo;
 
       public:
         MultiCombineComposite (Interfaces::NativeInterface          * mInterface,
@@ -47,6 +48,8 @@ namespace CCMI
           PAMI_assertf((cmd->cmd.xfer_allreduce.stype == PAMI_BYTE)&&(cmd->cmd.xfer_allreduce.rtype == PAMI_BYTE),"Not PAMI_BYTE? %#zX %#zX\n",(size_t)cmd->cmd.xfer_allreduce.stype,(size_t)cmd->cmd.xfer_allreduce.rtype);
 
           PAMI_Type_sizeof(cmd->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
+
+          _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
 
           unsigned        sizeOfType;
           coremath        func;
@@ -89,7 +92,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
           _minfo.cb_done.function     = _cb_done;
           _minfo.cb_done.clientdata   = _clientdata;
-          _native->multicombine(&_minfo);
+          _native->multicombine(&_minfo, _deviceInfo);
         }
       };
 

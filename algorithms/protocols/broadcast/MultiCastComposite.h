@@ -343,7 +343,6 @@ namespace CCMI
           {
             _active_native[0] = NULL;
             _active_native[1] = NULL;
-            PAMI::Topology  *t_all       = (PAMI::Topology*)_geometry->getTopology(0);
             PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getLocalMasterTopology();
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getLocalTopology();
 

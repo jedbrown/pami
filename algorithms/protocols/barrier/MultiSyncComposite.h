@@ -21,6 +21,7 @@ namespace CCMI
           Interfaces::NativeInterface        * _native;
           PAMI_GEOMETRY_CLASS                * _geometry;
           pami_multisync_t                     _minfo;
+          void                               * _deviceInfo;
 
         public:
           MultiSyncComposite (Interfaces::NativeInterface          * mInterface,
@@ -33,6 +34,7 @@ namespace CCMI
           {
             TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
 
+            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
             //_minfo.cb_done.function   = _cb_done;
             //_minfo.cb_done.clientdata = _clientdata;
             _minfo.connection_id      = 0;
@@ -46,7 +48,7 @@ namespace CCMI
             TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
             _minfo.cb_done.function   = _cb_done;
             _minfo.cb_done.clientdata = _clientdata;
-            _native->multisync(&_minfo);
+            _native->multisync(&_minfo, _deviceInfo);
           }
       };
 
@@ -111,7 +113,7 @@ namespace CCMI
                 return;
               }
 
-            // If we have more than one master, but we are the only node
+            // If we have more than one master, but we are the only local process
             // we are guaranteed to be a "local master", so we will just
             // issue the collective on the global device
             _deviceInfo = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
@@ -165,8 +167,6 @@ namespace CCMI
           Interfaces::NativeInterface        *_active_native;
           PAMI_GEOMETRY_CLASS                *_geometry;
           void                               *_deviceInfo;
-          PAMI::Topology                     *_l_topology;
-          PAMI::Topology                     *_g_topology;
           pami_multisync_t                    _minfo_l0;
           pami_multisync_t                    _minfo_g;
           pami_multisync_t                    _minfo_l1;
