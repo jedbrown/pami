@@ -504,7 +504,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 
               if (e < _ll.u.n_torus.coords[4]) _ll.u.n_torus.coords[4] = e;
 
-              if (t < _ll.u.n_torus.coords[6]) _ll.u.n_torus.coords[6] = t;
+              if (t < _ll.u.n_torus.coords[5]) _ll.u.n_torus.coords[5] = t;
 
               if (a > _ur.u.n_torus.coords[0]) _ur.u.n_torus.coords[0] = a;
 
@@ -516,7 +516,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 
               if (e > _ur.u.n_torus.coords[4]) _ur.u.n_torus.coords[4] = e;
 
-              if (t > _ur.u.n_torus.coords[6]) _ur.u.n_torus.coords[6] = t;
+              if (t > _ur.u.n_torus.coords[5]) _ur.u.n_torus.coords[5] = t;
 
             }
 

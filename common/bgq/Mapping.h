@@ -422,7 +422,7 @@ namespace PAMI
       size_t c = addr->u.n_torus.coords[2];
       size_t d = addr->u.n_torus.coords[3];
       size_t e = addr->u.n_torus.coords[4];
-      size_t t = addr->u.n_torus.coords[6];
+      size_t t = addr->u.n_torus.coords[5];
       // Verify that the bgq address is valid.
       // TODO convert to "unlikely if"
       if ((a >= aSize) ||
