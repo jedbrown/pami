@@ -3,19 +3,19 @@
  *  \brief PAMI_Context_post() performance test using comm-threads
  */
 
-/* #define  TRACE_ON */
+#define USE_THREADS
+/* #define NDEBUG */
+/* #define TRACE_ON */
 
 #define NCONTEXTS  64      /* The maximum number of contexts */
 #define ITERATIONS (1<<5)  /* The number of windows exectuted */
-#define WINDOW     16      /* The number of sends/recvs before a "wait" */
+#define WINDOW     (1<<4)  /* The number of sends/recvs before a "wait" */
 #define HEADER     16      /* Size of header */
 #define DATA       0       /* Size of data */
 #define MAX_SIZE   32      /* The number of processes that can participate */
-
 #define DISPATCH   0       /* Dispatch ID */
 
 
-/* #define NDEBUG */
 #define MIN(a,b) ((a<b)?a:b)
 
 #ifdef TRACE_ON
@@ -38,7 +38,7 @@
 #include <assert.h>
 #include <pami.h>
 
-#ifdef __pami_target_bgq__
+#if defined(__pami_target_bgq__) && defined(USE_THREADS)
 extern pami_result_t
 PAMI_Client_add_commthread_context(pami_client_t client, pami_context_t context);
 #endif
@@ -50,12 +50,9 @@ static volatile size_t recv_list[MAX_SIZE] = {0};
 static volatile size_t send_list[MAX_SIZE] = {0};
 static size_t ncontexts = NCONTEXTS;
 static size_t rank=99, size=(size_t)-1;
-#ifndef __pami_target_bgq__
+#if !defined(__pami_target_bgq__) && defined(USE_THREADS)
 static pthread_t threads[NCONTEXTS];
-#endif
 
-
-#ifndef __pami_target_bgq__
 #include <pthread.h>
 static void*
 advance(void* arg)
@@ -162,9 +159,17 @@ master()
     /* Check that everything is done */
     for (dest=1; dest<size; ++dest) {
       TRACE_ERR("           interation=%zu dest=%zu\n", iteration, dest);
-      while(send_list[dest] < WINDOW*(iteration+1));
+      while(send_list[dest] < WINDOW*(iteration+1)) {
+#ifndef USE_THREADS
+        PAMI_Context_advancev(contexts, ncontexts, 1);
+#endif
+      }
       TRACE_ERR("send done  interation=%zu dest=%zu\n", iteration, dest);
-      while(recv_list[dest] < WINDOW*(iteration+1));
+      while(recv_list[dest] < WINDOW*(iteration+1)) {
+#ifndef USE_THREADS
+        PAMI_Context_advancev(contexts, ncontexts, 1);
+#endif
+      }
       TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
     }
   }
@@ -205,9 +210,17 @@ worker()
     TRACE_ERR("Starting completion check  interation=%zu\n", iteration);
     {
       TRACE_ERR("           interation=%zu dest=%zu\n", iteration, dest);
-      while(send_list[dest] < WINDOW*(iteration+1));
+      while(send_list[dest] < WINDOW*(iteration+1)) {
+#ifndef USE_THREADS
+        PAMI_Context_advancev(contexts, ncontexts, 1);
+#endif
+      }
       TRACE_ERR("send done  interation=%zu dest=%zu\n", iteration, dest);
-      while(recv_list[dest] < WINDOW*(iteration+1));
+      while(recv_list[dest] < WINDOW*(iteration+1)) {
+#ifndef USE_THREADS
+        PAMI_Context_advancev(contexts, ncontexts, 1);
+#endif
+      }
       TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
     }
   }
@@ -296,6 +309,7 @@ init()
     assert(rc == PAMI_SUCCESS);
     assert(configuration.value.intval >= (HEADER+DATA));
 
+#ifdef USE_THREADS
 #ifdef __pami_target_bgq__
       rc = PAMI_Client_add_commthread_context(client, contexts[i]);
       assert(rc == PAMI_SUCCESS);
@@ -303,6 +317,7 @@ init()
       int result;
       result = pthread_create(&threads[i], NULL, advance, &contexts[i]);
       assert(result == 0);
+#endif
 #endif
   }
 }
@@ -323,7 +338,7 @@ main(int argc, char **argv)
   else
     ;
 
-#ifdef __pami_target_bgq__
+#if defined(__pami_target_bgq__) || !defined(USE_THREADS)
   pami_result_t rc;
 
   rc = PAMI_Context_destroyv(contexts, ncontexts);
