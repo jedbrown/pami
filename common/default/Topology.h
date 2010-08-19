@@ -1133,7 +1133,7 @@ namespace PAMI {
 		}
 		if (a.global == tb[j][0]) {
 //there:
-			if (tb[j][1] == n) {
+			if (tb[j][1] == (size_t)n) {
 				rl[k++] = r;
 			}
 			++tb[j][1];
