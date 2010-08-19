@@ -3,11 +3,18 @@
  *  \brief PAMI_Context_post() performance test using comm-threads
  */
 
+#ifndef __pami_target_bgp__
+/* There simply aren't enough cores on a BGP node to make the threaded version work */
 #define USE_THREADS
+#endif
 /* #define NDEBUG */
 /* #define TRACE_ON */
 
+#ifndef __pami_target_bgp__
 #define NCONTEXTS  64      /* The maximum number of contexts */
+#else
+#define NCONTEXTS  2       /** \todo Remove this when trac #238 is fixed */
+#endif
 #define ITERATIONS (1<<5)  /* The number of windows exectuted */
 #define WINDOW     (1<<4)  /* The number of sends/recvs before a "wait" */
 #define HEADER     16      /* Size of header */
@@ -142,11 +149,11 @@ check_complete_list(volatile size_t *count, size_t iteration)
 static void
 check_complete(size_t dest, size_t iteration)
 {
-  TRACE_ERR("           interation=%zu dest=%zu\n", iteration, dest);
+  TRACE_ERR("           iteration=%02zu dest=%02zu\n", iteration, dest);
   check_complete_list(&send_list[dest], iteration);
-  TRACE_ERR("send done  interation=%zu dest=%zu\n", iteration, dest);
+  TRACE_ERR("send done  iteration=%02zu dest=%02zu\n", iteration, dest);
   check_complete_list(&recv_list[dest], iteration);
-  TRACE_ERR("recv done  interation=%zu dest=%zu\n", iteration, dest);
+  TRACE_ERR("recv done  iteration=%02zu dest=%02zu\n", iteration, dest);
 }
 
 
@@ -178,14 +185,14 @@ master()
   pami_work_t work_list[WINDOW][size];
 
   for (iteration=0; iteration<ITERATIONS; ++iteration) {
-    TRACE_ERR("starting sends  interation=%zu\n", iteration);
+    TRACE_ERR("starting sends  iteration=%zu\n", iteration);
     for (i=0; i<WINDOW; ++i) {
       for (dest=1; dest<size; ++dest) {
         post_work(dest, iteration, i, &work_list[i][dest]);
       }
     }
 
-    TRACE_ERR("Starting completion check  interation=%zu\n", iteration);
+    TRACE_ERR("Starting completion check  iteration=%zu\n", iteration);
     /* Check that everything is done */
     for (dest=1; dest<size; ++dest) {
       check_complete(dest, iteration);
@@ -211,7 +218,7 @@ worker()
   pami_work_t work_list[WINDOW][1];
 
   for (iteration=0; iteration<ITERATIONS; ++iteration) {
-    TRACE_ERR("starting sends  interation=%zu\n", iteration);
+    TRACE_ERR("starting sends  iteration=%zu\n", iteration);
     for (i=0; i<WINDOW; ++i) {
       {
         post_work(dest, iteration, i, &work_list[i][dest]);
@@ -219,7 +226,7 @@ worker()
     }
 
     /* Check that everything is done */
-    TRACE_ERR("Starting completion check  interation=%zu\n", iteration);
+    TRACE_ERR("Starting completion check  iteration=%zu\n", iteration);
     {
       check_complete(dest, iteration);
     }
@@ -263,10 +270,13 @@ init()
   size_t query;
   query = client_query(client, PAMI_CLIENT_NUM_CONTEXTS).value.intval;
   ncontexts = MIN(ncontexts, query);
+#ifdef USE_THREADS
+  /* We don't care about other cores if we aren't in threaded mode */
   query = client_query(client, PAMI_CLIENT_HWTHREADS_AVAILABLE).value.intval;
   assert(query > 2); /* This requires a send helper and a recv helper */
   /* ncontexts = MIN(ncontexts, query-2); */
   ncontexts = MIN(ncontexts, query);
+#endif
 
   ncontexts &= ~(size_t)1;  /* Make it even */
   assert(ncontexts>1); /* There must be at least 2 */
