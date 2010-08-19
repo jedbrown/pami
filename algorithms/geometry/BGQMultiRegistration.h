@@ -37,10 +37,17 @@ namespace PAMI
 
     //----------------------------------------------------------------------------
     /// Declare our protocol factory templates and their metadata templates
+    /// 
+    /// 'Pure' protocols only work on the specified (Shmem or MU) device.
+    /// 
+    /// 'Composite' protocols combine Shmem/MU devices.
+    /// 
+    /// 'Sub' are pure protocols that work on a subtopology of the geometry, not
+    /// the whole geometry.  They may be used to create composite protocols
     //----------------------------------------------------------------------------
 
     //----------------------------------------------------------------------------
-    // Shmem allsided multisync
+    // 'Pure' Shmem allsided multisync
     //----------------------------------------------------------------------------
     void ShmemMsyncMetaData(pami_metadata_t *m)
     {
@@ -48,15 +55,15 @@ namespace PAMI
       pami_ca_set(&(m->buffer), 0);
       pami_ca_set(&(m->misc), 0);
 //      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
-      strncpy(&m->name[0], "ShmemMultiSyncComposite", 32);
+      strncpy(&m->name[0], "ShmemMultiSync", 32);
     }
 
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite,
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<>,
     ShmemMsyncMetaData,
     CCMI::ConnectionManager::SimpleConnMgr> ShmemMultiSyncFactory;
 
     //----------------------------------------------------------------------------
-    // Shmem allsided multicombine
+    // 'Pure' Shmem allsided multicombine
     //----------------------------------------------------------------------------
     void ShmemMcombMetaData(pami_metadata_t *m)
     {
@@ -64,7 +71,7 @@ namespace PAMI
       pami_ca_set(&(m->buffer), 0);
       pami_ca_set(&(m->misc), 0);
 //      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
-      strncpy(&m->name[0], "ShmemMultiCombComposite", 32);
+      strncpy(&m->name[0], "ShmemMultiComb", 32);
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite,
@@ -72,7 +79,7 @@ namespace PAMI
     CCMI::ConnectionManager::SimpleConnMgr> ShmemMultiCombineFactory;
 
     //----------------------------------------------------------------------------
-    // Shmem allsided multicast
+    // 'Pure' Shmem allsided multicast
     //----------------------------------------------------------------------------
     void ShmemMcastMetaData(pami_metadata_t *m)
     {
@@ -80,7 +87,7 @@ namespace PAMI
       pami_ca_set(&(m->buffer), 0);
       pami_ca_set(&(m->misc), 0);
 //      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
-      strncpy(&m->name[0], "ShmemMultiCastComposite", 32);
+      strncpy(&m->name[0], "ShmemMultiCast", 32);
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite,
@@ -89,7 +96,7 @@ namespace PAMI
 
 
     //----------------------------------------------------------------------------
-    // MU allsided multisync
+    // 'Pure' MU allsided multisync
     //----------------------------------------------------------------------------
     void MUMsyncMetaData(pami_metadata_t *m)
     {
@@ -97,15 +104,15 @@ namespace PAMI
       pami_ca_set(&(m->buffer), 0);
       pami_ca_set(&(m->misc), 0);
 //      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
-      strncpy(&m->name[0], "MUMultiSyncComposite", 32);
+      strncpy(&m->name[0], "MUMultiSync", 32);
     }
 
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite,
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<>,
     MUMsyncMetaData,
     CCMI::ConnectionManager::SimpleConnMgr> MUMultiSyncFactory;
 
     //----------------------------------------------------------------------------
-    // MU allsided multicast
+    // 'Pure' MU allsided multicast
     //----------------------------------------------------------------------------
     void MUMcombMetaData(pami_metadata_t *m)
     {
@@ -113,7 +120,7 @@ namespace PAMI
       pami_ca_set(&(m->buffer), 0);
       pami_ca_set(&(m->misc), 0);
 //      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
-      strncpy(&m->name[0], "MUMultiCombComposite", 32);
+      strncpy(&m->name[0], "MUMultiComb", 32);
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite,
@@ -121,7 +128,7 @@ namespace PAMI
     CCMI::ConnectionManager::SimpleConnMgr> MUMultiCombineFactory;
 
     //----------------------------------------------------------------------------
-    // MU allsided multicast built on active message multicast with an
+    // 'Pure' MU allsided multicast built on active message multicast with an
     // synchronizing multisync
     //
     // The necessary factory is defined here to implement the appropriate
@@ -136,7 +143,7 @@ namespace PAMI
       pami_ca_set(&(m->buffer), 0);
       pami_ca_set(&(m->misc), 0);
 //      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
-      strncpy(&m->name[0], "MUMultiCast2Composite", 32);
+      strncpy(&m->name[0], "MUMultiCast_Msync", 32);
     }
 
     // Define our base factory
@@ -238,6 +245,58 @@ namespace PAMI
     };
 
     //----------------------------------------------------------------------------
+    // 'Sub' Shmem allsided multisync - works on geometry->getLocalTopology()
+    // (LOCAL_TOPOLOGY_INDEX)
+    //----------------------------------------------------------------------------
+    void SubShmemMsyncMetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0], "ShmemMultiSyncSubComposite", 32);
+    }
+
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<LOCAL_TOPOLOGY_INDEX>,
+    SubShmemMsyncMetaData,
+    CCMI::ConnectionManager::SimpleConnMgr > SubShmemMultiSyncFactory;
+
+    //----------------------------------------------------------------------------
+    // 'Sub' MU allsided multisync - works on geometry->getLocalMasterTopology()
+    // (LOCAL_MASTER_TOPOLOGY_INDEX)
+    //----------------------------------------------------------------------------
+    void SubMUMsyncMetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0], "MUMultiSyncSubComposite", 32);
+    }
+
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<LOCAL_MASTER_TOPOLOGY_INDEX>,
+    SubMUMsyncMetaData,
+    CCMI::ConnectionManager::SimpleConnMgr > SubMUMultiSyncFactory;
+
+    //----------------------------------------------------------------------------
+    // 'Composite' Shmem/MU allsided multisync
+    //----------------------------------------------------------------------------
+    void Msync2MetaData(pami_metadata_t *m)
+    {
+//      pami_ca_set(&(m->geometry), 0);
+      pami_ca_set(&(m->buffer), 0);
+      pami_ca_set(&(m->misc), 0);
+//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
+      strncpy(&m->name[0], "MultiSyncComposite", 32);
+    }
+
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSync2Composite,
+    Msync2MetaData,
+    CCMI::ConnectionManager::SimpleConnMgr > MultiSync2Factory;
+
+
+
+    //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
     //----------------------------------------------------------------------------
     template <class T_Geometry, class T_ShmemNativeInterface, class T_MUNativeInterface>
@@ -258,15 +317,21 @@ namespace PAMI
             _sconnmgr(65535),
             _csconnmgr(),
             _shmem_barrier_composite(NULL),
+            _sub_shmem_barrier_composite(NULL),
             _mu_barrier_composite(NULL),
+            _sub_mu_barrier_composite(NULL),
+            _msync_composite(NULL),
             _shmem_ni(shmem_ni),
             _shmem_msync_factory(&_sconnmgr, _shmem_ni),
+            _sub_shmem_msync_factory(&_sconnmgr, _shmem_ni),
             _shmem_mcast_factory(&_sconnmgr, _shmem_ni),
             _shmem_mcomb_factory(&_sconnmgr, _shmem_ni),
             _mu_ni(mu_ni),
             _mu_msync_factory(&_sconnmgr, _mu_ni),
+            _sub_mu_msync_factory(&_sconnmgr, _mu_ni),
             _mu_mcast2_factory(NULL),
-            _mu_mcomb_factory(&_sconnmgr, _mu_ni)
+            _mu_mcomb_factory(&_sconnmgr, _mu_ni),
+            _msync_composite_factory(&_sconnmgr, NULL)
         {
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()\n", this));
           DO_DEBUG((templateName<T_Geometry>()));
@@ -274,15 +339,21 @@ namespace PAMI
           DO_DEBUG((templateName<T_MUNativeInterface>()));
 
           //set the mapid functions
-          if ((__global.useshmem()) && (__global.topology_local.size() > 1))
+          if (__global.useshmem())// && (__global.topology_local.size() > 1))
+          {
             _shmem_msync_factory.setMapIdToGeometry(mapidtogeometry);
+            _sub_shmem_msync_factory.setMapIdToGeometry(mapidtogeometry);
+          }
 
           if (__global.useMU())
-            {
-              _mu_msync_factory.setMapIdToGeometry(mapidtogeometry);
-              // Can't be ctor'd unless the NI was created
-              _mu_mcast2_factory = new (_mu_mcast2_factory_storage) MUMultiCast2Factory(&_csconnmgr, _mu_ni);
-            }
+          {
+            _mu_msync_factory.setMapIdToGeometry(mapidtogeometry);
+            _sub_mu_msync_factory.setMapIdToGeometry(mapidtogeometry);
+            _msync_composite_factory.setMapIdToGeometry(mapidtogeometry);
+
+            // Can't be ctor'd unless the NI was created
+            _mu_mcast2_factory = new (_mu_mcast2_factory_storage) MUMultiCast2Factory(&_csconnmgr, _mu_ni);
+          }
 
         }
 
@@ -292,7 +363,9 @@ namespace PAMI
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() phase %d, context_id %zu, geometry %p, msync %p, mcast %p, mcomb %p\n", this, phase, context_id, geometry, &_shmem_msync_factory, &_shmem_mcast_factory, &_shmem_mcomb_factory));
           pami_xfer_t xfer = {0};
           PAMI::Topology * topology = (PAMI::Topology*) geometry->getTopology(0);
-          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology: size() %zu, isLocal() %u, isGlobal #u\n", this, topology->size(),  topology->isLocalToMe()));//,  topology->isGlobal()));
+          PAMI::Topology * local_sub_topology = (PAMI::Topology*) geometry->getLocalTopology();
+          PAMI::Topology * master_sub_topology = (PAMI::Topology*) geometry->getLocalMasterTopology();
+          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology: size() %zu, isLocal() %u/%zu, isGlobal #u/%zu\n", this, topology->size(),  topology->isLocalToMe(),local_sub_topology->size(), master_sub_topology->size()));//,  topology->isGlobal()));
           DO_DEBUG(for(unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u\n", this, i, topology->index2Rank(i)););
 
 #ifdef ENABLE_MU_CLASSROUTES
@@ -300,18 +373,21 @@ if (phase == 0) {
 #endif
 
               if ((__global.useshmem()) && (__global.topology_local.size() > 1)
-                  && (__global.topology_local.size() == topology->size()) ) /// \todo shmem doesn't seem to work on subnode topologies?
+                  && (__global.topology_local.size() == local_sub_topology->size()) ) /// \todo shmem doesn't seem to work on subnode topologies?
                 {
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Shmem local barrier\n", this));
-                  _shmem_barrier_composite = _shmem_msync_factory.generate(geometry, &xfer);
 
-                  geometry->setKey(PAMI::Geometry::PAMI_GKEY_LOCALBARRIERCOMPOSITE,
-                                   (void*)_shmem_barrier_composite);
+                  _sub_shmem_barrier_composite = _sub_shmem_msync_factory.generate(geometry, &xfer);
+                  geometry->setKey(_context_id, PAMI::Geometry::PAMI_CKEY_LOCALBARRIERCOMPOSITE,
+                                   (void*)_sub_shmem_barrier_composite);
+
 
                   // If the geometry is all local nodes, we can use pure shmem composites.
                   if (topology->isLocalToMe())
                     {
                       TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Local Shmem factories\n", this));
+                      _shmem_barrier_composite = _shmem_msync_factory.generate(geometry, &xfer);
+
 
                       // Add Barriers
                       geometry->addCollective(PAMI_XFER_BARRIER, &_shmem_msync_factory, _context_id);
@@ -330,77 +406,78 @@ if (phase == 0) {
 
 #endif
               // If we have > 1 node, check MU
-              if (__global.useMU() && !topology->isLocalToMe())
+              if (__global.useMU())
                 {
                   /// Remember, this is 'pure' MU - we won't do any shmem - so only one process per node
                   /// on the same T dimension.
 
-                  /// Get a Nth global topology based on my local T dim, this will slice the
-                  /// subgeometry across nodes
-                  PAMI::Topology globalTopology;
-                  int t = (int) __global.mapping.t();
-                  topology->subTopologyNthGlobal(&globalTopology, t);
-
                   /// A simple check (of sizes) to see if this subgeometry is all global,
                   /// then the geometry topology is usable by MU.
-                  //
-                  // (subTopologyNthGlobal won't truly slice by T, it will use a relative 
-                  // subtask number.  However, we only get class route ID's on truly
-                  // rectangular subtopologies. So this slice + a class route id check (later)
-                  // is good enough.)
-                  bool useMu = topology->size() == globalTopology.size()? true : false;
-                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() useMu = %u (size %zu/%zu)\n", this, useMu, topology->size(),globalTopology.size()));
+                  bool usePureMu = topology->size() == master_sub_topology->size()? true : false;
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() usePureMu = %u (size %zu/%zu)\n", this, usePureMu, topology->size(),master_sub_topology->size()));
 
-//                for(unsigned i = 0; useMu && (i < topology->size()); ++i)
-//                  if(!(globalTopology.isRankMember(topology->index2Rank(i))))
-//                    useMu = false;
-
-                  // If we can use pure MU composites, add them
-                  if (useMu)
-                    {
 #ifdef ENABLE_MU_CLASSROUTES
       void *val;
                   val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() PAMI_GKEY_MSYNC_CLASSROUTEID %p\n", this, val));
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
           // Only register protocols if we got a classroute
 #endif
+                    _sub_mu_barrier_composite = _sub_mu_msync_factory.generate(geometry, &xfer);
+
+                    geometry->setKey(_context_id, PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE,
+                                       (void*)_sub_mu_barrier_composite);
+
+                    // If we can use pure MU composites, add them
+                    if (usePureMu  && !topology->isLocalToMe())
+                      {
                       TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU barrier\n", this));
                       _mu_barrier_composite = _mu_msync_factory.generate(geometry, &xfer);
 
-                      geometry->setKey(PAMI::Geometry::PAMI_GKEY_GLOBALBARRIERCOMPOSITE,
-                                       (void*)_mu_barrier_composite);
 
                       // Add Barriers
                       geometry->addCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
+                      }
 #ifdef ENABLE_MU_CLASSROUTES
                     }
                   val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() PAMI_GKEY_MCAST_CLASSROUTEID %p\n", this, val));
 
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
           // Only register protocols if we got a classroute
 #endif
 
+                    // If we can use pure MU composites, add them
+                    if (usePureMu && !topology->isLocalToMe())
+                      {
                       TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU bcast\n", this));
                       // Add Broadcasts
                       geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory, _context_id);
+                      }
 #ifdef ENABLE_MU_CLASSROUTES
                     }
                   val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() PAMI_GKEY_MCOMB_CLASSROUTEID %p\n", this, val));
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
 #endif
-
+                    // If we can use pure MU composites, add them
+                    if (usePureMu && !topology->isLocalToMe())
+                    {
                     // Direct MU allreduce only on one context per node (lowest T, context 0)
                     if((__global.mapping.isLowestT()) && (_context_id == 0))
                       // Add Allreduces
                       TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU allreduce\n", this));
                       geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
+                    }
 #ifdef ENABLE_MU_CLASSROUTES
                     }
 #endif
-                    }
+                  _msync_composite = _msync_composite_factory.generate(geometry, &xfer);
+                  // Add Barriers
+                  geometry->addCollective(PAMI_XFER_BARRIER, &_msync_composite_factory, _context_id);
 
             }
 #ifdef ENABLE_MU_CLASSROUTES
@@ -436,7 +513,10 @@ if (phase == 0) {
 
         // Barrier Storage
         CCMI::Executor::Composite                      *_shmem_barrier_composite;
+        CCMI::Executor::Composite                      *_sub_shmem_barrier_composite;
         CCMI::Executor::Composite                      *_mu_barrier_composite;
+        CCMI::Executor::Composite                      *_sub_mu_barrier_composite;
+        CCMI::Executor::Composite                      *_msync_composite;
 
         //* SHMEM interfaces:
         // Native Interface
@@ -444,6 +524,7 @@ if (phase == 0) {
 
         // CCMI Barrier Interface
         ShmemMultiSyncFactory                           _shmem_msync_factory;
+        SubShmemMultiSyncFactory                        _sub_shmem_msync_factory;
 
         // CCMI Broadcast Interfaces
         ShmemMultiCastFactory                           _shmem_mcast_factory;
@@ -457,6 +538,7 @@ if (phase == 0) {
 
         // CCMI Barrier Interface
         MUMultiSyncFactory                              _mu_msync_factory;
+        SubMUMultiSyncFactory                           _sub_mu_msync_factory;
 
         // CCMI Broadcast Interfaces
         MUMultiCast2Factory                            *_mu_mcast2_factory;
@@ -464,6 +546,9 @@ if (phase == 0) {
 
         // CCMI Allreduce Interface
         MUMultiCombineFactory                           _mu_mcomb_factory;
+
+        // CCMI Barrier Interface
+        MultiSync2Factory                               _msync_composite_factory;
     };
 
 

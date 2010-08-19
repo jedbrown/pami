@@ -34,8 +34,6 @@ namespace PAMI
     typedef enum
     {
       PAMI_GKEY_COLLFACTORY     = 0,
-      PAMI_GKEY_LOCALBARRIERCOMPOSITE,  // local sub-topologies only in the geometry
-      PAMI_GKEY_GLOBALBARRIERCOMPOSITE, // global sub-topologes only in the geometry
       PAMI_GKEY_UEBARRIERCOMPOSITE1,    // CCMI ue barrier (PAMI_CKEY_BARRIERCOMPOSITE1)
       PAMI_GKEY_MCAST_CLASSROUTEID,     // Multicast class route id
       PAMI_GKEY_MCOMB_CLASSROUTEID,     // Multicombine class route id
@@ -48,6 +46,8 @@ namespace PAMI
       PAMI_CKEY_COLLFACTORY     = 0,
       PAMI_CKEY_BARRIERCOMPOSITE0,      // ?
       PAMI_CKEY_BARRIERCOMPOSITE1,      // CCMI barrier cache
+      PAMI_CKEY_LOCALBARRIERCOMPOSITE,  // local sub-topologies only in the geometry
+      PAMI_CKEY_GLOBALBARRIERCOMPOSITE, // global sub-topologes only in the geometry
     } ckeys_t;                          // context keystore keys
 
     template <class T_Geometry>

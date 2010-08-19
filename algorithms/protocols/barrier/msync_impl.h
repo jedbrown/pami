@@ -31,7 +31,7 @@ namespace CCMI
         strcpy(&m->name[0],"CCMIMsyncBarrier");
       }
 
-      typedef AllSidedCollectiveProtocolFactoryT<MultiSyncComposite,
+      typedef AllSidedCollectiveProtocolFactoryT<MultiSyncComposite<>,
                                                  msync_barrier_md,
                                                  ConnectionManager::SimpleConnMgr> MultiSyncFactory;
     };

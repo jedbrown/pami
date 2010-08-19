@@ -91,10 +91,14 @@ namespace PAMI
             _global_dev(gdev),
             _allocator(allocator),
             _binomial_barrier_composite(),
+            _local_binomial_barrier_composite(),
+            _global_binomial_barrier_composite(),
             _connmgr(65535),
             _rbconnmgr(),
             _csconnmgr(),
             _binomial_barrier_factory(),
+            _local_binomial_barrier_factory(),
+            _global_binomial_barrier_factory(),
             _binomial_broadcast_factory(),
             _ring_broadcast_factory(),
             _asrb_binomial_broadcast_factory(),
@@ -161,10 +165,12 @@ namespace PAMI
               {
     TRACE_INIT((stderr, "<%p>CCMIRegistration::analyze() add\n",this));
     _binomial_barrier_composite = _binomial_barrier_factory->generate(geometry, &xfer);
+    _local_binomial_barrier_composite = _local_binomial_barrier_factory->generate(geometry, &xfer);
+    _global_binomial_barrier_composite = _global_binomial_barrier_factory->generate(geometry, &xfer);
 
-              geometry->setKey(context_id,
-                               PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1,
-                               (void*)_binomial_barrier_composite);
+//            geometry->setKey(context_id,
+//                             PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1,
+//                             (void*)_binomial_barrier_composite);
 
               if(context_id == 0) /// \todo multi-context support
               {
@@ -261,6 +267,14 @@ namespace PAMI
             // ----------------------------------------------------
 
             // ----------------------------------------------------
+            // Setup and Construct the sub-geometry binomial barrier factories from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBarrier::LocalBinomialBarrierFactory>(ni_am, device,_local_binomial_barrier_factory);
+            new ((void*)_local_binomial_barrier_factory) CCMI::Adaptor::P2PBarrier::LocalBinomialBarrierFactory(&_sconnmgr, ni_am, CCMI::Adaptor::P2PBarrier::LocalBinomialBarrier::cb_head);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBarrier::GlobalBinomialBarrierFactory>(ni_am, device,_global_binomial_barrier_factory);
+            new ((void*)_global_binomial_barrier_factory) CCMI::Adaptor::P2PBarrier::GlobalBinomialBarrierFactory(&_sconnmgr, ni_am, CCMI::Adaptor::P2PBarrier::GlobalBinomialBarrier::cb_head);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
             // Setup and Construct a binomial broadcast factory from allsided ni and p2p protocol
             setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory>(ni_as, device,  _binomial_broadcast_factory);
             new ((void*)_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory(&_connmgr, ni_as);
@@ -310,6 +324,8 @@ namespace PAMI
 
             //set the mapid functions
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
+            _local_binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
+            _global_binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
             _asrb_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
@@ -380,6 +396,37 @@ namespace PAMI
                                                                 ni_am,
                                                                 CCMI::Adaptor::P2PBarrier::BinomialBarrier::cb_head);
 
+            // ----------------------------------------------------
+            // Setup and Construct the sub-geometry binomial barrier factories from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PBarrier::LocalBinomialBarrierFactory>(ni_am,
+                                                                            device1,
+                                                                            device2,
+                                                                            _local_binomial_barrier_factory);
+            new ((void*)_local_binomial_barrier_factory)
+              CCMI::Adaptor::P2PBarrier::LocalBinomialBarrierFactory(&_sconnmgr,
+                                                                ni_am,
+                                                                CCMI::Adaptor::P2PBarrier::LocalBinomialBarrier::cb_head);
+
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PBarrier::GlobalBinomialBarrierFactory>(ni_am,
+                                                                            device1,
+                                                                            device2,
+                                                                            _global_binomial_barrier_factory);
+            new ((void*)_global_binomial_barrier_factory)
+              CCMI::Adaptor::P2PBarrier::GlobalBinomialBarrierFactory(&_sconnmgr,
+                                                                ni_am,
+                                                                CCMI::Adaptor::P2PBarrier::GlobalBinomialBarrier::cb_head);
+
+            // ----------------------------------------------------
 
             // Setup Broadcasts
 #define SETUPFACTORY(NI, NI_VAR, FACT, FACT_VAR, CONNMGR) setupFactory<NI, \
@@ -465,6 +512,8 @@ namespace PAMI
 
             //set the mapid functions
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
+            _local_binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
+            _global_binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
             _asrb_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
@@ -488,6 +537,8 @@ namespace PAMI
 
           // Barrier Storage and Native Interface
           CCMI::Executor::Composite                                   *_binomial_barrier_composite;
+          CCMI::Executor::Composite                                   *_local_binomial_barrier_composite;
+          CCMI::Executor::Composite                                   *_global_binomial_barrier_composite;
 
           // CCMI Connection Manager Class
           CCMI::ConnectionManager::ColorGeometryConnMgr                _connmgr;
@@ -497,6 +548,8 @@ namespace PAMI
 
           // CCMI Barrier Interface
           CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory               *_binomial_barrier_factory;
+          CCMI::Adaptor::P2PBarrier::LocalBinomialBarrierFactory          *_local_binomial_barrier_factory;
+          CCMI::Adaptor::P2PBarrier::GlobalBinomialBarrierFactory         *_global_binomial_barrier_factory;
 
           // CCMI Broadcasts
           CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory           *_binomial_broadcast_factory;

@@ -15,6 +15,7 @@ namespace CCMI
     namespace Barrier
     {
 
+      template <int T_Geometry_Index=0>
       class MultiSyncComposite : public CCMI::Executor::Composite
       {
         protected:
@@ -39,7 +40,7 @@ namespace CCMI
             //_minfo.cb_done.clientdata = _clientdata;
             _minfo.connection_id      = 0;
             _minfo.roles              = -1U;
-            _minfo.participants       = _geometry->getTopology(0);
+            _minfo.participants       = _geometry->getTopology(T_Geometry_Index);
 
           }
 
@@ -172,6 +173,121 @@ namespace CCMI
           pami_multisync_t                    _minfo_l1;
           pami_multisync_t                   *_active_minfo;
       };
+
+
+      class MultiSync2Composite : public CCMI::Executor::Composite
+      {
+
+          static void local_done_fn(pami_context_t  context,
+                                    void           *cookie,
+                                    pami_result_t   result )
+          {
+            TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite::local_done_fn()\n", this));
+            MultiSync2Composite *m = (MultiSync2Composite*) cookie;
+            m->_global_barrier->start();
+          }
+
+          static void global_done_fn(pami_context_t  context,
+                                     void           *cookie,
+                                     pami_result_t   result )
+          {
+            TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite::global_done_fn()\n", this));
+            MultiSync2Composite *m = (MultiSync2Composite*) cookie;
+            // next local barrier done is the user's done
+            m->_local_barrier->setDoneCallback(m->_cb_done.function,m->_cb_done.clientdata);
+            m->_local_barrier->start();
+          }
+
+        public:
+          MultiSync2Composite (Interfaces::NativeInterface                         *mInterface,
+                                     ConnectionManager::SimpleConnMgr              *cmgr,
+                                     pami_geometry_t                                g,
+                                     void                                          *cmd,
+                                     pami_event_function                            fn,
+                                     void                                          *cookie) :
+              Composite(),
+              _local_barrier(NULL),
+              _global_barrier(NULL),
+              _active_barrier(NULL),
+              _final_barrier(NULL),
+              _geometry((PAMI_GEOMETRY_CLASS*)g)
+          {
+            _cb_done.function   = fn;
+            _cb_done.clientdata = cookie;
+
+            TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite (_cb_done.function %p, _cb_done.clientdata %p)\n", this,_cb_done.function,_cb_done.clientdata));
+            PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getLocalMasterTopology();
+            PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getLocalTopology();
+
+            _local_barrier  = (CCMI::Executor::Composite *)_geometry->getKey((size_t)0, /// \todo does NOT support multicontext
+                                                                            PAMI::Geometry::PAMI_CKEY_LOCALBARRIERCOMPOSITE);
+            _global_barrier = (CCMI::Executor::Composite *)_geometry->getKey((size_t)0, /// \todo does NOT support multicontext
+                                                                            PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE);
+
+            // If the global "master" topology has only one rank, the local barrier will
+            // suffice to implement the barrier
+            if (t_master->size() == 1 && t_local->size() != 1)
+            {
+              _final_barrier = _active_barrier  =  _local_barrier;
+              return;
+            }
+
+            // If we have more than one master, but we are the only local process
+            // we are guaranteed to be a "local master", so we will just
+            // issue the collective on the global device
+
+            if (t_master->size() > 1 && t_local->size() == 1)
+            {
+              _final_barrier = _active_barrier  =  _global_barrier;
+              return;
+            }
+
+            // We have a mix of both local nodes and master nodes
+            // We need to determine if we are the master.
+            // If this node is the master, then it participates in
+            // the standard local, global, local flow.  If the node
+            // is not the master, it participates in only the
+            // local, local flow.
+
+            // _final_barrier will not be used - _global_done_fn will set
+            // the final cb_done for the last local barrier.
+
+            if (t_master->size() > 1 && t_local->size() > 1)
+            {
+              if (_geometry->isLocalMasterParticipant())
+              {
+                _local_barrier->setDoneCallback(local_done_fn, this);
+                _global_barrier->setDoneCallback(global_done_fn, this);
+              }
+              else
+              {
+                _local_barrier->setDoneCallback(global_done_fn, this);
+              }
+
+              _active_barrier               =  _local_barrier;
+              return;
+            }
+
+            PAMI_abort();
+
+          }
+          virtual void start()
+          {
+            TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite::start() _cb_done.function %p, _cb_done.clientdata %p\n", this,_cb_done.function,_cb_done.clientdata));
+
+            if(_final_barrier) _final_barrier->setDoneCallback(_cb_done.function, _cb_done.clientdata);
+
+            return _active_barrier->start();
+          }
+        protected:
+          CCMI::Executor::Composite          *_local_barrier;  // local shmem barrier
+          CCMI::Executor::Composite          *_global_barrier; // glocal barrier
+          CCMI::Executor::Composite          *_active_barrier; // active barrier to start
+          CCMI::Executor::Composite          *_final_barrier;  // barrier which will call final cb_done
+          PAMI_GEOMETRY_CLASS                *_geometry;
+          pami_callback_t                     _cb_done;   /**< User's completion callback */
+      };
+
     };
   };
 };

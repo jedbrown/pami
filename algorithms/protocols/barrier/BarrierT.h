@@ -30,7 +30,7 @@ namespace CCMI
       // Barrier Factory for generate routine
       // generate
       //
-      template <class T, MetaDataFn get_metadata, class C>
+      template <class T, MetaDataFn get_metadata, class C, PAMI::Geometry::ckeys_t T_Key=PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1>
       class BarrierFactoryT : public CollectiveProtocolFactoryT<T, get_metadata, C>
       {
         public:
@@ -49,10 +49,15 @@ namespace CCMI
             TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
             PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
             Executor::Composite *c = (Executor::Composite *) g->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                       PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1);
+                                                                       T_Key);
 
             if (!c)
+              {
               c = CollectiveProtocolFactoryT<T, get_metadata, C>::generate(geometry, cmd);
+              g->setKey((size_t)0, /// \todo does NOT support multicontext
+                        T_Key,
+                        (void*)c);
+              }
 
             return c;
           }
@@ -61,7 +66,7 @@ namespace CCMI
       ///
       /// \brief Binomial barrier
       ///
-      template <class T_Schedule, AnalyzeFn afn>
+      template <class T_Schedule, AnalyzeFn afn, int T_Geometry_Index=0, PAMI::Geometry::ckeys_t T_Key=PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1>
       class BarrierT : public CCMI::Executor::Composite
       {
           ///
@@ -91,7 +96,7 @@ namespace CCMI
                           ((PAMI_GEOMETRY_CLASS *)geometry)->comm(),
                           0,
                           mInterface),
-              _myschedule (__global.mapping.task(), (PAMI::Topology *)((PAMI_GEOMETRY_CLASS *)geometry)->getTopology(0))
+              _myschedule (__global.mapping.task(), (PAMI::Topology *)((PAMI_GEOMETRY_CLASS *)geometry)->getTopology(T_Geometry_Index))
           {
             TRACE_INIT((stderr, "<%p>CCMI::Adaptors::Barrier::BarrierT::ctor()\n",
                         this));//, geometry->comm()));
@@ -156,7 +161,7 @@ namespace CCMI
 
             PAMI_assert(geometry != NULL);
             BarrierT *composite = (BarrierT*) geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1);
+                                                                T_Key);
             CCMI_assert (composite != NULL);
             TRACE_INIT((stderr, "<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",
                         factory, cdata->_comm, composite));

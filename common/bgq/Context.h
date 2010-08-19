@@ -394,10 +394,6 @@ namespace PAMI
        TRACE_ERR((stderr,  "<%p>Context::Context() Register collectives(%p,%p,%p,%p,%zu,%zu\n",this, _shmem_native_interface, _global_mu_ni, client, this, id, clientid));
        // The multi registration will use shmem/mu if they are ctor'd above.
 
-//       bool muFlag = __global.useMU(false); /// \todo temp function while MU2 isn't complete
-
-       /// \todo while MU2 isn't complete, hack in shmem ni
-
        _multi_registration       =  new (_multi_registration)
        CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >(_shmem_native_interface, _global_mu_ni, client, (pami_context_t)this, id, clientid);
 
@@ -407,8 +403,6 @@ namespace PAMI
        // We know that _world_geometry is always "optimized" at create time.
        _multi_registration->analyze(_contextid, _world_geometry, 1);
 #endif
-
-//       __global.useMU(muFlag); /// \todo temp function while MU2 isn't complete
 
        _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid,_devices->_shmem[_contextid],_devices->_mu[_contextid],_protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size());
        _ccmi_registration->analyze(_contextid, _world_geometry, 0);
@@ -879,12 +873,7 @@ namespace PAMI
         pami_result_t result = PAMI_NERROR;
         result = _ccmi_registration->analyze(context_id,geometry, phase);
 
-        bool muFlag = __global.useMU(false); /// \todo temp function while MU2 isn't complete
-
         result = _multi_registration->analyze(context_id,geometry, phase);
-
-        __global.useMU(muFlag); /// \todo temp function while MU2 isn't complete
-
 
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if(_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal()) _pgas_shmem_registration->analyze(_contextid, geometry, phase);

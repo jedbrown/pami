@@ -68,7 +68,7 @@ int main (int argc, char ** argv)
     return 1;
 
   if (!task_id)
-    fprintf(stderr, "Barrier Done(%s)\n", always_works_md[0].name);
+    fprintf(stderr, "Barrier Done (%s)\n", always_works_md[0].name);
 
   for (algo = 0; algo < num_algorithm[0]; algo++)
     {
@@ -77,7 +77,7 @@ int main (int argc, char ** argv)
 
       if (!task_id)
         {
-          fprintf(stderr, "Test Barrier(%s) Correctness (%d of %zd algorithms)\n",
+          fprintf(stderr, "Test Barrier protocol(%s) Correctness (%d of %zd algorithms)\n",
                   always_works_md[algo].name, algo + 1, num_algorithm[0]);
           ti = timer();
           blocking_coll(context, &barrier, &poll_flag);
@@ -109,7 +109,7 @@ int main (int argc, char ** argv)
       usec = tf - ti;
 
       if (!task_id)
-        fprintf(stderr, "Test Barrier(%s) Performance barrier: time=%f usec\n",
+        fprintf(stderr, "Test Barrier protocol(%s) Performance: time=%f usec\n",
                 always_works_md[algo].name, usec / (double)niter);
     }
 

@@ -37,6 +37,9 @@
 #include "components/memory/MemoryAllocator.h"
 typedef PAMI::Counter::GccProcCounter GeomCompCtr;
 
+#define LOCAL_MASTER_TOPOLOGY_INDEX -1  // index into _topos[] for master/global sub-topology
+#define LOCAL_TOPOLOGY_INDEX        -2  // index into _topos[] for local sub-topology
+
 namespace PAMI
 {
   namespace Geometry
@@ -90,7 +93,8 @@ namespace PAMI
           _rank = mapping->task();
           _numtopos =  numranges + 1;
 
-          _topos = new PAMI::Topology[_numtopos];
+          _topos = new PAMI::Topology[_numtopos + 2]; // storing numtopos + local + global
+          _topos = &_topos[2]; // skip local & global storage
 
           for (i = 0; i < numranges; i++)
             nranks += (rangelist[i].hi - rangelist[i].lo + 1);
@@ -123,6 +127,23 @@ namespace PAMI
                       if ((rangelist[i-1].lo + j) == (pami_task_t) _rank)
                         _mytopo = i;
                     }
+              }
+
+          // build local and global topos 
+          _global_all_topo   = &_topos[0];
+          _local_master_topo = &_topos[-1];
+          _local_topo        = &_topos[-2];
+          _global_all_topo->subTopologyLocalMaster(_local_master_topo);
+          _global_all_topo->subTopologyLocalToMe(_local_topo);
+          // Check to see if we are are a participant on the tree/cau network
+          pami_task_t    *rl        = NULL;
+          uint            num_tasks = _local_master_topo->size();
+          _local_master_topo->rankList(&rl);
+          for(uint k=0; k<num_tasks; k++)
+            if(rl[k] == _rank)
+              {
+              _participant = true;
+              break;
               }
 
           PAMI::geometry_map[_commid]=this;
@@ -162,12 +183,28 @@ namespace PAMI
           _rank = mapping->task();
           _numtopos =  1;
 
-          _topos = new PAMI::Topology[_numtopos];
+          _topos = new PAMI::Topology[_numtopos + 2]; // storing numtopos + local + global
+          _topos = &_topos[2]; // skip local & global storage
 
           // this creates the topology including all subtopologies
           new (&_topos[0]) PAMI::Topology(topology);
 
-          // don't know yet what the individual subtopologies would be...
+          // build local and global topos 
+          _global_all_topo   = &_topos[0];
+          _local_master_topo = &_topos[-1];
+          _local_topo        = &_topos[-2];
+          _global_all_topo->subTopologyLocalMaster(_local_master_topo);
+          _global_all_topo->subTopologyLocalToMe(_local_topo);
+          // Check to see if we are are a participant on the tree/cau network
+          pami_task_t    *rl        = NULL;
+          uint            num_tasks = _local_master_topo->size();
+          _local_master_topo->rankList(&rl);
+          for(uint k=0; k<num_tasks; k++)
+            if(rl[k] == _rank)
+              {
+              _participant = true;
+              break;
+              }
 
           PAMI::geometry_map[_commid]=this;
           updateCachedGeometry(this, _commid);
@@ -246,7 +283,7 @@ namespace PAMI
 
       inline bool isLocalMasterParticipant_impl()
         {
-          PAMI_abort();
+          return _participant;
         }
 
       inline pami_topology_t* getTopology_impl(int topo_num)
@@ -256,12 +293,12 @@ namespace PAMI
 
       inline pami_topology_t* getLocalTopology_impl()
         {
-          PAMI_abort();
+          return (pami_topology_t*)_local_topo;
         }
 
       inline pami_topology_t* getLocalMasterTopology_impl()
         {
-          PAMI_abort();
+          return (pami_topology_t*)_local_master_topo;
         }
 
       inline int myTopologyId_impl()
@@ -749,6 +786,10 @@ namespace PAMI
       pami_callback_t                               _cb_done;
       pami_result_t                                 _cb_result;
       GeomCompCtr                                   _comp;
+      bool                                          _participant;
+      PAMI::Topology                               *_global_all_topo;
+      PAMI::Topology                               *_local_master_topo;
+      PAMI::Topology                               *_local_topo;
 
     }; // class Geometry
   };  // namespace Geometry
