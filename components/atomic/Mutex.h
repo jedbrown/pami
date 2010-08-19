@@ -9,7 +9,7 @@
 #ifndef __components_atomic_Mutex_h__
 #define __components_atomic_Mutex_h__
 
-#include "SysDep.h"
+#include "components/memory/MemoryManager.h"
 
 ///
 ///  \file components/atomic/Mutex.h

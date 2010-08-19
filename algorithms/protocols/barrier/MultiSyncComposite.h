@@ -25,7 +25,7 @@ namespace CCMI
 
         public:
           MultiSyncComposite (Interfaces::NativeInterface          * mInterface,
-                              ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS>     * cmgr,
+                              ConnectionManager::SimpleConnMgr     * cmgr,
                               pami_geometry_t                         g,
                               void                                 * cmd,
                               pami_event_function                     fn,
@@ -72,12 +72,12 @@ namespace CCMI
           }
 
         public:
-          MultiSyncComposite2Device (Interfaces::NativeInterface                         *mInterface,
-                                     ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> *cmgr,
-                                     pami_geometry_t                                      g,
-                                     void                                                *cmd,
-                                     pami_event_function                                  fn,
-                                     void                                                *cookie) :
+          MultiSyncComposite2Device (Interfaces::NativeInterface      *mInterface,
+                                     ConnectionManager::SimpleConnMgr *cmgr,
+                                     pami_geometry_t                   g,
+                                     void                             *cmd,
+                                     pami_event_function               fn,
+                                     void                             *cookie) :
               Composite(),
               // This is a small hack to get around making a whole new set of factories
               // and classes for a 2 device NI.  We just treat the first parameter like a

@@ -32,8 +32,8 @@ namespace CCMI
       typedef CCMI::Adaptor::All2AllFactoryT <All2AllProtocol, getAlltoallMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllFactory;
 
       // old CCMI
-      typedef CCMI::Adaptor::A2AProtocol <PAMI_COLL_M2M_CLASS, PAMI_SYSDEP_CLASS, size_t> AlltoallProtocol;
-      typedef CCMI::Adaptor::AlltoallFactory <PAMI_COLL_M2M_CLASS, PAMI_SYSDEP_CLASS, size_t> AlltoallFactory;
+      typedef CCMI::Adaptor::A2AProtocol <PAMI_COLL_M2M_CLASS, size_t> AlltoallProtocol;
+      typedef CCMI::Adaptor::AlltoallFactory <PAMI_COLL_M2M_CLASS, size_t> AlltoallFactory;
 
     };
   };

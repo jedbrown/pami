@@ -6,6 +6,8 @@
 #define __common_PipeWorkQueueInterface_h__
 
 #include <pami.h>
+#include "components/memory/MemoryManager.h"
+
 
 namespace PAMI
 {
@@ -41,8 +43,8 @@ namespace PAMI
             /// Creates a circular buffer of specified size in shared memory.
             /// Buffer size must be power-of-two.
             ///
-            /// \param[in] mm	System dependent methods
-            /// \param[in] bufsize	Size of buffer to allocate
+            /// \param[in] mm System dependent methods
+            /// \param[in] bufsize  Size of buffer to allocate
             ///
             inline void configure(PAMI::Memory::MemoryManager *mm, size_t bufsize);
 
@@ -56,8 +58,8 @@ namespace PAMI
             /// for desired use - i.e. all in shared memory if to be used beyond this process.
             ///
             /// \param[in] mm   System dependent methods
-            /// \param[in] buffer	Buffer to use
-            /// \param[in] bufsize	Size of buffer
+            /// \param[in] buffer Buffer to use
+            /// \param[in] bufsize  Size of buffer
             ///
             inline void configure(PAMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize);
 
@@ -70,9 +72,9 @@ namespace PAMI
             /// for desired use - i.e. all in shared memory if to be used beyond this process.
             ///
             /// \param[in] mm   System dependent methods
-            /// \param[in] buffer	Buffer to use
-            /// \param[in] bufsize	Size of buffer
-            /// \param[in] bufinit	Amount of data initially in buffer
+            /// \param[in] buffer Buffer to use
+            /// \param[in] bufsize  Size of buffer
+            /// \param[in] bufinit  Amount of data initially in buffer
             ///
             inline void configure(PAMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize, size_t bufinit);
 
@@ -149,13 +151,13 @@ namespace PAMI
 
             /// \brief register a wakeup for the consumer side of the PipeWorkQueue
             ///
-            /// \param[in] vec	Opaque wakeup vector parameter
+            /// \param[in] vec  Opaque wakeup vector parameter
             ///
             inline void setConsumerWakeup(void *vec);
 
             /// \brief register a wakeup for the producer side of the PipeWorkQueue
             ///
-            /// \param[in] vec	Opaque wakeup vector parameter
+            /// \param[in] vec  Opaque wakeup vector parameter
             ///
             inline void setProducerWakeup(void *vec);
 
@@ -171,23 +173,23 @@ namespace PAMI
             /// either side (or potentially third-parties) may use these
             /// methods as desired to set/get the info.
             ///
-            /// \param[in] word1	First piece of info
-            /// \param[in] word2	Second piece of info
+            /// \param[in] word1  First piece of info
+            /// \param[in] word2  Second piece of info
             inline void setConsumerUserInfo(void *word1, void *word2);
 
             /// \brief register user-defined info for producer
-            /// \param[in] word1	First piece of info
-            /// \param[in] word2	Second piece of info
+            /// \param[in] word1  First piece of info
+            /// \param[in] word2  Second piece of info
             inline void setProducerUserInfo(void *word1, void *word2);
 
             /// \brief get user-defined info for consumer
-            /// \param[in] word1	First piece of info
-            /// \param[in] word2	Second piece of info
+            /// \param[in] word1  First piece of info
+            /// \param[in] word2  Second piece of info
             inline void getConsumerUserInfo(void **word1, void **word2);
 
             /// \brief register user-defined info for producer
-            /// \param[in] word1	First piece of info
-            /// \param[in] word2	Second piece of info
+            /// \param[in] word1  First piece of info
+            /// \param[in] word2  Second piece of info
             inline void getProducerUserInfo(void **word1, void **word2);
 
             ///
@@ -230,43 +232,43 @@ namespace PAMI
 
             /// \brief raw accessor for total number of bytes produced since reset()
             ///
-            /// \return	number of bytes produced
+            /// \return number of bytes produced
             ///
             inline size_t getBytesProduced();
 
             /// \brief raw accessor for total number of bytes consumed since reset()
             ///
-            /// \return	number of bytes consumed
+            /// \return number of bytes consumed
             ///
             inline size_t getBytesConsumed();
 
             /// \brief current position for producing into buffer
             ///
-            /// \return	location in buffer to produce into
+            /// \return location in buffer to produce into
             ///
             inline char *bufferToProduce();
 
             /// \brief notify workqueue that bytes have been produced
             ///
-            /// \return	number of bytes that were produced
+            /// \return number of bytes that were produced
             ///
             inline void produceBytes(size_t bytes);
 
             /// \brief current position for consuming from buffer
             ///
-            /// \return	location in buffer to consume from
+            /// \return location in buffer to consume from
             ///
             inline char *bufferToConsume();
 
             /// \brief notify workqueue that bytes have been consumed
             ///
-            /// \return	number of bytes that were consumed
+            /// \return number of bytes that were consumed
             ///
             inline void consumeBytes(size_t bytes);
 
             /// \brief is workqueue ready for action
             ///
-            /// \return	boolean indicate workqueue readiness
+            /// \return boolean indicate workqueue readiness
             ///
             inline bool available();
 

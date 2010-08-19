@@ -15,7 +15,7 @@
 
 #ifndef __algorithms_schedule_BinomialTree_h__
 #define __algorithms_schedule_BinomialTree_h__
-#define HAVE_BINO_LINE_SCHED	// until branch is merged into main
+#define HAVE_BINO_LINE_SCHED  // until branch is merged into main
 
 #include "algorithms/interfaces/Schedule.h"
 #include "Global.h"
@@ -30,7 +30,6 @@ namespace CCMI
     //------ Supports a generic barrier and allreduce -------------
     //------ The number of phases is logrithmic with a max of 20 --
     //-------------------------------------------------------------
-    template <class T_SysDep>
     class BinomialTreeSchedule : public Interfaces::Schedule
     {
       unsigned _nphases;  /// \brief Number of phases total
@@ -60,59 +59,59 @@ namespace CCMI
  * @defgroup PHASE_CODES Codes used to represent implicite phases
  *@{
  */
-#define UNDEFINED_PHASE	((unsigned)-1)	///< Undefined phase
-#define ALL_PHASES	((unsigned)-2)	///< All phases in bino
-#define NO_PHASES	((unsigned)-3)	///< No phase
-#define NOT_RECV_PHASE	((unsigned)-4)	///< All except recv phases
-#define NOT_SEND_PHASE	NOT_RECV_PHASE	///< All except send phases
+#define UNDEFINED_PHASE ((unsigned)-1)  ///< Undefined phase
+#define ALL_PHASES  ((unsigned)-2)  ///< All phases in bino
+#define NO_PHASES ((unsigned)-3)  ///< No phase
+#define NOT_RECV_PHASE  ((unsigned)-4)  ///< All except recv phases
+#define NOT_SEND_PHASE  NOT_RECV_PHASE  ///< All except send phases
 /*@}*/
 
 /**
  * \brief Test whether node is "outside" the power-of-two set
- * \param[in] node	Node index to test, relative to root
- * \return	true or false
+ * \param[in] node  Node index to test, relative to root
+ * \return  true or false
  */
-#define IS_OUTSIDE(node)	((node) >= _hnranks)
+#define IS_OUTSIDE(node)  ((node) >= _hnranks)
 /**
  * \brief Convert a peer node to its "outside" equivalent
- * \param[in] node	Node index to convert, relative to root
- * \return	Converted node
+ * \param[in] node  Node index to convert, relative to root
+ * \return  Converted node
  */
-#define TO_OUTSIDE(node)	((node) + _hnranks)
+#define TO_OUTSIDE(node)  ((node) + _hnranks)
 /**
  * \brief Test whether node is a peer to the "outside" nodes
- * \param[in] node	Node index to test, relative to root
- * \return	true or false
+ * \param[in] node  Node index to test, relative to root
+ * \return  true or false
  */
-#define IS_PEER(node)		((node) < _pnranks)
+#define IS_PEER(node)   ((node) < _pnranks)
 /**
  * \brief Convert an "outside" node to its peer
- * \param[in] node	Node index to convert, relative to root
- * \return	Converted node
+ * \param[in] node  Node index to convert, relative to root
+ * \return  Converted node
  */
-#define TO_PEER(node)		((node) - _hnranks)
+#define TO_PEER(node)   ((node) - _hnranks)
 
 /**
  * \brief Convert a node to its "parent" in phase
- * \param[in] node	Node to convert, relative to root
- * \param[in] phase	Phase of algorithm
- * \return	Converted node
+ * \param[in] node  Node to convert, relative to root
+ * \param[in] phase Phase of algorithm
+ * \return  Converted node
  */
-#define TO_PARENT(node, phase)	\
+#define TO_PARENT(node, phase)  \
         (((node) - (1 << (phase))) & _treemask)
 /**
  * \brief Convert a node to its "child" in phase
- * \param[in] node	Node to convert, relative to root
- * \param[in] phase	Phase of algorithm
- * \return	Converted node
+ * \param[in] node  Node to convert, relative to root
+ * \param[in] phase Phase of algorithm
+ * \return  Converted node
  */
-#define TO_CHILD(node, phase)	\
+#define TO_CHILD(node, phase) \
         (((node) + (1 << (phase))) & _treemask)
 
       /**
        * \brief Convert a rank to _ranks[] index
-       * \param[in] rank	Rank as used in communications
-       * \return	Node index, position in _ranks[]
+       * \param[in] rank  Rank as used in communications
+       * \return  Node index, position in _ranks[]
        */
       inline unsigned RANK_TO_IDX(unsigned rank)
       {
@@ -131,8 +130,8 @@ namespace CCMI
 
       /**
        * \brief Convert a rank to relative-to-root index
-       * \param[in] rank	Rank as used in communications
-       * \return	Node index, relative to root
+       * \param[in] rank  Rank as used in communications
+       * \return  Node index, relative to root
        */
       inline unsigned RANK_TO_REL(unsigned rank)
       {
@@ -150,8 +149,8 @@ namespace CCMI
 
       /**
        * \brief Convert a relative-to-root index into a rank
-       * \param[in] node	Node index, relative to root
-       * \return	Rank for use in communications
+       * \param[in] node  Node index, relative to root
+       * \return  Rank for use in communications
        */
       inline unsigned REL_TO_RANK(unsigned node)
       {
@@ -160,17 +159,17 @@ namespace CCMI
         return(_ranks ? _ranks[node] : node + _rank0);
       }
 
-#define NODE_PARENT	true	///< Use node's parent
-#define NODE_CHILD	false	///< Use node's child
+#define NODE_PARENT true  ///< Use node's parent
+#define NODE_CHILD  false ///< Use node's child
 
       /**
        * \brief Get next node in schedule
        *
        * Returns the node we should communicate with in this phase
        *
-       * \param[in] parent	whether to go left or right...
-       * \param[in] ph	phase to work on
-       * \return	Next node in algorithm
+       * \param[in] parent  whether to go left or right...
+       * \param[in] ph  phase to work on
+       * \return  Next node in algorithm
        */
       inline unsigned NEXT_NODE(bool parent, unsigned ph)
       {
@@ -223,11 +222,11 @@ namespace CCMI
        *
        * Also called from Rectangle.h when doing a reduce along an axis of the rectangle.
        *
-       * \param[in] x		Our coord on axis
-       * \param[in] x0	Lowest coord on axis
-       * \param[in] xN	Highest coord on axis
-       * \param[in] ranks	(optional) Pointer to list of ranks (saved until later)
-       * \return	nothing
+       * \param[in] x   Our coord on axis
+       * \param[in] x0  Lowest coord on axis
+       * \param[in] xN  Highest coord on axis
+       * \param[in] ranks (optional) Pointer to list of ranks (saved until later)
+       * \return  nothing
        */
       inline void initBinoSched(unsigned x, unsigned x0, unsigned xN,
                                 unsigned *ranks = NULL)
@@ -240,7 +239,7 @@ namespace CCMI
         /* find my index - my place in rank list */
         _myrank = x;
 
-        _nphases = getMaxPhases(NULL, _nranks, &_nphbino);
+        _nphases = getMaxPhases(_nranks, &_nphbino);
         _hnranks = (1 << _nphbino); // threshold for special handling
         _pnranks = (_nranks - _hnranks);  // might be zero
         _treemask = _hnranks - 1;
@@ -248,7 +247,7 @@ namespace CCMI
 
     public:
 
-      static unsigned getMaxPhases(T_SysDep *sysdep, unsigned nranks,
+      static unsigned getMaxPhases(unsigned nranks,
                                    unsigned *nbino = NULL)
       {
         unsigned nph;
@@ -286,30 +285,29 @@ namespace CCMI
       /**
        * \brief Constructor for list of ranks
        *
-       * \param[in] sysdep	Simple sysdep for ranks
-       * \param[in] nranks	Number of ranks in list
-       * \param[in] ranks	Ranks list
+       * \param[in] nranks  Number of ranks in list
+       * \param[in] ranks Ranks list
        */
-      BinomialTreeSchedule(T_SysDep *sysdep, unsigned nranks,
+      BinomialTreeSchedule(unsigned nranks,
                            unsigned *ranks);
 
       /**
        * \brief Constructor for line (simple coords)
        *
-       * \param[in] me	My coord on line
-       * \param[in] min	Minimum coord on line
-       * \param[in] max	Maximum coord on line
+       * \param[in] me  My coord on line
+       * \param[in] min Minimum coord on line
+       * \param[in] max Maximum coord on line
        */
       BinomialTreeSchedule(unsigned me, unsigned min, unsigned max);
 
       /**
        * \brief Initialize Binomial Schedule
        *
-       * \param[in] root		Root node of collective
-       * \param[in] comm_op		Collective operation to do
-       * \param[out] startphase	Starting phase for this node
-       * \param[out] nphases		Number of phases for this node
-       * \param[out] nranks		Max num steps per phase
+       * \param[in] root    Root node of collective
+       * \param[in] comm_op   Collective operation to do
+       * \param[out] startphase Starting phase for this node
+       * \param[out] nphases    Number of phases for this node
+       * \param[out] nranks   Max num steps per phase
        */
       virtual void init(int root, int comm_op, int &startphase,
                         int &nphases, int &nranks);
@@ -317,10 +315,10 @@ namespace CCMI
       /**
        * \brief Get source phase steps
        *
-       * \param[in] phase	Phase to work on
-       * \param[out] dstpes	Rank(s) to receive from
-       * \param[out] ndst	Number of steps (ranks)
-       * \param[out] subtasks	Operations to perform with ranks
+       * \param[in] phase Phase to work on
+       * \param[out] dstpes Rank(s) to receive from
+       * \param[out] ndst Number of steps (ranks)
+       * \param[out] subtasks Operations to perform with ranks
        */
       virtual void getSrcPeList(unsigned phase, unsigned *srcpes,
                                 unsigned &nsrc, unsigned *subtasks=NULL)
@@ -359,10 +357,10 @@ namespace CCMI
       /**
        * \brief Get destination phase steps
        *
-       * \param[in] phase	Phase to work on
-       * \param[out] dstpes	Rank(s) to send to
-       * \param[out] ndst	Number of steps (ranks)
-       * \param[out] subtasks	Operations to perform to ranks
+       * \param[in] phase Phase to work on
+       * \param[out] dstpes Rank(s) to send to
+       * \param[out] ndst Number of steps (ranks)
+       * \param[out] subtasks Operations to perform to ranks
        */
       virtual void getDstPeList(unsigned phase, unsigned *dstpes,
                                 unsigned &ndst, unsigned *subtasks)
@@ -409,13 +407,11 @@ namespace CCMI
 /**
  * \brief Constructor for list of ranks
  *
- * \param[in] sysdep	Simple sysdep for ranks
- * \param[in] nranks	Number of ranks in list
- * \param[in] ranks	Ranks list
+ * \param[in] nranks  Number of ranks in list
+ * \param[in] ranks Ranks list
  */
-template <class T_SysDep>
-inline CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
-BinomialTreeSchedule(T_SysDep *sysdep, unsigned nranks, unsigned *ranks) : Schedule()
+inline CCMI::Schedule::BinomialTreeSchedule::
+BinomialTreeSchedule(unsigned nranks, unsigned *ranks) : Schedule()
 {
 
   CCMI_assert(nranks > 0);
@@ -423,23 +419,22 @@ BinomialTreeSchedule(T_SysDep *sysdep, unsigned nranks, unsigned *ranks) : Sched
 
   /* find my index - my place in rank list */
   unsigned rank = __global.mapping.task();
-  CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
+  CCMI::Schedule::BinomialTreeSchedule::
   initBinoSched(rank, 0, nranks - 1, ranks);
 }
 
 /**
  * \brief Constructor for line (simple coords)
  *
- * \param[in] x		My coord on line
- * \param[in] x0	Minimum coord on line
- * \param[in] xN	Maximum coord on line
+ * \param[in] x   My coord on line
+ * \param[in] x0  Minimum coord on line
+ * \param[in] xN  Maximum coord on line
  */
-template <class T_SysDep>
-inline CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
+inline CCMI::Schedule::BinomialTreeSchedule::
 BinomialTreeSchedule(unsigned x, unsigned x0, unsigned xN) : Schedule()
 {
 
-  CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
+  CCMI::Schedule::BinomialTreeSchedule::
   initBinoSched(x, x0, xN);
 }
 /**
@@ -450,11 +445,10 @@ BinomialTreeSchedule(unsigned x, unsigned x0, unsigned xN) : Schedule()
  * This computes values which require knowing the root node and/or
  * type of collective (_op).
  *
- * \param[in] node	Our node number (index) in ranks[] array,
- *			or position along line of nodes.
+ * \param[in] node  Our node number (index) in ranks[] array,
+ *      or position along line of nodes.
  */
-template <class T_SysDep>
-inline void CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
+inline void CCMI::Schedule::BinomialTreeSchedule::
 setupContext(unsigned &startph, unsigned &nph)
 {
   unsigned st, np;
@@ -581,14 +575,13 @@ setupContext(unsigned &startph, unsigned &nph)
 /**
  * \brief Initialize the final schedule
  *
- * \param[in] root	The root node (rank)
- * \param[in] comm_op	The collective operation to perform
- * \param[out] start	The starting phase for this node
- * \param[out] nph	The number of phases for this node
- * \param[out] nranks	The largest number of steps per phase
+ * \param[in] root  The root node (rank)
+ * \param[in] comm_op The collective operation to perform
+ * \param[out] start  The starting phase for this node
+ * \param[out] nph  The number of phases for this node
+ * \param[out] nranks The largest number of steps per phase
  */
-template <class T_SysDep>
-inline void CCMI::Schedule::BinomialTreeSchedule<T_SysDep>::
+inline void CCMI::Schedule::BinomialTreeSchedule::
 init(int root, int comm_op, int &start, int &nph, int &nranks)
 {
   unsigned st, np;

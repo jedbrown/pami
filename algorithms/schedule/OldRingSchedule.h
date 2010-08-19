@@ -33,7 +33,6 @@ namespace CCMI
 {
   namespace Schedule
   {
-    template <class T_Sysdep>
     class OldRingSchedule : public Interfaces::Schedule
     {
 
@@ -45,7 +44,7 @@ namespace CCMI
       {
       }
 
-      OldRingSchedule (T_Sysdep *map, unsigned nranks, unsigned *ranks);
+      OldRingSchedule (unsigned nranks, unsigned *ranks);
       OldRingSchedule (unsigned x, unsigned x0, unsigned xN);
       //OldRingSchedule (Rectangle  *rect, T_Sysdep *map);
 
@@ -373,7 +372,7 @@ namespace CCMI
         TRACE_SCHEDULE((stderr,"<%p>Schedule::OldRingSchedule::init() _prev = %d, _next = %d\n", this,_prev, _next));
       }
 
-      static unsigned getMaxPhases (T_Sysdep *map, unsigned nranks)
+      static unsigned getMaxPhases (unsigned nranks)
       {
         return nranks - 1;
       }
@@ -390,7 +389,6 @@ namespace CCMI
       getDstUnionTopology (PAMI::Topology *topology){ PAMI_abort(); return PAMI_SUCCESS;}
 
     protected:
-      T_Sysdep              * _sysdep;
       unsigned   short       _op;
       unsigned               _root;
       unsigned               _startPhase;
@@ -412,18 +410,13 @@ namespace CCMI
   };
 };
 
-template <class T_Sysdep>
-inline CCMI::Schedule::OldRingSchedule<T_Sysdep>::OldRingSchedule
-(T_Sysdep       * map,
- unsigned        nranks,
+inline CCMI::Schedule::OldRingSchedule::OldRingSchedule
+(unsigned        nranks,
  unsigned      * ranks) :
-_sysdep (map),
 _isHead (false), _isTail (false),
 _ranks(ranks), _nranks(nranks),
 _x0((unsigned) -1), _my_x ((unsigned) -1)
 {
-  CCMI_assert (map != NULL);
-
   _startPhase = ((unsigned) -1);
   _root = ((unsigned)-1);
   _dir = 0;
@@ -438,12 +431,11 @@ _x0((unsigned) -1), _my_x ((unsigned) -1)
 /// \param x0   the first rank
 /// \param xN   the last rank
 ///
-template <class T_Sysdep>
-inline CCMI::Schedule::OldRingSchedule<T_Sysdep>::OldRingSchedule
+inline CCMI::Schedule::OldRingSchedule::OldRingSchedule
 (unsigned        x,
  unsigned        x0,
  unsigned        xN) :
-_sysdep (NULL),_isHead (false), _isTail (false),
+_isHead (false), _isTail (false),
 _ranks(NULL), _nranks(xN - x0 + 1),
 _x0 (x0), _my_x (x)
 {
@@ -455,8 +447,8 @@ _x0 (x0), _my_x (x)
 
 #if 0
 inline CCMI::Schedule::OldRingSchedule::OldRingSchedule
-(Rectangle  *rect, T_Sysdep *map) :
-_sysdep (map), _isHead (false), _isTail (false), _ranks(NULL),
+(Rectangle  *rect) :
+_isHead (false), _isTail (false), _ranks(NULL),
 _nranks((unsigned)-1), _x0((unsigned) -1), _my_x ((unsigned) -1)
 {
   _startPhase = ((unsigned) -1);

@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 
-#include "SysDep.h"
+#include "components/memory/MemoryManager.h"
 
 #include "util/common.h"
 #include "util/queue/QueueInterface.h"

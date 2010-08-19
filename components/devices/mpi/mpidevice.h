@@ -22,7 +22,6 @@
 #include <map>
 #include <list>
 #include "util/ccmi_debug.h"
-#include "SysDep.h"
 
 #include "components/devices/MulticastModel.h"
 #include "components/devices/MulticombineModel.h"
@@ -492,9 +491,9 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                 memcpy (mcast->_buf + mcast->_counter, msg->buffer(), bytes);
 
               //printf ("dispatch %d matched posted receive %d %d %d %d\n",
-              //	    dispatch_id,
-              //	    nbytes, mcast->_pwidth, mcast->_counter,
-              //	    mcast->_size);
+              //      dispatch_id,
+              //      nbytes, mcast->_pwidth, mcast->_counter,
+              //      mcast->_size);
 
               //for(unsigned count = 0; count < mcast->_size; count += mcast->_pwidth)
               //if(mcast->_done_fn)
@@ -707,9 +706,9 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
         TRACE_DEVICE((stderr,
                       "<%p>MPIDevice::enqueue mcast recv message \n",
                       this));
-	//,
-	//(size_t)msg->_pwidth,
-	//(size_t)msg->_bytes));
+  //,
+  //(size_t)msg->_pwidth,
+  //(size_t)msg->_bytes));
         _mcastrecvQ.push_front(msg);
       }
 

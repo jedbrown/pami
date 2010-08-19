@@ -21,7 +21,6 @@
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/composite/Composite.h"
 
-#include "SysDep.h"
 #include "components/devices/generic/Device.h"
 #include "components/devices/misc/ProgressFunctionMsg.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
@@ -167,8 +166,7 @@ namespace PAMI
   typedef CollRegistration::OldCCMIRegistration<MPIGeometry,
                                                 MPIOldMcastModel,
                                                 MPIOldM2MModel,
-                                                MPIDevice,
-                                                SysDep> OldCCMICollreg;
+                                                MPIDevice> OldCCMICollreg;
 
   typedef Geometry::ClassRouteId<MPIGeometry> MPIClassRouteId;
 
@@ -230,7 +228,6 @@ namespace PAMI
      * the 'this' pointer actually points to the array - each device knows whether
      * that is truly an array and how many elements it contains.
      *
-     * \param[in] sd           SysDep object
      * \param[in] clientid     Client ID (index)
      * \param[in] num_ctx      Number of contexts in this client
      * \param[in] ctx          Context opaque entity
@@ -316,7 +313,6 @@ namespace PAMI
         _clientid (clientid),
         _contextid (id),
         _mm (mm),
-        _sysdep(*_mm),
         _lock (),
         _mpi(&_g_mpi_device),
         _world_geometry(world_geometry),
@@ -359,7 +355,7 @@ namespace PAMI
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 
           _oldccmi_collreg=(OldCCMICollreg*) malloc(sizeof(*_oldccmi_collreg));
-          new(_oldccmi_collreg) OldCCMICollreg(client, (pami_context_t)this, id,_sysdep,*_mpi);
+          new(_oldccmi_collreg) OldCCMICollreg(client, (pami_context_t)this, id,*_mpi);
           _oldccmi_collreg->analyze(_contextid, _world_geometry);
 
           _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
@@ -775,7 +771,6 @@ namespace PAMI
       void                     *_dispatch[1024][2];
       ProtocolAllocator         _protocol;
       Memory::MemoryManager    *_mm;
-      SysDep                    _sysdep;
       ContextLock _lock;
 
 #ifdef USE_WAKEUP_VECTORS

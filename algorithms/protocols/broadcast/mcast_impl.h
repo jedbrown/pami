@@ -34,7 +34,7 @@ namespace CCMI
 
       typedef AllSidedCollectiveProtocolFactoryT<MultiCastComposite,
                                                  mcast_broadcast_md,
-                                                 ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MultiCastFactory;
+                                                 ConnectionManager::SimpleConnMgr> MultiCastFactory;
 
     };
   };

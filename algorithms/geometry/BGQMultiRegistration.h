@@ -17,7 +17,6 @@
 #include <map>
 #include <vector>
 #include "algorithms/interfaces/CollRegistrationInterface.h"
-#include "SysDep.h"
 #include "TypeDefs.h"
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/connmgr/CommSeqConnMgr.h"
@@ -54,7 +53,7 @@ namespace PAMI
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite,
     ShmemMsyncMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiSyncFactory;
+    CCMI::ConnectionManager::SimpleConnMgr> ShmemMultiSyncFactory;
 
     //----------------------------------------------------------------------------
     // Shmem allsided multicombine
@@ -70,7 +69,7 @@ namespace PAMI
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite,
     ShmemMcombMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCombineFactory;
+    CCMI::ConnectionManager::SimpleConnMgr> ShmemMultiCombineFactory;
 
     //----------------------------------------------------------------------------
     // Shmem allsided multicast
@@ -86,7 +85,7 @@ namespace PAMI
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite,
     ShmemMcastMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > ShmemMultiCastFactory;
+    CCMI::ConnectionManager::SimpleConnMgr> ShmemMultiCastFactory;
 
 
     //----------------------------------------------------------------------------
@@ -103,7 +102,7 @@ namespace PAMI
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite,
     MUMsyncMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiSyncFactory;
+    CCMI::ConnectionManager::SimpleConnMgr> MUMultiSyncFactory;
 
     //----------------------------------------------------------------------------
     // MU allsided multicast
@@ -119,7 +118,7 @@ namespace PAMI
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite,
     MUMcombMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MUMultiCombineFactory;
+    CCMI::ConnectionManager::SimpleConnMgr> MUMultiCombineFactory;
 
     //----------------------------------------------------------------------------
     // MU allsided multicast built on active message multicast with an
@@ -360,11 +359,11 @@ if (phase == 0) {
                   if (useMu)
                     {
 #ifdef ENABLE_MU_CLASSROUTES
-		  void *val;
+      void *val;
                   val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
-		      // Only register protocols if we got a classroute
+          // Only register protocols if we got a classroute
 #endif
                       TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU barrier\n", this));
                       _mu_barrier_composite = _mu_msync_factory.generate(geometry, &xfer);
@@ -380,7 +379,7 @@ if (phase == 0) {
 
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
-		      // Only register protocols if we got a classroute
+          // Only register protocols if we got a classroute
 #endif
 
                       TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU bcast\n", this));
@@ -432,7 +431,7 @@ if (phase == 0) {
         size_t                                          _context_id;
 
         // CCMI Connection Manager Class
-        CCMI::ConnectionManager::SimpleConnMgr<SysDep>  _sconnmgr;
+        CCMI::ConnectionManager::SimpleConnMgr          _sconnmgr;
         CCMI::ConnectionManager::CommSeqConnMgr         _csconnmgr;
 
         // Barrier Storage

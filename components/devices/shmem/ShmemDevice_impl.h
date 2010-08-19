@@ -13,7 +13,6 @@
 #define __components_devices_shmem_ShmemDevice_impl_h__
 
 #include "Global.h"
-#include "SysDep.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x

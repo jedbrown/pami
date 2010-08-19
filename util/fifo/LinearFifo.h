@@ -17,8 +17,8 @@
 #include <string.h>
 
 #include "Arch.h"
-#include "SysDep.h"
 
+#include "components/memory/MemoryManager.h"
 #include "components/atomic/Counter.h"
 
 #include "util/fifo/Fifo.h"
@@ -88,7 +88,7 @@ namespace PAMI
             _head (0),
             _tail (),
 #if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-	    _active(NULL),
+      _active(NULL),
 #else // !__pami_target_bgq__
 #endif // !__pami_target_bgq__
             _inj_wrap_count (0),
@@ -113,12 +113,12 @@ namespace PAMI
               _packet[i].reset ();
             }
 #if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-	// since we currently wakeup all contexts if any are changed, this is fine.
-	size_t myix = __global.topology_local.rank2Index(__global.mapping.task());
-	__global._wuRegion_mms[clientid][myix].memalign((void **)&_active, sizeof(void *),
-						T_FifoSize * sizeof(*_active));
-	PAMI_assertf(_active, "Out of WAC Region memory allocating FIFO active flags");
-	memset((void *)_active, 0, T_FifoSize * sizeof(*_active));
+  // since we currently wakeup all contexts if any are changed, this is fine.
+  size_t myix = __global.topology_local.rank2Index(__global.mapping.task());
+  __global._wuRegion_mms[clientid][myix].memalign((void **)&_active, sizeof(void *),
+            T_FifoSize * sizeof(*_active));
+  PAMI_assertf(_active, "Out of WAC Region memory allocating FIFO active flags");
+  memset((void *)_active, 0, T_FifoSize * sizeof(*_active));
 #endif // __pami_target_bgq__
         }
 
@@ -141,7 +141,7 @@ namespace PAMI
           //mem_barrier ();
           //mem_sync();
 #if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-	  if (_active[_head])
+    if (_active[_head])
 #else // !__pami_target_bgq__
           TRACE_ERR((stderr, "(%zu) LinearFifo::nextRecPacket_impl() .. this = %p, _packet[%zu].isActive () = %d\n", __global.mapping.task(), this, _head, _packet[_head].isActive ()));
           if (_packet[_head].isActive ())
@@ -154,7 +154,7 @@ namespace PAMI
         inline void consumePacket_impl ()
         {
 #if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-	  _active[_head] = false;
+    _active[_head] = false;
 #else // !__pami_target_bgq__
           TRACE_ERR((stderr, "(%zu) LinearFifo::consumePacket_impl() .. this = %p, _packet[%zu].isActive () = %d\n", __global.mapping.task(), this, _head, _packet[_head].isActive ()));
                     //mem_barrier ();
@@ -196,7 +196,7 @@ namespace PAMI
           mem_barrier ();
           //mem_sync();
 #if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-	  _active[pktid] = true;
+    _active[pktid] = true;
 #else // !__pami_target_bgq__
           _packet[pktid].setActive (true);
 #endif // !__pami_target_bgq__
@@ -229,7 +229,7 @@ namespace PAMI
         size_t           _head;
         T_Atomic         _tail;
 #if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-	volatile bool	*_active;
+  volatile bool *_active;
 #else // !__pami_target_bgq__
 #endif // !__pami_target_bgq__
 

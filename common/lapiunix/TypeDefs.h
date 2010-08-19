@@ -30,7 +30,6 @@ typedef PAMI::Device::LAPIOldm2mModel<PAMI::Device::LAPIDevice,
 
 #define PAMI_COLL_MCAST_CLASS  LAPIOldMcastModel
 #define PAMI_COLL_M2M_CLASS    LAPIOldM2MModel
-#define PAMI_COLL_SYSDEP_CLASS PAMI::SysDep
 #define PAMI_GEOMETRY_CLASS    PAMI::Geometry::Lapi
 
 #endif

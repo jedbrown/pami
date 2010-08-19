@@ -14,7 +14,7 @@
 #ifndef __util_fifo_Fifo_h__
 #define __util_fifo_Fifo_h__
 
-#include "SysDep.h"
+#include "components/memory/MemoryManager.h"
 
 #ifndef TRACE
 #define TRACE(x)

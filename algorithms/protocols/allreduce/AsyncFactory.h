@@ -39,7 +39,7 @@ namespace CCMI
       /// function to retrieve an executor from a geometry (associated
       /// with a single comm id).
       ///
-      template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+      template <class T_Mcast, class T_ConnectionManager>
       class AsyncFactory : public CollectiveProtocolFactory
       {
       protected:
@@ -59,13 +59,8 @@ namespace CCMI
         pami_mapidtogeometry_fn               _cb_geometry;
 
         ///
-        /// \brief mapping module
-        ///
-        T_Sysdep                          * _mapping;
-
-        ///
         /// \brief Configuration flags
-        //
+        ///
         ConfigFlags                       _flags;
 
       ///
@@ -90,10 +85,10 @@ namespace CCMI
         AsyncFactory *factory = (AsyncFactory *) arg;
 
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)factory->_cb_geometry(cdata->_comm);
-        CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> *composite =
+        CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast,T_ConnectionManager> *composite =
         factory->getAllreduceComposite(geometry, cdata->_iteration);
 
-        CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *allreduce =
+        CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *allreduce =
         factory->getAllreduce(geometry, cdata->_iteration);
 
         TRACE_ADAPTOR((stderr,
@@ -109,7 +104,7 @@ namespace CCMI
         if((allreduce == NULL) || (composite == NULL))
         {
           composite = factory->buildComposite (geometry, cdata);
-          allreduce = (CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *) composite->getExecutor (0);
+          allreduce = (CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *) composite->getExecutor (0);
         }
         else if(composite->isIdle())
         {
@@ -144,14 +139,12 @@ namespace CCMI
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline AsyncFactory(T_Sysdep                                           * mapping,
-                            T_Mcast        * minterface,
+        inline AsyncFactory(T_Mcast        * minterface,
                             pami_mapidtogeometry_fn                           cb_geometry,
                             ConfigFlags                                   flags ) :
         _minterface (minterface),
         _connmgr    (NULL),
         _cb_geometry(cb_geometry),
-        _mapping    (mapping),
         _flags      (flags)
         {
           TRACE_ALERT((stderr,"<%p>Allreduce::AsyncFactory::ctor() ALERT:\n",this));
@@ -195,10 +188,10 @@ namespace CCMI
          int                        root = -1 ) = 0;
 
 
-        AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager>          * buildComposite (PAMI_GEOMETRY_CLASS         * geometry,
+        AsyncComposite<T_Mcast,T_ConnectionManager>          * buildComposite (PAMI_GEOMETRY_CLASS         * geometry,
                                                   CollHeaderData   * cdata)
         {
-          AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> *composite = (CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> *)
+          AsyncComposite<T_Mcast,T_ConnectionManager> *composite = (CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast,T_ConnectionManager> *)
                                       generateAsync(geometry,
                                                     cdata->_count,
                                                     (pami_dt)(cdata->_dt),
@@ -214,15 +207,15 @@ namespace CCMI
         /// \brief Get the executor associated with a comm id (and
         /// color/iteration id)
         ///
-        CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> * getAllreduce(PAMI_GEOMETRY_CLASS *geometry,
+        CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> * getAllreduce(PAMI_GEOMETRY_CLASS *geometry,
                                                      unsigned iter)
         {
           CCMI::Executor::OldComposite *composite =
             (CCMI::Executor::OldComposite *)geometry->getAllreduceComposite(iter);
 
-          CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *executor = (composite)?
-                                                    (CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *) composite->getExecutor (0):
-                                                    (CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager> *)NULL;
+          CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *executor = (composite)?
+                                                    (CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *) composite->getExecutor (0):
+                                                    (CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *)NULL;
 
           TRACE_ADAPTOR((stderr, "<%p>Allreduce::AsyncFactory::"
                          "getAllreduce(comm id X, color %#X)"
@@ -239,10 +232,10 @@ namespace CCMI
         /// iteration id).  It is expected to be associated with this Factory,
         /// otherwise destroy it and return NULL.
         ///
-        CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> * getAllreduceComposite(PAMI_GEOMETRY_CLASS *geometry,
+        CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast,T_ConnectionManager> * getAllreduceComposite(PAMI_GEOMETRY_CLASS *geometry,
                                                                          unsigned iteration)
         {
-          CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> *composite = (CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast, T_Sysdep, T_ConnectionManager> *)
+          CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast,T_ConnectionManager> *composite = (CCMI::Adaptor::Allreduce::AsyncComposite<T_Mcast,T_ConnectionManager> *)
                                                                 geometry->getAllreduceComposite(iteration);
 
           TRACE_ADAPTOR((stderr, "<%p>Allreduce::AsyncFactory::"

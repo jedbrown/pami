@@ -17,7 +17,6 @@
 #include <map>
 #include <vector>
 #include "algorithms/interfaces/CollRegistrationInterface.h"
-#include "SysDep.h"
 #include "Global.h"
 
 
@@ -41,33 +40,28 @@ namespace PAMI
     template <class T_Geometry,
               class T_Mcast,
               class T_M2M,
-              class T_Device,
-              class T_Sysdep>
+              class T_Device>
     class OldCCMIRegistration :
       public CollRegistration<PAMI::CollRegistration::OldCCMIRegistration<T_Geometry,
                                                                          T_Mcast,
                                                                          T_M2M,
-                                                                         T_Device,
-                                                                         T_Sysdep>,
+                                                                         T_Device>,
                               T_Geometry>
       {
       public:
         inline OldCCMIRegistration(pami_client_t       client,
                                    pami_context_t      context,
                                    size_t             context_id,
-                                   T_Sysdep          &sd,
                                    T_Device          &dev):
         CollRegistration<PAMI::CollRegistration::OldCCMIRegistration<T_Geometry,
                                                                     T_Mcast,
                                                                     T_M2M,
-                                                                    T_Device,
-                                                                    T_Sysdep>,
+                                                                    T_Device>,
                          T_Geometry> (),
         _client(client),
         _context(context),
         _context_id(context_id),
         _reduce_val(0),
-        _sd(sd),
         _dev(dev),
         _barrier(dev),
         _broadcast(dev),
@@ -77,23 +71,23 @@ namespace PAMI
         _binomallreduce(dev),
         _ringallreduce(dev),
         _ambionmialbroadcast(dev),
-        _barrier_registration(&_barrier,&_sd,(pami_mapidtogeometry_fn)mapidtogeometry),
+        _barrier_registration(&_barrier,(pami_mapidtogeometry_fn)mapidtogeometry),
         _broadcast_connmgr(65535),
-        _broadcast_registration(&_sd,&_broadcast,&_broadcast_connmgr,_context_id),
+        _broadcast_registration(&_broadcast,&_broadcast_connmgr,_context_id),
         _ringbcast_connmgr(65535),
-        _ringbcast_registration(&_sd,&_ringbroadcast,&_ringbcast_connmgr,65535),
-        _alltoallv_registration(&_alltoallv,&_sd),
+        _ringbcast_registration(&_ringbroadcast,&_ringbcast_connmgr,65535),
+        _alltoallv_registration(&_alltoallv),
         _cf(0,0),
-        _shortbinomallreduce_registration(&_sd,&_shortbinomallreduce,(pami_mapidtogeometry_fn)mapidtogeometry,_cf),
-        _binomallreduce_registration(&_sd,&_binomallreduce,(pami_mapidtogeometry_fn)mapidtogeometry,_cf),
-        _ringallreduce_registration(&_sd,&_ringallreduce,(pami_mapidtogeometry_fn)mapidtogeometry,_cf),
-        _ambcast_registration(&_sd,&_ambionmialbroadcast,__global.mapping.size())
+        _shortbinomallreduce_registration(&_shortbinomallreduce,(pami_mapidtogeometry_fn)mapidtogeometry,_cf),
+        _binomallreduce_registration(&_binomallreduce,(pami_mapidtogeometry_fn)mapidtogeometry,_cf),
+        _ringallreduce_registration(&_ringallreduce,(pami_mapidtogeometry_fn)mapidtogeometry,_cf),
+        _ambcast_registration(&_ambionmialbroadcast,__global.mapping.size())
           {
           }
 
         inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
         {
-	  if (phase != 0) return PAMI_SUCCESS;
+    if (phase != 0) return PAMI_SUCCESS;
           _barrier_registration.generate(&_barrier_composite,
                                          sizeof(CCMI_Executor_t),
                                          _context,
@@ -133,7 +127,6 @@ namespace PAMI
       pami_context_t             _context;
       size_t                     _context_id;
       uint64_t                   _reduce_val;
-      T_Sysdep                  &_sd;
       T_Device                  &_dev;
 
       T_Mcast                    _barrier;
@@ -148,10 +141,10 @@ namespace PAMI
       CCMI::Adaptor::Barrier::OldBinomialBarrierFactory       _barrier_registration;
       CCMI_Executor_t                                         _barrier_composite;
 
-      CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _broadcast_connmgr;
+      CCMI::ConnectionManager::ColorGeometryConnMgr           _broadcast_connmgr;
       CCMI::Adaptor::Broadcast::OldBinomialBcastFactory       _broadcast_registration;
 
-      CCMI::ConnectionManager::ColorGeometryConnMgr<T_Sysdep> _ringbcast_connmgr;
+      CCMI::ConnectionManager::ColorGeometryConnMgr           _ringbcast_connmgr;
       CCMI::Adaptor::Broadcast::OldRingBcastFactory           _ringbcast_registration;
 
       CCMI::Adaptor::Alltoall::AlltoallFactory                _alltoallv_registration;

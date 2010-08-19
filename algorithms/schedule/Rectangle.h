@@ -19,7 +19,7 @@
 
 #ifndef __algorithms_schedule_Rectangle_h__
 #define __algorithms_schedule_Rectangle_h__
-#define HAVE_NEW_RECT_SCHED	// until branch is merged into main
+#define HAVE_NEW_RECT_SCHED // until branch is merged into main
 
 /**
  * @defgroup BGTORUS_AXIS Axii used on BG Torus/Mesh network.
@@ -31,7 +31,7 @@
 #ifndef PAMI_MAX_DIMS
 /// \todo bogus defaults if we don't know PAMI defaults
 /** \brief Number of axii on Torus/Mesh network. */
-#define NUM_STD_AXIS	2
+#define NUM_STD_AXIS  2
 /** \brief Total number of axii on torus (includes local cores). */
 #define NUM_AXIS NUM_STD_AXIS
 #else
@@ -80,16 +80,16 @@ namespace CCMI
  * @defgroup BGRECT_PHASES Phases (starting) used by rectangle schedule.
  *@{
  */
-#define PHASE_NONE	((unsigned)-1)	/**< not a valid phase */
-#define PHASE_ONE	0	/**< root bcast to pri axis */
-#define PHASE_TWO	1	/**< face node bcast to sec axis */
-#define PHASE_THREE	2	/**< sec axis bcast to all of face (ter axis) */
-#define PHASE_FOUR	3	/**< face nodes bcast back on pri axis */
-#define PHASE_FIVE	4	/**< (begin) local core-to-core. NCores-1 phases
+#define PHASE_NONE  ((unsigned)-1)  /**< not a valid phase */
+#define PHASE_ONE 0 /**< root bcast to pri axis */
+#define PHASE_TWO 1 /**< face node bcast to sec axis */
+#define PHASE_THREE 2 /**< sec axis bcast to all of face (ter axis) */
+#define PHASE_FOUR  3 /**< face nodes bcast back on pri axis */
+#define PHASE_FIVE  4 /**< (begin) local core-to-core. NCores-1 phases
                                  * begin here */
 /*@}*/
 /** \brief Number of (starting) phases. */
-#define NUM_PHASES	5
+#define NUM_PHASES  5
 
 /**
  * \brief Increment an axis by some small value
@@ -100,9 +100,9 @@ namespace CCMI
  * Assumes "n" is small, <= NUM_STD_AXIS. Also assumes 'axis'
  * is a valid "standard" axis, i.e. axis < NUM_STD_AXIS.
  *
- * \param[in] axis	Current axis
- * \param[in] n		Increment to add to axis
- * \return	axis+n => NUM_STD_AXIS
+ * \param[in] axis  Current axis
+ * \param[in] n   Increment to add to axis
+ * \return  axis+n => NUM_STD_AXIS
  */
     inline int NEXT_STD_AXIS(int axis, int n)
     {
@@ -117,20 +117,20 @@ namespace CCMI
  */
 /// \todo These are also defined in Color.h :(
 #ifndef P_DIR
-  #define P_DIR		0	/**< positive direction */
-  #define N_DIR		1	/**< negative direction */
+  #define P_DIR   0 /**< positive direction */
+  #define N_DIR   1 /**< negative direction */
 #endif
 /*@}*/
 /** \brief Number of directions defined */
-#define NUM_DIR		2
+#define NUM_DIR   2
 
 /**
  * \brief Convert direction to opposite direction
  *
- * \param[in] dir	Direction to convert (P_DIR or N_DIR)
- * \return	Opposite direction (N_DIR or P_DIR)
+ * \param[in] dir Direction to convert (P_DIR or N_DIR)
+ * \return  Opposite direction (N_DIR or P_DIR)
  */
-#define OPP_DIR(dir)	((dir) ^ 1)
+#define OPP_DIR(dir)  ((dir) ^ 1)
 
 /**
  * \brief Translation table for axis+direction into DMA bcast command.
@@ -141,12 +141,12 @@ namespace CCMI
  * This code really should be (in C would be):
  *
  * static unsigned short line_bcast[NUM_STD_AXIS][NUM_DIR] = {
- *	[CCMI_X_DIM][P_DIR] = CCMI_LINEBCAST_XP,
- *	[CCMI_X_DIM][N_DIR] = CCMI_LINEBCAST_XM,
- *	[CCMI_Y_DIM][P_DIR] = CCMI_LINEBCAST_YP,
- *	[CCMI_Y_DIM][N_DIR] = CCMI_LINEBCAST_YM,
- *	[CCMI_Z_DIM][P_DIR] = CCMI_LINEBCAST_ZP,
- *	[CCMI_Z_DIM][N_DIR] = CCMI_LINEBCAST_ZM,
+ *  [CCMI_X_DIM][P_DIR] = CCMI_LINEBCAST_XP,
+ *  [CCMI_X_DIM][N_DIR] = CCMI_LINEBCAST_XM,
+ *  [CCMI_Y_DIM][P_DIR] = CCMI_LINEBCAST_YP,
+ *  [CCMI_Y_DIM][N_DIR] = CCMI_LINEBCAST_YM,
+ *  [CCMI_Z_DIM][P_DIR] = CCMI_LINEBCAST_ZP,
+ *  [CCMI_Z_DIM][N_DIR] = CCMI_LINEBCAST_ZM,
  * };
  */
 // \todo:  make this work from a query of axis size and num directions!
@@ -164,7 +164,7 @@ namespace CCMI
  * always the same and can be built when getDstPeList() is called.
  * Existence of a _startphase implies existence of these local steps.
  */
-#define MAX_NUM_STEPS	(NUM_DIR * NUM_STD_AXIS)
+#define MAX_NUM_STEPS (NUM_DIR * NUM_STD_AXIS)
 
 /**
  * \brief Structure to store rectangle
@@ -202,9 +202,9 @@ namespace CCMI
 /**
  * \brief Get rank of given coords (axii_t)
  *
- * \param[in] map	CollectiveMapping to use
- * \param[in] x		Coordinates to convert into rank
- * \return	nothing
+ * \param[in] map CollectiveMapping to use
+ * \param[in] x   Coordinates to convert into rank
+ * \return  nothing
  */
     static inline unsigned coord2rank(PAMI_MAPPING_CLASS *map, axii_t x)
     {
@@ -216,10 +216,10 @@ namespace CCMI
 /**
  * \brief Get coords (axii_t) of given rank
  *
- * \param[in] map	CollectiveMapping to use
- * \param[in] rank	Rank to convert
- * \param[out] x	Coordinates to return
- * \return	nothing
+ * \param[in] map CollectiveMapping to use
+ * \param[in] rank  Rank to convert
+ * \param[out] x  Coordinates to return
+ * \return  nothing
  */
     static inline void rank2coord(PAMI_MAPPING_CLASS *map, size_t rank, axii_t x)
     {
@@ -231,9 +231,9 @@ namespace CCMI
  *
  * This is an optimization of rank2coord(map, map->rank(), x);
  *
- * \param[in] map	CollectiveMapping to use
- * \param[out] x	Coordinates to return
- * \return	nothing
+ * \param[in] map CollectiveMapping to use
+ * \param[out] x  Coordinates to return
+ * \return  nothing
  */
     static inline void get_my_coord(PAMI_MAPPING_CLASS *map, axii_t x)
     {
@@ -364,7 +364,7 @@ namespace CCMI
        * \brief Method to set the _startphase value
        * The first time it is called is when the value is set.
        * All subsequent calls do nothing.
-       * \param[in] phase	The phase
+       * \param[in] phase The phase
        */
       inline void setPhase(unsigned phase)
       {
@@ -379,7 +379,7 @@ namespace CCMI
 
       /**
        * \brief Get the starting phase when I will first get data
-       * \return	starting phase for this node
+       * \return  starting phase for this node
        */
       inline unsigned getStartPhase()
       {
@@ -391,7 +391,7 @@ namespace CCMI
       /**
        * \brief Constructor for OneColorRectangle
        * Initialize everything to "empty".
-       * \return	nothing
+       * \return  nothing
        */
       OneColorRectangle() : Schedule()
       {
@@ -410,9 +410,9 @@ namespace CCMI
        * and 'rect'. Simply stores these values, as no other
        * initialization makes sense until root node is known.
        *
-       * \param[in] mapping	CollectiveMapping is use on the partition
-       * \param[in] color	Primary axis (color).
-       * \param[in] rect	Rectangle descriptor
+       * \param[in] mapping CollectiveMapping is use on the partition
+       * \param[in] color Primary axis (color).
+       * \param[in] rect  Rectangle descriptor
        * \return
        */
       inline OneColorRectangle(PAMI_MAPPING_CLASS *mapping, Color color,
@@ -432,9 +432,9 @@ namespace CCMI
        *
        * Asserts that memory is cabable of containing the object.
        *
-       * \param[in] size	Size of memory (\e addr) to contain new object
-       * \param[in] addr	Memory to contain new object
-       * \return	Pointer to new object
+       * \param[in] size  Size of memory (\e addr) to contain new object
+       * \param[in] addr  Memory to contain new object
+       * \return  Pointer to new object
        */
 //      inline void * operator new(size_t size, void *addr)
 //      {
@@ -445,7 +445,7 @@ namespace CCMI
       /**
        * \brief \e delete operator for destruction of object
        *
-       * \param[in] p	Pointer to object to destroy
+       * \param[in] p Pointer to object to destroy
        *
        * \note This is required to make "C" programs link successfully
        * with virtual destructors
@@ -462,22 +462,22 @@ namespace CCMI
       /**
        * \brief Get Source node phase list
        *
-       * \param[in] phase	Phase for which to extract information
-       * \param[out] srcpes	Array to hold source node(s)
-       * \param[out] nsrc	Number of source nodes
-       * \param[out] subtasks	Operation for receive
-       * \return	nothing (else)
+       * \param[in] phase Phase for which to extract information
+       * \param[out] srcpes Array to hold source node(s)
+       * \param[out] nsrc Number of source nodes
+       * \param[out] subtasks Operation for receive
+       * \return  nothing (else)
        */
       virtual void getSrcPeList(unsigned phase, unsigned *srcpes,
                                 unsigned &nsrc, unsigned *subtasks=NULL) = 0;
       /**
        * \brief Get Destination node phase list
        *
-       * \param[in] phase	Phase for which to extract information
-       * \param[out] dstpes	Array to hold destination node(s)
-       * \param[out] ndst	Number of destination nodes (and subtasks)
-       * \param[out] subtask	Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
-       * \return	nothing (else).
+       * \param[in] phase Phase for which to extract information
+       * \param[out] dstpes Array to hold destination node(s)
+       * \param[out] ndst Number of destination nodes (and subtasks)
+       * \param[out] subtask  Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
+       * \return  nothing (else).
        */
       virtual void getDstPeList(unsigned phase, unsigned *dstpes,
                                 unsigned &ndst, unsigned *subtasks) = 0;
@@ -487,8 +487,8 @@ namespace CCMI
        */
 
       /**
-       * \brief	Get node-in-rectangle's role (node_set)
-       * \return	Current node-in-rectangle's node set
+       * \brief Get node-in-rectangle's role (node_set)
+       * \return  Current node-in-rectangle's node set
        */
       inline node_set nodeSet()
       {
@@ -496,8 +496,8 @@ namespace CCMI
       }
 
       /**
-       * \brief	Get current rectangle's color
-       * \return	Current rectangle's color (primary axis)
+       * \brief Get current rectangle's color
+       * \return  Current rectangle's color (primary axis)
        */
       inline unsigned color()
       {
@@ -507,10 +507,10 @@ namespace CCMI
       /**
        * \brief Get colors that make sense for this rectangle.
        *
-       * \param[in] rect	The rectange in question
-       * \param[out] ideal	The ideal number of colors
-       * \param[out] max	The maximum number of colors (returned in colors)
-       * \param[out] colors	(optional) Array of enum Color's usable on rect
+       * \param[in] rect  The rectange in question
+       * \param[out] ideal  The ideal number of colors
+       * \param[out] max  The maximum number of colors (returned in colors)
+       * \param[out] colors (optional) Array of enum Color's usable on rect
        */
 
       static void getColors(const Rectangle &rect,
@@ -585,7 +585,7 @@ namespace CCMI
        * Uses class variables which must have been previously set,
        * i.e. by constructor _AND_ init(). Called from init().
        *
-       * \return	enum node_set value
+       * \return  enum node_set value
        */
       inline node_set getRectNodeSet(int &is_T)
       {
@@ -703,13 +703,13 @@ namespace CCMI
        * properties of the rectangle and/or location of root node (and which operation
        * is selected).
        *
-       * \param[in] root		Root node rank
-       * \param[in] op		Collective operation (e.g. Broadcast)
-       * \param[out] start		Starting phase for this node
-       * \param[out] nphases		Number of phases for this node
-       * \param[out] nmessages	Number of steps in each phase for this node
-       *				(not used by executor).
-       * \return	nothing (else)
+       * \param[in] root    Root node rank
+       * \param[in] op    Collective operation (e.g. Broadcast)
+       * \param[out] start    Starting phase for this node
+       * \param[out] nphases    Number of phases for this node
+       * \param[out] nmessages  Number of steps in each phase for this node
+       *        (not used by executor).
+       * \return  nothing (else)
        *
        * \refer ocrmb_sched
        */
@@ -756,8 +756,8 @@ namespace CCMI
        * perform only one line bcast operation. However, this mesh version will
        * function correctly in both torus and mesh configurations.
        *
-       * \param[in] color	Axis to be used in this phase
-       * \return	nothing
+       * \param[in] color Axis to be used in this phase
+       * \return  nothing
        *
        * \refer ocrmb_sched
        */
@@ -939,9 +939,9 @@ namespace CCMI
        *
        * Simply calls the One Color Rectangle constructor.
        *
-       * \param[in] mapping	The mapping of the geometry
-       * \param[in] color	The color to use for this schedule
-       * \param[in] rect	The rectangle info for this geom
+       * \param[in] mapping The mapping of the geometry
+       * \param[in] color The color to use for this schedule
+       * \param[in] rect  The rectangle info for this geom
        */
       inline OneColorRectBcastSched(PAMI_MAPPING_CLASS *mapping, Color color,
                                     const Rectangle &rect) :
@@ -954,9 +954,9 @@ namespace CCMI
        *
        * Checks the memory object has room for the schedule object.
        *
-       * \param[in] size	Size, in bytes, of the memory region
-       * \param[in] addr	The memory region
-       * \return	Address of memory region to use for object
+       * \param[in] size  Size, in bytes, of the memory region
+       * \param[in] addr  The memory region
+       * \return  Address of memory region to use for object
        */
 //      inline void * operator new(size_t size, void *addr)
 //      {
@@ -968,7 +968,7 @@ namespace CCMI
        *
        * Aborts since delete should not be used.
        *
-       * \param[in] p	The address of the object
+       * \param[in] p The address of the object
        */
       void operator delete(void *p)
       {
@@ -978,11 +978,11 @@ namespace CCMI
       /**
        * \brief Get Source node phase list
        *
-       * \param[in] phase	Phase for which to extract information
-       * \param[out] srcpes	Array to hold source node(s)
-       * \param[out] nsrc	Number of source nodes
-       * \param[out] subtasks	Operation for receive
-       * \return	nothing (else)
+       * \param[in] phase Phase for which to extract information
+       * \param[out] srcpes Array to hold source node(s)
+       * \param[out] nsrc Number of source nodes
+       * \param[out] subtasks Operation for receive
+       * \return  nothing (else)
        */
       virtual void getSrcPeList(unsigned phase, unsigned *srcpes,
                                 unsigned &nsrc, unsigned *subtasks=NULL)
@@ -1031,12 +1031,12 @@ namespace CCMI
        *
        * If _startphase is PHASE_NONE, we return zero (no) steps.
        *
-       * \param[in] phase	Phase for which to extract information
-       * \param[out] dstpes	Array to hold destination node(s)
-       * \param[out] ndst	Number of destination nodes (and subtasks)
-       * \param[out] subtask	Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
-       * \return	nothing (else). Sets 'ndst' to 0 if the given phase does not
-       *		exist for this schedule (i.e. if != _startphase).
+       * \param[in] phase Phase for which to extract information
+       * \param[out] dstpes Array to hold destination node(s)
+       * \param[out] ndst Number of destination nodes (and subtasks)
+       * \param[out] subtask  Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
+       * \return  nothing (else). Sets 'ndst' to 0 if the given phase does not
+       *    exist for this schedule (i.e. if != _startphase).
        */
       virtual void getDstPeList(unsigned phase, unsigned *dstpes,
                                 unsigned &ndst, unsigned *subtasks)
@@ -1185,13 +1185,13 @@ namespace CCMI
        * properties of the rectangle and/or location of root node (and which operation
        * is selected).
        *
-       * \param[in] root		Root node rank
-       * \param[in] op		Collective operation (e.g. Broadcast)
-       * \param[out] start		Starting phase for this node
-       * \param[out] nphases		Number of phases for this node
-       * \param[out] nmessages	Number of steps in each phase for this node
-       *				(not used by executor).
-       * \return	nothing (else)
+       * \param[in] root    Root node rank
+       * \param[in] op    Collective operation (e.g. Broadcast)
+       * \param[out] start    Starting phase for this node
+       * \param[out] nphases    Number of phases for this node
+       * \param[out] nmessages  Number of steps in each phase for this node
+       *        (not used by executor).
+       * \return  nothing (else)
        *
        * \refer ocrmb_sched
        */
@@ -1251,57 +1251,57 @@ namespace CCMI
       } Subschedule;
 
 
-    template <class T_Sysdep, class T_Schedule>
+    template <class T_Schedule>
     class OneColorRectRedSched : public OneColorRectangle
     {
     public:
     protected:
       Subschedule _subScheduleType;
-#define MAX_SUB_SCHEDULE_SIZE sizeof(CCMI::Schedule::BinomialTreeSchedule<T_Sysdep>) > \
-                              sizeof(CCMI::Schedule::OldRingSchedule<T_Sysdep>)?          \
-                              sizeof(CCMI::Schedule::BinomialTreeSchedule<T_Sysdep>) : \
-                              sizeof(CCMI::Schedule::OldRingSchedule<T_Sysdep>)
+#define MAX_SUB_SCHEDULE_SIZE sizeof(CCMI::Schedule::BinomialTreeSchedule) > \
+                              sizeof(CCMI::Schedule::OldRingSchedule)?          \
+                              sizeof(CCMI::Schedule::BinomialTreeSchedule) : \
+                              sizeof(CCMI::Schedule::OldRingSchedule)
 
       /**
        * \brief Create a sub schedule based on the desired type
        *
-       * \param[in] axis	Active axis to schedule
-       * \return	nothing
+       * \param[in] axis  Active axis to schedule
+       * \return  nothing
        */
       void createSubSchedule(unsigned axis)
       {
 
         if(_subScheduleType == Binomial)
         {
-          COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(BinomialTreeSchedule<T_Sysdep>));
+          COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(BinomialTreeSchedule));
           _subschedule[axis] = new (&_subschedule_storage[axis])
-            BinomialTreeSchedule<T_Sysdep>(_me._my[axis], _me._mn[axis], _me._mx[axis]);
+            BinomialTreeSchedule(_me._my[axis], _me._mn[axis], _me._mx[axis]);
         }
         else
         {
-          COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(OldRingSchedule<T_Sysdep>));
+          COMPILE_TIME_ASSERT(MAX_SUB_SCHEDULE_SIZE >= sizeof(OldRingSchedule));
           _subschedule[axis] = new (&_subschedule_storage[axis])
-            OldRingSchedule<T_Sysdep>(_me._my[axis], _me._mn[axis], _me._mx[axis]);
+            OldRingSchedule(_me._my[axis], _me._mn[axis], _me._mx[axis]);
         }
 
       }
       /**
        * \brief Ask the sub schedule class how many max phases are possible
        *
-       * \param[in] mapping	geometry mapping
-       * \param[in] nranks	number of ranks on the axis
-       * \return	number of phases
+       * \param[in] mapping geometry mapping
+       * \param[in] nranks  number of ranks on the axis
+       * \return  number of phases
        */
-      unsigned getMaxPhases(T_Sysdep *mapping, unsigned nranks)
+      unsigned getMaxPhases(unsigned nranks)
       {
         // These are static functions so we need to class them based on type
         if(_subScheduleType == Binomial)
         {
-          return BinomialTreeSchedule<T_Sysdep>::getMaxPhases(mapping,nranks);
+          return BinomialTreeSchedule::getMaxPhases(nranks);
         }
         else
         {
-          return OldRingSchedule<T_Sysdep>::getMaxPhases(mapping, nranks);
+          return OldRingSchedule::getMaxPhases(nranks);
         }
       }
 
@@ -1321,9 +1321,9 @@ namespace CCMI
       /**
        * \brief Initialize a mesh phase operation list for a given axis
        *
-       * \param[in] phase	Phase to which step belongs
-       * \param[in] axis	Active axis to use for operations
-       * \return	nothing
+       * \param[in] phase Phase to which step belongs
+       * \param[in] axis  Active axis to use for operations
+       * \return  nothing
        */
       inline void lineReduStep(unsigned phase, unsigned axis, unsigned &maxph)
       {
@@ -1355,10 +1355,10 @@ namespace CCMI
       /**
        * \brief Translate global phase to a bino sched and relative phase
        *
-       * \param[in] phase	Global phase number
-       * \param[out] which	Index into _subschedule[] for schedule, i.e. axis
-       * \return	Phase number relative to _subschedule[] schedule,
-       *	or UNDEFINED_PHASE if non found.
+       * \param[in] phase Global phase number
+       * \param[out] which  Index into _subschedule[] for schedule, i.e. axis
+       * \return  Phase number relative to _subschedule[] schedule,
+       *  or UNDEFINED_PHASE if non found.
        */
       inline unsigned xlatPhase(unsigned phase, unsigned &which)
       {
@@ -1432,9 +1432,9 @@ namespace CCMI
        *
        * Calls One Color Rectangle constructor and inits variables.
        *
-       * \param[in] mapping	Torus CollectiveMapping for geometry
-       * \param[in] color	Color of schedule
-       * \param[in] rect	Rectangle of geom
+       * \param[in] mapping Torus CollectiveMapping for geometry
+       * \param[in] color Color of schedule
+       * \param[in] rect  Rectangle of geom
        */
       inline OneColorRectRedSched(PAMI_MAPPING_CLASS *mapping, Color color,
                                   const Rectangle &rect, Subschedule subschedule=Binomial) :
@@ -1450,9 +1450,9 @@ namespace CCMI
        *
        * Checks the memory object has room for the schedule object.
        *
-       * \param[in] size	Size, in bytes, of the memory region
-       * \param[in] addr	The memory region
-       * \return	Address of memory region to use for object
+       * \param[in] size  Size, in bytes, of the memory region
+       * \param[in] addr  The memory region
+       * \return  Address of memory region to use for object
        */
 //      inline void * operator new(size_t size, void *addr)
 //      {
@@ -1464,7 +1464,7 @@ namespace CCMI
        *
        * Aborts since delete should not be used.
        *
-       * \param[in] p	The address of the object
+       * \param[in] p The address of the object
        */
       void operator delete(void *p)
       {
@@ -1474,11 +1474,11 @@ namespace CCMI
       /**
        * \brief Get Source node phase list
        *
-       * \param[in] phase	Phase for which to extract information
-       * \param[out] srcpes	Array to hold source node(s)
-       * \param[out] nsrc	Number of source nodes
-       * \param[out] subtasks	Operation for receive
-       * \return	nothing (else)
+       * \param[in] phase Phase for which to extract information
+       * \param[out] srcpes Array to hold source node(s)
+       * \param[out] nsrc Number of source nodes
+       * \param[out] subtasks Operation for receive
+       * \return  nothing (else)
        */
       virtual void getSrcPeList(unsigned phase, unsigned *srcpes,
                                 unsigned &nsrc, unsigned *subtasks=NULL)
@@ -1509,11 +1509,11 @@ namespace CCMI
       /**
        * \brief Get Destination node phase list
        *
-       * \param[in] phase	Phase for which to extract information
-       * \param[out] dstpes	Array to hold destination node(s)
-       * \param[out] ndst	Number of destination nodes (and subtasks)
-       * \param[out] subtask	Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
-       * \return	nothing (else).
+       * \param[in] phase Phase for which to extract information
+       * \param[out] dstpes Array to hold destination node(s)
+       * \param[out] ndst Number of destination nodes (and subtasks)
+       * \param[out] subtask  Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
+       * \return  nothing (else).
        */
       virtual void getDstPeList(unsigned phase, unsigned *dstpes,
                                 unsigned &ndst, unsigned *subtasks)
@@ -1549,13 +1549,13 @@ namespace CCMI
        * properties of the rectangle and/or location of root node (and which operation
        * is selected).
        *
-       * \param[in] root		Root node rank
-       * \param[in] op		Collective operation (e.g. Broadcast)
-       * \param[out] start		Starting phase for this node
-       * \param[out] nphases		Number of phases for this node
-       * \param[out] nmessages	Number of steps in each phase for this node
-       *				(not used by executor).
-       * \return	nothing (else)
+       * \param[in] root    Root node rank
+       * \param[in] op    Collective operation (e.g. Broadcast)
+       * \param[out] start    Starting phase for this node
+       * \param[out] nphases    Number of phases for this node
+       * \param[out] nmessages  Number of steps in each phase for this node
+       *        (not used by executor).
+       * \return  nothing (else)
        *
        * \refer ocrmb_sched
        */
@@ -1603,11 +1603,11 @@ namespace CCMI
       }
 
     }; /* OneColorRectRedSched */
-    template <class T_Sysdep, class T_Schedule>
+    template <class T_Schedule>
     class OneColorRectAllredSched : public OneColorRectangle
     {
     protected:
-      CCMI::Schedule::OneColorRectRedSched<T_Sysdep, T_Schedule> _reduce;
+      CCMI::Schedule::OneColorRectRedSched<T_Schedule> _reduce;
       CCMI::Schedule::OneColorRectBcastSched _bcast;
       unsigned _midphase;
 
@@ -1617,17 +1617,17 @@ namespace CCMI
        *
        * Construct rectangle reduce and broadcast schedules.
        *
-       * \param[in] mapping	Torus mapping for geometry
-       * \param[in] color	Color of schedule
-       * \param[in] rect	Rectangle of geom
+       * \param[in] mapping Torus mapping for geometry
+       * \param[in] color Color of schedule
+       * \param[in] rect  Rectangle of geom
        */
       inline OneColorRectAllredSched(PAMI_MAPPING_CLASS *mapping,
                                      Color color, const Rectangle &rect,
                                      Subschedule subschedule=Binomial) :
       OneColorRectangle(mapping, color, rect)
       {
-        COMPILE_TIME_ASSERT(sizeof(_reduce) >= sizeof(OneColorRectRedSched<T_Sysdep, T_Schedule>));
-        new (&_reduce) OneColorRectRedSched<T_Sysdep, T_Schedule>(mapping, color, rect, subschedule);
+        COMPILE_TIME_ASSERT(sizeof(_reduce) >= sizeof(OneColorRectRedSched<T_Schedule>));
+        new (&_reduce) OneColorRectRedSched<T_Schedule>(mapping, color, rect, subschedule);
         COMPILE_TIME_ASSERT(sizeof(_bcast) >= sizeof(OneColorRectBcastSched));
         new (&_bcast)  OneColorRectBcastSched(mapping, color, rect);
         _midphase = PHASE_NONE;
@@ -1640,11 +1640,11 @@ namespace CCMI
        *
        * Call the appropriate rectangle schedule to get the list.
        *
-       * \param[in] phase	Phase for which to extract information
-       * \param[out] srcpes	Array to hold source node(s)
-       * \param[out] nsrc	Number of source nodes
-       * \param[out] subtasks	Operation for receive
-       * \return	nothing (else)
+       * \param[in] phase Phase for which to extract information
+       * \param[out] srcpes Array to hold source node(s)
+       * \param[out] nsrc Number of source nodes
+       * \param[out] subtasks Operation for receive
+       * \return  nothing (else)
        */
       virtual void getSrcPeList(unsigned phase, unsigned *srcpes,
                                 unsigned &nsrc, unsigned *subtasks=NULL)
@@ -1664,11 +1664,11 @@ namespace CCMI
        *
        * Call the appropriate rectangle schedule to get the list.
        *
-       * \param[in] phase	Phase for which to extract information
-       * \param[out] dstpes	Array to hold destination node(s)
-       * \param[out] ndst	Number of destination nodes (and subtasks)
-       * \param[out] subtask	Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
-       * \return	nothing (else).
+       * \param[in] phase Phase for which to extract information
+       * \param[out] dstpes Array to hold destination node(s)
+       * \param[out] ndst Number of destination nodes (and subtasks)
+       * \param[out] subtask  Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
+       * \return  nothing (else).
        */
       virtual void getDstPeList(unsigned phase, unsigned *dstpes,
                                 unsigned &ndst, unsigned *subtasks)
@@ -1691,13 +1691,13 @@ namespace CCMI
        * properties of the rectangle and/or location of root node (and which operation
        * is selected).
        *
-       * \param[in] root		Root node rank
-       * \param[in] op		Collective operation (e.g. Broadcast)
-       * \param[out] start		Starting phase for this node
-       * \param[out] nphases		Number of phases for this node
-       * \param[out] nmessages	Number of steps in each phase for this node
-       *				(not used by executor).
-       * \return	nothing (else)
+       * \param[in] root    Root node rank
+       * \param[in] op    Collective operation (e.g. Broadcast)
+       * \param[out] start    Starting phase for this node
+       * \param[out] nphases    Number of phases for this node
+       * \param[out] nmessages  Number of steps in each phase for this node
+       *        (not used by executor).
+       * \return  nothing (else)
        *
        * \refer ocrmb_sched
        */

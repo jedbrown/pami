@@ -15,7 +15,6 @@
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
 #include "p2p/protocols/send/eager/EagerImmediate.h"
-#include "SysDep.h"
 
 typedef PAMI::Device::MPIDevice MPIDevice;
 typedef PAMI::Device::MPIMessage MPIMessage;
@@ -26,12 +25,12 @@ typedef PAMI::Protocol::MPI::P2PMcastProto<MPIDevice,EagerMPI,PAMI::Device::MPIB
 #include "test/internals/multisend/multicast.h"
 
 #ifndef TEST_BUF_SIZE
-#define TEST_BUF_SIZE	1024
+#define TEST_BUF_SIZE 1024
 #endif // TEST_BUF_SIZE
 
-#define GLOBAL_BCAST_NAME	"P2PMcastProto"
-#define GLOBAL_BCAST_MODEL	P2PMcastProto
-#define GLOBAL_BCAST_DEVICE	MPIDevice
+#define GLOBAL_BCAST_NAME "P2PMcastProto"
+#define GLOBAL_BCAST_MODEL  P2PMcastProto
+#define GLOBAL_BCAST_DEVICE MPIDevice
 
 PAMI::Topology itopo;
 PAMI::Topology otopo;

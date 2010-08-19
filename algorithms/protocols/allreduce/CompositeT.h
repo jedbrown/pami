@@ -29,8 +29,8 @@ namespace CCMI
       ///
       ///
       ///
-      template <class T_Schedule, class T_Executor, class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-      class CompositeT : public CCMI::Adaptor::Allreduce::Composite<T_Mcast, T_Sysdep, T_ConnectionManager>
+      template <class T_Schedule, class T_Executor, class T_Mcast, class T_ConnectionManager>
+      class CompositeT : public CCMI::Adaptor::Allreduce::Composite<T_Mcast, T_ConnectionManager>
       {
       protected:
         T_Executor  _executor;
@@ -46,7 +46,6 @@ namespace CCMI
         /// \brief Constructor
         ///
         CompositeT (PAMI_CollectiveRequest_t   * req,
-                    T_Sysdep                  * map,
                     T_ConnectionManager       * cmgr,
                     PAMI_Callback_t              cb_done,
                     pami_consistency_t           consistency,
@@ -62,13 +61,13 @@ namespace CCMI
                     CollectiveProtocolFactory * factory,
                     int                         root = -1,
                     CCMI::Schedule::Color       color=CCMI::Schedule::XP_Y_Z) :
-          CCMI::Adaptor::Allreduce::Composite<T_Mcast, T_Sysdep,T_ConnectionManager>(flags,
+          CCMI::Adaptor::Allreduce::Composite<T_Mcast,T_ConnectionManager>(flags,
                                                                                      (CCMI::Executor::Composite*)geometry->getKey((size_t)0, /// \todo does NOT support multicontext
                                                                                                                                   PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE0),
                                                                  factory, cb_done),
-        _executor(map, cmgr, consistency, geometry->comm(), geometry->getAllreduceIteration())
+        _executor(cmgr, consistency, geometry->comm(), geometry->getAllreduceIteration())
         {
-          create_schedule(map, geometry, color);
+          create_schedule(geometry, color);
           TRACE_ALERT((stderr,"<%p>Allreduce::%s::CompositeT() ALERT\n",this,name));
           addExecutor (&_executor);
           initialize (&_executor, req, srcbuf, dstbuf, count,
@@ -78,8 +77,7 @@ namespace CCMI
           _executor.reset ();
         }
         // Template implementation must specialize this function.
-        void create_schedule(T_Sysdep        * map,
-                             PAMI_GEOMETRY_CLASS                  * geometry,
+        void create_schedule(PAMI_GEOMETRY_CLASS                  * geometry,
                              CCMI::Schedule::Color       color)
         {
           CCMI_abort();

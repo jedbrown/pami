@@ -43,7 +43,7 @@ namespace CCMI
 
         public:
           MultiCastComposite (Interfaces::NativeInterface          * mInterface,
-                              ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS>     * cmgr,
+                              ConnectionManager::SimpleConnMgr     * cmgr,
                               pami_geometry_t                        g,
                               pami_xfer_t                          * cmd,
                               pami_event_function                    fn,
@@ -327,13 +327,13 @@ namespace CCMI
           ~MultiCastComposite2Device()
           {
           }
-          MultiCastComposite2Device (Interfaces::NativeInterface                         *native_l,
-                                     Interfaces::NativeInterface                         *native_g,
-                                     ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> *cmgr,
-                                     pami_geometry_t                                      g,
-                                     pami_xfer_t                                         *cmd,
-                                     pami_event_function                                  fn,
-                                     void                                                *cookie) :
+          MultiCastComposite2Device (Interfaces::NativeInterface      *native_l,
+                                     Interfaces::NativeInterface      *native_g,
+                                     ConnectionManager::SimpleConnMgr *cmgr,
+                                     pami_geometry_t                   g,
+                                     pami_xfer_t                      *cmd,
+                                     pami_event_function               fn,
+                                     void                             *cookie) :
               Composite(),
               _native_l(native_l),
               _native_g(native_g),
@@ -754,7 +754,7 @@ namespace CCMI
             free(_buffer);
           }
           MultiCastComposite3 (Interfaces::NativeInterface          * mInterface,
-                               ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS>     * cmgr,
+                               ConnectionManager::SimpleConnMgr     * cmgr,
                                pami_geometry_t                        g,
                                pami_xfer_t                          * cmd,
                                pami_event_function                    fn,

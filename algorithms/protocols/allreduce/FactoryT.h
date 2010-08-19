@@ -29,8 +29,8 @@ namespace CCMI
       /// This factory will generate a CompositeT [all]reduce.
       ///
       typedef void      (*MetaDataFn)   (pami_metadata_t *m);
-      template <class T_ConnectionManager, class T_Composite, class T_Sysdep, class T_Mcast, MetaDataFn get_metadata>
-      class FactoryT : public CCMI::Adaptor::Allreduce::Factory<T_Sysdep, T_Mcast, T_ConnectionManager>
+      template <class T_ConnectionManager, class T_Composite,class T_Mcast, MetaDataFn get_metadata>
+      class FactoryT : public CCMI::Adaptor::Allreduce::Factory<T_Mcast, T_ConnectionManager>
       {
       protected:
         T_ConnectionManager     _sconnmgr;
@@ -43,17 +43,15 @@ namespace CCMI
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline FactoryT(T_Sysdep *mapping,
-                        T_Mcast  *mof,
+        inline FactoryT(T_Mcast  *mof,
 //                        CCMI::MultiSend::MulticombineInterface *mf,
                         pami_mapidtogeometry_fn cb_geometry,
                         ConfigFlags flags) :
-          CCMI::Adaptor::Allreduce::Factory<T_Sysdep, T_Mcast, T_ConnectionManager>(mapping,
-                                                                                    mof,
+          CCMI::Adaptor::Allreduce::Factory<T_Mcast, T_ConnectionManager>(mof,
 //                                                    mf,
                                                                                     cb_geometry,
                                                                                     flags),
-          _sconnmgr(mapping)
+          _sconnmgr()
         {
           TRACE_ALERT((stderr,"<%p>Allreduce::%s::FactoryT() ALERT:\n",this, T_Composite::name));
           TRACE_ADAPTOR ((stderr, "<%p>Allreduce::%s::FactoryT() mf<%#X>\n",this, T_Composite::name,
@@ -162,7 +160,7 @@ namespace CCMI
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
                 arcomposite = new (c_request)
           T_Composite(request,
-                    this->_mapping, &this->_sconnmgr, cb_done,
+                    &this->_sconnmgr, cb_done,
                     consistency, this->_moldinterface, geometry,
                     srcbuf, dstbuf, 0, count, dtype, op,
                     this->_flags, this,

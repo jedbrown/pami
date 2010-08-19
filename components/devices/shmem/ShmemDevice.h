@@ -16,7 +16,7 @@
 
 #include <pami.h>
 
-#include "SysDep.h"
+#include "components/memory/MemoryManager.h"
 #include "Arch.h"
 #include "Memregion.h"
 
@@ -295,22 +295,22 @@ namespace PAMI
               __global.mapping.node2peer (address, me);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() me = %zu\n", me));
 
-	      // will there always be a "0"?
-	      local_barriered_shmemzero((void *)ncontexts, size, npeers, me == 0);
-	      ncontexts[me] = n;
-	      __sync_fetch_and_add(&ncontexts[npeers], 1);
-	      mem_sync(); // paranoia?
-	      while (ncontexts[npeers] < npeers);
-	      mem_sync(); // paranoia?
-	      size_t total_fifos_on_node = 0;
+        // will there always be a "0"?
+        local_barriered_shmemzero((void *)ncontexts, size, npeers, me == 0);
+        ncontexts[me] = n;
+        __sync_fetch_and_add(&ncontexts[npeers], 1);
+        mem_sync(); // paranoia?
+        while (ncontexts[npeers] < npeers);
+        mem_sync(); // paranoia?
+        size_t total_fifos_on_node = 0;
               // Assign fifo indexes to the peer fnum cache while computing total
-	      for (i = 0; i < npeers; i++)
-	      {
-		// This should only be done by one peer, but all write the same data
-		// and this way no extra synchronization is needed.
-		peer_fnum[i] = total_fifos_on_node;
-	      	total_fifos_on_node += ncontexts[i];
-	      }
+        for (i = 0; i < npeers; i++)
+        {
+    // This should only be done by one peer, but all write the same data
+    // and this way no extra synchronization is needed.
+    peer_fnum[i] = total_fifos_on_node;
+          total_fifos_on_node += ncontexts[i];
+        }
 
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() ncontexts = %p sync'd\n", ncontexts));
 

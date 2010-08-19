@@ -81,7 +81,7 @@ namespace CCMI
           /// \param[in] geometry    Geometry object
           ///
           BarrierT  (Interfaces::NativeInterface          * mInterface,
-                     ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS>     * cmgr,
+                     ConnectionManager::SimpleConnMgr     * cmgr,
                      pami_geometry_t                         geometry,
                      void                                 * cmd,
                      pami_event_function                     fn,
@@ -110,14 +110,14 @@ namespace CCMI
             _myexecutor.start();
           }
 
-	  virtual void   notifyRecv  (unsigned              src,
-				      const pami_quad_t   & metadata,
-				      PAMI::PipeWorkQueue ** pwq,
-				      pami_callback_t      * cb_done,
-				      void                 * cookie)
-	  {
-	    _myexecutor.notifyRecv (src, metadata, NULL, NULL);
-	  }
+    virtual void   notifyRecv  (unsigned              src,
+              const pami_quad_t   & metadata,
+              PAMI::PipeWorkQueue ** pwq,
+              pami_callback_t      * cb_done,
+              void                 * cookie)
+    {
+      _myexecutor.notifyRecv (src, metadata, NULL, NULL);
+    }
 
           static void    cb_head   (const pami_quad_t    * info,
                                      unsigned              count,
@@ -135,7 +135,7 @@ namespace CCMI
 
             PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
 
-	    *rcvlen    = 0;
+      *rcvlen    = 0;
             *recvpwq   = 0;
             cb_done->function    = NULL;
             cb_done->clientdata = NULL;
@@ -144,14 +144,14 @@ namespace CCMI
               {
                 geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (cdata->_comm);
 
-		if (geometry!= NULL)
-		  PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
-		else {
-		  //Geoemtry doesnt exist
-		  PAMI_GEOMETRY_CLASS::registerUnexpBarrier(cdata->_comm, (pami_quad_t&)*info, peer,
-							    (unsigned) PAMI::Geometry::PAMI_GKEY_UEBARRIERCOMPOSITE1);
-		  return;
-		}
+    if (geometry!= NULL)
+      PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
+    else {
+      //Geoemtry doesnt exist
+      PAMI_GEOMETRY_CLASS::registerUnexpBarrier(cdata->_comm, (pami_quad_t&)*info, peer,
+                  (unsigned) PAMI::Geometry::PAMI_GKEY_UEBARRIERCOMPOSITE1);
+      return;
+    }
               }
 
             PAMI_assert(geometry != NULL);

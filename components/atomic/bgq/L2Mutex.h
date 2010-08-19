@@ -20,7 +20,7 @@
  *
  */
 #include "Global.h"
-#include "SysDep.h"
+#include "components/memory/MemoryManager.h"
 #include "components/atomic/Mutex.h"
 #include <spi/include/l2/atomic.h>
 

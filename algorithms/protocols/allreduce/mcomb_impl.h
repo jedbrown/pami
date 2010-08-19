@@ -33,7 +33,7 @@ namespace CCMI
 
       typedef AllSidedCollectiveProtocolFactoryT<MultiCombineComposite,
                                                  mcomb_allreduce_md,
-                                                 ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MultiCombineFactory;
+                                                 ConnectionManager::SimpleConnMgr> MultiCombineFactory;
     };
   };
 };

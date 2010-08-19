@@ -14,15 +14,13 @@
 #ifndef __algorithms_connmgr_SimpleConnMgr_h__
 #define __algorithms_connmgr_SimpleConnMgr_h__
 
-#include "SysDep.h" /// \todo think about removing this
 #include "algorithms/connmgr/ConnectionManager.h"
 
 namespace CCMI
 {
   namespace ConnectionManager
   {
-    template <class T_Sysdep>
-    class SimpleConnMgr : public ConnectionManager<SimpleConnMgr<T_Sysdep> >
+    class SimpleConnMgr : public ConnectionManager<SimpleConnMgr>
     {
     protected:
       int   _connid;
@@ -33,7 +31,7 @@ namespace CCMI
       //   color.
       /* This class is really just a place holder for future extensions.  */
       SimpleConnMgr (int conn=0)
-        : ConnectionManager<SimpleConnMgr<T_Sysdep > >()
+        : ConnectionManager<SimpleConnMgr>()
       , _connid(0)
       {
         this->setNumConnections (conn == 0 ? 1 : conn );

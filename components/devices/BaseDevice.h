@@ -15,7 +15,7 @@
 #define __components_devices_BaseDevice_h__
 
 #include <pami.h>
-#include "SysDep.h"
+#include "components/memory/MemoryManager.h"
 
 namespace PAMI
 {

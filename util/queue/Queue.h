@@ -26,8 +26,7 @@
 
 #include <stdio.h>
 
-#include "SysDep.h"
-
+#include "components/memory/MemoryManager.h"
 #include "util/common.h"
 #include "util/queue/QueueInterface.h"
 #include "util/queue/QueueIteratorInterface.h"
@@ -90,16 +89,16 @@ namespace PAMI
 
   template <class T_Queue, class T_Element>
   struct BasicQueueIterator {
-	T_Element *curr;
-	T_Element *next;
+  T_Element *curr;
+  T_Element *next;
   };
 
   class Queue : public PAMI::Interface::DequeInterface<Queue>,
       public PAMI::Interface::QueueInfoInterface<Queue>,
       public PAMI::Interface::QueueIterator<
-			Queue, Interface::QueueElement<Queue> ,
-			BasicQueueIterator<Queue, Interface::QueueElement<Queue> >
-			>
+      Queue, Interface::QueueElement<Queue> ,
+      BasicQueueIterator<Queue, Interface::QueueElement<Queue> >
+      >
   {
     public:
 
@@ -109,10 +108,10 @@ namespace PAMI
       inline Queue() :
           PAMI::Interface::DequeInterface<Queue> (),
           PAMI::Interface::QueueInfoInterface<Queue> (),
-	  PAMI::Interface::QueueIterator<
-				Queue, Interface::QueueElement<Queue> ,
-				BasicQueueIterator<Queue, Interface::QueueElement<Queue> >
-				>(),
+    PAMI::Interface::QueueIterator<
+        Queue, Interface::QueueElement<Queue> ,
+        BasicQueueIterator<Queue, Interface::QueueElement<Queue> >
+        >(),
           _head (NULL),
           _tail (NULL),
           _size (0)
@@ -202,25 +201,25 @@ namespace PAMI
       /// \copydoc PAMI::Interface::QueueInterface::removeAll
       inline void removeAll_impl(Element *&head, Element *&tail, size_t &size)
       {
-	head = _head;
-	tail = _tail;
-	size = _size;
-	if (head) {
-	  _head = _tail = NULL;
-	  _size = 0;
-	}
+  head = _head;
+  tail = _tail;
+  size = _size;
+  if (head) {
+    _head = _tail = NULL;
+    _size = 0;
+  }
       }
 
       /// \copydoc PAMI::Interface::QueueInterface::appendAll
       inline void appendAll_impl(Element *head, Element *tail, size_t size)
       {
-	if (_tail) {
-		_tail->setNext(head);
-	} else {
-		_head = head;
-	}
-	_tail = tail;
-	_size += size;
+  if (_tail) {
+    _tail->setNext(head);
+  } else {
+    _head = head;
+  }
+  _tail = tail;
+  _size += size;
       }
 
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
@@ -356,36 +355,36 @@ namespace PAMI
     // This all works because there is only one thread removing (the iterator),
     // all others only append new work.
 
-	inline void iter_init_impl(Iterator *iter) {
-		iter->curr = iter->next = NULL;
-	}
+  inline void iter_init_impl(Iterator *iter) {
+    iter->curr = iter->next = NULL;
+  }
 
-	inline bool iter_begin_impl(Iterator *iter) {
-		iter->curr = peek();
-		return false; // did not alter queue
-	}
+  inline bool iter_begin_impl(Iterator *iter) {
+    iter->curr = peek();
+    return false; // did not alter queue
+  }
 
-	inline bool iter_check_impl(Iterator *iter) {
-		if (iter->curr == NULL) {
-			// done with this pass...
-			return false;
-		}
-		iter->next = nextElem(iter->curr);
-		return true;
-	}
+  inline bool iter_check_impl(Iterator *iter) {
+    if (iter->curr == NULL) {
+      // done with this pass...
+      return false;
+    }
+    iter->next = nextElem(iter->curr);
+    return true;
+  }
 
-	inline void iter_end_impl(Iterator *iter) {
-		iter->curr = iter->next;
-	}
+  inline void iter_end_impl(Iterator *iter) {
+    iter->curr = iter->next;
+  }
 
-	inline Element *iter_current_impl(Iterator *iter) {
-		return iter->curr;
-	}
+  inline Element *iter_current_impl(Iterator *iter) {
+    return iter->curr;
+  }
 
-	inline pami_result_t iter_remove_impl(Iterator *iter) {
-		remove(iter->curr);
-		return PAMI_SUCCESS;
-	}
+  inline pami_result_t iter_remove_impl(Iterator *iter) {
+    remove(iter->curr);
+    return PAMI_SUCCESS;
+  }
 
     private:
 

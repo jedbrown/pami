@@ -32,7 +32,7 @@ namespace CCMI
 
       public:
         MultiCombineComposite (Interfaces::NativeInterface          * mInterface,
-                            ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS>     * cmgr,
+                            ConnectionManager::SimpleConnMgr     * cmgr,
                             pami_geometry_t                        g,
                             pami_xfer_t                          * cmd,
                             pami_event_function                    fn,
@@ -104,12 +104,12 @@ namespace CCMI
       class MultiCombineComposite2Device : public CCMI::Executor::Composite
       {
       public:
-        MultiCombineComposite2Device (Interfaces::NativeInterface                         *mInterface,
-                                      ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> *cmgr,
-                                      pami_geometry_t                                      g,
-                                      pami_xfer_t                                         *cmd,
-                                      pami_event_function                                  fn,
-                                      void                                                *cookie) :
+        MultiCombineComposite2Device (Interfaces::NativeInterface      *mInterface,
+                                      ConnectionManager::SimpleConnMgr *cmgr,
+                                      pami_geometry_t                   g,
+                                      pami_xfer_t                      *cmd,
+                                      pami_event_function               fn,
+                                      void                             *cookie) :
           Composite()
           {
           }

@@ -74,13 +74,13 @@ namespace CCMI
         ///                          In async broadcast smaller buffer can be
         ///                          passed in as it doesent use multiple colors.
         /// \param[in]  cb_done      Callback to invoke when
-        ///				 message is complete.
+        ///        message is complete.
         /// \param[in]  consistency  Required consistency level
         /// \param[in]  geometry     Geometry to use for this
-        ///				 collective operation.
+        ///        collective operation.
         ///                          \c NULL indicates the global geometry.
         /// \param[in]  root         Rank of the node performing
-        ///				 the broadcast.
+        ///        the broadcast.
         /// \param[in]  src          Source buffer to broadcast.
         /// \param[in]  bytes        Number of bytes to broadcast.
         ///
@@ -102,7 +102,7 @@ namespace CCMI
       /// \brief Base factory class for synchronous broadcast factory
       ///  implementations.
       ///
-      template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+      template <class T_Mcast, class T_ConnectionManager>
       class BroadcastFactory : public BaseBroadcastFactory
       {
       protected:
@@ -115,11 +115,6 @@ namespace CCMI
         ///  \brief Connection Manager for the broadcast
         ///
         T_ConnectionManager   * _connmgr;
-
-        ///
-        /// \brief CollectiveMapping module
-        ///
-        T_Sysdep                          * _sd;
 
         ///
         /// \brief async broadcast handler
@@ -154,12 +149,11 @@ namespace CCMI
         ///
         BroadcastFactory
         (T_Mcast                        * minterface,
-         T_Sysdep                       * sd,
          T_ConnectionManager            * connmgr,
          unsigned                         nconn,
          pami_olddispatch_multicast_fn          cb_head = NULL,
          pami_olddispatch_multicast_fn          cb_head_buffered = NULL ) :
-        _minterface (minterface), _connmgr(connmgr), _sd (sd),
+        _minterface (minterface), _connmgr(connmgr),
         _cb_async(NULL), _cb_geometry(NULL), _cb_head(cb_head),
         _cb_head_buffered (cb_head_buffered), _isBuffered (true)
         {
@@ -186,7 +180,7 @@ namespace CCMI
           _cb_geometry =  cb_geometry;
         }
 
-        void setConnectionManager (CCMI::ConnectionManager::ConnectionManager<T_Sysdep>  * connmgr)
+        void setConnectionManager (T_ConnectionManager * connmgr)
         {
           _connmgr = connmgr;
         }

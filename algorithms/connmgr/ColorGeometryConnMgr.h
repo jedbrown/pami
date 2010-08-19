@@ -20,8 +20,7 @@ namespace CCMI
 {
   namespace ConnectionManager
   {
-    template <class T_Sysdep>
-    class ColorGeometryConnMgr : public ConnectionManager<ColorGeometryConnMgr<T_Sysdep> >
+    class ColorGeometryConnMgr : public ConnectionManager<ColorGeometryConnMgr>
     {
     public:
       enum
@@ -35,7 +34,7 @@ namespace CCMI
       //   color.
       /* This class is really just a place holder for future extensions.  */
       ColorGeometryConnMgr (int conn=0)
-        : ConnectionManager<ColorGeometryConnMgr<T_Sysdep> >()
+        : ConnectionManager<ColorGeometryConnMgr>()
       {
         setNumConnections_impl (conn == 0 ? 1 : conn );
       }

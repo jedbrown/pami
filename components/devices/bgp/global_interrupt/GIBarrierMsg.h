@@ -9,7 +9,6 @@
 #ifndef __components_devices_bgp_global_interrupt_GIBarrierMsg_h__
 #define __components_devices_bgp_global_interrupt_GIBarrierMsg_h__
 
-#include "SysDep.h"
 #include "util/common.h"
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/FactoryInterface.h"

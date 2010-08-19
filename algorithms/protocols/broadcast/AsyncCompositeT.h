@@ -30,11 +30,11 @@ namespace CCMI
       ///
       /// \brief Asyc Broadcast Composite. It is single color right now
       ///
-      template <class T_Schedule, class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+      template <class T_Schedule, class T_Mcast, class T_ConnectionManager>
       class AsyncCompositeT : public CCMI::Executor::OldComposite
       {
       protected:
-        CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager>    _executor __attribute__((__aligned__(16)));
+        CCMI::Executor::OldBroadcast<T_Mcast, T_ConnectionManager>    _executor __attribute__((__aligned__(16)));
         T_Schedule                            _schedule;
         BcastQueueElem               _bqelem;
         ExecutorPool               * _execpool;
@@ -43,8 +43,7 @@ namespace CCMI
         ///
         /// \brief Constructor
         ///
-        AsyncCompositeT (T_Sysdep             * sd,
-                         T_ConnectionManager  *cmgr,
+        AsyncCompositeT (T_ConnectionManager        *cmgr,
                          PAMI_Callback_t             cb_done,
                          pami_consistency_t          consistency,
                          T_Mcast                   * mf,
@@ -53,7 +52,7 @@ namespace CCMI
                          char                      * src,
                          unsigned                    bytes,
                          ExecutorPool              * epool) :
-        _executor (sd, geometry->comm(), cmgr, 0/*no color*/), _bqelem(this, root), _execpool(epool)
+        _executor (geometry->comm(), cmgr, 0/*no color*/), _bqelem(this, root), _execpool(epool)
         {
           TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AsyncCompositeT() \n",this));
           _executor.setMulticastInterface (mf);
@@ -64,7 +63,7 @@ namespace CCMI
           addExecutor (&_executor);
 
           COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
-          create_schedule(&_schedule, sizeof(_schedule), root, sd, geometry);
+          create_schedule(&_schedule, sizeof(_schedule), root, geometry);
           _executor.setSchedule (&_schedule);
         }
 
@@ -75,7 +74,6 @@ namespace CCMI
         void      create_schedule(void                      * buf,
                                   unsigned                    size,
                                   unsigned                    root,
-                                  T_Sysdep                       * sd,
                                   PAMI_GEOMETRY_CLASS                  * g) {CCMI_abort();};
 
         ExecutorPool *execpool ()
@@ -87,7 +85,7 @@ namespace CCMI
           return &_bqelem;
         }
 
-        CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager> &executor()
+        CCMI::Executor::OldBroadcast<T_Mcast, T_ConnectionManager> &executor()
         {
           return _executor;
         }
@@ -101,7 +99,7 @@ namespace CCMI
           AsyncCompositeT *composite = (AsyncCompositeT *) clientdata;
 
           TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AsyncCompositeT::staticAsyncRecvFn() \n",composite));
-          composite->executor().CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast,T_ConnectionManager>::notifyRecv ((unsigned)-1, *info, NULL,
+          composite->executor().CCMI::Executor::OldBroadcast<T_Mcast,T_ConnectionManager>::notifyRecv ((unsigned)-1, *info, NULL,
                                                                                           composite->executor().getPwidth());
         }
 
@@ -110,11 +108,11 @@ namespace CCMI
       ///
       /// \brief Base factory class for broadcast factory implementations.
       ///
-      template <class T_Composite, MetaDataFn get_metadata, class T_Sysdep, class T_Mcast>
-      class AsyncCompositeFactoryT : public BroadcastFactory<T_Sysdep, T_Mcast, CCMI::ConnectionManager::RankBasedConnMgr<T_Sysdep> >
+      template <class T_Composite, MetaDataFn get_metadata, class T_Mcast>
+      class AsyncCompositeFactoryT : public BroadcastFactory<T_Mcast, CCMI::ConnectionManager::RankBasedConnMgr>
       {
       protected:
-        CCMI::ConnectionManager::RankBasedConnMgr<T_Sysdep>  _rbconnmgr; //Connection manager
+        CCMI::ConnectionManager::RankBasedConnMgr  _rbconnmgr; //Connection manager
         ExecutorPool                               _execpool;
 
       public:
@@ -122,15 +120,13 @@ namespace CCMI
         /// \brief Constructor for broadcast factory implementations.
         ///
         AsyncCompositeFactoryT
-        (T_Sysdep *sd,
-         T_Mcast  *mf, unsigned nconn)
-          : BroadcastFactory<T_Sysdep, T_Mcast, CCMI::ConnectionManager::RankBasedConnMgr<T_Sysdep> >(mf,
-                                                                                                      sd,
+        (T_Mcast  *mf, unsigned nconn)
+          : BroadcastFactory<T_Mcast, CCMI::ConnectionManager::RankBasedConnMgr>(mf,
                                                                                                       &_rbconnmgr,
                                                                                                       nconn,
                                                                                                       (pami_olddispatch_multicast_fn)cb_head,
                                                                                                       (pami_olddispatch_multicast_fn)cb_head_buffered),
-        _rbconnmgr(sd)
+        _rbconnmgr()
         {
           //--
           TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AsyncCompositeFactoryT() \n",this));
@@ -198,13 +194,13 @@ namespace CCMI
         /// \param[in]  request      Opaque memory to maintain
         ///                          internal message state.
         /// \param[in]  cb_done      Callback to invoke when
-        ///				 message is complete.
+        ///        message is complete.
         /// \param[in]  consistency  Required consistency level
         /// \param[in]  geometry     Geometry to use for this
-        ///				 collective operation.
+        ///        collective operation.
         ///                          \c NULL indicates the global geometry.
         /// \param[in]  root         Rank of the node performing
-        ///				 the broadcast.
+        ///        the broadcast.
         /// \param[in]  src          Source buffer to broadcast.
         /// \param[in]  bytes        Number of bytes to broadcast.
         ///
@@ -228,7 +224,7 @@ namespace CCMI
           if(__global.mapping.task() == root)
           {
             a_bcast = new (request_buf)
-                      T_Composite ( this->_sd, &this->_rbconnmgr,
+                      T_Composite ( &this->_rbconnmgr,
                           cb_done, consistency, this->_minterface,
                           geometry, root, src, bytes, &this->_execpool );
             a_bcast->executor().start();
@@ -262,7 +258,7 @@ namespace CCMI
 
               //Create a new composite and post it to posted queue
               a_bcast = new (request_buf)
-                        T_Composite (this->_sd, &this->_rbconnmgr,
+                        T_Composite (&this->_rbconnmgr,
                            cb_exec_done, consistency, this->_minterface,
                            geometry, root, src, bytes, &this->_execpool);
 
@@ -312,7 +308,7 @@ namespace CCMI
 
             COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
             bcast = new (exec_request)
-                    T_Composite (factory->_sd, &factory->_rbconnmgr,
+                    T_Composite (&factory->_rbconnmgr,
                        cb_exec_done, PAMI_MATCH_CONSISTENCY, factory->_minterface,
                        geometry, cdata->_root, unexpbuf, sndlen, &factory->_execpool);
 
@@ -403,7 +399,7 @@ namespace CCMI
 
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
           T_Composite *bcast = new (request)
-                     T_Composite (factory->_sd, &factory->_rbconnmgr,
+                     T_Composite (&factory->_rbconnmgr,
                         cb_client_done, PAMI_MATCH_CONSISTENCY, factory->_minterface,
                         geometry, cdata->_root, *rcvbuf, *rcvlen, &factory->_execpool);
 

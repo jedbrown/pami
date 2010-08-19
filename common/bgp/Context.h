@@ -43,7 +43,6 @@
 #include "components/memory/MemoryAllocator.h"
 #include "components/memory/MemoryManager.h"
 
-#include "SysDep.h"
 #include "Memregion.h"
 
 #include "p2p/protocols/rget/GetRdma.h"
@@ -144,7 +143,6 @@ namespace PAMI
      * \param[in] contextid Context ID (index)
      * \param[in] clt   Client opaque entity
      * \param[in] ctx   Context opaque entity
-     * \param[in] sd    SysDep object
      */
     inline pami_result_t init(size_t clientid, size_t contextid, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm) {
       TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
@@ -224,7 +222,6 @@ namespace PAMI
           _clientid (clientid),
           _contextid (id),
           _mm (addr, bytes),
-          _sysdep (_mm),
           _lock (),
           _multi_registration(NULL),
           _world_geometry(world_geometry),
@@ -661,7 +658,6 @@ namespace PAMI
       Protocol::Get::RGet         * _rget;
       Protocol::Put::RPut         * _rput;
       PAMI::Memory::MemoryManager   _mm;
-      SysDep _sysdep;
 
       // devices...
       ContextLock _lock;

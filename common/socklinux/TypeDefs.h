@@ -35,7 +35,6 @@
 
 //#define PAMI_COLL_MCAST_CLASS  MPIMcastModel
 //#define PAMI_COLL_M2M_CLASS    MPIOldM2MModel
-#define PAMI_COLL_SYSDEP_CLASS PAMI::SysDep
 //#define PAMI_NATIVEINTERFACE   MPINativeInterface
 #define PAMI_GEOMETRY_CLASS    PAMI::Geometry::Common
 

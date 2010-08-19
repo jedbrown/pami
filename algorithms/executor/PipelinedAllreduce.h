@@ -28,8 +28,8 @@ namespace CCMI
 {
   namespace Executor
   {
-    template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-    class PipelinedAllreduce : public OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>
+    template<class T_Mcast, class T_ConnectionManager>
+    class PipelinedAllreduce : public OldAllreduceBase<T_Mcast,T_ConnectionManager>
     {
 
       private:
@@ -98,7 +98,7 @@ namespace CCMI
       public:
 
         /// Default Constructor
-        PipelinedAllreduce () : OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>(),
+        PipelinedAllreduce () : OldAllreduceBase<T_Mcast,T_ConnectionManager>(),
             _curRecvPhase ((unsigned) - 1), _curRecvChunk((unsigned) - 1),
             _curSendPhase ((unsigned) - 1), _curSendChunk((unsigned) - 1),
             _lastReducePhase((unsigned) - 1)
@@ -112,12 +112,11 @@ namespace CCMI
 
         ///  Main constructor to initialize the executor
         PipelinedAllreduce
-        (T_Sysdep             * map,
-         T_ConnectionManager  * connmgr,
+        (T_ConnectionManager  * connmgr,
          pami_consistency_t      consistency,
          const unsigned         commID,
          unsigned               iteration):
-            OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>(map, connmgr, consistency, commID, iteration, true),
+            OldAllreduceBase<T_Mcast,T_ConnectionManager>(connmgr, consistency, commID, iteration, true),
             _curRecvPhase ((unsigned) - 1), _curRecvChunk((unsigned) - 1),
             _curSendPhase ((unsigned) - 1), _curSendChunk((unsigned) - 1),
             _donecount (0), _lastReducePhase((unsigned) - 1)
@@ -144,7 +143,7 @@ namespace CCMI
 
         virtual void reset ()
         {
-          OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>::reset ();
+          OldAllreduceBase<T_Mcast,T_ConnectionManager>::reset ();
 
           //The previous allreduce could have enabled this
 //        _msend_data.setFlags (MultiSend::CCMI_FLAGS_UNSET);
@@ -190,8 +189,8 @@ namespace CCMI
   };  //-- Executor
 };  //-- CCMI
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::start()
+template<class T_Mcast, class T_ConnectionManager>
+inline void CCMI::Executor::PipelinedAllreduce<T_Mcast,T_ConnectionManager>::start()
 {
   this->_initialized = true;
   _numActiveSends   = PAMI_MAX_ACTIVE_SENDS;
@@ -239,8 +238,8 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
               _curSendChunk, _curRecvChunk));
 }
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifyRecv
+template<class T_Mcast, class T_ConnectionManager>
+inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_ConnectionManager>::notifyRecv
 (unsigned                     src,
  const pami_quad_t             & info,
  char                       * buf,
@@ -273,8 +272,8 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 
 }
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifySendDone
+template<class T_Mcast, class T_ConnectionManager>
+inline void CCMI::Executor::PipelinedAllreduce<T_Mcast,T_ConnectionManager>::notifySendDone
 ( const pami_quad_t & info)
 {
   // update state
@@ -308,8 +307,8 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
     }
 }
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advanceRecv()
+template<class T_Mcast, class T_ConnectionManager>
+inline void CCMI::Executor::PipelinedAllreduce<T_Mcast,T_ConnectionManager>::advanceRecv()
 {
 
 //  Logging::LogMgr::getLogMgr()->startCounter (_log_advancerecv);
@@ -422,8 +421,8 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 //  Logging::LogMgr::getLogMgr()->stopCounter (_log_advancerecv, 1);
 }
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advanceSend()
+template<class T_Mcast, class T_ConnectionManager>
+inline void CCMI::Executor::PipelinedAllreduce<T_Mcast,T_ConnectionManager>::advanceSend()
 {
 
 //  Logging::LogMgr::getLogMgr()->startCounter (_log_advancesend);
@@ -520,8 +519,8 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 //  Logging::LogMgr::getLogMgr()->stopCounter (_log_advancesend, 1);
 }
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::sendMessage
+template<class T_Mcast, class T_ConnectionManager>
+inline void CCMI::Executor::PipelinedAllreduce<T_Mcast,T_ConnectionManager>::sendMessage
 (const char             * buf,
  unsigned                 offset,
  unsigned                 bytes,
@@ -566,12 +565,12 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionMa
 
   CCMI_assert (offset + bytes <= this->_astate.getBytes());
 
-  OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>::sendMessage (buf + offset, bytes, dstpes, ndst, dsthints,
+  OldAllreduceBase<T_Mcast,T_ConnectionManager>::sendMessage (buf + offset, bytes, dstpes, ndst, dsthints,
                                                                          sphase, &this->_sState[index]);
 }
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::PipelinedAllreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advanceBcast ()
+template<class T_Mcast, class T_ConnectionManager>
+inline void CCMI::Executor::PipelinedAllreduce<T_Mcast,T_ConnectionManager>::advanceBcast ()
 {
   unsigned bcastRecvPhase = this->_astate.getBcastRecvPhase();
   TRACE_MSG ((stderr, "<%p:%#.1X>Executor::PipelinedAllreduce::advanceBcast "

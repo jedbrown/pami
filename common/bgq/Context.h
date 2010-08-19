@@ -26,7 +26,7 @@
 
 #include "components/memory/MemoryAllocator.h"
 
-#include "SysDep.h"
+#include "components/memory/MemoryManager.h"
 #include "Memregion.h"
 
 #include "p2p/protocols/RGet.h"
@@ -151,7 +151,6 @@ namespace PAMI
        * the 'this' pointer actually points to the array - each device knows whether
        * that is truly an array and how many elements it contains.
        *
-       * \param[in] sd           SysDep object
        * \param[in] clientid     Client ID (index)
        * \param[in] num_ctx      Number of contexts in this client
        * \param[in] ctx          Context opaque entity
@@ -235,7 +234,6 @@ namespace PAMI
           _clientid (clientid),
           _contextid (id),
           _mm (addr, bytes),
-          _sysdep (_mm),
           _lock(),
           _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >*) _multi_registration_storage),
           _ccmi_registration((CCMIRegistration*)_ccmi_registration_storage),
@@ -946,7 +944,6 @@ namespace PAMI
       pami_endpoint_t              _self;
 
       PAMI::Memory::MemoryManager  _mm;
-      SysDep                       _sysdep;
 
       void *                       _dispatch[1024];
       Protocol::Get::RGet         *_rget;

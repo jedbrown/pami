@@ -31,8 +31,8 @@ namespace CCMI
       ///
       /// This factory will generate a CompositeT [all]reduce.
       ///
-      template <class T_ConnectionManager, class T_Composite, class T_Sysdep, class T_Mcast>
-      class AsyncFactoryT : public CCMI::Adaptor::Allreduce::AsyncFactory<T_Sysdep, T_Mcast, T_ConnectionManager>
+      template <class T_ConnectionManager, class T_Composite, class T_Mcast>
+      class AsyncFactoryT : public CCMI::Adaptor::Allreduce::AsyncFactory<T_Mcast, T_ConnectionManager>
       {
       protected:
         T_ConnectionManager     _sconnmgr;
@@ -67,12 +67,11 @@ namespace CCMI
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline AsyncFactoryT(T_Sysdep *mapping,
-                             T_Mcast *mf,
+        inline AsyncFactoryT(T_Mcast *mf,
                              pami_mapidtogeometry_fn cb_geometry,
                              ConfigFlags flags) :
-          CCMI::Adaptor::Allreduce::AsyncFactory<T_Sysdep, T_Mcast, T_ConnectionManager>(mapping, mf, cb_geometry, flags),
-        _sconnmgr(mapping)
+          CCMI::Adaptor::Allreduce::AsyncFactory<T_Mcast, T_ConnectionManager>(mf, cb_geometry, flags),
+        _sconnmgr()
         {
           TRACE_ALERT((stderr,"<%p>Allreduce::%s::AsyncFactoryT() ALERT:\n",this, T_Composite::name));
           TRACE_ADAPTOR ((stderr, "<%p>Allreduce::%s::AsyncFactoryT() mf<%#X>\n",this, T_Composite::name,
@@ -111,7 +110,7 @@ namespace CCMI
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
           T_Composite *allreduce = new (c_request)
           T_Composite(request,
-                    this->_mapping, &this->_sconnmgr, cb_done,
+                    &this->_sconnmgr, cb_done,
                     consistency, this->_minterface, geometry,
                     srcbuf, dstbuf, 0, count, dtype, op,
                     this->_flags, this,
@@ -150,7 +149,7 @@ namespace CCMI
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T_Composite));
           T_Composite *allreduce = new (c_request)
           T_Composite((PAMI_CollectiveRequest_t*)NULL, // restart will reset this
-                    this->_mapping, &this->_sconnmgr,
+                    &this->_sconnmgr,
                     temp_cb_done, // bogus temporary cb, restart will reset it.
                     (pami_consistency_t) PAMI_MATCH_CONSISTENCY, // restart may reset this
                     this->_minterface,

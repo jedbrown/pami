@@ -26,7 +26,7 @@ namespace CCMI
 {
   namespace Executor
   {
-    template<class T_Mcastinterface, class T_Sysdep, class T_ConnectionManager>
+    template<class T_Mcastinterface, class T_ConnectionManager>
     class OldAllreduceBase : public Executor
     {
     public:
@@ -204,8 +204,7 @@ namespace CCMI
 
       ///  Main constructor to initialize the executor
       ///  By default it only needs one connection manager
-      OldAllreduceBase(T_Sysdep *map,
-                    T_ConnectionManager  * connmgr,
+      OldAllreduceBase(T_ConnectionManager  * connmgr,
                     pami_consistency_t                       consistency,
                     const unsigned                          commID,
                     unsigned                                iteration,
@@ -507,7 +506,7 @@ namespace CCMI
       {
         // Compile time assert
         // SendState storage must must fit in a request
-        COMPILE_TIME_ASSERT(sizeof(CCMI::Executor::OldAllreduceBase<T_Mcastinterface, T_Sysdep,T_ConnectionManager>::SendState)
+        COMPILE_TIME_ASSERT(sizeof(CCMI::Executor::OldAllreduceBase<T_Mcastinterface,T_ConnectionManager>::SendState)
                             <= sizeof(PAMI_CollectiveRequest_t));
       }
     }; // OldAllreduceBase
@@ -518,8 +517,8 @@ namespace CCMI
 /////////////////////////////////////////////
 ///   Protected Methods
 /////////////////////////////////////////////
-template<class T_Mcastinterface, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface, T_Sysdep, T_ConnectionManager>::advance ()
+template<class T_Mcastinterface, class T_ConnectionManager>
+inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface, T_ConnectionManager>::advance ()
 {
 
 //  Logging::LogMgr::getLogMgr()->startCounter (_log_advance);
@@ -657,8 +656,8 @@ inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface, T_Sysdep, T_Conne
 ///
 ///  \brief Send the next message by calling the msend interface
 ///
-template<class T_Mcastinterface,  class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface, T_Sysdep,T_ConnectionManager>::sendMessage
+template<class T_Mcastinterface, class T_ConnectionManager>
+inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface,T_ConnectionManager>::sendMessage
 (const char             * buf,
  unsigned                 bytes,
  unsigned               * dstpes,
@@ -721,8 +720,8 @@ inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface, T_Sysdep,T_Connec
 ///  Public methods that can be called externally
 ///
 ////////////////////////////////////////////////////////
-template<class T_Mcastinterface, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManager>::start()
+template<class T_Mcastinterface, class T_ConnectionManager>
+inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface,T_ConnectionManager>::start()
 {
   _initialized = true;
   _sState->sndClientData.me        = this;
@@ -749,8 +748,8 @@ inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface,  T_Sysdep, T_Conn
   TRACE_INIT ((stderr,"<%p>Executor::OldAllreduceBase start()\n",this));
 }
 
-template<class T_Mcastinterface,  class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManager>::notifyRecv
+template<class T_Mcastinterface, class T_ConnectionManager>
+inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface,T_ConnectionManager>::notifyRecv
 (unsigned                     src,
  const pami_quad_t             & info,
  char                       * buf,
@@ -772,8 +771,8 @@ inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface,  T_Sysdep, T_Conn
     advance();
 }
 
-template<class T_Mcastinterface, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface, T_Sysdep,T_ConnectionManager>::notifySendDone
+template<class T_Mcastinterface, class T_ConnectionManager>
+inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface,T_ConnectionManager>::notifySendDone
 ( const pami_quad_t & info)
 {
   // update state
@@ -788,8 +787,8 @@ inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface, T_Sysdep,T_Connec
   advance ();
 }
 
-template<class T_Mcastinterface, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManager>::postReceives ()
+template<class T_Mcastinterface, class T_ConnectionManager>
+inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface,T_ConnectionManager>::postReceives ()
 {
 //  Logging::LogMgr::getLogMgr()->startCounter (_log_postrecv);
 
@@ -812,9 +811,9 @@ inline void CCMI::Executor::OldAllreduceBase<T_Mcastinterface,  T_Sysdep, T_Conn
               this));
 }
 
-template<class T_Mcastinterface,  class T_Sysdep, class T_ConnectionManager>
+template<class T_Mcastinterface, class T_ConnectionManager>
 inline PAMI_Request_t *
-CCMI::Executor::OldAllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManager>::notifyRecvHead
+CCMI::Executor::OldAllreduceBase<T_Mcastinterface,T_ConnectionManager>::notifyRecvHead
 (const pami_quad_t  * info,
  unsigned          count,
  unsigned          peer,
@@ -927,9 +926,9 @@ CCMI::Executor::OldAllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManage
 ///  \fast callback for short allreduce operations
 ///  This callback does not return a request
 ///
-template<class T_Mcastinterface, class T_Sysdep, class T_ConnectionManager>
+template<class T_Mcastinterface, class T_ConnectionManager>
 inline void
-CCMI::Executor::OldAllreduceBase<T_Mcastinterface,  T_Sysdep, T_ConnectionManager>::notifyRecvShort
+CCMI::Executor::OldAllreduceBase<T_Mcastinterface,T_ConnectionManager>::notifyRecvShort
 (unsigned          phase,
  unsigned          sndlen,
  unsigned          srcindex,

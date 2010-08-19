@@ -90,26 +90,26 @@ namespace PAMI
             _local_dev(ldev),
             _global_dev(gdev),
             _allocator(allocator),
-            _binomial_barrier_composite(NULL),
+            _binomial_barrier_composite(),
             _connmgr(65535),
-            _rbconnmgr(NULL),
+            _rbconnmgr(),
             _csconnmgr(),
-            _binomial_barrier_factory(NULL),
-            _binomial_broadcast_factory(NULL),
-            _ring_broadcast_factory(NULL),
-            _asrb_binomial_broadcast_factory(NULL),
-            _ascs_binomial_broadcast_factory(NULL),
-            _active_binomial_broadcast_factory(NULL),
-            _binomial_allreduce_factory(NULL),
-            _ascs_binomial_allreduce_factory(NULL),
-            _ascs_binomial_reduce_factory(NULL),
-            _composite_ni(NULL)
+            _binomial_barrier_factory(),
+            _binomial_broadcast_factory(),
+            _ring_broadcast_factory(),
+            _asrb_binomial_broadcast_factory(),
+            _ascs_binomial_broadcast_factory(),
+            _active_binomial_broadcast_factory(),
+            _binomial_allreduce_factory(),
+            _ascs_binomial_allreduce_factory(),
+            _ascs_binomial_reduce_factory(),
+            _composite_ni()
           {
             TRACE_INIT((stderr, "<%p>CCMIRegistration() use_shmem %s, use_p2p %s, local_size %zu, global_size %zu\n", this, use_shmem? "true":"false",use_p2p?"true":"false",local_size,global_size ));
             if ((use_shmem) && (local_size > 1) && (use_p2p))
               {
-		TRACE_INIT((stderr, "<%p>CCMIRegistration() use composite\n",this));
-		// Use composite P2P/Shmem if both enabled and > 1 process per node
+    TRACE_INIT((stderr, "<%p>CCMIRegistration() use composite\n",this));
+    // Use composite P2P/Shmem if both enabled and > 1 process per node
                 // Setup Composite P2p/Shmem factories
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() register composite\n", this ));
                 setupFactories<T_CompositeNI_AM,
@@ -121,7 +121,7 @@ namespace PAMI
               }
             else if (use_p2p)
               {
-		TRACE_INIT((stderr, "<%p>CCMIRegistration() use p2p\n",this));
+    TRACE_INIT((stderr, "<%p>CCMIRegistration() use p2p\n",this));
                 // Use P2P if requested or only one process (some simple test scenario)
                 // Setup P2P factories
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() register MU\n", this ));
@@ -132,7 +132,7 @@ namespace PAMI
               }
             else if ((use_shmem) && (local_size > 1))
               {
-		TRACE_INIT((stderr, "<%p>CCMIRegistration() use shmem\n",this));
+    TRACE_INIT((stderr, "<%p>CCMIRegistration() use shmem\n",this));
                 // Use Shmem if requested and available ( > 1 process per node)
                 // Setup Shmem factories
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() register shmem\n", this ));
@@ -152,17 +152,17 @@ namespace PAMI
                            this,
                            context_id,
                            geometry));
-	    if (phase != 0) return PAMI_SUCCESS;
+      if (phase != 0) return PAMI_SUCCESS;
 
             pami_xfer_t xfer = {0};
             if (_binomial_barrier_factory == NULL) // nothing setup?
               ; // then do nothing - no shmem on 1 process per node (and other protocol is disabled)
             else
               {
-		TRACE_INIT((stderr, "<%p>CCMIRegistration::analyze() add\n",this));
-		_binomial_barrier_composite = _binomial_barrier_factory->generate(geometry, &xfer);
+    TRACE_INIT((stderr, "<%p>CCMIRegistration::analyze() add\n",this));
+    _binomial_barrier_composite = _binomial_barrier_factory->generate(geometry, &xfer);
 
-              geometry->setKey(context_id, 
+              geometry->setKey(context_id,
                                PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1,
                                (void*)_binomial_barrier_composite);
 
@@ -490,9 +490,9 @@ namespace PAMI
           CCMI::Executor::Composite                                   *_binomial_barrier_composite;
 
           // CCMI Connection Manager Class
-          CCMI::ConnectionManager::ColorGeometryConnMgr<SysDep>        _connmgr;
-          CCMI::ConnectionManager::SimpleConnMgr<SysDep>               _sconnmgr;
-          CCMI::ConnectionManager::RankBasedConnMgr<SysDep>            _rbconnmgr;
+          CCMI::ConnectionManager::ColorGeometryConnMgr                _connmgr;
+          CCMI::ConnectionManager::SimpleConnMgr                       _sconnmgr;
+          CCMI::ConnectionManager::RankBasedConnMgr                    _rbconnmgr;
           CCMI::ConnectionManager::CommSeqConnMgr                      _csconnmgr;
 
           // CCMI Barrier Interface

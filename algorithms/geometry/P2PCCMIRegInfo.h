@@ -16,7 +16,6 @@
 
 #include <map>
 #include <vector>
-#include "SysDep.h"
 #include "util/ccmi_debug.h"
 #include "TypeDefs.h"
 #include "algorithms/interfaces/CollRegistrationInterface.h"
@@ -60,7 +59,7 @@ namespace CCMI
       typedef CCMI::Adaptor::Barrier::BarrierFactoryT
       < BinomialBarrier,
         binomial_barrier_md,
-        CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> >
+        CCMI::ConnectionManager::SimpleConnMgr>
       BinomialBarrierFactory;
     };//Barrier
 
@@ -93,27 +92,27 @@ namespace CCMI
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
       < 1,
         CCMI::Schedule::ListMultinomial,
-        CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
+        CCMI::ConnectionManager::ColorGeometryConnMgr,
         get_colors >
       BinomialBroadcastComposite;
 
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < BinomialBroadcastComposite,
         binomial_broadcast_metadata,
-        CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> >
+        CCMI::ConnectionManager::ColorGeometryConnMgr>
       BinomialBroadcastFactory;
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
       < 1,
         CCMI::Schedule::RingSchedule,
-        CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
+        CCMI::ConnectionManager::ColorGeometryConnMgr,
         get_colors >
       RingBroadcastComposite;
 
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < RingBroadcastComposite,
         ring_broadcast_metadata,
-        CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> >
+        CCMI::ConnectionManager::ColorGeometryConnMgr>
       RingBroadcastFactory;
 
       void am_rb_broadcast_metadata(pami_metadata_t *m)
@@ -177,14 +176,14 @@ namespace CCMI
 
       typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
       < CCMI::Schedule::ListMultinomial,
-        CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+        CCMI::ConnectionManager::RankBasedConnMgr,
         create_schedule>
       AsyncRBBinomialBroadcastComposite;
 
       typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT
       < AsyncRBBinomialBroadcastComposite,
         am_rb_broadcast_metadata,
-        CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+        CCMI::ConnectionManager::RankBasedConnMgr,
         getKey >
       AsyncRBBinomialBroadcastFactory;
 
@@ -223,7 +222,7 @@ namespace CCMI
 
       typedef CCMI::Adaptor::AMBroadcast::AMBroadcastT
       < CCMI::Schedule::ListMultinomial,
-        CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+        CCMI::ConnectionManager::RankBasedConnMgr,
         create_schedule>
       AMBinomialBroadcastComposite;
 
@@ -231,7 +230,7 @@ namespace CCMI
       typedef CCMI::Adaptor::AMBroadcast::AMBroadcastFactoryT
       < AMBinomialBroadcastComposite,
         am_broadcast_metadata,
-        CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >
+        CCMI::ConnectionManager::RankBasedConnMgr>
       AMBinomialBroadcastFactory;
 
     }//AMBroadcast
@@ -262,15 +261,15 @@ namespace CCMI
         }
 
         typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT
-        < 1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
+        < 1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
           CCMI::Schedule::ListMultinomial,
-          CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+          CCMI::ConnectionManager::RankBasedConnMgr,
           get_colors > Composite;
 
         typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
         < Composite,
           binomial_allreduce_metadata,
-          CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >
+          CCMI::ConnectionManager::RankBasedConnMgr>
         Factory;
 
        unsigned getKey(unsigned                                   root,

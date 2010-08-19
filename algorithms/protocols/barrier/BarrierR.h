@@ -117,7 +117,7 @@ namespace CCMI
       /// \brief Barrier for rectangle schedules
       ///        The R argument chooses a rectangle schedule
       ///
-      template <class R, class MAP> class OldBarrierR : public CCMI::Executor::OldBarrier
+      template <class R> class OldBarrierR : public CCMI::Executor::OldBarrier
       {
         ///
         /// \brief The schedule for binomial barrier protocol
@@ -132,11 +132,10 @@ namespace CCMI
         /// \param[in] mInterface  The multicast Interface
         /// \param[in] geometry    Geometry object
         ///
-        OldBarrierR  (MAP                     * mapping,
-                   CCMI::MultiSend::OldMulticastInterface    * mInterface,
+        OldBarrierR  (CCMI::MultiSend::OldMulticastInterface    * mInterface,
                    Geometry                               * geometry) :
         OldBarrier (geometry->nranks(), geometry->ranks(), geometry->comm(), 0, mInterface),
-        _myschedule ( mapping, *geometry->rectangle())
+        _myschedule (*geometry->rectangle())
         {
           TRACE_ADAPTOR((stderr,"<%X>CCMI::Adaptor::Barrier::BarrierR::ctor(%X)\n",
                      (int)this, geometry->comm()));
@@ -153,8 +152,8 @@ namespace CCMI
       ///
       /// \brief Barrier Factory Base class.
       ///
-      template <class T, class MAP>
-      class OldBarrierFactoryR : private OldBarrierFactory<MAP>
+      template <class T>
+      class OldBarrierFactoryR : private OldBarrierFactory
       {
       public:
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -167,9 +166,8 @@ namespace CCMI
         /// \brief Constructor for barrier factory implementations.
         ///
         OldBarrierFactoryR (CCMI::MultiSend::OldMulticastInterface    * minterface,
-                         MAP                          * map,
                          CCMI_mapIdToGeometry                     cb_geometry) :
-        OldBarrierFactory<MAP> (minterface, map, cb_geometry)
+        OldBarrierFactory (minterface, cb_geometry)
         {
         }
 
@@ -192,7 +190,7 @@ namespace CCMI
          Geometry                  * geometry)
         {
           COMPILE_TIME_ASSERT(sizeof(CCMI_Executor_t) >= sizeof(T));
-          return new (request) T (this->_mapping, this->_mcastInterface, geometry);
+          return new (request) T (this->_mcastInterface, geometry);
         }
 
       };  //- OldBarrierFactoryR

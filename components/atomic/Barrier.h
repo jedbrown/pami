@@ -11,6 +11,8 @@
 
 #include <pami.h>
 
+#include "components/memory/MemoryManager.h"
+
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/atomic/Barrier.h
 ///  \brief Barrier Objects for Hardware and Software Barrieres
@@ -83,9 +85,9 @@ namespace Interface
       ///
       /// \brief Initialize the local barrier objecti
       ///
-      /// \param[in] mm			Memory Manager
-      /// \param[in] participants	Number of participants for the barrier
-      /// \param[in] participants	Is caller the master of group
+      /// \param[in] mm     Memory Manager
+      /// \param[in] participants Number of participants for the barrier
+      /// \param[in] participants Is caller the master of group
       ///
       /// \todo Need to find a way to initialize object by only one entity
       ///

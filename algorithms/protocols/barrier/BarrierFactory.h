@@ -20,7 +20,7 @@ namespace CCMI
       /// \brief Binomial barrier
       ///
       typedef bool (*AnalyzeFn) (PAMI_GEOMETRY_CLASS *g);
-      template <class T_Schedule, AnalyzeFn afn, class T_Sysdep, class T_Mcast>
+      template <class T_Schedule, AnalyzeFn afn, class T_Mcast>
       class OldBarrierT : public CCMI::Executor::Composite
       {
       protected:
@@ -34,12 +34,10 @@ namespace CCMI
         ///
         /// \brief Constructor for non-blocking barrier protocols.
         ///
-        /// \param[in] mapping     Pointer to mapping class
         /// \param[in] mInterface  The multicast Interface
         /// \param[in] geometry    Geometry object
         ///
-        OldBarrierT  (T_Sysdep            * mapping,
-                      T_Mcast             * mInterface,
+        OldBarrierT  (T_Mcast             * mInterface,
                       PAMI_GEOMETRY_CLASS  * geometry) :
         Composite(),
           _myexecutor (geometry->nranks(),
@@ -47,7 +45,7 @@ namespace CCMI
                        geometry->comm(),
                        0U,
                        mInterface),
-          _myschedule (mapping, geometry->nranks(), geometry->ranks())
+          _myschedule (geometry->nranks(), geometry->ranks())
         {
           TRACE_INIT((stderr,"<%p>CCMI::Adaptors::Barrier::BarrierT::ctor(%X)\n",
                       this, geometry->comm()));
@@ -71,12 +69,11 @@ namespace CCMI
       ///
       /// \brief Barrier Factory Base class.
       ///
-      template <class T, class T_Sysdep, class T_Mcast>
+      template <class T, class T_Mcast>
       class OldBarrierFactoryT : public CollectiveProtocolFactory
       {
       protected:
         T_Mcast                * _mcastInterface;
-        T_Sysdep               * _mapping;
 
       public:
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -89,10 +86,8 @@ namespace CCMI
         /// \brief Constructor for barrier factory implementations.
         ///
         OldBarrierFactoryT (T_Mcast                *minterface,
-                            T_Sysdep               *map,
                             pami_mapidtogeometry_fn  cb_geometry) :
-        _mcastInterface (minterface),
-        _mapping (map)
+        _mcastInterface (minterface)
         {
           TRACE_INIT((stderr,"<%p>CCMI::Collectives::Barrier::BarrierFactory::ctor(%d)\n",
                      this,(int)cb_geometry));
@@ -134,7 +129,7 @@ namespace CCMI
         {
           CCMI_assert(rsize >= sizeof(T));
           PAMI_GEOMETRY_CLASS  *geometry = (PAMI_GEOMETRY_CLASS *)g;
-          return new (request) T (this->_mapping, this->_mcastInterface, geometry);
+          return new (request) T (this->_mcastInterface, geometry);
         }
 
         static pami_quad_t *   cb_head   (const pami_quad_t    * info,

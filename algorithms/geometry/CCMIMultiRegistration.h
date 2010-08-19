@@ -17,7 +17,6 @@
 #include <map>
 #include <vector>
 #include "algorithms/interfaces/CollRegistrationInterface.h"
-#include "SysDep.h"
 #include "TypeDefs.h"
 #include "algorithms/protocols/broadcast/mcast_impl.h"
 #include "algorithms/protocols/barrier/msync_impl.h"
@@ -64,7 +63,7 @@ namespace PAMI
         pami_xfer_t xfer = {0};
         _barrier_composite =_msync_reg.generate(geometry, &xfer);
 
-        geometry->setKey(context_id, 
+        geometry->setKey(context_id,
                          PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1,
                          (void*)_barrier_composite);
         // Set geometry-wide, across contexts, UE barrier \todo multi-context support
@@ -102,7 +101,7 @@ namespace PAMI
       T_NativeInterfaceAS                                    &_ni;
 
       // CCMI Connection Manager Class
-      CCMI::ConnectionManager::SimpleConnMgr<SysDep>         _sconnmgr;
+      CCMI::ConnectionManager::SimpleConnMgr                  _sconnmgr;
 
       // CCMI Barrier Interface
       CCMI::Adaptor::Barrier::MultiSyncFactory               _msync_reg;
@@ -141,7 +140,7 @@ namespace PAMI
       inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
       {
         TRACE_ERR((stderr, "<%p>%s context_id %zu, geometry %p, mcast %p\n", this, __PRETTY_FUNCTION__, context_id, geometry,&_mcast_reg));
-	if (phase != 0) return PAMI_SUCCESS;
+  if (phase != 0) return PAMI_SUCCESS;
 
         // Add Broadcasts
         geometry->addCollective(PAMI_XFER_BROADCAST,&_mcast_reg,_context_id);
@@ -157,7 +156,7 @@ namespace PAMI
       T_NativeInterfaceAS                                    &_ni;
 
       // CCMI Connection Manager Class
-      CCMI::ConnectionManager::SimpleConnMgr<SysDep>         _sconnmgr;
+      CCMI::ConnectionManager::SimpleConnMgr                  _sconnmgr;
 
       // CCMI Broadcast Interface
       T_McastFactory                                         _mcast_reg;

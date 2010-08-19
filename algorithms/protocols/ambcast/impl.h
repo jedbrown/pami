@@ -40,12 +40,12 @@ namespace CCMI
       }
 
       typedef AMBroadcastT <CCMI::Schedule::ListMultinomial,
-                            CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+                            CCMI::ConnectionManager::RankBasedConnMgr,
                             create_schedule> AMBinomBcastComposite;
 
       typedef AMBroadcastFactoryT<AMBinomBcastComposite,
-	am_bcast_md,
-	CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AMBinomBcastFactory;
+  am_bcast_md,
+  CCMI::ConnectionManager::RankBasedConnMgr> AMBinomBcastFactory;
 
     };
   };

@@ -45,21 +45,21 @@ namespace CCMI
 
       typedef BcastMultiColorCompositeT < 1,
       CCMI::Schedule::ListMultinomial,
-      CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
+      CCMI::ConnectionManager::ColorGeometryConnMgr,
       get_colors > BinomialBcastComposite;
 
       typedef CollectiveProtocolFactoryT < BinomialBcastComposite,
       binom_bcast_md,
-      CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> > BinomialBcastFactory;
+      CCMI::ConnectionManager::ColorGeometryConnMgr> BinomialBcastFactory;
 
       typedef BcastMultiColorCompositeT < 1,
       CCMI::Schedule::RingSchedule,
-      CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS>,
+      CCMI::ConnectionManager::ColorGeometryConnMgr,
       get_colors > RingBcastComposite;
 
       typedef CollectiveProtocolFactoryT < RingBcastComposite,
       ring_bcast_md,
-      CCMI::ConnectionManager::ColorGeometryConnMgr<PAMI_SYSDEP_CLASS> > RingBcastFactory;
+      CCMI::ConnectionManager::ColorGeometryConnMgr> RingBcastFactory;
 
     };
   };

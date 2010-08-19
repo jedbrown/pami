@@ -49,16 +49,14 @@ namespace CCMI
          }
 
         typedef CompositeT
-        <CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>,
-         CCMI::Executor::Allreduce<PAMI_COLL_MCAST_CLASS,PAMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
-         PAMI_SYSDEP_CLASS,
+        <CCMI::Schedule::BinomialTreeSchedule,
+         CCMI::Executor::Allreduce<PAMI_COLL_MCAST_CLASS,CCMI::ConnectionManager::RankBasedConnMgr>,
          PAMI_COLL_MCAST_CLASS,
-         CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > Composite;
+         CCMI::ConnectionManager::RankBasedConnMgr> Composite;
 
         typedef FactoryT
-        <CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+        <CCMI::ConnectionManager::RankBasedConnMgr,
          CCMI::Adaptor::Allreduce::OldBinomial::Composite,
-         PAMI_SYSDEP_CLASS,
          PAMI_COLL_MCAST_CLASS,
          binomial_ar_md>
         Factory;
@@ -71,9 +69,9 @@ namespace CCMI
       // Specify the static name in the class (for debug)
       template<> const char* OldBinomial::Composite::name="Binomial";
       template<> inline bool OldBinomial::Composite::analyze(PAMI_GEOMETRY_CLASS *geometry){ return true;};
-      template<> inline void OldBinomial::Composite::create_schedule(PAMI_SYSDEP_CLASS * map,PAMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
+      template<> inline void OldBinomial::Composite::create_schedule(PAMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
       {
-        new (_schedule) CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
+        new (_schedule) CCMI::Schedule::BinomialTreeSchedule(geometry->nranks(), geometry->ranks());
       };
 
       /// New Binomial algorithms
@@ -100,11 +98,11 @@ namespace CCMI
           strcpy(&m->name[0],"CCMIBinomialAllreduce");
         }
 
-        typedef MultiColorCompositeT<1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
+        typedef MultiColorCompositeT<1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
           CCMI::Schedule::ListMultinomial,
-          CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+          CCMI::ConnectionManager::RankBasedConnMgr,
           get_colors> Composite;
-        typedef ProtocolFactoryT<Composite, binomial_ar_md, CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > Factory;
+        typedef ProtocolFactoryT<Composite, binomial_ar_md, CCMI::ConnectionManager::RankBasedConnMgr> Factory;
       };
 
 
@@ -123,17 +121,15 @@ namespace CCMI
          }
 
         typedef CompositeT
-        <CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>,
-         CCMI::Executor::OldAllreduceBase<PAMI_COLL_MCAST_CLASS,PAMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
-         PAMI_SYSDEP_CLASS,
+        <CCMI::Schedule::BinomialTreeSchedule,
+         CCMI::Executor::OldAllreduceBase<PAMI_COLL_MCAST_CLASS,CCMI::ConnectionManager::RankBasedConnMgr>,
          PAMI_COLL_MCAST_CLASS,
-         CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >
+         CCMI::ConnectionManager::RankBasedConnMgr>
         Composite;
 
         typedef FactoryT
-        <CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+        <CCMI::ConnectionManager::RankBasedConnMgr,
          CCMI::Adaptor::Allreduce::ShortBinomial::Composite,
-         PAMI_SYSDEP_CLASS,
          PAMI_COLL_MCAST_CLASS,
          short_ar_md>
         Factory;
@@ -146,9 +142,9 @@ namespace CCMI
       // Specify the static name in the class (for debug)
       template<> const char* ShortBinomial::Composite::name="ShortBinomial";
       template<> inline bool ShortBinomial::Composite::analyze(PAMI_GEOMETRY_CLASS *geometry){ return true;};
-      template<> inline void ShortBinomial::Composite::create_schedule(PAMI_SYSDEP_CLASS * map,PAMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
+      template<> inline void ShortBinomial::Composite::create_schedule(PAMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
       {
-        new (_schedule) CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
+        new (_schedule) CCMI::Schedule::BinomialTreeSchedule(geometry->nranks(), geometry->ranks());
       };
 
       // class Ring::Composite and Ring::Factory
@@ -167,17 +163,15 @@ namespace CCMI
          }
 
         typedef CompositeT
-        <CCMI::Schedule::OldRingSchedule<PAMI_SYSDEP_CLASS>,
-         CCMI::Executor::PipelinedAllreduce<PAMI_COLL_MCAST_CLASS,PAMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
-         PAMI_SYSDEP_CLASS,
+        <CCMI::Schedule::OldRingSchedule,
+         CCMI::Executor::PipelinedAllreduce<PAMI_COLL_MCAST_CLASS,CCMI::ConnectionManager::RankBasedConnMgr>,
          PAMI_COLL_MCAST_CLASS,
-         CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >
+         CCMI::ConnectionManager::RankBasedConnMgr>
         Composite;
 
         typedef FactoryT
-        <CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+        <CCMI::ConnectionManager::RankBasedConnMgr,
          CCMI::Adaptor::Allreduce::Ring::Composite,
-         PAMI_SYSDEP_CLASS,
          PAMI_COLL_MCAST_CLASS,
          ring_ar_md>
         Factory;
@@ -191,9 +185,9 @@ namespace CCMI
       // Specify the static name in the class (for debug)
       template<> const char* Ring::Composite::name="Ring";
       template<> inline bool Ring::Composite::analyze(PAMI_GEOMETRY_CLASS *geometry){ return true;};
-      template<> inline void Ring::Composite::create_schedule(PAMI_SYSDEP_CLASS * map,PAMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
+      template<> inline void Ring::Composite::create_schedule(PAMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
       {
-        new (_schedule) CCMI::Schedule::OldRingSchedule<PAMI_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
+        new (_schedule) CCMI::Schedule::OldRingSchedule(geometry->nranks(), geometry->ranks());
       };
 
       // class RingReduce::Composite and RingReduce::Factory
@@ -211,17 +205,15 @@ namespace CCMI
          }
 
         typedef CompositeT
-        <CCMI::Schedule::OldRingSchedule<PAMI_SYSDEP_CLASS>,
-         CCMI::Executor::Allreduce<PAMI_COLL_MCAST_CLASS,PAMI_SYSDEP_CLASS,CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >,
-         PAMI_SYSDEP_CLASS,
+        <CCMI::Schedule::OldRingSchedule,
+         CCMI::Executor::Allreduce<PAMI_COLL_MCAST_CLASS,CCMI::ConnectionManager::RankBasedConnMgr>,
          PAMI_COLL_MCAST_CLASS,
-         CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> >
+         CCMI::ConnectionManager::RankBasedConnMgr>
           Composite;      //? pipelined or not?
 
         typedef FactoryT
-        <CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+        <CCMI::ConnectionManager::RankBasedConnMgr,
          CCMI::Adaptor::Allreduce::RingReduce::Composite,
-         PAMI_SYSDEP_CLASS,
          PAMI_COLL_MCAST_CLASS,
          ring_r_md> Factory;
       };
@@ -233,9 +225,9 @@ namespace CCMI
       // Specify the static name in the class (for debug)
       template<> const char* RingReduce::Composite::name="RingReduce";
       template<> inline bool RingReduce::Composite::analyze(PAMI_GEOMETRY_CLASS *geometry){ return true;};
-      template<> inline void RingReduce::Composite::create_schedule(PAMI_SYSDEP_CLASS * map,PAMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
+      template<> inline void RingReduce::Composite::create_schedule(PAMI_GEOMETRY_CLASS * geometry,CCMI::Schedule::Color color)
       {
-        new (_schedule) CCMI::Schedule::OldRingSchedule<PAMI_SYSDEP_CLASS>(map, geometry->nranks(), geometry->ranks());
+        new (_schedule) CCMI::Schedule::OldRingSchedule(geometry->nranks(), geometry->ranks());
       };
     };
   };

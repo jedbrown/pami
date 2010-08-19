@@ -15,7 +15,6 @@
 #define __common_default_PipeWorkQueue_h__
 
 #include "Arch.h"
-#include "SysDep.h"
 #include "common/PipeWorkQueueInterface.h"
 #include "util/common.h"
 
@@ -24,16 +23,16 @@
 
 // undef/define to control workqueues that are optimized for the flat buffer case.
 #define OPTIMIZE_FOR_FLAT_WORKQUEUE
-#undef USE_FLAT_BUFFER	// (4*1024*1024)
+#undef USE_FLAT_BUFFER  // (4*1024*1024)
 
-#define ALLOC_SHMEM(memptr, align, size)	\
+#define ALLOC_SHMEM(memptr, align, size)  \
         { memptr = NULL; _mm->memalign((void **)&memptr, align, size); }
 
 /// \todo Fix shmem free so that it doesn't assert
-#define FREE_SHMEM(memptr)	\
+#define FREE_SHMEM(memptr)  \
         //_mm->free(memptr)
 
-#define WAKEUP(vector)		\
+#define WAKEUP(vector)    \
         // _wakeupManager().wakeup(vector)
 
 namespace PAMI {
@@ -58,7 +57,7 @@ class PipeWorkQueue : public Interface::PipeWorkQueue<PAMI::PipeWorkQueue> {
                 volatile void *consumerWord1;
                 volatile void *consumerWord2;
         };
-        static const int PWQ_HDR_NQUADS	= ((sizeof(struct workqueue_hdr_t) + sizeof(pami_quad_t) - 1) / sizeof(pami_quad_t));
+        static const int PWQ_HDR_NQUADS = ((sizeof(struct workqueue_hdr_t) + sizeof(pami_quad_t) - 1) / sizeof(pami_quad_t));
         ///
         /// \brief Work queue structure in shared memory
         ///
@@ -71,8 +70,8 @@ class PipeWorkQueue : public Interface::PipeWorkQueue<PAMI::PipeWorkQueue> {
         } workqueue_t __attribute__ ((__aligned__(16)));
 
         typedef struct export_t {
-                uint64_t bufPaddr;	// memregion?
-                uint64_t hdrPaddr;	// memregion?
+                uint64_t bufPaddr;  // memregion?
+                uint64_t hdrPaddr;  // memregion?
                 unsigned pmask;
         } export_t;
 
@@ -115,8 +114,8 @@ public:
         /// Creates a circular buffer of specified size in shared memory.
         /// Buffer size must be power-of-two.
         ///
-        /// \param[in] mm	System dependent methods
-        /// \param[in] bufsize	Size of buffer to allocate
+        /// \param[in] mm System dependent methods
+        /// \param[in] bufsize  Size of buffer to allocate
         ///
         inline void configure_impl(PAMI::Memory::MemoryManager *mm, size_t bufsize)
         {
@@ -141,8 +140,8 @@ public:
         /// for desired use - i.e. all in shared memory if to be used beyond this process.
         ///
         /// \param[in] mm   System dependent methods
-        /// \param[in] buffer	Buffer to use
-        /// \param[in] bufsize	Size of buffer
+        /// \param[in] buffer Buffer to use
+        /// \param[in] bufsize  Size of buffer
         ///
         inline void configure_impl(PAMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize)
         {
@@ -164,9 +163,9 @@ public:
         /// for desired use - i.e. all in shared memory if to be used beyond this process.
         ///
         /// \param[in] mm   System dependent methods
-        /// \param[in] buffer	Buffer to use
-        /// \param[in] bufsize	Size of buffer
-        /// \param[in] bufinit	Amount of data initially in buffer
+        /// \param[in] buffer Buffer to use
+        /// \param[in] bufsize  Size of buffer
+        /// \param[in] bufinit  Amount of data initially in buffer
         ///
         inline void configure_impl(PAMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize, size_t bufinit)
         {
@@ -336,7 +335,7 @@ public:
 
         /// \brief register a wakeup for the consumer side of the PipeWorkQueue
         ///
-        /// \param[in] vec	Opaque wakeup vector parameter
+        /// \param[in] vec  Opaque wakeup vector parameter
         ///
         inline void setConsumerWakeup_impl(void *vec) {
                 _sharedqueue->_u._s.consumerWakeVec = vec;
@@ -350,7 +349,7 @@ public:
 
         /// \brief register a wakeup for the producer side of the PipeWorkQueue
         ///
-        /// \param[in] vec	Opaque wakeup vector parameter
+        /// \param[in] vec  Opaque wakeup vector parameter
         ///
         inline void setProducerWakeup_impl(void *vec) {
                 _sharedqueue->_u._s.producerWakeVec = vec;
@@ -502,7 +501,7 @@ public:
 
         /// \brief raw accessor for total number of bytes produced since reset()
         ///
-        /// \return	number of bytes produced
+        /// \return number of bytes produced
         ///
         inline size_t getBytesProduced_impl()
         {
@@ -511,7 +510,7 @@ public:
 
         /// \brief raw accessor for total number of bytes consumed since reset()
         ///
-        /// \return	number of bytes consumed
+        /// \return number of bytes consumed
         ///
         inline size_t getBytesConsumed_impl()
         {
@@ -520,7 +519,7 @@ public:
 
         /// \brief current position for producing into buffer
         ///
-        /// \return	location in buffer to produce into
+        /// \return location in buffer to produce into
         ///
         inline char *bufferToProduce_impl()
         {
@@ -545,7 +544,7 @@ public:
 
         /// \brief notify workqueue that bytes have been produced
         ///
-        /// \return	number of bytes that were produced
+        /// \return number of bytes that were produced
         ///
         inline void produceBytes_impl(size_t bytes)
         {
@@ -561,7 +560,7 @@ public:
 
         /// \brief current position for consuming from buffer
         ///
-        /// \return	location in buffer to consume from
+        /// \return location in buffer to consume from
         ///
         inline char *bufferToConsume_impl()
         {
@@ -586,7 +585,7 @@ public:
 
         /// \brief notify workqueue that bytes have been consumed
         ///
-        /// \return	number of bytes that were consumed
+        /// \return number of bytes that were consumed
         ///
         inline void consumeBytes_impl(size_t bytes) {
                 _sharedqueue->_u._s.consumedBytes += bytes;
@@ -599,7 +598,7 @@ public:
 
         /// \brief is workqueue ready for action
         ///
-        /// \return	boolean indicate workqueue readiness
+        /// \return boolean indicate workqueue readiness
         ///
         inline bool available_impl() {
                 return (_sharedqueue != NULL);

@@ -21,13 +21,11 @@ namespace CCMI
 {
   namespace ConnectionManager
   {
-    template <class T_Sysdep>
-    class RankBasedConnMgr : public ConnectionManager<RankBasedConnMgr<T_Sysdep> >
+    class RankBasedConnMgr : public ConnectionManager<RankBasedConnMgr>
     {
     public:
-      RankBasedConnMgr (T_Sysdep *sd) :
-        ConnectionManager<RankBasedConnMgr<T_Sysdep> >(),
-        _sysdep(sd),
+      RankBasedConnMgr () :
+        ConnectionManager<RankBasedConnMgr>(),
         _numConnections(__global.mapping.size())
         {
         }
@@ -62,7 +60,6 @@ namespace CCMI
 
 
     private:
-      T_Sysdep *_sysdep;
       size_t    _numConnections;
     };
   };

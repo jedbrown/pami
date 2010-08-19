@@ -7,7 +7,6 @@
 #endif //PAMI_LAPI_IMPL
 
 #include "Global.h"
-#include "SysDep.h"
 #include "Client.h"
 #include "Context.h"
 #include "PipeWorkQueue.h"

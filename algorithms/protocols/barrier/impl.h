@@ -45,14 +45,12 @@ namespace CCMI
 
       typedef BarrierFactoryT <BinomialBarrier,
                                binom_barrier_md,
-                               ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > BinomialBarrierFactory;
+                               ConnectionManager::SimpleConnMgr> BinomialBarrierFactory;
 
-      typedef OldBarrierT <CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>,
+      typedef OldBarrierT <CCMI::Schedule::BinomialTreeSchedule,
                            binomial_analyze,
-                           PAMI_SYSDEP_CLASS,
                            PAMI_COLL_MCAST_CLASS> OldBinomialBarrier;
       typedef OldBarrierFactoryT <OldBinomialBarrier,
-                                  PAMI_SYSDEP_CLASS,
                                   PAMI_COLL_MCAST_CLASS> OldBinomialBarrierFactory;
 
     };

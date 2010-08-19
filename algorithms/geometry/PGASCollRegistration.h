@@ -19,7 +19,6 @@
 #include "algorithms/interfaces/CollRegistrationInterface.h"
 #include "algorithms/geometry/PGASWrapper.h"
 #include "common/NativeInterface.h"
-#include "SysDep.h"
 
 namespace PAMI
 {
@@ -158,7 +157,7 @@ namespace PAMI
 
       inline pami_result_t analyze_impl(size_t context_id,T_Geometry *geometry, int phase)
         {
-	  if (phase != 0) return PAMI_SUCCESS;
+    if (phase != 0) return PAMI_SUCCESS;
 
           _nb_barrier    = (TSPColl::Barrier<T_P2P_NI>*)_mgr.allocate (geometry, TSPColl::BarrierTag, geometry->comm());
           _nb_ue_barrier = (TSPColl::BarrierUE<T_P2P_NI>*)_mgr.allocate (geometry, TSPColl::BarrierUETag, geometry->comm());

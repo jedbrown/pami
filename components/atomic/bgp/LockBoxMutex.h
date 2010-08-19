@@ -20,7 +20,6 @@
  *
  */
 #include "Global.h"
-#include "SysDep.h"
 #include "common/bgp/LockBoxFactory.h"
 #include "components/atomic/Mutex.h"
 #include <spi/bgp_SPI.h>
@@ -49,7 +48,7 @@ namespace BGP {
                 }
                 void acquire_impl() {
                         LockBox_MutexLock((LockBox_Mutex_t)_addr);
-			mem_sync();
+      mem_sync();
                 }
                 void release_impl() {
                         LockBox_MutexUnlock((LockBox_Mutex_t)_addr);

@@ -14,7 +14,7 @@
 #ifndef __components_devices_workqueue_WorkQueue_h__
 #define __components_devices_workqueue_WorkQueue_h__
 
-#include "SysDep.h"
+#include "Platform.h"
 #include "PipeWorkQueue.h"
 #include "math/math_coremath.h"
 #include <pami.h>

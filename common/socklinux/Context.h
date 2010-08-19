@@ -33,7 +33,7 @@
 
 #include "components/memory/MemoryAllocator.h"
 
-#include "SysDep.h"
+#include "components/memory/MemoryManager.h"
 //#include "Memregion.h"
 
 #include "p2p/protocols/send/eager/Eager.h"
@@ -50,7 +50,7 @@ namespace PAMI
 {
   //typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>  ContextLock;
 #ifdef ENABLE_UDP_DEVICE
-  typedef Device::UDP::UdpDevice<SysDep> UdpDevice;
+  typedef Device::UDP::UdpDevice UdpDevice;
   typedef Device::UDP::UdpModel<UdpDevice,Device::UDP::UdpSendMessage> UdpModel;
   typedef PAMI::Protocol::Send::Datagram < UdpModel, UdpDevice > DatagramUdp;
 #endif
@@ -122,7 +122,6 @@ namespace PAMI
      * the 'this' pointer actually points to the array - each device knows whether
      * that is truly an array and how many elements it contains.
      *
-     * \param[in] sd           SysDep object
      * \param[in] clientid     Client ID (index)
      * \param[in] num_ctx      Number of contexts in this client
      * \param[in] ctx          Context opaque entity
@@ -201,8 +200,7 @@ namespace PAMI
                       PlatformDeviceList *devices, void * addr, size_t bytes) :
           Interface::Context<PAMI::Context> (client, contextid),
           Common::Context<PlatformDeviceList> (client, clientid, contextid, num, devices),
-          _mm (addr, bytes),
-          _sysdep (_mm)
+          _mm (addr, bytes)
       {
         TRACE_ERR((stderr, ">> Context::Context()\n"));
         // ----------------------------------------------------------------
@@ -319,8 +317,7 @@ namespace PAMI
 
     private:
 
-      PAMI::Memory::MemoryManager _mm;  // TODO why do I have to do this for sys dep?
-      SysDep _sysdep;
+      PAMI::Memory::MemoryManager _mm;
 
       MemoryAllocator<1024, 16> _request;
       ProtocolAllocator _protocol;

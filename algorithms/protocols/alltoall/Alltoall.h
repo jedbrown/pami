@@ -20,7 +20,7 @@ namespace CCMI
 {
   namespace Adaptor
   {
-    template <class T_Manytomany, class T_Sysdep, class T_Counter>
+    template <class T_Manytomany, class T_Counter>
     class A2AProtocol
     {
     protected:
@@ -39,8 +39,7 @@ namespace CCMI
       T_Manytomany       * _minterface;
 
     public:
-      A2AProtocol (T_Sysdep           * mapping,
-                   T_Manytomany       * minterface,
+      A2AProtocol (T_Manytomany       * minterface,
                    pami_callback_t       cb_done,
                    pami_consistency_t     consistency,
                    PAMI_GEOMETRY_CLASS * geometry,
@@ -140,20 +139,17 @@ namespace CCMI
 
 
 
-    template <class T_Manytomany, class T_Sysdep, class T_Counter>
+    template <class T_Manytomany, class T_Counter>
     class AlltoallFactory : public CCMI::Adaptor::CollectiveProtocolFactory
     {
     protected:
       T_Manytomany  * _minterface;
-      T_Sysdep      * _mapping;
 
     public:
 
-      AlltoallFactory (T_Manytomany *minterface,
-                       T_Sysdep     *mapping)
+      AlltoallFactory (T_Manytomany *minterface)
       {
         _minterface = minterface;
-        _mapping   = mapping;
       }
 
       //virtual ~AlltoallFactory () {}
@@ -236,8 +232,8 @@ namespace CCMI
                                  T_Counter         * sndcounters,
                                  T_Counter         * rcvcounters)
       {
-        COMPILE_TIME_ASSERT(sizeof(*request) >= sizeof(A2AProtocol<T_Manytomany, T_Sysdep, T_Counter>));
-        new (request) A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> (_mapping, _minterface, cb_done,
+        COMPILE_TIME_ASSERT(sizeof(*request) >= sizeof(A2AProtocol<T_Manytomany,T_Counter>));
+        new (request) A2AProtocol<T_Manytomany,T_Counter> (_minterface, cb_done,
                                                                       consistency,
                                                                       geometry,
                                                                       sndbuf, sndlens, sdispls, rcvbuf,
@@ -258,7 +254,7 @@ namespace CCMI
 
       static void cb_barrier_done (pami_context_t context, void *arg, pami_result_t err)
       {
-        A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> *proto = (A2AProtocol<T_Manytomany, T_Sysdep, T_Counter> *) arg;
+        A2AProtocol<T_Manytomany,T_Counter> *proto = (A2AProtocol<T_Manytomany,T_Counter> *) arg;
         proto->start();
       }
 

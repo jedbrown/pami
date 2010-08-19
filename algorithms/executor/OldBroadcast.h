@@ -32,11 +32,10 @@ namespace CCMI
      * link. With rectangular schedule it will lead to a one color
      * broadcast. Also implements pipelining.
      */
-    template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+    template <class T_Mcast, class T_ConnectionManager>
     class OldBroadcast : public Executor
     {
     protected:
-      T_Sysdep            * _sd;
       Interfaces::Schedule  * _comm_schedule;
       T_Mcast             * _mInterface;
       pami_oldmulticast_t    _msend;
@@ -108,7 +107,7 @@ namespace CCMI
       {
       }
 
-      inline OldBroadcast (T_Sysdep *sd, unsigned comm,
+      inline OldBroadcast (unsigned comm,
                         T_ConnectionManager *connmgr,
                         unsigned color, bool post_recvs = false):
       Executor(),
@@ -131,7 +130,6 @@ namespace CCMI
         _nmessages      =   0;
         _msend.cb_done.function   =   staticSendDone;
         _msend.cb_done.clientdata =   this;
-        _sd           =   sd;
         _msend.request     = &_send_request[0];
         pami_quad_t *info   = (_postReceives)?(NULL):(pami_quad_t*)((void*)&_mdata);
         _msend.msginfo     = info;
@@ -215,10 +213,6 @@ namespace CCMI
       {
         return _pipelinewidth;
       }
-      inline T_Sysdep       *getSysdep ()
-      {
-        return _sd;
-      }
 
       int           startphase() { return _startphase; }
       int           nphases()    { return _nphases; }
@@ -230,8 +224,8 @@ namespace CCMI
 ///
 /// \brief start sending broadcast data. Only active on the root node
 ///
-template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: start ()
+template <class T_Mcast, class T_ConnectionManager>
+inline void  CCMI::Executor::OldBroadcast<T_Mcast, T_ConnectionManager> :: start ()
 {
   TRACE_FLOW ((stderr, "<%p>Executor::OldBroadcast::start() phase %d, num total phases %d\n",this, _startphase, _nphases));
 
@@ -245,8 +239,8 @@ inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager
     sendNext ();
   }
 }
-template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: sendNext ()
+template <class T_Mcast, class T_ConnectionManager>
+inline void  CCMI::Executor::OldBroadcast<T_Mcast, T_ConnectionManager> :: sendNext ()
 {
 
   TRACE_FLOW ((stderr, "<%p>Executor::OldBroadcast::sendNext() startphase %d, nphases %d, nmessages %d\n",this,_startphase, _nphases, _nmessages));
@@ -311,8 +305,8 @@ inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager
   _mInterface->send(&_msend);
 
 }
-template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager> :: notifySendDone ( const pami_quad_t & info )
+template <class T_Mcast, class T_ConnectionManager>
+inline void  CCMI::Executor::OldBroadcast<T_Mcast, T_ConnectionManager> :: notifySendDone ( const pami_quad_t & info )
 {
   TRACE_FLOW ((stderr, "<%p>Executor::OldBroadcast::notifySendDone() nmessages %d\n",this, _nmessages));
 
@@ -323,8 +317,8 @@ inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager
   sendNext ();
 }
 
-template <class T_Sysdep, class T_Mcast, class T_ConnectionManager>
-inline void  CCMI::Executor::OldBroadcast<T_Sysdep, T_Mcast, T_ConnectionManager>::notifyRecv
+template <class T_Mcast, class T_ConnectionManager>
+inline void  CCMI::Executor::OldBroadcast<T_Mcast, T_ConnectionManager>::notifyRecv
 (unsigned        src,
  const pami_quad_t  & info,
  char          * buf,

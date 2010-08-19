@@ -14,6 +14,7 @@
 #ifndef __algorithms_protocols_broadcast_async_impl_h__
 #define __algorithms_protocols_broadcast_async_impl_h__
 
+#include "algorithms/connmgr/RankBasedConnMgr.h"
 #include "algorithms/schedule/MultinomialTree.h"
 #include "algorithms/schedule/BinomialTree.h"
 #include "algorithms/schedule/RingSchedule.h"
@@ -43,9 +44,9 @@ namespace CCMI
                            unsigned                      root,
                            Interfaces::NativeInterface * native,
                            PAMI_GEOMETRY_CLASS          * g)
-	{
-	  new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
-	}
+  {
+    new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
+  }
 
       unsigned getKey(unsigned                                                root,
                       unsigned                                                connid,
@@ -69,13 +70,13 @@ namespace CCMI
       }
 
       typedef AsyncBroadcastT <CCMI::Schedule::ListMultinomial,
-                               CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+                               CCMI::ConnectionManager::RankBasedConnMgr,
                                create_schedule>
       AsyncRBBinomBcastComposite;
 
       typedef AsyncBroadcastFactoryT<AsyncRBBinomBcastComposite,
                                      am_bcast_rb,
-                                     CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS>,
+                                     CCMI::ConnectionManager::RankBasedConnMgr,
                                      getKey>
       AsyncRBBinomBcastFactory;
 
@@ -102,21 +103,19 @@ namespace CCMI
       }
 
       typedef
-      AsyncCompositeT <CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>,
-                       PAMI_SYSDEP_CLASS,
-	               PAMI_COLL_MCAST_CLASS,
-                       CCMI::ConnectionManager::RankBasedConnMgr<PAMI_SYSDEP_CLASS> > AsyncBinomialComposite;
+      AsyncCompositeT <CCMI::Schedule::BinomialTreeSchedule,
+                       PAMI_COLL_MCAST_CLASS,
+                       CCMI::ConnectionManager::RankBasedConnMgr> AsyncBinomialComposite;
       template<>
       void AsyncBinomialComposite::create_schedule(void                      * buf,
                                                    unsigned                    size,
                                                    unsigned                    root,
-                                                   PAMI_SYSDEP_CLASS     * map,
                                                    PAMI_GEOMETRY_CLASS        * g)
       {
-        new (buf) CCMI::Schedule::BinomialTreeSchedule<PAMI_SYSDEP_CLASS>(map, g->nranks(), g->ranks());
+        new (buf) CCMI::Schedule::BinomialTreeSchedule(g->nranks(), g->ranks());
       }
 
-      typedef AsyncCompositeFactoryT <AsyncBinomialComposite,old_am_bcast_md,PAMI_SYSDEP_CLASS,PAMI_COLL_MCAST_CLASS>
+      typedef AsyncCompositeFactoryT <AsyncBinomialComposite,old_am_bcast_md,PAMI_COLL_MCAST_CLASS>
       AsyncBinomialFactory;
     };
   };

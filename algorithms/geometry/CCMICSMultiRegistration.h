@@ -19,7 +19,7 @@
 
 #include <map>
 #include <vector>
-#include "SysDep.h"
+#include "components/memory/MemoryManager.h"
 #include "TypeDefs.h"
 #include "components/devices/cshmem/CollShmDevice.h"
 #include "components/devices/NativeInterface.h"

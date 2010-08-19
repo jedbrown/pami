@@ -15,11 +15,11 @@
 #include <map>
 
 // common includes
-#include "SysDep.h"
 #include "Mapping.h"
 #include "common/lapiunix/lapifunc.h"
 #include "common/ContextInterface.h"
 #include "components/devices/BaseDevice.h"
+#include "components/memory/MemoryManager.h"
 
 // Geometry
 #include "algorithms/geometry/Geometry.h"
@@ -367,7 +367,6 @@ namespace PAMI
      * the 'this' pointer actually points to the array - each device knows whether
      * that is truly an array and how many elements it contains.
      *
-     * \param[in] sd           SysDep object
      * \param[in] clientid     Client ID (index)
      * \param[in] num_ctx      Number of contexts in this client
      * \param[in] ctx          Context opaque entity
@@ -921,7 +920,6 @@ namespace PAMI
   private:
       lapi_handle_t                          _lapi_handle;
       PlatformDeviceList                    *_devices;
-      SysDep                                 _sd;
     }; // end PAMI::Context
 }; // end namespace PAMI
 

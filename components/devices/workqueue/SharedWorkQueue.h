@@ -15,7 +15,6 @@
 #define __components_devices_workqueue_SharedWorkQueue_h__
 
 #include "util/common.h"
-#include "SysDep.h"
 #include "components/devices/workqueue/WorkQueue.h"
 #include "string.h"
 
@@ -43,11 +42,11 @@ namespace PAMI
             struct
             {
               volatile size_t bytes;     ///< Number of bytes produced - Only written by each producer!
-            } consumer[PAMI_MAX_PROC_PER_NODE];	// must preserve 16-byte alignment
+            } consumer[PAMI_MAX_PROC_PER_NODE]; // must preserve 16-byte alignment
             struct
             {
               volatile size_t bytes;     ///< Number of bytes consumed - Only written by each consumer!
-            } producer[PAMI_MAX_PROC_PER_NODE];	// must preserve 16-byte alignment
+            } producer[PAMI_MAX_PROC_PER_NODE]; // must preserve 16-byte alignment
                 // NOTE: producer[] must be at the end of the header
                 // (be the space used for the ad-hoc barrier counters)
                 // in order to avoid problems when early exiters of

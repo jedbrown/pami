@@ -44,7 +44,7 @@ namespace PAMI
         }
         typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
                                                                     MsyncMetaData,
-                                                                    CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> >
+                                                                    CCMI::ConnectionManager::SimpleConnMgr>
         MultiSyncFactory;
       };
 
@@ -57,7 +57,7 @@ namespace PAMI
         typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT
         < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS>,
           McastMetaData,
-          CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> >
+          CCMI::ConnectionManager::SimpleConnMgr>
         MultiCastFactory;
       };
 
@@ -69,7 +69,7 @@ namespace PAMI
         }
         typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device,
                                                                     McombineMetaData,
-                                                                    CCMI::ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> >
+                                                                    CCMI::ConnectionManager::SimpleConnMgr>
         MultiCombineFactory;
       };
       //  **********************************************************************
@@ -303,7 +303,7 @@ namespace PAMI
         uint64_t                                                        _reduce_val;
 
         // Connection Manager
-        CCMI::ConnectionManager::SimpleConnMgr<SysDep>                  _sconnmgr;
+        CCMI::ConnectionManager::SimpleConnMgr                          _sconnmgr;
 
         // Devices
         T_Local_Device                                                 &_local_devs;

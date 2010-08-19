@@ -14,7 +14,7 @@
 #ifndef __components_atomic_noop_Noop_h__
 #define __components_atomic_noop_Noop_h__
 
-#include "SysDep.h"
+#include "components/memory/MemoryManager.h"
 #include "components/atomic/Counter.h"
 #include "components/atomic/Mutex.h"
 

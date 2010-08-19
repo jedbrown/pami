@@ -17,7 +17,6 @@
 #include <map>
 #include <vector>
 #include "algorithms/interfaces/CollRegistrationInterface.h"
-#include "SysDep.h"
 #include "TypeDefs.h"
 #include "algorithms/protocols/broadcast/async_impl.h"
 #include "algorithms/protocols/broadcast/multi_color_impl.h"
@@ -65,35 +64,35 @@ namespace PAMI
         _context_id(context_id),
         _reduce_val(0),
         _dev(dev),
-	_msync_ni           (dev, client,context,context_id,client_id),
+  _msync_ni           (dev, client,context,context_id,client_id),
         _barrier_ni         (dev, client,context,context_id,client_id),
         _binom_broadcast_ni (dev, client,context,context_id,client_id),
         _ring_broadcast_ni  (dev, client,context,context_id,client_id),
-	_asrb_binom_bcast_ni  (dev, client,context,context_id,client_id),
-	_ascs_binom_bcast_ni  (dev, client,context,context_id,client_id),
-	_active_binombcast_ni  (dev, client,context,context_id,client_id),
-	_binom_allreduce_ni (dev, client,context,context_id,client_id),
-	_alltoall_ni (dev, client, context, context_id, client_id),
+  _asrb_binom_bcast_ni  (dev, client,context,context_id,client_id),
+  _ascs_binom_bcast_ni  (dev, client,context,context_id,client_id),
+  _active_binombcast_ni  (dev, client,context,context_id,client_id),
+  _binom_allreduce_ni (dev, client,context,context_id,client_id),
+  _alltoall_ni (dev, client, context, context_id, client_id),
         _connmgr(65535),
-	_rbconnmgr(NULL), //Doesnt use sysdeps
-	_csconnmgr(), //Doesnt use sysdeps
+  _rbconnmgr(), //Doesnt use sysdeps
+  _csconnmgr(), //Doesnt use sysdeps
         _msync_reg(&_sconnmgr, &_msync_ni),
         _barrier_reg(NULL,&_barrier_ni, CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
         _binom_broadcast_reg(&_connmgr, &_binom_broadcast_ni),
-	_ring_broadcast_reg(&_connmgr, &_ring_broadcast_ni),
-	_asrb_binom_bcast_reg(&_rbconnmgr, &_asrb_binom_bcast_ni),
-	_ascs_binom_bcast_reg(&_csconnmgr, &_ascs_binom_bcast_ni),
-	_active_binombcast_reg(&_rbconnmgr, &_active_binombcast_ni),
-	_alltoall_reg(&_csconnmgr, &_alltoall_ni),
-	_binomial_allreduce_reg(&_rbconnmgr, &_binom_allreduce_ni, CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead)
+  _ring_broadcast_reg(&_connmgr, &_ring_broadcast_ni),
+  _asrb_binom_bcast_reg(&_rbconnmgr, &_asrb_binom_bcast_ni),
+  _ascs_binom_bcast_reg(&_csconnmgr, &_ascs_binom_bcast_ni),
+  _active_binombcast_reg(&_rbconnmgr, &_active_binombcast_ni),
+  _alltoall_reg(&_csconnmgr, &_alltoall_ni),
+  _binomial_allreduce_reg(&_rbconnmgr, &_binom_allreduce_ni, CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead)
           {
             TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
-	    //set the mapid functions
+      //set the mapid functions
             _barrier_reg.setMapIdToGeometry(mapidtogeometry);
-	    _asrb_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
-	    _ascs_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
-	    _active_binombcast_reg.setMapIdToGeometry(mapidtogeometry);
-	    _alltoall_reg.setMapIdToGeometry(mapidtogeometry);
+      _asrb_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
+      _ascs_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
+      _active_binombcast_reg.setMapIdToGeometry(mapidtogeometry);
+      _alltoall_reg.setMapIdToGeometry(mapidtogeometry);
 
             _binomial_allreduce_reg.setMapIdToGeometry(mapidtogeometry);
           }
@@ -101,18 +100,18 @@ namespace PAMI
         inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
         {
           TRACE_ERR((stderr, "<%p>%s context_id %zu, geometry %p\n", this, __PRETTY_FUNCTION__, context_id, geometry));
-	  if (phase != 0) return PAMI_SUCCESS;
+    if (phase != 0) return PAMI_SUCCESS;
           pami_xfer_t xfer = {0};
           _barrier_composite =_barrier_reg.generate(geometry,
                                                     &xfer);
 
-          geometry->setKey(context_id, 
+          geometry->setKey(context_id,
                            PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1,
                            (void*)_barrier_composite);
           // Set geometry-wide, across contexts, UE barrier \todo multi-context support
           geometry->setKey(PAMI::Geometry::PAMI_GKEY_UEBARRIERCOMPOSITE1,
                            (void*)_barrier_composite);
-          
+
 
           // Add Barriers
           geometry->addCollective(PAMI_XFER_BARRIER,&_msync_reg,_context_id);
@@ -124,13 +123,13 @@ namespace PAMI
           geometry->addCollective(PAMI_XFER_BROADCAST,&_asrb_binom_bcast_reg,_context_id);
           geometry->addCollective(PAMI_XFER_BROADCAST,&_ascs_binom_bcast_reg,_context_id);
 
-	  // Add allreduce
-	  geometry->addCollective(PAMI_XFER_ALLREDUCE,&_binomial_allreduce_reg,_context_id);
+    // Add allreduce
+    geometry->addCollective(PAMI_XFER_ALLREDUCE,&_binomial_allreduce_reg,_context_id);
 
-	  //AM Broadcast
-	  geometry->addCollective(PAMI_XFER_AMBROADCAST,&_active_binombcast_reg,_context_id);
+    //AM Broadcast
+    geometry->addCollective(PAMI_XFER_AMBROADCAST,&_active_binombcast_reg,_context_id);
 
-	  geometry->setUEBarrier(&_barrier_reg);
+    geometry->setUEBarrier(&_barrier_reg);
 
           return PAMI_SUCCESS;
         }
@@ -175,9 +174,9 @@ namespace PAMI
       T_NativeInterface1S                                    _alltoall_ni;
 
       // CCMI Connection Manager Class
-      CCMI::ConnectionManager::ColorGeometryConnMgr<SysDep>  _connmgr;
-      CCMI::ConnectionManager::SimpleConnMgr<SysDep>         _sconnmgr;
-      CCMI::ConnectionManager::RankBasedConnMgr<SysDep>      _rbconnmgr;
+      CCMI::ConnectionManager::ColorGeometryConnMgr          _connmgr;
+      CCMI::ConnectionManager::SimpleConnMgr                 _sconnmgr;
+      CCMI::ConnectionManager::RankBasedConnMgr              _rbconnmgr;
       CCMI::ConnectionManager::CommSeqConnMgr                _csconnmgr;
 
       // CCMI Barrier Interface

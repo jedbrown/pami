@@ -44,7 +44,7 @@ namespace CCMI
       ///
       ///  \brief Base class for synchronous broadcasts
       ///
-      template <int NUMCOLORS, class S, PWColorsFn pwcfn, class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+      template <int NUMCOLORS, class S, PWColorsFn pwcfn, class T_Mcast, class T_ConnectionManager>
       class OldMultiColorCompositeT : public CCMI::Executor::OldComposite
       {
       protected:
@@ -62,12 +62,7 @@ namespace CCMI
         ///
         PAMI_Callback_t                               _cb_done;
 
-        ///
-        /// \brief Pointer to mapping
-        ///
-        T_Sysdep                              *  _sd;
-
-        CCMI::Executor::OldBroadcast<T_Sysdep,T_Mcast,T_ConnectionManager>
+        CCMI::Executor::OldBroadcast<T_Mcast,T_ConnectionManager>
                                                       _executors  [NUMCOLORS] __attribute__((__aligned__(16)));
         S                                             _schedules  [NUMCOLORS];
         char *                                        _srcbufs    [NUMCOLORS];
@@ -85,16 +80,15 @@ namespace CCMI
           {
             pami_quad_t *info = NULL;
 
-            CCMI::Executor::OldBroadcast<T_Sysdep,T_Mcast,T_ConnectionManager> *exe =
-              (CCMI::Executor::OldBroadcast<T_Sysdep,T_Mcast,T_ConnectionManager> *) executor;
+            CCMI::Executor::OldBroadcast<T_Mcast,T_ConnectionManager> *exe =
+              (CCMI::Executor::OldBroadcast<T_Mcast,T_ConnectionManager> *) executor;
 
             TRACE_ADAPTOR ((stderr, "<%p>Broadcast::OldMultiColorCompositeT::staticRecvFn() \n",exe));
 
             exe->notifyRecv ((unsigned)-1, *info, NULL, exe->getPwidth());
           }
 
-        OldMultiColorCompositeT (T_Sysdep                              * map,
-                              T_ConnectionManager * cmgr,
+        OldMultiColorCompositeT (T_ConnectionManager * cmgr,
                               PAMI_Callback_t                              cb_done,
                               pami_consistency_t                      consistency,
                               T_Mcast                              * mf,
@@ -102,7 +96,7 @@ namespace CCMI
                               unsigned                                     root,
                               char                                       * src,
                               unsigned                                     bytes) :
-        CCMI::Executor::OldComposite (), _doneCount(0), _numColors(0), _cb_done(cb_done), _sd(map)
+        CCMI::Executor::OldComposite (), _doneCount(0), _numColors(0), _cb_done(cb_done)
         {
           pwcfn (geometry, bytes, _colors, _numColors, _pipewidth);
 
@@ -125,9 +119,8 @@ namespace CCMI
           for(unsigned c = 0; c < _numColors; c++)
           {
             CCMI_assert (c < NUMCOLORS);
-            CCMI::Executor::OldBroadcast<T_Sysdep,T_Mcast,T_ConnectionManager> *bcast  =
-            new (& _executors[c]) CCMI::Executor::OldBroadcast<T_Sysdep,T_Mcast,T_ConnectionManager> (map,
-                                                                                                   geometry->comm(),
+            CCMI::Executor::OldBroadcast<T_Mcast,T_ConnectionManager> *bcast  =
+            new (& _executors[c]) CCMI::Executor::OldBroadcast<T_Mcast,T_ConnectionManager> (geometry->comm(),
                                                                                                    cmgr,
                                                                                                    _colors[c],
                                                                                                    true);
@@ -160,7 +153,6 @@ namespace CCMI
                            T_ConnectionManager   * cmgr,
                            T_Mcast               * minterface)
         {
-          PAMI_assert(this->_sd);
           if(__global.mapping.task() != root)
           { //post receive on non root nodes
             //posts a receive on connection given by connection
@@ -226,8 +218,8 @@ namespace CCMI
       /// \brief Base factory class for broadcast factory implementations.
       ///
       typedef void      (*MetaDataFn)   (pami_metadata_t *m);
-      template <class B, MetaDataFn get_metadata, class T_Sysdep,class T_Mcast, class T_ConnectionManager>
-      class OldMultiColorBroadcastFactoryT : public BroadcastFactory<T_Sysdep, T_Mcast, T_ConnectionManager>
+      template <class B, MetaDataFn get_metadata, class T_Mcast, class T_ConnectionManager>
+      class OldMultiColorBroadcastFactoryT : public BroadcastFactory<T_Mcast, T_ConnectionManager>
       {
       public:
 
@@ -235,11 +227,10 @@ namespace CCMI
         /// \brief Constructor for broadcast factory implementations.
         ///
         OldMultiColorBroadcastFactoryT
-        (T_Sysdep *map,
-         T_Mcast *mf,
+        (T_Mcast *mf,
          T_ConnectionManager *cmgr,
          unsigned nconn)
-          : BroadcastFactory<T_Sysdep, T_Mcast, T_ConnectionManager> (mf, map, cmgr, nconn)
+          : BroadcastFactory<T_Mcast, T_ConnectionManager> (mf, cmgr, nconn)
         {
         }
 
@@ -301,13 +292,13 @@ namespace CCMI
         /// \param[in]  request      Opaque memory to maintain
         ///                          internal message state.
         /// \param[in]  cb_done      Callback to invoke when
-        ///				 message is complete.
+        ///        message is complete.
         /// \param[in]  consistency  Required consistency level
         /// \param[in]  geometry     Geometry to use for this
-        ///				 collective operation.
+        ///        collective operation.
         ///                          \c NULL indicates the global geometry.
         /// \param[in]  root         Rank of the node performing
-        ///				 the broadcast.
+        ///        the broadcast.
         /// \param[in]  src          Source buffer to broadcast.
         /// \param[in]  bytes        Number of bytes to broadcast.
         ///
@@ -329,8 +320,7 @@ namespace CCMI
           PAMI_assert(request_buf);
           B  *composite =
           new (request_buf)
-          B (this->_sd,
-             this->_connmgr,
+          B (this->_connmgr,
              cb_done,
              consistency,
              this->_minterface,

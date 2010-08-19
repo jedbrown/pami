@@ -18,22 +18,22 @@ namespace CCMI
      * @defgroup PHASE_CODES Codes used to represent implicite phases
      *@{
      */
-#define UNDEFINED_PHASE	((unsigned)-1)	///< Undefined phase
-#define ALL_PHASES	((unsigned)-2)	///< All phases in bino
-#define NO_PHASES	((unsigned)-3)	///< No phase
-#define NOT_RECV_PHASE	((unsigned)-4)	///< All except recv phases
-#define NOT_SEND_PHASE	NOT_RECV_PHASE	///< All except send phases
-    /*@}*/
+#define UNDEFINED_PHASE ((unsigned)-1)  ///< Undefined phase
+#define ALL_PHASES  ((unsigned)-2)  ///< All phases in bino
+#define NO_PHASES ((unsigned)-3)  ///< No phase
+#define NOT_RECV_PHASE  ((unsigned)-4)  ///< All except recv phases
+#define NOT_SEND_PHASE  NOT_RECV_PHASE  ///< All except send phases
+    /**@}*/
 
     /**
      * \brief Convert a node to its peer in the binomial tree
-     * \param[in] node	Node to convert, relative to root
-     * \param[in] phase	Phase of algorithm
-     * \return	Converted node
+     * \param[in] node  Node to convert, relative to root
+     * \param[in] phase Phase of algorithm
+     * \return  Converted node
      */
-#define BINO(nodes, nranks, mynode, phase, nph, radix, lradix)	\
-    nranks = 0;							\
-    for (unsigned r=1; r < radix; r ++)				\
+#define BINO(nodes, nranks, mynode, phase, nph, radix, lradix)  \
+    nranks = 0;             \
+    for (unsigned r=1; r < radix; r ++)       \
       nodes[nranks++] = (mynode ^ (r << (phase * lradix)));
 
     //-------------------------------------------------------------
@@ -51,9 +51,9 @@ namespace CCMI
          *
          * Returns the node we should communicate with in this phase
          *
-         * \param[in] parent	whether to go left or right...
-         * \param[in] ph	phase to work on
-         * \return	Next node in algorithm
+         * \param[in] parent  whether to go left or right...
+         * \param[in] ph  phase to work on
+         * \return  Next node in algorithm
          */
         inline void NEXT_NODES(bool parent, unsigned ph, unsigned *nodes, unsigned &nranks)
         {
@@ -96,11 +96,11 @@ namespace CCMI
          *
          * Also called from Rectangle.h when doing a reduce along an axis of the rectangle.
          *
-         * \param[in] x		Our coord on axis
-         * \param[in] x0	Lowest coord on axis
-         * \param[in] xN	Highest coord on axis
-         * \param[in] ranks	(optional) Pointer to list of ranks (saved until later)
-         * \return	nothing
+         * \param[in] x   Our coord on axis
+         * \param[in] x0  Lowest coord on axis
+         * \param[in] xN  Highest coord on axis
+         * \param[in] ranks (optional) Pointer to list of ranks (saved until later)
+         * \return  nothing
          */
         inline void initBinoSched()
         {
@@ -202,8 +202,8 @@ namespace CCMI
         /**
          * \brief Constructor for list of ranks
          *
-         * \param[in] nranks	Number of ranks in list
-         * \param[in] ranks	Ranks list
+         * \param[in] nranks  Number of ranks in list
+         * \param[in] ranks Ranks list
          */
         MultinomialTreeT (unsigned myrank, PAMI::Topology *topo, unsigned c = 0);
 
@@ -211,8 +211,8 @@ namespace CCMI
         /**
          * \brief Constructor for list of ranks
          *
-         * \param[in] ranks	Ranks list
-         * \param[in] nranks	Number of ranks in list
+         * \param[in] ranks Ranks list
+         * \param[in] nranks  Number of ranks in list
          */
         MultinomialTreeT (unsigned myrank, size_t *ranks, unsigned nranks);
 
@@ -229,11 +229,11 @@ namespace CCMI
         /**
          * \brief Initialize Multinomial Schedule
          *
-         * \param[in] root		Root node of collective
-         * \param[in] comm_op		Collective operation to do
-         * \param[out] startphase	Starting phase for this node
-         * \param[out] nphases		Number of phases for this node
-         * \param[out] nranks		Max num steps per phase
+         * \param[in] root    Root node of collective
+         * \param[in] comm_op   Collective operation to do
+         * \param[out] startphase Starting phase for this node
+         * \param[out] nphases    Number of phases for this node
+         * \param[out] nranks   Max num steps per phase
          */
         virtual void init(int root, int comm_op, int &startphase,
                           int &nphases);
@@ -241,7 +241,7 @@ namespace CCMI
         /**
          * \brief Get source phase steps
          *
-         * \param[in] phase	Phase to work on
+         * \param[in] phase Phase to work on
          * \param[INOUT] srcranks are filled in the topology
          */
         virtual void getSrcTopology(unsigned phase, PAMI::Topology *topology)
@@ -276,7 +276,7 @@ namespace CCMI
         /**
          * \brief Get destination phase steps
          *
-         * \param[in] phase	Phase to work on
+         * \param[in] phase Phase to work on
          * \param[INOUT] dstranks are filled in the topology
          */
         virtual void getDstTopology(unsigned phase, PAMI::Topology *topology)
@@ -427,8 +427,8 @@ namespace CCMI
 /**
  * \brief Constructor for list of ranks
  *
- * \param[in] myrank	My rank in COMM_WORLD
- * \param[in] topology	topology across which the binomial must be performed
+ * \param[in] myrank  My rank in COMM_WORLD
+ * \param[in] topology  topology across which the binomial must be performed
  */
 template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
@@ -443,9 +443,9 @@ MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(to
 /**
  * \brief Constructor for list of ranks
  *
- * \param[in] myrank	My rank in COMM_WORLD
- * \param[in] nranks	Number of ranks in list
- * \param[in] ranks	Ranks list
+ * \param[in] myrank  My rank in COMM_WORLD
+ * \param[in] nranks  Number of ranks in list
+ * \param[in] ranks Ranks list
  */
 template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
@@ -468,8 +468,8 @@ MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks): _topology(ran
  * This computes values which require knowing the root node and/or
  * type of collective (_op).
  *
- * \param[in] node	Our node number (index) in ranks[] array,
- *			or position along line of nodes.
+ * \param[in] node  Our node number (index) in ranks[] array,
+ *      or position along line of nodes.
  */
 template <class M>
 void CCMI::Schedule::MultinomialTreeT<M>::
@@ -621,11 +621,11 @@ setupContext(unsigned &startph, unsigned &nph)
 /**
  * \brief Initialize the final schedule
  *
- * \param[in] root	The root node (rank)
- * \param[in] comm_op	The collective operation to perform
- * \param[out] start	The starting phase for this node
- * \param[out] nph	The number of phases for this node
- * \param[out] nranks	The largest number of steps per phase
+ * \param[in] root  The root node (rank)
+ * \param[in] comm_op The collective operation to perform
+ * \param[out] start  The starting phase for this node
+ * \param[out] nph  The number of phases for this node
+ * \param[out] nranks The largest number of steps per phase
  */
 template <class M>
 void CCMI::Schedule::MultinomialTreeT<M>::

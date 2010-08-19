@@ -54,8 +54,8 @@ namespace CCMI
     /// This executor stores persistent state/phase data, including buffer allocation,
     /// in an external class - AllreduceState.  The client should manage this class
     /// and free allocations when appropriate (AllreduceState::freeAllocations()).
-    template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-    class Allreduce : public OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>
+    template<class T_Mcast, class T_ConnectionManager>
+    class Allreduce : public OldAllreduceBase<T_Mcast, T_ConnectionManager>
     {
       protected:
 
@@ -150,7 +150,7 @@ namespace CCMI
         }
         /// \brief Default Constructor
         inline Allreduce () :
-            OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>(),
+            OldAllreduceBase<T_Mcast, T_ConnectionManager>(),
             _state(&this->_astate),
             _nextRecvData(0),
             //_sState[].sndReq        uninitialzed opaque storage
@@ -183,12 +183,11 @@ namespace CCMI
         /// \param[in] connmgr the connection manager to use
         /// \param[in] state   the persistent state/phase data
         /// \param[in] comm    the communicator id of the collective
-        inline Allreduce(T_Sysdep *map,
-                         T_ConnectionManager  * connmgr,
+        inline Allreduce(T_ConnectionManager  * connmgr,
                          pami_consistency_t                        consistency,
                          const unsigned                          commID,
                          unsigned                                iteration) :
-            OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>(map, connmgr, consistency, commID, iteration, true),
+            OldAllreduceBase<T_Mcast, T_ConnectionManager>(connmgr, consistency, commID, iteration, true),
             _state(&this->_astate),
             _nextRecvData(0),
             //_sState[].sndReq        uninitialzed opaque storage
@@ -208,8 +207,8 @@ namespace CCMI
 #ifdef CCMI_DEBUG
           TRACE_MSG((stderr, "<%p>Executor::Allreduce::ctor() "
                      "Allreduce %X, OldAllreduceBase %X, Executor %X\n", this,
-                     sizeof(CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>),
-                     sizeof(CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>),
+                     sizeof(CCMI::Executor::Allreduce<T_Mcast, T_ConnectionManager>),
+                     sizeof(CCMI::Executor::OldAllreduceBase<T_Mcast, T_ConnectionManager>),
                      sizeof(CCMI::Executor::Executor)));
           TRACE_DATA(("this", (const char*)this, sizeof(*this)));
 #endif
@@ -331,16 +330,16 @@ namespace CCMI
         {
           // Compile time assert
           // SendState array must must fit in a request
-          COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep, T_ConnectionManager>::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(PAMI_CollectiveRequest_t));
+          COMPILE_TIME_ASSERT((sizeof(CCMI::Executor::OldAllreduceBase<T_Mcast, T_ConnectionManager>::SendState)*CCMI_KERNEL_EXECUTOR_ALLREDUCE_MAX_ACTIVE_SENDS) <= sizeof(PAMI_CollectiveRequest_t));
         }
     }; // Allreduce
   };
 };// CCMI::Executor
 
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
+template<class T_Mcast, class T_ConnectionManager>
 inline PAMI_Request_t *
-CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifyRecvHead(const pami_quad_t    * info,
+CCMI::Executor::Allreduce<T_Mcast, T_ConnectionManager>::notifyRecvHead(const pami_quad_t    * info,
     unsigned          count,
     unsigned          peer,
     unsigned          sndlen,
@@ -447,8 +446,8 @@ CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifyRecvHea
   return _state->getRecvReq() + _nextRecvData++;
 };
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::postReceives()
+template<class T_Mcast, class T_ConnectionManager>
+inline void CCMI::Executor::Allreduce<T_Mcast, T_ConnectionManager>::postReceives()
 {
   // If receives are posted, sends do not require the info field.
   _sndInfoRequired = 0;
@@ -496,8 +495,8 @@ inline void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::p
   TRACE_FLOW((stderr, "<%p>Executor::Allreduce::postReceives() exit\n", this));
 }
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-inline void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::start()
+template<class T_Mcast, class T_ConnectionManager>
+inline void CCMI::Executor::Allreduce<T_Mcast, T_ConnectionManager>::start()
 {
   TRACE_FLOW((stderr, "<%p>Executor::Allreduce::start() enter\n", this));
   CCMI_assert(_state->getSchedule());
@@ -640,8 +639,8 @@ inline void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::s
   TRACE_FLOW((stderr, "<%p>Executor::Allreduce::start() exit\n", this));
 }
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifyRecv(unsigned src, const pami_quad_t & info, char * buf, unsigned bytes)
+template<class T_Mcast, class T_ConnectionManager>
+void CCMI::Executor::Allreduce<T_Mcast, T_ConnectionManager>::notifyRecv(unsigned src, const pami_quad_t & info, char * buf, unsigned bytes)
 {
   RecvCallbackData * cdata = (RecvCallbackData *)(&info);
   unsigned rphase = cdata->phase;
@@ -661,8 +660,8 @@ void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifyRe
   TRACE_FLOW((stderr, "<%p>Executor::Allreduce::notifyRecv() exit\n", this));
 }
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifySendDone(const pami_quad_t & info)
+template<class T_Mcast, class T_ConnectionManager>
+void CCMI::Executor::Allreduce<T_Mcast, T_ConnectionManager>::notifySendDone(const pami_quad_t & info)
 {
   TRACE_FLOW((stderr, "<%p>Executor::Allreduce::notifySendDone() enter\n", this));
 
@@ -682,8 +681,8 @@ void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::notifySe
   TRACE_FLOW((stderr, "<%p>Executor::Allreduce::notifySendDone() exit\n", this));
 }
 
-template<class T_Mcast, class T_Sysdep, class T_ConnectionManager>
-void CCMI::Executor::Allreduce<T_Mcast, T_Sysdep, T_ConnectionManager>::advance()
+template<class T_Mcast, class T_ConnectionManager>
+void CCMI::Executor::Allreduce<T_Mcast, T_ConnectionManager>::advance()
 {
   // Don't advance.  Probably in advance up the stack and doing a callback.  Delay it.
   if (_delayAdvance)

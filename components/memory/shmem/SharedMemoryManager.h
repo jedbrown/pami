@@ -67,7 +67,6 @@ namespace PAMI
                 TRACE_ERR((stderr, "SharedMemoryManager() .. \"%s\" %zu bytes mapped at %p\n", shmemfile, bytes, ptr));
                 _base = ptr;
                 _size = bytes;
-                TRACE_ERR((stderr, "SharedMemoryManager() .. _location = %p, _size = %zu\n", _location, _size));
 
                 // Use posix semaphores as a platform-neutral way of
                 // initializing the shared memory area.  The first process in
@@ -81,9 +80,6 @@ namespace PAMI
                 char semfile[2][sizeof(_shmemfile)+12];
                 snprintf (semfile[0], sizeof(_shmemfile)+12, "%s-semaphore0", _shmemfile);
                 snprintf (semfile[1], sizeof(_shmemfile)+12, "%s-semaphore1", _shmemfile);
-                size_t p, np;
-                __global.mapping.nodePeers (np);
-fprintf (stderr, "[%zu] SharedMemoryManager() .. np = %zu\n", __global.mapping.task(), np);
                 sem_t * semaphore0 = sem_open (semfile[0], O_CREAT, 0644, 1);
                 if (semaphore0 != SEM_FAILED)
                 {
@@ -93,12 +89,11 @@ fprintf (stderr, "[%zu] SharedMemoryManager() .. np = %zu\n", __global.mapping.t
                     while ((sem_wait(semaphore0) == -1) && errno == EINTR);
 
                     // test the value of semaphore1, if
-                    int value;
-                    sem_getvalue (semaphore1, &value);
-                    if (value == 0)
+                    int value1;
+                    sem_getvalue (semaphore1, &value1);
+                    if (value1 == 0)
                     {
                       // First process in gets to do the initialization
-fprintf (stderr, "[%zu] SharedMemoryManager() .. memset\n", __global.mapping.task());
                       memset (_base, 0, bytes);
                     }
 
@@ -110,51 +105,18 @@ fprintf (stderr, "[%zu] SharedMemoryManager() .. memset\n", __global.mapping.tas
                     sem_post (semaphore0);
                     sem_close (semaphore0);
 
-                    if (value == (np-1))
+                    size_t p, np;
+                    __global.mapping.nodePeers (np);
+                    if ((size_t)value1 == (np-1))
                     {
                       // Last process in gets to tear down the semaphores
                       rc = sem_unlink (semfile[1]);
-fprintf (stderr, "[%zu] SharedMemoryManager() .. unlink 1 = %d\n", __global.mapping.task(), rc);
                       rc = sem_unlink (semfile[0]);
-fprintf (stderr, "[%zu] SharedMemoryManager() .. unlink 0 = %d\n", __global.mapping.task(), rc);
                     }
+
+                    return;
                   }
                 }
-
-
-
-
-
-/*
-                  // Allow other processes to proceed now that the shared memory
-                  // area is initialized to a known state, increment the counter
-                  // by the number of waiting processes.
-                  //size_t p, np;
-                  //__global.mapping.nodePeers (np);
-                  //for (p=0; p<np; p++)
-                    //sem_post (semaphore);
-
-while ((sem_wait(semaphore) == -1) && errno == EINTR);
-                  // Destroy the semaphore after all processes are done.
-                  sem_close (semaphore);
-                  sem_unlink (semfile);
-fprintf (stderr, "[%zu] SharedMemoryManager() .. done\n", __global.mapping.task());
-                }
-                else
-                {
-fprintf (stderr, "[%zu] SharedMemoryManager() .. waiting\n", __global.mapping.task());
-                  // Another process has already created the semaphore and is
-                  // initializing the shared memory area. Open the semaphore and
-                  // wait until the shared memory initialization is complete.
-                  // This will decrement the counter once and unblock when the
-                  // value is zero.
-                  semaphore = sem_open (semfile, 0);
-                  while ((sem_wait(semaphore) == -1) && errno == EINTR);
-                  sem_close (semaphore);
-fprintf (stderr, "[%zu] SharedMemoryManager() .. done\n", __global.mapping.task());
-                }
-*/
-                return;
               }
             }
           }
@@ -173,11 +135,7 @@ fprintf (stderr, "[%zu] SharedMemoryManager() .. done\n", __global.mapping.task(
 
         inline ~SharedMemoryManager ()
         {
-          //if (_shmemfile[0] != NULL)
-          {
-            shm_unlink (_shmemfile);
-            //_shmemfile[0] = NULL;
-          }
+          shm_unlink (_shmemfile);
         };
 
         inline void init (void * addr, size_t bytes)

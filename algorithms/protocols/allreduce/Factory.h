@@ -60,7 +60,7 @@ namespace CCMI
       /// function to retrieve an executor from a geometry (associated
       /// with a single comm id).
       ///
-      template<class T_Sysdep, class T_Mcast, class T_ConnectionManager>
+      template<class T_Mcast, class T_ConnectionManager>
       class Factory : public BaseFactory
       {
       protected:
@@ -81,11 +81,6 @@ namespace CCMI
         pami_mapidtogeometry_fn               _cb_geometry;
 
         ///
-        /// \brief mapping module
-        ///
-        T_Sysdep                          * _mapping;
-
-        ///
         /// \brief Configuration flags
         //
         ConfigFlags                       _flags;
@@ -103,8 +98,7 @@ namespace CCMI
         ///
         /// \brief Constructor for allreduce factory implementations.
         ///
-        inline Factory(T_Sysdep                               * mapping,
-                       T_Mcast                                * moldinterface,
+        inline Factory(T_Mcast                                * moldinterface,
 //                       CCMI::MultiSend::MulticombineInterface        * minterface,
                        pami_mapidtogeometry_fn                            cb_geometry,
                        ConfigFlags                                     flags ) :
@@ -112,7 +106,6 @@ namespace CCMI
 //        _minterface (minterface),
         _connmgr    (NULL),
         _cb_geometry(cb_geometry),
-        _mapping    (mapping),
         _flags      (flags)
         {
           TRACE_ALERT((stderr,"<%p>Allreduce::Factory::ctor() ALERT:\n",this));
@@ -148,7 +141,7 @@ namespace CCMI
           CCMI_assert (info && arg);
           CollHeaderData  *cdata = (CollHeaderData *) info;
           Factory *factory = (Factory *) arg;
-          CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *allreduce =
+          CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *allreduce =
           factory->getAllreduce(cdata->_comm, cdata->_iteration);
 
           CCMI_assert (allreduce != NULL);
@@ -167,14 +160,14 @@ namespace CCMI
         /// \brief Get the executor associated with a comm id (and
         /// color/iteration id)
         ///
-        CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> * getAllreduce(unsigned comm,
+        CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> * getAllreduce(unsigned comm,
                                                unsigned color)
         {
           CCMI::Executor::OldComposite *composite =(CCMI::Executor::OldComposite *)
             ((PAMI_GEOMETRY_CLASS *)_cb_geometry(comm))->getAllreduceComposite(color);
-          CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *executor = (composite)?
-                                              (CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *) composite->getExecutor (0):
-                                              (CCMI::Executor::OldAllreduceBase<T_Mcast, T_Sysdep,T_ConnectionManager> *)NULL;
+          CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *executor = (composite)?
+                                              (CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *) composite->getExecutor (0):
+                                              (CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *)NULL;
 
           TRACE_ADAPTOR((stderr, "<%p>Allreduce::Factory::"
                          "getAllreduce(comm id %#X, color %#X)"

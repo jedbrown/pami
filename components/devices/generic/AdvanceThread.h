@@ -13,7 +13,7 @@
 #include "GenericDevicePlatform.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/generic/Message.h"
-#include "SysDep.h"
+#include "components/memory/MemoryManager.h"
 
 ////////////////////////////////////////////////////////////////////////
 ///  \file components/devices/generic/AdvanceThread.h
@@ -34,11 +34,11 @@ namespace Device {
         /// to be dequeue, and PAMI_SUCCESS indicates successful completion.
         ///
         enum ThreadStatus {
-                New = 0,	///< Thread has only been constructed (do not call)
-                Idle,		///< Thread has no work (do not call)
-                Ready,		///< Thread has work, make call to func
-                OneShot,	///< Thread is dequeued before calling func
-                Complete	///< Thread should be dequeued (do not call)
+                New = 0,  ///< Thread has only been constructed (do not call)
+                Idle,   ///< Thread has no work (do not call)
+                Ready,    ///< Thread has work, make call to func
+                OneShot,  ///< Thread is dequeued before calling func
+                Complete  ///< Thread should be dequeued (do not call)
         };
 
 namespace Generic {
@@ -72,8 +72,8 @@ public:
         /// Constructs a thread object that is ready to run,
         /// complete with work function.
         ///
-        /// \param[in] func	Work function to call
-        /// \param[in] cookie	Opaque data for work function
+        /// \param[in] func Work function to call
+        /// \param[in] cookie Opaque data for work function
         ///
         GenericThread(pami_work_function func, void *cookie) :
         GenericDeviceWorkQueue::Element(),
@@ -87,7 +87,7 @@ public:
         ///
         /// Calls the work function with the context object and opaque data.
         ///
-        /// \param[in] context	Context in which thread is being executed
+        /// \param[in] context  Context in which thread is being executed
         ///
         inline pami_result_t executeThread(pami_context_t context) {
                 return _func(context, _cookie);
@@ -95,13 +95,13 @@ public:
 
         /// \brief Accessor for thread status
         ///
-        /// \return	Thread status
+        /// \return Thread status
         ///
         inline ThreadStatus getStatus() { return _status; }
 
         /// \brief Set thread status
         ///
-        /// \param[in] stat	New status for thread
+        /// \param[in] stat New status for thread
         ///
         inline void setStatus(ThreadStatus stat) { _status = stat; }
 
@@ -110,8 +110,8 @@ public:
         /// Status must still be set to Ready or OneShot in order for
         /// function to be called.
         ///
-        /// \param[in] func	Function to call from advance
-        /// \param[in] cookie	Opaque data to pass to function
+        /// \param[in] func Function to call from advance
+        /// \param[in] cookie Opaque data to pass to function
         ///
         inline void setFunc(pami_work_function func, void *cookie) {
                 _func = func;
@@ -119,8 +119,8 @@ public:
         }
 protected:
         pami_work_function _func; ///< work function to call
-        void *_cookie;		 ///< opaque value to pass to work function
-        ThreadStatus _status;	 ///< current thread status
+        void *_cookie;     ///< opaque value to pass to work function
+        ThreadStatus _status;  ///< current thread status
 }; // class GenericThread
 
 }; /* namespace Generic */

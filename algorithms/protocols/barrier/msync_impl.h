@@ -33,7 +33,7 @@ namespace CCMI
 
       typedef AllSidedCollectiveProtocolFactoryT<MultiSyncComposite,
                                                  msync_barrier_md,
-                                                 ConnectionManager::SimpleConnMgr<PAMI_SYSDEP_CLASS> > MultiSyncFactory;
+                                                 ConnectionManager::SimpleConnMgr> MultiSyncFactory;
     };
   };
 };

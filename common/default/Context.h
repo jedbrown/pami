@@ -40,8 +40,7 @@
 //#include "components/atomic/pthread/Pthread.h"
 
 #include "components/memory/MemoryAllocator.h"
-
-#include "SysDep.h"
+#include "components/memory/MemoryManager.h"
 //#include "Memregion.h"
 
 #include "p2p/protocols/send/eager/Eager.h"

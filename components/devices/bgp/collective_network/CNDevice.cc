@@ -13,7 +13,6 @@
 #include "config.h"
 #include <pami.h>
 #include "util/common.h"
-#include "SysDep.h"
 #include "components/atomic/bgp/LockBoxBarrier.h"
 #include "components/devices/bgp/collective_network/CNDevice.h"
 
