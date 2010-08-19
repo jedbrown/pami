@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include "Context.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)  fprintf x
@@ -21,11 +22,13 @@ namespace PAMI
     class Client
     {
       public:
+
+        /// \todo Make the number of bytes of client-specific shared memory configurable
         inline Client (const char * name, pami_client_t client, pami_result_t &result) :
             _client (client),
             _references (1),
             _ncontexts (0),
-            _mm ()
+            _mm (name, 1024*1024)
         {
           TRACE_ERR((stderr, ">> Client::Client(), this = %p\n", this));
 
@@ -35,9 +38,6 @@ namespace PAMI
           // Set the client name string.
           memset ((void *)_name, 0x00, sizeof(_name));
           strncpy (_name, name, sizeof(_name) - 1);
-
-          // Get some shared memory for this client
-          initializeMemoryManager ();
 
           result = PAMI_SUCCESS;
           TRACE_ERR((stderr, "<< Client::Client()\n"));
@@ -56,7 +56,7 @@ namespace PAMI
         {
           TRACE_ERR((stderr, ">> Client::generate_impl(\"%s\", %p)\n", name, client));
 
-          pami_result_t result;
+          pami_result_t result = PAMI_ERROR;
           int rc = 0;
 
           // Needs error-checking and locks for thread safety
@@ -65,7 +65,6 @@ namespace PAMI
 
           if (rc != 0) PAMI_abort();
 
-          memset ((void *)clientp, 0x00, sizeof(T_Client));
           new (clientp) T_Client (name, (pami_client_t) clientp, result);
           *client = clientp;
 
@@ -77,9 +76,8 @@ namespace PAMI
         static void destroy_impl (pami_client_t client)
         {
           // Needs error-checking and locks for thread safety
-          Client * c = (Client *) client;
-          shm_unlink (c->_shmemfile);
-
+          T_Client * c = (T_Client *) client;
+          c->~Client();
           free ((void *) client);
         }
 
@@ -238,6 +236,21 @@ namespace PAMI
           PAMI_abort();
           return PAMI_SUCCESS;
         }
+
+        inline pami_result_t geometry_create_topology_impl(pami_geometry_t       *geometry,
+                                                           pami_configuration_t   configuration[],
+                                                           size_t                 num_configs,
+                                                           pami_geometry_t        parent,
+                                                           unsigned               id,
+                                                           pami_topology_t       *topology,
+                                                           pami_context_t         context,
+                                                           pami_event_function    fn,
+                                                           void                  *cookie)
+        {
+          PAMI_abort();
+          return PAMI_SUCCESS;
+        }
+
         inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       *geometry,
                                                             pami_configuration_t   configuration[],
                                                             size_t                 num_configs,
@@ -307,9 +320,8 @@ namespace PAMI
         PlatformDeviceList _platdevs;
         char            _name[256];
 
-        Memory::MemoryManager _mm;
-        char                  _shmemfile[1024];
-
+        Memory::SharedMemoryManager _mm;
+/*
         inline void initializeMemoryManager ()
         {
           size_t bytes     = 1024 * 1024;
@@ -359,6 +371,7 @@ namespace PAMI
 
           return;
         }
+*/
     }; // end class PAMI::Common::Client
   }; // end namespace PAMI::Common
 }; // end namespace PAMI

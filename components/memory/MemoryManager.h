@@ -166,7 +166,8 @@ namespace PAMI
           return _base;
         };
 
-      private:
+      protected:
+
         void * _base;
         size_t _size;
         size_t _offset;
