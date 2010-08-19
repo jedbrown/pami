@@ -356,14 +356,25 @@ namespace PAMI
 		 ( _mapping.isLowestT() ) &&
 		 ( _id_offset == 0 ) )
 	      {
+		char                 **globalCombiningInjFifoLookAsidePayloadVAs =
+		  _rm.getGlobalCombiningLookAsidePayloadBufferVAs();
+		uint64_t              *globalCombiningInjFifoLookAsidePayloadPAs =
+		  _rm.getGlobalCombiningLookAsidePayloadBufferPAs();
+		pami_event_function  **globalCombiningInjFifoLookAsideCompletionFnPtrs = 
+		  _rm.getGlobalCombiningLookAsideCompletionFnPtrs();
+		void                ***globalCombiningInjFifoLAsideCompletionCookiePtrs =
+		  _rm.getGlobalCombiningLookAsideCompletionCookiePtrs();
+
 		_combiningInjFifo = _numInjFifos;
+
 		injectionGroup.initialize (_combiningInjFifo,   /* fnum */
 					   _rm.getGlobalCombiningInjFifoPtr (),
-					   NULL,   /* immediate_vaddr */
-					   0ULL,   /* immediate_paddr */
-					   NULL,   /* completion_function */
-					   NULL,   /* completion_cookie */
-					   0,      /* n - dimension of above arrays */
+                                           (InjGroup::immediate_payload_t*)
+                                           globalCombiningInjFifoLookAsidePayloadVAs[0],
+                                           globalCombiningInjFifoLookAsidePayloadPAs[0],
+                                           globalCombiningInjFifoLookAsideCompletionFnPtrs[0],
+                                           globalCombiningInjFifoLAsideCompletionCookiePtrs[0],
+                                           _rm.getMaxNumDescInInjFifo(),
 					   NULL ); /* channel_cookie */
 		TRACE_FORMAT("Context::init():  Context is controlling combining InjChannel.  Context-relative InjFifo Id = %u, t=%zu\n",_combiningInjFifo, _mapping.t());
 	      }

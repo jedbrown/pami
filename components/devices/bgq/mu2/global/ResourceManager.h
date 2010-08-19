@@ -1027,10 +1027,22 @@ namespace PAMI
 
 	inline MUSPI_InjFifo_t * getGlobalCombiningInjFifoPtr ()
 	{
-	  uint32_t subgroup = (_globalInjFifoIds[0] / BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP) - 64;
-	  uint32_t fifoId   = _globalInjFifoIds[0] % BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP;
-	  return &(_globalInjSubGroups[subgroup]._injfifos[fifoId]);
+	  uint32_t subgroup = (_globalCombiningInjFifo.globalFifoIds[0] / BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP) - 64;
+	  uint32_t fifoId   = _globalCombiningInjFifo.globalFifoIds[0] % BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP;
+	  return &(_globalCombiningInjFifo.subgroups[subgroup]._injfifos[fifoId]);
 	}
+
+	inline char **getGlobalCombiningLookAsidePayloadBufferVAs()
+	  { return _globalCombiningInjFifo.lookAsidePayloadPtrs; }
+
+	inline uint64_t *getGlobalCombiningLookAsidePayloadBufferPAs()
+	  { return _globalCombiningInjFifo.lookAsidePayloadPAs; }
+
+	inline pami_event_function **getGlobalCombiningLookAsideCompletionFnPtrs()
+	  { return _globalCombiningInjFifo.lookAsideCompletionFnPtrs; }
+
+	inline void                ***getGlobalCombiningLookAsideCompletionCookiePtrs()
+	  { return _globalCombiningInjFifo.lookAsideCompletionCookiePtrs; }
 
 	/// \brief Get Global Base Address Table Id
 	///
@@ -1175,6 +1187,14 @@ namespace PAMI
 	inline void allocateGlobalRecFifos();
 	inline void allocateContextResources( size_t rmClientId,
 					      size_t contextOffset );
+	inline void allocateLookasideResources(
+					  size_t                   numInjFifos,
+					  size_t                   injFifoSize,
+					  char                  ***lookAsidePayloadPtrs,
+					  Kernel_MemoryRegion_t  **lookAsidePayloadMemoryRegions,
+					  uint64_t               **lookAsidePayloadPAs,
+					  pami_event_function   ***lookAsideCompletionFnPtrs,
+					  void                 ****lookAsideCompletionCookiePtrs);
 
 	//////////////////////////////////////////////////////////////////////////
 	///
@@ -1256,12 +1276,9 @@ namespace PAMI
 	char                             **_globalRgetInjFifoPtrs;  // RgetPointers to fifos.
 	uint32_t                          *_globalRgetInjFifoIds;   // Rget Ids.
 
-	MUSPI_InjFifoSubGroup_t           *_globalInjSubGroups;     // Global Inj Fifo (for
+	injFifoResources_t                 _globalCombiningInjFifo; // Global Inj Fifo (for
 	                                                            // combining collectives)
-	                                                            // subgroup 64 and 65.
-	char                             **_globalInjFifoPtrs;      // Pointers to combining
-	                                                            // fifos.
-	uint32_t                          *_globalInjFifoIds;       // Combining fifo Ids.
+	                                                            // in subgroup 64 or 65.
 
 	MUSPI_BaseAddressTableSubGroup_t  *_globalBatSubGroups;     // BAT Subgroups 64 and 64.
 	uint32_t                          *_globalBatIds;           // BAT ids.
@@ -2166,10 +2183,22 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
 				 _pamiRM.getInjFifoSize(),
 				 &fifoAttr,
 				 false, // Do not use shared memory
-				 &_globalInjSubGroups,
-				 &_globalInjFifoPtrs,
-				 &_globalInjFifoIds );
+				 &(_globalCombiningInjFifo.subgroups),
+				 &(_globalCombiningInjFifo.fifoPtrs),
+				 &(_globalCombiningInjFifo.globalFifoIds) );
   PAMI_assertf( (_calculateSizeOnly == 1) || (_allocateOnly == 1) || (numFifosSetup == 1), "Only %u injection fifos were set up.  Expected 1.\n",numFifosSetup );
+
+  if ( (_calculateSizeOnly == 0) && (_allocateOnly == 0) )
+    {
+      allocateLookasideResources(
+				 1, /* numInjFifos */
+				 _pamiRM.getRgetInjFifoSize(),
+				 &(_globalCombiningInjFifo.lookAsidePayloadPtrs),
+				 &(_globalCombiningInjFifo.lookAsidePayloadMemoryRegions),
+				 &(_globalCombiningInjFifo.lookAsidePayloadPAs),
+				 &(_globalCombiningInjFifo.lookAsideCompletionFnPtrs),
+				 &(_globalCombiningInjFifo.lookAsideCompletionCookiePtrs));
+    }
 
   // Set up the remote get fifos
 
@@ -2568,6 +2597,138 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalRecFifos()
 } // End: allocateGlobalRecFifos()
 
 
+void PAMI::Device::MU::ResourceManager::allocateLookasideResources(
+					  size_t                   numInjFifos,
+					  size_t                   injFifoSize,
+					  char                  ***lookAsidePayloadPtrs,
+					  Kernel_MemoryRegion_t  **lookAsidePayloadMemoryRegions,
+					  uint64_t               **lookAsidePayloadPAs,
+					  pami_event_function   ***lookAsideCompletionFnPtrs,
+					  void                 ****lookAsideCompletionCookiePtrs)
+{
+  int32_t  rc;
+  uint32_t fifo;
+  size_t lookAsidePayloadBufferSize = (injFifoSize / sizeof(MUHWI_Descriptor_t)) *
+    sizeof(InjGroup::immediate_payload_t);
+  size_t lookAsideCompletionFnArraySize = (injFifoSize / sizeof(MUHWI_Descriptor_t)) *
+    sizeof(pami_event_function);
+  size_t lookAsideCompletionCookieArraySize = (injFifoSize / sizeof(MUHWI_Descriptor_t)) *
+    sizeof(void *);
+
+  // Set up array of pointers to the lookaside payload buffers.  There is pointer per inj fifo.
+  char **_lookAsidePayloadPtrs;
+  allocateMemory( false, // Use heap
+		  (void **)(&_lookAsidePayloadPtrs),
+		  16,
+		  numInjFifos * sizeof(char**) );
+  TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadPtrs = %p\n",_lookAsidePayloadPtrs));
+  PAMI_assertf( _lookAsidePayloadPtrs != NULL, "The heap is full.\n" );
+  *lookAsidePayloadPtrs = _lookAsidePayloadPtrs;
+
+  // Allocate each of the lookaside payload buffers.  They have the same number of slots
+  // as the inj fifo.
+  for ( fifo=0; fifo<numInjFifos; fifo++ )
+    {
+      allocateMemory( false, // Use heap
+		      (void **)&(_lookAsidePayloadPtrs[fifo]),
+		      32,
+		      lookAsidePayloadBufferSize );
+      TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadPtr[%u] = %p\n",fifo,_lookAsidePayloadPtrs[fifo]));
+      PAMI_assertf ( _lookAsidePayloadPtrs[fifo] != NULL, "The heap is full.\n" );
+    }
+
+  // Set up array of memory regions corresponding to the lookaside payload buffers.
+  // We need this to get the physical addresses of the lookaside payload buffers.
+  // There is 1 memory region per lookaside buffer (ie. per inj fifo).
+  Kernel_MemoryRegion_t *_lookAsidePayloadMemoryRegions;
+  allocateMemory( false, // Use heap
+		  (void **)(&_lookAsidePayloadMemoryRegions),
+		  16,
+		  numInjFifos * sizeof(Kernel_MemoryRegion_t) );
+TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadMemoryRegions = %p\n",_lookAsidePayloadMemoryRegions));
+  PAMI_assertf( _lookAsidePayloadMemoryRegions != NULL, "The heap is full.\n" );
+  *lookAsidePayloadMemoryRegions = _lookAsidePayloadMemoryRegions;
+
+  // Initialize each of the lookaside payload memory regions.
+  for ( fifo=0; fifo<numInjFifos; fifo++ )
+    {
+      rc = Kernel_CreateMemoryRegion ( &_lookAsidePayloadMemoryRegions[fifo],
+				       _lookAsidePayloadPtrs[fifo],
+				       lookAsidePayloadBufferSize );
+      PAMI_assertf( rc==0, "Kernel_CreateMemoryRegion failed with rc=%d\n",rc);
+    }
+
+  // Set up array of lookaside payload buffer physical addresses.
+  // There is 1 PA for each lookaside buffer (ie. for each inj fifo).
+  uint64_t *_lookAsidePayloadPAs;
+  allocateMemory( false, // Use heap
+		  (void **)(&_lookAsidePayloadPAs),
+		  16,
+		  numInjFifos * sizeof(uint64_t) );
+  TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadPAs = %p\n",_lookAsidePayloadPAs));
+  PAMI_assertf( _lookAsidePayloadPAs != NULL, "The heap is full.\n" );
+  *lookAsidePayloadPAs = _lookAsidePayloadPAs;
+
+  // Calculate the lookaside payload PAs.
+  for ( fifo=0; fifo<numInjFifos; fifo++ )
+    {
+      _lookAsidePayloadPAs[fifo] =
+	(uint64_t)_lookAsidePayloadPtrs[fifo] -
+	(uint64_t)_lookAsidePayloadMemoryRegions[fifo].BaseVa +
+	(uint64_t)_lookAsidePayloadMemoryRegions[fifo].BasePa;
+      TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadPAs[%u] = 0x%lx\n",fifo,_lookAsidePayloadPAs[fifo]));
+    }
+
+  // Set up array of pointers to lookaside completion function arrays.
+  // There is 1 pointer for each inj fifo.
+  pami_event_function **_lookAsideCompletionFnPtrs;
+  allocateMemory( false, // Use heap
+		  (void **)(&_lookAsideCompletionFnPtrs),
+		  16,
+		  numInjFifos * sizeof(pami_event_function *) );
+  TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsideCompletionFnPtrs = %p\n",_lookAsideCompletionFnPtrs));
+  PAMI_assertf( _lookAsideCompletionFnPtrs != NULL, "The heap is full.\n" );
+  *lookAsideCompletionFnPtrs = _lookAsideCompletionFnPtrs;
+
+  // Allocate each of the lookaside completion function arrays.  They have the same number of slots
+  // as the inj fifo.
+  for ( fifo=0; fifo<numInjFifos; fifo++ )
+    {
+      allocateMemory( false, // Use heap
+		      (void **)&(_lookAsideCompletionFnPtrs[fifo]),
+		      16,
+		      lookAsideCompletionFnArraySize );
+      TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsideCompletionFnPtrs[%u] = %p\n",fifo,_lookAsideCompletionFnPtrs[fifo]));
+      PAMI_assertf ( _lookAsideCompletionFnPtrs[fifo] != NULL, "The heap is full.\n" );
+      memset( _lookAsideCompletionFnPtrs[fifo], 0x00, lookAsideCompletionFnArraySize );
+    }
+
+  // Set up array of pointers to lookaside completion cookie arrays.
+  // There is 1 pointer for each inj fifo.
+  void ***_lookAsideCompletionCookiePtrs;
+  allocateMemory( false, // Use heap
+		  (void **)(&_lookAsideCompletionCookiePtrs),
+		  16,
+		  numInjFifos * sizeof(void **) );
+  TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsideCompletionCookiePtrs = %p\n",_lookAsideCompletionCookiePtrs));
+  PAMI_assertf( _lookAsideCompletionCookiePtrs != NULL, "The heap is full.\n" );
+  *lookAsideCompletionCookiePtrs = _lookAsideCompletionCookiePtrs;
+
+  // Allocate each of the lookaside completion cookie arrays.  They have the same number of slots
+  // as the inj fifo.
+  for ( fifo=0; fifo<numInjFifos; fifo++ )
+    {
+      allocateMemory( false, // Use heap
+		      (void **)&(_lookAsideCompletionCookiePtrs[fifo]),
+		      16,
+		      lookAsideCompletionCookieArraySize );
+      TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsideCompletionCookiePtrs[%u] = %p\n",fifo,_lookAsideCompletionCookiePtrs[fifo]));
+      PAMI_assertf ( _lookAsideCompletionCookiePtrs[fifo] != NULL, "The heap is full.\n" );
+      memset( _lookAsideCompletionCookiePtrs[fifo], 0x00, lookAsideCompletionCookieArraySize );
+    }
+} // End: allocateLookasideResources()
+
+
 // \brief Allocate Global Resources
 //
 // Allocate resources needed before main().  These include:
@@ -2635,17 +2796,9 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
 void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClientId,
 								  size_t contextOffset )
 {
-  int32_t  rc;
   uint32_t numFifosSetup;
   size_t   numInjFifos = _perContextMUResources[rmClientId].numInjFifos;
   Kernel_InjFifoAttributes_t  injFifoAttr;
-  uint32_t fifo;
-  size_t lookAsidePayloadBufferSize = (_pamiRM.getInjFifoSize() / sizeof(MUHWI_Descriptor_t)) *
-    sizeof(InjGroup::immediate_payload_t);
-  size_t lookAsideCompletionFnArraySize = (_pamiRM.getInjFifoSize() / sizeof(MUHWI_Descriptor_t)) *
-    sizeof(pami_event_function);
-  size_t lookAsideCompletionCookieArraySize = (_pamiRM.getInjFifoSize() / sizeof(MUHWI_Descriptor_t)) *
-    sizeof(void *);
 
   // Set up the injection fifos for this context
 
@@ -2719,117 +2872,28 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
       TRACE((stderr,"MU ResourceManager: allocateContextResources: pinRecFifo[t=%zu][contextOffset=%zu] = %u\n",t,contextOffset,_clientResources[rmClientId].pinRecFifo[(contextOffset*_tSize) + t]));
     }
 
-  // Set up array of pointers to the lookaside payload buffers.  There is pointer per inj fifo.
-  char **lookAsidePayloadPtrs;
-  allocateMemory( false, // Use heap
-		  (void **)(&lookAsidePayloadPtrs),
-		  16,
-		  numInjFifos * sizeof(char**) );
-  TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadPtrs = %p\n",lookAsidePayloadPtrs));
-  PAMI_assertf( lookAsidePayloadPtrs != NULL, "The heap is full.\n" );
-  _clientResources[rmClientId].injResources[contextOffset].lookAsidePayloadPtrs = lookAsidePayloadPtrs;
+  allocateLookasideResources( numInjFifos,
+			      _pamiRM.getInjFifoSize(),
 
-  // Allocate each of the lookaside payload buffers.  They have the same number of slots
-  // as the inj fifo.
-  for ( fifo=0; fifo<numInjFifos; fifo++ )
-    {
-      allocateMemory( false, // Use heap
-		      (void **)&(lookAsidePayloadPtrs[fifo]),
-		      32,
-		      lookAsidePayloadBufferSize );
-      TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadPtr[%u] = %p\n",fifo,lookAsidePayloadPtrs[fifo]));
-      PAMI_assertf ( lookAsidePayloadPtrs[fifo] != NULL, "The heap is full.\n" );
-    }
+			      &(_clientResources[rmClientId].
+				injResources[contextOffset].
+				lookAsidePayloadPtrs),
 
-  // Set up array of memory regions corresponding to the lookaside payload buffers.
-  // We need this to get the physical addresses of the lookaside payload buffers.
-  // There is 1 memory region per lookaside buffer (ie. per inj fifo).
-  Kernel_MemoryRegion_t *lookAsidePayloadMemoryRegions;
-  allocateMemory( false, // Use heap
-		  (void **)(&lookAsidePayloadMemoryRegions),
-		  16,
-		  numInjFifos * sizeof(Kernel_MemoryRegion_t) );
-TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadMemoryRegions = %p\n",lookAsidePayloadMemoryRegions));
-  PAMI_assertf( lookAsidePayloadMemoryRegions != NULL, "The heap is full.\n" );
-  _clientResources[rmClientId].injResources[contextOffset].lookAsidePayloadMemoryRegions = lookAsidePayloadMemoryRegions;
+			      &(_clientResources[rmClientId].
+				injResources[contextOffset].
+				lookAsidePayloadMemoryRegions),
 
-  // Initialize each of the lookaside payload memory regions.
-  for ( fifo=0; fifo<numInjFifos; fifo++ )
-    {
-      rc = Kernel_CreateMemoryRegion ( &lookAsidePayloadMemoryRegions[fifo],
-				       lookAsidePayloadPtrs[fifo],
-				       lookAsidePayloadBufferSize );
-      PAMI_assertf( rc==0, "Kernel_CreateMemoryRegion failed with rc=%d\n",rc);
-    }
+			      &(_clientResources[rmClientId].
+				injResources[contextOffset].
+				lookAsidePayloadPAs),
 
-  // Set up array of lookaside payload buffer physical addresses.
-  // There is 1 PA for each lookaside buffer (ie. for each inj fifo).
-  uint64_t *lookAsidePayloadPAs;
-  allocateMemory( false, // Use heap
-		  (void **)(&lookAsidePayloadPAs),
-		  16,
-		  numInjFifos * sizeof(uint64_t) );
-  TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadPAs = %p\n",lookAsidePayloadPAs));
-  PAMI_assertf( lookAsidePayloadPAs != NULL, "The heap is full.\n" );
-  _clientResources[rmClientId].injResources[contextOffset].lookAsidePayloadPAs = lookAsidePayloadPAs;
+			      &(_clientResources[rmClientId].
+				injResources[contextOffset].
+				lookAsideCompletionFnPtrs),
 
-  // Calculate the lookaside payload PAs.
-  for ( fifo=0; fifo<numInjFifos; fifo++ )
-    {
-      lookAsidePayloadPAs[fifo] =
-	(uint64_t)lookAsidePayloadPtrs[fifo] -
-	(uint64_t)lookAsidePayloadMemoryRegions[fifo].BaseVa +
-	(uint64_t)lookAsidePayloadMemoryRegions[fifo].BasePa;
-      TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsidePayloadPAs[%u] = 0x%lx\n",fifo,lookAsidePayloadPAs[fifo]));
-    }
-
-  // Set up array of pointers to lookaside completion function arrays.
-  // There is 1 pointer for each inj fifo.
-  pami_event_function **lookAsideCompletionFnPtrs;
-  allocateMemory( false, // Use heap
-		  (void **)(&lookAsideCompletionFnPtrs),
-		  16,
-		  numInjFifos * sizeof(pami_event_function *) );
-  TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsideCompletionFnPtrs = %p\n",lookAsideCompletionFnPtrs));
-  PAMI_assertf( lookAsideCompletionFnPtrs != NULL, "The heap is full.\n" );
-  _clientResources[rmClientId].injResources[contextOffset].lookAsideCompletionFnPtrs = lookAsideCompletionFnPtrs;
-
-  // Allocate each of the lookaside completion function arrays.  They have the same number of slots
-  // as the inj fifo.
-  for ( fifo=0; fifo<numInjFifos; fifo++ )
-    {
-      allocateMemory( false, // Use heap
-		      (void **)&(lookAsideCompletionFnPtrs[fifo]),
-		      16,
-		      lookAsideCompletionFnArraySize );
-      TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsideCompletionFnPtrs[%u] = %p\n",fifo,lookAsideCompletionFnPtrs[fifo]));
-      PAMI_assertf ( lookAsideCompletionFnPtrs[fifo] != NULL, "The heap is full.\n" );
-      memset( lookAsideCompletionFnPtrs[fifo], 0x00, lookAsideCompletionFnArraySize );
-    }
-
-  // Set up array of pointers to lookaside completion cookie arrays.
-  // There is 1 pointer for each inj fifo.
-  void ***lookAsideCompletionCookiePtrs;
-  allocateMemory( false, // Use heap
-		  (void **)(&lookAsideCompletionCookiePtrs),
-		  16,
-		  numInjFifos * sizeof(void **) );
-  TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsideCompletionCookiePtrs = %p\n",lookAsideCompletionCookiePtrs));
-  PAMI_assertf( lookAsideCompletionCookiePtrs != NULL, "The heap is full.\n" );
-  _clientResources[rmClientId].injResources[contextOffset].lookAsideCompletionCookiePtrs = lookAsideCompletionCookiePtrs;
-
-  // Allocate each of the lookaside completion cookie arrays.  They have the same number of slots
-  // as the inj fifo.
-  for ( fifo=0; fifo<numInjFifos; fifo++ )
-    {
-      allocateMemory( false, // Use heap
-		      (void **)&(lookAsideCompletionCookiePtrs[fifo]),
-		      16,
-		      lookAsideCompletionCookieArraySize );
-      TRACE((stderr,"MU ResourceManager: allocateContextResources: lookAsideCompletionCookiePtrs[%u] = %p\n",fifo,lookAsideCompletionCookiePtrs[fifo]));
-      PAMI_assertf ( lookAsideCompletionCookiePtrs[fifo] != NULL, "The heap is full.\n" );
-      memset( lookAsideCompletionCookiePtrs[fifo], 0x00, lookAsideCompletionCookieArraySize );
-    }
+			      &(_clientResources[rmClientId].
+				injResources[contextOffset].
+				lookAsideCompletionCookiePtrs));
 
 } // End: allocateContextResources()
 
