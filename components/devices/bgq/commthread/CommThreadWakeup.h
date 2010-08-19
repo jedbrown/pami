@@ -101,8 +101,8 @@ private:
                 x = 0;
                 while (m) {
                         if (m & 1) {
-				_ctxset->getContext(_client, x)->cleanupAffinity(false);
-                                r = _ctxset->getContext(_client, x)->unlock();
+				_ctxset->getContext(x)->cleanupAffinity(false);
+                                r = _ctxset->getContext(x)->unlock();
                                 l &= ~(1ULL << x);
                         }
                         m >>= 1;
@@ -116,7 +116,7 @@ private:
                                 r = _ctxset->getContext(x)->trylock();
                                 if (r == PAMI_SUCCESS) {
                                         l |= (1ULL << x);
-					_ctxset->getContext(_client, x)->cleanupAffinity(true);
+					_ctxset->getContext(x)->cleanupAffinity(true);
                                 }
                         }
                         m >>= 1;
@@ -182,6 +182,21 @@ public:
                 // might need hook later, to do per-context initialization?
         }
 
+	static void balanceThreads(uint32_t core, uint32_t &newcore, uint32_t &newthread) {
+		uint32_t c = core;
+		uint32_t m = (c > _ptCore ? _ptThread + 1 : _ptThread);
+		if (!m) {
+			uint32_t j;
+			for (c = j = 16 - 1; j > _ptCore; --j) {
+				if (_core_iter[j] < _core_iter[c]) c = j;
+			}
+			m = _ptThread + 1;
+		}
+		newthread = (NUM_SMT - 1) - (_core_iter[c] % m);
+		newcore = c;
+		++_core_iter[c];
+	}
+
 	// arrange for the new comm-thread to hunt-down this context and
 	// take it, even if some other thread already picked it up.
 	// This helps ensure a more-balanced startup, and prevents some
@@ -195,15 +210,31 @@ public:
 			return PAMI_EAGAIN; // closest thing to ENOSPC ?
 		}
 		int status;
-		if (_numActive >= _maxActive) {
+		uint32_t c, t, core;
+#if 0
+		PAMI::Context *ctx = (PAMI::Context *)context;
+		core = __MUGlobal.getMuRM().getAffinity(clientid, ctx->getId());
+#else
+		static uint32_t __core = NUM_CORES - 1;
+		core = __core;
+		__core = (__core - 1) % NUM_CORES;
+#endif
+		BgqCommThread *thus;
+
+		balanceThreads(core, c, t);
+		if (_comm_xlat[c][t] != NULL) {
+		// if (_numActive >= _maxActive) {
 			// silently ignore attempts to create more commthtreads than
-			// processors.
+			// processors. but still must add context someplace...
+			thus = _comm_xlat[c][t];
+			thus->_initCtxs |= m;
+			/// \todo ensure commthread(s) wake up... how?
 			return PAMI_SUCCESS;
 		}
 		// we assume this is single-threaded so no locking required...
 		size_t x = _numActive++;
-		BgqCommThread *thus = &devs[x];
-		thus->_initCtxs = m;	// this shold never be zero
+		thus = &devs[x];
+		thus->_initCtxs = m;	// this should never be zero
 		pthread_attr_t attr;
 
 		status = pthread_attr_init(&attr);
@@ -233,6 +264,16 @@ public:
 			errno = status;
 			return PAMI_CHECK_ERRNO;
 		}
+		cpu_set_t cpu_mask;
+		CPU_ZERO(&cpu_mask);
+		CPU_SET(c * NUM_SMT + t, &cpu_mask);
+		status = pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpu_mask);
+		if (status) {
+			pthread_attr_destroy(&attr);
+			--_numActive;
+			errno = status;
+			return PAMI_CHECK_ERRNO;
+		}
 
 		thus->_shutdown = false;
 		status = pthread_create(&thus->_thread, &attr, commThread, thus);
@@ -243,6 +284,7 @@ public:
 			errno = status;
 			return PAMI_CHECK_ERRNO;
 		}
+		_comm_xlat[c][t] = thus;
 		return PAMI_SUCCESS;
         }
 
@@ -396,8 +438,12 @@ DEBUG_WRITE('t','t');
 	pthread_t _thread;		///< pthread identifier
 	size_t _falseWU;		///< perf counter for false wakeups
 	volatile bool _shutdown;	///< request commthread to exit
+	static size_t _core_iter[NUM_CORES];
+	static BgqCommThread *_comm_xlat[NUM_CORES][NUM_SMT];
 	static size_t _numActive;
 	static size_t _maxActive;
+	static size_t _ptCore;
+	static size_t _ptThread;
 }; // class BgqCommThread
 
 // Called from __global...
@@ -409,12 +455,20 @@ BgqCommThread *Factory::generate(Memory::MemoryManager *genmm,
 	BgqCommThread *devs;
 	BgqWakeupRegion *wu;
 	BgqContextPool *pool;
+
 	size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
 	// may need to factor in others such as shmem?
+
 	size_t x;
 	size_t me = __global.topology_local.rank2Index(__global.mapping.task());
 	size_t lsize = __global.topology_local.size();
+
 	BgqCommThread::_maxActive = Kernel_ProcessorCount() - 1;
+	// config param may also affect this?
+
+	BgqCommThread::_ptCore = (NUM_CORES - 1) - (BgqCommThread::_maxActive % NUM_CORES);
+	BgqCommThread::_ptThread = BgqCommThread::_maxActive / NUM_CORES;
+
 	posix_memalign((void **)&devs, 16, BgqCommThread::_maxActive * sizeof(*devs));
 	posix_memalign((void **)&pool, 16, sizeof(*pool));
 	posix_memalign((void **)&wu, 16, sizeof(*wu)); // one per client
@@ -430,7 +484,6 @@ BgqCommThread *Factory::generate(Memory::MemoryManager *genmm,
 	pool->init(BgqCommThread::_maxActive, num_ctx, genmm, wu->getWUmm());
 
 	for (x = 0; x < BgqCommThread::_maxActive; ++x) {
-		// one per context, but not otherwise tied to a context.
 		new (&devs[x]) BgqCommThread(wu, pool, num_ctx);
 	}
 	return devs;
@@ -497,6 +550,11 @@ fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
 
 size_t PAMI::Device::CommThread::BgqCommThread::_numActive = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_maxActive = 0;
+size_t PAMI::Device::CommThread::BgqCommThread::_ptCore = 0;
+size_t PAMI::Device::CommThread::BgqCommThread::_ptThread = 0;
+size_t PAMI::Device::CommThread::BgqCommThread::_core_iter[NUM_CORES] = {0};
+PAMI::Device::CommThread::BgqCommThread *PAMI::Device::CommThread::BgqCommThread::_comm_xlat[NUM_CORES][NUM_SMT] = {{NULL}};
+
 
 #undef DEBUG_INIT
 #undef DEBUG_WRITE
