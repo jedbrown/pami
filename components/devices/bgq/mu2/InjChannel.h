@@ -141,7 +141,7 @@ namespace PAMI
             _immediate_paddr = immediate_paddr;
             _n = n;
 
-	    TRACE_FORMAT("InjChannel::initialize:  vaddr=%p, paddr=0x%lx, fn=%p, cookie=%p, n=%zu, channel_cookie=%p\n",immediate_vaddr, immediate_paddr, completion_function, completion_cookie, n, channel_cookie);
+	    TRACE_FORMAT("InjChannel::initialize:  channel=%p, vaddr=%p, paddr=0x%lx, fn=%p, cookie=%p, n=%zu, channel_cookie=%p, f=%p\n",this, immediate_vaddr, immediate_paddr, completion_function, completion_cookie, n, channel_cookie, f);
             TRACE_FN_EXIT();
           };
 
