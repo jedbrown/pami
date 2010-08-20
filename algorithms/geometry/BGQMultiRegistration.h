@@ -473,11 +473,15 @@ namespace PAMI
                         }
                     }
 
-                  _msync_composite = _msync_composite_factory.generate(geometry, &xfer);
-                  // Add Barriers
-                  geometry->addCollective(PAMI_XFER_BARRIER, &_msync_composite_factory, _context_id);
-
                 }
+
+              // We rely on P2P having registered *some* sort of local and global barrier if shmem/mu couldn't, so 
+              // go ahead and register the composite local/global barrier now.
+
+              _msync_composite = _msync_composite_factory.generate(geometry, &xfer);
+              // Add Barriers
+              geometry->addCollective(PAMI_XFER_BARRIER, &_msync_composite_factory, _context_id);
+
 
             }
           else if (phase == -1)
