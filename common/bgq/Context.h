@@ -398,11 +398,9 @@ namespace PAMI
        CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >(_shmem_native_interface, _global_mu_ni, client, (pami_context_t)this, id, clientid);
 
        _multi_registration->analyze(_contextid, _world_geometry, 0);
-#ifdef ENABLE_MU_CLASSROUTES
        // for now, this is the only registration that has a phase 1...
        // We know that _world_geometry is always "optimized" at create time.
        _multi_registration->analyze(_contextid, _world_geometry, 1);
-#endif
 
        _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid,_devices->_shmem[_contextid],_devices->_mu[_contextid],_protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size());
        _ccmi_registration->analyze(_contextid, _world_geometry, 0);
@@ -878,11 +876,7 @@ namespace PAMI
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if(_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal()) _pgas_shmem_registration->analyze(_contextid, geometry, phase);
         // Can always use MU if it's available
-#ifdef ENABLE_MU_CLASSROUTES
         if (phase == 0 && _pgas_mu_registration) _pgas_mu_registration->analyze(_contextid,geometry, phase);
-#else
-        if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid,geometry, phase);
-#endif
 
         return result;
       }

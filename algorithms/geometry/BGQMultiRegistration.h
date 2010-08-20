@@ -368,9 +368,7 @@ namespace PAMI
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology: size() %zu, isLocal() %u/%zu, isGlobal #u/%zu\n", this, topology->size(),  topology->isLocalToMe(),local_sub_topology->size(), master_sub_topology->size()));//,  topology->isGlobal()));
           DO_DEBUG(for(unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u\n", this, i, topology->index2Rank(i)););
 
-#ifdef ENABLE_MU_CLASSROUTES
 if (phase == 0) {
-#endif
 
               if ((__global.useshmem()) && (__global.topology_local.size() > 1)
                   && (__global.topology_local.size() == local_sub_topology->size()) ) /// \todo shmem doesn't seem to work on subnode topologies?
@@ -400,11 +398,9 @@ if (phase == 0) {
                     }
                 }
 
-#ifdef ENABLE_MU_CLASSROUTES
 
 } else if (phase == 1) {
 
-#endif
               // If we have > 1 node, check MU
               if (__global.useMU())
                 {
@@ -416,14 +412,12 @@ if (phase == 0) {
                   bool usePureMu = topology->size() == master_sub_topology->size()? true : false;
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() usePureMu = %u (size %zu/%zu)\n", this, usePureMu, topology->size(),master_sub_topology->size()));
 
-#ifdef ENABLE_MU_CLASSROUTES
       void *val;
                   val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() PAMI_GKEY_MSYNC_CLASSROUTEID %p\n", this, val));
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
           // Only register protocols if we got a classroute
-#endif
                     _sub_mu_barrier_composite = _sub_mu_msync_factory.generate(geometry, &xfer);
 
                     geometry->setKey(_context_id, PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE,
@@ -439,7 +433,6 @@ if (phase == 0) {
                       // Add Barriers
                       geometry->addCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
                       }
-#ifdef ENABLE_MU_CLASSROUTES
                     }
                   val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() PAMI_GKEY_MCAST_CLASSROUTEID %p\n", this, val));
@@ -447,7 +440,6 @@ if (phase == 0) {
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
           // Only register protocols if we got a classroute
-#endif
 
                     // If we can use pure MU composites, add them
                     if (usePureMu && !topology->isLocalToMe())
@@ -456,13 +448,11 @@ if (phase == 0) {
                       // Add Broadcasts
                       geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory, _context_id);
                       }
-#ifdef ENABLE_MU_CLASSROUTES
                     }
                   val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() PAMI_GKEY_MCOMB_CLASSROUTEID %p\n", this, val));
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
-#endif
                     // If we can use pure MU composites, add them
                     if (usePureMu && !topology->isLocalToMe())
                     {
@@ -472,15 +462,12 @@ if (phase == 0) {
                       TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU allreduce\n", this));
                       geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
                     }
-#ifdef ENABLE_MU_CLASSROUTES
                     }
-#endif
                   _msync_composite = _msync_composite_factory.generate(geometry, &xfer);
                   // Add Barriers
                   geometry->addCollective(PAMI_XFER_BARRIER, &_msync_composite_factory, _context_id);
 
             }
-#ifdef ENABLE_MU_CLASSROUTES
 
 } else if (phase == -1) {
 
@@ -489,7 +476,6 @@ if (phase == 0) {
                   geometry->rmCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
                   geometry->rmCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
 }
-#endif
 
           return PAMI_SUCCESS;
         }

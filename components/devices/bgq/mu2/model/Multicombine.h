@@ -191,11 +191,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
-#ifdef ENABLE_MU_CLASSROUTES
         uint32_t classRoute = (uint32_t)(size_t)devinfo; // convert platform independent void* to bgq uint32_t classroute
-#else
-        uint32_t classRoute = 0;
-#endif
 
         TRACE_FORMAT( "connection_id %#X, class route %#X\n", mcomb->connection_id, classRoute);
 

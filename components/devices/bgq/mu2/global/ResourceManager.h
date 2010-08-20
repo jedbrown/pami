@@ -46,7 +46,6 @@
 #include <components/devices/bgq/mu2/InjGroup.h>
 #include <components/devices/generic/Device.h>
 
-#ifdef ENABLE_MU_CLASSROUTES
 #include "algorithms/geometry/Geometry.h"
 #include "components/atomic/bgq/L2Mutex.h"
 #include "components/devices/misc/AtomicMutexMsg.h"
@@ -55,7 +54,6 @@ typedef PAMI::Device::SharedAtomicMutexMdl<MUCR_mutex_t> MUCR_mutex_model_t;
 #include <spi/include/kernel/collective.h>
 #include <spi/include/mu/Classroute_inlines.h>
 #include <spi/include/kernel/gi.h>
-#endif
 
 #ifdef TRACE
 #undef TRACE
@@ -449,7 +447,6 @@ namespace PAMI
 	  // DUMMY CODE:
 /* 	  initializeContexts(0,1); */
 /* 	  initializeContexts(1,2); */
-#ifdef ENABLE_MU_CLASSROUTES
 	  // might want more shmem here, to use for coordinating locals in VN.
 	  // possibly changing this to a structure.
 	  mm.memalign((void **)&_lowest_geom_id, sizeof(void *), 1 * sizeof(void *));
@@ -610,11 +607,9 @@ namespace PAMI
 
 	  // Now, we should be ready to get requests for classroutes...
 	  // via the geomOptimize() method below...
-#endif
 	  TRACE((stderr,"MU ResourceManager: Exiting constructor\n"));
 	 } // End: UseMU
 	} // End: ResourceManager Default Constructor
-#ifdef ENABLE_MU_CLASSROUTES
 	// Note, we NEVER use BGQ_CLASS_INPUT_VC_USER. Only BGQ_CLASS_INPUT_VC_SUBCOMM.
 	#define CR_ALLREDUCE_DT_CT 3
 	struct cr_cookie
@@ -987,7 +982,6 @@ namespace PAMI
 	    }
 	  }
 	}
-#endif
 
         // \brief Get Per Process PAMI Max Number of Contexts For A Client
 	inline size_t getPerProcessMaxPamiResources ( size_t RmClientId )
@@ -1205,7 +1199,6 @@ namespace PAMI
 	PAMI::ResourceManager &_pamiRM;
 	PAMI::Mapping         &_mapping;
 	PAMI::BgqPersonality  &_pers;
-#ifdef ENABLE_MU_CLASSROUTES
 	MUCR_mutex_t _cr_mtx; // each context has MUCR_mutex_model_t pointing to this
 	MUCR_mutex_model_t **_cr_mtx_mdls;
 	PAMI::Topology _node_topo;
@@ -1223,7 +1216,6 @@ namespace PAMI
 	void *_cncrdata; // used by MUSPI routines to keep track of
 	               // classroute assignments - persistent!
 	void *_gicrdata; // (ditto)
-#endif
 	// _pinInfo is an array of entries.  Each entry has info for when there
 	// are a specific number of inj fifos in the context.
 	// There are 10 entries, for 1 fifo, 2 fifos, ..., 10 fifos.
@@ -3022,7 +3014,6 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 	    }
 	}
     }
-#ifdef ENABLE_MU_CLASSROUTES
     _cr_mtx_mdls[rmClientId] = (MUCR_mutex_model_t *)malloc(numContexts * sizeof(*_cr_mtx_mdls[rmClientId]));
     for (i = 0; i < numContexts; i++)
     {
@@ -3031,7 +3022,6 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 	  new (&_cr_mtx_mdls[rmClientId][i]) MUCR_mutex_model_t(device, &_cr_mtx, status);
 	  PAMI_assertf(status == PAMI_SUCCESS, "Failed to construct non-blocking mutex client %zd context %zd", rmClientId, i);
     }
-#endif
 
 } // End: initializeContexts()
 

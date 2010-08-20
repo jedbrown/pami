@@ -49,12 +49,10 @@ namespace PAMI
         _world_range.lo = 0;
         _world_range.hi = __global.mapping.size() - 1;
         new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, 1, &_world_range);
-#ifdef ENABLE_MU_CLASSROUTES
         // This must return immediately (must not enqueue non-blocking ops).
         // Passing a NULL context should ensure that.
         __MUGlobal.getMuRM().geomOptimize(_world_geometry, _clientid, 0, NULL, NULL, NULL);
         // Now, subsequent 'analyze' done on this geom will know that MU Coll is avail.
-#endif
 
         result = PAMI_SUCCESS;
       }
@@ -330,7 +328,6 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
-#ifdef ENABLE_MU_CLASSROUTES
       static void _geom_newopt_start(pami_context_t context, void *cookie, pami_result_t err)
       {
 	PAMI_assertf(context, "Geometry create barrier callback with NULL context");
@@ -396,7 +393,6 @@ if (context) { // HACK! until no one calls completion with NULL context!
 	// have done? Right now, nothing does proper cleanup...
 	// gp->~BGQGeometry(); ???
       }
-#endif
 
       inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
                 pami_configuration_t   configuration[],
@@ -410,7 +406,6 @@ if (context) { // HACK! until no one calls completion with NULL context!
                                                           void                 * cookie)
       {
         TRACE_ERR((stderr,  "%s enter geometry %p/%p\n", __PRETTY_FUNCTION__,geometry,*geometry));
-#ifdef ENABLE_MU_CLASSROUTES
 
   // simple for now: only PAMI_GEOMETRY_OPTIMIZE
         if (num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
@@ -461,35 +456,6 @@ if (context) { // HACK! until no one calls completion with NULL context!
           bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
         }
 
-#else
-        BGQGeometry              *new_geometry;
-
-        if (geometry != NULL)
-          {
-            new_geometry=(BGQGeometry*) malloc(sizeof(*new_geometry)); /// \todo use allocator
-            new(new_geometry) BGQGeometry(_client,
-              (PAMI::Geometry::Common*)parent,
-                                      &__global.mapping,
-                                      id,
-                                      slice_count,
-                                      rank_slices);
-
-            TRACE_ERR((stderr,  "%s analyze %zu geometry %p\n", __PRETTY_FUNCTION__,_ncontexts,new_geometry));
-            for (size_t n = 0; n < _ncontexts; n++)
-              {
-              TRACE_ERR((stderr,  "%s analyze %p geometry %p\n", __PRETTY_FUNCTION__,&_contexts[n],new_geometry));
-                _contexts[n].analyze(n, (BGQGeometry*)new_geometry, 0);
-              }
-            *geometry = (pami_geometry_t) new_geometry;
-            new_geometry->processUnexpBarrier();
-            /// \todo  deliver completion to the appropriate context
-          }
-
-        BGQGeometry *bargeom = (BGQGeometry*)parent;
-        PAMI::Context *ctxt = (PAMI::Context *)context;
-        bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
-
-#endif
         TRACE_ERR((stderr,  "%s exit geometry %p/%p\n", __PRETTY_FUNCTION__,geometry,*geometry));
         return PAMI_SUCCESS;
       }
@@ -532,7 +498,6 @@ if (context) { // HACK! until no one calls completion with NULL context!
             }
             *geometry = (pami_geometry_t) new_geometry;
 
-#ifdef ENABLE_MU_CLASSROUTES
             /// \todo  deliver completion to the appropriate context
             new_geometry->setCompletion(fn, cookie);
             new_geometry->addCompletion(); // ensure completion doesn't happen until
@@ -547,9 +512,6 @@ if (context) { // HACK! until no one calls completion with NULL context!
               bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry,
                                                            ctxt->getId(), context);
             }
-#else
-            bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
-#endif
             new_geometry->processUnexpBarrier();
         }
         else
@@ -573,7 +535,6 @@ if (context) { // HACK! until no one calls completion with NULL context!
                                                          pami_event_function     fn,
                                                          void                 * cookie)
       {
-#ifdef ENABLE_MU_CLASSROUTES
 
   // simple for now: only PAMI_GEOMETRY_OPTIMIZE, and not allowed here.
         if (num_configs)
@@ -581,13 +542,11 @@ if (context) { // HACK! until no one calls completion with NULL context!
             return PAMI_INVAL;
           }
 
-#endif
         // todo:  implement this routine
         PAMI_abortf("geometry_create_tasklist_impl");
         return PAMI_SUCCESS;
       }
 
-#ifdef ENABLE_MU_CLASSROUTES
       inline pami_result_t geometry_query_impl(pami_geometry_t geometry,
                                           pami_configuration_t configuration[],
             size_t num_configs)
@@ -653,35 +612,12 @@ if (context) { // HACK! until no one calls completion with NULL context!
 
         return rc;
       }
-#else
-    inline pami_result_t geometry_query_impl (pami_geometry_t        geometry,
-                pami_configuration_t   configuration[],
-                size_t                 num_configs)
-      {
-  return PAMI_UNIMPL;
-      }
-
-    inline pami_result_t geometry_update_impl (pami_geometry_t        geometry,
-                 pami_configuration_t   configuration[],
-                 size_t                 num_configs,
-                 pami_context_t         context,
-                 pami_event_function    fn,
-                 void                 * cookie)
-      {
-  return PAMI_UNIMPL;
-      }
-#endif
 
       inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
       {
   /// \todo #warning must free up geometry resources, etc.
-#ifdef ENABLE_MU_CLASSROUTES
         BGQGeometry *gp = (BGQGeometry *)geometry;
         return __MUGlobal.getMuRM().geomDeoptimize(gp);
-#else
-        PAMI_abortf("geometry_destroy_impl");
-        return PAMI_UNIMPL;
-#endif
       }
 
     protected:
