@@ -199,11 +199,20 @@ namespace CCMI {
 
       ListMap() {}
 
+      ~ListMap() {free(_ranks);}
+
       ListMap (unsigned myrank, PAMI::Topology *topology)
       {
-        CCMI_assert (topology->type() == PAMI_LIST_TOPOLOGY);
-        topology->rankList(&_ranks);
+        /// \todo temporary: malloc a rank list -- don't rely on PAMI_LIST_TOPOLOGY
+        /// In the future, maybe we do assert PAMI_LIST_TOPOLOGY but that would
+        /// imply that we only support irregular geometries with multinomial protocols?
+//      CCMI_assert (topology->type() == PAMI_LIST_TOPOLOGY);
+//      topology->rankList(&_ranks);
         _nranks = topology->size();
+        _ranks = (pami_task_t*)malloc(_nranks * sizeof(pami_task_t));
+        for(unsigned i = 0; i < _nranks; ++i) {
+          _ranks[i] = topology->index2Rank(i);
+        }
 
         unsigned nph = 0;
         for(unsigned i = _nranks; i > 1; i >>= 1) {
