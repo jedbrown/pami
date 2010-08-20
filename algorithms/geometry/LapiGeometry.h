@@ -37,6 +37,11 @@
 #include "components/memory/MemoryAllocator.h"
 typedef PAMI::Counter::GccProcCounter GeomCompCtr;
 
+// These are not supported on lapi geometries but they need to be defined to compile
+#define LOCAL_MASTER_TOPOLOGY_INDEX -1  // index into _topos[] for master/global sub-topology
+#define LOCAL_TOPOLOGY_INDEX        -2  // index into _topos[] for local sub-topology
+
+
 
 namespace PAMI
 {
