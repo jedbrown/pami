@@ -274,8 +274,17 @@ init()
   /* We don't care about other cores if we aren't in threaded mode */
   query = client_query(client, PAMI_CLIENT_HWTHREADS_AVAILABLE).value.intval;
   assert(query > 2); /* This requires a send helper and a recv helper */
-  /* ncontexts = MIN(ncontexts, query-2); */
+#ifndef __pami_target_bgq__
+  ncontexts = MIN(ncontexts, query-1);
+#else
+  /** \todo Remove this when trac #247 is fixed, since it shows a bug
+   *   when having more contexts than active comm-threads.  While the
+   *   code is correct for comm-thread mode (but not pthreads, where
+   *   we would over-subscribe the HW Threads), we don't actually want
+   *   to put more than one context per comm-thread.
+   */
   ncontexts = MIN(ncontexts, query);
+#endif
 #endif
 
   ncontexts &= ~(size_t)1;  /* Make it even */
