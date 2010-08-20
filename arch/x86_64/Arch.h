@@ -18,6 +18,13 @@
 
 // Here go things specific to this processor architecture
 
+#define NUM_CORES 1
+#define NUM_SMT   1
+
+// somewhat arbitrary...
+#define PAMI_MAX_PROC_PER_NODE   32
+#define PAMI_MAX_THREAD_PER_PROC 32
+
 #define mem_sync()    __sync_synchronize()
 #define mem_isync()   mem_sync()
 #define mem_barrier() __sync_synchronize()

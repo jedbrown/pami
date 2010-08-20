@@ -15,12 +15,8 @@
 #ifndef __common_mpi_Platform_h__
 #define __common_mpi_Platform_h__
 
-#define NUM_CORES 1
-#define NUM_SMT 1
+#include "Arch.h"
 
-// somewhat arbitrary...
-#define PAMI_MAX_PROC_PER_NODE	32
-#define PAMI_MAX_THREAD_PER_PROC	32
 #define PAMI_DEF_SH_WORKSIZE   4096 // Default shared work queue worksize
 #define PAMI_DEF_SH_WORKUNITS  32   // Default shared work queue workunits
 

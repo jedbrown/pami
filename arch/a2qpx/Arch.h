@@ -21,6 +21,14 @@
 
 // Here go things specific to this processor architecture
 
+#define NUM_CORES 16
+#define NUM_SMT    4
+
+// These are based on what the CNK allows (should be in an os file)
+#define PAMI_MAX_PROC_PER_NODE   (NUM_CORES * NUM_SMT)
+#define PAMI_MAX_THREAD_PER_PROC (NUM_CORES * NUM_SMT)
+
+
 #undef  mem_sync
 #define mem_sync()    ppc_msync()
 
