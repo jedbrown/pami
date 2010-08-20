@@ -1,14 +1,25 @@
 /*
- *  \file test/api/context/post-multithreaded-perf.c
- *  \brief PAMI_Context_post() performance test using comm-threads
+ * \file test/api/context/post-multithreaded-perf.c
+ * \brief A threaded message-rate benchmark
  */
 
-#ifndef __pami_target_bgp__
 /* There simply aren't enough cores on a BGP node to make the threaded version work */
+#ifndef __pami_target_bgp__
+/* USE_THREADS will try to use pthreads or comm-threads to
+ * asynchronously advance the contexts.  If not defined, everything
+ * will be done on the main thread
+ */
 #define USE_THREADS
 #endif
+/* Defining NDEBUG causes assert checks to not run, so the app runs faster */
 /* #define NDEBUG */
+/* Trace mode spews lots of debug info */
 /* #define TRACE_ON */
+/* There is a "pthread" mode which uses explicate pthreads to advance
+ * the contexts instead of comm-threads.  It is the default on non-BGQ
+ * systems, and can be forced by uncommenting the following line.
+ */
+/* #undef __pami_target_bgq__ */
 
 #ifndef __pami_target_bgp__
 #define NCONTEXTS  64      /* The maximum number of contexts */
@@ -101,6 +112,7 @@ send(pami_context_t context, void *_dest)
   },
   dispatch : DISPATCH,
   };
+  /* The remote context is set to the upper half of the context space */
   rc = PAMI_Endpoint_create(client, dest, (rank%mod)+mod, &params.dest);
   assert(rc == PAMI_SUCCESS);
   rc = PAMI_Send_immediate(context, &params);
@@ -163,6 +175,7 @@ post_work(size_t dest, size_t iteration, size_t window, pami_work_t *work)
   const size_t mod = ncontexts>>1;
   pami_result_t rc;
 
+  /* The local context is set to the lower half of the context space */
   size_t contextid = dest%mod;
   pami_context_t context = contexts[contextid];
   TRACE_ERR("Posting work  contextid=%zu dest=%zu arg=%p iteration=%zu window=%zu\n", contextid, dest, (void*)dest, iteration, window);
