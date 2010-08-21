@@ -475,11 +475,19 @@ namespace PAMI
 
                 }
 
-              // We rely on P2P having registered *some* sort of local and global barrier if shmem/mu couldn't, so 
-              // go ahead and register the composite local/global barrier now.
+              // Check if *someone* registered local/global protocols for our geometry
+              // before generating a composite protocol...
 
+              if((local_sub_topology->size() > 1) && (geometry->getKey(_context_id, PAMI::Geometry::PAMI_CKEY_LOCALBARRIERCOMPOSITE) == NULL))
+                return PAMI_SUCCESS; // done - we can't do a composite
+
+              if((master_sub_topology->size() > 1) && (geometry->getKey(_context_id, PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE) == NULL))
+                return PAMI_SUCCESS; // done - we can't do a composite
+
+              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() register a composite barrier\n", this));
               _msync_composite = _msync_composite_factory.generate(geometry, &xfer);
-              // Add Barriers
+
+              // Add Barrier
               geometry->addCollective(PAMI_XFER_BARRIER, &_msync_composite_factory, _context_id);
 
 

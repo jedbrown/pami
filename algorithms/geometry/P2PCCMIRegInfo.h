@@ -61,36 +61,7 @@ namespace CCMI
         binomial_barrier_md,
         CCMI::ConnectionManager::SimpleConnMgr>
       BinomialBarrierFactory;
-
-      typedef CCMI::Adaptor::Barrier::BarrierT
-      < CCMI::Schedule::ListMultinomial,
-        binomial_analyze,
-        LOCAL_TOPOLOGY_INDEX,
-        PAMI::Geometry::PAMI_CKEY_LOCALBARRIERCOMPOSITE >
-      LocalBinomialBarrier;
-
-      typedef CCMI::Adaptor::Barrier::BarrierFactoryT
-      < LocalBinomialBarrier,
-        binomial_barrier_md,
-        CCMI::ConnectionManager::SimpleConnMgr,
-        PAMI::Geometry::PAMI_CKEY_LOCALBARRIERCOMPOSITE>
-      LocalBinomialBarrierFactory;
-
-      typedef CCMI::Adaptor::Barrier::BarrierT
-      < CCMI::Schedule::ListMultinomial,
-        binomial_analyze,
-        LOCAL_MASTER_TOPOLOGY_INDEX,
-        PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE >
-      GlobalBinomialBarrier;
-
-      typedef CCMI::Adaptor::Barrier::BarrierFactoryT
-      < GlobalBinomialBarrier,
-        binomial_barrier_md,
-        CCMI::ConnectionManager::SimpleConnMgr,
-        PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE>
-      GlobalBinomialBarrierFactory;
-
-    };//P2pBarrier
+    };//Barrier
 
     namespace P2PBroadcast
     {

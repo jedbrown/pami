@@ -203,6 +203,9 @@ namespace CCMI {
 
       ListMap (unsigned myrank, PAMI::Topology *topology)
       {
+        /// Note: This does not appear to work on arbitrary topologies --
+        /// it seems to require 0...n-1 sequential ranks...
+        
         /// \todo temporary: malloc a rank list -- don't rely on PAMI_LIST_TOPOLOGY
         /// In the future, maybe we do assert PAMI_LIST_TOPOLOGY but that would
         /// imply that we only support irregular geometries with multinomial protocols?
