@@ -51,10 +51,6 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void ShmemMsyncMetaData(pami_metadata_t *m)
     {
-//      pami_ca_set(&(m->geometry), 0);
-      pami_ca_set(&(m->buffer), 0);
-      pami_ca_set(&(m->misc), 0);
-//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
       strncpy(&m->name[0], "ShmemMultiSync", 32);
     }
 
@@ -67,10 +63,6 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void ShmemMcombMetaData(pami_metadata_t *m)
     {
-//      pami_ca_set(&(m->geometry), 0);
-      pami_ca_set(&(m->buffer), 0);
-      pami_ca_set(&(m->misc), 0);
-//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
       strncpy(&m->name[0], "ShmemMultiComb", 32);
     }
 
@@ -83,10 +75,6 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void ShmemMcastMetaData(pami_metadata_t *m)
     {
-//      pami_ca_set(&(m->geometry), 0);
-      pami_ca_set(&(m->buffer), 0);
-      pami_ca_set(&(m->misc), 0);
-//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
       strncpy(&m->name[0], "ShmemMultiCast", 32);
     }
 
@@ -100,10 +88,6 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMsyncMetaData(pami_metadata_t *m)
     {
-//      pami_ca_set(&(m->geometry), 0);
-      pami_ca_set(&(m->buffer), 0);
-      pami_ca_set(&(m->misc), 0);
-//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
       strncpy(&m->name[0], "MUMultiSync", 32);
     }
 
@@ -116,10 +100,6 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMcombMetaData(pami_metadata_t *m)
     {
-//      pami_ca_set(&(m->geometry), 0);
-      pami_ca_set(&(m->buffer), 0);
-      pami_ca_set(&(m->misc), 0);
-//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
       strncpy(&m->name[0], "MUMultiComb", 32);
     }
 
@@ -139,10 +119,6 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMcast2MetaData(pami_metadata_t *m)
     {
-//      pami_ca_set(&(m->geometry), 0);
-      pami_ca_set(&(m->buffer), 0);
-      pami_ca_set(&(m->misc), 0);
-//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
       strncpy(&m->name[0], "MUMultiCast_Msync", 32);
     }
 
@@ -250,10 +226,6 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void SubShmemMsyncMetaData(pami_metadata_t *m)
     {
-//      pami_ca_set(&(m->geometry), 0);
-      pami_ca_set(&(m->buffer), 0);
-      pami_ca_set(&(m->misc), 0);
-//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
       strncpy(&m->name[0], "ShmemMultiSyncSubComposite", 32);
     }
 
@@ -267,10 +239,6 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void SubMUMsyncMetaData(pami_metadata_t *m)
     {
-//      pami_ca_set(&(m->geometry), 0);
-      pami_ca_set(&(m->buffer), 0);
-      pami_ca_set(&(m->misc), 0);
-//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
       strncpy(&m->name[0], "MUMultiSyncSubComposite", 32);
     }
 
@@ -283,10 +251,6 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void Msync2MetaData(pami_metadata_t *m)
     {
-//      pami_ca_set(&(m->geometry), 0);
-      pami_ca_set(&(m->buffer), 0);
-      pami_ca_set(&(m->misc), 0);
-//      pami_ca_set(&(m->op[PAMI_BAND]), PAMI_SIGNED_CHAR);
       strncpy(&m->name[0], "MultiSyncComposite", 32);
     }
 
@@ -299,10 +263,16 @@ namespace PAMI
       strncpy(&m->name[0], "MultiSync2Device", 32);
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
-      Msync2DMetaData,
-      CCMI::ConnectionManager::SimpleConnMgr>  MultiSync2DeviceFactory;
+      Msync2DMetaData, CCMI::ConnectionManager::SimpleConnMgr>  MultiSync2DeviceFactory;
 
-
+    void Mcast2DMetaData(pami_metadata_t *m)
+    {
+      strncpy(&m->name[0], "MultiCast2Device", 32);
+    }
+    typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS>,
+      Mcast2DMetaData, CCMI::ConnectionManager::SimpleConnMgr> MultiCast2DeviceFactory;
+  
+ 
     //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
     //----------------------------------------------------------------------------
@@ -340,7 +310,8 @@ namespace PAMI
             _mu_mcast2_factory(NULL),
             _mu_mcomb_factory(&_sconnmgr, _mu_ni),
             _msync_composite_factory(&_sconnmgr, NULL),
-            _msync2d_composite_factory(NULL)
+            _msync2d_composite_factory(NULL),
+            _mcast2d_composite_factory(NULL)
         {
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()\n", this));
           DO_DEBUG((templateName<T_Geometry>()));
@@ -370,6 +341,9 @@ namespace PAMI
             _ni_array[1] = _mu_ni;
             _msync2d_composite_factory = new (_msync2d_composite_factory_storage) MultiSync2DeviceFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface*)_ni_array);
             _msync2d_composite_factory->setMapIdToGeometry(mapidtogeometry);
+
+            _mcast2d_composite_factory = new (_mcast2d_composite_factory_storage) MultiCast2DeviceFactory(&_sconnmgr, _shmem_ni, false, _mu_ni, true);
+
           }
 
         }
@@ -493,7 +467,7 @@ namespace PAMI
                 }
 
               // Check if *someone* registered local/global protocols for our geometry
-              // before generating a composite protocol...
+              // before generating any composite protocol...
 
               if((local_sub_topology->size() > 1) && (geometry->getKey(_context_id, PAMI::Geometry::PAMI_CKEY_LOCALBARRIERCOMPOSITE) == NULL))
                 return PAMI_SUCCESS; // done - we can't do a composite
@@ -501,16 +475,23 @@ namespace PAMI
               if((master_sub_topology->size() > 1) && (geometry->getKey(_context_id, PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE) == NULL))
                 return PAMI_SUCCESS; // done - we can't do a composite
 
-              // Add Barrier
+              // Add Composite Barrier
               TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() register a composite barrier\n", this));
               _msync_composite = _msync_composite_factory.generate(geometry, &xfer);
 
               geometry->addCollective(PAMI_XFER_BARRIER, &_msync_composite_factory, _context_id);
 
+              // Add 2 device composite protocols
               if(_msync2d_composite_factory) 
               {
                 _msync2d_composite = _msync2d_composite_factory->generate(geometry, &xfer);
                 geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
+              }
+
+              if(_mcast2d_composite_factory) 
+              {
+/// \todo Doesn't work, disable it
+//              geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
               }
 
 
@@ -583,9 +564,14 @@ namespace PAMI
 
         // CCMI Barrier Interface
         MultiSync2Factory                               _msync_composite_factory;
+
+        // 2 device composite Interface
         CCMI::Interfaces::NativeInterface              *_ni_array[2];
         MultiSync2DeviceFactory                        *_msync2d_composite_factory;
         uint8_t                                         _msync2d_composite_factory_storage[sizeof(MultiSync2DeviceFactory)];
+
+        MultiCast2DeviceFactory                        *_mcast2d_composite_factory;
+        uint8_t                                         _mcast2d_composite_factory_storage[sizeof(MultiCast2DeviceFactory)];
     };
 
 
