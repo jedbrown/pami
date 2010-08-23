@@ -34,7 +34,6 @@
 #include "common/bgp/BgpMapCache.h"
 #include "Mapping.h"
 #include "Topology.h"
-#include "Wtime.h"
 #include "common/bgp/LockBoxFactory.h"
 
 namespace PAMI
@@ -52,7 +51,8 @@ namespace PAMI
           _memsize (0),
           lockboxFactory()
         {
-          Interface::Global<PAMI::Global>::time.init(personality.clockMHz());
+          //Interface::Global<PAMI::Global>::time.init(personality.clockMHz());
+          time.init (personality.clockMHz());
           //allocateMemory ();
 
           char   * shmemfile = "/unique-pami-global-shmem-file";

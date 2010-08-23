@@ -12,7 +12,7 @@
 
 ///
 /// \file common/GlobalInterface.h
-/// \brief Blue Gene/P Global Object
+/// \brief Common base global object
 ///
 /// This global object is constructed before main() and is a container class
 /// for all other classes that need to be constructed and initialized before
@@ -22,7 +22,7 @@
 #include "Platform.h"
 #include "util/common.h"
 #include "Topology.h"
-#include "Wtime.h"
+#include "Time.h"
 
 namespace PAMI
 {

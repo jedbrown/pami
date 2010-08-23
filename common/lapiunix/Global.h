@@ -22,7 +22,6 @@
 #include "common/GlobalInterface.h"
 #include "Mapping.h"
 #include "Topology.h"
-#include "Wtime.h"
 
 namespace PAMI
 {
@@ -35,7 +34,7 @@ namespace PAMI
           mapping()
         {
           // Time gets its own clockMHz
-          Interface::Global<PAMI::Global>::time.init(0);
+          time.init(0);
           {
                 size_t min=0, max=0;
                 mapping.init(min, max);

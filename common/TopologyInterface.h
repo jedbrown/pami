@@ -460,7 +460,7 @@ namespace PAMI
     template <class T_Topology>
       void Topology<T_Topology>::subTopologyLocalMaster(T_Topology *_new)
     {
-      return static_cast<T_Topology*>(this)->subTopologyLocalMaster_impl(_new);
+      static_cast<T_Topology*>(this)->subTopologyLocalMaster_impl(_new);
     }
 
     template <class T_Topology>

@@ -1050,6 +1050,10 @@ namespace PAMI {
                 _new->__size = 0;
         }
 
+        void subTopologyLocalMaster_impl(PAMI::Topology *_new) {
+          PAMI_abort();
+        }
+
         private:
                 size_t	__size;		///< number of ranks in this topology
                 pami_topology_type_t __type;	///< type of topology this is

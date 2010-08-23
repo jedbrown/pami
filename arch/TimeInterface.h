@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file common/BaseTimeInterface.h
+/// \file arch/TimeInterface.h
 /// \brief ???
 ///
-#ifndef __common_BaseTimeInterface_h__
-#define __common_BaseTimeInterface_h__
+#ifndef __arch_TimeInterface_h__
+#define __arch_TimeInterface_h__
 
 #include <pami.h>
 
@@ -20,10 +20,10 @@ namespace PAMI
     namespace Interface
     {
       ///
-      /// \param T_Mapping Base time template class
+      /// \param T Time template implementation class
       ///
       template <class T>
-      class BaseTime
+      class Time
       {
         public:
 
@@ -55,37 +55,37 @@ namespace PAMI
           /// \brief Returns an elapsed time on the calling processor.
           ///
           double time ();
-      }; // class BaseTime
+      }; // class Time
 
       template <class T>
-      inline pami_result_t BaseTime<T>::init (size_t clockMHz)
+      inline pami_result_t Time<T>::init (size_t clockMHz)
       {
         return static_cast<T*>(this)->init_impl (clockMHz);
       }
 
       template <class T>
-      size_t BaseTime<T>::clockMHz ()
+      size_t Time<T>::clockMHz ()
       {
         return static_cast<T*>(this)->clockMHz_impl ();
       }
 
       template <class T>
-      unsigned long long BaseTime<T>::timebase ()
+      unsigned long long Time<T>::timebase ()
       {
         return static_cast<T*>(this)->timebase_impl ();
       }
 
       template <class T>
-      double BaseTime<T>::tick ()
+      double Time<T>::tick ()
       {
         return static_cast<T*>(this)->tick_impl ();
       }
 
       template <class T>
-      double BaseTime<T>::time ()
+      double Time<T>::time ()
       {
         return static_cast<T*>(this)->time_impl ();
       }
     };	// namespace Interface
 };	// namespace PAMI
-#endif // __components_time_time_h__
+#endif // __arch_TimeInterface_h__ 

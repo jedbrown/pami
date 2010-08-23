@@ -7,26 +7,30 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file common/bgq/Wtime.h
+/// \file arch/a2qpx/Time.h
 /// \brief ???
 ///
-#ifndef __common_bgq_Wtime_h__
-#define __common_bgq_Wtime_h__
+#ifndef __arch_a2qpx_Time_h__
+#define __arch_a2qpx_Time_h__
 
 #include <pami.h>
 
-#include "common/BaseTimeInterface.h"
+#include "arch/TimeInterface.h"
 
 namespace PAMI
 {
-    class Time : public Interface::BaseTime<Time>
+    class Time : public Interface::Time<Time>
     {
       public:
 
+        friend class Interface::Time<Time>
+
         inline Time () :
-            Interface::BaseTime<Time> (),
+            Interface::Time<Time> (),
             _mhz(0)
         {};
+
+      protected:
 
         ///
         /// \brief Initialize the time object.
@@ -42,7 +46,7 @@ namespace PAMI
         ///
         /// \warning This returns \b mega hertz. Do not be confused.
         ///
-        inline size_t clockMHz ()
+        inline size_t clockMHz_impl ()
         {
           return _mhz;
         };
@@ -50,34 +54,15 @@ namespace PAMI
         ///
         /// \brief Returns the number of "cycles" elapsed on the calling processor.
         ///
-        inline unsigned long long timebase ()
+        inline unsigned long long timebase_impl ()
         {
-#if 0
-          unsigned temp;
-          union
-          {
-            struct { unsigned hi, lo; } w;
-            unsigned long long d;
-          } result;
-
-          do
-            {
-asm volatile ("mfspr %0,%1" : "=r" (temp)        : "i" (SPRN_TBRU));
-asm volatile ("mfspr %0,%1" : "=r" (result.w.lo) : "i" (SPRN_TBRL));
-asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
-            }
-          while (temp != result.w.hi);
-
-          return result.d;
-#else
           return GetTimeBase(); // From hwi/include/bqc/A2_inlines.h
-#endif
         };
 
         ///
         /// \brief Computes the smallest clock resolution theoretically possible
         ///
-        inline double tick ()
+        inline double tick_impl ()
         {
           return PAMI::Time::seconds_per_cycle;
         };
@@ -85,12 +70,10 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
         ///
         /// \brief Returns an elapsed time on the calling processor.
         ///
-        inline double time ()
+        inline double time_impl ()
         {
           return ((double)timebase() * PAMI::Time::seconds_per_cycle);
         };
-
-      protected:
 
         /// \brief BG/Q compute node processors run at 1.6ghz. This should be
         // changed when we know for sure how fast they are running at...
@@ -98,4 +81,4 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
         size_t _mhz;
     };	// class Time
 };	// namespace PAMI
-#endif // __components_time_bgq_bgqtime_h__
+#endif // __arch_a2qpx_Time_h__

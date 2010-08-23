@@ -7,27 +7,31 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file common/bgp/Wtime.h
+/// \file arch/ppc450d/Time.h
 /// \brief ???
 ///
-#ifndef __common_bgp_Wtime_h__
-#define __common_bgp_Wtime_h__
+#ifndef __arch_ppc450d_Time_h__
+#define __arch_ppc450d_Time_h__
 
 #include <pami.h>
 
-#include "common/BaseTimeInterface.h"
+#include "arch/TimeInterface.h"
 #include "common/bgp/BgpPersonality.h"
 
 namespace PAMI
 {
-    class Time : public Interface::BaseTime<Time>
+    class Time : public Interface::Time<Time>
     {
       public:
 
+        friend class Interface::Time<Time>;
+
         inline Time () :
-            Interface::BaseTime<Time> (),
+            Interface::Time<Time> (),
         _mhz(0)
         {};
+
+      protected:
 
         ///
         /// \brief Initialize the time object.
@@ -43,7 +47,7 @@ namespace PAMI
         ///
         /// \warning This returns \b mega hertz. Do not be confused.
         ///
-        inline size_t clockMHz ()
+        inline size_t clockMHz_impl ()
         {
           return _mhz;
         };
@@ -51,7 +55,7 @@ namespace PAMI
         ///
         /// \brief Returns the number of "cycles" elapsed on the calling processor.
         ///
-        inline unsigned long long timebase ()
+        inline unsigned long long timebase_impl ()
         {
           unsigned temp;
           union
@@ -74,7 +78,7 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
         ///
         /// \brief Computes the smallest clock resolution theoretically possible
         ///
-        inline double tick ()
+        inline double tick_impl ()
         {
           return PAMI::Time::seconds_per_cycle;
         };
@@ -82,16 +86,16 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
         ///
         /// \brief Returns an elapsed time on the calling processor.
         ///
-        inline double time ()
+        inline double time_impl ()
         {
           return ((double)timebase() * PAMI::Time::seconds_per_cycle);
         };
 
-      protected:
 
         /// \brief BG/P compute node processors run at 850 MHz
         static const double seconds_per_cycle = 1.176470588235294033e-09;
         size_t _mhz;
     };	// class Time
 };	// namespace PAMI
-#endif // __components_time_time_h__
+#endif // __arch_ppc450d_Time_h__
+

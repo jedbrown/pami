@@ -124,7 +124,8 @@ namespace PAMI
           TRACE_ERR((stderr, "SharedMemoryManager() .. FAILED, fake shmem on the heap\n"));
 
 #ifdef USE_MEMALIGN
-          posix_memalign ((void **)&_base, 16, bytes);
+          int rc = posix_memalign ((void **)&_base, 16, bytes);
+          PAMI_assert(rc==0);
 #else
           _base = (void*)malloc(bytes);
 #endif
