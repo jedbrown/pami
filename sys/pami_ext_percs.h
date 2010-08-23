@@ -40,7 +40,7 @@ extern "C"
     PAMI_CLIENT_RECEIVE_INTERRUPT, /**< CQU: bool : false: enable receive interrupt */
     PAMI_CLIENT_ERROR_HANDLER,     /**< CQ : pami_error_handler_t : NULL : asynchronous error handler */
     PAMI_CLIENT_STATISTICS,        /**<  Q : pami_statistics_t : N/A : retrieve communication statistics */
-    PAMI_CLIENT_TRIGGER,           /**<   U: pami_trigger_t : N/A : add or remove a trigger */ 
+    PAMI_CLIENT_TRIGGER,           /**<   U: pami_trigger_t : N/A : add or remove a trigger */
   } pami_attribute_name_ext_t;
 
   /** \} */ /* end of "ext_attr" group */
@@ -94,7 +94,7 @@ extern "C"
     int                count;       /**< Number of counters */
     pami_counter_t     counters[1]; /**< Array of counters  */
   } pami_statistics_t;
-  
+
   #define PAMI_VOID_CONTEXT  NULL   /**< PAMI context for indirect PAMI user */
 
   /**
@@ -104,9 +104,9 @@ extern "C"
     pami_context_t     context,
     int                argc,
     char               *argv[]);
-  
+
   /**
-   * \brief Triggers 
+   * \brief Triggers
    */
   typedef struct
   {

@@ -846,7 +846,7 @@ namespace PAMI
         _singlepkt.setDestination(dest);
         _singlepkt.setOpCode(op);
         _singlepkt.setWordLength(dt);
-        TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt, 
+        TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
                      dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
 
         if (likely(channel.isSendQueueEmpty() && ndesc > 0))
@@ -997,7 +997,7 @@ namespace PAMI
         _singlepkt.setDestination(dest);
         _singlepkt.setOpCode(op);
         _singlepkt.setWordLength(dt);
-        TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt, 
+        TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
                      dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
 
         if (likely(channel.isSendQueueEmpty() && ndesc > 0))
@@ -1145,7 +1145,7 @@ namespace PAMI
         _singlepkt.setDestination(dest);
         _singlepkt.setOpCode(op);
         _singlepkt.setWordLength(dt);
-        TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt, 
+        TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
                      dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
 
         if (likely(channel.isSendQueueEmpty() && ndesc > 0))
@@ -1277,7 +1277,7 @@ namespace PAMI
         _multipkt.setDestination(dest);
         _multipkt.setOpCode(op);
         _multipkt.setWordLength(dt);
-        TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt, 
+        TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
                      dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
 
         // Determine the physical address of the source data.

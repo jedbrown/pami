@@ -465,7 +465,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 	      // 1. Track the lowest T coord on our node
 	      // 2. Track whether this task is local to our node.  This is stored in
 	      //    the "reserved" bit of the coords structure.
-	      // 
+	      //
 	      if ( (a==aCoord) && (b==bCoord) && (c==cCoord) && (d==dCoord) && (e==eCoord) )
 		{
 		  if ( t < lowestTCoordOnMyNode )

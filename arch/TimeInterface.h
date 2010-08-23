@@ -88,4 +88,4 @@ namespace PAMI
       }
     };	// namespace Interface
 };	// namespace PAMI
-#endif // __arch_TimeInterface_h__ 
+#endif // __arch_TimeInterface_h__

@@ -175,4 +175,3 @@ namespace PAMI
 #undef SPRN_TBRU
 #undef SPRN_TBRL
 #endif // __arch_ppc64_Time_h__
-

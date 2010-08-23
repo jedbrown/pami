@@ -73,30 +73,30 @@
 ///   value is the percentage of the resources that are to be given to that
 ///   particular client.  Resources (such as the message unit) are divided up
 ///   according to these weights.  In the example, the first client gets 60
-///   percent of the resources, while the second client gets 40 percent.  The 
+///   percent of the resources, while the second client gets 40 percent.  The
 ///   weights must sum to 100.
 ///   - Default is that all clients get an equal amount of resources.
 ///
 /// - PAMI_RECFIFOSIZE - The size, in bytes, of each reception FIFO.  Incoming
-///   torus packets are stored in this fifo until PAMI Messaging can process 
-///   them.  Making this larger can reduce torus network congestion.  Making this 
+///   torus packets are stored in this fifo until PAMI Messaging can process
+///   them.  Making this larger can reduce torus network congestion.  Making this
 ///   smaller leaves more memory available to the application.
 ///   PAMI Messaging uses one reception FIFO per context.
 ///   - Default is 1048576 bytes (1 megabyte).
 ///
-/// - PAMI_INJFIFOSIZE - The size, in bytes, of each injection FIFO.  These 
-///   FIFOs store 64-byte descriptors, each describing a memory buffer to be 
-///   sent on the torus.  Making this larger can reduce overhead when there are 
+/// - PAMI_INJFIFOSIZE - The size, in bytes, of each injection FIFO.  These
+///   FIFOs store 64-byte descriptors, each describing a memory buffer to be
+///   sent on the torus.  Making this larger can reduce overhead when there are
 ///   many outstanding messages.  Making this smaller can increase that overhead.
 ///   PAMI Messaging optimally uses 10 injection FIFOs per context, although fewer
 ///   could be used when resources are constrained.
 ///   - Default is 65536 (64 kilobytes).
 ///
-/// - PAMI_RGETINJFIFOSIZE - The size, in bytes, of each remote get FIFO.  These 
-///   FIFOs store 64-byte descriptors, each describing a memory buffer to be 
-///   sent on the torus, and are used to queue requests for data (remote gets). 
-///   Making this larger can reduce torus network congestion and reduce overhead. 
-///   Making this smaller can increase that congestion and overhead. 
+/// - PAMI_RGETINJFIFOSIZE - The size, in bytes, of each remote get FIFO.  These
+///   FIFOs store 64-byte descriptors, each describing a memory buffer to be
+///   sent on the torus, and are used to queue requests for data (remote gets).
+///   Making this larger can reduce torus network congestion and reduce overhead.
+///   Making this smaller can increase that congestion and overhead.
 ///   PAMI Messaging uses 10 remote get FIFOs per node.
 ///   - Default is 65536 (64 kilobytes).
 
@@ -136,7 +136,7 @@ namespace PAMI
       inline const char *getClientName( size_t RmClientId ) { return _clientNamesPtrs[RmClientId]; }
 
       inline size_t getClientWeight( size_t RmClientId )    { return _clientWeights[RmClientId]; }
-      
+
       /// \brief Map the PAMI client Id into a Resource Manager Client Id
       ///
       /// The PAMI client Ids are assigned in order of PAMI_Client_initialize() invocations.
@@ -146,18 +146,18 @@ namespace PAMI
 
       /// \brief Return Whether The Specified Client Can Use MU Hardware Optimization
       ///        for Combining Collectives
-      /// 
-      /// The first client specified on the PAMI_CLIENTNAMES env var can use MU hardware 
+      ///
+      /// The first client specified on the PAMI_CLIENTNAMES env var can use MU hardware
       /// optmization for combining collectives.  The other clients cannot.
       ///
       inline bool   doesClientOptimizeCombiningCollectivesInMU( size_t RmClientId )
-      { 
-	if ( RmClientId == 0 ) 
+      {
+	if ( RmClientId == 0 )
 	  return true;
 	else
 	  return false;
       }
-      
+
       inline size_t getRgetInjFifoSize() { return _rgetInjFifoSize; }
 
       inline size_t getInjFifoSize() { return _injFifoSize; }

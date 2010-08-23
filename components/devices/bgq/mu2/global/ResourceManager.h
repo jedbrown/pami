@@ -2092,7 +2092,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
       PAMI_assertf( rc==0, "Kernel_QueryInjFifos failed with rc=%d.\n",rc );
       TRACE((stderr,"MU ResourceManager: setupInjFifos: subgroup = %u, numFree = %u\n",subgroup,numFree));
 
-      if ( numFree == 0 ) 
+      if ( numFree == 0 )
 	{
 	  subgroupIndex++;
 	  continue; // Nothing free in this subgroup?  Go to next.
@@ -2518,7 +2518,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
       PAMI_assertf( rc==0, "Kernel_QueryRecFifos failed with rc=%d.\n",rc );
       TRACE((stderr,"MU ResourceManager: setupRecFifos: subgroup = %u, numFree = %u\n",subgroup,numFree));
 
-      if ( numFree == 0 ) 
+      if ( numFree == 0 )
 	{
 	  subgroupIndex++;
 	  continue; // Nothing free in this subgroup?  Go to next.
@@ -3060,7 +3060,7 @@ void PAMI::Device::MU::ResourceManager::getInjFifosForContext( size_t           
 	   subgroups[relativeSubgroup].
 	   _injfifos[relativeFifo] );
 
-      TRACE((stderr,"MU ResourceManager: getInjFifosForContext: context=%zu, globalFifoId=%u, globalSubgroup=%u, relativeSubgroup=%u, startingSubgroupId=%u, relativeFifo=%u, injFifoStructurePtr=%p, hwinjfifo=%p\n",contextOffset,globalFifoId,globalSubgroup,relativeSubgroup,_clientResources[rmClientId].startingSubgroupIds[contextOffset],relativeFifo,injFifoPtrs[fifo],injFifoPtrs[fifo]->hw_injfifo)); 
+      TRACE((stderr,"MU ResourceManager: getInjFifosForContext: context=%zu, globalFifoId=%u, globalSubgroup=%u, relativeSubgroup=%u, startingSubgroupId=%u, relativeFifo=%u, injFifoStructurePtr=%p, hwinjfifo=%p\n",contextOffset,globalFifoId,globalSubgroup,relativeSubgroup,_clientResources[rmClientId].startingSubgroupIds[contextOffset],relativeFifo,injFifoPtrs[fifo],injFifoPtrs[fifo]->hw_injfifo));
     }
 } // End: getInjFifosForContext()
 

@@ -98,4 +98,3 @@ asm volatile ("mfspr %0,%1" : "=r" (result.w.hi) : "i" (SPRN_TBRU));
     };	// class Time
 };	// namespace PAMI
 #endif // __arch_ppc450d_Time_h__
-

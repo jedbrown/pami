@@ -46,14 +46,14 @@ namespace PAMI
         {
           PAMI_abort();
         }
-      
+
       static void cau_mcast_send_done(lapi_handle_t *hndl, void * completion_param)
         {
           // Our multicast operation has completed.
           // This means that we can consume the bytes out of the PWQ,
           // and notify a consumer (if a fcn has been set up) on the PWQ.
           notifyFcn            fn;
-          void                *cookie; 
+          void                *cookie;
           CAUMcastSendMessage *m        = (CAUMcastSendMessage *) completion_param;
           PipeWorkQueue       *source   = m->_src_pwq;
           msgHeader           *hdr      = (msgHeader *)m->_xfer_msghdr;
@@ -105,7 +105,7 @@ namespace PAMI
           size_t bytesLeft       = m->_buflen - m->_bytesProduced;
           size_t bytesAvail      = m->_pwq->bytesAvailableToProduce();
           notifyFcn fn;
-          void     *cookie; 
+          void     *cookie;
           void     *ptr          = (void*)fn;
 
           size_t bytesToCopy     = MIN(bytesLeft, bytesAvail);
@@ -139,7 +139,7 @@ namespace PAMI
           //
           CAUMcastRecvMessage *m = (CAUMcastRecvMessage*)completion_param;
           m->_cb_done.function(m->_context, m->_cb_done.clientdata, PAMI_SUCCESS);
-          
+
 
         }
 
@@ -165,7 +165,7 @@ namespace PAMI
 
           // Deliver the user callback for the multicast
           pami_dispatch_multicast_fn  user_fn     = mc->_id_to_fn[did];
-          void                       *user_cookie = mc->_id_to_async_arg[did]; 
+          void                       *user_cookie = mc->_id_to_async_arg[did];
           size_t                      rcvlen;
           PipeWorkQueue              *rcvpwq;
           pami_callback_t             cb_done;
@@ -183,7 +183,7 @@ namespace PAMI
           size_t                bytesToProduce = rcvpwq->bytesAvailableToProduce();
           void                 *bufToProduce   = rcvpwq->bufferToProduce();
           CAUMcastRecvMessage  *m              = NULL;
-          m = (CAUMcastRecvMessage*)malloc(sizeof(CAUMcastRecvMessage));          
+          m = (CAUMcastRecvMessage*)malloc(sizeof(CAUMcastRecvMessage));
           bool                  room;
           if(bytesToProduce < rcvlen)
             {
@@ -201,7 +201,7 @@ namespace PAMI
           if (ri->udata_one_pkt_ptr)
             {
               notifyFcn fn;
-              void     *cookie; 
+              void     *cookie;
               void     *ptr      = (void*)fn;
               rcvpwq->getConsumerUserInfo(&ptr,&cookie);
               if(room)
@@ -310,7 +310,7 @@ namespace PAMI
 
             // Set up the fields of the header
             // and concatenate the user header into the
-            // system header by memory copying 
+            // system header by memory copying
             hdr[0].dispatch_id    = _device.getLapiId(mcast->dispatch);
             hdr[0].geometry_id    = gi->_geometry_id;
             hdr[0].connection_id  = mcast->connection_id;
@@ -319,7 +319,7 @@ namespace PAMI
             hdr[0].data_sz        = source->bytesAvailableToConsume();
             char          *buf    = source->bufferToConsume();
             memcpy(&hdr[1],mcast->msginfo,uhdrsz);
-            
+
             // Issue the multicast
             CheckLapiRC(lapi_cau_multicast(_device.getHdl(),                   // lapi handle
                                            gi->_cau_id,                        // group id

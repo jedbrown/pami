@@ -63,7 +63,7 @@ namespace PAMI
         _device(device),
         _devinfo(devinfo)
         {
-          
+
         }
       void *allocateHeader(size_t sz)
         {
@@ -94,10 +94,10 @@ namespace PAMI
     };
 
     class CAUMcastRecvMessage
-    {      
+    {
     public:
       CAUMcastRecvMessage(pami_callback_t  cb_done,
-                          void            *target_buf, 
+                          void            *target_buf,
                           size_t           buflen,
                           PipeWorkQueue   *pwq,
                           pami_context_t   context):
@@ -113,7 +113,7 @@ namespace PAMI
 
 
       CAUMcastRecvMessage(pami_callback_t  cb_done,
-                          void            *target_buf, 
+                          void            *target_buf,
                           size_t           buflen,
                           PipeWorkQueue   *pwq,
                           pami_context_t   context,
@@ -134,12 +134,12 @@ namespace PAMI
       PipeWorkQueue             *_pwq;
       pami_context_t             _context;
     };
-    
 
 
 
 
-    
+
+
     class CAUMsyncMessage : MatchQueueElem
     {
     public:

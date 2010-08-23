@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/dispatch/Dispatch.h
+ * \file common/default/Dispatch.h
  * \brief ???
  */
 
-#ifndef __components_dispatch_Dispatch_h__
-#define __components_dispatch_Dispatch_h__
+#ifndef __common_default_Dispatch_h__
+#define __common_default_Dispatch_h__
 
 #include <pami.h>
 
@@ -135,4 +135,3 @@ namespace PAMI
   };
 };
 #endif // __components_dispatch_Dispatch_h__
-

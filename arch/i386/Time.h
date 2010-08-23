@@ -157,4 +157,3 @@ namespace PAMI
   };	// class Time
 };	// namespace PAMI
 #endif // __arch_i386_Time_h__
-

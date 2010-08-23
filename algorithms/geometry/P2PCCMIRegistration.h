@@ -163,7 +163,7 @@ namespace PAMI
               _binomial_barrier_composite = _binomial_barrier_factory->generate(geometry, &xfer);
 
               // Check if the full binomial barrier can act as a local or global sub-geometry barrier...
-              // that is, we only have one or the other subtopology.  
+              // that is, we only have one or the other subtopology.
               PAMI::Topology * local_sub_topology = (PAMI::Topology*) geometry->getLocalTopology();
               PAMI::Topology * master_sub_topology = (PAMI::Topology*) geometry->getLocalMasterTopology();
               if(master_sub_topology->size() == 1) // no global topology so use binomial locally

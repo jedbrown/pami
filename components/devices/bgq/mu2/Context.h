@@ -343,7 +343,7 @@ namespace PAMI
 
 	    // ----------------------------------------------------------------
 	    // If this context is supposed to use the combining injection
-	    // fifo, then 
+	    // fifo, then
 	    // 1.  Store the context-relative fifo number.
 	    // 2.  Initialize the next slot in the injectionGroup with this
 	    //     injection channel.
@@ -360,7 +360,7 @@ namespace PAMI
 		  _rm.getGlobalCombiningLookAsidePayloadBufferVAs();
 		uint64_t              *globalCombiningInjFifoLookAsidePayloadPAs =
 		  _rm.getGlobalCombiningLookAsidePayloadBufferPAs();
-		pami_event_function  **globalCombiningInjFifoLookAsideCompletionFnPtrs = 
+		pami_event_function  **globalCombiningInjFifoLookAsideCompletionFnPtrs =
 		  _rm.getGlobalCombiningLookAsideCompletionFnPtrs();
 		void                ***globalCombiningInjFifoLAsideCompletionCookiePtrs =
 		  _rm.getGlobalCombiningLookAsideCompletionCookiePtrs();
@@ -561,7 +561,7 @@ namespace PAMI
 	  ///
           /// \brief Pin Combining Fifo
           ///
-          /// The pinCombiningFifo method is used to retrieve 
+          /// The pinCombiningFifo method is used to retrieve
 	  /// 1.  The context-relative combining injection fifo number.
 	  /// 2.  The global MU reception fifo identification number to receive
 	  ///     the result of the combining operation.
@@ -578,9 +578,9 @@ namespace PAMI
           /// \param[out] rfifo   Reception fifo id to receive the result of a
 	  ///                     memory fifo combine.
 	  ///
-          /// \return  Context-relative injection fifo Id of the combining 
+          /// \return  Context-relative injection fifo Id of the combining
 	  ///          injection fifo.
-	  ///          Reception fifo id to receive the result of a 
+	  ///          Reception fifo id to receive the result of a
 	  ///          memory fifo combining operation.
           ///
           inline uint16_t pinCombiningFifo ( size_t    task,

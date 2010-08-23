@@ -1,5 +1,5 @@
 /*
- * \file test/api/context/post-multithreaded-perf.c
+ * \file test/api/p2p/send/sqmr.c
  * \brief A threaded message-rate benchmark
  */
 

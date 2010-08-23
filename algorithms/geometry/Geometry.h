@@ -129,7 +129,7 @@ namespace PAMI
                     }
               }
 
-          // build local and global topos 
+          // build local and global topos
           _global_all_topo   = &_topos[0];
           _local_master_topo = &_topos[-1];
           _local_topo        = &_topos[-2];
@@ -189,7 +189,7 @@ namespace PAMI
           // this creates the topology including all subtopologies
           new (&_topos[0]) PAMI::Topology(topology);
 
-          // build local and global topos 
+          // build local and global topos
           _global_all_topo   = &_topos[0];
           _local_master_topo = &_topos[-1];
           _local_topo        = &_topos[-2];

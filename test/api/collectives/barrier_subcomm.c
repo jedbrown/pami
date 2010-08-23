@@ -1,5 +1,5 @@
 ///
-/// \file test/api/collectives/barrier.c
+/// \file test/api/collectives/barrier_subcomm.c
 /// \brief Simple Barrier test
 ///
 

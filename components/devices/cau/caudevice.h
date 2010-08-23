@@ -24,7 +24,7 @@ namespace PAMI
   namespace Device
   {
     #define DISPATCH_ID_START 48
-    
+
     extern std::map<int,int> _g_lapi_mcast_to_pami_mcast;
     extern std::map<int,int> _g_pami_mcast_to_lapi_mcast;
     extern std::map<lapi_handle_t,void*> _g_id_to_device_table;
@@ -68,7 +68,7 @@ namespace PAMI
           _dispatch_id++;
           return _dispatch_id-1;
         }
-      
+
       inline pami_task_t          taskid()
         {
           return _taskid;

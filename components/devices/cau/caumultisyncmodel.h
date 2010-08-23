@@ -146,7 +146,7 @@ namespace PAMI
           if (ri->udata_one_pkt_ptr)
             {
               TRACE((stderr, "cau_red_handler: POSTING MULTICAST %d\n", seqno));
-              
+
               CheckLapiRC(lapi_cau_multicast(ms->_device.getHdl(),            // lapi handle
                                              gi->_cau_id,                     // group id
                                              ms->_dispatch_mcast_id,          // dispatch id
