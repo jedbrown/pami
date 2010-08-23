@@ -46,7 +46,7 @@ namespace PAMI
     virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie);
     virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_fn fn, void *cookie)
     {
-      PAMI_abort();
+      //PAMI_abort();
       return PAMI_ERROR;
     }
     virtual inline pami_result_t setSendDispatch(pami_dispatch_p2p_fn fn,

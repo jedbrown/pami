@@ -103,14 +103,19 @@ int main (int argc, char ** argv)
       int i;
 
       for (i = 0; i < niter; i++)
-        blocking_coll(context, &barrier, &poll_flag);
+          blocking_coll(context, &barrier, &poll_flag);
 
       tf = timer();
       usec = tf - ti;
 
       if (!task_id)
-        fprintf(stderr, "Test Barrier protocol(%s) Performance: time=%f usec\n",
-                always_works_md[algo].name, usec / (double)niter);
+      {
+          fprintf(stderr, "Test Barrier protocol(%s) Performance: time=%f usec\n",
+                  always_works_md[algo].name, usec / (double)niter);
+          delayTest(2);
+      }
+
+      blocking_coll(context, &barrier, &poll_flag);
     }
 
   rc = pami_shutdown(&client, &context, &num_contexts);

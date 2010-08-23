@@ -291,9 +291,16 @@ namespace PAMI
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSync2Composite,
-    Msync2MetaData,
-    CCMI::ConnectionManager::SimpleConnMgr > MultiSync2Factory;
+      Msync2MetaData,
+      CCMI::ConnectionManager::SimpleConnMgr > MultiSync2Factory;
 
+    void Msync2DMetaData(pami_metadata_t *m)
+    {
+      strncpy(&m->name[0], "MultiSync2Device", 32);
+    }
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
+      Msync2DMetaData,
+      CCMI::ConnectionManager::SimpleConnMgr>  MultiSync2DeviceFactory;
 
 
     //----------------------------------------------------------------------------
@@ -321,6 +328,7 @@ namespace PAMI
             _mu_barrier_composite(NULL),
             _sub_mu_barrier_composite(NULL),
             _msync_composite(NULL),
+            _msync2d_composite(NULL),
             _shmem_ni(shmem_ni),
             _shmem_msync_factory(&_sconnmgr, _shmem_ni),
             _sub_shmem_msync_factory(&_sconnmgr, _shmem_ni),
@@ -331,7 +339,8 @@ namespace PAMI
             _sub_mu_msync_factory(&_sconnmgr, _mu_ni),
             _mu_mcast2_factory(NULL),
             _mu_mcomb_factory(&_sconnmgr, _mu_ni),
-            _msync_composite_factory(&_sconnmgr, NULL)
+            _msync_composite_factory(&_sconnmgr, NULL),
+            _msync2d_composite_factory(NULL)
         {
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()\n", this));
           DO_DEBUG((templateName<T_Geometry>()));
@@ -353,7 +362,15 @@ namespace PAMI
 
               // Can't be ctor'd unless the NI was created
               _mu_mcast2_factory = new (_mu_mcast2_factory_storage) MUMultiCast2Factory(&_csconnmgr, _mu_ni);
+
             }
+//          if ((__global.useMU()) && (__global.useshmem()))
+          {
+            _ni_array[0] = _shmem_ni;
+            _ni_array[1] = _mu_ni;
+            _msync2d_composite_factory = new (_msync2d_composite_factory_storage) MultiSync2DeviceFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface*)_ni_array);
+            _msync2d_composite_factory->setMapIdToGeometry(mapidtogeometry);
+          }
 
         }
 
@@ -484,11 +501,17 @@ namespace PAMI
               if((master_sub_topology->size() > 1) && (geometry->getKey(_context_id, PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE) == NULL))
                 return PAMI_SUCCESS; // done - we can't do a composite
 
+              // Add Barrier
               TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() register a composite barrier\n", this));
               _msync_composite = _msync_composite_factory.generate(geometry, &xfer);
 
-              // Add Barrier
               geometry->addCollective(PAMI_XFER_BARRIER, &_msync_composite_factory, _context_id);
+
+              if(_msync2d_composite_factory) 
+              {
+                _msync2d_composite = _msync2d_composite_factory->generate(geometry, &xfer);
+                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
+              }
 
 
             }
@@ -527,6 +550,7 @@ namespace PAMI
         CCMI::Executor::Composite                      *_mu_barrier_composite;
         CCMI::Executor::Composite                      *_sub_mu_barrier_composite;
         CCMI::Executor::Composite                      *_msync_composite;
+        CCMI::Executor::Composite                      *_msync2d_composite;
 
         //* SHMEM interfaces:
         // Native Interface
@@ -559,6 +583,9 @@ namespace PAMI
 
         // CCMI Barrier Interface
         MultiSync2Factory                               _msync_composite_factory;
+        CCMI::Interfaces::NativeInterface              *_ni_array[2];
+        MultiSync2DeviceFactory                        *_msync2d_composite_factory;
+        uint8_t                                         _msync2d_composite_factory_storage[sizeof(MultiSync2DeviceFactory)];
     };
 
 
