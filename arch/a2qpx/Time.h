@@ -23,7 +23,7 @@ namespace PAMI
     {
       public:
 
-        friend class Interface::Time<Time>
+        friend class Interface::Time<Time>;
 
         inline Time () :
             Interface::Time<Time> (),
