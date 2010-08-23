@@ -18,6 +18,14 @@
 #include "components/devices/workqueue/WorkQueue.h"
 #include "string.h"
 
+#ifndef PAMI_DEF_SH_WORKSIZE
+#define PAMI_DEF_SH_WORKSIZE 4096
+#endif
+
+#ifndef PAMI_DEF_SH_WORKUNITS
+#define PAMI_DEF_SH_WORKUNITS 16
+#endif
+
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 

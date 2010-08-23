@@ -17,7 +17,4 @@
 
 #include "Arch.h"
 
-#define PAMI_DEF_SH_WORKSIZE   4096 //8192 // Default shared work queue worksize
-#define PAMI_DEF_SH_WORKUNITS  16 //32   // Default shared work queue workunits
-
 #endif // __common_bgq_platform_h__
