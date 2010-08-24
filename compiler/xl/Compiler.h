@@ -23,6 +23,9 @@
  */
 
 #include "builtins.h"
+
+#define __sync_synchronize() __sync()
+
 #ifdef __64BIT__
 #define __sync_fetch_and_or(x,y)	__fetch_and_orlp((volatile unsigned long *)x,y)
 #define __sync_fetch_and_and(x,y)	__fetch_and_andlp((volatile unsigned long *)x,y)
