@@ -45,6 +45,7 @@ namespace BGQ {
                         while (L2_AtomicLoadIncrement(_counter) != 0);
                 }
                 void release_impl() {
+			mem_sync();
                         L2_AtomicLoadClear(_counter);
                 }
                 bool tryAcquire_impl() {
