@@ -341,7 +341,8 @@ public:
   /// \copydoc PAMI::Interface::QueueInfoInterface::dump
   inline void dump_impl(const char *str, int n)
   {
-    PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+    fprintf(stderr, "%s: size=%zd head=%p tail=%p (locked:%d)\n", str,
+                              _size, _head, _tail, _mutex.isLocked());
   }
 
 #ifdef VALIDATE_ON
