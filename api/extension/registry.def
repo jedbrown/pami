@@ -1,0 +1,15 @@
+///
+/// Modifications to this file are strictly controlled by the
+/// PAMI Change Review Board
+///
+/// Extension identifier '0' is reserved for system use
+///
+/// The extension definition contains four fields:
+/// - Unique extension name
+/// - Unique extension identifier
+/// - Unique extension enumerant value range start
+/// - Unique extension enumerant value range count
+///
+
+PAMI_EXTENSION_DEFINE(EXT_test_extension,1,1000,16)
+PAMI_EXTENSION_DEFINE(EXT_torus_network,1000,0,0)

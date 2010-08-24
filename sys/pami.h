@@ -32,6 +32,7 @@ extern "C"
     PAMI_SHUTDOWN,     /**< Task has shutdown           */
     PAMI_CHECK_ERRNO,  /**< Check the errno val         */
     PAMI_OTHER,        /**< Other undefined error       */
+    PAMI_RESULT_EXT = 1000 /**< Begin extension-specific values */
   } pami_result_t;
 
   typedef void*    pami_client_t;   /**< Client of communication contexts */
@@ -94,7 +95,8 @@ extern "C"
     PAMI_MAXLOC,
     PAMI_MINLOC,
     PAMI_USERDEFINED_OP,
-    PAMI_OP_COUNT
+    PAMI_OP_COUNT,
+    PAMI_OP_EXT = 1000 /**< Begin extension-specific values */
   }
     pami_op;
 
@@ -128,7 +130,8 @@ extern "C"
     PAMI_LOC_2FLOAT,
     PAMI_LOC_2DOUBLE,
     PAMI_USERDEFINED_DT,
-    PAMI_DT_COUNT
+    PAMI_DT_COUNT,
+    PAMI_DT_EXT = 1000 /**< Begin extension-specific values */
   }
     pami_dt;
 
@@ -184,6 +187,7 @@ extern "C"
     PAMI_DISPATCH_SEND_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be transfered with the PAMI_Send_immediate() function. */
     PAMI_GEOMETRY_OPTIMIZE,         /**< Q : bool : Populate the geometry algorithms list with hardware optimized algorithms.  If the algorithms list
                                             *       is not optimized, point to point routines only will be present, and hardware resources will be released */
+    PAMI_ATTRIBUTE_NAME_EXT = 1000  /**< Begin extension-specific values */
   } pami_attribute_name_t;
 
   typedef union
@@ -1179,7 +1183,8 @@ extern "C"
     PAMI_XFER_AMSCATTER,
     PAMI_XFER_AMGATHER,
     PAMI_XFER_AMREDUCE,
-    PAMI_XFER_COUNT
+    PAMI_XFER_COUNT,
+    PAMI_XFER_TYPE_EXT = 1000 /**< Begin extension-specific values */
   } pami_xfer_type_t;
 
   /* ************************************************************************* */
@@ -2993,6 +2998,96 @@ extern "C"
   pami_result_t PAMI_Context_unlock (pami_context_t context);
 
   /** \} */ /* end of "context" group */
+
+  /*****************************************************************************/
+  /**
+   * \defgroup extensions PAMI Extensions
+   *
+   * A PAMI extension may contain one or more extended functions, using the
+   * PAMI_Extension_function() interface.
+   *
+   * For example, extension-specific functions may provide a mechanism to query
+   * and set configuration attributes, similar to PAMI_Context_query() and
+   * PAMI_Context_update(). The extension would define new extension-specific
+   * configuration functions, structs, and enums to accomplish this.
+   *
+   * Refer to the extension-specific documentation for more information on a
+   * particular extension.
+   *
+   * Refer to the \ref pami_extension_framework for more information on how to
+   * define, implement, and register a new extension.
+   * \{
+   */
+  /*****************************************************************************/
+
+  typedef void * pami_extension_t;
+
+  /**
+   * \brief Open an extension for use by a client
+   *
+   * The extension may also be queried during the compile pre-processing using
+   * an \c ##ifdef of the form \c __pami_extension_{name}__
+   *
+   * \code
+   * #ifdef __pami_extension_1234__
+   *
+   * // Use the "1234" extension
+   *
+   * #endif
+   * \endcode
+   *
+   * \param [in]  client    Client handle
+   * \param [in]  name      Unique extension name
+   * \param [out] extension Extension handle
+   *
+   * \retval PAMI_SUCCESS The named extension is available and implemented by the PAMI runtime.
+   * \retval PAMI_UNIMPL  The named extension is not implemented by the PAMI runtime.
+   * \retval PAMI_ERROR   The named extension was not initialized by the PAMI runtime.
+   */
+  pami_result_t PAMI_Extension_open (pami_client_t      client,
+                                     const char       * name,
+                                     pami_extension_t * extension);
+
+  /**
+   * \brief Close an extension
+   *
+   * \param [in] extension Extension handle
+   */
+  pami_result_t PAMI_Extension_close (pami_extension_t extension);
+
+  /**
+   * \brief Query an extension function
+   *
+   * If the named extension is available and implemented by the PAMI runtime
+   * the function pointer to the extension function is returned. This
+   * function pointer can be used to invoke the extension operation.
+   *
+   * \code
+   * typedef void (*pami_extension_1234_foo_fn) (pami_context_t context, size_t foo);
+   * typedef void (*pami_extension_1234_bar_fn) (pami_context_t context, struct iovec ** iov);
+   *
+   * pami_extension_1234_foo_fn pami_1234_foo =
+   *   (pami_extension_1234_foo_fn) PAMI_Extension_function ("pami_extension_1234", "foo");
+   * pami_extension_1234_bar_fn pami_1234_bar =
+   *   (pami_extension_1234_bar_fn) PAMI_Extension_function ("pami_extension_1234", "bar");
+   *
+   * pami_context_t context = ...;
+   * pami_extension_1234_foo (context, 0);
+   *
+   * struct iovec iov[1024];
+   * pami_extension_1234_bar (context, &iov);
+   * \endcode
+   *
+   * \param [in] extension Extension handle
+   * \param [in] fn        Extension function name
+   *
+   * \retval NULL Request PAMI extension is not available
+   * \return PAMI extension function pointer
+   */
+  void * PAMI_Extension_function (pami_extension_t extension, const char * fn);
+
+  /** \} */ /* end of "extensions" group */
+
 
 #ifdef __cplusplus
 };

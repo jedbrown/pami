@@ -9,7 +9,9 @@
 #                                                                  #
 # end_generated_IBM_copyright_prolog                               #
 
-VPATH		= @abs_srcdir@
-SUBDIRS		= c extension
-NOTBUILT        =
+VPATH       = @abs_srcdir@
+SUBDIRS     = @TARGET@
+NOTBUILT    =
+@LIBNAME@-""-TORUS_EXTENSION_SOURCES=TorusExtension.cc
+DEVICENAME     = @LIBNAME@-""-TORUS_EXTENSION
 include @abs_top_builddir@/Build.rules

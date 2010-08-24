@@ -9,7 +9,7 @@
 #                                                                  #
 # end_generated_IBM_copyright_prolog                               #
 
-VPATH		= @abs_srcdir@
-SUBDIRS		= c extension
-NOTBUILT        =
+VPATH    = @abs_srcdir@
+SUBDIRS  = c
+NOTBUILT =
 include @abs_top_builddir@/Build.rules

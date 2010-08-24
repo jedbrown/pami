@@ -1379,3 +1379,36 @@ extern "C" pami_result_t PAMI_Dt_query (pami_dt dt, size_t *size)
   *size = sz;
   return PAMI_SUCCESS;
 }
+
+#include "api/extension/Extension.h"
+#include "api/extension/registry.h"
+
+extern "C" pami_result_t PAMI_Extension_open (pami_client_t      client,
+                                              const char       * name,
+                                              pami_extension_t * extension)
+{
+  #define PAMI_EXTENSION_DEFINE(a,n,x,y)                    \
+    if (strcmp(#a, name) == 0)                              \
+      return PAMI::Extension::open<n>(client, #a, *extension);
+
+  #include "api/extension/registry.def"
+
+  #undef PAMI_EXTENSION_DEFINE
+
+  return PAMI::Extension::open<0>(client, name, *extension);
+}
+
+extern "C" pami_result_t PAMI_Extension_close (pami_extension_t extension)
+{
+  PAMI::Extension * x = (PAMI::Extension *) extension;
+  return x->close();
+}
+
+extern "C" void * PAMI_Extension_function (pami_extension_t   extension,
+                                           const char       * fn)
+{
+  PAMI::Extension * x = (PAMI::Extension *) extension;
+  return x->function (fn);
+}
+
+
