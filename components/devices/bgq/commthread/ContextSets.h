@@ -15,6 +15,7 @@
 
 #include <pami.h>
 #include "components/atomic/bgq/L2Mutex.h"
+#include "Context.h"
 
 namespace PAMI {
 namespace Device {

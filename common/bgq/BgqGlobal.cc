@@ -34,6 +34,11 @@ const double PAMI::Time::seconds_per_cycle = 6.25e-10;
 extern "C" unsigned __isMambo() {return __global.personality._is_mambo? 1:0;};
 #endif
 
+#ifdef USE_COMMTHREADS
+#include "components/devices/bgq/commthread/CommThreadFactory.h"
+PAMI::Device::CommThread::Factory __CommThreadGlobal(&__global.mm, &__global.l2atomicFactory.__nodescoped_mm);
+#endif // USE_COMMTHREADS
+
 //
 // astyle info    http://astyle.sourceforge.net
 //

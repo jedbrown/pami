@@ -167,7 +167,7 @@ namespace PAMI
             // but it won't matter since this object can't do anything with it anyway.
             // This must initialize before the context, so that MemoryManagers are
             // setup.
-            PAMI::Device::CommThread::BgqCommThread::initContext(__global._commThreads, _clientid, x, context[x]);
+            PAMI::Device::CommThread::BgqCommThread::initContext(_clientid, x, context[x]);
 #endif // USE_COMMTHREADS
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
                                               &_platdevs, base, bytes, _world_geometry);
@@ -193,7 +193,7 @@ namespace PAMI
         // for (i = 0.._ncontexts) PAMI_assertf(context[i] == _contexts[i], "...");
 #ifdef USE_COMMTHREADS
         // This removes all contexts... only needs to be called once.
-        PAMI::Device::CommThread::BgqCommThread::rmContexts(__global._commThreads, _clientid, (void **)_contexts, _ncontexts);
+        PAMI::Device::CommThread::BgqCommThread::rmContexts(_clientid, (void **)_contexts, _ncontexts);
 #endif // USE_COMMTHREADS
         pami_result_t res = PAMI_SUCCESS;
         size_t i;
@@ -220,7 +220,7 @@ namespace PAMI
       // This is not standard interface... yet?
       inline pami_result_t addContextToCommThreadPool(pami_context_t ctx)
       {
-          return PAMI::Device::CommThread::BgqCommThread::addContext(__global._commThreads, _clientid, ctx);
+          return PAMI::Device::CommThread::BgqCommThread::addContext(_clientid, ctx);
       }
 #endif // USE_COMMTHREADS
 

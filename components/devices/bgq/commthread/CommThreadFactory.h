@@ -7,14 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-/// \file components/devices/bgq/commthread/CommThreadWakeupStatic.h
+/// \file components/devices/bgq/commthread/CommThreadWakeup.h
 /// \brief
 
-#ifndef __components_devices_bgq_commthread_CommThreadWakeupStatic_h__
-#define __components_devices_bgq_commthread_CommThreadWakeupStatic_h__
-
-#include <pami.h>
-#include "components/memory/MemoryManager.h"
+#ifndef __components_devices_bgq_commthread_CommFactory_h__
+#define __components_devices_bgq_commthread_CommFactory_h__
 
 namespace PAMI {
 namespace Device {
@@ -23,20 +20,15 @@ namespace CommThread {
 class BgqCommThread;
 class Factory {
 public:
-
-// Called from __global...
-//
-// This isn't really a device, only using this for convenience but
-//
-static BgqCommThread *generate(Memory::MemoryManager *genmm,
-                                                Memory::MemoryManager *l2xmm);
-
-static pami_result_t shutdown(BgqCommThread *devs);
-
-}; // class Factory
+        Factory(PAMI::Memory::MemoryManager *genmm, PAMI::Memory::MemoryManager *l2xmm);
+        ~Factory();
+        BgqCommThread *getCommThreads() { return _commThreads; }
+private:
+        BgqCommThread *_commThreads;
+}; // class Factory 
 
 }; // namespace CommThread
 }; // namespace Device
 }; // namespace PAMI
 
-#endif // __components_devices_bgq_commthread_CommThreadWakeupStatic_h__
+#endif // __components_devices_bgq_commthread_CommFactory_h__

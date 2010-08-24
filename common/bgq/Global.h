@@ -33,8 +33,6 @@
 #include "Mapping.h"
 #include "Topology.h"
 #include "common/bgq/L2AtomicFactory.h"
-#include "components/devices/bgq/commthread/CommThreadWakeupStatic.h"
-#include "components/devices/bgq/commthread/WakeupRegion.h"
 
 #ifndef PAMI_MAX_NUM_CLIENTS
 /** \todo PAMI_MAX_NUM_CLIENTS needs to be setup by pami.h */
@@ -211,9 +209,6 @@ namespace PAMI
         PAMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
 //fprintf(stderr, "__global.mm size=%zd\n", mm.size());
         l2atomicFactory.init(&mm, &mapping, &topology_local);
-#ifdef USE_COMMTHREADS
-	_commThreads = PAMI::Device::CommThread::Factory::generate(&mm, &l2atomicFactory.__nodescoped_mm);
-#endif // USE_COMMTHREADS
 
         TRACE_ERR((stderr, "Global() <<\n"));
 
@@ -224,11 +219,6 @@ namespace PAMI
 
       inline ~Global ()
       {
-#ifdef USE_COMMTHREADS
-	PAMI::Device::CommThread::Factory::shutdown(_commThreads);
-	// PAMI::Device::CommThread::~BgqCommThread(); ??
-	_commThreads = NULL; // any reason to do this?
-#endif // USE_COMMTHREADS
       }
 
       inline bgq_mapcache_t * getMapCache ()
@@ -273,9 +263,6 @@ namespace PAMI
       PAMI::Atomic::BGQ::L2AtomicFactory l2atomicFactory;
       PAMI::Memory::MemoryManager mm;
       PAMI::Memory::MemoryManager *_wuRegion_mm;
-#ifdef USE_COMMTHREADS
-      PAMI::Device::CommThread::BgqCommThread *_commThreads;
-#endif // USE_COMMTHREADS
 
     private:
 

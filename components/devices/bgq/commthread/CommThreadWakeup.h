@@ -16,7 +16,7 @@
 #include <pami.h>
 #include "components/devices/bgq/commthread/WakeupRegion.h"
 #include "components/devices/bgq/commthread/ContextSets.h"
-#include "components/devices/bgq/commthread/CommThreadWakeupStatic.h"
+#include "components/devices/bgq/commthread/CommThreadFactory.h"
 #include "common/bgq/Context.h"
 #include <pthread.h>
 #include <signal.h>
@@ -81,12 +81,15 @@
 #define DEBUG_WRITE(a,b)
 #endif // ! DEBUG_COMMTHREADS
 
+extern PAMI::Device::CommThread::Factory __CommThreadGlobal;
+
 namespace PAMI {
 namespace Device {
 namespace CommThread {
 
 class BgqCommThread {
 private:
+
         /// \brief Convenience code to lock and/or unlock contexts in set
         ///
         /// \param[in] old	Currently locked contexts
@@ -177,7 +180,7 @@ public:
                 return NULL;
         }
 
-        static inline void initContext(BgqCommThread *devs, size_t clientid,
+        static inline void initContext(size_t clientid,
                                         size_t contextid, pami_context_t context) {
                 // might need hook later, to do per-context initialization?
         }
@@ -202,9 +205,10 @@ public:
 	// This helps ensure a more-balanced startup, and prevents some
 	// complexities of trying to re-balance later. Then, only when
 	// a comm-thread leaves the set does there have to be a re-balance.
-        static inline pami_result_t addContext(BgqCommThread *devs, size_t clientid,
+        static inline pami_result_t addContext(size_t clientid,
                                         pami_context_t context) {
                 // all BgqCommThread objects have the same ContextSet object.
+		BgqCommThread *devs = __CommThreadGlobal.getCommThreads();
                 uint64_t m = devs[0]._ctxset->addContext(context);
 		if (m == 0) {
 			return PAMI_EAGAIN; // closest thing to ENOSPC ?
@@ -223,7 +227,7 @@ public:
 
 		balanceThreads(core, c, t);
 		if (_comm_xlat[c][t] != NULL) {
-		// if (_numActive >= _maxActive) {
+		// if (_numActive >= _maxActive)
 			// silently ignore attempts to create more commthtreads than
 			// processors. but still must add context someplace...
 			thus = _comm_xlat[c][t];
@@ -288,12 +292,13 @@ public:
 		return PAMI_SUCCESS;
         }
 
-        static inline pami_result_t rmContexts(BgqCommThread *devs, size_t clientid,
+        static inline pami_result_t rmContexts(size_t clientid,
 						pami_context_t *ctxs, size_t nctx) {
 		size_t x;
 		if (_numActive == 0) {
 			return PAMI_SUCCESS;
 		}
+		BgqCommThread *devs = __CommThreadGlobal.getCommThreads();
 
                 // all BgqCommThread objects have the same ContextSet object.
 
@@ -450,8 +455,10 @@ DEBUG_WRITE('t','t');
 //
 // This isn't really a device, only using this for convenience but
 //
-BgqCommThread *Factory::generate(Memory::MemoryManager *genmm,
-						Memory::MemoryManager *l2xmm) {
+Factory::Factory(PAMI::Memory::MemoryManager *genmm,
+			PAMI::Memory::MemoryManager *l2xmm) :
+_commThreads(NULL)
+{
 	BgqCommThread *devs;
 	BgqWakeupRegion *wu;
 	BgqContextPool *pool;
@@ -486,17 +493,17 @@ BgqCommThread *Factory::generate(Memory::MemoryManager *genmm,
 	for (x = 0; x < BgqCommThread::_maxActive; ++x) {
 		new (&devs[x]) BgqCommThread(wu, pool, num_ctx);
 	}
-	return devs;
+	_commThreads = devs;
 }
 
-pami_result_t Factory::shutdown(BgqCommThread *devs) {
+Factory::~Factory() {
 	size_t x;
 
 	if (BgqCommThread::_numActive == 0) {
-		return PAMI_SUCCESS;
+		return;
 	}
 
-	// assert devs[0]._ctxset->_nactive == 0...
+	// assert _commThreads[0]._ctxset->_nactive == 0...
 	// will that be true? commthreads with no contexts will
 	// still be in the waitimpl loop. We really should confirm
 	// that all commthreads have reached the "zero contexts"
@@ -505,7 +512,7 @@ pami_result_t Factory::shutdown(BgqCommThread *devs) {
 	// thinks it has.
 
 	for (x = 0; x < BgqCommThread::_numActive; ++x) {
-		devs[x]._shutdown = true;
+		_commThreads[x]._shutdown = true;
 		// touching _shutdown will not directly wakeup commthreads,
 		// so must do something... tbd
 
@@ -528,7 +535,7 @@ pami_result_t Factory::shutdown(BgqCommThread *devs) {
 		// Note, should not get here unless all clients/contexts
 		// have been destroyed, so in that case the commthreads
 		// can just be terminated - they are all totally inactive.
-		pthread_kill(devs[x]._thread, SIGTERM);
+		pthread_kill(_commThreads[x]._thread, SIGTERM);
 		// There is no point to the _shutdown = true if using SIGTERM
 	}
 
@@ -536,12 +543,11 @@ pami_result_t Factory::shutdown(BgqCommThread *devs) {
 	size_t fwu = 0;
 	for (x = 0; x < BgqCommThread::_numActive; ++x) {
 		void *status;
-		pthread_join(devs[x]._thread, &status);
-		fwu += devs[x]._falseWU;
+		pthread_join(_commThreads[x]._thread, &status);
+		fwu += _commThreads[x]._falseWU;
 	}
 	BgqCommThread::_numActive = 0;
 fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
-	return PAMI_SUCCESS;
 }
 
 }; // namespace CommThread
@@ -554,7 +560,6 @@ size_t PAMI::Device::CommThread::BgqCommThread::_ptCore = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_ptThread = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_core_iter[NUM_CORES] = {0};
 PAMI::Device::CommThread::BgqCommThread *PAMI::Device::CommThread::BgqCommThread::_comm_xlat[NUM_CORES][NUM_SMT] = {{NULL}};
-
 
 #undef DEBUG_INIT
 #undef DEBUG_WRITE
