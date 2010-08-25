@@ -5,7 +5,9 @@
 #ifndef __api_extension_extension_h__
 #define __api_extension_extension_h__
 
+#ifdef __pami_extension_dynamic__
 #include <dlfcn.h>
+#endif
 
 #include "util/common.h"
 
@@ -56,8 +58,10 @@ namespace PAMI
       template <unsigned T>
       static void closeExtension (void * cookie, pami_result_t & result)
       {
-        result = PAMI_UNIMPL;
+        result = PAMI_SUCCESS;
+#ifdef __pami_extension_dynamic__
         dlclose (cookie);
+#endif
         return;
       };
 
