@@ -69,7 +69,7 @@ namespace CCMI
             /// \todo only supporting PAMI_BYTE right now
             PAMI_assertf((((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype == PAMI_BYTE)&&(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype == PAMI_BYTE),"Not PAMI_BYTE? %#zX %#zX\n",(size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,(size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype);
 
-            PAMI_Type_sizeof(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL
+//            PAMI_Type_sizeof(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL
 
             coremath func;
             unsigned sizeOfType;

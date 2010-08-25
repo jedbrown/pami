@@ -37,7 +37,7 @@ extern "C"
 
   typedef void*    pami_client_t;   /**< Client of communication contexts */
   typedef void*    pami_context_t;  /**< Context for data transfers       */
-  typedef void*    pami_type_t;     /**< Description for data layout      */
+  typedef void*    pami_type_t;     /**< \ingroup datatype Description for data layout  */
   typedef uint32_t pami_task_t;     /**< Identity of a process            */
   typedef uint32_t pami_endpoint_t; /**< Identity of a context            */
 
@@ -170,7 +170,7 @@ extern "C"
    */
   typedef enum {
     /* Attribute            Query / Update                                 */
-    PAMI_CLIENT_CLOCK_MHZ,          /**< Q : size_t : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
+    PAMI_CLIENT_CLOCK_MHZ = 100,    /**< Q : size_t : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
     PAMI_CLIENT_CONST_CONTEXTS,     /**< Q : size_t : All processes will return the same PAMI_CLIENT_NUM_CONTEXTS */
     PAMI_CLIENT_HWTHREADS_AVAILABLE,/**< Q : size_t : The number of HW threads available to a process without over-subscribing (at least 1) */
     PAMI_CLIENT_MEMREGION_SIZE,     /**< Q : size_t : Size of the pami_memregion_t handle in this implementation, in units of Bytes. */
@@ -182,11 +182,19 @@ extern "C"
     PAMI_CLIENT_TASK_ID,            /**< Q : size_t : ID of this task (AKA "rank") */
     PAMI_CLIENT_WTIMEBASE_MHZ,      /**< Q : size_t : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from PAMI_Wtimebase to PAMI_Timer manually. */
     PAMI_CLIENT_WTICK,              /**< Q : double : This has the same definition as MPI_Wtick(). */
-    PAMI_CONTEXT_DISPATCH_ID_MAX,   /**< Q : size_t : Maximum allowed dispatch id, see PAMI_Dispatch_set() */
-    PAMI_DISPATCH_RECV_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be received, and provided to the application, in a dispatch function. */
+
+    PAMI_CONTEXT_DISPATCH_ID_MAX = 200, /**< Q : size_t : Maximum allowed dispatch id, see PAMI_Dispatch_set() */
+
+    PAMI_DISPATCH_RECV_IMMEDIATE_MAX = 300, /**< Q : size_t : Maximum number of bytes that can be received, and provided to the application, in a dispatch function. */
     PAMI_DISPATCH_SEND_IMMEDIATE_MAX, /**< Q : size_t : Maximum number of bytes that can be transfered with the PAMI_Send_immediate() function. */
-    PAMI_GEOMETRY_OPTIMIZE,         /**< Q : bool : Populate the geometry algorithms list with hardware optimized algorithms.  If the algorithms list
+    PAMI_DISPATCH_ATOM_SIZE_MAX,    /**< Q : size_t : Maximum atom size that can be used with PAMI_Send_typed() function. */
+
+    PAMI_GEOMETRY_OPTIMIZE = 400,   /**< Q : bool : Populate the geometry algorithms list with hardware optimized algorithms.  If the algorithms list
                                             *       is not optimized, point to point routines only will be present, and hardware resources will be released */
+
+    PAMI_TYPE_DATA_SIZE = 500,      /**< Q : size_t : The data size of a type */
+    PAMI_TYPE_DATA_EXTENT,          /**< Q : size_t : The data extent of a type */
+    PAMI_TYPE_ATOM_SIZE,            /**< Q : size_t : The atom size of a type */
     PAMI_ATTRIBUTE_NAME_EXT = 1000  /**< Begin extension-specific values */
   } pami_attribute_name_t;
 
@@ -198,6 +206,8 @@ extern "C"
   } pami_attribute_value_t;
 
 #define PAMI_EXT_ATTR 1000 /**< starting value for extended attributes */
+
+  /** \} */ /* end of "configuration" group */
 
   /**
    * \brief General purpose configuration structure.
@@ -339,8 +349,45 @@ extern "C"
     pami_send_event_t     events;   /**< Non-blocking event parameters */
   } pami_send_t;
 
+
   /**
-   * \brief Structure for send parameters unique to a typed active message send
+   * \brief Function to produce data at send side or consume data at receive side
+   *
+   * The default operation with a typed transfer is to copy data. A data
+   * function, when associated with a type, allows a different way of handling
+   * data. For example, one can write a data function to perform data reduction
+   * instead of data copy.
+   *
+   * Unlike memory copy, a data function may not be able to handle byte data.
+   * Atom size is defined as the minimum unit size that a data function
+   * can accepts. For example, a data function for summing up doubles may
+   * require the input to be an integral number of doubles, thus the atom
+   * size for this data function is sizeof(double).
+   *
+   * When a data function is used with a typed transfer, one must make sure
+   * the atom size of the data function divides the atom size of the type.
+   *
+   * \param [in] target  The address of a contiguous target buffer
+   * \param [in] source  The address of a contiguous source buffer
+   * \param [in] bytes   The number of bytes to handle
+   * \param [in] cookie  A user-specified value
+   *
+   */
+  typedef void (*pami_data_function) (void   * target,
+                                      void   * source,
+                                      size_t   bytes,
+                                      void   * cookie);
+
+  /**
+   * \brief Data function that performs data copy
+   *
+   */
+  extern pami_data_function PAMI_DATA_COPY;
+
+  /**
+   * \brief Structure for send parameters of a typed active message send
+   *
+   * \c data_fn takes the same cookie for events
    */
   typedef struct
   {
@@ -348,9 +395,10 @@ extern "C"
     pami_send_event_t     events;   /**< Non-blocking event parameters */
     struct
     {
+      pami_type_t         type;     /**< Datatype */
       size_t              offset;   /**< Starting offset in \c datatype */
-      pami_type_t         datatype; /**< Datatype */
-    } typed;                       /**< Typed send parameters */
+      pami_data_function  data_fn;  /**< Function to produce data */
+    } typed;                        /**< Typed send parameters */
   } pami_send_typed_t;
 
   /**
@@ -474,6 +522,7 @@ extern "C"
     void                  * addr;     /**< Starting address of the buffer */
     pami_type_t             type;     /**< Datatype */
     size_t                  offset;   /**< Starting offset of the type */
+    pami_data_function      data_fn;  /**< Function to consume data */
   } pami_recv_t;
 
   /**
@@ -2229,6 +2278,14 @@ extern "C"
 
   pami_result_t PAMI_Collective (pami_context_t context, pami_xfer_t *cmd);
 
+  /*****************************************************************************/
+  /**
+   * \defgroup datatype pami datatype interface
+   *
+   * Some brief documentation on datatype stuff ...
+   * \{
+   */
+  /*****************************************************************************/
 
   /**
    * \brief A PAMI Datatype that represents a contigous data layout
@@ -2246,6 +2303,9 @@ extern "C"
    * \todo provide example code
    *
    * \param[out] type Type identifier to be created
+   *
+   * \retval PAMI_SUCCESS  The type is created.
+   * \retval PAMI_ENOMEM   Out of memory.
    */
   pami_result_t PAMI_Type_create (pami_type_t * type);
 
@@ -2260,12 +2320,16 @@ extern "C"
    * \param[in]     offset Offset from the end of the type to place the buffer
    * \param[in]     count  Number of buffers
    * \param[in]     stride Data stride
+   *
+   * \retval PAMI_SUCCESS  The buffer is added to the type.
+   * \retval PAMI_INVAL    The type is complete.
+   * \retval PAMI_ENOMEM   Out of memory.
    */
   pami_result_t PAMI_Type_add_simple (pami_type_t type,
-                                    size_t     bytes,
-                                    size_t     offset,
-                                    size_t     count,
-                                    size_t     stride);
+                                      size_t      bytes,
+                                      size_t      offset,
+                                      size_t      count,
+                                      size_t      stride);
 
   /**
    * \brief Append a typed buffer to an existing type identifier
@@ -2273,7 +2337,7 @@ extern "C"
    * \todo doxygen for offset parameter
    * \todo provide example code
    *
-   * \warning It is considered \b illegal to append an imcomplete type to
+   * \warning It is considered \b illegal to append an incomplete type to
    *          another type.
    *
    * \param[in,out] type    Type identifier to be modified
@@ -2281,29 +2345,34 @@ extern "C"
    * \param[in]     offset  Offset from the end of the type to place the buffer
    * \param[in]     count   Number of buffers
    * \param[in]     stride  Data stride
+   *
+   * \retval PAMI_SUCCESS  The subtype is added to the type.
+   * \retval PAMI_INVAL    The type is complete or the subtype is incomplete.
+   * \retval PAMI_ENOMEM   Out of memory.
    */
   pami_result_t PAMI_Type_add_typed (pami_type_t type,
-                                   pami_type_t subtype,
-                                   size_t     offset,
-                                   size_t     count,
-                                   size_t     stride);
+                                     pami_type_t subtype,
+                                     size_t      offset,
+                                     size_t      count,
+                                     size_t      stride);
 
   /**
    * \brief Complete the type identifier
    *
-   * \warning It is considered \b illegal to modify a type identifier after it
+   * The atom size of a type must divide the size of any contiguous buffer
+   * that's described by the type. An atom size of one is valid for any type.
+   *
+   * \warning It is considered \b illegal to modify a type layout after it
    *          has been completed.
    *
-   * \param[in] type Type identifier to be completed
-   */
-  pami_result_t PAMI_Type_complete (pami_type_t type);
-
-  /**
-   * \brief Get the byte size of a completed type
+   * \param[in] type       Type identifier to be completed
+   * \param[in] atom_size  Atom size of the type
    *
-   * \param[in] type Type identifier to get size from
+   * \retval PAMI_SUCCESS  The type is complete.
+   * \retval PAMI_INVAL    The atom size in invalid.
    */
-  pami_result_t PAMI_Type_sizeof (pami_type_t type);
+  pami_result_t PAMI_Type_complete (pami_type_t type,
+                                    size_t      atom_size);
 
   /**
    * \brief Destroy the type
@@ -2322,34 +2391,69 @@ extern "C"
   pami_result_t PAMI_Type_destroy (pami_type_t * type);
 
   /**
-   * \brief Pack data from a non-contiguous buffer to a contiguous buffer
+   * \brief Serialize a type
    *
-   * \param[in] src_type   source data type
-   * \param[in] src_offset starting offset of source data type
-   * \param[in] src_addr   starting address of source buffer
-   * \param[in] dst_addr   starting address of destination buffer
-   * \param[in] dst_size   destination buffer size
+   * Serialize a type and retrieve the address and the size of a serialized
+   * type object, which can be copied or transferred like normal data.
+   * A serialized type object can be reconstructed into a type with
+   * \c PAMI_Type_deserialize.
+   *
+   * The serialization is internal to PAMI and not into user-allocated
+   * memory. Serializing an already-serialized type retrieves the address
+   * and the size of the serialized type object.
+   *
+   * \note A PAMI implementation can choose to keep the internal representation
+   * of a type always serialized. Otherwise, it needs to handle serialization
+   * while a type is in use.
+   *
+   * \param[in]  type      Type identifier to be serialized
+   * \param[out] address   Address of the serialized type object
+   * \param[out] size      Size of the serialized type object
+   *
+   * \retval PAMI_SUCCESS  The serialization is successful.
+   * \retval PAMI_INVAL    The type is invalid.
+   * \retval PAMI_ENOMEM   Out of memory.
    */
-  pami_result_t PAMI_Type_pack_data (pami_type_t src_type,
-                                   size_t     src_offset,
-                                   void     * src_addr,
-                                   void     * dst_addr,
-                                   size_t     dst_size);
+  pami_result_t PAMI_Type_serialize (pami_type_t   type,
+                                     void       ** address,
+                                     size_t      * size);
 
   /**
-   * \brief Unpack data from a contiguous buffer to a non-contiguous buffer
+   * \brief Reconstruct a new type from a serialized type object
    *
-   * \param[in] dst_type   destination data type
-   * \param[in] dst_offset starting offset of destination data type
-   * \param[in] dst_addr   starting address of destination buffer
-   * \param[in] src_addr   starting address of source buffer
-   * \param[in] src_size   source buffer size
+   * Successful reconstruction completes the new type and the new type does
+   * not depend on the memory of the serialized type object.
+   *
+   * A reconstructed type can be destroyed by \c PAMI_Type_destroy.
+   *
+   * \param[out] type      Type identifier to be created
+   * \param[in]  address   Address of the serialized type object
+   * \param[in]  size      Size of the serialized type object
+   *
+   * \retval PAMI_SUCCESS  The reconstruction is successful.
+   * \retval PAMI_INVAL    The serialized type object is corrupted.
+   * \retval PAMI_ENOMEM   Out of memory.
    */
-  pami_result_t PAMI_Type_unpack_data (pami_type_t dst_type,
-                                     size_t     dst_offset,
-                                     void     * dst_addr,
-                                     void     * src_addr,
-                                     size_t     src_size);
+  pami_result_t PAMI_Type_deserialize (pami_type_t * type,
+                                       void        * address,
+                                       size_t        size);
+
+  /**
+   * \brief Query the attributes of a type
+   *
+   * The type being queried must have completed.
+   *
+   * \param [in] type           The type to query
+   * \param [in] configuration  The configuration attributes to query
+   * \param [in] num_configs    The number of configuration elements
+   *
+   * \retval PAMI_SUCCESS  The update has completed successfully.
+   * \retval PAMI_INVAL    The update has failed due to invalid parameters.
+   */
+  pami_result_t PAMI_Type_query (pami_type_t           type,
+                                 pami_configuration_t  configuration[],
+                                 size_t                num_configs);
+
   /** \} */ /* end of "datatype" group */
 
 #include "pami_ext.h"
@@ -2596,9 +2700,6 @@ extern "C"
    * \return Number of characters written into the array
    */
   size_t PAMI_Error_text (char * string, size_t length);
-
-
-  /** \} */ /* end of "configuration" group */
 
 
   /*****************************************************************************/

@@ -345,90 +345,64 @@ extern "C" pami_result_t PAMI_AMCollective_dispatch_set(pami_context_t          
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Functions from pami_datatypes.h                                             //
+// Type function implementations                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-///
-/// \copydoc PAMI_Type_create
-///
 extern "C" pami_result_t PAMI_Type_create (pami_type_t * type)
 {
   return PAMI_UNIMPL;
 }
 
-///
-/// \copydoc PAMI_Type_add_simple
-///
 extern "C" pami_result_t PAMI_Type_add_simple (pami_type_t type,
-                                             size_t     bytes,
-                                             size_t     offset,
-                                             size_t     count,
-                                             size_t     stride)
+                                               size_t      bytes,
+                                               size_t      offset,
+                                               size_t      count,
+                                               size_t      stride)
 {
   return PAMI_UNIMPL;
 }
 
-///
-/// \copydoc PAMI_Type_add_typed
-///
 extern "C" pami_result_t PAMI_Type_add_typed (pami_type_t type,
-                                            pami_type_t subtype,
-                                            size_t     offset,
-                                            size_t     count,
-                                            size_t     stride)
+                                              pami_type_t subtype,
+                                              size_t      offset,
+                                              size_t      count,
+                                              size_t      stride)
 {
   return PAMI_UNIMPL;
 }
 
-///
-/// \copydoc PAMI_Type_complete
-///
-extern "C" pami_result_t PAMI_Type_complete (pami_type_t type)
+extern "C" pami_result_t PAMI_Type_complete (pami_type_t type,
+                                             size_t      atom_size)
 {
   return PAMI_UNIMPL;
 }
 
-///
-/// \copydoc PAMI_Type_sizeof
-///
-extern "C" pami_result_t PAMI_Type_sizeof (pami_type_t type)
-{
-  return PAMI_UNIMPL;
-}
-
-///
-/// \copydoc PAMI_Type_destroy
-///
 extern "C" pami_result_t PAMI_Type_destroy (pami_type_t *type)
 {
   *type = NULL;
   return PAMI_UNIMPL;
 }
 
-///
-/// \copydoc PAMI_Type_pack_data
-///
-extern "C" pami_result_t PAMI_Type_pack_data (pami_type_t src_type,
-                                            size_t     src_offset,
-                                            void     * src_addr,
-                                            void     * dst_addr,
-                                            size_t     dst_size)
+extern "C" pami_result_t PAMI_Type_serialize (pami_type_t   type,
+                                              void       ** address,
+                                              size_t      * size)
 {
   return PAMI_UNIMPL;
 }
 
-///
-/// \copydoc PAMI_Type_unpack_data
-///
-extern "C" pami_result_t PAMI_Type_unpack (pami_type_t dst_type,
-                                         size_t     dst_offset,
-                                         void     * dst_addr,
-                                         void     * src_addr,
-                                         size_t     src_size)
+extern "C" pami_result_t PAMI_Type_deserialize (pami_type_t * type,
+                                                void        * address,
+                                                size_t        size)
 {
   return PAMI_UNIMPL;
 }
 
+extern "C" pami_result_t PAMI_Type_query (pami_type_t           type,
+                                          pami_configuration_t  configuration[],
+                                          size_t                num_configs)
+{
+  return PAMI_UNIMPL;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from pami_pipeworkqueue.h                                         //
