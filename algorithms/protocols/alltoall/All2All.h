@@ -50,7 +50,7 @@ namespace CCMI
           _donecount = 0;
 
           /// \todo only supporting PAMI_BYTE right now
-          PAMI_Type_sizeof(coll->cmd.xfer_alltoall.stype);
+          //PAMI_Type_sizeof(coll->cmd.xfer_alltoall.stype);
 
           /// \todo presumed size of PAMI_BYTE?
           size_t bytes = topo_size * coll->cmd.xfer_alltoall.stypecount * 1;

@@ -1,11 +1,18 @@
-/*  (C)Copyright IBM Corp.  2009, 2010  */
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
 /**
- * \file sys/pami_attributes.h
+ * \file algorithms/geometry/Attributes.h
  * \brief ???
  */
 
-#ifndef __pami_attributes_h__
-#define __pami_attributes_h__
+#ifndef __algorithms_geometry_Attributes_h__
+#define __algorithms_geometry_Attributes_h__
 
 #define PAMI_ISPOF2(x)   (!(((x) - 1) & (x)) ? 1 : 0)
 #define PAMI_ISEVEN(x)   (((x) % 2) ? 0 : 1)
@@ -58,4 +65,4 @@
 #define PAMI_MODE_THREADED                                                      3
 #define PAMI_MODE_UNTHREADED                                                    4
 
-#endif
+#endif // __algorithms_geometry_Attributes_h__

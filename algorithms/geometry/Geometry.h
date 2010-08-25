@@ -16,7 +16,7 @@
 
 #include "Topology.h"
 #include "Mapping.h"
-#include "sys/pami_attributes.h"
+#include "algorithms/geometry/Attributes.h"
 #include "algorithms/interfaces/GeometryInterface.h"
 #include "algorithms/geometry/Algorithm.h"
 #include <map>
@@ -49,7 +49,7 @@ namespace PAMI
     {
     public:
       inline Common(pami_client_t           client,
-		    Mapping                *mapping,
+        Mapping                *mapping,
                     pami_task_t             *ranks,
                     pami_task_t              nranks,
                     unsigned                comm,
@@ -61,7 +61,7 @@ namespace PAMI
                                         comm,
                                         numcolors,
                                         globalcontext),
-	_client(client)
+  _client(client)
         {
           TRACE_ERR((stderr, "<%p>Common()\n", this));
           pami_ca_unset_all(&_attributes);
@@ -481,26 +481,26 @@ namespace PAMI
       static inline void               updateCachedGeometry_impl(Common *geometry,
                                                                  unsigned comm)
       {
-	PAMI_assert(geometry!=NULL);
-	PAMI::cached_geometry[comm]=(void*)geometry;
+  PAMI_assert(geometry!=NULL);
+  PAMI::cached_geometry[comm]=(void*)geometry;
       }
 
       static inline void registerUnexpBarrier_impl (unsigned comm, pami_quad_t &info,
-						    unsigned peer, unsigned algorithm)
+                unsigned peer, unsigned algorithm)
       {
-	UnexpBarrierQueueElement *ueb = (UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
+  UnexpBarrierQueueElement *ueb = (UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
 
-	new (ueb) UnexpBarrierQueueElement (comm, info, peer, algorithm);
-	_ueb_queue.pushTail(ueb);
+  new (ueb) UnexpBarrierQueueElement (comm, info, peer, algorithm);
+  _ueb_queue.pushTail(ueb);
       }
 
       inline void processUnexpBarrier_impl () {
-	UnexpBarrierQueueElement *ueb = NULL;
-	while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL ) {
-	  CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((gkeys_t)ueb->getAlgorithm());/// \todo does NOT support multicontext keystore
-	  c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
-	  _ueb_allocator.returnObject(ueb);
-	}
+  UnexpBarrierQueueElement *ueb = NULL;
+  while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL ) {
+    CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((gkeys_t)ueb->getAlgorithm());/// \todo does NOT support multicontext keystore
+    c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
+    _ueb_allocator.returnObject(ueb);
+  }
       }
 
       // These methods were originally from the PGASRT Communicator class
