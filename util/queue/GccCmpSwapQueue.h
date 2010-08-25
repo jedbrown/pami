@@ -113,6 +113,7 @@ public:
   /// \copydoc PAMI::Interface::QueueInterface::dequeue
   inline Element *dequeue_impl() {
     PAMI_abortf("DequeInterface::dequeue not implemented");
+    return NULL;
   }
 
   /// \copydoc PAMI::Interface::QueueInterface::push
@@ -180,6 +181,7 @@ public:
   /// \copydoc PAMI::Interface::DequeInterface::before
   inline Element *before_impl(Element *reference) {
     PAMI_abortf("DequeInterface::before not implemented");
+    return NULL;
   }
 
   /// \copydoc PAMI::Interface::DequeInterface::insert
