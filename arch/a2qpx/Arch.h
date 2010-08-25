@@ -36,7 +36,7 @@
 #define mem_isync()   isync()
 
 #undef  mem_barrier
-#define mem_barrier() __sync_synchronize()
+#define mem_barrier() mbar()
 
 ///
 /// \brief Template specialization for size_t copies.
