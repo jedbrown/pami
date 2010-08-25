@@ -24,36 +24,20 @@ extern "C"
 // Functions from pami_misc.h                                                  //
 ////////////////////////////////////////////////////////////////////////////////
 
-///
-/// \copydoc PAMI_Error_text
-///
 extern "C" size_t PAMI_Error_text (char * string, size_t length)
 {
   return 0; // unimplemented
 }
 
-///
-/// \copydoc PAMI_Wtime
-///
 extern "C" double PAMI_Wtime ()
 {
   return __global.time.time();
 }
 
-///
-/// \copydoc PAMI_Wtimebase
-///
 extern "C" unsigned long long PAMI_Wtimebase()
 {
   return __global.time.timebase();
 }
-
-#if 0
-extern "C" pami_context_t PAMI_Client_getcontext(pami_client_t client, size_t context) {
-        PAMI::Client *clnt = (PAMI::Client *)client;
-        return (pami_context_t)clnt->getContext(context);
-}
-#endif
 
 extern "C" pami_result_t PAMI_Endpoint_create (pami_client_t     client,
                                                pami_task_t       task,
@@ -81,9 +65,6 @@ extern "C" pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
 }
 
 
-///
-/// \copydoc PAMI_Context_post
-///
 extern "C" pami_result_t PAMI_Context_post (pami_context_t        context,
                                           pami_work_t         * work,
                                           pami_work_function    fn,
@@ -98,9 +79,6 @@ extern "C" pami_result_t PAMI_Context_post (pami_context_t        context,
 // Functions from pami_fence.h                                                 //
 ////////////////////////////////////////////////////////////////////////////////
 
-///
-/// \copydoc PAMI_Fence_begin
-///
 extern "C" pami_result_t PAMI_Fence_begin (pami_context_t      context)
 
 {
@@ -108,9 +86,6 @@ extern "C" pami_result_t PAMI_Fence_begin (pami_context_t      context)
   return ctx->fence_begin ();
 }
 
-///
-/// \copydoc PAMI_Fence_end
-///
 extern "C" pami_result_t PAMI_Fence_end (pami_context_t      context)
 
 {
@@ -118,9 +93,6 @@ extern "C" pami_result_t PAMI_Fence_end (pami_context_t      context)
   return ctx->fence_end ();
 }
 
-///
-/// \copydoc PAMI_Fence_all
-///
 extern "C" pami_result_t PAMI_Fence_all (pami_context_t        context,
                                        pami_event_function   done_fn,
                                        void               * cookie)
@@ -129,9 +101,6 @@ extern "C" pami_result_t PAMI_Fence_all (pami_context_t        context,
   return ctx->fence_all (done_fn, cookie);
 }
 
-///
-/// \copydoc PAMI_Fence_task
-///
 extern "C" pami_result_t PAMI_Fence_endpoint (pami_context_t        context,
                                               pami_event_function   done_fn,
                                               void                * cookie,
@@ -146,9 +115,6 @@ extern "C" pami_result_t PAMI_Fence_endpoint (pami_context_t        context,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-///
-/// \copydoc PAMI_Geometry_create_taskrange
-///
 extern "C" pami_result_t PAMI_Geometry_create_taskrange (pami_client_t           client,
                                                          pami_configuration_t    configuration[],
                                                          size_t                  num_configs,
@@ -174,9 +140,6 @@ extern "C" pami_result_t PAMI_Geometry_create_taskrange (pami_client_t          
                                              cookie);
 }
 
-///
-/// \copydoc PAMI_Geometry_create_taskrange
-///
 extern "C" pami_result_t PAMI_Geometry_create_tasklist (pami_client_t               client,
                                                         pami_configuration_t        configuration[],
                                                         size_t                      num_configs,
@@ -202,9 +165,6 @@ extern "C" pami_result_t PAMI_Geometry_create_tasklist (pami_client_t           
                                             cookie);
 }
 
-///
-/// \copydoc PAMI_Geometry_create_taskrange
-///
 extern "C" pami_result_t PAMI_Geometry_create_topology(pami_client_t           client,
                                                        pami_configuration_t    configuration[],
                                                        size_t                  num_configs,
@@ -238,9 +198,6 @@ extern "C" pami_result_t PAMI_Geometry_query (pami_geometry_t       geometry,
   return _client->geometry_query(geometry, configuration, num_configs);
 }
 
-///
-/// \copydoc PAMI_Geometry_world
-///
 extern "C"  pami_result_t PAMI_Geometry_update (pami_geometry_t       geometry,
                                                 pami_configuration_t  configuration[],
                                                 size_t                num_configs,
@@ -253,12 +210,6 @@ extern "C"  pami_result_t PAMI_Geometry_update (pami_geometry_t       geometry,
   return _client->geometry_update(geometry, configuration, num_configs, context, fn, cookie);
 }
 
-
-
-
-///
-/// \copydoc PAMI_Geometry_world
-///
 extern "C" pami_result_t PAMI_Geometry_world (pami_client_t                client,
                                  pami_geometry_t            * world_geometry)
 {
@@ -266,9 +217,6 @@ extern "C" pami_result_t PAMI_Geometry_world (pami_client_t                clien
   return _client->geometry_world (world_geometry);
 }
 
-///
-/// \copydoc PAMI_Geometry_destroy
-///
 extern "C" pami_result_t PAMI_Geometry_destroy(pami_client_t    client,
                                                pami_geometry_t *geometry)
 {
@@ -278,9 +226,6 @@ extern "C" pami_result_t PAMI_Geometry_destroy(pami_client_t    client,
   return rc;
 }
 
-///
-/// \copydoc PAMI_Collective
-///
 extern "C" pami_result_t PAMI_Collective (pami_context_t   context,
                                         pami_xfer_t     *parameters)
 {
@@ -288,8 +233,6 @@ extern "C" pami_result_t PAMI_Collective (pami_context_t   context,
   return ctx->collective (parameters);
 }
 
-/// \copydoc PAMI_Geometry_algorithms_num
-///
 extern "C" pami_result_t PAMI_Geometry_algorithms_num (pami_context_t context,
                                                      pami_geometry_t geometry,
                                                      pami_xfer_type_t coll_type,
@@ -301,8 +244,6 @@ extern "C" pami_result_t PAMI_Geometry_algorithms_num (pami_context_t context,
                                       lists_lengths);
 }
 
-/// \copydoc PAMI_Geometry_algorithms_query
-///
 extern "C"  pami_result_t PAMI_Geometry_algorithms_query (pami_context_t context,
                                                        pami_geometry_t geometry,
                                                        pami_xfer_type_t   colltype,
@@ -330,9 +271,6 @@ extern "C"  pami_result_t PAMI_Geometry_algorithms_query (pami_context_t context
 ////////////////////////////////////////////////////////////////////////////////
 
 
-///
-/// \copydoc PAMI_AMCollective_dispatch_set
-///
 extern "C" pami_result_t PAMI_AMCollective_dispatch_set(pami_context_t              context,
                                                       pami_algorithm_t            algorithm,
                                                       size_t                     dispatch,
@@ -411,18 +349,12 @@ extern "C" pami_result_t PAMI_Type_query (pami_type_t           type,
 
 
 
-///
-/// \copydoc PAMI_PipeWorkQueue_config_circ
-///
 void PAMI_PipeWorkQueue_config_circ(pami_pipeworkqueue_t *wq,
                                    size_t bufsize)
 {
     PAMI_abort();
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_config_circ_usr
-///
 void PAMI_PipeWorkQueue_config_circ_usr(pami_pipeworkqueue_t *wq,
                                        char                *buffer,
                                        size_t               bufsize)
@@ -430,9 +362,6 @@ void PAMI_PipeWorkQueue_config_circ_usr(pami_pipeworkqueue_t *wq,
     PAMI_abort();
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_config_flat
-///
 void PAMI_PipeWorkQueue_config_flat(pami_pipeworkqueue_t *wq,
                                    char                *buffer,
                                    size_t               bufsize,
@@ -441,9 +370,6 @@ void PAMI_PipeWorkQueue_config_flat(pami_pipeworkqueue_t *wq,
     PAMI_abort();
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_config_noncontig
-///
 void PAMI_PipeWorkQueue_config_noncontig(pami_pipeworkqueue_t *wq,
                                         char                *buffer,
                                         pami_type_t          *type,
@@ -453,9 +379,6 @@ void PAMI_PipeWorkQueue_config_noncontig(pami_pipeworkqueue_t *wq,
     PAMI_abort();
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_export
-///
 pami_result_t PAMI_PipeWorkQueue_export(pami_pipeworkqueue_t     *wq,
                                       pami_pipeworkqueue_ext_t *exp)
 {
@@ -463,9 +386,6 @@ pami_result_t PAMI_PipeWorkQueue_export(pami_pipeworkqueue_t     *wq,
     return pwq->exp (exp);
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_import
-///
 pami_result_t PAMI_PipeWorkQueue_import(pami_pipeworkqueue_ext_t *import,
                                       pami_pipeworkqueue_t     *wq)
 {
@@ -473,26 +393,15 @@ pami_result_t PAMI_PipeWorkQueue_import(pami_pipeworkqueue_ext_t *import,
     return pwq->import (import);
 }
 
-
-///
-/// \copydoc PAMI_PipeWorkQueue_clone
-///
 void PAMI_PipeWorkQueue_clone(pami_pipeworkqueue_t *wq,
                              pami_pipeworkqueue_t *obj)
 {
 }
 
-
-///
-/// \copydoc PAMI_PipeWorkQueue_destroy
-///
 void PAMI_PipeWorkQueue_destroy(pami_pipeworkqueue_t *wq)
 {
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_reset
-///
 void PAMI_PipeWorkQueue_reset(pami_pipeworkqueue_t *wq)
 {
     PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
@@ -500,9 +409,6 @@ void PAMI_PipeWorkQueue_reset(pami_pipeworkqueue_t *wq)
 }
 
 
-///
-/// \copydoc PAMI_PipeWorkQueue_dump
-///
 void PAMI_PipeWorkQueue_dump(pami_pipeworkqueue_t *wq,
                             const char          *prefix)
 {
@@ -510,9 +416,6 @@ void PAMI_PipeWorkQueue_dump(pami_pipeworkqueue_t *wq,
     pwq->dump (prefix);
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_setConsumerWakeup
-///
 void PAMI_PipeWorkQueue_setConsumerWakeup(pami_pipeworkqueue_t *wq,
                                          void                *vec)
 {
@@ -520,9 +423,6 @@ void PAMI_PipeWorkQueue_setConsumerWakeup(pami_pipeworkqueue_t *wq,
     pwq->setConsumerWakeup (vec);
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_setProducerWakeup
-///
 void PAMI_PipeWorkQueue_setProducerWakeup(pami_pipeworkqueue_t *wq,
                                          void                *vec)
 {
@@ -530,9 +430,6 @@ void PAMI_PipeWorkQueue_setProducerWakeup(pami_pipeworkqueue_t *wq,
     pwq->setProducerWakeup (vec);
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_setProducerUserInfo
-///
 void PAMI_PipeWorkQueue_setProducerUserInfo(pami_pipeworkqueue_t *wq,
                                          void *word1, void *word2)
 {
@@ -540,9 +437,6 @@ void PAMI_PipeWorkQueue_setProducerUserInfo(pami_pipeworkqueue_t *wq,
     pwq->setProducerUserInfo (word1, word2);
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_setConsumerUserInfo
-///
 void PAMI_PipeWorkQueue_setConsumerUserInfo(pami_pipeworkqueue_t *wq,
                                          void *word1, void *word2)
 {
@@ -550,9 +444,6 @@ void PAMI_PipeWorkQueue_setConsumerUserInfo(pami_pipeworkqueue_t *wq,
     pwq->setConsumerUserInfo (word1, word2);
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_getProducerUserInfo
-///
 void PAMI_PipeWorkQueue_getProducerUserInfo(pami_pipeworkqueue_t *wq,
                                          void **word1, void **word2)
 {
@@ -560,9 +451,6 @@ void PAMI_PipeWorkQueue_getProducerUserInfo(pami_pipeworkqueue_t *wq,
     pwq->getProducerUserInfo (word1, word2);
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_getConsumerUserInfo
-///
 void PAMI_PipeWorkQueue_getConsumerUserInfo(pami_pipeworkqueue_t *wq,
                                          void **word1, void **word2)
 {
@@ -570,54 +458,36 @@ void PAMI_PipeWorkQueue_getConsumerUserInfo(pami_pipeworkqueue_t *wq,
     pwq->getConsumerUserInfo (word1, word2);
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_bytesAvailableToProduce
-///
 size_t PAMI_PipeWorkQueue_bytesAvailableToProduce(pami_pipeworkqueue_t *wq)
 {
     PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
     return pwq->bytesAvailableToProduce ();
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_bytesAvailableToConsume
-///
 size_t PAMI_PipeWorkQueue_bytesAvailableToConsume(pami_pipeworkqueue_t *wq)
 {
     PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
     return pwq->bytesAvailableToConsume ();
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_getBytesProduced
-///
 size_t PAMI_PipeWorkQueue_getBytesProduced(pami_pipeworkqueue_t *wq)
 {
     PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
     return pwq->getBytesProduced ();
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_getBytesConsumed
-///
 size_t PAMI_PipeWorkQueue_getBytesConsumed(pami_pipeworkqueue_t *wq)
 {
     PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
     return pwq->getBytesConsumed ();
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_bufferToProduce
-///
 char *PAMI_PipeWorkQueue_bufferToProduce(pami_pipeworkqueue_t *wq)
 {
     PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
     return pwq->bufferToProduce ();
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_produceBytes
-///
 void PAMI_PipeWorkQueue_produceBytes(pami_pipeworkqueue_t *wq,
                                     size_t               bytes)
 {
@@ -625,18 +495,12 @@ void PAMI_PipeWorkQueue_produceBytes(pami_pipeworkqueue_t *wq,
     return pwq->produceBytes (bytes);
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_bufferToConsume
-///
 char *PAMI_PipeWorkQueue_bufferToConsume(pami_pipeworkqueue_t *wq)
 {
     PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
     return pwq->bufferToConsume ();
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_consumeBytes
-///
 void PAMI_PipeWorkQueue_consumeBytes(pami_pipeworkqueue_t *wq,
                                     size_t               bytes)
 {
@@ -644,9 +508,6 @@ void PAMI_PipeWorkQueue_consumeBytes(pami_pipeworkqueue_t *wq,
     return pwq->consumeBytes (bytes);
 }
 
-///
-/// \copydoc PAMI_PipeWorkQueue_available
-///
 int PAMI_PipeWorkQueue_available(pami_pipeworkqueue_t *wq)
 {
     PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
@@ -660,26 +521,17 @@ int PAMI_PipeWorkQueue_available(pami_pipeworkqueue_t *wq)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-///
-/// \copydoc PAMI_Topology_create
-///
 void PAMI_Topology_create(pami_topology_t *topo)
 {
     PAMI_abort();
 }
 
-///
-/// \copydoc PAMI_Topology_create_rect
-///
 void PAMI_Topology_create_rect(pami_topology_t *topo,
                               pami_coord_t *ll, pami_coord_t *ur, unsigned char *tl)
 {
     PAMI_abort();
 }
 
-///
-/// \copydoc PAMI_Topology_create_axial
-///
 void PAMI_Topology_create_axial(pami_topology_t *topo,
                                pami_coord_t *ll,
                                pami_coord_t *ur,
@@ -690,104 +542,68 @@ void PAMI_Topology_create_axial(pami_topology_t *topo,
   PAMI_abort();
 }
 
-///
-/// \copydoc PAMI_Topology_create_task
-///
 void PAMI_Topology_create_task(pami_topology_t *topo, pami_task_t rank)
 {
     PAMI_abort();
 }
 
-///
-/// \copydoc PAMI_Topology_create_range
-///
 void PAMI_Topology_create_range(pami_topology_t *topo, pami_task_t rank0, pami_task_t rankn)
 {
   new(topo)PAMI::Topology(rank0,rankn);
 }
 
-///
-/// \copydoc PAMI_Topology_create_list
-///
 void PAMI_Topology_create_list(pami_topology_t *topo, pami_task_t *ranks, size_t nranks)
 {
   new(topo)PAMI::Topology(ranks,nranks);
 }
 
-///
-/// \copydoc PAMI_Topology_destroy
-///
 void PAMI_Topology_destroy(pami_topology_t *topo)
 {
     PAMI_abort();
 }
 
-///
-/// \copydoc PAMI_Topology_size_of
-///
 unsigned PAMI_Topology_size_of(pami_topology_t *topo)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->size_of();
 }
 
-///
-/// \copydoc PAMI_Topology_size
-///
 size_t PAMI_Topology_size(pami_topology_t *topo)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->size();
 }
 
-///
-/// \copydoc PAMI_Topology_type
-///
 pami_topology_type_t pami_topology_type(pami_topology_t *topo)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->type();
 }
 
-///
-/// \copydoc PAMI_Topology_index2TaskID
-///
 pami_task_t PAMI_Topology_index2TaskID(pami_topology_t *topo, size_t ix)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->index2Rank(ix);
 }
 
-///
-/// \copydoc PAMI_Topology_taskID2Index
-///
 size_t PAMI_Topology_taskID2Index(pami_topology_t *topo, pami_task_t rank)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->rank2Index(rank);
 }
 
-///
-/// \copydoc PAMI_Topology_taskRange
-///
 pami_result_t PAMI_Topology_taskRange(pami_topology_t *topo, pami_task_t *first, pami_task_t *last)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->rankRange(first,last);
 }
 
-///
-/// \copydoc PAMI_Topology_taskList
-///
 pami_result_t PAMI_Topology_taskList(pami_topology_t *topo, pami_task_t **list)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->rankList(list);
 }
 
-///
-/// \copydoc PAMI_Topology_rectSeg
-///
 pami_result_t PAMI_Topology_rectSeg(pami_topology_t *topo,
                                   pami_coord_t *ll, pami_coord_t *ur,
                                   unsigned char *tl)
@@ -796,27 +612,18 @@ pami_result_t PAMI_Topology_rectSeg(pami_topology_t *topo,
     return t->rectSeg(ll,ur,tl);
 }
 
-///
-/// \copydoc PAMI_Topology_isLocalToMe
-///
 int PAMI_Topology_isLocalToMe(pami_topology_t *topo)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->isLocalToMe();
 }
 
-///
-/// \copydoc PAMI_Topology_isRectSeg
-///
 int PAMI_Topology_isRectSeg(pami_topology_t *topo)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->isRectSeg();
 }
 
-///
-/// \copydoc PAMI_Topology_getNthDims
-///
 void PAMI_Topology_getNthDims(pami_topology_t *topo, unsigned n,
                              unsigned *c0, unsigned *cn, unsigned char *tl)
 {
@@ -824,90 +631,60 @@ void PAMI_Topology_getNthDims(pami_topology_t *topo, unsigned n,
     return t->getNthDims(n,c0,cn,tl);
 }
 
-///
-/// \copydoc PAMI_Topology_isTaskMember
-///
 int PAMI_Topology_isTaskMember(pami_topology_t *topo, pami_task_t rank)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->isRankMember(rank);
 }
 
-///
-/// \copydoc PAMI_Topology_isCoordMember
-///
 int PAMI_Topology_isCoordMember(pami_topology_t *topo, pami_coord_t *c0)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->isCoordMember(c0);
 }
 
-///
-/// \copydoc PAMI_Topology_sub_LocalToMe
-///
 void PAMI_Topology_sub_LocalToMe(pami_topology_t *_new, pami_topology_t *topo)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     t->subTopologyLocalToMe((PAMI::Topology *)_new);
 }
 
-///
-/// \copydoc PAMI_Topology_sub_NthGlobal
-///
 void PAMI_Topology_sub_NthGlobal(pami_topology_t *_new, pami_topology_t *topo, int n)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     t->subTopologyNthGlobal((PAMI::Topology *)_new, n);
 }
 
-///
-/// \copydoc PAMI_Topology_sub_ReduceDims
-///
 void PAMI_Topology_sub_ReduceDims(pami_topology_t *_new, pami_topology_t *topo, pami_coord_t *fmt)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     t->subTopologyReduceDims((PAMI::Topology *)_new, fmt);
 }
 
-///
-/// \copydoc PAMI_Topology_getTaskList
-///
 void PAMI_Topology_getTaskList(pami_topology_t *topo, size_t max, pami_task_t *ranks, size_t *nranks)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     t->getRankList(max,ranks,nranks);
 }
 
-///
-/// \copydoc PAMI_Topology_analyze
-///
 int  PAMI_Topology_analyze(pami_topology_t *topo)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->analyzeTopology();
 }
 
-///
-/// \copydoc PAMI_Topology_convert
-///
 int  PAMI_Topology_convert(pami_topology_t *topo, pami_topology_type_t new_type)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->convertTopology(new_type);
 }
 
-///
-/// \copydoc PAMI_Topology_intersect
-///
 void PAMI_Topology_intersect(pami_topology_t *_new, pami_topology_t *topo, pami_topology_t *other)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
     return t->intersectTopology((PAMI::Topology *)_new, (PAMI::Topology *)other);
 }
 
-///
-/// \copydoc PAMI_Topology_subtract
-///
 void PAMI_Topology_subtract(pami_topology_t *_new, pami_topology_t *topo, pami_topology_t *other)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
@@ -928,9 +705,6 @@ extern "C" pami_result_t PAMI_Client_add_commthread_context(pami_client_t client
 #endif // USE_COMMTHREADS
 
 
-///
-/// \copydoc PAMI_Client_create
-///
 extern "C" pami_result_t PAMI_Client_create (const char           *name,
                                              pami_client_t        *client,
                                              pami_configuration_t  configuration[],
@@ -939,9 +713,6 @@ extern "C" pami_result_t PAMI_Client_create (const char           *name,
   return PAMI::Client::generate (name, client, configuration, num_configs);
 }
 
-///
-/// \copydoc PAMI_Client_destroy
-///
 extern "C" pami_result_t PAMI_Client_destroy (pami_client_t *client)
 {
   PAMI::Client::destroy ((PAMI::Client *) *client);
@@ -951,9 +722,6 @@ extern "C" pami_result_t PAMI_Client_destroy (pami_client_t *client)
 
 
 
-///
-/// \copydoc PAMI_Context_createv
-///
 extern "C" pami_result_t PAMI_Context_createv (pami_client_t          client,
                                             pami_configuration_t    configuration[],
                                             size_t                 count,
@@ -968,9 +736,6 @@ extern "C" pami_result_t PAMI_Context_createv (pami_client_t          client,
   return result;
 }
 
-///
-/// \copydoc PAMI_Context_destroyv
-///
 extern "C" pami_result_t PAMI_Context_destroyv (pami_context_t* contexts,
                                                 size_t          ncontexts)
 {
@@ -987,9 +752,6 @@ extern "C" pami_result_t PAMI_Context_destroyv (pami_context_t* contexts,
   return result;
 }
 
-///
-/// \copydoc PAMI_Client_query
-///
 extern "C" pami_result_t PAMI_Client_query (pami_client_t         client,
                                             pami_configuration_t  configuration[],
                                             size_t                num_configs)
@@ -999,9 +761,6 @@ extern "C" pami_result_t PAMI_Client_query (pami_client_t         client,
   return cln->query(configuration,num_configs);
 }
 
-///
-/// \copydoc PAMI_Client_update
-///
 extern "C" pami_result_t PAMI_Client_update (pami_client_t         client,
                                              pami_configuration_t  configuration[],
                                              size_t                num_configs)
@@ -1010,9 +769,6 @@ extern "C" pami_result_t PAMI_Client_update (pami_client_t         client,
   return cln->update(configuration,num_configs);
 }
 
-///
-/// \copydoc PAMI_Dispatch_query
-///
 extern "C" pami_result_t PAMI_Dispatch_query (pami_context_t        context,
                                               size_t                dispatch,
                                               pami_configuration_t  configuration[],
@@ -1022,9 +778,6 @@ extern "C" pami_result_t PAMI_Dispatch_query (pami_context_t        context,
     return ctx->dispatch_query (dispatch, configuration, num_configs);
 }
 
-///
-/// \copydoc PAMI_Dispatch_update
-///
 extern "C" pami_result_t PAMI_Dispatch_update (pami_context_t        context,
                                                size_t                dispatch,
                                                pami_configuration_t  configuration[],
@@ -1036,9 +789,6 @@ extern "C" pami_result_t PAMI_Dispatch_update (pami_context_t        context,
 
 
 
-///
-/// \copydoc PAMI_Context_query
-///
 extern "C" pami_result_t PAMI_Context_query (pami_context_t        context,
                                              pami_configuration_t  configuration[],
                                              size_t                num_configs)
@@ -1057,9 +807,6 @@ extern "C" pami_result_t PAMI_Context_update (pami_context_t        context,
 
 
 
-///
-/// \copydoc PAMI_Dispatch_set
-///
 extern "C" pami_result_t PAMI_Dispatch_set (pami_context_t              context,
                                           size_t                     dispatch,
                                           pami_dispatch_callback_fn   fn,
@@ -1071,27 +818,18 @@ extern "C" pami_result_t PAMI_Dispatch_set (pami_context_t              context,
 }
 
 
-///
-/// \copydoc PAMI_Context_lock
-///
 extern "C" pami_result_t PAMI_Context_lock (pami_context_t context)
 {
   PAMI::Context * ctx = (PAMI::Context *) context;
   return ctx->lock ();
 }
 
-///
-/// \copydoc PAMI_Context_trylock
-///
 extern "C" pami_result_t PAMI_Context_trylock (pami_context_t context)
 {
   PAMI::Context * ctx = (PAMI::Context *) context;
   return ctx->trylock ();
 }
 
-///
-/// \copydoc PAMI_Context_unlock
-///
 extern "C" pami_result_t PAMI_Context_unlock (pami_context_t context)
 {
   PAMI::Context * ctx = (PAMI::Context *) context;
@@ -1099,9 +837,6 @@ extern "C" pami_result_t PAMI_Context_unlock (pami_context_t context)
 }
 
 
-///
-/// \copydoc PAMI_Context_advance
-///
 extern "C" pami_result_t PAMI_Context_advance (pami_context_t context, size_t maximum)
 {
   pami_result_t result;
@@ -1111,9 +846,6 @@ extern "C" pami_result_t PAMI_Context_advance (pami_context_t context, size_t ma
   return result;
 }
 
-///
-/// \copydoc PAMI_Context_advancev
-///
 extern "C" pami_result_t PAMI_Context_advancev (pami_context_t context[],
                                                   size_t        count,
                                                   size_t        maximum)
@@ -1140,9 +872,6 @@ extern "C" pami_result_t PAMI_Context_advancev (pami_context_t context[],
 // Functions from pami_p2p.h                                                   //
 ////////////////////////////////////////////////////////////////////////////////
 
-///
-/// \copydoc PAMI_Send
-///
 extern "C" pami_result_t PAMI_Send (pami_context_t   context,
                                   pami_send_t    * parameters)
 {
@@ -1150,9 +879,6 @@ extern "C" pami_result_t PAMI_Send (pami_context_t   context,
   return ctx->send (parameters);
 }
 
-///
-/// \copydoc PAMI_Send_immediate
-///
 extern "C" pami_result_t PAMI_Send_immediate (pami_context_t          context,
                                             pami_send_immediate_t * parameters)
 {
@@ -1160,9 +886,6 @@ extern "C" pami_result_t PAMI_Send_immediate (pami_context_t          context,
   return ctx->send (parameters);
 }
 
-///
-/// \copydoc PAMI_Send_typed
-///
 extern "C" pami_result_t PAMI_Send_typed (pami_context_t      context,
                                         pami_send_typed_t * parameters)
 {
@@ -1171,9 +894,6 @@ extern "C" pami_result_t PAMI_Send_typed (pami_context_t      context,
 }
 
 
-///
-/// \copydoc PAMI_Put
-///
 extern "C" pami_result_t PAMI_Put (pami_context_t      context,
                                  pami_put_simple_t * parameters)
 {
@@ -1182,9 +902,6 @@ extern "C" pami_result_t PAMI_Put (pami_context_t      context,
 }
 
 
-///
-/// \copydoc PAMI_Put_typed
-///
 extern "C" pami_result_t PAMI_Put_typed (pami_context_t      context,
                                        pami_put_typed_t  * parameters)
 {
@@ -1192,9 +909,6 @@ extern "C" pami_result_t PAMI_Put_typed (pami_context_t      context,
   return ctx->put_typed (parameters);
 }
 
-///
-/// \copydoc PAMI_Get
-///
 extern "C" pami_result_t PAMI_Get (pami_context_t      context,
                                  pami_get_simple_t * parameters)
 {
@@ -1203,9 +917,6 @@ extern "C" pami_result_t PAMI_Get (pami_context_t      context,
 }
 
 
-///
-/// \copydoc PAMI_Get_typed
-///
 extern "C" pami_result_t PAMI_Get_typed (pami_context_t      context,
                                        pami_get_typed_t  * parameters)
 {
@@ -1214,9 +925,6 @@ extern "C" pami_result_t PAMI_Get_typed (pami_context_t      context,
 }
 
 
-///
-/// \copydoc PAMI_Rmw
-///
 extern "C" pami_result_t PAMI_Rmw (pami_context_t      context,
                                  pami_rmw_t * parameters)
 {
@@ -1224,9 +932,6 @@ extern "C" pami_result_t PAMI_Rmw (pami_context_t      context,
   return ctx->rmw (parameters);
 }
 
-///
-/// \copydoc PAMI_Memregion_create
-///
 extern "C" pami_result_t PAMI_Memregion_create (pami_context_t     context,
                                                 void             * address,
                                                 size_t             bytes_in,
@@ -1237,9 +942,6 @@ extern "C" pami_result_t PAMI_Memregion_create (pami_context_t     context,
     return ctx->memregion_create (address, bytes_in, bytes_out, memregion);
 }
 
-///
-/// \copydoc PAMI_Memregion_destroy
-///
 extern "C" pami_result_t PAMI_Memregion_destroy (pami_context_t     context,
                                                  pami_memregion_t * memregion)
 {
@@ -1247,9 +949,6 @@ extern "C" pami_result_t PAMI_Memregion_destroy (pami_context_t     context,
     return ctx->memregion_destroy (memregion);
 }
 
-///
-/// \copydoc PAMI_Rput
-///
 extern "C" pami_result_t PAMI_Rput (pami_context_t      context,
                                  pami_rput_simple_t * parameters)
 {
@@ -1258,9 +957,6 @@ extern "C" pami_result_t PAMI_Rput (pami_context_t      context,
 }
 
 
-///
-/// \copydoc PAMI_Rput_typed
-///
 extern "C" pami_result_t PAMI_Rput_typed (pami_context_t      context,
                                        pami_rput_typed_t  * parameters)
 {
@@ -1268,9 +964,6 @@ extern "C" pami_result_t PAMI_Rput_typed (pami_context_t      context,
   return ctx->rput_typed (parameters);
 }
 
-///
-/// \copydoc PAMI_Rget
-///
 extern "C" pami_result_t PAMI_Rget (pami_context_t      context,
                                  pami_rget_simple_t * parameters)
 {
@@ -1279,9 +972,6 @@ extern "C" pami_result_t PAMI_Rget (pami_context_t      context,
 }
 
 
-///
-/// \copydoc PAMI_Rget_typed
-///
 extern "C" pami_result_t PAMI_Rget_typed (pami_context_t      context,
                                         pami_rget_typed_t  * parameters)
 {
@@ -1290,9 +980,6 @@ extern "C" pami_result_t PAMI_Rget_typed (pami_context_t      context,
 }
 
 
-///
-/// \copydoc PAMI_Purge_totask
-///
 extern "C" pami_result_t PAMI_Purge_totask (pami_context_t   context,
                                           size_t        * dest,
                                           size_t          count)
@@ -1302,9 +989,6 @@ extern "C" pami_result_t PAMI_Purge_totask (pami_context_t   context,
 }
 
 
-///
-/// \copydoc PAMI_Resume_totask
-///
 extern "C" pami_result_t PAMI_Resume_totask (pami_context_t   context,
                                            size_t        * dest,
                                            size_t          count)
@@ -1314,9 +998,6 @@ extern "C" pami_result_t PAMI_Resume_totask (pami_context_t   context,
 }
 
 
-///
-/// \copydoc PAMI_Task2Network
-///
 extern "C" pami_result_t PAMI_Task2Network(pami_task_t task,
                                            pami_coord_t *ntw)
 {
@@ -1329,9 +1010,6 @@ extern "C" pami_result_t PAMI_Task2Network(pami_task_t task,
 }
 
 
-///
-/// \copydoc PAMI_Network2Task
-///
 extern "C" pami_result_t PAMI_Network2Task(pami_coord_t ntw,
                                            pami_task_t *task)
 {

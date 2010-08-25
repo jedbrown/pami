@@ -286,9 +286,6 @@ namespace PAMI
                                           struct iovec       * iov,
                                           size_t               niov);
 
-        ///
-        /// \copydoc ???
-        ///
         template <unsigned T_Niov>
         inline bool postCollectivePacket (uint8_t              (&state)[T_StateBytes],
                                           pami_event_function   fn,
