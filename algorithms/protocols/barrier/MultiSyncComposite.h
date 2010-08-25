@@ -156,7 +156,6 @@ namespace CCMI
                 return;
               }
 
-            PAMI_assert(0);
           }
           virtual void start()
           {
@@ -267,8 +266,6 @@ namespace CCMI
               _active_barrier               =  _local_barrier;
               return;
             }
-
-            PAMI_abort();
 
           }
           virtual void start()
