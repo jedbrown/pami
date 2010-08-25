@@ -91,6 +91,7 @@ namespace PAMI
       inline pami_topology_t           *getTopology(int topo_num);
       inline pami_topology_t           *getLocalTopology();
       inline pami_topology_t           *getLocalMasterTopology();
+      inline pami_task_t                localMasterParticipant();
       inline bool                       isLocalMasterParticipant();
       inline void                       generatePermutation_sizet();
       inline void                       freePermutation_sizet();
@@ -211,6 +212,12 @@ namespace PAMI
     inline bool Geometry<T_Geometry>::isLocalMasterParticipant()
     {
       return static_cast<T_Geometry*>(this)->isLocalMasterParticipant_impl();
+    }
+
+    template <class T_Geometry>
+    inline pami_task_t Geometry<T_Geometry>::localMasterParticipant()
+    {
+      return static_cast<T_Geometry*>(this)->localMasterParticipant_impl();
     }
 
     template <class T_Geometry>

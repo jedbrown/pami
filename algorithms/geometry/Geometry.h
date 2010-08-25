@@ -67,7 +67,7 @@ namespace PAMI
           pami_ca_unset_all(&_attributes);
         }
       inline Common (pami_client_t                    client,
-		     Geometry<PAMI::Geometry::Common> *parent,
+                     Geometry<PAMI::Geometry::Common> *parent,
                      Mapping                         *mapping,
                      unsigned                         comm,
                      int                              numranges,
@@ -79,7 +79,8 @@ namespace PAMI
                                         rangelist),
         _kvstore(),
         _commid(comm),
-	_client(client)
+        _client(client),
+        _masterRank(-1)
         {
           TRACE_ERR((stderr, "<%p>Common(parent)\n", this));
           int i, j, k, size;
@@ -135,16 +136,17 @@ namespace PAMI
           _local_topo        = &_topos[-2];
           _global_all_topo->subTopologyLocalMaster(_local_master_topo);
           _global_all_topo->subTopologyLocalToMe(_local_topo);
-          // Check to see if we are are a participant on the tree/cau network
-          pami_task_t    *rl        = NULL;
-          uint            num_tasks = _local_master_topo->size();
-          _local_master_topo->rankList(&rl);
-          for(uint k=0; k<num_tasks; k++)
-            if(rl[k] == _rank)
+
+          // Find master participant on the tree/cau network
+          uint            num_master_tasks = _local_master_topo->size();
+          uint            num_local_tasks = _local_topo->size();
+          for(uint k=0; k<num_master_tasks; k++)
+            for(uint j=0; j<num_local_tasks; j++)
+              if(_local_master_topo->index2Rank(k) == _local_topo->index2Rank(j))
               {
-              _participant = true;
-              break;
-              }
+                _masterRank = _local_topo->index2Rank(j);
+                break;
+              };
 
           PAMI::geometry_map[_commid]=this;
           updateCachedGeometry(this, _commid);
@@ -163,7 +165,7 @@ namespace PAMI
             pami_ca_set(&_attributes, PAMI_GEOMETRY_ODD);
         }
       inline Common (pami_client_t                    client,
-		     Geometry<PAMI::Geometry::Common> *parent,
+                     Geometry<PAMI::Geometry::Common> *parent,
                      Mapping                         *mapping,
                      unsigned                         comm,
                      PAMI::Topology                  *topology):
@@ -173,7 +175,8 @@ namespace PAMI
                                         topology),
         _kvstore(),
         _commid(comm),
-	_client(client)
+        _client(client),
+        _masterRank(-1)
         {
           TRACE_ERR((stderr, "<%p>Common(parent)\n", this));
 
@@ -195,16 +198,16 @@ namespace PAMI
           _local_topo        = &_topos[-2];
           _global_all_topo->subTopologyLocalMaster(_local_master_topo);
           _global_all_topo->subTopologyLocalToMe(_local_topo);
-          // Check to see if we are are a participant on the tree/cau network
-          pami_task_t    *rl        = NULL;
-          uint            num_tasks = _local_master_topo->size();
-          _local_master_topo->rankList(&rl);
-          for(uint k=0; k<num_tasks; k++)
-            if(rl[k] == _rank)
+          // Find master participant on the tree/cau network
+          uint            num_master_tasks = _local_master_topo->size();
+          uint            num_local_tasks = _local_topo->size();
+          for(uint k=0; k<num_master_tasks; k++)
+            for(uint j=0; j<num_local_tasks; j++)
+              if(_local_master_topo->index2Rank(k) == _local_topo->index2Rank(j))
               {
-              _participant = true;
-              break;
-              }
+                _masterRank = _local_topo->index2Rank(j);
+                break;
+              };
 
           PAMI::geometry_map[_commid]=this;
           updateCachedGeometry(this, _commid);
@@ -281,10 +284,15 @@ namespace PAMI
                 }
         }
 
-      inline bool isLocalMasterParticipant_impl()
-        {
-          return _participant;
-        }
+       inline bool isLocalMasterParticipant_impl()
+         {
+           return _masterRank == _rank;
+         }
+
+       inline pami_task_t localMasterParticipant_impl()
+         {
+           return _masterRank;
+         }
 
       inline pami_topology_t* getTopology_impl(int topo_num)
         {
@@ -786,7 +794,7 @@ namespace PAMI
       pami_callback_t                               _cb_done;
       pami_result_t                                 _cb_result;
       GeomCompCtr                                   _comp;
-      bool                                          _participant;
+      pami_task_t                                   _masterRank;
       PAMI::Topology                               *_global_all_topo;
       PAMI::Topology                               *_local_master_topo;
       PAMI::Topology                               *_local_topo;

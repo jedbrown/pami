@@ -83,7 +83,7 @@ namespace PAMI
         _kvstore(),
         _commid(comm),
         _client(client),
-        _participant(false)
+        _masterRank(-1)
         {
           PAMI::Topology *cur         = NULL;
           PAMI::Topology *prev        = NULL;
@@ -141,16 +141,16 @@ namespace PAMI
             {
               _global_all_topo->subTopologyLocalMaster(_local_master_topo);
               _global_all_topo->subTopologyLocalToMe(_local_topo);
-              // Check to see if we are are a participant on the tree/cau network
-              pami_task_t    *rl        = NULL;
-              uint            num_tasks = _local_master_topo->size();
-              pami_result_t   rc        = _local_master_topo->rankList(&rl);
-              for(int k=0; k<num_tasks; k++)
-                if(rl[k] == _rank)
+              // Find master participant on the tree/cau network
+              uint            num_master_tasks = _local_master_topo->size();
+              uint            num_local_tasks = _local_topo->size();
+              for(uint k=0; k<num_master_tasks; k++)
+                for(uint j=0; j<num_local_tasks; j++)
+                  if(_local_master_topo->index2Rank(k) == _local_topo->index2Rank(j))
                   {
-                    _participant = true;
+                    _masterRank = _local_topo->index2Rank(j);
                     break;
-                  }
+                  };
             }
 //          PAMI_assert(_local_topo->size() != 0);
 //          PAMI_assert(_local_master_topo->size() != 0);
@@ -167,23 +167,27 @@ namespace PAMI
         {
           _global_all_topo->subTopologyLocalMaster(_local_master_topo);
           _global_all_topo->subTopologyLocalToMe(_local_topo);
-          // Check to see if we are are a participant on the tree/cau network
-          pami_task_t    *rl        = NULL;
-          uint            num_tasks = _local_master_topo->size();
-          pami_result_t   rc        = _local_master_topo->rankList(&rl);
-          for(int k=0; k<num_tasks; k++)
-            if(rl[k] == _rank)
+          // Find master participant on the tree/cau network
+          uint            num_master_tasks = _local_master_topo->size();
+          uint            num_local_tasks = _local_topo->size();
+          for(uint k=0; k<num_master_tasks; k++)
+            for(uint j=0; j<num_local_tasks; j++)
+              if(_local_master_topo->index2Rank(k) == _local_topo->index2Rank(j))
               {
-                _participant = true;
+                _masterRank = _local_topo->index2Rank(j);
                 break;
-              }
+              };
         }
 
       inline bool isLocalMasterParticipant_impl()
         {
-          return _participant;
+          return _masterRank == _rank;
         }
 
+      inline pami_task_t localMasterParticipant_impl()
+        {
+          return _masterRank;
+        }
 
       inline pami_topology_t* getTopology_impl(int topo_num)
         {
@@ -635,7 +639,7 @@ namespace PAMI
       void                                       *_allreduce[2];
       unsigned                                    _allreduce_async_mode;
       unsigned                                    _allreduce_iteration;
-      bool                                        _participant;
+      pami_task_t                                 _masterRank;
       pami_task_t                                 _virtual_rank;
 
       PAMI::Topology                             *_global_all_topo;
