@@ -53,10 +53,10 @@ int main(int argc, char ** argv)
   /* ------------------------------------------------------------------------ */
 
   pami_extension_t extension;
-  status = PAMI_Extension_open ("torus", &extension);
+  status = PAMI_Extension_open (client, "EXT_torus_network", &extension);
   if(status != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. The \"torus\" extension is not implemented. result = %d\n", status);
+    fprintf (stderr, "Error. The \"EXT_torus_network\" extension is not implemented. result = %d\n", status);
     return 1;
   }
 
@@ -64,7 +64,7 @@ int main(int argc, char ** argv)
     (pami_extension_torus_information_fn) PAMI_Extension_function (extension, "information");
   if (pamix_torus_info == (void *)NULL)
   {
-    fprintf (stderr, "Error. The \"torus\" extension function \"information\" is not implemented. result = %d\n", status);
+    fprintf (stderr, "Error. The \"EXT_torus_network\" extension function \"information\" is not implemented. result = %d\n", status);
     return 1;
   }
 
@@ -96,7 +96,7 @@ int main(int argc, char ** argv)
     (pami_extension_torus_task2torus_fn) PAMI_Extension_function (extension, "task2torus");
   if (pamix_torus_task2torus == (void *)NULL)
   {
-    fprintf (stderr, "Error. The \"torus\" extension function \"task2torus\" is not implemented. result = %d\n", status);
+    fprintf (stderr, "Error. The \"EXT_torus_network\" extension function \"task2torus\" is not implemented. result = %d\n", status);
     return 1;
   }
 
@@ -119,7 +119,7 @@ int main(int argc, char ** argv)
     (pami_extension_torus_torus2task_fn) PAMI_Extension_function (extension, "torus2task");
   if (pamix_torus_torus2task == (void *)NULL)
   {
-    fprintf (stderr, "Error. The \"torus\" extension function \"torus2task\" is not implemented. result = %d\n", status);
+    fprintf (stderr, "Error. The \"EXT_torus_network\" extension function \"torus2task\" is not implemented. result = %d\n", status);
     return 1;
   }
 
@@ -146,7 +146,7 @@ int main(int argc, char ** argv)
   status = PAMI_Extension_close (extension);
   if(status != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. The \"torus\" extension could not be closed. result = %d\n", status);
+    fprintf (stderr, "Error. The \"EXT_torus_network\" extension could not be closed. result = %d\n", status);
     return 1;
   }
 
