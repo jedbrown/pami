@@ -63,11 +63,13 @@ public:
 		size_t size = lsize * esize;
 		mm->memalign(&virt, size, size);
 		if (virt == NULL) {
+fprintf(stderr, "memalign failed for %zd %zd (avail=%zd)\n", size, size, mm->available());
 			return PAMI_ERROR;
 		}
                 uint32_t krc = Kernel_CreateMemoryRegion(&_wu_memreg, virt, size);
                 if (krc != 0) {
                         //mm->free(virt);
+fprintf(stderr, "Kernel_CreateMemoryRegion failed for %p %zd (%d)\n", virt, size, krc);
                         return PAMI_ERROR;
                 }
 		char *v = (char *)virt;

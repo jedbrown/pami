@@ -158,15 +158,14 @@ public:
                 return (1ULL << x);
         }
 
-        inline uint64_t rmContexts(pami_context_t *ctxs, size_t nctx) {
+	// first make these contexts "invisible" to comm threads.
+        inline uint64_t disableContexts(pami_context_t *ctxs, size_t nctx) {
 		size_t x, y;
 		uint64_t mask = 0;
                 _mutex.acquire();
 		for (y = 0; y < nctx; ++y) {
 			for (x = 0; x < _ncontexts_total; ++x) {
 				if (_contexts[x] == ctxs[y]) {
-					_contexts[x] = NULL;
-					--_ncontexts;
 					mask |= (1ULL << x);
 				}
 			}
@@ -179,6 +178,21 @@ public:
 		// are released (i.e. lock released).
                 _mutex.release();
 		return mask;
+	}
+
+	// now, remove (all references to) contexts entirely
+        inline void rmContexts(pami_context_t *ctxs, size_t nctx) {
+		size_t x, y;
+                _mutex.acquire();
+		for (y = 0; y < nctx; ++y) {
+			for (x = 0; x < _ncontexts_total; ++x) {
+				if (_contexts[x] == ctxs[y]) {
+					_contexts[x] = NULL;
+					--_ncontexts;
+				}
+			}
+		}
+                _mutex.release();
 	}
 
         PAMI::Context *getContext(size_t contextix) {

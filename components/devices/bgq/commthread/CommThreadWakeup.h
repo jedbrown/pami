@@ -24,7 +24,7 @@
 #include "hwi/include/bqc/A2_inlines.h"
 #include "spi/include/kernel/thread.h"
 
-#undef DEBUG_COMMTHREADS // Enable debug messages here
+#define DEBUG_COMMTHREADS // Enable debug messages here
 
 #undef HAVE_WU_ARMWITHADDRESS
 
@@ -304,7 +304,7 @@ public:
 
 		// This should wakeup all commthreads, and any one holding
 		// this context should release it...
-                uint64_t mask = devs[0]._ctxset->rmContexts(ctxs, nctx);
+                uint64_t mask = devs[0]._ctxset->disableContexts(ctxs, nctx);
 
 		// wait here for all contexts to get released? must only
 		// wait for all commthreads to release, not for other threads
@@ -322,6 +322,8 @@ public:
 				lmask |= devs[x]._lockCtxs;
 			}
 		} while (lmask & mask);
+
+                devs[0]._ctxset->rmContexts(ctxs, nctx);
 
 		return PAMI_SUCCESS;
 	}
@@ -463,8 +465,12 @@ _commThreads(NULL)
 	BgqWakeupRegion *wu;
 	BgqContextPool *pool;
 
+#if 0
 	size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
 	// may need to factor in others such as shmem?
+#else
+	size_t num_ctx = 64 / Kernel_ProcessCount();
+#endif
 
 	size_t x;
 	size_t me = __global.topology_local.rank2Index(__global.mapping.task());
