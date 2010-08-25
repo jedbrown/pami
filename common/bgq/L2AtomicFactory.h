@@ -24,7 +24,7 @@
 // We might need extra space for the WAC Region.
 // Must take into account (considerable) waste from large alignment value for WAC,
 // Using 2x as an upper-bound.
-#define L2A_MAX_NUMNODEL2ATOMIC(nproc,nctx)	(16*256+(nproc)*(nctx)*BGQ_WACREGION_SIZE) ///< max number of node-scope atomics
+#define L2A_MAX_NUMNODEL2ATOMIC(nproc,nctx)	(16*256+(nproc)*(nctx)*2*BGQ_WACREGION_SIZE) ///< max number of node-scope atomics
 #define L2A_MAX_NUMPROCL2ATOMIC	(16*256)	///< max number of proc(etc)-scope atomics
 
 ////////////////////////////////////////////////////////////////////////
@@ -86,6 +86,13 @@ namespace BGQ {
 
                 L2AtomicFactory() { }
 
+		/// \page env_vars Environment Variables
+		///
+		/// PAMI_PROC_L2ATOMICSIZE - Number of uint64_t in Process-scoped L2 Atomic pool
+		///
+		/// PAMI_NODE_L2ATOMICSIZE - Number of uint64_t in Node-scoped L2 Atomic pool
+		///
+
 		/// \brief Initialize the L2AtomicFactory
 		///
 		/// \param[in] mm	Shmem MemoryManager
@@ -97,6 +104,7 @@ namespace BGQ {
                         pami_result_t rc;
                         int irc;
 			uint64_t krc;
+			char *s;
 
                         // Must coordinate with all other processes on this node,
                         // and arrive at a common chunk of physical address memory
@@ -107,6 +115,9 @@ namespace BGQ {
                         size_t t = local->size();
 
                         size = L2A_MAX_NUMPROCL2ATOMIC;
+			if ((s = getenv("PAMI_PROC_L2ATOMICSIZE"))) {
+				size = strtoull(s, NULL, 0);
+			}
                         virt = NULL;
                         irc = posix_memalign(&virt, sizeof(uint64_t),
                                         sizeof(uint64_t) * size);
@@ -118,9 +129,12 @@ namespace BGQ {
 				"Failed to map process L2 Atomic region %p (%zd): %d",
 				virt, sizeof(uint64_t) * size, errno);
                         memset(virt, 0, sizeof(uint64_t) * size);
-			__procscoped_mm.init(virt, size);
+			__procscoped_mm.init(virt, size * sizeof(uint64_t));
 
                         size = L2A_MAX_NUMNODEL2ATOMIC(t,64);
+			if ((s = getenv("PAMI_NODE_L2ATOMICSIZE"))) {
+				size = strtoull(s, NULL, 0);
+			}
                         virt = NULL;
 
                         rc = mm->memalign(&virt, sizeof(uint64_t),
@@ -135,7 +149,8 @@ namespace BGQ {
 
 			/// \todo need to coordinate clearing of shmem unless we know a barrier follows
 			// clearing of memory done after computing local params
-			__nodescoped_mm.init(virt, size);
+			__nodescoped_mm.init(virt, size * sizeof(uint64_t));
+//fprintf(stderr, "L2 Atomics, node=%zd proc=%zd\n", __nodescoped_mm.size(), __procscoped_mm.size());
 
                         // Compute all implementation parameters,
                         // i.e. fill-in _factory struct.

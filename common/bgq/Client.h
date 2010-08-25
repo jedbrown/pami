@@ -673,6 +673,12 @@ namespace PAMI
       PAMI::Device::CommThread::BgqCommThread *_commThreads;
 #endif // USE_COMMTHREADS
 
+	/// \page env_vars Environment Variables
+	///
+	/// PAMI_CLIENT_SHMEMSIZE - Size, MB, Each Client shmem pool.
+	/// default: 2MB
+	///
+
       inline void initializeMemoryManager ()
       {
         TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));

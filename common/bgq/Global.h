@@ -61,6 +61,12 @@ void globalDumpHexData(const char * pstring, const uint32_t *buffer, size_t n_in
 
 #define BGQ_GLOBAL_SHMEM_SIZE(nproc,nctx)	L2A_MAX_NUMNODEL2ATOMIC(nproc,nctx) * sizeof(uint64_t); ///< extra shmem for BGQ L2 Atomics and WAC
 
+/// \page env_vars Environment Variables
+///
+/// PAMI_GLOBAL_SHMEMSIZE - Size, MB, Global shmem pool
+/// default: sizeof(mapcache) + Node-L2Atomics
+///
+
 namespace PAMI
 {
   class Global : public Interface::Global<PAMI::Global>
@@ -202,6 +208,7 @@ namespace PAMI
 
         topology_global.subTopologyLocalToMe(&topology_local);
         PAMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
+//fprintf(stderr, "__global.mm size=%zd\n", mm.size());
         l2atomicFactory.init(&mm, &mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));
