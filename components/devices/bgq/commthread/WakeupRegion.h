@@ -33,30 +33,30 @@ namespace CommThread {
 
 class BgqWakeupRegion {
 public:
-        // type (size) used for each context. Must be power-of-two.
+	// type (size) used for each context. Must be power-of-two.
 
-        BgqWakeupRegion() :
+	BgqWakeupRegion() :
 	_wu_mm(),
-        _wu_memreg()
-        { }
+	_wu_memreg()
+	{ }
 
-        ~BgqWakeupRegion() { }
+	~BgqWakeupRegion() { }
 
-        /// \brief Initialize Wakeup Region for client
-        ///
-        /// \param[in] nctx	Number of contexts being created for client
-        /// \param[in] me	My index in local topology
-        /// \param[in] lsize	Local size (local topology size)
-        /// \param[in] mm	L2Atomic/Shmem MemoryManager
-        /// \return	Error code
-        ///
-        inline pami_result_t init(size_t nctx, size_t me, size_t lsize, Memory::MemoryManager *mm) {
-                size_t mctx = nctx;
-                // in order for WAC base/mask values to work, need to ensure alignment
-                // is such that power-of-two pairs of (ctx0,mctx) result in viable
-                // base/mask values. Also... this is physical address dependent, so
-                // does the virtual address even matter?
-                while (mctx & (mctx - 1)) ++mctx; // brute force - better way?
+	/// \brief Initialize Wakeup Region for client
+	///
+	/// \param[in] nctx	Number of contexts being created for client
+	/// \param[in] me	My index in local topology
+	/// \param[in] lsize	Local size (local topology size)
+	/// \param[in] mm	L2Atomic/Shmem MemoryManager
+	/// \return	Error code
+	///
+	inline pami_result_t init(size_t nctx, size_t me, size_t lsize, Memory::MemoryManager *mm) {
+		size_t mctx = nctx;
+		// in order for WAC base/mask values to work, need to ensure alignment
+		// is such that power-of-two pairs of (ctx0,mctx) result in viable
+		// base/mask values. Also... this is physical address dependent, so
+		// does the virtual address even matter?
+		while (mctx & (mctx - 1)) ++mctx; // brute force - better way?
 
 		void *virt = NULL;
 		size_t esize = mctx * BGQ_WACREGION_SIZE * sizeof(uint64_t);
@@ -66,12 +66,12 @@ public:
 fprintf(stderr, "memalign failed for %zd %zd (avail=%zd)\n", size, size, mm->available());
 			return PAMI_ERROR;
 		}
-                uint32_t krc = Kernel_CreateMemoryRegion(&_wu_memreg, virt, size);
-                if (krc != 0) {
-                        //mm->free(virt);
+		uint32_t krc = Kernel_CreateMemoryRegion(&_wu_memreg, virt, size);
+		if (krc != 0) {
+			//mm->free(virt);
 fprintf(stderr, "Kernel_CreateMemoryRegion failed for %p %zd (%d)\n", virt, size, krc);
-                        return PAMI_ERROR;
-                }
+			return PAMI_ERROR;
+		}
 		char *v = (char *)virt;
 		size_t i;
 		for (i = 0; i < lsize; ++i) {
@@ -80,24 +80,24 @@ fprintf(stderr, "Kernel_CreateMemoryRegion failed for %p %zd (%d)\n", virt, size
 		}
 		_wu_region_me = me;
 
-                // PAMI_assert((size & (size - 1)) == 0); // power of 2
-                // PAMI_assert((_wu_memreg.BasePa & (size - 1)) == 0); // aligned
-                return PAMI_SUCCESS;
-        }
+		// PAMI_assert((size & (size - 1)) == 0); // power of 2
+		// PAMI_assert((_wu_memreg.BasePa & (size - 1)) == 0); // aligned
+		return PAMI_SUCCESS;
+	}
 
-        /// \brief Return base phy addr and mask for WAC given context(s)
-        ///
+	/// \brief Return base phy addr and mask for WAC given context(s)
+	///
 	/// \todo incorporate memregion into memory manager? also default alignment?
-        ///
-        /// \param[in] ctx	Bitmap of contexts to get WAC range for (currently not used)
-        /// \param[out] base	Physical base address of memory block
-        /// \param[out] mask	Address bit mask of memory block
-        ///
-        inline void getWURange(uint64_t ctx, uint64_t *base, uint64_t *mask) {
-                *base = (uint64_t)_wu_memreg.BasePa +
+	///
+	/// \param[in] ctx	Bitmap of contexts to get WAC range for (currently not used)
+	/// \param[out] base	Physical base address of memory block
+	/// \param[out] mask	Address bit mask of memory block
+	///
+	inline void getWURange(uint64_t ctx, uint64_t *base, uint64_t *mask) {
+		*base = (uint64_t)_wu_memreg.BasePa +
 			((char *)_wu_mm[_wu_region_me].base() - (char *)_wu_memreg.BaseVa);
-                *mask = ~(_wu_mm[_wu_region_me].size() - 1);
-        }
+		*mask = ~(_wu_mm[_wu_region_me].size() - 1);
+	}
 
 	inline PAMI::Memory::MemoryManager *getWUmm(size_t process = (size_t)-1) {
 		if (process == (size_t)-1) process = _wu_region_me;
@@ -109,11 +109,11 @@ fprintf(stderr, "Kernel_CreateMemoryRegion failed for %p %zd (%d)\n", virt, size
 	}
 
 private:
-        typedef uint64_t BgqWakeupRegionBuffer[BGQ_WACREGION_SIZE];
+	typedef uint64_t BgqWakeupRegionBuffer[BGQ_WACREGION_SIZE];
 
 	PAMI::Memory::MemoryManager _wu_mm[PAMI_MAX_PROC_PER_NODE];
 	size_t _wu_region_me;	///< local process index into WAC regions
-        Kernel_MemoryRegion_t _wu_memreg;	///< phy addr of WAC region
+	Kernel_MemoryRegion_t _wu_memreg;	///< phy addr of WAC region
 }; // class BgqWakeupRegion
 
 }; // namespace CommThread
