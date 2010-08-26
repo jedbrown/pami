@@ -126,13 +126,7 @@ void do_recv(pami_context_t context,
 	char buf[128];
 	sprintf(buf, "do_recv(%d) by %ld on context %d: cookie = %p, %d\n",
                 info->seq, pthread_self(), info->ctx, cookie,
-#ifndef __xlC__
-                *((typeof(info->seq) *)hdr)
-#else
-                /* It appears that XL does not support typeof(). */
-                /* Since the sprintf uses %d for this one, I assume int* is safe. */
-                *((int               *)hdr)
-#endif
+                *((__typeof__(info->seq) *)hdr)
           );
 	write(2, buf, strlen(buf));
 	--info->value;
