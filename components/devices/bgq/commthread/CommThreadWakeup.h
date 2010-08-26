@@ -180,6 +180,16 @@ public:
                 return NULL;
         }
 
+	static void commThreadSig(int sig) {
+		// BgqCommThread *thus = (BgqCommThread *)???;
+		// thus->__commThreadSig(sig);
+		// force us to highest priority so we can exit...
+                pthread_t self = pthread_self();
+		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
+//fprintf(stderr, "Bop %ld\n", self);
+                pthread_setschedprio(self, max_pri);
+	}
+
         static inline void initContext(size_t clientid,
                                         size_t contextid, pami_context_t context) {
                 // might need hook later, to do per-context initialization?
@@ -342,6 +352,11 @@ private:
 DEBUG_INIT();
 
                 pthread_setschedprio(self, max_pri);
+		struct sigaction sigact;
+		sigact.sa_handler = commThreadSig;
+		sigemptyset(&sigact.sa_mask);
+		sigact.sa_flags = 0;
+		sigaction(SIGUSR1, &sigact, NULL);
                 _ctxset->joinContextSet(id, _initCtxs);
 //fprintf(stderr, "comm thread %ld for context %04zx\n", self, _initCtxs);
 DEBUG_WRITE('c','t');
@@ -541,14 +556,15 @@ Factory::~Factory() {
 		// Note, should not get here unless all clients/contexts
 		// have been destroyed, so in that case the commthreads
 		// can just be terminated - they are all totally inactive.
-		pthread_kill(_commThreads[x]._thread, SIGTERM);
-		// There is no point to the _shutdown = true if using SIGTERM
+//fprintf(stderr, "pthread_kill(%ld, SIGUSR1);\n", _commThreads[x]._thread);
+		pthread_kill(_commThreads[x]._thread, SIGUSR1);
 	}
 
 	// need to pthread_join() here? or is it too risky (might hang)?
 	size_t fwu = 0;
 	for (x = 0; x < BgqCommThread::_numActive; ++x) {
 		void *status;
+//fprintf(stderr, "pthread_join(%ld, &status);\n", _commThreads[x]._thread);
 		pthread_join(_commThreads[x]._thread, &status);
 		fwu += _commThreads[x]._falseWU;
 	}
