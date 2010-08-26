@@ -32,7 +32,7 @@ namespace PAMI
 {
 
   ///
-  /// \brief Provide a Native Interface over a point to point protocol
+  /// \brief Provide a Native Interface over a point-to-point protocol
   ///
   /// \details See classes below
   /// \see PAMI::NativeInterfaceBase
@@ -43,7 +43,7 @@ namespace PAMI
   ///
   /// \example of usage
   ///
-  /// // Define a point to point protocol (
+  /// // Define a point-to-point protocol (
   ///
   /// typedef Protocol::Send::...<> MyProtocol;
   ///
@@ -146,7 +146,7 @@ namespace PAMI
 
       // Workaround:  This gets rid of an unused warning with gcc
       if(0)
-	getNextDispatch();
+  getNextDispatch();
 
       // Return
       return result;

@@ -46,7 +46,7 @@ namespace PAMI
         // Create an initial context for initialization
         rc = createOneContext(&_contexts[0],0);
         if(rc) {result=rc;  return;}
-        // Initialize Point to Point Communication
+        // Initialize Point-to-Point Communication
         // This is used to build an initial "simple" mapping
         // Using rank and size
         rc = _contexts[0]->initP2P(&myrank, &mysize, &_main_lapi_handle);

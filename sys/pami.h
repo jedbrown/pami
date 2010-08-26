@@ -190,7 +190,7 @@ extern "C"
     PAMI_DISPATCH_ATOM_SIZE_MAX,    /**< Q : size_t : Maximum atom size that can be used with PAMI_Send_typed() function. */
 
     PAMI_GEOMETRY_OPTIMIZE = 400,   /**< Q : bool : Populate the geometry algorithms list with hardware optimized algorithms.  If the algorithms list
-                                            *       is not optimized, point to point routines only will be present, and hardware resources will be released */
+                                            *       is not optimized, point-to-point routines only will be present, and hardware resources will be released */
 
     PAMI_TYPE_DATA_SIZE = 500,      /**< Q : size_t : The data size of a type */
     PAMI_TYPE_DATA_EXTENT,          /**< Q : size_t : The data extent of a type */
@@ -1978,14 +1978,14 @@ extern "C"
    * operation would be for all tasks to call a fence operation on a geometry,
    * followed by a barrier.
    *
-   * Any pt2pt transfers issued to one of the endpoints covered by the geometry cannot
-   * start until all pt2pt transfers to the endpoints in the geometry complete.
+   * Any point-to-point transfers issued to one of the endpoints covered by the geometry cannot
+   * start until all point-to-point transfers to the endpoints in the geometry complete.
    *
-   * *  "Task based" geometry fence will fence point to point and collective
+   * *  "Task based" geometry fence will fence point-to-point and collective
    *    operations to all addressable endpoints for the respective outstanding
-   *    point to point and collective operations.
+   *    point-to-point and collective operations.
    *
-   * *  For point to point, all communication outstanding endpoints will be fenced
+   * *  For point-to-point, all communication outstanding endpoints will be fenced
    *    for the context
    *
    * *  For collectives, all collectives pending on the current context will be
@@ -2306,7 +2306,7 @@ extern "C"
    *  This is a contiguous type object that does not need to be
    *  explicitly created using PAMI_Type_create.  It can be used
    *  in transfers where a pami_type_t is accepted to specify contiguous
-   *  bytes.  This can be used for both collective and point to point
+   *  bytes.  This can be used for both collective and point-to-point
    *  communication.
    */
   extern pami_type_t PAMI_BYTE;
@@ -2903,7 +2903,7 @@ extern "C"
    *   threads, as desired by the application
    * - <b>All contexts created by a client must be advanced by the application
    *   to prevent deadlocks.  This is the "all advance" rule</b>
-   * - The rationale for the "all-advance" rule is that for a point to point
+   * - The rationale for the "all-advance" rule is that for a point-to-point
    *   send or a collective operation, a communication is posted to a
    *   context, and delivered to a context on a remote task. The internals
    *   of the messaging layer could implement "horizontal" parallelism by
