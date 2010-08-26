@@ -7,7 +7,7 @@
 
 #include <pami.h>
 #include "components/memory/MemoryManager.h"
-
+#include "sys/pami_ext.h"
 
 namespace PAMI
 {

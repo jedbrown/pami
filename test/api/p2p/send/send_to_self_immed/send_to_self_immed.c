@@ -79,7 +79,9 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
 
 unsigned long long test (size_t sndlen, size_t myrank)
 {
-  pami_quad_t msginfo;
+  typedef size_t quad_t[4];
+
+  quad_t msginfo;
   pami_result_t result = PAMI_ERROR;
   pami_send_immediate_t parameters;
   parameters.dispatch        = dispatch;

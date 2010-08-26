@@ -18,6 +18,7 @@
 
 #include <pami.h>
 #include "util/common.h"
+#include "sys/pami_ext.h"
 
 /**
  * \brief Multisend interfaces.
@@ -62,20 +63,20 @@
    */
   typedef struct
   {
-    size_t               client;	      /**< client to operate within */
-    size_t               context;	      /**< primary context to operate within */
+    size_t               client;        /**< client to operate within */
+    size_t               context;       /**< primary context to operate within */
     pami_callback_t       cb_done;             /**< User's completion callback */
     unsigned             connection_id;    /**< A connection is a distinct stream of
                                               traffic. The connection id identifies the
                                               connection */
-    unsigned             roles;		      /**< bitmap of roles to perform */
-    pami_pipeworkqueue_t *data;		      /**< Data source */
+    unsigned             roles;         /**< bitmap of roles to perform */
+    pami_pipeworkqueue_t *data;         /**< Data source */
     pami_topology_t      *data_participants;   /**< Tasks contributing data */
-    pami_pipeworkqueue_t *results;	      /**< Results destination */
+    pami_pipeworkqueue_t *results;        /**< Results destination */
     pami_topology_t      *results_participants;/**< Tasks receiving results */
-    pami_op               optor;		      /**< Operation to perform on data */
-    pami_dt               dtype;		      /**< Datatype of elements */
-    size_t               count;		      /**< Number of elements */
+    pami_op               optor;          /**< Operation to perform on data */
+    pami_dt               dtype;          /**< Datatype of elements */
+    size_t               count;         /**< Number of elements */
   } pami_multicombine_t;
 
 

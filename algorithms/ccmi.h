@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 #include <pami.h>
+#include "sys/pami_ext.h"
 
 
 // A debug thread id
@@ -138,11 +139,11 @@ typedef struct _cheader_data
 #define  PAMI_UNDEFINED_RANK ((unsigned)-1)
 
 #ifndef CCMI_PROTOCOL_SIZE
-#define CCMI_PROTOCOL_SIZE	64
+#define CCMI_PROTOCOL_SIZE  64
 #endif
 
 #ifndef CCMI_GEOMETRY_SIZE
-#define CCMI_GEOMETRY_SIZE	32
+#define CCMI_GEOMETRY_SIZE  32
 #endif
 
 typedef enum

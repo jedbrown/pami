@@ -2461,16 +2461,12 @@ extern "C"
 
   /** \} */ /* end of "datatype" group */
 
-#include "pami_ext.h"
-
-
   typedef union
   {
     pami_dispatch_p2p_fn         p2p;
     pami_dispatch_ambroadcast_fn ambroadcast;
     pami_dispatch_amscatter_fn   amscatter;
     pami_dispatch_amreduce_fn    amreduce;
-    PAMI_DISPATCH_EXTEND         /** Extensions to this structure included from xm_ext.h */
   } pami_dispatch_callback_fn;
 
   /*****************************************************************************/
@@ -2488,7 +2484,6 @@ extern "C"
   typedef enum
   {
     PAMI_P2P_SEND,               /**< Point-to-point send         */
-    PAMI_DISPATCH_TYPE_EXTEND    /** Extensions to this structure included from xm_ext.h */
   } pami_dispatch_type_t;
 
   /**
@@ -2500,7 +2495,6 @@ extern "C"
     pami_dispatch_type_t    type;      /**< Type of dispatch reqistered    */
     union{
       pami_send_hint_t      send;
-      PAMI_HINT_EXTEND                 /** Extensions to this structure included from xm_ext.h */
     }                      hint;      /**< Type-specific hints            */
     void*                  config;    /**< Type-specific additional config*/
   } pami_dispatch_hint_t;

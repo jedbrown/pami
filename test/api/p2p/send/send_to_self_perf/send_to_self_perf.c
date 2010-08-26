@@ -150,7 +150,9 @@ static void send_done_remote (pami_context_t   context,
 
 unsigned long long test (size_t sndlen, size_t myrank)
 {
-  pami_quad_t msginfo;
+  typedef size_t quad_t[4];
+
+  quad_t msginfo;
   pami_result_t result = PAMI_ERROR;
   pami_send_t parameters;
   parameters.send.dispatch        = dispatch;

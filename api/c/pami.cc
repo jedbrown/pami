@@ -9,8 +9,6 @@
 #include "Global.h"
 #include "Client.h"
 #include "Context.h"
-#include "PipeWorkQueue.h"
-#include "Topology.h"
 #include <pami.h>
 #include "util/common.h"
 
@@ -164,29 +162,6 @@ extern "C" pami_result_t PAMI_Geometry_create_tasklist (pami_client_t           
                                             cookie);
 }
 
-extern "C" pami_result_t PAMI_Geometry_create_topology(pami_client_t           client,
-                                                       pami_configuration_t    configuration[],
-                                                       size_t                  num_configs,
-                                                       pami_geometry_t       * geometry,
-                                                       pami_geometry_t         parent,
-                                                       unsigned                id,
-                                                       pami_topology_t       * topology,
-                                                       pami_context_t          context,
-                                                       pami_event_function     fn,
-                                                       void                  * cookie)
-{
-  PAMI::Client * _client = (PAMI::Client *) client;
-  return _client->geometry_create_topology(geometry,
-                                           configuration,
-                                           num_configs,
-                                           parent,
-                                           id,
-                                           topology,
-                                           context,
-                                           fn,
-                                           cookie);
-}
-
 
 extern "C" pami_result_t PAMI_Geometry_query (pami_geometry_t       geometry,
                                               pami_configuration_t  configuration[],
@@ -287,354 +262,6 @@ extern "C" pami_result_t PAMI_AMCollective_dispatch_set(pami_context_t          
 
 #include "pami_type.cc"
 
-////////////////////////////////////////////////////////////////////////////////
-// Functions from pami_pipeworkqueue.h                                         //
-////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-void PAMI_PipeWorkQueue_config_circ(pami_pipeworkqueue_t *wq,
-                                   size_t bufsize)
-{
-    PAMI_abort();
-}
-
-void PAMI_PipeWorkQueue_config_circ_usr(pami_pipeworkqueue_t *wq,
-                                       char                *buffer,
-                                       size_t               bufsize)
-{
-    PAMI_abort();
-}
-
-void PAMI_PipeWorkQueue_config_flat(pami_pipeworkqueue_t *wq,
-                                   char                *buffer,
-                                   size_t               bufsize,
-                                   size_t               bufinit)
-{
-    PAMI_abort();
-}
-
-void PAMI_PipeWorkQueue_config_noncontig(pami_pipeworkqueue_t *wq,
-                                        char                *buffer,
-                                        pami_type_t          *type,
-                                        size_t               typecount,
-                                        size_t               typeinit)
-{
-    PAMI_abort();
-}
-
-pami_result_t PAMI_PipeWorkQueue_export(pami_pipeworkqueue_t     *wq,
-                                      pami_pipeworkqueue_ext_t *exp)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    return pwq->exp (exp);
-}
-
-pami_result_t PAMI_PipeWorkQueue_import(pami_pipeworkqueue_ext_t *import,
-                                      pami_pipeworkqueue_t     *wq)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    return pwq->import (import);
-}
-
-void PAMI_PipeWorkQueue_clone(pami_pipeworkqueue_t *wq,
-                             pami_pipeworkqueue_t *obj)
-{
-}
-
-void PAMI_PipeWorkQueue_destroy(pami_pipeworkqueue_t *wq)
-{
-}
-
-void PAMI_PipeWorkQueue_reset(pami_pipeworkqueue_t *wq)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    pwq->reset();
-}
-
-
-void PAMI_PipeWorkQueue_dump(pami_pipeworkqueue_t *wq,
-                            const char          *prefix)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    pwq->dump (prefix);
-}
-
-void PAMI_PipeWorkQueue_setConsumerWakeup(pami_pipeworkqueue_t *wq,
-                                         void                *vec)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    pwq->setConsumerWakeup (vec);
-}
-
-void PAMI_PipeWorkQueue_setProducerWakeup(pami_pipeworkqueue_t *wq,
-                                         void                *vec)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    pwq->setProducerWakeup (vec);
-}
-
-void PAMI_PipeWorkQueue_setProducerUserInfo(pami_pipeworkqueue_t *wq,
-                                         void *word1, void *word2)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    pwq->setProducerUserInfo (word1, word2);
-}
-
-void PAMI_PipeWorkQueue_setConsumerUserInfo(pami_pipeworkqueue_t *wq,
-                                         void *word1, void *word2)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    pwq->setConsumerUserInfo (word1, word2);
-}
-
-void PAMI_PipeWorkQueue_getProducerUserInfo(pami_pipeworkqueue_t *wq,
-                                         void **word1, void **word2)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    pwq->getProducerUserInfo (word1, word2);
-}
-
-void PAMI_PipeWorkQueue_getConsumerUserInfo(pami_pipeworkqueue_t *wq,
-                                         void **word1, void **word2)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    pwq->getConsumerUserInfo (word1, word2);
-}
-
-size_t PAMI_PipeWorkQueue_bytesAvailableToProduce(pami_pipeworkqueue_t *wq)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    return pwq->bytesAvailableToProduce ();
-}
-
-size_t PAMI_PipeWorkQueue_bytesAvailableToConsume(pami_pipeworkqueue_t *wq)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    return pwq->bytesAvailableToConsume ();
-}
-
-size_t PAMI_PipeWorkQueue_getBytesProduced(pami_pipeworkqueue_t *wq)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    return pwq->getBytesProduced ();
-}
-
-size_t PAMI_PipeWorkQueue_getBytesConsumed(pami_pipeworkqueue_t *wq)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    return pwq->getBytesConsumed ();
-}
-
-char *PAMI_PipeWorkQueue_bufferToProduce(pami_pipeworkqueue_t *wq)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    return pwq->bufferToProduce ();
-}
-
-void PAMI_PipeWorkQueue_produceBytes(pami_pipeworkqueue_t *wq,
-                                    size_t               bytes)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    return pwq->produceBytes (bytes);
-}
-
-char *PAMI_PipeWorkQueue_bufferToConsume(pami_pipeworkqueue_t *wq)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    return pwq->bufferToConsume ();
-}
-
-void PAMI_PipeWorkQueue_consumeBytes(pami_pipeworkqueue_t *wq,
-                                    size_t               bytes)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    return pwq->consumeBytes (bytes);
-}
-
-int PAMI_PipeWorkQueue_available(pami_pipeworkqueue_t *wq)
-{
-    PAMI::PipeWorkQueue * pwq = (PAMI::PipeWorkQueue *) wq;
-    return pwq->available ();
-}
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-// Functions from pami_topology.h                                              //
-////////////////////////////////////////////////////////////////////////////////
-
-
-void PAMI_Topology_create(pami_topology_t *topo)
-{
-    PAMI_abort();
-}
-
-void PAMI_Topology_create_rect(pami_topology_t *topo,
-                              pami_coord_t *ll, pami_coord_t *ur, unsigned char *tl)
-{
-    PAMI_abort();
-}
-
-void PAMI_Topology_create_axial(pami_topology_t *topo,
-                               pami_coord_t *ll,
-                               pami_coord_t *ur,
-                               pami_coord_t *ref,
-                               unsigned char *dir,
-                               unsigned char *tl)
-{
-  PAMI_abort();
-}
-
-void PAMI_Topology_create_task(pami_topology_t *topo, pami_task_t rank)
-{
-    PAMI_abort();
-}
-
-void PAMI_Topology_create_range(pami_topology_t *topo, pami_task_t rank0, pami_task_t rankn)
-{
-  new(topo)PAMI::Topology(rank0,rankn);
-}
-
-void PAMI_Topology_create_list(pami_topology_t *topo, pami_task_t *ranks, size_t nranks)
-{
-  new(topo)PAMI::Topology(ranks,nranks);
-}
-
-void PAMI_Topology_destroy(pami_topology_t *topo)
-{
-    PAMI_abort();
-}
-
-unsigned PAMI_Topology_size_of(pami_topology_t *topo)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->size_of();
-}
-
-size_t PAMI_Topology_size(pami_topology_t *topo)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->size();
-}
-
-pami_topology_type_t pami_topology_type(pami_topology_t *topo)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->type();
-}
-
-pami_task_t PAMI_Topology_index2TaskID(pami_topology_t *topo, size_t ix)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->index2Rank(ix);
-}
-
-size_t PAMI_Topology_taskID2Index(pami_topology_t *topo, pami_task_t rank)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->rank2Index(rank);
-}
-
-pami_result_t PAMI_Topology_taskRange(pami_topology_t *topo, pami_task_t *first, pami_task_t *last)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->rankRange(first,last);
-}
-
-pami_result_t PAMI_Topology_taskList(pami_topology_t *topo, pami_task_t **list)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->rankList(list);
-}
-
-pami_result_t PAMI_Topology_rectSeg(pami_topology_t *topo,
-                                  pami_coord_t *ll, pami_coord_t *ur,
-                                  unsigned char *tl)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->rectSeg(ll,ur,tl);
-}
-
-int PAMI_Topology_isLocalToMe(pami_topology_t *topo)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->isLocalToMe();
-}
-
-int PAMI_Topology_isRectSeg(pami_topology_t *topo)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->isRectSeg();
-}
-
-void PAMI_Topology_getNthDims(pami_topology_t *topo, unsigned n,
-                             unsigned *c0, unsigned *cn, unsigned char *tl)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->getNthDims(n,c0,cn,tl);
-}
-
-int PAMI_Topology_isTaskMember(pami_topology_t *topo, pami_task_t rank)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->isRankMember(rank);
-}
-
-int PAMI_Topology_isCoordMember(pami_topology_t *topo, pami_coord_t *c0)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->isCoordMember(c0);
-}
-
-void PAMI_Topology_sub_LocalToMe(pami_topology_t *_new, pami_topology_t *topo)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    t->subTopologyLocalToMe((PAMI::Topology *)_new);
-}
-
-void PAMI_Topology_sub_NthGlobal(pami_topology_t *_new, pami_topology_t *topo, int n)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    t->subTopologyNthGlobal((PAMI::Topology *)_new, n);
-}
-
-void PAMI_Topology_sub_ReduceDims(pami_topology_t *_new, pami_topology_t *topo, pami_coord_t *fmt)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    t->subTopologyReduceDims((PAMI::Topology *)_new, fmt);
-}
-
-void PAMI_Topology_getTaskList(pami_topology_t *topo, size_t max, pami_task_t *ranks, size_t *nranks)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    t->getRankList(max,ranks,nranks);
-}
-
-int  PAMI_Topology_analyze(pami_topology_t *topo)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->analyzeTopology();
-}
-
-int  PAMI_Topology_convert(pami_topology_t *topo, pami_topology_type_t new_type)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->convertTopology(new_type);
-}
-
-void PAMI_Topology_intersect(pami_topology_t *_new, pami_topology_t *topo, pami_topology_t *other)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->intersectTopology((PAMI::Topology *)_new, (PAMI::Topology *)other);
-}
-
-void PAMI_Topology_subtract(pami_topology_t *_new, pami_topology_t *topo, pami_topology_t *other)
-{
-    PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->subtractTopology((PAMI::Topology *)_new, (PAMI::Topology *)other);
-}
 
 #ifdef USE_COMMTHREADS // from (bgq/) Client.h
 /// \todo #warning PAMI_Client_add_commthread_context() is non-standard API
@@ -942,30 +569,11 @@ extern "C" pami_result_t PAMI_Resume_totask (pami_context_t   context,
   return ctx->resume_totask (dest, count);
 }
 
-
-extern "C" pami_result_t PAMI_Task2Network(pami_task_t task,
-                                           pami_coord_t *ntw)
-{
-#if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
-  return __global.mapping.task2network(task, ntw, PAMI_N_TORUS_NETWORK);
-#else
-  PAMI_abort();
-  return PAMI_ERROR;
-#endif
-}
-
-
-extern "C" pami_result_t PAMI_Network2Task(pami_coord_t ntw,
-                                           pami_task_t *task)
-{
-  pami_network type;
-  return __global.mapping.network2task(&ntw, task, &type);
-}
-
 namespace CCMI { namespace Adaptor { namespace Allreduce {
       extern void getReduceFunction(pami_dt, pami_op, unsigned,
                                     unsigned&, coremath&);
     }}};
+
 extern "C" pami_result_t PAMI_Dt_query (pami_dt dt, size_t *size)
 {
   coremath cb_allreduce  = NULL;
@@ -1007,5 +615,14 @@ extern "C" void * PAMI_Extension_function (pami_extension_t   extension,
   PAMI::Extension * x = (PAMI::Extension *) extension;
   return x->function (fn);
 }
+
+
+//
+//
+// Temporary! Move this someplace else!
+//
+//
+#include "api/c/pami_ext_impl.h"
+
 
 

@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <pami.h>
+#include "sys/pami_ext.h"
 
 namespace PAMI
 {
@@ -27,9 +28,9 @@ namespace PAMI
       ///
       /// Assumes no torus links if no 'tl' param.
       ///
-      /// \param[in] ll	lower-left coordinate
-      /// \param[in] ur	upper-right coordinate
-      /// \param[in] tl	optional, torus links flags
+      /// \param[in] ll lower-left coordinate
+      /// \param[in] ur upper-right coordinate
+      /// \param[in] tl optional, torus links flags
       ///
       inline Topology(pami_coord_t *ll, pami_coord_t *ur,
                       unsigned char *tl = NULL) {}
@@ -43,10 +44,10 @@ namespace PAMI
       ///
       /// Assumes no torus links if no 'tl' param.
       ///
-      /// \param[in] ll	lower-left coordinate
-      /// \param[in] ur	upper-right coordinate
+      /// \param[in] ll lower-left coordinate
+      /// \param[in] ur upper-right coordinate
       /// \param[in] ref reference rank
-      /// \param[in] tl	optional, torus links flags
+      /// \param[in] tl optional, torus links flags
       ///
       inline Topology(pami_coord_t *ll,
                       pami_coord_t *ur,
@@ -55,14 +56,14 @@ namespace PAMI
 
       /// \brief single rank constructor (PAMI_SINGLE_TOPOLOGY)
       ///
-      /// \param[in] rank	The rank
+      /// \param[in] rank The rank
       ///
       inline Topology(pami_task_t rank) {}
 
       /// \brief rank range constructor (PAMI_RANGE_TOPOLOGY)
       ///
-      /// \param[in] rank0	first rank in range
-      /// \param[in] rankn	last rank in range
+      /// \param[in] rank0  first rank in range
+      /// \param[in] rankn  last rank in range
       ///
       inline Topology(pami_task_t rank0, pami_task_t rankn) {}
 
@@ -70,31 +71,31 @@ namespace PAMI
       ///
       /// caller must not free ranks[]!
       ///
-      /// \param[in] ranks	array of ranks
-      /// \param[in] nranks	size of array
+      /// \param[in] ranks  array of ranks
+      /// \param[in] nranks size of array
       ///
       /// \todo create destructor to free list, or establish rules
       ///
       inline Topology(pami_task_t *ranks, size_t nranks) {}
 
       /// \brief accessor for size of a Topology object
-      /// \return	size of PAMI::Topology
+      /// \return size of PAMI::Topology
       inline unsigned size_of();
 
       /// \brief number of ranks in topology
-      /// \return	number of ranks
+      /// \return number of ranks
       inline size_t size();
 
       /// \brief type of topology
-      /// \return	topology type
+      /// \return topology type
       inline pami_topology_type_t type();
 
 
 
       /// \brief Nth rank in topology
       ///
-      /// \param[in] ix	Which rank to select
-      /// \return	Nth rank or (size_t)-1 if does not exist
+      /// \param[in] ix Which rank to select
+      /// \return Nth rank or (size_t)-1 if does not exist
       ///
       inline pami_task_t index2Rank(size_t ix);
 
@@ -102,23 +103,23 @@ namespace PAMI
       ///
       /// This is the inverse function to index2Rank(ix) above.
       ///
-      /// \param[in] rank	Which rank to get index for
-      /// \return	index of rank (rank(ix) == rank) or (size_t)-1
+      /// \param[in] rank Which rank to get index for
+      /// \return index of rank (rank(ix) == rank) or (size_t)-1
       ///
       inline size_t rank2Index(pami_task_t rank);
 
       /// \brief return range
       ///
-      /// \param[out] first	Where to put first rank in range
-      /// \param[out] last	Where to put last rank in range
-      /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a range topology
+      /// \param[out] first Where to put first rank in range
+      /// \param[out] last  Where to put last rank in range
+      /// \return PAMI_SUCCESS, or PAMI_UNIMPL if not a range topology
       ///
       inline pami_result_t rankRange(pami_task_t *first, pami_task_t *last);
 
       /// \brief return rank list
       ///
-      /// \param[out] list	pointer to list stored here
-      /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a list topology
+      /// \param[out] list  pointer to list stored here
+      /// \return PAMI_SUCCESS, or PAMI_UNIMPL if not a list topology
       ///
       inline pami_result_t rankList(pami_task_t **list);
 
@@ -127,12 +128,12 @@ namespace PAMI
       /// Warning! This returns pointers to the Topology internals!
       /// This can result in corruption of a topology if mis-used.
       ///
-      /// \param[in] ll	lower-left coordinate
-      /// \param[in] ur	upper-right coordinate
+      /// \param[in] ll lower-left coordinate
+      /// \param[in] ur upper-right coordinate
       /// \param[in] ref reference rank
-      /// \param[in] tl	 torus links flags
+      /// \param[in] tl  torus links flags
       ///
-      /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not an axial topology
+      /// \return PAMI_SUCCESS, or PAMI_UNIMPL if not an axial topology
       ///
       inline pami_result_t axial(pami_coord_t **ll, pami_coord_t **ur,
                                   pami_coord_t **ref,
@@ -143,12 +144,12 @@ namespace PAMI
       /// This method copies data to callers buffers. It is safer
       /// as the caller cannot directly modify the topology.
       ///
-      /// \param[in] ll	lower-left coordinate
-      /// \param[in] ur	upper-right coordinate
-      /// \param[in] ref	reference rank
-      /// \param[in] tl	torus links flags
+      /// \param[in] ll lower-left coordinate
+      /// \param[in] ur upper-right coordinate
+      /// \param[in] ref  reference rank
+      /// \param[in] tl torus links flags
       ///
-      /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not an axial topology
+      /// \return PAMI_SUCCESS, or PAMI_UNIMPL if not an axial topology
       ///
       inline pami_result_t axial(pami_coord_t *ll, pami_coord_t *ur,
                                   pami_coord_t *ref,
@@ -159,10 +160,10 @@ namespace PAMI
       /// Warning! This returns pointers to the Topology internals!
       /// This can result in corruption of a topology if mis-used.
       ///
-      /// \param[out] ll	lower-left coord pointer storage
-      /// \param[out] ur	upper-right coord pointer storage
-      /// \param[out] tl	optional, torus links flags
-      /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a coord topology
+      /// \param[out] ll  lower-left coord pointer storage
+      /// \param[out] ur  upper-right coord pointer storage
+      /// \param[out] tl  optional, torus links flags
+      /// \return PAMI_SUCCESS, or PAMI_UNIMPL if not a coord topology
       ///
       inline pami_result_t rectSeg(pami_coord_t **ll, pami_coord_t **ur,
                                   unsigned char **tl = NULL);
@@ -172,10 +173,10 @@ namespace PAMI
       /// This method copies data to callers buffers. It is safer
       /// as the caller cannot directly modify the topology.
       ///
-      /// \param[out] ll	lower-left coord pointer storage
-      /// \param[out] ur	upper-right coord pointer storage
-      /// \param[out] tl	optional, torus links flags
-      /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a coord topology
+      /// \param[out] ll  lower-left coord pointer storage
+      /// \param[out] ur  upper-right coord pointer storage
+      /// \param[out] tl  optional, torus links flags
+      /// \return PAMI_SUCCESS, or PAMI_UNIMPL if not a coord topology
       ///
       inline pami_result_t rectSeg(pami_coord_t *ll, pami_coord_t *ur,
                                   unsigned char *tl = NULL);
@@ -200,50 +201,50 @@ namespace PAMI
 
       /// \brief is topology a rectangular segment
       ///
-      /// \return	boolean indicating rect seg topo
+      /// \return boolean indicating rect seg topo
       ///
       inline bool isRectSeg();
 
       /// \brief extract Nth dimensions from coord topology
       ///
-      /// \param[in] n	Which dim to extract
-      /// \param[out] c0	lower value for dim range
-      /// \param[out] cn	upper value for dim range
-      /// \param[out] tl	optional, torus link flag
+      /// \param[in] n  Which dim to extract
+      /// \param[out] c0  lower value for dim range
+      /// \param[out] cn  upper value for dim range
+      /// \param[out] tl  optional, torus link flag
       ///
       inline void getNthDims(unsigned n, unsigned *c0, unsigned *cn,
                              unsigned char *tl = NULL);
 
       /// \brief is rank in topology
       ///
-      /// \param[in] rank	Rank to test
-      /// \return	boolean indicating rank is in topology
+      /// \param[in] rank Rank to test
+      /// \return boolean indicating rank is in topology
       ///
       inline bool isRankMember(pami_task_t rank);
 
       /// \brief is coordinate in topology
       ///
-      /// \param[in] c0	Coord to test
-      /// \return	boolean indicating coord is a member of topology
+      /// \param[in] c0 Coord to test
+      /// \return boolean indicating coord is a member of topology
       ///
       inline bool isCoordMember(pami_coord_t *c0);
 
       /// \brief create topology of ranks local to self
       ///
-      /// \param[out] _new	Where to build topology
+      /// \param[out] _new  Where to build topology
       ///
       inline void subTopologyLocalToMe(T_Topology *_new);
 
       /// \brief create topology from all Nth ranks globally
       ///
-      /// \param[out] _new	Where to build topology
-      /// \param[in] n	Which local rank to select on each node
+      /// \param[out] _new  Where to build topology
+      /// \param[in] n  Which local rank to select on each node
       ///
       inline void subTopologyNthGlobal(T_Topology *_new, int n);
 
       /// \brief create topology from all Nth offsets locally
       ///
-      /// \param[out] _new	Where to build topology
+      /// \param[out] _new  Where to build topology
       ///
       inline void subTopologyLocalMaster(T_Topology *_new);
 
@@ -255,8 +256,8 @@ namespace PAMI
       /// having "-1" will be preserved, while all others will be squashed
       /// into a dimension of size 1 having the value specified.
       ///
-      /// \param[out] _new	where to build new topology
-      /// \param[in] fmt	how to reduce dimensions
+      /// \param[out] _new  where to build new topology
+      /// \param[in] fmt  how to reduce dimensions
       ///
       inline void subTopologyReduceDims(T_Topology *_new, pami_coord_t *fmt);
 
@@ -271,9 +272,9 @@ namespace PAMI
       /// should assume it did not get the whole list, and could
       /// allocate a larger array and try again.
       ///
-      /// \param[in] max	size of caller-allocated array
-      /// \param[out] ranks	array where rank list is placed
-      /// \param[out] nranks	actual number of ranks put into array
+      /// \param[in] max  size of caller-allocated array
+      /// \param[out] ranks array where rank list is placed
+      /// \param[out] nranks  actual number of ranks put into array
       ///
       inline void getRankList(size_t max, pami_task_t *ranks, size_t *nranks);
 
@@ -283,12 +284,12 @@ namespace PAMI
       /// other analysis is done. A PAMI_SINGLE_TOPOLOGY cannot be optimized,
       /// either. Optimization levels:
       ///
-      ///	PAMI_SINGLE_TOPOLOGY (most)
-      ///	PAMI_COORD_TOPOLOGY
-      ///	PAMI_RANGE_TOPOLOGY
-      ///	PAMI_LIST_TOPOLOGY (least)
+      /// PAMI_SINGLE_TOPOLOGY (most)
+      /// PAMI_COORD_TOPOLOGY
+      /// PAMI_RANGE_TOPOLOGY
+      /// PAMI_LIST_TOPOLOGY (least)
       ///
-      /// \return	'true' if topology was changed
+      /// \return 'true' if topology was changed
       ///
       inline bool analyzeTopology();
 
@@ -297,8 +298,8 @@ namespace PAMI
       /// Does not differentiate between invalid conversions and
       /// 'null' conversions (same type).
       ///
-      /// \param[in] new_type	Topology type to try and convert into
-      /// \return	'true' if topology was changed
+      /// \param[in] new_type Topology type to try and convert into
+      /// \return 'true' if topology was changed
       ///
       inline bool convertTopology(pami_topology_type_t new_type);
 
@@ -306,8 +307,8 @@ namespace PAMI
       ///
       /// produces: _new = this .U. other
       ///
-      /// \param[out] _new	New topology created there
-      /// \param[in] other	The other topology
+      /// \param[out] _new  New topology created there
+      /// \param[in] other  The other topology
       ///
       inline void unionTopology(T_Topology *_new, T_Topology *other);
 
@@ -315,8 +316,8 @@ namespace PAMI
       ///
       /// produces: _new = this ./\. other
       ///
-      /// \param[out] _new	New topology created there
-      /// \param[in] other	The other topology
+      /// \param[out] _new  New topology created there
+      /// \param[in] other  The other topology
       ///
       inline void intersectTopology(T_Topology *_new, T_Topology *other);
 
@@ -324,8 +325,8 @@ namespace PAMI
       ///
       /// produces: _new = this .-. other
       ///
-      /// \param[out] _new	New topology created there
-      /// \param[in] other	The other topology
+      /// \param[out] _new  New topology created there
+      /// \param[in] other  The other topology
       ///
       inline void subtractTopology(T_Topology *_new, T_Topology *other);
     }; // end class PAMI::Interface::Topology

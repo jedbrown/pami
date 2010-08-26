@@ -14,6 +14,7 @@
 #define __common_BaseMappingInterface_h__
 
 #include <pami.h>
+#include "sys/pami_ext.h"
 
 namespace PAMI
 {
@@ -48,7 +49,7 @@ namespace PAMI
                                            pami_coord_t         * addr,
                                            pami_network           type);
           inline size_t globalDims();
-      };	// class Base
+      };  // class Base
 
       template <class T_Mapping>
       inline size_t Base<T_Mapping>::task ()
@@ -82,7 +83,7 @@ namespace PAMI
       {
         return static_cast<T_Mapping*>(this)->globalDims_impl ();
       }
-    };	// namespace Mapping
-  };	// namespace Interface
-};	// namespace PAMI
+    };  // namespace Mapping
+  };  // namespace Interface
+};  // namespace PAMI
 #endif // __components_mapping_basemapping_h__
