@@ -1364,9 +1364,10 @@ extern "C"
    * \param[in]     geometry      An input geometry to be analyzed.
    * \param[in]     coll_type     type of collective op.
    * \param[in,out] lists_lengths array of 2 numbers representing all valid
-   algorithms and optimized algorithms.
-   * \retval        PAMI_SUCCESS   number of algorithms is determined.
-   * \retval        ?????         There is an error with input parameters
+   *                              algorithms and optimized algorithms.
+   *
+   * \retval        PAMI_SUCCESS  number of algorithms is determined.
+   * \retval        PAMI_INVAL    There is an error with input parameters
    */
   pami_result_t PAMI_Geometry_algorithms_num (pami_context_t context,
                                             pami_geometry_t geometry,
@@ -1389,8 +1390,9 @@ extern "C"
    * \param[in,out] mdata1         metadata array to be filled in if algorithms
    *                               are applicable, can be NULL.
    * \param[in]     num1           number of algorithms to fill in.
-   * \retval        PAMI_SUCCESS    algorithm is applicable to geometry.
-   * \retval        ?????          Error in input arguments or not applicable.
+   *
+   * \retval        PAMI_SUCCESS   algorithm is applicable to geometry.
+   * \retval        PAMI_INVAL     Error in input arguments or not applicable.
    */
   pami_result_t PAMI_Geometry_algorithms_query (pami_context_t context,
                                              pami_geometry_t geometry,
@@ -1920,7 +1922,7 @@ extern "C"
    * \param[in]  rtypecount   Receive buffer type count
    * \param[in]  dt           Element data type
    * \param[in]  op           Reduce operation
-   * \param[in]  exclusive    scan operation is exclusive of current node?
+   * \param[in]  exclusive    scan operation is exclusive of current node
    *
    * \retval     0            Success
    *
@@ -2386,16 +2388,10 @@ extern "C"
   /**
    * \brief Destroy the type
    *
-   * Q. What if some in-flight messages are still using it?  What if some
-   * other types have references to it?
-   *
-   * A. Maintain an internal reference count and release internal type
-   * resources when the count hits zero.
-   *
-   * \param[in] type Type identifier to be destroyed
-   *
    * The type handle will be changed to an invalid value so that it is
    * clearly destroyed.
+   *
+   * \param[in] type Type identifier to be destroyed
    */
   pami_result_t PAMI_Type_destroy (pami_type_t * type);
 
@@ -3032,7 +3028,7 @@ extern "C"
    * \see PAMI_Context_lock
    * \see PAMI_Context_trylock
    *
-   * \todo Define return code, event bitmask ?
+   * \todo Define return code
    *
    * \param[in] context PAMI communication context
    * \param[in] maximum Maximum number of internal poll iterations
@@ -3063,8 +3059,7 @@ extern "C"
    *       \em leader context, and to manage the pami client threads to ensure
    *       that only one thread ever advances the set of contexts.
    *
-   * \todo Define return code, event bitmask ?
-   * \todo Rename function to something better
+   * \todo Define return code
    *
    * \see PAMI_Context_lock
    * \see PAMI_Context_trylock
