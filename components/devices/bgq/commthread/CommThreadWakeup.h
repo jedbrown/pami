@@ -90,110 +90,110 @@ namespace CommThread {
 class BgqCommThread {
 private:
 
-        /// \brief Convenience code to lock and/or unlock contexts in set
-        ///
-        /// \param[in] old	Currently locked contexts
-        /// \param[in] new	New set of contexts that should be locked
-        ///
-        inline void __lockContextSet(uint64_t &old, uint64_t new_) {
-                uint64_t m, l = old;
-                size_t x;
-                pami_result_t r;
+	/// \brief Convenience code to lock and/or unlock contexts in set
+	///
+	/// \param[in] old	Currently locked contexts
+	/// \param[in] new	New set of contexts that should be locked
+	///
+	inline void __lockContextSet(uint64_t &old, uint64_t new_) {
+		uint64_t m, l = old;
+		size_t x;
+		pami_result_t r;
 
-                m = (old ^ new_) & old; // must unlock these
-                x = 0;
-                while (m) {
-                        if (m & 1) {
+		m = (old ^ new_) & old; // must unlock these
+		x = 0;
+		while (m) {
+			if (m & 1) {
 				_ctxset->getContext(x)->cleanupAffinity(false);
-                                r = _ctxset->getContext(x)->unlock();
-                                l &= ~(1ULL << x);
-                        }
-                        m >>= 1;
-                        ++x;
-                }
+				r = _ctxset->getContext(x)->unlock();
+				l &= ~(1ULL << x);
+			}
+			m >>= 1;
+			++x;
+		}
 
-                m = (old ^ new_) & new_; // must lock these
-                x = 0;
-                while (m) {
-                        if (m & 1) {
-                                r = _ctxset->getContext(x)->trylock();
-                                if (r == PAMI_SUCCESS) {
-                                        l |= (1ULL << x);
+		m = (old ^ new_) & new_; // must lock these
+		x = 0;
+		while (m) {
+			if (m & 1) {
+				r = _ctxset->getContext(x)->trylock();
+				if (r == PAMI_SUCCESS) {
+					l |= (1ULL << x);
 					_ctxset->getContext(x)->cleanupAffinity(true);
-                                }
-                        }
-                        m >>= 1;
-                        ++x;
-                }
-                old = l;
-        }
+				}
+			}
+			m >>= 1;
+			++x;
+		}
+		old = l;
+	}
 
-        /// \brief Convenience code to advance all contexts in set
-        ///
-        /// \param[in] ctx	Bitmap of contexts that are locked
-        /// \return	Number of work events
-        ///
-        inline size_t __advanceContextSet(uint64_t ctx) {
-                size_t x, e = 0;
-                uint64_t m = ctx;
-                pami_result_t r;
-                x = 0;
-                while (m) {
-                        if (m & 1) {
-                                e += _ctxset->getContext(x)->advance(1, r);
-                                r = r; // avoid warning until we figure out what to do with result
-                        }
-                        m >>= 1;
-                        ++x;
-                }
-                return e;
-        }
+	/// \brief Convenience code to advance all contexts in set
+	///
+	/// \param[in] ctx	Bitmap of contexts that are locked
+	/// \return	Number of work events
+	///
+	inline size_t __advanceContextSet(uint64_t ctx) {
+		size_t x, e = 0;
+		uint64_t m = ctx;
+		pami_result_t r;
+		x = 0;
+		while (m) {
+			if (m & 1) {
+				e += _ctxset->getContext(x)->advance(1, r);
+				r = r; // avoid warning until we figure out what to do with result
+			}
+			m >>= 1;
+			++x;
+		}
+		return e;
+	}
 
-        /// \brief Arm the MU interrupt-through-Wakeup Unit
-        ///
-        inline void __armMU_WU() {
+	/// \brief Arm the MU interrupt-through-Wakeup Unit
+	///
+	inline void __armMU_WU() {
 		WU_ArmMU(0x0f);
 	}
 
-        /// \brief Disarm the MU interrupt-through-Wakeup Unit
-        ///
-        inline void __disarmMU_WU() {
+	/// \brief Disarm the MU interrupt-through-Wakeup Unit
+	///
+	inline void __disarmMU_WU() {
 		WU_DisarmMU(0x0f);
 	}
 
 public:
-        BgqCommThread(BgqWakeupRegion *wu, BgqContextPool *pool, size_t num_ctx) :
-        _wakeup_region(wu),
-        _ctxset(pool),
+	BgqCommThread(BgqWakeupRegion *wu, BgqContextPool *pool, size_t num_ctx) :
+	_wakeup_region(wu),
+	_ctxset(pool),
 	_thread(0),
 	_falseWU(0),
 	_shutdown(false)
-        { }
+	{ }
 
-        ~BgqCommThread() { }
+	~BgqCommThread() { }
 
 
-        static void *commThread(void *cookie) {
-                BgqCommThread *thus = (BgqCommThread *)cookie;
-                pami_result_t r = thus->__commThread();
-                r = r; // avoid warning until we decide how to use result
-                return NULL;
-        }
+	static void *commThread(void *cookie) {
+		BgqCommThread *thus = (BgqCommThread *)cookie;
+		pami_result_t r = thus->__commThread();
+		r = r; // avoid warning until we decide how to use result
+		return NULL;
+	}
 
 	static void commThreadSig(int sig) {
 		// BgqCommThread *thus = (BgqCommThread *)???;
 		// thus->__commThreadSig(sig);
 		// force us to highest priority so we can exit...
-                pthread_t self = pthread_self();
+		pthread_t self = pthread_self();
 		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
 //fprintf(stderr, "Bop %ld\n", self);
-                pthread_setschedprio(self, max_pri);
+		pthread_setschedprio(self, max_pri);
 	}
 
-        static inline void initContext(size_t clientid,
-                                        size_t contextid, pami_context_t context) {
-                // might need hook later, to do per-context initialization?
-        }
+	static inline void initContext(size_t clientid,
+					size_t contextid, pami_context_t context) {
+		// might need hook later, to do per-context initialization?
+	}
 
 	static void balanceThreads(uint32_t core, uint32_t &newcore, uint32_t &newthread) {
 		uint32_t c = core;
@@ -215,11 +215,11 @@ public:
 	// This helps ensure a more-balanced startup, and prevents some
 	// complexities of trying to re-balance later. Then, only when
 	// a comm-thread leaves the set does there have to be a re-balance.
-        static inline pami_result_t addContext(size_t clientid,
-                                        pami_context_t context) {
-                // all BgqCommThread objects have the same ContextSet object.
+	static inline pami_result_t addContext(size_t clientid,
+					pami_context_t context) {
+		// all BgqCommThread objects have the same ContextSet object.
 		BgqCommThread *devs = __CommThreadGlobal.getCommThreads();
-                uint64_t m = devs[0]._ctxset->addContext(context);
+		uint64_t m = devs[0]._ctxset->addContext(context);
 		if (m == 0) {
 			return PAMI_EAGAIN; // closest thing to ENOSPC ?
 		}
@@ -300,9 +300,9 @@ public:
 		}
 		_comm_xlat[c][t] = thus;
 		return PAMI_SUCCESS;
-        }
+	}
 
-        static inline pami_result_t rmContexts(size_t clientid,
+	static inline pami_result_t rmContexts(size_t clientid,
 						pami_context_t *ctxs, size_t nctx) {
 		size_t x;
 		if (_numActive == 0) {
@@ -310,11 +310,11 @@ public:
 		}
 		BgqCommThread *devs = __CommThreadGlobal.getCommThreads();
 
-                // all BgqCommThread objects have the same ContextSet object.
+		// all BgqCommThread objects have the same ContextSet object.
 
 		// This should wakeup all commthreads, and any one holding
 		// this context should release it...
-                uint64_t mask = devs[0]._ctxset->disableContexts(ctxs, nctx);
+		uint64_t mask = devs[0]._ctxset->disableContexts(ctxs, nctx);
 
 		// wait here for all contexts to get released? must only
 		// wait for all commthreads to release, not for other threads
@@ -326,135 +326,135 @@ public:
 		// is this guaranteed not to race with locker?
 		// do we need some sort of "generation counter" barrier?
 		uint64_t lmask;
-		do {    
+		do {
 			lmask = 0;
 			for (x = 0; x < _numActive; ++x) {
 				lmask |= devs[x]._lockCtxs;
 			}
 		} while (lmask & mask);
 
-                devs[0]._ctxset->rmContexts(ctxs, nctx);
+		devs[0]._ctxset->rmContexts(ctxs, nctx);
 
 		return PAMI_SUCCESS;
 	}
 
 private:
-        inline pami_result_t __commThread() {
-                // should/can this use the internal (C++) interface?
-                uint64_t new_ctx, old_ctx, lkd_ctx;
-                size_t n, events, ev_since_wu;
-                size_t max_loop = 100; // \todo need some heuristic or tunable for max loops
-                size_t id; // our current commthread id, among active ones.
-                pthread_t self = pthread_self();
-                uint64_t wu_start, wu_mask;
+	inline pami_result_t __commThread() {
+		// should/can this use the internal (C++) interface?
+		uint64_t new_ctx, old_ctx, lkd_ctx;
+		size_t n, events, ev_since_wu;
+		size_t max_loop = 100; // \todo need some heuristic or tunable for max loops
+		size_t id; // our current commthread id, among active ones.
+		pthread_t self = pthread_self();
+		uint64_t wu_start, wu_mask;
 		int min_pri = sched_get_priority_min(COMMTHREAD_SCHED);
 		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
 DEBUG_INIT();
 
-                pthread_setschedprio(self, max_pri);
+		pthread_setschedprio(self, max_pri);
 		struct sigaction sigact;
 		sigact.sa_handler = commThreadSig;
 		sigemptyset(&sigact.sa_mask);
 		sigact.sa_flags = 0;
 		sigaction(SIGUSR1, &sigact, NULL);
-                _ctxset->joinContextSet(id, _initCtxs);
+		_ctxset->joinContextSet(id, _initCtxs);
 //fprintf(stderr, "comm thread %ld for context %04zx\n", self, _initCtxs);
 DEBUG_WRITE('c','t');
-                new_ctx = old_ctx = lkd_ctx = 0;
+		new_ctx = old_ctx = lkd_ctx = 0;
 		ev_since_wu = 0;
-                while (!_shutdown) {
-                        //
+		while (!_shutdown) {
+			//
 new_context_assignment:	// These are the same now, assuming the re-locking is
 more_work:		// lightweight enough.
-                        //
+			//
 
-                        __armMU_WU();
+			__armMU_WU();
 
 			// doing this without 'new_ctx' depends on it being ignored...
-                        _wakeup_region->getWURange(0, &wu_start, &wu_mask);
+			_wakeup_region->getWURange(0, &wu_start, &wu_mask);
 
-                        n = 0;
+			n = 0;
 			events = 0;
 			do {
-                        	WU_ArmWithAddress(wu_start, wu_mask);
-                        	new_ctx = _ctxset->getContextSet(id);
+				WU_ArmWithAddress(wu_start, wu_mask);
+				new_ctx = _ctxset->getContextSet(id);
 
-                        	// this only locks/unlocks what changed...
-                        	__lockContextSet(lkd_ctx, new_ctx);
+				// this only locks/unlocks what changed...
+				__lockContextSet(lkd_ctx, new_ctx);
 				if (old_ctx != new_ctx) ev_since_wu += 1;
-                        	old_ctx = new_ctx;
+				old_ctx = new_ctx;
 				_lockCtxs = lkd_ctx;
-                                events = __advanceContextSet(lkd_ctx);
+				events = __advanceContextSet(lkd_ctx);
 				ev_since_wu += events;
-                        } while (!_shutdown && lkd_ctx && (events != 0 || ++n < max_loop));
+			} while (!_shutdown && lkd_ctx && (events != 0 || ++n < max_loop));
 			if (_shutdown) break;
 
-                        // Snoop the scheduler to see if other threads are competing.
-                        // This should also include total number of threads on
-                        // the core, and some heuristic by which we decide to
-                        // back-off more. This gets complicated if we consider
-                        // whether those other sw threads are truly active, or even
-                        // running in some syncopated "tag team" mode.
-                        // TBD
+			// Snoop the scheduler to see if other threads are competing.
+			// This should also include total number of threads on
+			// the core, and some heuristic by which we decide to
+			// back-off more. This gets complicated if we consider
+			// whether those other sw threads are truly active, or even
+			// running in some syncopated "tag team" mode.
+			// TBD
 //re_evaluate:
-                        n = Kernel_SnoopRunnable();
+			n = Kernel_SnoopRunnable();
 
-                        if (n <= 1) {
-                                // we are alone
-                                if (events == 0) {
-                                        // The wait can only detect new work.
-                                        // Only do the wait if we know the
-                                        // contexts have no work. otherwise
-                                        // we could wait forever for new work
-                                        // while existing work waits for us to
-                                        // advance it.
+			if (n <= 1) {
+				// we are alone
+				if (events == 0) {
+					// The wait can only detect new work.
+					// Only do the wait if we know the
+					// contexts have no work. otherwise
+					// we could wait forever for new work
+					// while existing work waits for us to
+					// advance it.
 					if (ev_since_wu == 0 && lkd_ctx) ++_falseWU;
 DEBUG_WRITE('g','i');
-        				ppc_waitimpl();
+					ppc_waitimpl();
 DEBUG_WRITE('w','u');
 					ev_since_wu = 0;
 					if (_shutdown) break;
-                                }
-                                // need to re-evaluate things here?
-                                // goto re_evaluate;
-                                // ... or just go back and do work?
-                                goto more_work;
-                        } else {
-                                __disarmMU_WU();
+				}
+				// need to re-evaluate things here?
+				// goto re_evaluate;
+				// ... or just go back and do work?
+				goto more_work;
+			} else {
+				__disarmMU_WU();
 
-                                // this only locks/unlocks what changed...
-                                __lockContextSet(lkd_ctx, 0);
+				// this only locks/unlocks what changed...
+				__lockContextSet(lkd_ctx, 0);
 				_lockCtxs = lkd_ctx;
 
-                                _ctxset->leaveContextSet(id); // id invalid now
+				_ctxset->leaveContextSet(id); // id invalid now
 DEBUG_WRITE('s','a');
 
-                                pthread_setschedprio(self, min_pri);
-                                //=== we get preempted here ===//
-                                pthread_setschedprio(self, max_pri);
+				pthread_setschedprio(self, min_pri);
+				//=== we get preempted here ===//
+				pthread_setschedprio(self, max_pri);
 DEBUG_WRITE('s','b');
 
 				if (_shutdown) break;
-                		_ctxset->joinContextSet(id, _initCtxs); // got id
-                                // always assume context set changed... just simpler.
-                                goto new_context_assignment;
-                        }
-                }
+				_ctxset->joinContextSet(id, _initCtxs); // got id
+				// always assume context set changed... just simpler.
+				goto new_context_assignment;
+			}
+		}
 
 		if (lkd_ctx) {
-                	__lockContextSet(lkd_ctx, 0);
+			__lockContextSet(lkd_ctx, 0);
 			_lockCtxs = lkd_ctx;
 		}
 		if (id != (size_t)-1) {
-                	_ctxset->leaveContextSet(id); // id invalid now
+			_ctxset->leaveContextSet(id); // id invalid now
 		}
 DEBUG_WRITE('t','t');
-                return PAMI_SUCCESS;
-        }
+		return PAMI_SUCCESS;
+	}
 
 	friend class PAMI::Device::CommThread::Factory;
-        BgqWakeupRegion *_wakeup_region;	///< WAC memory for contexts (common)
-        PAMI::Device::CommThread::BgqContextPool *_ctxset; ///< context set (common)
+	BgqWakeupRegion *_wakeup_region;	///< WAC memory for contexts (common)
+	PAMI::Device::CommThread::BgqContextPool *_ctxset; ///< context set (common)
 	uint64_t _initCtxs;		///< initial set of contexts to take
 	uint64_t _lockCtxs;		///< set of contexts we have locked
 	pthread_t _thread;		///< pthread identifier
