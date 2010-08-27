@@ -444,9 +444,7 @@ namespace PAMI
 	  // Set up the global resources
 	  allocateGlobalResources();
 	  TRACE((stderr,"MU ResourceManager: Done allocating global resources\n"));
-	  // DUMMY CODE:
-/* 	  initializeContexts(0,1); */
-/* 	  initializeContexts(1,2); */
+
 	  // might want more shmem here, to use for coordinating locals in VN.
 	  // possibly changing this to a structure.
 	  mm.memalign((void **)&_lowest_geom_id, sizeof(void *), 1 * sizeof(void *));
@@ -2954,37 +2952,38 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 
   // Obtain the list of HW threads for this process (corresponding to subgroups) from the kernel
   // We will use this to determine which subgroups to allocate resources from.
+  // Start with the last core in this process and round robin backwards from there.
 
   uint64_t threadMask = Kernel_ThreadMask( _mapping.t() );
   PAMI_assertf ( threadMask, "Kernel_ThreadMask returned no threads\n" ); // Cannot be zero
 
   // Round robin among the cores in this process, creating one context each time.
 
-  uint64_t subgroupMask     = 0x8000000000000000ULL; // Start with the 1st threads on core 0.
-  uint32_t startingSubgroup = 0, endingSubgroup;
+  uint64_t subgroupMask     = 0x1ULL; // Start with the last thread on core 15.
+  uint32_t startingSubgroup, endingSubgroup=63;
 
   for ( i=0; i<numContexts; i++ )
     {
       // Find the next subgroup where the context is to be created.
       while ( ( threadMask & subgroupMask ) == 0 )
 	{
-	  startingSubgroup++;
-	  subgroupMask = subgroupMask >> 1;  // Shift to next subgroup.
+	  endingSubgroup--;
+	  subgroupMask = subgroupMask << 1;  // Shift to next subgroup.
 	  if ( subgroupMask == 0 )
 	    {
-	      startingSubgroup = 0;
-	      subgroupMask = 0x8000000000000000ULL; // Wrap
+	      endingSubgroup = 63;
+	      subgroupMask = 0x1ULL; // Wrap
 	    }
 	}
-      // Determine ending subgroup.  Don't go beyond the core boundary (multiple of 4).
-      subgroupMask = subgroupMask >> 1; // Shift to next subgroup.
-      endingSubgroup = startingSubgroup + 1;
-      while ( ( endingSubgroup & 0x3 ) && ( threadMask & subgroupMask ) )
+      // Determine starting subgroup.  Don't go beyond the core boundary (multiple of 4).
+      subgroupMask = subgroupMask << 1; // Shift to next subgroup.
+      startingSubgroup = endingSubgroup - 1;
+      while ( (( startingSubgroup & 0x3 ) != 3) && ( threadMask & subgroupMask ) )
 	{
-	  endingSubgroup++;
-	  subgroupMask = subgroupMask >> 1;
+	  startingSubgroup--;
+	  subgroupMask = subgroupMask << 1;
 	}
-      endingSubgroup--;  // Adjust, since we went 1 beyond.
+      startingSubgroup++;  // Adjust, since we went 1 beyond.
 
       _clientResources[rmClientId].startingSubgroupIds[i] = startingSubgroup;
       _clientResources[rmClientId].endingSubgroupIds[i]   = endingSubgroup;
@@ -2996,21 +2995,21 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
       // Move to next core
       if ( subgroupMask == 0)
 	{
-	  startingSubgroup = 0;
-	  subgroupMask = 0x8000000000000000ULL; // Wrap
+	  endingSubgroup = 63;
+	  subgroupMask = 0x1ULL; // Wrap
 	}
       else
 	{
-	  startingSubgroup = endingSubgroup + 1; // Note: subgroupMask is already here.
-	  while ( startingSubgroup & 0x3 )
+	  endingSubgroup = startingSubgroup - 1; // Note: subgroupMask is already here.
+	  while ( ( endingSubgroup & 0x3 ) != 3 )
 	    {
-	      startingSubgroup++;
-	      subgroupMask = subgroupMask >> 1;
+	      endingSubgroup--;
+	      subgroupMask = subgroupMask << 1;
 	    }
 	  if ( subgroupMask == 0)
 	    {
-	      startingSubgroup = 0;
-	      subgroupMask = 0x8000000000000000ULL; // Wrap
+	      endingSubgroup = 63;
+	      subgroupMask = 0x1ULL; // Wrap
 	    }
 	}
     }
