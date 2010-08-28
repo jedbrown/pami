@@ -57,6 +57,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <pami.h>
+#include <pthread.h>
 
 #if defined(__pami_target_bgq__) && defined(USE_THREADS)
 extern pami_result_t
@@ -357,6 +358,7 @@ init()
       assert(rc == PAMI_SUCCESS);
 #else
       int result;
+      static pthread_t threads[NCONTEXTS];
       result = pthread_create(&threads[i], NULL, advance, &contexts[i]);
       assert(result == 0);
 #endif

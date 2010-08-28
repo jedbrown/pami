@@ -138,10 +138,10 @@ namespace PAMI
           _global_all_topo->subTopologyLocalToMe(_local_topo);
 
           // Find master participant on the tree/cau network
-          uint            num_master_tasks = _local_master_topo->size();
-          uint            num_local_tasks = _local_topo->size();
-          for(uint k=0; k<num_master_tasks; k++)
-            for(uint j=0; j<num_local_tasks; j++)
+          size_t            num_master_tasks = _local_master_topo->size();
+          size_t            num_local_tasks = _local_topo->size();
+          for(size_t k=0; k<num_master_tasks; k++)
+            for(size_t j=0; j<num_local_tasks; j++)
               if(_local_master_topo->index2Rank(k) == _local_topo->index2Rank(j))
               {
                 _masterRank = _local_topo->index2Rank(j);
@@ -199,10 +199,10 @@ namespace PAMI
           _global_all_topo->subTopologyLocalMaster(_local_master_topo);
           _global_all_topo->subTopologyLocalToMe(_local_topo);
           // Find master participant on the tree/cau network
-          uint            num_master_tasks = _local_master_topo->size();
-          uint            num_local_tasks = _local_topo->size();
-          for(uint k=0; k<num_master_tasks; k++)
-            for(uint j=0; j<num_local_tasks; j++)
+          size_t            num_master_tasks = _local_master_topo->size();
+          size_t            num_local_tasks = _local_topo->size();
+          for(size_t k=0; k<num_master_tasks; k++)
+            for(size_t j=0; j<num_local_tasks; j++)
               if(_local_master_topo->index2Rank(k) == _local_topo->index2Rank(j))
               {
                 _masterRank = _local_topo->index2Rank(j);

@@ -22,7 +22,7 @@
 #include "Platform.h"
 #include "util/common.h"
 #include "Topology.h"
-#include "Time.h"
+#include "Ptime.h"
 
 namespace PAMI
 {
