@@ -10,13 +10,14 @@
 #include "algorithms/connmgr/CommSeqConnMgr.h"
 #include "algorithms/protocols/CollectiveProtocolFactoryT.h"
 #include "util/ccmi_util.h"
-
+#include "util/queue/MatchQueue.h"
+#include "util/queue/Queue.h"
 
 #ifdef TRACE
 #undef TRACE
-#define TRACE(x)
+#define TRACE(x) //fprintf x
 #else
-#define TRACE(x)
+#define TRACE(x) //fprintf x
 #endif
 
 namespace CCMI
@@ -295,20 +296,106 @@ namespace CCMI
 
       };
 
+
+        class PWQBuffer : public PAMI::MatchQueueElem
+        {
+        public:
+          PWQBuffer(int seqno,
+                    int total_len):
+            MatchQueueElem(seqno),
+            _completion_action(0),
+            _complete(false),
+            _target_pwq(NULL),
+            _total_len(total_len)
+            {
+            }
+
+          inline void pwqCopy(PAMI::PipeWorkQueue *dst, PAMI::PipeWorkQueue *src)
+            {
+              PAMI_abort();
+            }
+          
+          inline void executeCAPost()
+            {
+              switch(_completion_action)
+                {
+                  case 0:
+                    // Post Action
+                    pwqCopy(_target_pwq, &_incoming_pwq);
+                    break;
+                  case 1:
+                    break;
+                  case 2:
+                    // Post Action
+                    pwqCopy(_target_pwq, &_incoming_pwq);
+                    break;
+                  case 3:
+                    break;
+                  case 4:
+                    break;
+                  case 5:
+                    break;
+                  default:
+                    PAMI_abort();
+                    break;
+                }              
+            }
+
+          inline void executeCAComplete()
+            {
+              TRACE((stderr, "executeCAComplete:  Action=%d\n",
+                     _completion_action));
+              switch(_completion_action)
+                {
+                  case 0:
+                    break;
+                  case 1:
+                    // Completion action
+                    pwqCopy(_target_pwq, &_incoming_pwq);
+                    break;
+                  case 2:
+                    break;
+                  case 3:
+                    // Completion action
+                    pwqCopy(_target_pwq, &_incoming_pwq);
+                    break;
+                  case 4:
+                    break;
+                  case 5:
+                    break;
+                  default:
+                    PAMI_abort();
+                    break;
+                }              
+              TRACE((stderr, "executeCAComplete:  delivering callback\n",
+                     _completion_action));
+              _user_callback(NULL, _user_cookie, PAMI_SUCCESS);
+              
+            }
+          
+          PAMI::PipeWorkQueue  _incoming_pwq;
+          PAMI::PipeWorkQueue *_target_pwq;
+          int                  _completion_action;
+          pami_event_function  _user_callback;
+          void                *_user_cookie; 
+          bool                 _complete;
+          size_t               _total_len;
+        };
+      
       /// A composite for a 2 device multicast
       template <class T_Geometry>
       class MultiCastComposite2Device : public CCMI::Executor::Composite
       {
-        public:
-          static void composite_done(pami_context_t  context,
-                                     void           *cookie,
-                                     pami_result_t   result)
+      public:
+
+        static void composite_done(pami_context_t  context,
+                                   void           *cookie,
+                                   pami_result_t   result)
           {
             MultiCastComposite2Device *m = (MultiCastComposite2Device*) cookie;
             m->_count++;
             TRACE((stderr, "MultiCastComposite2Device:  composite done:  count=%lz\n", m->_count));
-
-            if (m->_count == 2)
+            if(m->_count==2)
               m->_master_done.function(context, m->_master_done.clientdata, result);
           }
 
@@ -327,24 +414,31 @@ namespace CCMI
           ~MultiCastComposite2Device()
           {
           }
-          MultiCastComposite2Device (Interfaces::NativeInterface      *native_l,
-                                     Interfaces::NativeInterface      *native_g,
-                                     ConnectionManager::SimpleConnMgr *cmgr,
-                                     pami_geometry_t                   g,
-                                     pami_xfer_t                      *cmd,
-                                     pami_event_function               fn,
-                                     void                             *cookie) :
-              Composite(),
-              _native_l(native_l),
-              _native_g(native_g),
-              _geometry((PAMI_GEOMETRY_CLASS*)g),
-              _deviceInfo(NULL),
-              _root_topo(cmd->cmd.xfer_broadcast.root)
+        MultiCastComposite2Device (Interfaces::NativeInterface                         *native_l,
+                                   Interfaces::NativeInterface                         *native_g,
+                                   ConnectionManager::SimpleConnMgr                    *cmgr,
+                                   pami_geometry_t                                      g,
+                                   pami_xfer_t                                         *cmd,
+                                   pami_event_function                                  fn,
+                                   void                                                *cookie,
+                                   int                                                 &seqno,
+                                   PAMI::MatchQueue                                    *ue,
+                                   PAMI::Queue                                         *posted) :
+          Composite(),
+          _native_l(native_l),
+          _native_g(native_g),
+          _geometry((PAMI_GEOMETRY_CLASS*)g),
+          _deviceInfo(NULL),
+          _root_topo(cmd->cmd.xfer_broadcast.root),
+          _justme_topo(_geometry->rank()),
+          _pwqBuf(seqno+1, 0),
+          _activePwqBuf(NULL)
           {
             _active_native[0] = NULL;
             _active_native[1] = NULL;
             PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getLocalMasterTopology();
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getLocalTopology();
+            PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getMyMasterTopology();
 
             // Discover the root node and intereesting topology information
             size_t           root        = cmd->cmd.xfer_broadcast.root;
@@ -354,92 +448,102 @@ namespace CCMI
             _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
             size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_BYTE?
             size_t           numMasters  = t_master->size();
-
-            TRACE((stderr, "MultiCastComposite2Device:  In Composite Constructor\n"));
-
-            // Create a "flat pwq" for the send buffer
-            size_t          initialBytes;
-
-            if (amRoot)
-              initialBytes = bytes;
+            size_t           numLocal    = t_local->size();
+            TRACE((stderr, "MultiCastComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, bytes=%ld buf=%p\n",
+                   &_pwq0, &_pwq1, bytes, cmd->cmd.xfer_broadcast.buf));            
+            if(bytes == 0)
+              {
+                fn(NULL,  cookie, PAMI_SUCCESS); /// \todo, deliver the context
+                return;
+              }
+            size_t           initBytes;
+            if(amRoot)
+              initBytes=bytes;
             else
-              initialBytes = 0;
-
+              initBytes=0;
+            
+            // Create a "flat pwq" for the send buffer
             _pwq0.configure(NULL,                            // Memory manager
                             cmd->cmd.xfer_broadcast.buf,     // buffer
                             bytes,                           // buffer bytes
-                            initialBytes);                   // amount initially in buffer
+                            initBytes);                      // amount initially in buffer
 
             _pwq1.configure(NULL,                            // Memory manager
                             cmd->cmd.xfer_broadcast.buf,     // buffer
                             bytes,                           // buffer bytes
-                            initialBytes);                   // amount initially in buffer
+                            initBytes);                      // amount initially in buffer
 
-            if (amRoot && amMaster)
+            _pwq0.reset();
+            _pwq1.reset();
+
+
+            int cb_count = 0;
+            if(amRoot && amMaster)
               {
-                TRACE((stderr, "MultiCastComposite2Device:  Root/Master\n"));
                 // Participate in local and global multicast as the source
-                _minfo_l.client             = NULL;              // Not used by device
-                _minfo_l.context            = NULL;              // Not used by device
-                _minfo_l.cb_done.clientdata = this;
-                _minfo_l.connection_id      = _geometry->comm();
-                _minfo_l.roles              = -1U;
-                _minfo_l.bytes              = bytes;
-                _minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
-                _minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
-                _minfo_l.dst                = (pami_pipeworkqueue_t*) & _pwq0;
-                _minfo_l.dst_participants   = (pami_topology_t*)t_local;
-                _minfo_l.msginfo            = 0;
-                _minfo_l.msgcount           = 0;
-
-                if (numMasters > 1)
+                TRACE((stderr, "MultiCastComposite2Device:  Root/Master\n"));
+                if(numLocal > 1)
+                  {
+                    _minfo_l.client             = NULL;              // Not used by device
+                    _minfo_l.context            = NULL;              // Not used by device
+                    _minfo_l.cb_done.clientdata = this;
+                    _minfo_l.connection_id      = _geometry->comm();
+                    _minfo_l.roles              = -1U;
+                    _minfo_l.bytes              = bytes;
+                    _minfo_l.src                = (pami_pipeworkqueue_t*)&_pwq0;
+                    _minfo_l.src_participants   = (pami_topology_t*)&_root_topo;
+                    _minfo_l.dst                = NULL;
+                    _minfo_l.dst_participants   = (pami_topology_t*)t_local;
+                    _minfo_l.msginfo            = 0;
+                    _minfo_l.msgcount           = 0;
+                    _active_minfo[0]            = &_minfo_l;
+                    _active_native[0]           = _native_l;
+                    cb_count++;
+                  }
+                if(numMasters > 1)
                   {
                     _minfo_g.client             = NULL;              // Not used by device
                     _minfo_g.context            = NULL;              // Not used by device
-                    _minfo_g.cb_done.function   = composite_done;
                     _minfo_g.cb_done.clientdata = this;
                     _minfo_g.connection_id      = _geometry->comm();
                     _minfo_g.roles              = -1U;
                     _minfo_g.bytes              = bytes;
-                    _minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq1;
-                    _minfo_g.src_participants   = (pami_topology_t*) & _root_topo;
-                    _minfo_g.dst                = (pami_pipeworkqueue_t*) & _pwq1;
+                    _minfo_g.src                = (pami_pipeworkqueue_t*)&_pwq1;
+                    _minfo_g.src_participants   = (pami_topology_t*)&_root_topo;
+                    _minfo_g.dst                = NULL;
                     _minfo_g.dst_participants   = (pami_topology_t*)t_master;
                     _minfo_g.msginfo            = 0;
                     _minfo_g.msgcount           = 0;
 
                     _active_minfo[1]            = &_minfo_g;
                     _active_native[1]           = _native_g;
-
                     _minfo_l.cb_done.function   = composite_done;
+                    cb_count++;
                   }
-                else
-                  _minfo_l.cb_done.function     = simple_done;
-
-                _active_minfo[0]                = &_minfo_l;
-                _active_native[0]               = _native_l;
               }
             else if (amRoot)
               {
                 TRACE((stderr, "MultiCastComposite2Device:  Root only\n"));
                 // I am a root, but not the master, participate in
                 // the local broadcast only, as the source
-                _minfo_l.client             = NULL;              // Not used by device
-                _minfo_l.context            = NULL;              // Not used by device
-                _minfo_l.cb_done.function   = simple_done;
-                _minfo_l.cb_done.clientdata = this;
-                _minfo_l.connection_id      = _geometry->comm();
-                _minfo_l.roles              = -1U;
-                _minfo_l.bytes              = bytes;
-                _minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
-                _minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
-                _minfo_l.dst                = (pami_pipeworkqueue_t*) & _pwq0;
-                _minfo_l.dst_participants   = (pami_topology_t*)t_local;
-                _minfo_l.msginfo            = 0;
-                _minfo_l.msgcount           = 0;
-
-                _active_minfo[0]            = &_minfo_l;
-                _active_native[0]           = _native_l;
+                if(numLocal > 1)
+                  {
+                    _minfo_l.client             = NULL;              // Not used by device
+                    _minfo_l.context            = NULL;              // Not used by device
+                    _minfo_l.cb_done.clientdata = this;
+                    _minfo_l.connection_id      = _geometry->comm();
+                    _minfo_l.roles              = -1U;
+                    _minfo_l.bytes              = bytes;
+                    _minfo_l.src                = (pami_pipeworkqueue_t*)&_pwq0;
+                    _minfo_l.src_participants   = (pami_topology_t*)&_root_topo;
+                    _minfo_l.dst                = NULL;
+                    _minfo_l.dst_participants   = (pami_topology_t*)t_local;
+                    _minfo_l.msginfo            = 0;
+                    _minfo_l.msgcount           = 0;
+                    _active_minfo[0]            =&_minfo_l;
+                    _active_native[0]           =_native_l;
+                    cb_count++;
+                  }
               }
             else if (amMaster && isRootLocal)
               {
@@ -447,20 +551,26 @@ namespace CCMI
                 // I am the master task, and on the same node as the root
                 // so I will participate in the local broadcast (as a receiver)
                 // and I will participate in the global broadcast as a sender
-                _minfo_l.client             = NULL;              // Not used by device
-                _minfo_l.context            = NULL;              // Not used by device
-                _minfo_l.cb_done.clientdata = this;
-                _minfo_l.connection_id      = _geometry->comm();
-                _minfo_l.roles              = -1U;
-                _minfo_l.bytes              = bytes;
-                _minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
-                _minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
-                _minfo_l.dst                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- target buffer
-                _minfo_l.dst_participants   = (pami_topology_t*)t_local;
-                _minfo_l.msginfo            = 0;
-                _minfo_l.msgcount           = 0;
+                if(numLocal > 1)
+                  {
+                    _minfo_l.client             = NULL;              // Not used by device
+                    _minfo_l.context            = NULL;              // Not used by device
+                    _minfo_l.cb_done.clientdata = this;
+                    _minfo_l.connection_id      = _geometry->comm();
+                    _minfo_l.roles              = -1U;
+                    _minfo_l.bytes              = bytes;
+                    _minfo_l.src                = NULL;
+                    _minfo_l.src_participants   = (pami_topology_t*)&_root_topo;
+                    _minfo_l.dst                = (pami_pipeworkqueue_t*)&_pwq0;  // <--- target buffer
+                    _minfo_l.dst_participants   = (pami_topology_t*)t_local;
+                    _minfo_l.msginfo            = 0;
+                    _minfo_l.msgcount           = 0;
 
-                if (numMasters > 1)
+                    _active_minfo[0]            =&_minfo_l;
+                    _active_native[0]           =_native_l;
+                    cb_count++;
+                  }
+                if(numMasters > 1)
                   {
                     _minfo_g.client             = NULL;              // Not used by device
                     _minfo_g.context            = NULL;              // Not used by device
@@ -469,22 +579,17 @@ namespace CCMI
                     _minfo_g.connection_id      = _geometry->comm();
                     _minfo_g.roles              = -1U;
                     _minfo_g.bytes              = bytes;
-                    _minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- src buffer
-                    _minfo_g.src_participants   = (pami_topology_t*) & _root_topo;
-                    _minfo_g.dst                = (pami_pipeworkqueue_t*) & _pwq0;
+                    _minfo_g.src                = (pami_pipeworkqueue_t*)&_pwq0;  // <--- src buffer
+                    _minfo_g.src_participants   = (pami_topology_t*)&_justme_topo;
+                    _minfo_g.dst                = NULL;
                     _minfo_g.dst_participants   = (pami_topology_t*)t_master;
                     _minfo_g.msginfo            = 0;
                     _minfo_g.msgcount           = 0;
 
-                    _active_minfo[1]            = &_minfo_g;
-                    _active_native[1]           = _native_g;
-                    _minfo_l.cb_done.function   = composite_done;
+                    _active_minfo[1]            =&_minfo_g;
+                    _active_native[1]           =_native_g;
+                    cb_count++;
                   }
-                else
-                  _minfo_l.cb_done.function     = simple_done;
-
-                _active_minfo[0]            = &_minfo_l;
-                _active_native[0]           = _native_l;
               }
             else if (amMaster)
               {
@@ -492,81 +597,140 @@ namespace CCMI
                 // I am the master task, but root is on a different node
                 // I will recieve from the global multicast and forward
                 // to the local multicast
-
-                // I am the master task, and on the same node as the root
-                // so I will participate in the local broadcast (as a receiver)
-                // and I will participate in the global broadcast as a sender
-
-
-                _minfo_l.client             = NULL;              // Not used by device
-                _minfo_l.context            = NULL;              // Not used by device
-                _minfo_l.cb_done.clientdata = this;
-                _minfo_l.connection_id      = _geometry->comm();
-                _minfo_l.roles              = -1U;
-                _minfo_l.bytes              = bytes;
-                _minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
-                _minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
-                _minfo_l.dst                = (pami_pipeworkqueue_t*) & _pwq0;
-                _minfo_l.dst_participants   = (pami_topology_t*)t_local;
-                _minfo_l.msginfo            = 0;
-                _minfo_l.msgcount           = 0;
-
-                if (numMasters > 1)
+                // Do not explicitly participate in the multicast because it is active
+                if(numLocal > 1)
                   {
-                    _minfo_g.client             = NULL;              // Not used by device
-                    _minfo_g.context            = NULL;              // Not used by device
-                    _minfo_g.cb_done.function   = composite_done;
-                    _minfo_g.cb_done.clientdata = this;
-                    _minfo_g.connection_id      = _geometry->comm();
-                    _minfo_g.roles              = -1U;
-                    _minfo_g.bytes              = bytes;
-                    _minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq0;
-                    _minfo_g.src_participants   = (pami_topology_t*) & _root_topo;
-                    _minfo_g.dst                = (pami_pipeworkqueue_t*) & _pwq0;
-                    _minfo_g.dst_participants   = (pami_topology_t*)t_master;
-                    _minfo_g.msginfo            = 0;
-                    _minfo_g.msgcount           = 0;
-
-                    _minfo_l.cb_done.function   =  composite_done;
-                    _active_minfo[1]            = &_minfo_g;
-                    _active_native[1]           =  _native_g;
+                    _minfo_l.client             = NULL;              // Not used by device
+                    _minfo_l.context            = NULL;              // Not used by device
+                    _minfo_l.cb_done.clientdata = this;
+                    _minfo_l.connection_id      = _geometry->comm();
+                    _minfo_l.roles              = -1U;
+                    _minfo_l.bytes              = bytes;
+                    _minfo_l.src                = (pami_pipeworkqueue_t*)&_pwq0;
+                    _minfo_l.src_participants   = (pami_topology_t*)t_my_master;
+                    _minfo_l.dst                = NULL;
+                    _minfo_l.dst_participants   = (pami_topology_t*)t_local;
+                    _minfo_l.msginfo            = 0;
+                    _minfo_l.msgcount           = 0;
+                    _active_minfo[0]            = &_minfo_l;
+                    _active_native[0]           = _native_l;
+                    cb_count++;
+                  }
+                // This node will be receiving data from the master via an active message
+                // This means that I need to post this into a queue or find one that is UE
+                // 1)  Find in the UE queue
+                // 2)  If found, copy the data and complete the message
+                PWQBuffer *pwqBuf = (PWQBuffer*) ue->findAndDelete(seqno);                
+                if(pwqBuf)
+                  {
+                    // We found the unexpected message
+                    // The completion action is to copy the buffer out
+                    // of the temporary work queue into the user's buffer
+                    // when the message is finished
+                    if(numLocal==1 && pwqBuf->_complete)
+                      {
+                        // Case 0: Message complete, numLocal=1, we copy to user's pwq
+                        // at post time
+                        pwqBuf->_completion_action= 0;
+                        pwqBuf->_target_pwq       = &_pwq0;
+                      }
+                    else if(numLocal==1 && !pwqBuf->_complete)
+                      {
+                        // Case 1: Message incomplete, numLocal=1, we copy to user's pwq
+                        // at completion time
+                        pwqBuf->_completion_action= 1;
+                        pwqBuf->_target_pwq       = &_pwq0;
+                      }
+                    else if(numLocal>1 && pwqBuf->_complete)
+                      {
+                        // Case 2: Message complete, numLocal>1, we copy to pwq
+                        // and pipeline into the local mcast at post time
+                        pwqBuf->_completion_action= 2;
+                        pwqBuf->_target_pwq       = &_pwq0;
+                      }
+                    else if(numLocal>1 && !pwqBuf->_complete)
+                      {
+                        // Case 3: Message incomplete, numLocal>1, we leave pwq open
+                        // and pipeline into the local mcast at at completion time
+                        pwqBuf->_completion_action= 3;
+                        pwqBuf->_target_pwq       = &_pwq0;
+                      }
+                    else
+                      PAMI_abort();
+                    _activePwqBuf                 = pwqBuf;
+                    _activePwqBuf->_user_callback = fn;
+                    _activePwqBuf->_user_cookie   = cookie;
                   }
                 else
-                  _minfo_l.cb_done.function   = simple_done;
-
-                _active_minfo[0]            = &_minfo_l;
-                _active_native[0]           = _native_l;
+                  {
+                    // No UE message
+                    // The completion action is to complete the message
+                    // and deliver the callback
+                    TRACE((stderr, "MultiCastComposite2Device:  Posting to posted queue:  _pwqBuf=%p\n",
+                           &_pwqBuf));
+                    seqno++;
+                    posted->enqueue((PAMI::Queue::Element*)&_pwqBuf);
+                    if(numLocal==1)
+                      {
+                        // Case 4:  Action, complete the message into the users buffer
+                        _pwqBuf._completion_action = 4;
+                        _pwqBuf._target_pwq        = &_pwq0;
+                      }
+                    else
+                      {
+                        // Case 5:  Action, complete the message into the local pwq
+                        // Free the pwq
+                        _pwqBuf._completion_action = 5;
+                        _pwqBuf._target_pwq        = &_pwq0;
+                      }
+                    _activePwqBuf                 = &_pwqBuf;
+                    _activePwqBuf->_user_callback = fn;
+                    _activePwqBuf->_user_cookie   = cookie;
+                  }
               }
             else
               {
                 // I am the final case  I will only receive from the master
                 // task on my node
-                TRACE((stderr, "MultiCastComposite2Device:  Non-master, Non-root\n"));
-                _minfo_l.client             = NULL;              // Not used by device
-                _minfo_l.context            = NULL;              // Not used by device
-                _minfo_l.cb_done.function   = simple_done;
-                _minfo_l.cb_done.clientdata = this;
-                _minfo_l.connection_id      = _geometry->comm();
-                _minfo_l.roles              = -1U;
-                _minfo_l.bytes              = bytes;
-                _minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
-                _minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
-                _minfo_l.dst                = (pami_pipeworkqueue_t*) & _pwq0;
-                _minfo_l.dst_participants   = (pami_topology_t*)t_local;
-                _minfo_l.msginfo            = 0;
-                _minfo_l.msgcount           = 0;
-                _active_minfo[0]            = &_minfo_l;
-                _active_native[0]           = _native_l;
+                TRACE((stderr, "MultiCastComposite2Device:  Non-master, Non-root, numLocal=%d\n", numLocal));
+                if(numLocal > 1)
+                  {                    
+                    _minfo_l.client             = NULL;              // Not used by device
+                    _minfo_l.context            = NULL;              // Not used by device
+                    _minfo_l.cb_done.function   = simple_done;
+                    _minfo_l.cb_done.clientdata = this;
+                    _minfo_l.connection_id      = _geometry->comm();
+                    _minfo_l.roles              = -1U;
+                    _minfo_l.bytes              = bytes;
+                    _minfo_l.src                = (pami_pipeworkqueue_t*)&_pwq0;
+                    _minfo_l.src_participants   = (pami_topology_t*)&_root_topo;
+                    _minfo_l.dst                = (pami_pipeworkqueue_t*)&_pwq0;
+                    _minfo_l.dst_participants   = (pami_topology_t*)t_local;
+                    _minfo_l.msginfo            = 0;
+                    _minfo_l.msgcount           = 0;
+                    _active_minfo[0]            =&_minfo_l;
+                    _active_native[0]           =_native_l;
+                    cb_count++;
+                  }
               }
 
-            _pwq0.reset();
-            _pwq1.reset();
+            if(cb_count == 1)
+              {
+                _minfo_g.cb_done.function   = simple_done;
+                _minfo_l.cb_done.function   = simple_done;
+              }
+            else
+              {
+                _minfo_g.cb_done.function   = composite_done;
+                _minfo_l.cb_done.function   = composite_done;
+              }
             _count                      = 0;
             _master_done.function       = fn;
             _master_done.clientdata     = cookie;
           }
           virtual void start()
           {
+            TRACE((stderr, "MultiCastComposite2Device:  Multicast start()\n"));
             if (_active_native[0])
               {
                 TRACE((stderr, "MultiCastComposite2Device:  Local NI, start multicast\n"));
@@ -578,74 +742,115 @@ namespace CCMI
                 TRACE((stderr, "MultiCastComposite2Device:  Global NI, start multicast\n"));
                 _active_native[1]->multicast(_active_minfo[1], _deviceInfo);
               }
+            if(_activePwqBuf)
+              {
+                _activePwqBuf->executeCAPost();
+              }
           }
-        public:
-          Interfaces::NativeInterface        *_native_l;
-          Interfaces::NativeInterface        *_native_g;
-          Interfaces::NativeInterface        *_active_native[2];
-          pami_multicast_t                   *_active_minfo[2];
-          PAMI_GEOMETRY_CLASS                *_geometry;
-          void                               *_deviceInfo;
-          PAMI::Topology                     *_l_topology;
-          PAMI::Topology                     *_g_topology;
-          pami_multicast_t                    _minfo_l;
-          pami_multicast_t                    _minfo_g;
-          PAMI::PipeWorkQueue                 _pwq0;
-          PAMI::PipeWorkQueue                 _pwq1;
-          PAMI::Topology                      _root_topo;
-          pami_callback_t                     _master_done;
-          size_t                              _count;
-
+      public:
+        Interfaces::NativeInterface        *_native_l;
+        Interfaces::NativeInterface        *_native_g;
+        Interfaces::NativeInterface        *_active_native[2];
+        pami_multicast_t                   *_active_minfo[2];
+        PAMI_GEOMETRY_CLASS                *_geometry;
+        void                               *_deviceInfo;
+        PAMI::Topology                     *_l_topology;
+        PAMI::Topology                     *_g_topology;
+        pami_multicast_t                    _minfo_l;
+        pami_multicast_t                    _minfo_g;
+        PAMI::PipeWorkQueue                 _pwq0;
+        PAMI::PipeWorkQueue                 _pwq1;
+        PAMI::Topology                      _root_topo;
+        PAMI::Topology                      _justme_topo;
+        pami_callback_t                     _master_done;
+        size_t                              _count;
+        PWQBuffer                           _pwqBuf;
+        PWQBuffer                          *_activePwqBuf; 
       };
 
 
       /// \brief This is a factory for a 2 device multicast
       /// The two device multicast takes two native interfaces, the first is
       /// the local interface, and the second is the global interface
-      /// Note that
       template <class T_Composite, MetaDataFn get_metadata, class T_Connmgr>
       class MultiCastComposite2DeviceFactoryT: public CollectiveProtocolFactory
       {
-          class collObj
-          {
-            public:
-              collObj(Interfaces::NativeInterface       *native0,
-                      Interfaces::NativeInterface       *native1,
-                      T_Connmgr                         *cmgr,
-                      pami_geometry_t                    geometry,
-                      pami_xfer_t                       *cmd,
-                      pami_event_function                fn,
-                      void                              *cookie,
-                      MultiCastComposite2DeviceFactoryT *factory):
-                  _factory(factory),
-                  _user_done_fn(cmd->cb_done),
-                  _user_cookie(cmd->cookie),
-                  _obj(native0, native1, cmgr, geometry, cmd, fn, cookie)
-              {
-              }
-              void done_fn( pami_context_t   context,
-                            pami_result_t    result )
-              {
-                _user_done_fn(context, _user_cookie, result);
-              }
+        class collObj
+        {
+        public:
+          collObj(Interfaces::NativeInterface       *native0,
+                  Interfaces::NativeInterface       *native1,
+                  T_Connmgr                         *cmgr,
+                  pami_geometry_t                    geometry,
+                  pami_xfer_t                       *cmd,
+                  pami_event_function                fn,
+                  void                              *cookie,
+                  MultiCastComposite2DeviceFactoryT *factory,
+                  int                                seqno,
+                  PAMI::MatchQueue                  *ue,
+                  PAMI::Queue                       *posted):
+            _factory(factory),
+            _user_done_fn(cmd->cb_done),
+            _user_cookie(cmd->cookie),
+            _obj(native0,native1, cmgr, geometry, cmd, fn, cookie, seqno, ue, posted)
+            {
+            }
+          void done_fn( pami_context_t   context,
+                        pami_result_t    result )
+            {
+              _user_done_fn(context, _user_cookie, result);
+            }
 
-              MultiCastComposite2DeviceFactoryT *_factory;
-              pami_event_function                _user_done_fn;
-              void                              *_user_cookie;
-              T_Composite                        _obj;
-              unsigned                           _connection_id;
-          };
-          static void cb_async_g(const pami_quad_t     * info,
-                                 unsigned                count,
-                                 unsigned                conn_id,
-                                 size_t                  peer,
-                                 size_t                  sndlen,
-                                 void                  * arg,
-                                 size_t                * rcvlen,
-                                 pami_pipeworkqueue_t ** rcvpwq,
-                                 pami_callback_t       * cb_done)
+          MultiCastComposite2DeviceFactoryT *_factory;
+          pami_event_function                _user_done_fn;
+          void                              *_user_cookie;
+          T_Composite                        _obj;
+          unsigned                           _connection_id;
+        };
+
+        
+        static void cb_async_done(pami_context_t context, void *cookie, pami_result_t err)
           {
-            PAMI_abortf("Global async callback is unimpl\n");
+            TRACE((stderr, "MultiCastComposite2DeviceFactoryT: cb_async_done\n"));
+            PWQBuffer* pbuf = (PWQBuffer*) cookie;
+            pbuf->executeCAComplete();
+          }
+        
+        static void cb_async_g(const pami_quad_t     * info,
+                               unsigned                count,
+                               unsigned                conn_id,
+                               size_t                  peer,
+                               size_t                  sndlen,
+                               void                  * arg,
+                               size_t                * rcvlen,
+                               pami_pipeworkqueue_t ** rcvpwq,
+                               pami_callback_t       * cb_done)
+          {
+            TRACE((stderr, "MultiCastComposite2DeviceFactoryT: cb_async_g:  arg=%p\n", arg));
+            MultiCastComposite2DeviceFactoryT *f = (MultiCastComposite2DeviceFactoryT *) arg;
+            PWQBuffer* pbuf = (PWQBuffer*) f->_posted.dequeue();
+
+            if(pbuf)
+              {
+                // A message has been posted, and the PWQ has been set up
+                // So we can receive into this existing target PWQ
+                TRACE((stderr, "MultiCastComposite2DeviceFactoryT: cb_async_g, posted buffer, sndlen=%ld, pwq=%p\n",
+                       sndlen, pbuf->_target_pwq));
+                *rcvlen = sndlen;
+                *rcvpwq = (pami_pipeworkqueue_t*)pbuf->_target_pwq;
+                cb_done->function   = cb_async_done;
+                cb_done->clientdata = pbuf;
+              }
+            else
+              {
+                // A message has not been been posted, so we set up a temporary pwq
+                // That will be filled in with the target PWQ when the user calls in
+                // to the collective and specifies it.
+                TRACE((stderr, "MultiCastComposite2DeviceFactoryT: cb_async_g, unexpected buffer\n"));
+                PAMI_abort();
+                pbuf = f->allocatePbuf(sndlen);
+                f->_ue.pushHead((PAMI::MatchQueueElem*)pbuf);
+              }
           }
 
           static void cb_async_l(const pami_quad_t     * info,
@@ -662,17 +867,17 @@ namespace CCMI
             PAMI_abortf("Local async callback is unimpl\n");
           }
 
-        public:
-          MultiCastComposite2DeviceFactoryT (T_Connmgr                   *cmgr,
-                                             Interfaces::NativeInterface *native_l,
-                                             bool                         active_message_l,
-                                             Interfaces::NativeInterface *native_g,
-                                             bool                         active_message_g
-                                            ):
-              CollectiveProtocolFactory(),
-              _cmgr(cmgr),
-              _native_l(native_l),
-              _native_g(native_g)
+      public:
+        MultiCastComposite2DeviceFactoryT (T_Connmgr                   *cmgr,
+                                           Interfaces::NativeInterface *native_l,
+                                           bool                         active_message_l,
+                                           Interfaces::NativeInterface *native_g,
+                                           bool                         active_message_g):
+          CollectiveProtocolFactory(),
+          _cmgr(cmgr),
+          _native_l(native_l),
+          _native_g(native_g),
+          _seqno(0)
           {
             if (active_message_g)
               native_g->setMulticastDispatch(cb_async_g, this);
@@ -682,7 +887,7 @@ namespace CCMI
 
           }
 
-          virtual ~MultiCastComposite2DeviceFactoryT()
+        virtual ~MultiCastComposite2DeviceFactoryT()
           {
           }
           virtual void metadata(pami_metadata_t *mdata)
@@ -698,8 +903,16 @@ namespace CCMI
             cobj->_factory->_alloc.returnObject(cobj);
           }
 
-          virtual Executor::Composite * generate(pami_geometry_t  geometry,
-                                                 void            *cmd)
+        PWQBuffer * allocatePbuf(size_t sndlen)
+          {
+            PWQBuffer *pbuf =(PWQBuffer*) _alloc_pbuf.allocateObject();
+            new(pbuf)PWQBuffer(_seqno++,sndlen);
+            return pbuf;
+          }
+
+        
+        virtual Executor::Composite * generate(pami_geometry_t  geometry,
+                                               void            *cmd)
           {
             collObj *cobj = (collObj*) _alloc.allocateObject();
             TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::generate()\n", cobj));
@@ -710,17 +923,23 @@ namespace CCMI
                               (pami_xfer_t*)cmd,  // Parameters
                               done_fn,            // Intercept function
                               cobj,               // Intercept cookie
-                              this);              // Factory
+                              this,
+                              _seqno,
+                              &_ue,
+                              &_posted);              // Factory
             return (Executor::Composite *)&cobj->_obj;
 
           }
 
-        protected:
-          T_Connmgr                                             *_cmgr;
-          Interfaces::NativeInterface                           *_native_l;
-          Interfaces::NativeInterface                           *_native_g;
-          PAMI::MemoryAllocator < sizeof(collObj), 16 >          _alloc;
-
+      protected:
+        T_Connmgr                                       *_cmgr;
+        Interfaces::NativeInterface                     *_native_l;
+        Interfaces::NativeInterface                     *_native_g;
+        PAMI::MemoryAllocator < sizeof(collObj), 16 >    _alloc;
+        PAMI::MemoryAllocator < sizeof(PWQBuffer), 16 >  _alloc_pbuf;
+        PAMI::MatchQueue                                 _ue;
+        PAMI::Queue                                      _posted;
+        int                                              _seqno;
       };
 
     };

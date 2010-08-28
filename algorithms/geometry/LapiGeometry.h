@@ -136,10 +136,12 @@ namespace PAMI
 
           _global_all_topo   = new_topo;
           _local_master_topo = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
+          _my_master_topo    = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
           _local_topo        = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
           if(gen_topo)
             {
               _global_all_topo->subTopologyLocalMaster(_local_master_topo);
+              _local_master_topo->subTopologyLocalToMe(_my_master_topo);
               _global_all_topo->subTopologyLocalToMe(_local_topo);
               // Find master participant on the tree/cau network
               uint            num_master_tasks = _local_master_topo->size();
@@ -166,6 +168,7 @@ namespace PAMI
       inline void regenTopo()
         {
           _global_all_topo->subTopologyLocalMaster(_local_master_topo);
+          _local_master_topo->subTopologyLocalToMe(_my_master_topo);
           _global_all_topo->subTopologyLocalToMe(_local_topo);
           // Find master participant on the tree/cau network
           uint            num_master_tasks = _local_master_topo->size();
@@ -206,6 +209,12 @@ namespace PAMI
         {
           return (pami_topology_t*)_local_master_topo;
         }
+
+      inline pami_topology_t* getMyMasterTopology_impl()
+        {
+          return (pami_topology_t*)_my_master_topo;
+        }
+      
 
       inline unsigned                  comm_impl()
         {
@@ -644,6 +653,7 @@ namespace PAMI
 
       PAMI::Topology                             *_global_all_topo;
       PAMI::Topology                             *_local_master_topo;
+      PAMI::Topology                             *_my_master_topo;
       PAMI::Topology                             *_local_topo;
 
 

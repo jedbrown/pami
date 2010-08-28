@@ -17,6 +17,14 @@
 #include <pami.h>
 #include "components/devices/MulticastModel.h"
 
+#ifdef TRACE
+#undef TRACE
+#define TRACE(x) //fprintf x
+#else
+#define TRACE(x) //fprintf x
+#endif
+
+
 namespace PAMI
 {
   namespace Device
@@ -26,69 +34,90 @@ namespace PAMI
       public Interface::AMMulticastModel<CAUMulticastModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>
     {
       public:
+
+      // Required metadata for the m-* protocols
+      // These are defined by the interface
       static const size_t mcast_model_state_bytes = sizeof(T_Message);
       static const size_t sizeof_msg              = sizeof(T_Message);
       static const bool   is_active_message       = true;
 
-      typedef void (*notifyFcn) (void          * cookie);
-
+      // The maximum size of a CAU header is 12 bytes
+      // This msgHeader structure is sent along with the
+      // CAU data and used to fully multiplex the broadcast.
+      // Since the header is only 12 bytes, for now, we don't support
+      // any user header on CAU with this multicast, since it is all used
+      // for multi-* protocol data
       struct msgHeader
       {
-        uint32_t dispatch_id;
-        uint32_t geometry_id;
-        uint32_t header_len;
-        uint32_t connection_id;
-        size_t   root;
-        uint64_t data_sz;
+        unsigned dispatch_id:12;
+        unsigned geometry_id:12;
+        unsigned connection_id:12;
+        unsigned root:20;
+        unsigned data_sz:7;
+        unsigned msg_sz:33;
+      } __attribute__((__packed__));
+
+      // This is a structure used to track pipelines
+      // for incomplete receives.  CAU only allows for 64 byte packets
+      // so we have to track pipeline information internally
+      struct rcvInfo
+      {
+        size_t                      rcvlen;
+        PipeWorkQueue              *rcvpwq;
+        pami_callback_t             cb_done;
+        CAUMcastRecvMessage        *msg;
       };
 
-      static void notifyRecv(void*)
-        {
-          PAMI_abort();
-        }
 
+      // This is the "internal" send done function
+      // It uses a lapi callback signature since we sit on top of the lapi
+      // cau routines.  This routine handles pipelining of sends into larger
+      // sets of sends.  If we have a message larger than 64 bytes, this routine
+      // will post the next 64 byte message to pipeline the data.
       static void cau_mcast_send_done(lapi_handle_t *hndl, void * completion_param)
         {
           // Our multicast operation has completed.
           // This means that we can consume the bytes out of the PWQ,
           // and notify a consumer (if a fcn has been set up) on the PWQ.
-          notifyFcn            fn;
-          void                *cookie;
           CAUMcastSendMessage *m        = (CAUMcastSendMessage *) completion_param;
           PipeWorkQueue       *source   = m->_src_pwq;
           msgHeader           *hdr      = (msgHeader *)m->_xfer_msghdr;
-          void                *ptr      = (void*)fn;
 
-          source->getProducerUserInfo(&ptr,&cookie);
+          TRACE((stderr, "CAUMulticastModel:  cau_mcast_send_done, consuming %d bytes\n", hdr[0].data_sz));
           source->consumeBytes(hdr[0].data_sz);
-          if(fn)
-            fn(cookie);
-
           // Now check to see if we have finished the send message
           // If we have no bytes left, the message is done and we can
           // complete the send
-          size_t           bytesConsumed = m->_src_pwq->getBytesConsumed();
-          size_t           bytesLeft     = m->_bytes - bytesLeft;
+          size_t           bytesConsumed = source->getBytesConsumed();
+          size_t           bytesLeft     = m->_bytes - bytesConsumed;
+          
+          TRACE((stderr, "CAUMulticastModel:  cau_mcast_send_done:  consumed=%ld, bytesLeft=%ld bytesConsumed=%ld\n",
+                 hdr[0].data_sz,
+                 bytesLeft,
+                 bytesConsumed));
+
           if(bytesLeft == 0)
             {
+              TRACE((stderr, "CAUMulticastModel:  cau_mcast_send_done: delivering send done callback\n"));
               m->_fn((void*)m->_context, m->_cookie, PAMI_SUCCESS);
               m->freeHeader();
               return;
             }
-
+          
           // Otherwise, we have more data to send
           // We issue a multicast from this completion handler
           // and fill out the message header with the updated information
-          hdr[0].data_sz          = source->bytesAvailableToConsume();
-          hdr[0].header_len       = sizeof(msgHeader);
+          unsigned minsize        = MIN(source->bytesAvailableToConsume(), 64);
+          hdr[0].data_sz          = minsize;
           T_Device        *device = (T_Device *)m->_device;
           CAUGeometryInfo *gi     = (CAUGeometryInfo *)m->_devinfo;
           char            *buf    = source->bufferToConsume();
+          TRACE((stderr, "CAUMulticastModel:  cau_mcast_send_done: issuing pipelined multicast of %u bytes\n", hdr[0].data_sz));
           CheckLapiRC(lapi_cau_multicast(device->getHdl(),                 // lapi handle
                                          gi->_cau_id,                      // group id
                                          device->getLapiId(m->_dispatch),  // dispatch id
                                          m->_xfer_msghdr,                  // header
-                                         hdr[0].header_len,                // header len
+                                         sizeof(msgHeader),                // message header size
                                          buf,                              // data
                                          hdr[0].data_sz,                   // data size
                                          cau_mcast_send_done,              // done cb
@@ -101,13 +130,10 @@ namespace PAMI
           // We now have to deliver the rest of the data
           // to the pipeline and receive notification
           // of each chunk
+          TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_done\n"));
           CAUMcastRecvMessage *m = (CAUMcastRecvMessage*)completion_param;
           size_t bytesLeft       = m->_buflen - m->_bytesProduced;
           size_t bytesAvail      = m->_pwq->bytesAvailableToProduce();
-          notifyFcn fn;
-          void     *cookie;
-          void     *ptr          = (void*)fn;
-
           size_t bytesToCopy     = MIN(bytesLeft, bytesAvail);
           if(bytesToCopy>0)
             {
@@ -116,19 +142,12 @@ namespace PAMI
                      bytesToCopy);
               m->_bytesProduced += bytesToCopy;
               m->_pwq->produceBytes(bytesToCopy);
-              m->_pwq->getConsumerUserInfo(&ptr,&cookie);
-              if(fn)
-                fn(cookie);
             }
           // Check to see if we are done
           if(m->_bytesProduced >= m->_buflen)
             m->_cb_done.function(m->_context, m->_cb_done.clientdata, PAMI_SUCCESS);
           else
             {
-              // Set up notification
-              m->_pwq->setProducerUserInfo((void*)notifyRecv, m);
-              if(fn)
-                fn(cookie);
             }
           return;
         }
@@ -137,6 +156,7 @@ namespace PAMI
         {
           // No pipeline fixup required here
           //
+          TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_done2\n"));
           CAUMcastRecvMessage *m = (CAUMcastRecvMessage*)completion_param;
           m->_cb_done.function(m->_context, m->_cb_done.clientdata, PAMI_SUCCESS);
 
@@ -162,79 +182,116 @@ namespace PAMI
           CAUGeometryInfo     *gi      = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
           void                *r       = NULL;
           lapi_return_info_t  *ri      = (lapi_return_info_t *) retinfo;
-
+          
           // Deliver the user callback for the multicast
+          // if the incoming callback has not been delivered already
           pami_dispatch_multicast_fn  user_fn     = mc->_id_to_fn[did];
           void                       *user_cookie = mc->_id_to_async_arg[did];
-          size_t                      rcvlen;
-          PipeWorkQueue              *rcvpwq;
-          pami_callback_t             cb_done;
-          user_fn((pami_quad_t *)&msghdr[1],
-                  msghdr[0].header_len<<4,
-                  cid,
-                  root,
-                  msghdr[0].data_sz,
-                  user_cookie,
-                  &rcvlen,
-                  (pami_pipeworkqueue_t**)&rcvpwq,
-                  &cb_done);
+          rcvInfo                    *rcv         = mc->_gid_to_rcvinfo[gid];
 
-          // Inspect the pipeline work queue for available data
-          size_t                bytesToProduce = rcvpwq->bytesAvailableToProduce();
-          void                 *bufToProduce   = rcvpwq->bufferToProduce();
-          CAUMcastRecvMessage  *m              = NULL;
-          m = (CAUMcastRecvMessage*)malloc(sizeof(CAUMcastRecvMessage));
-          bool                  room;
-          if(bytesToProduce < rcvlen)
+          TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler did=%d gid=%d cid=%d root=%d user_fn=%p cookie=%p\n",
+                 did, gid,cid, root, user_fn, user_cookie));
+          if(!rcv)
             {
-              new(m)CAUMcastRecvMessage(cb_done, bufToProduce,rcvlen,rcvpwq,mc->_device.getContext(),1);
-              bufToProduce           = m->_side_buf;
-              room = 1;
+              TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler First Packet!\n"));
+              rcv = (rcvInfo*)mc->_rcvinfo_alloc.allocateObject();
+              user_fn(NULL,
+                      0,
+                      cid,
+                      root,
+                      msghdr->msg_sz,
+                      user_cookie,
+                      &rcv->rcvlen,
+                      (pami_pipeworkqueue_t**)&rcv->rcvpwq,
+                      &rcv->cb_done);
+              rcv->msg = (CAUMcastRecvMessage*)mc->_rcvmsg_alloc.allocateObject();
+              mc->_gid_to_rcvinfo[gid] = rcv;
+              PAMI_assert(rcv->rcvlen >= msghdr->msg_sz);
             }
           else
             {
-              bytesToProduce = MIN(rcvlen, bytesToProduce);
-              new(m)CAUMcastRecvMessage(cb_done, bufToProduce,rcvlen,rcvpwq,mc->_device.getContext());
-              room = 0;
+              TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler Non First Packet!\n"));
             }
-
+          // Inspect the pipeline work queue for available data
+          unsigned              incomingBytes  = msghdr->data_sz;
+          size_t                pwqAvail       = rcv->rcvpwq->bytesAvailableToProduce();
+          size_t                bytesToProduce = MIN(pwqAvail, incomingBytes);
+          void                 *bufToProduce   = rcv->rcvpwq->bufferToProduce();
+          bool                  noroom;
+          TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler:  incomingBytes=%u, pwqAvail=%ld"
+                 " bytesToProduce=%ld, bufToProduce=%p rcvlen=%ld\n",
+                 incomingBytes,
+                 pwqAvail,
+                 bytesToProduce,
+                 bufToProduce,
+                 rcv->rcvlen));
+          
+          // We have "incomingBytes", and we have "bytesToProduce" available space
+          // If incomingBytes is greater than the bytesToProduce, we need to store the
+          // message into a temporary buffer and fill the buffer later OR
+          // we can abort and push this up to the protocol to ensure that he provides us
+          // with a pipework queue with enough storage.  For now, we will copy this incoming
+          // packet into a temporary buffer
+          if(bytesToProduce < incomingBytes)
+            {
+              // Not enough space in the pwq for this incoming packet
+              // create a message and allocate a new ue buffer for this
+              TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler:  user buffer smaller than incoming bytes\n"));
+              new(rcv->msg)CAUMcastRecvMessage(rcv->cb_done, bufToProduce,rcv->rcvlen,rcv->rcvpwq,mc->_device.getContext(),1);
+              bufToProduce           = rcv->msg->_side_buf;
+              noroom                 = 1;
+            }
+          else
+            {
+              TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler:  enough space in PWQ \n"));
+              new(rcv->msg)CAUMcastRecvMessage(rcv->cb_done, bufToProduce,rcv->rcvlen,rcv->rcvpwq,mc->_device.getContext());
+              noroom                 = 0;
+            }
+          TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler after callback:  bytesToProduce=%ld, bufToProduce=%p rcv->rcvlen=%ld\n",
+                 bytesToProduce, bufToProduce, rcv->rcvlen));
+          
           if (ri->udata_one_pkt_ptr)
             {
-              notifyFcn fn;
-              void     *cookie;
-              void     *ptr      = (void*)fn;
-              rcvpwq->getConsumerUserInfo(&ptr,&cookie);
-              if(room)
+              TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler, 1pkt noroom=%d\n", noroom));
+              if(noroom)
                 {
-                  // This means the pwq didn't have enough room to
-                  // produce the bytes into, so we have to copy as much
-                  // as we can, and notify the consumer that we have produced
-                  // the bytes.  We'll memcpy the entire buffer into the
-                  // temp buffer and copy from that temp buffer as the pwq
-                  // has room to produce.  We also have to set up to be notified
-                  // when data has been consumed, as well as notify
-                  // the consumer that data has been produced.
-                  memcpy(m->_side_buf, (void *)ri->udata_one_pkt_ptr, m->_buflen);
-                  m->_bytesProduced+=bytesToProduce;
-                  rcvpwq->produceBytes(bytesToProduce);
-                  rcvpwq->setProducerUserInfo((void*)notifyRecv, m);
-                  if(fn)
-                    fn(cookie);
+                  // This means the pwq didn't have enough room to produce the bytes
+                  // We'll copy the incoming data into the side buffer
+                  // and post the receive message to the generic device to check for
+                  // user buffer availability
+                  memcpy(((char*)rcv->msg->_side_buf)+rcv->msg->_bytesProduced,
+                         (void *)ri->udata_one_pkt_ptr,
+                         incomingBytes);
+                  rcv->msg->_bytesProduced+=incomingBytes;
+                  // Post the message to the generic device
+                  // Not implemented yet, but post to the generic device
+                  // and copy from the _side_buf into the target PWQ
+                  // keep doing this until we've moved all the data
+                  PAMI_abort();
                 }
               else
                 {
                   // There is enough in the PWQ to produce all the data
                   // So we just memory copy to the PWQ and call the done
                   // function
+                  TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler, :: copying %ld to rpwq=%p, bufToProd=%p\n",
+                         bytesToProduce, rcv->rcvpwq, bufToProduce));
                   memcpy(bufToProduce,
                          (void *)ri->udata_one_pkt_ptr,
                          bytesToProduce);
-                  rcvpwq->produceBytes(bytesToProduce);
-                  if(fn)
-                    fn(cookie);
-                  cb_done.function(mc->_device.getContext(),
-                                   cb_done.clientdata,
-                                   PAMI_SUCCESS);
+                  rcv->rcvpwq->produceBytes(bytesToProduce);
+
+                  TRACE((stderr, "CAUMulticastModel: cau_mcast_recv_handler, ::  bytesProduced=%ld, rcvlen=%ld\n",
+                         rcv->rcvpwq->getBytesProduced(), rcv->rcvlen));
+                  if(rcv->rcvpwq->getBytesProduced() >= rcv->rcvlen)
+                    {
+                      rcv->cb_done.function(mc->_device.getContext(),
+                                            rcv->cb_done.clientdata,
+                                            PAMI_SUCCESS);
+                      mc->_rcvmsg_alloc.returnObject(rcv->msg);
+                      mc->_rcvinfo_alloc.returnObject(rcv);
+                      mc->_gid_to_rcvinfo[gid] = NULL;
+                    }
                 }
               r             = NULL;
               *comp_h       = NULL;
@@ -243,10 +300,13 @@ namespace PAMI
             }
           else
             {
-              if(room)
+              // Not handling the multi-packet case for cau
+              PAMI_abort();
+              TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler, multi-pkt noroom=%d", noroom));
+              if(noroom)
                 {
-                  // PWQ did not have enough room to hold the entire message
-                  r       = m->_side_buf;
+                  // PWQ did not have enough noroom to hold the entire message
+                  r       = rcv->msg->_side_buf;
                   *comp_h = cau_mcast_recv_done;
                 }
               else
@@ -254,7 +314,7 @@ namespace PAMI
                   r       = bufToProduce;
                   *comp_h = cau_mcast_recv_done2;
                 }
-              *uinfo  = m;
+              *uinfo  = rcv->msg;
               ri->ret_flags = LAPI_LOCAL_STATE;
             }
           return r;
@@ -270,9 +330,12 @@ namespace PAMI
                                                              pami_dispatch_multicast_fn  recv_func,
                                                              void                       *async_arg)
           {
-            _device.registerMcastDispatch(dispatch_id, cau_mcast_recv_handler, this);
-            _id_to_fn[dispatch_id]        = recv_func;
-            _id_to_async_arg[dispatch_id] = async_arg;
+            TRACE((stderr, "CAUMulticastModel:  registerMcastRecvFunction:  dispatch_id=%d fcn=%p cookie=%p"
+                   " user_fcn=%p user_cookie=%p\n",
+                   dispatch_id, cau_mcast_recv_handler, this, recv_func, async_arg));
+            int lapi_did = _device.registerMcastDispatch(dispatch_id, cau_mcast_recv_handler, this);
+            _id_to_fn[lapi_did]        = recv_func;
+            _id_to_async_arg[lapi_did] = async_arg;
             return PAMI_SUCCESS;
           }
 
@@ -303,11 +366,13 @@ namespace PAMI
             // Figure out our parameters for the cau multicast
             // Allocate storage for the user header and the system
             // header for the multicast
-            size_t         uhdrsz = PAMIQuad_sizeof(mcast->msgcount);
-            size_t         hdrsz  = uhdrsz+sizeof(msgHeader);
+            PAMI_assert(mcast->msgcount == 0);
+            PAMI_assert(sizeof(msgHeader) <= 12);
+            size_t         hdrsz  = sizeof(msgHeader);
             msgHeader     *hdr    = (msgHeader*)m->allocateHeader(hdrsz);
             PipeWorkQueue *source = (PipeWorkQueue *)mcast->src;
-
+            unsigned       minsize= MIN(source->bytesAvailableToConsume(), 64);
+            
             // Set up the fields of the header
             // and concatenate the user header into the
             // system header by memory copying
@@ -315,15 +380,23 @@ namespace PAMI
             hdr[0].geometry_id    = gi->_geometry_id;
             hdr[0].connection_id  = mcast->connection_id;
             hdr[0].root           = _device.taskid();
-            hdr[0].header_len     = uhdrsz;
-            hdr[0].data_sz        = source->bytesAvailableToConsume();
+            hdr[0].data_sz        = minsize;
+            hdr[0].msg_sz         = mcast->bytes;
             char          *buf    = source->bufferToConsume();
-            memcpy(&hdr[1],mcast->msginfo,uhdrsz);
 
+            TRACE((stderr, "CAUMulticastModel:  postMulticast0: bytesAvailable=%ld min=%ld, msize=%ld, hsize=%u\n",
+                   source->bytesAvailableToConsume(),
+                   MIN(source->bytesAvailableToConsume(), 64),
+                   mcast->bytes,
+                   hdr[0].data_sz));
+
+            TRACE((stderr, "CAUMulticastModel:  postMulticast: cau_id=%d did=%d hdrsz=%d buf=%p data_sz=%d\n",
+                   gi->_cau_id, hdr[0].dispatch_id, hdrsz, buf, hdr[0].data_sz));
+            
             // Issue the multicast
             CheckLapiRC(lapi_cau_multicast(_device.getHdl(),                   // lapi handle
                                            gi->_cau_id,                        // group id
-                                           _device.getLapiId(mcast->dispatch), // dispatch id
+                                           hdr[0].dispatch_id,                 // dispatch id
                                            m->_xfer_msghdr,                    // header
                                            hdrsz,                              // header len
                                            buf,                                // data
@@ -332,9 +405,12 @@ namespace PAMI
                                            m));                                // clientdata
             return PAMI_SUCCESS;
           }
-        T_Device                                &_device;
-        std::map<int,void*>                      _id_to_async_arg;
-        std::map<int,pami_dispatch_multicast_fn> _id_to_fn;
+        T_Device                                             &_device;
+        std::map<int,void*>                                   _id_to_async_arg;
+        std::map<int,pami_dispatch_multicast_fn>              _id_to_fn;
+        std::map<int,rcvInfo*>                                _gid_to_rcvinfo;
+        PAMI::MemoryAllocator<sizeof(rcvInfo), 16>            _rcvinfo_alloc;
+        PAMI::MemoryAllocator<sizeof(CAUMcastRecvMessage),16> _rcvmsg_alloc;
     };
   };
 };
