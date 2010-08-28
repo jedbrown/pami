@@ -303,9 +303,9 @@ namespace CCMI
           PWQBuffer(int seqno,
                     int total_len):
             MatchQueueElem(seqno),
+            _target_pwq(NULL),
             _completion_action(0),
             _complete(false),
-            _target_pwq(NULL),
             _total_len(total_len)
             {
             }
