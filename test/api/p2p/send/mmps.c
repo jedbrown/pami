@@ -55,7 +55,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <pami.h>
-#include <pthread.h>
 
 #if defined(__pami_target_bgq__) && defined(USE_THREADS)
 extern pami_result_t
@@ -69,11 +68,11 @@ static volatile size_t recv_list[MAX_SIZE] = {0};
 static volatile size_t send_list[MAX_SIZE] = {0};
 static size_t ncontexts = NCONTEXTS;
 static size_t rank=99, size=(size_t)-1;
+
 #if !defined(__pami_target_bgq__) && defined(USE_THREADS)
+#include <pthread.h>
 static pthread_t threads[NCONTEXTS];
 
-
-#include <pthread.h>
 static void*
 advance(void* arg)
 {
@@ -349,7 +348,6 @@ init()
       assert(rc == PAMI_SUCCESS);
 #else
       int result;
-      static pthread_t threads[NCONTEXTS];
       result = pthread_create(&threads[i], NULL, advance, &contexts[i]);
       assert(result == 0);
 #endif
