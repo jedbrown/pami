@@ -195,7 +195,13 @@ public:
 		// might need hook later, to do per-context initialization?
 	}
 
+#if 0
 	static void balanceThreads(uint32_t core, uint32_t &newcore, uint32_t &newthread) {
+
+		uint64_t mask = __CommThreadGlobal.availThreads(core);
+
+
+
 		uint32_t c = core;
 		uint32_t m = (c > _ptCore ? _ptThread + 1 : _ptThread);
 		if (!m) {
@@ -209,6 +215,7 @@ public:
 		newcore = c;
 		++_core_iter[c];
 	}
+#endif
 
 	// arrange for the new comm-thread to hunt-down this context and
 	// take it, even if some other thread already picked it up.
@@ -217,12 +224,6 @@ public:
 	// a comm-thread leaves the set does there have to be a re-balance.
 	static inline pami_result_t addContext(size_t clientid,
 					pami_context_t context) {
-		// all BgqCommThread objects have the same ContextSet object.
-		BgqCommThread *devs = __CommThreadGlobal.getCommThreads();
-		uint64_t m = devs[0]._ctxset->addContext(context);
-		if (m == 0) {
-			return PAMI_EAGAIN; // closest thing to ENOSPC ?
-		}
 		int status;
 		uint32_t c, t, core;
 #if 0
@@ -235,16 +236,34 @@ public:
 #endif
 		BgqCommThread *thus;
 
-		balanceThreads(core, c, t);
-		if (_comm_xlat[c][t] != NULL) {
-		// if (_numActive >= _maxActive)
-			// silently ignore attempts to create more commthtreads than
-			// processors. but still must add context someplace...
-			thus = _comm_xlat[c][t];
+		//balanceThreads(core, c, t);
+		c = core;
+		__CommThreadGlobal.getNextThread(c, t);
+		// any error checking?
+		thus = _comm_xlat[c][t];
+
+		// all BgqCommThread objects have the same ContextSet object.
+		BgqCommThread *devs = __CommThreadGlobal.getCommThreads();
+		// this will wakeup existing commthreads...
+		// note, unsolvable race condition: we want to add 'm' to
+		// the existing commthread's _initCtxs, but can't do that
+		// until getting 'm' from call to addContext() which will
+		// wakeup commthreads. This means any commthread might get
+		// the new context, and the true "home" commthread will
+		// have to force it away later. A more-complex two-phased
+		// approach would help. But, this is really not much different
+		// than a newly created commthread which will have to force
+		// its core context(s) back to itself.
+		uint64_t m = devs[0]._ctxset->addContext(context);
+		if (thus) {
+			if (m == 0) {
+				return PAMI_EAGAIN; // closest thing to ENOSPC ?
+			}
 			thus->_initCtxs |= m;
-			/// \todo ensure commthread(s) wake up... how?
+			mem_sync();
 			return PAMI_SUCCESS;
 		}
+
 		// we assume this is single-threaded so no locking required...
 		size_t x = _numActive++;
 		thus = &devs[x];
@@ -290,6 +309,7 @@ public:
 		}
 
 		thus->_shutdown = false;
+		mem_sync();
 		status = pthread_create(&thus->_thread, &attr, commThread, thus);
 		pthread_attr_destroy(&attr);
 		if (status) {
@@ -315,6 +335,9 @@ public:
 		// This should wakeup all commthreads, and any one holding
 		// this context should release it...
 		uint64_t mask = devs[0]._ctxset->disableContexts(ctxs, nctx);
+		for (x = 0; x < _numActive; ++x) {
+			devs[x]._initCtxs &= ~mask;
+		}
 
 		// wait here for all contexts to get released? must only
 		// wait for all commthreads to release, not for other threads
@@ -384,9 +407,10 @@ more_work:		// lightweight enough.
 				if (old_ctx != new_ctx) ev_since_wu += 1;
 				old_ctx = new_ctx;
 				_lockCtxs = lkd_ctx;
+				mem_sync();
 				events = __advanceContextSet(lkd_ctx);
 				ev_since_wu += events;
-			} while (!_shutdown && lkd_ctx && (events != 0 || ++n < max_loop));
+			} while (!_shutdown && lkd_ctx && events != 0 && ++n < max_loop);
 			if (_shutdown) break;
 
 			// Snoop the scheduler to see if other threads are competing.
@@ -425,6 +449,7 @@ DEBUG_WRITE('w','u');
 				// this only locks/unlocks what changed...
 				__lockContextSet(lkd_ctx, 0);
 				_lockCtxs = lkd_ctx;
+				mem_sync();
 
 				_ctxset->leaveContextSet(id); // id invalid now
 DEBUG_WRITE('s','a');
@@ -444,6 +469,7 @@ DEBUG_WRITE('s','b');
 		if (lkd_ctx) {
 			__lockContextSet(lkd_ctx, 0);
 			_lockCtxs = lkd_ctx;
+			mem_sync();
 		}
 		if (id != (size_t)-1) {
 			_ctxset->leaveContextSet(id); // id invalid now
@@ -455,12 +481,11 @@ DEBUG_WRITE('t','t');
 	friend class PAMI::Device::CommThread::Factory;
 	BgqWakeupRegion *_wakeup_region;	///< WAC memory for contexts (common)
 	PAMI::Device::CommThread::BgqContextPool *_ctxset; ///< context set (common)
-	uint64_t _initCtxs;		///< initial set of contexts to take
-	uint64_t _lockCtxs;		///< set of contexts we have locked
+	volatile uint64_t _initCtxs;	///< initial set of contexts to take
+	volatile uint64_t _lockCtxs;	///< set of contexts we have locked
 	pthread_t _thread;		///< pthread identifier
-	size_t _falseWU;		///< perf counter for false wakeups
+	volatile size_t _falseWU;	///< perf counter for false wakeups
 	volatile bool _shutdown;	///< request commthread to exit
-	static size_t _core_iter[NUM_CORES];
 	static BgqCommThread *_comm_xlat[NUM_CORES][NUM_SMT];
 	static size_t _numActive;
 	static size_t _maxActive;
@@ -515,6 +540,33 @@ _commThreads(NULL)
 		new (&devs[x]) BgqCommThread(wu, pool, num_ctx);
 	}
 	_commThreads = devs;
+
+	// determine what range of hwthreads we have...
+	// Try to generalize, and just use the bitmap as
+	// a set of "available" threads, zero each one as we
+	// start a commthread on it...  also take into account
+	// the "main" thread, where we never start a commthread.
+	uint64_t tmask = Kernel_ThreadMask(__global.mapping.t());
+	_proc_threads = tmask;
+	_comm_threads = 0; // not used?
+	memset(_num_used, 0, sizeof(_num_used));
+	memset(_num_avail, 0, sizeof(_num_avail));
+	memset(_first, 0, sizeof(_first));
+
+	// Assume the calling thread is main(), remove it from the mask.
+	tmask &= ~(1UL << ((NUM_CORES * NUM_SMT - 1) - Kernel_ProcessorID()));
+	_avail_threads = tmask;
+	int k, c;
+	uint32_t m;
+	static int __num_bits[] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4 };
+	for (k = 0; k < NUM_CORES; ++k) {
+		c = ((NUM_CORES - 1) - k) * NUM_SMT;
+		m = (tmask >> c) & 0x0f;
+		if (m) {
+			_num_avail[k] = __num_bits[m];
+			_first[k] = ffs(m) - 1;
+		}
+	}
 }
 
 Factory::~Factory() {
@@ -580,7 +632,6 @@ size_t PAMI::Device::CommThread::BgqCommThread::_numActive = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_maxActive = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_ptCore = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_ptThread = 0;
-size_t PAMI::Device::CommThread::BgqCommThread::_core_iter[NUM_CORES] = {0};
 PAMI::Device::CommThread::BgqCommThread *PAMI::Device::CommThread::BgqCommThread::_comm_xlat[NUM_CORES][NUM_SMT] = {{NULL}};
 
 #undef DEBUG_INIT

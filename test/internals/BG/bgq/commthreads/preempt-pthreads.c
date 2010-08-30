@@ -5,6 +5,11 @@
 
 #include "commthread_test.h"
 
+#ifdef __pami_target_bgq__
+#include "spi/include/kernel/process.h"
+#include "spi/include/kernel/location.h"
+#endif
+
 int run = 0;
 struct thread_data {
 	pami_context_t context;
@@ -123,16 +128,22 @@ int main(int argc, char ** argv) {
 					pthread_mutex_lock(&thr_data[x].mutex);
 					pthread_attr_init(&attr);
 #ifdef __pami_target_bgq__
+					// need better way to predict commthread assignment.
+					// this works for simple cases.
+					int p = Kernel_ProcessorCount();// 1..64
+					int i = Kernel_ProcessorID();	// 0..63
+					i = (i + p - 1) - x * 4;
 					cpu_set_t cpu_mask;
 					CPU_ZERO(&cpu_mask);
-					CPU_SET((x + 1) * 4, &cpu_mask);
+					CPU_SET(i, &cpu_mask);
 					pthread_attr_setaffinity_np(&attr,
 																			sizeof(cpu_set_t),
 																			&cpu_mask);
 #endif // __pami_target_bgq__
 					int rc = pthread_create(&thr_data[x].thread, &attr,
-																	user_pthread, (void *)&thr_data[x]);
+							user_pthread, (void *)&thr_data[x]);
 					if (rc == -1) perror("pthread_create");
+fprintf(stderr, "++ %ld %d:%d\n", thr_data[x].thread, i / 4, i % 4);
 					pthread_attr_destroy(&attr);
 				}
 			}

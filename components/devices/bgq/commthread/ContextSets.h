@@ -130,7 +130,7 @@ public:
 		PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_contexts");
 		setmm->memalign((void **)&_sets, 16, (nsets + 1) * sizeof(*_sets));
 		PAMI_assertf(_sets, "Out of memory for BgqContextPool::_sets");
-		memset(_sets, 0, (nsets + 1) * sizeof(*_sets));
+		memset((void *)_sets, 0, (nsets + 1) * sizeof(*_sets));
 		_ncontexts_total = nctx;
 		_nsets = nsets;
 	}
@@ -223,7 +223,6 @@ fprintf(stderr, "picking up extra contexts %04zx\n", m);
 
 	inline void joinContextSet(size_t &threadid,
 						uint64_t initial = 0ULL) {
-
 		uint64_t m = 0, n = 0;
 		_mutex.acquire();
 		while (n < 64 && (_actm & (1 << n)) != 0) {
@@ -267,11 +266,11 @@ private:
 	size_t _ncontexts;
 
 	ContextSetMutex _mutex;
-	uint64_t _actm;		// protected by _mutex
-	uint64_t *_sets;	// protected by _mutex
-	size_t _nsets;		// protected by _mutex
-	size_t _nactive;	// protected by _mutex
-	size_t _lastset;	// protected by _mutex
+	volatile uint64_t _actm;	// protected by _mutex
+	volatile uint64_t *_sets;	// protected by _mutex
+	volatile size_t _nsets;		// protected by _mutex
+	volatile size_t _nactive;	// protected by _mutex
+	volatile size_t _lastset;	// protected by _mutex
 }; // class BgqContextPool
 
 }; // namespace CommThread
