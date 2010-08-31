@@ -435,7 +435,7 @@ namespace PAMI
           // TODO: Honor the configuration passed in
           int rc = LAPI__Init(&_lapi_handle, &init_info);
           if (rc) {
-            RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Init failed with rc %d\n", rc);
+            RETURN_ERR_PAMI(ERR_ERROR, "LAPI__Init failed with rc %d\n", rc);
           }
           _lapi_state = _Lapi_port[_lapi_handle];
     lapi_senv(_lapi_handle, INTERRUPT_SET, false);
@@ -535,7 +535,7 @@ namespace PAMI
           LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
           int rc = LAPI__Term(ep->my_hndl);
           if (rc) {
-            RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Term failed with rc %d\n", rc);
+            RETURN_ERR_PAMI(ERR_ERROR, "LAPI__Term failed with rc %d\n", rc);
           }
           return PAMI_SUCCESS;
         }
@@ -611,50 +611,44 @@ namespace PAMI
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
           internal_error_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
-                  send->header.iov_base, send->header.iov_len,
-                  send->data.iov_base, send->data.iov_len,
-                  *(send_hint_t *)&send->hints);
+                                         send->header.iov_base, send->header.iov_len,
+                                         send->data.iov_base, send->data.iov_len,
+                                         *(send_hint_t *)&send->hints);
           return PAMI_RC(rc);
         }
 
-      inline pami_result_t send_impl (pami_send_typed_t * send_typed)
+      inline pami_result_t send_impl (pami_send_typed_t * parameters)
         {
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          return (cp->*(cp->pSendTyped))(send_typed);
+          PAMI_abort();
+          return PAMI_UNIMPL;
         }
 
-      inline pami_result_t put_impl (pami_put_simple_t * put)
+      inline pami_result_t put_impl (pami_put_simple_t * parameters)
+        {
+          PAMI_abort();
+          return PAMI_UNIMPL;
+        }
+
+      inline pami_result_t put_typed_impl (pami_put_typed_t * parameters)
+        {
+          PAMI_abort();
+          return PAMI_UNIMPL;
+        }
+
+      inline pami_result_t get_impl (pami_get_simple_t * parameters)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          internal_error_t rc = (cp->*(cp->pPut))
-              (put->rma.dest, put->addr.local, NULL, 
-               put->addr.remote, NULL, put->rma.bytes,
-               *(send_hint_t*)&put->rma.hints, INTERFACE_PAMI,
-               (void*)put->rma.done_fn, (void*)put->put.rdone_fn,
-               put->rma.cookie, NULL, NULL, NULL);
+          internal_error_t rc = (cp->*(cp->pGet))(parameters->rma.dest, parameters->addr.local, NULL,
+                                   parameters->addr.remote, NULL, parameters->rma.bytes,
+                                   *(send_hint_t*)&parameters->rma.hints, INTERFACE_PAMI,
+                                   (void *)parameters->rma.done_fn, parameters->rma.cookie, NULL, NULL);
           return PAMI_RC(rc);
         }
 
-      inline pami_result_t put_typed_impl (pami_put_typed_t * put_typed)
+      inline pami_result_t get_typed_impl (pami_get_typed_t * parameters)
         {
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          return (cp->*(cp->pPutTyped))(put_typed);
-        }
-
-      inline pami_result_t get_impl (pami_get_simple_t * get)
-        {
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          internal_error_t rc = (cp->*(cp->pGet))(get->rma.dest, get->addr.local, NULL,
-                  get->addr.remote, NULL, get->rma.bytes,
-                  *(send_hint_t*)&get->rma.hints, INTERFACE_PAMI,
-                  (void *)get->rma.done_fn, get->rma.cookie, NULL, NULL);
-          return PAMI_RC(rc);
-        }
-
-      inline pami_result_t get_typed_impl (pami_get_typed_t * get_typed)
-        {
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          return (cp->*(cp->pGetTyped))(get_typed);
+          PAMI_abort();
+          return PAMI_UNIMPL;
         }
 
       inline pami_result_t rmw_impl (pami_rmw_t * parameters)
