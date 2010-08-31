@@ -16,7 +16,6 @@
 
 extern "C"
 {
-  pami_type_t PAMI_BYTE = 0;
   pami_geometry_t PAMI_NULL_GEOMETRY = 0;
 }
 
@@ -286,61 +285,7 @@ extern "C" pami_result_t PAMI_AMCollective_dispatch_set(pami_context_t          
 // Type function implementations                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-extern "C" pami_result_t PAMI_Type_create (pami_type_t * type)
-{
-  return PAMI_UNIMPL;
-}
-
-extern "C" pami_result_t PAMI_Type_add_simple (pami_type_t type,
-                                               size_t      bytes,
-                                               size_t      offset,
-                                               size_t      count,
-                                               size_t      stride)
-{
-  return PAMI_UNIMPL;
-}
-
-extern "C" pami_result_t PAMI_Type_add_typed (pami_type_t type,
-                                              pami_type_t subtype,
-                                              size_t      offset,
-                                              size_t      count,
-                                              size_t      stride)
-{
-  return PAMI_UNIMPL;
-}
-
-extern "C" pami_result_t PAMI_Type_complete (pami_type_t type,
-                                             size_t      atom_size)
-{
-  return PAMI_UNIMPL;
-}
-
-extern "C" pami_result_t PAMI_Type_destroy (pami_type_t *type)
-{
-  *type = NULL;
-  return PAMI_UNIMPL;
-}
-
-extern "C" pami_result_t PAMI_Type_serialize (pami_type_t   type,
-                                              void       ** address,
-                                              size_t      * size)
-{
-  return PAMI_UNIMPL;
-}
-
-extern "C" pami_result_t PAMI_Type_deserialize (pami_type_t * type,
-                                                void        * address,
-                                                size_t        size)
-{
-  return PAMI_UNIMPL;
-}
-
-extern "C" pami_result_t PAMI_Type_query (pami_type_t           type,
-                                          pami_configuration_t  configuration[],
-                                          size_t                num_configs)
-{
-  return PAMI_UNIMPL;
-}
+#include "pami_type.cc"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from pami_pipeworkqueue.h                                         //
