@@ -8,6 +8,7 @@
 
 #include <pami.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
@@ -198,7 +199,10 @@ pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nc
 	int x;
 	size_t ix;
 	pami_send_hint_t h = {0};
-	size_t meix = TEST_Local_myindex();
+	pami_configuration_t configuration;
+	configuration.name = PAMI_CLIENT_TASK_ID;
+	result = PAMI_Client_query(client, &configuration, 1);
+	pami_task_t task = configuration.value.intval;
 
 	// even index sends, odd receives...
 	if (role) { // receiver...
@@ -212,8 +216,8 @@ pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nc
 
 			// assert(_info[x].value == 0)
 			_info[x].ctx = x;
-			ix = meix ^ 1;
-			pami_task_t task = TEST_Local_index2task(ix);
+			ix = task ^ 1;
+			pami_task_t task = TEST_Global_index2task(ix);
 			if (task == (pami_task_t)-1) continue; // never?
 
 			size_t targ = x;

@@ -425,7 +425,7 @@ more_work:		// lightweight enough.
 
 			if (n <= 1) {
 				// we are alone
-				if (events == 0) {
+				if (lkd_ctx == new_ctx && events == 0) {
 					// The wait can only detect new work.
 					// Only do the wait if we know the
 					// contexts have no work. otherwise

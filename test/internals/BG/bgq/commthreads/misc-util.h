@@ -20,6 +20,12 @@
 extern "C" {
 #endif
 
+pami_task_t TEST_Global_index2task(size_t x);
+
+size_t TEST_Global_size();
+
+size_t TEST_Global_myindex();
+
 pami_task_t TEST_Local_index2task(size_t x);
 
 size_t TEST_Local_size();
@@ -30,4 +36,4 @@ size_t TEST_Local_myindex();
 }
 #endif
 
-#endif // __test_BG_bgq_commthreads_misc_util_h__
+#endif // __test_internals_BG_bgq_commthreads_misc_util_h__

@@ -17,7 +17,6 @@ int main(int argc, char ** argv) {
 	pami_context_t context[NUM_CONTEXTS];
 	size_t num_contexts;
 	int x, y;
-	size_t meix = TEST_Local_myindex();
 	char buf[64];
 
 	result = PAMI_Client_create(cl_string, &client, NULL, 0);
@@ -40,9 +39,13 @@ int main(int argc, char ** argv) {
 		fprintf(stderr, "Must be run with an even number of tasks\n");
 		exit(1);
 	}
+	if (ntasks != 2) {
+		fprintf(stderr, "Currently, requires exactly 2 tasks\n");
+		exit(1);
+	}
 	int bufl = strlen(buf);
 
-	num_contexts = TEST_Local_size();
+	num_contexts = ntasks;
 	if (num_contexts > NUM_CONTEXTS) num_contexts = NUM_CONTEXTS;
 	result = PAMI_Context_createv(client, NULL, 0, &context[0], num_contexts);
 	if (result != PAMI_SUCCESS) {
@@ -72,7 +75,7 @@ int main(int argc, char ** argv) {
 			_info[x].seq = (task * 1000) + y * num_contexts + x + 1;
 		}
 
-		result = run_test_send(client, context, num_contexts, (meix ^ y) & 1);
+		result = run_test_send(client, context, num_contexts, (task ^ y) & 1);
 		if (result != PAMI_SUCCESS) {
 			fprintf(stderr, "Error. Unable to run commthread test. "
 							"result = %d\n", result);
