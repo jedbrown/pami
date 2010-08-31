@@ -19,9 +19,9 @@
 
 #ifdef TRACE
 #undef TRACE
-#define TRACE(x) //fprintf x
+#define TRACE(x)// fprintf x
 #else
-#define TRACE(x) //fprintf x
+#define TRACE(x)// fprintf x
 #endif
 
 
@@ -65,6 +65,8 @@ namespace PAMI
         size_t                      rcvlen;
         PipeWorkQueue              *rcvpwq;
         pami_callback_t             cb_done;
+        int                         gid;
+        CAUMulticastModel          *mc;
         CAUMcastRecvMessage        *msg;
       };
 
@@ -159,9 +161,59 @@ namespace PAMI
           TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_done2\n"));
           CAUMcastRecvMessage *m = (CAUMcastRecvMessage*)completion_param;
           m->_cb_done.function(m->_context, m->_cb_done.clientdata, PAMI_SUCCESS);
-
-
         }
+
+
+      static pami_result_t UeWorkFn(pami_context_t ctxt, void* cookie)
+        {
+          rcvInfo *rcv = (rcvInfo*)cookie;
+          // How much data is in the ue buffer, ready to copy?
+          unsigned              incomingBytes  = rcv->msg->_bytesProduced - rcv->msg->_bytesCopied;
+
+          // How much room in the PWQ?
+          size_t                pwqAvail       = rcv->rcvpwq->bytesAvailableToProduce();
+          size_t                bytesToProduce = MIN(pwqAvail, incomingBytes);
+          void                 *bufToProduce   = rcv->rcvpwq->bufferToProduce();
+
+
+          TRACE((stderr, "CAUMulticastModel:  UE Generic Device handler, incomingBytes=%d"
+                 " msg->bp=%ld msg->bc=%ld pwqAvail=%ld, bytesToProduce=%ld bufToProduce=%p\n",
+                 rcv->msg->_bytesProduced,
+                 rcv->msg->_bytesCopied,
+                 incomingBytes,
+                 pwqAvail,
+                 bytesToProduce,
+                 bufToProduce));
+
+          if(bytesToProduce)
+            {
+              TRACE((stderr, "CAUMulticastModel:  UE Generic Device handler, COPYING ctxt=%p cookie=%p\n",
+                     ctxt, cookie));
+              memcpy(bufToProduce,
+                     ((char*)rcv->msg->_side_buf) + rcv->msg->_bytesCopied,
+                     bytesToProduce);
+              rcv->msg->_bytesCopied +=bytesToProduce;
+              rcv->rcvpwq->produceBytes(bytesToProduce);
+            }
+
+          if(rcv->rcvpwq->getBytesProduced() >= rcv->rcvlen)
+            {
+              TRACE((stderr, "CAUMulticastModel:  UE Generic Device handler, MESSAGE DONE ctxt=%p cookie=%p\n",
+                     ctxt, cookie));
+
+              rcv->cb_done.function(rcv->mc->_device.getContext(),
+                                    rcv->cb_done.clientdata,
+                                    PAMI_SUCCESS);
+              rcv->mc->_device.freeWork(rcv->msg->_thread);
+              rcv->mc->_rcvmsg_alloc.returnObject(rcv->msg);
+              rcv->mc->_rcvinfo_alloc.returnObject(rcv);
+              rcv->mc->_gid_to_rcvinfo[rcv->gid] = NULL;
+              return PAMI_SUCCESS;
+            }
+          else
+            return PAMI_EAGAIN;
+        }
+
 
       static void * cau_mcast_recv_handler(lapi_handle_t  *hndl,
                                            void           *uhdr,
@@ -204,8 +256,9 @@ namespace PAMI
                       &rcv->rcvlen,
                       (pami_pipeworkqueue_t**)&rcv->rcvpwq,
                       &rcv->cb_done);
-              rcv->msg = (CAUMcastRecvMessage*)mc->_rcvmsg_alloc.allocateObject();
               mc->_gid_to_rcvinfo[gid] = rcv;
+              rcv->mc                  = mc;
+              rcv->gid                 = gid;
               PAMI_assert(rcv->rcvlen >= msghdr->msg_sz);
             }
           else
@@ -237,6 +290,7 @@ namespace PAMI
               // Not enough space in the pwq for this incoming packet
               // create a message and allocate a new ue buffer for this
               TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler:  user buffer smaller than incoming bytes\n"));
+              rcv->msg = (CAUMcastRecvMessage*)mc->_rcvmsg_alloc.allocateObject();
               new(rcv->msg)CAUMcastRecvMessage(rcv->cb_done, bufToProduce,rcv->rcvlen,rcv->rcvpwq,mc->_device.getContext(),1);
               bufToProduce           = rcv->msg->_side_buf;
               noroom                 = 1;
@@ -244,7 +298,7 @@ namespace PAMI
           else
             {
               TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler:  enough space in PWQ \n"));
-              new(rcv->msg)CAUMcastRecvMessage(rcv->cb_done, bufToProduce,rcv->rcvlen,rcv->rcvpwq,mc->_device.getContext());
+              rcv->msg = NULL;
               noroom                 = 0;
             }
           TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler after callback:  bytesToProduce=%ld, bufToProduce=%p rcv->rcvlen=%ld\n",
@@ -263,34 +317,49 @@ namespace PAMI
                          (void *)ri->udata_one_pkt_ptr,
                          incomingBytes);
                   rcv->msg->_bytesProduced+=incomingBytes;
-                  // Post the message to the generic device
-                  // Not implemented yet, but post to the generic device
-                  // and copy from the _side_buf into the target PWQ
-                  // keep doing this until we've moved all the data
-                  PAMI_abort();
+                  // Post the message to the generic device to handle the out of band
+                  // copying of data
+                  if(!rcv->msg->_thread)
+                    rcv->msg->_thread = mc->_device.postWork(UeWorkFn, rcv);
                 }
               else
                 {
-                  // There is enough in the PWQ to produce all the data
-                  // So we just memory copy to the PWQ and call the done
-                  // function
-                  TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler, :: copying %ld to rpwq=%p, bufToProd=%p\n",
-                         bytesToProduce, rcv->rcvpwq, bufToProduce));
-                  memcpy(bufToProduce,
-                         (void *)ri->udata_one_pkt_ptr,
-                         bytesToProduce);
-                  rcv->rcvpwq->produceBytes(bytesToProduce);
-
-                  TRACE((stderr, "CAUMulticastModel: cau_mcast_recv_handler, ::  bytesProduced=%ld, rcvlen=%ld\n",
-                         rcv->rcvpwq->getBytesProduced(), rcv->rcvlen));
-                  if(rcv->rcvpwq->getBytesProduced() >= rcv->rcvlen)
+                  if(!rcv->msg)
                     {
-                      rcv->cb_done.function(mc->_device.getContext(),
-                                            rcv->cb_done.clientdata,
-                                            PAMI_SUCCESS);
-                      mc->_rcvmsg_alloc.returnObject(rcv->msg);
-                      mc->_rcvinfo_alloc.returnObject(rcv);
-                      mc->_gid_to_rcvinfo[gid] = NULL;
+                      // There is enough in the PWQ to produce all the data
+                      // So we just memory copy to the PWQ and call the done
+                      // function.  Also, the previous receive message wasn't posted
+                      // so the copying is not handled by a posted PWQ work function
+                      TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler, :: copying %ld to rpwq=%p, bufToProd=%p\n",
+                             bytesToProduce, rcv->rcvpwq, bufToProduce));
+                      memcpy(bufToProduce,
+                             (void *)ri->udata_one_pkt_ptr,
+                             bytesToProduce);
+                      rcv->rcvpwq->produceBytes(bytesToProduce);
+
+                      TRACE((stderr, "CAUMulticastModel: cau_mcast_recv_handler, SIMPLE::  bytesProduced=%ld, rcvlen=%ld\n",
+                             rcv->rcvpwq->getBytesProduced(), rcv->rcvlen));
+                      if(rcv->rcvpwq->getBytesProduced() >= rcv->rcvlen)
+                        {
+                          rcv->cb_done.function(mc->_device.getContext(),
+                                                rcv->cb_done.clientdata,
+                                                PAMI_SUCCESS);
+                          mc->_rcvinfo_alloc.returnObject(rcv);
+                          mc->_gid_to_rcvinfo[gid] = NULL;
+                        }
+                    }
+                  else
+                    {
+                      TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler, UE:: copying %ld to rpwq=%p, bufToProd=%p\n",
+                             bytesToProduce, rcv->rcvpwq, bufToProduce));
+                      // This chunk of the pipeline is into a side buffer
+                      // We will continue the copying into the side buffer
+                      // and let the pwq thread finish the copying into the final
+                      // PWQ buffer and to finish the message completion
+                      memcpy(((char*)rcv->msg->_side_buf)+rcv->msg->_bytesProduced,
+                             (void *)ri->udata_one_pkt_ptr,
+                             incomingBytes);
+                      rcv->msg->_bytesProduced+=incomingBytes;
                     }
                 }
               r             = NULL;

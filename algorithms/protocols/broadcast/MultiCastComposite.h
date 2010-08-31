@@ -15,9 +15,9 @@
 
 #ifdef TRACE
 #undef TRACE
-#define TRACE(x) //fprintf x
+#define TRACE(x)// fprintf x
 #else
-#define TRACE(x) //fprintf x
+#define TRACE(x)// fprintf x
 #endif
 
 namespace CCMI
@@ -297,14 +297,11 @@ namespace CCMI
       };
 
 
-        class PWQBuffer : public PAMI::MatchQueueElem
+      class PWQBuffer : public PAMI::Queue::Element
         {
         public:
-          PWQBuffer(int seqno,
-                    int total_len):
-            MatchQueueElem(seqno),
-            _target_pwq(NULL),
-            _completion_action(0),
+          PWQBuffer(int total_len):
+            _target_pwq(&_ue_pwq),
             _complete(false),
             _total_len(total_len)
             {
@@ -317,65 +314,17 @@ namespace CCMI
           
           inline void executeCAPost()
             {
-              switch(_completion_action)
-                {
-                  case 0:
-                    // Post Action
-                    pwqCopy(_target_pwq, &_incoming_pwq);
-                    break;
-                  case 1:
-                    break;
-                  case 2:
-                    // Post Action
-                    pwqCopy(_target_pwq, &_incoming_pwq);
-                    break;
-                  case 3:
-                    break;
-                  case 4:
-                    break;
-                  case 5:
-                    break;
-                  default:
-                    PAMI_abort();
-                    break;
-                }              
             }
 
           inline void executeCAComplete()
             {
-              TRACE((stderr, "executeCAComplete:  Action=%d\n",
-                     _completion_action));
-              switch(_completion_action)
-                {
-                  case 0:
-                    break;
-                  case 1:
-                    // Completion action
-                    pwqCopy(_target_pwq, &_incoming_pwq);
-                    break;
-                  case 2:
-                    break;
-                  case 3:
-                    // Completion action
-                    pwqCopy(_target_pwq, &_incoming_pwq);
-                    break;
-                  case 4:
-                    break;
-                  case 5:
-                    break;
-                  default:
-                    PAMI_abort();
-                    break;
-                }              
-              TRACE((stderr, "executeCAComplete:  delivering callback\n",
-                     _completion_action));
+              TRACE((stderr, "executeCAComplete:  delivering callback\n"));
               _user_callback(NULL, _user_cookie, PAMI_SUCCESS);
               
             }
           
-          PAMI::PipeWorkQueue  _incoming_pwq;
+          PAMI::PipeWorkQueue  _ue_pwq;
           PAMI::PipeWorkQueue *_target_pwq;
-          int                  _completion_action;
           pami_event_function  _user_callback;
           void                *_user_cookie; 
           bool                 _complete;
@@ -421,8 +370,7 @@ namespace CCMI
                                    pami_xfer_t                                         *cmd,
                                    pami_event_function                                  fn,
                                    void                                                *cookie,
-                                   int                                                 &seqno,
-                                   PAMI::MatchQueue                                    *ue,
+                                   PAMI::Queue                                         *ue,
                                    PAMI::Queue                                         *posted) :
           Composite(),
           _native_l(native_l),
@@ -431,7 +379,7 @@ namespace CCMI
           _deviceInfo(NULL),
           _root_topo(cmd->cmd.xfer_broadcast.root),
           _justme_topo(_geometry->rank()),
-          _pwqBuf(seqno+1, 0),
+          _pwqBuf(0),
           _activePwqBuf(NULL)
           {
             _active_native[0] = NULL;
@@ -620,43 +568,13 @@ namespace CCMI
                 // This means that I need to post this into a queue or find one that is UE
                 // 1)  Find in the UE queue
                 // 2)  If found, copy the data and complete the message
-                PWQBuffer *pwqBuf = (PWQBuffer*) ue->findAndDelete(seqno);                
+                PWQBuffer *pwqBuf = (PWQBuffer*) ue->dequeue();
                 if(pwqBuf)
                   {
-                    // We found the unexpected message
-                    // The completion action is to copy the buffer out
-                    // of the temporary work queue into the user's buffer
-                    // when the message is finished
-                    if(numLocal==1 && pwqBuf->_complete)
-                      {
-                        // Case 0: Message complete, numLocal=1, we copy to user's pwq
-                        // at post time
-                        pwqBuf->_completion_action= 0;
-                        pwqBuf->_target_pwq       = &_pwq0;
-                      }
-                    else if(numLocal==1 && !pwqBuf->_complete)
-                      {
-                        // Case 1: Message incomplete, numLocal=1, we copy to user's pwq
-                        // at completion time
-                        pwqBuf->_completion_action= 1;
-                        pwqBuf->_target_pwq       = &_pwq0;
-                      }
-                    else if(numLocal>1 && pwqBuf->_complete)
-                      {
-                        // Case 2: Message complete, numLocal>1, we copy to pwq
-                        // and pipeline into the local mcast at post time
-                        pwqBuf->_completion_action= 2;
-                        pwqBuf->_target_pwq       = &_pwq0;
-                      }
-                    else if(numLocal>1 && !pwqBuf->_complete)
-                      {
-                        // Case 3: Message incomplete, numLocal>1, we leave pwq open
-                        // and pipeline into the local mcast at at completion time
-                        pwqBuf->_completion_action= 3;
-                        pwqBuf->_target_pwq       = &_pwq0;
-                      }
-                    else
-                      PAMI_abort();
+                    pwqBuf->_target_pwq           = &pwqBuf->_ue_pwq;
+                    pwqBuf->_ue_pwq.configure(NULL,cmd->cmd.xfer_broadcast.buf,bytes,0);
+                    pwqBuf->_ue_pwq.reset();
+                    _minfo_l.src                = (pami_pipeworkqueue_t*)&pwqBuf->_ue_pwq;
                     _activePwqBuf                 = pwqBuf;
                     _activePwqBuf->_user_callback = fn;
                     _activePwqBuf->_user_cookie   = cookie;
@@ -668,21 +586,8 @@ namespace CCMI
                     // and deliver the callback
                     TRACE((stderr, "MultiCastComposite2Device:  Posting to posted queue:  _pwqBuf=%p\n",
                            &_pwqBuf));
-                    seqno++;
                     posted->enqueue((PAMI::Queue::Element*)&_pwqBuf);
-                    if(numLocal==1)
-                      {
-                        // Case 4:  Action, complete the message into the users buffer
-                        _pwqBuf._completion_action = 4;
-                        _pwqBuf._target_pwq        = &_pwq0;
-                      }
-                    else
-                      {
-                        // Case 5:  Action, complete the message into the local pwq
-                        // Free the pwq
-                        _pwqBuf._completion_action = 5;
-                        _pwqBuf._target_pwq        = &_pwq0;
-                      }
+                    _pwqBuf._target_pwq           = &_pwq0;
                     _activePwqBuf                 = &_pwqBuf;
                     _activePwqBuf->_user_callback = fn;
                     _activePwqBuf->_user_cookie   = cookie;
@@ -702,8 +607,8 @@ namespace CCMI
                     _minfo_l.connection_id      = _geometry->comm();
                     _minfo_l.roles              = -1U;
                     _minfo_l.bytes              = bytes;
-                    _minfo_l.src                = (pami_pipeworkqueue_t*)&_pwq0;
-                    _minfo_l.src_participants   = (pami_topology_t*)&_root_topo;
+                    _minfo_l.src                = NULL;
+                    _minfo_l.src_participants   = (pami_topology_t*)t_my_master;
                     _minfo_l.dst                = (pami_pipeworkqueue_t*)&_pwq0;
                     _minfo_l.dst_participants   = (pami_topology_t*)t_local;
                     _minfo_l.msginfo            = 0;
@@ -786,13 +691,12 @@ namespace CCMI
                   pami_event_function                fn,
                   void                              *cookie,
                   MultiCastComposite2DeviceFactoryT *factory,
-                  int                                seqno,
-                  PAMI::MatchQueue                  *ue,
+                  PAMI::Queue                       *ue,
                   PAMI::Queue                       *posted):
             _factory(factory),
             _user_done_fn(cmd->cb_done),
             _user_cookie(cmd->cookie),
-            _obj(native0,native1, cmgr, geometry, cmd, fn, cookie, seqno, ue, posted)
+            _obj(native0,native1, cmgr, geometry, cmd, fn, cookie,ue, posted)
             {
             }
           void done_fn( pami_context_t   context,
@@ -829,28 +733,29 @@ namespace CCMI
             TRACE((stderr, "MultiCastComposite2DeviceFactoryT: cb_async_g:  arg=%p\n", arg));
             MultiCastComposite2DeviceFactoryT *f = (MultiCastComposite2DeviceFactoryT *) arg;
             PWQBuffer* pbuf = (PWQBuffer*) f->_posted.dequeue();
-
             if(pbuf)
               {
                 // A message has been posted, and the PWQ has been set up
                 // So we can receive into this existing target PWQ
                 TRACE((stderr, "MultiCastComposite2DeviceFactoryT: cb_async_g, posted buffer, sndlen=%ld, pwq=%p\n",
                        sndlen, pbuf->_target_pwq));
-                *rcvlen = sndlen;
-                *rcvpwq = (pami_pipeworkqueue_t*)pbuf->_target_pwq;
-                cb_done->function   = cb_async_done;
-                cb_done->clientdata = pbuf;
               }
             else
               {
                 // A message has not been been posted, so we set up a temporary pwq
                 // That will be filled in with the target PWQ when the user calls in
-                // to the collective and specifies it.
+                // to the collective and specifies it.  We'll reconfigure the pwq when
+                // the user gets around to posting
                 TRACE((stderr, "MultiCastComposite2DeviceFactoryT: cb_async_g, unexpected buffer\n"));
-                PAMI_abort();
                 pbuf = f->allocatePbuf(sndlen);
-                f->_ue.pushHead((PAMI::MatchQueueElem*)pbuf);
+                pbuf->_ue_pwq.configure(NULL, NULL, 0, 0);
+                pbuf->_ue_pwq.reset();
+                f->_ue.enqueue((PAMI::Queue::Element*)pbuf);
               }
+            *rcvlen = sndlen;
+            *rcvpwq = (pami_pipeworkqueue_t*)pbuf->_target_pwq;
+            cb_done->function   = cb_async_done;
+            cb_done->clientdata = pbuf;
           }
 
           static void cb_async_l(const pami_quad_t     * info,
@@ -876,8 +781,7 @@ namespace CCMI
           CollectiveProtocolFactory(),
           _cmgr(cmgr),
           _native_l(native_l),
-          _native_g(native_g),
-          _seqno(0)
+          _native_g(native_g)
           {
             if (active_message_g)
               native_g->setMulticastDispatch(cb_async_g, this);
@@ -906,7 +810,8 @@ namespace CCMI
         PWQBuffer * allocatePbuf(size_t sndlen)
           {
             PWQBuffer *pbuf =(PWQBuffer*) _alloc_pbuf.allocateObject();
-            new(pbuf)PWQBuffer(_seqno++,sndlen);
+            TRACE((stderr, "MultiCastComposite2DeviceFactoryT:: Allocating pbuf\n"));
+            new(pbuf)PWQBuffer(sndlen);
             return pbuf;
           }
 
@@ -924,7 +829,6 @@ namespace CCMI
                               done_fn,            // Intercept function
                               cobj,               // Intercept cookie
                               this,
-                              _seqno,
                               &_ue,
                               &_posted);              // Factory
             return (Executor::Composite *)&cobj->_obj;
@@ -937,9 +841,8 @@ namespace CCMI
         Interfaces::NativeInterface                     *_native_g;
         PAMI::MemoryAllocator < sizeof(collObj), 16 >    _alloc;
         PAMI::MemoryAllocator < sizeof(PWQBuffer), 16 >  _alloc_pbuf;
-        PAMI::MatchQueue                                 _ue;
+        PAMI::Queue                                      _ue;
         PAMI::Queue                                      _posted;
-        int                                              _seqno;
       };
 
     };

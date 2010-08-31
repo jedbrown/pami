@@ -30,7 +30,7 @@ namespace PAMI
     extern std::map<lapi_handle_t,void*> _g_id_to_device_table;
 
 
-    class CAUDevice: public PAMI::Device::Interface::BaseDevice<CAUDevice>
+    class CAUDevice: public Interface::BaseDevice<CAUDevice>
     {
     public:
       CAUDevice():
@@ -41,10 +41,16 @@ namespace PAMI
       inline void          init(lapi_state_t  *lapi_state,
                                 lapi_handle_t  lapi_handle,
                                 pami_client_t  client,
-                                pami_context_t context)
+                                size_t         client_id,
+                                pami_context_t context,
+                                size_t         context_id)
         {
           _lapi_state  = lapi_state;
           _lapi_handle = lapi_handle;
+          _client      = client;
+          _client_id   = client_id;
+          _context     = context;
+          _context_id  = context_id;
           lapi_qenv(_lapi_handle, TASK_ID, (int *)&_taskid);
         }
       inline lapi_state_t  *getState() { return _lapi_state;}
@@ -83,6 +89,26 @@ namespace PAMI
           return _context;
         }
 
+      void           setGenericDevices(Generic::Device *generics)
+        {
+          _generics = generics;
+        }
+
+      Generic::GenericThread * postWork( pami_work_function work_fn, void *cookie)
+        {
+          Generic::GenericThread *work =
+            (Generic::GenericThread *) _work_alloc.allocateObject();
+          work = new (work) Generic::GenericThread(work_fn, cookie);
+          work->setStatus(Ready);
+          _generics[_context_id].postThread(work);
+          return work;
+        }
+
+      void freeWork(Generic::GenericThread *work)
+        {
+          _work_alloc.returnObject(work);
+        }
+
       static inline void         *getClientData(int id)
         {
           return _g_id_to_device_table[id];
@@ -102,12 +128,16 @@ namespace PAMI
         }
 
     private:
-      lapi_state_t                        *_lapi_state;
-      lapi_handle_t                        _lapi_handle;
-      pami_client_t                        _client;
-      pami_context_t                       _context;
-      int                                  _dispatch_id;
-      pami_task_t                          _taskid;
+      lapi_state_t                                              *_lapi_state;
+      lapi_handle_t                                              _lapi_handle;
+      pami_client_t                                              _client;
+      pami_context_t                                             _context;
+      size_t                                                     _client_id;
+      size_t                                                     _context_id;
+      int                                                        _dispatch_id;
+      pami_task_t                                                _taskid;
+      Generic::Device                                           *_generics;
+      PAMI::MemoryAllocator<sizeof(Generic::GenericThread), 16>  _work_alloc;
     };
   };
 };

@@ -102,12 +102,13 @@ namespace PAMI
                           PipeWorkQueue   *pwq,
                           pami_context_t   context):
         _cb_done(cb_done),
-        _target_buf(target_buf),
         _side_buf(NULL),
         _buflen(buflen),
         _pwq(pwq),
         _bytesProduced(0),
-        _context(context)
+        _bytesCopied(0),
+        _context(context),
+        _thread(NULL)
         {
         }
 
@@ -119,20 +120,22 @@ namespace PAMI
                           pami_context_t   context,
                           int              alloc):
         _cb_done(cb_done),
-        _target_buf(target_buf),
         _side_buf(malloc(buflen)),
         _buflen(buflen),
         _bytesProduced(0),
-        _pwq(pwq)
+        _bytesCopied(0),
+        _pwq(pwq),
+        _thread(NULL)
         {
         }
       pami_callback_t            _cb_done;
-      void                      *_target_buf;
       void                      *_side_buf;
       size_t                     _buflen;
       size_t                     _bytesProduced;
+      size_t                     _bytesCopied;
       PipeWorkQueue             *_pwq;
       pami_context_t             _context;
+      Generic::GenericThread    *_thread;
     };
 
 

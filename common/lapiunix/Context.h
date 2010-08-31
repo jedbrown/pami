@@ -438,13 +438,18 @@ namespace PAMI
             RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Init failed with rc %d\n", rc);
           }
           _lapi_state = _Lapi_port[_lapi_handle];
-    lapi_senv(_lapi_handle, INTERRUPT_SET, false);
+          lapi_senv(_lapi_handle, INTERRUPT_SET, false);
 
           // Initialize the lapi device for collectives
           _lapi_device.init(_mm, _clientid, 0, _context, _contextid);
           _lapi_device.setLapiHandle(_lapi_handle);
           _lapi_device2.init(_lapi_state);
-          _cau_device.init(_lapi_state,_lapi_handle, _client, _context);
+          _cau_device.init(_lapi_state,
+                           _lapi_handle,
+                           _client,
+                           _clientid,
+                           _context,
+                           _contextid);
 
           // Query My Rank and My Size
           // TODO:  Use LAPI Internals, instead of
@@ -502,7 +507,7 @@ namespace PAMI
           else
             _coll_shm_collreg = NULL;
 #endif // _COLLSHM
-
+          _cau_device.setGenericDevices(_devices->_generics);
           _cau_collreg=(CAUCollreg*) malloc(sizeof(*_cau_collreg));
           new(_cau_collreg) CAUCollreg(_client,
                                        _context,
@@ -514,8 +519,6 @@ namespace PAMI
                                        _lapi_handle);
           // We analyze global here to get the proper device specific info
           _cau_collreg->analyze_global(_contextid, _world_geometry, 0xFFFFFFFF);
-
-
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
           return PAMI_SUCCESS;
         }
@@ -575,11 +578,11 @@ namespace PAMI
         }
 
       inline size_t advance_only_lapi (size_t maximum, pami_result_t & result)
-  {
+        {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
           internal_error_t rc = (cp->*(cp->pAdvance))(maximum);
           result = PAMI_RC(rc);
-  }
+        }
 
       inline pami_result_t lock_impl ()
         {
