@@ -689,11 +689,19 @@ namespace PAMI
 	  node_topo.rectSeg(CR_RECT_LL(&rect1), CR_RECT_UR(&rect1));
 	  _node_topo.rectSeg(CR_RECT_LL(&rect2), CR_RECT_UR(&rect2));
 	  if (__MUSPI_rect_compare(&rect1, &rect2) == 0) {
+	    // this topo includes all the same nodes as GEOMETRY_WORLD.
 	    geom->setKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID, (void *)(0 + 1));
 	    geom->setKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID, (void *)(0 + 1));
 	    geom->setKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID, (void *)(0 + 1));
 	    if (fn) fn(context, clientdata, PAMI_SUCCESS);
 	    return PAMI_SUCCESS;
+	  }
+	  // since 'topo' is rectangle, 'node_topo' must also be.
+	  size_t tdim = __global.mapping.torusDims(); // T dim is after last torus dim
+	  if (CR_COORD_DIM(CR_RECT_LL(&rect1),tdim) != 0) {
+	    // does not include T=0, so no MU optimization.
+	    if (fn) fn(context, clientdata, PAMI_SUCCESS);
+	    return PAMI_SUCCESS; // not really failure, just can't/won't do it.
 	  }
 
 	  /// \todo Only the primary task of the node should actually alter MU DCRs...
