@@ -61,7 +61,7 @@ namespace PAMI
                     rep_num(rep_num), rep_bytes(rep_bytes) { }
 
                 void Show() const {
-                    printf("pc %lu disp %ld offset %lu rep_num %lu rep_bytes %lu\n",
+                    printf("pc %zu disp %zu offset %zu rep_num %zu rep_bytes %zu\n",
                             pc, disp, offset, rep_num, rep_bytes);
                 }
             };
@@ -86,11 +86,11 @@ namespace PAMI
     };
 
     inline TypeMachine::TypeMachine(TypeCode *type)
-        : type(type), top(0), copy_func(NULL), cookie(NULL)
+      : type(type),  cookie(NULL),copy_func(NULL), top(0)
     {
         assert(type->IsCompleted());
         type->AcquireReference();
-        if (type->GetDepth() <= SMALL_STACK_DEPTH)
+        if (type->GetDepth() <= (unsigned)SMALL_STACK_DEPTH)
             stack = small_stack;
         else
             stack = new Cursor[type->GetDepth()];
@@ -111,7 +111,7 @@ namespace PAMI
 
         // adjust stack if new_type requires more
         size_t new_depth = new_type->GetDepth();
-        if (new_depth > type->GetDepth() && new_depth > SMALL_STACK_DEPTH) {
+        if (new_depth > type->GetDepth() && new_depth > (unsigned)SMALL_STACK_DEPTH) {
             if (stack != small_stack)
                 delete[] stack;
             stack = new Cursor[new_depth];
@@ -127,7 +127,7 @@ namespace PAMI
 
     inline void TypeMachine::Show() const
     {
-        for (int i = 0; i <= top; i++) {
+        for (unsigned i = 0; i <= top; i++) {
             printf("%4d: ", i);
             stack[i].Show();
         }
@@ -244,7 +244,7 @@ namespace PAMI
                         assert(reps_left > 0);
 
                         size_t reps_to_copy = std::min(reps_left, count);
-                        for (int i = 0; i < reps_to_copy; i++, index++) {
+                        for (unsigned i = 0; i < reps_to_copy; i++, index++) {
                             disp[index]  = cursor.disp;
                             bytes[index] = copy.bytes;
                             cursor.disp += copy.stride;

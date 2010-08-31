@@ -1,5 +1,5 @@
-#include "pami.h"
-#include "TypeMachine.h"
+#include "sys/pami.h"
+#include "common/type/TypeMachine.h"
 using namespace PAMI::Type;
 
 #ifndef RETURN_ERR_PAMI
@@ -75,7 +75,7 @@ pami_result_t PAMI_Type_complete (pami_type_t type, size_t atom_size)
     }
 
     // TODO: make MAX_ATOM_SIZE global and queriable
-    const int MIN_ATOM_SIZE = 1, MAX_ATOM_SIZE = 128;
+    const unsigned MIN_ATOM_SIZE = 1, MAX_ATOM_SIZE = 128;
     if (atom_size < MIN_ATOM_SIZE || atom_size > MAX_ATOM_SIZE) {
         RETURN_ERR_PAMI(PAMI_INVAL,
                 "Atom size %lu is out of range [%lu, %lu].\n",
@@ -145,7 +145,7 @@ pami_result_t PAMI_Type_query (pami_type_t           type,
         RETURN_ERR_PAMI(PAMI_INVAL, "Querying an incompleted type.\n");
     }
 
-    for (int i = 0; i < num_configs; i++) {
+    for (unsigned i = 0; i < num_configs; i++) {
         switch (config[i].name) {
             case PAMI_TYPE_DATA_SIZE:
                 config[i].value.intval = type_obj->GetDataSize();

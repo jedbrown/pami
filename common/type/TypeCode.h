@@ -80,8 +80,8 @@ namespace PAMI
                     num_blocks(0), unit(0), atom_size(0) { }
 
                 void Show(int pc) const {
-                    printf("%4d: Begin code_size %lu depth %lu data_size %lu "
-                            "extent %lu num_blocks %lu unit %lu atom_size %lu\n",
+                    printf("%4d: Begin code_size %zu depth %zu data_size %zu "
+                            "extent %zu num_blocks %zu unit %zu atom_size %zu\n",
                             pc, code_size, depth, data_size, extent, num_blocks, 
                             unit, atom_size);
                 }
@@ -96,7 +96,7 @@ namespace PAMI
                     : Op(COPY), bytes(bytes), stride(stride), reps(reps) { }
 
                 void Show(int pc) const {
-                    printf("%4d: Copy bytes %lu stride %lu reps %lu\n",
+                    printf("%4d: Copy bytes %zu stride %zu reps %zu\n",
                             pc, bytes, stride, reps);
                 }
             };
@@ -110,7 +110,7 @@ namespace PAMI
                     : Op(CALL), sub_type(sub_type), stride(stride), reps(reps) { }
 
                 void Show(int pc) const {
-                    printf("%4d: Call sub %lu stride %lu reps %lu\n",
+                    printf("%4d: Call sub %zu stride %zu reps %zu\n",
                             pc, pc + sub_type, stride, reps);
                 }
             };
@@ -121,7 +121,7 @@ namespace PAMI
                 Shift(size_t shift) : Op(SHIFT), shift(shift) { }
 
                 void Show(int pc) const {
-                    printf("%4d: Shift %ld\n", pc, shift);
+                    printf("%4d: Shift %zu\n", pc, shift);
                 }
             };
 
@@ -197,7 +197,7 @@ namespace PAMI
 
     inline void TypeCode::CheckCodeBuffer(size_t inc_code_size)
     {
-        Begin &begin = *(Begin *)code;
+      // Begin &begin = *(Begin *)code;
         if (code_cursor + inc_code_size > code_buf_size) {
             ResizeCodeBuffer(code_buf_size * 2);
         }
