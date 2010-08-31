@@ -863,7 +863,7 @@ namespace PAMI
 #if 0
         affinity = (Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).affinity() == Kernel_PhysicalProcessorID());
 #else
-        affinity = false;
+        affinity = !__global.useMU(); // if no MU, use wakeups
 #endif
         bool enqueue = (acquire && !affinity);
         bool cancel = (enqueue && _dummy_disable && !_dummy_disabled);
