@@ -546,6 +546,8 @@ extern "C"
    *
    * \note A zero-byte send will \b always result in an immediate receive.
    *
+   * \note A zero-byte receive does not require any changes to \c recv in the dispatch fn
+   *
    * \note The maximum number of bytes that may be immediately received can be
    *       queried with the \c PAMI_RECV_IMMEDIATE configuration attribute.
    *

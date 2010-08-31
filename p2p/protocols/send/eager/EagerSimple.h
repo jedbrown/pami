@@ -542,9 +542,6 @@ namespace PAMI
 
             TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zu, state->info.type = %p\n", metadata->bytes, state->info.type));
 
-            // Only contiguous receives are implemented
-            PAMI_assertf(state->info.type == PAMI_BYTE, "[%5d:%s] %s() - Only contiguous receives are implemented.\n", __LINE__, __FILE__, __FUNCTION__);
-
             if (unlikely(metadata->bytes == 0))
               {
                 // No data packets will follow this envelope packet. Invoke the
@@ -577,6 +574,11 @@ namespace PAMI
                     _connection.clear (metadata->origin);
                     freeRecvState (state);
                   }
+	      }
+	    else
+	      {
+                // Only contiguous receives are implemented
+                PAMI_assertf(state->info.type == PAMI_BYTE, "[%5d:%s] %s() - Only contiguous receives are implemented.\n", __LINE__, __FILE__, __FUNCTION__);
               }
 
             TRACE_ERR((stderr, "<< EagerSimple::process_envelope()\n"));
