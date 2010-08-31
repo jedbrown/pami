@@ -285,7 +285,7 @@ namespace PAMI
               rc = createOneContext(&_contexts[i],i);
               rc = _contexts[i]->initP2P(&t_myrank, &t_mysize, &t_lhandle);
 	      _platdevs.init(_clientid,i,_client,(pami_context_t)_contexts[i],&_mm);
-              if(rc) RETURN_ERR_PAMI(ERR_ERROR, "createContext failed with rc %d\n", rc);
+              if(rc) RETURN_ERR_PAMI(PAMI_ERROR, "createContext failed with rc %d\n", rc);
               _contexts[i]->setWorldGeometry(_world_geometry);
               _contexts[i]->initP2PCollectives();
               _contexts[i]->initCollectives();
