@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file arch/a2qpx/Time.h
+/// \file arch/a2qpx/Ptime.h
 /// \brief ???
 ///
-#ifndef __arch_a2qpx_Time_h__
-#define __arch_a2qpx_Time_h__
+#ifndef __arch_a2qpx_Ptime_h__
+#define __arch_a2qpx_Ptime_h__
 
 #include <pami.h>
 

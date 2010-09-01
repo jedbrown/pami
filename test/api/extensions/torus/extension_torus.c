@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/extensions/test/extension_test.c
+ * \file test/api/extensions/torus/extension_torus.c
  * \brief Simple test of the PAMI "test" extension
  */
 

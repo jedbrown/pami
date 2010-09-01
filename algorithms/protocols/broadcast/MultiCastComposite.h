@@ -311,7 +311,7 @@ namespace CCMI
             {
               PAMI_abort();
             }
-          
+
           inline void executeCAPost()
             {
             }
@@ -320,17 +320,17 @@ namespace CCMI
             {
               TRACE((stderr, "executeCAComplete:  delivering callback\n"));
               _user_callback(NULL, _user_cookie, PAMI_SUCCESS);
-              
+
             }
-          
+
           PAMI::PipeWorkQueue  _ue_pwq;
           PAMI::PipeWorkQueue *_target_pwq;
           pami_event_function  _user_callback;
-          void                *_user_cookie; 
+          void                *_user_cookie;
           bool                 _complete;
           size_t               _total_len;
         };
-      
+
       /// A composite for a 2 device multicast
       template <class T_Geometry>
       class MultiCastComposite2Device : public CCMI::Executor::Composite
@@ -398,7 +398,7 @@ namespace CCMI
             size_t           numMasters  = t_master->size();
             size_t           numLocal    = t_local->size();
             TRACE((stderr, "MultiCastComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, bytes=%ld buf=%p\n",
-                   &_pwq0, &_pwq1, bytes, cmd->cmd.xfer_broadcast.buf));            
+                   &_pwq0, &_pwq1, bytes, cmd->cmd.xfer_broadcast.buf));
             if(bytes == 0)
               {
                 fn(NULL,  cookie, PAMI_SUCCESS); /// \todo, deliver the context
@@ -409,7 +409,7 @@ namespace CCMI
               initBytes=bytes;
             else
               initBytes=0;
-            
+
             // Create a "flat pwq" for the send buffer
             _pwq0.configure(NULL,                            // Memory manager
                             cmd->cmd.xfer_broadcast.buf,     // buffer
@@ -599,7 +599,7 @@ namespace CCMI
                 // task on my node
                 TRACE((stderr, "MultiCastComposite2Device:  Non-master, Non-root, numLocal=%d\n", numLocal));
                 if(numLocal > 1)
-                  {                    
+                  {
                     _minfo_l.client             = NULL;              // Not used by device
                     _minfo_l.context            = NULL;              // Not used by device
                     _minfo_l.cb_done.function   = simple_done;
@@ -670,7 +670,7 @@ namespace CCMI
         pami_callback_t                     _master_done;
         size_t                              _count;
         PWQBuffer                           _pwqBuf;
-        PWQBuffer                          *_activePwqBuf; 
+        PWQBuffer                          *_activePwqBuf;
       };
 
 
@@ -712,14 +712,14 @@ namespace CCMI
           unsigned                           _connection_id;
         };
 
-        
+
         static void cb_async_done(pami_context_t context, void *cookie, pami_result_t err)
           {
             TRACE((stderr, "MultiCastComposite2DeviceFactoryT: cb_async_done\n"));
             PWQBuffer* pbuf = (PWQBuffer*) cookie;
             pbuf->executeCAComplete();
           }
-        
+
         static void cb_async_g(const pami_quad_t     * info,
                                unsigned                count,
                                unsigned                conn_id,
@@ -815,7 +815,7 @@ namespace CCMI
             return pbuf;
           }
 
-        
+
         virtual Executor::Composite * generate(pami_geometry_t  geometry,
                                                void            *cmd)
           {

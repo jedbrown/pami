@@ -623,6 +623,3 @@ extern "C" void * PAMI_Extension_function (pami_extension_t   extension,
 //
 //
 #include "api/c/pami_ext_impl.h"
-
-
-

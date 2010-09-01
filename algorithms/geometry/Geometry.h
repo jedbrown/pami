@@ -334,7 +334,7 @@ namespace PAMI
         {
           _allreduce_iteration ^= _allreduce_async_mode; // "increment" with defined mode
           return _allreduce_iteration;
-        }      
+        }
       inline pami_topology_t* getMyMasterTopology_impl()
         {
           PAMI_abort();

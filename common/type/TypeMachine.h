@@ -1,5 +1,9 @@
-#ifndef _PAMI_TYPE_MACHINE_H
-#define _PAMI_TYPE_MACHINE_H
+/**
+ * \file common/type/TypeMachine.h
+ * \brief ???
+ */
+#ifndef __common_type_TypeMachine_h__
+#define __common_type_TypeMachine_h__
 
 #include "TypeCode.h"
 
@@ -19,7 +23,7 @@
 
 namespace PAMI
 {
-  namespace Type 
+  namespace Type
   {
 
     typedef void (*TypeMachineCopyFunc)(void *to, void *from, size_t size, void *cookie);
@@ -216,8 +220,8 @@ namespace PAMI
                         pc += sizeof(TypeCode::Shift);
                         break;
                     }
-                case TypeCode::END: 
-                    {  
+                case TypeCode::END:
+                    {
                         // go back to the beginning
                         pc = sizeof(TypeCode::Begin);
                         break;
@@ -371,7 +375,7 @@ namespace PAMI
                             assert(bytes_left > 0);
 
                             size_t bytes_to_copy = std::min(bytes_left, bytes);
-                            Copy<PACK, INTERNAL>(target, origin, bytes_to_copy, 
+                            Copy<PACK, INTERNAL>(target, origin, bytes_to_copy,
                                     copy, cursor);
                             target += bytes_to_copy;
                             bytes -= bytes_to_copy;

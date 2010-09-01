@@ -574,4 +574,3 @@ pami_result_t PAMI_Network2Task(pami_coord_t ntw,
 
 
 #endif // __api_c_pami_ext_impl_h__
-

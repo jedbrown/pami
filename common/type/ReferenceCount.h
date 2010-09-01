@@ -1,9 +1,13 @@
-#ifndef _PAMI_REFERENCE_COUNT_H
-#define _PAMI_REFERENCE_COUNT_H
+/**
+ * \file common/type/ReferenceCount.h
+ * \brief ???
+ */
+#ifndef __common_type_ReferenceCount_h__
+#define __common_type_ReferenceCount_h__
 
 #include <assert.h>
 
-namespace PAMI 
+namespace PAMI
 {
 
     class ReferenceCount
@@ -28,15 +32,15 @@ namespace PAMI
         assert(ref_cnt == 0);
     }
 
-    inline void ReferenceCount::AcquireReference() 
-    { 
-        ref_cnt++; 
+    inline void ReferenceCount::AcquireReference()
+    {
+        ref_cnt++;
     }
 
-    inline void ReferenceCount::ReleaseReference() 
-    { 
-        assert(ref_cnt > 0); 
-        ref_cnt--; 
+    inline void ReferenceCount::ReleaseReference()
+    {
+        assert(ref_cnt > 0);
+        ref_cnt--;
         if (ref_cnt == 0)
             delete this;
 
@@ -44,12 +48,11 @@ namespace PAMI
         //       Otherwise delete will cause segfault.
     }
 
-    inline ssize_t ReferenceCount::GetReferenceCount() const 
-    { 
-        return ref_cnt; 
+    inline ssize_t ReferenceCount::GetReferenceCount() const
+    {
+        return ref_cnt;
     }
 
 }
 
 #endif // _PAMI_REFERENCE_COUNT_H
-

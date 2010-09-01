@@ -1,9 +1,9 @@
 /**
- * \file sys/extension/Extension.h
+ * \file api/extension/Extension.h
  * \brief All registered PAMI extensions
  */
-#ifndef __api_extension_extension_h__
-#define __api_extension_extension_h__
+#ifndef __api_extension_Extension_h__
+#define __api_extension_Extension_h__
 
 #ifdef __pami_extension_dynamic__
 #include <dlfcn.h>
@@ -134,7 +134,3 @@ namespace PAMI
 };
 
 #endif // __api_extension_extension_h__
-
-
-
-

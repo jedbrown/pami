@@ -214,7 +214,7 @@ namespace PAMI
         {
           return (pami_topology_t*)_my_master_topo;
         }
-      
+
 
       inline unsigned                  comm_impl()
         {

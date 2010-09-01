@@ -271,8 +271,8 @@ namespace PAMI
     }
     typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS>,
       Mcast2DMetaData, CCMI::ConnectionManager::SimpleConnMgr> MultiCast2DeviceFactory;
-  
- 
+
+
     //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
     //----------------------------------------------------------------------------
@@ -482,13 +482,13 @@ namespace PAMI
               geometry->addCollective(PAMI_XFER_BARRIER, &_msync_composite_factory, _context_id);
 
               // Add 2 device composite protocols
-              if(_msync2d_composite_factory) 
+              if(_msync2d_composite_factory)
               {
                 _msync2d_composite = _msync2d_composite_factory->generate(geometry, &xfer);
                 geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
               }
 
-              if(_mcast2d_composite_factory) 
+              if(_mcast2d_composite_factory)
               {
 /// \todo Doesn't work, disable it
 //              geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);

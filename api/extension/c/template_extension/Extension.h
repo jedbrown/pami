@@ -100,5 +100,3 @@ namespace PAMI
 
 #endif // __pami_extension_template_extension__
 #endif // __api_extension_c_template_extension_Extension_h__
-
-

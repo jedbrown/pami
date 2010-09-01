@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-/// \file components/devices/bgq/commthread/CommThreadWakeup.h
+/// \file components/devices/bgq/commthread/CommThreadFactory.h
 /// \brief
 
-#ifndef __components_devices_bgq_commthread_CommFactory_h__
-#define __components_devices_bgq_commthread_CommFactory_h__
+#ifndef __components_devices_bgq_commthread_CommThreadFactory_h__
+#define __components_devices_bgq_commthread_CommThreadFactory_h__
 
 namespace PAMI {
 namespace Device {
@@ -92,7 +92,7 @@ private:
 	int _num_used[NUM_CORES];
 	int _num_avail[NUM_CORES];
 	int _first[NUM_CORES];
-}; // class Factory 
+}; // class Factory
 
 }; // namespace CommThread
 }; // namespace Device

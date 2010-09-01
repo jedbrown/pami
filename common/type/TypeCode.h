@@ -1,5 +1,9 @@
-#ifndef _PAMI_TYPE_CODE_H
-#define _PAMI_TYPE_CODE_H
+/**
+ * \file common/type/TypeCode.h
+ * \brief ???
+ */
+#ifndef __common_type_TypeCode_h__
+#define __common_type_TypeCode_h__
 
 /*
    0         1         2         3
@@ -21,9 +25,9 @@
 //#undef assert
 //#define assert(...)
 
-namespace PAMI 
+namespace PAMI
 {
-  namespace Type 
+  namespace Type
   {
 
     class TypeCode : public ReferenceCount
@@ -75,14 +79,14 @@ namespace PAMI
                 size_t  unit;
                 size_t  atom_size;
 
-                Begin() 
+                Begin()
                     : Op(BEGIN), code_size(0), depth(1), data_size(0), extent(0),
                     num_blocks(0), unit(0), atom_size(0) { }
 
                 void Show(int pc) const {
                     printf("%4d: Begin code_size %zu depth %zu data_size %zu "
                             "extent %zu num_blocks %zu unit %zu atom_size %zu\n",
-                            pc, code_size, depth, data_size, extent, num_blocks, 
+                            pc, code_size, depth, data_size, extent, num_blocks,
                             unit, atom_size);
                 }
             };
@@ -292,7 +296,7 @@ namespace PAMI
         size_t &unit = ((Begin *)code)->unit;
         if (unit == 0)
             unit = new_unit;
-        else 
+        else
             unit = Math::GCD(unit, new_unit);
     }
 
@@ -317,7 +321,7 @@ namespace PAMI
             if (to_optimize && bytes == stride) {
                 stride  = bytes *= reps;
                 reps    = 1;
-            } 
+            }
             CheckCodeBuffer(sizeof(Copy));
             *(Copy *)(code + code_cursor) = Copy(bytes, stride, reps);
             code_cursor += sizeof(Copy);
@@ -436,4 +440,3 @@ namespace PAMI
 }
 
 #endif // _PAMI_TYPE_CODE_H
-

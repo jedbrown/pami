@@ -630,7 +630,7 @@ namespace PAMI
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
           internal_error_t rc = (cp->*(cp->pPut))
-              (put->rma.dest, put->addr.local, NULL, 
+              (put->rma.dest, put->addr.local, NULL,
                put->addr.remote, NULL, put->rma.bytes,
                *(send_hint_t*)&put->rma.hints, INTERFACE_PAMI,
                (void*)put->rma.done_fn, (void*)put->put.rdone_fn,

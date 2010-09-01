@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file arch/i386/Time.h
+/// \file arch/i386/Ptime.h
 /// \brief ???
 ///
-#ifndef __arch_i386_Time_h__
-#define __arch_i386_Time_h__
+#ifndef __arch_i386_Ptime_h__
+#define __arch_i386_Ptime_h__
 
 #include <pami.h>
 #include <sys/time.h>

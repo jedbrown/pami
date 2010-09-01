@@ -1,4 +1,7 @@
-
+///
+/// \file api/extension/c/torus_network/bgp/TorusExtension.cc
+/// \brief ???
+///
 #include "api/extension/c/torus_network/TorusExtension.h"
 
 #include "Global.h"
@@ -56,6 +59,3 @@ pami_result_t PAMI::TorusExtension::torus2task (size_t addr[], pami_task_t * tas
 
   return result;
 };
-
-
-

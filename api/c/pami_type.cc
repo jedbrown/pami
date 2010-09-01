@@ -1,3 +1,7 @@
+///
+/// \file api/c/pami_type.cc
+/// \brief ???
+///
 #include "sys/pami.h"
 #include "common/type/TypeMachine.h"
 using namespace PAMI::Type;
@@ -208,4 +212,3 @@ pami_result_t PAMI_Type_unpack_data (pami_type_t         dst_type,
 }
 
 }
-

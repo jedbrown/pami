@@ -92,7 +92,7 @@ namespace PAMI
           // complete the send
           size_t           bytesConsumed = source->getBytesConsumed();
           size_t           bytesLeft     = m->_bytes - bytesConsumed;
-          
+
           TRACE((stderr, "CAUMulticastModel:  cau_mcast_send_done:  consumed=%ld, bytesLeft=%ld bytesConsumed=%ld\n",
                  hdr[0].data_sz,
                  bytesLeft,
@@ -105,7 +105,7 @@ namespace PAMI
               m->freeHeader();
               return;
             }
-          
+
           // Otherwise, we have more data to send
           // We issue a multicast from this completion handler
           // and fill out the message header with the updated information
@@ -234,7 +234,7 @@ namespace PAMI
           CAUGeometryInfo     *gi      = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
           void                *r       = NULL;
           lapi_return_info_t  *ri      = (lapi_return_info_t *) retinfo;
-          
+
           // Deliver the user callback for the multicast
           // if the incoming callback has not been delivered already
           pami_dispatch_multicast_fn  user_fn     = mc->_id_to_fn[did];
@@ -278,7 +278,7 @@ namespace PAMI
                  bytesToProduce,
                  bufToProduce,
                  rcv->rcvlen));
-          
+
           // We have "incomingBytes", and we have "bytesToProduce" available space
           // If incomingBytes is greater than the bytesToProduce, we need to store the
           // message into a temporary buffer and fill the buffer later OR
@@ -303,7 +303,7 @@ namespace PAMI
             }
           TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler after callback:  bytesToProduce=%ld, bufToProduce=%p rcv->rcvlen=%ld\n",
                  bytesToProduce, bufToProduce, rcv->rcvlen));
-          
+
           if (ri->udata_one_pkt_ptr)
             {
               TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler, 1pkt noroom=%d\n", noroom));
@@ -441,7 +441,7 @@ namespace PAMI
             msgHeader     *hdr    = (msgHeader*)m->allocateHeader(hdrsz);
             PipeWorkQueue *source = (PipeWorkQueue *)mcast->src;
             unsigned       minsize= MIN(source->bytesAvailableToConsume(), 64);
-            
+
             // Set up the fields of the header
             // and concatenate the user header into the
             // system header by memory copying
@@ -461,7 +461,7 @@ namespace PAMI
 
             TRACE((stderr, "CAUMulticastModel:  postMulticast: cau_id=%d did=%d hdrsz=%d buf=%p data_sz=%d\n",
                    gi->_cau_id, hdr[0].dispatch_id, hdrsz, buf, hdr[0].data_sz));
-            
+
             // Issue the multicast
             CheckLapiRC(lapi_cau_multicast(_device.getHdl(),                   // lapi handle
                                            gi->_cau_id,                        // group id
