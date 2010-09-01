@@ -195,7 +195,7 @@ namespace PAMI
             switch (configuration[i].name)
               {
                 case PAMI_CLIENT_NUM_CONTEXTS:
-                  configuration[i].value.intval = 4; // modified by runmode?
+                  configuration[i].value.intval = 2; // modified by runmode?
                   break;
                 case PAMI_CLIENT_CONST_CONTEXTS:
                   configuration[i].value.intval = 1; // .TRUE.

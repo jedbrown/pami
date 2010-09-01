@@ -21,11 +21,7 @@
  */
 /* #undef __pami_target_bgq__ */
 
-#ifndef __pami_target_bgp__
 #define NCONTEXTS  64      /* The maximum number of contexts */
-#else
-#define NCONTEXTS  2       /** \todo Remove this when trac #238 is fixed */
-#endif
 #define ITERATIONS (1<<5)  /* The number of windows exectuted */
 #define WINDOW     (1<<4)  /* The number of sends/recvs before a "wait" */
 #define HEADER     16      /* Size of header */
