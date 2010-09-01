@@ -228,14 +228,8 @@ public:
 					pami_context_t context) {
 		int status;
 		uint32_t c, t, core;
-#if 0
 		PAMI::Context *ctx = (PAMI::Context *)context;
-		core = __MUGlobal.getMuRM().getAffinity(clientid, ctx->getId());
-#else
-		static uint32_t __core = NUM_CORES - 1;
-		core = __core;
-		__core = (__core - 1) % NUM_CORES;
-#endif
+		core = ctx->coreAffinity();
 		BgqCommThread *thus;
 
 		//balanceThreads(core, c, t);

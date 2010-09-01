@@ -842,6 +842,21 @@ namespace PAMI
           }
       }
 
+      /// \brief BGQ-only method to return the BGQ core to which a context has best affinity
+      ///
+      /// \return	BGQ Core ID that is best for context
+      ///
+      inline uint32_t coreAffinity()
+      {
+	// might be other affinities to consider, in the future.
+	// could be cached in context, instead of calling MU RM (etc) every time
+#if 0
+	return Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).affinity();
+#else
+	return (NUM_CORES - 1) - (_contextid % (Kernel_ProcessorCount() / NUM_SMT));
+#endif
+      }
+
       /// \brief BGQ-only method to fix any problems with hardware affinity to core/thread
       ///
       /// This method is (initially) to address a problem with MU interrupts having
@@ -859,11 +874,10 @@ namespace PAMI
       ///
       inline void cleanupAffinity(bool acquire)
       {
-        bool affinity;
 #if 0
-        affinity = (Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).affinity() == Kernel_PhysicalProcessorID());
+	bool affinity = (coreAffinity() == Kernel_ProcessorCoreID());
 #else
-        affinity = !__global.useMU(); // if no MU, use wakeups
+	bool affinity = !__global.useMU(); // if no MU, affinity anywhere
 #endif
         bool enqueue = (acquire && !affinity);
         bool cancel = (enqueue && _dummy_disable && !_dummy_disabled);

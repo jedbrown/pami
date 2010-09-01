@@ -31,7 +31,7 @@ class BgqContextPool {
 		size_t x = ffs(k);
 		if (x > 0 && x < 64) {
 			--x;
-			m = (1ULL << x);
+			m = (1UL << x);
 			k &= ~m;
 			ref = k;
 			return m;
@@ -39,74 +39,98 @@ class BgqContextPool {
 		// should never happen...
 		return 0;
 	}
-	// lock is held by caller...
-	// must ensure we complete, even if no contexts found.
-	// right now, assumes caller's _sets[] is zero...
-	// this needs to do better at following _initCtxs and/or MU affinity
-	inline uint64_t __rebalanceContexts(uint64_t initial) {
-		uint64_t m = 0;
-		size_t desired = (_ncontexts + (_nactive - 1)) / _nactive;
-		size_t n = 0;
-		size_t ni = 0;
 
-		while (n < desired) {
-			if (++_lastset >= _nsets) {
-				_lastset = 0;
-				if (++ni >= 2) break;
-#if 0 // this is not right, yet...
-				if (_sets[_nsets]) {
-					m |= __getOneContext(k);
-					++n;
-					continue;
-				}
-#endif
-			}
-			uint64_t k = _sets[_lastset];
-			if (_actm & (1 << _lastset)) {
-				if ((k & initial)) {
-					++n; // for now, assume 1 bit set in "initial"...
-					_sets[_lastset] = (k & ~initial);
-				} else if (k) {
-					// do not take their last context...
-					uint64_t mm = __getOneContext(k);
-					k &= mm;
-					if (k) {
-						m |= mm;
-						++n;
-						_sets[_lastset] = k;
-					}
-				}
-			}
+	/// \brief utility function to count number of '1' bits in a word
+	///
+	/// \param[in] k	Bitmap in which to count bits
+	/// \return	Number of '1' bits found in 'k'
+	///
+	inline size_t num_bits(uint64_t k) {
+		static int __num_bits[] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4 };
+		size_t n = 0;
+		while (k) {
+			n += __num_bits[k & 0x0f];
+			k >>= 4;
 		}
-		m |= initial; // we REALLY want this context...
-		return m;
+		return n;
 	}
 
-	// lock is held by caller...
+	/// \brief assign contexts to commthreads considering balanced and affinity
+	///
+	/// lock is held by caller...
+	///
+	/// a commthread is giving up all it's contexts, or this is the second
+	/// phase of a general re-balancing.
+	///
+	/// either way, re-distribute contexts across the (remaining) commthreads.
+	///
+	/// \param[in] ctxs	Bitmap of contexts that need commthreads
+	///
 	inline void __giveupContexts(uint64_t ctxs) {
 		uint64_t m = ctxs;
+		if (!m) return;
+		// now try to assign remaining contexts to alternate commthreads.
 		size_t x = 0;
 		while (m) {
-			// give away each context in a round-robin fashion.
 			if (m & 1) {
-				uint64_t n;
-				// there must be one other... or else we hang here.
-int count = 0;
-				while (1) {
-					if (++_lastset >= _nsets) {
-						_lastset = 0;
-if (++count == 5) fprintf(stderr, "hung in __giveupContexts(%zx) %zd %zd %zd (%zx)\n", ctxs, _nactive, _nsets, x, _actm);
+				size_t miny = _nsets;
+				size_t minc = _ncontexts;
+				size_t aminy = _nsets;
+				size_t aminc = _ncontexts;
+				size_t y;
+				// look for comthreads with the lowest number of
+				// contexts, both having affinity and not.
+				// if a commthread with affinity is found, use it.
+				// otherwise just pick the commthread with least
+				// number of contexts assigned.
+				for (y = 0; y < _nsets; ++y) {
+					if (!(_actm & (1UL << y))) continue;
+					if (_contexts[x]->coreAffinity() == _coreids[y]) {
+						if (_numinsets[y] < aminc) {
+							aminy = y;
+							aminc = _numinsets[y];
+						}
+					} else {
+						if (_numinsets[y] < minc) {
+							miny = y;
+							minc = _numinsets[y];
+						}
 					}
-					if ((_actm & (1 << _lastset))) {
-						n = _sets[_lastset];
-						_sets[_lastset] = n | (1ULL << x);
-						break;
-					}
+				}
+				if (aminy < _nsets) {
+					_sets[aminy] |= (1UL << x);
+					++_numinsets[aminy];
+				} else {
+					_sets[miny] |= (1UL << x);
+					++_numinsets[miny];
 				}
 			}
 			m >>= 1;
 			++x;
 		}
+	}
+
+	// lock is held by caller...
+	//
+	// do a complete redistribution of contexts. start by assigning
+	// contexts to "home" commthreads, if they are active. Then
+	// distribute any remaining contexts over the commthreads.
+	//
+	inline void __rebalanceContexts() {
+		uint64_t m;
+		size_t n;
+
+		// first, assign contexts to "home" commthreads, if possible.
+		m = (1UL << _ncontexts) - 1; // mask of all contexts
+		for (n = 0; n < _nsets; ++n) {
+			if (_actm & (1UL << n)) {
+				uint64_t k = _coresets[n];
+				_sets[n] = k;
+				m &= ~k;
+				_numinsets[n] = num_bits(k);
+			}
+		}
+		__giveupContexts(m);
 	}
 
 public:
@@ -132,6 +156,15 @@ public:
 		setmm->memalign((void **)&_sets, 16, (nsets + 1) * sizeof(*_sets));
 		PAMI_assertf(_sets, "Out of memory for BgqContextPool::_sets");
 		memset((void *)_sets, 0, (nsets + 1) * sizeof(*_sets));
+		setmm->memalign((void **)&_coresets, 16, nsets * sizeof(*_coresets));
+		PAMI_assertf(_coresets, "Out of memory for BgqContextPool::_coresets");
+		memset((void *)_coresets, 0, nsets * sizeof(*_coresets));
+		setmm->memalign((void **)&_coreids, 16, nsets * sizeof(*_coreids));
+		PAMI_assertf(_coreids, "Out of memory for BgqContextPool::_coreids");
+		memset((void *)_coreids, 0, nsets * sizeof(*_coreids));
+		setmm->memalign((void **)&_numinsets, 16, nsets * sizeof(*_numinsets));
+		PAMI_assertf(_numinsets, "Out of memory for BgqContextPool::_numinsets");
+		memset((void *)_numinsets, 0, nsets * sizeof(*_numinsets));
 		_ncontexts_total = nctx;
 		_nsets = nsets;
 	}
@@ -147,16 +180,16 @@ public:
 		}
 		if (x >= _ncontexts_total) {
 			// should never happen
-			return 0ULL;
+			return 0UL;
 		}
 		_contexts[x] = (PAMI::Context *)ctx;
 		++_ncontexts;
-		_sets[_nsets] |= (1ULL << x);
+		_sets[_nsets] |= (1UL << x);
 		_mutex.release();
 		// presumably, a new comm thread is about to call joinContextSet(),
 		// but can we guarantee timing? May need a way to ensure that
 		// "_sets[_nsets]" will be checked.
-		return (1ULL << x);
+		return (1UL << x);
 	}
 
 	// first make these contexts "invisible" to comm threads.
@@ -167,7 +200,7 @@ public:
 		for (y = 0; y < nctx; ++y) {
 			for (x = 0; x < _ncontexts_total; ++x) {
 				if (_contexts[x] == ctxs[y]) {
-					mask |= (1ULL << x);
+					mask |= (1UL << x);
 				}
 			}
 		}
@@ -214,24 +247,25 @@ public:
 	}
 
 	inline void joinContextSet(size_t &threadid,
-						uint64_t initial = 0ULL) {
+						uint64_t initial = 0UL) {
 		uint64_t m = 0, n = 0;
 		_mutex.acquire();
 		// find free slot...
-		while (n < 64 && (_actm & (1 << n)) != 0) ++n;
+		while (n < 64 && (_actm & (1UL << n)) != 0) ++n;
 		threadid = n;
-		if (_nactive == 0) {
+		_coresets[threadid] = initial;
+		_coreids[threadid] = Kernel_ProcessorCoreID();
+		_actm |= (1UL << threadid);
+		++_nactive;
+		if (_nactive == 1) {
 			// take all? or just a few...
 			m |= (_sets[_nsets] | initial);
 			_sets[_nsets] = 0;
-			++_nactive;
+			_sets[threadid] = m;
+			_numinsets[threadid] = num_bits(m);
 		} else {
-			++_nactive;
-			m |= __rebalanceContexts(initial);
+			__rebalanceContexts(); // recalc _sets[], _numinsets[]
 		}
-		_sets[threadid] = m;
-		// do not set bit until after calling __rebalanceContexts()
-		_actm |= (1 << threadid);
 		_mutex.release();
 	}
 
@@ -239,10 +273,13 @@ public:
 		_mutex.acquire();
 		--_nactive;
 		uint64_t m = _sets[threadid];
-		// PAMI_assert((_actm & (1 << threadid)) != 0);
-		_sets[threadid] = 0;
+		// PAMI_assert((_actm & (1UL << threadid)) != 0);
+		_sets[threadid] = 0;      // not valid unless _actm bit set
+		_coresets[threadid] = 0;  // not valid unless _actm bit set
+		_coreids[threadid] = 0;   // not valid unless _actm bit set
+		_numinsets[threadid] = 0; // not valid unless _actm bit set
 		// must clear bit before calling __giveupContexts()
-		_actm &= ~(1 << threadid);
+		_actm &= ~(1UL << threadid);
 		if (_nactive == 0) {
 			_sets[_nsets] |= m;
 		} else {
@@ -257,11 +294,14 @@ private:
 	size_t _ncontexts;
 
 	ContextSetMutex _mutex;
-	volatile uint64_t _actm;	// protected by _mutex
-	volatile uint64_t *_sets;	// protected by _mutex
-	volatile size_t _nsets;		// protected by _mutex
-	volatile size_t _nactive;	// protected by _mutex
-	volatile size_t _lastset;	// protected by _mutex
+	uint64_t _actm;		// protected by _mutex
+	uint64_t *_sets;	// protected by _mutex
+	uint64_t *_coresets;	// protected by _mutex
+	uint64_t *_coreids;	// protected by _mutex
+	uint64_t *_numinsets;	// protected by _mutex
+	size_t _nsets;		// protected by _mutex
+	size_t _nactive;	// protected by _mutex
+	size_t _lastset;	// protected by _mutex
 }; // class BgqContextPool
 
 }; // namespace CommThread
