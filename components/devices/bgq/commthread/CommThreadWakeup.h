@@ -95,9 +95,9 @@ private:
 	/// \param[in] old	Currently locked contexts
 	/// \param[in] new	New set of contexts that should be locked
 	///
-	inline void __lockContextSet(uint64_t &old, uint64_t new_) {
+	inline size_t __lockContextSet(uint64_t &old, uint64_t new_) {
 		uint64_t m, l = old;
-		size_t x;
+		size_t x, e = 0;
 		pami_result_t r;
 
 		m = (old ^ new_) & old; // must unlock these
@@ -116,6 +116,7 @@ private:
 		x = 0;
 		while (m) {
 			if (m & 1) {
+				++e; // if we need, or get, new conetxt
 				r = _ctxset->getContext(x)->trylock();
 				if (r == PAMI_SUCCESS) {
 					l |= (1ULL << x);
@@ -126,6 +127,7 @@ private:
 			++x;
 		}
 		old = l;
+		return e;
 	}
 
 	/// \brief Convenience code to advance all contexts in set
@@ -403,12 +405,12 @@ more_work:		// lightweight enough.
 				new_ctx = _ctxset->getContextSet(id);
 
 				// this only locks/unlocks what changed...
-				__lockContextSet(lkd_ctx, new_ctx);
+				events += __lockContextSet(lkd_ctx, new_ctx);
+				_lockCtxs = lkd_ctx;
 				if (old_ctx != new_ctx) ev_since_wu += 1;
 				old_ctx = new_ctx;
-				_lockCtxs = lkd_ctx;
 				mem_sync();
-				events = __advanceContextSet(lkd_ctx);
+				events += __advanceContextSet(lkd_ctx);
 				ev_since_wu += events;
 			} while (!_shutdown && lkd_ctx && events != 0 && ++n < max_loop);
 			if (_shutdown) break;
@@ -425,7 +427,7 @@ more_work:		// lightweight enough.
 
 			if (n <= 1) {
 				// we are alone
-				if (lkd_ctx == new_ctx && events == 0) {
+				if (events == 0) {
 					// The wait can only detect new work.
 					// Only do the wait if we know the
 					// contexts have no work. otherwise
@@ -447,7 +449,7 @@ DEBUG_WRITE('w','u');
 				__disarmMU_WU();
 
 				// this only locks/unlocks what changed...
-				__lockContextSet(lkd_ctx, 0);
+				(void)__lockContextSet(lkd_ctx, 0);
 				_lockCtxs = lkd_ctx;
 				mem_sync();
 
@@ -467,7 +469,7 @@ DEBUG_WRITE('s','b');
 		}
 
 		if (lkd_ctx) {
-			__lockContextSet(lkd_ctx, 0);
+			(void)__lockContextSet(lkd_ctx, 0);
 			_lockCtxs = lkd_ctx;
 			mem_sync();
 		}

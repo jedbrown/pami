@@ -42,6 +42,7 @@ class BgqContextPool {
 	// lock is held by caller...
 	// must ensure we complete, even if no contexts found.
 	// right now, assumes caller's _sets[] is zero...
+	// this needs to do better at following _initCtxs and/or MU affinity
 	inline uint64_t __rebalanceContexts(uint64_t initial) {
 		uint64_t m = 0;
 		size_t desired = (_ncontexts + (_nactive - 1)) / _nactive;
@@ -207,15 +208,6 @@ public:
 #if 0
 		// should we check "_sets[_nsets]" and possibly pick up more contexts?
 		// or just trigger a "rejoin"?
-		if (!m) {
-			// must not cause thrashing, but try to get some contexts...
-			if (_sets[_nsets] || _ncontexts >= _nactive) {
-				m = __rebalanceContexts();
-fprintf(stderr, "picking up extra contexts %04zx\n", m);
-				_sets[threadid] = m;
-				_actm |= (1 << threadid);
-			}
-		}
 #endif
 		_mutex.release();
 		return m;
@@ -225,9 +217,8 @@ fprintf(stderr, "picking up extra contexts %04zx\n", m);
 						uint64_t initial = 0ULL) {
 		uint64_t m = 0, n = 0;
 		_mutex.acquire();
-		while (n < 64 && (_actm & (1 << n)) != 0) {
-			++n;
-		}
+		// find free slot...
+		while (n < 64 && (_actm & (1 << n)) != 0) ++n;
 		threadid = n;
 		if (_nactive == 0) {
 			// take all? or just a few...
