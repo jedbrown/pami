@@ -274,4 +274,4 @@ pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nc
 	return PAMI_SUCCESS;
 }
 
-#endif // __test_BG_bgq_commthreads_commthread_test_h__
+#endif // __test_internals_BG_bgq_commthreads_commthread_test_h__

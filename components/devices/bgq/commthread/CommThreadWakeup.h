@@ -633,4 +633,4 @@ PAMI::Device::CommThread::BgqCommThread *PAMI::Device::CommThread::BgqCommThread
 #undef DEBUG_INIT
 #undef DEBUG_WRITE
 
-#endif // __components_devices_bgq_commthread_CommThread_h__
+#endif // __components_devices_bgq_commthread_CommThreadWakeup_h__

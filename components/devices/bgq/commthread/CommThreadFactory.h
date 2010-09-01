@@ -98,4 +98,4 @@ private:
 }; // namespace Device
 }; // namespace PAMI
 
-#endif // __components_devices_bgq_commthread_CommFactory_h__
+#endif // __components_devices_bgq_commthread_CommThreadFactory_h__
