@@ -36,6 +36,9 @@
 #include <stdlib.h>
 #include <hwi/include/bqc/MU_Macros.h>
 #include <hwi/include/bqc/classroute.h>
+#include <hwi/include/bqc/mu_dcr.h>
+#include <hwi/include/bqc/nd_500_dcr.h>
+#include <hwi/include/bqc/nd_x2_dcr.h>
 #include <spi/include/mu/InjFifo.h>
 #include <spi/include/mu/RecFifo.h>
 #include <spi/include/mu/Addressing.h>
@@ -433,6 +436,18 @@ namespace PAMI
 	 // MU MMIO storage.
 	 if ( __global.useMU() )
 	 {
+	   // Verify that the MU and ND are not in reset.
+	   // They must be out of reset in order to set up the MU resources,
+	   // or a machine check will occur.
+	   uint64_t val1, val2, val3;
+	   val1 = DCRReadUser(MU_DCR(RESET) );
+	   val2 = DCRReadUser(ND_X2_DCR(RESET));
+	   val3 = DCRReadUser(ND_500_DCR(RESET));
+	   if ( ( MU_DCR__RESET__DCRS_OUT_get(val1) ) ||
+		( ND_X2_DCR__RESET__DCRS_OUT_get(val2) ) ||
+		( ND_500_DCR__RESET__DCRS_OUT_get(val3) ) )
+	     PAMI_assertf( 0, "The ND and/or MU are still in reset.  Ensure you have +ND and +MU in your svchost file");
+
 	  // For each task, cache the optimal fifo pin in the mapcache.
 	  initFifoPin();
 
