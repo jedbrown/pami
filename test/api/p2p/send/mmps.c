@@ -185,7 +185,7 @@ static void
 master()
 {
   const size_t msgs = ITERATIONS*WINDOW*(size-1);
-  printf("+++Test: ITERATIONS=%u  WINDOW=%u  Remotes=%zu  Bi-Dir Msgs=%zu  HEADER=%u  DATA=%u\n",
+  printf(">>> Test: ITERATIONS=%u  WINDOW=%u  Remotes=%zu  Bi-Dir Msgs=%zu  HEADER=%u  DATA=%u\n",
          ITERATIONS, WINDOW, size-1, msgs, HEADER, DATA);
   double start, time;
   start = PAMI_Wtime();
@@ -210,8 +210,8 @@ master()
   }
 
   time = PAMI_Wtime()-start;
-  printf("---Communication complete on process %zu (%g seconds)\n", rank, time);
-  printf("+++Results: %zu bi-directional messages in %g seconds is %g MMPS\n",
+  printf("::: Communication complete on process %zu (%g seconds)\n", rank, time);
+  printf(">>> Results: %zu bi-directional messages in %g seconds is %g MMPS\n",
          msgs, time, msgs/(time*1e6));
 }
 
@@ -243,7 +243,7 @@ worker()
   }
 
   time = PAMI_Wtime() - start;
-  printf("---Communication complete on process %zu (%g seconds)\n", rank, time);
+  printf("::: Communication complete on process %zu (%g seconds)\n", rank, time);
 }
 
 
