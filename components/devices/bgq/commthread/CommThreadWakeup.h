@@ -24,7 +24,7 @@
 #include "hwi/include/bqc/A2_inlines.h"
 #include "spi/include/kernel/thread.h"
 
-#define DEBUG_COMMTHREADS // Enable debug messages here
+#undef DEBUG_COMMTHREADS // Enable debug messages here
 
 #undef HAVE_WU_ARMWITHADDRESS
 
