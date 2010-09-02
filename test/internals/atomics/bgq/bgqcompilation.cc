@@ -19,6 +19,10 @@
 #include "components/atomic/bgq/L2Barrier.h"
 
 int main(int argc, char **argv) {
+	if (argc >= 0) {
+		fprintf(stderr, "This program is not intended to be run!\n");
+		exit(1);
+	}
         PAMI::Memory::MemoryManager mm;
         mm.init(argv, argc); // anything
 
