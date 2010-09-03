@@ -617,7 +617,7 @@ Factory::~Factory() {
 		fwu += _commThreads[x]._falseWU;
 	}
 	BgqCommThread::_numActive = 0;
-fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
+if (fwu > 2) fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
 }
 
 }; // namespace CommThread
