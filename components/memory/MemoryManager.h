@@ -33,6 +33,43 @@ namespace PAMI
     class MemoryManager
     {
       public:
+	//
+	// We keep all allocations on a 16-byte boundary (i.e. (_offset & 0x0f) == 0).
+	// The user's buffer will also always be (at least) 16-byte aligned. This
+	// allows tucking of meta data immediately before the user buffer:
+	//
+	// (previous _offset)>+---------------+
+	//                    | header (opt)  | (variable length)
+	//                    |  + alignment  |
+	//                    +---------------+
+	//                    |    meta       | (fixed length)
+	// returned pointer ->+---------------+
+	//                    |               |
+	//                    |               |
+	//                    |    user       |
+	//                    |    buffer     |
+	//                    |               |
+	//                    |               |
+	//                    |               |
+	// (new) _offset ---->+---------------+
+	//
+	// So, by examining 'meta' one can tell where the 'previous _offset' was,
+	// and, by proxy, where the 'header' is (if any). This does not get us to
+	// a 'free' algorithm, though. Free space will still have to be managed.
+	// Probably, some use of 'meta' and 'header' (and 'user buffer' after free)
+	// to create a linked list (of sorts) for free space. The MemoryManager
+	// header would contain some sort of offset to where the first chunk of
+	// freespace is located, and from there the next chunk could be located
+	// by reading data out of 'meta', and so on. Code in free() will have to
+	// coallesce adjacent freec chunks, etc. Allocation will have to search
+	// the free list, rather than just take memory directly off the end.
+	//
+	// The reason to force a specific, minimal, alignment is so that low
+	// order bits in 'meta' could be used to encode extra information
+	// (if needed). For example, whether the chunk is private or has a 'key'.
+	// also, if 'meta' is something like size_t it may have to be aligned
+	// such that loads/stores don't trigger exceptions.
+	//
 	static const int MMKEYSIZE = 128;
 	typedef void _mm_init_fn(void *mem, size_t bytes, char *key, unsigned attrs, void *cookie);
 	class MemoryManagerHeader :	public PAMI::Queue,
