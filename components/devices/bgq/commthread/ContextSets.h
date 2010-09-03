@@ -133,6 +133,19 @@ class BgqContextPool {
 		__giveupContexts(m);
 	}
 
+	/// \todo #warning HACK workaround until mm support alloc by keys
+	inline void privateFromShared(Memory::MemoryManager *setmm,
+				void **ptr, size_t align, size_t bytes) {
+		uint32_t np = __global.topology_local.size();
+		uint8_t *v = NULL;
+		pami_result_t rc = setmm->memalign((void **)&v, align, bytes * np);
+		PAMI_assertf(rc == PAMI_SUCCESS && v,
+				"Out of memory for BgqContextPool::_sets");
+		v += bytes * __global.mapping.t();
+		memset(v, 0, bytes);
+		*ptr = v;
+	}
+
 public:
 	BgqContextPool() :
 	_contexts(NULL),
@@ -153,18 +166,23 @@ public:
 		_mutex.init(mm);
 		posix_memalign((void **)&_contexts, 16, nctx * sizeof(*_contexts));
 		PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_contexts");
-		setmm->memalign((void **)&_sets, 16, (nsets + 1) * sizeof(*_sets));
-		PAMI_assertf(_sets, "Out of memory for BgqContextPool::_sets");
-		memset((void *)_sets, 0, (nsets + 1) * sizeof(*_sets));
-		setmm->memalign((void **)&_coresets, 16, nsets * sizeof(*_coresets));
+		memset((void *)_contexts, 0, nctx * sizeof(*_contexts));
+
+		// only _sets[] needs to be in WAC region...
+		privateFromShared(setmm, (void **)&_sets, 16, sizeof(*_sets) * (nsets + 1));
+
+		posix_memalign((void **)&_coresets, 16, nsets * sizeof(*_coresets));
 		PAMI_assertf(_coresets, "Out of memory for BgqContextPool::_coresets");
 		memset((void *)_coresets, 0, nsets * sizeof(*_coresets));
-		setmm->memalign((void **)&_coreids, 16, nsets * sizeof(*_coreids));
+
+		posix_memalign((void **)&_coreids, 16, nsets * sizeof(*_coreids));
 		PAMI_assertf(_coreids, "Out of memory for BgqContextPool::_coreids");
 		memset((void *)_coreids, 0, nsets * sizeof(*_coreids));
-		setmm->memalign((void **)&_numinsets, 16, nsets * sizeof(*_numinsets));
+
+		posix_memalign((void **)&_numinsets, 16, nsets * sizeof(*_numinsets));
 		PAMI_assertf(_numinsets, "Out of memory for BgqContextPool::_numinsets");
 		memset((void *)_numinsets, 0, nsets * sizeof(*_numinsets));
+
 		_ncontexts_total = nctx;
 		_nsets = nsets;
 	}

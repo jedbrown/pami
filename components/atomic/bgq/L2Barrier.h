@@ -39,10 +39,12 @@ namespace BGQ {
                 _L2_Barrier_s() { }
 
                 inline void init(PAMI::Memory::MemoryManager *mm,
+                                PAMI::Atomic::BGQ::l2x_scope_t mmscope,
                                 PAMI::Atomic::BGQ::l2x_scope_t scope) {
+			/// \todo #warning HACK to workaround until MemoryManager::key_memalign
                         pami_result_t rc =
-                                __global.l2atomicFactory.l2x_alloc((void **)&_counters,
-                                                                                5, scope);
+                                __global.l2atomicFactory.l2x_mm_alloc(mm, mmscope,
+							(void **)&_counters, 5, scope);
                         PAMI_assertf(rc == PAMI_SUCCESS,
                                 "Failed to allocate L2 Atomics for Node Barrier");
                         // someone needs to reset the barrier, but needs to be
@@ -149,7 +151,17 @@ public:
                 // is the lowest-numbered core in the
                 // process.
 
-                _barrier.init(mm, PAMI::Atomic::BGQ::L2A_NODE_CORE_SCOPE);
+		/// \todo #warning HACK to workaround until MemoryManager::key_memalign
+		if (mm == __global._wuRegion_mm ||
+				mm == &__global.l2atomicFactory.__nodescoped_mm) {
+			_barrier.init(mm,
+				PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
+				PAMI::Atomic::BGQ::L2A_NODE_CORE_SCOPE);
+		} else {
+                	_barrier.init(&__global.l2atomicFactory.__nodescoped_mm,
+				PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
+				PAMI::Atomic::BGQ::L2A_NODE_CORE_SCOPE);
+		}
                 // PAMI_assert(m .iff. me == masterProc());
                 _barrier._master = __global.l2atomicFactory.masterProc() << __global.l2atomicFactory.coreShift();
                 _barrier._coreshift = 0;
@@ -170,7 +182,17 @@ public:
                 // and only one core per process will
                 // participate.
 
-                _barrier.init(mm, PAMI::Atomic::BGQ::L2A_NODE_PROC_SCOPE);
+		/// \todo #warning HACK to workaround until MemoryManager::key_memalign
+		if (mm == __global._wuRegion_mm ||
+				mm == &__global.l2atomicFactory.__nodescoped_mm) {
+			_barrier.init(mm,
+					PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
+					PAMI::Atomic::BGQ::L2A_NODE_PROC_SCOPE);
+		} else {
+                	_barrier.init(&__global.l2atomicFactory.__nodescoped_mm,
+					PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
+					PAMI::Atomic::BGQ::L2A_NODE_PROC_SCOPE);
+		}
                 // PAMI_assert(m .iff. me == masterProc());
                 _barrier._master = __global.l2atomicFactory.coreXlat(__global.l2atomicFactory.masterProc()) >> __global.l2atomicFactory.coreShift();
                 _barrier._coreshift = __global.l2atomicFactory.coreShift();

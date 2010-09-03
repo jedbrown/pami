@@ -35,9 +35,11 @@ namespace BGQ {
         public:
                 _L2Mutex() { }
                 inline void __init(PAMI::Memory::MemoryManager *mm,
+                                        PAMI::Atomic::BGQ::l2x_scope_t mmscope,
                                         PAMI::Atomic::BGQ::l2x_scope_t scope) {
-                        pami_result_t rc = __global.l2atomicFactory.l2x_alloc((void **)&_counter,
-                                                                        1, scope);
+			/// \todo #warning HACK to workaround until MemoryManager::key_memalign
+                        pami_result_t rc = __global.l2atomicFactory.l2x_mm_alloc(mm, mmscope,
+						(void **)&_counter, 1, scope);
                         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate L2 Atomic Mutex");
                         // if need to reset, must coordinate!
                 }
@@ -66,7 +68,16 @@ namespace BGQ {
         public:
                 L2ProcMutex() { }
                 inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-                        __init(mm, PAMI::Atomic::BGQ::L2A_PROC_SCOPE);
+			/// \todo #warning HACK to workaround until MemoryManager::key_memalign
+			if (mm == __global._wuRegion_mm ||
+					mm == &__global.l2atomicFactory.__nodescoped_mm) {
+				__init(mm, PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
+						PAMI::Atomic::BGQ::L2A_PROC_SCOPE);
+			} else {
+                        	__init(&__global.l2atomicFactory.__procscoped_mm,
+						PAMI::Atomic::BGQ::L2A_PROC_SCOPE,
+						PAMI::Atomic::BGQ::L2A_PROC_SCOPE);
+			}
                 }
         protected:
         }; // class L2ProcMutex
@@ -75,7 +86,16 @@ namespace BGQ {
         public:
                 L2NodeMutex() { }
                 inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-                        __init(mm, PAMI::Atomic::BGQ::L2A_NODE_SCOPE);
+			/// \todo #warning HACK to workaround until MemoryManager::key_memalign
+			if (mm == __global._wuRegion_mm ||
+					mm == &__global.l2atomicFactory.__nodescoped_mm) {
+				__init(mm, PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
+						PAMI::Atomic::BGQ::L2A_NODE_SCOPE);
+			} else {
+				__init(&__global.l2atomicFactory.__nodescoped_mm,
+						PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
+						PAMI::Atomic::BGQ::L2A_NODE_SCOPE);
+			}
                 }
         protected:
         }; // class L2NodeMutex

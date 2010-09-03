@@ -220,8 +220,8 @@ namespace BGQ {
 
                 /// callers must ensure all use the same order
                 inline pami_result_t l2x_alloc(void **p, int numAtomics, l2x_scope_t scope) {
-                        int lockSpan = numAtomics;
-                        PAMI::Memory::MemoryManager *arena;
+                        PAMI::Memory::MemoryManager *arena = &__procscoped_mm;
+			l2x_scope_t arena_scope = L2A_PROC_SCOPE;
                         switch(scope) {
                         case L2A_NODE_SCOPE:
                         case L2A_NODE_PROC_SCOPE:
@@ -231,6 +231,7 @@ namespace BGQ {
                                 // Node-scoped L2Atomics...
                                 // barrier... ??
                                 arena = &__nodescoped_mm;
+				arena_scope = L2A_NODE_SCOPE;
                                 break;
                         case L2A_PROC_SCOPE:
                         case L2A_PROC_CORE_SCOPE:
@@ -240,28 +241,79 @@ namespace BGQ {
                                 // Allocate the entire block on all processes, but
                                 // only return our specific lock(s).
                                 // ensure all get different L2Atomics
-                                lockSpan *= _factory.numProc;
-                                arena = &__procscoped_mm;
                                 break;
                         case L2A_CORE_SCOPE:
                         case L2A_CORE_SMT_SCOPE:
                                 /// \todo what are core-scoped atomics?
-                                arena = &__procscoped_mm;
                                 //break;
                         case L2A_SMT_SCOPE:
                                 /// \todo what are smt-scoped atomics?
-                                arena = &__procscoped_mm;
                                 //break;
                         case L2A_PTHREAD_SCOPE:
                                 /// \todo what are pthread-scoped atomics?
-                                arena = &__procscoped_mm;
+                                //break;
+                        default:
+                                PAMI_abortf("Invalid L2Atomic scope");
+                                break;
+                        }
+			return l2x_mm_alloc(arena, arena_scope, p, numAtomics, scope);
+                }
+
+		/// \todo #warning HACK to workaround using MemoryManager for L2Atomics
+		///
+                /// callers must ensure all use the same order
+                inline pami_result_t l2x_mm_alloc(PAMI::Memory::MemoryManager *mm,
+					l2x_scope_t mmscope,
+					void **p, int numAtomics, l2x_scope_t scope) {
+                        int lockSpan = numAtomics;
+                        switch(mmscope) {
+                        case L2A_NODE_SCOPE:
+                                break;
+                        case L2A_PROC_SCOPE:
+                                break;
+                        default:
+                                PAMI_abortf("Invalid L2Atomic mm scope");
+                                break;
+                        }
+                        switch(scope) {
+                        case L2A_NODE_SCOPE:
+                        case L2A_NODE_PROC_SCOPE:	// barrier only
+                        case L2A_NODE_PTHREAD_SCOPE:	// barrier only
+                        case L2A_NODE_CORE_SCOPE:	// barrier only
+                        case L2A_NODE_SMT_SCOPE:	// barrier only
+                                // Node-scoped L2Atomics...
+                                // barrier... ??
+				PAMI_assertf(mmscope == L2A_NODE_SCOPE,
+					"l2x_mm_alloc called with incompatible mm");
+                                break;
+                        case L2A_PROC_SCOPE:
+                        case L2A_PROC_CORE_SCOPE:	// barrier only
+                        case L2A_PROC_SMT_SCOPE:	// barrier only
+                        case L2A_PROC_PTHREAD_SCOPE:	// barrier only
+                                // Process-scoped L2Atomics...
+                                // Allocate the entire block on all processes, but
+                                // only return our specific lock(s).
+                                // ensure all get different L2Atomics
+				if (mmscope == L2A_NODE_SCOPE) {
+                                	lockSpan *= _factory.numProc;
+				}
+                                break;
+                        case L2A_CORE_SCOPE:
+                        case L2A_CORE_SMT_SCOPE:	// barrier only
+                                /// \todo what are core-scoped atomics?
+                                //break;
+                        case L2A_SMT_SCOPE:
+                                /// \todo what are smt-scoped atomics?
+                                //break;
+                        case L2A_PTHREAD_SCOPE:
+                                /// \todo what are pthread-scoped atomics?
                                 //break;
                         default:
                                 PAMI_abortf("Invalid L2Atomic scope");
                                 break;
                         }
 			uint64_t *v = NULL;
-			arena->memalign((void **)&v, sizeof(uint64_t),
+			mm->memalign((void **)&v, sizeof(uint64_t),
 						lockSpan * sizeof(uint64_t));
 			if (v == NULL) {
                                 return PAMI_EAGAIN;
@@ -284,8 +336,12 @@ namespace BGQ {
                         case L2A_PROC_PTHREAD_SCOPE:
                                 // Process-scoped L2Atomics...
                                 // Take our specific lock out of the entire block.
-                        	i = (numAtomics * _factory.myProc);
-				*p = &v[i];
+				if (mmscope == L2A_NODE_SCOPE) {
+                        		i = (numAtomics * _factory.myProc);
+					*p = &v[i];
+				} else {
+					*p = v;
+				}
                                 break;
                         case L2A_CORE_SCOPE:
                         case L2A_CORE_SMT_SCOPE:
