@@ -606,8 +606,21 @@ namespace PAMI
         }
       inline pami_result_t send_impl (pami_send_t * parameters)
         {
-          PAMI_abort();
-          return PAMI_SUCCESS;
+          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          internal_error_t rc = (cp->*(cp->pSend))(parameters->send.dest, 
+                                                   parameters->send.dispatch,         // hdr_hdl
+                                                   parameters->send.header.iov_base,  // uhdr
+                                                   parameters->send.header.iov_len,   // uhdr_len
+                                                   parameters->send.data.iov_base,    // udata
+                                                   parameters->send.data.iov_len,     // udata_len
+                                                   *(send_hint_t*)&parameters->send.hints,   // send hints 
+                                                   parameters->events.local_fn,       // 
+                                                   parameters->events.remote_fn,      // 
+                                                   parameters->events.cookie,         // 
+                                                   NULL, NULL,                        //  unused send completion handler
+                                                   NULL, NULL, NULL,                  // unused counter
+                                                   INTERFACE_PAMI);                   // caller
+          return PAMI_RC(rc);
         }
 
       inline pami_result_t send_impl (pami_send_immediate_t * send)
