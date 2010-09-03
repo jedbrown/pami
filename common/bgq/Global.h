@@ -88,6 +88,8 @@ namespace PAMI
         _useshmem = true;
         _useMU = true;
 
+        time.init(personality.Kernel_Config.FreqMHz);
+
         /// \todo #80 #99 Remove this when the DMA supports >1 context.
         /// Hopefully this is temporary. We should always include all
         /// the devices and have run time checks. But with no MU on
