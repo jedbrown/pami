@@ -2189,50 +2189,9 @@ uint64_t PAMI::Device::MU::ResourceManager::getInterruptMask ( size_t rmClientId
 //
 void PAMI::Device::MU::ResourceManager::setupSharedMemory()
 {
-  int fd, rc = -1;
   const char *shmemfile = "/unique-pami-globalRM-shmem-file";
-  void *ptr = NULL;
 
-  fd = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-  TRACE((stderr, "MU ResourceManager: setupSharedMemory: After shm_open, fd = %d\n", fd));
-
-  // There is shared memory...
-  if (fd != -1)
-    {
-      rc = ftruncate( fd, _memSize );
-      TRACE((stderr, "MU ResourceManager: setupSharedMemory: After ftruncate(%d,%zu), rc = %d\n", fd, _memSize, rc));
-
-      if (rc != -1)
-	{
-	  ptr = mmap( NULL, _memSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	  TRACE((stderr, "MU ResourceManager: setupSharedMemory: After mmap, ptr = %p\n", ptr));
-
-	  if (ptr != MAP_FAILED)
-	    {
-	      TRACE((stderr, "MU ResourceManager: setupSharedMemory: Shmem file <%s> %zu bytes mapped at %p\n", shmemfile, _memSize, ptr));
-	      DUMP_HEXDATA("Shared memory map", (const uint32_t *)ptr, 16);
-	      _mm.init(ptr, _memSize);
-	    }
-	  else
-	    {
-	      rc = -1;
-	    }
-	}
-    }
-
-  // There is not shared memory...
-  if (rc == -1)
-    {
-      fprintf(stderr, "MU ResourceManager: setupSharedMemory: %s:%d Failed to create shared memory (rc=%d, ptr=%p, _memSize=%zu) errno %d %s\n", __FILE__, __LINE__, rc, ptr, _memSize, errno, strerror(errno));
-      // There was a failure obtaining the shared memory segment, most
-      // likely because the application is running in SMP mode. Allocate
-      // memory from the heap instead.
-      //
-      // TODO - verify the run mode is actually SMP.
-      posix_memalign ((void **)&ptr, 16, _memSize);
-      memset (ptr, 0, _memSize);
-      _mm.init(ptr, _memSize);
-    }
+  _mm.init(&__global.shared_mm, _memSize, 1, 0, shmemfile);
 
 } // End: setupSharedMemory()
 

@@ -139,49 +139,9 @@ namespace PAMI
         // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
         TRACE_ERR((stderr, "Global() .. size = %zu\n", size));
         void * ptr = NULL;
-        rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-        TRACE_ERR((stderr, "Global() .. after shm_open, fd = %d\n", rc));
-
-        if (rc != -1)
-          {
-            fd = rc;
-            rc = ftruncate( fd, size );
-            TRACE_ERR((stderr, "Global() .. after ftruncate(%d,%zu), rc = %d\n", fd, size, rc));
-
-            if (rc != -1)
-              {
-                ptr = mmap( NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-                TRACE_ERR((stderr, "Global() .. after mmap, ptr = %p\n", ptr));
-
-                if (ptr != MAP_FAILED)
-                  {
-                    TRACE_ERR((stderr, "Global:shmem file <%s> %zu bytes mapped at %p\n", shmemfile, size, ptr));
-                    DUMP_HEXDATA("Shared memory map", (const uint32_t *)ptr, 16);
-                    mm.init(ptr, size);
-                    (void)initializeMapCache(personality, &mm, ll, ur, min, max,
-                                             true); //shared initialization
-                  }
-                else
-                  {
-                    rc = -1;
-                  }
-              }
-          }
-
-        if (rc == -1)
-          {
-            fprintf(stderr, "%s:%d Failed to create shared memory (rc=%d, ptr=%p, size=%zu) errno %d %s\n", __FILE__, __LINE__, rc, ptr, size, errno, strerror(errno));
-            // There was a failure obtaining the shared memory segment, most
-            // likely because the application is running in SMP mode. Allocate
-            // memory from the heap instead.
-            //
-            // TODO - verify the run mode is actually SMP.
-            posix_memalign ((void **)&ptr, 16, size);
-            memset (ptr, 0, size);
-            mm.init(ptr, size);
-            (void)initializeMapCache(personality, &mm, ll, ur, min, max,
-                                     false); // un-shared initialization
-          }
+	mm.init(&shared_mm, size, 1, 0, shmemfile);
+        (void)initializeMapCache(personality, &mm, ll, ur, min, max,
+                    ((mm.attrs() & PAMI_MM_SHARED) != 0); //shared initialization
 
         mapping.init(_mapcache, personality);
         PAMI::Topology::static_init(&mapping);

@@ -21,24 +21,42 @@ namespace PAMI
 {
   namespace Memory
   {
-    class HeapMemoryManager : public Interface::MemoryManager<HeapMemoryManager>
+    class HeapMemoryManager : public MemoryManager
     {
     public:
       inline HeapMemoryManager () :
-        Interface::MemoryManager<HeapMemoryManager> ()
+        MemoryManager ()
         {
+		_attrs = PAMI_MM_PRIVATE;
         }
 
-      inline pami_result_t memalign_impl (void   ** memptr,
-                                         size_t    alignment,
-                                         size_t    bytes)
-        {
+	inline void init (MemoryManager *mm, size_t bytes, size_t alignment,
+			unsigned attrs, char *key)
+	{
+		PAMI_abortf("HeapMemoryManager cannot be init()");
+	}
+	inline void init (void * addr, size_t bytes, size_t alignment, unsigned attrs)
+	{
+		PAMI_abortf("HeapMemoryManager cannot be init()");
+	}
+
+	inline pami_result_t key_memalign (void ** memptr, size_t alignment, size_t bytes,
+			char *key, _mm_init_fn *init_fn, void *cookie)
+	{
 #ifdef USE_MEMALIGN
-          posix_memalign (memptr, alignment, bytes);
+		int rc = posix_memalign (memptr, alignment, bytes);
+		if (rc == -1) return PAMI_ERROR;
 #else
-          *memptr = malloc(bytes);
+		*memptr = malloc(bytes);
+		if (!*memptr) return PAMI_ERROR;
 #endif
-          return PAMI_SUCCESS;
+		if (init_fn)
+		{
+			init_fn(*memptr, bytes, key, PAMI_MM_SHARED, cookie);
+		//
+		// else? or always? memset(*memptr, 0, bytes);
+		}
+		return PAMI_SUCCESS;
         }
 
     protected:

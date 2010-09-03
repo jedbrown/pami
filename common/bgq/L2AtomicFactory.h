@@ -118,18 +118,19 @@ namespace BGQ {
 			if ((s = getenv("PAMI_PROC_L2ATOMICSIZE"))) {
 				size = strtoull(s, NULL, 0);
 			}
-                        virt = NULL;
-                        irc = posix_memalign(&virt, sizeof(uint64_t),
-                                        sizeof(uint64_t) * size);
-                        PAMI_assertf(irc == 0 && virt,
-                                "Failed to get memory for _l2proc, asked size %zu",
-                                sizeof(uint64_t) * size);
-			krc = Kernel_L2AtomicsAllocate(virt, sizeof(uint64_t) * size);
+			rc = __procscoped_mm.init(&__global.heap_mm,
+					sizeof(uint64_t) * size,
+					sizeof(uint64_t), PAMI_MM_L2ATOMIC,
+					NULL,
+					PAMI::Memory::memzero, NULL);
+			PAMI_assertf(rc == PAMI_SUCCESS,
+				"Failed to get memory for _l2proc, asked size %zu",
+				sizeof(uint64_t) * size);
+			krc = Kernel_L2AtomicsAllocate(__procscoped_mm.base(),
+							__procscoped_mm.size());
                         PAMI_assertf(krc == 0,
 				"Failed to map process L2 Atomic region %p (%zd): %ld",
 				virt, sizeof(uint64_t) * size, krc);
-                        memset(virt, 0, sizeof(uint64_t) * size);
-			__procscoped_mm.init(virt, size * sizeof(uint64_t));
 
                         size = L2A_MAX_NUMNODEL2ATOMIC(t,64);
 			if ((s = getenv("PAMI_NODE_L2ATOMICSIZE"))) {
@@ -137,19 +138,20 @@ namespace BGQ {
 			}
                         virt = NULL;
 
-                        rc = mm->memalign(&virt, sizeof(uint64_t),
-                                        sizeof(uint64_t) * size);
+			rc = __nodescoped_mm.init(mm,
+					sizeof(uint64_t) * size,
+					sizeof(uint64_t), PAMI_MM_L2ATOMIC,
+					"/PAMI-L2AtomicFactory",
+					PAMI::Memory::memzero, NULL);
                         PAMI_assertf(rc == PAMI_SUCCESS && virt,
                                 "Failed to get shmem for _l2node, asked size %zu",
                                 sizeof(uint64_t) * size);
-			krc = Kernel_L2AtomicsAllocate(virt, sizeof(uint64_t) * size);
+			krc = Kernel_L2AtomicsAllocate(__nodescoped_mm.base(),
+							__nodescoped_mm.size());
                         PAMI_assertf(krc == 0,
 				"Failed to map shared L2 Atomic region %p (%zd): %ld",
 				virt, sizeof(uint64_t) * size, krc);
 
-			/// \todo need to coordinate clearing of shmem unless we know a barrier follows
-			// clearing of memory done after computing local params
-			__nodescoped_mm.init(virt, size * sizeof(uint64_t));
 #if 0
 fprintf(stderr, "L2 Atomics, node=%zd @ %p (%zd), proc=%zd @ %p (%zd)\n",
 __nodescoped_mm.size(),

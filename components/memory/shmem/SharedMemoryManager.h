@@ -38,117 +38,110 @@ namespace PAMI
     {
       public:
 
-        inline SharedMemoryManager (const char * name, size_t bytes) :
+	/// \brief This class is a wrapper for the shm_open/ftruncate/mmap sequence
+	///
+	/// Unlike general MemoryManagers, it does not actually contain any memory
+	/// instead it provides an interface into the OS's shared memory pool.
+	///
+        inline SharedMemoryManager () :
           MemoryManager ()
         {
-          char * jobstr = getenv ("PAMI_JOB_ID");
-          if (jobstr)
-            snprintf (_shmemfile, 1023, "/pami-client-%s-%s", jobstr, name);
-          else
-            snprintf (_shmemfile, 1023, "/pami-client-%s", name);
-
-          // Round up to the page size
-          //size_t pagesize  = 4096;
-          //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
-
-          TRACE_ERR((stderr, "SharedMemoryManager() .. bytes = %zu\n", bytes));
-          int fd = shm_open (_shmemfile, O_CREAT | O_RDWR, 0600);
-          TRACE_ERR((stderr, "SharedMemoryManager() .. after shm_open, fd = %d\n", fd));
-          if ( fd != -1 )
-          {
-            int rc = ftruncate (fd, bytes);
-            TRACE_ERR((stderr, "SharedMemoryManager() .. after ftruncate(%d,%zu), rc = %d\n", fd,n,rc));
-            if (rc != -1)
-            {
-              void * ptr = mmap (NULL, bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-              TRACE_ERR((stderr, "SharedMemoryManager() .. after mmap, ptr = %p, MAP_FAILED = %p\n", ptr, MAP_FAILED));
-              if ( ptr != MAP_FAILED )
-              {
-                TRACE_ERR((stderr, "SharedMemoryManager() .. \"%s\" %zu bytes mapped at %p\n", shmemfile, bytes, ptr));
-                _base = ptr;
-                _size = bytes;
-
-                // Use posix semaphores as a platform-neutral way of
-                // initializing the shared memory area.  The first process in
-                // will clear the memory so that all processes start using
-                // shared memory from a known state.
-                //
-                // This allows items like shared variables or atomic counters to
-                // be placed in the shared memory area without the need to
-                // separately initialize the variable or counter - the initial
-                // value will be '0'.
-                char semfile[2][sizeof(_shmemfile)+12];
-                snprintf (semfile[0], sizeof(_shmemfile)+12, "%s-semaphore0", _shmemfile);
-                snprintf (semfile[1], sizeof(_shmemfile)+12, "%s-semaphore1", _shmemfile);
-                sem_t * semaphore0 = sem_open (semfile[0], O_CREAT, 0644, 1);
-                if (semaphore0 != SEM_FAILED)
-                {
-                  sem_t * semaphore1 = sem_open (semfile[1], O_CREAT, 0644, 0);
-                  if (semaphore1 != SEM_FAILED)
-                  {
-                    while ((sem_wait(semaphore0) == -1) && errno == EINTR);
-
-                    // test the value of semaphore1, if
-                    int value1;
-                    sem_getvalue (semaphore1, &value1);
-                    if (value1 == 0)
-                    {
-                      // First process in gets to do the initialization
-                      memset (_base, 0, bytes);
-                    }
-
-                    // increment and close semaphore1
-                    sem_post (semaphore1);
-                    sem_close (semaphore1);
-
-                    // increment and close semaphore0
-                    sem_post (semaphore0);
-                    sem_close (semaphore0);
-
-                    size_t p, np;
-                    __global.mapping.nodePeers (np);
-                    if ((size_t)value1 == (np-1))
-                    {
-                      // Last process in gets to tear down the semaphores
-                      rc = sem_unlink (semfile[1]);
-                      rc = sem_unlink (semfile[0]);
-                    }
-
-                    return;
-                  }
-                }
-              }
-            }
-          }
-          TRACE_ERR((stderr,"%s:%d Failed to create shared memory (rc=%d, ptr=%p, n=%zu) errno %d %s\n",__FILE__,__LINE__, rc, ptr, n, errno, strerror(errno)));
-          TRACE_ERR((stderr, "SharedMemoryManager() .. FAILED, fake shmem on the heap\n"));
-
-#ifdef USE_MEMALIGN
-          int rc = posix_memalign ((void **)&_base, 16, bytes);
-          PAMI_assert(rc==0);
-#else
-          _base = (void*)malloc(bytes);
-#endif
-          _size = bytes;
-
-          return;
+		_attrs = PAMI_MM_SHARED;
         }
 
         inline ~SharedMemoryManager ()
         {
-          shm_unlink (_shmemfile);
-        };
+        }
 
-        inline void init (void * addr, size_t bytes)
-        {
-          PAMI_abort();
-        };
+	inline void init (MemoryManager *mm, size_t bytes, size_t alignment,
+			unsigned attrs, char *key)
+	{
+		PAMI_abortf("SharedMemoryManager cannot be init()");
+	}
+	inline void init (void * addr, size_t bytes, size_t alignment, unsigned attrs)
+	{
+		PAMI_abortf("SharedMemoryManager cannot be init()");
+	}
 
-        protected:
+	/// \todo How to enforce alignment?
+	inline pami_result_t key_memalign (void ** memptr, size_t alignment, size_t bytes,
+			char *key, _mm_init_fn *init_fn, void *cookie)
+	{
+	if (_attrs == PAMI_MM_SHARED) {
+		// should we keep track of each shm_open, so that we can
+		// later shm_unlink?
 
-          char _shmemfile[1024];
-    };
-  };
-};
+		// first try to create the file exclusively, if that
+		// succeeds then we know we should initialize it.
+		// However, we still need to ensure others do not
+		// start using the memory until we complete the init.
+		// Use a semaphore that is initialized to 0, all but
+		// the first (based on O_EXCL) will wait on the semaphore.
+		// 
+		sem_t *sem = sem_open(key, O_CREAT, 0600, 0);
+		if (sem == NULL) return PAMI_ERROR;
+
+		rc = shm_open (key, O_CREAT | O_EXCL | O_RDWR, 0600);
+		bool first = (rc != -1); // must be the first...
+
+		if (!first) rc = shm_open (key, O_CREAT | O_RDWR, 0600);
+		if (rc != -1)
+		{
+			fd = rc;
+			rc = ftruncate( fd, bytes );
+		}
+		if ( rc != -1 )
+		{
+			void * ptr = mmap( NULL, bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+			if ( ptr != MAP_FAILED )
+			{
+				if (first)
+				{
+					init_fn(ptr, bytes, key, PAMI_MM_SHARED, cookie);
+					sem_post(sem); // wake up next...
+					sem_close(sem);
+					sem_unlink(key);
+				}
+				else
+				{
+					sem_wait(sem);
+					sem_post(sem); // wake up next... if any
+					sem_close(sem);
+				}
+				*memptr = ptr;
+				return PAMI_SUCCESS;
+			}
+		}
+		sem_close(sem);
+		if (first) sem_unlink(key); // does it matter if more than one call?
+		// need to destroy file?
+		// shm_unlink(key);
+		// assuming failed because we're SMP mode, but really should do a better
+		// job of error analysis.
+
+		// switch to only ever try prival/local allocs
+		_attrs = PAMI_MM_PRIVATE;
+	}
+
+#ifdef USE_MEMALIGN
+		rc = posix_memalign(memptr, alignment, bytes);
+		if (rc == -1) return PAMI_ERROR;
+#else
+		*memptr = malloc(bytes);
+		if (!*memptr) return PAMI_ERROR;
+#endif
+		if (init_fn)
+		{
+			init_fn(*memptr, bytes, key, PAMI_MM_PRIVATE, cookie);
+		//
+		// else? or always? memset(*memptr, 0, bytes);
+		}
+		return PAMI_SUCCESS;
+	}
+
+    protected:
+    }; // class SharedMemoryManager
+  }; // namespace Memory
+}; // namespace PAMI
 #undef TRACE_ERR
 #endif // __pami_components_memory_shmem_sharedmemorymanager_h__

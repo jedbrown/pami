@@ -27,6 +27,17 @@ namespace PAMI
 {
   namespace Memory
   {
+    static const unsigned int PAMI_MM_PRIVATE   = 1;
+    static const unsigned int PAMI_MM_SHARED    = 2;
+    // how do platforms add more?
+    static const unsigned int PAMI_MM_L2ATOMIC  = 4;
+    static const unsigned int PAMI_MM_WACREGION = 8;
+
+    static void memzero(void *mem, size_t bytes, char *key, unsigned attrs, void *cookie)
+    {
+    	memset(mem, 0, bytes);
+    }
+
     class MemoryManager
     {
       private:
@@ -41,6 +52,14 @@ namespace PAMI
 			(size_t)base;
 	}
       public:
+
+        virtual void init (void *addr, size_t bytes, size_t alignment = 1, unsigned attrs = 0); // DEPRECATED
+        virtual void init (MemoryManager *mm, size_t bytes, size_t alignment = 1,
+					unsigned attrs = 0, char *key = NULL,
+					MM_INIT_FN *init_fn = NULL, void *cookie = NULL););
+        virtual pami_result_t key_memalign (void ** memptr, size_t alignment, size_t bytes,
+			char *key = NULL,
+			MM_INIT_FN *init_fn = NULL, void *cookie = NULL);
 	static const int MMKEYSIZE = 128;
 	typedef void MM_INIT_FN(void *mem, size_t bytes, char *key, unsigned attrs, void *cookie);
 
@@ -66,14 +85,38 @@ namespace PAMI
         };
 
         ///
+        /// \brief Intialize a memory manager from another memory manager
+        ///
+        /// \param[in] mm        MemoryManager providing buffer
+        /// \param[in] bytes     Number of bytes of memory to manage
+        /// \param[in] alignment (opt) Default/minimum alignment
+        /// \param[in] attrs     (opt) Attributes for memory (addr,bytes)
+        ///
+        inline void init (MemoryManager *mm, size_t bytes, size_t alignment,
+					unsigned attrs, char *key)
+        {
+		pami_result_t rc = mm->key_memalign((void **)&_base, alignment, bytes, key);
+		PAMI_assertf(rc == PAMI_SUCCESS, "failed to allocate memory for new mm");
+		_attrs = mm->attrs() | attrs;
+          	_size = bytes;
+	  	PAMI_assert_debugf(!(alignment & (alignment - 1)), "%zd: alignment must be power of two", alignment);
+	  	_alignment = alignment;
+	  	_meta = (MemoryManagerHeader *)_base;
+	  	_offset = padding(_base, sizeof(*_meta), alignment);
+	  	new (&_meta) MemoryManagerHeader();
+          	_enabled = true;
+
+        ///
         /// \brief Intialize a memory manager with a memory buffer
+        ///
+        /// DEPRECATED
         ///
         /// \param[in] addr      Address of the memory to be managed
         /// \param[in] bytes     Number of bytes of memory to manage
         /// \param[in] alignment (opt) Default/minimum alignment
         /// \param[in] attrs     (opt) Attributes for memory (addr,bytes)
         ///
-        inline void init (void * addr, size_t bytes, size_t alignment = 1, unsigned attrs = 0)
+        inline void init (void * addr, size_t bytes, size_t alignment, unsigned attrs)
         {
           TRACE_ERR((stderr, "%s(%p, %zu), this = %p\n", __PRETTY_FUNCTION__,addr,bytes, this));
           _base   = (uint8_t *) addr;
@@ -82,9 +125,7 @@ namespace PAMI
 	  PAMI_assert_debugf(!(alignment & (alignment - 1)), "%zd: alignment must be power of two", alignment);
 	  _alignment = alignment;
 	  _meta = (MemoryManagerHeader *)_base;
-	  _offset = ((((size_t)_base + sizeof(*_meta)) +
-				(_alignment - 1)) & ~(_alignment - 1)) -
-			(size_t)_base;
+	  _offset = padding(_base, sizeof(*_meta), alignment);
 	  new (&_meta) MemoryManagerHeader();
           _enabled = true;
         };
@@ -108,6 +149,7 @@ namespace PAMI
         inline void enable () { _enabled = true; }
         inline void disable () { _enabled = false; }
 	inline unsigned attrs () { return _attrs; }
+	inline void attrs (unsigned attrs) { _attrs |= attrs; }
 
         ///
         /// \brief Allocate an aligned buffer of the memory.
@@ -260,8 +302,7 @@ namespace PAMI
         /// \param[in]  cookie    (opt) Opaque data for initializer
         ///
         inline pami_result_t key_memalign (void ** memptr, size_t alignment, size_t bytes,
-			char *key = NULL,
-			_mm_init_fn *init_fn = NULL, void *cookie = NULL)
+			char *key, MM_INIT_FN *init_fn, void *cookie)
 	{
 	  if (key && strlen(key) >= MMKEYSIZE) {
 		return PAMI_INVAL;

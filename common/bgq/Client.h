@@ -747,46 +747,7 @@ namespace PAMI
         // Round up to the page size
         //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-        int fd, rc;
-        size_t n = bytes;
-
-#if 1
-        // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-
-        rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-
-        if (rc == -1)
-          fprintf(stderr, "BGQ::Client shm_open(<%s>,O_RDWR) rc = %d, errno = %d, %s\n", shmemfile,  rc,  errno,  strerror(errno));
-
-        TRACE_ERR((stderr,  "BGQ::Client() shm_open %d\n", rc));
-
-        void * ptr = NULL;
-
-        if ( rc != -1 )
-          {
-            fd = rc;
-            rc = ftruncate( fd, n );
-
-            if ( rc != -1 )
-              {
-                ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-                TRACE_ERR((stderr,  "BGQ::Client() mmap(NULL, %zu, PROT_READ | PROT_WRITE, MAP_SHARED, %d, 0); rc = %d \n", n, fd, rc));
-
-                if ( ptr != MAP_FAILED )
-                  {
-                    TRACE_ERR((stderr, "BGQ::Client:shmem file <%s> %zu bytes mapped at %p\n", shmemfile, n, ptr));
-                    _mm.init (ptr, n);
-                    return;
-                  }
-              }
-          }
-
-        fprintf(stderr, "%s:%d BGQ::Client Failed to create shared memory <%s> (rc=%d, ptr=%p, n=%zu) errno %d %s\n", __FILE__, __LINE__, shmemfile, rc, ptr, n, errno, strerror(errno));
-        //PAMI_abortf(stderr,"Failed to create shared memory (rc=%d, ptr=%p, n=%zu)\n", rc, ptr, n);
-
-        // Failed to create shared memory .. fake it using the heap ??
-        _mm.init (malloc (n), n);
-#endif
+	_mm.init(&__global.shared_mm, bytes, 1, 0, shmemfile);
         return;
       }
 

@@ -58,26 +58,30 @@ public:
 		// does the virtual address even matter?
 		while (mctx & (mctx - 1)) ++mctx; // brute force - better way?
 
-		void *virt = NULL;
 		size_t esize = mctx * BGQ_WACREGION_SIZE * sizeof(uint64_t);
 		size_t size = lsize * esize;
-		mm->memalign(&virt, size, size);
-		if (virt == NULL) {
+
+		pami_result_t rc = _wu_mm[me].init(mm, esize, esize, PAMI_MM_WACREGION);
+		if (rc != PAMI_SUCCESS) {
 fprintf(stderr, "memalign failed for %zd %zd (avail=%zd)\n", size, size, mm->available());
 			return PAMI_ERROR;
 		}
-		uint32_t krc = Kernel_CreateMemoryRegion(&_wu_memreg, virt, size);
+		uint32_t krc = Kernel_CreateMemoryRegion(&_wu_memreg, _wu_mm[me].base(),
+								_wu_mm[me].size());
 		if (krc != 0) {
 			//mm->free(virt);
-fprintf(stderr, "Kernel_CreateMemoryRegion failed for %p %zd (%d)\n", virt, size, krc);
+fprintf(stderr, "Kernel_CreateMemoryRegion failed for %p %zd (%d)\n",
+				_wu_mm[me].base(), _wu_mm[me].size(), krc);
 			return PAMI_ERROR;
 		}
+#if 0
 		char *v = (char *)virt;
 		size_t i;
 		for (i = 0; i < lsize; ++i) {
 			_wu_mm[i].init(v, esize);
 			v += esize;
 		}
+#endif
 		_wu_region_me = me;
 
 		// PAMI_assert((size & (size - 1)) == 0); // power of 2
@@ -101,10 +105,12 @@ fprintf(stderr, "Kernel_CreateMemoryRegion failed for %p %zd (%d)\n", virt, size
 
 	inline PAMI::Memory::MemoryManager *getWUmm(size_t process = (size_t)-1) {
 		if (process == (size_t)-1) process = _wu_region_me;
+PAMI_assertf(process == _wu_region_me, "do not use getWUmm(!me)");
 		return &_wu_mm[process];
 	}
 
 	inline PAMI::Memory::MemoryManager *getAllWUmm() {
+PAMI_abortf("do not use getAllWUmm()");
 		return &_wu_mm[0];
 	}
 

@@ -36,7 +36,9 @@ namespace Interface
         inline Global() :
           time(),
           topology_global(),
-          topology_local()
+          topology_local(),
+	  heap_mm(),
+	  shared_mm()
         {
                 ENFORCE_CLASS_MEMBER(T_Global,mapping);
         }
@@ -48,6 +50,8 @@ namespace Interface
         PAMI::Time	time;
         PAMI::Topology	topology_global;
         PAMI::Topology	topology_local;
+	PAMI::Memory::HeapMemoryManager heap_mm;
+	PAMI::Memory::SharedMemoryManager shared_mm;
 
         /// Global location for the processor name
         char processor_name[128];
