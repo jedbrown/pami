@@ -30,11 +30,19 @@ namespace PAMI
     class MemoryManager
     {
       private:
-	    inline size_t padding(void *base, size_t off, size_t align) {
+	/// \brief compute the padding needed to provide user with aligned addr
+	///
+	/// \param[in] base	Start address of raw chunk
+	/// \param[in] off	Addition (meta) data needed
+	/// \param[in] align	Alignment required (power of two)
+	///
+	inline size_t padding(void *base, size_t off, size_t align) {
 		return (((size_t)base + off + (align - 1)) & ~(align - 1)) -
 			(size_t)base;
-	    }
+	}
       public:
+	static const int MMKEYSIZE = 128;
+	typedef void MM_INIT_FN(void *mem, size_t bytes, char *key, unsigned attrs, void *cookie);
 
         ///
         /// \brief Empty base memory manager constructor
@@ -104,7 +112,7 @@ namespace PAMI
         ///
         /// \brief Allocate an aligned buffer of the memory.
         ///
-        /// Provides backward compatability
+        /// Provides backward compatability (?)
         ///
         /// \param[out] memptr    Pointer to the allocated memory.
         /// \param[in]  alignment Requested buffer alignment - must be a power of 2.
@@ -112,6 +120,13 @@ namespace PAMI
         ///
         inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes)
         {
+	  // for true backward-compatibility, need some sort of sequence-generator
+	  // to provide a 'key' value that represents the ordering of calls to this
+	  // memory manager.
+	  //   static char buf[MMKEYSIZE];
+	  //   sprintf(buf, "/seq%d", _sequence++);
+	  //   return key_memalign(memptr, alignment, bytes, buf);
+	  //
 	  return key_memalign(memptr, alignment, bytes);
         };
 
@@ -155,23 +170,44 @@ namespace PAMI
 	//
 	/// \todo #warning Full support for freeing memory is not supported yet
 #endif // SUPPORT_MM_FREE
-	static const int MMKEYSIZE = 128;
-	typedef void _mm_init_fn(void *mem, size_t bytes, char *key, unsigned attrs, void *cookie);
 
-	class MemoryManagerAlloc : public PAMI::Queue::Element {
+	/// \brief Class to hold the meta-data portion of an allocation that is shared
+	///
+	/// Anonymous (private) chunks do not use this object
+	///
+	class MemoryManagerChunk : public PAMI::Queue::Element {
 	public:
-		MemoryManagerAlloc(char *key, size_t align, size_t size) :
+		MemoryManagerChunk(char *key, size_t align, size_t size) :
 		PAMI::Queue::Element(),
 		{
 			strcpy(_key, key);
 			_raw_data = staticSize(this, align, size);
 			_raw_size = _raw_data + size;
 		}
+
+		/// \brief Static method to compute the meta size with alignment
+		///
+		/// \param[in] thus	Base address of raw chunk
+		/// \param[in] align	Alignment (power of two)
+		/// \param[in] size	Size of user request
+		/// \return	padding needed to hold meta data and align user addr
+		///
 		static staticSize(void *thus, size_t align, size_t size) {
-			return padding(thus, sizeof(MemoryManagerAlloc), align);
+			return padding(thus, sizeof(MemoryManagerChunk), align);
 		}
+
+		/// \brief Return total length of raw chunk
 		inline size_t size() { return _raw_size; }
-		inline void *address() { return this + _raw_data; }
+
+		/// \brief Return padding length of raw chunk
+		inline size_t padding() { return _raw_data; }
+
+		/// \brief Return address of user buffer in chunk
+		inline void *address() { return (uint8_t *)this + _raw_data; }
+
+		/// \brief Determine if chunk is a match for key
+		/// \param[in] key	Kay value searching for
+		/// \return	boolean indicating match
 		inline bool isMatch(char *key) {
 			return (key ? strncmp(key, _key, MMKEYSIZE) == 0 : false);
 		}
@@ -179,8 +215,9 @@ namespace PAMI
 		size_t _raw_data;
 		size_t _raw_size;
 		char _key[MMKEYSIZE];
-	}; // class MemoryManagerAlloc
+	}; // class MemoryManagerChunk
 
+	/// \brief Class to contain the root header of a MemoryManager
 	class MemoryManagerHeader :	public PAMI::Queue,
 					public PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>
 	{
@@ -193,13 +230,16 @@ namespace PAMI
 	  		// _meta->_allocations.init(NULL); // should be no-op/redundant
 		}
 
-		inline MemoryManagerAlloc *find(char *key) {
-			MemoryManagerAlloc *m = (MemoryManagerAlloc *)head();
+		/// \brief Search shared chunks for matching key
+		/// \param[in] key	Key to look for
+		/// \return Matching chunk object, or NULL if not found
+		inline MemoryManagerChunk *find(char *key) {
+			MemoryManagerChunk *m = (MemoryManagerChunk *)head();
 			while (m) {
 				if (m->isMatch(key)) { 
 					return m;
 				}
-				m = (MemoryManagerAlloc *)m->next();
+				m = (MemoryManagerChunk *)m->next();
 			}
 		}
 	}; // class MemoryManagerHeader
@@ -232,19 +272,20 @@ namespace PAMI
 	  size_t pad;
 	  if (key) {
 		// "public" (shared) allocation
-		MemoryManagerAlloc *m = _meta->find(key);
+		MemoryManagerChunk *m = _meta->find(key);
 		if (m) {
 			_meta->release();
 			*memptr = m->address();
 			return PAMI_SUCCESS;
 		}
-		pad = MemoryManagerAlloc::staticSize(addr, alignment, bytes);
+		pad = MemoryManagerChunk::staticSize(addr, alignment, bytes);
 		len += pad;
 	  	if (_offset + len > _size) {
 			_meta->release();
 			return PAMI_ERROR;
 	  	}
-	  	m = new (addr) MemoryManagerAlloc(key, alignment, bytes);
+	  	m = new (addr) MemoryManagerChunk(key, alignment, bytes);
+		PAMI_assert_debugf(pad == m->padding(), "MemoryManagerChunk padding changed");
 	  	_meta->push(m);
 		addr = m->address();
 	  } else {
