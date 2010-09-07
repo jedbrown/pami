@@ -175,12 +175,11 @@ namespace PAMI
           size_t                bytesToProduce = MIN(pwqAvail, incomingBytes);
           void                 *bufToProduce   = rcv->rcvpwq->bufferToProduce();
 
-
           TRACE((stderr, "CAUMulticastModel:  UE Generic Device handler, incomingBytes=%d"
                  " msg->bp=%ld msg->bc=%ld pwqAvail=%ld, bytesToProduce=%ld bufToProduce=%p\n",
+                 incomingBytes,
                  rcv->msg->_bytesProduced,
                  rcv->msg->_bytesCopied,
-                 incomingBytes,
                  pwqAvail,
                  bytesToProduce,
                  bufToProduce));
@@ -241,8 +240,8 @@ namespace PAMI
           void                       *user_cookie = mc->_id_to_async_arg[did];
           rcvInfo                    *rcv         = mc->_gid_to_rcvinfo[gid];
 
-          TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler did=%d gid=%d cid=%d root=%d user_fn=%p cookie=%p\n",
-                 did, gid,cid, root, user_fn, user_cookie));
+          TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler did=%d gid=%d cid=%d root=%d user_fn=%p cookie=%p rcv=%p\n",
+                 did, gid,cid, root, user_fn, user_cookie, rcv));
           if(!rcv)
             {
               TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler First Packet!\n"));
@@ -259,6 +258,7 @@ namespace PAMI
               mc->_gid_to_rcvinfo[gid] = rcv;
               rcv->mc                  = mc;
               rcv->gid                 = gid;
+              rcv->msg                 = NULL;
               PAMI_assert(rcv->rcvlen >= msghdr->msg_sz);
             }
           else
@@ -285,24 +285,33 @@ namespace PAMI
           // we can abort and push this up to the protocol to ensure that he provides us
           // with a pipework queue with enough storage.  For now, we will copy this incoming
           // packet into a temporary buffer
-          if(bytesToProduce < incomingBytes)
+          noroom = 1;
+          if(rcv->msg == NULL)
             {
-              // Not enough space in the pwq for this incoming packet
-              // create a message and allocate a new ue buffer for this
-              TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler:  user buffer smaller than incoming bytes\n"));
-              rcv->msg = (CAUMcastRecvMessage*)mc->_rcvmsg_alloc.allocateObject();
-              new(rcv->msg)CAUMcastRecvMessage(rcv->cb_done, bufToProduce,rcv->rcvlen,rcv->rcvpwq,mc->_device.getContext(),1);
-              bufToProduce           = rcv->msg->_side_buf;
-              noroom                 = 1;
+              if(bytesToProduce < incomingBytes)
+                {
+                  // Not enough space in the pwq for this incoming packet
+                  // create a message and allocate a new ue buffer for this
+                  TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler:  user buffer smaller than incoming bytes\n"));
+                  rcv->msg = (CAUMcastRecvMessage*)mc->_rcvmsg_alloc.allocateObject();
+                  new(rcv->msg)CAUMcastRecvMessage(rcv->cb_done,
+                                                   bufToProduce,
+                                                   rcv->rcvlen,
+                                                   rcv->rcvpwq,
+                                                   mc->_device.getContext(),
+                                                   1);
+                  bufToProduce           = rcv->msg->_side_buf;
+                  noroom                 = 1;
+                }
+              else
+                {
+                  TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler:  enough space in PWQ \n"));
+                  rcv->msg = NULL;
+                  noroom                 = 0;
+                }
             }
-          else
-            {
-              TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler:  enough space in PWQ \n"));
-              rcv->msg = NULL;
-              noroom                 = 0;
-            }
-          TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler after callback:  bytesToProduce=%ld, bufToProduce=%p rcv->rcvlen=%ld\n",
-                 bytesToProduce, bufToProduce, rcv->rcvlen));
+          TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler after callback:  bytesToProduce=%ld, bufToProduce=%p rcv->rcvlen=%ld rcv->msg=%p\n",
+                 bytesToProduce, bufToProduce, rcv->rcvlen, rcv->msg));
 
           if (ri->udata_one_pkt_ptr)
             {

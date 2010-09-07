@@ -342,7 +342,7 @@ namespace CCMI
           {
             MultiCastComposite2Device *m = (MultiCastComposite2Device*) cookie;
             m->_count++;
-            TRACE((stderr, "MultiCastComposite2Device:  composite done:  count=%lz\n", m->_count));
+            TRACE((stderr, "MultiCastComposite2Device:  composite done:  count=%ld\n", m->_count));
             if(m->_count==2)
               m->_master_done.function(context, m->_master_done.clientdata, result);
           }
