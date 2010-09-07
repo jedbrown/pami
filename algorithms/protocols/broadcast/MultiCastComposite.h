@@ -320,7 +320,6 @@ namespace CCMI
             {
               TRACE((stderr, "executeCAComplete:  delivering callback\n"));
               _user_callback(NULL, _user_cookie, PAMI_SUCCESS);
-
             }
 
           PAMI::PipeWorkQueue  _ue_pwq;
@@ -576,8 +575,11 @@ namespace CCMI
                     pwqBuf->_ue_pwq.reset();
                     _minfo_l.src                = (pami_pipeworkqueue_t*)&pwqBuf->_ue_pwq;
                     _activePwqBuf                 = pwqBuf;
-                    _activePwqBuf->_user_callback = fn;
-                    _activePwqBuf->_user_cookie   = cookie;
+                    if(numLocal>1)
+                      _activePwqBuf->_user_callback = composite_done;
+                    else
+                      _activePwqBuf->_user_callback = simple_done;
+                    _activePwqBuf->_user_cookie   = this;
                   }
                 else
                   {
@@ -589,8 +591,11 @@ namespace CCMI
                     posted->enqueue((PAMI::Queue::Element*)&_pwqBuf);
                     _pwqBuf._target_pwq           = &_pwq0;
                     _activePwqBuf                 = &_pwqBuf;
-                    _activePwqBuf->_user_callback = fn;
-                    _activePwqBuf->_user_cookie   = cookie;
+                    if(numLocal>1)
+                      _activePwqBuf->_user_callback = composite_done;
+                    else
+                      _activePwqBuf->_user_callback = simple_done;
+                    _activePwqBuf->_user_cookie   = this;
                   }
               }
             else

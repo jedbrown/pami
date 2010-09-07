@@ -959,7 +959,8 @@ public:
             while (_len != 0) {
               if (_role == PARENT) {
                 _wlen = window->produceData(*(PAMI::PipeWorkQueue *)mcast->src, _len, _device->getSysdep());
-                PAMI_ASSERT(_wlen >= 0);
+                if (_wlen == 0) return PAMI_EAGAIN;
+                PAMI_ASSERT(_wlen > 0);
                 _len  -= _wlen;
                 ++_step ;
                 rc = window->setAvail(_step, _nchildren+1);
