@@ -164,23 +164,26 @@ public:
 	inline void init(size_t nsets, size_t nctx,
 				Memory::MemoryManager *mm,
 				Memory::MemoryManager *setmm) {
-		_mutex.init(mm);
-		posix_memalign((void **)&_contexts, 16, nctx * sizeof(*_contexts));
+		_mutex.init(mm); /// \todo note: mutex is (always?) process-private
+		__global.heap_mm.memalign((void **)&_contexts, 16, nctx * sizeof(*_contexts));
 		PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_contexts");
 		memset((void *)_contexts, 0, nctx * sizeof(*_contexts));
 
-		// only _sets[] needs to be in WAC region...
-		privateFromShared(setmm, (void **)&_sets, 16, sizeof(*_sets) * (nsets + 1));
+		// only _sets[] needs to be in WAC region... but are process private
+		setmm->memalign((void **)&_sets, 16, sizeof(*_sets) * (nsets + 1));
 
-		posix_memalign((void **)&_coresets, 16, nsets * sizeof(*_coresets));
+		__global.heap_mm.memalign((void **)&_coresets, 16,
+							nsets * sizeof(*_coresets));
 		PAMI_assertf(_coresets, "Out of memory for BgqContextPool::_coresets");
 		memset((void *)_coresets, 0, nsets * sizeof(*_coresets));
 
-		posix_memalign((void **)&_coreids, 16, nsets * sizeof(*_coreids));
+		__global.heap_mm.memalign((void **)&_coreids, 16,
+							nsets * sizeof(*_coreids));
 		PAMI_assertf(_coreids, "Out of memory for BgqContextPool::_coreids");
 		memset((void *)_coreids, 0, nsets * sizeof(*_coreids));
 
-		posix_memalign((void **)&_numinsets, 16, nsets * sizeof(*_numinsets));
+		__global.heap_mm.memalign((void **)&_numinsets, 16,
+							nsets * sizeof(*_numinsets));
 		PAMI_assertf(_numinsets, "Out of memory for BgqContextPool::_numinsets");
 		memset((void *)_numinsets, 0, nsets * sizeof(*_numinsets));
 

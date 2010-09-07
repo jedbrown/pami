@@ -57,7 +57,7 @@ namespace PAMI
         virtual void init (MemoryManager *mm, size_t bytes, size_t alignment = 1,
 					unsigned attrs = 0, char *key = NULL,
 					MM_INIT_FN *init_fn = NULL, void *cookie = NULL););
-        virtual pami_result_t key_memalign (void ** memptr, size_t alignment, size_t bytes,
+        virtual pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes,
 			char *key = NULL,
 			MM_INIT_FN *init_fn = NULL, void *cookie = NULL);
 	static const int MMKEYSIZE = 128;
@@ -95,7 +95,7 @@ namespace PAMI
         inline void init (MemoryManager *mm, size_t bytes, size_t alignment,
 					unsigned attrs, char *key)
         {
-		pami_result_t rc = mm->key_memalign((void **)&_base, alignment, bytes, key);
+		pami_result_t rc = mm->memalign((void **)&_base, alignment, bytes, key);
 		PAMI_assertf(rc == PAMI_SUCCESS, "failed to allocate memory for new mm");
 		_attrs = mm->attrs() | attrs;
           	_size = bytes;
@@ -150,27 +150,6 @@ namespace PAMI
         inline void disable () { _enabled = false; }
 	inline unsigned attrs () { return _attrs; }
 	inline void attrs (unsigned attrs) { _attrs |= attrs; }
-
-        ///
-        /// \brief Allocate an aligned buffer of the memory.
-        ///
-        /// Provides backward compatability (?)
-        ///
-        /// \param[out] memptr    Pointer to the allocated memory.
-        /// \param[in]  alignment Requested buffer alignment - must be a power of 2.
-        /// \param[in]  bytes     Number of bytes to allocate.
-        ///
-        inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes)
-        {
-	  // for true backward-compatibility, need some sort of sequence-generator
-	  // to provide a 'key' value that represents the ordering of calls to this
-	  // memory manager.
-	  //   static char buf[MMKEYSIZE];
-	  //   sprintf(buf, "/seq%d", _sequence++);
-	  //   return key_memalign(memptr, alignment, bytes, buf);
-	  //
-	  return key_memalign(memptr, alignment, bytes);
-        };
 
 #ifdef SUPPORT_MM_FREE
 	//
@@ -301,7 +280,7 @@ namespace PAMI
         /// \param[in]  init_fn   (opt) Initializer
         /// \param[in]  cookie    (opt) Opaque data for initializer
         ///
-        inline pami_result_t key_memalign (void ** memptr, size_t alignment, size_t bytes,
+        inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes,
 			char *key, MM_INIT_FN *init_fn, void *cookie)
 	{
 	  if (key && strlen(key) >= MMKEYSIZE) {

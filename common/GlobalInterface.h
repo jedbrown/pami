@@ -50,8 +50,8 @@ namespace Interface
         PAMI::Time	time;
         PAMI::Topology	topology_global;
         PAMI::Topology	topology_local;
-	PAMI::Memory::HeapMemoryManager heap_mm;
-	PAMI::Memory::SharedMemoryManager shared_mm;
+	PAMI::Memory::HeapMemoryManager<T_Global> heap_mm;
+	PAMI::Memory::SharedMemoryManager<T_Global> shared_mm(&heap_mm);
 
         /// Global location for the processor name
         char processor_name[128];

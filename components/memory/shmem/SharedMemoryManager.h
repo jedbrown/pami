@@ -34,24 +34,30 @@ namespace PAMI
 {
   namespace Memory
   {
-    class SharedMemoryManager : public MemoryManager
+    class SharedMemoryManager<class T_Global> : public MemoryManager
     {
-      public:
+      protected:
+	friend class PAMI::Interface::Global<T_Global>;
 
 	/// \brief This class is a wrapper for the shm_open/ftruncate/mmap sequence
 	///
 	/// Unlike general MemoryManagers, it does not actually contain any memory
 	/// instead it provides an interface into the OS's shared memory pool.
 	///
-        inline SharedMemoryManager () :
+        inline SharedMemoryManager<T_Global> (MemoryManager *heapmm) :
           MemoryManager ()
         {
 		_attrs = PAMI_MM_SHARED;
+		// allocate some memory for tracking allocations...
+		_mm = heapmm;
         }
 
-        inline ~SharedMemoryManager ()
+        inline ~SharedMemoryManager<T_Global> ()
         {
+		// if this only happens at program exit, just unlink all keys...
         }
+
+      public:
 
 	inline void init (MemoryManager *mm, size_t bytes, size_t alignment,
 			unsigned attrs, char *key)
@@ -64,7 +70,7 @@ namespace PAMI
 	}
 
 	/// \todo How to enforce alignment?
-	inline pami_result_t key_memalign (void ** memptr, size_t alignment, size_t bytes,
+	inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes,
 			char *key, _mm_init_fn *init_fn, void *cookie)
 	{
 	if (_attrs == PAMI_MM_SHARED) {
@@ -78,6 +84,9 @@ namespace PAMI
 		// Use a semaphore that is initialized to 0, all but
 		// the first (based on O_EXCL) will wait on the semaphore.
 		// 
+
+		// maybe use GCC atomics on the shared memory chunk, in order to
+		// synchronize init, and in free will need to ensure memory gets zeroed.
 		sem_t *sem = sem_open(key, O_CREAT, 0600, 0);
 		if (sem == NULL) return PAMI_ERROR;
 
@@ -99,23 +108,22 @@ namespace PAMI
 				{
 					init_fn(ptr, bytes, key, PAMI_MM_SHARED, cookie);
 					sem_post(sem); // wake up next...
-					sem_close(sem);
-					sem_unlink(key);
 				}
 				else
 				{
 					sem_wait(sem);
 					sem_post(sem); // wake up next... if any
-					sem_close(sem);
 				}
 				*memptr = ptr;
 				return PAMI_SUCCESS;
 			}
 		}
 		sem_close(sem);
-		if (first) sem_unlink(key); // does it matter if more than one call?
+		sem_unlink(key);
 		// need to destroy file?
-		// shm_unlink(key);
+		// shm_unlink(key); // should not unlink until all close?
+		// (but, must ensure O_EXCL works so can't unlink here... ?
+		//
 		// assuming failed because we're SMP mode, but really should do a better
 		// job of error analysis.
 
@@ -123,13 +131,9 @@ namespace PAMI
 		_attrs = PAMI_MM_PRIVATE;
 	}
 
-#ifdef USE_MEMALIGN
-		rc = posix_memalign(memptr, alignment, bytes);
-		if (rc == -1) return PAMI_ERROR;
-#else
-		*memptr = malloc(bytes);
-		if (!*memptr) return PAMI_ERROR;
-#endif
+		rc = _mm->memalign(memptr, alignment, bytes, key, init_fn, cookie);
+
+		if (rc != PAMI_SUCCESS) return PAMI_ERROR;
 		if (init_fn)
 		{
 			init_fn(*memptr, bytes, key, PAMI_MM_PRIVATE, cookie);
@@ -140,6 +144,7 @@ namespace PAMI
 	}
 
     protected:
+	MemoryManager *_mm;
     }; // class SharedMemoryManager
   }; // namespace Memory
 }; // namespace PAMI
