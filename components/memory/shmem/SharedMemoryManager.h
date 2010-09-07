@@ -36,6 +36,17 @@ namespace PAMI
   {
     class SharedMemoryManager<class T_Global> : public MemoryManager
     {
+	struct shmhdr_t {
+		size_t ref_count;
+		size_t init_done;
+	};
+#if MM_FREE
+	struct mm_alloc {
+		shmhdr_t *hdr;
+		size_t total_bytes;
+		char key[MMKEYSIZE];
+	};
+#endif
       protected:
 	friend class PAMI::Interface::Global<T_Global>;
 
@@ -87,6 +98,8 @@ namespace PAMI
 
 		// maybe use GCC atomics on the shared memory chunk, in order to
 		// synchronize init, and in free will need to ensure memory gets zeroed.
+		bytes += sizeof(hdr);
+#ifdef _POSIX_SHM_OPEN
 		sem_t *sem = sem_open(key, O_CREAT, 0600, 0);
 		if (sem == NULL) return PAMI_ERROR;
 
@@ -104,18 +117,7 @@ namespace PAMI
 			void * ptr = mmap( NULL, bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 			if ( ptr != MAP_FAILED )
 			{
-				if (first)
-				{
-					init_fn(ptr, bytes, key, PAMI_MM_SHARED, cookie);
-					sem_post(sem); // wake up next...
-				}
-				else
-				{
-					sem_wait(sem);
-					sem_post(sem); // wake up next... if any
-				}
-				*memptr = ptr;
-				return PAMI_SUCCESS;
+				goto syncup;
 			}
 		}
 		sem_close(sem);
@@ -141,7 +143,83 @@ namespace PAMI
 		// else? or always? memset(*memptr, 0, bytes);
 		}
 		return PAMI_SUCCESS;
+
+#else // ! _POSIX_SHM_OPEN
+#warning Need to write SysV Shmem equivalent
+		// need to turn string into unique integer..
+		// yuk
+		int n = strlen(key);
+		int x = n / sizeof(key_t);
+		int y = n % sizeof(key_t);
+		key_t kkey = 0, *k = (key_t *)key;
+		while (x--) {
+			kkey ^= *k++;
+		}
+		char *ck = (char *)k;
+		while (y--) {
+			kkey ^= *ck++;
+		}
+		// yukky hash code
+
+		int id = shmget(kkey, bytes, IPC_CREAT | IPC_EXCL | 0600);
+		if (id == -1) {
+			id = shmget(kkey, 0, 0);
+			if (id == -1) {
+				return PAMI_ERROR;
+			}
+			// slave - must wait for "master" to init...
+		}
+		ptr = shmat(id, 0, 0);
+		if (ptr == NULL || ptr == (void *)-1) {
+			shmctl(id, IPC_RMID, NULL);
+			return PAMI_ERROR;
+		}
+#endif // ! _POSIX_SHM_OPEN
+syncup:
+		shmhdr_t *hdr = (*)ptr;
+		ptr = (void *)(hdr + 1);
+		bytes -= sizeof(*hdr);
+		if (first)
+		{
+			init_fn(ptr, bytes, key, PAMI_MM_SHARED, cookie);
+			__sync_fetch_and_add(&hdr->ref_count, 1);
+			hdr->init_done = 1;
+		}
+		else
+		{
+			__sync_fetch_and_add(&hdr->ref_count, 1);
+			while (!hdr->init_done); // better way than spinning?
+		}
+#if MM_FREE
+		_allocs[i].total_bytes = bytes + sizeof(*hdr);
+		_allocs[i].hdr = hdr;
+#ifdef _POSIX_SHM_OPEN
+		strncpy(_allocs[i].key, key, MMKEYSIZE);
+#else // ! _POSIX_SHM_OPEN
+		*((int *)_allocs[i].key) = id;
+#endif // ! _POSIX_SHM_OPEN
+#endif
+		*memptr = ptr;
+		return PAMI_SUCCESS;
 	}
+
+#if MM_FREE
+	// during destruction/free...
+	// Note, this isn't right or probably anywhere near it...
+	for (i = 0; i < _nallocs; ++i) {
+		if (!_allocs[i].hdr) continue;
+		size_t c = __sync_fetch_and_add(&_allocs[i].hdr->ref_count, -1);
+		if (c != 1) continue; // not last one, don't remove...
+		// only one participant should run this...
+#ifdef _POSIX_SHM_OPEN
+		shm_unlink(_allocs[i].key);
+#else // ! _POSIX_SHM_OPEN
+		shmctl(*((int *)_allocs[i].key), IPC_RMID, NULL);
+#endif // ! _POSIX_SHM_OPEN
+		// ensure next user of this memory gets zeros!
+		memset((void *)_allocs[i].hdr, 0, _allocs[i].total_bytes);
+	}
+#endif
 
     protected:
 	MemoryManager *_mm;

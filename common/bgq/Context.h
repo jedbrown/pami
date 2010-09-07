@@ -284,9 +284,9 @@ namespace PAMI
     public:
       inline Context (pami_client_t client, size_t clientid, size_t id, size_t num,
                       PlatformDeviceList *devices,
-                      void * addr, size_t bytes,
+                      MemoryManager * pmm, size_t bytes,
                       BGQGeometry *world_geometry,
-		      std::map<unsigned, pami_geometry_t> *geometry_map):
+		      std::map<unsigned, pami_geometry_t> *geometry_map) :
           Interface::Context<PAMI::Context> (client, id),
           _client (client),
           _context ((pami_context_t)this),
@@ -294,7 +294,6 @@ namespace PAMI
           _contextid (id),
 	  _dispatch_id(255),
 	  _geometry_map(geometry_map),
-          _mm (addr, bytes),
           _lock(),
 #ifdef _COLLSHM
           _coll_shm_registration(NULL),
@@ -326,6 +325,7 @@ namespace PAMI
         // Compile-time assertions
         // ----------------------------------------------------------------
 
+        _mm.init(pmm, bytes, 16),
         _self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
 
         //_lock.init(&_mm);

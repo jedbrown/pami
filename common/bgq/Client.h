@@ -160,12 +160,6 @@ namespace PAMI
         for (x = 0; x < n; ++x)
           {
             context[x] = (pami_context_t) & _contexts[x];
-            void *base = NULL;
-            _mm.enable();
-            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-            _mm.memalign((void **)&base, 16, bytes);
-            _mm.disable();
-            PAMI_assertf(base != NULL, "out of sharedmemory in context create x=%d,n=%d,bytes=%zu,mm.size=%zu,mm.available=%zu\n", x, n, bytes, _mm.size(), _mm.available());
 #ifdef USE_COMMTHREADS
             // Note, this is not inializing each comm thread but rather
             // initializing comm threads for each context. context[x] is not usable yet,
@@ -175,7 +169,7 @@ namespace PAMI
             PAMI::Device::CommThread::BgqCommThread::initContext(_clientid, x, context[x]);
 #endif // USE_COMMTHREADS
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                              &_platdevs, base, bytes, _world_geometry,&_geometry_map);
+                                              &_platdevs, &_mm, bytes, _world_geometry, &_geometry_map);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }

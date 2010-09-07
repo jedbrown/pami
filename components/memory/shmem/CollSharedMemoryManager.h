@@ -16,6 +16,8 @@
 #ifndef __components_memory_shmem_CollSharedMemoryManager_h__
 #define __components_memory_shmem_CollSharedMemoryManager_h__
 
+/// \todo #warning This should move into the Coll/CCMI area - it is not PAMI::Memory!
+
 #include <sys/mman.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -95,69 +97,17 @@ namespace PAMI
         CollSharedMemoryManager () :
           _nctrlstrs(0),
           _ndatabufs(0),
-          _shm_id(-1),
           _collshm (NULL),
           _localrank (__global.mapping.task()), // hacking for now, only support single node job
           _localsize (__global.mapping.size())  // hacking for now, only support single node job
         { }
 
-        int init(size_t rank, size_t size) {
+	static void _collshminit(void *mem, size_t bytes, char *key, unsigned attrs, void *cookie) {
+	    CollSharedMemoryManager *thus = (CollSharedMemoryManager *)cookie;
+	    thus->__collshminit(mem, bytes, key, attrs);
+	}
 
-          _localrank = rank;
-          _localsize = size;
-          int lrank;
-          TRACE_DBG((stderr,"init() rank %zu,size %zu\n",rank,size));
-
-#ifdef _POSIX_SHM_OPEN
-          char   shmemfile[512];
-          int    jobkey    = 0;
-          // This should still be OK for BG with one job per node
-          if(getenv("MP_PARTITION"))
-            jobkey = atoi(getenv("MP_PARTITION"));
-          snprintf (shmemfile, 1023, "/pami-collshm-%d",jobkey);
-
-            //const char   * shmemfile = "/unique-pami-coll-mm-shmem-file";
-          _shm_id = shm_open(shmemfile, O_CREAT|O_RDWR, 0600);
-          if( _shm_id != -1) {
-            if ( ftruncate(_shm_id, _size) != -1 )
-            {
-              _collshm = (collshm_t *) mmap(NULL, _size, PROT_READ|PROT_WRITE, MAP_SHARED, _shm_id, 0);
-              if ( _collshm == MAP_FAILED ) {
-                perror("mmap failed");
-                PAMI_assertf(_collshm != MAP_FAILED, "errno %d\n",errno);
-                return PAMI_ERROR;
-              }
-            }
-          } else {
-            TRACE_ERR((stderr, "shm_open failed, %d\n",errno));
-            return PAMI_ERROR;
-          }
-#else
-          unsigned req_segs = 1000; // for xmem attach
-
-          _shm_id = shmget(COLLSHM_KEY, _size, IPC_CREAT | IPC_EXCL | 0600);
-          if (_shm_id != -1) {
-            _collshm = (collshm_t *)shmat(_shm_id, 0, 0);
-            if (_collshm == NULL || _collshm == (collshm_t *)-1) {
-               TRACE_ERR((stderr,"master shmat failed: %d\n", errno));
-               shmctl(_shm_id, IPC_RMID, NULL);
-               return PAMI_ERROR;
-            }
-          } else {
-            _shm_id = shmget(COLLSHM_KEY, 0, 0);
-            if (_shm_id == -1) {
-              TRACE_ERR((stderr,"slave shmget failed\n"));
-              return PAMI_ERROR;
-            }
-            _collshm = (collshm_t *)shmat(_shm_id, 0, 0);
-            if (_collshm == NULL || _collshm == (collshm_t *)-1) {
-              TRACE_ERR((stderr,"slave shmat failed: %d\n", errno));
-              shmctl(_shm_id, IPC_RMID, NULL);
-              return PAMI_ERROR;
-            }
-          }
-#endif /* _POSIX_SHM_OPEN */
-          if (!_localrank) {
+	void __collshminit(void *mem, size_t bytes, char *key, unsigned attrs) {
 
             // both shm_open and shmget should guarantee initial
             // content of the shared memory to be zero
@@ -200,18 +150,15 @@ namespace PAMI
                               _collshm->ctlstr_list      ,
                               _collshm->free_buffer_list ,
                               _collshm->buffer_list      ));
-#ifdef _POSIX_SHM_OPEN
-            shm_unlink("COLLSHM_KEY");
-#else
-            shmctl(_shm_id, IPC_RMID, NULL);
-#endif
-          }
+	}
 
-          lrank = _collshm->ready_count.fetch_and_inc();
-          //lrank = COLLSHM_FETCH_AND_ADD((atomic_p)&_collshm->ready_count, 1);
-          TRACE_DBG((stderr,"task %zu joined, _collshm=%p, _localsize %zu\n", _localrank, _collshm, _localsize));
-          while (_collshm->ready_count.fetch() < _localsize);
+        int init(size_t rank, size_t size) {
 
+          _localrank = rank;
+          _localsize = size;
+
+	  __global.shared_mm.memalign((void **)&_collshm, 16, _size, "/pami-collshmem",
+					_collshminit, (void *)this);
           return PAMI_SUCCESS;
         }
 
@@ -222,6 +169,9 @@ namespace PAMI
 
             if (_collshm != NULL)
             {
+		// __global.shared_mm.free(_collshm);
+
+		/// \todo this should be a barrier, if needed at all.
                _collshm->term_count.fetch_and_inc();
                //COLLSHM_FETCH_AND_ADD((atomic_p)&_collshm->term_count, 1);
                while (_collshm->term_count.fetch() < _localsize);
@@ -560,7 +510,6 @@ namespace PAMI
 
         size_t     _nctrlstrs;
         size_t     _ndatabufs;
-        int        _shm_id;
         collshm_t *_collshm;       // base pointer of the shared memory segment
         size_t     _localrank;      // rank in the local topology
         size_t     _localsize;      // size of the local topology
