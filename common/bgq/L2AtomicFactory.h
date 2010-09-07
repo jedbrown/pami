@@ -15,7 +15,7 @@
 #include "components/memory/MemoryManager.h"
 #include "spi/include/kernel/memory.h"
 
-#define BGQ_WACREGION_SIZE	(64)	// the number of L2 Atomics (uint64_t)
+#define BGQ_WACREGION_SIZE	(256)	// the number of L2 Atomics (uint64_t)
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
