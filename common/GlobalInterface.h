@@ -28,7 +28,7 @@ namespace PAMI
 {
 namespace Interface
 {
-    template<class T_Global>
+    template<class T_Global, class T_Heap, class T_Shared>
     class Global
     {
       public:
@@ -38,7 +38,7 @@ namespace Interface
           topology_global(),
           topology_local(),
 	  heap_mm(),
-	  shared_mm()
+	  shared_mm(&heap_mm)
         {
                 ENFORCE_CLASS_MEMBER(T_Global,mapping);
         }
@@ -50,8 +50,8 @@ namespace Interface
         PAMI::Time	time;
         PAMI::Topology	topology_global;
         PAMI::Topology	topology_local;
-	PAMI::Memory::HeapMemoryManager<T_Global> heap_mm;
-	PAMI::Memory::SharedMemoryManager<T_Global> shared_mm(&heap_mm);
+	T_Heap heap_mm;
+	T_Shared shared_mm;
 
         /// Global location for the processor name
         char processor_name[128];

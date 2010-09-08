@@ -61,7 +61,8 @@ public:
 		size_t esize = mctx * BGQ_WACREGION_SIZE * sizeof(uint64_t);
 		size_t size = lsize * esize;
 
-		pami_result_t rc = _wu_mm[me].init(mm, esize, esize, PAMI_MM_WACREGION);
+		pami_result_t rc = _wu_mm[me].init(mm, esize, esize,
+					PAMI::Memory::PAMI_MM_WACREGION);
 		if (rc != PAMI_SUCCESS) {
 fprintf(stderr, "memalign failed for %zd %zd (avail=%zd)\n", size, size, mm->available());
 			return PAMI_ERROR;

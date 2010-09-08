@@ -116,7 +116,7 @@ namespace PAMI
 	// since we currently wakeup all contexts if any are changed, this is fine.
 	__global._wuRegion_mm->memalign((void **)&_active, sizeof(void *),
 					T_FifoSize * sizeof(*_active),
-					NULL, PAMI::Memory::memzero, NULL);
+					NULL, PAMI::Memory::MemoryManager::memzero, NULL);
 	PAMI_assertf(_active, "Out of WAC Region memory allocating FIFO active flags");
 #endif // __pami_target_bgq__
         }

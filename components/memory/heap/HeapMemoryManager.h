@@ -21,34 +21,31 @@ namespace PAMI
 {
   namespace Memory
   {
-    class HeapMemoryManager<class T_Global> : public MemoryManager
+    class HeapMemoryManager : public MemoryManager
     {
-    protected:
-      friend class PAMI::Interface::Global<T_Global>;
+    public:
 
-      inline HeapMemoryManager<T_Global> () :
+      inline HeapMemoryManager () :
         MemoryManager ()
         {
 		_attrs = PAMI_MM_PRIVATE;
         }
 
-      inline ~HeapMemoryManager<T_Global> ()
+      inline ~HeapMemoryManager ()
 	{
 	}
 
-    public:
-	inline void init (MemoryManager *mm, size_t bytes, size_t alignment,
-			unsigned attrs, char *key)
+	inline pami_result_t init (MemoryManager *mm, size_t bytes, size_t alignment,
+			unsigned attrs = 0, const char *key = NULL,
+			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
 	{
 		PAMI_abortf("HeapMemoryManager cannot be init()");
-	}
-	inline void init (void * addr, size_t bytes, size_t alignment, unsigned attrs)
-	{
-		PAMI_abortf("HeapMemoryManager cannot be init()");
+		return PAMI_ERROR;
 	}
 
 	inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes,
-			char *key, _mm_init_fn *init_fn, void *cookie)
+			const char *key = NULL,
+			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
 	{
 #ifdef USE_MEMALIGN
 		int rc = posix_memalign (memptr, alignment, bytes);

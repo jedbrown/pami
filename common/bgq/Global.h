@@ -33,6 +33,8 @@
 #include "Mapping.h"
 #include "Topology.h"
 #include "common/bgq/L2AtomicFactory.h"
+#include "components/memory/heap/HeapMemoryManager.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
 
 #ifndef PAMI_MAX_NUM_CLIENTS
 /** \todo PAMI_MAX_NUM_CLIENTS needs to be setup by pami.h */
@@ -68,7 +70,9 @@ void globalDumpHexData(const char * pstring, const uint32_t *buffer, size_t n_in
 
 namespace PAMI
 {
-  class Global : public Interface::Global<PAMI::Global>
+  class Global : public Interface::Global<PAMI::Global,
+			PAMI::Memory::HeapMemoryManager,
+			PAMI::Memory::SharedMemoryManager>
   {
     public:
 
@@ -134,14 +138,10 @@ namespace PAMI
 		size = strtoull(env, NULL, 0) * 1024 * 1024;
 	}
 
-        int fd, rc;
-
-        // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
         TRACE_ERR((stderr, "Global() .. size = %zu\n", size));
-        void * ptr = NULL;
 	mm.init(&shared_mm, size, 1, 0, shmemfile);
         (void)initializeMapCache(personality, &mm, ll, ur, min, max,
-                    ((mm.attrs() & PAMI_MM_SHARED) != 0); //shared initialization
+              ((mm.attrs() & PAMI::Memory::PAMI_MM_SHARED) != 0)); //shared initialization
 
         mapping.init(_mapcache, personality);
         PAMI::Topology::static_init(&mapping);
@@ -170,7 +170,7 @@ namespace PAMI
         topology_global.subTopologyLocalToMe(&topology_local);
         PAMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
 //fprintf(stderr, "__global.mm size=%zd\n", mm.size());
-        l2atomicFactory.init(&mm, &mapping, &topology_local);
+        l2atomicFactory.init(&mm, &heap_mm, &mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));
 

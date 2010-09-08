@@ -33,11 +33,6 @@ namespace PAMI
     static const unsigned int PAMI_MM_L2ATOMIC  = 4;
     static const unsigned int PAMI_MM_WACREGION = 8;
 
-    static void memzero(void *mem, size_t bytes, char *key, unsigned attrs, void *cookie)
-    {
-    	memset(mem, 0, bytes);
-    }
-
     class MemoryManager
     {
       private:
@@ -47,33 +42,39 @@ namespace PAMI
 	/// \param[in] off	Addition (meta) data needed
 	/// \param[in] align	Alignment required (power of two)
 	///
-	inline size_t padding(void *base, size_t off, size_t align) {
+	static inline size_t padding(void *base, size_t off, size_t align) {
 		return (((size_t)base + off + (align - 1)) & ~(align - 1)) -
 			(size_t)base;
 	}
       public:
+	static const unsigned int MMKEYSIZE = 128;
+	typedef void MM_INIT_FN(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie);
 
-        virtual void init (void *addr, size_t bytes, size_t alignment = 1, unsigned attrs = 0); // DEPRECATED
-        virtual void init (MemoryManager *mm, size_t bytes, size_t alignment = 1,
-					unsigned attrs = 0, char *key = NULL,
-					MM_INIT_FN *init_fn = NULL, void *cookie = NULL););
-        virtual pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes,
-			char *key = NULL,
-			MM_INIT_FN *init_fn = NULL, void *cookie = NULL);
-	static const int MMKEYSIZE = 128;
-	typedef void MM_INIT_FN(void *mem, size_t bytes, char *key, unsigned attrs, void *cookie);
+    static void memzero(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie)
+    {
+    	memset(mem, 0, bytes);
+    }
+
 
         ///
         /// \brief Empty base memory manager constructor
         ///
-        inline MemoryManager ()
+        inline MemoryManager () :
+	_base(NULL),
+	_size(0),
+	_offset(0),
+	_enabled(false),
+	_attrs(0),
+	_meta(NULL),
+	_alignment(0)
         {
           TRACE_ERR((stderr, "%s, this = %p\n", __PRETTY_FUNCTION__, this));
-          init (NULL, 0);
-        };
+        }
 
         ///
         /// \brief Base memory manager constructor with initial memory buffer
+        ///
+        /// DEPRECATED?
         ///
         /// \param[in] addr  Address of the memory to be managed
         /// \param[in] bytes Number of bytes of memory to manage
@@ -81,8 +82,15 @@ namespace PAMI
         inline MemoryManager (void * addr, size_t bytes, unsigned attrs = 0)
         {
           TRACE_ERR((stderr, "%s(%p, %zu), this = %p\n", __PRETTY_FUNCTION__,addr,bytes, this));
-          init (addr, bytes, attrs);
-        };
+		_base = addr;
+		_size = bytes;
+		_attrs = attrs;
+		_alignment = 1;
+	  	_meta = (MemoryManagerHeader *)_base;
+	  	_offset = padding(_base, sizeof(*_meta), _alignment);
+	  	new (_meta) MemoryManagerHeader();
+          	_enabled = true;
+        }
 
         ///
         /// \brief Intialize a memory manager from another memory manager
@@ -92,43 +100,34 @@ namespace PAMI
         /// \param[in] alignment (opt) Default/minimum alignment
         /// \param[in] attrs     (opt) Attributes for memory (addr,bytes)
         ///
-        inline void init (MemoryManager *mm, size_t bytes, size_t alignment,
-					unsigned attrs, char *key)
+        virtual inline pami_result_t init(MemoryManager *mm,
+					size_t bytes, size_t alignment = 1,
+					unsigned attrs = 0, const char *key = NULL,
+					MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
         {
-		pami_result_t rc = mm->memalign((void **)&_base, alignment, bytes, key);
-		PAMI_assertf(rc == PAMI_SUCCESS, "failed to allocate memory for new mm");
-		_attrs = mm->attrs() | attrs;
-          	_size = bytes;
 	  	PAMI_assert_debugf(!(alignment & (alignment - 1)), "%zd: alignment must be power of two", alignment);
-	  	_alignment = alignment;
-	  	_meta = (MemoryManagerHeader *)_base;
-	  	_offset = padding(_base, sizeof(*_meta), alignment);
-	  	new (&_meta) MemoryManagerHeader();
+		if (mm) {
+			// make new allocation...
+			pami_result_t rc = mm->memalign((void **)&_base, alignment, bytes,
+								key, init_fn, cookie);
+			if (rc != PAMI_SUCCESS) {
+				return rc;
+			}
+			_attrs = mm->attrs() | attrs;
+          		_size = bytes;
+	  		_alignment = alignment;
+	  		_meta = (MemoryManagerHeader *)_base;
+		} else {
+			// "reset" - discard arena
+			// this isn't really correct for multiple participants
+			_meta->acquire();
+			// subsequent new() will effectively release lock...
+		}
+	  	_offset = padding(_base, sizeof(*_meta), _alignment);
+	  	new (_meta) MemoryManagerHeader();
           	_enabled = true;
-
-        ///
-        /// \brief Intialize a memory manager with a memory buffer
-        ///
-        /// DEPRECATED
-        ///
-        /// \param[in] addr      Address of the memory to be managed
-        /// \param[in] bytes     Number of bytes of memory to manage
-        /// \param[in] alignment (opt) Default/minimum alignment
-        /// \param[in] attrs     (opt) Attributes for memory (addr,bytes)
-        ///
-        inline void init (void * addr, size_t bytes, size_t alignment, unsigned attrs)
-        {
-          TRACE_ERR((stderr, "%s(%p, %zu), this = %p\n", __PRETTY_FUNCTION__,addr,bytes, this));
-          _base   = (uint8_t *) addr;
-          _size   = bytes;
-	  _attrs  = attrs;
-	  PAMI_assert_debugf(!(alignment & (alignment - 1)), "%zd: alignment must be power of two", alignment);
-	  _alignment = alignment;
-	  _meta = (MemoryManagerHeader *)_base;
-	  _offset = padding(_base, sizeof(*_meta), alignment);
-	  new (&_meta) MemoryManagerHeader();
-          _enabled = true;
-        };
+		return PAMI_SUCCESS;
+	}
 
         ///
         /// \brief Memory syncronization
@@ -196,11 +195,13 @@ namespace PAMI
 	///
 	/// Anonymous (private) chunks do not use this object
 	///
-	class MemoryManagerChunk : public PAMI::Queue::Element {
+	/// Can't use util/queue/*Queue.h since they all depend on MemoryManager.
+	///
+	class MemoryManagerChunk {
 	public:
-		MemoryManagerChunk(char *key, size_t align, size_t size) :
-		PAMI::Queue::Element(),
+		MemoryManagerChunk(const char *key, size_t align, size_t size)
 		{
+			_next = NULL;
 			strcpy(_key, key);
 			_raw_data = staticSize(this, align, size);
 			_raw_size = _raw_data + size;
@@ -213,9 +214,15 @@ namespace PAMI
 		/// \param[in] size	Size of user request
 		/// \return	padding needed to hold meta data and align user addr
 		///
-		static staticSize(void *thus, size_t align, size_t size) {
-			return padding(thus, sizeof(MemoryManagerChunk), align);
+		static size_t staticSize(void *thus, size_t align, size_t size) {
+			return MemoryManager::padding(thus, sizeof(MemoryManagerChunk), align);
 		}
+
+		/// \brief Return next chunk
+		inline MemoryManagerChunk *next() { return _next; }
+
+		/// \brief Return next chunk
+		inline void next(MemoryManagerChunk *m) { _next = m; }
 
 		/// \brief Return total length of raw chunk
 		inline size_t size() { return _raw_size; }
@@ -229,40 +236,61 @@ namespace PAMI
 		/// \brief Determine if chunk is a match for key
 		/// \param[in] key	Kay value searching for
 		/// \return	boolean indicating match
-		inline bool isMatch(char *key) {
+		inline bool isMatch(const char *key) {
 			return (key ? strncmp(key, _key, MMKEYSIZE) == 0 : false);
 		}
 	private:
+		MemoryManagerChunk *_next;
 		size_t _raw_data;
 		size_t _raw_size;
 		char _key[MMKEYSIZE];
 	}; // class MemoryManagerChunk
 
 	/// \brief Class to contain the root header of a MemoryManager
-	class MemoryManagerHeader :	public PAMI::Queue,
-					public PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>
-	{
+	///
+	/// Can't use util/queue/*Queue.h or components/atomic/*... since they all
+	/// depend on MemoryManager.
+	///
+	class MemoryManagerHeader {
 	public:
 		MemoryManagerHeader() :
-		PAMI::Queue(),
-		PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>()
+		_pub_allocs(NULL),
+		_priv_allocs(NULL),
+		_mutex(0)
 		{
-	  		// _meta->_mutex.init(NULL); // should be no-op.
-	  		// _meta->_allocations.init(NULL); // should be no-op/redundant
 		}
 
 		/// \brief Search shared chunks for matching key
 		/// \param[in] key	Key to look for
 		/// \return Matching chunk object, or NULL if not found
-		inline MemoryManagerChunk *find(char *key) {
-			MemoryManagerChunk *m = (MemoryManagerChunk *)head();
+		inline MemoryManagerChunk *find(const char *key) {
+			MemoryManagerChunk *m = _pub_allocs;
 			while (m) {
 				if (m->isMatch(key)) { 
 					return m;
 				}
-				m = (MemoryManagerChunk *)m->next();
+				m = m->next();
 			}
+			return NULL;
 		}
+
+		// caller holds lock!
+		inline void push(MemoryManagerChunk *m) {
+			m->next(_pub_allocs);
+			_pub_allocs = m;
+		}
+
+		inline void acquire() {
+			while (__sync_fetch_and_add(&_mutex, 1) != 0);
+		}
+
+		inline void release() {
+			_mutex = 0;
+		}
+	private:
+		MemoryManagerChunk *_pub_allocs;
+		void *_priv_allocs;
+		size_t _mutex;
 	}; // class MemoryManagerHeader
 
         ///
@@ -280,15 +308,16 @@ namespace PAMI
         /// \param[in]  init_fn   (opt) Initializer
         /// \param[in]  cookie    (opt) Opaque data for initializer
         ///
-        inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes,
-			char *key, MM_INIT_FN *init_fn, void *cookie)
+        virtual inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes,
+			const char *key = NULL,
+			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
 	{
 	  if (key && strlen(key) >= MMKEYSIZE) {
 		return PAMI_INVAL;
 	  }
 	  _meta->acquire();
 	  size_t len = bytes;
-	  uint8_t *addr = _base + _offset;
+	  uint8_t *addr = (uint8_t *)_base + _offset;
 	  size_t pad;
 	  if (key) {
 		// "public" (shared) allocation
@@ -307,7 +336,7 @@ namespace PAMI
 	  	m = new (addr) MemoryManagerChunk(key, alignment, bytes);
 		PAMI_assert_debugf(pad == m->padding(), "MemoryManagerChunk padding changed");
 	  	_meta->push(m);
-		addr = m->address();
+		addr = (uint8_t *)m->address();
 	  } else {
 		// private allocation
 	  	pad = padding(addr, 0, alignment);
@@ -349,7 +378,7 @@ namespace PAMI
           }
 
           return _size - _offset - pad;
-        };
+        }
 
         ///
         /// \brief Return the size of the managed memory buffer
@@ -361,7 +390,7 @@ namespace PAMI
           TRACE_ERR((stderr, "%s %zu\n", __PRETTY_FUNCTION__,_size));
           PAMI_assert_debug(_base != NULL);
           return _size;
-        };
+        }
 
         ///
         /// \brief Return the base address of the managed memory buffer
@@ -372,7 +401,7 @@ namespace PAMI
         {
           PAMI_assert_debug(_base != NULL);
           return _base;
-        };
+        }
 
       protected:
 
@@ -383,8 +412,8 @@ namespace PAMI
 	unsigned _attrs;
 	MemoryManagerHeader *_meta;
 	size_t _alignment;
-    };
-  };
-};
+    }; // class MemoryManager
+  }; // namespace Memory
+}; // namespace PAMI
 
 #endif // __components_memory_MemoryManager_h__

@@ -34,7 +34,7 @@ namespace PAMI
 {
   namespace Memory
   {
-    class SharedMemoryManager<class T_Global> : public MemoryManager
+    class SharedMemoryManager : public MemoryManager
     {
 	struct shmhdr_t {
 		size_t ref_count;
@@ -47,15 +47,14 @@ namespace PAMI
 		char key[MMKEYSIZE];
 	};
 #endif
-      protected:
-	friend class PAMI::Interface::Global<T_Global>;
+      public:
 
 	/// \brief This class is a wrapper for the shm_open/ftruncate/mmap sequence
 	///
 	/// Unlike general MemoryManagers, it does not actually contain any memory
 	/// instead it provides an interface into the OS's shared memory pool.
 	///
-        inline SharedMemoryManager<T_Global> (MemoryManager *heapmm) :
+        inline SharedMemoryManager (MemoryManager *heapmm) :
           MemoryManager ()
         {
 		_attrs = PAMI_MM_SHARED;
@@ -63,27 +62,30 @@ namespace PAMI
 		_mm = heapmm;
         }
 
-        inline ~SharedMemoryManager<T_Global> ()
+        inline ~SharedMemoryManager ()
         {
 		// if this only happens at program exit, just unlink all keys...
         }
 
-      public:
 
-	inline void init (MemoryManager *mm, size_t bytes, size_t alignment,
-			unsigned attrs, char *key)
+	inline pami_result_t init (MemoryManager *mm, size_t bytes, size_t alignment,
+			unsigned attrs = 0, const char *key = NULL,
+			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
 	{
 		PAMI_abortf("SharedMemoryManager cannot be init()");
-	}
-	inline void init (void * addr, size_t bytes, size_t alignment, unsigned attrs)
-	{
-		PAMI_abortf("SharedMemoryManager cannot be init()");
+		return PAMI_ERROR;
 	}
 
 	/// \todo How to enforce alignment?
 	inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes,
-			char *key, _mm_init_fn *init_fn, void *cookie)
+			const char *key = NULL,
+			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
 	{
+		pami_result_t rc;
+		shmhdr_t *hdr;
+		void *ptr;
+		size_t rawbytes = bytes + sizeof(*hdr);
+		bool first;
 	if (_attrs == PAMI_MM_SHARED) {
 		// should we keep track of each shm_open, so that we can
 		// later shm_unlink?
@@ -98,23 +100,25 @@ namespace PAMI
 
 		// maybe use GCC atomics on the shared memory chunk, in order to
 		// synchronize init, and in free will need to ensure memory gets zeroed.
-		bytes += sizeof(hdr);
-#ifdef _POSIX_SHM_OPEN
+		int lrc;
+//#ifdef _POSIX_SHM_OPEN // This is NOT a valid selector for POSIX shm_open!!!
+#if 1
+		int fd;
 		sem_t *sem = sem_open(key, O_CREAT, 0600, 0);
 		if (sem == NULL) return PAMI_ERROR;
 
-		rc = shm_open (key, O_CREAT | O_EXCL | O_RDWR, 0600);
-		bool first = (rc != -1); // must be the first...
+		lrc = shm_open (key, O_CREAT | O_EXCL | O_RDWR, 0600);
+		first = (lrc != -1); // must be the first...
 
-		if (!first) rc = shm_open (key, O_CREAT | O_RDWR, 0600);
-		if (rc != -1)
+		if (!first) lrc = shm_open (key, O_CREAT | O_RDWR, 0600);
+		if (lrc != -1)
 		{
-			fd = rc;
-			rc = ftruncate( fd, bytes );
+			fd = lrc;
+			lrc = ftruncate( fd, rawbytes );
 		}
-		if ( rc != -1 )
+		if ( lrc != -1 )
 		{
-			void * ptr = mmap( NULL, bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+			ptr = mmap( NULL, rawbytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 			if ( ptr != MAP_FAILED )
 			{
 				goto syncup;
@@ -125,24 +129,6 @@ namespace PAMI
 		// need to destroy file?
 		// shm_unlink(key); // should not unlink until all close?
 		// (but, must ensure O_EXCL works so can't unlink here... ?
-		//
-		// assuming failed because we're SMP mode, but really should do a better
-		// job of error analysis.
-
-		// switch to only ever try prival/local allocs
-		_attrs = PAMI_MM_PRIVATE;
-	}
-
-		rc = _mm->memalign(memptr, alignment, bytes, key, init_fn, cookie);
-
-		if (rc != PAMI_SUCCESS) return PAMI_ERROR;
-		if (init_fn)
-		{
-			init_fn(*memptr, bytes, key, PAMI_MM_PRIVATE, cookie);
-		//
-		// else? or always? memset(*memptr, 0, bytes);
-		}
-		return PAMI_SUCCESS;
 
 #else // ! _POSIX_SHM_OPEN
 #warning Need to write SysV Shmem equivalent
@@ -161,7 +147,7 @@ namespace PAMI
 		}
 		// yukky hash code
 
-		int id = shmget(kkey, bytes, IPC_CREAT | IPC_EXCL | 0600);
+		int id = shmget(kkey, rawbytes, IPC_CREAT | IPC_EXCL | 0600);
 		if (id == -1) {
 			id = shmget(kkey, 0, 0);
 			if (id == -1) {
@@ -175,10 +161,27 @@ namespace PAMI
 			return PAMI_ERROR;
 		}
 #endif // ! _POSIX_SHM_OPEN
+		//
+		// assuming failed because we're SMP mode, but really should do a better
+		// job of error analysis.
+
+		// switch to only ever try private/local allocs
+		_attrs = PAMI_MM_PRIVATE;
+	}
+	// not shared, we're first, last, all...
+
+		rc = _mm->memalign(memptr, alignment, bytes, key, init_fn, cookie);
+
+		if (rc != PAMI_SUCCESS) return PAMI_ERROR;
+		memset(*memptr, 0, bytes);
+		if (init_fn)
+		{
+			init_fn(*memptr, bytes, key, PAMI_MM_PRIVATE, cookie);
+		}
+		return PAMI_SUCCESS;
 syncup:
-		shmhdr_t *hdr = (*)ptr;
+		hdr = (shmhdr_t *)ptr;
 		ptr = (void *)(hdr + 1);
-		bytes -= sizeof(*hdr);
 		if (first)
 		{
 			init_fn(ptr, bytes, key, PAMI_MM_SHARED, cookie);
@@ -188,10 +191,10 @@ syncup:
 		else
 		{
 			__sync_fetch_and_add(&hdr->ref_count, 1);
-			while (!hdr->init_done); // better way than spinning?
+			while (!hdr->init_done); // any better way than spinning?
 		}
 #if MM_FREE
-		_allocs[i].total_bytes = bytes + sizeof(*hdr);
+		_allocs[i].total_bytes = rawbytes;
 		_allocs[i].hdr = hdr;
 #ifdef _POSIX_SHM_OPEN
 		strncpy(_allocs[i].key, key, MMKEYSIZE);

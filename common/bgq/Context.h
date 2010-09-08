@@ -284,7 +284,7 @@ namespace PAMI
     public:
       inline Context (pami_client_t client, size_t clientid, size_t id, size_t num,
                       PlatformDeviceList *devices,
-                      MemoryManager * pmm, size_t bytes,
+                      PAMI::Memory::MemoryManager * pmm, size_t bytes,
                       BGQGeometry *world_geometry,
 		      std::map<unsigned, pami_geometry_t> *geometry_map) :
           Interface::Context<PAMI::Context> (client, id),

@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
         PAMI::Memory::MemoryManager mm;
-        mm.init(argv, argc); // anything
+        mm.init(&mm, argc); // anything
 
         COUNTER_HELPER(PAMI::Counter::GccNodeCounter, counter1, mm);
         COUNTER_HELPER(PAMI::Counter::GccProcCounter, counter2, mm);

@@ -132,9 +132,7 @@ public:
 	seed(s)
 	{
 		size_t size = 32*1024;
-		void *ptr = malloc(size);
-		assert(ptr);
-		mm.init(ptr, size);
+		mm.init(&__global.heap_mm, size);
 
 		size_t x;
 		unsigned long long t1, t0 = PAMI_Wtimebase();

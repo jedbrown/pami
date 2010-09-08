@@ -282,7 +282,7 @@ namespace PAMI
               size_t size = sizeof(size_t) * (2 * npeers + 1);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() size = %zu\n", size));
 	      static char key[128];
-	      sprintf(key, "/client%d-shm-ncontexts", clientid);
+	      sprintf(key, "/client%zd-shm-ncontexts", clientid);
               mm.memalign ((void **)&ncontexts, 16, size, key);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() ncontexts = %p\n", ncontexts));
 
@@ -320,15 +320,15 @@ namespace PAMI
               // _all_ of the contexts
               T_Fifo * all_fifos = NULL;
               size = ((sizeof(T_Fifo) + 15) & 0xfffffff0) * total_fifos_on_node;
-	      sprintf(key, "/client%d-shm-allfifos", clientid);
+	      sprintf(key, "/client%zd-shm-allfifos", clientid);
               mm.memalign ((void **)&all_fifos, 16, size, key);
 
               // Allocate an array of shared memory devices, one for each
               // context in this _task_ (from heap, not from shared memory)
               ShmemDevice * devices;
-              int rc;
-	      rc = __global.heap_mm.memalign((void **) & devices, 16, sizeof(*devices) * n);
-              PAMI_assertf(rc == 0, "posix_memalign failed for ShmemDevice[%zu], errno=%d\n", n, errno);
+              pami_result_t rc;
+	      rc = __global.heap_mm.memalign((void **)&devices, 16, sizeof(*devices) * n);
+              PAMI_assertf(rc == PAMI_SUCCESS, "memalign failed for ShmemDevice[%zu], rc=%d\n", n, rc);
 
               // Instantiate the shared memory devices
               for (i = 0; i < n; ++i)
