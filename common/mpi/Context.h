@@ -283,12 +283,11 @@ namespace PAMI
                       size_t                 clientid,
                       size_t                 id,
                       size_t                 num,
-                      PlatformDeviceList    *devices,
-                      void                  *addr,
+                      PlatformDeviceList *devices,
+                      Memory::MemoryManager *mm,
                       size_t                 bytes,
                       MPIGeometry           *world_geometry,
-                      Memory::MemoryManager *mm,
-                      std::map<unsigned, pami_geometry_t> *geometry_map):
+                      std::map<unsigned, pami_geometry_t> *geometry_map) :
         Interface::Context<PAMI::Context> (client, id),
         _client (client),
         _context(this),

@@ -35,20 +35,25 @@
 #include "Mapping.h"
 #include "Topology.h"
 #include "common/bgp/LockBoxFactory.h"
+#include "components/memory/heap/HeapMemoryManager.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
 
 namespace PAMI
 {
-    class Global : public Interface::Global<PAMI::Global>
+    class Global : public Interface::Global<PAMI::Global,
+				PAMI::Memory::HeapMemoryManager,
+				PAMI::Memory::SharedMemoryManager>
     {
       public:
 
         inline Global () :
-          Interface::Global<PAMI::Global>(),
+          Interface::Global<PAMI::Global,
+			PAMI::Memory::HeapMemoryManager,
+			PAMI::Memory::SharedMemoryManager>(),
           personality (),
           mapping(personality),
+	  mm(),
           _mapcache (),
-          _memptr (NULL),
-          _memsize (0),
           lockboxFactory()
         {
           //Interface::Global<PAMI::Global>::time.init(personality.clockMHz());
@@ -62,42 +67,8 @@ namespace PAMI
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-          int fd, rc;
-          size_t n = bytes;
+	  mm.init(&shared_mm, size, 1, 0, shmemfile);
 
-          // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-          rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-          PAMI_assertf(rc != -1, "shm_open(\"%s\", O_CREAT | O_RDWR, 0600) failed, errno=%d\n", shmemfile, errno)
-          fd = rc;
-          rc = ftruncate( fd, n );
-          PAMI_assertf(rc != -1, "ftruncate(%d, %zu) failed, errno=%d\n", fd, n, errno);
-          void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-          if (ptr == MAP_FAILED) {
-                PAMI_assertf(errno == ENOMEM, "mmap(NULL, %zu, PROT_READ | PROT_WRITE, MAP_SHARED, %d, 0) failed, errno = %d\n", n, fd, errno);
-                // PAMI_assert(mode == SMP)
-                close(fd);
-                shm_unlink(shmemfile);
-                fd = -1;
-                // just get some memory... remember, this is a ctor and is called pre-main
-                ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-                PAMI_assertf(ptr != MAP_FAILED, "mmap(NULL, %zu, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0) failed, errno = %d\n", n, errno);
-          }
-
-          size_t bytes_used = _mapcache.init (personality, ptr, n);
-          // Round up to the page size
-          size = (bytes_used + pagesize - 1) & ~(pagesize - 1);
-          if (fd != -1) {
-                // Truncate to this size.
-                rc = ftruncate( fd, size );
-                  PAMI_assertf(rc != -1, "ftruncate(%d, %zu) failed, errno=%d\n", fd, size, errno);
-          } else {
-                void *v = ptr;
-                ptr = mremap(v, n, size, 0);
-                PAMI_assertf(ptr != MAP_FAILED, "mremap(%p, %zu, %zu, 0) failed, errno = %d\n", v, n, size, errno);
-          }
-          _memptr  = ptr;
-          _memsize = bytes_used;
-          mapping.init(_mapcache, personality);
           lockboxFactory.init(&mapping);
           pami_coord_t ll, ur;
           size_t min, max;
@@ -131,12 +102,11 @@ namespace PAMI
 
         PAMI::BgpPersonality	personality;
         PAMI::Mapping		mapping;
+	PAMI::Memory::MemoryManager mm;
 
       private:
 
         PAMI::BgpMapCache	_mapcache;
-        void			*_memptr;
-        size_t			_memsize;
 
       public:
 

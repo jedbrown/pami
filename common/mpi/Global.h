@@ -23,6 +23,9 @@
 #include "Mapping.h"
 #include "Topology.h"
 #include <mpi.h>
+#include "components/memory/heap/HeapMemoryManager.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
+
 namespace PAMI
 {
     static void shutdownfunc()
@@ -30,7 +33,9 @@ namespace PAMI
       MPI_Finalize();
     }
 
-    class Global : public Interface::Global<PAMI::Global>
+    class Global : public Interface::Global<PAMI::Global,
+				PAMI::Memory::HeapMemoryManager,
+				PAMI::Memory::SharedMemoryManager>
     {
           // Simple class to control MPI initialization independent of other classes.
           class MPI
@@ -50,7 +55,9 @@ namespace PAMI
       public:
 
         inline Global () :
-          Interface::Global<PAMI::Global>(),
+          Interface::Global<PAMI::Global,
+		PAMI::Memory::HeapMemoryManager,
+		PAMI::Memory::SharedMemoryManager>(),
           mapping()
         {
           // Time gets its own clockMHz

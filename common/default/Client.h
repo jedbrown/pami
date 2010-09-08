@@ -28,7 +28,7 @@ namespace PAMI
             _client (client),
             _references (1),
             _ncontexts (0),
-            _mm (name, 1024*1024)
+            _mm ()
         {
           TRACE_ERR((stderr, ">> Client::Client(), this = %p\n", this));
 
@@ -38,6 +38,7 @@ namespace PAMI
           // Set the client name string.
           memset ((void *)_name, 0x00, sizeof(_name));
           strncpy (_name, name, sizeof(_name) - 1);
+	  initializeMemoryManager();
 
           result = PAMI_SUCCESS;
           TRACE_ERR((stderr, "<< Client::Client()\n"));
@@ -57,13 +58,13 @@ namespace PAMI
           TRACE_ERR((stderr, ">> Client::generate_impl(\"%s\", %p)\n", name, client));
 
           pami_result_t result = PAMI_ERROR;
-          int rc = 0;
+          pami_result_t rc;
 
           // Needs error-checking and locks for thread safety
           T_Client * clientp = NULL;
-          rc = posix_memalign((void **) & clientp, 16, sizeof (T_Client));
+          rc = __global.heap_mm.memalign((void **) & clientp, 16, sizeof (T_Client));
 
-          if (rc != 0) PAMI_abort();
+          if (rc != PAMI_SUCCESS) PAMI_abort();
 
           new (clientp) T_Client (name, (pami_client_t) clientp, result);
           *client = clientp;
@@ -126,13 +127,8 @@ namespace PAMI
                 for (x = 0; x < n; ++x)
                   {
                     context[x] = (pami_context_t) & _contexts[x];
-                    void *base = NULL;
-                    _mm.enable();
-                    _mm.memalign((void **)&base, 16, bytes);
-                    _mm.disable();
-                    PAMI_assertf(base != NULL, "out of sharedmemory in context create\n");
                     new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                                     &_platdevs, base, bytes);
+                                                     &_platdevs, &_mm, bytes);
                     //_context_list->pushHead((QueueElem *)&context[x]);
                     //_context_list->unlock();
                   }
@@ -321,57 +317,28 @@ namespace PAMI
         char            _name[256];
 
         Memory::SharedMemoryManager _mm;
-/*
+
         inline void initializeMemoryManager ()
         {
           size_t bytes     = 1024 * 1024;
           size_t pagesize  = 4096;
 
           char * jobstr = getenv ("PAMI_JOB_ID");
+	  char shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
 
           if (jobstr)
-            snprintf (_shmemfile, 1023, "/pami-client-%s-%s", _name, jobstr);
+            snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s-%s", _name, jobstr);
           else
-            snprintf (_shmemfile, 1023, "/pami-client-%s", _name);
+            snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s", _name);
 
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-          int fd, rc;
-          size_t n = bytes;
-
-          // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-          rc = shm_open (_shmemfile, O_CREAT | O_RDWR, 0600);
-
-//fprintf (stderr, "initializeMemoryManager() .. shmemfile = \"%s\", rc = %d\n", shmemfile, rc);
-          if ( rc != -1 )
-            {
-              fd = rc;
-              rc = ftruncate( fd, n );
-
-//fprintf (stderr, "initializeMemoryManager() .. rc = %d\n", rc);
-              if ( rc != -1 )
-                {
-                  void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-
-//fprintf (stderr, "initializeMemoryManager() .. ptr = %p, MAP_FAILED = %p\n", ptr, MAP_FAILED);
-                  if ( ptr != MAP_FAILED )
-                    {
-                      _mm.init (ptr, n);
-                      return;
-                    }
-                }
-            }
-
-//perror (NULL);
-//fprintf (stderr, "initializeMemoryManager() .. allocate memory from heap\n");
-
-          // Failed to create shared memory .. fake it using the heap ??
-          _mm.init (malloc (n), n);
+          _mm.init(&__global.shared_mm, size, 1, 0, shmemfile);
 
           return;
         }
-*/
+
     }; // end class PAMI::Common::Client
   }; // end namespace PAMI::Common
 }; // end namespace PAMI

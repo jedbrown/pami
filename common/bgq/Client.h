@@ -723,7 +723,7 @@ namespace PAMI
       inline void initializeMemoryManager ()
       {
         TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::initializeMemoryManager\n", this, _clientid));
-        char   shmemfile[1024];
+        char   shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
         //size_t bytes     = 1024*1024;
         //size_t bytes     = 2048 * 1024;
         size_t bytes     = 8192 * 1024;
@@ -736,7 +736,7 @@ namespace PAMI
             bytes = strtoull(env, NULL, 0) * 1024 * 1024;
           }
 
-        snprintf (shmemfile, 1023, "/pami-client-%s", _name);
+        snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s", _name);
 
         // Round up to the page size
         //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);

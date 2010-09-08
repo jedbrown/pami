@@ -197,10 +197,10 @@ namespace PAMI
       friend class Interface::Context<PAMI::Context>;
 
       inline Context (pami_client_t client, size_t clientid, size_t contextid, size_t num,
-                      PlatformDeviceList *devices, void * addr, size_t bytes) :
+                      PlatformDeviceList *devices,
+			PAMI::Memory::MemoryManager * pmm, size_t bytes) :
           Interface::Context<PAMI::Context> (client, contextid),
-          Common::Context<PlatformDeviceList> (client, clientid, contextid, num, devices),
-          _mm (addr, bytes)
+          Common::Context<PlatformDeviceList> (client, clientid, contextid, num, devices)
       {
         TRACE_ERR((stderr, ">> Context::Context()\n"));
         // ----------------------------------------------------------------
@@ -210,6 +210,9 @@ namespace PAMI
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
+	pmm->enable();
+	_mm.init(pmm, bytes, 16);
+	pmm->disable();
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 
         TRACE_ERR((stderr, "<< Context::Context()\n"));

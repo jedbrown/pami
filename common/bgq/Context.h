@@ -325,7 +325,9 @@ namespace PAMI
         // Compile-time assertions
         // ----------------------------------------------------------------
 
-        _mm.init(pmm, bytes, 16),
+	pmm->enable();
+        _mm.init(pmm, bytes, 16);
+	pmm->disable();
         _self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
 
         //_lock.init(&_mm);

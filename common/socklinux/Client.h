@@ -78,13 +78,8 @@ namespace PAMI
         for (x = 0; x < n; ++x)
           {
             context[x] = (pami_context_t) & _contexts[x];
-            void *base = NULL;
-            _mm.enable();
-            _mm.memalign((void **)&base, 16, bytes);
-            _mm.disable();
-            PAMI_assertf(base != NULL, "out of sharedmemory in context create\n");
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                             &_platdevs, base, bytes);
+                                             &_platdevs, &_mm, bytes);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }

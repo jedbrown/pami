@@ -786,36 +786,18 @@ namespace PAMI
   private:
     inline void initializeMemoryManager ()
       {
-        char   shmemfile[1024];
+        char   shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
         size_t bytes     = 8192*1024;
         size_t pagesize  = 4096;
         int    jobkey    = 0;
         if(getenv("MP_PARTITION"))
           jobkey = atoi(getenv("MP_PARTITION"));
 
-        snprintf (shmemfile, 1023, "/pami-client-%d-%s", jobkey,
-                  ((LapiImpl::Client*)&_lapiClient[0])->GetName());
+        snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s",
+		((LapiImpl::Client*)&_lapiClient[0])->GetName());
         // Round up to the page size
         size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
-        int fd, rc;
-        size_t n = bytes;
-
-        // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-        rc = shm_open (shmemfile, O_CREAT|O_RDWR,0600);
-        if ( rc != -1 )
-          {
-            fd = rc;
-            rc = ftruncate( fd, n );
-            void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_FILE|MAP_SHARED, fd, 0);
-            if ( ptr != MAP_FAILED )
-              {
-                _mm.init (ptr, n);
-                return;
-              }
-          }
-        // Failed to create shared memory .. fake it using the heap ??
-        PAMI_abort();
-        _mm.init (malloc (n), n);
+	_mm.init(&__global.shared_mm, size, 1, 0, shmemfile);
 
         return;
       }

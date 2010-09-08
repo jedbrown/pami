@@ -31,11 +31,11 @@ static inline pami_result_t initializeMemoryManager(const char *name, size_t byt
 					size_t numparts = 0, bool ismaster = false) {
         static size_t _bytes = 0;
         static void *_ptr = NULL;
-        char shmemfile[1024];
+        char shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
 
         if (!_ptr) {
 		
-                snprintf(shmemfile, 1023, "/pami-test-%s", name);
+                snprintf(shmemfile, sizeof(shmemfile) - 1, "/pami-test-%s", name);
 
         	mm.init(&__global.shared_mm, bytes, 1, 0, shmemfile);
 		_ptr = mm.base();

@@ -146,13 +146,8 @@ namespace PAMI
           {
           TRACE_ERR((stderr, "BGP::Client::createContext %u\n", x));
             context[x] = (pami_context_t) & _contexts[x];
-            void *base = NULL;
-            _mm.enable();
-            _mm.memalign((void **)&base, 16, bytes);
-            _mm.disable();
-            PAMI_assertf(base != NULL, "out of sharedmemory in context create x=%d,n=%d,bytes=%zu,mm.size=%zu,mm.available=%zu\n", x, n, bytes, _mm.size(), _mm.available());
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                             &_platdevs, base, bytes, _world_geometry, &_geometry_map);
+                                             &_platdevs, &_mm, bytes, _world_geometry, &_geometry_map);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
@@ -449,40 +444,16 @@ namespace PAMI
       inline void initializeMemoryManager ()
       {
         TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-        char   shmemfile[1024];
+        char   shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
         size_t bytes     = 1024 * 1024;
         //size_t pagesize  = 4096;
 
-        snprintf (shmemfile, 1023, "/pami-client-%s", _name);
+        snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s", _name);
 
         // Round up to the page size
         //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-        int fd, rc;
-        size_t n = bytes;
-
-        // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-        rc = shm_open (shmemfile, O_CREAT | O_RDWR, 0600);
-
-        if ( rc != -1 )
-          {
-            fd = rc;
-            rc = ftruncate( fd, n );
-
-            if ( rc != -1 )
-              {
-                void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-
-                if ( ptr != MAP_FAILED )
-                  {
-                    _mm.init (ptr, n);
-                    return;
-                  }
-              }
-          }
-
-        // Failed to create shared memory .. fake it using the heap ??
-        _mm.init (malloc (n), n);
+	_mm.init(&__global.shared_mm, bytes, 1, 0, shmemfile);
 
         return;
       }

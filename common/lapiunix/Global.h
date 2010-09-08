@@ -24,18 +24,25 @@
 #include "Topology.h"
 #include "common/lapiunix/lapifunc.h"
 #include <map>
+#include "components/memory/heap/HeapMemoryManager.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
 
 namespace PAMI
 {
-  class Global : public Interface::Global<PAMI::Global>
-  {
-  public:
-    inline Global () :
-      Interface::Global<PAMI::Global>(),
-      mapping()
-      {
-        // Time gets its own clockMHz
-        time.init(0);
+    class Global : public Interface::Global<PAMI::Global,
+				PAMI::Memory::HeapMemoryManager,
+				PAMI::Memory::SharedMemoryManager>
+    {
+      public:
+
+        inline Global () :
+          Interface::Global<PAMI::Global,
+		PAMI::Memory::HeapMemoryManager,
+		PAMI::Memory::SharedMemoryManager>(),
+          mapping()
+        {
+          // Time gets its own clockMHz
+          time.init(0);
           {
             size_t min=0, max=0;
             mapping.init(min, max);

@@ -121,13 +121,8 @@ namespace PAMI
         int x;
         for (x = 0; x < n; ++x) {
           context[x] = (pami_context_t)&_contexts[x];
-          void *base = NULL;
-          _mm.enable();
-          _mm.memalign((void **)&base, 16, bytes);
-          _mm.disable();
-          PAMI_assertf(base != NULL, "out of sharedmemory in context create\n");
           new (&_contexts[x]) PAMI::Context(this, _clientid, x, n,
-                                            &_platdevs, base, bytes, _world_geometry, &_mm,&_geometry_map);
+                                            &_platdevs, &_mm, bytes, _world_geometry, &_geometry_map);
           //_context_list->pushHead((QueueElem *)&context[x]);
           //_context_list->unlock();
           _ncontexts = n;
@@ -435,38 +430,14 @@ namespace PAMI
     
     inline void initializeMemoryManager ()
       {
-        char   shmemfile[1024];
+        char   shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
         size_t bytes     = 1024*1024;
         size_t pagesize  = 4096;
 
-        snprintf (shmemfile, 1023, "/pami-client-%s", _name);
+        snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s", _name);
         // Round up to the page size
         size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
-        int fd, rc;
-        size_t n = bytes;
-
-        // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
-        rc = shm_open (shmemfile, O_CREAT|O_RDWR,0600);
-        //fprintf(stderr,"rc = shm_open (%s, O_CREAT|O_RDWR,0600) = %d\n",shmemfile,rc);
-        if ( rc != -1 )
-          {
-            fd = rc;
-            rc = ftruncate( fd, n );
-            void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_FILE|MAP_SHARED, fd, 0);
-            //fprintf(stderr,"void * ptr = mmap( NULL, %zu, PROT_READ | PROT_WRITE, MAP_FILE|MAP_SHARED, fd, 0) = %p\n",n,ptr);
-            if ( ptr != MAP_FAILED )
-              {
-                _mm.init (ptr, n);
-                return;
-              }
-          }
-        // Abort if we *should* have created shmem, but allow single process nodes to continue
-        //fprintf(stderr,"__global.topology_local.size() %zu\n",__global.topology_local.size());
-        //fprintf(stderr,"__global.topology_global.size() %zu\n",__global.topology_global.size());
-        //fprintf(stderr,"__global.mapping.torusDims() %zu\n",__global.mapping.torusDims());
-        if(__global.topology_local.size() > 1) PAMI_abort();
-        // Failed to create shared memory .. fake it using the heap ??
-        _mm.init (malloc (n), n);
+	_mm.init(&__global.shared_mm, size, 1, 0, shmemfile);
         return;
       }
 
