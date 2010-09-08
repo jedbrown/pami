@@ -400,9 +400,15 @@ namespace PAMI
         Client *c = (Client*)cookie;
         for(size_t n=0; n<c->_ncontexts; n++)
           {
-            c->_contexts[n]->_pgas_collreg->analyze_global(n,g,reduce_result[0]);
-            c->_contexts[n]->_p2p_ccmi_collreg->analyze_global(n,g,reduce_result[1]);
-            c->_contexts[n]->_cau_collreg->analyze_global(n,g,reduce_result[2]);
+            c->_contexts[n]->_pgas_collreg->analyze_global(n,g,&reduce_result[0]);
+            c->_contexts[n]->_p2p_ccmi_collreg->analyze_global(n,g,&reduce_result[1]);
+            c->_contexts[n]->_cau_collreg->analyze_global(n,g,&reduce_result[2]);
+#if 0
+//#ifdef _COLLSHM
+            // collshm registration can not be used together with the cau registration
+            // shared memory region would have conflicts
+            c->_contexts[n]->_collshm_collreg->analyze_global(n,g,&reduce_result[3]);
+#endif // _COLLSHM
           }
       }
 
@@ -418,7 +424,9 @@ namespace PAMI
                                                         void                  * cookie)
       {
         LAPIGeometry              *new_geometry = NULL;
-        uint64_t                  to_reduce[3];
+        uint64_t                  to_reduce_vec[16];
+        uint64_t                  *to_reduce;
+        uint                      to_reduce_count;
         // If our new geometry is NOT NULL, we will create a new geometry
         // for this client.  This new geometry will be populated with a
         // set of algorithms.
@@ -426,19 +434,29 @@ namespace PAMI
           {
             new_geometry=(LAPIGeometry*) malloc(sizeof(*new_geometry));
             new(new_geometry)LAPIGeometry((pami_client_t)this,
-                                          (LAPIGeometry*)parent,
-                                          &__global.mapping,
-                                          id,
-                                          slice_count,
-                                          rank_slices);
+                                         (LAPIGeometry*)parent,
+                                         &__global.mapping,
+                                         id,
+                                         slice_count,
+                                         rank_slices);
+
+            PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getLocalMasterTopology();
+            to_reduce_count = 3 + local_master_topology->size();
+            if (to_reduce_count >16) {
+               to_reduce = (uint64_t *)malloc(to_reduce_count * sizeof(uint64_t)); 
+            } else {
+               to_reduce = &(to_reduce_vec[0]);
+            }
             for(size_t n=0; n<_ncontexts; n++)
               {
                 _contexts[n]->_pgas_collreg->analyze_local(n,new_geometry,&to_reduce[0]);
                 _contexts[n]->_p2p_ccmi_collreg->analyze_local(n,new_geometry,&to_reduce[1]);
                 _contexts[n]->_cau_collreg->analyze_local(n,new_geometry,&to_reduce[2]);
-#ifdef _COLLSHM
-                    // coll shm device is currently only enabled for world_geometry
-                    // _contexts[n]->_coll_shm_collreg->analyze(n, new_geometry);
+#if 0
+//#ifdef _COLLSHM
+                // collshm registration can not be used together with the cau registration
+                // shared memory region would have conflicts
+                _contexts[n]->_coll_shm_collreg->analyze_local(n, new_geometry, &to_reduce[3]);
 #endif // _COLLSHM
               }
 	    new_geometry->processUnexpBarrier();
@@ -474,7 +492,7 @@ namespace PAMI
             new(cr)LAPIClassRouteId(ar_algo,
                                    new_geometry,
                                    to_reduce,
-                                   3,
+                                   to_reduce_count,
                                    cr_func,
                                    (void*)this,
                                    fn,
@@ -494,6 +512,8 @@ namespace PAMI
                 return PAMI_INVAL;
               }
           }
+
+        if (to_reduce_count > 16) free(to_reduce);
         return PAMI_SUCCESS;
       }
 

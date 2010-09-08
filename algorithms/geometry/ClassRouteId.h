@@ -76,9 +76,9 @@ namespace PAMI
           ar.cookie                               = c;
           // algorithm not needed here
           memset(&ar.options,0,sizeof(ar.options));
-          ar.cmd.xfer_allreduce.sndbuf            = (char*)c->_bitmask;
+          ar.cmd.xfer_allreduce.sndbuf            = (char*)c->_inval;
           ar.cmd.xfer_allreduce.stype             = PAMI_BYTE;
-          ar.cmd.xfer_allreduce.stypecount        = sizeof(*c->_bitmask)*c->_count;
+          ar.cmd.xfer_allreduce.stypecount        = sizeof(*c->_inval)*c->_count;
           ar.cmd.xfer_allreduce.rcvbuf            = (char*)c->_result;
           ar.cmd.xfer_allreduce.rtype             = PAMI_BYTE;
           ar.cmd.xfer_allreduce.rtypecount        = sizeof(*c->_result)*c->_count;

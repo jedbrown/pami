@@ -237,10 +237,10 @@ namespace PAMI
         Client *c = (Client*)cookie;
         for(size_t n=0; n<c->_ncontexts; n++)
           {
-            c->_contexts[n]._pgas_collreg->analyze_global(n,g,reduce_result[0]);
-            c->_contexts[n]._p2p_ccmi_collreg->analyze_global(n,g,reduce_result[1]);
-            c->_contexts[n]._oldccmi_collreg->analyze_global(n,g,reduce_result[2]);
-            c->_contexts[n]._ccmi_collreg->analyze_global(n,g,reduce_result[3]);
+            c->_contexts[n]._pgas_collreg->analyze_global(n,g,&reduce_result[0]);
+            c->_contexts[n]._p2p_ccmi_collreg->analyze_global(n,g,&reduce_result[1]);
+            c->_contexts[n]._oldccmi_collreg->analyze_global(n,g,&reduce_result[2]);
+            c->_contexts[n]._ccmi_collreg->analyze_global(n,g,&reduce_result[3]);
           }
       }
 

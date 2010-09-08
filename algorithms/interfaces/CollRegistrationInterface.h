@@ -48,7 +48,7 @@ namespace PAMI
        */
       inline pami_result_t analyze_global(size_t         context_id,
                                           T_Geometry    *geometry,
-                                          uint64_t       in_val);
+                                          uint64_t      *in_val);
 
 
       /** Can we deprecate/remove this? */
@@ -70,7 +70,7 @@ namespace PAMI
     template <class T_Collregistration, class T_Geometry>
     inline pami_result_t CollRegistration<T_Collregistration,T_Geometry>::analyze_global(size_t      context_id,
                                                                                          T_Geometry *geometry,
-                                                                                         uint64_t    in_val)
+                                                                                         uint64_t   *in_val)
     {
       return static_cast<T_Collregistration*>(this)->analyze_global_impl(context_id, geometry, in_val);
     }

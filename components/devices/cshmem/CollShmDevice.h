@@ -798,7 +798,7 @@ public:
              {
                // recalculate tree structure
                _root = root;
-               getchildren_knary(_rrank, MIN(k, _nranks-1), _nranks, &_children[0], &(_nchildren), &(_parent));
+               getchildren_knary(_rrank, MIN(k, MAX(1,_nranks-1)), _nranks, &_children[0], &(_nchildren), &(_parent));
              }
              _setRole(); // _role may change even if _root does not change
           }
@@ -1434,13 +1434,15 @@ public:
         static const size_t sizeof_multisync_msg    = sizeof(CollShmMessage<pami_multisync_t, T_CollShmDevice>);
         static const size_t sizeof_multicombine_msg = sizeof(CollShmMessage<pami_multicombine_t, T_CollShmDevice>);
 
-        CollShmModel(PAMI::Device::Generic::Device *device, unsigned commid, PAMI::Topology *topology, T_MemoryManager *csmm) :
+        //CollShmModel(PAMI::Device::Generic::Device *device, unsigned commid, PAMI::Topology *topology, T_MemoryManager *csmm) :
+        CollShmModel(PAMI::Device::Generic::Device *device, unsigned commid, PAMI::Topology *topology, T_MemoryManager *csmm, void *ctrlstr) :
         PAMI::Device::Interface::MulticastModel<CollShmModel,NillCollShmDevice,sizeof_msg>(*device, _status),
         PAMI::Device::Interface::MultisyncModel<CollShmModel,NillCollShmDevice,sizeof_msg>(*device, _status),
         PAMI::Device::Interface::MulticombineModel<CollShmModel,NillCollShmDevice,sizeof_msg>(*device, _status),
         _peer(topology->rank2Index(__global.mapping.task())),
         _npeers(topology->size()),
-        _csdevice(device, commid, topology, csmm, csmm->getWGCtrlStr())
+        // _csdevice(device, commid, topology, csmm, csmm->getWGCtrlStr())
+         _csdevice(device, commid, topology, csmm, ctrlstr)
         {
             //TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
             // PAMI_assert(device == _g_l_bcastwq_dev);

@@ -481,6 +481,16 @@ namespace PAMI
 
       inline pami_result_t initCollectives()
         {
+          PAMI::Topology *local_master_topo = (PAMI::Topology *) ((PAMI::Geometry::Lapi *)_world_geometry)->getLocalMasterTopology();
+          uint64_t *invec = (uint64_t *)malloc((3 + local_master_topo->size()) * sizeof(uint64_t));
+          // for cau classroute initialization
+          invec[2]  = 0xFFFFFFFFFFFFFFFFULL;  
+          for (int i = 0; i < local_master_topo->size(); ++i)  invec[3+i] = 0ULL;
+
+	  //	  _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
+	  //	  new(_ccmi_collreg) CCMICollreg(_client, (pami_context_t)this, _contextid ,_clientid,_lapi_device);
+	  //	  _ccmi_collreg->analyze(_contextid, _world_geometry);
+
           _p2p_ccmi_collreg=(P2PCCMICollreg*) malloc(sizeof(*_p2p_ccmi_collreg));
           new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
                                                 _context,
@@ -496,13 +506,16 @@ namespace PAMI
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 #if 0
 //#ifdef _COLLSHM
+         // collshm registration can not be used togather with cau registration
+         // shared memory region would have conflicts
+
          // only enable collshm for context 0
           if (_contextid == 0)
           {
             _coll_shm_collreg = (LAPICollShmCollreg *) malloc(sizeof(*_coll_shm_collreg));
             new(_coll_shm_collreg) LAPICollShmCollreg(_client, _clientid, _context, _contextid,
                 PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, _clientid, _contextid));
-            _coll_shm_collreg->analyze(0, _world_geometry);
+            _coll_shm_collreg->analyze_global(0, _world_geometry, &invec[3]);
           }
           else
             _coll_shm_collreg = NULL;
@@ -518,8 +531,10 @@ namespace PAMI
                                        __global.mapping,
                                        _lapi_handle);
           // We analyze global here to get the proper device specific info
-          _cau_collreg->analyze_global(_contextid, _world_geometry, 0xFFFFFFFF);
+          _cau_collreg->analyze_global(_contextid, _world_geometry, &invec[2]);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
+
+          free(invec);
           return PAMI_SUCCESS;
         }
 

@@ -113,7 +113,7 @@ namespace PAMI
             return analyze(context_id, geometry, 0);
           }
 
-        inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t in)
+        inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t *in)
           {
             return PAMI_SUCCESS;
           }

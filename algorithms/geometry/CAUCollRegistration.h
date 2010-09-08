@@ -169,7 +169,9 @@ namespace PAMI
 
             // Allocate the local models
             T_LocalModel                     *local_model  = (T_LocalModel*)_model_allocator.allocateObject();
-            new(local_model)T_LocalModel(&_local_devs, geometry->comm(), local_topo, &_csmm);
+            void                             *csmm_ctrlstr = (void *) geometry->getKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI);
+            // fprintf(stderr, "CollShm control structure address, geometry %p - csmm_ctrlstr %p\n", geometry, csmm_ctrlstr);
+            new(local_model)T_LocalModel(&_local_devs, geometry->comm(), local_topo, &_csmm, csmm_ctrlstr);
 
             // Allocate the local native interface
             T_LocalNI_AM                     *ni           = (T_LocalNI_AM*)_ni_allocator.allocateObject();
@@ -227,15 +229,17 @@ namespace PAMI
             // into a single 64 bit integer.  Later, we may want to increase the size from one integer
             // to an array to be reduced (if more than 64 class routes are desired).
             *out = _reduce_val;
+            // prepare for collshmem device control structure address distribution
+            _csmm.getSGCtrlStrVec(geometry, out+1);
             return PAMI_SUCCESS;
           }
 
-        inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t in)
+        inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t *in)
           {
             // This is where we get our reduction result back from the geometry create operation
             // This bit should show the "highest" available mask of bits
             // This is the value we should use for our class route id
-            int               x        = ffs(in)-1;
+            int               x        = ffs(in[0])-1;
             uint64_t          key;
             if(x!=(int)0xFFFFFFFF)
               {
@@ -280,6 +284,13 @@ namespace PAMI
             geometry->setKey(Geometry::PAMI_GKEY_MCAST_CLASSROUTEID,gi);
             geometry->setKey(Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID,gi);
             geometry->setKey(Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID,gi);
+
+            uint master_rank   = ((PAMI::Topology *)geometry->getLocalTopology())->index2Rank(0);
+            uint master_index  = local_master_topo->rank2Index(master_rank);
+            void *ctrlstr      = (void *)in[master_index+1];
+            if (ctrlstr == NULL) 
+              ctrlstr = _csmm.getWGCtrlStr();
+            geometry->setKey(Geometry::PAMI_GKEY_GEOMETRYCSNI,ctrlstr);
 
             // Complete the final analysis and population of the geometry structure
             // with the algorithm list

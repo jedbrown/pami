@@ -466,15 +466,6 @@ namespace PAMI
           return (ctlstr_t *)ctlstr;
         }
 
-        // hack for getting per geometry shared memory region, need to determine this information
-        // geometry creation allreduce
-        ctlstr_t *getWGCtrlStr()
-        {
-          TRACE_DBG(("WGCtrlStr = %x\n", ((ctlstr_t *)_collshm->ctlstr_memory + (_localsize -1))));
-          return ((ctlstr_t *)_collshm->ctlstr_memory + (_localsize -1));
-        }
-
-
         ///
         /// \brief Return a list of shm ctrl struct to the free list
         ///
@@ -503,6 +494,33 @@ namespace PAMI
 
           TRACE_DBG(("_nctrlstrs = %d\n", _nctrlstrs));
 
+        }
+
+        // get coll shmem control struture address for world geometry
+        ctlstr_t *getWGCtrlStr()
+        {
+          TRACE_DBG(("WGCtrlStr = %x\n", ((ctlstr_t *)_collshm->ctlstr_memory + (_localsize -1))));
+          return ((ctlstr_t *)_collshm->ctlstr_memory + (_localsize -1));
+        }
+
+        // fill in a vector of coll shmem control structure addresses for sub-geometries
+        // perform allreduce on the vector during geometry analyze()
+        void getSGCtrlStrVec(pami_geometry_t geo, uint64_t *vec) 
+        {
+
+          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)geo;
+          PAMI::Topology *local_topo    = (PAMI::Topology *)geometry->getLocalTopology();
+          PAMI::Topology *lm_topo       = (PAMI::Topology *)geometry->getLocalMasterTopology();
+
+          uint master_rank              =  local_topo->index2Rank(0);
+          uint master_size              =  lm_topo->size();
+          uint master_index             =  lm_topo->rank2Index(master_rank);
+          uint local_size               =  local_topo->size();
+          uint local_index              =  local_topo->rank2Index(__global.mapping.task());
+
+          for (uint i = 0; i< master_size; ++i) vec[i] = 0xFFFFFFFFFFFFFFFFULL;
+          if (local_index == 0) 
+            vec[master_index] = (uint64_t) getCtrlStr(local_size);
         }
 
       protected:
