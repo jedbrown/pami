@@ -362,31 +362,31 @@ extern "C"
   typedef struct
   {
     /* The following hints use the PAMI_HINT2_* values */
-    uint32_t buffer_registered : 1; /**< Send and receive buffers are ready for RDMA operations  */
-    uint32_t consistency       : 1; /**< Force match ordering semantics                          */
-    uint32_t interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
-    uint32_t no_local_copy     : 1; /**< Disable PAMI making a local copy of data                */
-    uint32_t no_long_header    : 1; /**< Disable long header support                             */
-    uint32_t recv_contiguous   : 1; /**< Assert that receives on this dispatch will all be
+    unsigned buffer_registered : 1; /**< Send and receive buffers are ready for RDMA operations  */
+    unsigned consistency       : 1; /**< Force match ordering semantics                          */
+    unsigned interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
+    unsigned no_local_copy     : 1; /**< Disable PAMI making a local copy of data                */
+    unsigned no_long_header    : 1; /**< Disable long header support                             */
+    unsigned recv_contiguous   : 1; /**< Assert that receives on this dispatch will all be
                                          contiguous using PAMI_BYTE.  If specified during
                                          PAMI_Dispatch_set(), there is no need to set
                                          pami_recv_t::type for the receive.                      */
-    uint32_t recv_copy         : 1; /**< Assert that receives on this dispatch will all use
+    unsigned recv_copy         : 1; /**< Assert that receives on this dispatch will all use
                                          PAMI_DATA_COPY. If specified during PAMI_Dispatch_set(),
                                          there is no need set pami_recv_t::data_fn for the
                                          receive                                                 */
-    uint32_t recv_immediate    : 1; /**< Assert that sends will result in an 'immediate' receive */
+    unsigned recv_immediate    : 1; /**< Assert that sends will result in an 'immediate' receive */
 
     /* The following hints use the PAMI_HINT3_* values */
-    uint32_t use_rdma          : 2; /**< Enable/Disable rdma operations                          */
-    uint32_t use_shmem         : 2; /**< Enable/Disable shared memory optimizations              */
-    uint32_t multicontext      : 2; /**< Parallelize communication across multiple contexts      */
-  } pami_send_hint_t;
+    unsigned use_rdma          : 2; /**< Enable/Disable rdma operations                          */
+    unsigned use_shmem         : 2; /**< Enable/Disable shared memory optimizations              */
+    unsigned multicontext      : 2; /**< Parallelize communication across multiple contexts      */
+  } __attribute__((__packed__)) pami_send_hint_t;
 
   typedef struct
   {
-    uint32_t multicontext      : 2; /**< Parallelize communication across multiple contexts      */
-  } pami_collective_hint_t;
+    unsigned multicontext      : 2; /**< Parallelize communication across multiple contexts      */
+  } __attribute__((__packed__)) pami_collective_hint_t;
 
 
 
