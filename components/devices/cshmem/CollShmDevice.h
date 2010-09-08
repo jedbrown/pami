@@ -873,8 +873,11 @@ public:
             while (_len != 0) {
               if (_role == CHILD) {
                 _wlen = window->produceData(*(PAMI::PipeWorkQueue *)mcombine->data, _len, _device->getSysdep());
-                PAMI_ASSERT(_wlen >= 0);
-                if (_wlen == 0) return PAMI_EAGAIN;
+                if (_wlen == 0) {
+                  _action = NOACTION;
+                  return PAMI_EAGAIN;
+                }
+                PAMI_ASSERT(_wlen > 0);
                 _len  -= _wlen;
                 ++_step ;
                 rc = window->setAvail(_step, 2);
@@ -912,8 +915,11 @@ public:
 
                 // produce new data
                 _wlen = window->produceData(*(PAMI::PipeWorkQueue *)mcombine->data, _len, _device->getSysdep());
-                PAMI_ASSERT(_wlen >= 0);
-                if (_wlen == 0) return PAMI_EAGAIN;
+                if (_wlen == 0) {
+                  _action = NOACTION;
+                  return PAMI_EAGAIN;
+                }
+                PAMI_ASSERT(_wlen > 0);
 
                 ++_step ;
                 _action = READFROM;
@@ -959,7 +965,10 @@ public:
             while (_len != 0) {
               if (_role == PARENT) {
                 _wlen = window->produceData(*(PAMI::PipeWorkQueue *)mcast->src, _len, _device->getSysdep());
-                if (_wlen == 0) return PAMI_EAGAIN;
+                if (_wlen == 0) {
+                  _action = NOACTION;
+                  return PAMI_EAGAIN;
+                }
                 PAMI_ASSERT(_wlen > 0);
                 _len  -= _wlen;
                 ++_step ;
