@@ -58,7 +58,7 @@
 
 #ifdef _COLLSHM
 // Collective shmem device
-#include "components/memory/shmem/CollSharedMemoryManager.h"
+#include "components/devices/cshmem/CollSharedMemoryManager.h"
 #ifdef _LAPI_LINUX
 #include "components/atomic/gcc/GccBuiltin.h"
 #else

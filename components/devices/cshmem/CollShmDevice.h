@@ -23,7 +23,7 @@
 #include "components/devices/MulticombineModel.h"
 #include "components/devices/MulticastModel.h"
 #include "components/devices/FactoryInterface.h"
-#include "components/memory/shmem/CollSharedMemoryManager.h"
+#include "components/devices/cshmem/CollSharedMemoryManager.h"
 #include "common/default/PipeWorkQueue.h"
 
 #undef TRACE_ERR

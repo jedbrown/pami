@@ -7,14 +7,14 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/memory/shmem/CollSharedMemoryManager.h
-/// \brief Shared memory manager class
+/// \file components/devices/cshmem/CollSharedMemoryManager.h
+/// \brief Shared memory buffer manager class for CollShm device
 ///
 /// The class defined in this file uses C++ templates. C++ templates
 /// require all source code to be #include'd from a header file.
 ///
-#ifndef __components_memory_shmem_CollSharedMemoryManager_h__
-#define __components_memory_shmem_CollSharedMemoryManager_h__
+#ifndef __components_devices_cshmem_CollSharedMemoryManager_h__
+#define __components_devices_cshmem_CollSharedMemoryManager_h__
 
 /// \todo #warning This should move into the Coll/CCMI area - it is not PAMI::Memory!
 
@@ -522,4 +522,4 @@ namespace PAMI
 #undef PAMI_ASSERT
 #undef TRACE_ERR
 #undef TRACE_DBG
-#endif // __pami_components_memory_shmem_collsharedmemorymanager_h__
+#endif // __pami_components_devices_cshmem_collsharedmemorymanager_h__
