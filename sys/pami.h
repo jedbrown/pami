@@ -366,6 +366,14 @@ extern "C"
     uint32_t interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
     uint32_t no_local_copy     : 1; /**< Disable PAMI making a local copy of data                */
     uint32_t no_long_header    : 1; /**< Disable long header support                             */
+    uint32_t recv_contiguous   : 1; /**< Assert that receives on this dispatch will all be
+                                         contiguous using PAMI_BYTE.  If specified during
+                                         PAMI_Dispatch_set(), there is no need to set
+                                         pami_recv_t::type for the receive.                      */
+    uint32_t recv_copy         : 1; /**< Assert that receives on this dispatch will all use
+                                         PAMI_DATA_COPY. If specified during PAMI_Dispatch_set(),
+                                         there is no need set pami_recv_t::data_fn for the
+                                         receive                                                 */
     uint32_t recv_immediate    : 1; /**< Assert that sends will result in an 'immediate' receive */
 
     /* The following hints use the PAMI_HINT3_* values */
