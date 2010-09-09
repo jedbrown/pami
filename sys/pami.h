@@ -2846,11 +2846,11 @@ extern "C"
    *
    * \param[in]     client    Opaque destination client object
    * \param[in]     task      Opaque destination task object
-   * \param[in,out] endpoints Array of opaque endpoint objects to initialize
+   * \param[out]    endpoints Array of opaque endpoint objects to initialize
    * \param[in,out] count     Length of the endpoint array available/initialized
    *
    * \retval PAMI_INVAL The number endpoints on the task is larger than the
-   *                   size of endpoint array
+   *                    size of endpoint array
    */
   pami_result_t PAMI_Endpoint_createv (pami_client_t     client,
                                        pami_task_t       task,
