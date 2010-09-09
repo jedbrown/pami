@@ -54,12 +54,10 @@ namespace PAMI
 	/// Unlike general MemoryManagers, it does not actually contain any memory
 	/// instead it provides an interface into the OS's shared memory pool.
 	///
-        inline SharedMemoryManager (MemoryManager *heapmm) :
+        inline SharedMemoryManager () :
           MemoryManager ()
         {
 		_attrs = PAMI_MM_SHARED;
-		// allocate some memory for tracking allocations...
-		_mm = heapmm;
         }
 
         inline ~SharedMemoryManager ()
@@ -170,7 +168,7 @@ namespace PAMI
 	}
 	// not shared, we're first, last, all...
 
-		rc = _mm->memalign(memptr, alignment, bytes, key, init_fn, cookie);
+		rc = heap_mm->memalign(memptr, alignment, bytes, key, init_fn, cookie);
 
 		if (rc != PAMI_SUCCESS) return PAMI_ERROR;
 		memset(*memptr, 0, bytes);
@@ -225,7 +223,6 @@ syncup:
 #endif
 
     protected:
-	MemoryManager *_mm;
     }; // class SharedMemoryManager
   }; // namespace Memory
 }; // namespace PAMI

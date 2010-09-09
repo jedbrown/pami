@@ -50,11 +50,13 @@ namespace PAMI
 	static const unsigned int MMKEYSIZE = 128;
 	typedef void MM_INIT_FN(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie);
 
-    static void memzero(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie)
-    {
-    	memset(mem, 0, bytes);
-    }
+	// is this neded? do we always ensure memory is zero?
+	static void memzero(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie)
+	{
+		memset(mem, 0, bytes);
+	}
 
+	static MemoryManager *heap_mm; // reference to __global.heap_mm without circ deps.
 
         ///
         /// \brief Empty base memory manager constructor

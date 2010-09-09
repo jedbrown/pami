@@ -20,6 +20,8 @@ PAMI::Global __global;
 PAMI::Mapping *PAMI::Topology::mapping = NULL;
 pami_coord_t PAMI::Topology::my_coords;
 
+PAMI::Memory::MemoryManager *PAMI::Memory::MemoryManager::heap_mm = &__global.heap_mm;
+
 // These are not in Global.h for a couple reasons.
 // One is to avoid poluting the namespace there,
 // another is that this object should only be accessed by low-level

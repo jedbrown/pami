@@ -38,7 +38,7 @@ namespace Interface
           topology_global(),
           topology_local(),
 	  heap_mm(),
-	  shared_mm(&heap_mm)
+	  shared_mm()
         {
                 ENFORCE_CLASS_MEMBER(T_Global,mapping);
         }
