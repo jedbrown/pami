@@ -38,13 +38,13 @@ namespace CCMI
         /// \brief this call is called when an active message native interface is initialized and
         /// is not supported on all sided native interfaces
         virtual pami_result_t setMulticastDispatch(pami_dispatch_multicast_fn fn,
-                                          void *cookie)
+                                                   void *cookie)
         {
           PAMI_abort();
           return PAMI_ERROR;
         }
         virtual pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_fn fn,
-                                          void *cookie)
+                                                    void *cookie)
         {
           PAMI_abort();
           return PAMI_ERROR;
@@ -61,10 +61,10 @@ namespace CCMI
           PAMI_abort();
           return PAMI_ERROR;
         }
-        virtual pami_result_t multicast(pami_multicast_t *mcast, void *devinfo=NULL) = 0;
-        virtual pami_result_t multisync(pami_multisync_t *msync, void *devinfo=NULL) = 0;
-        virtual pami_result_t multicombine(pami_multicombine_t *mcombine, void *devinfo=NULL) = 0;
-        virtual pami_result_t manytomany(pami_manytomany_t *m2minfo, void *devinfo=NULL) = 0;
+        virtual pami_result_t multicast(pami_multicast_t *mcast, void *devinfo = NULL) = 0;
+        virtual pami_result_t multisync(pami_multisync_t *msync, void *devinfo = NULL) = 0;
+        virtual pami_result_t multicombine(pami_multicombine_t *mcombine, void *devinfo = NULL) = 0;
+        virtual pami_result_t manytomany(pami_manytomany_t *m2minfo, void *devinfo = NULL) = 0;
         virtual pami_result_t send (pami_send_t * parameters)
         {
           PAMI_abort();

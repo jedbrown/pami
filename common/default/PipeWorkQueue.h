@@ -199,9 +199,9 @@ public:
         /// \param[in] buffer         Buffer to use
         /// \param[in] dgsp           Memory layout of a buffer unit
         /// \param[in] dgspcount      Number of repetitions of buffer units
-        /// \param[in] dgspinit       Number of units initially in buffer
+        /// \param[in] bufinit        Number of bytes initially in buffer
         ///
-        inline void configure_impl(PAMI::Memory::MemoryManager *mm, char *buffer, pami_type_t *dgsp, size_t dgspcount, size_t dgspinit) {
+        inline void configure_impl(PAMI::Memory::MemoryManager *mm, char *buffer, pami_type_t *dgsp, size_t dgspcount, size_t bufinit) {
                 PAMI_abortf("DGSP PipeWorkQueue not yet supported");
         }
 

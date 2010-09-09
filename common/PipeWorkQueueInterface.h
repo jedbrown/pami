@@ -96,10 +96,73 @@ namespace PAMI
             /// \param[in] buffer         Buffer to use
             /// \param[in] type           Memory layout of a buffer unit
             /// \param[in] typecount      Number of repetitions of buffer units
-            /// \param[in] typeinit       Number of units initially in buffer
+            /// \param[in] bufinit        Number of bytes initially in buffer
             ///
-            inline void configure(PAMI::Memory::MemoryManager *mm, char *buffer, pami_type_t *type, size_t typecount, size_t typeinit);
+            inline void configure(PAMI::Memory::MemoryManager *mm, char *buffer, pami_type_t *type, size_t typecount, size_t bufinit);
 
+            /// \brief Configure for Many to Many (indexed flat buffer) access.
+            ///
+            /// Only one consumer OR producer at a time is allowed. 
+            ///
+            /// Sets up a flat buffer for indexed access by many to many.
+            ///
+            /// Each index (offset) in the buffer may be consumed or produced independently.
+            ///
+            /// Each index specifies maximum size with an arbitrary "initial fill".   An initial 
+            /// fill of 0 implies a producer-only PWQ.   A FULL initial fill implies a consumer-only 
+            /// PWQ.  Its the users responsibility to only call consumer or producer
+            /// interfaces or unpredictable results may occur.
+            ///
+            /// The interface is similar to PAMI::PipwWorkQueue's except that an index" will be 
+            /// required for all consume/produce calls. 
+            ///
+            /// Warning! The PWQ retains and uses the input arrays, it does NOT copy them.  It 
+            /// may change the contents of these arrays.
+            /// 
+            /// \param[out] unused        REMOVE? Consistent with PAMI::PipeWorkQueue?
+            /// \param[in]  buffer        Buffer to use
+            /// \param[in]  indexcount    Number of indexed access points to the pwq
+            /// \param[in]  dgsp          Memory layout of each buffer unit
+            /// \param[in]  offsets       Array[indexcount] of byte offsets for each indexed access point
+            /// \param[in]  dgspcounts    Array[indexcount] of data type (dgsp) counts 
+            /// \param[in]  bufinit       Array[indexcount] of bytes initially in buffer (storage may be modified)
+            /// 
+            /// \note bufinit must be empty (0) for producer PWQ or full (size of dgsp type * dsgpcounts[index]) for consumer PWQ.
+            /// 
+            inline void configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount, 
+                                  pami_type_t *dgsp, size_t *offsets, size_t *dgspcounts, size_t *bufinit);
+
+            /// \brief Configure for Many to Many (indexed flat buffer) access.
+            ///
+            /// Only one consumer OR producer at a time is allowed. 
+            ///
+            /// Sets up a flat buffer for indexed access by many to many.
+            ///
+            /// Each index (offset) in the buffer may be consumed or produced independently.
+            ///
+            /// Each index specifies maximum size with an arbitrary "initial fill".   An initial 
+            /// fill of 0 implies a producer-only PWQ.   A FULL initial fill implies a consumer-only 
+            /// PWQ.  Its the users responsibility to only call consumer or producer
+            /// interfaces or unpredictable results may occur.
+            ///
+            /// The interface is similar to PAMI::PipwWorkQueue's except that an index" will be 
+            /// required for all consume/produce calls. 
+            ///
+            /// Warning! The PWQ retains and uses the input arrays, it does NOT copy them.  It 
+            /// may change the contents of these arrays.
+            /// 
+            /// \param[out] unused        REMOVE? Consistent with PAMI::PipeWorkQueue?
+            /// \param[in]  buffer        Buffer to use
+            /// \param[in]  indexcount    Number of indexed access points to the pwq (bufinit array only)
+            /// \param[in]  dgsp          Memory layout of each buffer unit
+            /// \param[in]  offset        Byte offset for each indexed access point
+            /// \param[in]  dgspcount     Data type (dgsp) countfor each indexed access point 
+            /// \param[in]  bufinit       Array[indexcount] of bytes initially in buffer (storage may be modified)
+            /// 
+            /// \note bufinit must be empty (0) for producer PWQ or full (size of dgsp type * dsgpcounts[index]) for consumer PWQ.
+            /// 
+            inline void configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount, 
+                                       pami_type_t *dgsp, size_t offset, size_t dgspcount, size_t *bufinit);
             ///
             /// \brief Reset this shared memory work queue.
             ///
@@ -214,6 +277,21 @@ namespace PAMI
             inline size_t bytesAvailableToProduce();
 
             ///
+            /// \brief Return the maximum number of bytes that can be produced into this work queue.
+            ///
+            /// Bytes must be produced into the memory location returned by bufferToProduce() and then
+            /// this work queue \b must be updated with produceBytes().
+            ///
+            /// \see bufferToProduce
+            /// \see produceBytes
+            ///
+            /// \param[in] index of access point
+            ///
+            /// \return Number of bytes that may be produced.
+            ///
+            inline size_t bytesAvailableToProduce(size_t index);
+
+            ///
             /// \brief Return the maximum number of bytes that can be consumed from this work queue.
             ///
             /// Consuming from work queues with multiple consumers must specify the consumer id.
@@ -230,11 +308,34 @@ namespace PAMI
             ///
             inline size_t bytesAvailableToConsume();
 
+            ///
+            /// \brief Return the maximum number of bytes that can be consumed from this work queue.
+            ///
+            /// Bytes must be consumed into the memory location returned by bufferToConsume() and then
+            /// this work queue \b must be updated with consumeBytes().
+            ///
+            /// \see bufferToConsume
+            /// \see consumeBytes
+            ///
+            /// \param[in] index of access point
+            ///
+            /// \return Number of bytes that may be consumed.
+            ///
+            inline size_t bytesAvailableToConsume(size_t index);
+
             /// \brief raw accessor for total number of bytes produced since reset()
             ///
             /// \return number of bytes produced
             ///
             inline size_t getBytesProduced();
+
+            /// \brief raw accessor for total number of bytes produced since reset()
+            ///
+            /// \param[in] index of access point
+            ///
+            /// \return number of bytes produced
+            ///
+            inline size_t getBytesProduced(size_t index);
 
             /// \brief raw accessor for total number of bytes consumed since reset()
             ///
@@ -242,17 +343,40 @@ namespace PAMI
             ///
             inline size_t getBytesConsumed();
 
+            /// \brief raw accessor for total number of bytes consumed since reset()
+            ///
+            /// \param[in] index of access point
+            ///
+            /// \return number of bytes consumed
+            ///
+            inline size_t getBytesConsumed(size_t index);
+
             /// \brief current position for producing into buffer
             ///
             /// \return location in buffer to produce into
             ///
             inline char *bufferToProduce();
 
+            /// \brief current position for producing into buffer
+            ///
+            /// \param[in] index of access point
+            ///
+            /// \return location in buffer to produce into
+            ///
+            inline char *bufferToProduce(size_t index);
+
             /// \brief notify workqueue that bytes have been produced
             ///
-            /// \return number of bytes that were produced
+            /// \param[in] number of bytes that were produced
             ///
             inline void produceBytes(size_t bytes);
+
+            /// \brief notify workqueue that bytes have been produced
+            ///
+            /// \param[in] index of access point
+            /// \param[in] number of bytes that were produced
+            ///
+            inline void produceBytes(size_t index, size_t bytes);
 
             /// \brief current position for consuming from buffer
             ///
@@ -260,11 +384,26 @@ namespace PAMI
             ///
             inline char *bufferToConsume();
 
+            /// \brief current position for consuming from buffer
+            ///
+            /// \param[in] index of access point
+            ///
+            /// \return location in buffer to consume from
+            ///
+            inline char *bufferToConsume(size_t index);
+
             /// \brief notify workqueue that bytes have been consumed
             ///
-            /// \return number of bytes that were consumed
+            /// \param[in] number of bytes that were consumed
             ///
             inline void consumeBytes(size_t bytes);
+
+            /// \brief notify workqueue that bytes have been consumed
+            ///
+            /// \param[in] index of access point
+            /// \param[in] number of bytes that were consumed
+            ///
+            inline void consumeBytes(size_t index, size_t bytes);
 
             /// \brief is workqueue ready for action
             ///
@@ -310,10 +449,26 @@ namespace PAMI
 
         template <class T_PipeWorkQueue>
         void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *mm, char *buffer, pami_type_t *type,
-                                                       size_t typecount, size_t typeinit)
+                                                       size_t typecount, size_t bufinit)
         {
             return static_cast<T_PipeWorkQueue*>(this)->configure_impl(mm, buffer, type,
-                                                                       typecount, typeinit);
+                                                                       typecount, bufinit);
+        }
+
+        template <class T_PipeWorkQueue>
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount, 
+                                  pami_type_t *dgsp, size_t *offsets, size_t *dgspcounts, size_t *bufinit)
+        {
+            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(unused, buffer, indexcount, dgsp, offsets, 
+                                                                       dgspcounts, bufinit);
+        }
+
+        template <class T_PipeWorkQueue>
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount, 
+                                  pami_type_t *dgsp, size_t offset, size_t dgspcount, size_t *bufinit)
+        {
+            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(unused, buffer, indexcount, dgsp, offset, 
+                                                                       dgspcount, bufinit);
         }
 
         template <class T_PipeWorkQueue>
@@ -412,6 +567,54 @@ namespace PAMI
         void PipeWorkQueue<T_PipeWorkQueue>::consumeBytes(size_t bytes)
         {
             return static_cast<T_PipeWorkQueue*>(this)->consumeBytes_impl(bytes);
+        }
+
+        template <class T_PipeWorkQueue>
+        size_t PipeWorkQueue<T_PipeWorkQueue>::bytesAvailableToProduce(size_t index)
+        {
+            return static_cast<T_PipeWorkQueue*>(this)->bytesAvailableToProduce_impl(index);
+        }
+
+        template <class T_PipeWorkQueue>
+        size_t PipeWorkQueue<T_PipeWorkQueue>::bytesAvailableToConsume(size_t index)
+        {
+            return static_cast<T_PipeWorkQueue*>(this)->bytesAvailableToConsume_impl(index);
+        }
+
+        template <class T_PipeWorkQueue>
+        size_t PipeWorkQueue<T_PipeWorkQueue>::getBytesProduced(size_t index)
+        {
+            return static_cast<T_PipeWorkQueue*>(this)->getBytesProduced_impl(index);
+        }
+
+        template <class T_PipeWorkQueue>
+        size_t PipeWorkQueue<T_PipeWorkQueue>::getBytesConsumed(size_t index)
+        {
+            return static_cast<T_PipeWorkQueue*>(this)->getBytesConsumed_impl(index);
+        }
+
+        template <class T_PipeWorkQueue>
+        char * PipeWorkQueue<T_PipeWorkQueue>::bufferToProduce(size_t index)
+        {
+            return static_cast<T_PipeWorkQueue*>(this)->bufferToProduce_impl(index);
+        }
+
+        template <class T_PipeWorkQueue>
+        void PipeWorkQueue<T_PipeWorkQueue>::produceBytes(size_t index, size_t bytes)
+        {
+            return static_cast<T_PipeWorkQueue*>(this)->produceBytes_impl(index,bytes);
+        }
+
+        template <class T_PipeWorkQueue>
+        char * PipeWorkQueue<T_PipeWorkQueue>::bufferToConsume(size_t index)
+        {
+            return static_cast<T_PipeWorkQueue*>(this)->bufferToConsume_impl(index);
+        }
+
+        template <class T_PipeWorkQueue>
+        void PipeWorkQueue<T_PipeWorkQueue>::consumeBytes(size_t index, size_t bytes)
+        {
+            return static_cast<T_PipeWorkQueue*>(this)->consumeBytes_impl(index, bytes);
         }
 
         template <class T_PipeWorkQueue>

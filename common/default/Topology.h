@@ -715,6 +715,15 @@ namespace PAMI {
       }
       return (pami_task_t)-1;
     }
+    /// \brief Nth permuted index in topology
+    ///
+    /// \param[in] index Which index to select
+    /// \return	Nth permuted index or (size_t)-1 if does not exist
+    ///
+    pami_task_t index2PermutedIndex_impl(size_t index) 
+    {
+      return index;
+    }
 
     /// \brief determine index of rank in topology
     ///

@@ -99,6 +99,13 @@ namespace PAMI
       ///
       inline pami_task_t index2Rank(size_t ix);
 
+      /// \brief Nth permuted index in topology
+      ///
+      /// \param[in] ix	Which index to select
+      /// \return	Nth permuted index or (size_t)-1 if does not exist
+      ///
+      inline pami_task_t index2PermutedIndex(size_t index);
+
       /// \brief determine index of rank in topology
       ///
       /// This is the inverse function to index2Rank(ix) above.
@@ -353,6 +360,12 @@ namespace PAMI
       pami_task_t Topology<T_Topology>::index2Rank(size_t ix)
     {
       return static_cast<T_Topology*>(this)->index2Rank_impl(ix);
+    }
+
+   template <class T_Topology>
+      pami_task_t Topology<T_Topology>::index2PermutedIndex(size_t ix)
+    {
+      return static_cast<T_Topology*>(this)->index2PermutedIndex_impl(ix);
     }
 
     template <class T_Topology>

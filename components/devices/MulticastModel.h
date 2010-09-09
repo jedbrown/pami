@@ -54,8 +54,8 @@
    */
   typedef struct
   {
-    size_t               client;	   /**< client to operate within */
-    size_t               context;	   /**< primary context to operate within */
+    size_t               client;     /**< client to operate within */
+    size_t               context;    /**< primary context to operate within */
     size_t               dispatch;         /**< Dispatch identifier */
     pami_callback_t       cb_done;          /**< Completion callback */
     unsigned             connection_id;    /**< A connection is a distinct stream of
@@ -67,7 +67,7 @@
     pami_topology_t      *src_participants; /**< root */
     pami_pipeworkqueue_t *dst;              /**< dest buffer (ignored for one-sided) */
     pami_topology_t      *dst_participants; /**< destinations to multicast to*/
-    const pami_quad_t    *msginfo;	       /**< A extra info field to be sent with the message.
+    const pami_quad_t    *msginfo;         /**< A extra info field to be sent with the message.
                                                   This might include information about
                                                   the data being sent, for one-sided. */
     unsigned            msgcount;          /**< info count*/
@@ -81,8 +81,8 @@
    *
    * Does this accept zero-byte (no data, no metadata) operations?
    *
-   * \param[in] msginfo		Metadata
-   * \param[in] msgcount	Count of metadata
+   * \param[in] msginfo     Metadata
+   * \param[in] msgcount    Count of metadata
    * \param[in] connection_id  Stream ID of data
    * \param[in] root        Sending task
    * \param[in] sndlen      Length of data sent

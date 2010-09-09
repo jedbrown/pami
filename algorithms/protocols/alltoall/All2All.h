@@ -7,7 +7,7 @@
 
 #include "algorithms/composite/Composite.h"
 #include "util/ccmi_util.h"
-
+#include "components/devices/ManytomanyModel.h"
 
 namespace CCMI
 {
@@ -15,34 +15,38 @@ namespace CCMI
   {
     class All2AllProtocol: public CCMI::Executor::Composite
     {
-    protected:
-      Interfaces::NativeInterface *_native;
-      PAMI_GEOMETRY_CLASS *_geometry;
-      pami_manytomanybuf_t _send;
-      pami_manytomanybuf_t _recv;
-      pami_multisync_t _msync;
-      pami_manytomany_t _m2m_info;
-      pami_callback_t _my_cb_done;
-      pami_callback_t _app_cb_done;
-      size_t _my_index;
-      unsigned _donecount;
-
-    public:
-      All2AllProtocol() {};
-    All2AllProtocol(Interfaces::NativeInterface *mInterface,
-                    CCMI::ConnectionManager::CommSeqConnMgr *cmgr,
-                    pami_geometry_t g,
-                    pami_xfer_t *coll,
-                    pami_callback_t cb_done):
-      CCMI::Executor::Composite(),
-        _native(mInterface),
-        _app_cb_done(cb_done),
-        _geometry((PAMI_GEOMETRY_CLASS*)g)
+      protected:
+        Interfaces::NativeInterface *_native;
+        PAMI_GEOMETRY_CLASS   * _geometry;
+        pami_manytomanybuf_t    _send;
+        pami_manytomanybuf_t    _recv;
+        pami_manytomany_t       _m2m_info;
+        pami_callback_t         _my_cb_done;
+        pami_callback_t         _app_cb_done;
+        //size_t _my_index;
+        size_t                * _sendinit;
+        size_t                * _recvinit;
+        unsigned                _donecount;
+        PAMI::M2MPipeWorkQueue  _sendpwq;
+        PAMI::M2MPipeWorkQueue  _recvpwq;
+        CollHeaderData          _metadata;
+      public:
+        All2AllProtocol() {};
+        All2AllProtocol(Interfaces::NativeInterface *mInterface,
+                        CCMI::ConnectionManager::CommSeqConnMgr *cmgr,
+                        pami_geometry_t g,
+                        pami_xfer_t *coll,
+                        pami_callback_t cb_done):
+            CCMI::Executor::Composite(),
+            _native(mInterface),
+            _geometry((PAMI_GEOMETRY_CLASS*)g),
+            _app_cb_done(cb_done)
         {
-          pami_task_t self = __global.mapping.task();
-          pami_topology_t * all = _geometry->getTopology(0);
-          size_t topo_size = PAMI_Topology_size(all);
-          _my_index = PAMI_Topology_taskID2Index(all, self);
+          //pami_task_t self = __global.mapping.task();
+          PAMI::Topology * all = (PAMI::Topology *)_geometry->getTopology(0);
+          size_t topo_size = all->size();
+          TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol size %zu, stypecount %zu, rtypecount %zu\n", this, topo_size, coll->cmd.xfer_alltoall.stypecount,coll->cmd.xfer_alltoall.rtypecount));
+          //_my_index = all->rank2Index(self);
 
 
           _my_cb_done.function = a2aDone;
@@ -51,215 +55,274 @@ namespace CCMI
 
           /// \todo only supporting PAMI_BYTE right now
           //PAMI_Type_sizeof(coll->cmd.xfer_alltoall.stype);
+          PAMI_assert(coll->cmd.xfer_alltoall.stype == PAMI_BYTE);
 
           /// \todo presumed size of PAMI_BYTE?
-          size_t bytes = topo_size * coll->cmd.xfer_alltoall.stypecount * 1;
+          //size_t bytes = topo_size * coll->cmd.xfer_alltoall.stypecount * 1;
 
-          PAMI_PipeWorkQueue_config_flat(_send.buffer,
-                                         coll->cmd.xfer_alltoall.sndbuf,
-                                         bytes,
-                                         bytes);
-          PAMI_PipeWorkQueue_reset(_send.buffer);
+          _sendinit = (size_t*) malloc(sizeof(size_t) * topo_size);
+          PAMI_assert(_sendinit);
+
+          for (size_t i = 0; i < topo_size; ++i)
+            {
+              _sendinit[i] = coll->cmd.xfer_alltoall.stypecount;
+            }
+
+          _send.buffer = &_sendpwq;
+          _send.buffer->configure(NULL,
+                                  coll->cmd.xfer_alltoall.sndbuf,
+                                  topo_size,
+                                  &coll->cmd.xfer_alltoall.stype,
+                                  coll->cmd.xfer_alltoall.stypecount,/// \todo only supporting PAMI_BYTE so offset=length
+                                  coll->cmd.xfer_alltoall.stypecount,
+                                  _sendinit);
+
           _send.participants = all;
-          _send.num_vecs = 1;
-          _send.lengths = &(coll->cmd.xfer_alltoall.stypecount);
-          _send.offsets = (size_t *) NULL;
 
-          PAMI_PipeWorkQueue_config_flat(_recv.buffer,
-                                         coll->cmd.xfer_alltoall.rcvbuf,
-                                         bytes,
-                                         0);
-          PAMI_PipeWorkQueue_reset(_recv.buffer);
+          _recvinit = (size_t*) malloc(sizeof(size_t) * topo_size);
+          PAMI_assert(_recvinit);
+          memset(_recvinit, 0x00, sizeof(size_t)*topo_size);
+
+          _recv.buffer = &_recvpwq;
+          _recv.buffer->configure(NULL,
+                                  coll->cmd.xfer_alltoall.rcvbuf,
+                                  topo_size,
+                                  &coll->cmd.xfer_alltoall.rtype,
+                                  coll->cmd.xfer_alltoall.rtypecount,/// \todo only supporting PAMI_BYTE so offset=length
+                                  coll->cmd.xfer_alltoall.rtypecount,
+                                  _recvinit);
+
           _recv.participants = all;
-          _recv.num_vecs = 1;
-          _recv.lengths = &(coll->cmd.xfer_alltoall.rtypecount);
-          _recv.offsets = (size_t *) NULL;
 
           _m2m_info.send = _send;
-          _m2m_info.metadata = (pami_quad_t*) NULL;
-          _m2m_info.metacount = 0;
-          _m2m_info.num_index = 1;
-          _m2m_info.taskIndex = &_my_index;
-          _m2m_info.client = 0;
-          _m2m_info.context = 0; /// \todo ?
-          _m2m_info.connection_id = 0; /// \todo ?
+
+          // only comm is used in the header
+          _metadata._root  = -1U;
+          _metadata._comm  = _geometry->comm();
+          _metadata._count = -1U;
+          _metadata._phase = 0;
+          _metadata._iteration  = 0;
+          _metadata._op    = 0;
+          _metadata._dt    = 0;
+
+          _m2m_info.msginfo = (pami_quad_t*) & _metadata;
+          _m2m_info.msgcount = 1;
+
+          _m2m_info.taskIndex = NULL; //&_my_index; not used
+          _m2m_info.num_index = 0;    // not used
           _m2m_info.roles = -1U;
 
-          // Initialize the msync
-          _msync.client = 0;
-          _msync.context = 0; /// \todo ?
-          _msync.cb_done.function = cb_msync_done;
-          _msync.cb_done.clientdata = this;
-          _msync.connection_id = 0; /// \todo ?
-          _msync.roles = -1U;
-          _msync.participants = all;
+          _m2m_info.client = 0; /// \todo does NOT support multiclient
+          _m2m_info.context = 0; /// \todo does NOT support multicontext
+
+          _m2m_info.connection_id = _geometry->comm(); /// \todo ?
+
+          _m2m_info.cb_done.function   = a2aDone;
+          _m2m_info.cb_done.clientdata = this;
+
         }
 
-      virtual void start()
-      {
-        _m2m_info.cb_done.function   = a2aDone;
-        _m2m_info.cb_done.clientdata = this;
+        virtual void start()
+        {
+          TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol::start()\n", this));
 
-        // Start the msync. When it completes, it will start the mcast.
-        _native->multisync(&_msync);
-      }
-      void startA2A()
-      {
-        _native->manytomany(&_m2m_info);
-      }
-      static void cb_msync_done(pami_context_t context,
-                                void *arg,
-                                pami_result_t err)
-      {
-        All2AllProtocol *a2a = (All2AllProtocol*) arg;
-        CCMI_assert(a2a != NULL);
+          // Start the barrier. When it completes, it will start the m2m
+          CCMI::Executor::Composite *barrier = (CCMI::Executor::Composite *)
+                                               _geometry->getKey((size_t)0, /// \todo does NOT support multicontext
+                                                                 PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1);
+          CCMI_assert(barrier != NULL);
+          barrier->setDoneCallback (cb_barrier_done, this);
+          //barrier->setConsistency (consistency);
+          barrier->start();
 
-        // Msync is done, start the active message a2a
-        a2a->startA2A();
-      }
+        }
+        void startA2A()
+        {
+          TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol::startA2A()\n", this));
+          _native->manytomany(&_m2m_info);
+        }
+        static void cb_barrier_done(pami_context_t context,
+                                    void *arg,
+                                    pami_result_t err)
+        {
+          TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol::cb_barrier_done\n", arg));
+          All2AllProtocol *a2a = (All2AllProtocol*) arg;
+          CCMI_assert(a2a != NULL);
+
+          // Barrier is done, start the active message a2a
+          a2a->startA2A();
+        }
 
 
-      void notifyRecv(pami_manytomanybuf_t **recv,
-                      size_t *myIndex,
-                      pami_callback_t *cb_done)
-      {
-        *myIndex = _my_index;
-        *recv = (pami_manytomanybuf_t*) &_recv;
-        cb_done->function   = _my_cb_done.function;
-        cb_done->clientdata = _my_cb_done.clientdata;
-      }
+        void notifyRecv(pami_manytomanybuf_t **recv,
+                        size_t *myIndex,
+                        pami_callback_t *cb_done)
+        {
+          TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol::notifyRecv() recv %p\n", this, recv));
+          *myIndex = -1; //_my_index;
+          *recv = & _recv;
+          *cb_done = _my_cb_done;
+        }
 
-      static void a2aDone(pami_context_t context,
-                          void *arg,
-                          pami_result_t err)
-      {
-        All2AllProtocol *a2a = (All2AllProtocol *) arg;
-        CCMI_assert(a2a != NULL);
-        a2a->_donecount++;
-        if((a2a->_donecount == 2) && (a2a->_app_cb_done.function))
-          a2a->_app_cb_done.function (NULL,
-                                      a2a->_app_cb_done.clientdata,
-                                      PAMI_SUCCESS);
-      }
+        static void a2aDone(pami_context_t context,
+                            void *arg,
+                            pami_result_t err)
+        {
+          TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol::a2aDone()\n", arg));
+          All2AllProtocol *a2a = (All2AllProtocol *) arg;
+          CCMI_assert(a2a != NULL);
+
+          a2a->done(context, err);
+        }
+
+        void done(pami_context_t context,
+                  pami_result_t err)
+        {
+          TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol::done() count %u\n", this, _donecount));
+          _donecount++;
+
+          if ((_donecount == 2) && (_app_cb_done.function))
+            {
+              _app_cb_done.function (context,
+                                     _app_cb_done.clientdata,
+                                     err);
+              /// \todo allocator?  reuse from factory?
+              free(_sendinit);
+              free(_recvinit);
+            }
+        }
 
     };
 
 
     template <class T_Composite, MetaDataFn get_metadata, class C>
-      class All2AllFactoryT: public CollectiveProtocolFactory
+    class All2AllFactoryT: public CollectiveProtocolFactory
     {
-    protected:
-      pami_mapidtogeometry_fn _cb_geometry;
-      C *_cmgr;
-      Interfaces::NativeInterface *_native;
-      pami_dispatch_manytomany_fn _fn;
-      CCMI::Adaptor::CollOpPoolT<pami_xfer_t, T_Composite> _free_pool;
-    public:
-    All2AllFactoryT(C *cmgr,
-                     Interfaces::NativeInterface *native):
-      CollectiveProtocolFactory(),
-        _cmgr(cmgr),
-        _native(native)
+      protected:
+        pami_mapidtogeometry_fn _cb_geometry;
+        C *_cmgr;
+        Interfaces::NativeInterface *_native;
+        pami_dispatch_manytomany_fn _fn;
+        CCMI::Adaptor::CollOpPoolT<pami_xfer_t, T_Composite> _free_pool;
+      public:
+        All2AllFactoryT(C *cmgr,
+                        Interfaces::NativeInterface *native):
+            CollectiveProtocolFactory(),
+            _cmgr(cmgr),
+            _native(native)
         {
+          TRACE_ADAPTOR((stderr, "<%p>All2AllFactoryT\n", this));
           _fn = cb_manytomany;
           _native->setManytomanyDispatch(_fn, this);
         }
 
-      virtual ~All2AllFactoryT()
-      {
-      }
+        virtual ~All2AllFactoryT()
+        {
+          TRACE_ADAPTOR((stderr, "<%p>~All2AllFactoryT\n", this));
+        }
 
 
-      void operator delete(void * p)
-      {
-        CCMI_abort();
-      }
+        void operator delete(void * p)
+        {
+          CCMI_abort();
+        }
 
-      unsigned getKey(PAMI_GEOMETRY_CLASS *g, C **cmgr)
-      {
-        return g->comm();
-      }
+        unsigned getKey(PAMI_GEOMETRY_CLASS *g, C **cmgr)
+        {
+          return g->comm();
+        }
 
-      virtual void metadata(pami_metadata_t *mdata)
-      {
-        get_metadata(mdata);
-      }
+        virtual void metadata(pami_metadata_t *mdata)
+        {
+          get_metadata(mdata);
+        }
 
-      virtual Executor::Composite * generate(pami_geometry_t g,
-                                             void *op)
-      {
-        T_Composite *a2a = NULL;
-        pami_callback_t cb_exec_done;
-        PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) g;
-        CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *coll_object = NULL;
+        virtual Executor::Composite * generate(pami_geometry_t g,
+                                               void *op)
+        {
+          TRACE_ADAPTOR((stderr, "<%p>All2AllFactoryT::generate()\n", this));
+          T_Composite *a2a = NULL;
+          pami_callback_t cb_exec_done;
+          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) g;
+          CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *coll_object = NULL;
 
-        unsigned key = getKey((PAMI_GEOMETRY_CLASS*) g, &_cmgr);
-        coll_object = _free_pool.allocate(key);
+          unsigned key = getKey((PAMI_GEOMETRY_CLASS*) g, &_cmgr);
+          coll_object = _free_pool.allocate(key);
 
-        cb_exec_done.function = exec_done;
-        cb_exec_done.clientdata = (void *) coll_object;
+          cb_exec_done.function = exec_done;
+          cb_exec_done.clientdata = (void *) coll_object;
 
-        a2a = new (coll_object->getComposite())
+          a2a = new (coll_object->getComposite())
           T_Composite(_native,
                       _cmgr,
                       (PAMI_GEOMETRY_CLASS *) g,
                       (pami_xfer_t *)op,
                       cb_exec_done);
 
-        coll_object->setXfer((pami_xfer_t *)op);
-        coll_object->setFlag(LocalPosted);
-        coll_object->setFactory(this);
-        geometry->asyncCollectivePostQ().pushTail(coll_object);
-        return a2a;
-      }
-
-      static void cb_manytomany(void *arg,
-                                unsigned conn_id,
-                                pami_quad_t *metadata,
-                                unsigned metacount,
-                                pami_manytomanybuf_t **recv,
-                                size_t *myIndex,
-                                pami_callback_t *cb_done)
-      {
-        All2AllFactoryT *factory = (All2AllFactoryT *) arg;
-        CollHeaderData *md = (CollHeaderData *) metadata;
-        All2AllProtocol *a2a = NULL;
-        int comm = md->_comm;
-        PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
-          PAMI_GEOMETRY_CLASS::getCachedGeometry(comm);
-        if (!geometry)
-        {
-          geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry(comm);
-          PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, comm);
+          coll_object->setXfer((pami_xfer_t *)op);
+          coll_object->setFlag(LocalPosted);
+          coll_object->setFactory(this);
+          geometry->asyncCollectivePostQ().pushTail(coll_object);
+          TRACE_ADAPTOR((stderr, "<%p>All2AllFactoryT::generate() key %u, coll_object %p, a2a %p\n", this, key, coll_object, a2a));
+          return a2a;
         }
-        C *cmgr = factory->_cmgr;
-        unsigned key = factory->getKey(geometry, &cmgr);
 
-        CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *coll_object =
-          (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)
-          geometry->asyncCollectivePostQ().findAndDelete(key);
-        a2a = (T_Composite *) coll_object->getComposite();
-        a2a->notifyRecv(recv, myIndex, cb_done);
-      }
-
-
-      static void exec_done(pami_context_t context,
-                            void *coll_obj,
-                            pami_result_t err)
-      {
-        CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *coll_object =
-          (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) coll_obj;
-        unsigned flag = coll_object->getFlags();
-        if (flag & LocalPosted)
+        static void cb_manytomany(void *arg,
+                                  unsigned conn_id,
+                                  pami_quad_t *msginfo,
+                                  unsigned msgcount,
+                                  pami_manytomanybuf_t **recv,
+                                  size_t *myIndex,
+                                  pami_callback_t *cb_done)
         {
-          pami_xfer_t *xfer = coll_object->getXfer();
-          if (xfer->cb_done)
-            xfer->cb_done(NULL, xfer->cookie, PAMI_SUCCESS);
-          All2AllFactoryT *factory = (All2AllFactoryT *)
-            coll_object->getFactory();
-          factory->_free_pool.free(coll_object);
+          TRACE_ADAPTOR((stderr, "<%p>All2AllFactoryT::cb_manytomany() conn_id %u, msginfo %p, msgcount %u, recv %p\n", arg, conn_id, msginfo, msgcount, recv));
+          All2AllFactoryT *factory = (All2AllFactoryT *) arg;
+          CollHeaderData *md = (CollHeaderData *) msginfo;
+          PAMI_assert(msgcount >= sizeof(CollHeaderData) / (sizeof(pami_quad_t)));
+          All2AllProtocol *a2a = NULL;
+          int comm = md->_comm;
+          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
+                                          PAMI_GEOMETRY_CLASS::getCachedGeometry(comm);
+
+          if (!geometry)
+            {
+              geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry(comm);
+              PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, comm);
+            }
+
+          C *cmgr = factory->_cmgr;
+          unsigned key = factory->getKey(geometry, &cmgr);
+
+          CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *coll_object =
+            (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)
+            geometry->asyncCollectivePostQ().findAndDelete(key);
+          a2a = (T_Composite *) coll_object->getComposite();
+          TRACE_ADAPTOR((stderr, "<%p>All2AllFactoryT::cb_manytomany() key %u, coll_object %p, a2a %p\n", arg, key, coll_object, a2a));
+          a2a->notifyRecv(recv, myIndex, cb_done);
         }
-      }
+
+
+        static void exec_done(pami_context_t context,
+                              void *coll_obj,
+                              pami_result_t err)
+        {
+          TRACE_ADAPTOR((stderr, "<%p>All2AllFactoryT::exec_done()\n", coll_obj));
+          CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *coll_object =
+            (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) coll_obj;
+          unsigned flag = coll_object->getFlags();
+
+          if (flag & LocalPosted)
+            {
+              pami_xfer_t *xfer = coll_object->getXfer();
+
+              if (xfer->cb_done)
+                xfer->cb_done(NULL, xfer->cookie, PAMI_SUCCESS);
+
+              All2AllFactoryT *factory = (All2AllFactoryT *)
+                                         coll_object->getFactory();
+              factory->_free_pool.free(coll_object);
+            }
+        }
     }; //- All2AllFactoryT
 
 
