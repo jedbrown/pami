@@ -141,7 +141,7 @@ namespace PAMI
         TRACE_ERR((stderr, "Global() .. size = %zu\n", size));
 	mm.init(&shared_mm, size, 1, 0, shmemfile);
         (void)initializeMapCache(personality, &mm, ll, ur, min, max,
-              ((mm.attrs() & PAMI::Memory::PAMI_MM_SHARED) != 0)); //shared initialization
+              ((mm.attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) != 0)); //shared initialization
 
         mapping.init(_mapcache, personality);
         PAMI::Topology::static_init(&mapping);

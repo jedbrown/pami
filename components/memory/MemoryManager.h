@@ -18,6 +18,7 @@
 #include <sys/mman.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -27,15 +28,24 @@ namespace PAMI
 {
   namespace Memory
   {
-    static const unsigned int PAMI_MM_PRIVATE   = 1;
-    static const unsigned int PAMI_MM_SHARED    = 2;
+    static const unsigned int PAMI_MM_PROCSCOPE = 1;
+    static const unsigned int PAMI_MM_NODESCOPE = 2;
     // how do platforms add more?
     static const unsigned int PAMI_MM_L2ATOMIC  = 4;
     static const unsigned int PAMI_MM_WACREGION = 8;
 
     class MemoryManager
     {
-      private:
+      public:
+	static const unsigned int MMKEYSIZE = 128;
+	typedef void MM_INIT_FN(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie);
+
+	// is this neded? do we always ensure memory is zero?
+	static void memzero(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie)
+	{
+		memset(mem, 0, bytes);
+	}
+      protected:
 	/// \brief compute the padding needed to provide user with aligned addr
 	///
 	/// \param[in] base	Start address of raw chunk
@@ -46,152 +56,29 @@ namespace PAMI
 		return (((size_t)base + off + (align - 1)) & ~(align - 1)) -
 			(size_t)base;
 	}
-      public:
-	static const unsigned int MMKEYSIZE = 128;
-	typedef void MM_INIT_FN(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie);
 
-	// is this neded? do we always ensure memory is zero?
-	static void memzero(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie)
-	{
-		memset(mem, 0, bytes);
-	}
-
-	static MemoryManager *heap_mm; // reference to __global.heap_mm without circ deps.
-
-        ///
-        /// \brief Empty base memory manager constructor
-        ///
-        inline MemoryManager () :
-	_base(NULL),
-	_size(0),
-	_offset(0),
-	_enabled(false),
-	_attrs(0),
-	_meta(NULL),
-	_alignment(0)
-        {
-          TRACE_ERR((stderr, "%s, this = %p\n", __PRETTY_FUNCTION__, this));
-        }
-
-        ///
-        /// \brief Base memory manager constructor with initial memory buffer
-        ///
-        /// DEPRECATED?
-        ///
-        /// \param[in] addr  Address of the memory to be managed
-        /// \param[in] bytes Number of bytes of memory to manage
-        ///
-        inline MemoryManager (void * addr, size_t bytes, unsigned attrs = 0)
-        {
-          TRACE_ERR((stderr, "%s(%p, %zu), this = %p\n", __PRETTY_FUNCTION__,addr,bytes, this));
-		_base = addr;
-		_size = bytes;
-		_attrs = attrs;
-		_alignment = 1;
-	  	_meta = (MemoryManagerHeader *)_base;
-	  	_offset = padding(_base, sizeof(*_meta), _alignment);
-	  	new (_meta) MemoryManagerHeader();
-          	_enabled = true;
-        }
-
-        ///
-        /// \brief Intialize a memory manager from another memory manager
-        ///
-        /// \param[in] mm        MemoryManager providing buffer
-        /// \param[in] bytes     Number of bytes of memory to manage
-        /// \param[in] alignment (opt) Default/minimum alignment
-        /// \param[in] attrs     (opt) Attributes for memory (addr,bytes)
-        ///
-        virtual inline pami_result_t init(MemoryManager *mm,
-					size_t bytes, size_t alignment = 1,
-					unsigned attrs = 0, const char *key = NULL,
-					MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
-        {
-	  	PAMI_assert_debugf(!(alignment & (alignment - 1)), "%zd: alignment must be power of two", alignment);
-		if (mm) {
-			// make new allocation...
-			pami_result_t rc = mm->memalign((void **)&_base, alignment, bytes,
-								key, init_fn, cookie);
-			if (rc != PAMI_SUCCESS) {
-				return rc;
-			}
-			_attrs = mm->attrs() | attrs;
-          		_size = bytes;
-	  		_alignment = alignment;
-	  		_meta = (MemoryManagerHeader *)_base;
-		} else {
-			// "reset" - discard arena
-			// this isn't really correct for multiple participants
-			_meta->acquire();
-			// subsequent new() will effectively release lock...
+	class MemoryManagerAlloc {
+	public:
+		MemoryManagerAlloc() { }
+		~MemoryManagerAlloc() { }
+		inline size_t addRef() {
+			return __sync_fetch_and_add(&_ref_count, 1);
 		}
-	  	_offset = padding(_base, sizeof(*_meta), _alignment);
-	  	new (_meta) MemoryManagerHeader();
-          	_enabled = true;
-		return PAMI_SUCCESS;
-	}
-
-        ///
-        /// \brief Memory syncronization
-        ///
-        /// \todo Remove? Why is this needed? The \c msync macros defined in
-        ///       Arch.h should be sufficient.
-        ///
-        void sync()
-        {
-          static bool perr = false;
-          int rc = msync((void*)_base, _size, MS_SYNC);
-          if(!perr && rc) {
-            perr=true;
-            fprintf(stderr,  "MemoryManager::msync failed with %d, errno %d: %s\n", rc, errno, strerror(errno));
-          }
-        }
-
-        inline void enable () { _enabled = true; }
-        inline void disable () { _enabled = false; }
-	inline unsigned attrs () { return _attrs; }
-	inline void attrs (unsigned attrs) { _attrs |= attrs; }
-
-#ifdef SUPPORT_MM_FREE
-	//
-	// We keep all allocations on a 16-byte boundary (i.e. (_offset & 0x0f) == 0).
-	// The user's buffer will also always be (at least) 16-byte aligned. This
-	// allows tucking of meta data immediately before the user buffer:
-	//
-	// (previous _offset)>+---------------+
-	//                    | header (opt)  | (variable length)
-	//                    |  + alignment  |
-	//                    +---------------+
-	//                    |    meta       | (fixed length)
-	// returned pointer ->+---------------+
-	//                    |               |
-	//                    |               |
-	//                    |    user       |
-	//                    |    buffer     |
-	//                    |               |
-	//                    |               |
-	//                    |               |
-	// (new) _offset ---->+---------------+
-	//
-	// So, by examining 'meta' one can tell where the 'previous _offset' was,
-	// and, by proxy, where the 'header' is (if any). This does not get us to
-	// a 'free' algorithm, though. Free space will still have to be managed.
-	// Probably, some use of 'meta' and 'header' (and 'user buffer' after free)
-	// to create a linked list (of sorts) for free space. The MemoryManager
-	// header would contain some sort of offset to where the first chunk of
-	// freespace is located, and from there the next chunk could be located
-	// by reading data out of 'meta', and so on. Code in free() will have to
-	// coallesce adjacent freec chunks, etc. Allocation will have to search
-	// the free list, rather than just take memory directly off the end.
-	//
-	// The reason to force a specific, minimal, alignment is so that low
-	// order bits in 'meta' could be used to encode extra information
-	// (if needed). For example, whether the chunk is private or has a 'key'.
-	// also, if 'meta' is something like size_t it may have to be aligned
-	// such that loads/stores don't trigger exceptions.
-	//
-	/// \todo #warning Full support for freeing memory is not supported yet
-#endif // SUPPORT_MM_FREE
+		inline size_t rmRef() {
+			return __sync_fetch_and_add(&_ref_count, -1);
+		}
+		inline void initDone() { _init_done = 1; }
+		inline bool isInitDone() { return (_init_done == 1); }
+		inline size_t size(size_t align) {
+			return MemoryManager::padding(this, sizeof(*this), align);
+		}
+		inline uint8_t *address(size_t align) {
+			return (uint8_t *)this + size(align);
+		}
+	private:
+		size_t _ref_count;
+		size_t _init_done;
+	}; // class MemoryManagerAlloc
 
 	/// \brief Class to hold the meta-data portion of an allocation that is shared
 	///
@@ -204,9 +91,21 @@ namespace PAMI
 		MemoryManagerChunk(const char *key, size_t align, size_t size)
 		{
 			_next = NULL;
-			strcpy(_key, key);
-			_raw_data = staticSize(this, align, size);
-			_raw_size = _raw_data + size;
+			if (key) {
+				strncpy(_key, key, MMKEYSIZE);
+			} else {
+				snprintf(_key, MMKEYSIZE, "/pami-%d-%p",
+							getpid(), this);
+			}
+			_align = align;
+			_size = size;
+		}
+
+		MemoryManagerChunk(const char *key, void *mem, size_t align, size_t size)
+		{
+			MemoryManagerChunk(key, align, size);
+			_hdr = (MemoryManagerAlloc *)mem;
+			_fd = -1; // N/A
 		}
 
 		/// \brief Static method to compute the meta size with alignment
@@ -217,7 +116,7 @@ namespace PAMI
 		/// \return	padding needed to hold meta data and align user addr
 		///
 		static size_t staticSize(void *thus, size_t align, size_t size) {
-			return MemoryManager::padding(thus, sizeof(MemoryManagerChunk), align);
+			return MemoryManager::padding(thus, sizeof(MemoryManagerAlloc), align);
 		}
 
 		/// \brief Return next chunk
@@ -227,13 +126,16 @@ namespace PAMI
 		inline void next(MemoryManagerChunk *m) { _next = m; }
 
 		/// \brief Return total length of raw chunk
-		inline size_t size() { return _raw_size; }
+		inline size_t size() { return _hdr->size(_align); }
 
-		/// \brief Return padding length of raw chunk
-		inline size_t padding() { return _raw_data; }
+		inline void *address() { return _hdr->address(_align); }
 
-		/// \brief Return address of user buffer in chunk
-		inline void *address() { return (uint8_t *)this + _raw_data; }
+		inline char *key() { return _key; }
+
+		inline size_t addRef() { return _hdr->addRef(); }
+		inline size_t rmRef() { return _hdr->rmRef(); }
+		inline void initDone() { _hdr->initDone(); }
+		inline bool isInitDone() { return _hdr->isInitDone(); }
 
 		/// \brief Determine if chunk is a match for key
 		/// \param[in] key	Kay value searching for
@@ -241,10 +143,28 @@ namespace PAMI
 		inline bool isMatch(const char *key) {
 			return (key ? strncmp(key, _key, MMKEYSIZE) == 0 : false);
 		}
+		inline bool isMatch(void *addr) {
+			MemoryManagerAlloc *hdr = (MemoryManagerAlloc *)((char *)addr -
+							sizeof(MemoryManagerAlloc));
+			return (hdr == _hdr);
+		}
+	protected:
+		friend class SharedMemoryManager;
+		inline size_t safeSize() { return sizeof(MemoryManagerAlloc) + _align + _size; }
+
+		inline void init(void *mem, int fd) {
+			_hdr = (MemoryManagerAlloc *)mem;
+			_fd = fd;
+		}
+
+		inline int fd() { return _fd; }
+		inline void *rawAddress() { return (void *)_hdr; }
 	private:
 		MemoryManagerChunk *_next;
-		size_t _raw_data;
-		size_t _raw_size;
+		MemoryManagerAlloc *_hdr;
+		size_t _align;
+		size_t _size;
+		int _fd;
 		char _key[MMKEYSIZE];
 	}; // class MemoryManagerChunk
 
@@ -276,10 +196,46 @@ namespace PAMI
 			return NULL;
 		}
 
+		/// \brief Search shared chunks for matching addr
+		/// \param[in] addr	Memory alloc address to search for
+		/// \return Matching chunk object, or NULL if not found
+		inline MemoryManagerChunk *find(void *addr) {
+			MemoryManagerChunk *m = _pub_allocs;
+			while (m) {
+				if (m->isMatch(addr)) { 
+					return m;
+				}
+				m = m->next();
+			}
+			return NULL;
+		}
+
 		// caller holds lock!
 		inline void push(MemoryManagerChunk *m) {
 			m->next(_pub_allocs);
 			_pub_allocs = m;
+		}
+
+		// caller holds lock!
+		inline MemoryManagerChunk *head() {
+			MemoryManagerChunk *m = _pub_allocs;
+			return m;
+		}
+
+		// caller holds lock!
+		inline void dequeue(MemoryManagerChunk *m) {
+			MemoryManagerChunk *p = _pub_allocs, *pp = NULL;
+			while (p && p != m) {
+				pp = p;
+				p = p->next();
+			}
+			if (p) { // p == m
+				if (pp) {
+					pp->next(p->next());
+				} else {
+					_pub_allocs = p->next();
+				}
+			}
 		}
 
 		inline void acquire() {
@@ -294,6 +250,99 @@ namespace PAMI
 		void *_priv_allocs;
 		size_t _mutex;
 	}; // class MemoryManagerHeader
+
+      public:
+
+	static MemoryManager *heap_mm; // reference to __global.heap_mm without circ deps.
+	static MemoryManager *shared_mm; // reference to __global.shared_mm without circ deps.
+
+        ///
+        /// \brief Empty base memory manager constructor
+        ///
+        inline MemoryManager () :
+	_base(NULL),
+	_size(0),
+	_offset(0),
+	_enabled(false),
+	_attrs(0),
+	_meta(NULL),
+	_alignment(0),
+	_pmm(NULL)
+        {
+          TRACE_ERR((stderr, "%s, this = %p\n", __PRETTY_FUNCTION__, this));
+        }
+
+	~MemoryManager()
+	{
+		if (_base) {
+			_pmm->free(_base);
+			_base = NULL; // paranoia?
+		}
+	}
+
+        ///
+        /// \brief Intialize a memory manager from another memory manager
+        ///
+        /// \param[in] mm        MemoryManager providing buffer
+        /// \param[in] bytes     Number of bytes of memory to manage
+        /// \param[in] alignment (opt) Default/minimum alignment
+        /// \param[in] attrs     (opt) Attributes for memory (addr,bytes)
+        ///
+        virtual inline pami_result_t init(MemoryManager *mm,
+					size_t bytes, size_t alignment = 1,
+					unsigned attrs = 0, const char *key = NULL,
+					MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
+        {
+	  	PAMI_assert_debugf(!(alignment & (alignment - 1)), "%zd: alignment must be power of two", alignment);
+		if (mm) {
+//			if (mm->attrs() & PAMI_MM_NODESCOPE) {
+//				_meta_mm = shared_mm;
+//			} else {
+//				_meta_mm = heap_mm;
+//			}
+			_pmm = mm;
+			// make new allocation...
+			pami_result_t rc = mm->memalign((void **)&_base, alignment, bytes,
+								key, init_fn, cookie);
+			if (rc != PAMI_SUCCESS) {
+				return rc;
+			}
+			_attrs = mm->attrs() | attrs;
+          		_size = bytes;
+	  		_alignment = alignment;
+	  		_meta = (MemoryManagerHeader *)_base;
+		} else {
+			// "reset" - discard arena
+			// this isn't really correct for multiple participants - TBD
+			_meta->acquire();
+			// subsequent new() will effectively release lock...
+		}
+	  	_offset = padding(_base, sizeof(*_meta), _alignment);
+	  	new (_meta) MemoryManagerHeader();
+          	_enabled = true;
+		return PAMI_SUCCESS;
+	}
+
+        ///
+        /// \brief Memory syncronization
+        ///
+        /// \todo Remove? Why is this needed? The \c msync macros defined in
+        ///       Arch.h should be sufficient.
+        ///
+        void sync()
+        {
+          static bool perr = false;
+          int rc = msync((void*)_base, _size, MS_SYNC);
+          if(!perr && rc) {
+            perr=true;
+            fprintf(stderr,  "MemoryManager::msync failed with %d, errno %d: %s\n", rc, errno, strerror(errno));
+          }
+        }
+
+        inline void enable () { _enabled = true; }
+        inline void disable () { _enabled = false; }
+	inline unsigned attrs () { return _attrs; }
+	inline void attrs (unsigned attrs) { _attrs |= attrs; }
 
         ///
         /// \brief Allocate an aligned buffer of the memory.
@@ -336,7 +385,6 @@ namespace PAMI
 			return PAMI_ERROR;
 	  	}
 	  	m = new (addr) MemoryManagerChunk(key, alignment, bytes);
-		PAMI_assert_debugf(pad == m->padding(), "MemoryManagerChunk padding changed");
 	  	_meta->push(m);
 		addr = (uint8_t *)m->address();
 	  } else {
@@ -356,6 +404,13 @@ namespace PAMI
 	  *memptr = addr;
 	  _meta->release();
 	  return PAMI_SUCCESS;
+	}
+
+	inline void free(void *mem)
+	{
+		// for now, only top-level mm's actually free...
+		// i.e. SharedMemoryManager and HeapMemoryManager.
+		// and then only during job exit (dtor).
 	}
 
         ///
@@ -414,6 +469,8 @@ namespace PAMI
 	unsigned _attrs;
 	MemoryManagerHeader *_meta;
 	size_t _alignment;
+	MemoryManager *_pmm; // parent mm
+//	MemoryManager *_meta_mm; // mm for meta data (same scope as parent)
     }; // class MemoryManager
   }; // namespace Memory
 }; // namespace PAMI

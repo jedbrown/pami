@@ -28,7 +28,7 @@ namespace PAMI
       inline HeapMemoryManager () :
         MemoryManager ()
         {
-		_attrs = PAMI_MM_PRIVATE;
+		_attrs = PAMI_MM_PROCSCOPE;
         }
 
       inline ~HeapMemoryManager ()
@@ -56,12 +56,17 @@ namespace PAMI
 #endif
 		if (init_fn)
 		{
-			init_fn(*memptr, bytes, key, PAMI_MM_SHARED, cookie);
+			init_fn(*memptr, bytes, key, _attrs, cookie);
 		//
 		// else? or always? memset(*memptr, 0, bytes);
 		}
 		return PAMI_SUCCESS;
         }
+
+	inline void free(void *mem)
+	{
+		free(mem);
+	}
 
     protected:
     };
