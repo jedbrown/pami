@@ -39,9 +39,7 @@
 
 namespace PAMI
 {
-    class Global : public Interface::Global<PAMI::Global,
-				PAMI::Memory::HeapMemoryManager,
-				PAMI::Memory::SharedMemoryManager>
+    class Global : public Interface::Global<PAMI::Global>
     {
       public:
 
@@ -51,14 +49,15 @@ namespace PAMI
         {
           TRACE_ERR((stderr, ">> Global::Global()\n"));
 
-          Interface::Global<PAMI::Global,
-				PAMI::Memory::HeapMemoryManager,
-				PAMI::Memory::SharedMemoryManager>::time.init(0);
+          Interface::Global<PAMI::Global>::time.init(0);
           pami_coord_t ll, ur;
           size_t min, max, num;
           size_t *ranks;
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
+
+	  new (&heap_mm) PAMI::Memory::HeapMemoryManager();
+	  new (&shared_mm) PAMI::Memory::SharedMemoryManager();
 
           char shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
           snprintf (shmemfile, sizeof(shmemfile) - 1, "/unique-pami-global-shmem-file");

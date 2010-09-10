@@ -31,8 +31,8 @@ namespace PAMI
     static const unsigned int PAMI_MM_PROCSCOPE = 1;
     static const unsigned int PAMI_MM_NODESCOPE = 2;
     // how do platforms add more?
-    static const unsigned int PAMI_MM_L2ATOMIC  = 4;
-    static const unsigned int PAMI_MM_WACREGION = 8;
+    static const unsigned int PAMI_MM_L2ATOMIC  = 4; // BGQ-specific
+    static const unsigned int PAMI_MM_WACREGION = 8; // BGQ-specific
 
     class MemoryManager
     {
@@ -59,6 +59,7 @@ namespace PAMI
 
 	class MemoryManagerAlloc {
 	public:
+		static const size_t ALIGNMENT = sizeof(void *);
 		MemoryManagerAlloc() { }
 		~MemoryManagerAlloc() { }
 		inline size_t addRef() {
@@ -88,6 +89,7 @@ namespace PAMI
 	///
 	class MemoryManagerChunk {
 	public:
+		static const size_t ALIGNMENT = sizeof(void *);
 		MemoryManagerChunk(const char *key, size_t align, size_t size)
 		{
 			_next = NULL;
@@ -272,11 +274,11 @@ namespace PAMI
           TRACE_ERR((stderr, "%s, this = %p\n", __PRETTY_FUNCTION__, this));
         }
 
-	~MemoryManager()
+	virtual inline ~MemoryManager()
 	{
-		if (_base) {
+		if (_pmm) {
 			_pmm->free(_base);
-			_base = NULL; // paranoia?
+			MemoryManager(); // paranoia?
 		}
 	}
 
@@ -294,6 +296,11 @@ namespace PAMI
 					MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
         {
 	  	PAMI_assert_debugf(!(alignment & (alignment - 1)), "%zd: alignment must be power of two", alignment);
+	  	PAMI_assert_debugf(_enabled == false, "Trying to re-init MemoryManager");
+		// minimal alignment for MemoryManagerAlloc
+		if (alignment < MemoryManagerAlloc::ALIGNMENT) {
+			alignment = MemoryManagerAlloc::ALIGNMENT;
+		}
 		if (mm) {
 //			if (mm->attrs() & PAMI_MM_NODESCOPE) {
 //				_meta_mm = shared_mm;
@@ -323,22 +330,6 @@ namespace PAMI
 		return PAMI_SUCCESS;
 	}
 
-        ///
-        /// \brief Memory syncronization
-        ///
-        /// \todo Remove? Why is this needed? The \c msync macros defined in
-        ///       Arch.h should be sufficient.
-        ///
-        void sync()
-        {
-          static bool perr = false;
-          int rc = msync((void*)_base, _size, MS_SYNC);
-          if(!perr && rc) {
-            perr=true;
-            fprintf(stderr,  "MemoryManager::msync failed with %d, errno %d: %s\n", rc, errno, strerror(errno));
-          }
-        }
-
         inline void enable () { _enabled = true; }
         inline void disable () { _enabled = false; }
 	inline unsigned attrs () { return _attrs; }
@@ -363,6 +354,7 @@ namespace PAMI
 			const char *key = NULL,
 			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
 	{
+	  if (alignment < _alignment) alignment = _alignment;
 	  if (key && strlen(key) >= MMKEYSIZE) {
 		return PAMI_INVAL;
 	  }
@@ -406,7 +398,7 @@ namespace PAMI
 	  return PAMI_SUCCESS;
 	}
 
-	inline void free(void *mem)
+	virtual inline void free(void *mem)
 	{
 		// for now, only top-level mm's actually free...
 		// i.e. SharedMemoryManager and HeapMemoryManager.
@@ -420,11 +412,12 @@ namespace PAMI
         ///
         /// \return    Number of bytes available
         ///
-        inline size_t available (size_t alignment = 1)
+        virtual inline size_t available (size_t alignment = 1)
         {
           TRACE_ERR((stderr, "%s(%zu) _size %zu, _offset %zu, this = %p\n", __PRETTY_FUNCTION__,alignment, _size, _offset, this));
           PAMI_assert(_enabled==true);
           PAMI_assert_debug((alignment & (alignment - 1)) == 0);
+	  if (alignment < _alignment) alignment = _alignment;
 
           size_t pad = 0;
           if (alignment > 0)
@@ -471,6 +464,7 @@ namespace PAMI
 	size_t _alignment;
 	MemoryManager *_pmm; // parent mm
 //	MemoryManager *_meta_mm; // mm for meta data (same scope as parent)
+	MemoryManagerHeader _mmhdr;
     }; // class MemoryManager
   }; // namespace Memory
 }; // namespace PAMI

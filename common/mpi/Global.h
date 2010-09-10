@@ -33,9 +33,7 @@ namespace PAMI
       MPI_Finalize();
     }
 
-    class Global : public Interface::Global<PAMI::Global,
-				PAMI::Memory::HeapMemoryManager,
-				PAMI::Memory::SharedMemoryManager>
+    class Global : public Interface::Global<PAMI::Global>
     {
           // Simple class to control MPI initialization independent of other classes.
           class MPI
@@ -55,13 +53,14 @@ namespace PAMI
       public:
 
         inline Global () :
-          Interface::Global<PAMI::Global,
-		PAMI::Memory::HeapMemoryManager,
-		PAMI::Memory::SharedMemoryManager>(),
+          Interface::Global<PAMI::Global>(),
           mapping()
         {
-          // Time gets its own clockMHz
+          // MPI::Time gets its own clockMHz
           time.init(0);
+	  new (&heap_mm) PAMI::Memory::HeapMemoryManager();
+	  new (&shared_mm) PAMI::Memory::SharedMemoryManager();
+
           {
                 size_t min, max, num, *ranks;
 //              int rc = MPI_Init(0, NULL);

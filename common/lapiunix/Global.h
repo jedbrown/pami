@@ -29,20 +29,19 @@
 
 namespace PAMI
 {
-    class Global : public Interface::Global<PAMI::Global,
-				PAMI::Memory::HeapMemoryManager,
-				PAMI::Memory::SharedMemoryManager>
+    class Global : public Interface::Global<PAMI::Global>
     {
       public:
 
         inline Global () :
-          Interface::Global<PAMI::Global,
-		PAMI::Memory::HeapMemoryManager,
-		PAMI::Memory::SharedMemoryManager>(),
+          Interface::Global<PAMI::Global>(),
           mapping()
         {
-          // Time gets its own clockMHz
+          // LAPI::Time gets its own clockMHz
           time.init(0);
+	  new (&heap_mm) PAMI::Memory::HeapMemoryManager();
+	  new (&shared_mm) PAMI::Memory::SharedMemoryManager();
+
           {
             size_t min=0, max=0;
             mapping.init(min, max);

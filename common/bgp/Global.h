@@ -40,16 +40,12 @@
 
 namespace PAMI
 {
-    class Global : public Interface::Global<PAMI::Global,
-				PAMI::Memory::HeapMemoryManager,
-				PAMI::Memory::SharedMemoryManager>
+    class Global : public Interface::Global<PAMI::Global>
     {
       public:
 
         inline Global () :
-          Interface::Global<PAMI::Global,
-			PAMI::Memory::HeapMemoryManager,
-			PAMI::Memory::SharedMemoryManager>(),
+          Interface::Global<PAMI::Global>(),
           personality (),
           mapping(personality),
 	  mm(),
@@ -58,6 +54,16 @@ namespace PAMI
         {
           //Interface::Global<PAMI::Global>::time.init(personality.clockMHz());
           time.init (personality.clockMHz());
+
+	  new (&heap_mm) PAMI::Memory::HeapMemoryManager();
+	  if (personality.tSize() == 1) {
+		// There is no shared memory, so don't try. Fake using heap.
+		new (&shared_mm) PAMI::Memory::HeapMemoryManager();
+	  } else {
+		new (&shared_mm) PAMI::Memory::SharedMemoryManager();
+	  }
+
+
           //allocateMemory ();
 
           char   * shmemfile = "/unique-pami-global-shmem-file";

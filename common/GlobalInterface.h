@@ -23,12 +23,13 @@
 #include "util/common.h"
 #include "Topology.h"
 #include "Ptime.h"
+#include "components/memory/MemoryManager.h"
 
 namespace PAMI
 {
 namespace Interface
 {
-    template<class T_Global, class T_Heap, class T_Shared>
+    template<class T_Global>
     class Global
     {
       public:
@@ -50,8 +51,8 @@ namespace Interface
         PAMI::Time	time;
         PAMI::Topology	topology_global;
         PAMI::Topology	topology_local;
-	T_Heap heap_mm;
-	T_Shared shared_mm;
+	PAMI::Memory::MemoryManager heap_mm;	// re-constructed later
+	PAMI::Memory::MemoryManager shared_mm;	// re-constructed later
 
         /// Global location for the processor name
         char processor_name[128];

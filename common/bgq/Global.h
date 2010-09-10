@@ -70,9 +70,7 @@ void globalDumpHexData(const char * pstring, const uint32_t *buffer, size_t n_in
 
 namespace PAMI
 {
-  class Global : public Interface::Global<PAMI::Global,
-			PAMI::Memory::HeapMemoryManager,
-			PAMI::Memory::SharedMemoryManager>
+  class Global : public Interface::Global<PAMI::Global>
   {
     public:
 
@@ -93,6 +91,14 @@ namespace PAMI
         _useMU = true;
 
         time.init(personality.Kernel_Config.FreqMHz);
+
+	new (&heap_mm) PAMI::Memory::HeapMemoryManager();
+	if (personality.tSize() == 1) {
+		// There is no shared memory, so don't try. Fake using heap.
+		new (&shared_mm) PAMI::Memory::HeapMemoryManager();
+	} else {
+		new (&shared_mm) PAMI::Memory::SharedMemoryManager();
+	}
 
         /// \todo #80 #99 Remove this when the DMA supports >1 context.
         /// Hopefully this is temporary. We should always include all

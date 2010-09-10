@@ -28,11 +28,15 @@ namespace PAMI
       inline HeapMemoryManager () :
         MemoryManager ()
         {
+		COMPILE_TIME_ASSERT(sizeof(HeapMemoryManager) <= sizeof(MemoryManager));
 		_attrs = PAMI_MM_PROCSCOPE;
         }
 
       inline ~HeapMemoryManager ()
 	{
+		// this is only called from process exit,
+		// so no need to actually free - the memory
+		// is all being reclaimed by the OS.
 	}
 
 	inline pami_result_t init (MemoryManager *mm, size_t bytes, size_t alignment,
@@ -66,6 +70,11 @@ namespace PAMI
 	inline void free(void *mem)
 	{
 		free(mem);
+	}
+
+	inline size_t available(size_t alignment) {
+		// how to tell how much is available???
+		return (size_t)-1;
 	}
 
     protected:
