@@ -292,7 +292,7 @@ int main(int argc, char*argv[])
                 }
             }
 
-          blocking_coll(context, &barrier, &bar_poll_flag);
+          blocking_coll(context, &newbarrier, &newbar_poll_flag);
           fflush(stderr);
         }
     }

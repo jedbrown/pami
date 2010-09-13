@@ -16,12 +16,15 @@
 #include "p2p/protocols/SendPWQ.h"
 #include "components/memory/MemoryAllocator.h"
 
-#undef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+/// \todo put this trace facility somewhere common
+#include "components/devices/bgq/mu2/trace.h"
 
 #ifdef CCMI_TRACE_ALL
-#undef TRACE_ERR
-#define TRACE_ERR(x) fprintf x
+ #define DO_TRACE_ENTEREXIT 1
+ #define DO_TRACE_DEBUG     1
+#else
+ #define DO_TRACE_ENTEREXIT 0
+ #define DO_TRACE_DEBUG     0
 #endif
 
 extern PAMI::Global __global;
@@ -77,7 +80,9 @@ namespace PAMI
     static size_t _id = DISPATCH_P2P_START;
     static size_t getNextDispatch()
     {
-      TRACE_ERR((stderr, "<%p>NativeInterfaceCommon::getNextDispatch() %zu\n", (void*)NULL, _id));
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "%zu", _id);
+      TRACE_FN_EXIT();
       return _id++;
     }
 
@@ -111,7 +116,7 @@ namespace PAMI
                                                   size_t              client_id)
 
     {
-      TRACE_ERR((stderr, "<%p>NativeInterfaceCommon::constructNativeInterface() \n", (void*)NULL));
+      TRACE_FN_ENTER();
       DO_DEBUG((templateName<T_NativeInterface>()));
       DO_DEBUG((templateName<T_Protocol>()));
       DO_DEBUG((templateName<T_Device>()));
@@ -188,6 +193,7 @@ namespace PAMI
 //        getNextDispatch();
 
       // Return
+      TRACE_FN_EXIT();
       return result;
     }
 
@@ -215,7 +221,7 @@ namespace PAMI
                                                   size_t              client_id)
 
     {
-      TRACE_ERR((stderr, "<%p>NativeInterfaceCommon::constructNativeInterface() \n", (void*)NULL));
+      TRACE_FN_ENTER();
       DO_DEBUG((templateName<T_NativeInterface>()));
       DO_DEBUG((templateName<T_Protocol1>()));
       DO_DEBUG((templateName<T_Protocol2>()));
@@ -338,6 +344,7 @@ namespace PAMI
 
 
       // Return
+      TRACE_FN_EXIT();
       return result;
     }
 
@@ -378,9 +385,9 @@ namespace PAMI
           CCMI::Interfaces::NativeInterface(__global.mapping.task(),
                                             __global.mapping.size())
       {
-        TRACE_ERR((stderr, "<%p>NativeInterfaceBase()\n", this));
+        TRACE_FN_ENTER();
         DO_DEBUG((templateName<T_Protocol>()));
-        DO_DEBUG((templateName<T_Max_Msgcount>()));
+        TRACE_FN_EXIT();
       };
 
       // State (request) implementation.
@@ -573,23 +580,29 @@ namespace PAMI
       ///
       inline void setMcastProtocol(size_t dispatch, T_Protocol* protocol)
       {
-        TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::setMcastProtocol(%zu, %p)\n", this, dispatch, protocol));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p> %zu, %p", this, dispatch, protocol);
         _mcast_dispatch = dispatch;
         _mcast_protocol = protocol;
+        TRACE_FN_EXIT();
       }
 
       inline void setM2mProtocol(size_t dispatch, T_Protocol* protocol)
       {
-        TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::setM2mProtocol(%zu, %p)\n", this, dispatch, protocol));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p> %zu, %p", this, dispatch, protocol);
         _m2m_dispatch = dispatch;
         _m2m_protocol = protocol;
+        TRACE_FN_EXIT();
       }
 
       inline void setSendProtocol(size_t dispatch, T_Protocol* protocol)
       {
-        TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::setMcastProtocol(%zu, %p)\n", this, dispatch, protocol));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p> %zu, %p", this, dispatch, protocol);
         _send_dispatch = dispatch;
         _send_protocol = protocol;
+        TRACE_FN_EXIT();
       }
 
     private:
@@ -775,23 +788,29 @@ namespace PAMI
       ///
       inline void setMcastProtocol(size_t dispatch, T_Protocol* protocol)
       {
-        TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::setMcastProtocol(%p)\n", this, protocol));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p> %p dispatch %zu ", this, protocol, dispatch);
         this->_mcast_dispatch = dispatch;
         this->_mcast_protocol = protocol;
+        TRACE_FN_EXIT();
       }
 
       inline void setM2mProtocol(size_t dispatch, T_Protocol* protocol)
       {
-        TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::setM2mProtocol(%p)\n", this, protocol));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p> %p dispatch %zu ", this, protocol, dispatch);
         this->_m2m_dispatch = dispatch;
         this->_m2m_protocol = protocol;
+        TRACE_FN_EXIT();
       }
 
       inline void setSendProtocol(size_t dispatch, T_Protocol* protocol)
       {
-        TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::setMcastProtocol(%p)\n", this, protocol));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p> %p dispatch %zu ", this, protocol, dispatch);
         this->_send_dispatch = dispatch;
         this->_send_protocol = protocol;
+        TRACE_FN_EXIT();
       }
 
     private:
@@ -859,9 +878,9 @@ namespace PAMI
       _contextid(context_id),
       _clientid(client_id)
   {
-    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided()\n", this));
+    TRACE_FN_ENTER();
     DO_DEBUG((templateName<T_Protocol>()));
-    DO_DEBUG((templateName<T_Max_Msgcount>()));
+    TRACE_FN_EXIT();
   };
 
   template <class T_Protocol, int T_Max_Msgcount>
@@ -869,19 +888,20 @@ namespace PAMI
       void          *rdata,
       pami_result_t   res)
   {
+    TRACE_FN_ENTER();
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj             *obj = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj*)rdata;
     NativeInterfaceAllsided *ni   = (NativeInterfaceAllsided *)obj->_ni;
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::ni_client_done(%p, %p, %d) calling %p(%p)\n",
+    TRACE_FORMAT( "<%p> %p, %p, %d calling %p(%p)",
                ni, context, rdata, res,
-               obj->_user_callback.function, obj->_user_callback.clientdata));
+               obj->_user_callback.function, obj->_user_callback.clientdata);
 
     if (obj->_type == NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICAST)
       {
         // Punch the produce button on the rcvpwq
         typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t *state = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t*)obj->_state._mcast;
-        TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::ni_client_done pwq<%p>->produce(%zu)\n",
-                   ni, state->rcvpwq, state->bytes));
+        TRACE_FORMAT( "<%p> <%p>->produce(%zu)",
+                   ni, state->rcvpwq, state->bytes);
 
         if (state->rcvpwq) state->rcvpwq->produceBytes(state->bytes); /// \todo ? is this always the right byte count?
 
@@ -905,19 +925,23 @@ namespace PAMI
 //#endif
 
     ni->_allocator.returnObject(obj);
+    TRACE_FN_EXIT();
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie)
   {
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::setDispatch(%p, %p)\n",
-               this, fn,  cookie));
+    TRACE_FN_ENTER();
+    TRACE_FORMAT( "<%p> %p, %p",
+               this, fn,  cookie);
 
+    TRACE_FN_EXIT();
     if (fn == NULL) // we allow a no-op dispatch on allsided.
       return PAMI_SUCCESS;
 
-    PAMI_abortf("<%p>NativeInterfaceAllsided::setDispatch(%p, %p)\n", this, fn,  cookie);
+    TRACE_FN_EXIT();
+    PAMI_abortf("<%p>%p, %p", this, fn,  cookie);
     return PAMI_ERROR;
   }
 
@@ -941,11 +965,12 @@ namespace PAMI
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
+    TRACE_FN_ENTER();
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICAST;
     req->_ni               = this;
     req->_user_callback    = mcast->cb_done;
-    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::multicast(%p/%p) connection id %u, msgcount %u, bytes %zu\n", this, req, mcast, mcast->connection_id, mcast->msgcount, mcast->bytes));
+    TRACE_FORMAT( "<%p> %p/%p connection id %u, msgcount %u, bytes %zu", this, req, mcast, mcast->connection_id, mcast->msgcount, mcast->bytes);
     DO_DEBUG((templateName<T_Protocol>()));
 
     //  \todo:  this copy will cause a latency hit, maybe we need to change postMultisync
@@ -960,6 +985,7 @@ namespace PAMI
     m.cb_done.clientdata   =  req;
 
     postMulticast_impl(req->_state._mcast, &m);
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
@@ -971,7 +997,7 @@ namespace PAMI
 //  req->_type              = NativeInterfaceBase<T_Protocol,T_Max_Msgcount>::allocObj::MANYTOMANY_SEND;
 //  req->_ni               = this;
 //  req->_user_callback    = m2m->cb_done;
-//  TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::manytomany(%p/%p) connection id %u, msgcount %u\n", this, req, m2m, m2m->connection_id, m2m->metacount));
+//  TRACE_FORMAT( "<%p> %p/%p connection id %u, msgcount %u", this, req, m2m, m2m->connection_id, m2m->metacount);
 //  DO_DEBUG((templateName<T_Protocol>()));
 //
 //  //  \todo:  this copy will cause a latency hit, maybe we need to change postManytomany
@@ -992,11 +1018,12 @@ namespace PAMI
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::multisync(pami_multisync_t *msync, void *devinfo)
   {
+    TRACE_FN_ENTER();
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTISYNC;
     req->_ni               = this;
     req->_user_callback    = msync->cb_done;
-    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::multisync(%p/%p) connection id %u\n", this, msync, req, msync->connection_id));
+    TRACE_FORMAT( "<%p> %p/%p connection id %u", this, msync, req, msync->connection_id);
     DO_DEBUG((templateName<T_Protocol>()));
 
     pami_multisync_t  m     = *msync;
@@ -1007,6 +1034,7 @@ namespace PAMI
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
     //_msync.postMultisync(req->_state._msync, &m);
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
@@ -1014,11 +1042,12 @@ namespace PAMI
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::multicombine (pami_multicombine_t *mcomb, void *devinfo)
   {
+    TRACE_FN_ENTER();
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICOMBINE;
     req->_ni               = this;
     req->_user_callback    = mcomb->cb_done;
-    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::multicombine(%p/%p) connection id %u, count %zu, dt %#X, op %#X\n", this, mcomb, req, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor));
+    TRACE_FORMAT( "<%p> %p/%p connection id %u, count %zu, dt %#X, op %#X", this, mcomb, req, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor);
     DO_DEBUG((templateName<T_Protocol>()));
 
     pami_multicombine_t  m     = *mcomb;
@@ -1030,6 +1059,7 @@ namespace PAMI
     m.cb_done.clientdata   =  req;
 
     //_mcomb.postMulticombine(req->_state._mcomb, &m);
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
@@ -1053,6 +1083,7 @@ namespace PAMI
       pami_multicast_t *mcast,
       void             *devinfo)
   {
+    TRACE_FN_ENTER();
     pami_result_t result;
     COMPILE_TIME_ASSERT((sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t) <= NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::multicast_sizeof_msg));
 
@@ -1063,10 +1094,10 @@ namespace PAMI
     size_t length = mcast->bytes;
     PAMI::PipeWorkQueue *pwq = (PAMI::PipeWorkQueue *)mcast->src;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::postMulticast_impl() dispatch %zu, connection_id %#X, msgcount %d/%p, bytes %zu/%p/%p\n",
+    TRACE_FORMAT( "<%p> dispatch %zu, connection_id %#X, msgcount %d/%p, bytes %zu/%p/%p",
                this, mcast->dispatch, mcast->connection_id,
                mcast->msgcount, mcast->msginfo,
-               mcast->bytes, pwq, pwq ? pwq->bufferToConsume() : NULL));
+               mcast->bytes, pwq, pwq ? pwq->bufferToConsume() : NULL);
 
     state_data->connection_id = mcast->connection_id;
     state_data->rcvpwq        = (PAMI::PipeWorkQueue*)mcast->dst;
@@ -1087,14 +1118,18 @@ namespace PAMI
 
     if (mcast->msgcount) memcpy(state_data->meta.msginfo, msgdata, mcast->msgcount * sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t().msginfo));
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::postMulticast_impl() state %p/%p\n", this, state, state_data));
+    TRACE_FORMAT( "<%p> state %p/%p", this, state, state_data);
 
     if (state_data->rcvpwq) _mcastQ.pushTail(state_data); // only use recvQ if this mcast expects to receives data.
 
     // Destinations may return now and wait for data to be dispatched
     /// \todo Handle metadata only?
     /// \todo handle both pwq's null? Barrier?
-    if (!pwq) return PAMI_SUCCESS;
+    if (!pwq) 
+    {
+      TRACE_FN_EXIT();
+      return PAMI_SUCCESS;
+    }
 
     void* payload = NULL;
 
@@ -1116,7 +1151,7 @@ namespace PAMI
         state_data->doneCountDown--;// don't send to myself
         PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
 
-        TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided pwq<%p> length %zu/%zu\n", this, rcvpwq, rcvpwq->bytesAvailableToProduce(), length));
+        TRACE_FORMAT( "<%p>NativeInterfaceAllsided pwq<%p> length %zu/%zu", this, rcvpwq, rcvpwq->bytesAvailableToProduce(), length);
 
         if (rcvpwq && (rcvpwq->bytesAvailableToProduce() >= length)) // copy it if desired
           {
@@ -1142,13 +1177,14 @@ namespace PAMI
     state_data->sendpwq.clientid  = _clientid;
     state_data->sendpwq.contextid = _contextid;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::<%p>send() data %zu, header %zu\n", this, _mcast_protocol, state_data->sendpwq.send.simple.send.data.iov_len, state_data->sendpwq.send.simple.send.header.iov_len));
+    TRACE_FORMAT( "<%p> %p data %zu, header %zu", this, _mcast_protocol, state_data->sendpwq.send.simple.send.data.iov_len, state_data->sendpwq.send.simple.send.header.iov_len);
 
     result = _mcast_protocol->simplePWQ(&state_data->sendpwq, _context);
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::postMulticast_impl() dispatch %zu, connection_id %#X exit\n",
-               this, mcast->dispatch, mcast->connection_id));
+    TRACE_FORMAT( "<%p> dispatch %zu, connection_id %#X exit",
+               this, mcast->dispatch, mcast->connection_id);
 
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
 
   }; // NativeInterfaceAllsided<T_Protocol,T_Max_Msgcount>::postMulticast_impl
@@ -1167,7 +1203,8 @@ namespace PAMI
       pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
       pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
-    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::dispatch_mcast header size %zu, data size %zu\n", cookie, header_size, data_size));
+    TRACE_FN_ENTER();
+    TRACE_FORMAT( "<%p> context %p, header/size %p/%zu, data/size %p/%zu, origin %u, recv %p", cookie, context_hdl, header, header_size, data, data_size, origin, recv);
     NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount> *p = (NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount> *)cookie;
     p->handle_mcast(context_hdl,
                     header,
@@ -1176,6 +1213,7 @@ namespace PAMI
                     data_size,
                     origin,
                     recv);
+    TRACE_FN_EXIT();
   }
 
 //template <class T_Protocol, int T_Max_Msgcount>
@@ -1188,7 +1226,7 @@ namespace PAMI
 //                                                                pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
 //                                                                pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
 //{
-//  TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::dispatch_m2m header size %zu, data size %zu\n", cookie, header_size, data_size));
+//  TRACE_FORMAT( "<%p> header size %zu, data size %zu", cookie, header_size, data_size);
 //  NativeInterfaceAllsided<T_Protocol,T_Max_Msgcount> *p = (NativeInterfaceAllsided<T_Protocol,T_Max_Msgcount> *)cookie;
 //  p->handle_m2m(context_hdl,
 //                  header,
@@ -1227,13 +1265,13 @@ namespace PAMI
                                                                                 pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
                                                                                 pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
-
+    TRACE_FN_ENTER();
     unsigned connection_id = ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->connection_id;
     size_t bytes           = ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->sndlen;
     //size_t root            = ((NativeInterfaceBase<T_Protocol,T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->root;
     PAMI::PipeWorkQueue   *rcvpwq;
     pami_callback_t       cb_done;
-    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::handle_mcast()  header size %zu, data size %zu/%zu, connection_id %u, root %u, origin %u, recv %p\n", this, header_size, data_size, bytes, connection_id, ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->root, origin, recv));
+    TRACE_FORMAT( "<%p>  header size %zu, data size %zu/%zu, connection_id %u, root %u, origin %u, recv %p", this, header_size, data_size, bytes, connection_id, ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->root, origin, recv);
 
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t* receive_state = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t*)_mcastQ.peekHead();
 
@@ -1246,22 +1284,22 @@ namespace PAMI
     bytes   = receive_state->bytes;
     rcvpwq  = receive_state->rcvpwq;
     cb_done = receive_state->cb_done;
-    TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::handle_mcast()  header size %zu, data size %zu/%zu, connection_id %u, root %u, recv %p, receive_state %p\n", this, header_size, data_size, bytes, connection_id, ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->root, recv, receive_state));
+    TRACE_FORMAT( "<%p>  header size %zu, data size %zu/%zu, connection_id %u, root %u, recv %p, receive_state %p", this, header_size, data_size, bytes, connection_id, ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->root, recv, receive_state);
 
     _mcastQ.deleteElem(receive_state);
 
     // I don't think send/recv lets us receive less than was sent, so assert they gave us enough buffer/pwq...
-    PAMI_assert_debugf(bytes == data_size, "bytes %zu == %zu data_size\n", bytes, data_size);
+    PAMI_assert_debugf(bytes == data_size, "bytes %zu == %zu data_size", bytes, data_size);
 
     // No data or immediate data? We're done.
     if ((bytes == 0) || (recv == NULL) || (data != NULL))
       {
-        TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::handle_mcast()  immediate\n", this));
+        TRACE_FORMAT( "<%p> immediate", this);
 
         if (data && bytes)
           {
             /// \todo An assertion probably isn't the best choice...
-            TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided<%d>::handle_mcast()  pwq<%p>\n", this, __LINE__, rcvpwq));
+            TRACE_FORMAT( "<%p>NativeInterfaceAllsided<%d>::handle_mcast()  pwq<%p>", this, __LINE__, rcvpwq);
             PAMI_assertf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
             memcpy(rcvpwq->bufferToProduce(), data, bytes);
 //        rcvpwq->produceBytes(data_size);
@@ -1270,18 +1308,19 @@ namespace PAMI
         // call original done
         /** \todo fix or remove this hack */
         if (cb_done.function)
-          (cb_done.function)(NULL,//PAMI_Client_getcontext(_client,_contextid),
+          (cb_done.function)(context_hdl,
                              cb_done.clientdata, PAMI_SUCCESS);
 
 // #warning \todo if it's 0 byte, no recv structure should be delivered
         if (recv != NULL)
           memset(recv, 0, sizeof(*recv));
 
+        TRACE_FN_EXIT();
         return;
       }
 
     // model_available_buffers_only semantics: If you're receiving data then the pwq must be available
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided<%d>::handle_mcast() pwq<%p>\n", this, __LINE__, rcvpwq));
+    TRACE_FORMAT( "<%p>NativeInterfaceAllsided<%d>::handle_mcast() pwq<%p>", this, __LINE__, rcvpwq);
     PAMI_assert(model_available_buffers_only && (rcvpwq->bytesAvailableToProduce() >= data_size));
 
     recv->addr     = rcvpwq->bufferToProduce();
@@ -1289,6 +1328,7 @@ namespace PAMI
     recv->offset   = 0;
     recv->local_fn = cb_done.function;
     recv->cookie   = cb_done.clientdata;
+    TRACE_FN_EXIT();
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
@@ -1296,10 +1336,11 @@ namespace PAMI
       void          *  cookie,
       pami_result_t    result )
   {
+    TRACE_FN_ENTER();
 
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t*)cookie;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::sendMcastDone countDown %u\n", cookie, state_data->doneCountDown));
+    TRACE_FORMAT( "<%p> countDown %u", cookie, state_data->doneCountDown);
 
     if (--state_data->doneCountDown == 0)
       {
@@ -1307,9 +1348,8 @@ namespace PAMI
         if (state_data->cb_done.function)
           (state_data->cb_done.function)(context,
                                          state_data->cb_done.clientdata, PAMI_SUCCESS);
-
-        return;
       }
+    TRACE_FN_EXIT();
   }
 
 //  template <class T_Protocol, int T_Max_Msgcount>
@@ -1320,7 +1360,7 @@ namespace PAMI
 //
 //    typename NativeInterfaceBase<T_Protocol,T_Max_Msgcount>::p2p_manytomany_send_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol,T_Max_Msgcount>::p2p_manytomany_send_statedata_t*)cookie;
 //
-//    TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::sendM2mDone countDown %u\n", cookie, state_data->doneCountDown));
+//    TRACE_FORMAT( "<%p> countDown %u", cookie, state_data->doneCountDown);
 //
 //    if (--state_data->doneCountDown == 0)
 //      {
@@ -1341,7 +1381,7 @@ namespace PAMI
 //
 //  typename NativeInterfaceBase<T_Protocol,T_Max_Msgcount>::p2p_manytomany_recv_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol,T_Max_Msgcount>::p2p_manytomany_recv_statedata_t*)cookie;
 //
-//  TRACE_ERR((stderr, "<%p>:NativeInterfaceAllsided::recvM2mDone countDown %u\n", cookie, state_data->doneCountDown));
+//  TRACE_FORMAT( "<%p> countDown %u", cookie, state_data->doneCountDown);
 //
 //  if (--state_data->doneCountDown == 0)
 //    {
@@ -1358,27 +1398,28 @@ namespace PAMI
   inline NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::NativeInterfaceActiveMessage(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id):
       NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>(client, context, context_id, client_id)
   {
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage()\n", this));
+    TRACE_FN_ENTER();
     DO_DEBUG((templateName<T_Protocol>()));
-    DO_DEBUG((templateName<T_Max_Msgcount>()));
+    TRACE_FN_EXIT();
   }
   template <class T_Protocol, int T_Max_Msgcount>
   inline void NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::ni_client_done(pami_context_t  context,
       void          *rdata,
       pami_result_t   res)
   {
+    TRACE_FN_ENTER();
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj             *obj = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj*)rdata;
     NativeInterfaceActiveMessage *ni   = (NativeInterfaceActiveMessage *)obj->_ni;
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::ni_client_done(%p, %p, %d) calling %p(%p)\n",
+    TRACE_FORMAT( "<%p> %p, %p, %d calling %p(%p)",
                ni, context, rdata, res,
-               obj->_user_callback.function, obj->_user_callback.clientdata));
+               obj->_user_callback.function, obj->_user_callback.clientdata);
 
     if (obj->_type == NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICAST) // Punch the produce button on the pwq
       {
         typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t *state = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t*)obj->_state._mcast;
-        TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::ni_client_done pwq<%p>->produce(%zu)\n",
-                   ni, state->rcvpwq, state->bytes));
+        TRACE_FORMAT( "<%p> pwq<%p>->produce(%zu)",
+                   ni, state->rcvpwq, state->bytes);
 
         if (state->rcvpwq) state->rcvpwq->produceBytes(state->bytes); /// \todo ? is this always the right byte count?
 
@@ -1403,14 +1444,16 @@ namespace PAMI
                                    res);
 
     ni->_allocator.returnObject(obj);
+    TRACE_FN_EXIT();
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setManytomanyDispatch (pami_dispatch_manytomany_fn fn, void *cookie)
   {
+    TRACE_FN_ENTER();
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::setDispatch(%p, %p) id=%zu\n",
-               this, fn,  cookie,  this->_m2m_dispatch));
+    TRACE_FORMAT( "<%p> %p, %p id=%zu",
+               this, fn,  cookie,  this->_m2m_dispatch);
     DO_DEBUG((templateName<T_Protocol>()));
 
     this->_m2m_dispatch_arg = cookie;
@@ -1418,16 +1461,17 @@ namespace PAMI
 
     /// \todo I would really like to set the p2p protocol dispatch now, but that isn't defined...
     /// so my caller must construct the p2p protocol with my dispatch function and this ptr.
-
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie)
   {
+    TRACE_FN_ENTER();
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::setDispatch(%p, %p) id=%zu\n",
-               this, fn,  cookie,  this->_mcast_dispatch));
+    TRACE_FORMAT( "<%p> %p, %p id=%zu",
+               this, fn,  cookie,  this->_mcast_dispatch);
     DO_DEBUG((templateName<T_Protocol>()));
 
     this->_mcast_dispatch_arg = cookie;
@@ -1435,7 +1479,7 @@ namespace PAMI
 
     /// \todo I would really like to set the p2p protocol dispatch now, but that isn't defined...
     /// so my caller must construct the p2p protocol with my dispatch function and this ptr.
-
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
@@ -1458,11 +1502,12 @@ namespace PAMI
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
+    TRACE_FN_ENTER();
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)this->_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICAST;
     req->_ni               = this;
     req->_user_callback    = mcast->cb_done;
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::multicast(%p/%p) connection id %u, msgcount %u, bytes %zu\n", this, req, mcast, mcast->connection_id, mcast->msgcount, mcast->bytes));
+    TRACE_FORMAT( "<%p> %p/%p connection id %u, msgcount %u, bytes %zu", this, req, mcast, mcast->connection_id, mcast->msgcount, mcast->bytes);
     DO_DEBUG((templateName<T_Protocol>()));
 
     //  \todo:  this copy will cause a latency hit, maybe we need to change postMultisync
@@ -1477,12 +1522,14 @@ namespace PAMI
     m.cb_done.clientdata   =  req;
 
     postMulticast_impl(req->_state._mcast, &m);
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::manytomany (pami_manytomany_t *m2m, void *devinfo)
   {
+    TRACE_FN_ENTER();
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)this->_allocator.allocateObject();
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t* state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t*)req->_state._m2m;
 
@@ -1491,7 +1538,7 @@ namespace PAMI
     req->_ni               = this;
     req->_user_callback    = m2m->cb_done;
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::manytomany(%p/%p) connection id %u, msgcount %u\n", this, req, m2m, m2m->connection_id, m2m->msgcount));
+    TRACE_FORMAT( "<%p> %p/%p connection id %u, msgcount %u", this, req, m2m, m2m->connection_id, m2m->msgcount);
     DO_DEBUG((templateName<T_Protocol>()));
 
     //  \todo:  this copy will cause a latency hit, maybe we need to change postManytomany
@@ -1505,6 +1552,7 @@ namespace PAMI
     m.cb_done.clientdata   =  req;
 
     postManytomany_impl(req->_state._m2m, &m);
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
@@ -1512,11 +1560,12 @@ namespace PAMI
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::multisync(pami_multisync_t *msync, void *devinfo)
   {
+    TRACE_FN_ENTER();
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)this->_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTISYNC;
     req->_ni               = this;
     req->_user_callback    = msync->cb_done;
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::multisync(%p/%p) connection id %u\n", this, msync, req, msync->connection_id));
+    TRACE_FORMAT( "<%p> %p/%p connection id %u", this, msync, req, msync->connection_id);
     DO_DEBUG((templateName<T_Protocol>()));
 
     pami_multisync_t  m     = *msync;
@@ -1527,6 +1576,7 @@ namespace PAMI
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
     //_msync.postMultisync(req->_state._msync, &m);
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
@@ -1534,11 +1584,12 @@ namespace PAMI
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::multicombine (pami_multicombine_t *mcomb, void *devinfo)
   {
+    TRACE_FN_ENTER();
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)this->_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICOMBINE;
     req->_ni               = this;
     req->_user_callback    = mcomb->cb_done;
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::multicombine(%p/%p) connection id %u, count %zu, dt %#X, op %#X\n", this, mcomb, req, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor));
+    TRACE_FORMAT( "<%p> %p/%p connection id %u, count %zu, dt %#X, op %#X", this, mcomb, req, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor);
     DO_DEBUG((templateName<T_Protocol>()));
 
     pami_multicombine_t  m     = *mcomb;
@@ -1550,6 +1601,7 @@ namespace PAMI
     m.cb_done.clientdata   =  req;
 
     //_mcomb.postMulticombine(req->_state._mcomb, &m);
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
 
   }
@@ -1575,7 +1627,7 @@ namespace PAMI
       pami_multicast_t *mcast,
       void             *devinfo)
   {
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::postMulticast_impl\n", this));
+    TRACE_FN_ENTER();
     pami_result_t result;
     COMPILE_TIME_ASSERT((sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t) <= NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::multicast_sizeof_msg));
 
@@ -1586,10 +1638,10 @@ namespace PAMI
     size_t length = mcast->bytes;
     PAMI::PipeWorkQueue *pwq = (PAMI::PipeWorkQueue *)mcast->src;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::postMulticast_impl() dispatch %zu, connection_id %#X, msgcount %d/%p, bytes %zu/%p/%p\n",
+    TRACE_FORMAT( "<%p> dispatch %zu, connection_id %#X, msgcount %d/%p, bytes %zu/%p/%p",
                this, mcast->dispatch, mcast->connection_id,
                mcast->msgcount, mcast->msginfo,
-               mcast->bytes, pwq, pwq ? pwq->bufferToConsume() : NULL));
+               mcast->bytes, pwq, pwq ? pwq->bufferToConsume() : NULL);
 
     void* payload = NULL;
 
@@ -1632,7 +1684,7 @@ namespace PAMI
         state_data->doneCountDown--;// don't send to myself
         PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
 
-        TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage pwq<%p> length %zu/%zu\n", this, rcvpwq, rcvpwq->bytesAvailableToProduce(), length));
+        TRACE_FORMAT( "<%p>NativeInterfaceActiveMessage pwq<%p> length %zu/%zu", this, rcvpwq, rcvpwq->bytesAvailableToProduce(), length);
 
         if (rcvpwq && (rcvpwq->bytesAvailableToProduce() >= length)) // copy it if desired
           {
@@ -1658,16 +1710,15 @@ namespace PAMI
     state_data->sendpwq.clientid  = this->_clientid;
     state_data->sendpwq.contextid = this->_contextid;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::<%p>send() data %zu, header %zu\n", this, this->_mcast_protocol, state_data->sendpwq.send.simple.send.data.iov_len, state_data->sendpwq.send.simple.send.header.iov_len));
+    TRACE_FORMAT( "<%p> %p, data %zu, header %zu", this, this->_mcast_protocol, state_data->sendpwq.send.simple.send.data.iov_len, state_data->sendpwq.send.simple.send.header.iov_len);
 
     result = this->_mcast_protocol->simplePWQ(&state_data->sendpwq, this->_context);
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::postMulticast_impl() dispatch %zu, connection_id %#X exit\n",
-               this, mcast->dispatch, mcast->connection_id));
+    TRACE_FORMAT( "<%p> dispatch %zu, connection_id %#X exit",
+               this, mcast->dispatch, mcast->connection_id);
 
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
-
-
   }; // NativeInterfaceActiveMessage<T_Protocol,T_Max_Msgcount>::postMulticast_impl
 
   template <class T_Protocol, int T_Max_Msgcount>
@@ -1675,7 +1726,7 @@ namespace PAMI
       pami_manytomany_t *m2m,
       void             *devinfo)
   {
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::postManytomany_impl\n", this));
+    TRACE_FN_ENTER();
     COMPILE_TIME_ASSERT((sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t) <= NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::manytomany_sizeof_msg));
 
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t*) & state;
@@ -1684,10 +1735,10 @@ namespace PAMI
     PAMI::M2MPipeWorkQueue *pwq = m2m->send.buffer;
     PAMI::Topology    *topology = m2m->send.participants;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::postManytomany_impl() dispatch %zu, connection_id %#X, msgcount %d/%p, pwq %p\n",
+    TRACE_FORMAT( "<%p> dispatch %zu, connection_id %#X, msgcount %d/%p, pwq %p",
                this, this->_m2m_dispatch, m2m->connection_id,
                m2m->msgcount, m2m->msginfo,
-               pwq));
+               pwq);
 
     // Get the msginfo buffer/length and validate (assert) inputs
     void* msgdata             = (void*)m2m->msginfo;
@@ -1739,17 +1790,15 @@ namespace PAMI
                                        this->_contextid,        /// \todo what context do I target?
                                        &parameters.send.dest);
 
-        TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::postManytomany_impl() simple(nd(%u(%u,%zu)) length %zd, payload %p\n", this, parameters.send.dest, task, this->_contextid, parameters.send.data.iov_len, parameters.send.data.iov_base));
+        TRACE_FORMAT( "<%p> simple(nd(%u(%u,%zu)) length %zd, payload %p", this, parameters.send.dest, task, this->_contextid, parameters.send.data.iov_len, parameters.send.data.iov_base);
         result = this->_m2m_protocol->simple(&parameters);
-        TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::postManytomany_impl() simple result %u\n", this, result));
+        TRACE_FORMAT( "<%p> simple result %u", this, result);
       }
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::postManytomany_impl() dispatch %zu, connection_id %#X exit\n",
-               this, this->_m2m_dispatch, m2m->connection_id));
-
+    TRACE_FORMAT( "<%p> dispatch %zu, connection_id %#X exit",
+               this, this->_m2m_dispatch, m2m->connection_id);
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
-
-
   }; // NativeInterfaceActiveMessage<T_Protocol,T_Max_Msgcount>::postManytomany_impl
 
   ///
@@ -1766,7 +1815,8 @@ namespace PAMI
       pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
       pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::dispatch_mcast header size %zu, data size %zu\n", cookie, header_size, data_size));
+    TRACE_FN_ENTER();
+    TRACE_FORMAT( "<%p> context %p, header/size %p/%zu, data/size %p/%zu, origin %u, recv %p", cookie, context_hdl, header, header_size, data, data_size, origin, recv);
     NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *p = (NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *)cookie;
     p->handle_mcast(context_hdl,
                     header,
@@ -1775,6 +1825,7 @@ namespace PAMI
                     data_size,
                     origin,
                     recv);
+    TRACE_FN_EXIT();
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
@@ -1787,7 +1838,8 @@ namespace PAMI
       pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
       pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::dispatch_m2m header size %zu, data size %zu\n", cookie, header_size, data_size));
+    TRACE_FN_ENTER();
+    TRACE_FORMAT( "<%p> context %p, header/size %p/%zu, data/size %p/%zu, origin %u, recv %p", cookie, context_hdl, header, header_size, data, data_size, origin, recv);
     NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *p = (NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *)cookie;
     p->handle_m2m(  context_hdl,
                     header,
@@ -1796,6 +1848,7 @@ namespace PAMI
                     data_size,
                     origin,
                     recv);
+    TRACE_FN_EXIT();
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
@@ -1808,7 +1861,8 @@ namespace PAMI
       pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
       pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::dispatch_send header size %zu, data size %zu\n", cookie, header_size, data_size));
+    TRACE_FN_ENTER();
+    TRACE_FORMAT( "<%p> context %p, header/size %p/%zu, data/size %p/%zu, origin %u, recv %p", cookie, context_hdl, header, header_size, data, data_size, origin, recv);
     NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *p = (NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *)cookie;
     p->_send_dispatch_function(context_hdl,
                                p->_send_dispatch_arg,
@@ -1818,6 +1872,7 @@ namespace PAMI
                                data_size,
                                origin,
                                recv);
+    TRACE_FN_EXIT();
   }
 
   ///
@@ -1834,6 +1889,7 @@ namespace PAMI
       pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
       pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
+    TRACE_FN_ENTER();
 
     // Call user's dispatch to get receive pwq and cb_done.
     unsigned connection_id = ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->connection_id;
@@ -1842,30 +1898,30 @@ namespace PAMI
     PAMI::PipeWorkQueue   *rcvpwq;
     pami_callback_t       cb_done = {NULL, NULL};
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::handle_mcast()  header size %zu, data size %zu/%zu, connection_id %u, root %zu, recv %p\n", this, header_size, data_size, bytes, connection_id, root, recv));
+    TRACE_FORMAT( "<%p> header size %zu, data size %zu/%zu, connection_id %u, root %zu, recv %p", this, header_size, data_size, bytes, connection_id, root, recv);
 
     // tolerate a null dispatch if there's no data (barrier?)
-    PAMI_assertf(((this->_mcast_dispatch_function == NULL) && (data_size == 0)) || (this->_mcast_dispatch_function != NULL), "fn %p, size %zu\n", this->_mcast_dispatch_function, data_size);
+    PAMI_assertf(((this->_mcast_dispatch_function == NULL) && (data_size == 0)) || (this->_mcast_dispatch_function != NULL), "fn %p, size %zu", this->_mcast_dispatch_function, data_size);
 
     if (this->_mcast_dispatch_function != NULL)
       this->_mcast_dispatch_function(((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->msginfo, ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->msgcount,
                                      connection_id, root, bytes, this->_mcast_dispatch_arg, &bytes,
                                      (pami_pipeworkqueue_t**)&rcvpwq, &cb_done);
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::handle_mcast()  requested bytes %zu\n", this, bytes));
+    TRACE_FORMAT( "<%p> requested bytes %zu", this, bytes);
 
     // I don't think send/recv lets us receive less than was sent, so assert they gave us enough buffer/pwq...
-    PAMI_assert_debugf(bytes == data_size, "bytes %zu == %zu data_size\n", bytes, data_size);
+    PAMI_assert_debugf(bytes == data_size, "bytes %zu == %zu data_size", bytes, data_size);
 
     // No data or immediate data? We're done.
     if ((bytes == 0) || (recv == NULL) || (data != NULL))
       {
-        TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::handle_mcast()  immediate\n", this));
+        TRACE_FORMAT( "<%p> immediate", this);
 
         if (data && bytes)
           {
             /// \todo An assertion probably isn't the best choice...
-            TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage<%d>::handle_mcast()  pwq<%p>\n", this, __LINE__, rcvpwq));
+            TRACE_FORMAT( "<%p>NativeInterfaceActiveMessage<%d>::handle_mcast()  pwq<%p>", this, __LINE__, rcvpwq);
             PAMI_assertf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
             memcpy(rcvpwq->bufferToProduce(), data, bytes);
             rcvpwq->produceBytes(data_size);
@@ -1873,16 +1929,16 @@ namespace PAMI
 
         // call original done
         /** \todo fix or remove this hack */
-        TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::handle_mcast() done<%p>, cookie<%p>\n", this, cb_done.function, cb_done.clientdata));
+        TRACE_FORMAT( "<%p> done<%p>, cookie<%p>", this, cb_done.function, cb_done.clientdata);
 
         if (cb_done.function)
-          (cb_done.function)(NULL,//PAMI_Client_getcontext(_client,_contextid),
+          (cb_done.function)(context_hdl,
                              cb_done.clientdata, PAMI_SUCCESS);
 
 // #warning \todo if it's 0 byte, no recv structure should be delivered
         if (recv != NULL)
           memset(recv, 0, sizeof(*recv));
-
+        TRACE_FN_EXIT();
         return;
       }
 
@@ -1898,15 +1954,14 @@ namespace PAMI
     state->rcvpwq      = rcvpwq;
     state->sendpwq.pwq = NULL;
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::handle_mcast(%p) connection id %u, bytes %zu\n", this, req, connection_id, bytes));
+    TRACE_FORMAT( "<%p> %p connection id %u, bytes %zu", this, req, connection_id, bytes);
 
     recv->addr     = rcvpwq->bufferToProduce();
     recv->type     = PAMI_BYTE;
     recv->offset   = 0;
     recv->local_fn = ni_client_done;
     recv->cookie   = req;
-
-
+    TRACE_FN_EXIT();
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
@@ -1918,11 +1973,12 @@ namespace PAMI
       pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
       pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
+    TRACE_FN_ENTER();
 
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t::metadata_t* metadata = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t::metadata_t*)header;
     unsigned             connection_id = metadata->connection_id;
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::handle_m2m()  header size %zu, data size %zu, connection_id %u, origin %u, recv %p\n", this, header_size, data_size, connection_id, origin, recv));
+    TRACE_FORMAT( "<%p> header size %zu, data size %zu, connection_id %u, origin %u, recv %p", this, header_size, data_size, connection_id, origin, recv);
 
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_recv_statedata_t* state = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_recv_statedata_t*)this->_m2mRecvQ.peekHead();
 
@@ -1959,7 +2015,7 @@ namespace PAMI
         state->doneCountDown = state->recv->participants->size();
 
         this->_m2mRecvQ.pushTail(state); // queue this m2m state
-        TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::handle_m2m()  connection_id %u, doneCountDown %u\n", this, state->connection_id, state->doneCountDown));
+        TRACE_FORMAT( "<%p> connection_id %u, doneCountDown %u", this, state->connection_id, state->doneCountDown);
       }
 
     PAMI::M2MPipeWorkQueue   *pwq      = state->recv->buffer;
@@ -1980,12 +2036,12 @@ namespace PAMI
     // No data or immediate data? We're done.
     if ((data_size == 0) || (recv == NULL) || (data != NULL))
       {
-        TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::handle_m2m()  immediate\n", this));
+        TRACE_FORMAT( "<%p> immediate", this);
 
         if (data && data_size)
           {
             /// \todo An assertion probably isn't the best choice...
-          TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage<%d>::handle_m2m()  pwq<%p>\n", this, __LINE__, pwq));
+          TRACE_FORMAT( "<%p>NativeInterfaceActiveMessage<%d>::handle_m2m()  pwq<%p>", this, __LINE__, pwq);
             memcpy(buffer, data, data_size);
             //pwq->produceBytes(originTask,data_size); \todo don't care about pipelining on M2M pwq's
           }
@@ -1998,17 +2054,18 @@ namespace PAMI
         // #warning \todo if it's 0 byte, no recv structure should be delivered
         if (recv != NULL)
           memset(recv, 0, sizeof(*recv));
-
+        TRACE_FN_EXIT();
         return;
       }
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::handle_m2m() data_size %zu, bytesToProduce(%zu) %zu\n", this, data_size, originIndex, bytesToProduce));
+    TRACE_FORMAT( "<%p> data_size %zu, bytesToProduce(%zu) %zu", this, data_size, originIndex, bytesToProduce);
 
     recv->addr     = buffer;
     recv->type     = PAMI_BYTE; /// \todo assume PAMI_BYTE for now
     recv->offset   = 0;
     recv->local_fn = recvM2mDone;
     recv->cookie   = state;
+    TRACE_FN_EXIT();
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
@@ -2016,10 +2073,11 @@ namespace PAMI
       void          *  cookie,
       pami_result_t    result )
   {
+    TRACE_FN_ENTER();
 
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t*)cookie;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::sendMcastDone countDown %u\n", cookie, state_data->doneCountDown));
+    TRACE_FORMAT( "<%p> countDown %u", cookie, state_data->doneCountDown);
 
     if (--state_data->doneCountDown == 0)
       {
@@ -2027,9 +2085,8 @@ namespace PAMI
         if (state_data->cb_done.function)
           (state_data->cb_done.function)(context,
                                          state_data->cb_done.clientdata, PAMI_SUCCESS);
-
-        return;
       }
+    TRACE_FN_EXIT();
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
@@ -2037,10 +2094,11 @@ namespace PAMI
       void          *  cookie,
       pami_result_t    result )
   {
+    TRACE_FN_ENTER();
 
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t*)cookie;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::sendM2mDone countDown %u\n", cookie, state_data->doneCountDown));
+    TRACE_FORMAT( "<%p> countDown %u", cookie, state_data->doneCountDown);
 
     if (--state_data->doneCountDown == 0)
       {
@@ -2048,9 +2106,8 @@ namespace PAMI
         if (state_data->cb_done.function)
           (state_data->cb_done.function)(context,
                                          state_data->cb_done.clientdata, PAMI_SUCCESS);
-
-        return;
       }
+    TRACE_FN_EXIT();
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
@@ -2058,10 +2115,11 @@ namespace PAMI
       void          *  cookie,
       pami_result_t    result )
   {
+    TRACE_FN_ENTER();
 
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_recv_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_recv_statedata_t*)cookie;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::recvM2mDone countDown %u\n", cookie, state_data->doneCountDown));
+    TRACE_FORMAT( "<%p> countDown %u", cookie, state_data->doneCountDown);
 
     if (--state_data->doneCountDown == 0)
       {
@@ -2069,12 +2127,9 @@ namespace PAMI
       if (state_data->cb_done.function)
         (state_data->cb_done.function)(context,
                                        state_data->cb_done.clientdata, PAMI_SUCCESS);
-
-      return;
       }
+    TRACE_FN_EXIT();
   }
-
-
 };
 
 #endif

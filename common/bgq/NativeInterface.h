@@ -16,8 +16,19 @@
 
 #include "components/memory/MemoryAllocator.h"
 
-#undef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#include "util/ccmi_util.h"
+
+/// \todo put this trace facility somewhere common
+#include "components/devices/bgq/mu2/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+ #define DO_TRACE_ENTEREXIT 1
+ #define DO_TRACE_DEBUG     1
+#else
+   #define DO_TRACE_ENTEREXIT 0
+ #define DO_TRACE_DEBUG     0
+#endif
+
 
 extern PAMI::Global __global;
 
@@ -122,13 +133,13 @@ namespace PAMI
       _mcast(*mcast),
       _msync(*msync),
       _mcomb(*mcomb),
-      _dispatch(DISPATCH_START),
+      _dispatch(-1U),
       _client(client),
       _context(context),
       _contextid(context_id),
       _clientid(client_id)
   {
-    TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+    TRACE_FN_ENTER();
   };
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
@@ -149,18 +160,20 @@ namespace PAMI
       _msync(device, _msync_status),
       _mcomb(device, _mcomb_status),
 
-      _dispatch(DISPATCH_START),
+      _dispatch(-1U),
       _client(client),
       _context(context),
       _contextid(context_id),
       _clientid(client_id)
   {
-    TRACE_ERR((stderr, "<%p>%s %d %d %d\n", this, __PRETTY_FUNCTION__,
-               _mcast_status, _msync_status, _mcomb_status));
+    TRACE_FN_ENTER();
+    TRACE_FORMAT( "<%p>%s %d %d %d", this, __PRETTY_FUNCTION__,
+               _mcast_status, _msync_status, _mcomb_status);
 
     PAMI_assert(_mcast_status == PAMI_SUCCESS);
     PAMI_assert(_msync_status == PAMI_SUCCESS);
     PAMI_assert(_mcomb_status == PAMI_SUCCESS);
+    TRACE_FN_EXIT();
   };
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
@@ -171,7 +184,7 @@ namespace PAMI
                                                                               size_t         client_id) :
       BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>(device, client, context, context_id, client_id)
   {
-    TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+    TRACE_FN_ENTER();
     DO_DEBUG((templateName<T_Device>()));
   }
 
@@ -181,12 +194,13 @@ namespace PAMI
       void          *rdata,
       pami_result_t   res)
   {
+    TRACE_FN_ENTER();
     allocObj             *obj = (allocObj*)rdata;
     BGQNativeInterfaceAS *ni   = obj->_ni;
 
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::ni_client_done(%p, %p, %d) calling %p(%p)\n",
+    TRACE_FORMAT( "<%p> %p, %p, %d calling %p(%p)",
                ni, context, rdata, res,
-               obj->_user_callback.function, obj->_user_callback.clientdata));
+               obj->_user_callback.function, obj->_user_callback.clientdata);
 
     if (obj->_user_callback.function)
       obj->_user_callback.function(context,
@@ -194,32 +208,36 @@ namespace PAMI
                                    res);
 
     ni->_allocator.returnObject(obj);
+    TRACE_FN_EXIT();
   }
 
   /// \brief this call is called when the native interface is initialized
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline pami_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie)
   {
-    static size_t dispatch = DISPATCH_START;
+    TRACE_FN_ENTER();
+    this->_dispatch = NativeInterfaceCommon::getNextDispatch();
 
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::setDispatch(%p, %p) id=%zu\n",
-               this, fn,  cookie,  dispatch));
+    TRACE_FORMAT( "<%p> %p, %p id=%u",
+               this, fn,  cookie,  this->_dispatch);
     DO_DEBUG((templateName<T_Mcast>()));
 
-    pami_result_t result = this->_mcast.registerMcastRecvFunction(dispatch, fn, cookie);
+    pami_result_t result = this->_mcast.registerMcastRecvFunction(this->_dispatch, fn, cookie);
 
-    this->_dispatch = dispatch;
-    dispatch ++;
+    PAMI_assert(result == PAMI_SUCCESS);
+
+    TRACE_FN_EXIT();
     return result;
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
+    TRACE_FN_ENTER();
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
     req->_user_callback    = mcast->cb_done;
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicast(%p/%p) connection id %u, msgcount %u, bytes %zu\n", this, mcast, req, mcast->connection_id, mcast->msgcount, mcast->bytes));
+    TRACE_FORMAT( "<%p> %p/%p connection id %u, msgcount %u, bytes %zu, devinfo %p", this, mcast, req, mcast->connection_id, mcast->msgcount, mcast->bytes,devinfo);
     DO_DEBUG((templateName<T_Mcast>()));
 
     //  \todo:  this copy will cause a latency hit, maybe we need to change postMultisync
@@ -233,17 +251,19 @@ namespace PAMI
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
 
-    return _mcast.postMulticast(req->_state._mcast, &m);
+    TRACE_FN_EXIT();
+    return _mcast.postMulticast(req->_state._mcast, &m, devinfo);
   }
 
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync(pami_multisync_t *msync, void *devinfo)
   {
+    TRACE_FN_ENTER();
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
     req->_user_callback    = msync->cb_done;
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multisync(%p/%p) connection id %u\n", this, msync, req, msync->connection_id));
+    TRACE_FORMAT( "<%p> %p/%p connection id %u, devinfo %p", this, msync, req, msync->connection_id, devinfo);
     DO_DEBUG((templateName<T_Msync>()));
 
     pami_multisync_t  m     = *msync;
@@ -253,7 +273,8 @@ namespace PAMI
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
-    _msync.postMultisync(req->_state._msync, &m);
+    _msync.postMultisync(req->_state._msync, &m, devinfo);
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
@@ -261,10 +282,11 @@ namespace PAMI
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicombine (pami_multicombine_t *mcomb, void *devinfo)
   {
+    TRACE_FN_ENTER();
     allocObj *req          = (allocObj *)_allocator.allocateObject();
     req->_ni               = this;
     req->_user_callback    = mcomb->cb_done;
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicombine(%p/%p) connection id %u, count %zu, dt %#X, op %#X\n", this, mcomb, req, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor));
+    TRACE_FORMAT( "<%p> %p/%p connection id %u, count %zu, dt %#X, op %#X, devinfo %p", this, mcomb, req, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor, devinfo);
     DO_DEBUG((templateName<T_Mcomb>()));
 
     pami_multicombine_t  m     = *mcomb;
@@ -275,39 +297,46 @@ namespace PAMI
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
 
-    return _mcomb.postMulticombine(req->_state._mcomb, &m);
+    TRACE_FN_EXIT();
+    return _mcomb.postMulticombine(req->_state._mcomb, &m, devinfo);
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicast (uint8_t (&state)[T_Mcast::sizeof_msg],
       pami_multicast_t *mcast, void *devinfo)
   {
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicast(%p,%p) connection id %u, msgcount %u, bytes %zu\n", this, &state, mcast, mcast->connection_id, mcast->msgcount, mcast->bytes));
+    TRACE_FN_ENTER();
+    TRACE_FORMAT( "<%p> %p,%p connection id %u, msgcount %u, bytes %zu, devinfo %p", this, &state, mcast, mcast->connection_id, mcast->msgcount, mcast->bytes, devinfo);
     DO_DEBUG((templateName<T_Mcast>()));
 
     mcast->dispatch =  _dispatch;
 
-    return _mcast.postMulticast_impl(state, mcast);
+    TRACE_FN_EXIT();
+    return _mcast.postMulticast_impl(state, mcast, devinfo);
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],
       pami_multisync_t *msync, void *devinfo)
   {
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multisync(%p,%p) connection id %u\n", this, &state, msync, msync->connection_id));
+    TRACE_FN_ENTER();
+    TRACE_FORMAT( "<%p> %p,%p connection id %u, devinfo %p", this, &state, msync, msync->connection_id, devinfo);
     DO_DEBUG((templateName<T_Msync>()));
 
-    return _msync.postMultisync_impl(state, msync);
+    TRACE_FN_EXIT();
+    return _msync.postMultisync_impl(state, msync, devinfo);
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
   inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicombine (uint8_t (&state)[T_Mcomb::sizeof_msg],
       pami_multicombine_t *mcomb, void *devinfo)
   {
-    TRACE_ERR((stderr, "<%p>BGQNativeInterface::multicombine(%p,%p) connection id %u, count %zu, dt %#X, op %#X\n", this, &state, mcomb, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor));
+    TRACE_FN_ENTER();
+    TRACE_FORMAT( "<%p> %p,%p connection id %u, count %zu, dt %#X, op %#X, devinfo %p", this, &state, mcomb, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor, devinfo);
     DO_DEBUG((templateName<T_Mcomb>()));
 
-    return _mcomb.postMulticombine_impl(state, mcomb);
+    TRACE_FN_EXIT();
+    return _mcomb.postMulticombine_impl(state, mcomb, devinfo);
   }
 
 

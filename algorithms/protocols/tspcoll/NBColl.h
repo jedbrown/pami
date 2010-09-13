@@ -49,7 +49,7 @@ namespace TSPColl
             pami_event_function cb_complete, void *arg);
 
   public:
-    virtual void  kick  (T_mcast *p2p_iface) {};
+    virtual void  kick  (T_mcast *p2p_iface, pami_context_t context=NULL) {};
     virtual bool isdone () const { return false; } /* check completion */
     int instID () const { return _instID; }
     int tag    () const { return _tag;    }

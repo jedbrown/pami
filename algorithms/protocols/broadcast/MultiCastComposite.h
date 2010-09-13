@@ -126,7 +126,7 @@ namespace CCMI
       template <class T_Geometry>
       class MultiCastComposite2 : public CCMI::Executor::Composite
       {
-      protected:
+      protected: 
         Interfaces::NativeInterface        * _native;
         PAMI_GEOMETRY_CLASS                * _geometry;
         pami_broadcast_t                     _xfer_broadcast;
@@ -198,8 +198,8 @@ namespace CCMI
           }
           else
           {
-            _buffer = (char*) & _bytes; // dummy buffer - unused
-            _src.configure(NULL, _buffer, 0, 0);
+            //_buffer = (char*) & _bytes; // dummy buffer - unused
+            _src.configure(NULL, (char*)NULL, 0, 0);
             _dst.configure(NULL, cmd->cmd.xfer_broadcast.buf, _bytes, 0);
           }
 

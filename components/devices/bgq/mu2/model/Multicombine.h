@@ -25,7 +25,6 @@
 
 #include "components/devices/bgq/mu2/trace.h"
 
-#include "components/devices/MulticombineModel.h"
 #define DO_TRACE_ENTEREXIT 0
 #define DO_TRACE_DEBUG     0
 
@@ -89,9 +88,9 @@ namespace PAMI
 
           static const size_t sizeof_msg                              = 2048 /*sizeof(state_data_t)*/;
           static const size_t packet_model_payload_bytes              = T_PacketModel::packet_model_payload_bytes;
-          static const size_t packet_model_immediate_max              = T_PacketModel::packet_model_immediate_max;
+          static const size_t packet_model_immediate_bytes              = T_PacketModel::packet_model_immediate_bytes;
 
-          static const size_t Multicombine_model_msgcount_max            = (packet_model_payload_bytes /*or packet_model_immediate_max*/ / sizeof(pami_quad_t));
+          static const size_t Multicombine_model_msgcount_max            = (packet_model_payload_bytes /*or packet_model_immediate_bytes*/ / sizeof(pami_quad_t));
           static const size_t Multicombine_model_bytes_max               = (uint32_t) - 1; // protocol_metadata_t::sndlen
           static const size_t Multicombine_model_connection_id_max       = (uint32_t) - 1; // protocol_metadata_t::connection_id \todo 64 bit?
 
@@ -115,9 +114,9 @@ namespace PAMI
           {
             static unsigned _id = 0x81;
             TRACE_FN_ENTER();
-            TRACE_FORMAT("%u\n", (_id + 1) && 0xFF);
+            TRACE_FORMAT("%u\n", (_id + 1) & 0xFF);
             TRACE_FN_EXIT();
-            return ++_id && 0xFF;
+            return ++_id & 0xFF;
           }
           /// \brief MU dispatch function
           inline static int dispatch_data (void   * metadata,
@@ -192,6 +191,9 @@ namespace PAMI
         TRACE_FN_ENTER();
 
         uint32_t classRoute = (uint32_t)(size_t)devinfo; // convert platform independent void* to bgq uint32_t classroute
+        // MU class routes start at 0 but ResourceManager adds 1 to avoid NULL-looking device info.
+        PAMI_assert(classRoute);
+        classRoute -= 1; 
 
         TRACE_FORMAT( "connection_id %#X, class route %#X\n", mcomb->connection_id, classRoute);
 
@@ -253,7 +255,7 @@ namespace PAMI
               }
 
             // Post the Multicombine to the device in one or more packets
-            if (length <= packet_model_payload_bytes /*or packet_model_immediate_max*/) // one packet
+            if (length <= packet_model_payload_bytes /*or packet_model_immediate_bytes*/) // one packet
               {
                 _data_model.postCollectivePacket (state_data->pkt,
                                                   NULL,

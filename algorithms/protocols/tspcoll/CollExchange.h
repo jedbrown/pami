@@ -47,7 +47,7 @@ namespace TSPColl
     /* ------------------------------ */
     /*  public API                    */
     /* ------------------------------ */
-    virtual void  kick             (T_NI *p2p_iface);
+    virtual void  kick             (T_NI *p2p_iface, pami_context_t context=NULL);
     virtual bool  isdone           () const;
     static void   amsend_reg       (T_NI *p2p_iface, void *cd);
   protected:
@@ -205,7 +205,7 @@ inline void TSPColl::CollExchange<T_NI>::reset()
 /*                   kick the state machine (make progress)                */
 /* *********************************************************************** */
 template <class T_NI>
-inline void TSPColl::CollExchange<T_NI>::kick(T_NI *p2p_iface)
+inline void TSPColl::CollExchange<T_NI>::kick(T_NI *p2p_iface, pami_context_t context)
 {
   /* continued ATOMIC (code should be entered with mutex already locked */
   _p2p_iface = p2p_iface;
@@ -298,7 +298,7 @@ inline void TSPColl::CollExchange<T_NI>::kick(T_NI *p2p_iface)
               _phase++;
               TRACE((stderr, "Delivering user done callback fcn=%p arg=%p\n",
                      this->_cb_complete, this->_arg));
-              this->_cb_complete (NULL, this->_arg, PAMI_SUCCESS);
+              this->_cb_complete (context, this->_arg, PAMI_SUCCESS);
           }
 
  the_end:
@@ -369,7 +369,7 @@ inline void TSPColl::CollExchange<T_NI>::cb_senddone (pami_context_t context, vo
          base->_phase, base->_numphases,
          base->_dest[base->_phase], base->_sbufln[base->_phase],
          base->_sendcomplete));
-  base->kick(base->_p2p_iface);
+  base->kick(base->_p2p_iface,context);
 }
 
 
@@ -393,7 +393,7 @@ TSPColl::CollExchange<T_NI>::cb_recvcomplete (pami_context_t context, void * arg
          base->_tag,
          base->_counter, base->_phase, phase, base->_recvcomplete[phase]));
   if (base->_cb_recv1[phase]) base->_cb_recv1[phase](base, phase);
-  base->kick(base->_p2p_iface);
+  base->kick(base->_p2p_iface,context);
 }
 
 /* *********************************************************************** */

@@ -88,6 +88,7 @@ namespace PAMI
 
       template <class T_Geometry,
       class T_Local_Device,
+      class T_Global_Device,
       class T_LocalNI_AM,
       class T_GlobalNI_AM,
       class T_LocalModel,
@@ -95,6 +96,7 @@ namespace PAMI
       class BGQ2DRegistration :
       public CollRegistration < PAMI::CollRegistration::BGQ2D::BGQ2DRegistration < T_Geometry,
       T_Local_Device,
+      T_Global_Device,
       T_LocalNI_AM,
       T_GlobalNI_AM,
       T_LocalModel,
@@ -115,7 +117,7 @@ namespace PAMI
           // Currently, the _niPtr array is in front
           // These have to go at the front of the struct
           // because the protocols use the key.
-          CCMI::Interfaces::NativeInterface *_niPtr[2];
+          CCMI::Interfaces::NativeInterface *_niPtr[4];
           Barrier::MultiSyncFactory         *_barrier;
           Broadcast::MultiCastFactory       *_broadcast;
           Allreduce::MultiCombineFactory    *_allreduce;
@@ -131,10 +133,11 @@ namespace PAMI
                                size_t              context_id,
                                size_t              client_id,
                                T_Local_Device     &ldev,
-                               T_GlobalNI_AM      *g_ni,
+                               T_Global_Device    &gdev,
                                Mapping            &mapping):
         CollRegistration < PAMI::CollRegistration::BGQ2D::BGQ2DRegistration < T_Geometry,
         T_Local_Device,
+        T_Global_Device,
         T_LocalNI_AM,
         T_GlobalNI_AM,
         T_LocalModel,
@@ -148,7 +151,11 @@ namespace PAMI
         _global_size(mapping.size()),
         _reduce_val((-1)&(~0x1)),
         _local_devs(ldev),
-        _g_ni(g_ni)
+        _global_dev(gdev),
+        _g_barrier_ni(_global_dev,client, context, context_id, client_id),
+        _g_broadcast_ni(_global_dev,client, context, context_id, client_id),
+        _g_allreduce_ni(_global_dev,client, context, context_id, client_id),
+        _g_allreducenp_ni(_global_dev,client, context, context_id, client_id)
         {
           TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           // To initialize shared memory, we need to provide the task offset into the
@@ -198,8 +205,10 @@ namespace PAMI
           GeometryInfo                     *geometryInfo = (GeometryInfo*)_geom_allocator.allocateObject();
           geometryInfo->_local_model                     = local_model;
           geometryInfo->_niPtr[0]                        = ni;
-          geometryInfo->_niPtr[1]                        = _g_ni;
-
+          geometryInfo->_niPtr[1]                        = &_g_barrier_ni;
+          geometryInfo->_niPtr[2]                        = ni;
+          geometryInfo->_niPtr[3]                        = &_g_allreducenp_ni;
+        
           // Allocate the factories
           //  ----->  Barrier
           Barrier::MultiSyncFactory  *barrier_reg        = (Barrier::MultiSyncFactory*)_factory_allocator.allocateObject();
@@ -212,7 +221,7 @@ namespace PAMI
           new(broadcast_reg) Broadcast::MultiCastFactory(&_sconnmgr,
                                                          (CCMI::Interfaces::NativeInterface *)ni,
                                                          false,  // local protocols are not active message (2 sided), will not register
-                                                         (CCMI::Interfaces::NativeInterface *)_g_ni,
+                                                         (CCMI::Interfaces::NativeInterface *)_g_broadcast_ni,
                                                          true);  // global protocols ARE active message, will register async
           geometryInfo->_broadcast                       = broadcast_reg;
 
@@ -220,13 +229,13 @@ namespace PAMI
           Allreduce::MultiCombineFactory  *allreduce_reg = (Allreduce::MultiCombineFactory*)_factory_allocator.allocateObject();
           new(allreduce_reg) Allreduce::MultiCombineFactory(&_sconnmgr,
                                                             (CCMI::Interfaces::NativeInterface *)ni,
-                                                            (CCMI::Interfaces::NativeInterface *)_g_ni);
+                                                            (CCMI::Interfaces::NativeInterface *)_g_allreduce_ni);
           geometryInfo->_allreduce                       = allreduce_reg;
 
           //  ----->  Allreduce
           Allreduce::MultiCombineFactoryNP  *allreducenp_reg = (Allreduce::MultiCombineFactoryNP*)_factory_allocator.allocateObject();
           new(allreducenp_reg) Allreduce::MultiCombineFactoryNP(&_sconnmgr,
-                                                                (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[0]);
+                                                                (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[2]);
           geometryInfo->_allreducenp                     = allreducenp_reg;
 
           // Add the geometry info to the geometry
@@ -293,9 +302,13 @@ namespace PAMI
 
         // Devices
         T_Local_Device                                                 &_local_devs;
+        T_Global_Device                                                &_global_dev;
 
         // Global native interface
-        T_GlobalNI_AM                                                  *_g_ni;
+        T_GlobalNI_AM                                                   _g_barrier_ni;
+        T_GlobalNI_AM                                                   _g_broadcast_ni;
+        T_GlobalNI_AM                                                   _g_allreduce_ni;
+        T_GlobalNI_AM                                                   _g_allreducenp_ni;
 
         // Factory Allocator
         // and Local NI allocator

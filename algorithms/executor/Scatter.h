@@ -437,13 +437,13 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
  PAMI::PipeWorkQueue ** pwq,
  pami_callback_t      * cb_done)
 {
-  TRACE_MSG((stderr, "<%p> Executor::ScatterExec::notifyRecv() from %d, dsttopology.size %zu\n", this, src, _dsttopology.size()));
+  TRACE_MSG((stderr, "<%p> Executor::ScatterExec::notifyRecv() from %d\n", this, src));
 
   *pwq = &_pwq;
 
   if (_nphases > 1)
     {
-      TRACE_ADAPTOR((stderr, "<%p> Executor::ScatterExec::notifyRecv() dsttopology.size %zu\n", this, _dsttopology.size()));
+      TRACE_ADAPTOR((stderr, "<%p> Executor::ScatterExec::notifyRecv() \n", this));
       /// \todo this sendNext() should have worked but MPI platform didn't support it (yet).
       //    cb_done->function = NULL;  //There is a send here that will notify completion
       //    sendNext ();

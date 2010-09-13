@@ -21,15 +21,36 @@ namespace PAMI
   {
     namespace MU
     {
+      typedef enum {
+        UNDETERMINED = 0,
+        POSITIVE,
+        MINUS
+      } direction_t;
+
+      template <direction_t T_DIRECTION=UNDETERMINED>
       class PacketModelDeposit : public MU::PacketModel
       {
         public :
 
           /// \see PAMI::Device::Interface::PacketModel::PacketModel
+          /// \param[in] hint_p  true = positive direction, false = minus direction
           inline PacketModelDeposit (MU::Context & context) :
               MU::PacketModel (context)
           {
+#ifdef __bgq__
+//          PAMI_assert(T_DIRECTION != UNDETERMINED);
+            PAMI_assert((T_DIRECTION == MINUS) || (T_DIRECTION == POSITIVE)); // In case we add directions?
+
+            uint8_t hintsABCD = T_DIRECTION == POSITIVE ? 
+              MUHWI_PACKET_HINT_AP|MUHWI_PACKET_HINT_BP|MUHWI_PACKET_HINT_CP|MUHWI_PACKET_HINT_DP :
+              MUHWI_PACKET_HINT_AM|MUHWI_PACKET_HINT_BM|MUHWI_PACKET_HINT_CM|MUHWI_PACKET_HINT_DM;
+
+            uint8_t hintsE = T_DIRECTION == POSITIVE ? MUHWI_PACKET_HINT_EP : MUHWI_PACKET_HINT_EM;
+            _singlepkt.setHints(hintsABCD,hintsE);
+            _multipkt.setHints(hintsABCD,hintsE);
+#endif
             _singlepkt.setDeposit(MUHWI_PACKET_DEPOSIT);
+
             _multipkt.setDeposit(MUHWI_PACKET_DEPOSIT);
           };
 

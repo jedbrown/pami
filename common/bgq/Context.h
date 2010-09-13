@@ -72,7 +72,9 @@ namespace PAMI
               CSNativeInterface, CSMemoryManager, CollShmModel>            CollShmCollreg;
 
   typedef CollRegistration::BGQ2D::BGQ2DRegistration<BGQGeometry,
-              PAMI::Device::Generic::Device, CSNativeInterface,
+              PAMI::Device::Generic::Device, 
+              MUDevice, 
+              CSNativeInterface,
               MUGlobalNI,
               CollShmModel, CSMemoryManager>                               BGQ2DCollreg;
 
@@ -295,7 +297,7 @@ namespace PAMI
           _coll_shm_registration(NULL),
           _bgq2d_registration(NULL),
 #endif
-          _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >*) _multi_registration_storage),
+          _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI >*) _multi_registration_storage),
           _ccmi_registration((CCMIRegistration*)_ccmi_registration_storage),
           _world_geometry(world_geometry),
           _status(PAMI_SUCCESS),
@@ -304,7 +306,6 @@ namespace PAMI
           _shmemMcombModel(NULL),
           _shmem_native_interface(NULL),
           _devices(devices),
-          _global_mu_ni(NULL),
           _pgas_mu_registration(NULL),
           _pgas_shmem_registration(NULL),
           _dummy_disable(false),
@@ -337,9 +338,6 @@ namespace PAMI
 
         if (__global.useMU())
           {
-            TRACE_ERR((stderr,  "<%p>Context::Context() construct mu native interface\n", this));
-            // Can't construct NI until device is init()'d.  Ctor into member storage.
-            _global_mu_ni = new (_global_mu_ni_storage) MUGlobalNI(Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _client, _context, _contextid, _clientid);
 
             // Initialize mu rget and mu rput protocols.
             pami_result_t result = PAMI_ERROR;
@@ -461,7 +459,7 @@ namespace PAMI
             else TRACE_ERR((stderr, "topology does not support shmem\n"));
           }
 
-        TRACE_ERR((stderr,  "<%p>Context::Context() Register collectives(%p,%p,%p,%p,%zu,%zu\n", this, _shmem_native_interface, _global_mu_ni, client, this, id, clientid));
+        TRACE_ERR((stderr,  "<%p>Context::Context() Register collectives(%p,%p,%p,%zu,%zu\n", this, _shmem_native_interface, client, this, id, clientid));
         // The multi registration will use shmem/mu if they are ctor'd above.
 
 #ifdef _COLLSHM   // New Collective Shmem Registration
@@ -481,7 +479,10 @@ namespace PAMI
             else  _coll_shm_registration = NULL;
 
             _bgq2d_registration = new((BGQ2DCollreg *) _bgq2d_registration_storage)
-            BGQ2DCollreg(_client, _context, _contextid, _clientid, PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, _clientid, _contextid), _global_mu_ni, __global.mapping);
+            BGQ2DCollreg(_client, _context, _contextid, _clientid, 
+                         PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, _clientid, _contextid), 
+                         PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),
+                         __global.mapping);
 
             if(((PAMI::Topology*)_world_geometry->getTopology(0))->isLocal() && _coll_shm_registration)
                  _coll_shm_registration->analyze_global(_contextid, _world_geometry, invec);
@@ -497,7 +498,12 @@ namespace PAMI
 #endif
 
         _multi_registration       =  new (_multi_registration)
-        CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >(_shmem_native_interface, _global_mu_ni, client, (pami_context_t)this, id, clientid);
+        CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI >(_shmem_native_interface,
+                                                                                                       PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), 
+                                                                                                       client, 
+                                                                                                       (pami_context_t)this, 
+                                                                                                       id, 
+                                                                                                       clientid);
 
         _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size());
 
@@ -1107,7 +1113,7 @@ namespace PAMI
       CollShmCollreg              *_coll_shm_registration;
       BGQ2DCollreg                *_bgq2d_registration;
 #endif
-      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >    *_multi_registration;
+      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI >    *_multi_registration;
       CCMIRegistration            *_ccmi_registration;
       BGQGeometry                 *_world_geometry;
       pami_result_t                _status;
@@ -1120,15 +1126,13 @@ namespace PAMI
       uint8_t                      _coll_shm_registration_storage[sizeof(CollShmCollreg)];
       uint8_t                      _bgq2d_registration_storage[sizeof(BGQ2DCollreg)];
 #endif
-      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUGlobalNI >)];
+      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI >)];
       uint8_t                      _shmemMcastModel_storage[sizeof(ShmemMcstModel)];
       uint8_t                      _shmemMsyncModel_storage[sizeof(ShmemMsyncModel)];
       uint8_t                      _shmemMcombModel_storage[sizeof(ShmemMcombModel)];
       uint8_t                      _shmem_native_interface_storage[sizeof(AllSidedShmemNI)];
       ProtocolAllocator            _protocol;
       PlatformDeviceList          *_devices;
-      MUGlobalNI                  *_global_mu_ni;
-      uint8_t                      _global_mu_ni_storage[sizeof(MUGlobalNI)];
       MU_PGASCollreg              *_pgas_mu_registration;
       uint8_t                      _pgas_mu_registration_storage[sizeof(MU_PGASCollreg)];
       Shmem_PGASCollreg           *_pgas_shmem_registration;

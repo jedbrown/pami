@@ -80,9 +80,9 @@ namespace PAMI
 
           static const size_t sizeof_msg                              = 2048 /*sizeof(state_data_t)*/;
           static const size_t packet_model_payload_bytes              = AllreducePacketModel::packet_model_payload_bytes;
-          static const size_t packet_model_immediate_max              = AllreducePacketModel::packet_model_immediate_max;
+          static const size_t packet_model_immediate_bytes              = AllreducePacketModel::packet_model_immediate_bytes;
 
-          static const size_t Multisync_model_msgcount_max            = (packet_model_payload_bytes /*or packet_model_immediate_max*/ / sizeof(pami_quad_t));
+          static const size_t Multisync_model_msgcount_max            = (packet_model_payload_bytes /*or packet_model_immediate_bytes*/ / sizeof(pami_quad_t));
           static const size_t Multisync_model_bytes_max               = (uint32_t) - 1; // protocol_metadata_t::sndlen
           static const size_t Multisync_model_connection_id_max       = (uint32_t) - 1; // protocol_metadata_t::connection_id \todo 64 bit?
 
@@ -96,9 +96,9 @@ namespace PAMI
           {
             static unsigned _id = 0x81;
             TRACE_FN_ENTER();
-            TRACE_FORMAT("%u\n", (_id + 1) && 0xFF);
+            TRACE_FORMAT("%u/%u\n", _id, ((_id + 1) & 0xFF));
             TRACE_FN_EXIT();
-            return ++_id && 0xFF;
+            return ++_id & 0xFF;
           }
           /// \brief MU dispatch function
           inline static int dispatch_header (void   * metadata,
@@ -170,6 +170,9 @@ namespace PAMI
         TRACE_FN_ENTER();
 
         uint32_t classRoute = (uint32_t)(size_t)devinfo; // convert platform independent void* to bgq uint32_t classroute
+        // MU class routes start at 0 but ResourceManager adds 1 to avoid NULL-looking device info.
+        PAMI_assert(classRoute);
+        classRoute -= 1; 
 
         TRACE_FORMAT( "connection_id %#X, class route %#X\n", msync->connection_id, classRoute);
 

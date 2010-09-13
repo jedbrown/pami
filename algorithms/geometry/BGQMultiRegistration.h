@@ -226,6 +226,119 @@ namespace PAMI
     };
 
     //----------------------------------------------------------------------------
+    // 'Pure' MU axial allsided multicast built on active message multicast with an
+    // synchronizing multisync
+    //
+    // The necessary factory is defined here to implement the appropriate
+    // dispatch/notifyRecv.  We simply us a map<> to associate connection id's
+    // with composites.  Since it's all-sided, this should be fine.
+    //
+    // Connection id's are based on incrementing CommSeqConnMgr id's.
+    //----------------------------------------------------------------------------
+    void AxialMcast2MetaData(pami_metadata_t *m)
+    {
+      strncpy(&m->name[0], "AxialMultiCast_Msync", 32);
+    }
+
+    // Define our base factory
+    typedef CCMI::Adaptor::CollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry>,
+    AxialMcast2MetaData,
+    CCMI::ConnectionManager::CommSeqConnMgr > AxialMultiCast2FactoryBase;
+
+    // Extend the base factory to handle our multicast dispatch head
+    class AxialMultiCast2Factory : public AxialMultiCast2FactoryBase
+    {
+    public:
+      AxialMultiCast2Factory (CCMI::ConnectionManager::CommSeqConnMgr *cmgr,
+                              CCMI::Interfaces::NativeInterface *native,
+                              pami_dispatch_multicast_fn   cb_head = NULL):
+      // pass our multicast dispatch (axial2_cb_async) to the parent
+      AxialMultiCast2FactoryBase(cmgr, native, (pami_dispatch_multicast_fn)&axial2_cb_async)
+      {
+        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::AxialMultiCast2Factory()\n", this));
+      };
+      virtual CCMI::Executor::Composite * generate(pami_geometry_t             geometry,
+                                                   void                      * cmd)
+      {
+        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::AxialMultiCast2Factory::generate()\n", this));
+
+        // The composite will ctor the connection manager and generate a unique connection id.
+        collObj *cobj = (collObj*) _alloc.allocateObject();
+        TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::generate()\n", cobj));
+        new(cobj) collObj(_native,          // Native interface
+                          _cmgr,            // Connection Manager
+                          geometry,         // Geometry Object
+                          (pami_xfer_t*)cmd, // Parameters
+                          done_fn,          // Intercept function
+                          cobj,             // Intercept cookie
+                          this);            // Factory
+
+        CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> *composite = &cobj->_obj;
+
+        // Get the (updated and unique) connection id and store this new composite in the map[connection_id].
+        BGQGeometry *bgqGeometry = (BGQGeometry *)geometry;
+        unsigned comm = bgqGeometry->comm();
+        cobj->_connection_id = _cmgr->getConnectionId (comm, 0, 0, 0, 0);
+        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::AxialMultiCast2Factory::generate() map comm %u, connection_id %u, composite %p\n", this, comm, cobj->_connection_id, composite));
+        _composite_map[cobj->_connection_id] = composite;
+        return composite;
+      }
+      static void done_fn(pami_context_t  context,
+                          void           *clientdata,
+                          pami_result_t   res)
+      {
+        collObj *cobj = (collObj *)clientdata;
+        TRACE_ADAPTOR((stderr, "<%p>PAMI::CollRegistration::AxialMultiCast2Factory::done_fn()\n", cobj));
+        cobj->done_fn(context, res);
+        AxialMultiCast2Factory* factory = (AxialMultiCast2Factory*) cobj->_factory;
+        factory->_composite_map.erase(cobj->_connection_id);
+        cobj->_factory->_alloc.returnObject(cobj);
+      }
+
+
+      ///
+      /// \brief multicast dispatch - call the factory notifyRecvHead
+      ///
+      static void axial2_cb_async(const pami_quad_t      *msginfo,       // \param[in] msginfo    Metadata
+                               unsigned                msgcount,      // \param[in] msgcount Count of metadata
+                               unsigned                connection_id, // \param[in] connection_id  Stream ID of data
+                               size_t                  root,          // \param[in] root        Sending task
+                               size_t                  sndlen,        // \param[in] sndlen      Length of data sent
+                               void                  * clientdata,    // \param[in] clientdata  Opaque arg
+                               size_t                * rcvlen,        // \param[out] rcvlen     Length of data to receive
+                               pami_pipeworkqueue_t ** rcvpwq,        // \param[out] rcvpwq     Where to put recv data
+                               pami_callback_t       * cb_done)       // \param[out] cb_done    Completion callback to invoke when data received
+      {
+        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::AxialMultiCast2Factory::axial2_cb_async()\n", clientdata));
+        AxialMultiCast2Factory* factory = (AxialMultiCast2Factory*) clientdata;
+        return factory->notifyRecvHead(msginfo, msgcount, connection_id, root, sndlen, rcvlen, rcvpwq, cb_done);
+      }
+
+      ///
+      /// \brief Find the composite by connection_id in the map and notifyRecv()
+      ///
+      void notifyRecvHead(const pami_quad_t      *msginfo,       // \param[in] msginfo    Metadata
+                          unsigned                msgcount,      // \param[in] msgcount Count of metadata
+                          unsigned                connection_id, // \param[in] connection_id  Stream ID of data
+                          size_t                  root,          // \param[in] root        Sending task
+                          size_t                  sndlen,        // \param[in] sndlen      Length of data sent
+                          size_t                * rcvlen,        // \param[out] rcvlen     Length of data to receive
+                          pami_pipeworkqueue_t ** rcvpwq,        // \param[out] rcvpwq     Where to put recv data
+                          pami_callback_t       * cb_done)       // \param[out] cb_done    Completion callback to invoke when data received
+      {
+        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::AxialMultiCast2Factory::notifyRecvHead() msgcount %u, connection_id %u, root %zu, sndlen %zu\n", this, msgcount, connection_id, root, sndlen));
+        CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> *composite = _composite_map[connection_id];
+        PAMI_assertf(composite, "connection_id %u, root %zu\n", connection_id, root);
+        *rcvlen = sndlen;  // Not passed or set by notifyRecv? Just assume everything sent will be received
+        return composite->notifyRecv (root,
+                                      msginfo,
+                                      rcvpwq,
+                                      cb_done);
+      };
+      std::map<unsigned, CCMI::Adaptor::Broadcast::MultiCastComposite2<BGQGeometry> * > _composite_map;
+    };
+
+    //----------------------------------------------------------------------------
     // 'Sub' Shmem allsided multisync - works on geometry->getLocalTopology()
     // (LOCAL_TOPOLOGY_INDEX)
     //----------------------------------------------------------------------------
@@ -308,18 +421,18 @@ namespace PAMI
     //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
     //----------------------------------------------------------------------------
-    template <class T_Geometry, class T_ShmemNativeInterface, class T_MUNativeInterface>
+    template <class T_Geometry, class T_ShmemNativeInterface, class T_MUDevice, class T_MUNativeInterface, class T_AxialNativeInterface>
     class BGQMultiRegistration :
-    public CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUNativeInterface>, T_Geometry>
+    public CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface>, T_Geometry>
     {
     public:
       inline BGQMultiRegistration(T_ShmemNativeInterface *shmem_ni,
-                                  T_MUNativeInterface    *mu_ni,
+                                  T_MUDevice             &mu_device,
                                   pami_client_t           client,
                                   pami_context_t          context,
                                   size_t                  context_id,
                                   size_t                  client_id):
-      CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUNativeInterface>, T_Geometry> (),
+      CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface>, T_Geometry> (),
       _client(client),
       _context(context),
       _context_id(context_id),
@@ -336,11 +449,21 @@ namespace PAMI
       _sub_shmem_msync_factory(&_sconnmgr, _shmem_ni),
       _shmem_mcast_factory(&_sconnmgr, _shmem_ni),
       _shmem_mcomb_factory(&_sconnmgr, _shmem_ni),
-      _mu_ni(mu_ni),
-      _mu_msync_factory(&_sconnmgr, _mu_ni),
-      _sub_mu_msync_factory(&_sconnmgr, _mu_ni),
+      _mu_device(mu_device),
+      _mu_ni_msync(NULL),
+      _mu_ni_sub_msync(NULL),
+      _mu_ni_mcomb(NULL),
+      _mu_ni_mcast2(NULL),
+      _mu_ni_msync2d(NULL),
+      _mu_ni_mcast2d(NULL),
+      _mu_ni_mcomb2d(NULL),
+      _mu_ni_mcomb2dNP(NULL),
+      _axial_mu_ni(NULL),
+      _mu_msync_factory(NULL),
+      _sub_mu_msync_factory(NULL),
       _mu_mcast2_factory(NULL),
-      _mu_mcomb_factory(&_sconnmgr, _mu_ni),
+      _axial_mcast2_factory(NULL),
+      _mu_mcomb_factory(NULL),
       _msync_composite_factory(&_sconnmgr, NULL),
       _msync2d_composite_factory(NULL),
       _mcast2d_composite_factory(NULL),
@@ -350,7 +473,9 @@ namespace PAMI
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()\n", this));
         DO_DEBUG((templateName<T_Geometry>()));
         DO_DEBUG((templateName<T_ShmemNativeInterface>()));
+        DO_DEBUG((templateName<T_MUDevice>()));
         DO_DEBUG((templateName<T_MUNativeInterface>()));
+        DO_DEBUG((templateName<T_AxialNativeInterface>()));
 
         //set the mapid functions
         if (__global.useshmem())// && (__global.topology_local.size() > 1))
@@ -363,24 +488,42 @@ namespace PAMI
         if (__global.useMU())
         {
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration() usemu\n", this));
-          _mu_msync_factory.setMapIdToGeometry(mapidtogeometry);
-          _sub_mu_msync_factory.setMapIdToGeometry(mapidtogeometry);
+            
+          _mu_ni_msync          = new (_mu_ni_msync_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
+          _mu_ni_sub_msync      = new (_mu_ni_sub_msync_storage     ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
+          _mu_ni_mcomb          = new (_mu_ni_mcomb_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
+          _mu_ni_mcast2         = new (_mu_ni_mcast2_storage        ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
+          _mu_ni_msync2d        = new (_mu_ni_msync2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
+          _mu_ni_mcast2d        = new (_mu_ni_mcast2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
+          _mu_ni_mcomb2d        = new (_mu_ni_mcomb2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
+          _mu_ni_mcomb2dNP      = new (_mu_ni_mcomb2dNP_storage     ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
+          _axial_mu_ni          = new (_axial_mu_ni_storage         ) T_AxialNativeInterface(_mu_device, client, context, context_id, client_id);
+          _mu_msync_factory     = new (_mu_msync_factory_storage    ) MUMultiSyncFactory(&_sconnmgr, _mu_ni_msync);
+          _sub_mu_msync_factory = new (_sub_mu_msync_factory_storage) SubMUMultiSyncFactory(&_sconnmgr, _mu_ni_sub_msync);
+          _mu_mcomb_factory     = new (_mu_mcomb_factory_storage    ) MUMultiCombineFactory(&_sconnmgr, _mu_ni_mcomb);
+                
+
+          _mu_msync_factory->setMapIdToGeometry(mapidtogeometry);
+          _sub_mu_msync_factory->setMapIdToGeometry(mapidtogeometry);
           _msync_composite_factory.setMapIdToGeometry(mapidtogeometry);
 
           // Can't be ctor'd unless the NI was created
-          _mu_mcast2_factory = new (_mu_mcast2_factory_storage) MUMultiCast2Factory(&_csconnmgr, _mu_ni);
+          _mu_mcast2_factory = new (_mu_mcast2_factory_storage) MUMultiCast2Factory(&_csconnmgr, _mu_ni_mcast2);
+          _axial_mcast2_factory = new (_axial_mcast2_factory_storage) AxialMultiCast2Factory(&_csconnmgr, _axial_mu_ni);
 
         }
 
 //          if ((__global.useMU()) && (__global.useshmem()))
         {
           _ni_array[0] = _shmem_ni;
-          _ni_array[1] = _mu_ni;
+          _ni_array[1] = _mu_ni_msync2d;
+          _ni_array[2] = _shmem_ni;
+          _ni_array[3] = _mu_ni_mcomb2dNP;
           _msync2d_composite_factory = new (_msync2d_composite_factory_storage) MultiSync2DeviceFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface*)_ni_array);
           _msync2d_composite_factory->setMapIdToGeometry(mapidtogeometry);
-          _mcast2d_composite_factory = new (_mcast2d_composite_factory_storage) MultiCast2DeviceFactory(&_sconnmgr, _shmem_ni, false, _mu_ni, _mu_ni ? true : false);
-          _mcomb2d_composite_factory = new (_mcomb2d_composite_factory_storage) MultiCombine2DeviceFactory(&_sconnmgr, _shmem_ni, _mu_ni);
-          _mcomb2dNP_composite_factory = new (_mcomb2dNP_composite_factory_storage) MultiCombine2DeviceFactoryNP(&_sconnmgr,  (CCMI::Interfaces::NativeInterface*)_ni_array);
+          _mcast2d_composite_factory = new (_mcast2d_composite_factory_storage) MultiCast2DeviceFactory(&_sconnmgr, _shmem_ni, false, _mu_ni_mcast2d,  _mu_ni_mcast2d ? true : false);
+          _mcomb2d_composite_factory = new (_mcomb2d_composite_factory_storage) MultiCombine2DeviceFactory(&_sconnmgr, _shmem_ni, _mu_ni_mcomb2d);
+          _mcomb2dNP_composite_factory = new (_mcomb2dNP_composite_factory_storage) MultiCombine2DeviceFactoryNP(&_sconnmgr,  (CCMI::Interfaces::NativeInterface*)_ni_array[2]);
         }
 
       }
@@ -451,7 +594,7 @@ namespace PAMI
             if (val && val != PAMI_CR_GKEY_FAIL)
             {
               // Only register protocols if we got a classroute
-              _sub_mu_barrier_composite = _sub_mu_msync_factory.generate(geometry, &xfer);
+              _sub_mu_barrier_composite = _sub_mu_msync_factory->generate(geometry, &xfer);
 
               geometry->setKey(_context_id, PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE,
                                (void*)_sub_mu_barrier_composite);
@@ -460,11 +603,11 @@ namespace PAMI
               if (usePureMu  && !topology->isLocalToMe())
               {
                 TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU barrier\n", this));
-                _mu_barrier_composite = _mu_msync_factory.generate(geometry, &xfer);
+                _mu_barrier_composite = _mu_msync_factory->generate(geometry, &xfer);
 
 
                 // Add Barriers
-                geometry->addCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
+                geometry->addCollective(PAMI_XFER_BARRIER, _mu_msync_factory, _context_id);
               }
 
               // Add 2 device composite protocols
@@ -492,6 +635,43 @@ namespace PAMI
                 TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU bcast\n", this));
                 // Add Broadcasts
                 geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory, _context_id);
+                
+                // 'Pure' Axial only makes sense on a line... useless but enabled here for testing
+                // Note, while axial doesn't use classroutes it does use msync and expects a classroute for that,
+                // should check for that but we'll assume if we got mcast then we got msync too
+                /// \todo This could change to geometry->default_barrier() or some other barrier instead of msync to not require classroutes...
+                do {
+                  // make a local copy of the topology
+                  PAMI::Topology coord_topology = *(PAMI::Topology*) geometry->getTopology(0);
+                  coord_topology.convertTopology(PAMI_COORD_TOPOLOGY);
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Axial type %u\n", this, coord_topology.type()));
+                  if(coord_topology.type() != PAMI_COORD_TOPOLOGY) break; //not a coord? then not a line
+
+                  pami_coord_t rll;
+                  pami_coord_t rur;
+                  unsigned char risTorus[PAMI_MAX_DIMS];
+                  coord_topology.rectSeg(&rll, &rur, risTorus);
+                  TRACE_INIT((stderr,"<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Axial "
+                              "ll[%zu,%zu,%zu,%zu,%zu], ur[%zu,%zu,%zu,%zu,%zu]\n", this,                             
+                              rll.u.n_torus.coords[0],                                 
+                              rll.u.n_torus.coords[1],                                 
+                              rll.u.n_torus.coords[2],                                 
+                              rll.u.n_torus.coords[3],                                 
+                              rll.u.n_torus.coords[4],                                
+                              rur.u.n_torus.coords[0],                                 
+                              rur.u.n_torus.coords[1],                                 
+                              rur.u.n_torus.coords[2],                                 
+                              rur.u.n_torus.coords[3],                                 
+                              rur.u.n_torus.coords[4]));                                
+                  unsigned ndimsDifferent=0;
+                  for (size_t i=0; i < __global.mapping.globalDims(); ++i)
+                    if(rll.u.n_torus.coords[i] != rur.u.n_torus.coords[i]) ++ndimsDifferent;
+
+                  if(ndimsDifferent != 1) break; // only 1 dim different on a line
+                    
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Axial (line) bcast\n", this));
+                  geometry->addCollective(PAMI_XFER_BROADCAST,  _axial_mcast2_factory, _context_id);
+                } while(0);
               }
 
               // Add 2 device composite protocols
@@ -522,7 +702,7 @@ namespace PAMI
                   // Add Allreduces
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU allreduce\n", this));
 
-                  geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
+                  geometry->addCollective(PAMI_XFER_ALLREDUCE, _mu_mcomb_factory, _context_id);
                 }
               }
 
@@ -554,10 +734,10 @@ namespace PAMI
           // before generating any composite protocol...
 
           if ((local_sub_topology->size() > 1) && (geometry->getKey(_context_id, PAMI::Geometry::PAMI_CKEY_LOCALBARRIERCOMPOSITE) == NULL))
-            return PAMI_SUCCESS; // done - we can't do a composite
+            return PAMI_SUCCESS; // done - we can't do a protocol composite
 
           if ((master_sub_topology->size() > 1) && (geometry->getKey(_context_id, PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE) == NULL))
-            return PAMI_SUCCESS; // done - we can't do a composite
+            return PAMI_SUCCESS; // done - we can't do a protocol composite
 
           // Add Composite Barrier
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() register a composite barrier\n", this));
@@ -572,8 +752,9 @@ namespace PAMI
 
           /// \todo remove MU collectives algorithms... TBD
           geometry->rmCollective(PAMI_XFER_BROADCAST, _mu_mcast2_factory, _context_id);
-          geometry->rmCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
-          geometry->rmCollective(PAMI_XFER_BARRIER, &_mu_msync_factory, _context_id);
+          geometry->rmCollective(PAMI_XFER_BROADCAST, _axial_mcast2_factory, _context_id);
+          geometry->rmCollective(PAMI_XFER_ALLREDUCE, _mu_mcomb_factory, _context_id);
+          geometry->rmCollective(PAMI_XFER_BARRIER, _mu_msync_factory, _context_id);
         }
 
         return PAMI_SUCCESS;
@@ -618,26 +799,51 @@ namespace PAMI
       // CCMI Allreduce Interface
       ShmemMultiCombineFactory                        _shmem_mcomb_factory;
 
-      //* MU interfaces
-      // Native Interface
-      T_MUNativeInterface                            *_mu_ni;
+      // MU Device
+      T_MUDevice                                     &_mu_device;
 
-      // CCMI Barrier Interface
-      MUMultiSyncFactory                              _mu_msync_factory;
-      SubMUMultiSyncFactory                           _sub_mu_msync_factory;
+      // MU Native Interface
 
-      // CCMI Broadcast Interfaces
+      T_MUNativeInterface                            *_mu_ni_msync;
+      uint8_t                                         _mu_ni_msync_storage[sizeof(T_MUNativeInterface)];
+      T_MUNativeInterface                            *_mu_ni_sub_msync;
+      uint8_t                                         _mu_ni_sub_msync_storage[sizeof(T_MUNativeInterface)];
+      T_MUNativeInterface                            *_mu_ni_mcomb;
+      uint8_t                                         _mu_ni_mcomb_storage[sizeof(T_MUNativeInterface)];
+      T_MUNativeInterface                            *_mu_ni_mcast2;
+      uint8_t                                         _mu_ni_mcast2_storage[sizeof(T_MUNativeInterface)];
+      T_MUNativeInterface                            *_mu_ni_msync2d;
+      uint8_t                                         _mu_ni_msync2d_storage[sizeof(T_MUNativeInterface)];
+      T_MUNativeInterface                            *_mu_ni_mcast2d;
+      uint8_t                                         _mu_ni_mcast2d_storage[sizeof(T_MUNativeInterface)];
+      T_MUNativeInterface                            *_mu_ni_mcomb2d;
+      uint8_t                                         _mu_ni_mcomb2d_storage[sizeof(T_MUNativeInterface)];
+      T_MUNativeInterface                            *_mu_ni_mcomb2dNP;
+      uint8_t                                         _mu_ni_mcomb2dNP_storage[sizeof(T_MUNativeInterface)];
+      T_AxialNativeInterface                         *_axial_mu_ni;
+      uint8_t                                         _axial_mu_ni_storage[sizeof(T_AxialNativeInterface)];
+
+      // Barrier factories
+      MUMultiSyncFactory                             *_mu_msync_factory;
+      uint8_t                                         _mu_msync_factory_storage[sizeof(MUMultiSyncFactory)];
+      SubMUMultiSyncFactory                          *_sub_mu_msync_factory;
+      uint8_t                                         _sub_mu_msync_factory_storage[sizeof(SubMUMultiSyncFactory)];
+
+      // Broadcast factories
       MUMultiCast2Factory                            *_mu_mcast2_factory;
       uint8_t                                         _mu_mcast2_factory_storage[sizeof(MUMultiCast2Factory)];
+      AxialMultiCast2Factory                         *_axial_mcast2_factory;
+      uint8_t                                         _axial_mcast2_factory_storage[sizeof(AxialMultiCast2Factory)];
 
-      // CCMI Allreduce Interface
-      MUMultiCombineFactory                           _mu_mcomb_factory;
+      // Allreduce factories
+      MUMultiCombineFactory                          *_mu_mcomb_factory;
+      uint8_t                                         _mu_mcomb_factory_storage[sizeof(MUMultiCombineFactory)];
 
-      // CCMI Barrier Interface
+      // Barrier factories
       MultiSync2Factory                               _msync_composite_factory;
 
-      // 2 device composite Interface
-      CCMI::Interfaces::NativeInterface              *_ni_array[2];
+      // 2 device composite factories
+      CCMI::Interfaces::NativeInterface              *_ni_array[4];
       MultiSync2DeviceFactory                        *_msync2d_composite_factory;
       uint8_t                                         _msync2d_composite_factory_storage[sizeof(MultiSync2DeviceFactory)];
 

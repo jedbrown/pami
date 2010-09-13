@@ -45,7 +45,7 @@ namespace CCMI
           //pami_task_t self = __global.mapping.task();
           PAMI::Topology * all = (PAMI::Topology *)_geometry->getTopology(0);
           size_t topo_size = all->size();
-          TRACE_ADAPTOR((stderr, "<%p>All2AllvProtocol size %zu, stypecount %zu, rtypecount %zu\n", this, topo_size, coll->cmd.xfer_alltoallv.stypecount,coll->cmd.xfer_alltoallv.rtypecount));
+          TRACE_ADAPTOR((stderr, "<%p>All2AllvProtocol size %zu\n", this, topo_size));
           //_my_index = all->rank2Index(self);
 
 

@@ -181,7 +181,7 @@ namespace CCMI
                                     void           *cookie,
                                     pami_result_t   result )
           {
-            TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite::local_done_fn()\n", this));
+            TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite::local_done_fn()\n", cookie));
             MultiSync2Composite *m = (MultiSync2Composite*) cookie;
             m->_global_barrier->start();
           }
@@ -190,7 +190,7 @@ namespace CCMI
                                      void           *cookie,
                                      pami_result_t   result )
           {
-            TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite::global_done_fn()\n", this));
+            TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite::global_done_fn()\n", cookie));
             MultiSync2Composite *m = (MultiSync2Composite*) cookie;
             // next local barrier done is the user's done
             m->_local_barrier->setDoneCallback(m->_cb_done.function,m->_cb_done.clientdata);

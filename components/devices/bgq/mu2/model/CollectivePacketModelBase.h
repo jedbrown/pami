@@ -69,7 +69,7 @@ namespace PAMI
           static const size_t packet_model_payload_bytes         = MU::Context::packet_payload_size;
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::getPacketImmediateMax
-          static const size_t packet_model_immediate_max         = MU::Context::immediate_payload_size;
+          static const size_t packet_model_immediate_bytes         = MU::Context::immediate_payload_size;
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::getPacketTransferStateBytes
           static const size_t packet_model_state_bytes           = 1024 + MU::InjChannel::completion_event_state_bytes;

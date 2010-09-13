@@ -356,7 +356,7 @@ namespace PAMI
 #endif
       static void _geom_newopt_start(pami_context_t context, void *cookie, pami_result_t err)
       {
-        TRACE_ERR((stderr, "<%p>BGQ::Client::_geom_newopt_start cookie %p, context %p\n", ((PAMI::Context *)context)->getClient(), cookie, context));
+        TRACE_ERR((stderr, "BGQ::Client::_geom_newopt_start cookie %p, context %p, error %u\n", cookie, context, err));
         PAMI_assertf(context, "Geometry create barrier callback with NULL context");
 
         if (err != PAMI_SUCCESS)
@@ -380,7 +380,7 @@ namespace PAMI
 
       static void _geom_opt_finish(pami_context_t context, void *cookie, pami_result_t err)
       {
-        TRACE_ERR((stderr, "<%p>BGQ::Client::_geom_opt_finish cookie %p, context %p\n", ((PAMI::Context *)context)->getClient(), cookie, context));
+        TRACE_ERR((stderr, "BGQ::Client::_geom_opt_finish cookie %p, context %p, error %u\n", cookie, context, err));
         BGQGeometry *gp = (BGQGeometry *)cookie;
 
         if (context)   // HACK! until no one calls completion with NULL context!
@@ -405,7 +405,7 @@ namespace PAMI
 
       static void _geom_newopt_finish(pami_context_t context, void *cookie, pami_result_t err)
       {
-        TRACE_ERR((stderr, "<%p>BGQ::Client::_geom_newopt_finish cookie %p, context %p\n",((PAMI::Context *)context)->getClient(), cookie, context));
+        TRACE_ERR((stderr, "BGQ::Client::_geom_newopt_finish cookie %p, context %p, error %u\n", cookie, context, err));
         BGQGeometry *gp = (BGQGeometry *)cookie;
         //PAMI::Context *ctxt = (PAMI::Context *)context;
 
@@ -763,7 +763,7 @@ namespace PAMI
 #ifdef _COLLSHM   // New Collective Shmem Registration
         uint64_t                  *to_reduce;
         uint                       to_reduce_count;
-        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::start_barrier()\n", this, _clientid));
+        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::start_barrier() context %p\n", this, _clientid, context));
 
         PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getLocalMasterTopology();
         to_reduce_count = local_master_topology->size();
@@ -804,6 +804,7 @@ namespace PAMI
 
         free(to_reduce);
 #else
+        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::start_barrier() context %p  %s\n", this, _clientid, context, optimize == PAMI_GEOMETRY_OPTIMIZE? "Optimized":" "));
         if(bargeom)
         {
           if(optimize == PAMI_GEOMETRY_OPTIMIZE)
