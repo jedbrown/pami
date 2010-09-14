@@ -27,14 +27,14 @@
 
 #include "Platform.h"
 #include "util/common.h"
+#include "components/memory/heap/HeapMemoryManager.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
 #include "common/GlobalInterface.h"
 #include "common/bgq/BgqPersonality.h"
 #include "common/bgq/BgqMapCache.h"
 #include "Mapping.h"
 #include "Topology.h"
 #include "common/bgq/L2AtomicFactory.h"
-#include "components/memory/heap/HeapMemoryManager.h"
-#include "components/memory/shmem/SharedMemoryManager.h"
 
 #ifndef PAMI_MAX_NUM_CLIENTS
 /** \todo PAMI_MAX_NUM_CLIENTS needs to be setup by pami.h */

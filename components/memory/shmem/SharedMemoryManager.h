@@ -16,6 +16,7 @@
 #ifndef __components_memory_shmem_SharedMemoryManager_h__
 #define __components_memory_shmem_SharedMemoryManager_h__
 
+#define PAMI_MM_ALLOC_TYPE	MemoryManagerOSAlloc
 #include "components/memory/MemoryManager.h"
 
 #include <sys/mman.h>
@@ -34,20 +35,17 @@
 
 #ifdef _POSIX_SHM_OPEN
 
-PAMI_MM_SHM_OPEN_EXCL(m)	shm_open(m->key(), O_CREAT | O_EXCL | O_RDWR, 0600)
-PAMI_MM_SHM_OPEN(m)		shm_open(m->key(), O_RDWR, 0)
-static inline void *PAMI_MM_SHM_MAP(MemoryManagerOSAlloc *m) {
-	if (ftruncate(m->fd(), m->size()) == -1) return NULL;
-	return mmap(NULL, m->size(), PROT_READ | PROT_WRITE, MAP_SHARED, m->fd(), 0);
-}
+#define PAMI_MM_SHM_OPEN_EXCL(m) shm_open(m->key(), O_CREAT | O_EXCL | O_RDWR, 0600)
+#define PAMI_MM_SHM_OPEN(m)	shm_open(m->key(), O_RDWR, 0)
+#define PAMI_MM_SHM_MAP(m) ({ (ftruncate(m->fd(), m->size()) == -1) ? NULL : mmap(NULL, m->size(), PROT_READ | PROT_WRITE, MAP_SHARED, m->fd(), 0); })
 #define PAMI_MM_SHM_UNMAP(m)	{close(m->fd()); munmap(m->mem(), m->size());}
 #define PAMI_MM_SHM_DELETE(m)	{shm_unlink(m->key());}
 
 #else // ! _POSIX_SHM_OPEN
 
 #warning Need to write/validate SysV Shmem equivalent
-PAMI_MM_SHM_OPEN_EXCL(m)	shmget(m->vkey(), m->size(), IPC_CREAT | IPC_EXCL | 0600)
-PAMI_MM_SHM_OPEN(m)		shmget(m->vkey(), 0, 0)
+#define PAMI_MM_SHM_OPEN_EXCL(m) shmget(m->vkey(), m->size(), IPC_CREAT | IPC_EXCL | 0600)
+#define PAMI_MM_SHM_OPEN(m)	shmget(m->vkey(), 0, 0)
 #define PAMI_MM_SHM_MAP(m)	shmat(m->fd(), 0, 0)
 #define PAMI_MM_SHM_UNMAP(m)	{shmdt(m->mem());}
 #define PAMI_MM_SHM_DELETE(m)	{shmctl(m->fd(), IPC_RMID, NULL);}
@@ -58,7 +56,7 @@ namespace PAMI
 {
   namespace Memory
   {
-    class SharedMemoryManager : public MemoryManager<MemoryManagerOSAlloc>
+    class SharedMemoryManager : public MemoryManager
     {
       public:
 
@@ -75,7 +73,7 @@ namespace PAMI
 	/// tracked for the afore mentioned reason.
 	///
         inline SharedMemoryManager () :
-          MemoryManager<MemoryManagerOSAlloc> ()
+          MemoryManager ()
         {
 		COMPILE_TIME_ASSERT(sizeof(SharedMemoryManager) <= sizeof(MemoryManager));
 		// This could be better decided based on number of processes
@@ -84,9 +82,7 @@ namespace PAMI
 		// simply not construct SharedMemoryManager in shared_mm
 		// (construct HeapMemoryManager twice, in heap_mm and shared_mm).
 		_attrs = PAMI_MM_NODESCOPE;
-		_meta_mm = heap_mm; // sync-init not here, in actual user shmem segment
-		_meta.init(_meta_mm, "/pami-shmemmgr");
-		_meta.offset(0);
+		_meta.init(heap_mm, "/pami-shmemmgr");
 		_enabled = true;
         }
 
@@ -112,10 +108,8 @@ namespace PAMI
 	{
 		PAMI_assert_debugf(_attrs == PAMI_MM_NODESCOPE, "SharedMemoryManager not shared");
 		if (alignment < _alignment) alignment = _alignment;
-		pami_result_t rc;
 		void *ptr = NULL;
 		bool first = false;
-		int fd = -1;
 		_meta.acquire();
 		MemoryManagerOSAlloc *alloc = _meta.findFree();
 		if (alloc == NULL) {
@@ -191,7 +185,7 @@ namespace PAMI
 		}
 		// shared segment acquired, now sync and init.
 
-		alloc->mem(ptr); // required for addRef(), userMem(), etc...
+		alloc->mem(ptr, alignment); // required for addRef(), userMem(), etc...
 		if (first)
 		{
 			init_fn(alloc->userMem(), alloc->userSize(), alloc->key(),
@@ -211,9 +205,9 @@ namespace PAMI
 
 	inline void free(void *mem) {
 		_meta.acquire();
-		MemoryManagerOSAlloc *m = _mmhdr.find(mem);
+		MemoryManagerOSAlloc *m = _meta.find(mem);
 		if (m) {
-			_free(m);
+			__free(m);
 		}
 		_meta.release();
 	}
@@ -227,7 +221,7 @@ namespace PAMI
     protected:
 
 	// lock held by caller.
-	inline void _free(MemoryManagerOSAlloc *m, void *cookie = NULL) {
+	inline void __free(MemoryManagerOSAlloc *m) {
 		PAMI_MM_SHM_UNMAP(m);
 		if (m->rmRef() == 1) {
 			// zero memory so that next use is zeroed?
@@ -235,6 +229,12 @@ namespace PAMI
 			PAMI_MM_SHM_DELETE(m);
 			m->free();
 		}
+	}
+
+	// lock held by caller.
+	static void _free(MemoryManagerOSAlloc *m, void *cookie) {
+		SharedMemoryManager *thus = (SharedMemoryManager *)cookie;
+		thus->__free(m);
 	}
 
 	inline void freeAll() {

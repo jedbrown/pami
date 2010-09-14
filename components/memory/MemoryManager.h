@@ -24,6 +24,10 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
+#ifndef PAMI_MM_ALLOC_TYPE
+#define PAMI_MM_ALLOC_TYPE	MemoryManagerAlloc
+#endif // ! PAMI_MM_ALLOC_TYPE
+
 namespace PAMI
 {
   namespace Memory
@@ -35,7 +39,6 @@ namespace PAMI
     static const unsigned int PAMI_MM_L2ATOMIC  = 4; // BGQ-specific
     static const unsigned int PAMI_MM_WACREGION = 8; // BGQ-specific
 
-    template <class T_Alloc = MemoryManagerAlloc>
     class MemoryManager
     {
       public:
@@ -85,7 +88,7 @@ namespace PAMI
 	public:
 		MemoryManagerKey() { }
 
-		inline void key(char *key) {
+		inline void key(const char *key) {
 			if (key) {
 				strncpy(_key, key, MMKEYSIZE);
 			} else {
@@ -97,8 +100,8 @@ namespace PAMI
 		}
 		inline char *key() { return _key; }
 
-		inline bool isMatch(char *key) {
-			return (strnchr(_key, key, MMKEYSIZE) == 0);
+		inline bool isMatch(const char *key) {
+			return (strncmp(_key, key, MMKEYSIZE) == 0);
 		}
 		inline bool isFree() { return (_key[0] == '\0'); }
 	private:
@@ -121,6 +124,8 @@ namespace PAMI
 		inline void offset(size_t off) { _offset = off; }
 
 		inline void free() { memset(this, 0, sizeof(*this)); }
+
+		inline void *userMem() { return (void *)-1; }
 	private:
 		size_t _offset; // _base + _offset = memory chunk
 	}; // class MemoryManagerAlloc
@@ -134,16 +139,19 @@ namespace PAMI
 		inline int fd() { return _fd; }
 		inline void vkey(uint32_t key) { _vkey = key; }
 		inline uint32_t vkey() { return _vkey; }
-		inline void mem(void *mem) {
+		inline void mem(void *mem, size_t align) {
 			_mem = mem;
 			_pad = padding(mem, sizeof(MemoryManagerSync), align);
 		}
 		inline void *mem() { return _mem; }
 		inline size_t size() { return _size; }
 
+		inline size_t offset() { return (size_t)-1; }
+		inline void offset(size_t off) { }
+
 		inline void *userMem() { return (char *)_mem + _pad; }
 		inline size_t userSize() { return _userSize; }
-		inline void userSize(size_t size) {
+		inline void userSize(size_t size, size_t align) {
 			_userSize = size;
 			_pad = sizeof(MemoryManagerSync) + align; // worst-case
 			_size = size + _pad;
@@ -196,8 +204,8 @@ namespace PAMI
 
 	// meta[0] has 8, meta[1] has 16, meta[2] has 32, etc...
 	#define MM_META_NUM(idx)	(8 << idx)
+	#define MMMAX_N_META	4
 
-	template <class T_Alloc>
 	class MemoryManagerMeta {
 	private:
 		inline void _metaAlloc(void **pptr, size_t len, char tag) {
@@ -212,7 +220,7 @@ namespace PAMI
 		MemoryManagerMeta() :
 		_meta_mm(NULL),
 		_metahdr(NULL),
-		_meta_key_fmt(""),
+		_meta_key_fmt(),
 		_meta_key_len(0)
 		{
 			memset(_metas, 0, sizeof(_metas));
@@ -244,12 +252,22 @@ namespace PAMI
 
 		inline void acquire() { _metahdr->acquire(); }
 		inline void release() { _metahdr->release(); }
-		inline size_t offset() { return _metahdr->offset(); }
-		inline void offset(size_t off) { _metahdr->offset(off); }
+
+		inline size_t spaceUsed() {
+			return _metahdr->offset();
+		}
+		inline size_t getSpace(size_t alignment, size_t bytes) {
+			// fancier freespace handling TBD...
+			return _metahdr->offset();
+		}
+	  	inline void allocSpace(size_t offset, size_t bytes) {
+			// fancier freespace handling TBD...
+			_metahdr->offset(offset + bytes);
+		}
 
 		// caller holds lock
-		inline T_Alloc *find(const char *key) {
-			int x;
+		inline PAMI_MM_ALLOC_TYPE *find(const char *key) {
+			int x, y;
 			for (x = 0; x < MMMAX_N_META && _metas[x]; ++x) {
 				for (y = 0; y < MM_META_NUM(x); ++y) {
 					if (_metas[x][y].isFree()) continue;
@@ -261,10 +279,10 @@ namespace PAMI
 			return NULL;
 		}
 
-		// only for MemoryManager, T_Alloc == MemoryManagerAlloc
+		// only for MemoryManager, PAMI_MM_ALLOC_TYPE == MemoryManagerAlloc
 		// caller holds lock
-		inline T_Alloc *find(size_t off) {
-			int x;
+		inline PAMI_MM_ALLOC_TYPE *find(size_t off) {
+			int x, y;
 			for (x = 0; x < MMMAX_N_META && _metas[x]; ++x) {
 				for (y = 0; y < MM_META_NUM(x); ++y) {
 					if (_metas[x][y].isFree()) continue;
@@ -276,10 +294,10 @@ namespace PAMI
 			return NULL;
 		}
 
-		// only for SharedMemoryManager, T_Alloc == MemoryManagerOSAlloc
+		// only for SharedMemoryManager, PAMI_MM_ALLOC_TYPE == MemoryManagerOSAlloc
 		// caller holds lock
-		inline T_Alloc *find(void *mem) {
-			int x;
+		inline PAMI_MM_ALLOC_TYPE *find(void *mem) {
+			int x, y;
 			for (x = 0; x < MMMAX_N_META && _metas[x]; ++x) {
 				for (y = 0; y < MM_META_NUM(x); ++y) {
 					if (_metas[x][y].isFree()) continue;
@@ -293,8 +311,8 @@ namespace PAMI
 
 		// allocates more space if needed/possible.
 		// caller holds lock
-		inline T_Alloc *findFree() {
-			int x;
+		inline PAMI_MM_ALLOC_TYPE *findFree() {
+			int x, y;
 			COMPILE_TIME_ASSERT(MMMAX_N_META <= 10); // for "0123456789"[x]...
 			for (x = 0; x < MMMAX_N_META; ++x) {
 				if (_metas[x] == NULL) {
@@ -316,9 +334,9 @@ namespace PAMI
 		}
 
 		// caller holds lock
-		inline void forAllActive(void (*func)(T_Alloc *m),
+		inline void forAllActive(void (*func)(PAMI_MM_ALLOC_TYPE *m, void *cookie),
 						void *cookie = NULL) {
-			int x;
+			int x, y;
 			for (x = 0; x < MMMAX_N_META && _metas[x]; ++x) {
 				for (y = 0; y < MM_META_NUM(x); ++y) {
 					if (!_metas[x][y].isFree()) {
@@ -332,10 +350,10 @@ namespace PAMI
 		MemoryManagerHeader *_metahdr;
 		char _meta_key_fmt[MMKEYSIZE];
 		size_t _meta_key_len;
-		T_Alloc *_metas[MMMAX_N_META];
+		PAMI_MM_ALLOC_TYPE *_metas[MMMAX_N_META];
 	}; // class MemoryManagerMeta
 
-	inline void _meta_reset(T_Alloc *m, void *cookie = NULL) {
+	static void _meta_reset(PAMI_MM_ALLOC_TYPE *m, void *cookie) {
 		m->free();
 	}
 
@@ -362,7 +380,7 @@ namespace PAMI
 	virtual inline ~MemoryManager()
 	{
 		if (_pmm) {
-			~_meta;
+			_meta.~MemoryManagerMeta();
 			_pmm->free(_base);
 			MemoryManager(); // paranoia?
 		}
@@ -393,16 +411,11 @@ namespace PAMI
 		}
 #if 0
 		// minimal alignment for MemoryManagerAlloc
-		if (alignment < MemoryManagerAlloc::ALIGNMENT) {
-			alignment = MemoryManagerAlloc::ALIGNMENT;
+		if (alignment < PAMI_MM_ALLOC_TYPE::ALIGNMENT) {
+			alignment = PAMI_MM_ALLOC_TYPE::ALIGNMENT;
 		}
 #endif
 		if (mm) {
-//			if (mm->attrs() & PAMI_MM_NODESCOPE) {
-//				_meta_mm = shared_mm;
-//			} else {
-//				_meta_mm = heap_mm;
-//			}
 			_pmm = mm;
 			// make new allocation...
 			pami_result_t rc = mm->memalign((void **)&_base, alignment, bytes,
@@ -413,13 +426,14 @@ namespace PAMI
 			_attrs = mm->attrs() | attrs;
           		_size = bytes;
 			_alignment = alignment;
-			_meta.init(_meta_mm, key);
+			_meta.init((mm->attrs() & PAMI_MM_NODESCOPE) ?
+				shared_mm : heap_mm, key);
 		} else {
 			// "reset" - discard arena
 			// this isn't really correct for multiple participants - TBD
-			forAllActive(_meta_reset);
+			_meta.forAllActive(_meta_reset);
+			_meta.init(NULL, NULL);
 		}
-		_meta.offset(0);
           	_enabled = true;
 		return PAMI_SUCCESS;
 	}
@@ -452,36 +466,34 @@ namespace PAMI
 	  if (key && strlen(key) >= MMKEYSIZE) {
 		return PAMI_INVAL;
 	  }
-	  size_t len = bytes;
-	  uint8_t *addr = (uint8_t *)_base + _offset;
-	  size_t pad;
 	  _meta.acquire();
 	  if (key) {
 		// "public" (shared) allocation
-		MemoryManagerAlloc *m = _meta.find(key);
+		PAMI_MM_ALLOC_TYPE *m = _meta.find(key);
 		if (m) {
 			m->addRef();
 			_meta.release();
-			m->waitInit();
+			m->waitDone();
 			*memptr = (uint8_t *)_base + m->offset();
 			return PAMI_SUCCESS;
 		}
 		// lock still held...
 	  }
-	  m = _meta.findFree();
+	  PAMI_MM_ALLOC_TYPE *m = _meta.findFree();
 	  // pre-existing, shared, chunks were handled above,
 	  // no init required by them. We have the lock, and are the
 	  // first, so just do init if needed.
 
-	  m->offset(padding(_base, _meta->offset(), alignment);
+	  size_t offset = _meta.getSpace(alignment, bytes);
+	  m->offset(padding(_base, offset, alignment));
 	  if (m->offset() + bytes > _size) {
-		_meta->release();
+		_meta.release();
 		return PAMI_ERROR;
 	  }
 	  m->key(key);
 	  m->addRef();
-	  _offset += m->offset() + bytes;
-	  _meta->release();
+	  _meta.allocSpace(m->offset(), bytes);
+	  _meta.release();
 	  *memptr = (uint8_t *)_base + m->offset();
 	  if (init_fn) {
 		init_fn(*memptr, bytes, key, _attrs, cookie);
@@ -511,15 +523,7 @@ namespace PAMI
           PAMI_assert_debug((alignment & (alignment - 1)) == 0);
 	  if (alignment < _alignment) alignment = _alignment;
 
-          size_t pad = 0;
-          if (alignment > 0)
-          {
-            pad = ((size_t)_base + _offset) & (alignment - 1);
-            if (pad > 0)
-              pad = (alignment - pad);
-          }
-
-          return _size - _offset - pad;
+          return _size - _meta.spaceUsed();
         }
 
         ///
@@ -548,11 +552,11 @@ namespace PAMI
       protected:
 
 	inline void _acquire() {
-		_metahdr.acquire();
+		_meta.acquire();
 	}
 
 	inline void _release() {
-		_metahdr.release();
+		_meta.release();
 	}
 
         void * _base;
@@ -561,7 +565,7 @@ namespace PAMI
 	unsigned _attrs;
 	size_t _alignment;
 	MemoryManager *_pmm; // parent mm
-	MemoryManagerMeta<T_Alloc> _meta;
+	MemoryManagerMeta _meta;
     }; // class MemoryManager
   }; // namespace Memory
 }; // namespace PAMI
