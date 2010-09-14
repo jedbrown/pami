@@ -32,11 +32,33 @@
 
 #define _POSIX_SHM_OPEN // This is NOT a valid selector for Linux!
 
+#ifdef _POSIX_SHM_OPEN
+
+PAMI_MM_SHM_OPEN_EXCL(m)	shm_open(m->key(), O_CREAT | O_EXCL | O_RDWR, 0600)
+PAMI_MM_SHM_OPEN(m)		shm_open(m->key(), O_RDWR, 0)
+static inline void *PAMI_MM_SHM_MAP(MemoryManagerOSAlloc *m) {
+	if (ftruncate(m->fd(), m->size()) == -1) return NULL;
+	return mmap(NULL, m->size(), PROT_READ | PROT_WRITE, MAP_SHARED, m->fd(), 0);
+}
+#define PAMI_MM_SHM_UNMAP(m)	{close(m->fd()); munmap(m->mem(), m->size());}
+#define PAMI_MM_SHM_DELETE(m)	{shm_unlink(m->key());}
+
+#else // ! _POSIX_SHM_OPEN
+
+#warning Need to write/validate SysV Shmem equivalent
+PAMI_MM_SHM_OPEN_EXCL(m)	shmget(m->vkey(), m->size(), IPC_CREAT | IPC_EXCL | 0600)
+PAMI_MM_SHM_OPEN(m)		shmget(m->vkey(), 0, 0)
+#define PAMI_MM_SHM_MAP(m)	shmat(m->fd(), 0, 0)
+#define PAMI_MM_SHM_UNMAP(m)	{shmdt(m->mem());}
+#define PAMI_MM_SHM_DELETE(m)	{shmctl(m->fd(), IPC_RMID, NULL);}
+
+#endif // ! _POSIX_SHM_OPEN
+
 namespace PAMI
 {
   namespace Memory
   {
-    class SharedMemoryManager : public MemoryManager
+    class SharedMemoryManager : public MemoryManager<MemoryManagerOSAlloc>
     {
       public:
 
@@ -53,7 +75,7 @@ namespace PAMI
 	/// tracked for the afore mentioned reason.
 	///
         inline SharedMemoryManager () :
-          MemoryManager ()
+          MemoryManager<MemoryManagerOSAlloc> ()
         {
 		COMPILE_TIME_ASSERT(sizeof(SharedMemoryManager) <= sizeof(MemoryManager));
 		// This could be better decided based on number of processes
@@ -62,6 +84,10 @@ namespace PAMI
 		// simply not construct SharedMemoryManager in shared_mm
 		// (construct HeapMemoryManager twice, in heap_mm and shared_mm).
 		_attrs = PAMI_MM_NODESCOPE;
+		_meta_mm = heap_mm; // sync-init not here, in actual user shmem segment
+		_meta.init(_meta_mm, "/pami-shmemmgr");
+		_meta.offset(0);
+		_enabled = true;
         }
 
         inline ~SharedMemoryManager ()
@@ -87,66 +113,21 @@ namespace PAMI
 		PAMI_assert_debugf(_attrs == PAMI_MM_NODESCOPE, "SharedMemoryManager not shared");
 		if (alignment < _alignment) alignment = _alignment;
 		pami_result_t rc;
-		MemoryManagerChunk *alloc = NULL;
 		void *ptr = NULL;
 		bool first = false;
 		int fd = -1;
-		rc = heap_mm->memalign((void **)&alloc,
-			MemoryManagerChunk::ALIGNMENT, sizeof(*alloc));
-		if (rc != PAMI_SUCCESS) {
-			return rc;
-		}
-		new (alloc) MemoryManagerChunk(key, alignment, bytes);
-		size_t rawbytes = alloc->safeSize();
-
-		// Note, Global does not construct this if the target conditions
-		// would prevent it from succeeding - for example SMP-mode on BG.
-		// So that simplifies the code, as any errors are just fatal.
-
-		// should we keep track of each shm_open, so that we can
-		// later shm_unlink?
-
-		// first try to create the file exclusively, if that
-		// succeeds then we know we should initialize it.
-		// However, we still need to ensure others do not
-		// start using the memory until we complete the init.
-		// Use a "counter mutex" that is initialized to 0, all but
-		// the first (based on O_EXCL) will wait on it.
-		// 
-
-		// use GCC atomics on the shared memory chunk, in order to
-		// synchronize init, and in free will need to ensure memory gets zeroed.
-		int lrc;
-#ifdef _POSIX_SHM_OPEN // This is NOT a valid selector for POSIX shm_open!!!
-		lrc = shm_open(alloc->key(), O_CREAT | O_EXCL | O_RDWR, 0600);
-		first = (lrc != -1); // must be the first...
-
-		if (!first) lrc = shm_open(alloc->key(), O_CREAT | O_RDWR, 0600);
-		if (lrc == -1)
-		{
-			heap_mm->free(alloc);
+		_meta.acquire();
+		MemoryManagerOSAlloc *alloc = _meta.findFree();
+		if (alloc == NULL) {
+			_meta.release();
 			return PAMI_ERROR;
 		}
-		fd = lrc;
-		lrc = ftruncate(fd, rawbytes);
-		if (lrc == -1)
-		{
-			close(fd); // needed? possible?
-			shm_unlink(alloc->key()); // right?
-			heap_mm->free(alloc);
-			return PAMI_ERROR;
-		}
-		ptr = mmap(NULL, rawbytes, PROT_READ | PROT_WRITE,
-							MAP_SHARED, fd, 0);
-		if (ptr == NULL || ptr == MAP_FAILED)
-		{
-			close(fd); // needed? possible?
-			shm_unlink(alloc->key()); // right?
-			heap_mm->free(alloc);
-			return PAMI_ERROR;
-		}
+		alloc->key(key);
+		alloc->userSize(bytes, alignment);
+		// note, inital (worst-case) padding now set, when
+		// actual pointer assigned below, padding is updated.
+#ifdef _POSIX_SHM_OPEN
 #else // ! _POSIX_SHM_OPEN
-#warning Need to write/validate SysV Shmem equivalent
 		key_t kkey;
 		if (!key) {
 			kkey = IPC_PRIVATE;
@@ -167,52 +148,74 @@ namespace PAMI
 			}
 			// yukky hash code
 		}
+		alloc->vkey(kkey);
+#endif // ! _POSIX_SHM_OPEN
+		// Note, Global does not construct this if the target conditions
+		// would prevent it from succeeding - for example SMP-mode on BG.
+		// So that simplifies the code, as any errors are just fatal.
 
-		lrc = shmget(kkey, rawbytes, IPC_CREAT | IPC_EXCL | 0600);
+		// should we keep track of each shm_open, so that we can
+		// later shm_unlink?
+
+		// first try to create the file exclusively, if that
+		// succeeds then we know we should initialize it.
+		// However, we still need to ensure others do not
+		// start using the memory until we complete the init.
+		// Use a "counter mutex" that is initialized to 0, all but
+		// the first (based on O_EXCL) will wait on it.
+		// 
+
+		// use GCC atomics on the shared memory chunk, in order to
+		// synchronize init, and in free will need to ensure memory gets zeroed.
+		int lrc;
+
+		lrc = PAMI_MM_SHM_OPEN_EXCL(alloc);
 		first = (lrc != -1); // must be the first...
-		if (!first) lrc = shmget(kkey, 0, 0);
+
+		if (!first) lrc = PAMI_MM_SHM_OPEN(alloc);
 		if (lrc == -1)
 		{
-			heap_mm->free(alloc);
+			alloc->free();
+			_meta.release();
 			return PAMI_ERROR;
 		}
-		fd = lrc;
-		ptr = shmat(fd, 0, 0);
-		if (ptr == NULL || ptr == (void *)-1) {
-			shmctl(fd, IPC_RMID, NULL);
-			heap_mm->free(alloc);
+		alloc->fd(lrc); // PAMI_MM_SHM_MAP (et al.) requires this first.
+		ptr = PAMI_MM_SHM_MAP(alloc);
+		if (ptr == NULL || ptr == MAP_FAILED)
+		{
+			PAMI_MM_SHM_UNMAP(alloc);
+			PAMI_MM_SHM_DELETE(alloc);
+			alloc->free();
+			_meta.release();
 			return PAMI_ERROR;
 		}
-#endif // ! _POSIX_SHM_OPEN
 		// shared segment acquired, now sync and init.
 
-		alloc->init(ptr, fd); // fd might be -1, indicates not-shm
-		ptr = alloc->address();
+		alloc->mem(ptr); // required for addRef(), userMem(), etc...
 		if (first)
 		{
-			init_fn(ptr, bytes, alloc->key(), _attrs, cookie);
+			init_fn(alloc->userMem(), alloc->userSize(), alloc->key(),
+								_attrs, cookie);
 			alloc->addRef();
 			alloc->initDone();
 		}
 		else
 		{
 			alloc->addRef();
-			while (!alloc->isInitDone()); // any better way than spinning?
+			alloc->waitDone();
 		}
-		*memptr = ptr;
-		_mmhdr.acquire();
-		_mmhdr.push(alloc);
-		_mmhdr.release();
+		*memptr = alloc->userMem();
+		_meta.release();
 		return PAMI_SUCCESS;
 	}
 
 	inline void free(void *mem) {
-		_mmhdr.acquire();
-		MemoryManagerChunk *m = _mmhdr.find(mem);
+		_meta.acquire();
+		MemoryManagerOSAlloc *m = _mmhdr.find(mem);
 		if (m) {
 			_free(m);
 		}
-		_mmhdr.release();
+		_meta.release();
 	}
 
 	inline size_t available(size_t alignment) {
@@ -224,32 +227,20 @@ namespace PAMI
     protected:
 
 	// lock held by caller.
-	inline void _free(MemoryManagerChunk *m) {
-#ifdef _POSIX_SHM_OPEN
-		close(m->fd()); // needed? possible?
-#endif // _POSIX_SHM_OPEN
+	inline void _free(MemoryManagerOSAlloc *m, void *cookie = NULL) {
+		PAMI_MM_SHM_UNMAP(m);
 		if (m->rmRef() == 1) {
 			// zero memory so that next use is zeroed?
 			// memset(m->rawAddress(), 0, m->size());
-#ifdef _POSIX_SHM_OPEN
-			shm_unlink(m->key());
-#else // ! _POSIX_SHM_OPEN
-			shmctl(m->fd(), IPC_RMID, NULL);
-#endif // ! _POSIX_SHM_OPEN
+			PAMI_MM_SHM_DELETE(m);
+			m->free();
 		}
-		_mmhdr.dequeue(m);
 	}
 
 	inline void freeAll() {
-		_mmhdr.acquire();
-		MemoryManagerChunk *m = _mmhdr.head();
-		MemoryManagerChunk *n;
-		while (m) {
-			n = m->next();
-			_free(m);
-			m = n;
-		}
-		_mmhdr.release();
+		_meta.acquire();
+		_meta.forAllActive(_free);
+		_meta.release();
 	}
 
     }; // class SharedMemoryManager
