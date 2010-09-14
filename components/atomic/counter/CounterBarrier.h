@@ -49,6 +49,15 @@ namespace PAMI
 
           _participants = participants;
           _master = master;
+#if 0
+fprintf(stderr, "local_barriered_ctrzero<>(%p {%p,%p,%p,%p,%p}, 5, %zd, %d)\n", _counter,
+_counter[0].returnLock(),
+_counter[1].returnLock(),
+_counter[2].returnLock(),
+_counter[3].returnLock(),
+_counter[4].returnLock(),
+participants, master);
+#endif
           local_barriered_ctrzero<T_Counter>(_counter, 5, participants, master);
         };
 

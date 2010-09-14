@@ -126,8 +126,8 @@ namespace BGQ {
                                 sizeof(uint64_t) * size);
 			krc = Kernel_L2AtomicsAllocate(virt, sizeof(uint64_t) * size);
                         PAMI_assertf(krc == 0,
-				"Failed to map process L2 Atomic region %p (%zd): %d",
-				virt, sizeof(uint64_t) * size, errno);
+				"Failed to map process L2 Atomic region %p (%zd): %ld",
+				virt, sizeof(uint64_t) * size, krc);
                         memset(virt, 0, sizeof(uint64_t) * size);
 			__procscoped_mm.init(virt, size * sizeof(uint64_t));
 
@@ -144,14 +144,21 @@ namespace BGQ {
                                 sizeof(uint64_t) * size);
 			krc = Kernel_L2AtomicsAllocate(virt, sizeof(uint64_t) * size);
                         PAMI_assertf(krc == 0,
-				"Failed to map shared L2 Atomic region %p (%zd): %d",
-				virt, sizeof(uint64_t) * size, errno);
+				"Failed to map shared L2 Atomic region %p (%zd): %ld",
+				virt, sizeof(uint64_t) * size, krc);
 
 			/// \todo need to coordinate clearing of shmem unless we know a barrier follows
 			// clearing of memory done after computing local params
 			__nodescoped_mm.init(virt, size * sizeof(uint64_t));
-//fprintf(stderr, "L2 Atomics, node=%zd proc=%zd\n", __nodescoped_mm.size(), __procscoped_mm.size());
-
+#if 0
+fprintf(stderr, "L2 Atomics, node=%zd @ %p (%zd), proc=%zd @ %p (%zd)\n",
+__nodescoped_mm.size(),
+__nodescoped_mm.base(),
+__nodescoped_mm.available(),
+__procscoped_mm.size(),
+__procscoped_mm.base(),
+__procscoped_mm.available());
+#endif
                         // Compute all implementation parameters,
                         // i.e. fill-in _factory struct.
                         PAMI::Interface::Mapping::nodeaddr_t addr;
