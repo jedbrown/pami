@@ -52,7 +52,7 @@ namespace PAMI
 	///
 	/// \param[in] base	Start address of raw chunk
 	/// \param[in] off	Addition (meta) data needed
-	/// \param[in] align	Alignment required (power of two)
+	/// \param[in] align	Alignment required (power of two - NOT zero!)
 	///
 	static inline size_t padding(void *base, size_t off, size_t align) {
 		return (((size_t)base + off + (align - 1)) & ~(align - 1)) -
@@ -207,12 +207,14 @@ namespace PAMI
 	class MemoryManagerMeta {
 	private:
 		inline void _metaAlloc(void **pptr, size_t len, char tag) {
+			pami_result_t rc;
 			if (_meta_key_len) {
 				_meta_key_fmt[_meta_key_len] = tag; // replaced on each use
-				_meta_mm->memalign(pptr, 0, len, _meta_key_fmt);
+				rc = _meta_mm->memalign(pptr, 0, len, _meta_key_fmt);
 			} else {
-				_meta_mm->memalign(pptr, 0, len, NULL);
+				rc = _meta_mm->memalign(pptr, 0, len, NULL);
 			}
+			PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get memory for meta");
 		}
 	public:
 		MemoryManagerMeta() :
@@ -245,6 +247,7 @@ namespace PAMI
 				_meta_key_fmt[_meta_key_len + 1] = '\0';
 			}
 			_metaAlloc((void **)&_metahdr, sizeof(*_metahdr), 'h');
+			PAMI_assertf(_metahdr, "Failed to get memory for _metahdr");
 			new (_metahdr) MemoryManagerHeader(); // can? should?
 		}
 
@@ -364,7 +367,7 @@ namespace PAMI
 	_size(0),
 	_enabled(false),
 	_attrs(0),
-	_alignment(0),
+	_alignment(sizeof(void *)),
 	_pmm(NULL)
         {
           TRACE_ERR((stderr, "%s, this = %p\n", __PRETTY_FUNCTION__, this));

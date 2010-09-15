@@ -60,8 +60,10 @@ namespace PAMI
 		// There is no shared memory, so don't try. Fake using heap.
 		shared_mm = new (_shared_mm) PAMI::Memory::HeapMemoryManager();
 	  } else {
-		shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager();
+		shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(heap_mm);
 	  }
+	PAMI::Memory::MemoryManager::heap_mm = heap_mm;
+	PAMI::Memory::MemoryManager::shared_mm = shared_mm;
 
 
           //allocateMemory ();

@@ -19,8 +19,8 @@ PAMI::Global __global;
 PAMI::Mapping *PAMI::Topology::mapping = NULL;
 pami_coord_t PAMI::Topology::my_coords;
 
-PAMI::Memory::MemoryManager *PAMI::Memory::MemoryManager::heap_mm = __global.heap_mm;
-PAMI::Memory::MemoryManager *PAMI::Memory::MemoryManager::shared_mm = __global.shared_mm;
+PAMI::Memory::MemoryManager *PAMI::Memory::MemoryManager::heap_mm;
+PAMI::Memory::MemoryManager *PAMI::Memory::MemoryManager::shared_mm;
 
 #include "components/devices/misc/ProgressFunctionMsg.h"
 PAMI::Device::ProgressFunctionDev _g_progfunc_dev;

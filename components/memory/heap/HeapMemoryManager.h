@@ -51,10 +51,14 @@ namespace PAMI
 			const char *key = NULL,
 			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
 	{
+		if (alignment < _alignment) alignment = _alignment;
 #ifdef USE_MEMALIGN
 		int rc = posix_memalign (memptr, alignment, bytes);
-		if (rc == -1) return PAMI_ERROR;
+		if (rc != 0) {
+			return PAMI_ERROR;
+		}
 #else
+		// todo: actually do requested alignment...
 		*memptr = malloc(bytes);
 		if (!*memptr) return PAMI_ERROR;
 #endif

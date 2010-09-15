@@ -71,7 +71,7 @@ namespace PAMI
 	/// Support for free() is not provided yet, but allocations must still be
 	/// tracked for the afore mentioned reason.
 	///
-        inline SharedMemoryManager () :
+        inline SharedMemoryManager (MemoryManager *mm) :
           MemoryManager (),
 	  _meta()
         {
@@ -81,7 +81,7 @@ namespace PAMI
 		// simply not construct SharedMemoryManager in shared_mm
 		// (construct HeapMemoryManager twice, in heap_mm and shared_mm).
 		_attrs = PAMI_MM_NODESCOPE;
-		_meta.init(heap_mm, "/pami-shmemmgr");
+		_meta.init(mm, "/pami-shmemmgr");
 		_enabled = true;
         }
 
@@ -106,6 +106,7 @@ namespace PAMI
 			const char *key = NULL,
 			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
 	{
+
 		PAMI_assert_debugf(_attrs == PAMI_MM_NODESCOPE, "SharedMemoryManager not shared");
 		if (alignment < _alignment) alignment = _alignment;
 		void *ptr = NULL;
@@ -186,17 +187,17 @@ namespace PAMI
 		// shared segment acquired, now sync and init.
 
 		alloc->mem(ptr, alignment); // required for addRef(), userMem(), etc...
-		if (first)
-		{
-			init_fn(alloc->userMem(), alloc->userSize(), alloc->key(),
-								_attrs, cookie);
-			alloc->addRef();
-			alloc->initDone();
-		}
-		else
-		{
-			alloc->addRef();
-			alloc->waitDone();
+		alloc->addRef();
+		if (init_fn) {
+			if (first) {
+				init_fn(alloc->userMem(), alloc->userSize(),
+						alloc->key(), _attrs, cookie);
+				alloc->initDone();
+			} else {
+				// note: sync may not be needed if _meta.acquire/release
+				// already prevents the race condition.
+				alloc->waitDone();
+			}
 		}
 		*memptr = alloc->userMem();
 		_meta.release();

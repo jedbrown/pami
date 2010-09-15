@@ -97,8 +97,10 @@ namespace PAMI
 		// There is no shared memory, so don't try. Fake using heap.
 		shared_mm = new (_shared_mm) PAMI::Memory::HeapMemoryManager();
 	} else {
-		shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager();
+		shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(heap_mm);
 	}
+	PAMI::Memory::MemoryManager::heap_mm = heap_mm;
+	PAMI::Memory::MemoryManager::shared_mm = shared_mm;
 
         /// \todo #80 #99 Remove this when the DMA supports >1 context.
         /// Hopefully this is temporary. We should always include all
@@ -175,7 +177,6 @@ namespace PAMI
 
         topology_global.subTopologyLocalToMe(&topology_local);
         PAMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
-//fprintf(stderr, "__global.mm size=%zd\n", mm.size());
         l2atomicFactory.init(&mm, heap_mm, &mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));
