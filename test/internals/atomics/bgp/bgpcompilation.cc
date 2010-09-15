@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "This program is not intended to be run!\n");
 		exit(1);
 	}
-        PAMI::Memory::MemoryManager mm;
+        PAMI::Memory::GenMemoryManager mm;
         mm.init(argv, argc); // anything
 
         COUNTER_HELPER(PAMI::Counter::BGP::LockBoxNodeCounter, counter1, mm);

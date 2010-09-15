@@ -707,7 +707,7 @@ namespace PAMI
 
 
 
-      Memory::MemoryManager _mm;
+      Memory::GenMemoryManager _mm;
       //  Unexpected Barrier allocator
       MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;       
       //  Unexpected Barrier match queue
@@ -741,7 +741,7 @@ namespace PAMI
         // Round up to the page size
         //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-	_mm.init(&__global.shared_mm, bytes, 1, 0, shmemfile);
+	_mm.init(__global.shared_mm, bytes, 1, 0, shmemfile);
         return;
       }
 

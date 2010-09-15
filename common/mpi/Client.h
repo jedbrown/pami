@@ -420,7 +420,7 @@ namespace PAMI
     MPIGeometry               *_world_geometry;
     pami_geometry_range_t      _world_range;
     std::map<unsigned, pami_geometry_t> _geometry_map;
-    Memory::MemoryManager      _mm;
+    Memory::GenMemoryManager      _mm;
     //  Unexpected Barrier allocator
     MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
 
@@ -437,7 +437,7 @@ namespace PAMI
         snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s", _name);
         // Round up to the page size
         size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
-	_mm.init(&__global.shared_mm, size, 1, 0, shmemfile);
+	_mm.init(__global.shared_mm, size, 1, 0, shmemfile);
         return;
       }
 

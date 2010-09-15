@@ -1410,7 +1410,7 @@ namespace PAMI
 	clientResources_t *_clientResources;
 
 	// Shared Memory Manager
-	PAMI::Memory::MemoryManager        _mm;
+	PAMI::Memory::GenMemoryManager        _mm;
 	size_t                             _memSize;
 
 	// Node-wide resources
@@ -2191,7 +2191,7 @@ void PAMI::Device::MU::ResourceManager::setupSharedMemory()
 {
   const char *shmemfile = "/unique-pami-globalRM-shmem-file";
 
-  _mm.init(&__global.shared_mm, _memSize, 1, 0, shmemfile);
+  _mm.init(__global.shared_mm, _memSize, 1, 0, shmemfile);
 
 } // End: setupSharedMemory()
 

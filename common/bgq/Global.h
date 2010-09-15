@@ -92,12 +92,12 @@ namespace PAMI
 
         time.init(personality.Kernel_Config.FreqMHz);
 
-	new (&heap_mm) PAMI::Memory::HeapMemoryManager();
+	heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
 	if (personality.tSize() == 1) {
 		// There is no shared memory, so don't try. Fake using heap.
-		new (&shared_mm) PAMI::Memory::HeapMemoryManager();
+		shared_mm = new (_shared_mm) PAMI::Memory::HeapMemoryManager();
 	} else {
-		new (&shared_mm) PAMI::Memory::SharedMemoryManager();
+		shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager();
 	}
 
         /// \todo #80 #99 Remove this when the DMA supports >1 context.
@@ -145,7 +145,7 @@ namespace PAMI
 	}
 
         TRACE_ERR((stderr, "Global() .. size = %zu\n", size));
-	mm.init(&shared_mm, size, 1, 0, shmemfile);
+	mm.init(shared_mm, size, 1, 0, shmemfile);
         (void)initializeMapCache(personality, &mm, ll, ur, min, max,
               ((mm.attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) != 0)); //shared initialization
 
@@ -176,7 +176,7 @@ namespace PAMI
         topology_global.subTopologyLocalToMe(&topology_local);
         PAMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
 //fprintf(stderr, "__global.mm size=%zd\n", mm.size());
-        l2atomicFactory.init(&mm, &heap_mm, &mapping, &topology_local);
+        l2atomicFactory.init(&mm, heap_mm, &mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));
 
@@ -229,7 +229,7 @@ namespace PAMI
       BgqPersonality       personality;
       PAMI::Mapping         mapping;
       PAMI::Atomic::BGQ::L2AtomicFactory l2atomicFactory;
-      PAMI::Memory::MemoryManager mm;
+      PAMI::Memory::GenMemoryManager mm;
       PAMI::Memory::MemoryManager *_wuRegion_mm;
 
     private:

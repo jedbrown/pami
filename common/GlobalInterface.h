@@ -23,7 +23,8 @@
 #include "util/common.h"
 #include "Topology.h"
 #include "Ptime.h"
-#include "components/memory/MemoryManager.h"
+#include "components/memory/heap/HeapMemoryManager.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
 
 namespace PAMI
 {
@@ -38,8 +39,8 @@ namespace Interface
           time(),
           topology_global(),
           topology_local(),
-	  heap_mm(),
-	  shared_mm()
+	  heap_mm(NULL),
+	  shared_mm(NULL)
         {
                 ENFORCE_CLASS_MEMBER(T_Global,mapping);
         }
@@ -51,12 +52,15 @@ namespace Interface
         PAMI::Time	time;
         PAMI::Topology	topology_global;
         PAMI::Topology	topology_local;
-	PAMI::Memory::MemoryManager heap_mm;	// re-constructed later
-	PAMI::Memory::MemoryManager shared_mm;	// re-constructed later
-
+	PAMI::Memory::MemoryManager *heap_mm;
+	PAMI::Memory::MemoryManager *shared_mm;
         /// Global location for the processor name
         char processor_name[128];
 
+      protected:
+	uint8_t _heap_mm[sizeof(PAMI::Memory::HeapMemoryManager)];
+	uint8_t _shared_mm[sizeof(PAMI::Memory::SharedMemoryManager)];	// possibly
+						// constructed as a HeapMemoryManager.
   };   // class Global
 };     // namespace Interface
 };     // namespace PAMI

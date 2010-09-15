@@ -115,7 +115,7 @@ class QueueTest {
 	static const size_t num_ctx = 1;
 public:
 
-	PAMI::Memory::MemoryManager mm;
+	PAMI::Memory::GenMemoryManager mm;
 
 	PAMI::Device::Generic::Device *queue;
 	typedef PAMI::Device::Generic::GenericThread element_t;
@@ -132,7 +132,7 @@ public:
 	seed(s)
 	{
 		size_t size = 32*1024;
-		mm.init(&__global.heap_mm, size);
+		mm.init(__global.heap_mm, size);
 
 		size_t x;
 		unsigned long long t1, t0 = PAMI_Wtimebase();

@@ -62,7 +62,7 @@ namespace PAMI
 
           // Needs error-checking and locks for thread safety
           T_Client * clientp = NULL;
-          rc = __global.heap_mm.memalign((void **) & clientp, 16, sizeof (T_Client));
+          rc = __global.heap_mm->memalign((void **) & clientp, 16, sizeof (T_Client));
 
           if (rc != PAMI_SUCCESS) PAMI_abort();
 
@@ -334,7 +334,7 @@ namespace PAMI
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-          _mm.init(&__global.shared_mm, size, 1, 0, shmemfile);
+          _mm.init(__global.shared_mm, size, 1, 0, shmemfile);
 
           return;
         }

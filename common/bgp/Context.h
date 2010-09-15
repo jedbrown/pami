@@ -632,7 +632,7 @@ namespace PAMI
 
       Protocol::Get::RGet         * _rget;
       Protocol::Put::RPut         * _rput;
-      PAMI::Memory::MemoryManager   _mm;
+      PAMI::Memory::GenMemoryManager   _mm;
 
       // devices...
       ContextLock _lock;

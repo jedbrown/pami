@@ -109,7 +109,7 @@ public:
 		unsigned int val;
 	};
 
-	PAMI::Memory::MemoryManager mm;
+	PAMI::Memory::GenMemoryManager mm;
 	T_Queue queue;
 
 	double base_t;
@@ -127,7 +127,7 @@ public:
 	seed(s)
 	{
 		size_t size = 32*1024;
-		mm.init(&__global.heap_mm, size);
+		mm.init(__global.heap_mm, size);
 		queue.init(&mm);
 
 		int x;

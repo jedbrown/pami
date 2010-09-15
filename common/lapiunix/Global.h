@@ -39,8 +39,8 @@ namespace PAMI
         {
           // LAPI::Time gets its own clockMHz
           time.init(0);
-	  new (&heap_mm) PAMI::Memory::HeapMemoryManager();
-	  new (&shared_mm) PAMI::Memory::SharedMemoryManager();
+	  heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
+	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager();
 
           {
             size_t min=0, max=0;

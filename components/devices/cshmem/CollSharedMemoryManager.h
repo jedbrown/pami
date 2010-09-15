@@ -157,7 +157,7 @@ namespace PAMI
           _localrank = rank;
           _localsize = size;
 
-	  __global.shared_mm.memalign((void **)&_collshm, 16, _size, "/pami-collshmem",
+	  __global.shared_mm->memalign((void **)&_collshm, 16, _size, "/pami-collshmem",
 					_collshminit, (void *)this);
           return PAMI_SUCCESS;
         }

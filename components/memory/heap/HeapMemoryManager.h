@@ -14,8 +14,8 @@
 #ifndef __components_memory_heap_HeapMemoryManager_h__
 #define __components_memory_heap_HeapMemoryManager_h__
 
-#define PAMI_MM_ALLOC_TYPE	MemoryManagerOSAlloc
 #include "components/memory/MemoryManager.h"
+#include "components/memory/shmem/SharedMemoryManager.h"
 
 namespace PAMI
 {
@@ -28,7 +28,7 @@ namespace PAMI
       inline HeapMemoryManager () :
         MemoryManager ()
         {
-		COMPILE_TIME_ASSERT(sizeof(HeapMemoryManager) <= sizeof(MemoryManager));
+		COMPILE_TIME_ASSERT(sizeof(HeapMemoryManager) <= sizeof(SharedMemoryManager));
 		_attrs = PAMI_MM_PROCSCOPE;
         }
 

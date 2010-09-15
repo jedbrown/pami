@@ -1115,7 +1115,7 @@ namespace PAMI
       std::map<unsigned, pami_geometry_t> *_geometry_map;
       pami_endpoint_t              _self;
 
-      PAMI::Memory::MemoryManager  _mm;
+      PAMI::Memory::GenMemoryManager  _mm;
 
       void *                       _dispatch[1024];
       Protocol::Get::RGet         *_rget;

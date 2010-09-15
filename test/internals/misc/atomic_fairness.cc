@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	PAMI::Memory::MemoryManager mm;
+	PAMI::Memory::GenMemoryManager mm;
 	initializeMemoryManager("TEST", 512, mm, 1, true);
 	thread_lock.init(&mm);
 

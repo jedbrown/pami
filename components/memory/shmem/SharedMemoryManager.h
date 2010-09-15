@@ -16,7 +16,6 @@
 #ifndef __components_memory_shmem_SharedMemoryManager_h__
 #define __components_memory_shmem_SharedMemoryManager_h__
 
-#define PAMI_MM_ALLOC_TYPE	MemoryManagerOSAlloc
 #include "components/memory/MemoryManager.h"
 
 #include <sys/mman.h>
@@ -73,9 +72,9 @@ namespace PAMI
 	/// tracked for the afore mentioned reason.
 	///
         inline SharedMemoryManager () :
-          MemoryManager ()
+          MemoryManager (),
+	  _meta()
         {
-		COMPILE_TIME_ASSERT(sizeof(SharedMemoryManager) <= sizeof(MemoryManager));
 		// This could be better decided based on number of processes
 		// per node, but can't get that from __global because of
 		// circular dependencies. Instead, Global could check and
@@ -90,6 +89,7 @@ namespace PAMI
         {
 		// if this only happens at program exit, just unlink all keys...
 		freeAll();
+		_meta.~MemoryManagerMeta<MemoryManagerOSAlloc>();
         }
 
 
@@ -242,6 +242,8 @@ namespace PAMI
 		_meta.forAllActive(_free);
 		_meta.release();
 	}
+
+	MemoryManagerMeta<MemoryManagerOSAlloc> _meta;
 
     }; // class SharedMemoryManager
   }; // namespace Memory

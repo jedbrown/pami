@@ -56,8 +56,8 @@ namespace PAMI
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
 
-	  new (&heap_mm) PAMI::Memory::HeapMemoryManager();
-	  new (&shared_mm) PAMI::Memory::SharedMemoryManager();
+	  heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
+	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager();
 
           char shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
           snprintf (shmemfile, sizeof(shmemfile) - 1, "/unique-pami-global-shmem-file");
@@ -92,7 +92,7 @@ namespace PAMI
        public:
 
         PAMI::Mapping         mapping;
-	PAMI::Memory::MemoryManager mm;
+	PAMI::Memory::GenMemoryManager mm;
 
     }; // PAMI::Global
 };     // PAMI

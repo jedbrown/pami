@@ -81,8 +81,8 @@ namespace BGQ {
                 size_t __numProc;
                 bool __isMasterRank;
         public:
-		PAMI::Memory::MemoryManager __nodescoped_mm;
-		PAMI::Memory::MemoryManager __procscoped_mm;
+		PAMI::Memory::GenMemoryManager __nodescoped_mm;
+		PAMI::Memory::GenMemoryManager __procscoped_mm;
 
                 L2AtomicFactory() { }
 

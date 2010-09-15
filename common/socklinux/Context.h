@@ -320,7 +320,7 @@ namespace PAMI
 
     private:
 
-      PAMI::Memory::MemoryManager _mm;
+      PAMI::Memory::GenMemoryManager _mm;
 
       MemoryAllocator<1024, 16> _request;
       ProtocolAllocator _protocol;

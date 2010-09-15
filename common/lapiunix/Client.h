@@ -797,7 +797,7 @@ namespace PAMI
 		((LapiImpl::Client*)&_lapiClient[0])->GetName());
         // Round up to the page size
         size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
-	_mm.init(&__global.shared_mm, size, 1, 0, shmemfile);
+	_mm.init(__global.shared_mm, size, 1, 0, shmemfile);
 
         return;
       }
@@ -846,7 +846,7 @@ namespace PAMI
     std::map<unsigned, pami_geometry_t>          _geometry_map;
     
     // Shared Memory Manager for this Client
-    Memory::MemoryManager                        _mm;
+    Memory::GenMemoryManager                        _mm;
 
     // Initial LAPI handle for building geometries,
     // fencing, and other comm needed for initialization

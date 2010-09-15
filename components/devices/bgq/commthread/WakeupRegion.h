@@ -118,7 +118,7 @@ PAMI_abortf("do not use getAllWUmm()");
 private:
 	typedef uint64_t BgqWakeupRegionBuffer[BGQ_WACREGION_SIZE];
 
-	PAMI::Memory::MemoryManager _wu_mm[PAMI_MAX_PROC_PER_NODE];
+	PAMI::Memory::GenMemoryManager _wu_mm[PAMI_MAX_PROC_PER_NODE];
 	size_t _wu_region_me;	///< local process index into WAC regions
 	Kernel_MemoryRegion_t _wu_memreg;	///< phy addr of WAC region
 }; // class BgqWakeupRegion

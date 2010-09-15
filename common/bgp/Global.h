@@ -55,12 +55,12 @@ namespace PAMI
           //Interface::Global<PAMI::Global>::time.init(personality.clockMHz());
           time.init (personality.clockMHz());
 
-	  new (&heap_mm) PAMI::Memory::HeapMemoryManager();
+	  heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
 	  if (personality.tSize() == 1) {
 		// There is no shared memory, so don't try. Fake using heap.
-		new (&shared_mm) PAMI::Memory::HeapMemoryManager();
+		shared_mm = new (_shared_mm) PAMI::Memory::HeapMemoryManager();
 	  } else {
-		new (&shared_mm) PAMI::Memory::SharedMemoryManager();
+		shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager();
 	  }
 
 
@@ -108,7 +108,7 @@ namespace PAMI
 
         PAMI::BgpPersonality	personality;
         PAMI::Mapping		mapping;
-	PAMI::Memory::MemoryManager mm;
+	PAMI::Memory::GenMemoryManager mm;
 
       private:
 

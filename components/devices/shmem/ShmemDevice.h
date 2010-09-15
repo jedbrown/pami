@@ -327,7 +327,7 @@ namespace PAMI
               // context in this _task_ (from heap, not from shared memory)
               ShmemDevice * devices;
               pami_result_t rc;
-	      rc = __global.heap_mm.memalign((void **)&devices, 16, sizeof(*devices) * n);
+	      rc = __global.heap_mm->memalign((void **)&devices, 16, sizeof(*devices) * n);
               PAMI_assertf(rc == PAMI_SUCCESS, "memalign failed for ShmemDevice[%zu], rc=%d\n", n, rc);
 
               // Instantiate the shared memory devices
