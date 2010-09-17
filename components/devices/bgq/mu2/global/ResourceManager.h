@@ -2224,7 +2224,6 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
   memset( &fifoAttr, 0x00, sizeof(fifoAttr) );
 
   fifoAttr.RemoteGet = 1;
-  fifoAttr.Priority  = 1;
 
   numFifosSetup = setupInjFifos( 64, // Starting subgroup
 				 65, // Ending subgroup
