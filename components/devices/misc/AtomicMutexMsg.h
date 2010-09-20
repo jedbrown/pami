@@ -144,7 +144,7 @@ public:
 			AtomicMutexDev,sizeof(AtomicMutexMsg<T_Mutex>) >(device, status),
 	_gd(&device)
 	{
-		_mutex.init(_gd->getMM());
+		_mutex.init(_gd->getMM(), NULL); // problem...
 		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
 	}
 

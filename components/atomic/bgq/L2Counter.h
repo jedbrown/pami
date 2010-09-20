@@ -27,25 +27,23 @@ namespace BGQ {
 /// \brief CRTP interface for BG/Q L2 Atomics builtins atomic objects.
 ///
 template <class T_Counter>
-class _L2Counter : public PAMI::Atomic::Interface::Counter<T_Counter> {
+class L2Counter : public PAMI::Atomic::Interface::IndirCounter<T_Counter> {
 public:
-        _L2Counter() :
-                PAMI::Atomic::Interface::Counter<T_Counter>()
+        L2Counter() :
+	PAMI::Atomic::Interface::IndirCounter<T_Counter>(),
+	_counter(NULL)
         {}
 
-        ~_L2Counter() {}
+        ~L2Counter() {}
 
-        void __init(PAMI::Memory::MemoryManager *mm,
-                                PAMI::Atomic::BGQ::l2x_scope_t mmscope,
-                                PAMI::Atomic::BGQ::l2x_scope_t scope) {
-		/// \todo #warning HACK to workaround until MemoryManager::key_memalign
-                pami_result_t rc;
-                rc = __global.l2atomicFactory.l2x_mm_alloc(mm, mmscope,
-							(void **)&_counter, 1, scope);
-                PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate L2 Atomic Counter");
-                // MUST NOT DO THIS! other procs might be already using it.
-                /// \todo #warning: find a way to ensure memory is zeroed once and only once.
-                //fetch_and_clear_impl();
+        /// \see PAMI::Atomic::Interface::Counter::init
+        void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
+		PAMI_assert_debugf((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0,
+			"mm is not L2-Atomic capable");
+		PAMI_assert_debugf(!_counter, "Re-init or object is in shmem");
+                pami_result_t rc = mm->memalign((void **)&_counter, sizeof(*_counter),
+							sizeof(*_counter), key);
+                PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get L2 Atomic Counter");
         }
 
         /// \see PAMI::Atomic::Interface::Counter::fetch
@@ -86,77 +84,7 @@ protected:
 
         volatile uint64_t *_counter;
 
-}; // class _L2Counter
-
-///
-/// \brief BG/Q L2 Atomics based Proc-scoped Atomic Counter
-///
-/// Currently, for 4GB RAM nodes, L2 Atomics may be performed anywhere in-place.
-/// Later, we may need to go to a scheme that maps a block of memory for use
-/// in L2 Atomics, and allocates counters out of it a la BG/P Lockboxes.
-///
-class L2ProcCounter : public _L2Counter<L2ProcCounter> {
-public:
-        L2ProcCounter() :
-        _L2Counter<L2ProcCounter>()
-        {}
-
-        ~L2ProcCounter() {}
-
-        /// \see PAMI::Atomic::Interface::Counter::init
-        void init_impl(PAMI::Memory::MemoryManager *mm) {
-		/// \todo #warning HACK to workaround until MemoryManager::key_memalign
-		if (mm == __global._wuRegion_mm ||
-				mm == &__global.l2atomicFactory.__nodescoped_mm) {
-			__init(mm, PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
-					PAMI::Atomic::BGQ::L2A_PROC_SCOPE);
-		} else {
-			__init(&__global.l2atomicFactory.__procscoped_mm,
-					PAMI::Atomic::BGQ::L2A_PROC_SCOPE,
-					PAMI::Atomic::BGQ::L2A_PROC_SCOPE);
-		}
-                // MUST NOT DO THIS! other procs might be already using it.
-                // TODO: find a way to ensure memory is zeroed once and only once.
-                //fetch_and_clear_impl ();
-        }
-
-protected:
-}; // class L2ProcCounter
-
-///
-/// \brief BG/Q L2 Atomics based Node-scoped Atomic Counter
-///
-/// Currently, for 4GB RAM nodes, L2 Atomics may be performed anywhere in-place.
-/// Later, we may need to go to a scheme that maps a block of memory for use
-/// in L2 Atomics, and allocates counters out of it a la BG/P Lockboxes.
-///
-class L2NodeCounter : public _L2Counter<L2NodeCounter> {
-public:
-        L2NodeCounter() :
-        _L2Counter<L2NodeCounter>()
-        {}
-
-        ~L2NodeCounter() {}
-
-        /// \see PAMI::Atomic::Interface::Counter::init
-        void init_impl(PAMI::Memory::MemoryManager *mm) {
-		/// \todo #warning HACK to workaround until MemoryManager::key_memalign
-		if (mm == __global._wuRegion_mm ||
-				mm == &__global.l2atomicFactory.__nodescoped_mm) {
-			__init(mm, PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
-					PAMI::Atomic::BGQ::L2A_NODE_SCOPE);
-		} else {
-			__init(&__global.l2atomicFactory.__nodescoped_mm,
-					PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
-					PAMI::Atomic::BGQ::L2A_NODE_SCOPE);
-		}
-                // MUST NOT DO THIS! other procs might be already using it.
-                // TODO: find a way to ensure memory is zeroed once and only once.
-                //fetch_and_clear_impl ();
-        }
-
-protected:
-}; // class L2NodeCounter
+}; // class L2Counter
 
 }; // namespace BGQ
 }; // namespace Atomic

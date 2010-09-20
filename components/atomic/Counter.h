@@ -21,23 +21,26 @@ namespace PAMI
   namespace Interface
   {
     ///
-    /// \brief Interface for all atomic counter objects.
+    /// \brief Interface for atomic counter objects
+    ///
+    /// This is a base classs and is not used directly.
     ///
     /// \param T_Object  Atomic counter object derived class
     ///
+    template <class T_Object> class InPlaceCounter;
+    template <class T_Object> class IndirCounter;
     template <class T_Object>
     class Counter
     {
+      private:
+	friend class InPlaceCounter<T_Object>;
+	friend class IndirCounter<T_Object>;
+        Counter() {
+		// need equiv check for methods...
+		// ENFORCE_CLASS_MEMBER(T_Object,init);
+	}
+        ~Counter() {}
       public:
-        Counter  () {};
-        ~Counter () {};
-
-        ///
-        /// \brief Initialize counter object
-        ///
-	/// \todo Need to find a way to initialize object by only one entity
-        ///
-        void init (PAMI::Memory::MemoryManager *mm);
 
         ///
         /// \brief Fetch the atomic counter object value
@@ -47,7 +50,7 @@ namespace PAMI
         ///
         /// \return Atomic counter object value
         ///
-        inline size_t fetch ();
+        inline size_t fetch()
 
         ///
         /// \brief Fetch, then increment the atomic counter object value
@@ -57,7 +60,7 @@ namespace PAMI
         ///
         /// \return Atomic counter object value
         ///
-        inline size_t fetch_and_inc ();
+        inline size_t fetch_and_inc()
 
         ///
         /// \brief Fetch, then decrement the atomic counter object value
@@ -67,7 +70,7 @@ namespace PAMI
         ///
         /// \return Atomic counter object value
         ///
-        inline size_t fetch_and_dec ();
+        inline size_t fetch_and_dec()
 
         ///
         /// \brief Fetch, then clear the atomic counter object value
@@ -77,7 +80,7 @@ namespace PAMI
         ///
         /// \return Atomic counter object value
         ///
-        inline size_t fetch_and_clear ();
+        inline size_t fetch_and_clear()
 
         ///
         /// \brief Clear the atomic counter object value
@@ -87,7 +90,7 @@ namespace PAMI
         ///
         /// This is needed to make Mutexes deterministic on some implementations
         ///
-        inline void clear ();
+        inline void clear()
 
         ///
         /// \brief Atomic compare and swap operation
@@ -100,56 +103,113 @@ namespace PAMI
         ///
         /// \retval true Comparison was successful and swap value was written.
         ///
-        inline bool compare_and_swap (size_t compare, size_t swap);
-
-        inline void *returnLock();
-
-    }; // PAMI::Atomic::Interface::Counter class
+        inline bool compare_and_swap(size_t compare, size_t swap)
+    }; // class Counter
 
     template <class T_Object>
-    inline void Counter<T_Object>::init (PAMI::Memory::MemoryManager *mm)
-    {
-      static_cast<T_Object*>(this)->init_impl(mm);
-    }
-
-    template <class T_Object>
-    inline size_t Counter<T_Object>::fetch ()
+    inline size_t Counter<T_Object>::fetch()
     {
       return static_cast<T_Object*>(this)->fetch_impl();
     }
 
     template <class T_Object>
-    inline size_t Counter<T_Object>::fetch_and_inc ()
+    inline size_t Counter<T_Object>::fetch_and_inc()
     {
       return static_cast<T_Object*>(this)->fetch_and_inc_impl();
     }
 
     template <class T_Object>
-    inline size_t Counter<T_Object>::fetch_and_dec ()
+    inline size_t Counter<T_Object>::fetch_and_dec()
     {
       return static_cast<T_Object*>(this)->fetch_and_dec_impl();
     }
 
     template <class T_Object>
-    inline size_t Counter<T_Object>::fetch_and_clear ()
+    inline size_t Counter<T_Object>::fetch_and_clear()
     {
       return static_cast<T_Object*>(this)->fetch_and_clear_impl();
     }
 
     template <class T_Object>
-    inline void Counter<T_Object>::clear ()
+    inline void Counter<T_Object>::clear()
     {
       static_cast<T_Object*>(this)->clear_impl();
     }
 
     template <class T_Object>
-    inline bool Counter<T_Object>::compare_and_swap (size_t compare, size_t swap)
+    inline bool Counter<T_Object>::compare_and_swap(size_t compare, size_t swap)
     {
       return static_cast<T_Object*>(this)->compare_and_swap_impl(compare, swap);
     }
 
+    ///
+    /// \brief Interface for atomic counter objects that operate in-place.
+    ///
+    /// \param T_Object  Atomic counter object derived class
+    ///
     template <class T_Object>
-    inline void * Counter<T_Object>::returnLock()
+    class InPlaceCounter : public Counter<T_Object>
+    {
+      protected:
+        InPlaceCounter() {};
+        ~InPlaceCounter() {};
+
+      public:
+        ///
+        /// \brief Initialize counter object
+        ///
+	/// \todo Need to find a way to initialize object by only one entity
+        ///
+        void init();
+
+        inline void *returnLock();
+
+    }; // PAMI::Atomic::Interface::InPlaceCounter class
+
+    template <class T_Object>
+    inline void InPlaceCounter<T_Object>::init()
+    {
+      static_cast<T_Object*>(this)->init_impl();
+    }
+
+    template <class T_Object>
+    inline void * InPlaceCounter<T_Object>::returnLock()
+    {
+      return static_cast<T_Object*>(this)->returnLock_impl();
+    }
+
+    ///
+    /// \brief Interface for atomic counter objects using indirect storage.
+    ///
+    /// \param T_Object  Atomic counter object derived class
+    ///
+    template <class T_Object>
+    class IndirCounter : public Counter<T_Object>
+    {
+      protected:
+        IndirCounter() {};
+        ~IndirCounter() {};
+
+      public:
+        ///
+        /// \brief Initialize counter object
+        ///
+	/// \todo Need to find a way to initialize object by only one entity
+        ///
+        void init(PAMI::Memory::MemoryManager *mm, const char *key);
+
+        inline void *returnLock();
+
+    }; // PAMI::Atomic::Interface::IndirCounter class
+
+    template <class T_Object>
+    inline void IndirCounter<T_Object>::init(PAMI::Memory::MemoryManager *mm, const char *key)
+    {
+      static_cast<T_Object*>(this)->init_impl(mm, key);
+    }
+
+    template <class T_Object>
+    inline void * IndirCounter<T_Object>::returnLock()
     {
       return static_cast<T_Object*>(this)->returnLock_impl();
     }

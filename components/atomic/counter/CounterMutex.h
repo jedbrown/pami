@@ -24,10 +24,16 @@ namespace Mutex {
         template <class T_Counter>
         class CounterMutex : public PAMI::Atomic::Interface::Mutex<CounterMutex<T_Counter> > {
         public:
-                CounterMutex() {}
+                CounterMutex() :
+		PAMI::Atomic::Interface::Mutex<CounterMutex<T_Counter> >(),
+		_counter()
+		{ }
                 ~CounterMutex() {}
-                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-                        _counter.init(mm);
+                inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
+                        _counter.init(mm, key);
+                }
+                inline void init_impl() {
+                        _counter.init();
                 }
                 void acquire_impl() {
                         while (_counter.fetch_and_inc() != 0);

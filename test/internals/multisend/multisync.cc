@@ -25,9 +25,9 @@ typedef PAMI::Device::AtomicBarrierDev Barrier_Device1;
 #define MUTEX1_ISLOCAL	1
 #include "components/devices/misc/AtomicMutexMsg.h"
 #include "components/atomic/counter/CounterMutex.h"
-typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccNodeCounter> Mutex_Type1;
-typedef PAMI::Device::AtomicMutexMdl<Mutex_Type1> Mutex_Model1;
-typedef PAMI::Device::AtomicMutexDev Mutex_Device1;
+typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccCounter> Mutex_Type1;
+typedef PAMI::Device::SharedAtomicMutexMdl<Mutex_Type1> Mutex_Model1;
+typedef PAMI::Device::SharedAtomicMutexDev Mutex_Device1;
 #endif
 
 #define MEMMGR_SIZE	(128*1024)

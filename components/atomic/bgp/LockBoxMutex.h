@@ -40,15 +40,19 @@ namespace BGP {
         //
         // These classes are used internally ONLY. See following classes for users
         //
-        class _LockBoxMutex {
+
+        class LockBoxMutex : public PAMI::Atomic::Interface::IndirMutex<LockBoxMutex> {
         public:
-                _LockBoxMutex() { _addr = NULL; }
-                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-                        PAMI_abortf("_LockBoxMutex must be a subclass");
+                LockBoxMutex() { _addr = NULL; }
+                ~LockBoxMutex() {}
+                inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
+			PAMI_assert_debugf(!_addr, "Re-init or object is in shmem");
+                        __global.lockboxFactory.lbx_alloc(&this->_addr, 1,
+				key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
                 }
                 void acquire_impl() {
                         LockBox_MutexLock((LockBox_Mutex_t)_addr);
-      mem_sync();
+			mem_sync();
                 }
                 void release_impl() {
                         LockBox_MutexUnlock((LockBox_Mutex_t)_addr);
@@ -62,13 +66,17 @@ namespace BGP {
                 void *returnLock_impl() { return _addr; }
         protected:
                 void *_addr;
-        }; // class _LockBoxMutex
+        }; // class LockBoxMutex
 
-        class _FairLockBoxMutex {
+
+        class FairLockBoxMutex : public PAMI::Atomic::Interface::IndirMutex<FairLockBoxMutex> {
         public:
-                _FairLockBoxMutex() { _addr = NULL; }
-                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-                        PAMI_abortf("_FairLockBoxMutex must be a subclass");
+                FairLockBoxMutex() { _addr = NULL; }
+                ~FairLockBoxMutex() {}
+                inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
+			PAMI_assert_debugf(!_addr, "Re-init or object is in shmem");
+                        __global.lockboxFactory.lbx_alloc(&this->_addr, 1,
+				key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
                 }
                 void acquire_impl() {
                         // LockBox_MutexLock((LockBox_Mutex_t)_addr);
@@ -111,50 +119,6 @@ namespace BGP {
         protected:
                 void *_addr;
         }; // class _FairLockBoxMutex
-
-        //
-        // Here are the actual classes to be used:
-        //
-
-        class LockBoxNodeMutex : public _LockBoxMutex,
-                                 public PAMI::Atomic::Interface::Mutex<LockBoxNodeMutex> {
-        public:
-                LockBoxNodeMutex() {}
-                ~LockBoxNodeMutex() {}
-                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-                        __global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_NODE_SCOPE);
-                }
-        }; // class LockBoxNodeMutex
-
-        class LockBoxProcMutex : public _LockBoxMutex,
-                                 public PAMI::Atomic::Interface::Mutex<LockBoxProcMutex> {
-        public:
-                LockBoxProcMutex() {}
-                ~LockBoxProcMutex() {}
-                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-                        __global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_PROC_SCOPE);
-                }
-        }; // class LockBoxProcMutex
-
-        class FairLockBoxNodeMutex : public _FairLockBoxMutex,
-                                     public PAMI::Atomic::Interface::Mutex<FairLockBoxNodeMutex> {
-        public:
-                FairLockBoxNodeMutex() {}
-                ~FairLockBoxNodeMutex() {}
-                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-                        __global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_NODE_SCOPE);
-                }
-        }; // class FairLockBoxNodeMutex
-
-        class FairLockBoxProcMutex : public _FairLockBoxMutex,
-                                     public PAMI::Atomic::Interface::Mutex<FairLockBoxProcMutex> {
-        public:
-                FairLockBoxProcMutex() {}
-                ~FairLockBoxProcMutex() {}
-                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-                        __global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_PROC_SCOPE);
-                }
-        }; // class FairLockBoxProcMutex
 
 }; // BGP namespace
 }; // Mutex namespace

@@ -81,6 +81,16 @@ namespace PAMI
 		return (size_t)-1;
 	}
 
+	inline void dump(const char *str) {
+		if (str) {
+			fprintf(stderr, "%s: HeapMemoryManager %x\n", str,
+					_attrs);
+		} else {
+			fprintf(stderr, "HeapMemoryManager %x\n",
+					_attrs);
+		}
+	}
+
     protected:
     };
   };

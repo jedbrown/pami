@@ -131,7 +131,7 @@ public:
                 size_t peers = __global.topology_local.size();
                 size_t peer0 = __global.topology_local.index2Rank(0);
                 size_t me = __global.mapping.task();
-                _barrier.init(_gd->getMM(), peers, (peer0 == me));
+                _barrier.init(_gd->getMM(), NULL, peers, (peer0 == me)); // problem...
 		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
         }
 

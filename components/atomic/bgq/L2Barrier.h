@@ -14,6 +14,10 @@
  * \file components/atomic/bgq/L2Barrier.h
  *
  * \brief BG/Q L2 Atomics implementation of a Barriers
+ *
+ * These objects must NOT be instantiated in shared memory!
+ * Each process may get a different virtual address, so *_counters
+ * would get stomped.
  */
 #include "components/atomic/Barrier.h"
 #include "Global.h"
@@ -36,21 +40,15 @@ namespace BGQ {
 
         class _L2_Barrier_s {
         public:
-                _L2_Barrier_s() { }
+                _L2_Barrier_s() :
+		_counters(NULL)
+		{ }
 
-                inline void init(PAMI::Memory::MemoryManager *mm,
-                                PAMI::Atomic::BGQ::l2x_scope_t mmscope,
-                                PAMI::Atomic::BGQ::l2x_scope_t scope) {
-			/// \todo #warning HACK to workaround until MemoryManager::key_memalign
-                        pami_result_t rc;
-                        rc = __global.l2atomicFactory.l2x_mm_alloc(mm, mmscope, (void **)&_counters, 5, scope);
-                        PAMI_assertf(rc == PAMI_SUCCESS,
-                                "Failed to allocate L2 Atomics for Node Barrier");
-                        // someone needs to reset the barrier, but needs to be
-                        // done in some barriered region to ensure no one has
-                        // started using the barrier yet (or only first one does it).
-                        // memset(_counters, 0, sizeof(*_counters));
-                }
+		pami_result_t __init(PAMI::Memory::MemoryManager *mm, const char *key) {
+			PAMI_assert_debugf(!_counters, "Re-init or object is in shmem");
+			return mm->memalign((void **)&_counters, sizeof(uint64_t),
+							sizeof(*_counter), key);
+		}
 
                 inline uint64_t *controlPtr() { return &_counters->ctrl_lock; }
                 inline uint64_t *lockPtr(int n) { return &_counters->lock[n]; }
@@ -73,7 +71,7 @@ public:
         _L2Barrier() { }
         ~_L2Barrier() { }
 
-        inline void init_impl(Memory::MemoryManager *mm, size_t z, bool m) {
+        inline void init_impl(Memory::MemoryManager *mm, const char *key, size_t z, bool m) {
                 PAMI_abortf("_L2Barrier class must be subclass");
         }
 
@@ -139,28 +137,20 @@ protected:
 }; // class _L2Barrier
 
 class L2NodeCoreBarrier :
-                public PAMI::Atomic::Interface::Barrier<L2NodeCoreBarrier>,
+                public PAMI::Atomic::Interface::IndirBarrier<L2NodeCoreBarrier>,
                 public _L2Barrier {
 public:
         L2NodeCoreBarrier() {}
         ~L2NodeCoreBarrier() {}
-        inline void init_impl(PAMI::Memory::MemoryManager *mm, size_t z, bool m) {
+        inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key, size_t z, bool m) {
                 // For core-granularity, everything is
                 // a core number. Assume the master core
                 // is the lowest-numbered core in the
                 // process.
 
-		/// \todo #warning HACK to workaround until MemoryManager::key_memalign
-		if (mm == __global._wuRegion_mm ||
-				mm == &__global.l2atomicFactory.__nodescoped_mm) {
-			_barrier.init(mm,
-				PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
-				PAMI::Atomic::BGQ::L2A_NODE_CORE_SCOPE);
-		} else {
-                	_barrier.init(&__global.l2atomicFactory.__nodescoped_mm,
-				PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
-				PAMI::Atomic::BGQ::L2A_NODE_CORE_SCOPE);
-		}
+		pami_result_t rc = _barrier.__init(mm, key);
+		PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get L2 Atomic NodeCoreBarrier");
+
                 // PAMI_assert(m .iff. me == masterProc());
                 _barrier._master = __global.l2atomicFactory.masterProc() << __global.l2atomicFactory.coreShift();
                 _barrier._coreshift = 0;
@@ -170,28 +160,20 @@ public:
 }; // class L2NodeCoreBarrier
 
 class L2NodeProcBarrier :
-                public PAMI::Atomic::Interface::Barrier<L2NodeProcBarrier>,
+                public PAMI::Atomic::Interface::IndirBarrier<L2NodeProcBarrier>,
                 public _L2Barrier {
 public:
         L2NodeProcBarrier() {}
         ~L2NodeProcBarrier() {}
-        inline void init_impl(PAMI::Memory::MemoryManager *mm, size_t z, bool m) {
+        inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key, size_t z, bool m) {
                 // For proc-granularity, must convert
                 // between core id and process id,
                 // and only one core per process will
                 // participate.
 
-		/// \todo #warning HACK to workaround until MemoryManager::key_memalign
-		if (mm == __global._wuRegion_mm ||
-				mm == &__global.l2atomicFactory.__nodescoped_mm) {
-			_barrier.init(mm,
-					PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
-					PAMI::Atomic::BGQ::L2A_NODE_PROC_SCOPE);
-		} else {
-                	_barrier.init(&__global.l2atomicFactory.__nodescoped_mm,
-					PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
-					PAMI::Atomic::BGQ::L2A_NODE_PROC_SCOPE);
-		}
+		pami_result_t rc = _barrier.__init(mm, key);
+		PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get L2 Atomic NodeProcBarrier");
+
                 // PAMI_assert(m .iff. me == masterProc());
                 _barrier._master = __global.l2atomicFactory.coreXlat(__global.l2atomicFactory.masterProc()) >> __global.l2atomicFactory.coreShift();
                 _barrier._coreshift = __global.l2atomicFactory.coreShift();

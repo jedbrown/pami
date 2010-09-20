@@ -26,46 +26,44 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "This program is not intended to be run!\n");
 		exit(1);
 	}
-        PAMI::Memory::GenMemoryManager mm;
-        mm.init(argv, argc); // anything
 
-        COUNTER_HELPER(PAMI::Counter::BGP::LockBoxNodeCounter, counter1, mm);
+        COUNTER_HELPER(PAMI::Counter::BGP::LockBoxNodeCounter, counter1, argv[1]);
 
-        COUNTER_HELPER(PAMI::Counter::BGP::LockBoxProcCounter, counter2, mm);
+        COUNTER_HELPER(PAMI::Counter::BGP::LockBoxProcCounter, counter2, argv[1]);
 
-        COUNTER_HELPER(PAMI::Counter::BGP::BgpProcCounter, counter3, mm);
+        COUNTER_HELPER(PAMI::Counter::BGP::BgpProcCounter, counter3, argv[1]);
 
-        COUNTER_HELPER(PAMI::Counter::BGP::BgpNodeCounter, counter4, mm);
+        COUNTER_HELPER(PAMI::Counter::BGP::BgpNodeCounter, counter4, argv[1]);
 
 
 
 
-        MUTEX_HELPER(PAMI::Mutex::BGP::BgpProcMutex, mutex1, mm);
+        MUTEX_HELPER(PAMI::Mutex::BGP::BgpProcMutex, mutex1, argv[1]);
 
-        MUTEX_HELPER(PAMI::Mutex::BGP::BgpNodeMutex, mutex2, mm);
+        MUTEX_HELPER(PAMI::Mutex::BGP::BgpNodeMutex, mutex2, argv[1]);
 
-        MUTEX_HELPER(PAMI::Mutex::BGP::LockBoxProcMutex, mutex3, mm);
+        MUTEX_HELPER(PAMI::Mutex::BGP::LockBoxProcMutex, mutex3, argv[1]);
 
-        MUTEX_HELPER(PAMI::Mutex::BGP::LockBoxNodeMutex, mutex4, mm);
+        MUTEX_HELPER(PAMI::Mutex::BGP::LockBoxNodeMutex, mutex4, argv[1]);
 
-        MUTEX_HELPER(PAMI::Mutex::BGP::FairLockBoxProcMutex, mutex5, mm);
+        MUTEX_HELPER(PAMI::Mutex::BGP::FairLockBoxProcMutex, mutex5, argv[1]);
 
-        MUTEX_HELPER(PAMI::Mutex::BGP::FairLockBoxNodeMutex, mutex6, mm);
+        MUTEX_HELPER(PAMI::Mutex::BGP::FairLockBoxNodeMutex, mutex6, argv[1]);
 
-        MUTEX_HELPER(PAMI::Mutex::BGP::LwarxStwcxProcMutex, mutex7, mm);
+        MUTEX_HELPER(PAMI::Mutex::BGP::LwarxStwcxProcMutex, mutex7, argv[1]);
 
-        MUTEX_HELPER(PAMI::Mutex::BGP::LwarxStwcxNodeMutex, mutex8, mm);
-
-
+        MUTEX_HELPER(PAMI::Mutex::BGP::LwarxStwcxNodeMutex, mutex8, argv[1]);
 
 
-        BARRIER_HELPER(PAMI::Barrier::BGP::LockBoxNodeProcBarrier, barrier1, mm, argc, (argc == 0));
 
-        BARRIER_HELPER(PAMI::Barrier::BGP::LockBoxNodeCoreBarrier, barrier2, mm, argc, (argc == 0));
 
-        BARRIER_HELPER(PAMI::Barrier::BGP::LwarxStwcxNodeProcBarrier, barrier3, mm, argc, (argc == 0));
+        BARRIER_HELPER(PAMI::Barrier::BGP::LockBoxNodeProcBarrier, barrier1, argv[1], argc, (argc == 0));
 
-        BARRIER_HELPER(PAMI::Barrier::BGP::LwarxStwcxNodeCoreBarrier, barrier4, mm, argc, (argc == 0));
+        BARRIER_HELPER(PAMI::Barrier::BGP::LockBoxNodeCoreBarrier, barrier2, argv[1], argc, (argc == 0));
+
+        BARRIER_HELPER(PAMI::Barrier::BGP::LwarxStwcxNodeProcBarrier, barrier3, argv[1], argc, (argc == 0));
+
+        BARRIER_HELPER(PAMI::Barrier::BGP::LwarxStwcxNodeCoreBarrier, barrier4, argv[1], argc, (argc == 0));
 
         return 1;
 }

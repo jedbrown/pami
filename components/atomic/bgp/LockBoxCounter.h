@@ -32,11 +32,13 @@ namespace BGP {
         //
         // This class is used internally ONLY. See following classes for users
         //
-        class _LockBoxCounter {
+        class LockBoxCounter : public PAMI::Atomic::Interface::IndirCounter<LockBoxCounter> {
         public:
-                _LockBoxCounter() { _addr = NULL; }
-                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-                        PAMI_abortf("_LockBoxCounter must be a subclass");
+                LockBoxCounter() { _addr = NULL; }
+                ~LockBoxCounter() {}
+                inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
+                        __global.lockboxFactory.lbx_alloc(&_addr, 1,
+					key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
                 }
                 inline size_t fetch_impl() {
                         return LockBox_Query((LockBox_Counter_t)_addr);
@@ -60,31 +62,7 @@ namespace BGP {
                 void *returnLock_impl() { return _addr; }
         protected:
                 void *_addr;
-        }; // class _LockBoxCounter
-
-        //
-        // Here are the actual classes to be used:
-        //
-
-        class LockBoxNodeCounter : public _LockBoxCounter,
-                                 public PAMI::Atomic::Interface::Counter<LockBoxNodeCounter> {
-        public:
-                LockBoxNodeCounter() {}
-                ~LockBoxNodeCounter() {}
-                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-                        __global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_NODE_SCOPE);
-                }
-        }; // class LockBoxNodeCounter
-
-        class LockBoxProcCounter : public _LockBoxCounter,
-                                 public PAMI::Atomic::Interface::Counter<LockBoxProcCounter> {
-        public:
-                LockBoxProcCounter() {}
-                ~LockBoxProcCounter() {}
-                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-                        __global.lockboxFactory.lbx_alloc(&this->_addr, 1, PAMI::Atomic::BGP::LBX_PROC_SCOPE);
-                }
-        }; // class LockBoxProcCounter
+        }; // class LockBoxCounter
 
 }; // BGP namespace
 }; // Counter namespace

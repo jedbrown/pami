@@ -41,10 +41,10 @@ namespace PAMI
         ~BgpAtomic () {};
 
         /// \see PAMI::Atomic::AtomicObject::init
-        void init_impl (PAMI::Memory::MemoryManager *mm)
+        void init_impl (const char *key)
         {
           //_atom = _BGP_ATOMIC_INIT(0);
-          fetch_and_clear_impl ();
+          // fetch_and_clear_impl ();
         };
 
         /// \see PAMI::Atomic::AtomicObject::fetch
@@ -118,7 +118,7 @@ namespace BGP {
         inline size_t fetch_and_clear_impl() { return _bgp_fetch_and_and((_BGP_Atomic *)&_atomic, 0); }
         inline void clear_impl() { _atomic = 0; }
 
-        inline void init_impl (PAMI::Memory::MemoryManager *mm)
+        inline void init_impl (const char *key)
         {
           // Noop
         };
@@ -154,12 +154,8 @@ namespace BGP {
         inline size_t fetch_and_clear_impl() { return _bgp_fetch_and_and((_BGP_Atomic *)_atomic, 0); }
         inline void clear_impl() { *_atomic = 0; }
 
-        inline void init_impl (PAMI::Memory::MemoryManager *mm)
+        inline void init_impl (const char *key)
         {
-          _atomic = NULL;
-            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-          mm->memalign((void **)&_atomic, 8, sizeof(*_atomic));
-          PAMI_assertf(_atomic, "Failed to get shmem for BgpNodeCounter");
         };
 
         /// \see PAMI::Atomic::Interface::Mutex::returnLock
@@ -214,7 +210,7 @@ namespace BGP {
         };
 
         /// \see PAMI::Atomic::Interface::Mutex::init
-        inline void init_impl (PAMI::Memory::MemoryManager *mm)
+        inline void init_impl (const char *key)
         {
         };
 
@@ -265,12 +261,8 @@ namespace BGP {
         };
 
         /// \see PAMI::Atomic::Interface::Mutex::init
-        inline void init_impl (PAMI::Memory::MemoryManager *mm)
+        inline void init_impl (const char *key)
         {
-          _atomic = NULL;
-            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-          mm->memalign((void **)&_atomic, 8, sizeof(*_atomic));
-          PAMI_assertf(_atomic, "Failed to get shmem for BgpNodeMutex");
         };
 
         /// \see PAMI::Atomic::Interface::Mutex::returnLock

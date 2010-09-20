@@ -18,24 +18,24 @@
 #include "util/common.h"
 #include "components/memory/MemoryManager.h"
 
-#define COUNTER_HELPER(class, var, mm)	\
+#define COUNTER_HELPER(class, var, key)	\
         class var;			\
-        var.init(&mm);			\
+        var.init(key);			\
         var.fetch_and_inc();		\
         var.fetch_and_dec();		\
         var.fetch_and_clear();
 
-#define MUTEX_HELPER(class, var, mm)	\
+#define MUTEX_HELPER(class, var, key)	\
         class var;			\
-        var.init(&mm);			\
+        var.init(key);			\
         var.acquire();			\
         var.tryAcquire();		\
         var.release();			\
         var.isLocked();
 
-#define BARRIER_HELPER(class, var, mm, partic, master)	\
+#define BARRIER_HELPER(class, var, key, partic, master)	\
         class var;					\
-        var.init(&mm, partic, master);			\
+        var.init(key, partic, master);			\
         var.enter();
 
 #endif // __test_atomics_compilation_h__

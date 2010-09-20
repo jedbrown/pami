@@ -33,7 +33,6 @@
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
 #include "Global.h"
-#include "test/internals/multisend/memorymanager.h"
 
 #ifdef __pami_target_bgq__
 #include "components/atomic/bgq/L2Counter.h"
@@ -151,9 +150,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	PAMI::Memory::GenMemoryManager mm;
-	initializeMemoryManager("TEST", 512, mm, 1, true);
-	thread_lock.init(&mm);
+	thread_lock.init("/atomic-fairness");
 
 	memset(tt, 0, sizeof(tt));
 	int n;

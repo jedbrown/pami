@@ -38,6 +38,8 @@ namespace Interface
   ///
   ///  \brief Base Class for Mutex
   ///
+  template <class T_Object> class InPlaceMutex;
+  template <class T_Object> class IndirMutex;
   template <class T_Object>
   class Mutex
     {
@@ -62,18 +64,9 @@ namespace Interface
       ///
       inline bool isLocked();
 
-      ///
-      /// \brief  Alloc and Init
-      ///
-      /// \todo Need to find a way to initialize lock by only one entity
-      ///
-      inline void init(PAMI::Memory::MemoryManager *mm);
-
-      ///
-      /// \brief  Provide access to the raw lock var/data
-      ///
-      inline void * returnLock();
-    protected:
+    private:
+	friend class InPlaceMutex<T_Object>;
+	friend class IndirMutex<T_Object>;
       ///
       /// \brief  Construct a lock
       ///
@@ -107,14 +100,82 @@ inline bool Mutex<T_Object>::isLocked()
         return static_cast<T_Object*>(this)->isLocked_impl();
 }
 
+  ///
+  ///  \brief Base Class for Mutex constructed in-place
+  ///
+  template <class T_Object>
+  class InPlaceMutex : public Mutex<T_Object>
+    {
+    public:
+      ///
+      /// \brief  Alloc and Init
+      ///
+      /// \todo Need to find a way to initialize lock by only one entity
+      ///
+      inline void init();
+
+      ///
+      /// \brief  Provide access to the raw lock var/data
+      ///
+      inline void * returnLock();
+    protected:
+      ///
+      /// \brief  Construct a lock
+      ///
+      InPlaceMutex() {};
+      ~InPlaceMutex() {};
+
+    private:
+    }; // class InPlaceMutex
+
 template <class T_Object>
-inline void Mutex<T_Object>::init(PAMI::Memory::MemoryManager *mm)
+inline void InPlaceMutex<T_Object>::init()
 {
-        static_cast<T_Object*>(this)->init_impl(mm);
+        static_cast<T_Object*>(this)->init_impl();
 }
 
 template <class T_Object>
-inline void *Mutex<T_Object>::returnLock()
+inline void *InPlaceMutex<T_Object>::returnLock()
+{
+        return static_cast<T_Object*>(this)->returnLock_impl();
+}
+
+  ///
+  ///  \brief Base Class for Mutex constructed indirectly
+  ///
+  template <class T_Object>
+  class IndirMutex : public Mutex<T_Object>
+    {
+    public:
+      ///
+      /// \brief  Alloc and Init
+      ///
+      /// \todo Need to find a way to initialize lock by only one entity
+      ///
+      inline void init(PAMI::Memory::MemoryManager *mm, const char *key);
+
+      ///
+      /// \brief  Provide access to the raw lock var/data
+      ///
+      inline void * returnLock();
+    protected:
+      ///
+      /// \brief  Construct a lock
+      ///
+      IndirMutex() {};
+      ~IndirMutex() {};
+
+    private:
+    }; // class IndirMutex
+
+template <class T_Object>
+inline void IndirMutex<T_Object>::init(PAMI::Memory::MemoryManager *mm, const char *key)
+{
+        static_cast<T_Object*>(this)->init_impl(mm, key);
+}
+
+template <class T_Object>
+inline void *IndirMutex<T_Object>::returnLock()
 {
         return static_cast<T_Object*>(this)->returnLock_impl();
 }

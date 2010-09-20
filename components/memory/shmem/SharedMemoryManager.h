@@ -89,6 +89,8 @@ namespace PAMI
         {
 		// if this only happens at program exit, just unlink all keys...
 		freeAll();
+		// could free up all the meta data, but it is in heap and
+		// about to be freed by _exit().
 		_meta.~MemoryManagerMeta<MemoryManagerOSAlloc>();
         }
 
@@ -111,7 +113,7 @@ namespace PAMI
 		if (alignment < _alignment) alignment = _alignment;
 		void *ptr = NULL;
 		bool first = false;
-		_meta.acquire();
+		_meta.acquire(); // only makes this thread-safe, not proc-safe.
 		MemoryManagerOSAlloc *alloc = _meta.findFree();
 		if (alloc == NULL) {
 			_meta.release();
@@ -188,19 +190,17 @@ namespace PAMI
 
 		alloc->mem(ptr, alignment); // required for addRef(), userMem(), etc...
 		alloc->addRef();
+		_meta.release();
 		if (init_fn) {
 			if (first) {
 				init_fn(alloc->userMem(), alloc->userSize(),
 						alloc->key(), _attrs, cookie);
 				alloc->initDone();
 			} else {
-				// note: sync may not be needed if _meta.acquire/release
-				// already prevents the race condition.
 				alloc->waitDone();
 			}
 		}
 		*memptr = alloc->userMem();
-		_meta.release();
 		return PAMI_SUCCESS;
 	}
 
@@ -217,6 +217,16 @@ namespace PAMI
 		// how to tell how much is available???
 		// BGQ: getenv(BG_SHAREDMEMSIZE), minus something...
 		return (size_t)-1;
+	}
+
+	inline void dump(const char *str) {
+		if (str) {
+			fprintf(stderr, "%s: SharedMemoryManager %x\n", str,
+					_attrs);
+		} else {
+			fprintf(stderr, "SharedMemoryManager %x\n",
+					_attrs);
+		}
 	}
 
     protected:

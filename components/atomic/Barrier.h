@@ -68,10 +68,14 @@ namespace Interface
   ///
   /// \param T  Barrier object derived class
   ///
+  template <class T> class InPlaceBarrier;
+  template <class T> class IndirBarrier;
   template <class T>
   class Barrier
     {
-    public:
+    private:
+	friend class InPlaceBarrier<T>;
+	friend class IndirBarrier<T>;
       ///
       /// \brief  Construct a barrier
       ///
@@ -82,16 +86,17 @@ namespace Interface
       ///
       ~Barrier() { /* need to call de_init... */}
 
+    public:
       ///
       /// \brief Initialize the local barrier objecti
       ///
-      /// \param[in] mm     Memory Manager
+      /// \param[in] key     Identifier of object instance
       /// \param[in] participants Number of participants for the barrier
       /// \param[in] participants Is caller the master of group
       ///
       /// \todo Need to find a way to initialize object by only one entity
       ///
-      inline void init(PAMI::Memory::MemoryManager *mm, size_t participants, bool master);
+      inline void init(size_t participants, bool master);
 
 
       ///
@@ -137,21 +142,9 @@ namespace Interface
     }; // class Barrier
 
 template <class T>
-inline void Barrier<T>::init(PAMI::Memory::MemoryManager *mm, size_t participants, bool master)
-{
-        static_cast<T*>(this)->init_impl(mm, participants, master);
-}
-
-template <class T>
 inline pami_result_t Barrier<T>::enter()
 {
         return static_cast<T*>(this)->enter_impl();
-}
-
-template <class T>
-inline void Barrier<T>::dump(const char *string)
-{
-        static_cast<T*>(this)->dump_impl(string);
 }
 
 template <class T>
@@ -172,8 +165,132 @@ inline barrierPollStatus Barrier<T>::poll()
         return static_cast<T*>(this)->poll_impl();
 }
 
+  ///
+  /// \brief Barrier object interface
+  ///
+  /// \param T  Barrier object derived class
+  ///
+  template <class T>
+  class InPlaceBarrier : public Barrier<T>
+    {
+    protected:
+      ///
+      /// \brief  Construct a barrier
+      ///
+      InPlaceBarrier() { }
+
+      ///
+      /// \brief  destruct a barrier
+      ///
+      ~InPlaceBarrier() { /* need to call de_init... */}
+
+    public:
+      ///
+      /// \brief Initialize the local barrier objecti
+      ///
+      /// \param[in] key     Identifier of object instance
+      /// \param[in] participants Number of participants for the barrier
+      /// \param[in] participants Is caller the master of group
+      ///
+      /// \todo Need to find a way to initialize object by only one entity
+      ///
+      inline void init(size_t participants, bool master);
+
+      ///
+      /// \brief  Provide access to the raw barrier var/data
+      /// This is not a usefull method, as the thing returned
+      /// does not represent any externally-visible entity.
+      ///
+      inline void * returnBarrier();
+
+      ///
+      /// \brief  Debug routine to dump state of a barrier
+      ///
+      inline void dump(const char *string = NULL);
+
+    private:
+    }; // class InPlaceBarrier
+
 template <class T>
-inline void *Barrier<T>::returnBarrier()
+inline void InPlaceBarrier<T>::init(size_t participants, bool master)
+{
+        static_cast<T*>(this)->init_impl(participants, master);
+}
+
+template <class T>
+inline void InPlaceBarrier<T>::dump(const char *string)
+{
+        static_cast<T*>(this)->dump_impl(string);
+}
+
+template <class T>
+inline void *InPlaceBarrier<T>::returnBarrier()
+{
+        return static_cast<T*>(this)->returnBarrier_impl();
+}
+
+  ///
+  /// \brief Barrier object interface
+  ///
+  /// \param T  Barrier object derived class
+  ///
+  template <class T>
+  class IndirBarrier : public Barrier<T>
+    {
+    protected:
+      ///
+      /// \brief  Construct a barrier
+      ///
+      IndirBarrier() { }
+
+      ///
+      /// \brief  destruct a barrier
+      ///
+      ~IndirBarrier() { /* need to call de_init... */}
+
+    public:
+      ///
+      /// \brief Initialize the local barrier objecti
+      ///
+      /// \param[in] key     Identifier of object instance
+      /// \param[in] participants Number of participants for the barrier
+      /// \param[in] participants Is caller the master of group
+      ///
+      /// \todo Need to find a way to initialize object by only one entity
+      ///
+      inline void init(PAMI::Memory::MemoryManager *mm, const char *key,
+					size_t participants, bool master);
+
+      ///
+      /// \brief  Provide access to the raw barrier var/data
+      /// This is not a usefull method, as the thing returned
+      /// does not represent any externally-visible entity.
+      ///
+      inline void * returnBarrier();
+
+      ///
+      /// \brief  Debug routine to dump state of a barrier
+      ///
+      inline void dump(const char *string = NULL);
+
+    private:
+    }; // class IndirBarrier
+
+template <class T>
+inline void IndirBarrier<T>::init(PAMI::Memory::MemoryManager *mm, const char *key,
+					size_t participants, bool master)
+{
+        static_cast<T*>(this)->init_impl(mm, key, participants, master);
+}
+
+template <class T>
+inline void IndirBarrier<T>::dump(const char *string)
+{
+        static_cast<T*>(this)->dump_impl(string);
+}
+
+template <class T>
+inline void *IndirBarrier<T>::returnBarrier()
 {
         return static_cast<T*>(this)->returnBarrier_impl();
 }

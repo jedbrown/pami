@@ -184,6 +184,7 @@ typedef pami_geometry_t (*pami_mapidtogeometry_fn) (pami_context_t c, int comm);
 ///
 /// This assumes that the last two counters will not be accessed
 /// by any participant too soon after return from this routine...
+/// That is true for CounterBarrier.
 ///
 template <class T_Counter>
 inline void local_barriered_ctrzero(T_Counter *ctrs, size_t num,
@@ -191,24 +192,24 @@ inline void local_barriered_ctrzero(T_Counter *ctrs, size_t num,
         PAMI_assertf(num >= 2, "local_barriered_ctrzero() requires at least two counters\n");
         size_t c0 = num - 2;
         size_t c1 = num - 1;
-        if (master) {
+        if (master) { // -----------------------------------------------------------
                 size_t value = ctrs[c1].fetch() + participants;
                 size_t i;
-                for (i = 0; i < c0; ++i) {
-                        ctrs[i].fetch_and_clear();
+                for (i = 0; i < c0; ++i) {	// 0: clear most of the counters
+                        ctrs[i].clear();
                 }
-                ctrs[c1].fetch_and_inc();
-                while (ctrs[c1].fetch() != value) {
-                        ctrs[c0].fetch_and_inc();
+                ctrs[c1].fetch_and_inc();	// 2: count entry of 1 participant
+                while (ctrs[c1].fetch() != value) { // 2: await arrival of all participants
+                        ctrs[c0].fetch_and_inc(); // 1: trigger entry of slaves
                 }
-                ctrs[c1].fetch_and_clear();
-                ctrs[c0].fetch_and_clear();
-        } else {
+                ctrs[c1].clear();
+                ctrs[c0].clear();	// 3: trigger completion of slaves
+        } else { // ----------------------------------------------------------------
                 size_t value = ctrs[c0].fetch();
-                while (ctrs[c0].fetch() == value);
-                ctrs[c1].fetch_and_inc();
-                while (ctrs[c0].fetch() != 0);
-        }
+                while (ctrs[c0].fetch() == value); // 1: await entry of master
+                ctrs[c1].fetch_and_inc();	// 2: count entry of 1 participant
+                while (ctrs[c0].fetch() != 0);	// 3: await completion of master
+        } // -----------------------------------------------------------------------
 }
 #endif // __cplusplus
 // try to do an un-templated version for C programs?

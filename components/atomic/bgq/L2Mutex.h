@@ -30,19 +30,15 @@ namespace BGQ {
         //
         // These classes are used internally ONLY. See following classes for users
         //
-        template <class T_Mutex>
-        class _L2Mutex : public PAMI::Atomic::Interface::Mutex<T_Mutex> {
+        class L2Mutex : public PAMI::Atomic::Interface::IndirMutex<L2Mutex> {
         public:
-                _L2Mutex() { }
-                inline void __init(PAMI::Memory::MemoryManager *mm,
-                                        PAMI::Atomic::BGQ::l2x_scope_t mmscope,
-                                        PAMI::Atomic::BGQ::l2x_scope_t scope) {
-			/// \todo #warning HACK to workaround until MemoryManager::key_memalign
-                        pami_result_t rc;
-                        rc = __global.l2atomicFactory.l2x_mm_alloc(mm, mmscope,
-						(void **)&_counter, 1, scope);
+                L2Mutex() { _counter = NULL; }
+                inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
+			PAMI_assert_debugf((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0,
+				"mm is not L2Atomic-capable");
+			PAMI_assert_debugf(!_counter, "Re-init or object is in shmem");
+                        pami_result_t rc = mm->memalign((void **)&_counter, 0, 1, key);
                         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate L2 Atomic Mutex");
-                        // if need to reset, must coordinate!
                 }
                 void acquire_impl() {
                         while (L2_AtomicLoadIncrement(_counter) != 0);
@@ -60,46 +56,7 @@ namespace BGQ {
                 void *returnLock_impl() { return _counter; }
         protected:
                 uint64_t *_counter;
-        }; // class _L2Mutex
-
-        //
-        // These classes are used internally ONLY. See following classes for users
-        //
-        class L2ProcMutex : public _L2Mutex<L2ProcMutex> {
-        public:
-                L2ProcMutex() { }
-                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-			/// \todo #warning HACK to workaround until MemoryManager::key_memalign
-			if (mm == __global._wuRegion_mm ||
-					mm == &__global.l2atomicFactory.__nodescoped_mm) {
-				__init(mm, PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
-						PAMI::Atomic::BGQ::L2A_PROC_SCOPE);
-			} else {
-                        	__init(&__global.l2atomicFactory.__procscoped_mm,
-						PAMI::Atomic::BGQ::L2A_PROC_SCOPE,
-						PAMI::Atomic::BGQ::L2A_PROC_SCOPE);
-			}
-                }
-        protected:
-        }; // class L2ProcMutex
-
-        class L2NodeMutex : public _L2Mutex<L2NodeMutex> {
-        public:
-                L2NodeMutex() { }
-                inline void init_impl(PAMI::Memory::MemoryManager *mm) {
-			/// \todo #warning HACK to workaround until MemoryManager::key_memalign
-			if (mm == __global._wuRegion_mm ||
-					mm == &__global.l2atomicFactory.__nodescoped_mm) {
-				__init(mm, PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
-						PAMI::Atomic::BGQ::L2A_NODE_SCOPE);
-			} else {
-				__init(&__global.l2atomicFactory.__nodescoped_mm,
-						PAMI::Atomic::BGQ::L2A_NODE_SCOPE,
-						PAMI::Atomic::BGQ::L2A_NODE_SCOPE);
-			}
-                }
-        protected:
-        }; // class L2NodeMutex
+        }; // class L2Mutex
 
 }; // BGQ namespace
 }; // Mutex namespace

@@ -61,7 +61,7 @@ public:
         _LockBoxBarrier() { }
         ~_LockBoxBarrier() { }
 
-        inline void init_impl(PAMI::Memory::MemoryManager *mm, size_t z, bool m) {
+        inline void init_impl(const char *key, size_t z, bool m) {
                 PAMI_abortf("_LockBoxBarrier class must be subclass");
         }
 
@@ -127,12 +127,12 @@ protected:
 }; // class _LockBoxBarrier
 
 class LockBoxNodeCoreBarrier :
-                public PAMI::Atomic::Interface::Barrier<LockBoxNodeCoreBarrier>,
+                public PAMI::Atomic::Interface::IndirBarrier<LockBoxNodeCoreBarrier>,
                 public _LockBoxBarrier {
 public:
         LockBoxNodeCoreBarrier() {}
         ~LockBoxNodeCoreBarrier() {}
-        inline void init_impl(PAMI::Memory::MemoryManager *mm, size_t z, bool m) {
+        inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key, size_t z, bool m) {
                 // For core-granularity, everything is
                 // a core number. Assume the master core
                 // is the lowest-numbered core in the
@@ -142,18 +142,18 @@ public:
                 _barrier.coreshift = 0;
                 _barrier.nparties = __global.lockboxFactory.numCore();
                 __global.lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
-                                                PAMI::Atomic::BGP::LBX_NODE_SCOPE);
+			key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
                 _status = PAMI::Atomic::Interface::Initialized;
         }
 }; // class LockBoxNodeCoreBarrier
 
 class LockBoxNodeProcBarrier :
-                public PAMI::Atomic::Interface::Barrier<LockBoxNodeProcBarrier>,
+                public PAMI::Atomic::Interface::IndirBarrier<LockBoxNodeProcBarrier>,
                 public _LockBoxBarrier {
 public:
         LockBoxNodeProcBarrier() {}
         ~LockBoxNodeProcBarrier() {}
-        inline void init_impl(PAMI::Memory::MemoryManager *mm, size_t z, bool m) {
+        inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key, size_t z, bool m) {
                 // For proc-granularity, must convert
                 // between core id and process id,
                 // and only one core per process will
@@ -162,7 +162,7 @@ public:
                 _barrier.coreshift = __global.lockboxFactory.coreShift();
                 _barrier.nparties = __global.lockboxFactory.numProc();
                 __global.lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
-                                                PAMI::Atomic::BGP::LBX_NODE_SCOPE);
+			key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
                 _status = PAMI::Atomic::Interface::Initialized;
         }
 }; // class LockBoxNodeProcBarrier

@@ -8,7 +8,9 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file components/atomic/gcc/GccBuiltin.h
- * \brief ???
+ * \brief Objects using compiler built-in atomics (GCC __sync_*)
+ *
+ * These objects are implicitly in-place.
  */
 
 #ifndef __components_atomic_gcc_GccBuiltin_h__
@@ -35,7 +37,7 @@ namespace PAMI
         ~GccBuiltin () {};
 
         /// \see PAMI::Atomic::Interface::Counter::init
-        void init_impl (PAMI::Memory::MemoryManager *mm)
+        void init_impl (const char *key)
         {
           // MUST NOT DO THIS! other procs might be already using it.
           /// \todo #warning: find a way to ensure memory is zeroed once and only once.

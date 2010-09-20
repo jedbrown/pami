@@ -58,10 +58,10 @@
 
 namespace PAMI
 {
-  typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>  ContextLock;
+  typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccInPlaceCounter>  ContextLock;
 
   typedef Fifo::FifoPacket <16, 256> ShmemPacket;
-  typedef Fifo::LinearFifo<Counter::BGP::LockBoxProcCounter, ShmemPacket, 128> ShmemFifo;
+  typedef Fifo::LinearFifo<Counter::BGP::LockBoxCounter, ShmemPacket, 128> ShmemFifo;
   //typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgpShaddr> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
@@ -225,6 +225,10 @@ namespace PAMI
 	  _geometry_map(geometry_map),
           _devices(devices)
       {
+	char mmkey[PAMI::Memory::MemoryManager::MMKEYSIZE];
+	char *mms;
+	mms = mmkey + sprintf(mmkey, "/pami-client%d-context%d", clientid, id);
+
         TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -237,11 +241,12 @@ namespace PAMI
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
+	strcpy(mms, "-mm");
 	pmm->enable();
-	_mm.init(pmm, bytes, 16);
+	_mm.init(pmm, bytes, 16, mmkey);
 	pmm->enable();
 
-        _lock.init(&_mm);
+        _lock.init();
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
         _local_generic_device = & PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, clientid, id);
 

@@ -75,7 +75,12 @@ namespace PAMI
 		inline void initDone() { _init_done = 1; }
 
 		// must be called without lock!
-		inline void waitDone() { while (_init_done == 0); }
+		inline void waitDone() {
+int count = 0;
+			while (_init_done == 0) {
+if (++count == 1000000) fprintf(stderr, "stuck?\n");
+}
+		}
 	private:
 		size_t _ref_count;
 		size_t _init_done;
@@ -425,6 +430,7 @@ namespace PAMI
 					unsigned attrs = 0, const char *key = NULL,
 					MM_INIT_FN *init_fn = NULL, void *cookie = NULL) = 0;
 
+	virtual void dump(const char *str = NULL) = 0;
         ///
         /// \brief Return the size of the managed memory buffer
         ///
@@ -522,9 +528,10 @@ namespace PAMI
 		return PAMI_INVAL;
 	  }
 	  _meta.acquire();
+	  MemoryManagerAlloc *m;
 	  if (key) {
 		// "public" (shared) allocation
-		MemoryManagerAlloc *m = _meta.find(key);
+		m = _meta.find(key);
 		if (m) {
 			m->addRef();
 			_meta.release();
@@ -533,8 +540,10 @@ namespace PAMI
 			return PAMI_SUCCESS;
 		}
 		// lock still held...
+	  	m = _meta.findFree();
+	  } else {
+	  	m = _meta.findFree();
 	  }
-	  MemoryManagerAlloc *m = _meta.findFree();
 	  // pre-existing, shared, chunks were handled above,
 	  // no init required by them. We have the lock, and are the
 	  // first, so just do init if needed.
@@ -580,6 +589,16 @@ namespace PAMI
 
           return _size - _meta.spaceUsed();
         }
+
+	inline void dump(const char *str) {
+		if (str) {
+			fprintf(stderr, "%s: GenMemoryManager %p %zd (%zd) %x\n", str,
+					_base, _size, _meta.spaceUsed(), _attrs);
+		} else {
+			fprintf(stderr, "GenMemoryManager %p %zd (%zd) %x\n",
+					_base, _size, _meta.spaceUsed(), _attrs);
+		}
+	}
     private:
 	MemoryManagerMeta<MemoryManagerAlloc> _meta;
     }; // class GenMemoryManager

@@ -82,7 +82,7 @@ namespace PAMI
 #endif
 
 
-  typedef Mutex::CounterMutex<Counter::BGQ::L2ProcCounter>  ContextLock;
+  typedef Mutex::CounterMutex<Counter::BGQ::L2Counter>  ContextLock;
 
   typedef CollRegistration::P2P::CCMIRegistration < BGQGeometry,
   ShmemDevice,
@@ -313,6 +313,10 @@ namespace PAMI
           _dummy_disable(false),
           _dummy_disabled(false)
       {
+	char mmkey[PAMI::Memory::MemoryManager::MMKEYSIZE];
+	char *mms;
+	mms = mmkey + sprintf(mmkey, "/pami-client%d-context%d", clientid, id);
+
         TRACE_ERR((stderr,  "<%p>Context::Context() enter\n", this));
         // ----------------------------------------------------------------
         // Compile-time assertions
@@ -325,13 +329,15 @@ namespace PAMI
         // Compile-time assertions
         // ----------------------------------------------------------------
 
+	strcpy(mms, "-mm");
 	pmm->enable();
-        _mm.init(pmm, bytes, 16);
+        _mm.init(pmm, bytes, 16, 0, mmkey);
 	pmm->disable();
         _self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
 
-        //_lock.init(&_mm);
-        _lock.init(__global._wuRegion_mm); // put context lock in WAC region
+	//strcpy(mms, "-lock");
+        _lock.init(&__global._wuRegion_mm, NULL);
+
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 
 

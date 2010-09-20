@@ -31,22 +31,45 @@ namespace PAMI
       public:
         CounterBarrier () :
           PAMI::Atomic::Interface::Barrier<CounterBarrier<T_Counter> > (),
-          _control (_counter[0]),
-          _lock (&_counter[1]),
-          _stat (&_counter[3]),
+          _control (NULL),
+          _lock (NULL),
+          _stat (NULL),
           _participants (0),
           _data(0),
           _master(false)
-        {};
+        {}
 
-        ~CounterBarrier () {};
+        ~CounterBarrier () {}
 
-        /// \see PAMI::Atomic::Interface::Barrier::init()
-        void init_impl (PAMI::Memory::MemoryManager *mm, size_t participants, bool master)
+        /// \see PAMI::Atomic::Interface::IndirBarrier::init()
+        void init_impl (PAMI::Memory::MemoryManager *mm, const char *key, size_t participants, bool master)
         {
+	  PAMI_assert_debugf(!_control, "Re-init or object is in shmem");
           unsigned i;
-          for (i=0; i<5; i++) _counter[i].init(mm);
+	  unsigned n = strlen(key);
+	  PAMI_assert_debugf(n + 1 < PAMI::Memory::MemoryManager::MMKEYSIZE,
+		"overflow mm key");
+	  key[n+1] = '\0';
+          for (i=0; i<5; i++) {
+		key[n] = "0123456789"[i];
+		_counter[i].init(mm, key);
+	  }
+	  key[n] = '\0'; // repair caller's key
+          _participants = participants;
+          _master = master;
+	  _control = &_counter[0];
+	  _lock = &_counter[1];
+	  _stat = &_counter[3];
+        }
 
+        /// \see PAMI::Atomic::Interface::InPlaceBarrier::init()
+        void init_impl (size_t participants, bool master)
+        {
+	  PAMI_assert_debugf(!_control, "Re-init or object is in shmem");
+          unsigned i;
+          for (i=0; i<5; i++) {
+		_counter[i].init();
+	  }
           _participants = participants;
           _master = master;
 #if 0
@@ -58,8 +81,10 @@ _counter[3].returnLock(),
 _counter[4].returnLock(),
 participants, master);
 #endif
-          local_barriered_ctrzero<T_Counter>(_counter, 5, participants, master);
-        };
+	  _control = &_counter[0];
+	  _lock = &_counter[1];
+	  _stat = &_counter[3];
+        }
 
         /// \see PAMI::Atomic::Interface::Barrier::enter()
         inline pami_result_t enter_impl ()
@@ -79,7 +104,7 @@ participants, master);
         inline void pollInit_impl() {
                 size_t phase;
                 // msync...
-                phase = _control.fetch();
+                phase = _control->fetch();
                 _lock[phase].fetch_and_inc();
                 _data = phase;
                 _status = PAMI::Atomic::Interface::Entered;
@@ -96,9 +121,9 @@ participants, master);
                 } while (value > 0 && value < (2 * _participants));
                 if (_master) {
                         if (phase) {
-                                _control.fetch_and_dec();
+                                _control->fetch_and_dec();
                         } else {
-                                _control.fetch_and_inc();
+                                _control->fetch_and_inc();
                         }
                         _stat[phase].fetch_and_clear();
                         _lock[phase].fetch_and_clear();
@@ -118,7 +143,7 @@ participants, master);
 
         T_Counter   _counter[5];
 
-        T_Counter & _control;
+        T_Counter * _control;
         T_Counter * _lock;
         T_Counter * _stat;
 

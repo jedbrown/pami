@@ -262,6 +262,11 @@ namespace PAMI
         // Inner factory class
         class Factory : public Interface::FactoryInterface<Factory, ShmemDevice, PAMI::Device::Generic::Device>
         {
+	  private:
+		static void _mem_sync(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie)
+		{
+			return; // only used to cause synchronization.
+		}
           public:
             static inline ShmemDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *gds)
             {
@@ -281,9 +286,9 @@ namespace PAMI
               volatile size_t * ncontexts = NULL;
               size_t size = sizeof(size_t) * (2 * npeers + 1);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() size = %zu\n", size));
-	      static char key[128];
+	      static char key[PAMI::Memory::MemoryManager::MMKEYSIZE];
 	      sprintf(key, "/client%zd-shm-ncontexts", clientid);
-              mm.memalign ((void **)&ncontexts, 16, size, key);
+              mm.memalign ((void **)&ncontexts, 16, size, key, _mem_sync, NULL);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() ncontexts = %p\n", ncontexts));
 
               size_t * peer_fnum = (size_t *)ncontexts + npeers + 1;
@@ -297,8 +302,6 @@ namespace PAMI
               __global.mapping.node2peer (address, me);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() me = %zu\n", me));
 
-        // will there always be a "0"?
-        local_barriered_shmemzero((void *)ncontexts, size, npeers, me == 0);
         ncontexts[me] = n;
         __sync_fetch_and_add(&ncontexts[npeers], 1);
         mem_sync(); // paranoia?

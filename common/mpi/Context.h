@@ -65,7 +65,7 @@ extern PAMI::Device::MPIDevice _g_mpi_device;
 namespace PAMI
 {
     // This won't work with XL
-    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>  ContextLock;
+    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccCounter>  ContextLock;
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice MPIDevice;
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
@@ -77,7 +77,7 @@ namespace PAMI
                                             MPIEagerBase,
                                             PAMI::Device::MPIBcastMdl,
                                             PAMI::Device::MPIBcastDev> P2PMcastProto;
-    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>  ContextLock;
+    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccCounter>  ContextLock;
 
 #ifdef ENABLE_SHMEM_DEVICE
     typedef Fifo::FifoPacket <64, 1024>                            ShmemPacket;
@@ -303,6 +303,10 @@ namespace PAMI
         _empty_advance(0),
         _devices(devices)
         {
+	  char mmkey[PAMI::Memory::MemoryManager::MMKEYSIZE];
+	  char *mms;
+	  mms = mmkey + sprintf(mmkey, "/pami-client%d-context%d", clientid, id);
+
           // dispatch_impl relies on the table being initialized to NULL's.
           memset(_dispatch, 0x00, sizeof(_dispatch));
 
@@ -312,7 +316,7 @@ namespace PAMI
 #endif // USE_WAKEUP_VECTORS
           _devices->init(_clientid, _contextid, _client, _context, _mm);
           _mpi->init(_mm, _clientid, num, (pami_context_t)this, id);
-          _lock.init(_mm);
+          _lock.init();
 
           // this barrier is here because the shared memory init
           // needs to be synchronized

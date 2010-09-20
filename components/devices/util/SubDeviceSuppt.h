@@ -561,10 +561,14 @@ public:
         /// \param[in] mm		MemoryManager object
         /// \param[in] devices		Array of generic devices for client
         ///
-        inline pami_result_t __init(size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
+        inline pami_result_t __init(size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, const char *key, PAMI::Device::Generic::Device *devices) {
                 if (client == 0) {
+			int n= strlen(key);
+			PAMI_assert_debugf(n + 5 < PAMI::Memory::MemoryManager::MMKEYSIZE,
+				"mm key \"%s\" overflow", key);
+			strcpy(&key[n], "-done");
                         _mm = mm;
-                        _doneThreads.init(mm);
+                        _doneThreads.init(key);
                         _doneThreads.fetch_and_clear();
                         _init = 1;
                 }
