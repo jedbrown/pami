@@ -41,35 +41,21 @@ namespace PAMI
 
         ~CounterBarrier () {}
 
-        /// \see PAMI::Atomic::Interface::IndirBarrier::init()
+        /// \see PAMI::Atomic::Interface::Barrier::init()
         void init_impl (PAMI::Memory::MemoryManager *mm, const char *key, size_t participants, bool master)
         {
 	  PAMI_assert_debugf(!_control, "Re-init or object is in shmem");
           unsigned i;
-	  unsigned n = strlen(key);
+	  char *k = (char *)key;
+	  unsigned n = strlen(k);
 	  PAMI_assert_debugf(n + 1 < PAMI::Memory::MMKEYSIZE,
 		"overflow mm key");
-	  key[n+1] = '\0';
+	  k[n+1] = '\0';
           for (i=0; i<5; i++) {
-		key[n] = "0123456789"[i];
-		_counter[i].init(mm, key);
+		k[n] = "0123456789"[i];
+		_counter[i].init(mm, k);
 	  }
-	  key[n] = '\0'; // repair caller's key
-          _participants = participants;
-          _master = master;
-	  _control = &_counter[0];
-	  _lock = &_counter[1];
-	  _stat = &_counter[3];
-        }
-
-        /// \see PAMI::Atomic::Interface::InPlaceBarrier::init()
-        void init_impl (size_t participants, bool master)
-        {
-	  PAMI_assert_debugf(!_control, "Re-init or object is in shmem");
-          unsigned i;
-          for (i=0; i<5; i++) {
-		_counter[i].init();
-	  }
+	  k[n] = '\0'; // repair caller's key
           _participants = participants;
           _master = master;
 #if 0

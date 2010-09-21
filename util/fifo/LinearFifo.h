@@ -100,10 +100,10 @@ namespace PAMI
         ///
         /// \brief Initialize the linear fifo with a specific packet buffer.
         ///
-        inline void init_impl (size_t clientid, Memory::MemoryManager *mm)
+        inline void init_impl (size_t clientid)
         {
           _head = 0;
-          _tail.init (mm);
+          _tail.init ();
           _tail.fetch_and_clear ();
 
           unsigned i;

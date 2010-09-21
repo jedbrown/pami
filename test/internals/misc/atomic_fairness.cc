@@ -36,18 +36,18 @@
 
 #ifdef __pami_target_bgq__
 #include "components/atomic/bgq/L2Counter.h"
-#define COUNTER_T	PAMI::Counter::BGQ::L2ProcCounter
+#define COUNTER_T	PAMI::Counter::BGQ::L2Counter
 #ifndef NUM_THREADS
 #define NUM_THREADS	16
 #endif // ! NUM_THREADS
 #endif
 #ifdef __pami_target_bgp__
 #include "components/atomic/bgp/LockBoxCounter.h"
-#define COUNTER_T	PAMI::Counter::BGP::LockBoxProcCounter
+#define COUNTER_T	PAMI::Counter::BGP::LockBoxCounter
 #endif
 
 #ifndef COUNTER_T
-#define COUNTER_T	PAMI::Counter::GccProcCounter
+#define COUNTER_T	PAMI::Counter::GccInPlaceCounter
 #endif // !COUNTER_T
 
 typedef PAMI::Mutex::CounterMutex<COUNTER_T> Mutex_t;
@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	thread_lock.init("/atomic-fairness");
+	thread_lock.init(__global.heap_mm, NULL);
 
 	memset(tt, 0, sizeof(tt));
 	int n;

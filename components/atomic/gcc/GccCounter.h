@@ -26,15 +26,15 @@ namespace PAMI
   namespace Counter
   {
 
-    class GccInPlaceCounter : public PAMI::Atomic::Interface::InPlaceCounter<GccCounter>
+    class GccInPlaceCounter : public PAMI::Atomic::Interface::InPlaceCounter<GccInPlaceCounter>
     {
       public:
-        GccCounter() {}
-        ~GccCounter() {}
+        GccInPlaceCounter() {}
+        ~GccInPlaceCounter() {}
         inline void init_impl()
         {
           TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-          _addr.init();
+	  new (&_addr) PAMI::Atomic::GccBuiltin();
         }
         inline size_t fetch_impl()
         {
@@ -56,10 +56,10 @@ namespace PAMI
         {
           _addr.clear();
         }
-        void *returnLock_impl() { return _addr.returnLock(); }
+        void *returnLock_impl() { return &_addr; }
       protected:
         PAMI::Atomic::GccBuiltin _addr;
-    }; // class GccCounter
+    }; // class GccInPlaceCounter
 
     class GccIndirCounter : public PAMI::Atomic::Interface::IndirCounter<GccIndirCounter>
     {
@@ -69,7 +69,9 @@ namespace PAMI
         inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key)
         {
           TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-          _addr->init(mm, key);
+	  pami_result_t rc = mm->memalign((void **)&_addr, sizeof(*_addr), sizeof(*_addr), key);
+	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get memory for GccIndirCounter");
+	  new (_addr) PAMI::Atomic::GccBuiltin();
         }
         inline size_t fetch_impl()
         {
@@ -91,7 +93,7 @@ namespace PAMI
         {
           _addr->clear();
         }
-        void *returnLock_impl() { return _addr->returnLock(); }
+        void *returnLock_impl() { return _addr; }
       protected:
         PAMI::Atomic::GccBuiltin *_addr;
     }; // class GccIndirCounter

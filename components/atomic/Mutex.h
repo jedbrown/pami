@@ -33,6 +33,8 @@ namespace PAMI
 {
 namespace Atomic
 {
+	class NoopMutex;
+
 namespace Interface
 {
   ///
@@ -67,6 +69,7 @@ namespace Interface
     private:
 	friend class InPlaceMutex<T_Object>;
 	friend class IndirMutex<T_Object>;
+	friend class PAMI::Atomic::NoopMutex;
       ///
       /// \brief  Construct a lock
       ///

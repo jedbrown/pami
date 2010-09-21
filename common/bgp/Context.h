@@ -61,8 +61,7 @@ namespace PAMI
   typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccInPlaceCounter>  ContextLock;
 
   typedef Fifo::FifoPacket <16, 256> ShmemPacket;
-  typedef Fifo::LinearFifo<Counter::BGP::LockBoxCounter, ShmemPacket, 128> ShmemFifo;
-  //typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
+  typedef Fifo::LinearFifo<Counter::GccInPlaceCounter, ShmemPacket, 128> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgpShaddr> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
   typedef Device::Shmem::DmaModel<ShmemDevice> ShmemDmaModel;

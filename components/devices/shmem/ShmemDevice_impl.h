@@ -51,7 +51,7 @@ namespace PAMI
 #endif
 
       new (_rfifo) T_Fifo ();
-      _rfifo->init (clientid, mm);
+      _rfifo->init (clientid);
 
       // Allocate memory for and construct the queue objects,
       // one for each context on the local node

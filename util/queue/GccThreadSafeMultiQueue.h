@@ -135,7 +135,7 @@ namespace PAMI {
 		_size(0)
 		{}
 
-		inline void init(PAMI::Memory::MemoryManager *mm) {
+		inline void init(PAMI::Memory::MemoryManager *mm, const char *key) {
 		}
 
 		inline void enqueue_impl(Element *e) {

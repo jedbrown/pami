@@ -22,10 +22,10 @@ namespace PAMI {
 namespace Mutex {
 
         template <class T_Counter>
-        class CounterMutex : public PAMI::Atomic::Interface::Mutex<CounterMutex<T_Counter> > {
+        class CounterMutex : public PAMI::Atomic::Interface::IndirMutex<CounterMutex<T_Counter> > {
         public:
                 CounterMutex() :
-		PAMI::Atomic::Interface::Mutex<CounterMutex<T_Counter> >(),
+		PAMI::Atomic::Interface::IndirMutex<CounterMutex<T_Counter> >(),
 		_counter()
 		{ }
                 ~CounterMutex() {}

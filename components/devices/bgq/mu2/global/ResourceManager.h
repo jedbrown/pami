@@ -52,7 +52,7 @@
 #include "algorithms/geometry/Geometry.h"
 #include "components/atomic/bgq/L2Mutex.h"
 #include "components/devices/misc/AtomicMutexMsg.h"
-typedef PAMI::Mutex::BGQ::L2ProcMutex MUCR_mutex_t;
+typedef PAMI::Mutex::BGQ::L2Mutex MUCR_mutex_t;
 typedef PAMI::Device::SharedAtomicMutexMdl<MUCR_mutex_t> MUCR_mutex_model_t;
 #include <spi/include/kernel/collective.h>
 #include <spi/include/mu/Classroute_inlines.h>
@@ -486,7 +486,7 @@ namespace PAMI
 	  __global.topology_global.subTopologyNthGlobal(&_node_topo, 0);
 	  _node_topo.convertTopology(PAMI_COORD_TOPOLOGY);
 
-	  _cr_mtx.init(&mm);
+	  _cr_mtx.init(&mm, "/pami-mu2-rm-cr");
 	  _cr_mtx_mdls = (MUCR_mutex_model_t **)malloc(_pamiRM.getNumClients() * sizeof(*_cr_mtx_mdls));
 
 	  // Note, we NEVER use BGQ_CLASS_INPUT_VC_USER. Only BGQ_CLASS_INPUT_VC_SUBCOMM.

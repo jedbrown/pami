@@ -22,7 +22,7 @@ namespace Device {
 namespace CommThread {
 
 class BgqContextPool {
-	typedef PAMI::Mutex::BGQ::L2ProcMutex ContextSetMutex;
+	typedef PAMI::Mutex::BGQ::L2Mutex ContextSetMutex;
 
 	// lock is held by caller...
 	inline uint64_t __getOneContext(uint64_t &ref) {
@@ -164,7 +164,7 @@ public:
 	inline void init(size_t nsets, size_t nctx,
 				Memory::MemoryManager *mm,
 				Memory::MemoryManager *setmm) {
-		_mutex.init(mm); /// \todo note: mutex is (always?) process-private
+		_mutex.init(mm, NULL); /// \todo note: mutex is (always?) process-private
 		__global.heap_mm->memalign((void **)&_contexts, 16, nctx * sizeof(*_contexts));
 		PAMI_assertf(_contexts, "Out of memory for BgqContextPool::_contexts");
 		memset((void *)_contexts, 0, nctx * sizeof(*_contexts));

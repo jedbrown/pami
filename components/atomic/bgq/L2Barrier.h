@@ -47,7 +47,7 @@ namespace BGQ {
 		pami_result_t __init(PAMI::Memory::MemoryManager *mm, const char *key) {
 			PAMI_assert_debugf(!_counters, "Re-init or object is in shmem");
 			return mm->memalign((void **)&_counters, sizeof(uint64_t),
-							sizeof(*_counter), key);
+							sizeof(*_counters), key);
 		}
 
                 inline uint64_t *controlPtr() { return &_counters->ctrl_lock; }
@@ -137,7 +137,7 @@ protected:
 }; // class _L2Barrier
 
 class L2NodeCoreBarrier :
-                public PAMI::Atomic::Interface::IndirBarrier<L2NodeCoreBarrier>,
+                public PAMI::Atomic::Interface::Barrier<L2NodeCoreBarrier>,
                 public _L2Barrier {
 public:
         L2NodeCoreBarrier() {}
@@ -160,7 +160,7 @@ public:
 }; // class L2NodeCoreBarrier
 
 class L2NodeProcBarrier :
-                public PAMI::Atomic::Interface::IndirBarrier<L2NodeProcBarrier>,
+                public PAMI::Atomic::Interface::Barrier<L2NodeProcBarrier>,
                 public _L2Barrier {
 public:
         L2NodeProcBarrier() {}

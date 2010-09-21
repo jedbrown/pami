@@ -563,12 +563,14 @@ public:
         ///
         inline pami_result_t __init(size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, const char *key, PAMI::Device::Generic::Device *devices) {
                 if (client == 0) {
-			int n= strlen(key);
+#if 0 // always an in-place (proc-scoped) counter...
+			unsigned n = strlen(key);
 			PAMI_assert_debugf(n + 5 < PAMI::Memory::MMKEYSIZE,
 				"mm key \"%s\" overflow", key);
-			strcpy(&key[n], "-done");
+			strcpy((char *)&key[n], "-done");
+#endif
                         _mm = mm;
-                        _doneThreads.init(key);
+                        _doneThreads.init();
                         _doneThreads.fetch_and_clear();
                         _init = 1;
                 }

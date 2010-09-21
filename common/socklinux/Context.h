@@ -57,7 +57,7 @@ namespace PAMI
 
 #ifdef ENABLE_SHMEM_DEVICE
   typedef Fifo::FifoPacket <sizeof(void*)*4, 240> ShmemPacket;
-  typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 128> ShmemFifo;
+  typedef Fifo::LinearFifo<Counter::GccInPlaceCounter, ShmemPacket, 128> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
 #endif

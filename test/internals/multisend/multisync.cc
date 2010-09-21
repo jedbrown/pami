@@ -9,11 +9,11 @@
 #include "test/internals/multisend/multisync.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 
-#define BARRIER1_NAME	"PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter>"
+#define BARRIER1_NAME	"PAMI::Barrier::CounterBarrier<PAMI::Counter::GccIndirCounter>"
 #define BARRIER1_ISLOCAL	1
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
-typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> Barrier_Type1;
+typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::GccIndirCounter> Barrier_Type1;
 
 typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type1> Barrier_Model1;
 typedef PAMI::Device::AtomicBarrierDev Barrier_Device1;
@@ -21,7 +21,7 @@ typedef PAMI::Device::AtomicBarrierDev Barrier_Device1;
 #undef BARRIER2_NAME
 
 #if 0
-#define MUTEX1_NAME	"AtomicMutexMdl<GccNodeCounter>"
+#define MUTEX1_NAME	"AtomicMutexMdl<GccIndirCounter>"
 #define MUTEX1_ISLOCAL	1
 #include "components/devices/misc/AtomicMutexMsg.h"
 #include "components/atomic/counter/CounterMutex.h"

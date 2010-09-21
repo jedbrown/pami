@@ -59,8 +59,10 @@ namespace PAMI
 	    ( myTask == __global.mapping.lowestT() ) ? master=true : master=false;
 
 	    TRACE((stderr, "MU::Context::generate_impl: Initializing local barrier, size=%zu, master=%d\n", numLocalTasks, master));
-	    PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> barrier;
-	    barrier.init(&__global.mm,
+	    PAMI::Barrier::CounterBarrier<PAMI::Counter::GccIndirCounter> barrier;
+	    char key[PAMI::Memory::MMKEYSIZE];
+	    sprintf(key, "/pami-mu2-rm%zd", id_client);
+	    barrier.init(&__global.mm, key,
 			 numLocalTasks,
 			 master );
 

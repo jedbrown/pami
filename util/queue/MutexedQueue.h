@@ -124,9 +124,9 @@ public:
   _size(0)
   {}
 
-  inline void init(PAMI::Memory::MemoryManager *mm)
+  inline void init(PAMI::Memory::MemoryManager *mm, const char *key)
   {
-    _mutex.init(mm);
+    _mutex.init(mm, key);
     PAMI_assertf(!_mutex.isLocked(), "Mutex did not init unlocked\n");
   }
 

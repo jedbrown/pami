@@ -24,14 +24,16 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "This program is not intended to be run!\n");
 		exit(1);
 	}
+	PAMI::Memory::GenMemoryManager mm;
+	mm.init(&mm, argc); // anything
 
-        COUNTER_HELPER(PAMI::Counter::GccNodeCounter, counter1, argv[1]);
-        COUNTER_HELPER(PAMI::Counter::GccProcCounter, counter2, argv[1]);
-        COUNTER_HELPER(PAMI::Counter::Pthread, counter3, argv[1]);
+        COUNTER_HELPER(PAMI::Counter::GccIndirCounter, counter1, &mm, argv[1]);
+        COUNTER_HELPER2(PAMI::Counter::GccInPlaceCounter, counter2);
+        COUNTER_HELPER2(PAMI::Counter::Pthread, counter3);
 
-        MUTEX_HELPER(PAMI::Mutex::CounterMutex<PAMI::Counter::GccNodeCounter>, mutex1, argv[1]);
+        MUTEX_HELPER(PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter>, mutex1, &mm, argv[1]);
 
-        BARRIER_HELPER(PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter>, barrier1, argv[1], argc, (argc == 0));
+        BARRIER_HELPER(PAMI::Barrier::CounterBarrier<PAMI::Counter::GccIndirCounter>, barrier1, &mm, argv[1], argc, (argc == 0));
 
         return 1;
 }

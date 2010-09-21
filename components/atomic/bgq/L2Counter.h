@@ -26,11 +26,10 @@ namespace BGQ {
 ///
 /// \brief CRTP interface for BG/Q L2 Atomics builtins atomic objects.
 ///
-template <class T_Counter>
-class L2Counter : public PAMI::Atomic::Interface::IndirCounter<T_Counter> {
+class L2Counter : public PAMI::Atomic::Interface::IndirCounter<L2Counter> {
 public:
         L2Counter() :
-	PAMI::Atomic::Interface::IndirCounter<T_Counter>(),
+	PAMI::Atomic::Interface::IndirCounter<L2Counter>(),
 	_counter(NULL)
         {}
 

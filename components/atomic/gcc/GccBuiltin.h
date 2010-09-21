@@ -36,14 +36,6 @@ namespace PAMI
 
         ~GccBuiltin () {};
 
-        /// \see PAMI::Atomic::Interface::Counter::init
-        void init_impl (const char *key)
-        {
-          // MUST NOT DO THIS! other procs might be already using it.
-          /// \todo #warning: find a way to ensure memory is zeroed once and only once.
-          //fetch_and_clear_impl ();
-        };
-
         /// \see PAMI::Atomic::Interface::Counter::fetch
         inline size_t fetch_impl ()
         {
@@ -89,8 +81,6 @@ namespace PAMI
         {
           return __sync_bool_compare_and_swap (&_atom, compare, swap);
         };
-
-        inline void *returnLock_impl() { return (void *)&_atom; }
 
       protected:
 

@@ -115,7 +115,7 @@ namespace PAMI
     Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false> > MUShmemAxialDputNI;
 
   typedef Fifo::FifoPacket <32, 544> ShmemPacket;
-  typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
+  typedef Fifo::LinearFifo<Counter::GccInPlaceCounter, ShmemPacket, 16> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgqShaddrReadOnly> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
   typedef Device::Shmem::DmaModel<ShmemDevice> ShmemDmaModel;
@@ -159,9 +159,7 @@ namespace PAMI
   typedef PAMI::NativeInterfaceAllsided< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AS;
 
 
-  // Old (BGP) Collective Shmem Protocol Typedefs
-
-  typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2NodeCounter>       Barrier_Type;
+  typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2Counter> Barrier_Type;
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           ShmemMsyncModel;
 

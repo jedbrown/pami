@@ -315,7 +315,7 @@ namespace PAMI
       {
 	char mmkey[PAMI::Memory::MMKEYSIZE];
 	char *mms;
-	mms = mmkey + sprintf(mmkey, "/pami-client%d-context%d", clientid, id);
+	mms = mmkey + sprintf(mmkey, "/pami-clt%zd-ctx%zd", clientid, id);
 
         TRACE_ERR((stderr,  "<%p>Context::Context() enter\n", this));
         // ----------------------------------------------------------------
@@ -336,7 +336,7 @@ namespace PAMI
         _self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
 
 	//strcpy(mms, "-lock");
-        _lock.init(&__global._wuRegion_mm, NULL);
+        _lock.init(__global._wuRegion_mm, NULL);
 
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 

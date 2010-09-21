@@ -118,7 +118,7 @@ namespace PAMI
       {
       };
 
-      inline void init (PAMI::Memory::MemoryManager *mm)
+      inline void init (PAMI::Memory::MemoryManager *mm, const char *key)
       {
         _head = NULL;
         _tail = NULL;

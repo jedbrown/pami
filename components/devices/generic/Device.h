@@ -289,8 +289,11 @@ public:
 		__allGds = devices;
 
 		__queues = NULL;
+		char key[PAMI::Memory::MMKEYSIZE];
+		int n = sprintf(key, "/clt%zd-ctx%zd-gd-", client, context);
 #if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-		__global._wuRegion_mm->memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
+		// process-private allocation...
+		__global._wuRegion_mm->memalign((void **)&__queues, sizeof(void *), sizeof(*__queues), NULL);
 #else // ! __pami_target_bgq__
 		int rc = posix_memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
 		rc = rc; // until we decide what to do with error
@@ -298,8 +301,11 @@ public:
 		PAMI_assertf(__queues, "Out of memory allocating generic device queues");
 		new (&__queues->__Threads) GenericDeviceWorkQueue();
 		new (&__queues->__GenericQueue) GenericDeviceCompletionQueue();
-		__queues->__Threads.init(mm);
-		__queues->__GenericQueue.init(mm);
+		key[n] = 't';
+		key[n + 1] = '\0';
+		__queues->__Threads.init(mm, key);
+		key[n] = 'm';
+		__queues->__GenericQueue.init(mm, key);
 #ifndef QUEUE_NO_ITER
 		__queues->__Threads.iter_init(&__ThrIter);
 #endif // !QUEUE_NO_ITER

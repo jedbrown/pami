@@ -144,7 +144,7 @@ namespace PAMI
 			return PAMI_ERROR;
 		}
 		alloc->fd(lrc); // mmap (et al.) requires this first.
-		lrc = ftruncate(alloc->fd(), alloc->size()) == -1);
+		lrc = ftruncate(alloc->fd(), alloc->size());
 		if (lrc == 0) {
 			ptr = mmap(NULL, alloc->size(), PROT_READ | PROT_WRITE, MAP_SHARED,
 									alloc->fd(), 0);

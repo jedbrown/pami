@@ -16,8 +16,13 @@
 
 namespace PAMI
 {
+  namespace Counter {
+    class Pthread;
+  }; // namespace Counter
   namespace Atomic
   {
+    class GccBuiltin;
+    class Noop;
   namespace Interface
   {
     ///
@@ -29,12 +34,16 @@ namespace PAMI
     ///
     template <class T_Object> class InPlaceCounter;
     template <class T_Object> class IndirCounter;
+
     template <class T_Object>
     class Counter
     {
       private:
 	friend class InPlaceCounter<T_Object>;
 	friend class IndirCounter<T_Object>;
+	friend class PAMI::Atomic::GccBuiltin;
+	friend class PAMI::Atomic::Noop;
+	friend class PAMI::Counter::Pthread;
         Counter() {
 		// need equiv check for methods...
 		// ENFORCE_CLASS_MEMBER(T_Object,init);
@@ -50,7 +59,7 @@ namespace PAMI
         ///
         /// \return Atomic counter object value
         ///
-        inline size_t fetch()
+        inline size_t fetch();
 
         ///
         /// \brief Fetch, then increment the atomic counter object value
@@ -60,7 +69,7 @@ namespace PAMI
         ///
         /// \return Atomic counter object value
         ///
-        inline size_t fetch_and_inc()
+        inline size_t fetch_and_inc();
 
         ///
         /// \brief Fetch, then decrement the atomic counter object value
@@ -70,7 +79,7 @@ namespace PAMI
         ///
         /// \return Atomic counter object value
         ///
-        inline size_t fetch_and_dec()
+        inline size_t fetch_and_dec();
 
         ///
         /// \brief Fetch, then clear the atomic counter object value
@@ -80,7 +89,7 @@ namespace PAMI
         ///
         /// \return Atomic counter object value
         ///
-        inline size_t fetch_and_clear()
+        inline size_t fetch_and_clear();
 
         ///
         /// \brief Clear the atomic counter object value
@@ -90,7 +99,7 @@ namespace PAMI
         ///
         /// This is needed to make Mutexes deterministic on some implementations
         ///
-        inline void clear()
+        inline void clear();
 
         ///
         /// \brief Atomic compare and swap operation
@@ -103,7 +112,7 @@ namespace PAMI
         ///
         /// \retval true Comparison was successful and swap value was written.
         ///
-        inline bool compare_and_swap(size_t compare, size_t swap)
+        inline bool compare_and_swap(size_t compare, size_t swap);
     }; // class Counter
 
     template <class T_Object>
@@ -160,7 +169,7 @@ namespace PAMI
         ///
 	/// \todo Need to find a way to initialize object by only one entity
         ///
-        void init();
+        inline void init();
 
         inline void *returnLock();
 
@@ -196,7 +205,7 @@ namespace PAMI
         ///
 	/// \todo Need to find a way to initialize object by only one entity
         ///
-        void init(PAMI::Memory::MemoryManager *mm, const char *key);
+        inline void init(PAMI::Memory::MemoryManager *mm, const char *key);
 
         inline void *returnLock();
 

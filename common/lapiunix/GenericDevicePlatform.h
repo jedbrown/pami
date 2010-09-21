@@ -16,16 +16,12 @@
 
 #ifdef __GNUC__
 
-#include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
-typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> GenericDeviceMutex;
-typedef PAMI::Counter::GccProcCounter GenericDeviceCounter;
+typedef PAMI::Counter::GccInPlaceCounter GenericDeviceCounter;
 
 #else /* !__GNUC__ */
 
-#include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/pthread/Pthread.h"
-typedef PAMI::Mutex::CounterMutex<PAMI::Counter::Pthread> GenericDeviceMutex;
 typedef PAMI::Counter::Pthread GenericDeviceCounter;
 
 #endif /* !__GNUC__ */

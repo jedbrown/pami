@@ -556,7 +556,7 @@ _commThreads(NULL)
 	__global._wuRegion_mm = wu->getWUmm();
 
 	new (pool) BgqContextPool();
-	pool->init(BgqCommThread::_maxActive, num_ctx, genmm, wu->getWUmm());
+	pool->init(BgqCommThread::_maxActive, num_ctx, l2xmm, __global._wuRegion_mm);
 
 	for (x = 0; x < BgqCommThread::_maxActive; ++x) {
 		new (&devs[x]) BgqCommThread(wu, pool, num_ctx);

@@ -30,11 +30,11 @@
 #undef USE_COMMTHREADS
 
 #if defined(GCCSAFE) && !defined(QUEUE_NAME)
-#define QUEUE_NAME	"GccThreadSafeQueue<GccProcCounter>"
+#define QUEUE_NAME	"GccThreadSafeQueue<GccIndirCounter>"
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
 #define GenericDeviceWorkQueue	PAMI::GccThreadSafeQueue<\
-		PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> >\
+		PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter> >\
 		>
 #endif // GCCSAFE
 
@@ -46,15 +46,15 @@
 
 #if defined(L2MUTEX) && !defined(QUEUE_NAME)
 #include "components/atomic/bgq/L2Mutex.h"
-#define QUEUE_NAME	"MutexedQueue<L2ProcMutex>"
-#define GenericDeviceWorkQueue	PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex>
+#define QUEUE_NAME	"MutexedQueue<L2Mutex>"
+#define GenericDeviceWorkQueue	PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2Mutex>
 #endif // L2MUTEX
 
 #if defined(L2SAFE) && !defined(QUEUE_NAME)
 #include "components/atomic/bgq/L2Mutex.h"
-#define QUEUE_NAME	"GccThreadSafeQueue<L2ProcMutex>"
+#define QUEUE_NAME	"GccThreadSafeQueue<L2Mutex>"
 #define GenericDeviceWorkQueue	PAMI::GccThreadSafeQueue<\
-		PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex>\
+		PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2Mutex>\
 		>
 #endif // L2SAFE
 
@@ -67,26 +67,39 @@
 
 #if defined(LBXMUTEX) && !defined(QUEUE_NAME)
 #include "components/atomic/bgp/LockBoxMutex.h"
-#define QUEUE_NAME	"MutexedQueue<LockBoxProcMutex>"
-#define GenericDeviceWorkQueue	PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex>
+#define QUEUE_NAME	"MutexedQueue<LockBoxMutex>"
+#define GenericDeviceWorkQueue	PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxMutex>
 #endif // LBXMUTEX
 
 #if defined(LBXSAFE) && !defined(QUEUE_NAME)
 #include "components/atomic/bgp/LockBoxMutex.h"
-#define QUEUE_NAME	"GccThreadSafeQueue<LockBoxProcMutex>"
+#define QUEUE_NAME	"GccThreadSafeQueue<LockBoxMutex>"
 #define GenericDeviceWorkQueue	PAMI::GccThreadSafeQueue<\
-		PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex>\
+		PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxMutex>\
 		>
 #endif // LBXSAFE
 
 #if defined(GCCMUTEX) && !defined(QUEUE_NAME)
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
-#define QUEUE_NAME	"MutexedQueue<CounterMutex<GccProcCounter>>"
+#define QUEUE_NAME	"MutexedQueue<CounterMutex<GccIndirCounter>>"
 #define GenericDeviceWorkQueue	PAMI::MutexedQueue<\
-		PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>\
+		PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter>\
 		>
 #endif // GCCMUTEX
+
+#include "components/atomic/counter/CounterMutex.h"
+#ifdef __GNUC__
+
+#include "components/atomic/gcc/GccCounter.h"
+typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter> GenericDeviceMutex;
+
+#else /* !__GNUC__ */
+
+#include "components/atomic/pthread/Pthread.h"
+typedef PAMI::Mutex::CounterMutex<PAMI::Counter::Pthread> GenericDeviceMutex;
+
+#endif /* !__GNUC__ */
 
 #ifndef QUEUE_NAME
 #define QUEUE_NAME	"MutexedQueue<GenericDeviceMutex>"

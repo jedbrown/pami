@@ -64,7 +64,7 @@ namespace PAMI {
 		_size(0)
 		{}
 
-		inline void init(PAMI::Memory::MemoryManager *mm) {
+		inline void init(PAMI::Memory::MemoryManager *mm, const char *key) {
 		}
 		inline void enqueue_impl(Element *e) {
 			e->setNext(NULL);
@@ -230,9 +230,9 @@ namespace PAMI {
 		_pub_queue()
 		{}
 
-		inline void init(PAMI::Memory::MemoryManager *mm) {
-			_priv_queue.init(mm);
-			_pub_queue.init(mm);
+		inline void init(PAMI::Memory::MemoryManager *mm, const char *key) {
+			_priv_queue.init(mm, key);
+			_pub_queue.init(mm, key);
 		}
 
 		inline void enqueue_impl(Element *e) {

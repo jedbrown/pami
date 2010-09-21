@@ -25,7 +25,7 @@ namespace PAMI
     ///
     /// \brief CRTP interface for pthread atomic objects.
     ///
-      class Pthread : public PAMI::Atomic::Interface::Counter <Pthread>
+      class Pthread : public PAMI::Atomic::Interface::InPlaceCounter <Pthread>
     {
       public:
         Pthread (){}
@@ -33,7 +33,7 @@ namespace PAMI
         ~Pthread () {}
 
         /// \see PAMI::Atomic::AtomicObject::init
-        void init_impl (PAMI::Memory::MemoryManager *mm)
+        void init_impl ()
         {
           pthread_mutex_init (&_mutex, NULL);
           fetch_and_clear_impl ();

@@ -43,15 +43,15 @@ static inline pid_t gettid() {
 #define MAX_PTHREADS	8
 #endif // MAX_PTHREADS
 
-#define QUEUE1_NAME	"GccThreadSafeQueue<GccProcCounter>"
+#define QUEUE1_NAME	"GccThreadSafeQueue<GccIndirCounter>"
 #define QUEUE1_TYPE	(1 << 0)
-typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> > queue_1a;
+typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter> > queue_1a;
 typedef PAMI::GccThreadSafeQueue<queue_1a> queue_1;
 
 
-#define QUEUE2_NAME	"MutexedQueue<GccProcCounter>"
+#define QUEUE2_NAME	"MutexedQueue<GccIndirCounter>"
 #define QUEUE2_TYPE	(1 << 1)
-typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter> > queue_2;
+typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter> > queue_2;
 
 #define QUEUE3_NAME	"GccThreadSafeQueue<GccCmpSwap>"
 #define QUEUE3_TYPE	(1 << 2)
@@ -60,13 +60,13 @@ typedef PAMI::GccThreadSafeQueue<queue_3a> queue_3;
 
 #ifdef __bgp__
 #include "components/atomic/bgp/LockBoxMutex.h"
-#define QUEUE4_NAME	"MutexedQueue<LockBoxProcMutex>"
+#define QUEUE4_NAME	"MutexedQueue<LockBoxMutex>"
 #define QUEUE4_TYPE	(1 << 3)
-typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex> queue_4;
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxMutex> queue_4;
 
-#define QUEUE5_NAME	"GccThreadSafeQueue<LockBoxProcMutex>"
+#define QUEUE5_NAME	"GccThreadSafeQueue<LockBoxMutex>"
 #define QUEUE5_TYPE	(1 << 4)
-typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxProcMutex> queue_5a;
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxMutex> queue_5a;
 typedef PAMI::GccThreadSafeQueue<queue_5a> queue_5;
 
 #define QUEUE_ALL	(QUEUE1_TYPE | QUEUE2_TYPE | QUEUE3_TYPE | QUEUE4_TYPE | QUEUE5_TYPE)
@@ -76,11 +76,11 @@ typedef PAMI::GccThreadSafeQueue<queue_5a> queue_5;
 #include "components/atomic/bgq/L2Mutex.h"
 #define QUEUE4_NAME	"MutexedQueue<L2ProcMutex>"
 #define QUEUE4_TYPE	(1 << 3)
-typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex> queue_4;
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2Mutex> queue_4;
 
-#define QUEUE5_NAME	"GccThreadSafeQueue<L2ProcMutex>"
+#define QUEUE5_NAME	"GccThreadSafeQueue<L2Mutex>"
 #define QUEUE5_TYPE	(1 << 4)
-typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex> queue_5a;
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2Mutex> queue_5a;
 typedef PAMI::GccThreadSafeQueue<queue_5a> queue_5;
 
 #include <util/queue/bgq/ArrayBasedQueue.h>
@@ -128,7 +128,7 @@ public:
 	{
 		size_t size = 32*1024;
 		mm.init(__global.heap_mm, size);
-		queue.init(&mm);
+		queue.init(&mm, NULL);
 
 		int x;
 		unsigned long long t1, t0 = PAMI_Wtimebase();
