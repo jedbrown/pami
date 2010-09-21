@@ -126,7 +126,7 @@ namespace PAMI
         // This is where we get our reduction result back from the geometry create operation
         PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getLocalMasterTopology());
         PAMI::Topology *local_topo        = (PAMI::Topology *)geometry->getLocalTopology();
- 
+
         uint master_rank   = local_topo->index2Rank(0);
         uint master_index  = local_master_topo->rank2Index(master_rank);
         void *ctrlstr      = (void *)in[master_index];
@@ -160,8 +160,8 @@ namespace PAMI
         T_CSModel *cs_model = new T_CSModel(&_devs, geometry->comm(), local_topo, &_csmm, ctrlstr);
 
         // Allocate the local native interface
-        T_CSNativeInterface *ni = new T_CSNativeInterface(*cs_model, _client, _client_id, _context, 
-                                       _context_id, local_topo->rank2Index(__global.mapping.task()), 
+        T_CSNativeInterface *ni = new T_CSNativeInterface(*cs_model, _client, _client_id, _context,
+                                       _context_id, local_topo->rank2Index(__global.mapping.task()),
                                        local_topo->size());
         geometry->setKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI, ni);
 

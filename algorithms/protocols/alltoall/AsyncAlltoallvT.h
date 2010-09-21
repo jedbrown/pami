@@ -132,7 +132,7 @@ namespace CCMI
           T_Type *a_xfer;
           getAlltoallXfer<T_Type>(&a_xfer, &((pami_xfer_t *)cmd)->cmd);
           _executor.setSchedule (NULL);
-          _executor.setVectors(a_xfer); 
+          _executor.setVectors(a_xfer);
           _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
         }
 
@@ -240,7 +240,7 @@ namespace CCMI
           {
 	    T_Composite* a_composite = NULL;
 	    CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co = NULL;
-	    T_Type *a_xfer; 
+	    T_Type *a_xfer;
             getAlltoallXfer<T_Type>(&a_xfer, &((pami_xfer_t *)cmd)->cmd);
 
 	    PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
@@ -263,8 +263,8 @@ namespace CCMI
 	      co->setFlag(LocalPosted);
 
               a_composite = co->getComposite();
-              // update send buffer pointer and, at root, receive buffer pointers  
-              a_composite->executor().updateVectors(a_xfer); 
+              // update send buffer pointer and, at root, receive buffer pointers
+              a_composite->executor().updateVectors(a_xfer);
 	    }
 	    /// not found posted CollOp object, create a new one and
 	    /// queue it in active queue
@@ -348,7 +348,7 @@ namespace CCMI
 	      cb_exec_done.function = exec_done;
 	      cb_exec_done.clientdata = co;
               pami_xfer_t a_xfer;
- 
+
               setTempAlltoallXfer<T_Type>(&(a_xfer.cmd));
 
 	      a_composite = new (co->getComposite())

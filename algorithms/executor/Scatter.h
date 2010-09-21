@@ -20,7 +20,7 @@ namespace CCMI
   namespace Executor
   {
     /*
-     * Implements a scatter strategy which uses one network link. 
+     * Implements a scatter strategy which uses one network link.
      */
 
       template <class T_Scatter_type>
@@ -98,7 +98,7 @@ namespace CCMI
         int                 _nphases;
         int                 _startphase;
         int                 _donecount;
-        
+
         int                 _maxdsts;
         pami_task_t         _dstranks [MAX_CONCURRENT];
         unsigned            _dstlens  [MAX_CONCURRENT];
@@ -135,7 +135,7 @@ namespace CCMI
 
         ScatterExec (Interfaces::NativeInterface  * mf,
                        T_ConnMgr                    * connmgr,
-                       unsigned                       comm, 
+                       unsigned                       comm,
                        PAMI::Topology               *gtopology) :
             Interfaces::Executor(),
             _comm_schedule (NULL),
@@ -158,17 +158,17 @@ namespace CCMI
           _clientdata        =  0;
           _root              =  (unsigned) - 1;
           _buflen            =  0;
- 
+
           _donecount         =   0;
 
           _mdata._comm       = _comm;
           _mdata._root       = _root;
-          _mdata._count      = -1; 
+          _mdata._count      = -1;
           _mdata._phase      = 0;
 
         }
 
-        virtual ~ScatterExec () 
+        virtual ~ScatterExec ()
         {
            /// Todo: convert this to allocator ?
            if (_maxdsts) free (_msendstr);
@@ -258,18 +258,18 @@ namespace CCMI
               memcpy (_tmpbuf+(_native->numranks() - _native->myrank())*len  ,src, _native->myrank() * len);
             }
           }
-          else if (_nphases > 1) 
-          { 
+          else if (_nphases > 1)
+          {
             // schedule's getLList() method can be used for an accurate buffer size
             size_t  buflen = _native->numranks() * len;
             _tmpbuf = (char *)malloc(buflen);
             _pwq.configure (NULL, _tmpbuf, buflen, 0);
-            _pwq.reset();  
-          } 
-          else 
+            _pwq.reset();
+          }
+          else
           {
             _pwq.configure (NULL, dst, len, 0);
-            _pwq.reset();  
+            _pwq.reset();
           }
 
         }
@@ -278,7 +278,7 @@ namespace CCMI
         {
 
            if (_native->myrank() == _root) {
-             setScatterVectors<T_Scatter_type>(xfer, (void *)&_disps, (void *)&_sndcounts); 
+             setScatterVectors<T_Scatter_type>(xfer, (void *)&_disps, (void *)&_sndcounts);
            }
         }
 
@@ -362,9 +362,9 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
   if (_curphase == _startphase + _nphases)
   {
      // all parents copy from send buffer to application destination buffer
-     if (_disps && _sndcounts) 
+     if (_disps && _sndcounts)
        memcpy(_rbuf, _sbuf+_disps[myindex], _buflen);
-     else if (_native->myrank() == _root) 
+     else if (_native->myrank() == _root)
        memcpy(_rbuf, _sbuf+myindex * _buflen, _buflen);
      else if (_nphases > 1)
        memcpy(_rbuf, _tmpbuf, _buflen);
@@ -377,7 +377,7 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
 
   CCMI_assert(_donecount  == 0);
   _donecount = ndst;
-  
+
   for (unsigned i = 0; i < ndst; ++i)
   {
 
@@ -389,20 +389,20 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
     unsigned dstindex = _gtopology->rank2Index(_dstranks[i]);
     size_t buflen;
     unsigned offset;
-    if (_disps && _sndcounts) 
+    if (_disps && _sndcounts)
     {
       CCMI_assert(_native->myrank() == _root);
       CCMI_assert(ndst == 1);
       buflen   =  _sndcounts[dstindex];
       offset   =  _disps[dstindex];
-      _mdata._count = buflen; 
+      _mdata._count = buflen;
     }
-    else if ((unsigned)_nphases == _native->numranks() - 1) 
-    { 
+    else if ((unsigned)_nphases == _native->numranks() - 1)
+    {
       buflen   = _buflen;
       offset   = dstindex * _buflen;
-    } 
-    else 
+    }
+    else
     {
       buflen   = _dstlens[i] * _buflen;
       offset   = ((dstindex + size - myindex)% size) * _buflen;

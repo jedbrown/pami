@@ -221,8 +221,8 @@ namespace CCMI
 	      co->setFlag(LocalPosted);
 
               a_composite = co->getComposite();
-              // update send buffer pointer and, at root, receive buffer pointers  
-              a_composite->executor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount); 
+              // update send buffer pointer and, at root, receive buffer pointers
+              a_composite->executor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount);
 	    }
 	    /// not found posted CollOp object, create a new one and
 	    /// queue it in active queue
@@ -311,7 +311,7 @@ namespace CCMI
 			      cmgr,
 			      cb_exec_done,
 			      geometry,
-                              NULL, 
+                              NULL,
                               PAMI_BYTE,
                               cdata->_count,
                               NULL,

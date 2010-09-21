@@ -19,7 +19,7 @@ namespace CCMI
   namespace Executor
   {
     /*
-     * Implements a gather strategy which uses one network link. 
+     * Implements a gather strategy which uses one network link.
      */
 
       template <class T_Gather_type>
@@ -78,7 +78,7 @@ namespace CCMI
            int                 subsize;
            PAMI::PipeWorkQueue pwq;
            GatherExec         *exec;
-        }; 
+        };
 
       protected:
         T_Schedule                     * _comm_schedule;
@@ -99,7 +99,7 @@ namespace CCMI
         int                 _nphases;
         int                 _startphase;
         int                 _donecount;
-        
+
         int                 _maxsrcs;
         pami_task_t         _srcranks [MAX_CONCURRENT];
         unsigned            _srclens  [MAX_CONCURRENT];
@@ -136,7 +136,7 @@ namespace CCMI
 
         GatherExec (Interfaces::NativeInterface  * mf,
                        T_ConnMgr                    * connmgr,
-                       unsigned                       comm, 
+                       unsigned                       comm,
                        PAMI::Topology               *gtopology) :
             Interfaces::Executor(),
             _comm_schedule (NULL),
@@ -174,10 +174,10 @@ namespace CCMI
 
         }
 
-        virtual ~GatherExec () 
+        virtual ~GatherExec ()
         {
            /// Todo: convert this to allocator ?
-           if (_maxsrcs) free (_mrecvstr); 
+           if (_maxsrcs) free (_mrecvstr);
            free (_tmpbuf);
         }
 
@@ -255,7 +255,7 @@ namespace CCMI
             _tmpbuf = (char *) malloc(buflen);
           }
           else
-          { 
+          {
 
             unsigned ndst;
             _comm_schedule->getLList(_startphase, &_srcranks[0], ndst, &_srclens[0]);
@@ -266,12 +266,12 @@ namespace CCMI
 
             _donecount        = _srclens[0];
             size_t  buflen    = _srclens[0]  * _buflen;
-            if (_nphases > 1) 
+            if (_nphases > 1)
             {
               _tmpbuf = (char *)malloc(buflen);
               _pwq.configure (NULL, _tmpbuf, buflen, 0);
             }
-            else 
+            else
             {
               _pwq.configure (NULL, src, buflen, 0);
             }
@@ -280,7 +280,7 @@ namespace CCMI
 
             _mdata._count = buflen;
 
-          } 
+          }
           //TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::setInfo() _pwq %p, bytes available %zu/%zu\n", this, &_pwq, _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
 
         }
@@ -351,18 +351,18 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   --_donecount;
   if (_native->myrank() == _root)
   {
-    if (_disps && _rcvcounts) 
+    if (_disps && _rcvcounts)
       memcpy(_rbuf + _disps[_root], _sbuf, _buflen);
     else
       memcpy(_rbuf + _root * _buflen, _sbuf, _buflen);
 
     if (_donecount == 0) sendNext();
-  } 
-  else 
-  { 
+  }
+  else
+  {
     if (_nphases == 1)
       sendNext ();
-    else 
+    else
       memcpy(_tmpbuf, _sbuf, _buflen);
   }
 }
@@ -412,7 +412,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
   unsigned nsrcs;
   _comm_schedule->getRList(cdata->_phase, &_srcranks[0], nsrcs, &_srclens[0]);
 
-  for (i = 0; i < nsrcs; ++i) 
+  for (i = 0; i < nsrcs; ++i)
     //if (_srcranks[i] == _gtopology->rank2Index(src)) break;
     if (_srcranks[i] == src) break;
 
@@ -434,15 +434,15 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
     _srclens[i] = 1;
     buflen   = _buflen;
     offset   = srcindex * _buflen;
-  } else { 
+  } else {
     buflen   = _srclens[i] * _buflen;
     offset   = ((srcindex + size - myindex)% size) * _buflen; // will root be affected by this ?
-  } 
+  }
   // CCMI_assert (buflen == cdata->_count);
 
   char    *tmpbuf   = _tmpbuf + offset;
   unsigned ind      = cdata->_phase * _maxsrcs + i;
-  *pwq = &_mrecvstr[ind].pwq; 
+  *pwq = &_mrecvstr[ind].pwq;
   (*pwq)->configure (NULL, tmpbuf, buflen, 0);
   (*pwq)->reset();
   // (*pwq)->produceBytes(buflen);

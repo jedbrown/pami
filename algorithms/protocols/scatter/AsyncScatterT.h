@@ -133,7 +133,7 @@ namespace CCMI
               _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(0))
           {
             TRACE_ADAPTOR ((stderr, "<%p>Scatter::AsyncScatterT() \n", this));
-          
+
             T_Scatter_type *s_xfer;
             getScatterXfer<T_Scatter_type>(&s_xfer, &((pami_xfer_t *)cmd)->cmd);
 
@@ -272,7 +272,7 @@ namespace CCMI
                               cmgr,
                               cb_exec_done,
                               (PAMI_GEOMETRY_CLASS *)g,
-                              (void *)cmd); 
+                              (void *)cmd);
 
                 co->setXfer((pami_xfer_t*)cmd);
                 co->setFlag(LocalPosted);
@@ -408,11 +408,11 @@ namespace CCMI
 
                 pami_xfer_t a_xfer;
                 setTempScatterXfer<scatter_type>(&(a_xfer.cmd));
-                
+
                 EADescriptor * ead = (EADescriptor *) factory->_ead_allocator.allocateObject();
                 memcpy(&(ead->cdata), cdata, sizeof(cdata));
                 ead->flag  = EASTARTED;
-                // ead->bytes = sndlen; 
+                // ead->bytes = sndlen;
                 ead->bytes = cdata->_count;
 
                 if (sndlen)
@@ -455,9 +455,9 @@ namespace CCMI
                 a_scatter = (T_Composite *) co->getComposite();
               }
 
-            // This is tricky, unlike broadcast, the receive pwq could be a temporary buffer 
-            // different from the ea buffer or application buffer. The executor code is responsible 
-            // for moving data to those buffers 
+            // This is tricky, unlike broadcast, the receive pwq could be a temporary buffer
+            // different from the ea buffer or application buffer. The executor code is responsible
+            // for moving data to those buffers
             a_scatter->executor().notifyRecv(peer, *info, (PAMI::PipeWorkQueue **)rcvpwq, cb_done);
             * rcvlen  = sndlen;
 

@@ -74,7 +74,7 @@ namespace CCMI
                          PAMI_GEOMETRY_CLASS            * geometry,
                          void                           *cmd) :
         Executor::Composite(),
-        _bcast_executor (native, cmgr, geometry->comm()), 
+        _bcast_executor (native, cmgr, geometry->comm()),
         _gather_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(0)),
         _cmgr(cmgr)
         {
@@ -239,8 +239,8 @@ namespace CCMI
               co->setFlag(LocalPosted);
 
               a_composite = co->getComposite();
-              // update send buffer pointer and, at root, receive buffer pointers  
-              a_composite->getGatherExecutor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount); 
+              // update send buffer pointer and, at root, receive buffer pointers
+              a_composite->getGatherExecutor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount);
 
               geometry->asyncCollectivePostQ().pushTail(co);
 
@@ -281,7 +281,7 @@ namespace CCMI
                 a_composite->getGatherExecutor().setConnectionID(key);
               }
 	      geometry->asyncCollectivePostQ().pushTail(co);
- 
+
               if (_native->myrank() == a_xfer->root)
               {
                 DEBUG((stderr, "key = %d, start broadcast executor in generate()\n", key);)
@@ -303,7 +303,7 @@ namespace CCMI
            pami_pipeworkqueue_t ** rcvpwq,
            pami_callback_t       * cb_done)
           {
-            // CCMI_assert (sndlen == 0); 
+            // CCMI_assert (sndlen == 0);
 
             AsyncLongGatherFactoryT *factory = (AsyncLongGatherFactoryT *) arg;
             CollHeaderData *cdata = (CollHeaderData *) info;
@@ -354,7 +354,7 @@ namespace CCMI
               cb_exec_done.clientdata = co;
 
               a_composite = new (co->getComposite())
-                T_Composite ( factory->_native, 
+                T_Composite ( factory->_native,
                               cmgr,
                               cb_exec_done,
                               geometry,
@@ -390,7 +390,7 @@ namespace CCMI
 
             return;
           }
- 
+
           static void bcast_exec_done (pami_context_t context, void *cd, pami_result_t err)
           {
             CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> * co =
@@ -417,7 +417,7 @@ namespace CCMI
                 CCMI_assert(ead == NULL);
               }
 
-              co->getComposite()->getGatherExecutor().start(); 
+              co->getComposite()->getGatherExecutor().start();
             }
             else if (flag & EarlyArrival)
             {

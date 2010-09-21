@@ -443,7 +443,7 @@ namespace PAMI
             PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getLocalMasterTopology();
             to_reduce_count = 3 + local_master_topology->size();
             if (to_reduce_count >16) {
-               to_reduce = (uint64_t *)malloc(to_reduce_count * sizeof(uint64_t)); 
+               to_reduce = (uint64_t *)malloc(to_reduce_count * sizeof(uint64_t));
             } else {
                to_reduce = &(to_reduce_vec[0]);
             }

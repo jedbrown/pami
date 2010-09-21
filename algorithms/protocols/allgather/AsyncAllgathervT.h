@@ -129,7 +129,7 @@ namespace CCMI
           TRACE_ADAPTOR ((stderr, "<%p>Allgatherv::AsyncAllgathervT() \n",this));
           T_Type *a_xfer;
 
-          getAllgatherXfer<T_Type>(&a_xfer, &((pami_xfer_t *)cmd)->cmd); 
+          getAllgatherXfer<T_Type>(&a_xfer, &((pami_xfer_t *)cmd)->cmd);
           _executor.setSchedule(NULL);
           _executor.setVectors (a_xfer);
           _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
@@ -261,8 +261,8 @@ namespace CCMI
 	      co->setFlag(LocalPosted);
 
               a_composite = co->getComposite();
-              // update send buffer pointer and, at root, receive buffer pointers  
-              a_composite->executor().updateVectors(a_xfer); 
+              // update send buffer pointer and, at root, receive buffer pointers
+              a_composite->executor().updateVectors(a_xfer);
 	    }
 	    /// not found posted CollOp object, create a new one and
 	    /// queue it in active queue

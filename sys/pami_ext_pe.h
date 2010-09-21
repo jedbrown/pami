@@ -1,10 +1,10 @@
 /**
- * \file sys/pami_ext_percs.h
+ * \file sys/pami_ext_pe.h
  * \brief platform-specific messaging interface
  * \todo  put this into percs subdir and rename to pami_ext.h
  */
-#ifndef __pami_ext_percs_h__
-#define __pami_ext_percs_h__
+#ifndef __pami_ext_pe_h__
+#define __pami_ext_pe_h__
 
 #include "pami.h"
 

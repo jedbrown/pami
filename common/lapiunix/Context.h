@@ -484,7 +484,7 @@ namespace PAMI
           PAMI::Topology *local_master_topo = (PAMI::Topology *) ((PAMI::Geometry::Lapi *)_world_geometry)->getLocalMasterTopology();
           uint64_t *invec = (uint64_t *)malloc((3 + local_master_topo->size()) * sizeof(uint64_t));
           // for cau classroute initialization
-          invec[2]  = 0xFFFFFFFFFFFFFFFFULL;  
+          invec[2]  = 0xFFFFFFFFFFFFFFFFULL;
           for (int i = 0; i < local_master_topo->size(); ++i)  invec[3+i] = 0ULL;
 
 	  //	  _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
@@ -622,16 +622,16 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_t * parameters)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          internal_error_t rc = (cp->*(cp->pSend))(parameters->send.dest, 
+          internal_error_t rc = (cp->*(cp->pSend))(parameters->send.dest,
                                                    parameters->send.dispatch,         // hdr_hdl
                                                    parameters->send.header.iov_base,  // uhdr
                                                    parameters->send.header.iov_len,   // uhdr_len
                                                    parameters->send.data.iov_base,    // udata
                                                    parameters->send.data.iov_len,     // udata_len
-                                                   *(send_hint_t*)&parameters->send.hints,   // send hints 
-                                                   parameters->events.local_fn,       // 
-                                                   parameters->events.remote_fn,      // 
-                                                   parameters->events.cookie,         // 
+                                                   *(send_hint_t*)&parameters->send.hints,   // send hints
+                                                   parameters->events.local_fn,       //
+                                                   parameters->events.remote_fn,      //
+                                                   parameters->events.cookie,         //
                                                    NULL, NULL,                        //  unused send completion handler
                                                    NULL, NULL, NULL,                  // unused counter
                                                    INTERFACE_PAMI);                   // caller

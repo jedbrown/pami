@@ -28,16 +28,16 @@ namespace CCMI
       public:
 
         struct RecvStruct {
-           pami_task_t         rank; 
+           pami_task_t         rank;
            int                 subsize;
            PAMI::PipeWorkQueue pwq;
-        }; 
+        };
 
         struct PhaseRecvStr {
            int             donecount;
            int             partnercnt;
            AllgatherExec   *exec;
-           RecvStruct      recvstr[MAX_CONCURRENT]; 
+           RecvStruct      recvstr[MAX_CONCURRENT];
         };
 
       protected:
@@ -57,7 +57,7 @@ namespace CCMI
         int                 _nphases;
         int                 _startphase;
         int                 _donecount;
-        
+
         int                 _maxsrcs;
         pami_task_t         _dstranks [MAX_CONCURRENT];
         unsigned            _dstlens  [MAX_CONCURRENT];
@@ -68,7 +68,7 @@ namespace CCMI
         PAMI::Topology      *_gtopology;
 
         PAMI::PipeWorkQueue _pwq [MAX_CONCURRENT];
-        CollHeaderData      _mdata [MAX_CONCURRENT]; 
+        CollHeaderData      _mdata [MAX_CONCURRENT];
         pami_multicast_t    _msend [MAX_CONCURRENT];
 
         //Private method
@@ -113,10 +113,10 @@ namespace CCMI
           _buflen            =  0;
         }
 
-        virtual ~AllgatherExec () 
+        virtual ~AllgatherExec ()
         {
            /// Todo: convert this to allocator ?
-           if (_maxsrcs) free (_mrecvstr); 
+           if (_maxsrcs) free (_mrecvstr);
            if ((unsigned)_nphases != _native->numranks() - 1) free (_tmpbuf); // what about the multiport case ???
         }
 
@@ -233,9 +233,9 @@ namespace CCMI
         {
           TRACE_MSG ((stderr, "<%p>Executor::AllgatherExec::notifyRecvDone()\n", cookie));
           PhaseRecvStr  *mrecv = (PhaseRecvStr *) cookie;
-          mrecv->donecount ++; 
+          mrecv->donecount ++;
           AllgatherExec<T_ConnMgr, T_Schedule> *exec =  mrecv->exec;
-          if (mrecv->donecount == 0){ 
+          if (mrecv->donecount == 0){
             exec->_curphase  ++;
             exec->_donecount  = 0;
             exec->sendNext();
@@ -276,13 +276,13 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
   CCMI_assert(_donecount  == 0);
 
   if (_curphase < _startphase + _nphases) {
-    
+
     unsigned ndsts, nsrcs;
     _comm_schedule->getList(_curphase, &_srcranks[0], nsrcs, &_dstranks[0], ndsts, &_srclens[0], &_dstlens[0]);
     CCMI_assert(nsrcs == ndsts);
 
     for (unsigned i = 0; i < nsrcs; ++i) {
-      new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);    
+      new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);
 
       size_t buflen = _dstlens[i] * _buflen;
       _pwq[i].configure (NULL, _tmpbuf, buflen, 0);
@@ -290,7 +290,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
       _pwq[i].produceBytes(buflen);
 
       _mdata[i]._phase             = _curphase;
-      _mdata[i]._count             = _buflen; 
+      _mdata[i]._count             = _buflen;
       _msend[i].src_participants   = (pami_topology_t *) & _selftopology;
       _msend[i].dst_participants   = (pami_topology_t *) & _dsttopology[i];
       _msend[i].cb_done.function   = notifySendDone;
@@ -309,11 +309,11 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
         unsigned srcindex   = _gtopology->rank2Index(_srcranks[i]);
         unsigned dist       = (srcindex + _native->numranks() - myindex)% _native->numranks();
         RecvStruct *recvstr = &_mrecvstr[_curphase].recvstr[i];
-        recvstr->pwq.configure (NULL, _tmpbuf + dist * _buflen, buflen, 0); 
+        recvstr->pwq.configure (NULL, _tmpbuf + dist * _buflen, buflen, 0);
         recvstr->pwq.reset();
         recvstr->subsize = buflen;
         recvstr->rank    = _srcranks[i];
-      } 
+      }
       _mrecvstr[_curphase].partnercnt = nsrcs;
       _mrecvstr[_curphase].exec       = this;
     }
@@ -364,7 +364,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::notifyRecv
     _mrecvstr[cdata->_phase].exec       = this;
     _mrecvstr[cdata->_phase].partnercnt = 1; // this could be a problem ???
   } else {
-    for (int i = 0; i < _mrecvstr[cdata->_phase].partnercnt; ++i) 
+    for (int i = 0; i < _mrecvstr[cdata->_phase].partnercnt; ++i)
       if (src == _mrecvstr[cdata->_phase].recvstr[i].rank) {
         srcindex = i;
         break;
@@ -373,7 +373,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::notifyRecv
 
   //CCMI_assert(myindex < nsrcs);
 
-  *pwq = &_mrecvstr[cdata->_phase].recvstr[srcindex].pwq; 
+  *pwq = &_mrecvstr[cdata->_phase].recvstr[srcindex].pwq;
 
   cb_done->function = notifyRecvDone;
   cb_done->clientdata = &_mrecvstr[cdata->_phase];

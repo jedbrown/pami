@@ -19,11 +19,11 @@ namespace CCMI
   namespace Executor
   {
     /*
-     * Implements a allgatherv strategy which uses one network link. 
+     * Implements a allgatherv strategy which uses one network link.
      */
 
       template <class T_Allgather_type>
-      struct AllgatherVecType 
+      struct AllgatherVecType
       {
          //COMPILE_TIME_ASSERT(0==1);
       };
@@ -51,14 +51,14 @@ namespace CCMI
       }
 
       template <>
-      inline void setAllgatherVec<pami_allgather_t> (pami_allgather_t *xfer, 
+      inline void setAllgatherVec<pami_allgather_t> (pami_allgather_t *xfer,
                 void *rdisps, void *rcounts)
       {
          return;
       }
 
       template <>
-      inline void setAllgatherVec<pami_allgatherv_t> (pami_allgatherv_t *xfer, 
+      inline void setAllgatherVec<pami_allgatherv_t> (pami_allgatherv_t *xfer,
                 void *rdisps, void *rcounts)
       {
          *((size_t **)rdisps)   = xfer->rdispls;
@@ -98,7 +98,7 @@ namespace CCMI
         int                 _startphase;
         int                 _lphase;
         int                 _rphase;
-        
+
         int                 _maxsrcs;
 
         int                 _senddone;
@@ -116,7 +116,7 @@ namespace CCMI
         pami_multicast_t    _mrsend;
 
         typedef typename AllgatherVecType<T_Type>::base_type basetype;
-    
+
         basetype                *_disps;
         basetype                *_rcvcounts;
 
@@ -141,7 +141,7 @@ namespace CCMI
 
         AllgathervExec (Interfaces::NativeInterface  * mf,
                        T_ConnMgr                    * connmgr,
-                       unsigned                       comm, 
+                       unsigned                       comm,
                        PAMI::Topology               *gtopology) :
             Interfaces::Executor(),
             _comm_schedule (NULL),
@@ -178,7 +178,7 @@ namespace CCMI
 
           _mrdata._comm       = _comm;
           _mrdata._root       = -1;
-          _mrdata._count      = -1; 
+          _mrdata._count      = -1;
           _mrdata._phase      = 0;
 
           info                  =  (pami_quad_t*)((void*) & _mrdata);
@@ -188,7 +188,7 @@ namespace CCMI
 
         }
 
-        virtual ~AllgathervExec () 
+        virtual ~AllgathervExec ()
         {
         }
 
@@ -240,7 +240,7 @@ namespace CCMI
           _sbuf = src;
           _rbuf = dst;
 
-          // setup send PWQ and destination topology 
+          // setup send PWQ and destination topology
           // what is myrank ??? rank in world geometry or index in topology ???
           unsigned myindex  = _gtopology->rank2Index(_native->myrank());
 
@@ -248,7 +248,7 @@ namespace CCMI
           _dst              = _gtopology->index2Rank(dstindex);
           new (&_dsttopology) PAMI::Topology(_dst);
           unsigned srcindex = (myindex + _native->numranks() - 1) % _native->numranks();
-          _src              = _gtopology->index2Rank(srcindex); 
+          _src              = _gtopology->index2Rank(srcindex);
           new (&_srctopology) PAMI::Topology(_src);
 
         }
@@ -272,25 +272,25 @@ namespace CCMI
 
         size_t getSendLength(int phase)
         {
-           int index = (_native->myrank() + _native->numranks() - phase) % _native->numranks(); 
+           int index = (_native->myrank() + _native->numranks() - phase) % _native->numranks();
            return (_rcvcounts) ? _rcvcounts[index] : _buflen;
         }
 
         size_t getRecvLength(int phase)
         {
-           int index = (_native->myrank() +  phase + 1) % _native->numranks();    
+           int index = (_native->myrank() +  phase + 1) % _native->numranks();
            return (_rcvcounts) ? _rcvcounts[index] : _buflen;
         }
 
         size_t getSendDisp(int phase)
         {
-           int index = (_native->myrank() + _native->numranks() - phase) % _native->numranks();    
+           int index = (_native->myrank() + _native->numranks() - phase) % _native->numranks();
            return (_disps) ? _disps[index] : index * _buflen;
         }
 
         size_t getRecvDisp(int phase)
         {
-           int index = (_native->myrank() +  phase + 1) % _native->numranks();                      
+           int index = (_native->myrank() +  phase + 1) % _native->numranks();
            return (_disps) ? _disps[index] : index * _buflen;
         }
 
@@ -429,7 +429,7 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::sendNext ()
     _mrsend.bytes              = getSendLength(_curphase);
     _native->multicast(&_mrsend);
   }
-  
+
   return;
 }
 

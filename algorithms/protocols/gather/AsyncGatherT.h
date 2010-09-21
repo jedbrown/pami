@@ -135,7 +135,7 @@ namespace CCMI
           getGatherXfer<T_Gather_type>(&g_xfer, &((pami_xfer_t *)cmd)->cmd);
 
           unsigned bytes = g_xfer->stypecount;
-        
+
           COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
           create_schedule(&_schedule, sizeof(_schedule), g_xfer->root, native, geometry);
           _executor.setRoot(g_xfer->root);
@@ -278,8 +278,8 @@ namespace CCMI
 	      co->setFlag(LocalPosted);
 
               a_composite = co->getComposite();
-              // update send buffer pointer and, at root, receive buffer pointers  
-              a_composite->executor().updateBuffers(g_xfer->sndbuf, g_xfer->rcvbuf, g_xfer->rtypecount); 
+              // update send buffer pointer and, at root, receive buffer pointers
+              a_composite->executor().updateBuffers(g_xfer->sndbuf, g_xfer->rcvbuf, g_xfer->rtypecount);
 	    }
 	    /// not found posted CollOp object, create a new one and
 	    /// queue it in active queue
@@ -342,7 +342,7 @@ namespace CCMI
 
             DEBUG((stderr, "AsyncGatherFactory::cb_async(), root = %d, connection id = %d\n",
                             cdata->_root, conn_id);)
-       
+
 	    C *cmgr = factory->getConnMgr();
             unsigned key;
             key = getKey (cdata->_root, conn_id, geometry, (ConnectionManager::BaseConnectionManager **)&cmgr);

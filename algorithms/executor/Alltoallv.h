@@ -19,11 +19,11 @@ namespace CCMI
   namespace Executor
   {
     /*
-     * Implements a alltoallv strategy which uses one network link. 
+     * Implements a alltoallv strategy which uses one network link.
      */
 
       template <class T_Alltoall_type>
-      struct AlltoallVecType 
+      struct AlltoallVecType
       {
          // COMPILE_TIME_ASSERT(0==1);
       };
@@ -45,12 +45,12 @@ namespace CCMI
       };
 
       template <class T_Alltoall_type>
-      inline void setAlltoallVec(T_Alltoall_type *xfer, void *sbuf, void *scounts, void *sdisps, 
+      inline void setAlltoallVec(T_Alltoall_type *xfer, void *sbuf, void *scounts, void *sdisps,
                                    void *rbuf, void *rcounts, void *rdisps)
       {
          COMPILE_TIME_ASSERT(0==1);
       }
-      
+
       template <>
       inline void setAlltoallVec<pami_alltoall_t> (pami_alltoall_t *xfer, void *sbuf, void *scounts, void *sdisps,                                   void *rbuf, void *rcounts, void *rdisps)
       {
@@ -60,7 +60,7 @@ namespace CCMI
       }
 
       template <>
-      inline void setAlltoallVec<pami_alltoallv_t> (pami_alltoallv_t *xfer, 
+      inline void setAlltoallVec<pami_alltoallv_t> (pami_alltoallv_t *xfer,
            void *sbuf, void *scounts, void *sdisps, void *rbuf, void *rcounts, void *rdisps)
       {
         *((char **)sbuf)      = xfer->sndbuf;
@@ -73,7 +73,7 @@ namespace CCMI
       }
 
       template <>
-      inline void setAlltoallVec<pami_alltoallv_int_t> (pami_alltoallv_int_t *xfer, 
+      inline void setAlltoallVec<pami_alltoallv_int_t> (pami_alltoallv_int_t *xfer,
             void *sbuf, void *scounts, void *sdisps, void *rbuf, void *rcounts, void *rdisps)
       {
         *((char **)sbuf)   = xfer->sndbuf;
@@ -108,7 +108,7 @@ namespace CCMI
         int                 _startphase;
         int                 _lphase;
         int                 _rphase [MAX_PARALLEL];
-        
+
         int                 _maxsrcs;
 
         unsigned            _parindex;
@@ -154,7 +154,7 @@ namespace CCMI
 
         AlltoallvExec (Interfaces::NativeInterface  * mf,
                        T_ConnMgr                    * connmgr,
-                       unsigned                       comm, 
+                       unsigned                       comm,
                        PAMI::Topology               *gtopology) :
             Interfaces::Executor(),
             _comm_schedule (NULL),
@@ -193,7 +193,7 @@ namespace CCMI
 
           _mrdata._comm       = _comm;
           _mrdata._root       = -1;
-          _mrdata._count      = -1; 
+          _mrdata._count      = -1;
           _mrdata._phase      = 0;
 
           info    =  (pami_quad_t*)((void*) & _mrdata);
@@ -203,7 +203,7 @@ namespace CCMI
 
         }
 
-        virtual ~AlltoallvExec () 
+        virtual ~AlltoallvExec ()
         {
         }
 
@@ -251,7 +251,7 @@ namespace CCMI
 
         void setVectors(T_Type *xfer)
         {
-           setAlltoallVec<T_Type> (xfer, _sbuf, _sdisps, _scounts, _rbuf, _rdisps, _rcounts); 
+           setAlltoallVec<T_Type> (xfer, _sbuf, _sdisps, _scounts, _rbuf, _rdisps, _rcounts);
         }
 
         void  updateVectors(T_Type *xfer)
@@ -259,7 +259,7 @@ namespace CCMI
            setAlltoallVec<T_Type> (xfer, _sbuf, _sdisps, _scounts, _rbuf, _rdisps, _rcounts);
         }
 
-        /// \todo: this should be moved to the schedule 
+        /// \todo: this should be moved to the schedule
         unsigned getPartnerIndex(unsigned uphase)
         {
 
@@ -416,10 +416,10 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
 
   // setup destination topology
   _parindex         = getPartnerIndex(_curphase);
-  if (_parindex == (unsigned)-1) { // skip this phase 
+  if (_parindex == (unsigned)-1) { // skip this phase
     _lphase   ++;
     CCMI_assert(_rphase[_curphase % MAX_PARALLEL] == 0);
-    _curphase ++;    
+    _curphase ++;
     if (_curphase == _startphase + _nphases) {
       if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
       return;
@@ -455,7 +455,7 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
     _mrsend.bytes              = getSendLength(_parindex);
     _native->multicast(&_mrsend);
   }
-  
+
   return;
 }
 

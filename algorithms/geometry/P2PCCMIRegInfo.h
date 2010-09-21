@@ -331,7 +331,7 @@ namespace CCMI
       };//Binomial
     };//Allreduce
 
-    namespace P2PScatter 
+    namespace P2PScatter
     {
 
       unsigned getKey(unsigned                                   root,
@@ -342,13 +342,13 @@ namespace CCMI
         if (connid != (unsigned)-1)
         {
           *connmgr = NULL; //use this key as connection id
-          return connid;  
-        }       
+          return connid;
+        }
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         return cm->updateConnectionId( geometry->comm() );
       }
 
-      namespace Binomial 
+      namespace Binomial
       {
 
         void create_schedule(void                        * buf,
@@ -369,7 +369,7 @@ namespace CCMI
 
         typedef CCMI::Adaptor::Scatter::AsyncScatterT
         < CCMI::Schedule::GenericTreeSchedule<>,
-          CCMI::ConnectionManager::CommSeqConnMgr, 
+          CCMI::ConnectionManager::CommSeqConnMgr,
           create_schedule, pami_scatter_t > Composite;
 
         typedef CCMI::Adaptor::Scatter::AsyncScatterFactoryT
@@ -377,31 +377,31 @@ namespace CCMI
           binomial_scatter_metadata,
           CCMI::ConnectionManager::CommSeqConnMgr,
           getKey > Factory;
-    
+
       } // Binomial
 
-      namespace Flat 
+      namespace Flat
       {
 
         void create_schedule(void                        * buf,
                              unsigned                      size,
-                             unsigned                      root,   
-                             Interfaces::NativeInterface * native, 
-                             PAMI_GEOMETRY_CLASS          * g)    
-        {       
+                             unsigned                      root,
+                             Interfaces::NativeInterface * native,
+                             PAMI_GEOMETRY_CLASS          * g)
+        {
           TRACE_INIT((stderr, "<%p>AsyncFlatScatterComposite::create_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
-        }       
+        }
 
         void flat_scatter_metadata(pami_metadata_t *m)
-        {       
+        {
           // \todo:  fill in other metadata
           strcpy(&m->name[0], "P2P_CCMI Flat Scatter");
-        }       
+        }
 
         typedef CCMI::Adaptor::Scatter::AsyncScatterT
         < CCMI::Schedule::GenericTreeSchedule<1, 1, 1>,
-          CCMI::ConnectionManager::CommSeqConnMgr, 
+          CCMI::ConnectionManager::CommSeqConnMgr,
           create_schedule, pami_scatter_t > Composite;
 
         typedef CCMI::Adaptor::Scatter::AsyncScatterFactoryT
@@ -426,7 +426,7 @@ namespace CCMI
         {
           *connmgr = NULL; //use this key as connection id
           return connid;
-        } 
+        }
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         return cm->updateConnectionId( geometry->comm() );
       }
@@ -480,7 +480,7 @@ namespace CCMI
 
     } // P2PScatterv
 
-    namespace P2PGather 
+    namespace P2PGather
     {
 
       unsigned getKey(unsigned                                   root,
@@ -491,13 +491,13 @@ namespace CCMI
         if (connid != (unsigned)-1)
         {
           *connmgr = NULL; //use this key as connection id
-          return connid;  
-        }       
+          return connid;
+        }
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         return cm->updateConnectionId( geometry->comm() );
       }
 
-      namespace Binomial 
+      namespace Binomial
       {
 
         void create_schedule(void                        * buf,
@@ -518,7 +518,7 @@ namespace CCMI
 
         typedef CCMI::Adaptor::Gather::AsyncGatherT
         < CCMI::Schedule::GenericTreeSchedule<>,
-          CCMI::ConnectionManager::CommSeqConnMgr, 
+          CCMI::ConnectionManager::CommSeqConnMgr,
           create_schedule, pami_gather_t > Composite;
 
         typedef CCMI::Adaptor::Gather::AsyncGatherFactoryT
@@ -527,21 +527,21 @@ namespace CCMI
           CCMI::ConnectionManager::CommSeqConnMgr,
           getKey >
         Factory;
-    
+
       }// Binomial
 
-      namespace Flat 
+      namespace Flat
       {
 
         void create_gather_schedule(void                        * buf,
                                     unsigned                      size,
-                                    unsigned                      root,   
-                                    Interfaces::NativeInterface * native, 
-                                    PAMI_GEOMETRY_CLASS          * g)    
-        {       
+                                    unsigned                      root,
+                                    Interfaces::NativeInterface * native,
+                                    PAMI_GEOMETRY_CLASS          * g)
+        {
           TRACE_INIT((stderr, "<%p>AsyncFlatGatherComposite::create_gather_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
-        }       
+        }
 
         void create_bcast_schedule(void                        * buf,
                                    unsigned                      size,
@@ -554,17 +554,17 @@ namespace CCMI
         }
 
         void flat_gather_metadata(pami_metadata_t *m)
-        {       
+        {
           // \todo:  fill in other metadata
           strcpy(&m->name[0], "P2P_CCMI Flat Gather");
-        }       
+        }
 
         typedef CCMI::Adaptor::Gather::AsyncLongGatherT
         < pami_gather_t,
           CCMI::Schedule::GenericTreeSchedule<1, 1, 2>,
           CCMI::Schedule::GenericTreeSchedule<1, 1, 1>,
-          CCMI::ConnectionManager::CommSeqConnMgr, 
-          create_bcast_schedule, 
+          CCMI::ConnectionManager::CommSeqConnMgr,
+          create_bcast_schedule,
           create_gather_schedule > Composite;
 
         typedef CCMI::Adaptor::Gather::AsyncLongGatherFactoryT
@@ -588,8 +588,8 @@ namespace CCMI
         if (connid != (unsigned)-1)
         {
           *connmgr = NULL; //use this key as connection id
-          return connid;   
-        }        
+          return connid;
+        }
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         return cm->updateConnectionId( geometry->comm() );
       }
@@ -600,10 +600,10 @@ namespace CCMI
                                      unsigned                      root,
                                      Interfaces::NativeInterface * native,
                                      PAMI_GEOMETRY_CLASS          * g)
-        {      
+        {
           TRACE_INIT((stderr, "<%p>AsyncGathervComposite::create_gatherv_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
-        }      
+        }
 
         void create_bcast_schedule(void                        * buf,
                                    unsigned                      size,
@@ -616,10 +616,10 @@ namespace CCMI
         }
 
         void gatherv_metadata(pami_metadata_t *m)
-        {      
+        {
           // \todo:  fill in other metadata
           strcpy(&m->name[0], "P2P_CCMI Gatherv");
-        }      
+        }
 
         typedef CCMI::Adaptor::Gather::AsyncLongGatherT
         < pami_gatherv_t,
@@ -659,10 +659,10 @@ namespace CCMI
 
      } // P2PGatherv
 
-    namespace P2PAllgather 
+    namespace P2PAllgather
     {
 
-      namespace Binomial 
+      namespace Binomial
       {
 
         unsigned getKey(unsigned                                   root,
@@ -673,8 +673,8 @@ namespace CCMI
           if (connid != (unsigned)-1)
           {
             *connmgr = NULL; //use this key as connection id
-            return connid;  
-          }       
+            return connid;
+          }
           ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
           return cm->updateConnectionId( geometry->comm() );
         }
@@ -697,7 +697,7 @@ namespace CCMI
 
         typedef CCMI::Adaptor::Allgather::AsyncAllgatherT
         < CCMI::Schedule::GenericTreeSchedule<>,
-          CCMI::ConnectionManager::CommSeqConnMgr, 
+          CCMI::ConnectionManager::CommSeqConnMgr,
           create_schedule > Composite;
 
         typedef CCMI::Adaptor::Allgather::AsyncAllgatherFactoryT
@@ -706,11 +706,11 @@ namespace CCMI
           CCMI::ConnectionManager::CommSeqConnMgr,
           getKey >
         Factory;
-    
+
       }// Binomial
     }// P2PAllgather
 
-    namespace P2PAllgatherv 
+    namespace P2PAllgatherv
     {
 
       namespace Ring
@@ -724,8 +724,8 @@ namespace CCMI
           if (connid != (unsigned)-1)
           {
             *connmgr = NULL; //use this key as connection id
-            return connid;  
-          }       
+            return connid;
+          }
           ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
           return cm->updateConnectionId( geometry->comm() );
         }
@@ -743,11 +743,11 @@ namespace CCMI
         }
 
         typedef CCMI::Adaptor::Allgatherv::AsyncAllgathervT
-        < CCMI::ConnectionManager::CommSeqConnMgr, 
+        < CCMI::ConnectionManager::CommSeqConnMgr,
           pami_allgather_t > AllgatherComposite;
 
         typedef CCMI::Adaptor::Allgatherv::AsyncAllgathervFactoryT
-        < pami_allgather_t, 
+        < pami_allgather_t,
           AllgatherComposite,
           ring_allgather_metadata,
           CCMI::ConnectionManager::CommSeqConnMgr,
@@ -755,21 +755,21 @@ namespace CCMI
         AllgatherFactory;
 
         typedef CCMI::Adaptor::Allgatherv::AsyncAllgathervT
-        < CCMI::ConnectionManager::CommSeqConnMgr, 
+        < CCMI::ConnectionManager::CommSeqConnMgr,
           pami_allgatherv_int_t > AllgathervIntComposite;
 
         typedef CCMI::Adaptor::Allgatherv::AsyncAllgathervFactoryT
-        < pami_allgatherv_int_t, 
+        < pami_allgatherv_int_t,
           AllgathervIntComposite,
           ring_allgatherv_int_metadata,
           CCMI::ConnectionManager::CommSeqConnMgr,
           getKey >
         AllgathervIntFactory;
-    
+
       }// Ring
     }// P2PAllgatherv
 
-    namespace P2PAlltoallv 
+    namespace P2PAlltoallv
     {
 
       namespace Pairwise
@@ -783,8 +783,8 @@ namespace CCMI
           if (connid != (unsigned)-1)
           {
             *connmgr = NULL; //use this key as connection id
-            return connid;  
-          }       
+            return connid;
+          }
           ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
           return cm->updateConnectionId( geometry->comm() );
         }
@@ -802,11 +802,11 @@ namespace CCMI
         }
 
         typedef CCMI::Adaptor::Alltoallv::AsyncAlltoallvT
-        < CCMI::ConnectionManager::CommSeqConnMgr, 
+        < CCMI::ConnectionManager::CommSeqConnMgr,
           pami_alltoall_t > AlltoallComposite;
 
         typedef CCMI::Adaptor::Alltoallv::AsyncAlltoallvFactoryT
-        < pami_alltoall_t, 
+        < pami_alltoall_t,
           AlltoallComposite,
           pairwise_alltoall_metadata,
           CCMI::ConnectionManager::CommSeqConnMgr,
@@ -814,17 +814,17 @@ namespace CCMI
         AlltoallFactory;
 
         typedef CCMI::Adaptor::Alltoallv::AsyncAlltoallvT
-        < CCMI::ConnectionManager::CommSeqConnMgr, 
+        < CCMI::ConnectionManager::CommSeqConnMgr,
           pami_alltoallv_int_t > AlltoallvIntComposite;
 
         typedef CCMI::Adaptor::Alltoallv::AsyncAlltoallvFactoryT
-        < pami_alltoallv_int_t, 
+        < pami_alltoallv_int_t,
           AlltoallvIntComposite,
           pairwise_alltoallv_int_metadata,
           CCMI::ConnectionManager::CommSeqConnMgr,
           getKey >
         AlltoallvIntFactory;
-    
+
       }// Pairwise
     }// P2PAlltoallv
 

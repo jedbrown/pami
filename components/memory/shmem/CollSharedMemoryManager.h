@@ -505,7 +505,7 @@ namespace PAMI
 
         // fill in a vector of coll shmem control structure addresses for sub-geometries
         // perform allreduce on the vector during geometry analyze()
-        void getSGCtrlStrVec(pami_geometry_t geo, uint64_t *vec) 
+        void getSGCtrlStrVec(pami_geometry_t geo, uint64_t *vec)
         {
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)geo;
@@ -519,7 +519,7 @@ namespace PAMI
           uint local_index              =  local_topo->rank2Index(__global.mapping.task());
 
           for (uint i = 0; i< master_size; ++i) vec[i] = 0xFFFFFFFFFFFFFFFFULL;
-          if (local_index == 0) 
+          if (local_index == 0)
             vec[master_index] = (uint64_t) getCtrlStr(local_size);
         }
 
