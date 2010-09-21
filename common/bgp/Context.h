@@ -225,7 +225,7 @@ namespace PAMI
 	  _geometry_map(geometry_map),
           _devices(devices)
       {
-	char mmkey[PAMI::Memory::MemoryManager::MMKEYSIZE];
+	char mmkey[PAMI::Memory::MMKEYSIZE];
 	char *mms;
 	mms = mmkey + sprintf(mmkey, "/pami-client%d-context%d", clientid, id);
 

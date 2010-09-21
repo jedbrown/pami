@@ -57,11 +57,13 @@ namespace PAMI
           size_t   pagesize  = 4096;
 
 	  heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
-	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(heap_mm);
+	  // get jobid from process manager...
+	  size_t jobid = 0;
+	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(jobid, heap_mm);
 	PAMI::Memory::MemoryManager::heap_mm = heap_mm;
 	PAMI::Memory::MemoryManager::shared_mm = shared_mm;
 
-          char shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
+          char shmemfile[PAMI::Memory::MMKEYSIZE];
           snprintf (shmemfile, sizeof(shmemfile) - 1, "/unique-pami-global-shmem-file");
 
           // Round up to the page size

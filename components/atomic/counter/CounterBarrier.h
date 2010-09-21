@@ -47,7 +47,7 @@ namespace PAMI
 	  PAMI_assert_debugf(!_control, "Re-init or object is in shmem");
           unsigned i;
 	  unsigned n = strlen(key);
-	  PAMI_assert_debugf(n + 1 < PAMI::Memory::MemoryManager::MMKEYSIZE,
+	  PAMI_assert_debugf(n + 1 < PAMI::Memory::MMKEYSIZE,
 		"overflow mm key");
 	  key[n+1] = '\0';
           for (i=0; i<5; i++) {

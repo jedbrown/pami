@@ -40,7 +40,9 @@ namespace PAMI
           // LAPI::Time gets its own clockMHz
           time.init(0);
 	  heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
-	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(heap_mm);
+	  // get jobid from POE?
+	  size_t jobid = 0;
+	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(jobid, heap_mm);
 	PAMI::Memory::MemoryManager::heap_mm = heap_mm;
 	PAMI::Memory::MemoryManager::shared_mm = shared_mm;
 

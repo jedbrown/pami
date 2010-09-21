@@ -35,12 +35,13 @@ namespace PAMI
     static const unsigned int PAMI_MM_L2ATOMIC  = 4; // BGQ-specific
     static const unsigned int PAMI_MM_WACREGION = 8; // BGQ-specific
 
+    static const unsigned int MMKEYSIZE = 128;
+    typedef void MM_INIT_FN(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie);
+
     // internal class, templatized to allow varied use
     class MemoryManager
     {
       public:
-	static const unsigned int MMKEYSIZE = 128;
-	typedef void MM_INIT_FN(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie);
 
 	// is this neded? do we always ensure memory is zero?
 	static void memzero(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie)

@@ -30,27 +30,6 @@
 #define TRACE_ERR(x)  //fprintf x
 #endif
 
-#define _POSIX_SHM_OPEN // This is NOT a valid selector for Linux!
-
-#ifdef _POSIX_SHM_OPEN
-
-#define PAMI_MM_SHM_OPEN_EXCL(m) shm_open(m->key(), O_CREAT | O_EXCL | O_RDWR, 0600)
-#define PAMI_MM_SHM_OPEN(m)	shm_open(m->key(), O_RDWR, 0)
-#define PAMI_MM_SHM_MAP(m) ({ (ftruncate(m->fd(), m->size()) == -1) ? NULL : mmap(NULL, m->size(), PROT_READ | PROT_WRITE, MAP_SHARED, m->fd(), 0); })
-#define PAMI_MM_SHM_UNMAP(m)	{close(m->fd()); munmap(m->mem(), m->size());}
-#define PAMI_MM_SHM_DELETE(m)	{shm_unlink(m->key());}
-
-#else // ! _POSIX_SHM_OPEN
-
-#warning Need to write/validate SysV Shmem equivalent
-#define PAMI_MM_SHM_OPEN_EXCL(m) shmget(m->vkey(), m->size(), IPC_CREAT | IPC_EXCL | 0600)
-#define PAMI_MM_SHM_OPEN(m)	shmget(m->vkey(), 0, 0)
-#define PAMI_MM_SHM_MAP(m)	shmat(m->fd(), 0, 0)
-#define PAMI_MM_SHM_UNMAP(m)	{shmdt(m->mem());}
-#define PAMI_MM_SHM_DELETE(m)	{shmctl(m->fd(), IPC_RMID, NULL);}
-
-#endif // ! _POSIX_SHM_OPEN
-
 namespace PAMI
 {
   namespace Memory
@@ -71,9 +50,10 @@ namespace PAMI
 	/// Support for free() is not provided yet, but allocations must still be
 	/// tracked for the afore mentioned reason.
 	///
-        inline SharedMemoryManager (MemoryManager *mm) :
+        inline SharedMemoryManager(size_t jobid, MemoryManager *mm) :
           MemoryManager (),
-	  _meta()
+	  _meta(),
+	  _jobid(jobid)
         {
 		// This could be better decided based on number of processes
 		// per node, but can't get that from __global because of
@@ -110,6 +90,16 @@ namespace PAMI
 	{
 
 		PAMI_assert_debugf(_attrs == PAMI_MM_NODESCOPE, "SharedMemoryManager not shared");
+		// May need to enforce uniquness at a higher level than just this
+		// PAMI job. May need to acquire a unique prefix from, say, Mapping
+		// that ensures the underlying OS shmem segment will not conflict
+		// with any other jobs that might be running.
+		//
+		if (*key == '/') ++key; // or... allow "relative" vs. "absolute" keys?
+		char nkey[MMKEYSIZE];
+		snprintf(nkey, sizeof(nkey), "/%zd-%s", _jobid, key);
+		// ... use 'nkey' here-after...
+		//
 		if (alignment < _alignment) alignment = _alignment;
 		void *ptr = NULL;
 		bool first = false;
@@ -119,34 +109,11 @@ namespace PAMI
 			_meta.release();
 			return PAMI_ERROR;
 		}
-		alloc->key(key);
+		alloc->key(nkey);
 		alloc->userSize(bytes, alignment);
 		// note, inital (worst-case) padding now set, when
 		// actual pointer assigned below, padding is updated.
-#ifdef _POSIX_SHM_OPEN
-#else // ! _POSIX_SHM_OPEN
-		key_t kkey;
-		if (!key) {
-			kkey = IPC_PRIVATE;
-		} else {
-			// need to turn string into unique integer..
-			// yuk
-			int n = strlen(key);
-			int x = n / sizeof(key_t);
-			int y = n % sizeof(key_t);
-			kkey = 0;
-			key_t  *k = (key_t *)key;
-			while (x--) {
-				kkey ^= *k++;
-			}
-			char *ck = (char *)k;
-			while (y--) {
-				kkey ^= *ck++;
-			}
-			// yukky hash code
-		}
-		alloc->vkey(kkey);
-#endif // ! _POSIX_SHM_OPEN
+
 		// Note, Global does not construct this if the target conditions
 		// would prevent it from succeeding - for example SMP-mode on BG.
 		// So that simplifies the code, as any errors are just fatal.
@@ -166,27 +133,32 @@ namespace PAMI
 		// synchronize init, and in free will need to ensure memory gets zeroed.
 		int lrc;
 
-		lrc = PAMI_MM_SHM_OPEN_EXCL(alloc);
+		lrc = shm_open(alloc->key(), O_CREAT | O_EXCL | O_RDWR, 0600);
 		first = (lrc != -1); // must be the first...
 
-		if (!first) lrc = PAMI_MM_SHM_OPEN(alloc);
+		if (!first) lrc = shm_open(alloc->key(), O_RDWR, 0);
 		if (lrc == -1)
 		{
 			alloc->free();
 			_meta.release();
 			return PAMI_ERROR;
 		}
-		alloc->fd(lrc); // PAMI_MM_SHM_MAP (et al.) requires this first.
-		ptr = PAMI_MM_SHM_MAP(alloc);
+		alloc->fd(lrc); // mmap (et al.) requires this first.
+		lrc = ftruncate(alloc->fd(), alloc->size()) == -1);
+		if (lrc == 0) {
+			ptr = mmap(NULL, alloc->size(), PROT_READ | PROT_WRITE, MAP_SHARED,
+									alloc->fd(), 0);
+		}
 		if (ptr == NULL || ptr == MAP_FAILED)
 		{
-			PAMI_MM_SHM_UNMAP(alloc);
-			PAMI_MM_SHM_DELETE(alloc);
+			// segment is not mapped...
+			close(alloc->fd());
+			if (first) shm_unlink(alloc->key());
 			alloc->free();
 			_meta.release();
 			return PAMI_ERROR;
 		}
-		// shared segment acquired, now sync and init.
+		// shared segment acquired and mapped, now sync and init.
 
 		alloc->mem(ptr, alignment); // required for addRef(), userMem(), etc...
 		alloc->addRef();
@@ -233,11 +205,12 @@ namespace PAMI
 
 	// lock held by caller.
 	inline void __free(MemoryManagerOSAlloc *m) {
-		PAMI_MM_SHM_UNMAP(m);
+		close(m->fd());
+		munmap(m->mem(), m->size());
 		if (m->rmRef() == 1) {
 			// zero memory so that next use is zeroed?
 			// memset(m->rawAddress(), 0, m->size());
-			PAMI_MM_SHM_DELETE(m);
+			shm_unlink(m->key());
 			m->free();
 		}
 	}
@@ -255,6 +228,7 @@ namespace PAMI
 	}
 
 	MemoryManagerMeta<MemoryManagerOSAlloc> _meta;
+	size_t _jobid;
 
     }; // class SharedMemoryManager
   }; // namespace Memory

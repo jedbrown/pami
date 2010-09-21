@@ -286,7 +286,7 @@ namespace PAMI
               volatile size_t * ncontexts = NULL;
               size_t size = sizeof(size_t) * (2 * npeers + 1);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() size = %zu\n", size));
-	      static char key[PAMI::Memory::MemoryManager::MMKEYSIZE];
+	      static char key[PAMI::Memory::MMKEYSIZE];
 	      sprintf(key, "/client%zd-shm-ncontexts", clientid);
               mm.memalign ((void **)&ncontexts, 16, size, key, _mem_sync, NULL);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() ncontexts = %p\n", ncontexts));

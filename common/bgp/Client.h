@@ -444,7 +444,7 @@ namespace PAMI
       inline void initializeMemoryManager ()
       {
         TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-        char   shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
+        char   shmemfile[PAMI::Memory::MMKEYSIZE];
         size_t bytes     = 1024 * 1024;
         //size_t pagesize  = 4096;
 

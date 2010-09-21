@@ -303,7 +303,7 @@ namespace PAMI
         _empty_advance(0),
         _devices(devices)
         {
-	  char mmkey[PAMI::Memory::MemoryManager::MMKEYSIZE];
+	  char mmkey[PAMI::Memory::MMKEYSIZE];
 	  char *mms;
 	  mms = mmkey + sprintf(mmkey, "/pami-client%d-context%d", clientid, id);
 

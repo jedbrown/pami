@@ -31,7 +31,7 @@ static inline pami_result_t initializeMemoryManager(const char *name, size_t byt
 					size_t numparts = 0, bool ismaster = false) {
         static size_t _bytes = 0;
         static void *_ptr = NULL;
-        char shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
+        char shmemfile[PAMI::Memory::MMKEYSIZE];
 
         if (!_ptr) {
 		

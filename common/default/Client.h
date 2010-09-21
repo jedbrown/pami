@@ -324,7 +324,7 @@ namespace PAMI
           size_t pagesize  = 4096;
 
           char * jobstr = getenv ("PAMI_JOB_ID");
-	  char shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
+	  char shmemfile[PAMI::Memory::MMKEYSIZE];
 
           if (jobstr)
             snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s-%s", _name, jobstr);

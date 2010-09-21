@@ -786,7 +786,7 @@ namespace PAMI
   private:
     inline void initializeMemoryManager ()
       {
-        char   shmemfile[PAMI::Memory::MemoryManager::MMKEYSIZE];
+        char   shmemfile[PAMI::Memory::MMKEYSIZE];
         size_t bytes     = 8192*1024;
         size_t pagesize  = 4096;
         int    jobkey    = 0;
