@@ -43,6 +43,10 @@
 #define CEIL(x,y) (((x)+(y)-1)/(y))
 #endif
 
+#define CEILING_P(x) ((x-(int)(x)) > 0 ? (int)(x+1) : (int)(x))
+#define CEILING_N(x) ((x-(int)(x)) < 0 ? (int)(x-1) : (int)(x))
+#define CEILING(x) ( ((x) > 0) ? CEILING_P(x) : CEILING_N(x) )
+
 /*
  * The following are only respected by GCC and the latest XL
  * compilers.  The "expected" value is assumed to be either a 1 or 0,

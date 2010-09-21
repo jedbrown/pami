@@ -103,6 +103,19 @@ namespace PAMI
             _binomial_allreduce_factory(),
             _ascs_binomial_allreduce_factory(),
             _ascs_binomial_reduce_factory(),
+            _ascs_binomial_scatter_factory(),
+            _ascs_flat_scatter_factory(),
+            _ascs_scatterv_factory(),
+            _ascs_scatterv_int_factory(),
+            _ascs_binomial_gather_factory(),
+            _ascs_flat_gather_factory(),
+            _ascs_gatherv_factory(),
+            _ascs_gatherv_int_factory(),
+            _ascs_binomial_allgather_factory(),
+            _ascs_ring_allgather_factory(),
+            _ascs_ring_allgatherv_int_factory(),
+            _ascs_pairwise_alltoall_factory(),
+            _ascs_pairwise_alltoallv_int_factory(),
             _composite_ni()
           {
             TRACE_INIT((stderr, "<%p>CCMIRegistration() use_shmem %s, use_p2p %s, local_size %zu, global_size %zu\n", this, use_shmem? "true":"false",use_p2p?"true":"false",local_size,global_size ));
@@ -213,6 +226,45 @@ namespace PAMI
               geometry->addCollective(PAMI_XFER_REDUCE,
                                       _ascs_binomial_reduce_factory,
                                       _context_id);
+              geometry->addCollective(PAMI_XFER_SCATTER,
+                                      _ascs_binomial_scatter_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_SCATTER,
+                                      _ascs_flat_scatter_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_SCATTERV,
+                                      _ascs_scatterv_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_SCATTERV_INT,
+                                     _ascs_scatterv_int_factory,
+                                     _context_id);
+              geometry->addCollective(PAMI_XFER_GATHER,
+                                      _ascs_binomial_gather_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_GATHER,
+                                      _ascs_flat_gather_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_GATHERV,
+                                      _ascs_gatherv_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_GATHERV_INT,
+                                      _ascs_gatherv_int_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_ALLGATHER,
+                                      _ascs_binomial_allgather_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_ALLGATHER,
+                                      _ascs_ring_allgather_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,
+                                      _ascs_ring_allgatherv_int_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_ALLTOALL,
+                                      _ascs_pairwise_alltoall_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
+                                      _ascs_pairwise_alltoallv_int_factory,
+                                      _context_id);
               }
             return PAMI_SUCCESS;
           }
@@ -319,6 +371,86 @@ namespace PAMI
             new ((void*)_ascs_binomial_reduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num binomial scatter factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PScatter::Binomial::Factory>(ni_am, device, _ascs_binomial_scatter_factory);
+            new ((void*)_ascs_binomial_scatter_factory) CCMI::Adaptor::P2PScatter::Binomial::Factory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num flat scatter factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PScatter::Flat::Factory>(ni_am, device, _ascs_flat_scatter_factory);
+            new ((void*)_ascs_flat_scatter_factory) CCMI::Adaptor::P2PScatter::Flat::Factory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num scatterv factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PScatterv::Factory>(ni_am, device, _ascs_scatterv_factory);
+            new ((void*)_ascs_scatterv_factory) CCMI::Adaptor::P2PScatterv::Factory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num scatterv_int factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PScatterv::IntFactory>(ni_am, device, _ascs_scatterv_int_factory);
+            new ((void*)_ascs_scatterv_int_factory) CCMI::Adaptor::P2PScatterv::IntFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num binomial gather factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGather::Binomial::Factory>(ni_am, device, _ascs_binomial_gather_factory);
+            new ((void*)_ascs_binomial_gather_factory) CCMI::Adaptor::P2PGather::Binomial::Factory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num flat gather factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGather::Flat::Factory>(ni_am, device, _ascs_flat_gather_factory);
+            new ((void*)_ascs_flat_gather_factory) CCMI::Adaptor::P2PGather::Flat::Factory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num gatherv factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGatherv::Factory>(ni_am, device, _ascs_gatherv_factory);
+            new ((void*)_ascs_gatherv_factory) CCMI::Adaptor::P2PGatherv::Factory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num gatherv_int factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGatherv::IntFactory>(ni_am, device, _ascs_gatherv_int_factory);
+            new ((void*)_ascs_gatherv_int_factory) CCMI::Adaptor::P2PGatherv::IntFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num allgather factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllgather::Binomial::Factory>(ni_am, device, _ascs_binomial_allgather_factory);
+            new ((void*)_ascs_binomial_allgather_factory) CCMI::Adaptor::P2PAllgather::Binomial::Factory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num allgather factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory>(ni_am, device, _ascs_ring_allgather_factory);
+            new ((void*)_ascs_ring_allgather_factory) CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num allgatherv factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory>(ni_am, device, _ascs_ring_allgatherv_int_factory);
+            new ((void*)_ascs_ring_allgatherv_int_factory) CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num alltoall factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory>(ni_am, device, _ascs_pairwise_alltoall_factory);
+            new ((void*)_ascs_pairwise_alltoall_factory) CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num alltoallv factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory>(ni_am, device, _ascs_pairwise_alltoallv_int_factory);
+            new ((void*)_ascs_pairwise_alltoallv_int_factory) CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+
+
             //set the mapid functions
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
             _asrb_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
@@ -327,6 +459,19 @@ namespace PAMI
             _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_reduce_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_binomial_scatter_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_flat_scatter_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_scatterv_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_scatterv_int_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_binomial_gather_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_flat_gather_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_gatherv_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_gatherv_int_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_binomial_allgather_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_ring_allgather_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_ring_allgatherv_int_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_pairwise_alltoall_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_pairwise_alltoallv_int_factory->setMapIdToGeometry(mapidtogeometry);
           }
 
           template<class T_NI,
@@ -474,6 +619,149 @@ namespace PAMI
             new ((void*)_ascs_binomial_reduce_factory)
               CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory(&_csconnmgr, ni_am);
 
+            // Setup and Construct an asynchronous, comm_id/seq_num binomial scatter factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PScatter::Binomial::Factory>(ni_am,
+                                device1, device2, _ascs_binomial_scatter_factory);
+            new ((void*)_ascs_binomial_scatter_factory)
+              CCMI::Adaptor::P2PScatter::Binomial::Factory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num flat scatter factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PScatter::Flat::Factory>(ni_am,
+                                device1, device2, _ascs_flat_scatter_factory);
+            new ((void*)_ascs_flat_scatter_factory)
+              CCMI::Adaptor::P2PScatter::Flat::Factory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num scatterv factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PScatterv::Factory>(ni_am,
+                                device1, device2, _ascs_scatterv_factory);
+            new ((void*)_ascs_scatterv_factory)
+              CCMI::Adaptor::P2PScatterv::Factory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num scatterv_int factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PScatterv::IntFactory>(ni_am,
+                                device1, device2, _ascs_scatterv_int_factory);
+            new ((void*)_ascs_scatterv_int_factory)
+              CCMI::Adaptor::P2PScatterv::IntFactory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num binomial gather factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PGather::Binomial::Factory>(ni_am,
+                                device1, device2, _ascs_binomial_gather_factory);
+            new ((void*)_ascs_binomial_gather_factory)
+              CCMI::Adaptor::P2PGather::Binomial::Factory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num flat gather factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PGather::Flat::Factory>(ni_am,
+                                device1, device2, _ascs_flat_gather_factory);
+            new ((void*)_ascs_flat_gather_factory)
+              CCMI::Adaptor::P2PGather::Flat::Factory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num gatherv factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PGatherv::Factory>(ni_am,
+                                device1, device2, _ascs_gatherv_factory);
+            new ((void*)_ascs_gatherv_factory)
+              CCMI::Adaptor::P2PGatherv::Factory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num gatherv_int factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PGatherv::IntFactory>(ni_am,
+                                device1, device2, _ascs_gatherv_int_factory);
+            new ((void*)_ascs_gatherv_int_factory)
+              CCMI::Adaptor::P2PGatherv::IntFactory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num allgather factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PAllgather::Binomial::Factory>(ni_am,
+                                device1, device2, _ascs_binomial_allgather_factory);
+            new ((void*)_ascs_binomial_allgather_factory)
+              CCMI::Adaptor::P2PAllgather::Binomial::Factory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num allgather factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory>(ni_am,
+                                device1, device2, _ascs_ring_allgather_factory);
+            new ((void*)_ascs_ring_allgather_factory)
+              CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num allgatherv_int factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory>(ni_am,
+                                device1, device2, _ascs_ring_allgatherv_int_factory);
+            new ((void*)_ascs_ring_allgatherv_int_factory)
+              CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num alltoall factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory>(ni_am,
+                                device1, device2, _ascs_pairwise_alltoall_factory);
+            new ((void*)_ascs_pairwise_alltoall_factory)
+              CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory(&_csconnmgr, ni_am);
+
+            // Setup and Construct an asynchronous, comm_id/seq_num alltoallv_int factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory>(ni_am,
+                                device1, device2, _ascs_pairwise_alltoallv_int_factory);
+            new ((void*)_ascs_pairwise_alltoallv_int_factory)
+              CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory(&_csconnmgr, ni_am);
+
             //set the mapid functions
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
             _asrb_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
@@ -482,6 +770,20 @@ namespace PAMI
             _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_reduce_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_binomial_scatter_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_flat_scatter_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_scatterv_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_scatterv_int_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_binomial_gather_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_flat_gather_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_gatherv_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_gatherv_int_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_binomial_allgather_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_ring_allgather_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_ring_allgatherv_int_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_pairwise_alltoall_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_pairwise_alltoallv_int_factory->setMapIdToGeometry(mapidtogeometry);
+
           }
 
       private:
@@ -522,6 +824,22 @@ namespace PAMI
           // CCMI Async [All]Reduce
           CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory  *_ascs_binomial_allreduce_factory;
           CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory     *_ascs_binomial_reduce_factory;
+
+          // CCMI Async Gather/Scatter
+          CCMI::Adaptor::P2PScatter::Binomial::Factory                    *_ascs_binomial_scatter_factory;
+          CCMI::Adaptor::P2PScatter::Flat::Factory                        *_ascs_flat_scatter_factory;
+          CCMI::Adaptor::P2PScatterv::Factory                             *_ascs_scatterv_factory;
+          CCMI::Adaptor::P2PScatterv::IntFactory                          *_ascs_scatterv_int_factory;
+          CCMI::Adaptor::P2PGather::Binomial::Factory                     *_ascs_binomial_gather_factory;
+          CCMI::Adaptor::P2PGather::Flat::Factory                         *_ascs_flat_gather_factory;
+          CCMI::Adaptor::P2PGatherv::Factory                              *_ascs_gatherv_factory;
+          CCMI::Adaptor::P2PGatherv::IntFactory                           *_ascs_gatherv_int_factory;
+          CCMI::Adaptor::P2PAllgather::Binomial::Factory                  *_ascs_binomial_allgather_factory;
+          CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory            *_ascs_ring_allgather_factory;
+          CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory        *_ascs_ring_allgatherv_int_factory;
+          CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory          *_ascs_pairwise_alltoall_factory;
+          CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory      *_ascs_pairwise_alltoallv_int_factory;
+
 
           // New p2p Native interface members:
 
