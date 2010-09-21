@@ -910,7 +910,24 @@ namespace PAMI
       inline pami_result_t update_impl(pami_configuration_t  configuration[],
                                        size_t                num_configs)
         {
-          return PAMI_INVAL;
+          pami_result_t result = PAMI_SUCCESS;
+          size_t i;
+          for(i=0; i<num_configs; i++)
+            {
+              switch (configuration[i].name)
+                {
+                  default:
+                  {
+                    internal_error_t rc;
+                    lapi_state_t *lp      = getLapiState();
+                    LapiImpl::Context *cp = (LapiImpl::Context *)lp;
+                    rc = (cp->*(cp->pConfigUpdate))(configuration);
+                    if(rc != SUCCESS)
+                      result = PAMI_INVAL;
+                  }
+                }
+            }
+          return result;
         }
 
     private:

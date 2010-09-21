@@ -137,7 +137,7 @@ extern "C"
    * \retval PAMI_SUCCESS  The mutex owner has been retrieved.
    * \retval PAMI_INVAL    The \c context or the \c owner pointer is invalid.
    */
-  pami_result_t PAMI_Mutex_getowner (pami_context_t context, unsigned long *owner);
+  pami_result_t PAMI_Context_mutex_getowner (pami_context_t context, unsigned long *owner);
 
   /*
    * The following functions are modelled after pthread_cond_* functions.
@@ -151,7 +151,7 @@ extern "C"
    * \retval PAMI_SUCCESS  The condition has been created.
    * \retval PAMI_INVAL    The \c context or the \c cond pointer is invalid.
    */
-  pami_result_t PAMI_Cond_create (pami_context_t context, pami_cond_t *cond);
+  pami_result_t PAMI_Context_cond_create (pami_context_t context, pami_cond_t *cond);
 
   /**
    * \brief Wait on a condition
@@ -164,7 +164,7 @@ extern "C"
    * \retval PAMI_SUCCESS  The condition has been met.
    * \retval PAMI_INVAL    The \c context or the \c cond is invalid.
    */
-  pami_result_t PAMI_Cond_wait (pami_context_t context, pami_cond_t cond);
+  pami_result_t PAMI_Context_cond_wait (pami_context_t context, pami_cond_t cond);
 
   /**
    * \brief Wait on a condition with timeout
@@ -180,7 +180,7 @@ extern "C"
    * \retval PAMI_INVAL    The \c context, the \c cond or the \c time pointer
    *                       is invalid.
    */
-  pami_result_t PAMI_Cond_timedwait (pami_context_t context, pami_cond_t cond,
+  pami_result_t PAMI_Context_cond_timedwait (pami_context_t context, pami_cond_t cond,
           struct timespec *time);
 
   /**
@@ -192,7 +192,7 @@ extern "C"
    * \retval PAMI_SUCCESS  The signal has been delivered.
    * \retval PAMI_INVAL    The \c context or the \c cond is invalid.
    */
-  pami_result_t PAMI_Cond_signal (pami_context_t context, pami_cond_t cond);
+  pami_result_t PAMI_Context_cond_signal (pami_context_t context, pami_cond_t cond);
 
   /**
    * \brief Signal to wake up all waiters on a condition
@@ -203,7 +203,7 @@ extern "C"
    * \retval PAMI_SUCCESS  The signal has been delivered.
    * \retval PAMI_INVAL    The \c context or the \c cond is invalid.
    */
-  pami_result_t PAMI_Cond_broadcast (pami_context_t context, pami_cond_t cond);
+  pami_result_t PAMI_Context_cond_broadcast (pami_context_t context, pami_cond_t cond);
 
   /**
    * \brief Destroy a condition
@@ -214,7 +214,18 @@ extern "C"
    * \retval PAMI_SUCCESS  The condition has been destroyed.
    * \retval PAMI_INVAL    The \c context or the \c cond is invalid.
    */
-  pami_result_t PAMI_Cond_destroy (pami_context_t context, pami_cond_t cond);
+  pami_result_t PAMI_Context_cond_destroy (pami_context_t context, pami_cond_t cond);
+
+  /**
+   * \brief Function pointers fot the above member functions
+   */
+  typedef pami_result_t (*mutex_getowner_fn) (pami_context_t context, unsigned long *owner);
+  typedef pami_result_t (*cond_create_fn) (pami_context_t context, pami_cond_t *cond);
+  typedef pami_result_t (*cond_wait_fn) (pami_context_t context, pami_cond_t *cond);
+  typedef pami_result_t (*cond_timedwait_fn) (pami_context_t context, pami_cond_t *cond);
+  typedef pami_result_t (*cond_signal_fn) (pami_context_t context, pami_cond_t *cond);
+  typedef pami_result_t (*cond_broadcast_fn) (pami_context_t context, pami_cond_t *cond);
+  typedef pami_result_t (*cond_destroy_fn) (pami_context_t context, pami_cond_t *cond);
 
   /** \} */ /* end of "mutex_cond" group */
   /** \} */ /* end of "ext_percs" group */
