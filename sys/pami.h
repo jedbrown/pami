@@ -298,8 +298,6 @@ extern "C"
     /* The following hints use the PAMI_HINT2_* values */
     uint32_t buffer_registered : 1; /**< Send and receive buffers are ready for RDMA operations  */
     uint32_t consistency       : 1; /**< Force match ordering semantics                          */
-    uint32_t high_priority     : 1; /**< Message is delivered with high priority,
-                                         which may result in out-of-order delivery               */
     uint32_t interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
     uint32_t no_local_copy     : 1; /**< Disable PAMI making a local copy of data                */
     uint32_t no_long_header    : 1; /**< Disable long header support                             */
