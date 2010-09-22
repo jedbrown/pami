@@ -17,6 +17,7 @@
 #include "components/atomic/bgq/L2Counter.h"
 #include "components/atomic/bgq/L2Mutex.h"
 #include "components/atomic/bgq/L2Barrier.h"
+#include "components/atomic/counter/CounterBarrier.h"
 
 int main(int argc, char **argv) {
 	if (argc >= 0) {
@@ -34,6 +35,8 @@ int main(int argc, char **argv) {
 
         BARRIER_HELPER(PAMI::Barrier::BGQ::L2NodeCoreBarrier, barrier1, &mm, argv[1], argc, (argc == 0));
         BARRIER_HELPER(PAMI::Barrier::BGQ::L2NodeProcBarrier, barrier2, &mm, argv[1], argc, (argc == 0));
+        BARRIER_HELPER(PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2InPlaceCounter>, barrier3, &mm, argv[1], argc, (argc == 0));
+        BARRIER_HELPER(PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2IndirCounter>, barrier4, &mm, argv[1], argc, (argc == 0));
 
         return 1;
 }

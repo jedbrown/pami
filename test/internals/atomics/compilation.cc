@@ -33,7 +33,8 @@ int main(int argc, char **argv) {
 
         MUTEX_HELPER(PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter>, mutex1, &mm, argv[1]);
 
-        BARRIER_HELPER(PAMI::Barrier::CounterBarrier<PAMI::Counter::GccIndirCounter>, barrier1, &mm, argv[1], argc, (argc == 0));
+        BARRIER_HELPER(PAMI::Barrier::CounterBarrier<PAMI::Counter::GccInPlaceCounter>, barrier1, &mm, argv[1], argc, (argc == 0));
+        BARRIER_HELPER(PAMI::Barrier::CounterBarrier<PAMI::Counter::GccIndirCounter>, barrier2, &mm, argv[1], argc, (argc == 0));
 
         return 1;
 }
