@@ -157,6 +157,15 @@ public:
                 _barrier._nparties = __global.l2atomicFactory.numCore();
                 _status = PAMI::Atomic::Interface::Initialized;
         }
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		// This is an indirect object, cannot instantiate in shared memory.
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		// This is an L2 Atomic object, must have L2 Atomic-mapped memory
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0) &&
+			((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
 }; // class L2NodeCoreBarrier
 
 class L2NodeProcBarrier :
@@ -180,6 +189,15 @@ public:
                 _barrier._nparties = __global.l2atomicFactory.numProc();
                 _status = PAMI::Atomic::Interface::Initialized;
         }
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		// This is an indirect object, cannot instantiate in shared memory.
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		// This is an L2 Atomic object, must have L2 Atomic-mapped memory
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0) &&
+			((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
 }; // class L2NodeProcBarrier
 
 }; // BGQ namespace

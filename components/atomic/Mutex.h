@@ -66,6 +66,9 @@ namespace Interface
       ///
       inline bool isLocked();
 
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm);
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm);
+
     private:
 	friend class InPlaceMutex<T_Object>;
 	friend class IndirMutex<T_Object>;

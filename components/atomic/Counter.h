@@ -113,6 +113,9 @@ namespace PAMI
         /// \retval true Comparison was successful and swap value was written.
         ///
         inline bool compare_and_swap(size_t compare, size_t swap);
+
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm);
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm);
     }; // class Counter
 
     template <class T_Object>
@@ -164,6 +167,7 @@ namespace PAMI
         ~InPlaceCounter() {};
 
       public:
+	static const bool isIndirect = false;
         ///
         /// \brief Initialize counter object
         ///
@@ -200,6 +204,7 @@ namespace PAMI
         ~IndirCounter() {};
 
       public:
+	static const bool isIndirect = true;
         ///
         /// \brief Initialize counter object
         ///

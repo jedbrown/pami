@@ -36,6 +36,14 @@ namespace BGP {
         public:
                 LockBoxCounter() { _addr = NULL; }
                 ~LockBoxCounter() {}
+		static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+			return true;	// all participants get the same lockbox id,
+					// so memory type doesn't matter.
+		}
+		static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+			return true; // for now, until a lockbox mm is done
+			// return ((mm->attrs() & PAMI::Memory::PAMI_MM_LOCKBOX) != 0);
+		}
                 inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
                         __global.lockboxFactory.lbx_alloc(&_addr, 1,
 					key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);

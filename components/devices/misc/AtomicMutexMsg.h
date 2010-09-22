@@ -144,8 +144,21 @@ public:
 			AtomicMutexDev,sizeof(AtomicMutexMsg<T_Mutex>) >(device, status),
 	_gd(&device)
 	{
+		if (!checkDataMm(_gd->getMM())) {
+			status = PAMI_INVAL;
+			return;
+		}
 		_mutex.init(_gd->getMM(), NULL); // problem...
 		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
+	}
+
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		return T_Mutex::checkCtorMm(mm) &&
+			((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
+
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return T_Mutex::checkDataMm(mm);
 	}
 
 	inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
@@ -173,6 +186,14 @@ public:
 	{
 		// mutex was initialized by caller, probably shared between many models.
 		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
+	}
+
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
+
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return T_Mutex::checkDataMm(mm);
 	}
 
 	inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],

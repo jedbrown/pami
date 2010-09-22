@@ -131,9 +131,22 @@ public:
                 size_t peers = __global.topology_local.size();
                 size_t peer0 = __global.topology_local.index2Rank(0);
                 size_t me = __global.mapping.task();
+		// can't validate ctor, can't tell what memory 'this' points to...
+		if (!checkDataMm(_gd->getMM())) {
+			status = PAMI_INVAL;
+			return;
+		}
                 _barrier.init(_gd->getMM(), NULL, peers, (peer0 == me)); // problem...
 		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
         }
+
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		return T_Barrier::checkCtorMm(mm);
+	}
+
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return T_Barrier::checkDataMm(mm);
+	}
 
         inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
                                                 pami_multisync_t *msync,

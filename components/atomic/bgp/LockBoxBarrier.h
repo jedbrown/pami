@@ -145,6 +145,15 @@ public:
 			key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
                 _status = PAMI::Atomic::Interface::Initialized;
         }
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		// This is an indirect object, cannot instantiate in shared memory.
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		// until a lockbox mm exists
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) != 0);
+		// return ((mm->attrs() & PAMI::Memory::PAMI_MM_LOCKBOX) != 0);
+	}
 }; // class LockBoxNodeCoreBarrier
 
 class LockBoxNodeProcBarrier :
@@ -165,6 +174,15 @@ public:
 			key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
                 _status = PAMI::Atomic::Interface::Initialized;
         }
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		// This is an indirect object, cannot instantiate in shared memory.
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		// until a lockbox mm exists
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) != 0);
+		// return ((mm->attrs() & PAMI::Memory::PAMI_MM_LOCKBOX) != 0);
+	}
 }; // class LockBoxNodeProcBarrier
 
 }; // BGP namespace

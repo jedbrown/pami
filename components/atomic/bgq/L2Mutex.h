@@ -54,6 +54,15 @@ namespace BGQ {
                         return (L2_AtomicLoad(_counter) > 0) ? true : false;
                 }
                 void *returnLock_impl() { return _counter; }
+
+		static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+			// This is an indirect object, cannot instantiate in shared memory.
+			return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+		}
+		static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+			// This is an L2 Atomic object, must have L2 Atomic-mapped memory
+			return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
+		}
         protected:
                 uint64_t *_counter;
         }; // class L2Mutex

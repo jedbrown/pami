@@ -50,6 +50,13 @@ namespace BGP {
                         return (_addr.atom != 0);
                 }
                 inline void *returnLock_impl() { return (void *)&_addr.atom; }
+
+		static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+			return true;
+		}
+		static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+			return true;
+		}
         private:
                 _BGPLM_Atomic _addr;
         }; // class LwarxStwcxInPlaceMutex
@@ -74,6 +81,14 @@ namespace BGP {
                         return (_addr->atom != 0);
                 }
                 inline void *returnLock_impl() { return (void *)&_addr->atom; }
+
+		static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+			// pointers must NOT be in shared memory
+			return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+		}
+		static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+			return true;
+		}
         private:
                 _BGP_Atomic *_addr;
         }; // class LwarxStwcxIndirMutex

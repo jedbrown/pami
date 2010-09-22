@@ -48,6 +48,15 @@ namespace Mutex {
                         return (_counter.fetch() > 0) ? true : false;
                 }
                 void *returnLock_impl() { return _counter.returnLock(); }
+
+		static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+			// counter is indirect, so mutex is indirect...
+			return T_Counter::checkCtorMm(mm);
+		}
+
+		static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+			return T_Counter::checkDataMm(mm);
+		}
         protected:
                 T_Counter _counter;
         }; // class CounterMutex

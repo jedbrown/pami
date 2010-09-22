@@ -37,7 +37,9 @@ namespace PAMI
           _participants (0),
           _data(0),
           _master(false)
-        {}
+        {
+		PAMI_assertf(T_Counter::isIndirect, "in-place counter used with indirect barrier");
+	}
 
         ~CounterBarrier () {}
 
@@ -71,6 +73,14 @@ participants, master);
 	  _lock = &_counter[1];
 	  _stat = &_counter[3];
         }
+
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		// This is an indirect object, cannot instantiate in shared memory.
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return T_Counter::checkDataMm(mm);
+	}
 
         /// \see PAMI::Atomic::Interface::Barrier::enter()
         inline pami_result_t enter_impl ()

@@ -31,6 +31,15 @@ namespace PAMI
       public:
         GccInPlaceCounter() {}
         ~GccInPlaceCounter() {}
+
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
+
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
+
         inline void init_impl()
         {
           TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
@@ -66,6 +75,15 @@ namespace PAMI
       public:
         GccIndirCounter() {}
         ~GccIndirCounter() {}
+
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
+
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
+
         inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key)
         {
           TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));

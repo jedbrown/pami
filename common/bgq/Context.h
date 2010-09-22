@@ -439,6 +439,8 @@ namespace PAMI
                 _shmemMcombModel         = (ShmemMcombModel*)_shmemMcombModel_storage;
                 _shmemMsyncModel         = (ShmemMsyncModel*)_shmemMsyncModel_storage;
 
+		// if _shmemMsyncModel_storage is in heap...
+		// PAMI_assert(Barrier_Model::checkCtorMm(__global.heap_mm);
                 new (_shmemMsyncModel_storage)        ShmemMsyncModel(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid), _status);
 
 #ifdef ENABLE_NEW_SHMEM

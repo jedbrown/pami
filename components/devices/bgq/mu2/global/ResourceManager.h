@@ -486,8 +486,15 @@ namespace PAMI
 	  __global.topology_global.subTopologyNthGlobal(&_node_topo, 0);
 	  _node_topo.convertTopology(PAMI_COORD_TOPOLOGY);
 
+	  // don't know where 'this' was allocated, so can't call MUCR_mutex_t::checkCtorMm
+	  PAMI_assertf(MUCR_mutex_t::checkDataMm(&mm),
+		"Cannot init MUCR_mutex_t in given mm");
 	  _cr_mtx.init(&mm, "/pami-mu2-rm-cr");
-	  _cr_mtx_mdls = (MUCR_mutex_model_t **)malloc(_pamiRM.getNumClients() * sizeof(*_cr_mtx_mdls));
+	  PAMI_assertf(MUCR_mutex_model_t::checkCtorMm(__global.heap_mm),
+		"Cannot construct MUCR_mutex_model_t on heap");
+	  pami_result_t prc = __global.heap_mm->memalign((void **)&_cr_mtx_mdls,
+			sizeof(void *), _pamiRM.getNumClients() * sizeof(*_cr_mtx_mdls));
+	  PAMI_assertf(prc == PAMI_SUCCESS, "Failed to alloc mem for CR mutex models");
 
 	  // Note, we NEVER use BGQ_CLASS_INPUT_VC_USER. Only BGQ_CLASS_INPUT_VC_SUBCOMM.
 
@@ -3426,7 +3433,8 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 	    }
 	}
     }
-    _cr_mtx_mdls[rmClientId] = (MUCR_mutex_model_t *)malloc(numContexts * sizeof(*_cr_mtx_mdls[rmClientId]));
+    __global.heap_mm->memalign((void **)&_cr_mtx_mdls[rmClientId], sizeof(void *),
+				numContexts * sizeof(*_cr_mtx_mdls[rmClientId]));
     for (i = 0; i < numContexts; i++)
     {
 	  pami_result_t status = PAMI_ERROR;

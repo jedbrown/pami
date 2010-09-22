@@ -35,10 +35,19 @@ public:
 
         ~L2Counter() {}
 
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		// This is an indirect object, cannot instantiate in shared memory.
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
+
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		// This is an L2 Atomic object, must have L2 Atomic-mapped memory
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
+	}
+
         /// \see PAMI::Atomic::Interface::Counter::init
         void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
-		PAMI_assert_debugf((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0,
-			"mm is not L2-Atomic capable");
+		PAMI_assert_debugf(checkDataMm(mm), "mm is not L2-Atomic capable");
 		PAMI_assert_debugf(!_counter, "Re-init or object is in shmem");
                 pami_result_t rc = mm->memalign((void **)&_counter, sizeof(*_counter),
 							sizeof(*_counter), key);

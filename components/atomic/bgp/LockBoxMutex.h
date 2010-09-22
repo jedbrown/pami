@@ -64,6 +64,16 @@ namespace BGP {
                         return (LockBox_Query((LockBox_Counter_t)_addr) > 0) ? true : false;
                 }
                 void *returnLock_impl() { return _addr; }
+
+		static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+			return true;	// all participants get the same lockbox id,
+					// so doesn't matter what type of memory.
+		}
+
+		static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+			return true; // until a lockbox mm exists.
+			// return ((mm->attrs() & PAMI::Memory::PAMI_MM_LOCKBOX) != 0);
+		}
         protected:
                 void *_addr;
         }; // class LockBoxMutex
@@ -116,6 +126,16 @@ namespace BGP {
                         return (LockBox_Query((LockBox_Counter_t)_addr) > 0) ? true : false;
                 }
                 void *returnLock_impl() { return _addr; }
+
+		static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+			return true;	// all participants get the same lockbox id,
+					// so doesn't matter what type of memory.
+		}
+
+		static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+			return true; // until a lockbox mm exists.
+			// return ((mm->attrs() & PAMI::Memory::PAMI_MM_LOCKBOX) != 0);
+		}
         protected:
                 void *_addr;
         }; // class _FairLockBoxMutex

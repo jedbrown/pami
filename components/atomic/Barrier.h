@@ -94,6 +94,8 @@ namespace Interface
       inline void init(PAMI::Memory::MemoryManager *mm, const char *key,
 					size_t participants, bool master);
 
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm);
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm);
 
       ///
       /// \brief Enter a local blocking barrier operation
