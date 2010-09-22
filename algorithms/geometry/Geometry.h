@@ -609,6 +609,15 @@ namespace PAMI
                   case PAMI_XFER_SCATTERV_INT:
                     return &_scatterv_ints[context_id];
                     break;
+                  case PAMI_XFER_GATHER:
+                    return &_gathers[context_id];
+                    break;
+                  case PAMI_XFER_GATHERV:
+                    return &_gathervs[context_id];
+                    break;
+                  case PAMI_XFER_GATHERV_INT:
+                    return &_gatherv_ints[context_id];
+                    break;
                   case PAMI_XFER_BARRIER:
                     return &_barriers[context_id];
                     break;
@@ -637,7 +646,7 @@ namespace PAMI
                     return &_amreduces[context_id];
                     break;
                   default:
-                    PAMI_abort();
+                    PAMI_abortf("colltype %u\n",colltype);
                     return NULL;
                     break;
               }

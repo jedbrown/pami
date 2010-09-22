@@ -37,10 +37,10 @@ namespace PAMI
         protected:
 
           /// Total number of dispatch sets
-          static const size_t dispatch_set_count = 256;
+          static const size_t dispatch_set_count = 512;
 
           /// Number of dispatch functions in a dispatch set
-          static const size_t dispatch_set_size  = 16;
+          static const size_t dispatch_set_size  = 8;
 
           /// System notification dispatch identifier
           static const uint16_t dispatch_system_notify = dispatch_set_count * dispatch_set_size - 1;
