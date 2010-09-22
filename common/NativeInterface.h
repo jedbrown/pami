@@ -80,6 +80,16 @@ namespace PAMI
       TRACE_ERR((stderr, "<%p>NativeInterfaceCommon::getNextDispatch() %zu\n", (void*)NULL, _id));
       return _id++;
     }
+
+    /// \brief Enum to enumerate which underlying interface is being used by the NI
+    typedef enum
+    {
+      MULTICAST_ONLY,
+      MANYTOMANY_ONLY,
+      P2P_ONLY,
+      ALL,
+    } select_interface;
+
     /// \brief Construct a P2p Native Interface
     /// \details
     ///
@@ -91,7 +101,7 @@ namespace PAMI
     ///
     ///  Finally, the P2P protocol is set into the native interface.
     ///
-    template<class T_Allocator, class T_NativeInterface, class T_Protocol, class T_Device>
+    template<class T_Allocator, class T_NativeInterface, class T_Protocol, class T_Device, select_interface T_Select>
     inline pami_result_t constructNativeInterface(T_Allocator        &allocator,
                                                   T_Device           &device,
                                                   T_NativeInterface *&ni,
@@ -112,55 +122,70 @@ namespace PAMI
       COMPILE_TIME_ASSERT(sizeof(T_Protocol) <= T_Allocator::objsize);
 
 
-      // Construct the p2p protocol using the NI dispatch function and cookie
-      // This sets up the multicast protocol
+      // Construct the protocol(s) using the NI dispatch function and cookie
       ni = (T_NativeInterface*) allocator.allocateObject ();
       new ((void*)ni) T_NativeInterface(client, context, context_id, client_id);
 
-      pami_dispatch_p2p_fn       fn = T_NativeInterface::dispatch_mcast;
-      pami_endpoint_t            origin   = PAMI_ENDPOINT_INIT(client_id, __global.mapping.task(), context_id);
-      size_t                     dispatch = getNextDispatch();
-      T_Protocol                *protocol = (T_Protocol*) T_Protocol::generate(dispatch,
-                                                                               fn,
-                                                                               (void*) ni,
-                                                                               device,
-                                                                               origin,
-                                                                               context,
-                                                                               allocator,
-                                                                               result);
-      ni->setMcastProtocol(dispatch, protocol);
+      pami_dispatch_p2p_fn       fn;      
+      pami_endpoint_t            origin;  
+      size_t                     dispatch;
+      T_Protocol                *protocol;
 
-      // Construct the m2m protocol using the NI dispatch function and cookie
-      dispatch  = getNextDispatch();
-      fn        = T_NativeInterface::dispatch_m2m;
-      protocol  = (T_Protocol*) T_Protocol::generate(dispatch,
-                                                     fn,
-                                                     (void*) ni,
-                                                     device,
-                                                     origin,
-                                                     context,
-                                                     allocator,
-                                                     result);
-      ni->setM2mProtocol(dispatch, protocol);
+      if(T_Select == ALL || T_Select == MULTICAST_ONLY)
+      {
+        // Construct the mcast protocol using the NI dispatch function and cookie
+        fn = T_NativeInterface::dispatch_mcast;                                       
+        origin   = PAMI_ENDPOINT_INIT(client_id, __global.mapping.task(), context_id);
+        dispatch = getNextDispatch();                                                 
+
+        protocol = (T_Protocol*) T_Protocol::generate(dispatch,
+                                                                                 fn,
+                                                                                 (void*) ni,
+                                                                                 device,
+                                                                                 origin,
+                                                                                 context,
+                                                                                 allocator,
+                                                                                 result);
+        ni->setMcastProtocol(dispatch, protocol);
+      }
+
+      if(T_Select == ALL || T_Select == MANYTOMANY_ONLY)
+      {
+        // Construct the m2m protocol using the NI dispatch function and cookie
+        dispatch  = getNextDispatch();
+        fn        = T_NativeInterface::dispatch_m2m;
+        protocol  = (T_Protocol*) T_Protocol::generate(dispatch,
+                                                       fn,
+                                                       (void*) ni,
+                                                       device,
+                                                       origin,
+                                                       context,
+                                                       allocator,
+                                                       result);
+        ni->setM2mProtocol(dispatch, protocol);
+      }
 
 
-      // Construct the p2p protocol using the NI dispatch function and cookie
-      dispatch  = getNextDispatch();
-      fn        = T_NativeInterface::dispatch_send;
-      protocol  = (T_Protocol*) T_Protocol::generate(dispatch,
-                                                     fn,
-                                                     (void*) ni,
-                                                     device,
-                                                     origin,
-                                                     context,
-                                                     allocator,
-                                                     result);
-      ni->setSendProtocol(dispatch, protocol);
+      if(T_Select == ALL || T_Select == P2P_ONLY)
+      {
+        // Construct the p2p protocol using the NI dispatch function and cookie
+        dispatch  = getNextDispatch();
+        fn        = T_NativeInterface::dispatch_send;
+        protocol  = (T_Protocol*) T_Protocol::generate(dispatch,
+                                                       fn,
+                                                       (void*) ni,
+                                                       device,
+                                                       origin,
+                                                       context,
+                                                       allocator,
+                                                       result);
+        ni->setSendProtocol(dispatch, protocol);
+      }
 
 
       // Workaround:  This gets rid of an unused warning with gcc
-      if (0)
-        getNextDispatch();
+//      if (0)
+//        getNextDispatch();
 
       // Return
       return result;
@@ -179,7 +204,7 @@ namespace PAMI
     ///
     ///  Finally, the composite protocol is set into the native interface.
     ///
-    template<class T_Allocator, class T_NativeInterface, class T_Protocol1, class T_Device1, class T_Protocol2, class T_Device2>
+    template<class T_Allocator, class T_NativeInterface, class T_Protocol1, class T_Device1, class T_Protocol2, class T_Device2, select_interface T_Select>
     inline pami_result_t constructNativeInterface(T_Allocator        &allocator,
                                                   T_Device1           &device1,
                                                   T_Device2           &device2,
@@ -210,34 +235,107 @@ namespace PAMI
 
       pami_endpoint_t origin = PAMI_ENDPOINT_INIT(client_id, __global.mapping.task(), context_id);
 
-      // Construct the first p2p protocol using the NI dispatch function and cookie
-      pami_dispatch_p2p_fn       fn = T_NativeInterface::dispatch_mcast;
-      size_t                     dispatch  = getNextDispatch();
-      T_Protocol1               *protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch,
-                                                                                  fn,
-                                                                                  (void*) ni,
-                                                                                  device1,
-                                                                                  origin,
-                                                                                  context,
-                                                                                  allocator,
-                                                                                  result);
-      T_Protocol2               *protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
-                                                                                  fn,
-                                                                                  (void*) ni,
-                                                                                  device2,
-                                                                                  origin,
-                                                                                  context,
-                                                                                  allocator,
-                                                                                  result);
-      // Construct the composite from the two protocols
-      Protocol::Send::SendPWQ<Protocol::Send::Send>* composite =
-        (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
-        Protocol::Send::Factory::generate(protocol1,
-                                          protocol2,
-                                          allocator,
-                                          result);
-      // Set the composite protocol into the NI
-      ni->setMcastProtocol(dispatch, composite);
+      // Construct the protocols using the NI dispatch function and cookie
+      pami_dispatch_p2p_fn       fn;        
+      size_t                     dispatch;  
+      T_Protocol1               *protocol1; 
+      T_Protocol2               *protocol2; 
+      Protocol::Send::SendPWQ<Protocol::Send::Send>* composite;
+                                            
+      if(T_Select == ALL || T_Select == MULTICAST_ONLY)
+      {
+        // Construct the mcast protocol using the NI dispatch function and cookie
+        fn = T_NativeInterface::dispatch_mcast;                       
+        dispatch  = getNextDispatch();                                
+        protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch,    
+                                              fn,                     
+                                              (void*) ni,             
+                                              device1,                
+                                              origin,                 
+                                              context,                
+                                              allocator,              
+                                              result);                
+        protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,    
+                                              fn,                     
+                                              (void*) ni,             
+                                              device2,                
+                                              origin,                                                             
+                                              context,                                                      
+                                              allocator,                                                    
+                                              result);                                                      
+                                              
+        // Construct the composite from the two protocols
+        composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
+          Protocol::Send::Factory::generate(protocol1,
+                                            protocol2,
+                                            allocator,
+                                            result);
+        // Set the composite protocol into the NI
+        ni->setMcastProtocol(dispatch, composite);
+      }
+
+      if(T_Select == ALL || T_Select == MANYTOMANY_ONLY)
+      {
+        // Construct the m2m protocol using the NI dispatch function and cookie
+        dispatch  = getNextDispatch();
+        fn        = T_NativeInterface::dispatch_m2m;
+        protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch,
+                                                                                    fn,
+                                                                                    (void*) ni,
+                                                                                    device1,
+                                                                                    origin,
+                                                                                    context,
+                                                                                    allocator,
+                                                                                    result);
+        protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
+                                                                                    fn,
+                                                                                    (void*) ni,
+                                                                                    device2,
+                                                                                    origin,
+                                                                                    context,
+                                                                                    allocator,
+                                                                                    result);
+        // Construct the composite from the two protocols
+        composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
+          Protocol::Send::Factory::generate(protocol1,
+                                            protocol2,
+                                            allocator,
+                                            result);
+        // Set the composite protocol into the NI
+        ni->setM2mProtocol(dispatch, composite);
+      }
+
+      if(T_Select == ALL || T_Select == P2P_ONLY)
+      {
+        // Construct the p2p protocol using the NI dispatch function and cookie
+        dispatch  = getNextDispatch();
+        fn        = T_NativeInterface::dispatch_send;
+        protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch,
+                                                                                    fn,
+                                                                                    (void*) ni,
+                                                                                    device1,
+                                                                                    origin,
+                                                                                    context,
+                                                                                    allocator,
+                                                                                    result);
+        protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
+                                                                                    fn,
+                                                                                    (void*) ni,
+                                                                                    device2,
+                                                                                    origin,
+                                                                                    context,
+                                                                                    allocator,
+                                                                                    result);
+        // Construct the composite from the two protocols
+        composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
+          Protocol::Send::Factory::generate(protocol1,
+                                            protocol2,
+                                            allocator,
+                                            result);
+        // Set the composite protocol into the NI
+        ni->setSendProtocol(dispatch, composite);
+      }
+
 
       // Return
       return result;

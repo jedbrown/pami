@@ -294,7 +294,7 @@ namespace PAMI
           }
 
         private:
-          template<class T_NI, class T_Protocol, class T_Device, class T_Factory>
+          template<class T_NI, class T_Protocol, class T_Device, class T_Factory, NativeInterfaceCommon::select_interface T_Select>
           void setupFactory(T_NI      *&ni,
                             T_Device   &device,
                             T_Factory *&factory)
@@ -303,7 +303,8 @@ namespace PAMI
             result = NativeInterfaceCommon::constructNativeInterface<T_Allocator,
                                                                      T_NI,
                                                                      T_Protocol,
-                                                                     T_Device>(_allocator,
+                                                                     T_Device,
+                                                                     T_Select>(_allocator,
                                                                                device,
                                                                                ni,
                                                                                _client,
@@ -323,138 +324,138 @@ namespace PAMI
 
             // ----------------------------------------------------
             // Setup and Construct a binomial barrier factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory>(ni_am, device,_binomial_barrier_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,_binomial_barrier_factory);
             new ((void*)_binomial_barrier_factory) CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory(&_sconnmgr, ni_am, CCMI::Adaptor::P2PBarrier::BinomialBarrier::cb_head);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct a binomial broadcast factory from allsided ni and p2p protocol
-            setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory>(ni_as, device,  _binomial_broadcast_factory);
+            setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_as, device,  _binomial_broadcast_factory);
             new ((void*)_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory(&_connmgr, ni_as);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct a ring broadcast factory from allsided ni and p2p protocol
-            setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory>(ni_as, device,  _ring_broadcast_factory);
+            setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_as, device,  _ring_broadcast_factory);
             new ((void*)_ring_broadcast_factory) CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory(&_connmgr, ni_as);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num binomial broadcast factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::AsyncCSBinomialBroadcastFactory>(ni_am, device,  _ascs_binomial_broadcast_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::AsyncCSBinomialBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _ascs_binomial_broadcast_factory);
             new ((void*)_ascs_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::AsyncCSBinomialBroadcastFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, rank based binomial broadcast factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory>(ni_am, device,  _asrb_binomial_broadcast_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _asrb_binomial_broadcast_factory);
             new ((void*)_asrb_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory(&_rbconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct a rank based binomial active message broadcast factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAMBroadcast::AMBinomialBroadcastFactory>(ni_am, device,  _active_binomial_broadcast_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAMBroadcast::AMBinomialBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _active_binomial_broadcast_factory);
             new ((void*)_active_binomial_broadcast_factory) CCMI::Adaptor::P2PAMBroadcast::AMBinomialBroadcastFactory(&_rbconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct a binomial allreducefactory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllreduce::Binomial::Factory>(ni_am, device,  _binomial_allreduce_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllreduce::Binomial::Factory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _binomial_allreduce_factory);
             new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory(&_rbconnmgr, ni_am, CCMI::Adaptor::P2PAllreduce::Binomial::Composite::cb_receiveHead);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num binomial  allreduce factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory>(ni_am, device,_ascs_binomial_allreduce_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,_ascs_binomial_allreduce_factory);
             new ((void*)_ascs_binomial_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num binomial  allreduce factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory>(ni_am, device, _ascs_binomial_reduce_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_binomial_reduce_factory);
             new ((void*)_ascs_binomial_reduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num binomial scatter factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PScatter::Binomial::Factory>(ni_am, device, _ascs_binomial_scatter_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PScatter::Binomial::Factory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_binomial_scatter_factory);
             new ((void*)_ascs_binomial_scatter_factory) CCMI::Adaptor::P2PScatter::Binomial::Factory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num flat scatter factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PScatter::Flat::Factory>(ni_am, device, _ascs_flat_scatter_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PScatter::Flat::Factory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_flat_scatter_factory);
             new ((void*)_ascs_flat_scatter_factory) CCMI::Adaptor::P2PScatter::Flat::Factory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num scatterv factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PScatterv::Factory>(ni_am, device, _ascs_scatterv_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PScatterv::Factory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_scatterv_factory);
             new ((void*)_ascs_scatterv_factory) CCMI::Adaptor::P2PScatterv::Factory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num scatterv_int factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PScatterv::IntFactory>(ni_am, device, _ascs_scatterv_int_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PScatterv::IntFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_scatterv_int_factory);
             new ((void*)_ascs_scatterv_int_factory) CCMI::Adaptor::P2PScatterv::IntFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num binomial gather factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGather::Binomial::Factory>(ni_am, device, _ascs_binomial_gather_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGather::Binomial::Factory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_binomial_gather_factory);
             new ((void*)_ascs_binomial_gather_factory) CCMI::Adaptor::P2PGather::Binomial::Factory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num flat gather factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGather::Flat::Factory>(ni_am, device, _ascs_flat_gather_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGather::Flat::Factory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_flat_gather_factory);
             new ((void*)_ascs_flat_gather_factory) CCMI::Adaptor::P2PGather::Flat::Factory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num gatherv factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGatherv::Factory>(ni_am, device, _ascs_gatherv_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGatherv::Factory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_gatherv_factory);
             new ((void*)_ascs_gatherv_factory) CCMI::Adaptor::P2PGatherv::Factory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num gatherv_int factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGatherv::IntFactory>(ni_am, device, _ascs_gatherv_int_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGatherv::IntFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_gatherv_int_factory);
             new ((void*)_ascs_gatherv_int_factory) CCMI::Adaptor::P2PGatherv::IntFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num allgather factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllgather::Binomial::Factory>(ni_am, device, _ascs_binomial_allgather_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllgather::Binomial::Factory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_binomial_allgather_factory);
             new ((void*)_ascs_binomial_allgather_factory) CCMI::Adaptor::P2PAllgather::Binomial::Factory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num allgather factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory>(ni_am, device, _ascs_ring_allgather_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_ring_allgather_factory);
             new ((void*)_ascs_ring_allgather_factory) CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num allgatherv factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory>(ni_am, device, _ascs_ring_allgatherv_int_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_ring_allgatherv_int_factory);
             new ((void*)_ascs_ring_allgatherv_int_factory) CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num alltoall factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory>(ni_am, device, _ascs_pairwise_alltoall_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_pairwise_alltoall_factory);
             new ((void*)_ascs_pairwise_alltoall_factory) CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num alltoallv factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory>(ni_am, device, _ascs_pairwise_alltoallv_int_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_pairwise_alltoallv_int_factory);
             new ((void*)_ascs_pairwise_alltoallv_int_factory) CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
             // Setup and Construct an alltoall factory from active message ni and p2p protocol
-            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAlltoall::All2AllFactory>(ni_am, device, _alltoall_factory);
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAlltoall::All2AllFactory,NativeInterfaceCommon::MANYTOMANY_ONLY>(ni_am, device, _alltoall_factory);
             new ((void*)_alltoall_factory) CCMI::Adaptor::P2PAlltoall::All2AllFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
@@ -487,7 +488,8 @@ namespace PAMI
                    class T_Device1,
                    class T_Protocol2,
                    class T_Device2,
-                   class T_Factory>
+                   class T_Factory, 
+                   NativeInterfaceCommon::select_interface T_Select>
           void setupFactory(T_NI        *&ni,
                             T_Device1    &device1,
                             T_Device2    &device2,
@@ -501,7 +503,8 @@ namespace PAMI
                T_Protocol1,
                T_Device1,
                T_Protocol2,
-               T_Device2>(_allocator,
+               T_Device2,
+               T_Select>(_allocator,
                          device1,
                          device2,
                          ni,
@@ -535,7 +538,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory>(ni_am,
+                         CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                                                             device1,
                                                                             device2,
                                                                             _binomial_barrier_factory);
@@ -551,7 +555,8 @@ namespace PAMI
                                                                        T_Device1, \
                                                                        T_Protocol2, \
                                                                        T_Device2, \
-                                                                       FACT >(NI_VAR, device1, device2, FACT_VAR); \
+                                                                       FACT, \
+                                                                       NativeInterfaceCommon::MULTICAST_ONLY >(NI_VAR, device1, device2, FACT_VAR); \
                                                           new ((void*)FACT_VAR) FACT(&CONNMGR, NI_VAR);
             SETUPFACTORY(T_NI_Allsided,
                          ni_as,
@@ -596,7 +601,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PAllreduce::Binomial::Factory>(ni_am,
+                         CCMI::Adaptor::P2PAllreduce::Binomial::Factory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                                                          device1,
                                                                          device2,
                                                                          _binomial_allreduce_factory);
@@ -611,7 +617,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory>(ni_am,
+                         CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                     device1,device2,_ascs_binomial_allreduce_factory);
             new ((void*)_ascs_binomial_allreduce_factory)
               CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory(&_csconnmgr, ni_am);
@@ -622,7 +629,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory>(ni_am,
+                         CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_binomial_reduce_factory);
             new ((void*)_ascs_binomial_reduce_factory)
               CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory(&_csconnmgr, ni_am);
@@ -633,7 +641,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PScatter::Binomial::Factory>(ni_am,
+                         CCMI::Adaptor::P2PScatter::Binomial::Factory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_binomial_scatter_factory);
             new ((void*)_ascs_binomial_scatter_factory)
               CCMI::Adaptor::P2PScatter::Binomial::Factory(&_csconnmgr, ni_am);
@@ -644,7 +653,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PScatter::Flat::Factory>(ni_am,
+                         CCMI::Adaptor::P2PScatter::Flat::Factory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_flat_scatter_factory);
             new ((void*)_ascs_flat_scatter_factory)
               CCMI::Adaptor::P2PScatter::Flat::Factory(&_csconnmgr, ni_am);
@@ -655,7 +665,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PScatterv::Factory>(ni_am,
+                         CCMI::Adaptor::P2PScatterv::Factory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_scatterv_factory);
             new ((void*)_ascs_scatterv_factory)
               CCMI::Adaptor::P2PScatterv::Factory(&_csconnmgr, ni_am);
@@ -666,7 +677,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PScatterv::IntFactory>(ni_am,
+                         CCMI::Adaptor::P2PScatterv::IntFactory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_scatterv_int_factory);
             new ((void*)_ascs_scatterv_int_factory)
               CCMI::Adaptor::P2PScatterv::IntFactory(&_csconnmgr, ni_am);
@@ -677,7 +689,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PGather::Binomial::Factory>(ni_am,
+                         CCMI::Adaptor::P2PGather::Binomial::Factory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_binomial_gather_factory);
             new ((void*)_ascs_binomial_gather_factory)
               CCMI::Adaptor::P2PGather::Binomial::Factory(&_csconnmgr, ni_am);
@@ -688,7 +701,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PGather::Flat::Factory>(ni_am,
+                         CCMI::Adaptor::P2PGather::Flat::Factory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_flat_gather_factory);
             new ((void*)_ascs_flat_gather_factory)
               CCMI::Adaptor::P2PGather::Flat::Factory(&_csconnmgr, ni_am);
@@ -699,7 +713,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PGatherv::Factory>(ni_am,
+                         CCMI::Adaptor::P2PGatherv::Factory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_gatherv_factory);
             new ((void*)_ascs_gatherv_factory)
               CCMI::Adaptor::P2PGatherv::Factory(&_csconnmgr, ni_am);
@@ -710,7 +725,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PGatherv::IntFactory>(ni_am,
+                         CCMI::Adaptor::P2PGatherv::IntFactory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_gatherv_int_factory);
             new ((void*)_ascs_gatherv_int_factory)
               CCMI::Adaptor::P2PGatherv::IntFactory(&_csconnmgr, ni_am);
@@ -721,7 +737,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PAllgather::Binomial::Factory>(ni_am,
+                         CCMI::Adaptor::P2PAllgather::Binomial::Factory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_binomial_allgather_factory);
             new ((void*)_ascs_binomial_allgather_factory)
               CCMI::Adaptor::P2PAllgather::Binomial::Factory(&_csconnmgr, ni_am);
@@ -732,7 +749,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory>(ni_am,
+                         CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_ring_allgather_factory);
             new ((void*)_ascs_ring_allgather_factory)
               CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory(&_csconnmgr, ni_am);
@@ -743,7 +761,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory>(ni_am,
+                         CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_ring_allgatherv_int_factory);
             new ((void*)_ascs_ring_allgatherv_int_factory)
               CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory(&_csconnmgr, ni_am);
@@ -754,7 +773,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory>(ni_am,
+                         CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_pairwise_alltoall_factory);
             new ((void*)_ascs_pairwise_alltoall_factory)
               CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory(&_csconnmgr, ni_am);
@@ -765,7 +785,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory>(ni_am,
+                         CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
                                 device1, device2, _ascs_pairwise_alltoallv_int_factory);
             new ((void*)_ascs_pairwise_alltoallv_int_factory)
               CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory(&_csconnmgr, ni_am);
@@ -776,7 +797,8 @@ namespace PAMI
                          T_Device1,
                          T_Protocol2,
                          T_Device2,
-                         CCMI::Adaptor::P2PAlltoall::All2AllFactory>(ni_am,
+                         CCMI::Adaptor::P2PAlltoall::All2AllFactory,
+                         NativeInterfaceCommon::MANYTOMANY_ONLY>(ni_am,
                                                                      device1,
                                                                      device2,
                                                                      _alltoall_factory);

@@ -122,7 +122,7 @@ namespace PAMI
 
 
 #define SETUPNI(NI) result   = NativeInterfaceCommon::constructNativeInterface             \
-                               <T_Allocator, T_P2P_NI, T_Protocol, T_Device>(_proto_alloc, \
+                               <T_Allocator, T_P2P_NI, T_Protocol, T_Device, NativeInterfaceCommon::P2P_ONLY>(_proto_alloc, \
                                                                              _dev,         \
                                                                              NI,           \
                                                                              _client,      \
