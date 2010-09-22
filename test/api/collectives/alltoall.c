@@ -18,54 +18,50 @@
 
 
 //#define INIT_BUFS(r)
-#define INIT_BUFS(i,r) init_bufs(i,r)
+#define INIT_BUFS(r) init_bufs(r)
 
 //#define CHCK_BUFS
-#define CHCK_BUFS(i,s,r)    check_bufs(i,s,r)
+#define CHCK_BUFS(s,r)    check_bufs(s,r)
 
 
 char sbuf[BUFSIZE];
 char rbuf[BUFSIZE];
 
+/// \todo #warning remove alltoallv code...
+size_t sndlens[ MAX_COMM_SIZE ];
+size_t sdispls[ MAX_COMM_SIZE ];
+size_t rcvlens[ MAX_COMM_SIZE ];
+size_t rdispls[ MAX_COMM_SIZE ];
 
-void init_bufs(size_t i, size_t r)
+void init_bufs(size_t r)
 {
   size_t k;
 
-  for ( k = 0; k < i; k++ )
+  for ( k = 0; k < sndlens[r]; k++ )
     {
-      sbuf[ i * r + k ] = ((r + k) & 0xff);
-      rbuf[ i * r + k ] = 0xff;
-      fprintf(stderr,  "sbuf[%zu]= %u, rbuf[%zu]= %u\n", i * r + k, sbuf[i * r + k],i * r + k, rbuf[i * r + k]);
+      sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
+      rbuf[ rdispls[r] + k ] = 0xff;
     }
 }
 
 
-void check_bufs(size_t msg_size, size_t sz, size_t myrank)
+void check_bufs(size_t sz, size_t myrank)
 {
   size_t r, k;
 
   for ( r = 0; r < sz; r++ )
-    for ( k = 0; k < msg_size; k++ )
-      { 
-        size_t displ = msg_size * r;
-        fprintf(stderr,  "rbuf[%zu]= %u\n", displ+k, rbuf[displ+k]);
-      }
-  for ( r = 0; r < sz; r++ )
-    for ( k = 0; k < msg_size; k++ )
-      { 
-      size_t displ = msg_size * r;
-      fprintf(stderr,  "rbuf[%zu]= %u\n", displ+k, rbuf[displ+k]);
-      if ( rbuf[ displ + k ] != (char)((myrank + k) & 0xff) )
-        {
-        printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
-               myrank,
-               displ + k,
-               rbuf[ displ + k ],
-               ((r + k) & 0xff),
-               r );
-        exit(1);
-        }
+    for ( k = 0; k < rcvlens[r]; k++ )
+      {
+        if ( rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff) )
+          {
+            printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
+                   myrank,
+                   rdispls[r] + k,
+                   rbuf[ rdispls[r] + k ],
+                   ((r + k) & 0xff),
+                   r );
+            exit(1);
+          }
       }
 }
 
@@ -113,6 +109,11 @@ int main(int argc, char*argv[])
 
   if (rc == 1)
     return 1;
+  if(num_tasks > MAX_COMM_SIZE )
+  {
+    fprintf(stderr, "Number of tasks (%zu) > MAX_COMM_SIZE (%zu)\n",num_tasks, (size_t)MAX_COMM_SIZE);
+    return 1;
+  }
 
   /*  Query the world geometry for barrier algorithms */
   rc = query_geometry_world(client,
@@ -172,7 +173,9 @@ int main(int argc, char*argv[])
 
             for ( j = 0; j < num_tasks; j++ )
               {
-                INIT_BUFS(i, j );
+                sndlens[j] = rcvlens[j] = i;
+                sdispls[j] = rdispls[j] = i * j;
+                INIT_BUFS( j );
               }
 
             blocking_coll(context, &barrier, &bar_poll_flag);
@@ -192,7 +195,7 @@ int main(int argc, char*argv[])
 
             tf = timer();
 
-            CHCK_BUFS(i, num_tasks, task_id);
+            CHCK_BUFS(num_tasks, task_id);
 
             blocking_coll(context, &barrier, &bar_poll_flag);
 
