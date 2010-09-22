@@ -22,7 +22,7 @@ namespace Device {
 namespace CommThread {
 
 class BgqContextPool {
-	typedef PAMI::Mutex::BGQ::L2Mutex ContextSetMutex;
+	typedef PAMI::Mutex::BGQ::L2IndirMutex ContextSetMutex;
 
 	// lock is held by caller...
 	inline uint64_t __getOneContext(uint64_t &ref) {

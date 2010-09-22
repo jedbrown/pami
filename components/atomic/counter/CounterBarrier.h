@@ -38,7 +38,6 @@ namespace PAMI
           _data(0),
           _master(false)
         {
-		PAMI_assertf(T_Counter::isIndirect, "in-place counter used with indirect barrier");
 	}
 
         ~CounterBarrier () {}
@@ -48,18 +47,38 @@ namespace PAMI
         {
 	  PAMI_assert_debugf(!_control, "Re-init or object is in shmem");
           unsigned i;
-	  char *k = (char *)key;
-	  unsigned n = strlen(k);
-	  PAMI_assert_debugf(n + 1 < PAMI::Memory::MMKEYSIZE,
-		"overflow mm key");
-	  k[n+1] = '\0';
-          for (i=0; i<5; i++) {
-		k[n] = "0123456789"[i];
-		_counter[i].init(mm, k);
-	  }
-	  k[n] = '\0'; // repair caller's key
           _participants = participants;
           _master = master;
+	  if (T_Counter::isIndirect) {
+	  	char *k = (char *)key;
+	  	unsigned n = strlen(k);
+	  	PAMI_assert_debugf(n + 1 < PAMI::Memory::MMKEYSIZE,
+			"overflow mm key");
+	  	k[n+1] = '\0';
+          	for (i=0; i<5; i++) {
+			k[n] = "0123456789"[i];
+			new (&_counter[i]) T_Counter();
+			_counter[i].init(mm, k);
+	  	}
+	  	k[n] = '\0'; // repair caller's key
+	  	_control = &_counter[0];
+	  	_lock = &_counter[1];
+	  	_stat = &_counter[3];
+	  } else {
+		PAMI_assertf(T_Counter::checkCtorMm(mm),
+			"counters are incompatible with given mm");
+		pami_result_t rc = mm->memalign((void **)&_counters, sizeof(void *),
+					5 * sizeof(T_Counter), key);
+		PAMI_assertf(rc == PAMI_SUCCESS,
+			"Failed to allocate counters for Barrier from provided mm");
+          	for (i = 0; i < 5; ++i) {
+			new (&_counters[i]) T_Counter();
+			_counters[i].init();
+	  	}
+	  	_control = &_counters[0];
+	  	_lock = &_counters[1];
+	  	_stat = &_counters[3];
+	  }
 #if 0
 fprintf(stderr, "local_barriered_ctrzero<>(%p {%p,%p,%p,%p,%p}, 5, %zd, %d)\n", _counter,
 _counter[0].returnLock(),
@@ -69,9 +88,6 @@ _counter[3].returnLock(),
 _counter[4].returnLock(),
 participants, master);
 #endif
-	  _control = &_counter[0];
-	  _lock = &_counter[1];
-	  _stat = &_counter[3];
         }
 
 	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
@@ -79,7 +95,12 @@ participants, master);
 		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
 	}
 	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
-		return T_Counter::checkDataMm(mm);
+		if (T_Counter::isIndirect) {
+			return T_Counter::checkDataMm(mm);
+		} else {
+			return T_Counter::checkCtorMm(mm) &&
+				T_Counter::checkDataMm(mm); // redundant?
+		}
 	}
 
         /// \see PAMI::Atomic::Interface::Barrier::enter()
@@ -137,7 +158,8 @@ participants, master);
 
       private:
 
-        T_Counter   _counter[5];
+        T_Counter   _counter[5]; // can't put things with ctors in union,
+        T_Counter   *_counters;  // so these are distinct members for now...
 
         T_Counter * _control;
         T_Counter * _lock;

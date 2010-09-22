@@ -52,7 +52,7 @@
 #include "algorithms/geometry/Geometry.h"
 #include "components/atomic/bgq/L2Mutex.h"
 #include "components/devices/misc/AtomicMutexMsg.h"
-typedef PAMI::Mutex::BGQ::L2Mutex MUCR_mutex_t;
+typedef PAMI::Mutex::BGQ::L2IndirMutex MUCR_mutex_t;
 typedef PAMI::Device::SharedAtomicMutexMdl<MUCR_mutex_t> MUCR_mutex_model_t;
 #include <spi/include/kernel/collective.h>
 #include <spi/include/mu/Classroute_inlines.h>

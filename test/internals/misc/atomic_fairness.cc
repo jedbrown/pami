@@ -36,7 +36,7 @@
 
 #ifdef __pami_target_bgq__
 #include "components/atomic/bgq/L2Counter.h"
-#define COUNTER_T	PAMI::Counter::BGQ::L2Counter
+#define COUNTER_T	PAMI::Counter::BGQ::L2IndirCounter
 #ifndef NUM_THREADS
 #define NUM_THREADS	16
 #endif // ! NUM_THREADS

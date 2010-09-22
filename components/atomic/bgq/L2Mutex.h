@@ -30,9 +30,44 @@ namespace BGQ {
         //
         // These classes are used internally ONLY. See following classes for users
         //
-        class L2Mutex : public PAMI::Atomic::Interface::IndirMutex<L2Mutex> {
+        class L2InPlaceMutex : public PAMI::Atomic::Interface::InPlaceMutex<L2InPlaceMutex> {
         public:
-                L2Mutex() { _counter = NULL; }
+                L2InPlaceMutex() { }
+                inline void init_impl() {
+                }
+                void acquire_impl() {
+                        while (L2_AtomicLoadIncrement(&_counter) != 0);
+                }
+                void release_impl() {
+			mem_sync();
+                        L2_AtomicLoadClear(&_counter);
+                }
+                bool tryAcquire_impl() {
+                        return (L2_AtomicLoadIncrement(&_counter) == 0);
+                }
+                bool isLocked_impl() {
+                        return (L2_AtomicLoad(&_counter) > 0) ? true : false;
+                }
+                void *returnLock_impl() { return &_counter; }
+
+		static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+			// This is an L2 Atomic object, must have L2 Atomic-mapped memory
+			return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
+		}
+		static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+			// This is an L2 Atomic object, must have L2 Atomic-mapped memory
+			return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
+		}
+        protected:
+                uint64_t _counter;
+        }; // class L2InPlaceMutex
+
+        //
+        // These classes are used internally ONLY. See following classes for users
+        //
+        class L2IndirMutex : public PAMI::Atomic::Interface::IndirMutex<L2IndirMutex> {
+        public:
+                L2IndirMutex() { _counter = NULL; }
                 inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
 			PAMI_assert_debugf((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0,
 				"mm is not L2Atomic-capable");
@@ -65,7 +100,7 @@ namespace BGQ {
 		}
         protected:
                 uint64_t *_counter;
-        }; // class L2Mutex
+        }; // class L2IndirMutex
 
 }; // BGQ namespace
 }; // Mutex namespace

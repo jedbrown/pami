@@ -82,7 +82,7 @@ namespace PAMI
 #endif
 
 
-  typedef Mutex::CounterMutex<Counter::BGQ::L2Counter>  ContextLock;
+  typedef Mutex::CounterMutex<Counter::BGQ::L2IndirCounter>  ContextLock;
 
   typedef CollRegistration::P2P::CCMIRegistration < BGQGeometry,
   ShmemDevice,

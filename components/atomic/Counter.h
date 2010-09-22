@@ -174,6 +174,7 @@ namespace PAMI
 	/// \todo Need to find a way to initialize object by only one entity
         ///
         inline void init();
+        inline void init(PAMI::Memory::MemoryManager *mm, const char *key) { PAMI_abortf("indirect init attempted on in-place object"); }
 
         inline void *returnLock();
 
@@ -211,6 +212,7 @@ namespace PAMI
 	/// \todo Need to find a way to initialize object by only one entity
         ///
         inline void init(PAMI::Memory::MemoryManager *mm, const char *key);
+        inline void init() { PAMI_abortf("in-place init attempted on indirect object"); }
 
         inline void *returnLock();
 

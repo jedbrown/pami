@@ -46,15 +46,15 @@
 
 #if defined(L2MUTEX) && !defined(QUEUE_NAME)
 #include "components/atomic/bgq/L2Mutex.h"
-#define QUEUE_NAME	"MutexedQueue<L2Mutex>"
-#define GenericDeviceWorkQueue	PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2Mutex>
+#define QUEUE_NAME	"MutexedQueue<L2IndirMutex>"
+#define GenericDeviceWorkQueue	PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2IndirMutex>
 #endif // L2MUTEX
 
 #if defined(L2SAFE) && !defined(QUEUE_NAME)
 #include "components/atomic/bgq/L2Mutex.h"
-#define QUEUE_NAME	"GccThreadSafeQueue<L2Mutex>"
+#define QUEUE_NAME	"GccThreadSafeQueue<L2IndirMutex>"
 #define GenericDeviceWorkQueue	PAMI::GccThreadSafeQueue<\
-		PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2Mutex>\
+		PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2IndirMutex>\
 		>
 #endif // L2SAFE
 

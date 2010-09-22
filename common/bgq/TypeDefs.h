@@ -159,7 +159,7 @@ namespace PAMI
   typedef PAMI::NativeInterfaceAllsided< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AS;
 
 
-  typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2Counter> Barrier_Type;
+  typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2IndirCounter> Barrier_Type;
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           ShmemMsyncModel;
 
