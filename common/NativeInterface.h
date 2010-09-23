@@ -971,7 +971,7 @@ namespace PAMI
 //  req->_type              = NativeInterfaceBase<T_Protocol,T_Max_Msgcount>::allocObj::MANYTOMANY_SEND;
 //  req->_ni               = this;
 //  req->_user_callback    = m2m->cb_done;
-//  TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::manytomany(%p/%p) connection id %u, msgcount %u, num index %zu\n", this, req, m2m, m2m->connection_id, m2m->metacount, m2m->num_index));
+//  TRACE_ERR((stderr, "<%p>NativeInterfaceAllsided::manytomany(%p/%p) connection id %u, msgcount %u\n", this, req, m2m, m2m->connection_id, m2m->metacount));
 //  DO_DEBUG((templateName<T_Protocol>()));
 //
 //  //  \todo:  this copy will cause a latency hit, maybe we need to change postManytomany
@@ -1491,7 +1491,7 @@ namespace PAMI
     req->_ni               = this;
     req->_user_callback    = m2m->cb_done;
 
-    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::manytomany(%p/%p) connection id %u, msgcount %u, num index %zu\n", this, req, m2m, m2m->connection_id, m2m->msgcount, m2m->num_index));
+    TRACE_ERR((stderr, "<%p>NativeInterfaceActiveMessage::manytomany(%p/%p) connection id %u, msgcount %u\n", this, req, m2m, m2m->connection_id, m2m->msgcount));
     DO_DEBUG((templateName<T_Protocol>()));
 
     //  \todo:  this copy will cause a latency hit, maybe we need to change postManytomany
@@ -1684,10 +1684,10 @@ namespace PAMI
     PAMI::M2MPipeWorkQueue *pwq = m2m->send.buffer;
     PAMI::Topology    *topology = m2m->send.participants;
 
-    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::postManytomany_impl() dispatch %zu, connection_id %#X, msgcount %d/%p, numindex %zu pwq %p\n",
+    TRACE_ERR((stderr, "<%p>:NativeInterfaceActiveMessage::postManytomany_impl() dispatch %zu, connection_id %#X, msgcount %d/%p, pwq %p\n",
                this, this->_m2m_dispatch, m2m->connection_id,
                m2m->msgcount, m2m->msginfo,
-               m2m->num_index, pwq));
+               pwq));
 
     // Get the msginfo buffer/length and validate (assert) inputs
     void* msgdata             = (void*)m2m->msginfo;
@@ -1720,7 +1720,6 @@ namespace PAMI
     parameters.events.local_fn = sendM2mDone;
     parameters.events.remote_fn = NULL;
 
-    /// we don't support taskIndex
     parameters.send.header.iov_base = &state_data->meta;
     parameters.send.header.iov_len = msgsize;
 
@@ -1938,8 +1937,6 @@ namespace PAMI
 
         PAMI_assert(this->_m2m_dispatch_function != NULL);
 
-        size_t                myIndex;
-
         typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)this->_allocator.allocateObject();
         state = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_recv_statedata_t*)req->_state._m2m;
 
@@ -1952,7 +1949,6 @@ namespace PAMI
                                      connection_id,
                                      metadata->msginfo, metadata->msgcount,
                                      &state->recv,
-                                     &myIndex, // ignored?
                                      &req->_user_callback);
 
         state->cb_done.function   = ni_client_done;

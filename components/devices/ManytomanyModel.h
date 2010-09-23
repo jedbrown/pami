@@ -51,12 +51,6 @@ typedef struct
 /**
  * \brief Structure of parameters used to initiate a ManyToMany
  *
- * The taskIndex parameter may be transmitted to the receiver for use by cb_recv
- * to optimized indexing into the recv parameter arrays (lengths and offsets).
- * It may be NULL, in which case the receiver will lookup each sender rank in the
- * recv topology.  It may be a single value if the index is the same on all 
- * destinations (alltoall).  It may be 1 value per destination if a more complicated 
- * manytomany is being done. 
  */
 typedef struct
 {
@@ -65,10 +59,6 @@ typedef struct
   pami_callback_t      cb_done;       /**< User's send completion callback */
   unsigned             connection_id; /**< differentiate data streams */
   unsigned             roles;         /**< bitmap of roles to perform */
-  size_t              *taskIndex;     /**< Hint - index of send in recv parameters.
-                                           May be NULL */
-  size_t               num_index;     /**< Number of entries in "taskIndex".
-                                           Should be 0, 1 or send.participants->size() */
   pami_manytomanybuf_t send;          /**< send data parameters */
   const pami_quad_t   *msginfo;       /**< A extra info field to be sent with the message.
                                            This might include information about
@@ -88,26 +78,20 @@ typedef struct
  * only once per connection_id. The first sender message to arrive will invoke
  * the callback and get recv params for ALL other senders in the instance.
  *
- * The myIndex parameter is the receiving task's index in the recv arrays
- * (lengths and offsets) and is used by the manytomany as an optimization
- * for handling local data reception.
- *
  * \param[in]  arg       Client Data
  * \param[in]  conn_id   Instance ID
  * \param[in]  msginfo   Pointer to metadata, if any, in message header.
  * \param[in]  msgcount  Number of pami_quad_ts of metadata.
  * \param[out] recv      Receive parameters for this connection (instance)
- * \param[out] myIndex   Hint - index of Recv Task in the receive parameters.
  * \param[out] cb_done   Receive completion callback
  *
- * \return  Request object opaque storage for message.
+ * \return  void
  */
 typedef void (*pami_dispatch_manytomany_fn)(void                  *arg,
                                             unsigned               conn_id,
                                             pami_quad_t           *msginfo,
                                             unsigned               msgcount,
                                             pami_manytomanybuf_t **recv,
-                                            size_t                *myIndex,
                                             pami_callback_t       *cb_done);
 
 

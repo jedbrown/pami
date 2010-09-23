@@ -108,8 +108,6 @@ namespace CCMI
           _m2m_info.msginfo = (pami_quad_t*) & _metadata;
           _m2m_info.msgcount = 1;
 
-          _m2m_info.taskIndex = NULL; //&_my_index; not used
-          _m2m_info.num_index = 0;    // not used
           _m2m_info.roles = -1U;
 
           _m2m_info.client = 0; /// \todo does NOT support multiclient
@@ -155,11 +153,9 @@ namespace CCMI
 
 
         void notifyRecv(pami_manytomanybuf_t **recv,
-                        size_t *myIndex,
                         pami_callback_t *cb_done)
         {
           TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol::notifyRecv() recv %p\n", this, recv));
-          *myIndex = -1; //_my_index;
           *recv = & _recv;
           *cb_done = _my_cb_done;
         }
@@ -272,7 +268,6 @@ namespace CCMI
                                   pami_quad_t *msginfo,
                                   unsigned msgcount,
                                   pami_manytomanybuf_t **recv,
-                                  size_t *myIndex,
                                   pami_callback_t *cb_done)
         {
           TRACE_ADAPTOR((stderr, "<%p>All2AllFactoryT::cb_manytomany() conn_id %u, msginfo %p, msgcount %u, recv %p\n", arg, conn_id, msginfo, msgcount, recv));
@@ -298,7 +293,7 @@ namespace CCMI
             geometry->asyncCollectivePostQ().findAndDelete(key);
           a2a = (T_Composite *) coll_object->getComposite();
           TRACE_ADAPTOR((stderr, "<%p>All2AllFactoryT::cb_manytomany() key %u, coll_object %p, a2a %p\n", arg, key, coll_object, a2a));
-          a2a->notifyRecv(recv, myIndex, cb_done);
+          a2a->notifyRecv(recv, cb_done);
         }
 
 
