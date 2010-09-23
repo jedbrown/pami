@@ -117,6 +117,7 @@ namespace PAMI
             _ascs_pairwise_alltoall_factory(),
             _ascs_pairwise_alltoallv_int_factory(),
             _alltoall_factory(),
+            _alltoallv_factory(),
             _composite_ni()
           {
             TRACE_INIT((stderr, "<%p>CCMIRegistration() use_shmem %s, use_p2p %s, local_size %zu, global_size %zu\n", this, use_shmem? "true":"false",use_p2p?"true":"false",local_size,global_size ));
@@ -270,6 +271,9 @@ namespace PAMI
                                       _context_id);
               geometry->addCollective(PAMI_XFER_ALLTOALL,
                                       _alltoall_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_ALLTOALLV,
+                                      _alltoallv_factory,
                                       _context_id);
               }
             return PAMI_SUCCESS;
@@ -461,6 +465,11 @@ namespace PAMI
             new ((void*)_alltoall_factory) CCMI::Adaptor::P2PAlltoall::All2AllFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
 
+            // Setup and Construct an alltoall factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAlltoallv::All2AllvFactory,NativeInterfaceCommon::MANYTOMANY_ONLY>(ni_am, device, _alltoallv_factory);
+            new ((void*)_alltoallv_factory) CCMI::Adaptor::P2PAlltoallv::All2AllvFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
             //set the mapid functions
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
             _asrb_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
@@ -483,6 +492,7 @@ namespace PAMI
             _ascs_pairwise_alltoall_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_pairwise_alltoallv_int_factory->setMapIdToGeometry(mapidtogeometry);
             _alltoall_factory->setMapIdToGeometry(mapidtogeometry);
+            _alltoallv_factory->setMapIdToGeometry(mapidtogeometry);
           }
 
           template<class T_NI,
@@ -806,6 +816,19 @@ namespace PAMI
                                                                      _alltoall_factory);
             new ((void*)_alltoall_factory) CCMI::Adaptor::P2PAlltoall::All2AllFactory(&_csconnmgr, ni_am);
 
+            // Setup Alltoallv
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PAlltoallv::All2AllvFactory,
+                         NativeInterfaceCommon::MANYTOMANY_ONLY>(ni_am,
+                                                                     device1,
+                                                                     device2,
+                                                                     _alltoallv_factory);
+            new ((void*)_alltoallv_factory) CCMI::Adaptor::P2PAlltoallv::All2AllvFactory(&_csconnmgr, ni_am);
+
             //set the mapid functions
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
             _asrb_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
@@ -828,6 +851,7 @@ namespace PAMI
             _ascs_pairwise_alltoall_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_pairwise_alltoallv_int_factory->setMapIdToGeometry(mapidtogeometry);
             _alltoall_factory->setMapIdToGeometry(mapidtogeometry);
+            _alltoallv_factory->setMapIdToGeometry(mapidtogeometry);
           }
 
       private:
@@ -886,6 +910,8 @@ namespace PAMI
 
           // CCMI Alltoall
           CCMI::Adaptor::P2PAlltoall::All2AllFactory                      *_alltoall_factory;
+          // CCMI Alltoallv
+          CCMI::Adaptor::P2PAlltoallv::All2AllvFactory                    *_alltoallv_factory;
 
           // New p2p Native interface members:
 

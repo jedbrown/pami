@@ -41,6 +41,7 @@
 #include "p2p/protocols/SendPWQ.h"
 #include "common/NativeInterface.h"
 #include "algorithms/protocols/alltoall/All2All.h"
+#include "algorithms/protocols/alltoall/All2Allv.h"
 
 // CCMI Template implementations for P2P
 namespace CCMI
@@ -834,12 +835,23 @@ namespace CCMI
       void getAlltoallMetaData(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
-        strcpy(&m->name[0],"Alltoall");
+        strcpy(&m->name[0],"P2P Alltoall");
       }
       typedef CCMI::Adaptor::All2AllProtocol All2AllProtocol;
       typedef CCMI::Adaptor::All2AllFactoryT <All2AllProtocol, getAlltoallMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllFactory;
 
     };//P2PAlltoall
+    namespace P2PAlltoallv
+    {
+      void getAlltoallvMetaData(pami_metadata_t *m)
+      {
+        // \todo:  fill in other metadata
+        strcpy(&m->name[0],"P2P Alltoallv");
+      }
+      typedef CCMI::Adaptor::All2AllvProtocol All2AllProtocolv;
+      typedef CCMI::Adaptor::All2AllvFactoryT <All2AllProtocolv, getAlltoallvMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllvFactory;
+
+    };//P2PAlltoallv
 
 
   }//Adaptor

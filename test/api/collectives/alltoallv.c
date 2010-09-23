@@ -107,6 +107,11 @@ int main(int argc, char*argv[])
 
   if (rc == 1)
     return 1;
+  if(num_tasks > MAX_COMM_SIZE )
+  {
+    fprintf(stderr, "Number of tasks (%zu) > MAX_COMM_SIZE (%zu)\n",num_tasks, (size_t)MAX_COMM_SIZE);
+    return 1;
+  }
 
   /*  Query the world geometry for barrier algorithms */
   rc = query_geometry_world(client,
