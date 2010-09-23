@@ -113,7 +113,11 @@ namespace CCMI
           _m2m_info.client = 0; /// \todo does NOT support multiclient
           _m2m_info.context = 0; /// \todo does NOT support multicontext
 
-          _m2m_info.connection_id = _geometry->comm(); /// \todo ?
+          unsigned comm = _geometry->comm(); 
+          _m2m_info.connection_id = cmgr->getConnectionId_impl(comm, -1, 0, 0, -1);
+          TRACE_ADAPTOR((stderr, "<%p>All2AllvProtocol::All2AllvProtocol() connection_id %u\n", this, _m2m_info.connection_id));
+          cmgr->updateConnectionId(comm);
+
 
           _m2m_info.cb_done.function   = a2aDone;
           _m2m_info.cb_done.clientdata = this;
