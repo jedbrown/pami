@@ -126,8 +126,9 @@ namespace PAMI
       ni = (T_NativeInterface*) allocator.allocateObject ();
       new ((void*)ni) T_NativeInterface(client, context, context_id, client_id);
 
+      pami_endpoint_t            origin   = PAMI_ENDPOINT_INIT(client_id, __global.mapping.task(), context_id);
+
       pami_dispatch_p2p_fn       fn;      
-      pami_endpoint_t            origin;  
       size_t                     dispatch;
       T_Protocol                *protocol;
 
@@ -135,7 +136,6 @@ namespace PAMI
       {
         // Construct the mcast protocol using the NI dispatch function and cookie
         fn = T_NativeInterface::dispatch_mcast;                                       
-        origin   = PAMI_ENDPOINT_INIT(client_id, __global.mapping.task(), context_id);
         dispatch = getNextDispatch();                                                 
 
         protocol = (T_Protocol*) T_Protocol::generate(dispatch,
