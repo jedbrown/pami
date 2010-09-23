@@ -260,9 +260,11 @@ namespace PAMI
               geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,
                                       _ascs_ring_allgatherv_int_factory,
                                       _context_id);
+#ifndef __bgq__ // currently not working
               geometry->addCollective(PAMI_XFER_ALLTOALL,
                                       _ascs_pairwise_alltoall_factory,
                                       _context_id);
+#endif
               geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
                                       _ascs_pairwise_alltoallv_int_factory,
                                       _context_id);
