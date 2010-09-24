@@ -41,7 +41,11 @@ extern "C" pami_result_t PAMI_Endpoint_create (pami_client_t     client,
                                                size_t            offset,
                                                pami_endpoint_t * endpoint)
 {
+#ifdef PAMI_LAPI_IMPL
+  *endpoint = task;
+#else
   *endpoint = PAMI_ENDPOINT_INIT(client,task,offset);
+#endif
   return PAMI_SUCCESS;
 }
 
@@ -57,7 +61,12 @@ extern "C" pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
                                               pami_task_t     * task,
                                               size_t          * offset)
 {
+#ifdef PAMI_LAPI_IMPL
+    *task   = endpoint;
+    *offset = 0;
+#else
   PAMI_ENDPOINT_INFO(endpoint,*task,*offset);
+#endif
   return PAMI_SUCCESS;
 }
 
