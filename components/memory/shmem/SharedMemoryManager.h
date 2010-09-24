@@ -63,10 +63,26 @@ namespace PAMI
 		_attrs = PAMI_MM_NODESCOPE;
 		_meta.init(mm, "/pami-shmemmgr");
 		_enabled = true;
+#ifdef MM_DEBUG // set/unset in MemoryManager.h
+		_debug = (getenv("PAMI_MM_DEBUG") != NULL);
+		_num_allocs = 0;
+		_num_frees = 0;
+		_total_bytes = 0;
+		_curr_bytes = 0;
+		_max_bytes = 0;
+#endif // MM_DEBUG
         }
 
         inline ~SharedMemoryManager ()
         {
+#ifdef MM_DEBUG
+		if (_debug) {
+			fprintf(stderr, "SharedMemoryManager %zd allocs, %zd frees, "
+					"total %zdb, curr %zdb, max %zdb\n",
+				_num_allocs, _num_frees,
+				_total_bytes, _curr_bytes, _max_bytes);
+		}
+#endif // MM_DEBUG
 		// if this only happens at program exit, just unlink all keys...
 		freeAll();
 		// could free up all the meta data, but it is in heap and
@@ -173,6 +189,16 @@ namespace PAMI
 			}
 		}
 		*memptr = alloc->userMem();
+#ifdef MM_DEBUG
+		if (_debug) {
+			++_num_allocs;
+			_total_bytes += alloc->userSize();
+			_curr_bytes += alloc->userSize();
+			if (_curr_bytes > _max_bytes) {
+				_max_bytes = _curr_bytes;
+			}
+		}
+#endif // MM_DEBUG
 		return PAMI_SUCCESS;
 	}
 
@@ -180,6 +206,12 @@ namespace PAMI
 		_meta.acquire();
 		MemoryManagerOSAlloc *m = _meta.find(mem);
 		if (m) {
+#ifdef MM_DEBUG
+			if (_debug) {
+				--_num_allocs;
+				_curr_bytes -= m->userSize();
+			}
+#endif // MM_DEBUG
 			__free(m);
 		}
 		_meta.release();
@@ -229,6 +261,14 @@ namespace PAMI
 
 	MemoryManagerMeta<MemoryManagerOSAlloc> _meta;
 	size_t _jobid;
+#ifdef MM_DEBUG
+	bool _debug;
+	size_t _num_allocs;
+	size_t _num_frees;
+	size_t _total_bytes;
+	size_t _curr_bytes;
+	size_t _max_bytes;
+#endif // MM_DEBUG
 
     }; // class SharedMemoryManager
   }; // namespace Memory

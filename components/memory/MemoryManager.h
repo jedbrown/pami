@@ -24,6 +24,11 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
+#define MM_DEBUG
+
+// need a "name" for each MemoryManager, in order to debug effectively.
+// But HeapMemoryManager and SharedMemoryManager debug is still useful.
+
 namespace PAMI
 {
   namespace Memory

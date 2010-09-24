@@ -30,6 +30,14 @@ namespace PAMI
         {
 		COMPILE_TIME_ASSERT(sizeof(HeapMemoryManager) <= sizeof(SharedMemoryManager));
 		_attrs = PAMI_MM_PROCSCOPE;
+#ifdef MM_DEBUG // set/unset in MemoryManager.h
+		_debug = (getenv("PAMI_MM_DEBUG") != NULL);
+		_num_allocs = 0;
+		_num_frees = 0;
+		_total_bytes = 0;
+		// since currently this can't track number of bytes freed,
+		// don't bother trying to track current/max bytes.
+#endif // MM_DEBUG
         }
 
       inline ~HeapMemoryManager ()
@@ -37,6 +45,14 @@ namespace PAMI
 		// this is only called from process exit,
 		// so no need to actually free - the memory
 		// is all being reclaimed by the OS.
+#ifdef MM_DEBUG
+		if (_debug) {
+			fprintf(stderr, "HeapMemoryManager %zd allocs, %zd frees, "
+					"total %zdb\n",
+				_num_allocs, _num_frees,
+				_total_bytes);
+		}
+#endif // MM_DEBUG
 	}
 
 	inline pami_result_t init (MemoryManager *mm, size_t bytes, size_t alignment,
@@ -68,11 +84,22 @@ namespace PAMI
 		//
 		// else? or always? memset(*memptr, 0, bytes);
 		}
+#ifdef MM_DEBUG
+		if (_debug) {
+			++_num_allocs;
+			_total_bytes += bytes;
+		}
+#endif // MM_DEBUG
 		return PAMI_SUCCESS;
         }
 
 	inline void free(void *mem)
 	{
+#ifdef MM_DEBUG
+		if (_debug) {
+			++_num_frees;
+		}
+#endif // MM_DEBUG
 		free(mem);
 	}
 
@@ -92,6 +119,12 @@ namespace PAMI
 	}
 
     protected:
+#ifdef MM_DEBUG
+	bool _debug;
+	size_t _num_allocs;
+	size_t _num_frees;
+	size_t _total_bytes;
+#endif // MM_DEBUG
     };
   };
 };
