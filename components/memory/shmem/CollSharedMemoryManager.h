@@ -25,12 +25,14 @@
 
 #include "Platform.h"
 
+#undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  // printf x
+#define TRACE_ERR(x)   //fprintf x
 #endif
 
+#undef TRACE_DBG
 #ifndef TRACE_DBG
-#define TRACE_DBG(x)  // printf x
+#define TRACE_DBG(x)   //fprintf x
 #endif
 
 #ifndef PAMI_ASSERT
@@ -106,18 +108,19 @@ namespace PAMI
           int lrank;
 
 #ifdef _POSIX_SHM_OPEN
-          _shm_id = shm_open(COLLSHM_KEY, O_CREAT|O_RDWR, 0600);
+          const char   * shmemfile = "/unique-pami-coll-mm-shmem-file";
+          _shm_id = shm_open(shmemfile, O_CREAT|O_RDWR, 0600);
           if( _shm_id != -1) {
             if ( ftruncate(_shm_id, _size) != -1 )
             {
               _collshm = (collshm_t *) mmap(NULL, _size, PROT_READ|PROT_WRITE, MAP_SHARED, _shm_id, 0);
               if ( _collshm == MAP_FAILED ) {
-                TRACE_ERR(("mmap failed, %d\n", errno));
+                TRACE_ERR((stderr, "mmap(%zu) failed, %d\n",_size, errno)); 
                 return PAMI_ERROR;
               }
             }
           } else {
-            TRACE_ERR(("shm_open failed, %d\n",errno));
+            TRACE_ERR((stderr, "shm_open failed, %d\n",errno));
             return PAMI_ERROR;
           }
 #else
@@ -127,19 +130,19 @@ namespace PAMI
           if (_shm_id != -1) {
             _collshm = (collshm_t *)shmat(_shm_id, 0, 0);
             if (_collshm == NULL || _collshm == (collshm_t *)-1) {
-               TRACE_ERR(("master shmat failed: %d\n", errno));
+               TRACE_ERR((stderr,"master shmat failed: %d\n", errno));
                shmctl(_shm_id, IPC_RMID, NULL);
                return PAMI_ERROR;
             }
           } else {
             _shm_id = shmget(COLLSHM_KEY, 0, 0);
             if (_shm_id == -1) {
-              TRACE_ERR(("slave shmget failed\n"));
+              TRACE_ERR((stderr,"slave shmget failed\n"));
               return PAMI_ERROR;
             }
             _collshm = (collshm_t *)shmat(_shm_id, 0, 0);
             if (_collshm == NULL || _collshm == (collshm_t *)-1) {
-              TRACE_ERR(("slave shmat failed: %d\n", errno));
+              TRACE_ERR((stderr,"slave shmat failed: %d\n", errno));
               shmctl(_shm_id, IPC_RMID, NULL);
               return PAMI_ERROR;
             }
@@ -179,7 +182,7 @@ namespace PAMI
 
           lrank = _collshm->ready_count.fetch_and_inc();
           //lrank = COLLSHM_FETCH_AND_ADD((atomic_p)&_collshm->ready_count, 1);
-          TRACE_DBG(("task %d joined, _collshm=%p\n", _localrank, _collshm));
+          TRACE_DBG((stderr,"task %zu joined, _collshm=%p\n", _localrank, _collshm));
           while (_collshm->ready_count.fetch() < _localsize);
 
           return PAMI_SUCCESS;
@@ -217,7 +220,7 @@ namespace PAMI
           databuf_t *bufs     = _collshm->buffer_pool;
 
           if ((char *)(new_bufs + COLLSHM_INIT_BUFCNT) > ((char *)_collshm + _size)) {
-            TRACE_ERR(("Run out of shm data bufs, base=%lp, buffer_memory=%lp, boundary=%lp, end=%lp\n",
+            TRACE_ERR((stderr,"Run out of shm data bufs, base=%p, buffer_memory=%p, boundary=%p, end=%p\n",
                         _collshm, _collshm->buffer_memory, (char *)_collshm+_size,
                         (char *)(new_bufs+COLLSHM_INIT_BUFCNT)));
             PAMI_ASSERT(0);
@@ -253,7 +256,7 @@ namespace PAMI
         databuf_t *getDataBuffer (unsigned count)
         {
 
-          PAMI_ASSERT(count < COLLSHM_INIT_BUFCNT);
+          PAMI_ASSERT(count <= COLLSHM_INIT_BUFCNT);
 
           unsigned buf_count = 0;
           databuf_t * cur;
@@ -283,18 +286,18 @@ namespace PAMI
               }
 
               buf_count = count;
-              TRACE_DBG(("new buffer is %p\n",buffers));
+              TRACE_DBG((stderr,"new buffer is %p\n",buffers));
               continue;
             }
 
             next = cur->next;
-            TRACE_DBG(("start: cur = %p, cur->next = %p and _collshm->free_buffer_list = %p\n",
+            TRACE_DBG((stderr,"start: cur = %p, cur->next = %p and _collshm->free_buffer_list = %p\n",
                         cur, next, _collshm->free_buffer_list));
 
             //while (!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_buffer_list),(long *)&cur, (long)next))
             while (!_collshm->buffer_list->compare_and_swap((size_t)cur, (size_t)next))
             {
-               TRACE_DBG(("entry cur = %p, cur->next = %p and _collshm->free_buffer_list = %p\n",
+               TRACE_DBG((stderr,"entry cur = %p, cur->next = %p and _collshm->free_buffer_list = %p\n",
                      cur, next, _collshm->free_buffer_list));
 
                // cur = (databuf_t *)_collshm->free_buffer_list;
@@ -305,19 +308,19 @@ namespace PAMI
                else
                  next = cur->next;
 
-               TRACE_DBG(("exit cur = %p, cur->next = %p and _collshm->free_buffer_list = %p\n",
+               TRACE_DBG((stderr,"exit cur = %p, cur->next = %p and _collshm->free_buffer_list = %p\n",
                          cur, next, _collshm->free_buffer_list));
             }
             if (cur == NULL) continue;  // may need to start over
 
-            TRACE_DBG(("end cur = %p\n", cur));
+            TRACE_DBG((stderr,"end cur = %p\n", cur));
             cur->next = buffers;
             buffers = (databuf_t *)cur;
             buf_count ++;
           }
 
           _ndatabufs += count;
-          TRACE_DBG(("_ndatabufs = %d\n", _ndatabufs));
+          TRACE_DBG((stderr,"_ndatabufs = %zu\n", _ndatabufs));
           return buffers;
         }
 
@@ -348,7 +351,7 @@ namespace PAMI
             tmp->next = (databuf_t *)_collshm->buffer_list->fetch();
           }
 
-          TRACE_DBG(("_ndatabufs = %d\n", _ndatabufs));
+          TRACE_DBG((stderr,"_ndatabufs = %d\n", _ndatabufs));
 
         }
 
@@ -371,7 +374,7 @@ namespace PAMI
           ctlstr_t *tmp      = _collshm->ctlstr_pool;
 
           if ((char *)(ctlstr + COLLSHM_INIT_CTLCNT) > ((char *)_collshm->buffer_memory)) {
-            TRACE_ERR(("Run out of shm ctrl structs, base=%lp, ctrl_memory=%lp, boundary=%lp, end=%lp\n",
+            TRACE_ERR((stderr,"Run out of shm ctrl structs, base=%p, ctrl_memory=%p, boundary=%p, end=%p\n",
                         _collshm, _collshm->ctlstr_memory, (char *)_collshm->buffer_memory,
                         (char *)(ctlstr+COLLSHM_INIT_CTLCNT)));
             PAMI_ASSERT(0);
@@ -407,13 +410,13 @@ namespace PAMI
         ctlstr_t *getCtrlStr (unsigned count)
         {
 
-          PAMI_ASSERT(count < COLLSHM_INIT_CTLCNT);
+          PAMI_ASSERT(count <= COLLSHM_INIT_CTLCNT);
 
           unsigned ctlstr_count = 0;
           ctlstr_t * cur;
           ctlstr_t *next, *tmp, *ctlstr = NULL;
 
-          // TRACE_DBG(("_collshm->free_ctlstr_list = %lx\n", _collshm->free_ctlstr_list));
+          // TRACE_DBG((stderr,"_collshm->free_ctlstr_list = %lx\n", _collshm->free_ctlstr_list));
           while (ctlstr_count < count)
           {
             // cur = (ctlstr_t * )_collshm->free_ctlstr_list;
@@ -452,7 +455,7 @@ namespace PAMI
                  next = NULL;  // take care of the case in which free list becomes empty
                else
                  next = cur->next;
-               TRACE_DBG(("cur = %lx\n", cur));
+               TRACE_DBG((stderr,"cur = %p\n", cur));
             }
             if (cur == NULL) continue;  // may need to start over
 
@@ -462,7 +465,7 @@ namespace PAMI
           }
 
           _nctrlstrs += count;
-          TRACE_DBG(("_nctrlstrs = %d\n", _nctrlstrs));
+          TRACE_DBG((stderr,"_nctrlstrs = %zu\n", _nctrlstrs));
           return (ctlstr_t *)ctlstr;
         }
 
@@ -492,14 +495,15 @@ namespace PAMI
             tmp->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
           }
 
-          TRACE_DBG(("_nctrlstrs = %d\n", _nctrlstrs));
+          TRACE_DBG((stderr,"_nctrlstrs = %d\n", _nctrlstrs));
 
         }
 
         // get coll shmem control struture address for world geometry
         ctlstr_t *getWGCtrlStr()
         {
-          TRACE_DBG(("WGCtrlStr = %x\n", ((ctlstr_t *)_collshm->ctlstr_memory + (_localsize -1))));
+          TRACE_DBG((stderr,"_collshm %p \n",_collshm));
+          TRACE_DBG((stderr,"WGCtrlStr = %p\n", ((ctlstr_t *)_collshm->ctlstr_memory + (_localsize -1))));
           return ((ctlstr_t *)_collshm->ctlstr_memory + (_localsize -1));
         }
 

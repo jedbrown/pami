@@ -5,6 +5,7 @@
 #ifndef __algorithms_protocols_barrier_CSMultiSyncComposite_h__
 #define __algorithms_protocols_barrier_CSMultiSyncComposite_h__
 
+#include "algorithms/interfaces/Schedule.h"
 #include "algorithms/executor/Barrier.h"
 #include "algorithms/composite/Composite.h"
 

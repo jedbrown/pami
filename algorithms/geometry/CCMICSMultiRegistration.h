@@ -116,6 +116,7 @@ namespace PAMI
 
       inline pami_result_t analyze_local_impl(size_t context_id,T_Geometry *geometry, uint64_t *out)
       {
+        TRACE_ERR((stderr, "<%p>%s context %zu, geometry %p, out %p\n", this, __PRETTY_FUNCTION__, context_id, geometry, out));
          // This is where we define our contribution to the allreduce
          _csmm.getSGCtrlStrVec(geometry, out);
          return PAMI_SUCCESS;
@@ -123,6 +124,7 @@ namespace PAMI
 
       inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t *in)
       {
+        TRACE_ERR((stderr, "<%p>%s context %zu, geometry %p, in %p\n", this, __PRETTY_FUNCTION__, context_id, geometry, in));
         // This is where we get our reduction result back from the geometry create operation
         PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getLocalMasterTopology());
         PAMI::Topology *local_topo        = (PAMI::Topology *)geometry->getLocalTopology();
@@ -141,6 +143,7 @@ namespace PAMI
 
       inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
       {
+        TRACE_ERR((stderr, "<%p>%s context %zu, geometry %p, phase %u\n", this, __PRETTY_FUNCTION__, context_id, geometry, in));
 
         if (phase != 0) return PAMI_SUCCESS;
 

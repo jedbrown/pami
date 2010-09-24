@@ -149,6 +149,15 @@ namespace PAMI
 
   public:
 
+    inline pami_result_t task2peer_impl(size_t task, size_t &peer)
+      {
+        Interface::Mapping::nodeaddr_t address;
+        task2node(task,address);
+        node2peer(address,peer);
+        return PAMI_SUCCESS;
+      }
+
+
     ///
     /// \brief Retrieve pointer to a mu destination structure for this task
     ///

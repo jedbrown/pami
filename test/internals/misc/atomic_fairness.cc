@@ -84,8 +84,8 @@ struct threader {
 	unsigned long long counter;
 };
 
-int delay = 100;
-int yield = 100;
+int delay_limit = 100;
+int yield_limit = 100;
 
 struct threader tt[NUM_THREADS];
 
@@ -100,7 +100,7 @@ static inline void PRINT_STATS(pami_task_t rank) {
 		s += sprintf(s, " %10lld", tt[x].counter);
 		t += tt[x].counter;
 	}
-	s += sprintf(s, " (%lld) delay %d yield %d\n", t, delay, yield);
+	s += sprintf(s, " (%lld) delay %d yield %d\n", t, delay_limit, yield_limit);
 	printf(buf);
 }
 
@@ -121,15 +121,15 @@ void *slave(void *v) {
 	thread_lock.acquire();
 	while (t1 - t0 < duration) {
 		++t->counter;
-		if (delay)  {
+		if (delay_limit)  {
 			unsigned long long t00 = __global.time.timebase();
-			while (__global.time.timebase() - t00 < (unsigned long long)delay);
+			while (__global.time.timebase() - t00 < (unsigned long long)delay_limit);
 		}
 		t1 = __global.time.timebase();
 		thread_lock.release();
-		if (yield) {
+		if (yield_limit) {
 			unsigned long long t00 = __global.time.timebase();
-			while (__global.time.timebase() - t00 < (unsigned long long)yield);
+			while (__global.time.timebase() - t00 < (unsigned long long)yield_limit);
 		}
 		thread_lock.acquire();
 	}
@@ -139,8 +139,8 @@ void *slave(void *v) {
 
 int main(int argc, char **argv) {
 	if (argc > 1) {
-		delay = strtoul(argv[1], NULL, 0);
-		if (argc > 2) yield = strtoul(argv[2], NULL, 0);
+		delay_limit = strtoul(argv[1], NULL, 0);
+		if (argc > 2) yield_limit = strtoul(argv[2], NULL, 0);
 	}
 
 	pami_task_t task_id = __global.mapping.task();

@@ -27,10 +27,10 @@
 #include "common/default/PipeWorkQueue.h"
 
 #undef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x) //fprintf x
 
 #undef TRACE_DBG
-#define TRACE_DBG(x) // printf x
+#define TRACE_DBG(x) //fprintf x
 
 #undef PAMI_ASSERT
 #define PAMI_ASSERT(x) PAMI_assert(x)
@@ -99,7 +99,7 @@ class CollShmMessage : public BaseCollShmMessage {
           BaseCollShmMessage (device, multi->cb_done, multi->client, multi->context),
           _multi (multi)
         {
-          //TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+          //TRACE_ERR((stderr,stderr,  "%s enter\n", __PRETTY_FUNCTION__));
           _msgtype =  message_type< T_Multi >::msgtype;
         }
 
@@ -182,15 +182,15 @@ public:
          char immediate_data[IMMEDIATE_CHANNEL_DATA_SIZE];
       } window_data_t;
 
-      //#define COMBINE_DATA(dest, src, len, flag) {\
-      //  if (flag) {    \
-      //    int i;       \
-      //    for (i=0; i<len; i++) { \
-      //      ((char *)dest)[i] = ((char *)dest)[i]+ ((char *)src)[i]; \
-      //    }                           \
-      //  } else {       \
-      //    memcpy (dest, src, len);  \
-      //  } \
+      //#define COMBINE_DATA(dest, src, len, flag) {
+      //  if (flag) {    
+      //    int i;       
+      //    for (i=0; i<len; i++) { 
+      //      ((char *)dest)[i] = ((char *)dest)[i]+ ((char *)src)[i]; 
+      //    }                           
+      //  } else {       
+      //    memcpy (dest, src, len);  
+      //  } 
       //}
 
       CollShmWindow() :
@@ -391,7 +391,9 @@ public:
         if (dest.bytesAvailableToProduce() < MIN(length, _len)) return 0;
         size_t reqbytes = MIN (length, dest.bytesAvailableToProduce());
         size_t len      = MIN (reqbytes, _len);
+#if  defined(__64BIT__) && !defined(_LAPI_LINUX)
         char *src;
+#endif
         switch (_ctrl.content)
         {
           case IMMEDIATE:
@@ -420,7 +422,7 @@ public:
             break;
 #endif
           default:
-            TRACE_DBG(("valus of content is %d\n", _ctrl.content));
+            TRACE_DBG((stderr,"valus of content is %d\n", _ctrl.content));
             PAMI_ASSERT(0);
         }
 
@@ -434,7 +436,9 @@ public:
       INLINE size_t consumeData(char *dest, size_t length, int combine_flag, pami_op op, pami_dt dt)
       {
         size_t len      = MIN (length, _len);
+#if  defined(__64BIT__) && !defined(_LAPI_LINUX)
         char *src;
+#endif
         switch (_ctrl.content)
         {
           case IMMEDIATE:
@@ -463,7 +467,7 @@ public:
             break;
 #endif
           default:
-            TRACE_DBG(("valus of content is %d\n", _ctrl.content));
+            TRACE_DBG((stderr,"valus of content is %d\n", _ctrl.content));
             PAMI_ASSERT(0);
         }
         return len;
@@ -582,7 +586,7 @@ public:
           CollShmThread() : PAMI::Device::Generic::GenericAdvanceThread()
           {}
 
-          CollShmThread(int idx, CollShmDevice *device) :
+          CollShmThread(unsigned idx, CollShmDevice *device) :
           PAMI::Device::Generic::GenericAdvanceThread(),
           _idx(idx),
           _step(0),
@@ -590,10 +594,10 @@ public:
           _partners(0),
           _sync_flag(0),
           _target_cntr(0),
-          _role(NOROLE),
           _root((unsigned char) -1),
           _arank(device->getRank()),
           _nranks(device->getSize()),
+          _role(NOROLE),
           _device(device)
           {
              setAdv(advanceThread);
@@ -792,7 +796,7 @@ public:
 
              _rrank = (_arank + _nranks - root) % _nranks;
 
-             TRACE_DBG(("root = %d, _root = %d\n", (int)root, (int)_root));
+             TRACE_DBG((stderr,"root = %d, _root = %d\n", (int)root, (int)_root));
 
              if (root != _root)
              {
@@ -837,7 +841,7 @@ public:
             if (!_step) {
               mem_barrier(); // lwsync();
               window = _device->getWindow(0, _arank, _idx);
-              TRACE_DBG(("window addr = %x\n", window));
+              TRACE_DBG((stderr,"window addr = %p\n", window));
               window->setSyncflag(_sync_flag);
               _step = 1;
             }
@@ -853,7 +857,7 @@ public:
               msg->setStatus(PAMI::Device::Done);
               setMsg(NULL);
               _device->decActiveMsg();
-              TRACE_DBG(("shm_sync, _sync_flag =%d\n", _sync_flag));
+              TRACE_DBG((stderr,"shm_sync, _sync_flag =%d\n", _sync_flag));
               return PAMI_SUCCESS;
             }
           }
@@ -868,7 +872,7 @@ public:
             CollShmWindow *window = _device->getWindow(0, _arank, _idx);
             int i, prank;
 
-            TRACE_DBG(("shm_reduce %d\n", _idx));
+            TRACE_DBG((stderr,"shm_reduce %d\n", _idx));
 
             while (_len != 0) {
               if (_role == CHILD) {
@@ -960,7 +964,7 @@ public:
             CollShmWindow *window = _device->getWindow(0, _arank, _idx);
             int prank;
 
-            TRACE_DBG(("shm_bcast %d\n", _idx));
+            TRACE_DBG((stderr,"shm_bcast %d\n", _idx));
 
             while (_len != 0) {
               if (_role == PARENT) {
@@ -1064,9 +1068,9 @@ public:
        _tid(topo->rank2Index(__global.mapping.task())),
        _nactive(0),
        _syncbits(0),
-       _round(0),
        _head(_numchannels),
-       _tail(0)
+       _tail(0),
+       _round(0)
        {
 
          int num = _synccounts;
@@ -1075,7 +1079,7 @@ public:
          PAMI_ASSERT(str != NULL);
          collshm_wgroup_t *ctlstr = (collshm_wgroup_t *)str;
 
-         for (int i = 0; i < _numchannels; ++i) {
+         for (unsigned i = 0;  i < _numchannels; ++i) {
            new (&_threads[i]) CollShmThread(i, this);
          }
 
@@ -1087,14 +1091,14 @@ public:
          for (int i = 0; i < 2; ++i)
          {
            _increments[i] = 1;
-           for (int j = 0; j < _numsyncs; ++j)
+           for (unsigned j = 0; j < _numsyncs; ++j)
              _completions[i][j] = 0;
          }
 
          // initialize shm channels
-         for (int i = 0; i < _ntasks; ++i)
+         for (unsigned i = 0;  i < _ntasks; ++i)
          {
-            TRACE_DBG(("ctlstr is %p\n", ctlstr));
+            TRACE_DBG((stderr,"ctlstr is %p\n", ctlstr));
             _wgroups[i] = ctlstr;
             // ctlstr      = (collshm_wgroup_t *)(*(collshm_wgroup_t **)ctlstr);
             ctlstr      = ctlstr->next;
@@ -1111,7 +1115,7 @@ public:
               _wgroups[i]->task_rank  = i;
 
               for (int j = 0; j < 2; ++j)
-                for (int k = 0; k < _numsyncs; ++k) {
+                for (unsigned k = 0; k < _numsyncs; ++k) {
                   //_wgroups[i]->barrier[j][k] = 0;
                   _wgroups[i]->barrier[i][j].clear();
                 }
@@ -1153,7 +1157,7 @@ public:
 
           while (_completions[round][head] == _synccounts)
           {
-            TRACE_DBG(("round = %d, head = %d, barrier = %d, completion = %d\n", round, head, _wgroups[0]->barrier[round][head].fetch(), _completions[round][head]));
+            TRACE_DBG((stderr,"round = %d, head = %d, barrier = %zu, completion = %d\n", round, head, _wgroups[0]->barrier[round][head].fetch(), _completions[round][head]));
             if (_wgroups[0]->barrier[round][head].fetch() == ((increment == 1) ? _ntasks : 0))
             {
               ++adv;
@@ -1171,7 +1175,7 @@ public:
           }
           _head += (adv * _synccounts);
 
-          TRACE_DBG(("advance head ..._head = %d\n", _head));
+          TRACE_DBG((stderr,"advance head ..._head = %d\n", _head));
 
           return adv;
         }
@@ -1189,7 +1193,7 @@ public:
         {
           int position = -1;
 
-          TRACE_DBG(("before advance tail, tail = %d\n", (int)_tail));
+          TRACE_DBG((stderr,"before advance tail, tail = %d\n", (int)_tail));
           if (_isThreadAvailable())
           {
             position = _tail++;
@@ -1200,7 +1204,7 @@ public:
               _round  = (_round+1) & 0x1;
              }
           }
-          TRACE_DBG(("after advance tail, tail =%d\n", (int)_tail));
+          TRACE_DBG((stderr,"after advance tail, tail =%d\n", (int)_tail));
 
           return position;
         }
@@ -1210,7 +1214,7 @@ public:
         ///
         INLINE pami_result_t _advanceQueue(pami_context_t context)
         {
-          TRACE_DBG(("advanceQueue activated\n"));
+          TRACE_DBG((stderr,"advanceQueue activated\n"));
           if (_isThreadAvailable()) {
             postNextMsg();
             _threadm.setStatus(PAMI::Device::Idle); // potential race condition here !!!
@@ -1260,7 +1264,7 @@ public:
           bool     cur_round = channel_id < _tail;
           unsigned round     = cur_round ? _round : ((_round+1) & 0x1);
 
-          TRACE_DBG(("Operation %d completed, thread set to free, completions = %d\n", channel_id, _completions[round][idx]));
+          TRACE_DBG((stderr,"Operation %d completed, thread set to free, completions = %d\n", channel_id, _completions[round][idx]));
           if ((++ _completions[round][idx]) < _synccounts) return;
 
           int      increment  = _increments[round];
@@ -1269,9 +1273,9 @@ public:
           do {
             arrived    = _wgroups[0]->barrier[round][idx].fetch();
             // needs to recheck if it is the last one to take care of race condition
-            if (arrived == (increment == 1 ? _ntasks-1 : 1)) {
-              for (int grp = 0; grp < _ntasks; ++grp) {
-                 for (int w = 0; w < _synccounts; ++w)
+            if (arrived == (increment == 1 ? (int)(_ntasks-1) : 1)) {
+              for (unsigned grp = 0; grp < _ntasks; ++grp) {
+                 for (unsigned w = 0; w < _synccounts; ++w)
                   (_wgroups[grp]->windows[idx*_synccounts + w]).clearCtrl();
               }
             }
@@ -1294,7 +1298,7 @@ public:
         /// \return pointer to the corresponding window
         INLINE CollShmWindow * getWindow (unsigned geometry, size_t peer, unsigned channel)
         {
-          TRACE_DBG(("_wgroup[%d] window[%d]=%p, %p\n", peer, channel, _wgroups[peer], &(_wgroups[peer]->windows[channel])));
+          TRACE_DBG((stderr,"_wgroup[%zu] window[%d]=%p, %p\n", peer, channel, _wgroups[peer], &(_wgroups[peer]->windows[channel])));
           return &(_wgroups[peer]->windows[channel]);
         }
 
@@ -1308,7 +1312,7 @@ public:
           size_t x = msg->getContextId();
           PAMI::Device::Generic::Device *g = getGenerics();
 
-          TRACE_DBG(("postMsg %p\n",msg));
+          TRACE_DBG((stderr,"postMsg %p\n",msg));
 
           if (_isThreadAvailable()) {
             CollShmThread *thr = getAvailThread();
@@ -1329,7 +1333,7 @@ public:
 
             g[x].postMsg(msg);
             g[x].postThread(thr);
-            TRACE_DBG(("message posted\n"));
+            TRACE_DBG((stderr,"message posted\n"));
           } else {
             msg->setStatus(PAMI::Device::Initialized);
 
@@ -1337,7 +1341,7 @@ public:
               _threadm.setStatus(PAMI::Device::Ready);
               g[x].postThread(&_threadm);
             }
-            TRACE_DBG(("%d message initalized\n", _nactive));
+            TRACE_DBG((stderr,"%d message initalized\n", _nactive));
           }
 
           enqueue(msg);
@@ -1351,7 +1355,7 @@ public:
           BaseCollShmMessage *msg, *nextmsg;
 
           for (msg = (BaseCollShmMessage *)peek(); msg; msg = nextmsg) {
-             TRACE_DBG(("postNextMsg %p\n",msg));
+             TRACE_DBG((stderr,"postNextMsg %p\n",msg));
 
              nextmsg = (BaseCollShmMessage *)next(msg);
              if (msg->getStatus() != PAMI::Device::Initialized) continue;
@@ -1444,7 +1448,7 @@ public:
         // _csdevice(device, commid, topology, csmm, csmm->getWGCtrlStr())
          _csdevice(device, commid, topology, csmm, ctrlstr)
         {
-            //TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+            //TRACE_ERR((stderr,stderr,  "%s enter\n", __PRETTY_FUNCTION__));
             // PAMI_assert(device == _g_l_bcastwq_dev);
 
             _csdevice.getWindow(0,0,0); // just simple checking

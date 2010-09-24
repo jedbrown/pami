@@ -120,11 +120,14 @@ namespace PAMI
   typedef PAMI::NativeInterfaceAllsided< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AS;
 
 
-  typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2NodeCounter> Barrier_Type;
+  // Old (BGP) Collective Shmem Protocol Typedefs
 
-  typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
-
-  typedef BGQNativeInterfaceAS <ShmemDevice, Device::LocalBcastWQModel, Barrier_Model,Device::LocalAllreduceWQModel> AllSidedShmemNI;
+  typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2NodeCounter>       Barrier_Type;
+  typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           Barrier_Model;
+  typedef BGQNativeInterfaceAS <ShmemDevice, 
+                                Device::LocalBcastWQModel, 
+                                Barrier_Model,
+                                Device::LocalAllreduceWQModel>                   AllSidedShmemNI;
 
 }
 
