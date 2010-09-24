@@ -5,7 +5,7 @@
 #ifndef __algorithms_executor_Scatter_h__
 #define __algorithms_executor_Scatter_h__
 
-
+#include "Global.h"
 #include "algorithms/interfaces/Schedule.h"
 #include "algorithms/interfaces/Executor.h"
 #include "algorithms/connmgr/ConnectionManager.h"
@@ -177,10 +177,9 @@ namespace CCMI
 
         virtual ~ScatterExec ()
         {
-          /// Todo: convert this to allocator ?
-          if (_maxdsts) free (_msendstr);
-
-          if (_native->myrank() != _root || (_root != 0 && _native->numranks() != (unsigned)_nphases + 1)) free (_tmpbuf);
+           /// Todo: convert this to allocator ?
+           if (_maxdsts) __global.heap_mm->free(_msendstr);
+           if (_native->myrank() != _root || (_root != 0 && _native->numranks() != (unsigned)_nphases+1)) __global.heap_mm->free(_tmpbuf);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -214,14 +213,13 @@ namespace CCMI
             connection_id = _connmgr->getConnectionId(_comm, _root, 0, (unsigned) - 1, (unsigned) - 1);
 
           _msendstr = NULL;
-
           if (_maxdsts)
-            {
-              _msendstr = (SendStruct *) malloc (_maxdsts * sizeof(SendStruct)) ;
-
-              pami_quad_t *info      =  (pami_quad_t*)((void*) & _mdata);
-
-              for (int i = 0; i < _maxdsts; ++i)
+          {
+	    pami_result_t rc = __global.heap_mm->memalign((void **)&_msendstr, 0, 
+            						_maxdsts * sizeof(SendStruct));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _msendstr");
+            pami_quad_t *info      =  (pami_quad_t*)((void*) & _mdata);
+            for (int i = 0; i <_maxdsts; ++i)
                 {
                   _msendstr[i].msend.msginfo       =  info;
                   _msendstr[i].msend.msgcount      =  1;
@@ -267,20 +265,22 @@ namespace CCMI
                 _tmpbuf = src;
               else  // allocate temporary buffer and reshuffle the data
                 {
-                  size_t buflen = _native->numranks() * len;
-                  _tmpbuf = (char *) malloc(buflen);
-                  memcpy (_tmpbuf, src + _myindex*len, (_native->numranks() - _myindex)*len);
-                  memcpy (_tmpbuf + (_native->numranks() - _myindex)*len  , src, _myindex * len);
+              size_t buflen = _native->numranks() * len;
+	      pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
+              memcpy (_tmpbuf, src+_myindex*len, (_native->numranks() - _myindex)*len);
+              memcpy (_tmpbuf+(_native->numranks() - _myindex)*len  ,src, _myindex * len);
                 }
             }
           else if (_nphases > 1)
-            {
-              // schedule's getLList() method can be used for an accurate buffer size
-              size_t  buflen = _native->numranks() * len;
-              _tmpbuf = (char *)malloc(buflen);
-              _pwq.configure (NULL, _tmpbuf, buflen, 0);
-              _pwq.reset();
-            }
+          {
+            // schedule's getLList() method can be used for an accurate buffer size
+            size_t  buflen = _native->numranks() * len;
+	    pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
+            _pwq.configure (NULL, _tmpbuf, buflen, 0);
+            _pwq.reset();
+          }
           else
             {
               _pwq.configure (NULL, dst, len, 0);

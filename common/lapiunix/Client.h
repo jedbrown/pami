@@ -220,14 +220,15 @@ namespace PAMI
         char   *host,*hosts,*s;
 
         // local node process/rank info
-        _mapcache=(uint32_t*)malloc(sizeof(*_mapcache) * mysize);
-        PAMI_assertf(_mapcache != NULL, "memory alloc failed");
-        _peers = (size_t*)malloc(sizeof(*_peers) * mysize);
-        PAMI_assertf(_peers != NULL, "memory alloc failed");
-        host=(char*)malloc(str_len);
-        PAMI_assertf(host != NULL, "memory alloc failed");
-        hosts=(char*)malloc(str_len*mysize);
-        PAMI_assertf(hosts != NULL, "memory alloc failed");
+	pami_result_t rc = __global.heap_mm->memalign((void **)&_mapcache, 0,
+						sizeof(*_mapcache) * mysize);
+        PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed");
+	rc = __global.heap_mm->memalign((void **)&_peers, 0, sizeof(*_peers) * mysize);
+        PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed");
+	rc = __global.heap_mm->memalign((void **)&host, 0, str_len);
+        PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed");
+	rc = __global.heap_mm->memalign((void **)&hosts, 0, str_len*mysize);
+        PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed");
         err = gethostname(host, str_len);
         PAMI_assertf(err == 0, "gethostname failed, errno %d", errno);
 
@@ -278,8 +279,8 @@ namespace PAMI
             _peers[_npeers++] = r;
           }
         }
-        free(host);
-        free(hosts);
+        __global.heap_mm->free(host);
+        __global.heap_mm->free(hosts);
 
         // local ranks could be represented as rectangle...
         // but, let Global.h use Topology analyze if it wants.
@@ -310,11 +311,11 @@ namespace PAMI
         }
 
         PAMI::Client * clientp;
-        clientp = (PAMI::Client *)malloc(sizeof (PAMI::Client));
-        PAMI_assert(clientp != NULL);
-        memset ((void *)clientp, 0x00, sizeof(PAMI::Client));
         pami_result_t res;
-        new (clientp) PAMI::Client (name, configuration, num_configs, res);
+	res = __global.heap_mm->memalign((void **)&clientp, 0, sizeof(*clientp));
+        PAMI_assertf(res == PAMI_SUCCESS, "Failed to alloc client"); // or return?
+        memset ((void *)clientp, 0x00, sizeof(PAMI::Client));
+        new (clientp) PAMI::Client(name, configuration, num_configs, res);
         if (res != PAMI_SUCCESS)
           return res;
         *client = (pami_client_t) clientp;
@@ -333,7 +334,7 @@ namespace PAMI
           
         Client *c = (Client *) client;
         c->~Client();
-        free (client);
+        __global.heap_mm->free(client);
       }
 
     inline char * getName_impl ()
@@ -527,12 +528,15 @@ namespace PAMI
         uint64_t                  to_reduce_vec[16];
         uint64_t                  *to_reduce;
         uint                      to_reduce_count;
+	pami_result_t rc;
         // If our new geometry is NOT NULL, we will create a new geometry
         // for this client.  This new geometry will be populated with a
         // set of algorithms.
         if(geometry != NULL)
           {
-            new_geometry=(LAPIGeometry*) malloc(sizeof(*new_geometry));
+	    rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+							sizeof(*new_geometry));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
             new(new_geometry)LAPIGeometry((pami_client_t)this,
                                           (LAPIGeometry*)parent,
                                           &__global.mapping,
@@ -544,7 +548,9 @@ namespace PAMI
             PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             to_reduce_count = 3 + local_master_topology->size();
             if (to_reduce_count >16) {
-               to_reduce = (uint64_t *)malloc(to_reduce_count * sizeof(uint64_t));
+	       rc = __global.heap_mm->memalign((void **)&to_reduce, 0,
+               					to_reduce_count * sizeof(uint64_t));
+	       PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
             } else {
                to_reduce = &(to_reduce_vec[0]);
             }
@@ -585,7 +591,9 @@ namespace PAMI
                                           0,
                                           ctxt->getId());
             Geometry::Algorithm<LAPIGeometry> *ar_algo = (Geometry::Algorithm<LAPIGeometry> *)alg;
-            LAPIClassRouteId *cr = (LAPIClassRouteId *)malloc(sizeof(LAPIClassRouteId));
+            LAPIClassRouteId *cr;
+	    rc = __global.heap_mm->memalign((void **)&cr, 0, sizeof(LAPIClassRouteId));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc LAPIClassRouteId");
             new(cr)LAPIClassRouteId(ar_algo,
                                    new_geometry,
                                    to_reduce,
@@ -610,7 +618,7 @@ namespace PAMI
               }
           }
 
-        if (to_reduce_count > 16) free(to_reduce);
+        if (to_reduce_count > 16) __global.heap_mm->free(to_reduce);
         return PAMI_SUCCESS;
       }
 

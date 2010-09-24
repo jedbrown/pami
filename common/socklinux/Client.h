@@ -62,8 +62,8 @@ namespace PAMI
 
         _ncontexts = n;
 
-        int rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
-        PAMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
+        pammi_result_t rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
+        PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _contexts[%zd]", n);
         int x;
 
         _platdevs.generate(_clientid, n, _mm);

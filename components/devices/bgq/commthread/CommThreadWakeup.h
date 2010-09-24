@@ -524,6 +524,7 @@ _commThreads(NULL)
 	size_t num_ctx = 64 / Kernel_ProcessCount();
 #endif
 
+	pami_result_t rc;
 	size_t me = __global.topology_local.rank2Index(__global.mapping.task());
 	size_t lsize = __global.topology_local.size();
 
@@ -544,17 +545,17 @@ _commThreads(NULL)
 	BgqCommThread::_ptCore = (NUM_CORES - 1) - (BgqCommThread::_maxActive % NUM_CORES);
 	BgqCommThread::_ptThread = BgqCommThread::_maxActive / NUM_CORES;
 
-	posix_memalign((void **)&devs, 16, BgqCommThread::_maxActive * sizeof(*devs));
-	posix_memalign((void **)&pool, 16, sizeof(*pool));
-	posix_memalign((void **)&wu, 16, sizeof(*wu)); // one per client
+	rc = __global.heap_mm->memalign((void **)&devs, 16, BgqCommThread::_maxActive * sizeof(*devs));
+	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc BgqCommThread");
+	rc = __global.heap_mm->memalign((void **)&pool, 16, sizeof(*pool));
+	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc BgqContextPool");
+	rc = __global.heap_mm->memalign((void **)&wu, 16, sizeof(*wu)); // one per client
+	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc BgqWakeupRegion");
 
 	new (wu) BgqWakeupRegion();
-	pami_result_t rc = wu->init(num_ctx, me, lsize, l2xmm);
-	if (rc != PAMI_SUCCESS) {
-		PAMI_abortf("Failed to initialize BgqWakeupRegion - not enough shared memory?");
-	}
+	rc = wu->init(num_ctx, me, lsize, l2xmm);
+	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to init BgqWakeupRegion - not enough shared memory?");
 	__global._wuRegion_mm = wu->getWUmm();
-
 	new (pool) BgqContextPool();
 	pool->init(BgqCommThread::_maxActive, num_ctx, l2xmm, __global._wuRegion_mm);
 

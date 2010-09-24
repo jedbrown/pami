@@ -68,8 +68,8 @@ namespace PAMI
       };
       inline ~Mapping ()
       {
-        free( _tcpConnTable );
-        free( _udpConnTable );
+        PAMI::Memory::MemoryManager::heap_mm->free( _tcpConnTable );
+        PAMI::Memory::MemoryManager::heap_mm->free( _udpConnTable );
       };
 
       inline bool loadMapFile()
@@ -108,7 +108,9 @@ namespace PAMI
         }
 
         // Allocate the node table - this contains the information from the map file
-        _nodetable = (node_table_t *) malloc (_size * sizeof(node_table_t));
+	pami_result_t rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+			(void **)&_nodetable, 0, _size * sizeof(*_nodetable));
+	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _nodetable");
         for (i=0; i<_size; i++)
         {
           _nodetable[i].host[0] = 0; // NULL
@@ -218,7 +220,9 @@ namespace PAMI
 
         _udpConnInit = true;
         // Allocate space for the connection table
-        _udpConnTable = (udp_conn_t *)malloc(_size * sizeof(udp_conn_t));
+	pami_result_t rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+			(void **)&_udpConnTable, 0, _size * sizeof(*_udpConnTable));
+	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _udpConnTable");
 
         size_t i;
         for ( i=0; i<_size; i++) {
@@ -302,7 +306,9 @@ namespace PAMI
       {
         _tcpConnInit = true;
         // Allocate space for the connection table
-        _tcpConnTable = (pami_coord_t *)malloc(_size * sizeof(pami_coord_t));
+	pami_result_t rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+			(void **)&_tcpConnTable, 0, _size * sizeof(*_tcpConnTable));
+	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc *_tcpConnTable");
 
         // All are sockets entries
         size_t i;

@@ -22,6 +22,7 @@
 
 #include "common/TopologyInterface.h"
 #include "Mapping.h"
+#include "components/memory/MemoryManager.h"
 #include "util/common.h"
 
 #define net_coord(n)	u.n_torus.coords[n]
@@ -190,7 +191,10 @@ namespace PAMI {
           size_t s = 0;
           size_t z;
           mapping->nodePeers(z);
-          pami_task_t *rl = (pami_task_t *)malloc(z * sizeof(*rl));
+          pami_task_t *rl;
+	  pami_result_t rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&rl, 0, z * sizeof(*rl));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", z);
           pami_task_t *rp = rl;
           if (__type == PAMI_RANGE_TOPOLOGY) {
             pami_task_t r;
@@ -217,7 +221,7 @@ namespace PAMI {
             _new->topo_ranklist = rl;
             return;
           } else {
-            free(rl);
+            PAMI::Memory::MemoryManager::heap_mm->free(rl);
           }
         }
       }
@@ -626,8 +630,9 @@ namespace PAMI {
 	memcpy(this, topo, sizeof(*topo));
 	// right now, the only type that allocates additional storage is PAMI_LIST_TOPOLOGY
 	if (topo->__type == PAMI_LIST_TOPOLOGY) {
-	    topo_ranklist = (pami_task_t *)malloc(__size * sizeof(*topo_ranklist));
-	    PAMI_assertf(topo_ranklist, "Out of memory in Topology clone ctor");
+	    pami_result_t rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+			(void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "ranklist[%zd] alloc failed", __size);
 	    memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
 	}
     }
@@ -1148,8 +1153,14 @@ namespace PAMI {
 
         size_t s = __size;
 	typedef size_t tb_t[2];
-        pami_task_t *rl = (pami_task_t *)malloc(s * sizeof(*rl));
-        tb_t *tb = (tb_t *)malloc(s * sizeof(tb_t));
+	pami_task_t *rl;
+	tb_t *tb;
+	pami_result_t rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&rl, 0, s * sizeof(*rl));
+	PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
+	rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&tb, 0, s * sizeof(*tb));
+	PAMI_assertf(rc == PAMI_SUCCESS, "temp tb-list[%zd] alloc failed", s);
 	memset(tb, 0, s * sizeof(tb_t));
         size_t k = 0;
         pami_task_t r;
@@ -1175,12 +1186,12 @@ namespace PAMI {
 		}
 	  }
         }
-	free(tb);
+	PAMI::Memory::MemoryManager::heap_mm->free(tb);
         if (k == 1) {
           _new->__type = PAMI_SINGLE_TOPOLOGY;
           _new->__size = 1;
           _new->topo_rank = rl[0];
-          free(rl);
+          PAMI::Memory::MemoryManager::heap_mm->free(rl);
           return;
         }
         if (k > 1) {
@@ -1191,7 +1202,7 @@ namespace PAMI {
         }
         _new->__type = PAMI_EMPTY_TOPOLOGY;
         _new->__size = 0;
-        free(rl);
+        PAMI::Memory::MemoryManager::heap_mm->free(rl);
       }
     }
 
@@ -1354,7 +1365,9 @@ namespace PAMI {
           return true;
           break;
         case PAMI_LIST_TOPOLOGY:
-          rl = (pami_task_t *)malloc(sizeof(*rl));
+	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&rl, 0, sizeof(*rl));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[1] alloc failed");
           __type = PAMI_LIST_TOPOLOGY;
           *rl = topo_rank;
           topo_ranklist = rl;
@@ -1379,7 +1392,9 @@ namespace PAMI {
           }
           break;
         case PAMI_LIST_TOPOLOGY:
-          rl = (pami_task_t *)malloc(__size * sizeof(*rl));
+	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&rl, 0, __size * sizeof(*rl));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", __size);
           rp = rl;
           __type = PAMI_LIST_TOPOLOGY;
           pami_task_t r;
@@ -1429,7 +1444,9 @@ namespace PAMI {
           }
           break;
         case PAMI_LIST_TOPOLOGY:
-          rl = (pami_task_t *)malloc(__size * sizeof(*rl));
+	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&rl, 0, __size * sizeof(*rl));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", __size);
           rp = rl;
           c0 = topo_llcoord;
           do {
@@ -1560,6 +1577,7 @@ namespace PAMI {
         size_t s;
         size_t i, j, k;
         pami_task_t *rl;
+	pami_result_t rc;
         switch (__type) {
         case PAMI_COORD_TOPOLOGY:
           // This always results in a rectangle...
@@ -1614,7 +1632,9 @@ namespace PAMI {
           // guess at size: smallest topology.
           s = (__size < other->__size ?
                __size : other->__size);
-          rl = (pami_task_t *)malloc(s * sizeof(*rl));
+	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&rl, 0, s * sizeof(*rl));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
           k = 0;
           for (i = 0; i < __size; ++i) {
             for (j = 0; j < other->__size; ++j) {
@@ -1629,7 +1649,7 @@ namespace PAMI {
             _new->topo_ranklist = rl;
             return;
           }
-          free(rl);
+          PAMI::Memory::MemoryManager::heap_mm->free(rl);
           break;
         case PAMI_EMPTY_TOPOLOGY:
         default:
@@ -1721,7 +1741,9 @@ namespace PAMI {
           // that we don't check for. We just create a
           // list and then try to convert it to coords.
           s = __size;
-          rl = (pami_task_t *)malloc(s * sizeof(*rl));
+	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&rl, 0, s * sizeof(*rl));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
           k = 0;
           c0 = topo_llcoord;
           do {
@@ -1742,7 +1764,7 @@ namespace PAMI {
             rl[k++] = rank;
           } while (__nextCoord(&c0, mapping->globalDims()));
           if (k == 0) {
-            free(rl);
+            PAMI::Memory::MemoryManager::heap_mm->free(rl);
             break;
           }
           _new->__size = k;
@@ -1752,12 +1774,12 @@ namespace PAMI {
             _new->topo_llcoord = ll;
             _new->topo_urcoord = ur;
             set_istorus(_new->topo_llcoord,_new->topo_urcoord,_new->topo_istorus);  
-            free(rl);
+            PAMI::Memory::MemoryManager::heap_mm->free(rl);
           } else if (max - min + 1 == k) {
             _new->__type = PAMI_RANGE_TOPOLOGY;
             _new->topo_first = min;
             _new->topo_last = max;
-            free(rl);
+            PAMI::Memory::MemoryManager::heap_mm->free(rl);
           } else {
             _new->__type = PAMI_LIST_TOPOLOGY;
             _new->topo_ranklist = rl;
@@ -1801,7 +1823,9 @@ namespace PAMI {
             s = other->topo_first - topo_first +
               topo_last - other->topo_last;
             PAMI_assert_debugf(s != 0, "subtraction results in empty topology\n");
-            rl = (pami_task_t *)malloc(s * sizeof(*rl));
+	    rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&rl, 0, s * sizeof(*rl));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
             k = 0;
             for (j = topo_first; j < other->topo_first; ++j) {
               rl[k++] = j;
@@ -1839,7 +1863,9 @@ namespace PAMI {
         case PAMI_LIST_TOPOLOGY:
           /// \todo keep this from being O(n^2)
           s = __size;
-          rl = (pami_task_t *)malloc(s * sizeof(*rl));
+	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&rl, 0, s * sizeof(*rl));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
           k = 0;
           for (i = 0; i < s; ++i) {
             if (other->isRankMember(topo_list(i))) {
@@ -1849,7 +1875,7 @@ namespace PAMI {
             rl[k++] = topo_list(i);
           }
           if (k == 0) {
-            free(rl);
+            PAMI::Memory::MemoryManager::heap_mm->free(rl);
             _new->__type = PAMI_EMPTY_TOPOLOGY;
             _new->__size = 0;
             break;
@@ -1877,7 +1903,9 @@ namespace PAMI {
           if (isRankMember(other->topo_rank)) {
             // convert rectangle to list and remove one...
             s = __size;
-            rl = (pami_task_t *)malloc(s * sizeof(*rl));
+	    rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&rl, 0, s * sizeof(*rl));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
             k = 0;
             c0 = topo_llcoord;
             do {
@@ -1889,13 +1917,13 @@ namespace PAMI {
               rl[k++] = rank;
             } while (__nextCoord(&c0, mapping->globalDims()));
             if (k == 0) {
-              free(rl);
+              PAMI::Memory::MemoryManager::heap_mm->free(rl);
               break;
             } else if (k == 1) {
               _new->__type = PAMI_SINGLE_TOPOLOGY;
               _new->__size = 1;
               _new->topo_rank = rl[0];
-              free(rl);
+              PAMI::Memory::MemoryManager::heap_mm->free(rl);
               return;
             }
             _new->__type = PAMI_LIST_TOPOLOGY;
@@ -1911,7 +1939,9 @@ namespace PAMI {
           if (isRankMember(other->topo_rank)) {
             // convert range into list...
             s = __size;
-            rl = (pami_task_t *)malloc(s * sizeof(*rl));
+	    rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&rl, 0, s * sizeof(*rl));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
             k = 0;
             for (i = topo_first; i < other->topo_rank; ++i) {
               rl[k++] = i;
@@ -1920,13 +1950,13 @@ namespace PAMI {
               rl[k++] = i;
             }
             if (k == 0) { // probably never
-              free(rl);
+              PAMI::Memory::MemoryManager::heap_mm->free(rl);
               break;
             } else if (k == 1) {
               _new->__type = PAMI_SINGLE_TOPOLOGY;
               _new->__size = 1;
               _new->topo_rank = rl[0];
-              free(rl);
+              PAMI::Memory::MemoryManager::heap_mm->free(rl);
               return;
             }
             _new->__type = PAMI_LIST_TOPOLOGY;
@@ -1940,7 +1970,9 @@ namespace PAMI {
           break;
         case PAMI_LIST_TOPOLOGY:
           s = __size;
-          rl = (pami_task_t *)malloc(s * sizeof(*rl));
+	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&rl, 0, s * sizeof(*rl));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
           k = 0;
           for (i = 0; i < s; ++i) {
             if (topo_list(i) != other->topo_rank) {
@@ -1948,13 +1980,13 @@ namespace PAMI {
             }
           }
           if (k == 0) { // probably never
-            free(rl);
+            PAMI::Memory::MemoryManager::heap_mm->free(rl);
             break;
           } else if (k == 1) {
             _new->__type = PAMI_SINGLE_TOPOLOGY;
             _new->__size = 1;
             _new->topo_rank = rl[0];
-            free(rl);
+            PAMI::Memory::MemoryManager::heap_mm->free(rl);
             return;
           }
           _new->__type = PAMI_LIST_TOPOLOGY;

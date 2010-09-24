@@ -14,6 +14,7 @@
 #ifndef __algorithms_geometry_Geometry_h__
 #define __algorithms_geometry_Geometry_h__
 
+#include "Global.h"
 #include "Topology.h"
 #include "Mapping.h"
 #include "algorithms/geometry/Attributes.h"
@@ -93,6 +94,58 @@ namespace PAMI
 
           resetUEBarrier_impl();
         }
+
+      inline Common (pami_client_t                        client,
+                     Geometry<PAMI::Geometry::Common>    *parent,
+                     Mapping                             *mapping,
+                     unsigned                             comm,
+                     int                                  numranges,
+                     pami_geometry_range_t                rangelist[],
+		     std::map<unsigned, pami_geometry_t> *geometry_map):
+        Geometry<PAMI::Geometry::Common>(parent,
+					 mapping,
+					 comm,
+					 numranges,
+					 rangelist),
+        _kvstore(),
+        _commid(comm),
+        _client(client),
+	_geometry_map(geometry_map),
+        _masterRank(-1)
+        {
+          TRACE_ERR((stderr, "<%p>Common(parent)\n", this));
+          int i, j, k, size;
+          pami_task_t nranks;
+
+
+          size = 0;
+          nranks = 0;
+          _mytopo = 0;
+          _rank = mapping->task();
+          _numtopos =  numranges + 1;
+
+          _topos = new PAMI::Topology[_numtopos + 3]; // storing numtopos + local + global + local_master
+          _topos = &_topos[3]; // skip local & global storage & local_master
+
+          for (i = 0; i < numranges; i++)
+            nranks += (rangelist[i].hi - rangelist[i].lo + 1);
+
+	  pami_result_t rc = __global.heap_mm->memalign((void **)&_ranks,
+			sizeof(pami_task_t), nranks * sizeof(pami_task_t));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc memory for _ranks");
+
+          for (k = 0, i = 0; i < numranges; i++)
+              {
+                size = rangelist[i].hi - rangelist[i].lo + 1;
+
+                for (j = 0; j < size; j++, k++)
+                    {
+                      _ranks[k] = rangelist[i].lo + j;
+                      if (_ranks[k] == (pami_task_t) _rank)
+                        _virtual_rank = k;
+                    }
+              }
+	}
 
         inline Common (pami_client_t                        client,
                        Geometry<PAMI::Geometry::Common>    *parent,
@@ -461,9 +514,12 @@ namespace PAMI
 
         inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl(unsigned i)
         {
-          if (_allreduce_storage[i] == NULL)
-            _allreduce_storage[i] =  malloc (PAMI_REQUEST_NQUADS * 4);
-
+          if(_allreduce_storage[i] == NULL) {
+	    pami_result_t rc = __global.heap_mm->memalign((void **)&_allreduce_storage[i],
+			sizeof(void *), PAMI_REQUEST_NQUADS*4);
+	    PAMI_assertf(rc == PAMI_SUCCESS,
+			"Failed to alloc memory for _allreduce_storage[%d]", i);
+	  }
           return _allreduce_storage[i];
         }
         inline COMPOSITE_TYPE            getAllreduceComposite_impl(unsigned i)
@@ -483,9 +539,14 @@ namespace PAMI
         }
         inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl()
         {
-          if (_allreduce_storage[_allreduce_iteration] == NULL)
-            _allreduce_storage[_allreduce_iteration] = malloc (PAMI_REQUEST_NQUADS * 4);
-
+          if(_allreduce_storage[_allreduce_iteration] == NULL) {
+	    pami_result_t rc = __global.heap_mm->memalign(
+			(void **)&_allreduce_storage[_allreduce_iteration],
+			sizeof(void *), PAMI_REQUEST_NQUADS*4);
+	    PAMI_assertf(rc == PAMI_SUCCESS,
+			"Failed to alloc memory for _allreduce_storage[%d]",
+			_allreduce_iteration);
+	  }
           return _allreduce_storage[_allreduce_iteration];
         }
 

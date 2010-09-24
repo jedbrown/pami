@@ -60,8 +60,9 @@ namespace CCMI
           /// \todo presumed size of PAMI_BYTE?
           //size_t bytes = topo_size * coll->cmd.xfer_alltoall.stypecount * 1;
 
-          _sendinit = (size_t*) malloc(sizeof(size_t) * topo_size);
-          PAMI_assert(_sendinit);
+	  pami_result_t rc = __global.heap_mm->memalign((void **)&_sendinit, 0,
+						sizeof(size_t) * topo_size);
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _sendinit");
 
           for (size_t i = 0; i < topo_size; ++i)
             {
@@ -79,8 +80,9 @@ namespace CCMI
 
           _send.participants = all;
 
-          _recvinit = (size_t*) malloc(sizeof(size_t) * topo_size);
-          PAMI_assert(_recvinit);
+	  rc = __global.heap_mm->memalign((void **)&_recvinit, 0,
+						sizeof(size_t) * topo_size);
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _recvinit");
           memset(_recvinit, 0x00, sizeof(size_t)*topo_size);
 
           _recv.buffer = &_recvpwq;
@@ -187,8 +189,8 @@ namespace CCMI
                                      _app_cb_done.clientdata,
                                      err);
               /// \todo allocator?  reuse from factory?
-              free(_sendinit);
-              free(_recvinit);
+              __global.heap_mm->free(_sendinit);
+              __global.heap_mm->free(_recvinit);
             }
         }
 

@@ -323,13 +323,17 @@ namespace PAMI
           // we shoudl find a way to remove this
           MPI_Barrier(MPI_COMM_WORLD);
 
-          _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
-          new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi, &_dispatch_id,_geometry_map);
+	  pami_result_t rc = __global.heap_mm->memalign((void **)&_pgas_collreg, 0,
+								sizeof(*_pgas_collreg));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
+          new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi, &_dispatch_id, _geometry_map);
           _world_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
           _pgas_collreg->analyze(_contextid,_world_geometry);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
 
-          _p2p_ccmi_collreg=(P2PCCMICollreg*) malloc(sizeof(*_p2p_ccmi_collreg));
+	  rc = __global.heap_mm->memalign((void **)&_p2p_ccmi_collreg, 0,
+								sizeof(*_p2p_ccmi_collreg));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
           new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
                                                 _context,
                                                 _contextid,
@@ -343,7 +347,6 @@ namespace PAMI
                                                 &_dispatch_id,
                                                 _geometry_map);
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
-
 
           MPI_Barrier(MPI_COMM_WORLD);
         }

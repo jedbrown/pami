@@ -14,6 +14,7 @@
 #ifndef __algorithms_protocols_broadcast_AsyncBroadcastT_h__
 #define __algorithms_protocols_broadcast_AsyncBroadcastT_h__
 
+#include "Global.h"
 #include "algorithms/ccmi.h"
 #include "algorithms/executor/Broadcast.h"
 #include "algorithms/connmgr/CommSeqConnMgr.h"
@@ -143,8 +144,9 @@ namespace CCMI
             if (size <= 32768)
               return(char *)_eab_allocator.allocateObject();
 
-            char *buf = (char *)malloc(size);
-            return buf;
+	    char *buf;
+	    pami_result_t rc = __global.heap_mm->memalign((void **)&buf, 0, size);
+	    return rc == PAMI_SUCCESS ? buf : NULL;
           }
 
           void freeBuffer (unsigned size, char *buf)
@@ -152,7 +154,7 @@ namespace CCMI
             if (size <= 32768)
               return _eab_allocator.returnObject(buf);
 
-            free(buf);
+            __global.heap_mm->free(buf);
           }
 
           virtual Executor::Composite * generate(pami_geometry_t              g,

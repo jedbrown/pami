@@ -248,6 +248,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
                                          PAMI::Memory::MemoryManager *mm,
                                          pami_coord_t &ll, pami_coord_t &ur, pami_task_t &min, pami_task_t &max, bool shared)
 {
+  pami_result_t res;
   bgq_mapcache_t  * mapcache = &_mapcache;
 
   TRACE_ERR( (stderr, "Global::initializeMapCache() >> mm = %p, mapcache = %p\n", mm, mapcache));
@@ -312,8 +313,8 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
     }
 
   volatile cacheAnchors_t *cacheAnchorsPtr;
-  mm->memalign((void **)&cacheAnchorsPtr, 16, sizeof(*cacheAnchorsPtr));
-  PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for cacheAnchorsPtr");
+  res = mm->memalign((void **)&cacheAnchorsPtr, 16, sizeof(*cacheAnchorsPtr));
+  PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for cacheAnchorsPtr");
 
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache = %p, size = %zu, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zu, fullSize = %zu, peerSize = %zu\n", mapcache, mm->size(), cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize));
 
@@ -333,17 +334,17 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. participant=%ld\n", participant));
 
-  mm->memalign((void **)&mapcache->torus.task2coords, 16, fullSize * sizeof(*mapcache->torus.task2coords));
-  PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for task2coords");
-  mm->memalign((void **)&mapcache->torus.coords2task, 16, fullSize * sizeof(*mapcache->torus.coords2task));
-  PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for coords2task");
+  res = mm->memalign((void **)&mapcache->torus.task2coords, 16, fullSize * sizeof(*mapcache->torus.task2coords));
+  PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for task2coords");
+  res = mm->memalign((void **)&mapcache->torus.coords2task, 16, fullSize * sizeof(*mapcache->torus.coords2task));
+  PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for coords2task");
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache->torus.task2coords = %p mapcache->torus.coords2task = %p\n", mapcache->torus.task2coords, mapcache->torus.coords2task));
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->torus.coords2task = %p\n", mapcache->node.local2peer, mapcache->torus.coords2task));
 
-  mm->memalign((void **)&mapcache->node.local2peer, 16, peerSize * sizeof(*mapcache->node.local2peer));
-  PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for local2peer");
-  mm->memalign((void **)&mapcache->node.peer2task, 16, peerSize * sizeof(*mapcache->node.peer2task));
-  PAMI_assertf(cacheAnchorsPtr, "Failed to get memory for peer2task");
+  res = mm->memalign((void **)&mapcache->node.local2peer, 16, peerSize * sizeof(*mapcache->node.local2peer));
+  PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for local2peer");
+  res = mm->memalign((void **)&mapcache->node.peer2task, 16, peerSize * sizeof(*mapcache->node.peer2task));
+  PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for peer2task");
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
 
   pami_task_t max_rank = 0, min_rank = (pami_task_t) - 1;
@@ -365,8 +366,9 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
       uint64_t numNodes   = aSize * bSize * cSize * dSize * eSize;
       // Calculate number of array slots needed...
       uint64_t narraySize = (numNodes + 63) >> 6; // Divide by 64 bits.
-      uint64_t *narray = (uint64_t*)malloc(narraySize * sizeof(uint64_t));
-      PAMI_assert(narray != NULL);
+      uint64_t *narray;
+      res = heap_mm->memalign((void **)&narray, 0, narraySize * sizeof(uint64_t));
+      PAMI_assertf(res == PAMI_SUCCESS, "Failed to alloc narray");
       memset(narray, 0, narraySize*sizeof(uint64_t));
 
       // Initialize the task and peer mappings to -1 (== "not mapped")
@@ -500,7 +502,7 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
           cacheAnchorsPtr->numActiveNodesGlobal = numActiveNodesGlobal;
 	  cacheAnchorsPtr->lowestTCoordOnMyNode  = lowestTCoordOnMyNode;
 
-          free(narray);
+          heap_mm->free(narray);
           narray = NULL;
           cacheAnchorsPtr->maxRank = max_rank;
           cacheAnchorsPtr->minRank = min_rank;

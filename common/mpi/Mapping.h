@@ -23,6 +23,7 @@
 #include <mpi.h>
 #include <errno.h>
 #include <unistd.h>
+#include "components/memory/MemoryManager.h"
 
 #define PAMI_MAPPING_CLASS PAMI::Mapping
 
@@ -77,25 +78,19 @@ namespace PAMI
                 _task = num_ranks;
 
                 // local node process/rank info
-#ifdef USE_MEMALIGN
-                err = posix_memalign((void **)&_mapcache, sizeof(void *), sizeof(*_mapcache) * _size);
-                PAMI_assertf(err == 0, "memory alloc failed, err %d", err);
-                err = posix_memalign((void **)&_peers, sizeof(void *), sizeof(*_peers) * _size);
-                PAMI_assertf(err == 0, "memory alloc failed, err %d", err);
-                err = posix_memalign((void **)&host, sizeof(void *), str_len);
-                PAMI_assertf(err == 0, "memory alloc failed, err %d", err);
-                err = posix_memalign((void **)&hosts, sizeof(void *), str_len * _size);
-                PAMI_assertf(err == 0, "memory alloc failed, err %d", err);
-#else
-                _mapcache=(uint32_t*)malloc(sizeof(*_mapcache) * _size);
-                PAMI_assertf(_mapcache != NULL, "memory alloc failed");
-                _peers = (size_t*)malloc(sizeof(*_peers) * _size);
-                PAMI_assertf(_peers != NULL, "memory alloc failed");
-                host=(char*)malloc(str_len);
-                PAMI_assertf(host != NULL, "memory alloc failed");
-                hosts=(char*)malloc(str_len*_size);
-                PAMI_assertf(hosts != NULL, "memory alloc failed");
-#endif
+		pami_result_t rc;
+                rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&_mapcache,
+					sizeof(void *), sizeof(*_mapcache) * _size);
+                PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed, err %d", rc);
+                rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&_peers,
+					sizeof(void *), sizeof(*_peers) * _size);
+                PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed, err %d", rc);
+                rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&host,
+					sizeof(void *), str_len);
+                PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed, err %d", rc);
+                rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&hosts,
+					sizeof(void *), str_len * _size);
+                PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed, err %d", rc);
                 err = gethostname(host, str_len);
                 PAMI_assertf(err == 0, "gethostname failed, errno %d", errno);
 
@@ -123,8 +118,8 @@ namespace PAMI
                                 _peers[_npeers++] = r;
                         }
                 }
-                free(host);
-                free(hosts);
+                PAMI::Memory::MemoryManager::heap_mm->free(host);
+                PAMI::Memory::MemoryManager::heap_mm->free(hosts);
 
                 // if all ranks are local, then see if an ENV variable
                 // gives us permission to spice things up.

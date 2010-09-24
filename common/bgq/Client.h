@@ -70,7 +70,6 @@ namespace PAMI
       {
         TRACE_ERR((stderr, "<%p>BGQ::Client::generate_impl\n", client));
         pami_result_t result;
-        int rc = 0;
 
         //__client_list->lock();
 
@@ -78,9 +77,8 @@ namespace PAMI
         PAMI::Client * clientp = NULL;
         //if ((client = __client_list->contains (name)) == NULL)
         //{
-        rc = posix_memalign((void **) & clientp, 16, sizeof (PAMI::Client));
-
-        if (rc != 0) PAMI_abort();
+        result = __global.heap_mm->memalign((void **)&clientp, 16, sizeof(*clientp));
+	PAMI_assertf(result == PAMI_SUCCESS, "Failed to alloc PAMI::Client"); // just return?
 
         memset ((void *)clientp, 0x00, sizeof(PAMI::Client));
         new (clientp) PAMI::Client (name, result);
@@ -105,7 +103,7 @@ namespace PAMI
         //if (client->getReferenceCount () == 0)
         //{
         //__client_list->remove (client);
-        free ((void *) client);
+        __global.heap_mm->free((void *)client);
         //}
         //__client_list->unlock ();
       }
@@ -141,9 +139,9 @@ namespace PAMI
 
         n = ncontexts;
 
-        int rc;
-        rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
-        PAMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
+        pami_result_t rc;
+	rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
+        PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _contexts[%d], errno=%d\n", n, errno);
         int x;
         TRACE_ERR((stderr, "BGQ::Client::createContext mm available %zu\n", _mm.available()));
         _platdevs.generate(_clientid, n, _mm);
@@ -209,7 +207,7 @@ namespace PAMI
             if (rc != PAMI_SUCCESS) res = rc;
           }
 
-        free(_contexts);
+        __global.heap_mm->free(_contexts);
         _contexts = NULL;
         _ncontexts = 0;
         return res;
@@ -450,7 +448,9 @@ namespace PAMI
 
         if (geometry != NULL)
           {
-            new_geometry = (BGQGeometry *)malloc(sizeof(*new_geometry)); /// \todo use allocator
+	    pami_result_t rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+							sizeof(*new_geometry)); /// \todo use allocator
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
             new (new_geometry) BGQGeometry(_client,
                                            (PAMI::Geometry::Common *)parent,
                                            &__global.mapping,
@@ -517,7 +517,9 @@ namespace PAMI
 
         if (geometry != NULL)
           {
-            new_geometry = (BGQGeometry *)malloc(sizeof(*new_geometry)); /// \todo use allocator
+	    pami_result_t rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+					sizeof(*new_geometry)); /// \todo use allocator
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
             new (new_geometry) BGQGeometry(_client,
                                            (PAMI::Geometry::Common *)parent,
                                            &__global.mapping,

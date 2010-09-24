@@ -5,7 +5,7 @@
 #ifndef __algorithms_executor_Allgather_h__
 #define __algorithms_executor_Allgather_h__
 
-
+#include "Global.h"
 #include "algorithms/interfaces/Schedule.h"
 #include "algorithms/interfaces/Executor.h"
 #include "algorithms/connmgr/ConnectionManager.h"
@@ -128,10 +128,9 @@ namespace CCMI
 
         virtual ~AllgatherExec ()
         {
-          /// Todo: convert this to allocator ?
-          if (_maxsrcs) free (_mrecvstr);
-
-          free (_tmpbuf);
+           /// Todo: convert this to allocator ?
+           if (_maxsrcs) __global.heap_mm->free(_mrecvstr);
+           __global.heap_mm->free(_tmpbuf);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -153,7 +152,9 @@ namespace CCMI
           CCMI_assert(_maxsrcs <= MAX_CONCURRENT);
           CCMI_assert(_nphases <= MAX_PARALLEL);
 
-          _mrecvstr = (PhaseRecvStr *) malloc (_nphases * sizeof(PhaseRecvStr)) ;
+	  pami_result_t rc = __global.heap_mm->memalign((void **)&_mrecvstr, 0,
+          					_nphases * sizeof(PhaseRecvStr));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _mrecvstr");
 
           for (int i = 0; i < _nphases; ++i)
             {
@@ -215,7 +216,8 @@ namespace CCMI
 
           CCMI_assert(_comm_schedule != NULL);
           size_t buflen = _native->numranks() * len;
-          _tmpbuf = (char *) malloc(buflen);
+	  pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
         }
 
         //------------------------------------------

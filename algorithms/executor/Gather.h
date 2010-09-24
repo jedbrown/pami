@@ -5,7 +5,7 @@
 #ifndef __algorithms_executor_Gather_h__
 #define __algorithms_executor_Gather_h__
 
-
+#include "Global.h"
 #include "algorithms/interfaces/Schedule.h"
 #include "algorithms/interfaces/Executor.h"
 #include "algorithms/connmgr/ConnectionManager.h"
@@ -188,10 +188,9 @@ namespace CCMI
 
         virtual ~GatherExec ()
         {
-          /// Todo: convert this to allocator ?
-          if (_maxsrcs) free (_mrecvstr);
-
-          if (!(_disps && _rcvcounts)) free (_tmpbuf);
+           /// Todo: convert this to allocator ?
+           if (_maxsrcs) __global.heap_mm->free(_mrecvstr);
+           if (!(_disps && _rcvcounts)) __global.heap_mm->free(_tmpbuf);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -224,8 +223,11 @@ namespace CCMI
 
           // todo: this is clearly not scalable, need to use rendezvous similar to
           // that in allgather
-          if (_maxsrcs)
-            _mrecvstr = (RecvStruct *) malloc (_maxsrcs * _mynphases * sizeof(RecvStruct)) ;
+          if (_maxsrcs) {
+	    pami_result_t rc = __global.heap_mm->memalign((void **)&_mrecvstr, 0,
+					_maxsrcs * _mynphases * sizeof(RecvStruct));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _mrecvstr");
+	  }
         }
 
         void setConnectionID (unsigned cid)
@@ -273,27 +275,21 @@ namespace CCMI
           CCMI_assert(_comm_schedule != NULL);
 
           if (_native->myrank() == _root)
-            {
-              _donecount = _native->numranks();
-              size_t buflen = 0;
-
-              if (_disps && _rcvcounts)
-                {
-                  for (unsigned i = 0; i < _native->numranks() ; ++i)
-                    {
-                      buflen += _rcvcounts[i];
-
-                      if (_rcvcounts[i] == 0 && i != _rootindex) _donecount--;
-                    }
-
-                  _buflen = buflen;
-                  _tmpbuf = _rbuf;
-                }
-              else
-                {
-                  buflen = _native->numranks() * len;
-                  _tmpbuf = (char *) malloc(buflen);
-                }
+          {
+            _donecount = _native->numranks();
+            size_t buflen = 0;
+            if (_disps && _rcvcounts) {
+              for (unsigned i = 0; i < _native->numranks() ; ++i)
+              {
+                buflen += _rcvcounts[i];
+                if (_rcvcounts[i] == 0 && i != _rootindex) _donecount--;
+              }
+              _buflen = buflen;
+              _tmpbuf = _rbuf;
+            } else {
+              buflen = _native->numranks() * len;
+	      pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
             }
           else // setup PWQ
             {
@@ -305,21 +301,20 @@ namespace CCMI
               //new (&_dsttopology) PAMI::Topology(_gtopology->index2Rank(_srcranks[0]));
               new (&_dsttopology) PAMI::Topology(_srcranks[0]);
 
-              _donecount        = _srclens[0];
-              size_t  buflen    = _srclens[0]  * _buflen;
-
-              if (_mynphases > 1)
-                {
-                  _tmpbuf = (char *)malloc(buflen);
-                  _pwq.configure (NULL, _tmpbuf, buflen, 0);
-                }
-              else
-                {
-                  _pwq.configure (NULL, src, buflen, 0);
-                }
-
-              _pwq.reset();
-              _pwq.produceBytes(buflen);
+            _donecount        = _srclens[0];
+            size_t  buflen    = _srclens[0]  * _buflen;
+            if (_mynphases > 1)
+            {
+	      pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
+              _pwq.configure (NULL, _tmpbuf, buflen, 0);
+            }
+            else
+            {
+              _pwq.configure (NULL, src, buflen, 0);
+            }
+            _pwq.reset();
+            _pwq.produceBytes(buflen);
 
               _totallen = _srclens[0];
 
