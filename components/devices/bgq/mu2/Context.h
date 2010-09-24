@@ -239,7 +239,8 @@ namespace PAMI
                                      recFifoAttrs);
             TRACE_FORMAT("_rfifoid = %d", _rfifoid);
 
-            _recFifoBuf = (char *)memalign (32, REC_MEMORY_FIFO_SIZE + 1);
+	    prc = __global.heap_mm->memalign((void **)&_recFifoBuf, 32, REC_MEMORY_FIFO_SIZE + 1);
+	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _recFifoBuf failed");
             PAMI_assert ((((uint64_t)_recFifoBuf) % 32) == 0);
             memset(_recFifoBuf, 0, REC_MEMORY_FIFO_SIZE + 1);
 
