@@ -240,7 +240,7 @@ inline void CCMI::Executor::ScheduleCache::allocate
       if (_cachebuf != NULL)
         CCMI_Free (_cachebuf);
 
-      _cachebuf = (char *) CCMI_Alloc (buf_size);
+      CCMI_Alloc (_cachebuf, buf_size);
       _cachesize = buf_size;
 
       memset (_cachebuf, 0, _cachesize);

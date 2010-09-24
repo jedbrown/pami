@@ -586,7 +586,7 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
       if (_scheduleAllocation)
         CCMI_Free(_scheduleAllocation);
 
-      _scheduleAllocation = CCMI_Alloc(allocationNewSize);
+      CCMI_Alloc(_scheduleAllocation, allocationNewSize);
 
       CCMI_assert(_scheduleAllocation);
       _scheduleAllocationSize = allocationNewSize;
@@ -716,7 +716,7 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
     {
       if (_receiveAllocation) CCMI_Free(_receiveAllocation);
 
-      _receiveAllocation = CCMI_Alloc(allocationNewSize);
+      CCMI_Alloc(_receiveAllocation, allocationNewSize);
 
       CCMI_assert(_receiveAllocation);
 

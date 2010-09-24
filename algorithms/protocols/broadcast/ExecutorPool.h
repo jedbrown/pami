@@ -75,7 +75,8 @@ namespace CCMI
             int max_bytes = ((bytes < MAX_PREALLOCATED_BYTES) ?
                              (MAX_PREALLOCATED_BYTES) : (bytes));
 
-            void *buf = CCMI_Alloc (sizeof(CCMI_Executor_t) + max_bytes);
+            void *buf;
+            CCMI_Alloc (buf, sizeof(CCMI_Executor_t) + max_bytes);
             * exec   = (CCMI_Executor_t *) buf;
             * rcvbuf = (char *)buf + sizeof(CCMI_Executor_t);
           }

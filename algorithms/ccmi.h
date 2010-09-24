@@ -127,11 +127,11 @@ typedef struct _cheader_data
 
 
 #ifndef CCMI_Alloc
-#define CCMI_Alloc(x)  malloc(x)
+#define CCMI_Alloc(p,x)  __global.heap_mm->memalign((void **)&p, 0, x)
 #endif
 
 #ifndef CCMI_Free
-#define CCMI_Free(x)   free(x)
+#define CCMI_Free(x)   __global.heap_mm->free(x)
 #endif
 
 #define PAMI_UNDEFINED_PHASE ((unsigned)-1)
