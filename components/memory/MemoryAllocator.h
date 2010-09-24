@@ -16,11 +16,8 @@
 #ifndef __components_memory_MemoryAllocator_h__
 #define __components_memory_MemoryAllocator_h__
 
+#include "components/memory/MemoryManager.h"
 #include "components/atomic/noop/Noop.h"
-#ifdef USE_MEMALIGN
-  #include <errno.h>
-#endif
-//#define USE_MEMALIGN
 
 #include "util/trace.h"
 
@@ -68,16 +65,10 @@ namespace PAMI
         {
           // Allocate and construct a new set of objects
           unsigned i;
-#ifdef USE_MEMALIGN
-          int rc;
-          TRACE_FORMAT("%zu", sizeof(memory_object_t) * 10);
-          rc = posix_memalign ((void **)&object, T_ObjAlign, sizeof(memory_object_t) * 10);
-          PAMI_assertf(rc==0, "posix_memalign failed for context, errno=%d, %s\n", errno, strerror(errno));
-#else
-          TRACE_FORMAT("%zu", sizeof(memory_object_t) * 10);
-          object = (memory_object_t*)malloc(sizeof(memory_object_t)*10);
-          PAMI_assertf((((unsigned long)object) & (T_ObjAlign-1))== 0, "object (%p) not aligned on %#X bytes.\n", object, T_ObjAlign);
-#endif
+          pami_result_t rc;
+	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+			(void **)&object, T_ObjAlign, sizeof(memory_object_t) * 10);
+          PAMI_assertf(rc==PAMI_SUCCESS, "alloc failed for context\n");
           // "return" the newly allocated objects to the pool of free objects.
           for (i=1; i<10; i++) returnObject ((void *) &object[i]);
         }

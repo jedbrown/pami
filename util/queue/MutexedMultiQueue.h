@@ -138,6 +138,14 @@ namespace PAMI
           _size (0)
       {};
 
+      static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+           return T_Mutex::checkCtorMm(mm);
+      }
+
+      static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+           return T_Mutex::checkDataMm(mm);
+      }
+
       inline void init(PAMI::Memory::MemoryManager *mm, const char *key)
       {
 	_mutex.init(mm, key);

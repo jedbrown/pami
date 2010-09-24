@@ -78,8 +78,8 @@ namespace PAMI
 static inline MPIDevice *generate_impl(size_t clientid, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices) {
         size_t x;
         MPIDevice *devs;
-        int rc = posix_memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
-        PAMI_assertf(rc == 0, "posix_memalign failed for MPIDevice[%zu], errno=%d\n", num_ctx, errno);
+        pami_result_t rc = __global.heap_mm->memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
+        PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for MPIDevice[%zu], errno=%d\n", num_ctx, errno);
         for (x = 0; x < num_ctx; ++x) {
                 new (&devs[x]) MPIDevice(num_ctx);
         }
@@ -196,6 +196,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
         int flag = 0;
         MPI_Status sts;
         int events=0;
+	pami_result_t res;
 
         if(dbg) {
           TRACE_DEVICE((stderr,"<%p>MPIDevice::advance_impl\n",this));
@@ -233,7 +234,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
             size_t       context = (*it_p2p)->_context;
             _sendQ.remove((*it_p2p));
             if((*it_p2p)->_freeme)
-              free(*it_p2p);
+              __global.heap_mm->free(*it_p2p);
 
             if(done_fn)
               done_fn(NULL,//PAMI_Client_getcontext(client,context),  \todo fix this
@@ -256,10 +257,10 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
             if((*it)->_done_fn )
               ((*it)->_done_fn)(NULL, (*it)->_cookie, PAMI_SUCCESS);
 
-            free ((*it)->_reqs);
-            free ((*it)->_bufs);
+            __global.heap_mm->free ((*it)->_reqs);
+            __global.heap_mm->free ((*it)->_bufs);
             _m2msendQ.remove((*it));
-            free (*it);
+            __global.heap_mm->free (*it);
             break;
           }
         }
@@ -324,7 +325,9 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
-              MPIMessage *msg = (MPIMessage *) malloc (sizeof(*msg));
+              MPIMessage *msg;
+	      res = __global.heap_mm->memalign((void **)&msg, 0, sizeof(*msg));
+	      PAMI_assertf(res == PAMI_SUCCESS, "alloc of msg failed");
               int rc = MPI_Recv(&msg->_p2p_msg,nbytes,MPI_BYTE,sts.
                                 MPI_SOURCE,sts.MPI_TAG,
                                 _communicator,&sts);
@@ -340,14 +343,16 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                               msg->_p2p_msg._payloadsize0+msg->_p2p_msg._payloadsize1,
                               mdi.recv_func_parm,
                               NULL);
-              free(msg);
+              __global.heap_mm->free(msg);
             }
             break;
           case P2P_PACKET_DATA_TAG: // p2p packet + data
             {
               int nbytes = 0;
               MPI_Get_count(&sts, MPI_BYTE, &nbytes);
-              MPIMessage *msg = (MPIMessage *) malloc (sizeof(*msg)+nbytes);
+              MPIMessage *msg;
+	      res = __global.heap_mm->memalign((void **)&msg, 0, sizeof(*msg) + nbytes);
+	      PAMI_assertf(res == PAMI_SUCCESS, "alloc of msg failed");
               int rc = MPI_Recv(&msg->_p2p_msg,nbytes,MPI_BYTE,sts.
                                 MPI_SOURCE,sts.MPI_TAG,
                                 _communicator,&sts);
@@ -363,7 +368,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
                               msg->_p2p_msg._payloadsize0+msg->_p2p_msg._payloadsize1,
                               mdi.recv_func_parm,
                               NULL);
-              free(msg);
+              __global.heap_mm->free(msg);
             }
             break;
          case MULTISYNC_TAG:

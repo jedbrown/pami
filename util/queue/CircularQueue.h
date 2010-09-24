@@ -94,6 +94,14 @@ namespace PAMI
       {
       };
 
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
+
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
+
       inline void init (PAMI::Memory::MemoryManager * mm, const char *key)
       {
       };

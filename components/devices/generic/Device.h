@@ -220,9 +220,9 @@ public:
 		static inline Device *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices) {
 			size_t x;
 			Device *gds;
-			int rc;
-                        rc = posix_memalign((void **)&gds, 16, sizeof(*gds) * num_ctx);
-			PAMI_assertf(rc == 0, "posix_memalign failed for generics[%zu], errno=%d\n", num_ctx, errno);
+			pami_result_t rc;
+			rc = __global.heap_mm->memalign((void **)&gds, 16, sizeof(*gds) * num_ctx);
+			PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for generics[%zu], errno=%d\n", num_ctx, errno);
 			for (x = 0; x < num_ctx; ++x) {
 				new (&gds[x]) PAMI::Device::Generic::Device(client, x, num_ctx);
 			}
@@ -291,18 +291,26 @@ public:
 		__queues = NULL;
 		char key[PAMI::Memory::MMKEYSIZE];
 		int n = sprintf(key, "/clt%zd-ctx%zd-gd-", client, context);
+		pami_result_t rc;
+		PAMI::Memory::MemoryManager *qmm;
 #if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-		// process-private allocation...
-		__global._wuRegion_mm->memalign((void **)&__queues, sizeof(void *), sizeof(*__queues), NULL);
+		qmm = __global._wuRegion_mm;
 #else // ! __pami_target_bgq__
-		int rc = posix_memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
-		rc = rc; // until we decide what to do with error
+		qmm = __global.heap_mm;
 #endif // ! __pami_target_bgq__
-		PAMI_assertf(__queues, "Out of memory allocating generic device queues");
+		PAMI_assertf(__queues->__Threads.checkCtorMm(qmm) &&
+				__queues->__GenericQueue.checkCtorMm(qmm),
+			"Queue memory incompatible with embedded atomics");
+		// process-private allocation...
+		rc = qmm->memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
+		PAMI_assertf(rc == PAMI_SUCCESS, "Out of memory allocating generic device queues");
 		new (&__queues->__Threads) GenericDeviceWorkQueue();
 		new (&__queues->__GenericQueue) GenericDeviceCompletionQueue();
 		key[n] = 't';
 		key[n + 1] = '\0';
+		PAMI_assertf(__queues->__Threads.checkDataMm(mm) &&
+				__queues->__GenericQueue.checkDataMm(mm),
+			"supplied MemoryManager incompatible with queue atomics");
 		__queues->__Threads.init(mm, key);
 		key[n] = 'm';
 		__queues->__GenericQueue.init(mm, key);

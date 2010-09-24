@@ -64,7 +64,7 @@ namespace PAMI {
 		_size(0)
 		{}
 
-		inline void init(PAMI::Memory::MemoryManager *mm, const char *key) {
+		inline void init() {
 		}
 		inline void enqueue_impl(Element *e) {
 			e->setNext(NULL);
@@ -230,8 +230,16 @@ namespace PAMI {
 		_pub_queue()
 		{}
 
+		static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+			return T_PubQueue::checkCtorMm(mm);
+		}
+
+		static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+			return T_PubQueue::checkDataMm(mm);
+		}
+
 		inline void init(PAMI::Memory::MemoryManager *mm, const char *key) {
-			_priv_queue.init(mm, key);
+			_priv_queue.init();
 			_pub_queue.init(mm, key);
 		}
 
