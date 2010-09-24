@@ -740,14 +740,24 @@ namespace PAMI
 
       inline pami_result_t purge_totask_impl (size_t * dest, size_t count)
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          internal_error_t rc;
+          for (int i=0; i<count; i++) {
+              pami_endpoint_t *tgt = (pami_endpoint_t *)dest + i;
+              rc = (cp->*(cp->pPurge))(*tgt, INTERFACE_PAMI);
+          }
+          return PAMI_RC(rc);
         }
 
       inline pami_result_t resume_totask_impl (size_t * dest, size_t count)
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          internal_error_t rc;
+          for (int i=0; i<count; i++) {
+              pami_endpoint_t *tgt = (pami_endpoint_t *)dest + i;
+              rc = (cp->*(cp->pResume))(*tgt, INTERFACE_PAMI);
+          }
+          return PAMI_RC(rc);
         }
 
       inline pami_result_t fence_begin_impl ()
