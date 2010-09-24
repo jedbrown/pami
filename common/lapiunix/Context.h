@@ -76,6 +76,8 @@
 
 #include "components/devices/NativeInterface.h"
 
+extern lapi_state_t    *_Lapi_port[MAX_LAPI_PORTS];
+
 
 namespace PAMI
 {
@@ -411,6 +413,7 @@ namespace PAMI
         _client (client),
         _clientid (clientid),
         _clientname(clientname),
+        _mm(mm),
         _context((pami_context_t) this),
         _contextid (id),
         _world_geometry(NULL),
@@ -433,18 +436,19 @@ namespace PAMI
           init_info.protocol_name  = _clientname;
 
           // TODO: Honor the configuration passed in
+          _Lapi_port[_contextid] = (lapi_state_t*)_lapi_state;
           int rc = LAPI__Init(&_lapi_handle, &init_info);
           if (rc) {
             RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Init failed with rc %d\n", rc);
           }
-          _lapi_state = _Lapi_port[_lapi_handle];
+//          _lapi_state = _Lapi_port[_lapi_handle];
           lapi_senv(_lapi_handle, INTERRUPT_SET, false);
 
           // Initialize the lapi device for collectives
           _lapi_device.init(_mm, _clientid, 0, _context, _contextid);
           _lapi_device.setLapiHandle(_lapi_handle);
-          _lapi_device2.init(_lapi_state);
-          _cau_device.init(_lapi_state,
+          _lapi_device2.init((lapi_state_t*)_lapi_state);
+          _cau_device.init((lapi_state_t*)_lapi_state,
                            _lapi_handle,
                            _client,
                            _clientid,
@@ -499,7 +503,7 @@ namespace PAMI
                                                 _devices->_shmem[_contextid],
                                                 _lapi_device2,
                                                 _protocol,
-                                                1,  //use shared memory
+                                                _mm?1:0,  //use shared memory
                                                 1,  //use "global" device
                                                 __global.topology_global.size(),
                                                 __global.topology_local.size());
@@ -550,7 +554,7 @@ namespace PAMI
 
       inline pami_result_t destroy_impl ()
         {
-          LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *ep = (LapiImpl::Context *)(lapi_state_t*)_lapi_state;
           int rc = LAPI__Term(ep->my_hndl);
           if (rc) {
             RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Term failed with rc %d\n", rc);
@@ -586,7 +590,7 @@ namespace PAMI
           // Todo:  Add collective devices
           // Todo:  Fix number of iterations
           _devices->advance(_clientid, _contextid);
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc = (cp->*(cp->pAdvance))(maximum);
           result = PAMI_RC(rc);
           return 1;
@@ -594,34 +598,34 @@ namespace PAMI
 
       inline size_t advance_only_lapi (size_t maximum, pami_result_t & result)
         {
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc = (cp->*(cp->pAdvance))(maximum);
           result = PAMI_RC(rc);
         }
 
       inline pami_result_t lock_impl ()
         {
-          LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *ep = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc = (ep->*(ep->pLock))();
           return PAMI_RC(rc);
         }
 
       inline pami_result_t trylock_impl ()
         {
-          LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *ep = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc = (ep->*(ep->pTryLock))();
           return PAMI_RC(rc);
         }
 
       inline pami_result_t unlock_impl ()
         {
-          LapiImpl::Context *ep = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *ep = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc = (ep->*(ep->pUnlock))();
           return PAMI_RC(rc);
         }
       inline pami_result_t send_impl (pami_send_t * parameters)
         {
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc = (cp->*(cp->pSend))(parameters->send.dest,
                                                    parameters->send.dispatch,         // hdr_hdl
                                                    parameters->send.header.iov_base,  // uhdr
@@ -640,7 +644,7 @@ namespace PAMI
 
       inline pami_result_t send_impl (pami_send_immediate_t * send)
         {
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
                   send->header.iov_base, send->header.iov_len,
                   send->data.iov_base, send->data.iov_len,
@@ -650,13 +654,13 @@ namespace PAMI
 
       inline pami_result_t send_impl (pami_send_typed_t * send_typed)
         {
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           return (cp->*(cp->pSendTyped))(send_typed);
         }
 
       inline pami_result_t put_impl (pami_put_simple_t * put)
         {
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc = (cp->*(cp->pPut))
               (put->rma.dest, put->addr.local, NULL,
                put->addr.remote, NULL, put->rma.bytes,
@@ -668,13 +672,13 @@ namespace PAMI
 
       inline pami_result_t put_typed_impl (pami_put_typed_t * put_typed)
         {
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           return (cp->*(cp->pPutTyped))(put_typed);
         }
 
       inline pami_result_t get_impl (pami_get_simple_t * get)
         {
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc = (cp->*(cp->pGet))(get->rma.dest, get->addr.local, NULL,
                   get->addr.remote, NULL, get->rma.bytes,
                   *(send_hint_t*)&get->rma.hints, INTERFACE_PAMI,
@@ -684,7 +688,7 @@ namespace PAMI
 
       inline pami_result_t get_typed_impl (pami_get_typed_t * get_typed)
         {
-          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           return (cp->*(cp->pGetTyped))(get_typed);
         }
 
@@ -824,7 +828,7 @@ namespace PAMI
                                           void                      * cookie,
                                           pami_send_hint_t            options)
         {
-          LapiImpl::Context  *cp = (LapiImpl::Context *)_lapi_state;
+          LapiImpl::Context  *cp = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc =
               (cp->*(cp->pDispatchSet))(id, (void *)fn.p2p, cookie,
                       *(send_hint_t *)&options, INTERFACE_PAMI);
@@ -833,7 +837,7 @@ namespace PAMI
 
       inline lapi_state_t *getLapiState()
         {
-          return _lapi_state;
+          return (lapi_state_t*)_lapi_state;
         }
 
       inline pami_result_t dispatch_query_impl(size_t                dispatch,
@@ -931,11 +935,11 @@ namespace PAMI
         }
 
     private:
+      /*  Lapi State Object.  use this for direct access        */
+      char                                   _lapi_state[sizeof(LapiImpl::Context)];
+
       /*  PAMI Client Pointer associated with this PAMI Context */
       pami_client_t                          _client;
-
-      /*  Lapi State Object.  use this for direct access        */
-      lapi_state_t                          *_lapi_state;
 
       /*  Context pointer to this client                        */
       pami_context_t                         _context;
