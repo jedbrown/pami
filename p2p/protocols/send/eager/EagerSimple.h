@@ -701,7 +701,9 @@ namespace PAMI
 
                 if (unlikely((header_bytes) > (T_Model::packet_model_payload_bytes - pbytes)))
                   {
-                    state->longheader.addr   = (uint8_t *) malloc(header_bytes);
+		    pami_result_t prc = __global.heap_mm->memalign((void **)&state->longheader.addr, 0,
+								header_bytes);
+		    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of state->longheader.addr failed");
                     state->longheader.bytes  = header_bytes;
                     state->longheader.offset = 0;
                     TRACE_ERR ((stderr, "<< EagerSimple::dispatch_envelope_direct() .. long header\n"));
@@ -797,7 +799,7 @@ namespace PAMI
 
                 // Free the malloc'd longheader buffer now that it has been
                 // delivered to the application.
-                free (state->longheader.addr);
+                __global.heap_mm->free (state->longheader.addr);
               }
 
             TRACE_ERR((stderr, "<< EagerSimple::dispatch_longheader_message()\n"));

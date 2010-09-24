@@ -127,55 +127,55 @@ namespace CCMI
       template <class T_Geometry>
       class MultiCastComposite2 : public CCMI::Executor::Composite
       {
-        protected:
-          Interfaces::NativeInterface        * _native;
-          PAMI_GEOMETRY_CLASS                * _geometry;
-          pami_broadcast_t                     _xfer_broadcast;
-          PAMI::Topology                       _all;
-          PAMI::Topology                       _root;
-          PAMI::Topology                       _destinations;
-          PAMI::PipeWorkQueue                  _src;
-          PAMI::PipeWorkQueue                  _dst;
-          pami_multicast_t                     _minfo;
-          pami_multisync_t                     _msync;
-          size_t                               _bytes;
-          char                               * _buffer;
-          void                               * _deviceMcastInfo;
-          void                               * _deviceMsyncInfo;
+      protected: 
+        Interfaces::NativeInterface        * _native;
+        PAMI_GEOMETRY_CLASS                * _geometry;
+        pami_broadcast_t                     _xfer_broadcast;
+        PAMI::Topology                       _all;
+        PAMI::Topology                       _root;
+        PAMI::Topology                       _destinations;
+        PAMI::PipeWorkQueue                  _src;
+        PAMI::PipeWorkQueue                  _dst;
+        pami_multicast_t                     _minfo;
+        pami_multisync_t                     _msync;
+        size_t                               _bytes;
+        char                               * _buffer;
+        void                               * _deviceMcastInfo;
+        void                               * _deviceMsyncInfo;
 
-        public:
-          ~MultiCastComposite2()
-          {
-            TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
-            free(_buffer);
-          }
-          MultiCastComposite2 (Interfaces::NativeInterface          * mInterface,
-                               ConnectionManager::CommSeqConnMgr    * cmgr,
-                               pami_geometry_t                        g,
-                               pami_xfer_t                          * cmd,
-                               pami_event_function                    fn,
-                               void                                 * cookie) :
-              Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g),
-              _xfer_broadcast(cmd->cmd.xfer_broadcast), _root(cmd->cmd.xfer_broadcast.root),
-              _bytes(cmd->cmd.xfer_broadcast.typecount * 1), /// \todo presumed size of PAMI_BYTE?
-              _buffer(NULL)
-          {
-            TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, cmd->cmd.xfer_broadcast.root));
+      public:
+        ~MultiCastComposite2()
+        {
+          TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+          __global.heap_mm->free(_buffer);
+        }
+        MultiCastComposite2 (Interfaces::NativeInterface          * mInterface,
+                             ConnectionManager::CommSeqConnMgr    * cmgr,
+                             pami_geometry_t                        g,
+                             pami_xfer_t                          * cmd,
+                             pami_event_function                    fn,
+                             void                                 * cookie) :
+        Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g),
+        _xfer_broadcast(cmd->cmd.xfer_broadcast), _root(cmd->cmd.xfer_broadcast.root),
+        _bytes(cmd->cmd.xfer_broadcast.typecount * 1), /// \todo presumed size of PAMI_BYTE?
+        _buffer(NULL)
+        {
+          TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, cmd->cmd.xfer_broadcast.root));
 
-            _deviceMcastInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-            _deviceMsyncInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID); /// \todo switch to GKEY_MSYNC_CLASSROUTEID
+          _deviceMcastInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
+          _deviceMsyncInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID); /// \todo switch to PAMI_GKEY_MSYNC_CLASSROUTEID
 
-            _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-            _all.subtractTopology(&_destinations,  &_root);
+          _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+          _all.subtractTopology(&_destinations,  &_root);
 
-            DO_DEBUG(for (unsigned j = 0; j < _root.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root.index2Rank(j), _root.size()));
+          DO_DEBUG(for (unsigned j = 0; j < _root.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root.index2Rank(j), _root.size()));
 
-            DO_DEBUG(for (unsigned j = 0; j < _destinations.size(); ++j) fprintf(stderr, "destinations[%u]=%zu, size %zu\n", j, (size_t)_destinations.index2Rank(j), _destinations.size()));
+          DO_DEBUG(for (unsigned j = 0; j < _destinations.size(); ++j) fprintf(stderr, "destinations[%u]=%zu, size %zu\n", j, (size_t)_destinations.index2Rank(j), _destinations.size()));
 
-            DO_DEBUG(for (unsigned j = 0; j < _all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)_all.index2Rank(j), _all.size()));
+          DO_DEBUG(for (unsigned j = 0; j < _all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)_all.index2Rank(j), _all.size()));
 
-            /// \todo only supporting PAMI_BYTE right now
-            PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_BYTE, "Not PAMI_BYTE? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
+          /// \todo only supporting PAMI_BYTE right now
+          PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_BYTE, "Not PAMI_BYTE? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
 
 //            PAMI_Type_sizeof(cmd->cmd.xfer_broadcast.type); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
@@ -190,19 +190,20 @@ namespace CCMI
 //                          func );
 //        size_t bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
-            if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
-              {
-                _src.configure(NULL, cmd->cmd.xfer_broadcast.buf, _bytes, _bytes);
-                /// \todo unless the device lets me toss unwanted data, we need a dummy buffer to receive.
-                _buffer = (char*) malloc(_bytes);
-                _dst.configure(NULL, _buffer, _bytes, 0);
-              }
-            else
-              {
-                //_buffer = (char*) & _bytes; // dummy buffer - unused
-                _src.configure(NULL, (char*)NULL, 0, 0);
-                _dst.configure(NULL, cmd->cmd.xfer_broadcast.buf, _bytes, 0);
-              }
+          if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
+          {
+            _src.configure(NULL, cmd->cmd.xfer_broadcast.buf, _bytes, _bytes);
+            /// \todo unless the device lets me toss unwanted data, we need a dummy buffer to receive.
+	    pami_result_t prc = __global.heap_mm->memalign((void **)&_buffer, 0, _bytes);
+	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _buffer failed");
+            _dst.configure(NULL, _buffer, _bytes, 0);
+          }
+          else
+          {
+            //_buffer = (char*) & _bytes; // dummy buffer - unused
+            _src.configure(NULL, (char*)NULL, 0, 0);
+            _dst.configure(NULL, cmd->cmd.xfer_broadcast.buf, _bytes, 0);
+          }
 
             _src.reset();
             _dst.reset();

@@ -305,8 +305,9 @@ void PAMI::ResourceManager::getSubStringsFromConfigValueString(
   size_t       i;
 
   // Allocate space for _numClients pointers, to point to the client names.
-  mySubStringConfigValuePtrs = (const char**)malloc( numSubStringConfigValues * sizeof( char* ) );
-  PAMI_assertf( mySubStringConfigValuePtrs != NULL, "The heap is full.\n" );
+  pami_result_t prc = __global.heap_mm->memalign((void **)&mySubStringConfigValuePtrs, 0,
+			numSubStringConfigValues * sizeof(*mySubStringConfigValuePtrs));
+  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of mySubStringConfigValuePtrs failed");
 
   // If the env var is not specified, fill the pointers with the default value.
   if ( configValueString == NULL )
@@ -321,8 +322,9 @@ void PAMI::ResourceManager::getSubStringsFromConfigValueString(
       while ( configValueString[configValueStringLen++] != '\0' );
 
       // Allocate space for a copy of the comma-delimited list of values
-      myConfigValueStringCopy = (char*)malloc( configValueStringLen );
-      PAMI_assertf( myConfigValueStringCopy != NULL, "The heap is full.\n");
+      pami_result_t prc = __global.heap_mm->memalign((void **)&myConfigValueStringCopy, 0,
+						configValueStringLen);
+      PAMI_assertf(prc == PAMI_SUCCESS, "alloc of myConfigValueStringCopy failed");
 
       // Copy the env var string into our writeable copy
       for ( i=0; i<configValueStringLen; i++ )
@@ -382,8 +384,9 @@ void PAMI::ResourceManager::getClientWeights( const char *clientWeightsConfigVal
   size_t sum;
 
   // Allocate space for _numClients weights.
-  _clientWeights = (size_t*)malloc( _numClients * sizeof( size_t ) );
-  PAMI_assertf( _clientWeights != NULL, "The heap is full.\n" );
+  pami_result_t prc = __global.heap_mm->memalign((void **)&_clientWeights, 0,
+				_numClients * sizeof(*_clientWeights));
+  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientWeights failed");
 
   // If PAMI_CLIENTWEIGHTS is not specified, then the weights are evenly
   // distributed among the clients.  For example, 3 clients would be 34,33,33,
@@ -441,8 +444,8 @@ void PAMI::ResourceManager::getClientWeights( const char *clientWeightsConfigVal
       PAMI_assertf ( sum == 100, "The PAMI_CLIENTWEIGHTS do not add up to 100.\n" );
 
       // Free temporary arrays.
-      free( subStringConfigValuePtrs );
-      free( configValueStringCopy    );
+      __global.heap_mm->free( subStringConfigValuePtrs );
+      __global.heap_mm->free( configValueStringCopy    );
     }
 } // End: getClientWeights()
 

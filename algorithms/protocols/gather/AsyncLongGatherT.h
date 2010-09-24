@@ -185,17 +185,18 @@ namespace CCMI
             if (size <= 32768)
               return (char *)_eab_allocator.allocateObject();
 
-            char *buf = (char *)malloc(size);
-            return buf;
-          }
+	    char *buf;
+	    pami_result_t prc = __global.heap_mm->memalign((void **)&buf, 0, size);
+	    return prc == PAMI_SUCCESS ? buf : NULL;
+	  }
 
           void freeBuffer (unsigned size, char *buf)
           {
             if (size <= 32768)
               return _eab_allocator.returnObject(buf);
 
-            free(buf);
-          }
+	    __global.heap_mm->free(buf);
+	  }
 
           typedef typename T_Composite::xfer_type gather_type;
 

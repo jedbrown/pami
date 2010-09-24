@@ -83,9 +83,9 @@ namespace PAMI
             inline void set (T_Device     * key,
                              T_Connection * value)
             {
-              Element * element =
-                (Element *) malloc (sizeof(Element));
-
+              Element * element;
+	      pami_result_t prc = __global.heap_mm->memalign((void **)&element, 0, sizeof(*element));
+	      PAMI_assertf(prc == PAMI_SUCCESS, "alloc of Element failed");
               new (element) Element (key, value);
 
               _queue.push ((Queue::Element *) element);

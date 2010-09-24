@@ -92,7 +92,9 @@ ScBcast(PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
          PGASRT_MYNODE, tag, instID, this, &_scatterv, &_allgatherv));
 
 
-  _lengths = (size_t *) malloc (sizeof(size_t) * comm->size());
+  pami_result_t prc = __global.heap_mm->memalign((void **)&_lengths, 0,
+					sizeof(*_lengths) * comm->size());
+  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _lengths[%d] failed", comm->size());
   _scatterv.setComplete (scattercomplete, this);
   _barrier.setComplete  (barriercomplete, this);
   _barrier2.setComplete (barrier2complete, this);

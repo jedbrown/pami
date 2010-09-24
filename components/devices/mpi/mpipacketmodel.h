@@ -171,7 +171,6 @@ namespace PAMI
                                    struct iovec         (&iov)[2])
         {
           int rc;
-//          void       * obj = malloc(sizeof(MPIMessage));
           TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket %d \n",this, this->_dispatch_id));
 #ifdef EMULATE_UNRELIABLE_DEVICE
           unsigned long long t = __global.time.timebase ();
@@ -266,7 +265,9 @@ namespace PAMI
           PAMI_assert(T_Niov<=2);
 
           int rc;
-          void       * obj = malloc(sizeof(MPIMessage));
+          void       * obj;
+	  pami_result_t prc = __global.heap_mm->memalign((void **)&obj, 0, sizeof(MPIMessage));
+	  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of MPIMessage failed");
           TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl %d \n",this, this->_dispatch_id));
 #ifdef EMULATE_UNRELIABLE_DEVICE
           unsigned long long t = __global.time.timebase ();
@@ -330,7 +331,9 @@ namespace PAMI
           unsigned long long t = __global.time.timebase ();
           if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
 #endif
-          MPIMessage * msg = (MPIMessage *)malloc(sizeof(MPIMessage)+metasize+length-128-224);
+	  pami_result_t prc = __global.heap_mm->memalign((void **)&msg, 0,
+				sizeof(*msg) + metasize + length - 128 - 224);
+	  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of MPIMessage failed");
           new(msg)MPIMessage(this->_client,this->_contextid,
                              this->_dispatch_id,
                              fn,

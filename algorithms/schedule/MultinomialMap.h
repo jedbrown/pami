@@ -192,11 +192,11 @@ namespace CCMI
         unsigned getGlobalRank (unsigned relrank)
         {
           relrank += _xR;
-
           if (relrank >= _nranks) relrank -= _nranks;
-
           return relrank + _x0;
         }
+
+      ~ListMap() {__global.heap_mm->free(_ranks);}
 
         ///
         /// \brief Get my rank in the collective

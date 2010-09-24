@@ -55,7 +55,9 @@ namespace PAMI
 
       // Allocate memory for and construct the queue objects,
       // one for each context on the local node
-      __sendQ = (Shmem::SendQueue *) malloc ((sizeof (Shmem::SendQueue) * _total_fifos));
+      pami_result_t prc = __global.heap_mm->memalign((void **)&__sendQ, 0,
+						_total_fifos * sizeof(*__sendQ));
+      PAMI_assertf(prc == PAMI_SUCCESS, "alloc of __sendQ failed");
 
       for (i = 0; i < _total_fifos; i++)
         {
@@ -63,7 +65,9 @@ namespace PAMI
         }
 
       // Initialize the "last injection sequence id per fifo" array.
-      _last_inj_sequence_id = (size_t *) malloc (sizeof(size_t) * _total_fifos);
+      prc = __global.heap_mm->memalign((void **)&_last_inj_sequence_id, 0,
+					_total_fifos * sizeof(*_last_inj_sequence_id));
+      PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _last_inj_sequence_id failed");
       for (i=0; i<_total_fifos; i++) _last_inj_sequence_id[i] = (size_t) -1;
 
       // Initialize the registered receive function array to unexpected().
@@ -165,7 +169,7 @@ namespace PAMI
 
           // Remove the unexpected packet from the queue and free
           __ueQ[set].dequeue();
-          free (uepkt);
+          __global.heap_mm->free (uepkt);
         }
         else
         {
@@ -218,7 +222,7 @@ namespace PAMI
 
           // Remove the unexpected packet from the queue and free
           __ueQ[set].dequeue();
-          free (uepkt);
+          __global.heap_mm->free (uepkt);
         }
         else
         {
@@ -263,8 +267,9 @@ namespace PAMI
       // The metadata is at the front of the packet.
       PacketImpl * pkt = (PacketImpl *) metadata;
 
-      UnexpectedPacket * uepkt =
-        (UnexpectedPacket *) malloc (sizeof(UnexpectedPacket));
+      UnexpectedPacket * uepkt;
+      pami_result_t prc = __global.heap_mm->memalign((void **)&uepkt, 0, sizeof(*uepkt));
+      PAMI_assertf(prc == PAMI_SUCCESS, "alloc of uepkt failed");
       new ((void *)uepkt) UnexpectedPacket (pkt);
 
       TRACE_ERR((stderr, "   (%zu) ShmemDevice::unexpected(), uepkt = %p, uepkt->id = %u\n", __global.mapping.task(), uepkt, uepkt->id));

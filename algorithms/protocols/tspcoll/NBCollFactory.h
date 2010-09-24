@@ -54,84 +54,95 @@ template <class T_NI>
 TSPColl::NBColl<T_NI> *
 TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID)
 {
+  pami_result_t prc;
   switch (tag)
     {
       case BarrierTag:
       {
-        NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Barrier<T_NI>));
-        PAMI_assert(b != NULL);
+        NBColl<T_NI> * b;
+	prc = __global.heap_mm->memalign((void **)&b, 0, sizeof(Barrier<T_NI>));
+        PAMI_assertf(prc == PAMI_SUCCESS, "alloc of NBColl<T_NI> Barrier<T_NI> failed");
         memset (b, 0, sizeof(Barrier<T_NI>));
         new (b) Barrier<T_NI> (comm, tag, instID, 0);
         return b;
       }
       case BarrierUETag:
       {
-        NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(BarrierUE<T_NI>));
-        PAMI_assert(b != NULL);
+        NBColl<T_NI> * b;
+	prc = __global.heap_mm->memalign((void **)&b, 0, sizeof(BarrierUE<T_NI>));
+        PAMI_assertf(prc == PAMI_SUCCESS, "alloc of NBColl<T_NI> BarrierUE<T_NI> failed");
         memset (b, 0, sizeof(BarrierUE<T_NI>));
         new (b) BarrierUE<T_NI> (comm, tag, instID, 0);
         return b;
       }
       case AllgatherTag:
       {
-        NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Allgather<T_NI>));
-        PAMI_assert(b != NULL);
+        NBColl<T_NI> * b;
+	prc = __global.heap_mm->memalign((void **)&b, 0, sizeof(Allgather<T_NI>));
+        PAMI_assertf(prc == PAMI_SUCCESS, "alloc of NBColl<T_NI> Allgather<T_NI> failed");
         memset (b, 0, sizeof(Allgather<T_NI>));
         new (b) Allgather<T_NI> (comm, tag, instID, 0);
         return b;
       }
       case AllgathervTag:
       {
-        NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Allgatherv<T_NI>));
-        PAMI_assert(b != NULL);
+        NBColl<T_NI> * b;
+	prc = __global.heap_mm->memalign((void **)&b, 0, sizeof(Allgatherv<T_NI>));
+        PAMI_assertf(prc == PAMI_SUCCESS, "alloc of NBColl<T_NI> Allgatherv<T_NI> failed");
         memset (b, 0, sizeof(Allgatherv<T_NI>));
         new (b) Allgatherv<T_NI> (comm, tag, instID, 0);
         return b;
       }
       case BcastTag:
       {
-        NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(BinomBcast<T_NI>));
-        PAMI_assert(b != NULL);
+        NBColl<T_NI> * b;
+	prc = __global.heap_mm->memalign((void **)&b, 0, sizeof(BinomBcast<T_NI>));
+        PAMI_assertf(prc == PAMI_SUCCESS, "alloc of NBColl<T_NI> BinomBcast<T_NI> failed");
         memset (b, 0, sizeof(BinomBcast<T_NI>));
         new (b) BinomBcast<T_NI> (comm, tag, instID, 0);
         return b;
       }
       case BcastTag2:
       {
-        NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(ScBcast<T_NI>));
-        PAMI_assert(b != NULL);
+        NBColl<T_NI> * b;
+	prc = __global.heap_mm->memalign((void **)&b, 0, sizeof(ScBcast<T_NI>));
+        PAMI_assertf(prc == PAMI_SUCCESS, "alloc of NBColl<T_NI> ScBcast<T_NI> failed");
         memset (b, 0, sizeof(ScBcast<T_NI>));
         new (b) ScBcast<T_NI> (comm, tag, instID, 0);
         return b;
       }
       case ShortAllreduceTag:
       {
-        NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Allreduce::Short<T_NI>));
-        PAMI_assert(b != NULL);
+        NBColl<T_NI> * b;
+	prc = __global.heap_mm->memalign((void **)&b, 0, sizeof(Allreduce::Short<T_NI>));
+        PAMI_assertf(prc == PAMI_SUCCESS, "alloc of NBColl<T_NI> Allreduce::Short<T_NI> failed");
         memset (b, 0, sizeof(Allreduce::Short<T_NI>));
         new (b) Allreduce::Short<T_NI> (comm, tag, instID, 0);
         return b;
       }
       case LongAllreduceTag:
       {
-        NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Allreduce::Long<T_NI>));
-        PAMI_assert(b != NULL);
+        NBColl<T_NI> * b;
+	prc = __global.heap_mm->memalign((void **)&b, 0, sizeof(Allreduce::Long<T_NI>));
+        PAMI_assertf(prc == PAMI_SUCCESS, "alloc of NBColl<T_NI> Allreduce::Long<T_NI> failed");
         memset (b, 0, sizeof(Allreduce::Long<T_NI>));
         new (b) Allreduce::Long<T_NI> (comm, tag, instID, 0);
         return b;
       }
       case ScatterTag:
       {
-        NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Scatter<T_NI>));
-        PAMI_assert(b != NULL);
+        NBColl<T_NI> * b;
+	prc = __global.heap_mm->memalign((void **)&b, 0, sizeof(Scatter<T_NI>));
+        PAMI_assertf(prc == PAMI_SUCCESS, "alloc of NBColl<T_NI> Scatter<T_NI> failed");
         memset (b, 0, sizeof(Scatter<T_NI>));
         new (b) Scatter<T_NI> (comm, tag, instID, 0);
         return b;
       }
       case ScattervTag:
       {
-        NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Scatterv<T_NI>));
-        PAMI_assert(b != NULL);
+        NBColl<T_NI> * b;
+	prc = __global.heap_mm->memalign((void **)&b, 0, sizeof(Scatterv<T_NI>));
+        PAMI_assertf(prc == PAMI_SUCCESS, "alloc of NBColl<T_NI> Scatterv<T_NI> failed");
         memset (b, 0, sizeof(Scatterv<T_NI>));
         new (b) Scatterv<T_NI> (comm, tag, instID, 0);
         return b;

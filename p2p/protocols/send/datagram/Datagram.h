@@ -259,7 +259,9 @@ public:
                                 <= T_Model::packet_model_payload_bytes);
 
                 //allocate memory
-                _queue = (Queue *) malloc(sizeof(Queue) * _device.peers());
+		pami_result_t prc = __global.heap_mm->memalign((void **)&_queue, 0,
+						sizeof(*_queue) * _device.peers());
+		PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _queue failed");
 
                 //Initializing queue
                 for (size_t i = 0; i < _device.peers(); i++) {
@@ -315,7 +317,9 @@ public:
                 pami_result_t result;
                 pami_send_t simple_parm;
                 // Create storage to save message until sent (have to malloc since unbounded)
-                msg_copy_t *msg_copy = (msg_copy_t *)malloc(sizeof(msg_copy_t));
+		pami_result_t prc = __global.heap_mm->memalign((void **)&msg_copy, 0,
+								sizeof(*msg_copy));
+		PAMI_assertf(prc == PAMI_SUCCESS, "alloc of msg_copy failed");
                 memcpy(msg_copy->header, parameters->header.iov_base,
                                 parameters->header.iov_len);
                 memcpy(msg_copy->data, parameters->data.iov_base,
@@ -364,7 +368,7 @@ protected:
                 TRACE_ERR((stderr, ">> Datagram::cb_immediate_complete() \n"));
                 // Send finished so get rid of copy of message
                 msg_copy_t *msg_copy = (msg_copy_t *) cookie;
-                free(msg_copy);TRACE_ERR((stderr, "<< Datagram::cb_immediate_complete() \n"));
+                __global.heap_mm->free(msg_copy);TRACE_ERR((stderr, "<< Datagram::cb_immediate_complete() \n"));
         }
         ;
 
@@ -831,13 +835,19 @@ private:
                         rcv->wminseq = 0; ///Max seqno
 
                         //TODO need to implement longheader in the future  ????
-                        //rcv->msgbuff = (char *) malloc (sizeof (char*)*rts->mbytes);  ///Allocate buffer for Metadata
+                        //rcv->msgbuff = (char *) malloc (sizeof (char*)*rts->mbytes);  ///Allocate buffer for Metadata using __global.heap_mm!
                         //rcv->msgbytes = 0;                                            ///Initalized received bytes
 
                         // TODO Why two arrays?
                         ///initialize Array with zeros
-                        rcv->lost_list = (size_t *) malloc(sizeof(size_t) * rts->bytes);
-                        rcv->rcv_list = (size_t *) malloc(sizeof(size_t) * rts->bytes);
+			pami_result_t prc = __global.heap_mm->memalign(
+					(void **)&rcv->lost_list, 0,
+					sizeof(*rcv->lost_list) * rts->bytes);
+			PAMI_assertf(prc == PAMI_SUCCESS, "alloc of rcv->lost_list failed");
+			pami_result_t prc = __global.heap_mm->memalign(
+					(void **)&rcv->rcv_list, 0,
+					sizeof(*rcv->rcv_list) * rts->bytes);
+			PAMI_assertf(prc == PAMI_SUCCESS, "alloc of rcv->rcv_list failed");
 
                         for (size_t i = 0; i < rts->bytes; i++)
                                 rcv->lost_list[i] = 0;
@@ -1190,7 +1200,7 @@ private:
                 TRACE_ERR((stderr,
                                                 "   Datagram::send_window() .. window pkt = %p , pktno=%d\n",
                                                 &window->pkg[i].pkt, i));
-                //pkt_t * dummy = (pkt_t *)malloc(sizeof(pkt_t));
+                //pkt_t * dummy = (pkt_t *)malloc(sizeof(pkt_t)); using __global.heap_mm!
                 send_packet(window->va_send->datagram->_data_model, // Model to send packet on
                                 window->pkg[i].pkt, // T_Message to send
                                 NULL, // Callback

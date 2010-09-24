@@ -223,7 +223,9 @@ namespace PAMI
             //No tested
             //Queue Setup
             //allocate memory
-            _queue = (Queue *) malloc(sizeof(Queue) * _device.peers());
+	    pami_result_t prc = __global.heap_mm->memalign((void **)&_queue, 0,
+						sizeof(*_queue) * _device.peers());
+	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _queue failed");
 
             //Initializing queue
             for (size_t i = 0; i < _device.peers(); i++)
@@ -672,7 +674,9 @@ namespace PAMI
             rcv->fromRank  = send->fromRank;              ///Origin Rank
             rcv->mbytes  = send->mbytes;                    ///Metadata application bytes
 
-            rcv->msgbuff = (char *) malloc (sizeof (char*) * send->mbytes);  ///Allocate buffer for Metadata
+	    pami_result_t prc = __global.heap_mm->memalign((void **)&rcv->msgbuff, 0,
+		sizeof(*rcv->msgbuff) * send->mbytes);  ///Allocate buffer for Metadata
+	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of buffer for Metadata failed");
             rcv->msgbytes = 0;                                            ///Initalized received bytes
 
             rcv->ackinfo = send->ackinfo;
@@ -998,7 +1002,7 @@ namespace PAMI
                                         (pami_recv_t *) &(header->va_recv->info));   //recv_struct
 
             //free received buffer
-            free(header->va_recv->msgbuff);
+            __global.heap_mm->free(header->va_recv->msgbuff);
 
             TRACE_ERR((stderr, "   AdaptiveSimple::process_rts_data().. after dispatch_rts_data after p2p rcv->info.data.simple.addr  = %p , header->offest = %d , header->bsend = %d , rcv->info.data.simple.bytes =%d\n", header->va_recv->info.data.simple.addr, header->offset, header->bsend, header->va_recv->info.data.simple.bytes));
 
@@ -1579,7 +1583,6 @@ namespace PAMI
 
 
             TRACE_ERR((stderr, "   AdaptiveSimple::send_window() .. window pkt = %p , pktno=%d\n", &window->pkg[i].pkt, i));
-            //pkt_t * dummy = (pkt_t *)malloc(sizeof(pkt_t));
 
             if (iolen == 1)
               {

@@ -16,8 +16,6 @@
 
 #include <hwi/include/bqc/MU_PacketHeader.h>
 
-#include <malloc.h>
-
 #include <spi/include/mu/InjFifo.h>
 #include <spi/include/mu/RecFifo.h>
 #include <spi/include/mu/DescriptorBaseXX.h>
@@ -187,10 +185,13 @@ namespace PAMI
                                      &_ififoid,
                                      &injFifoAttrs);
 
-            _injFifoBuf = (char *) memalign (64, INJ_MEMORY_FIFO_SIZE + 1);
+            pami_result_t prc = __global.heap_mm->memalign((void **)&__injFifoBuf, 64,
+								INJ_MEMORY_FIFO_SIZE + 1);
+	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of __injFifoBuf failed");
             PAMI_assert((((uint64_t)_injFifoBuf) % 64) == 0);
-            _lookAsideBuf = (InjGroup::immediate_payload_t *)
-                            malloc ((INJ_MEMORY_FIFO_SIZE + 1) * sizeof(InjGroup::immediate_payload_t));
+	    pami_result_t prc = __global.heap_mm->memalign((void **)&_lookAsideBuf, 0,
+			(INJ_MEMORY_FIFO_SIZE + 1) * sizeof(*_lookAsideBuf));
+	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _lookAsideBuf failed");
 
             memset(_injFifoBuf, 0, INJ_MEMORY_FIFO_SIZE + 1);
 
@@ -207,9 +208,13 @@ namespace PAMI
             // ----------------------------------------------------------------
             // Allocate and initialize the "lookaside completion" array
             // ----------------------------------------------------------------
-            _lookAsideCompletionFn = (pami_event_function *) malloc ((INJ_MEMORY_FIFO_NDESC + 1) * sizeof(pami_event_function));
+	    prc = __global.heap_mm->memalign((void **)&_lookAsideCompletionFn, 0,
+			(INJ_MEMORY_FIFO_NDESC + 1) * sizeof(*_lookAsideCompletionFn));
+	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _lookAsideCompletionFn failed");
             memset(_lookAsideCompletionFn, 0, (INJ_MEMORY_FIFO_NDESC + 1) * sizeof(pami_event_function));
-            _lookAsideCompletionCookie = (void **) malloc ((INJ_MEMORY_FIFO_NDESC + 1) * sizeof(void *));
+	    prc = __global.heap_mm->memalign((void **)&_lookAsideCompletionCookie, 0,
+			(INJ_MEMORY_FIFO_NDESC + 1) * sizeof(*_lookAsideCompletionCookie));
+	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _lookAsideCompletionCookie failed");
             memset(_lookAsideCompletionCookie, 0, (INJ_MEMORY_FIFO_NDESC + 1) * sizeof(void *));
 
 
@@ -283,18 +288,21 @@ namespace PAMI
             // Resource Manager allocates the resources.
 
             // Construct arrays of Inj and Rec fifo pointers.
-            _rm.getNumResourcesPerContext(  _rm_id_client,
-					    &_numInjFifos,
-					    &_numRecFifos,
-					    &_numBatIds );
-            _injFifos = (MUSPI_InjFifo_t**)malloc( _numInjFifos * sizeof(MUSPI_InjFifo_t*) );
-            PAMI_assertf( _injFifos != NULL, "The heap is full.\n" );
+            _rm.getNumFifosPerContext(  _rm_id_client,
+                                        &_numInjFifos,
+                                        &_numRecFifos,
+				        &_numBatIds );
+	    pami_result_t prc = __global.heap_mm->memalign((void **)&_injFifos, 0,
+					_numInjFifos * sizeof(*_injFifos));
+	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _injFifos failed");
 
-            _recFifos = (MUSPI_RecFifo_t**)malloc( _numRecFifos * sizeof(MUSPI_RecFifo_t*) );
-            PAMI_assertf( _recFifos != NULL, "The heap is full.\n" );
+	    prc = __global.heap_mm->memalign((void **)&_recFifos, 0,
+					_numRecFifos * sizeof(*_recFifos));
+	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _recFifos failed");
 
-            _globalRecFifoIds = (uint32_t *)malloc( _numRecFifos * sizeof(uint32_t) );
-            PAMI_assertf( _globalRecFifoIds != NULL, "The heap is full.\n" );
+	    prc = __global.heap_mm->memalign((void **)&_globalRecFifoIds, 0,
+					_numInjFifos * sizeof(*_globalRecFifoIds));
+	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _globalRecFifoIds failed");
 
             _rm.getInjFifosForContext( _rm_id_client,
                                        _id_offset,

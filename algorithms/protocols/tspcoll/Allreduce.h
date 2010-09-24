@@ -428,12 +428,10 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
   _nelems = bytes / datawidth;
 
   if (sbuf != dbuf) memcpy (dbuf, sbuf, bytes);
-
-  if (_tmpbuf) free (_tmpbuf);
-
-  _tmpbuf = malloc (bytes);
-
-  if (!_tmpbuf) CCMI_FATALERROR (-1, "Allreduce: memory allocation error");
+  pami_result_t prc;
+  if (_tmpbuf) __global.heap_mm->free (_tmpbuf);
+  prc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, bytes);
+  if (prc != PAMI_SUCCESS) CCMI_FATALERROR (-1, "Allreduce: memory allocation error");
 
   /* --------------------------------------------------- */
   /*  set source and destination buffers and node ids    */
