@@ -147,7 +147,7 @@ namespace PAMI
 
             memfifo.Rec_FIFO_Id    = 0;
             memfifo.Rec_Put_Offset = 0;
-            memfifo.Interrupt      = MUHWI_DESCRIPTOR_DO_NOT_INTERRUPT_ON_PACKET_ARRIVAL;
+            memfifo.Interrupt      = MUHWI_DESCRIPTOR_INTERRUPT_ON_PACKET_ARRIVAL;
             memfifo.SoftwareBit    = 0;
 
             self.setMemoryFIFOFields (&memfifo);

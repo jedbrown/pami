@@ -386,6 +386,22 @@ namespace PAMI
                                          _recFifos[0],
                                          _mapping.getMuDestinationSelf(),
                                          mu_context_cookie);
+
+	    // Store a pointer in the injectionGroup that points to the MU MMIO
+	    /// field for clearing interrupts.  This will be used later during
+	    // advance() to clear the MU interrrupts.
+	    MUSPI_RecFifoSubGroup_t *_recFifoSubgroup = 
+	      _rm.getRecFifoSubgroup( _rm_id_client,
+				      _id_offset );
+	    injectionGroup.setClearInterruptsStatusPtr ( _recFifoSubgroup );
+	    
+	    // Construct a interrupt bitmask indicating which interrupts to clear
+	    // 64 bits:
+	    // - Bits  0 through 31 clear injection fifo threshold crossing
+	    // - Bits 32 through 47 clear reception fifo threshold crossing
+	    // - Bits 48 through 63 clear reception fifo packet arrival
+	    _interruptMask = _rm.getInterruptMask( _rm_id_client,
+						   _id_offset );
 #endif
 
             TRACE_FN_EXIT();
@@ -488,11 +504,26 @@ namespace PAMI
           {
 //            TRACE_FN_ENTER();
 
-            unsigned events  = injectionGroup.advance ();
-            events          += receptionChannel.advance ();
+	    // If interrupts are ON, clear them BEFORE advancing.
+	    // In this way, we will not miss an interruptable event.
+	    // Note that the SPI only does the clear if the interrupt mask
+	    // is non-zero.  This is faster than always doing the store
+	    // to the MU MMIO interrupts status field.
+	    //
+	    // Also, storing the MU MMIO pointer and the interrupt mask
+	    // inside of the injectionGroup (as opposed to in this context object)
+	    // is faster because we need to touch the contents of the
+	    // injectionGroup anyway, so one touch should bring it all in.
+
+	    MUSPI_ClearInterruptsDirect( injectionGroup.getClearInterruptsStatusPtr(),
+					 injectionGroup.getInterruptMask() );
+	    unsigned events  = injectionGroup.advance ();
+	    events += receptionChannel.advance ();
 
 //            TRACE_FN_EXIT();
-            return events;
+
+	    return events;
+
           }
 
           ///
@@ -775,8 +806,34 @@ namespace PAMI
             return _rm.getRgetInjFifoIds();
           };
 
+	  /// \brief Get the Core Affinity for this Context
+	  ///
+	  /// \retval  coreId  The core number that this context is affiliated with.
+	  ///
+	  inline uint32_t affinity()
+	    {
+	      return _rm.getAffinity( _rm_id_client,
+				      _id_offset );
+	    }
+
+	  // \brief Set Up Interrupts
+	  //
+	  // When a commthread acquires or releases this context, update the
+	  // interrupt mask stored in the injection group accordingly.
+	  // When acquiring, the specified interrupt mask is used.
+	  // When releasing, the interrupt mask is set to zero.
+	  //
+	  // \param[in]  acquire  Boolean indicating what the commthread is doing.
+	  //                      - true: Acquiring the context
+	  //                      - false: Releasing the context
+	  //
+	  inline void setInterrupts( bool acquire )
+	    {
+	      injectionGroup.setInterruptMask( acquire, _interruptMask );
+	    }
+
           RecChannel   receptionChannel; // Reception resources, public access
-          InjGroup     injectionGroup;   // Injection resources, public access
+          InjGroup     injectionGroup __attribute__((__aligned__(16)));   // Injection resources, public access
 
         protected:
 
@@ -810,7 +867,6 @@ namespace PAMI
           pinInfoEntry_t        *_pinInfo;
 	  pinInfoEntry_t        *_rgetPinInfo;
           uint16_t              *_pinBroadcastFifoMap;
-
 #endif
 
 	  PAMI::ResourceManager & _pamiRM; // PAMI Resource Manager
@@ -824,7 +880,7 @@ namespace PAMI
 	  uint32_t          _combiningInjFifo;       // Context-relative fifo id.
 	                                             // Initialized to combiningInjFifoIdNotSet
                                                      // if this context does not manage it.
-
+	  uint64_t                 _interruptMask;
       }; // class     PAMI::Device::MU::Context
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device

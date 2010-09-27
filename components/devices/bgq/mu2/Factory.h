@@ -128,7 +128,7 @@ namespace PAMI
             // Allocate an array of mu contexts, one for each pami context
             // in this _task_ (from heap, not from shared memory)
             MU::Context * mu;
-            rc = posix_memalign((void **) & mu, 16, sizeof(*mu) * id_count);
+            rc = posix_memalign((void **) & mu, 64, sizeof(*mu) * id_count);
             PAMI_assertf(rc == 0, "posix_memalign failed for mu[%zu], errno=%d\n", id_count, errno);
 
 // !!!!

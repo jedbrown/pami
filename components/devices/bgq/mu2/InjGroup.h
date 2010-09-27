@@ -57,9 +57,12 @@ namespace PAMI
           ///
           inline InjGroup () :
               _sendqueue_status (0),
-              _completion_status (0)
+	      _completion_status (0),
+ 	      _interruptMask(0),
+	      _clearInterruptStatusPtr(NULL)
           {
             TRACE_FN_ENTER();
+	    TRACE_FORMAT("InjGroup this=%p, &_sendqueue_status=%p, &_completion_status=%p, &_interruptMask=%p, _clearInterruptStatusPtr=%p\n",this,&_sendqueue_status,&_completion_status,&_interruptMask,&_clearInterruptStatusPtr);
 
             size_t i;
             for (i=0; i<11; i++)
@@ -103,6 +106,58 @@ namespace PAMI
                                       n, channel_cookie);
             TRACE_FN_EXIT();
           }
+
+	  /// \brief Set the Interrupt Mask
+	  ///
+	  /// When interrupts are ON, the mask that is stored is the specified
+	  /// mask, otherwise it is zero.
+	  ///
+	  /// \param[in]  indicator  Indicates whether interrupts are on
+	  /// \param[in]  mask       The mask indicating which MU resources
+	  ///                        need to have their interrupts cleared.
+	  ///
+	  inline void setInterruptMask (bool indicator, uint64_t interruptMask )
+	    {
+	      if ( indicator )
+		_interruptMask = interruptMask;
+	      else
+		_interruptMask = 0;
+	    }
+
+	  /// \brief Get the Interrupt Mask
+	  ///
+	  /// \retval  mask  Interrupt mask indicating which MU resources need
+	  //                 to have their interrupts cleared.
+	  ///
+	  inline uint64_t getInterruptMask ()
+	    {
+	      return (_interruptMask);
+	    }
+
+	  /// \brief Set the Clear Interrupts Status Pointer
+	  ///
+	  /// Sets the pointer to the MU MMIO field that indicates which
+	  /// MU resources are to have their interrupts cleared.
+	  ///
+	  /// \param[in]  sgPtr  Pointer to a recFifo subgroup associated with
+	  ///                    the MU resources that are to have their
+	  ///                    interrupts cleared.
+	  ///
+	  inline void setClearInterruptsStatusPtr ( MUSPI_RecFifoSubGroup_t * sg_ptr )
+	    {
+	      _clearInterruptStatusPtr = MUSPI_GetClearInterruptsStatusPtr(sg_ptr);
+	    }
+
+	  /// \brief Get the Clear Interrupts Status Pointer
+	  ///
+	  /// \retval statusPtr  The pointer to the MU MMIO field that indicates
+	  ///                    which MU resources are to have their interrupts
+	  ///                    cleared.
+	  ///
+	  inline volatile uint64_t *getClearInterruptsStatusPtr ()
+	    {
+	      return _clearInterruptStatusPtr;
+	    }
 
           ///
           /// \brief Advance the injection channels in this injection group
@@ -166,9 +221,12 @@ namespace PAMI
           InjChannel channel[11];
 
         protected:
-
+	  uint64_t   _filler[9]; // This seems to help performance...not sure why.
           uint64_t   _sendqueue_status;  // Send queue status, one bit for each channel
           uint64_t   _completion_status; // Completion status, one bit for each channel
+	  uint64_t   _interruptMask;   // Indicates if MU interrupts are turned ON.
+	  volatile uint64_t  *_clearInterruptStatusPtr; // Pointer to MU MMIO field that
+                                                        // clears interrupts.
 
       }; // class     PAMI::Device::MU::InjGroup
     };   // namespace PAMI::Device::MU

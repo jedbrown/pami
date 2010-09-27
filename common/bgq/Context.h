@@ -850,7 +850,7 @@ namespace PAMI
       {
 	// might be other affinities to consider, in the future.
 	// could be cached in context, instead of calling MU RM (etc) every time
-#if 0
+#if 1
 	return Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).affinity();
 #else
 	return (NUM_CORES - 1) - (_contextid % (Kernel_ProcessorCount() / NUM_SMT));
@@ -874,8 +874,9 @@ namespace PAMI
       ///
       inline void cleanupAffinity(bool acquire)
       {
-#if 0
+#if 1
 	bool affinity = (coreAffinity() == Kernel_ProcessorCoreID());
+	TRACE_ERR(("acquire=%d, affinity=%d, coreAffinity=%u, Kernel_ProcessorCoreID=%u, ContextID=%zu\n",acquire,affinity,coreAffinity(),Kernel_ProcessorCoreID(),_contextid));
 #else
 	bool affinity = !__global.useMU(); // if no MU, affinity anywhere
 #endif
@@ -883,6 +884,12 @@ namespace PAMI
         bool cancel = (enqueue && _dummy_disable && !_dummy_disabled);
         bool dequeue = (!acquire);
 
+	// If we are using the MU, tell the MU device to set up interrupts properly
+	// depending on whether we are acquiring the context or releasing it.
+	if ( __global.useMU() )
+	  {
+	    Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).setInterrupts(acquire);
+	  }
         if (cancel)
           {
             _dummy_disable = _dummy_disabled = false;

@@ -217,7 +217,7 @@ public:
 		_mutex.acquire();
 		for (y = 0; y < nctx; ++y) {
 			for (x = 0; x < _ncontexts_total; ++x) {
-				if (_contexts[x] == ctxs[y]) {
+			        if ((_contexts[x]) && (_contexts[x] == ctxs[y])) {
 					mask |= (1UL << x);
 				}
 			}
@@ -238,7 +238,7 @@ public:
 		_mutex.acquire();
 		for (y = 0; y < nctx; ++y) {
 			for (x = 0; x < _ncontexts_total; ++x) {
-				if (_contexts[x] == ctxs[y]) {
+			        if ((_contexts[x]) && (_contexts[x] == ctxs[y])) {
 					_contexts[x] = NULL;
 					--_ncontexts;
 				}

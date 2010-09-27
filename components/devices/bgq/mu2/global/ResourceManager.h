@@ -1114,6 +1114,37 @@ namespace PAMI
 				       size_t t )
 	{ return _clientResources[rmClientId].pinRecFifo[(contextOffset*_tSize) + t]; }
 
+	/// \brief Get the Core Affinity for a Context
+	///
+	/// \param[in]  rmClientId  Resource Manager client Id
+	/// \param[in]  contextOffset  The context Id, relative to the client
+        ///
+        /// \retval  coreId  The core number that the specified context is affiliated with.
+        ///
+        inline uint32_t getAffinity( size_t rmClientId,
+                                     size_t contextOffset )
+	{ return _clientResources[rmClientId].startingSubgroupIds[contextOffset] / 
+	    BGQ_MU_NUM_FIFO_SUBGROUPS; }
+	
+
+	// \brief Get Interrupt Mask
+	// 
+	// Construct a interrupt bitmask indicating which interrupts to clear for the
+	// specified context.  These indicate which fifos in the group are for
+	// this context.
+	// 64 bits:
+	// - Bits  0 through 31 clear injection fifo threshold crossing
+	// - Bits 32 through 47 clear reception fifo threshold crossing
+	// - Bits 48 through 63 clear reception fifo packet arrival
+	//
+	inline uint64_t getInterruptMask ( size_t rmClientId,
+					   size_t contextOffset );
+	    
+
+	inline MUSPI_RecFifoSubGroup_t *getRecFifoSubgroup ( size_t rmClientId,
+							     size_t contextOffset )
+	{ return &(_clientResources[rmClientId].recResources[contextOffset].subgroups[0]); }
+
 	inline void getInjFifosForContext( size_t            rmClientId,
 					   size_t            contextOffset,
 					   size_t            numInjFifos,
@@ -1177,6 +1208,7 @@ namespace PAMI
 				       size_t   fifoSize,
 				       Kernel_InjFifoAttributes_t  *fifoAttr,
 				       bool                         useSharedMemory,
+				       bool                         enableInterrupts,
 				       MUSPI_InjFifoSubGroup_t    **subgroups,
 				       char                      ***fifoPtrs,
 				       uint32_t                   **globalFifoIds );
@@ -1939,6 +1971,44 @@ void PAMI::Device::MU::ResourceManager::calculatePerCorePerProcessPerClientMURes
 } // End: calculatePerCorePerProcessPerClientMUResources()
 
 
+// \brief Get Interrupt Mask
+// 
+// Construct a interrupt bitmask indicating which interrupts to clear for the
+// specified context.  These indicate which fifos in the group are for
+// this context.
+// 64 bits:
+// - Bits  0 through 31 clear injection fifo threshold crossing
+// - Bits 32 through 47 clear reception fifo threshold crossing
+// - Bits 48 through 63 clear reception fifo packet arrival
+//
+uint64_t PAMI::Device::MU::ResourceManager::getInterruptMask ( size_t rmClientId,
+							       size_t contextOffset )
+{
+  uint32_t fifo, numFifos;
+  uint64_t mask = 0;
+
+  // Determine which inj fifos are in this context
+  numFifos = _perContextMUResources[rmClientId].numInjFifos;
+
+  for ( fifo=0; fifo<numFifos; fifo++ )
+    {
+      mask |= 0x8000000000000000ULL >> (_clientResources[rmClientId].injResources[contextOffset].globalFifoIds[fifo] % BGQ_MU_NUM_INJ_FIFOS_PER_GROUP);
+    }
+
+  // Determine which rec fifos are in this context
+  numFifos = _perContextMUResources[rmClientId].numRecFifos;
+
+  for ( fifo=0; fifo<numFifos; fifo++ )
+    {
+      mask |= 0x80000000ULL >> (_clientResources[rmClientId].recResources[contextOffset].globalFifoIds[fifo] % BGQ_MU_NUM_REC_FIFOS_PER_GROUP);
+      mask |= 0x8000ULL >> (_clientResources[rmClientId].recResources[contextOffset].globalFifoIds[fifo] % BGQ_MU_NUM_REC_FIFOS_PER_GROUP);
+    }
+  TRACE_ERR((stderr,"MU ResourceManager: getInterruptMask: Client %zu, Context %zu, Interrupt mask=0x%lx\n",rmClientId,contextOffset,mask));
+
+  return mask;
+}
+
+
 // \brief Setup Shared Memory
 //
 // Set up a shared memory area for global resources to use.
@@ -2021,6 +2091,8 @@ void PAMI::Device::MU::ResourceManager::allocateMemory( bool    useSharedMemory,
 // \param[in]  fifoAttr          Pointer to the attributes of the fifos (all are same)
 // \param[in]  useSharedMemory   Boolean indicating whether to allocate
 //                               resources from shared memory (true) or heap (false).
+// \param[in]  enableInterrupts  Boolean indicating whether to enable MU interrupts
+//                               (true) or not (false)
 // \param[out] subgroups         Pointer to an array of subgroup structures.
 //                               This array is malloc'd and initialized
 //                               by this function, and this pointer is set
@@ -2044,6 +2116,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 		       size_t   fifoSize,
 		       Kernel_InjFifoAttributes_t  *fifoAttr,
 		       bool                         useSharedMemory,
+		       bool                         enableInterrupts,
 		       MUSPI_InjFifoSubGroup_t    **subgroups,
 		       char                      ***fifoPtrs,
 		       uint32_t                   **globalFifoIds)
@@ -2167,6 +2240,26 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 				   KERNEL_INJ_FIFO_ACTIVATE );
       PAMI_assertf( rc == 0, "Kernel_InjFifoActivate failed with rc=%d\n",rc );
 
+      if ( enableInterrupts )
+	{
+	  // Enable interrupts.
+	  Kernel_InjFifoInterrupts_t *fifoInterrupts =
+	    (Kernel_InjFifoInterrupts_t *)malloc( numFree * sizeof(Kernel_InjFifoInterrupts_t) );
+	  PAMI_assertf( fifoInterrupts != NULL, "The heap is full.\n" );
+	  for (fifo=0; fifo<numFree; fifo++)
+	    {
+	      memset(&fifoInterrupts[fifo],0x00,sizeof(Kernel_InjFifoInterrupts_t));
+	      fifoInterrupts[fifo].Threshold_Crossing = 1;
+	    }
+	  
+	  rc = Kernel_ConfigureInjFifoInterrupts( &((*subgroups)[subgroupIndex]),
+						  numFree,
+						  freeIds,
+						  fifoInterrupts);
+	  PAMI_assertf( rc == 0, "ConfigureInjFifoInterrupts failed with rc=%d\n",rc);
+	  free( fifoInterrupts);
+	}
+	  
       fifoIndex         += numFree;
 
       numLeftToAllocate -= numFree;
@@ -2202,6 +2295,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
 				 _pamiRM.getInjFifoSize(),
 				 &fifoAttr,
 				 false, // Do not use shared memory
+				 false, // Do not enable interrupts
 				 &(_globalCombiningInjFifo.subgroups),
 				 &(_globalCombiningInjFifo.fifoPtrs),
 				 &(_globalCombiningInjFifo.globalFifoIds) );
@@ -2231,6 +2325,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
 				 _pamiRM.getRgetInjFifoSize(),
 				 &fifoAttr,
 				 true, // Use shared memory
+				 false,// Do not enable interrupts
 				 &_globalRgetInjSubGroups,
 				 &_globalRgetInjFifoPtrs,
 				 &_globalRgetInjFifoIds );
@@ -2590,6 +2685,24 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
 	    ( (subgroup % BGQ_MU_NUM_REC_FIFO_SUBGROUPS)*BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP + freeIds[fifo] );
 	}
 
+      // Enable interrupts.
+      Kernel_RecFifoInterrupts_t *fifoInterrupts =
+	(Kernel_RecFifoInterrupts_t *)malloc( numFree * sizeof(Kernel_RecFifoInterrupts_t) );
+      PAMI_assertf( fifoInterrupts != NULL, "The heap is full.\n" );
+      for (fifo=0; fifo<numFree; fifo++)
+	{
+	  memset(&fifoInterrupts[fifo],0x00,sizeof(Kernel_RecFifoInterrupts_t));
+	  fifoInterrupts[fifo].Threshold_Crossing = 1;
+	  fifoInterrupts[fifo].Packet_Arrival     = 1;
+	}
+
+      rc = Kernel_ConfigureRecFifoInterrupts( &((*subgroups)[subgroupIndex]),
+					      numFree,
+					      freeIds,
+					      fifoInterrupts);
+      PAMI_assertf( rc == 0, "ConfigureRecFifoInterrupts failed with rc=%d\n",rc);
+      free( fifoInterrupts);
+
       // Enable the fifos.
       TRACE((stderr,"MU ResourceManager: setupRecFifos: Enabling RecFifos in group %u, bits 0x%lx\n",subgroup/BGQ_MU_NUM_REC_FIFO_SUBGROUPS,enableBits));
       rc = Kernel_RecFifoEnable( subgroup/BGQ_MU_NUM_REC_FIFO_SUBGROUPS,
@@ -2820,9 +2933,27 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
 void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClientId,
 								  size_t contextOffset )
 {
+  int32_t  rc;
   uint32_t numFifosSetup;
   size_t   numInjFifos = _perContextMUResources[rmClientId].numInjFifos;
   Kernel_InjFifoAttributes_t  injFifoAttr;
+
+  // Set the MU Inj Fifo Interrupt Threshold such that if an inj fifo fills, and then
+  // the free space increases above zero, an interrupt will fire so additional 
+  // descriptors can be injected.
+  uint64_t threshold = 0; 
+  rc = Kernel_ConfigureInjFifoThresholds( &threshold,
+					  NULL /* remoteGetThreshold */ );
+  PAMI_assertf( rc == 0, "Kernel_ConfigureInjFifoThresholds failed with rc=%d\n",rc);
+
+  // Set the MU Rec Fifo Interrupt Threshold such that if the free space drops below this
+  // threshold, an interrupt will fire so the packets can be processed.
+  // Set it to two-thirds the size of the rec fifo (in units of number of descriptors).
+  threshold = (_pamiRM.getRecFifoSize() * 2) / (3 * sizeof(MUHWI_Descriptor_t));
+  rc = Kernel_ConfigureRecFifoThreshold( threshold );
+  PAMI_assertf( rc == 0, "Kernel_ConfigureRecFifoThreshold failed with rc=%d\n",rc);
+  
+  TRACE_ERR((stderr,"MU ResourceManager: allocateContextResources: Setting Inj Fifo Threshold to 0, and Rec Fifo Threshold to %lu\n",threshold));
 
   // Set up the injection fifos for this context
 
@@ -2835,10 +2966,12 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
 		    _pamiRM.getInjFifoSize(),
 		    &injFifoAttr,
 		    false, // Do not use shared memory...use heap.
+		    true,  // Enable interrupts.
 		    &(_clientResources[rmClientId].injResources[contextOffset].subgroups),
 		    &(_clientResources[rmClientId].injResources[contextOffset].fifoPtrs),
 		    &(_clientResources[rmClientId].injResources[contextOffset].globalFifoIds) );
   PAMI_assertf( numFifosSetup == numInjFifos, "Only %u injection fifos were set up.  Expected %zu.\n",numFifosSetup,numInjFifos );
+
   // Set up the reception fifos for this context
 
   Kernel_RecFifoAttributes_t  recFifoAttr;

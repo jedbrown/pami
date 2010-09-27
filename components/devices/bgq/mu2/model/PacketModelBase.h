@@ -200,7 +200,7 @@ namespace PAMI
 
         memfifo.Rec_FIFO_Id    = 0;
         memfifo.Rec_Put_Offset = 0;
-        memfifo.Interrupt      = MUHWI_DESCRIPTOR_DO_NOT_INTERRUPT_ON_PACKET_ARRIVAL;
+        memfifo.Interrupt      = MUHWI_DESCRIPTOR_INTERRUPT_ON_PACKET_ARRIVAL;
         memfifo.SoftwareBit    = 0;
 
         _singlepkt.setMemoryFIFOFields (&memfifo);
@@ -331,7 +331,7 @@ namespace PAMI
 #endif
             // Set the payload information.
             memfifo->setPayload (paddr, tbytes);
-            //MUSPI_DescriptorDumpHex((char*)"JEFF: Descriptor",desc);
+            //MUSPI_DescriptorDumpHex((char*)"PAMI SendImmediate:  Descriptor",desc);
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
             //uint64_t sequence =

@@ -525,6 +525,9 @@ namespace PAMI
 							cookie);
 
             rget->setPayload (paddr, pbytes);
+/*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget",desc); */
+/*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput",(MUHWI_Descriptor_t*)vaddr); */
+/*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion",((MUHWI_Descriptor_t*)vaddr)+1); */
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
