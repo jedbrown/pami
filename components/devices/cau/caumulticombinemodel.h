@@ -17,28 +17,247 @@
 #include <pami.h>
 #include "components/devices/MulticombineModel.h"
 
+#ifdef TRACE
+#undef TRACE
+#define TRACE(x)// fprintf x
+#else
+#define TRACE(x)// fprintf x
+#endif
+
 namespace PAMI
 {
   namespace Device
   {
     template <class T_Device, class T_Message>
-      class CAUMulticombineModel : public Interface::MulticombineModel<CAUMulticombineModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>
-      {
+    class CAUMulticombineModel :
+      public Interface::MulticombineModel<CAUMulticombineModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>
+    {
       public:
-	static const size_t multicombine_model_state_bytes = sizeof(T_Message);
-	static const size_t sizeof_msg                     = sizeof(T_Message);
+      // These are the interface specified constants
+      // These define the semantics of the multicombine
+      static const size_t multicombine_model_state_bytes = sizeof(T_Message);
+      static const size_t sizeof_msg                     = sizeof(T_Message);
 
-	CAUMulticombineModel (T_Device & device, pami_result_t &status) :
-	  Interface::MulticombineModel < CAUMulticombineModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, status)
-	  {};
-	  inline pami_result_t postMulticombine_impl (uint8_t (&state)[multicombine_model_state_bytes],
-						      pami_multicombine_t *mcombine,
-                                                      void                *devinfo)
-	    {
-              PAMI_abort();
-              return PAMI_SUCCESS;
-	    }
-      };
+      
+
+      // The done function for the reduction operation
+      // As part of the multicombine operation
+      // This reduction is the data movement function that indicates
+      // a portion of the reduction has completed
+      static void cau_red_send_done(lapi_handle_t *hndl, void * completion_param)
+        {
+          // Todo:  Support send pipelining with generic device if no room in pwq
+          TRACE((stderr, "CAUMulticombineModel:  cau_red_send_done\n"));
+          CAUMcombineMessage *m        = (CAUMcombineMessage*)completion_param;
+          size_t                sentBytes  = m->_currentBytes;
+          m->_bytesReduced                += sentBytes;
+          m->_sndpwq->consumeBytes(sentBytes);
+          if(m->_bytesReduced == m->_bytesToReduce)
+            {
+              m->_user_done_fn(m->_context, m->_user_cookie, PAMI_SUCCESS);
+              return;
+            }
+          CAUGeometryInfo *gi      = (CAUGeometryInfo *)m->_devinfo;
+          T_Device        *device  = (T_Device *)m->_device;
+          char            *buf     = m->_sndpwq->bufferToConsume();
+          unsigned         minsize = MIN(m->_sndpwq->bytesAvailableToConsume(), 64);
+          CheckLapiRC(lapi_cau_reduce(device->getHdl(),             // lapi handle
+                                      gi->_cau_id,                  // group id
+                                      m->_xfer_header.dispatch_id,  // dispatch id
+                                      &m->_xfer_header,             // header
+                                      sizeof(m->_xfer_header),      // header_len
+                                      buf,                          // data
+                                      minsize,                      // data size
+                                      m->_red,                      // reduction op
+                                      cau_red_send_done,            // send completion handler
+                                      m));                          // cookie
+        }
+
+      static void cau_mcast_send_done(lapi_handle_t *hndl, void * completion_param)
+        {
+          TRACE((stderr, "CAUMulticombineModel: cau_mcast_send_done\n"));
+        }
+
+      static void * cau_mcast_handler(lapi_handle_t  *hndl,
+                                      void           *uhdr,
+                                      uint           *uhdr_len,
+                                      ulong          *retinfo,
+                                      compl_hndlr_t **comp_h,
+                                      void          **uinfo)
+        {
+          TRACE((stderr, "CAUMulticombineModel: cau_mcast_handler\n"));
+
+        }
+
+
+      
+      static void * cau_red_handler(lapi_handle_t  *hndl,
+                                    void           *uhdr,
+                                    uint           *uhdr_len,
+                                    ulong          *retinfo,
+                                    compl_hndlr_t **comp_h,
+                                    void          **uinfo)
+        {
+          // The reduction handler can only be called on the "Root" node
+          // This message can be unexpected, meaning that the root node has not
+          // explicitly entered the reduction.
+          CAUMcombineMessage::xfer_header *hdr   = (CAUMcombineMessage::xfer_header*)uhdr;
+          int                              did   = hdr->dispatch_id;
+          int                              gid   = hdr->geometry_id;
+          int                              seqno = hdr->seqno;
+          CAUMulticombineModel            *mc    = (CAUMulticombineModel*) CAUDevice::getClientData(did);
+          PAMI_GEOMETRY_CLASS             *g     = (PAMI_GEOMETRY_CLASS*)mc->_device.mapidtogeometry(gid);
+          CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
+
+          // Next, search the posted queue for a message with the incoming seq number
+          CAUMcombineMessage              *m     = (CAUMcombineMessage *)gi->_postedRed.findAndDelete(seqno);
+          void                            *r     = NULL;
+          lapi_return_info_t              *ri    = (lapi_return_info_t *) retinfo;
+
+          // No message found
+          // Post unexpected message
+          TRACE((stderr, "CAUMulticombineModel: cau_red_handler: found and delete seqno=%d\n", seqno));
+          if(m == NULL)
+            {
+              TRACE((stderr, "CAUMulticombineModel: cau_red_handler: NOT FOUND %d\n", seqno));
+              cau_reduce_op_t red = {CAU_SIGNED_INT, CAU_NOP};
+              m = (CAUMcombineMessage *)mc->_msg_allocator.allocateObject();
+              new(m) CAUMcombineMessage(hdr->msgsize,             // bytesToReduce
+                                        NULL,                     // rcvPWQ
+                                        NULL,                     // sndPWQ
+                                        red,                      // CAU operation
+                                        mc->_device.getContext(), // Context
+                                        NULL,                     // done function
+                                        NULL,                     // user cookie
+                                        gi->_seqnoRed++,          // ue search key
+                                        mc);
+              gi->_ueRed.pushTail((MatchQueueElem*)m);
+              r             = NULL;
+              *comp_h       = NULL;
+              ri->ret_flags = LAPI_SEND_REPLY;
+              ri->ctl_flags = LAPI_BURY_MSG;
+              return r;
+            }
+
+          // We found the message in the posted queue
+          // The message is being filled in currently, so
+          // we can start to multicast to the destinations
+          TRACE((stderr, "CAUMulticombineModel: cau_red_handler: NOT FOUND %d\n", seqno));
+          if (ri->udata_one_pkt_ptr)
+            {
+              TRACE((stderr, "CAUMulticombineModel: cau_red_handler: POSTING MULTICAST %d\n", seqno));
+              CheckLapiRC(lapi_cau_multicast(mc->_device.getHdl(),            // lapi handle
+                                             gi->_cau_id,                     // group id
+                                             mc->_dispatch_mcast_id,          // dispatch id
+                                             &m->_xfer_header,                // header
+                                             sizeof(m->_xfer_header),         // header len
+                                             NULL,                            // data
+                                             0,                               // data size
+                                             cau_mcast_send_done,             // done cb
+                                             m));                             // clientdata
+              r             = NULL;
+              *comp_h       = NULL;
+              ri->ret_flags = LAPI_SEND_REPLY;
+              ri->ctl_flags = LAPI_BURY_MSG;
+            }
+          else
+            PAMI_abort();
+        }
+      
+      CAUMulticombineModel (T_Device & device, pami_result_t &status) :
+        Interface::MulticombineModel < CAUMulticombineModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, status),
+        _device(device)
+          {
+            TRACE((stderr, "CAUMulticombineModel:  Registering Dispatch Handler:  %p %p\n", cau_red_handler, cau_mcast_handler));
+            _dispatch_red_id   = _device.registerSyncDispatch(cau_red_handler, this);
+            _dispatch_mcast_id = _device.registerSyncDispatch(cau_mcast_handler, this);
+            status             = PAMI_SUCCESS;
+          };
+        inline pami_result_t postMulticombine_impl (uint8_t (&state)[multicombine_model_state_bytes],
+                                                    pami_multicombine_t *mcombine,
+                                                    void                *devinfo)
+          {
+            int              rc;
+            cau_reduce_op_t  red;
+            red.operand_type                 = _device.pami_to_lapi_dt(mcombine->dtype);
+            red.operation                    = _device.pami_to_lapi_op(mcombine->optor);
+            pami_task_t            *tl       = NULL;
+            pami_task_t            *tl_root  = NULL;
+            PipeWorkQueue          *source   = (PipeWorkQueue*)mcombine->data;
+            PipeWorkQueue          *dest     = (PipeWorkQueue*)mcombine->results;
+            CAUMcombineMessage     *m        = NULL;
+            Topology               *topo_src = (Topology*)mcombine->data_participants;
+            Topology               *topo_dst = (Topology*)mcombine->results_participants;
+            CAUGeometryInfo        *gi       = (CAUGeometryInfo *)devinfo;
+
+            
+            topo_src->rankList(&tl);
+            topo_dst->rankList(&tl_root);
+
+            if(tl_root[0] == _device.taskid())
+            {
+              // This is the root of the multicombine.  This node needs
+              // to perform the math operations and start broadcasting
+              // the data to the destination nodes.  The math operation
+              // is the local data and the incoming reduction stream
+              // If the message is not found, just let the async
+              // handler handle this
+              TRACE((stderr, "CAUMulticombineModel: postMulticombine  FindAndDelete\n"));
+              m = (CAUMcombineMessage*)gi->_ueRed.findAndDelete(gi->_seqnoRed);
+              if (m != NULL)
+                {
+                  // Post work to generic device to perform math operations
+                  // on local data, and multicast to the destinations
+                  // Capture the state into a receive message and post this
+                  // message information to the generic device
+                }
+            }
+
+            if(!m)
+              {
+                m  = new(state) CAUMcombineMessage(mcombine->count,               // bytesToReduce Todo, get actual size
+                                                   dest,                          // Receive PWQ
+                                                   source,                        // Send PWQ
+                                                   red,                           // reduce operation      
+                                                   _device.getContext(),          // Context 
+                                                   mcombine->cb_done.function,    // User done fcn
+                                                   mcombine->cb_done.clientdata,  // Done fcn
+                                                   gi->_seqnoRed++,               // Reduction sequence number 
+                                                   NULL);                         // toFree?
+                m->_xfer_header.dispatch_id        =  _dispatch_red_id;
+                m->_xfer_header.geometry_id        =  gi->_geometry_id;
+                m->_xfer_header.seqno              =  gi->_seqnoRed-1;
+                m->_xfer_header.pktsize            =  64;
+                m->_xfer_header.msgsize            =  mcombine->count;
+              }
+            unsigned        minsize =  MIN(source->bytesAvailableToConsume(), 64);
+            char           *buf     =  source->bufferToConsume();
+            m->_currentBytes        = minsize;
+            // This node is not the root, start the reduction
+            if(tl_root[0] == _device.taskid())
+              {
+                TRACE((stderr, "CAUMulticombineModel: Reduce\n"));
+                CheckLapiRC(lapi_cau_reduce(_device.getHdl(),         // lapi handle
+                                            gi->_cau_id,              // group id
+                                            _dispatch_red_id,         // dispatch id
+                                            &m->_xfer_header,        // header
+                                            sizeof(m->_xfer_header),    // header_len
+                                            buf,                      // data
+                                            minsize,                  // data size
+                                            red,                      // reduction op
+                                            cau_red_send_done,        // send completion handler
+                                            m));                      // cookie
+              }
+            TRACE((stderr, "CAUMulticombineModel:  postMulticombine:  Pushing Tail\n"));
+            gi->_postedRed.pushTail((MatchQueueElem*)m);
+            return PAMI_SUCCESS;
+          }
+      public:
+        T_Device                     &_device;
+        int                           _dispatch_red_id;
+        int                           _dispatch_mcast_id;
+        PAMI::MemoryAllocator<sizeof(CAUMcombineMessage),16> _msg_allocator;
+    };
   };
 };
 #endif // __components_devices_cau_caumulticombinemodel_h__

@@ -138,11 +138,6 @@ namespace PAMI
       Generic::GenericThread    *_thread;
     };
 
-
-
-
-
-
     class CAUMsyncMessage : MatchQueueElem
     {
     public:
@@ -169,10 +164,54 @@ namespace PAMI
 
     };
 
-    class CAUMcombineMessage
+    class CAUMcombineMessage : MatchQueueElem
     {
     public:
-      unsigned toimpl;
+      CAUMcombineMessage(size_t               bytesToReduce,
+                         PipeWorkQueue       *rcvpwq,
+                         PipeWorkQueue       *sndpwq,
+                         cau_reduce_op_t      red,
+                         pami_context_t       context,
+                         pami_event_function  done_fn,
+                         void                *user_cookie,
+                         int                  key,
+                         void                *toFree):
+        MatchQueueElem(key),
+        _user_done_fn(done_fn),
+        _user_cookie(user_cookie),
+        _toFree(toFree),
+        _bytesReduced(0),
+        _bytesToReduce(bytesToReduce),
+        _currentBytes(0),
+        _rcvpwq(rcvpwq),
+        _sndpwq(sndpwq),
+        _red(red),
+        _context(context),
+        _devinfo(NULL),
+        _device(NULL)
+        {
+        }
+      pami_event_function  _user_done_fn;
+      void                *_user_cookie;
+      void                *_toFree;
+      pami_context_t       _context;
+      size_t               _bytesReduced;
+      size_t               _bytesToReduce;
+      size_t               _currentBytes;
+      PipeWorkQueue       *_rcvpwq;
+      PipeWorkQueue       *_sndpwq;
+      cau_reduce_op_t      _red;
+      void                *_ue_buf;
+      void                *_devinfo;
+      void                *_device;
+      struct               xfer_header
+      {
+        unsigned           dispatch_id:16;
+        unsigned           geometry_id:16;
+        unsigned           seqno      :32;
+        unsigned           pktsize    :7;
+        unsigned           msgsize    :25;
+      } _xfer_header __attribute__((__packed__));
     };
 
     class CAUM2MMessage
@@ -194,6 +233,9 @@ namespace PAMI
         _seqno(0),
         _ue(),
         _posted(),
+        _seqnoRed(0),
+        _ueRed(),
+        _postedRed(),
         _topo(topo)
         {}
       int             _cau_id;
@@ -201,6 +243,11 @@ namespace PAMI
       uint64_t        _seqno;
       MatchQueue      _ue;
       MatchQueue      _posted;
+
+      uint64_t        _seqnoRed;
+      MatchQueue      _ueRed;
+      MatchQueue      _postedRed;
+      
       PAMI::Topology *_topo;
     };
 

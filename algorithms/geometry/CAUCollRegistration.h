@@ -67,9 +67,9 @@ namespace PAMI
         {
           strncpy(&m->name[0], "CAU MultiCombineComposite", 32);
         }
-        typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device,
-                                                                    McombineMetaData,
-                                                                    CCMI::ConnectionManager::SimpleConnMgr>
+        typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device,
+                                                                                 McombineMetaData,
+                                                                                 CCMI::ConnectionManager::SimpleConnMgr>
         MultiCombineFactory;
       };
       //  **********************************************************************
@@ -209,7 +209,9 @@ namespace PAMI
 
             //  ----->  Allreduce
             Allreduce::MultiCombineFactory  *allreduce_reg = (Allreduce::MultiCombineFactory*)_factory_allocator.allocateObject();
-            new(allreduce_reg) Allreduce::MultiCombineFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[0]);
+            new(allreduce_reg) Allreduce::MultiCombineFactory(&_sconnmgr,
+                                                              (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[0],
+                                                              (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[3]);
             geometryInfo->_allreduce                       = allreduce_reg;
 
             // Add the geometry info to the geometry

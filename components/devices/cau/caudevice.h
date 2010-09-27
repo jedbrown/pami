@@ -18,6 +18,14 @@
 #include "components/devices/cau/caumessage.h"
 #include <map>
 
+#ifdef TRACE
+#undef TRACE
+#define TRACE(x)// fprintf x
+#else
+#define TRACE(x)// fprintf x
+#endif
+
+
 namespace PAMI
 {
   extern std::map<unsigned, pami_geometry_t> geometry_map;
@@ -109,6 +117,100 @@ namespace PAMI
           _work_alloc.returnObject(work);
         }
 
+
+      inline const bool   multicombine_model_op_support(pami_dt dt, pami_op op)
+        {
+          const bool support[PAMI_DT_COUNT][PAMI_OP_COUNT] =
+          {
+        //  PAMI_UNDEFINED_OP, PAMI_NOOP, PAMI_MAX, PAMI_MIN, PAMI_SUM, PAMI_PROD, PAMI_LAND, PAMI_LOR, PAMI_LXOR, PAMI_BAND, PAMI_BOR, PAMI_BXOR, PAMI_MAXLOC, PAMI_MINLOC, PAMI_USERDEFINED_OP,
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNDEFINED_DT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_CHAR
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_CHAR
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_SHORT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_SHORT
+            {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false,       false},//PAMI_SIGNED_INT
+            {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false,       false},//PAMI_UNSIGNED_INT
+            {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false,       false},//PAMI_SIGNED_LONG_LONG
+            {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false,       false},//PAMI_UNSIGNED_LONG_LONG
+            {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false,       false},//PAMI_FLOAT
+            {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false,       false},//PAMI_DOUBLE
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LONG_DOUBLE
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOGICAL
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SINGLE_COMPLEX
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_DOUBLE_COMPLEX
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2INT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_SHORT_INT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_FLOAT_INT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_DOUBLE_INT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2FLOAT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2DOUBLE
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false} //PAMI_USERDEFINED_DT
+          };
+          TRACE((stderr, "Multicombine::multicombine_model_op_support(%d, %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
+          return(support[dt][op]);
+        }
+
+
+
+      inline int pami_to_lapi_dt(pami_dt dt)
+        {
+          switch(dt)
+            {
+              case PAMI_SIGNED_INT:
+                return CAU_SIGNED_INT;
+                break;
+              case PAMI_UNSIGNED_INT:
+                return CAU_UNSIGNED_INT;
+                break;
+              case PAMI_SIGNED_LONG_LONG:
+                return CAU_SIGNED_LONGLONG;
+                break;
+              case PAMI_UNSIGNED_LONG_LONG:
+                return CAU_UNSIGNED_LONGLONG;
+                break;
+              case PAMI_FLOAT:
+                return CAU_FLOAT;
+                break;
+              case PAMI_DOUBLE:
+                return CAU_DOUBLE;
+                break;
+              default:
+                return -1;
+                break;
+            }
+          return -1;
+        }
+
+      inline int pami_to_lapi_op(pami_op op)
+        {
+          switch(op)
+            {
+              case PAMI_SUM:
+                return CAU_SUM;
+                break;
+              case PAMI_MIN:
+                return CAU_MIN;
+                break;
+              case PAMI_MAX:
+                return CAU_MAX;
+                break;
+              case PAMI_BAND:
+                return CAU_AND;
+                break;
+              case PAMI_BXOR:
+                return CAU_XOR;
+                break;
+              case PAMI_BOR:
+                return CAU_OR;
+                break;
+              default:
+                return -1;
+                break;
+            }
+          return -1;
+        }
+      
+      
       static inline void         *getClientData(int id)
         {
           return _g_id_to_device_table[id];
@@ -127,6 +229,9 @@ namespace PAMI
           return _g_pami_mcast_to_lapi_mcast[pami_id];
         }
 
+      
+
+      
     private:
       lapi_state_t                                              *_lapi_state;
       lapi_handle_t                                              _lapi_handle;

@@ -16,6 +16,7 @@
 
 #include <pami.h>
 #include "components/devices/MulticastModel.h"
+#include "components/devices/cau/caumessage.h"
 
 #ifdef TRACE
 #undef TRACE
@@ -23,7 +24,6 @@
 #else
 #define TRACE(x)// fprintf x
 #endif
-
 
 namespace PAMI
 {

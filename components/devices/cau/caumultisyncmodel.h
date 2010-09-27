@@ -18,8 +18,11 @@
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/cau/caumessage.h"
 
-#ifndef TRACE
-#define TRACE(x)
+#ifdef TRACE
+#undef TRACE
+#define TRACE(x)// fprintf x
+#else
+#define TRACE(x)// fprintf x
 #endif
 
 namespace PAMI
