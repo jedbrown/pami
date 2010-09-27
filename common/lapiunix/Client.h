@@ -588,8 +588,11 @@ namespace PAMI
         char   shmemfile[1024];
         size_t bytes     = 8192*1024;
         size_t pagesize  = 4096;
+        int    jobkey    = 0;
+        if(getenv("MP_PARTITION"))
+          jobkey = atoi(getenv("MP_PARTITION"));
 
-        snprintf (shmemfile, 1023, "/pami-client-%s", _lapiClient->GetName());
+        snprintf (shmemfile, 1023, "/pami-client-%d-%s",jobkey,_lapiClient->GetName());
         // Round up to the page size
         size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
         int fd, rc;
