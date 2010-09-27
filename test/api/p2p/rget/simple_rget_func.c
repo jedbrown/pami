@@ -357,11 +357,11 @@ int main (int argc, char ** argv)
 #ifdef TEST_CROSSTALK
     fprintf (stdout, "PAMI_Rget('simple') functional test [crosstalk]\n");
     fprintf (stdout, "\n");
-    PAMI_Endpoint_create (client, 1, 1, &parameters.dest);
+    PAMI_Endpoint_create (client, num_tasks-1, 1, &parameters.dest);
 #else
     fprintf (stdout, "PAMI_Rget('simple') functional test\n");
     fprintf (stdout, "\n");
-    PAMI_Endpoint_create (client, 1, 0, &parameters.dest);
+    PAMI_Endpoint_create (client, num_tasks-1, 0, &parameters.dest);
 #endif
 
 
@@ -423,7 +423,7 @@ fprintf (stderr, "Wait for 'ack', _ack_active = %zu\n", _ack_active);
     }
 
   }
-  else if (task_id == 1)
+  else if (task_id == num_tasks-1)
   {
 #ifdef TEST_CROSSTALK
       size_t contextid = 1;
