@@ -127,7 +127,8 @@ namespace PAMI
             return PAMI_ERROR;
           }
 
-        int rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
+        int rc;
+        rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
         PAMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
         int x;
         TRACE_ERR((stderr, "BGP::Client::createContext mm available %zu\n", _mm.available()));

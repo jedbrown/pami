@@ -45,7 +45,8 @@ namespace PAMI
 
         uint32_t paddr_lower = 0;
         uint32_t paddr_upper = 0;
-        int rc = Kernel_Virtual2Physical(base, bytes_in, &paddr_upper, &paddr_lower );
+        int rc;
+        rc = Kernel_Virtual2Physical(base, bytes_in, &paddr_upper, &paddr_lower );
         PAMI_assertf(rc == 0, "%s<%d> Bad return code from Kernel_Virtual2Physical: %d\n", __FILE__, __LINE__, rc);
 
         _paddr = ((uint64_t) paddr_upper) << 32;

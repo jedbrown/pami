@@ -54,8 +54,10 @@ void printSchedule(CCMI::Schedule::MCRect schedule, int start, int nphases,
 
         // Get the axial members
         result = topo.axial(&low, &high, &ref, tl);
-
         PAMI_assert(result == PAMI_SUCCESS);
+        if (result != PAMI_SUCCESS)
+          return;
+
         if (task_id == id || id == (pami_task_t) -1)
         {
           //char dir[32] = "";

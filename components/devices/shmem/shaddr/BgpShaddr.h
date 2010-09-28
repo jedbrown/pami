@@ -419,7 +419,8 @@ void * PAMI::Device::Shmem::BgpShaddr::p2v (size_t     peer,
     {
       // Map a new process window for this physical address
       TRACE_ERR((stderr, "   BgpShaddr::p2v():%d .. _window[%zu].tlbslot = %d, paddr_round_down = %d, window_size = %d\n", __LINE__, peer, _window[peer].tlbslot, paddr_round_down, window_size));
-      int rc = Kernel_SetProcessWindow (_window[peer].tlbslot, paddr_round_down,
+      int rc;
+      rc = Kernel_SetProcessWindow (_window[peer].tlbslot, paddr_round_down,
                                         window_size,
                                         PROT_READ | PROT_WRITE,
                                         &_window[peer].last_vaddr, &_window[peer].last_paddr, &actualsize);
