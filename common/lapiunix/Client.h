@@ -797,9 +797,6 @@ namespace PAMI
         char   shmemfile[PAMI::Memory::MMKEYSIZE];
         size_t bytes     = 8192*1024;
         size_t pagesize  = 4096;
-        int    jobkey    = 0;
-        if(getenv("MP_PARTITION"))
-          jobkey = atoi(getenv("MP_PARTITION"));
 
         snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s",
 		((LapiImpl::Client*)&_lapiClient[0])->GetName());
