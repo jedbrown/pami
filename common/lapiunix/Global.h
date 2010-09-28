@@ -43,7 +43,7 @@ namespace PAMI
 	  // get jobid from POE?
 	  size_t jobid = 0;
 	  if(getenv("MP_PARTITION"))
-		jobkey = atoi(getenv("MP_PARTITION"));
+		jobid = atoi(getenv("MP_PARTITION"));
 	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(jobid, heap_mm);
 	PAMI::Memory::MemoryManager::heap_mm = heap_mm;
 	PAMI::Memory::MemoryManager::shared_mm = shared_mm;
