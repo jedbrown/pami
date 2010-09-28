@@ -14,7 +14,7 @@ SUBDIRS         =
 NOTBUILT        = 
 APPS            = barrier.${EXTENSION} barrier_subcomm.${EXTENSION} bcast.${EXTENSION} \
 		bcast_advisor.${EXTENSION} allreduce.${EXTENSION} allgather.${EXTENSION} \
-                allgatherv.${EXTENSION} \
+                allgatherv.${EXTENSION} reduce.${EXTENSION} \
 		scatter.${EXTENSION} scatterv.${EXTENSION} bcast_subcomm.${EXTENSION} \
 		ambcast.${EXTENSION} alltoall.${EXTENSION} alltoallv.${EXTENSION} bcast_subcomm2.${EXTENSION} \
 		bcast_subcomm_noparent.${EXTENSION} 
