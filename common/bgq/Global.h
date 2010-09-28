@@ -82,7 +82,7 @@ namespace PAMI
       {
         pami_coord_t ll, ur;
         pami_task_t min = 0, max = 0;
-        const char   * shmemfile = "/unique-pami-global-shmem-file";
+        const char   * shmemfile = "/pami-global-shmem";
         size_t   bytes;
         size_t   pagesize  = 4096;
         char *envopts;
@@ -101,6 +101,7 @@ namespace PAMI
 	}
 	PAMI::Memory::MemoryManager::heap_mm = heap_mm;
 	PAMI::Memory::MemoryManager::shared_mm = shared_mm;
+	PAMI::Memory::MemoryManager::shm_mm = &mm;  // not initialized yet!
 
         /// \todo #80 #99 Remove this when the DMA supports >1 context.
         /// Hopefully this is temporary. We should always include all

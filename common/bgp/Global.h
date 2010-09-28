@@ -64,11 +64,12 @@ namespace PAMI
 	  }
 	PAMI::Memory::MemoryManager::heap_mm = heap_mm;
 	PAMI::Memory::MemoryManager::shared_mm = shared_mm;
+	PAMI::Memory::MemoryManager::shm_mm = &mm; // not initialized yet!
 
 
           //allocateMemory ();
 
-          char   * shmemfile = "/unique-pami-global-shmem-file";
+          char   * shmemfile = "/pami-global-shmem";
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
 

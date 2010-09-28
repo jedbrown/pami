@@ -487,9 +487,12 @@ namespace PAMI
 	  _node_topo.convertTopology(PAMI_COORD_TOPOLOGY);
 
 	  // don't know where 'this' was allocated, so can't call MUCR_mutex_t::checkCtorMm
-	  PAMI_assertf(MUCR_mutex_t::checkDataMm(&mm),
+
+	  // should this mutex be in the WAC?
+	  PAMI::Memory::MemoryManager *mxmm = &__global.l2atomicFactory.__nodescoped_mm;
+	  PAMI_assertf(MUCR_mutex_t::checkDataMm(mxmm),
 		"Cannot init MUCR_mutex_t in given mm");
-	  _cr_mtx.init(&mm, "/pami-mu2-rm-cr");
+	  _cr_mtx.init(mxmm, "/pami-mu2-rm-cr");
 	  PAMI_assertf(MUCR_mutex_model_t::checkCtorMm(__global.heap_mm),
 		"Cannot construct MUCR_mutex_model_t on heap");
 	  pami_result_t prc = __global.heap_mm->memalign((void **)&_cr_mtx_mdls,

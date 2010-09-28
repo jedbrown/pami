@@ -20,6 +20,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "spi/include/kernel/location.h"
+
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 #endif
@@ -82,10 +84,7 @@ namespace PAMI
 
 		// must be called without lock!
 		inline void waitDone() {
-int count = 0;
-			while (_init_done == 0) {
-if (++count == 1000000) fprintf(stderr, "stuck?\n");
-}
+			while (_init_done == 0) { }
 		}
 	private:
 		size_t _ref_count;
@@ -134,8 +133,13 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 		inline void free() { memset(this, 0, sizeof(*this)); }
 
 		inline void *userMem() { return (void *)-1; }
+		inline size_t userSize() { return _userSize; }
+		inline void userSize(size_t size, size_t align) {
+			_userSize = size;
+		}
 	private:
 		size_t _offset; // _base + _offset = memory chunk
+		size_t _userSize;
 	}; // class MemoryManagerAlloc
 
 	class MemoryManagerOSAlloc : public MemoryManagerKey {
@@ -203,11 +207,12 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 		}
 
 		inline void release() {
+			mem_sync();
 			_mutex = 0;
 		}
 	private:
-		size_t _mutex;
-        	size_t _offset; // simple free-space handling
+		volatile size_t _mutex;
+        	volatile size_t _offset; // simple free-space handling
 	}; // class MemoryManagerHeader
 
 	// meta[0] has 8, meta[1] has 16, meta[2] has 32, etc...
@@ -245,6 +250,22 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 			}
 		}
 
+		inline void dump(const char *str) {
+			int x, y;
+			for (x = 0; x < MMMAX_N_META && _metas[x]; ++x) {
+				for (y = 0; y < MM_META_NUM(x); ++y) {
+					fprintf(stderr, "%s: _metas[%d][%d]: "
+						"\"%s\" %p %zd (%zd)\n",
+						str, x, y,
+						_metas[x][y].key(),
+						_metas[x][y].userMem(),
+						_metas[x][y].offset(),
+						_metas[x][y].userSize()
+						);
+				}
+			}
+		}
+
 		inline void init(MemoryManager *mm, const char *key) {
 			_meta_mm = mm;
 			if (key) {
@@ -259,7 +280,7 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 			}
 			_metaAlloc((void **)&_metahdr, sizeof(*_metahdr), 'h');
 			PAMI_assertf(_metahdr, "Failed to get memory for _metahdr");
-			new (_metahdr) MemoryManagerHeader(); // can? should?
+			//new (_metahdr) MemoryManagerHeader(); // can? should?
 		}
 
 		inline void acquire() { _metahdr->acquire(); }
@@ -369,6 +390,7 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 
 	static MemoryManager *heap_mm; // reference to __global.heap_mm without circ deps.
 	static MemoryManager *shared_mm; // reference to __global.shared_mm without circ deps.
+	static MemoryManager *shm_mm; // reference to __global.mm without circ deps.
 
         ///
         /// \brief Empty base memory manager constructor
@@ -398,6 +420,7 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
         inline void disable () { _enabled = false; }
 	inline unsigned attrs () { return _attrs; }
 	inline void attrs (unsigned attrs) { _attrs |= attrs; }
+        inline MemoryManager *getParent() { return _pmm; }
 
         ///
         /// \brief Allocate an aligned buffer of the memory.
@@ -420,6 +443,7 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 	virtual void free(void *mem) = 0;
         virtual size_t available (size_t alignment = 1) = 0;
 
+        virtual const char *getName() = 0;
         ///
         /// \brief Intialize a memory manager from another memory manager
         ///
@@ -475,7 +499,7 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 	_meta()
 	{
 	}
-	~GenMemoryManager()
+	virtual ~GenMemoryManager()
 	{
 		_meta.~MemoryManagerMeta();
 	}
@@ -483,6 +507,8 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 	static void _meta_reset(MemoryManagerAlloc *m, void *cookie) {
 		m->free();
 	}
+
+	inline const char *getName() { return _name; }
 
         inline pami_result_t init(MemoryManager *mm,
 					size_t bytes, size_t alignment = 1,
@@ -505,16 +531,24 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 		if (mm) {
 			_pmm = mm;
 			// make new allocation...
+			if (key) {
+				strncpy(_name, key, sizeof(_name));
+			} else {
+				_name[0] = '\0';
+			}
 			pami_result_t rc = mm->memalign((void **)&_base, alignment, bytes,
-								key, init_fn, cookie);
+								_name, init_fn, cookie);
 			if (rc != PAMI_SUCCESS) {
 				return rc;
 			}
 			_attrs = mm->attrs() | attrs;
           		_size = bytes;
 			_alignment = alignment;
-			_meta.init((mm->attrs() & PAMI_MM_NODESCOPE) ?
-				shared_mm : heap_mm, key);
+			// have a problem when creating shm_mm,
+			// can't use itself for meta data allocs.
+			MemoryManager *mmm = (mm->attrs() & PAMI_MM_NODESCOPE) ?
+					(this == shm_mm ? shared_mm : shm_mm) : heap_mm;
+			_meta.init(mmm, _name);
 		} else {
 			// "reset" - discard arena
 			// this isn't really correct for multiple participants - TBD
@@ -535,7 +569,7 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 	  }
 	  _meta.acquire();
 	  MemoryManagerAlloc *m;
-	  if (key) {
+	  if (key && key[0]) {
 		// "public" (shared) allocation
 		m = _meta.find(key);
 		if (m) {
@@ -548,6 +582,11 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 		// lock still held...
 	  	m = _meta.findFree();
 	  } else {
+		if (key) {
+			// callers wants to know the unique key we chose...
+			snprintf((char *)key, MMKEYSIZE, "/%d-%lx",
+				getpid(), (unsigned long)memptr);
+		}
 	  	m = _meta.findFree();
 	  }
 	  // pre-existing, shared, chunks were handled above,
@@ -562,6 +601,7 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 	  }
 	  m->key(key);
 	  m->addRef();
+	  m->userSize(bytes, 0);
 	  _meta.allocSpace(m->offset(), bytes);
 	  _meta.release();
 	  *memptr = (uint8_t *)_base + m->offset();
@@ -598,15 +638,16 @@ if (++count == 1000000) fprintf(stderr, "stuck?\n");
 
 	inline void dump(const char *str) {
 		if (str) {
-			fprintf(stderr, "%s: GenMemoryManager %p %zd (%zd) %x\n", str,
-					_base, _size, _meta.spaceUsed(), _attrs);
-		} else {
-			fprintf(stderr, "GenMemoryManager %p %zd (%zd) %x\n",
-					_base, _size, _meta.spaceUsed(), _attrs);
+			fprintf(stderr, "%s: ", str);
 		}
+		fprintf(stderr, "%s::GenMemoryManager %p %zd (%zd) %x\n", _name,
+					_base, _size, _meta.spaceUsed(), _attrs);
+		_meta.dump(_name);
+		_pmm->dump(str);
 	}
     private:
 	MemoryManagerMeta<MemoryManagerAlloc> _meta;
+	char _name[MMKEYSIZE];
     }; // class GenMemoryManager
 
   }; // namespace Memory

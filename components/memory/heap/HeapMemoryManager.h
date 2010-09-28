@@ -14,6 +14,8 @@
 #ifndef __components_memory_heap_HeapMemoryManager_h__
 #define __components_memory_heap_HeapMemoryManager_h__
 
+#include <cstdlib>
+
 #include "components/memory/MemoryManager.h"
 #include "components/memory/shmem/SharedMemoryManager.h"
 
@@ -40,7 +42,7 @@ namespace PAMI
 #endif // MM_DEBUG
         }
 
-      inline ~HeapMemoryManager ()
+      virtual ~HeapMemoryManager ()
 	{
 		// this is only called from process exit,
 		// so no need to actually free - the memory
@@ -54,6 +56,8 @@ namespace PAMI
 		}
 #endif // MM_DEBUG
 	}
+
+	inline const char *getName() { return "HeapMemoryManager"; }
 
 	inline pami_result_t init (MemoryManager *mm, size_t bytes, size_t alignment,
 			unsigned attrs = 0, const char *key = NULL,
@@ -69,7 +73,7 @@ namespace PAMI
 	{
 		if (alignment < _alignment) alignment = _alignment;
 #ifdef USE_MEMALIGN
-		int rc = posix_memalign (memptr, alignment, bytes);
+		int rc = posix_memalign(memptr, alignment, bytes);
 		if (rc != 0) {
 			return PAMI_ERROR;
 		}
@@ -100,7 +104,7 @@ namespace PAMI
 			++_num_frees;
 		}
 #endif // MM_DEBUG
-		free(mem);
+		std::free(mem);
 	}
 
 	inline size_t available(size_t alignment) {

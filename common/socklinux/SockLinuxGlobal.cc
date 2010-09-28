@@ -21,6 +21,7 @@ PAMI::Mapping *PAMI::Topology::mapping = NULL;
 
 PAMI::Memory::MemoryManager *PAMI::Memory::MemoryManager::heap_mm;
 PAMI::Memory::MemoryManager *PAMI::Memory::MemoryManager::shared_mm;
+PAMI::Memory::MemoryManager *PAMI::Memory::MemoryManager::shm_mm;
 
 #include "components/devices/misc/ProgressFunctionMsg.h"
 PAMI::Device::ProgressFunctionDev _g_progfunc_dev;

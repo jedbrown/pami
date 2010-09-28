@@ -73,7 +73,7 @@ namespace PAMI
 #endif // MM_DEBUG
         }
 
-        inline ~SharedMemoryManager ()
+        virtual ~SharedMemoryManager ()
         {
 #ifdef MM_DEBUG
 		if (_debug) {
@@ -90,6 +90,7 @@ namespace PAMI
 		_meta.~MemoryManagerMeta<MemoryManagerOSAlloc>();
         }
 
+	inline const char *getName() { return "SharedMemoryManager"; }
 
 	inline pami_result_t init (MemoryManager *mm, size_t bytes, size_t alignment,
 			unsigned attrs = 0, const char *key = NULL,
@@ -111,9 +112,19 @@ namespace PAMI
 		// that ensures the underlying OS shmem segment will not conflict
 		// with any other jobs that might be running.
 		//
-		if (*key == '/') ++key; // or... allow "relative" vs. "absolute" keys?
 		char nkey[MMKEYSIZE];
-		snprintf(nkey, sizeof(nkey), "/%zd-%s", _jobid, key);
+		if (key && key[0]) {
+			if (*key == '/') ++key; // or... allow "relative" vs. "absolute" keys?
+			snprintf(nkey, sizeof(nkey), "/%zd-%s", _jobid, key);
+		} else {
+			// this should be unique
+			snprintf(nkey, sizeof(nkey), "/%zd-%d-%lx", _jobid,
+						getpid(), (unsigned long)memptr);
+			if (key) {
+				// callers wants to know the unique key we chose...
+				strcpy((char *)key, nkey);
+			}
+		}
 		// ... use 'nkey' here-after...
 		//
 		if (alignment < _alignment) alignment = _alignment;

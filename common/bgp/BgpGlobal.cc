@@ -22,6 +22,7 @@ pami_coord_t PAMI::Topology::my_coords;
 
 PAMI::Memory::MemoryManager *PAMI::Memory::MemoryManager::heap_mm;
 PAMI::Memory::MemoryManager *PAMI::Memory::MemoryManager::shared_mm;
+PAMI::Memory::MemoryManager *PAMI::Memory::MemoryManager::shm_mm;
 
 // These are not in Global.h for a couple reasons.
 // One is to avoid poluting the namespace there,
