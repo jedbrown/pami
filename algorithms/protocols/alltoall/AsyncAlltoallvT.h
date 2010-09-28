@@ -388,7 +388,8 @@ namespace CCMI
             DEBUG((stderr, "key = %d, execution done, clean up\n", co->key());)
 
             PAMI_GEOMETRY_CLASS *geometry = co->getGeometry();
-	    unsigned                 flag = co->getFlags();
+	    unsigned                 flag;
+	    flag = co->getFlags();
 
             CCMI_assert(flag & LocalPosted);
 

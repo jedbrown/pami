@@ -282,7 +282,8 @@ namespace CCMI
       virtual void getSrcTopology (unsigned phase, PAMI::Topology *topology)
       {
         unsigned *srcranks;
-        pami_result_t rc = topology->rankList(&srcranks);
+        pami_result_t rc;
+        rc = topology->rankList(&srcranks);
         CCMI_assert (rc == PAMI_SUCCESS);
         CCMI_assert(srcranks != NULL);
 
@@ -318,7 +319,8 @@ namespace CCMI
       virtual void getDstTopology(unsigned phase, PAMI::Topology *topology)
       {
         unsigned *dstranks;
-        pami_result_t rc = topology->rankList(&dstranks);
+        pami_result_t rc;
+        rc = topology->rankList(&dstranks);
         CCMI_assert (rc == PAMI_SUCCESS);
         CCMI_assert(dstranks != NULL);
 
@@ -355,8 +357,8 @@ namespace CCMI
        */
       virtual pami_result_t getSrcUnionTopology (PAMI::Topology *topology) {
         unsigned *srcranks;
-        pami_result_t rc = topology->rankList(&srcranks);
-        unsigned nsrcranks = topology->size();
+        pami_result_t rc;
+        rc = topology->rankList(&srcranks);
         CCMI_assert (rc == PAMI_SUCCESS);
         CCMI_assert(srcranks != NULL);
 
@@ -383,7 +385,7 @@ namespace CCMI
             }
           ntotal_ranks += nranks;
           nranks = 0;
-          CCMI_assert (ntotal_ranks <= nsrcranks);
+          CCMI_assert (ntotal_ranks <= topology->size());
         }
 
         //Convert to a list topology
@@ -398,8 +400,8 @@ namespace CCMI
        */
       virtual pami_result_t getDstUnionTopology (PAMI::Topology *topology) {
         unsigned *dstranks;
-        pami_result_t rc = topology->rankList(&dstranks);
-        unsigned ndstranks = topology->size();
+        pami_result_t rc;
+        rc = topology->rankList(&dstranks);
         CCMI_assert (rc == PAMI_SUCCESS);
         CCMI_assert(dstranks != NULL);
 
@@ -425,7 +427,7 @@ namespace CCMI
               CCMI_abort();
             }
           ntotal_ranks += nranks;
-          CCMI_assert (ntotal_ranks <= ndstranks);
+          CCMI_assert (ntotal_ranks <= topology->size());
           nranks = 0;
         }
 
@@ -496,14 +498,16 @@ inline CCMI::Schedule::RingSchedule::RingSchedule
 
   if (t == PAMI_LIST_TOPOLOGY) {
     unsigned *ranks;
-    pami_result_t rc = topology->rankList(&ranks);
+    pami_result_t rc;
+    rc = topology->rankList(&ranks);
     CCMI_assert (rc == PAMI_SUCCESS);
     CCMI_assert(ranks != NULL);
     configure (myrank, topology->size(), ranks);
   }
   else   if (t == PAMI_RANGE_TOPOLOGY) {
     pami_task_t first, last;
-    pami_result_t rc = topology->rankRange(&first, &last);
+    pami_result_t rc;
+    rc = topology->rankRange(&first, &last);
     PAMI_assert(rc == PAMI_SUCCESS);
     configure (myrank, first, last);
   }

@@ -531,7 +531,8 @@ namespace PAMI
           pami_task_t first, last;
           for(i = 1; i < _numtopos; i++)
               {
-                pami_result_t result = _topos[i].rankRange(&first, &last);
+                pami_result_t result;
+                result = _topos[i].rankRange(&first, &last);
                 PAMI_assert(result == PAMI_SUCCESS);
                 range_size = _topos[i].size();
                 rank_left -= range_size;

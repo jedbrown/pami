@@ -323,7 +323,8 @@ namespace PAMI
               // Allocate an array of shared memory devices, one for each
               // context in this _task_ (from heap, not from shared memory)
               ShmemDevice * devices;
-              int rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
+              int rc;
+              rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
               PAMI_assertf(rc == 0, "posix_memalign failed for ShmemDevice[%zu], errno=%d\n", n, errno);
 
               // Instantiate the shared memory devices

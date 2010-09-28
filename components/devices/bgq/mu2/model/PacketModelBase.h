@@ -458,7 +458,8 @@ namespace PAMI
             // Determine the physical address of the (temporary) payload
             // buffer from the model state memory.
             Kernel_MemoryRegion_t memRegion;
-            uint32_t rc = Kernel_CreateMemoryRegion (&memRegion, payload, tbytes);
+            uint32_t rc;
+            rc = Kernel_CreateMemoryRegion (&memRegion, payload, tbytes);
             PAMI_assert ( rc == 0 );
             uint64_t paddr = (uint64_t)memRegion.BasePa +
                              ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
@@ -699,7 +700,8 @@ namespace PAMI
             // Determine the physical address of the (temporary) payload
             // buffer from the model state memory.
             Kernel_MemoryRegion_t memRegion;
-            uint32_t rc = Kernel_CreateMemoryRegion (&memRegion, (msg + 1), length);
+            uint32_t rc;
+            rc = Kernel_CreateMemoryRegion (&memRegion, (msg + 1), length);
             PAMI_assert ( rc == 0 );
             uint64_t paddr = (uint64_t)memRegion.BasePa +
                              ((uint64_t)(msg + 1) - (uint64_t)memRegion.BaseVa);

@@ -38,7 +38,8 @@ namespace BGQ {
                                         PAMI::Atomic::BGQ::l2x_scope_t mmscope,
                                         PAMI::Atomic::BGQ::l2x_scope_t scope) {
 			/// \todo #warning HACK to workaround until MemoryManager::key_memalign
-                        pami_result_t rc = __global.l2atomicFactory.l2x_mm_alloc(mm, mmscope,
+                        pami_result_t rc;
+                        rc = __global.l2atomicFactory.l2x_mm_alloc(mm, mmscope,
 						(void **)&_counter, 1, scope);
                         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate L2 Atomic Mutex");
                         // if need to reset, must coordinate!

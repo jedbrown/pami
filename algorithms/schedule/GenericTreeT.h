@@ -281,7 +281,8 @@ namespace CCMI {
     	    {
 
     	      unsigned *srcranks;
-              pami_result_t rc = topology->rankList(&srcranks);
+              pami_result_t rc;
+              rc = topology->rankList(&srcranks);
               CCMI_assert (rc == PAMI_SUCCESS);
               CCMI_assert(srcranks != NULL);
 
@@ -298,7 +299,8 @@ namespace CCMI {
   	    void getDstTopology (unsigned phase, PAMI::Topology *topology)
   	    {
     	      unsigned *dstranks;
-              pami_result_t rc = topology->rankList(&dstranks);
+              pami_result_t rc;
+              rc = topology->rankList(&dstranks);
               CCMI_assert (rc == PAMI_SUCCESS);
               CCMI_assert(dstranks != NULL);
 
@@ -315,7 +317,8 @@ namespace CCMI {
  	    pami_result_t getSrcUnionTopology (PAMI::Topology *topology)
  	    {
  	      unsigned *srcranks;
- 	      pami_result_t rc = topology->rankList(&srcranks);
+ 	      pami_result_t rc;
+              rc = topology->rankList(&srcranks);
  	      CCMI_assert (rc == PAMI_SUCCESS);
  	      CCMI_assert(srcranks != NULL);
 
@@ -340,7 +343,8 @@ namespace CCMI {
             pami_result_t getDstUnionTopology (PAMI::Topology *topology)
             {
                 unsigned *dstranks;
-        	pami_result_t rc = topology->rankList(&dstranks);
+        	pami_result_t rc;
+                rc = topology->rankList(&dstranks);
         	CCMI_assert (rc == PAMI_SUCCESS);
         	CCMI_assert(dstranks != NULL);
 
@@ -731,7 +735,8 @@ namespace CCMI {
       	  void  getSrcTopology (unsigned phase, PAMI::Topology *topology)
       	  {
       	    unsigned *srcranks;
-            pami_result_t rc = topology->rankList(&srcranks);
+            pami_result_t rc;
+            rc = topology->rankList(&srcranks);
             CCMI_assert (rc == PAMI_SUCCESS);
             CCMI_assert(srcranks != NULL);
 
@@ -749,7 +754,8 @@ namespace CCMI {
       	  void getDstTopology (unsigned phase, PAMI::Topology *topology)
       	  {
       	    unsigned *dstranks;
-            pami_result_t rc = topology->rankList(&dstranks);
+            pami_result_t rc;
+            rc = topology->rankList(&dstranks);
             CCMI_assert (rc == PAMI_SUCCESS);
             CCMI_assert(dstranks != NULL);
 
@@ -766,7 +772,8 @@ namespace CCMI {
       	pami_result_t getSrcUnionTopology (PAMI::Topology *topology)
       	{
       	  unsigned *srcranks;
-      	  pami_result_t rc = topology->rankList(&srcranks);
+      	  pami_result_t rc;
+          rc = topology->rankList(&srcranks);
       	  CCMI_assert (rc == PAMI_SUCCESS);
       	  CCMI_assert(srcranks != NULL);
 
@@ -791,7 +798,8 @@ namespace CCMI {
       	 pami_result_t getDstUnionTopology (PAMI::Topology *topology)
       	 {
       	   unsigned *dstranks;
-      	   pami_result_t rc = topology->rankList(&dstranks);
+      	   pami_result_t rc;
+           rc = topology->rankList(&dstranks);
       	   CCMI_assert (rc == PAMI_SUCCESS);
       	   CCMI_assert(dstranks != NULL);
 

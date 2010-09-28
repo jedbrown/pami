@@ -216,12 +216,11 @@ namespace PAMI
 
         void* payload = NULL;
 
-        Topology* dataTopology = (Topology*)mcomb->data_participants;
-        PAMI_assert(dataTopology->isRankMember(_task_id));
+        PAMI_assert(((Topology*)mcomb->data_participants)->isRankMember(_task_id));
 
         Topology* resultsTopology = (Topology*)mcomb->results_participants;
 
-        PAMI_assert(resultsTopology->size() == dataTopology->size() || resultsTopology->size() == 1); /// \todo based on T_PacketModel?
+        PAMI_assert(resultsTopology->size() == ((Topology*)mcomb->data_participants)->size() || resultsTopology->size() == 1); /// \todo based on T_PacketModel?
 
         if (resultsTopology->isRankMember(_task_id))
           {
@@ -508,6 +507,7 @@ namespace PAMI
       template <class T_PacketModel, bool T_Msgdata_support, bool T_PWQ_support>
       inline const uint8_t   MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::mu_op(pami_dt dt, pami_op op)
       {
+#if ASSERT_LEVEL > 0
         const pami_op op_check[PAMI_OP_COUNT] =
         {
           PAMI_UNDEFINED_OP,    // PAMI_UNDEFINED_OP
@@ -526,6 +526,7 @@ namespace PAMI
           PAMI_MINLOC,          // PAMI_MINLOC
           PAMI_USERDEFINED_OP   // PAMI_USERDEFINED_OP
         };
+#endif
 
 
         // The MU opcode - 0xF0 is invalid
@@ -564,7 +565,7 @@ namespace PAMI
       template <class T_PacketModel, bool T_Msgdata_support, bool T_PWQ_support>
       inline const size_t    MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::mu_size(pami_dt dt)
       {
-
+#if ASSERT_LEVEL > 0
         const pami_dt dt_check[PAMI_DT_COUNT] =
         {
           PAMI_UNDEFINED_DT,       //PAMI_UNDEFINED_DT
@@ -590,6 +591,8 @@ namespace PAMI
           PAMI_LOC_2DOUBLE,        //PAMI_LOC_2DOUBLE
           PAMI_USERDEFINED_DT      //PAMI_USERDEFINED_DT
         };
+#endif
+
         const size_t mu_size_table[PAMI_DT_COUNT] =
         {
           -1,                         //PAMI_UNDEFINED_DT

@@ -2149,26 +2149,50 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
   // Allocate space for the output structures
   allocateMemory( useSharedMemory, (void **)(subgroups), 16, outputStructuresSize );
   TRACE((stderr,"MU ResourceManager: setupInjFifos: subgroups ptr = %p\n",*subgroups));
-  if ( useSharedMemory ) PAMI_assertf( *subgroups != NULL, "Shared memory is full.\n" )
-  else PAMI_assertf( *subgroups != NULL, "The heap is full.\n" );
+  if ( useSharedMemory )
+    {
+      PAMI_assertf( *subgroups != NULL, "Shared memory is full.\n" );
+    }
+  else
+    {
+      PAMI_assertf( *subgroups != NULL, "The heap is full.\n" );
+    }
 
   allocateMemory( useSharedMemory, (void **)(fifoPtrs), 16, fifoPtrsArraySize );
   TRACE((stderr,"MU ResourceManager: setupInjFifos: fifoPtrs ptr = %p\n",*fifoPtrs));
-  if ( useSharedMemory ) PAMI_assertf ( *fifoPtrs != NULL, "Shared memory is full.\n" )
-  else PAMI_assertf( *fifoPtrs != NULL, "The heap is full.\n" );
+  if ( useSharedMemory )
+    {
+      PAMI_assertf ( *fifoPtrs != NULL, "Shared memory is full.\n" );
+    }
+  else
+    {
+      PAMI_assertf( *fifoPtrs != NULL, "The heap is full.\n" );
+    }
 
   for ( fifo=0; fifo<numFifos; fifo++ )
     {
       allocateMemory( useSharedMemory, (void **)&((*fifoPtrs)[fifo]), 64, fifoSize );
       TRACE((stderr,"MU ResourceManager: setupInjFifos: fifo ptr address = %p, fifoptr = %p\n",&((*fifoPtrs)[fifo]), (*fifoPtrs)[fifo]));
-      if ( useSharedMemory ) PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "Shared memory is full.\n" )
-      else PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "The heap is full.\n" );
+      if ( useSharedMemory )
+        {
+          PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "Shared memory is full.\n" );
+        }
+      else
+        {
+          PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "The heap is full.\n" );
+        }
     }
 
   allocateMemory( useSharedMemory, (void **)(globalFifoIds), 16, fifoIdsSize );
   TRACE((stderr,"MU ResourceManager: setupInjFifos: globalFifoIds ptr = %p\n",*globalFifoIds));
-  if ( useSharedMemory ) PAMI_assertf ( *globalFifoIds != NULL, "Shared memory is full.\n" )
-  else PAMI_assertf ( *globalFifoIds != NULL, "The heap is full.\n" );
+  if ( useSharedMemory )
+    {
+      PAMI_assertf ( *globalFifoIds != NULL, "Shared memory is full.\n" );
+    }
+  else
+    {
+      PAMI_assertf ( *globalFifoIds != NULL, "The heap is full.\n" );
+    }
 
   if ( _allocateOnly == 1 ) return 0;
 
@@ -2403,13 +2427,25 @@ uint32_t PAMI::Device::MU::ResourceManager::setupBatIds(
   // Allocate space for the output structures
   allocateMemory( useSharedMemory, (void **)(subgroups), 16, outputStructuresSize );
   TRACE((stderr,"MU ResourceManager: setupBatIds: subgroups ptr = %p\n",*subgroups));
-  if ( useSharedMemory ) PAMI_assertf( *subgroups != NULL, "Shared memory is full.\n" )
-  else PAMI_assertf( *subgroups != NULL, "The heap is full.\n" );
+  if ( useSharedMemory )
+    {
+      PAMI_assertf( *subgroups != NULL, "Shared memory is full.\n" );
+    }
+  else
+    {
+      PAMI_assertf( *subgroups != NULL, "The heap is full.\n" );
+    }
 
   allocateMemory( useSharedMemory, (void **)(globalBatIds), 16, batIdsSize );
   TRACE((stderr,"MU ResourceManager: setupBatIds: globalBatIds ptr = %p\n",*globalBatIds));
-  if ( useSharedMemory ) PAMI_assertf ( *globalBatIds != NULL, "Shared memory is full.\n" )
-  else PAMI_assertf ( *globalBatIds != NULL, "The heap is full.\n" );
+  if ( useSharedMemory )
+    {
+      PAMI_assertf ( *globalBatIds != NULL, "Shared memory is full.\n" );
+    }
+  else
+    {
+      PAMI_assertf ( *globalBatIds != NULL, "The heap is full.\n" );
+    }
 
   if ( _allocateOnly == 1 ) return 0;
 
@@ -2596,26 +2632,50 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
   // Allocate space for the output structures
   allocateMemory( useSharedMemory, (void **)(subgroups), 16, outputStructuresSize );
   TRACE((stderr,"MU ResourceManager: setupRecFifos: subgroups ptr = %p\n",*subgroups));
-  if ( useSharedMemory ) PAMI_assertf( *subgroups != NULL, "Shared memory is full.\n" )
-  else PAMI_assertf( *subgroups != NULL, "The heap is full.\n" );
+  if ( useSharedMemory )
+    {
+      PAMI_assertf( *subgroups != NULL, "Shared memory is full.\n" );
+    }
+  else
+    {
+      PAMI_assertf( *subgroups != NULL, "The heap is full.\n" );
+    }
 
   allocateMemory( useSharedMemory, (void **)(fifoPtrs), 16, fifoPtrsArraySize );
   TRACE((stderr,"MU ResourceManager: setupRecFifos: fifoPtrs ptr = %p\n",*fifoPtrs));
-  if ( useSharedMemory ) PAMI_assertf ( *fifoPtrs != NULL, "Shared memory is full.\n" )
-  else PAMI_assertf( *fifoPtrs != NULL, "The heap is full.\n" );
+  if ( useSharedMemory )
+    {
+      PAMI_assertf ( *fifoPtrs != NULL, "Shared memory is full.\n" );
+    }
+  else
+    {
+      PAMI_assertf( *fifoPtrs != NULL, "The heap is full.\n" );
+    }
 
   for ( fifo=0; fifo<numFifos; fifo++ )
     {
       allocateMemory( useSharedMemory, (void **)&((*fifoPtrs)[fifo]), 32, fifoSize );
       TRACE((stderr,"MU ResourceManager: setupRecFifos: fifo ptr address = %p, fifoptr = %p\n",&((*fifoPtrs)[fifo]), (*fifoPtrs)[fifo]));
-      if ( useSharedMemory ) PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "Shared memory is full.\n" )
-      else PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "The heap is full.\n" );
+      if ( useSharedMemory )
+        {
+          PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "Shared memory is full.\n" );
+        }
+      else
+        {
+          PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "The heap is full.\n" );
+        }
     }
 
   allocateMemory( useSharedMemory, (void **)(globalFifoIds), 16, fifoIdsSize );
   TRACE((stderr,"MU ResourceManager: setupRecFifos: globalFifoIds ptr = %p\n",*globalFifoIds));
-  if ( useSharedMemory ) PAMI_assertf ( *globalFifoIds != NULL, "Shared memory is full.\n" )
-  else PAMI_assertf ( *globalFifoIds != NULL, "The heap is full.\n" );
+  if ( useSharedMemory )
+    {
+      PAMI_assertf ( *globalFifoIds != NULL, "Shared memory is full.\n" );
+    }
+  else
+    {
+      PAMI_assertf ( *globalFifoIds != NULL, "The heap is full.\n" );
+    }
 
   if ( _allocateOnly == 1 ) return 0;
 

@@ -138,7 +138,8 @@ class BgqContextPool {
 				void **ptr, size_t align, size_t bytes) {
 		uint32_t np = __global.topology_local.size();
 		uint8_t *v = NULL;
-		pami_result_t rc = setmm->memalign((void **)&v, align, bytes * np);
+		pami_result_t rc;
+                rc = setmm->memalign((void **)&v, align, bytes * np);
 		PAMI_assertf(rc == PAMI_SUCCESS && v,
 				"Out of memory for BgqContextPool::_sets");
 		v += bytes * __global.mapping.t();

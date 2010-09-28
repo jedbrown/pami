@@ -471,7 +471,8 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::notifyRecv
 
   if ((int)cdata->_count == -1) {
     CCMI_assert(cdata->_phase - _curphase < MAX_PARALLEL);
-    unsigned pindex = getPartnerIndex(cdata->_phase);
+    unsigned pindex;
+    pindex = getPartnerIndex(cdata->_phase);
     CCMI_assert(pindex != (unsigned) -1);
     CCMI_assert(src == _gtopology->index2Rank(pindex));
     _rphase[cdata->_phase % MAX_PARALLEL] = cdata->_phase;

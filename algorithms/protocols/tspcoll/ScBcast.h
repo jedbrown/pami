@@ -188,9 +188,9 @@ inline void TSPColl::ScBcast<T_NI>::barrier3complete(pami_context_t context, voi
 template <class T_NI>
 inline void TSPColl::ScBcast<T_NI>::allgathervcomplete(pami_context_t context, void *arg, pami_result_t res)
 {
-  ScBcast * self = (ScBcast *) arg;
+  PAMI_assert(arg != NULL);
   TRACE((stderr, "%d: SCBCAST agvcomplete\n", PGASRT_MYNODE));
-  PAMI_assert(self != NULL);
+  // ScBcast * self = (ScBcast *) arg;
   // self->_barrier3.kick(_p2p_iface);
 }
 

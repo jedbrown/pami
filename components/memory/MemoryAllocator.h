@@ -61,7 +61,8 @@ namespace PAMI
           // Allocate and construct a new set of objects
           unsigned i;
 #ifdef USE_MEMALIGN
-          int rc = posix_memalign ((void **)&object, T_ObjAlign, sizeof(memory_object_t) * 10);
+          int rc;
+          rc = posix_memalign ((void **)&object, T_ObjAlign, sizeof(memory_object_t) * 10);
           PAMI_assertf(rc==0, "posix_memalign failed for context, errno=%d, %s\n", errno, strerror(errno));
 #else
           object = (memory_object_t*)malloc(sizeof(memory_object_t)*10);
