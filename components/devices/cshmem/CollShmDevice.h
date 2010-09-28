@@ -735,6 +735,7 @@ public:
 
           INLINE void _setPartners()
           {
+            PAMI_ASSERT(_nchildren <= PAMI_MAX_PROC_PER_NODE);
             _partners        = 0x0;
             for (int j = 0; j < _nchildren; ++j) {
               _partners = _partners | (0x1 << ((_children[j] + _root) % _nranks ));
@@ -1035,7 +1036,7 @@ public:
           uint8_t        _nranks;              // total number of on node ranks for the topology
           uint8_t        _parent;              // these needs to be optimized
           uint8_t        _nchildren;
-          uint8_t        _children[32];        // enough to support flat tree of 32 on node tasks
+          uint8_t        _children[PAMI_MAX_PROC_PER_NODE];// enough to support flat tree of max procs per node
           collshm_role_t _role;
           // GenericDeviceMessageQueue *_device;
           CollShmDevice  *_device;
