@@ -277,7 +277,8 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
 
   if (_curphase < _startphase + _nphases) {
 
-    unsigned ndsts, nsrcs;
+    unsigned ndsts=0, nsrcs=0;
+    // It appears that the getList method will not always initialize ndsts & nsrcs
     _comm_schedule->getList(_curphase, &_srcranks[0], nsrcs, &_dstranks[0], ndsts, &_srclens[0], &_dstlens[0]);
     CCMI_assert(nsrcs == ndsts);
 

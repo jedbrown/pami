@@ -42,9 +42,8 @@ namespace BGQ {
                                 PAMI::Atomic::BGQ::l2x_scope_t mmscope,
                                 PAMI::Atomic::BGQ::l2x_scope_t scope) {
 			/// \todo #warning HACK to workaround until MemoryManager::key_memalign
-                        pami_result_t rc =
-                                __global.l2atomicFactory.l2x_mm_alloc(mm, mmscope,
-							(void **)&_counters, 5, scope);
+                        pami_result_t rc;
+                        rc = __global.l2atomicFactory.l2x_mm_alloc(mm, mmscope, (void **)&_counters, 5, scope);
                         PAMI_assertf(rc == PAMI_SUCCESS,
                                 "Failed to allocate L2 Atomics for Node Barrier");
                         // someone needs to reset the barrier, but needs to be

@@ -422,7 +422,9 @@ namespace PAMI {
                 /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a list topology
                 ///
                 pami_result_t rankList_impl(pami_task_t **list) {
-                        if (__type != PAMI_LIST_TOPOLOGY) {
+                        if (__type != PAMI_LIST_TOPOLOGY)
+                        {
+                                *list = NULL;
                                 return PAMI_UNIMPL;
                         }
                         *list = topo_ranklist;
