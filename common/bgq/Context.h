@@ -899,11 +899,16 @@ namespace PAMI
       {
 	// might be other affinities to consider, in the future.
 	// could be cached in context, instead of calling MU RM (etc) every time
-#if 1
-	return Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).affinity();
-#else
-	return (NUM_CORES - 1) - (_contextid % (Kernel_ProcessorCount() / NUM_SMT));
-#endif
+	// When the MU is active, go with its affinity.
+	// Otherwise, compute an affinity.
+	if ( __global.useMU() )
+	  {
+	    return Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).affinity();
+	  }
+	else
+	  {
+	    return (NUM_CORES - 1) - (_contextid % (Kernel_ProcessorCount() / NUM_SMT));
+	  }
       }
 
       /// \brief BGQ-only method to fix any problems with hardware affinity to core/thread
