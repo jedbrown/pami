@@ -67,9 +67,9 @@ namespace PAMI
 
         inline pami_result_t rget_typed (pami_rget_typed_t * parameters);
 
-        inline pami_result_t purge_totask (size_t *dest, size_t count);
+        inline pami_result_t purge_totask (pami_endpoint_t *dest, size_t count);
 
-        inline pami_result_t resume_totask (size_t *dest, size_t count);
+        inline pami_result_t resume_totask (pami_endpoint_t *dest, size_t count);
 
         inline pami_result_t fence_begin ();
 
@@ -261,13 +261,13 @@ namespace PAMI
     }
 
     template <class T_Context>
-    pami_result_t Context<T_Context>::purge_totask (size_t *dest, size_t count)
+    pami_result_t Context<T_Context>::purge_totask (pami_endpoint_t *dest, size_t count)
     {
       return static_cast<T_Context*>(this)->purge_totask_impl(dest, count);
     }
 
     template <class T_Context>
-    pami_result_t Context<T_Context>::resume_totask (size_t *dest, size_t count)
+    pami_result_t Context<T_Context>::resume_totask (pami_endpoint_t *dest, size_t count)
     {
       return static_cast<T_Context*>(this)->resume_totask_impl(dest, count);
     }

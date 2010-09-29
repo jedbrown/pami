@@ -561,18 +561,18 @@ extern "C" pami_result_t PAMI_Rget_typed (pami_context_t      context,
 }
 
 
-extern "C" pami_result_t PAMI_Purge_totask (pami_context_t   context,
-                                          size_t        * dest,
-                                          size_t          count)
+extern "C" pami_result_t PAMI_Purge(pami_context_t    context,
+                                    pami_endpoint_t * dest,
+                                    size_t            count)
 {
   PAMI::Context * ctx = (PAMI::Context *) context;
   return ctx->purge_totask (dest, count);
 }
 
 
-extern "C" pami_result_t PAMI_Resume_totask (pami_context_t   context,
-                                           size_t        * dest,
-                                           size_t          count)
+extern "C"   pami_result_t PAMI_Resume (pami_context_t    context,
+                                        pami_endpoint_t * dest,
+                                        size_t            count)
 {
   PAMI::Context * ctx = (PAMI::Context *) context;
   return ctx->resume_totask (dest, count);

@@ -738,7 +738,7 @@ namespace PAMI
           return PAMI_UNIMPL;
         }
 
-      inline pami_result_t purge_totask_impl (size_t * dest, size_t count)
+      inline pami_result_t purge_totask_impl (pami_endpoint_t * dest, size_t count)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
           internal_error_t rc;
@@ -749,7 +749,7 @@ namespace PAMI
           return PAMI_RC(rc);
         }
 
-      inline pami_result_t resume_totask_impl (size_t * dest, size_t count)
+      inline pami_result_t resume_totask_impl (pami_endpoint_t * dest, size_t count)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
           internal_error_t rc;
