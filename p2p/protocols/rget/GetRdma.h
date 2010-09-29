@@ -97,6 +97,7 @@ namespace PAMI
 
           inline GetRdma (T_Device & device, pami_context_t context, pami_result_t & status) :
               _model (device, status),
+              _device (device),
               _context (context)
           {
             COMPILE_TIME_ASSERT(T_Model::dma_model_mr_supported == true);
@@ -111,6 +112,9 @@ namespace PAMI
             pami_task_t task;
             size_t offset;
             PAMI_ENDPOINT_INFO(parameters->rma.dest, task, offset);
+
+            // Verify that this task is addressable by this dma device
+            if (unlikely(_device.isPeer(task) == false)) return PAMI_ERROR;
 
             TRACE_ERR((stderr, "   GetRdma::simple(), attempt an 'immediate' rget transfer.\n"));
             if (_model.postDmaGet (task, offset,
@@ -156,6 +160,7 @@ namespace PAMI
         protected:
 
           T_Model                                   _model;
+          T_Device                                & _device;
           MemoryAllocator < sizeof(get_state), 16 > _allocator;
           pami_context_t                            _context;
       };
