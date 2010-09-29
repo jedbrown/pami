@@ -452,16 +452,18 @@ namespace PAMI
 
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
-                      // If we can use pure MU composites, add them
-                      if (usePureMu && !topology->isLocalToMe())
+                    // If we can use pure MU composites, add them
+                    if (usePureMu && !topology->isLocalToMe())
+                      {
+                      // Direct MU allreduce only on one context per node (lowest T, context 0)
+                      if ((__global.mapping.isLowestT()) && (_context_id == 0))
                         {
-                          // Direct MU allreduce only on one context per node (lowest T, context 0)
-                          if ((__global.mapping.isLowestT()) && (_context_id == 0))
-                            // Add Allreduces
-                            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU allreduce\n", this));
+                        // Add Allreduces
+                        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU allreduce\n", this));
 
-                          geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
+                        geometry->addCollective(PAMI_XFER_ALLREDUCE, &_mu_mcomb_factory, _context_id);
                         }
+                      }
                     }
 
                 }

@@ -69,7 +69,7 @@ namespace PAMI
   typedef MemoryAllocator<2048, 16> ProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
 
   typedef Device::MU::Context MUDevice;
-  //typedef Device::MU::MUCollDevice MUDevice;
+
   typedef BGQNativeInterface < MUDevice,
                                Device::MU::MulticastModel<false, false>,
                                Device::MU::MultisyncModel<false, false>,

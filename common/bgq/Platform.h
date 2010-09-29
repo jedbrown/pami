@@ -24,13 +24,15 @@
 #define _POSIX_SHM_OPEN
 
 #include <sched.h>
+#include <limits.h>
 inline void yield()
 {
     sched_yield();
 }
 
 #define CACHEBLOCKSZ 128
-#define XMEM_THRESH  (32768*4096)
+#define XMEM_THRESH ULONG_MAX
+//#define XMEM_THRESH  (32768*4096)
 
 #define COLLSHM_DEVICE_NUMSYNCS 2
 #define COLLSHM_DEVICE_SYNCCOUNT 16

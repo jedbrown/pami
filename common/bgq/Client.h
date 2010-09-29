@@ -34,13 +34,13 @@ namespace PAMI
           _world_geometry((BGQGeometry*)_world_geometry_storage),
           _mm ()
       {
-        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
         static size_t next_client_id = 0;
         // Set the client name string.
         memset ((void *)_name, 0x00, sizeof(_name));
         strncpy (_name, name, sizeof(_name) - 1);
 
         _clientid = next_client_id++;
+        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client() %s\n", this, _clientid, _name));
         // PAMI_assert(_clientid < PAMI_MAX_NUM_CLIENTS);
 
         // Get some shared memory for this client
@@ -65,7 +65,7 @@ namespace PAMI
                                           pami_configuration_t   configuration[],
                                           size_t                 num_configs)
       {
-        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+        TRACE_ERR((stderr, "<%p>BGQ::Client::generate_impl\n", client));
         pami_result_t result;
         int rc = 0;
 
@@ -96,6 +96,7 @@ namespace PAMI
 
       static void destroy_impl (pami_client_t client)
       {
+        TRACE_ERR((stderr, "<%p>BGQ::Client::destroy_impl\n", client));
         //__client_list->lock ();
         //client->decReferenceCount ();
         //if (client->getReferenceCount () == 0)
@@ -116,7 +117,7 @@ namespace PAMI
                                                pami_context_t       * context,
                                                size_t                ncontexts)
       {
-        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::createContext_impl\n", this, _clientid));
         //_context_list->lock ();
         int n = ncontexts;
 
@@ -325,8 +326,37 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+#ifdef _COLLSHM   // New Collective Shmem Registration
+      static void _geom_newopt_global_analyze(pami_context_t  context,
+                                              void           *cookie,
+                                              uint64_t       *reduce_result,
+                                              BGQGeometry    *g,
+                                              pami_result_t   result )
+      {
+
+        // Global reduce is done, so do global analyze
+        PAMI::Context *ctxt = (PAMI::Context *)context;
+        Client *thus = (Client *)ctxt->getClient();
+        TRACE_ERR((stderr, "<%p>BGQ::Client::_geom_newopt_global_analyze cookie %p, context %p\n", thus, cookie, context));
+        for (size_t n = 0; n < thus->_ncontexts; n++)
+        {
+          thus->_contexts[n].analyze_global(n,g,reduce_result);
+        }
+
+        // Now optimize if requested
+        if(cookie == (void*) PAMI_GEOMETRY_OPTIMIZE)
+        {
+          _geom_newopt_start(context, g, result);
+        }
+        else // finish without optimizing
+        {
+          _geom_newopt_finish(context, g, result);
+        }
+      }
+#endif
       static void _geom_newopt_start(pami_context_t context, void *cookie, pami_result_t err)
       {
+        TRACE_ERR((stderr, "<%p>BGQ::Client::_geom_newopt_start cookie %p, context %p\n", ((PAMI::Context *)context)->getClient(), cookie, context));
         PAMI_assertf(context, "Geometry create barrier callback with NULL context");
 
         if (err != PAMI_SUCCESS)
@@ -350,6 +380,7 @@ namespace PAMI
 
       static void _geom_opt_finish(pami_context_t context, void *cookie, pami_result_t err)
       {
+        TRACE_ERR((stderr, "<%p>BGQ::Client::_geom_opt_finish cookie %p, context %p\n", ((PAMI::Context *)context)->getClient(), cookie, context));
         BGQGeometry *gp = (BGQGeometry *)cookie;
 
         if (context)   // HACK! until no one calls completion with NULL context!
@@ -374,6 +405,7 @@ namespace PAMI
 
       static void _geom_newopt_finish(pami_context_t context, void *cookie, pami_result_t err)
       {
+        TRACE_ERR((stderr, "<%p>BGQ::Client::_geom_newopt_finish cookie %p, context %p\n",((PAMI::Context *)context)->getClient(), cookie, context));
         BGQGeometry *gp = (BGQGeometry *)cookie;
         //PAMI::Context *ctxt = (PAMI::Context *)context;
 
@@ -407,7 +439,7 @@ namespace PAMI
                                                           pami_event_function     fn,
                                                           void                 * cookie)
       {
-        TRACE_ERR((stderr,  "%s enter geometry %p/%p\n", __PRETTY_FUNCTION__, geometry, *geometry));
+        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::geometry_create_taskrange_impl  geometry %p/%p\n", this, _clientid, geometry, *geometry));
 
         // simple for now: only PAMI_GEOMETRY_OPTIMIZE
         if (num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
@@ -442,17 +474,12 @@ namespace PAMI
             /// \todo  deliver completion to the appropriate context
             new_geometry->setCompletion(fn, cookie);
             new_geometry->addCompletion(); // ensure completion doesn't happen until
-            // all have been analyzed (_geom_opt_finish).
-            if (num_configs) // must be PAMI_GEOMETRY_OPTIMIZE...
-              {
-                bargeom->default_barrier(_geom_newopt_start, (void *)new_geometry,
-                                         ctxt->getId(), context);
-              }
-            else
-              {
-                bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry,
-                                         ctxt->getId(), context);
-              }
+                                           // all have been analyzed (_geom_opt_finish).
+
+            // Start the barrier (and then the global analyze and (maybe) the optimize ... 
+            start_barrier(bargeom, new_geometry, 
+                          ctxt->getId(), context, 
+                          num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
 
             new_geometry->processUnexpBarrier();
           }
@@ -477,7 +504,7 @@ namespace PAMI
                                                          pami_event_function    fn,
                                                          void                  *cookie)
       {
-        TRACE_ERR((stderr,  "%s enter geometry %p/%p\n", __PRETTY_FUNCTION__, geometry, *geometry));
+        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::geometry_create_topology_impl geometry %p/%p\n", this, _clientid, geometry, *geometry));
 
         // simple for now: only PAMI_GEOMETRY_OPTIMIZE
         if (num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
@@ -511,17 +538,12 @@ namespace PAMI
             /// \todo  deliver completion to the appropriate context
             new_geometry->setCompletion(fn, cookie);
             new_geometry->addCompletion(); // ensure completion doesn't happen until
-            // all have been analyzed (_geom_opt_finish).
-            if (num_configs) // must be PAMI_GEOMETRY_OPTIMIZE...
-              {
-                bargeom->default_barrier(_geom_newopt_start, (void *)new_geometry,
-                                         ctxt->getId(), context);
-              }
-            else
-              {
-                bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry,
-                                         ctxt->getId(), context);
-              }
+                                           // all have been analyzed (_geom_opt_finish).
+
+            // Start the barrier (and then the global analyze and (maybe) the optimize ... 
+            start_barrier(bargeom, new_geometry, 
+                          ctxt->getId(), context, 
+                          num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
 
             new_geometry->processUnexpBarrier();
           }
@@ -547,7 +569,7 @@ namespace PAMI
                                                          pami_event_function     fn,
                                                          void                 * cookie)
       {
-
+        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::geometry_create_tasklist_impl geometry %p/%p\n", this, _clientid, geometry, *geometry));
         // simple for now: only PAMI_GEOMETRY_OPTIMIZE, and not allowed here.
         if (num_configs)
           {
@@ -563,6 +585,7 @@ namespace PAMI
                                                pami_configuration_t configuration[],
                                                size_t num_configs)
       {
+        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::geometry_query_impl\n", this, _clientid));
         // for now, this must be very simple...
         if (num_configs != 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE)
           {
@@ -587,6 +610,7 @@ namespace PAMI
                                                 pami_event_function fn,
                                                 void *cookie)
       {
+        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::geometry_update_impl\n", this, _clientid));
         // for now, this must be very simple...
         if (num_configs != 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE)
           {
@@ -604,6 +628,7 @@ namespace PAMI
             gp->setCompletion(fn, cookie);
             gp->addCompletion();        // ensure completion doesn't happen until
             // all have been analyzed (_geom_opt_finish).
+            /// \todo should this be _geom_newopt_finish?
             rc = __MUGlobal.getMuRM().geomOptimize(gp, _clientid,
                                                    ctxt->getId(), context, _geom_opt_finish, (void *)gp);
           }
@@ -630,6 +655,7 @@ namespace PAMI
 
       inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
       {
+        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::geometry_destroy_impl\n", this, _clientid));
         /// \todo #warning must free up geometry resources, etc.
         BGQGeometry *gp = (BGQGeometry *)geometry;
         return __MUGlobal.getMuRM().geomDeoptimize(gp);
@@ -666,7 +692,7 @@ namespace PAMI
 
       inline void initializeMemoryManager ()
       {
-        TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::initializeMemoryManager\n", this, _clientid));
         char   shmemfile[1024];
         //size_t bytes     = 1024*1024;
         size_t bytes     = 2048 * 1024;
@@ -726,6 +752,154 @@ namespace PAMI
 #endif
         return;
       }
+
+      void start_barrier(BGQGeometry          *bargeom, 
+                         BGQGeometry          *new_geometry, 
+                         size_t                context_id, 
+                         pami_context_t        context, 
+                         pami_attribute_name_t optimize)
+      {
+#ifdef _COLLSHM   // New Collective Shmem Registration
+        uint64_t                  *to_reduce;
+        uint                       to_reduce_count;
+        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::start_barrier()\n", this, _clientid));
+
+        PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getLocalMasterTopology();
+        to_reduce_count = local_master_topology->size();
+
+        to_reduce = (uint64_t *)malloc(to_reduce_count * sizeof(uint64_t));
+
+        // analyze_local initializes the to_reduce array before the global analyze (reduction)
+        for(size_t n=0; n<_ncontexts; n++)
+        {
+          _contexts[n].analyze_local(n,new_geometry,to_reduce);
+        }
+
+        pami_algorithm_t  alg;
+        new_geometry->algorithms_info(PAMI_XFER_ALLREDUCE,
+                                      &alg,
+                                      NULL,
+                                      1,
+                                      NULL,
+                                      NULL,
+                                      0,
+                                      context_id);
+
+        Geometry::Algorithm<BGQGeometry> *ar_algo = (Geometry::Algorithm<BGQGeometry> *)alg;
+
+        // Do a reduction and finish the global analyze and (maybe) start the optimization phase
+        GlobalAnalyzer<BGQGeometry> *ga = (GlobalAnalyzer<BGQGeometry> *)malloc(sizeof(GlobalAnalyzer<BGQGeometry>));
+        new(ga)GlobalAnalyzer<BGQGeometry>(context,
+                                           ar_algo,
+                                           new_geometry,
+                                           to_reduce,
+                                           to_reduce_count,
+                                           _geom_newopt_global_analyze,
+                                           (void*)optimize);
+
+        if(bargeom)
+          bargeom->default_barrier(GlobalAnalyzer<BGQGeometry>::start_global_analyzer, ga, context_id, context);
+        else PAMI_assert(bargeom); /// \todo? parentless/UE barrier support
+
+        free(to_reduce);
+#else
+        if(bargeom)
+        {
+          if(optimize == PAMI_GEOMETRY_OPTIMIZE)
+            bargeom->default_barrier(_geom_newopt_start, (void *)new_geometry, context_id, context);
+          else
+            bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry, context_id, context);
+        }
+        else PAMI_assert(bargeom); /// \todo? parentless/UE barrier support
+#endif
+      }
+  
+#ifdef _COLLSHM   // New Collective Shmem Registration
+      template <class T_Geometry>
+      class GlobalAnalyzer
+      {
+        typedef void (*results_event_function)(pami_context_t  context,
+                                               void           *cookie,
+                                               uint64_t       *reduce_result,
+                                               T_Geometry     *geometry,
+                                               pami_result_t   result );
+
+
+      public:
+        GlobalAnalyzer<T_Geometry>(pami_context_t            context, 
+                                   Geometry::Algorithm<T_Geometry>    *ar_algo,
+                                   T_Geometry               *geometry,
+                                   uint64_t                 *bitmask,
+                                   size_t                    count,
+                                   results_event_function    result_cb_done,
+                                   void                     *result_cookie):
+          _context(context),
+          _ar_algo(ar_algo),
+          _geometry(geometry),
+          _bitmask(bitmask),
+          _count(count),
+          _result_cb_done(result_cb_done),
+          _result_cookie(result_cookie)
+          {
+            TRACE_ERR((stderr, "<%p>BGQ::Client::GlobalAnalyzer()()\n", this));
+            _result = (uint64_t*) malloc(count*sizeof(uint64_t)*2);
+            _inval  = _result + count;
+            memcpy(_inval,_bitmask,count*sizeof(uint64_t));
+          }
+
+        void free_arrays()
+        {
+          TRACE_ERR((stderr, "<%p>BGQ::Client::GlobalAnalyzer::free()()\n", this));
+          free(_result);
+        }
+        static void global_analyzer_done(pami_context_t   context,
+                                void           * cookie,
+                                pami_result_t    result )
+          {
+            GlobalAnalyzer     *c        = (GlobalAnalyzer *)cookie;
+            TRACE_ERR((stderr, "<%p>BGQ::Client::GlobalAnalyzer::global_analyzer_done() context %p/%p\n", cookie, c->_context, context));
+            c->_result_cb_done(c->_context, // can't trust the param context?
+                               c->_result_cookie,
+                               &c->_result[0],
+                               c->_geometry,result);
+            c->free_arrays();
+            free(c);
+          }
+
+        static void start_global_analyzer(pami_context_t   context,
+                                          void           * cookie,
+                                          pami_result_t    result )
+          {
+            TRACE_ERR((stderr, "<%p>BGQ::Client::GlobalAnalyzer::start_global_analyzer()()\n", cookie));
+            pami_xfer_t                          ar; // allreduce
+            GlobalAnalyzer                      *c  = (GlobalAnalyzer *)cookie;
+            ar.cb_done                              = global_analyzer_done;
+            ar.cookie                               = c;
+            // algorithm not needed here
+            memset(&ar.options,0,sizeof(ar.options));
+            ar.cmd.xfer_allreduce.sndbuf            = (char*)c->_inval;
+            ar.cmd.xfer_allreduce.stype             = PAMI_BYTE;
+            ar.cmd.xfer_allreduce.stypecount        = sizeof(*c->_inval)*c->_count;
+            ar.cmd.xfer_allreduce.rcvbuf            = (char*)c->_result;
+            ar.cmd.xfer_allreduce.rtype             = PAMI_BYTE;
+            ar.cmd.xfer_allreduce.rtypecount        = sizeof(*c->_result)*c->_count;
+            ar.cmd.xfer_allreduce.dt                = PAMI_UNSIGNED_LONG_LONG;
+            ar.cmd.xfer_allreduce.op                = PAMI_BAND;
+            c->_ar_algo->generate(&ar);
+          }
+      private:
+        pami_context_t          _context; 
+        Geometry::Algorithm<T_Geometry>  *_ar_algo;
+        T_Geometry             *_geometry;
+        uint64_t               *_bitmask;
+        size_t                  _count;
+        results_event_function  _result_cb_done;
+        void                   *_result_cookie;
+        uint64_t               *_result;
+        uint64_t               *_inval;
+
+      };
+#endif
   }; // end class PAMI::Client
 }; // end namespace PAMI
 #endif // __components_client_bgq_bgqclient_h__

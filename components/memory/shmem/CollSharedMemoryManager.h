@@ -106,6 +106,7 @@ namespace PAMI
           _localrank = rank;
           _localsize = size;
           int lrank;
+          TRACE_DBG((stderr,"init() rank %zu,size %zu\n",rank,size));
 
 #ifdef _POSIX_SHM_OPEN
           const char   * shmemfile = "/unique-pami-coll-mm-shmem-file";
@@ -115,7 +116,8 @@ namespace PAMI
             {
               _collshm = (collshm_t *) mmap(NULL, _size, PROT_READ|PROT_WRITE, MAP_SHARED, _shm_id, 0);
               if ( _collshm == MAP_FAILED ) {
-                TRACE_ERR((stderr, "mmap(%zu) failed, %d\n",_size, errno)); 
+                perror("mmap failed");
+                PAMI_assertf(_collshm != MAP_FAILED, "errno %d\n",errno);
                 return PAMI_ERROR;
               }
             }
@@ -172,7 +174,25 @@ namespace PAMI
             // Todo:  remove the following getCtrlStr()
             // Todo:  add the per geometry shared memory information to allreduce in analyze().
             getCtrlStr(_localsize);
-
+            TRACE_DBG((stderr,"getSGCtrlStrVec() _localsize %zu, "
+                              "_collshm->ctlstr_pool      %p, "
+                              "_collshm->buffer_pool      %p, "
+                              "_collshm->ctlstr_memory    %p, "
+                              "_collshm->buffer_memory    %p, "
+                              "_collshm->free_ctlstr_list %p, "
+                              "_collshm->ctlstr_list      %p, "
+                              "_collshm->free_buffer_list %p, "
+                              "_collshm->buffer_list      %p  "
+                                                           "\n",
+                              _localsize,
+                              _collshm->ctlstr_pool      ,
+                              _collshm->buffer_pool      ,
+                              _collshm->ctlstr_memory    ,
+                              _collshm->buffer_memory    ,
+                              _collshm->free_ctlstr_list ,
+                              _collshm->ctlstr_list      ,
+                              _collshm->free_buffer_list ,
+                              _collshm->buffer_list      ));
 #ifdef _POSIX_SHM_OPEN
             shm_unlink("COLLSHM_KEY");
 #else
@@ -182,7 +202,7 @@ namespace PAMI
 
           lrank = _collshm->ready_count.fetch_and_inc();
           //lrank = COLLSHM_FETCH_AND_ADD((atomic_p)&_collshm->ready_count, 1);
-          TRACE_DBG((stderr,"task %zu joined, _collshm=%p\n", _localrank, _collshm));
+          TRACE_DBG((stderr,"task %zu joined, _collshm=%p, _localsize %zu\n", _localrank, _collshm, _localsize));
           while (_collshm->ready_count.fetch() < _localsize);
 
           return PAMI_SUCCESS;
@@ -465,7 +485,7 @@ namespace PAMI
           }
 
           _nctrlstrs += count;
-          TRACE_DBG((stderr,"_nctrlstrs = %zu\n", _nctrlstrs));
+          TRACE_DBG((stderr,"_nctrlstrs = %zu, ctlstr %p\n", _nctrlstrs,ctlstr));
           return (ctlstr_t *)ctlstr;
         }
 
@@ -521,6 +541,8 @@ namespace PAMI
           uint master_index             =  lm_topo->rank2Index(master_rank);
           uint local_size               =  local_topo->size();
           uint local_index              =  local_topo->rank2Index(__global.mapping.task());
+          TRACE_DBG((stderr,"getSGCtrlStrVec() geometry %p, master_rank %u, master_size %u, master_index %u, local_size %u, local_index %u\n",
+                     geo, master_rank, master_size, master_index, local_size, local_index));
 
           for (uint i = 0; i< master_size; ++i) vec[i] = 0xFFFFFFFFFFFFFFFFULL;
           if (local_index == 0)

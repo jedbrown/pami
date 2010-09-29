@@ -14,9 +14,6 @@
 #ifndef __algorithms_geometry_CCMICSMultiRegistration_h__
 #define __algorithms_geometry_CCMICSMultiRegistration_h__
 
-#undef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
-
 #include <map>
 #include <vector>
 #include "components/memory/MemoryManager.h"
@@ -29,6 +26,9 @@
 #include "algorithms/protocols/barrier/CSMultiSyncComposite.h"
 #include "algorithms/protocols/AllSidedCSProtocolFactoryT.h"
 
+#undef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+
 namespace CCMI
 {
   namespace Adaptor
@@ -39,7 +39,7 @@ namespace CCMI
       void csmcomb_reduce_md(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
-        strcpy(&m->name[0],"CCMICSMcombReduce<");
+        strcpy(&m->name[0],"ShmemCSMultiComb<");
       }
 
       typedef CCMI::Adaptor::AllSidedCSProtocolFactoryT<CSMultiCombineComposite, csmcomb_reduce_md> CSMultiCombineFactory;
@@ -51,7 +51,7 @@ namespace CCMI
       void csmcast_broadcast_md(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
-        strcpy(&m->name[0],"CCMICSMcastBroadcast");
+        strcpy(&m->name[0],"ShmemCSMultiCast");
       }
 
       typedef CCMI::Adaptor::AllSidedCSProtocolFactoryT<CSMultiCastComposite, csmcast_broadcast_md> CSMultiCastFactory;
@@ -63,7 +63,7 @@ namespace CCMI
       void csmsync_barrier_md(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
-        strcpy(&m->name[0],"CCMICSMsyncBarrier");
+        strcpy(&m->name[0],"ShmemCSMultiSync");
       }
 
       typedef CCMI::Adaptor::AllSidedCSProtocolFactoryT<CSMultiSyncComposite, csmsync_barrier_md> CSMultiSyncFactory;
@@ -111,20 +111,27 @@ namespace PAMI
         size_t                         numpeers;
         __global.mapping.task2peer(task, peer);
         __global.mapping.nodePeers(numpeers);
+        TRACE_ERR((stderr, "<%p>CCMICSMultiRegistration() task %zu, peer %zu, numpeers %zu\n", this, task, peer, numpeers));
         _csmm.init(peer,numpeers);
       }
 
       inline pami_result_t analyze_local_impl(size_t context_id,T_Geometry *geometry, uint64_t *out)
       {
-        TRACE_ERR((stderr, "<%p>%s context %zu, geometry %p, out %p\n", this, __PRETTY_FUNCTION__, context_id, geometry, out));
-         // This is where we define our contribution to the allreduce
+        TRACE_ERR((stderr, "<%p>CCMICSMultiRegistration::analyze_local_impl() context %zu, geometry %p, out %p\n", this, context_id, geometry, out));
+        // only support single context for now
+        if (context_id != 0) return PAMI_SUCCESS;
+
+        // This is where we define our contribution to the allreduce
          _csmm.getSGCtrlStrVec(geometry, out);
          return PAMI_SUCCESS;
       }
 
       inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t *in)
       {
-        TRACE_ERR((stderr, "<%p>%s context %zu, geometry %p, in %p\n", this, __PRETTY_FUNCTION__, context_id, geometry, in));
+        TRACE_ERR((stderr, "<%p>CCMICSMultiRegistration::analyze_global_impl() context %zu, geometry %p, in %p\n", this, context_id, geometry, in));
+        // only support single context for now
+        if (context_id != 0) return PAMI_SUCCESS;
+
         // This is where we get our reduction result back from the geometry create operation
         PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getLocalMasterTopology());
         PAMI::Topology *local_topo        = (PAMI::Topology *)geometry->getLocalTopology();
@@ -138,17 +145,17 @@ namespace PAMI
 
         // Complete the final analysis and population of the geometry structure
         // with the algorithm list
-        return analyze(context_id, geometry, 0);
+        return analyze(context_id, geometry, 1);
       }
 
       inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
       {
-        TRACE_ERR((stderr, "<%p>%s context %zu, geometry %p, phase %u\n", this, __PRETTY_FUNCTION__, context_id, geometry, in));
+        TRACE_ERR((stderr, "<%p>CCMICSMultiRegistration::analyze_impl() context %zu, geometry %p, phase %u\n", this, context_id, geometry, phase));
 
-        if (phase != 0) return PAMI_SUCCESS;
+        if (phase != 1) return PAMI_SUCCESS; // only after analyze_global \todo clean this up
 
-        // only support single node for now
-        PAMI_assert(context_id == 0);
+        // only support single context for now
+        if (context_id != 0) return PAMI_SUCCESS;
 
         // Get the topology for the local nodes
         // and the topology for the "distributed masters" for the global communication
@@ -194,7 +201,7 @@ namespace PAMI
       CCMI::Adaptor::Broadcast::CSMultiCastFactory             _mcast_reg;
       CCMI::Adaptor::Allreduce::CSMultiCombineFactory          _mcomb_reg;
 
-      T_CSMemoryManager _csmm;
+      T_CSMemoryManager                                        _csmm;
     }; // CCMICSMultiRegistration
   }; // CollRegistration
 }; // PAMI

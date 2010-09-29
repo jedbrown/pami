@@ -29,7 +29,7 @@ namespace PAMI
         }
       /**
        *  This routine performs a local analyze, which populates
-       *  a 64 bit unsigned integer with some data.
+       *  a 64 bit unsigned integer (array) with some data.
        *  The out value is meant to be reduced and input into
        *  some reduction routine on the geometry.
        *  This allows the analyze routine to obtain global information
@@ -42,9 +42,9 @@ namespace PAMI
 
       /**
        *  Once a global reduction or exchange has happened on the
-       *  unsigned integer, the integer is passed into the analyze_global
-       *  routine.  The analyze_global routine will populate the list
-       *  of algorithms with optimized routines
+       *  unsigned integer (array), the integer (array) is passed into
+       *  the analyze_global routine.  The analyze_global routine
+       *  will populate the list of algorithms with optimized routines
        */
       inline pami_result_t analyze_global(size_t         context_id,
                                           T_Geometry    *geometry,

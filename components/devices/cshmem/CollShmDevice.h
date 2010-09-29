@@ -99,7 +99,7 @@ class CollShmMessage : public BaseCollShmMessage {
           BaseCollShmMessage (device, multi->cb_done, multi->client, multi->context),
           _multi (multi)
         {
-          //TRACE_ERR((stderr,stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+          TRACE_DBG((stderr, "<%p>CollShmMessage::\n", this));
           _msgtype =  message_type< T_Multi >::msgtype;
         }
 
@@ -197,12 +197,14 @@ public:
       _buf(NULL),
       _len(0)
       {
+        TRACE_DBG((stderr, "<%p>CollShmWindow()\n", this));
         clearCtrl();
         prepData();
       }
 
       INLINE void combineData(void *dst, void *src, size_t len, int flag, pami_op op, pami_dt dt)
       {
+        TRACE_DBG((stderr, "<%p>CollShmWindow::combineData()\n", this));
         if (flag) {
           coremath func = MATH_OP_FUNCS(dt, op, 2);
           int dtshift  = pami_dt_shift[dt];
@@ -218,6 +220,7 @@ public:
 
       INLINE void clearCtrl()
       {
+        TRACE_DBG((stderr, "<%p>CollShmWindow::clearCtrl()\n", this));
         *((long long *)&_ctrl) = 0x0LL;
       }
 
@@ -226,6 +229,7 @@ public:
       INLINE window_content_t getContent() { return _ctrl.content; }
       INLINE void setContent(window_content_t content)
       {
+        TRACE_DBG((stderr, "<%p>CollShmWindow::setContent() %u\n", this,content));
         mem_barrier(); // lwsync();
         _ctrl.content = content;
       }
@@ -250,6 +254,7 @@ public:
       ///
       INLINE pami_result_t setAvail(unsigned avail_value, unsigned cmpl_value)
       {
+        TRACE_DBG((stderr, "<%p>CollShmWindow::setAvail() avail_value %u,cmpl_value %u\n", this, avail_value,cmpl_value));
         PAMI_ASSERT(_ctrl.cmpl_cntr.fetch() == 0);
         _ctrl.cmpl_cntr.fetch_and_add(cmpl_value); // one way to make using the right counter atomic
 
@@ -261,8 +266,10 @@ public:
         if (_ctrl.cmpl_cntr.fetch() == 1) {
           _ctrl.cmpl_cntr.clear();
           if (_ctrl.content == XMEMATT) returnBuffer(NULL);
+          TRACE_DBG((stderr, "<%p>CollShmWindow::setAvail() PAMI_SUCCESS\n", this)); 
           return PAMI_SUCCESS;
         }
+        TRACE_DBG((stderr, "<%p>CollShmWindow::setAvail() PAMI_EAGAIN\n", this));
         return PAMI_EAGAIN;
       }
 
@@ -271,9 +278,12 @@ public:
       ///
       INLINE pami_result_t isAvail(unsigned value)
       {
-        if (_ctrl.avail_flag != value) return PAMI_EAGAIN;
-
+        if (_ctrl.avail_flag != value) {
+          TRACE_DBG((stderr, "<%p>CollShmWindow::isAvail() value %u PAMI_EAGAIN\n", this, value)); 
+          return PAMI_EAGAIN;
+          }
         mem_isync(); //isync();
+        TRACE_DBG((stderr, "<%p>CollShmWindow::isAvail() value %u PAMI_SUCCESS\n", this, value));
         return PAMI_SUCCESS;
       }
 
@@ -292,6 +302,7 @@ public:
 
       INLINE size_t produceData(PAMI::PipeWorkQueue &src, size_t length, T_MemoryManager *csmm)
       {
+        TRACE_DBG((stderr, "<%p>CollShmWindow::produceData() src %p/%p, length %zu\n",this, &src,src.bufferToConsume(), length));
 
         if (src.bytesAvailableToConsume() < MIN(length, COLLSHM_BUFSZ) ) return 0;
 
@@ -302,7 +313,7 @@ public:
           _len = reqbytes;
           memcpy (_data.immediate_data, src.bufferToConsume(), _len);
           src.consumeBytes(_len);
-          _ctrl.content = IMMEDIATE;
+          setContent(IMMEDIATE);
 
         } else if (reqbytes <= XMEM_THRESH) {
 
@@ -316,7 +327,7 @@ public:
 
           memcpy (_buf, src.bufferToConsume(), _len);
           src.consumeBytes(_len);
-          _ctrl.content = COPYINOUT;
+          setContent(COPYINOUT);
 
         } else {
 #if  defined(__64BIT__) && !defined(_LAPI_LINUX)
@@ -331,7 +342,9 @@ public:
 
           _data.xmem_data.src    = (volatile char *)src.bufferToConsume();
           _data.xmem_data.hndl   = reg.hndl_out;
-          _ctrl.content    = XMEMATT;
+          setContent(XMEMATT);
+#else
+          PAMI_ASSERT(0);
 #endif
         }
 
@@ -344,11 +357,12 @@ public:
       ///
       INLINE size_t produceData(char *src, size_t length, T_MemoryManager *csmm)
       {
+        TRACE_DBG((stderr, "<%p>CollShmWindow::produceData() src %p, length %zu\n", this, src, length));
         if (length < IMMEDIATE_CHANNEL_DATA_SIZE)
         {
           _len = length;
           memcpy (_data.immediate_data, src, _len);
-          _ctrl.content = IMMEDIATE;
+          setContent(IMMEDIATE);
 
         } else if (length <= XMEM_THRESH) {
 
@@ -361,7 +375,7 @@ public:
           }
 
           memcpy (_buf, src, _len);
-          _ctrl.content = COPYINOUT;
+          setContent(COPYINOUT);
 
         } else {
 #if  defined(__64BIT__) && !defined(_LAPI_LINUX)
@@ -376,7 +390,9 @@ public:
 
           _data.xmem_data.src    = (volatile char *)src;
           _data.xmem_data.hndl   = reg.hndl_out;
-          _ctrl.content    = XMEMATT;
+          setContent(XMEMATT);
+#else
+          PAMI_ASSERT(0);
 #endif
         }
 
@@ -388,6 +404,7 @@ public:
       ///
       INLINE size_t consumeData(PAMI::PipeWorkQueue &dest, size_t length, int combine_flag, pami_op op, pami_dt dt)
       {
+        TRACE_DBG((stderr, "<%p>CollShmWindow::consumeData() dest %p/%p, length %zu\n",this, &dest,dest.bufferToConsume(), length));
         if (dest.bytesAvailableToProduce() < MIN(length, _len)) return 0;
         size_t reqbytes = MIN (length, dest.bytesAvailableToProduce());
         size_t len      = MIN (reqbytes, _len);
@@ -422,7 +439,7 @@ public:
             break;
 #endif
           default:
-            TRACE_DBG((stderr,"valus of content is %d\n", _ctrl.content));
+            TRACE_DBG((stderr,"<%p>CollShmWindow::consumeData() valus of content is %d\n",this, _ctrl.content));
             PAMI_ASSERT(0);
         }
 
@@ -435,6 +452,7 @@ public:
       ///
       INLINE size_t consumeData(char *dest, size_t length, int combine_flag, pami_op op, pami_dt dt)
       {
+        TRACE_DBG((stderr, "<%p>CollShmWindow::consumeData() dest %p, length %zu\n",this, dest, length));
         size_t len      = MIN (length, _len);
 #if  defined(__64BIT__) && !defined(_LAPI_LINUX)
         char *src;
@@ -467,8 +485,8 @@ public:
             break;
 #endif
           default:
-            TRACE_DBG((stderr,"valus of content is %d\n", _ctrl.content));
-            PAMI_ASSERT(0);
+            TRACE_DBG((stderr,"<%p>CollShmWindow::consumeData() valus of content is %d\n",this, _ctrl.content));
+            PAMI_assertf(0,"<%p>switch %d, dest %p, length %zu/%zu, combine_flag %d, op %u, dt %u\n", this, _ctrl.content,dest,length,len,combine_flag,op,dt);
         }
         return len;
       }
@@ -478,6 +496,7 @@ public:
       ///
       INLINE char *getBuffer(T_MemoryManager *csmm)
       {
+        TRACE_DBG((stderr, "<%p>CollShmWindow::getBuffer()\n", this));
          char *buf = NULL;
          switch (_ctrl.content)
          {
@@ -520,6 +539,7 @@ public:
        ///
        INLINE void returnBuffer(char *buf)
        {
+         TRACE_DBG((stderr, "<%p>CollShmWindow::returnBuffer()\n", this));
 #if defined(__64BIT__) && !defined(_LAPI_LINUX)
          PAMI_ASSERT (_ctrl.content == XMEMATT);
          PAMI_ASSERT( _data.xmem_data.hndl != ZCMEM_HNDL_NULL);
@@ -663,6 +683,7 @@ public:
             CollShmWindow  *window;
             int pollcnt = 10;
 
+            TRACE_DBG((stderr, "<%p>CollShmThread::_advanceThread() action %u\n", this, _action));
             // common action handling
             switch (_action) {
               case NOACTION: // just started
@@ -710,6 +731,7 @@ public:
                 break;
             }
 
+            TRACE_DBG((stderr, "<%p>CollShmThread::_advanceThread() msg %p\n", this, msg));
             // type specific progress handling
             if (msg) { // if there is still valid message pointer, then more progress must be needed
               switch ( msg->getMsgType() ) {
@@ -767,6 +789,7 @@ public:
              pami_multicast_t *mcast;
              pami_multicombine_t *mcombine;
 
+             TRACE_DBG((stderr, "<%p>CollShmThread::initThread() msgtype %u\n", this, msgtype));
              switch (msgtype)
              {
                case MultiCast:
@@ -813,6 +836,7 @@ public:
           ///
           INLINE pami_result_t progressMultisync( CollShmMessage<pami_multisync_t, CollShmDevice> *msg)
           {
+            TRACE_DBG((stderr, "<%p>CollShmThread::progressMultisync() msg %p\n", this, msg));
             // pami_result_t rc;
             // PAMI_ASSERT(_sync_flag == 0);
             // if (_sync_flag != _target_cntr)  rc = _device->sync(_idx, _sync_flag);
@@ -868,12 +892,12 @@ public:
          ///
          INLINE pami_result_t progressMulticombine( CollShmMessage<pami_multicombine_t, CollShmDevice> *msg)
          {
+           TRACE_DBG((stderr,"<%p>progressMulticombine msg %p, idx %d\n",this,msg, _idx));
             pami_result_t rc = PAMI_SUCCESS;
             pami_multicombine_t *mcombine = msg->getMulti();
             CollShmWindow *window = _device->getWindow(0, _arank, _idx);
             int i, prank;
 
-            TRACE_DBG((stderr,"shm_reduce %d\n", _idx));
 
             while (_len != 0) {
               if (_role == CHILD) {
@@ -882,7 +906,7 @@ public:
                   _action = NOACTION;
                   return PAMI_EAGAIN;
                 }
-                PAMI_ASSERT(_wlen > 0);
+                PAMI_ASSERT(_wlen != -1ULL);
                 _len  -= _wlen;
                 ++_step ;
                 rc = window->setAvail(_step, 2);
@@ -924,7 +948,7 @@ public:
                   _action = NOACTION;
                   return PAMI_EAGAIN;
                 }
-                PAMI_ASSERT(_wlen > 0);
+                PAMI_ASSERT(_wlen != -1ULL);
 
                 ++_step ;
                 _action = READFROM;
@@ -960,12 +984,12 @@ public:
           ///
           INLINE pami_result_t progressMulticast( CollShmMessage<pami_multicast_t, CollShmDevice> *msg)
           {
+            TRACE_DBG((stderr, "<%p>CollShmThread::progressMulticast() msg %p, idx %u\n", this, msg, _idx));
             pami_result_t rc = PAMI_SUCCESS;
             pami_multicast_t *mcast = msg->getMulti();
             CollShmWindow *window = _device->getWindow(0, _arank, _idx);
             int prank;
 
-            TRACE_DBG((stderr,"shm_bcast %d\n", _idx));
 
             while (_len != 0) {
               if (_role == PARENT) {
@@ -974,7 +998,7 @@ public:
                   _action = NOACTION;
                   return PAMI_EAGAIN;
                 }
-                PAMI_ASSERT(_wlen > 0);
+                PAMI_ASSERT(_wlen != -1ULL);
                 _len  -= _wlen;
                 ++_step ;
                 rc = window->setAvail(_step, _nchildren+1);
@@ -1158,7 +1182,7 @@ public:
 
           while (_completions[round][head] == _synccounts)
           {
-            TRACE_DBG((stderr,"round = %d, head = %d, barrier = %zu, completion = %d\n", round, head, _wgroups[0]->barrier[round][head].fetch(), _completions[round][head]));
+            TRACE_DBG((stderr,"advanceHead() round = %d, head = %d, barrier = %zu, completion = %d\n", round, head, _wgroups[0]->barrier[round][head].fetch(), _completions[round][head]));
             if (_wgroups[0]->barrier[round][head].fetch() == ((increment == 1) ? _ntasks : 0))
             {
               ++adv;
@@ -1176,7 +1200,7 @@ public:
           }
           _head += (adv * _synccounts);
 
-          TRACE_DBG((stderr,"advance head ..._head = %d\n", _head));
+          TRACE_DBG((stderr,"advance head ..._head = %d, adv = %u, round = %d, head = %d, barrier = %zu, completion = %d\n", _head, adv, round, head, _wgroups[0]->barrier[round][head].fetch(), _completions[round][head]));
 
           return adv;
         }
@@ -1299,7 +1323,7 @@ public:
         /// \return pointer to the corresponding window
         INLINE CollShmWindow * getWindow (unsigned geometry, size_t peer, unsigned channel)
         {
-          TRACE_DBG((stderr,"_wgroup[%zu] window[%d]=%p, %p\n", peer, channel, _wgroups[peer], &(_wgroups[peer]->windows[channel])));
+          TRACE_DBG((stderr,"<%p>getWindow() _wgroup[%zu]=%p window[%d]=%p\n",this, peer, _wgroups[peer], channel, &(_wgroups[peer]->windows[channel])));
           return &(_wgroups[peer]->windows[channel]);
         }
 
@@ -1449,7 +1473,7 @@ public:
         // _csdevice(device, commid, topology, csmm, csmm->getWGCtrlStr())
          _csdevice(device, commid, topology, csmm, ctrlstr)
         {
-            //TRACE_ERR((stderr,stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+          TRACE_DBG((stderr, "<%p>CollShmModel()\n", this));
             // PAMI_assert(device == _g_l_bcastwq_dev);
 
             _csdevice.getWindow(0,0,0); // just simple checking
