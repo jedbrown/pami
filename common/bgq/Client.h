@@ -743,7 +743,7 @@ namespace PAMI
         // Round up to the page size
         //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-	_mm.init(__global.shared_mm, bytes, 1, 0, shmemfile);
+	_mm.init(__global.shared_mm, bytes, 1, 1, 0, shmemfile);
         return;
       }
 

@@ -125,16 +125,28 @@ public:
   {}
 
   static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+    if (T_Mutex::isIndirect) {
 	return T_Mutex::checkCtorMm(mm);
+    } else {
+	return true;
+    }
   }
 
   static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+    if (T_Mutex::isIndirect) {
 	return T_Mutex::checkDataMm(mm);
+    } else {
+	return true; // no mm will be used in init()...
+    }
   }
 
   inline void init(PAMI::Memory::MemoryManager *mm, const char *key)
   {
-    _mutex.init(mm, key);
+    if (T_Mutex::isIndirect) {
+    	_mutex.init(mm, key);
+    } else {
+    	_mutex.init();
+    }
     PAMI_assertf(!_mutex.isLocked(), "Mutex did not init unlocked\n");
   }
 

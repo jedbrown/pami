@@ -138,11 +138,14 @@ public:
         LocalAllreduceWQModel(LocalAllreduceWQDevice &device, pami_result_t &status) :
         PAMI::Device::Interface::MulticombineModel<LocalAllreduceWQModel,LocalAllreduceWQDevice,sizeof(LocalAllreduceWQMessage)>(device, status),
 	_gd(&device),
-        _shared(_gd->getMM()),
         _peer(__global.topology_local.rank2Index(__global.mapping.task())),
         _npeers(__global.topology_local.size())
         {
-            TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
+		TRACE_ERR((stderr, "%s enter\n", __PRETTY_FUNCTION__));
+		char key[PAMI::Memory::MMKEYSIZE];
+		sprintf(key, "/LocalAllreduceWQModel-%zd-%zd",
+					_gd->clientId(), _gd->contextId());
+		new (&_shared) PAMI::Device::WorkQueue::SharedWorkQueue(_gd->getMM(), key);
                 if (!_shared.available()) {
                         status = PAMI_ERROR;
                         return;

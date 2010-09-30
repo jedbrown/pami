@@ -37,7 +37,7 @@ static inline pami_result_t initializeMemoryManager(const char *name, size_t byt
 		
                 snprintf(shmemfile, sizeof(shmemfile) - 1, "/pami-test-%s", name);
 
-        	mm.init(__global.shared_mm, bytes, 1, 0, shmemfile);
+        	mm.init(__global.shared_mm, bytes, 1, 1, 0, shmemfile);
 		_ptr = mm.base();
 		_bytes = mm.size();
 

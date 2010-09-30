@@ -331,7 +331,7 @@ namespace PAMI
 
 	strcpy(mms, "-mm");
 	pmm->enable();
-        _mm.init(pmm, bytes, 16, 0, mmkey);
+        _mm.init(pmm, bytes, 16, 16, 0, mmkey);
 	pmm->disable();
         _self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
 

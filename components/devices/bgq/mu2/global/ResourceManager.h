@@ -1312,7 +1312,7 @@ namespace PAMI
 	inline void calculatePerProcessOptimalPamiResources();
 	inline void calculatePerCorePerProcessPerClientMUResources();
 	inline void setupSharedMemory();
-	inline void allocateMemory( bool    useSharedMemory,
+	inline void allocateMemory( const char *key,
 				    void ** memptr,
 				    size_t  alignment,
 				    size_t  bytes );
@@ -1321,7 +1321,7 @@ namespace PAMI
 				       size_t   numFifos,
 				       size_t   fifoSize,
 				       Kernel_InjFifoAttributes_t  *fifoAttr,
-				       bool                         useSharedMemory,
+				       const char *key,
 				       bool                         enableInterrupts,
 				       MUSPI_InjFifoSubGroup_t    **subgroups,
 				       char                      ***fifoPtrs,
@@ -1331,7 +1331,7 @@ namespace PAMI
 				       size_t   numFifos,
 				       size_t   fifoSize,
 				       Kernel_RecFifoAttributes_t  *fifoAttr,
-				       bool                         useSharedMemory,
+				       const char *key,
 				       MUSPI_RecFifoSubGroup_t    **subgroups,
 				       char                      ***fifoPtrs,
 				       uint32_t                   **globalFifoIds );
@@ -1339,7 +1339,7 @@ namespace PAMI
 				    uint32_t                           startingSubgroup,
 				    uint32_t                           endingSubgroup,
 				    uint32_t                           numBatIds,
-				    bool                               useSharedMemory,
+				    const char *key,
 				    MUSPI_BaseAddressTableSubGroup_t **subgroups,
 				    uint32_t                         **globalBatIds);
 	inline void allocateGlobalResources();
@@ -2209,24 +2209,20 @@ void PAMI::Device::MU::ResourceManager::setupSharedMemory()
 {
   const char *shmemfile = "/unique-pami-globalRM-shmem-file";
 
-  _mm.init(__global.shared_mm, _memSize, 1, 0, shmemfile);
+  _mm.init(__global.shared_mm, _memSize, 1, 1, 0, shmemfile);
 
 } // End: setupSharedMemory()
 
 
-void PAMI::Device::MU::ResourceManager::allocateMemory( bool    useSharedMemory,
+void PAMI::Device::MU::ResourceManager::allocateMemory( const char * key,
 							void ** memptr,
 							size_t  alignment,
 							size_t  bytes )
 {
-  if ( useSharedMemory )
-    {
-      _mm.memalign( memptr, alignment, bytes );
-    }
-  else
-    {
-      __global.heap_mm->memalign( memptr, alignment, bytes );
-    }
+  pami_result_t rc;
+  PAMI::Memory::MemoryManager *mm = key ? &_mm : __global.heap_mm;
+  rc = mm->memalign( memptr, alignment, bytes, key );
+  PAMI_assertf(rc == PAMI_SUCCESS, "out of memory asking for %zd aligned %zd, key %s", bytes, alignment, key ? key : "(nil)");
 } // End:  allocateMemory()
 
 
@@ -2240,8 +2236,7 @@ void PAMI::Device::MU::ResourceManager::allocateMemory( bool    useSharedMemory,
 // \param[in]  numFifos          Number of fifos to set up
 // \param[in]  fifoSize          The size of the fifos (all are same)
 // \param[in]  fifoAttr          Pointer to the attributes of the fifos (all are same)
-// \param[in]  useSharedMemory   Boolean indicating whether to allocate
-//                               resources from shared memory (true) or heap (false).
+// \param[in]  key               SharedMemory id or NULL if heap.
 // \param[in]  enableInterrupts  Boolean indicating whether to enable MU interrupts
 //                               (true) or not (false)
 // \param[out] subgroups         Pointer to an array of subgroup structures.
@@ -2266,7 +2261,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 		       size_t   numFifos,
 		       size_t   fifoSize,
 		       Kernel_InjFifoAttributes_t  *fifoAttr,
-		       bool                         useSharedMemory,
+		       const char *key,
 		       bool                         enableInterrupts,
 		       MUSPI_InjFifoSubGroup_t    **subgroups,
 		       char                      ***fifoPtrs,
@@ -2285,7 +2280,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 
   if ( _calculateSizeOnly == 1 )
     {
-      if ( useSharedMemory )
+      if ( key )
 	{
 	  _memSize += outputStructuresSize +
 	              fifoPtrsArraySize  +
@@ -2297,53 +2292,42 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 
     } // End: _calculateOnly
 
+  size_t keylen = 0;
+  char mkey[PAMI::Memory::MMKEYSIZE];
+  if (key) {
+	keylen = strlen(key);
+	PAMI_assertf(keylen < sizeof(mkey), "shmem key length overflow");
+	strcpy(mkey, key);
+	key = mkey;
+  }
   // Allocate space for the output structures
-  allocateMemory( useSharedMemory, (void **)(subgroups), 16, outputStructuresSize );
+  if (key) strcpy(mkey + keylen, "-subgroups");
+  allocateMemory( key, (void **)(subgroups), 16, outputStructuresSize );
   TRACE((stderr,"MU ResourceManager: setupInjFifos: subgroups ptr = %p\n",*subgroups));
-  if ( useSharedMemory )
-    {
-      PAMI_assertf( *subgroups != NULL, "Shared memory is full.\n" );
-    }
-  else
-    {
-      PAMI_assertf( *subgroups != NULL, "The heap is full.\n" );
-    }
+  if ( key ) { PAMI_assertf( *subgroups != NULL, "Shared memory is full.\n" ); }
+  else { PAMI_assertf( *subgroups != NULL, "The heap is full.\n" ); }
 
-  allocateMemory( useSharedMemory, (void **)(fifoPtrs), 16, fifoPtrsArraySize );
+  // pointers need to be in private memory
+  //if (key) strcpy(mkey + keylen, "-fifoPtrs");
+  allocateMemory( NULL, (void **)(fifoPtrs), 16, fifoPtrsArraySize );
   TRACE((stderr,"MU ResourceManager: setupInjFifos: fifoPtrs ptr = %p\n",*fifoPtrs));
-  if ( useSharedMemory )
-    {
-      PAMI_assertf ( *fifoPtrs != NULL, "Shared memory is full.\n" );
-    }
-  else
-    {
-      PAMI_assertf( *fifoPtrs != NULL, "The heap is full.\n" );
-    }
+  if ( key ) { PAMI_assertf ( *fifoPtrs != NULL, "Shared memory is full.\n" ); }
+  else { PAMI_assertf( *fifoPtrs != NULL, "The heap is full.\n" ); }
 
   for ( fifo=0; fifo<numFifos; fifo++ )
     {
-      allocateMemory( useSharedMemory, (void **)&((*fifoPtrs)[fifo]), 64, fifoSize );
+      if (key) sprintf(mkey + keylen, "-fifoPtrs-%d", fifo);
+      allocateMemory( key, (void **)&((*fifoPtrs)[fifo]), 64, fifoSize );
       TRACE((stderr,"MU ResourceManager: setupInjFifos: fifo ptr address = %p, fifoptr = %p\n",&((*fifoPtrs)[fifo]), (*fifoPtrs)[fifo]));
-      if ( useSharedMemory )
-        {
-          PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "Shared memory is full.\n" );
-        }
-      else
-        {
-          PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "The heap is full.\n" );
-        }
+      if ( key ) { PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "Shared memory is full.\n" ); }
+      else { PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "The heap is full.\n" ); }
     }
 
-  allocateMemory( useSharedMemory, (void **)(globalFifoIds), 16, fifoIdsSize );
+  if (key) strcpy(mkey + keylen, "-globalFifoIds");
+  allocateMemory( key, (void **)(globalFifoIds), 16, fifoIdsSize );
   TRACE((stderr,"MU ResourceManager: setupInjFifos: globalFifoIds ptr = %p\n",*globalFifoIds));
-  if ( useSharedMemory )
-    {
-      PAMI_assertf ( *globalFifoIds != NULL, "Shared memory is full.\n" );
-    }
-  else
-    {
-      PAMI_assertf ( *globalFifoIds != NULL, "The heap is full.\n" );
-    }
+  if ( key ) { PAMI_assertf ( *globalFifoIds != NULL, "Shared memory is full.\n" ); }
+  else { PAMI_assertf ( *globalFifoIds != NULL, "The heap is full.\n" ); }
 
   if ( _allocateOnly == 1 ) return 0;
 
@@ -2394,7 +2378,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 	  rc = Kernel_CreateMemoryRegion ( &memRegion,
 					   (*fifoPtrs)[fifoIndex+fifo],
 					   fifoSize );
-	  PAMI_assertf( rc == 0, "Kernel_CreateMemoryRegion failed with rc=%d\n",rc );
+	  PAMI_assertf( rc == 0, "Kernel_CreateMemoryRegion(&memRegion, %p, %zd) [%d] failed with rc=%d, errno=%d\n", (*fifoPtrs)[fifoIndex+fifo], fifoSize, fifoIndex+fifo, rc, errno );
 
 	  rc = Kernel_InjFifoInit( &((*subgroups)[subgroupIndex]),
 				   freeIds[fifo],
@@ -2470,7 +2454,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
 				 1,  // Number of fifos
 				 _pamiRM.getInjFifoSize(),
 				 &fifoAttr,
-				 false, // Do not use shared memory
+				 NULL, // Do not use shared memory
 				 false, // Do not enable interrupts
 				 &(_globalCombiningInjFifo.subgroups),
 				 &(_globalCombiningInjFifo.fifoPtrs),
@@ -2500,7 +2484,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
 				 10, // Number of fifos
 				 _pamiRM.getRgetInjFifoSize(),
 				 &fifoAttr,
-				 true, // Use shared memory
+				 "allocateGlobalInjFifos-fifoAttr", // Use shared memory
 				 false,// Do not enable interrupts
 				 &_globalRgetInjSubGroups,
 				 &_globalRgetInjFifoPtrs,
@@ -2514,7 +2498,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
   //     Use the same relative rget fifos as the 9 normal fifos.
   if ( _calculateSizeOnly == 1 ) return;
 
-  allocateMemory( false /*do not useSharedMemory*/,
+  allocateMemory( NULL /*do not useSharedMemory*/,
 		  (void **)(&_rgetPinInfo),
 		  64,
 		  sizeof(*_rgetPinInfo) );
@@ -2538,8 +2522,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalInjFifos()
 // \param[in]  startingSubgroup  Starting subgroup number
 // \param[in]  endingSubgroup    Ending subgroup number
 // \param[in]  numBatIds         Number of BAT ids to set up
-// \param[in]  useSharedMemory   Boolean indicating whether to allocate
-//                               resources from shared memory (true) or heap (false).
+// \param[in]  key               shared memory key or NULL for heap.
 // \param[out] subgroups         Pointer to an array of subgroup structures.
 //                               This array is malloc'd and initialized
 //                               by this function, and this pointer is set
@@ -2555,7 +2538,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupBatIds(
                        uint32_t                           startingSubgroup,
 		       uint32_t                           endingSubgroup,
 		       uint32_t                           numBatIds,
-		       bool                               useSharedMemory,
+		       const char                        *key,
 		       MUSPI_BaseAddressTableSubGroup_t **subgroups,
 		       uint32_t                         **globalBatIds)
 {
@@ -2577,27 +2560,25 @@ uint32_t PAMI::Device::MU::ResourceManager::setupBatIds(
     } // End: _calculateOnly
 
   // Allocate space for the output structures
-  allocateMemory( useSharedMemory, (void **)(subgroups), 16, outputStructuresSize );
+  size_t keylen = 0;
+  char mkey[PAMI::Memory::MMKEYSIZE];
+  if (key) {
+	keylen = strlen(key);
+	PAMI_assertf(keylen < sizeof(mkey), "shmem key length overflow");
+	strcpy(mkey, key);
+	key = mkey;
+  }
+  if (key) strcpy(mkey + keylen, "-subgroups");
+  allocateMemory( key, (void **)(subgroups), 16, outputStructuresSize );
   TRACE((stderr,"MU ResourceManager: setupBatIds: subgroups ptr = %p\n",*subgroups));
-  if ( useSharedMemory )
-    {
-      PAMI_assertf( *subgroups != NULL, "Shared memory is full.\n" );
-    }
-  else
-    {
-      PAMI_assertf( *subgroups != NULL, "The heap is full.\n" );
-    }
+  if ( key ) { PAMI_assertf( *subgroups != NULL, "Shared memory is full.\n" ); }
+  else { PAMI_assertf( *subgroups != NULL, "The heap is full.\n" ); }
 
-  allocateMemory( useSharedMemory, (void **)(globalBatIds), 16, batIdsSize );
+  if (key) strcpy(mkey + keylen, "-globalBatIds");
+  allocateMemory( key, (void **)(globalBatIds), 16, batIdsSize );
   TRACE((stderr,"MU ResourceManager: setupBatIds: globalBatIds ptr = %p\n",*globalBatIds));
-  if ( useSharedMemory )
-    {
-      PAMI_assertf ( *globalBatIds != NULL, "Shared memory is full.\n" );
-    }
-  else
-    {
-      PAMI_assertf ( *globalBatIds != NULL, "The heap is full.\n" );
-    }
+  if ( key ) { PAMI_assertf ( *globalBatIds != NULL, "Shared memory is full.\n" ); }
+  else { PAMI_assertf ( *globalBatIds != NULL, "The heap is full.\n" ); }
 
   if ( _allocateOnly == 1 ) return 0;
 
@@ -2670,7 +2651,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
   numBatIdsSetup = setupBatIds( 64, // Starting subgroup
 				65, // Ending subgroup
 				5,  // Number of BAT ids (see above list)
-				true, // Use shared memory
+				"allocateGlobalBaseAddressTableEntries-_globalBatIds", // Use shared memory
 				&_globalBatSubGroups,
 				&_globalBatIds );
   PAMI_assertf( (_calculateSizeOnly == 1) || (_allocateOnly == 1) || (numBatIdsSetup == 5), "Only %u base address Ids were set up.  Expected 5.\n",numBatIdsSetup );
@@ -2686,7 +2667,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
 
   // Allocate space for the shared counter in shared memory.
   uint64_t *sharedCounterPtr;
-  allocateMemory( true /*useSharedMemory*/, (void **)(&sharedCounterPtr), 8, sizeof(uint64_t) );
+  allocateMemory( "allocateGlobalBaseAddressTableEntries-sharedCounterPtr" /*useSharedMemory*/, (void **)(&sharedCounterPtr), 8, sizeof(uint64_t) );
   TRACE((stderr,"MU ResourceManager: allocateGlobalBaseAddressTableEntries: Shared counter address = %p\n",sharedCounterPtr));
   PAMI_assertf( sharedCounterPtr != NULL, "Shared memory is full.\n" );
 
@@ -2739,8 +2720,7 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
 // \param[in]  numFifos          Number of fifos to set up
 // \param[in]  fifoSize          The size of the fifos (all are same)
 // \param[in]  fifoAttr          Pointer to the attributes of the fifos (all are same)
-// \param[in]  useSharedMemory   Boolean indicating whether to allocate
-//                               resources from shared memory (true) or heap (false).
+// \param[in]  key               shared memory key or NULL for heap.
 // \param[out] subgroups         Pointer to an array of subgroup structures.
 //                               This array is malloc'd and initialized
 //                               by this function, and this pointer is set
@@ -2763,7 +2743,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
 		       size_t   numFifos,
 		       size_t   fifoSize,
 		       Kernel_RecFifoAttributes_t  *fifoAttr,
-		       bool                         useSharedMemory,
+		       const char *key,
 		       MUSPI_RecFifoSubGroup_t    **subgroups,
 		       char                      ***fifoPtrs,
 		       uint32_t                   **globalFifoIds)
@@ -2791,52 +2771,41 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
     } // End: _calculateOnly
 
   // Allocate space for the output structures
-  allocateMemory( useSharedMemory, (void **)(subgroups), 16, outputStructuresSize );
+  size_t keylen = 0;
+  char mkey[PAMI::Memory::MMKEYSIZE];
+  if (key) {
+	keylen = strlen(key);
+	PAMI_assertf(keylen < sizeof(mkey), "shmem key length overflow");
+	strcpy(mkey, key);
+	key = mkey;
+  }
+  if (key) strcpy(mkey + keylen, "-subgroups");
+  allocateMemory( key, (void **)(subgroups), 16, outputStructuresSize );
   TRACE((stderr,"MU ResourceManager: setupRecFifos: subgroups ptr = %p\n",*subgroups));
-  if ( useSharedMemory )
-    {
-      PAMI_assertf( *subgroups != NULL, "Shared memory is full.\n" );
-    }
-  else
-    {
-      PAMI_assertf( *subgroups != NULL, "The heap is full.\n" );
-    }
+  if ( key ) { PAMI_assertf( *subgroups != NULL, "Shared memory is full.\n" ); }
+  else { PAMI_assertf( *subgroups != NULL, "The heap is full.\n" ); }
 
-  allocateMemory( useSharedMemory, (void **)(fifoPtrs), 16, fifoPtrsArraySize );
+  // pointers need to be in private memory
+  //if (key) strcpy(mkey + keylen, "-fifoPtrs");
+  allocateMemory( NULL, (void **)(fifoPtrs), 16, fifoPtrsArraySize );
   TRACE((stderr,"MU ResourceManager: setupRecFifos: fifoPtrs ptr = %p\n",*fifoPtrs));
-  if ( useSharedMemory )
-    {
-      PAMI_assertf ( *fifoPtrs != NULL, "Shared memory is full.\n" );
-    }
-  else
-    {
-      PAMI_assertf( *fifoPtrs != NULL, "The heap is full.\n" );
-    }
+  if ( key ) { PAMI_assertf ( *fifoPtrs != NULL, "Shared memory is full.\n" ); }
+  else { PAMI_assertf( *fifoPtrs != NULL, "The heap is full.\n" ); }
 
   for ( fifo=0; fifo<numFifos; fifo++ )
     {
-      allocateMemory( useSharedMemory, (void **)&((*fifoPtrs)[fifo]), 32, fifoSize );
+      if (key) sprintf(mkey + keylen, "-fifoPtrs-%d", fifo);
+      allocateMemory( key, (void **)&((*fifoPtrs)[fifo]), 32, fifoSize );
       TRACE((stderr,"MU ResourceManager: setupRecFifos: fifo ptr address = %p, fifoptr = %p\n",&((*fifoPtrs)[fifo]), (*fifoPtrs)[fifo]));
-      if ( useSharedMemory )
-        {
-          PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "Shared memory is full.\n" );
-        }
-      else
-        {
-          PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "The heap is full.\n" );
-        }
+      if ( key ) { PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "Shared memory is full.\n" ); }
+      else { PAMI_assertf ( (*fifoPtrs)[fifo] != NULL, "The heap is full.\n" ); }
     }
 
-  allocateMemory( useSharedMemory, (void **)(globalFifoIds), 16, fifoIdsSize );
+  if (key) strcpy(mkey + keylen, "-globalFifoIds");
+  allocateMemory( key, (void **)(globalFifoIds), 16, fifoIdsSize );
   TRACE((stderr,"MU ResourceManager: setupRecFifos: globalFifoIds ptr = %p\n",*globalFifoIds));
-  if ( useSharedMemory )
-    {
-      PAMI_assertf ( *globalFifoIds != NULL, "Shared memory is full.\n" );
-    }
-  else
-    {
-      PAMI_assertf ( *globalFifoIds != NULL, "The heap is full.\n" );
-    }
+  if ( key ) { PAMI_assertf ( *globalFifoIds != NULL, "Shared memory is full.\n" ); }
+  else { PAMI_assertf ( *globalFifoIds != NULL, "The heap is full.\n" ); }
 
   if ( _allocateOnly == 1 ) return 0;
 
@@ -2976,7 +2945,7 @@ void PAMI::Device::MU::ResourceManager::allocateLookasideResources(
 
   // Set up array of pointers to the lookaside payload buffers.  There is pointer per inj fifo.
   char **_lookAsidePayloadPtrs;
-  allocateMemory( false, // Use heap
+  allocateMemory( NULL, // Use heap
 		  (void **)(&_lookAsidePayloadPtrs),
 		  16,
 		  numInjFifos * sizeof(char**) );
@@ -2988,7 +2957,7 @@ void PAMI::Device::MU::ResourceManager::allocateLookasideResources(
   // as the inj fifo.
   for ( fifo=0; fifo<numInjFifos; fifo++ )
     {
-      allocateMemory( false, // Use heap
+      allocateMemory( NULL, // Use heap
 		      (void **)&(_lookAsidePayloadPtrs[fifo]),
 		      32,
 		      lookAsidePayloadBufferSize );
@@ -3000,7 +2969,7 @@ void PAMI::Device::MU::ResourceManager::allocateLookasideResources(
   // We need this to get the physical addresses of the lookaside payload buffers.
   // There is 1 memory region per lookaside buffer (ie. per inj fifo).
   Kernel_MemoryRegion_t *_lookAsidePayloadMemoryRegions;
-  allocateMemory( false, // Use heap
+  allocateMemory( NULL, // Use heap
 		  (void **)(&_lookAsidePayloadMemoryRegions),
 		  16,
 		  numInjFifos * sizeof(Kernel_MemoryRegion_t) );
@@ -3020,7 +2989,7 @@ TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadM
   // Set up array of lookaside payload buffer physical addresses.
   // There is 1 PA for each lookaside buffer (ie. for each inj fifo).
   uint64_t *_lookAsidePayloadPAs;
-  allocateMemory( false, // Use heap
+  allocateMemory( NULL, // Use heap
 		  (void **)(&_lookAsidePayloadPAs),
 		  16,
 		  numInjFifos * sizeof(uint64_t) );
@@ -3041,7 +3010,7 @@ TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadM
   // Set up array of pointers to lookaside completion function arrays.
   // There is 1 pointer for each inj fifo.
   pami_event_function **_lookAsideCompletionFnPtrs;
-  allocateMemory( false, // Use heap
+  allocateMemory( NULL, // Use heap
 		  (void **)(&_lookAsideCompletionFnPtrs),
 		  16,
 		  numInjFifos * sizeof(pami_event_function *) );
@@ -3053,7 +3022,7 @@ TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadM
   // as the inj fifo.
   for ( fifo=0; fifo<numInjFifos; fifo++ )
     {
-      allocateMemory( false, // Use heap
+      allocateMemory( NULL, // Use heap
 		      (void **)&(_lookAsideCompletionFnPtrs[fifo]),
 		      16,
 		      lookAsideCompletionFnArraySize );
@@ -3065,7 +3034,7 @@ TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadM
   // Set up array of pointers to lookaside completion cookie arrays.
   // There is 1 pointer for each inj fifo.
   void ***_lookAsideCompletionCookiePtrs;
-  allocateMemory( false, // Use heap
+  allocateMemory( NULL, // Use heap
 		  (void **)(&_lookAsideCompletionCookiePtrs),
 		  16,
 		  numInjFifos * sizeof(void **) );
@@ -3077,7 +3046,7 @@ TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadM
   // as the inj fifo.
   for ( fifo=0; fifo<numInjFifos; fifo++ )
     {
-      allocateMemory( false, // Use heap
+      allocateMemory( NULL, // Use heap
 		      (void **)&(_lookAsideCompletionCookiePtrs[fifo]),
 		      16,
 		      lookAsideCompletionCookieArraySize );
@@ -3195,7 +3164,7 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
 		    numInjFifos,
 		    _pamiRM.getInjFifoSize(),
 		    &injFifoAttr,
-		    false, // Do not use shared memory...use heap.
+		    NULL, // Do not use shared memory...use heap.
 		    true,  // Enable interrupts.
 		    &(_clientResources[rmClientId].injResources[contextOffset].subgroups),
 		    &(_clientResources[rmClientId].injResources[contextOffset].fifoPtrs),
@@ -3213,7 +3182,7 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
 		    numRecFifos,
 		    _pamiRM.getRecFifoSize(),
 		    &recFifoAttr,
-		    false, // Do not use shared memory...use heap.
+		    NULL, // Do not use shared memory...use heap.
 		    &(_clientResources[rmClientId].recResources[contextOffset].subgroups),
 		    &(_clientResources[rmClientId].recResources[contextOffset].fifoPtrs),
 		    &(_clientResources[rmClientId].recResources[contextOffset].globalFifoIds) );

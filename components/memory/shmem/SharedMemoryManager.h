@@ -73,7 +73,7 @@ namespace PAMI
 #endif // MM_DEBUG
         }
 
-        virtual ~SharedMemoryManager ()
+        ~SharedMemoryManager ()
         {
 #ifdef MM_DEBUG
 		if (_debug) {
@@ -84,15 +84,19 @@ namespace PAMI
 		}
 #endif // MM_DEBUG
 		// if this only happens at program exit, just unlink all keys...
-		freeAll();
+
+		// freeAll(); // needs to be done before/in _meta.~MemoryManagerMeta which
+		// frees all the meta data buffers!
+
 		// could free up all the meta data, but it is in heap and
 		// about to be freed by _exit().
-		_meta.~MemoryManagerMeta<MemoryManagerOSAlloc>();
+		// _meta.~MemoryManagerMeta<MemoryManagerOSShmAlloc>(); // already called!?
         }
 
 	inline const char *getName() { return "SharedMemoryManager"; }
 
-	inline pami_result_t init (MemoryManager *mm, size_t bytes, size_t alignment,
+	inline pami_result_t init (MemoryManager *mm, size_t bytes,
+			size_t alignment, size_t new_align,
 			unsigned attrs = 0, const char *key = NULL,
 			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
 	{
@@ -115,10 +119,10 @@ namespace PAMI
 		char nkey[MMKEYSIZE];
 		if (key && key[0]) {
 			if (*key == '/') ++key; // or... allow "relative" vs. "absolute" keys?
-			snprintf(nkey, sizeof(nkey), "/%zd-%s", _jobid, key);
+			snprintf(nkey, sizeof(nkey), "/job%zd-%s", _jobid, key);
 		} else {
-			// this should be unique
-			snprintf(nkey, sizeof(nkey), "/%zd-%d-%lx", _jobid,
+			// this should be unique... or not? memptr might not be...
+			snprintf(nkey, sizeof(nkey), "/job%zd-pid%d-%lx", _jobid,
 						getpid(), (unsigned long)memptr);
 			if (key) {
 				// callers wants to know the unique key we chose...
@@ -131,7 +135,7 @@ namespace PAMI
 		void *ptr = NULL;
 		bool first = false;
 		_meta.acquire(); // only makes this thread-safe, not proc-safe.
-		MemoryManagerOSAlloc *alloc = _meta.findFree();
+		MemoryManagerOSShmAlloc *alloc = _meta.findFree();
 		if (alloc == NULL) {
 			_meta.release();
 			return PAMI_ERROR;
@@ -215,7 +219,7 @@ namespace PAMI
 
 	inline void free(void *mem) {
 		_meta.acquire();
-		MemoryManagerOSAlloc *m = _meta.find(mem);
+		MemoryManagerOSShmAlloc *m = _meta.find(mem);
 		if (m) {
 #ifdef MM_DEBUG
 			if (_debug) {
@@ -223,7 +227,7 @@ namespace PAMI
 				_curr_bytes -= m->userSize();
 			}
 #endif // MM_DEBUG
-			__free(m);
+			m->free();
 		}
 		_meta.release();
 	}
@@ -246,31 +250,7 @@ namespace PAMI
 
     protected:
 
-	// lock held by caller.
-	inline void __free(MemoryManagerOSAlloc *m) {
-		close(m->fd());
-		munmap(m->mem(), m->size());
-		if (m->rmRef() == 1) {
-			// zero memory so that next use is zeroed?
-			// memset(m->rawAddress(), 0, m->size());
-			shm_unlink(m->key());
-			m->free();
-		}
-	}
-
-	// lock held by caller.
-	static void _free(MemoryManagerOSAlloc *m, void *cookie) {
-		SharedMemoryManager *thus = (SharedMemoryManager *)cookie;
-		thus->__free(m);
-	}
-
-	inline void freeAll() {
-		_meta.acquire();
-		_meta.forAllActive(_free);
-		_meta.release();
-	}
-
-	MemoryManagerMeta<MemoryManagerOSAlloc> _meta;
+	MemoryManagerMeta<MemoryManagerOSShmAlloc> _meta;
 	size_t _jobid;
 #ifdef MM_DEBUG
 	bool _debug;

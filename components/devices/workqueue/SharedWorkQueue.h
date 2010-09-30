@@ -62,6 +62,8 @@ namespace PAMI
             volatile char buffer[0]; ///< Producer-consumer buffer
           } workqueue_t __attribute__ ((__aligned__ (16)));
 
+	  SharedWorkQueue() {} // this does nothing, must call other ctor...
+
           ///
           /// \brief Default constructor.
           ///
@@ -69,7 +71,7 @@ namespace PAMI
           ///
           /// \param[in] queue Location of the workqueue structure in shared memory.
           ///
-          SharedWorkQueue (PAMI::Memory::MemoryManager *mm, unsigned workunits = PAMI_DEF_SH_WORKUNITS, unsigned worksize = PAMI_DEF_SH_WORKSIZE) :
+          SharedWorkQueue (PAMI::Memory::MemoryManager *mm, const char *key, unsigned workunits = PAMI_DEF_SH_WORKUNITS, unsigned worksize = PAMI_DEF_SH_WORKSIZE) :
             WorkQueue (),
             _qsize (workunits * worksize),
             _worksize (worksize),
@@ -77,7 +79,7 @@ namespace PAMI
           {
             TRACE_ERR((stderr,  "%s enter mm %p, workunits %u, worksize %u\n", __PRETTY_FUNCTION__,mm,workunits, worksize));
                 size_t size = sizeof(workqueue_t) + _qsize;
-                mm->memalign((void **)&_sharedqueue, 16, size);
+                mm->memalign((void **)&_sharedqueue, 16, size, key);
                 TRACE_ERR((stderr,  "%s sharedqueue %p\n", __PRETTY_FUNCTION__,_sharedqueue));
                 PAMI_assert_debug(_sharedqueue);
                 PAMI_assert_debug((_qsize & (_qsize - 1)) == 0);

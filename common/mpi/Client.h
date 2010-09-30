@@ -436,7 +436,7 @@ namespace PAMI
         snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s", _name);
         // Round up to the page size
         size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
-	_mm.init(__global.shared_mm, size, 1, 0, shmemfile);
+	_mm.init(__global.shared_mm, size, 1, 1, 0, shmemfile);
         return;
       }
 

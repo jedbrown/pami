@@ -242,7 +242,7 @@ namespace PAMI
         // ----------------------------------------------------------------
 	strcpy(mms, "-mm");
 	pmm->enable();
-	_mm.init(pmm, bytes, 16, mmkey);
+	_mm.init(pmm, bytes, 16, 16, 0, mmkey);
 	pmm->enable();
 
         _lock.init();

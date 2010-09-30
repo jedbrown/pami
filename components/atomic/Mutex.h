@@ -113,12 +113,14 @@ inline bool Mutex<T_Object>::isLocked()
   class InPlaceMutex : public Mutex<T_Object>
     {
     public:
+      static const bool isIndirect = false;
       ///
       /// \brief  Alloc and Init
       ///
       /// \todo Need to find a way to initialize lock by only one entity
       ///
       inline void init();
+      inline void init(PAMI::Memory::MemoryManager *mm, const char *key) { PAMI_abortf("indirect init attempted on in-place object"); }
 
       ///
       /// \brief  Provide access to the raw lock var/data
@@ -153,12 +155,14 @@ inline void *InPlaceMutex<T_Object>::returnLock()
   class IndirMutex : public Mutex<T_Object>
     {
     public:
+      static const bool isIndirect = true;
       ///
       /// \brief  Alloc and Init
       ///
       /// \todo Need to find a way to initialize lock by only one entity
       ///
       inline void init(PAMI::Memory::MemoryManager *mm, const char *key);
+      inline void init() { PAMI_abortf("in-place init attempted on indirect object"); }
 
       ///
       /// \brief  Provide access to the raw lock var/data

@@ -42,7 +42,7 @@ namespace PAMI
 #endif // MM_DEBUG
         }
 
-      virtual ~HeapMemoryManager ()
+      ~HeapMemoryManager()
 	{
 		// this is only called from process exit,
 		// so no need to actually free - the memory
@@ -59,7 +59,8 @@ namespace PAMI
 
 	inline const char *getName() { return "HeapMemoryManager"; }
 
-	inline pami_result_t init (MemoryManager *mm, size_t bytes, size_t alignment,
+	inline pami_result_t init (MemoryManager *mm, size_t bytes,
+			size_t alignment, size_t new_align,
 			unsigned attrs = 0, const char *key = NULL,
 			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
 	{
@@ -78,9 +79,10 @@ namespace PAMI
 			return PAMI_ERROR;
 		}
 #else
-		// todo: actually do requested alignment...
-		*memptr = malloc(bytes);
-		if (!*memptr) return PAMI_ERROR;
+		void *ptr = malloc(bytes + alignment);
+		if (!ptr) return PAMI_ERROR;
+		*memptr = (void *)(((uintptr_t)ptr + alignment - 1) &
+						~(alignment - 1));
 #endif
 		if (init_fn)
 		{

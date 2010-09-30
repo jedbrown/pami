@@ -99,7 +99,7 @@ namespace BGQ {
 		/// \param[in] mapping	Mapping object
 		/// \param[in] local	Topology for tasks local to node
 		///
-                inline void init(PAMI::Memory::MemoryManager *mm,
+                inline void init(PAMI::Memory::MemoryManager *shared_mm,
                 		PAMI::Memory::MemoryManager *heap_mm,
                                 PAMI::Mapping *mapping, PAMI::Topology *local) {
                         pami_result_t rc;
@@ -119,8 +119,10 @@ namespace BGQ {
 			}
 			rc = __procscoped_mm.init(heap_mm,
 					sizeof(uint64_t) * size,
-					sizeof(uint64_t), PAMI::Memory::PAMI_MM_L2ATOMIC,
-					NULL,
+					sizeof(uint64_t),
+					sizeof(uint64_t),
+					PAMI::Memory::PAMI_MM_L2ATOMIC,
+					"/L2AtomicFactory-priv",
 					PAMI::Memory::MemoryManager::memzero, NULL);
 			PAMI_assertf(rc == PAMI_SUCCESS,
 				"Failed to get memory for _l2proc, asked size %zu",
@@ -136,10 +138,12 @@ namespace BGQ {
 				size = strtoull(s, NULL, 0);
 			}
 
-			rc = __nodescoped_mm.init(mm,
+			rc = __nodescoped_mm.init(shared_mm,
 					sizeof(uint64_t) * size,
-					sizeof(uint64_t), PAMI::Memory::PAMI_MM_L2ATOMIC,
-					"/PAMI-L2AtomicFactory",
+					sizeof(uint64_t),
+					sizeof(uint64_t),
+					PAMI::Memory::PAMI_MM_L2ATOMIC,
+					"/L2AtomicFactory-shared",
 					PAMI::Memory::MemoryManager::memzero, NULL);
                         PAMI_assertf(rc == PAMI_SUCCESS,
                                 "Failed to get shmem for _l2node, asked size %zu",

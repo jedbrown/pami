@@ -311,17 +311,33 @@ public:
 
         CNAllreduce2PModel(CNAllreduce2PDevice &device, pami_result_t &status) :
         PAMI::Device::Interface::MulticombineModel<CNAllreduce2PModel,CNAllreduce2PDevice,sizeof(CNAllreduce2PMessage)>(device,status),
-        // we depend on doing consumeBytes(bytesAvailableToConsume()) in order
-        // to "jump" to next "boundary" so we maintain alignment for each cycle.
-        // this requires the WQ behavior based on workunits and worksize that
-        // creates artificial "boundaries" at those points.
-        _ewq(_g_cnallreduce2p_dev.common()->getSysdep(), EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
-        _mwq(_g_cnallreduce2p_dev.common()->getSysdep(), EXPO_WQ_SIZE, MANT_WQ_FACT * BGPCN_PKT_SIZE),
-        _xwq(_g_cnallreduce2p_dev.common()->getSysdep(), EXPO_WQ_SIZE, BGPCN_PKT_SIZE),
         _dispatch_id_e(_g_cnallreduce2p_dev.newDispID()),
         _dispatch_id_m(_g_cnallreduce2p_dev.newDispID())
         {
                 // PAMI_assert(device == _g_cnallreduce2p_dev);
+		char *key[PAMI::Memory::MMKEYSIZE];
+		size_t keylen = sprintf(key, "/CNAllreduce2PModel-");
+		key[keylen+1] = '\0';
+
+		// we depend on doing consumeBytes(bytesAvailableToConsume()) in order
+		// to "jump" to next "boundary" so we maintain alignment for each cycle.
+		// this requires the WQ behavior based on workunits and worksize that
+		// creates artificial "boundaries" at those points.
+		key[keylen] = 'e';
+		new (&_ewq) PAMI::Device::WorkQueue::SharedWorkQueue(
+				_g_cnallreduce2p_dev.common()->getSysdep(),
+				key, EXPO_WQ_SIZE, BGPCN_PKT_SIZE);
+
+		key[keylen] = 'm';
+		new (&_mwq) PAMI::Device::WorkQueue::SharedWorkQueue(
+				_g_cnallreduce2p_dev.common()->getSysdep(),
+				key, EXPO_WQ_SIZE, MANT_WQ_FACT * BGPCN_PKT_SIZE);
+
+		key[keylen] = 'x';
+		new (&_xwq) PAMI::Device::WorkQueue::SharedWorkQueue(
+				_g_cnallreduce2p_dev.common()->getSysdep(),
+				key, EXPO_WQ_SIZE, BGPCN_PKT_SIZE);
+
                 _me = __global.mapping.task();
                 _ewq.setConsumers(1, 0);
                 _ewq.setProducers(1, 0);

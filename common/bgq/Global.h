@@ -60,8 +60,6 @@
 #define DUMP_HEXDATA(s,b,n) //globalDumpHexData(s,b,n)
 void globalDumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints);
 
-#define BGQ_GLOBAL_SHMEM_SIZE(nproc,nctx)	L2A_MAX_NUMNODEL2ATOMIC(nproc,nctx) * sizeof(uint64_t); ///< extra shmem for BGQ L2 Atomics and WAC
-
 /// \page env_vars Environment Variables
 ///
 /// PAMI_GLOBAL_SHMEMSIZE - Size, MB, Global shmem pool
@@ -95,7 +93,7 @@ namespace PAMI
 	heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
 	if (personality.tSize() == 1) {
 		// There is no shared memory, so don't try. Fake using heap.
-		shared_mm = new (_shared_mm) PAMI::Memory::HeapMemoryManager();
+		shared_mm = heap_mm;
 	} else {
 		shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(0, heap_mm);
 	}
@@ -139,8 +137,10 @@ namespace PAMI
 
         bytes = initializeMapCache(personality, NULL, ll, ur, min, max, true);
 
+	// reserve space for 8 sub-mm's...
+	bytes += PAMI::Memory::GenMemoryManager::MAX_META_SIZE() * 8;
         // Round up to the page size
-        size_t size = ((bytes + pagesize - 1) & ~(pagesize - 1)) + BGQ_GLOBAL_SHMEM_SIZE(64,64);
+        size_t size = ((bytes + pagesize - 1) & ~(pagesize - 1));
 
 	char *env = getenv("PAMI_GLOBAL_SHMEMSIZE");
 	if (env) {
@@ -148,7 +148,7 @@ namespace PAMI
 	}
 
         TRACE_ERR((stderr, "Global() .. size = %zu\n", size));
-	mm.init(shared_mm, size, 1, 0, shmemfile);
+	mm.init(shared_mm, size, 1, 1, 0, shmemfile);
         (void)initializeMapCache(personality, &mm, ll, ur, min, max,
               ((mm.attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) != 0)); //shared initialization
 
@@ -178,7 +178,7 @@ namespace PAMI
 
         topology_global.subTopologyLocalToMe(&topology_local);
         PAMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
-        l2atomicFactory.init(&mm, heap_mm, &mapping, &topology_local);
+        l2atomicFactory.init(shared_mm, heap_mm, &mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));
 
@@ -265,7 +265,6 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
       uint64_t enter;
       uint64_t exit;
     } atomic;
-    volatile size_t *rankCachePtr; // Pointer to rank cache
     volatile size_t numActiveRanksLocal; // Number of ranks on our physical node.
     volatile size_t numActiveRanksGlobal;// Number of ranks in the partition.
     volatile size_t numActiveNodesGlobal;// Number of nodes in the partition.
@@ -314,7 +313,8 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
     }
 
   volatile cacheAnchors_t *cacheAnchorsPtr;
-  res = mm->memalign((void **)&cacheAnchorsPtr, 16, sizeof(*cacheAnchorsPtr));
+  res = mm->memalign((void **)&cacheAnchorsPtr, 16, sizeof(*cacheAnchorsPtr),
+						"/pami-global-cacheAnchorsPtr");
   PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for cacheAnchorsPtr");
 
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache = %p, size = %zu, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zu, fullSize = %zu, peerSize = %zu\n", mapcache, mm->size(), cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize));
@@ -335,16 +335,20 @@ size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
 
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. participant=%ld\n", participant));
 
-  res = mm->memalign((void **)&mapcache->torus.task2coords, 16, fullSize * sizeof(*mapcache->torus.task2coords));
+  res = mm->memalign((void **)&mapcache->torus.task2coords, 16, fullSize * sizeof(*mapcache->torus.task2coords),
+						"/pami-global-task2coords");
   PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for task2coords");
-  res = mm->memalign((void **)&mapcache->torus.coords2task, 16, fullSize * sizeof(*mapcache->torus.coords2task));
+  res = mm->memalign((void **)&mapcache->torus.coords2task, 16, fullSize * sizeof(*mapcache->torus.coords2task),
+						"/pami-global-coords2task");
   PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for coords2task");
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache->torus.task2coords = %p mapcache->torus.coords2task = %p\n", mapcache->torus.task2coords, mapcache->torus.coords2task));
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->torus.coords2task = %p\n", mapcache->node.local2peer, mapcache->torus.coords2task));
 
-  res = mm->memalign((void **)&mapcache->node.local2peer, 16, peerSize * sizeof(*mapcache->node.local2peer));
+  res = mm->memalign((void **)&mapcache->node.local2peer, 16, peerSize * sizeof(*mapcache->node.local2peer),
+						"/pami-global-local2peer");
   PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for local2peer");
-  res = mm->memalign((void **)&mapcache->node.peer2task, 16, peerSize * sizeof(*mapcache->node.peer2task));
+  res = mm->memalign((void **)&mapcache->node.peer2task, 16, peerSize * sizeof(*mapcache->node.peer2task),
+						"/pami-global-peer2task");
   PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for peer2task");
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
 

@@ -45,7 +45,16 @@ namespace Interface
                 ENFORCE_CLASS_MEMBER(T_Global,mapping);
         }
 
-        inline ~Global () {};
+        inline ~Global () {
+		PAMI::Memory::SharedMemoryManager *smm =
+				(PAMI::Memory::SharedMemoryManager *)shared_mm;
+		PAMI::Memory::HeapMemoryManager *hmm =
+				(PAMI::Memory::HeapMemoryManager *)heap_mm;
+		if (shared_mm != heap_mm) {
+			smm->PAMI::Memory::SharedMemoryManager::~SharedMemoryManager();
+		}
+		hmm->PAMI::Memory::HeapMemoryManager::~HeapMemoryManager();
+	}
 
       public:
 
