@@ -58,7 +58,7 @@ namespace PAMI
 	  heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
 	  if (personality.tSize() == 1) {
 		// There is no shared memory, so don't try. Fake using heap.
-		shared_mm = new (_shared_mm) PAMI::Memory::HeapMemoryManager();
+		shared_mm = heap_mm;
 	  } else {
 		shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(0, heap_mm);
 	  }
@@ -72,6 +72,9 @@ namespace PAMI
           char   * shmemfile = "/pami-global-shmem";
           size_t   bytes     = 1024*1024;
           size_t   pagesize  = 4096;
+
+	  // reserve space for 8 sub-mm's...
+	  bytes += PAMI::Memory::GenMemoryManager::MAX_META_SIZE() * 8;
 
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);

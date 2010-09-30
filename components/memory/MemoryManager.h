@@ -367,7 +367,7 @@ namespace PAMI
 		inline T_MMAlloc *find(size_t off) {
 			size_t x, y;
 			for (x = 0; x < _metahdr->numMetas(); ++x) {
-				_getMeta(x);
+				if (_metas[x] == NULL) break;
 				for (y = 0; y < MM_META_NUM(x); ++y) {
 					if (_metas[x][y].isFree()) continue;
 					if (_metas[x][y].offset() == off) {
@@ -383,7 +383,7 @@ namespace PAMI
 		inline T_MMAlloc *find(void *mem) {
 			size_t x, y;
 			for (x = 0; x < _metahdr->numMetas(); ++x) {
-				_getMeta(x);
+				if (_metas[x] == NULL) break;
 				for (y = 0; y < MM_META_NUM(x); ++y) {
 					if (_metas[x][y].isFree()) continue;
 					if (_metas[x][y].userMem() == mem) {
@@ -550,9 +550,26 @@ namespace PAMI
 	GenMemoryManager() : MemoryManager(),
 	_meta()
 	{
+#ifdef MM_DEBUG // set/unset in MemoryManager.h
+		_debug = (getenv("PAMI_MM_DEBUG") != NULL);
+		_num_allocs = 0;
+		_num_frees = 0;
+		_total_bytes = 0;
+		_curr_bytes = 0;
+		_max_bytes = 0;
+#endif // MM_DEBUG
 	}
 	virtual ~GenMemoryManager()
 	{
+#ifdef MM_DEBUG
+		if (_debug) {
+			fprintf(stderr, "\"%s\"(%p, %zd): %zd allocs, %zd frees, "
+					"total %zdb, curr %zdb, max %zdb\n",
+				_name, _base, _size,
+				_num_allocs, _num_frees,
+				_total_bytes, _curr_bytes, _max_bytes);
+		}
+#endif // MM_DEBUG
 		if (_base) {
 			if (_pmm->base()) {
 				_pmm->free(_base);
@@ -636,6 +653,16 @@ namespace PAMI
 			_meta.release();
 			m->waitDone();
 			*memptr = (uint8_t *)_base + m->offset();
+#ifdef MM_DEBUG
+			if (_debug) {
+				++_num_allocs;
+				_total_bytes += m->userSize();
+				_curr_bytes += m->userSize();
+				if (_curr_bytes > _max_bytes) {
+					_max_bytes = _curr_bytes;
+				}
+			}
+#endif // MM_DEBUG
 			return PAMI_SUCCESS;
 		}
 		// lock still held...
@@ -669,6 +696,16 @@ namespace PAMI
 		init_fn(*memptr, bytes, key, _attrs, cookie);
 	  }
 	  m->initDone();
+#ifdef MM_DEBUG
+	if (_debug) {
+		++_num_allocs;
+		_total_bytes += m->userSize();
+		_curr_bytes += m->userSize();
+		if (_curr_bytes > _max_bytes) {
+			_max_bytes = _curr_bytes;
+		}
+	}
+#endif // MM_DEBUG
 	  return PAMI_SUCCESS;
 	}
 
@@ -677,6 +714,16 @@ namespace PAMI
 		// for now, only top-level mm's actually free...
 		// i.e. SharedMemoryManager and HeapMemoryManager.
 		// and then only during job exit (dtor).
+#ifdef MM_DEBUG
+		size_t off = (size_t)mem - (size_t)_base;
+		MemoryManagerAlloc *m = _meta.find(off);
+		if (m) {
+			if (_debug) {
+				++_num_frees;
+				_curr_bytes -= m->userSize();
+			}
+		}
+#endif // MM_DEBUG
 	}
 
         ///
@@ -708,6 +755,14 @@ namespace PAMI
     private:
 	MemoryManagerMeta<MemoryManagerAlloc> _meta;
 	char _name[MMKEYSIZE];
+#ifdef MM_DEBUG
+	bool _debug;
+	size_t _num_allocs;
+	size_t _num_frees;
+	size_t _total_bytes;
+	size_t _curr_bytes;
+	size_t _max_bytes;
+#endif // MM_DEBUG
     }; // class GenMemoryManager
 
   }; // namespace Memory

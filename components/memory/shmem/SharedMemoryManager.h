@@ -77,7 +77,7 @@ namespace PAMI
         {
 #ifdef MM_DEBUG
 		if (_debug) {
-			fprintf(stderr, "SharedMemoryManager %zd allocs, %zd frees, "
+			fprintf(stderr, "SharedMemoryManager: %zd allocs, %zd frees, "
 					"total %zdb, curr %zdb, max %zdb\n",
 				_num_allocs, _num_frees,
 				_total_bytes, _curr_bytes, _max_bytes);
@@ -223,7 +223,7 @@ namespace PAMI
 		if (m) {
 #ifdef MM_DEBUG
 			if (_debug) {
-				--_num_allocs;
+				++_num_frees;
 				_curr_bytes -= m->userSize();
 			}
 #endif // MM_DEBUG

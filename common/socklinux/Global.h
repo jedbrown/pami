@@ -67,6 +67,8 @@ namespace PAMI
           char shmemfile[PAMI::Memory::MMKEYSIZE];
           snprintf (shmemfile, sizeof(shmemfile) - 1, "/unique-pami-global-shmem-file");
 
+	  bytes += PAMI::Memory::GenMemoryManager::MAX_META_SIZE() * 8;
+
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 

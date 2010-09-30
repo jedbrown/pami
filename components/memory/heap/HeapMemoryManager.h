@@ -49,8 +49,8 @@ namespace PAMI
 		// is all being reclaimed by the OS.
 #ifdef MM_DEBUG
 		if (_debug) {
-			fprintf(stderr, "HeapMemoryManager %zd allocs, %zd frees, "
-					"total %zdb\n",
+			fprintf(stderr, "HeapMemoryManager: "
+					"%zd allocs, %zd frees, total %zdb\n",
 				_num_allocs, _num_frees,
 				_total_bytes);
 		}
