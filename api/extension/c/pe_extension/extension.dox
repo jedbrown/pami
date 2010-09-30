@@ -125,7 +125,7 @@ pami_result_t PAMI_Context_cond_broadcast (pami_context_t context, pami_cond_t c
 pami_result_t PAMI_Context_cond_destroy (pami_context_t context, pami_cond_t cond);
 
 /**
- * \brief Function pointers fot the above member functions
+ * \brief Function pointers for the above functions
  */
 typedef pami_result_t (*mutex_getowner_fn) (pami_context_t context, unsigned long *owner);
 typedef pami_result_t (*cond_create_fn) (pami_context_t context, pami_cond_t *cond);

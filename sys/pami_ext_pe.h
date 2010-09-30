@@ -68,7 +68,7 @@ extern "C"
    * \defgroup comm_stat Communication statistics
    * \{
    *
-   * \ref PAMI_Client_query with \c PAMI_STATISTICS returns in
+   * \ref PAMI_Context_query with \c PAMI_CLIENT_STATISTICS returns in
    * \ref pami_attribute_value_t.chararray a pointer to \ref pami_statistics_t
    * whose memory is managed by PAMI internally.
    *
@@ -94,6 +94,20 @@ extern "C"
     int                count;       /**< Number of counters */
     pami_counter_t     counters[1]; /**< Array of counters  */
   } pami_statistics_t;
+
+  /** \} */ /* end of "comm_stat" group */
+
+  /**
+   * \defgroup trigger User-defined triggers
+   * \{
+   *
+   * \ref PAMI_Context_update with \c PAMI_CLIENT_TRIGGER passes in
+   * \ref pami_attribute_value_t.chararray as a pointer to \ref pami_trigger_t
+   * to add or remove a user-defined trigger.
+   *
+   * \c NULL as trigger_func in \ref pami_statistics_t indicates removal of the
+   * trigger with name specified in trigger_name.
+   */
 
   #define PAMI_VOID_CONTEXT  NULL   /**< PAMI context for indirect PAMI user */
 
