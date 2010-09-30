@@ -30,6 +30,7 @@
 #include "components/devices/shmem/ShmemPacket.h"
 #include "components/devices/shmem/ShmemWork.h"
 #include "components/devices/shmem/shaddr/NoShaddr.h"
+#include "components/devices/shmem/wakeup/WakeupNoop.h"
 #include "components/memory/MemoryAllocator.h"
 #include "util/queue/Queue.h"
 #include "util/queue/CircularQueue.h"
@@ -229,18 +230,21 @@ namespace PAMI
           _task = __global.mapping.task();
 
           // Initialize all fifos on the node
-          size_t i;
+          size_t i, j;
           _nfifos = _npeers * _ncontexts;
           char fifokey[PAMI::Memory::MMKEYSIZE];
 
-          for (i = 0; i < _nfifos; i++)
+          for (i = 0; i < _npeers; i++)
+          {
+            for (j = 0; j < _ncontexts; j++)
             {
-              snprintf (fifokey, PAMI::Memory::MMKEYSIZE - 1, "/device-shmem-client-%zu-fifo-%zu", _clientid, i);
-              _fifo[i].initialize (&mm, fifokey);
+              size_t fnum = (i * _ncontexts) + j;
+              snprintf (fifokey, PAMI::Memory::MMKEYSIZE - 1, "/device-shmem-client-%zu-fifo-%zu", _clientid, fnum);
+              _fifo[fnum].initialize (&mm, fifokey, _npeers, i);
             }
+          }
 
           // Initialize the reception fifo assigned to this context
-          //size_t fnum = _peer * _ncontexts + _contextid;
           _rfifo.initialize (_fifo[fnum(_peer, _contextid)]);
 
           // Initialize the local send queue for each fifo on the node
@@ -362,8 +366,6 @@ namespace PAMI
 
         inline bool activePackets (size_t fnum);
 
-
-
         T_Fifo _fifo[T_FifoCount];  //< Injection fifo array for all node contexts
         T_Fifo  _rfifo;             //< Fifo to use as the reception fifo
         size_t * _last_inj_sequence_id;
@@ -452,7 +454,6 @@ namespace PAMI
     size_t ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::advance ()
     {
       size_t events = 0;
-
       while (_rfifo.consumePacket(_dispatch))
         {
           events++;

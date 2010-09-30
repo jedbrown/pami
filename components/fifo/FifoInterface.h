@@ -113,7 +113,9 @@ namespace PAMI
           ///
           template <class T_MemoryManager>
           inline void initialize (T_MemoryManager * mm,
-                                  char            * key);
+                                  char            * key,
+                                  size_t            npeers,
+                                  size_t            pid);
 
           ///
           /// \brief Initialize a fifo by cloning a previously initialized fifo.
@@ -202,15 +204,17 @@ namespace PAMI
       template <class T_Fifo>
       template <class T_MemoryManager>
       void Fifo<T_Fifo>::initialize (T_MemoryManager * mm,
-                                     char            * key)
+                                     char            * key,
+                                     size_t            npeers,
+                                     size_t            pid)
       {
-        return static_cast<T_Fifo*>(this)->initialize_impl (mm, key);
+        static_cast<T_Fifo*>(this)->initialize_impl (mm, key, npeers, pid);
       }
 
       template <class T_Fifo>
       void Fifo<T_Fifo>::initialize (T_Fifo & fifo)
       {
-        return static_cast<T_Fifo*>(this)->initialize_impl (fifo);
+        static_cast<T_Fifo*>(this)->initialize_impl (fifo);
       }
 
       template <class T_Fifo>

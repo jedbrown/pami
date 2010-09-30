@@ -33,24 +33,24 @@ namespace PAMI
 {
   namespace Fifo
   {
-    template < class T_Packet, class T_Atomic, unsigned T_Size = 128 >
-      class WrapFifo : public PAMI::Fifo::Interface::Fifo <PAMI::Fifo::WrapFifo <T_Packet, T_Atomic,T_Size> >
+    template < class T_Packet, class T_Atomic, unsigned T_Size = 128, class T_Wakeup = Wakeup::Noop >
+      class WrapFifo : public PAMI::Fifo::Interface::Fifo <PAMI::Fifo::WrapFifo <T_Packet, T_Atomic,T_Size,T_Wakeup> >
     {
       public:
 
         typedef T_Packet Packet;
 
-        friend class Interface::Fifo <WrapFifo <T_Packet, T_Atomic, T_Size> >;
+        friend class Interface::Fifo <WrapFifo <T_Packet, T_Atomic, T_Size,T_Wakeup> >;
 
         static const size_t mask = T_Size - 1;
         static const size_t packet_header_size = T_Packet::header_size;
         static const size_t packet_payload_size = T_Packet::payload_size;
 
         inline WrapFifo () :
-          Interface::Fifo <WrapFifo <T_Packet, T_Atomic, T_Size> > (),
+          Interface::Fifo <WrapFifo <T_Packet, T_Atomic, T_Size,T_Wakeup> > (),
           _packet (NULL),
-          _active (NULL),
           _head (NULL),
+          _active (),
           _bounded_counter (),
           _last_packet_produced (0),
           _seq_num(0)
@@ -69,8 +69,11 @@ namespace PAMI
         // PAMI::Fifo::Fifo interface implementation
         // ---------------------------------------------------------------------
 
-        inline void initialize_impl (PAMI::Memory::MemoryManager * mm,
-            char                        * key)
+        template <class T_MemoryManager>
+        inline void initialize_impl (T_MemoryManager * mm,
+                                     char            * key,
+                                     size_t            npeers,
+                                     size_t            pid)
         {
           TRACE_ERR((stderr, ">> WrapFifo::initialize_impl(%p, \"%s\")\n", mm, key));
 
@@ -80,7 +83,13 @@ namespace PAMI
           _bounded_counter.init (mm, atomic_key);
           _bounded_counter.set_fifo_bounds(0, T_Size);
 
-          TRACE_ERR((stderr, "   WrapFifo::initialize_impl() after atomic init, before sync memalign\n"));
+          char wakeup_key[PAMI::Memory::MMKEYSIZE];
+          snprintf (wakeup_key, PAMI::Memory::MMKEYSIZE - 1, "%s-wakeup", key);
+          _wakeup = T_Wakeup::generate(npeers, wakeup_key);
+          
+          char active_key[PAMI::Memory::MMKEYSIZE];
+          snprintf (active_key, PAMI::Memory::MMKEYSIZE - 1, "%s-active", key);
+          _active.init (mm, active_key, T_Size, &_wakeup[pid]);
 
           // Allocate an array of packets with the provided memory manager
           // and key. The WrapFifo::packet_initialize() function is only
@@ -89,12 +98,12 @@ namespace PAMI
           // memalign until the first process has completed the memory
           // initialization.
           //
-          // Allocation is for N packets, N active flags, 1 head counter,
+          // Allocation is for N packets, 1 head counter,
           // and 1 wrap counter.
 
           mm->memalign ((void **)&_packet,
               sizeof(T_Packet),
-              (sizeof(T_Packet) + sizeof(size_t)) * T_Size +
+              sizeof(T_Packet) * T_Size +
               sizeof(size_t) * 2,
               key,
               WrapFifo::packet_initialize,
@@ -102,14 +111,13 @@ namespace PAMI
 
           TRACE_ERR((stderr, "   WrapFifo::initialize_impl() after sync memalign\n"));
 
-          _active = (size_t *) & _packet[T_Size];
-          _head = &_active[T_Size];
+          _head = (size_t *) & _packet[T_Size];
           *(_head) = 0;
 
           TRACE_ERR((stderr, "<< WrapFifo::initialize_impl(%p, \"%s\"), _active = %p, _head = %p, *_head = %zu\n", mm, key, _active, _head, *_head));
         };
 
-        inline void initialize_impl (WrapFifo<T_Packet, T_Atomic> & fifo)
+        inline void initialize_impl (WrapFifo & fifo)
         {
 
 
@@ -121,6 +129,10 @@ namespace PAMI
           _active = fifo._active;
           _head = fifo._head;
           _last_packet_produced = fifo._last_packet_produced;
+          
+          _wakeup = fifo._wakeup;
+          _active.init (fifo._active);
+          
 
           TRACE_ERR((stderr, "<< WrapFifo::initialize_impl(WrapFifo &), _packet = %p, _active = %p, _head = %p, *_head = %zu, _last_packet_produced = %zu\n", _packet, _active, _head, *_head, _last_packet_produced));
         };
@@ -211,10 +223,10 @@ namespace PAMI
               // any pending writes before the barrier, which could result in the
               // receiving process reading the 'active' attribute and then reading
               // stale packet header/payload data.
-              //mem_barrier();
-              mem_sync();
+              mem_barrier();
+              //mem_sync();
               _active[index] = 1;
-              //mem_barrier();
+              mem_barrier();
 
               _last_packet_produced = index;
               //_last_packet_produced = tail;
@@ -240,7 +252,7 @@ namespace PAMI
             const size_t head = *(this->_head);
             size_t index = head & WrapFifo::mask;
 
-            if (_active[index] == 1)
+            if (_active[index])
             {
               //TRACE_ERR((stderr, "   WrapFifo::consumePacket_impl(T_Consumer &), head = %zu, index = %zu (WrapFifo::mask = %p)\n", head, index, (void *)WrapFifo::mask));
               //dumpPacket(head);
@@ -302,12 +314,13 @@ namespace PAMI
         // Located in shared memory
         // -----------------------------------------------------------------
         T_Packet     * _packet;
-        size_t       * _active;
         size_t       * _head;
 
         // -----------------------------------------------------------------
         // Located in-place
         // -----------------------------------------------------------------
+        T_Wakeup * _wakeup;
+        typename T_Wakeup::Region _active;
         T_Atomic       _bounded_counter;
         size_t         _last_packet_produced;
         uint8_t       _seq_num;

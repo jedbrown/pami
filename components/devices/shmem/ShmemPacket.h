@@ -339,18 +339,19 @@ namespace PAMI
             _metasize       = metasize;
             _payload        = payload;
             _length         = length;
+            TRACE_ERR((stderr, "   MultiPacketWriter::init(%p,%zu,%p,%zu)\n", metadata, metasize, payload, length));
           };
 
           inline bool isDone ()
           {
-            //fprintf(stderr,"   MultiPacketWriter::isDone(), _length = %zu, return = %d\n", _length, (_length == 0));
+            TRACE_ERR((stderr,"   MultiPacketWriter::isDone(), this = %p, _length (%p) = %zu, return = %d\n", this, &_length, _length, (_length == 0)));
             return (_length == 0);
           };
 
           template <class T_Packet>
           inline bool produce_impl (T_Packet & packet)
           {
-            //fprintf(stderr,">> MultiPacketWriter::produce_impl(T_Packet), _length = %zu, payload_size = %zu\n", _length, T_Packet::payload_size);
+            TRACE_ERR((stderr,">> MultiPacketWriter::produce_impl(T_Packet), this = %p, _length = %zu, payload_size = %zu\n", this, _length, T_Packet::payload_size));
 
             if (_length >= T_Packet::payload_size)
               {
@@ -367,17 +368,17 @@ namespace PAMI
             Shmem::Packet<T_Packet>::writeHeader (packet, (uint8_t *) _metadata, _metasize);
             Shmem::Packet<T_Packet>::setDispatch (packet, _dispatch);
 
-            //fprintf(stderr,"<< MultiPacketWriter::produce_impl(T_Packet), _length = %zu\n", _length);
+            TRACE_ERR((stderr,"<< MultiPacketWriter::produce_impl(T_Packet), _length (%p) = %zu\n", &_length, _length));
             return true;
           };
 
           template <class T_Packet>
           inline bool produce_impl (T_Packet & packet, bool & done)
           {
-            //fprintf(stderr,"MultiPacketWriter::produce_impl(T_Packet,bool), _length = %zu\n", _length);
+            TRACE_ERR((stderr,"MultiPacketWriter::produce_impl(T_Packet,bool), _length = %zu\n", _length));
             bool result = produce_impl (packet);
             done = (_length == 0);
-            //fprintf(stderr,"MultiPacketWriter::produce_impl(T_Packet,bool), _length = %zu, result = %d, done = %d\n", _length, result, done);
+            TRACE_ERR((stderr,"MultiPacketWriter::produce_impl(T_Packet,bool), _length = %zu, result = %d, done = %d\n", _length, result, done));
             return result;
           };
 

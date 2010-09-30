@@ -27,7 +27,7 @@
 #include "components/devices/shmem/ShmemPacketMessage.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 namespace PAMI
@@ -99,7 +99,7 @@ namespace PAMI
 
             if (_device.isSendQueueEmpty (fnum))
               {
-                if (_device.fifo[fnum].producePacket(writer))
+                if (_device._fifo[fnum].producePacket(writer))
                   {
                     if (fn) fn (_context, cookie, PAMI_SUCCESS);
 
@@ -216,7 +216,7 @@ namespace PAMI
                 PacketIovecWriter<T_Niov> writer (_dispatch_id);
                 writer.init (metadata, metasize, iov);
                 bool result = _device._fifo[fnum].producePacket(writer);
-
+                
                 TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(\"immediate\"), return %d\n", result));
                 return result;
               }
@@ -242,15 +242,22 @@ namespace PAMI
 
             if (_device.isSendQueueEmpty (fnum))
               {
-                while ((_device._fifo[fnum].producePacket(writer) == true) && (writer._length != 0));
+                bool packet_was_produced = false;
+                do
+                {
+                  packet_was_produced = _device._fifo[fnum].producePacket(writer);
+                  TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), packet_was_produced = %d\n", packet_was_produced));
+                  TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), &writer = %p, writer.isDone() = %d\n", &writer, writer.isDone()));
 
-                if (writer._length == 0)
+                  if (writer.isDone())
                   {
                     if (fn) fn (_context, cookie, PAMI_SUCCESS);
 
                     TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return true\n"));
                     return true;
                   }
+
+                } while (packet_was_produced);
               }
 
             // Send queue is not empty or not all packets were written to the

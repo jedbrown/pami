@@ -22,7 +22,7 @@
 #include "math/Memcpy.x.h"
 
 #undef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x) // fprintf x
 
 namespace PAMI
 {
@@ -887,11 +887,11 @@ namespace PAMI
                     eager->freeRecvState (state);
                   }
 
-                TRACE_ERR((stderr, "<< dispatch_data_message(), origin task = %d ... receive completed\n", task));
+                TRACE_ERR((stderr, "<< EagerSimple::dispatch_data_message(), origin task = %d ... receive completed\n", task));
                 return 0;
               }
 
-            TRACE_ERR((stderr, "<< dispatch_data_message(), origin task = %d ... wait for more data\n", task));
+            TRACE_ERR((stderr, "<< EagerSimple::dispatch_data_message(), origin task = %d ... wait for more data\n", task));
             return 0;
           };
 
