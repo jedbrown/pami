@@ -269,9 +269,7 @@ public:
 	__GenericQueue(),
 	__Threads(),
 #endif
-#ifndef QUEUE_NO_ITER
 	__ThrIter(),
-#endif // !QUEUE_NO_ITER
 	__clientId(client),
 	__contextId(contextId),
 	__nContexts(num_ctx)
@@ -314,9 +312,7 @@ public:
 		__queues->__Threads.init(mm, key);
 		key[n] = 'm';
 		__queues->__GenericQueue.init(mm, key);
-#ifndef QUEUE_NO_ITER
 		__queues->__Threads.iter_init(&__ThrIter);
-#endif // !QUEUE_NO_ITER
 		return PAMI_SUCCESS;
 	}
 
@@ -339,46 +335,28 @@ public:
 		// just further delay the advance of real work when present.
 
 		//if (!__Threads.mutex()->tryAcquire()) continue;
-#ifndef QUEUE_NO_ITER
 		GenericThread *thr;
 		__queues->__Threads.iter_begin(&__ThrIter);
 		for (; __queues->__Threads.iter_check(&__ThrIter); __queues->__Threads.iter_end(&__ThrIter)) {
 			thr = (GenericThread *)__queues->__Threads.iter_current(&__ThrIter);
-#else // QUEUE_NO_ITER
-		GenericThread *thr, *nxtthr;
-		for (thr = (GenericThread *)__queues->__Threads.peekHead(); thr; thr = nxtthr) {
-			nxtthr = (GenericThread *)__queues->__Threads.nextElem(thr);
-#endif // QUEUE_NO_ITER
 			if (thr->getStatus() == PAMI::Device::Ready) {
 				++events;
 				pami_result_t rc = thr->executeThread(__context);
 				if (rc != PAMI_EAGAIN) {
 					// thr->setStatus(PAMI::Device::Complete);
-#ifndef QUEUE_NO_ITER
 					__queues->__Threads.iter_remove(&__ThrIter);
-#else // QUEUE_NO_ITER
-		__queues->__Threads.deleteElem(thr);
-#endif // QUEUE_NO_ITER
 					continue;
 				}
 			} else if (thr->getStatus() == PAMI::Device::OneShot) {
 				++events;
 				// thread is like completion callback, dequeue first.
-#ifndef QUEUE_NO_ITER
 				__queues->__Threads.iter_remove(&__ThrIter);
-#else // QUEUE_NO_ITER
-	__queues->__Threads.deleteElem(thr);
-#endif // QUEUE_NO_ITER
 				thr->executeThread(__context);
 				continue;
 			}
 			// This allows a thread to be "completed" by something else...
 			if (thr->getStatus() == PAMI::Device::Complete) {
-#ifndef QUEUE_NO_ITER
 				__queues->__Threads.iter_remove(&__ThrIter);
-#else // QUEUE_NO_ITER
-	__queues->__Threads.deleteElem(thr);
-#endif // QUEUE_NO_ITER
 				continue;
 			}
 		}
@@ -462,9 +440,7 @@ private:
 	};
 
 	GenericDeviceQueues *__queues;
-#ifndef QUEUE_NO_ITER
 	GenericDeviceWorkQueue::Iterator __ThrIter;
-#endif // !QUEUE_NO_ITER
 
 	pami_context_t __context; ///< context handle for this generic device
 	size_t __clientId;    ///< client ID for context
