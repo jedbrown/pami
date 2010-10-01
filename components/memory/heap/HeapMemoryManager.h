@@ -84,6 +84,8 @@ namespace PAMI
 		*memptr = (void *)(((uintptr_t)ptr + alignment - 1) &
 						~(alignment - 1));
 #endif
+		memset(*memptr, 0, bytes);	// needed for 1 proc/node, when
+						// simulating shared_mm...
 		if (init_fn)
 		{
 			init_fn(*memptr, bytes, key, _attrs, cookie);
