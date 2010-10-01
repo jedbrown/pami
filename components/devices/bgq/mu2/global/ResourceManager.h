@@ -2403,8 +2403,10 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
       if ( enableInterrupts )
 	{
 	  // Enable interrupts.
-	  Kernel_InjFifoInterrupts_t *fifoInterrupts =
-	    (Kernel_InjFifoInterrupts_t *)malloc( numFree * sizeof(Kernel_InjFifoInterrupts_t) );
+	  Kernel_InjFifoInterrupts_t *fifoInterrupts;
+          prc = __global.heap_mm->memalign((void **)&fifoInterrupts, 0,
+			numFree * sizeof(*fifoInterrupts));
+          PAMI_assertf(prc == PAMI_SUCCESS, "alloc of fifoInterrupts failed");
 	  PAMI_assertf( fifoInterrupts != NULL, "The heap is full.\n" );
 	  for (fifo=0; fifo<numFree; fifo++)
 	    {
@@ -2877,9 +2879,10 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
 	}
 
       // Enable interrupts.
-      Kernel_RecFifoInterrupts_t *fifoInterrupts =
-	(Kernel_RecFifoInterrupts_t *)malloc( numFree * sizeof(Kernel_RecFifoInterrupts_t) );
-      PAMI_assertf( fifoInterrupts != NULL, "The heap is full.\n" );
+      Kernel_RecFifoInterrupts_t *fifoInterrupts;
+      prc = __global.heap_mm->memalign((void **)&fifoInterrupts, 0,
+			numFree * sizeof(*fifoInterrupts));
+      PAMI_assertf(prc == PAMI_SUCCESS, "alloc of fifoInterrupts failed");
       for (fifo=0; fifo<numFree; fifo++)
 	{
 	  memset(&fifoInterrupts[fifo],0x00,sizeof(Kernel_RecFifoInterrupts_t));

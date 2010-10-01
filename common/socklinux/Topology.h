@@ -24,6 +24,13 @@
 #include "Mapping.h"
 #include "util/common.h"
 
+#include "components/memory/MemoryManager.h"
+#define MEM_ALLOC(ptr,size,err...) {\
+	pami_result_t _rc = PAMI::Memory::MemoryManager::heap_mm->memalign(\
+			(void **)&ptr, 0, size);	\
+	PAMI_assertf(_rc == PAMI_SUCCESS, err);	\
+}
+
 namespace PAMI {
         class Topology : public Interface::Topology<PAMI::Topology> {
                 static PAMI::Mapping *mapping;
@@ -310,8 +317,8 @@ namespace PAMI {
 			memcpy(this, topo, sizeof(*topo));
 			// right now, the only type that allocates additional storage is PAMI_LIST_TOPOLOGY
 			if (topo->__type == PAMI_LIST_TOPOLOGY) {
-				topo_ranklist = (pami_task_t *)malloc(__size * sizeof(*topo_ranklist));
-				PAMI_assertf(topo_ranklist, "Out of memory in Topology clone ctor");
+				MEM_ALLOC(topo_ranklist,__size * sizeof(*topo_ranklist),
+						"Out of memory in Topology clone ctor");
 				memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
 			}
 		}
@@ -658,7 +665,7 @@ namespace PAMI {
                                         return true;
                                         break;
                                 case PAMI_LIST_TOPOLOGY:
-                                        rl = (pami_task_t *)malloc(sizeof(*rl));
+                                        MEM_ALLOC(rl, sizeof(*rl), "out of memory");
                                         __type = PAMI_LIST_TOPOLOGY;
                                         *rl = topo_rank;
                                         topo_ranklist = rl;
@@ -683,7 +690,7 @@ namespace PAMI {
                                         }
                                         break;
                                 case PAMI_LIST_TOPOLOGY:
-                                        rl = (pami_task_t *)malloc(__size * sizeof(*rl));
+                                        MEM_ALLOC(rl, __size * sizeof(*rl), "out of memory");
                                         rp = rl;
                                         __type = PAMI_LIST_TOPOLOGY;
                                         size_t r;
@@ -789,7 +796,7 @@ namespace PAMI {
                                 // guess at size: smallest topology.
                                 s = (__size < other->__size ?
                                                 __size : other->__size);
-                                rl = (pami_task_t *)malloc(s * sizeof(*rl));
+                                MEM_ALLOC(rl, s * sizeof(*rl), "out of memory");
                                 k = 0;
                                 for (i = 0; i < __size; ++i) {
                                         for (j = 0; j < other->__size; ++j) {
@@ -916,7 +923,7 @@ namespace PAMI {
                         case PAMI_LIST_TOPOLOGY:
                                 /// \todo keep this from being O(n^2)
                                 s = __size;
-                                rl = (pami_task_t *)malloc(s * sizeof(*rl));
+                                MEM_ALLOC(rl, s * sizeof(*rl), "out of memory");
                                 k = 0;
                                 for (i = 0; i < s; ++i) {
                                         if (other->isRankMember(topo_list(i))) {
@@ -956,7 +963,7 @@ namespace PAMI {
                                 if (isRankMember(other->topo_rank)) {
                                         // convert range into list...
                                         s = __size;
-                                        rl = (pami_task_t *)malloc(s * sizeof(*rl));
+                                	MEM_ALLOC(rl, s * sizeof(*rl), "out of memory");
                                         k = 0;
                                         for (i = topo_first; i < other->topo_rank; ++i) {
                                                 rl[k++] = i;
@@ -985,7 +992,7 @@ namespace PAMI {
                                 break;
                         case PAMI_LIST_TOPOLOGY:
                                 s = __size;
-                                rl = (pami_task_t *)malloc(s * sizeof(*rl));
+                                MEM_ALLOC(rl, s * sizeof(*rl), "out of memory");
                                 k = 0;
                                 for (i = 0; i < s; ++i) {
                                         if (topo_list(i) != other->topo_rank) {

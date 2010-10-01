@@ -38,6 +38,7 @@
 #undef  mem_barrier
 #define mem_barrier() mbar()
 
+#ifdef __cplusplus
 ///
 /// \brief Template specialization for size_t copies.
 ///
@@ -56,5 +57,6 @@ void Type<size_t>::copy (size_t * dst, size_t * src)
     for (i=0; i<(N%(sizeof(size_t))); i++) d[i] = s[i];
   }
 };
+#endif // __cplusplus
 
 #endif // __pami_arch_a2qpx_h__

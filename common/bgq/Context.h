@@ -481,7 +481,10 @@ namespace PAMI
         {
 
             PAMI::Topology *local_master_topo = (PAMI::Topology *) _world_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
-            uint64_t *invec = (uint64_t *)malloc((local_master_topo->size()) * sizeof(uint64_t));
+            uint64_t *invec;
+	    pami_result_t rc = __global.heap_mm->memalign((void **)&invec, 0,
+				local_master_topo->size() * sizeof(uint64_t));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "out of memory for invec");
             for (size_t i = 0; i < local_master_topo->size(); ++i)  invec[i] = 0ULL;
 
             if (__global.useshmem())
