@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/collectives/reduce.c
- * \brief ???
+ * \brief simple reduce on world geometry
  */
 
 #include "../pami_util.h"

@@ -42,6 +42,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   pami_xfer_t          barrier;
   volatile unsigned    bar_poll_flag = 0;
+  volatile unsigned    newbar_poll_flag = 0;
 
   /* Bcast variables */
   size_t               bcast_num_algorithm[2];
@@ -226,7 +227,7 @@ int main(int argc, char*argv[])
 
   /*  Set up sub geometry barrier */
   newbarrier.cb_done   = cb_done;
-  newbarrier.cookie    = (void*) & bar_poll_flag;
+  newbarrier.cookie    = (void*) & newbar_poll_flag;
   newbarrier.algorithm = newbar_algo[0];
 
   int nalg;
@@ -258,13 +259,13 @@ int main(int argc, char*argv[])
                 }
 
               fflush(stdout);
-              blocking_coll(context, &newbarrier, &bar_poll_flag);
+              blocking_coll(context, &newbarrier, &newbar_poll_flag);
 
               for (i = 1; i <= BUFSIZE; i *= 2)
                 {
                   long long dataSent = i;
                   int          niter = 100;
-                  blocking_coll(context, &newbarrier, &bar_poll_flag);
+                  blocking_coll(context, &newbarrier, &newbar_poll_flag);
                   ti = timer();
 
                   for (j = 0; j < niter; j++)
@@ -276,7 +277,7 @@ int main(int argc, char*argv[])
                     }
 
                   tf = timer();
-                  blocking_coll(context, &newbarrier, &bar_poll_flag);
+                  blocking_coll(context, &newbarrier, &newbar_poll_flag);
                   usec = (tf - ti) / (double)niter;
 
                   if (task_id == root)
@@ -291,7 +292,6 @@ int main(int argc, char*argv[])
                 }
             }
 
-          blocking_coll(context, &barrier, &bar_poll_flag);
           blocking_coll(context, &barrier, &bar_poll_flag);
           fflush(stderr);
         }
