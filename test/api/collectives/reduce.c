@@ -12,8 +12,6 @@
  */
 
 #include "../pami_util.h"
-#include "math/math_coremath.h" // special datatype size structs
-
 
 //define this if you want to validate the data for unsigned sums
 #define CHECK_DATA
@@ -150,31 +148,6 @@ const char * dt_array_str[] =
   "PAMI_LOC_2DOUBLE"
 };
 
-unsigned elemsize_array[] =
-{
-  sizeof(unsigned int),       // PAMI_UNSIGNED_INT,
-  sizeof(double),             // PAMI_DOUBLE,
-  sizeof(char),               // PAMI_SIGNED_CHAR,
-  sizeof(unsigned char),      // PAMI_UNSIGNED_CHAR,
-  sizeof(short),              // PAMI_SIGNED_SHORT,
-  sizeof(unsigned short),     // PAMI_UNSIGNED_SHORT,
-  sizeof(int),                // PAMI_SIGNED_INT,
-  sizeof(long long),          // PAMI_SIGNED_LONG_LONG,
-  sizeof(unsigned long long), // PAMI_UNSIGNED_LONG_LONG,
-  sizeof(float),              // PAMI_FLOAT,
-  sizeof(long double),        // PAMI_LONG_DOUBLE,
-  sizeof(unsigned int),       // PAMI_LOGICAL,
-  (2 * sizeof(float)),        // PAMI_SINGLE_COMPLEX,
-  (2 * sizeof(double)),       // PAMI_DOUBLE_COMPLEX
-  // The following are from math/math_coremath.h structures
-  // \todo Correct or not?  At least they match internal math...
-  sizeof(int32_int32_t),      // PAMI_LOC_2INT,
-  sizeof(int16_int32_t),      // PAMI_LOC_SHORT_INT,
-  sizeof(fp32_int32_t),       // PAMI_LOC_FLOAT_INT,
-  sizeof(fp64_int32_t),       // PAMI_LOC_DOUBLE_INT,
-  sizeof(fp32_fp32_t),        // PAMI_LOC_2FLOAT,
-  sizeof(fp64_fp64_t),        // PAMI_LOC_2DOUBLE,
-};
 
 unsigned ** alloc2DContig(int nrows, int ncols)
 {
@@ -205,7 +178,12 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
           ibuf[i] = i;
         }
     }
-  else memset(buf,  task_id,  count * elemsize_array[dt]);
+  else
+    {
+      size_t sz;
+      PAMI_Dt_query (dt_array[dt], &sz);
+      memset(buf,  task_id,  count * sz);
+    }
 }
 
 int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks)
@@ -223,6 +201,9 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks)
             {
               fprintf(stderr, "Check(%d) failed rbuf[%d] %u != %u\n", count, i, rbuf[1], i*num_tasks);
               err = -1;
+#ifndef FULL_TEST
+              return err;
+#endif
             }
         }
     }
@@ -376,6 +357,8 @@ int main(int argc, char*argv[])
 
       for (i = 0, j = DT_UNSIGNED_SHORT; i < OP_COUNT; i++)validTable[i][j] = 0;
 
+      for (i = 0, j = DT_FLOAT;          i < OP_COUNT; i++)validTable[i][j] = 0;
+
       for (i = 0, j = DT_LOGICAL;        i < OP_COUNT; i++)validTable[i][j] = 0;
 
       for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)validTable[i][j] = 0;
@@ -440,6 +423,8 @@ int main(int argc, char*argv[])
       reduce.cmd.xfer_reduce.rtype     = PAMI_BYTE;
       reduce.cmd.xfer_reduce.rtypecount = 0;
 
+
+
       for (dt = 0; dt < dt_count; dt++)
         for (op = 0; op < op_count; op++)
           {
@@ -450,7 +435,9 @@ int main(int argc, char*argv[])
 
                 for (i = 1; i <= COUNT; i *= 2)
                   {
-                    long long dataSent = i * elemsize_array[dt];
+                    size_t sz;
+                    PAMI_Dt_query (dt_array[dt], &sz);
+                    long long dataSent = i * sz;
                     int niter;
 
                     if (dataSent < CUTOFF)

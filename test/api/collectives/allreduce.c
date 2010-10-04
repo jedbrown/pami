@@ -19,7 +19,7 @@
 #define FULL_TEST
 #define COUNT      65536
 #define MAXBUFSIZE COUNT*16
-#define NITERLAT   100
+#define NITERLAT   1000
 #define NITERBW    10
 #define CUTOFF     65536
 
