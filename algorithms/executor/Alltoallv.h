@@ -11,8 +11,17 @@
 #include "algorithms/connmgr/ConnectionManager.h"
 #include "algorithms/interfaces/NativeInterface.h"
 
+// #define CONNECTION_ID_SHFT
+#ifdef CONNECTION_ID_SHFT
+#define SHFT_BITS_PHASE 10
+#define SHFT_BITS_SRC   10
+#define SHFT_BITS      (SHFT_BITS_PHASE+SHFT_BITS_SRC)
+#endif
+
 #define MAX_CONCURRENT 32
 #define MAX_PARALLEL 20
+
+#define EXECUTOR_DEBUG(x) // fprintf x
 
 namespace CCMI
 {
@@ -45,22 +54,23 @@ namespace CCMI
       };
 
       template <class T_Alltoall_type>
-      inline void setAlltoallVec(T_Alltoall_type *xfer, void *sbuf, void *scounts, void *sdisps,
+      inline void setAlltoallVec(T_Alltoall_type *xfer, int *buflen, void *sbuf, void *scounts, void *sdisps, 
                                    void *rbuf, void *rcounts, void *rdisps)
       {
          COMPILE_TIME_ASSERT(0==1);
       }
 
       template <>
-      inline void setAlltoallVec<pami_alltoall_t> (pami_alltoall_t *xfer, void *sbuf, void *scounts, void *sdisps,                                   void *rbuf, void *rcounts, void *rdisps)
+      inline void setAlltoallVec<pami_alltoall_t> (pami_alltoall_t *xfer, int *buflen, void *sbuf, void *scounts, void *sdisps,                                   void *rbuf, void *rcounts, void *rdisps)
       {
          *((char **)rbuf)   = xfer->rcvbuf;
          *((char **)sbuf)   = xfer->sndbuf;
+         *buflen            = xfer->rtypecount;
          return;
       }
 
       template <>
-      inline void setAlltoallVec<pami_alltoallv_t> (pami_alltoallv_t *xfer,
+      inline void setAlltoallVec<pami_alltoallv_t> (pami_alltoallv_t *xfer, int *buflen,
            void *sbuf, void *scounts, void *sdisps, void *rbuf, void *rcounts, void *rdisps)
       {
         *((char **)sbuf)      = xfer->sndbuf;
@@ -69,11 +79,12 @@ namespace CCMI
         *((char **)rbuf)      = xfer->rcvbuf;
         *((size_t **)rdisps)  = xfer->rdispls;
         *((size_t **)rcounts) = xfer->rtypecounts;
+        *buflen               = 0;
         return;
       }
 
       template <>
-      inline void setAlltoallVec<pami_alltoallv_int_t> (pami_alltoallv_int_t *xfer,
+      inline void setAlltoallVec<pami_alltoallv_int_t> (pami_alltoallv_int_t *xfer, int *buflen, 
             void *sbuf, void *scounts, void *sdisps, void *rbuf, void *rcounts, void *rdisps)
       {
         *((char **)sbuf)   = xfer->sndbuf;
@@ -82,6 +93,8 @@ namespace CCMI
         *((char **)rbuf)   = xfer->rcvbuf;
         *((int **)rdisps)  = xfer->rdispls;
         *((int **)rcounts) = xfer->rtypecounts;
+        *buflen            = 0;
+
         return;
       }
 
@@ -112,6 +125,7 @@ namespace CCMI
         int                 _maxsrcs;
 
         unsigned            _parindex;
+        unsigned            _myindex;
 
         int                 _senddone;
         int                 _recvdone [MAX_PARALLEL];
@@ -123,6 +137,8 @@ namespace CCMI
         CollHeaderData      _mrdata;
         pami_multicast_t    _mlsend;
         pami_multicast_t    _mrsend;
+        unsigned            _lconnid;
+        unsigned            _rconnid;
 
         typedef typename AlltoallVecType<T_Type>::base_type basetype;
 
@@ -141,7 +157,7 @@ namespace CCMI
             _comm(-1),
             _sbuf(NULL),
             _rbuf(NULL),
-            _curphase(0),
+            _curphase(-1),
             _nphases(0),
             _startphase(0),
             _sdisps(NULL),
@@ -163,7 +179,7 @@ namespace CCMI
             _comm(comm),
             _sbuf(NULL),
             _rbuf(NULL),
-            _curphase(0),
+            _curphase(-1),
             _nphases(0),
             _startphase(0),
             _partopology(),
@@ -220,23 +236,41 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%p>Executor::AlltoallvExec::setSchedule()\n", this));
           _comm_schedule = ct;
 
-          _nphases    = _native->numranks() - 1;
+          // should get the number of phases from a real schedule 
+          _nphases    = _native->numranks()-1 + _native->numranks() % 2;
           _startphase = 0;
-          _curphase   = 0;
+          _curphase   = -1;
           _lphase     = 0;
           for (int i = 0; i < MAX_PARALLEL; ++i) _rphase[i]     = 0;
+
+          _myindex  = _gtopology->rank2Index(_native->myrank());
+          _parindex = getPartnerIndex(0, _native->numranks(), _myindex);
 
           unsigned connection_id = (unsigned) -1;
           if (_connmgr)
             connection_id = _connmgr->getConnectionId(_comm, (unsigned)-1, 0, (unsigned) - 1, (unsigned) - 1);
+
+#ifdef CONNECTION_ID_SHFT
+           _lconnid = (connection_id << SHFT_BITS) + (_myindex << SHFT_BITS_SRC);
+           _rconnid = (connection_id << SHFT_BITS) + (_myindex << SHFT_BITS_SRC);
+#else
+           _lconnid = connection_id;
+           _rconnid = connection_id;
+#endif
+          
         }
 
         void setConnectionID (unsigned cid)
         {
 
+#ifdef CONNECTION_ID_SHFT
           //Override the connection id from the connection manager
-          _mlsend.connection_id = cid;
-          _mrsend.connection_id = cid;
+          _lconnid = (cid << SHFT_BITS) + (_myindex << SHFT_BITS_SRC);
+          _rconnid = (cid << SHFT_BITS) + (_myindex << SHFT_BITS_SRC);
+#else
+          _lconnid = cid;
+          _rconnid = cid;
+#endif
 
         }
 
@@ -251,21 +285,23 @@ namespace CCMI
 
         void setVectors(T_Type *xfer)
         {
-           setAlltoallVec<T_Type> (xfer, _sbuf, _sdisps, _scounts, _rbuf, _rdisps, _rcounts);
+           setAlltoallVec<T_Type> (xfer, &_buflen, &_sbuf, &_scounts, &_sdisps, &_rbuf, &_rcounts,  &_rdisps); 
+           EXECUTOR_DEBUG((stderr, "setVector gets called, rbuf = %x, rdisp = %x, _rounts = %x\n", _rbuf, _rdisps, _rcounts);)
         }
 
         void  updateVectors(T_Type *xfer)
         {
-           setAlltoallVec<T_Type> (xfer, _sbuf, _sdisps, _scounts, _rbuf, _rdisps, _rcounts);
+           setAlltoallVec<T_Type> (xfer, &_buflen, &_sbuf, &_scounts, &_sdisps, &_rbuf, &_rcounts,  &_rdisps);
+           EXECUTOR_DEBUG((stderr, "updateVector gets called, rbuf = %x, rdisp = %x, _rounts = %x\n", _rbuf, _rdisps, _rcounts);)
         }
 
-        /// \todo: this should be moved to the schedule
-        unsigned getPartnerIndex(unsigned uphase)
+        /// \todo: this should be moved to the schedule 
+        unsigned getPartnerIndex(unsigned uphase, unsigned utasks, unsigned umyindex)
         {
 
           int phase   = (int)uphase;
-          int tasks   = _native->numranks();
-          int myindex = _native->myrank();
+          int tasks   = (int)utasks;
+          int myindex = (int)umyindex;
 
           int partner;
           if(tasks & 1)
@@ -281,16 +317,19 @@ namespace CCMI
              if (partner == myindex)
                partner = tasks;
            }
-	  return partner;
+          EXECUTOR_DEBUG((stderr, "phase %d, myindex %d, partner %d\n", phase, myindex, partner);)
+	  return (unsigned)partner;
         }
 
         size_t getSendLength(unsigned index)
         {
+           EXECUTOR_DEBUG((stderr, "index = %d, scounts = %p, buflen = %d\n", index, _scounts, _buflen);)
            return (_scounts) ? _scounts[index] : _buflen;
         }
 
         size_t getRecvLength(unsigned index)
         {
+           EXECUTOR_DEBUG((stderr, "index = %d, rcounts = %p, buflen = %d\n", index, _rcounts, _buflen);)
            return (_rcounts) ? _rcounts[index] : _buflen;
         }
 
@@ -308,9 +347,10 @@ namespace CCMI
         {
           size_t sleng = getSendLength(index);
           size_t sdisp = getSendDisp(index);
-          _pwq.configure (NULL, _rbuf + sdisp, sleng, 0);
+          _pwq.configure (NULL, _sbuf + sdisp, sleng, 0);
           _pwq.reset();
           _pwq.produceBytes(sleng);
+          EXECUTOR_DEBUG((stderr, "send index = %d, disp = %d, leng = %d\n", index, sdisp, sleng);)
           return &_pwq;
         }
 
@@ -318,9 +358,10 @@ namespace CCMI
         {
           size_t rleng = getRecvLength(index);
           size_t rdisp = getRecvDisp(index);
-          _rpwq[phase - _curphase].configure (NULL, _rbuf + rdisp, rleng, 0);
-          _rpwq[phase - _curphase].reset();
-          return &_rpwq[phase - _curphase];
+          _rpwq[phase % MAX_PARALLEL].configure (NULL, _rbuf + rdisp, rleng, 0);
+          _rpwq[phase % MAX_PARALLEL].reset();
+          EXECUTOR_DEBUG((stderr, "receive index = %d, phase = %d, disp = %d, leng = %d\n", index, phase, rdisp, rleng);)
+          return &_rpwq[phase % MAX_PARALLEL];
         }
 
         //------------------------------------------
@@ -350,11 +391,14 @@ namespace CCMI
         {
           TRACE_MSG ((stderr, "<%p>Executor::AlltoallvExec::notifySendDone()\n", cookie));
           AlltoallvExec<T_ConnMgr, T_Type> *exec =  (AlltoallvExec<T_ConnMgr, T_Type> *) cookie;
+
+          EXECUTOR_DEBUG((stderr, "notifySendDone for phase %d\n", exec->_curphase);)
           exec->_senddone = 1;
           if (exec->_recvdone[exec->_curphase % MAX_PARALLEL] == 1) {
             exec->_recvdone[exec->_curphase % MAX_PARALLEL] = 0;
             exec->_senddone = 0;
             exec->_curphase ++;
+            exec->_parindex =  exec->getPartnerIndex(exec->_curphase, exec->_native->numranks(), exec->_myindex);
             exec->sendNext();
           }
         }
@@ -365,11 +409,14 @@ namespace CCMI
         {
           TRACE_MSG ((stderr, "<%p>Executor::AlltoallvExec::notifyRecvDone()\n", cookie));
           AlltoallvExec<T_ConnMgr, T_Type> *exec =  (AlltoallvExec<T_ConnMgr, T_Type> *) cookie;
+
+          EXECUTOR_DEBUG((stderr, "notifyRecvDone for phase %d\n", exec->_curphase);)
           exec->_recvdone[exec->_curphase % MAX_PARALLEL] = 1;
           if (exec->_senddone == 1) {
             exec->_recvdone[exec->_curphase % MAX_PARALLEL] = 0;
             exec->_senddone = 0;
             exec->_curphase ++;
+            exec->_parindex =  exec->getPartnerIndex(exec->_curphase, exec->_native->numranks(), exec->_myindex);
             exec->sendNext();
           }
         }
@@ -380,7 +427,9 @@ namespace CCMI
         {
           TRACE_MSG ((stderr, "<%p>Executor::AlltoallvExec::notifyRecvDone()\n", cookie));
           AlltoallvExec<T_ConnMgr, T_Type> *exec =  (AlltoallvExec<T_ConnMgr, T_Type> *) cookie;
-          exec->sendNext();
+          EXECUTOR_DEBUG((stderr, "notifyAvailRecvDone for phase %d\n", exec->_curphase);)
+          if (exec->_curphase >= exec->_startphase)
+             exec->sendNext();
         }
 
 
@@ -396,12 +445,9 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr,T_Type>::start ()
 {
   TRACE_ADAPTOR((stderr, "<%p>Executor::AlltoallvExec::start() count%d\n", this, _buflen));
 
-  _curphase  = _startphase;
-  _lphase    = _curphase + 1;
+  _lphase = _curphase  = _startphase;
 
-  // what is myrank ? in world geometry or in this geometry ?
-  unsigned myindex = _native->myrank();
-  memcpy(_rbuf + getRecvDisp(myindex), _sbuf + getSendDisp(myindex), getRecvLength(myindex));
+  memcpy(_rbuf + getRecvDisp(_myindex), _sbuf + getSendDisp(_myindex), getRecvLength(_myindex));
 
   sendNext ();
 }
@@ -409,14 +455,15 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr,T_Type>::start ()
 template <class T_ConnMgr, class T_Type>
 inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
 {
+
+  EXECUTOR_DEBUG((stderr, "sendNext - curphase = %d, startphase = %d, and nphases = %d\n", _curphase, _startphase, _nphases);)
   if (_curphase == _startphase + _nphases) {
     if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
     return;
   }
 
   // setup destination topology
-  _parindex         = getPartnerIndex(_curphase);
-  if (_parindex == (unsigned)-1) { // skip this phase
+  if (_parindex == (unsigned)-1) { // skip this phase 
     _lphase   ++;
     CCMI_assert(_rphase[_curphase % MAX_PARALLEL] == 0);
     _curphase ++;
@@ -424,14 +471,15 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
       if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
       return;
     }
-    _parindex         = getPartnerIndex(_curphase);
+    _parindex         = getPartnerIndex(_curphase, _native->numranks(), _myindex);
   }
   new (&_partopology) PAMI::Topology(_gtopology->index2Rank(_parindex));
 
   // send buffer available msg to left neighbor
-  if (_lphase == _curphase+1) {
+  if (_lphase == _curphase) {
     _lphase ++;
     _mldata._phase             = _curphase+1;
+    _mldata._count             = -1;
     _mlsend.src_participants   = (pami_topology_t *) & _selftopology;
     _mlsend.dst_participants   = (pami_topology_t *) & _partopology;
     _mlsend.cb_done.function   = NULL;
@@ -439,7 +487,14 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
     _mlsend.src                = NULL;
     _mlsend.dst                = NULL;
     _mlsend.bytes              = 0;
+#ifdef CONNECTION_ID_SHFT
+    _mlsend.connection_id      = _lconnid + 1;
+#else
+    _mlsend.connection_id      = _lconnid;
+#endif
     _native->multicast(&_mlsend);
+
+    EXECUTOR_DEBUG((stderr, "phase %d, send buffer available msg to %d\n", _curphase, _partopology.index2Rank(0));)
   }
 
   if (_rphase[_curphase % MAX_PARALLEL] == _curphase+1) { // buffer available at the right neighbor
@@ -453,7 +508,14 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
     _mrsend.src                = (pami_pipeworkqueue_t *)getSendPWQ(_parindex);
     _mrsend.dst                = NULL;
     _mrsend.bytes              = getSendLength(_parindex);
+#ifdef CONNECTION_ID_SHFT
+    _mrsend.connection_id      = _rconnid;
+#else
+    _mrsend.connection_id      = _rconnid;
+#endif
     _native->multicast(&_mrsend);
+  
+    EXECUTOR_DEBUG((stderr, "phase %d, send data msg to %d\n", _curphase, _partopology.index2Rank(0));)
   }
 
   return;
@@ -471,15 +533,16 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::notifyRecv
 
   if ((int)cdata->_count == -1) {
     CCMI_assert(cdata->_phase - _curphase < MAX_PARALLEL);
-    unsigned pindex;
-    pindex = getPartnerIndex(cdata->_phase);
+    unsigned pindex  = getPartnerIndex(cdata->_phase-1,_native->numranks(),_myindex);
     CCMI_assert(pindex != (unsigned) -1);
+    EXECUTOR_DEBUG((stderr, "phase = %d, src = %d, expected %d\n", cdata->_phase-1, src, _gtopology->index2Rank(pindex));)
     CCMI_assert(src == _gtopology->index2Rank(pindex));
-    _rphase[cdata->_phase % MAX_PARALLEL] = cdata->_phase;
+    _rphase[(cdata->_phase-1) % MAX_PARALLEL] = cdata->_phase;
     *pwq = NULL;
     cb_done->function   = notifyAvailRecvDone;
     cb_done->clientdata = this;
   } else {
+    EXECUTOR_DEBUG((stderr, "data phase = %d, src = %d, expected %d\n", _curphase, src, _gtopology->index2Rank(_parindex));)
     CCMI_assert(cdata->_count == 0);
     CCMI_assert(src == _gtopology->index2Rank(_parindex));
     CCMI_assert(cdata->_phase == _curphase);

@@ -240,7 +240,7 @@ namespace CCMI
 		              cmgr,
 		              cb_exec_done,
 			      (PAMI_GEOMETRY_CLASS *)g,
-                              &(((pami_xfer_t *)cmd)->cmd));
+                              (void *)cmd);
 
 	      co->setXfer((pami_xfer_t*)cmd);
 	      co->setFlag(LocalPosted);
@@ -317,6 +317,8 @@ namespace CCMI
                               NULL,
                               PAMI_BYTE,
                               cdata->_count);
+              if (cmgr == NULL)
+                a_composite->executor().setConnectionID(key);
 
 	      co->setFlag(EarlyArrival);
 	      co->setFactory (factory);

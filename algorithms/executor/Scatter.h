@@ -87,6 +87,10 @@ namespace CCMI
 
         int                 _comm;
         unsigned            _root;
+
+        unsigned            _rootindex;
+        unsigned            _myindex;
+
         int                 _buflen;
         char                *_sbuf;
         char                *_rbuf;
@@ -197,6 +201,9 @@ namespace CCMI
           //CCMI_assert(_comm_schedule != NULL);
           //_comm_schedule->getDstUnionTopology (&_dsttopology);
 
+          _myindex    = _gtopology->rank2Index(_native->myrank());
+          _rootindex  = _gtopology->rank2Index(_root);
+
           unsigned connection_id = (unsigned) -1;
           if (_connmgr)
             connection_id = _connmgr->getConnectionId(_comm, _root, 0, (unsigned) - 1, (unsigned) - 1);
@@ -254,8 +261,8 @@ namespace CCMI
             {
               size_t buflen = _native->numranks() * len;
               _tmpbuf = (char *) malloc(buflen);
-              memcpy (_tmpbuf, src+_native->myrank()*len, (_native->numranks() - _native->myrank())*len);
-              memcpy (_tmpbuf+(_native->numranks() - _native->myrank())*len  ,src, _native->myrank() * len);
+              memcpy (_tmpbuf, src+_myindex*len, (_native->numranks() - _myindex)*len);
+              memcpy (_tmpbuf+(_native->numranks() - _myindex)*len  ,src, _myindex * len);
             }
           }
           else if (_nphases > 1)
@@ -354,7 +361,6 @@ template <class T_ConnMgr, class T_Schedule, typename T_Scatter_type>
 inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>::sendNext ()
 {
   unsigned ndst = 0;
-  unsigned myindex  = _gtopology->rank2Index(_native->myrank());
   unsigned size     = _gtopology->size();
 
   CCMI_assert(_comm_schedule != NULL);
@@ -362,10 +368,10 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
   if (_curphase == _startphase + _nphases)
   {
      // all parents copy from send buffer to application destination buffer
-     if (_disps && _sndcounts)
-       memcpy(_rbuf, _sbuf+_disps[myindex], _buflen);
-     else if (_native->myrank() == _root)
-       memcpy(_rbuf, _sbuf+myindex * _buflen, _buflen);
+     if (_disps && _sndcounts) 
+       memcpy(_rbuf, _sbuf+_disps[_myindex], _buflen);
+     else if (_native->myrank() == _root) 
+       memcpy(_rbuf, _sbuf+_myindex * _buflen, _buflen);
      else if (_nphases > 1)
        memcpy(_rbuf, _tmpbuf, _buflen);
 
@@ -405,7 +411,7 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
     else
     {
       buflen   = _dstlens[i] * _buflen;
-      offset   = ((dstindex + size - myindex)% size) * _buflen;
+      offset   = ((dstindex + size - _myindex)% size) * _buflen;
     }
 
     char    *tmpbuf   = _tmpbuf + offset;

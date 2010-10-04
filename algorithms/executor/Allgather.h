@@ -15,6 +15,13 @@
 #define MAX_CONCURRENT 32
 #define MAX_PARALLEL 20
 
+#if defined EXECUTOR_DEBUG
+#undef EXECUTOR_DEBUG
+#define EXECUTOR_DEBUG(x) // fprintf x
+#else
+#define EXECUTOR_DEBUG(x) // fprintf x
+#endif
+
 namespace CCMI
 {
   namespace Executor
@@ -51,6 +58,8 @@ namespace CCMI
         char                *_rbuf;
         char                *_tmpbuf;
 
+        unsigned            _myindex;
+
         PhaseRecvStr        *_mrecvstr;
 
         int                 _curphase;
@@ -58,6 +67,8 @@ namespace CCMI
         int                 _startphase;
         int                 _donecount;
 
+        unsigned            _connection_id;
+        
         int                 _maxsrcs;
         pami_task_t         _dstranks [MAX_CONCURRENT];
         unsigned            _dstlens  [MAX_CONCURRENT];
@@ -116,8 +127,8 @@ namespace CCMI
         virtual ~AllgatherExec ()
         {
            /// Todo: convert this to allocator ?
-           if (_maxsrcs) free (_mrecvstr);
-           if ((unsigned)_nphases != _native->numranks() - 1) free (_tmpbuf); // what about the multiport case ???
+           if (_maxsrcs) free (_mrecvstr); 
+           free (_tmpbuf); 
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -158,15 +169,22 @@ namespace CCMI
             _msend[i].roles         = -1U;
           }
 
-          unsigned connection_id = (unsigned) -1;
+          _myindex    = _gtopology->rank2Index(_native->myrank());
+
           if (_connmgr)
-            connection_id = _connmgr->getConnectionId(_comm, (unsigned)-1, 0, (unsigned) - 1, (unsigned) - 1);
+            _connection_id = _connmgr->getConnectionId(_comm, (unsigned)-1, 0, (unsigned) - 1, (unsigned) - 1);
+
+          for (int i=0; i<MAX_CONCURRENT; ++i)
+            _msend[i].connection_id = _connection_id;
+
         }
 
         void setConnectionID (unsigned cid)
         {
 
           CCMI_assert(_comm_schedule != NULL);
+
+          _connection_id = cid;
 
           //Override the connection id from the connection manager
           for (int i=0; i<MAX_CONCURRENT; ++i)
@@ -215,6 +233,10 @@ namespace CCMI
         {
           TRACE_MSG ((stderr, "<%p>Executor::AllgatherExec::notifySendDone()\n", cookie));
           AllgatherExec<T_ConnMgr, T_Schedule> *exec =  (AllgatherExec<T_ConnMgr, T_Schedule> *) cookie;
+
+          EXECUTOR_DEBUG((stderr, "AllgatherExec::notifySendDone, curphase = %d, donecount = %d, rcv donecount = %d, total recv = %d\n",
+                  exec->_curphase, exec->_donecount, exec->_mrecvstr[exec->_curphase].donecount,
+                   exec->_mrecvstr[exec->_curphase].partnercnt); )
           exec->_donecount --;
           if (exec->_donecount == 0) {
             exec->_mrecvstr[exec->_curphase].donecount -= exec->_mrecvstr[exec->_curphase].partnercnt;
@@ -233,9 +255,12 @@ namespace CCMI
         {
           TRACE_MSG ((stderr, "<%p>Executor::AllgatherExec::notifyRecvDone()\n", cookie));
           PhaseRecvStr  *mrecv = (PhaseRecvStr *) cookie;
-          mrecv->donecount ++;
           AllgatherExec<T_ConnMgr, T_Schedule> *exec =  mrecv->exec;
-          if (mrecv->donecount == 0){
+
+          EXECUTOR_DEBUG((stderr, "AllgatherExec::notifyRecvDone, curphase = %d, donecount = %d, rcv donecount = %d, total recv =%d\n", exec->_curphase, exec->_donecount, mrecv->donecount, mrecv->partnercnt); )
+
+          mrecv->donecount ++; 
+          if (mrecv->donecount == 0){ 
             exec->_curphase  ++;
             exec->_donecount  = 0;
             exec->sendNext();
@@ -275,15 +300,43 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
   CCMI_assert(_comm_schedule != NULL);
   CCMI_assert(_donecount  == 0);
 
-  if (_curphase < _startphase + _nphases) {
+  unsigned srcindex, dstindex;
+  unsigned dist;
 
-    unsigned ndsts=0, nsrcs=0;
-    // It appears that the getList method will not always initialize ndsts & nsrcs
-    _comm_schedule->getList(_curphase, &_srcranks[0], nsrcs, &_dstranks[0], ndsts, &_srclens[0], &_dstlens[0]);
-    CCMI_assert(nsrcs == ndsts);
+  EXECUTOR_DEBUG((stderr, "curphase = %d, startphase = %d, nphase = %d\n", _curphase, _startphase, _nphases);)
+
+  if (_curphase < _startphase + _nphases) {
+    
+    unsigned ndsts, nsrcs;
+    // _comm_schedule->getList(_curphase, &_srcranks[0], nsrcs, &_dstranks[0], ndsts, &_srclens[0], &_dstlens[0]);
+    _comm_schedule->getRList(_nphases - _curphase - 1, &_srcranks[0], nsrcs, &_srclens[0]);
+    _donecount = ndsts = nsrcs;
+
+    if (_mrecvstr[_curphase].exec == NULL) {
+      CCMI_assert(_mrecvstr[_curphase].donecount == 0);
+      for (unsigned i = 0; i < nsrcs; ++i) {
+        size_t buflen       = _srclens[i] * _buflen;
+        srcindex            = _gtopology->rank2Index(_srcranks[i]);
+        dist                = (srcindex + _native->numranks() - _myindex)% _native->numranks();
+        RecvStruct *recvstr = &_mrecvstr[_curphase].recvstr[i];
+        recvstr->pwq.configure (NULL, _tmpbuf + dist * _buflen, buflen, 0);
+        recvstr->pwq.reset();
+        recvstr->subsize = buflen;
+        recvstr->rank    = _srcranks[i];
+      }
+      _mrecvstr[_curphase].partnercnt = nsrcs;
+      _mrecvstr[_curphase].exec       = this;
+    }
 
     for (unsigned i = 0; i < nsrcs; ++i) {
-      new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);
+      srcindex     = _gtopology->rank2Index(_srcranks[i]);
+      dist         = (srcindex + _native->numranks() - _myindex)% _native->numranks();
+      dstindex     = (_myindex + _native->numranks() - dist) % _native->numranks();
+
+      _dstranks[i] = _gtopology->index2Rank(dstindex);
+      _dstlens[i]  = _srclens[i];
+
+      new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);    
 
       size_t buflen = _dstlens[i] * _buflen;
       _pwq[i].configure (NULL, _tmpbuf, buflen, 0);
@@ -302,30 +355,11 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
       _native->multicast(&_msend[i]);
     }
 
-    if (_mrecvstr[_curphase].exec == NULL) {
-      CCMI_assert(_mrecvstr[_curphase].donecount == 0);
-      for (unsigned i = 0; i < nsrcs; ++i) {
-        size_t buflen       = _srclens[i] * _buflen;
-        unsigned myindex    = _gtopology->rank2Index(_native->myrank());
-        unsigned srcindex   = _gtopology->rank2Index(_srcranks[i]);
-        unsigned dist       = (srcindex + _native->numranks() - myindex)% _native->numranks();
-        RecvStruct *recvstr = &_mrecvstr[_curphase].recvstr[i];
-        recvstr->pwq.configure (NULL, _tmpbuf + dist * _buflen, buflen, 0);
-        recvstr->pwq.reset();
-        recvstr->subsize = buflen;
-        recvstr->rank    = _srcranks[i];
-      }
-      _mrecvstr[_curphase].partnercnt = nsrcs;
-      _mrecvstr[_curphase].exec       = this;
-    }
-
-    _donecount = ndsts;
-
     return;
   }
 
-  memcpy (_rbuf + (_native->myrank()+1) * _buflen, _tmpbuf, (_native->numranks() - _native->myrank()-1)* _buflen);
-  memcpy (_rbuf, _tmpbuf+(_native->numranks() - _native->myrank())*_buflen, _native->myrank() * _buflen);
+  memcpy (_rbuf + ((_myindex+1)%_native->numranks()) * _buflen, _tmpbuf, (_native->numranks() - _myindex-1)* _buflen);
+  memcpy (_rbuf, _tmpbuf+(_native->numranks() - _myindex)*_buflen, _myindex * _buflen);
 
   if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
   return;
@@ -341,7 +375,9 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::notifyRecv
 
   CollHeaderData *cdata = (CollHeaderData*) &info;
 
-  unsigned srcindex=0;
+  EXECUTOR_DEBUG((stderr, "recvd from %d, phase = %d, count = %d\n", src, cdata->_phase, cdata->_count);)
+
+  unsigned sindex=0;
   unsigned nsrcs;
 
   if (_mrecvstr[cdata->_phase].exec == NULL) {
@@ -350,16 +386,17 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::notifyRecv
     _comm_schedule->getRList(_nphases - cdata->_phase - 1, &_srcranks[0], nsrcs, &_srclens[0]);
     for (unsigned i = 0; i < nsrcs; ++i) {
       size_t buflen       = _srclens[i] * _buflen;
-      unsigned myindex    = _gtopology->rank2Index(_native->myrank());
-      srcindex            = _gtopology->rank2Index(_srcranks[i]);
-      unsigned dist       = (srcindex + _native->numranks() - myindex)% _native->numranks();
-      RecvStruct *recvstr = &_mrecvstr[_curphase].recvstr[i];
+      EXECUTOR_DEBUG((stderr, "phase  = %d, buflen = %d, _srclens[%d] = %d, _srcranks[%d] = %d\n", cdata->_phase, _buflen, i, _srclens[i], i, _srcranks[i]);)
+      unsigned srcindex   = _gtopology->rank2Index(_srcranks[i]);
+      unsigned dist       = (srcindex + _native->numranks() - _myindex)% _native->numranks();
+      RecvStruct *recvstr = &_mrecvstr[cdata->_phase].recvstr[i];
       recvstr->pwq.configure (NULL, _tmpbuf + dist * _buflen, buflen, 0);
       recvstr->pwq.reset();
       recvstr->subsize = buflen;
       recvstr->rank    = _srcranks[i];
       if (_srcranks[i] == src) {
-        srcindex = i;
+        sindex = i;
+        // fprintf(stderr, "found index %d, for src %d\n", i, src);
       }
     }
     _mrecvstr[cdata->_phase].exec       = this;
@@ -367,14 +404,15 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::notifyRecv
   } else {
     for (int i = 0; i < _mrecvstr[cdata->_phase].partnercnt; ++i)
       if (src == _mrecvstr[cdata->_phase].recvstr[i].rank) {
-        srcindex = i;
+        sindex = i;
         break;
       }
   }
 
   //CCMI_assert(myindex < nsrcs);
 
-  *pwq = &_mrecvstr[cdata->_phase].recvstr[srcindex].pwq;
+  *pwq = &_mrecvstr[cdata->_phase].recvstr[sindex].pwq; 
+  // fprintf(stderr, "phase %d, sindex %d, src pwq address %p\n", cdata->_phase, sindex, *pwq);
 
   cb_done->function = notifyRecvDone;
   cb_done->clientdata = &_mrecvstr[cdata->_phase];

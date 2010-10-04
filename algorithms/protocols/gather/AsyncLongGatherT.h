@@ -23,9 +23,9 @@
 
 #if defined DEBUG
 #undef DEBUG
-#define DEBUG(x) // fprintf x
+#define DEBUG(x)  // fprintf x
 #else
-#define DEBUG(x) // fprintf x
+#define DEBUG(x)  // fprintf x
 #endif
 
 namespace CCMI
@@ -54,17 +54,6 @@ namespace CCMI
       public:
 
         ///
-        /// \brief For long message gather, the done call back to be called
-        ///        when 0-byte broadcast finishes
-        ///
-        static void cb_bcast_done(pami_context_t context, void *me, pami_result_t err)
-        {
-          AsyncLongGatherT * composite = (AsyncLongGatherT *) me;
-
-          composite->getGatherExecutor().start();
-        }
-
-        ///
         /// \brief Constructor
         ///
         AsyncLongGatherT () {};
@@ -87,13 +76,14 @@ namespace CCMI
           _bcast_executor.setRoot(a_xfer->root);
           _bcast_executor.setSchedule (&_bcast_schedule, 0);
           _bcast_executor.setBuffers (&_bbuf[0],&_bbuf[0],1); // Need to confirm that 0-byte message gets delivered
-          _bcast_executor.setDoneCallback (cb_bcast_done, this);
+          _bcast_executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
           COMPILE_TIME_ASSERT(sizeof(_gather_schedule) >= sizeof(T_Gather_Schedule));
           create_gather_schedule(&_gather_schedule, sizeof(_gather_schedule), a_xfer->root, native, geometry);
           // how do we reuse the sequence number as connection id ???
           _gather_executor.setRoot(a_xfer->root);
           _gather_executor.setSchedule(&_gather_schedule);
+          _gather_executor.setVectors(a_xfer);
           _gather_executor.setBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount);
           _gather_executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
@@ -227,20 +217,22 @@ namespace CCMI
             {
 
               DEBUG((stderr, "key = %d, found early arrival in unexpected queue\n", key);)
-              CCMI_assert(_native->myrank() == a_xfer->root);
               CCMI_assert(co->getFlags() & EarlyArrival);
 
               EADescriptor *ead = (EADescriptor *) co->getEAQ()->peekTail();
               CCMI_assert(ead != NULL);
-              CCMI_assert(ead->bytes == 0);
               CCMI_assert(ead->cdata._root == a_xfer->root);
 
               co->setXfer((pami_xfer_t*)cmd);
               co->setFlag(LocalPosted);
 
               a_composite = co->getComposite();
-              // update send buffer pointer and, at root, receive buffer pointers
-              a_composite->getGatherExecutor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount);
+              // update send buffer pointer and, at root, receive buffer pointers  
+              a_composite->getGatherExecutor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount); 
+              a_composite->getGatherExecutor().updatePWQ(); 
+
+              // setVectors is not needed since there is no early arrival at root for long gather
+              // a_composite->getGatherExecutor().setVectors(a_xfer); 
 
               geometry->asyncCollectivePostQ().pushTail(co);
 
@@ -250,10 +242,11 @@ namespace CCMI
                 ead->flag = EANODATA;
                 _ead_allocator.returnObject(ead);
 
+                a_composite->getGatherExecutor().setDoneCallback(gather_exec_done, co);
                 a_composite->getGatherExecutor().start();
               }
 	    }
-	    /// not found posted CollOp object, create a new one and
+	    /// not found early arrival CollOp object, create a new one and
 	    /// queue it in active queue
 	    else
 	    {
@@ -261,7 +254,7 @@ namespace CCMI
 
               co = _free_pool.allocate(key);
 	      pami_callback_t  cb_exec_done;
-	      cb_exec_done.function   = gather_exec_done;
+	      cb_exec_done.function   = bcast_exec_done;
               cb_exec_done.clientdata = co;
 
 	      a_composite = new (co->getComposite())
@@ -270,11 +263,11 @@ namespace CCMI
 		              cb_exec_done,
 			      (PAMI_GEOMETRY_CLASS *)g,
                               (void *)cmd);
-
+   
 	      co->setXfer((pami_xfer_t*)cmd);
 	      co->setFlag(LocalPosted);
 	      co->setFactory(this);
-              co->setGeometry((PAMI_GEOMETRY_CLASS *)g);
+              co->setGeometry(geometry);
 	      //Use the Key as the connection ID
 	      if (cmgr == NULL) {
                 a_composite->getBroadcastExecutor().setConnectionID(key);
@@ -321,10 +314,10 @@ namespace CCMI
             C *cmgr = factory->_cmgr;
             unsigned key = getKey (cdata->_root, conn_id, geometry, (ConnectionManager::BaseConnectionManager **)&cmgr);
             CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
-              (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().findAndDelete(key);
+              (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().find(key);
 
             if (factory->_native->myrank() == cdata->_root) {
-               DEBUG((stderr, "key = %d,  existing root co\n", key);)
+               DEBUG((stderr, "key = %d,  existing root co %p\n", key, co);)
                a_composite = (T_Composite *) co->getComposite();
 
                a_composite->getGatherExecutor().notifyRecv(peer, *info, (PAMI::PipeWorkQueue **)rcvpwq, cb_done);
@@ -350,7 +343,7 @@ namespace CCMI
 
               co = factory->_free_pool.allocate(key);
               pami_callback_t cb_exec_done;
-              cb_exec_done.function = gather_exec_done;
+              cb_exec_done.function = bcast_exec_done;
               cb_exec_done.clientdata = co;
 
               a_composite = new (co->getComposite())
@@ -368,7 +361,7 @@ namespace CCMI
               co->getEAQ()->pushTail(ead);
               co->setFlag(EarlyArrival);
               co->setFactory (factory);
-
+              co->setGeometry(geometry);
               //Use the Key as the connection ID
               if (cmgr == NULL) {
                 a_composite->getBroadcastExecutor().setConnectionID(key);
@@ -400,8 +393,6 @@ namespace CCMI
             unsigned     flag = co->getFlags();
             if (flag & LocalPosted)
             {
-              pami_xfer_t *xfer = co->getXfer();
-
               EADescriptor *ead = (EADescriptor *) co->getEAQ()->popTail();
               AsyncLongGatherFactoryT *factory = (AsyncLongGatherFactoryT *)co->getFactory();
 
@@ -417,7 +408,8 @@ namespace CCMI
                 CCMI_assert(ead == NULL);
               }
 
-              co->getComposite()->getGatherExecutor().start();
+              co->getComposite()->getGatherExecutor().setDoneCallback(gather_exec_done, co);
+              co->getComposite()->getGatherExecutor().start(); 
             }
             else if (flag & EarlyArrival)
             {

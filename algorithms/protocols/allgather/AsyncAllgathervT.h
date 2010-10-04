@@ -302,7 +302,7 @@ namespace CCMI
 	  static void cb_async
 	    (const pami_quad_t     * info,
 	     unsigned                count,
-	     unsigned                conn_id,
+	     unsigned                connection_id,
 	     size_t                  peer,
 	     size_t                  sndlen,
 	     void                  * arg,
@@ -310,6 +310,13 @@ namespace CCMI
 	     pami_pipeworkqueue_t ** rcvpwq,
 	     pami_callback_t       * cb_done)
 	  {
+
+#ifdef CONNECTION_ID_SHFT
+            unsigned conn_id = connection_id >> SHFT_BITS;
+#else
+            unsigned conn_id = connection_id;
+#endif
+
 	    AsyncAllgathervFactoryT *factory = (AsyncAllgathervFactoryT *) arg;
 	    //fprintf(stderr, "%d: <%#.8X>Allgatherv::AsyncAllgathervFactoryT::cb_async() connid %d\n",factory->_native->myrank(), (int)factory, conn_id);
 
@@ -356,6 +363,9 @@ namespace CCMI
 			      cb_exec_done,
 			      geometry,
                               (void *)&a_xfer);
+
+              if (cmgr == NULL)
+                a_composite->executor().setConnectionID(key);
 
 	      co->setFlag(EarlyArrival);
 	      co->setFactory (factory);

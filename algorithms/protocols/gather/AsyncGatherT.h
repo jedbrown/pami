@@ -142,8 +142,8 @@ namespace CCMI
           _executor.setSchedule (&_schedule);
 
           DEBUG((stderr, "In GatherExec ctor, root = %d, sbuf = %x, rbuf = %x, bytes = %d\n", g_xfer->root, g_xfer->sndbuf, g_xfer->rcvbuf, bytes);)
-          _executor.setBuffers (g_xfer->sndbuf,g_xfer->rcvbuf, bytes);
           _executor.setVectors (g_xfer);
+          _executor.setBuffers (g_xfer->sndbuf,g_xfer->rcvbuf, bytes);
           _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
         }
@@ -383,6 +383,9 @@ namespace CCMI
 	      co->setFlag(EarlyArrival);
 	      co->setFactory (factory);
               co->setGeometry(geometry);
+
+              if (cmgr == NULL) 
+                a_composite->executor().setConnectionID(key);
 
 	      geometry->asyncCollectiveUnexpQ().pushTail(co);
 	    }

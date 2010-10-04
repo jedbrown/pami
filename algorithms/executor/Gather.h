@@ -14,6 +14,8 @@
 #define MAX_CONCURRENT 32
 #define MAX_PARALLEL 20
 
+#define EXECUTOR_DEBUG(x) // fprintf x
+
 namespace CCMI
 {
   namespace Executor
@@ -88,9 +90,13 @@ namespace CCMI
         int                 _comm;
         unsigned            _root;
         int                 _buflen;
+        int                 _totallen;
         char                *_sbuf;
         char                *_rbuf;
         char                *_tmpbuf;
+
+        unsigned            _myindex;
+        unsigned            _rootindex;
 
         PAMI::PipeWorkQueue _pwq;
         RecvStruct          *_mrecvstr;
@@ -99,7 +105,8 @@ namespace CCMI
         int                 _nphases;
         int                 _startphase;
         int                 _donecount;
-
+        int                 _mynphases;
+        
         int                 _maxsrcs;
         pami_task_t         _srcranks [MAX_CONCURRENT];
         unsigned            _srclens  [MAX_CONCURRENT];
@@ -128,6 +135,7 @@ namespace CCMI
             _nphases(0),
             _startphase(0),
             _donecount(-1),
+            _mynphases(0),
             _disps(NULL),
             _rcvcounts(NULL)
         {
@@ -151,6 +159,7 @@ namespace CCMI
             _nphases(0),
             _startphase(0),
             _donecount (-1),
+            _mynphases(0),
             _dsttopology(),
             _selftopology(mf->myrank()),
             _gtopology(gtopology),
@@ -177,8 +186,8 @@ namespace CCMI
         virtual ~GatherExec ()
         {
            /// Todo: convert this to allocator ?
-           if (_maxsrcs) free (_mrecvstr);
-           free (_tmpbuf);
+           if (_maxsrcs) free (_mrecvstr); 
+           if (!(_disps && _rcvcounts)) free (_tmpbuf);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -196,8 +205,11 @@ namespace CCMI
           _comm_schedule->init (_root, CCMI::Schedule::GATHER, _startphase, _nphases, _maxsrcs);
           CCMI_assert(_maxsrcs <= MAX_CONCURRENT);
 
-          _nphases = _comm_schedule->getMyNumPhases();
-          CCMI_assert(_nphases <= MAX_PARALLEL);
+          _mynphases = _comm_schedule->getMyNumPhases();
+          CCMI_assert(_mynphases <= MAX_PARALLEL);
+
+          _myindex    = _gtopology->rank2Index(_native->myrank());
+          _rootindex  = _gtopology->rank2Index(_root);
 
           unsigned connection_id = (unsigned) -1;
           if (_connmgr)
@@ -208,7 +220,7 @@ namespace CCMI
           // todo: this is clearly not scalable, need to use rendezvous similar to
           // that in allgather
           if (_maxsrcs)
-            _mrecvstr = (RecvStruct *) malloc (_maxsrcs * _nphases * sizeof(RecvStruct)) ;
+            _mrecvstr = (RecvStruct *) malloc (_maxsrcs * _mynphases * sizeof(RecvStruct)) ;
         }
 
         void setConnectionID (unsigned cid)
@@ -235,27 +247,44 @@ namespace CCMI
           _rbuf   = dst;
         }
 
+        void updatePWQ()
+        {
+          _pwq.configure (NULL, _sbuf, _buflen, 0);
+          _pwq.reset();
+          _pwq.produceBytes(_buflen);
+        }
+
         void  setBuffers (char *src, char *dst, int len)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::setInfo() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
 
-          _buflen = len;
-          _sbuf = src;
-          _rbuf = dst;
+          _buflen   = len;
+          _sbuf     = src;
+          _rbuf     = dst;
 
           // ship data length info in the header for async protocols
           _mdata._count = len;
 
           CCMI_assert(_comm_schedule != NULL);
-          // setup PWQ
           if (_native->myrank() == _root)
           {
             _donecount = _native->numranks();
-            size_t buflen = _native->numranks() * len;
-            _tmpbuf = (char *) malloc(buflen);
+            size_t buflen = 0;
+            if (_disps && _rcvcounts) {
+              for (unsigned i = 0; i < _native->numranks() ; ++i) 
+              {
+                buflen += _rcvcounts[i];
+                if (_rcvcounts[i] == 0 && i != _rootindex) _donecount--;
+              }
+              _buflen = buflen;
+              _tmpbuf = _rbuf;
+            } else { 
+              buflen = _native->numranks() * len;
+              _tmpbuf = (char *) malloc(buflen);
+            }
           }
-          else
-          {
+          else // setup PWQ
+          { 
 
             unsigned ndst;
             _comm_schedule->getLList(_startphase, &_srcranks[0], ndst, &_srclens[0]);
@@ -266,7 +295,7 @@ namespace CCMI
 
             _donecount        = _srclens[0];
             size_t  buflen    = _srclens[0]  * _buflen;
-            if (_nphases > 1)
+            if (_mynphases > 1) 
             {
               _tmpbuf = (char *)malloc(buflen);
               _pwq.configure (NULL, _tmpbuf, buflen, 0);
@@ -278,7 +307,7 @@ namespace CCMI
             _pwq.reset();
             _pwq.produceBytes(buflen);
 
-            _mdata._count = buflen;
+            _totallen = _srclens[0];
 
           }
           //TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::setInfo() _pwq %p, bytes available %zu/%zu\n", this, &_pwq, _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
@@ -322,6 +351,8 @@ namespace CCMI
           TRACE_MSG ((stderr, "<%p>Executor::GatherExec::notifyRecvDone()\n", cookie));
           RecvStruct    *mrecv = (RecvStruct *) cookie;
           GatherExec<T_ConnMgr, T_Schedule, T_Gather_type> *exec =  mrecv->exec;
+
+          EXECUTOR_DEBUG((stderr, "GatherExec::notifyRecvDone, donecount = %d, subsize = %d\n", exec->_donecount, mrecv->subsize);)
           exec->_donecount -= mrecv->subsize;
           if (exec->_donecount == 0) exec->sendNext();
         }
@@ -339,8 +370,11 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
 {
   TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::start() count%d\n", this, _buflen));
 
-  // Nothing to gather? We're done.
-  if ((_buflen == 0) && _cb_done && !(_disps && _rcvcounts))
+  EXECUTOR_DEBUG((stderr, "GatherExec::start, mynphases = %d, buflen = %d, donecount = %d\n",
+        _mynphases, _buflen, _donecount);)
+  
+  // Nothing to gather? We're done. What if in Gatherv ?
+  if ((_buflen == 0) && _cb_done)
     {
       _cb_done (NULL, _clientdata, PAMI_SUCCESS);
       return;
@@ -348,23 +382,17 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
 
   _curphase  = _startphase;
 
-  --_donecount;
   if (_native->myrank() == _root)
   {
-    if (_disps && _rcvcounts)
-      memcpy(_rbuf + _disps[_root], _sbuf, _buflen);
+    if (_disps && _rcvcounts) 
+      memcpy(_rbuf + _disps[_rootindex], _sbuf, _rcvcounts[_rootindex]);
     else
-      memcpy(_rbuf + _root * _buflen, _sbuf, _buflen);
+      memcpy(_rbuf + _rootindex * _buflen, _sbuf, _buflen);
+  }
+  else if (_mynphases > 1)  memcpy(_tmpbuf, _sbuf, _buflen);
+  --_donecount; 
 
-    if (_donecount == 0) sendNext();
-  }
-  else
-  {
-    if (_nphases == 1)
-      sendNext ();
-    else
-      memcpy(_tmpbuf, _sbuf, _buflen);
-  }
+  if (_donecount == 0) sendNext();
 }
 
 template <class T_ConnMgr, class T_Schedule, typename T_Gather_type>
@@ -373,15 +401,19 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   CCMI_assert(_comm_schedule != NULL);
   CCMI_assert(_donecount  == 0);
 
+  // TODO: needs to add noncontiguous datatype handling
   if (_native->myrank() == _root)
   {
-    if (_root != 0) {
-      memcpy (_rbuf + (_native->myrank()+1)* _buflen, _tmpbuf+_buflen, (_native->numranks() - _native->myrank()-1)*_buflen);
-      memcpy (_rbuf, _tmpbuf+(_native->numranks() - _native->myrank())*_buflen, _native->myrank() * _buflen);
-    } else{
-      memcpy (_rbuf, _tmpbuf, _native->myrank() * _buflen);
-    }
 
+    if (!(_disps && _rcvcounts)) {
+      if (_rootindex != 0) {
+        memcpy (_rbuf + ((_myindex+1)%_native->numranks())* _buflen, _tmpbuf+_buflen, (_native->numranks() - _myindex-1)*_buflen);
+        memcpy (_rbuf, _tmpbuf+(_native->numranks() - _myindex)*_buflen, _myindex * _buflen);
+      } else{
+        memcpy (_rbuf, _tmpbuf, _myindex * _buflen);
+      }
+    }
+  
     if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
     return;
   }
@@ -393,8 +425,9 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   _msend.cb_done.clientdata = _clientdata;
   _msend.src                = (pami_pipeworkqueue_t *) & _pwq;
   _msend.dst                = NULL;
-  _msend.bytes              = _mdata._count;
-  _mdata._count             = _buflen;
+  _msend.bytes              = _totallen * _buflen;
+
+  EXECUTOR_DEBUG((stderr, "GatherExec::sendNext() to %d, totalcnt = %d, buflen = %d, multicast address %p, %p\n", _dsttopology.index2Rank(0), _totallen, _buflen, &_msend, &_mdata);)
   _native->multicast(&_msend);
 }
 
@@ -418,7 +451,6 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
 
   CCMI_assert(i < nsrcs);
 
-  unsigned myindex  = _gtopology->rank2Index(_native->myrank());
   unsigned srcindex = _gtopology->rank2Index(_srcranks[i]);
   unsigned size     = _gtopology->size();
 
@@ -428,16 +460,16 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
   if (_disps && _rcvcounts) {
     CCMI_assert(_native->myrank() == _root);
     _srclens[i] = 1;
-    buflen    =  _rcvcounts[srcindex] * _buflen;
-    offset    =  _disps[srcindex] * _buflen;
-  } else if (0 && (unsigned)_nphases == _native->numranks() - 1) {
+    buflen    =  _rcvcounts[srcindex];
+    offset    =  _disps[srcindex];
+  } else if (0 && (unsigned)_mynphases == _native->numranks() - 1) {
     _srclens[i] = 1;
     buflen   = _buflen;
     offset   = srcindex * _buflen;
   } else {
     buflen   = _srclens[i] * _buflen;
-    offset   = ((srcindex + size - myindex)% size) * _buflen; // will root be affected by this ?
-  }
+    offset   = ((srcindex + size - _myindex)% size) * _buflen; // will root be affected by this ?
+  } 
   // CCMI_assert (buflen == cdata->_count);
 
   char    *tmpbuf   = _tmpbuf + offset;
@@ -448,6 +480,8 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
   // (*pwq)->produceBytes(buflen);
   _mrecvstr[ind].subsize  = _srclens[i];
   _mrecvstr[ind].exec     = this;
+
+  EXECUTOR_DEBUG((stderr, "GatherExec::notifyRecv - src = %d, offset = %d, lenth = %d, phase = %d\n", src, offset, buflen, cdata->_phase);)
 
   cb_done->function    = notifyRecvDone;
   cb_done->clientdata  = &_mrecvstr[ind];
