@@ -278,6 +278,7 @@ namespace PAMI
 		}
 
 		virtual ~MemoryManagerMeta() {
+			if (!_metahdr) return;
 			acquire();
 			size_t x, y;
 			for (x = 0; x < _metahdr->numMetas(); ++x) {
