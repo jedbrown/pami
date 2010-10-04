@@ -25,9 +25,19 @@ int main (int argc, char ** argv)
 
   configuration.name = PAMI_CLIENT_NUM_CONTEXTS;
   result = PAMI_Client_query(client, &configuration, 1);
-  size_t num = configuration.value.intval;
+  size_t max = configuration.value.intval;
 
-  fprintf (stderr, "PAMI_CLIENT_NUM_CONTEXTS = %zu\n", num);
+  size_t num = max;
+  if (getenv("PAMI_DEVICE")) {
+	fprintf(stderr, "PAMI_DEVICE = %s\n", getenv("PAMI_DEVICE"));
+  } else {
+	fprintf(stderr, "PAMI_DEVICE = D\n");
+  }
+  if (getenv("NUM_CONTEXTS")) {
+	num = strtoul(getenv("NUM_CONTEXTS"), NULL, 0);
+	// if (num > max) num = max;
+  }
+  fprintf (stderr, "PAMI_CLIENT_NUM_CONTEXTS = %zu, using %zu\n", max, num);
   size_t tmp = num;
 
   result = PAMI_Context_createv (client, &configuration, 0, context, num);
