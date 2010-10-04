@@ -572,7 +572,7 @@ public:
             OPDONE,
           } collshm_action_t;
 
-          typedef unsigned collshm_mask_t;
+          typedef unsigned long long collshm_mask_t;
 
           typedef enum {
             NOROLE = 0,
@@ -691,7 +691,7 @@ public:
 
               case CSOSYNC:
                 while (_partners && pollcnt--) {
-                  for (unsigned partner = 0x1, i = 0; i < _nranks; ++i, partner <<= 1) {
+                  for (collshm_mask_t partner = 0x1, i = 0; i < _nranks; ++i, partner <<= 1) {
                     if (_partners & partner) {
                       window = _device->getWindow(0, i, _idx);
                       if (window->getSyncflag() == _sync_flag) {
@@ -712,7 +712,7 @@ public:
                 break;
 
               case READFROM:
-                for (unsigned partner = 0; partner< _nranks; ++partner)
+                for (collshm_mask_t partner = 0; partner< _nranks; ++partner)
                 {
                   if (_partners & (0x1 <<partner))
                   {
@@ -847,7 +847,7 @@ public:
             if (_action == NOACTION) {
               _setPartners();
               _action = CSOSYNC;
-              unsigned partner = 0x1;
+              collshm_mask_t partner = 0x1;
               int i = 0;
               while (_partners && pollcnt--) {
                 for (; i < _nranks; ++i, partner <<= 1) {
@@ -953,7 +953,7 @@ public:
                 ++_step ;
                 _action = READFROM;
                 _setPartners();
-                unsigned partner = 0x1;
+                collshm_mask_t partner = 0x1;
                 for (int i=0 ; i < _nranks; ++i, partner <<= 1) {
                   if (_partners & partner) {
                     CollShmWindow *pwindow = _device->getWindow(0, i, _idx);
@@ -1303,6 +1303,7 @@ public:
                  for (unsigned w = 0; w < _synccounts; ++w)
                   (_wgroups[grp]->windows[idx*_synccounts + w]).clearCtrl();
               }
+              mem_barrier();   
             }
           } //while(!(COLLSHM_COMPARE_AND_SWAP((atomic_p)&(_wgroups[0]->barrier[round][idx]),&arrived, arrived+increment)))
           while(!_wgroups[0]->barrier[round][idx].compare_and_swap(arrived, arrived+increment)) ;
