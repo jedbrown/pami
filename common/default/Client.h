@@ -79,7 +79,7 @@ namespace PAMI
           // Needs error-checking and locks for thread safety
           T_Client * c = (T_Client *) client;
           c->~Client();
-          free ((void *) client);
+          __global.heap_mm->free ((void *) client);
         }
 
         inline char * getName_impl ()
@@ -111,8 +111,8 @@ namespace PAMI
                     return PAMI_ERROR;
                   }
 
-                int rc = posix_memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
-                PAMI_assertf(rc == 0, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
+                int rc = __global.heap_mm->memalign((void **) & _contexts, 16, sizeof(*_contexts) * n);
+                PAMI_assertf(rc == 0, "allocate failed for _contexts[%d], errno=%d\n", n, errno);
                 int x;
 
                 _platdevs.generate(_clientid, n, _mm);
@@ -153,7 +153,7 @@ namespace PAMI
               if (rc != PAMI_SUCCESS) res = rc;
             }
 
-          free(_contexts);
+          __global.heap_mm->free(_contexts);
           _contexts = NULL;
           _ncontexts = 0;
           return res;

@@ -30,6 +30,7 @@
 			(void **)&ptr, 0, size);	\
 	PAMI_assertf(_rc == PAMI_SUCCESS, err);	\
 }
+#define MEM_FREE(ptr) { PAMI::Memory::MemoryManager::heap_mm->free(ptr); }
 
 namespace PAMI {
         class Topology : public Interface::Topology<PAMI::Topology> {
@@ -811,7 +812,7 @@ namespace PAMI {
                                         _new->topo_ranklist = rl;
                                         return;
                                 }
-                                free(rl);
+                                MEM_FREE(rl);
                                 break;
                         case PAMI_EMPTY_TOPOLOGY:
                         default:
@@ -933,7 +934,7 @@ namespace PAMI {
                                         rl[k++] = topo_list(i);
                                 }
                                 if (k == 0) {
-                                        free(rl);
+                                        MEM_FREE(rl);
                                         _new->__type = PAMI_EMPTY_TOPOLOGY;
                                         _new->__size = 0;
                                         break;
@@ -972,13 +973,13 @@ namespace PAMI {
                                                 rl[k++] = i;
                                         }
                                         if (k == 0) { // probably never
-                                                free(rl);
+                                                MEM_FREE(rl);
                                                 break;
                                         } else if (k == 1) {
                                                 _new->__type = PAMI_SINGLE_TOPOLOGY;
                                                 _new->__size = 1;
                                                 _new->topo_rank = rl[0];
-                                                free(rl);
+                                                MEM_FREE(rl);
                                                 return;
                                         }
                                         _new->__type = PAMI_LIST_TOPOLOGY;
@@ -1000,13 +1001,13 @@ namespace PAMI {
                                         }
                                 }
                                 if (k == 0) { // probably never
-                                        free(rl);
+                                        MEM_FREE(rl);
                                         break;
                                 } else if (k == 1) {
                                         _new->__type = PAMI_SINGLE_TOPOLOGY;
                                         _new->__size = 1;
                                         _new->topo_rank = rl[0];
-                                        free(rl);
+                                        MEM_FREE(rl);
                                         return;
                                 }
                                 _new->__type = PAMI_LIST_TOPOLOGY;

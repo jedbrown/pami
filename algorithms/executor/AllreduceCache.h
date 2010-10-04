@@ -480,7 +480,7 @@ namespace CCMI
 
               if (_nextActivePhase)
                 {
-                  free(_nextActivePhase);
+                  __global.heap_mm->free(_nextActivePhase);
                   _nextActivePhase = NULL;
                 }
 

@@ -2419,7 +2419,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 						  freeIds,
 						  fifoInterrupts);
 	  PAMI_assertf( rc == 0, "ConfigureInjFifoInterrupts failed with rc=%d\n",rc);
-	  free( fifoInterrupts);
+	  __global.heap_mm->free( fifoInterrupts);
 	}
 
       fifoIndex         += numFree;
@@ -2895,7 +2895,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
 					      freeIds,
 					      fifoInterrupts);
       PAMI_assertf( rc == 0, "ConfigureRecFifoInterrupts failed with rc=%d\n",rc);
-      free( fifoInterrupts);
+      __global.heap_mm->free( fifoInterrupts);
 
       // Enable the fifos.
       TRACE((stderr,"MU ResourceManager: setupRecFifos: Enabling RecFifos in group %u, bits 0x%lx\n",subgroup/BGQ_MU_NUM_REC_FIFO_SUBGROUPS,enableBits));
