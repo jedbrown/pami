@@ -83,14 +83,13 @@ namespace PAMI
 		if (!ptr) return PAMI_ERROR;
 		*memptr = (void *)(((uintptr_t)ptr + alignment - 1) &
 						~(alignment - 1));
+		// can't free this! users ptr is not the one malloc knows about...
 #endif
 		memset(*memptr, 0, bytes);	// needed for 1 proc/node, when
 						// simulating shared_mm...
 		if (init_fn)
 		{
 			init_fn(*memptr, bytes, key, _attrs, cookie);
-		//
-		// else? or always? memset(*memptr, 0, bytes);
 		}
 #ifdef MM_DEBUG
 		if (_debug) {
@@ -108,7 +107,9 @@ namespace PAMI
 			++_num_frees;
 		}
 #endif // MM_DEBUG
+#ifdef USE_MEMALIGN
 		std::free(mem);
+#endif
 	}
 
 	inline size_t available(size_t alignment) {
