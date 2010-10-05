@@ -533,10 +533,12 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::notifyRecv
 
   if ((int)cdata->_count == -1) {
     CCMI_assert(cdata->_phase - _curphase < MAX_PARALLEL);
+#if ASSERT_LEVEL > 0
     unsigned pindex  = getPartnerIndex(cdata->_phase-1,_native->numranks(),_myindex);
     CCMI_assert(pindex != (unsigned) -1);
     EXECUTOR_DEBUG((stderr, "phase = %d, src = %d, expected %d\n", cdata->_phase-1, src, _gtopology->index2Rank(pindex));)
     CCMI_assert(src == _gtopology->index2Rank(pindex));
+#endif
     _rphase[(cdata->_phase-1) % MAX_PARALLEL] = cdata->_phase;
     *pwq = NULL;
     cb_done->function   = notifyAvailRecvDone;
