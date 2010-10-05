@@ -30,6 +30,14 @@ namespace PAMI
           Common::Client<PAMI::Client> (name, client, result)
         {
           TRACE_ERR((stderr, ">> Client::Client()\n"));
+	  char key[PAMI::Memory::MMKEYSIZE];
+	  sprintf(key, "/pami-clt-%s-mm", name);
+	  size_t bytes = 1*1024*1024;
+	  char *env = getenv("PAMI_CLIENT_SHMEMSIZE");
+	  if (env) {
+		bytes = strtoull(env, NULL, 0) * 1024 * 1024;
+	  }
+	  _mm.init(__global.shared_mm, bytes, 16, key);
           TRACE_ERR((stderr, "<< Client::Client()\n"));
         }
 
@@ -73,13 +81,17 @@ namespace PAMI
         // relevant fields of the context, so this memset should not be
         // needed anyway.
         //memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
-        size_t bytes = _mm.available() / n - 16;
+        size_t bytes = (1*1024*1024) / n;
+	char *env = getenv("PAMI_CONTEXT_SHMEMSIZE");
+	if (env) {
+		bytes = strtoull(env, NULL, 0) * 1024 * 1024;
+	}
 
         for (x = 0; x < n; ++x)
           {
             context[x] = (pami_context_t) & _contexts[x];
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                             &_platdevs, &_mm, bytes);
+                                            &_platdevs, __global.shared_mm, bytes);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }

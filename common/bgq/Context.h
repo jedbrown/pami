@@ -330,9 +330,7 @@ namespace PAMI
         // ----------------------------------------------------------------
 
 	strcpy(mms, "-mm");
-	pmm->enable();
         _mm.init(pmm, bytes, 16, 16, 0, mmkey);
-	pmm->disable();
         _self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
 
 	//strcpy(mms, "-lock");
@@ -576,6 +574,9 @@ namespace PAMI
 
         TRACE_ERR((stderr,  "<%p>Context:: exit\n", this));
       }
+
+      inline ~Context() { }
+
       inline pami_client_t getClient_impl ()
       {
         return _client;

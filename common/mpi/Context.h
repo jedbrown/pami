@@ -295,7 +295,7 @@ namespace PAMI
         _contextid (id),
         _geometry_map(geometry_map),
         _dispatch_id(255),
-        _mm (mm),
+        _mm (),
         _lock (),
         _mpi(&_g_mpi_device),
         _world_geometry(world_geometry),
@@ -307,6 +307,9 @@ namespace PAMI
 	  char *mms;
 	  mms = mmkey + sprintf(mmkey, "/pami-client%d-context%d", clientid, id);
 
+	  strcpy(mms, "-mm");
+	  _mm.init(mm, 0, bytes, mmkey);
+
           // dispatch_impl relies on the table being initialized to NULL's.
           memset(_dispatch, 0x00, sizeof(_dispatch));
 
@@ -314,8 +317,8 @@ namespace PAMI
 #ifdef USE_WAKEUP_VECTORS
           _wakeupManager.init(1, 0x57550000 | id); // check errors?
 #endif // USE_WAKEUP_VECTORS
-          _devices->init(_clientid, _contextid, _client, _context, _mm);
-          _mpi->init(_mm, _clientid, num, (pami_context_t)this, id);
+          _devices->init(_clientid, _contextid, _client, _context, &_mm);
+          _mpi->init(&_mm, _clientid, num, (pami_context_t)this, id);
           _lock.init();
 
           // this barrier is here because the shared memory init
@@ -755,7 +758,7 @@ namespace PAMI
       void                     *_dispatch[1024][2];
       int                       _dispatch_id;
       ProtocolAllocator         _protocol;
-      Memory::MemoryManager    *_mm;
+      Memory::MemoryManager    _mm;
       ContextLock _lock;
 
 #ifdef USE_WAKEUP_VECTORS

@@ -795,8 +795,12 @@ namespace PAMI
     inline void initializeMemoryManager ()
       {
         char   shmemfile[PAMI::Memory::MMKEYSIZE];
-        size_t bytes     = 8192*1024;
+        size_t bytes     = 8*1024*1024;
         size_t pagesize  = 4096;
+	char *env = getenv("PAMI_CLIENT_SHMEMSIZE");
+	if (env) {
+		bytes = strtoull(env, NULL, 0) * 1024 * 1024;
+	}
 
         snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s",
 		((LapiImpl::Client*)&_lapiClient[0])->GetName());

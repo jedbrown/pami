@@ -138,15 +138,19 @@ namespace PAMI
         // relevant fields of the context, so this memset should not be
         // needed anyway.
         //memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
-        size_t bytes = _mm.available() / n - 16;
-        TRACE_ERR((stderr, "BGP::Client::createContext mm available %zu, bytes %zu\n", _mm.available(), bytes));
+        size_t bytes = (1*1024*1024) / n;
+        char *env = getenv("PAMI_CONTEXT_SHMEMSIZE");
+        if (env) {
+            bytes = strtoull(env, NULL, 0) * 1024 * 1024;
+        }
+        TRACE_ERR((stderr, "BGP::Client::createContext mm bytes %zu\n", bytes));
 
         for (x = 0; x < n; ++x)
           {
           TRACE_ERR((stderr, "BGP::Client::createContext %u\n", x));
             context[x] = (pami_context_t) & _contexts[x];
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                             &_platdevs, &_mm, bytes, _world_geometry, &_geometry_map);
+                                   &_platdevs, __global.shared_mm, bytes, _world_geometry, &_geometry_map);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }

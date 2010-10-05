@@ -112,12 +112,16 @@ namespace PAMI
         // relevant fields of the context, so this memset should not be
         // needed anyway.
         //memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
-        size_t bytes = _mm.available() / n - 16;
+        size_t bytes = (1*1024*1024) / n;
+	char *env = getenv("PAMI_CLIENT_SHMEMSIZE");
+	if (env) {
+		bytes = strtoull(env, NULL, 0) * 1024 * 1024;
+	}
         int x;
         for (x = 0; x < n; ++x) {
           context[x] = (pami_context_t)&_contexts[x];
           new (&_contexts[x]) PAMI::Context(this, _clientid, x, n,
-                                            &_platdevs, &_mm, bytes, _world_geometry, &_geometry_map);
+                                   &_platdevs, __global.shared_mm, bytes, _world_geometry, &_geometry_map);
           //_context_list->pushHead((QueueElem *)&context[x]);
           //_context_list->unlock();
           _ncontexts = n;
@@ -432,6 +436,10 @@ namespace PAMI
         char   shmemfile[PAMI::Memory::MMKEYSIZE];
         size_t bytes     = 1024*1024;
         size_t pagesize  = 4096;
+	char *env = getenv("PAMI_CLIENT_SHMEMSIZE");
+	if (env) {
+		bytes = strtoull(env, NULL, 0) * 1024 * 1024;
+	}
 
         snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s", _name);
         // Round up to the page size

@@ -241,9 +241,7 @@ namespace PAMI
         // Compile-time assertions
         // ----------------------------------------------------------------
 	strcpy(mms, "-mm");
-	pmm->enable();
 	_mm.init(pmm, bytes, 16, 16, 0, mmkey);
-	pmm->enable();
 
         _lock.init();
         _devices->init(_clientid, _contextid, _client, _context, &_mm);

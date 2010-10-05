@@ -71,41 +71,24 @@ namespace PAMI
         TRACE_ERR((stderr, "<%p>BGQ::Client::generate_impl\n", client));
         pami_result_t result;
 
-        //__client_list->lock();
-
         // If a client with this name is not already initialized...
         PAMI::Client * clientp = NULL;
-        //if ((client = __client_list->contains (name)) == NULL)
-        //{
         result = __global.heap_mm->memalign((void **)&clientp, 16, sizeof(*clientp));
 	PAMI_assertf(result == PAMI_SUCCESS, "Failed to alloc PAMI::Client"); // just return?
 
         memset ((void *)clientp, 0x00, sizeof(PAMI::Client));
         new (clientp) PAMI::Client (name, result);
         *client = clientp;
-        //__client_list->pushHead ((QueueElem *) client);
-        //}
-        //else
-        //{
-        //client->incReferenceCount ();
-        //}
-
-        //__client_list->unlock();
-
         return result;
       }
 
       static void destroy_impl (pami_client_t client)
       {
         TRACE_ERR((stderr, "<%p>BGQ::Client::destroy_impl\n", client));
-        //__client_list->lock ();
-        //client->decReferenceCount ();
-        //if (client->getReferenceCount () == 0)
-        //{
-        //__client_list->remove (client);
+	PAMI::Client *clt = (PAMI::Client *)client;
+	// ensure contexts are destroyed first???
+	clt->~Client();
         __global.heap_mm->free((void *)client);
-        //}
-        //__client_list->unlock ();
       }
 
       inline char * getName_impl ()
@@ -152,8 +135,12 @@ namespace PAMI
         // relevant fields of the context, so this memset should not be
         // needed anyway.
         //memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
-        size_t bytes = _mm.available() / n - 16;
-        TRACE_ERR((stderr, "BGQ::Client::createContext mm available %zu, bytes %zu\n", _mm.available(), bytes));
+        size_t bytes = (2*1024*1024) / n;
+        char *env = getenv("PAMI_CONTEXT_SHMEMSIZE");
+        if (env) {
+            bytes = strtoull(env, NULL, 0) * 1024 * 1024;
+        }
+        TRACE_ERR((stderr, "BGQ::Client::createContext mm bytes %zu\n", bytes));
 
         for (x = 0; x < n; ++x)
           {
@@ -167,7 +154,7 @@ namespace PAMI
             PAMI::Device::CommThread::BgqCommThread::initContext(_clientid, x, context[x]);
 #endif // USE_COMMTHREADS
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                              &_platdevs, &_mm, bytes, _world_geometry, &_geometry_map);
+                                   &_platdevs, __global.shared_mm, bytes, _world_geometry, &_geometry_map);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
@@ -199,8 +186,7 @@ namespace PAMI
           {
             context[i] = NULL;
             PAMI::Context * ctx = &_contexts[i];
-            //_context_list->lock ();
-            //_context_list->remove (context);
+	    ctx->~Context();
             pami_result_t rc = ctx->destroy ();
 
             //_context_list->unlock ();
