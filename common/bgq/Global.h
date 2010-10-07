@@ -135,17 +135,36 @@ namespace PAMI
             if (_useMU) TRACE_ERR((stderr, "Using MU device\n"));
           }
 
+#if 0
+        size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
+        // may need to factor in others such as shmem?
+#else
+        size_t num_ctx = 256 / Kernel_ProcessCount();
+#endif
+#if 0
         bytes = initializeMapCache(personality, NULL, ll, ur, min, max, true);
 
 	// reserve space for 8 sub-mm's...
 	bytes += PAMI::Memory::GenMemoryManager::MAX_META_SIZE() * 8;
-        // Round up to the page size
-        size_t size = ((bytes + pagesize - 1) & ~(pagesize - 1));
+#else
+	bytes = 12000 + 5800 * num_ctx + 2500 * Kernel_ProcessCount();
+#endif
 
+	/// \page env_vars Environment Variables
+	///
+	/// PAMI_GLOBAL_SHMEMSIZE - Size, bytes, Global shared memory region.
+	/// May use 'K' or 'M' suffix as multiplier.
+	/// Default: 12000 + 5800 * maxctx + 2500 * nproc;
+	///
 	char *env = getenv("PAMI_GLOBAL_SHMEMSIZE");
 	if (env) {
-		size = strtoull(env, NULL, 0) * 1024 * 1024;
+                char *s = NULL;
+                bytes = strtoull(env, &s, 0);
+                if (*s == 'm' || *s == 'M') bytes *= 1024 * 1024;
+                else if (*s == 'k' || *s == 'K') bytes *= 1024;
 	}
+        // Round up to the page size
+        size_t size = ((bytes + pagesize - 1) & ~(pagesize - 1));
 
         TRACE_ERR((stderr, "Global() .. size = %zu\n", size));
 	mm.init(shared_mm, size, 1, 1, 0, shmemfile);

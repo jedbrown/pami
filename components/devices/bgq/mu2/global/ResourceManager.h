@@ -649,6 +649,8 @@ namespace PAMI
 	  TRACE((stderr,"MU ResourceManager: Exiting constructor\n"));
 	 } // End: UseMU
 	} // End: ResourceManager Default Constructor
+	~ResourceManager() {
+	}
 	// Note, we NEVER use BGQ_CLASS_INPUT_VC_USER. Only BGQ_CLASS_INPUT_VC_SUBCOMM.
 	#define CR_ALLREDUCE_DT_CT 3
 	struct cr_cookie

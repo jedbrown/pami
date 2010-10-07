@@ -36,6 +36,13 @@ namespace PAMI
   {
     class SharedMemoryManager : public MemoryManager
     {
+	private:
+		inline void MM_DUMP_STATS() {
+			fprintf(stderr, "SharedMemoryManager: %zd allocs, %zd frees, "
+					"local %zdb, repeat %zdb\n",
+				_num_allocs, _num_frees,
+				_loc_bytes, _rep_bytes);
+		}
       public:
 
 	/// \brief This class is a wrapper for the shm_open/ftruncate/mmap sequence
@@ -67,9 +74,8 @@ namespace PAMI
 		_debug = (getenv("PAMI_MM_DEBUG") != NULL);
 		_num_allocs = 0;
 		_num_frees = 0;
-		_total_bytes = 0;
-		_curr_bytes = 0;
-		_max_bytes = 0;
+		_loc_bytes = 0;
+		_rep_bytes = 0;
 #endif // MM_DEBUG
         }
 
@@ -77,10 +83,7 @@ namespace PAMI
         {
 #ifdef MM_DEBUG
 		if (_debug) {
-			fprintf(stderr, "SharedMemoryManager: %zd allocs, %zd frees, "
-					"total %zdb, curr %zdb, max %zdb\n",
-				_num_allocs, _num_frees,
-				_total_bytes, _curr_bytes, _max_bytes);
+			MM_DUMP_STATS();
 		}
 #endif // MM_DEBUG
 		// if this only happens at program exit, just unlink all keys...
@@ -183,8 +186,6 @@ namespace PAMI
 		if (ptr == NULL || ptr == MAP_FAILED)
 		{
 			// segment is not mapped...
-			close(alloc->fd());
-			if (first) shm_unlink(alloc->key());
 			alloc->free();
 			_meta.release();
 			return PAMI_ERROR;
@@ -207,10 +208,11 @@ namespace PAMI
 #ifdef MM_DEBUG
 		if (_debug) {
 			++_num_allocs;
-			_total_bytes += alloc->userSize();
-			_curr_bytes += alloc->userSize();
-			if (_curr_bytes > _max_bytes) {
-				_max_bytes = _curr_bytes;
+			size_t alloc_bytes = alloc->userSize();
+			if (first) {
+				_loc_bytes += alloc_bytes;
+			} else {
+				_rep_bytes += alloc_bytes;
 			}
 		}
 #endif // MM_DEBUG
@@ -224,7 +226,7 @@ namespace PAMI
 #ifdef MM_DEBUG
 			if (_debug) {
 				++_num_frees;
-				_curr_bytes -= m->userSize();
+				_rep_bytes -= m->userSize();
 			}
 #endif // MM_DEBUG
 			m->free();
@@ -256,9 +258,8 @@ namespace PAMI
 	bool _debug;
 	size_t _num_allocs;
 	size_t _num_frees;
-	size_t _total_bytes;
-	size_t _curr_bytes;
-	size_t _max_bytes;
+	size_t _loc_bytes;
+	size_t _rep_bytes;
 #endif // MM_DEBUG
 
     }; // class SharedMemoryManager

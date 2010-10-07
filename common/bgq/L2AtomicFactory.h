@@ -114,8 +114,22 @@ namespace BGQ {
                         size_t t = local->size();
 
                         size = L2A_MAX_NUMPROCL2ATOMIC;
-			if ((s = getenv("PAMI_PROC_L2ATOMICSIZE"))) {
-				size = strtoull(s, NULL, 0);
+			/// \page env_vars Environment Variables
+			///
+			/// PAMI_BGQ_PROC_L2ATOMICSIZE - Size, uint64_t, proc-scoped
+			///	L2 Atomic region. May use 'K' or 'M' suffix as multiplier.
+			///	Default: 4K
+			///
+			/// PAMI_BGQ_NODE_L2ATOMICSIZE - Size, uint64_t, node-scoped
+			///	L2 Atomic region. May use 'K' or 'M' suffix as multiplier.
+			///	Default: 4K + nctx * nproc * 256
+			///	Includes WAC region (PAMI_BGQ_WU_*).
+			///
+			if ((s = getenv("PAMI_BGQ_PROC_L2ATOMICSIZE"))) {
+                		char *u = NULL;
+                		size = strtoull(s, &u, 0);
+                		if (*u == 'm' || *u == 'M') size *= 1024 * 1024;
+                		else if (*u == 'k' || *u == 'K') size *= 1024;
 			}
 			rc = __procscoped_mm.init(heap_mm,
 					sizeof(uint64_t) * size,
@@ -133,9 +147,18 @@ namespace BGQ {
 				"Failed to map process L2 Atomic region %p (%zd): %ld",
 				__procscoped_mm.base(), __procscoped_mm.size(), krc);
 
-                        size = L2A_MAX_NUMNODEL2ATOMIC(t,64);
-			if ((s = getenv("PAMI_NODE_L2ATOMICSIZE"))) {
-				size = strtoull(s, NULL, 0);
+#if 0
+        size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
+        // may need to factor in others such as shmem?
+#else
+        size_t num_ctx = 256 / Kernel_ProcessCount();
+#endif
+                        size = L2A_MAX_NUMNODEL2ATOMIC(t,num_ctx);
+			if ((s = getenv("PAMI_BGQ_NODE_L2ATOMICSIZE"))) {
+                		char *u = NULL;
+                		size = strtoull(s, &u, 0);
+                		if (*u == 'm' || *u == 'M') size *= 1024 * 1024;
+                		else if (*u == 'k' || *u == 'K') size *= 1024;
 			}
 
 			rc = __nodescoped_mm.init(shared_mm,

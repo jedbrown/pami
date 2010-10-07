@@ -66,6 +66,9 @@ namespace PAMI
 	{
 	} // End: Global Default Constructor
 
+	~Global() {
+	}
+
 	PAMI::ResourceManager &getPamiRM()  { return _pamiRM;  }
 	PAMI::Mapping         &getMapping() { return _mapping; }
 	ResourceManager       &getMuRM()    { return _muRM;    }

@@ -111,11 +111,10 @@ namespace PAMI
           }
 
         /// \todo #99 Remove this hack and replace with a device interface
-        size_t peers, max;
+        size_t peers;
         __global.mapping.nodePeers (peers);
-        max = MIN(4, (64 / peers));
 
-        if (ncontexts > (64 / peers))
+        if (ncontexts > (256 / peers))
           {
             return PAMI_INVAL;
           }
@@ -135,12 +134,26 @@ namespace PAMI
         // relevant fields of the context, so this memset should not be
         // needed anyway.
         //memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
-        size_t bytes = (2*1024*1024) / n;
+        size_t bytes = 135 * 1024;
+
+	/// \page env_vars Environment Variables
+	///
+	/// PAMI_CONTEXT_SHMEMSIZE - Size, bytes, of each Context's shmem pool. 
+	/// May use 'K' or 'M' suffix as multiplier. default: 135K
+	///
         char *env = getenv("PAMI_CONTEXT_SHMEMSIZE");
         if (env) {
-            bytes = strtoull(env, NULL, 0) * 1024 * 1024;
+		char *s = NULL;
+		bytes = strtoull(env, &s, 0);
+		if (*s == 'm' || *s == 'M') bytes *= 1024 * 1024;
+		else if (*s == 'k' || *s == 'K') bytes *= 1024;
         }
         TRACE_ERR((stderr, "BGQ::Client::createContext mm bytes %zu\n", bytes));
+        char key[PAMI::Memory::MMKEYSIZE];
+	sprintf(key, "/pami-clt%zd-ctx-mm", _clientid);
+	rc = _xmm.init(__global.shared_mm, bytes * n, 0, 0, 0, key);
+	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
+									key, bytes * n);
 
         for (x = 0; x < n; ++x)
           {
@@ -154,7 +167,7 @@ namespace PAMI
             PAMI::Device::CommThread::BgqCommThread::initContext(_clientid, x, context[x]);
 #endif // USE_COMMTHREADS
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                   &_platdevs, __global.shared_mm, bytes, _world_geometry, &_geometry_map);
+                                   &_platdevs, &_xmm, bytes, _world_geometry, &_geometry_map);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
@@ -696,6 +709,7 @@ namespace PAMI
 
 
       Memory::GenMemoryManager _mm;
+      Memory::GenMemoryManager _xmm; // used to fill context mm, from single OS alloc.
       //  Unexpected Barrier allocator
       MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;       
       //  Unexpected Barrier match queue
@@ -704,32 +718,44 @@ namespace PAMI
 
 	/// \page env_vars Environment Variables
 	///
-	/// PAMI_CLIENT_SHMEMSIZE - Size, MB, Each Client shmem pool.
-	/// default: 2MB
+	/// PAMI_CLIENT_SHMEMSIZE - Size, bytes, of each Client shmem pool. 
+	/// May use 'K' or 'M' suffix as multiplier. default: 2MB
 	///
 
       inline void initializeMemoryManager ()
       {
         TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::initializeMemoryManager\n", this, _clientid));
         char   shmemfile[PAMI::Memory::MMKEYSIZE];
-        //size_t bytes     = 1024*1024;
-        //size_t bytes     = 2048 * 1024;
-        size_t bytes     = 8192 * 1024;
-        //size_t pagesize  = 4096;
+#if 0
+        size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
+        // may need to factor in others such as shmem?
+#else
+        size_t num_ctx = 256 / Kernel_ProcessCount();
+#endif
+	// 18K * Ncontexts... 
+        size_t bytes = 8800 * num_ctx * Kernel_ProcessCount();
 
+	/// \page env_vars Environment Variables
+	///
+	/// PAMI_CLIENT_SHMEMSIZE - Size, bytes, per-Client shared memory.
+	/// May use 'K' or 'M' suffix as multiplier. default: 8800 * maxnctx * nproc;
+	///
         char *env = getenv("PAMI_CLIENT_SHMEMSIZE");
-
-        if (env)
-          {
-            bytes = strtoull(env, NULL, 0) * 1024 * 1024;
-          }
+        if (env) {
+		char *s = NULL;
+		bytes = strtoull(env, &s, 0);
+		if (*s == 'm' || *s == 'M') bytes *= 1024 * 1024;
+		else if (*s == 'k' || *s == 'K') bytes *= 1024;
+        }
 
         snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s", _name);
 
         // Round up to the page size
         //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-	_mm.init(__global.shared_mm, bytes, 1, 1, 0, shmemfile);
+	pami_result_t rc = _mm.init(__global.shared_mm, bytes, 1, 1, 0, shmemfile);
+	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
+									shmemfile, bytes);
         return;
       }
 

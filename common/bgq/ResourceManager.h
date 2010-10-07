@@ -131,6 +131,8 @@ namespace PAMI
 
 	} // End: ResourceManager Default Constructor
 
+	inline ~ResourceManager() {
+	}
 
       inline size_t getNumSpiUserInjFifosPerProcess() { return _numSpiUserInjFifosPerProcess; }
 

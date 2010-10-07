@@ -322,14 +322,17 @@ namespace PAMI
               // Allocate a shared memory segment for _all_ of the fifos for
               // _all_ of the contexts
               T_Fifo * all_fifos = NULL;
+              pami_result_t rc;
               size = ((sizeof(T_Fifo) + 15) & 0xfffffff0) * total_fifos_on_node;
 	      sprintf(key, "/client%zd-shm-allfifos", clientid);
-              mm.memalign ((void **)&all_fifos, 16, size, key);
+              rc = mm.memalign ((void **)&all_fifos, 16, size, key);
+if (!(rc == PAMI_SUCCESS)) mm.dump("ShmemDevice.h");
+	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate %zd for shmem fifos "
+			"from \"%s\"\n", size, mm.getName());
 
               // Allocate an array of shared memory devices, one for each
               // context in this _task_ (from heap, not from shared memory)
               ShmemDevice * devices;
-              pami_result_t rc;
 	      rc = __global.heap_mm->memalign((void **)&devices, 16, sizeof(*devices) * n);
               PAMI_assertf(rc == PAMI_SUCCESS, "memalign failed for ShmemDevice[%zu], rc=%d\n", n, rc);
 

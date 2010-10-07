@@ -182,9 +182,15 @@ public:
 	_thread(0),
 	_falseWU(0),
 	_shutdown(false)
-	{ }
+	{
+		_wakeup_region->addRef();
+	}
 
-	~BgqCommThread() { }
+	~BgqCommThread() {
+		if (_wakeup_region->rmRef() == 1) {
+			_wakeup_region->~BgqWakeupRegion();
+		}
+	}
 
 
 	static void *commThread(void *cookie) {
@@ -521,7 +527,7 @@ _commThreads(NULL)
 	size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
 	// may need to factor in others such as shmem?
 #else
-	size_t num_ctx = 64 / Kernel_ProcessCount();
+	size_t num_ctx = 256 / Kernel_ProcessCount();
 #endif
 
 	pami_result_t rc;
@@ -618,10 +624,6 @@ Factory::~Factory() {
 #ifndef COMMTHREAD_LAYOUT_TESTING
 	size_t x;
 
-	if (BgqCommThread::_numActive == 0) {
-		return;
-	}
-
 	// assert _commThreads[0]._ctxset->_nactive == 0...
 	// will that be true? commthreads with no contexts will
 	// still be in the waitimpl loop. We really should confirm
@@ -660,15 +662,20 @@ Factory::~Factory() {
 
 	// need to pthread_join() here? or is it too risky (might hang)?
 	size_t fwu = 0;
-	for (x = 0; x < BgqCommThread::_numActive; ++x) {
+	size_t na = BgqCommThread::_numActive;
+	BgqCommThread::_numActive = 0;
+	for (x = 0; x < na; ++x) {
 		void *status;
 //fprintf(stderr, "pthread_join(%ld, &status);\n", _commThreads[x]._thread);
 		pthread_join(_commThreads[x]._thread, &status);
 		fwu += _commThreads[x]._falseWU;
+		_commThreads[x].~BgqCommThread();
 	}
-	BgqCommThread::_numActive = 0;
 if (fwu > 2) fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
 #endif // !COMMTHREAD_LAYOUT_TESTING
+	for (;x < BgqCommThread::_maxActive; ++x) {
+		_commThreads[x].~BgqCommThread();
+	}
 }
 
 }; // namespace CommThread

@@ -27,20 +27,38 @@
 
 #define WU_CACHELINE_SIZE	L1_CACHELINE_SIZE
 
+#define WU_BASELINE		256
+#define WU_CONTEXT_COST		104
+#define WU_PROC_DISCOUNT	8
+
 namespace PAMI {
 namespace Device {
 namespace CommThread {
 
 class BgqWakeupRegion {
+private:
+	inline size_t _nextPowerOfTwo(size_t esize) {
+		size_t n = esize - 1;
+		if (!(esize & n)) return esize;
+		size_t s = 1;
+		size_t x;
+		while ((x = (n >> s)) != 0) {
+			n |= x;
+			s <<= 1;
+		}
+		return n + 1;
+	}
 public:
 	// type (size) used for each context. Must be power-of-two.
 
 	BgqWakeupRegion() :
 	_wu_mm(),
-	_wu_memreg()
+	_wu_memreg(),
+	_ref(0)
 	{ }
 
-	~BgqWakeupRegion() { }
+	~BgqWakeupRegion() {
+	}
 
 	/// \brief Initialize Wakeup Region for client
 	///
@@ -56,26 +74,65 @@ public:
 		// is such that power-of-two pairs of (ctx0,mctx) result in viable
 		// base/mask values. Also... this is physical address dependent, so
 		// does the virtual address even matter?
-		while (mctx & (mctx - 1)) ++mctx; // brute force - better way?
 
-		size_t esize = mctx * BGQ_WACREGION_SIZE * sizeof(uint64_t);
-		size_t size = lsize * esize;
+		// 256 + WU_CONTEXT_COST * mctx - WU_PROC_DISCOUNT * nproc; // nproc < 64...
 
-		pami_result_t rc = _wu_mm[me].init(mm, esize, esize,
-					PAMI::Memory::PAMI_MM_WACREGION);
+		/// \page env_vars Environment Variables
+		///
+		/// PAMI_BGQ_WU_BASELINE - Size, bytes, of baseline WAC region.
+		/// default: 256
+		/// size = PAMI_BGQ_WU_BASELINE + PAMI_BGQ_WU_CONTEXT_COST * nctx -
+		///			PAMI_BGQ_WU_PROC_DISCOUNT * nproc;
+		/// Minimum: PAMI_BGQ_WU_BASELINE;
+		///
+		/// PAMI_BGQ_WU_CONTEXT_COST - Size, bytes, per-context WAC memory.
+		/// default: 104
+		/// size = PAMI_BGQ_WU_BASELINE + PAMI_BGQ_WU_CONTEXT_COST * nctx -
+		///			PAMI_BGQ_WU_PROC_DISCOUNT * nproc;
+		///
+		/// PAMI_BGQ_WU_PROC_DISCOUNT - Size, bytes, per-proc WAC savings.
+		/// default: 8
+		/// size = PAMI_BGQ_WU_BASELINE + PAMI_BGQ_WU_CONTEXT_COST * nctx -
+		///			PAMI_BGQ_WU_PROC_DISCOUNT * nproc;
+		///
+		char *env;
+		size_t wu_baseline = WU_BASELINE;
+		if ((env = getenv("PAMI_BGQ_WU_BASELINE"))) {
+			wu_baseline = strtoul(env, NULL, 0);
+		}
+		size_t wu_context_cost = WU_CONTEXT_COST;
+		if ((env = getenv("PAMI_BGQ_WU_CONTEXT_COST"))) {
+			wu_context_cost = strtoul(env, NULL, 0);
+		}
+		size_t wu_proc_discount = WU_PROC_DISCOUNT;
+		if ((env = getenv("PAMI_BGQ_WU_PROC_DISCOUNT"))) {
+			wu_proc_discount = strtoul(env, NULL, 0);
+		}
+		size_t esize = (wu_baseline + mctx * wu_context_cost -
+					lsize * wu_proc_discount) * sizeof(uint64_t);
+		esize = _nextPowerOfTwo(esize);
+		if (lsize >= PAMI_MAX_PROC_PER_NODE) {
+			esize = wu_baseline; // never actually used for wakeup...
+		}
+
+		char key[PAMI::Memory::MMKEYSIZE];
+		sprintf(key, "/pami-wu-region-%zd", me);
+		pami_result_t rc = _wu_mm.init(mm, esize, esize, 0,
+					PAMI::Memory::PAMI_MM_WACREGION, key);
 		if (rc != PAMI_SUCCESS) {
-fprintf(stderr, "memalign failed for %zd %zd (avail=%zd)\n", size, size, mm->available());
+fprintf(stderr, "memalign failed for %zd %zd (avail=%zd)\n", esize, esize, mm->available());
 			return PAMI_ERROR;
 		}
-		uint32_t krc = Kernel_CreateMemoryRegion(&_wu_memreg, _wu_mm[me].base(),
-								_wu_mm[me].size());
+		uint32_t krc = Kernel_CreateMemoryRegion(&_wu_memreg, _wu_mm.base(),
+								_wu_mm.size());
 		if (krc != 0) {
 			//mm->free(virt);
 fprintf(stderr, "Kernel_CreateMemoryRegion failed for %p %zd (%d)\n",
-				_wu_mm[me].base(), _wu_mm[me].size(), krc);
+				_wu_mm.base(), _wu_mm.size(), krc);
 			return PAMI_ERROR;
 		}
 #if 0
+		size_t size = lsize * esize;
 		char *v = (char *)virt;
 		size_t i;
 		for (i = 0; i < lsize; ++i) {
@@ -100,27 +157,37 @@ fprintf(stderr, "Kernel_CreateMemoryRegion failed for %p %zd (%d)\n",
 	///
 	inline void getWURange(uint64_t ctx, uint64_t *base, uint64_t *mask) {
 		*base = (uint64_t)_wu_memreg.BasePa +
-			((char *)_wu_mm[_wu_region_me].base() - (char *)_wu_memreg.BaseVa);
-		*mask = ~(_wu_mm[_wu_region_me].size() - 1);
+			((char *)_wu_mm.base() - (char *)_wu_memreg.BaseVa);
+		*mask = ~(_wu_mm.size() - 1);
 	}
 
 	inline PAMI::Memory::MemoryManager *getWUmm(size_t process = (size_t)-1) {
 		if (process == (size_t)-1) process = _wu_region_me;
 PAMI_assertf(process == _wu_region_me, "do not use getWUmm(!me)");
-		return &_wu_mm[process];
+		return &_wu_mm;
 	}
 
 	inline PAMI::Memory::MemoryManager *getAllWUmm() {
 PAMI_abortf("do not use getAllWUmm()");
-		return &_wu_mm[0];
+		return NULL; //&_wu_mm[0];
+	}
+
+	inline void addRef() {
+		__sync_fetch_and_add(&_ref, 1);
+	}
+
+	inline size_t rmRef() {
+		return __sync_fetch_and_add(&_ref, -1);
 	}
 
 private:
 	typedef uint64_t BgqWakeupRegionBuffer[BGQ_WACREGION_SIZE];
 
-	PAMI::Memory::GenMemoryManager _wu_mm[PAMI_MAX_PROC_PER_NODE];
+	//PAMI::Memory::GenMemoryManager _wu_mm[PAMI_MAX_PROC_PER_NODE];
+	PAMI::Memory::GenMemoryManager _wu_mm;
 	size_t _wu_region_me;	///< local process index into WAC regions
 	Kernel_MemoryRegion_t _wu_memreg;	///< phy addr of WAC region
+	size_t _ref;
 }; // class BgqWakeupRegion
 
 }; // namespace CommThread

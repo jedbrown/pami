@@ -10,7 +10,7 @@
 int main (int argc, char ** argv)
 {
   pami_client_t client;
-  pami_context_t context[2];
+  pami_context_t context[128];
   pami_configuration_t configuration;
   char                  cl_string[] = "TEST";
 
@@ -35,6 +35,7 @@ int main (int argc, char ** argv)
   }
   if (getenv("NUM_CONTEXTS")) {
 	num = strtoul(getenv("NUM_CONTEXTS"), NULL, 0);
+	if (num > 128) num = 128;
 	// if (num > max) num = max;
   }
   fprintf (stderr, "PAMI_CLIENT_NUM_CONTEXTS = %zu, using %zu\n", max, num);
