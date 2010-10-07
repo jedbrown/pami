@@ -263,6 +263,9 @@ namespace PAMI
       Msync2MetaData,
       CCMI::ConnectionManager::SimpleConnMgr > MultiSync2Factory;
 
+    //----------------------------------------------------------------------------
+    // 'Composite' Shmem/MU allsided 2 device multisync
+    //----------------------------------------------------------------------------
     void Msync2DMetaData(pami_metadata_t *m)
     {
       strncpy(&m->name[0], "MultiSync2Device", 32);
@@ -270,6 +273,9 @@ namespace PAMI
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
       Msync2DMetaData, CCMI::ConnectionManager::SimpleConnMgr>  MultiSync2DeviceFactory;
 
+    //----------------------------------------------------------------------------
+    // 'Composite' Shmem/MU allsided 2 device multicast
+    //----------------------------------------------------------------------------
     void Mcast2DMetaData(pami_metadata_t *m)
     {
       strncpy(&m->name[0], "MultiCast2Device", 32);
@@ -277,12 +283,26 @@ namespace PAMI
     typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS>,
       Mcast2DMetaData, CCMI::ConnectionManager::SimpleConnMgr> MultiCast2DeviceFactory;
 
+    //----------------------------------------------------------------------------
+    // 'Composite' Shmem/MU allsided 2 device multicombine
+    //----------------------------------------------------------------------------
     void Mcomb2DMetaData(pami_metadata_t *m)
+    {
+      strncpy(&m->name[0], "MultiCombine2Device", 32);
+    }
+    typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device,
+      Mcomb2DMetaData, CCMI::ConnectionManager::SimpleConnMgr>    MultiCombine2DeviceFactory;
+
+
+    //----------------------------------------------------------------------------
+    // 'Composite' Shmem/MU allsided 2 device multicombine with no pipelining
+    //----------------------------------------------------------------------------
+    void Mcomb2DMetaDataNP(pami_metadata_t *m)
     {
       strncpy(&m->name[0], "MultiCombine2DeviceNP", 32);
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
-      Mcomb2DMetaData, CCMI::ConnectionManager::SimpleConnMgr> MultiCombine2DeviceFactory;
+      Mcomb2DMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr> MultiCombine2DeviceFactoryNP;
 
  
     //----------------------------------------------------------------------------
@@ -324,7 +344,8 @@ namespace PAMI
             _msync_composite_factory(&_sconnmgr, NULL),
             _msync2d_composite_factory(NULL),
             _mcast2d_composite_factory(NULL),
-            _mcomb2d_composite_factory(NULL)
+            _mcomb2d_composite_factory(NULL),
+            _mcomb2dNP_composite_factory(NULL)
         {
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()\n", this));
           DO_DEBUG((templateName<T_Geometry>()));
@@ -357,7 +378,8 @@ namespace PAMI
             _msync2d_composite_factory = new (_msync2d_composite_factory_storage) MultiSync2DeviceFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface*)_ni_array);
             _msync2d_composite_factory->setMapIdToGeometry(mapidtogeometry);
             _mcast2d_composite_factory = new (_mcast2d_composite_factory_storage) MultiCast2DeviceFactory(&_sconnmgr, _shmem_ni, false, _mu_ni,_mu_ni? true:false);
-            _mcomb2d_composite_factory = new (_mcomb2d_composite_factory_storage) MultiCombine2DeviceFactory(&_sconnmgr,  (CCMI::Interfaces::NativeInterface*)_ni_array);
+            _mcomb2d_composite_factory = new (_mcomb2d_composite_factory_storage) MultiCombine2DeviceFactory(&_sconnmgr, _shmem_ni, _mu_ni);
+            _mcomb2dNP_composite_factory = new (_mcomb2dNP_composite_factory_storage) MultiCombine2DeviceFactoryNP(&_sconnmgr,  (CCMI::Interfaces::NativeInterface*)_ni_array);
           }
 
         }
@@ -497,12 +519,19 @@ namespace PAMI
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast 2D\n", this));
                   geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
                 }
-  
+
+                if(_mcomb2dNP_composite_factory) 
+                {
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcomb 2DNP\n", this));
+                  geometry->addCollective(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context_id);
+                }
+
                 if(_mcomb2d_composite_factory) 
                 {
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcomb 2D\n", this));
                   geometry->addCollective(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory, _context_id);
                 }
+
               }
 
               // Check if *someone* registered local/global protocols for our geometry
@@ -601,6 +630,9 @@ namespace PAMI
 
         MultiCombine2DeviceFactory                     *_mcomb2d_composite_factory;
         uint8_t                                         _mcomb2d_composite_factory_storage[sizeof(MultiCombine2DeviceFactory)];
+
+        MultiCombine2DeviceFactoryNP                   *_mcomb2dNP_composite_factory;
+        uint8_t                                         _mcomb2dNP_composite_factory_storage[sizeof(MultiCombine2DeviceFactoryNP)];
     };
 
 
