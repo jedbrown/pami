@@ -316,7 +316,7 @@ namespace PAMI
 				int x;
 				for (x = 0; x < MMMAX_N_META; ++x) {
 					if (_metas[x]) {
-						_meta_mm->free(_metas[x]);
+						if (!_pre_alloc) _meta_mm->free(_metas[x]);
 						_metas[x] = NULL;
 					}
 				}
@@ -345,6 +345,7 @@ namespace PAMI
 
 		inline void init(MemoryManager *mm, const char *key) {
 			_meta_mm = mm;
+			_pre_alloc = (mm == shared_mm); // minimize small allocs
 			if (key) {
 				_meta_key_len = strlen(key);
 				strncpy(_meta_key_fmt, key, MMKEYSIZE);
@@ -355,9 +356,22 @@ namespace PAMI
 				_meta_key_fmt[_meta_key_len++] = '-';
 				_meta_key_fmt[_meta_key_len + 1] = '\0';
 			}
-			pami_result_t rc = _metaAlloc((void **)&_metahdr, sizeof(*_metahdr), 'h');
-			PAMI_assertf(rc == PAMI_SUCCESS,
+			pami_result_t rc;
+			if (_pre_alloc) {
+				rc = _metaAlloc((void **)&_metahdr, sizeof(*_metahdr), 'a');
+				PAMI_assertf(rc == PAMI_SUCCESS,
+					"Failed to get memory for meta data");
+				int x;
+				T_MMAlloc *mp = (T_MMAlloc *)(_metahdr + 1);
+				for (x = 0; x < MMMAX_N_META; ++x) {
+					_metas[x] = mp;
+					mp += MM_META_NUM(x);
+				}
+			} else {
+				rc = _metaAlloc((void **)&_metahdr, sizeof(*_metahdr), 'h');
+				PAMI_assertf(rc == PAMI_SUCCESS,
 					"Failed to get memory for _metahdr");
+			}
 			//new (_metahdr) MemoryManagerHeader(); // can? should?
 		}
 
@@ -454,6 +468,7 @@ namespace PAMI
 		}
 	private:
 		MemoryManager *_meta_mm; // mm for meta data (same scope as parent)
+		bool _pre_alloc;
 		MemoryManagerHeader *_metahdr;
 		char _meta_key_fmt[MMKEYSIZE];
 		size_t _meta_key_len;
