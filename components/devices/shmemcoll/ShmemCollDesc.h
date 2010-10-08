@@ -76,13 +76,18 @@ namespace PAMI
 			inline ShmemCollDesc():_master(0),_storage(NULL),_my_state(FREE),_seq_num(0),_num_consumers(0),_flag(0){};
 			inline ~ShmemCollDesc() {}
 
-			inline void init(Memory::MemoryManager *mm)
+			inline void init(Memory::MemoryManager *mm, const char *key)
 			{
-				_synch_counter.init (mm);
+				//char mmkey[PAMI::Memory::MMKEYSIZE];
+				//size_t keyl = sprintf(mmkey, "%s-x", key) - 1;
+				//mmkey[keyl] = 's';
+				_synch_counter.init (); // in-place counter
           		_synch_counter.fetch_and_clear ();
-				_done_counter.init (mm);
+				//mmkey[keyl] = 'd';
+				_done_counter.init (); // in-place counter
           		_done_counter.fetch_and_clear ();
-				//_seq_num.init (mm);
+				//mmkey[keyl] = 'q';
+				//_seq_num.init (mm, mmkey);
           		//_seq_num.fetch_and_clear ();
 				_num_consumers = 0;
 				_connid = -1;
@@ -260,10 +265,13 @@ namespace PAMI
 
 			public:
 
-			inline ShmemCollDescFifo(Memory::MemoryManager *mm ):_head(0), _tail(0), _next_pending_match(0), _fifo_end(DESCRIPTOR_FIFO_SIZE)
+			inline ShmemCollDescFifo(Memory::MemoryManager *mm, size_t clientid, size_t contextid):_head(0), _tail(0), _next_pending_match(0), _fifo_end(DESCRIPTOR_FIFO_SIZE)
 			{
+				char key[PAMI::Memory::MMKEYSIZE];
 				for(unsigned i=0; i < DESCRIPTOR_FIFO_SIZE; i++){
-					_desc[i].init(mm);
+					sprintf(key, "/ShmemCollDescFifo-%zd-%zd-%d",
+						clientid, contextid, i);
+					_desc[i].init(mm, key);
 					_desc[i].set_seq_id((uint64_t)i);
 //					new((void*)&_desc[i]) T_Desc(mm);
 				}

@@ -550,14 +550,12 @@ namespace CCMI
             DO_DEBUG(dumpDbuf((double*)m->_pwq_dst.bufferToConsume() , m->_pwq_dst.bytesAvailableToConsume() / sizeof(double)));
 
             if (m->_cb_done.function)
-              m->_cb_done.function(context, m->_cb_done.clientdata, result);
-
-            if (m->_bytes > 2048)
-              {
-                free(m->_buffer);
-                free(m->_buffer1);
-              }
-
+                   m->_cb_done.function(context, m->_cb_done.clientdata, result);
+            if(m->_bytes > 2048)
+            {
+              __global.heap_mm->free(m->_buffer); 
+              __global.heap_mm->free(m->_buffer1); 
+            }
             m->_buffer = NULL;
             m->_buffer1 = NULL;
           }
@@ -568,13 +566,12 @@ namespace CCMI
         public:
           ~MultiCombineComposite2DeviceNP ()
           {
-            TRACE_ADAPTOR((stderr, "<%p>~MultiCombineComposite2DeviceNP() %p, %p\n", this, _buffer, _buffer1));
-
-            if (_bytes > 2048)
-              {
-                free(_buffer);
-                free(_buffer1);
-              }
+            TRACE_ADAPTOR((stderr, "<%p>~MultiCombineComposite2DeviceNP() %p, %p\n",this,_buffer,_buffer1));
+            if(_bytes > 2048)
+            {
+              __global.heap_mm->free(_buffer);
+              __global.heap_mm->free(_buffer1);
+            }
           }
           MultiCombineComposite2DeviceNP (Interfaces::NativeInterface      *mInterface,
                                           ConnectionManager::SimpleConnMgr *cmgr,
@@ -626,12 +623,15 @@ namespace CCMI
                               func );
 
             _bytes                       = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE?
-
-            if (_bytes > 2048)
-              {
-                _buffer = (char*) malloc(_bytes + 128); /// \todo memory leak?
-                _buffer1 = (char*) malloc(_bytes + 128); /// \todo memory leak?
-              }
+            if(_bytes > 2048)
+            {
+	      pami_result_t rc;
+	      /// \todo memory leaks?
+	      rc = __global.heap_mm->memalign((void **)&_buffer, 0, _bytes + 128);
+	      PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _buffer %zd", _bytes + 128);
+	      rc = __global.heap_mm->memalign((void **)&_buffer1, 0, _bytes + 128);
+	      PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _buffer1 %zd", _bytes + 128);
+            }
             else
               {
                 _buffer = _bufferb;

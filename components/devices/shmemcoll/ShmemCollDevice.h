@@ -202,7 +202,9 @@ namespace PAMI
 			  assert(all_world_desc_fifos != NULL);
 
 			  size_t *peer_desc_fnum;
-			  peer_desc_fnum	= (size_t*)malloc(sizeof(size_t)*npeers);
+              pami_result_t rc;	// avoid warning when ASSERTS=0
+	      rc = __global.heap_mm->memalign((void **)&peer_desc_fnum, 0, sizeof(*peer_desc_fnum)*npeers);
+	      PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for peer_desc_fnum");
 		      // Assign fifo indexes to the peer fnum cache
               peer_desc_fnum[0] = 0;
 
@@ -214,9 +216,8 @@ namespace PAMI
                 }
 
               ShmemCollDevice * devices;
-              int rc;	// avoid warning when ASSERTS=0
-	      rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
-              PAMI_assertf(rc == 0, "posix_memalign failed for ShmemCollDevice[%zu], errno=%d\n", n, errno);
+	      rc = __global.heap_mm->memalign((void **) & devices, 16, sizeof(*devices) * n);
+              PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for ShmemCollDevice[%zu], errno=%d\n", n, errno);
 
               for (i = 0; i < n; ++i)
                 {

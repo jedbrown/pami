@@ -164,7 +164,7 @@ namespace PAMI
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           ShmemMsyncModel;
 
 #ifdef ENABLE_NEW_SHMEM
-  typedef PAMI::Device::Shmem::ShmemCollDesc <Atomic::GccBuiltin> ShmemCollDesc;
+  typedef PAMI::Device::Shmem::ShmemCollDesc <Counter::GccInPlaceCounter> ShmemCollDesc;
   typedef PAMI::Device::ShmemCollDevice<ShmemCollDesc> ShmemCollDevice;
   typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcombModel;
   typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcstModel;

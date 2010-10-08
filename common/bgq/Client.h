@@ -773,7 +773,8 @@ namespace PAMI
         PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
         to_reduce_count = local_master_topology->size();
 
-        to_reduce = (uint64_t *)malloc(to_reduce_count * sizeof(uint64_t));
+	rc = __global.heap_mm->memalign((void **)&to_reduce, 0, to_reduce_count * sizeof(uint64_t));
+	PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for to_reduce %zd", to_reduce_count * sizeof(uint64_t));
 
         // analyze_local initializes the to_reduce array before the global analyze (reduction)
         for(size_t n=0; n<_ncontexts; n++)
@@ -794,7 +795,9 @@ namespace PAMI
         Geometry::Algorithm<BGQGeometry> *ar_algo = (Geometry::Algorithm<BGQGeometry> *)alg;
 
         // Do a reduction and finish the global analyze and (maybe) start the optimization phase
-        GlobalAnalyzer<BGQGeometry> *ga = (GlobalAnalyzer<BGQGeometry> *)malloc(sizeof(GlobalAnalyzer<BGQGeometry>));
+        GlobalAnalyzer<BGQGeometry> *ga;
+	rc = __global.heap_mm->memalign((void **)&ga, 0, sizeof(*ga));
+	PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for GlobalAnalyzer<BGQGeometry> %zd", sizeof(*ga));
         new(ga)GlobalAnalyzer<BGQGeometry>(context,
                                            ar_algo,
                                            new_geometry,
@@ -807,7 +810,7 @@ namespace PAMI
           bargeom->default_barrier(GlobalAnalyzer<BGQGeometry>::start_global_analyzer, ga, context_id, context);
         else PAMI_assert(bargeom); /// \todo? parentless/UE barrier support
 
-        free(to_reduce);
+        __global.heap_mm->free(to_reduce);
 #else
         TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::start_barrier() context %p  %s\n", this, _clientid, context, optimize == PAMI_GEOMETRY_OPTIMIZE? "Optimized":" "));
         if(bargeom)
@@ -855,7 +858,8 @@ namespace PAMI
           _result_cookie(result_cookie)
           {
             TRACE_ERR((stderr, "<%p>BGQ::Client::GlobalAnalyzer()()\n", this));
-            _result = (uint64_t*) malloc(count*sizeof(uint64_t)*2);
+	    rc = __global.heap_mm->memalign((void **)&_result, 0, count*2*sizeof(*_result));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _result %zd", count*2*sizeof(*_result));
             _inval  = _result + count;
             memcpy(_inval,_bitmask,count*sizeof(uint64_t));
           }
@@ -863,7 +867,7 @@ namespace PAMI
         void free_arrays()
         {
           TRACE_ERR((stderr, "<%p>BGQ::Client::GlobalAnalyzer::free()()\n", this));
-          free(_result);
+          __global.heap_mm->free(_result);
         }
         static void global_analyzer_done(pami_context_t   context,
                                 void           * cookie,
@@ -876,7 +880,7 @@ namespace PAMI
                                &c->_result[0],
                                c->_geometry,result);
             c->free_arrays();
-            free(c);
+            __global.heap_mm->free(c);
           }
 
         static void start_global_analyzer(pami_context_t   context,

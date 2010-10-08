@@ -21,7 +21,7 @@
 #endif // TEST_BUF_SIZE
 #define SHORTITER 100
 #define LONGITER	10
-typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Atomic::GccBuiltin> ShmemCollDesc;
+typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::GccInPlaceCounter> ShmemCollDesc;
 //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::L2NodeCounter> ShmemCollDesc;
 typedef PAMI::Device::ShmemCollDevice <ShmemCollDesc> ShmemCollDevice;
 typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcstModel;
@@ -41,7 +41,7 @@ int main(int argc, char ** argv) {
         task_id = __global.mapping.task();
         num_tasks = __global.mapping.size();
         context = (pami_context_t)1; // context must not be NULL
-        PAMI::Memory::MemoryManager mm;
+        PAMI::Memory::GenMemoryManager mm;
         initializeMemoryManager("multicast test", 8192*1024, mm);
 
         if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);

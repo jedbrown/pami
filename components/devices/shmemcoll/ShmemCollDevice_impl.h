@@ -56,8 +56,8 @@ namespace PAMI
       //_local_task = _local_task / stride;//hack
 #endif
 
-      new (_my_desc_fifo) Shmem::ShmemCollDescFifo<T_Desc>(mm);
-      new (_my_world_desc_fifo) Shmem::ShmemCollDescFifo<T_Desc>(mm);
+      new (_my_desc_fifo) Shmem::ShmemCollDescFifo<T_Desc>(mm, clientid, contextid);
+      new (_my_world_desc_fifo) Shmem::ShmemCollDescFifo<T_Desc>(mm, clientid, contextid);
       // barrier ?
 
 		//delay
@@ -69,10 +69,13 @@ namespace PAMI
 		TRACE_ERR((stderr,"spin waiting\n"));
 		for (unsigned i =0; i < 10000000; i++){}
 
-      __collectiveQ = (Shmem::SendQueue *) malloc ((sizeof (Shmem::SendQueue)));
+	pami_result_t rc;
+	rc = __global.heap_mm->memalign((void **)&__collectiveQ, 0, sizeof(*__collectiveQ));
+	PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for __collectiveQ");
        new (__collectiveQ) Shmem::SendQueue (Generic::Device::Factory::getDevice (progress, 0, contextid));
 
-      __pending_descriptorQ = (Shmem::SendQueue *) malloc ((sizeof (Shmem::SendQueue)));
+	rc = __global.heap_mm->memalign((void **)&__pending_descriptorQ, 0, sizeof(*__pending_descriptorQ));
+	PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for __pending_descriptorQ");
        new (__pending_descriptorQ) Shmem::SendQueue (Generic::Device::Factory::getDevice (progress, 0, contextid));
 
       for (i = 0; i < MATCH_DISPATCH_SIZE; i++)
