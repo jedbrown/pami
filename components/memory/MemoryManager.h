@@ -191,7 +191,7 @@ namespace PAMI
 
 		inline void *userMem() { return (char *)_mem + _pad; }
 		inline size_t userSize() { return _userSize; }
-		inline size_t rawSize() { return (size_t)-1; }
+		inline size_t rawSize() { return _userSize; } // same same
 		inline void userSize(size_t size, size_t align) {
 			_userSize = size;
 			_pad = sizeof(MemoryManagerSync) + align; // worst-case
@@ -602,13 +602,14 @@ namespace PAMI
 		_num_frees = 0;
 		_loc_bytes = 0;
 		_rep_bytes = 0;
+		_fre_bytes = 0;
 	}
 	inline void MM_DUMP_STATS() {
 		fprintf(stderr, "%s(%p, %zd): %zd allocs, %zd frees, "
-				"local %zdb, repeat %zdb\n",
+				"local %zd, repeat %zd, freed %zd\n",
 			_name, _base, _size,
 			_num_allocs, _num_frees,
-			_loc_bytes, _rep_bytes);
+			_loc_bytes, _rep_bytes, _fre_bytes);
 	}
     public:
 	static size_t MAX_META_SIZE() {
@@ -653,7 +654,11 @@ namespace PAMI
 #endif // MM_DEBUG
 		// "reset" - discard arena
 		pami_result_t rc = PAMI_SUCCESS;
-		if (force) rc = _meta.reset();
+		if (force) {
+			// need to coordinate and synchronize... TBD
+			rc = _meta.reset();
+			memset(_base, 0, _size);
+		}
 		return rc;
 	}
 
@@ -796,7 +801,7 @@ namespace PAMI
 		if (m) {
 			if (_debug) {
 				++_num_frees;
-				// _rep_bytes -= m->rawSize(); // m->userSize();
+				_fre_bytes += m->rawSize();
 			}
 		}
 #endif // MM_DEBUG
@@ -842,6 +847,7 @@ namespace PAMI
 	size_t _num_frees;
 	size_t _loc_bytes;
 	size_t _rep_bytes;
+	size_t _fre_bytes;
 #endif // MM_DEBUG
     }; // class GenMemoryManager
 

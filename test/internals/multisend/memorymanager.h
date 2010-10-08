@@ -43,16 +43,9 @@ static inline pami_result_t initializeMemoryManager(const char *name, size_t byt
 
         } else {
                 // assert(bytes == _bytes || bytes == 0);
+		// need to "free" everything and reset...
+        	mm.reset(true);
         }
-	if (numparts != 0) {
-		if (numparts > 1) {
-			local_barriered_shmemzero(_ptr, _bytes, numparts, ismaster);
-		} else {
-			memset(_ptr, 0, _bytes);
-		}
-	}
-	// need to "free" everything and reset...
-        mm.reset(true);
 
         return PAMI_SUCCESS;
 }

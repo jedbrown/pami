@@ -30,12 +30,13 @@ namespace PAMI
 		_num_allocs = 0;
 		_num_frees = 0;
 		_total_bytes = 0;
+		_freed_bytes = 0;
 	}
 	inline void MM_DUMP_STATS() {
 		fprintf(stderr, "HeapMemoryManager: "
-					"%zd allocs, %zd frees, total %zdb\n",
+					"%zd allocs, %zd frees, total %zd, freed %zd\n",
 			_num_allocs, _num_frees,
-			_total_bytes);
+			_total_bytes, _freed_bytes);
 	}
     public:
 
@@ -123,6 +124,7 @@ namespace PAMI
 #ifdef MM_DEBUG
 		if (_debug) {
 			++_num_frees;
+			// _freed_bytes += bytes;
 		}
 #endif // MM_DEBUG
 #ifdef USE_MEMALIGN
@@ -151,6 +153,7 @@ namespace PAMI
 	size_t _num_allocs;
 	size_t _num_frees;
 	size_t _total_bytes;
+	size_t _freed_bytes;
 #endif // MM_DEBUG
     };
   };

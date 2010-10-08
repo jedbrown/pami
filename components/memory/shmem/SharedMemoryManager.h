@@ -43,12 +43,13 @@ namespace PAMI
 			_num_frees = 0;
 			_loc_bytes = 0;
 			_rep_bytes = 0;
+			_fre_bytes = 0;
 		}
 		inline void MM_DUMP_STATS() {
 			fprintf(stderr, "SharedMemoryManager: %zd allocs, %zd frees, "
-					"local %zdb, repeat %zdb\n",
+					"local %zd, repeat %zd, freed %zd\n",
 				_num_allocs, _num_frees,
-				_loc_bytes, _rep_bytes);
+				_loc_bytes, _rep_bytes, _fre_bytes);
 		}
 #endif // MM_DEBUG
       public:
@@ -120,6 +121,7 @@ namespace PAMI
 		}
 #endif // MM_DEBUG
 		pami_result_t rc = PAMI_SUCCESS;
+		// does the OS ensure that memory is zeroed when re-used???
 		if (force) rc = _meta.reset(); // acquires lock...
 		return rc;
 	}
@@ -187,22 +189,32 @@ namespace PAMI
 		lrc = shm_open(alloc->key(), O_CREAT | O_EXCL | O_RDWR, 0600);
 		first = (lrc != -1); // must be the first...
 
-		if (!first) lrc = shm_open(alloc->key(), O_RDWR, 0);
-		if (lrc == -1)
-		{
-			alloc->free();
-			_meta.release();
-			return PAMI_ERROR;
+		if (first) {
+			alloc->fd(lrc); // mmap (et al.) requires this first.
+			lrc = ftruncate(alloc->fd(), alloc->size()); // this zeroes memory...
+			if (lrc == -1) {
+				close(alloc->fd());
+				shm_unlink(alloc->key()); // yes?
+				alloc->free();
+				_meta.release();
+				return PAMI_ERROR;
+			}
+		} else {
+			lrc = shm_open(alloc->key(), O_RDWR, 0);
+			if (lrc == -1) {
+				alloc->free();
+				_meta.release();
+				return PAMI_ERROR;
+			}
+			alloc->fd(lrc); // mmap (et al.) requires this first.
 		}
-		alloc->fd(lrc); // mmap (et al.) requires this first.
-		lrc = ftruncate(alloc->fd(), alloc->size());
-		if (lrc == 0) {
-			ptr = mmap(NULL, alloc->size(), PROT_READ | PROT_WRITE, MAP_SHARED,
+		ptr = mmap(NULL, alloc->size(), PROT_READ | PROT_WRITE, MAP_SHARED,
 									alloc->fd(), 0);
-		}
 		if (ptr == NULL || ptr == MAP_FAILED)
 		{
 			// segment is not mapped...
+			close(alloc->fd());
+			if (first) shm_unlink(alloc->key()); // yes?
 			alloc->free();
 			_meta.release();
 			return PAMI_ERROR;
@@ -225,7 +237,7 @@ namespace PAMI
 #ifdef MM_DEBUG
 		if (_debug) {
 			++_num_allocs;
-			size_t alloc_bytes = alloc->userSize();
+			size_t alloc_bytes = alloc->rawSize();
 			if (first) {
 				_loc_bytes += alloc_bytes;
 			} else {
@@ -243,7 +255,7 @@ namespace PAMI
 #ifdef MM_DEBUG
 			if (_debug) {
 				++_num_frees;
-				_rep_bytes -= m->userSize();
+				_fre_bytes += m->rawSize();
 			}
 #endif // MM_DEBUG
 			m->free();
@@ -277,6 +289,7 @@ namespace PAMI
 	size_t _num_frees;
 	size_t _loc_bytes;
 	size_t _rep_bytes;
+	size_t _fre_bytes;
 #endif // MM_DEBUG
 
     }; // class SharedMemoryManager
