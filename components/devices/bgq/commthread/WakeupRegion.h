@@ -70,12 +70,9 @@ public:
 	///
 	inline pami_result_t init(size_t nctx, size_t me, size_t lsize, Memory::MemoryManager *mm) {
 		size_t mctx = nctx;
-		// in order for WAC base/mask values to work, need to ensure alignment
-		// is such that power-of-two pairs of (ctx0,mctx) result in viable
-		// base/mask values. Also... this is physical address dependent, so
-		// does the virtual address even matter?
-
-		// 256 + WU_CONTEXT_COST * mctx - WU_PROC_DISCOUNT * nproc; // nproc < 64...
+		// in order for WAC base/mask values to work, need to ensure size is
+		// of power-of-two with same address alignment. Assuming phy address
+		// alignment will match virt address alignment.
 
 		/// \page env_vars Environment Variables
 		///
