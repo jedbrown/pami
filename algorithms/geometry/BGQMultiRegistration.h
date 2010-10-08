@@ -500,7 +500,10 @@ namespace PAMI
                 if (_mcast2d_composite_factory)
                 {
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast 2D\n", this));
+// Doesn't work well enough to be a default protocol
+#ifdef ENABLE_NEW_SHMEM
                   geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
+#endif
                 }
               }
             }
@@ -535,7 +538,10 @@ namespace PAMI
                 if (_mcomb2d_composite_factory)
                 {
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcomb 2D\n", this));
+// Doesn't work well enough to be a default protocol
+#ifdef ENABLE_NEW_SHMEM
                   geometry->addCollective(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory, _context_id);
+#endif
                 }
 
               }
