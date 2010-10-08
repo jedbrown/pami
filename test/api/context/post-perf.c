@@ -4,7 +4,7 @@
  */
 
 #define NCONTEXTS  64
-#define ITERATIONS (1<<10)
+#define ITERATIONS (1<<15)
 
 
 #define NDEBUG
