@@ -70,6 +70,17 @@ namespace PAMI
         McombineMetaData,
         CCMI::ConnectionManager::SimpleConnMgr>
         MultiCombineFactory;
+
+        //----------------------------------------------------------------------------
+        // 'Composite' Shmem/MU allsided 2 device multicombine with no pipelining
+        //----------------------------------------------------------------------------
+        void Mcomb2DMetaDataNP(pami_metadata_t *m)
+        {
+          strncpy(&m->name[0], "MultiCombine2DeviceNPConverged", 32);
+        }
+        typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
+          Mcomb2DMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr > MultiCombineFactoryNP;
+
       };
       //  **********************************************************************
       //  End:  Typedefs for template instantiations
@@ -96,6 +107,7 @@ namespace PAMI
           char barrier_blob[sizeof(Barrier::MultiSyncFactory)];
           char broadcast_blob[sizeof(Broadcast::MultiCastFactory)];
           char allreduce_blob[sizeof(Allreduce::MultiCombineFactory)];
+          char allreducenp_blob[sizeof(Allreduce::MultiCombineFactoryNP)];
         }Factories;
 
         typedef struct GeometryInfo
@@ -107,6 +119,7 @@ namespace PAMI
           Barrier::MultiSyncFactory         *_barrier;
           Broadcast::MultiCastFactory       *_broadcast;
           Allreduce::MultiCombineFactory    *_allreduce;
+          Allreduce::MultiCombineFactoryNP  *_allreducenp;
           T_LocalModel                      *_local_model;
         }GeometryInfo;
 
@@ -210,10 +223,17 @@ namespace PAMI
                                                             (CCMI::Interfaces::NativeInterface *)_g_ni);
           geometryInfo->_allreduce                       = allreduce_reg;
 
+          //  ----->  Allreduce
+          Allreduce::MultiCombineFactoryNP  *allreducenp_reg = (Allreduce::MultiCombineFactoryNP*)_factory_allocator.allocateObject();
+          new(allreducenp_reg) Allreduce::MultiCombineFactoryNP(&_sconnmgr,
+                                                                (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[0]);
+          geometryInfo->_allreducenp                     = allreducenp_reg;
+
           // Add the geometry info to the geometry
           geometry->setKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI, ni);
           geometry->addCollective(PAMI_XFER_BARRIER,barrier_reg,context_id);
           geometry->addCollective(PAMI_XFER_BROADCAST,broadcast_reg,context_id);
+          geometry->addCollective(PAMI_XFER_ALLREDUCE,allreducenp_reg,context_id);
           geometry->addCollective(PAMI_XFER_ALLREDUCE,allreduce_reg,context_id);
 
           // Todo:  free the ginfo;
