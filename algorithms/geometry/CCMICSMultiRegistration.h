@@ -39,7 +39,7 @@ namespace CCMI
       void csmcomb_reduce_md(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
-        strcpy(&m->name[0],"ShmemCSMultiComb<");
+        strcpy(&m->name[0],"ShmemMultiCombConverged<");
       }
 
       typedef CCMI::Adaptor::AllSidedCSProtocolFactoryT<CSMultiCombineComposite, csmcomb_reduce_md> CSMultiCombineFactory;
@@ -51,7 +51,7 @@ namespace CCMI
       void csmcast_broadcast_md(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
-        strcpy(&m->name[0],"ShmemCSMultiCast");
+        strcpy(&m->name[0],"ShmemMultiCastConverged");
       }
 
       typedef CCMI::Adaptor::AllSidedCSProtocolFactoryT<CSMultiCastComposite, csmcast_broadcast_md> CSMultiCastFactory;
@@ -63,7 +63,7 @@ namespace CCMI
       void csmsync_barrier_md(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata
-        strcpy(&m->name[0],"ShmemCSMultiSync");
+        strcpy(&m->name[0],"ShmemMultiSyncConverged");
       }
 
       typedef CCMI::Adaptor::AllSidedCSProtocolFactoryT<CSMultiSyncComposite, csmsync_barrier_md> CSMultiSyncFactory;
