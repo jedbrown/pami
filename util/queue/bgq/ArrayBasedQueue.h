@@ -83,7 +83,6 @@ namespace PAMI {
       uint64_t index = 0; 
       
       if ( (index =  L2_AtomicLoadIncrementBounded (&_atomicCounters[0])) != L2_ATOMIC_EMPTY ) {
-	mem_sync();
 	//fprintf(stderr, "Dequeueing index %ld, counter address %lx\n", index, (uint64_t)&_atomicCounters[0]);
 	uint64_t qindex = index & (DEFAULT_SIZE - 1);
 	
@@ -91,6 +90,7 @@ namespace PAMI {
 	while (element == NULL) 	  //Wait till producer updates this
 	  element = _queueArray[qindex].element; 
 	
+	mem_sync();
 	//fprintf(stderr, "Found element %ld\n", index);
 	
 	_privateq.enqueue((Element *)element);
