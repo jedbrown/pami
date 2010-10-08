@@ -33,6 +33,7 @@ typedef PAMI::Counter::Pthread GenericDeviceCounter;
 #include "util/queue/Queue.h"
 #include "util/queue/MutexedQueue.h"
 #include "util/queue/MultiQueue.h"
+#include "util/queue/bgq/ArrayBasedQueue.h"
 
 /// \brief Queue type to use for messages
 #define GENDEVMSG_SEND_QNUM	0
@@ -52,6 +53,7 @@ typedef PAMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_SEND_QNUM>	GenericDevice
 /// \brief Queue type to use for generic device threads (work) queue(s)
 #include "util/queue/GccThreadSafeQueue.h"
 #include "components/atomic/bgq/L2Mutex.h"
-typedef PAMI::GccThreadSafeQueue<PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex> > GenericDeviceWorkQueue;
+//typedef PAMI::GccThreadSafeQueue<PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex> > GenericDeviceWorkQueue;
+typedef PAMI::ArrayBasedQueue<PAMI::Mutex::BGQ::L2ProcMutex> GenericDeviceWorkQueue;
 
 #endif // __common_bgq_GenericDevicePlatform_h__
