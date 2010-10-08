@@ -197,7 +197,8 @@ namespace PAMI
                 }
 
               ShmemCollDevice * devices;
-              int rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
+              int rc;	// avoid warning when ASSERTS=0
+	      rc = posix_memalign((void **) & devices, 16, sizeof(*devices) * n);
               PAMI_assertf(rc == 0, "posix_memalign failed for ShmemCollDevice[%zu], errno=%d\n", n, errno);
 
               for (i = 0; i < n; ++i)

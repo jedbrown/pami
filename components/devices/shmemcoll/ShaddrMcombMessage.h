@@ -319,7 +319,8 @@ namespace PAMI
 			TRACE_ERR((stderr, "bytes of data to be multicombined:%zu\n", bytes));
 
 			const uint64_t 	alignment = 64;
-			const uint64_t	mask1	= (alignment - 1);
+			uint64_t	mask1;		// avoid warnings when ASSERTS=0
+			mask1	= (alignment - 1);	// avoid warnings when ASSERTS=0
 
 			/* All nodes except master(local rank 0), do the math */
 

@@ -388,6 +388,7 @@ namespace CCMI
             size_t           numMasters  = _topology_g->size();
             size_t           numLocals   = _topology_l->size();
             PAMI_assertf(numMasters > 1 && numLocals > 1, "numMasters %zu, numLocals %zu\n", numMasters, numLocals); /// \todo keep it simple for now.
+	    numLocals = numLocals; numMasters = numMasters; // silence warnings when ASSERTS=0
 
             _deviceMcombInfo = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
             _deviceMcastInfo = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
