@@ -52,7 +52,7 @@ static inline pami_result_t initializeMemoryManager(const char *name, size_t byt
 		}
 	}
 	// need to "free" everything and reset...
-        mm.init(NULL, _bytes);
+        mm.reset(true);
 
         return PAMI_SUCCESS;
 }

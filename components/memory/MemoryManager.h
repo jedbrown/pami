@@ -281,6 +281,19 @@ namespace PAMI
 			}
 			return rc;
 		}
+		inline pami_result_t _freeAll() {
+			if (!_metahdr) return PAMI_SUCCESS;
+			size_t x, y;
+			for (x = 0; x < _metahdr->numMetas(); ++x) {
+				if (_metas[x] == NULL) break;
+				for (y = 0; y < MM_META_NUM(x); ++y) {
+					if (!_metas[x][y].isFree()) {
+						_metas[x][y].free();
+					}
+				}
+			}
+			return PAMI_SUCCESS;
+		}
 	public:
 		MemoryManagerMeta() :
 		_meta_mm(NULL),
@@ -294,19 +307,7 @@ namespace PAMI
 		virtual ~MemoryManagerMeta() {
 			if (!_metahdr) return;
 			acquire(); // no one else should be here...
-			if (!_metahdr) {
-				release();
-				return;
-			}
-			size_t x, y;
-			for (x = 0; x < _metahdr->numMetas(); ++x) {
-				if (_metas[x] == NULL) break;
-				for (y = 0; y < MM_META_NUM(x); ++y) {
-					if (!_metas[x][y].isFree()) {
-						_metas[x][y].free();
-					}
-				}
-			}
+			_freeAll();
 			release(); // no one else should be here...
 			if (_meta_mm->base()) { // still there?
 				if (_metahdr) {
@@ -321,6 +322,13 @@ namespace PAMI
 					}
 				}
 			}
+		}
+
+		inline pami_result_t reset() {
+			acquire();
+			pami_result_t rc = _freeAll();
+			release();
+			return rc;
 		}
 
 		inline void dump(const char *str) {
@@ -547,6 +555,13 @@ namespace PAMI
 					size_t new_align = 1,
 					unsigned attrs = 0, const char *key = NULL,
 					MM_INIT_FN *init_fn = NULL, void *cookie = NULL) = 0;
+        ///
+        /// \brief Reset a memory manager
+        ///
+        /// Forceably release all user memory. (caution!)
+	/// If PAMI_MM_DEBUG is set, will print then reset statistics.
+        ///
+        virtual pami_result_t reset(bool force = false) = 0;
 
 	virtual void dump(const char *str = NULL) = 0;
         ///
@@ -582,6 +597,12 @@ namespace PAMI
 
     class GenMemoryManager : public MemoryManager {
     private:
+	inline void MM_RESET_STATS() {
+		_num_allocs = 0;
+		_num_frees = 0;
+		_loc_bytes = 0;
+		_rep_bytes = 0;
+	}
 	inline void MM_DUMP_STATS() {
 		fprintf(stderr, "%s(%p, %zd): %zd allocs, %zd frees, "
 				"local %zdb, repeat %zdb\n",
@@ -604,10 +625,7 @@ namespace PAMI
 	{
 #ifdef MM_DEBUG // set/unset in MemoryManager.h
 		_debug = (getenv("PAMI_MM_DEBUG") != NULL);
-		_num_allocs = 0;
-		_num_frees = 0;
-		_loc_bytes = 0;
-		_rep_bytes = 0;
+		MM_RESET_STATS();
 #endif // MM_DEBUG
 	}
 	virtual ~GenMemoryManager()
@@ -624,11 +642,20 @@ namespace PAMI
 		}
 	}
 
-	static void _meta_reset(MemoryManagerAlloc *m, void *cookie) {
-		m->free();
-	}
-
 	inline const char *getName() { return _name; }
+
+	inline pami_result_t reset(bool force = false) {
+#ifdef MM_DEBUG
+		if (_debug) {
+			MM_DUMP_STATS();
+			MM_RESET_STATS();
+		}
+#endif // MM_DEBUG
+		// "reset" - discard arena
+		pami_result_t rc = PAMI_SUCCESS;
+		if (force) rc = _meta.reset();
+		return rc;
+	}
 
         inline pami_result_t init(MemoryManager *mm,
 					size_t bytes, size_t alignment = 1,
@@ -651,33 +678,26 @@ namespace PAMI
 			alignment = T_Alloc::ALIGNMENT;
 		}
 #endif
-		if (mm) {
-			_pmm = mm;
-			// make new allocation...
-			if (key) {
-				strncpy(_name, key, sizeof(_name));
-			} else {
-				_name[0] = '\0';
-			}
-			pami_result_t rc = mm->memalign((void **)&_base, alignment, bytes,
-								_name, init_fn, cookie);
-			if (rc != PAMI_SUCCESS) {
-				return rc;
-			}
-			_attrs = mm->attrs() | attrs;
-          		_size = bytes;
-			_alignment = new_align;
-			// have a problem when creating shm_mm,
-			// can't use itself for meta data allocs.
-			MemoryManager *mmm = (mm->attrs() & PAMI_MM_NODESCOPE) ?
-					(this == shm_mm ? shared_mm : shm_mm) : heap_mm;
-			_meta.init(mmm, _name);
+		_pmm = mm;
+		// make new allocation...
+		if (key) {
+			strncpy(_name, key, sizeof(_name));
 		} else {
-			// "reset" - discard arena
-			// this isn't really correct for multiple participants - TBD
-			_meta.forAllActive(_meta_reset);
-			_meta.init(NULL, NULL);
+			_name[0] = '\0';
 		}
+		pami_result_t rc = mm->memalign((void **)&_base, alignment, bytes,
+								_name, init_fn, cookie);
+		if (rc != PAMI_SUCCESS) {
+			return rc;
+		}
+		_attrs = mm->attrs() | attrs;
+          	_size = bytes;
+		_alignment = new_align;
+		// have a problem when creating shm_mm,
+		// can't use itself for meta data allocs.
+		MemoryManager *mmm = (mm->attrs() & PAMI_MM_NODESCOPE) ?
+					(this == shm_mm ? shared_mm : shm_mm) : heap_mm;
+		_meta.init(mmm, _name);
           	_enabled = true;
 		return PAMI_SUCCESS;
 	}

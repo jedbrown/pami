@@ -37,12 +37,20 @@ namespace PAMI
     class SharedMemoryManager : public MemoryManager
     {
 	private:
+#ifdef MM_DEBUG // set/unset in MemoryManager.h
+		inline void MM_RESET_STATS() {
+			_num_allocs = 0;
+			_num_frees = 0;
+			_loc_bytes = 0;
+			_rep_bytes = 0;
+		}
 		inline void MM_DUMP_STATS() {
 			fprintf(stderr, "SharedMemoryManager: %zd allocs, %zd frees, "
 					"local %zdb, repeat %zdb\n",
 				_num_allocs, _num_frees,
 				_loc_bytes, _rep_bytes);
 		}
+#endif // MM_DEBUG
       public:
 
 	/// \brief This class is a wrapper for the shm_open/ftruncate/mmap sequence
@@ -70,12 +78,9 @@ namespace PAMI
 		_attrs = PAMI_MM_NODESCOPE;
 		_meta.init(mm, "/pami-shmemmgr");
 		_enabled = true;
-#ifdef MM_DEBUG // set/unset in MemoryManager.h
+#ifdef MM_DEBUG
 		_debug = (getenv("PAMI_MM_DEBUG") != NULL);
-		_num_allocs = 0;
-		_num_frees = 0;
-		_loc_bytes = 0;
-		_rep_bytes = 0;
+		MM_RESET_STATS();
 #endif // MM_DEBUG
         }
 
@@ -105,6 +110,18 @@ namespace PAMI
 	{
 		PAMI_abortf("SharedMemoryManager cannot be init()");
 		return PAMI_ERROR;
+	}
+
+	inline pami_result_t reset(bool force = false) {
+#ifdef MM_DEBUG
+		if (_debug) {
+			MM_DUMP_STATS();
+			MM_RESET_STATS();
+		}
+#endif // MM_DEBUG
+		pami_result_t rc = PAMI_SUCCESS;
+		if (force) rc = _meta.reset(); // acquires lock...
+		return rc;
 	}
 
 	/// \todo How to enforce alignment?

@@ -25,6 +25,18 @@ namespace PAMI
   {
     class HeapMemoryManager : public MemoryManager
     {
+    private:
+	inline void MM_RESET_STATS() {
+		_num_allocs = 0;
+		_num_frees = 0;
+		_total_bytes = 0;
+	}
+	inline void MM_DUMP_STATS() {
+		fprintf(stderr, "HeapMemoryManager: "
+					"%zd allocs, %zd frees, total %zdb\n",
+			_num_allocs, _num_frees,
+			_total_bytes);
+	}
     public:
 
       inline HeapMemoryManager () :
@@ -34,9 +46,7 @@ namespace PAMI
 		_attrs = PAMI_MM_PROCSCOPE;
 #ifdef MM_DEBUG // set/unset in MemoryManager.h
 		_debug = (getenv("PAMI_MM_DEBUG") != NULL);
-		_num_allocs = 0;
-		_num_frees = 0;
-		_total_bytes = 0;
+		MM_RESET_STATS();
 		// since currently this can't track number of bytes freed,
 		// don't bother trying to track current/max bytes.
 #endif // MM_DEBUG
@@ -49,10 +59,7 @@ namespace PAMI
 		// is all being reclaimed by the OS.
 #ifdef MM_DEBUG
 		if (_debug) {
-			fprintf(stderr, "HeapMemoryManager: "
-					"%zd allocs, %zd frees, total %zdb\n",
-				_num_allocs, _num_frees,
-				_total_bytes);
+			MM_DUMP_STATS();
 		}
 #endif // MM_DEBUG
 	}
@@ -66,6 +73,17 @@ namespace PAMI
 	{
 		PAMI_abortf("HeapMemoryManager cannot be init()");
 		return PAMI_ERROR;
+	}
+
+	inline pami_result_t reset(bool force = false) {
+#ifdef MM_DEBUG
+		if (_debug) {
+			MM_DUMP_STATS();
+			MM_RESET_STATS();
+		}
+#endif // MM_DEBUG
+		// can't actually release any memory... yet.
+		return PAMI_SUCCESS;
 	}
 
 	inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes,
