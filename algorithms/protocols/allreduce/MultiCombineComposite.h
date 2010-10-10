@@ -137,10 +137,10 @@ namespace CCMI
             }
 
           MultiCombineComposite2DeviceFactoryT *_factory;
-          pami_event_function                _user_done_fn;
-          void                              *_user_cookie;
-          T_Composite                        _obj;
-          unsigned                           _connection_id;
+          pami_event_function                   _user_done_fn;
+          void                                 *_user_cookie;
+          T_Composite                           _obj;
+          unsigned                              _connection_id;
         };
       public:
         MultiCombineComposite2DeviceFactoryT (T_Connmgr                   *cmgr,
@@ -196,6 +196,17 @@ namespace CCMI
       class MultiCombineComposite2Device : public CCMI::Executor::Composite
       {
       public:
+        static void composite_done(pami_context_t  context,
+                                   void           *cookie,
+                                   pami_result_t   result)
+          {
+            MultiCombineComposite2Device *m = (MultiCombineComposite2Device*) cookie;
+            m->_count--;
+            TRACE_ADAPTOR((stderr, "MultiCombineComposite2Device:  composite done:  count=%ld\n", m->_count));
+            if (m->_count==0)
+              m->_user_done.function(context, m->_user_done.clientdata, result);
+          }
+        
         MultiCombineComposite2Device (Interfaces::NativeInterface      *native_l,
                                       Interfaces::NativeInterface      *native_g,
                                       ConnectionManager::SimpleConnMgr *cmgr,
@@ -206,41 +217,226 @@ namespace CCMI
           Composite(),
           _native_l(native_l),
           _native_g(native_g),
-          _geometry((PAMI_GEOMETRY_CLASS*)g),
-          _deviceInfo(NULL),
-          _root_topo(cmd->cmd.xfer_broadcast.root),
-          _justme_topo(_geometry->rank())
+          _geometry((PAMI_GEOMETRY_CLASS*)g)
           {
-          }
+            PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getLocalMasterTopology();
+            PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getLocalTopology();
+            PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getMyMasterTopology();
+            bool             amMaster    = _geometry->isLocalMasterParticipant();
+            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID); // todo:  shared mem may need its own devinfo
+            size_t           sbytes      = cmd->cmd.xfer_allreduce.stypecount*1; // todo add type
+            TRACE((stderr, "MultiCombineComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, bytes=%ld buf=%p\n",
+                   &_pwq_src, &_pwq_dest, bytes, cmd->cmd.xfer_allreduce.sndbuf));
 
+            // Create a "flat pwq" for the send buffer
+            _pwq_src.configure(NULL,                            // Memory manager
+                            cmd->cmd.xfer_allreduce.sndbuf,  // buffer
+                            sbytes,                          // buffer bytes
+                            sbytes);                         // amount initially in buffer
+            _pwq_dest.configure(NULL,                            // Memory manager
+                            cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
+                            sbytes,                          // buffer bytes
+                            0);                              // amount initially in buffer
+            _user_done.clientdata = cmd->cookie;
+            _user_done.function   = cmd->cb_done;
+            _pwq_src.reset();
+            _pwq_dest.reset();
+            
+            // The "Only Local" case
+            // This means the geometry only contains local tasks
+            // A single multicombine will suffice to handle the allreduce
+            if(t_local->size() == _geometry->size())
+              {
+                _mcombine_l.client               = NULL;
+                _mcombine_l.context              = NULL;
+                _mcombine_l.cb_done.clientdata   = this;
+                _mcombine_l.cb_done.function     = composite_done;
+                _mcombine_l.connection_id        = _geometry->comm();
+                _mcombine_l.roles                = -1U;
+                _mcombine_l.data                 = (pami_pipeworkqueue_t*)&_pwq_src;
+                _mcombine_l.data_participants    = (pami_topology_t*)t_local;
+                _mcombine_l.results              = (pami_pipeworkqueue_t*)&_pwq_dest;
+                _mcombine_l.results_participants = (pami_topology_t*)t_local;
+                _mcombine_l.optor                = cmd->cmd.xfer_allreduce.op;
+                _mcombine_l.dtype                = cmd->cmd.xfer_allreduce.dt;
+                _mcombine_l.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
+                _startFcn                        = &MultiCombineComposite2Device::start0;
+                _count                           = 1;
+                return;
+              }
+
+            // The "Only Global Master" case
+            // My task only belongs to a global master, with no other local task
+            // A single multicombine will suffice in this case as well
+            // To detect this case, the local size will be only me
+            if(t_local->size() == 1)
+              {
+                _mcombine_g.client               = NULL;
+                _mcombine_g.context              = NULL;
+                _mcombine_g.cb_done.clientdata   = this;
+                _mcombine_g.cb_done.function     = composite_done;
+                _mcombine_g.connection_id        = _geometry->comm();
+                _mcombine_g.roles                = -1U;
+                _mcombine_g.data                 = (pami_pipeworkqueue_t*)&_pwq_src;
+                _mcombine_g.data_participants    = (pami_topology_t*)t_master;
+                _mcombine_g.results              = (pami_pipeworkqueue_t*)&_pwq_dest;
+                _mcombine_g.results_participants = (pami_topology_t*)t_master;
+                _mcombine_g.optor                = cmd->cmd.xfer_allreduce.op;
+                _mcombine_g.dtype                = cmd->cmd.xfer_allreduce.dt;
+                _mcombine_g.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
+                _startFcn                        = &MultiCombineComposite2Device::start1;
+                _count                           = 1;
+                return;                
+              }
+
+            // This is the non-master participant in the reduction
+            // In this case, the task will participate in a local multicombine as a contributer(only)
+            // followed by a local multicast(as a recipient).  To detect this case
+            // we must not be a master task
+            if(!amMaster)
+              {
+                // The local multicombine
+                // Source is local topology
+                // Destination is the global master, a reduction
+                _mcombine_l.client               = NULL;
+                _mcombine_l.context              = NULL;
+                _mcombine_l.cb_done.clientdata   = this;
+                _mcombine_l.cb_done.function     = composite_done;
+                _mcombine_l.connection_id        = _geometry->comm();
+                _mcombine_l.roles                = -1U;
+                _mcombine_l.data                 = (pami_pipeworkqueue_t*)&_pwq_src;
+                _mcombine_l.data_participants    = (pami_topology_t*)t_local;
+                _mcombine_l.results              = NULL;
+                _mcombine_l.results_participants = (pami_topology_t*)t_my_master;
+                _mcombine_l.optor                = cmd->cmd.xfer_allreduce.op;
+                _mcombine_l.dtype                = cmd->cmd.xfer_allreduce.dt;
+                _mcombine_l.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
+
+                // Also, prepare the local multicast, with the root as the local master
+                // We are guaranteed to not have an early arrival with this multicast if we post
+                // it first.  This protocol expects the local multicast to be 2 sided
+                _mcast_l.client                  = NULL;
+                _mcast_l.context                 = NULL;
+                _mcast_l.cb_done.function        = composite_done;
+                _mcast_l.cb_done.clientdata      = this;
+                _mcast_l.connection_id           = _geometry->comm();
+                _mcast_l.roles                   = -1U;
+                _mcast_l.bytes                   = cmd->cmd.xfer_allreduce.rtypecount;
+                _mcast_l.src                     = NULL;
+                _mcast_l.src_participants        = (pami_topology_t*)t_my_master;
+                _mcast_l.dst                     = (pami_pipeworkqueue_t*)&_pwq_dest;
+                _mcast_l.dst_participants        = (pami_topology_t*)t_local;
+                _mcast_l.msginfo                 = 0;
+                _mcast_l.msgcount                = 0;
+                _startFcn                        = &MultiCombineComposite2Device::start2;
+                _count                           = 2;
+                return;
+              }
+
+            // The final case:  this task a global master, with local nodes as well
+            // In this case, we will be the target of a local reduction, and participate
+            // in this reduction.  The results will chain into a global reduction, which
+            // will chain into a local mcast:
+            // local_mc[local_topo,me]-->global_mc[master topo, master topo]-->local_mcast[me, local_topo]
+            // These extra PWQ's are pointing at the reception buffer.  This means that the
+            // reception buffers will be overwritten, maybe more than once
+            // todo Do we need some scratch space if we want to do something like in place?
+            _pwq_inter0.configure(NULL,                            // Memory manager
+                                  cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
+                                  sbytes,                          // buffer bytes
+                                  0);                              // amount initially in buffer
+            _pwq_inter1.configure(NULL,                            // Memory manager
+                                  cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
+                                  sbytes,                          // buffer bytes
+                                  0);                              // amount initially in buffer
+            _pwq_inter0.reset();
+            _pwq_inter1.reset();
+
+            _mcombine_l.client               = NULL;
+            _mcombine_l.context              = NULL;
+            _mcombine_l.cb_done.clientdata   = this;
+            _mcombine_l.cb_done.function     = composite_done;
+            _mcombine_l.connection_id        = _geometry->comm();
+            _mcombine_l.roles                = -1U;
+            _mcombine_l.data                 = (pami_pipeworkqueue_t*)&_pwq_src;
+            _mcombine_l.data_participants    = (pami_topology_t*)t_local;
+            _mcombine_l.results              = (pami_pipeworkqueue_t*)&_pwq_inter0; // results can go in dest buffer
+            _mcombine_l.results_participants = (pami_topology_t*)t_my_master;       // me!
+            _mcombine_l.optor                = cmd->cmd.xfer_allreduce.op;
+            _mcombine_l.dtype                = cmd->cmd.xfer_allreduce.dt;
+            _mcombine_l.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
+
+            _mcombine_g.client               = NULL;
+            _mcombine_g.context              = NULL;
+            _mcombine_g.cb_done.clientdata   = this;
+            _mcombine_g.cb_done.function     = composite_done;
+            _mcombine_g.connection_id        = _geometry->comm();
+            _mcombine_g.roles                = -1U;
+            _mcombine_g.data                 = (pami_pipeworkqueue_t*)&_pwq_inter0;
+            _mcombine_g.data_participants    = (pami_topology_t*)t_master;
+            _mcombine_g.results              = (pami_pipeworkqueue_t*)&_pwq_inter1;
+            _mcombine_g.results_participants = (pami_topology_t*)t_master;
+            _mcombine_g.optor                = cmd->cmd.xfer_allreduce.op;
+            _mcombine_g.dtype                = cmd->cmd.xfer_allreduce.dt;
+            _mcombine_g.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
+
+            _mcast_l.client                  = NULL;
+            _mcast_l.context                 = NULL;
+            _mcast_l.cb_done.function        = composite_done;
+            _mcast_l.cb_done.clientdata      = this;
+            _mcast_l.connection_id           = _geometry->comm();
+            _mcast_l.roles                   = -1U;
+            _mcast_l.bytes                   = cmd->cmd.xfer_allreduce.rtypecount;
+            _mcast_l.src                     = (pami_pipeworkqueue_t*)&_pwq_inter1;
+            _mcast_l.src_participants        = (pami_topology_t*)t_my_master;  // me!
+            _mcast_l.dst                     = (pami_pipeworkqueue_t*)&_pwq_dest;
+            _mcast_l.dst_participants        = (pami_topology_t*)t_local;
+            _mcast_l.msginfo                 = 0;
+            _mcast_l.msgcount                = 0;
+            _count                           = 3;
+            _startFcn                        = &MultiCombineComposite2Device::start3;
+          }
+        void start0()
+          {
+            _native_l->multicombine(&_mcombine_l, _deviceInfo);
+          }
+        void start1()
+          {
+            _native_g->multicombine(&_mcombine_g, _deviceInfo);
+          }
+        void start2()
+          {
+            _native_l->multicast(&_mcast_l, _deviceInfo);
+            _native_l->multicombine(&_mcombine_l, _deviceInfo);
+          }
+        void start3()
+          {
+            _native_l->multicast(&_mcast_l, _deviceInfo);
+            _native_l->multicombine(&_mcombine_l, _deviceInfo);
+            _native_g->multicombine(&_mcombine_g, _deviceInfo);
+          }
+        
         virtual void start()
           {
+            (this->*_startFcn)();
           }
-
-        Interfaces::NativeInterface        *_native_l;
-        Interfaces::NativeInterface        *_native_g;
-        Interfaces::NativeInterface        *_active_native[2];
-        pami_multicombine_t                *_active_minfo[2];
-        PAMI_GEOMETRY_CLASS                *_geometry;
-        void                               *_deviceInfo;
-        PAMI::Topology                     *_l_topology;
-        PAMI::Topology                     *_g_topology;
-        pami_multicast_t                    _minfo_l;
-        pami_multicast_t                    _minfo_g;
-        PAMI::PipeWorkQueue                 _pwq0;
-        PAMI::PipeWorkQueue                 _pwq1;
-        PAMI::Topology                      _root_topo;
-        PAMI::Topology                      _justme_topo;
-        pami_callback_t                     _master_done;
-        size_t                              _count;
+        void (MultiCombineComposite2Device::*_startFcn)();
+        Interfaces::NativeInterface         *_native_l;
+        Interfaces::NativeInterface         *_native_g;
+        PAMI_GEOMETRY_CLASS                 *_geometry;
+        void                                *_deviceInfo;
+        PAMI::Topology                      *_l_topology;
+        PAMI::Topology                      *_g_topology;
+        pami_multicombine_t                  _mcombine_l;
+        pami_multicombine_t                  _mcombine_g;
+        pami_multicast_t                     _mcast_l;
+        PAMI::PipeWorkQueue                  _pwq_src;
+        PAMI::PipeWorkQueue                  _pwq_dest;
+        PAMI::PipeWorkQueue                  _pwq_inter0;
+        PAMI::PipeWorkQueue                  _pwq_inter1;
+        pami_callback_t                      _user_done;
+        size_t                               _count;
       };
-
-
-
-
-
-
-
 
 
       /// \brief All sided allreduce over all sided multicombines/multicasts
