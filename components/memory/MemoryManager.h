@@ -135,9 +135,20 @@ namespace PAMI
 			_rawSize = (_offset - off) + _userSize;
 		}
 
-		inline void free() { memset(this, 0, sizeof(*this)); }
-		static void static_free(MemoryManagerAlloc *m, void *v) {
-			m->free();
+		// returns PAMI_SUCCESS if last reference gone, otherwise
+		// PAMI_EAGAIN (potentially, PAMI_ERROR but not currently used).
+		// caller holds lock...
+		inline pami_result_t free() {
+			// this destroys VFT? Can't do this anyway.
+			// memset(this, 0, sizeof(*this));
+
+			pami_result_t rc = PAMI_EAGAIN; // i.e. EBUSY
+			// Meta data in shared memory, or same memory as allocation...
+			if (rmRef() == 1) {
+				freeKey();
+				rc = PAMI_SUCCESS;
+			}
+			return rc;
 		}
 
 		inline void *userMem() { return (void *)-1; }
@@ -158,29 +169,32 @@ namespace PAMI
 		MemoryManagerOSShmAlloc() { }
 		virtual ~MemoryManagerOSShmAlloc() { }
 
+		// returns PAMI_SUCCESS if last reference gone, otherwise
+		// PAMI_EAGAIN (potentially, PAMI_ERROR but not currently used).
 		// caller holds lock...
-		inline void free() {
+		inline pami_result_t free() {
+			pami_result_t rc = PAMI_EAGAIN; // i.e. EBUSY
+			// Meta data in private memory, but allocation is shared...
 			close(_fd);
 			if (sync() && rmRef() == 1) { // last one out...
 				// zero memory so that next use is zeroed?
 				// memset(rawAddress(), 0, size());
 				shm_unlink(key());
+				rc = PAMI_SUCCESS;
 			}
 			freeKey();
-		}
-
-		// caller holds lock...
-		static void static_free(MemoryManagerOSShmAlloc *m, void *v) {
-			m->free();
+			return rc;
 		}
 
 		inline void fd(int fd) { _fd = fd; }
 		inline int fd() { return _fd; }
 		inline void vkey(uint32_t key) { _vkey = key; }
 		inline uint32_t vkey() { return _vkey; }
-		inline void mem(void *mem, size_t align) {
+		inline void mem(void *mem, size_t len, size_t align) {
 			_mem = mem;
 			_pad = padding(mem, sizeof(MemoryManagerSync), align);
+			_userSize = len;
+			_size = len + _pad;
 		}
 		inline void *mem() { return _mem; }
 		inline size_t size() { return _size; }
@@ -192,10 +206,9 @@ namespace PAMI
 		inline void *userMem() { return (char *)_mem + _pad; }
 		inline size_t userSize() { return _userSize; }
 		inline size_t rawSize() { return _userSize; } // same same
-		inline void userSize(size_t size, size_t align) {
-			_userSize = size;
-			_pad = sizeof(MemoryManagerSync) + align; // worst-case
-			_size = size + _pad;
+		inline void userSize(size_t size, size_t align) { }
+		static size_t maxSize(size_t size, size_t align) {
+			return sizeof(MemoryManagerSync) + align + size;
 		}
 
 		inline void initDone() { sync()->initDone(); }
@@ -259,6 +272,45 @@ namespace PAMI
 	template <class T_MMAlloc = MemoryManagerAlloc>
 	class MemoryManagerMeta {
 	private:
+
+		inline void __mark(size_t z) {
+			_my_metas[z / (sizeof(*_my_metas) * 8)] |=
+					(1 << (z % (sizeof(*_my_metas) * 8)));
+		}
+
+		inline void __unMark(size_t z) {
+			_my_metas[z / (sizeof(*_my_metas) * 8)] &=
+					~(1 << (z % (sizeof(*_my_metas) * 8)));
+		}
+
+		inline bool __isMarked(size_t z) {
+			return (_my_metas[z / (sizeof(*_my_metas) * 8)] &
+					(1 << (z % (sizeof(*_my_metas) * 8)))) != 0;
+		}
+
+		/// Caller declares size_t x = 0, y = 0, z = 0;
+		/// before starting iteration. Return value of NULL is end.
+		///
+		template <bool fill, bool want>
+		inline T_MMAlloc *__locateOne(size_t &x, size_t &y, size_t &z) {
+			size_t max = (want ? MMMAX_N_META : _metahdr->numMetas());
+			for (; x < max; ++x, y = 0) {
+				if (fill && _getMeta(x) != PAMI_SUCCESS) return NULL;
+				if (!fill && _metas[x] == NULL) return NULL;
+				for (; y < MM_META_NUM(x); ++y, ++z) {
+					if (_metas[x][y].isFree() == want) {
+						return &_metas[x][y];
+					}
+				}
+			}
+			return NULL;
+		}
+		// Caller of __locateOne() must call this between iterations.
+		inline void __locateSkip(size_t &x, size_t &y, size_t &z) {
+			++y;
+			++z;
+		}
+
 		inline pami_result_t _metaAlloc(void **pptr, size_t len, char tag) {
 			pami_result_t rc;
 			if (_meta_key_len) {
@@ -281,25 +333,40 @@ namespace PAMI
 			}
 			return rc;
 		}
+
 		inline pami_result_t _freeAll() {
 			if (!_metahdr) return PAMI_SUCCESS;
-			size_t x, y;
-			for (x = 0; x < _metahdr->numMetas(); ++x) {
-				if (_metas[x] == NULL) break;
-				for (y = 0; y < MM_META_NUM(x); ++y) {
-					if (!_metas[x][y].isFree()) {
-						_metas[x][y].free();
-					}
+			size_t x = 0, y = 0, z = 0;
+			size_t nf = 0; // "Not Freed"...
+			T_MMAlloc *m;
+			while ((m = __locateOne<false,false>(x, y, z))) {
+				if (!__isMarked(z) || free(m) != PAMI_SUCCESS) {
+					++nf;
 				}
+				__locateSkip(x, y, z);
+			}
+			if (nf == 0) { // got them all...
+				_metahdr->offset(0);
 			}
 			return PAMI_SUCCESS;
 		}
 	public:
+		static const size_t MAX_NUM_META() {
+			size_t x;
+			size_t y = 0;
+			for (x = 0; x < MMMAX_N_META; ++x) {
+				y += MM_META_NUM(x);
+			}
+			return y;
+		}
+
 		MemoryManagerMeta() :
 		_meta_mm(NULL),
 		_metahdr(NULL),
 		_meta_key_fmt(),
-		_meta_key_len(0)
+		_meta_key_len(0),
+		_my_metas(NULL),
+		_last_z(0)
 		{
 			memset(_metas, 0, sizeof(_metas));
 		}
@@ -327,27 +394,29 @@ namespace PAMI
 		inline pami_result_t reset() {
 			acquire();
 			pami_result_t rc = _freeAll();
+			if (rc == PAMI_SUCCESS && _metahdr->offset() != 0) {
+				rc = PAMI_ERROR;
+			}
 			release();
 			return rc;
 		}
 
 		inline void dump(const char *str) {
-			size_t x, y;
+			size_t x = 0, y = 0, z = 0;
+			T_MMAlloc *m;
 			if (!_metahdr) return;
-			for (x = 0; x < _metahdr->numMetas(); ++x) {
-				if (_getMeta(x) != PAMI_SUCCESS) return;
-				for (y = 0; y < MM_META_NUM(x); ++y) {
-					if (_metas[x][y].isFree()) { continue; }
-					fprintf(stderr, "%s: _metas[%zd][%zd]: "
-						"\"%s\" %p %zd (%zd/%zd)\n",
-						str, x, y,
-						_metas[x][y].key(),
-						_metas[x][y].userMem(),
-						_metas[x][y].offset(),
-						_metas[x][y].userSize(),
-						_metas[x][y].rawSize()
-						);
-				}
+			while ((m = __locateOne<true,false>(x, y, z))) {
+				// dump "my" flag too?
+				fprintf(stderr, "%s: _metas[%zd][%zd]: "
+					"\"%s\" %p %zd (%zd/%zd)\n",
+					str, x, y,
+					m->key(),
+					m->userMem(),
+					m->offset(),
+					m->userSize(),
+					m->rawSize()
+					);
+				__locateSkip(x, y, z);
 			}
 		}
 
@@ -380,6 +449,12 @@ namespace PAMI
 				PAMI_assertf(rc == PAMI_SUCCESS,
 					"Failed to get memory for _metahdr");
 			}
+			// one bit per entry in _metas[*]...
+			rc = heap_mm->memalign((void **)&_my_metas, sizeof(*_my_metas),
+								MAX_NUM_META() / 8);
+			PAMI_assertf(rc == PAMI_SUCCESS,
+					"Failed to get memory for _my_metas");
+			memset(_my_metas, 0, MAX_NUM_META() / 8);
 			//new (_metahdr) MemoryManagerHeader(); // can? should?
 		}
 
@@ -398,17 +473,19 @@ namespace PAMI
 			return _metahdr->offset(offset + bytes);
 		}
 
+		// Find existing, possibly from other thread (requires filling
+		// of all space).
 		// caller holds lock
 		inline T_MMAlloc *find(const char *key) {
-			size_t x, y;
-			for (x = 0; x < _metahdr->numMetas(); ++x) {
-				if (_getMeta(x) != PAMI_SUCCESS) return NULL;
-				for (y = 0; y < MM_META_NUM(x); ++y) {
-					if (_metas[x][y].isFree()) continue;
-					if (_metas[x][y].isMatch(key)) {
-						return &_metas[x][y];
-					}
+			size_t x = 0, y = 0, z = 0;
+			T_MMAlloc *m;
+			while ((m = __locateOne<true,false>(x, y, z))) {
+				if (m->isMatch(key)) {
+					_last_z = z;
+					m->addRef();
+					return m;
 				}
+				__locateSkip(x, y, z);
 			}
 			return NULL;
 		}
@@ -416,15 +493,14 @@ namespace PAMI
 		// only for MemoryManager, T_MMAlloc == MemoryManagerAlloc
 		// caller holds lock
 		inline T_MMAlloc *find(size_t off) {
-			size_t x, y;
-			for (x = 0; x < _metahdr->numMetas(); ++x) {
-				if (_metas[x] == NULL) break;
-				for (y = 0; y < MM_META_NUM(x); ++y) {
-					if (_metas[x][y].isFree()) continue;
-					if (_metas[x][y].offset() == off) {
-						return &_metas[x][y];
-					}
+			size_t x = 0, y = 0, z = 0;
+			T_MMAlloc *m;
+			while ((m = __locateOne<false,false>(x, y, z))) {
+				if (_metas[x][y].offset() == off) {
+					_last_z = z;
+					return m;
 				}
+				__locateSkip(x, y, z);
 			}
 			return NULL;
 		}
@@ -432,47 +508,73 @@ namespace PAMI
 		// only for SharedMemoryManager, T_MMAlloc == MemoryManagerOSShmAlloc
 		// caller holds lock
 		inline T_MMAlloc *find(void *mem) {
-			size_t x, y;
-			for (x = 0; x < _metahdr->numMetas(); ++x) {
-				if (_metas[x] == NULL) break;
-				for (y = 0; y < MM_META_NUM(x); ++y) {
-					if (_metas[x][y].isFree()) continue;
-					if (_metas[x][y].userMem() == mem) {
-						return &_metas[x][y];
-					}
+			size_t x = 0, y = 0, z = 0;
+			T_MMAlloc *m;
+			while ((m = __locateOne<false,false>(x, y, z))) {
+				if (_metas[x][y].userMem() == mem) {
+					_last_z = z;
+					return m;
 				}
+				__locateSkip(x, y, z);
 			}
 			return NULL;
 		}
 
 		// allocates more space if needed/possible.
 		// caller holds lock
-		inline T_MMAlloc *findFree() {
-			size_t x, y;
-			COMPILE_TIME_ASSERT(MMMAX_N_META <= 10); // for "0123456789"[x]...
-			for (x = 0; x < MMMAX_N_META; ++x) {
-				if (_getMeta(x) != PAMI_SUCCESS) return NULL;
-				for (y = 0; y < MM_META_NUM(x); ++y) {
-					if (_metas[x][y].isFree()) {
-						return &_metas[x][y];
-					}
-				}
+		inline T_MMAlloc *findFree(void *mem, size_t len, size_t aln,
+								const char *key) {
+			size_t x = 0, y = 0, z = 0;
+			T_MMAlloc *m = __locateOne<true,true>(x, y, z);
+			if (m) {
+				m->key(key);
+				m->mem(mem, len, aln);
+				m->userSize(len, aln);
+				m->addRef();
+				__mark(z);
 			}
-			return NULL;
+			return m;
+		}
+
+		// allocates more space if needed/possible.
+		// caller holds lock
+		inline T_MMAlloc *findFree(size_t off, size_t len, size_t max,
+								const char *key) {
+			COMPILE_TIME_ASSERT(MMMAX_N_META <= 10); // for "0123456789"[x]...
+			size_t x = 0, y = 0, z = 0;
+			T_MMAlloc *m = __locateOne<true,true>(x, y, z);
+			if (m) {
+				m->offset(off);
+				m->userSize(len, 0);
+				m->rawOffset(off); // must be after m->offset(...) and m->userSize(...)
+				if (m->offset() + len > max) {
+					return NULL;
+				}
+				m->key(key);
+				m->addRef();
+				__mark(z);
+			}
+			return m;
 		}
 
 		// caller holds lock
 		inline void forAllActive(void (*func)(T_MMAlloc *m, void *cookie),
 						void *cookie = NULL) {
-			size_t x, y;
-			for (x = 0; x < _metahdr->numMetas(); ++x) {
-				if (_getMeta(x) != PAMI_SUCCESS) return;
-				for (y = 0; y < MM_META_NUM(x); ++y) {
-					if (!_metas[x][y].isFree()) {
-						func(&_metas[x][y], cookie);
-					}
-				}
+			size_t x = 0, y = 0, z = 0;
+			T_MMAlloc *m;
+			while ((m = __locateOne<true,false>(x, y, z))) {
+				func(m, cookie);
+				__locateSkip(x, y, z);
 			}
+		}
+
+		// 'm' must have been immediate result of find()...
+		// returns PAMI_SUCCESS if last reference gone, otherwise
+		// PAMI_EAGAIN (potentially, PAMI_ERROR but not currently used).
+		inline pami_result_t free(T_MMAlloc *m) {
+			size_t z = _last_z;
+			__unMark(z);
+			return m->free();
 		}
 	private:
 		MemoryManager *_meta_mm; // mm for meta data (same scope as parent)
@@ -481,6 +583,8 @@ namespace PAMI
 		char _meta_key_fmt[MMKEYSIZE];
 		size_t _meta_key_len;
 		T_MMAlloc *_metas[MMMAX_N_META];
+		uint64_t *_my_metas;
+		size_t _last_z;
 	}; // class MemoryManagerMeta
 
       public:
@@ -613,11 +717,7 @@ namespace PAMI
 	}
     public:
 	static size_t MAX_META_SIZE() {
-		size_t x;
-		size_t y = 0;
-		for (x = 0; x < MMMAX_N_META; ++x) {
-			y += MM_META_NUM(x);
-		}
+		size_t y = MemoryManagerMeta<MemoryManagerAlloc>::MAX_NUM_META();
 		return y * sizeof(MemoryManagerAlloc) + sizeof(MemoryManagerHeader);
 	}
 
@@ -719,9 +819,8 @@ namespace PAMI
 	  MemoryManagerAlloc *m;
 	  if (key && key[0]) {
 		// "public" (shared) allocation
-		m = _meta.find(key);
+		m = _meta.find(key); // does addRef() if found...
 		if (m) {
-			m->addRef();
 			_meta.release();
 			m->waitDone();
 			*memptr = (uint8_t *)_base + m->offset();
@@ -735,34 +834,17 @@ namespace PAMI
 			return PAMI_SUCCESS;
 		}
 		// lock still held...
-	  	m = _meta.findFree();
 	  } else {
 		if (key) {
 			// callers wants to know the unique key we chose...
 			snprintf((char *)key, MMKEYSIZE, "/%d-%lx",
 				getpid(), (unsigned long)memptr);
 		}
-	  	m = _meta.findFree();
 	  }
-	  if (!m) {
-		_meta.release();
-#ifdef MM_DEBUG
-		if (_debug) {
-			dump("ENOMEM(meta)");
-	  	}
-#endif // MM_DEBUG
-		return PAMI_ERROR;
-	  }
-	  //PAMI_assertf(m, "Ran out of metadata space");
-	  // pre-existing, shared, chunks were handled above,
-	  // no init required by them. We have the lock, and are the
-	  // first, so just do init if needed.
-
 	  size_t offset = _meta.getSpace(_base, alignment, bytes);
-	  m->offset(offset);
-	  m->userSize(bytes, 0);
-	  m->rawOffset(offset); // must be after m->offset(...) and m->userSize(...)
-	  if (m->offset() + bytes > _size) {
+
+	  m = _meta.findFree(offset, bytes, _size, key);
+	  if (!m) {
 		_meta.release();
 #ifdef MM_DEBUG
 		if (_debug) {
@@ -771,8 +853,6 @@ namespace PAMI
 #endif // MM_DEBUG
 		return PAMI_ERROR;
 	  }
-	  m->key(key);
-	  m->addRef();
 	  offset = _meta.allocSpace(m->offset(), bytes);
 	  _meta.release();
 	  *memptr = (uint8_t *)_base + m->offset();
@@ -803,6 +883,7 @@ namespace PAMI
 				++_num_frees;
 				_fre_bytes += m->rawSize();
 			}
+			// _meta.free(m); // save it for dtor... someday...
 		}
 #endif // MM_DEBUG
 	}

@@ -156,14 +156,6 @@ namespace PAMI
 		if (alignment < _alignment) alignment = _alignment;
 		void *ptr = NULL;
 		bool first = false;
-		_meta.acquire(); // only makes this thread-safe, not proc-safe.
-		MemoryManagerOSShmAlloc *alloc = _meta.findFree();
-		if (alloc == NULL) {
-			_meta.release();
-			return PAMI_ERROR;
-		}
-		alloc->key(nkey);
-		alloc->userSize(bytes, alignment);
 		// note, inital (worst-case) padding now set, when
 		// actual pointer assigned below, padding is updated.
 
@@ -184,45 +176,45 @@ namespace PAMI
 
 		// use GCC atomics on the shared memory chunk, in order to
 		// synchronize init, and in free will need to ensure memory gets zeroed.
-		int lrc;
+		MemoryManagerOSShmAlloc *alloc;
+		int lrc, fd = -1;
+		size_t max = MemoryManagerOSShmAlloc::maxSize(bytes, alignment);
 
-		lrc = shm_open(alloc->key(), O_CREAT | O_EXCL | O_RDWR, 0600);
+		lrc = shm_open(nkey, O_CREAT | O_EXCL | O_RDWR, 0600);
 		first = (lrc != -1); // must be the first...
 
 		if (first) {
-			alloc->fd(lrc); // mmap (et al.) requires this first.
-			lrc = ftruncate(alloc->fd(), alloc->size()); // this zeroes memory...
+			fd = lrc;
+			lrc = ftruncate(fd, max); // this zeroes memory...
 			if (lrc == -1) {
-				close(alloc->fd());
-				shm_unlink(alloc->key()); // yes?
-				alloc->free();
-				_meta.release();
+				close(fd);
+				shm_unlink(nkey); // yes?
 				return PAMI_ERROR;
 			}
 		} else {
-			lrc = shm_open(alloc->key(), O_RDWR, 0);
+			lrc = shm_open(nkey, O_RDWR, 0);
 			if (lrc == -1) {
-				alloc->free();
-				_meta.release();
 				return PAMI_ERROR;
 			}
-			alloc->fd(lrc); // mmap (et al.) requires this first.
+			fd = lrc;
 		}
-		ptr = mmap(NULL, alloc->size(), PROT_READ | PROT_WRITE, MAP_SHARED,
-									alloc->fd(), 0);
+		ptr = mmap(NULL, max, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 		if (ptr == NULL || ptr == MAP_FAILED)
 		{
 			// segment is not mapped...
-			close(alloc->fd());
-			if (first) shm_unlink(alloc->key()); // yes?
-			alloc->free();
-			_meta.release();
+			close(fd);
+			if (first) shm_unlink(nkey); // yes?
 			return PAMI_ERROR;
 		}
 		// shared segment acquired and mapped, now sync and init.
+		_meta.acquire(); // only makes this thread-safe, not proc-safe.
+		alloc = _meta.findFree(ptr, bytes, alignment, nkey);
+		if (alloc == NULL) {
+			_meta.release();
+			return PAMI_ERROR;
+		}
 
-		alloc->mem(ptr, alignment); // required for addRef(), userMem(), etc...
-		alloc->addRef();
+		alloc->fd(fd);
 		_meta.release();
 		if (init_fn) {
 			if (first) {
@@ -258,7 +250,7 @@ namespace PAMI
 				_fre_bytes += m->rawSize();
 			}
 #endif // MM_DEBUG
-			m->free();
+			_meta.free(m);
 		}
 		_meta.release();
 	}
