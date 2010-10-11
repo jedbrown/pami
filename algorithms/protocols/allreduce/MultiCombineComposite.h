@@ -247,8 +247,8 @@ namespace CCMI
             // A single multicombine will suffice to handle the allreduce
             if(t_local->size() == _geometry->size())
               {
-                _mcombine_l.client               = NULL;
-                _mcombine_l.context              = NULL;
+                _mcombine_l.client               = 0; /// \todo ?
+                _mcombine_l.context              = 0; /// \todo ?
                 _mcombine_l.cb_done.clientdata   = this;
                 _mcombine_l.cb_done.function     = composite_done;
                 _mcombine_l.connection_id        = _geometry->comm();
@@ -271,8 +271,8 @@ namespace CCMI
             // To detect this case, the local size will be only me
             if(t_local->size() == 1)
               {
-                _mcombine_g.client               = NULL;
-                _mcombine_g.context              = NULL;
+                _mcombine_g.client               = 0; /// \todo ?
+                _mcombine_g.context              = 0; /// \todo ?
                 _mcombine_g.cb_done.clientdata   = this;
                 _mcombine_g.cb_done.function     = composite_done;
                 _mcombine_g.connection_id        = _geometry->comm();
@@ -298,8 +298,8 @@ namespace CCMI
                 // The local multicombine
                 // Source is local topology
                 // Destination is the global master, a reduction
-                _mcombine_l.client               = NULL;
-                _mcombine_l.context              = NULL;
+                _mcombine_l.client               = 0; /// \todo ?
+                _mcombine_l.context              = 0; /// \todo ?
                 _mcombine_l.cb_done.clientdata   = this;
                 _mcombine_l.cb_done.function     = composite_done;
                 _mcombine_l.connection_id        = _geometry->comm();
@@ -315,8 +315,8 @@ namespace CCMI
                 // Also, prepare the local multicast, with the root as the local master
                 // We are guaranteed to not have an early arrival with this multicast if we post
                 // it first.  This protocol expects the local multicast to be 2 sided
-                _mcast_l.client                  = NULL;
-                _mcast_l.context                 = NULL;
+                _mcast_l.client                  = 0; /// \todo ?
+                _mcast_l.context                 = 0; /// \todo ?
                 _mcast_l.cb_done.function        = composite_done;
                 _mcast_l.cb_done.clientdata      = this;
                 _mcast_l.connection_id           = _geometry->comm();
@@ -352,8 +352,8 @@ namespace CCMI
             _pwq_inter0.reset();
             _pwq_inter1.reset();
 
-            _mcombine_l.client               = NULL;
-            _mcombine_l.context              = NULL;
+            _mcombine_l.client               = 0; /// \todo ?
+            _mcombine_l.context              = 0; /// \todo ?
             _mcombine_l.cb_done.clientdata   = this;
             _mcombine_l.cb_done.function     = composite_done;
             _mcombine_l.connection_id        = _geometry->comm();
@@ -366,8 +366,8 @@ namespace CCMI
             _mcombine_l.dtype                = cmd->cmd.xfer_allreduce.dt;
             _mcombine_l.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
 
-            _mcombine_g.client               = NULL;
-            _mcombine_g.context              = NULL;
+            _mcombine_g.client               = 0; /// \todo ?
+            _mcombine_g.context              = 0; /// \todo ?
             _mcombine_g.cb_done.clientdata   = this;
             _mcombine_g.cb_done.function     = composite_done;
             _mcombine_g.connection_id        = _geometry->comm();
@@ -380,8 +380,8 @@ namespace CCMI
             _mcombine_g.dtype                = cmd->cmd.xfer_allreduce.dt;
             _mcombine_g.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
 
-            _mcast_l.client                  = NULL;
-            _mcast_l.context                 = NULL;
+            _mcast_l.client                  = 0; /// \todo ?
+            _mcast_l.context                 = 0; /// \todo ?
             _mcast_l.cb_done.function        = composite_done;
             _mcast_l.cb_done.clientdata      = this;
             _mcast_l.connection_id           = _geometry->comm();
