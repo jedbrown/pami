@@ -35,9 +35,12 @@ extern "C"
   typedef enum {
     /* Attribute             usage : type : default : description   */
     PAMI_PERCS_ATTR = PAMI_EXT_ATTR,
+    PAMI_CLIENT_CHECK_PARAM,       /**< CQU: bool : true : check function parameters */
     PAMI_CLIENT_RELIABLE,          /**< CQ : bool : true : run in reliable mode */
     PAMI_CLIENT_THREAD_SAFE,       /**< CQ : bool : true : run in thread-safe mode */
     PAMI_CLIENT_RECEIVE_INTERRUPT, /**< CQU: bool : false: enable receive interrupt */
+    PAMI_CLIENT_PROGRESS_HANDLER,  /**< CQ : pami_event_function : NULL : asynchronous progress handler */
+    PAMI_CLIENT_PROGRESS_COOKIE,   /**< CQ : void * : NULL : cookie to asynchronous progress handler */
     PAMI_CLIENT_ERROR_HANDLER,     /**< CQ : pami_error_handler_t : NULL : asynchronous error handler */
     PAMI_CLIENT_STATISTICS,        /**<  Q : pami_statistics_t : N/A : retrieve communication statistics */
     PAMI_CLIENT_TRIGGER,           /**<   U: pami_trigger_t : N/A : add or remove a trigger */
