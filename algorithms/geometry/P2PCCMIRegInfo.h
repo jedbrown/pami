@@ -32,6 +32,7 @@
 #include "algorithms/protocols/allreduce/MultiColorCompositeT.h"
 #include "algorithms/protocols/allreduce/ProtocolFactoryT.h"
 #include "algorithms/protocols/allreduce/AsyncAllreduceT.h"
+#include "algorithms/protocols/allreduce/AsyncReduceScatterT.h"
 #include "algorithms/protocols/scatter/AsyncScatterT.h"
 #include "algorithms/protocols/gather/AsyncGatherT.h"
 #include "algorithms/protocols/gather/AsyncLongGatherT.h"
@@ -481,6 +482,52 @@ namespace CCMI
         IntFactory;
 
     } // P2PScatterv
+
+    namespace P2PReduceScatter
+    {
+
+      unsigned getKey(unsigned                                   root,
+                      unsigned                                   connid,
+                      PAMI_GEOMETRY_CLASS                      * geometry,
+                      ConnectionManager::BaseConnectionManager **connmgr)
+      {
+        if (connid != (unsigned)-1)
+        {
+          *connmgr = NULL; //use this key as connection id
+          return connid;
+        }
+        ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
+        return cm->updateConnectionId( geometry->comm() );
+      }
+
+
+      void create_schedule(void                        * buf,
+                           unsigned                      size,
+                           unsigned                      root,
+                           Interfaces::NativeInterface * native,
+                           PAMI_GEOMETRY_CLASS          * g)
+      {
+        TRACE_INIT((stderr, "<%p>AsyncReduceScatterComposite::create_schedule()\n",(void*)NULL));
+        new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
+      }
+
+
+       void ascs_reduce_scatter_metadata(pami_metadata_t *m)
+       {
+         // \todo:  fill in other metadata
+         strcpy(&m->name[0],"CCMI_ASCS_ReduceScatter");
+       }
+
+       typedef CCMI::Adaptor::Allreduce::AsyncReduceScatterT<CCMI::Schedule::ListMultinomial,
+         CCMI::Schedule::GenericTreeSchedule<1, 1, 1>,
+         CCMI::ConnectionManager::CommSeqConnMgr, create_schedule>
+         AsyncCSReduceScatterComposite;
+
+       typedef CCMI::Adaptor::Allreduce::AsyncReduceScatterFactoryT<AsyncCSReduceScatterComposite,
+         ascs_reduce_scatter_metadata, CCMI::ConnectionManager::CommSeqConnMgr,getKey> 
+         AsyncCSReduceScatterFactory;
+
+    } // P2PReduceScatter
 
     namespace P2PGather
     {

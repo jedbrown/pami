@@ -513,6 +513,9 @@ namespace PAMI
                   case PAMI_XFER_AMREDUCE:
                     return &_amreduces[context_id];
                     break;
+                  case PAMI_XFER_REDUCE_SCATTER:
+                    return &_reduce_scatters[context_id];
+                    break;
                   default:
                     PAMI_abort();
                     return NULL;
@@ -635,6 +638,7 @@ namespace PAMI
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _alltoalls[PAMI_GEOMETRY_NUMALGOLISTS];
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _alltoallvs[PAMI_GEOMETRY_NUMALGOLISTS];
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _alltoallv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _reduce_scatters[PAMI_GEOMETRY_NUMALGOLISTS];
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _ambroadcasts[PAMI_GEOMETRY_NUMALGOLISTS];
 
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _amscatters[PAMI_GEOMETRY_NUMALGOLISTS];

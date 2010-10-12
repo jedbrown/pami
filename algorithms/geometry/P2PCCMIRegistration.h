@@ -107,6 +107,7 @@ namespace PAMI
             _ascs_flat_scatter_factory(),
             _ascs_scatterv_factory(),
             _ascs_scatterv_int_factory(),
+            _ascs_reduce_scatter_factory(),
             _ascs_binomial_gather_factory(),
             _ascs_flat_gather_factory(),
             _ascs_gatherv_factory(),
@@ -239,6 +240,9 @@ namespace PAMI
                                       _context_id);
               geometry->addCollective(PAMI_XFER_SCATTERV_INT,
                                      _ascs_scatterv_int_factory,
+                                     _context_id);
+              geometry->addCollective(PAMI_XFER_REDUCE_SCATTER,
+                                     _ascs_reduce_scatter_factory,
                                      _context_id);
               geometry->addCollective(PAMI_XFER_GATHER,
                                       _ascs_binomial_gather_factory,
@@ -407,6 +411,12 @@ namespace PAMI
             // ----------------------------------------------------
 
             // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num reduce_scatter factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PReduceScatter::AsyncCSReduceScatterFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_reduce_scatter_factory);
+            new ((void*)_ascs_reduce_scatter_factory) CCMI::Adaptor::P2PReduceScatter::AsyncCSReduceScatterFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num binomial gather factory from active message ni and p2p protocol
             setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PGather::Binomial::Factory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_binomial_gather_factory);
             new ((void*)_ascs_binomial_gather_factory) CCMI::Adaptor::P2PGather::Binomial::Factory(&_csconnmgr, ni_am);
@@ -482,6 +492,7 @@ namespace PAMI
             _ascs_flat_scatter_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_scatterv_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_scatterv_int_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_reduce_scatter_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_gather_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_flat_gather_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_gatherv_factory->setMapIdToGeometry(mapidtogeometry);
@@ -695,6 +706,18 @@ namespace PAMI
             new ((void*)_ascs_scatterv_int_factory)
               CCMI::Adaptor::P2PScatterv::IntFactory(&_csconnmgr, ni_am);
 
+            // Setup and Construct an asynchronous, comm_id/seq_num reduce_scatter factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PReduceScatter::AsyncCSReduceScatterFactory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
+                                device1, device2, _ascs_reduce_scatter_factory);
+            new ((void*)_ascs_reduce_scatter_factory)
+              CCMI::Adaptor::P2PReduceScatter::AsyncCSReduceScatterFactory(&_csconnmgr, ni_am);
+
             // Setup and Construct an asynchronous, comm_id/seq_num binomial gather factory from active message ni and p2p protocol
             setupFactory<T_NI_ActiveMessage,
                          T_Protocol1,
@@ -841,6 +864,7 @@ namespace PAMI
             _ascs_flat_scatter_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_scatterv_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_scatterv_int_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_reduce_scatter_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_gather_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_flat_gather_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_gatherv_factory->setMapIdToGeometry(mapidtogeometry);
@@ -898,6 +922,7 @@ namespace PAMI
           CCMI::Adaptor::P2PScatter::Flat::Factory                        *_ascs_flat_scatter_factory;
           CCMI::Adaptor::P2PScatterv::Factory                             *_ascs_scatterv_factory;
           CCMI::Adaptor::P2PScatterv::IntFactory                          *_ascs_scatterv_int_factory;
+          CCMI::Adaptor::P2PReduceScatter::AsyncCSReduceScatterFactory    *_ascs_reduce_scatter_factory;
           CCMI::Adaptor::P2PGather::Binomial::Factory                     *_ascs_binomial_gather_factory;
           CCMI::Adaptor::P2PGather::Flat::Factory                         *_ascs_flat_gather_factory;
           CCMI::Adaptor::P2PGatherv::Factory                              *_ascs_gatherv_factory;
