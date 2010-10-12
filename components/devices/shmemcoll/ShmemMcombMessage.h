@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemMcombMessageShmem.h
+ * \file components/devices/shmemcoll/ShmemMcombMessage.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_McombMessageShmem_h__
-#define __components_devices_shmem_McombMessageShmem_h__
+#ifndef __components_devices_shmemcoll_ShmemMcombMessage_h__
+#define __components_devices_shmemcoll_ShmemMcombMessage_h__
 
 #include <errno.h>
 #include <sys/uio.h>
@@ -42,7 +42,7 @@ namespace PAMI
       template <class T_Device, class T_Desc>
       class McombMessageShmem : public McombMessage<T_Device, T_Desc>
       {
-		public:	
+		public:
 			//currently optimized to a many-to-one combine
 		  static inline pami_result_t short_msg_advance(T_Desc* master_desc, pami_multicombine_t* mcomb_params,
 														unsigned npeers, unsigned local_rank, unsigned task)
@@ -60,32 +60,32 @@ namespace PAMI
 				double* dst = (double*)(rcv->bufferToConsume());
 
 				if (npeers == 4)
-				{	
+				{
 
 					for (unsigned i = 0; i < mcomb_params->count; i++)
 						SHMEMBUF_SHORT(0)[i] = SHMEMBUF_SHORT(0)[i] + SHMEMBUF_SHORT(1)[i] + SHMEMBUF_SHORT(2)[i] + SHMEMBUF_SHORT(3)[i];
- 
+
 				}
 				else if (npeers == 8)
 				{
 					for (unsigned i = 0; i < mcomb_params->count; i++)
-						SHMEMBUF_SHORT(0)[i] = SHMEMBUF_SHORT(0)[i] + SHMEMBUF_SHORT(1)[i] + SHMEMBUF_SHORT(2)[i] + SHMEMBUF_SHORT(3)[i] + 
-									SHMEMBUF_SHORT(4)[i] + SHMEMBUF_SHORT(5)[i] + SHMEMBUF_SHORT(6)[i] + SHMEMBUF_SHORT(7)[i] ; 
+						SHMEMBUF_SHORT(0)[i] = SHMEMBUF_SHORT(0)[i] + SHMEMBUF_SHORT(1)[i] + SHMEMBUF_SHORT(2)[i] + SHMEMBUF_SHORT(3)[i] +
+									SHMEMBUF_SHORT(4)[i] + SHMEMBUF_SHORT(5)[i] + SHMEMBUF_SHORT(6)[i] + SHMEMBUF_SHORT(7)[i] ;
 
 
 				}
 				else if (npeers == 16){
 					for (unsigned i = 0; i < mcomb_params->count; i++)
-						SHMEMBUF_SHORT(0)[i] = SHMEMBUF_SHORT(0)[i] + SHMEMBUF_SHORT(1)[i] + SHMEMBUF_SHORT(2)[i] + SHMEMBUF_SHORT(3)[i] + 
-									SHMEMBUF_SHORT(4)[i] + SHMEMBUF_SHORT(5)[i] + SHMEMBUF_SHORT(6)[i] + SHMEMBUF_SHORT(7)[i] + 
-									SHMEMBUF_SHORT(8)[i] + SHMEMBUF_SHORT(9)[i] + SHMEMBUF_SHORT(10)[i] + SHMEMBUF_SHORT(11)[i] + 
-									SHMEMBUF_SHORT(12)[i] + SHMEMBUF_SHORT(13)[i] + SHMEMBUF_SHORT(14)[i] + SHMEMBUF_SHORT(15)[i];  
+						SHMEMBUF_SHORT(0)[i] = SHMEMBUF_SHORT(0)[i] + SHMEMBUF_SHORT(1)[i] + SHMEMBUF_SHORT(2)[i] + SHMEMBUF_SHORT(3)[i] +
+									SHMEMBUF_SHORT(4)[i] + SHMEMBUF_SHORT(5)[i] + SHMEMBUF_SHORT(6)[i] + SHMEMBUF_SHORT(7)[i] +
+									SHMEMBUF_SHORT(8)[i] + SHMEMBUF_SHORT(9)[i] + SHMEMBUF_SHORT(10)[i] + SHMEMBUF_SHORT(11)[i] +
+									SHMEMBUF_SHORT(12)[i] + SHMEMBUF_SHORT(13)[i] + SHMEMBUF_SHORT(14)[i] + SHMEMBUF_SHORT(15)[i];
 
 				}
 				else{
 				fprintf(stderr,"sum not yet supported\n");
 				}
-			
+
 				char* src = (char*) master_desc->get_buffer(0);
 				char* my_dst = (char*)(dst);
 				memcpy((void*)my_dst, (void*)src, bytes);
@@ -110,7 +110,7 @@ namespace PAMI
 			while (master_desc->in_use()){}; //wait for everyone to signal done
 #endif
 			return PAMI_SUCCESS;
-		  }	
+		  }
 
         protected:
           // invoked by the thread object
@@ -156,32 +156,32 @@ namespace PAMI
 
 			if (_local_rank == 0){
 				if (_npeers == 4)
-				{	
+				{
 
 					for (unsigned i = 0; i < mcomb_params.count; i++)
 						SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i];
- 
+
 				}
 				else if (_npeers == 8)
 				{
 					for (unsigned i = 0; i < mcomb_params.count; i++)
-						SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i] + 
-									SHMEMBUF(4)[i] + SHMEMBUF(5)[i] + SHMEMBUF(6)[i] + SHMEMBUF(7)[i] ; 
+						SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i] +
+									SHMEMBUF(4)[i] + SHMEMBUF(5)[i] + SHMEMBUF(6)[i] + SHMEMBUF(7)[i] ;
 
 
 				}
 				else if (_npeers == 16){
 					for (unsigned i = 0; i < mcomb_params.count; i++)
-						SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i] + 
-									SHMEMBUF(4)[i] + SHMEMBUF(5)[i] + SHMEMBUF(6)[i] + SHMEMBUF(7)[i] + 
-									SHMEMBUF(8)[i] + SHMEMBUF(9)[i] + SHMEMBUF(10)[i] + SHMEMBUF(11)[i] + 
-									SHMEMBUF(12)[i] + SHMEMBUF(13)[i] + SHMEMBUF(14)[i] + SHMEMBUF(15)[i];  
+						SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i] +
+									SHMEMBUF(4)[i] + SHMEMBUF(5)[i] + SHMEMBUF(6)[i] + SHMEMBUF(7)[i] +
+									SHMEMBUF(8)[i] + SHMEMBUF(9)[i] + SHMEMBUF(10)[i] + SHMEMBUF(11)[i] +
+									SHMEMBUF(12)[i] + SHMEMBUF(13)[i] + SHMEMBUF(14)[i] + SHMEMBUF(15)[i];
 
 				}
 				else{
 				fprintf(stderr,"sum not yet supported\n");
 				}
-			
+
 				_master_desc->signal_flag();
 			}
 
@@ -203,7 +203,7 @@ namespace PAMI
 			return PAMI_SUCCESS;
 
           }
-			
+
 
         public:
           inline McombMessageShmem (T_Device *device, T_Desc* desc, T_Desc* matched_desc) :

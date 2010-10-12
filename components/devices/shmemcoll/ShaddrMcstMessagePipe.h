@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemMcstMessageShaddr.h
+ * \file components/devices/shmemcoll/ShaddrMcstMessagePipe.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_McstMessageShaddr_h__
-#define __components_devices_shmem_McstMessageShaddr_h__
+#ifndef __components_devices_shmemcoll_ShaddrMcstMessagePipe_h__
+#define __components_devices_shmemcoll_ShaddrMcstMessagePipe_h__
 
 #include <errno.h>
 #include <sys/uio.h>
@@ -35,7 +35,7 @@ namespace PAMI
 	  struct McstControl
 	  {
 		void* glob_src_buffer;
-		volatile uint16_t	incoming_bytes;	
+		volatile uint16_t	incoming_bytes;
 	  }__attribute__((__aligned__(128)));
 
       template <class T_Device, class T_Desc>
@@ -53,13 +53,13 @@ namespace PAMI
 
           inline pami_result_t advance ()
           {
-			
+
 			T_Desc* _my_desc = this->_my_desc;
             T_Desc* _master_desc = this->_master_desc;
 
 			unsigned _my_index = __global.topology_local.rank2Index(__global.mapping.task());
 			unsigned master = _my_desc->get_master();
-				
+
 			void* mybuf;
 
 			Shmem::McstControl* mcst_control = (Shmem::McstControl*) _master_desc->get_buffer();
@@ -70,7 +70,7 @@ namespace PAMI
             PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue*) mcast_params.dst;
             PAMI::PipeWorkQueue *src = (PAMI::PipeWorkQueue*) mcast_params.src;
 
-			unsigned bytes = mcast_params.bytes; 
+			unsigned bytes = mcast_params.bytes;
 
 			if (_my_index == master){
 				if (this->_bytes_consumed == bytes)
@@ -82,7 +82,7 @@ namespace PAMI
 
 				}
 				size_t bytes_to_consume = src->bytesAvailableToConsume() - this->_bytes_consumed;
-				if (bytes_to_consume > 0) 
+				if (bytes_to_consume > 0)
 				{
 					TRACE_ERR((stderr,"bytes_to_consume:%zd\n", bytes_to_consume));
 					mcst_control->incoming_bytes += bytes_to_consume;
@@ -121,7 +121,7 @@ namespace PAMI
 			}
 					return PAMI_SUCCESS;
           }
-			
+
 
         public:
           inline McstMessageShaddr (T_Device *device, T_Desc* desc, T_Desc* master_desc) :

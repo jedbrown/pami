@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemMcstMessageShaddr.h
+ * \file components/devices/shmemcoll/ShaddrMcstMessage.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_McstMessageShaddr_h__
-#define __components_devices_shmem_McstMessageShaddr_h__
+#ifndef __components_devices_shmemcoll_ShaddrMcstMessage_h__
+#define __components_devices_shmemcoll_ShaddrMcstMessage_h__
 
 #include <errno.h>
 #include <sys/uio.h>
@@ -49,13 +49,13 @@ namespace PAMI
           inline pami_result_t advance ()
           {
 			TRACE_ERR((stderr, "in Mcst advance\n"));
-			
+
 			T_Desc* _my_desc = this->_my_desc;
             T_Desc* _master_desc = this->_master_desc;
 
 			//unsigned _my_index = __global.topology_local.rank2Index(__global.mapping.task());
 			unsigned master = _my_desc->get_master();
-				
+
 			void* mybuf;
 			void* buf = (void*) _master_desc->get_buffer(master);
 			TRACE_ERR((stderr, "buf from master:%d address:%p\n", master, buf));
@@ -64,7 +64,7 @@ namespace PAMI
 			pami_multicast_t & mcast_params = _my_desc->get_mcast_params();
             PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue*) mcast_params.dst;
 
-			unsigned bytes; 
+			unsigned bytes;
 
 			/*if (_my_index == master){
 				while (_master_desc->in_use()){};
@@ -96,7 +96,7 @@ namespace PAMI
 			this->setStatus (PAMI::Device::Done);
 			return PAMI_SUCCESS;
           }
-			
+
 
         public:
           inline McstMessageShaddr (T_Device *device, T_Desc* desc, T_Desc* master_desc) :

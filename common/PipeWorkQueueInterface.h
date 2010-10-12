@@ -102,66 +102,66 @@ namespace PAMI
 
             /// \brief Configure for Many to Many (indexed flat buffer) access.
             ///
-            /// Only one consumer OR producer at a time is allowed. 
+            /// Only one consumer OR producer at a time is allowed.
             ///
             /// Sets up a flat buffer for indexed access by many to many.
             ///
             /// Each index (offset) in the buffer may be consumed or produced independently.
             ///
-            /// Each index specifies maximum size with an arbitrary "initial fill".   An initial 
-            /// fill of 0 implies a producer-only PWQ.   A FULL initial fill implies a consumer-only 
+            /// Each index specifies maximum size with an arbitrary "initial fill".   An initial
+            /// fill of 0 implies a producer-only PWQ.   A FULL initial fill implies a consumer-only
             /// PWQ.  Its the users responsibility to only call consumer or producer
             /// interfaces or unpredictable results may occur.
             ///
-            /// The interface is similar to PAMI::PipwWorkQueue's except that an index" will be 
-            /// required for all consume/produce calls. 
+            /// The interface is similar to PAMI::PipwWorkQueue's except that an index" will be
+            /// required for all consume/produce calls.
             ///
-            /// Warning! The PWQ retains and uses the input arrays, it does NOT copy them.  It 
+            /// Warning! The PWQ retains and uses the input arrays, it does NOT copy them.  It
             /// may change the contents of these arrays.
-            /// 
+            ///
             /// \param[out] unused        REMOVE? Consistent with PAMI::PipeWorkQueue?
             /// \param[in]  buffer        Buffer to use
             /// \param[in]  indexcount    Number of indexed access points to the pwq
             /// \param[in]  dgsp          Memory layout of each buffer unit
             /// \param[in]  offsets       Array[indexcount] of byte offsets for each indexed access point
-            /// \param[in]  dgspcounts    Array[indexcount] of data type (dgsp) counts 
+            /// \param[in]  dgspcounts    Array[indexcount] of data type (dgsp) counts
             /// \param[in]  bufinit       Array[indexcount] of bytes initially in buffer (storage may be modified)
-            /// 
+            ///
             /// \note bufinit must be empty (0) for producer PWQ or full (size of dgsp type * dsgpcounts[index]) for consumer PWQ.
-            /// 
-            inline void configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount, 
+            ///
+            inline void configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount,
                                   pami_type_t *dgsp, size_t *offsets, size_t *dgspcounts, size_t *bufinit);
 
             /// \brief Configure for Many to Many (indexed flat buffer) access.
             ///
-            /// Only one consumer OR producer at a time is allowed. 
+            /// Only one consumer OR producer at a time is allowed.
             ///
             /// Sets up a flat buffer for indexed access by many to many.
             ///
             /// Each index (offset) in the buffer may be consumed or produced independently.
             ///
-            /// Each index specifies maximum size with an arbitrary "initial fill".   An initial 
-            /// fill of 0 implies a producer-only PWQ.   A FULL initial fill implies a consumer-only 
+            /// Each index specifies maximum size with an arbitrary "initial fill".   An initial
+            /// fill of 0 implies a producer-only PWQ.   A FULL initial fill implies a consumer-only
             /// PWQ.  Its the users responsibility to only call consumer or producer
             /// interfaces or unpredictable results may occur.
             ///
-            /// The interface is similar to PAMI::PipwWorkQueue's except that an index" will be 
-            /// required for all consume/produce calls. 
+            /// The interface is similar to PAMI::PipwWorkQueue's except that an index" will be
+            /// required for all consume/produce calls.
             ///
-            /// Warning! The PWQ retains and uses the input arrays, it does NOT copy them.  It 
+            /// Warning! The PWQ retains and uses the input arrays, it does NOT copy them.  It
             /// may change the contents of these arrays.
-            /// 
+            ///
             /// \param[out] unused        REMOVE? Consistent with PAMI::PipeWorkQueue?
             /// \param[in]  buffer        Buffer to use
             /// \param[in]  indexcount    Number of indexed access points to the pwq (bufinit array only)
             /// \param[in]  dgsp          Memory layout of each buffer unit
             /// \param[in]  offset        Byte offset for each indexed access point
-            /// \param[in]  dgspcount     Data type (dgsp) countfor each indexed access point 
+            /// \param[in]  dgspcount     Data type (dgsp) countfor each indexed access point
             /// \param[in]  bufinit       Array[indexcount] of bytes initially in buffer (storage may be modified)
-            /// 
+            ///
             /// \note bufinit must be empty (0) for producer PWQ or full (size of dgsp type * dsgpcounts[index]) for consumer PWQ.
-            /// 
-            inline void configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount, 
+            ///
+            inline void configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount,
                                        pami_type_t *dgsp, size_t offset, size_t dgspcount, size_t *bufinit);
             ///
             /// \brief Reset this shared memory work queue.
@@ -456,18 +456,18 @@ namespace PAMI
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount, 
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount,
                                   pami_type_t *dgsp, size_t *offsets, size_t *dgspcounts, size_t *bufinit)
         {
-            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(unused, buffer, indexcount, dgsp, offsets, 
+            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(unused, buffer, indexcount, dgsp, offsets,
                                                                        dgspcounts, bufinit);
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount, 
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount,
                                   pami_type_t *dgsp, size_t offset, size_t dgspcount, size_t *bufinit)
         {
-            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(unused, buffer, indexcount, dgsp, offset, 
+            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(unused, buffer, indexcount, dgsp, offset,
                                                                        dgspcount, bufinit);
         }
 

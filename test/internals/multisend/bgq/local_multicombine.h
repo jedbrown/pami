@@ -1,10 +1,10 @@
 /**
- * \file test/internals/multisend/multicombine.h
+ * \file test/internals/multisend/bgq/local_multicombine.h
  * \brief ???
  */
 
-#ifndef __test_internals_multisend_multicombine_h__
-#define __test_internals_multisend_multicombine_h__
+#ifndef __test_internals_multisend_bgq_local_multicombine_h__
+#define __test_internals_multisend_bgq_local_multicombine_h__
 
 #include <stdio.h>
 #include <pami.h>
@@ -54,7 +54,7 @@ public:
         _name(test)
         {
 				uint64_t my_alignment;
-				my_alignment = 128;	
+				my_alignment = 128;
 				void* myMemory = malloc ( T_BufSize + my_alignment );
 				if ( !myMemory ) printf("malloc failed\n");
 				_source  = (char*)( ((uint64_t)myMemory + my_alignment)  & ~(my_alignment-1) );
@@ -82,7 +82,7 @@ public:
                         return PAMI_ERROR;
                 }
 
-				//assert(root != 0); //everybody is the root 
+				//assert(root != 0); //everybody is the root
                 _ipwq.configure(NULL, _source, sizeof(_source), sizeof(_source));
                 _ipwq.reset();
                 _opwq.configure(NULL, _result, sizeof(_result), 0);

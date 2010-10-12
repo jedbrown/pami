@@ -1,5 +1,9 @@
-#ifndef __sum_h__
-#define __sum_h__
+/**
+ * \file test/internals/multisend/bgq/sum.h
+ * \brief ???
+ */
+#ifndef __test_internals_multisend_bgq_sum_h__
+#define __test_internals_multisend_bgq_sum_h__
 #if 0
 #include <firmware/include/fwext/fwext.h>
 

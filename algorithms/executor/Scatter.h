@@ -368,9 +368,9 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
   if (_curphase == _startphase + _nphases)
   {
      // all parents copy from send buffer to application destination buffer
-     if (_disps && _sndcounts) 
+     if (_disps && _sndcounts)
        memcpy(_rbuf, _sbuf+_disps[_myindex], _buflen);
-     else if (_native->myrank() == _root) 
+     else if (_native->myrank() == _root)
        memcpy(_rbuf, _sbuf+_myindex * _buflen, _buflen);
      else if (_nphases > 1)
        memcpy(_rbuf, _tmpbuf, _buflen);

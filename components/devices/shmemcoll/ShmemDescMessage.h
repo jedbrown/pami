@@ -1,5 +1,9 @@
-#ifndef __components_devices_shmem_ShmemDescMessage_h__
-#define __components_devices_shmem_ShmemDescMessage_h__
+/**
+ * \file components/devices/shmemcoll/ShmemDescMessage.h
+ * \brief ???
+ */
+#ifndef __components_devices_shmemcoll_ShmemDescMessage_h__
+#define __components_devices_shmemcoll_ShmemDescMessage_h__
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)  //fprintf x
@@ -32,7 +36,7 @@ namespace PAMI
 		  {
 
 			pami_result_t res = _device->postDescriptor(desc);
-			if (res == PAMI_SUCCESS) 
+			if (res == PAMI_SUCCESS)
 			{
 				this->setStatus (PAMI::Device::Done);
 				return PAMI_SUCCESS;
@@ -42,17 +46,17 @@ namespace PAMI
 	   	  }
 
 	   public:
-          inline ShmemDescMessage (T_Device *device, pami_event_function done_fn, void *done_cookie) : 
+          inline ShmemDescMessage (T_Device *device, pami_event_function done_fn, void *done_cookie) :
 			SendQueue::Message (ShmemDescMessage::__advance, this, done_fn, done_cookie, device->getContextOffset()),
               _device (device)
 		{}
-			
+
 		inline T_Desc & return_descriptor(void){return desc;};
 
 		T_Desc desc;
 		T_Device* _device;
 
-		};	
+		};
 
 		template <class T_Device, class T_Desc>
 		class ShmemDescMessageWorld : public SendQueue::Message
@@ -74,7 +78,7 @@ namespace PAMI
 
 			//TRACE_ERR((stderr, "fetching descriptor of myself and master:%u\n", desc.get_master()));
 			pami_result_t res = _device->getShmemWorldDesc(&my_desc, &master_desc, desc.get_master());
-			if (res == PAMI_SUCCESS) 
+			if (res == PAMI_SUCCESS)
 			{
 
 				if (desc.get_type() == Shmem::MULTICAST)
@@ -98,7 +102,7 @@ namespace PAMI
 					}
 
 					my_desc->set_state(Shmem::INIT);
-			
+
 					if ( mcast.bytes <= Shmem::McstMessage<T_Device, T_Desc>::short_msg_cutoff )
 					{
                     	Shmem::McstMessage<T_Device, T_Desc> * obj = (Shmem::McstMessage<T_Device, T_Desc> *) (my_desc->get_storage());
@@ -111,7 +115,7 @@ namespace PAMI
                         new (obj) Shmem::McstMessageShaddr<T_Device, T_Desc> (_device, my_desc, master_desc);
                    		_device->post(obj);
 					}
-				
+
 						/* To do..signal arrived */
 
 					this->setStatus (PAMI::Device::Done);
@@ -123,18 +127,18 @@ namespace PAMI
 	   	  }
 
 	   public:
-          inline ShmemDescMessageWorld (T_Device *device, pami_event_function done_fn, void *done_cookie, unsigned peer) : 
+          inline ShmemDescMessageWorld (T_Device *device, pami_event_function done_fn, void *done_cookie, unsigned peer) :
 			SendQueue::Message (ShmemDescMessageWorld::__advance, this, done_fn, done_cookie, device->getContextOffset()),
               _device (device), _peer (peer)
 		{}
-			
+
 		inline T_Desc & return_descriptor(void){return desc;};
 
 		T_Desc desc;
 		T_Device* _device;
 		unsigned _peer;
 
-		};	
+		};
 	}
   }
 }

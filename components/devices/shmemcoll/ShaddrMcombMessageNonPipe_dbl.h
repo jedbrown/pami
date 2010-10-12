@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemMcombMessageShaddr.h
+ * \file components/devices/shmemcoll/ShaddrMcombMessageNonPipe_dbl.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_McombMessageShaddr_h__
-#define __components_devices_shmem_McombMessageShaddr_h__
+#ifndef __components_devices_shmemcoll_ShaddrMcombMessageNonPipe_dbl_h__
+#define __components_devices_shmemcoll_ShaddrMcombMessageNonPipe_dbl_h__
 
 #include <errno.h>
 #include <sys/uio.h>
@@ -105,15 +105,15 @@ namespace PAMI
 
 	  struct McombControl
 	  {
-	  	struct 
+	  	struct
 	  	{
 			void* src_bufs[NUM_LOCAL_TASKS];
 			void* dst_bufs[NUM_LOCAL_TASKS];
-	  	}GlobalAddressTable __attribute__((__aligned__(128))); 	
-		volatile uint16_t	chunks_done[NUM_LOCAL_TASKS];	
-		volatile uint16_t	chunks_copied[NUM_LOCAL_TASKS];	
+	  	}GlobalAddressTable __attribute__((__aligned__(128)));
+		volatile uint16_t	chunks_done[NUM_LOCAL_TASKS];
+		volatile uint16_t	chunks_copied[NUM_LOCAL_TASKS];
 	  };
-	
+
       template <class T_Device, class T_Desc>
       class McombMessageShaddr : public McombMessage<T_Device, T_Desc>
       {
@@ -125,7 +125,7 @@ namespace PAMI
             return msg->advance();
           };
 
-		  inline void advance_4way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers, 
+		  inline void advance_4way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
 										double* dst, size_t bytes)
 		  {
 				/* local ranks other than 0 do the following quad sum */
@@ -137,21 +137,21 @@ namespace PAMI
 					chunk_size = (bytes-bytes_so_far > chunk_size )? chunk_size: (bytes-bytes_so_far);
 					if (iter == _local_rank){
 					if (chunk_size%1024 == 0)//checking for multiple of 1024 bytes only
-					{ 
-						quad_double_sum_4way(dst+ bytes_so_far/sizeof(double), SHADDR_SRCBUF(0)+bytes_so_far/sizeof(double), 
-										SHADDR_SRCBUF(1)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(2)+bytes_so_far/sizeof(double), 
+					{
+						quad_double_sum_4way(dst+ bytes_so_far/sizeof(double), SHADDR_SRCBUF(0)+bytes_so_far/sizeof(double),
+										SHADDR_SRCBUF(1)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(2)+bytes_so_far/sizeof(double),
 										SHADDR_SRCBUF(3)+bytes_so_far/sizeof(double), chunk_size/sizeof(double));
 					}
 					else
 					{
 						for (unsigned i =0; i < chunk_size/sizeof(double); i++)
 						{
-							dst[i+bytes_so_far/sizeof(double)] = SHADDR_SRCBUF(0)[i+bytes_so_far/sizeof(double)] + 
-										SHADDR_SRCBUF(1)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(2)[i+bytes_so_far/sizeof(double)] + 
-										SHADDR_SRCBUF(3)[i+bytes_so_far/sizeof(double)]; 
+							dst[i+bytes_so_far/sizeof(double)] = SHADDR_SRCBUF(0)[i+bytes_so_far/sizeof(double)] +
+										SHADDR_SRCBUF(1)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(2)[i+bytes_so_far/sizeof(double)] +
+										SHADDR_SRCBUF(3)[i+bytes_so_far/sizeof(double)];
 						}
 
-					}	
+					}
 					mcomb_control->chunks_done[_local_rank] += 1;
 					}
 					bytes_so_far += chunk_size;
@@ -159,10 +159,10 @@ namespace PAMI
 					if (bytes_so_far == bytes) break;
 					}
 					chunk_size*=2;
-				}	
-		  }			
+				}
+		  }
 
-		  inline void advance_8way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers, 
+		  inline void advance_8way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
 										double* dst, size_t bytes)
 		  {
 				/* local ranks other than 0 do the following quad sum */
@@ -174,25 +174,25 @@ namespace PAMI
 					chunk_size = (bytes-bytes_so_far > chunk_size )? chunk_size: (bytes-bytes_so_far);
 					if (iter == _local_rank){
 					if (chunk_size%1024 == 0)//checking for multiple of 1024 bytes only
-					{ 
-						quad_double_sum_8way(dst+ bytes_so_far/sizeof(double), SHADDR_SRCBUF(0)+bytes_so_far/sizeof(double), 
-										SHADDR_SRCBUF(1)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(2)+bytes_so_far/sizeof(double), 
-										SHADDR_SRCBUF(3)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(4)+bytes_so_far/sizeof(double), 
-										SHADDR_SRCBUF(5)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(6)+bytes_so_far/sizeof(double), 
+					{
+						quad_double_sum_8way(dst+ bytes_so_far/sizeof(double), SHADDR_SRCBUF(0)+bytes_so_far/sizeof(double),
+										SHADDR_SRCBUF(1)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(2)+bytes_so_far/sizeof(double),
+										SHADDR_SRCBUF(3)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(4)+bytes_so_far/sizeof(double),
+										SHADDR_SRCBUF(5)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(6)+bytes_so_far/sizeof(double),
 										SHADDR_SRCBUF(7)+bytes_so_far/sizeof(double), chunk_size/sizeof(double));
 					}
 					else
 					{
 						for (unsigned i =0; i < chunk_size/sizeof(double); i++)
 						{
-							dst[i+bytes_so_far/sizeof(double)] = SHADDR_SRCBUF(0)[i+bytes_so_far/sizeof(double)] + 
-										SHADDR_SRCBUF(1)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(2)[i+bytes_so_far/sizeof(double)] + 
-										SHADDR_SRCBUF(3)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(4)[i+bytes_so_far/sizeof(double)] + 
-										SHADDR_SRCBUF(5)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(6)[i+bytes_so_far/sizeof(double)] + 
+							dst[i+bytes_so_far/sizeof(double)] = SHADDR_SRCBUF(0)[i+bytes_so_far/sizeof(double)] +
+										SHADDR_SRCBUF(1)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(2)[i+bytes_so_far/sizeof(double)] +
+										SHADDR_SRCBUF(3)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(4)[i+bytes_so_far/sizeof(double)] +
+										SHADDR_SRCBUF(5)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(6)[i+bytes_so_far/sizeof(double)] +
 										SHADDR_SRCBUF(7)[i+bytes_so_far/sizeof(double)];
 						}
 
-					}	
+					}
 					mcomb_control->chunks_done[_local_rank] += 1;
 					}
 					bytes_so_far += chunk_size;
@@ -200,11 +200,11 @@ namespace PAMI
 					if (bytes_so_far == bytes) break;
 					}
 					chunk_size*=2;
-				}	
+				}
 
 		  }
 
-		  inline void advance_16way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers, 
+		  inline void advance_16way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
 										double* dst, size_t bytes)
 		  {
 				/* local ranks other than 0 do the following quad sum */
@@ -216,33 +216,33 @@ namespace PAMI
 					chunk_size = (bytes-bytes_so_far > chunk_size )? chunk_size: (bytes-bytes_so_far);
 					if (iter == _local_rank){
 					if (chunk_size%1024 == 0)//checking for multiple of 1024 bytes only
-					{ 
-						quad_double_sum_16way(dst+ bytes_so_far/sizeof(double), SHADDR_SRCBUF(0)+bytes_so_far/sizeof(double), 
-										SHADDR_SRCBUF(1)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(2)+bytes_so_far/sizeof(double), 
-										SHADDR_SRCBUF(3)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(4)+bytes_so_far/sizeof(double), 
-										SHADDR_SRCBUF(5)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(6)+bytes_so_far/sizeof(double), 
-										SHADDR_SRCBUF(7)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(8)+bytes_so_far/sizeof(double), 
-										SHADDR_SRCBUF(9)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(10)+bytes_so_far/sizeof(double), 
-										SHADDR_SRCBUF(11)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(12)+bytes_so_far/sizeof(double), 
-										SHADDR_SRCBUF(13)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(14)+bytes_so_far/sizeof(double), 
+					{
+						quad_double_sum_16way(dst+ bytes_so_far/sizeof(double), SHADDR_SRCBUF(0)+bytes_so_far/sizeof(double),
+										SHADDR_SRCBUF(1)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(2)+bytes_so_far/sizeof(double),
+										SHADDR_SRCBUF(3)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(4)+bytes_so_far/sizeof(double),
+										SHADDR_SRCBUF(5)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(6)+bytes_so_far/sizeof(double),
+										SHADDR_SRCBUF(7)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(8)+bytes_so_far/sizeof(double),
+										SHADDR_SRCBUF(9)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(10)+bytes_so_far/sizeof(double),
+										SHADDR_SRCBUF(11)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(12)+bytes_so_far/sizeof(double),
+										SHADDR_SRCBUF(13)+bytes_so_far/sizeof(double), SHADDR_SRCBUF(14)+bytes_so_far/sizeof(double),
 										SHADDR_SRCBUF(15)+bytes_so_far/sizeof(double), chunk_size/sizeof(double));
 					}
 					else
 					{
 						for (unsigned i =0; i < chunk_size/sizeof(double); i++)
 						{
-							dst[i+bytes_so_far/sizeof(double)] = SHADDR_SRCBUF(0)[i+bytes_so_far/sizeof(double)] + 
-										SHADDR_SRCBUF(1)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(2)[i+bytes_so_far/sizeof(double)] + 
-										SHADDR_SRCBUF(3)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(4)[i+bytes_so_far/sizeof(double)] + 
-										SHADDR_SRCBUF(5)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(6)[i+bytes_so_far/sizeof(double)] + 
-										SHADDR_SRCBUF(7)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(8)[i+bytes_so_far/sizeof(double)] + 
-										SHADDR_SRCBUF(9)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(10)[i+bytes_so_far/sizeof(double)] + 
-										SHADDR_SRCBUF(11)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(12)[i+bytes_so_far/sizeof(double)] + 
-										SHADDR_SRCBUF(13)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(14)[i+bytes_so_far/sizeof(double)] + 
+							dst[i+bytes_so_far/sizeof(double)] = SHADDR_SRCBUF(0)[i+bytes_so_far/sizeof(double)] +
+										SHADDR_SRCBUF(1)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(2)[i+bytes_so_far/sizeof(double)] +
+										SHADDR_SRCBUF(3)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(4)[i+bytes_so_far/sizeof(double)] +
+										SHADDR_SRCBUF(5)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(6)[i+bytes_so_far/sizeof(double)] +
+										SHADDR_SRCBUF(7)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(8)[i+bytes_so_far/sizeof(double)] +
+										SHADDR_SRCBUF(9)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(10)[i+bytes_so_far/sizeof(double)] +
+										SHADDR_SRCBUF(11)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(12)[i+bytes_so_far/sizeof(double)] +
+										SHADDR_SRCBUF(13)[i+bytes_so_far/sizeof(double)] + SHADDR_SRCBUF(14)[i+bytes_so_far/sizeof(double)] +
 										SHADDR_SRCBUF(15)[i+bytes_so_far/sizeof(double)];
 						}
 
-					}	
+					}
 					mcomb_control->chunks_done[_local_rank] += 1;
 					}
 					bytes_so_far += chunk_size;
@@ -250,7 +250,7 @@ namespace PAMI
 					if (bytes_so_far == bytes) break;
 					}
 					chunk_size*=2;
-				}	
+				}
 
 		  }
 
@@ -273,7 +273,7 @@ namespace PAMI
 			//t1  = PAMI_Wtimebase();
 			//while (_master_desc->arrived_peers() != (unsigned) num_src_ranks){}
 			//	fprintf(stderr,"[%d]arrived peers:%u num_src_ranks:%zd", _local_rank, _master_desc->arrived_peers(), num_src_ranks);
-			
+
 			/* Non blocking until all the peers arrive at the collective */
 			if (_master_desc->arrived_peers() != (unsigned) num_src_ranks)
 			{
@@ -307,7 +307,7 @@ namespace PAMI
 
 				/* Check for the alignment..Assuming L1 cache line alignment for now */
 				PAMI_ASSERT(ALIGNED_SRCBUF(0,mask1) && ALIGNED_SRCBUF(1,mask1) &&ALIGNED_SRCBUF(2,mask1) &&ALIGNED_SRCBUF(3,mask1)) ;
-				
+
 		   		advance_4way_sum(mcomb_control, _local_rank, _npeers, dst, bytes);
 
 			}
@@ -316,7 +316,7 @@ namespace PAMI
 				/* Check for the alignment..Assuming L1 cache line alignment for now */
 				PAMI_ASSERT(ALIGNED_SRCBUF(0,mask1) && ALIGNED_SRCBUF(1,mask1) &&ALIGNED_SRCBUF(2,mask1) &&ALIGNED_SRCBUF(3,mask1)) ;
 				PAMI_ASSERT(ALIGNED_SRCBUF(4,mask1) && ALIGNED_SRCBUF(5,mask1) &&ALIGNED_SRCBUF(6,mask1) &&ALIGNED_SRCBUF(7,mask1)) ;
-				//unsigned long long t1 = PAMI_Wtimebase();	
+				//unsigned long long t1 = PAMI_Wtimebase();
 		   		advance_8way_sum(mcomb_control, _local_rank, _npeers, dst, bytes);
 				//unsigned long long t2 = PAMI_Wtimebase();
 				 //fprintf(stderr,"[%d]cycles:%lld, bytes:%zd\n", _local_rank,(t2-t1), bytes);
@@ -328,7 +328,7 @@ namespace PAMI
 				PAMI_ASSERT(ALIGNED_SRCBUF(4,mask1) && ALIGNED_SRCBUF(5,mask1) &&ALIGNED_SRCBUF(6,mask1) &&ALIGNED_SRCBUF(7,mask1)) ;
 				PAMI_ASSERT(ALIGNED_SRCBUF(8,mask1) && ALIGNED_SRCBUF(9,mask1) &&ALIGNED_SRCBUF(10,mask1) &&ALIGNED_SRCBUF(11,mask1)) ;
 				PAMI_ASSERT(ALIGNED_SRCBUF(12,mask1) && ALIGNED_SRCBUF(13,mask1) &&ALIGNED_SRCBUF(14,mask1) &&ALIGNED_SRCBUF(15,mask1)) ;
-				
+
 		   		advance_16way_sum(mcomb_control, _local_rank, _npeers, dst, bytes);
 
 			}
@@ -338,7 +338,7 @@ namespace PAMI
 				exit(0);
 
 			}
-			
+
 			}
 
 		/* Reduction over...start gathering the results, local_rank == 0, the master, gathers the results */
@@ -351,24 +351,24 @@ namespace PAMI
 					while (mcomb_control->chunks_done[iter] <= mcomb_control->chunks_copied[iter]){};
 
 					if (chunk_size%1024 == 0)//checking for multiple of 1024 bytes only
-					{ 
-						quad_double_copy((dst + bytes_so_far/sizeof(double)), 
+					{
+						quad_double_copy((dst + bytes_so_far/sizeof(double)),
 							 	  (SHADDR_DSTBUF(iter)+bytes_so_far/sizeof(double)), chunk_size/sizeof(double));
 						rcv->produceBytes(chunk_size);
 					}
 					else
 					{
-						memcpy((void*)(dst + bytes_so_far/sizeof(double)), 
+						memcpy((void*)(dst + bytes_so_far/sizeof(double)),
 						 	  (void*)(SHADDR_DSTBUF(iter)+bytes_so_far/sizeof(double)), chunk_size/sizeof(double));
 						rcv->produceBytes(chunk_size);
-					}	
+					}
 					mcomb_control->chunks_copied[iter] += 1;
 					bytes_so_far += chunk_size;
 					TRACE_ERR((stderr,"dst[%u]:%f\n", iter*NUM_DBLS_PER_CHUNK, dst[iter*NUM_DBLS_PER_CHUNK]));
 					if (bytes_so_far == bytes) break;
 					}
 					chunk_size*=2;
-				}	
+				}
 
 			}
 
@@ -380,7 +380,7 @@ namespace PAMI
 			return PAMI_SUCCESS;
 
           }
-			
+
 
         public:
           inline McombMessageShaddr (T_Device *device, T_Desc* desc, T_Desc* matched_desc) :

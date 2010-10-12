@@ -524,7 +524,7 @@ namespace CCMI
          AsyncCSReduceScatterComposite;
 
        typedef CCMI::Adaptor::Allreduce::AsyncReduceScatterFactoryT<AsyncCSReduceScatterComposite,
-         ascs_reduce_scatter_metadata, CCMI::ConnectionManager::CommSeqConnMgr,getKey> 
+         ascs_reduce_scatter_metadata, CCMI::ConnectionManager::CommSeqConnMgr,getKey>
          AsyncCSReduceScatterFactory;
 
     } // P2PReduceScatter

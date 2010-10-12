@@ -247,7 +247,7 @@ namespace PAMI
       uint64_t        _seqnoRed;
       MatchQueue      _ueRed;
       MatchQueue      _postedRed;
-      
+
       PAMI::Topology *_topo;
     };
 

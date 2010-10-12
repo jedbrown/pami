@@ -1,5 +1,5 @@
 ///
-/// \file api/extension/c/hfi_extension/bgp/HfiExtension.cc
+/// \file api/extension/c/hfi_extension/HfiExtension.cc
 /// \brief ???
 ///
 #include "HfiExtension.h"
@@ -14,8 +14,8 @@ pami_result_t
 PAMI::HfiExtension::hfi_pkt_counters (pami_context_t context,
         hfi_pkt_counter_t *counters)
 {
-  
-  internal_error_t rst =  _dbg_hfi_perf_counters( ((Context*)context)->my_hndl, 
+
+  internal_error_t rst =  _dbg_hfi_perf_counters( ((Context*)context)->my_hndl,
           (lapi_pkt_counter_t*)counters, false);
 
   PAMI_RC( rst );

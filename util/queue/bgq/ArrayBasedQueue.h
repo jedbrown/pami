@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-///  \file util/queue/ArrayBasedQueue.h
+///  \file util/queue/bgq/ArrayBasedQueue.h
 ///  \brief Fast Aarray Based Queue Classes
 ///
 ///  These classes implement a base queue element and queues constructed
@@ -21,8 +21,8 @@
 ///  - Queue:         A queue of elements
 ///
 ///
-#ifndef __util_queue_ArrayBasedQueue_h__
-#define __util_queue_ArrayBasedQueue_h__
+#ifndef __util_queue_bgq_ArrayBasedQueue_h__
+#define __util_queue_bgq_ArrayBasedQueue_h__
 
 #include <execinfo.h>
 #include <stdio.h>
@@ -43,7 +43,7 @@
 
 #define DEFAULT_SIZE         2048
 
-#ifndef L1D_CACHE_LINE_SIZE 
+#ifndef L1D_CACHE_LINE_SIZE
 #define L1D_CACHE_LINE_SIZE  64
 #endif
 
@@ -61,7 +61,7 @@ namespace PAMI {
   /// algorithm will not use fast queue till the producers stop
   /// enqueueing.
   ///
-  ///  
+  ///
   template <class T_Mutex>
     class ArrayBasedQueue : public PAMI::Interface::DequeInterface<ArrayBasedQueue<T_Mutex>,
     Queue::Element >,
@@ -80,27 +80,27 @@ namespace PAMI {
     ///
     inline bool  advance() {
       bool newwork = false;
-      uint64_t index = 0; 
-      
+      uint64_t index = 0;
+
       if ( (index =  L2_AtomicLoadIncrementBounded (&_atomicCounters[0])) != L2_ATOMIC_EMPTY ) {
 	//fprintf(stderr, "Dequeueing index %ld, counter address %lx\n", index, (uint64_t)&_atomicCounters[0]);
 	uint64_t qindex = index & (DEFAULT_SIZE - 1);
-	
+
 	volatile Element *element = _queueArray[qindex].element; //Wait till producer updates this
 	while (element == NULL) 	  //Wait till producer updates this
-	  element = _queueArray[qindex].element; 
-	
+	  element = _queueArray[qindex].element;
+
 	mem_sync();
 	//fprintf(stderr, "Found element %ld\n", index);
-	
+
 	_privateq.enqueue((Element *)element);
 	_queueArray[qindex].element = NULL; //Mark the element as unused
 	newwork = true;
-	
+
 	//Increment the queue size to permit another enqueue
-	L2_AtomicLoadIncrement(&_atomicCounters[2]); 
+	L2_AtomicLoadIncrement(&_atomicCounters[2]);
       }
-      
+
       if (!_overflowq.isEmpty()) {
 	_mutex.acquire();
 	Queue::Element *head;
@@ -112,16 +112,16 @@ namespace PAMI {
 	  newwork = true;
 	}
 	_mutex.release();
-      }      
+      }
 
       return newwork;
     }
 
-  public:    
+  public:
     const static bool removeAll_can_race = false;
     typedef Queue::Element  Element;
     typedef BasicQueueIterator<ArrayBasedQueue<T_Mutex>, Element > Iterator;
-    
+
     //Structure designed to force write combining
     struct ArrayBasedQueueElement {
       volatile Element   *element;
@@ -139,29 +139,29 @@ namespace PAMI {
       _counterAddress[3]  = NULL;
       _queueArray         = NULL;
     }
-      
+
     inline void init(PAMI::Memory::MemoryManager *mm)
-      {    
+      {
 	_mutex.init(mm);
 	_overflowq.init(mm);
 	_privateq.init(mm);
-	
+
 	uint64_t *buffer;
 	int rc = 0;
-	rc = __global.l2atomicFactory.__procscoped_mm.memalign((void **)&buffer, 
+	rc = __global.l2atomicFactory.__procscoped_mm.memalign((void **)&buffer,
 							       L1D_CACHE_LINE_SIZE, L1D_CACHE_LINE_SIZE);
 	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate L2 Atomic Counter");
 	//Verify counter array is 32-byte aligned
 
 	//printf ("Array Based Queue Initialized, atomics at address %lx\n", (uint64_t)buffer);
-	
+
 	_atomicCounters = buffer;
-	PAMI_assert( (((uint64_t)_atomicCounters) & 0x3f) == 0 );	
+	PAMI_assert( (((uint64_t)_atomicCounters) & 0x3f) == 0 );
 
 	L2_AtomicStore(&_atomicCounters[0], 0);   //Consumer
 	L2_AtomicStore(&_atomicCounters[1], 0);   //Producer
 	L2_AtomicStore(&_atomicCounters[2], DEFAULT_SIZE); //Upper bound
-	
+
 	uint64_t tid = 0;
 	for (tid = 0; tid < 4UL; tid ++)
 	  _counterAddress[tid] =  (volatile uint64_t *)
@@ -169,22 +169,22 @@ namespace PAMI {
 	       ((((uint64_t) &_atomicCounters[1]) << 5) & ~0xfful)) |
 	      (tid << 6)) +
 	     (4UL << 3)); //__l2_op_ptr (_atomicCounters, 4 /*bounded increment*/);
-	
+
 	for (tid = 0; tid < 4UL; tid ++)
 	  _flushAddress[tid] =  (volatile uint64_t *)
 	    (((Kernel_L2AtomicsBaseAddress() +
 	       ((((uint64_t) &_atomicCounters[3]) << 5) & ~0xfful)) |
 	      (tid << 6)) +
 	     (4UL << 3)); //__l2_op_ptr (_atomicCounters, 4 /*bounded increment*/);
-	
+
 	//PAMI_assertf(sizeof(ArrayBasedQueueElement)==L1D_CACHE_LINE_SIZE, "Error: QueueElement size");
 
-	_queueArray = (ArrayBasedQueueElement *) memalign (L1D_CACHE_LINE_SIZE, 
+	_queueArray = (ArrayBasedQueueElement *) memalign (L1D_CACHE_LINE_SIZE,
 							       sizeof(ArrayBasedQueueElement) * DEFAULT_SIZE);
 	memset (_queueArray, 0, sizeof(ArrayBasedQueueElement) * DEFAULT_SIZE);
 	PAMI_assert (_queueArray != NULL);
       }
-      
+
       /// \copydoc PAMI::Interface::QueueInterface::enqueue
     inline void enqueue_impl(Element *element)
       {
@@ -195,9 +195,9 @@ namespace PAMI {
 	                         //non-blocking write fence
 	//mbar();
 	uint64_t index = 0;
-	if ( likely (_overflowq.isEmpty() && 
+	if ( likely (_overflowq.isEmpty() &&
 		     ((index = *(_counterAddress[tid])) != L2_ATOMIC_FULL)) )
-	  { 
+	  {
 	    uint64_t qindex = index & (DEFAULT_SIZE - 1);
             //printf("Atomic increment of counter %lx returned index %lu\n", (uint64_t)&_atomicCounters[1], index);
 	    _queueArray[qindex].element = element;
@@ -205,59 +205,59 @@ namespace PAMI {
 	    _wakeup = 1;
 	    return;
 	  }
-	
+
 	_mutex.acquire();
 	_overflowq.enqueue((Queue::Element *)element);
 	_mutex.release();
       }
-      
+
       /// \copydoc PAMI::Interface::QueueInterface::dequeue
     inline Element *dequeue_impl()
       {
 	advance();
 	return 	_privateq.dequeue();
       }
-    
+
     /// \copydoc PAMI::Interface::QueueInterface::push (implemented as an enqueue)
     inline void push_impl(Element *element)
       {
 	enqueue_impl (element);
       }
-    
+
     /// \copydoc PAMI::Interface::QueueInterface::peek
     inline Element *peek_impl()
       {
 	advance();
 	return _privateq.peek();
       }
-    
+
     /// \copydoc PAMI::Interface::QueueInterface::isEmpty
     inline bool isEmpty_impl()
       {
 	advance();
-	
+
 	return _privateq.isEmpty();
       }
-    
+
     /// \copydoc PAMI::Interface::QueueInterface::next
     inline Element *next_impl(Element *reference)
       {
 	PAMI_abort();
 	return NULL;
       }
-    
+
     /// \copydoc PAMI::Interface::QueueInterface::removeAll
     inline void removeAll_impl(Element *&head, Element *&tail, size_t &size)
       {
 	PAMI_assertf(0, "removeAll not implemented\n");
       }
-    
+
     /// \copydoc PAMI::Interface::QueueInterface::appendAll
     inline void appendAll_impl(Element *head, Element *tail, size_t size)
       {
 	PAMI_assertf(0, "appendAll not implemented\n");
       }
-    
+
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
     /// \copydoc PAMI::Interface::QueueInterface::popTail
     inline Element *popTail_impl()
@@ -265,7 +265,7 @@ namespace PAMI {
 	PAMI_abort();
 	return NULL;
       }
-    
+
     /// \copydoc PAMI::Interface::QueueInterface::peekTail
     inline Element *peekTail_impl()
       {
@@ -273,56 +273,56 @@ namespace PAMI {
 	return NULL;
       }
 #endif
-    
+
     /// \copydoc PAMI::Interface::DequeInterface::tail
     inline Element *tail_impl()
       {
 	PAMI_abort();
 	return NULL;
       }
-    
+
     /// \copydoc PAMI::Interface::DequeInterface::before
     inline Element *before_impl(Element *reference)
       {
 	PAMI_abort();
 	return NULL;
       }
-    
+
     /// \copydoc PAMI::Interface::DequeInterface::insert
     inline void insert_impl(Element *reference,
 			    Element *element)
       {
 	PAMI_abort();
       }
-    
+
     /// \copydoc PAMI::Interface::DequeInterface::append
     inline void append_impl(Element *reference,
 			    Element *element)
       {
 	PAMI_abort();
       }
-    
+
     /// \copydoc PAMI::Interface::DequeInterface::remove
     inline void remove_impl(Element *element)
       {
 	PAMI_abort();
 	return;
       }
-    
+
     /// \copydoc PAMI::Interface::QueueInfoInterface::size
     inline size_t size_impl()
       {
 	advance();
 	return _privateq.size_impl();
       }
-    
+
     /// \copydoc PAMI::Interface::QueueInfoInterface::dump
     inline void dump_impl(const char *str, int n)
     {
       fprintf(stderr, "%s: size=%ld locked:%d\n", str,
 	      size_impl(), _mutex.isLocked());
     }
-    
+
 #ifdef VALIDATE_ON
     /// \copydoc PAMI::Interface::QueueInfoInterface::validate
     inline void validate_impl()
@@ -330,22 +330,22 @@ namespace PAMI {
 	PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
       }
 #endif
-    
+
     // Iterator implementation:
     // This all works because there is only one thread removing (the iterator),
     // all others only append new work.
-    
+
     inline void iter_init_impl(Iterator *iter) {
-      iter->curr = iter->next = NULL;      
+      iter->curr = iter->next = NULL;
     }
-    
-    inline bool iter_begin_impl(Iterator *iter) {      
+
+    inline bool iter_begin_impl(Iterator *iter) {
       bool newwork = advance();
-      
+
       iter->curr =  (Element *)_privateq.peek();
       return newwork;
     }
-    
+
     inline bool iter_check_impl(Iterator *iter) {
       if (iter->curr == NULL) {
 	// done with this pass...
@@ -354,22 +354,22 @@ namespace PAMI {
       iter->next = _privateq.nextElem(iter->curr);
       return  true;
     }
-    
+
     inline void iter_end_impl(Iterator *iter) {
       iter->curr = iter->next;
     }
-    
+
     inline Element *iter_current_impl(Iterator *iter) {
       return iter->curr;
     }
-    
+
     inline pami_result_t iter_remove_impl(Iterator *iter) {
       _privateq.remove(iter->curr);
       return PAMI_SUCCESS;
     }
-    
+
   protected:
-      
+
     volatile uint64_t                              * _atomicCounters;
     volatile uint64_t                              * _counterAddress[4];
     ArrayBasedQueueElement                         * _queueArray;

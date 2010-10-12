@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemMcstModelWorld.h
+ * \file components/devices/shmemcoll/ShmemMcstModelWorld.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_mcst_model_world_h__
-#define __components_devices_shmem_mcst_model_world_h__
+#ifndef __components_devices_shmemcoll_ShmemMcstModelWorld_h__
+#define __components_devices_shmemcoll_ShmemMcstModelWorld_h__
 
 #include <errno.h>
 #include <sys/uio.h>
@@ -44,7 +44,7 @@ namespace PAMI
 	template <class T_Device, class T_Desc>
 	class ShmemMcstModelWorld : public Interface::MulticastModel < ShmemMcstModelWorld<T_Device,T_Desc>, T_Device, sizeof(Shmem::McstMessage<T_Device,T_Desc>) >
       {
-	
+
 	public:
 		//Shmem Multicast Model
 		ShmemMcstModelWorld (T_Device &device, pami_result_t &status) :
@@ -76,12 +76,12 @@ namespace PAMI
 	TRACE_ERR((stderr, "size of destination topology:%zu\n", num_dst_ranks));
 
 	unsigned local_root = __global.topology_local.rank2Index(src_topo->index2Rank(0));
-	//unsigned my_topo_idx = _peer; //for now my index in the group is the same as my _peer 
-	
+	//unsigned my_topo_idx = _peer; //for now my index in the group is the same as my _peer
+
 	T_Desc *my_desc=NULL, *master_desc=NULL;
 
 	if (_device.isPendingDescQueueEmpty()){
-		pami_result_t res =	 _device.getShmemWorldDesc(&my_desc, &master_desc, local_root); 
+		pami_result_t res =	 _device.getShmemWorldDesc(&my_desc, &master_desc, local_root);
 		 while (res != PAMI_SUCCESS)
         {
              res =   _device.getShmemWorldDesc(&my_desc, &master_desc, local_root);
@@ -91,7 +91,7 @@ namespace PAMI
 		if (res == PAMI_SUCCESS)
 		{
 			TRACE_ERR((stderr,"local_root%u my_local_rank:%u\n", local_root, _peer));
-	
+
 			if (mcast->bytes <= Shmem::McstMessage<T_Device, T_Desc>::short_msg_cutoff)
 			{
 				if (local_root == _peer){
@@ -118,7 +118,7 @@ namespace PAMI
 #else
 				my_desc->set_mcast_params(mcast);
 				my_desc->set_master(local_root);
-				Shmem::McstMessageShmem<T_Device, T_Desc> * obj = (Shmem::McstMessageShmem<T_Device, T_Desc> *) (&state[0]);	
+				Shmem::McstMessageShmem<T_Device, T_Desc> * obj = (Shmem::McstMessageShmem<T_Device, T_Desc> *) (&state[0]);
 				new (obj) Shmem::McstMessageShmem<T_Device, T_Desc> (&_device, my_desc, master_desc);
     			_device.post(obj);
 #endif
@@ -156,10 +156,10 @@ namespace PAMI
 	}
 
 	TRACE_ERR((stderr,"Creating descriptor message for retrying the collective\n"));
-	Shmem::ShmemDescMessageWorld<T_Device,T_Desc>* desc_msg = (Shmem::ShmemDescMessageWorld<T_Device,T_Desc>*)shmem_mcst_world_allocator.allocateObject ();			
+	Shmem::ShmemDescMessageWorld<T_Device,T_Desc>* desc_msg = (Shmem::ShmemDescMessageWorld<T_Device,T_Desc>*)shmem_mcst_world_allocator.allocateObject ();
 	new ((void*)desc_msg) Shmem::ShmemDescMessageWorld<T_Device, T_Desc>(&_device, Shmem::ShmemMcstModelWorld<T_Device, T_Desc>::release_desc_msg, this,_peer);
 
-	T_Desc & coll_desc = desc_msg->return_descriptor();	
+	T_Desc & coll_desc = desc_msg->return_descriptor();
 
 	coll_desc.set_mcast_params(mcast);
 	coll_desc.set_master(local_root);
@@ -170,7 +170,7 @@ namespace PAMI
 	TRACE_ERR((stderr,"Posted the descriptor message for retrying the collective\n"));
 
 	return PAMI_SUCCESS;
-	
+
   };
 
 static void release_desc_msg (pami_context_t context, void* cookie, pami_result_t result)
@@ -192,10 +192,10 @@ protected:
 
 
       };  // PAMI::Device::Shmem::ShmemMcstModelWorld class
-		
-	  template <class T_Device, class T_Desc>	
+
+	  template <class T_Device, class T_Desc>
 	  MemoryAllocator < sizeof(ShmemDescMessage<T_Device,T_Desc>), 16 > ShmemMcstModelWorld<T_Device, T_Desc>::shmem_mcst_world_allocator;
-		
+
     };    // PAMI::Device::Shmem namespace
   };      // PAMI::Device namespace
 };        // PAMI namespace

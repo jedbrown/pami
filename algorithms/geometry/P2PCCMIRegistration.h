@@ -511,7 +511,7 @@ namespace PAMI
                    class T_Device1,
                    class T_Protocol2,
                    class T_Device2,
-                   class T_Factory, 
+                   class T_Factory,
                    NativeInterfaceCommon::select_interface T_Select>
           void setupFactory(T_NI        *&ni,
                             T_Device1    &device1,

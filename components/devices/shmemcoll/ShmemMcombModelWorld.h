@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemMcombModelWorld.h
+ * \file components/devices/shmemcoll/ShmemMcombModelWorld.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_mcomb_model_world_h__
-#define __components_devices_shmem_mcomb_model_world_h__
+#ifndef __components_devices_shmemcoll_ShmemMcombModelWorld_h__
+#define __components_devices_shmemcoll_ShmemMcombModelWorld_h__
 
 #include <errno.h>
 #include <sys/uio.h>
@@ -43,7 +43,7 @@ namespace PAMI
       class ShmemMcombModelWorld : public Interface::MulticombineModel < ShmemMcombModelWorld<T_Device,T_Desc>, T_Device, sizeof(Shmem::McombMessage<T_Device,T_Desc>) >
       {
 	public:
-		
+
 			//Shmem Multicombine Model
           ShmemMcombModelWorld (T_Device &device, pami_result_t &status) :
 		Interface::MulticombineModel < ShmemMcombModelWorld<T_Device, T_Desc>, T_Device, sizeof(Shmem::McombMessage<T_Device,T_Desc>) > (device, status),
@@ -75,21 +75,21 @@ namespace PAMI
 	size_t num_src_ranks = src_topo->size();
 
 	unsigned local_root = __global.topology_local.rank2Index(dst_topo->index2Rank(0));
-	
+
 	T_Desc *my_desc=NULL, *master_desc=NULL;
 
 	if (_device.isPendingDescQueueEmpty()){
-		pami_result_t res =	 _device.getShmemWorldDesc(&my_desc, &master_desc, local_root); 
+		pami_result_t res =	 _device.getShmemWorldDesc(&my_desc, &master_desc, local_root);
 		//assert(res == PAMI_SUCCESS);
 		while (res != PAMI_SUCCESS)
 		{
-			 res =	 _device.getShmemWorldDesc(&my_desc, &master_desc, local_root); 
+			 res =	 _device.getShmemWorldDesc(&my_desc, &master_desc, local_root);
 			 _device.advance();
-		}	
+		}
 
 		if (res == PAMI_SUCCESS)
 		{
-	
+
 			TRACE_ERR((stderr,"mcomb->count:%zd\n",mcomb->count));
 			size_t bytes = mcomb->count << pami_dt_shift[mcomb->dtype];
 
@@ -115,26 +115,26 @@ namespace PAMI
 				}
 				return PAMI_SUCCESS;
 #else
-				if (local_root == _peer) 
+				if (local_root == _peer)
 					my_desc->set_consumers(num_src_ranks);
 
 				my_desc->set_mcomb_params(mcomb);
-				Shmem::McombMessageShmem<T_Device, T_Desc> * obj = (Shmem::McombMessageShmem<T_Device, T_Desc> *) (&state[0]);	
+				Shmem::McombMessageShmem<T_Device, T_Desc> * obj = (Shmem::McombMessageShmem<T_Device, T_Desc> *) (&state[0]);
     			new (obj) Shmem::McombMessageShmem<T_Device, T_Desc> (&_device, my_desc, master_desc);
     			_device.post(obj);
 #endif
 			}
 			else
 			{
-				if (local_root == _peer) 
+				if (local_root == _peer)
 					my_desc->set_consumers(num_src_ranks);
 
 				my_desc->set_mcomb_params(mcomb);
 				void* src_buf = ((PAMI::PipeWorkQueue *)mcomb->data)->bufferToConsume();
 				void* dst_buf = ((PAMI::PipeWorkQueue *)mcomb->results)->bufferToProduce();
-				 TRACE_ERR((stderr,"Taking shaddr path local_root%u my_local_rank:%u my_va_src_buf:%p my_va_dst_buf:%p\n", 
+				 TRACE_ERR((stderr,"Taking shaddr path local_root%u my_local_rank:%u my_va_src_buf:%p my_va_dst_buf:%p\n",
 							local_root, _peer, src_buf, dst_buf));
-				
+
 				 Memregion memreg_src;
 				 Memregion memreg_dst;
 				 Shmem::McombControl* mcomb_control = (Shmem::McombControl*) master_desc->get_buffer();
@@ -161,7 +161,7 @@ namespace PAMI
 				 TRACE_ERR((stderr,"dst buffer info..[%d]phy_addr:%p set my global dst address:%p \n", _peer, phy_addr, global_vaddr));
 				 TRACE_ERR((stderr,"dst buffer[0] via global VA:%f \n", ((double*)global_vaddr)[0]));
 
-				if (local_root == _peer) 
+				if (local_root == _peer)
 				{
 					my_desc->set_consumers(num_src_ranks);
 
@@ -187,12 +187,12 @@ namespace PAMI
 
 	assert(0);
 	TRACE_ERR((stderr,"Creating descriptor message for retrying the collective\n"));
-	Shmem::ShmemDescMessageWorld<T_Device,T_Desc>* desc_msg = (Shmem::ShmemDescMessageWorld<T_Device,T_Desc>*)shmem_mcomb_world_allocator.allocateObject ();			
+	Shmem::ShmemDescMessageWorld<T_Device,T_Desc>* desc_msg = (Shmem::ShmemDescMessageWorld<T_Device,T_Desc>*)shmem_mcomb_world_allocator.allocateObject ();
 	new ((void*)desc_msg) Shmem::ShmemDescMessageWorld<T_Device, T_Desc>(&_device, Shmem::ShmemMcombModelWorld<T_Device, T_Desc>::release_desc_msg, this,_peer);
 
-	T_Desc & coll_desc = desc_msg->return_descriptor();	
+	T_Desc & coll_desc = desc_msg->return_descriptor();
 
-	coll_desc.set_mcomb_params(mcomb);	
+	coll_desc.set_mcomb_params(mcomb);
 	coll_desc.set_master(local_root);
 	coll_desc.set_storage((void*)&state);
 	coll_desc.set_type(Shmem::MULTICOMBINE);
@@ -201,7 +201,7 @@ namespace PAMI
 	TRACE_ERR((stderr,"Posted the descriptor message for retrying the collective\n"));
 
 	return PAMI_SUCCESS;
-	
+
   };
 
 static void release_desc_msg (pami_context_t context, void* cookie, pami_result_t result)
@@ -223,10 +223,10 @@ protected:
 
 
       };  // PAMI::Device::Shmem::ShmemMcombModelWorld class
-		
-	  template <class T_Device, class T_Desc>	
+
+	  template <class T_Device, class T_Desc>
 	  MemoryAllocator < sizeof(ShmemDescMessage<T_Device,T_Desc>), 16 > ShmemMcombModelWorld<T_Device, T_Desc>::shmem_mcomb_world_allocator;
-		
+
     };    // PAMI::Device::Shmem namespace
   };      // PAMI::Device namespace
 };        // PAMI namespace

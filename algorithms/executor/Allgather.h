@@ -68,7 +68,7 @@ namespace CCMI
         int                 _donecount;
 
         unsigned            _connection_id;
-        
+
         int                 _maxsrcs;
         pami_task_t         _dstranks [MAX_CONCURRENT];
         unsigned            _dstlens  [MAX_CONCURRENT];
@@ -127,8 +127,8 @@ namespace CCMI
         virtual ~AllgatherExec ()
         {
            /// Todo: convert this to allocator ?
-           if (_maxsrcs) free (_mrecvstr); 
-           free (_tmpbuf); 
+           if (_maxsrcs) free (_mrecvstr);
+           free (_tmpbuf);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -259,8 +259,8 @@ namespace CCMI
 
           EXECUTOR_DEBUG((stderr, "AllgatherExec::notifyRecvDone, curphase = %d, donecount = %d, rcv donecount = %d, total recv =%d\n", exec->_curphase, exec->_donecount, mrecv->donecount, mrecv->partnercnt); )
 
-          mrecv->donecount ++; 
-          if (mrecv->donecount == 0){ 
+          mrecv->donecount ++;
+          if (mrecv->donecount == 0){
             exec->_curphase  ++;
             exec->_donecount  = 0;
             exec->sendNext();
@@ -306,7 +306,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
   EXECUTOR_DEBUG((stderr, "curphase = %d, startphase = %d, nphase = %d\n", _curphase, _startphase, _nphases);)
 
   if (_curphase < _startphase + _nphases) {
-    
+
     unsigned ndsts, nsrcs;
     // _comm_schedule->getList(_curphase, &_srcranks[0], nsrcs, &_dstranks[0], ndsts, &_srclens[0], &_dstlens[0]);
     _comm_schedule->getRList(_nphases - _curphase - 1, &_srcranks[0], nsrcs, &_srclens[0]);
@@ -336,7 +336,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
       _dstranks[i] = _gtopology->index2Rank(dstindex);
       _dstlens[i]  = _srclens[i];
 
-      new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);    
+      new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);
 
       size_t buflen = _dstlens[i] * _buflen;
       _pwq[i].configure (NULL, _tmpbuf, buflen, 0);
@@ -411,7 +411,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::notifyRecv
 
   //CCMI_assert(myindex < nsrcs);
 
-  *pwq = &_mrecvstr[cdata->_phase].recvstr[sindex].pwq; 
+  *pwq = &_mrecvstr[cdata->_phase].recvstr[sindex].pwq;
   // fprintf(stderr, "phase %d, sindex %d, src pwq address %p\n", cdata->_phase, sindex, *pwq);
 
   cb_done->function = notifyRecvDone;

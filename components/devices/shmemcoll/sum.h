@@ -1,5 +1,9 @@
-#ifndef __sum_h__
-#define __sum_h__
+/**
+ * \file components/devices/shmemcoll/sum.h
+ * \brief ???
+ */
+#ifndef __components_devices_shmemcoll_sum_h__
+#define __components_devices_shmemcoll_sum_h__
 #if 0
 #include <firmware/include/fwext/fwext.h>
 

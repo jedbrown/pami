@@ -16,7 +16,7 @@ namespace PAMI
   class HfiExtension
   {
     public:
-      static pami_result_t hfi_pkt_counters (pami_context_t context, 
+      static pami_result_t hfi_pkt_counters (pami_context_t context,
               hfi_pkt_counter_t *counters);
 
       static pami_result_t hfi_remote_update (pami_context_t context,

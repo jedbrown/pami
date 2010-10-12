@@ -1,3 +1,7 @@
+/**
+ * \file components/devices/shmemcoll/asmheader.h
+ * \brief ???
+ */
 #ifndef __asmheader_h__
 #define __ashheader_h__
 

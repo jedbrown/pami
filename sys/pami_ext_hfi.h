@@ -1,4 +1,4 @@
-/** 
+/**
  * \file sys/pami_ext_hfi.h
  * \brief HFI specified interfaces
  */

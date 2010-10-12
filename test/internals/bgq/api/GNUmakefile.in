@@ -38,4 +38,3 @@ else
 endif
 
 default: ${APPS}
-

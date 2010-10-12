@@ -5,12 +5,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemCollDevice_impl.h
+ * \file components/devices/shmemcoll/ShmemCollDevice_impl.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_ShmemCollDevice_impl_h__
-#define __components_devices_shmem_ShmemCollDevice_impl_h__
+#ifndef __components_devices_shmemcoll_ShmemCollDevice_impl_h__
+#define __components_devices_shmemcoll_ShmemCollDevice_impl_h__
 
 #include "Global.h"
 #include "common/bgq/Memregion.h"
@@ -59,8 +59,8 @@ namespace PAMI
       new (_my_desc_fifo) Shmem::ShmemCollDescFifo<T_Desc>(mm);
       new (_my_world_desc_fifo) Shmem::ShmemCollDescFifo<T_Desc>(mm);
       // barrier ?
- 
-		//delay 
+
+		//delay
 	  /*unsigned long long delay = 100000, t0, t1;
 	  t0 = __global.time.timebase();
       while ((t1 = __global.time.timebase()) - t0 < delay);
@@ -170,7 +170,7 @@ namespace PAMI
     {
       TRACE_ERR((stderr, ">> (%zu) ShmemCollDevice::postCollective(%p, %p, %zu, %u, %u, %p)\n", __global.mapping.task(), src, dst, bytes,conn_id,master, state));
 
-		T_Desc* coll_desc = _my_desc_fifo->fetch_descriptor();	
+		T_Desc* coll_desc = _my_desc_fifo->fetch_descriptor();
 		if (coll_desc != NULL){
 			coll_desc->set_src_pwq(src);
 			coll_desc->set_recv_pwq(dst);
@@ -195,7 +195,7 @@ namespace PAMI
     {
       TRACE_ERR((stderr, ">> (%zu) ShmemCollDevice::postMulticastShmem(  %u, %p)\n", __global.mapping.task(), master, state));
 
-		T_Desc* coll_desc = _my_desc_fifo->fetch_descriptor();	
+		T_Desc* coll_desc = _my_desc_fifo->fetch_descriptor();
 		if (coll_desc != NULL){
 
 			coll_desc->set_mcast_params(mcast);
@@ -213,7 +213,7 @@ namespace PAMI
 				TRACE_ERR((stderr,"copied bytes:%zu from %p to %p data[0]:%u\n", mcast->bytes, mybuf, buf, ((unsigned*)buf)[0]));
 				((PAMI::PipeWorkQueue*)mcast->src)->consumeBytes(mcast->bytes);
 			}
-			
+
 			coll_desc->set_state(Shmem::INIT);
 		return PAMI_SUCCESS;
 		}
@@ -231,7 +231,7 @@ namespace PAMI
 
 		Memregion memregion(_context);
 
-		T_Desc* coll_desc = _my_desc_fifo->fetch_descriptor();	
+		T_Desc* coll_desc = _my_desc_fifo->fetch_descriptor();
 		if (coll_desc != NULL){
 
 				coll_desc->set_mcast_params(mcast);
@@ -252,12 +252,12 @@ namespace PAMI
 				uint32_t rc = 0;
 				rc = Kernel_Physical2GlobalVirtual (phy_addr, &global_vaddr);
 				assert(rc == 0);
-				
+
 				memcpy(buf, &global_vaddr, sizeof(global_vaddr));
 				TRACE_ERR((stderr,"copied global_vaddr:%p to %p \n", global_vaddr, buf));
 				((PAMI::PipeWorkQueue*)mcast->src)->consumeBytes(mcast->bytes);
 			}
-			
+
 			coll_desc->set_state(Shmem::INIT);
       		return PAMI_SUCCESS;
 		}
@@ -273,7 +273,7 @@ namespace PAMI
     pami_result_t ShmemCollDevice<T_Desc>::postDescriptor (T_Desc & desc)
     {
 #if 0
-		T_Desc* coll_desc = _my_desc_fifo->fetch_descriptor();	
+		T_Desc* coll_desc = _my_desc_fifo->fetch_descriptor();
 		if (coll_desc != NULL){
 	        coll_desc->set_src_pwq(desc.get_src_pwq());
 			coll_desc->set_recv_pwq(desc.get_recv_pwq());
@@ -293,7 +293,7 @@ namespace PAMI
 				TRACE_ERR((stderr,"copied bytes:%u from %p to %p data[0]:%u\n", desc.get_bytes(), mybuf, buf, ((unsigned*)buf)[0]));
 				desc.get_src_pwq()->consumeBytes(desc.get_bytes());
 			}
-			
+
 			coll_desc->set_state(Shmem::INIT);
       		return PAMI_SUCCESS;
 		}
@@ -319,7 +319,7 @@ namespace PAMI
 			uint64_t	next_seq_id = next_free_desc->get_seq_id();
 			TRACE_ERR((stderr,"desc_index:%u next_seq_id:%ld\n",desc_index, next_seq_id));
 			T_Desc* desc = _all_world_desc_fifos[master].get_descriptor_by_idx(desc_index);
-		
+
 			//assert(next_seq_id == desc->get_seq_id());
 			if (likely(next_seq_id == desc->get_seq_id())){
 				*my_desc = _my_world_desc_fifo->fetch_descriptor();
@@ -330,7 +330,7 @@ namespace PAMI
 		}
 
 		return PAMI_EAGAIN;
-	}	
+	}
 
     template <class T_Desc>
     pami_result_t ShmemCollDevice<T_Desc>::post (Shmem::SendQueue::Message * msg)

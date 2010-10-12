@@ -5,12 +5,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemCollDevice.h
+ * \file components/devices/shmemcoll/ShmemCollDevice.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_ShmemCollDevice_h__
-#define __components_devices_shmem_ShmemCollDevice_h__
+#ifndef __components_devices_shmemcoll_ShmemCollDevice_h__
+#define __components_devices_shmemcoll_ShmemCollDevice_h__
 
 #include <sys/uio.h>
 
@@ -183,12 +183,12 @@ namespace PAMI
               size = ((sizeof(Shmem::ShmemCollDescFifo<T_Desc>)+128) & 0xffffff80 ) * total_desc_fifos ;
               mm.memalign ((void **)&all_world_desc_fifos, 128, size);
 			  assert(all_world_desc_fifos != NULL);
-        
+
 			  size_t *peer_desc_fnum;
 			  peer_desc_fnum	= (size_t*)malloc(sizeof(size_t)*npeers);
 		      // Assign fifo indexes to the peer fnum cache
               peer_desc_fnum[0] = 0;
-		
+
 
               for (i = 1; i < npeers; i++)
                 {
@@ -236,7 +236,7 @@ namespace PAMI
             };
         };
 
-        inline ShmemCollDevice (size_t contextid, size_t ndescfifos, Shmem::ShmemCollDescFifo<T_Desc>* all_fifos, 
+        inline ShmemCollDevice (size_t contextid, size_t ndescfifos, Shmem::ShmemCollDescFifo<T_Desc>* all_fifos,
 							Shmem::ShmemCollDescFifo<T_Desc>* all_world_fifos, size_t * fnum_hash) :
             Interface::BaseDevice< ShmemCollDevice<T_Desc> > (),
             _total_fifos (ndescfifos),
@@ -301,7 +301,7 @@ namespace PAMI
 
     	pami_result_t postMulticastShaddr (pami_multicast_t* mcast, unsigned master, uint16_t dispatch_id, void* state);
 		pami_result_t postDescriptor (T_Desc & desc);
-		
+
 		pami_result_t postPendingDescriptor (Shmem::SendQueue::Message * msg);
 
 		pami_result_t getShmemWorldDesc(T_Desc** my_desc, T_Desc** master_desc, unsigned master);
@@ -310,28 +310,28 @@ namespace PAMI
         ///
         ///
         inline bool isCollectiveQueueEmpty ();
-		
-		inline bool isPendingDescQueueEmpty();  
+
+		inline bool isPendingDescQueueEmpty();
 
         inline Shmem::SendQueue *getQS ();
 
         inline pami_result_t init (size_t clientid, size_t contextid, pami_client_t client, pami_context_t context, Memory::MemoryManager *mm, PAMI::Device::Generic::Device * progress);
 
         inline size_t advance ();
-    
+
 		inline size_t fnum (size_t peer, size_t offset);
 
 	    pami_result_t registerMatchDispatch (Interface::MatchFunction_t   match_func, void * recv_func_parm, uint16_t &id);
 
 
         T_Desc * _desc;
-        size_t _total_fifos;    
+        size_t _total_fifos;
         size_t * _fnum_hash;    //< Fifo number lookup table
-		Shmem::ShmemCollDescFifo<T_Desc> *_all_desc_fifos;         
-        Shmem::ShmemCollDescFifo<T_Desc>  * _my_desc_fifo;       
+		Shmem::ShmemCollDescFifo<T_Desc> *_all_desc_fifos;
+        Shmem::ShmemCollDescFifo<T_Desc>  * _my_desc_fifo;
 
-		Shmem::ShmemCollDescFifo<T_Desc> *_all_world_desc_fifos;         
-        Shmem::ShmemCollDescFifo<T_Desc>  * _my_world_desc_fifo;       
+		Shmem::ShmemCollDescFifo<T_Desc> *_all_world_desc_fifos;
+        Shmem::ShmemCollDescFifo<T_Desc>  * _my_world_desc_fifo;
 
         Memory::MemoryManager *_mm;
         pami_client_t       _client;
@@ -402,7 +402,7 @@ namespace PAMI
     size_t ShmemCollDevice<T_Desc>::advance ()
     {
       size_t events = 0;
-		
+
 		/* Releasing done descriptors for comm world communicators */
 
 		if (!_my_world_desc_fifo->is_empty()){
@@ -439,9 +439,9 @@ namespace PAMI
           			_dispatch[dispatch_id].function (desc, matched_desc, _dispatch[dispatch_id].clientdata);
 					desc->set_state(Shmem::ACTIVE);
 					_my_desc_fifo->advance_next_match();
-				}	
+				}
 			}
-		}	
+		}
 		else{
 //			TRACE_ERR((stderr,"my_desc_fifo is empty\n"));
 		}

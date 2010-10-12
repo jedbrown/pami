@@ -38,7 +38,7 @@ namespace PAMI
       static const size_t multicombine_model_state_bytes = sizeof(T_Message);
       static const size_t sizeof_msg                     = sizeof(T_Message);
 
-      
+
 
       // The done function for the reduction operation
       // As part of the multicombine operation
@@ -90,7 +90,7 @@ namespace PAMI
         }
 
 
-      
+
       static void * cau_red_handler(lapi_handle_t  *hndl,
                                     void           *uhdr,
                                     uint           *uhdr_len,
@@ -163,7 +163,7 @@ namespace PAMI
           else
             PAMI_abort();
         }
-      
+
       CAUMulticombineModel (T_Device & device, pami_result_t &status) :
         Interface::MulticombineModel < CAUMulticombineModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, status),
         _device(device)
@@ -190,7 +190,7 @@ namespace PAMI
             Topology               *topo_dst = (Topology*)mcombine->results_participants;
             CAUGeometryInfo        *gi       = (CAUGeometryInfo *)devinfo;
 
-            
+
             topo_src->rankList(&tl);
             topo_dst->rankList(&tl_root);
 
@@ -218,11 +218,11 @@ namespace PAMI
                 m  = new(state) CAUMcombineMessage(mcombine->count,               // bytesToReduce Todo, get actual size
                                                    dest,                          // Receive PWQ
                                                    source,                        // Send PWQ
-                                                   red,                           // reduce operation      
-                                                   _device.getContext(),          // Context 
+                                                   red,                           // reduce operation
+                                                   _device.getContext(),          // Context
                                                    mcombine->cb_done.function,    // User done fcn
                                                    mcombine->cb_done.clientdata,  // Done fcn
-                                                   gi->_seqnoRed++,               // Reduction sequence number 
+                                                   gi->_seqnoRed++,               // Reduction sequence number
                                                    NULL);                         // toFree?
                 m->_xfer_header.dispatch_id        =  _dispatch_red_id;
                 m->_xfer_header.geometry_id        =  gi->_geometry_id;

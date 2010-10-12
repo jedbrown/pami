@@ -1,5 +1,9 @@
-#ifndef __components_devices_shmem_ShmemCollDesc_h__
-#define __components_devices_shmem_ShmemCollDesc_h__
+/**
+ * \file components/devices/shmemcoll/ShmemCollDesc.h
+ * \brief ???
+ */
+#ifndef __components_devices_shmemcoll_ShmemCollDesc_h__
+#define __components_devices_shmemcoll_ShmemCollDesc_h__
 
 #include "components/devices/MulticastModel.h"
 #include "components/devices/MultisyncModel.h"
@@ -19,20 +23,20 @@ namespace PAMI
     {
 
 #define DESCRIPTOR_FIFO_SIZE    16
-//#define DESCRIPTOR_FIFO_SIZE   32 
+//#define DESCRIPTOR_FIFO_SIZE   32
 //#define	BUFFER_SIZE_PER_TASK	256
 #define	BUFFER_SIZE_PER_TASK	512
-#define NUM_LOCAL_TASKS			16	
+#define NUM_LOCAL_TASKS			16
 
 
-		typedef enum 
+		typedef enum
 		{
 			MULTICAST=0,
 			MULTICOMBINE,
 			MULTISYNC
-		}CollType_t;	
+		}CollType_t;
 
-		typedef enum 
+		typedef enum
 		{
 			FREE=0,
 			INIT,
@@ -48,9 +52,9 @@ namespace PAMI
 
 			uint16_t        		_dispatch_id; 	/* Invoke the dispatch after match */
 			unsigned 				_master;		/* Master of the collective */
-			CollType_t				_type;			
+			CollType_t				_type;
 			void*					_storage;
-			int						_connid;		/* Initialize with -1		*/	
+			int						_connid;		/* Initialize with -1		*/
 			T_Atomic				_synch_counter;	/* Whether everyone has arrived */
 			T_Atomic				_done_counter; 	/* Whether everyone finished 	*/
 			DescState_t				_my_state;		/* Any of FREE, INIT, ACTIVE, DONE */
@@ -63,11 +67,11 @@ namespace PAMI
 				pami_multicast_t	_mcast;
 				pami_multicombine_t	_mcomb;
 
-			//}						_coll_params;	
+			//}						_coll_params;
 			char					_buffer[NUM_LOCAL_TASKS*BUFFER_SIZE_PER_TASK] __attribute__((__aligned__(128)));
 
 			public:
-			
+
 			inline ShmemCollDesc():_master(0),_storage(NULL),_my_state(FREE),_seq_num(0),_num_consumers(0),_flag(0){};
 			inline ~ShmemCollDesc() {}
 
@@ -122,25 +126,25 @@ namespace PAMI
 			inline	void set_type(CollType_t type)
 			{
 				_type = type;
-			}	
+			}
 
 			inline	CollType_t get_type()
 			{
 				return _type;
-			}	
+			}
 
 			inline void set_dispatch_id(uint16_t dispatch_id)
 			{
 				 _dispatch_id = dispatch_id;
 			}
-			
+
 			inline uint16_t get_dispatch_id()
 			{
 				 return _dispatch_id;
 			}
 
 			inline void set_storage(void* storage)
-			{	
+			{
 				_storage = storage;
 			}
 
@@ -157,12 +161,12 @@ namespace PAMI
 				if (_done_counter.fetch() == _num_consumers) { return 0;}
 				return 1;
 			}
-		
+
 			inline void signal_flag()
 			{
 				++_flag;
 			}
-			
+
 			inline unsigned get_flag()
 			{
 				return _flag;
@@ -171,7 +175,7 @@ namespace PAMI
 			inline void* get_buffer(unsigned index){
 				return (void*)(_buffer+index*BUFFER_SIZE_PER_TASK);
 			}
-			
+
 			inline void* get_buffer(){
 				return (void*)_buffer;
 			}
@@ -184,7 +188,7 @@ namespace PAMI
 				_synch_counter.fetch_and_inc();
 			}
 
-			
+
 			inline void set_master(unsigned master){
 				_master = master;
 			}
@@ -204,9 +208,9 @@ namespace PAMI
 			inline unsigned get_conn_id(){
 				return _connid;
 			}
-			
+
 			inline void* get_storage()
-			{	
+			{
 				return _storage;
 			}
 
@@ -222,7 +226,7 @@ namespace PAMI
 				_num_consumers = consumers;
 			}
 		};
-		
+
 		template < class T_Desc >
 		class ShmemCollDescFifo{
 
@@ -234,7 +238,7 @@ namespace PAMI
 			uint64_t _fifo_end;
 
 			public:
-		
+
 			inline ShmemCollDescFifo(Memory::MemoryManager *mm ):_head(0), _tail(0), _next_pending_match(0), _fifo_end(DESCRIPTOR_FIFO_SIZE)
 			{
 				for(unsigned i=0; i < DESCRIPTOR_FIFO_SIZE; i++){
@@ -242,20 +246,20 @@ namespace PAMI
 					_desc[i].set_seq_id((uint64_t)i);
 //					new((void*)&_desc[i]) T_Desc(mm);
 				}
-				
-			}	
+
+			}
 
 			inline ~ShmemCollDescFifo()
 			{
 				//printf("releasing done descriptors\n");
 				while (_head < _tail){
-					if ((_desc[_head%DESCRIPTOR_FIFO_SIZE].get_state() == DONE)&& !(_desc[_head%DESCRIPTOR_FIFO_SIZE].in_use())) 
+					if ((_desc[_head%DESCRIPTOR_FIFO_SIZE].get_state() == DONE)&& !(_desc[_head%DESCRIPTOR_FIFO_SIZE].in_use()))
 						_head++;
 				}
 				//printf("done releasing descriptors\n");
 			}
 
-			inline T_Desc* fetch_descriptor() { 
+			inline T_Desc* fetch_descriptor() {
 				if (_tail < _fifo_end) {
 					unsigned index = _tail % DESCRIPTOR_FIFO_SIZE;
 					_tail++;
@@ -265,7 +269,7 @@ namespace PAMI
 				return NULL;
 			}
 
-			inline T_Desc* next_free_descriptor(unsigned &index) { 
+			inline T_Desc* next_free_descriptor(unsigned &index) {
 				if (_tail < _fifo_end) {
 					index = _tail % DESCRIPTOR_FIFO_SIZE;
 					TRACE_ERR((stderr,"fetch successful: head:%ld tail:%ld fifoend:%ld\n",_head, _tail,_fifo_end));
@@ -274,15 +278,15 @@ namespace PAMI
 				return NULL;
 			}
 
-			inline T_Desc* get_descriptor_by_idx(unsigned index) { 
+			inline T_Desc* get_descriptor_by_idx(unsigned index) {
 				return &_desc[index];
 			}
-			
+
 			inline void release_done_descriptors(){
 				uint64_t seq_id;
 
 				while (_head < _tail){
-					if ((_desc[_head%DESCRIPTOR_FIFO_SIZE].get_state() == DONE)&& !(_desc[_head%DESCRIPTOR_FIFO_SIZE].in_use())) 
+					if ((_desc[_head%DESCRIPTOR_FIFO_SIZE].get_state() == DONE)&& !(_desc[_head%DESCRIPTOR_FIFO_SIZE].in_use()))
 					{
 						TRACE_ERR((stderr,"releasing descriptor:%d\n",(unsigned)_head%DESCRIPTOR_FIFO_SIZE));
 
@@ -295,7 +299,7 @@ namespace PAMI
 						_fifo_end++;
 
 					}
-					else return;	
+					else return;
 				}
 			}
 
@@ -317,27 +321,27 @@ namespace PAMI
 
 			inline T_Desc* next_desc_pending_match(){
 				if (_desc[_next_pending_match % DESCRIPTOR_FIFO_SIZE].get_state() == INIT){
-					return &_desc[_next_pending_match % DESCRIPTOR_FIFO_SIZE];				
+					return &_desc[_next_pending_match % DESCRIPTOR_FIFO_SIZE];
 				}
 				return NULL;
-			}			
+			}
 
 			inline T_Desc* match_descriptor(unsigned conn_id){
 				while (_head < _tail){
-					if ((_desc[_head%DESCRIPTOR_FIFO_SIZE].get_conn_id() == conn_id) && 
+					if ((_desc[_head%DESCRIPTOR_FIFO_SIZE].get_conn_id() == conn_id) &&
 						(_desc[_head%DESCRIPTOR_FIFO_SIZE].get_state() == INIT))
 						{
 							return &_desc[_head%DESCRIPTOR_FIFO_SIZE];
 						}
 				}
-				return NULL;	
+				return NULL;
 			}
-			
+
 			inline void incr_head(){
 				_head++;
 			}
-		};	
-		
+		};
+
 	}
   }
 }

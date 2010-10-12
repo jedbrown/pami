@@ -476,9 +476,9 @@ namespace PAMI
             new_geometry->addCompletion(); // ensure completion doesn't happen until
                                            // all have been analyzed (_geom_opt_finish).
 
-            // Start the barrier (and then the global analyze and (maybe) the optimize ... 
-            start_barrier(bargeom, new_geometry, 
-                          ctxt->getId(), context, 
+            // Start the barrier (and then the global analyze and (maybe) the optimize ...
+            start_barrier(bargeom, new_geometry,
+                          ctxt->getId(), context,
                           num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
 
             new_geometry->processUnexpBarrier();
@@ -540,9 +540,9 @@ namespace PAMI
             new_geometry->addCompletion(); // ensure completion doesn't happen until
                                            // all have been analyzed (_geom_opt_finish).
 
-            // Start the barrier (and then the global analyze and (maybe) the optimize ... 
-            start_barrier(bargeom, new_geometry, 
-                          ctxt->getId(), context, 
+            // Start the barrier (and then the global analyze and (maybe) the optimize ...
+            start_barrier(bargeom, new_geometry,
+                          ctxt->getId(), context,
                           num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
 
             new_geometry->processUnexpBarrier();
@@ -754,10 +754,10 @@ namespace PAMI
         return;
       }
 
-      void start_barrier(BGQGeometry          *bargeom, 
-                         BGQGeometry          *new_geometry, 
-                         size_t                context_id, 
-                         pami_context_t        context, 
+      void start_barrier(BGQGeometry          *bargeom,
+                         BGQGeometry          *new_geometry,
+                         size_t                context_id,
+                         pami_context_t        context,
                          pami_attribute_name_t optimize)
       {
 #ifdef _COLLSHM   // New Collective Shmem Registration
@@ -814,7 +814,7 @@ namespace PAMI
         else PAMI_assert(bargeom); /// \todo? parentless/UE barrier support
 #endif
       }
-  
+
 #ifdef _COLLSHM   // New Collective Shmem Registration
       template <class T_Geometry>
       class GlobalAnalyzer
@@ -827,7 +827,7 @@ namespace PAMI
 
 
       public:
-        GlobalAnalyzer<T_Geometry>(pami_context_t            context, 
+        GlobalAnalyzer<T_Geometry>(pami_context_t            context,
                                    Geometry::Algorithm<T_Geometry>    *ar_algo,
                                    T_Geometry               *geometry,
                                    uint64_t                 *bitmask,
@@ -889,7 +889,7 @@ namespace PAMI
             c->_ar_algo->generate(&ar);
           }
       private:
-        pami_context_t          _context; 
+        pami_context_t          _context;
         Geometry::Algorithm<T_Geometry>  *_ar_algo;
         T_Geometry             *_geometry;
         uint64_t               *_bitmask;

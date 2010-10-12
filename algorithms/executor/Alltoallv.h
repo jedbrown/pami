@@ -54,7 +54,7 @@ namespace CCMI
       };
 
       template <class T_Alltoall_type>
-      inline void setAlltoallVec(T_Alltoall_type *xfer, int *buflen, void *sbuf, void *scounts, void *sdisps, 
+      inline void setAlltoallVec(T_Alltoall_type *xfer, int *buflen, void *sbuf, void *scounts, void *sdisps,
                                    void *rbuf, void *rcounts, void *rdisps)
       {
          COMPILE_TIME_ASSERT(0==1);
@@ -84,7 +84,7 @@ namespace CCMI
       }
 
       template <>
-      inline void setAlltoallVec<pami_alltoallv_int_t> (pami_alltoallv_int_t *xfer, int *buflen, 
+      inline void setAlltoallVec<pami_alltoallv_int_t> (pami_alltoallv_int_t *xfer, int *buflen,
             void *sbuf, void *scounts, void *sdisps, void *rbuf, void *rcounts, void *rdisps)
       {
         *((char **)sbuf)   = xfer->sndbuf;
@@ -236,7 +236,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%p>Executor::AlltoallvExec::setSchedule()\n", this));
           _comm_schedule = ct;
 
-          // should get the number of phases from a real schedule 
+          // should get the number of phases from a real schedule
           _nphases    = _native->numranks()-1 + _native->numranks() % 2;
           _startphase = 0;
           _curphase   = -1;
@@ -257,7 +257,7 @@ namespace CCMI
            _lconnid = connection_id;
            _rconnid = connection_id;
 #endif
-          
+
         }
 
         void setConnectionID (unsigned cid)
@@ -285,7 +285,7 @@ namespace CCMI
 
         void setVectors(T_Type *xfer)
         {
-           setAlltoallVec<T_Type> (xfer, &_buflen, &_sbuf, &_scounts, &_sdisps, &_rbuf, &_rcounts,  &_rdisps); 
+           setAlltoallVec<T_Type> (xfer, &_buflen, &_sbuf, &_scounts, &_sdisps, &_rbuf, &_rcounts,  &_rdisps);
            EXECUTOR_DEBUG((stderr, "setVector gets called, rbuf = %x, rdisp = %x, _rounts = %x\n", _rbuf, _rdisps, _rcounts);)
         }
 
@@ -295,7 +295,7 @@ namespace CCMI
            EXECUTOR_DEBUG((stderr, "updateVector gets called, rbuf = %x, rdisp = %x, _rounts = %x\n", _rbuf, _rdisps, _rcounts);)
         }
 
-        /// \todo: this should be moved to the schedule 
+        /// \todo: this should be moved to the schedule
         unsigned getPartnerIndex(unsigned uphase, unsigned utasks, unsigned umyindex)
         {
 
@@ -463,7 +463,7 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
   }
 
   // setup destination topology
-  if (_parindex == (unsigned)-1) { // skip this phase 
+  if (_parindex == (unsigned)-1) { // skip this phase
     _lphase   ++;
     CCMI_assert(_rphase[_curphase % MAX_PARALLEL] == 0);
     _curphase ++;
@@ -514,7 +514,7 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
     _mrsend.connection_id      = _rconnid;
 #endif
     _native->multicast(&_mrsend);
-  
+
     EXECUTOR_DEBUG((stderr, "phase %d, send data msg to %d\n", _curphase, _partopology.index2Rank(0));)
   }
 

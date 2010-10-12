@@ -106,7 +106,7 @@ namespace CCMI
         int                 _startphase;
         int                 _donecount;
         int                 _mynphases;
-        
+
         int                 _maxsrcs;
         pami_task_t         _srcranks [MAX_CONCURRENT];
         unsigned            _srclens  [MAX_CONCURRENT];
@@ -186,7 +186,7 @@ namespace CCMI
         virtual ~GatherExec ()
         {
            /// Todo: convert this to allocator ?
-           if (_maxsrcs) free (_mrecvstr); 
+           if (_maxsrcs) free (_mrecvstr);
            if (!(_disps && _rcvcounts)) free (_tmpbuf);
         }
 
@@ -271,20 +271,20 @@ namespace CCMI
             _donecount = _native->numranks();
             size_t buflen = 0;
             if (_disps && _rcvcounts) {
-              for (unsigned i = 0; i < _native->numranks() ; ++i) 
+              for (unsigned i = 0; i < _native->numranks() ; ++i)
               {
                 buflen += _rcvcounts[i];
                 if (_rcvcounts[i] == 0 && i != _rootindex) _donecount--;
               }
               _buflen = buflen;
               _tmpbuf = _rbuf;
-            } else { 
+            } else {
               buflen = _native->numranks() * len;
               _tmpbuf = (char *) malloc(buflen);
             }
           }
           else // setup PWQ
-          { 
+          {
 
             unsigned ndst;
             _comm_schedule->getLList(_startphase, &_srcranks[0], ndst, &_srclens[0]);
@@ -295,7 +295,7 @@ namespace CCMI
 
             _donecount        = _srclens[0];
             size_t  buflen    = _srclens[0]  * _buflen;
-            if (_mynphases > 1) 
+            if (_mynphases > 1)
             {
               _tmpbuf = (char *)malloc(buflen);
               _pwq.configure (NULL, _tmpbuf, buflen, 0);
@@ -372,7 +372,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
 
   EXECUTOR_DEBUG((stderr, "GatherExec::start, mynphases = %d, buflen = %d, donecount = %d\n",
         _mynphases, _buflen, _donecount);)
-  
+
   // Nothing to gather? We're done. What if in Gatherv ?
   if ((_buflen == 0) && _cb_done)
     {
@@ -384,13 +384,13 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
 
   if (_native->myrank() == _root)
   {
-    if (_disps && _rcvcounts) 
+    if (_disps && _rcvcounts)
       memcpy(_rbuf + _disps[_rootindex], _sbuf, _rcvcounts[_rootindex]);
     else
       memcpy(_rbuf + _rootindex * _buflen, _sbuf, _buflen);
   }
   else if (_mynphases > 1)  memcpy(_tmpbuf, _sbuf, _buflen);
-  --_donecount; 
+  --_donecount;
 
   if (_donecount == 0) sendNext();
 }
@@ -413,7 +413,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
         memcpy (_rbuf, _tmpbuf, _myindex * _buflen);
       }
     }
-  
+
     if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
     return;
   }
@@ -469,7 +469,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
   } else {
     buflen   = _srclens[i] * _buflen;
     offset   = ((srcindex + size - _myindex)% size) * _buflen; // will root be affected by this ?
-  } 
+  }
   // CCMI_assert (buflen == cdata->_count);
 
   char    *tmpbuf   = _tmpbuf + offset;

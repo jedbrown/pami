@@ -384,7 +384,7 @@ namespace CCMI
 	      co->setFactory (factory);
               co->setGeometry(geometry);
 
-              if (cmgr == NULL) 
+              if (cmgr == NULL)
                 a_composite->executor().setConnectionID(key);
 
 	      geometry->asyncCollectiveUnexpQ().pushTail(co);

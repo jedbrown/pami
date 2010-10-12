@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemMcstMessage.h
+ * \file components/devices/shmemcoll/McstMessage.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_ShmemMcstMessage_h__
-#define __components_devices_shmem_ShmemMcstMessage_h__
+#ifndef __components_devices_shmemcoll_McstMessage_h__
+#define __components_devices_shmemcoll_McstMessage_h__
 
 #include <errno.h>
 #include <sys/uio.h>
@@ -38,15 +38,15 @@ namespace PAMI
 		protected:
 
   		static void __done (pami_context_t context, void* cookie, pami_result_t result)
-		  {		
-			TRACE_ERR((stderr,"invoking done of the message\n"));	
+		  {
+			TRACE_ERR((stderr,"invoking done of the message\n"));
 			McstMessage * msg = (McstMessage *) cookie;
 			pami_multicast_t & mcast_params = msg->_my_desc->get_mcast_params();
-			
+
 			mcast_params.cb_done.function(context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
-			msg->_my_desc->set_state(Shmem::DONE);	
+			msg->_my_desc->set_state(Shmem::DONE);
 			return;
-			
+
 		  };
 
 
@@ -67,7 +67,7 @@ namespace PAMI
 		protected:
 		 T_Device      * _device;
 		 T_Desc		* _my_desc;
-		 T_Desc		* _master_desc;	
+		 T_Desc		* _master_desc;
 		 size_t	_bytes_consumed;
 
       };  // PAMI::Device::McstMessage class

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemMcombMessageShaddr.h
+ * \file components/devices/shmemcoll/ShaddrMcombMessagePipe.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_McombMessageShaddr_h__
-#define __components_devices_shmem_McombMessageShaddr_h__
+#ifndef __components_devices_shmemcoll_ShaddrMcombMessagePipe_h__
+#define __components_devices_shmemcoll_ShaddrMcombMessagePipe_h__
 
 #include <errno.h>
 #include <sys/uio.h>
@@ -108,16 +108,16 @@ namespace PAMI
 
 	  struct McombControl
 	  {
-	  	struct 
+	  	struct
 	  	{
 			void* src_bufs[NUM_LOCAL_TASKS];
 			void* dst_bufs[NUM_LOCAL_TASKS];
-	  	}GlobalAddressTable __attribute__((__aligned__(128))); 	
-		volatile uint16_t	chunks_done[NUM_LOCAL_TASKS];	
-		volatile uint16_t	chunks_copied[NUM_LOCAL_TASKS];	
-		volatile uint16_t	current_iter;	
+	  	}GlobalAddressTable __attribute__((__aligned__(128)));
+		volatile uint16_t	chunks_done[NUM_LOCAL_TASKS];
+		volatile uint16_t	chunks_copied[NUM_LOCAL_TASKS];
+		volatile uint16_t	current_iter;
 	  };
-	
+
       template <class T_Device, class T_Desc>
       class McombMessageShaddr : public McombMessage<T_Device, T_Desc>
       {
@@ -129,7 +129,7 @@ namespace PAMI
             return msg->advance();
           };
 
-		  inline void advance_4way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers, 
+		  inline void advance_4way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
 										double* dst, size_t bytes)
 		  {
 				/* local ranks other than 0 do the following quad sum */
@@ -138,20 +138,20 @@ namespace PAMI
 				for (iter=0; iter < NUM_CHUNKS(bytes)-1; iter++){
 					if ((iter%(_npeers-1) +1) == _local_rank){
 
-					quad_double_sum_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK, 
+					quad_double_sum_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
 										SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
 					mcomb_control->chunks_done[_local_rank] += 1;
 					}
 					TRACE_ERR((stderr,"dst[%u]:%f\n", iter*NUM_DBLS_PER_CHUNK, dst[iter*NUM_DBLS_PER_CHUNK]));
-				}	
+				}
 
 				/* summing last chunk which can be of any size */
 				if ((iter%(_npeers-1) +1) == _local_rank){
 					if (bytes%CHUNK_SIZE == 0)
 					{
-					quad_double_sum_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK, 
+					quad_double_sum_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
 										SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
 
 					}
@@ -159,17 +159,17 @@ namespace PAMI
 					{
 						for (unsigned i =0; i < (bytes%CHUNK_SIZE)/sizeof(double); i++)
 						{
-							dst[i+iter*NUM_DBLS_PER_CHUNK] = SHADDR_SRCBUF(0)[i+iter*NUM_DBLS_PER_CHUNK] + 
-										SHADDR_SRCBUF(1)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(2)[i+iter*NUM_DBLS_PER_CHUNK] + 
+							dst[i+iter*NUM_DBLS_PER_CHUNK] = SHADDR_SRCBUF(0)[i+iter*NUM_DBLS_PER_CHUNK] +
+										SHADDR_SRCBUF(1)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(2)[i+iter*NUM_DBLS_PER_CHUNK] +
 										SHADDR_SRCBUF(3)[i+iter*NUM_DBLS_PER_CHUNK];
 						}
 					}
 					mcomb_control->chunks_done[_local_rank] += 1;
 				}
 
-		  }			
+		  }
 
-		  inline void advance_8way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers, 
+		  inline void advance_8way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
 										double* dst, size_t bytes)
 		  {
 				/* local ranks other than 0 do the following quad sum */
@@ -177,27 +177,27 @@ namespace PAMI
 
 				for (iter=0; iter < NUM_CHUNKS(bytes)-1; iter++){
 					if ((iter%(_npeers-1) +1) == _local_rank){
-				//unsigned long long t1 = PAMI_Wtimebase();	
+				//unsigned long long t1 = PAMI_Wtimebase();
 
-					quad_double_sum_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK, 
+					quad_double_sum_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
 										SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
 				//unsigned long long t2 = PAMI_Wtimebase();
 				// fprintf(stderr,"[%d]cycles:%lld, bytes:%zd\n", _local_rank,(t2-t1), NUM_DBLS_PER_CHUNK*sizeof(double));
 					mcomb_control->chunks_done[_local_rank] += 1;
 					}
-				}	
+				}
 
 				/* summing last chunk which can be of any size */
 				if ((iter%(_npeers-1) +1) == _local_rank){
 					if (bytes%CHUNK_SIZE == 0)
 					{
-					quad_double_sum_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK, 
+					quad_double_sum_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
 										SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
 
 					}
@@ -205,10 +205,10 @@ namespace PAMI
 					{
 						for (unsigned i =0; i < (bytes%CHUNK_SIZE)/sizeof(double); i++)
 						{
-							dst[i+iter*NUM_DBLS_PER_CHUNK] = SHADDR_SRCBUF(0)[i+iter*NUM_DBLS_PER_CHUNK] + 
-										SHADDR_SRCBUF(1)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(2)[i+iter*NUM_DBLS_PER_CHUNK] + 
-										SHADDR_SRCBUF(3)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(4)[i+iter*NUM_DBLS_PER_CHUNK] + 
-										SHADDR_SRCBUF(5)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(6)[i+iter*NUM_DBLS_PER_CHUNK] + 
+							dst[i+iter*NUM_DBLS_PER_CHUNK] = SHADDR_SRCBUF(0)[i+iter*NUM_DBLS_PER_CHUNK] +
+										SHADDR_SRCBUF(1)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(2)[i+iter*NUM_DBLS_PER_CHUNK] +
+										SHADDR_SRCBUF(3)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(4)[i+iter*NUM_DBLS_PER_CHUNK] +
+										SHADDR_SRCBUF(5)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(6)[i+iter*NUM_DBLS_PER_CHUNK] +
 										SHADDR_SRCBUF(7)[i+iter*NUM_DBLS_PER_CHUNK];
 						}
 					}
@@ -216,10 +216,10 @@ namespace PAMI
 					mcomb_control->chunks_done[_local_rank] += 1;
 				}
 
-		
+
 		  }
 
-		  inline void advance_16way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers, 
+		  inline void advance_16way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
 										double* dst, size_t bytes)
 		  {
 				/* local ranks other than 0 do the following quad sum */
@@ -228,32 +228,32 @@ namespace PAMI
 				for (iter=0; iter < NUM_CHUNKS(bytes)-1; iter++){
 					if ((iter%(_npeers-1) +1) == _local_rank){
 
-					quad_double_sum_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(8)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(9)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(10)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(11)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(12)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(13)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(14)+iter*NUM_DBLS_PER_CHUNK, 
+					quad_double_sum_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(8)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(9)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(10)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(11)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(12)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(13)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(14)+iter*NUM_DBLS_PER_CHUNK,
 										SHADDR_SRCBUF(15)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
 					mcomb_control->chunks_done[_local_rank] += 1;
 					}
 					TRACE_ERR((stderr,"dst[%u]:%f\n", iter*NUM_DBLS_PER_CHUNK, dst[iter*NUM_DBLS_PER_CHUNK]));
-				}	
+				}
 
 				/* summing last chunk which can be of any size */
 				if ((iter%(_npeers-1) +1) == _local_rank){
 					if (bytes%CHUNK_SIZE == 0)
 					{
-					quad_double_sum_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(8)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(9)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(10)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(11)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(12)+iter*NUM_DBLS_PER_CHUNK, 
-										SHADDR_SRCBUF(13)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(14)+iter*NUM_DBLS_PER_CHUNK, 
+					quad_double_sum_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(8)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(9)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(10)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(11)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(12)+iter*NUM_DBLS_PER_CHUNK,
+										SHADDR_SRCBUF(13)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(14)+iter*NUM_DBLS_PER_CHUNK,
 										SHADDR_SRCBUF(15)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
 
 					}
@@ -261,20 +261,20 @@ namespace PAMI
 					{
 						for (unsigned i =0; i < (bytes%CHUNK_SIZE)/sizeof(double); i++)
 						{
-							dst[i+iter*NUM_DBLS_PER_CHUNK] = SHADDR_SRCBUF(0)[i+iter*NUM_DBLS_PER_CHUNK] + 
-										SHADDR_SRCBUF(1)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(2)[i+iter*NUM_DBLS_PER_CHUNK] + 
-										SHADDR_SRCBUF(3)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(4)[i+iter*NUM_DBLS_PER_CHUNK] + 
-										SHADDR_SRCBUF(5)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(6)[i+iter*NUM_DBLS_PER_CHUNK] + 
-										SHADDR_SRCBUF(7)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(8)[i+iter*NUM_DBLS_PER_CHUNK] + 
-										SHADDR_SRCBUF(9)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(10)[i+iter*NUM_DBLS_PER_CHUNK] + 
-										SHADDR_SRCBUF(11)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(12)[i+iter*NUM_DBLS_PER_CHUNK] + 
-										SHADDR_SRCBUF(13)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(14)[i+iter*NUM_DBLS_PER_CHUNK] + 
+							dst[i+iter*NUM_DBLS_PER_CHUNK] = SHADDR_SRCBUF(0)[i+iter*NUM_DBLS_PER_CHUNK] +
+										SHADDR_SRCBUF(1)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(2)[i+iter*NUM_DBLS_PER_CHUNK] +
+										SHADDR_SRCBUF(3)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(4)[i+iter*NUM_DBLS_PER_CHUNK] +
+										SHADDR_SRCBUF(5)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(6)[i+iter*NUM_DBLS_PER_CHUNK] +
+										SHADDR_SRCBUF(7)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(8)[i+iter*NUM_DBLS_PER_CHUNK] +
+										SHADDR_SRCBUF(9)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(10)[i+iter*NUM_DBLS_PER_CHUNK] +
+										SHADDR_SRCBUF(11)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(12)[i+iter*NUM_DBLS_PER_CHUNK] +
+										SHADDR_SRCBUF(13)[i+iter*NUM_DBLS_PER_CHUNK] + SHADDR_SRCBUF(14)[i+iter*NUM_DBLS_PER_CHUNK] +
 										SHADDR_SRCBUF(15)[i+iter*NUM_DBLS_PER_CHUNK];
 						}
 					}
 					mcomb_control->chunks_done[_local_rank] += 1;
 				}
-		
+
 		  }
 
 
@@ -296,7 +296,7 @@ namespace PAMI
 			//t1  = PAMI_Wtimebase();
 			//while (_master_desc->arrived_peers() != (unsigned) num_src_ranks){}
 			//	fprintf(stderr,"[%d]arrived peers:%u num_src_ranks:%zd", _local_rank, _master_desc->arrived_peers(), num_src_ranks);
-			
+
 			/* Non blocking until all the peers arrive at the collective */
 			if (_master_desc->arrived_peers() != (unsigned) num_src_ranks)
 			{
@@ -330,7 +330,7 @@ namespace PAMI
 
 				/* Check for the alignment..Assuming L1 cache line alignment for now */
 				PAMI_ASSERT(ALIGNED_SRCBUF(0,mask1) && ALIGNED_SRCBUF(1,mask1) &&ALIGNED_SRCBUF(2,mask1) &&ALIGNED_SRCBUF(3,mask1)) ;
-				
+
 		   		advance_4way_sum(mcomb_control, _local_rank, _npeers, dst, bytes);
 
 			}
@@ -339,7 +339,7 @@ namespace PAMI
 				/* Check for the alignment..Assuming L1 cache line alignment for now */
 				PAMI_ASSERT(ALIGNED_SRCBUF(0,mask1) && ALIGNED_SRCBUF(1,mask1) &&ALIGNED_SRCBUF(2,mask1) &&ALIGNED_SRCBUF(3,mask1)) ;
 				PAMI_ASSERT(ALIGNED_SRCBUF(4,mask1) && ALIGNED_SRCBUF(5,mask1) &&ALIGNED_SRCBUF(6,mask1) &&ALIGNED_SRCBUF(7,mask1)) ;
-				//unsigned long long t1 = PAMI_Wtimebase();	
+				//unsigned long long t1 = PAMI_Wtimebase();
 		   		advance_8way_sum(mcomb_control, _local_rank, _npeers, dst, bytes);
 				//unsigned long long t2 = PAMI_Wtimebase();
 				 //fprintf(stderr,"[%d]cycles:%lld, bytes:%zd\n", _local_rank,(t2-t1), bytes);
@@ -351,7 +351,7 @@ namespace PAMI
 				PAMI_ASSERT(ALIGNED_SRCBUF(4,mask1) && ALIGNED_SRCBUF(5,mask1) &&ALIGNED_SRCBUF(6,mask1) &&ALIGNED_SRCBUF(7,mask1)) ;
 				PAMI_ASSERT(ALIGNED_SRCBUF(8,mask1) && ALIGNED_SRCBUF(9,mask1) &&ALIGNED_SRCBUF(10,mask1) &&ALIGNED_SRCBUF(11,mask1)) ;
 				PAMI_ASSERT(ALIGNED_SRCBUF(12,mask1) && ALIGNED_SRCBUF(13,mask1) &&ALIGNED_SRCBUF(14,mask1) &&ALIGNED_SRCBUF(15,mask1)) ;
-				
+
 		   		advance_16way_sum(mcomb_control, _local_rank, _npeers, dst, bytes);
 
 			}
@@ -361,7 +361,7 @@ namespace PAMI
 				exit(0);
 
 			}
-			
+
 			}
 
 		/* Reduction over...start gathering the results, local_rank == 0, the master, gathers the results */
@@ -374,18 +374,18 @@ namespace PAMI
 					while (mcomb_control->chunks_done[my_peer] <= mcomb_control->chunks_copied[my_peer]){};
 
 					{
-						quad_double_copy((dst + NUM_DBLS_PER_CHUNK*iter), 
+						quad_double_copy((dst + NUM_DBLS_PER_CHUNK*iter),
 							 	  (SHADDR_DSTBUF(my_peer)+NUM_DBLS_PER_CHUNK*iter), NUM_DBLS_PER_CHUNK);
 						rcv->produceBytes(CHUNK_SIZE);
 						mcomb_control->chunks_copied[my_peer] += 1;
 					}
-				}	
+				}
 
 				if (loops > 0)
-				{	 	
+				{
 					CURRENT_ITER+=loops;
 					TRACE_ERR((stderr,"CURRENT_ITER:%d loops:%u\n",CURRENT_ITER, loops));
-					return PAMI_EAGAIN;		//breaking the advance so that the master can advance network 
+					return PAMI_EAGAIN;		//breaking the advance so that the master can advance network
 				}
 
 				/* copying last chunk */
@@ -393,19 +393,19 @@ namespace PAMI
 				while (mcomb_control->chunks_done[my_peer] <= mcomb_control->chunks_copied[my_peer]){};
 				//printf("chunks_done:%d chunks_copied:%d\n", mcomb_control->chunks_done[my_peer], mcomb_control->chunks_copied[my_peer]);
 				ppc_msync();
-				
+
 
 				if (bytes%CHUNK_SIZE == 0)
 				{
-					/*memcpy((void*)(dst + NUM_DBLS_PER_CHUNK*iter), 
+					/*memcpy((void*)(dst + NUM_DBLS_PER_CHUNK*iter),
 						 	  (void*)(SHADDR_DSTBUF(my_peer)+NUM_DBLS_PER_CHUNK*iter), CHUNK_SIZE);*/
-					quad_double_copy((dst + NUM_DBLS_PER_CHUNK*CURRENT_ITER), 
+					quad_double_copy((dst + NUM_DBLS_PER_CHUNK*CURRENT_ITER),
 							 	 (SHADDR_DSTBUF(my_peer)+NUM_DBLS_PER_CHUNK*CURRENT_ITER), NUM_DBLS_PER_CHUNK);
 					rcv->produceBytes(CHUNK_SIZE);
 				}
 				else
 				{
-					memcpy((void*)(dst + NUM_DBLS_PER_CHUNK*CURRENT_ITER), 
+					memcpy((void*)(dst + NUM_DBLS_PER_CHUNK*CURRENT_ITER),
 						 	  (void*)(SHADDR_DSTBUF(my_peer)+NUM_DBLS_PER_CHUNK*CURRENT_ITER), bytes%CHUNK_SIZE);
 					rcv->produceBytes(bytes%CHUNK_SIZE);
 				}
@@ -419,7 +419,7 @@ namespace PAMI
 			return PAMI_SUCCESS;
 
           }
-			
+
 
         public:
           inline McombMessageShaddr (T_Device *device, T_Desc* desc, T_Desc* matched_desc) :

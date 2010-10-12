@@ -1,3 +1,7 @@
+/**
+ * \file components/devices/shmemcoll/4way_sum.h
+ * \brief ???
+ */
 #include "asmheader.h"
 
 #ifdef __GNUC__
@@ -7,7 +11,7 @@
 #endif
 
 #define ASM asm volatile
-  
+
 //summing 'num' doubles, num >= 32 in multiples of 16
 inline int quad_double_sum_4way( double* dest, double* src0, double *src1, double* src2, double* src3, uint64_t num )
 {
@@ -17,21 +21,21 @@ inline int quad_double_sum_4way( double* dest, double* src0, double *src1, doubl
   uint64_t y;
 
   register int inc __MYASM__("r7");
-  
-  src0_1 = src0 -8;  //offset by stride=0 bytes		
-  src0_2 = src0 -4;	
 
-  src1_1 = src1 -8;  //offset by stride=0 bytes		
-  src1_2 = src1 -4;	
+  src0_1 = src0 -8;  //offset by stride=0 bytes
+  src0_2 = src0 -4;
 
-  src2_1 = src2 -8;  //offset by stride=0 bytes		
-  src2_2 = src2 -4;	
+  src1_1 = src1 -8;  //offset by stride=0 bytes
+  src1_2 = src1 -4;
 
-  src3_1 = src3 -8;  //offset by stride=0 bytes		
-  src3_2 = src3 -4;	
+  src2_1 = src2 -8;  //offset by stride=0 bytes
+  src2_2 = src2 -4;
 
-  dst_1 = dest -8;  //offset by stride=0 bytes		
-  dst_2 = dest -4;	
+  src3_1 = src3 -8;  //offset by stride=0 bytes
+  src3_2 = src3 -4;
+
+  dst_1 = dest -8;  //offset by stride=0 bytes
+  dst_2 = dest -4;
 
   inc=64;
 
@@ -63,7 +67,7 @@ inline int quad_double_sum_4way( double* dest, double* src0, double *src1, doubl
   do{
   	  ASM("qvfadd 18, 16, 17" ::  );
 
-	  
+
   	  ASM("qvfadd 19, 4, 5" ::  );
 	  VECTOR_LOAD(src0_1,inc,4);
 	  VECTOR_LOAD(src1_1,inc,5);
@@ -84,7 +88,7 @@ inline int quad_double_sum_4way( double* dest, double* src0, double *src1, doubl
   	  ASM("qvfadd 24, 22, 23" ::  );
 
   	  ASM("qvfadd 21, 19, 20" ::  );
-		
+
  	  if(!--y) break;
 
   	  ASM("qvfadd 16, 0, 1" ::  );
@@ -107,7 +111,7 @@ inline int quad_double_sum_4way( double* dest, double* src0, double *src1, doubl
   	  ASM("qvfadd 22, 8, 9" ::  );
 	  VECTOR_STORE(dst_2,inc,27);
 
-   }while(1);	
+   }while(1);
 
 	  VECTOR_STORE(dst_2,inc,24);
 
@@ -146,9 +150,9 @@ inline int quad_double_sum_4way( double* dest, double* src0, double *src1, doubl
 
   	  ASM("qvfadd 21, 19, 20" ::  );
   	  ASM("qvfadd 27, 25, 26" ::  );
-	
+
 	  VECTOR_STORE(dst_1,inc,21);
 	  VECTOR_STORE(dst_2,inc,27);
-		
+
   return 0;
 }

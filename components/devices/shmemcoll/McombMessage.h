@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/McombMessage.h
+ * \file components/devices/shmemcoll/McombMessage.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_McombMessage_h__
-#define __components_devices_shmem_McombMessage_h__
+#ifndef __components_devices_shmemcoll_McombMessage_h__
+#define __components_devices_shmemcoll_McombMessage_h__
 
 #include <errno.h>
 #include <sys/uio.h>
@@ -36,9 +36,9 @@ namespace PAMI
       class McombMessage : public SendQueue::Message
       {
 
-		
+
         protected:
-	   inline McombMessage (T_Device * device, T_Desc * desc, T_Desc * matched_desc, 
+	   inline McombMessage (T_Device * device, T_Desc * desc, T_Desc * matched_desc,
  						pami_work_function  work_func, void * work_cookie ) :
        SendQueue::Message (work_func, work_cookie, McombMessage::__done, this, device->getContextOffset()),
       _device (device),
@@ -71,7 +71,7 @@ namespace PAMI
 
    T_Device      * _device;
    T_Desc		* _my_desc;
-   T_Desc		* _master_desc;	
+   T_Desc		* _master_desc;
    unsigned      _master, _local_rank, _npeers;
    pami_task_t  _task;
 

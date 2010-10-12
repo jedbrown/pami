@@ -227,12 +227,12 @@ namespace CCMI
               co->setFlag(LocalPosted);
 
               a_composite = co->getComposite();
-              // update send buffer pointer and, at root, receive buffer pointers  
-              a_composite->getGatherExecutor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount); 
-              a_composite->getGatherExecutor().updatePWQ(); 
+              // update send buffer pointer and, at root, receive buffer pointers
+              a_composite->getGatherExecutor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount);
+              a_composite->getGatherExecutor().updatePWQ();
 
               // setVectors is not needed since there is no early arrival at root for long gather
-              // a_composite->getGatherExecutor().setVectors(a_xfer); 
+              // a_composite->getGatherExecutor().setVectors(a_xfer);
 
               geometry->asyncCollectivePostQ().pushTail(co);
 
@@ -263,7 +263,7 @@ namespace CCMI
 		              cb_exec_done,
 			      (PAMI_GEOMETRY_CLASS *)g,
                               (void *)cmd);
-   
+
 	      co->setXfer((pami_xfer_t*)cmd);
 	      co->setFlag(LocalPosted);
 	      co->setFactory(this);
@@ -409,7 +409,7 @@ namespace CCMI
               }
 
               co->getComposite()->getGatherExecutor().setDoneCallback(gather_exec_done, co);
-              co->getComposite()->getGatherExecutor().start(); 
+              co->getComposite()->getGatherExecutor().start();
             }
             else if (flag & EarlyArrival)
             {

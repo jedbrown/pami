@@ -60,17 +60,17 @@ namespace CCMI
       }
 
       template <>
-      inline void setAllgatherVec<pami_allgather_t> (pami_allgather_t *xfer, 
+      inline void setAllgatherVec<pami_allgather_t> (pami_allgather_t *xfer,
                 int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
       {
          *sbuf = xfer->sndbuf;
          *rbuf = xfer->rcvbuf;
-         *buflen = xfer->rtypecount; 
+         *buflen = xfer->rtypecount;
          return;
       }
 
       template <>
-      inline void setAllgatherVec<pami_allgatherv_t> (pami_allgatherv_t *xfer, 
+      inline void setAllgatherVec<pami_allgatherv_t> (pami_allgatherv_t *xfer,
                 int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
       {
          *sbuf = xfer->sndbuf;
@@ -112,7 +112,7 @@ namespace CCMI
         PAMI::PipeWorkQueue _rpwq;
 
         unsigned            _myindex;
-       
+
         int                 _curphase;
         int                 _nphases;
         int                 _startphase;
@@ -245,7 +245,7 @@ namespace CCMI
           _dst              = _gtopology->index2Rank(dstindex);
           new (&_dsttopology) PAMI::Topology(_dst);
 
-          unsigned srcindex = (_myindex + _native->numranks() - 1) % _native->numranks(); 
+          unsigned srcindex = (_myindex + _native->numranks() - 1) % _native->numranks();
           _src              = _gtopology->index2Rank(srcindex);
           new (&_srctopology) PAMI::Topology(_src);
 
@@ -312,25 +312,25 @@ namespace CCMI
 
         size_t getSendLength(int phase)
         {
-           int index = (_myindex + _native->numranks() - phase - 1) % _native->numranks(); 
+           int index = (_myindex + _native->numranks() - phase - 1) % _native->numranks();
            return (_rcvcounts) ? _rcvcounts[index] : _buflen;
         }
 
         size_t getRecvLength(int phase)
         {
-           int index = (_myindex +  phase + 1) % _native->numranks();    
+           int index = (_myindex +  phase + 1) % _native->numranks();
            return (_rcvcounts) ? _rcvcounts[index] : _buflen;
         }
 
         size_t getSendDisp(int phase)
         {
-           int index = (_myindex + _native->numranks() - phase - 1) % _native->numranks();    
+           int index = (_myindex + _native->numranks() - phase - 1) % _native->numranks();
            return (_disps) ? _disps[index] : index * _buflen;
         }
 
         size_t getRecvDisp(int phase)
         {
-           int index = (_myindex +  phase + 1) % _native->numranks();                      
+           int index = (_myindex +  phase + 1) % _native->numranks();
            return (_disps) ? _disps[index] : index * _buflen;
         }
 
@@ -434,7 +434,7 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::start ()
   TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start() count%d\n", this, _buflen));
 
   _curphase  = _startphase;
-  if (_rphase == -1) 
+  if (_rphase == -1)
     _rphase = _startphase;
   else
     _rphase ++;
@@ -495,7 +495,7 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::sendNext ()
   }
 
   _in_send_next = 0;
-  
+
   return;
 }
 

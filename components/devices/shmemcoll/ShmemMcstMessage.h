@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemMcstMessageShmem.h
+ * \file components/devices/shmemcoll/ShmemMcstMessage.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_McstMessageShmem_h__
-#define __components_devices_shmem_McstMessageShmem_h__
+#ifndef __components_devices_shmemcoll_ShmemMcstMessage_h__
+#define __components_devices_shmemcoll_ShmemMcstMessage_h__
 
 #include <errno.h>
 #include <sys/uio.h>
@@ -41,13 +41,13 @@ namespace PAMI
 		  static inline pami_result_t short_msg_advance(T_Desc* master_desc, pami_multicast_t* mcast_params, unsigned master)
           {
 			TRACE_ERR((stderr, "in Mcst advance\n"));
-				
+
 			void* mybuf;
 			void* buf = (void*)master_desc->get_buffer(master);
 			TRACE_ERR((stderr, "buf from master:%d address:%p\n", master, buf));
-			
+
 			PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue*) mcast_params->dst;
-			unsigned bytes; 
+			unsigned bytes;
 
 			 if (((PAMI::Topology*)mcast_params->dst_participants)->isRankMember(__global.mapping.task()))
 			{
@@ -79,15 +79,15 @@ namespace PAMI
 			TRACE_ERR((stderr, "in Mcst advance\n"));
 			//unsigned _my_index = __global.topology_local.rank2Index(__global.mapping.task());
 			unsigned master = this->_my_desc->get_master();
-				
+
 			void* mybuf;
 			void* buf = (void*) this->_master_desc->get_buffer(master);
 			TRACE_ERR((stderr, "buf from master:%d address:%p\n", master, buf));
-			
+
 			pami_multicast_t & mcast_params = this->_my_desc->get_mcast_params();
 
 			PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue*) mcast_params.dst;
-			unsigned bytes; 
+			unsigned bytes;
 
 			/*if (_my_index == master){
 				this->setStatus (PAMI::Device::Done);
@@ -116,7 +116,7 @@ namespace PAMI
             TRACE_ERR((stderr, "<< McstMessageShmem::advance(), return PAMI_EAGAIN\n"));
             //return PAMI_EAGAIN;
           }
-			
+
 
         public:
           inline McstMessageShmem (T_Device *device, T_Desc* desc, T_Desc* master_desc) :

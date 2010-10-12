@@ -128,15 +128,15 @@ namespace PAMI
 
       pami_endpoint_t            origin   = PAMI_ENDPOINT_INIT(client_id, __global.mapping.task(), context_id);
 
-      pami_dispatch_p2p_fn       fn;      
+      pami_dispatch_p2p_fn       fn;
       size_t                     dispatch;
       T_Protocol                *protocol;
 
       if(T_Select == ALL || T_Select == MULTICAST_ONLY)
       {
         // Construct the mcast protocol using the NI dispatch function and cookie
-        fn = T_NativeInterface::dispatch_mcast;                                       
-        dispatch = getNextDispatch();                                                 
+        fn = T_NativeInterface::dispatch_mcast;
+        dispatch = getNextDispatch();
 
         protocol = (T_Protocol*) T_Protocol::generate(dispatch,
                                                                                  fn,
@@ -236,34 +236,34 @@ namespace PAMI
       pami_endpoint_t origin = PAMI_ENDPOINT_INIT(client_id, __global.mapping.task(), context_id);
 
       // Construct the protocols using the NI dispatch function and cookie
-      pami_dispatch_p2p_fn       fn;        
-      size_t                     dispatch;  
-      T_Protocol1               *protocol1; 
-      T_Protocol2               *protocol2; 
+      pami_dispatch_p2p_fn       fn;
+      size_t                     dispatch;
+      T_Protocol1               *protocol1;
+      T_Protocol2               *protocol2;
       Protocol::Send::SendPWQ<Protocol::Send::Send>* composite;
-                                            
+
       if(T_Select == ALL || T_Select == MULTICAST_ONLY)
       {
         // Construct the mcast protocol using the NI dispatch function and cookie
-        fn = T_NativeInterface::dispatch_mcast;                       
-        dispatch  = getNextDispatch();                                
-        protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch,    
-                                              fn,                     
-                                              (void*) ni,             
-                                              device1,                
-                                              origin,                 
-                                              context,                
-                                              allocator,              
-                                              result);                
-        protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,    
-                                              fn,                     
-                                              (void*) ni,             
-                                              device2,                
-                                              origin,                                                             
-                                              context,                                                      
-                                              allocator,                                                    
-                                              result);                                                      
-                                              
+        fn = T_NativeInterface::dispatch_mcast;
+        dispatch  = getNextDispatch();
+        protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch,
+                                              fn,
+                                              (void*) ni,
+                                              device1,
+                                              origin,
+                                              context,
+                                              allocator,
+                                              result);
+        protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
+                                              fn,
+                                              (void*) ni,
+                                              device2,
+                                              origin,
+                                              context,
+                                              allocator,
+                                              result);
+
         // Construct the composite from the two protocols
         composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
           Protocol::Send::Factory::generate(protocol1,
@@ -1626,7 +1626,7 @@ namespace PAMI
 
     state_data->doneCountDown = state_data->sendpwq.dst_participants.size();
 
-    // Am I a destination?  Handle it. 
+    // Am I a destination?  Handle it.
     if (state_data->sendpwq.dst_participants.isRankMember(this->myrank())) /// \todo change semantics here? ticket #31
       {
         state_data->doneCountDown--;// don't send to myself

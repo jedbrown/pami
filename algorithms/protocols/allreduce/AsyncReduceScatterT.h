@@ -45,9 +45,9 @@ namespace CCMI
       protected:
         CCMI::Executor::AllreduceBaseExec<T_Conn>  _reduce_executor;
         T_Reduce_Schedule                          _reduce_schedule;
-        CCMI::Executor::ScatterExec<T_Conn, T_Scatter_Schedule, pami_scatterv_t>  
+        CCMI::Executor::ScatterExec<T_Conn, T_Scatter_Schedule, pami_scatterv_t>
                                                    _scatter_executor;
-        T_Scatter_Schedule                         _scatter_schedule; 
+        T_Scatter_Schedule                         _scatter_schedule;
         T_Conn                                     *_cmgr;
         size_t                                     *_sdispls;
         char                                       *_tmpbuf;
@@ -77,7 +77,7 @@ namespace CCMI
         _reduce_done(0)
         {
           TRACE_ADAPTOR ((stderr, "<%p>Allreduce::AsyncReduceScatterT() \n",this));
-         
+
           PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(0);
           unsigned root = topo->index2Rank(0);
           coremath func;
@@ -152,7 +152,7 @@ namespace CCMI
 
         }
 
-        ~AsyncReduceScatterT () 
+        ~AsyncReduceScatterT ()
         {
           free(_sdispls);
           free(_tmpbuf);
@@ -176,9 +176,9 @@ namespace CCMI
               _tmpbuf = (char *) malloc(bytes);
               _relbuf = rcvbuf;
               _reduce_executor.setBuffers (sndbuf, _tmpbuf, bytes);
-           } 
-           else 
-           { 
+           }
+           else
+           {
              _reduce_executor.setBuffers(sndbuf, rcvbuf, bytes);
            }
         }
@@ -187,7 +187,7 @@ namespace CCMI
         {
 
           pami_scatterv_t s_xfer;
-          
+
           _sdispls = (size_t *) malloc(counts * sizeof(size_t));
           _sdispls[0] = 0;
           for (unsigned i = 0; i < counts; ++i)
@@ -351,7 +351,7 @@ namespace CCMI
 
               a_composite = co->getComposite();
 
-              a_composite->prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount, _native->myrank() == root); 
+              a_composite->prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount, _native->myrank() == root);
               a_composite->getReduceExecutor().setReduceConnectionManager(cmgr);
               a_composite->getReduceExecutor().setBroadcastConnectionManager(cmgr);
 
@@ -522,7 +522,7 @@ namespace CCMI
             PAMI_GEOMETRY_CLASS *geometry = co->getGeometry();
             PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(0);
             unsigned root = topo->index2Rank(0);
-            if (factory->_native->myrank() == root) 
+            if (factory->_native->myrank() == root)
               a_composite->getScatterExecutor().start();
 
             return;

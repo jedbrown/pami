@@ -15,7 +15,7 @@
 #endif
 
 // Use a local done function for testing
-#define LOCAL_TEST 
+#define LOCAL_TEST
 
 #undef DO_DEBUG
 #define DO_DEBUG(x) //x
@@ -206,7 +206,7 @@ namespace CCMI
             if (m->_count==0)
               m->_user_done.function(context, m->_user_done.clientdata, result);
           }
-        
+
         MultiCombineComposite2Device (Interfaces::NativeInterface      *native_l,
                                       Interfaces::NativeInterface      *native_g,
                                       ConnectionManager::SimpleConnMgr *cmgr,
@@ -241,7 +241,7 @@ namespace CCMI
             _user_done.function   = cmd->cb_done;
             _pwq_src.reset();
             _pwq_dest.reset();
-            
+
             // The "Only Local" case
             // This means the geometry only contains local tasks
             // A single multicombine will suffice to handle the allreduce
@@ -286,7 +286,7 @@ namespace CCMI
                 _mcombine_g.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
                 _startFcn                        = &MultiCombineComposite2Device::start1;
                 _count                           = 1;
-                return;                
+                return;
               }
 
             // This is the non-master participant in the reduction
@@ -415,7 +415,7 @@ namespace CCMI
             _native_l->multicombine(&_mcombine_l, _deviceInfo);
             _native_g->multicombine(&_mcombine_g, _deviceInfo);
           }
-        
+
         virtual void start()
           {
             (this->*_startFcn)();
@@ -495,12 +495,12 @@ namespace CCMI
             MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
             TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::test_local_done_fn() %p, %p\n",cookie,m->_buffer,m->_buffer1));
             DO_DEBUG(dumpDbuf((double*)m->_pwq_dst.bufferToConsume() , m->_pwq_dst.bytesAvailableToConsume()/sizeof(double)));
-            if (m->_cb_done.function) 
+            if (m->_cb_done.function)
                    m->_cb_done.function(context, m->_cb_done.clientdata, result);
             if(m->_bytes > 2048)
             {
-              free(m->_buffer); 
-              free(m->_buffer1); 
+              free(m->_buffer);
+              free(m->_buffer1);
             }
             m->_buffer=NULL;
             m->_buffer1=NULL;
@@ -594,7 +594,7 @@ namespace CCMI
                                _bytes,                          // buffer bytes
                                _bytes);                         // amount initially in buffer
             _pwq_src.reset();
-            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP() send buffer %p, bytes available to consume:%zd, produce:%zd\n", this, _pwq_src.bufferToConsume(), 
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP() send buffer %p, bytes available to consume:%zd, produce:%zd\n", this, _pwq_src.bufferToConsume(),
                            _pwq_src.bytesAvailableToConsume(), _pwq_src.bytesAvailableToProduce()));
             DO_DEBUG(dumpDbuf((double*)_pwq_src.bufferToConsume() , _pwq_src.bytesAvailableToConsume()/sizeof(double)));
 
@@ -603,7 +603,7 @@ namespace CCMI
                                _bytes,                          // buffer bytes
                                0);                              // amount initially in buffer
             _pwq_dst.reset();
-            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP() receive buffer %p, bytes available to consume:%zd, produce:%zd\n", this, _pwq_dst.bufferToProduce(), 
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP() receive buffer %p, bytes available to consume:%zd, produce:%zd\n", this, _pwq_dst.bufferToProduce(),
                            _pwq_dst.bytesAvailableToConsume(), _pwq_dst.bytesAvailableToProduce()));
 
             char* tmp = (char*)(((uint64_t)_buffer + 127) & ~(uint64_t)127); // align the buffer
@@ -659,7 +659,7 @@ namespace CCMI
             // Intercept the user's done for testing purposes.
             _cb_done.function   = fn;
             _cb_done.clientdata = cookie;
-            _mcast_l.cb_done.function     =  test_local_done_fn; 
+            _mcast_l.cb_done.function     =  test_local_done_fn;
             _mcast_l.cb_done.clientdata   =  this;
 #else
             _mcast_l.cb_done.function     =  fn;
@@ -705,7 +705,7 @@ namespace CCMI
           char                                _buffer1b[2048+128];
           size_t                              _bytes;
 #ifdef LOCAL_TEST
-          pami_callback_t                     _cb_done;   // User's completion callback 
+          pami_callback_t                     _cb_done;   // User's completion callback
 #endif
       };
 
@@ -730,6 +730,6 @@ namespace CCMI
 #endif
 
 #undef DO_DEBUG
-#define DO_DEBUG(x) 
+#define DO_DEBUG(x)
 
 #endif

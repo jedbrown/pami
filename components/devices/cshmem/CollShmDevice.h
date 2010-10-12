@@ -183,14 +183,14 @@ public:
       } window_data_t;
 
       //#define COMBINE_DATA(dest, src, len, flag) {
-      //  if (flag) {    
-      //    int i;       
-      //    for (i=0; i<len; i++) { 
-      //      ((char *)dest)[i] = ((char *)dest)[i]+ ((char *)src)[i]; 
-      //    }                           
-      //  } else {       
-      //    memcpy (dest, src, len);  
-      //  } 
+      //  if (flag) {
+      //    int i;
+      //    for (i=0; i<len; i++) {
+      //      ((char *)dest)[i] = ((char *)dest)[i]+ ((char *)src)[i];
+      //    }
+      //  } else {
+      //    memcpy (dest, src, len);
+      //  }
       //}
 
       CollShmWindow() :
@@ -266,7 +266,7 @@ public:
         if (_ctrl.cmpl_cntr.fetch() == 1) {
           _ctrl.cmpl_cntr.clear();
           if (_ctrl.content == XMEMATT) returnBuffer(NULL);
-          TRACE_DBG((stderr, "<%p>CollShmWindow::setAvail() PAMI_SUCCESS\n", this)); 
+          TRACE_DBG((stderr, "<%p>CollShmWindow::setAvail() PAMI_SUCCESS\n", this));
           return PAMI_SUCCESS;
         }
         TRACE_DBG((stderr, "<%p>CollShmWindow::setAvail() PAMI_EAGAIN\n", this));
@@ -279,7 +279,7 @@ public:
       INLINE pami_result_t isAvail(unsigned value)
       {
         if (_ctrl.avail_flag != value) {
-          TRACE_DBG((stderr, "<%p>CollShmWindow::isAvail() value %u PAMI_EAGAIN\n", this, value)); 
+          TRACE_DBG((stderr, "<%p>CollShmWindow::isAvail() value %u PAMI_EAGAIN\n", this, value));
           return PAMI_EAGAIN;
           }
         mem_isync(); //isync();
@@ -1303,7 +1303,7 @@ public:
                  for (unsigned w = 0; w < _synccounts; ++w)
                   (_wgroups[grp]->windows[idx*_synccounts + w]).clearCtrl();
               }
-              mem_barrier();   
+              mem_barrier();
             }
           } //while(!(COLLSHM_COMPARE_AND_SWAP((atomic_p)&(_wgroups[0]->barrier[round][idx]),&arrived, arrived+increment)))
           while(!_wgroups[0]->barrier[round][idx].compare_and_swap(arrived, arrived+increment)) ;

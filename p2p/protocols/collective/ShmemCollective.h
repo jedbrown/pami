@@ -1,5 +1,9 @@
-#ifndef __p2p_protocols_send_eager_ShmemCollective_h__
-#define __p2p_protocols_send_eager_ShmemCollective_h__
+/**
+ * \file p2p/protocols/collective/ShmemCollective.h
+ * \brief ???
+ */
+#ifndef __p2p_protocols_collective_ShmemCollective_h__
+#define __p2p_protocols_collective_ShmemCollective_h__
 
 #include "components/memory/MemoryAllocator.h"
 #include "util/common.h"
@@ -14,7 +18,7 @@ namespace PAMI
   {
     namespace ShmemCollective
     {
-				
+
 	template <class T_Model, class T_Device, class T_Descriptor>
 	class ShmemCollective
 	{
@@ -50,7 +54,7 @@ namespace PAMI
 		{
 			_collective_model.postDescriptor(mcastinfo);
 
-		}		
+		}
 
 
 		protected:
@@ -74,15 +78,15 @@ namespace PAMI
 		{
 
 			  collective_t * coll = (collective_t *) _allocator.allocateObject ();
-			  _collective_model.postCollective(coll, descriptor);		
+			  _collective_model.postCollective(coll, descriptor);
 				return 0;
 		};
 
 
 
-	};	
-	
+	};
+
 
     }
-  }	
+  }
 }

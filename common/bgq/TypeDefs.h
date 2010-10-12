@@ -69,7 +69,7 @@
 #include "components/devices/shmemcoll/ShmemCollDesc.h"
 #include "components/devices/shmemcoll/ShmemMcombModelWorld.h"
 #include "components/devices/shmemcoll/ShmemMcstModelWorld.h"
-#endif 
+#endif
 
 namespace PAMI
 {
@@ -144,7 +144,7 @@ namespace PAMI
   typedef Device::LocalAllreduceWQModel ShmemMcombModel;
   typedef Device::LocalBcastWQModel ShmemMcstModel;
   typedef ShmemDevice ShmemCollDevice;
-#endif 
+#endif
 
   typedef BGQNativeInterfaceAS <ShmemCollDevice, ShmemMcstModel, ShmemMsyncModel,ShmemMcombModel> AllSidedShmemNI;
 }

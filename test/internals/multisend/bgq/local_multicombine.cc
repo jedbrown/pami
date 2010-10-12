@@ -1,5 +1,5 @@
 ///
-/// \file test/internals/multisend/multicombine.cc
+/// \file test/internals/multisend/bgq/local_multicombine.cc
 /// \brief ???
 ///
 
@@ -17,14 +17,14 @@
 //#include "8way_sum.h"
 
 #ifndef TEST_BUF_SIZE
-//#define TEST_BUF_SIZE	8	
+//#define TEST_BUF_SIZE	8
 //#define TEST_BUF_SIZE	4104
 //#define TEST_BUF_SIZE	8192
 //#define TEST_BUF_SIZE	65536
 #define TEST_BUF_SIZE	524288
 //#define TEST_BUF_SIZE	1024
 #endif // TEST_BUF_SIZE
-#define ITER 100	
+#define ITER 100
 
 #define SHORTITER 100
 #define LONGITER	10
@@ -34,7 +34,7 @@ typedef PAMI::Device::ShmemCollDevice <ShmemCollDesc> ShmemCollDevice;
 typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcombModel;
 
 #define LOCAL_REDUCE_NAME	"PAMI::Device::ShmemMcombModel"
-#define LOCAL_REDUCE_MODEL ShmemMcombModel	
+#define LOCAL_REDUCE_MODEL ShmemMcombModel
 #define LOCAL_REDUCE_DEVICE ShmemCollDevice
 
 //#define SUM_PROCESS_SINGLE
@@ -42,7 +42,7 @@ typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemCollDevice, ShmemCollDes
 #define MEM_ALLOC_ALIGNED(x) 	{  myMemory = malloc ( TEST_BUF_SIZE + my_alignment );\
 									if ( !myMemory ) printf("malloc failed\n");\
 									x  = (double*)( ((uint64_t)myMemory + my_alignment)  & ~(my_alignment-1) );\
-								}		
+								}
 #define LOCAL_BARRIER	{ counter.fetch_and_inc();\
 							while (counter.fetch() < total_count+num_tasks){};\
 							total_count+=num_tasks;\
@@ -102,7 +102,7 @@ int main(int argc, char ** argv) {
 		if (iter > 1) sum+=diff;
 		}
 
-		if (task_id == root) fprintf(stderr,"cycles:%lld bytes:%d\n", sum/ITER, TEST_BUF_SIZE); 
+		if (task_id == root) fprintf(stderr,"cycles:%lld bytes:%d\n", sum/ITER, TEST_BUF_SIZE);
 #endif
 		unsigned long long diff = 0, sum=0;
 		unsigned num_iter;
@@ -110,11 +110,11 @@ int main(int argc, char ** argv) {
 		for (unsigned msg = 128; msg <= TEST_BUF_SIZE; msg*=2)
 		{
 			diff =0;
-			sum = 0;	
+			sum = 0;
         	mcomb.count = msg / sizeof(double);
-		
+
 			if (msg < 16384) num_iter = SHORTITER;
-			else num_iter = LONGITER;	
+			else num_iter = LONGITER;
 			for (unsigned iter =0 ; iter < num_iter+2; iter++)
 			{
 				//rc = test1.perform_test(task_id, num_tasks, context, &mcast);
@@ -124,7 +124,7 @@ int main(int argc, char ** argv) {
 				if (iter > 1) sum+=diff;
 
 			}
-			if (task_id == root) fprintf(stderr,"cycles:%lld bytes:%d \n", sum/num_iter, msg); 
+			if (task_id == root) fprintf(stderr,"cycles:%lld bytes:%d \n", sum/num_iter, msg);
 		}
         return 0;
 }

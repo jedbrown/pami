@@ -71,9 +71,9 @@ namespace PAMI
   typedef CollRegistration::CCMICSMultiRegistration<BGQGeometry,
               CSNativeInterface, CSMemoryManager, CollShmModel>            CollShmCollreg;
 
-  typedef CollRegistration::BGQ2D::BGQ2DRegistration<BGQGeometry, 
-              PAMI::Device::Generic::Device, CSNativeInterface, 
-              MUGlobalNI, 
+  typedef CollRegistration::BGQ2D::BGQ2DRegistration<BGQGeometry,
+              PAMI::Device::Generic::Device, CSNativeInterface,
+              MUGlobalNI,
               CollShmModel, CSMemoryManager>                               BGQ2DCollreg;
 
 
@@ -475,15 +475,15 @@ namespace PAMI
 
             if (__global.useshmem())
             {
-                _coll_shm_registration = new((CollShmCollreg *) _coll_shm_registration_storage) 
+                _coll_shm_registration = new((CollShmCollreg *) _coll_shm_registration_storage)
                 CollShmCollreg(_client, _clientid, _context, _contextid, PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, _clientid, _contextid));
             }
             else  _coll_shm_registration = NULL;
 
-            _bgq2d_registration = new((BGQ2DCollreg *) _bgq2d_registration_storage) 
+            _bgq2d_registration = new((BGQ2DCollreg *) _bgq2d_registration_storage)
             BGQ2DCollreg(_client, _context, _contextid, _clientid, PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, _clientid, _contextid), _global_mu_ni, __global.mapping);
 
-            if(((PAMI::Topology*)_world_geometry->getTopology(0))->isLocal() && _coll_shm_registration) 
+            if(((PAMI::Topology*)_world_geometry->getTopology(0))->isLocal() && _coll_shm_registration)
                  _coll_shm_registration->analyze_global(_contextid, _world_geometry, invec);
             else _bgq2d_registration->analyze_global(_contextid, _world_geometry, invec);
 
@@ -1004,7 +1004,7 @@ namespace PAMI
       {
         TRACE_ERR((stderr, "Context::analyze_local context id %zu, geometry %p\n", context_id, geometry));
   #ifdef _COLLSHM
-        if(_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal())          
+        if(_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal())
             _coll_shm_registration->analyze_local(context_id, geometry, reduce_result);
         else if(_bgq2d_registration) _bgq2d_registration->analyze_global(context_id, geometry, reduce_result);
   #endif // _COLLSHM
@@ -1017,7 +1017,7 @@ namespace PAMI
       {
         TRACE_ERR((stderr, "Context::analyze_global context id %zu, geometry %p\n", context_id, geometry));
   #ifdef _COLLSHM
-        if(_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal())          
+        if(_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal())
             _coll_shm_registration->analyze_global(context_id, geometry, reduce_result);
         else if(_bgq2d_registration) _bgq2d_registration->analyze_global(context_id, geometry, reduce_result);
   #endif // _COLLSHM
@@ -1036,7 +1036,7 @@ namespace PAMI
 //            _coll_shm_registration->analyze(context_id, geometry, phase);
 //#endif
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
-        if (_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal()) 
+        if (_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal())
             _pgas_shmem_registration->analyze(_contextid, geometry, phase);
 
         // Can always use MU if it's available

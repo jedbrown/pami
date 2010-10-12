@@ -1,5 +1,5 @@
 ///
-/// \file test/internals/multisend/multicast.cc
+/// \file test/internals/multisend/bgq/local_multicast.cc
 /// \brief ???
 ///
 
@@ -27,7 +27,7 @@ typedef PAMI::Device::ShmemCollDevice <ShmemCollDesc> ShmemCollDevice;
 typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcstModel;
 
 #define LOCAL_BCAST_NAME	"PAMI::Device::ShmemMcstModel"
-#define LOCAL_BCAST_MODEL 	ShmemMcstModel	
+#define LOCAL_BCAST_MODEL 	ShmemMcstModel
 #define LOCAL_BCAST_DEVICE 	ShmemCollDevice
 
 PAMI::Topology itopo;
@@ -83,11 +83,11 @@ int main(int argc, char ** argv) {
 		for (unsigned msg = 4; msg <= TEST_BUF_SIZE; msg*=2)
 		{
 			diff =0;
-			sum = 0;	
+			sum = 0;
 			mcast.bytes = msg;
-		
+
 			if (msg < 16384) num_iter = SHORTITER;
-			else num_iter = LONGITER;	
+			else num_iter = LONGITER;
 			for (unsigned iter =0 ; iter < num_iter+2; iter++)
 			{
 				//rc = test1.perform_test(task_id, num_tasks, context, &mcast);
@@ -97,7 +97,7 @@ int main(int argc, char ** argv) {
 				if (iter > 1) sum+=diff;
 
 			}
-			if (task_id == root) fprintf(stderr,"cycles:%lld bytes:%d \n", sum/num_iter, msg); 
+			if (task_id == root) fprintf(stderr,"cycles:%lld bytes:%d \n", sum/num_iter, msg);
 		}
       //  fprintf(stderr, "PASS %s\n", test);
 

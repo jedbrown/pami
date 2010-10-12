@@ -1,10 +1,10 @@
 /**
- * \file test/internals/multisend/multicast.h
+ * \file test/internals/multisend/bgq/local_multicast.h
  * \brief ???
  */
 
-#ifndef __test_internals_multisend_multicast_h__
-#define __test_internals_multisend_multicast_h__
+#ifndef __test_internals_multisend_bgq_local_multicast_h__
+#define __test_internals_multisend_bgq_local_multicast_h__
 
 #include <stdio.h>
 #include <pami.h>
@@ -101,7 +101,7 @@ public:
         _name(test)
         {
 				uint64_t my_alignment;
-				my_alignment = 128;	
+				my_alignment = 128;
 				void* myMemory = malloc ( T_BufSize + my_alignment );
 				if ( !myMemory ) printf("malloc failed\n");
 				_source  = (char*)( ((uint64_t)myMemory + my_alignment)  & ~(my_alignment-1) );

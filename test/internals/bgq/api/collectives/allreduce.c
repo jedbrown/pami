@@ -181,7 +181,7 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
   else if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_DOUBLE)
   {
     double *dbuf = (double *)  buf;
-  
+
     for (i = 0; i < count; i++)
     {
       dbuf[i] = 1.0*i;

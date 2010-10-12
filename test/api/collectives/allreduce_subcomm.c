@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/allreduce.c
+ * \file test/api/collectives/allreduce_subcomm.c
  * \brief allreduce on sub-geometries
  */
 

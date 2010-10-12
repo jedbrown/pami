@@ -1123,12 +1123,12 @@ namespace PAMI
         ///
         inline uint32_t getAffinity( size_t rmClientId,
                                      size_t contextOffset )
-	{ return _clientResources[rmClientId].startingSubgroupIds[contextOffset] / 
+	{ return _clientResources[rmClientId].startingSubgroupIds[contextOffset] /
 	    BGQ_MU_NUM_FIFO_SUBGROUPS; }
-	
+
 
 	// \brief Get Interrupt Mask
-	// 
+	//
 	// Construct a interrupt bitmask indicating which interrupts to clear for the
 	// specified context.  These indicate which fifos in the group are for
 	// this context.
@@ -1139,7 +1139,7 @@ namespace PAMI
 	//
 	inline uint64_t getInterruptMask ( size_t rmClientId,
 					   size_t contextOffset );
-	    
+
 
 	inline MUSPI_RecFifoSubGroup_t *getRecFifoSubgroup ( size_t rmClientId,
 							     size_t contextOffset )
@@ -1972,7 +1972,7 @@ void PAMI::Device::MU::ResourceManager::calculatePerCorePerProcessPerClientMURes
 
 
 // \brief Get Interrupt Mask
-// 
+//
 // Construct a interrupt bitmask indicating which interrupts to clear for the
 // specified context.  These indicate which fifos in the group are for
 // this context.
@@ -2275,7 +2275,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 	      memset(&fifoInterrupts[fifo],0x00,sizeof(Kernel_InjFifoInterrupts_t));
 	      fifoInterrupts[fifo].Threshold_Crossing = 1;
 	    }
-	  
+
 	  rc = Kernel_ConfigureInjFifoInterrupts( &((*subgroups)[subgroupIndex]),
 						  numFree,
 						  freeIds,
@@ -2283,7 +2283,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 	  PAMI_assertf( rc == 0, "ConfigureInjFifoInterrupts failed with rc=%d\n",rc);
 	  free( fifoInterrupts);
 	}
-	  
+
       fifoIndex         += numFree;
 
       numLeftToAllocate -= numFree;
@@ -2999,9 +2999,9 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
   Kernel_InjFifoAttributes_t  injFifoAttr;
 
   // Set the MU Inj Fifo Interrupt Threshold such that if an inj fifo fills, and then
-  // the free space increases above zero, an interrupt will fire so additional 
+  // the free space increases above zero, an interrupt will fire so additional
   // descriptors can be injected.
-  uint64_t threshold = 0; 
+  uint64_t threshold = 0;
   rc = Kernel_ConfigureInjFifoThresholds( &threshold,
 					  NULL /* remoteGetThreshold */ );
   PAMI_assertf( rc == 0, "Kernel_ConfigureInjFifoThresholds failed with rc=%d\n",rc);
@@ -3012,7 +3012,7 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
   threshold = (_pamiRM.getRecFifoSize() * 2) / (3 * sizeof(MUHWI_Descriptor_t));
   rc = Kernel_ConfigureRecFifoThreshold( threshold );
   PAMI_assertf( rc == 0, "Kernel_ConfigureRecFifoThreshold failed with rc=%d\n",rc);
-  
+
   TRACE_ERR((stderr,"MU ResourceManager: allocateContextResources: Setting Inj Fifo Threshold to 0, and Rec Fifo Threshold to %lu\n",threshold));
 
   // Set up the injection fifos for this context

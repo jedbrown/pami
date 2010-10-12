@@ -203,7 +203,7 @@ namespace PAMI
           // Allocate the factories
           //  ----->  Barrier
           Barrier::MultiSyncFactory  *barrier_reg        = (Barrier::MultiSyncFactory*)_factory_allocator.allocateObject();
-          new(barrier_reg) Barrier::MultiSyncFactory(&_sconnmgr, 
+          new(barrier_reg) Barrier::MultiSyncFactory(&_sconnmgr,
                                                      (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[0]);
           geometryInfo->_barrier                         = barrier_reg;
 

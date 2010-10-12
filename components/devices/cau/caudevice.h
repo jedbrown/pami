@@ -209,8 +209,8 @@ namespace PAMI
             }
           return -1;
         }
-      
-      
+
+
       static inline void         *getClientData(int id)
         {
           return _g_id_to_device_table[id];
@@ -229,9 +229,9 @@ namespace PAMI
           return _g_pami_mcast_to_lapi_mcast[pami_id];
         }
 
-      
 
-      
+
+
     private:
       lapi_state_t                                              *_lapi_state;
       lapi_handle_t                                              _lapi_handle;

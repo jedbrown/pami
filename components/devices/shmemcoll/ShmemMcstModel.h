@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShmemMcstModel.h
+ * \file components/devices/shmemcoll/ShmemMcstModel.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmem_mcst_model_h__
-#define __components_devices_shmem_mcst_model_h__
+#ifndef __components_devices_shmemcoll_ShmemMcstModel_h__
+#define __components_devices_shmemcoll_ShmemMcstModel_h__
 
 #include <errno.h>
 #include <sys/uio.h>
@@ -44,7 +44,7 @@ namespace PAMI
       {
 
 		private:
-		
+
 		//Collective logic for short messages
 		static int dispatch_mcst_matched_shmem(void* desc1, void* desc2 , void  *func_param )
         {
@@ -76,9 +76,9 @@ namespace PAMI
 			TRACE_ERR((stderr, "posted the message to generic device\n"));
             return 0;
         };
-	
+
         public:
-		
+
 			//Shmem Multicast Model
           ShmemMcstModel (T_Device &device, pami_result_t &status) :
               Interface::MulticastModel < ShmemMcstModel<T_Device, T_Desc>, T_Device, sizeof(Shmem::McstMessage<T_Device,T_Desc>) > (device, status),
@@ -99,7 +99,7 @@ namespace PAMI
           inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof(Shmem::McstMessage<T_Device,T_Desc>)],
                              			          	pami_multicast_t *mcast)
           {
-		
+
 			//currently assume all the processes local to the node are participating
 			//identify the peers by the local tasks
 			TRACE_ERR((stderr, "posting multicast descriptor\n"));
@@ -112,14 +112,14 @@ namespace PAMI
 			*/
 
 			unsigned local_root = __global.topology_local.rank2Index(src_topo->index2Rank(0));
-			//unsigned my_topo_idx = _peer; //for now my index in the group is the same as my _peer 
+			//unsigned my_topo_idx = _peer; //for now my index in the group is the same as my _peer
 
 
 			uint16_t	dispatch;
 			if (_device.isPendingDescQueueEmpty()){
-				
+
 				pami_result_t res;
-			
+
 				if (mcast->bytes <= short_msg_cutoff){
 
 					 res =	 _device.postMulticastShmem(mcast, local_root, _dispatch_id_shmem, (void*)state);
@@ -133,11 +133,11 @@ namespace PAMI
 				if (res == PAMI_SUCCESS) return PAMI_SUCCESS;
 
 			}
-			
-			Shmem::ShmemDescMessage<T_Device,T_Desc>* desc_msg = (Shmem::ShmemDescMessage<T_Device,T_Desc>*)shmem_mcst_allocator.allocateObject ();			
+
+			Shmem::ShmemDescMessage<T_Device,T_Desc>* desc_msg = (Shmem::ShmemDescMessage<T_Device,T_Desc>*)shmem_mcst_allocator.allocateObject ();
 			new ((void*)desc_msg) Shmem::ShmemDescMessage<T_Device, T_Desc>(&_device, Shmem::ShmemMcstModel<T_Device, T_Desc>::release_desc_msg, this);
 
-		    T_Desc & coll_desc = desc_msg->return_descriptor();	
+		    T_Desc & coll_desc = desc_msg->return_descriptor();
 			coll_desc.set_mcast_params(mcast);
             coll_desc.set_master(local_root);
             coll_desc.set_dispatch_id(dispatch);
@@ -145,7 +145,7 @@ namespace PAMI
 			coll_desc.set_type(Shmem::MULTICAST);
 
 		 	_device.postPendingDescriptor(desc_msg);
-			
+
 			return PAMI_SUCCESS;
           };
 
@@ -170,10 +170,10 @@ namespace PAMI
 
 
       };  // PAMI::Device::Shmem::ShmemMcstModel class
-		
-	  template <class T_Device, class T_Desc>	
+
+	  template <class T_Device, class T_Desc>
 	  MemoryAllocator < sizeof(ShmemDescMessage<T_Device,T_Desc>), 16 > ShmemMcstModel<T_Device, T_Desc>::shmem_mcst_allocator;
-		
+
     };    // PAMI::Device::Shmem namespace
   };      // PAMI::Device namespace
 };        // PAMI namespace

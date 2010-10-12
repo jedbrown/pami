@@ -1,5 +1,9 @@
-#ifndef __opt_copy_a2_h__
-#define __opt_copy_a2_h__
+/**
+ * \file components/devices/shmemcoll/opt_copy_a2.h
+ * \brief ???
+ */
+#ifndef __components_devices_shmemcoll_opt_copy_a2_h__
+#define __components_devices_shmemcoll_opt_copy_a2_h__
 
 #include "asmheader.h"
 #include "assert.h"
@@ -9,7 +13,7 @@
 #else
 #define __MYASM__(p) /* nothing */
 #endif
-  
+
 //copying 'num' doubles, num >= 128, in multiples of 64
 inline int quad_double_copy( double* dest, double* src, size_t num )
 {
@@ -19,12 +23,12 @@ inline int quad_double_copy( double* dest, double* src, size_t num )
   uint64_t y;
 
   register int inc __MYASM__("r7");
-	
-  fpp1_1 = src -8;  //offset by stride=0 bytes		
-  fpp1_2 = src -4;	
 
-  fpp2_1 = dest -8;  //offset by stride=0 bytes		
-  fpp2_2 = dest -4;	
+  fpp1_1 = src -8;  //offset by stride=0 bytes
+  fpp1_2 = src -4;
+
+  fpp2_1 = dest -8;  //offset by stride=0 bytes
+  fpp2_2 = dest -4;
 
   inc=64;
 
@@ -150,11 +154,11 @@ inline int opt_bgq_memcpy(void* dst, void* src, size_t bytes)
 	size_t quad_copy_bytes = (bytes /1024)* 1024;
 	size_t bytes_remaining = bytes - quad_copy_bytes;
 
-	if (quad_copy_bytes > 0) 
+	if (quad_copy_bytes > 0)
 	{
 		quad_double_copy((double*)dst_buf, (double*)src_buf, (quad_copy_bytes)/sizeof(double));
 	}
-	
+
 	if (bytes_remaining > 0)
 	{
 		memcpy((void*)((char*)dst_buf + quad_copy_bytes), (void*)((char*)src_buf + quad_copy_bytes), bytes_remaining);
@@ -164,8 +168,8 @@ inline int opt_bgq_memcpy(void* dst, void* src, size_t bytes)
 #if 0
 	//Check if aligned to 128 bytes, L2 cache line size
 	if (((uint64_t)dst | (uint64_t)src) & 0x7F)  {
-		
-		//Check if the bytes is a multiple of 512, 
+
+		//Check if the bytes is a multiple of 512,
 		if (bytes % 512 == 0)
 		{
 			quad_double_copy((double*)dst, (double*)src, bytes/sizeof(double));
@@ -174,7 +178,7 @@ inline int opt_bgq_memcpy(void* dst, void* src, size_t bytes)
 	}
 	else{
 		memcpy(dst, src, bytes);
-	}	
+	}
 #endif
 	return 0;
 }
@@ -193,16 +197,16 @@ inline int opt_bgq_memcpy(void* dst, void* src, size_t bytes)
 		uint64_t dst_aligned = (dst_buf & ~mask);
 		uint64_t src_aligned = (src_buf & ~mask);
 		size_t bytes_unaligned = (alignment - (dst_buf & mask));
-		
+
 		//multiples of 1024
 		size_t quad_copy_bytes = ((bytes - bytes_unaligned)/1024)* 1024;
 		size_t bytes_remaining = bytes- bytes_unaligned - quad_copy_bytes;
 
-		if (quad_copy_bytes > 0) 
+		if (quad_copy_bytes > 0)
 		{
 			quad_double_copy((double*)dst_aligned, (double*)src_aligned, (quad_copy_bytes)/sizeof(double));
 		}
-		
+
 		if (bytes_remaining > 0)
 		{
 			memcpy((void*)(dst_aligned + quad_copy_bytes), (void*)(src_aligned + quad_copy_bytes), bytes_remaining);
@@ -219,8 +223,8 @@ inline int opt_bgq_memcpy(void* dst, void* src, size_t bytes)
 #if 0
 	//Check if aligned to 128 bytes, L2 cache line size
 	if (((uint64_t)dst | (uint64_t)src) & 0x7F)  {
-		
-		//Check if the bytes is a multiple of 512, 
+
+		//Check if the bytes is a multiple of 512,
 		if (bytes % 512 == 0)
 		{
 			quad_double_copy((double*)dst, (double*)src, bytes/sizeof(double));
@@ -229,7 +233,7 @@ inline int opt_bgq_memcpy(void* dst, void* src, size_t bytes)
 	}
 	else{
 		memcpy(dst, src, bytes);
-	}	
+	}
 #endif
 	return 0;
 }

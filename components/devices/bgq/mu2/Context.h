@@ -390,11 +390,11 @@ namespace PAMI
 	    // Store a pointer in the injectionGroup that points to the MU MMIO
 	    /// field for clearing interrupts.  This will be used later during
 	    // advance() to clear the MU interrrupts.
-	    MUSPI_RecFifoSubGroup_t *_recFifoSubgroup = 
+	    MUSPI_RecFifoSubGroup_t *_recFifoSubgroup =
 	      _rm.getRecFifoSubgroup( _rm_id_client,
 				      _id_offset );
 	    injectionGroup.setClearInterruptsStatusPtr ( _recFifoSubgroup );
-	    
+
 	    // Construct a interrupt bitmask indicating which interrupts to clear
 	    // 64 bits:
 	    // - Bits  0 through 31 clear injection fifo threshold crossing
