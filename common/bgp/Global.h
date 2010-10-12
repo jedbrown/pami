@@ -56,13 +56,13 @@ namespace PAMI
           time.init (personality.clockMHz());
 
 	  heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
+	PAMI::Memory::MemoryManager::heap_mm = heap_mm;
 	  if (personality.tSize() == 1) {
 		// There is no shared memory, so don't try. Fake using heap.
 		shared_mm = heap_mm;
 	  } else {
 		shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(0, heap_mm);
 	  }
-	PAMI::Memory::MemoryManager::heap_mm = heap_mm;
 	PAMI::Memory::MemoryManager::shared_mm = shared_mm;
 	PAMI::Memory::MemoryManager::shm_mm = &mm; // not initialized yet!
 

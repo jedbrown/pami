@@ -298,7 +298,10 @@ namespace PAMI
 				if (fill && _getMeta(x) != PAMI_SUCCESS) return NULL;
 				if (!fill && _metas[x] == NULL) return NULL;
 				for (; y < MM_META_NUM(x); ++y, ++z) {
-					if (_metas[x][y].isFree() == want) {
+					if (want && _metas[x][y].isFree()) {
+						return &_metas[x][y];
+					}
+					if (!want && !_metas[x][y].isFree()) {
 						return &_metas[x][y];
 					}
 				}
@@ -442,6 +445,7 @@ namespace PAMI
 				T_MMAlloc *mp = (T_MMAlloc *)(_metahdr + 1);
 				for (x = 0; x < MMMAX_N_META; ++x) {
 					_metas[x] = mp;
+					_metahdr->setMeta(x);
 					mp += MM_META_NUM(x);
 				}
 			} else {
@@ -483,6 +487,7 @@ namespace PAMI
 				if (m->isMatch(key)) {
 					_last_z = z;
 					m->addRef();
+					__mark(z);
 					return m;
 				}
 				__locateSkip(x, y, z);

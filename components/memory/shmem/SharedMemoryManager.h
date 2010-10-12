@@ -67,7 +67,7 @@ namespace PAMI
 	/// tracked for the afore mentioned reason.
 	///
         inline SharedMemoryManager(size_t jobid, MemoryManager *mm) :
-          MemoryManager (),
+          MemoryManager(),
 	  _meta(),
 	  _jobid(jobid)
         {

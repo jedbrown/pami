@@ -59,10 +59,10 @@ namespace PAMI
           // MPI::Time gets its own clockMHz
           time.init(0);
 	  heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
+	PAMI::Memory::MemoryManager::heap_mm = heap_mm;
 	  // need to get jobid from process manager...
 	  size_t jobid = 0;
 	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(jobid, heap_mm);
-	PAMI::Memory::MemoryManager::heap_mm = heap_mm;
 	PAMI::Memory::MemoryManager::shared_mm = shared_mm;
 	PAMI::Memory::MemoryManager::shm_mm = shared_mm;
 
