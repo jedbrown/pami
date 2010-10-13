@@ -606,22 +606,24 @@ namespace PAMI
       inline pami_result_t lock_impl ()
         {
           LapiImpl::Context *ep = (LapiImpl::Context *)&_lapi_state[0];
-          internal_error_t rc = (ep->*(ep->pLock))();
-          return PAMI_RC(rc);
+          ep->mutex.Lock<true>();
+          return PAMI_SUCCESS;
         }
 
       inline pami_result_t trylock_impl ()
         {
           LapiImpl::Context *ep = (LapiImpl::Context *)&_lapi_state[0];
-          internal_error_t rc = (ep->*(ep->pTryLock))();
-          return PAMI_RC(rc);
+          if (0 == ep->mutex.TryLock<true>())
+            return PAMI_SUCCESS;
+          else
+            return PAMI_EAGAIN;
         }
 
       inline pami_result_t unlock_impl ()
         {
           LapiImpl::Context *ep = (LapiImpl::Context *)&_lapi_state[0];
-          internal_error_t rc = (ep->*(ep->pUnlock))();
-          return PAMI_RC(rc);
+          ep->mutex.Unlock<true>();
+          return PAMI_SUCCESS;
         }
       inline pami_result_t send_impl (pami_send_t * parameters)
         {
