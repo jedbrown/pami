@@ -152,12 +152,12 @@ namespace PAMI {
       _boundAddress[3]   = NULL;
     }
 
-    inline void init(PAMI::Memory::MemoryManager *mm)
-      {
-	_mutex.init(mm);
-	_overflowq.init(mm);
-	_privateq.init(mm);
-
+    inline void init(PAMI::Memory::MemoryManager *mm, const char *key)
+      {    
+	_mutex.init(); // in-place mutex
+	_overflowq.init(mm, key);
+	_privateq.init(mm, key);
+	
 	uint64_t *buffer;
 	int rc = 0;
 	rc = __global.l2atomicFactory.__procscoped_mm.memalign((void **)&buffer,

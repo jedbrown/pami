@@ -199,10 +199,10 @@ namespace PAMI
 			fd = lrc;
 		}
 		ptr = mmap(NULL, max, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+		close(fd); // no longer needed
 		if (ptr == NULL || ptr == MAP_FAILED)
 		{
 			// segment is not mapped...
-			close(fd);
 			if (first) shm_unlink(nkey); // yes?
 			return PAMI_ERROR;
 		}
@@ -210,11 +210,11 @@ namespace PAMI
 		_meta.acquire(); // only makes this thread-safe, not proc-safe.
 		alloc = _meta.findFree(ptr, bytes, alignment, nkey);
 		if (alloc == NULL) {
+			munmap(ptr, max);
 			_meta.release();
 			return PAMI_ERROR;
 		}
 
-		alloc->fd(fd);
 		_meta.release();
 		if (init_fn) {
 			if (first) {
@@ -240,6 +240,10 @@ namespace PAMI
 		return PAMI_SUCCESS;
 	}
 
+	static void last_free(MemoryManagerOSShmAlloc *m) {
+		shm_unlink(m->key());
+	}
+
 	inline void free(void *mem) {
 		_meta.acquire();
 		MemoryManagerOSShmAlloc *m = _meta.find(mem);
@@ -250,7 +254,8 @@ namespace PAMI
 				_fre_bytes += m->rawSize();
 			}
 #endif // MM_DEBUG
-			_meta.free(m);
+			munmap(m->rawMem(), m->rawSize());
+			_meta.free(m, last_free);
 		}
 		_meta.release();
 	}

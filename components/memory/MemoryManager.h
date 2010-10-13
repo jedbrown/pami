@@ -62,7 +62,7 @@ namespace PAMI
 	/// \param[in] off	Addition (meta) data needed
 	/// \param[in] align	Alignment required (power of two - NOT zero!)
 	///
-	static inline size_t padding(void *base, size_t off, size_t align) {
+	static inline size_t getPadding(void *base, size_t off, size_t align) {
 		return (((size_t)base + off + (align - 1)) & ~(align - 1)) -
 			(size_t)base;
 	}
@@ -130,35 +130,35 @@ namespace PAMI
 		virtual ~MemoryManagerAlloc() { }
 
 		inline size_t offset() { return _offset; }
-		inline void offset(size_t off) { _offset = off; }
-		inline void rawOffset(size_t off) {
-			_rawSize = (_offset - off) + _userSize;
+		inline void *userMem() { return (void *)-1; }
+		inline size_t userSize() { return _userSize; }
+		inline size_t rawSize() { return _rawSize; }
+
+		inline void setMem(void *mem, size_t len, size_t aln) { }
+		inline void setMem(size_t off, size_t len, size_t pad) {
+			_userSize = len;
+			_offset = off;
+			_rawSize = len + pad;
 		}
 
 		// returns PAMI_SUCCESS if last reference gone, otherwise
 		// PAMI_EAGAIN (potentially, PAMI_ERROR but not currently used).
 		// caller holds lock...
-		inline pami_result_t free() {
+		inline pami_result_t free(void (*func)(MemoryManagerAlloc *m) = NULL) {
 			// this destroys VFT? Can't do this anyway.
 			// memset(this, 0, sizeof(*this));
 
 			pami_result_t rc = PAMI_EAGAIN; // i.e. EBUSY
 			// Meta data in shared memory, or same memory as allocation...
 			if (rmRef() == 1) {
+				if (func) func(this);
 				freeKey();
 				rc = PAMI_SUCCESS;
 			}
 			return rc;
 		}
-
-		inline void *userMem() { return (void *)-1; }
-		inline size_t rawSize() { return _rawSize; }
-		inline size_t userSize() { return _userSize; }
-		inline void userSize(size_t size, size_t align) {
-			_userSize = size;
-		}
 	private:
-		volatile size_t _offset; // _base + _offset = memory chunk
+		volatile size_t _offset; // _base + _offset = user memory chunk
 		volatile size_t _userSize;
 		volatile size_t _rawSize;
 	}; // class MemoryManagerAlloc
@@ -169,44 +169,37 @@ namespace PAMI
 		MemoryManagerOSShmAlloc() { }
 		virtual ~MemoryManagerOSShmAlloc() { }
 
+		inline size_t offset() { return (size_t)-1; }
+		inline void *userMem() { return (char *)_mem + _pad; }
+		inline size_t userSize() { return _userSize; }
+		inline void *rawMem() { return _mem; }
+		inline size_t rawSize() { return _size; }
+
+		inline void setMem(size_t off, size_t len, size_t pad) { }
+		inline void setMem(void *mem, size_t len, size_t aln) {
+			_mem = mem;
+			_size = maxSize(len, aln); // assumed "real" length of 'mem'...
+						// (caller should have used maxSize() too)
+			_pad = getPadding(mem, sizeof(MemoryManagerSync), aln);
+			_userSize = len;
+		}
+
 		// returns PAMI_SUCCESS if last reference gone, otherwise
 		// PAMI_EAGAIN (potentially, PAMI_ERROR but not currently used).
 		// caller holds lock...
-		inline pami_result_t free() {
+		inline pami_result_t free(void (*func)(MemoryManagerOSShmAlloc *m) = NULL) {
 			pami_result_t rc = PAMI_EAGAIN; // i.e. EBUSY
 			// Meta data in private memory, but allocation is shared...
-			close(_fd);
 			if (sync() && rmRef() == 1) { // last one out...
+				if (func) func(this);
 				// zero memory so that next use is zeroed?
 				// memset(rawAddress(), 0, size());
-				shm_unlink(key());
 				rc = PAMI_SUCCESS;
 			}
 			freeKey();
 			return rc;
 		}
 
-		inline void fd(int fd) { _fd = fd; }
-		inline int fd() { return _fd; }
-		inline void vkey(uint32_t key) { _vkey = key; }
-		inline uint32_t vkey() { return _vkey; }
-		inline void mem(void *mem, size_t len, size_t align) {
-			_mem = mem;
-			_pad = padding(mem, sizeof(MemoryManagerSync), align);
-			_userSize = len;
-			_size = len + _pad;
-		}
-		inline void *mem() { return _mem; }
-		inline size_t size() { return _size; }
-
-		inline size_t offset() { return (size_t)-1; }
-		inline void offset(size_t off) { }
-		inline void rawOffset(size_t off) { }
-
-		inline void *userMem() { return (char *)_mem + _pad; }
-		inline size_t userSize() { return _userSize; }
-		inline size_t rawSize() { return _userSize; } // same same
-		inline void userSize(size_t size, size_t align) { }
 		static size_t maxSize(size_t size, size_t align) {
 			return sizeof(MemoryManagerSync) + align + size;
 		}
@@ -221,8 +214,6 @@ namespace PAMI
 		size_t _size;
 		size_t _userSize;
 		size_t _pad;
-		uint32_t _vkey; // SysV Shm only
-		int _fd; // mmap fd or shmget id
 	}; // class MemoryManagerOSShmAlloc
 
 	/// \brief Class to contain the root header of a MemoryManager
@@ -468,11 +459,41 @@ namespace PAMI
 		inline size_t spaceUsed() {
 			return _metahdr->offset();
 		}
-		inline size_t getSpace(void *base, size_t alignment, size_t bytes) {
+
+		/// \brief Prepare to make an allocation
+		///
+		/// Setup numbers to reflect requested allocation.
+		///
+		///    offset ---+
+		///              v
+		/// +------------+------------------------+
+		/// | padding    |  (user allocation)     |
+		/// +------------+------------------------+
+		///              |<-------- bytes ------->|
+		///
+		/// Note: these numbers may not represent available memory.
+		/// Caller verifies available space then calls allocSpace().
+		///
+		///  \param[in] base		Base of mm (for setting alignment)
+		///  \param[in] alignment	User alignment request
+		///  \param[in] bytes		User alloc request size
+		///  \param[out] offset		Offset of user allocation
+		///  \param[out] padding	Padding of 'offset'
+		///
+		inline void getSpace(void *base, size_t alignment, size_t bytes,
+					size_t &offset, size_t &padding) {
 			// fancier freespace handling TBD...
-			return padding(base, _metahdr->offset(), alignment);
+			size_t padded = getPadding(base, _metahdr->offset(), alignment);
+			padding = padded - _metahdr->offset();
+			offset = padded;
 		}
-	  	inline size_t allocSpace(size_t offset, size_t bytes) {
+		/// \brief Commit an allocation
+		///
+		///  \param[in] offset	From getSpace()
+		///  \param[in] bytes	User requested allocation size
+		///  \param[in] padding	From getSpace()
+		///
+	  	inline size_t allocSpace(size_t offset, size_t bytes, size_t padding) {
 			// fancier freespace handling TBD...
 			return _metahdr->offset(offset + bytes);
 		}
@@ -532,9 +553,8 @@ namespace PAMI
 			size_t x = 0, y = 0, z = 0;
 			T_MMAlloc *m = __locateOne<true,true>(x, y, z);
 			if (m) {
+				m->setMem(mem, len, aln);
 				m->key(key);
-				m->mem(mem, len, aln);
-				m->userSize(len, aln);
 				m->addRef();
 				__mark(z);
 			}
@@ -543,18 +563,22 @@ namespace PAMI
 
 		// allocates more space if needed/possible.
 		// caller holds lock
-		inline T_MMAlloc *findFree(size_t off, size_t len, size_t max,
+		inline T_MMAlloc *findFree(void *base, size_t max, size_t len, size_t aln,
 								const char *key) {
 			COMPILE_TIME_ASSERT(MMMAX_N_META <= 10); // for "0123456789"[x]...
+			
 			size_t x = 0, y = 0, z = 0;
+			size_t pad, off;
+			// just get initial figures for allocation.
+			getSpace(base, aln, len, off, pad);
 			T_MMAlloc *m = __locateOne<true,true>(x, y, z);
 			if (m) {
-				m->offset(off);
-				m->userSize(len, 0);
-				m->rawOffset(off); // must be after m->offset(...) and m->userSize(...)
+				m->setMem(off, len, pad);
 				if (m->offset() + len > max) {
 					return NULL;
 				}
+				// now, "commit" the allocation...
+				allocSpace(off, len, pad);
 				m->key(key);
 				m->addRef();
 				__mark(z);
@@ -576,10 +600,10 @@ namespace PAMI
 		// 'm' must have been immediate result of find()...
 		// returns PAMI_SUCCESS if last reference gone, otherwise
 		// PAMI_EAGAIN (potentially, PAMI_ERROR but not currently used).
-		inline pami_result_t free(T_MMAlloc *m) {
+		inline pami_result_t free(T_MMAlloc *m, void (*func)(T_MMAlloc *m) = NULL) {
 			size_t z = _last_z;
 			__unMark(z);
-			return m->free();
+			return m->free(func);
 		}
 	private:
 		MemoryManager *_meta_mm; // mm for meta data (same scope as parent)
@@ -846,10 +870,8 @@ namespace PAMI
 				getpid(), (unsigned long)memptr);
 		}
 	  }
-	  size_t offset = _meta.getSpace(_base, alignment, bytes);
-
-	  m = _meta.findFree(offset, bytes, _size, key);
-	  if (!m) {
+	  m = _meta.findFree(_base, _size, bytes, alignment, key);
+	  if (!m) { // either no space for user or no space for meta...
 		_meta.release();
 #ifdef MM_DEBUG
 		if (_debug) {
@@ -858,7 +880,6 @@ namespace PAMI
 #endif // MM_DEBUG
 		return PAMI_ERROR;
 	  }
-	  offset = _meta.allocSpace(m->offset(), bytes);
 	  _meta.release();
 	  *memptr = (uint8_t *)_base + m->offset();
 	  if (init_fn) {
