@@ -1,15 +1,16 @@
 ///
-/// \file test/api/p2p/send/shmem-matrix.c
+/// \file test/api/p2p/send/shmem-matrix-mv.c
 /// \Matrixed "shmem" point-to-point PAMI_send() test
 ///
 
 #include "sys/pami.h"
 #include <stdio.h>
+#include <string.h>
 
-//      PAMI_HINT_DEFAULT = 0, This hint leaves the option up to the PAMI implementation to choose.
-//      PAMI_HINT_FORCE   = 1, This allows the user to force an option to be used.
-//      PAMI_HINT_DENY    = 2, The user can force the implementation to not use this option.
-//      PAMI_HINT_MAX     = 3, The largest hint value; it cannot actually be used.
+// PAMI_HINT3_DEFAULT   = 0, This hint leaves the option up to the PAMI implementation to choose.
+// PAMI_HINT3_FORCE_ON  = 1, This allows the user to force an option to be used.
+// PAMI_HINT3_FORCE_OFF = 2, The user can force the implementation to not use this option.
+// PAMI_HINT3_MAX       = 3, The largest hint value; it cannot actually be used.
 
 //#define ENABLE_TRACE
 
@@ -22,25 +23,50 @@
 uint8_t __recv_buffer[2048];
 char recv_str[2048];               // used to print __recv_buffer as string
 size_t __recv_size;
+size_t __header_errors;
 size_t __data_errors;
 uint8_t reset_value[2] ={0, 255};  // reset value for each byte of __recv_buffer ...all 0's or all 1's (255)
-size_t r = 0;                      // used to loop over reset values
+size_t rv = 0;                      // used to loop over reset values
 
 unsigned validate (const void * addr, size_t bytes, size_t test_n_plus_1)
 {
   unsigned status = 1;
   uint8_t * byte = (uint8_t *) addr;
+  uint8_t expected_value = 0;
+  size_t total_bytes = 0;
   size_t i, j = 0;
 
-  for (i=0; i<bytes; i++)
-  {
-    if (byte[i] != (uint8_t)i)
-    {
-      fprintf (stderr, "validate(%p,%zu) .. ERROR .. byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, bytes, i, (uint8_t)i, i, &byte[i], byte[i]);
+  // Verify data received as well as 0-minus-1 and n-plus-1 bytes
+  if (test_n_plus_1) {
+    total_bytes = bytes+2;
+  } else { // Only verify data received
+    total_bytes = bytes;
+  }
+
+  // Loop through recv_buffer
+  for (i=0; i<total_bytes; i++) {
+
+    // Determine expected value
+    if (test_n_plus_1) {
+      // Ensure 0-minus-1 and n-plus-1 bytes equal the reset value
+      if ( (i == 0) || (i == total_bytes-1) ) {
+	expected_value = reset_value[rv];
+      } else { // Validate received data (__recv_buffer[1:bytes])
+	expected_value = (uint8_t)(i-1);
+      }
+    } else {
+      expected_value = (uint8_t)i;
+    }
+
+    // Verify current value
+    if (byte[i] != expected_value) {
+
+      fprintf (stderr, "validate(%p,%zu) .. ERROR .. byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, total_bytes, i, expected_value, i, &byte[i], byte[i]);
+
       status = 0;
     }
 
-  // Print element to string to print later if desired
+    // Print element to string to print later if desired
     sprintf(&recv_str[j], "%d", byte[i]);
     if (byte[i] < 10) {
       j++;
@@ -51,19 +77,8 @@ unsigned validate (const void * addr, size_t bytes, size_t test_n_plus_1)
     }
   }
 
-  // Add n-plus-1 byte to end of string so we can see what the default was
-  sprintf(&recv_str[j], "%d", byte[i]);
-
-  // Validate n-plus-1 byte (ensure it equals default value)
-  if (test_n_plus_1) {
-    if (byte[bytes] != reset_value[r]) {
-      fprintf (stderr, "validate(%p,%zu) .. ERROR .. byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, bytes, bytes, reset_value[r], bytes, &byte[bytes], byte[bytes]);
-      status = 0;
-    }
-  }
-
   // Print __recv_buffer
-  fprintf(stdout, "recv buffer[0:%zu] after send: %s\n", bytes, recv_str);
+  fprintf(stdout, "recv buffer[0:%zu] after send: %s\n", total_bytes-1, recv_str);
 
   return status;
 }
@@ -86,14 +101,14 @@ static void recv_done (pami_context_t   context,
 }
 
 static void test_dispatch (
-    pami_context_t        context,      /**< IN: PAMI context */
+    pami_context_t       context,      /**< IN: PAMI context */
     void               * cookie,       /**< IN: dispatch cookie */
     const void         * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
     const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
     size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
-    pami_endpoint_t origin,
-pami_recv_t         * recv)        /**< OUT: receive message structure */
+    pami_endpoint_t      origin,
+    pami_recv_t        * recv)         /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
   fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zu, header_size = %zu, pipe_size = %zu\n", cookie, *active, header_size, pipe_size);
@@ -101,6 +116,7 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
   //fprintf (stderr, "... dispatch function.  active = %zu\n", *active);
 
   if (!validate(header_addr, header_size, 0))
+    __header_errors++;
     fprintf (stderr, "validate header ERROR!\n");
 
   if (pipe_size == 0)
@@ -113,10 +129,10 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
 
     recv->local_fn = recv_done;
     recv->cookie   = cookie;
-    recv->type = PAMI_BYTE;
-    recv->addr     = __recv_buffer;
+    recv->type     = PAMI_BYTE;
+    recv->addr     = &__recv_buffer[1];
     recv->offset   = 0;
-    //fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn);
+    //    fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn);
   }
 
   return;
@@ -142,6 +158,17 @@ static void send_done_remote (pami_context_t   context,
 
 int main (int argc, char ** argv)
 {
+
+  size_t i, j;
+  size_t run_all = 0;   // run with alled hints
+
+  for (i = 1; i < argc; i++){ /* Skip argv[0] (program name). */
+   
+    if ( (strcmp(argv[i], "-a") == 0) || (strcmp(argv[i], "--all") == 0) ) {      
+      run_all = 1;
+    }
+  }
+
   volatile size_t send_active = 2;
   volatile size_t recv_active = 1;
 
@@ -177,6 +204,7 @@ int main (int argc, char ** argv)
   size_t task_id = configuration.value.intval;
   TRACE((stderr, "My task id = %zu\n", task_id));
 
+  // Ensure we have >= 2 tasks
   configuration.name = PAMI_CLIENT_NUM_TASKS;
   result = PAMI_Client_query(client, &configuration,1);
   if (result != PAMI_SUCCESS)
@@ -186,11 +214,10 @@ int main (int argc, char ** argv)
   }
   size_t num_tasks = configuration.value.intval;
   TRACE((stderr, "Number of tasks = %zu\n", num_tasks));
-  /*  if (num_tasks != 2)
-  {
-    fprintf(stderr, "Error. This test requires 2 tasks. Number of tasks in this job: %zu\n", num_tasks);
+  if (num_tasks < 2) {
+    fprintf(stderr, "Error. This test requires >= 2 tasks. Number of tasks in this job: %zu\n", num_tasks);
     return 1;
-    }*/
+  }
 
   pami_send_hint_t options;
   pami_dispatch_callback_fn fn;
@@ -235,6 +262,8 @@ int main (int argc, char ** argv)
     return 1;
   }
 
+
+ 
   options.use_shmem = 3;
   TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
   result = PAMI_Dispatch_set (context,
@@ -242,14 +271,15 @@ int main (int argc, char ** argv)
                              fn,
                              (void *)&recv_active,
                              options);
-  if (result != PAMI_INVAL)
-  {
-    fprintf(stderr, "Error. Should not be able to set use_shmem >= 3. result = %d\n", result);
-    return 1;
+
+  if (result != PAMI_INVAL) {
+    // Make this a warning till it's implemented
+    fprintf(stderr, "Warning. Should not be able to set use_shmem >= 3. result = %d\n", result);
+
+    //return 1;
   }
 
   // Setup header and data vars
-  size_t i = 0;
   uint8_t header[1024];
   uint8_t data[1024];
   for (i=0; i<1024; i++)
@@ -283,6 +313,7 @@ int main (int argc, char ** argv)
   size_t send_soft_use_shmem_hint = 0;       // soft hint value of sending task
   size_t recv_use_shmem_hint = 0;            // hard hint value of receiving task
 
+
   // Create dispatch arrays
 
   size_t dispatch_ary_0[3][12] = {{0, 0, 0, 0, 4, 0, 4, 4, 8, 8, 0, 8},
@@ -292,26 +323,26 @@ int main (int argc, char ** argv)
                                   {4, 4, 4, 4, 5, 0, 5, 5, 6, 6, 0, 6},
                                   {8, 8, 8, 8, 9, 0, 9, 9, 10, 10, 0, 10}};
 
-  // Init to skip failing scenarios ...enable failing scenarios later
+  // Init to skip alled scenarios ...enable later if requested
   size_t skip_ary[3][12] =       {{0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0},
-                                  {0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1},
-                                  {0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0}};
+                                  {1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1},
+                                  {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0}};
 
   pami_send_t parameters;
   parameters.send.header.iov_base = header;
   parameters.send.header.iov_len  = header_bytes[1]; // 16 bytes
   parameters.send.data.iov_base   = data;
-  parameters.send.data.iov_len    = data_bytes[2]; // 512 bytes
+  parameters.send.data.iov_len    = data_bytes[2];   // 512 bytes
   parameters.events.cookie        = (void *) &send_active;
   parameters.events.local_fn      = send_done_local;
   parameters.events.remote_fn     = send_done_remote;
 
-  // ======== Combinations of use shmem and no shmem hints that should pass  ========
+  // ======== Combinations of use_shmem hints that should pass  ========
 
   if (task_id == 0)
   {
 
-    fprintf(stderr, "======== Combinations of use shmem and no shmem hints that should pass  ========\n");
+    fprintf(stderr, "======== Combinations of use_shmem hints that should pass  ========\n");
 
     // Create task unique dispatch sets
     options.use_shmem = 0;
@@ -395,8 +426,17 @@ int main (int argc, char ** argv)
     for (r = 0; r < 3; r++) {
       for (s = 0; s < 12; s++) {
 
-	// Skip scenarios that are expected to fail
+	// Skip mismatched scenarios with unpredictable results
 	if (skip_ary[r][s]) {
+
+	  // Reset __recv_buffer based on next send hint TC
+	  // 0's for even TCs and 255's for odd TCs
+	  rv = (s+1) % 2; 
+
+	  for (i = 0; i < 2048; i++) {
+	    __recv_buffer[i] = reset_value[rv];
+	  }
+
 	  continue;
 	}
 
@@ -418,7 +458,7 @@ int main (int argc, char ** argv)
  	    return 1;
  	  }
 
-	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\ttask %zu use shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, n, recv_use_shmem_hint);
+	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu use shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, n, recv_use_shmem_hint);
 
 	  result = PAMI_Send (context, &parameters);
 	  if (result != PAMI_SUCCESS)
@@ -442,12 +482,21 @@ int main (int argc, char ** argv)
 	  TRACE((stderr, "... after send-recv advance loop\n"));
 	  send_active = 2;
 	  recv_active = 1;
+
 	} // end task loop
+
+	// Reset __recv_buffer based on next send hint TC
+	// 0's for even TCs and 255's for odd TCs
+	rv = (s+1) % 2; 
+
+	for (i = 0; i < 2048; i++) {
+	  __recv_buffer[i] = reset_value[rv];
+	}
+
       } // end send hint loop
     } // end recv hint loop
   } // end task = 0
-  else
-  {
+  else { // task id > 0
 
     // Create task unique dispatch sets
     options.use_shmem = 1;
@@ -537,8 +586,17 @@ int main (int argc, char ** argv)
     for (r = 0; r < 3; r++) {
       for (s = 0; s < 12; s++) {
 
-	// Skip scenarios that are expected to fail
+	// Skip mismatched scenarios with unpredictable results
 	if (skip_ary[r][s]) {
+
+	  // Reset __recv_buffer based on next send hint TC
+	  // 0's for even TCs and 255's for odd TCs
+	  rv = (s+1) % 2; 
+
+	  for (i = 0; i < 2048; i++) {
+	    __recv_buffer[i] = reset_value[rv];
+	  }
+
 	  continue;
 	}
 
@@ -553,7 +611,19 @@ int main (int argc, char ** argv)
 	  }
 	}
 	TRACE((stderr, "... after recv advance loop\n"));
-	recv_active = 1;
+
+	// Reset __recv_buffer based on next send hint TC
+	if (recv_active == 0) {
+	  
+	  // 0's for even TCs and 255's for odd TCs
+	  rv = (s+1) % 2; 
+
+	  for (i = 0; i < 2048; i++) {
+	    __recv_buffer[i] = reset_value[rv];
+	  }
+
+	  recv_active = 1;
+	}
 
 	TRACE((stderr, "before send ...\n"));
 
@@ -587,150 +657,186 @@ int main (int argc, char ** argv)
 	}
 	TRACE((stderr, "... after send advance loop\n"));
 	send_active = 2;
-      } // end header loop
-    } // end testcase loop
-  } // end task != 0
+      } // end send hint loop
+    } // end recv hint loop
+  } // end task != 0 
 
+  // ======== Combinations of mismatched use_shmem hints with unpredicatble results ========
+  if ( run_all == 1) {
+    // Enable unpredictable mismatched scenarios only ...skip expected passing scenarios
 
-  // ======== Combinations of shmem hints that should result in recv FAILS  ========
-
-  // Enable recv fail scenarios only ...skip passing scenarios
-  size_t j = 0;
-  for (i = 0; i < 4; i++) {
-    for(j = 0; j < 11; j++) {
+    // Disable all test scenarios
+    for (i = 0; i < 4; i++) {
+      for(j = 0; j < 12; j++) {
 	skip_ary[i][j] = 1;
+      }
     }
-  }
 
-  // Execute send = 2,recv = 1
-  skip_ary[1][8] = 0; skip_ary[1][9] = 0; skip_ary[1][11] = 0;
-  // Execute send = 1,recv = 2
-  skip_ary[2][4] = 0; skip_ary[2][6] = 0; skip_ary[2][7] = 0;
+    // Execute send hard hint = 0, recv hard hint = 1
+    skip_ary[1][0] = 0; skip_ary[1][1] = 0; skip_ary[1][2] = 0; skip_ary[1][3] = 0;
+    // Execute send hard hint = 2, recv hard hint = 1
+    skip_ary[1][8] = 0; skip_ary[1][9] = 0; skip_ary[1][11] = 0;
+    // Execute send hard hint = 0, recv hard hint = 2
+    skip_ary[2][0] = 0; skip_ary[2][1] = 0; skip_ary[2][2] = 0; skip_ary[2][3] = 0;
+    // Execute send hard hint = 1, recv hard hint = 2
+    skip_ary[2][4] = 0; skip_ary[2][6] = 0; skip_ary[2][7] = 0;
 
-  if (task_id == 0)
-  {
 
-    fprintf(stderr, "======== Combinations of shmem hints that should result in recv FAILS  ========\n");
+    if (task_id == 0) {
+	  
+      fprintf(stderr, "======== Combinations of mismatched shmem hints with unpredictable results ========\n");
+	  
+      for (r = 0; r < 3; r++) {
+	for (s = 0; s < 12; s++) {
+	    
+	  // Skip expected passing and failing scenarios
+	  if (skip_ary[r][s]) {
 
-    for (r = 0; r < 3; r++) {
-      for (s = 0; s < 12; s++) {
+	    // Reset __recv_buffer based on next send hint TC
+	    // 0's for even TCs and 255's for odd TCs
+	    rv = (s+1) % 2; 
 
-	// Skip scenarios we don't expect to result in a recv fail
-	if (skip_ary[r][s]) {
-	  continue;
-	}
+	    for (i = 0; i < 2048; i++) {
+	      __recv_buffer[i] = reset_value[rv];
+	    }
 
-	// Determine hint values
-	send_hard_use_shmem_hint = (s >> 2) & 3;
-	send_soft_use_shmem_hint = s & 3;
-	recv_use_shmem_hint = r;
-
-	parameters.send.dispatch        = dispatch_ary_0[r][s];
-
-	// Communicate with each task
-	for (n = 1; n < num_tasks; n++) {
-
-	  TRACE((stderr, "before send ...\n"));
-
-	  result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
-	  if (result != PAMI_SUCCESS) {
-	    fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
-	    return 1;
+	    continue;
 	  }
 
-	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu use shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, n, recv_use_shmem_hint);
+	  // Determine hint values
+	  send_hard_use_shmem_hint = (s >> 2) & 3;
+	  send_soft_use_shmem_hint = s & 3;
+	  recv_use_shmem_hint = r;
 
-	  result = PAMI_Send (context, &parameters);
-	  if (result != PAMI_SUCCESS)
-	  {
-	    fprintf(stderr, "Error. Sent %zu byte header and %zu byte data from task %zu (use_shmem hard hint = %zu, use_shmem soft hint = %zu) to task %zu (use_shmem hard hint = %zu) and FAILED wth rc = %d\n",header_bytes[1], data_bytes[2], task_id, send_hard_use_shmem_hint, send_soft_use_shmem_hint, n, recv_use_shmem_hint, result);
-	    return 1;
-	  }
-	  TRACE((stderr, "... after send.\n"));
+	  parameters.send.dispatch        = dispatch_ary_0[r][s];
 
+	  // Communicate with each task
+	  for (n = 1; n < num_tasks; n++) {
+	    
+	    TRACE((stderr, "before send ...\n"));
 
-	  TRACE((stderr, "before send-recv advance loop ...\n"));
-	  while (send_active || recv_active)
-	  {
-	    result = PAMI_Context_advance (context, 100);
-	    if (result != PAMI_SUCCESS)
-	      {
+	    result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	    if (result != PAMI_SUCCESS) {
+	      fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	      return 1;
+	    }
+		
+	    fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask %zu use shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, n, recv_use_shmem_hint);
+
+	    result = PAMI_Send (context, &parameters);
+	    if (result != PAMI_SUCCESS) {
+	      fprintf(stderr, "Error. Sent %zu byte header and %zu byte data from task %zu (use_shmem hard hint = %zu, use_shmem soft hint = %zu) to task %zu (use_shmem hard hint = %zu) and FAILED wth rc = %d\n",header_bytes[1], data_bytes[2], task_id, send_hard_use_shmem_hint, send_soft_use_shmem_hint, n, recv_use_shmem_hint, result);
+	      return 1;
+	    }
+	    TRACE((stderr, "... after send.\n"));
+		
+		
+	    TRACE((stderr, "before send-recv advance loop ...\n"));
+	    while (send_active || recv_active) {
+	      result = PAMI_Context_advance (context, 100);
+	      if (result != PAMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
 		return 1;
 	      }
+	    }
+	    TRACE((stderr, "... after send-recv advance loop\n"));
+
+	    send_active = 2;
+	    recv_active = 1;
+	  } // end task loop
+
+	  // Reset __recv_buffer based on next send hint TC
+	  // 0's for even TCs and 255's for odd TCs
+	  rv = (s+1) % 2; 
+
+	  for (i = 0; i < 2048; i++) {
+	    __recv_buffer[i] = reset_value[rv];
 	  }
-	  TRACE((stderr, "... after send-recv advance loop\n"));
+
+	} // end send hint loop
+      } // end recv hint loop
+    } // end task = 0
+    else { // task id > 0
+	  
+      result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+      if (result != PAMI_SUCCESS) {
+	fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	return 1;
+      }
+
+      for (r = 0; r < 3; r++) {
+	for (s = 0; s < 12; s++) {
+	      
+	  // Skip scenarios that are expected to pass and fail
+	  if (skip_ary[r][s]) {
+
+	    // Reset __recv_buffer based on next send hint TC
+	    // 0's for even TCs and 255's for odd TCs
+	    rv = (s+1) % 2; 
+
+	    for (i = 0; i < 2048; i++) {
+	      __recv_buffer[i] = reset_value[rv];
+	    }
+
+	    continue;
+	  }
+
+	  TRACE((stderr, "before recv advance loop ...\n"));
+	  while (recv_active != 0) {
+	    result = PAMI_Context_advance (context, 100);
+	    if (result != PAMI_SUCCESS) {
+	      fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+	      return 1;
+	    }
+	  }
+	  TRACE((stderr, "... after recv advance loop\n"));
+	  
+	  // Reset __recv_buffer based on next send hint TC
+	  if (recv_active == 0) {
+	  
+	    // 0's for even TCs and 255's for odd TCs
+	    rv = (s+1) % 2; 
+
+	    for (i = 0; i < 2048; i++) {
+	      __recv_buffer[i] = reset_value[rv];
+	    }
+
+	    recv_active = 1;
+	  }
+	      
+	  TRACE((stderr, "before send ...\n"));
+	      
+	  // Determine hint values
+	  send_hard_use_shmem_hint = (s >> 2) & 3;
+	  send_soft_use_shmem_hint = s & 3;
+	  recv_use_shmem_hint = r;
+
+	  parameters.send.dispatch        = dispatch_ary_n[r][s];
+
+	  fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> 0:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask 0 use shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, recv_use_shmem_hint);
+
+	  result = PAMI_Send (context, &parameters);
+	  if (result != PAMI_SUCCESS) {
+	    fprintf(stderr, "Error. Sent %zu byte header and %zu byte data from task %zu (use_shmem hard hint = %zu, use_shmem soft hint = %zu) to task 0 (use_shmem hard hint = %zu) and FAILED wth rc = %d\n",header_bytes[1], data_bytes[2], task_id, send_hard_use_shmem_hint, send_soft_use_shmem_hint, recv_use_shmem_hint, result);
+	    return 1;
+	  }
+
+	  TRACE((stderr, "... after send.\n"));
+	  
+	  TRACE((stderr, "before send advance loop ...\n"));
+	  while (send_active) {
+	    result = PAMI_Context_advance (context, 100);
+	    if (result != PAMI_SUCCESS) {
+	      fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+	      return 1;
+	    }
+	  }
+	  TRACE((stderr, "... after send advance loop\n"));
 	  send_active = 2;
-	  recv_active = 1;
-	} // end task loop
-      } // end send hint loop
-    } // end recv hint loop
-  } // end task = 0
-  else
-  {
-
-    result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
-    if (result != PAMI_SUCCESS) {
-      fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
-      return 1;
-    }
-
-    for (r = 0; r < 3; r++) {
-      for (s = 0; s < 12; s++) {
-
-	// Skip scenarios that are expected to fail
-	if (skip_ary[r][s]) {
-	  continue;
-	}
-
-	TRACE((stderr, "before recv advance loop ...\n"));
-	while (recv_active != 0)
-	{
-	  result = PAMI_Context_advance (context, 100);
-	  if (result != PAMI_SUCCESS)
-	  {
-	    fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
-	    return 1;
-	  }
-	}
-	TRACE((stderr, "... after recv advance loop\n"));
-	recv_active = 1;
-
-	TRACE((stderr, "before send ...\n"));
-
-	// Determine hint values
-	send_hard_use_shmem_hint = (s >> 2) & 3;
-	send_soft_use_shmem_hint = s & 3;
-	recv_use_shmem_hint = r;
-
-	parameters.send.dispatch        = dispatch_ary_n[r][s];
-
-	fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> 0:\n\t\ttask %zu use_shmem hard hint = %zu\n\t\ttask %zu use_shmem soft hint = %zu\n\t\ttask 0 use shmem hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, task_id, send_hard_use_shmem_hint, task_id, send_soft_use_shmem_hint, recv_use_shmem_hint);
-
-	result = PAMI_Send (context, &parameters);
-	if (result != PAMI_SUCCESS)
-	{
-	  fprintf(stderr, "Error. Sent %zu byte header and %zu byte data from task %zu (use_shmem hard hint = %zu, use_shmem soft hint = %zu) to task 0 (use_shmem hard hint = %zu) and FAILED wth rc = %d\n",header_bytes[1], data_bytes[2], task_id, send_hard_use_shmem_hint, send_soft_use_shmem_hint, recv_use_shmem_hint, result);
-	  return 1;
-	}
-
-	TRACE((stderr, "... after send.\n"));
-
-	TRACE((stderr, "before send advance loop ...\n"));
-	while (send_active)
-	{
-	  result = PAMI_Context_advance (context, 100);
-	  if (result != PAMI_SUCCESS)
-	  {
-	    fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
-	    return 1;
-	  }
-	}
-	TRACE((stderr, "... after send advance loop\n"));
-	send_active = 2;
-      } // end header loop
-    } // end testcase loop
-  } // end task != 0
+	} // end header loop
+      } // end testcase loop
+    } // end task != 0
+  } // end mismatched hint test
 
   // ======== Cleanup ========
 
@@ -748,5 +854,10 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  return 0;
-};
+  if ( __header_errors || __data_errors ) {
+    fprintf(stderr, "Error. shmem_matrix FAILED with %zu header errors and %zu data errors. \n", __header_errors, __data_errors );
+    return 1;
+  } else {
+    return 0;
+  }
+}
