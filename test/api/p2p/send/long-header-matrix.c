@@ -10,6 +10,10 @@
 
 #include <pami.h>
 #include <stdio.h>
+#include <string.h>
+
+// PAMI_HINT2_OFF   = 0, This turns the option off.
+// PAMI_HINT2_ON    = 1, This turns the option on.
 
 #define ENABLE_TRACE
 
@@ -20,7 +24,7 @@
 #endif
 
 static void recv_done (pami_context_t   context,
-                       void          * cookie,
+                       void           * cookie,
                        pami_result_t    result)
 {
   volatile size_t * active = (volatile size_t *) cookie;
@@ -29,14 +33,14 @@ static void recv_done (pami_context_t   context,
 }
 
 static void test_dispatch (
-    pami_context_t        context,      /**< IN: PAMI context */
+    pami_context_t       context,      /**< IN: PAMI context */
     void               * cookie,       /**< IN: dispatch cookie */
     const void         * header_addr,  /**< IN: header address */
     size_t               header_size,  /**< IN: header size */
     const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
     size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
-    pami_endpoint_t origin,
-pami_recv_t         * recv)        /**< OUT: receive message structure */
+    pami_endpoint_t      origin,
+    pami_recv_t        * recv)         /**< OUT: receive message structure */
 {
   TRACE((stderr, "Called dispatch function.  cookie = %p, active: %zu, header_addr = %p, header_size = %zu\n", cookie,  *((volatile size_t *) cookie), header_addr, header_size));
 
@@ -70,6 +74,16 @@ static void send_done_remote (pami_context_t   context,
 
 int main (int argc, char ** argv)
 {
+  size_t i = 0;
+  size_t run_all = 0;   // include unpredictable mismatched scenarios 
+
+  for (i = 1; i < argc; i++){ /* Skip argv[0] (program name). */
+   
+    if ( (strcmp(argv[i], "-a") == 0) || (strcmp(argv[i], "--all") == 0) ) {      
+      run_all = 1;
+    }
+  }
+
   volatile size_t send_active = 2;
   volatile size_t recv_active = 1;
 
@@ -181,6 +195,7 @@ int main (int argc, char ** argv)
     fprintf(stderr, "====== Combinations of header sizes and no_long_header hints that should pass ======\n");
 
     // Create task unique dispatch sets 1 & 2
+    // dispatch ID 1: task 0 no_long_header = 0, task n no_long_header = 1
     options.no_long_header = 0;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
@@ -194,6 +209,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
+    // dispatch ID 2: task 0 no_long_header = 1, task n no_long_header = 0
     options.no_long_header = 1;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
@@ -269,6 +285,7 @@ int main (int argc, char ** argv)
   {
 
     // Create task unique dispatch sets 1 & 2
+    // dispatch ID 1: task n no_long_header = 1, task 0 no_long_header = 0
     options.no_long_header = 1;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
@@ -282,6 +299,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
+    // dispatch ID 2: task n no_long_header = 0, task 0 no_long_header = 1
     options.no_long_header = 0;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
@@ -445,140 +463,131 @@ int main (int argc, char ** argv)
   } // end task = 1 loop
 
   // ======== Combinations of header sizes and no_long_header hints that should result in recv FAILS  ========
+  if (run_all == 1) {
+    if (task_id == 0) {
 
-  if (task_id == 0)
-  {
+      fprintf(stderr, "====== Combinations of header sizes and no_long_header hints that should result in recv FAILS ======\n");
 
-    fprintf(stderr, "====== Combinations of header sizes and no_long_header hints that should result in recv FAILS ======\n");
+      // Only sending long headers
+      h = 1;
+      parameters.send.header.iov_base = (void *) header_ary[h];
+      parameters.send.header.iov_len  = header_size_ary[h];
 
-    // Only sending long headers
-    h = 1;
-    parameters.send.header.iov_base = (void *) header_ary[h];
-    parameters.send.header.iov_len  = header_size_ary[h];
+      for (testcase = 1; testcase < 4; testcase++) {
 
-    for (testcase = 1; testcase < 4; testcase++) {
+	// Skip testcase #2, (sending FAIL)
+	if (testcase == 2) {
+	  continue;
+	}
 
-      // Skip testcase #2, (sending FAIL)
-      if (testcase == 2) {
-	continue;
+	// Determine hint values
+	send_hard_hint = (testcase >> 2) & 1;
+	send_soft_hint = (testcase >> 1) & 1;
+	recv_hard_hint = testcase & 1;
+
+	fprintf (stderr, "testcase = %zu, dispatch = %zu.\n", testcase, dispatch_ary_0[testcase]);
+
+	parameters.send.dispatch        = dispatch_ary_0[testcase];
+
+	// Communicate with each task
+	for (n = 1; n < num_tasks; n++) {
+
+	  TRACE((stderr, "before send ...\n"));
+
+
+	  result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
+	  if (result != PAMI_SUCCESS) {
+	    fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	    return 1;
+	  }
+
+	  fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask %zu no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, n, task_id, send_hard_hint, task_id, send_soft_hint, n, recv_hard_hint);
+
+	  result = PAMI_Send (context, &parameters);
+	  if (result != PAMI_SUCCESS) {
+	    fprintf(stderr, "Error. Sent a %s (%zu bytes) from task %zu (no_long_header hard hint = %zu, soft hint = %zu) to task %zu (no_long_header hard hint = %zu) and FAILED with rc = %d\n", &header_type_str[h][0], header_size_ary[h], task_id, send_hard_hint, send_soft_hint, n, recv_hard_hint, result);
+	    return 1;
+	  }
+	  TRACE((stderr, "... after send.\n"));
+
+	  TRACE((stderr, "before send-recv advance loop ...\n"));
+	  while (send_active || recv_active) {
+	    result = PAMI_Context_advance (context, 100);
+	    if (result != PAMI_SUCCESS) {
+	      fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+	      return 1;
+	    }
+	  }
+	  TRACE((stderr, "... after send-recv advance loop\n"));
+	  send_active = 2;
+	  recv_active = 1;
+	} // end task id loop
+      } // end testcase loop
+    } // end task = 0
+    else {
+
+      // Only sending long headers
+      h = 1;
+      parameters.send.header.iov_base = (void *) header_ary[h];
+      parameters.send.header.iov_len  = header_size_ary[h];
+
+      result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+      if (result != PAMI_SUCCESS) {
+	fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+	return 1;
       }
 
-      // Determine hint values
-      send_hard_hint = (testcase >> 2) & 1;
-      send_soft_hint = (testcase >> 1) & 1;
-      recv_hard_hint = testcase & 1;
+      for (testcase = 1; testcase < 4; testcase++) {
 
-      fprintf (stderr, "testcase = %zu, dispatch = %zu.\n", testcase, dispatch_ary_0[testcase]);
-
-      parameters.send.dispatch        = dispatch_ary_0[testcase];
-
-      // Communicate with each task
-      for (n = 1; n < num_tasks; n++) {
-
-	TRACE((stderr, "before send ...\n"));
-
-
-	result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
-	if (result != PAMI_SUCCESS) {
-	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
-	  return 1;
+	// Skip testcase #2, (sending FAIL)
+	if (testcase == 2) {
+	  continue;
 	}
 
-	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask %zu no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, n, task_id, send_hard_hint, task_id, send_soft_hint, n, recv_hard_hint);
-
-	result = PAMI_Send (context, &parameters);
-	if (result != PAMI_SUCCESS)
-	{
-	  fprintf(stderr, "Error. Sent a %s (%zu bytes) from task %zu (no_long_header hard hint = %zu, soft hint = %zu) to task %zu (no_long_header hard hint = %zu) and FAILED with rc = %d\n", &header_type_str[h][0], header_size_ary[h], task_id, send_hard_hint, send_soft_hint, n, recv_hard_hint, result);
-	  return 1;
-	}
-	TRACE((stderr, "... after send.\n"));
-
-	TRACE((stderr, "before send-recv advance loop ...\n"));
-	while (send_active || recv_active)
-	{
+	TRACE((stderr, "before recv advance loop ...\n"));
+	while (recv_active != 0) {
 	  result = PAMI_Context_advance (context, 100);
-	  if (result != PAMI_SUCCESS)
-	  {
+	  if (result != PAMI_SUCCESS) {
 	    fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
 	    return 1;
 	  }
 	}
-	TRACE((stderr, "... after send-recv advance loop\n"));
-	send_active = 2;
+	TRACE((stderr, "... after recv advance loop\n"));
 	recv_active = 1;
-      } // end task id loop
-    } // end testcase loop
-  } // end task = 0
-  else
-  {
 
-    // Only sending long headers
-    h = 1;
-    parameters.send.header.iov_base = (void *) header_ary[h];
-    parameters.send.header.iov_len  = header_size_ary[h];
+	TRACE((stderr, "before send ...\n"));
 
-    result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
-    if (result != PAMI_SUCCESS) {
-      fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
-      return 1;
-    }
+	// Determine hint values
+	send_hard_hint = (testcase >> 2) & 1;
+	send_soft_hint = (testcase >> 1) & 1;
+	recv_hard_hint = testcase & 1;
 
-    for (testcase = 1; testcase < 4; testcase++) {
+	fprintf (stderr, "testcase = %zu, dispatch = %zu.\n", testcase, dispatch_ary_n[testcase]);
 
-      // Skip testcase #2, (sending FAIL)
-      if (testcase == 2) {
-	continue;
-      }
+	parameters.send.dispatch        = dispatch_ary_n[testcase];
 
-      TRACE((stderr, "before recv advance loop ...\n"));
-      while (recv_active != 0)
-      {
-	result = PAMI_Context_advance (context, 100);
-	if (result != PAMI_SUCCESS)
-	{
-	  fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> 0:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask 0 no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, task_id, send_hard_hint, task_id, send_soft_hint, recv_hard_hint);
+
+	result = PAMI_Send (context, &parameters);
+	if (result != PAMI_SUCCESS) {
+	  fprintf(stderr, "Error. Sent a %s (%zu bytes) from task %zu (no_long_header hard hint = %zu, soft hint = %zu) to task 0 (no_long_header hard hint = %zu) and FAILED with rc = %d\n", &header_type_str[h][0], header_size_ary[h], task_id, send_hard_hint, send_soft_hint, recv_hard_hint, result);
 	  return 1;
 	}
-      }
-      TRACE((stderr, "... after recv advance loop\n"));
-      recv_active = 1;
+	TRACE((stderr, "... after send.\n"));
 
-      TRACE((stderr, "before send ...\n"));
-
-      // Determine hint values
-      send_hard_hint = (testcase >> 2) & 1;
-      send_soft_hint = (testcase >> 1) & 1;
-      recv_hard_hint = testcase & 1;
-
-      fprintf (stderr, "testcase = %zu, dispatch = %zu.\n", testcase, dispatch_ary_n[testcase]);
-
-      parameters.send.dispatch        = dispatch_ary_n[testcase];
-
-      fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> 0:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask 0 no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, task_id, send_hard_hint, task_id, send_soft_hint, recv_hard_hint);
-
-      result = PAMI_Send (context, &parameters);
-      if (result != PAMI_SUCCESS)
-      {
-	fprintf(stderr, "Error. Sent a %s (%zu bytes) from task %zu (no_long_header hard hint = %zu, soft hint = %zu) to task 0 (no_long_header hard hint = %zu) and FAILED with rc = %d\n", &header_type_str[h][0], header_size_ary[h], task_id, send_hard_hint, send_soft_hint, recv_hard_hint, result);
-	return 1;
-      }
-      TRACE((stderr, "... after send.\n"));
-
-      TRACE((stderr, "before send advance loop ...\n"));
-      while (send_active)
-      {
-	result = PAMI_Context_advance (context, 100);
-	if (result != PAMI_SUCCESS)
-	{
-	  fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
-	  return 1;
+	TRACE((stderr, "before send advance loop ...\n"));
+	while (send_active) {
+	  result = PAMI_Context_advance (context, 100);
+	  if (result != PAMI_SUCCESS) {
+	    fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+	    return 1;
+	  }
 	}
-      }
-      TRACE((stderr, "... after send advance loop\n"));
-      send_active = 2;
-    } // end testcase loop
-  } // end task = 1 loop
+	TRACE((stderr, "... after send advance loop\n"));
+	send_active = 2;
+      } // end testcase loop
+    } // end task = 1 loop
+  } // end run_all
 
   // ======== Cleanup ========
 
