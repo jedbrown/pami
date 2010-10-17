@@ -37,7 +37,7 @@ typedef struct
   pami_endpoint_t   origin;
   size_t            bytes;
   size_t            pad;
-  uint32_t          buffer[BUFFERSIZE<<1];
+  uint32_t          buffer[12]; // 16-byte paddign on both sides
   volatile size_t * value;
 } get_info_t;
 
@@ -60,12 +60,15 @@ void initialize_data (uint32_t * addr, size_t bytes, size_t pad)
   uint32_t * p    = (uint32_t *) addr;
   uint8_t  * data = (uint8_t *)  &p[pad];
 
+  // initialize front padding 
   for (i=0; i<pad; i++)
     p[i] = 0xdeadbeef;
 
+  // initialize main data
   for (i=0; i<bytes; i++)
     data[i] = ~(bytes-i);
 
+  // initialize back padding 
   p = (uint32_t *) &data[i];
   for (i=0; i<pad; i++)
     p[i] = 0xdeadbeef;
@@ -82,7 +85,7 @@ unsigned validate_data (uint32_t * addr, size_t bytes, size_t pad)
   {
     if (addr[i] != 0xdeadbeef)
     {
-      fprintf (stderr, "validate_data(%p,%zu,%zu) .. ERROR .. addr[%zu] != %d (value is 0x%08x)\n", addr, bytes, pad, i, 0xdeadbeef, addr[i]);
+      fprintf (stderr, "validate_data(%p,%zu,%zu) .. ERROR .. addr[%zu] != 0x%08x (value is 0x%08x)\n", addr, bytes, pad, i, 0xdeadbeef, addr[i]);
       success = 0;
     }
   }
@@ -90,9 +93,9 @@ unsigned validate_data (uint32_t * addr, size_t bytes, size_t pad)
   uint8_t * data = (uint8_t *) &addr[i];
   for (i=0; i<bytes; i++)
   {
-    if (data[i] != ~(bytes-i))
+    if (data[i] != (uint8_t)~(bytes-i))
     {
-      fprintf (stderr, "validate_data(%p,%zu,%zu) .. ERROR .. data[%zu] != %zu (value is 0x%08x)\n", addr, bytes, pad, i, ~(bytes-i), data[i]);
+      fprintf (stderr, "validate_data(%p,%zu,%zu) .. ERROR .. data[%zu] != 0x%02x (value is 0x%02x)\n", addr, bytes, pad, i, ~(bytes-i), data[i]);
       success = 0;
     }
   }
@@ -102,7 +105,7 @@ unsigned validate_data (uint32_t * addr, size_t bytes, size_t pad)
   {
     if (p[i] != 0xdeadbeef)
     {
-      fprintf (stderr, "validate_data(%p,%zu,%zu) .. ERROR .. p[%zu] != %d (value is 0x%08x)\n", addr, bytes, pad, i, 0xdeadbeef, p[i]);
+      fprintf (stderr, "validate_data(%p,%zu,%zu) .. ERROR .. p[%zu] != 0x%08x (value is 0x%08x)\n", addr, bytes, pad, i, 0xdeadbeef, p[i]);
       success = 0;
     }
   }
@@ -149,8 +152,8 @@ static void get_done (pami_context_t   context,
   else
   {
     // validate the data!
-    print_data ((void *)info->buffer, info->bytes + info->pad * 4 * 2);
-    if (!validate_data(info->buffer, info->bytes, info->pad))
+    print_data ((void *)info->buffer, 4*12);
+    if (!validate_data(info->buffer, info->bytes, 4))
     {
       TRACE_ERR((stderr, "   get_done() PAMI_Get data validation error.\n"));
       status = 2; // get data validation failure
@@ -189,14 +192,15 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
   rts_info_t * rts = (rts_info_t *) header_addr;
   fprintf (stderr, "   'rts' dispatch function.  rts->origin = 0x%08x, rts->bytes = %zu, rts->source = %p\n", rts->origin, rts->bytes, rts->source);
 
+  size_t pad  = BUFFERSIZE;
   get_info_t * get = (get_info_t *) malloc (sizeof(get_info_t));
   get->value  = active;
   get->origin = rts->origin;
   get->bytes  = rts->bytes;
-  get->pad    = 16;
+  get->pad    = pad;
 
-  initialize_data (get->buffer, 0, BUFFERSIZE>>2);
-  print_data (get->buffer, BUFFERSIZE);
+  initialize_data (get->buffer, 0, 6);
+  print_data (get->buffer, 12*4);
 
   pami_get_simple_t parameters;
   parameters.rma.dest    = rts->origin;
@@ -204,7 +208,7 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
   parameters.rma.bytes   = rts->bytes;
   parameters.rma.cookie  = get;
   parameters.rma.done_fn = get_done;
-  parameters.addr.local  = (void *) (get->buffer);
+  parameters.addr.local  = (void *) (get->buffer+4);
   parameters.addr.remote = rts->source;
   PAMI_Get (context, &parameters);
 

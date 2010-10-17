@@ -80,6 +80,7 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
   _nonzero = 1;
 
   pami_put_simple_t parameters;
+  memset(&parameters, 0, sizeof (parameters));
   parameters.rma.dest    = info->origin;
   //parameters.rma.hints   = {0};
   parameters.rma.bytes   = sizeof(size_t);
@@ -217,7 +218,7 @@ fprintf (stderr, "Before PAMI_Send_immediate()\n");
 fprintf (stderr, "Wait for 'ack', _done (%p) = %zu\n", &_done, _done);
     while (!_done)
     {
-      result = PAMI_Context_advance (context[0], 100);
+      PAMI_Context_advance (context[0], 100);
       if (result != PAMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
@@ -237,7 +238,7 @@ fprintf (stderr, "Wait for 'ack', _done (%p) = %zu\n", &_done, _done);
 fprintf (stderr, "Wait for message, _done = %zu, contextid = %zu\n", _done, contextid);
     while (!_done != 0)
     {
-      result = PAMI_Context_advance (context[contextid], 100);
+      PAMI_Context_advance (context[contextid], 100);
       if (result != PAMI_SUCCESS)
       {
         fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
