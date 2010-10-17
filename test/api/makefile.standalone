@@ -1,0 +1,142 @@
+# Change these parameters for your platform
+PAMI_INCLUDE   := /usr/include
+PAMI_LIB       := /usr/lib
+PAMI_LIBNAME   := -lpami_r
+C_COMPILER     := mpicc
+CXX_COMPILER   := mpic++
+LINKER         := gcc
+
+##### You shouldn't have to edit under this line ######
+CC        := ${C_COMPILER}  -O2 -g -I${PAMI_INCLUDE} 
+CXX       := ${CXX_COMPILER} -O2 -g -I${PAMI_INCLUDE} 
+LD        := ${LINKER}    -L${PAMI_LIB} ${PAMI_LIBNAME}
+ECHO      := echo
+
+MODULES   := p2p client collectives context endpoint extensions p2p/send p2p/get p2p/put p2p/rget p2p/rput \
+	     p2p/send/send_to_self_immed p2p/send/send_to_self_perf time extensions/test extensions/torus
+SRC_DIR   := $(addprefix ./,$(MODULES))
+BUILD_DIR := $(addprefix build/,$(MODULES))
+
+SRC       := $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.c))
+SRC       += $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.cc))
+
+OBJ       += $(patsubst %.c,build/%.o,$(SRC))
+OBJ       += $(patsubst %.cc,build/%.o,$(SRC))
+
+EXE       := $(patsubst %.o,build/%.exe,$(OBJ))
+
+INCLUDES  := $(addprefix -I,$(SRC_DIR))
+
+vpath %.cc $(SRC_DIR)
+vpath %.c  $(SRC_DIR)
+
+define make-goal
+.SUFFIXES:
+
+.SUFFIXES: .o .c .cc 
+
+.SECONDARY:
+
+.c.o::
+	@ $(ECHO) "[CC]:  $$< -> $$@"
+	@ $(CC) $(INCLUDES) -c $$< -o build/$$@
+
+.cc.o::
+	@ $(ECHO) "[CXX]: $$< -> $$@"
+	@ $(CXX) $(INCLUDES) -c $$< -o build/$$@
+
+build/%.exe: %.o
+	@ $(ECHO) "  [LD]: $$< -> $$@"
+	@ $(LD) build/$$< -o $$@
+endef
+
+.PHONY: all checkdirs clean
+
+all: checkdirs build/init.exe \
+build/init_coll.exe \
+build/client/configuration.exe \
+build/client/hello.exe \
+build/collectives/allgather.exe \
+build/collectives/allgatherv.exe \
+build/collectives/allreduce.exe \
+build/collectives/allreduce_subcomm.exe \
+build/collectives/alltoall.exe \
+build/collectives/alltoallv.exe \
+build/collectives/ambcast.exe \
+build/collectives/barrier.exe \
+build/collectives/barrier_subcomm.exe \
+build/collectives/bcast.exe \
+build/collectives/bcast_subcomm.exe \
+build/collectives/bcast_subcomm2.exe \
+build/collectives/bcast_subcomm_noparent.exe \
+build/collectives/reduce.exe \
+build/collectives/reduce_subcomm.exe \
+build/collectives/scatter.exe \
+build/collectives/scatterv.exe \
+build/context/advance.exe \
+build/context/create.exe \
+build/context/lock.exe \
+build/context/multi-advance.exe \
+build/context/multi-create.exe \
+build/context/post-multithreaded-perf.exe \
+build/context/post-multithreaded.exe \
+build/context/post-perf.exe \
+build/context/post.exe \
+build/endpoint/endpoint_table.exe \
+build/p2p/send/send_immediate_pingpong_ring.exe \
+build/p2p/send_latency.exe \
+build/p2p/sendimmediate_latency.exe \
+build/p2p/udp_simple_send.exe \
+build/p2p/adi.exe \
+build/p2p/default-send-nplus1.exe \
+build/p2p/default-send.exe \
+build/p2p/dispatch.exe \
+build/p2p/get/simple_get_func.exe \
+build/p2p/immediate_send.exe \
+build/p2p/immediate_send_overflow.exe \
+build/p2p/put/simple_put_func.exe \
+build/p2p/rget/simple_rget_func.exe \
+build/p2p/rput/simple_rput_func.exe \
+build/p2p/send/default-send-1.exe \
+build/p2p/send/long-header-matrix.exe \
+build/p2p/send/long-header.exe \
+build/p2p/send/mmps.exe \
+build/p2p/send/rdma-matrix.exe \
+build/p2p/send/send_flood_perf.exe \
+build/p2p/send/send_to_self.exe \
+build/p2p/send/send_to_self_immed/send_to_self_immed.exe \
+build/p2p/send/send_to_self_perf/send_to_self_perf.exe \
+build/p2p/send/send_unexpected_func.exe \
+build/p2p/send/shmem-matrix.exe \
+build/p2p/send/sqmr.exe \
+build/p2p/simple-send-immediate.exe \
+build/time/tick.exe \
+build/time/time.exe \
+build/time/timebase.exe \
+build/extensions/test/extension_test.exe \
+build/extensions/torus/extension_torus.exe 
+
+## These don't build
+# build/p2p/send/eager_concurrency.exe
+# build/p2p/send/long-header-hard-match.exe 
+# build/p2p/send/long-header-hard-opp.exe 
+# build/extensions/multisend/multicast.exe \
+# build/extensions/multisend/multicast_as.exe \
+# build/extensions/multisend/multicast_global.exe \
+# build/extensions/multisend/multicast_local.exe \
+# build/extensions/multisend/multicast_local_as.exe \
+# build/extensions/multisend/multicast_pwq.exe \
+# build/extensions/multisend/multicast_pwq_as.exe \
+# build/extensions/multisend/multicombine_global.exe \
+# build/extensions/multisend/multisync_global.exe \
+# build/extensions/topology/topology.exe
+
+checkdirs: $(BUILD_DIR)
+
+$(BUILD_DIR):
+	@mkdir -p $@
+
+clean:
+	@rm -rf $(BUILD_DIR)
+
+$(foreach bdir,$(BUILD_DIR),$(eval $(call make-goal,$(bdir))))
