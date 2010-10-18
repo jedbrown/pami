@@ -14,7 +14,7 @@ int main (int argc, char ** argv)
   pami_configuration_t query = {name:PAMI_CLIENT_WTICK};
   double value;
 
-  PAMI_Client_create("PAMI Example", &client, NULL, 0);
+  PAMI_Client_create("TEST", &client, NULL, 0);
   PAMI_Context_createv(client, NULL, 0, &context, num);
 
   fprintf (stdout, "Before PAMI_Wtick()\n");

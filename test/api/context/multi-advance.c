@@ -43,7 +43,7 @@ int main (int argc, char ** argv)
     if (result == PAMI_SUCCESS)
     {
       fprintf (stdout, "Before PAMI_Context_advance(), context = %zu\n", i);
-      result = PAMI_Context_advance (context[1], 1);
+      result = PAMI_Context_advance (context[i], 1);
       fprintf (stdout, " After PAMI_Context_advance(), context = %zu, result = %d\n", i, result);
     }
   }

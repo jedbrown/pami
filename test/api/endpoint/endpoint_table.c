@@ -8,7 +8,7 @@
 
 pami_endpoint_t * _endpoint;
 
-static void createEndpointTable (pami_client_t client)
+static void createEndpointTable (pami_client_t client, int num)
 {
   pami_configuration_t configuration;
   configuration.name = PAMI_CLIENT_NUM_TASKS;
@@ -24,9 +24,9 @@ static void createEndpointTable (pami_client_t client)
 
   _endpoint =
     (pami_endpoint_t *) malloc (sizeof(pami_endpoint_t) *
-                                global_tasks * 4);
+                                global_tasks * num);
 
-  size_t i, n, size = global_tasks * 4;
+  size_t i, n, size = global_tasks * num;
   pami_endpoint_t * ptr = _endpoint;
   n = size;
   for (i=0; i<global_tasks; i++)
@@ -75,15 +75,21 @@ static pami_result_t send_endpoint (pami_context_t   context,
 int main ()
 {
   pami_client_t client;
-  pami_context_t context[4];
+  pami_context_t *context;
   pami_result_t result;
-
-  PAMI_Client_create ("name", &client, NULL, 0);
-
+  pami_configuration_t configuration;
+  
+  PAMI_Client_create ("TEST", &client, NULL, 0);
+  
+  configuration.name = PAMI_CLIENT_NUM_CONTEXTS;
+  result = PAMI_Client_query(client, &configuration, 1);
+  size_t num = configuration.value.intval;
+  context = (pami_context_t*) malloc (num*sizeof(pami_context_t));
+  
   /* Create four contexts - every task creates the same number */
-  PAMI_Context_createv (client, NULL, 0, context, 4);
+  PAMI_Context_createv (client, NULL, 0, context, num);
 
-  createEndpointTable (client);
+  createEndpointTable (client, num);
 
 
   pami_dispatch_callback_fn fn;
@@ -92,7 +98,7 @@ int main ()
   volatile size_t expect = 0;
 
   size_t i;
-  for (i=0; i<4; i++)
+  for (i=0; i<num; i++)
   {
     PAMI_Context_lock (context[i]);
     result = PAMI_Dispatch_set (context[i], 0, fn, (void *)&expect, options);
@@ -102,8 +108,6 @@ int main ()
       return 1;
     }
   }
-
-  pami_configuration_t configuration;
 
   configuration.name = PAMI_CLIENT_TASK_ID;
   result = PAMI_Client_query(client, &configuration, 1);
@@ -124,9 +128,9 @@ int main ()
   }
   size_t num_tasks = configuration.value.intval;
   fprintf (stderr, "Number of tasks = %zu\n", num_tasks);
-  if (num_tasks < 2)
+  if (num*num_tasks < 7)
   {
-    fprintf (stderr, "Error. This test requires at least 2 tasks. Number of tasks in this job: %zu\n", num_tasks);
+    fprintf (stderr, "Error. This test requires at least 7 endpoints. Number of endpoints in this job: %zu\n", num*num_tasks);
     return 1;
   }
 
@@ -142,18 +146,20 @@ int main ()
   parameters.send.header.iov_len  = 16;
   parameters.send.data.iov_base   = data;
   parameters.send.data.iov_len    = 1024;
+  parameters.send.hints           = options;
   parameters.events.cookie        = (void *) &active;
   parameters.events.local_fn      = decrement;
+  parameters.events.remote_fn     = NULL;
 
   /* Send a message to endpoint "6" */
-  send_endpoint (context[0], 6, &parameters);
+  send_endpoint (context[0], 1, &parameters);
 
   fprintf (stdout, "before advance, active = %zu, expect = %zu\n", active, expect);
-  while ((active + expect) > 0) PAMI_Context_advancev (context, 4, 100);
+  while ((active + expect) > 0) PAMI_Context_advancev (context, num, 100);
 
-  for (i=0; i<4; i++) PAMI_Context_unlock (context[i]);
+  for (i=0; i<num; i++) PAMI_Context_unlock (context[i]);
 
-  result = PAMI_Context_destroyv (context, 4);
+  result = PAMI_Context_destroyv (context, num);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
