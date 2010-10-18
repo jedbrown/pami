@@ -2024,9 +2024,7 @@ namespace PAMI
     PAMI_ENDPOINT_INFO(origin, originTask, this->_contextid);
     size_t                    originIndex  = topology->rank2Index(originTask);
 
-#if ASSERT_LEVEL > 0
     size_t                    bytesToProduce = pwq->bytesAvailableToProduce(originIndex);
-#endif
 
     char                     *buffer = pwq->bufferToProduce(originIndex);
 

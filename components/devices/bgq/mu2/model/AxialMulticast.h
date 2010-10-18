@@ -413,13 +413,17 @@ namespace PAMI
 
         /// \todo eventually assert that our input is axial instead of converting above
         PAMI_assert(dst_topology->type() == PAMI_AXIAL_TOPOLOGY);
-        pami_coord_t *ll;
-        pami_coord_t *ur;
-        pami_coord_t *ref;
-        unsigned char *isTorus;
+        pami_coord_t *ll=NULL;
+        pami_coord_t *ur=NULL;
+        pami_coord_t *ref=NULL;
+        unsigned char *isTorus=NULL;
 
+#if ASSERT_LEVEL > 0
         pami_result_t result = dst_topology->axial(&ll, &ur, &ref, &isTorus);
         PAMI_assert(result == PAMI_SUCCESS);
+#else
+        dst_topology->axial(&ll, &ur, &ref, &isTorus);
+#endif
         TRACE_FORMAT("ll[%zu,%zu,%zu,%zu,%zu], ur[%zu,%zu,%zu,%zu,%zu]",                             
                      ll->u.n_torus.coords[0],                                 
                      ll->u.n_torus.coords[1],                                 
@@ -431,7 +435,6 @@ namespace PAMI
                      ur->u.n_torus.coords[2],                                 
                      ur->u.n_torus.coords[3],                                 
                      ur->u.n_torus.coords[4]);                                
-        PAMI_assert(result == PAMI_SUCCESS);
 
         pami_task_t   target_task_p=0, target_task_m=0; //target tasks (+) and (-) directions
         size_t        target_offset = mcast->context;
