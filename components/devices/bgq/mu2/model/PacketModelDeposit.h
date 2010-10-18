@@ -37,7 +37,7 @@ namespace PAMI
           inline PacketModelDeposit (MU::Context & context) :
               MU::PacketModel (context)
           {
-#ifdef __bgq__
+#if 0//__bgq__
 //          PAMI_assert(T_DIRECTION != UNDETERMINED);
             PAMI_assert((T_DIRECTION == MINUS) || (T_DIRECTION == POSITIVE)); // In case we add directions?
 
