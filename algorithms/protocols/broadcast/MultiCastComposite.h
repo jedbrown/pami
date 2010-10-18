@@ -15,7 +15,7 @@
 
 #ifndef CCMI_TRACE_ALL
   #undef TRACE_ADAPTOR
-  #define TRACE_ADAPTOR(x) //fprintf x
+#define TRACE_ADAPTOR(x) //fprintf x
 #endif
 
 namespace CCMI
@@ -329,7 +329,10 @@ namespace CCMI
       };
 
       /// A composite for a 2 device multicast
-      template <class T_Geometry>
+      // The T_Sync boolean forces an msync before the global multicast.  This is for 
+      // devices that do not support buffering unexpected messages.
+      /// \todo BGQ/MU will use this until MU broadcast 'features' are resolved (Issue 1714)
+      template <class T_Geometry, bool T_Sync=false>
       class MultiCastComposite2Device : public CCMI::Executor::Composite
       {
       public:
@@ -397,6 +400,10 @@ namespace CCMI
           size_t           numLocal    = t_local->size();
           TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, bytes=%ld buf=%p\n",
                          &_pwq0, &_pwq1, bytes, cmd->cmd.xfer_broadcast.buf));
+          DO_DEBUG(for (unsigned j = 0; j < numMasters; ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>localMasterTopo[%u]=%zu, size %zu\n", t_master, j, (size_t)t_master->index2Rank(j), numMasters));
+          DO_DEBUG(for (unsigned j = 0; j < numLocal; ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>localTopo[%u]=%zu, size %zu\n", t_local,j, (size_t)t_local->index2Rank(j), numLocal));
+          DO_DEBUG(for (unsigned j = 0; j < t_my_master->size(); ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>myMasterTopo[%u]=%zu, size %zu\n",t_my_master,j, (size_t)t_my_master->index2Rank(j), t_my_master->size()));
+
           if (bytes == 0)
           {
             fn(NULL,  cookie, PAMI_SUCCESS); /// \todo, deliver the context
@@ -621,6 +628,7 @@ namespace CCMI
               _active_native[0]           =_native_l;
               cb_count++;
             }
+            TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Non-master, Non-root, numLocal=%zu, src %p, dst %p\n", numLocal, _minfo_l.src_participants,_minfo_l.dst_participants));
           }
 
           if (cb_count == 1)
@@ -636,8 +644,45 @@ namespace CCMI
           _count                      = 0;
           _master_done.function       = fn;
           _master_done.clientdata     = cookie;
+
+          if(T_Sync)
+          {
+            _deviceMsyncInfo          = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID); /// \todo switch to PAMI_GKEY_MSYNC_CLASSROUTEID
+            // Initialize the msync
+            _msync.client             = 0;
+            _msync.context            = 0; /// \todo ?
+            _msync.cb_done.function   = cb_msync_done;
+            _msync.cb_done.clientdata = this;
+            _msync.connection_id      = 0; /// \todo ?
+            _msync.roles              = -1U;
+            _msync.participants       = amMaster && (t_master->size() > 1)? (pami_topology_t *) t_master: (pami_topology_t *) NULL;
+          }
+
         }
+        static void cb_msync_done(pami_context_t context, void *me, pami_result_t err)
+        {
+          TRACE_ADAPTOR((stderr, "MultiCastComposite2Device::cb_msync_done()\n"));
+          MultiCastComposite2Device *m = (MultiCastComposite2Device*) me;
+          CCMI_assert (m != NULL);
+
+          // Msync is done, start the active message mcast on the root
+          m->startMcast();
+        }
+
         virtual void start()
+        {
+          TRACE_ADAPTOR((stderr, "MultiCastComposite2Device::start()\n"));
+          if(T_Sync)
+          {
+            if(_msync.participants)
+            {
+             _native_g->multisync(&_msync, _deviceMsyncInfo);
+             return;
+            }
+          }
+          startMcast();
+        }
+        void startMcast()
         {
           TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Multicast start()\n"));
           if (_active_native[0])
@@ -675,6 +720,8 @@ namespace CCMI
         size_t                              _count;
         PWQBuffer                           _pwqBuf;
         PWQBuffer                          *_activePwqBuf;
+        void                               * _deviceMsyncInfo;
+        pami_multisync_t                     _msync;
       };
 
 
@@ -706,6 +753,7 @@ namespace CCMI
           void done_fn( pami_context_t   context,
                         pami_result_t    result )
           {
+            TRACE_ADAPTOR((stderr, "MultiCastComposite2DeviceFactoryT::done_fn()\n"));
             _user_done_fn(context, _user_cookie, result);
           }
 
@@ -806,6 +854,7 @@ namespace CCMI
                             void           *clientdata,
                             pami_result_t   res)
         {
+          TRACE_ADAPTOR((stderr, "MultiCastComposite2DeviceFactoryT::done_fn\n"));
           collObj *cobj = (collObj *)clientdata;
           cobj->done_fn(context, res);
           cobj->_factory->_alloc.returnObject(cobj);
@@ -824,7 +873,7 @@ namespace CCMI
                                                void            *cmd)
         {
           collObj *cobj = (collObj*) _alloc.allocateObject();
-          TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::generate()\n", cobj));
+          TRACE_ADAPTOR((stderr, "<%p>MultiCastComposite2DeviceFactoryT::generate()\n", cobj));
           new(cobj) collObj(_native_l,          // Native interface local
                             _native_g,          // Native Interface global
                             _cmgr,              // Connection Manager

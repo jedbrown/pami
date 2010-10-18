@@ -54,7 +54,7 @@ namespace PAMI
           strncpy(&m->name[0], "MultiCast2DeviceConverged", 32);
         }
         typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT
-        < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS>,
+        < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS, true>,
         McastMetaData,
         CCMI::ConnectionManager::SimpleConnMgr>
         MultiCastFactory;
@@ -221,7 +221,7 @@ namespace PAMI
           new(broadcast_reg) Broadcast::MultiCastFactory(&_sconnmgr,
                                                          (CCMI::Interfaces::NativeInterface *)ni,
                                                          false,  // local protocols are not active message (2 sided), will not register
-                                                         (CCMI::Interfaces::NativeInterface *)_g_broadcast_ni,
+                                                         (CCMI::Interfaces::NativeInterface *)&_g_broadcast_ni,
                                                          true);  // global protocols ARE active message, will register async
           geometryInfo->_broadcast                       = broadcast_reg;
 
@@ -229,7 +229,7 @@ namespace PAMI
           Allreduce::MultiCombineFactory  *allreduce_reg = (Allreduce::MultiCombineFactory*)_factory_allocator.allocateObject();
           new(allreduce_reg) Allreduce::MultiCombineFactory(&_sconnmgr,
                                                             (CCMI::Interfaces::NativeInterface *)ni,
-                                                            (CCMI::Interfaces::NativeInterface *)_g_allreduce_ni);
+                                                            (CCMI::Interfaces::NativeInterface *)&_g_allreduce_ni);
           geometryInfo->_allreduce                       = allreduce_reg;
 
           //  ----->  Allreduce

@@ -683,7 +683,7 @@ public:
             CollShmWindow  *window;
             int pollcnt = 10;
 
-            TRACE_DBG((stderr, "<%p>CollShmThread::_advanceThread() action %u\n", this, _action));
+            //TRACE_DBG((stderr, "<%p>CollShmThread::_advanceThread() action %u\n", this, _action));
             // common action handling
             switch (_action) {
               case NOACTION: // just started
@@ -736,6 +736,7 @@ public:
             if (msg) { // if there is still valid message pointer, then more progress must be needed
               switch ( msg->getMsgType() ) {
                 case MultiCast:
+                  TRACE_DBG((stderr, "<%p>CollShmThread::_advanceThread() msg %p\n", this, msg));
                   rc = progressMulticast(static_cast< CollShmMessage<pami_multicast_t, CollShmDevice> *>(msg));
                   break;
                 case MultiSync:
@@ -796,6 +797,10 @@ public:
                  mcast  = (pami_multicast_t *) static_cast<CollShmMessage<pami_multicast_t, CollShmDevice> *>(_msg)->getMulti();
                  topo   = (PAMI::Topology *)mcast->src_participants;
                  root   = _device->getTopo()->rank2Index(topo->index2Rank(0));
+		 //                 for (unsigned j = 0; j < topo->size(); ++j) fprintf(stderr, "<%p>topo[%u]=%zu, size %zu\n", topo, j, (size_t)topo->index2Rank(j), topo->size());
+		 //                 for (unsigned j = 0; j < _device->getTopo()->size(); ++j) fprintf(stderr, "_device->getTopo()[%u]=%zu, size %zu\n", j, (size_t)_device->getTopo()->index2Rank(j), _device->getTopo()->size());
+                 TRACE_DBG((stderr, "CollShmThread::initThread() topo->index2Rank(0) %d\n",(int)topo->index2Rank(0)));
+                 
                  _len   = mcast->bytes;
                  _wlen  = 0;
                  // Need to compare flat XMEM_ATTACH vs. pipeline tree COPYINOUT
@@ -1324,7 +1329,7 @@ public:
         /// \return pointer to the corresponding window
         INLINE CollShmWindow * getWindow (unsigned geometry, size_t peer, unsigned channel)
         {
-          TRACE_DBG((stderr,"<%p>getWindow() _wgroup[%zu]=%p window[%d]=%p\n",this, peer, _wgroups[peer], channel, &(_wgroups[peer]->windows[channel])));
+          //TRACE_DBG((stderr,"<%p>getWindow() _wgroup[%zu]=%p window[%d]=%p\n",this, peer, _wgroups[peer], channel, &(_wgroups[peer]->windows[channel])));
           return &(_wgroups[peer]->windows[channel]);
         }
 

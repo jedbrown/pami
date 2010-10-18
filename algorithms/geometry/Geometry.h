@@ -37,8 +37,9 @@
 #include "components/memory/MemoryAllocator.h"
 typedef PAMI::Counter::GccProcCounter GeomCompCtr;
 
-#define LOCAL_MASTER_TOPOLOGY_INDEX -1  // index into _topos[] for master/global sub-topology
+#define MASTER_TOPOLOGY_INDEX       -1  // index into _topos[] for master/global sub-topology
 #define LOCAL_TOPOLOGY_INDEX        -2  // index into _topos[] for local sub-topology
+#define LOCAL_MASTER_TOPOLOGY_INDEX -3  // index into _topos[] for local master sub-topology
 
 namespace PAMI
 {
@@ -94,8 +95,8 @@ namespace PAMI
           _rank = mapping->task();
           _numtopos =  numranges + 1;
 
-          _topos = new PAMI::Topology[_numtopos + 2]; // storing numtopos + local + global
-          _topos = &_topos[2]; // skip local & global storage
+          _topos = new PAMI::Topology[_numtopos + 3]; // storing numtopos + local + global + local_master
+          _topos = &_topos[3]; // skip local & global storage & local_master
 
           for (i = 0; i < numranges; i++)
             nranks += (rangelist[i].hi - rangelist[i].lo + 1);
@@ -134,8 +135,10 @@ namespace PAMI
           _global_all_topo   = &_topos[0];
           _local_master_topo = &_topos[-1];
           _local_topo        = &_topos[-2];
+          _my_master_topo    = &_topos[-3];
           _global_all_topo->subTopologyLocalMaster(_local_master_topo);
           _global_all_topo->subTopologyLocalToMe(_local_topo);
+          _local_master_topo->subTopologyLocalToMe(_my_master_topo);
 
           // Find master participant on the tree/cau network
           size_t            num_master_tasks = _local_master_topo->size();
@@ -186,8 +189,8 @@ namespace PAMI
           _rank = mapping->task();
           _numtopos =  1;
 
-          _topos = new PAMI::Topology[_numtopos + 2]; // storing numtopos + local + global
-          _topos = &_topos[2]; // skip local & global storage
+          _topos = new PAMI::Topology[_numtopos + 3]; // storing numtopos + local + global + local_master
+          _topos = &_topos[3]; // skip local & global storage & local_master
 
           // this creates the topology including all subtopologies
           new (&_topos[0]) PAMI::Topology(topology);
@@ -196,8 +199,10 @@ namespace PAMI
           _global_all_topo   = &_topos[0];
           _local_master_topo = &_topos[-1];
           _local_topo        = &_topos[-2];
+          _my_master_topo    = &_topos[-3];
           _global_all_topo->subTopologyLocalMaster(_local_master_topo);
           _global_all_topo->subTopologyLocalToMe(_local_topo);
+          _local_master_topo->subTopologyLocalToMe(_my_master_topo);
           // Find master participant on the tree/cau network
           size_t            num_master_tasks = _local_master_topo->size();
           size_t            num_local_tasks = _local_topo->size();
@@ -337,8 +342,7 @@ namespace PAMI
         }
       inline pami_topology_t* getMyMasterTopology_impl()
         {
-          PAMI_abort();
-          return NULL;
+          return (pami_topology_t*)_my_master_topo;
         }
       inline unsigned                  comm_impl()
         {
@@ -817,6 +821,7 @@ namespace PAMI
       PAMI::Topology                               *_global_all_topo;
       PAMI::Topology                               *_local_master_topo;
       PAMI::Topology                               *_local_topo;
+      PAMI::Topology                               *_my_master_topo;
 
     }; // class Geometry
   };  // namespace Geometry
