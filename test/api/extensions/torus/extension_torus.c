@@ -27,7 +27,7 @@ typedef const pami_extension_torus_information_t * (*pami_extension_torus_inform
 typedef pami_result_t (*pami_extension_torus_task2torus_fn) (pami_task_t, size_t[]);
 typedef pami_result_t (*pami_extension_torus_torus2task_fn) (size_t[], pami_task_t *);
 
-#define DBG_FPRINTF(x) //fprintf x
+#define DBG_FPRINTF(x) /*fprintf x */
 
 int main(int argc, char ** argv)
 {
@@ -123,10 +123,10 @@ int main(int argc, char ** argv)
     return 1;
   }
 
-  //coord[0] = 0;
-  //coord[1] = 0;
-  //coord[2] = 0;
-  //coord[3] = 1;
+  /*coord[0] = 0; */
+  /*coord[1] = 0; */
+  /*coord[2] = 0; */
+  /*coord[3] = 1; */
   status = pamix_torus_torus2task (coord, &task);
   if (status != PAMI_SUCCESS)
   {

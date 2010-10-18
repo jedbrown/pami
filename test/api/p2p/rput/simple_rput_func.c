@@ -1,20 +1,20 @@
-///
-/// \file test/api/p2p/rput/simple_rput_func.c
-/// \brief Simple point-to-point PAMI_Rget() test
-///
-/// This test implements a very simple "rendezvous" communication and
-/// depends on a functional PAMI_Send_immediate() function.
-///
+/*/ */
+/*/ \file test/api/p2p/rput/simple_rput_func.c */
+/*/ \brief Simple point-to-point PAMI_Rget() test */
+/*/ */
+/*/ This test implements a very simple "rendezvous" communication and */
+/*/ depends on a functional PAMI_Send_immediate() function. */
+/*/ */
 
 #include <pami.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 
-//#define TEST_CROSSTALK
+/*#define TEST_CROSSTALK */
 
-//#define USE_SHMEM_OPTION
-//#define NO_SHMEM_OPTION
+/*#define USE_SHMEM_OPTION */
+/*#define NO_SHMEM_OPTION */
 
 #define DISPATCH_ID_MEMREGION 10
 
@@ -22,7 +22,7 @@
 #define MAXTASKS 64
 
 #undef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x) /* fprintf x */
 
 
 
@@ -276,7 +276,7 @@ int main (int argc, char ** argv)
 
       /* initialize common rput parameters */
       pami_rput_simple_t parameters;
-      //parameters.rma.hints          = 0;
+      /*parameters.rma.hints          = 0; */
       parameters.rma.bytes          = sizeof(size_t);
       parameters.rma.cookie         = (void *) &_info[cid].active;
       parameters.rma.done_fn        = decrement;
@@ -362,7 +362,7 @@ int main (int argc, char ** argv)
 
       /* initialize common rput parameters */
       pami_rput_simple_t parameters;
-      //parameters.rma.hints          = 0;
+      /*parameters.rma.hints          = 0; */
       parameters.rma.bytes          = sizeof(size_t);
       parameters.rma.cookie         = (void *) &_info[cid].active;
       parameters.rma.done_fn        = decrement;
@@ -403,7 +403,7 @@ int main (int argc, char ** argv)
   for (; cid<2; cid++)
 #endif
   {
-    // Destroy the local memory region
+    /* Destroy the local memory region */
     PAMI_Memregion_destroy (context[cid], &_info[cid].mr[task_id]);
   }
 

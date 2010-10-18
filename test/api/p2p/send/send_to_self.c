@@ -1,7 +1,7 @@
-///
-/// \file test/api/p2p/send/send_to_self.c
-/// \brief "send to self" point-to-point PAMI_Send() test
-///
+/*/ */
+/*/ \file test/api/p2p/send/send_to_self.c */
+/*/ \brief "send to self" point-to-point PAMI_Send() test */
+/*/ */
 
 #include <stdio.h>
 
@@ -64,7 +64,7 @@ static void send_done_remote (pami_context_t   context,
 #endif
 int main (int argc, char ** argv)
 {
-  //volatile size_t send_active = 2;
+  /*volatile size_t send_active = 2; */
   volatile size_t send_active = 1;
   volatile size_t recv_active = 1;
 
@@ -111,7 +111,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, result);
     return 1;
   }
-  //size_t num_tasks = configuration.value.intval;
+  /*size_t num_tasks = configuration.value.intval; */
 
   size_t dispatch = 0;
   pami_dispatch_callback_fn fn;
@@ -131,13 +131,13 @@ int main (int argc, char ** argv)
 
   pami_send_t parameters;
   parameters.send.dispatch        = dispatch;
-  parameters.send.header.iov_base = (void *)&dispatch; // send *something*
+  parameters.send.header.iov_base = (void *)&dispatch; /* send *something* */
   parameters.send.header.iov_len  = sizeof(size_t);
-  parameters.send.data.iov_base   = (void *)&dispatch; // send *something*
+  parameters.send.data.iov_base   = (void *)&dispatch; /* send *something* */
   parameters.send.data.iov_len    = sizeof(size_t);
   parameters.events.cookie    = (void *) &send_active;
   parameters.events.local_fn  = send_done_local;
-  //parameters.events.remote_fn = send_done_remote;
+  /*parameters.events.remote_fn = send_done_remote; */
   parameters.events.remote_fn = NULL;
 #if 1
   int iter;

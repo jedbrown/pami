@@ -1,6 +1,6 @@
-//
-/// \file test/api/collectives/allgatherv.c
-///
+/* */
+/*/ \file test/api/collectives/allgatherv.c */
+/*/ */
 
 #include "../pami_util.h"
 

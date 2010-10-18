@@ -22,7 +22,7 @@
 
 #define BUFSIZE 1048576
 
-// Geometry Objects
+/* Geometry Objects */
 volatile unsigned        _g_barrier_active;
 volatile unsigned        _g_broadcast_active;
 
@@ -504,7 +504,7 @@ int main(int argc, char*argv[])
     }
 
   free(world_algorithm);
-  //  free(top_algorithm);
-  //  free(bottom_algorithm);
+  /*  free(top_algorithm); */
+  /*  free(bottom_algorithm); */
   return 0;
 }

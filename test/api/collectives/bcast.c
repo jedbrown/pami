@@ -1,11 +1,11 @@
-///
-/// \file test/api/collectives/bcast.c
-/// \brief Simple Bcast test
-///
+/*/ */
+/*/ \file test/api/collectives/bcast.c */
+/*/ \brief Simple Bcast test */
+/*/ */
 
 #include "../pami_util.h"
 
-//define this if you want to validate the data
+/*define this if you want to validate the data */
 #define CHECK_DATA
 
 #define BUFSIZE 524288

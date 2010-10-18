@@ -23,7 +23,7 @@
 #include <strings.h>
 
 #include "pami.h"
-//#include "../util/barrier.h"
+/*#include "../util/barrier.h" */
 
 #ifndef ITERATIONS
 #define ITERATIONS 1000
@@ -81,7 +81,7 @@ int setup_localpeers(pami_task_t *ranks, size_t nranks, pami_task_t *mine) {
 #define NEXT_BUFSIZE(sndlen)	((sndlen) * 3 / 2 + 1)
 #endif /* ! NEXT_BUFSIZE */
 
-#define TRACE_ERR(x...) // fprintf(x)
+#define TRACE_ERR(x...) /* fprintf(x) */
 
 static struct networks {
         size_t netw;
@@ -206,7 +206,7 @@ pami_recv_t *recv) {
                 memcpy(rbuf, pipe_addr, pipe_size);
                 recvflag = 0;
         } else {
-                //recv->
+                /*recv-> */
         }
 }
 
@@ -217,7 +217,7 @@ int setup_netw(int netpro, pami_context_t context, size_t *dispatch_id,
         fn.p2p = cb_recv;
         int net = netpro & 0x0000ffff;
         int pro = netpro >> 16;
-        // TBD: figure out which type of send we want, and then tell PAMI...
+        /* TBD: figure out which type of send we want, and then tell PAMI... */
         *dispatch_id = 0;
 
         pami_result_t e = PAMI_Dispatch_set(context, *dispatch_id, fn, cb_recv_cd,
@@ -225,7 +225,7 @@ int setup_netw(int netpro, pami_context_t context, size_t *dispatch_id,
         return e;
 }
 
-#if 0 // finish porting later... if needed...
+#if 0 /* finish porting later... if needed... */
 void send(PAMI_Protocol_t *proto, char *buf, size_t sndlen, size_t targetrank, DCMF_Consistency consistency) {
         PAMIQuad msginfo;
         PAMI_Request_t sender;
@@ -268,7 +268,7 @@ int test(pami_context_t context, size_t dispatch_id, pami_task_t rank,
 
         static bool init = true;
         if (init) {
-                // Configure and register barriers
+                /* Configure and register barriers */
                 barrier_init();
                 init = false;
         }
@@ -276,7 +276,7 @@ int test(pami_context_t context, size_t dispatch_id, pami_task_t rank,
 
         curr_tag = (((originrank << 8) | targetrank) << 16);
         sendflag = recvflag = 1;
-        // Warm-up...
+        /* Warm-up... */
         if (rank == originrank) {
                 send(context, dispatch_id, sbuf, 100, targetrank);
                 recv(context, dispatch_id, 100, false);

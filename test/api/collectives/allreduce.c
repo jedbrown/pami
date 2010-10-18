@@ -13,7 +13,7 @@
 
 #include "../pami_util.h"
 
-//define this if you want to validate the data for unsigned sums
+/*define this if you want to validate the data for unsigned sums */
 #define CHECK_DATA
 
 #define FULL_TEST
@@ -333,12 +333,12 @@ int main(int argc, char*argv[])
     for (j = DT_LOC_2INT; j <= DT_LOC_2DOUBLE; j++)
       validTable[i][j] = 1;
 
-  /// \todo These long long types reportedly fail in pgas, so disable for now.
+  /*/ \todo These long long types reportedly fail in pgas, so disable for now. */
   for (i = 0, j = DT_SIGNED_LONG_LONG; i < OP_COUNT; i++)validTable[i][j] = 0;
 
   for (i = 0, j = DT_UNSIGNED_LONG_LONG; i < OP_COUNT; i++)validTable[i][j] = 0;
 
-  /// \todo These fail using core math...we should find this bug.
+  /*/ \todo These fail using core math...we should find this bug. */
   validTable[OP_BAND][DT_DOUBLE] = 0;
 
 #if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
@@ -348,7 +348,7 @@ int main(int argc, char*argv[])
 
   if ((env == NULL) || ((*env == 'M') || (*env == 'B')))
     {
-      /// These are unsupported on MU
+      /*/ These are unsupported on MU */
       for (i = 0, j = DT_SIGNED_CHAR;    i < OP_COUNT; i++)validTable[i][j] = 0;
 
       for (i = 0, j = DT_UNSIGNED_CHAR;  i < OP_COUNT; i++)validTable[i][j] = 0;
@@ -384,7 +384,7 @@ int main(int argc, char*argv[])
       for (i = OP_MINLOC, j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
     }
 
-  // This works on bgq so re-enable it
+  /* This works on bgq so re-enable it */
   if ((env) && (*env == 'M'))
     validTable[OP_BAND][DT_DOUBLE] = 1;
 
@@ -466,7 +466,7 @@ int main(int argc, char*argv[])
 #ifdef CHECK_DATA
                     int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
 
-                    //assert (rc == 0);
+                    /*assert (rc == 0); */
                     if (rc) fprintf(stderr, "FAILED validation\n");
 
 #endif

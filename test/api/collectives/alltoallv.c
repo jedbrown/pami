@@ -17,10 +17,10 @@
 #define BUFSIZE       (MSGSIZE * MAX_COMM_SIZE)
 
 
-//#define INIT_BUFS(r)
+/*#define INIT_BUFS(r) */
 #define INIT_BUFS(r) init_bufs(r)
 
-//#define CHCK_BUFS
+/*#define CHCK_BUFS */
 #define CHCK_BUFS(s,r)    check_bufs(s,r)
 
 

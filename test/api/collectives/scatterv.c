@@ -1,7 +1,7 @@
-///
-/// \file test/api/collectives/scatterv.c
-/// \brief Simple Allgatherv test
-///
+/*/ */
+/*/ \file test/api/collectives/scatterv.c */
+/*/ \brief Simple Allgatherv test */
+/*/ */
 
 #include "../pami_util.h"
 

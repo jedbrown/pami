@@ -1,7 +1,7 @@
-///
-/// \file test/api/time/timebase.c
-/// \brief Simple PAMI_Wtimebase() test before PAMI_Client_create()
-///
+/*/ */
+/*/ \file test/api/time/timebase.c */
+/*/ \brief Simple PAMI_Wtimebase() test before PAMI_Client_create() */
+/*/ */
 
 #include <pami.h>
 #include <stdio.h>

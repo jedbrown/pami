@@ -20,7 +20,7 @@
 #include <pami.h>
 
 #define MSGCOUNT 1
-//#define MSGCOUNT 16
+/*#define MSGCOUNT 16 */
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR

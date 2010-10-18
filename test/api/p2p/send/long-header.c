@@ -1,12 +1,12 @@
-///
-/// \file test/api/p2p/send/long-header.c
-/// \brief "Long header" point-to-point PAMI_send() test
-///
+/*/ */
+/*/ \file test/api/p2p/send/long-header.c */
+/*/ \brief "Long header" point-to-point PAMI_send() test */
+/*/ */
 
 #include <pami.h>
 #include <stdio.h>
 
-//#define ENABLE_TRACE
+/*#define ENABLE_TRACE */
 
 #ifdef ENABLE_TRACE
 #define TRACE(x) fprintf x

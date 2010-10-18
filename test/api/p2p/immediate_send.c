@@ -1,15 +1,15 @@
-///
-/// \file test/api/p2p/immediate_send.c
-/// \brief Simple point-to-point PAMI_Send_immediate() test
-///
+/*/ */
+/*/ \file test/api/p2p/immediate_send.c */
+/*/ \brief Simple point-to-point PAMI_Send_immediate() test */
+/*/ */
 
 #include <pami.h>
 #include <stdio.h>
 
-//#define TEST_CROSSTALK
+/*#define TEST_CROSSTALK */
 
-//#define USE_SHMEM_OPTION
-//#define NO_SHMEM_OPTION
+/*#define USE_SHMEM_OPTION */
+/*#define NO_SHMEM_OPTION */
 
 
 unsigned validate (const void * addr, size_t bytes)

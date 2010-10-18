@@ -37,21 +37,21 @@ static double timer()
 #define TRACE_ERR(x)
 #endif
 
-// Testcase delay/sleep function (n seconds)
+/* Testcase delay/sleep function (n seconds) */
 #define delayTest(n) sleep(n)
 
-// Redefine delay/sleep for bgq mambo workarounds
+/* Redefine delay/sleep for bgq mambo workarounds */
 #ifdef __pami_target_bgq__
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 extern unsigned __isMambo();
-// sleep() doesn't appear to work in mambo right now.  A hackey simulation...
+/* sleep() doesn't appear to work in mambo right now.  A hackey simulation... */
 #undef delayTest
 #define delayTest(n) _mamboSleep(n, __LINE__)
 unsigned _mamboSleep(unsigned seconds, unsigned from)
 {
-  if (__isMambo()) /// \todo mambo hack
+  if (__isMambo()) /*/ \todo mambo hack */
   {
-    double dseconds = ((double)seconds)/1000; //mambo seconds are loooong.
+    double dseconds = ((double)seconds)/1000; /*mambo seconds are loooong. */
     double start = PAMI_Wtime (), d=0;
     while (PAMI_Wtime() < (start+dseconds))
     {

@@ -20,7 +20,7 @@
 #include "PipeWorkQueue.h"
 #include "Topology.h"
 
-#define DBG_FPRINTF(x) //fprintf x
+#define DBG_FPRINTF(x) /*fprintf x */
 #define DBGF_FUNCTIONNAME DBG_FPRINTF((stderr,"%.*s\n",_function_name_len(__PRETTY_FUNCTION__),_function_name(__PRETTY_FUNCTION__)))
 
 namespace PAMI
@@ -186,46 +186,46 @@ namespace PAMI
         size_t x;
 
 
-        if(isRoot) // validate untouched src buffer
+        if(isRoot) /* validate untouched src buffer */
           for(x = 0; x < count_of_unsigneds && errors < 5 ; ++x)
           {
             if(((unsigned *)source)[x] != value++)
             {
               fprintf(stderr, "Corrupted source buffer(%d) at index %zu.\n",((unsigned *)source)[x], x);
-              errors++;//break;
+              errors++;/*break; */
             }
           }
-        else // validate untouched buffer (-1)
+        else /* validate untouched buffer (-1) */
           for(x = 0; x < count_of_unsigneds  && errors < 5 ; ++x)
           {
             if(((unsigned *)source)[x] != (unsigned)-1)
             {
               fprintf(stderr, "Corrupted source buffer(%d) at index %zu.\n",((unsigned *)source)[x], x);
-              errors++;//break;
+              errors++;/*break; */
             }
           }
 
         value = 0;
-        // Validate the output data is correct
-        if(isDest) // validate expected results
+        /* Validate the output data is correct */
+        if(isDest) /* validate expected results */
           for(x = 0; x < count_of_unsigneds && errors < 5 ; ++x)
           {
             if(((unsigned *)destination)[x] != value++)
             {
               fprintf(stderr, "Incorrect result buffer(%d) at index %zu.\n",((unsigned *)destination)[x], x);
-              errors++;//break;
+              errors++;/*break; */
             }
           }
-        else // validate untouched buffer (-1)
+        else /* validate untouched buffer (-1) */
           for(x = 0; x < count_of_unsigneds && errors < 5 ; ++x)
           {
             if(((unsigned *)destination)[x] != (unsigned)-1)
             {
               fprintf(stderr, "Corrupted result buffer(%d) at index %zu.\n",((unsigned *)destination)[x], x);
-              errors++;//break;
+              errors++;/*break; */
             }
           }
-        if(errors) //(x - errors) < count_of_unsigneds)
+        if(errors) /*(x - errors) < count_of_unsigneds) */
         {
           fprintf(stderr, "FAIL validation %d\n",errors);
           return PAMI_ERROR;
@@ -233,10 +233,10 @@ namespace PAMI
         fprintf(stderr, "PASS validation\n");
         return PAMI_SUCCESS;
       }
-      //====================================================================
-      // Following MIN0 functions assume an unsigned/MIN [all]reduce. A designated "root" will set
-      // the buffers to 0 so that should be the MIN result.
-      //====================================================================
+      /*==================================================================== */
+      /* Following MIN0 functions assume an unsigned/MIN [all]reduce. A designated "root" will set */
+      /* the buffers to 0 so that should be the MIN result. */
+      /*==================================================================== */
       inline void resetMIN0(bool isRoot  = false)
       {
         DBGF_FUNCTIONNAME;
@@ -336,32 +336,32 @@ namespace PAMI
         size_t x;
 
 
-        if(isRoot) // validate untouched src buffer
+        if(isRoot) /* validate untouched src buffer */
           for(x = 0; x < count_of_unsigneds && errors < 5 ; ++x)
           {
             if(((unsigned *)source)[x] != 0)
             {
               fprintf(stderr, "Corrupted source buffer(%d) at index %zu.\n",((unsigned *)source)[x], x);
-              errors++;//break;
+              errors++;/*break; */
             }
           }
-        else // validate untouched src buffer (-1)
+        else /* validate untouched src buffer (-1) */
           for(x = 0; x < count_of_unsigneds  && errors < 5 ; ++x)
           {
             if(((unsigned *)source)[x] != value++)
             {
               fprintf(stderr, "Corrupted source buffer(%d) at index %zu.\n",((unsigned *)source)[x], x);
-              errors++;//break;
+              errors++;/*break; */
             }
           }
 
-        // Validate the output data is correct
+        /* Validate the output data is correct */
         for(x = 0; x < count_of_unsigneds && errors < 5 ; ++x)
         {
           if(((unsigned *)destination)[x] != 0)
           {
             fprintf(stderr, "Incorrect result buffer(%d) at index %zu.\n",((unsigned *)destination)[x], x);
-            errors++;//break;
+            errors++;/*break; */
           }
         }
 
@@ -373,9 +373,9 @@ namespace PAMI
         fprintf(stderr, "PASS validation\n");
         return PAMI_SUCCESS;
       }
-    }; // class Buffer
+    }; /* class Buffer */
 
-  }; // namespace Test
-}; // namespace PAMI
+  }; /* namespace Test */
+}; /* namespace PAMI */
 
-#endif // __test_multisend_buffer_h__
+#endif /* __test_multisend_buffer_h__ */

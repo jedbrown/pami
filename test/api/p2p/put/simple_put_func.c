@@ -1,19 +1,19 @@
-///
-/// \file test/api/p2p/put/simple_put_func.c
-/// \brief Simple point-to-point PAMI_Get() test
-///
-/// This test implements a very simple "ping-ack" communication and
-/// depends on a functional PAMI_Send_immediate() function.
-///
+/*/ */
+/*/ \file test/api/p2p/put/simple_put_func.c */
+/*/ \brief Simple point-to-point PAMI_Get() test */
+/*/ */
+/*/ This test implements a very simple "ping-ack" communication and */
+/*/ depends on a functional PAMI_Send_immediate() function. */
+/*/ */
 
 #include <pami.h>
 #include <stdio.h>
 #include <stdint.h>
 
-//#define TEST_CROSSTALK
+/*#define TEST_CROSSTALK */
 
-//#define USE_SHMEM_OPTION
-//#define NO_SHMEM_OPTION
+/*#define USE_SHMEM_OPTION */
+/*#define NO_SHMEM_OPTION */
 
 #define DISPATCH_ID 10
 
@@ -21,7 +21,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x)  /*fprintf x */
 #endif
 
 typedef struct
@@ -50,11 +50,11 @@ static void done (pami_context_t   context,
 
   TRACE_ERR((stderr, ">> done() cookie = %p (value = %d => %d), result = %zu\n", cookie, *(value), *(value)-1, result));
 
-  size_t status = 0; // success
+  size_t status = 0; /* success */
   if (result != PAMI_SUCCESS)
   {
     TRACE_ERR((stderr, "   done() PAMI_Put failed\n"));
-    status = 1; // get failed
+    status = 1; /* get failed */
   }
 
   ++*(value);
@@ -82,7 +82,7 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
   pami_put_simple_t parameters;
   memset(&parameters, 0, sizeof (parameters));
   parameters.rma.dest    = info->origin;
-  //parameters.rma.hints   = {0};
+  /*parameters.rma.hints   = {0}; */
   parameters.rma.bytes   = sizeof(size_t);
   parameters.rma.cookie  = cookie;
   parameters.rma.done_fn = done;
@@ -201,7 +201,7 @@ int main (int argc, char ** argv)
 #endif
 
 
-    // Send a message to the target task
+    /* Send a message to the target task */
     info_t info;
     PAMI_Endpoint_create (client, 0, 0, &info.origin);
     info.dst = (void *) &_done;
@@ -214,7 +214,7 @@ int main (int argc, char ** argv)
 fprintf (stderr, "Before PAMI_Send_immediate()\n");
     PAMI_Send_immediate (context[0], &parameters);
 
-    // wait for the 'ack'
+    /* wait for the 'ack' */
 fprintf (stderr, "Wait for 'ack', _done (%p) = %zu\n", &_done, _done);
     while (!_done)
     {
@@ -234,7 +234,7 @@ fprintf (stderr, "Wait for 'ack', _done (%p) = %zu\n", &_done, _done);
       size_t contextid = 0;
 #endif
 
-    // wait for the 'rts'
+    /* wait for the 'rts' */
 fprintf (stderr, "Wait for message, _done = %zu, contextid = %zu\n", _done, contextid);
     while (!_done != 0)
     {
@@ -262,7 +262,7 @@ fprintf (stderr, "Test completed .. cleanup\n");
     return 1;
   }
 
-  //fprintf (stdout, "Success (%d)\n", task_id);
+  /*fprintf (stdout, "Success (%d)\n", task_id); */
 
   return 0;
 };

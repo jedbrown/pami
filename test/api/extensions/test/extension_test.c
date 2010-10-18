@@ -23,7 +23,7 @@ typedef struct
 typedef void (*pami_extension_test_foo_fn) ();
 typedef void (*pami_extension_test_bar_fn) (bar_info_t *);
 
-#define DBG_FPRINTF(x) //fprintf x
+#define DBG_FPRINTF(x) /*fprintf x */
 
 int main(int argc, char ** argv)
 {

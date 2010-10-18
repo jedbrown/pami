@@ -16,17 +16,17 @@
 
 #include "send_general.h"
 
-int recvflags[2];	// 2 phases are enough to keep things separate
+int recvflags[2];	/* 2 phases are enough to keep things separate */
 
 void send_concurrency_init(int bufsiz, size_t nranks) {
         send_general_init(bufsiz);
 }
 
 struct test_msginfo {
-        int phase;	// test phase message is for
-        unsigned _w1;	// unused
-        unsigned _w2;	// unused
-        unsigned _w3;	// unused
+        int phase;	/* test phase message is for */
+        unsigned _w1;	/* unused */
+        unsigned _w2;	/* unused */
+        unsigned _w3;	/* unused */
 };
 
 /* --------------------------------------------------------------- */
@@ -70,17 +70,17 @@ pami_recv_t *recv) {
 int con_recv_err = 0, con_send_err = 0;
 
 int con_setup_netw(int net, pami_context_t context, size_t *proto) {
-        // turns out, for now, we don't need special values here,
-        // but this is a better way of doing the registration since
-        // the callbacks reside in this file and so should the specification
-        // of clientdata.
+        /* turns out, for now, we don't need special values here, */
+        /* but this is a better way of doing the registration since */
+        /* the callbacks reside in this file and so should the specification */
+        /* of clientdata. */
         return setup_netw(net, context, proto, cb_recv_con, NULL);
 }
 
-// 'ranks' is NULL for global (non-local) test.
-// Global: rank = 0..numranks-1
-// Local:  rank = ranks[0..numranks-1]
-//
+/* 'ranks' is NULL for global (non-local) test. */
+/* Global: rank = 0..numranks-1 */
+/* Local:  rank = ranks[0..numranks-1] */
+/* */
 int con_test(size_t dispatch_id, pami_client_t client, pami_context_t context,
                 pami_task_t rank, pami_task_t *ranks, size_t numranks,
                 unsigned *times, bool verify) {
@@ -93,7 +93,7 @@ int con_test(size_t dispatch_id, pami_client_t client, pami_context_t context,
 
         static bool init = true;
         if (init) {
-                // Configure and register barriers
+                /* Configure and register barriers */
                 barrier_init();
                 init = false;
         }
@@ -114,12 +114,12 @@ int con_test(size_t dispatch_id, pami_client_t client, pami_context_t context,
                 fill_buf(sbuf, sndlen, curr_tag);
                 send.send.data.iov_len = sndlen;
 
-                // assert (recvflag == lastrecv);
+                /* assert (recvflag == lastrecv); */
                 sendflag = recvflags[0] = recvflags[1] = 0;
                 barrier();
                 unsigned long long t1 = PAMI_Wtimebase();
                 for (i = 0; i < niter; i++) {
-                        int phase = i & 1; // phase of test, alternate 0/1
+                        int phase = i & 1; /* phase of test, alternate 0/1 */
                         msginfo.phase = phase;
                         PAMI_Context_lock(context);
                         for (targ = 0; targ < numranks; ++targ) {
@@ -138,8 +138,8 @@ int con_test(size_t dispatch_id, pami_client_t client, pami_context_t context,
                         recvflags[phase] = 0;
                         sendflag = 0;
                         if (verify) {
-                                ; // TBD...
-                                // need barrier?  how to separate diff orig buffers?
+                                ; /* TBD... */
+                                /* need barrier?  how to separate diff orig buffers? */
                         }
                 }
                 unsigned long long t2 = PAMI_Wtimebase();

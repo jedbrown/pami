@@ -1,19 +1,19 @@
-///
-/// \file test/api/p2p/get/simple_get_func.c
-/// \brief Simple point-to-point PAMI_Get() test
-///
-/// This test implements a very simple "rendezvous" communication and
-/// depends on a functional PAMI_Send_immediate() function.
-///
+/*/ */
+/*/ \file test/api/p2p/get/simple_get_func.c */
+/*/ \brief Simple point-to-point PAMI_Get() test */
+/*/ */
+/*/ This test implements a very simple "rendezvous" communication and */
+/*/ depends on a functional PAMI_Send_immediate() function. */
+/*/ */
 
 #include <pami.h>
 #include <stdio.h>
 #include <stdint.h>
 
-//#define TEST_CROSSTALK
+/*#define TEST_CROSSTALK */
 
-//#define USE_SHMEM_OPTION
-//#define NO_SHMEM_OPTION
+/*#define USE_SHMEM_OPTION */
+/*#define NO_SHMEM_OPTION */
 
 #define DISPATCH_ID_RTS 0
 #define DISPATCH_ID_ACK 1
@@ -22,7 +22,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x)  /*fprintf x */
 #endif
 
 typedef struct
@@ -37,7 +37,7 @@ typedef struct
   pami_endpoint_t   origin;
   size_t            bytes;
   size_t            pad;
-  uint32_t          buffer[12]; // 16-byte paddign on both sides
+  uint32_t          buffer[12]; /* 16-byte paddign on both sides */
   volatile size_t * value;
 } get_info_t;
 
@@ -60,15 +60,15 @@ void initialize_data (uint32_t * addr, size_t bytes, size_t pad)
   uint32_t * p    = (uint32_t *) addr;
   uint8_t  * data = (uint8_t *)  &p[pad];
 
-  // initialize front padding 
+  /* initialize front padding  */
   for (i=0; i<pad; i++)
     p[i] = 0xdeadbeef;
 
-  // initialize main data
+  /* initialize main data */
   for (i=0; i<bytes; i++)
     data[i] = ~(bytes-i);
 
-  // initialize back padding 
+  /* initialize back padding  */
   p = (uint32_t *) &data[i];
   for (i=0; i<pad; i++)
     p[i] = 0xdeadbeef;
@@ -143,24 +143,24 @@ static void get_done (pami_context_t   context,
 
   TRACE_ERR((stderr, ">> get_done() cookie = %p (info->value = %d => %d), result = %zu\n", cookie, *(info->value), *(info->value)-1, result));
 
-  size_t status = 0; // success
+  size_t status = 0; /* success */
   if (result != PAMI_SUCCESS)
   {
     TRACE_ERR((stderr, "   get_done() PAMI_Get failed\n"));
-    status = 1; // get failed
+    status = 1; /* get failed */
   }
   else
   {
-    // validate the data!
+    /* validate the data! */
     print_data ((void *)info->buffer, 4*12);
     if (!validate_data(info->buffer, info->bytes, 4))
     {
       TRACE_ERR((stderr, "   get_done() PAMI_Get data validation error.\n"));
-      status = 2; // get data validation failure
+      status = 2; /* get data validation failure */
     }
   }
 
-  // Send an 'ack' to the origin
+  /* Send an 'ack' to the origin */
   pami_send_immediate_t parameters;
   parameters.dispatch        = DISPATCH_ID_ACK;
   parameters.dest            = info->origin;
@@ -204,7 +204,7 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
 
   pami_get_simple_t parameters;
   parameters.rma.dest    = rts->origin;
-  //parameters.rma.hints   = {0};
+  /*parameters.rma.hints   = {0}; */
   parameters.rma.bytes   = rts->bytes;
   parameters.rma.cookie  = get;
   parameters.rma.done_fn = get_done;
@@ -338,14 +338,14 @@ int main (int argc, char ** argv)
 #endif
 
 
-    // Allocate some memory from the heap.
+    /* Allocate some memory from the heap. */
     void * send_buffer = malloc (BUFFERSIZE);
 
-    // Initialize the memory for validation.
+    /* Initialize the memory for validation. */
     initialize_data ((uint32_t *)send_buffer, BUFFERSIZE, 0);
     print_data (send_buffer, BUFFERSIZE);
 
-    // Send an 'rts' message to the target task
+    /* Send an 'rts' message to the target task */
     rts_info_t rts_info;
     PAMI_Endpoint_create (client, 0, 0, &rts_info.origin);
     rts_info.bytes  = BUFFERSIZE;
@@ -359,7 +359,7 @@ int main (int argc, char ** argv)
 fprintf (stderr, "Before PAMI_Send_immediate()\n");
     PAMI_Send_immediate (context[0], &parameters);
 
-    // wait for the 'ack'
+    /* wait for the 'ack' */
 fprintf (stderr, "Wait for 'ack', _ack_active = %zu\n", _ack_active);
     while (_ack_active != 0)
     {
@@ -398,7 +398,7 @@ fprintf (stderr, "Wait for 'ack', _ack_active = %zu\n", _ack_active);
       size_t contextid = 0;
 #endif
 
-    // wait for the 'rts'
+    /* wait for the 'rts' */
 fprintf (stderr, "Wait for 'rts', _rts_active = %zu, contextid = %zu\n", _rts_active, contextid);
     while (_rts_active != 0)
     {
@@ -426,7 +426,7 @@ fprintf (stderr, "Test completed .. cleanup\n");
     return 1;
   }
 
-  //fprintf (stdout, "Success (%d)\n", task_id);
+  /*fprintf (stdout, "Success (%d)\n", task_id); */
 
   return 0;
 };

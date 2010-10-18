@@ -21,23 +21,23 @@
 
 #include <pami.h>
 #define ITERATIONS 2
-//#define ITERATIONS 1000
-//#define ITERATIONS 100
+/*#define ITERATIONS 1000 */
+/*#define ITERATIONS 100 */
 
-// This should be an PAMI attribute, but until that is defined, here it is...
-// The limit is 512 for the MU device, but 488 for the shmem device.
-// So, until an attribute is available that programatically tells us this,
-// the shmem device test will fail after message size 314.
+/* This should be an PAMI attribute, but until that is defined, here it is... */
+/* The limit is 512 for the MU device, but 488 for the shmem device. */
+/* So, until an attribute is available that programatically tells us this, */
+/* the shmem device test will fail after message size 314. */
 #define IMMEDIATE_SEND_LIMIT 512
 
 #ifndef BUFSIZE
-//#define BUFSIZE 2048
-//#define BUFSIZE 1024*256
-//#define BUFSIZE 16
+/*#define BUFSIZE 2048 */
+/*#define BUFSIZE 1024*256 */
+/*#define BUFSIZE 16 */
 #define BUFSIZE 1024
 #endif
 
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) /*fprintf x */
 
 size_t _my_rank;
 
@@ -85,15 +85,15 @@ unsigned long long test (size_t sndlen, size_t myrank)
   pami_result_t result = PAMI_ERROR;
   pami_send_immediate_t parameters;
   parameters.dispatch        = dispatch;
-  parameters.header.iov_base = (void *)&msginfo; // send *something*
+  parameters.header.iov_base = (void *)&msginfo; /* send *something* */
   parameters.header.iov_len  = sizeof(msginfo);
-  parameters.data.iov_base   = (void *)_sbuf; // send *something*
+  parameters.data.iov_base   = (void *)_sbuf; /* send *something* */
   parameters.data.iov_len    = sndlen;
   PAMI_Endpoint_create (_g_client, _my_rank, 0, &parameters.dest);
 
   unsigned i;
   unsigned long long t1 = 0;
-  //Allow warmup of 1 iteration
+  /*Allow warmup of 1 iteration */
   for (i = 0; i <= ITERATIONS; i++)
   {
     TRACE_ERR((stderr, "(%zu)\n(%zu) Starting Iteration %d of size %zu\n", _my_rank, _my_rank, i, sndlen));
@@ -273,7 +273,7 @@ int main ()
 
     char str[10240];
 
-    // Init the send buffer.
+    /* Init the send buffer. */
     unsigned j;
     for (j=0; j<BUFSIZE; j++)
       {
@@ -292,12 +292,12 @@ int main ()
       for (i=0; i<_protocol_count; i++)
       {
         /* warmup */
-        //test (&_protocol[i], sndlen, _my_rank);
+        /*test (&_protocol[i], sndlen, _my_rank); */
 
         cycles = test (sndlen, _my_rank);
         usec   = cycles/clockMHz;
 
-        // Check the buffer.
+        /* Check the buffer. */
         unsigned j;
         for (j=0; j<sndlen; j++)
         {
@@ -318,12 +318,12 @@ int main ()
       for (i=0; i<_protocol_count; i++)
       {
         /* warmup */
-        //test (&_protocol[i], sndlen, _my_rank);
+        /*test (&_protocol[i], sndlen, _my_rank); */
 
         cycles = test (sndlen, _my_rank);
         usec   = cycles/clockMHz;
 
-        // Check the buffer.
+        /* Check the buffer. */
         unsigned j;
         for (j=0; j<sndlen; j++)
         {

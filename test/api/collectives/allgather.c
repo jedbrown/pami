@@ -1,7 +1,7 @@
-///
-/// \file test/api/collectives/allgather.c
-/// \brief Simple Barrier test
-///
+/*/ */
+/*/ \file test/api/collectives/allgather.c */
+/*/ \brief Simple Barrier test */
+/*/ */
 
 #include "../pami_util.h"
 

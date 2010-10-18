@@ -293,7 +293,7 @@ static void init()
   pami_configuration_t query;
   pami_send_hint_t options = {consistency:1};
 
-  PAMI_Client_create("PAMId ADI Example", &client, NULL, 0);
+  PAMI_Client_create("TEST", &client, NULL, 0);
 
   query.name = PAMI_CLIENT_TASK_ID;
   PAMI_Client_query (client, &query,1);

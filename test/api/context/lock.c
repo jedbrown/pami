@@ -1,7 +1,7 @@
-///
-/// \file test/api/context/lock.c
-/// \brief Simple PAMI_Context_lock() test
-///
+/*/ */
+/*/ \file test/api/context/lock.c */
+/*/ \brief Simple PAMI_Context_lock() test */
+/*/ */
 
 #include <pami.h>
 #include <stdio.h>

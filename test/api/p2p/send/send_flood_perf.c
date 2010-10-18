@@ -18,32 +18,32 @@
 #include <unistd.h>
 
 #include <pami.h>
-//#include "../../util.h"
+/*#include "../../util.h" */
 
 #define ITERATIONS 1
-//#define ITERATIONS 1000
-//#define ITERATIONS 1000
+/*#define ITERATIONS 1000 */
+/*#define ITERATIONS 1000 */
 
 #define WARMUP
 
-//#define TEST_SEND_IMMEDIATE
+/*#define TEST_SEND_IMMEDIATE */
 
 #ifdef TEST_SEND_IMMEDIATE
 #define BUFSIZE 256
 #else
 #ifndef BUFSIZE
 #define BUFSIZE 2048
-//#define BUFSIZE 1024*256
+/*#define BUFSIZE 1024*256 */
 #endif
 #endif
 
 
 #define MSGCOUNT 1024
-//#define MSGCOUNT 16
+/*#define MSGCOUNT 16 */
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x) /* fprintf x */
 #endif
 
 volatile unsigned _recv_active;
@@ -127,7 +127,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
   ack.data.iov_base  = NULL;
   ack.data.iov_len = 0;
 
-  //barrier ();
+  /*barrier (); */
   usleep(1000);
 
   unsigned long long t1 = PAMI_Wtimebase();
@@ -184,9 +184,9 @@ int main (int argc, char ** argv)
   PAMI_Context_createv (client, NULL, 0, &context, 1);
   TRACE_ERR((stderr, "...  after PAMI_Context_createv()\n"));
 
-  //TRACE_ERR((stderr, "... before barrier_init()\n"));
-  //barrier_init (client, context, 0);
-  //TRACE_ERR((stderr, "...  after barrier_init()\n"));
+  /*TRACE_ERR((stderr, "... before barrier_init()\n")); */
+  /*barrier_init (client, context, 0); */
+  /*TRACE_ERR((stderr, "...  after barrier_init()\n")); */
 
 
   /* Register the protocols to test */
@@ -255,7 +255,7 @@ int main (int argc, char ** argv)
     fflush (stdout);
   }
 
-  //barrier ();
+  /*barrier (); */
 
   unsigned long long cycles;
   double usec;

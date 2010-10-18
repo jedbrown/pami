@@ -1,19 +1,19 @@
-///
-/// \file test/api/p2p/rget/simple_rget_func.c
-/// \brief Simple point-to-point PAMI_Rget() test
-///
-/// This test implements a very simple "rendezvous" communication and
-/// depends on a functional PAMI_Send_immediate() function.
-///
+/*/ */
+/*/ \file test/api/p2p/rget/simple_rget_func.c */
+/*/ \brief Simple point-to-point PAMI_Rget() test */
+/*/ */
+/*/ This test implements a very simple "rendezvous" communication and */
+/*/ depends on a functional PAMI_Send_immediate() function. */
+/*/ */
 
 #include <pami.h>
 #include <stdio.h>
 #include <stdint.h>
 
-//#define TEST_CROSSTALK
+/*#define TEST_CROSSTALK */
 
-//#define USE_SHMEM_OPTION
-//#define NO_SHMEM_OPTION
+/*#define USE_SHMEM_OPTION */
+/*#define NO_SHMEM_OPTION */
 
 #define DISPATCH_ID_RTS 0
 #define DISPATCH_ID_ACK 1
@@ -22,7 +22,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x)  /*fprintf x */
 #endif
 
 typedef struct
@@ -154,24 +154,24 @@ static void get_done (pami_context_t   context,
 
   fprintf (stderr, ">> 'get_done' callback, cookie = %p (info->value = %zu => %zu), result = %d\n", cookie, *(info->value), *(info->value)-1, result);
 
-  size_t status = 0; // success
+  size_t status = 0; /* success */
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "   'get_done' callback, PAMI_Get failed\n");
-    status = 1; // get failed
+    status = 1; /* get failed */
   }
   else
   {
-    // validate the data!
+    /* validate the data! */
     print_data ((void *)info->buffer, info->bytes + info->pad * 2);
     if (!validate_data(info->buffer, info->bytes, info->pad))
     {
       fprintf (stderr, "   'get_done' callback,) PAMI_Get data validation error.\n");
-      status = 2; // get data validation failure
+      status = 2; /* get data validation failure */
     }
   }
 
-  // Send an 'ack' to the origin
+  /* Send an 'ack' to the origin */
   pami_send_immediate_t parameters;
   parameters.dispatch        = DISPATCH_ID_ACK;
   parameters.dest            = info->origin;
@@ -181,7 +181,7 @@ static void get_done (pami_context_t   context,
   parameters.data.iov_len    = 0;
   PAMI_Send_immediate (context, &parameters);
 
-  // Destroy the local memory region
+  /* Destroy the local memory region */
   PAMI_Memregion_destroy (context, &(info->memregion));
 
   free (cookie);
@@ -206,8 +206,8 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
   rts_info_t * rts = (rts_info_t *) header_addr;
   fprintf (stderr, "   'rts' dispatch function.  rts->origin = 0x%08x, rts->bytes = %zu\n", rts->origin, rts->bytes);
 
-  //assert(pipe_addr!=NULL);
-  //pami_memregion_t * origin_memregion = (pami_memregion_t *) pipe_addr;
+  /*assert(pipe_addr!=NULL); */
+  /*pami_memregion_t * origin_memregion = (pami_memregion_t *) pipe_addr; */
 
   get_info_t * get = (get_info_t *) malloc (sizeof(get_info_t));
   get->value  = active;
@@ -218,11 +218,11 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
   initialize_data (get->buffer, 0, BUFFERSIZE<<1);
   print_data (get->buffer, BUFFERSIZE<<2);
 
-  // Create a memregion for the data buffer.
+  /* Create a memregion for the data buffer. */
   size_t bytes = 0;
   PAMI_Memregion_create (context, get->buffer, BUFFERSIZE>>2, &bytes, &(get->memregion));
 
-  // Perform the rdma get operation
+  /* Perform the rdma get operation */
   pami_rget_simple_t parameters;
   parameters.rma.dest    = rts->origin;
   parameters.rma.bytes   = rts->bytes;
@@ -365,19 +365,19 @@ int main (int argc, char ** argv)
 #endif
 
 
-    // Allocate some memory from the heap.
+    /* Allocate some memory from the heap. */
     void * send_buffer = malloc (BUFFERSIZE);
 
-    // Initialize the memory for validation.
+    /* Initialize the memory for validation. */
     initialize_data ((uint32_t *)send_buffer, BUFFERSIZE, 0);
     print_data (send_buffer, BUFFERSIZE);
 
-    // Send an 'rts' message to the target task and provide the memory region
+    /* Send an 'rts' message to the target task and provide the memory region */
     rts_info_t rts_info;
     PAMI_Endpoint_create (client, 0, 0, &rts_info.origin);
     rts_info.bytes  = BUFFERSIZE;
 
-    // Create a memory region for this memoru buffer
+    /* Create a memory region for this memoru buffer */
     size_t bytes = 0;
     PAMI_Memregion_create (context[0], send_buffer, BUFFERSIZE, &bytes, &(rts_info.memregion));
 
@@ -389,7 +389,7 @@ int main (int argc, char ** argv)
 fprintf (stderr, "Before PAMI_Send_immediate()\n");
     PAMI_Send_immediate (context[0], &parameters);
 
-    // wait for the 'ack'
+    /* wait for the 'ack' */
 fprintf (stderr, "Wait for 'ack', _ack_active = %zu\n", _ack_active);
     while (_ack_active != 0)
     {
@@ -401,7 +401,7 @@ fprintf (stderr, "Wait for 'ack', _ack_active = %zu\n", _ack_active);
       }
     }
 
-    // Destroy the local memory region
+    /* Destroy the local memory region */
     PAMI_Memregion_destroy (context[0], &(rts_info.memregion));
 
     free (send_buffer);
@@ -431,7 +431,7 @@ fprintf (stderr, "Wait for 'ack', _ack_active = %zu\n", _ack_active);
       size_t contextid = 0;
 #endif
 
-    // wait for the 'rts'
+    /* wait for the 'rts' */
 fprintf (stderr, "Wait for 'rts', _rts_active = %zu, contextid = %zu\n", _rts_active, contextid);
     while (_rts_active != 0)
     {
@@ -459,7 +459,7 @@ fprintf (stderr, "Test completed .. cleanup\n");
     return 1;
   }
 
-  //fprintf (stdout, "Success (%d)\n", task_id);
+  /*fprintf (stdout, "Success (%d)\n", task_id); */
 
   return 0;
 };

@@ -17,17 +17,17 @@
 #define BUFSIZE       (MSGSIZE * MAX_COMM_SIZE)
 
 
-//#define INIT_BUFS(r)
+/*#define INIT_BUFS(r) */
 #define INIT_BUFS(r) init_bufs(r)
 
-//#define CHCK_BUFS
+/*#define CHCK_BUFS */
 #define CHCK_BUFS(s,r)    check_bufs(s,r)
 
 
 char sbuf[BUFSIZE];
 char rbuf[BUFSIZE];
 
-/// \todo #warning remove alltoallv code...
+/*/ \todo #warning remove alltoallv code... */
 size_t sndlens[ MAX_COMM_SIZE ];
 size_t sdispls[ MAX_COMM_SIZE ];
 size_t rcvlens[ MAX_COMM_SIZE ];

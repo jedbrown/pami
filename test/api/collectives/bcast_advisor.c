@@ -1,7 +1,7 @@
-///
-/// \file test/api/collectives/bcast_advisor.c
-/// \brief Simple Bcast test with advisor functionality
-///
+/*/ */
+/*/ \file test/api/collectives/bcast_advisor.c */
+/*/ \brief Simple Bcast test with advisor functionality */
+/*/ */
 
 #include "util/compact_attributes.h"
 #include <pami.h>

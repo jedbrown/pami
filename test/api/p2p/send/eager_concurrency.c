@@ -14,10 +14,10 @@
  */
 #include <unistd.h>
 
-#define ITERATIONS	-1	// Use our variable
+#define ITERATIONS	-1	/* Use our variable */
 #define MINBUFSIZE	-1
 #define BUFSIZE		-1
-#include "send_concurrency.h" // includes send_general.h
+#include "send_concurrency.h" /* includes send_general.h */
 
 int ITERATIONS = 100;
 size_t MINBUFSIZE = 128;
@@ -116,8 +116,8 @@ usage:
         size_t nranks;
         pami_task_t me;
         if (local) {
-                //nranks = setup_localpeers(ranks, 64, &me);
-                // assume all local...
+                /*nranks = setup_localpeers(ranks, 64, &me); */
+                /* assume all local... */
                 for (nranks = 0; nranks < num_tasks; ++nranks) ranks[nranks] = nranks;
                 me = task_id;
         } else {
@@ -135,14 +135,14 @@ usage:
                 con_setup_netw(nets[x], context, &protocol[x]);
         }
 
-        // Count number of buffer sizes being tested
+        /* Count number of buffer sizes being tested */
         for (z = MINBUFSIZE, n = 0; z <= BUFSIZE; z = NEXT_BUFSIZE(z)) ++n;
 
         results = (unsigned *)malloc(argc * n * sizeof(unsigned));
         if (me == 0) {
-                //PAMI_Coord_t addr;
-                //DCMF_Hardware_t hw;
-                //DCMF_Hardware(&hw);
+                /*PAMI_Coord_t addr; */
+                /*DCMF_Hardware_t hw; */
+                /*DCMF_Hardware(&hw); */
                 size_t orig, *_orig;
 
                 fprintf(stdout, "#\n");
@@ -153,12 +153,12 @@ usage:
                         } else {
                                 _orig = &orig;
                         }
-                        //DCMF_Messager_rank2network(*_orig, PAMI_TORUS_NETWORK, &addr);
-                        //fprintf(stdout, "# Rank %zu (%zu,%zu,%zu,%zu)\n", *_orig,
-                                //addr.torus.x, addr.torus.y, addr.torus.z, addr.torus.t);
+                        /*DCMF_Messager_rank2network(*_orig, PAMI_TORUS_NETWORK, &addr); */
+                        /*fprintf(stdout, "# Rank %zu (%zu,%zu,%zu,%zu)\n", *_orig, */
+                                /*addr.torus.x, addr.torus.y, addr.torus.z, addr.torus.t); */
                         fprintf(stdout, "# Rank %zu\n", *_orig);
                 }
-                //fprintf(stdout, "# Clock MHz = %d, Iterations = %d\n", hw.clockMHz, ITERATIONS);
+                /*fprintf(stdout, "# Clock MHz = %d, Iterations = %d\n", hw.clockMHz, ITERATIONS); */
                 fprintf(stdout, "# Clock MHz = %d, Iterations = %d\n", 0, ITERATIONS);
                 if (verify) {
                         fprintf(stdout, "# WARNING! Data verification is ON. Performance numbers are not realistic!\n");

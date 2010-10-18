@@ -1,23 +1,23 @@
-///
-/// \file test/api/p2p/send/long-header-hard-opp.c
-/// \Matrixed "Long header" point-to-point PAMI_send() test
-///
-///   send hints       recv hints     header    exp
-/// no long header | no long header    size    result   NOTES:
-/// ============== | ============== | ====== | ====== | ================================
-/// 0 (hard)       | 1 (hard)       | short  | pass   | Testsuite #1
-/// 0 (hard)       | 1 (hard)       | long   | fail   | Test with mismatched hard hints
-/// 1 (hard)       | 0 (hard)       | short  | pass   | Same dispatch ID with unique hints
-/// 1 (hard)       | 0 (hard)       | long   | fail   |
-/// 0 (soft)       | 0 (hard)       | short  | pass   | Testsuite #2
-/// 0 (soft)       | 0 (hard)       | long   | pass   | Use soft hint to turn mismatched
-/// 1 (soft)       | 1 (hard)       | short  | pass   | hard hints into matched hints
-/// 1 (soft)       | 1 (hard)       | long   | fail   |
+/*/ */
+/*/ \file test/api/p2p/send/long-header-hard-opp.c */
+/*/ \Matrixed "Long header" point-to-point PAMI_send() test */
+/*/ */
+/*/   send hints       recv hints     header    exp */
+/*/ no long header | no long header    size    result   NOTES: */
+/*/ ============== | ============== | ====== | ====== | ================================ */
+/*/ 0 (hard)       | 1 (hard)       | short  | pass   | Testsuite #1 */
+/*/ 0 (hard)       | 1 (hard)       | long   | fail   | Test with mismatched hard hints */
+/*/ 1 (hard)       | 0 (hard)       | short  | pass   | Same dispatch ID with unique hints */
+/*/ 1 (hard)       | 0 (hard)       | long   | fail   | */
+/*/ 0 (soft)       | 0 (hard)       | short  | pass   | Testsuite #2 */
+/*/ 0 (soft)       | 0 (hard)       | long   | pass   | Use soft hint to turn mismatched */
+/*/ 1 (soft)       | 1 (hard)       | short  | pass   | hard hints into matched hints */
+/*/ 1 (soft)       | 1 (hard)       | long   | fail   | */
 
 #include <pami.h>
 #include <stdio.h>
 
-//#define ENABLE_TRACE
+/*#define ENABLE_TRACE */
 
 #ifdef ENABLE_TRACE
 #define TRACE(x) fprintf x
@@ -150,23 +150,23 @@ int main (int argc, char ** argv)
   uint8_t short_header[128];
   uint8_t long_header[1024];
 
-  // Create matrix controls and values
-  size_t d = 0;                              // controls dispatch id/hard hint & soft hint
-  size_t h = 0;                              // controls header pointer and header size arrays
+  /* Create matrix controls and values */
+  size_t d = 0;                              /* controls dispatch id/hard hint & soft hint */
+  size_t h = 0;                              /* controls header pointer and header size arrays */
   uint8_t * header_ary[2] = {short_header, long_header};
   size_t header_size_ary[2] = {128, 1024};
-  size_t soft_hint_ary[2] = {1, 0};           // soft hint = opposite of hard hint
+  size_t soft_hint_ary[2] = {1, 0};           /* soft hint = opposite of hard hint */
   char header_type_str[2][50] = {"short header", "long header"};
-  pami_result_t mixd_expected_ary [2][2];  // expected results based on h & sending task values
-  pami_result_t fixd_expected_ary [2][2];  // expected results based on h & sending task values
-  mixd_expected_ary[0][0] = PAMI_SUCCESS;  // t0d0 no_long_header = 0, send short_header, t1d0 no_long_header = 1
-  mixd_expected_ary[0][1] = PAMI_SUCCESS;  // t0d0 no_long_header = 0, send short_header, t1d0 no_long_header = 1
-  mixd_expected_ary[1][0] = PAMI_ERROR;    // t0d0 no_long_header = 0, send long_header, t1d0 no_long_header = 1
-  mixd_expected_ary[1][1] = PAMI_INVAL;    // t0d0 no_long_header = 0, send long_header, t1d0 no_long_header = 1
-  fixd_expected_ary[0][0] = PAMI_SUCCESS;  // t0d0 no_long_header = 0 -> 1, send short_header, t1d0 no_long_header = 1
-  fixd_expected_ary[0][1] = PAMI_SUCCESS;  // t0d0 no_long_header = 0, send short_header, t1d0 no_long_header = 1 -> 0
-  fixd_expected_ary[1][0] = PAMI_INVAL;    // t0d0 no_long_header = 0 -> 1, send long_header, t1d0 no_long_header = 1
-  fixd_expected_ary[1][1] = PAMI_SUCCESS;  // t0d0 no_long_header = 0, send long_header, t1d0 no_long_header = 1 -> 0
+  pami_result_t mixd_expected_ary [2][2];  /* expected results based on h & sending task values */
+  pami_result_t fixd_expected_ary [2][2];  /* expected results based on h & sending task values */
+  mixd_expected_ary[0][0] = PAMI_SUCCESS;  /* t0d0 no_long_header = 0, send short_header, t1d0 no_long_header = 1 */
+  mixd_expected_ary[0][1] = PAMI_SUCCESS;  /* t0d0 no_long_header = 0, send short_header, t1d0 no_long_header = 1 */
+  mixd_expected_ary[1][0] = PAMI_ERROR;    /* t0d0 no_long_header = 0, send long_header, t1d0 no_long_header = 1 */
+  mixd_expected_ary[1][1] = PAMI_INVAL;    /* t0d0 no_long_header = 0, send long_header, t1d0 no_long_header = 1 */
+  fixd_expected_ary[0][0] = PAMI_SUCCESS;  /* t0d0 no_long_header = 0 -> 1, send short_header, t1d0 no_long_header = 1 */
+  fixd_expected_ary[0][1] = PAMI_SUCCESS;  /* t0d0 no_long_header = 0, send short_header, t1d0 no_long_header = 1 -> 0 */
+  fixd_expected_ary[1][0] = PAMI_INVAL;    /* t0d0 no_long_header = 0 -> 1, send long_header, t1d0 no_long_header = 1 */
+  fixd_expected_ary[1][1] = PAMI_SUCCESS;  /* t0d0 no_long_header = 0, send long_header, t1d0 no_long_header = 1 -> 0 */
 
   pami_send_t parameters;
   parameters.send.data.iov_base   = NULL;
@@ -176,14 +176,14 @@ int main (int argc, char ** argv)
   parameters.events.remote_fn     = send_done_remote;
 
 
-  // ======== Testsuite #1 ========
-  // Test results of sending short and long headers
-  // when no_long_header is set to opposite values using hard hints
+  /* ======== Testsuite #1 ======== */
+  /* Test results of sending short and long headers */
+  /* when no_long_header is set to opposite values using hard hints */
 
   if (task_id == 0)
   {
 
-    // Create Dispatch ID 0 with no_long_header = 0 (opposite of ID 0 in task 1)
+    /* Create Dispatch ID 0 with no_long_header = 0 (opposite of ID 0 in task 1) */
     options.no_long_header = 0;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
@@ -232,13 +232,13 @@ int main (int argc, char ** argv)
 	send_active = 2;
 	recv_active = 1;
 
-      } // end header loop
-    } // end dispatch id loop
-  } // end task = 0
+      } /* end header loop */
+    } /* end dispatch id loop */
+  } /* end task = 0 */
   else
   {
 
-    // Create Dispatch ID 0 with no_long_header = 1 (opposite of ID 0 in task 0)
+    /* Create Dispatch ID 0 with no_long_header = 1 (opposite of ID 0 in task 0) */
     options.no_long_header = 1;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
@@ -300,25 +300,25 @@ int main (int argc, char ** argv)
 	TRACE((stderr, "... after send advance loop\n"));
 	send_active = 2;
 
-      } // end header loop
-    } // end dispatch loop
-  } // end task = 1 loop
+      } /* end header loop */
+    } /* end dispatch loop */
+  } /* end task = 1 loop */
 
-  // ======== Testsuite #2 ========
-  // Test results of sending short and long headers
-  // when no_long_headers is set to opposite values using hard hints
-  // and soft hints are used to make the no_long_headers hints match
+  /* ======== Testsuite #2 ======== */
+  /* Test results of sending short and long headers */
+  /* when no_long_headers is set to opposite values using hard hints */
+  /* and soft hints are used to make the no_long_headers hints match */
 
   if (task_id == 0)
   {
     for (d = 0; d < 1; d++) {
       TRACE((stderr, "before send ...\n"));
       parameters.send.dispatch        = d;
-      for ( h = 0; h < 2; h++) { // 0 = short_header, 1 = long_header
+      for ( h = 0; h < 2; h++) { /* 0 = short_header, 1 = long_header */
 	parameters.send.header.iov_base = (void *) header_ary[h];
 	parameters.send.header.iov_len  = header_size_ary[h];
 	PAMI_Endpoint_create (client, 1, 0, &parameters.send.dest);
-	// Use soft hint to match Dispatch ID 0 in task 0
+	/* Use soft hint to match Dispatch ID 0 in task 0 */
 	parameters.send.hints.no_long_header = soft_hint_ary[task_id];
 
 	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n", &header_type_str[h][0], header_size_ary[h], task_id, soft_hint_ary[task_id]);
@@ -348,9 +348,9 @@ int main (int argc, char ** argv)
 	TRACE((stderr, "... after send-recv advance loop\n"));
 	send_active = 2;
 	recv_active = 1;
-      } // end header loop
-    } // end dispatch id loop
-  } // end task = 0
+      } /* end header loop */
+    } /* end dispatch id loop */
+  } /* end task = 0 */
   else
   {
     for (d = 0; d < 1; d++) {
@@ -401,9 +401,9 @@ int main (int argc, char ** argv)
 	}
 	TRACE((stderr, "... after send advance loop\n"));
 	send_active = 2;
-      } // end header loop
-    } // end dispatch loop
-  } // end task = 1 loop
+      } /* end header loop */
+    } /* end dispatch loop */
+  } /* end task = 1 loop */
 
   result = PAMI_Context_destroyv(&context, 1);
   if (result != PAMI_SUCCESS)
