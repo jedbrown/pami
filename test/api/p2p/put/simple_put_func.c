@@ -9,6 +9,7 @@
 #include <pami.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 
 /*#define TEST_CROSSTALK */
 
