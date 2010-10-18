@@ -566,7 +566,7 @@ namespace PAMI
         {
           PAMI::Device::Generic::GenericThread *work = NULL;
           COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
-          work = new (work) PAMI::Device::Generic::GenericThread(work_fn, cookie);
+          work = new (state) PAMI::Device::Generic::GenericThread(work_fn, cookie);
           work->setStatus(PAMI::Device::OneShot);
           _devices->_generics[_contextid].postThread(work);
           return PAMI_SUCCESS;
