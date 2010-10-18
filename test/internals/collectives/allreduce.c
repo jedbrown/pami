@@ -342,7 +342,7 @@ int main(int argc, char*argv[])
   fprintf(stderr, "PAMI_DEVICE=%c\n", env?*env:' ');
   if((env==NULL) || ((*env=='M') || (*env=='B')))
       {
-        /// These are unsupported on MU
+        /* These are unsupported on MU */
         for(i=0,j= DT_SIGNED_CHAR;    i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_UNSIGNED_CHAR;  i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_SIGNED_SHORT;   i<OP_COUNT;i++)validTable[i][j]=0;

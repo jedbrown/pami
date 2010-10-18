@@ -377,7 +377,7 @@ int main(int argc, char*argv[])
 
   if ((env == NULL) || ((*env == 'M') || (*env == 'B')))
   {
-    /// These are unsupported on MU
+    /* These are unsupported on MU */
     for (i = 0, j = DT_SIGNED_CHAR;    i < OP_COUNT; i++)validTable[i][j] = 0;
 
     for (i = 0, j = DT_UNSIGNED_CHAR;  i < OP_COUNT; i++)validTable[i][j] = 0;
