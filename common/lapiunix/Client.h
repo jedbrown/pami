@@ -330,10 +330,10 @@ namespace PAMI
             switch (configuration[i].name)
               {
                 case PAMI_CLIENT_NUM_CONTEXTS:
-                  configuration[i].value.intval = 1; // real value TBD
+                  configuration[i].value.intval = 1;
                   break;
                 case PAMI_CLIENT_CONST_CONTEXTS:
-                  configuration[i].value.intval = 0; // real value TBD
+                  configuration[i].value.intval = 1;
                   break;
                 case PAMI_CLIENT_TASK_ID:
                   configuration[i].value.intval = __global.mapping.task();
