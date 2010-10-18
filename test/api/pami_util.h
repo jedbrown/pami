@@ -49,7 +49,7 @@ extern unsigned __isMambo();
 #define delayTest(n) _mamboSleep(n, __LINE__)
 unsigned _mamboSleep(unsigned seconds, unsigned from)
 {
-  if (__isMambo()) /*/ \todo mambo hack */
+  if (__isMambo()) /** \todo mambo hack */
   {
     double dseconds = ((double)seconds)/1000; /*mambo seconds are loooong. */
     double start = PAMI_Wtime (), d=0;

@@ -1,9 +1,9 @@
-/** 
- * \file test/api/p2p/rput/simple_rput_func.c 
- * \brief Simple point-to-point PAMI_Rget() test 
- * 
- * This test implements a very simple "rendezvous" communication and 
- * depends on a functional PAMI_Send_immediate() function. 
+/**
+ * \file test/api/p2p/rput/simple_rput_func.c
+ * \brief Simple point-to-point PAMI_Rget() test
+ *
+ * This test implements a very simple "rendezvous" communication and
+ * depends on a functional PAMI_Send_immediate() function.
  */
 
 #include <pami.h>

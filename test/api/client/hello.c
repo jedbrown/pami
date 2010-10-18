@@ -1,6 +1,6 @@
-/** 
- * \file test/api/client/hello.c 
- * \brief Simple hello after PAMI_Client_create() 
+/**
+ * \file test/api/client/hello.c
+ * \brief Simple hello after PAMI_Client_create()
  */
 
 #include <pami.h>

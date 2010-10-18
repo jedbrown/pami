@@ -1,6 +1,6 @@
-/** 
- * \file test/api/p2p/send/default-send-1-mv.c 
- * \brief Ppoint-to-point PAMI_send() test using multiple contexts 
+/**
+ * \file test/api/p2p/send/default-send-1.c
+ * \brief Ppoint-to-point PAMI_send() test using multiple contexts
  */
 
 #include <pami.h>

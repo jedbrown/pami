@@ -27,7 +27,7 @@
 char sbuf[BUFSIZE];
 char rbuf[BUFSIZE];
 
-/*/ \todo #warning remove alltoallv code... */
+/** \todo #warning remove alltoallv code... */
 size_t sndlens[ MAX_COMM_SIZE ];
 size_t sdispls[ MAX_COMM_SIZE ];
 size_t rcvlens[ MAX_COMM_SIZE ];

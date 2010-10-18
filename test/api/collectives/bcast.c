@@ -1,6 +1,6 @@
 /**
- * \file test/api/collectives/bcast.c 
- * \brief Simple Bcast test 
+ * \file test/api/collectives/bcast.c
+ * \brief Simple Bcast test
  */
 
 #include "../pami_util.h"

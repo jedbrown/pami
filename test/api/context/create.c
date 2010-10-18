@@ -1,6 +1,6 @@
-/** 
- * \file test/api/context/create.c 
- * \brief Simple PAMI_Context_createv() test 
+/**
+ * \file test/api/context/create.c
+ * \brief Simple PAMI_Context_createv() test
  */
 
 #include <pami.h>

@@ -1,6 +1,6 @@
-/** 
- * \file test/api/p2p/send/send_to_self.c 
- * \brief "send to self" point-to-point PAMI_Send() test 
+/**
+ * \file test/api/p2p/send/send_to_self.c
+ * \brief "send to self" point-to-point PAMI_Send() test
  */
 
 #include <stdio.h>

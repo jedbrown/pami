@@ -1,6 +1,6 @@
-/** 
- * \file test/api/context/post.c 
- * \brief Simple PAMI_Context_post() test 
+/**
+ * \file test/api/context/post.c
+ * \brief Simple PAMI_Context_post() test
  */
 
 #include <pami.h>

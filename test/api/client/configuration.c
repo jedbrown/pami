@@ -1,6 +1,6 @@
 /**
- * \file test/api/client/configuration.c 
- * \brief Simple client configuration test 
+ * \file test/api/client/configuration.c
+ * \brief Simple client configuration test
  */
 
 #include <pami.h>

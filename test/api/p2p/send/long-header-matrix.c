@@ -1,11 +1,11 @@
 /**
- * \file test/api/p2p/send/long-header-matrix.c 
- * \Matrixed "Long header" point-to-point PAMI_send() test 
- * 
- *   send hints       recv hints     header    exp 
- * no long header | no long header    size    result   NOTES: 
- * ============== | ============== | ====== | ====== | ================================ 
- * 0 (hard)       | 0 (hard)       | short  | pass   | 
+ * \file test/api/p2p/send/long-header-matrix.c
+ * \Matrixed "Long header" point-to-point PAMI_send() test
+ *
+ *   send hints       recv hints     header    exp
+ * no long header | no long header    size    result   NOTES:
+ * ============== | ============== | ====== | ====== | ================================
+ * 0 (hard)       | 0 (hard)       | short  | pass   |
  */
 
 #include <pami.h>
@@ -78,8 +78,8 @@ int main (int argc, char ** argv)
   size_t run_all = 0;   /* include unpredictable mismatched scenarios  */
 
   for (i = 1; i < argc; i++){ /* Skip argv[0] (program name). */
-   
-    if ( (strcmp(argv[i], "-a") == 0) || (strcmp(argv[i], "--all") == 0) ) {      
+
+    if ( (strcmp(argv[i], "-a") == 0) || (strcmp(argv[i], "--all") == 0) ) {
       run_all = 1;
     }
   }

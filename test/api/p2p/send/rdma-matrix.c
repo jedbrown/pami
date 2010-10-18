@@ -1,6 +1,6 @@
 /**
- * \file test/api/p2p/send/rdma-matrix-mv.c 
- * \Matrixed "rdma" point-to-point PAMI_send() test 
+ * \file test/api/p2p/send/rdma-matrix.c
+ * \Matrixed "rdma" point-to-point PAMI_send() test
  */
 
 #include "pami.h"
@@ -163,8 +163,8 @@ int main (int argc, char ** argv)
   size_t run_all = 0;   /* run with alled hints */
 
   for (i = 1; i < argc; i++){ /* Skip argv[0] (program name). */
-   
-    if ( (strcmp(argv[i], "-a") == 0) || (strcmp(argv[i], "--all") == 0) ) {      
+
+    if ( (strcmp(argv[i], "-a") == 0) || (strcmp(argv[i], "--all") == 0) ) {
       run_all = 1;
     }
   }
@@ -263,7 +263,7 @@ int main (int argc, char ** argv)
   }
 
 
- 
+
   options.use_rdma = 3;
   TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
   result = PAMI_Dispatch_set (context,
@@ -431,7 +431,7 @@ int main (int argc, char ** argv)
 
 	  /* Reset __recv_buffer based on next send hint TC */
 	  /* 0's for even TCs and 255's for odd TCs */
-	  rv = (s+1) % 2; 
+	  rv = (s+1) % 2;
 
 	  for (i = 0; i < 2048; i++) {
 	    __recv_buffer[i] = reset_value[rv];
@@ -487,7 +487,7 @@ int main (int argc, char ** argv)
 
 	/* Reset __recv_buffer based on next send hint TC */
 	/* 0's for even TCs and 255's for odd TCs */
-	rv = (s+1) % 2; 
+	rv = (s+1) % 2;
 
 	for (i = 0; i < 2048; i++) {
 	  __recv_buffer[i] = reset_value[rv];
@@ -591,7 +591,7 @@ int main (int argc, char ** argv)
 
 	  /* Reset __recv_buffer based on next send hint TC */
 	  /* 0's for even TCs and 255's for odd TCs */
-	  rv = (s+1) % 2; 
+	  rv = (s+1) % 2;
 
 	  for (i = 0; i < 2048; i++) {
 	    __recv_buffer[i] = reset_value[rv];
@@ -614,9 +614,9 @@ int main (int argc, char ** argv)
 
 	/* Reset __recv_buffer based on next send hint TC */
 	if (recv_active == 0) {
-	  
+
 	  /* 0's for even TCs and 255's for odd TCs */
-	  rv = (s+1) % 2; 
+	  rv = (s+1) % 2;
 
 	  for (i = 0; i < 2048; i++) {
 	    __recv_buffer[i] = reset_value[rv];
@@ -683,18 +683,18 @@ int main (int argc, char ** argv)
 
 
     if (task_id == 0) {
-	  
+
       fprintf(stderr, "======== Combinations of mismatched rdma hints with unpredictable results ========\n");
-	  
+
       for (r = 0; r < 3; r++) {
 	for (s = 0; s < 12; s++) {
-	    
+
 	  /* Skip expected passing and failing scenarios */
 	  if (skip_ary[r][s]) {
 
 	    /* Reset __recv_buffer based on next send hint TC */
 	    /* 0's for even TCs and 255's for odd TCs */
-	    rv = (s+1) % 2; 
+	    rv = (s+1) % 2;
 
 	    for (i = 0; i < 2048; i++) {
 	      __recv_buffer[i] = reset_value[rv];
@@ -712,7 +712,7 @@ int main (int argc, char ** argv)
 
 	  /* Communicate with each task */
 	  for (n = 1; n < num_tasks; n++) {
-	    
+
 	    TRACE((stderr, "before send ...\n"));
 
 	    result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
@@ -720,7 +720,7 @@ int main (int argc, char ** argv)
 	      fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
 	      return 1;
 	    }
-		
+
 	    fprintf(stderr, "Sending %zu byte header and %zu byte data from task %zu -> %zu:\n\t\ttask %zu use_rdma hard hint = %zu\n\t\ttask %zu use_rdma soft hint = %zu\n\t\ttask %zu use rdma hard hint = %zu\n", header_bytes[1], data_bytes[2], task_id, n, task_id, send_hard_use_rdma_hint, task_id, send_soft_use_rdma_hint, n, recv_use_rdma_hint);
 
 	    result = PAMI_Send (context, &parameters);
@@ -729,8 +729,8 @@ int main (int argc, char ** argv)
 	      return 1;
 	    }
 	    TRACE((stderr, "... after send.\n"));
-		
-		
+
+
 	    TRACE((stderr, "before send-recv advance loop ...\n"));
 	    while (send_active || recv_active) {
 	      result = PAMI_Context_advance (context, 100);
@@ -747,7 +747,7 @@ int main (int argc, char ** argv)
 
 	  /* Reset __recv_buffer based on next send hint TC */
 	  /* 0's for even TCs and 255's for odd TCs */
-	  rv = (s+1) % 2; 
+	  rv = (s+1) % 2;
 
 	  for (i = 0; i < 2048; i++) {
 	    __recv_buffer[i] = reset_value[rv];
@@ -757,7 +757,7 @@ int main (int argc, char ** argv)
       } /* end recv hint loop */
     } /* end task = 0 */
     else { /* task id > 0 */
-	  
+
       result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
       if (result != PAMI_SUCCESS) {
 	fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
@@ -766,13 +766,13 @@ int main (int argc, char ** argv)
 
       for (r = 0; r < 3; r++) {
 	for (s = 0; s < 12; s++) {
-	      
+
 	  /* Skip scenarios that are expected to pass and fail */
 	  if (skip_ary[r][s]) {
 
 	    /* Reset __recv_buffer based on next send hint TC */
 	    /* 0's for even TCs and 255's for odd TCs */
-	    rv = (s+1) % 2; 
+	    rv = (s+1) % 2;
 
 	    for (i = 0; i < 2048; i++) {
 	      __recv_buffer[i] = reset_value[rv];
@@ -790,12 +790,12 @@ int main (int argc, char ** argv)
 	    }
 	  }
 	  TRACE((stderr, "... after recv advance loop\n"));
-	  
+
 	  /* Reset __recv_buffer based on next send hint TC */
 	  if (recv_active == 0) {
-	  
+
 	    /* 0's for even TCs and 255's for odd TCs */
-	    rv = (s+1) % 2; 
+	    rv = (s+1) % 2;
 
 	    for (i = 0; i < 2048; i++) {
 	      __recv_buffer[i] = reset_value[rv];
@@ -803,9 +803,9 @@ int main (int argc, char ** argv)
 
 	    recv_active = 1;
 	  }
-	      
+
 	  TRACE((stderr, "before send ...\n"));
-	      
+
 	  /* Determine hint values */
 	  send_hard_use_rdma_hint = (s >> 2) & 3;
 	  send_soft_use_rdma_hint = s & 3;
@@ -822,7 +822,7 @@ int main (int argc, char ** argv)
 	  }
 
 	  TRACE((stderr, "... after send.\n"));
-	  
+
 	  TRACE((stderr, "before send advance loop ...\n"));
 	  while (send_active) {
 	    result = PAMI_Context_advance (context, 100);

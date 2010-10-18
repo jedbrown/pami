@@ -1,6 +1,6 @@
-/** 
- * \file test/api/collectives/scatter.c 
- * \brief Simple Barrier test 
+/**
+ * \file test/api/collectives/scatter.c
+ * \brief Simple Barrier test
  */
 
 #include "../pami_util.h"

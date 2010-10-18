@@ -1,6 +1,6 @@
-/** 
- * \file test/api/collectives/barrier_subcomm.c 
- * \brief Simple Barrier test 
+/**
+ * \file test/api/collectives/barrier_subcomm.c
+ * \brief Simple Barrier test
  */
 
 
