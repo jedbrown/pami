@@ -1,7 +1,7 @@
-/*/ */
-/*/ \file test/api/p2p/send/rdma-matrix-mv.c */
-/*/ \Matrixed "rdma" point-to-point PAMI_send() test */
-/*/ */
+/**
+ * \file test/api/p2p/send/rdma-matrix-mv.c 
+ * \Matrixed "rdma" point-to-point PAMI_send() test 
+ */
 
 #include "pami.h"
 #include <stdio.h>

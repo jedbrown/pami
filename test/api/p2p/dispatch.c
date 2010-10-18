@@ -1,7 +1,7 @@
-/*/ */
-/*/ \file test/api/p2p/dispatch.c */
-/*/ \brief Simple point-topoint PAMI_Dispatch_set() test */
-/*/ */
+/** 
+ * \file test/api/p2p/dispatch.c 
+ * \brief Simple point-topoint PAMI_Dispatch_set() test 
+ */ 
 
 #include <pami.h>
 #include <stdio.h>

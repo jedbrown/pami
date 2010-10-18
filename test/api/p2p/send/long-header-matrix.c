@@ -1,12 +1,12 @@
-/*/ */
-/*/ \file test/api/p2p/send/long-header-matrix.c */
-/*/ \Matrixed "Long header" point-to-point PAMI_send() test */
-/*/ */
-/*/   send hints       recv hints     header    exp */
-/*/ no long header | no long header    size    result   NOTES: */
-/*/ ============== | ============== | ====== | ====== | ================================ */
-/*/ 0 (hard)       | 0 (hard)       | short  | pass   | */
-
+/**
+ * \file test/api/p2p/send/long-header-matrix.c 
+ * \Matrixed "Long header" point-to-point PAMI_send() test 
+ * 
+ *   send hints       recv hints     header    exp 
+ * no long header | no long header    size    result   NOTES: 
+ * ============== | ============== | ====== | ====== | ================================ 
+ * 0 (hard)       | 0 (hard)       | short  | pass   | 
+ */
 
 #include <pami.h>
 #include <stdio.h>

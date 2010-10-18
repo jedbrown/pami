@@ -1,7 +1,7 @@
-/*/ */
-/*/ \file test/api/p2p/immediate_send.c */
-/*/ \brief Simple point-to-point PAMI_Send_immediate() test */
-/*/ */
+/**
+ * \file test/api/p2p/immediate_send.c 
+ * \brief Simple point-to-point PAMI_Send_immediate() test 
+ */
 
 #include <pami.h>
 #include <stdio.h>

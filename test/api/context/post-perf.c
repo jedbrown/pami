@@ -1,4 +1,4 @@
-/*
+/**
  *  \file test/api/context/post-perf.c
  *  \brief PAMI_Context_post() performance test using comm-threads
  */

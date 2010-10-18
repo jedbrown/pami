@@ -1,18 +1,19 @@
-/*/ */
-/*/ \file test/api/p2p/send/long-header-hard-match.c */
-/*/ \Matrixed "Long header" point-to-point PAMI_send() test */
-/*/ */
-/*/   send hints       recv hints     header    exp */
-/*/ no long header | no long header    size    result   NOTES: */
-/*/ ============== | ============== | ====== | ====== | ================================ */
-/*/ 0 (hard)       | 0 (hard)       | short  | pass   | Testsuite #1 */
-/*/ 0 (hard)       | 0 (hard)       | long   | pass   | Test with matched hard hints */
-/*/ 1 (hard)       | 1 (hard)       | short  | pass   | */
-/*/ 1 (hard)       | 1 (hard)       | long   | fail   | */
-/*/ 1 (soft)       | 0 (hard)       | short  | pass   | Testsuite #2 */
-/*/ 1 (soft)       | 0 (hard)       | long   | fail   | Use soft hint to turn matched */
-/*/ 0 (soft)       | 1 (hard)       | short  | pass   | hard hints into mismatched hints */
-/*/ 0 (soft)       | 1 (hard)       | long   | pass   | */
+/** 
+ * \file test/api/p2p/send/long-header-hard-match.c 
+ * \Matrixed "Long header" point-to-point PAMI_send() test 
+ * 
+ *   send hints       recv hints     header    exp 
+ * no long header | no long header    size    result   NOTES: 
+ * ============== | ============== | ====== | ====== | ================================ 
+ * 0 (hard)       | 0 (hard)       | short  | pass   | Testsuite #1 
+ * 0 (hard)       | 0 (hard)       | long   | pass   | Test with matched hard hints 
+ * 1 (hard)       | 1 (hard)       | short  | pass   | 
+ * 1 (hard)       | 1 (hard)       | long   | fail   | 
+ * 1 (soft)       | 0 (hard)       | short  | pass   | Testsuite #2 
+ * 1 (soft)       | 0 (hard)       | long   | fail   | Use soft hint to turn matched 
+ * 0 (soft)       | 1 (hard)       | short  | pass   | hard hints into mismatched hints 
+ * 0 (soft)       | 1 (hard)       | long   | pass   | 
+ */
 
 #include <pami.h>
 #include <stdio.h>

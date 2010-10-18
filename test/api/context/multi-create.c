@@ -1,7 +1,7 @@
-/*/ */
-/*/ \file test/api/context/multi-create.c */
-/*/ \brief Simple PAMI_Context_createv() test for multiple contexts */
-/*/ */
+/**
+ * \file test/api/context/multi-create.c 
+ * \brief Simple PAMI_Context_createv() test for multiple contexts 
+ */
 
 #include <pami.h>
 #include <stdio.h>

@@ -1,7 +1,7 @@
-/*/ */
-/*/ \file test/api/p2p/send/shmem-matrix-mv.c */
-/*/ \Matrixed "shmem" point-to-point PAMI_send() test */
-/*/ */
+/**
+ * \file test/api/p2p/send/shmem-matrix-mv.c 
+ * \Matrixed "shmem" point-to-point PAMI_send() test 
+ */
 
 #include "pami.h"
 #include <stdio.h>

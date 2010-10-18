@@ -1,7 +1,7 @@
-/*/ */
-/*/ \file test/api/init.c */
-/*/ \brief Simple Initialization Test */
-/*/ */
+/** 
+ * \file test/api/init.c 
+ * \brief Simple Initialization Test 
+ */
 
 #include "pami_util.h"
 

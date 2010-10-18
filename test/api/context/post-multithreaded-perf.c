@@ -1,11 +1,11 @@
-/*/ */
-/*/ \file test/api/context/post-multithreaded-perf.c */
-/*/ \brief Multithreaded PAMI_Context_post() performance test */
-/*/ */
-/*/ \todo There is a slight difference in the reported post times in the case */
-/*/       where the number of 'helper' threads == 1. For this test to be */
-/*/       completely accurate the times should be nearly equal. */
-/*/ */
+/** 
+ * \file test/api/context/post-multithreaded-perf.c 
+ * \brief Multithreaded PAMI_Context_post() performance test 
+ * 
+ * \todo There is a slight difference in the reported post times in the case 
+ *       where the number of 'helper' threads == 1. For this test to be 
+ *       completely accurate the times should be nearly equal. 
+ */
 
 #include <pami.h>
 #include <stdio.h>

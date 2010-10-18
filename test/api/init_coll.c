@@ -1,8 +1,7 @@
-/*/ */
-/*/ \file test/api/init_coll.c */
-/*/ \brief Simple Collective Initialization Test */
-/*/ */
-
+/** 
+ * \file test/api/init_coll.c 
+ * \brief Simple Collective Initialization Test 
+ */
 
 #include "pami_util.h"
 

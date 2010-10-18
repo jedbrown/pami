@@ -1,7 +1,7 @@
-/*/ */
-/*/ \file test/api/context/multi-advance.c */
-/*/ \brief Simple PAMI_Context_advance() multiple test */
-/*/ */
+/** 
+ * \file test/api/context/multi-advance.c 
+ * \brief Simple PAMI_Context_advance() multiple test 
+ */
 
 #include <pami.h>
 #include <stdio.h>

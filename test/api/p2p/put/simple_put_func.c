@@ -1,10 +1,10 @@
-/*/ */
-/*/ \file test/api/p2p/put/simple_put_func.c */
-/*/ \brief Simple point-to-point PAMI_Get() test */
-/*/ */
-/*/ This test implements a very simple "ping-ack" communication and */
-/*/ depends on a functional PAMI_Send_immediate() function. */
-/*/ */
+/**
+ * \file test/api/p2p/put/simple_put_func.c 
+ * \brief Simple point-to-point PAMI_Get() test 
+ * 
+ * This test implements a very simple "ping-ack" communication and 
+ * depends on a functional PAMI_Send_immediate() function. 
+ */
 
 #include <pami.h>
 #include <stdio.h>

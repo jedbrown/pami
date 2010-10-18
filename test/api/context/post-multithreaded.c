@@ -1,7 +1,7 @@
-/*/ */
-/*/ \file test/api/context/post-multithreaded.c */
-/*/ \brief Multithreaded PAMI_Context_post() test */
-/*/ */
+/** 
+ * \file test/api/context/post-multithreaded.c 
+ * \brief Multithreaded PAMI_Context_post() test 
+ */
 
 #include <pami.h>
 #include <stdio.h>

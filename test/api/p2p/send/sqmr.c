@@ -1,4 +1,4 @@
-/*
+/**
  * \file test/api/p2p/send/sqmr.c
  * \brief A threaded message-rate benchmark
  */

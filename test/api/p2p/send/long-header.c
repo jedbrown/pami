@@ -1,7 +1,7 @@
-/*/ */
-/*/ \file test/api/p2p/send/long-header.c */
-/*/ \brief "Long header" point-to-point PAMI_send() test */
-/*/ */
+/**
+ * \file test/api/p2p/send/long-header.c
+ * \brief "Long header" point-to-point PAMI_send() test
+ */
 
 #include <pami.h>
 #include <stdio.h>
