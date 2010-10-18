@@ -114,6 +114,7 @@ namespace PAMI
             _ascs_gatherv_int_factory(),
             _ascs_binomial_allgather_factory(),
             _ascs_ring_allgather_factory(),
+            _ascs_ring_allgatherv_factory(),
             _ascs_ring_allgatherv_int_factory(),
             _ascs_pairwise_alltoall_factory(),
             _ascs_pairwise_alltoallv_int_factory(),
@@ -261,6 +262,9 @@ namespace PAMI
                                       _context_id);
               geometry->addCollective(PAMI_XFER_ALLGATHER,
                                       _ascs_ring_allgather_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_ALLGATHERV,
+                                      _ascs_ring_allgatherv_factory,
                                       _context_id);
               geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,
                                       _ascs_ring_allgatherv_int_factory,
@@ -454,6 +458,12 @@ namespace PAMI
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num allgatherv factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_ring_allgatherv_factory);
+            new ((void*)_ascs_ring_allgatherv_factory) CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num allgatherv factory from active message ni and p2p protocol
             setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device, _ascs_ring_allgatherv_int_factory);
             new ((void*)_ascs_ring_allgatherv_int_factory) CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory(&_csconnmgr, ni_am);
             // ----------------------------------------------------
@@ -499,6 +509,7 @@ namespace PAMI
             _ascs_gatherv_int_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_allgather_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_ring_allgather_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_ring_allgatherv_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_ring_allgatherv_int_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_pairwise_alltoall_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_pairwise_alltoallv_int_factory->setMapIdToGeometry(mapidtogeometry);
@@ -790,6 +801,18 @@ namespace PAMI
             new ((void*)_ascs_ring_allgather_factory)
               CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory(&_csconnmgr, ni_am);
 
+            // Setup and Construct an asynchronous, comm_id/seq_num allgatherv factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervFactory,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
+                                device1, device2, _ascs_ring_allgatherv_factory);
+            new ((void*)_ascs_ring_allgatherv_factory)
+              CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervFactory(&_csconnmgr, ni_am);
+
             // Setup and Construct an asynchronous, comm_id/seq_num allgatherv_int factory from active message ni and p2p protocol
             setupFactory<T_NI_ActiveMessage,
                          T_Protocol1,
@@ -871,6 +894,7 @@ namespace PAMI
             _ascs_gatherv_int_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_allgather_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_ring_allgather_factory->setMapIdToGeometry(mapidtogeometry);
+            _ascs_ring_allgatherv_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_ring_allgatherv_int_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_pairwise_alltoall_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_pairwise_alltoallv_int_factory->setMapIdToGeometry(mapidtogeometry);
@@ -929,6 +953,7 @@ namespace PAMI
           CCMI::Adaptor::P2PGatherv::IntFactory                           *_ascs_gatherv_int_factory;
           CCMI::Adaptor::P2PAllgather::Binomial::Factory                  *_ascs_binomial_allgather_factory;
           CCMI::Adaptor::P2PAllgatherv::Ring::AllgatherFactory            *_ascs_ring_allgather_factory;
+          CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervFactory           *_ascs_ring_allgatherv_factory;
           CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory        *_ascs_ring_allgatherv_int_factory;
           CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory          *_ascs_pairwise_alltoall_factory;
           CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory      *_ascs_pairwise_alltoallv_int_factory;

@@ -791,6 +791,12 @@ namespace CCMI
           strcpy(&m->name[0], "P2P_CCMI Ring Allgatherv_int");
         }
 
+        void ring_allgatherv_metadata(pami_metadata_t *m)
+        {
+          // \todo:  fill in other metadata
+          strcpy(&m->name[0], "P2P_CCMI Ring Allgatherv");
+        }
+
         typedef CCMI::Adaptor::Allgatherv::AsyncAllgathervT
         < CCMI::ConnectionManager::CommSeqConnMgr,
           pami_allgather_t > AllgatherComposite;
@@ -814,6 +820,19 @@ namespace CCMI
           CCMI::ConnectionManager::CommSeqConnMgr,
           getKey >
         AllgathervIntFactory;
+
+        typedef CCMI::Adaptor::Allgatherv::AsyncAllgathervT
+        < CCMI::ConnectionManager::CommSeqConnMgr,
+          pami_allgatherv_t > AllgathervComposite;
+
+        typedef CCMI::Adaptor::Allgatherv::AsyncAllgathervFactoryT
+        < pami_allgatherv_t,
+          AllgathervComposite,
+          ring_allgatherv_metadata,
+          CCMI::ConnectionManager::CommSeqConnMgr,
+          getKey >
+        AllgathervFactory;
+
 
       }// Ring
     }// P2PAllgatherv
