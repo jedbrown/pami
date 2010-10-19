@@ -246,7 +246,7 @@ int main (int argc, char ** argv)
     while (_info[cid].exchange != 0)
     {
       result = PAMI_Context_advance (context[0], 100);
-      if (result != PAMI_SUCCESS)
+      if (result != PAMI_SUCCESS && result != PAMI_EAGAIN)
       {
         fprintf (stderr, "Error. Unable to advance pami context %zu. result = %d\n", cid, result);
         return 1;
@@ -308,7 +308,7 @@ int main (int argc, char ** argv)
       while (_info[cid].active != 0)
       {
         result = PAMI_Context_advance (context[0], 100);
-        if (result != PAMI_SUCCESS)
+        if (result != PAMI_SUCCESS && result != PAMI_EAGAIN)
         {
           fprintf (stderr, "Error. Unable to advance pami context %zu. result = %d\n", cid, result);
           return 1;
@@ -328,7 +328,7 @@ int main (int argc, char ** argv)
         while (_info[cid].pong[tid] != 0)
         {
           result = PAMI_Context_advance (context[0], 100);
-          if (result != PAMI_SUCCESS)
+          if (result != PAMI_SUCCESS && result != PAMI_EAGAIN)
           {
             fprintf (stderr, "Error. Unable to advance pami context %zu. result = %d\n", cid, result);
             return 1;
@@ -349,7 +349,7 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Wait for the 'ping' rput operation to complete for context %zu\n", cid);
       while (_info[cid].ping[task_id] != 0)
       {
-        result = PAMI_Context_advance (context[cid], 100);
+        PAMI_Context_advance (context[cid], 100);
         if (result != PAMI_SUCCESS)
         {
           fprintf (stderr, "Error. Unable to advance pami context %zu. result = %d\n", cid, result);
@@ -387,7 +387,7 @@ int main (int argc, char ** argv)
       while (_info[cid].active != 0)
       {
         result = PAMI_Context_advance (context[cid], 100);
-        if (result != PAMI_SUCCESS)
+        if (result != PAMI_SUCCESS & result != PAMI_EAGAIN)
         {
           fprintf (stderr, "Error. Unable to advance pami context %zu. result = %d\n", cid, result);
           return 1;

@@ -37,7 +37,7 @@ typedef struct
   pami_endpoint_t   origin;
   size_t            bytes;
   size_t            pad;
-  uint32_t          buffer[BUFFERSIZE<<1];
+  uint32_t          buffer[12]; /* have 16-byte padding on both sides */
   pami_memregion_t  memregion;
   volatile size_t * value;
 } get_info_t;
@@ -58,22 +58,21 @@ void print_data (void * addr, size_t bytes)
 void initialize_data (uint32_t * addr, size_t bytes, size_t pad)
 {
   size_t i = 0;
-  uint8_t * p    = (uint8_t *) addr;
+  uint32_t * p   = addr;
   uint8_t * data = (uint8_t *) &p[pad];
 
-  uint8_t deadbeef[4];
-  deadbeef[0] = 0xde;
-  deadbeef[1] = 0xad;
-  deadbeef[2] = 0xbe;
-  deadbeef[3] = 0xef;
-
-  /* fill the entire buffer with "deadbeef" */
-  for (i=0; i<(pad * 2 + bytes); i++)
-    p[i] = deadbeef[i%4];
+  /* initialize front padding  */
+  for (i=0; i<pad; i++)
+    p[i] = 0xdeadbeef;
 
   /* fill the data pattern */
   for (i=0; i<bytes; i++)
     data[i] = (uint8_t) (~(bytes-i));
+
+  /* initialize back padding  */
+  p = (uint32_t *) &data[i];
+  for (i=0; i<pad; i++)
+    p[i] = 0xdeadbeef;
 }
 
 unsigned validate_data (uint32_t * addr, size_t bytes, size_t pad)
@@ -83,41 +82,32 @@ unsigned validate_data (uint32_t * addr, size_t bytes, size_t pad)
 
   TRACE_ERR((stderr, "validate_data(%p,%zu,%zu)\n", addr, bytes, pad));
 
-  uint8_t deadbeef[4];
-  deadbeef[0] = 0xde;
-  deadbeef[1] = 0xad;
-  deadbeef[2] = 0xbe;
-  deadbeef[3] = 0xef;
-
-  /* check the "pad" on either side of the buffer */
-  uint8_t * p = (uint8_t *) addr;
   for (i=0; i<pad; i++)
   {
-    if (p[i] != deadbeef[i%4])
+    if (addr[i] != 0xdeadbeef)
     {
+      fprintf (stderr, "validate_data(%p,%zu,%zu) .. ERROR .. addr[%zu] != 0x%08x (value is 0x%08x)\n", addr, bytes, pad, i, 0xdeadbeef, addr[i]);
       success = 0;
-      fprintf (stderr, "  Error. (address: %p) p[%zu] != 0x%02x (value is 0x%02x)\n", &p[i], i, deadbeef[i%4], p[i]);
-    }
-  }
-  p += pad + bytes;
-  for (i=0; i<pad; i++)
-  {
-    if (p[i] != deadbeef[i%4])
-    {
-      success = 0;
-      fprintf (stderr, "  Error. (address: %p) p[%zu] != 0x%02x (value is 0x%02x)\n", &p[i], i+pad+bytes, deadbeef[i%4], p[i]);
     }
   }
 
-  /* check the data in the middle */
-  p = (uint8_t *) addr;
-  p += pad;
+  uint8_t * data = (uint8_t *) &addr[i];
   for (i=0; i<bytes; i++)
   {
-    if (p[i] != (uint8_t)(~(bytes-i)))
+    if (data[i] != (uint8_t)~(bytes-i))
     {
+      fprintf (stderr, "validate_data(%p,%zu,%zu) .. ERROR .. data[%zu] != 0x%02zx (value is 0x%02x)\n", addr, bytes, pad, i, (uint8_t)~(bytes-i), data[i]);
       success = 0;
-      fprintf (stderr, "  Error. (address: %p) p[%zu] != 0x%02x (value is 0x%02x)\n", &p[i], i+pad, (uint8_t)(~(bytes-i)), p[i]);
+    }
+  }
+
+  uint32_t * p = (uint32_t *) &data[i];
+  for (i=0; i<pad; i++)
+  {
+    if (p[i] != 0xdeadbeef)
+    {
+      fprintf (stderr, "validate_data(%p,%zu,%zu) .. ERROR .. p[%zu] != 0x%08x (value is 0x%08x)\n", addr, bytes, pad, i, 0xdeadbeef, p[i]);
+      success = 0;
     }
   }
 
@@ -157,16 +147,16 @@ static void get_done (pami_context_t   context,
   size_t status = 0; /* success */
   if (result != PAMI_SUCCESS)
   {
-    fprintf (stderr, "   'get_done' callback, PAMI_Get failed\n");
+    fprintf (stderr, "   'get_done' callback, PAMI_Rget failed\n");
     status = 1; /* get failed */
   }
   else
   {
     /* validate the data! */
-    print_data ((void *)info->buffer, info->bytes + info->pad * 2);
-    if (!validate_data(info->buffer, info->bytes, info->pad))
+    print_data ((void *)info->buffer, 4 * 12);
+    if (!validate_data(info->buffer, info->bytes, 4))
     {
-      fprintf (stderr, "   'get_done' callback,) PAMI_Get data validation error.\n");
+      fprintf (stderr, "   'get_done' callback,) PAMI_Rget data validation error.\n");
       status = 2; /* get data validation failure */
     }
   }
@@ -215,12 +205,12 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
   get->bytes  = rts->bytes;
   get->pad    = 16;
 
-  initialize_data (get->buffer, 0, BUFFERSIZE<<1);
-  print_data (get->buffer, BUFFERSIZE<<2);
+  initialize_data (get->buffer, 0, 6);
+  print_data (get->buffer, 12*4);
 
   /* Create a memregion for the data buffer. */
   size_t bytes = 0;
-  PAMI_Memregion_create (context, get->buffer, BUFFERSIZE>>2, &bytes, &(get->memregion));
+  PAMI_Memregion_create (context, get->buffer, 12*4, &bytes, &(get->memregion));
 
   /* Perform the rdma get operation */
   pami_rget_simple_t parameters;
@@ -229,7 +219,7 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
   parameters.rma.cookie  = get;
   parameters.rma.done_fn = get_done;
   parameters.rdma.local.mr      = &(get->memregion);
-  parameters.rdma.local.offset  = get->pad;
+  parameters.rdma.local.offset  = 16; 
   parameters.rdma.remote.mr     = &(rts->memregion);
   parameters.rdma.remote.offset = 0;
 
@@ -394,7 +384,7 @@ fprintf (stderr, "Wait for 'ack', _ack_active = %zu\n", _ack_active);
     while (_ack_active != 0)
     {
       result = PAMI_Context_advance (context[0], 100);
-      if (result != PAMI_SUCCESS)
+      if (result != PAMI_SUCCESS && result != PAMI_EAGAIN)
       {
         fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
         return 1;
@@ -436,7 +426,7 @@ fprintf (stderr, "Wait for 'rts', _rts_active = %zu, contextid = %zu\n", _rts_ac
     while (_rts_active != 0)
     {
       result = PAMI_Context_advance (context[contextid], 100);
-      if (result != PAMI_SUCCESS)
+      if (result != PAMI_SUCCESS && result != PAMI_EAGAIN)
       {
         fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
         return 1;
