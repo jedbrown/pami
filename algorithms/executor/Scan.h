@@ -213,7 +213,7 @@ namespace CCMI
                               pami_dt          dt = PAMI_UNDEFINED_DT)
         {
 
-          CCMI_assert(count * sizeOfType == _buflen);
+          CCMI_assert(count * sizeOfType == (unsigned)_buflen);
           _reduceFunc    = func;
           _sizeOfType    = sizeOfType;
 
@@ -232,7 +232,7 @@ namespace CCMI
                             pami_dt          dt = PAMI_UNDEFINED_DT)
         {
 
-          CCMI_assert(count * sizeOfType == _buflen);
+          CCMI_assert(count * sizeOfType == (unsigned)_buflen);
           _reduceFunc    = func;
           _sizeOfType    = sizeOfType;
 
