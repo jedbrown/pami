@@ -388,7 +388,7 @@ int main (int argc, char ** argv)
       while (_info[cid].active != 0)
       {
         result = PAMI_Context_advance (context[cid], 100);
-        if (result != PAMI_SUCCESS & result != PAMI_EAGAIN)
+        if (result != PAMI_SUCCESS && result != PAMI_EAGAIN)
         {
           fprintf (stderr, "Error. Unable to advance pami context %zu. result = %d\n", cid, result);
           return 1;
