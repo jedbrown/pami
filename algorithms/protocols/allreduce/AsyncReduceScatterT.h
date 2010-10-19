@@ -50,6 +50,7 @@ namespace CCMI
         T_Scatter_Schedule                         _scatter_schedule;
         T_Conn                                     *_cmgr;
         size_t                                     *_sdispls;
+        size_t                                     *_scounts;
         char                                       *_tmpbuf;
         char                                       *_relbuf;
         int                                        _scatter_done;
@@ -72,6 +73,7 @@ namespace CCMI
         _scatter_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(0)),
         _cmgr(cmgr),
         _sdispls(NULL),
+        _scounts(NULL),
         _tmpbuf(NULL),
         _scatter_done(0),
         _reduce_done(0)
@@ -121,6 +123,7 @@ namespace CCMI
         _scatter_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(0)),
         _cmgr(cmgr),
         _sdispls(NULL),
+        _scounts(NULL),
         _tmpbuf(NULL),
         _scatter_done(0),
         _reduce_done(0)
@@ -155,6 +158,7 @@ namespace CCMI
         ~AsyncReduceScatterT ()
         {
           free(_sdispls);
+          free(_scounts);
           free(_tmpbuf);
         }
 
@@ -183,20 +187,29 @@ namespace CCMI
            }
         }
 
-        void setScatterExecutor (char *sbuf, char *rbuf, size_t rtypecount, size_t *stypecounts, unsigned counts, bool root, pami_callback_t  cb_done)
+        void setScatterExecutor (char *sbuf, char *rbuf, size_t rtypecount, size_t *stypecounts, 
+                                 pami_dt dt, pami_op op, unsigned counts, bool root, 
+                                 pami_callback_t  cb_done)
         {
 
           pami_scatterv_t s_xfer;
+          coremath func;
+          unsigned sizeOfType;
+
+          CCMI::Adaptor::Allreduce::getReduceFunction(dt,op,rtypecount,sizeOfType,func);
 
           _sdispls = (size_t *) malloc(counts * sizeof(size_t));
+          _scounts = (size_t *) malloc(counts * sizeof(size_t));
           _sdispls[0] = 0;
+          _scounts[0] = stypecounts[0] * sizeOfType;
           for (unsigned i = 0; i < counts; ++i)
           {
-            _sdispls[i+1] = _sdispls[i] + stypecounts[i];
-            // fprintf(stderr, "setScatterExecutor - _sdispls[%d] = %d\n", i+1, _sdispls[i+1]);
+            _scounts[i+1] = stypecounts[i+1] * sizeOfType;
+            _sdispls[i+1] = _sdispls[i] + stypecounts[i] * sizeOfType;
+            //fprintf(stderr, "setScatterExecutor - _sdispls[%d] = %d, _scounts[%d] = %d\n", i+1, _sdispls[i+1], i+1, _scounts[i+1]);
           }
 
-          s_xfer.stypecounts = stypecounts;
+          s_xfer.stypecounts = _scounts;
           s_xfer.sdispls     = _sdispls;
 
           _scatter_executor.setRoot (0);
@@ -358,7 +371,7 @@ namespace CCMI
               pami_callback_t  cb_exec_done;
               cb_exec_done.function   = scatter_exec_done;
               cb_exec_done.clientdata = co;
-              a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount,a_xfer->rcounts,_native->numranks(), _native->myrank() == root, cb_exec_done);
+              a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount,a_xfer->rcounts,a_xfer->dt, a_xfer->op,_native->numranks(), _native->myrank() == root, cb_exec_done);
               a_composite->getScatterExecutor().setConnectionID(key + 1);
 	    }
 	    /// not found posted CollOp object, create a new one and
@@ -380,7 +393,7 @@ namespace CCMI
                               cmd );
 
               cb_exec_done.function = scatter_exec_done;
-              a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount, a_xfer->rcounts, _native->numranks(), _native->myrank() == root, cb_exec_done);
+              a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount, a_xfer->rcounts, a_xfer->dt, a_xfer->op, _native->numranks(), _native->myrank() == root, cb_exec_done);
 
 	      co->setXfer((pami_xfer_t*)cmd);
 	      co->setFlag(LocalPosted);

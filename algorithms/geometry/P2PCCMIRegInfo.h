@@ -39,6 +39,7 @@
 #include "algorithms/protocols/allgather/AsyncAllgatherT.h"
 #include "algorithms/protocols/allgather/AsyncAllgathervT.h"
 #include "algorithms/protocols/alltoall/AsyncAlltoallvT.h"
+#include "algorithms/protocols/scan/AsyncScanT.h"
 #include "p2p/protocols/SendPWQ.h"
 #include "common/NativeInterface.h"
 #include "algorithms/protocols/alltoall/All2All.h"
@@ -708,6 +709,56 @@ namespace CCMI
 
      } // P2PGatherv
 
+    namespace P2PScan
+    {
+      namespace Binomial
+      {
+
+        unsigned getKey(unsigned                                   root,
+                        unsigned                                   connid,
+                        PAMI_GEOMETRY_CLASS                      * geometry,
+                        ConnectionManager::BaseConnectionManager **connmgr)
+        {
+          if (connid != (unsigned)-1)
+          {
+            *connmgr = NULL; //use this key as connection id
+            return connid;
+          }
+          ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
+          return cm->updateConnectionId( geometry->comm() );
+        }
+
+        void create_schedule(void                        * buf,
+                             unsigned                      size,
+                             unsigned                      root,
+                             Interfaces::NativeInterface * native,
+                             PAMI_GEOMETRY_CLASS          * g)
+        {
+          TRACE_INIT((stderr, "<%p>AsyncBinomialScanComposite::create_schedule()\n",(void*)NULL));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
+        }
+
+        void binomial_scan_metadata(pami_metadata_t *m)
+        {
+          // \todo:  fill in other metadata
+          strcpy(&m->name[0], "P2P_CCMI Binomial Scan");
+        }
+
+        typedef CCMI::Adaptor::Scan::AsyncScanT
+        < CCMI::Schedule::GenericTreeSchedule<>,
+          CCMI::ConnectionManager::CommSeqConnMgr,
+          create_schedule > Composite;
+
+        typedef CCMI::Adaptor::Scan::AsyncScanFactoryT
+        < Composite,
+          binomial_scan_metadata,
+          CCMI::ConnectionManager::CommSeqConnMgr,
+          getKey >
+        Factory;
+
+      }// Binomial
+    }// P2PScan
+
     namespace P2PAllgather
     {
 
@@ -734,7 +785,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
-          TRACE_INIT((stderr, "<%p>AsyncBinomialGatherComposite::create_schedule()\n",(void*)NULL));
+          TRACE_INIT((stderr, "<%p>AsyncBinomialAllgatherComposite::create_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
         }
 

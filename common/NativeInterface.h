@@ -1956,6 +1956,8 @@ namespace PAMI
 
     TRACE_FORMAT( "<%p> %p connection id %u, bytes %zu", this, req, connection_id, bytes);
 
+    recv->hints.inline_completion = 1;
+
     recv->addr     = rcvpwq->bufferToProduce();
     recv->type     = PAMI_BYTE;
     recv->offset   = 0;
