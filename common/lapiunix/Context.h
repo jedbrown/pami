@@ -705,21 +705,37 @@ namespace PAMI
                                                   size_t           * bytes_out,
                                                   pami_memregion_t * memregion)
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          internal_error_t rc =
+              (cp->*(cp->pRegisterMem))(address, bytes_in, bytes_out,
+                      (void*)memregion, PAMI_CLIENT_MEMREGION_SIZE_STATIC);
+          return PAMI_RC(rc);
         }
 
       inline pami_result_t memregion_destroy_impl (pami_memregion_t * memregion)
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          // Do nothing but set memregion to a invalid value
+          memset(memregion, 0, sizeof(pami_memregion_t));
+          return PAMI_SUCCESS;
         }
 
 
       inline pami_result_t rput_impl (pami_rput_simple_t * parameters)
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          MemRegion *local_mr   = (MemRegion*)(parameters->rdma.local.mr);
+          void      *local_buf  = (void*)(local_mr->basic.user_ptr + parameters->rdma.local.offset);
+          MemRegion *remote_mr  = (MemRegion*)(parameters->rdma.remote.mr);
+          void      *remote_buf = (void*)(remote_mr->basic.user_ptr + parameters->rdma.remote.offset);
+          /* pass both local_mr and remote_mr will enable eager rdma 
+           * if hint.use_rdma != force_off */
+          internal_error_t rc = (cp->*(cp->pPut))
+              (parameters->rma.dest, local_buf, local_mr,
+               remote_buf, remote_mr, parameters->rma.bytes,
+               *(send_hint_t*)&parameters->rma.hints, INTERFACE_PAMI,
+               (void*)parameters->rma.done_fn, (void*)parameters->put.rdone_fn,
+               parameters->rma.cookie, NULL, NULL, NULL);
+          return PAMI_RC(rc);
         }
 
       inline pami_result_t rput_typed_impl (pami_rput_typed_t * parameters)
@@ -730,8 +746,19 @@ namespace PAMI
 
       inline pami_result_t rget_impl (pami_rget_simple_t * parameters)
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          MemRegion *local_mr   = (MemRegion*)(parameters->rdma.local.mr);
+          void      *local_buf  = (void*)(local_mr->basic.user_ptr + parameters->rdma.local.offset);
+          MemRegion *remote_mr  = (MemRegion*)(parameters->rdma.remote.mr);
+          void      *remote_buf = (void*)(remote_mr->basic.user_ptr + parameters->rdma.remote.offset);
+          /* pass both local_mr and remote_mr will enable eager rdma 
+           * if hint.use_rdma != force_off */
+          internal_error_t rc = 
+              (cp->*(cp->pGet))(parameters->rma.dest,
+                      local_buf, local_mr, remote_buf, remote_mr, parameters->rma.bytes,
+                      *(send_hint_t*)&parameters->rma.hints, INTERFACE_PAMI,
+                      (void *)parameters->rma.done_fn, parameters->rma.cookie, NULL, NULL);
+          return PAMI_RC(rc);
         }
 
       inline pami_result_t rget_typed_impl (pami_rget_typed_t * parameters)
