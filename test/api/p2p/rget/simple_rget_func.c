@@ -98,7 +98,7 @@ unsigned validate_data (uint32_t * addr, size_t bytes, size_t pad)
   {
     if (data[i] != (uint8_t)~(bytes-i))
     {
-//      fprintf (stderr, "validate_data(%p,%zu,%zu) .. ERROR .. data[%zu] != 0x%02zx (value is 0x%02x)\n", addr, bytes, pad, i, (uint8_t)~(bytes-i), data[i]);
+      fprintf (stderr, "validate_data(%p,%zu,%zu) .. ERROR .. data[%zu] != 0x%02zx (value is 0x%02x)\n", addr, bytes, pad, i, ~(bytes-i), data[i]);
       success = 0;
     }
   }
