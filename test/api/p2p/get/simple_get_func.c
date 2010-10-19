@@ -25,6 +25,8 @@
 #define TRACE_ERR(x)  /*fprintf x */
 #endif
 
+static pami_send_hint_t null_send_hint;
+
 typedef struct
 {
   pami_endpoint_t   origin;
@@ -168,6 +170,7 @@ static void get_done (pami_context_t   context,
   parameters.header.iov_len  = sizeof(status);
   parameters.data.iov_base   = NULL;
   parameters.data.iov_len    = 0;
+  parameters.hints           = null_send_hint;
   PAMI_Send_immediate (context, &parameters);
 
   free (cookie);
@@ -204,7 +207,7 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
 
   pami_get_simple_t parameters;
   parameters.rma.dest    = rts->origin;
-  /*parameters.rma.hints   = {0}; */
+  parameters.rma.hints   = null_send_hint; 
   parameters.rma.bytes   = rts->bytes;
   parameters.rma.cookie  = get;
   parameters.rma.done_fn = get_done;
@@ -276,7 +279,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  pami_send_hint_t options={};
+  pami_send_hint_t options=null_send_hint;
 
 #ifdef USE_SHMEM_OPTION
   options.use_shmem = PAMI_HINT3_FORCE_ON;
@@ -356,6 +359,7 @@ int main (int argc, char ** argv)
     parameters.header.iov_len  = sizeof(rts_info_t);
     parameters.data.iov_base   = NULL;
     parameters.data.iov_len    = 0;
+    parameters.hints           = null_send_hint;
 fprintf (stderr, "Before PAMI_Send_immediate()\n");
     PAMI_Send_immediate (context[0], &parameters);
 

@@ -25,6 +25,7 @@
 #define TRACE_ERR(x)  /*fprintf x */
 #endif
 
+static pami_send_hint_t null_send_hint;
 typedef struct
 {
   pami_endpoint_t   origin;
@@ -169,6 +170,7 @@ static void get_done (pami_context_t   context,
   parameters.header.iov_len  = sizeof(status);
   parameters.data.iov_base   = NULL;
   parameters.data.iov_len    = 0;
+  parameters.hints           = null_send_hint;
   PAMI_Send_immediate (context, &parameters);
 
   /* Destroy the local memory region */
@@ -240,6 +242,7 @@ int main (int argc, char ** argv)
   volatile size_t _rts_active = 1;
   volatile size_t _ack_active = 1;
 
+  memset(&null_send_hint, 0, sizeof(null_send_hint));
 
   pami_client_t client;
   pami_context_t context[2];
@@ -293,7 +296,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  pami_send_hint_t options={};
+  pami_send_hint_t options=null_send_hint;
 
 #ifdef USE_SHMEM_OPTION
   options.use_shmem = PAMI_HINT3_FORCE_ON;

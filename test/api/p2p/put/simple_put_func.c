@@ -25,6 +25,8 @@
 #define TRACE_ERR(x)  /*fprintf x */
 #endif
 
+static pami_send_hint_t null_send_hint;
+
 typedef struct
 {
   pami_endpoint_t   origin;
@@ -83,7 +85,7 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
   pami_put_simple_t parameters;
   memset(&parameters, 0, sizeof (parameters));
   parameters.rma.dest    = info->origin;
-  /*parameters.rma.hints   = {0}; */
+  parameters.rma.hints   = null_send_hint;
   parameters.rma.bytes   = sizeof(size_t);
   parameters.rma.cookie  = cookie;
   parameters.rma.done_fn = done;
@@ -212,6 +214,7 @@ int main (int argc, char ** argv)
     parameters.header.iov_len  = sizeof(info_t);
     parameters.data.iov_base   = NULL;
     parameters.data.iov_len    = 0;
+    parameters.hints           = null_send_hint;
 fprintf (stderr, "Before PAMI_Send_immediate()\n");
     PAMI_Send_immediate (context[0], &parameters);
 

@@ -25,6 +25,7 @@
 #define TRACE_ERR(x) /* fprintf x */
 
 
+static pami_send_hint_t null_send_hint;
 
 typedef struct
 {
@@ -183,7 +184,7 @@ int main (int argc, char ** argv)
 
 
 
-  pami_send_hint_t options={};
+  pami_send_hint_t options=null_send_hint;
 #ifdef USE_SHMEM_OPTION
   options.use_shmem = PAMI_HINT3_FORCE_ON;
   fprintf (stderr, "##########################################\n");
@@ -276,7 +277,7 @@ int main (int argc, char ** argv)
 
       /* initialize common rput parameters */
       pami_rput_simple_t parameters;
-      /*parameters.rma.hints          = 0; */
+      parameters.rma.hints          = null_send_hint;
       parameters.rma.bytes          = sizeof(size_t);
       parameters.rma.cookie         = (void *) &_info[cid].active;
       parameters.rma.done_fn        = decrement;
@@ -362,7 +363,7 @@ int main (int argc, char ** argv)
 
       /* initialize common rput parameters */
       pami_rput_simple_t parameters;
-      /*parameters.rma.hints          = 0; */
+      parameters.rma.hints          = null_send_hint; 
       parameters.rma.bytes          = sizeof(size_t);
       parameters.rma.cookie         = (void *) &_info[cid].active;
       parameters.rma.done_fn        = decrement;
