@@ -153,6 +153,12 @@ namespace PAMI
 
         // --------------------------------------------------------------------
         // Set the common base descriptor fields
+	// 
+	// For the remote get packet, send it using the high priority torus
+	// fifo map.  Everything else uses non-priority torus fifos, pinned
+	// later based on destination.  This is necessary to avoid deadlock
+	// when the remote get fifo fills.  Note that this is in conjunction
+	// with using the high priority virtual channel (set elsewhere).
         // --------------------------------------------------------------------
         MUSPI_BaseDescriptorInfoFields_t base;
         memset((void *)&base, 0, sizeof(base));
@@ -160,12 +166,20 @@ namespace PAMI
         base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
 
         _dput.setBaseFields (&base);
-        _rget.setBaseFields (&base);
         _rput.setBaseFields (&base);
+
+	base.Torus_FIFO_Map = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_PRIORITY;
+	_rget.setBaseFields (&base);
 
 
         // --------------------------------------------------------------------
         // Set the common point-to-point descriptor fields
+	//
+	// For the remote get packet, send it on the high priority virtual
+	// channel.  Everything else is on the deterministic virtual channel.
+	// This is necessary to avoid deadlock when the remote get fifo fills.
+	// Note that this is in conjunction with setting the high priority
+	// torus fifo map (set elsewhere).
         // --------------------------------------------------------------------
         MUSPI_Pt2PtDescriptorInfoFields_t pt2pt;
         memset((void *)&pt2pt, 0, sizeof(pt2pt));
@@ -180,12 +194,14 @@ namespace PAMI
         _dput.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
         _dput.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
         _dput.setPt2PtFields (&pt2pt);
-        _rget.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
-        _rget.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
-        _rget.setPt2PtFields (&pt2pt);
         _rput.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
         _rput.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
         _rput.setPt2PtFields (&pt2pt);
+        _rget.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
+        _rget.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
+        pt2pt.Misc2 =
+          MUHWI_PACKET_VIRTUAL_CHANNEL_HIGH_PRIORITY;
+        _rget.setPt2PtFields (&pt2pt);
 
 
         // --------------------------------------------------------------------
@@ -500,7 +516,6 @@ namespace PAMI
 
             // Initialize the injection fifo descriptor in-place.
             rget->setDestination (dest);
-            rget->setTorusInjectionFIFOMap (map);
 
             // Determine the remote pinning information
             size_t rfifo =
