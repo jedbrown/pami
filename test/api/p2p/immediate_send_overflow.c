@@ -368,20 +368,25 @@ int main (int argc, char ** argv)
 	    }
 	      
 	    if (recv_active == 0) {
+
+	      // Determine reset value 
+	      // reset value = 0 for even test values, 255 for odd test values
+	      if (n == num_tasks - 1) { // test is going to increment
+		r = (test+1) % 2; // base reset value on next test value
+	      } else {
+		r = test % 2; // base reset value on current test value
+	      }
+
+	      // Reset __recv_buffer for next test
+	      for (i = 0; i < 2048; i++) {
+		__recv_buffer[i] = reset_value[r];
+	      }
+
 	      recv_active = 1;
 	    }
 
 	    fprintf (stderr, "... after advance loop\n");
 	  } // end task id loop
-
-	  // Reset __recv_buffer for next payload
-	  // reset value = 0 for even p values, 255 for odd p values
-	  r = (test+1) % 2; // base reset value on next p value
-	      
-	  for (i = 0; i < 2048; i++) {
-	    __recv_buffer[i] = reset_value[r];
-	  }
-	  
 	} // end scenario loop
       } // end xtalk loop
     } // end device loop
@@ -441,11 +446,12 @@ int main (int argc, char ** argv)
 	  }
 	    
 	  if (recv_active == 0) {
-
-	    // Reset __recv_buffer for next payload
+	    
+	    // Determine reset value
 	    // reset value = 0 for even p values, 255 for odd p values
 	    r = (test+1) % 2; // base reset value on next p value
 	      
+	    // Reset __recv_buffer for next payload
 	    for (i = 0; i < 2048; i++) {
 	      __recv_buffer[i] = reset_value[r];
 	    }
