@@ -385,25 +385,26 @@ int main (int argc, char ** argv)
 		  send_active = 1;
 
 		  if (recv_active == 0) {
+
+		    // Reset __recv_buffer
+		    for (i = 0; i < 2048; i++) {
+		      // Need special cases for transitioning from 0 <-> 255
+		      if ((n == num_tasks - 1) && (h == hsize - 1) && (p == psize - 1)) { // Last header/payload combo sent to last task
+			if (r == reset_elements - 1) { // time to loop back to 0
+			  __recv_buffer[i] = reset_value[0];
+			} else { // move to next reset value
+			  __recv_buffer[i] = reset_value[r+1];
+			}
+		      } else {
+			__recv_buffer[i] = reset_value[r];
+		      }
+		    }
+		    
 		    recv_active = 1;
 		  }
 
 		  fprintf (stderr, "... after send-recv advance loop\n");
 		} // end task id loop
-
-		// Reset __recv_buffer
-		for (i = 0; i < 2048; i++) {
-		  // Need special cases for transitioning from 0 <-> 255
-		  if ((h == hsize - 1) && (p == psize - 1)) {
-		    if (r == reset_elements - 1) { // time to loop back to 0
-		      __recv_buffer[i] = reset_value[0];
-		    } else { // move to next reset value
-		      __recv_buffer[i] = reset_value[r+1];
-		    }
-		  } else {
-		    __recv_buffer[i] = reset_value[r];
-		  }
-		}
 	      } // end payload loop
 	    } // end header loop
 	  } // end reset value loop
@@ -457,8 +458,8 @@ int main (int argc, char ** argv)
 		  // Reset __recv_buffer
 		  for (i = 0; i < 2048; i++) {
 		    // Need special cases for transitioning from 0 <-> 255
-		    if ((h == hsize - 1) && (p == psize - 1)) {
-		      if (r == reset_elements - 1) { // time to loop back to 0
+		    if ((h == hsize - 1) && (p == psize - 1)) { // last header/payload combo
+		      if (r == reset_elements - 1) { // loop back to 0
 			__recv_buffer[i] = reset_value[0];
 		      } else { // move to next reset value
 			__recv_buffer[i] = reset_value[r+1];
