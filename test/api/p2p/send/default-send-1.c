@@ -1,7 +1,7 @@
-/**
- * \file test/api/p2p/send/default-send-1.c
- * \brief Ppoint-to-point PAMI_send() test using multiple contexts
- */
+///
+/// \file test/api/p2p/send/default-send-1.c
+/// \brief Ppoint-to-point PAMI_send() test using multiple contexts
+///
 
 #include <pami.h>
 #include <stdio.h>
@@ -104,7 +104,7 @@ unsigned do_test ()
     return 1;
   }
   size_t task_id = configuration.value.intval;
-  /*TRACE((stderr, "My task id = %zu\n", task_id)); */
+  //TRACE((stderr, "My task id = %zu\n", task_id));
 
   configuration.name = PAMI_CLIENT_NUM_TASKS;
   result = PAMI_Client_query(g_client, &configuration,1);
@@ -114,14 +114,13 @@ unsigned do_test ()
     return 1;
   }
   size_t num_tasks = configuration.value.intval;
-  /*TRACE((stderr, "Number of tasks = %zu\n", num_tasks)); */
-  if (num_tasks != 2)
-  {
-    fprintf (stderr, "Error. This test requires 2 tasks. Number of tasks in this job: %zu\n", num_tasks);
+  //TRACE((stderr, "Number of tasks = %zu\n", num_tasks));
+  if (num_tasks < 2) {
+    fprintf(stderr, "Error. This test requires >= 2 tasks. Number of tasks in this job: %zu\n", num_tasks);
     return 1;
   }
 
-  /*size_t dispatch = 0; */
+  //size_t dispatch = 0;
   pami_dispatch_callback_fn fn;
   fn.p2p = test_dispatch;
   pami_send_hint_t options={0};
@@ -129,9 +128,9 @@ unsigned do_test ()
 
   if (create_dpids) {
     for (i = 0; i < num_contexts; i++) {
-      /* For each context: */
-      /* Set up dispatch ID 0 for MU (use_shmem = 2) */
-      /* set up dispatch ID 1 for SHMem (use_shmem = 1) */
+      // For each context:
+      // Set up dispatch ID 0 for MU (use_shmem = 2)
+      // set up dispatch ID 1 for SHMem (use_shmem = 1)
 
       for (dev = initial_device; dev < device_limit; dev++) {
 	fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
@@ -145,12 +144,12 @@ unsigned do_test ()
 	  fprintf (stderr, "Error. Unable to register pami dispatch %zu on context %zu. result = %d\n", dev, i, result);
 	  return 1;
 	}
-      } /* end dp id/device loop */
-    } /* end context loop */
+      } // end dp id/device loop
+    } // end context loop
 
     create_dpids = 0;
 
-  } /* end dispatch id creation */
+  } // end dispatch id creation
 
   pami_send_t parameters;
   parameters.send.header.iov_base = NULL;
@@ -162,6 +161,7 @@ unsigned do_test ()
 
   size_t xtalk = 0;
   size_t remote_cb = 0;
+  size_t n = 0;
 
   char device_str[2][50] = {"MU", "SHMem"};
   char xtalk_str[2][50] = {"no crosstalk", "crosstalk"};
@@ -169,81 +169,87 @@ unsigned do_test ()
 
   if (task_id == 0)
   {
-    for(dev = initial_device; dev < device_limit; dev++) {      /* device loop */
-      for(xtalk = 0; xtalk < num_contexts; xtalk++) {                /* xtalk loop */
+    for(dev = initial_device; dev < device_limit; dev++) {      // device loop
 
-	/* Skip running MU in Cross talk mode for now */
-	if (xtalk && !strcmp(device_str[dev], "MU")) {
+      parameters.send.dispatch = dev;
+
+      for(xtalk = 0; xtalk < num_contexts; xtalk++) {                // xtalk loop
+
+	// Skip running MU in Cross talk mode for now
+	/*	if (xtalk && !strcmp(device_str[dev], "MU")) {
 	  continue;
 	}
-
-	parameters.send.dispatch = dev;
-	result = PAMI_Endpoint_create (g_client, 1, xtalk, &parameters.send.dest);
-	if (result != PAMI_SUCCESS) {
-	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed for task_id 1, context %zu with %d.\n", xtalk, result);
-	  return 1;
-	}
-
-	for (remote_cb = 0; remote_cb < 2; remote_cb++) { /* remote callback loop */
+	*/
+	for (remote_cb = 0; remote_cb < 2; remote_cb++) { // remote callback loop
 	  if (remote_cb) {
 	    parameters.events.remote_fn     = send_done_remote;
 	  } else {
 	    parameters.events.remote_fn     = NULL;
 	  }
 
-	  fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] (%zu, 0) -> (1, %zu) =====\n\n", &device_str[dev][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], task_id, xtalk);
+	  // Communicate with each task
+	  for (n = 1; n < num_tasks; n++) {	  
 
-	  TRACE((stderr, "before send ...\n"));
-
-	  if (remote_cb) {
-	    send_active++;
-	  }
-
-
-	  result = PAMI_Send (context[0], &parameters);
-	  if (result != PAMI_SUCCESS) {
-	    fprintf (stderr, "ERROR:   PAMI_Send failed with rc = %d\n", result);
-	    return 1;
-	  }
-
-	  TRACE((stderr, "... after send.\n"));
-
-	  TRACE((stderr, "before send-recv advance loop ...\n"));
-	  while (send_active || recv_active) {
-	    result = PAMI_Context_advance (context[0], 100);
+	    result = PAMI_Endpoint_create (g_client, n, xtalk, &parameters.send.dest);
 	    if (result != PAMI_SUCCESS) {
-	      fprintf (stderr, "Error. Unable to advance pami context 0. result = %d\n", result);
+	      fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed for task_id %zu, context %zu with %d.\n", n, xtalk, result);
 	      return 1;
 	    }
-	  }
 
-	  send_active = 1;
-	  recv_active = 1;
+	    fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] 0 0 (%zu, 0) -> (%zu, %zu) =====\n\n", &device_str[dev][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], task_id, n, xtalk);
 
-	  TRACE((stderr, "... after send-recv advance loop\n"));
-	} /* end remote callback loop */
-      } /* end xtalk loop */
-    } /* end device loop */
-  } /* end task = 0 loop */
+	    if (remote_cb) {
+	      send_active++;
+	    }
+
+	    TRACE((stderr, "before send ...\n"));
+	    result = PAMI_Send (context[0], &parameters);
+	    TRACE((stderr, "... after send.\n"));
+
+	    if (result != PAMI_SUCCESS) {
+	      fprintf (stderr, "ERROR:   PAMI_Send failed with rc = %d\n", result);
+	      return 1;
+	    }
+
+	    TRACE((stderr, "before send-recv advance loop ...\n"));
+	    while (send_active || recv_active) {
+	      result = PAMI_Context_advance (context[0], 100);
+	      if (result != PAMI_SUCCESS) {
+		fprintf (stderr, "Error. Unable to advance pami context 0. result = %d\n", result);
+		return 1;
+	      }
+	    }
+
+	    send_active = 1;
+	    recv_active = 1;
+
+	    TRACE((stderr, "... after send-recv advance loop\n"));
+	  } // end task loop
+	} // end remote callback loop
+      } // end xtalk loop
+    } // end device loop
+  } // end task = 0 loop
   else
   {
 
-    for(dev = initial_device; dev < device_limit; dev++) {      /* device loop */
-      for(xtalk = 0; xtalk < num_contexts; xtalk++) {                /* xtalk loop */
+    for(dev = initial_device; dev < device_limit; dev++) {      // device loop
 
-	/* Skip running MU in Cross talk mode for now */
-	if (xtalk && !strcmp(device_str[dev], "MU")) {
+      parameters.send.dispatch = dev;
+
+      for(xtalk = 0; xtalk < num_contexts; xtalk++) {                // xtalk loop
+
+	// Skip running MU in Cross talk mode for now
+	/*	if (xtalk && !strcmp(device_str[dev], "MU")) {
 	  continue;
 	}
-
-	parameters.send.dispatch = dev;
+	*/
 	result = PAMI_Endpoint_create (g_client, 0, 0, &parameters.send.dest);
 	if (result != PAMI_SUCCESS) {
 	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed for task_id 0, context 0 with %d.\n", result);
 	  return 1;
 	}
 
-	for (remote_cb = 0; remote_cb < 2; remote_cb++) { /* remote callback loop */
+	for (remote_cb = 0; remote_cb < 2; remote_cb++) { // remote callback loop
 
 	  if (remote_cb) {
 	    parameters.events.remote_fn     = send_done_remote;
@@ -263,21 +269,20 @@ unsigned do_test ()
 	  recv_active = 1;
 	  TRACE((stderr, "... after recv advance loop\n"));
 
-	  fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] (%zu, %zu) -> (0, 0) =====\n\n", &device_str[dev][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], task_id, xtalk);
-
-	  TRACE((stderr, "before send ...\n"));
+	  fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] 0 0 (%zu, %zu) -> (0, 0) =====\n\n", &device_str[dev][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], task_id, xtalk);
 
 	  if (remote_cb) {
 	    send_active++;
 	  }
 
+	  TRACE((stderr, "before send ...\n"));
 	  result = PAMI_Send (context[xtalk], &parameters);
+	  TRACE((stderr, "... after send.\n"));
+
 	  if (result != PAMI_SUCCESS) {
 	    fprintf (stderr, "ERROR:   PAMI_Send failed with rc = %d\n", result);
 	    return 1;
 	  }
-
-	  TRACE((stderr, "... after send.\n"));
 
 	  TRACE((stderr, "before send advance loop ...\n"));
 	  while (send_active) {
@@ -291,10 +296,10 @@ unsigned do_test ()
 	  send_active = 1;
 
 	  TRACE((stderr, "... after send advance loop\n"));
-	} /* end remote callback loop */
-      } /* end xtalk loop */
-    } /* end device loop */
-  } /* end task != 0 */
+	} // end remote callback loop
+      } // end xtalk loop
+    } // end device loop
+  } // end task != 0
 
   /* Unlock the context */
   for( i = 0; i < num_contexts; i++) {
@@ -313,7 +318,9 @@ unsigned do_test ()
 int main (int argc, char ** argv)
 {
 
-  /* Determine which Device is being used */
+  size_t status = 0;
+
+  // Determine which Device is being used
   char * device;
   device = getenv ("PAMI_DEVICE");
 
@@ -379,10 +386,10 @@ int main (int argc, char ** argv)
   }
 
   TRACE((stderr, "Before do_test.\n"));
-  do_test ();
+  status = do_test ();
   TRACE((stderr, "After do_test.\n"));
 
-  /* ====== CLEANUP ====== */
+  // ====== CLEANUP ======
 
   result = PAMI_Context_destroyv(context, num_contexts);
   if (result != PAMI_SUCCESS) {
@@ -397,6 +404,10 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  fprintf (stderr, "Success.\n");
-  return 0;
-};
+  if (status) {
+    fprintf (stderr, "ERROR: default-send-1 FAILED with rc = %zu!!\n", status);
+  } else {
+    fprintf (stderr, "Success.\n");
+  }
+  return status;
+}
