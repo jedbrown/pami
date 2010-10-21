@@ -266,17 +266,17 @@ namespace PAMI
 
 		inline void __mark(size_t z) {
 			_my_metas[z / (sizeof(*_my_metas) * 8)] |=
-					(1 << (z % (sizeof(*_my_metas) * 8)));
+					((size_t)1 << (z % (sizeof(*_my_metas) * 8)));
 		}
 
 		inline void __unMark(size_t z) {
 			_my_metas[z / (sizeof(*_my_metas) * 8)] &=
-					~(1 << (z % (sizeof(*_my_metas) * 8)));
+					~((size_t)1 << (z % (sizeof(*_my_metas) * 8)));
 		}
 
 		inline bool __isMarked(size_t z) {
 			return (_my_metas[z / (sizeof(*_my_metas) * 8)] &
-					(1 << (z % (sizeof(*_my_metas) * 8)))) != 0;
+					((size_t)1 << (z % (sizeof(*_my_metas) * 8)))) != 0;
 		}
 
 		/// Caller declares size_t x = 0, y = 0, z = 0;
@@ -429,7 +429,10 @@ namespace PAMI
 			}
 			pami_result_t rc;
 			if (_pre_alloc) {
-				rc = _metaAlloc((void **)&_metahdr, sizeof(*_metahdr), 'a');
+				rc = _metaAlloc((void **)&_metahdr,
+					sizeof(*_metahdr) +
+						MAX_NUM_META() * sizeof(*_metas[0]),
+					'a');
 				PAMI_assertf(rc == PAMI_SUCCESS,
 					"Failed to get memory for meta data");
 				int x;
