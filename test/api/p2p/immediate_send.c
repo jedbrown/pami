@@ -322,20 +322,25 @@ int main (int argc, char ** argv)
 	      }
 	      
 	      if (recv_active == 0) {
+
+		// Determine reset value 
+		// reset value = 0 for even p values, 255 for odd p values
+		if (n == num_tasks - 1) { // p is going to increment
+		  r = (p+1) % 2; // base reset value on next p value
+		} else {
+		  r = p % 2; // base reset value on current p value
+		}
+
+		// Reset __recv_buffer for next payload
+		for (i = 0; i < 2048; i++) {
+		  __recv_buffer[i] = reset_value[r];
+		}
+
 		recv_active = 1;
 	      }
 
 	      fprintf (stderr, "... after advance loop\n");
 	    } // end task id loop
-
-	    // Reset __recv_buffer for next payload
-	    // reset value = 0 for even p values, 255 for odd p values
-	    r = (p+1) % 2; // base reset value on next p value
-
-	    for (i = 0; i < 2048; i++) {
-	      __recv_buffer[i] = reset_value[r];
-	    }
-	    
 	  } // end payload loop
 	} // end header loop
       } // end xtalk loop
@@ -375,10 +380,11 @@ int main (int argc, char ** argv)
 
 	    if (recv_active == 0) {
 
-	      // Reset __recv_buffer for next payload
+	      // Determine reset value
 	      // reset value = 0 for even p values, 255 for odd p values
 	      r = (p+1) % 2; // base reset value on next p value
 	      
+	      // Reset __recv_buffer for next payload
 	      for (i = 0; i < 2048; i++) {
 		__recv_buffer[i] = reset_value[r];
 	      }
