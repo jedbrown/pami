@@ -4,7 +4,7 @@
 /// \validates that the n+1 byte remains unchanged
 ///
 
-#include "sys/pami.h"
+#include <pami.h>
 #include <stdio.h>
 #include <string.h>
 
