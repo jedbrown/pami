@@ -17,6 +17,7 @@
 // common includes
 #include "Mapping.h"
 #include "common/lapiunix/lapifunc.h"
+#include "common/lapiunix/Client.h"
 #include "common/ContextInterface.h"
 #include "components/devices/BaseDevice.h"
 #include "components/memory/MemoryManager.h"
@@ -430,19 +431,14 @@ namespace PAMI
                                    size_t        *out_mysize,
                                    lapi_handle_t *out_lapi_handle)
         {
-          // Bring up the LAPI P2P Contexts
-          lapi_info_t  init_info;
-          memset(&init_info, 0, sizeof(init_info));
-          init_info.protocol_name  = _clientname;
+          LapiImpl::Client* lp_client = (LapiImpl::Client*)_client;
 
-          // TODO: Honor the configuration passed in
+          LapiImpl::Context::Config config(lp_client->GetConfig(), NULL, 0);
+
           _Lapi_port[_contextid] = (lapi_state_t*)_lapi_state;
-          int rc = LAPI__Init(&_lapi_handle, &init_info);
-          if (rc) {
-            RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Init failed with rc %d\n", rc);
-          }
-//          _lapi_state = _Lapi_port[_lapi_handle];
-          lapi_senv(_lapi_handle, INTERRUPT_SET, false);
+          LapiImpl::Context::Create(config);
+
+          _lapi_handle = ((lapi_state_t*)_lapi_state)->my_hndl;
 
           // Initialize the lapi device for collectives
           _lapi_device.init(_mm, _clientid, 0, _context, _contextid);
@@ -455,20 +451,8 @@ namespace PAMI
                            _context,
                            _contextid);
 
-          // Query My Rank and My Size
-          // TODO:  Use LAPI Internals, instead of
-          // doing an upcall to LAPI
-          int orank=0, osz=0;
-          CheckLapiRC(lapi_qenv(_lapi_handle,
-                                NUM_TASKS,
-                                &osz));
-
-          CheckLapiRC(lapi_qenv(_lapi_handle,
-                                TASK_ID,
-                                &orank));
-
-          *out_mysize        = osz;
-          *out_myrank        = orank;
+          *out_mysize        = _Lapi_env.MP_procs;
+          *out_myrank        = _Lapi_env.MP_child;
           *out_lapi_handle   = _lapi_handle;
 
           return PAMI_SUCCESS;

@@ -15,14 +15,17 @@
 #include "algorithms/geometry/Geometry.h"
 #include "../lapi/include/Client.h"
 
+extern pthread_once_t  _Per_proc_lapi_init;
+extern void _lapi_perproc_setup(void);
+
 namespace PAMI
 {
   class Client : public Interface::Client<PAMI::Client>
   {
   public:
-    inline Client (const char * name, pami_result_t & result) :
+    inline Client (const char * name, pami_configuration_t configuration[],
+            size_t num_configs, pami_result_t & result) :
       Interface::Client<PAMI::Client>(name, result),
-      _lapiClient(NULL),
       _client ((pami_client_t) this),
       _maxctxts(0),
       _ncontexts (0),
@@ -36,9 +39,8 @@ namespace PAMI
         // Todo:  Support more contexts
         _maxctxts = 1;
 
-        // Get storage and allocate a LAPI Client Object
-        _lapiClient                    = (LapiImpl::Client*) _lapiClientAlloc.allocateObject();
-        new(_lapiClient) LapiImpl::Client(name);
+        // Initialize a LAPI Client Object
+        new(&_lapiClient[0]) LapiImpl::Client(name, configuration, num_configs);
 
         // Initialize the shared memory manager
         initializeMemoryManager ();
@@ -113,7 +115,6 @@ namespace PAMI
 
     inline ~Client ()
       {
-        _lapiClientAlloc.returnObject(_lapiClient);
       }
 
 
@@ -221,12 +222,18 @@ namespace PAMI
                                         size_t                 num_configs)
       {
         int rc = 0;
+
+        // per-process setup. _Lapi_env usable after this point
+        if (pthread_once(&_Per_proc_lapi_init, _lapi_perproc_setup) != 0) {
+            RETURN_ERR_PAMI(PAMI_ERROR, "pthread_once failed. errno=%d\n", errno);
+        }
+
         PAMI::Client * clientp;
         clientp = (PAMI::Client *)malloc(sizeof (PAMI::Client));
         PAMI_assert(clientp != NULL);
         memset ((void *)clientp, 0x00, sizeof(PAMI::Client));
         pami_result_t res;
-        new (clientp) PAMI::Client (name, res);
+        new (clientp) PAMI::Client (name, configuration, num_configs, res);
         *client = (pami_client_t) clientp;
         return res;
       }
@@ -240,7 +247,7 @@ namespace PAMI
 
     inline char * getName_impl ()
       {
-        return _lapiClient->GetName();
+        return ((LapiImpl::Client*)&_lapiClient[0])->GetName();
       }
 
 
@@ -250,7 +257,7 @@ namespace PAMI
         PAMI::Context *c = (PAMI::Context *) _contextAlloc.allocateObject();
         new (c) PAMI::Context(this->getClient(),      /* Client ptr       */
                               _clientid,              /* Client  id       */
-                              _lapiClient->GetName(), /* Client String    */
+                              ((LapiImpl::Client*)&_lapiClient[0])->GetName(), /* Client String    */
                               index,                  /* Context id       */
                               &_platdevs,             /* Platform Devices */
                               &_mm);                  /* Memory Manager   */
@@ -592,7 +599,8 @@ namespace PAMI
         if(getenv("MP_PARTITION"))
           jobkey = atoi(getenv("MP_PARTITION"));
 
-        snprintf (shmemfile, 1023, "/pami-client-%d-%s",jobkey,_lapiClient->GetName());
+        snprintf (shmemfile, 1023, "/pami-client-%d-%s", jobkey,
+                ((LapiImpl::Client*)&_lapiClient[0])->GetName());
         // Round up to the page size
         size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
         int fd, rc;
@@ -619,8 +627,8 @@ namespace PAMI
       }
 
   private:
-    // LAPI Client Pointer
-    LapiImpl::Client                            *_lapiClient;
+    // LAPI Client object. use this for direct access 
+    char                    _lapiClient[sizeof(LapiImpl::Client)];
 
     // Array of PAMI Contexts associated with this Client
     PAMI::Context                               *_contexts[64];
@@ -664,9 +672,6 @@ namespace PAMI
 
     // PAMI Context Allocator
     MemoryAllocator<sizeof(PAMI::Context),16>    _contextAlloc;
-
-    // LAPI Client Allocator
-    MemoryAllocator<sizeof(LapiImpl::Client),16> _lapiClientAlloc;
 
     // Geometry Allocator
     MemoryAllocator<sizeof(LAPIGeometry),16>     _geometryAlloc;

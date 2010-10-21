@@ -18,11 +18,10 @@ namespace PAMI
   namespace Interface
   {
     template <class T_Client>
-    class Client : public PAMI::Queue::Element
+    class Client
     {
       public:
-        inline Client (const char * name, pami_result_t & result) :
-            PAMI::Queue::Element ()
+        inline Client (const char * name, pami_result_t & result) 
         {
           result = PAMI_UNIMPL;
         }
