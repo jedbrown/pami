@@ -254,7 +254,10 @@ namespace PAMI
           TRACE((stderr, "CAU:  tl[0]=%d taskid=%d\n", tl[0], _device.taskid()));
           if(tl[0] != _device.taskid())
             {
+              // We have tp push this first because the reduce call can
+              // call our callback
               TRACE((stderr, "CAU:  Reduce\n"));
+              gi->_posted.pushTail((MatchQueueElem*)m);
               CheckLapiRC(lapi_cau_reduce(_device.getHdl(),         // lapi handle
                                           gi->_cau_id,              // group id
                                           _dispatch_red_id,         // dispatch id
@@ -265,6 +268,7 @@ namespace PAMI
                                           red,                      // reduction op
                                           cau_red_send_done,        // send completion handler
                                           m));                       // cookie
+              return PAMI_SUCCESS;
             }
           TRACE((stderr, "CAU:  Pushing Tail\n"));
           gi->_posted.pushTail((MatchQueueElem*)m);
