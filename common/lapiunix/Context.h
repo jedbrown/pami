@@ -724,8 +724,21 @@ namespace PAMI
 
       inline pami_result_t rput_typed_impl (pami_rput_typed_t * parameters)
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          /* we use PAMI_Put_typed for now */
+          MemRegion *local_mr   = (MemRegion*)(parameters->rdma.local.mr);
+          void      *local_buf  = (void*)(local_mr->basic.user_ptr + parameters->rdma.local.offset);
+          MemRegion *remote_mr  = (MemRegion*)(parameters->rdma.remote.mr);
+          void      *remote_buf = (void*)(remote_mr->basic.user_ptr + parameters->rdma.remote.offset);
+
+          pami_put_typed_t put_typed;
+          put_typed.rma         = parameters->rma;
+          put_typed.type        = parameters->type;
+          put_typed.put         = parameters->put;
+          put_typed.addr.local  = local_buf;
+          put_typed.addr.remote = remote_buf;
+
+          return (cp->*(cp->pPutTyped))(&put_typed);
         }
 
       inline pami_result_t rget_impl (pami_rget_simple_t * parameters)
@@ -747,8 +760,20 @@ namespace PAMI
 
       inline pami_result_t rget_typed_impl (pami_rget_typed_t * parameters)
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          /* we use PAMI_Get_typed for now */
+          MemRegion *local_mr   = (MemRegion*)(parameters->rdma.local.mr);
+          void      *local_buf  = (void*)(local_mr->basic.user_ptr + parameters->rdma.local.offset);
+          MemRegion *remote_mr  = (MemRegion*)(parameters->rdma.remote.mr);
+          void      *remote_buf = (void*)(remote_mr->basic.user_ptr + parameters->rdma.remote.offset);
+
+          pami_get_typed_t get_typed;
+          get_typed.rma         = parameters->rma;
+          get_typed.type        = parameters->type;
+          get_typed.addr.local  = local_buf;
+          get_typed.addr.remote = remote_buf;
+
+          return (cp->*(cp->pGetTyped))(&get_typed);
         }
 
       inline pami_result_t purge_totask_impl (pami_endpoint_t * dest, size_t count)
