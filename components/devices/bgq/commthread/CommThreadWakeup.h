@@ -406,7 +406,7 @@ more_work:		// lightweight enough.
 				mem_sync();
 				events += __advanceContextSet(lkd_ctx);
 				ev_since_wu += events;
-			} while (!_shutdown && lkd_ctx && events != 0 && ++n < max_loop);
+			} while (!_shutdown && lkd_ctx && ++n < max_loop);
 			if (_shutdown) break;
 
 			// Snoop the scheduler to see if other threads are competing.
