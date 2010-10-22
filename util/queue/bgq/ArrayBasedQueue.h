@@ -106,7 +106,7 @@ namespace PAMI {
 	//Increment the queue bound to permit another enqueue
 	*_boundAddress[tid] = 1;  //Store increment operation 
       }
-
+      
       if (!_overflowq.isEmpty()) {
 	_mutex.acquire();
 	Queue::Element *head;
@@ -261,20 +261,22 @@ namespace PAMI {
     /// \copydoc PAMI::Interface::QueueInterface::next
     inline Element *next_impl(Element *reference)
       {
-	PAMI_abort();
-	return NULL;
+	advance();
+	return _privateq.next(reference);
       }
 
     /// \copydoc PAMI::Interface::QueueInterface::removeAll
     inline void removeAll_impl(Element *&head, Element *&tail, size_t &size)
       {
-	PAMI_assertf(0, "removeAll not implemented\n");
+	advance();
+	_privateq.removeAll(head, tail, size);
       }
 
     /// \copydoc PAMI::Interface::QueueInterface::appendAll
     inline void appendAll_impl(Element *head, Element *tail, size_t size)
       {
-	PAMI_assertf(0, "appendAll not implemented\n");
+	advance();
+	_privateq.appendAll(head, tail, size);
       }
 
 #ifdef COMPILE_DEPRECATED_QUEUE_INTERFACES
@@ -296,36 +298,38 @@ namespace PAMI {
     /// \copydoc PAMI::Interface::DequeInterface::tail
     inline Element *tail_impl()
       {
-	PAMI_abort();
-	return NULL;
+	advance();
+	return _privateq.tail();
       }
 
     /// \copydoc PAMI::Interface::DequeInterface::before
     inline Element *before_impl(Element *reference)
       {
-	PAMI_abort();
-	return NULL;
+	advance();
+	return _privateq.before(reference);
       }
 
     /// \copydoc PAMI::Interface::DequeInterface::insert
     inline void insert_impl(Element *reference,
 			    Element *element)
       {
-	PAMI_abort();
+	advance();
+	return _privateq.insert(reference, element);
       }
 
     /// \copydoc PAMI::Interface::DequeInterface::append
     inline void append_impl(Element *reference,
 			    Element *element)
       {
-	PAMI_abort();
+	advance();
+	_privateq.append(reference, element);
       }
 
     /// \copydoc PAMI::Interface::DequeInterface::remove
     inline void remove_impl(Element *element)
       {
-	PAMI_abort();
-	return;
+	advance();
+	_privateq.remove(element);
       }
 
     /// \copydoc PAMI::Interface::QueueInfoInterface::size

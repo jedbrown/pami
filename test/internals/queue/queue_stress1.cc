@@ -83,7 +83,13 @@ typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex> queue_4;
 typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2ProcMutex> queue_5a;
 typedef PAMI::GccThreadSafeQueue<queue_5a> queue_5;
 
-#define QUEUE_ALL	(QUEUE1_TYPE | QUEUE2_TYPE | QUEUE3_TYPE | QUEUE4_TYPE | QUEUE5_TYPE)
+#include <util/queue/bgq/ArrayBasedQueue.h>
+#define QUEUE6_NAME	"ArrayBasedQueue<L2ProcMutex>"
+#define QUEUE6_TYPE	(1 << 5)
+typedef PAMI::ArrayBasedQueue<PAMI::Mutex::BGQ::L2ProcMutex> queue_6;
+
+#define QUEUE_ALL	(QUEUE1_TYPE | QUEUE2_TYPE | QUEUE3_TYPE | QUEUE4_TYPE | QUEUE5_TYPE | QUEUE6_TYPE)
+//#define QUEUE_ALL	(QUEUE6_TYPE)
 #endif
 
 #ifndef QUEUE_ALL
@@ -338,5 +344,14 @@ int main(int argc, char **argv) {
 		ret += test5.run_test();
 	}
 #endif // QUEUE5_NAME
+#ifdef QUEUE6_NAME
+	if (qtype & QUEUE6_TYPE) {
+		srand(seed);
+		QueueTest<queue_6,0> test6(6, QUEUE6_NAME, pthreads, elements, seed);
+		ret += test6.run_test();
+	}
+#endif // QUEUE6_NAME
+
+
 	exit(ret);
 }
