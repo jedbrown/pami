@@ -59,6 +59,7 @@ namespace PAMI
 
       inline ~Client ()
       {
+	if (_contexts) (void)destroyContext_impl(NULL, _ncontexts);
       }
 
       static pami_result_t generate_impl (const char * name, pami_client_t * client,
@@ -192,10 +193,10 @@ namespace PAMI
       inline pami_result_t destroyContext_impl (pami_context_t *context, size_t ncontexts)
       {
         PAMI_assertf(ncontexts == _ncontexts, "destroyContext(%p,%zu) called without all contexts (expected %zu contexts)", context, ncontexts, _ncontexts);
-        // for (i = 0.._ncontexts) PAMI_assertf(context[i] == _contexts[i], "...");
+        // for (i = 0.._ncontexts) PAMI_assertf(context[i] == &_contexts[i], "...");
 #ifdef USE_COMMTHREADS
         // This removes all contexts... only needs to be called once.
-        PAMI::Device::CommThread::BgqCommThread::rmContexts(_clientid, (void **)_contexts, _ncontexts);
+        PAMI::Device::CommThread::BgqCommThread::rmContexts(_clientid, _contexts, _ncontexts);
 #endif // USE_COMMTHREADS
         pami_result_t res = PAMI_SUCCESS;
         size_t i;

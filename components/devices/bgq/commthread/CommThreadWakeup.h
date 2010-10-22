@@ -319,7 +319,7 @@ public:
 	}
 
 	static inline pami_result_t rmContexts(size_t clientid,
-						pami_context_t *ctxs, size_t nctx) {
+						PAMI::Context *ctxs, size_t nctx) {
 		size_t x;
 		if (_numActive == 0) {
 			return PAMI_SUCCESS;

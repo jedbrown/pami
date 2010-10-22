@@ -212,13 +212,13 @@ public:
 	}
 
 	// first make these contexts "invisible" to comm threads.
-	inline uint64_t disableContexts(pami_context_t *ctxs, size_t nctx) {
+	inline uint64_t disableContexts(PAMI::Context *ctxs, size_t nctx) {
 		size_t x, y;
 		uint64_t mask = 0;
 		_mutex.acquire();
 		for (y = 0; y < nctx; ++y) {
 			for (x = 0; x < _ncontexts_total; ++x) {
-			        if ((_contexts[x]) && (_contexts[x] == ctxs[y])) {
+			        if ((_contexts[x]) && (_contexts[x] == (void *)&ctxs[y])) {
 					mask |= (1UL << x);
 				}
 			}
@@ -234,12 +234,12 @@ public:
 	}
 
 	// now, remove (all references to) contexts entirely
-	inline void rmContexts(pami_context_t *ctxs, size_t nctx) {
+	inline void rmContexts(PAMI::Context *ctxs, size_t nctx) {
 		size_t x, y;
 		_mutex.acquire();
 		for (y = 0; y < nctx; ++y) {
 			for (x = 0; x < _ncontexts_total; ++x) {
-			        if ((_contexts[x]) && (_contexts[x] == ctxs[y])) {
+			        if ((_contexts[x]) && (_contexts[x] == (void *)&ctxs[y])) {
 					_contexts[x] = NULL;
 					--_ncontexts;
 				}
