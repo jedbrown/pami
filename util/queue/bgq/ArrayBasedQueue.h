@@ -50,6 +50,8 @@
 #define L2_ATOMIC_FULL        0x8000000000000000UL
 #define L2_ATOMIC_EMPTY       0x8000000000000000UL
 
+#define USE_GUARDED_WC_FLUSH 0
+
 namespace PAMI {
   ///
   /// \brief A fast array based queue based on L2 atomics. All calls
@@ -190,13 +192,15 @@ namespace PAMI {
 	      (tid << 6)) +
 	     (2UL << 3)); /*Store add*/
 	
+#if USE_GUARDED_WC_FLUSH
 	for (tid = 0; tid < 4UL; tid ++)
 	  _flushAddress[tid] =  (volatile uint64_t *)
 	    (((Kernel_L2AtomicsBaseAddress() +
 	       ((((uint64_t) &_atomicCounters[3]) << 5) & ~0xfful)) |
 	      (tid << 6)) +
 	     (0UL << 3)); /*direct store*/
-	
+#endif	
+
 	_queueArray = (volatile Element * volatile *) memalign (L1D_CACHE_LINE_SIZE, 
 								sizeof(Element*) * DEFAULT_SIZE);
 	PAMI_assert (_queueArray != NULL);
@@ -208,9 +212,11 @@ namespace PAMI {
       {
 	//printf("Calling enqueue\n");
 	int tid = Kernel_ProcessorThreadID();
+#if USE_GUARDED_WC_FLUSH
 	*_flushAddress[tid] = 0; //Store 0 to the flush address to
 	                         //flush all stores. Low overhead
 	                         //non-blocking write fence
+#endif
 	//mbar();
 	uint64_t index = 0;
 	if ( likely (_overflowq.isEmpty() && 
@@ -395,7 +401,9 @@ namespace PAMI {
 
     volatile Element          * volatile           * _queueArray;      
     volatile uint64_t                              * _tailAddress[4];
+#if USE_GUARDED_WC_FLUSH
     volatile uint64_t                              * _flushAddress[4];
+#endif
     Queue                                            _overflowq;
     volatile uint64_t                              * _headAddress[4];
     volatile uint64_t                              * _boundAddress[4];
