@@ -72,7 +72,7 @@ namespace CCMI
         int                 _donecount;
 
         unsigned            _connection_id;
-        
+
         int                 _maxsrcs;
         pami_task_t         _dstranks [MAX_CONCURRENT];
         unsigned            _dstlens  [MAX_CONCURRENT];
@@ -135,8 +135,8 @@ namespace CCMI
         virtual ~ScanExec ()
         {
            /// Todo: convert this to allocator ?
-           free (_mrecvstr); 
-           free (_tmpbuf); 
+           free (_mrecvstr);
+           free (_tmpbuf);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -181,7 +181,7 @@ namespace CCMI
           for (unsigned i = 1; i < _native->numranks(); i *= 2) {
             if (_myindex + i < _native->numranks())
               _endphase ++;
-            else 
+            else
               break;
           }
 
@@ -319,8 +319,8 @@ namespace CCMI
 
           EXECUTOR_DEBUG((stderr, "ScanExec::notifyRecvDone, curphase = %d, donecount = %d, rcv donecount = %d, total recv =%d\n", exec->_curphase, exec->_donecount, mrecv->donecount, mrecv->partnercnt); )
 
-          mrecv->donecount ++; 
-          if (mrecv->donecount == 0){ 
+          mrecv->donecount ++;
+          if (mrecv->donecount == 0){
             exec->_curphase  ++;
             exec->_donecount  = 0;
             if (exec->_endphase == -1) {
@@ -376,12 +376,12 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
   EXECUTOR_DEBUG((stderr, "curphase = %d, startphase = %d, nphase = %d\n", _curphase, _startphase, _nphases);)
 
   if (_curphase < _startphase + _nphases) {
-    
+
     unsigned ndsts, nsrcs;
     // _comm_schedule->getList(_curphase, &_srcranks[0], nsrcs, &_dstranks[0], ndsts, &_srclens[0], &_dstlens[0]);
     _comm_schedule->getRList(_nphases - _curphase - 1, &_srcranks[0], nsrcs, &_srclens[0]);
 
-    // only support binomial tree for now 
+    // only support binomial tree for now
     CCMI_assert(nsrcs == 1);
 
     _donecount = ndsts = nsrcs;
@@ -412,7 +412,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
       if (dstindex < _myindex) {
         _dstranks[i] = _gtopology->index2Rank(dstindex);
 
-        new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);    
+        new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);
 
         size_t buflen = _buflen;
         _pwq[i].configure (NULL, _tmpbuf, buflen, 0);
@@ -488,10 +488,12 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
     CCMI_assert(nsrcs == 1);
     for (unsigned i = 0; i < nsrcs; ++i) {
       size_t buflen       = _buflen;
-      EXECUTOR_DEBUG((stderr, "phase  = %d, buflen = %d, _srclens[%d] = %d, _srcranks[%d] = %d\n", cdata->_phase, _buflen, i, _srclens[i], i, _srcranks[i]);)
-      unsigned srcindex   = _gtopology->rank2Index(_srcranks[i]);
-      unsigned dist       = (srcindex + _native->numranks() - _myindex)% _native->numranks();
+      EXECUTOR_DEBUG((stderr, "phase  = %d, buflen = %d, _srclens[%d] = %d, _srcranks[%d] = %d\n", cdata->_phase, _buflen, i, _srclens[i], i, _srcranks[i]));
+#if ASSERT_LEVEL > 0
+      unsigned srcindex = _gtopology->rank2Index(_srcranks[i]);
+      unsigned dist     = (srcindex + _native->numranks() - _myindex)% _native->numranks();
       CCMI_assert(_myindex + dist < _native->numranks());
+#endif
       RecvStruct *recvstr = &_mrecvstr[cdata->_phase].recvstr[i];
       recvstr->pwq.configure (NULL, _tmpbuf + (cdata->_phase+1) * _buflen, buflen, 0);
       recvstr->pwq.reset();
@@ -513,7 +515,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
       }
   }
 
-  *pwq = &_mrecvstr[cdata->_phase].recvstr[sindex].pwq; 
+  *pwq = &_mrecvstr[cdata->_phase].recvstr[sindex].pwq;
   // fprintf(stderr, "phase %d, sindex %d, src pwq address %p\n", cdata->_phase, sindex, *pwq);
 
   cb_done->function = notifyRecvDone;
