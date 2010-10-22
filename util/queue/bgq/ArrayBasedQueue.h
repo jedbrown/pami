@@ -71,6 +71,11 @@ namespace PAMI {
     Queue::Element,
     BasicQueueIterator<ArrayBasedQueue<T_Mutex>, Queue::Element> > {
 
+  public:    
+    const static bool removeAll_can_race = false;
+    typedef Queue::Element  Element;
+    typedef BasicQueueIterator<ArrayBasedQueue<T_Mutex>, Element > Iterator;    
+
   protected:
 
     ///
@@ -80,25 +85,26 @@ namespace PAMI {
     ///
     inline bool  advance() {
       bool newwork = false;
-      uint64_t index = 0;
-
-      if ( (index =  L2_AtomicLoadIncrementBounded (&_atomicCounters[0])) != L2_ATOMIC_EMPTY ) {
+      uint64_t index = 0; 
+      
+      int tid = Kernel_ProcessorThreadID();
+      while ( (index =  *_headAddress[tid]) != L2_ATOMIC_EMPTY ) {
 	//fprintf(stderr, "Dequeueing index %ld, counter address %lx\n", index, (uint64_t)&_atomicCounters[0]);
 	uint64_t qindex = index & (DEFAULT_SIZE - 1);
-
-	volatile Element *element = _queueArray[qindex].element; //Wait till producer updates this
-	while (element == NULL) 	  //Wait till producer updates this
-	  element = _queueArray[qindex].element;
-
+	
+	//Wait till producer updates this	
+	while (_queueArray[qindex] == NULL);
+      
+	Element *element = (Element *)_queueArray[qindex];
+	_queueArray[qindex] = NULL; //Mark the element as unused
 	mem_sync();
 	//fprintf(stderr, "Found element %ld\n", index);
 
 	_privateq.enqueue((Element *)element);
-	_queueArray[qindex].element = NULL; //Mark the element as unused
 	newwork = true;
 
-	//Increment the queue size to permit another enqueue
-	L2_AtomicLoadIncrement(&_atomicCounters[2]);
+	//Increment the queue bound to permit another enqueue
+	*_boundAddress[tid] = 1;  //Store increment operation 
       }
 
       if (!_overflowq.isEmpty()) {
@@ -118,26 +124,26 @@ namespace PAMI {
     }
 
   public:
-    const static bool removeAll_can_race = false;
-    typedef Queue::Element  Element;
-    typedef BasicQueueIterator<ArrayBasedQueue<T_Mutex>, Element > Iterator;
-
-    //Structure designed to force write combining
-    struct ArrayBasedQueueElement {
-      volatile Element   *element;
-    } __attribute__((__aligned__(8))); //__attribute__((__aligned__(L1D_CACHE_LINE_SIZE)));
-
-
-  public:
     inline ArrayBasedQueue() :  _overflowq(), _privateq(), _mutex()
     {
-      _wakeup             = 0;
-      _atomicCounters     = NULL;
-      _counterAddress[0]  = NULL;
-      _counterAddress[1]  = NULL;
-      _counterAddress[2]  = NULL;
-      _counterAddress[3]  = NULL;
-      _queueArray         = NULL;
+      _wakeup            = 0;
+      _queueArray        = NULL;
+
+      _atomicCounters    = NULL;
+      _tailAddress[0]    = NULL;
+      _tailAddress[1]    = NULL;
+      _tailAddress[2]    = NULL;
+      _tailAddress[3]    = NULL;		         
+
+      _headAddress[0]    = NULL;
+      _headAddress[1]    = NULL;
+      _headAddress[2]    = NULL;
+      _headAddress[3]    = NULL;
+
+      _boundAddress[0]   = NULL;
+      _boundAddress[1]   = NULL;
+      _boundAddress[2]   = NULL;
+      _boundAddress[3]   = NULL;
     }
 
     inline void init(PAMI::Memory::MemoryManager *mm)
@@ -164,28 +170,40 @@ namespace PAMI {
 
 	uint64_t tid = 0;
 	for (tid = 0; tid < 4UL; tid ++)
-	  _counterAddress[tid] =  (volatile uint64_t *)
+	  _headAddress[tid] =  (volatile uint64_t *)
+	    (((Kernel_L2AtomicsBaseAddress() +
+	       ((((uint64_t) &_atomicCounters[0]) << 5) & ~0xfful)) |
+	      (tid << 6)) +
+	     (4UL << 3)); /*bounded increment*/
+
+	for (tid = 0; tid < 4UL; tid ++)
+	  _tailAddress[tid] =  (volatile uint64_t *)
 	    (((Kernel_L2AtomicsBaseAddress() +
 	       ((((uint64_t) &_atomicCounters[1]) << 5) & ~0xfful)) |
 	      (tid << 6)) +
-	     (4UL << 3)); //__l2_op_ptr (_atomicCounters, 4 /*bounded increment*/);
+	     (4UL << 3)); /*bounded increment*/
 
+	for (tid = 0; tid < 4UL; tid ++)
+	  _boundAddress[tid] =  (volatile uint64_t *)
+	    (((Kernel_L2AtomicsBaseAddress() +
+	       ((((uint64_t) &_atomicCounters[2]) << 5) & ~0xfful)) |
+	      (tid << 6)) +
+	     (2UL << 3)); /*Store add*/
+	
 	for (tid = 0; tid < 4UL; tid ++)
 	  _flushAddress[tid] =  (volatile uint64_t *)
 	    (((Kernel_L2AtomicsBaseAddress() +
 	       ((((uint64_t) &_atomicCounters[3]) << 5) & ~0xfful)) |
 	      (tid << 6)) +
-	     (4UL << 3)); //__l2_op_ptr (_atomicCounters, 4 /*bounded increment*/);
-
-	//PAMI_assertf(sizeof(ArrayBasedQueueElement)==L1D_CACHE_LINE_SIZE, "Error: QueueElement size");
-
-	_queueArray = (ArrayBasedQueueElement *) memalign (L1D_CACHE_LINE_SIZE,
-							       sizeof(ArrayBasedQueueElement) * DEFAULT_SIZE);
-	memset (_queueArray, 0, sizeof(ArrayBasedQueueElement) * DEFAULT_SIZE);
+	     (0UL << 3)); /*direct store*/
+	
+	_queueArray = (volatile Element * volatile *) memalign (L1D_CACHE_LINE_SIZE, 
+								sizeof(Element*) * DEFAULT_SIZE);
 	PAMI_assert (_queueArray != NULL);
+	memset ((void*)_queueArray, 0, sizeof(Element*) * DEFAULT_SIZE);
       }
-
-      /// \copydoc PAMI::Interface::QueueInterface::enqueue
+      
+    /// \copydoc PAMI::Interface::QueueInterface::enqueue
     inline void enqueue_impl(Element *element)
       {
 	//printf("Calling enqueue\n");
@@ -195,12 +213,13 @@ namespace PAMI {
 	                         //non-blocking write fence
 	//mbar();
 	uint64_t index = 0;
-	if ( likely (_overflowq.isEmpty() &&
-		     ((index = *(_counterAddress[tid])) != L2_ATOMIC_FULL)) )
-	  {
+	if ( likely (_overflowq.isEmpty() && 
+		     ((index = *(_tailAddress[tid])) != L2_ATOMIC_FULL)) )
+	  { 
 	    uint64_t qindex = index & (DEFAULT_SIZE - 1);
-            //printf("Atomic increment of counter %lx returned index %lu\n", (uint64_t)&_atomicCounters[1], index);
-	    _queueArray[qindex].element = element;
+	    //PAMI_assert ( _queueArray[qindex] == NULL);
+	    //printf("Atomic increment of counter %lx returned index %lu\n", (uint64_t)&_atomicCounters[1], index);
+	    _queueArray[qindex] = element;
 	    //printf("After enqueue\n");
 	    _wakeup = 1;
 	    return;
@@ -370,14 +389,16 @@ namespace PAMI {
 
   protected:
 
-    volatile uint64_t                              * _atomicCounters;
-    volatile uint64_t                              * _counterAddress[4];
-    ArrayBasedQueueElement                         * _queueArray;
+    volatile Element          * volatile           * _queueArray;      
+    volatile uint64_t                              * _tailAddress[4];
     volatile uint64_t                              * _flushAddress[4];
     Queue                                            _overflowq;
+    volatile uint64_t                              * _headAddress[4];
+    volatile uint64_t                              * _boundAddress[4];
     Queue                                            _privateq;
     T_Mutex                                          _mutex;
     volatile uint64_t                                _wakeup;
+    volatile uint64_t                              * _atomicCounters;
 
   }; // class PAMI::ArrayBasedQueue
 }; // namespace PAMI
