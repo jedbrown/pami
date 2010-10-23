@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/reduce_scatter.c
+ * \file test/api/collectives/reduce_scatter.c
  * \brief ???
  */
 
