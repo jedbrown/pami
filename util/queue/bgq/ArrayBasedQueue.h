@@ -400,11 +400,9 @@ namespace PAMI {
   protected:
 
     volatile Element          * volatile           * _queueArray;      
-    volatile uint64_t                              * _tailAddress[4];
-#if USE_GUARDED_WC_FLUSH
-    volatile uint64_t                              * _flushAddress[4];
-#endif
     Queue                                            _overflowq;
+    volatile uint64_t                              * _tailAddress[4];
+    volatile uint64_t                              * _flushAddress[4];
     volatile uint64_t                              * _headAddress[4];
     volatile uint64_t                              * _boundAddress[4];
     Queue                                            _privateq;
@@ -412,7 +410,7 @@ namespace PAMI {
     volatile uint64_t                                _wakeup;
     volatile uint64_t                              * _atomicCounters;
 
-  }; // class PAMI::ArrayBasedQueue
+  } __attribute__((__aligned__(L1D_CACHE_LINE_SIZE))); // class PAMI::ArrayBasedQueue
 }; // namespace PAMI
 
 #endif // __util_queue_queue_h__
