@@ -130,7 +130,7 @@ public:
                         t[nt].setStatus(PAMI::Device::Ready);
                         t[nt]._wq = _rwq;
                         t[nt]._bytesLeft = _bytes << _allreduceSetup._logbytemult;
-                        t[nt]._cycles = 3000; // DCMF_PERSISTENT_ADVANCE;
+                        t[nt]._cycles = 3000;
                         __advanceRcp(&t[nt]);
                         ++nt;
                 }

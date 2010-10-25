@@ -78,7 +78,7 @@ namespace PAMI
           //_myNetworkCoord.n_torus.coords[ix++] = t();
           //_numDims = ix;
 
-          //DCMF_assert_debug(_numDims <= CM_MAX_DIMS);
+          //PAMI_assert_debug(_numDims <= CM_MAX_DIMS);
           size_t tCoord = personality.tCoord ();
           size_t tsize  = personality.tSize ();
 

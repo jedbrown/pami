@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 ///
 /// \file components/devices/bgp/collective_network/cn_bg_dat.c
-/// \brief Tables used by DCMF
+/// \brief Tables used by PAMI
 ///
 
 #include <pami.h>
