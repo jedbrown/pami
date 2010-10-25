@@ -264,7 +264,7 @@ namespace PAMI
                   char* pn = __global.processor_name;
                   /// \todo This should be more descriptive and the
                   /// snprintf() should be run at init only.  This is
-                  /// the BGP DCMF version:
+                  /// the BGP version:
                   /// "Rank 0 of 128 (0,0,0,0)  R00-M0-N10-J01"
                   rc = snprintf(pn, 128, "Task %zu of %zu", __global.mapping.task(), __global.mapping.size());
                   pn[128-1] = 0;

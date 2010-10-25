@@ -42,41 +42,6 @@
 
 #define CCMIQuad_sizeof(x)  ((sizeof(x)+15)>>4)
 
-#define __dcmf_ccmi_new_defined__
-#ifndef  __dcmf_ccmi_new_defined__
-  #define  __dcmf_ccmi_new_defined__
-  #ifdef __cplusplus
-inline void* operator new(size_t obj_size, void* pointer, size_t avail_size)
-{
-/*   printf("%s: From %p for %u out of %u\n", __PRETTY_FUNCTION__, pointer, obj_size, avail_size); */
-  CCMI_assert_debug(pointer != NULL);
-  CCMI_assert_debug(obj_size <= avail_size);
-  return pointer;
-}
-// Just to keep BEAM from complaining
-inline void operator delete(void* pointer0, void* pointer, size_t avail_size)
-{
-/*   printf("%s: From %p for %u out of %u\n", __PRETTY_FUNCTION__, pointer, obj_size, avail_size); */
-  CCMI_assert_debug(0);
-  return;
-}
-
-inline void* operator new(size_t obj_size, void* pointer)
-{
-/*   printf("%s: From %p for %u\n", __PRETTY_FUNCTION__, pointer, obj_size); */
-  CCMI_assert_debug(pointer != NULL);
-  return pointer;
-}
-// Just to keep BEAM from complaining
-inline void operator delete(void* pointer0, void* pointer)
-{
-/*   printf("%s: From %p for %u\n", __PRETTY_FUNCTION__, pointer, obj_size); */
-  CCMI_assert_debug(0);
-  return;
-}
-  #endif
-#endif
-
 #if defined(__bgl__) || defined(__bgx__) || defined(__bgxl__)
   #define MAX_NUM_CORES	2
 #elif defined(__bgp__)

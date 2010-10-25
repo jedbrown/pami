@@ -186,4 +186,4 @@ inline pami_result_t LocalAllreduceWQModel::postMulticombine_impl(uint8_t (&stat
 }; // namespace Device
 }; // namespace PAMI
 
-#endif // __dcmf_workqueue_localallreducewqmsg_h__
+#endif

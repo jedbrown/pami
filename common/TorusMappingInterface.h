@@ -172,18 +172,18 @@ namespace PAMI
           ///   addr[1] = 1;
           ///   addr[2] = 2;
           ///   addr[3] = 3;
-          ///   if (mapping.torus2task<4>(task, addr) == DCMF_SUCCESS)
+          ///   if (mapping.torus2task<4>(task, addr) == PAMI_SUCCESS)
           ///   { ... }
           ///
-          ///   if (mapping.torus2task<4>(task, {3,2,1,0]) == DCMF_SUCCESS)
+          ///   if (mapping.torus2task<4>(task, {3,2,1,0]) == PAMI_SUCCESS)
           ///   { ... }
           /// \endcode
           ///
           /// \param[in]  addr Array of torus coordinates
           /// \param[out] task Global task identifier
           ///
-          /// \retval DCMF_SUCCESS
-          /// \retval DCMF_INVAL   Invalid torus address used as an input
+          /// \retval PAMI_SUCCESS
+          /// \retval PAMI_INVAL   Invalid torus address used as an input
           ///
 //          template <int T_Dimension>
           inline pami_result_t torus2task (size_t (&addr)[T_Dimensions], size_t & task);

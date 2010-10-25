@@ -188,59 +188,6 @@ int main ()
   fprintf (stderr, "immediate_send_limit = %zu\n", immediate_send_limit);
 
   double clockMHz = 1600.0;
-
-/*   /\* Register the protocols to test *\/ */
-/*   DCMF_Send_Configuration_t p; */
-/*   p.cb_recv_short            = cb_recv_new_short; */
-/*   p.cb_recv_short_clientdata = (void *)&_recv_active; */
-/*   p.cb_recv                  = cb_recv_new; */
-/*   p.cb_recv_clientdata       = (void *)&_recv_active; */
-
-/*   char testcase_str[10240]; */
-/*   unsigned i, j, k = 0; */
-/*   _protocol_count = 0; */
-/*   for (i = 1; i < DCMF_SEND_PROTOCOL_COUNT; i++) */
-/*   { */
-/*     /\* don't test the rzv protocol *\/ */
-/*     /\*if (i == DCMF_RZV_SEND_PROTOCOL) continue;*\/ */
-
-/*     /\* don't test the eager protocol *\/ */
-/*     /\*if (i == DCMF_EAGER_SEND_PROTOCOL) continue;*\/ */
-
-/*     /\* don't test the user0 protocol *\/ */
-/*     if (i == DCMF_USER0_SEND_PROTOCOL) continue; */
-
-/*     /\* don't test the user1 protocol *\/ */
-/*     if (i == DCMF_USER1_SEND_PROTOCOL) continue; */
-
-/*     p.protocol = (DCMF_Send_Protocol) i; */
-/*     for (j = 0; j < PAMI_NETWORK_COUNT; j++) */
-/*     { */
-/*       /\* don't test the default network *\/ */
-/*       if (j == PAMI_DEFAULT_NETWORK) continue; */
-
-/*       /\* don't test the torus network *\/ */
-/*       /\*if (j == DCMF_TORUS_NETWORK) continue;*\/ */
-
-/*       /\* don't test the shmem network *\/ */
-/*       /\*if (j == DCMF_SHMEM_NETWORK) continue;*\/ */
-
-/*       p.network = (PAMI_Network) j; */
-/*       TRACE_ERR((stderr, "(%zu) before DCMF_Send_register(), network = %d, protocol = %d\n", DCMF_Messager_rank (), j, i)); */
-/*       PAMI_Result result = DCMF_Send_register (&_protocol[_protocol_count], &p); */
-/*       TRACE_ERR((stderr, "(%zu) after DCMF_Send_register(), network = %d, protocol = %d, result = %d\n", DCMF_Messager_rank (), j, i, result)); */
-
-/*       if (result == PAMI_SUCCESS) */
-/*       { */
-/*         k += sprintf (&testcase_str[k], "# testcase %d == %s: %s\n", _protocol_count, _send_names[i], _network_names[j]); */
-/*         _protocol_count++; */
-/*       } */
-/*     } */
-/*   } */
-
-/*   /\* Display some test header information *\/ */
-/*   _my_rank = DCMF_Messager_rank (); */
-
   unsigned int _protocol_count = 1;
 
   if (_my_rank == 0)

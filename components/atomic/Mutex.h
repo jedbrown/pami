@@ -25,7 +25,7 @@
 ///  - Node Mutex:        A mutex where the scope is across all cores on the node.
 ///  - Process Mutex:     A mutex where the scope is only across the cores/threads that participate in a SMP process.
 ///
-///  Namespace:  DCMF, the messaging namespace
+///  Namespace:  PAMI, the messaging namespace
 ///  Notes:  This is currently indended for use only by the lock manager
 ///
 ///
