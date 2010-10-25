@@ -99,7 +99,7 @@ namespace PAMI
           /// \param[out] status       Constructor status
           ///
           inline EagerSimple (size_t                 dispatch,
-                              pami_dispatch_p2p_fn   dispatch_fn,
+                              pami_dispatch_p2p_function dispatch_fn,
                               void                 * cookie,
                               T_Device             & device,
                               pami_endpoint_t        origin,
@@ -499,7 +499,7 @@ namespace PAMI
           pami_endpoint_t  _origin;
           pami_context_t   _context;
 
-          pami_dispatch_p2p_fn   _dispatch_fn;
+          pami_dispatch_p2p_function _dispatch_fn;
           void                     * _cookie;
 
           T_Connection              _connection;

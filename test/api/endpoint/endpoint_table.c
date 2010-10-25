@@ -92,7 +92,7 @@ int main ()
   createEndpointTable (client, num);
 
 
-  pami_dispatch_callback_fn fn;
+  pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
   pami_send_hint_t options = {0};
   volatile size_t expect = 0;

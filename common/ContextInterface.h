@@ -98,12 +98,12 @@ namespace PAMI
         inline pami_result_t collective (pami_xfer_t * parameters);
 
         inline pami_result_t dispatch (size_t                     dispatch,
-                                      pami_dispatch_callback_fn   fn,
+                                      pami_dispatch_callback_function fn,
                                       void                     * cookie,
                                       pami_send_hint_t            options);
         inline pami_result_t amcollective_dispatch(pami_algorithm_t            algorithm,
                                                   size_t                     dispatch,
-                                                  pami_dispatch_callback_fn   fn,
+                                                  pami_dispatch_callback_function fn,
                                                   void                     * cookie,
                                                   pami_collective_hint_t      options);
       inline pami_result_t dispatch_query(size_t                dispatch,
@@ -337,7 +337,7 @@ namespace PAMI
 
     template <class T_Context>
     pami_result_t Context<T_Context>::dispatch (size_t                     dispatch,
-                                               pami_dispatch_callback_fn   fn,
+                                               pami_dispatch_callback_function fn,
                                                void                     * cookie,
                                                pami_send_hint_t            options)
     {
@@ -347,7 +347,7 @@ namespace PAMI
     template <class T_Context>
     pami_result_t Context<T_Context>::amcollective_dispatch(pami_algorithm_t            algorithm,
                                                            size_t                     dispatch,
-                                                           pami_dispatch_callback_fn   fn,
+                                                           pami_dispatch_callback_function fn,
                                                            void                     * cookie,
                                                            pami_collective_hint_t      options)
     {

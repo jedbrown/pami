@@ -12,6 +12,12 @@
 #define PAMI_EXT_ATTR 1000 /**< starting value for extended attributes */
 #endif
 
+typedef struct
+{
+  pami_event_function   function;
+  void                * clientdata;
+} pami_callback_t;
+
 typedef struct pami_quad_t
 {
     unsigned w0; /**< Word[0] */

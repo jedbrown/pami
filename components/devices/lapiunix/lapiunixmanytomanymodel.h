@@ -32,7 +32,7 @@ namespace PAMI
         Interface::ManytomanyModel < LAPIManytomanyModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device, status)
         {};
 
-      inline void setCallback (pami_dispatch_manytomany_fn cb_recv, void *arg)
+      inline void setCallback (pami_dispatch_manytomany_function cb_recv, void *arg)
         {
         }
 

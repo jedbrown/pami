@@ -231,7 +231,7 @@ namespace CCMI
           _msync.roles              = -1U;
           _msync.participants       = (pami_topology_t *) & _all;
 
-//        pami_dispatch_callback_fn lfn;
+//        pami_dispatch_callback_function lfn;
 //        lfn.multicast = dispatch_multicast_fn;
 //        _native->setDispatch(lfn, this);
 
@@ -242,7 +242,7 @@ namespace CCMI
           _minfo.cb_done.function   = _cb_done;
           _minfo.cb_done.clientdata = _clientdata;
 
-//          pami_dispatch_callback_fn fn;
+//          pami_dispatch_callback_function fn;
 //          fn.multicast = dispatch_multicast_fn;
 //          _native->setDispatch(fn, this);
 

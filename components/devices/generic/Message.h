@@ -16,6 +16,7 @@
 
 #include <pami.h>
 #include "GenericDevicePlatform.h"
+#include "sys/pami_ext.h"
 
 namespace PAMI {
 namespace Device {
@@ -139,7 +140,6 @@ protected:
         size_t _context;		///< context ID for message
         pami_callback_t _cb;		///< completion callback
 }; /* class GenericMessage */
-
 }; /* namespace Generic */
 }; /* namespace Device */
 }; /* namespace PAMI */

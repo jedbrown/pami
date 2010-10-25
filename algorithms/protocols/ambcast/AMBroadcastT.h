@@ -86,7 +86,7 @@ namespace CCMI
       class AMBroadcastFactoryT: public CollectiveProtocolFactoryT<T, get_metadata, C>
       {
         protected:
-          pami_dispatch_ambroadcast_fn _cb_ambcast;
+          pami_dispatch_ambroadcast_function _cb_ambcast;
 
         public:
           AMBroadcastFactoryT (C                           *cmgr,
@@ -127,7 +127,7 @@ namespace CCMI
           }
 
           virtual void setAsyncInfo (bool                          is_buffered,
-                                     pami_dispatch_callback_fn      cb_async,
+                                     pami_dispatch_callback_function cb_async,
                                      pami_mapidtogeometry_fn        cb_geometry)
           {
             _cb_ambcast = cb_async.ambroadcast;

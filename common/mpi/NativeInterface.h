@@ -43,19 +43,19 @@ namespace PAMI
 
     /// \brief this call is called when the native interface is
     /// initialized to set the mcast dispatch
-    virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie);
-    virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_fn fn, void *cookie)
+    virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie);
+    virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_function fn, void *cookie)
     {
       //PAMI_abort();
       return PAMI_ERROR;
     }
-    virtual inline pami_result_t setSendDispatch(pami_dispatch_p2p_fn fn,
+    virtual inline pami_result_t setSendDispatch(pami_dispatch_p2p_function fn,
                                                  void *cookie)
       {
         PAMI_abort();
         return PAMI_ERROR;
       }
-    virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_p2p_fn fn,
+    virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_p2p_function fn,
                                                     void *cookie)
       {
         PAMI_abort();
@@ -184,7 +184,7 @@ namespace PAMI
 
     /// \brief this call is called when the native interface is initialized
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
-  inline pami_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie)
+  inline pami_result_t MPINativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie)
       {
       __g_mpi_dispatch++;
       _dispatch=__g_mpi_dispatch;

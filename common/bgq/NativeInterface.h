@@ -113,8 +113,8 @@ namespace PAMI
 
       /// \brief this call is called when the native interface is
       /// initialized to set the mcast dispatch
-      virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie);
-      virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_fn fn, void *cookie)
+      virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie);
+      virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_function fn, void *cookie)
       {
         PAMI_abort();
         return PAMI_ERROR;
@@ -213,7 +213,7 @@ namespace PAMI
 
   /// \brief this call is called when the native interface is initialized
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie)
+  inline pami_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie)
   {
     TRACE_FN_ENTER();
     this->_dispatch = NativeInterfaceCommon::getNextDispatch();

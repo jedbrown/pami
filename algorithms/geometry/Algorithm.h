@@ -78,7 +78,7 @@ namespace PAMI
         }
 
         inline pami_result_t dispatch_set(size_t                     dispatch,
-                                          pami_dispatch_callback_fn   fn,
+                                          pami_dispatch_callback_function fn,
                                           void                     * cookie,
                                           pami_collective_hint_t      options)
         {

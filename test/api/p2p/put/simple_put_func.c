@@ -174,7 +174,7 @@ int main (int argc, char ** argv)
   for (i=0; i<2; i++)
 #endif
   {
-    pami_dispatch_callback_fn fn;
+    pami_dispatch_callback_function fn;
 
     fprintf (stderr, "Before PAMI_Dispatch_set(%d) .. &_done = %p, _done = %zu\n", DISPATCH_ID, &_done, _done);
     fn.p2p = dispatch_send;

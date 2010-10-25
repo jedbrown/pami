@@ -236,7 +236,7 @@ namespace PAMI
 
           // Deliver the user callback for the multicast
           // if the incoming callback has not been delivered already
-          pami_dispatch_multicast_fn  user_fn     = mc->_id_to_fn[did];
+          pami_dispatch_multicast_function user_fn     = mc->_id_to_fn[did];
           void                       *user_cookie = mc->_id_to_async_arg[did];
           rcvInfo                    *rcv         = mc->_gid_to_rcvinfo[gid];
 
@@ -405,7 +405,7 @@ namespace PAMI
           {};
 
         inline pami_result_t registerMcastRecvFunction_impl (int                         dispatch_id,
-                                                             pami_dispatch_multicast_fn  recv_func,
+                                                             pami_dispatch_multicast_function recv_func,
                                                              void                       *async_arg)
           {
             TRACE((stderr, "CAUMulticastModel:  registerMcastRecvFunction:  dispatch_id=%d fcn=%p cookie=%p"
@@ -485,7 +485,7 @@ namespace PAMI
           }
         T_Device                                             &_device;
         std::map<int,void*>                                   _id_to_async_arg;
-        std::map<int,pami_dispatch_multicast_fn>              _id_to_fn;
+        std::map<int,pami_dispatch_multicast_function>              _id_to_fn;
         std::map<int,rcvInfo*>                                _gid_to_rcvinfo;
         PAMI::MemoryAllocator<sizeof(rcvInfo), 16>            _rcvinfo_alloc;
         PAMI::MemoryAllocator<sizeof(CAUMcastRecvMessage),16> _rcvmsg_alloc;

@@ -57,7 +57,7 @@ namespace CCMI
     public:
       CollectiveProtocolFactoryT (C                           *cmgr,
                                   Interfaces::NativeInterface *native,
-                                  pami_dispatch_multicast_fn   cb_head = NULL):
+                                  pami_dispatch_multicast_function cb_head = NULL):
         CollectiveProtocolFactory(),
         _cmgr(cmgr),
         _native(native)

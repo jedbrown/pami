@@ -795,7 +795,7 @@ namespace PAMI
 
       inline pami_result_t amcollective_dispatch_impl (pami_algorithm_t            algorithm,
                                                        size_t                     dispatch,
-                                                       pami_dispatch_callback_fn   fn,
+                                                       pami_dispatch_callback_function fn,
                                                        void                     * cookie,
                                                        pami_collective_hint_t      options)
       {
@@ -804,7 +804,7 @@ namespace PAMI
       }
 
       inline pami_result_t dispatch_impl (size_t                     id,
-                                          pami_dispatch_callback_fn   fn,
+                                          pami_dispatch_callback_function fn,
                                           void                      * cookie,
                                           pami_send_hint_t            options)
       {

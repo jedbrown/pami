@@ -202,7 +202,7 @@ int main (int argc, char ** argv)
   for (i=0; i<2; i++)
 #endif
   {
-    pami_dispatch_callback_fn fn;
+    pami_dispatch_callback_function fn;
 
     fprintf (stderr, "Before PAMI_Dispatch_set(%d) .. &_info[%zu].exchange = %p\n", DISPATCH_ID_MEMREGION, i, &_info[i].exchange);
     fn.p2p = dispatch_mr;

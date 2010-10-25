@@ -148,7 +148,7 @@ int main(int argc, char*argv[])
         }
 
       pami_collective_hint_t h = {0};
-      pami_dispatch_callback_fn fn;
+      pami_dispatch_callback_function fn;
       fn.ambroadcast = cb_bcast_recv;
       PAMI_AMCollective_dispatch_set(context,
                                      ambcast_always_works_algo[nalg],

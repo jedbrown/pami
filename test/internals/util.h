@@ -128,7 +128,7 @@ void barrier_init (pami_client_t client, pami_context_t context, size_t dispatch
   //__barrier_active[1].send = 0;
   __barrier_active[1] = __barrier_size-1;
 
-  pami_dispatch_callback_fn fn;
+  pami_dispatch_callback_function fn;
   fn.p2p = barrier_dispatch_function;
   pami_send_hint_t options={};
   TRACE_ERR((stderr, "Before PAMI_Dispatch_set() ...\n"));

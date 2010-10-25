@@ -30,7 +30,7 @@ unsigned validate (const void * addr, size_t bytes)
 /**
  * \brief dispatch function for immediate sends
  *
- * \see pami_dispatch_p2p_fn
+ * \see pami_dispatch_p2p_function
  */
 /* [example dispatch function] */
 void test_dispatch (
@@ -89,7 +89,7 @@ int main (int argc, char ** argv)
   recv_active[1] = 1;
 
   size_t dispatch = 10;
-  pami_dispatch_callback_fn fn;
+  pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
   pami_send_hint_t options = {};
 

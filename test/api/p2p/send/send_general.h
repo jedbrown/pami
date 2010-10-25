@@ -211,9 +211,9 @@ pami_recv_t *recv) {
 }
 
 int setup_netw(int netpro, pami_context_t context, size_t *dispatch_id,
-                pami_dispatch_p2p_fn cb_recv = cb_recv_new,
+                pami_dispatch_p2p_function cb_recv = cb_recv_new,
                 void *cb_recv_cd = NULL) {
-        pami_dispatch_callback_fn fn;
+        pami_dispatch_callback_function fn;
         fn.p2p = cb_recv;
         int net = netpro & 0x0000ffff;
         int pro = netpro >> 16;

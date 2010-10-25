@@ -52,7 +52,7 @@ namespace PAMI
 
           template <class T_Allocator>
           static Eager * generate (size_t                 dispatch,
-                                   pami_dispatch_p2p_fn   dispatch_fn,
+                                   pami_dispatch_p2p_function dispatch_fn,
                                    void                 * cookie,
                                    T_Device             & device,
                                    pami_endpoint_t        origin,
@@ -91,7 +91,7 @@ namespace PAMI
           /// \param[out] status      Constructor status
           ///
           inline Eager (size_t                 dispatch,
-                        pami_dispatch_p2p_fn   dispatch_fn,
+                        pami_dispatch_p2p_function dispatch_fn,
                         void                 * cookie,
                         T_Device             & device,
                         pami_endpoint_t        origin,

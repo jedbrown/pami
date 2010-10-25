@@ -92,7 +92,7 @@
    * \param[out] cb_done    Completion callback to invoke when data received
    * \return   void
    */
-  typedef void (*pami_dispatch_multicast_fn)(const pami_quad_t        *msginfo,
+  typedef void (*pami_dispatch_multicast_function)(const pami_quad_t        *msginfo,
                                             unsigned              msgcount,
                                             unsigned              connection_id,
                                             size_t                root,
@@ -163,13 +163,13 @@ namespace PAMI
           {
           };
         inline pami_result_t registerMcastRecvFunction (int                         dispatch_id,
-                                                        pami_dispatch_multicast_fn  recv_func,
+                                                        pami_dispatch_multicast_function recv_func,
                                                         void                       *async_arg);
       }; // class AMMulticastModel
       template <class T_Model,class T_Device,unsigned T_StateBytes>
       pami_result_t AMMulticastModel<T_Model,T_Device,
                                     T_StateBytes>::registerMcastRecvFunction (int                         dispatch_id,
-                                                                              pami_dispatch_multicast_fn  recv_func,
+                                                                              pami_dispatch_multicast_function recv_func,
                                                                               void                       *async_arg)
       {
         return static_cast<T_Model*>(this)->registerMcastRecvFunction_impl (dispatch_id,

@@ -93,7 +93,7 @@ namespace PAMI
             TRACE_DEVICE((stderr,"<%p>P2PMcastProto(status)  allocator size %zu\n",this,_allocator.objsize));
           }
         inline P2PMcastProto(size_t                     dispatch_id,
-                             pami_dispatch_multicast_fn  dispatch,
+                             pami_dispatch_multicast_function dispatch,
                              void                     * cookie,
                              T_P2P_DEVICE             & p2p_device,
                              T_MULTICAST_DEVICE       & mcast_dev,
@@ -118,7 +118,7 @@ namespace PAMI
           {
             TRACE_DEVICE((stderr,"<%p>P2PMcastProto.  allocator size %zu\n",this,_allocator.objsize));
             // Construct a p2p protocol for dispatching
-            pami_dispatch_callback_fn fn;
+            pami_dispatch_callback_function fn;
             fn.p2p = dispatch_p2p;
             pami_endpoint_t origin = PAMI_ENDPOINT_INIT(_clientid, _task_id, _contextid);
             new (&_p2p_protocol) T_P2P_PROTOCOL(dispatch_id, fn.p2p, (void*)this,
@@ -127,7 +127,7 @@ namespace PAMI
           }
 
         pami_result_t registerMcastRecvFunction_impl(int dispatch_id,
-                                                    pami_dispatch_multicast_fn     dispatch,
+                                                    pami_dispatch_multicast_function dispatch,
                                                     void                         *cookie)
           {
             TRACE_DEVICE((stderr,"<%p>P2PMcastProto::register id %zu, fn %p, cookie %p\n",this,dispatch_id, dispatch, cookie));
@@ -136,7 +136,7 @@ namespace PAMI
             _dispatch_fn=dispatch;
             _cookie=cookie;
             // Construct a p2p protocol for dispatching
-            pami_dispatch_callback_fn fn;
+            pami_dispatch_callback_function fn;
             fn.p2p = dispatch_p2p;
             new (&_p2p_protocol) T_P2P_PROTOCOL(_dispatch_id, fn, (void*)this,
                                                 _g_mpi_device,
@@ -356,7 +356,7 @@ namespace PAMI
         size_t                        _dispatch_data_id;
         size_t                        _dispatch_header_id;
         size_t                        _dispatch_id;
-        pami_dispatch_multicast_fn     _dispatch_fn;
+        pami_dispatch_multicast_function _dispatch_fn;
         pami_client_t                  _client;
         pami_context_t                 _context;
         size_t                        _contextid;

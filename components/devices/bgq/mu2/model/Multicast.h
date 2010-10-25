@@ -101,7 +101,7 @@ namespace PAMI
 
           /// \see PAMI::Device::Interface::MulticastModel::registerMcastRecvFunction
           pami_result_t registerMcastRecvFunction_impl(int                        dispatch_id,
-                                                       pami_dispatch_multicast_fn  func,
+                                                       pami_dispatch_multicast_function func,
                                                        void                      *arg);
           /// \see PAMI::Device::Interface::MulticastModel::postMulticast
           pami_result_t postMulticast_impl(uint8_t (&state)[MulticastModel<T_Msgdata_support, T_PWQ_support>::sizeof_msg],
@@ -145,7 +145,7 @@ namespace PAMI
           BroadcastPacketModel                         _header_model;
           BroadcastPacketModel                         _data_model;
 
-          pami_dispatch_multicast_fn                   _dispatch_function;
+          pami_dispatch_multicast_function             _dispatch_function;
           void                                       * _dispatch_arg;
 
 //        T_Connection                                 _connection; ///\todo ConnectionArray isn't appropriate...
@@ -545,7 +545,7 @@ namespace PAMI
 
       template <bool T_Msgdata_support, bool T_PWQ_support>
       pami_result_t MulticastModel<T_Msgdata_support, T_PWQ_support>::registerMcastRecvFunction_impl(int                         dispatch_id,
-          pami_dispatch_multicast_fn  func,
+          pami_dispatch_multicast_function func,
           void                       *arg)
       {
         TRACE_FN_ENTER();

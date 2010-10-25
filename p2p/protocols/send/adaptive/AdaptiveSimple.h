@@ -177,7 +177,7 @@ namespace PAMI
           /// \param[out] status       Constructor status
           ///
           inline AdaptiveSimple (size_t                     dispatch,
-                                 pami_dispatch_callback_fn   dispatch_fn,
+                                 pami_dispatch_callback_function dispatch_fn,
                                  void                     * cookie,
                                  T_Device                 & device,
                                  pami_task_t                 origin_task,
@@ -605,7 +605,7 @@ namespace PAMI
           pami_task_t      _fromRank;
           pami_client_t   _client;
           size_t      _contextid;
-          pami_dispatch_callback_fn   _dispatch_fn;
+          pami_dispatch_callback_function _dispatch_fn;
           void                     * _cookie;
           void ** _connection;
           // Support up to 100 unique contexts.

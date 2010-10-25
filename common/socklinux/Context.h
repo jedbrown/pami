@@ -216,7 +216,7 @@ namespace PAMI
       }
 
       inline pami_result_t dispatch_impl (size_t                      id,
-                                          pami_dispatch_callback_fn   fn,
+                                          pami_dispatch_callback_function fn,
                                           void                      * cookie,
                                           pami_send_hint_t            options)
       {

@@ -96,7 +96,7 @@ namespace PAMI
 
           /// \see PAMI::Device::Interface::MulticombineModel::registermcombRecvFunction
           pami_result_t registermcombRecvFunction_impl(int                        dispatch_id,
-                                                       pami_dispatch_multicast_fn  func,
+                                                       pami_dispatch_multicast_function func,
                                                        void                      *arg);
           /// \see PAMI::Device::Interface::MulticombineModel::postMulticombine
           pami_result_t postMulticombine_impl(uint8_t (&state)[MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::sizeof_msg],

@@ -119,7 +119,7 @@ namespace CCMI
         ///
         /// \brief async broadcast handler
         ///
-        pami_dispatch_ambroadcast_fn _cb_async;
+        pami_dispatch_ambroadcast_function _cb_async;
         ///
         /// \brief get geometry from comm id
         ///
@@ -163,7 +163,7 @@ namespace CCMI
         /// \brief Utility functions
         ///
         void setAsyncInfo (bool                          is_buffered,
-                           pami_dispatch_callback_fn   cb_async,
+                           pami_dispatch_callback_function cb_async,
                            pami_mapidtogeometry_fn          cb_geometry)
         {
           _isBuffered = is_buffered;

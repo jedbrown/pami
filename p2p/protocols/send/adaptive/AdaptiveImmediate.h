@@ -90,7 +90,7 @@ namespace PAMI
           /// \param[out] status       Constructor status
           ///
           inline AdaptiveImmediate (size_t                     dispatch,
-                                    pami_dispatch_callback_fn   dispatch_fn,
+                                    pami_dispatch_callback_function dispatch_fn,
                                     void                     * cookie,
                                     T_Device                 & device,
                                     pami_task_t                 origin_task,
@@ -193,7 +193,7 @@ namespace PAMI
 
           pami_client_t              _client;
           size_t                     _contextid;
-          pami_dispatch_callback_fn   _dispatch_fn;
+          pami_dispatch_callback_function _dispatch_fn;
           void                     * _cookie;
           T_Device                 & _device;
 

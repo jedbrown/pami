@@ -44,7 +44,7 @@ public:
     }
 
   void initialize(TSPColl::NBCollManager<T_NI> *mc,
-                  pami_dispatch_p2p_fn          fn,
+                  pami_dispatch_p2p_function    fn,
                   pami_context_t                context,
                   void                         *cookie,
                   const void                   *header_addr,
@@ -107,7 +107,7 @@ public:
   // cb_incoming parameters
 
   TSPColl::NBCollManager<T_NI>         *_mc;
-  pami_dispatch_p2p_fn                  _ue_dispatch_fn;
+  pami_dispatch_p2p_function            _ue_dispatch_fn;
   pami_context_t                        _ue_context;
   void                                 *_ue_cookie;
   void                                 *_ue_header_addr;

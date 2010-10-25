@@ -59,7 +59,7 @@ namespace PAMI
   ///
   /// // Generate the protocol with the NI dispatch function and the NI pointer as a cookie
   ///
-  ///  pami_dispatch_multicast_fn dispatch_fn;
+  ///  pami_dispatch_multicast_function dispatch_fn;
   /// dispatch_fn = NativeInterfaceActiveMessage::dispatch_mcast;
   ///
   /// MySendPWQ *protocol = (MySendPWQ*) MySendPWQ::generate(dispatch, dispatch_fn,(void*) ni,  ...);
@@ -133,7 +133,7 @@ namespace PAMI
 
       pami_endpoint_t            origin   = PAMI_ENDPOINT_INIT(client_id, __global.mapping.task(), context_id);
 
-      pami_dispatch_p2p_fn       fn;
+      pami_dispatch_p2p_function fn;
       size_t                     dispatch;
       T_Protocol                *protocol;
 
@@ -242,7 +242,7 @@ namespace PAMI
       pami_endpoint_t origin = PAMI_ENDPOINT_INIT(client_id, __global.mapping.task(), context_id);
 
       // Construct the protocols using the NI dispatch function and cookie
-      pami_dispatch_p2p_fn       fn;
+      pami_dispatch_p2p_function fn;
       size_t                     dispatch;
       T_Protocol1               *protocol1;
       T_Protocol2               *protocol2;
@@ -514,15 +514,15 @@ namespace PAMI
                                            PAMI::PipeWorkQueue *pwq);
 
       /// \brief initial to set the mcast dispatch
-      virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie);
-      virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_fn fn, void *cookie)
+      virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie);
+      virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_function fn, void *cookie)
       {
         PAMI_abort();
         return PAMI_ERROR;
       }
-      virtual inline pami_result_t setSendDispatch(pami_dispatch_p2p_fn  fn,
+      virtual inline pami_result_t setSendDispatch(pami_dispatch_p2p_function fn,
                                                    void                      *cookie);
-      virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_p2p_fn  fn,
+      virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_p2p_function fn,
                                                       void                      *cookie);
 
       /// \brief Multicast model constants/attributes
@@ -674,17 +674,17 @@ namespace PAMI
       PAMI::MemoryAllocator < sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj), 16 > _allocator; // Allocator
 
       T_Protocol                           *_mcast_protocol;
-      pami_dispatch_multicast_fn            _mcast_dispatch_function;
+      pami_dispatch_multicast_function      _mcast_dispatch_function;
       void                                * _mcast_dispatch_arg;
       size_t                                _mcast_dispatch;
 
       T_Protocol                           *_m2m_protocol;
-      pami_dispatch_manytomany_fn           _m2m_dispatch_function;
+      pami_dispatch_manytomany_function     _m2m_dispatch_function;
       void                                * _m2m_dispatch_arg;
       size_t                                _m2m_dispatch;
 
       T_Protocol                           *_send_protocol;
-      pami_dispatch_p2p_fn                  _send_dispatch_function;
+      pami_dispatch_p2p_function            _send_dispatch_function;
       void                                * _send_dispatch_arg;
       size_t                                _send_dispatch;
 
@@ -725,13 +725,13 @@ namespace PAMI
                                            PAMI::PipeWorkQueue *pwq);
 
       /// \brief initialize to set the mcast dispatch
-      virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_fn  fn,
+      virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_function fn,
                                                          void                       *cookie);
-      virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_fn  fn,
+      virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_function fn,
                                                          void                        *cookie);
-      virtual inline pami_result_t setSendDispatch(pami_dispatch_p2p_fn  fn,
+      virtual inline pami_result_t setSendDispatch(pami_dispatch_p2p_function fn,
                                                    void                 *cookie);
-      virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_p2p_fn  fn,
+      virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_p2p_function fn,
                                                       void                 *cookie);
 
       /// \brief Multicast model constants/attributes
@@ -929,7 +929,7 @@ namespace PAMI
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
-  inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie)
+  inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie)
   {
 
     TRACE_FN_ENTER();
@@ -946,7 +946,7 @@ namespace PAMI
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
-  inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::setSendDispatch (pami_dispatch_p2p_fn fn, void *cookie)
+  inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::setSendDispatch (pami_dispatch_p2p_function fn, void *cookie)
   {
     this->_send_dispatch_arg      = cookie;
     this->_send_dispatch_function = fn;
@@ -954,7 +954,7 @@ namespace PAMI
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
-  inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::setSendPWQDispatch (pami_dispatch_p2p_fn fn, void *cookie)
+  inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::setSendPWQDispatch (pami_dispatch_p2p_function fn, void *cookie)
   {
     PAMI_abort();
     return PAMI_ERROR;
@@ -1448,7 +1448,7 @@ namespace PAMI
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
-  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setManytomanyDispatch (pami_dispatch_manytomany_fn fn, void *cookie)
+  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setManytomanyDispatch (pami_dispatch_manytomany_function fn, void *cookie)
   {
     TRACE_FN_ENTER();
 
@@ -1466,7 +1466,7 @@ namespace PAMI
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
-  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setMulticastDispatch (pami_dispatch_multicast_fn fn, void *cookie)
+  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie)
   {
     TRACE_FN_ENTER();
 
@@ -1484,7 +1484,7 @@ namespace PAMI
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
-  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setSendDispatch (pami_dispatch_p2p_fn fn, void *cookie)
+  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setSendDispatch (pami_dispatch_p2p_function fn, void *cookie)
   {
     this->_send_dispatch_arg      = cookie;
     this->_send_dispatch_function = fn;
@@ -1492,7 +1492,7 @@ namespace PAMI
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
-  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setSendPWQDispatch (pami_dispatch_p2p_fn fn, void *cookie)
+  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setSendPWQDispatch (pami_dispatch_p2p_function fn, void *cookie)
   {
     PAMI_abort();
     return PAMI_SUCCESS;

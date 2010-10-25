@@ -162,7 +162,7 @@ int main ()
   size_t num_tasks = configuration.value.intval;
   printf("(%zu) after Initializing client and context.  num_tasks=%zu\n", task_id, num_tasks);
 
-  pami_dispatch_callback_fn fn;
+  pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
   pami_send_hint_t options={};
   TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, _recv_active = %lu\n", &_recv_active, _recv_active));

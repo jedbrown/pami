@@ -61,7 +61,7 @@ namespace PAMI
           /// \param[out] status       Constructor status
           ///
           inline Adaptive (size_t                     dispatch,
-                           pami_dispatch_callback_fn   dispatch_fn,
+                           pami_dispatch_callback_function dispatch_fn,
                            void                     * cookie,
                            T_Device                 & device,
                            size_t                     origin_task,

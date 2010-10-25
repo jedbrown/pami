@@ -102,7 +102,7 @@ namespace PAMI
 
         /// \see PAMI::Device::Interface::MulticastModel::registerMcastRecvFunction
         pami_result_t registerMcastRecvFunction_impl(int                        dispatch_id,
-                                                    pami_dispatch_multicast_fn  func,
+                                                    pami_dispatch_multicast_function func,
                                                     void                      *arg);
         /// \see PAMI::Device::Interface::MulticastModel::postMulticast
         pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
@@ -170,7 +170,7 @@ namespace PAMI
         MUCollDevice                        & _device;
         MUDescriptorWrapper                   _wrapper_model;
         MUSPI_CollectiveMemoryFIFODescriptor  _desc_model;
-        pami_dispatch_multicast_fn             _dispatch_function;
+        pami_dispatch_multicast_function       _dispatch_function;
         void                                * _dispatch_arg;
         // We only need one receive state because we only support one active collective at a time
         mcast_recv_state_t                          _receive_state;

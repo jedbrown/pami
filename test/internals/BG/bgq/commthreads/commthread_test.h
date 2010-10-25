@@ -186,7 +186,7 @@ pami_result_t init_test_send(pami_client_t client, pami_context_t *ctx, size_t n
 	test_init();
 	for (x = 0; x < nctx; ++x) {
 		disp_id[x] = 0;
-		pami_result_t rc = PAMI_Dispatch_set(ctx[x], disp_id[x], (pami_dispatch_callback_fn){do_recv}, (void *)&_info[x], h);
+		pami_result_t rc = PAMI_Dispatch_set(ctx[x], disp_id[x], (pami_dispatch_callback_function){do_recv}, (void *)&_info[x], h);
 		if (rc != PAMI_SUCCESS) {
 			fprintf(stderr, "Failed to set dispatch for context %d\n", x);
 		}

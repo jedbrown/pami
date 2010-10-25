@@ -49,7 +49,7 @@ namespace PAMI
 
     typedef struct mpi_mcast_dispatch_info_t
     {
-      pami_dispatch_multicast_fn  recv_func;
+      pami_dispatch_multicast_function recv_func;
       void                         *async_arg;
     }mpi_mcast_dispatch_info_t;
 
@@ -157,7 +157,7 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
       }
 
       void registerMcastRecvFunction (int                           dispatch_id,
-                                      pami_dispatch_multicast_fn     recv_func,
+                                      pami_dispatch_multicast_function recv_func,
                                       void                         *async_arg)
       {
         _mcast_dispatch_table[dispatch_id].recv_func=recv_func;

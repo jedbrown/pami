@@ -30,7 +30,7 @@ namespace PAMI
 	public:
 
 	inline ShmemCollective (size_t                     dispatch,
-							pami_dispatch_callback_fn   dispatch_fn,
+							pami_dispatch_callback_function dispatch_fn,
 							void                     * cookie,
 							T_Device                 & device,
 							pami_result_t             & status) :
@@ -69,7 +69,7 @@ namespace PAMI
 		T_Model                    _collective_model;
 
 		pami_context_t              _context;
-		pami_dispatch_callback_fn   _dispatch_fn;
+		pami_dispatch_callback_function _dispatch_fn;
 		void                     * _cookie;
 		T_Device                 & _device;
 

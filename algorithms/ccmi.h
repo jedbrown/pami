@@ -44,7 +44,7 @@ const unsigned MIN_PIPELINE_WIDTH_TORUS = 480;
 /// This is the default allreduce min torus pipeline width, set to 1920
 const unsigned ALLREDUCE_MIN_PIPELINE_WIDTH_TORUS = 1920;
 
-//typedef pami_dispatch_multicast_fn CCMI_RecvMulticast_t;
+//typedef pami_dispatch_multicast_function CCMI_RecvMulticast_t;
 #define __ccmi_recv_multicast_callback_defined__
 
 /* These are defined in ccmi_collectives.h */

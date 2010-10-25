@@ -51,7 +51,7 @@ public:
 
         template <class T_Allocator>
         static DatagramProtocol * generate (size_t                     dispatch,
-                                            pami_dispatch_callback_fn   dispatch_fn,
+                                            pami_dispatch_callback_function dispatch_fn,
                                             void                     * cookie,
                                             T_Device                 & device,
                                             T_Allocator              & allocator,
@@ -232,7 +232,7 @@ public:
         /// \param[in]  context      Communication context
         /// \param[out] status       Constructor status
         ///
-        Datagram(size_t dispatch, pami_dispatch_callback_fn dispatch_fn,
+        Datagram(size_t dispatch, pami_dispatch_callback_function dispatch_fn,
                         void *cookie, T_Device & device, pami_result_t & status) :
                                 PAMI::Protocol::Send::Send(),
                                 _rts_model(device),
@@ -581,7 +581,7 @@ private:
         pami_task_t _from_taskid;
         size_t     _from_contextid;
         pami_context_t _context;
-        pami_dispatch_callback_fn _dispatch_fn;
+        pami_dispatch_callback_function _dispatch_fn;
         void *_cookie;
         T_Connection _connection;
 

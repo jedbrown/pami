@@ -68,12 +68,6 @@ extern "C"
 
   typedef uintptr_t pami_work_t[8];
 
-  typedef struct
-  {
-    pami_event_function  function;
-    void               *clientdata;
-  } pami_callback_t;
-
 /**
  * \brief Message layer operation types
  */
@@ -510,7 +504,7 @@ extern "C"
    * in such a way that unwanted portions of the incoming are disposed into
    * a circular junk buffer.
    *
-   * \see pami_dispatch_p2p_fn
+   * \see pami_dispatch_p2p_function
    */
   typedef struct
   {
@@ -553,7 +547,7 @@ extern "C"
    *
    * "pipe" has nothing to do with "PipeWorkQueue"s
    */
-  typedef void (*pami_dispatch_p2p_fn) (pami_context_t    context,      /**< IN:  communication context which invoked the dispatch function */
+  typedef void (*pami_dispatch_p2p_function) (pami_context_t    context,      /**< IN:  communication context which invoked the dispatch function */
                                         void            * cookie,       /**< IN:  dispatch cookie */
                                         const void      * header_addr,  /**< IN:  header address  */
                                         size_t            header_size,  /**< IN:  header size     */
@@ -2054,7 +2048,7 @@ extern "C"
    *
    * \todo doxygen
    */
-  typedef void (*pami_dispatch_ambroadcast_fn) (pami_context_t         context,
+  typedef void (*pami_dispatch_ambroadcast_function) (pami_context_t         context,
                                                 size_t                 root,
                                                 pami_geometry_t        geometry,
                                                 const size_t           sndlen,
@@ -2110,7 +2104,7 @@ extern "C"
    *
    * \todo doxygen
    */
-  typedef void (*pami_dispatch_amscatter_fn) (size_t                 root,
+  typedef void (*pami_dispatch_amscatter_function) (size_t                 root,
                                               pami_geometry_t        geometry,
                                               const unsigned         sndlen,
                                               const void           * user_header,
@@ -2168,7 +2162,7 @@ extern "C"
    *
    * \todo doxygen
    */
-  typedef void (*pami_dispatch_amgather_fn) (size_t                 root,
+  typedef void (*pami_dispatch_amgather_function) (size_t                 root,
                                              pami_geometry_t        geometry_id,
                                              const unsigned         sndlen,
                                              const void           * user_header,
@@ -2238,7 +2232,7 @@ extern "C"
    *
    * \todo doxygen
    */
-  typedef void (*pami_dispatch_amreduce_fn) (size_t                 root,
+  typedef void (*pami_dispatch_amreduce_function) (size_t                 root,
                                              pami_geometry_t        geometry_id,
                                              const unsigned         sndlen,
                                              pami_dt                dt,
@@ -2463,11 +2457,11 @@ extern "C"
 
   typedef union
   {
-    pami_dispatch_p2p_fn         p2p;
-    pami_dispatch_ambroadcast_fn ambroadcast;
-    pami_dispatch_amscatter_fn   amscatter;
-    pami_dispatch_amreduce_fn    amreduce;
-  } pami_dispatch_callback_fn;
+    pami_dispatch_p2p_function   p2p;
+    pami_dispatch_ambroadcast_function ambroadcast;
+    pami_dispatch_amscatter_function amscatter;
+    pami_dispatch_amreduce_function amreduce;
+  } pami_dispatch_callback_function;
 
   /*****************************************************************************/
   /**
@@ -2525,7 +2519,7 @@ extern "C"
    */
   pami_result_t PAMI_Dispatch_set (pami_context_t              context,
                                    size_t                      dispatch,
-                                   pami_dispatch_callback_fn   fn,
+                                   pami_dispatch_callback_function fn,
                                    void                      * cookie,
                                    pami_send_hint_t            options);
 
@@ -2546,7 +2540,7 @@ extern "C"
   pami_result_t PAMI_AMCollective_dispatch_set(pami_context_t              context,
                                              pami_algorithm_t            algorithm,
                                              size_t                     dispatch,
-                                             pami_dispatch_callback_fn   fn,
+                                             pami_dispatch_callback_function fn,
                                              void                     * cookie,
                                              pami_collective_hint_t      options);
   /** \} */ /* end of "dispatch" group */

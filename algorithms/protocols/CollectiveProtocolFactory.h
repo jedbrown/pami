@@ -61,7 +61,7 @@ namespace CCMI
         virtual void metadata(pami_metadata_t *mdata) = 0;
 
         virtual void setAsyncInfo (bool                          is_buffered,
-                                   pami_dispatch_callback_fn      cb_async,
+                                   pami_dispatch_callback_function cb_async,
                                    pami_mapidtogeometry_fn        cb_geometry)
         {
           TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));

@@ -40,7 +40,7 @@ namespace PAMI
         };
 
       inline pami_result_t registerMcastRecvFunction_impl (int                        dispatch_id,
-                                                          pami_dispatch_multicast_fn  recv_func,
+                                                          pami_dispatch_multicast_function recv_func,
                                                           void                      *async_arg)
                 {
           _device.registerMcastRecvFunction (dispatch_id,recv_func, async_arg);
@@ -85,7 +85,7 @@ namespace PAMI
           return rc;
                 }
       T_Device                  &_device;
-      pami_dispatch_multicast_fn  _cb_async_head;
+      pami_dispatch_multicast_function _cb_async_head;
       void                      *_async_arg;
         };
     };

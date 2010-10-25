@@ -85,7 +85,7 @@ int main(int argc, char ** argv)
 
   size_t ldispatch = 2, rdispatch=3;
 
-  pami_dispatch_callback_fn   fn;
+  pami_dispatch_callback_function fn;
 
   fn.multicast = NULL; // all-sided, no recv callback
 

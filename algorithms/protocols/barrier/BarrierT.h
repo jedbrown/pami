@@ -36,7 +36,7 @@ namespace CCMI
         public:
           BarrierFactoryT(C                           *cmgr,
                           Interfaces::NativeInterface *native,
-                          pami_dispatch_multicast_fn    cb_head = NULL):
+                          pami_dispatch_multicast_function cb_head = NULL):
               CollectiveProtocolFactoryT<T, get_metadata, C>(cmgr, native, cb_head)
           {
             TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));

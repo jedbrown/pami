@@ -19,7 +19,7 @@ namespace CCMI
       public:
 	ProtocolFactoryT (C                           *cmgr,
 			  Interfaces::NativeInterface *native,
-			  pami_dispatch_multicast_fn    cb_head=NULL):
+			  pami_dispatch_multicast_function cb_head=NULL):
 	CollectiveProtocolFactoryT<T, get_metadata, C>(cmgr, native, cb_head)
 	{
 	}

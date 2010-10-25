@@ -91,7 +91,7 @@ namespace PAMI
           /// \param[out] status       Constructor status
           ///
           inline EagerImmediate (size_t                 dispatch,
-                                 pami_dispatch_p2p_fn   dispatch_fn,
+                                 pami_dispatch_p2p_function dispatch_fn,
                                  void                 * cookie,
                                  T_Device             & device,
                                  pami_endpoint_t        origin,
@@ -232,7 +232,7 @@ namespace PAMI
 
           T_Model                _send_model __attribute__((__aligned__(32)));
           pami_context_t         _context;
-          pami_dispatch_p2p_fn   _dispatch_fn;
+          pami_dispatch_p2p_function _dispatch_fn;
           void                 * _cookie;
           T_Device             & _device;
           pami_endpoint_t        _origin;

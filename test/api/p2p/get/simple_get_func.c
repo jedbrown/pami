@@ -298,7 +298,7 @@ int main (int argc, char ** argv)
   for (i=0; i<2; i++)
 #endif
   {
-    pami_dispatch_callback_fn fn;
+    pami_dispatch_callback_function fn;
 
     fprintf (stderr, "Before PAMI_Dispatch_set(%d) .. &_rts_active = %p, _rts_active = %zu\n", DISPATCH_ID_RTS, &_rts_active, _rts_active);
     fn.p2p = dispatch_rts;

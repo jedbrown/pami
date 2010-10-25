@@ -317,9 +317,9 @@ static void init()
   query.value.intval = 1;
   PAMI_Context_createv(client, &query, 1, contexts, num_contexts);
 
-  pami_dispatch_callback_fn RecvShortFN;
+  pami_dispatch_callback_function RecvShortFN;
   RecvShortFN.p2p = RecvShortCB;
-  pami_dispatch_callback_fn RecvLongFN;
+  pami_dispatch_callback_function RecvLongFN;
   RecvLongFN.p2p = RecvLongCB;
 
   /*

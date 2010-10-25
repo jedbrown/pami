@@ -36,7 +36,7 @@ namespace PAMI
                 {};
 
       inline pami_result_t registerMcastRecvFunction_impl (int                        dispatch_id,
-                                                          pami_dispatch_multicast_fn  recv_func,
+                                                          pami_dispatch_multicast_function recv_func,
                                                           void                      *async_arg)
                 {
               return PAMI_SUCCESS;

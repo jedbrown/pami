@@ -131,7 +131,7 @@ PAMI::Device::MU::MUMulticastModel::~MUMulticastModel ()
 };
 
 pami_result_t PAMI::Device::MU::MUMulticastModel::registerMcastRecvFunction_impl(int                        dispatch_id,
-                                                                               pami_dispatch_multicast_fn  func,
+                                                                               pami_dispatch_multicast_function func,
                                                                                void                      *arg)
 {
   TRACE((stderr, "<%p>:MUMulticastModel::registerMcastRecvFunction_impl(%d, %p, %p)\n", this, dispatch_id, func, arg));

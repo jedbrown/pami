@@ -138,9 +138,9 @@ namespace PAMI
     public:
       MUMultiCast2Factory (CCMI::ConnectionManager::CommSeqConnMgr *cmgr,
                            CCMI::Interfaces::NativeInterface *native,
-                           pami_dispatch_multicast_fn   cb_head = NULL):
+                           pami_dispatch_multicast_function cb_head = NULL):
       // pass our multicast dispatch (mu2_cb_async) to the parent
-      MUMultiCast2FactoryBase(cmgr, native, (pami_dispatch_multicast_fn)&mu2_cb_async)
+      MUMultiCast2FactoryBase(cmgr, native, (pami_dispatch_multicast_function)&mu2_cb_async)
       {
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::MUMultiCast2Factory()\n", this));
       };
@@ -251,9 +251,9 @@ namespace PAMI
     public:
       AxialMultiCast2Factory (CCMI::ConnectionManager::CommSeqConnMgr *cmgr,
                               CCMI::Interfaces::NativeInterface *native,
-                              pami_dispatch_multicast_fn   cb_head = NULL):
+                              pami_dispatch_multicast_function cb_head = NULL):
       // pass our multicast dispatch (axial2_cb_async) to the parent
-      AxialMultiCast2FactoryBase(cmgr, native, (pami_dispatch_multicast_fn)&axial2_cb_async)
+      AxialMultiCast2FactoryBase(cmgr, native, (pami_dispatch_multicast_function)&axial2_cb_async)
       {
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::AxialMultiCast2Factory()\n", this));
       };
