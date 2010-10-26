@@ -29,8 +29,6 @@
 
 extern PAMI::Global __global;
 
-#define DISPATCH_P2P_START 0x10
-
 namespace PAMI
 {
 
@@ -77,15 +75,6 @@ namespace PAMI
 
   namespace NativeInterfaceCommon // Common constants
   {
-    static size_t _id = DISPATCH_P2P_START;
-    static size_t getNextDispatch()
-    {
-      TRACE_FN_ENTER();
-      TRACE_FORMAT( "%zu", _id);
-      TRACE_FN_EXIT();
-      return _id++;
-    }
-
     /// \brief Enum to enumerate which underlying interface is being used by the NI
     typedef enum
     {
@@ -113,7 +102,8 @@ namespace PAMI
                                                   pami_client_t       client,
                                                   pami_context_t      context,
                                                   size_t              context_id,
-                                                  size_t              client_id)
+                                                  size_t              client_id,
+                                                  int                *dispatch_id)
 
     {
       TRACE_FN_ENTER();
@@ -141,7 +131,7 @@ namespace PAMI
       {
         // Construct the mcast protocol using the NI dispatch function and cookie
         fn = T_NativeInterface::dispatch_mcast;
-        dispatch = getNextDispatch();
+        dispatch = (*dispatch_id)--;
 
         protocol = (T_Protocol*) T_Protocol::generate(dispatch,
                                                                                  fn,
@@ -157,7 +147,7 @@ namespace PAMI
       if(T_Select == ALL || T_Select == MANYTOMANY_ONLY)
       {
         // Construct the m2m protocol using the NI dispatch function and cookie
-        dispatch  = getNextDispatch();
+        dispatch = (*dispatch_id)--;
         fn        = T_NativeInterface::dispatch_m2m;
         protocol  = (T_Protocol*) T_Protocol::generate(dispatch,
                                                        fn,
@@ -174,7 +164,7 @@ namespace PAMI
       if(T_Select == ALL || T_Select == P2P_ONLY)
       {
         // Construct the p2p protocol using the NI dispatch function and cookie
-        dispatch  = getNextDispatch();
+        dispatch = (*dispatch_id)--;
         fn        = T_NativeInterface::dispatch_send;
         protocol  = (T_Protocol*) T_Protocol::generate(dispatch,
                                                        fn,
@@ -218,7 +208,8 @@ namespace PAMI
                                                   pami_client_t       client,
                                                   pami_context_t      context,
                                                   size_t              context_id,
-                                                  size_t              client_id)
+                                                  size_t              client_id,
+                                                  int                *dispatch_id)
 
     {
       TRACE_FN_ENTER();
@@ -252,7 +243,7 @@ namespace PAMI
       {
         // Construct the mcast protocol using the NI dispatch function and cookie
         fn = T_NativeInterface::dispatch_mcast;
-        dispatch  = getNextDispatch();
+        dispatch = (*dispatch_id)--;
         protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch,
                                               fn,
                                               (void*) ni,
@@ -283,7 +274,7 @@ namespace PAMI
       if(T_Select == ALL || T_Select == MANYTOMANY_ONLY)
       {
         // Construct the m2m protocol using the NI dispatch function and cookie
-        dispatch  = getNextDispatch();
+        dispatch = (*dispatch_id)--;
         fn        = T_NativeInterface::dispatch_m2m;
         protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch,
                                                                                     fn,
@@ -314,7 +305,7 @@ namespace PAMI
       if(T_Select == ALL || T_Select == P2P_ONLY)
       {
         // Construct the p2p protocol using the NI dispatch function and cookie
-        dispatch  = getNextDispatch();
+        dispatch = (*dispatch_id)--;
         fn        = T_NativeInterface::dispatch_send;
         protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch,
                                                                                     fn,

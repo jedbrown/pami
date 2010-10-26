@@ -194,10 +194,9 @@ namespace PAMI
 
       inline pami_topology_t* getTopology_impl(int topo_num)
         {
-          if(topo_num == 0)
-            return (pami_topology_t*)_global_all_topo;
-          else
+          if(topo_num != 0)
             PAMI_abort();
+          return (pami_topology_t*)_global_all_topo;
         }
 
       inline pami_topology_t* getLocalTopology_impl()

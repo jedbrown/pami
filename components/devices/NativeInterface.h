@@ -17,9 +17,6 @@
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
-#define DISPATCH_START_DEVICE  16
-#define DISPATCH_START_COLLSHM 32
-
 namespace PAMI
 {
   namespace Device
@@ -40,12 +37,14 @@ namespace PAMI
                                    size_t          context_id,
                                    size_t          client_id,
                                    pami_task_t     taskid,
-                                   size_t          num_tasks);
+                                   size_t          num_tasks,
+                                   int            *dispatch_id);
 
       virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_function fn,
                                                          void                       *cookie)
         {
-          return _mcast.registerMcastRecvFunction(_dispatch,fn,cookie);
+          _my_dispatch_id = (*_dispatch_id)--;
+          return _mcast.registerMcastRecvFunction(_my_dispatch_id,fn,cookie);
         }
       virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_function fn, void *cookie)
       {
@@ -123,7 +122,8 @@ namespace PAMI
       T_Msync                    _msync;
       T_Mcomb                    _mcomb;
 
-      unsigned                   _dispatch;
+      int                       *_dispatch_id;
+      int                        _my_dispatch_id;
       pami_client_t              _client;
       pami_context_t             _context;
       size_t                     _contextid;
@@ -140,7 +140,8 @@ namespace PAMI
                                                                                                 size_t          context_id,
                                                                                                 size_t          client_id,
                                                                                                 pami_task_t     task,
-                                                                                                size_t          size):
+                                                                                                size_t          size,
+                                                                                                int            *dispatch_id):
       CCMI::Interfaces::NativeInterface(task, size),
       _allocator(),
       _mcast_status(PAMI_SUCCESS),
@@ -149,7 +150,7 @@ namespace PAMI
       _mcast(device,_mcast_status),
       _msync(device,_msync_status),
       _mcomb(device,_mcomb_status),
-      _dispatch(DISPATCH_START_DEVICE),
+      _dispatch_id(dispatch_id),
       _client(client),
       _context(context),
       _contextid(context_id),
@@ -191,7 +192,7 @@ namespace PAMI
       req->_user_callback    = mcast->cb_done;
 
       pami_multicast_t  m    = *mcast;
-      m.dispatch             =  _dispatch;
+      m.dispatch             =  _my_dispatch_id;
       m.client               =  _clientid;
       m.context              =  _contextid;
 
@@ -247,7 +248,7 @@ namespace PAMI
                                                                                                            pami_multicast_t *mcast,
                                                                                                            void             *devinfo)
     {
-      mcast->dispatch =  _dispatch;
+      mcast->dispatch =  _my_dispatch_id;
       return _mcast.postMulticast_impl(state, mcast, devinfo);
     }
 
@@ -317,7 +318,6 @@ namespace PAMI
 
       PAMI::MemoryAllocator < sizeof(allocObj), 16 > _allocator;
       T_Model                 &_model;
-      unsigned                _dispatch;
       pami_client_t           _client;
       pami_context_t          _context;
       size_t                  _contextid;
@@ -338,7 +338,6 @@ namespace PAMI
       CCMI::Interfaces::NativeInterface(task_id, num_tasks),
       _allocator(),
       _model(model),
-      _dispatch(DISPATCH_START_COLLSHM),
       _client(client),
       _context(context),
       _contextid(context_id),
@@ -376,7 +375,6 @@ namespace PAMI
       // pami_multicast_t  m     = *mcast;
       pami_multicast_t&  m     = *mcast;
 
-      m.dispatch =  _dispatch; // \todo ? Not really used in C++ objects?
       m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
       m.context  =  _contextid;// \todo ? Why doesn't caller set this?
 
@@ -436,9 +434,6 @@ namespace PAMI
                                                                 void *devinfo)
     {
       DO_DEBUG((templateName<T_Model>()));
-
-      mcast->dispatch =  _dispatch;
-
       return _model.postMulticast_impl(state, mcast, devinfo);
     }
 

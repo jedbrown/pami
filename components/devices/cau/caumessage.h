@@ -68,6 +68,7 @@ namespace PAMI
       void *allocateHeader(size_t sz)
         {
           _xfer_msghdr = malloc(sz);
+          return _xfer_msghdr;
         }
 
       void freeHeader()
@@ -138,7 +139,7 @@ namespace PAMI
       Generic::GenericThread    *_thread;
     };
 
-    class CAUMsyncMessage : MatchQueueElem
+    class CAUMsyncMessage : public MatchQueueElem
     {
     public:
       CAUMsyncMessage(double               init_val,
@@ -164,7 +165,7 @@ namespace PAMI
 
     };
 
-    class CAUMcombineMessage : MatchQueueElem
+    class CAUMcombineMessage : public MatchQueueElem
     {
     public:
       CAUMcombineMessage(size_t               bytesToReduce,

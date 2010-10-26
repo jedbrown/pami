@@ -134,7 +134,8 @@ namespace PAMI
                                size_t              client_id,
                                T_Local_Device     &ldev,
                                T_Global_Device    &gdev,
-                               Mapping            &mapping):
+                               Mapping            &mapping,
+                               int                *dispatch_id):
         CollRegistration < PAMI::CollRegistration::BGQ2D::BGQ2DRegistration < T_Geometry,
         T_Local_Device,
         T_Global_Device,
@@ -147,15 +148,16 @@ namespace PAMI
         _context(context),
         _context_id(context_id),
         _client_id(client_id),
+        _dispatch_id(dispatch_id),
         _global_task(mapping.task()),
         _global_size(mapping.size()),
         _reduce_val((-1)&(~0x1)),
         _local_devs(ldev),
         _global_dev(gdev),
-        _g_barrier_ni(_global_dev,client, context, context_id, client_id),
-        _g_broadcast_ni(_global_dev,client, context, context_id, client_id),
-        _g_allreduce_ni(_global_dev,client, context, context_id, client_id),
-        _g_allreducenp_ni(_global_dev,client, context, context_id, client_id)
+        _g_barrier_ni(_global_dev,client, context, context_id, client_id,dispatch_id),
+        _g_broadcast_ni(_global_dev,client, context, context_id, client_id,dispatch_id),
+        _g_allreduce_ni(_global_dev,client, context, context_id, client_id,dispatch_id),
+        _g_allreducenp_ni(_global_dev,client, context, context_id, client_id,dispatch_id)
         {
           TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           // To initialize shared memory, we need to provide the task offset into the
@@ -199,7 +201,7 @@ namespace PAMI
                               _context,
                               _context_id,
                               local_topo->rank2Index(_global_task),
-                              local_topo->size());
+                              local_topo->size())
 
           // Construct the geometry info object, so we can free our allocated objects later
           GeometryInfo                     *geometryInfo = (GeometryInfo*)_geom_allocator.allocateObject();
@@ -293,6 +295,10 @@ namespace PAMI
         pami_context_t                                                  _context;
         size_t                                                          _context_id;
         size_t                                                          _client_id;
+        // This is a pointer to the current dispatch id of the context
+        // This will be decremented by the ConstructNativeInterface routines
+        int                                                            *_dispatch_id;
+
         pami_task_t                                                     _global_task;
         size_t                                                          _global_size;
         uint64_t                                                        _reduce_val;

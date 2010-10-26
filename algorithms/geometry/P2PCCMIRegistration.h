@@ -66,7 +66,8 @@ namespace PAMI
                                   bool                use_shmem,
                                   bool                use_p2p,
                                   size_t              global_size,
-                                  size_t              local_size):
+                                  size_t              local_size,
+                                  int                *dispatch_id):
             CollRegistration < PAMI::CollRegistration::P2P::CCMIRegistration < T_Geometry,
                                                                                T_Local_Device,
                                                                                T_Global_Device,
@@ -87,6 +88,7 @@ namespace PAMI
             _context_id(context_id),
             _client_id(client_id),
             _reduce_val(0),
+            _dispatch_id(dispatch_id),
             _local_dev(ldev),
             _global_dev(gdev),
             _allocator(allocator),
@@ -332,7 +334,8 @@ namespace PAMI
                                                                                _client,
                                                                                _context,
                                                                                _context_id,
-                                                                               _client_id);
+                                                                               _client_id,
+                                                                               _dispatch_id);
             PAMI_assert(result == PAMI_SUCCESS);
             COMPILE_TIME_ASSERT(sizeof(T_Factory) <= T_Allocator::objsize);
             factory = (T_Factory*) _allocator.allocateObject ();
@@ -561,7 +564,8 @@ namespace PAMI
                          _client,
                          _context,
                          _context_id,
-                         _client_id);
+                         _client_id,
+                         _dispatch_id);
             PAMI_assert(result == PAMI_SUCCESS);
 
 
@@ -938,6 +942,10 @@ namespace PAMI
           size_t                                                       _context_id;
           size_t                                                       _client_id;
           uint64_t                                                     _reduce_val;
+
+          // This is a pointer to the current dispatch id of the context
+          // This will be decremented by the ConstructNativeInterface routines
+          int                                                         *_dispatch_id;
 
           // Protocol device(s) and allocator
           T_Local_Device                                              &_local_dev;

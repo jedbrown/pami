@@ -32,8 +32,6 @@
 
 extern PAMI::Global __global;
 
-#define DISPATCH_START 0x10
-
 namespace PAMI
 {
 
@@ -43,10 +41,10 @@ namespace PAMI
   {
     public:
       /// \brief ctor that takes pointers to multi* objects
-      inline BGQNativeInterfaceAS(T_Mcast *mcast, T_Msync *msync, T_Mcomb *mcomb, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id);
+      inline BGQNativeInterfaceAS(T_Mcast *mcast, T_Msync *msync, T_Mcomb *mcomb, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id);
 
       /// \brief ctor that constructs multi* objects internally
-      inline BGQNativeInterfaceAS(T_Device &device, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id);
+      inline BGQNativeInterfaceAS(T_Device &device, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id,int *dispatch_id);
 
       /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterface)
       virtual inline pami_result_t multicast    (pami_multicast_t    *, void *devinfo = NULL);
@@ -102,6 +100,7 @@ namespace PAMI
       pami_context_t          _context;
       size_t                  _contextid;
       size_t                  _clientid;
+      int                    *_dispatch_id;
   }; // class BGQNativeInterfaceAS
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
@@ -109,7 +108,7 @@ namespace PAMI
   {
     public:
       /// \brief ctor that constructs multi* objects internally
-      inline BGQNativeInterface(T_Device &device, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id);
+      inline BGQNativeInterface(T_Device &device, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id,int *dispatch_id);
 
       /// \brief this call is called when the native interface is
       /// initialized to set the mcast dispatch
@@ -126,7 +125,7 @@ namespace PAMI
   // Inline implementations
   ///////////////////////////////////////////////////////////////////////////////
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::BGQNativeInterfaceAS(T_Mcast *mcast, T_Msync *msync, T_Mcomb *mcomb, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id):
+  inline BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::BGQNativeInterfaceAS(T_Mcast *mcast, T_Msync *msync, T_Mcomb *mcomb, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id,int *dispatch_id):
       CCMI::Interfaces::NativeInterface(__global.mapping.task(),
                                         __global.mapping.size()),
       _allocator(),
@@ -137,9 +136,11 @@ namespace PAMI
       _client(client),
       _context(context),
       _contextid(context_id),
-      _clientid(client_id)
+      _clientid(client_id),
+      _dispatch_id(dispatch_id)
   {
     TRACE_FN_ENTER();
+    TRACE_FN_EXIT();
   };
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
@@ -147,7 +148,8 @@ namespace PAMI
       pami_client_t  client,
       pami_context_t context,
       size_t         context_id,
-      size_t         client_id):
+      size_t         client_id,
+      int           *dispatch_id):
       CCMI::Interfaces::NativeInterface(__global.mapping.task(),
                                         __global.mapping.size()),
       _allocator(),
@@ -164,7 +166,8 @@ namespace PAMI
       _client(client),
       _context(context),
       _contextid(context_id),
-      _clientid(client_id)
+      _clientid(client_id),
+      _dispatch_id(dispatch_id)
   {
     TRACE_FN_ENTER();
     TRACE_FORMAT( "<%p>%s %d %d %d", this, __PRETTY_FUNCTION__,
@@ -181,11 +184,13 @@ namespace PAMI
                                                                               pami_client_t  client,
                                                                               pami_context_t context,
                                                                               size_t         context_id,
-                                                                              size_t         client_id) :
-      BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>(device, client, context, context_id, client_id)
+                                                                              size_t         client_id,
+                                                                              int           *dispatch_id) :
+      BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>(device, client, context, context_id, client_id, dispatch_id)
   {
     TRACE_FN_ENTER();
     DO_DEBUG((templateName<T_Device>()));
+    TRACE_FN_EXIT();
   }
 
 
@@ -216,7 +221,7 @@ namespace PAMI
   inline pami_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie)
   {
     TRACE_FN_ENTER();
-    this->_dispatch = NativeInterfaceCommon::getNextDispatch();
+    this->_dispatch = (*this->_dispatch_id)--;
 
     TRACE_FORMAT( "<%p> %p, %p id=%u",
                this, fn,  cookie,  this->_dispatch);

@@ -91,7 +91,8 @@ namespace PAMI
                               size_t              client_id,
                               size_t              context_id,
                               T_Allocator        &proto_alloc,
-                              T_Device           &dev):
+                              T_Device           &dev,
+                              int                *dispatch_id):
         CollRegistration<PAMI::CollRegistration::PGASRegistration<T_Geometry,
                                                                   T_P2P_NI,
                                                                   T_Allocator,
@@ -104,6 +105,7 @@ namespace PAMI
         _client_id(client_id),
         _context_id(context_id),
         _reduce_val(0),
+        _dispatch_id(dispatch_id),
         _dev(dev),
         _proto_alloc(proto_alloc),
         _bcast(NULL),
@@ -128,7 +130,8 @@ namespace PAMI
                                                                              _client,      \
                                                                              _context,     \
                                                                              _context_id,  \
-                                                                             _client_id)
+                                                                             _client_id,   \
+                                                                             _dispatch_id)
             SETUPNI(_bcast);
             SETUPNI(_allgather);
             SETUPNI(_allgatherv);
@@ -261,6 +264,7 @@ namespace PAMI
       size_t                      _context_id;
       T_NBCollMgr                 _mgr;
       uint64_t                    _reduce_val;
+      int                        *_dispatch_id;   
       // Native Interface
       T_Device                   &_dev;
       T_Allocator                &_proto_alloc;

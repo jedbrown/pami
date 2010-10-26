@@ -31,27 +31,24 @@ namespace PAMI
   extern std::map<unsigned, pami_geometry_t> geometry_map;
   namespace Device
   {
-    #define DISPATCH_ID_START 48
-
-    extern std::map<int,int> _g_lapi_mcast_to_pami_mcast;
-    extern std::map<int,int> _g_pami_mcast_to_lapi_mcast;
+//    extern std::map<int,int> _g_lapi_mcast_to_pami_mcast;
+//    extern std::map<int,int> _g_pami_mcast_to_lapi_mcast;
     extern std::map<lapi_handle_t,void*> _g_id_to_device_table;
-
 
     class CAUDevice: public Interface::BaseDevice<CAUDevice>
     {
     public:
       CAUDevice():
 	_lapi_state(NULL),
-        _lapi_handle(0),
-        _dispatch_id(DISPATCH_ID_START)
+        _lapi_handle(0)
 	{}
       inline void          init(lapi_state_t  *lapi_state,
                                 lapi_handle_t  lapi_handle,
                                 pami_client_t  client,
                                 size_t         client_id,
                                 pami_context_t context,
-                                size_t         context_id)
+                                size_t         context_id,
+                                int           *dispatch_id)
         {
           _lapi_state  = lapi_state;
           _lapi_handle = lapi_handle;
@@ -59,6 +56,7 @@ namespace PAMI
           _client_id   = client_id;
           _context     = context;
           _context_id  = context_id;
+          _dispatch_id = dispatch_id;
           lapi_qenv(_lapi_handle, TASK_ID, (int *)&_taskid);
         }
       inline lapi_state_t  *getState() { return _lapi_state;}
@@ -66,21 +64,31 @@ namespace PAMI
       inline int            registerSyncDispatch(hdr_hndlr_t *hdr,
                                                  void        *clientdata)
         {
-          CheckLapiRC(lapi_addr_set(_lapi_handle,(void*)hdr,_dispatch_id));
-          _g_id_to_device_table[_dispatch_id++] = clientdata;
-          return _dispatch_id-1;
+          int my_dispatch_id = (*_dispatch_id)--;
+          LapiImpl::Context *cp = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
+          internal_error_t rc = (cp->*(cp->pDispatchSet))(my_dispatch_id,
+                                                          (void*)hdr,
+                                                          NULL,
+                                                          null_send_hint,
+                                                          INTERFACE_LAPI);          
+          if(rc != SUCCESS) return -1;
+          _g_id_to_device_table[my_dispatch_id] = clientdata;
+          return my_dispatch_id;
         }
 
-      inline int            registerMcastDispatch(int          pami_dispatch_id,
+      inline int            registerMcastDispatch(int          dispatch_id,
                                                   hdr_hndlr_t *hdr,
                                                   void        *clientdata)
         {
-          CheckLapiRC(lapi_addr_set(_lapi_handle,(void*)hdr,_dispatch_id));
-          _g_id_to_device_table[_dispatch_id]            = clientdata;
-          _g_pami_mcast_to_lapi_mcast[pami_dispatch_id]  = _dispatch_id;
-          _g_lapi_mcast_to_pami_mcast[_dispatch_id]      = pami_dispatch_id;
-          _dispatch_id++;
-          return _dispatch_id-1;
+          LapiImpl::Context *cp = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
+          internal_error_t rc = (cp->*(cp->pDispatchSet))(dispatch_id,
+                                                          (void*)hdr,
+                                                          NULL,
+                                                          null_send_hint,
+                                                          INTERFACE_LAPI);          
+          if(rc != SUCCESS) return -1;
+          _g_id_to_device_table[dispatch_id]           =  clientdata;
+          return dispatch_id;
         }
 
       inline pami_task_t          taskid()
@@ -94,7 +102,7 @@ namespace PAMI
         }
       pami_context_t getClient()
         {
-          return _context;
+          return _client;
         }
 
       void           setGenericDevices(Generic::Device *generics)
@@ -209,8 +217,6 @@ namespace PAMI
             }
           return -1;
         }
-
-
       static inline void         *getClientData(int id)
         {
           return _g_id_to_device_table[id];
@@ -220,18 +226,6 @@ namespace PAMI
           pami_geometry_t g = geometry_map[comm];
           return g;
         }
-      static inline int          getPamiId(int lapi_id)
-        {
-          return _g_lapi_mcast_to_pami_mcast[lapi_id];
-        }
-      static inline int          getLapiId(int pami_id)
-        {
-          return _g_pami_mcast_to_lapi_mcast[pami_id];
-        }
-
-
-
-
     private:
       lapi_state_t                                              *_lapi_state;
       lapi_handle_t                                              _lapi_handle;
@@ -239,7 +233,7 @@ namespace PAMI
       pami_context_t                                             _context;
       size_t                                                     _client_id;
       size_t                                                     _context_id;
-      int                                                        _dispatch_id;
+      int                                                       *_dispatch_id;
       pami_task_t                                                _taskid;
       Generic::Device                                           *_generics;
       PAMI::MemoryAllocator<sizeof(Generic::GenericThread), 16>  _work_alloc;

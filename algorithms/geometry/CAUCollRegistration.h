@@ -124,7 +124,8 @@ namespace PAMI
                                T_Local_Device     &ldev,
                                T_Global_Device    &gdev,
                                Mapping            &mapping,
-                               lapi_handle_t       lapi_handle):
+                               lapi_handle_t       lapi_handle,
+                               int                *dispatch_id):
           CollRegistration < PAMI::CollRegistration::CAU::CAURegistration < T_Geometry,
                                                                             T_Local_Device,
                                                                             T_Global_Device,
@@ -137,15 +138,16 @@ namespace PAMI
           _context(context),
           _context_id(context_id),
           _client_id(client_id),
+          _dispatch_id(dispatch_id),
           _global_task(mapping.task()),
           _global_size(mapping.size()),
           _lapi_handle(lapi_handle),
           _reduce_val((-1)&(~0x1)),
           _local_devs(ldev),
           _global_dev(gdev),
-          _g_barrier_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size),
-          _g_broadcast_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size),
-          _g_allreduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size)
+          _g_barrier_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
+          _g_broadcast_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
+          _g_allreduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id)
           {
             // To initialize shared memory, we need to provide the task offset into the
             // local nodes, and the total number of nodes we have locally
@@ -310,6 +312,7 @@ namespace PAMI
         pami_context_t                                                  _context;
         size_t                                                          _context_id;
         size_t                                                          _client_id;
+        int                                                            *_dispatch_id; 
         pami_task_t                                                     _global_task;
         size_t                                                          _global_size;
         lapi_handle_t                                                   _lapi_handle;

@@ -64,6 +64,7 @@ namespace PAMI
         _mapcache = mapcache;
         _peers    = peers;
         _npeers   = npeers;
+        return PAMI_SUCCESS;
       }
 
     inline size_t task_impl()

@@ -312,6 +312,7 @@ namespace PAMI
         _context(this),
         _clientid (clientid),
         _contextid (id),
+        _dispatch_id(255),
         _mm (mm),
         _lock (),
         _mpi(&_g_mpi_device),
@@ -337,7 +338,7 @@ namespace PAMI
           MPI_Barrier(MPI_COMM_WORLD);
 
           _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
-          new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi);
+          new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi, &_dispatch_id);
           _pgas_collreg->analyze(_contextid,_world_geometry);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
 
@@ -346,12 +347,13 @@ namespace PAMI
                                                 _context,
                                                 _contextid,
                                                 _clientid,
-                                              _devices->_shmem[_contextid],*_mpi,
-                                              _protocol,
+                                                _devices->_shmem[_contextid],*_mpi,
+                                                _protocol,
                                                 0,
                                                 1,
-                                              __global.topology_global.size(),
-                                              __global.topology_local.size());
+                                                __global.topology_global.size(),
+                                                __global.topology_local.size(),
+                                                &_dispatch_id);
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 
           _oldccmi_collreg=(OldCCMICollreg*) malloc(sizeof(*_oldccmi_collreg));
@@ -769,6 +771,7 @@ namespace PAMI
       size_t                    _clientid;
       size_t                    _contextid;
       void                     *_dispatch[1024][2];
+      int                       _dispatch_id;
       ProtocolAllocator         _protocol;
       Memory::MemoryManager    *_mm;
       ContextLock _lock;

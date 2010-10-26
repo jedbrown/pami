@@ -431,11 +431,13 @@ namespace PAMI
                                   pami_client_t           client,
                                   pami_context_t          context,
                                   size_t                  context_id,
-                                  size_t                  client_id):
+                                  size_t                  client_id,
+                                  int                    *dispatch_id):
       CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface>, T_Geometry> (),
       _client(client),
       _context(context),
       _context_id(context_id),
+      _dispatch_id(dispatch_id),
       _sconnmgr(65535),
       _csconnmgr(),
       _shmem_barrier_composite(NULL),
@@ -489,15 +491,15 @@ namespace PAMI
         {
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration() usemu\n", this));
             
-          _mu_ni_msync          = new (_mu_ni_msync_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
-          _mu_ni_sub_msync      = new (_mu_ni_sub_msync_storage     ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
-          _mu_ni_mcomb          = new (_mu_ni_mcomb_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
-          _mu_ni_mcast2         = new (_mu_ni_mcast2_storage        ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
-          _mu_ni_msync2d        = new (_mu_ni_msync2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
-          _mu_ni_mcast2d        = new (_mu_ni_mcast2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
-          _mu_ni_mcomb2d        = new (_mu_ni_mcomb2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
-          _mu_ni_mcomb2dNP      = new (_mu_ni_mcomb2dNP_storage     ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id);
-          _axial_mu_ni          = new (_axial_mu_ni_storage         ) T_AxialNativeInterface(_mu_device, client, context, context_id, client_id);
+          _mu_ni_msync          = new (_mu_ni_msync_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
+          _mu_ni_sub_msync      = new (_mu_ni_sub_msync_storage     ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
+          _mu_ni_mcomb          = new (_mu_ni_mcomb_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
+          _mu_ni_mcast2         = new (_mu_ni_mcast2_storage        ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
+          _mu_ni_msync2d        = new (_mu_ni_msync2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
+          _mu_ni_mcast2d        = new (_mu_ni_mcast2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
+          _mu_ni_mcomb2d        = new (_mu_ni_mcomb2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
+          _mu_ni_mcomb2dNP      = new (_mu_ni_mcomb2dNP_storage     ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
+          _axial_mu_ni          = new (_axial_mu_ni_storage         ) T_AxialNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
           _mu_msync_factory     = new (_mu_msync_factory_storage    ) MUMultiSyncFactory(&_sconnmgr, _mu_ni_msync);
           _sub_mu_msync_factory = new (_sub_mu_msync_factory_storage) SubMUMultiSyncFactory(&_sconnmgr, _mu_ni_sub_msync);
           _mu_mcomb_factory     = new (_mu_mcomb_factory_storage    ) MUMultiCombineFactory(&_sconnmgr, _mu_ni_mcomb);
@@ -772,6 +774,10 @@ namespace PAMI
       pami_client_t                                   _client;
       pami_context_t                                  _context;
       size_t                                          _context_id;
+      // This is a pointer to the current dispatch id of the context
+      // This will be decremented by the ConstructNativeInterface routines
+      int                                            *_dispatch_id;
+
 
       // CCMI Connection Manager Class
       CCMI::ConnectionManager::SimpleConnMgr          _sconnmgr;

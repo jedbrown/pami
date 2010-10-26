@@ -18,7 +18,7 @@ PAMI::HfiExtension::hfi_pkt_counters (pami_context_t context,
   internal_error_t rst =  _dbg_hfi_perf_counters( ((Context*)context)->my_hndl,
           (lapi_pkt_counter_t*)counters, false);
 
-  PAMI_RC( rst );
+  return PAMI_RC( rst );
 }
 
 //TODO replace LAPI function with an internal func

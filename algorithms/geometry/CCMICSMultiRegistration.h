@@ -91,7 +91,7 @@ namespace PAMI
                                       pami_context_t      context,
                                       size_t              context_id,
                                       // PAMI::Context       *contexts,
-                                      PAMI::Device::Generic::Device &devs) :
+                                      PAMI::Device::Generic::Device &devs):
       CollRegistration<PAMI::CollRegistration::CCMICSMultiRegistration<T_Geometry, T_CSNativeInterface,
                                                      T_CSMemoryManager, T_CSModel>, T_Geometry> (),
       _client(client),
@@ -172,7 +172,8 @@ namespace PAMI
         // Allocate the local native interface
         T_CSNativeInterface *ni = new T_CSNativeInterface(*cs_model, _client, _client_id, _context,
                                        _context_id, local_topo->rank2Index(__global.mapping.task()),
-                                       local_topo->size());
+                                                          local_topo->size());
+
         geometry->setKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI, ni);
 
         geometry->addCollective(PAMI_XFER_BARRIER,&_msync_reg,context_id);
@@ -196,7 +197,6 @@ namespace PAMI
       size_t                                                   _context_id;
       // PAMI::Context                                            *_contexts;
       PAMI::Device::Generic::Device                            &_devs;
-
       CCMI::Adaptor::Barrier::CSMultiSyncFactory               _msync_reg;
       CCMI::Adaptor::Broadcast::CSMultiCastFactory             _mcast_reg;
       CCMI::Adaptor::Allreduce::CSMultiCombineFactory          _mcomb_reg;

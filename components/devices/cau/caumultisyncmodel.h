@@ -90,9 +90,14 @@ namespace PAMI
               *comp_h       = NULL;
               ri->ret_flags = LAPI_SEND_REPLY;
               ri->ctl_flags = LAPI_BURY_MSG;
+              return NULL;
             }
           else
             PAMI_abort();
+
+          // Should not be reached
+          PAMI_abort();
+          return NULL;
         }
 
 
@@ -163,22 +168,29 @@ namespace PAMI
               *comp_h       = NULL;
               ri->ret_flags = LAPI_SEND_REPLY;
               ri->ctl_flags = LAPI_BURY_MSG;
+              return NULL;
             }
           else
             PAMI_abort();
+
+          // Not reached
+          PAMI_abort();
+          return NULL;
         }
 
       public:
       static const size_t msync_model_state_bytes = sizeof(T_Message);
       static const size_t sizeof_msg              = sizeof(T_Message);
-      CAUMultisyncModel (T_Device &device, pami_result_t &status) :
+      CAUMultisyncModel (T_Device      &device,pami_result_t &status):
         Interface::MultisyncModel<CAUMultisyncModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>(device,status),
         _device(device)
           {
             TRACE((stderr, "CAU:  Registering Dispatch Handler:  %p %p\n", cau_red_handler, cau_mcast_handler));
-            _dispatch_red_id   = _device.registerSyncDispatch(cau_red_handler, this);
-            _dispatch_mcast_id = _device.registerSyncDispatch(cau_mcast_handler, this);
-            status             = PAMI_SUCCESS;
+            status                            = PAMI_SUCCESS;
+            _dispatch_red_id                  = _device.registerSyncDispatch(cau_red_handler, this);
+            if(_dispatch_red_id==-1) status   = PAMI_ERROR;
+            _dispatch_mcast_id                = _device.registerSyncDispatch(cau_mcast_handler, this);
+            if(_dispatch_mcast_id==-1) status = PAMI_ERROR;
           }
 
         pami_result_t postMultisync (uint8_t         (&state)[msync_model_state_bytes],

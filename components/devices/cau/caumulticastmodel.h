@@ -117,7 +117,7 @@ namespace PAMI
           TRACE((stderr, "CAUMulticastModel:  cau_mcast_send_done: issuing pipelined multicast of %u bytes\n", hdr[0].data_sz));
           CheckLapiRC(lapi_cau_multicast(device->getHdl(),                 // lapi handle
                                          gi->_cau_id,                      // group id
-                                         device->getLapiId(m->_dispatch),  // dispatch id
+                                         m->_dispatch,                     // dispatch id
                                          m->_xfer_msghdr,                  // header
                                          sizeof(msgHeader),                // message header size
                                          buf,                              // data
@@ -411,9 +411,10 @@ namespace PAMI
             TRACE((stderr, "CAUMulticastModel:  registerMcastRecvFunction:  dispatch_id=%d fcn=%p cookie=%p"
                    " user_fcn=%p user_cookie=%p\n",
                    dispatch_id, cau_mcast_recv_handler, this, recv_func, async_arg));
-            int lapi_did = _device.registerMcastDispatch(dispatch_id, cau_mcast_recv_handler, this);
-            _id_to_fn[lapi_did]        = recv_func;
-            _id_to_async_arg[lapi_did] = async_arg;
+            
+            _device.registerMcastDispatch(dispatch_id, cau_mcast_recv_handler, this);
+            _id_to_fn[dispatch_id]        = recv_func;
+            _id_to_async_arg[dispatch_id] = async_arg;
             return PAMI_SUCCESS;
           }
 
@@ -454,7 +455,7 @@ namespace PAMI
             // Set up the fields of the header
             // and concatenate the user header into the
             // system header by memory copying
-            hdr[0].dispatch_id    = _device.getLapiId(mcast->dispatch);
+            hdr[0].dispatch_id    = mcast->dispatch;
             hdr[0].geometry_id    = gi->_geometry_id;
             hdr[0].connection_id  = mcast->connection_id;
             hdr[0].root           = _device.taskid();

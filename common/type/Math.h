@@ -9,7 +9,7 @@ namespace PAMI
 {
     namespace Math {
         template <class T>
-            T GCD(T a, T b)
+            inline T GCD(T a, T b)
             {
                 T t;
                 while (b != 0) {

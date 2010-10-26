@@ -86,7 +86,7 @@ namespace PAMI
                                       void          **uinfo)
         {
           TRACE((stderr, "CAUMulticombineModel: cau_mcast_handler\n"));
-
+          return NULL;
         }
 
 
@@ -162,6 +162,10 @@ namespace PAMI
             }
           else
             PAMI_abort();
+
+          // Not reached
+          PAMI_abort();
+          return NULL;
         }
 
       CAUMulticombineModel (T_Device & device, pami_result_t &status) :

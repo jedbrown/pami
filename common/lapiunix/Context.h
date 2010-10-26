@@ -125,10 +125,10 @@ namespace PAMI
         pami_send_hint_t   options;
         memset(&options, 0, sizeof(options));
         internal_error_t rc = (cp->*(cp->pDispatchSet))(dispatch,
-                                           (void *)dispatch_fn,
-                                           cookie,
-                                           *(send_hint_t *)&options,
-                                           INTERFACE_PAMI);
+                                                        (void *)dispatch_fn,
+                                                        cookie,
+                                                        *(send_hint_t *)&options,
+                                                        INTERFACE_PAMI);
         result = PAMI_RC(rc);
         return;
       }
@@ -139,21 +139,21 @@ namespace PAMI
       {
         LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
         internal_error_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
-                                       send->header.iov_base, send->header.iov_len,
-                                       send->data.iov_base, send->data.iov_len,
-                                       *(send_hint_t *)&send->hints);
+                                                      send->header.iov_base, send->header.iov_len,
+                                                      send->data.iov_base, send->data.iov_len,
+                                                      *(send_hint_t *)&send->hints);
         return PAMI_RC(rc);
       }
     inline pami_result_t simple (pami_send_t * simple)
       {
         LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
         internal_error_t rc = (cp->*(cp->pSend))(simple->send.dest, simple->send.dispatch,
-                simple->send.header.iov_base, simple->send.header.iov_len,
-                simple->send.data.iov_base, simple->send.data.iov_len,
-                *(send_hint_t *)&simple->send.hints,
-                simple->events.local_fn, simple->events.remote_fn,
-                simple->events.cookie,
-                NULL, NULL, NULL, NULL, NULL, INTERFACE_PAMI);
+                                                 simple->send.header.iov_base, simple->send.header.iov_len,
+                                                 simple->send.data.iov_base, simple->send.data.iov_len,
+                                                 *(send_hint_t *)&simple->send.hints,
+                                                 simple->events.local_fn, simple->events.remote_fn,
+                                                 simple->events.cookie,
+                                                 NULL, NULL, NULL, NULL, NULL, INTERFACE_PAMI);
         return PAMI_RC(rc);
       }
     inline pami_result_t getAttributes (pami_configuration_t  configuration[],
@@ -170,7 +170,7 @@ namespace PAMI
                                            void                      * cookie,
                                            PAMI::DeviceWrapper       & device,
                                            pami_endpoint_t             origin,
-             pami_context_t              context,
+                                           pami_context_t              context,
                                            T_Allocator               & allocator,
                                            pami_result_t             & result)
       {
@@ -414,6 +414,7 @@ namespace PAMI
         _client (client),
         _clientid (clientid),
         _clientname(clientname),
+        _dispatch_id(255),
         _mm(mm),
         _context((pami_context_t) this),
         _contextid (id),
@@ -449,7 +450,8 @@ namespace PAMI
                            _client,
                            _clientid,
                            _context,
-                           _contextid);
+                           _contextid,
+                          &_dispatch_id);
 
           *out_mysize        = _Lapi_env.MP_procs;
           *out_myrank        = _Lapi_env.MP_child;
@@ -462,7 +464,7 @@ namespace PAMI
         {
           // Initalize Collective Registration
           _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
-          new(_pgas_collreg) PGASCollreg(_client,_context,_clientid,_contextid,_protocol,_lapi_device2);
+          new(_pgas_collreg) PGASCollreg(_client,_context,_clientid,_contextid,_protocol,_lapi_device2,&_dispatch_id);
           _pgas_collreg->analyze(_contextid,_world_geometry);
           return PAMI_SUCCESS;
         }
@@ -490,7 +492,8 @@ namespace PAMI
                                                 _mm?1:0,  //use shared memory
                                                 1,  //use "global" device
                                                 __global.topology_global.size(),
-                                                __global.topology_local.size());
+                                                __global.topology_local.size(),
+                                                &_dispatch_id);
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 #if 0
 //#ifdef _COLLSHM
@@ -517,7 +520,8 @@ namespace PAMI
                                        *_devices->_generics,
                                        _cau_device,
                                        __global.mapping,
-                                       _lapi_handle);
+                                       _lapi_handle,
+                                       &_dispatch_id);
           // We analyze global here to get the proper device specific info
           _cau_collreg->analyze_global(_contextid, _world_geometry, &invec[2]);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
@@ -585,6 +589,7 @@ namespace PAMI
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc = (cp->*(cp->pAdvance))(maximum);
           result = PAMI_RC(rc);
+          return 0;
         }
 
       inline pami_result_t lock_impl ()
@@ -984,6 +989,9 @@ namespace PAMI
 
     private:
       /*  Lapi State Object.  use this for direct access        */
+      /*  Warning!  do not put any variables before this        */
+      /*  We rely on this being the first element of the        */
+      /*  class for lapi/pami compatibility                     */
       char                                   _lapi_state[sizeof(LapiImpl::Context)];
 
       /*  PAMI Client Pointer associated with this PAMI Context */
@@ -1001,6 +1009,10 @@ namespace PAMI
       /*  Pointer to the client name string                     */
       char                                  *_clientname;
 
+      /*  This is the "per context dispatch", and is used by    */
+      /*  collectives, should start from 255 and decrease       */
+      int                                    _dispatch_id;
+      
       /*  Memory Manager Pointer                                */
       Memory::MemoryManager                 *_mm;
 
