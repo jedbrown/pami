@@ -23,7 +23,7 @@
 #include "components/memory/MemoryManager.h"
 
 // Geometry
-#include "algorithms/geometry/Geometry.h"
+#include "algorithms/geometry/LapiGeometry.h"
 
 // Components
 #include "components/devices/generic/Device.h"

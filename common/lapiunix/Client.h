@@ -12,7 +12,7 @@
 
 #include "common/ClientInterface.h"
 #include "common/lapiunix/Context.h"
-#include "algorithms/geometry/Geometry.h"
+#include "algorithms/geometry/LapiGeometry.h"
 #include "../lapi/include/Client.h"
 
 extern pthread_once_t  _Per_proc_lapi_init;
