@@ -460,6 +460,8 @@ namespace PAMI
 	  allocateGlobalResources();
 	  TRACE((stderr,"MU ResourceManager: Done allocating global resources\n"));
 
+	  TRACE((stderr,"GlobalBatId=%u, SharedCounterBatId=%u, ShortCollectiveBroadcastBatId=%u, ThroughputCollectiveBroadcastBufferBatId=%u, ThroughputCollectiveBroadcastCounterBatId=%u\n",getGlobalBatId(),getSharedCounterBatId(),getShortCollectiveBroadcastBatId(),getThroughputCollectiveBroadcastBufferBatId(), getThroughputCollectiveBroadcastCounterBatId()));
+
 	  // might want more shmem here, to use for coordinating locals in VN.
 	  // possibly changing this to a structure.
 	  mm.memalign((void **)&_lowest_geom_id, sizeof(void *), 1 * sizeof(void *));
@@ -1075,6 +1077,54 @@ namespace PAMI
 	/// can be zero.
 	inline uint32_t getSharedCounterBatId ()
 	{ return _globalBatIds[1]; }
+
+	/// \brief Get Short Collective Broadcast Base Address Table Id
+	///
+	inline uint32_t getShortCollectiveBroadcastBatId ()
+	{ return _globalBatIds[2]; }
+
+	/// \brief Get Throughput Collective Broadcast Buffer Base Address Table Id
+	///
+	inline uint32_t getThroughputCollectiveBroadcastBufferBatId ()
+	{ return _globalBatIds[3]; }
+
+	/// \brief Get Throughput Collective Broadcast Counter Base Address Table Id
+	///
+	inline uint32_t getThroughputCollectiveBroadcastCounterBatId ()
+	{ return _globalBatIds[4]; }
+
+	/// \brief Set Short Collective Broadcast Base Address Table Entry
+	///
+	inline int32_t setShortCollectiveBroadcastBatEntry ( uint64_t value )
+	{
+	  uint32_t batSubgroup = ( _globalBatIds[2] / BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP ) - 64;
+	  uint8_t  batId       = _globalBatIds[2] % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
+	  return MUSPI_SetBaseAddress ( &_globalBatSubGroups[batSubgroup],
+					batId,
+					value );
+	}
+
+	/// \brief Set Throughput Collective Broadcast Buffer Base Address Table Entry
+	///
+	inline int32_t setThroughputCollectiveBroadcastBufferBatEntry ( uint64_t value )
+	{
+	  uint32_t batSubgroup = ( _globalBatIds[3] / BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP ) - 64;
+	  uint8_t  batId       = _globalBatIds[3] % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
+	  return MUSPI_SetBaseAddress ( &_globalBatSubGroups[batSubgroup],
+					batId,
+					value );
+	}
+
+	/// \brief Set Throughput Collective Broadcast Counter Base Address Table Entry
+	///
+	inline int32_t setThroughputCollectiveBroadcastCounterBatEntry ( uint64_t value )
+	{
+	  uint32_t batSubgroup = ( _globalBatIds[4] / BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP ) - 64;
+	  uint8_t  batId       = _globalBatIds[4] % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
+	  return MUSPI_SetBaseAddress ( &_globalBatSubGroups[batSubgroup],
+					batId,
+					value );
+	}
 
 	inline size_t mapClientIdToRmClientId ( size_t clientId );
 
@@ -2502,6 +2552,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupBatIds(
 // -  1 base address table entry in subgroup 64 or 65, initialized to 0.
 // -  1 base address table entry in subgroup 64 or 65, initialized to the atomic
 //    address of a shared counter, whose value is ignored.
+// -  3 base address table entries in subgroup 64 or 65 for collective broadcasts.
 //
 void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
 {
@@ -2510,11 +2561,11 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
 
   numBatIdsSetup = setupBatIds( 64, // Starting subgroup
 				65, // Ending subgroup
-				2,  // Number of BAT ids
+				5,  // Number of BAT ids (see above list)
 				true, // Use shared memory
 				&_globalBatSubGroups,
 				&_globalBatIds );
-  PAMI_assertf( (_calculateSizeOnly == 1) || (_allocateOnly == 1) || (numBatIdsSetup == 2), "Only %u base address Ids were set up.  Expected 2.\n",numBatIdsSetup );
+  PAMI_assertf( (_calculateSizeOnly == 1) || (_allocateOnly == 1) || (numBatIdsSetup == 5), "Only %u base address Ids were set up.  Expected 5.\n",numBatIdsSetup );
 
   // Incorporate the size of the shared counter into the shared memory space requirement.
   if ( _calculateSizeOnly == 1 )
@@ -2564,6 +2615,8 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
 			      sharedCounterBATvalue );
   TRACE((stderr,"MU ResourceManager: allocateGlobalBaseAddressTableEntry: Shared Counter BAT entry: Relative batSubgroup=%u, Relative batId=%u, Global batId=%u, rc=%d, Shared Counter PA=0x%lx, BAT value = 0x%lx\n",batSubgroup, batId, _globalBatIds[1], rc, sharedCounterPA, sharedCounterBATvalue ));
   PAMI_assertf( rc == 0, "MUSPI_SetBaseAddress failed with rc=%d\n",rc );
+
+  // Don't set the next 3 BAT slots (for collective bcasts) to anything.
 
 } // End: allocateGlobalBaseAddressTableEntry()
 
@@ -2931,7 +2984,10 @@ TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadM
 // Allocate resources needed before main().  These include:
 // - 10 remote get injection fifos (8 in subgroup 64, 2 in subgroup 65).
 // -  1 collective combining injection fifo (in subgroup 65).
-// -  1 base address table entry in subgroup 64, initialized to 0.
+// -  1 base address table entry in subgroup 64 or 65, initialized to 0.
+// -  1 base address table entry in subgroup 64 or 65, initialized to the atomic
+//    address of a shared counter, whose value is ignored.
+// -  3 base address table entries in subgroup 64 or 65 for collective broadcasts.
 // -  N reception fifos, where N is in the range 1..256.  All available reception
 //    fifos will be allocated at this time.
 // -  Array of clientResources_t structures, one per client.
