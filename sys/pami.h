@@ -214,40 +214,111 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup CA Compact attributes
+   * \defgroup PAMI Collectives Metadata
    * \{
    */
   /*****************************************************************************/
 
-  /** \todo Should this be size_t ??? */
-  typedef int pami_ca_mask;
-
-#define PAMI_CA_MASK_NUM_BYTES  (sizeof(pami_ca_mask))
-#define PAMI_CA_BYTE_SIZE       (sizeof(char))
-#define PAMI_CA_TOTAL_BITS      (PAMI_CA_BYTE_SIZE * PAMI_CA_MASK_NUM_BYTES) /**< \todo Either this definition is wrong, or the name is misleading; this is not a bit-count for the array */
-#define PAMI_CA_NUM_ELEMENTS    1
-
-  /* compact list of informative attributes in the form of bits*/
-  typedef struct
-  {
-    /* initially 1 list element of 32 bits, assuming sizeof(pami_ca_mask)==4 */
-    pami_ca_mask bits[PAMI_CA_NUM_ELEMENTS];
-  } pami_ca_t;
+  /**
+   *  This enum contains the "reason" codes that indicate why a particular collective
+   *  operation could fail.  Upon querying the metadata of a particular collective
+   *  the user may have a function pointer populated in the "check_fn" field of the
+   *  metadata struct.  The user can pass in the call site parameters (the pami_xfer_t)
+   *  of the collective into this function and receive a list of failures.
+   */
+    typedef union metadata_result_t
+    {
+      unsigned bitmask;
+      struct
+      {
+        unsigned align_send_buffer:1;       /*  Send buffer must be aligned     */
+        unsigned align_send_recv_buffer:1;  /*  Receive buffer must be aligned  */
+        unsigned datatype:1;                /*  Datatype not valid for this op  */
+        unsigned op:1;                      /*  Operation not valid for this op */
+        unsigned contiguous_send:1;         /*  Send data must be contiguous    */
+        unsigned contiguous_recv:1;         /*  Receive data must be contigous  */
+        unsigned continuous_send:1;         /*  Send data must be continuous    */
+        unsigned continuous_recv:1;         /*  Receive data must be continuous */
+      };
+    }metadata_result_t;
+  
+  /*  Forward declaration of pami_xfer_t */
+  typedef struct pami_xfer_t *xfer_p;
+  
+  /**
+   * \brief Function signature for metadata queries
+   *
+   * \param[in] in A "call-site"   collecitive query parameters
+   * \retval    pami_metata_check  failure code, 0=success, nonzero
+   *                               bits are OR'd from pami_metadata_check_t
+   */
+  typedef metadata_result_t (*pami_metadata_function) (struct pami_xfer_t *in);
 
   /**
    * \brief A metadata structure to describe a collective protocol
    */
   typedef struct
   {
-    pami_ca_t geometry; /**< geometry attributes                   */
-    pami_ca_t buffer;   /**< buffer attributes (contig, alignment) */
-    pami_ca_t misc;     /**< other attributes (i.e. threaded)      */
-    char name[32];     /**< name of algorithm                     */
+    char                   name[32];     /**<  A character string describing the collective */
+    unsigned               version;      /**<  A version number of the collective           */
+    /* Correctness Parameters */
+    pami_metadata_function check_fn;     /**<  A function pointer to validate parameters for
+                                               the collective operation.  Can be NULL if
+                                               no correctness check is required             */
+    size_t                 range_lo;     /**<  This protocol has minumum bytes to send/recv
+                                               requirements                                 */
+    size_t                 range_hi;     /**<  This protocol has maximum bytes to send/recv
+                                               requirements                                 */
+    union {
+      unsigned bitmask_correct;
+      struct {
+        unsigned               mustquery:1;    /**<  A flag indicating whether or not the user MUST
+                                                  query the metadata or not.  0:query is not
+                                                  necessary.  >0: the user must call the check_fn
+                                                  to determine if the call site parameters are
+                                                  correct.                                     */
+        unsigned               nonlocal:1;     /**<  The protocol associated with this metadata
+                                                  requires "nonlocal" knowledge, meaning that
+                                                  the result code from the check_fn must be
+                                                  allreduced to determine if the operation
+                                                  will work 0:no, >0:  requires nonlocal data  */
+        unsigned               sendminalign:1; /**<  This protocol requires a minimum address
+                                                  alignment of sendminalign bytes              */
+        unsigned               recvminalign:1; /**<  This protocol requires a minimum address
+                                                  alignment of recvminalign bytes              */
+        unsigned               alldt:1;        /**<  This protocol works for all datatypes for
+                                                  reduction. 0:not for all dt 1:for all dt     */
+        unsigned               allop:1;        /**<  This protocol works for all operations for
+                                                  reduction. 0: not for all op, 1:for all op   */
+        unsigned               contigsflags:1; /**<  This protocol requires contiguous data(send)
+                                                  contiguous:  data type must be PAMI_BYTE     */
+        unsigned               contigrflags:1; /**<  This protocol requires contiguous data(recv)
+                                                  contiguous:  data type must be PAMI_BYTE     */
+        unsigned               continsflags:1; /**<  This protocol requires continuous data(send) 
+                                                  continuous:  data type must be PAMI_BYTE and
+                                                  for vector collectives, the target buffers
+                                                  of the vectors must be adjacent in memory    */
+        unsigned               continrflags:1; /**<  This protocol requires continuous data(recv)
+                                                  continuous:  data type must be PAMI_BYTE and
+                                                  for vector collectives, the target buffers
+                                                  of the vectors must be adjacent in memory    */
+      };
+    };
+    /* Performance Parameters */
+    union
+    {
+      unsigned bitmask_perf;
+      struct
+      {
+        unsigned               hw_accel:1;     /**<  This collective is using special purpose
+                                                  hardware to accelerate the collective
+                                                  0:  no 1:  yes                               */
+      };
+    };
+    size_t                 range_lo_perf;/**<  Estimated performance range in bytes(low)    */
+    size_t                 range_hi_perf;/**<  Estimated performance range in bytes(high)   */
   } pami_metadata_t;
-
-  extern void pami_metadata_multiset(pami_ca_t *, ...);
-
-  /** \} */ /* end of "Compact attributes" group */
+  /** \} */ /* end of "PAMI Collectives Metadata" group */
 
 
   /*****************************************************************************/
@@ -2272,10 +2343,10 @@ extern "C"
     pami_reduce_scatter_t   xfer_reduce_scatter;
     } pami_collective_t;
 
-  typedef struct
+  typedef struct pami_xfer_t
   {
     pami_event_function       cb_done;
-    void                   * cookie;
+    void                     *cookie;
     pami_algorithm_t          algorithm;
     pami_collective_hint_t    options;
     pami_collective_t         cmd;

@@ -11,6 +11,6 @@
 
 VPATH		= @abs_srcdir@
 SUBDIRS		=
-@LIBNAME@-""-PAMICORE_SOURCES = pami_dat.c pami_advisor.c pami_ca.c
+@LIBNAME@-""-PAMICORE_SOURCES = pami_dat.c
 DEVICENAME = @LIBNAME@-""-PAMICORE
 include @abs_top_builddir@/Build.rules

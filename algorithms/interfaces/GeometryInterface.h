@@ -15,7 +15,6 @@
 #define __algorithms_interfaces_GeometryInterface_h__
 
 #include <pami.h>
-#include "util/compact_attributes.h"
 #include "util/queue/MatchQueue.h"
 #include "Mapping.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
