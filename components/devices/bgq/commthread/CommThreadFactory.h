@@ -22,6 +22,9 @@ class Factory {
 public:
         Factory(PAMI::Memory::MemoryManager *genmm, PAMI::Memory::MemoryManager *l2xmm);
         ~Factory();
+#ifdef TESTING
+	void * operator new(size_t x, void *v) { return v; }
+#endif // TESTING
 
 	/// \brief Return reference to the entire commthreads array
 	///
@@ -49,6 +52,7 @@ public:
 	/// \param[out] thread	The hwthread on 'core' to use
 	///
 	inline void getNextThread(uint32_t &core, uint32_t &thread) {
+
 		if (!_num_avail[core]) {
 			// special case: desired core not avail
 			// probably never happens, the MU RM avoids this.
@@ -65,33 +69,36 @@ public:
 			core = k;
 		}
 		int x = _num_used[core]++;
-		int c = ((NUM_CORES - 1) - core) * NUM_SMT; // core 0 is MSBs
-		uint64_t m;
-		int y;
-
 		x %= _num_avail[core];
-		x += _first[core];
-		// this does not handle cases where avail threads are not adjacent,
-		// but we don't expect that to ever happen.
-		for (y = 0; y < _num_avail[core]; ++y) {
-			m = (1UL << (x + c));
-			if (_avail_threads & m) {
-				thread = (NUM_SMT - 1) - x;
-				return;
-			}
-		}
-		// can this ever happen?
-		// PAMI_abortf("Internal error: no avail threads");
-		thread = 0; // TBD: some error value...
+		thread = _smt_xlat[core][x];
 	}
+
+	// This might someday be a CNK SPI (should be?)
+	// For now, assumes being called from main thread of process.
+	// Also, assumes CNK is operating in the BREADTH layout...
+	//
+	inline uint32_t getRecommendedThread(uint32_t index) {
+		uint32_t a;
+		if (Kernel_ProcessCount() > NUM_CORES) {
+			a = index;
+		} else {
+			uint32_t cpp = Kernel_ProcessorCount() / NUM_SMT;
+			a = index * NUM_SMT;
+			a += ((index / cpp) * 2) % NUM_SMT;
+			a += (index / (2 * cpp));
+			a %= Kernel_ProcessorCount();
+		}
+		return _core0 * NUM_SMT + _smt0 + a;
+	}
+
 private:
         BgqCommThread *_commThreads;
-	uint64_t _proc_threads;
-	uint64_t _comm_threads;
 	uint64_t _avail_threads;
 	int _num_used[NUM_CORES];
 	int _num_avail[NUM_CORES];
-	int _first[NUM_CORES];
+	int _smt_xlat[NUM_CORES][NUM_SMT];
+	uint32_t _core0;
+	uint32_t _smt0;
 }; // class Factory
 
 }; // namespace CommThread

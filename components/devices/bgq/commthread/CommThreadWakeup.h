@@ -515,6 +515,18 @@ _commThreads(NULL)
 	BgqCommThread::_maxActive = Kernel_ProcessorCount() - 1;
 	// config param may also affect this?
 
+	/// \page env_vars Environment Variables
+	///
+	/// PAMI_MAX_COMMTHREADS - Maximum number of commthreads to use.
+	/// Note: this must be based on number of processes per node.
+	/// Default: BG_PROCESSESPERNODE - 1
+	///
+	char *env = getenv("PAMI_MAX_COMMTHREADS");
+	if (env) {
+		size_t v = strtoul(env, NULL, 0);
+		if (v < BgqCommThread::_maxActive) BgqCommThread::_maxActive = v;
+	}
+
 	BgqCommThread::_ptCore = (NUM_CORES - 1) - (BgqCommThread::_maxActive % NUM_CORES);
 	BgqCommThread::_ptThread = BgqCommThread::_maxActive / NUM_CORES;
 
@@ -543,25 +555,31 @@ _commThreads(NULL)
 	// start a commthread on it...  also take into account
 	// the "main" thread, where we never start a commthread.
 	uint64_t tmask = Kernel_ThreadMask(__global.mapping.t());
-	_proc_threads = tmask;
-	_comm_threads = 0; // not used?
 	memset(_num_used, 0, sizeof(_num_used));
 	memset(_num_avail, 0, sizeof(_num_avail));
-	memset(_first, 0, sizeof(_first));
 
 	// Assume the calling thread is main(), remove it from the mask.
 	tmask &= ~(1UL << ((NUM_CORES * NUM_SMT - 1) - Kernel_ProcessorID()));
 	_avail_threads = tmask;
 	int k, c;
-	uint32_t m;
-	static int __num_bits[] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4 };
-	for (k = 0; k < NUM_CORES; ++k) {
-		c = ((NUM_CORES - 1) - k) * NUM_SMT;
-		m = (tmask >> c) & 0x0f;
-		if (m) {
-			_num_avail[k] = __num_bits[m];
-			_first[k] = ffs(m) - 1;
+	uint64_t m;
+
+	_core0 = Kernel_ProcessorID() / NUM_SMT;
+	_smt0 = Kernel_ProcessorID() % NUM_SMT;
+	c = Kernel_ProcessorCount() - 1; // highest thread index in process
+	k = c - BgqCommThread::_maxActive;
+	for (; c > k; --c) {
+		x = getRecommendedThread(c);
+		uint32_t core = x / NUM_SMT;
+		uint32_t thread = x % NUM_SMT;
+
+		m = (1UL << ((NUM_CORES * NUM_SMT - 1) - x));
+		if (!(tmask & m)) {
+			if (k > 0) --k;
+			continue;
 		}
+		// could also assert that _num_avail[core] < NUM_SMT...
+		_smt_xlat[core][_num_avail[core]++] = thread;
 	}
 }
 
