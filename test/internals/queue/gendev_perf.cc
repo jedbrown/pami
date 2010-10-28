@@ -58,6 +58,13 @@
 		>
 #endif // L2SAFE
 
+#if defined(ARRAYBASED) && !defined(QUEUE_NAME)
+#include "components/atomic/bgq/L2Mutex.h"
+#include "util/queue/bgq/ArrayBasedQueue.h"
+#define QUEUE_NAME	"ArrayBasedQueue<L2ProcMutex>"
+#define GenericDeviceWorkQueue PAMI::ArrayBasedQueue<PAMI::Mutex::BGQ::L2ProcMutex>
+#endif // ARRAYBASED
+
 #if defined(LBXMUTEX) && !defined(QUEUE_NAME)
 #include "components/atomic/bgp/LockBoxMutex.h"
 #define QUEUE_NAME	"MutexedQueue<LockBoxProcMutex>"
