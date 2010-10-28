@@ -1,0 +1,4 @@
+# Example for compiling smt_layout
+
+smt_layout: smt_layout.cc
+	$(CXX) -g -Wall smt_layout.cc -o smt_layout -I/path/to/pami

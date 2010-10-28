@@ -13,6 +13,7 @@
 #ifndef __components_devices_bgq_commthread_CommThreadWakeup_h__
 #define __components_devices_bgq_commthread_CommThreadWakeup_h__
 
+#ifndef COMMTHREAD_LAYOUT_TESTING
 #include <pami.h>
 #include "components/devices/bgq/commthread/WakeupRegion.h"
 #include "components/devices/bgq/commthread/ContextSets.h"
@@ -82,6 +83,7 @@
 #endif // ! DEBUG_COMMTHREADS
 
 extern PAMI::Device::CommThread::Factory __CommThreadGlobal;
+#endif // !COMMTHREAD_LAYOUT_TESTING
 
 namespace PAMI {
 namespace Device {
@@ -89,6 +91,14 @@ namespace CommThread {
 
 class BgqCommThread {
 private:
+
+#ifdef COMMTHREAD_LAYOUT_TESTING
+
+public:
+        BgqCommThread() { }
+        static size_t _maxActive;
+
+#else // !COMMTHREAD_LAYOUT_TESTING
 
 	/// \brief Convenience code to lock and/or unlock contexts in set
 	///
@@ -487,6 +497,7 @@ DEBUG_WRITE('t','t');
 	static size_t _maxActive;
 	static size_t _ptCore;
 	static size_t _ptThread;
+#endif // !COMMTHREAD_LAYOUT_TESTING
 }; // class BgqCommThread
 
 // Called from __global...
@@ -497,6 +508,9 @@ Factory::Factory(PAMI::Memory::MemoryManager *genmm,
 			PAMI::Memory::MemoryManager *l2xmm) :
 _commThreads(NULL)
 {
+	size_t x;
+	BgqCommThread::_maxActive = Kernel_ProcessorCount() - 1;
+#ifndef COMMTHREAD_LAYOUT_TESTING
 	BgqCommThread *devs;
 	BgqWakeupRegion *wu;
 	BgqContextPool *pool;
@@ -508,11 +522,9 @@ _commThreads(NULL)
 	size_t num_ctx = 64 / Kernel_ProcessCount();
 #endif
 
-	size_t x;
 	size_t me = __global.topology_local.rank2Index(__global.mapping.task());
 	size_t lsize = __global.topology_local.size();
 
-	BgqCommThread::_maxActive = Kernel_ProcessorCount() - 1;
 	// config param may also affect this?
 
 	/// \page env_vars Environment Variables
@@ -548,13 +560,15 @@ _commThreads(NULL)
 		new (&devs[x]) BgqCommThread(wu, pool, num_ctx);
 	}
 	_commThreads = devs;
+	size_t tcoord = __global.mapping.t();
+#endif // !COMMTHREAD_LAYOUT_TESTING
 
 	// determine what range of hwthreads we have...
 	// Try to generalize, and just use the bitmap as
 	// a set of "available" threads, zero each one as we
 	// start a commthread on it...  also take into account
 	// the "main" thread, where we never start a commthread.
-	uint64_t tmask = Kernel_ThreadMask(__global.mapping.t());
+	uint64_t tmask = Kernel_ThreadMask(tcoord);
 	memset(_num_used, 0, sizeof(_num_used));
 	memset(_num_avail, 0, sizeof(_num_avail));
 
@@ -581,9 +595,24 @@ _commThreads(NULL)
 		// could also assert that _num_avail[core] < NUM_SMT...
 		_smt_xlat[core][_num_avail[core]++] = thread;
 	}
+#ifdef COMMTHREAD_LAYOUT_TESTING
+{       int c, t, k;
+        static char buf[128];
+        k = (int)_core0 + ((int)Kernel_ProcessorCount() + 2) / NUM_SMT;
+        for (c = _core0; c < k; ++c) {
+                char *s = buf;
+                s += sprintf(s, " %3d:", c);
+                for (t = 0; t < _num_avail[c]; ++t) {
+                        s += sprintf(s, " %3d", _smt_xlat[c][t]);
+                }
+                fprintf(stderr, "%s\n", buf);
+        }
+}
+#endif // COMMTHREAD_LAYOUT_TESTING
 }
 
 Factory::~Factory() {
+#ifndef COMMTHREAD_LAYOUT_TESTING
 	size_t x;
 
 	if (BgqCommThread::_numActive == 0) {
@@ -636,19 +665,22 @@ Factory::~Factory() {
 	}
 	BgqCommThread::_numActive = 0;
 if (fwu > 2) fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
+#endif // !COMMTHREAD_LAYOUT_TESTING
 }
 
 }; // namespace CommThread
 }; // namespace Device
 }; // namespace PAMI
 
-size_t PAMI::Device::CommThread::BgqCommThread::_numActive = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_maxActive = 0;
+#ifndef COMMTHREAD_LAYOUT_TESTING
+size_t PAMI::Device::CommThread::BgqCommThread::_numActive = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_ptCore = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_ptThread = 0;
 PAMI::Device::CommThread::BgqCommThread *PAMI::Device::CommThread::BgqCommThread::_comm_xlat[NUM_CORES][NUM_SMT] = {{NULL}};
 
 #undef DEBUG_INIT
 #undef DEBUG_WRITE
+#endif // !COMMTHREAD_LAYOUT_TESTING
 
 #endif // __components_devices_bgq_commthread_CommThreadWakeup_h__

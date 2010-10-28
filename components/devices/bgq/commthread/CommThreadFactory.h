@@ -22,9 +22,9 @@ class Factory {
 public:
         Factory(PAMI::Memory::MemoryManager *genmm, PAMI::Memory::MemoryManager *l2xmm);
         ~Factory();
-#ifdef TESTING
+#ifdef COMMTHREAD_LAYOUT_TESTING
 	void * operator new(size_t x, void *v) { return v; }
-#endif // TESTING
+#endif // COMMTHREAD_LAYOUT_TESTING
 
 	/// \brief Return reference to the entire commthreads array
 	///
