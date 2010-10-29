@@ -372,6 +372,7 @@ namespace PAMI
       {
 	size_t numInjFifos;
 	size_t numRecFifos;
+	size_t numBatIds;
       } muResources_t;
 
       typedef struct pamiResources
@@ -398,6 +399,14 @@ namespace PAMI
 	uint32_t                 *globalFifoIds;
       } recFifoResources_t;
 
+      typedef struct batResources
+      {
+	MUSPI_BaseAddressTableSubGroup_t *subgroups;
+	uint32_t                         *globalBatIds;
+	uint32_t                          status; // 1 bit per BATid, starting with high-order
+                                                  // bit 0.  1=free, 0=allocated.
+      } batResources_t;
+
       typedef struct clientResources
       {
 	size_t              numContexts;
@@ -405,10 +414,12 @@ namespace PAMI
 	uint32_t           *endingSubgroupIds;   // One entry per context
 	injFifoResources_t *injResources;        // One entry per context
 	recFifoResources_t *recResources;        // One entry per context
-	uint16_t           *pinRecFifo;          // 2D array [tcoord][contextOffset] containing
+	batResources_t     *batResources;        // One entry per context
+	uint16_t           *pinRecFifo;          // 2D array [tcoord][ctxOffset] containing
 	                                         // globalRecFifoId.
+	uint16_t           *pinBatId;            // 2D array [tcoord][ctxOffset] containing
+	                                         // globalBatId of first BatId in the group.
       } clientResources_t;
-
 
       class ResourceManager
       {
@@ -427,6 +438,7 @@ namespace PAMI
 	  _mapping( mapping ),
 	  _pers( pers ),
 	  _tSize( mapping.tSize() ),
+	  _myT( mapping.t() ),
 	  _perProcessMaxPamiResources( NULL ),
 	  _perProcessOptimalPamiResources( NULL ),
 	  _globalRecSubGroups( NULL )
@@ -1125,6 +1137,34 @@ namespace PAMI
 					batId,
 					value );
 	}
+	
+	/// \brief Query the Number of Free BAT IDs Within A Context
+	///
+	/// \retval  numFree
+	inline uint32_t queryFreeBatIdsForContext( size_t    rmClientId,
+						   size_t    contextOffset );
+	
+	/// \brief Allocate (reserve) BAT IDs Within A Context
+	///
+	/// \retval  0  Success
+	/// \retval  -1 Failed to allocate the specified number of BatIds.
+	///             No IDs were actually allocated.
+	inline int32_t allocateBatIdsForContext( size_t    rmClientId,
+						 size_t    contextOffset,
+						 size_t    numBatIds,
+						 uint16_t *globalBatIds );
+	
+	/// \brief Free (unreserve) BAT IDs Within A Context
+	///
+	inline void freeBatIdsForContext( size_t    rmClientId,
+					  size_t    contextOffset,
+					  size_t    numBatIds,
+					  uint16_t *globalBatIds );
+
+	inline int32_t setBatEntryForContext ( size_t    rmClientId,
+					       size_t    contextOffset,
+					       uint16_t  globalBatId,
+					       uint64_t  value );
 
 	inline size_t mapClientIdToRmClientId ( size_t clientId );
 
@@ -1132,10 +1172,11 @@ namespace PAMI
 				 size_t numContexts,
                                  PAMI::Device::Generic::Device * devices );
 
-	inline void getNumFifosPerContext( size_t  rmClientId,
-				    size_t *numInjFifos,
-				    size_t *numRecFifos );
-
+	inline void getNumResourcesPerContext( size_t  rmClientId,
+					       size_t *numInjFifos,
+					       size_t *numRecFifos,
+					       size_t *numBatIds );
+	
 	inline uint16_t *getPinBroadcastFifoMap( size_t numInjFifos )
 	  { return &(_pinBroadcastFifoMap[numInjFifos-1][0]); }
 
@@ -1163,6 +1204,15 @@ namespace PAMI
 				       size_t contextOffset,
 				       size_t t )
 	{ return _clientResources[rmClientId].pinRecFifo[(contextOffset*_tSize) + t]; }
+
+	inline uint16_t getPinBatId( size_t rmClientId,
+				     size_t contextOffset,
+				     size_t t,
+				     uint16_t globalBatId )
+	{ 
+	  uint16_t myRelativeGlobalBatId = globalBatId - _clientResources[rmClientId].pinBatId[(contextOffset*_tSize) + _myT];
+	  return _clientResources[rmClientId].pinBatId[(contextOffset*_tSize) + t] + myRelativeGlobalBatId;
+	}
 
 	/// \brief Get the Core Affinity for a Context
 	///
@@ -1332,6 +1382,7 @@ namespace PAMI
 	uint16_t _pinBroadcastFifoMap[numTorusDirections][BGQ_COLL_CLASS_MAX_CLASSROUTES];
 
 	size_t  _tSize;
+	size_t  _myT;
 	ssize_t _aSizeHalved;
 	ssize_t _bSizeHalved;
 	ssize_t _cSizeHalved;
@@ -1713,9 +1764,12 @@ void PAMI::Device::MU::ResourceManager::calculatePerCoreMUResourcesBasedOnAvaila
 {
   size_t minFreeInjFifosPerCore = BGQ_MU_NUM_INJ_FIFOS_PER_GROUP;
   size_t minFreeRecFifosPerCore = BGQ_MU_NUM_REC_FIFOS_PER_GROUP;
+  size_t minFreeBatIdsPerCore   = BGQ_MU_NUM_DATA_COUNTERS_PER_GROUP;
   size_t i;
   int32_t rc;
-  uint32_t fifoids[BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP];
+  uint32_t injFifoIds[BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP];
+  uint32_t recFifoIds[BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP];
+  uint32_t batIds[BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP];
 
   // Examine each core's MU resources (not 17th core), and determine the
   // minimum over all of the cores.
@@ -1725,6 +1779,7 @@ void PAMI::Device::MU::ResourceManager::calculatePerCoreMUResourcesBasedOnAvaila
     {
       size_t numFreeInjFifosInGroup = 0;
       size_t numFreeRecFifosInGroup = 0;
+      size_t numFreeBatIdsInGroup   = 0;
 
       // Loop through the subgroups in this group
       for (i=0; i<BGQ_MU_NUM_FIFO_SUBGROUPS; i++)
@@ -1733,27 +1788,39 @@ void PAMI::Device::MU::ResourceManager::calculatePerCoreMUResourcesBasedOnAvaila
 
 	  rc = Kernel_QueryInjFifos( subgroup,
 				     &numFreeResourcesInSubgroup,
-				     fifoids );
+				     injFifoIds );
 	  PAMI_assertf( rc == 0, "Kernel_QueryInjFifos failed with rc=%d.\n",rc );
 
 	  numFreeInjFifosInGroup += numFreeResourcesInSubgroup;
 
 	  rc = Kernel_QueryRecFifos( subgroup,
 				     &numFreeResourcesInSubgroup,
-				     fifoids );
+				     recFifoIds );
 	  PAMI_assertf( rc == 0, "Kernel_QueryRecFifos failed with rc=%d.\n",rc);
 
 	  numFreeRecFifosInGroup += numFreeResourcesInSubgroup;
+
+	  rc = Kernel_QueryBaseAddressTable ( subgroup,
+					      &numFreeResourcesInSubgroup,
+					      batIds );
+	  PAMI_assertf( rc == 0, "Kernel_QueryBaseAddressTable failed with rc=%d.\n",rc);
+
+	  numFreeBatIdsInGroup += numFreeResourcesInSubgroup;
 
 	  subgroup++;
 	}
       if ( numFreeInjFifosInGroup < minFreeInjFifosPerCore )
 	minFreeInjFifosPerCore = numFreeInjFifosInGroup;
+      if ( numFreeRecFifosInGroup < minFreeRecFifosPerCore )
+	minFreeRecFifosPerCore = numFreeRecFifosInGroup;
+      if ( numFreeBatIdsInGroup < minFreeBatIdsPerCore )
+	minFreeBatIdsPerCore = numFreeBatIdsInGroup;
     }
   _perCoreMUResourcesBasedOnAvailability.numInjFifos = minFreeInjFifosPerCore;
   _perCoreMUResourcesBasedOnAvailability.numRecFifos = minFreeRecFifosPerCore;
+  _perCoreMUResourcesBasedOnAvailability.numBatIds   = minFreeBatIdsPerCore;
 
-  TRACE((stderr,"MU ResourceManager: _perCoreMUResourcesBasedOnAvailability.numInjFifos = %zu, _perCoreMUResourcesBasedOnAvailability.numRecFifos = %zu\n",_perCoreMUResourcesBasedOnAvailability.numInjFifos, _perCoreMUResourcesBasedOnAvailability.numRecFifos));
+  TRACE((stderr,"MU ResourceManager: _perCoreMUResourcesBasedOnAvailability.numInjFifos = %zu, _perCoreMUResourcesBasedOnAvailability.numRecFifos = %zu, _perCoreMUResourcesBasedOnAvailability.numBatIds = %zu\n",_perCoreMUResourcesBasedOnAvailability.numInjFifos, _perCoreMUResourcesBasedOnAvailability.numRecFifos, _perCoreMUResourcesBasedOnAvailability.numBatIds));
 
 } // End: calculatePerCoreMUResourcesBasedOnAvailability()
 
@@ -1783,11 +1850,21 @@ void PAMI::Device::MU::ResourceManager::calculatePerCoreMUResourcesBasedOnConfig
 
   numSpiUserRecFifos = numSpiUserRecFifos * _pamiRM.getNumProcessesPerCore();
 
+  size_t numSpiUserBatIdsPerProcess = _pamiRM.getNumSpiUserBatIdsPerProcess();
+  size_t numSpiUserBatIds =
+    numSpiUserBatIdsPerProcess / _pamiRM.getNumCoresPerProcess();
+  if ( ( numSpiUserBatIds == 0 ) && ( numSpiUserBatIdsPerProcess > 0 ) )
+    numSpiUserBatIds = 1;
+
+  numSpiUserBatIds = numSpiUserBatIds * _pamiRM.getNumProcessesPerCore();
+
   _perCoreMUResourcesBasedOnConfig.numInjFifos = BGQ_MU_NUM_INJ_FIFOS_PER_GROUP - numSpiUserInjFifos;
 
   _perCoreMUResourcesBasedOnConfig.numRecFifos = BGQ_MU_NUM_REC_FIFOS_PER_GROUP - numSpiUserRecFifos;
 
-  TRACE((stderr,"MU ResourceManager: _perCoreMUResourcesBasedOnConfig.numInjFifos = %zu, _perCoreMUResourcesBasedOnConfig.numRecFifos = %zu\n", _perCoreMUResourcesBasedOnConfig.numInjFifos, _perCoreMUResourcesBasedOnConfig.numRecFifos));
+  _perCoreMUResourcesBasedOnConfig.numBatIds   = BGQ_MU_NUM_DATA_COUNTERS_PER_GROUP - numSpiUserBatIds;
+
+  TRACE((stderr,"MU ResourceManager: _perCoreMUResourcesBasedOnConfig.numInjFifos = %zu, _perCoreMUResourcesBasedOnConfig.numRecFifos = %zu, _perCoreMUResourcesBasedOnConfig.numBatIds = %zu\n", _perCoreMUResourcesBasedOnConfig.numInjFifos, _perCoreMUResourcesBasedOnConfig.numRecFifos, _perCoreMUResourcesBasedOnConfig.numBatIds));
 
 } // End: calculatePerCoreMUResourcesBasedOnConfig()
 
@@ -1813,7 +1890,11 @@ void PAMI::Device::MU::ResourceManager::calculatePerCoreMUResources()
   if ( _perCoreMUResourcesBasedOnConfig.numRecFifos < _perCoreMUResources.numRecFifos )
     _perCoreMUResources.numRecFifos = _perCoreMUResourcesBasedOnConfig.numRecFifos;
 
-  TRACE((stderr,"MU ResourceManager: _perCoreMUResources.numInjFifos = %zu, _perCoreMUResources.numRecFifos = %zu\n", _perCoreMUResources.numInjFifos, _perCoreMUResources.numRecFifos));
+  _perCoreMUResources.numBatIds   = _perCoreMUResourcesBasedOnAvailability.numBatIds;
+  if ( _perCoreMUResourcesBasedOnConfig.numBatIds < _perCoreMUResources.numBatIds )
+    _perCoreMUResources.numBatIds = _perCoreMUResourcesBasedOnConfig.numBatIds;
+
+  TRACE((stderr,"MU ResourceManager: _perCoreMUResources.numInjFifos = %zu, _perCoreMUResources.numRecFifos = %zu, _perCoreMUResources.numBatIds = %zu\n", _perCoreMUResources.numInjFifos, _perCoreMUResources.numRecFifos, _perCoreMUResources.numBatIds));
 
 } // End: calculatePerCoreMUResources()
 
@@ -1838,7 +1919,13 @@ void PAMI::Device::MU::ResourceManager::calculatePerCorePerProcessMUResources()
 
   PAMI_assertf( _perCorePerProcessMUResources.numRecFifos > 0, "No reception fifos available for PAMI\n" );
 
-  TRACE((stderr,"MU ResourceManager: _perCorePerProcessMUResources.numInjFifos = %zu, _perCorePerProcessMUResources.numRecFifos = %zu\n",_perCorePerProcessMUResources.numInjFifos,_perCorePerProcessMUResources.numRecFifos));
+  _perCorePerProcessMUResources.numBatIds =
+    _perCoreMUResources.numBatIds / numProcessesPerCore;
+
+  // We don't assert if there are no BATids.  The protocols will query this resource manager
+  // and not enable their protocol if there aren't enough BATids.
+
+  TRACE((stderr,"MU ResourceManager: _perCorePerProcessMUResources.numInjFifos = %zu, _perCorePerProcessMUResources.numRecFifos = %zu, _perCorePerProcessMUResources.numBatIds = %zu\n",_perCorePerProcessMUResources.numInjFifos,_perCorePerProcessMUResources.numRecFifos,_perCorePerProcessMUResources.numBatIds));
 }
 
 
@@ -1908,6 +1995,39 @@ void PAMI::Device::MU::ResourceManager::divideMUResourceAmongClients(
       resourceRemaining -= numRecFifos_int;
       clientResource[i].numRecFifos = numRecFifos_int;
     }
+
+  // Divide Number of Base Address Table Entries
+  // There could be no BAT entries available, in which case all clients get 0.
+  // There could be fewer than the number of clients, in which case the first
+  // clients get 1 each until it runs out, and the rest get 0.
+  resourceRemaining = resourceValue.numBatIds;
+  for (i=0; i<numClients; i++)
+    {
+      if ( resourceRemaining == 0 ) clientResource[i].numBatIds = 0;
+      else
+	{
+	  if ( resourceRemaining <= (numClients-i) ) // Not enough to go around?
+	    {
+	      clientResource[i].numBatIds = 1; // Clients get 1 until it runs out
+	      resourceRemaining--;
+	    }
+	  else
+	    {
+	      double numBatIds = ( (double)resourceValue.numBatIds *
+				   (double)_pamiRM.getClientWeight(i) ) / (double)100;
+	      size_t numBatIds_int = numBatIds;
+	      if ( ( numBatIds - (double)numBatIds_int ) >= 0.5 ) numBatIds_int++; // Round up.
+	      if ( numBatIds_int == 0 ) numBatIds_int = 1; // Don't let it be zero.
+	      while ( ( resourceRemaining - numBatIds_int ) <
+		      ( numClients - i - 1 ) ) // Not enough remain to go around?
+		numBatIds_int--;
+	      if ( numBatIds_int > resourceRemaining )
+		numBatIds_int = resourceRemaining;
+	      resourceRemaining -= numBatIds_int;
+	      clientResource[i].numBatIds = numBatIds_int;
+	    }
+	}
+    }
 }
 
 
@@ -1924,11 +2044,12 @@ void PAMI::Device::MU::ResourceManager::calculatePerProcessMaxPamiResources()
   PAMI_assertf ( _perProcessMaxPamiResources != NULL, "The heap is full.\n" );
 
   // Compute the max number of contexts per process as the minimum of the
-  // number of inj and rec fifos per process.
+  // number of inj and rec fifos.
   size_t totalNumInjFifosPerProcess = _perCorePerProcessMUResources.numInjFifos *
                                         _pamiRM.getNumCoresPerProcess();
   size_t totalNumRecFifosPerProcess = _perCorePerProcessMUResources.numRecFifos *
                                         _pamiRM.getNumCoresPerProcess();
+
   pamiResources_t maxContextsPerProcess;
   maxContextsPerProcess.numContexts = totalNumInjFifosPerProcess;
   if ( totalNumRecFifosPerProcess < maxContextsPerProcess.numContexts )
@@ -1960,7 +2081,7 @@ void PAMI::Device::MU::ResourceManager::calculatePerProcessOptimalPamiResources(
   _perProcessOptimalPamiResources = (pamiResources_t *)malloc( numClients * sizeof( *_perProcessOptimalPamiResources ) );
   PAMI_assertf ( _perProcessOptimalPamiResources != NULL, "The heap is full.\n" );
 
-  // Calculate optimal number of Inj and Rec contexts per process
+  // Calculate optimal number of Inj contexts per process
   size_t clientOptimalNumInjFifosPerContext = optimalNumInjFifosPerContext;
   size_t numInjFifosPerCore = _perCorePerProcessMUResources.numInjFifos;
   while ( clientOptimalNumInjFifosPerContext > 0 )
@@ -1971,6 +2092,7 @@ void PAMI::Device::MU::ResourceManager::calculatePerProcessOptimalPamiResources(
     }
   PAMI_assertf ( clientOptimalNumInjFifosPerContext > 0, "Not enough injection fifos are available.\n" );
 
+  // Calculate optimal number of Rec contexts per process
   size_t clientOptimalNumRecFifosPerContext = optimalNumRecFifosPerContext;
   size_t numRecFifosPerCore = _perCorePerProcessMUResources.numRecFifos;
   while (1)
@@ -1985,6 +2107,7 @@ void PAMI::Device::MU::ResourceManager::calculatePerProcessOptimalPamiResources(
   // Inj and Rec.
   numContextsPerCore = numInjContextsPerCore;
   if ( numRecContextsPerCore < numContextsPerCore ) numContextsPerCore = numRecContextsPerCore;
+
   pamiResources_t numContextsPerProcess;
   numContextsPerProcess.numContexts = numContextsPerCore * numCoresPerProcess;
 
@@ -2015,7 +2138,7 @@ void PAMI::Device::MU::ResourceManager::calculatePerCorePerProcessPerClientMURes
 
   for (i=0; i<numClients; i++)
     {
-      TRACE((stderr,"MU ResourceManager: _perCorePerProcessPerClientMUResources[%lu].numInjFifos = %lu, .numRecFifos = %lu\n",i,_perCorePerProcessPerClientMUResources[i].numInjFifos,_perCorePerProcessPerClientMUResources[i].numRecFifos));
+      TRACE((stderr,"MU ResourceManager: _perCorePerProcessPerClientMUResources[%lu].numInjFifos = %lu, .numRecFifos = %lu, .numBatIds = %lu\n",i,_perCorePerProcessPerClientMUResources[i].numInjFifos,_perCorePerProcessPerClientMUResources[i].numRecFifos, _perCorePerProcessPerClientMUResources[i].numBatIds));
     }
 
 } // End: calculatePerCorePerProcessPerClientMUResources()
@@ -2512,6 +2635,12 @@ uint32_t PAMI::Device::MU::ResourceManager::setupBatIds(
 					 freeIds );
       PAMI_assertf( rc==0, "Kernel_QueryBaseAddressTable failed with rc=%d\n",rc );
       TRACE((stderr,"MU ResourceManager: setupBatIds: subgroup = %u, numFree = %u\n",subgroup,numFree));
+
+      if ( numFree == 0 )
+	{
+	  subgroupIndex++;
+	  continue; // Nothing free in this subgroup?  Go to next.
+	}
 
       if ( numFree > numLeftToAllocate ) numFree = numLeftToAllocate;
 
@@ -3052,6 +3181,8 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
   int32_t  rc;
   uint32_t numFifosSetup;
   size_t   numInjFifos = _perContextMUResources[rmClientId].numInjFifos;
+  size_t   numRecFifos = _perContextMUResources[rmClientId].numRecFifos;
+  size_t   numBatIds   = _perContextMUResources[rmClientId].numBatIds;
   Kernel_InjFifoAttributes_t  injFifoAttr;
 
   // Set the MU Inj Fifo Interrupt Threshold such that if an inj fifo fills, and then
@@ -3096,15 +3227,45 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
   numFifosSetup = setupRecFifos(
 		    _clientResources[rmClientId].startingSubgroupIds[contextOffset],
 		    _clientResources[rmClientId].endingSubgroupIds[contextOffset],
-		    _perContextMUResources[rmClientId].numRecFifos,
+		    numRecFifos,
 		    _pamiRM.getRecFifoSize(),
 		    &recFifoAttr,
 		    false, // Do not use shared memory...use heap.
 		    &(_clientResources[rmClientId].recResources[contextOffset].subgroups),
 		    &(_clientResources[rmClientId].recResources[contextOffset].fifoPtrs),
 		    &(_clientResources[rmClientId].recResources[contextOffset].globalFifoIds) );
-  PAMI_assertf( numFifosSetup == _perContextMUResources[rmClientId].numRecFifos, "Only %u reception fifos were set up.  Expected %zu.\n",numFifosSetup,_perContextMUResources[rmClientId].numRecFifos );
-  // Store the adjusted global rec fifo id in the pinRecFifo array for each tcoord
+  PAMI_assertf( numFifosSetup == numRecFifos, "Only %u reception fifos were set up.  Expected %zu.\n",numFifosSetup,numRecFifos );
+
+  // Set up the base address table entries for this context.
+  // Get as many as possible up to the max for this context.
+  // There may be none available to set up...that's ok.
+
+  if ( numBatIds )
+    {
+      uint32_t numBatIdsSetup;
+      
+      numBatIdsSetup = setupBatIds( 
+		    _clientResources[rmClientId].startingSubgroupIds[contextOffset],
+		    _clientResources[rmClientId].endingSubgroupIds[contextOffset],
+		    numBatIds,  // Number of BAT ids
+		    false, // Do not use shared memory
+		    &(_clientResources[rmClientId].batResources[contextOffset].subgroups),
+		    &(_clientResources[rmClientId].batResources[contextOffset].globalBatIds) );
+
+      PAMI_assertf( numBatIdsSetup == numBatIds, "Only %u base address Ids were set up.  Expected %zu.\n",numBatIdsSetup, numBatIds);
+      
+      // Set the status of the BATids (free vs allocated) to be free.
+      // Turn ON a bit in a 32-bit field for each BATid, indicating free.
+      _clientResources[rmClientId].batResources[contextOffset].status = 
+	(_BN(63-numBatIds) - 1) << (32-numBatIds);
+      TRACE((stderr,"%zu BATids set up, status=0x%08x\n",numBatIds,_clientResources[rmClientId].batResources[contextOffset].status));
+    }
+
+  // For each tcoord, store the adjusted 
+  // - global rec fifo id in the pinRecFifo array
+  // - global bat id in the pinBatId array.  We only store the first global bat id in the group
+  //   associated with this context.
+
   // 1. Find the first subgroup in our process
   size_t tSize = _mapping.tSize();
   size_t t;
@@ -3117,8 +3278,14 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
       myStartingSubgroup++;
       mask = mask >> 1;
     }
+
   uint16_t myRelativeGlobalFifoId = _clientResources[rmClientId].recResources[contextOffset].globalFifoIds[0] - ( myStartingSubgroup * BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP);
-  TRACE((stderr,"MU ResourceManager: allocateContextResources: rmClientId=%zu, contextOffset=%zu, globalFifoIds[0]=%u, myStartingSubgroup=%u, myRelativeRecFifoGlobalFifoId=%u\n",rmClientId,contextOffset,_clientResources[rmClientId].recResources[contextOffset].globalFifoIds[0],myStartingSubgroup,myRelativeGlobalFifoId));
+
+  uint16_t myRelativeGlobalBatId=0;
+  if ( numBatIds )
+    myRelativeGlobalBatId = _clientResources[rmClientId].batResources[contextOffset].globalBatIds[0]  - ( myStartingSubgroup * BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP );
+
+  TRACE((stderr,"MU ResourceManager: allocateContextResources: rmClientId=%zu, contextOffset=%zu, globalFifoIds[0]=%u, myStartingSubgroup=%u, myRelativeRecFifoGlobalFifoId=%u, myRelativeGlobalBatId=%u\n",rmClientId,contextOffset,_clientResources[rmClientId].recResources[contextOffset].globalFifoIds[0],myStartingSubgroup,myRelativeGlobalFifoId,myRelativeGlobalBatId));
 
   for ( t=0; t<tSize; t++ )
     {
@@ -3142,7 +3309,11 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
       _clientResources[rmClientId].pinRecFifo[(contextOffset*_tSize)+t] =
 	(startingSubgroup * BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) + myRelativeGlobalFifoId;
 
-      TRACE((stderr,"MU ResourceManager: allocateContextResources: pinRecFifo[t=%zu][contextOffset=%zu] = %u\n",t,contextOffset,_clientResources[rmClientId].pinRecFifo[(contextOffset*_tSize) + t]));
+      if ( numBatIds)
+	_clientResources[rmClientId].pinBatId[(contextOffset*_tSize)+t] = 
+	  (startingSubgroup * BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP) + myRelativeGlobalBatId;
+
+      TRACE((stderr,"MU ResourceManager: allocateContextResources: startingSubgroup=%u, pinRecFifo,pinBatId[t=%zu][contextOffset=%zu] = %u,%u\n",startingSubgroup,t,contextOffset,_clientResources[rmClientId].pinRecFifo[(contextOffset*_tSize) + t],_clientResources[rmClientId].pinBatId[(contextOffset*_tSize) + t]));
     }
 
   allocateLookasideResources( numInjFifos,
@@ -3196,6 +3367,9 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
   _clientResources[rmClientId].recResources = (recFifoResources_t*)malloc( numContexts * sizeof(recFifoResources_t) );
   PAMI_assertf( _clientResources[rmClientId].recResources, "The heap is full.\n" );
 
+  _clientResources[rmClientId].batResources = (batResources_t*)malloc( numContexts * sizeof(batResources_t) );
+  PAMI_assertf( _clientResources[rmClientId].batResources, "The heap is full.\n" );
+
   // Determine the number of contexts per core needed by this client.
   size_t numCoresPerProcess = _pamiRM.getNumCoresPerProcess();
   size_t numContextsPerCore = ( numContexts + numCoresPerProcess -1 ) / numCoresPerProcess;
@@ -3207,11 +3381,14 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
     _perCorePerProcessPerClientMUResources[rmClientId].numInjFifos / numContextsPerCore;
   _perContextMUResources[rmClientId].numRecFifos =
     _perCorePerProcessPerClientMUResources[rmClientId].numRecFifos / numContextsPerCore;
+  _perContextMUResources[rmClientId].numBatIds =
+    _perCorePerProcessPerClientMUResources[rmClientId].numBatIds / numContextsPerCore;
 
   PAMI_assertf( _perContextMUResources[rmClientId].numInjFifos, "Not enough injection fifos are available\n" );
   PAMI_assertf( _perContextMUResources[rmClientId].numRecFifos, "Not enough reception fifos are available\n" );
+  // Don't assert for numBatIds, because we allow it to be zero
 
-  TRACE((stderr,"MU ResourceManager: initializeContexts: Each context for client %zu gets %zu injFifos and %zu recFifos\n",rmClientId, _perContextMUResources[rmClientId].numInjFifos, _perContextMUResources[rmClientId].numRecFifos));
+  TRACE((stderr,"MU ResourceManager: initializeContexts: Each context for client %zu gets %zu injFifos, %zu recFifos, %zu BatIds\n",rmClientId, _perContextMUResources[rmClientId].numInjFifos, _perContextMUResources[rmClientId].numRecFifos,_perContextMUResources[rmClientId].numBatIds));
 
   // Adjust the number of fifos needed if they exceed the max that we need.
   if ( _perContextMUResources[rmClientId].numInjFifos > optimalNumInjFifosPerContext )
@@ -3220,6 +3397,11 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
     _perContextMUResources[rmClientId].numRecFifos = optimalNumRecFifosPerContext;
 
   TRACE((stderr,"MU ResourceManager: initializeContexts: Each context for client %zu gets %zu injFifos and %zu recFifos after lowering to needed limits\n",rmClientId, _perContextMUResources[rmClientId].numInjFifos, _perContextMUResources[rmClientId].numRecFifos));
+
+  _clientResources[rmClientId].pinBatId = (uint16_t*)malloc( _mapping.tSize() *
+							     numContexts *
+							     sizeof(uint16_t) );
+  PAMI_assertf( _clientResources[rmClientId].pinBatId, "The heap is full.\n" );
 
   // Obtain the list of HW threads for this process (corresponding to subgroups) from the kernel
   // We will use this to determine which subgroups to allocate resources from.
@@ -3296,14 +3478,16 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 } // End: initializeContexts()
 
 
-void PAMI::Device::MU::ResourceManager::getNumFifosPerContext( size_t  rmClientId,
-							       size_t *numInjFifos,
-							       size_t *numRecFifos )
+void PAMI::Device::MU::ResourceManager::getNumResourcesPerContext( size_t  rmClientId,
+								   size_t *numInjFifos,
+								   size_t *numRecFifos,
+								   size_t *numBatIds )
 {
   *numInjFifos = _perContextMUResources[rmClientId].numInjFifos;
   *numRecFifos = _perContextMUResources[rmClientId].numRecFifos;
+  *numBatIds   = _perContextMUResources[rmClientId].numBatIds;
 
-} // End: getNumFifosPerContext()
+} // End: getNumResourcesPerContext()
 
 
 void PAMI::Device::MU::ResourceManager::getInjFifosForContext( size_t            rmClientId,
@@ -3364,6 +3548,118 @@ void PAMI::Device::MU::ResourceManager::getRecFifosForContext( size_t           
       TRACE((stderr,"MU ResourceManager: getRecFifosForContext: globalFifoId=%u, globalSubgroup=%u, relativeSubgroup=%u, relativeFifo=%u, recFifoStructurePtr=%p, globalFifoId=%u\n",globalFifoId,globalSubgroup,relativeSubgroup,relativeFifo,recFifoPtrs[fifo],globalFifoIds[fifo]));
     }
 } // End: getRecFifosForContext()
+
+
+/// \brief Query the Number of Free BAT IDs Within A Context
+///
+/// \retval  numFree
+uint32_t PAMI::Device::MU::ResourceManager::queryFreeBatIdsForContext( size_t    rmClientId,
+								      size_t    contextOffset )
+{
+  size_t numBatIds     = _perContextMUResources[rmClientId].numBatIds;
+  size_t numFreeBatIds = 0;
+  size_t i;
+  uint32_t status = _clientResources[rmClientId].batResources[contextOffset].status;
+  
+  for ( i=0; i<numBatIds; i++ )
+    {
+      if ( status & 0x80000000 ) numFreeBatIds++;
+      status = status << 1;
+    }
+
+  TRACE((stderr,"MU ResourceManager: queryFreeBatIdsForContext: numBatIds=%zu, numFreeBatIds=%zu\n",numBatIds, numFreeBatIds));
+
+  return numFreeBatIds;
+
+}// End: queryFreeBatIdsForContext()
+
+	
+/// \brief Allocate (reserve) BAT IDs Within A Context
+///
+/// \retval  0  Success
+/// \retval  -1 Failed to allocate the specified number of BatIds.
+///             No IDs were actually allocated.
+int32_t PAMI::Device::MU::ResourceManager::allocateBatIdsForContext( size_t    rmClientId,
+								     size_t    contextOffset,
+								     size_t    numBatIds,
+								     uint16_t *globalBatIds )
+{
+  size_t numContextBatIds = _perContextMUResources[rmClientId].numBatIds;
+
+  PAMI_assert( numBatIds <= numContextBatIds );
+
+  size_t numFreeBatIds = queryFreeBatIdsForContext( rmClientId,
+						    contextOffset );
+
+  if ( numFreeBatIds < numBatIds ) return -1; // Not enough free BAT IDs.
+
+  size_t i, j=0;
+  uint32_t status = _clientResources[rmClientId].batResources[contextOffset].status;
+
+  for ( i=0; (i<numContextBatIds) && (numBatIds>0); i++, numBatIds-- )
+    {
+      if ( status & 0x80000000 ) // Is the i'th BAT ID free?
+	{
+	  _clientResources[rmClientId].batResources[contextOffset].status &= ~(1<<(31-i)); // Mark allocated.
+	  globalBatIds[j++] =  _clientResources[rmClientId].batResources[contextOffset].globalBatIds[i];
+	  status = status << 1;
+	  
+	  TRACE((stderr,"MU ResourceManager: allocateBatIdsForContext: allocated batId %zu, globalBatId=%u, newStatus=0x%08x\n",i,globalBatIds[j-1],_clientResources[rmClientId].batResources[contextOffset].status));
+	}
+    }
+  return 0;
+
+} // End: allocateBatIdsForContext()
+
+	
+/// \brief Free (unreserve) BAT IDs Within A Context
+///
+void PAMI::Device::MU::ResourceManager::freeBatIdsForContext( size_t    rmClientId,
+							      size_t    contextOffset,
+							      size_t    numBatIds,
+							      uint16_t *globalBatIds )
+{
+  size_t numContextBatIds = _perContextMUResources[rmClientId].numBatIds;
+
+  PAMI_assert( numBatIds <= numContextBatIds );
+
+  size_t i, j;
+
+  for ( i=0; i<numBatIds; i++ ) // Loop through the caller's IDs to free
+    {
+      for ( j=0; j<numContextBatIds; j++ ) // Loop through the context's BAT IDs.
+	{
+	  if ( _clientResources[rmClientId].batResources[contextOffset].globalBatIds[j] ==
+	       globalBatIds[i] ) // Found it?
+	    {
+	      _clientResources[rmClientId].batResources[contextOffset].status |= _BN(j)>>32; // Mark free
+	      TRACE((stderr,"MU ResourceManager: freeBatIdsForContext: freed BATid %zu, globalBatId=%u, newStatus=0x%08x\n",j,globalBatIds[i],_clientResources[rmClientId].batResources[contextOffset].status));
+	    }
+	}
+    }
+
+} // End: freeBatIdsForContext()
+
+
+int32_t PAMI::Device::MU::ResourceManager::setBatEntryForContext ( size_t    rmClientId,
+								   size_t    contextOffset,
+								   uint16_t  globalBatId,
+								   uint64_t  value )
+{
+  uint32_t startingSubgroupForContext = 
+    _clientResources[rmClientId].startingSubgroupIds[contextOffset];
+  uint32_t relativeSubgroupIndex = ( (globalBatId - 
+				      (startingSubgroupForContext * 
+				       BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP)) / 
+				     BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP );
+  uint8_t  relativeBatId = globalBatId % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
+
+  TRACE((stderr,"MU ResourceManager: setBatEntryForContext: Setting globalBatId %u to 0x%lx, startingSubgroup=%u, subgroupIndex=%u, relativeBatId=%u\n",globalBatId,value,startingSubgroupForContext,relativeSubgroupIndex,relativeBatId));
+
+  return MUSPI_SetBaseAddress ( &_clientResources[rmClientId].batResources[contextOffset].subgroups[relativeSubgroupIndex],
+				relativeBatId,
+				value );
+} // End: setBatEntryForContext()
 
 
 #undef TRACE

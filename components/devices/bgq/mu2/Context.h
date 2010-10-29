@@ -278,9 +278,10 @@ namespace PAMI
             // Resource Manager allocates the resources.
 
             // Construct arrays of Inj and Rec fifo pointers.
-            _rm.getNumFifosPerContext(  _rm_id_client,
-                                        &_numInjFifos,
-                                        &_numRecFifos );
+            _rm.getNumResourcesPerContext(  _rm_id_client,
+					    &_numInjFifos,
+					    &_numRecFifos,
+					    &_numBatIds );
             _injFifos = (MUSPI_InjFifo_t**)malloc( _numInjFifos * sizeof(MUSPI_InjFifo_t*) );
             PAMI_assertf( _injFifos != NULL, "The heap is full.\n" );
 
@@ -300,6 +301,27 @@ namespace PAMI
                                        _numRecFifos,
                                        _recFifos,
                                        _globalRecFifoIds );
+
+	    // The following ifdef'd out code is for testing only...
+#if 0
+            _globalBatIds = (uint16_t *)malloc( _numBatIds * sizeof(uint16_t) );
+            PAMI_assertf( _globalBatIds != NULL, "The heap is full.\n" );
+
+            fprintf(stderr,"Context.h: queryFreeBatIds returned %u\n",queryFreeBatIds());
+
+            int32_t rc = allocateBatIds( _numBatIds,
+					 _globalBatIds );
+	    
+	    fprintf(stderr,"Context.h: allocateBatIdsForContext for numBatIds=%zu returned %d\n",_numBatIds,rc);
+	    size_t i;
+	    for (i=0;i<_numBatIds;i++)
+	      fprintf(stderr,"Context.h: allocateBatIdsForContext returned id %u\n",_globalBatIds[i]);
+	    fprintf (stderr,"Context.h: setting BAT ID for context %zu\n",_id_offset);
+	    setBatId ( _globalBatIds[2], 501 );
+
+	    freeBatIds ( 1, &_globalBatIds[2]);
+            fprintf(stderr,"Context.h: queryFreeBatIds returned %u after freeing #2 with global BATid %u\n",queryFreeBatIds(),_globalBatIds[2]);
+#endif
 
             // Get arrays of the following:
             // 1. Lookaside payload buffers virtual addresses
@@ -715,6 +737,12 @@ namespace PAMI
 
             rfifo = _rm.getPinRecFifo( _id_client, offset, tcoord );
             TRACE_FORMAT("client=%zu, context=%zu, tcoord=%zu, rfifo = %u", _id_client, offset, tcoord, rfifo);
+
+	    // The following ifdef'd out code is for testing only...
+#if 0
+	    fprintf(stderr,"Context.h: pinBatId t=0, globalBatId=%u returned %u, pinBatId t=1 returned %u\n",_globalBatIds[3],pinBatId(0,_globalBatIds[3]),pinBatId(1,_globalBatIds[3]));
+#endif
+
             map = _pinInfo->torusInjFifoMaps[fifoPin];
 
             TRACE_FORMAT("(destTask %zu, destOffset %zu) -> dest = %08x, rfifo = %d, optimalFifoPin = %u, actualFifoPin = %u, map = %016lx, injFifoIds[]=%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u", task, offset, *((uint32_t *) &dest), rfifo, fifoPin, _pinInfo->injFifoIds[fifoPin], map, _pinInfo->injFifoIds[0], _pinInfo->injFifoIds[1], _pinInfo->injFifoIds[2], _pinInfo->injFifoIds[3], _pinInfo->injFifoIds[4], _pinInfo->injFifoIds[5], _pinInfo->injFifoIds[6], _pinInfo->injFifoIds[7], _pinInfo->injFifoIds[8], _pinInfo->injFifoIds[9], _pinInfo->injFifoIds[10], _pinInfo->injFifoIds[11], _pinInfo->injFifoIds[12], _pinInfo->injFifoIds[13], _pinInfo->injFifoIds[14], _pinInfo->injFifoIds[15] );
@@ -801,6 +829,111 @@ namespace PAMI
             return _rm.getSharedCounterBatId();
           };
 
+          inline uint32_t getShortCollectiveBroadcastBatId ()
+	  {
+	    return _rm.getShortCollectiveBroadcastBatId();
+          };
+
+	  inline int32_t setShortCollectiveBroadcastBatEntry ( uint64_t value )
+	  {
+	    return _rm.setShortCollectiveBroadcastBatEntry ( value );
+	  }
+
+          inline uint32_t getThroughputCollectiveBroadcastBufferBatId ()
+	  {
+	    return _rm.getThroughputCollectiveBroadcastBufferBatId();
+          };
+
+	  inline int32_t setThroughputCollectiveBroadcastBufferBatEntry ( uint64_t value )
+	  {
+	    return _rm.setThroughputCollectiveBroadcastBufferBatEntry ( value );
+	  }
+
+          inline uint32_t getThroughputCollectiveBroadcastCounterBatId ()
+	  {
+	    return _rm.getThroughputCollectiveBroadcastCounterBatId();
+          };
+
+	  inline int32_t setThroughputCollectiveBroadcastCounterBatEntry ( uint64_t value )
+	  {
+	    return _rm.setThroughputCollectiveBroadcastCounterBatEntry ( value );
+	  }
+
+	  /// \brief Query the Number of Free BAT IDs Within This Context
+	  ///
+	  /// \retval  numFree
+	  inline uint32_t queryFreeBatIds()
+	  {
+	    return _rm.queryFreeBatIdsForContext( _rm_id_client,
+						  _id_offset );
+	  }
+
+	  /// \brief Allocate BAT IDs
+	  ///
+	  /// \param[in]  numBatIds    Number to allocate
+	  /// \param[out] globalBatIds Array with numBatIds slots that will
+	  ///                          be set to the global BAT IDs that
+	  ///                          were allocated.
+	  /// \retval  0  Success
+	  /// \retval  -1 Failed to allocate the specified number of BatIds.
+	  ///             No IDs were actually allocated.
+	  inline int32_t allocateBatIds ( size_t    numBatIds,
+					  uint16_t *globalBatIds )
+	  {
+	    return _rm.allocateBatIdsForContext( _rm_id_client,
+						 _id_offset,
+						 numBatIds,
+						 globalBatIds );
+	  }
+
+	  /// \brief Free BAT IDs
+	  ///
+	  /// \param[in]  numBatIds    Number to free
+	  /// \param[out] globalBatIds Array with numBatIds slots containing
+	  ///                          the global BAT IDs to be freed.
+	  inline void freeBatIds( size_t    numBatIds,
+				  uint16_t *globalBatIds )
+	  {
+	    _rm.freeBatIdsForContext( _rm_id_client,
+				      _id_offset,
+				      numBatIds,
+				      globalBatIds );
+	  }
+
+	  /// \brief Pin BAT ID
+	  ///
+	  /// \param[in] t           The T coordinate of the destination 
+	  /// \param[in] globalBatId The global BAT id in this context that
+	  ///                        would be used for this transfer.  This
+	  ///                        is used to find the corresponding BAT ID
+	  ///                        at the destination.
+	  ///
+	  /// \retval pinnedBatId The corresponding BAT ID on the destination.
+	  inline uint16_t pinBatId( size_t t,
+				    uint16_t globalBatId )
+	  {
+	    return _rm.getPinBatId ( _rm_id_client,
+				     _id_offset,
+				     t,
+				     globalBatId );
+	  }
+
+	  /// \brief Set the Value of A BAT Entry in This Context
+	  ///
+	  /// \param[in] globalBatId The global BAT ID whose value is to be set
+	  /// \param[in] value       The value to be set
+	  ///
+	  /// \retval  0  Success
+	  /// \retval  -1 Failed to set the BAT ID.
+	  inline int32_t setBatEntry ( uint16_t  globalBatId,
+				       uint64_t  value )
+	  {
+	    return _rm.setBatEntryForContext ( _rm_id_client,
+					       _id_offset,
+					       globalBatId,
+					       value );
+	  }
+
           inline uint32_t *getRgetInjFifoIds ()
           {
             return _rm.getRgetInjFifoIds();
@@ -857,9 +990,14 @@ namespace PAMI
           // Resource Manager allocates resources
           size_t                 _numInjFifos;
           size_t                 _numRecFifos;
+	  size_t                 _numBatIds;
           MUSPI_InjFifo_t      **_injFifos;
           MUSPI_RecFifo_t      **_recFifos;
           uint32_t              *_globalRecFifoIds;
+	  // The following ifdef'd out code is for testing only....
+#if 0
+	  uint16_t              *_globalBatIds;
+#endif
           char                 **_lookAsidePayloadVAs;
           uint64_t              *_lookAsidePayloadPAs;
           pami_event_function  **_lookAsideCompletionFnPtrs;

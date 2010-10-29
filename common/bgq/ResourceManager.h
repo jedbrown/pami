@@ -57,6 +57,10 @@
 ///   by an MU SPI application.
 ///   - Default is 0.
 ///
+/// - MUSPI_NUMBATIDS - Number of base address table IDs per process reserved
+//    for use by an MU SPI application.
+///   - Default is 0.
+///
 /// - PAMI_NUMCLIENTS - The number of clients.
 ///   - Default is 1.
 ///
@@ -105,6 +109,7 @@ namespace PAMI
 {
   const size_t numSpiUserInjFifosPerProcessDefault = 0;
   const size_t numSpiUserRecFifosPerProcessDefault = 0;
+  const size_t numSpiUserBatIdsPerProcessDefault   = 0;
   const size_t numClientsDefault         = 1;
   const char   defaultClientName[]       = "MPI";
   const size_t rgetInjFifoSizeDefault    = 65536;
@@ -130,6 +135,8 @@ namespace PAMI
       inline size_t getNumSpiUserInjFifosPerProcess() { return _numSpiUserInjFifosPerProcess; }
 
       inline size_t getNumSpiUserRecFifosPerProcess() { return _numSpiUserRecFifosPerProcess; }
+
+      inline size_t getNumSpiUserBatIdsPerProcess()   { return _numSpiUserBatIdsPerProcess;   }
 
       inline size_t getNumClients()         { return _numClients; }
 
@@ -205,6 +212,7 @@ namespace PAMI
 
       size_t       _numSpiUserInjFifosPerProcess;
       size_t       _numSpiUserRecFifosPerProcess;
+      size_t       _numSpiUserBatIdsPerProcess;
       size_t       _numClients;
       char        *_clientNamesConfigValueStringCopy;
       const char **_clientNamesPtrs;
@@ -476,6 +484,10 @@ void PAMI::ResourceManager::getConfig()
   // Get MUSPI_NUMRECFIFOS
   _numSpiUserRecFifosPerProcess    = getConfigValueSize_t( "MUSPI_NUMRECFIFOS",
 							   numSpiUserRecFifosPerProcessDefault );
+
+  // Get MUSPI_NUMBATIDS
+  _numSpiUserBatIdsPerProcess    = getConfigValueSize_t( "MUSPI_NUMBATIDS",
+							   numSpiUserBatIdsPerProcessDefault );
 
   // Get PAMI_NUMCLIENTS
   _numClients            = getConfigValueSize_t( "PAMI_NUMCLIENTS",
