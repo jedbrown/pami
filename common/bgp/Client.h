@@ -130,8 +130,8 @@ namespace PAMI
 	rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
         PAMI_assertf(rc == 0, "alloc failed for _contexts[%d], errno=%d\n", n, errno);
         int x;
-        TRACE_ERR((stderr, "BGP::Client::createContext mm available %zu\n", _mm.available()));
-        _platdevs.generate(_clientid, n, _mm);
+        TRACE_ERR((stderr, "BGP::Client::createContext mm available %zu\n", __global.shared_mm.available()));
+        _platdevs.generate(_clientid, n, __global.mm);
 
         // This memset has been removed due to the amount of cycles it takes
         // on simulators.  Lower level initializers should be setting the
@@ -150,7 +150,7 @@ namespace PAMI
           TRACE_ERR((stderr, "BGP::Client::createContext %u\n", x));
             context[x] = (pami_context_t) & _contexts[x];
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                   &_platdevs, __global.shared_mm, bytes, _world_geometry, &_geometry_map);
+                                   &_platdevs, &__global.mm, bytes, _world_geometry, &_geometry_map);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
@@ -445,7 +445,7 @@ namespace PAMI
       Memory::GenMemoryManager _mm;
       //  Unexpected Barrier allocator
       MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
-      
+
       //  Unexpected Barrier match queue
       MatchQueue                                                             _ueb_queue;
 
@@ -462,7 +462,7 @@ namespace PAMI
         // Round up to the page size
         //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-	_mm.init(__global.shared_mm, bytes, 1, 1, 0, shmemfile);
+	_mm.init(__global.shared_mm, bytes, 16, 16, 0, shmemfile);
 
         return;
       }

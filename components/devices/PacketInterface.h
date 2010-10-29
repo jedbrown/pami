@@ -343,7 +343,7 @@ namespace PAMI
           /// \retval false No data has been posted
           ///
           template <unsigned T_Niov>
-          inline bool postPacket (size_t     target_task,
+          inline bool postPacket (size_t         target_task,
                                   size_t         target_offset,
                                   void         * metadata,
                                   size_t         metasize,
@@ -418,40 +418,40 @@ namespace PAMI
           ///               packet device must be advanced until the completion
           ///               event function is invoked
           ///
-          inline bool postPacket (uint8_t              (&state)[T_StateBytes],
+          inline bool postPacket (uint8_t               (&state)[T_StateBytes],
                                   pami_event_function   fn,
-                                  void               * cookie,
-                                  size_t           target_task,
-                                  size_t               target_offset,
-                                  void               * metadata,
-                                  size_t               metasize,
-                                  struct iovec       * iov,
-                                  size_t               niov);
+                                  void                * cookie,
+                                  size_t                target_task,
+                                  size_t                target_offset,
+                                  void                * metadata,
+                                  size_t                metasize,
+                                  struct iovec        * iov,
+                                  size_t                niov);
 
           template <unsigned T_Niov>
-          inline bool postPacket (uint8_t              (&state)[T_StateBytes],
+          inline bool postPacket (uint8_t               (&state)[T_StateBytes],
                                   pami_event_function   fn,
-                                  void               * cookie,
-                                  size_t           target_task,
-                                  size_t               target_offset,
-                                  void               * metadata,
-                                  size_t               metasize,
-                                  struct iovec         (&iov)[T_Niov]);
+                                  void                * cookie,
+                                  size_t                target_task,
+                                  size_t                target_offset,
+                                  void                * metadata,
+                                  size_t                metasize,
+                                  struct iovec          (&iov)[T_Niov]);
 
           ///
           /// often, only a single contiguous buffer is sent in the packet
           /// payload.  Create a special-case interface for this which removes
           /// the iovec management responsibilities...
           ///
-          inline bool postPacket (uint8_t              (&state)[T_StateBytes],
+          inline bool postPacket (uint8_t               (&state)[T_StateBytes],
                                   pami_event_function   fn,
-                                  void               * cookie,
-                                  size_t           target_task,
-                                  size_t               target_offset,
-                                  void               * metadata,
-                                  size_t               metasize,
-                                  void               * payload,
-                                  size_t               length);
+                                  void                * cookie,
+                                  size_t                target_task,
+                                  size_t                target_offset,
+                                  void                * metadata,
+                                  size_t                metasize,
+                                  void                * payload,
+                                  size_t                length);
 
           ///
           /// \brief Post a multiple packet transfer operation
@@ -491,15 +491,15 @@ namespace PAMI
           ///               device must be advanced until the completion
           ///               callback is invoked
           ///
-          inline bool postMultiPacket (uint8_t              (&state)[T_StateBytes],
+          inline bool postMultiPacket (uint8_t               (&state)[T_StateBytes],
                                        pami_event_function   fn,
-                                       void               * cookie,
-                                       size_t           target_task,
-                                       size_t               target_offset,
-                                       void               * metadata,
-                                       size_t               metasize,
-                                       void               * payload,
-                                       size_t               length);
+                                       void                * cookie,
+                                       size_t                target_task,
+                                       size_t                target_offset,
+                                       void                * metadata,
+                                       size_t                metasize,
+                                       void                * payload,
+                                       size_t                length);
       };
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
@@ -560,26 +560,40 @@ namespace PAMI
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       template <unsigned T_Niov>
-      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (size_t     target_task,
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (size_t         target_task,
                                                                             size_t         target_offset,
                                                                             void         * metadata,
                                                                             size_t         metasize,
                                                                             struct iovec   (&iov)[T_Niov])
       {
+#ifdef ERROR_CHECKS
+        {
+          size_t i, bytes = 0;
+          for (i = 0; i < T_Niov; i++) bytes += iov[i].iov_len;
+          PAMI_assert(bytes <= T_Model::packet_model_payload_bytes);
+        }
+#endif
         return static_cast<T_Model*>(this)->postPacket_impl (target_task, target_offset, metadata, metasize, iov);
       }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
-      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t               (&state)[T_StateBytes],
                                                                             pami_event_function   fn,
-                                                                            void               * cookie,
-                                                                            size_t           target_task,
-                                                                            size_t               target_offset,
-                                                                            void               * metadata,
-                                                                            size_t               metasize,
-                                                                            struct iovec       * iov,
-                                                                            size_t               niov)
+                                                                            void                * cookie,
+                                                                            size_t                target_task,
+                                                                            size_t                target_offset,
+                                                                            void                * metadata,
+                                                                            size_t                metasize,
+                                                                            struct iovec        * iov,
+                                                                            size_t                niov)
       {
+#ifdef ERROR_CHECKS
+        {
+          size_t i, bytes = 0;
+          for (i = 0; i < niov; i++) bytes += iov[i].iov_len;
+          PAMI_assert(bytes <= T_Model::packet_model_payload_bytes);
+        }
+#endif
         return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie,
                                                              target_task, target_offset,
                                                              metadata, metasize,
@@ -588,31 +602,43 @@ namespace PAMI
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
       template <unsigned T_Niov>
-      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t               (&state)[T_StateBytes],
                                                                             pami_event_function   fn,
-                                                                            void               * cookie,
-                                                                            size_t           target_task,
-                                                                            size_t               target_offset,
-                                                                            void               * metadata,
-                                                                            size_t               metasize,
-                                                                            struct iovec         (&iov)[T_Niov])
+                                                                            void                * cookie,
+                                                                            size_t                target_task,
+                                                                            size_t                target_offset,
+                                                                            void                * metadata,
+                                                                            size_t                metasize,
+                                                                            struct iovec          (&iov)[T_Niov])
       {
+#ifdef ERROR_CHECKS
+        {
+          size_t i, bytes = 0;
+          for (i = 0; i < T_Niov; i++) bytes += iov[i].iov_len;
+          PAMI_assert(bytes <= T_Model::packet_model_payload_bytes);
+        }
+#endif
         return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie,
                                                              target_task, target_offset,
                                                              metadata, metasize, iov);
       }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
-      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t              (&state)[T_StateBytes],
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postPacket (uint8_t               (&state)[T_StateBytes],
                                                                             pami_event_function   fn,
-                                                                            void               * cookie,
-                                                                            size_t           target_task,
-                                                                            size_t               target_offset,
-                                                                            void               * metadata,
-                                                                            size_t               metasize,
-                                                                            void               * payload,
-                                                                            size_t               length)
+                                                                            void                * cookie,
+                                                                            size_t                target_task,
+                                                                            size_t                target_offset,
+                                                                            void                * metadata,
+                                                                            size_t                metasize,
+                                                                            void                * payload,
+                                                                            size_t                length)
       {
+#ifdef ERROR_CHECKS
+        {
+          PAMI_assert((length+metasize) <= T_Model::packet_model_payload_bytes);
+        }
+#endif
         return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie,
                                                              target_task, target_offset,
                                                              metadata, metasize,
@@ -620,15 +646,15 @@ namespace PAMI
       }
 
       template <class T_Model, class T_Device, unsigned T_StateBytes>
-      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postMultiPacket (uint8_t              (&state)[T_StateBytes],
+      inline bool PacketModel<T_Model, T_Device, T_StateBytes>::postMultiPacket (uint8_t               (&state)[T_StateBytes],
                                                                                  pami_event_function   fn,
-                                                                                 void               * cookie,
-                                                                                 size_t           target_task,
-                                                                                 size_t               target_offset,
-                                                                                 void               * metadata,
-                                                                                 size_t               metasize,
-                                                                                 void               * payload,
-                                                                                 size_t               length)
+                                                                                 void                * cookie,
+                                                                                 size_t                target_task,
+                                                                                 size_t                target_offset,
+                                                                                 void                * metadata,
+                                                                                 size_t                metasize,
+                                                                                 void                * payload,
+                                                                                 size_t                length)
       {
         return static_cast<T_Model*>(this)->postMultiPacket_impl (state, fn, cookie,
                                                                   target_task, target_offset,

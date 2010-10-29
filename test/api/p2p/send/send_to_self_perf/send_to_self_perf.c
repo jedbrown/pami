@@ -31,7 +31,7 @@
 #define BUFSIZE 1024
 #endif
 
-#define TRACE_ERR(x) /*fprintf x */
+#define TRACE_ERR(x) //fprintf x
 
 size_t _my_rank;
 

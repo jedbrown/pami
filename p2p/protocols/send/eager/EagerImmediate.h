@@ -133,11 +133,12 @@ namespace PAMI
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() >>\n"));
 
 #ifdef ERROR_CHECKS
-
             if (T_Model::packet_model_immediate_bytes <
                 (parameters->data.iov_len + parameters->header.iov_len))
+            {
+              TRACE_ERR((stderr,"Oops! ... %zu < (%zu+%zu) ???\n", T_Model::packet_model_immediate_bytes, parameters->data.iov_len, parameters->header.iov_len));
               return PAMI_INVAL;
-
+            }
 #endif
 
             pami_task_t task;

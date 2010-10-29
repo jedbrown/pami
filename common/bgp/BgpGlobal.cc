@@ -35,13 +35,13 @@ PAMI::Device::BGP::giDevice _g_gibarrier_dev;
 #include "components/devices/misc/ProgressFunctionMsg.h"
 PAMI::Device::ProgressFunctionDev _g_progfunc_dev;
 
-#include "components/devices/bgp/collective_network/CNDevice.h"
-extern PAMI::Device::BGP::CNDevice _g_cncommon_dev;
-#include "components/devices/bgp/collective_network/CNAllreduceMsg.h"
-PAMI::Device::BGP::CNAllreduceDevice _g_cnallreduce_dev(&_g_cncommon_dev);
-#include "components/devices/bgp/collective_network/CNAllreducePPMsg.h"
-PAMI::Device::BGP::CNAllreducePPDevice _g_cnallreducepp_dev(&_g_cncommon_dev);
-#include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
-PAMI::Device::BGP::CNAllreduce2PDevice _g_cnallreduce2p_dev(&_g_cncommon_dev);
-#include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
-PAMI::Device::BGP::CNBroadcastDevice _g_cnbroadcast_dev(&_g_cncommon_dev);
+//#include "components/devices/bgp/collective_network/CNDevice.h"
+//extern PAMI::Device::BGP::CNDevice _g_cncommon_dev;
+//#include "components/devices/bgp/collective_network/CNAllreduceMsg.h"
+//PAMI::Device::BGP::CNAllreduceDevice _g_cnallreduce_dev(&_g_cncommon_dev);
+//#include "components/devices/bgp/collective_network/CNAllreducePPMsg.h"
+//PAMI::Device::BGP::CNAllreducePPDevice _g_cnallreducepp_dev(&_g_cncommon_dev);
+//#include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
+//PAMI::Device::BGP::CNAllreduce2PDevice _g_cnallreduce2p_dev(&_g_cncommon_dev);
+//#include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
+//PAMI::Device::BGP::CNBroadcastDevice _g_cnbroadcast_dev(&_g_cncommon_dev);

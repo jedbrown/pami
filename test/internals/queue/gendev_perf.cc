@@ -92,7 +92,7 @@
 #ifdef __GNUC__
 
 #include "components/atomic/gcc/GccCounter.h"
-typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter> GenericDeviceMutex;
+//typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter> GenericDeviceMutex;
 
 #else /* !__GNUC__ */
 

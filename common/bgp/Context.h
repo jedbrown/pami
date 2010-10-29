@@ -22,11 +22,11 @@
 
 // BGP-specific devices...
 #include "components/devices/bgp/global_interrupt/GIBarrierMsg.h"
-#include "components/devices/bgp/collective_network/CNAllreduceMsg.h"
+//#include "components/devices/bgp/collective_network/CNAllreduceMsg.h"
 //#include "components/devices/bgp/collective_network/CNAllreduceShortMsg.h"
-#include "components/devices/bgp/collective_network/CNAllreducePPMsg.h"
-#include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
-#include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
+//#include "components/devices/bgp/collective_network/CNAllreducePPMsg.h"
+//#include "components/devices/bgp/collective_network/CNAllreduceSum2PMsg.h"
+//#include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
 
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
@@ -60,11 +60,11 @@ namespace PAMI
 {
   typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter>  ContextLock;
 
-  typedef Fifo::FifoPacket <16, 256> ShmemPacket;
-  typedef Fifo::LinearFifo<Counter::GccInPlaceCounter, ShmemPacket, 128> ShmemFifo;
+  typedef Fifo::FifoPacket <sizeof(void*)*4, 256> ShmemPacket;
+  typedef Fifo::LinearFifo<ShmemPacket, Counter::GccIndirCounter> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgpShaddr> ShmemDevice;
+  //typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
-  typedef Device::Shmem::DmaModel<ShmemDevice> ShmemDmaModel;
 
   //
   // >> Point-to-point protocol typedefs and dispatch registration.
@@ -118,10 +118,10 @@ namespace PAMI
         _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
         // BGP-specific devices...
         _gibarr = PAMI::Device::BGP::giDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-        _cnallred = PAMI::Device::BGP::CNAllreduceDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-        _cnppallred = PAMI::Device::BGP::CNAllreducePPDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-        _cn2pallred = PAMI::Device::BGP::CNAllreduce2PDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-        _cnbcast = PAMI::Device::BGP::CNBroadcastDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        //_cnallred = PAMI::Device::BGP::CNAllreduceDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        //_cnppallred = PAMI::Device::BGP::CNAllreducePPDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        //_cn2pallred = PAMI::Device::BGP::CNAllreduce2PDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        //_cnbcast = PAMI::Device::BGP::CNBroadcastDevice::Factory::generate(clientid, num_ctx, mm, _generics);
         return PAMI_SUCCESS;
     }
 
@@ -152,10 +152,10 @@ namespace PAMI
         PAMI::Device::LocalBcastWQDevice::Factory::init(_localbcast, clientid, contextid, clt, ctx, mm, _generics);
         PAMI::Device::LocalReduceWQDevice::Factory::init(_localreduce, clientid, contextid, clt, ctx, mm, _generics);
         PAMI::Device::BGP::giDevice::Factory::init(_gibarr, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::BGP::CNAllreduceDevice::Factory::init(_cnallred, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::BGP::CNAllreducePPDevice::Factory::init(_cnppallred, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::BGP::CNAllreduce2PDevice::Factory::init(_cn2pallred, clientid, contextid, clt, ctx, mm, _generics);
-        PAMI::Device::BGP::CNBroadcastDevice::Factory::init(_cnbcast, clientid, contextid, clt, ctx, mm, _generics);
+        //PAMI::Device::BGP::CNAllreduceDevice::Factory::init(_cnallred, clientid, contextid, clt, ctx, mm, _generics);
+        //PAMI::Device::BGP::CNAllreducePPDevice::Factory::init(_cnppallred, clientid, contextid, clt, ctx, mm, _generics);
+        //PAMI::Device::BGP::CNAllreduce2PDevice::Factory::init(_cn2pallred, clientid, contextid, clt, ctx, mm, _generics);
+        //PAMI::Device::BGP::CNBroadcastDevice::Factory::init(_cnbcast, clientid, contextid, clt, ctx, mm, _generics);
         return PAMI_SUCCESS;
     }
 
@@ -181,10 +181,10 @@ namespace PAMI
         events += PAMI::Device::LocalReduceWQDevice::Factory::advance(_localreduce, clientid, contextid);
         // BGP-specific devices...
         events += PAMI::Device::BGP::giDevice::Factory::advance(_gibarr, clientid, contextid);
-        events += PAMI::Device::BGP::CNAllreduceDevice::Factory::advance(_cnallred, clientid, contextid);
-        events += PAMI::Device::BGP::CNAllreducePPDevice::Factory::advance(_cnppallred, clientid, contextid);
-        events += PAMI::Device::BGP::CNAllreduce2PDevice::Factory::advance(_cn2pallred, clientid, contextid);
-        events += PAMI::Device::BGP::CNBroadcastDevice::Factory::advance(_cnbcast, clientid, contextid);
+        //events += PAMI::Device::BGP::CNAllreduceDevice::Factory::advance(_cnallred, clientid, contextid);
+        //events += PAMI::Device::BGP::CNAllreducePPDevice::Factory::advance(_cnppallred, clientid, contextid);
+        //events += PAMI::Device::BGP::CNAllreduce2PDevice::Factory::advance(_cn2pallred, clientid, contextid);
+        //events += PAMI::Device::BGP::CNBroadcastDevice::Factory::advance(_cnbcast, clientid, contextid);
         return events;
     }
 
@@ -199,10 +199,10 @@ namespace PAMI
     PAMI::Device::LocalReduceWQDevice *_localreduce;
     // BGP-specific devices...
     PAMI::Device::BGP::giDevice *_gibarr;
-    PAMI::Device::BGP::CNAllreduceDevice *_cnallred;
-    PAMI::Device::BGP::CNAllreducePPDevice *_cnppallred;
-    PAMI::Device::BGP::CNAllreduce2PDevice *_cn2pallred;
-    PAMI::Device::BGP::CNBroadcastDevice *_cnbcast;
+    //PAMI::Device::BGP::CNAllreduceDevice *_cnallred;
+    //PAMI::Device::BGP::CNAllreducePPDevice *_cnppallred;
+    //PAMI::Device::BGP::CNAllreduce2PDevice *_cn2pallred;
+    //PAMI::Device::BGP::CNBroadcastDevice *_cnbcast;
   }; // class PlatformDeviceList
 
 
@@ -251,18 +251,21 @@ namespace PAMI
         // ----------------------------------------------------------------
         // Initialize the rdma protocol(s)
         // ----------------------------------------------------------------
+#if 0
         pami_result_t result = PAMI_ERROR;
         _rget = Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
           generate (_devices->_shmem[_contextid], _context, _protocol, result);
         TRACE_ERR((stderr, "%s<%u>  result = %d\n", __PRETTY_FUNCTION__,__LINE__, result));
         if (result != PAMI_SUCCESS)
+#endif
           _rget = Protocol::Get::NoRGet::generate (_protocol);
-
+#if 0
         result = PAMI_ERROR;
         _rput = Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice,false>, ShmemDevice>::
           generate (_devices->_shmem[_contextid], _context, _protocol, result);
         TRACE_ERR((stderr, "%s<%u>  result = %d\n", __PRETTY_FUNCTION__,__LINE__, result));
         if (result != PAMI_SUCCESS)
+#endif
           _rput = Protocol::Put::NoRPut::generate (_protocol);
 
 

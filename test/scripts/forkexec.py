@@ -18,7 +18,11 @@ for i in xrange(int(np)):
         os.environ['PAMI_SOCK_TASK'] = str(i)
         os.environ['PAMI_SOCK_SIZE'] = np
         os.environ['PAMI_UDP_CONFIG'] = config
-        os.execlp(test,testname)
+#       sys.stdout = open(str(i) + ".stdout", 'w');
+#       sys.stderr = open(str(i) + ".stderr", 'w');
+        execname = testname # + " 2>" + str(i) + ".err"
+        print ("fork() .. " + execname)
+        os.execlp(test,execname)
     elif (rc == 0):
         print "Started rank " + str(i)
     else:

@@ -20,78 +20,121 @@
 
 namespace PAMI
 {
-    namespace Fifo
+  namespace Fifo
+  {
+    ///
+    /// \brief Packet interface class
+    ///
+    /// \tparam T_Packet Packet implementation class
+    ///
+    template <class T_Packet>
+    class Packet
     {
-      template <class T_Packet>
-      class Packet
-      {
-        public:
-          Packet () {};
-          ~Packet () {};
+      public:
 
-          inline void clear ();
+        ///
+        /// \brief Number of available bytes in the packet header for application data
+        ///
+        /// \note All fifo implementation classes must define the static constant
+        ///       \c headerSize_impl.
+        ///
+        static const size_t header_size  = T_Packet::headerSize_impl;
 
-          inline void * getHeader ();
-          size_t headerSize ();
-          inline void copyHeader (void * dst);
-          inline void writeHeader (void * src);
+        ///
+        /// \brief Number of available bytes in the packet payload for application data
+        ///
+        /// \note All fifo implementation classes must define the static constant
+        ///       \c payloadSize_impl.
+        ///
+        static const size_t payload_size = T_Packet::payloadSize_impl;
 
-          inline void * getPayload ();
-          size_t payloadSize ();
-          inline void copyPayload (void * addr);
-      };
+        Packet () {};
+        ~Packet () {};
 
-      template <class T_Packet>
-      void Packet<T_Packet>::clear ()
-      {
-        return static_cast<T_Packet*>(this)->clear_impl ();
-      }
+        ///
+        /// \brief Clear all header and payload data in a packet
+        ///
+        inline void clear ();
 
-      template <class T_Packet>
-      void * Packet<T_Packet>::getHeader ()
-      {
-        return static_cast<T_Packet*>(this)->getHeader_impl ();
-      }
+        ///
+        /// \brief Retrieve a pointer to the packet header location.
+        ///
+        inline void * getHeader ();
 
-      template <class T_Packet>
-      size_t Packet<T_Packet>::headerSize ()
-      {
-        return T_Packet::headerSize_impl;
-      }
+        ///
+        /// \brief Copy a packet header into a destination buffer.
+        ///
+        /// Packet::header_size bytes will be copied into the destination
+        /// buffer.
+        ///
+        /// \param [in] dst Destination buffer for the header data
+        ///
+        inline void copyHeader (void * dst);
 
-      template <class T_Packet>
-      void Packet<T_Packet>::copyHeader (void * dst)
-      {
-        static_cast<T_Packet*>(this)->copyHeader_impl (dst);
-      }
+        ///
+        /// \brief Write a packet header from a source buffer.
+        ///
+        /// Packet::header_size bytes will be copied from the source buffer.
+        ///
+        /// \param [in] src Source buffer for the header data
+        ///
+        inline void writeHeader (void * src);
 
-      template <class T_Packet>
-      void Packet<T_Packet>::writeHeader (void * src)
-      {
-        static_cast<T_Packet*>(this)->writeHeader_impl (src);
-      }
+        ///
+        /// \brief Retrieve a pointer to the packet payload location.
+        ///
+        inline void * getPayload ();
 
-      template <class T_Packet>
-      void * Packet<T_Packet>::getPayload ()
-      {
-        return static_cast<T_Packet*>(this)->getPayload_impl ();
-      }
+        ///
+        /// \brief Copy a packet payload into a destination buffer.
+        ///
+        /// Packet::payload_size bytes will be copied into the destination
+        /// buffer.
+        ///
+        /// \param [in] dst Destination buffer for the payload data
+        ///
+        inline void copyPayload (void * dst);
+    };
 
-      template <class T_Packet>
-      size_t Packet<T_Packet>::payloadSize ()
-      {
-        return T_Packet::payloadSize_impl;
-      }
+    template <class T_Packet>
+    void Packet<T_Packet>::clear ()
+    {
+      return static_cast<T_Packet*>(this)->clear_impl ();
+    }
 
-      template <class T_Packet>
-      void Packet<T_Packet>::copyPayload (void * addr)
-      {
-        static_cast<T_Packet*>(this)->copyPayload_impl (addr);
-      }
+    template <class T_Packet>
+    void * Packet<T_Packet>::getHeader ()
+    {
+      return static_cast<T_Packet*>(this)->getHeader_impl ();
+    }
+
+    template <class T_Packet>
+    void Packet<T_Packet>::copyHeader (void * dst)
+    {
+      static_cast<T_Packet*>(this)->copyHeader_impl (dst);
+    }
+
+    template <class T_Packet>
+    void Packet<T_Packet>::writeHeader (void * src)
+    {
+      static_cast<T_Packet*>(this)->writeHeader_impl (src);
+    }
+
+    template <class T_Packet>
+    void * Packet<T_Packet>::getPayload ()
+    {
+      return static_cast<T_Packet*>(this)->getPayload_impl ();
+    }
+
+    template <class T_Packet>
+    void Packet<T_Packet>::copyPayload (void * dst)
+    {
+      static_cast<T_Packet*>(this)->copyPayload_impl (dst);
+    }
   };
 };
 #undef TRACE
-#endif // __util_fifo_packet_h__
+#endif // __util_fifo_Packet_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

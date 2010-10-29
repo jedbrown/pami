@@ -80,7 +80,7 @@ namespace PAMI
 
 #ifdef ENABLE_SHMEM_DEVICE
     typedef Fifo::FifoPacket <64, 1024>                            ShmemPacket;
-    typedef Fifo::LinearFifo<Counter::GccInPlaceCounter, ShmemPacket, 128> ShmemFifo;
+    typedef Fifo::LinearFifo<ShmemPacket, Counter::GccIndirCounter> ShmemFifo;
     typedef Device::ShmemDevice<ShmemFifo>                         ShmemDevice;
     typedef Device::Shmem::PacketModel<ShmemDevice>                ShmemPacketModel;
     typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice>  ShmemEagerBase;

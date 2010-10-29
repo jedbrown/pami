@@ -9,6 +9,23 @@
 /**
  * \file components/devices/shmem/ShmemPacketMessage.h
  * \brief ???
+ *
+ * Need several types of messages:
+ * 1. "immediate" fifo operation with local completion
+ * 2. "immediate" fifo operation with remote completion
+ * 3. "fence" fifo operation with local completion
+ * 4. "fence" fifo operation with remote completion
+ * 3. "fence" shaddr operation with local completion
+ *
+ * "immediate" means that the packet is written as soon as space is
+ * available in the fifo.
+ *
+ * "fence" means that the packet is only written after all previous
+ * packets from the origin context have been received.
+ *
+ * "fifo operation" means a packet is produced into the fifo.
+ *
+ * "shaddr operation" means a shared address read/write is performed.
  */
 
 #ifndef __components_devices_shmem_ShmemPacketMessage_h__
@@ -34,12 +51,28 @@ namespace PAMI
   {
     namespace Shmem
     {
-
-      template <class T_Device>
+      template < class T_Device, class T_Functor, bool T_Remote = false, bool T_Fence = false >
       class PacketMessage : public SendQueue::Message
       {
         protected:
-          // invoked by the thread object
+
+          static void remote_completion_intercept (pami_context_t   context,
+                                                   void           * cookie,
+                                                   pami_result_t    status)
+          {
+            PacketMessage * msg = (PacketMessage *) cookie;
+
+            size_t sequence = msg->_device->_fifo[msg->_fnum].lastPacketProduced();
+            msg->_device->postCompletion (msg->_state,
+                                          msg->_user_fn,
+                                          msg->_user_cookie,
+                                          msg->_fnum,
+                                          sequence);
+
+            return ;
+          };
+
+          /// invoked by the thread object
           /// \see SendQueue::Message::_work
           static pami_result_t __advance (pami_context_t context, void * cookie)
           {
@@ -47,146 +80,111 @@ namespace PAMI
             return msg->advance();
           };
 
+          inline pami_result_t write ()
+          {
+            // Attempt to write the packet into the fifo as soon as space
+            // becomes available.
+
+            while (_device->_fifo[_fnum].producePacket(_writer) == true)
+              {
+                if (_writer.isDone())
+                  {
+                    // This removes the work from the generic device.
+                    this->setStatus (PAMI::Device::Done);
+
+                    // This causes the message completion callback to be invoked.
+                    return PAMI_SUCCESS;
+                  }
+              }
+
+            return PAMI_EAGAIN;
+          };
+
           inline pami_result_t advance ()
           {
-            size_t sequence = 0;
-            TRACE_ERR((stderr, ">> PacketMessage::advance()\n"));
+            TRACE_ERR((stderr, ">> PacketMessage::advance(), device->isSendQueueEmpty(%zu) = %d\n", _fnum, _device->isSendQueueEmpty (_fnum)));
 
-            if (_device->writeSinglePacket (_fifo, _dispatch_id, _metadata, _metasize,
-                                            _iov, _niov, sequence) == PAMI_SUCCESS)
-              {
-                TRACE_ERR((stderr, "   PacketMessage::advance(), write single packet successful\n"));
-                this->setStatus (PAMI::Device::Done);
-                TRACE_ERR((stderr, "<< PacketMessage::advance(), return PAMI_SUCCESS\n"));
-                return PAMI_SUCCESS;
-              }
+            if (T_Fence == false)
+              return this->write ();
+
+            // Do not attempt to write the packet into the fifo until all
+            // previous packets from this origin context have been received.
+            if (! _device->activePackets(_fnum))
+              return this->write ();
 
             TRACE_ERR((stderr, "<< PacketMessage::advance(), return PAMI_EAGAIN\n"));
             return PAMI_EAGAIN;
-          }
-
-          inline PacketMessage (pami_work_function    work_func,
-                                void               * work_cookie,
-                                pami_event_function   fn,
-                                void               * cookie,
-                                T_Device           * device,
-                                size_t               fifo) :
-              SendQueue::Message (work_func, work_cookie, fn, cookie, device->getContextOffset()),
-              _device (device),
-              _fifo (fifo)
-          {};
-
+          };
 
         public:
           inline PacketMessage (pami_event_function   fn,
-                                void               * cookie,
-                                T_Device           * device,
-                                size_t               fifo) :
+                                void                * cookie,
+                                T_Device            * device,
+                                size_t                fnum,
+                                T_Functor           & writer) :
               SendQueue::Message (PacketMessage::__advance, this, fn, cookie, device->getContextOffset()),
               _device (device),
-              _fifo (fifo)
+              _fnum (fnum),
+              _writer (writer)
           {
-            TRACE_ERR((stderr, "<> PacketMessage::PacketMessage()\n"));
-          };
+            TRACE_ERR((stderr, ">> PacketMessage::PacketMessage()\n"));
 
-          inline void setHeader (uint16_t   dispatch_id,
-                                 void     * metadata,
-                                 size_t     metasize)
-          {
-            _dispatch_id = dispatch_id;
-            memcpy ((void *)&_metadata, metadata, metasize);
-            _metasize = metasize;
-          };
-
-          inline void setPayload (void * src, size_t bytes)
-          {
-            __iov.iov_base = src;
-            __iov.iov_len  = bytes;
-            _iov  = & __iov;
-            _niov = 1;
-          };
-
-          inline void setPayload (struct iovec * iov, size_t niov)
-          {
-            _iov = iov;
-            _niov = niov;
-          };
-
-          template <unsigned T_Niov>
-          inline void setPayload (struct iovec (&iov)[T_Niov])
-          {
-            _iov  = & iov[0];
-            _niov = T_Niov;
-          };
-
-        protected:
-
-          T_Device      * _device;
-          size_t          _fifo;
-
-          uint16_t        _dispatch_id;
-          size_t          _metasize;
-          uint8_t         _metadata[T_Device::metadata_size];
-
-          struct iovec  * _iov;
-          size_t          _niov;
-          struct iovec    __iov;
-      };  // PAMI::Device::PacketMessage class
-
-      template <class T_Device>
-      class MultiPacketMessage : public PacketMessage<T_Device>
-      {
-        protected:
-          static pami_result_t __advance (pami_context_t context, void * cookie)
-          {
-            MultiPacketMessage * msg = (MultiPacketMessage *) cookie;
-            return msg->advance();
-          };
-
-        public:
-          inline MultiPacketMessage (pami_event_function   fn,
-                                     void               * cookie,
-                                     T_Device           * device,
-                                     size_t               fifo) :
-              PacketMessage<T_Device> (MultiPacketMessage<T_Device>::__advance, (void *)this, fn, cookie, device, fifo)
-          {};
-
-          inline pami_result_t advance ()
-          {
-            size_t sequence = 0;
-            size_t bytes = MIN(this->__iov.iov_len, T_Device::payload_size);
-            TRACE_ERR((stderr, ">> MultiPacketMessage::advance() .. __iov.iov_len = %zu, T_Device::payload_size = %zu, bytes = %zu\n", this->__iov.iov_len, T_Device::payload_size, bytes));
-
-            while (this->_device->writeSinglePacket (this->_fifo, this->_dispatch_id,
-                                                     this->_metadata, this->_metasize,
-                                                     this->__iov.iov_base, bytes,
-                                                     sequence) == PAMI_SUCCESS)
+            if (T_Remote == true)
               {
-                TRACE_ERR((stderr, "   MultiPacketMessage::advance() .. this->__iov.iov_base = %p, this->__iov.iov_len = %zu, bytes = %zu\n", this->__iov.iov_base, this->__iov.iov_len, bytes));
-                if (this->__iov.iov_len <= bytes)
-                  {
-                    this->setStatus (PAMI::Device::Done);
-                    TRACE_ERR((stderr, "<< MultiPacketMessage::advance() .. done (== PAMI_SUCCESS)\n"));
-                    return PAMI_SUCCESS;
-                  }
-
-                uint8_t * tmp = (uint8_t *) this->__iov.iov_base;
-                this->__iov.iov_base = (void *)(tmp + bytes);
-                this->__iov.iov_len -= bytes;
-                bytes = MIN(this->__iov.iov_len, T_Device::payload_size);
-                TRACE_ERR((stderr, "   MultiPacketMessage::advance() .. update state, __iov.iov_base = %p, __iov.iov_len = %zu, bytes = %zu\n", this->__iov.iov_base, this->__iov.iov_len, bytes));
+                // Intercept the message completion callback and invoke the
+                // "post remote completion work" callback instead of the user
+                // callback when the message completes.
+                _user_fn       = fn;
+                _user_cookie   = cookie;
+                _cb.function   = remote_completion_intercept;
+                _cb.clientdata = (void *) this;
               }
 
-            TRACE_ERR((stderr, "<< MultiPacketMessage::advance() .. return PAMI_EAGAIN (== \"not done\")\n"));
-            return PAMI_EAGAIN;
+            TRACE_ERR((stderr, "<< PacketMessage::PacketMessage()\n"));
           };
 
-          inline void setPayload (void * src, size_t bytes)
+          inline PacketMessage (pami_event_function   fn,
+                                void                * cookie,
+                                T_Device            * device,
+                                size_t                fnum,
+                                uint16_t              dispatch_id,
+                                void                * metadata,
+                                size_t                metasize,
+                                void                * payload,
+                                size_t                bytes) :
+              SendQueue::Message (PacketMessage::__advance, this, fn, cookie, device->getContextOffset()),
+              _device (device),
+              _fnum (fnum),
+              _writer (dispatch_id)
           {
-            this->__iov.iov_base = src;
-            this->__iov.iov_len  = bytes;
+            TRACE_ERR((stderr, ">> PacketMessage::PacketMessage()\n"));
+
+            _writer.init (metadata, metasize, payload, bytes);
+
+            if (T_Remote == true)
+              {
+                // Intercept the message completion callback and invoke the
+                // "post remote completion work" callback instead of the user
+                // callback when the message completes.
+                _user_fn       = fn;
+                _user_cookie   = cookie;
+                _cb.function   = remote_completion_intercept;
+                _cb.clientdata = (void *) this;
+              }
+
+            TRACE_ERR((stderr, "<< PacketMessage::PacketMessage()\n"));
           };
-      };  // PAMI::Device::Shmem::MultiPacketMessage class
+
+        protected:
+
+          T_Device            * _device;
+          size_t                _fnum;
+          T_Functor             _writer;
+          uint8_t               _state[T_Device::completion_work_size];
+          pami_event_function   _user_fn;
+          void                * _user_cookie;
+
+      };  // PAMI::Device::PacketMessage class
     };
   };    // PAMI::Device namespace
 };      // PAMI namespace

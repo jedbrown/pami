@@ -175,6 +175,7 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Max number of contexts = %zu\n", max_contexts);
   } else {
     fprintf (stderr, "ERROR:  Max number of contexts (%zu) <= 0. Exiting\n", max_contexts);
+    PAMI_Client_destroy(client);
     return 1;
   }
 

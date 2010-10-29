@@ -504,4 +504,5 @@ void * PAMI::Device::Shmem::BgpShaddr::v2p (size_t   peer,
 #endif
 }
 #endif
+
 #endif /* __components_devices_shmem_bgp_BgpShaddr_h__ */

@@ -131,7 +131,7 @@ namespace PAMI
 			const char *key = NULL,
 			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
 	{
-
+//fprintf(stderr,">> SharedMemoryManager::memalign(), this = %p\n", this);
 		PAMI_assert_debugf(_attrs == PAMI_MM_NODESCOPE, "SharedMemoryManager not shared");
 		// May need to enforce uniquness at a higher level than just this
 		// PAMI job. May need to acquire a unique prefix from, say, Mapping
@@ -153,6 +153,9 @@ namespace PAMI
 		}
 		// ... use 'nkey' here-after...
 		//
+//fprintf(stderr,"   SharedMemoryManager::memalign(), key = '%s', nkey = '%s'\n", key, nkey);
+
+
 		if (alignment < _alignment) alignment = _alignment;
 		void *ptr = NULL;
 		bool first = false;
@@ -172,7 +175,7 @@ namespace PAMI
 		// start using the memory until we complete the init.
 		// Use a "counter mutex" that is initialized to 0, all but
 		// the first (based on O_EXCL) will wait on it.
-		// 
+		//
 
 		// use GCC atomics on the shared memory chunk, in order to
 		// synchronize init, and in free will need to ensure memory gets zeroed.
@@ -182,6 +185,7 @@ namespace PAMI
 
 		lrc = shm_open(nkey, O_CREAT | O_EXCL | O_RDWR, 0600);
 		first = (lrc != -1); // must be the first...
+//fprintf(stderr,"   SharedMemoryManager::memalign(), lrc = %d, first = %d\n", lrc, first);
 
 		if (first) {
 			fd = lrc;
@@ -216,6 +220,9 @@ namespace PAMI
 		}
 
 		_meta.release();
+
+//fprintf(stderr,"memalign(), init_fn = %p, first = %d, nkey = '%s'\n", init_fn, first, nkey);
+
 		if (init_fn) {
 			if (first) {
 				init_fn(alloc->userMem(), alloc->userSize(),

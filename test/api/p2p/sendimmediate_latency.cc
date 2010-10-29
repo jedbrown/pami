@@ -34,6 +34,11 @@
 //#define BUFSIZE 1024
 #endif
 
+#ifndef MAX_BUFSIZE
+#define MAX_BUFSIZE 2048
+#endif
+
+
 #undef TRACE_ERR
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)  //fprintf x
@@ -42,7 +47,7 @@
 volatile unsigned _send_active;
 volatile unsigned _recv_active;
 volatile unsigned _recv_iteration;
-char              _recv_buffer[BUFSIZE] __attribute__ ((__aligned__(16)));
+char              _recv_buffer[MAX_BUFSIZE] __attribute__ ((__aligned__(16)));
 
 size_t         _dispatch[100];
 unsigned       _dispatch_count;
@@ -106,8 +111,8 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
   _recv_iteration = 0;
   _send_active = 1;
 
-  char metadata[BUFSIZE];
-  char buffer[BUFSIZE];
+  char metadata[MAX_BUFSIZE];
+  char buffer[MAX_BUFSIZE];
 
   header_t header;
   header.sndlen = sndlen;
@@ -215,6 +220,18 @@ int main (int argc, char ** argv)
   result = PAMI_Client_query(client, &configuration,1);
   double tick = configuration.value.doubleval;
 
+  configuration.name = PAMI_DISPATCH_SEND_IMMEDIATE_MAX;
+  result = PAMI_Dispatch_query(context, _dispatch[0], &configuration,1);
+  size_t send_immediate_max = 256;
+  if (result == PAMI_SUCCESS)
+  {
+    send_immediate_max = configuration.value.intval;
+  }
+  else
+  {
+    fprintf (stderr, "Warning. Unable to query PAMI_DISPATCH_SEND_IMMEDIATE_MAX, using test default value %zu. result = %d\n", send_immediate_max, result);
+  }
+
   /* Display some test header information */
   if (_my_rank == 0)
   {
@@ -260,9 +277,10 @@ int main (int argc, char ** argv)
   char str[10240];
 //	fprintf(stdout,"starting the test\n") ;
   size_t sndlen;
-  for (sndlen = 0; sndlen < BUFSIZE; sndlen = sndlen*3/2+1)
+  for (sndlen = 0; sndlen < send_immediate_max; sndlen = sndlen*3/2+1)
   //sndlen = 40;
   {
+    //if (_my_rank == 0)
     int index = 0;
     index += sprintf (&str[index], "%10zd ", sndlen);
 

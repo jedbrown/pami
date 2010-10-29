@@ -39,10 +39,10 @@ namespace PAMI
                        void               * work_cookie) :
             PAMI::Device::Generic::GenericThread (work_func, work_cookie)
           {
-          }
+          };
       };  // PAMI::Device::Shmem::Work class
 
-      template <class T_Device>
+      template <class T_Fifo>
       class RecPacketWork : public Work
       {
         protected:
@@ -55,7 +55,7 @@ namespace PAMI
 
           inline pami_result_t advance_with_callback (pami_context_t context)
           {
-            if (_sequence <= _device->lastRecSequenceId(_fnum))
+            if (_sequence <= _fifo.lastPacketConsumed())
             {
               // Invoke the work completion callback
               _done_fn (context, _done_cookie, PAMI_SUCCESS);
@@ -75,7 +75,7 @@ namespace PAMI
 
           inline pami_result_t advance_with_status (pami_context_t context)
           {
-            if (_sequence <= _device->lastRecSequenceId(_fnum))
+            if (_sequence <= _fifo.lastPacketConsumed())
             {
               // Set the associated message status to "done". This will remove
               // the message from the head of the message queue and invoke any
@@ -92,47 +92,27 @@ namespace PAMI
 
         public:
 
-          inline RecPacketWork (T_Device            * device,
-                                size_t                sequence,
-                                size_t                fnum,
+          inline RecPacketWork (T_Fifo              & fifo,
                                 pami_event_function   fn,
-                                void                * cookie) :
+                                void                * cookie,
+                                size_t                sequence) :
             Work (__advance_with_callback, this),
-            _device (device),
+            _fifo (fifo),
             _sequence (sequence),
-            _fnum (fnum),
             _done_fn (fn),
             _done_cookie (cookie)
           {
-          }
-
-          inline RecPacketWork (T_Device                * device,
-                                size_t                    sequence,
-                                size_t                    fnum,
-                                Generic::GenericMessage * msg) :
-            Work (__advance_with_status, this),
-            _device (device),
-            _sequence (sequence),
-            _fnum (fnum),
-            _msg (msg)
-          {
-          }
-
-          inline void setSequenceId (size_t sequence)
-          {
-            _sequence = sequence;
-          }
+          };
 
         protected:
 
-          T_Device                * _device;
+          T_Fifo                  & _fifo;
           size_t                    _sequence;
-          size_t                    _fnum;
           pami_event_function       _done_fn;
           void                    * _done_cookie;
           Generic::GenericMessage * _msg;
-      };  // PAMI::Device::Shmem::RecPacketWork class
 
+      };  // PAMI::Device::Shmem::RecPacketWork class
     };    // PAMI::Device::Shmem namespace
   };      // PAMI::Device namespace
 };        // PAMI namespace

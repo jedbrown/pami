@@ -44,8 +44,8 @@ namespace PAMI
       public:
 
         inline Global () :
-	mapping(),
-	mm()
+	mapping()//,
+	//mm()
         {
           TRACE_ERR((stderr, ">> Global::Global()\n"));
 
@@ -72,7 +72,7 @@ namespace PAMI
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-          mm.init(shared_mm, size, 1, 1, 0, shmemfile);
+          //mm.init(shared_mm, size, 1, 1, 0, shmemfile);
 
           mapping.init(min, max, num, &ranks);
           PAMI::Topology::static_init(&mapping);
@@ -99,7 +99,7 @@ namespace PAMI
        public:
 
         PAMI::Mapping         mapping;
-	PAMI::Memory::GenMemoryManager mm;
+	//PAMI::Memory::GenMemoryManager mm;
 
     }; // PAMI::Global
 };     // PAMI

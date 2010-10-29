@@ -108,10 +108,16 @@ namespace PAMI
 
           };  // PAMI::Device::Shmem::SendQueue::Message class
 
-          inline SendQueue (PAMI::Device::Generic::Device & progress) :
+          inline SendQueue () :
               GenericDeviceMessageQueue (),
-              _progress (&progress)
+              _progress (NULL)
           {
+          };
+
+          inline void init (PAMI::Device::Generic::Device * progress)
+          {
+            TRACE_ERR((stderr, ">> SendQueue::init(%p) this=%p\n", progress, this));
+            _progress = progress;
           };
 
           /// \brief post the message to be advanced later
@@ -124,6 +130,7 @@ namespace PAMI
             TRACE_ERR((stderr, ">> SendQueue::post(%p)\n", msg));
 
             // Initialize the message for this queue
+            TRACE_ERR((stderr, "   SendQueue::post() progress = %p, this = %p\n", _progress, this));
             msg->setup (_progress, this);
 
             // If the "local" queue is empty, then post this message, and its

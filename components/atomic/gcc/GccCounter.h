@@ -84,37 +84,55 @@ namespace PAMI
 		return true;
 	}
 
+        inline void clone (GccIndirCounter & atomic)
+        {
+          _c = atomic._c;
+        };
+
         inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key)
         {
           TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
 	  pami_result_t rc;
-	  rc = mm->memalign((void **)&_addr, sizeof(*_addr), sizeof(*_addr), key);
+          rc = mm->memalign((void **)&_c, sizeof(*_c), sizeof(*_c), key, GccIndirCounter::gcc_initialize, (void *) this);
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get memory for GccIndirCounter");
-	  new (_addr) PAMI::Atomic::GccBuiltin();
+	  new (_c) PAMI::Atomic::GccBuiltin();
         }
         inline size_t fetch_impl()
         {
-          return _addr->fetch();
+          return _c->fetch();
         }
         inline size_t fetch_and_inc_impl()
         {
-          return _addr->fetch_and_inc();
+          return _c->fetch_and_inc();
         }
         inline size_t fetch_and_dec_impl()
         {
-          return _addr->fetch_and_dec();
+          return _c->fetch_and_dec();
         }
         inline size_t fetch_and_clear_impl()
         {
-          return _addr->fetch_and_clear();
+          return _c->fetch_and_clear();
         }
         inline void clear_impl()
         {
-          _addr->clear();
+          _c->clear();
         }
-        void *returnLock_impl() { return _addr; }
+        void *returnLock_impl() { return _c; }
       protected:
-        PAMI::Atomic::GccBuiltin *_addr;
+        static void gcc_initialize (void       * memory,
+                                    size_t       bytes,
+                                    const char * key,
+                                    unsigned     attributes,
+                                    void       * cookie)
+	      {
+          //fprintf(stderr,"GccIndirCounter::gcc_initialize() >>\n");
+          PAMI::Atomic::GccBuiltin * _c =
+            (PAMI::Atomic::GccBuiltin *) memory;
+          _c->clear();
+          //fprintf(stderr,"GccIndirCounter::gcc_initialize() <<\n");
+        };
+
+        PAMI::Atomic::GccBuiltin * _c;
     }; // class GccIndirCounter
 
   }; // Counter namespace

@@ -19,7 +19,7 @@
 #include "Arch.h"
 
 #include "components/memory/MemoryManager.h"
-#include "components/atomic/Counter.h"
+#include "components/atomic/CounterInterface.h"
 
 #include "util/fifo/Fifo.h"
 #include "util/fifo/Packet.h"
@@ -33,209 +33,269 @@ namespace PAMI
 {
   namespace Fifo
   {
-    template <class T_Atomic, class T_Packet, unsigned T_FifoSize>
-    class LinearFifo : public Fifo<LinearFifo <T_Atomic, T_Packet, T_FifoSize>, T_Packet >
+    template < class T_Packet, class T_Atomic, unsigned T_Size = 128 >
+    class LinearFifo : public Fifo <LinearFifo <T_Packet, T_Atomic, T_Size> >
     {
-      private:
-        class LinearFifoPacket : public T_Packet
-        {
-          public:
-            inline LinearFifoPacket () :
-                T_Packet ()
-            {
-              TRACE_ERR((stderr, "%s: size %zu, fifosize %d, sizeof(LinearFifoPacket) %zu, sizeof(T_Atomic) %zu\n", __PRETTY_FUNCTION__,  sizeof(*this),  T_FifoSize, sizeof(LinearFifoPacket),sizeof(T_Atomic)));
-#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-#else // !__pami_target_bgq__
-              setActive (false);
-#endif // !__pami_target_bgq__
-            };
-
-            inline ~LinearFifoPacket () {};
-
-            inline void reset ()
-            {
-              T_Packet::clear();
-#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-#else // !__pami_target_bgq__
-              setActive (false);
-#endif // !__pami_target_bgq__
-            };
-
-#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-            static const size_t public_header_bytes = T_Packet::headerSize_impl;
-#else // !__pami_target_bgq__
-            inline bool isActive ()
-            {
-              size_t * header = (size_t *) T_Packet::getHeader ();
-              return header[(T_Packet::headerSize_impl / sizeof(size_t))-1];
-            };
-            inline void setActive (bool active)
-            {
-              TRACE_ERR((stderr, "(%zu) >> LinearFifoPacket::setActive(%d)\n", __global.mapping.task(), active));
-              size_t * header = (size_t *) T_Packet::getHeader ();
-              header[(T_Packet::headerSize_impl / sizeof(size_t))-1] = active;
-              TRACE_ERR((stderr, "(%zu)    LinearFifoPacket::setActive(%d), header = %p, header[%zu] = %zu\n", __global.mapping.task(), active, header, (T_Packet::headerSize_impl / sizeof(size_t)) - 1, header[(T_Packet::headerSize_impl / sizeof(size_t))-1]));
-              TRACE_ERR((stderr, "(%zu) << LinearFifoPacket::setActive(%d)\n", __global.mapping.task(), active));
-            };
-
-            static const size_t public_header_bytes = T_Packet::headerSize_impl - sizeof(size_t);
-#endif // !__pami_target_bgq__
-        };
-
       public:
+
+        typedef T_Packet Packet;
+
+        friend class Fifo <LinearFifo <T_Packet, T_Atomic, T_Size> >;
+
+        static const size_t mask = T_Size - 1;
+
         inline LinearFifo () :
-            Fifo<LinearFifo <T_Atomic, T_Packet, T_FifoSize>, T_Packet> (),
-            _head (0),
+            Fifo <LinearFifo <T_Packet, T_Atomic, T_Size> > (),
+            _packet (NULL),
+            _active (NULL),
+            _head (NULL),
             _tail (),
-#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-      _active(NULL),
-#else // !__pami_target_bgq__
-#endif // !__pami_target_bgq__
-            _inj_wrap_count (0),
-            _last_rec_sequence (0)
-        {};
+            _last_packet_produced (0)
+        {
+          // How to compile-time-assert that the fifo length is a power of two?
+          //
+          // The following code is pretty lame .. but it works.
+          //COMPILE_TIME_ASSERT((T_Size==1)||(T_Size==2)||(T_Size==4)||(T_Size==8)||(T_Size==16)||(T_Size==32)||(T_Size==64)||(T_Size==128)||(T_Size==256)||(T_Size==1024)||(T_Size==2048)||(T_Size==4096)||(T_Size==8192)||(T_Size==16384)||(T_Size==32768));
+        };
 
         inline ~LinearFifo () {};
 
-        ///
-        /// \brief Initialize the linear fifo with a specific packet buffer.
-        ///
-        inline void init_impl (size_t clientid)
-        {
-          _head = 0;
-          _tail.init ();
-          _tail.fetch_and_clear ();
-
-          unsigned i;
-
-          for (i = 0; i < T_FifoSize; i++)
-            {
-              _packet[i].reset ();
-            }
-#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-	// since we currently wakeup all contexts if any are changed, this is fine.
-	// note, this needs to be done for all other process as well. and with a key...
-	__global._wuRegion_mm->memalign((void **)&_active, sizeof(void *),
-					T_FifoSize * sizeof(*_active),
-					NULL, PAMI::Memory::MemoryManager::memzero, NULL);
-	PAMI_assertf(_active, "Out of WAC Region memory allocating FIFO active flags");
-#endif // __pami_target_bgq__
-        }
-
-        inline T_Packet * nextInjPacket_impl (size_t & pktid)
-        {
-          TRACE_ERR((stderr, "(%zu) LinearFifo::nextInjPacket_impl() >>\n", __global.mapping.task()));
-          pktid = _tail.fetch_and_inc ();
-          TRACE_ERR((stderr, "(%zu) LinearFifo::nextInjPacket_impl() .. _tail.fetch_and_inc() => %zu, T_FifoSize = %d\n", __global.mapping.task(), pktid, T_FifoSize));
-
-          if (pktid < T_FifoSize)
-            {
-              return (T_Packet *) &_packet[pktid];
-            }
-
-          return NULL;
-        };
-
-        inline T_Packet * nextRecPacket_impl ()
-        {
-          //mem_barrier ();
-          //mem_sync();
-#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-    if (_active[_head])
-#else // !__pami_target_bgq__
-          TRACE_ERR((stderr, "(%zu) LinearFifo::nextRecPacket_impl() .. this = %p, _packet[%zu].isActive () = %d\n", __global.mapping.task(), this, _head, _packet[_head].isActive ()));
-          if (_packet[_head].isActive ())
-#endif // !__pami_target_bgq__
-            return (T_Packet *) &_packet[_head];
-
-          return (T_Packet *) NULL;
-        };
-
-        inline void consumePacket_impl ()
-        {
-#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-    _active[_head] = false;
-#else // !__pami_target_bgq__
-          TRACE_ERR((stderr, "(%zu) LinearFifo::consumePacket_impl() .. this = %p, _packet[%zu].isActive () = %d\n", __global.mapping.task(), this, _head, _packet[_head].isActive ()));
-                    //mem_barrier ();
-          //mem_sync();
-          _packet[_head].setActive (false);
-#endif // !__pami_target_bgq__
-          _last_rec_sequence++;
-
-          _head++;
-
-          // If this packet is the last packet in the fifo, reset the tail
-          // to the start of the fifo.
-          if (_head == T_FifoSize)
-            {
-              _head = 0;
-              //mem_sync ();
-                  mem_barrier ();
-              _tail.fetch_and_clear ();
-            }
-          //mem_barrier ();
-          //mem_sync();
-        };
-
-        inline void producePacket_impl (size_t pktid)
-        {
-          TRACE_ERR((stderr, "(%zu) >> LinearFifo::producePacket_impl(%zu)\n", __global.mapping.task(), pktid));
-
-          // This memory barrier forces all previous memory operations to
-          // complete (header writes, payload write, etc) before the packet is
-          // marked 'active'.  As soon as the receiving process sees that the
-          // 'active' attribute is set it will start to read the packet header
-          // and payload data.
-          //
-          // If this memory barrier is done *after* the packet is marked
-          // 'active', then the processor or memory system may still reorder
-          // any pending writes before the barrier, which could result in the
-          // receiving process reading the 'active' attribute and then reading
-          // stale packet header/payload data.
-          mem_barrier ();
-          //mem_sync();
-#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-    _active[pktid] = true;
-#else // !__pami_target_bgq__
-          _packet[pktid].setActive (true);
-#endif // !__pami_target_bgq__
-          //mem_barrier ();
-          //mem_sync();
-
-          TRACE_ERR((stderr, "(%zu) << LinearFifo::producePacket_impl(%zu)\n", __global.mapping.task(), pktid));
-        };
-
-        inline size_t nextInjSequenceId_impl ()
-        {
-          size_t index = _tail.fetch ();
-
-          if (index < T_FifoSize)
-            return index + _inj_wrap_count * T_FifoSize;
-
-          return (_inj_wrap_count + 1) * T_FifoSize;
-        }
-
-        inline size_t lastRecSequenceId_impl ()
-        {
-          return _last_rec_sequence;
-        }
-
-        static const size_t packet_header_size = T_Packet::headerSize_impl - sizeof(size_t);
-        static const size_t packet_payload_size = T_Packet::payloadSize_impl;
-
       protected:
-        LinearFifoPacket _packet[T_FifoSize];
-        size_t           _head;
-        T_Atomic         _tail;
-#if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
-  volatile bool *_active;
-#else // !__pami_target_bgq__
-#endif // !__pami_target_bgq__
 
-        size_t           _inj_wrap_count;
-        size_t           _last_rec_sequence;
+        // ---------------------------------------------------------------------
+        // PAMI::Fifo::Fifo interface implementation
+        // ---------------------------------------------------------------------
+
+        inline void initialize_impl (PAMI::Memory::MemoryManager * mm,
+                                     char                        * key)
+        {
+          TRACE_ERR((stderr, ">> LinearFifo::initialize_impl(%p, \"%s\")\n", mm, key));
+
+          // Initialize the tail atomic counter using the base key.
+          char atomic_key[PAMI::Memory::MMKEYSIZE];
+          snprintf (atomic_key, PAMI::Memory::MMKEYSIZE - 1, "%s-counter", key);
+          _tail.init (mm, atomic_key);
+
+          TRACE_ERR((stderr, "   LinearFifo::initialize_impl() after atomic init, before sync memalign\n"));
+
+          // Allocate an array of packets with the provided memory manager
+          // and key. The LinearFifo::packet_initialize() function is only
+          // invoked by the first process to allocate from the memory manager
+          // with this key. All other processes do not return from the
+          // memalign until the first process has completed the memory
+          // initialization.
+          //
+          // Allocation is for N packets, N active flags, 1 head counter,
+          // and 1 wrap counter.
+
+          mm->memalign ((void **)&_packet,
+                        sizeof(T_Packet),
+                        (sizeof(T_Packet) + sizeof(size_t)) * T_Size +
+                        sizeof(size_t) * 2,
+                        key,
+                        LinearFifo::packet_initialize,
+                        NULL);
+
+          TRACE_ERR((stderr, "   LinearFifo::initialize_impl() after sync memalign\n"));
+
+          _active = (size_t *) & _packet[T_Size];
+          _head = &_active[T_Size];
+          *(_head) = 0;
+
+          TRACE_ERR((stderr, "<< LinearFifo::initialize_impl(%p, \"%s\"), _active = %p, _head = %p, *_head = %zu\n", mm, key, _active, _head, *_head));
+        };
+
+        inline void initialize_impl (LinearFifo<T_Packet, T_Atomic, T_Size> & fifo)
+        {
+          TRACE_ERR((stderr, ">> LinearFifo::initialize_impl(LinearFifo &)\n"));
+          _tail.clone (fifo._tail);
+
+          _packet = fifo._packet;
+          _active = fifo._active;
+          _head = fifo._head;
+          _last_packet_produced = fifo._last_packet_produced;
+
+          TRACE_ERR((stderr, "<< LinearFifo::initialize_impl(LinearFifo &), _packet = %p, _active = %p, _head = %p, *_head = %zu, _last_packet_produced = %zu\n", _packet, _active, _head, *_head, _last_packet_produced));
+        };
+
+        inline void dumpPacket (size_t index)
+        {
+          char tmp[10240];
+          char * str = tmp;
+          size_t i = 0;
+
+          uint32_t * hdr = (uint32_t *) _packet[index].getHeader();
+          str += sprintf(str, "LinearFifo::dumpPacket.header  [%p,%4zu] ", hdr, packet_header_size_impl);
+          size_t bytes = 0;
+
+          while (bytes < packet_header_size_impl)
+            {
+              str += sprintf(str, "%08x ", hdr[i++]);
+              bytes += sizeof(uint32_t);
+
+              if (i % 4 == 0)
+                str += sprintf(str, "\nLinearFifo::dumpPacket.header  [%p]      ", &hdr[i]);
+            }
+
+          fprintf(stderr, "%s\n", tmp);
+
+          str = tmp;
+          uint32_t * payload = (uint32_t *) _packet[index].getPayload();
+          str += sprintf(str, "LinearFifo::dumpPacket.payload [%p,%4zu] ", payload, packet_payload_size_impl);
+          bytes = 0;
+          i = 0;
+
+          while (bytes < packet_payload_size_impl)
+            {
+              str += sprintf(str, "%08x ", payload[i++]);
+              bytes += sizeof(uint32_t);
+
+              if (i % 4 == 0)
+                str += sprintf(str, "\nLinearFifo::dumpPacket.payload [%p]      ", &payload[i]);
+            }
+
+          fprintf(stderr, "%s\n", tmp);
+        };
+
+        static const size_t packet_header_size_impl = T_Packet::header_size;
+
+        static const size_t packet_payload_size_impl = T_Packet::payload_size;
+
+        inline size_t lastPacketProduced_impl ()
+        {
+          return _last_packet_produced;
+        };
+
+        inline size_t lastPacketConsumed_impl ()
+        {
+          return *_head - 1;
+        };
+
+        ///
+        /// \param [in] packet Functor object that implements the PacketProducer interface
+        ///
+        /// \see PAMI::Fifo::Interface::PacketProducer
+        ///
+        template <class T_Producer>
+        inline bool producePacket_impl (T_Producer & packet)
+        {
+          TRACE_ERR((stderr, ">> LinearFifo::producePacket_impl(T_Producer &)\n"));
+
+          size_t index = _tail.fetch_and_inc ();
+
+          TRACE_ERR((stderr, "   LinearFifo::producePacket_impl(T_Producer &), index = %zu\n", index));
+
+          if (likely (index < T_Size))
+            {
+              //dumpPacket(index);
+              packet.produce (_packet[index]);
+              //dumpPacket(index);
+
+              // This memory barrier forces all previous memory operations to
+              // complete (header writes, payload write, etc) before the packet is
+              // marked 'active'.  As soon as the receiving process sees that the
+              // 'active' attribute is set it will start to read the packet header
+              // and payload data.
+              //
+              // If this memory barrier is done *after* the packet is marked
+              // 'active', then the processor or memory system may still reorder
+              // any pending writes before the barrier, which could result in the
+              // receiving process reading the 'active' attribute and then reading
+              // stale packet header/payload data.
+              mem_barrier();
+              _active[index] = 1;
+              //mem_barrier();
+
+              _last_packet_produced = index;
+
+              TRACE_ERR((stderr, "<< LinearFifo::producePacket_impl(T_Producer &), return true\n"));
+              return true;
+            }
+
+          TRACE_ERR((stderr, "<< LinearFifo::producePacket_impl(T_Producer &), return false\n"));
+          return false;
+        };
+
+        ///
+        /// \param [in] packet Functor object that implements the PacketConsumer interface
+        ///
+        /// \see PAMI::Fifo::Interface::PacketConsumer
+        ///
+        template <class T_Consumer>
+        inline bool consumePacket_impl (T_Consumer & packet)
+        {
+          TRACE_ERR((stderr, ">> LinearFifo::consumePacket_impl(T_Consumer &)\n"));
+
+          const size_t head = *(this->_head);
+          size_t index = head & LinearFifo::mask;
+
+          TRACE_ERR((stderr, "   LinearFifo::consumePacket_impl(T_Consumer &), head = %zu, index = %zu (LinearFifo::mask = %p)\n", head, index, (void *)LinearFifo::mask));
+          if (_active[index] == 1)
+            {
+              //dumpPacket(head);
+              packet.consume (_packet[index]);
+              //dumpPacket(head);
+
+              _active[index] = 0;
+              *(this->_head) = head + 1;
+
+              // If this packet is the last packet in the fifo, reset the tail
+              // to the start of the fifo.
+              if (index == (T_Size - 1))
+                {
+                  mem_barrier();
+                  _tail.clear();
+                }
+
+              TRACE_ERR((stderr, "<< LinearFifo::consumePacket_impl(T_Consumer &), return true\n"));
+              return true;
+            }
+
+          TRACE_ERR((stderr, "<< LinearFifo::consumePacket_impl(T_Consumer &), return false\n"));
+          return false;
+        };
+
+      private:
+
+        ///
+        /// \brief Initialize the packet resources
+        ///
+        /// \see PAMI::Memory::MM_INIT_FN
+        ///
+        static void packet_initialize (void       * memory,
+                                       size_t       bytes,
+                                       const char * key,
+                                       unsigned     attributes,
+                                       void       * cookie)
+        {
+          TRACE_ERR((stderr, ">> LinearFifo::packet_initialize(%p, %zu, \"%s\", %d, %p)\n", memory, bytes, key, attributes, cookie));
+          T_Packet * packet = (T_Packet *) memory;
+          size_t * active = (size_t *) & packet[T_Size];
+
+          size_t i;
+
+          for (i = 0; i < T_Size; i++)
+            {
+              new (&packet[i]) T_Packet();
+              active[i] = 0;
+            }
+          TRACE_ERR((stderr, "<< LinearFifo::packet_initialize(%p, %zu, \"%s\", %d, %p)\n", memory, bytes, key, attributes, cookie));
+        }
+
+        // -----------------------------------------------------------------
+        // Located in shared memory
+        // -----------------------------------------------------------------
+        T_Packet     * _packet;
+        size_t       * _active;
+        size_t       * _head;
+
+        // -----------------------------------------------------------------
+        // Located in-place
+        // -----------------------------------------------------------------
+        T_Atomic       _tail;
+        size_t         _last_packet_produced;
     };
+
   };
 };
 #undef TRACE_ERR

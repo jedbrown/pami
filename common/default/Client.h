@@ -11,7 +11,7 @@
 #include "components/memory/shmem/SharedMemoryManager.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  fprintf x
+#define TRACE_ERR(x)  //fprintf x
 #endif
 
 namespace PAMI
@@ -27,8 +27,8 @@ namespace PAMI
         inline Client (const char * name, pami_client_t client, pami_result_t &result) :
             _client (client),
             _references (1),
-            _ncontexts (0),
-            _mm ()
+            _ncontexts (0)//,
+            //_mm (1, __global.shared_mm)
         {
           TRACE_ERR((stderr, ">> Client::Client(), this = %p\n", this));
 
@@ -38,7 +38,6 @@ namespace PAMI
           // Set the client name string.
           memset ((void *)_name, 0x00, sizeof(_name));
           strncpy (_name, name, sizeof(_name) - 1);
-	  initializeMemoryManager();
 
           result = PAMI_SUCCESS;
           TRACE_ERR((stderr, "<< Client::Client()\n"));
@@ -321,7 +320,7 @@ namespace PAMI
         char            _name[256];
 
         Memory::GenMemoryManager _mm;
-
+#if 0
         inline void initializeMemoryManager ()
         {
           size_t bytes     = 1024 * 1024;
@@ -338,7 +337,7 @@ namespace PAMI
 
           return;
         }
-
+#endif
     }; // end class PAMI::Common::Client
   }; // end namespace PAMI::Common
 }; // end namespace PAMI

@@ -67,7 +67,7 @@ namespace PAMI
         {
           TRACE_ERR((stderr, ">> Client::createContext_impl()\n"));
         //_context_list->lock ();
-        int n = ncontexts;
+        size_t n = ncontexts;
 
         if (_ncontexts != 0)
           {
@@ -103,7 +103,9 @@ namespace PAMI
           {
             context[x] = (pami_context_t) & _contexts[x];
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                            &_platdevs, __global.shared_mm, bytes);
+                                            &_platdevs,
+                                            &_mm, //__global.shared_mm,
+                                            bytes);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }

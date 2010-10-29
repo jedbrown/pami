@@ -23,6 +23,7 @@
 
 #include "components/devices/PacketInterface.h"
 #include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemPacket.h"
 #include "components/devices/shmem/ShmemPacketMessage.h"
 
 #ifndef TRACE_ERR
@@ -48,130 +49,122 @@ namespace PAMI
       /// \see ShmemPacketDevice
       ///
       template <class T_Device>
-      class PacketModel : public Interface::PacketModel < PacketModel<T_Device>, T_Device, sizeof(Shmem::PacketMessage<T_Device>) >
+      class PacketModel : public Interface::PacketModel < PacketModel<T_Device>, T_Device, 512 >
       {
         public:
           ///
-          /// \brief Construct a Common Device Interface shared memory packet model.
+          /// \brief Construct a shared memory device packet model.
           ///
-          /// \param[in] device  Shared memory device
+          /// \param [in] device  Shared memory device
           ///
           PacketModel (T_Device & device) :
-              Interface::PacketModel < PacketModel<T_Device>, T_Device, sizeof(Shmem::PacketMessage<T_Device>) > (device),
+              Interface::PacketModel < PacketModel<T_Device>, T_Device, 512 > (device),
               _device (device)
           {
-            COMPILE_TIME_ASSERT(sizeof(Shmem::PacketMessage<T_Device>) == sizeof(MultiPacketMessage<T_Device>));
+            //COMPILE_TIME_ASSERT(sizeof(Shmem::PacketMessage<T_Device>) == sizeof(MultiPacketMessage<T_Device>));
           };
 
-#ifdef EMULATE_UNRELIABLE_SHMEM_DEVICE
-          static const bool   reliable_packet_model             = false;
-#else
-          static const bool   reliable_packet_model             = true;
-#endif
-          static const bool   deterministic_packet_model        = true;
+          static const bool   reliable_packet_model             = T_Device::reliable;
+          static const bool   deterministic_packet_model        = T_Device::deterministic;
+
           static const size_t packet_model_metadata_bytes       = T_Device::metadata_size;
           static const size_t packet_model_multi_metadata_bytes = T_Device::metadata_size;
           static const size_t packet_model_payload_bytes        = T_Device::payload_size;
           static const size_t packet_model_immediate_bytes      = T_Device::payload_size;
-          static const size_t packet_model_state_bytes          = sizeof(Shmem::PacketMessage<T_Device>);
+          static const size_t packet_model_state_bytes          = 512;
 
           pami_result_t init_impl (size_t                      dispatch,
-                                  Interface::RecvFunction_t   direct_recv_func,
-                                  void                      * direct_recv_func_parm,
-                                  Interface::RecvFunction_t   read_recv_func,
-                                  void                      * read_recv_func_parm)
+                                   Interface::RecvFunction_t   direct_recv_func,
+                                   void                      * direct_recv_func_parm,
+                                   Interface::RecvFunction_t   read_recv_func,
+                                   void                      * read_recv_func_parm)
           {
             return _device.registerRecvFunction (dispatch, direct_recv_func, direct_recv_func_parm, _dispatch_id);
           };
 
-          inline bool postPacket_impl (uint8_t              (&state)[sizeof(Shmem::PacketMessage<T_Device>)],
+          inline bool postPacket_impl (uint8_t               (&state)[512],
                                        pami_event_function   fn,
-                                       void               * cookie,
-                                       size_t           target_task,
-                                       size_t               target_offset,
-                                       void               * metadata,
-                                       size_t               metasize,
-                                       struct iovec_t     * iov,
-                                       size_t               niov)
+                                       void                * cookie,
+                                       size_t                target_task,
+                                       size_t                target_offset,
+                                       void                * metadata,
+                                       size_t                metasize,
+                                       struct iovec_t      * iov,
+                                       size_t                niov)
           {
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(1)\n"));
-            size_t sequence;
             size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            PacketWriter<struct iovec_t> writer (_dispatch_id);
+            writer.init (metadata, metasize, iov, niov);
 
-            if (_device.isSendQueueEmpty (fnum) &&
-                _device.writeSinglePacket (fnum, _dispatch_id, metadata, metasize,
-                                           iov, niov, sequence) == PAMI_SUCCESS)
+            if (_device.isSendQueueEmpty (fnum))
               {
-                TRACE_ERR((stderr, "   PacketModel::postPacket_impl(1), write single packet successful\n"));
+                if (_device.fifo[fnum].producePacket(writer))
+                  {
+                    if (fn) fn (_context, cookie, PAMI_SUCCESS);
 
-                if (fn) fn (_context, cookie, PAMI_SUCCESS);
-
-                TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(1), return true\n"));
-                return true;
+                    TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(1), return true\n"));
+                    return true;
+                  }
               }
 
-            TRACE_ERR((stderr, "   PacketModel::postPacket_impl(1), construct message object\n"));
-            Shmem::PacketMessage<T_Device> * obj = (Shmem::PacketMessage<T_Device> *) & state[0];
-            new (obj) Shmem::PacketMessage<T_Device> (_device.getQS(fnum), fn, cookie, &_device, fnum);
-            obj->setHeader (_dispatch_id, metadata, metasize);
-            obj->setPayload (iov, niov);
-            TRACE_ERR((stderr, "   PacketModel::postPacket_impl(1), do post\n"));
-            _device.post(fnum, obj);
+            // Send queue is not empty or not all packets were written to the
+            // fifo. Construct a message and post to device
+            TRACE_ERR((stderr, "   PacketModel::postPacket_impl(1), post message to device\n"));
+            COMPILE_TIME_ASSERT(sizeof(PacketMessage<T_Device, PacketWriter<struct iovec_t> >) <= packet_model_state_bytes);
+
+            PacketMessage<T_Device, PacketWriter<struct iovec_t> > * msg =
+            (PacketMessage<T_Device, PacketWriter<struct iovec_t> > *) & state[0];
+            new (msg) PacketMessage<T_Device, PacketWriter<struct iovec_t> > (fn, cookie, &_device, fnum, writer);
+            _device.post (fnum, msg);
 
             TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(1), return false\n"));
             return false;
           };
 
           template <unsigned T_Niov>
-          inline bool postPacket_impl (uint8_t              (&state)[sizeof(Shmem::PacketMessage<T_Device>)],
+          inline bool postPacket_impl (uint8_t               (&state)[512],
                                        pami_event_function   fn,
-                                       void               * cookie,
-                                       size_t           target_task,
-                                       size_t               target_offset,
-                                       void               * metadata,
-                                       size_t               metasize,
-                                       struct iovec         (&iov)[T_Niov])
+                                       void                * cookie,
+                                       size_t                target_task,
+                                       size_t                target_offset,
+                                       void                * metadata,
+                                       size_t                metasize,
+                                       struct iovec          (&iov)[T_Niov])
           {
-#ifdef ERROR_CHECKS
-            {
-              unsigned i;
-              size_t bytes = 0;
-
-              for (i = 0; i < T_Niov; i++) bytes += iov[i].iov_len;
-
-              PAMI_assert(bytes <= packet_model_payload_bytes);
-            }
-#endif
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(2), T_Niov = %d\n", T_Niov));
-            size_t sequence;
             size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            PacketIovecWriter<T_Niov> writer (_dispatch_id);
+            writer.init (metadata, metasize, iov);
 
-            if (_device.isSendQueueEmpty (fnum) &&
-                _device.writeSinglePacket (fnum, _dispatch_id, metadata, metasize,
-                                           iov, sequence) == PAMI_SUCCESS)
+            if (_device.isSendQueueEmpty (fnum))
               {
-                if (fn) fn (_context, cookie, PAMI_SUCCESS);
+                if (_device._fifo[fnum].producePacket(writer))
+                  {
+                    if (fn) fn (_context, cookie, PAMI_SUCCESS);
 
-                TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(2), T_Niov = %d, return true\n", T_Niov));
-                return true;
+                    return true;
+                  }
               }
 
-            TRACE_ERR((stderr, "   PacketModel::postPacket_impl(2), T_Niov = %d\n", T_Niov));
-            Shmem::PacketMessage<T_Device> * obj = (Shmem::PacketMessage<T_Device> *) & state[0];
-            new (obj) Shmem::PacketMessage<T_Device> (fn, cookie, &_device, fnum);
-            obj->setHeader (_dispatch_id, metadata, metasize);
-            obj->setPayload (iov);
-            TRACE_ERR((stderr, "   PacketModel::postPacket_impl(2), T_Niov = %d, before post\n", T_Niov));
-            _device.post (fnum, obj);
+            // Send queue is not empty or not all packets were written to the
+            // fifo. Construct a message and post to device
+            TRACE_ERR((stderr, "   PacketModel::postPacket_impl(2), post message to device\n"));
+            COMPILE_TIME_ASSERT(sizeof(PacketMessage<T_Device, PacketIovecWriter<T_Niov> >) <= packet_model_state_bytes);
 
-            TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(2), T_Niov = %d, return false\n", T_Niov));
+            PacketMessage<T_Device, PacketIovecWriter<T_Niov> > * msg =
+              (PacketMessage<T_Device, PacketIovecWriter<T_Niov> > *) & state[0];
+            new (msg) PacketMessage<T_Device, PacketIovecWriter<T_Niov> > (fn, cookie, &_device, fnum, writer);
+            _device.post (fnum, msg);
+
+            TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(2), return false\n"));
             return false;
           };
 
-          inline bool postPacket_impl (uint8_t              (&state)[sizeof(Shmem::PacketMessage<T_Device>)],
-                                       pami_event_function   fn,
+          inline bool postPacket_impl (uint8_t              (&state)[512],
+                                       pami_event_function  fn,
                                        void               * cookie,
-                                       size_t           target_task,
+                                       size_t               target_task,
                                        size_t               target_offset,
                                        void               * metadata,
                                        size_t               metasize,
@@ -179,161 +172,95 @@ namespace PAMI
                                        size_t               length)
           {
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(0)\n"));
-            size_t sequence;
             size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            PacketWriter<void> writer (_dispatch_id);
+            writer.init (metadata, metasize, payload, length);
 
-            if (_device.isSendQueueEmpty (fnum) &&
-                _device.writeSinglePacket (fnum, _dispatch_id, metadata, metasize,
-                                           payload, length, sequence) == PAMI_SUCCESS)
+            if (_device.isSendQueueEmpty (fnum))
               {
-                TRACE_ERR((stderr, "   PacketModel::postPacket_impl(0), after write single packet\n"));
+                if (_device._fifo[fnum].producePacket(writer))
+                  {
+                    if (fn) fn (_context, cookie, PAMI_SUCCESS);
 
-                if (fn) fn (_device.getContext(), cookie, PAMI_SUCCESS);
-
-                TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(0), return true\n"));
-                return true;
+                    TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(0), return true\n"));
+                    return true;
+                  }
               }
 
-            TRACE_ERR((stderr, "   PacketModel::postPacket_impl(0), before message constructor\n"));
-            Shmem::PacketMessage<T_Device> * obj = (Shmem::PacketMessage<T_Device> *) & state[0];
-            new (obj) Shmem::PacketMessage<T_Device> (fn, cookie, &_device, fnum);
-            obj->setHeader (_dispatch_id, metadata, metasize);
-            obj->setPayload (payload, length);
-            TRACE_ERR((stderr, "   PacketModel::postPacket_impl(0), before device post\n"));
-            _device.post(fnum, obj);
+            // Send queue is not empty or not all packets were written to the
+            // fifo. Construct a message and post to device
+            TRACE_ERR((stderr, "   PacketModel::postPacket_impl(0), post message to device\n"));
+            COMPILE_TIME_ASSERT(sizeof(PacketMessage<T_Device, PacketWriter<void> >) <= packet_model_state_bytes);
+
+            PacketMessage<T_Device, PacketWriter<void> > * msg =
+              (PacketMessage<T_Device, PacketWriter<void> > *) & state[0];
+            new (msg) PacketMessage<T_Device, PacketWriter<void> > (fn, cookie, &_device, fnum, writer);
+            _device.post (fnum, msg);
 
             TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(0), return false\n"));
             return false;
           };
 
           template <unsigned T_Niov>
-          inline bool postPacket_impl (size_t     target_task,
+          inline bool postPacket_impl (size_t         target_task,
                                        size_t         target_offset,
                                        void         * metadata,
                                        size_t         metasize,
                                        struct iovec   (&iov)[T_Niov])
           {
-#ifdef ERROR_CHECKS
-            {
-              unsigned i;
-              size_t bytes = 0;
-
-              for (i = 0; i < T_Niov; i++) bytes += iov[i].iov_len;
-
-              PAMI_assert(bytes <= packet_model_payload_bytes);
-            }
-#endif
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(\"immediate\")\n"));
-            size_t sequence;
             size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
-            TRACE_ERR((stderr, "   PacketModel::postPacket_impl(\"immediate\") .. after _device.fnum() and _device.task2peer(), fnum = %zu\n", fnum));
-            return (_device.isSendQueueEmpty (fnum) &&
-                    _device.writeSinglePacket (fnum, _dispatch_id,
-                                               metadata, metasize, iov,
-                                               sequence) == PAMI_SUCCESS);
+
+            if (_device.isSendQueueEmpty (fnum))
+              {
+                PacketIovecWriter<T_Niov> writer (_dispatch_id);
+                writer.init (metadata, metasize, iov);
+                bool result = _device._fifo[fnum].producePacket(writer);
+
+                TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(\"immediate\"), return %d\n", result));
+                return result;
+              }
+
+            TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(\"immediate\"), return false\n"));
+            return false;
           };
 
-          inline bool postMultiPacket_impl (uint8_t              (&state)[sizeof(MultiPacketMessage<T_Device>)],
+          inline bool postMultiPacket_impl (uint8_t               (&state)[512],
                                             pami_event_function   fn,
-                                            void               * cookie,
-                                            size_t           target_task,
-                                            size_t               target_offset,
-                                            void               * metadata,
-                                            size_t               metasize,
-                                            void               * payload,
-                                            size_t               length)
+                                            void                * cookie,
+                                            size_t                target_task,
+                                            size_t                target_offset,
+                                            void                * metadata,
+                                            size_t                metasize,
+                                            void                * payload,
+                                            size_t                length)
           {
             TRACE_ERR((stderr, ">> PacketModel::postMultiPacket_impl()\n"));
-            size_t sequence, fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            MultiPacketWriter<void> writer (_dispatch_id);
+            writer.init (metadata, metasize, payload, length);
 
-            uint8_t * src = (uint8_t *) payload;
-            size_t bytes_to_write = length;
-
-            if (likely(_device.isSendQueueEmpty (fnum)))
+            if (_device.isSendQueueEmpty (fnum))
               {
-                TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), send queue is empty, bytes_to_write = %zu\n", bytes_to_write));
+                while ((_device._fifo[fnum].producePacket(writer) == true) && (writer._length != 0));
 
-                // write as many full packets as possible
-                while (bytes_to_write >= packet_model_payload_bytes)
-                {
-                  TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), write a full packet, src = %p, bytes_to_write = %zu\n", src, bytes_to_write));
-                  if (_device.writeSinglePacket (fnum, _dispatch_id, metadata, metasize,
-                                                 (void *) src,
-                                                 //packet_model_payload_bytes,
-                                                 sequence) == PAMI_SUCCESS)
+                if (writer._length == 0)
                   {
-                    src += packet_model_payload_bytes;
-                    bytes_to_write -= packet_model_payload_bytes;
-                  }
-                  else
-                  {
-                    // no space in fifo, construct message and post to device
-                    TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), not able to write all of the full packets to the fifo\n"));
-                    MultiPacketMessage<T_Device> * msg = (MultiPacketMessage<T_Device> *) & state[0];
-                    new (msg) MultiPacketMessage<T_Device> (fn, cookie, &_device, fnum);
-                    msg->setHeader (_dispatch_id, metadata, metasize);
-                    msg->setPayload ((void *) src, bytes_to_write);
-
-                    TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), before post\n"));
-                    _device.post (fnum, msg);
-
-                    TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return false\n"));
-                    return false;
-                  }
-                }
-
-                TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), after writing all full packets, src = %p, bytes_to_write = %zu\n", src, bytes_to_write));
-                // write the "tail" packet
-                if (bytes_to_write > 0)
-                {
-                  if (_device.writeSinglePacket (fnum, _dispatch_id, metadata, metasize,
-                                                 src, bytes_to_write, sequence) == PAMI_SUCCESS)
-                  {
-                    TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), all packets were written\n"));
-
-                    // all packets were written to the fifo, invoke callback function
-                    if (fn) fn (_device.getContext(), cookie, PAMI_SUCCESS);
+                    if (fn) fn (_context, cookie, PAMI_SUCCESS);
 
                     TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return true\n"));
                     return true;
                   }
-                  else
-                  {
-                    // no space in fifo, construct message and post to device
-                    TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), not able to write the tail packet to the fifo\n"));
-                    MultiPacketMessage<T_Device> * msg = (MultiPacketMessage<T_Device> *) & state[0];
-                    new (msg) MultiPacketMessage<T_Device> (fn, cookie, &_device, fnum);
-                    msg->setHeader (_dispatch_id, metadata, metasize);
-                    msg->setPayload ((void *) src, bytes_to_write);
-
-                    TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), before post\n"));
-                    _device.post (fnum, msg);
-
-                    TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return false\n"));
-                    return false;
-                  }
-                }
-                else // bytes_to_write == 0
-                {
-                  TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), all packets were written\n"));
-
-                  // all packets were written to the fifo, invoke callback function
-                  if (fn) fn (_device.getContext(), cookie, PAMI_SUCCESS);
-
-                  TRACE_ERR((stderr, "<< %s:%d %s(), return true\n", __FILE__, __LINE__, __FUNCTION__));
-                  return true;
-                }
               }
 
-            // send queue is not empty, construct a message and post to device
-            TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), send queue is not empty\n"));
+            // Send queue is not empty or not all packets were written to the
+            // fifo. Construct a message and post to device
+            TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), post message to device\n"));
+            COMPILE_TIME_ASSERT(sizeof(PacketMessage<T_Device, MultiPacketWriter<void> >) <= packet_model_state_bytes);
 
-            MultiPacketMessage<T_Device> * msg = (MultiPacketMessage<T_Device> *) & state[0];
-            new (msg) MultiPacketMessage<T_Device> (fn, cookie, &_device, fnum);
-            msg->setHeader (_dispatch_id, metadata, metasize);
-            msg->setPayload (payload, length);
-
-            TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), before post\n"));
+            PacketMessage<T_Device, MultiPacketWriter<void> > * msg =
+              (PacketMessage<T_Device, MultiPacketWriter<void> > *) & state[0];
+            new (msg) PacketMessage<T_Device, MultiPacketWriter<void> > (fn, cookie, &_device, fnum, writer);
             _device.post (fnum, msg);
 
             TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return false\n"));
@@ -342,8 +269,8 @@ namespace PAMI
 
         protected:
 
-          T_Device      & _device;
-          uint16_t        _dispatch_id;
+          T_Device       & _device;
+          uint16_t         _dispatch_id;
           pami_context_t   _context;
 
       };  // PAMI::Device::Shmem::PacketModel class

@@ -28,149 +28,69 @@ namespace PAMI
 {
   namespace Fifo
   {
-      template <unsigned T_HeaderSize, unsigned T_PacketSize>
-      class FifoPacket : public Packet<FifoPacket <T_HeaderSize, T_PacketSize> >
-      {
-        public:
-          inline FifoPacket () :
-              Packet<FifoPacket <T_HeaderSize, T_PacketSize> > ()
-          {
-            COMPILE_TIME_ASSERT(T_HeaderSize%sizeof(pami_quad_t)==0);
-            COMPILE_TIME_ASSERT(T_PacketSize%sizeof(pami_quad_t)==0);
-          };
+    ///
+    /// \brief Simple packet implementation
+    ///
+    /// \note The packet payload size is the entire packet size less the
+    ///       packet header size.
+    ///
+    /// \tparam T_HeaderSize Specifies the number of bytes in the packet header
+    /// \tparam T_PacketSize Specifies the number of bytes in the entire packet
+    ///
+    template <unsigned T_HeaderSize, unsigned T_PacketSize>
+    class FifoPacket : public Packet<FifoPacket <T_HeaderSize, T_PacketSize> >
+    {
+      public:
 
-          inline void clear_impl ()
-          {
-            memset ((void *)&_data[0], 0, T_PacketSize);
-          }
+        friend class Packet<FifoPacket <T_HeaderSize, T_PacketSize> >;
 
-          inline void * getHeader_impl ()
-          {
-            return (void *) &_data[0];
-          };
+        inline FifoPacket () :
+            Packet<FifoPacket <T_HeaderSize, T_PacketSize> > ()
+        {};
 
-          inline void copyHeader_impl (void * dst)
-          {
-            // Constant-expression branch should be optimized out by the compiler.
-            if (sizeof(size_t) == 8)
-            {
-              size_t i, n = T_HeaderSize >> 3;
-              size_t * d = (size_t *) dst;
-              size_t * s = (size_t *) _data;
-              for (i=0; i<n; i+=2)
-              {
-                d[i]   = s[i];
-                d[i+1] = s[i+1];
-              }
-            }
-            else if (sizeof(size_t) == 4)
-            {
-              size_t i, n = T_HeaderSize >> 2;
-              size_t * d = (size_t *) dst;
-              size_t * s = (size_t *) _data;
-              for (i=0; i<n; i+=4)
-              {
-                d[i]   = s[i];
-                d[i+1] = s[i+1];
-                d[i+2] = s[i+2];
-                d[i+3] = s[i+3];
-              }
-            }
-            else
-            {
-              memcpy (dst, (void *)_data, T_HeaderSize);
-            }
-#if 0 // buggy!
-            if(likely((size_t)dst & 0x0f == 0))
-              Type<pami_quad_t>::copy<T_HeaderSize>((pami_quad_t *) dst, _data);
-            else
-              Type<size_t>::copy<T_HeaderSize>((size_t *) dst, (size_t *) _data);
-#endif
-          };
+      protected:
 
-          inline void writeHeader_impl (void * src)
-          {
-            // Constant-expression branch should be optimized out by the compiler.
-            if (sizeof(size_t) == 8)
-            {
-              size_t i, n = T_HeaderSize >> 3;
-              size_t * d = (size_t *) _data;
-              size_t * s = (size_t *) src;
-              for (i=0; i<n; i+=2)
-              {
-                d[i]   = s[i];
-                d[i+1] = s[i+1];
-              }
-            }
-            else if (sizeof(size_t) == 4)
-            {
-              size_t i, n = T_HeaderSize >> 2;
-              size_t * d = (size_t *) _data;
-              size_t * s = (size_t *) src;
-              for (i=0; i<n; i+=4)
-              {
-                d[i]   = s[i];
-                d[i+1] = s[i+1];
-                d[i+2] = s[i+2];
-                d[i+3] = s[i+3];
-              }
-            }
-            else
-            {
-              memcpy ((void *)_data, src, T_HeaderSize);
-            }
-#if 0 // buggy!
-            if(likely(((size_t)src & 0x0f) == 0))
-              Type<pami_quad_t>::copy<T_HeaderSize>(_data, (pami_quad_t *) src);
-            else
-              Type<size_t>::copy<T_HeaderSize>((size_t *) _data, (size_t *) src);
-#endif
-          };
+        inline void clear_impl ()
+        {
+          memset ((void *)&_data[0], 0, T_PacketSize);
+        }
 
-          inline void * getPayload ()
-          {
-            return (void *) &_data[T_HeaderSize/sizeof(pami_quad_t)];
-          };
+        inline void * getHeader_impl ()
+        {
+          return (void *) &_data[0];
+        };
 
-          inline void copyPayload_impl (void * addr)
-          {
-            TRACE((stderr, "FifoPacket::copyPayload_impl(%p), sizeof(size_t) = %zu, T_PacketSize = %zu, T_HeaderSize = %zu, &_data[T_HeaderSize/sizeof(pami_quad_t)] = %p\n", addr, sizeof(size_t), T_PacketSize, T_HeaderSize, &_data[T_HeaderSize/sizeof(pami_quad_t)]));
-#if 0
-            if(likely((size_t)addr & 0x0f == 0))
-              Type<pami_quad_t>::copy<T_PacketSize-T_HeaderSize> ((pami_quad_t *) addr, &_data[T_HeaderSize]);
-            else
-              Type<size_t>::copy<T_PacketSize-T_HeaderSize> ((size_t *) addr, (size_t *) &_data[T_HeaderSize]);
-#else
-            if (sizeof(size_t) == 4)
-            {
-              size_t * src = (size_t *) addr;
-              size_t * dst = (size_t *) &_data[T_HeaderSize/sizeof(pami_quad_t)];
-              size_t i, n = (T_PacketSize-T_HeaderSize) >> 2;
-              for (i=0; i<n; i++) dst[i] = src[i];
-            }
-            else if (sizeof(size_t) == 8)
-            {
-              size_t * src = (size_t *) addr;
-              size_t * dst = (size_t *) &_data[T_HeaderSize/sizeof(pami_quad_t)];
-              size_t i, n = (T_PacketSize-T_HeaderSize) >> 3;
-              for (i=0; i<n; i++) dst[i] = src[i];
-            }
-            else
-            {
-              memcpy ((void *) &_data[T_HeaderSize/sizeof(pami_quad_t)], addr, T_PacketSize-T_HeaderSize);
-            }
-#endif
-          };
+        inline void copyHeader_impl (void * dst)
+        {
+          memcpy (dst, (void *)_data, T_HeaderSize);
+        };
 
-          static const size_t headerSize_impl  = T_HeaderSize;
-          static const size_t payloadSize_impl = T_PacketSize - T_HeaderSize;
-        private:
-          pami_quad_t _data[T_PacketSize/sizeof(pami_quad_t)];
-      };
+        inline void writeHeader_impl (void * src)
+        {
+          memcpy ((void *)_data, src, T_HeaderSize);
+        };
+
+        inline void * getPayload_impl ()
+        {
+          return (void *) &_data[T_HeaderSize];
+        };
+
+        inline void copyPayload_impl (void * addr)
+        {
+          memcpy ((void *) &_data[T_HeaderSize/sizeof(pami_quad_t)], addr, T_PacketSize - T_HeaderSize);
+        };
+
+        static const size_t headerSize_impl  = T_HeaderSize;
+
+        static const size_t payloadSize_impl = T_PacketSize - T_HeaderSize;
+
+      private:
+        uint8_t _data[T_PacketSize];
+    };
   };
 };
 #undef TRACE_ERR
-#endif // __util_fifo_fifopacket_h__
+#endif // __util_fifo_FifoPacket_h__
 
 
 //

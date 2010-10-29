@@ -40,7 +40,7 @@ namespace PAMI
     template <class T_Object>
     class Counter
     {
-      private:
+      protected:
 	friend class InPlaceCounter<T_Object>;
 	friend class IndirCounter<T_Object>;
 	friend class PAMI::Atomic::GccBuiltin;

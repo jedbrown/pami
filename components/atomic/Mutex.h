@@ -69,7 +69,7 @@ namespace Interface
 	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm);
 	static bool checkDataMm(PAMI::Memory::MemoryManager *mm);
 
-    private:
+    protected:
 	friend class InPlaceMutex<T_Object>;
 	friend class IndirMutex<T_Object>;
 	friend class PAMI::Atomic::NoopMutex;
