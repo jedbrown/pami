@@ -239,7 +239,7 @@ extern "C"
         unsigned contiguous_recv:1;         /*  Receive data must be contigous  */
         unsigned continuous_send:1;         /*  Send data must be continuous    */
         unsigned continuous_recv:1;         /*  Receive data must be continuous */
-      };
+      }check;
     }metadata_result_t;
   
   /*  Forward declaration of pami_xfer_t */
@@ -302,8 +302,8 @@ extern "C"
                                                   continuous:  data type must be PAMI_BYTE and
                                                   for vector collectives, the target buffers
                                                   of the vectors must be adjacent in memory    */
-      };
-    };
+      }values;
+    }check_correct;
     /* Performance Parameters */
     union
     {
@@ -313,8 +313,8 @@ extern "C"
         unsigned               hw_accel:1;     /**<  This collective is using special purpose
                                                   hardware to accelerate the collective
                                                   0:  no 1:  yes                               */
-      };
-    };
+      }values;
+    }check_perf;
     size_t                 range_lo_perf;/**<  Estimated performance range in bytes(low)    */
     size_t                 range_hi_perf;/**<  Estimated performance range in bytes(high)   */
   } pami_metadata_t;
