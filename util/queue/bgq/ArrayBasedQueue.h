@@ -86,14 +86,16 @@ namespace PAMI {
     ///  thread.
     ///
     inline bool  advance() {
-      bool newwork = false;
-      uint64_t index = 0; 
-      
+      bool newwork = false;      
       int tid = Kernel_ProcessorThreadID();
-      while ( (index =  *_headAddress[tid]) != L2_ATOMIC_EMPTY ) {
+      uint64_t index = *_tailLoadAddress[tid];
+      uint64_t head  = _headCounter;
+
+      while ( head < index ) {
 	//fprintf(stderr, "Dequeueing index %ld, counter address %lx\n", index, (uint64_t)&_atomicCounters[0]);
-	uint64_t qindex = index & (DEFAULT_SIZE - 1);
-	
+	uint64_t qindex = head & (DEFAULT_SIZE - 1);
+	head ++;
+
 	//Wait till producer updates this	
 	while (_queueArray[qindex] == NULL);
       
@@ -108,7 +110,8 @@ namespace PAMI {
 	//Increment the queue bound to permit another enqueue
 	*_boundAddress[tid] = 1;  //Store increment operation 
       }
-      
+      _headCounter = head;
+
       if (!_overflowq.isEmpty()) {
 	_mutex.acquire();
 	Queue::Element *head;
@@ -136,12 +139,13 @@ namespace PAMI {
       _tailAddress[1]    = NULL;
       _tailAddress[2]    = NULL;
       _tailAddress[3]    = NULL;		         
+      
+      _tailLoadAddress[0]    = NULL;
+      _tailLoadAddress[1]    = NULL;
+      _tailLoadAddress[2]    = NULL;
+      _tailLoadAddress[3]    = NULL;		         
 
-      _headAddress[0]    = NULL;
-      _headAddress[1]    = NULL;
-      _headAddress[2]    = NULL;
-      _headAddress[3]    = NULL;
-
+      _headCounter       = 0;
       _boundAddress[0]   = NULL;
       _boundAddress[1]   = NULL;
       _boundAddress[2]   = NULL;
@@ -172,19 +176,19 @@ namespace PAMI {
 
 	uint64_t tid = 0;
 	for (tid = 0; tid < 4UL; tid ++)
-	  _headAddress[tid] =  (volatile uint64_t *)
-	    (((Kernel_L2AtomicsBaseAddress() +
-	       ((((uint64_t) &_atomicCounters[0]) << 5) & ~0xfful)) |
-	      (tid << 6)) +
-	     (4UL << 3)); /*bounded increment*/
-
-	for (tid = 0; tid < 4UL; tid ++)
 	  _tailAddress[tid] =  (volatile uint64_t *)
 	    (((Kernel_L2AtomicsBaseAddress() +
 	       ((((uint64_t) &_atomicCounters[1]) << 5) & ~0xfful)) |
 	      (tid << 6)) +
 	     (4UL << 3)); /*bounded increment*/
 
+	for (tid = 0; tid < 4UL; tid ++)
+	  _tailLoadAddress[tid] =  (volatile uint64_t *)
+	    (((Kernel_L2AtomicsBaseAddress() +
+	       ((((uint64_t) &_atomicCounters[1]) << 5) & ~0xfful)) |
+	      (tid << 6)) +
+	     (0UL << 3)); /*Load counter*/
+	
 	for (tid = 0; tid < 4UL; tid ++)
 	  _boundAddress[tid] =  (volatile uint64_t *)
 	    (((Kernel_L2AtomicsBaseAddress() +
@@ -220,7 +224,7 @@ namespace PAMI {
 	//mbar();
 	uint64_t index = 0;
 	if ( likely (_overflowq.isEmpty() && 
-		     ((index = *(_tailAddress[tid])) != L2_ATOMIC_FULL)) )
+		     ((index = *_tailAddress[tid]) != L2_ATOMIC_FULL)) )
 	  { 
 	    uint64_t qindex = index & (DEFAULT_SIZE - 1);
 	    //PAMI_assert ( _queueArray[qindex] == NULL);
@@ -403,8 +407,9 @@ namespace PAMI {
     Queue                                            _overflowq;
     volatile uint64_t                              * _tailAddress[4];
     volatile uint64_t                              * _flushAddress[4];
-    volatile uint64_t                              * _headAddress[4];
+    volatile uint64_t                              * _tailLoadAddress[4];
     volatile uint64_t                              * _boundAddress[4];
+    uint64_t                                         _headCounter;
     Queue                                            _privateq;
     T_Mutex                                          _mutex;
     volatile uint64_t                                _wakeup;

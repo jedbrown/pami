@@ -185,18 +185,16 @@ namespace PAMI
 
             if (likely(_completion_status != 0))
               {
-                events += channel[0].advanceCompletion ();
-                events += channel[1].advanceCompletion ();
-                events += channel[2].advanceCompletion ();
-                events += channel[3].advanceCompletion ();
-                events += channel[4].advanceCompletion ();
-                events += channel[5].advanceCompletion ();
-                events += channel[6].advanceCompletion ();
-                events += channel[7].advanceCompletion ();
-                events += channel[8].advanceCompletion ();
-                events += channel[9].advanceCompletion ();
-                events += channel[10].advanceCompletion ();
-              }
+		//Compiler will unroll loop
+		for (int i = 0; i <= 10; i++)
+		  if ((_completion_status & (1 << i)) != 0) {
+		    channel[i].updateHwSeqno();
+		  }
+		for (int i = 0; i <= 10; i++)
+		  if ((_completion_status & (1 << i)) != 0) {
+		    channel[i].advanceCompletion();
+		  }
+	      }
 
             if (unlikely(_sendqueue_status != 0))
               {
