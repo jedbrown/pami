@@ -8,7 +8,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "algorithms/schedule/MCRect.cc"
+#include "algorithms/schedule/MCRect.h"
 
 #define net_coord(n)	u.n_torus.coords[n]
 

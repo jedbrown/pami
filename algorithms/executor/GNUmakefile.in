@@ -12,6 +12,6 @@
 VPATH		= @abs_srcdir@
 SUBDIRS		= 
 NOTBUILT        =                  
-@LIBNAME@-""-CCMIALLREDUCESTATE_SOURCES=AllreduceState.cc
-DEVICENAME     = @LIBNAME@-""-CCMIALLREDUCESTATE
+#@LIBNAME@-""-CCMIALLREDUCESTATE_SOURCES=AllreduceState.cc
+#DEVICENAME     = @LIBNAME@-""-CCMIALLREDUCESTATE
 include @abs_top_builddir@/Build.rules

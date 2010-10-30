@@ -11,6 +11,6 @@
 
 VPATH		= @abs_srcdir@
 SUBDIRS		= 
-SOURCES		= AllreduceState.cc
-DEVICENAME	= 
+#SOURCES		= AllreduceState.cc
+#DEVICENAME	= 
 include @abs_top_builddir@/Build.rules
