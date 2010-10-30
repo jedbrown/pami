@@ -53,15 +53,14 @@ namespace PAMI
       class Geometry
     {
     public:
-      inline Geometry(Mapping     *mapping,
-                      pami_task_t  *ranks,
-                      pami_task_t  nranks,
-                      unsigned     comm,
-                      unsigned     numcolors,
-                      bool         globalcontext)
-      {
-        TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
-      }
+      inline Geometry (Geometry     *parent,
+                       Mapping      *mapping,
+                       unsigned      comm,
+                       int           numranks,
+                       pami_task_t  *ranks)
+        {
+          TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+        }
       inline Geometry (Geometry  *parent,
                        Mapping   *mapping,
                        unsigned   comm,

@@ -51,25 +51,46 @@ namespace PAMI
       public Geometry<PAMI::Geometry::Lapi>
     {
     public:
-      inline Lapi(pami_client_t  client,
-      Mapping       *mapping,
-                  pami_task_t   *ranks,
-                  pami_task_t    nranks,
-                  unsigned       comm,
-                  unsigned       numcolors,
-                  bool           globalcontext):
-        Geometry<PAMI::Geometry::Lapi>(mapping,
-                                       ranks,
-                                       nranks,
+      inline Lapi(pami_client_t                   client,
+                  Geometry<PAMI::Geometry::Lapi> *parent,
+                  Mapping                        *mapping,
+                  unsigned                        comm,
+                  pami_task_t                     nranks,
+                  pami_task_t                    *ranks):
+        Geometry<PAMI::Geometry::Lapi>(parent,
+                                       mapping,
                                        comm,
-                                       numcolors,
-                                       globalcontext),
-  _client(client)
+                                       nranks,
+                                       ranks),
+        _client(client)
         {
+          _ranks                     = ranks;
+          _global_all_topo           = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
+          new(_global_all_topo)Topology(_ranks, nranks);
+          _local_master_topo         = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
+          _my_master_topo            = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
+          _local_topo                = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
+          _global_all_topo->subTopologyLocalMaster(_local_master_topo);
+          _local_master_topo->subTopologyLocalToMe(_my_master_topo);
+          _global_all_topo->subTopologyLocalToMe(_local_topo);
+          // Find master participant on the tree/cau network
+          uint            num_master_tasks = _local_master_topo->size();
+          uint            num_local_tasks  = _local_topo->size();
+          for(uint k=0; k<num_master_tasks; k++)
+            for(uint j=0; j<num_local_tasks; j++)
+              if(_local_master_topo->index2Rank(k) == _local_topo->index2Rank(j))
+                {
+                  _masterRank = _local_topo->index2Rank(j);
+                  break;
+                };          
+          PAMI::geometry_map[_commid]=this;
+          _virtual_rank    =  _global_all_topo->rank2Index(_rank);
+          PAMI_assert(_virtual_rank != -1);
+          updateCachedGeometry(this, _commid);          
         }
-
+      
       inline Lapi (pami_client_t                   client,
-       Geometry<PAMI::Geometry::Lapi> *parent,
+                   Geometry<PAMI::Geometry::Lapi> *parent,
                    Mapping                        *mapping,
                    unsigned                        comm,
                    int                             numranges,
@@ -97,42 +118,42 @@ namespace PAMI
           // When union topologies are supported for unions of range lists,
           // we can re-enable this code
           if(0)
-              {
-                PAMI::Topology *_temp_topo  = (PAMI::Topology *)malloc((numranges)*sizeof(PAMI::Topology));
-                for(int i=0; i<numranges; i++)
-                  new(&_temp_topo[i])Topology(rangelist[i].lo, rangelist[i].hi);
+            {
+              PAMI::Topology *_temp_topo  = (PAMI::Topology *)malloc((numranges)*sizeof(PAMI::Topology));
+              for(int i=0; i<numranges; i++)
+                new(&_temp_topo[i])Topology(rangelist[i].lo, rangelist[i].hi);
 
-                prev = &_temp_topo[0];
-                for(int i=1; i<numranges; i++)
-                    {
-                      cur      = &_temp_topo[i];
-                      new_topo = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
-                      prev->unionTopology(new_topo, cur);
-                      prev = new_topo;
-                      if(free_topo)
-                        free(free_topo);
-                      free_topo = new_topo;
-                    }
-                free(_temp_topo);
-              }
+              prev = &_temp_topo[0];
+              for(int i=1; i<numranges; i++)
+                {
+                  cur      = &_temp_topo[i];
+                  new_topo = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
+                  prev->unionTopology(new_topo, cur);
+                  prev = new_topo;
+                  if(free_topo)
+                    free(free_topo);
+                  free_topo = new_topo;
+                }
+              free(_temp_topo);
+            }
           else
 #endif
-              {
-                pami_task_t nranks = 0;
-                int i,j,k;
-                for (i = 0; i < numranges; i++)
-                  nranks += (rangelist[i].hi - rangelist[i].lo + 1);
+            {
+              pami_task_t nranks = 0;
+              int i,j,k;
+              for (i = 0; i < numranges; i++)
+                nranks += (rangelist[i].hi - rangelist[i].lo + 1);
 
-                _ranks = (pami_task_t*)malloc(nranks * sizeof(pami_task_t));
-                for (k = 0, i = 0; i < numranges; i++)
-                    {
-                      pami_task_t size = rangelist[i].hi - rangelist[i].lo + 1;
-                      for (j = 0; j < size; j++, k++)
-                        _ranks[k] = rangelist[i].lo + j;
-                    }
-                new_topo = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
-                new(new_topo)Topology(_ranks, nranks);
-              }
+              _ranks = (pami_task_t*)malloc(nranks * sizeof(pami_task_t));
+              for (k = 0, i = 0; i < numranges; i++)
+                {
+                  pami_task_t size = rangelist[i].hi - rangelist[i].lo + 1;
+                  for (j = 0; j < size; j++, k++)
+                    _ranks[k] = rangelist[i].lo + j;
+                }
+              new_topo = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
+              new(new_topo)Topology(_ranks, nranks);
+            }
 
           _global_all_topo   = new_topo;
           _local_master_topo = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
@@ -149,10 +170,10 @@ namespace PAMI
               for(uint k=0; k<num_master_tasks; k++)
                 for(uint j=0; j<num_local_tasks; j++)
                   if(_local_master_topo->index2Rank(k) == _local_topo->index2Rank(j))
-                  {
-                    _masterRank = _local_topo->index2Rank(j);
-                    break;
-                  };
+                    {
+                      _masterRank = _local_topo->index2Rank(j);
+                      break;
+                    };
             }
 //          PAMI_assert(_local_topo->size() != 0);
 //          PAMI_assert(_local_master_topo->size() != 0);
@@ -176,12 +197,20 @@ namespace PAMI
           for(uint k=0; k<num_master_tasks; k++)
             for(uint j=0; j<num_local_tasks; j++)
               if(_local_master_topo->index2Rank(k) == _local_topo->index2Rank(j))
-              {
-                _masterRank = _local_topo->index2Rank(j);
-                break;
-              };
+                {
+                  _masterRank = _local_topo->index2Rank(j);
+                  break;
+                };
         }
 
+      inline ~Lapi ()
+        {
+          free(_global_all_topo);
+          free(_local_master_topo);
+          free(_my_master_topo);
+          free(_local_topo);
+        }
+      
       inline bool isLocalMasterParticipant_impl()
         {
           return _masterRank == _rank;
@@ -378,21 +407,21 @@ namespace PAMI
         }
 
       static inline void registerUnexpBarrier_impl (unsigned comm, pami_quad_t &info,
-                unsigned peer, unsigned algorithm)
-      {
-  UnexpBarrierQueueElement *ueb = (UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
+                                                    unsigned peer, unsigned algorithm)
+        {
+          UnexpBarrierQueueElement *ueb = (UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
 
-  new (ueb) UnexpBarrierQueueElement (comm, info, peer, algorithm);
-  _ueb_queue.pushTail(ueb);
-      }
+          new (ueb) UnexpBarrierQueueElement (comm, info, peer, algorithm);
+          _ueb_queue.pushTail(ueb);
+        }
 
       inline void processUnexpBarrier_impl () {
-  UnexpBarrierQueueElement *ueb = NULL;
-  while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL ) {
-    CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((gkeys_t)ueb->getAlgorithm());/// \todo does NOT support multicontext keystore
-    c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
-    _ueb_allocator.returnObject(ueb);
-  }
+        UnexpBarrierQueueElement *ueb = NULL;
+        while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL ) {
+          CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((gkeys_t)ueb->getAlgorithm());/// \todo does NOT support multicontext keystore
+          c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
+          _ueb_allocator.returnObject(ueb);
+        }
       }
 
       // These methods were originally from the PGASRT Communicator class
@@ -444,87 +473,87 @@ namespace PAMI
         }
 
       inline AlgoLists<Geometry<PAMI::Geometry::Lapi> > * algorithms_get_lists(size_t context_id,
-                                                                                pami_xfer_type_t  colltype)
+                                                                               pami_xfer_type_t  colltype)
         {
           TRACE_ERR((stderr, "<%p>Lapi::algorithms_get_lists()\n", this));
           switch(colltype)
-              {
-                  case PAMI_XFER_BROADCAST:
-                    return &_broadcasts[context_id];
-                    break;
-                  case PAMI_XFER_ALLREDUCE:
-                    return &_allreduces[context_id];
-                    break;
-                  case PAMI_XFER_REDUCE:
-                    return &_reduces[context_id];
-                    break;
-                  case PAMI_XFER_ALLGATHER:
-                    return &_allgathers[context_id];
-                    break;
-                  case PAMI_XFER_ALLGATHERV:
-                    return &_allgathervs[context_id];
-                    break;
-                  case PAMI_XFER_ALLGATHERV_INT:
-                    return &_allgatherv_ints[context_id];
-                    break;
-                  case PAMI_XFER_SCATTER:
-                    return &_scatters[context_id];
-                    break;
-                  case PAMI_XFER_SCATTERV:
-                    return &_scattervs[context_id];
-                    break;
-                  case PAMI_XFER_SCATTERV_INT:
-                    return &_scatterv_ints[context_id];
-                    break;
-                  case PAMI_XFER_GATHER:
-                    return &_gathers[context_id];
-                    break;
-                  case PAMI_XFER_GATHERV:
-                    return &_gathervs[context_id];
-                    break;
-                  case PAMI_XFER_GATHERV_INT:
-                    return &_gatherv_ints[context_id];
-                    break;
-                  case PAMI_XFER_BARRIER:
-                    return &_barriers[context_id];
-                    break;
-                  case PAMI_XFER_ALLTOALL:
-                    return &_alltoalls[context_id];
-                    break;
-                  case PAMI_XFER_ALLTOALLV:
-                    return &_alltoallvs[context_id];
-                    break;
-                  case PAMI_XFER_ALLTOALLV_INT:
-                    return &_alltoallv_ints[context_id];
-                    break;
-                  case PAMI_XFER_SCAN:
-                    return &_scans[context_id];
-                    break;
-                  case PAMI_XFER_AMBROADCAST:
-                    return &_ambroadcasts[context_id];
-                    break;
-                  case PAMI_XFER_AMSCATTER:
-                    return &_amscatters[context_id];
-                    break;
-                  case PAMI_XFER_AMGATHER:
-                    return &_amgathers[context_id];
-                    break;
-                  case PAMI_XFER_AMREDUCE:
-                    return &_amreduces[context_id];
-                    break;
-                  case PAMI_XFER_REDUCE_SCATTER:
-                    return &_reduce_scatters[context_id];
-                    break;
-                  default:
-                    PAMI_abort();
-                    return NULL;
-                    break;
-              }
+            {
+              case PAMI_XFER_BROADCAST:
+                return &_broadcasts[context_id];
+                break;
+              case PAMI_XFER_ALLREDUCE:
+                return &_allreduces[context_id];
+                break;
+              case PAMI_XFER_REDUCE:
+                return &_reduces[context_id];
+                break;
+              case PAMI_XFER_ALLGATHER:
+                return &_allgathers[context_id];
+                break;
+              case PAMI_XFER_ALLGATHERV:
+                return &_allgathervs[context_id];
+                break;
+              case PAMI_XFER_ALLGATHERV_INT:
+                return &_allgatherv_ints[context_id];
+                break;
+              case PAMI_XFER_SCATTER:
+                return &_scatters[context_id];
+                break;
+              case PAMI_XFER_SCATTERV:
+                return &_scattervs[context_id];
+                break;
+              case PAMI_XFER_SCATTERV_INT:
+                return &_scatterv_ints[context_id];
+                break;
+              case PAMI_XFER_GATHER:
+                return &_gathers[context_id];
+                break;
+              case PAMI_XFER_GATHERV:
+                return &_gathervs[context_id];
+                break;
+              case PAMI_XFER_GATHERV_INT:
+                return &_gatherv_ints[context_id];
+                break;
+              case PAMI_XFER_BARRIER:
+                return &_barriers[context_id];
+                break;
+              case PAMI_XFER_ALLTOALL:
+                return &_alltoalls[context_id];
+                break;
+              case PAMI_XFER_ALLTOALLV:
+                return &_alltoallvs[context_id];
+                break;
+              case PAMI_XFER_ALLTOALLV_INT:
+                return &_alltoallv_ints[context_id];
+                break;
+              case PAMI_XFER_SCAN:
+                return &_scans[context_id];
+                break;
+              case PAMI_XFER_AMBROADCAST:
+                return &_ambroadcasts[context_id];
+                break;
+              case PAMI_XFER_AMSCATTER:
+                return &_amscatters[context_id];
+                break;
+              case PAMI_XFER_AMGATHER:
+                return &_amgathers[context_id];
+                break;
+              case PAMI_XFER_AMREDUCE:
+                return &_amreduces[context_id];
+                break;
+              case PAMI_XFER_REDUCE_SCATTER:
+                return &_reduce_scatters[context_id];
+                break;
+              default:
+                PAMI_abort();
+                return NULL;
+                break;
+            }
         }
 
       inline pami_result_t addCollective_impl(pami_xfer_type_t                            colltype,
-                                             CCMI::Adaptor::CollectiveProtocolFactory  *factory,
-                                             size_t                                     context_id)
+                                              CCMI::Adaptor::CollectiveProtocolFactory  *factory,
+                                              size_t                                     context_id)
         {
           TRACE_ERR((stderr, "<%p>Lapi::addCollective_impl()\n", this));
           AlgoLists<Geometry<PAMI::Geometry::Lapi> > * alist = algorithms_get_lists(context_id, colltype);
@@ -533,8 +562,8 @@ namespace PAMI
         }
 
       inline pami_result_t addCollectiveCheck_impl(pami_xfer_type_t                            colltype,
-                                                  CCMI::Adaptor::CollectiveProtocolFactory  *factory,
-                                                  size_t                                     context_id)
+                                                   CCMI::Adaptor::CollectiveProtocolFactory  *factory,
+                                                   size_t                                     context_id)
         {
           TRACE_ERR((stderr, "<%p>Lapi::addCollectiveCheck_impl()\n", this));
           AlgoLists<Geometry<PAMI::Geometry::Lapi> > * alist = algorithms_get_lists(context_id, colltype);
@@ -543,8 +572,8 @@ namespace PAMI
         }
 
       pami_result_t algorithms_num_impl(pami_xfer_type_t  colltype,
-                                       size_t             *lengths,
-                                       size_t           context_id)
+                                        size_t             *lengths,
+                                        size_t           context_id)
         {
           TRACE_ERR((stderr, "<%p>Lapi::algorithms_num_impl()\n", this));
           AlgoLists<Geometry<PAMI::Geometry::Lapi> > * alist = algorithms_get_lists(context_id, colltype);
@@ -553,39 +582,39 @@ namespace PAMI
         }
 
       inline pami_result_t algorithms_info_impl (pami_xfer_type_t   colltype,
-                                                pami_algorithm_t  *algs0,
-                                                pami_metadata_t   *mdata0,
+                                                 pami_algorithm_t  *algs0,
+                                                 pami_metadata_t   *mdata0,
                                                  size_t               num0,
-                                                pami_algorithm_t  *algs1,
-                                                pami_metadata_t   *mdata1,
-                                                size_t             num1,
-                                                size_t            context_id)
+                                                 pami_algorithm_t  *algs1,
+                                                 pami_metadata_t   *mdata1,
+                                                 size_t             num1,
+                                                 size_t            context_id)
         {
           TRACE_ERR((stderr, "<%p>Lapi::algorithms_info_impl(), algs0=%p, num0=%u, mdata0=%p, algs1=%p, num1=%u, mdata1=%p\n", this, algs0,num0,mdata0,algs1,num1,mdata1));
           AlgoLists<Geometry<PAMI::Geometry::Lapi> > * alist = algorithms_get_lists(context_id, colltype);
           for(size_t i=0; i<num0; i++)
-              {
-            TRACE_ERR((stderr, "<%p> alist->_algo_list[%u]=%p, mdata0[%u]=%p\n", this, i, alist->_algo_list[i],i,mdata0?&mdata0[i]:NULL));
-                if(algs0)
-                  algs0[i]   =(pami_algorithm_t) alist->_algo_list[i];
-                if(mdata0)
-                  alist->_algo_list[i]->metadata(&mdata0[i]);
-              }
+            {
+              TRACE_ERR((stderr, "<%p> alist->_algo_list[%u]=%p, mdata0[%u]=%p\n", this, i, alist->_algo_list[i],i,mdata0?&mdata0[i]:NULL));
+              if(algs0)
+                algs0[i]   =(pami_algorithm_t) alist->_algo_list[i];
+              if(mdata0)
+                alist->_algo_list[i]->metadata(&mdata0[i]);
+            }
           for(size_t i=0; i<num1; i++)
-              {
-            TRACE_ERR((stderr, "<%p> alist->_algo_list_check[%u]=%p, mdata1[%u]=%p\n", this, i, alist->_algo_list_check[i],i,mdata1?&mdata1[i]:NULL));
-                if(algs1)
-                  algs1[i] =(pami_algorithm_t) alist->_algo_list_check[i];
-                if(mdata1)
-                  alist->_algo_list_check[i]->metadata(&mdata1[i]);
-              }
+            {
+              TRACE_ERR((stderr, "<%p> alist->_algo_list_check[%u]=%p, mdata1[%u]=%p\n", this, i, alist->_algo_list_check[i],i,mdata1?&mdata1[i]:NULL));
+              if(algs1)
+                algs1[i] =(pami_algorithm_t) alist->_algo_list_check[i];
+              if(mdata1)
+                alist->_algo_list_check[i]->metadata(&mdata1[i]);
+            }
           return PAMI_SUCCESS;
         }
 
       pami_result_t default_barrier(pami_event_function       cb_done,
-                                   void                   * cookie,
-                                   size_t                   ctxt_id,
-                                   pami_context_t            context)
+                                    void                   * cookie,
+                                    size_t                   ctxt_id,
+                                    pami_context_t            context)
         {
           TRACE_ERR((stderr, "<%p>Lapi::default_barrier()\n", this));
           pami_xfer_t cmd;
@@ -648,8 +677,8 @@ namespace PAMI
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _barriers[PAMI_GEOMETRY_NUMALGOLISTS];
       Algorithm<PAMI::Geometry::Lapi>             _ue_barrier;
 
-      std::map <int, void*>                         _kvstore;                              // global/geometry key store
-      std::map <int, void*>                         _kvcstore[PAMI_GEOMETRY_NUMALGOLISTS]; // per context key store
+      std::map <int, void*>                       _kvstore;                              // global/geometry key store
+      std::map <int, void*>                       _kvcstore[PAMI_GEOMETRY_NUMALGOLISTS]; // per context key store
       int                                         _commid;
       pami_client_t                               _client;
       pami_task_t                                 _rank;
@@ -667,8 +696,6 @@ namespace PAMI
       PAMI::Topology                             *_local_master_topo;
       PAMI::Topology                             *_my_master_topo;
       PAMI::Topology                             *_local_topo;
-
-
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace PAMI

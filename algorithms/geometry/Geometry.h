@@ -49,20 +49,18 @@ namespace PAMI
       public Geometry<PAMI::Geometry::Common>
     {
     public:
-      inline Common(pami_client_t           client,
-        Mapping                *mapping,
-                    pami_task_t             *ranks,
-                    pami_task_t              nranks,
-                    unsigned                comm,
-                    unsigned                numcolors,
-                    bool                    globalcontext):
-        Geometry<PAMI::Geometry::Common>(mapping,
-                                        ranks,
-                                        nranks,
-                                        comm,
-                                        numcolors,
-                                        globalcontext),
-  _client(client)
+      inline Common(pami_client_t                     client,
+                    Geometry<PAMI::Geometry::Common> *parent,
+                    Mapping                          *mapping,
+                    unsigned                          comm,
+                    pami_task_t                       nranks,
+                    pami_task_t                      *ranks):
+        Geometry<PAMI::Geometry::Common>(parent,
+                                         mapping,
+                                         comm,
+                                         nranks,
+                                         ranks),
+        _client(client)
         {
           TRACE_ERR((stderr, "<%p>Common()\n", this));
         }

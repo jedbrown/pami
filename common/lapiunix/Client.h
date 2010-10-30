@@ -410,12 +410,6 @@ namespace PAMI
             c->_contexts[n]->_pgas_collreg->analyze_global(n,g,&reduce_result[0]);
             c->_contexts[n]->_p2p_ccmi_collreg->analyze_global(n,g,&reduce_result[1]);
             c->_contexts[n]->_cau_collreg->analyze_global(n,g,&reduce_result[2]);
-#if 0
-//#ifdef _COLLSHM
-            // collshm registration can not be used together with the cau registration
-            // shared memory region would have conflicts
-            c->_contexts[n]->_collshm_collreg->analyze_global(n,g,&reduce_result[3]);
-#endif // _COLLSHM
           }
       }
 
@@ -459,12 +453,6 @@ namespace PAMI
                 _contexts[n]->_pgas_collreg->analyze_local(n,new_geometry,&to_reduce[0]);
                 _contexts[n]->_p2p_ccmi_collreg->analyze_local(n,new_geometry,&to_reduce[1]);
                 _contexts[n]->_cau_collreg->analyze_local(n,new_geometry,&to_reduce[2]);
-#if 0
-//#ifdef _COLLSHM
-                // collshm registration can not be used together with the cau registration
-                // shared memory region would have conflicts
-                _contexts[n]->_coll_shm_collreg->analyze_local(n, new_geometry, &to_reduce[3]);
-#endif // _COLLSHM
               }
 	    new_geometry->processUnexpBarrier();
             *geometry=(LAPIGeometry*) new_geometry;
@@ -552,8 +540,91 @@ namespace PAMI
                                                        void                  * cookie)
       {
         // todo:  implement this routine
-        PAMI_abort();
+        LAPIGeometry              *new_geometry = NULL;
+        uint64_t                  to_reduce_vec[16];
+        uint64_t                  *to_reduce;
+        uint                      to_reduce_count;
+        // If our new geometry is NOT NULL, we will create a new geometry
+        // for this client.  This new geometry will be populated with a
+        // set of algorithms.
+        if(geometry != NULL)
+          {
+            new_geometry=(LAPIGeometry*) malloc(sizeof(*new_geometry));
+            new(new_geometry)LAPIGeometry((pami_client_t)this,
+                                          (LAPIGeometry*)parent,
+                                          &__global.mapping,
+                                          id,
+                                          task_count,
+                                          tasks);
 
+            PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getLocalMasterTopology();
+            to_reduce_count = 3 + local_master_topology->size();
+            if (to_reduce_count >16) {
+              to_reduce = (uint64_t *)malloc(to_reduce_count * sizeof(uint64_t));
+            } else {
+              to_reduce = &(to_reduce_vec[0]);
+            }
+            for(size_t n=0; n<_ncontexts; n++)
+              {
+                _contexts[n]->_pgas_collreg->analyze_local(n,new_geometry,&to_reduce[0]);
+                _contexts[n]->_p2p_ccmi_collreg->analyze_local(n,new_geometry,&to_reduce[1]);
+                _contexts[n]->_cau_collreg->analyze_local(n,new_geometry,&to_reduce[2]);
+              }
+	    new_geometry->processUnexpBarrier();
+            *geometry=(LAPIGeometry*) new_geometry;
+          }
+
+        // Now we must take care of the synchronization of this new geometry
+        // First, if a new geometry is created, we will perform an allreduce
+        // on the new geometry.
+        // If we have a parent geometry, we perform synchronization on that
+        // geometry.  If we don't have a parent geometry, we perform an
+        // "unexpected" barrier on only the new geometry.  In either case,
+        // any node creating a new geometry will allocate a class route.
+        // When the synchronization is completed (barrier or uebarrier), it
+        // will chain into an allreduce operation, which performs the allocation
+        // of the classroute.  When the classroute has been allocated,
+        // The "done" event is delivered to the user.
+        LAPIGeometry      *bargeom = (LAPIGeometry*)parent;
+        PAMI::Context    *ctxt    = (PAMI::Context *)context;
+        if(new_geometry)
+          {
+            pami_algorithm_t  alg;
+            new_geometry->algorithms_info(PAMI_XFER_ALLREDUCE,
+                                          &alg,
+                                          NULL,
+                                          1,
+                                          NULL,
+                                          NULL,
+                                          0,
+                                          ctxt->getId());
+            Geometry::Algorithm<LAPIGeometry> *ar_algo = (Geometry::Algorithm<LAPIGeometry> *)alg;
+            LAPIClassRouteId *cr = (LAPIClassRouteId *)malloc(sizeof(LAPIClassRouteId));
+            new(cr)LAPIClassRouteId(ar_algo,
+                                    new_geometry,
+                                    to_reduce,
+                                    to_reduce_count,
+                                    cr_func,
+                                    (void*)this,
+                                    fn,
+                                    cookie);
+            if(bargeom)
+              bargeom->default_barrier(LAPIClassRouteId::get_classroute, cr, ctxt->getId(), context);
+            else
+              new_geometry->ue_barrier(LAPIClassRouteId::get_classroute, cr, ctxt->getId(), context);
+          }
+        else
+          {
+            if(bargeom)
+              bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+            else
+              {
+                // Null parent and null new geometry?  Why are you here?
+                return PAMI_INVAL;
+              }
+          }
+
+        if (to_reduce_count > 16) free(to_reduce);
         return PAMI_SUCCESS;
       }
 
@@ -576,12 +647,11 @@ namespace PAMI
 
     inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
       {
-        PAMI_abort();
-        return PAMI_UNIMPL;
+        LAPIGeometry* g = (LAPIGeometry*)geometry;
+        g->~LAPIGeometry();
+        free(g);        
+        return PAMI_SUCCESS;
       }
-
-
-
   protected:
 
     inline pami_client_t getClient () const
@@ -600,7 +670,7 @@ namespace PAMI
           jobkey = atoi(getenv("MP_PARTITION"));
 
         snprintf (shmemfile, 1023, "/pami-client-%d-%s", jobkey,
-                ((LapiImpl::Client*)&_lapiClient[0])->GetName());
+                  ((LapiImpl::Client*)&_lapiClient[0])->GetName());
         // Round up to the page size
         size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
         int fd, rc;
@@ -609,16 +679,16 @@ namespace PAMI
         // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
         rc = shm_open (shmemfile, O_CREAT|O_RDWR,0600);
         if ( rc != -1 )
-            {
-              fd = rc;
-              rc = ftruncate( fd, n );
-              void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_FILE|MAP_SHARED, fd, 0);
-              if ( ptr != MAP_FAILED )
-                  {
-                    _mm.init (ptr, n);
-                    return;
-                  }
-            }
+          {
+            fd = rc;
+            rc = ftruncate( fd, n );
+            void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_FILE|MAP_SHARED, fd, 0);
+            if ( ptr != MAP_FAILED )
+              {
+                _mm.init (ptr, n);
+                return;
+              }
+          }
         // Failed to create shared memory .. fake it using the heap ??
         PAMI_abort();
         _mm.init (malloc (n), n);
