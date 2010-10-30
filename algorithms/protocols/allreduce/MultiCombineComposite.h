@@ -7,7 +7,9 @@
 
 #include "algorithms/composite/Composite.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
+#include "algorithms/protocols/allreduce/ReduceFunctions.h"
 #include "util/ccmi_util.h"
+
 
 #ifndef CCMI_TRACE_ALL
 #undef TRACE_ADAPTOR
@@ -26,10 +28,6 @@ namespace CCMI
   {
     namespace Allreduce
     {
-      // Forward declare prototype
-      extern void getReduceFunction(pami_dt, pami_op, unsigned,
-                                    unsigned&, coremath&) __attribute__((noinline));
-
       class MultiCombineComposite : public CCMI::Executor::Composite
       {
         protected:

@@ -11,6 +11,7 @@
 #include "Context.h"
 #include <pami.h>
 #include "util/common.h"
+#include "algorithms/protocols/allreduce/ReduceFunctions.h" // For dt_query
 
 extern "C"
 {
@@ -577,11 +578,6 @@ extern "C"   pami_result_t PAMI_Resume (pami_context_t    context,
   PAMI::Context * ctx = (PAMI::Context *) context;
   return ctx->resume_totask (dest, count);
 }
-
-namespace CCMI { namespace Adaptor { namespace Allreduce {
-      extern void getReduceFunction(pami_dt, pami_op, unsigned,
-                                    unsigned&, coremath&);
-    }}};
 
 extern "C" pami_result_t PAMI_Dt_query (pami_dt dt, size_t *size)
 {

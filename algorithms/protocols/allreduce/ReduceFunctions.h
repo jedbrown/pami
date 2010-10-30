@@ -10,13 +10,15 @@
  * \file algorithms/protocols/allreduce/ReduceFunctions.cc
  * \brief Support routines for allreduce operations
  */
+#ifndef __algorithms_protocols_allreduce_ReduceFunctions_h__
+#define __algorithms_protocols_allreduce_ReduceFunctions_h__
+
+
 
 #include "util/common.h"  // need this first to define throw() before stdlib.h is included (for xlC -noeh)
 #include "algorithms/ccmi.h"
 #include "util/ccmi_debug.h"
-//#include "algorithms/executor/AllreduceBase.h"
 #include "math/math_coremath.h"
-//#include "./Factory.h"
 
 namespace CCMI
 {
@@ -48,7 +50,7 @@ namespace CCMI
 ///
 /// \brief Get the reduce function and datatype size
 ///
-      void getReduceFunction(pami_dt           dtype,
+      inline void getReduceFunction(pami_dt           dtype,
                              pami_op           op,
                              unsigned          count,
                              unsigned        & sizeOfType,
@@ -729,3 +731,6 @@ namespace CCMI
     }
   }
 }
+
+#endif // __algorithms_protocols_allreduce_ReduceFunctions_h__
+

@@ -12,6 +12,6 @@
 VPATH		= @abs_srcdir@
 SUBDIRS		= 
 NOTBUILT        =                  
-@LIBNAME@-""-CCMIREDUCEFUNCTIONS_SOURCES=ReduceFunctions.cc
-DEVICENAME     = @LIBNAME@-""-CCMIREDUCEFUNCTIONS
+#@LIBNAME@-""-CCMIREDUCEFUNCTIONS_SOURCES=ReduceFunctions.cc
+#DEVICENAME     = @LIBNAME@-""-CCMIREDUCEFUNCTIONS
 include @abs_top_builddir@/Build.rules

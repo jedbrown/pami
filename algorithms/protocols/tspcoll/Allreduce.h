@@ -18,13 +18,10 @@
 #define __algorithms_protocols_tspcoll_Allreduce_h__
 
 #include "algorithms/protocols/tspcoll/CollExchange.h"
+#include "algorithms/protocols/allreduce/ReduceFunctions.h"
 #include "math/math_coremath.h"
 #include <string.h>
 
-namespace CCMI { namespace Adaptor { namespace Allreduce {
-      extern void getReduceFunction(pami_dt, pami_op, unsigned,
-                                    unsigned&, coremath&);
-    }}};
 namespace TSPColl
 {
   namespace Allreduce

@@ -6,6 +6,7 @@
 #define __algorithms_protocols_allreduce_CSMultiCombineComposite_h__
 
 #include "algorithms/composite/Composite.h"
+#include "algorithms/protocols/allreduce/ReduceFunctions.h"
 #include "util/ccmi_util.h"
 
 
@@ -15,10 +16,6 @@ namespace CCMI
   {
     namespace Allreduce
     {
-      // Forward declare prototype
-      extern void getReduceFunction(pami_dt, pami_op, unsigned,
-                                    unsigned&, coremath&) __attribute__((noinline));
-
       class CSMultiCombineComposite : public CCMI::Executor::Composite
       {
       protected:

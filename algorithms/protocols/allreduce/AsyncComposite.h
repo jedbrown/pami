@@ -15,10 +15,11 @@
 #define __algorithms_protocols_allreduce_AsyncComposite_h__
 
 #include "algorithms/protocols/allreduce/Composite.h"
-//  #include "Geometry.h"
 #include "algorithms/executor/Barrier.h"
 #include "algorithms/executor/OldAllreduceBase.h"
+#include "algorithms/protocols/allreduce/ReduceFunctions.h"
 #include "math/math_coremath.h"
+
 
 namespace CCMI
 {
@@ -27,11 +28,6 @@ namespace CCMI
 
     namespace Allreduce
     {
-
-      // Forward declare prototype
-      extern void getReduceFunction(pami_dt, pami_op, unsigned,
-                                    unsigned&, coremath&) __attribute__((noinline));
-
       //-- AsyncComposite
       /// \brief The Async Composite for the Allreduce kernel executor.
       ///

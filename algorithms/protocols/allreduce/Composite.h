@@ -19,6 +19,7 @@
 #include "algorithms/executor/Barrier.h"
 #include "algorithms/executor/OldAllreduceBase.h"
 #include "math/math_coremath.h"
+#include "algorithms/protocols/allreduce/ReduceFunctions.h"
 
 namespace CCMI
 {
@@ -44,9 +45,6 @@ namespace CCMI
 
     namespace Allreduce
     {
-      // Forward declare prototype
-      extern void getReduceFunction(pami_dt, pami_op, unsigned,
-                                    unsigned&, coremath&) __attribute__((noinline));
       //-- Composite
       /// \brief The Composite for the Allreduce (and reduce)
       /// kernel executor.
