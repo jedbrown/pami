@@ -33,7 +33,7 @@ char send_buf[NUM_CONTEXT][NUM_LOOP*2];
 void
 pami_am_complete(pami_context_t context, void *cookie, pami_result_t result)
 {
-    // do nothing
+    /* do nothing */
 }
 void pami_recv_handler(pami_context_t context, void *cookie,
         const void *header_addr, size_t header_size, 

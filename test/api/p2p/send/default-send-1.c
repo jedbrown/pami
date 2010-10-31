@@ -1,7 +1,6 @@
-///
-/// \file test/api/p2p/send/default-send-1.c
-/// \brief Ppoint-to-point PAMI_send() test using multiple contexts
-///
+/** \file test/api/p2p/send/default-send-1.c
+    \brief Ppoint-to-point PAMI_send() test using multiple contexts
+*/
 
 #include <pami.h>
 #include <stdio.h>
@@ -104,7 +103,7 @@ unsigned do_test ()
     return 1;
   }
   size_t task_id = configuration.value.intval;
-  //TRACE((stderr, "My task id = %zu\n", task_id));
+  /*TRACE((stderr, "My task id = %zu\n", task_id)); */
 
   configuration.name = PAMI_CLIENT_NUM_TASKS;
   result = PAMI_Client_query(g_client, &configuration,1);
@@ -114,13 +113,13 @@ unsigned do_test ()
     return 1;
   }
   size_t num_tasks = configuration.value.intval;
-  //TRACE((stderr, "Number of tasks = %zu\n", num_tasks));
+  /*TRACE((stderr, "Number of tasks = %zu\n", num_tasks)); */
   if (num_tasks < 2) {
     fprintf(stderr, "Error. This test requires >= 2 tasks. Number of tasks in this job: %zu\n", num_tasks);
     return 1;
   }
 
-  //size_t dispatch = 0;
+  /*size_t dispatch = 0; */
   pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
   pami_send_hint_t options={0};
@@ -128,9 +127,9 @@ unsigned do_test ()
 
   if (create_dpids) {
     for (i = 0; i < num_contexts; i++) {
-      // For each context:
-      // Set up dispatch ID 0 for MU (use_shmem = 2)
-      // set up dispatch ID 1 for SHMem (use_shmem = 1)
+      /* For each context: */
+      /* Set up dispatch ID 0 for MU (use_shmem = 2) */
+      /* set up dispatch ID 1 for SHMem (use_shmem = 1) */
 
       for (dev = initial_device; dev < device_limit; dev++) {
 	fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
@@ -144,12 +143,12 @@ unsigned do_test ()
 	  fprintf (stderr, "Error. Unable to register pami dispatch %zu on context %zu. result = %d\n", dev, i, result);
 	  return 1;
 	}
-      } // end dp id/device loop
-    } // end context loop
+      } /* end dp id/device loop */
+    } /* end context loop */
 
     create_dpids = 0;
 
-  } // end dispatch id creation
+  } /* end dispatch id creation */
 
   pami_send_t parameters;
   parameters.send.header.iov_base = NULL;
@@ -169,25 +168,25 @@ unsigned do_test ()
 
   if (task_id == 0)
   {
-    for(dev = initial_device; dev < device_limit; dev++) {      // device loop
+    for(dev = initial_device; dev < device_limit; dev++) {      /* device loop */
 
       parameters.send.dispatch = dev;
 
-      for(xtalk = 0; xtalk < num_contexts; xtalk++) {                // xtalk loop
+      for(xtalk = 0; xtalk < num_contexts; xtalk++) {                /* xtalk loop */
 
-	// Skip running MU in Cross talk mode for now
+	/* Skip running MU in Cross talk mode for now */
 	/*	if (xtalk && !strcmp(device_str[dev], "MU")) {
 	  continue;
 	}
 	*/
-	for (remote_cb = 0; remote_cb < 2; remote_cb++) { // remote callback loop
+	for (remote_cb = 0; remote_cb < 2; remote_cb++) { /* remote callback loop */
 	  if (remote_cb) {
 	    parameters.events.remote_fn     = send_done_remote;
 	  } else {
 	    parameters.events.remote_fn     = NULL;
 	  }
 
-	  // Communicate with each task
+	  /* Communicate with each task */
 	  for (n = 1; n < num_tasks; n++) {	  
 
 	    result = PAMI_Endpoint_create (g_client, n, xtalk, &parameters.send.dest);
@@ -224,21 +223,21 @@ unsigned do_test ()
 	    recv_active = 1;
 
 	    TRACE((stderr, "... after send-recv advance loop\n"));
-	  } // end task loop
-	} // end remote callback loop
-      } // end xtalk loop
-    } // end device loop
-  } // end task = 0 loop
+	  } /* end task loop */
+	} /* end remote callback loop */
+      } /* end xtalk loop */
+    } /* end device loop */
+  } /* end task = 0 loop */
   else
   {
 
-    for(dev = initial_device; dev < device_limit; dev++) {      // device loop
+    for(dev = initial_device; dev < device_limit; dev++) {      /* device loop */
 
       parameters.send.dispatch = dev;
 
-      for(xtalk = 0; xtalk < num_contexts; xtalk++) {                // xtalk loop
+      for(xtalk = 0; xtalk < num_contexts; xtalk++) {                /* xtalk loop */
 
-	// Skip running MU in Cross talk mode for now
+	/* Skip running MU in Cross talk mode for now */
 	/*	if (xtalk && !strcmp(device_str[dev], "MU")) {
 	  continue;
 	}
@@ -249,7 +248,7 @@ unsigned do_test ()
 	  return 1;
 	}
 
-	for (remote_cb = 0; remote_cb < 2; remote_cb++) { // remote callback loop
+	for (remote_cb = 0; remote_cb < 2; remote_cb++) { /* remote callback loop */
 
 	  if (remote_cb) {
 	    parameters.events.remote_fn     = send_done_remote;
@@ -296,10 +295,10 @@ unsigned do_test ()
 	  send_active = 1;
 
 	  TRACE((stderr, "... after send advance loop\n"));
-	} // end remote callback loop
-      } // end xtalk loop
-    } // end device loop
-  } // end task != 0
+	} /* end remote callback loop */
+      } /* end xtalk loop */
+    } /* end device loop */
+  } /* end task != 0 */
 
   /* Unlock the context */
   for( i = 0; i < num_contexts; i++) {
@@ -320,7 +319,7 @@ int main (int argc, char ** argv)
 
   size_t status = 0;
 
-  // Determine which Device is being used
+  /* Determine which Device is being used */
   char * device;
   device = getenv ("PAMI_DEVICE");
 
@@ -389,7 +388,7 @@ int main (int argc, char ** argv)
   status = do_test ();
   TRACE((stderr, "After do_test.\n"));
 
-  // ====== CLEANUP ======
+  /* ====== CLEANUP ====== */
 
   result = PAMI_Context_destroyv(context, num_contexts);
   if (result != PAMI_SUCCESS) {

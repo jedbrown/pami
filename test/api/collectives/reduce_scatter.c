@@ -13,7 +13,7 @@
 
 #include "../pami_util.h"
 
-//define this if you want to validate the data for unsigned sums
+/*define this if you want to validate the data for unsigned sums */
 #define CHECK_DATA
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
@@ -159,28 +159,28 @@ const char * dt_array_str[] =
 
 unsigned elemsize_array[] =
   {
-    sizeof(unsigned int),       // PAMI_UNSIGNED_INT,
-    sizeof(double),             // PAMI_DOUBLE,
-    sizeof(char),               // PAMI_SIGNED_CHAR,
-    sizeof(unsigned char),      // PAMI_UNSIGNED_CHAR,
-    sizeof(short),              // PAMI_SIGNED_SHORT,
-    sizeof(unsigned short),     // PAMI_UNSIGNED_SHORT,
-    sizeof(int),                // PAMI_SIGNED_INT,
-    sizeof(long long),          // PAMI_SIGNED_LONG_LONG,
-    sizeof(unsigned long long), // PAMI_UNSIGNED_LONG_LONG,
-    sizeof(float),              // PAMI_FLOAT,
-    sizeof(long double),        // PAMI_LONG_DOUBLE,
-    sizeof(unsigned int),       // PAMI_LOGICAL,
-    (2 * sizeof(float)),        // PAMI_SINGLE_COMPLEX,
-    (2 * sizeof(double)),       // PAMI_DOUBLE_COMPLEX
-    // The following are from math/math_coremath.h structures
-    // \todo Correct or not?  At least they match internal math...
-    sizeof(int32_int32_t),      // PAMI_LOC_2INT,
-    sizeof(int16_int32_t),      // PAMI_LOC_SHORT_INT,
-    sizeof(fp32_int32_t),       // PAMI_LOC_FLOAT_INT,
-    sizeof(fp64_int32_t),       // PAMI_LOC_DOUBLE_INT,
-    sizeof(fp32_fp32_t),        // PAMI_LOC_2FLOAT,
-    sizeof(fp64_fp64_t),        // PAMI_LOC_2DOUBLE,
+    sizeof(unsigned int),       /* PAMI_UNSIGNED_INT, */
+    sizeof(double),             /* PAMI_DOUBLE, */
+    sizeof(char),               /* PAMI_SIGNED_CHAR, */
+    sizeof(unsigned char),      /* PAMI_UNSIGNED_CHAR, */
+    sizeof(short),              /* PAMI_SIGNED_SHORT, */
+    sizeof(unsigned short),     /* PAMI_UNSIGNED_SHORT, */
+    sizeof(int),                /* PAMI_SIGNED_INT, */
+    sizeof(long long),          /* PAMI_SIGNED_LONG_LONG, */
+    sizeof(unsigned long long), /* PAMI_UNSIGNED_LONG_LONG, */
+    sizeof(float),              /* PAMI_FLOAT, */
+    sizeof(long double),        /* PAMI_LONG_DOUBLE, */
+    sizeof(unsigned int),       /* PAMI_LOGICAL, */
+    (2 * sizeof(float)),        /* PAMI_SINGLE_COMPLEX, */
+    (2 * sizeof(double)),       /* PAMI_DOUBLE_COMPLEX */
+    /* The following are from math/math_coremath.h structures */
+    /* \todo Correct or not?  At least they match internal math... */
+    sizeof(int32_int32_t),      /* PAMI_LOC_2INT, */
+    sizeof(int16_int32_t),      /* PAMI_LOC_SHORT_INT, */
+    sizeof(fp32_int32_t),       /* PAMI_LOC_FLOAT_INT, */
+    sizeof(fp64_int32_t),       /* PAMI_LOC_DOUBLE_INT, */
+    sizeof(fp32_fp32_t),        /* PAMI_LOC_2FLOAT, */
+    sizeof(fp64_fp64_t),        /* PAMI_LOC_2DOUBLE, */
   };
 
 unsigned ** alloc2DContig(int nrows, int ncols)
@@ -200,7 +200,7 @@ unsigned ** alloc2DContig(int nrows, int ncols)
 void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id) {
 
   int i;
-  // if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
+  /* if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) { */
   if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_UNSIGNED_INT) {
     unsigned int *ibuf = (unsigned int *)  buf;
     for (i = 0; i < count; i++) {
@@ -213,7 +213,7 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id) {
 int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks, int task_id) {
 
   int i, err = 0;
-  //  if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) {
+  /*  if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) { */
   if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_UNSIGNED_INT) {
     unsigned int *rbuf = (unsigned int *)  buf;
     for (i = 0; i < count / num_tasks; i++) {
@@ -339,11 +339,11 @@ int main(int argc, char*argv[])
     for(j=DT_LOC_2INT; j<=DT_LOC_2DOUBLE; j++)
       validTable[i][j]=1;
 
-  /// \todo These long long types reportedly fail in pgas, so disable for now.
+  /*/ \todo These long long types reportedly fail in pgas, so disable for now. */
   for(i=0,j=DT_SIGNED_LONG_LONG; i<OP_COUNT;i++)validTable[i][j]=0;
   for(i=0,j=DT_UNSIGNED_LONG_LONG; i<OP_COUNT;i++)validTable[i][j]=0;
 
-  /// \todo These fail using core math...we should find this bug.
+  /*/ \todo These fail using core math...we should find this bug. */
   validTable[OP_BAND][DT_DOUBLE]=0;
 
 #if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
@@ -352,7 +352,7 @@ int main(int argc, char*argv[])
   fprintf(stderr, "PAMI_DEVICE=%c\n", env?*env:' ');
   if((env==NULL) || ((*env=='M') || (*env=='B')))
       {
-        /// These are unsupported on MU
+        /*/ These are unsupported on MU */
         for(i=0,j= DT_SIGNED_CHAR;    i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_UNSIGNED_CHAR;  i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_SIGNED_SHORT;   i<OP_COUNT;i++)validTable[i][j]=0;
@@ -370,7 +370,7 @@ int main(int argc, char*argv[])
         for(i= OP_MAXLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
         for(i= OP_MINLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
       }
-  // This works on bgq so re-enable it
+  /* This works on bgq so re-enable it */
   if((env) && (*env=='M'))
     validTable[OP_BAND][DT_DOUBLE]=1;
 #endif
@@ -430,7 +430,7 @@ int main(int argc, char*argv[])
             for (int ind =0; ind < num_tasks; ++ind) rcounts[ind] = i / num_tasks;
 
 #ifdef CHECK_DATA
-            // initialize_sndbuf (sbuf, i, op_array[op], dt_array[dt], task_id);
+            /* initialize_sndbuf (sbuf, i, op_array[op], dt_array[dt], task_id); */
             initialize_sndbuf (sbuf, i, op, dt, task_id);
 #endif
             blocking_coll(context,&barrier,&bar_poll_flag);
@@ -448,9 +448,9 @@ int main(int argc, char*argv[])
             blocking_coll(context,&barrier,&bar_poll_flag);
 
 #ifdef CHECK_DATA
-            // int rc = check_rcvbuf (rbuf, i, op_array[op], dt_array[dt], num_tasks, task_id);
+            /* int rc = check_rcvbuf (rbuf, i, op_array[op], dt_array[dt], num_tasks, task_id); */
             int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks, task_id); 
-            //assert (rc == 0);
+            /*assert (rc == 0); */
             if(rc) { fprintf(stderr, "FAILED validation\n"); exit(1); }
 #endif
 

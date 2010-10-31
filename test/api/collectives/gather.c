@@ -1,7 +1,7 @@
-///
-/// \file test/api/collectives/gather.c
-/// \brief Simple gather test
-///
+/**
+   \file test/api/collectives/gather.c 
+   \brief Simple gather test 
+*/
 
 #include "../pami_util.h"
 #define CHECK_DATA

@@ -279,7 +279,7 @@ int main (int argc, char ** argv)
       } /* end header loop */
     } /* end testcase loop */
   } /* end task = 0 */
-  else // task id > 0
+  else /* task id > 0 */
   {
 
     /* Create task unique dispatch sets 1 & 2 */
@@ -423,11 +423,11 @@ int main (int argc, char ** argv)
       } /* end task id loop */
     } /* end testcase loop */
   } /* end task = 0 */
-  /* Commenting out non-task 0 send fails to clean up output
+#if 0
+  /* Commenting out non-task 0 send fails to clean up output */
   else
   {
-
-    // Only sending long headers 
+    /* Only sending long headers  */
     h = 1;
     parameters.send.header.iov_base = (void *) header_ary[h];
     parameters.send.header.iov_len  = header_size_ary[h];
@@ -442,7 +442,7 @@ int main (int argc, char ** argv)
 
       TRACE((stderr, "before send ...\n"));
 
-      // Determine hint values
+      /* Determine hint values */
       send_hard_hint = (testcase >> 2) & 1;
       send_soft_hint = (testcase >> 1) & 1;
       recv_hard_hint = testcase & 1;
@@ -458,9 +458,10 @@ int main (int argc, char ** argv)
 	return 1;
       }
       TRACE((stderr, "... after send.\n"));
-    } // end testcase loop
-  } // end task = 1 loop
+    } /* end testcase loop */
+  } /* end task = 1 loop */
 */
+#endif
   /* ======== Combinations of header sizes and no_long_header hints that should result in recv FAILS  ======== */
   if (run_all == 1) {
     if (task_id == 0) {

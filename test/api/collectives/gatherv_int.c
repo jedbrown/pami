@@ -1,7 +1,7 @@
-///
-/// \file test/api/collectives/gatherv_int.c
-/// \brief Simple gatherv_int test
-///
+/**
+   \file test/api/collectives/gatherv_int.c 
+   \brief Simple gatherv_int test 
+*/
 
 #include "../pami_util.h"
 
