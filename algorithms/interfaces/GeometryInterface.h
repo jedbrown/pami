@@ -17,6 +17,8 @@
 #include <pami.h>
 #include "util/queue/MatchQueue.h"
 #include "Mapping.h"
+#include "components/memory/MemoryAllocator.h"
+#include "algorithms/geometry/UnexpBarrierQueueElement.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "GeometryPlatform.h"
 
@@ -135,10 +137,8 @@ namespace PAMI
       inline void                       setAllreduceComposite(COMPOSITE_TYPE c);
       inline void                       setAllreduceComposite(COMPOSITE_TYPE c,
                                                               unsigned i);
-      static inline void                registerUnexpBarrier(unsigned comm, pami_quad_t &info,
-							     unsigned peer, unsigned algorithm);
-
-      inline void                       processUnexpBarrier();
+      inline void                       processUnexpBarrier(MatchQueue * ueb_queue,
+                                                            MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> *ueb_allocator);
 
       // These methods were originally from the PGASRT Communicator class
       inline pami_task_t                 size       (void);
@@ -453,16 +453,10 @@ namespace PAMI
     }
 
     template <class T_Geometry>
-      inline void Geometry<T_Geometry>::registerUnexpBarrier (unsigned comm, pami_quad_t &info,
-							      unsigned peer, unsigned algorithm)
+    inline void Geometry<T_Geometry>::processUnexpBarrier(MatchQueue * ueb_queue,
+                                                          MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> *ueb_allocator)
     {
-      return T_Geometry::registerUnexpBarrier_impl(comm, info, peer, algorithm);
-    }
-
-    template <class T_Geometry>
-      inline void Geometry<T_Geometry>::processUnexpBarrier ()
-    {
-      return static_cast<T_Geometry*>(this)->processUnexpBarrier_impl();
+      return static_cast<T_Geometry*>(this)->processUnexpBarrier_impl(ueb_queue,ueb_allocator);
     }
 
     // These methods were originally from the PGASRT Communicator class

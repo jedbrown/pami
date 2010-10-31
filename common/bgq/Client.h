@@ -485,7 +485,8 @@ namespace PAMI
                           ctxt->getId(), context,
                           num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
 
-            new_geometry->processUnexpBarrier();
+	    new_geometry->processUnexpBarrier(&_ueb_queue,
+                                              &_ueb_allocator);
           }
         else
           {
@@ -549,7 +550,8 @@ namespace PAMI
                           ctxt->getId(), context,
                           num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
 
-            new_geometry->processUnexpBarrier();
+	    new_geometry->processUnexpBarrier(&_ueb_queue,
+                                              &_ueb_allocator);
           }
         else
           {
@@ -671,6 +673,18 @@ namespace PAMI
         TRACE_ERR((stderr, "<%p>%s\n", g, __PRETTY_FUNCTION__));
         return g;
       }
+    
+    inline void registerUnexpBarrier_impl (unsigned     comm,
+                                           pami_quad_t &info,
+                                           unsigned     peer,
+                                           unsigned     algorithm)
+      {
+        Geometry::UnexpBarrierQueueElement *ueb =
+          (Geometry::UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
+        new (ueb) Geometry::UnexpBarrierQueueElement (comm, info, peer, algorithm);
+        _ueb_queue.pushTail(ueb);
+      }
+
 
 
     protected:
@@ -699,6 +713,11 @@ namespace PAMI
 
 
       Memory::MemoryManager _mm;
+      //  Unexpected Barrier allocator
+      MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;       
+      //  Unexpected Barrier match queue
+      MatchQueue                                                             _ueb_queue;
+
 
 	/// \page env_vars Environment Variables
 	///
@@ -915,7 +934,6 @@ namespace PAMI
         void                   *_result_cookie;
         uint64_t               *_result;
         uint64_t               *_inval;
-
       };
 #endif
   }; // end class PAMI::Client

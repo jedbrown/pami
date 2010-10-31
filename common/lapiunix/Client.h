@@ -10,7 +10,6 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <map>
-
 #include "common/ClientInterface.h"
 #include "common/lapiunix/Context.h"
 #include "algorithms/geometry/LapiGeometry.h"
@@ -457,7 +456,8 @@ namespace PAMI
                 _contexts[n]->_p2p_ccmi_collreg->analyze_local(n,new_geometry,&to_reduce[1]);
                 _contexts[n]->_cau_collreg->analyze_local(n,new_geometry,&to_reduce[2]);
               }
-	    new_geometry->processUnexpBarrier();
+	    new_geometry->processUnexpBarrier(&_ueb_queue,
+                                              &_ueb_allocator);
             *geometry=(LAPIGeometry*) new_geometry;
           }
 
@@ -574,7 +574,8 @@ namespace PAMI
                 _contexts[n]->_p2p_ccmi_collreg->analyze_local(n,new_geometry,&to_reduce[1]);
                 _contexts[n]->_cau_collreg->analyze_local(n,new_geometry,&to_reduce[2]);
               }
-	    new_geometry->processUnexpBarrier();
+            new_geometry->processUnexpBarrier(&_ueb_queue,
+                                              &_ueb_allocator);
             *geometry=(LAPIGeometry*) new_geometry;
           }
 
@@ -664,6 +665,16 @@ namespace PAMI
         return g;
       }
 
+    inline void registerUnexpBarrier_impl (unsigned     comm,
+                                           pami_quad_t &info,
+                                           unsigned     peer,
+                                           unsigned     algorithm)
+      {
+        Geometry::UnexpBarrierQueueElement *ueb =
+          (Geometry::UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
+        new (ueb) Geometry::UnexpBarrierQueueElement (comm, info, peer, algorithm);
+        _ueb_queue.pushTail(ueb);
+      }
     
   protected:
 
@@ -762,6 +773,12 @@ namespace PAMI
     // Geometry Allocator
     MemoryAllocator<sizeof(LAPIGeometry),16>     _geometryAlloc;
 
+
+    //  Unexpected Barrier allocator
+    MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
+
+    //  Unexpected Barrier match queue
+    MatchQueue                                                             _ueb_queue;
   }; // end class PAMI::Client
 }; // end namespace PAMI
 

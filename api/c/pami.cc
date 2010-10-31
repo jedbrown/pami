@@ -248,18 +248,34 @@ extern "C"  pami_result_t PAMI_Geometry_algorithms_query (pami_context_t context
                                         mdata1,
                                         num1);
 }
-///
 
 ////////////////////////////////////////////////////////////////////////////////
-// Functions from pami_dispatch.h                                              //
+// Geometry Utility functions                                                 //
 ////////////////////////////////////////////////////////////////////////////////
-
 pami_geometry_t mapidtogeometry (pami_context_t context, int comm)
 {
   PAMI::Context * ctx    = (PAMI::Context *) context;
   PAMI::Client  * client = (PAMI::Client *)  ctx->getClient ();
   return client->mapidtogeometry(comm);
 }
+
+void registerunexpbarrier(pami_context_t context,
+                          unsigned       comm,
+                          pami_quad_t   &info,
+                          unsigned       peer,
+                          unsigned       algorithm)
+{
+  PAMI::Context * ctx    = (PAMI::Context *) context;
+  PAMI::Client  * client = (PAMI::Client *)  ctx->getClient ();
+  client->registerUnexpBarrier(comm,info,peer,algorithm);
+}
+
+
+///
+
+////////////////////////////////////////////////////////////////////////////////
+// Functions from pami_dispatch.h                                              //
+////////////////////////////////////////////////////////////////////////////////
 
 extern "C" pami_result_t PAMI_AMCollective_dispatch_set(pami_context_t              context,
                                                       pami_algorithm_t            algorithm,

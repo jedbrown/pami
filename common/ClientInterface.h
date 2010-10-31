@@ -104,6 +104,11 @@ namespace PAMI
 
         inline pami_result_t geometry_destroy(pami_geometry_t geometry);
         inline pami_geometry_t mapidtogeometry (int comm);
+        inline void registerUnexpBarrier(unsigned     comm,
+                                         pami_quad_t &info,
+                                         unsigned     peer,
+                                         unsigned     algorithm);
+      
     }; // end class PAMI::Client::Client
 
     template <class T_Client>
@@ -274,7 +279,18 @@ namespace PAMI
     {
       return static_cast<T_Client*>(this)->mapidtogeometry_impl(comm);
     }
-    
+
+    template <class T_Client>
+    inline void Client<T_Client>::registerUnexpBarrier (unsigned     comm,
+                                                        pami_quad_t &info,
+                                                        unsigned     peer,
+                                                        unsigned     algorithm)
+    {
+      static_cast<T_Client*>(this)->registerUnexpBarrier_impl(comm,
+                                                              info,
+                                                              peer,
+                                                              algorithm);      
+    }
   }; // end namespace Interface
 }; // end namespace PAMI
 #endif // __pami_client_h__

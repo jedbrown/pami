@@ -308,7 +308,9 @@ namespace PAMI
           }
           *geometry = (pami_geometry_t) new_geometry;
           /// \todo  deliver completion to the appropriate context
-    new_geometry->processUnexpBarrier();
+	  new_geometry->processUnexpBarrier(&_ueb_queue,
+					    &_ueb_allocator);
+
         }
         BGPGeometry *bargeom = (BGPGeometry*)parent;
         PAMI::Context *ctxt = (PAMI::Context *)context;
@@ -344,7 +346,9 @@ namespace PAMI
           }
           *geometry = (pami_geometry_t) new_geometry;
           /// \todo  deliver completion to the appropriate context
-    new_geometry->processUnexpBarrier();
+	  new_geometry->processUnexpBarrier(&_ueb_queue,
+					    &_ueb_allocator);
+
         }
         BGPGeometry *bargeom = (BGPGeometry*)parent;
         PAMI::Context *ctxt = (PAMI::Context *)context;
@@ -398,6 +402,18 @@ namespace PAMI
         return g;
       }
 
+    inline void registerUnexpBarrier_impl (unsigned     comm,
+                                           pami_quad_t &info,
+                                           unsigned     peer,
+                                           unsigned     algorithm)
+      {
+        Geometry::UnexpBarrierQueueElement *ueb =
+          (Geometry::UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
+        new (ueb) Geometry::UnexpBarrierQueueElement (comm, info, peer, algorithm);
+        _ueb_queue.pushTail(ueb);
+      }
+
+
     protected:
 
       inline pami_client_t getClient () const
@@ -422,6 +438,12 @@ namespace PAMI
       std::map<unsigned, pami_geometry_t> _geometry_map;
 
       Memory::MemoryManager _mm;
+      //  Unexpected Barrier allocator
+      MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
+      
+      //  Unexpected Barrier match queue
+      MatchQueue                                                             _ueb_queue;
+
 
       inline void initializeMemoryManager ()
       {

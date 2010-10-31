@@ -30,15 +30,6 @@ extern pami_geometry_t mapidtogeometry (pami_context_t context, int comm);
 
 namespace PAMI
 {
-  ///
-  /// \brief memory allocator for early arrival barrier messages
-  //
-  extern PAMI::MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16 > _ueb_allocator;
-
-  ///
-  /// \brief static match queue to store unexpected barrier messages
-  ///
-  extern PAMI::MatchQueue                                          _ueb_queue;
   namespace Geometry
   {
     // This class manages "Algorithms", which consist of a geometry

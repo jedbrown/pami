@@ -399,24 +399,16 @@ namespace PAMI
           return _allreduce[_allreduce_iteration];
         }
 
-      static inline void registerUnexpBarrier_impl (unsigned comm, pami_quad_t &info,
-                                                    unsigned peer, unsigned algorithm)
-        {
-          UnexpBarrierQueueElement *ueb = (UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
-
-          new (ueb) UnexpBarrierQueueElement (comm, info, peer, algorithm);
-          _ueb_queue.pushTail(ueb);
-        }
-
-      inline void processUnexpBarrier_impl ()
+      inline void processUnexpBarrier_impl (MatchQueue * ueb_queue,
+                                            MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> *ueb_allocator)
         {
           UnexpBarrierQueueElement *ueb = NULL;
-          while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL )
+          while ( (ueb = (UnexpBarrierQueueElement *)ueb_queue->findAndDelete(_commid)) != NULL )
             {
               /// \todo does NOT support multicontext keystore
               CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((gkeys_t)ueb->getAlgorithm());
               c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
-              _ueb_allocator.returnObject(ueb);
+              ueb_allocator->returnObject(ueb);
             }
         }
 

@@ -19,6 +19,13 @@
 #include "algorithms/protocols/barrier/BarrierFactory.h"
 #include "algorithms/executor/Barrier.h"
 
+extern void registerunexpbarrier(pami_context_t context,
+                                 unsigned       comm,
+                                 pami_quad_t   &info,
+                                 unsigned       peer,
+                                 unsigned       algorithm);
+
+
 namespace CCMI
 {
   namespace Adaptor
@@ -116,14 +123,14 @@ namespace CCMI
           }
 
     virtual void   notifyRecv  (unsigned              src,
-              const pami_quad_t   & metadata,
-              PAMI::PipeWorkQueue ** pwq,
-              pami_callback_t      * cb_done,
-              void                 * cookie)
-    {
-      _myexecutor.notifyRecv (src, metadata, NULL, NULL);
-    }
-
+                                const pami_quad_t   & metadata,
+                                PAMI::PipeWorkQueue ** pwq,
+                                pami_callback_t      * cb_done,
+                                void                 * cookie)
+          {
+            _myexecutor.notifyRecv (src, metadata, NULL, NULL);
+          }
+        
         static void    cb_head   (pami_context_t         ctxt,
                                   const pami_quad_t    * info,
                                   unsigned              count,
@@ -148,8 +155,11 @@ namespace CCMI
             if (geometry== NULL)
               {
                 //Geoemtry doesnt exist
-                PAMI_GEOMETRY_CLASS::registerUnexpBarrier(cdata->_comm, (pami_quad_t&)*info, peer,
-                                                          (unsigned) PAMI::Geometry::PAMI_GKEY_UEBARRIERCOMPOSITE1);
+                registerunexpbarrier(ctxt,
+                                     cdata->_comm,
+                                     (pami_quad_t&)*info,
+                                     peer,
+                                     (unsigned) PAMI::Geometry::PAMI_GKEY_UEBARRIERCOMPOSITE1);
                 return;
               }
             PAMI_assert(geometry != NULL);

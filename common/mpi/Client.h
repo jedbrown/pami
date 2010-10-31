@@ -278,9 +278,8 @@ namespace PAMI
                 _contexts[n]._oldccmi_collreg->analyze_local(n,new_geometry,&to_reduce[2]);
                 _contexts[n]._ccmi_collreg->analyze_local(n,new_geometry,&to_reduce[3]);
               }
-
-	    new_geometry->processUnexpBarrier();
-
+	    new_geometry->processUnexpBarrier(&_ueb_queue,
+                                              &_ueb_allocator);
             *geometry=(MPIGeometry*) new_geometry;
           }
 
@@ -396,6 +395,17 @@ namespace PAMI
         pami_geometry_t g = _geometry_map[comm];
         return g;
       }
+    inline void registerUnexpBarrier_impl (unsigned     comm,
+                                           pami_quad_t &info,
+                                           unsigned     peer,
+                                           unsigned     algorithm)
+      {
+        Geometry::UnexpBarrierQueueElement *ueb =
+          (Geometry::UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
+        new (ueb) Geometry::UnexpBarrierQueueElement (comm, info, peer, algorithm);
+        _ueb_queue.pushTail(ueb);
+      }
+
     
 
   protected:
@@ -419,7 +429,13 @@ namespace PAMI
     pami_geometry_range_t      _world_range;
     std::map<unsigned, pami_geometry_t> _geometry_map;
     Memory::MemoryManager      _mm;
+    //  Unexpected Barrier allocator
+    MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
 
+    //  Unexpected Barrier match queue
+    MatchQueue                                                             _ueb_queue;
+
+    
     inline void initializeMemoryManager ()
       {
         char   shmemfile[1024];
