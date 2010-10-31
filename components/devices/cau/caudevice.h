@@ -31,10 +31,6 @@ namespace PAMI
 {
   namespace Device
   {
-//    extern std::map<int,int> _g_lapi_mcast_to_pami_mcast;
-//    extern std::map<int,int> _g_pami_mcast_to_lapi_mcast;
-    extern std::map<lapi_handle_t,void*> _g_id_to_device_table;
-
     class CAUDevice: public Interface::BaseDevice<CAUDevice>
     {
     public:
@@ -72,7 +68,7 @@ namespace PAMI
                                                           null_send_hint,
                                                           INTERFACE_LAPI);          
           if(rc != SUCCESS) return -1;
-          _g_id_to_device_table[my_dispatch_id] = clientdata;
+          __global._id_to_device_table[my_dispatch_id] = clientdata;
           return my_dispatch_id;
         }
 
@@ -87,7 +83,7 @@ namespace PAMI
                                                           null_send_hint,
                                                           INTERFACE_LAPI);          
           if(rc != SUCCESS) return -1;
-          _g_id_to_device_table[dispatch_id]           =  clientdata;
+          __global._id_to_device_table[dispatch_id]           =  clientdata;
           return dispatch_id;
         }
 
@@ -219,7 +215,7 @@ namespace PAMI
         }
       static inline void         *getClientData(int id)
         {
-          return _g_id_to_device_table[id];
+          return __global._id_to_device_table[id];
         }
       inline pami_geometry_t geometrymap (int comm)
         {

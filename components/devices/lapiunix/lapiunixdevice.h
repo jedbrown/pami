@@ -43,8 +43,6 @@ namespace PAMI
       void                          *async_arg;
     }lapi_m2m_dispatch_info_t;
 
-    extern std::map<lapi_handle_t,void*> _g_context_to_device_table;
-
     class LAPIDevice : public Interface::BaseDevice<LAPIDevice>,
                        public Interface::PacketDevice<LAPIDevice>
     {
@@ -64,7 +62,7 @@ namespace PAMI
       inline void setLapiHandle(lapi_handle_t handle)
         {
           _lapi_handle=handle;
-          _g_context_to_device_table[handle]=(void*) this;
+          __global._context_to_device_table[handle]=(void*) this;
 
           _tf.Util_type = LAPI_GET_THREAD_FUNC;
           CheckLapiRC(lapi_util(_lapi_handle, (lapi_util_t *)&_tf));
@@ -270,7 +268,7 @@ namespace PAMI
           void               *r   = NULL;
           lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
           OldLAPIM2MHeader      *hdr = (OldLAPIM2MHeader*) uhdr;
-          LAPIDevice         *dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
+          LAPIDevice         *dev = (LAPIDevice*) __global._context_to_device_table[*hndl];
 
           std::list<OldLAPIM2MRecvMessage<size_t>*>::iterator it;
           for(it=dev->_m2mrecvQ.begin();it != dev->_m2mrecvQ.end(); it++)
@@ -370,7 +368,7 @@ namespace PAMI
           void               *r   = NULL;
           lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
           OldLAPIM2MHeader      *hdr = (OldLAPIM2MHeader*) uhdr;
-          LAPIDevice         *dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
+          LAPIDevice         *dev = (LAPIDevice*) __global._context_to_device_table[*hndl];
           unsigned        conn_id = *((unsigned*)uhdr);
           LAPIMsyncMessage     *m = dev->_msyncsendQ[conn_id];
 
@@ -437,7 +435,7 @@ namespace PAMI
           unsigned                    pwidth;
           pami_callback_t              cb_done;
 
-          LAPIDevice *_dev = (LAPIDevice*) _g_context_to_device_table[*hndl];
+          LAPIDevice *_dev = (LAPIDevice*) __global._context_to_device_table[*hndl];
           lapi_mcast_dispatch_info_t ldi = _dev->_mcast_dispatch_lookup[dispatch_id];
           _dev->lock();
           std::list<OldLAPIMcastRecvMessage*>::iterator it;

@@ -22,43 +22,30 @@
 #include "common/GlobalInterface.h"
 #include "Mapping.h"
 #include "Topology.h"
+#include "common/lapiunix/lapifunc.h"
+#include <map>
 
 namespace PAMI
 {
-    class Global : public Interface::Global<PAMI::Global>
-    {
-      public:
-
-        inline Global () :
-          Interface::Global<PAMI::Global>(),
-          mapping()
-        {
-          // Time gets its own clockMHz
-          time.init(0);
+  class Global : public Interface::Global<PAMI::Global>
+  {
+  public:
+    inline Global () :
+      Interface::Global<PAMI::Global>(),
+      mapping()
+      {
+        // Time gets its own clockMHz
+        time.init(0);
           {
-                size_t min=0, max=0;
-                mapping.init(min, max);
-#if 0
-
-                PAMI::Topology::static_init(&mapping);
-                if (mapping.size() == max - min + 1) {
-                        new (&topology_global) PAMI::Topology(min, max);
-                } else {
-                        PAMI_abortf("failed to build global-world topology %zu:: %zu..%zu", mapping.size(), min, max);
-                }
-                topology_global.subTopologyLocalToMe(&topology_local);
-#endif
+            size_t min=0, max=0;
+            mapping.init(min, max);
           }
-        };
-
-
-
-        inline ~Global () {};
-
-      public:
-
-        PAMI::Mapping		mapping;
-
+      };
+    inline ~Global () {};
+  public:
+    PAMI::Mapping		   mapping;
+    std::map<lapi_handle_t,void*> _context_to_device_table;
+    std::map<lapi_handle_t,void*> _id_to_device_table;    
   };   // class Global
 };     // namespace PAMI
 
