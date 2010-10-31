@@ -19,7 +19,6 @@
 // Collective Registration for CCMI protocols for p2p
 namespace PAMI
 {
-  extern std::map<unsigned, pami_geometry_t> geometry_map;
   namespace CollRegistration
   {
     namespace P2P
@@ -56,18 +55,19 @@ namespace PAMI
                                   T_Geometry >
       {
         public:
-          inline CCMIRegistration(pami_client_t       client,
-                                  pami_context_t      context,
-                                  size_t              context_id,
-                                  size_t              client_id,
-                                  T_Local_Device     &ldev,
-                                  T_Global_Device    &gdev,
-                                  T_Allocator        &allocator,
-                                  bool                use_shmem,
-                                  bool                use_p2p,
-                                  size_t              global_size,
-                                  size_t              local_size,
-                                  int                *dispatch_id):
+          inline CCMIRegistration(pami_client_t                        client,
+                                  pami_context_t                       context,
+                                  size_t                               context_id,
+                                  size_t                               client_id,
+                                  T_Local_Device                      &ldev,
+                                  T_Global_Device                     &gdev,
+                                  T_Allocator                         &allocator,
+                                  bool                                 use_shmem,
+                                  bool                                 use_p2p,
+                                  size_t                               global_size,
+                                  size_t                               local_size,
+                                  int                                 *dispatch_id,
+                                  std::map<unsigned, pami_geometry_t> *geometry_map):
             CollRegistration < PAMI::CollRegistration::P2P::CCMIRegistration < T_Geometry,
                                                                                T_Local_Device,
                                                                                T_Global_Device,
@@ -87,6 +87,7 @@ namespace PAMI
             _context(context),
             _context_id(context_id),
             _client_id(client_id),
+            _geometry_map(geometry_map),
             _reduce_val(0),
             _dispatch_id(dispatch_id),
             _local_dev(ldev),
@@ -306,15 +307,6 @@ namespace PAMI
         inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t *in)
           {
             return PAMI_SUCCESS;
-          }
-
-
-
-          static pami_geometry_t mapidtogeometry (int comm)
-          {
-            pami_geometry_t g = geometry_map[comm];
-            TRACE_INIT((stderr, "<%p>CCMIRegistration::mapidtogeometry()\n", g));
-            return g;
           }
 
         private:
@@ -941,6 +933,7 @@ namespace PAMI
           pami_context_t                                               _context;
           size_t                                                       _context_id;
           size_t                                                       _client_id;
+          std::map<unsigned, pami_geometry_t>                         *_geometry_map;
           uint64_t                                                     _reduce_val;
 
           // This is a pointer to the current dispatch id of the context

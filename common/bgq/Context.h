@@ -285,13 +285,15 @@ namespace PAMI
       inline Context (pami_client_t client, size_t clientid, size_t id, size_t num,
                       PlatformDeviceList *devices,
                       void * addr, size_t bytes,
-                      BGQGeometry *world_geometry) :
+                      BGQGeometry *world_geometry,
+		      std::map<unsigned, pami_geometry_t> *geometry_map):
           Interface::Context<PAMI::Context> (client, id),
           _client (client),
           _context ((pami_context_t)this),
           _clientid (clientid),
           _contextid (id),
 	  _dispatch_id(255),
+	  _geometry_map(geometry_map),
           _mm (addr, bytes),
           _lock(),
 #ifdef _COLLSHM
@@ -353,7 +355,7 @@ namespace PAMI
 
             if (result != PAMI_SUCCESS) rput_mu = NULL;
 
-            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), &_dispatch_id);
+            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), &_dispatch_id, _geometry_map);
 
           }
 
@@ -455,7 +457,7 @@ namespace PAMI
 
                 if (result != PAMI_SUCCESS) rput_shmem = NULL;
 
-                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid),& _dispatch_id);
+                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid),& _dispatch_id,_geometry_map);
               }
             else TRACE_ERR((stderr, "topology does not support shmem\n"));
           }
@@ -506,9 +508,10 @@ namespace PAMI
                                                                                                        (pami_context_t)this, 
                                                                                                        id, 
                                                                                                        clientid,
-                                                                                                       &_dispatch_id);
+												       &_dispatch_id,
+													_geometry_map);
 
-        _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size(), &_dispatch_id);
+        _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size(), &_dispatch_id, _geometry_map);
 
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if (_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(0))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry, 0);
@@ -1104,6 +1107,7 @@ namespace PAMI
       size_t                       _clientid;
       size_t                       _contextid;
       int                          _dispatch_id;
+      std::map<unsigned, pami_geometry_t> *_geometry_map;
       pami_endpoint_t              _self;
 
       PAMI::Memory::MemoryManager  _mm;

@@ -266,7 +266,8 @@ namespace CCMI
           return a2a;
         }
 
-        static void cb_manytomany(void *arg,
+        static void cb_manytomany(pami_context_t ctxt,
+                                  void *arg,
                                   unsigned conn_id,
                                   pami_quad_t *msginfo,
                                   unsigned msgcount,
@@ -279,14 +280,7 @@ namespace CCMI
           PAMI_assert(msgcount >= sizeof(CollHeaderData) / (sizeof(pami_quad_t)));
           All2AllvProtocol *a2a = NULL;
           int comm = md->_comm;
-          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
-                                          PAMI_GEOMETRY_CLASS::getCachedGeometry(comm);
-
-          if (!geometry)
-            {
-              geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry(comm);
-              PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, comm);
-            }
+          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry(ctxt, comm);
 
           C *cmgr = factory->_cmgr;
           unsigned key = factory->getKey(geometry, &cmgr);

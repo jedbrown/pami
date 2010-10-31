@@ -29,7 +29,7 @@ namespace CCMI
       ///
       /// \brief Asyc Broadcast Composite. It is single color right now
       ///
-      template <class T_Schedule, class T_Conn, ScheduleFn create_schedule>
+      template <class T_Schedule, class T_Conn, SFunc<PAMI_GEOMETRY_CLASS>::ScheduleFn create_schedule>
       class AMBroadcastT : public CCMI::Executor::Composite
       {
         protected:
@@ -135,7 +135,8 @@ namespace CCMI
 
 
           static void   cb_head
-          (const pami_quad_t     * info,
+          (pami_context_t         ctxt,
+           const pami_quad_t     * info,
            unsigned               count,
            unsigned               conn_id,
            size_t                 peer,
@@ -149,13 +150,7 @@ namespace CCMI
             CollHeaderData *cdata = (CollHeaderData *) info;
 
             int comm = cdata->_comm;
-            PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(comm);
-
-            if (geometry == NULL)
-              {
-                geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (comm);
-                PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, comm);
-              }
+            PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, comm);
 
             pami_xfer_t broadcast;
             broadcast.algorithm = (size_t) - 1;  ///Not used by the protocols

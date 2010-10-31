@@ -33,8 +33,6 @@
 
 namespace PAMI
 {
-  extern std::map<unsigned, pami_geometry_t> geometry_map;
-
   namespace CollRegistration
   {
     template <class T_Geometry,
@@ -49,11 +47,12 @@ namespace PAMI
                               T_Geometry>
       {
       public:
-      inline CCMIRegistration(pami_client_t       client,
-                              pami_context_t      context,
-                              size_t             context_id,
-                              size_t             client_id,
-                              T_Device          &dev):
+      inline CCMIRegistration(pami_client_t                        client,
+                              pami_context_t                       context,
+                              size_t                               context_id,
+                              size_t                               client_id,
+                              T_Device                            &dev,
+                              std::map<unsigned, pami_geometry_t> *geometry_map):
         CollRegistration<PAMI::CollRegistration::CCMIRegistration<T_Geometry,
                                                                  T_NativeInterface1S,
                                                                  T_NativeInterfaceAS,
@@ -63,36 +62,37 @@ namespace PAMI
         _context(context),
         _context_id(context_id),
         _reduce_val(0),
+        _geometry_map(geometry_map),
         _dev(dev),
-  _msync_ni           (dev, client,context,context_id,client_id),
+        _msync_ni           (dev, client,context,context_id,client_id),
         _barrier_ni         (dev, client,context,context_id,client_id),
         _binom_broadcast_ni (dev, client,context,context_id,client_id),
         _ring_broadcast_ni  (dev, client,context,context_id,client_id),
-  _asrb_binom_bcast_ni  (dev, client,context,context_id,client_id),
-  _ascs_binom_bcast_ni  (dev, client,context,context_id,client_id),
-  _active_binombcast_ni  (dev, client,context,context_id,client_id),
-  _binom_allreduce_ni (dev, client,context,context_id,client_id),
-  _alltoall_ni (dev, client, context, context_id, client_id),
+        _asrb_binom_bcast_ni  (dev, client,context,context_id,client_id),
+        _ascs_binom_bcast_ni  (dev, client,context,context_id,client_id),
+        _active_binombcast_ni  (dev, client,context,context_id,client_id),
+        _binom_allreduce_ni (dev, client,context,context_id,client_id),
+        _alltoall_ni (dev, client, context, context_id, client_id),
         _connmgr(65535),
-  _rbconnmgr(), //Doesnt use sysdeps
-  _csconnmgr(), //Doesnt use sysdeps
+        _rbconnmgr(), //Doesnt use sysdeps
+        _csconnmgr(), //Doesnt use sysdeps
         _msync_reg(&_sconnmgr, &_msync_ni),
         _barrier_reg(NULL,&_barrier_ni, CCMI::Adaptor::Barrier::BinomialBarrier::cb_head),
         _binom_broadcast_reg(&_connmgr, &_binom_broadcast_ni),
-  _ring_broadcast_reg(&_connmgr, &_ring_broadcast_ni),
-  _asrb_binom_bcast_reg(&_rbconnmgr, &_asrb_binom_bcast_ni),
-  _ascs_binom_bcast_reg(&_csconnmgr, &_ascs_binom_bcast_ni),
-  _active_binombcast_reg(&_rbconnmgr, &_active_binombcast_ni),
-  _alltoall_reg(&_csconnmgr, &_alltoall_ni),
-  _binomial_allreduce_reg(&_rbconnmgr, &_binom_allreduce_ni, CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead)
+        _ring_broadcast_reg(&_connmgr, &_ring_broadcast_ni),
+        _asrb_binom_bcast_reg(&_rbconnmgr, &_asrb_binom_bcast_ni),
+        _ascs_binom_bcast_reg(&_csconnmgr, &_ascs_binom_bcast_ni),
+        _active_binombcast_reg(&_rbconnmgr, &_active_binombcast_ni),
+        _alltoall_reg(&_csconnmgr, &_alltoall_ni),
+        _binomial_allreduce_reg(&_rbconnmgr, &_binom_allreduce_ni, CCMI::Adaptor::Allreduce::Binomial::Composite::cb_receiveHead)
           {
             TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
       //set the mapid functions
             _barrier_reg.setMapIdToGeometry(mapidtogeometry);
-      _asrb_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
-      _ascs_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
-      _active_binombcast_reg.setMapIdToGeometry(mapidtogeometry);
-      _alltoall_reg.setMapIdToGeometry(mapidtogeometry);
+            _asrb_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
+            _ascs_binom_bcast_reg.setMapIdToGeometry(mapidtogeometry);
+            _active_binombcast_reg.setMapIdToGeometry(mapidtogeometry);
+            _alltoall_reg.setMapIdToGeometry(mapidtogeometry);
 
             _binomial_allreduce_reg.setMapIdToGeometry(mapidtogeometry);
           }
@@ -145,18 +145,13 @@ namespace PAMI
             return PAMI_SUCCESS;
           }
 
-      static pami_geometry_t mapidtogeometry (int comm)
-        {
-          pami_geometry_t g = geometry_map[comm];
-          TRACE_ERR((stderr, "<%p>%s\n", g, __PRETTY_FUNCTION__));
-          return g;
-        }
-
     public:
       pami_client_t                                          _client;
       pami_context_t                                         _context;
       size_t                                                 _context_id;
       uint64_t                                               _reduce_val;
+      std::map<unsigned, pami_geometry_t>                   *_geometry_map;
+        
 
       // Barrier Storage
       CCMI::Executor::Composite                             *_barrier_composite;

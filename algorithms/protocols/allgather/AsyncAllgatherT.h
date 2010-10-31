@@ -37,7 +37,7 @@ namespace CCMI
       ///
       /// \brief Asyc Allgather Composite.
       ///
-      template <class T_Schedule, class T_Conn, ScheduleFn create_schedule>
+      template <class T_Schedule, class T_Conn, SFunc<PAMI_GEOMETRY_CLASS>::ScheduleFn create_schedule>
 	class AsyncAllgatherT : public CCMI::Executor::Composite
       {
 
@@ -260,7 +260,8 @@ namespace CCMI
 	  }
 
 	  static void cb_async
-	    (const pami_quad_t     * info,
+          (pami_context_t         ctxt,
+           const pami_quad_t     * info,
 	     unsigned                count,
 	     unsigned                conn_id,
 	     size_t                  peer,
@@ -277,12 +278,7 @@ namespace CCMI
 	    T_Composite* a_composite = NULL;
 
 	    int comm = cdata->_comm;
-	    PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(comm);
-	    if(geometry == NULL)
-	    {
-	      geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (comm);
-	      PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, comm);
-	    }
+	    PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, comm);
 
 	    C *cmgr = factory->getConnMgr();
             unsigned key;

@@ -787,7 +787,8 @@ typedef enum {
   } pami_subtask_t;
 
 
-  typedef pami_quad_t * (*pami_olddispatch_multicast_fn) (const pami_quad_t   * info,
+typedef pami_quad_t * (*pami_olddispatch_multicast_fn) (pami_context_t ctxt,
+                                                        const pami_quad_t   * info,
                                                         unsigned             count,
                                                         unsigned             peer,
                                                         size_t               sndlen,

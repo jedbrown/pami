@@ -51,18 +51,23 @@ namespace PAMI
       public Geometry<PAMI::Geometry::Lapi>
     {
     public:
-      inline Lapi(pami_client_t                   client,
-                  Geometry<PAMI::Geometry::Lapi> *parent,
-                  Mapping                        *mapping,
-                  unsigned                        comm,
-                  pami_task_t                     nranks,
-                  pami_task_t                    *ranks):
+      inline Lapi(pami_client_t                        client,
+                  Geometry<PAMI::Geometry::Lapi>      *parent,
+                  Mapping                             *mapping,
+                  unsigned                             comm,
+                  pami_task_t                          nranks,
+                  pami_task_t                         *ranks,
+                  std::map<unsigned, pami_geometry_t> *geometry_map):
         Geometry<PAMI::Geometry::Lapi>(parent,
                                        mapping,
                                        comm,
                                        nranks,
                                        ranks),
-        _client(client)
+        _kvstore(),
+        _commid(comm),
+        _client(client),
+        _geometry_map(geometry_map),
+        _masterRank(-1)
         {
           _ranks                     = ranks;
           _global_all_topo           = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
@@ -83,19 +88,19 @@ namespace PAMI
                   _masterRank = _local_topo->index2Rank(j);
                   break;
                 };          
-          PAMI::geometry_map[_commid]=this;
+          (*_geometry_map)[_commid]=this;
           _virtual_rank    =  _global_all_topo->rank2Index(_rank);
           PAMI_assert(_virtual_rank != -1);
-          updateCachedGeometry(this, _commid);          
         }
       
-      inline Lapi (pami_client_t                   client,
-                   Geometry<PAMI::Geometry::Lapi> *parent,
-                   Mapping                        *mapping,
-                   unsigned                        comm,
-                   int                             numranges,
-                   pami_geometry_range_t           rangelist[],
-                   int                             gen_topo=1):
+      inline Lapi (pami_client_t                        client,
+                   Geometry<PAMI::Geometry::Lapi>      *parent,
+                   Mapping                             *mapping,
+                   unsigned                             comm,
+                   int                                  numranges,
+                   pami_geometry_range_t                rangelist[],
+                   std::map<unsigned, pami_geometry_t> *geometry_map,
+                   int                                  gen_topo=1):
         Geometry<PAMI::Geometry::Lapi>(parent,
                                        mapping,
                                        comm,
@@ -104,6 +109,7 @@ namespace PAMI
         _kvstore(),
         _commid(comm),
         _client(client),
+        _geometry_map(geometry_map),
         _masterRank(-1)
         {
           PAMI::Topology *cur         = NULL;
@@ -178,12 +184,11 @@ namespace PAMI
 //          PAMI_assert(_local_topo->size() != 0);
 //          PAMI_assert(_local_master_topo->size() != 0);
 
-          PAMI::geometry_map[_commid]=this;
+          (*_geometry_map)[_commid]=this;
           pami_result_t rc = _global_all_topo->rankList(&_ranks);
           PAMI_assert(rc == PAMI_SUCCESS);
           _virtual_rank    =  _global_all_topo->rank2Index(_rank);
           PAMI_assert(_virtual_rank != -1);
-          updateCachedGeometry(this, _commid);
         }
 
       inline void regenTopo()
@@ -394,18 +399,6 @@ namespace PAMI
           return _allreduce[_allreduce_iteration];
         }
 
-
-      static inline Lapi   *getCachedGeometry_impl(unsigned comm)
-        {
-          return (Lapi*)PAMI::cached_geometry[comm];
-        }
-      static inline void               updateCachedGeometry_impl(Lapi *geometry,
-                                                                 unsigned comm)
-        {
-          PAMI_assert(geometry!=NULL);
-          PAMI::cached_geometry[comm]=(void*)geometry;
-        }
-
       static inline void registerUnexpBarrier_impl (unsigned comm, pami_quad_t &info,
                                                     unsigned peer, unsigned algorithm)
         {
@@ -415,14 +408,17 @@ namespace PAMI
           _ueb_queue.pushTail(ueb);
         }
 
-      inline void processUnexpBarrier_impl () {
-        UnexpBarrierQueueElement *ueb = NULL;
-        while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL ) {
-          CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((gkeys_t)ueb->getAlgorithm());/// \todo does NOT support multicontext keystore
-          c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
-          _ueb_allocator.returnObject(ueb);
+      inline void processUnexpBarrier_impl ()
+        {
+          UnexpBarrierQueueElement *ueb = NULL;
+          while ( (ueb = (UnexpBarrierQueueElement *)_ueb_queue.findAndDelete(_commid)) != NULL )
+            {
+              /// \todo does NOT support multicontext keystore
+              CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((gkeys_t)ueb->getAlgorithm());
+              c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
+              _ueb_allocator.returnObject(ueb);
+            }
         }
-      }
 
       // These methods were originally from the PGASRT Communicator class
       inline pami_task_t size_impl(void)
@@ -645,8 +641,6 @@ namespace PAMI
           _ue_barrier._factory  =f;
           _ue_barrier._geometry =this;
         }
-
-
     private:
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _allreduces[PAMI_GEOMETRY_NUMALGOLISTS];
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _broadcasts[PAMI_GEOMETRY_NUMALGOLISTS];
@@ -685,6 +679,7 @@ namespace PAMI
       MatchQueue                                  _ue;
       MatchQueue                                  _post;
       pami_task_t                                *_ranks;
+      std::map<unsigned, pami_geometry_t>        *_geometry_map;
       void                                       *_allreduce_storage[2];
       void                                       *_allreduce[2];
       unsigned                                    _allreduce_async_mode;

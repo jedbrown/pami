@@ -302,16 +302,18 @@ namespace PAMI
                       size_t                 clientid,
                       size_t                 id,
                       size_t                 num,
-                                PlatformDeviceList *devices,
+                      PlatformDeviceList    *devices,
                       void                  *addr,
                       size_t                 bytes,
                       MPIGeometry           *world_geometry,
-                      Memory::MemoryManager *mm) :
+                      Memory::MemoryManager *mm,
+                      std::map<unsigned, pami_geometry_t> *geometry_map):
         Interface::Context<PAMI::Context> (client, id),
         _client (client),
         _context(this),
         _clientid (clientid),
         _contextid (id),
+        _geometry_map(geometry_map),
         _dispatch_id(255),
         _mm (mm),
         _lock (),
@@ -338,7 +340,7 @@ namespace PAMI
           MPI_Barrier(MPI_COMM_WORLD);
 
           _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
-          new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi, &_dispatch_id);
+          new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi, &_dispatch_id,_geometry_map);
           _pgas_collreg->analyze(_contextid,_world_geometry);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
 
@@ -353,15 +355,16 @@ namespace PAMI
                                                 1,
                                                 __global.topology_global.size(),
                                                 __global.topology_local.size(),
-                                                &_dispatch_id);
+                                                &_dispatch_id,
+                                                _geometry_map);
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 
           _oldccmi_collreg=(OldCCMICollreg*) malloc(sizeof(*_oldccmi_collreg));
-          new(_oldccmi_collreg) OldCCMICollreg(client, (pami_context_t)this, id,*_mpi);
+          new(_oldccmi_collreg) OldCCMICollreg(client, (pami_context_t)this, id,*_mpi,_geometry_map);
           _oldccmi_collreg->analyze(_contextid, _world_geometry);
 
           _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
-          new(_ccmi_collreg) CCMICollreg(client, (pami_context_t)this, id,clientid,*_mpi);
+          new(_ccmi_collreg) CCMICollreg(client, (pami_context_t)this, id,clientid,*_mpi,_geometry_map);
           _ccmi_collreg->analyze(_contextid, _world_geometry);
 
 
@@ -770,6 +773,7 @@ namespace PAMI
       pami_context_t             _context;
       size_t                    _clientid;
       size_t                    _contextid;
+      std::map<unsigned, pami_geometry_t> *_geometry_map;
       void                     *_dispatch[1024][2];
       int                       _dispatch_id;
       ProtocolAllocator         _protocol;

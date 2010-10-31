@@ -772,7 +772,8 @@ namespace CCMI
           pbuf->executeCAComplete();
         }
 
-        static void cb_async_g(const pami_quad_t     * info,
+        static void cb_async_g(pami_context_t          ctxt,
+                               const pami_quad_t     * info,
                                unsigned                count,
                                unsigned                conn_id,
                                size_t                  peer,
@@ -810,7 +811,8 @@ namespace CCMI
           cb_done->clientdata = pbuf;
         }
 
-        static void cb_async_l(const pami_quad_t     * info,
+        static void cb_async_l(pami_context_t          ctxt,
+                               const pami_quad_t     * info,
                                unsigned                count,
                                unsigned                conn_id,
                                size_t                  peer,

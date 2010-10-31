@@ -426,7 +426,8 @@ namespace PAMI
             state_data->cb_done.clientdata = NULL;
 
             // Invoke the registered dispatch function.
-            model->_dispatch_function((pami_quad_t*)msg,                              // Msgdata
+            model->_dispatch_function(model->_device.getContext(),
+				      (pami_quad_t*)msg,                              // Msgdata
                                       m->msgcount,                      // Count of msgdata
                                       m->connection_id,                 // Connection ID of data
                                       m->root,                          // Sending task/root

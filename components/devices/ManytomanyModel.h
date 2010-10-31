@@ -87,12 +87,13 @@ typedef struct
  *
  * \return  void
  */
-typedef void (*pami_dispatch_manytomany_function)(void                  *arg,
-                                            unsigned               conn_id,
-                                            pami_quad_t           *msginfo,
-                                            unsigned               msgcount,
-                                            pami_manytomanybuf_t **recv,
-                                            pami_callback_t       *cb_done);
+typedef void (*pami_dispatch_manytomany_function)(pami_context_t         ctxt,
+                                                  void                  *arg,
+                                                  unsigned               conn_id,
+                                                  pami_quad_t           *msginfo,
+                                                  unsigned               msgcount,
+                                                  pami_manytomanybuf_t **recv,
+                                                  pami_callback_t       *cb_done);
 
 
 

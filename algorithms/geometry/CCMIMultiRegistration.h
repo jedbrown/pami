@@ -27,8 +27,6 @@
 
 namespace PAMI
 {
-  extern std::map<unsigned, pami_geometry_t> geometry_map;
-
   namespace CollRegistration
   {
     template <class T_Geometry, class T_NativeInterfaceAS>
@@ -36,15 +34,17 @@ namespace PAMI
     public CollRegistration<PAMI::CollRegistration::CCMIMultiRegistration<T_Geometry,T_NativeInterfaceAS>,T_Geometry>
     {
     public:
-      inline CCMIMultiRegistration(T_NativeInterfaceAS &ni,
-                                   pami_client_t       client,
-                                   pami_context_t      context,
-                                   size_t             context_id,
-                                   size_t             client_id):
+      inline CCMIMultiRegistration(T_NativeInterfaceAS                 &ni,
+                                   pami_client_t                        client,
+                                   pami_context_t                       context,
+                                   size_t                               context_id,
+                                   size_t                               client_id,
+                                   std::map<unsigned, pami_geometry_t> *geometry_map):
       CollRegistration<PAMI::CollRegistration::CCMIMultiRegistration<T_Geometry, T_NativeInterfaceAS>,T_Geometry> (),
       _client(client),
       _context(context),
       _context_id(context_id),
+      _geometry_map(geometry_map),
       _ni(ni),
       _sconnmgr(65535),
       _msync_reg(&_sconnmgr, &_ni),
@@ -82,17 +82,11 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
-      static pami_geometry_t mapidtogeometry (int comm)
-      {
-        pami_geometry_t g = geometry_map[comm];
-        TRACE_ERR((stderr, "<%p>%s\n", g, __PRETTY_FUNCTION__));
-        return g;
-      }
-
     public:
       pami_client_t                                           _client;
       pami_context_t                                          _context;
       size_t                                                  _context_id;
+      std::map<unsigned, pami_geometry_t>                    *_geometry_map;
 
       // Barrier Storage
       CCMI::Executor::Composite                             *_barrier_composite;

@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <map>
 
 #include "common/ClientInterface.h"
 #include "common/lapiunix/Context.h"
@@ -260,7 +261,8 @@ namespace PAMI
                               ((LapiImpl::Client*)&_lapiClient[0])->GetName(), /* Client String    */
                               index,                  /* Context id       */
                               &_platdevs,             /* Platform Devices */
-                              &_mm);                  /* Memory Manager   */
+                              &_mm,                   /* Memory Manager   */
+                              &_geometry_map);  
         *ctxt = c;
         _ncontexts++;
         return PAMI_SUCCESS;
@@ -435,12 +437,13 @@ namespace PAMI
           {
             new_geometry=(LAPIGeometry*) malloc(sizeof(*new_geometry));
             new(new_geometry)LAPIGeometry((pami_client_t)this,
-                                         (LAPIGeometry*)parent,
-                                         &__global.mapping,
-                                         id,
-                                         slice_count,
-                                         rank_slices);
-
+                                          (LAPIGeometry*)parent,
+                                          &__global.mapping,
+                                          id,
+                                          slice_count,
+                                          rank_slices,
+                                          &_geometry_map);
+            
             PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getLocalMasterTopology();
             to_reduce_count = 3 + local_master_topology->size();
             if (to_reduce_count >16) {
@@ -555,7 +558,8 @@ namespace PAMI
                                           &__global.mapping,
                                           id,
                                           task_count,
-                                          tasks);
+                                          tasks,
+                                          &_geometry_map);
 
             PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getLocalMasterTopology();
             to_reduce_count = 3 + local_master_topology->size();
@@ -652,6 +656,15 @@ namespace PAMI
         free(g);        
         return PAMI_SUCCESS;
       }
+    
+    inline pami_geometry_t mapidtogeometry_impl (int comm)
+      {
+        pami_geometry_t g = _geometry_map[comm];
+        TRACE_ERR((stderr, "<%p>%s\n", g, __PRETTY_FUNCTION__));
+        return g;
+      }
+
+    
   protected:
 
     inline pami_client_t getClient () const
@@ -733,6 +746,9 @@ namespace PAMI
     // Geometry Range Object for the initial world geometry
     pami_geometry_range_t                        _world_range;
 
+    // This is a map of geometries to geometry id's
+    std::map<unsigned, pami_geometry_t>          _geometry_map;
+    
     // Shared Memory Manager for this Client
     Memory::MemoryManager                        _mm;
 

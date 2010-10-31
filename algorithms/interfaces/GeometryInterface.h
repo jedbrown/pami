@@ -135,12 +135,6 @@ namespace PAMI
       inline void                       setAllreduceComposite(COMPOSITE_TYPE c);
       inline void                       setAllreduceComposite(COMPOSITE_TYPE c,
                                                               unsigned i);
-
-
-      static inline T_Geometry         *getCachedGeometry (unsigned comm);
-      static inline void                updateCachedGeometry (T_Geometry *geometry,
-                                                              unsigned comm);
-
       static inline void                registerUnexpBarrier(unsigned comm, pami_quad_t &info,
 							     unsigned peer, unsigned algorithm);
 
@@ -456,19 +450,6 @@ namespace PAMI
     inline COMPOSITE_TYPE Geometry<T_Geometry>::getAllreduceComposite()
     {
       return static_cast<T_Geometry*>(this)->getAllreduceComposite_impl();
-    }
-
-    template <class T_Geometry>
-    inline T_Geometry *Geometry<T_Geometry>::getCachedGeometry (unsigned comm)
-    {
-      return T_Geometry::getCachedGeometry_impl(comm);
-    }
-
-    template <class T_Geometry>
-    inline void Geometry<T_Geometry>::updateCachedGeometry (T_Geometry *geometry,
-                                                                         unsigned comm)
-    {
-      return T_Geometry::updateCachedGeometry_impl(geometry, comm);
     }
 
     template <class T_Geometry>

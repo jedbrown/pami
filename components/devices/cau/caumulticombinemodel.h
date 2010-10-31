@@ -106,7 +106,7 @@ namespace PAMI
           int                              gid   = hdr->geometry_id;
           int                              seqno = hdr->seqno;
           CAUMulticombineModel            *mc    = (CAUMulticombineModel*) CAUDevice::getClientData(did);
-          PAMI_GEOMETRY_CLASS             *g     = (PAMI_GEOMETRY_CLASS*)mc->_device.mapidtogeometry(gid);
+          PAMI_GEOMETRY_CLASS             *g     = (PAMI_GEOMETRY_CLASS*)mc->_device.geometrymap(gid);
           CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
 
           // Next, search the posted queue for a message with the incoming seq number

@@ -1895,7 +1895,8 @@ namespace PAMI
     PAMI_assertf(((this->_mcast_dispatch_function == NULL) && (data_size == 0)) || (this->_mcast_dispatch_function != NULL), "fn %p, size %zu", this->_mcast_dispatch_function, data_size);
 
     if (this->_mcast_dispatch_function != NULL)
-      this->_mcast_dispatch_function(((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->msginfo, ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->msgcount,
+      this->_mcast_dispatch_function(context_hdl,
+        ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->msginfo, ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->msgcount,
                                      connection_id, root, bytes, this->_mcast_dispatch_arg, &bytes,
                                      (pami_pipeworkqueue_t**)&rcvpwq, &cb_done);
 
@@ -1994,7 +1995,8 @@ namespace PAMI
         req->_ni               = this;
 
         // Call user's dispatch on the first recv for this connection id to get receive parms and cb_done.
-        this->_m2m_dispatch_function(this->_m2m_dispatch_arg,
+        this->_m2m_dispatch_function(context_hdl,
+                                     this->_m2m_dispatch_arg,
                                      connection_id,
                                      metadata->msginfo, metadata->msgcount,
                                      &state->recv,

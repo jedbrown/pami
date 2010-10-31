@@ -66,7 +66,7 @@ namespace PAMI
           int                  gid     = didPtr[1];
           int                  seqno   = didPtr[2];
           CAUMultisyncModel   *ms      = (CAUMultisyncModel*) CAUDevice::getClientData(did);
-          PAMI_GEOMETRY_CLASS *g       = (PAMI_GEOMETRY_CLASS*)ms->_device.mapidtogeometry(gid);
+          PAMI_GEOMETRY_CLASS *g       = (PAMI_GEOMETRY_CLASS*)ms->_device.geometrymap(gid);
 
           // Next, search the posted queue for a message with the incoming seq number
           // A message must always be found because the reduction is synchronizing!
@@ -118,7 +118,7 @@ namespace PAMI
           int                  gid     = didPtr[1];
           int                  seqno   = didPtr[2];
           CAUMultisyncModel   *ms      = (CAUMultisyncModel*) CAUDevice::getClientData(did);
-          PAMI_GEOMETRY_CLASS *g       = (PAMI_GEOMETRY_CLASS*)ms->_device.mapidtogeometry(gid);
+          PAMI_GEOMETRY_CLASS *g       = (PAMI_GEOMETRY_CLASS*)ms->_device.geometrymap(gid);
 
           // Next, search the posted queue for a message with the incoming seq number
           CAUGeometryInfo    *gi  = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);

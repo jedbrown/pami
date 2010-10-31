@@ -75,8 +75,6 @@ namespace CCMI
 
 namespace PAMI
 {
-  extern std::map<unsigned, pami_geometry_t> geometry_map;
-
   namespace CollRegistration
   {
 
@@ -86,19 +84,19 @@ namespace PAMI
                                       T_CSNativeInterface, T_CSMemoryManager, T_CSModel>, T_Geometry>
     {
     public:
-      inline CCMICSMultiRegistration( pami_client_t       client,
-                                      size_t              client_id,
-                                      pami_context_t      context,
-                                      size_t              context_id,
-                                      // PAMI::Context       *contexts,
-                                      PAMI::Device::Generic::Device &devs):
+      inline CCMICSMultiRegistration( pami_client_t                        client,
+                                      size_t                               client_id,
+                                      pami_context_t                       context,
+                                      size_t                               context_id,
+                                      PAMI::Device::Generic::Device       &devs,
+                                      std::map<unsigned, pami_geometry_t> *geometry_map):
       CollRegistration<PAMI::CollRegistration::CCMICSMultiRegistration<T_Geometry, T_CSNativeInterface,
                                                      T_CSMemoryManager, T_CSModel>, T_Geometry> (),
       _client(client),
       _client_id(client_id),
       _context(context),
       _context_id(context_id),
-      // _contexts(contexts),
+      _geometry_map(geometry_map),
       _devs(devs)
       {
         TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
@@ -185,7 +183,7 @@ namespace PAMI
 
       static pami_geometry_t mapidtogeometry (int comm)
       {
-        pami_geometry_t g = geometry_map[comm];
+        pami_geometry_t g = (*_geometry_map)[comm];
         TRACE_ERR((stderr, "<%p>%s\n", g, __PRETTY_FUNCTION__));
         return g;
       }
@@ -195,6 +193,8 @@ namespace PAMI
       size_t                                                   _client_id;
       pami_context_t                                           _context;
       size_t                                                   _context_id;
+      std::map<unsigned, pami_geometry_t>                     *_geometry_map;
+
       // PAMI::Context                                            *_contexts;
       PAMI::Device::Generic::Device                            &_devs;
       CCMI::Adaptor::Barrier::CSMultiSyncFactory               _msync_reg;

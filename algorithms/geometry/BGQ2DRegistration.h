@@ -26,8 +26,6 @@
 
 namespace PAMI
 {
-  extern std::map<unsigned, pami_geometry_t> geometry_map;
-
   namespace CollRegistration
   {
     namespace BGQ2D
@@ -128,14 +126,15 @@ namespace PAMI
 
 
       public:
-        inline BGQ2DRegistration(pami_client_t       client,
-                               pami_context_t      context,
-                               size_t              context_id,
-                               size_t              client_id,
-                               T_Local_Device     &ldev,
-                               T_Global_Device    &gdev,
-                               Mapping            &mapping,
-                               int                *dispatch_id):
+        inline BGQ2DRegistration(pami_client_t                        client,
+                                 pami_context_t                       context,
+                                 size_t                               context_id,
+                                 size_t                               client_id,
+                                 T_Local_Device                      &ldev,
+                                 T_Global_Device                     &gdev,
+                                 Mapping                             &mapping,
+                                 int                                 *dispatch_id,
+                                 std::map<unsigned, pami_geometry_t> *geometry_map):
         CollRegistration < PAMI::CollRegistration::BGQ2D::BGQ2DRegistration < T_Geometry,
         T_Local_Device,
         T_Global_Device,
@@ -148,6 +147,7 @@ namespace PAMI
         _context(context),
         _context_id(context_id),
         _client_id(client_id),
+        _geometry_map(geometry_map),
         _dispatch_id(dispatch_id),
         _global_task(mapping.task()),
         _global_size(mapping.size()),
@@ -286,7 +286,7 @@ namespace PAMI
 
         static pami_geometry_t mapidtogeometry (int comm)
         {
-          pami_geometry_t g = geometry_map[comm];
+          pami_geometry_t g = (*_geometry_map)[comm];
           return g;
         }
       private:
@@ -295,6 +295,8 @@ namespace PAMI
         pami_context_t                                                  _context;
         size_t                                                          _context_id;
         size_t                                                          _client_id;
+        std::map<unsigned, pami_geometry_t>                            *_geometry_map;
+
         // This is a pointer to the current dispatch id of the context
         // This will be decremented by the ConstructNativeInterface routines
         int                                                            *_dispatch_id;

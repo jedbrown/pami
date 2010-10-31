@@ -34,7 +34,6 @@
 
 namespace PAMI
 {
-  extern std::map<unsigned, pami_geometry_t> geometry_map;
   namespace CollRegistration
   {
     template <class T_Geometry,
@@ -49,20 +48,22 @@ namespace PAMI
                               T_Geometry>
       {
       public:
-        inline OldCCMIRegistration(pami_client_t       client,
-                                   pami_context_t      context,
-                                   size_t             context_id,
-                                   T_Device          &dev):
+        inline OldCCMIRegistration(pami_client_t                        client,
+                                   pami_context_t                       context,
+                                   size_t                               context_id,
+                                   T_Device                            &dev,
+                                   std::map<unsigned, pami_geometry_t> *geometry_map):
         CollRegistration<PAMI::CollRegistration::OldCCMIRegistration<T_Geometry,
-                                                                    T_Mcast,
-                                                                    T_M2M,
-                                                                    T_Device>,
+                                                                     T_Mcast,
+                                                                     T_M2M,
+                                                                     T_Device>,
                          T_Geometry> (),
         _client(client),
         _context(context),
         _context_id(context_id),
         _reduce_val(0),
         _dev(dev),
+        _geometry_map(geometry_map),
         _barrier(dev),
         _broadcast(dev),
         _ringbroadcast(dev),
@@ -117,11 +118,6 @@ namespace PAMI
           {
             return PAMI_SUCCESS;
           }
-      static pami_geometry_t mapidtogeometry (int comm)
-        {
-          pami_geometry_t g = geometry_map[comm];
-          return g;
-        }
     public:
       pami_client_t              _client;
       pami_context_t             _context;
@@ -129,6 +125,9 @@ namespace PAMI
       uint64_t                   _reduce_val;
       T_Device                  &_dev;
 
+      // Map of geometry id's to geometry for this client
+      std::map<unsigned, pami_geometry_t> *_geometry_map;
+        
       T_Mcast                    _barrier;
       T_Mcast                    _broadcast;
       T_Mcast                    _ringbroadcast;

@@ -103,6 +103,7 @@ namespace PAMI
 					     void                 *cookie);
 
         inline pami_result_t geometry_destroy(pami_geometry_t geometry);
+        inline pami_geometry_t mapidtogeometry (int comm);
     }; // end class PAMI::Client::Client
 
     template <class T_Client>
@@ -267,7 +268,13 @@ namespace PAMI
     {
       return static_cast<T_Client*>(this)->geometry_destroy_impl(geometry);
     }
-
+    
+    template <class T_Client>
+    pami_geometry_t Client<T_Client>::mapidtogeometry (int comm)
+    {
+      return static_cast<T_Client*>(this)->mapidtogeometry_impl(comm);
+    }
+    
   }; // end namespace Interface
 }; // end namespace PAMI
 #endif // __pami_client_h__

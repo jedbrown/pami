@@ -38,11 +38,11 @@ namespace CCMI
         }
 
 
-        pami_geometry_t getGeometry(unsigned id)
+        pami_geometry_t getGeometry(pami_context_t ctxt, unsigned id)
         {
           TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           CCMI_assert (_cb_geometry != NULL);
-          return _cb_geometry (id);
+          return _cb_geometry (ctxt, id);  // -1, the function is scoped to the geometry
         }
 
         virtual ~CollectiveProtocolFactory ()

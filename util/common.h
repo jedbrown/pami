@@ -167,7 +167,7 @@ inline void* operator new(size_t obj_size, void* pointer)
  */
 #define static_assert(expr, string) COMPILE_TIME_ASSERT(expr)
 
-typedef pami_geometry_t (*pami_mapidtogeometry_fn) (int comm);
+typedef pami_geometry_t (*pami_mapidtogeometry_fn) (pami_context_t c, int comm);
 
 #ifdef __cplusplus
 #define ENFORCE_CLASS_MEMBER(class,member)	{ PAMI_assert_debug(&((class *)this)->member || true); }

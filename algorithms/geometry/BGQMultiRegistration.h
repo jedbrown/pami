@@ -35,8 +35,6 @@
 
 namespace PAMI
 {
-  extern std::map<unsigned, pami_geometry_t> geometry_map;
-
   namespace CollRegistration
   {
 
@@ -426,18 +424,20 @@ namespace PAMI
     public CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface>, T_Geometry>
     {
     public:
-      inline BGQMultiRegistration(T_ShmemNativeInterface *shmem_ni,
-                                  T_MUDevice             &mu_device,
-                                  pami_client_t           client,
-                                  pami_context_t          context,
-                                  size_t                  context_id,
-                                  size_t                  client_id,
-                                  int                    *dispatch_id):
+      inline BGQMultiRegistration(T_ShmemNativeInterface              *shmem_ni,
+                                  T_MUDevice                          &mu_device,
+                                  pami_client_t                        client,
+                                  pami_context_t                       context,
+                                  size_t                               context_id,
+                                  size_t                               client_id,
+                                  int                                 *dispatch_id,
+                                  std::map<unsigned, pami_geometry_t> *geometry_map):
       CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface>, T_Geometry> (),
       _client(client),
       _context(context),
       _context_id(context_id),
       _dispatch_id(dispatch_id),
+      _geometry_map(geometry_map),
       _sconnmgr(65535),
       _csconnmgr(),
       _shmem_barrier_composite(NULL),
@@ -761,15 +761,6 @@ namespace PAMI
 
         return PAMI_SUCCESS;
       }
-
-      static pami_geometry_t mapidtogeometry (int comm)
-      {
-        pami_geometry_t g = geometry_map[comm];
-        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::mapidtogeometry(%d)\n", g, comm));
-        return g;
-      }
-
-
     public:
       pami_client_t                                   _client;
       pami_context_t                                  _context;
@@ -777,7 +768,7 @@ namespace PAMI
       // This is a pointer to the current dispatch id of the context
       // This will be decremented by the ConstructNativeInterface routines
       int                                            *_dispatch_id;
-
+      std::map<unsigned, pami_geometry_t>            *_geometry_map;
 
       // CCMI Connection Manager Class
       CCMI::ConnectionManager::SimpleConnMgr          _sconnmgr;

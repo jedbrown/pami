@@ -50,7 +50,7 @@ namespace PAMI
         _world_range.hi = __global.mapping.size() - 1;
 	/// \todo This should be using the global topology and NOT de-optimize to a range!
         /// new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, &__global.topology_global);
-        new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, 1, &_world_range);
+        new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, 1, &_world_range, &_geometry_map);
         // This must return immediately (must not enqueue non-blocking ops).
         // Passing a NULL context should ensure that.
         __MUGlobal.getMuRM().geomOptimize(_world_geometry, _clientid, 0, NULL, NULL, NULL);
@@ -175,7 +175,7 @@ namespace PAMI
             PAMI::Device::CommThread::BgqCommThread::initContext(_clientid, x, context[x]);
 #endif // USE_COMMTHREADS
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                              &_platdevs, base, bytes, _world_geometry);
+                                              &_platdevs, base, bytes, _world_geometry,&_geometry_map);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
@@ -462,7 +462,8 @@ namespace PAMI
                                            &__global.mapping,
                                            id,
                                            slice_count,
-                                           rank_slices);
+                                           rank_slices,
+					   &_geometry_map);
 
             TRACE_ERR((stderr,  "%s analyze %zu geometry %p\n", __PRETTY_FUNCTION__, _ncontexts, new_geometry));
 
@@ -664,6 +665,14 @@ namespace PAMI
         return __MUGlobal.getMuRM().geomDeoptimize(gp);
       }
 
+    inline pami_geometry_t mapidtogeometry_impl (int comm)
+      {
+        pami_geometry_t g = _geometry_map[comm];
+        TRACE_ERR((stderr, "<%p>%s\n", g, __PRETTY_FUNCTION__));
+        return g;
+      }
+
+
     protected:
 
       inline pami_client_t getClient () const
@@ -684,6 +693,10 @@ namespace PAMI
       BGQGeometry                  *_world_geometry;
       uint8_t                       _world_geometry_storage[sizeof(BGQGeometry)];
       pami_geometry_range_t         _world_range;
+      // This is a map of geometries to geometry id's
+      std::map<unsigned, pami_geometry_t>          _geometry_map;
+
+
 
       Memory::MemoryManager _mm;
 

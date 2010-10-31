@@ -52,7 +52,7 @@ namespace PAMI
         PAMI_assert(_world_geometry);
         _world_range.lo=0;
         _world_range.hi=_mysize-1;
-        new(_world_geometry) MPIGeometry(_client, NULL, &__global.mapping,0, 1,&_world_range);
+        new(_world_geometry) MPIGeometry(_client, NULL, &__global.mapping,0, 1,&_world_range, &_geometry_map);
         result = PAMI_SUCCESS;
       }
 
@@ -127,7 +127,7 @@ namespace PAMI
           _mm.disable();
           PAMI_assertf(base != NULL, "out of sharedmemory in context create\n");
           new (&_contexts[x]) PAMI::Context(this, _clientid, x, n,
-                                            &_platdevs, base, bytes, _world_geometry, &_mm);
+                                            &_platdevs, base, bytes, _world_geometry, &_mm,&_geometry_map);
           //_context_list->pushHead((QueueElem *)&context[x]);
           //_context_list->unlock();
           _ncontexts = n;
@@ -269,7 +269,8 @@ namespace PAMI
                                          &__global.mapping,
                                          id,
                                          slice_count,
-                                         rank_slices);
+                                         rank_slices,
+                                         &_geometry_map);
             for(size_t n=0; n<_ncontexts; n++)
               {
                 _contexts[n]._pgas_collreg->analyze_local(n,new_geometry,&to_reduce[0]);
@@ -390,6 +391,12 @@ namespace PAMI
         PAMI_abort();
         return PAMI_UNIMPL;
       }
+    inline pami_geometry_t mapidtogeometry_impl (int comm)
+      {
+        pami_geometry_t g = _geometry_map[comm];
+        return g;
+      }
+    
 
   protected:
 
@@ -410,6 +417,7 @@ namespace PAMI
     int                        _mysize;
     MPIGeometry               *_world_geometry;
     pami_geometry_range_t      _world_range;
+    std::map<unsigned, pami_geometry_t> _geometry_map;
     Memory::MemoryManager      _mm;
 
     inline void initializeMemoryManager ()

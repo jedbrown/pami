@@ -54,30 +54,37 @@ namespace PAMI
                     Mapping                          *mapping,
                     unsigned                          comm,
                     pami_task_t                       nranks,
-                    pami_task_t                      *ranks):
+                    pami_task_t                      *ranks,
+		    std::map<unsigned, pami_geometry_t> *geometry_map):
         Geometry<PAMI::Geometry::Common>(parent,
                                          mapping,
                                          comm,
                                          nranks,
                                          ranks),
-        _client(client)
+	_kvstore(),                                                                                                      
+        _commid(comm),                                                                                                   
+        _client(client),                                                                                                 
+        _geometry_map(geometry_map),                                                                                     
+        _masterRank(-1)
         {
           TRACE_ERR((stderr, "<%p>Common()\n", this));
         }
-      inline Common (pami_client_t                    client,
-                     Geometry<PAMI::Geometry::Common> *parent,
-                     Mapping                         *mapping,
-                     unsigned                         comm,
-                     int                              numranges,
-                     pami_geometry_range_t             rangelist[]):
+      inline Common (pami_client_t                        client,
+                     Geometry<PAMI::Geometry::Common>    *parent,
+                     Mapping                             *mapping,
+                     unsigned                             comm,
+                     int                                  numranges,
+                     pami_geometry_range_t                rangelist[],
+		     std::map<unsigned, pami_geometry_t> *geometry_map):
         Geometry<PAMI::Geometry::Common>(parent,
-                                        mapping,
-                                        comm,
-                                        numranges,
-                                        rangelist),
+					 mapping,
+					 comm,
+					 numranges,
+					 rangelist),
         _kvstore(),
         _commid(comm),
         _client(client),
+	_geometry_map(geometry_map),
         _masterRank(-1)
         {
           TRACE_ERR((stderr, "<%p>Common(parent)\n", this));
@@ -147,8 +154,7 @@ namespace PAMI
                 break;
               };
 
-          PAMI::geometry_map[_commid]=this;
-          updateCachedGeometry(this, _commid);
+	  (*_geometry_map)[_commid]=this;
         }
       inline Common (pami_client_t                    client,
                      Geometry<PAMI::Geometry::Common> *parent,
@@ -193,9 +199,7 @@ namespace PAMI
                 _masterRank = _local_topo->index2Rank(j);
                 break;
               };
-
-          PAMI::geometry_map[_commid]=this;
-          updateCachedGeometry(this, _commid);
+	  (*_geometry_map)[_commid]=this;
         }
 
        /// \brief Convenience callback used by geometry completion sub-events
@@ -448,18 +452,6 @@ namespace PAMI
         {
           return _allreduce[_allreduce_iteration];
         }
-
-
-      static inline Common   *getCachedGeometry_impl(unsigned comm)
-        {
-          return (Common*)PAMI::cached_geometry[comm];
-        }
-      static inline void               updateCachedGeometry_impl(Common *geometry,
-                                                                 unsigned comm)
-      {
-  PAMI_assert(geometry!=NULL);
-  PAMI::cached_geometry[comm]=(void*)geometry;
-      }
 
       static inline void registerUnexpBarrier_impl (unsigned comm, pami_quad_t &info,
                 unsigned peer, unsigned algorithm)
@@ -772,6 +764,7 @@ namespace PAMI
       MatchQueue                                    _ue;
       MatchQueue                                    _post;
       pami_task_t                                  *_ranks;
+      std::map<unsigned, pami_geometry_t>          *_geometry_map;
       void                                         *_allreduce_storage[2];
       void                                         *_allreduce[2];
       unsigned                                      _allreduce_async_mode;

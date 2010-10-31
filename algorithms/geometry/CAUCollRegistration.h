@@ -27,8 +27,6 @@
 // Collective Registration for CAU protocols for p2p
 namespace PAMI
 {
-  extern std::map<unsigned, pami_geometry_t> geometry_map;
-
   namespace CollRegistration
   {
     namespace CAU
@@ -117,15 +115,16 @@ namespace PAMI
 
 
       public:
-        inline CAURegistration(pami_client_t       client,
-                               pami_context_t      context,
-                               size_t              context_id,
-                               size_t              client_id,
-                               T_Local_Device     &ldev,
-                               T_Global_Device    &gdev,
-                               Mapping            &mapping,
-                               lapi_handle_t       lapi_handle,
-                               int                *dispatch_id):
+        inline CAURegistration(pami_client_t                        client,
+                               pami_context_t                       context,
+                               size_t                               context_id,
+                               size_t                               client_id,
+                               T_Local_Device                      &ldev,
+                               T_Global_Device                     &gdev,
+                               Mapping                             &mapping,
+                               lapi_handle_t                        lapi_handle,
+                               int                                 *dispatch_id,
+                               std::map<unsigned, pami_geometry_t> *geometry_map):
           CollRegistration < PAMI::CollRegistration::CAU::CAURegistration < T_Geometry,
                                                                             T_Local_Device,
                                                                             T_Global_Device,
@@ -139,6 +138,7 @@ namespace PAMI
           _context_id(context_id),
           _client_id(client_id),
           _dispatch_id(dispatch_id),
+          _geometry_map(geometry_map),
           _global_task(mapping.task()),
           _global_size(mapping.size()),
           _lapi_handle(lapi_handle),
@@ -301,11 +301,6 @@ namespace PAMI
             return analyze(context_id, geometry, 0);
           }
 
-        static pami_geometry_t mapidtogeometry (int comm)
-          {
-            pami_geometry_t g = geometry_map[comm];
-            return g;
-          }
       private:
         // Client, Context, and Utility variables
         pami_client_t                                                   _client;
@@ -313,10 +308,13 @@ namespace PAMI
         size_t                                                          _context_id;
         size_t                                                          _client_id;
         int                                                            *_dispatch_id; 
+        std::map<unsigned, pami_geometry_t>                            *_geometry_map;
         pami_task_t                                                     _global_task;
         size_t                                                          _global_size;
         lapi_handle_t                                                   _lapi_handle;
         uint64_t                                                        _reduce_val;
+
+
 
         // Connection Manager
         CCMI::ConnectionManager::SimpleConnMgr                          _sconnmgr;

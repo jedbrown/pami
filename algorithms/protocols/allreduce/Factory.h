@@ -124,7 +124,8 @@ namespace CCMI
         ///
         /// \brief Generate a non-blocking allreduce message.
         ///
-        static pami_quad_t *   cb_receiveHead(const pami_quad_t  * info,
+        static pami_quad_t *   cb_receiveHead(pami_context_t       ctxt,
+                                              const pami_quad_t  * info,
                                                  unsigned          count,
                                                  unsigned          peer,
                                                  size_t            sndlen,
@@ -142,7 +143,7 @@ namespace CCMI
           CollHeaderData  *cdata = (CollHeaderData *) info;
           Factory *factory = (Factory *) arg;
           CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *allreduce =
-          factory->getAllreduce(cdata->_comm, cdata->_iteration);
+            factory->getAllreduce(ctxt, cdata->_comm, cdata->_iteration);
 
           CCMI_assert (allreduce != NULL);
           TRACE_ADAPTOR((stderr, "<%p>Allreduce::Factory::"
@@ -160,11 +161,11 @@ namespace CCMI
         /// \brief Get the executor associated with a comm id (and
         /// color/iteration id)
         ///
-        CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> * getAllreduce(unsigned comm,
+        CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> * getAllreduce(pami_context_t ctxt, unsigned comm,
                                                unsigned color)
         {
           CCMI::Executor::OldComposite *composite =(CCMI::Executor::OldComposite *)
-            ((PAMI_GEOMETRY_CLASS *)_cb_geometry(comm))->getAllreduceComposite(color);
+            ((PAMI_GEOMETRY_CLASS *)_cb_geometry(ctxt, comm))->getAllreduceComposite(color);
           CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *executor = (composite)?
                                               (CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *) composite->getExecutor (0):
                                               (CCMI::Executor::OldAllreduceBase<T_Mcast,T_ConnectionManager> *)NULL;

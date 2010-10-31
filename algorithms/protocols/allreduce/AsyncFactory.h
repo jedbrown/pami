@@ -66,16 +66,17 @@ namespace CCMI
       ///
       /// \brief Generate a non-blocking allreduce message.
       ///
-      static PAMI_Request_t *   cb_receiveHead(const pami_quad_t    * info,
-                                               unsigned          count,
-                                               unsigned          peer,
-                                               size_t            sndlen,
-                                               size_t            conn_id,
-                                               void            * arg,
-                                               unsigned        * rcvlen,
-                                               char           ** rcvbuf,
-                                               unsigned        * pipewidth,
-                                               PAMI_Callback_t * cb_done)
+      static PAMI_Request_t *   cb_receiveHead(pami_context_t    ctxt,
+                                              const pami_quad_t    * info,
+                                              unsigned          count,
+                                              unsigned          peer,
+                                              size_t            sndlen,
+                                              size_t            conn_id,
+                                              void            * arg,
+                                              unsigned        * rcvlen,
+                                              char           ** rcvbuf,
+                                              unsigned        * pipewidth,
+                                              PAMI_Callback_t * cb_done)
       {
         TRACE_ADAPTOR((stderr,
                        "<%p>Allreduce::AsyncFactory::cb_receiveHead peer %d, conn_id %d\n",

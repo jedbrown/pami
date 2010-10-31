@@ -272,7 +272,8 @@ namespace CCMI
         }
 
         static PAMI_Request_t *   cb_head_buffered
-        (const pami_quad_t* info,
+        (pami_context_t      ctxt,
+          const pami_quad_t* info,
          unsigned          count,
          unsigned          peer,
          unsigned          sndlen,
@@ -288,7 +289,7 @@ namespace CCMI
           CollHeaderData *cdata = (CollHeaderData *) info;
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
-            factory->_cb_geometry(cdata->_comm);
+            factory->_cb_geometry(ctxt, cdata->_comm);
 
           PAMI::MatchQueue  &mqueue = geometry->asyncCollectivePostQ();
           BcastQueueElem *elem = (BcastQueueElem *) mqueue.findAndDelete(cdata->_root);
@@ -358,7 +359,8 @@ namespace CCMI
           //nothing needs to be freed as this is an application buffer
         }
 
-        static PAMI_Request_t *   cb_head  (const pami_quad_t    * info,
+        static PAMI_Request_t *   cb_head  (pami_context_t ctxt,
+                                            const pami_quad_t    * info,
                                            unsigned          count,
                                            unsigned          peer,
                                            unsigned          sndlen,
@@ -374,7 +376,7 @@ namespace CCMI
           CollHeaderData *cdata = (CollHeaderData *) info;
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
-            factory->_cb_geometry(cdata->_comm);
+            factory->_cb_geometry(ctxt, cdata->_comm);
 
           //Application callback
           // todo:  WARNING:  callback is not appropriately delivered to user (header for example)

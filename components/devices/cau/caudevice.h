@@ -25,10 +25,10 @@
 #define TRACE(x)// fprintf x
 #endif
 
+extern pami_geometry_t mapidtogeometry (pami_context_t ctxt, int comm);
 
 namespace PAMI
 {
-  extern std::map<unsigned, pami_geometry_t> geometry_map;
   namespace Device
   {
 //    extern std::map<int,int> _g_lapi_mcast_to_pami_mcast;
@@ -221,12 +221,12 @@ namespace PAMI
         {
           return _g_id_to_device_table[id];
         }
-      static pami_geometry_t mapidtogeometry (int comm)
+      inline pami_geometry_t geometrymap (int comm)
         {
-          pami_geometry_t g = geometry_map[comm];
-          return g;
+          return mapidtogeometry(_context, comm);
         }
-    private:
+
+    public:
       lapi_state_t                                              *_lapi_state;
       lapi_handle_t                                              _lapi_handle;
       pami_client_t                                              _client;

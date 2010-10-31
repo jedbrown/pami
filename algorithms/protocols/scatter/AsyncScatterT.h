@@ -105,7 +105,7 @@ namespace CCMI
          xfer->xfer_scatterv_int.rtypecount = 0;
       }
 
-      template <class T_Schedule, class T_Conn, ScheduleFn create_schedule, typename T_Scatter_type>
+      template <class T_Schedule, class T_Conn, SFunc<PAMI_GEOMETRY_CLASS>::ScheduleFn create_schedule, typename T_Scatter_type>
       class AsyncScatterT : public CCMI::Executor::Composite
       {
         protected:
@@ -368,7 +368,8 @@ namespace CCMI
           }
 
           static void cb_async
-          (const pami_quad_t     * info,
+          (pami_context_t          ctxt,
+           const pami_quad_t     * info,
            unsigned                count,
            unsigned                conn_id,
            size_t                  peer,
@@ -384,13 +385,7 @@ namespace CCMI
             T_Composite* a_scatter = NULL;
 
             int comm = cdata->_comm;
-            PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(comm);
-
-            if (geometry == NULL)
-              {
-                geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (comm);
-                PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, comm);
-              }
+            PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, comm);
 
             C *cmgr = factory->_cmgr;
             unsigned key = factory->myGetKey (cdata->_root, conn_id, geometry, &cmgr);

@@ -233,7 +233,8 @@ namespace CCMI
           /// \brief Generate a non-blocking allreduce message.
           ///
           static void  cb_receiveHead
-          (const pami_quad_t     * info,
+          (pami_context_t         ctxt,
+           const pami_quad_t     * info,
            unsigned               count,
            unsigned               conn_id,
            size_t                 peer,
@@ -250,7 +251,7 @@ namespace CCMI
             CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arg;
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn> *composite = (Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn> *)
-                ((PAMI_GEOMETRY_CLASS *)factory->getGeometry(cdata->_comm))->getAllreduceComposite(cdata->_iteration);
+                ((PAMI_GEOMETRY_CLASS *)factory->getGeometry(ctxt, cdata->_comm))->getAllreduceComposite(cdata->_iteration);
 
             CCMI_assert (composite != NULL);
             //Use color 0 for now

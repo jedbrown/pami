@@ -22,20 +22,17 @@
 
 namespace PAMI
 {
-  extern std::map<unsigned, pami_geometry_t> geometry_map;
   namespace CollRegistration
   {
-
-    extern const char BarrierString[]        ;
-    extern const char BarrierUEString[]      ;
-    extern const char AllgatherString[]      ;
-    extern const char AllgathervString[]     ;
-    extern const char ScatterString[]        ;
-    extern const char ScattervString[]       ;
-    extern const char AllreduceString[]      ;
-    extern const char ShortAllreduceString[] ;
-    extern const char BroadcastString[]      ;
-
+    char BarrierString[]        = "PGAS_Barrier";
+    char BarrierUEString[]      = "PGAS_UEBarrier";
+    char AllgatherString[]      = "PGAS_Allgather";
+    char AllgathervString[]     = "PGAS_Allgatherv";
+    char ScatterString[]        = "PGAS_Scatter";
+    char ScattervString[]       = "PGAS_Scatterv";
+    char AllreduceString[]      = "PGAS_Allreduce";
+    char ShortAllreduceString[] = "PGAS_ShortAllreduce";
+    char BroadcastString[]      = "PGAS_Broadcast";
 
     template <class T_Geometry,
               class T_P2P_NI,
@@ -86,13 +83,14 @@ namespace PAMI
         }Factories;
 
       public:
-      inline PGASRegistration(pami_client_t       client,
-                              pami_context_t      context,
-                              size_t              client_id,
-                              size_t              context_id,
-                              T_Allocator        &proto_alloc,
-                              T_Device           &dev,
-                              int                *dispatch_id):
+      inline PGASRegistration(pami_client_t                        client,
+                              pami_context_t                       context,
+                              size_t                               client_id,
+                              size_t                               context_id,
+                              T_Allocator                         &proto_alloc,
+                              T_Device                            &dev,
+                              int                                 *dispatch_id,
+                              std::map<unsigned, pami_geometry_t> *geometry_map):
         CollRegistration<PAMI::CollRegistration::PGASRegistration<T_Geometry,
                                                                   T_P2P_NI,
                                                                   T_Allocator,
@@ -106,6 +104,7 @@ namespace PAMI
         _context_id(context_id),
         _reduce_val(0),
         _dispatch_id(dispatch_id),
+        _geometry_map(geometry_map),
         _dev(dev),
         _proto_alloc(proto_alloc),
         _bcast(NULL),
@@ -251,12 +250,6 @@ namespace PAMI
             return PAMI_SUCCESS;
           }
 
-      static pami_geometry_t mapidtogeometry (int comm)
-        {
-          pami_geometry_t g = geometry_map[comm];
-          return g;
-        }
-
     public:
       pami_client_t               _client;
       pami_context_t              _context;
@@ -264,7 +257,11 @@ namespace PAMI
       size_t                      _context_id;
       T_NBCollMgr                 _mgr;
       uint64_t                    _reduce_val;
-      int                        *_dispatch_id;   
+      int                        *_dispatch_id;
+
+      // Map of geometry id's to geometry for this client
+      std::map<unsigned, pami_geometry_t> *_geometry_map; 
+ 
       // Native Interface
       T_Device                   &_dev;
       T_Allocator                &_proto_alloc;

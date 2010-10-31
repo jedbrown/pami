@@ -229,7 +229,7 @@ namespace PAMI
           int                  cid     = msghdr->connection_id;
           size_t              root     = msghdr->root;
           CAUMulticastModel   *mc      = (CAUMulticastModel*) CAUDevice::getClientData(did);
-          PAMI_GEOMETRY_CLASS *g       = (PAMI_GEOMETRY_CLASS*)mc->_device.mapidtogeometry(gid);
+          PAMI_GEOMETRY_CLASS *g       = (PAMI_GEOMETRY_CLASS*)mc->_device.geometrymap(gid);
           CAUGeometryInfo     *gi      = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
           void                *r       = NULL;
           lapi_return_info_t  *ri      = (lapi_return_info_t *) retinfo;
@@ -246,7 +246,8 @@ namespace PAMI
             {
               TRACE((stderr, "CAUMulticastModel:  cau_mcast_recv_handler First Packet!\n"));
               rcv = (rcvInfo*)mc->_rcvinfo_alloc.allocateObject();
-              user_fn(NULL,
+              user_fn(mc->_device.getContext(),
+                      NULL,
                       0,
                       cid,
                       root,

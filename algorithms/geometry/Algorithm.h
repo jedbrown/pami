@@ -14,8 +14,8 @@
 #ifndef __algorithms_geometry_Algorithm_h__
 #define __algorithms_geometry_Algorithm_h__
 
-#include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include <map>
+#include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "components/memory/MemoryAllocator.h"
 #include "algorithms/geometry/UnexpBarrierQueueElement.h"
 
@@ -26,11 +26,10 @@
 #define TRACE_ERR2(x) //fprintf x
 
 
+extern pami_geometry_t mapidtogeometry (pami_context_t context, int comm);
+
 namespace PAMI
 {
-  extern std::map<unsigned, pami_geometry_t> geometry_map;
-  extern std::map<unsigned, pami_geometry_t> cached_geometry;
-
   ///
   /// \brief memory allocator for early arrival barrier messages
   //
@@ -40,7 +39,6 @@ namespace PAMI
   /// \brief static match queue to store unexpected barrier messages
   ///
   extern PAMI::MatchQueue                                          _ueb_queue;
-
   namespace Geometry
   {
     // This class manages "Algorithms", which consist of a geometry
@@ -70,17 +68,11 @@ namespace PAMI
 
           return PAMI_SUCCESS;
         }
-        static pami_geometry_t mapidtogeometry (int comm)
-        {
-          pami_geometry_t g = geometry_map[comm];
-          TRACE_ERR((stderr, "<%p>Algorithm::mapidtogeometry()\n", g));
-          return g;
-        }
 
-        inline pami_result_t dispatch_set(size_t                     dispatch,
-                                          pami_dispatch_callback_function fn,
-                                          void                     * cookie,
-                                          pami_collective_hint_t      options)
+        inline pami_result_t dispatch_set(size_t                           dispatch,
+                                          pami_dispatch_callback_function  fn,
+                                          void                            *cookie,
+                                          pami_collective_hint_t           options)
         {
           TRACE_ERR((stderr, "<%p>Algorithm::dispatch_set()\n", this));
           _factory->setAsyncInfo(false,

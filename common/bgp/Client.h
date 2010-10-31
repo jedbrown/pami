@@ -44,7 +44,7 @@ namespace PAMI
 
         _world_range.lo=0;
         _world_range.hi=__global.mapping.size()-1;
-        new(_world_geometry_storage) BGPGeometry(_client, NULL, &__global.mapping,0, 1,&_world_range);
+        new(_world_geometry_storage) BGPGeometry(_client, NULL, &__global.mapping,0, 1,&_world_range,&_geometry_map);
 
         result = PAMI_SUCCESS;
       }
@@ -152,7 +152,7 @@ namespace PAMI
             _mm.disable();
             PAMI_assertf(base != NULL, "out of sharedmemory in context create x=%d,n=%d,bytes=%zu,mm.size=%zu,mm.available=%zu\n", x, n, bytes, _mm.size(), _mm.available());
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                             &_platdevs, base, bytes, _world_geometry);
+                                             &_platdevs, base, bytes, _world_geometry, &_geometry_map);
             //_context_list->pushHead((QueueElem *)&context[x]);
             //_context_list->unlock();
           }
@@ -296,11 +296,12 @@ namespace PAMI
         {
           new_geometry=(BGPGeometry*) malloc(sizeof(*new_geometry)); /// \todo use allocator
           new(new_geometry) BGPGeometry(_client,
-            (PAMI::Geometry::Common*)parent,
-                                    &__global.mapping,
-                                    id,
-                                    slice_count,
-                                            rank_slices);
+					(PAMI::Geometry::Common*)parent,
+					&__global.mapping,
+					id,
+					slice_count,
+					rank_slices,
+					&_geometry_map);
           for(size_t n=0; n<_ncontexts; n++)
           {
             _contexts[n].analyze(n,(BGPGeometry*)new_geometry);
@@ -390,6 +391,13 @@ namespace PAMI
         return PAMI_UNIMPL;
       }
 
+    inline pami_geometry_t mapidtogeometry_impl (int comm)
+      {
+        pami_geometry_t g = _geometry_map[comm];
+        TRACE_ERR((stderr, "<%p>%s\n", g, __PRETTY_FUNCTION__));
+        return g;
+      }
+
     protected:
 
       inline pami_client_t getClient () const
@@ -411,6 +419,7 @@ namespace PAMI
       BGPGeometry                  *_world_geometry;
       uint8_t                       _world_geometry_storage[sizeof(BGPGeometry)];
       pami_geometry_range_t         _world_range;
+      std::map<unsigned, pami_geometry_t> _geometry_map;
 
       Memory::MemoryManager _mm;
 

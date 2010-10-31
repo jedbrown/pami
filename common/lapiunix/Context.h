@@ -404,12 +404,13 @@ namespace PAMI
     class Context : public Interface::Context<PAMI::Context>
     {
     public:
-    inline Context (pami_client_t                  client,
-                    size_t                         clientid,
-                    char                          *clientname,
-                    size_t                         id,
-                    PlatformDeviceList            *devices,
-                    Memory::MemoryManager         *mm):
+    inline Context (pami_client_t                        client,
+                    size_t                               clientid,
+                    char                                *clientname,
+                    size_t                               id,
+                    PlatformDeviceList                  *devices,
+                    Memory::MemoryManager               *mm,
+                    std::map<unsigned, pami_geometry_t> *geometry_map):
         Interface::Context<PAMI::Context> (client, id),
         _client (client),
         _clientid (clientid),
@@ -419,6 +420,7 @@ namespace PAMI
         _context((pami_context_t) this),
         _contextid (id),
         _world_geometry(NULL),
+        _geometry_map(geometry_map),
         _devices(devices)
       {
       }
@@ -464,7 +466,14 @@ namespace PAMI
         {
           // Initalize Collective Registration
           _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
-          new(_pgas_collreg) PGASCollreg(_client,_context,_clientid,_contextid,_protocol,_lapi_device2,&_dispatch_id);
+          new(_pgas_collreg) PGASCollreg(_client,
+                                         _context,
+                                         _clientid,
+                                         _contextid,
+                                         _protocol,
+                                         _lapi_device2,
+                                         &_dispatch_id,
+                                         _geometry_map);
           _pgas_collreg->analyze(_contextid,_world_geometry);
           return PAMI_SUCCESS;
         }
@@ -493,7 +502,8 @@ namespace PAMI
                                                 1,  //use "global" device
                                                 __global.topology_global.size(),
                                                 __global.topology_local.size(),
-                                                &_dispatch_id);
+                                                &_dispatch_id,
+                                                _geometry_map);
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 #if 0
 //#ifdef _COLLSHM
@@ -521,7 +531,8 @@ namespace PAMI
                                        _cau_device,
                                        __global.mapping,
                                        _lapi_handle,
-                                       &_dispatch_id);
+                                       &_dispatch_id,
+                                       _geometry_map);
           // We analyze global here to get the proper device specific info
           _cau_collreg->analyze_global(_contextid, _world_geometry, &invec[2]);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
@@ -1035,6 +1046,10 @@ namespace PAMI
 
       /*  World Geometry Pointer for this context               */
       LAPIGeometry                          *_world_geometry;
+
+      /*  Client scoped comm id to geomtry map                  */
+      std::map<unsigned, pami_geometry_t>   *_geometry_map;
+      
   private:
       lapi_handle_t                          _lapi_handle;
       PlatformDeviceList                    *_devices;

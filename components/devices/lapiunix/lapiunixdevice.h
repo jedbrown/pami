@@ -456,7 +456,8 @@ namespace PAMI
           OldLAPIMcastRecvMessage *mcast = &m_store;
           if(!found)
               {
-                ldi.recv_func (&msg->_info[0],
+                ldi.recv_func (msg->_context,
+                               &msg->_info[0],
                                msg->_info_count,
                                msg->_peer,
                                msg->_size,

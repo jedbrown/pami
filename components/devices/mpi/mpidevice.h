@@ -439,7 +439,8 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
               {
                 PAMI_assert (mdi.recv_func != NULL);
 
-                mdi.recv_func (&msg->_info[0],
+                mdi.recv_func (_context,
+                               &msg->_info[0],
                                msg->_info_count,
                                sts.MPI_SOURCE,
                                msg->_size,

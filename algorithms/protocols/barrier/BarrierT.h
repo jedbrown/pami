@@ -124,41 +124,34 @@ namespace CCMI
       _myexecutor.notifyRecv (src, metadata, NULL, NULL);
     }
 
-          static void    cb_head   (const pami_quad_t    * info,
-                                     unsigned              count,
-                                     unsigned              conn_id,
-                                     size_t                peer,
-                                     size_t                sndlen,
-                                     void                * arg,
-                                     size_t              * rcvlen,
-                                     pami_pipeworkqueue_t **recvpwq,
-                                     PAMI_Callback_t  * cb_done)
+        static void    cb_head   (pami_context_t         ctxt,
+                                  const pami_quad_t    * info,
+                                  unsigned              count,
+                                  unsigned              conn_id,
+                                  size_t                peer,
+                                  size_t                sndlen,
+                                  void                * arg,
+                                  size_t              * rcvlen,
+                                  pami_pipeworkqueue_t **recvpwq,
+                                  PAMI_Callback_t  *     cb_done)
           {
             TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
             CollHeaderData  *cdata = (CollHeaderData *) info;
             CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arg;
 
-            PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
-
-      *rcvlen    = 0;
+            *rcvlen    = 0;
             *recvpwq   = 0;
-            cb_done->function    = NULL;
+            cb_done->function   = NULL;
             cb_done->clientdata = NULL;
-
-            if (geometry == NULL)
+            
+            PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, cdata->_comm);            
+            if (geometry== NULL)
               {
-                geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (cdata->_comm);
-
-    if (geometry!= NULL)
-      PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
-    else {
-      //Geoemtry doesnt exist
-      PAMI_GEOMETRY_CLASS::registerUnexpBarrier(cdata->_comm, (pami_quad_t&)*info, peer,
-                  (unsigned) PAMI::Geometry::PAMI_GKEY_UEBARRIERCOMPOSITE1);
-      return;
-    }
+                //Geoemtry doesnt exist
+                PAMI_GEOMETRY_CLASS::registerUnexpBarrier(cdata->_comm, (pami_quad_t&)*info, peer,
+                                                          (unsigned) PAMI::Geometry::PAMI_GKEY_UEBARRIERCOMPOSITE1);
+                return;
               }
-
             PAMI_assert(geometry != NULL);
             BarrierT *composite = (BarrierT*) geometry->getKey((size_t)0, /// \todo does NOT support multicontext
                                                                 T_Key);

@@ -92,15 +92,16 @@
    * \param[out] cb_done    Completion callback to invoke when data received
    * \return   void
    */
-  typedef void (*pami_dispatch_multicast_function)(const pami_quad_t        *msginfo,
-                                            unsigned              msgcount,
-                                            unsigned              connection_id,
-                                            size_t                root,
-                                            size_t                sndlen,
-                                            void                 *clientdata,
-                                            size_t               *rcvlen,
-                                            pami_pipeworkqueue_t **rcvpwq,
-                                            pami_callback_t       *cb_done);
+   typedef void (*pami_dispatch_multicast_function)(pami_context_t        ctxt,
+                                                    const pami_quad_t     *msginfo,
+                                                    unsigned              msgcount,
+                                                    unsigned              connection_id,
+                                                    size_t                root,
+                                                    size_t                sndlen,
+                                                    void                 *clientdata,
+                                                    size_t               *rcvlen,
+                                                    pami_pipeworkqueue_t **rcvpwq,
+                                                    pami_callback_t       *cb_done);
 
 
 

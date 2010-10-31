@@ -214,8 +214,9 @@ namespace PAMI
   {
     public:
       inline Context (pami_client_t client, size_t clientid, size_t id, size_t num,
-                                      PlatformDeviceList *devices,
-                                void * addr, size_t bytes, BGPGeometry *world_geometry) :
+		      PlatformDeviceList *devices,
+		      void * addr, size_t bytes, BGPGeometry *world_geometry,
+		      std::map<unsigned, pami_geometry_t> *geometry_map) :
           Interface::Context<PAMI::Context> (client, id),
           _client (client),
           _context ((pami_context_t)this),
@@ -225,6 +226,7 @@ namespace PAMI
           _lock (),
           _multi_registration(NULL),
           _world_geometry(world_geometry),
+	  _geometry_map(geometry_map),
           _status(PAMI_SUCCESS),
           _mcastModel(NULL),
           _msyncModel(NULL),
@@ -265,7 +267,7 @@ namespace PAMI
         TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
         new (_native_interface_storage) AllSidedNI(_mcastModel, _msyncModel, _mcombModel, client, (pami_context_t)this, id, clientid);
         TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
-        new (_multi_registration)       MultiCollectiveRegistration(*_native_interface, client, (pami_context_t)this, id, clientid);
+        new (_multi_registration)       MultiCollectiveRegistration(*_native_interface, client, (pami_context_t)this, id, clientid,_geometry_map);
         TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
         _multi_registration->analyze(_contextid, _world_geometry);
         }
@@ -666,6 +668,7 @@ namespace PAMI
     public:
       MultiCollectiveRegistration *_multi_registration;
       BGPGeometry                 *_world_geometry;
+      std::map<unsigned, pami_geometry_t> *_geometry_map;
     private:
       pami_result_t                _status;
       Device::LocalBcastWQModel   *_mcastModel;

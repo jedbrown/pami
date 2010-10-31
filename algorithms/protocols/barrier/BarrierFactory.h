@@ -132,7 +132,8 @@ namespace CCMI
           return new (request) T (this->_mcastInterface, geometry);
         }
 
-        static pami_quad_t *   cb_head   (const pami_quad_t    * info,
+        static pami_quad_t *   cb_head   (pami_context_t   ctxt,
+                                          const pami_quad_t    * info,
                                          unsigned          count,
                                          unsigned          peer,
                                          size_t            sndlen,
@@ -146,12 +147,8 @@ namespace CCMI
           CollHeaderData  *cdata = (CollHeaderData *) info;
           OldBarrierFactoryT *factory = (OldBarrierFactoryT *) arg;
 
-          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) PAMI_GEOMETRY_CLASS::getCachedGeometry(cdata->_comm);
-          if(geometry == NULL)
-          {
-            geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry(cdata->_comm);
-            PAMI_GEOMETRY_CLASS::updateCachedGeometry(geometry, cdata->_comm);
-          }
+          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry(ctxt, cdata->_comm);
+
           PAMI_assert(geometry != NULL);
 
           T *composite = (T*) geometry->getKey((size_t)0, /// \todo does NOT support multicontext

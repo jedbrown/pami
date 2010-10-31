@@ -254,6 +254,12 @@ extern "C"  pami_result_t PAMI_Geometry_algorithms_query (pami_context_t context
 // Functions from pami_dispatch.h                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
+pami_geometry_t mapidtogeometry (pami_context_t context, int comm)
+{
+  PAMI::Context * ctx    = (PAMI::Context *) context;
+  PAMI::Client  * client = (PAMI::Client *)  ctx->getClient ();
+  return client->mapidtogeometry(comm);
+}
 
 extern "C" pami_result_t PAMI_AMCollective_dispatch_set(pami_context_t              context,
                                                       pami_algorithm_t            algorithm,
