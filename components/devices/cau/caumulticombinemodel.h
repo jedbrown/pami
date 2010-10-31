@@ -19,9 +19,9 @@
 
 #ifdef TRACE
 #undef TRACE
-#define TRACE(x)// fprintf x
+#define TRACE(x) fprintf x
 #else
-#define TRACE(x)// fprintf x
+#define TRACE(x) fprintf x
 #endif
 
 namespace PAMI

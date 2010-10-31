@@ -16,6 +16,15 @@
 #define TRACE_ADAPTOR(x) //fprintf x
 #endif
 
+
+#ifdef TRACE
+#undef TRACE
+#define TRACE(x) //fprintf x
+#else
+#define TRACE(x) //fprintf x
+#endif
+
+
 // Use a local done function for testing
 #define LOCAL_TEST
 
@@ -200,7 +209,7 @@ namespace CCMI
           {
             MultiCombineComposite2Device *m = (MultiCombineComposite2Device*) cookie;
             m->_count--;
-            TRACE_ADAPTOR((stderr, "MultiCombineComposite2Device:  composite done:  count=%ld\n", m->_count));
+            TRACE((stderr, "MultiCombineComposite2Device:  composite done:  count=%ld\n", m->_count));
             if (m->_count==0)
               m->_user_done.function(context, m->_user_done.clientdata, result);
           }
@@ -221,10 +230,20 @@ namespace CCMI
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getLocalTopology();
             PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getMyMasterTopology();
             bool             amMaster    = _geometry->isLocalMasterParticipant();
-            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID); // todo:  shared mem may need its own devinfo
+            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
+            // todo:  shared mem may need its own devinfo
+            unsigned        typesize;            
+            coremath        func;
+            getReduceFunction(cmd->cmd.xfer_allreduce.dt,
+                              cmd->cmd.xfer_allreduce.op,
+                              cmd->cmd.xfer_allreduce.stypecount,
+                              typesize,
+                              func);
             size_t           sbytes      = cmd->cmd.xfer_allreduce.stypecount*1; // todo add type
-            TRACE((stderr, "MultiCombineComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, bytes=%ld buf=%p\n",
-                   &_pwq_src, &_pwq_dest, bytes, cmd->cmd.xfer_allreduce.sndbuf));
+            size_t           scountDt    = sbytes / typesize;
+
+            TRACE((stderr, "MultiCombineComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, sbytes=%ld buf=%p\n",
+                   &_pwq_src, &_pwq_dest, sbytes, cmd->cmd.xfer_allreduce.sndbuf));
 
             // Create a "flat pwq" for the send buffer
             _pwq_src.configure(NULL,                            // Memory manager
@@ -243,8 +262,13 @@ namespace CCMI
             // The "Only Local" case
             // This means the geometry only contains local tasks
             // A single multicombine will suffice to handle the allreduce
-            if(t_local->size() == _geometry->size())
+            if(t_local->size() == _geometry->size() && amMaster)
               {
+                _pwq_inter0.configure(NULL,                            // Memory manager
+                                      cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
+                                      sbytes,                          // buffer bytes
+                                      0);                              // amount initially in buffer
+                _pwq_inter0.reset();
                 _mcombine_l.client               = 0; /// \todo ?
                 _mcombine_l.context              = 0; /// \todo ?
                 _mcombine_l.cb_done.clientdata   = this;
@@ -253,13 +277,32 @@ namespace CCMI
                 _mcombine_l.roles                = -1U;
                 _mcombine_l.data                 = (pami_pipeworkqueue_t*)&_pwq_src;
                 _mcombine_l.data_participants    = (pami_topology_t*)t_local;
-                _mcombine_l.results              = (pami_pipeworkqueue_t*)&_pwq_dest;
-                _mcombine_l.results_participants = (pami_topology_t*)t_local;
+                _mcombine_l.results              = (pami_pipeworkqueue_t*)&_pwq_inter0;
+                _mcombine_l.results_participants = (pami_topology_t*)t_my_master;
                 _mcombine_l.optor                = cmd->cmd.xfer_allreduce.op;
                 _mcombine_l.dtype                = cmd->cmd.xfer_allreduce.dt;
-                _mcombine_l.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
-                _startFcn                        = &MultiCombineComposite2Device::start0;
-                _count                           = 1;
+                _mcombine_l.count                = scountDt;
+
+                // Also, prepare the local multicast, with the root as the local master
+                // We are guaranteed to not have an early arrival with this multicast if we post
+                // it first.  This protocol expects the local multicast to be 2 sided
+                _mcast_l.client                  = 0; /// \todo ?
+                _mcast_l.context                 = 0; /// \todo ?
+                _mcast_l.cb_done.function        = composite_done;
+                _mcast_l.cb_done.clientdata      = this;
+                _mcast_l.connection_id           = _geometry->comm();
+                _mcast_l.roles                   = -1U;
+                _mcast_l.bytes                   = cmd->cmd.xfer_allreduce.rtypecount;
+                _mcast_l.src                     = (pami_pipeworkqueue_t*)&_pwq_inter0;
+                _mcast_l.src_participants        = (pami_topology_t*)t_my_master;
+                _mcast_l.dst                     = (pami_pipeworkqueue_t*)&_pwq_dest;
+                _mcast_l.dst_participants        = (pami_topology_t*)t_local;
+                _mcast_l.msginfo                 = 0;
+                _mcast_l.msgcount                = 0;
+                _startFcn                        = &MultiCombineComposite2Device::start2;
+                _count                           = 2;
+
+                TRACE((stderr, "<%p>Local Only MASTER Setting up start2: local native() %p\n",this,_native_l));
                 return;
               }
 
@@ -284,6 +327,7 @@ namespace CCMI
                 _mcombine_g.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
                 _startFcn                        = &MultiCombineComposite2Device::start1;
                 _count                           = 1;
+                TRACE((stderr, "<%p>Global Only Setting up start1:\n",this));
                 return;
               }
 
@@ -308,7 +352,7 @@ namespace CCMI
                 _mcombine_l.results_participants = (pami_topology_t*)t_my_master;
                 _mcombine_l.optor                = cmd->cmd.xfer_allreduce.op;
                 _mcombine_l.dtype                = cmd->cmd.xfer_allreduce.dt;
-                _mcombine_l.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
+                _mcombine_l.count                = scountDt;
 
                 // Also, prepare the local multicast, with the root as the local master
                 // We are guaranteed to not have an early arrival with this multicast if we post
@@ -328,6 +372,7 @@ namespace CCMI
                 _mcast_l.msgcount                = 0;
                 _startFcn                        = &MultiCombineComposite2Device::start2;
                 _count                           = 2;
+                TRACE((stderr, "<%p>Non Master Setting up start1:\n",this));
                 return;
               }
 
@@ -393,22 +438,28 @@ namespace CCMI
             _mcast_l.msgcount                = 0;
             _count                           = 3;
             _startFcn                        = &MultiCombineComposite2Device::start3;
+            TRACE((stderr, "<%p>Master(local and global) Setting up start3:\n",this));
           }
         void start0()
           {
+            TRACE((stderr, "<%p>start0: local native() native=%p\n",this,_native_l));
             _native_l->multicombine(&_mcombine_l, _deviceInfo);
           }
         void start1()
           {
+            TRACE((stderr, "<%p>start1(): global multicombine %p\n",this,_native_g));
             _native_g->multicombine(&_mcombine_g, _deviceInfo);
           }
         void start2()
           {
+            TRACE((stderr, "<%p>start2(): local mcast+local multicombine %p\n",this,_native_l));
             _native_l->multicast(&_mcast_l, _deviceInfo);
             _native_l->multicombine(&_mcombine_l, _deviceInfo);
           }
         void start3()
           {
+            TRACE((stderr, "<%p>start3(): local mcast+local multicombine+global multicombine l=%p g=%p\n"
+                           ,this,_native_l, _native_g));
             _native_l->multicast(&_mcast_l, _deviceInfo);
             _native_l->multicombine(&_mcombine_l, _deviceInfo);
             _native_g->multicombine(&_mcombine_g, _deviceInfo);
@@ -416,6 +467,7 @@ namespace CCMI
 
         virtual void start()
           {
+            TRACE((stderr, "<%p>Calling startFcn: multicombine() %p\n",this,this->_startFcn));
             (this->*_startFcn)();
           }
         void (MultiCombineComposite2Device::*_startFcn)();
