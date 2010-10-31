@@ -52,4 +52,6 @@ extern "C" {
 #define PAMI_DEF_SH_WORKSIZE   8192 // Default shared work queue worksize
 #define PAMI_DEF_SH_WORKUNITS  32   // Default shared work queue workunits
 
+#define _POSIX_SHM_OPEN
+
 #endif // __common_lapiunix_platform_h__

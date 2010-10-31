@@ -67,6 +67,7 @@ namespace PAMI
                                           0,
                                           1,
                                           &_world_range,
+                                          &_geometry_map,
                                           0); // This tells the geometry not to build
                                               // the optimized topologies.  we can
                                               // generate them after building a mapping

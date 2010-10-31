@@ -109,7 +109,14 @@ namespace PAMI
           TRACE_DBG((stderr,"init() rank %zu,size %zu\n",rank,size));
 
 #ifdef _POSIX_SHM_OPEN
-          const char   * shmemfile = "/unique-pami-coll-mm-shmem-file";
+          char   shmemfile[512];
+          int    jobkey    = 0;
+          // This should still be OK for BG with one job per node
+          if(getenv("MP_PARTITION"))
+            jobkey = atoi(getenv("MP_PARTITION"));
+          snprintf (shmemfile, 1023, "/pami-collshm-%d",jobkey);
+
+            //const char   * shmemfile = "/unique-pami-coll-mm-shmem-file";
           _shm_id = shm_open(shmemfile, O_CREAT|O_RDWR, 0600);
           if( _shm_id != -1) {
             if ( ftruncate(_shm_id, _size) != -1 )
