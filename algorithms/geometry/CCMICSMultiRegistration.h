@@ -181,26 +181,16 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
-      static pami_geometry_t mapidtogeometry (int comm)
-      {
-        pami_geometry_t g = (*_geometry_map)[comm];
-        TRACE_ERR((stderr, "<%p>%s\n", g, __PRETTY_FUNCTION__));
-        return g;
-      }
-
     public:
       pami_client_t                                            _client;
       size_t                                                   _client_id;
       pami_context_t                                           _context;
       size_t                                                   _context_id;
       std::map<unsigned, pami_geometry_t>                     *_geometry_map;
-
-      // PAMI::Context                                            *_contexts;
       PAMI::Device::Generic::Device                            &_devs;
       CCMI::Adaptor::Barrier::CSMultiSyncFactory               _msync_reg;
       CCMI::Adaptor::Broadcast::CSMultiCastFactory             _mcast_reg;
       CCMI::Adaptor::Allreduce::CSMultiCombineFactory          _mcomb_reg;
-
       T_CSMemoryManager                                        _csmm;
     }; // CCMICSMultiRegistration
   }; // CollRegistration
