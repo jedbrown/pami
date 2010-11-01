@@ -816,29 +816,29 @@ namespace PAMI
 
       inline pami_result_t fence_begin_impl ()
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          // This function is no-op in PERCS for now
+          return PAMI_SUCCESS; 
         }
 
       inline pami_result_t fence_end_impl ()
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          // This function is no-op in PERCS for now
+          return PAMI_SUCCESS; 
         }
 
       inline pami_result_t fence_all_impl (pami_event_function   done_fn,
                                           void               * cookie)
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          return (cp->*(cp->pFenceAll))(done_fn, cookie);
         }
 
       inline  pami_result_t fence_endpoint_impl (pami_event_function   done_fn,
                                                  void                * cookie,
                                                  pami_endpoint_t       endpoint)
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+          return (cp->*(cp->pFenceEndpoint))(done_fn, cookie, endpoint);
         }
 
 
