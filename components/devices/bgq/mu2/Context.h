@@ -289,7 +289,7 @@ namespace PAMI
             // Resource Manager allocates the resources.
 
             // Construct arrays of Inj and Rec fifo pointers.
-            _rm.getNumFifosPerContext(  _rm_id_client,
+            _rm.getNumResourcesPerContext(_rm_id_client,
                                         &_numInjFifos,
                                         &_numRecFifos,
 				        &_numBatIds );
