@@ -20,6 +20,7 @@
 #include "common/lapiunix/lapifunc.h"
 #include "TypeDefs.h"
 #include "components/memory/MemoryAllocator.h"
+#include "algorithms/protocols/allreduce/ReduceFunctions.h"
 #include <list>
 
 namespace PAMI
@@ -168,21 +169,26 @@ namespace PAMI
     class CAUMcombineMessage : public MatchQueueElem
     {
     public:
-      CAUMcombineMessage(size_t               bytesToReduce,
+      CAUMcombineMessage(size_t               count,
+                         size_t               sizeoftype,
                          PipeWorkQueue       *rcvpwq,
                          PipeWorkQueue       *sndpwq,
                          cau_reduce_op_t      red,
                          pami_context_t       context,
                          pami_event_function  done_fn,
                          void                *user_cookie,
-                         int                  key,
+                         int                  key,                         
                          void                *toFree):
         MatchQueueElem(key),
         _user_done_fn(done_fn),
         _user_cookie(user_cookie),
         _toFree(toFree),
+        _count(count),
+        _sizeoftype(sizeoftype),
         _bytesReduced(0),
-        _bytesToReduce(bytesToReduce),
+        _bytesToReduce(count*sizeoftype),
+        _bytesBroadcasted(0),
+        _bytesToBroadcast(_bytesToReduce),
         _currentBytes(0),
         _rcvpwq(rcvpwq),
         _sndpwq(sndpwq),
@@ -196,8 +202,12 @@ namespace PAMI
       void                *_user_cookie;
       void                *_toFree;
       pami_context_t       _context;
+      size_t               _count;
+      size_t               _sizeoftype; 
       size_t               _bytesReduced;
       size_t               _bytesToReduce;
+      size_t               _bytesBroadcasted;
+      size_t               _bytesToBroadcast;
       size_t               _currentBytes;
       PipeWorkQueue       *_rcvpwq;
       PipeWorkQueue       *_sndpwq;
@@ -205,6 +215,7 @@ namespace PAMI
       void                *_ue_buf;
       void                *_devinfo;
       void                *_device;
+      coremath             _math_func;
       struct               xfer_header
       {
         unsigned           dispatch_id:16;
@@ -213,6 +224,16 @@ namespace PAMI
         unsigned           pktsize    :7;
         unsigned           msgsize    :25;
       } _xfer_header __attribute__((__packed__));
+      struct               xfer_header_b
+      {
+        unsigned           dispatch_id:16;
+        unsigned           geometry_id:16;
+        unsigned           seqno      :32;
+        unsigned           pktsize    :7;
+        unsigned           msgsize    :25;
+      } _xfer_header_b __attribute__((__packed__));
+
+
     };
 
     class CAUM2MMessage
@@ -237,6 +258,7 @@ namespace PAMI
         _seqnoRed(0),
         _ueRed(),
         _postedRed(),
+        _postedBcast(),
         _topo(topo)
         {}
       int             _cau_id;
@@ -248,6 +270,7 @@ namespace PAMI
       uint64_t        _seqnoRed;
       MatchQueue      _ueRed;
       MatchQueue      _postedRed;
+      MatchQueue      _postedBcast;
 
       PAMI::Topology *_topo;
     };

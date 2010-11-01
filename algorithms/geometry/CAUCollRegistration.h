@@ -65,11 +65,26 @@ namespace PAMI
         {
           strncpy(&m->name[0], "CAU MultiCombineComposite", 32);
         }
-        typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device,
+        typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device<0>,
+                                                                                 McombineMetaData,
+                                                                                 CCMI::ConnectionManager::SimpleConnMgr>
+
+        MultiCombineFactory;
+      };
+      namespace Reduce
+      {
+        void McombineMetaData(pami_metadata_t *m)
+        {
+          strncpy(&m->name[0], "CAU MultiCombineComposite", 32);
+        }
+        typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device<1>,
                                                                                  McombineMetaData,
                                                                                  CCMI::ConnectionManager::SimpleConnMgr>
         MultiCombineFactory;
       };
+
+
+      
       //  **********************************************************************
       //  End:  Typedefs for template instantiations
       //  **********************************************************************
@@ -97,6 +112,7 @@ namespace PAMI
           char barrier_blob[sizeof(Barrier::MultiSyncFactory)];
           char broadcast_blob[sizeof(Broadcast::MultiCastFactory)];
           char allreduce_blob[sizeof(Allreduce::MultiCombineFactory)];
+          char reduce_blob[sizeof(Reduce::MultiCombineFactory)];
         }Factories;
 
         typedef struct GeometryInfo
@@ -104,10 +120,11 @@ namespace PAMI
           // Currently, the _niPtr array is in front
           // These have to go at the front of the struct
           // because the protocols use the key.
-          CCMI::Interfaces::NativeInterface *_niPtr[4];
+          CCMI::Interfaces::NativeInterface *_niPtr[5];
           Barrier::MultiSyncFactory         *_barrier;
           Broadcast::MultiCastFactory       *_broadcast;
           Allreduce::MultiCombineFactory    *_allreduce;
+          Reduce::MultiCombineFactory       *_reduce;
           T_LocalModel                      *_local_model;
           T_LocalNI_AM                      *_ni;
         }GeometryInfo;
@@ -147,7 +164,8 @@ namespace PAMI
           _global_dev(gdev),
           _g_barrier_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_broadcast_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
-          _g_allreduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id)
+          _g_allreduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
+          _g_reduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id)
           {
             // To initialize shared memory, we need to provide the task offset into the
             // local nodes, and the total number of nodes we have locally
@@ -193,6 +211,7 @@ namespace PAMI
             geometryInfo->_niPtr[1]                        = &_g_barrier_ni;
             geometryInfo->_niPtr[2]                        = &_g_broadcast_ni;
             geometryInfo->_niPtr[3]                        = &_g_allreduce_ni;
+            geometryInfo->_niPtr[4]                        = &_g_reduce_ni;
 
             // Allocate the factories
             //  ----->  Barrier
@@ -216,11 +235,19 @@ namespace PAMI
                                                               (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[3]);
             geometryInfo->_allreduce                       = allreduce_reg;
 
+            //  ----->  Reduce
+            Reduce::MultiCombineFactory  *reduce_reg = (Reduce::MultiCombineFactory*)_factory_allocator.allocateObject();
+            new(reduce_reg) Reduce::MultiCombineFactory(&_sconnmgr,
+                                                              (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[0],
+                                                              (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[3]);
+            geometryInfo->_reduce                       = reduce_reg;
+
             // Add the geometry info to the geometry
             geometry->setKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI, ni);
             geometry->addCollective(PAMI_XFER_BARRIER,barrier_reg,context_id);
             geometry->addCollective(PAMI_XFER_BROADCAST,broadcast_reg,context_id);
             geometry->addCollective(PAMI_XFER_ALLREDUCE,allreduce_reg,context_id);
+            geometry->addCollective(PAMI_XFER_REDUCE,reduce_reg,context_id);
 
             // Todo:  free the ginfo;
             return PAMI_SUCCESS;
@@ -327,6 +354,7 @@ namespace PAMI
         T_GlobalNI_AM                                                   _g_barrier_ni;
         T_GlobalNI_AM                                                   _g_broadcast_ni;
         T_GlobalNI_AM                                                   _g_allreduce_ni;
+        T_GlobalNI_AM                                                   _g_reduce_ni;
 
         // Factory Allocator
         // and Local NI allocator

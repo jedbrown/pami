@@ -200,6 +200,7 @@ namespace CCMI
 
       /// \brief All sided allreduce over active message multicombines
       /// A local device will chain into a global multicombine
+      template <int ReduceOnly>
       class MultiCombineComposite2Device : public CCMI::Executor::Composite
       {
       public:
@@ -247,13 +248,13 @@ namespace CCMI
 
             // Create a "flat pwq" for the send buffer
             _pwq_src.configure(NULL,                            // Memory manager
-                            cmd->cmd.xfer_allreduce.sndbuf,  // buffer
-                            sbytes,                          // buffer bytes
-                            sbytes);                         // amount initially in buffer
+                               cmd->cmd.xfer_allreduce.sndbuf,  // buffer
+                               sbytes,                          // buffer bytes
+                               sbytes);                         // amount initially in buffer
             _pwq_dest.configure(NULL,                            // Memory manager
-                            cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
-                            sbytes,                          // buffer bytes
-                            0);                              // amount initially in buffer
+                                cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
+                                sbytes,                          // buffer bytes
+                                0);                              // amount initially in buffer
             _user_done.clientdata = cmd->cookie;
             _user_done.function   = cmd->cb_done;
             _pwq_src.reset();
@@ -324,7 +325,7 @@ namespace CCMI
                 _mcombine_g.results_participants = (pami_topology_t*)t_master;
                 _mcombine_g.optor                = cmd->cmd.xfer_allreduce.op;
                 _mcombine_g.dtype                = cmd->cmd.xfer_allreduce.dt;
-                _mcombine_g.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
+                _mcombine_g.count                = scountDt;
                 _startFcn                        = &MultiCombineComposite2Device::start1;
                 _count                           = 1;
                 TRACE((stderr, "<%p>Global Only Setting up start1:\n",this));
@@ -372,7 +373,7 @@ namespace CCMI
                 _mcast_l.msgcount                = 0;
                 _startFcn                        = &MultiCombineComposite2Device::start2;
                 _count                           = 2;
-                TRACE((stderr, "<%p>Non Master Setting up start1:\n",this));
+                TRACE((stderr, "<%p>Non Master Setting up start2:\n",this));
                 return;
               }
 
