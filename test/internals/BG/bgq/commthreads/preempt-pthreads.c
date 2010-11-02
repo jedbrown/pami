@@ -1,7 +1,7 @@
-///
-/// \file test/internals/BG/bgq/commthreads/preempt-pthreads.c
-/// \brief Simple test for basic commthread functionality
-///
+/**
+ * \file test/internals/BG/bgq/commthreads/preempt-pthreads.c
+ * \brief Simple test for basic commthread functionality
+ */
 
 #include "commthread_test.h"
 
@@ -34,7 +34,7 @@ void *user_pthread(void *cookie) {
 				write(2, buf, bufl);
 				last = 1;
 			}
-			rc = PAMI_Context_trylock(dat->context); // should cause wakeups...
+			rc = PAMI_Context_trylock(dat->context); /* should cause wakeups... */
 			if (rc == PAMI_SUCCESS) {
 				while (run && dat->active) {
 					// why doesn't advance return "num events" anymore?
@@ -139,7 +139,7 @@ int main(int argc, char ** argv) {
 					pthread_attr_setaffinity_np(&attr,
 																			sizeof(cpu_set_t),
 																			&cpu_mask);
-#endif // __pami_target_bgq__
+#endif /* __pami_target_bgq__ */
 					int rc = pthread_create(&thr_data[x].thread, &attr,
 							user_pthread, (void *)&thr_data[x]);
 					if (rc == -1) perror("pthread_create");

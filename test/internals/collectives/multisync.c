@@ -1,7 +1,7 @@
-///
-/// \file test/internals/collectives/multisync.c
-/// \brief Simple Multisync test
-///
+/**
+ * \file test/internals/collectives/multisync.c
+ * \brief Simple Multisync test
+ */
 
 #include <pami.h>
 #include <sys/time.h>
@@ -89,7 +89,7 @@ int main (int argc, char ** argv)
       pami_task_t       *tasklist = (pami_task_t*)malloc(sz*sizeof(pami_task_t));
       size_t i;
       for(i=0; i<sz; i++)tasklist[i]=i;
-      //PAMI_Topology_create_range(&topo,0,sz-1);
+      /*PAMI_Topology_create_range(&topo,0,sz-1); */
       PAMI_Topology_create_list(&topo,tasklist,sz);
 
       pami_multisync_t multisync;

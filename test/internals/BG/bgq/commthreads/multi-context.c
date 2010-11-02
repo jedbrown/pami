@@ -1,7 +1,7 @@
-///
-/// \file test/internals/BG/bgq/commthreads/multi-context.c
-/// \brief Simple test for basic commthread functionality
-///
+/**
+ * \file test/internals/BG/bgq/commthreads/multi-context.c
+ * \brief Simple test for basic commthread functionality
+ */
 
 #include "commthread_test.h"
 

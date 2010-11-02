@@ -6,13 +6,13 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-///
-/// \file core/pami_dat.c
-/// \brief Tables used by PAMI
-///
-/// Since C++ does not yet support designated initializers,
-/// this needs to be C code.
-///
+/**
+ * \file core/pami_dat.c
+ * \brief Tables used by PAMI
+ *
+ * Since C++ does not yet support designated initializers, this needs
+ * to be C code.
+ */
 
 #include <pami.h>
 #include "math/math_coremath.h"

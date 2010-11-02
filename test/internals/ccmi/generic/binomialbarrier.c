@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 
   unsigned    ranks[MAXRANKS];
 
-  //fprintf (stderr, "Starting barrier test\n");
+  /*fprintf (stderr, "Starting barrier test\n"); */
 
   MPI_Init (&argc, &argv);
   CCMI_Collective_initialize();

@@ -1,7 +1,7 @@
-///
-/// \file test/internals/BG/bgq/classroutes/classroute_test.c
-/// \brief Simple test for basic commthread functionality
-///
+/**
+ *  \file test/internals/BG/bgq/classroutes/classroute_test.c
+ * \brief Simple test for basic commthread functionality
+ */
 
 #include "classroute_test.h"
 
@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 		perror("Kernel_GetPersonality()");
 		exit(1);
 	}
-#if 0 // not currently needed?
+#if 0 /* not currently needed? */
 fprintf(stderr, "pers: (%d,%d,%d,%d,%d)\n",
 pers.Network_Config.Anodes,
 pers.Network_Config.Bnodes,
@@ -94,13 +94,13 @@ pers.Network_Config.Enodes);
 
 	BG_JobCoords_t subblk;
 	is_subblockjob = Kernel_JobCoords(&subblk);
-	if (is_subblockjob) { // no sub-block == use entire block
-		if (subblk.shape.core < 16) { // sub-node job... not supported
+	if (is_subblockjob) { /* no sub-block == use entire block */
+		if (subblk.shape.core < 16) { /* sub-node job... not supported */
 			fprintf(stderr, "Sub-node jobs are not supported\n");
 			exit(1);
 		}
 	}
-#if 0 // not currently needed?
+#if 0 /* not currently needed? */
 fprintf(stderr, "subblk: (%d,%d,%d,%d,%d)\n",
 subblk.shape.a,
 subblk.shape.b,
@@ -189,8 +189,8 @@ sprintf(s, "\nBG_SUB_BLOCK_SHAPE=\"%s\"", _s ? _s : "");
 	// ...}
 
 #ifdef BUILD_CLASSROUTES
-	int world_id = 0; // where did CNK setup our commworld classroute?
-	int nClassRoutes = 16; // how many are really available to us?
+	int world_id = 0; /* where did CNK setup our commworld classroute? */
+	int nClassRoutes = 16; /* how many are really available to us? */
 
 	// At this point, 'commworld' should be the circumscribing rectangle for the
 	// active nodes and 'excluded' (if not NULL and nexcl > 0) is the array of
@@ -204,7 +204,7 @@ sprintf(s, "\nBG_SUB_BLOCK_SHAPE=\"%s\"", _s ? _s : "");
 	// Or do we only care about the booted block and it's root?
 
 	ClassRoute_t cr;
-	void *crdata = NULL; // used by routines to keep track of classroute assignments
+	void *crdata = NULL; /* used by routines to keep track of classroute assignments */
 
 	CR_RECT_T subcomm;
 	CR_COORD_T *subexcl;
@@ -251,7 +251,7 @@ sprintf(s, "\nBG_SUB_BLOCK_SHAPE=\"%s\"", _s ? _s : "");
 				// fatal error - no classroute ids available.
 				// we could just 'break' here, but all nodes must follow suit...
 			}
-			--id; // ffs() returns bit# + 1
+			--id; /* ffs() returns bit# + 1 */
 			classRouteIds[i] = id;
 			classRoutes[i] = cr;
 			classRouteSize[i] = __MUSPI_rect_size(&subcomm);
@@ -279,7 +279,7 @@ sprintf(s, "\nBG_SUB_BLOCK_SHAPE=\"%s\"", _s ? _s : "");
 
 	// Now test all the classroutes...
 	for (i = 0; i < nClassRoutes; ++i) {
-		if (classRouteSize[i] == 0) continue; // barrier needed?
+		if (classRouteSize[i] == 0) continue; /* barrier needed? */
 
 		unsigned long long rbuf, sbuf;
 		sbuf = 1;
@@ -305,6 +305,6 @@ sprintf(s, "\nBG_SUB_BLOCK_SHAPE=\"%s\"", _s ? _s : "");
 			exit(1);
 		}
 	}
-#endif // BUILD_CLASSROUTES
+#endif /* BUILD_CLASSROUTES */
 	exit(0);
 }

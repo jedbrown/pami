@@ -362,12 +362,12 @@ int main(int argc, char*argv[])
     for (j = DT_LOC_2INT; j <= DT_LOC_2DOUBLE; j++)
       validTable[i][j] = 1;
 
-  /// \todo These long long types reportedly fail in pgas, so disable for now.
+  /** \todo These long long types reportedly fail in pgas, so disable for now. */
   for (i = 0, j = DT_SIGNED_LONG_LONG; i < OP_COUNT; i++)validTable[i][j] = 0;
 
   for (i = 0, j = DT_UNSIGNED_LONG_LONG; i < OP_COUNT; i++)validTable[i][j] = 0;
 
-  /// \todo These fail using core math...we should find this bug.
+  /** \todo These fail using core math...we should find this bug. */
   validTable[OP_BAND][DT_DOUBLE] = 0;
 
 #if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
@@ -413,7 +413,7 @@ int main(int argc, char*argv[])
     for (i = OP_MINLOC, j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
   }
 
-  // This works on bgq so re-enable it
+  /* This works on bgq so re-enable it */
   if ((env) && (*env == 'M'))
     validTable[OP_BAND][DT_DOUBLE] = 1;
 
@@ -447,11 +447,11 @@ int main(int argc, char*argv[])
     allreduce.cb_done   = cb_done;
     allreduce.cookie    = (void*) & allreduce_poll_flag;
     allreduce.algorithm = allreduce_always_works_algo[nalg];
-    tmp = (char*)(((uint64_t)sbuf + 127) & ~(uint64_t)127); // align the buffer
+    tmp = (char*)(((uint64_t)sbuf + 127) & ~(uint64_t)127); /* align the buffer */
     allreduce.cmd.xfer_allreduce.sndbuf    = tmp;
     allreduce.cmd.xfer_allreduce.stype     = PAMI_BYTE;
     allreduce.cmd.xfer_allreduce.stypecount = 0;
-    tmp = (char*)(((uint64_t)rbuf + 127) & ~(uint64_t)127); // align the buffer
+    tmp = (char*)(((uint64_t)rbuf + 127) & ~(uint64_t)127); /* align the buffer */
     allreduce.cmd.xfer_allreduce.rcvbuf    = tmp;
     allreduce.cmd.xfer_allreduce.rtype     = PAMI_BYTE;
     allreduce.cmd.xfer_allreduce.rtypecount = 0;

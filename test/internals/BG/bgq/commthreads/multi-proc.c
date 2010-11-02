@@ -1,12 +1,12 @@
-///
-/// \file test/internals/BG/bgq/commthreads/multi-proc.c
-/// \brief Simple test for basic commthread functionality using multiple processes per node
-///
+/**
+ * \file test/internals/BG/bgq/commthreads/multi-proc.c
+ * \brief Simple test for basic commthread functionality using multiple processes per node
+ */
 
-// override the normal defaults
+/* override the normal defaults */
 #ifndef NUM_CONTEXTS
 #define NUM_CONTEXTS	2
-#endif // NUM_CONTEXTS
+#endif /* NUM_CONTEXTS */
 
 #include "commthread_test.h"
 

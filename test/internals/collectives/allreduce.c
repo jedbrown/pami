@@ -12,7 +12,7 @@
  */
 
 #include "../../api/pami_util.h"
-#include "math/math_coremath.h" // special datatype size structs
+#include "math/math_coremath.h" /* special datatype size structs */
 
 
 //define this if you want to validate the data for unsigned sums
@@ -152,28 +152,28 @@ const char * dt_array_str[] =
 
 unsigned elemsize_array[] =
   {
-    sizeof(unsigned int),       // PAMI_UNSIGNED_INT,
-    sizeof(double),             // PAMI_DOUBLE,
-    sizeof(char),               // PAMI_SIGNED_CHAR,
-    sizeof(unsigned char),      // PAMI_UNSIGNED_CHAR,
-    sizeof(short),              // PAMI_SIGNED_SHORT,
-    sizeof(unsigned short),     // PAMI_UNSIGNED_SHORT,
-    sizeof(int),                // PAMI_SIGNED_INT,
-    sizeof(long long),          // PAMI_SIGNED_LONG_LONG,
-    sizeof(unsigned long long), // PAMI_UNSIGNED_LONG_LONG,
-    sizeof(float),              // PAMI_FLOAT,
-    sizeof(long double),        // PAMI_LONG_DOUBLE,
-    sizeof(unsigned int),       // PAMI_LOGICAL,
-    (2 * sizeof(float)),        // PAMI_SINGLE_COMPLEX,
-    (2 * sizeof(double)),       // PAMI_DOUBLE_COMPLEX
-    // The following are from math/math_coremath.h structures
-    // \todo Correct or not?  At least they match internal math...
-    sizeof(int32_int32_t),      // PAMI_LOC_2INT,
-    sizeof(int16_int32_t),      // PAMI_LOC_SHORT_INT,
-    sizeof(fp32_int32_t),       // PAMI_LOC_FLOAT_INT,
-    sizeof(fp64_int32_t),       // PAMI_LOC_DOUBLE_INT,
-    sizeof(fp32_fp32_t),        // PAMI_LOC_2FLOAT,
-    sizeof(fp64_fp64_t),        // PAMI_LOC_2DOUBLE,
+    sizeof(unsigned int),       /* PAMI_UNSIGNED_INT, */
+    sizeof(double),             /* PAMI_DOUBLE, */
+    sizeof(char),               /* PAMI_SIGNED_CHAR, */
+    sizeof(unsigned char),      /* PAMI_UNSIGNED_CHAR, */
+    sizeof(short),              /* PAMI_SIGNED_SHORT, */
+    sizeof(unsigned short),     /* PAMI_UNSIGNED_SHORT, */
+    sizeof(int),                /* PAMI_SIGNED_INT, */
+    sizeof(long long),          /* PAMI_SIGNED_LONG_LONG, */
+    sizeof(unsigned long long), /* PAMI_UNSIGNED_LONG_LONG, */
+    sizeof(float),              /* PAMI_FLOAT, */
+    sizeof(long double),        /* PAMI_LONG_DOUBLE, */
+    sizeof(unsigned int),       /* PAMI_LOGICAL, */
+    (2 * sizeof(float)),        /* PAMI_SINGLE_COMPLEX, */
+    (2 * sizeof(double)),       /* PAMI_DOUBLE_COMPLEX */
+    /* The following are from math/math_coremath.h structures */
+    /* \todo Correct or not?  At least they match internal math... */
+    sizeof(int32_int32_t),      /* PAMI_LOC_2INT, */
+    sizeof(int16_int32_t),      /* PAMI_LOC_SHORT_INT, */
+    sizeof(fp32_int32_t),       /* PAMI_LOC_FLOAT_INT, */
+    sizeof(fp64_int32_t),       /* PAMI_LOC_DOUBLE_INT, */
+    sizeof(fp32_fp32_t),        /* PAMI_LOC_2FLOAT, */
+    sizeof(fp64_fp64_t),        /* PAMI_LOC_2DOUBLE, */
   };
 
 unsigned ** alloc2DContig(int nrows, int ncols)
@@ -329,11 +329,11 @@ int main(int argc, char*argv[])
     for(j=DT_LOC_2INT; j<=DT_LOC_2DOUBLE; j++)
       validTable[i][j]=1;
 
-  /// \todo These long long types reportedly fail in pgas, so disable for now.
+  /** \todo These long long types reportedly fail in pgas, so disable for now. */
   for(i=0,j=DT_SIGNED_LONG_LONG; i<OP_COUNT;i++)validTable[i][j]=0;
   for(i=0,j=DT_UNSIGNED_LONG_LONG; i<OP_COUNT;i++)validTable[i][j]=0;
 
-  /// \todo These fail using core math...we should find this bug.
+  /** \todo These fail using core math...we should find this bug. */
   validTable[OP_BAND][DT_DOUBLE]=0;
 
 #if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
@@ -361,7 +361,7 @@ int main(int argc, char*argv[])
         for(i= OP_MAXLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
         for(i= OP_MINLOC, j=0; j<DT_COUNT;j++)validTable[i][j]=0;
       }
-  // This works on bgq so re-enable it
+  /* This works on bgq so re-enable it */
   if((env) && (*env=='M'))
     validTable[OP_BAND][DT_DOUBLE]=1;
 #endif
@@ -436,7 +436,7 @@ int main(int argc, char*argv[])
 
 #ifdef CHECK_DATA
             int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
-            //assert (rc == 0);
+            /*assert (rc == 0); */
             if(rc) fprintf(stderr, "FAILED validation\n");
 #endif
 

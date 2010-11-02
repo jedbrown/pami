@@ -6,10 +6,10 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-///
-/// \file components/devices/bgp/collective_network/cn_bg_dat.c
-/// \brief Tables used by PAMI
-///
+/**
+ * \file components/devices/bgp/collective_network/cn_bg_dat.c
+ * \brief Tables used by PAMI
+ */
 
 #include <pami.h>
 #include "math/bgp/collective_network/pami_bg_math.h"
