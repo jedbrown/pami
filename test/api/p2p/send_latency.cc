@@ -23,7 +23,7 @@
 //#define ITERATIONS 1
 
 #ifndef BUFSIZE
-#define BUFSIZE 2048
+#define BUFSIZE 262144
 //#define BUFSIZE 1024*256
 //#define BUFSIZE 16
 //#define BUFSIZE 1024
@@ -33,7 +33,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x)  // fprintf x
 #endif
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
@@ -75,28 +75,27 @@ static void test_dispatch (
     size_t               header_size,  /**< IN: header size */
     const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
     size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
-    pami_endpoint_t origin,
-pami_recv_t         * recv)        /**< OUT: receive message structure */
+    pami_endpoint_t      origin,
+    pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
-  if (pipe_addr != NULL)
+  if (recv)
+  {
+    //header_t * header = (header_t *) header_addr;
+    TRACE_ERR((stderr, "(%zu) test_dispatch() async recv:  cookie = %p, pipe_size = %zu\n", _my_task, cookie, pipe_size));    
+    recv->local_fn = decrement;
+    recv->cookie   = cookie;
+    recv->type     = PAMI_BYTE;
+    recv->addr     = _recv_buffer;
+    recv->offset   = 0;
+    recv->data_fn  = PAMI_DATA_COPY;
+  }
+  else
   {
     //memcpy (_recv_buffer, pipe_addr, pipe_size);
     unsigned * value = (unsigned *) cookie;
     TRACE_ERR((stderr, "(%zu) test_dispatch() short recv:  cookie = %p, decrement: %d => %d\n", _my_task, cookie, *value, *value-1));
     --*value;
   }
-  else
-  {
-    //header_t * header = (header_t *) header_addr;
-    TRACE_ERR((stderr, "(%zu) test_dispatch() async recv:  cookie = %p, pipe_size = %zu\n", _my_task, cookie, pipe_size));
-
-    recv->local_fn = decrement;
-    recv->cookie   = cookie;
-    recv->type     = PAMI_BYTE;
-    recv->addr     = _recv_buffer;
-    recv->offset   = 0;
-  }
-
   _recv_iteration++;
 }
 
@@ -140,7 +139,10 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
   parameters.events.cookie        = (void *) &_send_active;
   parameters.events.local_fn      = decrement;
   parameters.events.remote_fn     = NULL;
+  memset(&parameters.send.hints, 0, sizeof(parameters.send.hints));
 
+//  parameters.send.hints.use_rdma = 0;
+  
 //  barrier ();
 
   unsigned i;
@@ -212,7 +214,7 @@ int main (int argc, char ** argv)
 
   pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
-  pami_send_hint_t options={};
+  pami_send_hint_t options={0};
   TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, recv_active = %u\n", &_recv_active, _recv_active));
   pami_result_t result = PAMI_Dispatch_set (context,
                                           _dispatch[_dispatch_count++],
