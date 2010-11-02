@@ -1,8 +1,16 @@
-/*/ */
-/*/ \file test/api/p2p/immediate_send_overflow.c
-/*/ \brief Simple point-topoint PAMI_send() test */
-/*/ \validates that the n+1 byte remains unchanged */
-/*/ */
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file test/api/p2p/immediate_send_overflow.c
+ * \brief Simple point-topoint PAMI_send() test
+ * \validates that the n+1 byte remains unchanged
+ */
 
 #include <pami.h>
 #include <stdio.h>

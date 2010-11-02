@@ -174,7 +174,7 @@ unsigned elemsize_array[] =
     (2 * sizeof(float)),        /* PAMI_SINGLE_COMPLEX, */
     (2 * sizeof(double)),       /* PAMI_DOUBLE_COMPLEX */
     /* The following are from math/math_coremath.h structures */
-    /* \todo Correct or not?  At least they match internal math... */
+    /** \todo Correct or not?  At least they match internal math... */
     sizeof(int32_int32_t),      /* PAMI_LOC_2INT, */
     sizeof(int16_int32_t),      /* PAMI_LOC_SHORT_INT, */
     sizeof(fp32_int32_t),       /* PAMI_LOC_FLOAT_INT, */
@@ -337,11 +337,11 @@ int main(int argc, char*argv[])
     for(j=DT_LOC_2INT; j<=DT_LOC_2DOUBLE; j++)
       validTable[i][j]=1;
 
-  /*/ \todo These long long types reportedly fail in pgas, so disable for now. */
+  /** \todo These long long types reportedly fail in pgas, so disable for now. */
   for(i=0,j=DT_SIGNED_LONG_LONG; i<OP_COUNT;i++)validTable[i][j]=0;
   for(i=0,j=DT_UNSIGNED_LONG_LONG; i<OP_COUNT;i++)validTable[i][j]=0;
 
-  /*/ \todo These fail using core math...we should find this bug. */
+  /** \todo These fail using core math...we should find this bug. */
   validTable[OP_BAND][DT_DOUBLE]=0;
 
 #if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
@@ -350,7 +350,7 @@ int main(int argc, char*argv[])
   fprintf(stderr, "PAMI_DEVICE=%c\n", env?*env:' ');
   if((env==NULL) || ((*env=='M') || (*env=='B')))
       {
-        /*/ These are unsupported on MU */
+        /* These are unsupported on MU */
         for(i=0,j= DT_SIGNED_CHAR;    i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_UNSIGNED_CHAR;  i<OP_COUNT;i++)validTable[i][j]=0;
         for(i=0,j= DT_SIGNED_SHORT;   i<OP_COUNT;i++)validTable[i][j]=0;
