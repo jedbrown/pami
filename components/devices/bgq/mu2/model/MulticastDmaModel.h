@@ -68,7 +68,8 @@ namespace PAMI
 	    
 	    ///// Get the BAT IDS ///////////////
 	    //// Setup CounterVec in BAT 
-	    uint rc = _mucontext.allocateBatIds (2, _batids);  
+	    uint rc = 0;
+	    rc = _mucontext.allocateBatIds (2, _batids);  
 	    PAMI_assert (rc == 0);
 
 	    Kernel_MemoryRegion_t memRegion;
@@ -162,7 +163,8 @@ namespace PAMI
 	    pami_coord_t *ref=NULL;
 	    unsigned char *isTorus=NULL;
 	    
-	    pami_result_t result = dst_topology->axial(&ll, &ur, &ref, &isTorus);
+	    pami_result_t result = PAMI_SUCCESS;
+	    result = dst_topology->axial(&ll, &ur, &ref, &isTorus);
 	    PAMI_assert(result == PAMI_SUCCESS);
 	    dst_topology->axial(&ll, &ur, &ref, &isTorus);
 
@@ -195,7 +197,8 @@ namespace PAMI
 
 	    if (!done && !(_flags & POLLING_SENDS)) {
 	      _flags |= POLLING_SENDS;	      
-	      pami_context_t context = (pami_context_t) mcast->context;
+	      pami_context_t context = NULL;
+	      context = (pami_context_t) mcast->context;
 	      PAMI_assert(context != NULL);
 	      PAMI::Device::Generic::GenericThread *work = new (&_swork) PAMI::Device::Generic::GenericThread(advance_sends, this);
 	      _mucontext.getProgressDevice()->postThread(work);
@@ -221,7 +224,8 @@ namespace PAMI
 	    if (idx == 0) {
 	      char *payload = _recvs[idx]->_payload;
 	      Kernel_MemoryRegion_t memRegion;
-	      uint rc = Kernel_CreateMemoryRegion (&memRegion, payload, mcast->bytes);
+	      uint rc = 0;
+	      rc = Kernel_CreateMemoryRegion (&memRegion, payload, mcast->bytes);
 	      PAMI_assert ( rc == 0 );
 	      uint64_t paddr = (uint64_t)memRegion.BasePa +
 		((uint64_t)payload - (uint64_t)memRegion.BaseVa);
@@ -230,7 +234,8 @@ namespace PAMI
 
 	    if ((_flags & POLLING_RECVS) == 0) {
 	      _flags |= POLLING_RECVS;	      	      
-	      pami_context_t context = (pami_context_t) mcast->context;
+	      pami_context_t context = NULL;
+	      context = (pami_context_t) mcast->context;
 	      PAMI_assert(context != NULL);
 	      PAMI::Device::Generic::GenericThread *work = new (&_rwork) PAMI::Device::Generic::GenericThread(advance_recvs, this);
 	      _mucontext.getProgressDevice()->postThread(work);
