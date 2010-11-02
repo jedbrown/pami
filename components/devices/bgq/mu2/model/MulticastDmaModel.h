@@ -58,7 +58,8 @@ namespace PAMI
 	  _mucontext(device),
 	  _nActiveRecvs(0),
 	  _nActiveSends(0),
-	  _flags(0)
+	  _flags(0),
+	  _curBaseAddress(0)
 	  {	    
 	    memset(_sends, 0, sizeof(_sends));
 	    memset(_recvs, 0, sizeof(_recvs));
@@ -179,13 +180,8 @@ namespace PAMI
 									 ur,
 									 pwq,
 									 length);
-	    
-	    //Passing the put offset
-	    if (_nActiveSends != 0)
-	      msg->setRecPutOffset ((uint64_t)pwq->bufferToConsume() - (uint64_t)_sends[0]->getPwq()->bufferToConsume());
-	    
+	    	    	    
 	    _sends[_nActiveSends] = msg;
-	    _nActiveSends ++;
 	    
 	    // Clone the single-packet model descriptor into the injection fifo
 	    MUSPI_DescriptorBase * dput = &msg->_desc;
@@ -193,9 +189,17 @@ namespace PAMI
 	    
 	    msg->init();
 	    dput->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Counter_Offset = mcast->connection_id * sizeof(uint64_t);
-	    //bool done = msg->advance();
 
-	    if (!(_flags & POLLING_SENDS)) {
+	    //Passing the put offset
+	    if (_nActiveSends != 0) 
+	      msg->setRecPutOffset ((uint64_t)pwq->bufferToConsume() - (uint64_t)_curBaseAddress);
+	    else //_nActiveSends == 0
+	      _curBaseAddress = (uint64_t)pwq->bufferToConsume();
+
+	    _nActiveSends ++;
+	    bool done = msg->advance();
+
+	    if (!done && !(_flags & POLLING_SENDS)) {
 	      _flags |= POLLING_SENDS;	      
 	      pami_context_t context = NULL;
 	      context = (pami_context_t) mcast->context;
@@ -203,6 +207,12 @@ namespace PAMI
 	      PAMI::Device::Generic::GenericThread *work = new (&_swork) PAMI::Device::Generic::GenericThread(advance_sends, this);
 	      _mucontext.getProgressDevice()->postThread(work);
 	    }
+	    else if (done) {
+	      _nActiveSends --;
+	      _sends[_nActiveSends] = NULL;
+	      if (_nActiveSends == 0)
+		_curBaseAddress = 0;
+	    }	      
 	  }
 
 	  void processRecv (uint8_t (&state)[MulticastDmaModel::sizeof_msg],
@@ -307,14 +317,17 @@ namespace PAMI
 		  bool done = model->_sends[i]->advance();
 		  if (done) {
 		    model->_sends[i] = NULL;
-		    ncomplete = 0;
+		    ncomplete++;
 		  }
 		}
+		else
+		  ncomplete ++;
 	      }
 
 	      if (ncomplete == model->_nActiveSends) {
 		model->_nActiveSends = 0;
 		model->_flags &= ~(POLLING_SENDS);
+		model->_curBaseAddress = 0;
 		return PAMI_SUCCESS;
 	      }
 
@@ -330,6 +343,7 @@ namespace PAMI
 	  unsigned                                   _nActiveSends;
 	  unsigned                                   _flags;
 	  uint8_t                                    _recvIdVec[MAX_COUNTERS];
+	  uint64_t                                   _curBaseAddress;
 	  uint64_t                                   _counterShadowVec[MAX_COUNTERS]; //A list of shadow counters
 	  MulticastDmaRecv                         * _recvs[MAX_COUNTERS];
 	  InjectDPutMulticast                      * _sends[MAX_COUNTERS];

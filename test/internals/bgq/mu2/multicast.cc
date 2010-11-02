@@ -140,10 +140,8 @@ int main(int argc, char ** argv)
   
   Delay (1000);
 
-  if (myrank != 0) {
-    for (int i = 0; i < MAX_BUF_SIZE; i++)
-      PAMI_assert (bcastbuf[i] == (i&0xff));
-  }
+  for (int i = 0; i < MAX_BUF_SIZE; i++)
+    PAMI_assert (bcastbuf[i] == (i&0xff));
 
   for (int i = 0; i < MAX_ITER; i++) {
     done_count = 1;
