@@ -212,7 +212,7 @@ namespace PAMI
                                                  Memory::MemoryManager * mm,
                                                  Generic::Device       * progress)
           {
-            return getDevice_impl (devices, clientid, contextid).init (clientid, context);
+            return getDevice_impl (devices, clientid, contextid).init (clientid, context, progress);
           };
 
           ///

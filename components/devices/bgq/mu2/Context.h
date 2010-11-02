@@ -29,7 +29,7 @@
 
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
-
+#include "components/devices/generic/Device.h"
 #include "components/devices/bgq/mu2/global/Global.h"
 #include "components/devices/bgq/mu2/InjChannel.h"
 #include "components/devices/bgq/mu2/InjGroup.h"
@@ -150,11 +150,13 @@ namespace PAMI
           /// \param[in] mu_context_cookie   MU context cookie delivered in callbacks
           ///
           inline pami_result_t init (size_t   id_client,
-                                     void   * mu_context_cookie)
+                                     void   * mu_context_cookie,
+				     Generic::Device       * progress)
           {
-	    fprintf(stderr, "Context inited\n");
-
             TRACE_FN_ENTER();
+
+	    _progressDevice = progress;
+
             _id_client = id_client;
 
             // Map the PAMI client ID to the resource manager's client ID.
@@ -941,6 +943,12 @@ namespace PAMI
             return _rm.getRgetInjFifoIds();
           };
 
+	  /// \brief Get the Progress device to post pami work to
+	  ///
+	  /// \retval generic device pointer
+	  ///
+	  inline Generic::Device *getProgressDevice() { return _progressDevice; }
+
 	  /// \brief Get the Core Affinity for this Context
 	  ///
 	  /// \retval  coreId  The core number that this context is affiliated with.
@@ -1021,6 +1029,8 @@ namespace PAMI
 	                                             // Initialized to combiningInjFifoIdNotSet
                                                      // if this context does not manage it.
 	  uint64_t                 _interruptMask;
+
+	  Generic::Device         *_progressDevice;
       }; // class     PAMI::Device::MU::Context
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device

@@ -191,14 +191,14 @@ namespace PAMI
 	    
 	    msg->init();
 	    dput->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Counter_Offset = mcast->connection_id * sizeof(uint64_t);
-
 	    bool done = msg->advance();
 
-	    pami_context_t context = (pami_context_t) mcast->context;
-	    PAMI_assert(context != NULL);
 	    if (!done && !(_flags & POLLING_SENDS)) {
 	      _flags |= POLLING_SENDS;	      
-	      PAMI_Context_post(context, &_swork, advance_sends, this);
+	      pami_context_t context = (pami_context_t) mcast->context;
+	      PAMI_assert(context != NULL);
+	      PAMI::Device::Generic::GenericThread *work = new (&_swork) PAMI::Device::Generic::GenericThread(advance_sends, this);
+	      _mucontext.getProgressDevice()->postThread(work);
 	    }
 	  }
 
@@ -228,11 +228,12 @@ namespace PAMI
 	      _mucontext.setBatEntry (_batids[0], paddr);
 	    }
 
-	    pami_context_t context = (pami_context_t) mcast->context;
-	    PAMI_assert(context != NULL);
 	    if ((_flags & POLLING_RECVS) == 0) {
-	      _flags |= POLLING_RECVS;	      
-	      PAMI_Context_post(context, &_swork, advance_recvs, this);
+	      _flags |= POLLING_RECVS;	      	      
+	      pami_context_t context = (pami_context_t) mcast->context;
+	      PAMI_assert(context != NULL);
+	      PAMI::Device::Generic::GenericThread *work = new (&_rwork) PAMI::Device::Generic::GenericThread(advance_recvs, this);
+	      _mucontext.getProgressDevice()->postThread(work);
 	    }
 	  }
   
@@ -255,28 +256,26 @@ namespace PAMI
 	      unsigned i = 0, ncomplete = 0;
 	      MulticastDmaModel *model = (MulticastDmaModel *)cookie;
 
-	      while (model->_nActiveRecvs != ncomplete) {
-		for (i=0; i < model->_nActiveRecvs; i++)  {
-		  if (model->_recvs[i] != NULL) {
-		    uint8_t cid = model->_recvIdVec[i];
-		    volatile uint64_t cc = model->_counterVec[cid];
-		    if (cc != model->_counterShadowVec[i]) {
-		      mem_sync();
-		      model->_recvs[i]->produceBytes (model->_counterShadowVec[i] - cc);
-		      model->_counterShadowVec[i] = cc;
-		    }
+	      for (i=0; i < model->_nActiveRecvs; i++)  {
+		if (model->_recvs[i] != NULL) {
+		  uint8_t cid = model->_recvIdVec[i];
+		  volatile uint64_t cc = model->_counterVec[cid];
+		  if (cc != model->_counterShadowVec[i]) {
+		    mem_sync();
+		    model->_recvs[i]->produceBytes (model->_counterShadowVec[i] - cc);
+		    model->_counterShadowVec[i] = cc;
+		  }
 		  
-		    //Trigger a send check on counter i??
-		    if (cc == 0) {
-		      ncomplete++;		      
-		      if (model->_recvs[i]->_fn)
-			model->_recvs[i]->_fn (context, model->_recvs[i]->_cookie, PAMI_SUCCESS);
-		      model->_recvs[i] = NULL;
-		    }
+		  //Trigger a send check on counter i??
+		  if (cc == 0) {
+		    ncomplete++;		      
+		    if (model->_recvs[i]->_fn)
+		      model->_recvs[i]->_fn (context, model->_recvs[i]->_cookie, PAMI_SUCCESS);
+		    model->_recvs[i] = NULL;
 		  }
-		  else {
-		    ncomplete++;
-		  }
+		}
+		else {
+		  ncomplete++;
 		}
 	      }
 
@@ -285,7 +284,7 @@ namespace PAMI
 		model->_nActiveRecvs = 0;
 		model->_flags &= ~(POLLING_RECVS);
 		model->_mucontext.setBatEntry (model->_batids[0], 0);
-
+		
 		return PAMI_SUCCESS;
 	      }
 	      
