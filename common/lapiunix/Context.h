@@ -77,8 +77,6 @@
 
 #include "components/devices/NativeInterface.h"
 
-extern lapi_state_t    *_Lapi_port[MAX_LAPI_PORTS];
-
 
 namespace PAMI
 {
@@ -438,8 +436,7 @@ namespace PAMI
 
           LapiImpl::Context::Config config(lp_client->GetConfig(), NULL, 0);
 
-          _Lapi_port[_contextid] = (lapi_state_t*)_lapi_state;
-          LapiImpl::Context::Create(config);
+          LapiImpl::Context::Create(config, (LapiImpl::Context *)_lapi_state);
 
           _lapi_handle = ((lapi_state_t*)_lapi_state)->my_hndl;
 
