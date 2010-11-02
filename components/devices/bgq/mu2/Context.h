@@ -152,6 +152,8 @@ namespace PAMI
           inline pami_result_t init (size_t   id_client,
                                      void   * mu_context_cookie)
           {
+	    fprintf(stderr, "Context inited\n");
+
             TRACE_FN_ENTER();
             _id_client = id_client;
 

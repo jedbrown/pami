@@ -694,7 +694,7 @@ namespace PAMI
         return _client;
       }
 
-    private:
+    public:
 
       pami_client_t _client;
       size_t _clientid;

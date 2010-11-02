@@ -11,6 +11,8 @@
  * \brief Simple standalone MU software device test.
  */
 
+#include "sys/pami.h"
+
 #include "common/bgq/Global.h"
 
 #include "common/bgq/BgqPersonality.h"
@@ -31,6 +33,10 @@
 #include "p2p/protocols/send/eager/Eager.h"
 
 typedef PAMI::Device::MU::Context MuContext;
+
+namespace PAMI{
+  extern MuContext  *__mu_contexts;
+}
 
 typedef PAMI::Device::MU::PacketModel MuPacketModel;
 //typedef PAMI::Device::MU::PacketModelMemoryFifoCompletion MuPacketModel;
@@ -205,11 +211,22 @@ void test (MuContext & mu0, T_Model & model, T_Protocol & protocol, const char *
 
 int main(int argc, char ** argv)
 {
-  // Initialize the MU resources for all contexts for this client
-  __MUGlobal.getMuRM().initializeContexts( 0 /*id_client*/, 2 /*id_count*/, NULL /* generic::Devices */ );
+  pami_client_t client;
+  char clientname[]="PAMI";
+  //TRACE_ERR((stderr, "... before PAMI_Client_create()\n"));
+  PAMI_Client_create (clientname, &client, NULL, 0);
+  //TRACE_ERR((stderr, "...  after PAMI_Client_create()\n"));
+  pami_context_t context;
+  //TRACE_ERR((stderr, "... before PAMI_Context_createv()\n"));
+  { size_t _n = 1; PAMI_Context_createv (client, NULL, 0, &context, _n); }
+  //TRACE_ERR((stderr, "...  after PAMI_Context_createv()\n"));
 
-  MuContext mu0 (__global.mapping, 0, 0, 2);
-  mu0.init (0, NULL); // id_client, mu context "cookie" (usually pami_context_t)
+  // Initialize the MU resources for all contexts for this client
+  //__MUGlobal.getMuRM().initializeContexts( 0 /*id_client*/, 2 /*id_count*/, NULL /* generic::Devices */ );
+
+  //MuContext mu0 (__global.mapping, 0, 0, 2);
+
+  MuContext &mu0 = PAMI::__mu_contexts[0]; 
 
   fprintf (stderr, "After mu init\n");
 
@@ -222,9 +239,6 @@ int main(int argc, char ** argv)
   uint8_t model10_buf[sizeof(PAMI::Device::MU::PacketModel)] __attribute__((__aligned__(32)));
   PAMI::Device::MU::PacketModel &model10 = *(new (model10_buf) PAMI::Device::MU::PacketModel(mu0));
 
-  uint8_t model11_buf[sizeof(PAMI::Device::MU::PacketModel)] __attribute__((__aligned__(32)));
-  PAMI::Device::MU::PacketModel &model11 = *(new (model11_buf) PAMI::Device::MU::PacketModel(mu0));
-
   fprintf (stderr, "After model constructors\n");
 
   //pami_result_t result;
@@ -233,14 +247,13 @@ int main(int argc, char ** argv)
 //  model00.init (100, dispatch_fn, (void *) 100, NULL, NULL);
 //  model01.init (100, dispatch_fn, (void *) 101, NULL, NULL);
 
-  model10.init (101, dispatch_fn, (void *) 100, NULL, NULL);
-  model11.init (101, dispatch_fn, (void *) 101, NULL, NULL);
+  bool rc  = model10.init (0, dispatch_fn, (void *) 0, NULL, NULL);
+  PAMI_assert (rc == PAMI_SUCCESS);
 
   fprintf (stderr, "After model init\n");
 
-
   pami_result_t result;
-  MuEager eager (10,      // dispatch set id
+  MuEager eager (0,      // dispatch set id
                  recv,    //dispatch function
                  NULL,    // dispatch cookie
                  mu0,      // "packet" device reference
