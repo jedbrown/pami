@@ -193,9 +193,9 @@ namespace PAMI
 	    
 	    msg->init();
 	    dput->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Counter_Offset = mcast->connection_id * sizeof(uint64_t);
-	    bool done = msg->advance();
+	    //bool done = msg->advance();
 
-	    if (!done && !(_flags & POLLING_SENDS)) {
+	    if (!(_flags & POLLING_SENDS)) {
 	      _flags |= POLLING_SENDS;	      
 	      pami_context_t context = NULL;
 	      context = (pami_context_t) mcast->context;
