@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/tests/generic/binomialbarrier.c
+ * \file test/internals/ccmi/generic/binomialbarrier.c
  * \brief ???
  */
 

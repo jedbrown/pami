@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/tests/generic/onesidedbinomialbcast.cc
+ * \file test/internals/ccmi/generic/onesidedbinomialbcast.cc
  * \brief ???
  */
 

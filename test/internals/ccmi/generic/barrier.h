@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/tests/generic/barrier.h
+ * \file test/internals/ccmi/generic/barrier.h
  * \brief ccmi barrier common routines
  */
 
-#ifndef __algorithms_tests_generic_barrier_h__
-#define __algorithms_tests_generic_barrier_h__
+#ifndef __test_internals_ccmi_generic_barrier_h__
+#define __test_internals_ccmi_generic_barrier_h__
 
 #include "common.h"
 

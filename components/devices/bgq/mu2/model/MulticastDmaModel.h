@@ -1,4 +1,15 @@
-
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/devices/bgq/mu2/model/MulticastDmaModel.h
+ * \brief ???
+ */
 #ifndef __components_devices_bgq_mu2_model_MulticastDmaModel_h__
 #define __components_devices_bgq_mu2_model_MulticastDmaModel_h__
 

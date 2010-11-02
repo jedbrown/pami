@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/tests/generic/common.h
+ * \file test/internals/ccmi/generic/common.h
  * \brief common routines for ccmi tests
  */
 
-#ifndef __algorithms_tests_generic_common_h__
-#define __algorithms_tests_generic_common_h__
+#ifndef __test_internals_ccmi_generic_common_h__
+#define __test_internals_ccmi_generic_common_h__
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpi.h"

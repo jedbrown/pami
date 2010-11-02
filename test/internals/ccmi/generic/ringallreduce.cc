@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/tests/generic/ringallreduce.cc
+ * \file test/internals/ccmi/generic/ringallreduce.cc
  * \brief performance test
  */
 

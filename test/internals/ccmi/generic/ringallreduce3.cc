@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/tests/generic/ringallreduce3.cc
+ * \file test/internals/ccmi/generic/ringallreduce3.cc
  * \brief allreduce MPI_IN_PLACE for different counts
  */
 

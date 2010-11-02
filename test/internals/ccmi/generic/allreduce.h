@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/tests/generic/allreduce.h
+ * \file test/internals/ccmi/generic/allreduce.h
  * \brief ccmi allreduce common routines
  */
 
-#ifndef __algorithms_tests_generic_allreduce_h__
-#define __algorithms_tests_generic_allreduce_h__
+#ifndef __test_internals_ccmi_generic_allreduce_h__
+#define __test_internals_ccmi_generic_allreduce_h__
 
 #include "common.h"
 

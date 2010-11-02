@@ -1,5 +1,5 @@
 /**
-   \file test/api/collectives/gather.c 
+   \file test/api/collectives/gather.c
    \brief Simple gather test 
 */
 

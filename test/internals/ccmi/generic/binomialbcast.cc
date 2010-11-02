@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/tests/generic/binomialbcast.cc
+ * \file test/internals/ccmi/generic/binomialbcast.cc
  * \brief ???
  */
 

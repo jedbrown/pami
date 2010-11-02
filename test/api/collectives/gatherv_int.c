@@ -1,5 +1,5 @@
 /**
-   \file test/api/collectives/gatherv_int.c 
+   \file test/api/collectives/gatherv_int.c
    \brief Simple gatherv_int test 
 */
 

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/allreduce/ReduceFunctions.cc
+ * \file algorithms/protocols/allreduce/ReduceFunctions.h
  * \brief Support routines for allreduce operations
  */
 #ifndef __algorithms_protocols_allreduce_ReduceFunctions_h__
@@ -733,4 +733,3 @@ namespace CCMI
 }
 
 #endif // __algorithms_protocols_allreduce_ReduceFunctions_h__
-

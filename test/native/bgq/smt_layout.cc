@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog
 
-/// \file .../smt_layout.cc
+/// \file test/native/bgq/smt_layout.cc
 /// \brief Simple, native compiled, test for commthread layout pattern
 ///
 /// Dumps the layout of commthreads given the number of processes per node.

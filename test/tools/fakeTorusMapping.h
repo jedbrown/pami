@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/tools/fakeTorusMapping.h
+ * \file test/tools/fakeTorusMapping.h
  * \brief ???
  */
 
-#ifndef __algorithms_tools_fakeTorusMapping_h__
-#define __algorithms_tools_fakeTorusMapping_h__
+#ifndef __test_tools_fakeTorusMapping_h__
+#define __test_tools_fakeTorusMapping_h__
 
 /*
  * Fake TorusMapping so we don't need a real blue-gene system.

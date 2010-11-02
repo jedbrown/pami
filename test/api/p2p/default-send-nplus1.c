@@ -1,4 +1,4 @@
-/** \file test/api/p2p/default-send-nplus1.c       
+/** \file test/api/p2p/default-send-nplus1.c
     \brief Simple point-topoint PAMI_send() test   
     \validates that the n+1 byte remains unchanged 
 */

@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/tests/generic/asyncshortbinomialallreduce.cc
+ * \file test/internals/ccmi/generic/asyncshortbinomialallreduce.cc
  * \brief performance test
  */
 

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/tests/generic/bcast.h
+ * \file test/internals/ccmi/generic/bcast.h
  * \brief ???
  */
 
-#ifndef __algorithms_tests_generic_bcast_h__
-#define __algorithms_tests_generic_bcast_h__
+#ifndef __test_internals_ccmi_generic_bcast_h__
+#define __test_internals_ccmi_generic_bcast_h__
 
 #include "common.h"
 #include "barrier.h"

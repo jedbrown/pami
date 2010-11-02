@@ -1,5 +1,5 @@
 /**
- * \file test/api/context/post.c
+ * \file test/api/context/post-multithreaded-traffic.c
  * \brief Simple PAMI_Context_post() test
  */
 

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/tests/generic/asyncbcast.h
+ * \file test/internals/ccmi/generic/asyncbcast.h
  * \brief ???
  */
 
-#ifndef __algorithms_tests_generic_asyncbcast_h__
-#define __algorithms_tests_generic_asyncbcast_h__
+#ifndef __test_internals_ccmi_generic_asyncbcast_h__
+#define __test_internals_ccmi_generic_asyncbcast_h__
 
 #include "common.h"
 #include "barrier.h"
