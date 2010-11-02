@@ -189,13 +189,6 @@ namespace PAMI
             return 0; // huh?
           };
 
-	  inline void updateHwSeqno () {
-	    // Read the mu despriptor count from hardware
-            uint64_t current = MUSPI_getHwDescCount (_ififo);
-            // Update the descriptor count shadow
-            _ififo->descCount = current;
-	  }
-
           ///
           /// \brief Process any pending injection descriptor completions
           ///
@@ -229,7 +222,13 @@ namespace PAMI
               return 0;
             }
 
-	    uint64_t current = _ififo->descCount;
+
+            // Read the mu descriptor count from hardware
+            uint64_t current = MUSPI_getHwDescCount (_ififo);
+
+            // Update the descriptor count shadow
+            _ififo->descCount = current;
+
             CompletionEvent * event = (CompletionEvent *) _completionq.peek();
             while (event != NULL && event->isDone(current))
             {

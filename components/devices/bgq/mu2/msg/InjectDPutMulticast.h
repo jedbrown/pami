@@ -118,7 +118,7 @@ namespace PAMI
 	void init() {
 	  char *payload = (char*)_pwq->bufferToConsume();
 	  PAMI_assert (payload != NULL);
-	  printf ("PWQ payload 0x%lx\n", (uint64_t) payload);
+	  //printf ("PWQ payload 0x%lx\n", (uint64_t) payload);
 	  
 	  // Determine the physical address of the (temporary) payload
 	  // buffer from the model state memory.
@@ -145,7 +145,7 @@ namespace PAMI
 	      {
 		//positive direction
 		if (ur->u.n_torus.coords[i] != ref->u.n_torus.coords[i]) {
-		  printf ("HERE %d %ld \n\n", i, ur->u.n_torus.coords[i]);
+		  //printf ("HERE %d %ld \n\n", i, ur->u.n_torus.coords[i]);
 		  _destinations[_ndestinations].Destination.Destination = 
 		    (me->Destination.Destination & ~(0x3f << dstidx)) | (ur->u.n_torus.coords[i] << dstidx);
 		  _fifos[_ndestinations] = pidx;
@@ -183,6 +183,7 @@ namespace PAMI
 	      }
 	  }
 	  
+#if 0
 	  for (i = 0; i < _ndestinations; i++)
 	    printf ("Sending to 0x%x %d %d %d %d %d\n", 
 		    _destinations[i].Destination.Destination,
@@ -192,6 +193,7 @@ namespace PAMI
 		    _destinations[i].Destination.D_Destination,
 		    _destinations[i].Destination.E_Destination
 		    );
+#endif
 	}  
 	
 	///

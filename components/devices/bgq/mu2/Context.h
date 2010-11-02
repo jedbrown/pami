@@ -42,6 +42,7 @@
 #define CONTEXT_ALLOCATES_RESOURCES   0
 
 extern PAMI::Device::MU::Global __MUGlobal;
+extern void *__mu_context_cache;
 
 namespace PAMI
 {

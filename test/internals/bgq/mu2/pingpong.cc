@@ -34,7 +34,7 @@
 
 typedef PAMI::Device::MU::Context MuContext;
 
-extern PAMI::Device::MU::MuContext  *__mu_contexts;
+extern void *__mu_context_cache;
 
 typedef PAMI::Device::MU::PacketModel MuPacketModel;
 //typedef PAMI::Device::MU::PacketModelMemoryFifoCompletion MuPacketModel;
@@ -224,7 +224,7 @@ int main(int argc, char ** argv)
 
   //MuContext mu0 (__global.mapping, 0, 0, 2);
 
-  MuContext &mu0 = PAMI::__mu_contexts[0]; 
+  MuContext &mu0 = *(MuContext *)(__mu_context_cache); 
 
   fprintf (stderr, "After mu init\n");
 
