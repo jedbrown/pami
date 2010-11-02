@@ -190,7 +190,7 @@ int main (int argc, char ** argv)
     hdrsize[arg] = (size_t) strtol (argv[arg], NULL, 10);
   }
 
-  char clientname[] = "PAMI";
+  char clientname[] = "TEST";
   pami_client_t client;
   TRACE_ERR((stderr, "... before PAMI_Client_create()\n"));
   PAMI_Client_create (clientname, &client, NULL, 0);
