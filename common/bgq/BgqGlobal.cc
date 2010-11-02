@@ -27,6 +27,7 @@ PAMI::ResourceManager __pamiRM;
 
 #include "components/devices/bgq/mu2/global/Global.h"
 PAMI::Device::MU::Global __MUGlobal ( __pamiRM, __global.mapping, __global.personality, __global.mm );
+PAMI::Device::MU::Context   *__mu_contexts; //Short term fix to get internal tests working
 
 const double PAMI::Time::seconds_per_cycle = 6.25e-10;
 

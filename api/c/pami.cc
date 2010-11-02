@@ -13,11 +13,6 @@
 #include "util/common.h"
 #include "algorithms/protocols/allreduce/ReduceFunctions.h" // For dt_query
 
-
-namespace PAMI {
-  PAMI::MUDevice *__mu_contexts;
-}
-
 extern "C"
 {
   pami_geometry_t PAMI_NULL_GEOMETRY = 0;

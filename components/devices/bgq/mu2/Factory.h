@@ -30,7 +30,8 @@
 #endif
 #define TRACE(x) //fprintf x
 
-extern PAMI::Device::MU::Global __MUGlobal;
+extern PAMI::Device::MU::Global     __MUGlobal;
+extern PAMI::Device::MU::Context  * __mu_contexts;
 
 namespace PAMI
 {
@@ -197,6 +198,8 @@ namespace PAMI
 	    TRACE((stderr, "MU Factory: Entering Local Barrier after global barrier\n"));
 	    barrier.enter();
 	    TRACE((stderr, "MU Factory: Exiting Local Barrier after global barrier\n"));
+
+	    __mu_contexts = mu;
 
             return mu;
           };

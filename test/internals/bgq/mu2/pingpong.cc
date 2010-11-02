@@ -34,9 +34,7 @@
 
 typedef PAMI::Device::MU::Context MuContext;
 
-namespace PAMI{
-  extern MuContext  *__mu_contexts;
-}
+extern PAMI::Device::MU::MuContext  *__mu_contexts;
 
 typedef PAMI::Device::MU::PacketModel MuPacketModel;
 //typedef PAMI::Device::MU::PacketModelMemoryFifoCompletion MuPacketModel;

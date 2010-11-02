@@ -53,8 +53,6 @@
 
 namespace PAMI
 {
-  extern MUDevice   *__mu_contexts;
-
 #ifdef _COLLSHM   // New Collective Shmem Protocol Typedefs
 
 #if 1
@@ -177,7 +175,7 @@ namespace PAMI
         if (__global.useMU())
           {
             TRACE_ERR((stderr, "device init: MU\n"));
-            __mu_contexts = _mu = Device::MU::Factory::generate(clientid, num_ctx, mm, _generics);
+            _mu = Device::MU::Factory::generate(clientid, num_ctx, mm, _generics);
           }
 
         _atmmtx = PAMI::Device::AtomicMutexDev::Factory::generate(clientid, num_ctx, mm, _generics);
