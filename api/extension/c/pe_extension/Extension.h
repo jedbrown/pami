@@ -39,6 +39,9 @@ namespace PAMI
   template <>
   void * Extension::queryExtension<2000> (const char * name, void * cookie)
   {
+    if (strcasecmp (name, "global_query") == 0)
+      return (void *) PAMI_Global_query;
+
     if (strcasecmp (name, "mutex_getowner") == 0)
       return NULL;
 //      return (void *) PAMI_Context_mutex_getowner;

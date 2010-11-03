@@ -17,6 +17,7 @@
 
 extern pthread_once_t  _Per_proc_lapi_init;
 extern void _lapi_perproc_setup(void);
+extern PamiActiveClients  _pami_act_clients;
 
 namespace PAMI
 {
@@ -235,12 +236,22 @@ namespace PAMI
         memset ((void *)clientp, 0x00, sizeof(PAMI::Client));
         pami_result_t res;
         new (clientp) PAMI::Client (name, configuration, num_configs, res);
+        if (res != PAMI_SUCCESS)
+          return res;
         *client = (pami_client_t) clientp;
+        
+        // Store newly created client into global structure 
+        res = _pami_act_clients.AddClient(*client);
+        if (res != PAMI_SUCCESS)
+          RETURN_ERR_PAMI(PAMI_ERROR, "Failed to add the created client to the active client counter.\n");
         return res;
       }
 
     static void destroy_impl (pami_client_t client)
       {
+        // Delete destroyed client from global structure 
+        _pami_act_clients.RemoveClient(client);
+          
         Client *c = (Client *) client;
         c->~Client();
         free (client);
@@ -356,6 +367,12 @@ namespace PAMI
                   break;
                 case PAMI_CLIENT_WTICK:
                   configuration[i].value.doubleval =__global.time.tick();
+                  break;
+                case PAMI_CLIENT_ACTIVE_CONTEXT:
+                  _active_contexts.context_num = _ncontexts;
+                  for (int i = 0; i < _ncontexts; i ++)
+                    _active_contexts.contexts[i] = (pami_context_t) _contexts[i];
+                  configuration[i].value.chararray = (char*)&_active_contexts;
                   break;
                 case PAMI_CLIENT_MEM_SIZE:
                 case PAMI_CLIENT_PROCESSOR_NAME:
@@ -780,6 +797,9 @@ namespace PAMI
 
     //  Unexpected Barrier match queue
     MatchQueue                                                             _ueb_queue;
+
+    // Active contexts in the Client
+    pami_active_context_t                        _active_contexts;
   }; // end class PAMI::Client
 }; // end namespace PAMI
 
