@@ -3596,16 +3596,17 @@ int32_t PAMI::Device::MU::ResourceManager::allocateBatIdsForContext( size_t    r
   size_t i, j=0;
   uint32_t status = _clientResources[rmClientId].batResources[contextOffset].status;
 
-  for ( i=0; (i<numContextBatIds) && (numBatIds>0); i++, numBatIds-- )
+  for ( i=0; (i<numContextBatIds) && (numBatIds>0); i++ )
     {
       if ( status & 0x80000000 ) // Is the i'th BAT ID free?
 	{
 	  _clientResources[rmClientId].batResources[contextOffset].status &= ~(1<<(31-i)); // Mark allocated.
 	  globalBatIds[j++] =  _clientResources[rmClientId].batResources[contextOffset].globalBatIds[i];
-	  status = status << 1;
+	  numBatIds--;
 	  
 	  TRACE((stderr,"MU ResourceManager: allocateBatIdsForContext: allocated batId %zu, globalBatId=%u, newStatus=0x%08x\n",i,globalBatIds[j-1],_clientResources[rmClientId].batResources[contextOffset].status));
 	}
+      status = status << 1;
     }
   return 0;
 
