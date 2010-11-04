@@ -305,10 +305,10 @@ namespace PAMI
         {
 	  char mmkey[PAMI::Memory::MMKEYSIZE];
 	  char *mms;
-	  mms = mmkey + sprintf(mmkey, "/pami-client%d-context%d", clientid, id);
+	  mms = mmkey + sprintf(mmkey, "/pami-client%zd-context%zd", clientid, id);
 
 	  strcpy(mms, "-mm");
-	  _mm.init(mm, 0, bytes, mmkey);
+	  _mm.init(mm, bytes, 16, 16, 0, mmkey);
 
           // dispatch_impl relies on the table being initialized to NULL's.
           memset(_dispatch, 0x00, sizeof(_dispatch));

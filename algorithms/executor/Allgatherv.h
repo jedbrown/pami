@@ -523,36 +523,26 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::notifyRecv
 
   CollHeaderData *cdata = (CollHeaderData*) & info;
 
-  if ((int)cdata->_count == -1)
-    {
-      CCMI_assert(src == _dst);
-
-      if (_rphase == _curphase && _curphase >= _startphase)
-        {
-          CCMI_assert(cdata->_phase == _curphase + 1);
-        }
-      else if (_rphase == _curphase + 1 || _curphase < _startphase)
-        {
-          CCMI_assert(cdata->_phase == _curphase + 2);
-        }
-      else
-        {
-          CCMI_assert(0);
-        }
-
-      *pwq = NULL;
-      cb_done->function   = notifyAvailRecvDone;
-      cb_done->clientdata = this;
+  if ((int)cdata->_count == -1) {
+    CCMI_assert(src == _dst);
+    if (_rphase == _curphase && _curphase >= _startphase) {
+      CCMI_assert(cdata->_phase == (unsigned)_curphase+1);
+    } else if (_rphase == _curphase+1 || _curphase < _startphase) {
+      CCMI_assert(cdata->_phase == (unsigned)_curphase+2);
+    } else {
+      CCMI_assert(0);
     }
-  else
-    {
-      CCMI_assert(src == _src);
-      CCMI_assert(cdata->_phase == _curphase);
-      CCMI_assert(cdata->_count == 0);
-      *pwq = getRecvPWQ(_curphase);
-      cb_done->function   = notifyRecvDone;
-      cb_done->clientdata = this;
-    }
+    *pwq = NULL;
+    cb_done->function   = notifyAvailRecvDone;
+    cb_done->clientdata = this;
+  } else {
+    CCMI_assert(src == _src);
+    CCMI_assert(cdata->_phase == (unsigned)_curphase);
+    CCMI_assert(cdata->_count == 0);
+    *pwq = getRecvPWQ(_curphase);
+    cb_done->function   = notifyRecvDone;
+    cb_done->clientdata = this;
+  }
 
   return;
 }

@@ -568,21 +568,19 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::notifyRecv
       EXECUTOR_DEBUG((stderr, "phase = %d, src = %d, expected %d\n", cdata->_phase - 1, src, _gtopology->index2Rank(pindex));)
       CCMI_assert(src == _gtopology->index2Rank(pindex));
 #endif
-      _rphase[(cdata->_phase-1) % MAX_PARALLEL] = cdata->_phase;
-      *pwq = NULL;
-      cb_done->function   = notifyAvailRecvDone;
-      cb_done->clientdata = this;
-    }
-  else
-    {
-      EXECUTOR_DEBUG((stderr, "data phase = %d, src = %d, expected %d\n", _curphase, src, _gtopology->index2Rank(_parindex));)
-      CCMI_assert(cdata->_count == 0);
-      CCMI_assert(src == _gtopology->index2Rank(_parindex));
-      CCMI_assert(cdata->_phase == _curphase);
-      *pwq = getRecvPWQ(_parindex, _curphase);
-      cb_done->function   = notifyRecvDone;
-      cb_done->clientdata = this;
-    }
+    _rphase[(cdata->_phase-1) % MAX_PARALLEL] = cdata->_phase;
+    *pwq = NULL;
+    cb_done->function   = notifyAvailRecvDone;
+    cb_done->clientdata = this;
+  } else {
+    EXECUTOR_DEBUG((stderr, "data phase = %d, src = %d, expected %d\n", _curphase, src, _gtopology->index2Rank(_parindex));)
+    CCMI_assert(cdata->_count == 0);
+    CCMI_assert(src == _gtopology->index2Rank(_parindex));
+    CCMI_assert(cdata->_phase == (unsigned)_curphase);
+    *pwq = getRecvPWQ(_parindex, _curphase);
+    cb_done->function   = notifyRecvDone;
+    cb_done->clientdata = this;
+  }
 
   return;
 }

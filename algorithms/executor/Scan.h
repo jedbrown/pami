@@ -528,11 +528,9 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
   unsigned sindex = 0;
   unsigned nsrcs;
 
-  if (_mrecvstr[cdata->_phase].exec == NULL)
-    {
-      CCMI_assert(_mrecvstr[cdata->_phase].donecount == 0);
-      CCMI_assert(cdata->_phase <= _endphase);
-
+  if (_mrecvstr[cdata->_phase].exec == NULL) {
+    CCMI_assert(_mrecvstr[cdata->_phase].donecount == 0);
+    CCMI_assert(cdata->_phase <= (unsigned)_endphase);
       _comm_schedule->getRList(_nphases - cdata->_phase - 1, &_srcranks[0], nsrcs, &_srclens[0]);
       CCMI_assert(nsrcs == 1);
 
