@@ -212,7 +212,7 @@ namespace PAMI
         // ----------------------------------------------------------------
 	char key[PAMI::Memory::MMKEYSIZE];
 	sprintf(key, "/pami-clt%zd-ctx%zd-mm", clientid, contextid);
-	_mm.init(pmm, bytes, 16, key);
+	_mm.init(pmm, bytes, 16, 16, 0, key);
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 
         TRACE_ERR((stderr, "<< Context::Context()\n"));
