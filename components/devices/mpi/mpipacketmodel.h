@@ -331,6 +331,7 @@ namespace PAMI
           unsigned long long t = __global.time.timebase ();
           if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
 #endif
+	  MPIMessage *msg;
 	  pami_result_t prc = __global.heap_mm->memalign((void **)&msg, 0,
 				sizeof(*msg) + metasize + length - 128 - 224);
 	  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of MPIMessage failed");

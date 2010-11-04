@@ -320,7 +320,7 @@ namespace PAMI
         PlatformDeviceList _platdevs;
         char            _name[256];
 
-        Memory::SharedMemoryManager _mm;
+        Memory::GenMemoryManager _mm;
 
         inline void initializeMemoryManager ()
         {

@@ -37,7 +37,7 @@ namespace PAMI
 	  if (env) {
 		bytes = strtoull(env, NULL, 0) * 1024 * 1024;
 	  }
-	  _mm.init(__global.shared_mm, bytes, 16, key);
+	  _mm.init(__global.shared_mm, bytes, 16, 16, key);
           TRACE_ERR((stderr, "<< Client::Client()\n"));
         }
 
@@ -46,6 +46,17 @@ namespace PAMI
           TRACE_ERR((stderr, ">> Client::~Client()\n"));
           TRACE_ERR((stderr, "<< Client::~Client()\n"));
         }
+
+	inline pami_geometry_t mapidtogeometry_impl(int comm) {
+		PAMI_abortf("mapidtogeometry_impl not implemented");
+	}
+
+	inline void registerUnexpBarrier_impl(unsigned comm,
+			pami_quad_t &info,
+			unsigned     peer,
+			unsigned     algorithm) {
+		PAMI_abortf("registerUnexpBarrier_impl not implemented");
+	}
 
       protected:
 
@@ -70,8 +81,8 @@ namespace PAMI
 
         _ncontexts = n;
 
-        pammi_result_t rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
-        PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _contexts[%zd]", n);
+        pami_result_t rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
+        PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _contexts[%d]", n);
         int x;
 
         _platdevs.generate(_clientid, n, _mm);

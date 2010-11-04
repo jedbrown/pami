@@ -65,7 +65,7 @@ extern PAMI::Device::MPIDevice _g_mpi_device;
 namespace PAMI
 {
     // This won't work with XL
-    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccCounter>  ContextLock;
+    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccInPlaceCounter>  ContextLock;
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice MPIDevice;
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
@@ -77,7 +77,7 @@ namespace PAMI
                                             MPIEagerBase,
                                             PAMI::Device::MPIBcastMdl,
                                             PAMI::Device::MPIBcastDev> P2PMcastProto;
-    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccCounter>  ContextLock;
+    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccInPlaceCounter>  ContextLock;
 
 #ifdef ENABLE_SHMEM_DEVICE
     typedef Fifo::FifoPacket <64, 1024>                            ShmemPacket;
@@ -758,7 +758,7 @@ namespace PAMI
       void                     *_dispatch[1024][2];
       int                       _dispatch_id;
       ProtocolAllocator         _protocol;
-      Memory::MemoryManager    _mm;
+      Memory::GenMemoryManager  _mm;
       ContextLock _lock;
 
 #ifdef USE_WAKEUP_VECTORS
