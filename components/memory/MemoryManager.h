@@ -20,8 +20,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "spi/include/kernel/location.h"
-
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 #endif
