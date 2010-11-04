@@ -79,7 +79,7 @@ namespace PAMI
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-	  mm.init(&shared_mm, size, 1, 1, 0, shmemfile);
+	  mm.init(shared_mm, size, 1, 1, 0, shmemfile);
 
           lockboxFactory.init(&mapping);
           pami_coord_t ll, ur;

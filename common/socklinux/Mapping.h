@@ -109,9 +109,10 @@ namespace PAMI
         }
 
         // Allocate the node table - this contains the information from the map file
-	pami_result_t rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+	pami_result_t ret;
+	ret = PAMI::Memory::MemoryManager::heap_mm->memalign(
 			(void **)&_nodetable, 0, _size * sizeof(*_nodetable));
-	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _nodetable");
+	PAMI_assertf(ret == PAMI_SUCCESS, "Failed to alloc _nodetable");
         for (i=0; i<_size; i++)
         {
           _nodetable[i].host[0] = 0; // NULL
@@ -221,9 +222,10 @@ namespace PAMI
 
         _udpConnInit = true;
         // Allocate space for the connection table
-	pami_result_t rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+	pami_result_t ret;
+	ret = PAMI::Memory::MemoryManager::heap_mm->memalign(
 			(void **)&_udpConnTable, 0, _size * sizeof(*_udpConnTable));
-	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _udpConnTable");
+	PAMI_assertf(ret == PAMI_SUCCESS, "Failed to alloc _udpConnTable");
 
         size_t i;
         for ( i=0; i<_size; i++) {

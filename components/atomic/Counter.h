@@ -14,6 +14,8 @@
 #ifndef __components_atomic_Counter_h__
 #define __components_atomic_Counter_h__
 
+#include "components/memory/MemoryManager.h"
+
 namespace PAMI
 {
   namespace Counter {

@@ -37,7 +37,7 @@ namespace PAMI
 	  if (env) {
 		bytes = strtoull(env, NULL, 0) * 1024 * 1024;
 	  }
-	  _mm.init(__global.shared_mm, bytes, 16, 16, key);
+	  _mm.init(__global.shared_mm, bytes, 16, 16, 0, key);
           TRACE_ERR((stderr, "<< Client::Client()\n"));
         }
 
