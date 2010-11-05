@@ -192,20 +192,15 @@ namespace CCMI
         PAMI::Topology tmp = *rect;
         if (rect->type() != PAMI_COORD_TOPOLOGY) tmp.convertTopology(PAMI_COORD_TOPOLOGY);
         tmp.rectSeg(&ll, &ur, &torus_link);
-        //Assume 5D torus for BG/Q
-        sizes[0] = ur->u.n_torus.coords[0] - ll->u.n_torus.coords[0] + 1;
-        sizes[1] = ur->u.n_torus.coords[1] - ll->u.n_torus.coords[1] + 1;
-        sizes[2] = ur->u.n_torus.coords[2] - ll->u.n_torus.coords[2] + 1;
-        sizes[3] = ur->u.n_torus.coords[3] - ll->u.n_torus.coords[3] + 1;
-        sizes[4] = ur->u.n_torus.coords[4] - ll->u.n_torus.coords[4] + 1;
-        //printf("HERE ABCDE %zu %zu %zu %zu %zu\n",
-        //     sizes[0], sizes[1], sizes[2], sizes[3], sizes[4]);
         for (i = 0; i < torus_dims; i++)
+        {  
+          sizes[i] = ur->u.n_torus.coords[i] - ll->u.n_torus.coords[i] + 1;
           if (sizes[i] > 1)
           {  
-            TRACE_FORMAT("color[%u]=%u", ideal, i);
+            TRACE_FORMAT("color[%u]=%u",ideal, i);
             colors[ideal++] = i;
           }
+        }
 
         max = ideal;
 

@@ -88,7 +88,6 @@ namespace CCMI
         ncolors = 1;
         colors[0] = CCMI::Schedule::NO_COLOR;
       }
-#ifdef __bgq__
     void get_rect_colors (PAMI::Topology             * t,
                           unsigned                    bytes,
                           unsigned                  * colors,
@@ -96,7 +95,8 @@ namespace CCMI
     {
 
       unsigned max = 0, ideal = 0;
-      unsigned _colors[10];
+      unsigned _colors[PAMI_MAX_DIMS*2];
+      PAMI_assert(ncolors <= (PAMI_MAX_DIMS*2));
       CCMI::Schedule::MCRect::getColors (t, ideal, max, _colors);
       TRACE_INIT((stderr, "get_rect_colors() bytes %u, ncolors %u, ideal %u, max %u\n", bytes, ncolors, ideal, max));
       
@@ -151,7 +151,7 @@ namespace CCMI
         rectangle_1color_broadcast_metadata,
         CCMI::ConnectionManager::ColorGeometryConnMgr>
       Rectangle1ColorBroadcastFactory;
-#endif
+
       void binomial_broadcast_metadata(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata

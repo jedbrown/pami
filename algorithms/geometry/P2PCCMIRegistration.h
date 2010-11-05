@@ -98,10 +98,8 @@ namespace PAMI
             _rbconnmgr(),
             _csconnmgr(),
             _binomial_barrier_factory(),
-#ifdef __bgq__
             _rectangle_broadcast_factory(),
             _rectangle_1color_broadcast_factory(),
-#endif
             _binomial_broadcast_factory(),
             _ring_broadcast_factory(),
             _asrb_binomial_broadcast_factory(),
@@ -215,21 +213,21 @@ namespace PAMI
                                       _binomial_barrier_factory,
                                       _context_id);
 
-	      geometry->setUEBarrier((CCMI::Adaptor::CollectiveProtocolFactory*)&_binomial_barrier_factory);
+              geometry->setUEBarrier((CCMI::Adaptor::CollectiveProtocolFactory*)&_binomial_barrier_factory);
 
-#ifdef __bgq__
               PAMI::Topology rectangle = *master_sub_topology;
               if(rectangle.type() != PAMI_COORD_TOPOLOGY) rectangle.convertTopology(PAMI_COORD_TOPOLOGY);
               if(rectangle.type() == PAMI_COORD_TOPOLOGY)
               {
+#if 0           // currently fails data checks in bcast.c   
                 geometry->addCollective(PAMI_XFER_BROADCAST,
                                         _rectangle_broadcast_factory,
                                         _context_id);
-              geometry->addCollective(PAMI_XFER_BROADCAST,
+#endif
+                geometry->addCollective(PAMI_XFER_BROADCAST,
                                       _rectangle_1color_broadcast_factory,
                                       _context_id);
               }
-#endif
               geometry->addCollective(PAMI_XFER_BROADCAST,
                                       _binomial_broadcast_factory,
                                       _context_id);
@@ -300,7 +298,7 @@ namespace PAMI
               geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,
                                       _ascs_ring_allgatherv_int_factory,
                                       _context_id);
-#ifndef __bgq__ // currently not working
+#ifndef __bgq__ // currently not working reliably on BGQ/MU
               geometry->addCollective(PAMI_XFER_ALLTOALL,
                                       _ascs_pairwise_alltoall_factory,
                                       _context_id);
@@ -364,7 +362,7 @@ namespace PAMI
             setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,_binomial_barrier_factory);
             new ((void*)_binomial_barrier_factory) CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory(&_sconnmgr, ni_am, CCMI::Adaptor::P2PBarrier::BinomialBarrier::cb_head);
             // ----------------------------------------------------
-#ifdef __bgq__
+
             // ----------------------------------------------------
             // Setup and Construct a rectangle broadcast factory from allsided ni and p2p protocol
             setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::RectangleBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_as, device,  _rectangle_broadcast_factory);
@@ -375,7 +373,7 @@ namespace PAMI
             setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::Rectangle1ColorBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_as, device,  _rectangle_1color_broadcast_factory);
             new ((void*)_rectangle_1color_broadcast_factory) CCMI::Adaptor::P2PBroadcast::Rectangle1ColorBroadcastFactory(&_connmgr, ni_as);
             // ----------------------------------------------------
-#endif
+
             // ----------------------------------------------------
             // Setup and Construct a binomial broadcast factory from allsided ni and p2p protocol
             setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_as, device,  _binomial_broadcast_factory);
@@ -635,7 +633,7 @@ namespace PAMI
                                                                        FACT, \
                                                                        NativeInterfaceCommon::MULTICAST_ONLY >(NI_VAR, device1, device2, FACT_VAR); \
                                                           new ((void*)FACT_VAR) FACT(&CONNMGR, NI_VAR);
-#ifdef __bgq__
+
             SETUPFACTORY(T_NI_Allsided,
                          ni_as,
                          CCMI::Adaptor::P2PBroadcast::RectangleBroadcastFactory,
@@ -646,7 +644,7 @@ namespace PAMI
                          CCMI::Adaptor::P2PBroadcast::Rectangle1ColorBroadcastFactory,
                          _rectangle_1color_broadcast_factory,
                          _connmgr);
-#endif
+
             SETUPFACTORY(T_NI_Allsided,
                          ni_as,
                          CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory,
@@ -1001,10 +999,8 @@ namespace PAMI
           CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory               *_binomial_barrier_factory;
 
           // CCMI Broadcasts
-#ifdef __bgq__
           CCMI::Adaptor::P2PBroadcast::RectangleBroadcastFactory          *_rectangle_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::Rectangle1ColorBroadcastFactory    *_rectangle_1color_broadcast_factory;
-#endif
           CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory           *_binomial_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory               *_ring_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory    *_asrb_binomial_broadcast_factory;
