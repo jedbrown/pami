@@ -15,7 +15,7 @@
 
 #include "components/devices/MulticastModel.h"
 #include "components/memory/MemoryAllocator.h"
-#include "components/devices/bgq/mu2/trace.h"
+#include "util/trace.h"
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/msg/InjectDPutMulticast.h"
 
@@ -28,7 +28,7 @@
 
 #include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
-#include "components/devices/bgq/mu2/trace.h"
+#include "util/trace.h"
 
 #ifdef CCMI_TRACE_ALL
   #define DO_TRACE_ENTEREXIT 1

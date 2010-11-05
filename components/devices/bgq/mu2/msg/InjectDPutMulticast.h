@@ -14,10 +14,9 @@
 #define __components_devices_bgq_mu2_msg_InjectDPutMulticast_h__
 
 #include "spi/include/mu/DescriptorBaseXX.h"
-#include "components/devices/bgq/mu2/trace.h"
 #include "components/devices/bgq/mu2/InjChannel.h"
 #include "components/devices/bgq/mu2/msg/MessageQueue.h"
-#include "components/devices/bgq/mu2/trace.h"
+#include "util/trace.h"
 #include "common/bgq/Mapping.h"
 #include "components/memory/MemoryAllocator.h"
 

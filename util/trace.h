@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file components/devices/bgq/mu2/trace.h
+/// \file util/trace.h
 /// \brief Yet another attempt at a trace/debug facility
 ///
-#ifndef __components_devices_bgq_mu2_trace_h__
-#define __components_devices_bgq_mu2_trace_h__
+#ifndef __util_trace_h__
+#define __util_trace_h__
 
 
 static size_t __trace_fn_counter = 0;
@@ -51,4 +51,4 @@ static char   __trace_indent_string[64] = { "                                   
 
 
 
-#endif // __components_devices_bgq_mu2_trace_h__
+#endif // __util_trace_h__

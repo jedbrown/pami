@@ -16,7 +16,7 @@
 
 #include "components/connection/ConnectionInterface.h"
 
-#include "components/devices/bgq/mu2/trace.h"
+#include "util/trace.h"
 #define DO_TRACE_ENTEREXIT 0
 #define DO_TRACE_DEBUG     0
 

@@ -25,7 +25,7 @@
 
 #include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
-#include "components/devices/bgq/mu2/trace.h"
+#include "util/trace.h"
 
 #ifdef CCMI_TRACE_ALL
  #define DO_TRACE_ENTEREXIT 1

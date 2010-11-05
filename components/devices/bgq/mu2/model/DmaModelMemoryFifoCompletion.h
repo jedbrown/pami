@@ -16,7 +16,7 @@
 #include "components/devices/bgq/mu2/model/DmaModelBase.h"
 #include "components/devices/bgq/mu2/model/MemoryFifoCompletion.h"
 
-#include "components/devices/bgq/mu2/trace.h"
+#include "util/trace.h"
 #undef  DO_TRACE_ENTEREXIT
 #undef  DO_TRACE_DEBUG
 #define DO_TRACE_ENTEREXIT 0

@@ -28,7 +28,7 @@
 
   #include "util/ccmi_debug.h"
 /// \todo put this trace facility somewhere common
-  #include "components/devices/bgq/mu2/trace.h"
+  #include "util/trace.h"
 
   #ifdef CCMI_TRACE_ALL
     #define DO_TRACE_ENTEREXIT 1

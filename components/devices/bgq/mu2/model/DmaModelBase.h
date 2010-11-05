@@ -19,7 +19,7 @@
 #include "components/devices/DmaInterface.h"
 #include "components/devices/bgq/mu2/Context.h"
 
-#include "components/devices/bgq/mu2/trace.h"
+#include "util/trace.h"
 #include "components/memory/MemoryAllocator.h"
 
 #include <stdlib.h>
