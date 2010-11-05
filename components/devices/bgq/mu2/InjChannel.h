@@ -58,10 +58,6 @@ namespace PAMI
           /// \brief Immediate payload element for the lookaside array
           typedef MUHWI_Descriptor_t immediate_payload_t[2];
 
-          /// \brief Number of bits to shift for a descriptor
-          /// \todo Move this up ... MUSPI ?
-          static const size_t BGQ_MU_DESCRIPTOR_SIZE_IN_POW2 = 6;
-
           inline InjChannel () :
               _sendq_status (_dummy_status),
               _completion_status (_dummy_status)
@@ -97,7 +93,7 @@ namespace PAMI
               _n (0)
           {
             TRACE_FN_ENTER();
-            COMPILE_TIME_ASSERT(BGQ_MU_DESCRIPTOR_SIZE_IN_BYTES == (1 << BGQ_MU_DESCRIPTOR_SIZE_IN_POW2));
+            COMPILE_TIME_ASSERT(BGQ_MU_DESCRIPTOR_SIZE_IN_BYTES == (1 << BGQ_MU_DESCRIPTOR_SIZE_IN_POWER_OF_2));
             TRACE_FN_EXIT();
           };
 
@@ -314,9 +310,9 @@ namespace PAMI
             size_t tail  = (size_t) MUSPI_getTailVa ((MUSPI_Fifo_t *)_ififo);
             size_t end   = (size_t) MUSPI_getEndVa ((MUSPI_Fifo_t *)_ififo);
 
-            TRACE_FORMAT("tail = 0x%lx, end = 0x%lx, freeSpace = %lu, freeSpace << BGQ_MU_DESCRIPTOR_SIZE_IN_POW2 = %lu\n", tail, end, freeSpace, freeSpace << BGQ_MU_DESCRIPTOR_SIZE_IN_POW2);
+            TRACE_FORMAT("tail = 0x%lx, end = 0x%lx, freeSpace = %lu, freeSpace << BGQ_MU_DESCRIPTOR_SIZE_IN_POWER_OF_2 = %lu\n", tail, end, freeSpace, freeSpace << BGQ_MU_DESCRIPTOR_SIZE_IN_POWER_OF_2);
 
-            if ( (tail + (freeSpace << BGQ_MU_DESCRIPTOR_SIZE_IN_POW2)) <= end )
+            if ( (tail + (freeSpace << BGQ_MU_DESCRIPTOR_SIZE_IN_POWER_OF_2)) <= end )
               {
                 // No free space wrap, empty fifo, or full fifo
                 TRACE_FORMAT("No wrap.  Free descriptor count = %ld\n", freeSpace);
@@ -324,9 +320,9 @@ namespace PAMI
                 return freeSpace;
               }
 
-            TRACE_FORMAT("Wrap.  Free descriptor count = %zu\n", (end - tail) >> BGQ_MU_DESCRIPTOR_SIZE_IN_POW2);
+            TRACE_FORMAT("Wrap.  Free descriptor count = %zu\n", (end - tail) >> BGQ_MU_DESCRIPTOR_SIZE_IN_POWER_OF_2);
             TRACE_FN_EXIT();
-            return (end - tail) >> BGQ_MU_DESCRIPTOR_SIZE_IN_POW2;
+            return (end - tail) >> BGQ_MU_DESCRIPTOR_SIZE_IN_POWER_OF_2;
           };
 
           ///
@@ -370,6 +366,43 @@ namespace PAMI
           };
 
           ///
+          /// \brief The next N free descriptors in the injection fifo
+          ///
+          /// \warning Does not check if the fifo is full
+	  ///
+	  /// Get pointers to the next N descriptors in the injection fifo
+	  ///
+	  /// \param[in]   N      Number of descriptor pointers to get
+	  /// \param[out]  descs  Array that is to contain a list of pointers
+	  ///                     to the next N descriptor slots in the fifo
+	  ///
+	  /// \retval Descriptor number of the last of these next descriptors
+	  /// \retval -1 Injection fifo is full.  No descriptor pointers returned.
+	  /// \returns Descriptor pointers
+          ///
+          /// \see getFreeDescriptorCount
+          /// \see getFreeDescriptorCountWithUpdate
+          ///
+          inline uint64_t getNextDescriptorMultiple ( uint32_t N,
+						  MUHWI_Descriptor_t **descs )
+          {
+            TRACE_FN_ENTER();
+            uint64_t descNum = MUSPI_InjFifoNextDescMultiple( _ififo,
+							      N,
+							      (void**)descs );
+	    if ( descNum != (uint64_t)-1 ) // All N descriptors returned?
+	      {
+		uint32_t i;
+		for (i=0; i<N; i++)
+		  {
+		    TRACE_FORMAT("getNextDescriptors:  descs[%u] = %p", i, descs[i]);
+		  }
+		TRACE_FN_EXIT();
+	      }
+	    return descNum;
+	  }
+
+          ///
           /// \brief Retreive the immediate payload information associated
           ///        with a descriptor in an injection fifo
           ///
@@ -381,7 +414,7 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
             size_t start = (size_t) MUSPI_getStartVa ((MUSPI_Fifo_t *)_ififo);
-            size_t index = ((size_t) desc - start) >> BGQ_MU_DESCRIPTOR_SIZE_IN_POW2;
+            size_t index = ((size_t) desc - start) >> BGQ_MU_DESCRIPTOR_SIZE_IN_POWER_OF_2;
             size_t offset = index * sizeof(immediate_payload_t);
             TRACE_FORMAT("desc = %zu, start = %zu, index = %zu, offset = %zu", (size_t)desc, start, index, offset);
 
@@ -408,6 +441,27 @@ namespace PAMI
             TRACE_HEXDATA((void *)MUSPI_getTailVa(&_ififo->_fifo),BGQ_MU_DESCRIPTOR_SIZE_IN_BYTES*2);
             uint64_t sequence = MUSPI_InjFifoAdvanceDesc (_ififo);
             TRACE_HEXDATA((void *)MUSPI_getTailVa(&_ififo->_fifo),BGQ_MU_DESCRIPTOR_SIZE_IN_BYTES*2);
+            TRACE_FORMAT("sequence = %zu", sequence);
+
+            TRACE_FN_EXIT();
+            return sequence;
+          };
+
+          ///
+          /// \brief Advance the MU injection fifo tail pointer by N slots
+          ///
+          /// This completes a descriptor injection operation.
+          ///
+          /// \see checkDescComplete
+          /// \return sequence number of last injected descriptor
+          ///
+          inline uint64_t injFifoAdvanceDescMultiple ( uint32_t N )
+          {
+            TRACE_FN_ENTER();
+
+            TRACE_HEXDATA((void *)MUSPI_getTailVa(&_ififo->_fifo),BGQ_MU_DESCRIPTOR_SIZE_IN_BYTES*2*N);
+            uint64_t sequence = MUSPI_InjFifoAdvanceDescMultiple ( _ififo, N );
+            TRACE_HEXDATA((void *)MUSPI_getTailVa(&_ififo->_fifo),BGQ_MU_DESCRIPTOR_SIZE_IN_BYTES*2*N);
             TRACE_FORMAT("sequence = %zu", sequence);
 
             TRACE_FN_EXIT();
