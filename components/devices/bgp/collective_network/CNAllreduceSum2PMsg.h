@@ -315,7 +315,7 @@ public:
         _dispatch_id_m(_g_cnallreduce2p_dev.newDispID())
         {
                 // PAMI_assert(device == _g_cnallreduce2p_dev);
-		char *key[PAMI::Memory::MMKEYSIZE];
+		char key[PAMI::Memory::MMKEYSIZE];
 		size_t keylen = sprintf(key, "/CNAllreduce2PModel-");
 		key[keylen+1] = '\0';
 

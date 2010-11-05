@@ -21,9 +21,6 @@
 #include "util/queue/MutexedQueue.h"
 #include "util/queue/MultiQueue.h"
 
-/// \brief The mutex used by the generic device
-typedef PAMI::Mutex::BGP::LockBoxMutex GenericDeviceMutex;
-
 /// \brief The atomic counter used by threads for tracking completion of message
 typedef PAMI::Counter::BGP::LockBoxCounter GenericDeviceCounter;
 
@@ -42,6 +39,6 @@ typedef PAMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_COMPL_QNUM>	GenericDevic
 typedef PAMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_SEND_QNUM>	GenericDeviceMessageQueue;
 
 /// \brief Queue type to use for generic device threads (work) queue(s)
-typedef PAMI::MutexedQueue<GenericDeviceMutex>	GenericDeviceWorkQueue;
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::LockBoxMutex>	GenericDeviceWorkQueue;
 
 #endif // __common_bgp_GenericDevicePlatform_h__

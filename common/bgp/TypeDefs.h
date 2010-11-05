@@ -35,7 +35,7 @@ namespace PAMI
   typedef Geometry::Common                     BGPGeometry;
 
 
-  typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::GccNodeCounter> Barrier_Type;
+  typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::GccIndirCounter> Barrier_Type;
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
 

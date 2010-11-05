@@ -127,7 +127,7 @@ protected:
 }; // class _LockBoxBarrier
 
 class LockBoxNodeCoreBarrier :
-                public PAMI::Atomic::Interface::IndirBarrier<LockBoxNodeCoreBarrier>,
+                public PAMI::Atomic::Interface::Barrier<LockBoxNodeCoreBarrier>,
                 public _LockBoxBarrier {
 public:
         LockBoxNodeCoreBarrier() {}
@@ -157,7 +157,7 @@ public:
 }; // class LockBoxNodeCoreBarrier
 
 class LockBoxNodeProcBarrier :
-                public PAMI::Atomic::Interface::IndirBarrier<LockBoxNodeProcBarrier>,
+                public PAMI::Atomic::Interface::Barrier<LockBoxNodeProcBarrier>,
                 public _LockBoxBarrier {
 public:
         LockBoxNodeProcBarrier() {}

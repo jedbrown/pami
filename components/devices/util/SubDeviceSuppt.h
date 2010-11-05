@@ -738,7 +738,7 @@ public:
 //				//_threads[x].setPolled(true);
 //			}
                 }
-                _common->__init(client, contextId, clt, ctx, mm, devices);
+                _common->__init(client, contextId, clt, ctx, mm, "/bgp-tree-dev", devices);
                 return _common->init(mm, client, contextId, ctx);
         }
 

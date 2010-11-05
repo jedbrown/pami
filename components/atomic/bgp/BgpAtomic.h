@@ -16,6 +16,7 @@
 
 #include "components/atomic/Counter.h"
 #include "components/atomic/Mutex.h"
+#include "components/memory/MemoryManager.h"
 
 #include <spi/bgp_SPI.h>
 #include <bpcore/bgp_atomic_ops.h>
@@ -31,21 +32,28 @@ namespace PAMI
     ///
     /// \brief CRTP interface for bgp atomic objects.
     ///
-    class BgpAtomic : public PAMI::Atomic::Interface::Counter <BgpAtomic>
+    class BgpAtomic : public PAMI::Atomic::Interface::InPlaceCounter <BgpAtomic>
     {
       public:
         BgpAtomic () :
-            PAMI::Atomic::Interface::Counter <BgpAtomic> ()
+            PAMI::Atomic::Interface::InPlaceCounter <BgpAtomic> ()
         {};
 
         ~BgpAtomic () {};
 
         /// \see PAMI::Atomic::AtomicObject::init
-        void init_impl (const char *key)
+        void init_impl ()
         {
           //_atom = _BGP_ATOMIC_INIT(0);
           // fetch_and_clear_impl ();
         };
+
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
 
         /// \see PAMI::Atomic::AtomicObject::fetch
         inline size_t fetch_impl ()
@@ -98,12 +106,12 @@ namespace PAMI
 namespace Counter {
 namespace BGP {
 
-    class BgpProcCounter : public PAMI::Atomic::Interface::Counter <BgpProcCounter>
+    class BgpProcCounter : public PAMI::Atomic::Interface::InPlaceCounter <BgpProcCounter>
     {
       public:
 
         inline BgpProcCounter () :
-          PAMI::Atomic::Interface::Counter <BgpProcCounter> (),
+          PAMI::Atomic::Interface::InPlaceCounter <BgpProcCounter> (),
           _atomic (0)
         {};
 
@@ -118,10 +126,17 @@ namespace BGP {
         inline size_t fetch_and_clear_impl() { return _bgp_fetch_and_and((_BGP_Atomic *)&_atomic, 0); }
         inline void clear_impl() { _atomic = 0; }
 
-        inline void init_impl (const char *key)
+        inline void init_impl ()
         {
           // Noop
         };
+
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
 
         /// \see PAMI::Atomic::Interface::Mutex::returnLock
         inline void * returnLock_impl ()
@@ -134,12 +149,12 @@ namespace BGP {
         volatile uint32_t _atomic __attribute__ ((aligned(8)));
     };
 
-    class BgpNodeCounter : public PAMI::Atomic::Interface::Counter <BgpNodeCounter>
+    class BgpNodeCounter : public PAMI::Atomic::Interface::IndirCounter <BgpNodeCounter>
     {
       public:
 
         inline BgpNodeCounter () :
-          PAMI::Atomic::Interface::Counter <BgpNodeCounter> (),
+          PAMI::Atomic::Interface::IndirCounter <BgpNodeCounter> (),
           _atomic (NULL)
         {};
 
@@ -154,9 +169,18 @@ namespace BGP {
         inline size_t fetch_and_clear_impl() { return _bgp_fetch_and_and((_BGP_Atomic *)_atomic, 0); }
         inline void clear_impl() { *_atomic = 0; }
 
-        inline void init_impl (const char *key)
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
+        inline void init_impl (PAMI::Memory::MemoryManager *mm, const char *key)
         {
-        };
+		pami_result_t rc = mm->memalign((void **)&_atomic, sizeof(*_atomic),
+				sizeof(*_atomic), key);
+		PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get BGP Atomic Counter");
+        }
 
         /// \see PAMI::Atomic::Interface::Mutex::returnLock
         inline void * returnLock_impl ()
@@ -174,12 +198,12 @@ namespace BGP {
 namespace Mutex {
 namespace BGP {
 
-    class BgpProcMutex : public PAMI::Atomic::Interface::Mutex <BgpProcMutex>
+    class BgpProcMutex : public PAMI::Atomic::Interface::InPlaceMutex <BgpProcMutex>
     {
       public:
 
         inline BgpProcMutex () :
-          PAMI::Atomic::Interface::Mutex <BgpProcMutex> (),
+          PAMI::Atomic::Interface::InPlaceMutex <BgpProcMutex> (),
           _atomic (0)
         {};
 
@@ -210,9 +234,16 @@ namespace BGP {
         };
 
         /// \see PAMI::Atomic::Interface::Mutex::init
-        inline void init_impl (const char *key)
+        inline void init_impl ()
         {
         };
+
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
 
         /// \see PAMI::Atomic::Interface::Mutex::returnLock
         inline void * returnLock_impl ()
@@ -225,12 +256,12 @@ namespace BGP {
         volatile uint32_t _atomic __attribute__ ((aligned(8)));
     };
 
-    class BgpNodeMutex : public PAMI::Atomic::Interface::Mutex <BgpNodeMutex>
+    class BgpNodeMutex : public PAMI::Atomic::Interface::IndirMutex <BgpNodeMutex>
     {
       public:
 
         inline BgpNodeMutex () :
-          PAMI::Atomic::Interface::Mutex <BgpNodeMutex> (),
+          PAMI::Atomic::Interface::IndirMutex <BgpNodeMutex> (),
           _atomic (NULL)
         {};
 
@@ -261,9 +292,19 @@ namespace BGP {
         };
 
         /// \see PAMI::Atomic::Interface::Mutex::init
-        inline void init_impl (const char *key)
+        inline void init_impl (PAMI::Memory::MemoryManager *mm, const char *key)
         {
+		pami_result_t rc = mm->memalign((void **)&_atomic,
+					sizeof(*_atomic), sizeof(*_atomic), key);
+		PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate BGP Atomic Mutex");
         };
+
+	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
+	}
+	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return true;
+	}
 
         /// \see PAMI::Atomic::Interface::Mutex::returnLock
         inline void * returnLock_impl ()
