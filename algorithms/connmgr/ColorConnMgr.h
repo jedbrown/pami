@@ -16,46 +16,46 @@
 
 #include "ConnectionManager.h"
 
-#define MAX_COLORS  7  //colors 0 - 6
+#define MAX_COLORS  11  //colors 0 - 6
 
 namespace CCMI
 {
   namespace ConnectionManager
   {
-
-    class ColorConnMgr : public ConnectionManager
+    class ColorConnMgr : public ConnectionManager<ColorConnMgr>
     {
     public:
-
+      
       /// Constructor
-      ColorConnMgr () : ConnectionManager()
-      {
-        setNumConnections (MAX_COLORS);
-      }
+      ColorConnMgr () : ConnectionManager<ColorConnMgr> ()
+	{
+	}
 
+      inline void setNumConnections_impl (size_t sz)
+	{
+	}
+      
       ///
       /// \brief return the connection id given a set of inputs
       /// \param comm the communicator id of the collective
       /// \param root the root of the collective operation
-      ///
-
-      virtual unsigned getConnectionId (unsigned comm, unsigned root,
-                                        unsigned color, unsigned phase, unsigned dst=(unsigned)-1)
-      {
-        return color;
-      }
-
-      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root,
-                                            unsigned src, unsigned phase, unsigned color)
-      {
-        return color;
-      }
-
+      /// \param color the dimension of the collective operation
+      inline unsigned getConnectionId_impl (unsigned comm, unsigned root,
+                                            unsigned color, unsigned phase, unsigned dst=(unsigned)-1)
+	{
+	  return color;
+	}
+      
+      inline unsigned getRecvConnectionId_impl (unsigned comm, unsigned root,
+						unsigned src, unsigned phase, unsigned color)
+	{
+	  return color;
+	}
+      
       virtual int getNumConnections_impl ()
-        {
-          return MAX_COLORS;
-        }
-
+      {
+	return MAX_COLORS;
+      }
     };
   };
 };

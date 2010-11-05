@@ -36,6 +36,7 @@
   #include "components/devices/bgq/mu2/model/DmaModelMemoryFifoCompletion.h"
 
   #include "components/devices/bgq/mu2/model/AxialMulticast.h"
+  #include "components/devices/bgq/mu2/model/MulticastDmaModel.h"
   #include "components/devices/bgq/mu2/model/Multicast.h"
   #include "components/devices/bgq/mu2/model/Multicombine.h"
   #include "components/devices/bgq/mu2/model/Multisync.h"
@@ -89,6 +90,16 @@ namespace PAMI
                                Device::MU::AxialMulticastModel<false, false>,
                                Device::MU::MultisyncModel<false, false>,
                                Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialNI;
+
+/*  typedef BGQNativeInterface < MUDevice,
+                               Device::MU::AxialMulticastModel<false, false>,
+                               Device::MU::MultisyncModel<false, false>,
+                               Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialDputNI;
+*/
+  typedef BGQNativeInterfaceAS < MUDevice,
+                               Device::MU::MulticastDmaModel,
+                               Device::MU::MultisyncModel<false, false>,
+                               Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialDputNI;
 
   typedef Fifo::FifoPacket <32, 544> ShmemPacket;
   typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;

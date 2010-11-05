@@ -22,9 +22,17 @@
 #include "components/devices/bgq/mu2/model/PacketModelDeposit.h"
 #include "components/memory/MemoryAllocator.h"
 
+#include "util/ccmi_debug.h"
+#include "util/ccmi_util.h"
 #include "components/devices/bgq/mu2/trace.h"
-#define DO_TRACE_ENTEREXIT 0
-#define DO_TRACE_DEBUG     0
+
+#ifdef CCMI_TRACE_ALL
+ #define DO_TRACE_ENTEREXIT 1
+ #define DO_TRACE_DEBUG     1
+#else
+ #define DO_TRACE_ENTEREXIT 0
+ #define DO_TRACE_DEBUG     0
+#endif
 
 
 namespace PAMI
@@ -277,7 +285,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
-        TRACE_FORMAT( "connection_id %#X", mcast->connection_id);
+        TRACE_FORMAT( "connection_id %#X, src_participants %p, dst_participants %p", mcast->connection_id, mcast->src_participants, mcast->dst_participants);
 
         // Get the source data buffer/length and validate (assert) inputs
         size_t length = mcast->bytes;
@@ -286,7 +294,7 @@ namespace PAMI
         if (T_PWQ_support == false)
         {
           // If you're sending data, it must all be ready in the pwq.
-          PAMI_assert((length == 0) || (pwq && pwq->bytesAvailableToConsume() == length));
+/// \todo ?          PAMI_assert((length == 0) || (pwq && pwq->bytesAvailableToConsume() == length));
         }
         else
         {
@@ -299,10 +307,13 @@ namespace PAMI
           PAMI_assert(mcast->msgcount == 0);
         }
 
-        TRACE_FORMAT( "dispatch %zu, connection_id %#X, msgcount %d/%p, bytes %zu/%p/%p",
+        TRACE_FORMAT( "dispatch %zu, connection_id %#X, msgcount %d/%p, ndst %zu, bytes %zu/%zu pwq %p buffer %p",
                       mcast->dispatch, mcast->connection_id,
                       mcast->msgcount, mcast->msginfo,
-                      mcast->bytes, pwq, pwq ? pwq->bufferToConsume() : NULL);
+                      mcast->bytes, 
+                      mcast->dst_participants? ((PAMI::Topology*)mcast->dst_participants)->size():(size_t)-1, 
+                      pwq ? pwq->bytesAvailableToConsume():(size_t)-1,
+                      pwq, pwq ? pwq->bufferToConsume() : NULL);
 
         state_data_t *state_data = (state_data_t*) & state;
 
@@ -336,13 +347,13 @@ namespace PAMI
         PAMI::Topology* dst_topology = (PAMI::Topology*)mcast->dst_participants;
 
         pami_task_t * ranklist = NULL;
-        unsigned char risTorus[PAMI_MAX_DIMS];
-        if (dst_topology->type() != PAMI_AXIAL_TOPOLOGY)
+        unsigned char risTorus[PAMI_MAX_DIMS]={};
+        if ((dst_topology->type() != PAMI_AXIAL_TOPOLOGY))// && (dst_topology->size() > 1))
         {
           PAMI::Topology* src_topology = (PAMI::Topology*)mcast->src_participants;
           pami_coord_t rref;
           pami_network rtype = PAMI_N_TORUS_NETWORK;                                               
-          DO_DEBUG(for (unsigned j = 0; j < dst_topology->size(); ++j) {pami_coord_t tref;
+          DO_DEBUG(for (unsigned j = 0; dst_topology && (j < dst_topology->size()); ++j) {pami_coord_t tref;
                      TRACE_FORMAT( "destinations[%u]=%zu, size %zu, %u, [%zu,%zu,%zu,%zu,%zu]", 
                                    j, (size_t)dst_topology->index2Rank(j), dst_topology->size(),
                                    __global.mapping.task2network((size_t)dst_topology->index2Rank(j), &tref,  rtype), 
@@ -353,7 +364,7 @@ namespace PAMI
                                    tref.u.n_torus.coords[4]
                                  )});
           
-          DO_DEBUG(for (unsigned j = 0; j < src_topology->size(); ++j) {pami_coord_t tref;
+          DO_DEBUG(for (unsigned j = 0;src_topology && (j < src_topology->size()); ++j) {pami_coord_t tref;
                    TRACE_FORMAT( "sources[%u]=%zu, size %zu, %u, [%zu,%zu,%zu,%zu,%zu]", 
                                  j, (size_t)src_topology->index2Rank(j), src_topology->size(),
                                  __global.mapping.task2network((size_t)src_topology->index2Rank(j), &tref,  rtype), 
@@ -369,16 +380,17 @@ namespace PAMI
 
           PAMI::Topology coord_topology;
 // aborts          src_topology->unionTopology(&coord_topology, dst_topology);
-          ranklist = (pami_task_t*)malloc(src_topology->size()+dst_topology->size());
-          for (size_t i = 0 ; i < src_topology->size(); ++i)
+          size_t tsize = (src_topology?src_topology->size():0)+(dst_topology?dst_topology->size():0);
+          ranklist = (pami_task_t*)malloc(tsize);
+          for (size_t i = 0 ; src_topology && i < src_topology->size(); ++i)
           {
             ranklist[i] = src_topology->index2Rank(i);
           }
-          for (size_t j=0,i = src_topology->size() ; j < dst_topology->size(); ++i,++j)
+          for (size_t j=0,i = src_topology?src_topology->size():0 ; dst_topology && j < dst_topology->size(); ++i,++j)
           {
             ranklist[i] = dst_topology->index2Rank(j);
           }
-          new (&coord_topology) Topology(ranklist, dst_topology->size()+src_topology->size());
+          new (&coord_topology) Topology(ranklist, tsize);
 
           DO_DEBUG(for (unsigned j = 0; j < coord_topology.size(); ++j) {pami_coord_t tref;
                    TRACE_FORMAT( "coord_topology[%u]=%zu, size %zu, %u, [%zu,%zu,%zu,%zu,%zu]", 
@@ -412,7 +424,7 @@ namespace PAMI
         }
 
         /// \todo eventually assert that our input is axial instead of converting above
-        PAMI_assert(dst_topology->type() == PAMI_AXIAL_TOPOLOGY);
+        PAMI_assert((dst_topology->type() == PAMI_AXIAL_TOPOLOGY));// || (dst_topology->size() == 1));
         pami_coord_t *ll=NULL;
         pami_coord_t *ur=NULL;
         pami_coord_t *ref=NULL;
@@ -929,8 +941,6 @@ namespace PAMI
   };
 };
 
-#undef  DO_TRACE_ENTEREXIT
-#undef  DO_TRACE_DEBUG
 
 #endif // __components_devices_bgq_mu2_model_AxialMulticast_h__
 

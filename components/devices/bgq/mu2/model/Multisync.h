@@ -22,9 +22,17 @@
 #include "components/devices/bgq/mu2/model/AllreducePacketModel.h"
 #include "components/memory/MemoryAllocator.h"
 
+#include "util/ccmi_debug.h"
+#include "util/ccmi_util.h"
 #include "components/devices/bgq/mu2/trace.h"
-#define DO_TRACE_ENTEREXIT 0
-#define DO_TRACE_DEBUG     0
+
+#ifdef CCMI_TRACE_ALL
+ #define DO_TRACE_ENTEREXIT 1
+ #define DO_TRACE_DEBUG     1
+#else
+ #define DO_TRACE_ENTEREXIT 0
+ #define DO_TRACE_DEBUG     0
+#endif
 
 namespace PAMI
 {
@@ -255,13 +263,38 @@ namespace PAMI
         return 0;
       }; // PAMI::Device::MU::MultisyncModel::dispatch_header
 
+      class NullMultisyncModel : public Interface::MultisyncModel < NullMultisyncModel, MU::Context, 0 /*sizeof(state_data_t)*/ >
+      {
+        public:
+          static const bool   Multisync_model_active_message          = true;
+          static const bool   Multisync_model_available_buffers_only  = true;
+
+          static const size_t sizeof_msg                              = 0 /*sizeof(state_data_t)*/;
+          static const size_t packet_model_payload_bytes              = 0;
+          static const size_t packet_model_immediate_bytes            = 0;
+
+          static const size_t Multisync_model_msgcount_max            = 0;
+          static const size_t Multisync_model_bytes_max               = 0;
+          static const size_t Multisync_model_connection_id_max       = 0;
+
+          /// \see PAMI::Device::Interface::MultisyncModel::MultisyncModel
+          NullMultisyncModel (MU::Context & device, pami_result_t &status) :
+              Interface::MultisyncModel < NullMultisyncModel, MU::Context, 0 /*sizeof(state_data_t)*/ > (device, status)
+          {
+            PAMI_abort();
+          }
+          inline pami_result_t postMultisync_impl(uint8_t (&state)[NullMultisyncModel::sizeof_msg],
+          pami_multisync_t *msync,
+          void             *devinfo)
+          {
+            PAMI_abort();
+          }
+      };
 
     };
   };
 };
 
-#undef  DO_TRACE_ENTEREXIT
-#undef  DO_TRACE_DEBUG
 
 #endif // __components_devices_bgq_mu2_model_Multisync_h__
 

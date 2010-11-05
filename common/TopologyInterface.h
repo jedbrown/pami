@@ -218,8 +218,9 @@ namespace PAMI
       /// \param[out] c0  lower value for dim range
       /// \param[out] cn  upper value for dim range
       /// \param[out] tl  optional, torus link flag
+      /// \return PAMI_SUCCESS, or PAMI_UNIMPL if not a coord/axial topology
       ///
-      inline void getNthDims(unsigned n, unsigned *c0, unsigned *cn,
+      inline pami_result_t getNthDims(unsigned n, unsigned *c0, unsigned *cn,
                              unsigned char *tl = NULL);
 
       /// \brief is rank in topology
@@ -441,7 +442,7 @@ namespace PAMI
     }
 
     template <class T_Topology>
-      void Topology<T_Topology>::getNthDims(unsigned n, unsigned *c0, unsigned *cn,
+      pami_result_t Topology<T_Topology>::getNthDims(unsigned n, unsigned *c0, unsigned *cn,
                                             unsigned char *tl)
     {
       return static_cast<T_Topology*>(this)->getNthDims_impl(n,c0,cn,tl);

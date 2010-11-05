@@ -114,12 +114,22 @@ int main(int argc, char ** argv)
   if (myrank == 0) {
     mcast.src_participants = (pami_topology_t *)&srct;
     
-    unsigned char istorus[5] = {0,0,0,0,0};
+    unsigned char istorus[7] = {0,0,0,0,0,0,0};
     pami_coord_t ll, ur;
     memset(ll.u.n_torus.coords, 0, sizeof(ll.u.n_torus.coords));
     memset(ur.u.n_torus.coords, 0, sizeof(ur.u.n_torus.coords));
     
-    ur.u.n_torus.coords[0] = 1;
+    //ur.u.n_torus.coords[0] = 1;
+    PAMI_Task2Network (1, &ur);
+
+    printf ("Target coords %ld %ld %ld %ld %ld %ld\n", 
+	    ur.u.n_torus.coords[0],
+	    ur.u.n_torus.coords[1],
+	    ur.u.n_torus.coords[2],
+	    ur.u.n_torus.coords[3],
+	    ur.u.n_torus.coords[4],
+	    ur.u.n_torus.coords[5]);
+
     memset (&dstt, 0, sizeof(dstt));
     new (&dstt) PAMI::Topology (&ll, &ur, &ll, istorus); //Root is the ll node too
     

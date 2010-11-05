@@ -110,6 +110,15 @@ namespace PAMI {
 #define topo_axial_urdim(n)	  __topo._axial._rect._urcorner.net_coord(n)
 #define topo_axial_hastorus(n)  __topo._axial._rect._istorus[n]
 
+    /// \brief set the torus link flags 
+    ///
+    /// \param[in] isTorus - torus links flags
+    ///
+    inline void set_istorus(unsigned char isTorus[PAMI_MAX_DIMS])
+    {
+      mapping->torusInformation(isTorus);
+    }
+
     /// \brief are the two coords located on the same node
     ///
     /// \param[in] c0	first coordinate
@@ -373,9 +382,7 @@ namespace PAMI {
         __type = PAMI_COORD_TOPOLOGY;
         topo_llcoord = ll;
         topo_urcoord = ur;
-        // can we get real torus info from mapping???
-        // for now, assume no torus links
-        memset(topo_istorus, 0, mapping->globalDims());
+        set_istorus(topo_istorus);
         return true;
       }
       return false;
@@ -402,9 +409,7 @@ namespace PAMI {
         __type = PAMI_COORD_TOPOLOGY;
         topo_llcoord = ll;
         topo_urcoord = ur;
-        // can we get real torus info from mapping???
-        // for now, assume no torus links
-        memset(topo_istorus, 0, mapping->globalDims());
+        set_istorus(topo_istorus);  
         return true;
       }
       return false;
@@ -528,7 +533,7 @@ namespace PAMI {
       if (tl) {
         memcpy(topo_istorus, tl, mapping->globalDims());
       } else {
-        memset(topo_istorus, 0, mapping->globalDims());
+        set_istorus(topo_istorus);  
       }
       __size = __sizeRange(ll, ur, mapping->globalDims());
     }
@@ -546,6 +551,8 @@ namespace PAMI {
              unsigned char *tl = NULL)
       {
         int i;
+        PAMI_assert(mapping->globalDims() <= PAMI_MAX_DIMS);
+
         __size = 1;
 
         __type = PAMI_AXIAL_TOPOLOGY;
@@ -558,10 +565,10 @@ namespace PAMI {
         if (tl) {
           memcpy(topo_axial_istorus, tl, mapping->globalDims());
         } else {
-          memset(topo_axial_istorus,  0, mapping->globalDims());
+        set_istorus(topo_axial_istorus);  
         }
 
-        for (i = 0; i < PAMI_MAX_DIMS; i++)
+        for (i = 0; (size_t) i < mapping->globalDims(); i++)
         {
           __size += topo_axial_urdim(i) - topo_axial_lldim(i);
         }
@@ -1043,13 +1050,27 @@ namespace PAMI {
     /// \param[out] cn	upper value for dim range
     /// \param[out] tl	optional, torus link flag
     ///
-    void getNthDims_impl(unsigned n, unsigned *c0, unsigned *cn,
+    pami_result_t getNthDims_impl(unsigned n, unsigned *c0, unsigned *cn,
                          unsigned char *tl = NULL) {
-      *c0 = topo_lldim(n);
-      *cn = topo_urdim(n);
-      if (tl) {
-        *tl = topo_hastorus(n);
+      if(__type == PAMI_COORD_TOPOLOGY) 
+      {
+        *c0 = topo_lldim(n);
+        *cn = topo_urdim(n);
+        if (tl) {
+          *tl = topo_hastorus(n);
+        }
       }
+      else if(__type == PAMI_COORD_TOPOLOGY) 
+      {
+        *c0 = topo_axial_lldim(n);
+        *cn = topo_axial_urdim(n);
+        if (tl) {
+          *tl = topo_axial_hastorus(n);
+        }
+      }
+      else return PAMI_UNIMPL; 
+
+      return PAMI_SUCCESS; 
     }
 
     /// \brief is rank in topology
@@ -1323,9 +1344,7 @@ namespace PAMI {
           __type = PAMI_COORD_TOPOLOGY;
           topo_llcoord = c0;
           topo_urcoord = c0;
-          // can we get real torus info from mapping???
-          // for now, assume no torus links
-          memset(topo_istorus, 0, mapping->globalDims());
+          set_istorus(topo_istorus);  
           return true;
           break;
         case PAMI_RANGE_TOPOLOGY:
@@ -1564,9 +1583,7 @@ namespace PAMI {
                      mapping->globalDims());
           _new->__size = __sizeRange(&_new->topo_llcoord,
                                      &_new->topo_urcoord, mapping->globalDims());
-          // can we get real torus info from old topology???
-          // for now, assume no torus links
-          memset(topo_istorus, 0, mapping->globalDims());
+          set_istorus(topo_istorus);  
           return;
           break;
         case PAMI_SINGLE_TOPOLOGY:
@@ -1734,9 +1751,7 @@ namespace PAMI {
             _new->__type = PAMI_COORD_TOPOLOGY;
             _new->topo_llcoord = ll;
             _new->topo_urcoord = ur;
-            // can we get real torus info from old topology???
-            // for now, assume no torus links
-            memset(_new->topo_istorus, 0, mapping->globalDims());
+            set_istorus(_new->topo_istorus);  
             free(rl);
           } else if (max - min + 1 == k) {
             _new->__type = PAMI_RANGE_TOPOLOGY;

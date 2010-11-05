@@ -450,7 +450,8 @@ void PAMI_Topology_getNthDims(pami_topology_t *topo, unsigned n,
                              unsigned *c0, unsigned *cn, unsigned char *tl)
 {
     PAMI::Topology * t = (PAMI::Topology *) topo;
-    return t->getNthDims(n,c0,cn,tl);
+    t->getNthDims(n,c0,cn,tl);
+    return;
 }
 
 ///

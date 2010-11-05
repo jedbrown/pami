@@ -8,6 +8,8 @@
 #include "algorithms/composite/Composite.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "algorithms/protocols/allreduce/ReduceFunctions.h"
+
+#include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
 
 
@@ -27,9 +29,6 @@
 
 // Use a local done function for testing
 #define LOCAL_TEST
-
-#undef DO_DEBUG
-#define DO_DEBUG(x) //x
 
 namespace CCMI
 {
@@ -779,8 +778,5 @@ namespace CCMI
 #undef TRACE_ADAPTOR
 #define TRACE_ADAPTOR(x)
 #endif
-
-#undef DO_DEBUG
-#define DO_DEBUG(x)
 
 #endif

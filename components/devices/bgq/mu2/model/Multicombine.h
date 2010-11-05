@@ -23,10 +23,17 @@
 #include "components/devices/bgq/mu2/model/ReducePacketModel.h"
 #include "components/memory/MemoryAllocator.h"
 
+#include "util/ccmi_debug.h"
+#include "util/ccmi_util.h"
 #include "components/devices/bgq/mu2/trace.h"
 
-#define DO_TRACE_ENTEREXIT 0
-#define DO_TRACE_DEBUG     0
+#ifdef CCMI_TRACE_ALL
+ #define DO_TRACE_ENTEREXIT 1
+ #define DO_TRACE_DEBUG     1
+#else
+ #define DO_TRACE_ENTEREXIT 0
+ #define DO_TRACE_DEBUG     0
+#endif
 
 namespace PAMI
 {
@@ -377,8 +384,6 @@ namespace PAMI
         return ;
       }; // PAMI::Device::MU::MulticombineModel::processData
 
-#undef  DO_TRACE_ENTEREXIT
-#undef  DO_TRACE_DEBUG
 #undef TRACE
 #define TRACE(x) //fprintf x
 

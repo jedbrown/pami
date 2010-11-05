@@ -83,7 +83,15 @@ namespace PAMI
 
       coord2node (_a, _b, _c, _d, _e, _t,      //fix?
                   _nodeaddr.global, _nodeaddr.local);
+
+      _torusInfo[0]= _pers.isTorusA();
+      _torusInfo[1]= _pers.isTorusB();
+      _torusInfo[2]= _pers.isTorusC();
+      _torusInfo[3]= _pers.isTorusD();
+      _torusInfo[4]= _pers.isTorusE();
+
       TRACE_ERR((stderr, "Mapping() coords(a,b,c,d,e,t):(%zu %zu %zu %zu %zu %zu), node: (%#lX %#lX)\n", _a, _b, _c, _d, _e, _t, _nodeaddr.global, _nodeaddr.local));
+      TRACE_ERR((stderr, "Mapping() torusInfo(a,b,c,d,e,t):(%u %u %u %u %u %u), node: (%#lX %#lX)\n", _torusInfo[0],_torusInfo[1],_torusInfo[2],_torusInfo[3],_torusInfo[4]));
 
     };
 
@@ -103,6 +111,8 @@ namespace PAMI
     size_t _d;
     size_t _e;
     size_t _t;
+
+    char _torusInfo[BGQ_TDIMS];
 
     // The _coords do not match the _MUcoords.  So, we have two versions of it.
     bgq_coords_t  _coords;
@@ -548,6 +558,15 @@ namespace PAMI
       TRACE_ERR((stderr, "Mapping::task2node_impl(%zu, {%zu, %zu}) <<\n", task, address.global, address.local));
       return PAMI_SUCCESS;
     };
+
+    ///
+    /// \brief Get torus link information
+    /// \see PAMI::Interface::Mapping::Torus::torusInformation()
+    ///
+    inline void torusInformation_impl(unsigned char info[])
+    {
+      memcpy(info, _torusInfo, BGQ_TDIMS*sizeof(unsigned char));
+    }
 
     /// \see PAMI::Interface::Mapping::Node::node2task()
     inline pami_result_t node2task_impl (Interface::Mapping::nodeaddr_t address, size_t & task)

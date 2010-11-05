@@ -72,7 +72,7 @@ namespace CCMI
                               pami_event_function                     cb_done,
                               void                                  * clientdata,
                               Interfaces::NativeInterface           * mf,
-                              unsigned                                ncolors = 1):
+                              unsigned                                ncolors = NUMCOLORS):
             CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>(), _doneCount(0), _numColors(ncolors), _cb_done(cb_done), _clientdata(clientdata), _native(mf), _cmgr(cmgr)
         {
           _nComplete     = _numColors + 1;
@@ -88,6 +88,12 @@ namespace CCMI
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::initialize() root %u, bytes %u\n", this,root, bytes));
           pwcfn (topology, bytes, _colors, _numColors);
+
+          //printf ("Using %d colors, %d\n", _numColors, _colors[0]);
+
+          if (_numColors > NUMCOLORS)
+            _numColors = NUMCOLORS;
+          
           _nComplete     = _numColors + 1;
           TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::initialize() numcolors %u, complete %u\n", this,_numColors,_nComplete));
 
@@ -104,9 +110,11 @@ namespace CCMI
               for (unsigned c = 1; c < _numColors; ++c)
                 {
                   bytecounts[c] = aligned_bytes;
+                  TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::initialize() bytecounts[%u] %u\n", this,c,bytecounts[c]));
                 }
 
               bytecounts[_numColors-1]  = bytes - (aligned_bytes * (_numColors - 1));
+              TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::initialize() bytecounts[%u] %u\n", this,_numColors-1,bytecounts[_numColors-1]));
             }
 
           for (unsigned c = 0; c < _numColors; c++)
@@ -125,7 +133,7 @@ namespace CCMI
                                 dst + aligned_bytes*c,
                                 bytecounts[c]);
               exec->setDoneCallback (cb_composite_done, this);
-              exec->setSchedule (&_schedules[c], c);
+              exec->setSchedule (&_schedules[c], _colors[c]);
 
               addExecutor (exec);
               COMPILE_TIME_ASSERT(sizeof(_schedules[0]) >= sizeof(T_Sched));

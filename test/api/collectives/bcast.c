@@ -8,9 +8,10 @@
 /*define this if you want to validate the data */
 #define CHECK_DATA
 
-#define BUFSIZE 524288
+#define BUFSIZE (1048576*8)
 #define NITER 100
 
+char* protocolName;
 
 void initialize_sndbuf (void *buf, int bytes)
 {
@@ -35,7 +36,7 @@ int check_rcvbuf (void *buf, int bytes)
     {
       if (cbuf[i-1] != c)
         {
-          fprintf(stderr, "Check(%d) failed <%p>buf[%d]=%.2u != %.2u \n", bytes, buf, i - 1, cbuf[i-1], c);
+          fprintf(stderr, "%s:Check(%d) failed <%p>buf[%d]=%.2u != %.2u \n", protocolName, bytes, buf, i - 1, cbuf[i-1], c);
           return -1;
         }
 
@@ -72,7 +73,7 @@ int main (int argc, char ** argv)
   pami_xfer_type_t     bcast_xfer = PAMI_XFER_BROADCAST;
   volatile unsigned    bcast_poll_flag = 0;
 
-  int                  nalg = 0;
+  int                  nalg= 0;
   double               ti, tf, usec;
   char                 buf[BUFSIZE];
   pami_xfer_t          barrier;
@@ -136,13 +137,14 @@ int main (int argc, char ** argv)
       broadcast.cmd.xfer_broadcast.type      = PAMI_BYTE;
       broadcast.cmd.xfer_broadcast.typecount = 0;
 
+      protocolName = bcast_always_works_md[nalg].name;
       if (task_id == (size_t)root)
         {
-          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root, bcast_always_works_md[nalg].name);
+          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root, protocolName);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
-
+      //      if(strcmp(bcast_always_works_md[nalg].name,"RectangleP2PBroadcast")) continue;
       int i, j;
 
       for (i = 1; i <= BUFSIZE; i *= 2)

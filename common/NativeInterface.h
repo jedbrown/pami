@@ -8,6 +8,7 @@
 
 #include "Global.h"
 #include "algorithms/interfaces/NativeInterface.h"
+#include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
 
 #include "components/devices/MulticastModel.h"
@@ -1090,6 +1091,16 @@ namespace PAMI
                mcast->msgcount, mcast->msginfo,
                mcast->bytes, pwq, pwq ? pwq->bufferToConsume() : NULL);
 
+    TRACE_FORMAT( "<%p> dispatch %zu, connection_id %#X, msgcount %d/%p, bytes %zu/%p/%zu",
+               this, mcast->dispatch, mcast->connection_id,
+               mcast->msgcount, mcast->msginfo,
+               mcast->bytes, pwq, pwq ? pwq->bytesAvailableToConsume() : NULL);
+
+    TRACE_FORMAT( "<%p> dispatch %zu, connection_id %#X, msgcount %d/%p, bytes %zu/%p/%zu",
+               this, mcast->dispatch, mcast->connection_id,
+               mcast->msgcount, mcast->msginfo,
+               mcast->bytes, pwq, pwq ? pwq->bytesAvailableToProduce() : NULL);
+
     state_data->connection_id = mcast->connection_id;
     state_data->rcvpwq        = (PAMI::PipeWorkQueue*)mcast->dst;
     state_data->sendpwq.pwq   = (PAMI::PipeWorkQueue*)mcast->src;
@@ -1121,28 +1132,34 @@ namespace PAMI
       TRACE_FN_EXIT();
       return PAMI_SUCCESS;
     }
+    TRACE_FORMAT( "<%p> here i am", this);
 
     void* payload = NULL;
 
     if (length)
       payload = (void*)pwq->bufferToConsume();
+    TRACE_FORMAT( "<%p> here i am", this);
 
     // calc how big our msginfo needs to be
     size_t msgsize =  sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t().connection_id) + sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t().root) + sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t().sndlen) +
                       sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t().msgcount) + (mcast->msgcount * sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t().msginfo));
 
+    TRACE_FORMAT( "<%p> here i am", this);
     // Send the multicast to each destination
     state_data->sendpwq.dst_participants = *((PAMI::Topology*)mcast->dst_participants);
 
+    TRACE_FORMAT( "<%p> here i am", this);
     state_data->doneCountDown = state_data->sendpwq.dst_participants.size();
 
+    TRACE_FORMAT( "<%p> here i am", this);
     // Am I a destination?  Handle it.
     if (state_data->sendpwq.dst_participants.isRankMember(this->myrank())) /// \todo change semantics here? ticket #31
       {
+    TRACE_FORMAT( "<%p> here i am", this);
         state_data->doneCountDown--;// don't send to myself
         PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
 
-        TRACE_FORMAT( "<%p>NativeInterfaceAllsided pwq<%p> length %zu/%zu", this, rcvpwq, rcvpwq->bytesAvailableToProduce(), length);
+        TRACE_FORMAT( "<%p>NativeInterfaceAllsided pwq<%p> length %zu/%zu", this, rcvpwq, rcvpwq? rcvpwq->bytesAvailableToProduce():(size_t)-1, length);
 
         if (rcvpwq && (rcvpwq->bytesAvailableToProduce() >= length)) // copy it if desired
           {
@@ -1151,6 +1168,7 @@ namespace PAMI
         else; /// \todo now what??? Move this to completion?
       }
 
+    TRACE_FORMAT( "<%p> here i am", this);
     state_data->sendpwq.send.simple.send.hints = (pami_send_hint_t)
     {
       0
@@ -1311,7 +1329,8 @@ namespace PAMI
       }
 
     // model_available_buffers_only semantics: If you're receiving data then the pwq must be available
-    TRACE_FORMAT( "<%p>NativeInterfaceAllsided<%d>::handle_mcast() pwq<%p>", this, __LINE__, rcvpwq);
+    TRACE_FORMAT( "<%p>NativeInterfaceAllsided<%d>::handle_mcast() pwq<%p> rcvpwq->bytesAvailableToProduce() %zd, cbdone %p/%p", 
+                  this, __LINE__, rcvpwq,rcvpwq->bytesAvailableToProduce(),cb_done.function,cb_done.clientdata);
     PAMI_assert(model_available_buffers_only && (rcvpwq->bytesAvailableToProduce() >= data_size));
 
     recv->addr     = rcvpwq->bufferToProduce();
@@ -2123,6 +2142,7 @@ namespace PAMI
       }
     TRACE_FN_EXIT();
   }
+
 };
 
 #endif

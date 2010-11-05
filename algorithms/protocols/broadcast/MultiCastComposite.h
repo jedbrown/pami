@@ -9,6 +9,7 @@
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/connmgr/CommSeqConnMgr.h"
 #include "algorithms/protocols/CollectiveProtocolFactoryT.h"
+#include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
 #include "util/queue/MatchQueue.h"
 #include "util/queue/Queue.h"

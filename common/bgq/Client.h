@@ -480,11 +480,11 @@ namespace PAMI
             new_geometry->addCompletion(); // ensure completion doesn't happen until
                                            // all have been analyzed (_geom_opt_finish).
 
-            // Start the barrier (and then the global analyze and (maybe) the optimize ...
-            start_barrier(bargeom, new_geometry,
-                          ctxt->getId(), context,
-                          num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
-
+	    // Start the barrier (and then the global analyze and (maybe) the optimize ...
+	    start_barrier(bargeom, new_geometry,
+			  ctxt->getId(), context,
+			  num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
+	    
 	    new_geometry->processUnexpBarrier(&_ueb_queue,
                                               &_ueb_allocator);
           }
@@ -545,11 +545,11 @@ namespace PAMI
             new_geometry->addCompletion(); // ensure completion doesn't happen until
                                            // all have been analyzed (_geom_opt_finish).
 
-            // Start the barrier (and then the global analyze and (maybe) the optimize ...
-            start_barrier(bargeom, new_geometry,
-                          ctxt->getId(), context,
-                          num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
-
+	    // Start the barrier (and then the global analyze and (maybe) the optimize ...
+	    start_barrier(bargeom, new_geometry,
+			  ctxt->getId(), context,
+			  num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
+	    
 	    new_geometry->processUnexpBarrier(&_ueb_queue,
                                               &_ueb_allocator);
           }
@@ -842,12 +842,18 @@ namespace PAMI
         TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::start_barrier() context %p  %s\n", this, _clientid, context, optimize == PAMI_GEOMETRY_OPTIMIZE? "Optimized":" "));
         if(bargeom)
         {
-          if(optimize == PAMI_GEOMETRY_OPTIMIZE)
+          if(optimize == PAMI_GEOMETRY_OPTIMIZE) 
             bargeom->default_barrier(_geom_newopt_start, (void *)new_geometry, context_id, context);
           else
             bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry, context_id, context);
         }
-        else PAMI_assert(bargeom); /// \todo? parentless/UE barrier support
+        //else PAMI_assert(bargeom); /// \todo? parentless/UE barrier support
+	//else {
+	//new_geometry->ue_barrier(_geom_newopt_finish, (void *)new_geometry, context_id, context);
+	//}
+	else {
+	  _geom_newopt_finish(context, (void *)new_geometry, PAMI_SUCCESS);
+	}	
 #endif
       }
 

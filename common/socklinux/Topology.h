@@ -498,8 +498,9 @@ namespace PAMI {
                 /// \param[out] cn	upper value for dim range
                 /// \param[out] tl	optional, torus link flag
                 ///
-                void getNthDims_impl(unsigned n, unsigned *c0, unsigned *cn,
+                pami_result_t getNthDims_impl(unsigned n, unsigned *c0, unsigned *cn,
                                                 unsigned char *tl = NULL) {
+                        return PAMI_UNIMPL;
                 }
 
                 /// \brief is rank in topology

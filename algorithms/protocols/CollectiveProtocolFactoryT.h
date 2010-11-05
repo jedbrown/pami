@@ -62,7 +62,7 @@ namespace CCMI
         _cmgr(cmgr),
         _native(native)
         {
-          TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT()\n",this));
+          TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT() %p\n",this, native));
           DO_DEBUG((templateName<MetaDataFn>()));
           _native->setMulticastDispatch(cb_head, this);
         }

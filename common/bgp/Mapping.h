@@ -484,6 +484,16 @@ namespace PAMI
           return PAMI_SUCCESS;
         }
 
+        ///
+        /// \brief Get torus link information
+        /// \see PAMI::Interface::Mapping::Torus::torusInformation()
+        ///
+        inline void torusInformation_impl(unsigned char info[])
+        {
+          /// \todo set torus link info from personality?
+          memset(info, 0x00,  PAMI_BGP_NETWORK_DIMS*sizeof(unsigned char));
+        }
+
         /// \brief Get the task associated with a specific node address
         inline pami_result_t node2task_impl (Interface::Mapping::nodeaddr_t addr, size_t & task)
         {

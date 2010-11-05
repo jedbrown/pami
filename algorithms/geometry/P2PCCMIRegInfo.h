@@ -44,6 +44,8 @@
 #include "common/NativeInterface.h"
 #include "algorithms/protocols/alltoall/All2All.h"
 #include "algorithms/protocols/alltoall/All2Allv.h"
+#include "algorithms/schedule/MCRect.h"
+#include "algorithms/schedule/TorusRect.h"
 
 // CCMI Template implementations for P2P
 namespace CCMI
@@ -86,7 +88,70 @@ namespace CCMI
         ncolors = 1;
         colors[0] = CCMI::Schedule::NO_COLOR;
       }
+#ifdef __bgq__
+    void get_rect_colors (PAMI::Topology             * t,
+                          unsigned                    bytes,
+                          unsigned                  * colors,
+                          unsigned                  & ncolors)
+    {
 
+      unsigned max = 0, ideal = 0;
+      unsigned _colors[10];
+      CCMI::Schedule::MCRect::getColors (t, ideal, max, _colors);
+      TRACE_INIT((stderr, "get_rect_colors() bytes %u, ncolors %u, ideal %u, max %u\n", bytes, ncolors, ideal, max));
+      
+      if (bytes < 2048) //4 packets
+        ideal = 1;
+      else if (bytes < 8192) //4 packets
+        ideal = 2;
+
+      if (ideal < ncolors)
+        ncolors = ideal;  //Reduce the number of colors to the relavant colors
+      
+      TRACE_INIT((stderr, "get_rect_colors() ncolors %u, ideal %u\n", ncolors, ideal));
+      memcpy (colors, _colors, ncolors * sizeof(int));
+    }
+
+      void rectangle_broadcast_metadata(pami_metadata_t *m)
+      {
+        // \todo:  fill in other metadata
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
+        strcpy(&m->name[0], "RectangleP2PBroadcast");
+      }
+
+      typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
+      < 5,
+        CCMI::Schedule::TorusRect,
+        CCMI::ConnectionManager::ColorGeometryConnMgr,
+        get_rect_colors>
+      RectangleBroadcastComposite;
+
+      typedef CCMI::Adaptor::CollectiveProtocolFactoryT
+      < RectangleBroadcastComposite,
+        rectangle_broadcast_metadata,
+        CCMI::ConnectionManager::ColorGeometryConnMgr>
+      RectangleBroadcastFactory;
+
+      void rectangle_1color_broadcast_metadata(pami_metadata_t *m)
+      {
+        // \todo:  fill in other metadata
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
+        strcpy(&m->name[0], "Rectangle1ColorP2PBroadcast");
+      }
+
+      typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
+      < 1,
+        CCMI::Schedule::TorusRect,
+        CCMI::ConnectionManager::ColorGeometryConnMgr,
+        get_colors>
+      RectangleBroadcastComposite1Color;
+
+      typedef CCMI::Adaptor::CollectiveProtocolFactoryT
+      < RectangleBroadcastComposite1Color,
+        rectangle_1color_broadcast_metadata,
+        CCMI::ConnectionManager::ColorGeometryConnMgr>
+      Rectangle1ColorBroadcastFactory;
+#endif
       void binomial_broadcast_metadata(pami_metadata_t *m)
       {
         // \todo:  fill in other metadata

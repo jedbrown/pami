@@ -25,9 +25,17 @@
 #include "components/devices/bgq/mu2/msg/InjectDescriptorMessage.h"
 
 
+#include "util/ccmi_debug.h"
+#include "util/ccmi_util.h"
 #include "components/devices/bgq/mu2/trace.h"
-#define DO_TRACE_ENTEREXIT 0
-#define DO_TRACE_DEBUG     0
+
+#ifdef CCMI_TRACE_ALL
+ #define DO_TRACE_ENTEREXIT 1
+ #define DO_TRACE_DEBUG     1
+#else
+ #define DO_TRACE_ENTEREXIT 0
+ #define DO_TRACE_DEBUG     0
+#endif
 
 
 namespace PAMI
@@ -1372,8 +1380,6 @@ namespace PAMI
   };     // PAMI::Device namespace
 };       // PAMI namespace
 
-#undef  DO_TRACE_ENTEREXIT
-#undef  DO_TRACE_DEBUG
 
 #endif // __components_devices_bgq_mu2_CollectivePacketModelBase_h__
 //

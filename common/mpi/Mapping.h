@@ -231,6 +231,15 @@ namespace PAMI
                 address.local = x & 0x0000ffff;
                 return PAMI_SUCCESS;
         }
+      ///
+      /// \brief Get torus link information
+      /// \see PAMI::Interface::Mapping::Torus::torusInformation()
+      ///
+      inline void torusInformation_impl(unsigned char info[])
+      {
+        memset(info, 0x00, MPI_TDIMS*sizeof(unsigned char));
+      }
+
       inline pami_result_t node2task_impl (Interface::Mapping::nodeaddr_t & address, size_t & task)
         {
                 uint32_t x = (address.global << 16) | address.local;

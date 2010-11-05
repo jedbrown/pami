@@ -86,7 +86,13 @@ namespace PAMI
           inline size_t torusDims() const
           {
             return T_Dimensions;
+
           };
+
+          ///
+          /// \brief Get the torus link information
+          ///
+          inline void torusInformation(unsigned char info[]);
 
           ///
           /// \brief Get the torus address for the local task
@@ -269,13 +275,6 @@ namespace PAMI
         return static_cast<T_Mapping*>(this)->torusSize_impl<T_Dimension> ();
       }
 #endif
-#if 0
-      template <class T_Mapping, unsigned T_Dimensions>
-      inline size_t Torus<T_Mapping,T_Dimensions>::torusDims () const
-      {
-        return T_Dimensions;
-      }
-#endif
       template <class T_Mapping, unsigned T_Dimensions>
       //template <int T_Dimension>
       //inline size_t Torus<T_Mapping,T_Dimensions>::torusAddr (size_t (&addr)[T_Dimensions]) const
@@ -285,7 +284,13 @@ namespace PAMI
       }
 
       template <class T_Mapping, unsigned T_Dimensions>
-      //template <int T_Dimension>
+      inline void Torus<T_Mapping,T_Dimensions>::torusInformation(unsigned char info[])
+      {
+        return static_cast<T_Mapping*>(this)->torusInformation_impl(info);
+      }
+
+
+      template <class T_Mapping, unsigned T_Dimensions>
       inline pami_result_t Torus<T_Mapping,T_Dimensions>::task2torus (size_t task, size_t (&addr)[T_Dimensions])
       {
         return static_cast<T_Mapping*>(this)->task2torus_impl (task, addr);

@@ -16,8 +16,6 @@
 
 #include "algorithms/executor/Executor.h"
 
-#define MAX_EXECUTORS   6
-
 namespace CCMI
 {
   namespace Executor
@@ -114,7 +112,7 @@ namespace CCMI
       {
             TRACE_ADAPTOR((stderr,"<%p>Executor::CompositeT()\n",this));
         _barrier = NULL;
-        for(int count = 0; count < MAX_EXECUTORS; count ++)
+        for(int count = 0; count < NUM_EXECUTORS; count ++)
           _executors[count] = NULL;
         _numExecutors = 0;
       }
@@ -137,7 +135,7 @@ namespace CCMI
 
       void addExecutor (T_Exec *exec)
       {
-        CCMI_assert (_numExecutors < MAX_EXECUTORS);
+        CCMI_assert (_numExecutors < NUM_EXECUTORS);
         _executors [_numExecutors] = exec;
         _numExecutors ++;
       }

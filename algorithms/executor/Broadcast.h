@@ -121,12 +121,12 @@ namespace CCMI
 
         void  setBuffers (char *src, char *dst, int len)
         {
-          TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setInfo() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
+          TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
           _buflen = len;
           //Setup pipework queue
           _pwq.configure (NULL, src, len, 0);
           _pwq.reset();
-          TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setInfo() _pwq %p, bytes available %zu/%zu\n", this, &_pwq,
+          TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() _pwq %p, bytes available %zu/%zu\n", this, &_pwq,
                          _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
         }
 
@@ -235,8 +235,8 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
 #ifdef CCMI_DEBUG
   char tbuf[1024];
   char sbuf[16384];
-  sprintf(sbuf, "<%p>Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %zu\n",
-          this, _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume());
+  sprintf(sbuf, "<%p>Executor::BroadcastExec::sendNext() from %zu: bytes %d, ndsts %zu bytes available to consume %zu\n",
+          this,__global.mapping.task(), _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume());
 
   for (unsigned i = 0; i < _dsttopology.size(); ++i)
     {

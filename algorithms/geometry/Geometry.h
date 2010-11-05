@@ -155,6 +155,9 @@ namespace PAMI
               };
 
 	  (*_geometry_map)[_commid]=this;
+
+	  _ue_barrier._factory = NULL;
+
         }
       inline Common (pami_client_t                    client,
                      Geometry<PAMI::Geometry::Common> *parent,
@@ -200,6 +203,8 @@ namespace PAMI
                 break;
               };
 	  (*_geometry_map)[_commid]=this;
+
+	  _ue_barrier._factory = NULL;
         }
 
        /// \brief Convenience callback used by geometry completion sub-events
@@ -704,6 +709,9 @@ namespace PAMI
           pami_xfer_t cmd;
           cmd.cb_done=cb_done;
           cmd.cookie =cookie;
+
+	  PAMI_assert (_ue_barrier._factory != NULL);
+	  
           return _ue_barrier.generate(&cmd);
         }
 
