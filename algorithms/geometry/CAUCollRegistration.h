@@ -167,6 +167,13 @@ namespace PAMI
           _g_allreduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_reduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id)
           {
+            if(getenv("MP_COLLECTIVE_GROUPS"))
+              _enabled = true;
+            else
+              _enabled = false;
+
+            if(!_enabled) return;
+
             // To initialize shared memory, we need to provide the task offset into the
             // local nodes, and the total number of nodes we have locally
             size_t                         peer;
@@ -178,6 +185,7 @@ namespace PAMI
 
         inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
           {
+            if(!_enabled) return PAMI_SUCCESS;
             PAMI_assert(context_id == 0);
 
             // Get the topology for the local nodes
@@ -260,6 +268,8 @@ namespace PAMI
             // into a single 64 bit integer.  Later, we may want to increase the size from one integer
             // to an array to be reduced (if more than 64 class routes are desired).
             *out = _reduce_val;
+            if(!_enabled) return PAMI_SUCCESS;
+
             // prepare for collshmem device control structure address distribution
             _csmm.getSGCtrlStrVec(geometry, out+1);
             return PAMI_SUCCESS;
@@ -267,6 +277,8 @@ namespace PAMI
 
         inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t *in)
           {
+            if(!_enabled) return PAMI_SUCCESS;
+
             // This is where we get our reduction result back from the geometry create operation
             // This bit should show the "highest" available mask of bits
             // This is the value we should use for our class route id
@@ -306,7 +318,6 @@ namespace PAMI
             // We populate this device specific information into the geometry
             // The protocol will query for the device specific information,
             // and pass this into the M-* api during communication
-
             PAMI::Device::CAUGeometryInfo *gi
               = (PAMI::Device::CAUGeometryInfo *)_cau_geom_allocator.allocateObject();
             new(gi)PAMI::Device::CAUGeometryInfo(key,
@@ -340,8 +351,7 @@ namespace PAMI
         size_t                                                          _global_size;
         lapi_handle_t                                                   _lapi_handle;
         uint64_t                                                        _reduce_val;
-
-
+        bool                                                            _enabled;
 
         // Connection Manager
         CCMI::ConnectionManager::SimpleConnMgr                          _sconnmgr;
