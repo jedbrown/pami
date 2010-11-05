@@ -401,14 +401,15 @@ CCMI::Schedule::TorusRect::setupBroadcast(int phase,
 {
   TRACE_FN_ENTER();
   pami_coord_t low, high;
+  uint8_t toruslinks[PAMI_MAX_DIMS] = {0};
 
   //Find the axis to do the line broadcast on
   int axis = (phase + _color) % _ndims;
-  if (_torus_link[0])
+  if (_torus_link[axis])
   {
-    _torus_link[axis] = POSITIVE;
+    toruslinks[axis] = POSITIVE;
     if (_color >= _ndims)
-      _torus_link[axis] = NEGATIVE;
+      toruslinks[axis] = NEGATIVE;
   }
 
   low = _self_coord;
@@ -420,7 +421,7 @@ CCMI::Schedule::TorusRect::setupBroadcast(int phase,
 
   TRACE_FORMAT("<%u:%p>phase %u, axis %d, _self %zu, ll %zu, ur %zu ",_color,this,phase, axis,_self_coord.net_coord(axis),_ll.net_coord(axis),_ur.net_coord(axis));
   new (topo) PAMI::Topology(&low, &high, &_self_coord,
-                            &_torus_link[0]);
+                            toruslinks);
   TRACE_FN_EXIT();
 }
 
@@ -437,6 +438,7 @@ CCMI::Schedule::TorusRect::setupGhost(PAMI::Topology *topo)
 {
   TRACE_FN_ENTER();
   pami_coord_t ref, dst;
+  uint8_t toruslinks[PAMI_MAX_DIMS] = {0};
 
   //size_t torus_dims = _map->torusDims();
   size_t axis = _color % _ndims;
@@ -447,7 +449,14 @@ CCMI::Schedule::TorusRect::setupGhost(PAMI::Topology *topo)
 
   if (_torus_link[axis]) // if this dim or axis is a torus
   {
-    ref.net_coord(axis) = (_root_coord.net_coord(axis) + 1) % _dim_sizes[axis];
+    if (_color < _ndims) { //+ve colors
+      ref.net_coord(axis) = (_root_coord.net_coord(axis) + 1) % _dim_sizes[axis];
+      toruslinks[axis] = POSITIVE;
+    }
+    else {
+      ref.net_coord(axis) = (_root_coord.net_coord(axis) - 1) % _dim_sizes[axis];
+      toruslinks[axis] = NEGATIVE;
+    }
   }
   else
   {
@@ -481,15 +490,29 @@ CCMI::Schedule::TorusRect::setupGhost(PAMI::Topology *topo)
     {
       low  = _self_coord;
       high = _self_coord;
-      low.net_coord(axis) = MIN(dst.net_coord(axis),
-                                _self_coord.net_coord(axis));
-      high.net_coord(axis) = MAX(dst.net_coord(axis),
-                                 _self_coord.net_coord(axis));
+
+      if (toruslinks[axis] == MESH) {
+	low.net_coord(axis) = MIN(dst.net_coord(axis),
+				  _self_coord.net_coord(axis));
+	high.net_coord(axis) = MAX(dst.net_coord(axis),
+				   _self_coord.net_coord(axis));
+      }
+      //Data must go from self to dst
+      else if (toruslinks[axis] == POSITIVE) {
+	//In the case of torus we may have a wrapped  (low is self)
+	high.net_coord(axis) = dst.net_coord(axis);
+      }
+      else if (toruslinks[axis] == NEGATIVE) {
+	//In the case of torus we may have a wrapped  (high is self)
+	low.net_coord(axis) = dst.net_coord(axis);
+      }
+
       TRACE_FORMAT("<%u:%p>axis %zu, _self %zu, dst %zu, dst %zu ",_color,this,axis,_self_coord.net_coord(axis),dst.net_coord(axis),dst.net_coord(axis));
+
       /// \todo why build an axial topoology for one ghost?   You can't
       /// multicast/deposit to it?  Why not leave it as a single rank topology.
       new (topo) PAMI::Topology(&low, &high, &_self_coord,
-                                &_torus_link[0]);
+                                toruslinks);
     }
   }
   TRACE_FN_EXIT();
@@ -508,7 +531,7 @@ inline void
 CCMI::Schedule::TorusRect::setupLocal(PAMI::Topology *topo)
 {
   TRACE_FN_ENTER();
-  unsigned char torus_link[PAMI_MAX_DIMS] = {0};
+  uint8_t torus_link[PAMI_MAX_DIMS] = {0};
   //size_t peers;
   //_map->nodePeers(peers);
 

@@ -184,7 +184,7 @@ namespace PAMI
 	    int pidx = 2*i+1;
 	    int dstidx = (MAX_DIMS - i - 1) * 6;
 
-	    //if (isTorus[i] == MESH) //Mesh
+	    if (isTorus[i] == MESH) //Mesh
 	      {
 		//positive direction
 		if (ur->u.n_torus.coords[i] != ref->u.n_torus.coords[i]) {
@@ -203,8 +203,6 @@ namespace PAMI
 		  _ndestinations ++;
 		}
 	      }                   
-	    //else PAMI_abort();
-#if 0                                          
 	    else if (isTorus[i] == TORUS_POSITIVE)
 	      {
 		if (ref->u.n_torus.coords[i] == ll->u.n_torus.coords[i])
@@ -226,7 +224,6 @@ namespace PAMI
 		    (me->Destination.Destination & ~(0x3f << dstidx))|((ref->u.n_torus.coords[i]+1) << dstidx);
 		_fifos[_ndestinations] = nidx;
 	      }
-#endif
 	  }
 	  
 #if 0
