@@ -13,18 +13,47 @@
 #ifndef __components_devices_bgq_commthread_CommThreadFactory_h__
 #define __components_devices_bgq_commthread_CommThreadFactory_h__
 
+#include "common/bgq/ResourceManager.h"
+extern PAMI::ResourceManager __pamiRM;
+
 namespace PAMI {
 namespace Device {
 namespace CommThread {
 
 class BgqCommThread;
 class Factory {
+	static const int MAX_NCTXS = 64;
 public:
         Factory(PAMI::Memory::MemoryManager *genmm, PAMI::Memory::MemoryManager *l2xmm);
         ~Factory();
 #ifdef COMMTHREAD_LAYOUT_TESTING
 	void * operator new(size_t x, void *v) { return v; }
 #endif // COMMTHREAD_LAYOUT_TESTING
+
+	inline size_t getPerProcessMaxPamiResources(size_t RmClientId) {
+		size_t x, y = 0;
+		size_t n = MAX_NCTXS;
+		// this could be done only once, in ctor...
+		// or better yet, there should be common routine since everyone needs it.
+		size_t t = __pamiRM.getNumClients();
+		for (x = 0; x < t; ++x) {
+			size_t z;
+			if (x + 1 == t) {
+				z = n;
+			} else {
+				z = MAX_NCTXS;
+				z *= __pamiRM.getClientWeight(x);
+				z /= 100;
+			}
+			n -= z;
+			if (x == RmClientId) y = z;
+		}
+		return y;
+	}
+
+	inline size_t getPerProcessMaxPamiResources() {
+		return MAX_NCTXS; // this is because of uint64_t for context sets bitmaps.
+	}
 
 	/// \brief Return reference to the entire commthreads array
 	///
