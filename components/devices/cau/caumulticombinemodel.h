@@ -20,9 +20,9 @@
 
 #ifdef TRACE
 #undef TRACE
-#define TRACE(x) // fprintf x
+#define TRACE(x)  // fprintf x
 #else
-#define TRACE(x) // fprintf x
+#define TRACE(x)  // fprintf x
 #endif
 
 namespace PAMI
@@ -46,12 +46,11 @@ namespace PAMI
       static void cau_red_send_done(lapi_handle_t *hndl, void * completion_param)
         {
           // Todo:  Support send pipelining with generic device if no room in pwq
-          TRACE((stderr, "CAUMulticombineModel: NonRoot:  entering: cau_red_send_done\n"));
+          TRACE((stderr, "CAUMultiombineModel: NonRoot:  entering: cau_red_send_done\n"));
           CAUMcombineMessage    *m          = (CAUMcombineMessage*)completion_param;
           size_t                 sentBytes  = m->_currentBytes;
           m->_bytesReduced                 += sentBytes;
           m->_sndpwq->consumeBytes(sentBytes);
-
           TRACE((stderr, "CAUMulticombineModel: NonRoot:  cau_red_send_done bytesReduced=%lu, bytesToReduce=%lu\n",
                  m->_bytesReduced, m->_bytesToReduce));
           if(m->_bytesReduced == m->_bytesToReduce)
@@ -59,22 +58,6 @@ namespace PAMI
               TRACE((stderr, "CAUMulticombineModel: NonRoot:  data reduce done, waiting for multicast\n"));
               return;
             }
-          CAUGeometryInfo *gi      = (CAUGeometryInfo *)m->_devinfo;
-          T_Device        *device  = (T_Device *)m->_device;
-          char            *buf     = m->_sndpwq->bufferToConsume();
-          unsigned         minsize = MIN(m->_sndpwq->bytesAvailableToConsume(), 64);
-          TRACE((stderr, "CAUMulticombineModel: NonRoot: More data to reduce: buf=%p toReduce=%lu\n",
-                 buf, minsize));
-          CheckLapiRC(lapi_cau_reduce(device->getHdl(),             // lapi handle
-                                      gi->_cau_id,                  // group id
-                                      m->_xfer_header.dispatch_id,  // dispatch id
-                                      &m->_xfer_header,             // header
-                                      sizeof(m->_xfer_header),      // header_len
-                                      buf,                          // data
-                                      minsize,                      // data size
-                                      m->_red,                      // reduction op
-                                      cau_red_send_done,            // send completion handler
-                                      m));                          // cookie
         }
 
       static void cau_mcast_send_done(lapi_handle_t *hndl, void * completion_param)
@@ -87,6 +70,10 @@ namespace PAMI
           if(m->_bytesBroadcasted == m->_bytesToBroadcast)
             {
               TRACE((stderr, "CAUMulticombineModel: delivering user callback\n"));
+              T_Device                          *device = (T_Device *)m->_device;
+              PAMI_GEOMETRY_CLASS               *g      = (PAMI_GEOMETRY_CLASS*)device->geometrymap(m->_xfer_header.geometry_id);
+              CAUGeometryInfo                   *gi     = (CAUGeometryInfo*)g->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
+              gi->_postedRed.deleteElem(m);              
               m->_user_done_fn(m->_context, m->_user_cookie, PAMI_SUCCESS);
               return;
             }
@@ -107,7 +94,7 @@ namespace PAMI
           CAUMulticombineModel              *mc    = (CAUMulticombineModel*) CAUDevice::getClientData(did);
           PAMI_GEOMETRY_CLASS               *g     = (PAMI_GEOMETRY_CLASS*)mc->_device.geometrymap(gid);
           CAUGeometryInfo                   *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
-          CAUMcombineMessage                *m     = (CAUMcombineMessage *)gi->_postedBcast.findAndDelete(seqno);
+          CAUMcombineMessage                *m     = (CAUMcombineMessage *)gi->_postedBcast.find(seqno);
           void                              *r     = NULL;
           lapi_return_info_t                *ri    = (lapi_return_info_t *) retinfo;
           TRACE((stderr, "CAUMulticombineModel: cau_mcast_handler: seqno=%lu m=%p\n",
@@ -117,10 +104,12 @@ namespace PAMI
             {
               size_t bytesLeft       = m->_bytesToBroadcast - m->_bytesBroadcasted;
               size_t bytesAvail      = m->_rcvpwq->bytesAvailableToProduce();
-              size_t bytesToCopy     = MIN(bytesLeft, bytesAvail);
+              size_t bytesToCopyOK   = MIN(bytesLeft, bytesAvail);
+              size_t bytesToCopy     = hdr->pktsize;
               void * buf             = m->_rcvpwq->bufferToProduce();
-              TRACE((stderr, "CAUMulticombineModel: cau_mcast_handler: copying data buf=%p bytesToB=%lu, bytesB=%lu bytesToC=%lu\n",
-                     buf, m->_bytesToBroadcast, m->_bytesBroadcasted,bytesToCopy));
+              TRACE((stderr, "CAUMulticombineModel: cau_mcast_handler: copying data buf=%p bytesToB=%lu, bytesB=%lu bytesToC=%lu bytesToCOK=%lu\n",
+                     buf, m->_bytesToBroadcast, m->_bytesBroadcasted,bytesToCopy, bytesToCopyOK));
+              PAMI_assert(bytesToCopyOK >= bytesToCopy);
               if(bytesToCopy>0)
                 {
                   memcpy(buf,ri->udata_one_pkt_ptr,bytesToCopy);
@@ -130,17 +119,32 @@ namespace PAMI
               if(m->_bytesBroadcasted == m->_bytesToBroadcast)
                 {
                   TRACE((stderr, "CAUMulticombineModel: delivering user callback\n"));
+                  gi->_postedBcast.deleteElem(m);
                   m->_user_done_fn(m->_context, m->_user_cookie, PAMI_SUCCESS);
-                }
-              else
-                {
-                  // Put the message back on the queue, since we aren't done
-                  gi->_postedBcast.pushTail((MatchQueueElem*)m);
                 }
               r             = NULL;
               *comp_h       = NULL;
               ri->ret_flags = LAPI_SEND_REPLY;
               ri->ctl_flags = LAPI_BURY_MSG;
+
+              if(m->_bytesReduced < m->_bytesToReduce)
+                {
+                  T_Device        *device  = (T_Device *)m->_device;
+                  char            *redbuf  = m->_sndpwq->bufferToConsume();
+                  unsigned         minsize = MIN(m->_sndpwq->bytesAvailableToConsume(), 64);
+                  TRACE((stderr, "CAUMulticombineModel: NonRoot(cau_mcast_handler): More data to reduce: redbuf=%p toReduce=%lu\n",
+                         redbuf, minsize));
+                  CheckLapiRC(lapi_cau_reduce(device->getHdl(),             // lapi handle
+                                              gi->_cau_id,                  // group id
+                                              m->_xfer_header.dispatch_id,  // dispatch id
+                                              &m->_xfer_header,             // header
+                                              sizeof(m->_xfer_header),      // header_len
+                                              redbuf,                       // data
+                                              minsize,                      // data size
+                                              m->_red,                      // reduction op
+                                              cau_red_send_done,            // send completion handler
+                                              m));                          // cookie
+                }
               return NULL;
             }
           else
@@ -172,7 +176,7 @@ namespace PAMI
           CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
 
           // Next, search the posted queue for a message with the incoming seq number
-          CAUMcombineMessage              *m     = (CAUMcombineMessage *)gi->_postedRed.findAndDelete(seqno);
+          CAUMcombineMessage              *m     = (CAUMcombineMessage *)gi->_postedRed.find(seqno);
           void                            *r     = NULL;
           lapi_return_info_t              *ri    = (lapi_return_info_t *) retinfo;
 
@@ -333,6 +337,7 @@ namespace PAMI
                 m->_xfer_header.pktsize            =  64;
                 m->_xfer_header.msgsize            =  mcombine->count;
                 m->_math_func                      =  mathfunc;
+                m->_device                         = &_device; 
                 TRACE((stderr, "CAUMulticombineModel: Created New Message=%p (%lu)to post to expected queue\n",
                        m, m->_xfer_header.seqno));
               }
@@ -343,7 +348,8 @@ namespace PAMI
             // This node is not the root, start the reduction
             if(tl_root[0] != _device.taskid())
               {
-                TRACE((stderr, "CAUMulticombineModel: Nonroot Calling Reduce and posting to posted queue\n"));
+                TRACE((stderr, "CAUMulticombineModel: Nonroot Calling Reduce and posting to posted broadcast queue seqno=%lu\n",
+                       m->_xfer_header.seqno));
                 gi->_postedBcast.pushTail((MatchQueueElem*)m);
                 CheckLapiRC(lapi_cau_reduce(_device.getHdl(),         // lapi handle
                                             gi->_cau_id,              // group id
