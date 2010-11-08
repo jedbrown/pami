@@ -2524,6 +2524,33 @@ extern "C"
                                  pami_configuration_t  configuration[],
                                  size_t                num_configs);
 
+  /**
+   * \brief Transform typed data between buffers in the same address space
+   *
+   * \param [in] src_addr       Source buffer address
+   * \param [in] src_type       Source data type
+   * \param [in] src_offset     Starting offset of source data type
+   * \param [in] dst_addr       Destination buffer address
+   * \param [in] dst_type       Destination data type
+   * \param [in] dst_offset     Starting offset of destination data type
+   * \param [in] bytes          Amount of data to transform
+   * \param [in] data_fn        Function to transform the data
+   * \param [in] cookie         Argument to data function
+   *
+   * \retval PAMI_SUCCESS  The operation has completed successfully.
+   * \retval PAMI_INVAL    The operation has failed due to invalid parameters,
+   *                       e.g. incomplete types.
+   */
+  pami_result_t PAMI_Type_transform_data (void               * src_addr,
+                                          pami_type_t          src_type,
+                                          size_t               src_offset,
+                                          void               * dst_addr,
+                                          pami_type_t          dst_type,
+                                          size_t               dst_offset,
+                                          size_t               size,
+                                          pami_data_function   data_fn,
+                                          void               * cookie);
+
   /** \} */ /* end of "datatype" group */
 
   typedef union

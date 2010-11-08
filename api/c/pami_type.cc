@@ -13,6 +13,8 @@ using namespace PAMI::Type;
 pami_type_t        PAMI_BYTE = new TypeContig;
 pami_data_function PAMI_DATA_COPY = NULL;
 
+extern "C" {
+
 pami_result_t PAMI_Type_create (pami_type_t * type)
 {
     TypeCode * type_obj;
@@ -168,47 +170,57 @@ pami_result_t PAMI_Type_query (pami_type_t           type,
     return PAMI_SUCCESS;
 }
 
-extern "C" {
-// TODO: Remove pack and unpack which are no longer in pami.h
-
-pami_result_t PAMI_Type_pack_data (pami_type_t         src_type,
-                                   size_t              src_offset,
-                                   void              * src_addr,
-                                   void              * dst_addr,
-                                   size_t              dst_size,
-                                   pami_data_function  data_fn,
-                                   void              * cookie)
+pami_result_t PAMI_Type_transform_data (void               * src_addr,
+                                        pami_type_t          src_type,
+                                        size_t               src_offset,
+                                        void               * dst_addr,
+                                        pami_type_t          dst_type,
+                                        size_t               dst_offset,
+                                        size_t               size,
+                                        pami_data_function   data_fn,
+                                        void               * cookie)
 {
-    TypeCode * type_obj = (TypeCode *)src_type;
-    if (!type_obj->IsCompleted()) {
+    TypeCode * src_type_obj = (TypeCode *)src_type;
+    TypeCode * dst_type_obj = (TypeCode *)dst_type;
+    if (!src_type_obj->IsCompleted() || !dst_type_obj->IsCompleted()) {
         RETURN_ERR_PAMI(PAMI_INVAL, "Using incomplete type.\n");
     }
 
-    TypeMachine packer(type_obj);
-    packer.SetCopyFunc(data_fn, cookie);
-    packer.MoveCursor(src_offset);
-    packer.Pack(dst_addr, src_addr, dst_size);
-    return PAMI_SUCCESS;
-}
+    if (dst_type_obj->IsContiguous()) {
+        // packing: non-contiguous to contiguous
+        TypeMachine packer(src_type_obj);
+        packer.SetCopyFunc(data_fn, cookie);
+        packer.MoveCursor(src_offset);
+        packer.Pack((char *)dst_addr + dst_offset, src_addr, size);
 
-pami_result_t PAMI_Type_unpack_data (pami_type_t         dst_type,
-                                     size_t              dst_offset,
-                                     void              * dst_addr,
-                                     void              * src_addr,
-                                     size_t              src_size,
-                                     pami_data_function  data_fn,
-                                     void              * cookie)
-{
-    TypeCode * type_obj = (TypeCode *)dst_type;
-    if (!type_obj->IsCompleted()) {
-        RETURN_ERR_PAMI(PAMI_INVAL, "Using incomplete type.\n");
+    } else if (src_type_obj->IsContiguous()) {
+        // unpacking: contiguous to non-contiguous
+        TypeMachine unpacker(dst_type_obj);
+        unpacker.SetCopyFunc(data_fn, cookie);
+        unpacker.MoveCursor(dst_offset);
+        unpacker.Unpack(dst_addr, (char *)src_addr + src_offset, size);
+
+    } else {
+        // generic: non-contiguous to non-contiguous
+        TypeMachine packer(src_type_obj);
+        packer.MoveCursor(src_offset);
+
+        TypeMachine unpacker(dst_type_obj);
+        unpacker.SetCopyFunc(data_fn, cookie);
+        unpacker.MoveCursor(dst_offset);
+
+        // use a temporary buffer to copy in and out data
+        const size_t TMP_BUF_SIZE = 8192;
+        char tmp_buf[TMP_BUF_SIZE];
+
+        for (size_t offset = 0; offset < size; offset += TMP_BUF_SIZE) {
+            size_t bytes_to_copy = std::min(size - offset, TMP_BUF_SIZE);
+            packer.Pack(tmp_buf, src_addr, bytes_to_copy);
+            unpacker.Unpack(dst_addr, tmp_buf, bytes_to_copy);
+        }
     }
 
-    TypeMachine unpacker(type_obj);
-    unpacker.SetCopyFunc(data_fn, cookie);
-    unpacker.MoveCursor(dst_offset);
-    unpacker.Unpack(dst_addr, src_addr, src_size);
     return PAMI_SUCCESS;
 }
 
-}
+} // extern "C"
