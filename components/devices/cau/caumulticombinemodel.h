@@ -226,6 +226,7 @@ namespace PAMI
                   m->_math_func(buf, inputs, 2, bytesToCopy/m->_sizeoftype);
                   m->_bytesReduced += bytesToCopy;
                   m->_rcvpwq->produceBytes(bytesToCopy);
+                  m->_sndpwq->consumeBytes(bytesToCopy);
                 }
 
               m->_xfer_header_b.dispatch_id = mc->_dispatch_mcast_id;
@@ -348,8 +349,8 @@ namespace PAMI
             // This node is not the root, start the reduction
             if(tl_root[0] != _device.taskid())
               {
-                TRACE((stderr, "CAUMulticombineModel: Nonroot Calling Reduce and posting to posted broadcast queue seqno=%lu\n",
-                       m->_xfer_header.seqno));
+                TRACE((stderr, "CAUMulticombineModel: Nonroot Calling Reduce and posting to posted broadcast queue seqno=%lu buf=%p\n",
+                       m->_xfer_header.seqno, buf));
                 gi->_postedBcast.pushTail((MatchQueueElem*)m);
                 CheckLapiRC(lapi_cau_reduce(_device.getHdl(),         // lapi handle
                                             gi->_cau_id,              // group id
