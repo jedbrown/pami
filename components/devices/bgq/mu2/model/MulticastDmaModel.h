@@ -20,7 +20,7 @@
 #include "components/devices/bgq/mu2/msg/InjectDPutMulticast.h"
 
 
-#define MAX_COUNTERS 10
+#define MAX_COUNTERS 12
 
 #ifndef L1_DCACHE_LINE_SIZE
 #define L1_DCACHE_LINE_SIZE   64
@@ -326,7 +326,7 @@ namespace PAMI
 	      for (i=0; i < model->_nActiveRecvs; i++)  {
 		if (model->_recvs[i] != NULL) {
 		  uint8_t cid = model->_recvIdVec[i];
-		  volatile uint64_t cc = model->_counterVec[cid];
+		  uint64_t cc = model->_counterVec[cid];
 		  if (cc != model->_counterShadowVec[i]) {
 		    mem_sync();
 

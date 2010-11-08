@@ -223,6 +223,7 @@ namespace PAMI
 		  _destinations[_ndestinations].Destination.Destination =
 		    (me->Destination.Destination & ~(0x3f << dstidx))|((ref->u.n_torus.coords[i]+1) << dstidx);
 		_fifos[_ndestinations] = nidx;
+		_ndestinations ++;
 	      }
 	  }
 	  

@@ -178,7 +178,7 @@ namespace CCMI
       }
 
 
-          static void getColors(PAMI::Topology *rect, unsigned &ideal,
+      static void getColors(PAMI::Topology *rect, unsigned &ideal,
                             unsigned &max, unsigned *colors = NULL)
       {
         TRACE_FN_ENTER();
@@ -204,16 +204,16 @@ namespace CCMI
 
         max = ideal;
 
-#if 0 //disable -ve colors
+#if 1 //enable -ve colors
         for (i = 0; i < torus_dims; i++)
           if (sizes[i] > 1 && torus_link[i])
           {  
             TRACE_FORMAT("color[%u]=%zu",  max, i + torus_dims);
             colors[max++] = i + torus_dims;
           }
-
-        if (max == 2 * ideal)
-          ideal = max;
+          
+          if (max == 2 * ideal)
+            ideal = max;
 #endif
         if (ideal == 0)
         {
@@ -442,7 +442,6 @@ CCMI::Schedule::TorusRect::setupGhost(PAMI::Topology *topo)
 
   //size_t torus_dims = _map->torusDims();
   size_t axis = _color % _ndims;
-
   CCMI_assert(_dim_sizes[axis] > 1);
 
   ref = _self_coord;
@@ -451,11 +450,11 @@ CCMI::Schedule::TorusRect::setupGhost(PAMI::Topology *topo)
   {
     if (_color < _ndims) { //+ve colors
       ref.net_coord(axis) = (_root_coord.net_coord(axis) + 1) % _dim_sizes[axis];
-      toruslinks[axis] = POSITIVE;
+      toruslinks[axis] = NEGATIVE;
     }
     else {
-      ref.net_coord(axis) = (_root_coord.net_coord(axis) - 1) % _dim_sizes[axis];
-      toruslinks[axis] = NEGATIVE;
+      ref.net_coord(axis) = (_root_coord.net_coord(axis) + _dim_sizes[axis] - 1) % _dim_sizes[axis];
+      toruslinks[axis] = POSITIVE;
     }
   }
   else
@@ -490,7 +489,6 @@ CCMI::Schedule::TorusRect::setupGhost(PAMI::Topology *topo)
     {
       low  = _self_coord;
       high = _self_coord;
-
       if (toruslinks[axis] == MESH) {
 	low.net_coord(axis) = MIN(dst.net_coord(axis),
 				  _self_coord.net_coord(axis));
@@ -579,7 +577,7 @@ CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology)
   // Init to empty topology
   new (topology) PAMI::Topology();
 
-  low = _self_coord;
+  low  = _self_coord;
   high = _self_coord;
   pami_result_t result = PAMI_SUCCESS;
 
@@ -636,10 +634,15 @@ CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology)
       for (int j = 0; j < (int) ndims; j++)
       {
         torus_link[j] |= tmp_torus_link[j];
-        low.net_coord(j) = MIN(low.net_coord(j), tmp_low.net_coord(j));
-        high.net_coord(j) = MAX(high.net_coord(j), tmp_high.net_coord(j));
-      }
 
+	///On a torus network when the wrap links are used lo and hi are relative (SK)       
+	if (tmp_low.net_coord(j)  != _self_coord.net_coord(j))
+	  low.net_coord(j)  =  tmp_low.net_coord(j); //MIN(low.net_coord(j), tmp_low.net_coord(j));
+	
+	if (tmp_high.net_coord(j) != _self_coord.net_coord(j))
+	  high.net_coord(j) = tmp_high.net_coord(j);   //MAX(high.net_coord(j), tmp_high.net_coord(j));
+      }
+      
       // make an axial topology
       new (topology) PAMI::Topology(&low, &high, &_self_coord, torus_link);
     }
