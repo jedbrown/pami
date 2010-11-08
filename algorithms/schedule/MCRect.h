@@ -87,6 +87,10 @@ namespace CCMI
         if (rect->type() != PAMI_COORD_TOPOLOGY) tmp.convertTopology(PAMI_COORD_TOPOLOGY);
         PAMI_assert(tmp.type() == PAMI_COORD_TOPOLOGY);
         tmp.rectSeg(&_ll, &_ur, &_torus_link[0]);
+
+	//Disable torus optimizations
+	memset (_torus_link, 0, sizeof(_torus_link));
+
         DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>MCRect:: Rank %zu, ll coord[%u]=%zu",_color,this, _map->task(), j, _ll.u.n_torus.coords[j]));
         DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>MCRect:: Rank %zu, ur coord[%u]=%zu",_color,this, _map->task(), j, _ur.u.n_torus.coords[j]));
         _nReduceDims = 0;
