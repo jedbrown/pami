@@ -37,6 +37,10 @@
 #include "components/devices/cau/caumulticombinemodel.h"
 #include "components/devices/cau/caumulticombinemodel.h"
 
+// BSR Components
+#include "components/devices/bsr/bsrdevice.h"
+#include "components/devices/bsr/bsrmultisyncmodel.h"
+
 // P2P Protocols
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/SendPWQ.h"
@@ -184,6 +188,7 @@ namespace PAMI
 
   // Device Typedefs
   typedef Device::CAUDevice                                           CAUDevice;
+  typedef Device::BSRDevice                                           BSRDevice;
 
   // P2P Message Typedefs
   typedef PAMI::SendWrapper                                           LAPISendBase;
@@ -433,6 +438,7 @@ namespace PAMI
                            _context,
                            _contextid,
                           &_dispatch_id);
+          _bsr_device.init(_client, _context, _contextid, _Lapi_env.MP_child);
 
           *out_mysize        = _Lapi_env.MP_procs;
           *out_myrank        = _Lapi_env.MP_child;
@@ -471,14 +477,14 @@ namespace PAMI
           // for cau classroute initialization
           invec[2]  = 0xFFFFFFFFFFFFFFFFULL;
           for (int i = 0; i < local_master_topo->size(); ++i)  invec[3+i] = 0ULL;
-          
 	  rc = __global.heap_mm->memalign((void **)&_p2p_ccmi_collreg, 0,
 						sizeof(*_p2p_ccmi_collreg));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
           size_t numpeers=0, numtasks;
           __global.mapping.nodePeers(numpeers);
           numtasks = __global.mapping.size();
-          
+
+          _bsr_device.setGenericDevices(_devices->_generics);
           _cau_device.setGenericDevices(_devices->_generics);
 	  rc = __global.heap_mm->memalign((void **)&_cau_collreg, 0,
 						sizeof(*_cau_collreg));
@@ -1033,6 +1039,7 @@ namespace PAMI
       /*  The over lapi devices                                 */
       DeviceWrapper                          _lapi_device;
       CAUDevice                              _cau_device;
+      BSRDevice                              _bsr_device;
   public:
       /*  Collective Registrations                              */
       PGASCollreg                           *_pgas_collreg;
