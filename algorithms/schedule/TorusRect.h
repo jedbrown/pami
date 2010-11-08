@@ -301,10 +301,10 @@ CCMI::Schedule::TorusRect::init(int root,
   }
 
   start = _start_phase;
-  nphases = _ndims + 2 - start; // 2: 1 for local comm if any, 1 for ghost
-  //_map->nodePeers(peers);
+
+  // 2: 1 for local comm if any, 1 for ghost
+  _nphases = nphases = _ndims + 2 - start;
   peers = _dim_sizes[_ndims];
-  _nphases = nphases;
   if (peers == 1)
     _nphases = --nphases;
   TRACE_FORMAT("<%u:%p>_peers %zu, _start_phase %u, nphases %d",_color,this,peers, _start_phase, _nphases);
@@ -347,7 +347,6 @@ CCMI::Schedule::TorusRect::getDstTopology(unsigned phase,
   torus_dims = _map->torusDims();
   core_dim = torus_dims;
   peers = _dim_sizes[torus_dims];
-  //_map->nodePeers(peers);
 
   if (_self_coord.net_coord(core_dim) == _root_coord.net_coord(core_dim))
   {

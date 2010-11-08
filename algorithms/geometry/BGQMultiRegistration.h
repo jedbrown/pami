@@ -444,7 +444,7 @@ namespace PAMI
 
       unsigned max = 0, ideal = 0;
       unsigned _colors[10];
-      CCMI::Schedule::MCRect::getColors (t, ideal, max, _colors);
+      CCMI::Schedule::TorusRect::getColors (t, ideal, max, _colors);
       TRACE_INIT((stderr, "get_rect_colors() bytes %u, ncolors %u, ideal %u, max %u\n", bytes, ncolors, ideal, max));
       
       if (bytes < 2048) //4 packets
