@@ -359,6 +359,7 @@ CCMI::Schedule::TorusRect::getDstTopology(unsigned phase,
       else if (phase == _ndims)
         setupGhost(topo);
     }
+    else new (topo) PAMI::Topology();
 
     ///Process local broadcasts
     if ((phase == ( _ndims + 1)) && (peers > 1))
@@ -366,10 +367,8 @@ CCMI::Schedule::TorusRect::getDstTopology(unsigned phase,
 
     if ((topo->size() == 1) && (topo->index2Rank(0) == _map->task()))
       new (topo) PAMI::Topology();
-
   }
-  else
-    new (topo) PAMI::Topology();
+  else new (topo) PAMI::Topology();
 
 #if DO_DEBUG(1)+0
   TRACE_FORMAT("<%u:%p>topology size %zu",_color,this,topo->size());
