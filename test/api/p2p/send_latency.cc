@@ -41,8 +41,8 @@ extern "C" unsigned __isMambo();
 #endif
 
 
-volatile unsigned _send_active;
-volatile unsigned _recv_active;
+volatile unsigned _send_active = 1;
+volatile unsigned _recv_active = 1;
 volatile unsigned _recv_iteration;
 char              _recv_buffer[BUFSIZE] __attribute__ ((__aligned__(16)));
 
@@ -105,6 +105,8 @@ void send_once (pami_context_t context, pami_send_t * parameters)
     PAMI_Send (context, parameters);
   TRACE_ERR((stderr, "(%zu) send_once() Before advance\n", _my_task));
   while (_send_active) PAMI_Context_advance (context, 100);
+
+  _send_active = 1;
   TRACE_ERR((stderr, "(%zu) send_once()  After advance\n", _my_task));
 }
 
@@ -120,9 +122,7 @@ void recv_once (pami_context_t context)
 unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, pami_task_t mytask, pami_task_t origintask, pami_endpoint_t origin, pami_task_t targettask, pami_endpoint_t target)
 {
   TRACE_ERR((stderr, "(%u) Do test ... sndlen = %zu\n", mytask, sndlen));
-  _recv_active = 1;
   _recv_iteration = 0;
-  _send_active = 1;
 
   char metadata[BUFSIZE];
   char buffer[BUFSIZE];
@@ -155,9 +155,6 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
       TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", mytask, i, sndlen));
       send_once (context, &parameters);
       recv_once (context);
-
-      _recv_active = 1;
-      _send_active = 1;
     }
   }
   else if (mytask == targettask)
@@ -168,9 +165,6 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
       TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", mytask, i, sndlen));
       recv_once (context);
       send_once (context, &parameters);
-
-      _recv_active = 1;
-      _send_active = 1;
     }
   }
   unsigned long long t2 = PAMI_Wtimebase();
