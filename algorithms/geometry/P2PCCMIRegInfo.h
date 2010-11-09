@@ -23,6 +23,7 @@
 #include "algorithms/schedule/RingSchedule.h"
 #include "algorithms/schedule/GenericTreeT.h"
 #include "algorithms/connmgr/ColorGeometryConnMgr.h"
+#include "algorithms/connmgr/ColorConnMgr.h"
 #include "algorithms/connmgr/CommSeqConnMgr.h"
 #include "algorithms/protocols/CollectiveProtocolFactoryT.h"
 #include "algorithms/protocols/broadcast/BcastMultiColorCompositeT.h"
@@ -122,14 +123,14 @@ namespace CCMI
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
       < 5,
         CCMI::Schedule::TorusRect,
-        CCMI::ConnectionManager::ColorGeometryConnMgr,
+        CCMI::ConnectionManager::ColorConnMgr,
         get_rect_colors>
       RectangleBroadcastComposite;
 
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < RectangleBroadcastComposite,
         rectangle_broadcast_metadata,
-        CCMI::ConnectionManager::ColorGeometryConnMgr>
+        CCMI::ConnectionManager::ColorConnMgr>
       RectangleBroadcastFactory;
 
       void rectangle_1color_broadcast_metadata(pami_metadata_t *m)
@@ -142,14 +143,14 @@ namespace CCMI
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
       < 1,
         CCMI::Schedule::TorusRect,
-        CCMI::ConnectionManager::ColorGeometryConnMgr,
+        CCMI::ConnectionManager::ColorConnMgr,
         get_colors>
       RectangleBroadcastComposite1Color;
 
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < RectangleBroadcastComposite1Color,
         rectangle_1color_broadcast_metadata,
-        CCMI::ConnectionManager::ColorGeometryConnMgr>
+        CCMI::ConnectionManager::ColorConnMgr>
       Rectangle1ColorBroadcastFactory;
 
       void binomial_broadcast_metadata(pami_metadata_t *m)

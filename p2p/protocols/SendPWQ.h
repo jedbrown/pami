@@ -158,14 +158,14 @@ namespace PAMI
           if(trace_once) TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
           size_t length = pwq? pwq->bytesAvailableToConsume() : 0;
           void* payload = pwq?(void*)pwq->bufferToConsume(): NULL;
-          if(trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p",this, length,(size_t)parameters->data.iov_len, payload);
+          if(trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p  data[%.2u..%.2u]",this, length,(size_t)parameters->data.iov_len, payload, *(char*)payload,*(char*)((char*)payload+length-1));
 
           // send it now if there is enough data in the pwq
           if (length >= parameters->data.iov_len)
           {
             if(!trace_once) TRACE_FN_ENTER();
             if(!trace_once) TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
-            if(!trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p",this, length,(size_t)parameters->data.iov_len, payload);
+            if(!trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p data[%.2u..%.2u]",this, length,(size_t)parameters->data.iov_len, payload, payload?*(char*)payload:-1,payload?*(char*)((char*)payload+length-1):-1);
             parameters->data.iov_base = payload;
             parameters->data.iov_len = length;
             size_t size = state->dst_participants.size();
@@ -233,14 +233,14 @@ namespace PAMI
           if(trace_once) TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
           size_t length = pwq? pwq->bytesAvailableToConsume() : 0;
           void* payload = pwq?(void*)pwq->bufferToConsume(): NULL;
-          if(trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p",this, length,(size_t)parameters->send.data.iov_len, payload);
+          if(trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p  data[%.2u..%.2u]",this, length,(size_t)parameters->send.data.iov_len, payload, payload?*(char*)payload:-1,payload?*(char*)((char*)payload+length-1):-1);
 
           // send it now if there is enough data in the pwq
           if (length >= parameters->send.data.iov_len)
           {
             if(!trace_once) TRACE_FN_ENTER();
             if(!trace_once) TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
-            if(!trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p",this, length,(size_t)parameters->send.data.iov_len, payload);
+            if(!trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p  data[%.2u..%.2u]",this, length,(size_t)parameters->send.data.iov_len, payload, *(char*)payload,*(char*)((char*)payload+length-1));
             parameters->send.data.iov_base = payload;
             parameters->send.data.iov_len = length;
             size_t size = state->dst_participants.size();

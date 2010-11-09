@@ -94,7 +94,8 @@ namespace PAMI
             _global_dev(gdev),
             _allocator(allocator),
             _binomial_barrier_composite(),
-            _connmgr(65535),
+            _cg_connmgr(65535),
+            _color_connmgr(),
             _rbconnmgr(),
             _csconnmgr(),
             _binomial_barrier_factory(),
@@ -219,11 +220,11 @@ namespace PAMI
               if(rectangle.type() != PAMI_COORD_TOPOLOGY) rectangle.convertTopology(PAMI_COORD_TOPOLOGY);
               if(rectangle.type() == PAMI_COORD_TOPOLOGY)
               {
-#if 0           // currently fails data checks in bcast.c   
+		//#if 0           // currently fails data checks in bcast.c   
                 geometry->addCollective(PAMI_XFER_BROADCAST,
                                         _rectangle_broadcast_factory,
                                         _context_id);
-#endif
+		//#endif
                 geometry->addCollective(PAMI_XFER_BROADCAST,
                                       _rectangle_1color_broadcast_factory,
                                       _context_id);
@@ -366,24 +367,24 @@ namespace PAMI
             // ----------------------------------------------------
             // Setup and Construct a rectangle broadcast factory from allsided ni and p2p protocol
             setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::RectangleBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_as, device,  _rectangle_broadcast_factory);
-            new ((void*)_rectangle_broadcast_factory) CCMI::Adaptor::P2PBroadcast::RectangleBroadcastFactory(&_connmgr, ni_as);
+            new ((void*)_rectangle_broadcast_factory) CCMI::Adaptor::P2PBroadcast::RectangleBroadcastFactory(&_color_connmgr, ni_as);
             // ----------------------------------------------------
             // ----------------------------------------------------
             // Setup and Construct a rectangle broadcast factory from allsided ni and p2p protocol
             setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::Rectangle1ColorBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_as, device,  _rectangle_1color_broadcast_factory);
-            new ((void*)_rectangle_1color_broadcast_factory) CCMI::Adaptor::P2PBroadcast::Rectangle1ColorBroadcastFactory(&_connmgr, ni_as);
+            new ((void*)_rectangle_1color_broadcast_factory) CCMI::Adaptor::P2PBroadcast::Rectangle1ColorBroadcastFactory(&_color_connmgr, ni_as);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct a binomial broadcast factory from allsided ni and p2p protocol
             setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_as, device,  _binomial_broadcast_factory);
-            new ((void*)_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory(&_connmgr, ni_as);
+            new ((void*)_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory(&_cg_connmgr, ni_as);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct a ring broadcast factory from allsided ni and p2p protocol
             setupFactory<T_NI_Allsided, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_as, device,  _ring_broadcast_factory);
-            new ((void*)_ring_broadcast_factory) CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory(&_connmgr, ni_as);
+            new ((void*)_ring_broadcast_factory) CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory(&_cg_connmgr, ni_as);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
@@ -638,24 +639,24 @@ namespace PAMI
                          ni_as,
                          CCMI::Adaptor::P2PBroadcast::RectangleBroadcastFactory,
                          _rectangle_broadcast_factory,
-                         _connmgr);
+                         _color_connmgr);
             SETUPFACTORY(T_NI_Allsided,
                          ni_as,
                          CCMI::Adaptor::P2PBroadcast::Rectangle1ColorBroadcastFactory,
                          _rectangle_1color_broadcast_factory,
-                         _connmgr);
+                         _color_connmgr);
 
             SETUPFACTORY(T_NI_Allsided,
                          ni_as,
                          CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory,
                          _binomial_broadcast_factory,
-                         _connmgr);
+                         _cg_connmgr);
 
             SETUPFACTORY(T_NI_Allsided,
                          ni_as,
                          CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory,
                          _ring_broadcast_factory,
-                         _connmgr);
+                         _cg_connmgr);
 
             SETUPFACTORY(T_NI_ActiveMessage,
                          ni_am,
@@ -990,7 +991,8 @@ namespace PAMI
           CCMI::Executor::Composite                                   *_binomial_barrier_composite;
 
           // CCMI Connection Manager Class
-          CCMI::ConnectionManager::ColorGeometryConnMgr                _connmgr;
+          CCMI::ConnectionManager::ColorGeometryConnMgr                _cg_connmgr;
+          CCMI::ConnectionManager::ColorConnMgr                        _color_connmgr;
           CCMI::ConnectionManager::SimpleConnMgr                       _sconnmgr;
           CCMI::ConnectionManager::RankBasedConnMgr                    _rbconnmgr;
           CCMI::ConnectionManager::CommSeqConnMgr                      _csconnmgr;
