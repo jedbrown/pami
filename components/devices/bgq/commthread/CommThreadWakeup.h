@@ -36,6 +36,7 @@
 #include "hwi/include/bqc/wu_mmio.h"
 #define USR_WAKEUP_BASE ((unsigned long *)(PHYMAP_MINADDR_L1P + 0x1c00))
 
+#define CNK_WAKEUP_SPI_FIRST_WAC	0	// TBD: get from CNK
 #define WU_ArmWithAddress(addr,mask) {				\
 	int thr = Kernel_PhysicalHWThreadID();			\
 	int reg = thr + CNK_WAKEUP_SPI_FIRST_WAC;		\
