@@ -114,9 +114,9 @@ namespace PAMI {
     ///
     /// \param[in] isTorus - torus links flags
     ///
-    inline void set_istorus(unsigned char isTorus[PAMI_MAX_DIMS])
+    inline void set_istorus(pami_coord_t ll, pami_coord_t ur, unsigned char isTorus[PAMI_MAX_DIMS])
     {
-      mapping->torusInformation(isTorus);
+      mapping->torusInformation(ll, ur, isTorus);
     }
 
     /// \brief are the two coords located on the same node
@@ -382,7 +382,7 @@ namespace PAMI {
         __type = PAMI_COORD_TOPOLOGY;
         topo_llcoord = ll;
         topo_urcoord = ur;
-        set_istorus(topo_istorus);
+        set_istorus(topo_llcoord,topo_urcoord,topo_istorus);
         return true;
       }
       return false;
@@ -409,7 +409,7 @@ namespace PAMI {
         __type = PAMI_COORD_TOPOLOGY;
         topo_llcoord = ll;
         topo_urcoord = ur;
-        set_istorus(topo_istorus);  
+        set_istorus(topo_llcoord,topo_urcoord,topo_istorus);  
         return true;
       }
       return false;
@@ -533,7 +533,7 @@ namespace PAMI {
       if (tl) {
         memcpy(topo_istorus, tl, mapping->globalDims());
       } else {
-        set_istorus(topo_istorus);  
+        set_istorus(topo_llcoord,topo_urcoord,topo_istorus);  
       }
       __size = __sizeRange(ll, ur, mapping->globalDims());
     }
@@ -565,7 +565,7 @@ namespace PAMI {
         if (tl) {
           memcpy(topo_axial_istorus, tl, mapping->globalDims());
         } else {
-        set_istorus(topo_axial_istorus);  
+        set_istorus(topo_axial_llcoord,topo_axial_urcoord,topo_axial_istorus);  
         }
 
         for (i = 0; (size_t) i < mapping->globalDims(); i++)
@@ -1344,7 +1344,7 @@ namespace PAMI {
           __type = PAMI_COORD_TOPOLOGY;
           topo_llcoord = c0;
           topo_urcoord = c0;
-          set_istorus(topo_istorus);  
+          set_istorus(topo_llcoord,topo_urcoord,topo_istorus);  
           return true;
           break;
         case PAMI_RANGE_TOPOLOGY:
@@ -1583,7 +1583,7 @@ namespace PAMI {
                      mapping->globalDims());
           _new->__size = __sizeRange(&_new->topo_llcoord,
                                      &_new->topo_urcoord, mapping->globalDims());
-          set_istorus(topo_istorus);  
+          set_istorus(_new->topo_llcoord,_new->topo_urcoord,_new->topo_istorus);  
           return;
           break;
         case PAMI_SINGLE_TOPOLOGY:
@@ -1751,7 +1751,7 @@ namespace PAMI {
             _new->__type = PAMI_COORD_TOPOLOGY;
             _new->topo_llcoord = ll;
             _new->topo_urcoord = ur;
-            set_istorus(_new->topo_istorus);  
+            set_istorus(_new->topo_llcoord,_new->topo_urcoord,_new->topo_istorus);  
             free(rl);
           } else if (max - min + 1 == k) {
             _new->__type = PAMI_RANGE_TOPOLOGY;

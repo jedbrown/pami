@@ -235,7 +235,7 @@ namespace PAMI
       /// \brief Get torus link information
       /// \see PAMI::Interface::Mapping::Torus::torusInformation()
       ///
-      inline void torusInformation_impl(unsigned char info[])
+      inline void torusInformation_impl(pami_coord_t &ll, pami_coord_t &ur, unsigned char info[])
       {
         memset(info, 0x00, MPI_TDIMS*sizeof(unsigned char));
       }

@@ -92,7 +92,7 @@ namespace PAMI
           ///
           /// \brief Get the torus link information
           ///
-          inline void torusInformation(unsigned char info[]);
+          inline void torusInformation(pami_coord_t &ll, pami_coord_t &ur, unsigned char info[]);
 
           ///
           /// \brief Get the torus address for the local task
@@ -284,9 +284,9 @@ namespace PAMI
       }
 
       template <class T_Mapping, unsigned T_Dimensions>
-      inline void Torus<T_Mapping,T_Dimensions>::torusInformation(unsigned char info[])
+      inline void Torus<T_Mapping,T_Dimensions>::torusInformation(pami_coord_t &ll, pami_coord_t &ur, unsigned char info[])
       {
-        return static_cast<T_Mapping*>(this)->torusInformation_impl(info);
+        return static_cast<T_Mapping*>(this)->torusInformation_impl(ll,ur,info);
       }
 
 

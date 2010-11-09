@@ -563,9 +563,25 @@ namespace PAMI
     /// \brief Get torus link information
     /// \see PAMI::Interface::Mapping::Torus::torusInformation()
     ///
-    inline void torusInformation_impl(unsigned char info[])
+    inline void torusInformation_impl(pami_coord_t &ll, pami_coord_t &ur, unsigned char info[])
     {
-      memcpy(info, _torusInfo, BGQ_TDIMS*sizeof(unsigned char));
+      size_t sizes[] = {_pers.aSize(),
+                        _pers.bSize(),
+                        _pers.cSize(),
+                        _pers.dSize(),
+                        _pers.eSize()
+        };
+      for(int i = 0;i < 5; ++i)
+      {
+       if(_torusInfo[i] && 
+          (
+           ((size_t)abs(ur.u.n_torus.coords[i] - ll.u.n_torus.coords[i])+1) == sizes[i]
+           )
+          )
+         info[i] = true;
+       else 
+         info[i] = false;
+      }
     }
 
     /// \see PAMI::Interface::Mapping::Node::node2task()
