@@ -3586,8 +3586,6 @@ int32_t PAMI::Device::MU::ResourceManager::allocateBatIdsForContext( size_t    r
 {
   size_t numContextBatIds = _perContextMUResources[rmClientId].numBatIds;
 
-  PAMI_assert( numBatIds <= numContextBatIds );
-
   size_t numFreeBatIds = queryFreeBatIdsForContext( rmClientId,
 						    contextOffset );
 
