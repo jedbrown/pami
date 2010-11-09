@@ -184,9 +184,8 @@ namespace PAMI
     TRACE_FORMAT( "<%p>%s %d %d %d", this, __PRETTY_FUNCTION__,
                _mcast_status, _msync_status, _mcomb_status);
 
-    PAMI_assert(_mcast_status == PAMI_SUCCESS);
-    PAMI_assert(_msync_status == PAMI_SUCCESS);
-    PAMI_assert(_mcomb_status == PAMI_SUCCESS);
+    CCMI::Interfaces::NativeInterface::_status = (pami_result_t) (_mcast_status | _msync_status | _mcomb_status);
+
     TRACE_FN_EXIT();
   };
 

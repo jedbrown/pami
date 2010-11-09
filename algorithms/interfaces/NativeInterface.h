@@ -23,10 +23,11 @@ namespace CCMI
       protected:
         unsigned         _myrank;
         unsigned         _numranks;
+        pami_result_t    _status;
 
       public:
         NativeInterface(unsigned myrank,
-                        unsigned numranks): _myrank(myrank), _numranks(numranks) {}
+                        unsigned numranks): _myrank(myrank), _numranks(numranks), _status(PAMI_SUCCESS) {}
         ///
         /// \brief Virtual destructors make compilers happy.
         ///
@@ -34,6 +35,7 @@ namespace CCMI
 
         unsigned myrank()   { return _myrank; }
         unsigned numranks() { return _numranks; }
+        pami_result_t status() { return _status; }
 
         /// \brief this call is called when an active message native interface is initialized and
         /// is not supported on all sided native interfaces

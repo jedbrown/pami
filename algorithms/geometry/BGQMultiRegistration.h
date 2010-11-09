@@ -593,16 +593,21 @@ namespace PAMI
           _mu_ni_mcomb2d        = new (_mu_ni_mcomb2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
           _mu_ni_mcomb2dNP      = new (_mu_ni_mcomb2dNP_storage     ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
           _axial_mu_ni          = new (_axial_mu_ni_storage         ) T_AxialNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
+
           _axial_dput_mu_ni     = new (_axial_dput_mu_ni_storage    ) T_AxialDputNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
+          if (_axial_dput_mu_ni->status() != PAMI_SUCCESS) _axial_dput_mu_ni = NULL; // Not enough resources?
+
           _mu_msync_factory     = new (_mu_msync_factory_storage    ) MUMultiSyncFactory(&_sconnmgr, _mu_ni_msync);
           _sub_mu_msync_factory = new (_sub_mu_msync_factory_storage) SubMUMultiSyncFactory(&_sconnmgr, _mu_ni_sub_msync);
           _mu_mcomb_factory     = new (_mu_mcomb_factory_storage    ) MUMultiCombineFactory(&_sconnmgr, _mu_ni_mcomb);
 
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  RectangleDput1ColorBroadcastFactory\n", this));
-          _rectangle_1color_dput_broadcast_factory = new (_rectangle_1color_dput_broadcast_factory_storage) RectangleDput1ColorBroadcastFactory(&_color_connmgr, _axial_dput_mu_ni);
+          if (_axial_dput_mu_ni)
+            _rectangle_1color_dput_broadcast_factory = new (_rectangle_1color_dput_broadcast_factory_storage) RectangleDput1ColorBroadcastFactory(&_color_connmgr, _axial_dput_mu_ni);
 
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  RectangleDputBroadcastFactory\n", this));
-          _rectangle_dput_broadcast_factory = new (_rectangle_dput_broadcast_factory_storage) RectangleDputBroadcastFactory(&_color_connmgr, _axial_dput_mu_ni);
+          if (_axial_dput_mu_ni)
+            _rectangle_dput_broadcast_factory = new (_rectangle_dput_broadcast_factory_storage) RectangleDputBroadcastFactory(&_color_connmgr, _axial_dput_mu_ni);
 
 
           _mu_msync_factory->setMapIdToGeometry(mapidtogeometry);
