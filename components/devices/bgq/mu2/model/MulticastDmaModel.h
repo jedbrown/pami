@@ -97,14 +97,23 @@ namespace PAMI
 	    
 	    ///// Get the BAT IDS ///////////////
 	    //// Setup CounterVec in BAT 
-	    uint rc = 0;
-	    rc = _mucontext.allocateBatIds (MAX_COUNTERS, _b_batids);  
-	    PAMI_assert (rc == 0);
+	    int32_t rcBAT = 0;
+	    rcBAT = _mucontext.allocateBatIds (MAX_COUNTERS, _b_batids);  
+	    if (rcBAT == -1)
+	      {
+		status = PAMI_ERROR;
+		return;
+	      }
 
-	    rc = _mucontext.allocateBatIds (1, &_c_batid);  
-	    PAMI_assert (rc == 0);
+	    rcBAT = _mucontext.allocateBatIds (1, &_c_batid);  
+	    if (rcBAT == -1)
+	      {
+		status = PAMI_ERROR;
+		return;
+	      }
 
 	    //printf ("Get Bat Ids %d %d\n", _batids[0], _batids[1]);
+	    uint rc = 0;
 
 	    Kernel_MemoryRegion_t memRegion;
 	    rc = Kernel_CreateMemoryRegion (&memRegion, (void *)_counterVec, sizeof(_counterVec));
