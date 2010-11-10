@@ -243,7 +243,7 @@ namespace CCMI
         // Lets do the barrier to sync
         CCMI::Executor::Composite *barrier =(CCMI::Executor::Composite *)
           geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                           PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE0);
+                           PAMI::Geometry::CKEY_BARRIERCOMPOSITE0);
         CCMI_assert(barrier != NULL);
         barrier->setDoneCallback (cb_barrier_done, request);
         //barrier->setConsistency (consistency);

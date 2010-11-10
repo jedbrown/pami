@@ -45,7 +45,6 @@
 #include "common/NativeInterface.h"
 #include "algorithms/protocols/alltoall/All2All.h"
 #include "algorithms/protocols/alltoall/All2Allv.h"
-#include "algorithms/schedule/MCRect.h"
 #include "algorithms/schedule/TorusRect.h"
 
 // CCMI Template implementations for P2P
@@ -98,13 +97,19 @@ namespace CCMI
       unsigned max = 0, ideal = 0;
       unsigned _colors[PAMI_MAX_DIMS*2];
       PAMI_assert(ncolors <= (PAMI_MAX_DIMS*2));
-      CCMI::Schedule::MCRect::getColors (t, ideal, max, _colors);
+      CCMI::Schedule::TorusRect::getColors (t, ideal, max, _colors);
       TRACE_INIT((stderr, "get_rect_colors() bytes %u, ncolors %u, ideal %u, max %u\n", bytes, ncolors, ideal, max));
       
-      if (bytes < 2048) //4 packets
+      if (bytes <= 8192) //16 packets
         ideal = 1;
-      else if (bytes < 8192) //4 packets
+      else if (bytes <= 65536 && ideal >= 2)
         ideal = 2;
+      else if (bytes <= 262144 && ideal >= 3)
+        ideal = 3;
+      else if (bytes <= 1048576 && ideal >= 5)
+        ideal = 5;
+      else if (bytes <= 4194304 && ideal >= 8)
+        ideal = 8;
 
       if (ideal < ncolors)
         ncolors = ideal;  //Reduce the number of colors to the relavant colors
@@ -112,6 +117,7 @@ namespace CCMI
       TRACE_INIT((stderr, "get_rect_colors() ncolors %u, ideal %u\n", ncolors, ideal));
       memcpy (colors, _colors, ncolors * sizeof(int));
     }
+
 
       void rectangle_broadcast_metadata(pami_metadata_t *m)
       {
@@ -124,7 +130,8 @@ namespace CCMI
       < 5,
         CCMI::Schedule::TorusRect,
         CCMI::ConnectionManager::ColorConnMgr,
-        get_rect_colors>
+        get_rect_colors,
+        PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX>
       RectangleBroadcastComposite;
 
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
@@ -144,7 +151,8 @@ namespace CCMI
       < 1,
         CCMI::Schedule::TorusRect,
         CCMI::ConnectionManager::ColorConnMgr,
-        get_colors>
+        get_colors,
+        PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX>
       RectangleBroadcastComposite1Color;
 
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT

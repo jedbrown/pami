@@ -22,7 +22,7 @@ namespace CCMI
       ///
       ///  \brief Base class for synchronous broadcasts
       ///
-      template <int NUMCOLORS, class T_Sched, class T_Conn, Executor::GetColorsFn pwcfn>
+      template <int NUMCOLORS, class T_Sched, class T_Conn, Executor::GetColorsFn pwcfn, int T_Geometry_Index=PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX>
       class BcastMultiColorCompositeT : public Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
       {
       public:
@@ -43,7 +43,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%p>BcastMultiColorCompositeT()\n",this));
           Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::
           initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(),
-                      (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(0),
+                      (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(T_Geometry_Index),
                       ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.root,
                       ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount,
                       ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
@@ -54,7 +54,7 @@ namespace CCMI
           PAMI_GEOMETRY_CLASS *geometry = ((PAMI_GEOMETRY_CLASS *)g);
           CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
                                                  geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                  PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1);
+                                                                  PAMI::Geometry::CKEY_BARRIERCOMPOSITE1);
           this->addBarrier(barrier);
           barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
           //barrier->setConsistency (consistency);

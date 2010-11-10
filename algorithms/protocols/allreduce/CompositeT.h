@@ -63,7 +63,7 @@ namespace CCMI
                     CCMI::Schedule::Color       color=CCMI::Schedule::XP_Y_Z) :
           CCMI::Adaptor::Allreduce::Composite<T_Mcast,T_ConnectionManager>(flags,
                                                                                      (CCMI::Executor::Composite*)geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                                                                                  PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE0),
+                                                                                                                                  PAMI::Geometry::CKEY_BARRIERCOMPOSITE0),
                                                                  factory, cb_done),
         _executor(cmgr, consistency, geometry->comm(), geometry->getAllreduceIteration())
         {

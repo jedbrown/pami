@@ -191,20 +191,20 @@ namespace PAMI
               PAMI::Topology * local_sub_topology = (PAMI::Topology*) geometry->getLocalTopology();
               PAMI::Topology * master_sub_topology = (PAMI::Topology*) geometry->getLocalMasterTopology();
               if(master_sub_topology->size() == 1) // no global topology so use binomial locally
-                geometry->setKey(context_id, PAMI::Geometry::PAMI_CKEY_LOCALBARRIERCOMPOSITE,
+                geometry->setKey(context_id, PAMI::Geometry::CKEY_LOCALBARRIERCOMPOSITE,
                                  (void*)_binomial_barrier_composite);
               if(local_sub_topology->size() == 1)        // no local topology so use binomial globally
-                geometry->setKey(context_id, PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE,
+                geometry->setKey(context_id, PAMI::Geometry::CKEY_GLOBALBARRIERCOMPOSITE,
                                  (void*)_binomial_barrier_composite);
 
               geometry->setKey(context_id,
-                               PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1,
+                               PAMI::Geometry::CKEY_BARRIERCOMPOSITE1,
                                (void*)_binomial_barrier_composite);
 
               if(context_id == 0) /// \todo multi-context support
               {
                 // Set geometry-wide, across contexts, UE barrier
-                geometry->setKey(PAMI::Geometry::PAMI_GKEY_UEBARRIERCOMPOSITE1,
+                geometry->setKey(PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1,
                                  (void*)_binomial_barrier_composite);
               }
 

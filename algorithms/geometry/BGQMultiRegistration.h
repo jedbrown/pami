@@ -353,7 +353,7 @@ namespace PAMI
       strncpy(&m->name[0], "ShmemMultiSyncSubComposite", 32);
     }
 
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<LOCAL_TOPOLOGY_INDEX>,
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<PAMI::Geometry::LOCAL_TOPOLOGY_INDEX>,
     SubShmemMsyncMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > SubShmemMultiSyncFactory;
 
@@ -366,7 +366,7 @@ namespace PAMI
       strncpy(&m->name[0], "MUMultiSyncSubComposite", 32);
     }
 
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<LOCAL_MASTER_TOPOLOGY_INDEX>,
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX>,
     SubMUMsyncMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > SubMUMultiSyncFactory;
 
@@ -476,7 +476,8 @@ namespace PAMI
     <1,
     CCMI::Schedule::TorusRect,
     CCMI::ConnectionManager::ColorConnMgr,
-    get_rect_colors>
+    get_rect_colors,
+    PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX>
     RectangleDput1ColorBroadcastComposite;
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT
@@ -494,16 +495,17 @@ namespace PAMI
 
     typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
     <10,
-    CCMI::Schedule::TorusRect,
-    CCMI::ConnectionManager::ColorConnMgr,
-    get_rect_colors>
-    RectangleDputBroadcastComposite;
+      CCMI::Schedule::TorusRect,
+      CCMI::ConnectionManager::ColorConnMgr,
+      get_rect_colors,
+      PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX>
+      RectangleDputBroadcastComposite;
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT
     < RectangleDputBroadcastComposite,
-    rectangle_dput_broadcast_metadata,
-    CCMI::ConnectionManager::ColorConnMgr>
-    RectangleDputBroadcastFactory;
+      rectangle_dput_broadcast_metadata,
+      CCMI::ConnectionManager::ColorConnMgr>
+      RectangleDputBroadcastFactory;
 
     //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
@@ -663,7 +665,7 @@ namespace PAMI
             TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Shmem local barrier\n", this));
 
             _sub_shmem_barrier_composite = _sub_shmem_msync_factory.generate(geometry, &xfer);
-            geometry->setKey(_context_id, PAMI::Geometry::PAMI_CKEY_LOCALBARRIERCOMPOSITE,
+            geometry->setKey(_context_id, PAMI::Geometry::CKEY_LOCALBARRIERCOMPOSITE,
                              (void*)_sub_shmem_barrier_composite);
 
 
@@ -706,22 +708,17 @@ namespace PAMI
 //
 //          } while (0);
 
-            if (_rectangle_dput_broadcast_factory)
-            do 
-            {
-              // make a local copy of the topology
-              PAMI::Topology coord_topology = *(PAMI::Topology*) geometry->getTopology(0);
-              coord_topology.convertTopology(PAMI_COORD_TOPOLOGY);
-              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Analyze Rectangle type %u\n", this, coord_topology.type()));
-              if (coord_topology.type() != PAMI_COORD_TOPOLOGY) break; //not a coord? then not a line
+          // Is there a coordinate topology? Try rectangle protocols
+          if(geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX) != NULL)
+          {
+            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Rectangle\n", this));
+            //Add a rectangle broadcasts
+            if (_rectangle_1color_dput_broadcast_factory)
+              geometry->addCollective(PAMI_XFER_BROADCAST,  _rectangle_1color_dput_broadcast_factory, _context_id);
 
-              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Rectangle\n", this));
-              //Add a rectangle broadcasts
-              if (_rectangle_1color_dput_broadcast_factory)
-                geometry->addCollective(PAMI_XFER_BROADCAST,  _rectangle_1color_dput_broadcast_factory, _context_id);
-
+            if (_rectangle_dput_broadcast_factory)              
               geometry->addCollective(PAMI_XFER_BROADCAST,  _rectangle_dput_broadcast_factory, _context_id);
-            } while (0);
+          }
 
         }
         else if (phase == 1)
@@ -739,15 +736,15 @@ namespace PAMI
             TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() usePureMu = %u (size %zu/%zu)\n", this, usePureMu, topology->size(), master_sub_topology->size()));
 
             void *val;
-            val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() PAMI_GKEY_MSYNC_CLASSROUTEID %p\n", this, val));
+            val = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
+            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MSYNC_CLASSROUTEID %p\n", this, val));
 
             if (val && val != PAMI_CR_GKEY_FAIL)
             {
               // Only register protocols if we got a classroute
               _sub_mu_barrier_composite = _sub_mu_msync_factory->generate(geometry, &xfer);
 
-              geometry->setKey(_context_id, PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE,
+              geometry->setKey(_context_id, PAMI::Geometry::CKEY_GLOBALBARRIERCOMPOSITE,
                                (void*)_sub_mu_barrier_composite);
 
               // If we can use pure MU composites, add them
@@ -773,8 +770,8 @@ namespace PAMI
               }
             }
 
-            val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() PAMI_GKEY_MCAST_CLASSROUTEID %p\n", this, val));
+            val = geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
+            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MCAST_CLASSROUTEID %p\n", this, val));
 
             if (val && val != PAMI_CR_GKEY_FAIL)
             {
@@ -841,8 +838,8 @@ namespace PAMI
               }
             }
 
-            val = geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() PAMI_GKEY_MCOMB_CLASSROUTEID %p\n", this, val));
+            val = geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
+            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MCOMB_CLASSROUTEID %p\n", this, val));
 
             if (val && val != PAMI_CR_GKEY_FAIL)
             {
@@ -886,10 +883,10 @@ namespace PAMI
           // Check if *someone* registered local/global protocols for our geometry
           // before generating any composite protocol...
 
-          if ((local_sub_topology->size() > 1) && (geometry->getKey(_context_id, PAMI::Geometry::PAMI_CKEY_LOCALBARRIERCOMPOSITE) == NULL))
+          if ((local_sub_topology->size() > 1) && (geometry->getKey(_context_id, PAMI::Geometry::CKEY_LOCALBARRIERCOMPOSITE) == NULL))
             return PAMI_SUCCESS; // done - we can't do a protocol composite
 
-          if ((master_sub_topology->size() > 1) && (geometry->getKey(_context_id, PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE) == NULL))
+          if ((master_sub_topology->size() > 1) && (geometry->getKey(_context_id, PAMI::Geometry::CKEY_GLOBALBARRIERCOMPOSITE) == NULL))
             return PAMI_SUCCESS; // done - we can't do a protocol composite
 
           // Add Composite Barrier

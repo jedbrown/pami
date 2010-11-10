@@ -72,7 +72,7 @@ namespace PAMI
               TRACE((stderr, "CAUMulticombineModel: delivering user callback\n"));
               T_Device                          *device = (T_Device *)m->_device;
               PAMI_GEOMETRY_CLASS               *g      = (PAMI_GEOMETRY_CLASS*)device->geometrymap(m->_xfer_header.geometry_id);
-              CAUGeometryInfo                   *gi     = (CAUGeometryInfo*)g->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
+              CAUGeometryInfo                   *gi     = (CAUGeometryInfo*)g->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
               gi->_postedRed.deleteElem(m);              
               m->_user_done_fn(m->_context, m->_user_cookie, PAMI_SUCCESS);
               return;
@@ -93,7 +93,7 @@ namespace PAMI
           int                                seqno = hdr->seqno;
           CAUMulticombineModel              *mc    = (CAUMulticombineModel*) CAUDevice::getClientData(did);
           PAMI_GEOMETRY_CLASS               *g     = (PAMI_GEOMETRY_CLASS*)mc->_device.geometrymap(gid);
-          CAUGeometryInfo                   *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
+          CAUGeometryInfo                   *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
           CAUMcombineMessage                *m     = (CAUMcombineMessage *)gi->_postedBcast.find(seqno);
           void                              *r     = NULL;
           lapi_return_info_t                *ri    = (lapi_return_info_t *) retinfo;
@@ -173,7 +173,7 @@ namespace PAMI
           int                              seqno = hdr->seqno;
           CAUMulticombineModel            *mc    = (CAUMulticombineModel*) CAUDevice::getClientData(did);
           PAMI_GEOMETRY_CLASS             *g     = (PAMI_GEOMETRY_CLASS*)mc->_device.geometrymap(gid);
-          CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
+          CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
 
           // Next, search the posted queue for a message with the incoming seq number
           CAUMcombineMessage              *m     = (CAUMcombineMessage *)gi->_postedRed.find(seqno);

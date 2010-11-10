@@ -131,7 +131,7 @@ namespace CCMI
           // Start the barrier. When it completes, it will start the m2m
           CCMI::Executor::Composite *barrier = (CCMI::Executor::Composite *)
                                                _geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                 PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1);
+                                                                 PAMI::Geometry::CKEY_BARRIERCOMPOSITE1);
           CCMI_assert(barrier != NULL);
           barrier->setDoneCallback (cb_barrier_done, this);
           //barrier->setConsistency (consistency);

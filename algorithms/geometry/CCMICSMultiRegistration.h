@@ -139,7 +139,7 @@ namespace PAMI
         void *ctrlstr      = (void *)in[master_index];
         if (ctrlstr == NULL) ctrlstr = (void *)_csmm.getWGCtrlStr();
 
-        geometry->setKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI, ctrlstr);
+        geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ctrlstr);
 
         // Complete the final analysis and population of the geometry structure
         // with the algorithm list
@@ -162,7 +162,7 @@ namespace PAMI
         PAMI_assert(local_topo->size() != 0);
         PAMI_assert(local_master_topo->size() != 0);
 
-        void *ctrlstr  = (void *) geometry->getKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI);
+        void *ctrlstr  = (void *) geometry->getKey(PAMI::Geometry::GKEY_GEOMETRYCSNI);
 
         // Allocate the local models
         T_CSModel *cs_model = new T_CSModel(&_devs, geometry->comm(), local_topo, &_csmm, ctrlstr);
@@ -172,7 +172,7 @@ namespace PAMI
                                        _context_id, local_topo->rank2Index(__global.mapping.task()),
                                                           local_topo->size());
 
-        geometry->setKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI, ni);
+        geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ni);
 
         geometry->addCollective(PAMI_XFER_BARRIER,&_msync_reg,context_id);
         geometry->addCollective(PAMI_XFER_BROADCAST,&_mcast_reg,context_id);

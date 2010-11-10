@@ -33,7 +33,7 @@ namespace CCMI
 
           // setDoneCallback(fn, cookie);
 
-          _native = (Interfaces::NativeInterface *)_geometry->getKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI);
+          _native = (Interfaces::NativeInterface *)_geometry->getKey(PAMI::Geometry::GKEY_GEOMETRYCSNI);
 
          _minfo.cb_done.function   = fn;
          _minfo.cb_done.clientdata = cookie;

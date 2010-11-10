@@ -186,7 +186,7 @@ namespace PAMI
           PAMI_assert(local_topo->size() != 0);
           PAMI_assert(local_master_topo->size() != 0);
 
-          void *ctrlstr  = (void *) geometry->getKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI);
+          void *ctrlstr  = (void *) geometry->getKey(PAMI::Geometry::GKEY_GEOMETRYCSNI);
 
 
           // Allocate the local models
@@ -241,7 +241,7 @@ namespace PAMI
           geometryInfo->_allreducenp                     = allreducenp_reg;
 
           // Add the geometry info to the geometry
-          geometry->setKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI, ni);
+          geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ni);
           geometry->addCollective(PAMI_XFER_BARRIER,barrier_reg,context_id);
           geometry->addCollective(PAMI_XFER_BROADCAST,broadcast_reg,context_id);
           geometry->addCollective(PAMI_XFER_ALLREDUCE,allreducenp_reg,context_id);
@@ -277,7 +277,7 @@ namespace PAMI
           void *ctrlstr      = (void *)in[master_index];
           if (ctrlstr == NULL) ctrlstr = (void *)_csmm.getWGCtrlStr();
 
-          geometry->setKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI, ctrlstr);
+          geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ctrlstr);
 
           // Complete the final analysis and population of the geometry structure
           // with the algorithm list

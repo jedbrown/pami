@@ -15,7 +15,7 @@ namespace CCMI
     namespace Barrier
     {
 
-      template <int T_Geometry_Index=0>
+      template <int T_Geometry_Index=PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX>
       class MultiSyncComposite : public CCMI::Executor::Composite
       {
         protected:
@@ -35,7 +35,7 @@ namespace CCMI
           {
             TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
 
-            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
+            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
             //_minfo.cb_done.function   = _cb_done;
             //_minfo.cb_done.clientdata = _clientdata;
             _minfo.connection_id      = 0;
@@ -117,7 +117,7 @@ namespace CCMI
             // If we have more than one master, but we are the only local process
             // we are guaranteed to be a "local master", so we will just
             // issue the collective on the global device
-            _deviceInfo = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID);
+            _deviceInfo = _geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
 
             if (t_master->size() > 1 && t_local->size() == 1)
               {
@@ -219,9 +219,9 @@ namespace CCMI
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getLocalTopology();
 
             _local_barrier  = (CCMI::Executor::Composite *)_geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                            PAMI::Geometry::PAMI_CKEY_LOCALBARRIERCOMPOSITE);
+                                                                            PAMI::Geometry::CKEY_LOCALBARRIERCOMPOSITE);
             _global_barrier = (CCMI::Executor::Composite *)_geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                            PAMI::Geometry::PAMI_CKEY_GLOBALBARRIERCOMPOSITE);
+                                                                            PAMI::Geometry::CKEY_GLOBALBARRIERCOMPOSITE);
 
             // If the global "master" topology has only one rank, the local barrier will
             // suffice to implement the barrier

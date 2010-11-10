@@ -197,7 +197,7 @@ namespace PAMI
 
             // Allocate the local models
             T_LocalModel                     *local_model  = (T_LocalModel*)_model_allocator.allocateObject();
-            void                             *csmm_ctrlstr = (void *) geometry->getKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI);
+            void                             *csmm_ctrlstr = (void *) geometry->getKey(PAMI::Geometry::GKEY_GEOMETRYCSNI);
             // fprintf(stderr, "CollShm control structure address, geometry %p - csmm_ctrlstr %p\n", geometry, csmm_ctrlstr);
             new(local_model)T_LocalModel(&_local_devs, geometry->comm(), local_topo, &_csmm, csmm_ctrlstr);
 
@@ -251,7 +251,7 @@ namespace PAMI
             geometryInfo->_reduce                       = reduce_reg;
 
             // Add the geometry info to the geometry
-            geometry->setKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI, ni);
+            geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ni);
             geometry->addCollective(PAMI_XFER_BARRIER,barrier_reg,context_id);
             geometry->addCollective(PAMI_XFER_BROADCAST,broadcast_reg,context_id);
             geometry->addCollective(PAMI_XFER_ALLREDUCE,allreduce_reg,context_id);
@@ -323,16 +323,16 @@ namespace PAMI
             new(gi)PAMI::Device::CAUGeometryInfo(key,
                                                  geometry->comm(),
                                                  local_master_topo);
-            geometry->setKey(Geometry::PAMI_GKEY_MCAST_CLASSROUTEID,gi);
-            geometry->setKey(Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID,gi);
-            geometry->setKey(Geometry::PAMI_GKEY_MSYNC_CLASSROUTEID,gi);
+            geometry->setKey(Geometry::GKEY_MCAST_CLASSROUTEID,gi);
+            geometry->setKey(Geometry::GKEY_MCOMB_CLASSROUTEID,gi);
+            geometry->setKey(Geometry::GKEY_MSYNC_CLASSROUTEID,gi);
 
             uint master_rank   = ((PAMI::Topology *)geometry->getLocalTopology())->index2Rank(0);
             uint master_index  = local_master_topo->rank2Index(master_rank);
             void *ctrlstr      = (void *)in[master_index+1];
             if (ctrlstr == NULL)
               ctrlstr = _csmm.getWGCtrlStr();
-            geometry->setKey(Geometry::PAMI_GKEY_GEOMETRYCSNI,ctrlstr);
+            geometry->setKey(Geometry::GKEY_GEOMETRYCSNI,ctrlstr);
 
             // Complete the final analysis and population of the geometry structure
             // with the algorithm list

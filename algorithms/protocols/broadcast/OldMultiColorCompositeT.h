@@ -332,7 +332,7 @@ namespace CCMI
           composite->SyncBcastPost (geometry, root, this->_connmgr, this->_minterface);
           CCMI::Executor::Composite *barrier = (CCMI::Executor::Composite*)
             geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                             PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE0);
+                             PAMI::Geometry::CKEY_BARRIERCOMPOSITE0);
           CCMI_assert(barrier != NULL);
 
           barrier->setDoneCallback (B::cb_barrier_done, composite);

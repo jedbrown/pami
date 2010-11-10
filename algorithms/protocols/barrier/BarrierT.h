@@ -37,7 +37,7 @@ namespace CCMI
       // Barrier Factory for generate routine
       // generate
       //
-      template <class T, MetaDataFn get_metadata, class C, PAMI::Geometry::ckeys_t T_Key=PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1>
+      template <class T, MetaDataFn get_metadata, class C, PAMI::Geometry::ckeys_t T_Key=PAMI::Geometry::CKEY_BARRIERCOMPOSITE1>
       class BarrierFactoryT : public CollectiveProtocolFactoryT<T, get_metadata, C>
       {
         public:
@@ -73,7 +73,7 @@ namespace CCMI
       ///
       /// \brief Binomial barrier
       ///
-      template <class T_Schedule, AnalyzeFn afn, int T_Geometry_Index=0, PAMI::Geometry::ckeys_t T_Key=PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1>
+      template <class T_Schedule, AnalyzeFn afn, int T_Geometry_Index=PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX, PAMI::Geometry::ckeys_t T_Key=PAMI::Geometry::CKEY_BARRIERCOMPOSITE1>
       class BarrierT : public CCMI::Executor::Composite
       {
           ///
@@ -159,7 +159,7 @@ namespace CCMI
                                      cdata->_comm,
                                      (pami_quad_t&)*info,
                                      peer,
-                                     (unsigned) PAMI::Geometry::PAMI_GKEY_UEBARRIERCOMPOSITE1);
+                                     (unsigned) PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1);
                 return;
               }
             PAMI_assert(geometry != NULL);

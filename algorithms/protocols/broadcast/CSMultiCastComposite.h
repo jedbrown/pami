@@ -39,7 +39,7 @@ namespace CCMI
 
           //setDoneCallback(fn, cookie);
 
-          _native = (Interfaces::NativeInterface *)_geometry->getKey(PAMI::Geometry::PAMI_GKEY_GEOMETRYCSNI);
+          _native = (Interfaces::NativeInterface *)_geometry->getKey(PAMI::Geometry::GKEY_GEOMETRYCSNI);
 
           /// \todo only supporting PAMI_BYTE right now
           PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_BYTE,"Not PAMI_BYTE? %#zX\n",(size_t)cmd->cmd.xfer_broadcast.type);

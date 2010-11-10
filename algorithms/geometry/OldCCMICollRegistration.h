@@ -95,7 +95,7 @@ namespace PAMI
                                          (pami_geometry_t)geometry,
                                          NULL);
           geometry->setKey((size_t)0, /// \todo does NOT support multicontext
-                           PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE0,
+                           PAMI::Geometry::CKEY_BARRIERCOMPOSITE0,
                            (void*)&_barrier_composite);
 
           geometry->addCollective(PAMI_XFER_BARRIER,&_barrier_registration,_context_id);

@@ -75,8 +75,7 @@ namespace CCMI
     {
     public:
       TorusRect(): _rect(*(PAMI::Topology*)NULL), _map(NULL)
-      {
-      }
+      { }
 
       TorusRect(unsigned myrank, 
                 PAMI::Topology *rect,
@@ -93,9 +92,8 @@ namespace CCMI
         _map->task2network(_map->task(), &_self_coord, PAMI_N_TORUS_NETWORK);
         DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, coord[%u]=%zu",_color,this, _map->task(), j, _self_coord.u.n_torus.coords[j]));
 
-	if (_rect.type() != PAMI_COORD_TOPOLOGY) _rect.convertTopology(PAMI_COORD_TOPOLOGY);
-	
-        PAMI_assert(_rect.type() == PAMI_COORD_TOPOLOGY);
+        PAMI_assertf(_rect.type() == PAMI_COORD_TOPOLOGY, "Type %u",_rect.type());
+
         _rect.rectSeg(&_ll, &_ur, &_torus_link[0]);
         DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ll coord[%u]=%zu",_color,this, _map->task(), j, _ll.u.n_torus.coords[j]));
         DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ur coord[%u]=%zu",_color,this, _map->task(), j, _ur.u.n_torus.coords[j]));
@@ -121,8 +119,8 @@ namespace CCMI
         unsigned int i;
         DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, coord[%u]=%zu",_color,this, _map->task(), j, _self_coord.u.n_torus.coords[j]));
 
-	if (_rect.type() != PAMI_COORD_TOPOLOGY) _rect.convertTopology(PAMI_COORD_TOPOLOGY);
-        PAMI_assert(_rect.type() == PAMI_COORD_TOPOLOGY);
+        PAMI_assertf(_rect.type() == PAMI_COORD_TOPOLOGY, "Type %u",_rect.type());
+
         _rect.rectSeg(&_ll, &_ur, &_torus_link[0]);
         DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ll coord[%u]=%zu",_color,this, _map->task(), j, _ll.u.n_torus.coords[j]));
         DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ur coord[%u]=%zu",_color,this, _map->task(), j, _ur.u.n_torus.coords[j]));
@@ -185,10 +183,9 @@ namespace CCMI
         size_t torus_dims, sizes[PAMI_MAX_DIMS];
 
         torus_dims = __global.mapping.torusDims();
-//        PAMI::Topology tmp = *rect;
-//        if (rect->type() != PAMI_COORD_TOPOLOGY) tmp.convertTopology(PAMI_COORD_TOPOLOGY);
-//        tmp.rectSeg(&ll, &ur, &torus_link);
-        if (rect->type() != PAMI_COORD_TOPOLOGY) rect->convertTopology(PAMI_COORD_TOPOLOGY);
+
+        PAMI_assertf(rect->type() == PAMI_COORD_TOPOLOGY, "Type %u",rect->type());
+
         rect->rectSeg(&ll, &ur, &torus_link);
         for (i = 0; i < torus_dims; i++)
         {  

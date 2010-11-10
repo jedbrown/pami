@@ -53,7 +53,7 @@ namespace CCMI
         {
           TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, cmd->cmd.xfer_broadcast.root));
 
-          _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
+          _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
 
           PAMI::Topology all;
           all = *(PAMI::Topology*)_geometry->getTopology(0);
@@ -162,8 +162,8 @@ namespace CCMI
         {
           TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, cmd->cmd.xfer_broadcast.root));
 
-          _deviceMcastInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
-          _deviceMsyncInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID); /// \todo switch to PAMI_GKEY_MSYNC_CLASSROUTEID
+          _deviceMcastInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
+          _deviceMsyncInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID); /// \todo switch to GKEY_MSYNC_CLASSROUTEID
 
           _all = *(PAMI::Topology*)_geometry->getTopology(0);
           _all.subtractTopology(&_destinations,  &_root);
@@ -395,7 +395,7 @@ namespace CCMI
           bool             amRoot      = (root == _geometry->rank());
           bool             amMaster    = _geometry->isLocalMasterParticipant();
           bool             isRootLocal = t_local->isRankMember(root);
-          _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
+          _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
           size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_BYTE?
           size_t           numMasters  = t_master->size();
           size_t           numLocal    = t_local->size();
@@ -648,7 +648,7 @@ namespace CCMI
 
           if(T_Sync)
           {
-            _deviceMsyncInfo          = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID); /// \todo switch to PAMI_GKEY_MSYNC_CLASSROUTEID
+            _deviceMsyncInfo          = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID); /// \todo switch to GKEY_MSYNC_CLASSROUTEID
             // Initialize the msync
             _msync.client             = 0;
             _msync.context            = 0; /// \todo ?

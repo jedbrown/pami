@@ -66,7 +66,7 @@ namespace CCMI
 
 //          PAMI_Type_sizeof(cmd->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
-            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
+            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
 
             unsigned        sizeOfType;
             coremath        func;
@@ -230,7 +230,7 @@ namespace CCMI
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getLocalTopology();
             PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getMyMasterTopology();
             bool             amMaster    = _geometry->isLocalMasterParticipant();
-            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
+            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
             // todo:  shared mem may need its own devinfo
             unsigned        typesize;            
             coremath        func;
@@ -636,8 +636,8 @@ namespace CCMI
             PAMI_assertf(numMasters > 1 && numLocals > 1, "numMasters %zu, numLocals %zu\n", numMasters, numLocals); /// \todo keep it simple for now.
 	    numLocals = numLocals; numMasters = numMasters; // silence warnings when ASSERTS=0
 
-            _deviceMcombInfo = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCOMB_CLASSROUTEID);
-            _deviceMcastInfo = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
+            _deviceMcombInfo = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
+            _deviceMcastInfo = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
 
             _pwq_src.configure(NULL,                            // Memory manager
                                cmd->cmd.xfer_allreduce.sndbuf,  // buffer

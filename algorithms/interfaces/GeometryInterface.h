@@ -34,22 +34,32 @@ namespace PAMI
   {
     typedef enum
     {
-      PAMI_GKEY_COLLFACTORY     = 0,
-      PAMI_GKEY_UEBARRIERCOMPOSITE1,    // CCMI ue barrier (PAMI_CKEY_BARRIERCOMPOSITE1)
-      PAMI_GKEY_MCAST_CLASSROUTEID,     // Multicast class route id
-      PAMI_GKEY_MCOMB_CLASSROUTEID,     // Multicombine class route id
-      PAMI_GKEY_MSYNC_CLASSROUTEID,     // Multisync class route id
+      GKEY_COLLFACTORY     = 0,
+      GKEY_UEBARRIERCOMPOSITE1,    // CCMI ue barrier (CKEY_BARRIERCOMPOSITE1)
+      GKEY_MCAST_CLASSROUTEID,     // Multicast class route id
+      GKEY_MCOMB_CLASSROUTEID,     // Multicombine class route id
+      GKEY_MSYNC_CLASSROUTEID,     // Multisync class route id
       PAMI_GKEY_PLATEXTENSIONS
-      PAMI_GKEY_GEOMETRYCSNI            // native interface for coll shm device
-    } gkeys_t;                          // global keystore keys
+      GKEY_GEOMETRYCSNI            // native interface for coll shm device
+    } gkeys_t;                     // global keystore keys
     typedef enum
     {
-      PAMI_CKEY_COLLFACTORY     = 0,
-      PAMI_CKEY_BARRIERCOMPOSITE0,      // ?
-      PAMI_CKEY_BARRIERCOMPOSITE1,      // CCMI barrier cache
-      PAMI_CKEY_LOCALBARRIERCOMPOSITE,  // local sub-topologies only in the geometry
-      PAMI_CKEY_GLOBALBARRIERCOMPOSITE, // global sub-topologes only in the geometry
-    } ckeys_t;                          // context keystore keys
+      CKEY_COLLFACTORY     = 0,
+      CKEY_BARRIERCOMPOSITE0,      // ?
+      CKEY_BARRIERCOMPOSITE1,      // CCMI barrier cache
+      CKEY_LOCALBARRIERCOMPOSITE,  // local sub-topologies only in the geometry
+      CKEY_GLOBALBARRIERCOMPOSITE, // global sub-topologes only in the geometry
+    } ckeys_t;                     // context keystore keys
+
+    typedef enum
+    {
+      DEFAULT_TOPOLOGY_INDEX      =  0,  // master/global sub-topology
+      MASTER_TOPOLOGY_INDEX       =  1,  // master/global sub-topology
+      LOCAL_TOPOLOGY_INDEX        =  2,  // local sub-topology
+      LOCAL_MASTER_TOPOLOGY_INDEX =  3,  // local master sub-topology
+      COORDINATE_TOPOLOGY_INDEX   =  4,  // coordinate (rectangle) topology
+      MAX_NUM_TOPOLOGIES          =  5   // Number of topologies stored
+    } topologyIndex_t;             // indices into _topos[] for special topologies
 
     template <class T_Geometry>
       class Geometry
@@ -190,7 +200,8 @@ namespace PAMI
     template <class T_Geometry>
     inline pami_topology_t* Geometry<T_Geometry>::getTopology(int topo_num)
     {
-      return static_cast<T_Geometry*>(this)->getTopology_impl(topo_num);
+      PAMI_assertf((topologyIndex_t)topo_num < MAX_NUM_TOPOLOGIES,"topo_num %d",topo_num);
+      return static_cast<T_Geometry*>(this)->getTopology_impl((topologyIndex_t)topo_num);
     }
 
     template <class T_Geometry>

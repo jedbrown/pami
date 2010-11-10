@@ -108,7 +108,7 @@ namespace CCMI
             PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
             CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
                                                    geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                    PAMI::Geometry::PAMI_CKEY_BARRIERCOMPOSITE1);
+                                                                    PAMI::Geometry::CKEY_BARRIERCOMPOSITE1);
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::addBarrier(barrier);
             barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
