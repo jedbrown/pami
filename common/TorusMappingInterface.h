@@ -56,26 +56,15 @@ namespace PAMI
             abort();
             return;
           };
+#endif
 
           ///
           /// \brief Get the size of a torus dimension
-          ///
-          /// \note The C++ template parameter \c T_Dimension is used to specify
-          ///       torus dimension to query. The use of C++ templates for this
-          ///       method allows the compiler to generate code without an if-branch.
-          ///
-          /// \code
-          ///   size_t x = mapping.torusSize<0>();
-          ///   size_t y = mapping.torusSize<1>();
-          ///   size_t z = mapping.torusSize<2>();
-          ///   size_t t = mapping.torusSize<3>();
-          /// \endcode
-          ///
+          /// \param i - the dimension
           /// \return Torus dimension size
           ///
-          template <int T_Dimension>
-          inline size_t torusSize () const;
-#endif
+          inline size_t torusSize (size_t i);
+
           ///
           /// \brief Get the number of torus (physical network) dimensions
           ///
@@ -266,15 +255,14 @@ namespace PAMI
         return 0;
         //return static_cast<T_Mapping*>(this)->torusCoord_impl[T_Dimension];
       }
-
+#endif
 
       template <class T_Mapping, unsigned T_Dimensions>
-      template <int T_Dimension>
-      inline size_t Torus<T_Mapping>::torusSize<T_Dimension> () const
+      inline size_t Torus<T_Mapping, T_Dimensions>::torusSize(size_t i)
       {
-        return static_cast<T_Mapping*>(this)->torusSize_impl<T_Dimension> ();
+        return static_cast<T_Mapping*>(this)->torusSize_impl(i);
       }
-#endif
+
       template <class T_Mapping, unsigned T_Dimensions>
       //template <int T_Dimension>
       //inline size_t Torus<T_Mapping,T_Dimensions>::torusAddr (size_t (&addr)[T_Dimensions]) const

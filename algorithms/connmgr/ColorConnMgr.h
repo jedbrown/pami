@@ -16,7 +16,7 @@
 
 #include "ConnectionManager.h"
 
-#define MAX_COLORS  11  //colors 0 - 6
+#define MAX_COLORS  11  //colors 0 - 10
 
 namespace CCMI
 {

@@ -198,14 +198,15 @@ namespace CCMI
 
         max = ideal;
 
-#if 1 //enable -ve colors
-        for (i = 0; i < torus_dims; i++)
+#if 1 //enable +ve colors
+        for (i = 0; i < torus_dims; i++) 
+        {
           if (sizes[i] > 1 && torus_link[i])
           {  
             TRACE_FORMAT("color[%u]=%zu",  max, i + torus_dims);
             colors[max++] = i + torus_dims;
           }
-          
+        }
           if (max == 2 * ideal)
             ideal = max;
 #endif
@@ -399,8 +400,11 @@ CCMI::Schedule::TorusRect::setupBroadcast(int phase,
 {
   TRACE_FN_ENTER();
   pami_coord_t low, high;
-  uint8_t toruslinks[PAMI_MAX_DIMS] = {0};
-
+  uint8_t toruslinks[PAMI_MAX_DIMS];
+  for(int i=0; i<PAMI_MAX_DIMS;++i)
+  {
+    toruslinks[i] = 0;
+  }
   //Find the axis to do the line broadcast on
   int axis = (phase + _color) % _ndims;
   if (_torus_link[axis])
@@ -446,7 +450,11 @@ CCMI::Schedule::TorusRect::setupGhost(PAMI::Topology *topo)
 {
   TRACE_FN_ENTER();
   pami_coord_t ref, dst;
-  uint8_t toruslinks[PAMI_MAX_DIMS] = {0};
+  uint8_t toruslinks[PAMI_MAX_DIMS];
+  for(int i=0; i<PAMI_MAX_DIMS;++i)
+  {
+    toruslinks[i] = 0;
+  }
 
   //size_t torus_dims = _map->torusDims();
   size_t axis = _color % _ndims;
@@ -548,7 +556,12 @@ inline void
 CCMI::Schedule::TorusRect::setupLocal(PAMI::Topology *topo)
 {
   TRACE_FN_ENTER();
-  uint8_t torus_link[PAMI_MAX_DIMS] = {0};
+  uint8_t torus_link[PAMI_MAX_DIMS];
+  for(int i=0; i<PAMI_MAX_DIMS;++i)
+  {
+    torus_link[i] = 0;
+  }
+
 
   // the cores dim is the first one after the physical torus dims
   size_t core_dim = _map->torusDims();
@@ -595,7 +608,7 @@ CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology)
   unsigned char torus_link[PAMI_MAX_DIMS] = {0};
   unsigned char tmp_torus_link[PAMI_MAX_DIMS] = {0};
 
-  unsigned char risTorus[PAMI_MAX_DIMS];
+//  unsigned char risTorus[PAMI_MAX_DIMS];
   PAMI::Topology tmp;
   pami_coord_t tmp_low, tmp_high, tmp_ref;
   pami_coord_t low, high;
@@ -616,20 +629,20 @@ CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology)
     if (tmp.size())
     {
       // convert a local coord to axial?
-      if (tmp.type() != PAMI_AXIAL_TOPOLOGY)
-      {
-        PAMI::Topology ctmp = tmp;
-        /// \todo doesn't work? tmp.convertTopology(PAMI_AXIAL_TOPOLOGY);
-        ctmp.convertTopology(PAMI_AXIAL_TOPOLOGY);
-        TRACE_FORMAT("<%u:%p>tmp.convertTopology(PAMI_AXIAL_TOPOLOGY), input topology.type = %s%u",_color,this, 
-                     ctmp.type() == PAMI_COORD_TOPOLOGY? "PAMI_COORD_TOPOLOGY:":(ctmp.type() == PAMI_EMPTY_TOPOLOGY? "PAMI_EMPTY_TOPOLOGY:": ""), ctmp.type())
-        tmp.rectSeg(&tmp_low, &tmp_high, risTorus);
-        _map->task2network(_map->task(), &tmp_ref, PAMI_N_TORUS_NETWORK);
-        new (&tmp) PAMI::Topology(&tmp_low, &tmp_high, &tmp_ref, risTorus);
-        TRACE_FORMAT("<%u:%p>tmp.convertTopology(PAMI_AXIAL_TOPOLOGY), output topology.type = %s%u",_color,this, 
-                     ctmp.type() == PAMI_AXIAL_TOPOLOGY? "PAMI_AXIAL_TOPOLOGY:":(ctmp.type() == PAMI_EMPTY_TOPOLOGY? "PAMI_EMPTY_TOPOLOGY:": ""), ctmp.type())
-        PAMI_assert(tmp.type() == PAMI_AXIAL_TOPOLOGY);
-      }
+      //if (tmp.type() != PAMI_AXIAL_TOPOLOGY)
+      //{
+      //  PAMI::Topology ctmp = tmp;
+      /// \todo doesn't work? tmp.convertTopology(PAMI_AXIAL_TOPOLOGY);
+      //  ctmp.convertTopology(PAMI_AXIAL_TOPOLOGY);
+      //  TRACE_FORMAT("<%u:%p>tmp.convertTopology(PAMI_AXIAL_TOPOLOGY), input topology.type = %s%u",_color,this, 
+      //               ctmp.type() == PAMI_COORD_TOPOLOGY? "PAMI_COORD_TOPOLOGY:":(ctmp.type() == PAMI_EMPTY_TOPOLOGY? "PAMI_EMPTY_TOPOLOGY:": ""), ctmp.type())
+      //  tmp.rectSeg(&tmp_low, &tmp_high, risTorus);
+      //  _map->task2network(_map->task(), &tmp_ref, PAMI_N_TORUS_NETWORK);
+      //  new (&tmp) PAMI::Topology(&tmp_low, &tmp_high, &tmp_ref, risTorus);
+      //  TRACE_FORMAT("<%u:%p>tmp.convertTopology(PAMI_AXIAL_TOPOLOGY), output topology.type = %s%u",_color,this, 
+      //               ctmp.type() == PAMI_AXIAL_TOPOLOGY? "PAMI_AXIAL_TOPOLOGY:":(ctmp.type() == PAMI_EMPTY_TOPOLOGY? "PAMI_EMPTY_TOPOLOGY:": ""), ctmp.type())
+      //  PAMI_assert(tmp.type() == PAMI_AXIAL_TOPOLOGY);
+      //}
 
       // Get the axial members
       result = tmp.axial(&tmp_low, &tmp_high,
@@ -646,16 +659,17 @@ CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology)
         ///On a torus network when the wrap links are used lo and hi are relative (SK)       
         if (tmp_low.net_coord(j)  != _self_coord.net_coord(j))
           low.net_coord(j)  =  tmp_low.net_coord(j); //MIN(low.net_coord(j), tmp_low.net_coord(j));
+
         if (tmp_high.net_coord(j) != _self_coord.net_coord(j))
           high.net_coord(j) = tmp_high.net_coord(j);   //MAX(high.net_coord(j), tmp_high.net_coord(j));
       }
-      
-      // make an axial topology
-      new (topology) PAMI::Topology(&low, &high, &_self_coord, torus_link);
     }
   }
+  // make an axial topology
+  new (topology) PAMI::Topology(&low, &high, &_self_coord, torus_link);
   if((topology->size() == 1) && (topology->index2Rank(0) == _map->task()))
     new (topology) PAMI::Topology();
+
 #if DO_DEBUG(1)+0
   if (topology->type() == PAMI_AXIAL_TOPOLOGY)
   {

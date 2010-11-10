@@ -90,7 +90,6 @@ namespace CCMI
           pwcfn (topology, bytes, _colors, _numColors);
 
           //printf ("Using %d colors, %d\n", _numColors, _colors[0]);
-
           if (_numColors > NUMCOLORS)
             _numColors = NUMCOLORS;
           

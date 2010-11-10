@@ -15,7 +15,6 @@
 
 #include "components/devices/MulticastModel.h"
 #include "components/memory/MemoryAllocator.h"
-#include "util/trace.h"
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/msg/InjectDPutMulticast.h"
 
@@ -51,7 +50,6 @@ namespace PAMI
 	  
 	  MulticastDmaRecv (pami_multicast_t *mcast) {
 	    TRACE_FN_ENTER();
-	    _connid = mcast->connection_id;	    
 	    
 	    _pwq = (PAMI::PipeWorkQueue *)mcast->dst;
 	    _payload = (char*)_pwq->bufferToProduce();
@@ -68,7 +66,6 @@ namespace PAMI
 	    TRACE_FN_EXIT();		    
 	  }
 	  
-	  unsigned                _connid;
 	  PipeWorkQueue         * _pwq;
 	  pami_event_function     _fn;
 	  void                  * _cookie; 
@@ -85,8 +82,8 @@ namespace PAMI
 	  _mucontext(device),
 	  _nActiveRecvs(0),
 	  _nActiveSends(0),
-	  _flags(0),
-	  _curBaseAddress(0)
+	  _flags(0) //,
+	  //_curBaseAddress(0)
 	  {	    
 	    TRACE_FN_ENTER();
 	    memset(_sends, 0, sizeof(_sends));
@@ -215,7 +212,6 @@ namespace PAMI
 	    pami_result_t result = PAMI_SUCCESS;
 	    result = dst_topology->axial(&ll, &ur, &ref, &isTorus);
 	    PAMI_assert(result == PAMI_SUCCESS);
-	    dst_topology->axial(&ll, &ur, &ref, &isTorus);
 
 	    PipeWorkQueue *pwq = (PAMI::PipeWorkQueue *)mcast->src;
 	    InjectDPutMulticast *msg = new (&state) InjectDPutMulticast (_mucontext, 
@@ -236,6 +232,7 @@ namespace PAMI
 	    _modeldesc.clone (*dput);
 	    
 	    msg->init();
+	    PAMI_assert (mcast->connection_id < MAX_COUNTERS);
 	    dput->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Counter_Offset = mcast->connection_id * sizeof(uint64_t);
 	    dput->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _b_batids[mcast->connection_id];
 
@@ -256,8 +253,8 @@ namespace PAMI
 	    else if (done) {
 	      _nActiveSends --;
 	      _sends[_nActiveSends] = NULL;
-	      if (_nActiveSends == 0)
-		_curBaseAddress = 0;
+	      //if (_nActiveSends == 0)
+	      //_curBaseAddress = 0;
 	    }	      
 	    TRACE_FN_EXIT();		    
 	  }
@@ -388,7 +385,7 @@ namespace PAMI
 	      if (ncomplete == model->_nActiveSends) {
 		model->_nActiveSends = 0;
 		model->_flags &= ~(POLLING_SENDS);
-		model->_curBaseAddress = 0;
+		//model->_curBaseAddress = 0;
 
 		TRACE_FN_EXIT();		    
 		return PAMI_SUCCESS;
@@ -408,7 +405,7 @@ namespace PAMI
 	  unsigned                                   _nActiveSends;
 	  unsigned                                   _flags;
 	  uint8_t                                    _recvIdVec[MAX_COUNTERS];
-	  uint64_t                                   _curBaseAddress;
+	  //uint64_t                                   _curBaseAddress;
 	  uint64_t                                   _counterShadowVec[MAX_COUNTERS]; //A list of shadow counters
 	  MulticastDmaRecv                         * _recvs[MAX_COUNTERS];
 	  InjectDPutMulticast                      * _sends[MAX_COUNTERS];

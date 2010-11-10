@@ -584,6 +584,20 @@ namespace PAMI
       }
     }
 
+    inline size_t torusSize_impl (size_t i) 
+    {
+      PAMI_assert (i < 6);
+      size_t sizes[6];
+      sizes[0] = _pers.aSize();
+      sizes[1] = _pers.bSize();
+      sizes[2] = _pers.cSize();
+      sizes[3] = _pers.dSize();
+      sizes[4] = _pers.eSize();
+      sizes[5] = _pers.tSize();
+      
+      return sizes[i];
+    }
+
     /// \see PAMI::Interface::Mapping::Node::node2task()
     inline pami_result_t node2task_impl (Interface::Mapping::nodeaddr_t address, size_t & task)
     {

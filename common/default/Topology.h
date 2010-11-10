@@ -570,7 +570,7 @@ namespace PAMI {
 
         for (i = 0; (size_t) i < mapping->globalDims(); i++)
         {
-          __size += topo_axial_urdim(i) - topo_axial_lldim(i);
+          __size += (mapping->torusSize(i) + topo_axial_urdim(i) - topo_axial_lldim(i)) % mapping->torusSize(i);
         }
       }
     /// \brief single rank constructor (PAMI_SINGLE_TOPOLOGY)

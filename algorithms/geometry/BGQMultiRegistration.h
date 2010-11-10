@@ -447,11 +447,17 @@ namespace PAMI
       CCMI::Schedule::TorusRect::getColors (t, ideal, max, _colors);
       TRACE_INIT((stderr, "get_rect_colors() bytes %u, ncolors %u, ideal %u, max %u\n", bytes, ncolors, ideal, max));
       
-      if (bytes < 2048) //4 packets
+      if (bytes <= 8192) //16 packets
         ideal = 1;
-      else if (bytes < 8192 && ideal >= 2) //4 packets
+      else if (bytes <= 65536 && ideal >= 2)
         ideal = 2;
-      
+      else if (bytes <= 262144 && ideal >= 3)
+        ideal = 3;
+      else if (bytes <= 1048576 && ideal >= 4)
+        ideal = 4;
+      else if (bytes <= 4194304 && ideal >= 6)
+        ideal = 6;
+
       if (ideal < ncolors)
         ncolors = ideal;  //Reduce the number of colors to the relavant colors
       
