@@ -21,8 +21,8 @@ namespace PAMI {
                 #define SEMID_BITS	((sizeof(void *) / 2) * 8)
                 #define SEMNO_BITS	SEMID_BITS
 
-                #define MAX_SEMID	((1 << SEMID_BITS) - 1)
-                #define MAX_SEMNO	((1 << SEMNO_BITS) - 1)
+                #define MAX_SEMID	((1UL << SEMID_BITS) - 1)
+                #define MAX_SEMNO	((1UL << SEMNO_BITS) - 1)
         public:
                 inline WakeupManager() :
                 Interface::WakeupManager<PAMI::WakeupManager>(),
@@ -36,7 +36,7 @@ namespace PAMI {
                         if (_semKey != IPC_PRIVATE) {
                                 return PAMI_ERROR;
                         }
-                        if (num > MAX_SEMNO) {
+                        if (num > (int)MAX_SEMNO) {
                                 return PAMI_ERROR;
                         }
                         key_t key = (key_t)setKey;
@@ -45,7 +45,7 @@ namespace PAMI {
                         if (rc < 0) {
                                 return PAMI_ERROR;
                         }
-                        if (rc > MAX_SEMID) {
+                        if (rc > (int)MAX_SEMID) {
                                 return PAMI_ERROR;
                         }
                         _semSet = rc;
@@ -58,7 +58,7 @@ namespace PAMI {
                         if (num >= _semNum || num < 0) {
                                 return NULL;
                         }
-                        size_t z = ((num + 1) << SEMNO_BITS) | _semSet;
+                        size_t z = ((num + 1UL) << SEMNO_BITS) | _semSet;
                         return (void *)z;
                 }
 
