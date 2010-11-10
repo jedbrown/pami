@@ -183,22 +183,21 @@ namespace PAMI
 	    int nidx = 2*i;
 	    int pidx = 2*i+1;
 	    int dstidx = (MAX_DIMS - i - 1) * 6;
-
+	    uint32_t dest = (me->Destination.Destination & ~(0x3f << dstidx));
+	    
 	    if (isTorus[i] == MESH) //Mesh
 	      {
 		//positive direction
 		if (ur->u.n_torus.coords[i] != ref->u.n_torus.coords[i]) {
 		  //printf ("HERE %d %ld \n\n", i, ur->u.n_torus.coords[i]);
-		  _destinations[_ndestinations].Destination.Destination = 
-		    (me->Destination.Destination & ~(0x3f << dstidx)) | (ur->u.n_torus.coords[i] << dstidx);
+		  _destinations[_ndestinations].Destination.Destination = dest | (ur->u.n_torus.coords[i] << dstidx);
 		  _fifos[_ndestinations] = pidx;
 		  _ndestinations ++;
 		}		
 	    
 		//negative direction
 		if (ll->u.n_torus.coords[i] != ref->u.n_torus.coords[i]) {
-		  _destinations[_ndestinations].Destination.Destination = 
-		    (me->Destination.Destination & ~(0x3f << dstidx))|(ll->u.n_torus.coords[i] << dstidx);
+		  _destinations[_ndestinations].Destination.Destination = dest | (ll->u.n_torus.coords[i] << dstidx);
 		  _fifos[_ndestinations] = nidx;
 		  _ndestinations ++;
 		}
@@ -206,22 +205,18 @@ namespace PAMI
 	    else if (isTorus[i] == TORUS_POSITIVE)
 	      {
 		if (ref->u.n_torus.coords[i] == ll->u.n_torus.coords[i])
-		  _destinations[_ndestinations].Destination.Destination =
-		    (me->Destination.Destination & ~(0x3f << dstidx))|(ur->u.n_torus.coords[i] << dstidx);
+		  _destinations[_ndestinations].Destination.Destination = dest | (ur->u.n_torus.coords[i] << dstidx);
 		else
-		  _destinations[_ndestinations].Destination.Destination =
-		    (me->Destination.Destination & ~(0x3f << dstidx))|((ref->u.n_torus.coords[i]-1) << dstidx);
+		  _destinations[_ndestinations].Destination.Destination = dest | ((ref->u.n_torus.coords[i]-1) << dstidx);
 		_fifos[_ndestinations] = pidx;
 		_ndestinations ++;
 	      }
 	    else if (isTorus[i] == TORUS_NEGATIVE)
 	      {
-		if (ref->u.n_torus.coords[i] == ur->u.n_torus.coords[i])
-		  _destinations[_ndestinations].Destination.Destination =
-		    (me->Destination.Destination & ~(0x3f << dstidx))|((ll->u.n_torus.coords[i]) << dstidx);
+		if (ref->u.n_torus.coords[i] == ur->u.n_torus.coords[i]) 
+		  _destinations[_ndestinations].Destination.Destination = dest | (ll->u.n_torus.coords[i] << dstidx);
 		else
-		  _destinations[_ndestinations].Destination.Destination =
-		    (me->Destination.Destination & ~(0x3f << dstidx))|((ref->u.n_torus.coords[i]+1) << dstidx);
+		  _destinations[_ndestinations].Destination.Destination = dest | ((ref->u.n_torus.coords[i]+1) << dstidx);
 		_fifos[_ndestinations] = nidx;
 		_ndestinations ++;
 	      }

@@ -453,10 +453,10 @@ namespace PAMI
         ideal = 2;
       else if (bytes <= 262144 && ideal >= 3)
         ideal = 3;
-      else if (bytes <= 1048576 && ideal >= 4)
-        ideal = 4;
-      else if (bytes <= 4194304 && ideal >= 6)
-        ideal = 6;
+      else if (bytes <= 1048576 && ideal >= 5)
+        ideal = 5;
+      else if (bytes <= 4194304 && ideal >= 8)
+        ideal = 8;
 
       if (ideal < ncolors)
         ncolors = ideal;  //Reduce the number of colors to the relavant colors

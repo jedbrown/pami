@@ -73,8 +73,7 @@ namespace PAMI
 	};
 
 	static const unsigned sizeof_msg = sizeof(InjectDPutMulticast);
-	static const unsigned POLLING_SENDS = 0x1;
-	static const unsigned POLLING_RECVS = 0x2;
+	static const unsigned POLLING = 0x1;
 	
 	MulticastDmaModel (MU::Context                 & device, 
 			   pami_result_t               & status) : 
@@ -245,16 +244,14 @@ namespace PAMI
 	    _nActiveSends ++;
 	    bool done = msg->advance();
 
-	    if (!done && !(_flags & POLLING_SENDS)) {
-	      _flags |= POLLING_SENDS;	      
-	      PAMI::Device::Generic::GenericThread *work = new (&_swork) PAMI::Device::Generic::GenericThread(advance_sends, this);
+	    if (!done && !_flags) {
+	      _flags |= POLLING;	      
+	      PAMI::Device::Generic::GenericThread *work = new (&_swork) PAMI::Device::Generic::GenericThread(advance, this);
 	      _mucontext.getProgressDevice()->postThread(work);
 	    }
 	    else if (done) {
 	      _nActiveSends --;
 	      _sends[_nActiveSends] = NULL;
-	      //if (_nActiveSends == 0)
-	      //_curBaseAddress = 0;
 	    }	      
 	    TRACE_FN_EXIT();		    
 	  }
@@ -272,7 +269,6 @@ namespace PAMI
 	    PAMI_assert(_recvs[idx] == NULL);
 
 	    //fprintf(stderr, "Processing recv for idx %d connid %d\n", idx, connid);
-
 	    _recvIdVec[idx] = connid;
 	    _counterVec[connid] = mcast->bytes;
 	    _counterShadowVec[idx] = mcast->bytes;
@@ -290,9 +286,9 @@ namespace PAMI
 	    _mucontext.setBatEntry (_b_batids[connid], paddr);
 	    //}
 
-	    if ((_flags & POLLING_RECVS) == 0) {
-	      _flags |= POLLING_RECVS;	      	      
-	      PAMI::Device::Generic::GenericThread *work = new (&_rwork) PAMI::Device::Generic::GenericThread(advance_recvs, this);
+	    if (_flags == 0) {
+	      _flags = POLLING; 
+	      PAMI::Device::Generic::GenericThread *work = new (&_rwork) PAMI::Device::Generic::GenericThread(advance, this);
 	      _mucontext.getProgressDevice()->postThread(work);
 	    }
 	    TRACE_FN_EXIT();		    
@@ -313,97 +309,86 @@ namespace PAMI
 	    return PAMI_SUCCESS;
 	  }
 
-	  static pami_result_t advance_recvs (pami_context_t     context,
-					      void             * cookie)
+	  static pami_result_t advance (pami_context_t     context,
+					void             * cookie) 
 	    {
-	      TRACE_FN_ENTER();
-	      unsigned i = 0, ncomplete = 0;
 	      MulticastDmaModel *model = (MulticastDmaModel *)cookie;
+	      model->advance_recvs(context);
+	      model->advance_sends (context);
+	      
+	      if (model->_nActiveRecvs == 0 && model->_nActiveSends ==0) {
+		model->_flags = 0;
+		return PAMI_SUCCESS;
+	      }
+	      return PAMI_EAGAIN;
+	    }
 
-	      for (i=0; i < model->_nActiveRecvs; i++)  {
-		if (model->_recvs[i] != NULL) {
-		  uint8_t cid = model->_recvIdVec[i];
-		  uint64_t cc = model->_counterVec[cid];
-		  if (cc != model->_counterShadowVec[i]) {
-		    mem_sync();
+	  void advance_recvs (pami_context_t     context)
+	  {
+	    TRACE_FN_ENTER();
+	    unsigned i = 0, ncomplete = 0;
 
-		    //printf("Advancing counter %d connid %d\n", i, cid);
-
-		    model->_recvs[i]->produceBytes (model->_counterShadowVec[i] - cc);
-		    model->_counterShadowVec[i] = cc;
-		  }
-		  
-		  //Trigger a send check on counter i??
-		  if (cc == 0) {
-		    ncomplete++;		      
-		    if (model->_recvs[i]->_fn)
-		      model->_recvs[i]->_fn (context, model->_recvs[i]->_cookie, PAMI_SUCCESS);
-		    model->_recvs[i] = NULL;
-		    model->_mucontext.setBatEntry (model->_b_batids[cid], 0);
-		  }
+	    for (i=0; i < _nActiveRecvs; i++)  {
+	      if (_recvs[i] != NULL) {
+		uint8_t cid = _recvIdVec[i];
+		uint64_t cc = _counterVec[cid];
+		uint32_t bytes = _counterShadowVec[i] - cc;
+		if (bytes > 0) {
+		  mem_sync();
+		  //printf("Advancing counter %d connid %d\n", i, cid);
+		    
+		  _recvs[i]->produceBytes (_counterShadowVec[i] - cc);
+		  _counterShadowVec[i] = cc;
 		}
-		else {
+		
+		//Trigger a send check on counter i??
+		if (cc == 0) {
+		  ncomplete++;		      
+		  if (_recvs[i]->_fn)
+		    _recvs[i]->_fn (context, _recvs[i]->_cookie, PAMI_SUCCESS);
+		  _recvs[i] = NULL;
+		  _mucontext.setBatEntry (_b_batids[cid], 0);
+		}
+	      }
+	      else {
+		ncomplete++;
+	      }
+	    }
+	    
+	    if (_nActiveRecvs == ncomplete) 
+	      _nActiveRecvs = 0;
+	  }
+	  
+
+	  void advance_sends (pami_context_t     context)
+	  {
+	    TRACE_FN_ENTER();
+	    unsigned i = 0, ncomplete = 0;	      
+	    for (i=0; i < _nActiveSends; i++)  {
+	      if (_sends[i] != NULL) {
+		bool done = _sends[i]->advance();
+		if (done) {
+		  _sends[i] = NULL;
 		  ncomplete++;
 		}
 	      }
-
-	      if (model->_nActiveRecvs == ncomplete) {
-		//printf ("All recvs completed\n");
-
-		//All connections of this collective have completed
-		model->_nActiveRecvs = 0;
-		model->_flags &= ~(POLLING_RECVS);
-		//model->_mucontext.setBatEntry (model->_batids[0], 0);
-		
-		TRACE_FN_EXIT();		    
-		return PAMI_SUCCESS;
-	      }
-	      
-	      TRACE_FN_EXIT();		    
-	      return PAMI_EAGAIN;
+	      else
+		ncomplete ++;
 	    }
-	  
+	    
+	    if (ncomplete == _nActiveSends) 
+	      _nActiveSends = 0;
+	  }
 
-	  static pami_result_t advance_sends (pami_context_t     context,
-					      void             * cookie)
-	    {
-	      TRACE_FN_ENTER();
-	      MulticastDmaModel *model = (MulticastDmaModel *)cookie;
-	      unsigned i = 0, ncomplete = 0;	      
-	      for (i=0; i < model->_nActiveSends; i++)  {
-		if (model->_sends[i] != NULL) {
-		  bool done = model->_sends[i]->advance();
-		  if (done) {
-		    model->_sends[i] = NULL;
-		    ncomplete++;
-		  }
-		}
-		else
-		  ncomplete ++;
-	      }
-
-	      if (ncomplete == model->_nActiveSends) {
-		model->_nActiveSends = 0;
-		model->_flags &= ~(POLLING_SENDS);
-		//model->_curBaseAddress = 0;
-
-		TRACE_FN_EXIT();		    
-		return PAMI_SUCCESS;
-	      }
-
-	      TRACE_FN_EXIT();	 
-	      return PAMI_EAGAIN;
-	    }
 	  
       protected:
-	  MUSPI_DescriptorBase                       _modeldesc;         /// Model descriptor
-	  uint16_t                                   _b_batids[MAX_COUNTERS];  /// The base address table id for payload
-	  uint16_t                                   _c_batid;             /// The base address table id for counter
-	  MUHWI_Destination_t                        _me;
 	  MU::Context                              & _mucontext;
 	  unsigned                                   _nActiveRecvs;
 	  unsigned                                   _nActiveSends;
 	  unsigned                                   _flags;
+	  uint16_t                                   _b_batids[MAX_COUNTERS];  /// The base address table id for payload
+	  uint16_t                                   _c_batid;             /// The base address table id for counter
+	  MUHWI_Destination_t                        _me;
 	  uint8_t                                    _recvIdVec[MAX_COUNTERS];
 	  //uint64_t                                   _curBaseAddress;
 	  uint64_t                                   _counterShadowVec[MAX_COUNTERS]; //A list of shadow counters
@@ -411,6 +396,7 @@ namespace PAMI
 	  InjectDPutMulticast                      * _sends[MAX_COUNTERS];
 	  pami_work_t                                _swork;	  
 	  pami_work_t                                _rwork;
+	  MUSPI_DescriptorBase                       _modeldesc;         /// Model descriptor
 
 	  ///These counters are indexed by the connetion id known to the remote node
 	  volatile uint64_t      _counterVec[MAX_COUNTERS] __attribute__((__aligned__(L1_DCACHE_LINE_SIZE)));

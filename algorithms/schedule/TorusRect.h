@@ -74,7 +74,7 @@ namespace CCMI
     class TorusRect: public CCMI::Interfaces::Schedule
     {
     public:
-      TorusRect(): _rect(), _map(NULL)
+      TorusRect(): _rect(*(PAMI::Topology*)NULL), _map(NULL)
       {
       }
 
@@ -92,7 +92,9 @@ namespace CCMI
         _ndims = _map->torusDims();
         _map->task2network(_map->task(), &_self_coord, PAMI_N_TORUS_NETWORK);
         DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, coord[%u]=%zu",_color,this, _map->task(), j, _self_coord.u.n_torus.coords[j]));
-        _rect.convertTopology(PAMI_COORD_TOPOLOGY);
+
+	if (_rect.type() != PAMI_COORD_TOPOLOGY) _rect.convertTopology(PAMI_COORD_TOPOLOGY);
+	
         PAMI_assert(_rect.type() == PAMI_COORD_TOPOLOGY);
         _rect.rectSeg(&_ll, &_ur, &_torus_link[0]);
         DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ll coord[%u]=%zu",_color,this, _map->task(), j, _ll.u.n_torus.coords[j]));
@@ -119,7 +121,7 @@ namespace CCMI
         unsigned int i;
         DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, coord[%u]=%zu",_color,this, _map->task(), j, _self_coord.u.n_torus.coords[j]));
 
-        _rect.convertTopology(PAMI_COORD_TOPOLOGY);
+	if (_rect.type() != PAMI_COORD_TOPOLOGY) _rect.convertTopology(PAMI_COORD_TOPOLOGY);
         PAMI_assert(_rect.type() == PAMI_COORD_TOPOLOGY);
         _rect.rectSeg(&_ll, &_ur, &_torus_link[0]);
         DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ll coord[%u]=%zu",_color,this, _map->task(), j, _ll.u.n_torus.coords[j]));
@@ -183,9 +185,11 @@ namespace CCMI
         size_t torus_dims, sizes[PAMI_MAX_DIMS];
 
         torus_dims = __global.mapping.torusDims();
-        PAMI::Topology tmp = *rect;
-        if (rect->type() != PAMI_COORD_TOPOLOGY) tmp.convertTopology(PAMI_COORD_TOPOLOGY);
-        tmp.rectSeg(&ll, &ur, &torus_link);
+//        PAMI::Topology tmp = *rect;
+//        if (rect->type() != PAMI_COORD_TOPOLOGY) tmp.convertTopology(PAMI_COORD_TOPOLOGY);
+//        tmp.rectSeg(&ll, &ur, &torus_link);
+        if (rect->type() != PAMI_COORD_TOPOLOGY) rect->convertTopology(PAMI_COORD_TOPOLOGY);
+        rect->rectSeg(&ll, &ur, &torus_link);
         for (i = 0; i < torus_dims; i++)
         {  
           sizes[i] = ur->u.n_torus.coords[i] - ll->u.n_torus.coords[i] + 1;
@@ -228,7 +232,7 @@ namespace CCMI
       unsigned int      _nphases;
       unsigned char     _torus_link[PAMI_MAX_DIMS];
       size_t            _dim_sizes[PAMI_MAX_DIMS];
-      PAMI::Topology     _rect;
+      PAMI::Topology    &_rect;
       PAMI_MAPPING_CLASS *_map;
 
       void setupBroadcast(int phase,  PAMI::Topology *topo);
