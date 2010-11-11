@@ -33,7 +33,6 @@
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
 #include "components/devices/mpi/MPIBcastMsg.h"
 #include "components/devices/mpi/MPISyncMsg.h"
-#include "algorithms/geometry/CCMICollRegistration.h"
 #include "algorithms/geometry/PGASCollRegistration.h"
 #include "algorithms/geometry/OldCCMICollRegistration.h"
 #include "algorithms/geometry/P2PCCMIRegistration.h"
