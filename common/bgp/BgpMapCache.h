@@ -14,6 +14,7 @@
 ///
 
 #include "common/bgp/BgpPersonality.h"
+#include "components/memory/MemoryManager.h"
 
 /// \brief Creates valid index into _rankcache[].
 ///
@@ -34,8 +35,7 @@ namespace PAMI
         inline ~BgpMapCache () {};
 
         inline size_t init (BgpPersonality & personality,
-                            void                   * ptr,
-                            size_t                   bytes
+                            PAMI::Memory::MemoryManager &mm
                             )
         {
           // This structure anchors pointers to the map cache and rank cache.
@@ -98,7 +98,9 @@ namespace PAMI
           pami_result_t result = mm.memalign((void **) & cacheAnchorsPtr, 16, sizeof(cacheAnchors_t));
 #warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
 #endif
-          cacheAnchorsPtr = (volatile cacheAnchors_t *) ptr;
+          pami_result_t result = mm.memalign((void **)&cacheAnchorsPtr, 0,
+			sizeof(*cacheAnchorsPtr), "/pami-bgp-cacheAnchors");
+	  PAMI_assertf(result == PAMI_SUCCESS, "alloc failed for cacheAnchorsPtr");
 
           // Determine if we are the master rank on our physical node.  Do this
           // by finding the lowest t coordinate on our node, and if it is us,

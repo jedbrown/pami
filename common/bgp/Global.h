@@ -80,7 +80,9 @@ namespace PAMI
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
 	  mm.init(shared_mm, size, 1, 1, 0, shmemfile);
+	  _mapcache.init (personality, mm);
 
+	  mapping.init(_mapcache, personality);
           lockboxFactory.init(&mapping);
           pami_coord_t ll, ur;
           size_t min, max;

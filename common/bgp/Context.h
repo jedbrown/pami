@@ -58,7 +58,7 @@
 
 namespace PAMI
 {
-  typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccInPlaceCounter>  ContextLock;
+  typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter>  ContextLock;
 
   typedef Fifo::FifoPacket <16, 256> ShmemPacket;
   typedef Fifo::LinearFifo<Counter::GccInPlaceCounter, ShmemPacket, 128> ShmemFifo;
@@ -243,7 +243,8 @@ namespace PAMI
 	strcpy(mms, "-mm");
 	_mm.init(pmm, bytes, 16, 16, 0, mmkey);
 
-        _lock.init();
+	strcpy(mms, "-lk");
+        _lock.init(&_mm, mmkey);
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
         _local_generic_device = & PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, clientid, id);
 
