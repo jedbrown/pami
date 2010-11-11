@@ -65,7 +65,7 @@ extern PAMI::Device::MPIDevice _g_mpi_device;
 namespace PAMI
 {
     // This won't work with XL
-    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccInPlaceCounter>  ContextLock;
+    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter>  ContextLock;
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice MPIDevice;
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
@@ -77,7 +77,6 @@ namespace PAMI
                                             MPIEagerBase,
                                             PAMI::Device::MPIBcastMdl,
                                             PAMI::Device::MPIBcastDev> P2PMcastProto;
-    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccInPlaceCounter>  ContextLock;
 
 #ifdef ENABLE_SHMEM_DEVICE
     typedef Fifo::FifoPacket <64, 1024>                            ShmemPacket;
@@ -319,7 +318,8 @@ namespace PAMI
 #endif // USE_WAKEUP_VECTORS
           _devices->init(_clientid, _contextid, _client, _context, &_mm);
           _mpi->init(&_mm, _clientid, num, (pami_context_t)this, id);
-          _lock.init();
+	  strcpy(mms, "-lk");
+          _lock.init(&_mm, mmkey);
 
           // this barrier is here because the shared memory init
           // needs to be synchronized
