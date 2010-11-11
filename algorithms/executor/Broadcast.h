@@ -39,6 +39,7 @@ namespace CCMI
         pami_task_t             _dstranks [MAX_PARALLEL];
         PAMI::Topology          _dsttopology;
         PAMI::Topology          _selftopology;
+        PAMI::Topology          _roottopology;
 
         CollHeaderData                               _mdata;
         T                                         *  _connmgr;
@@ -117,6 +118,7 @@ namespace CCMI
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setRoot()\n", this));
           _root = root;
+	  new (&_roottopology) PAMI::Topology(root);
         }
 
         void  setBuffers (char *src, char *dst, int len)
@@ -162,7 +164,7 @@ namespace CCMI
 
           TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives bytes %d, rank %d\n", this, _buflen, _selftopology.index2Rank(0)));
           mrecv.src_participants   = NULL; //current mechanism to identify a non-root node
-          mrecv.dst_participants   = (pami_topology_t *) & _selftopology;
+          mrecv.dst_participants   = (pami_topology_t *) & _roottopology; //& _selftopology;
 
           if (_dsttopology.size() == 0)
             {
