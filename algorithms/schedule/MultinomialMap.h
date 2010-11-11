@@ -191,8 +191,7 @@ namespace CCMI {
       unsigned              _xM;     /** My relative rank */
       unsigned              _nranks;  /** Number of ranks */
       unsigned              _hnranks; /** Nearest power of 2 */
-    };
-
+    };    
 
     class ListMap : public MultinomialMap<ListMap> {
     public:
@@ -210,17 +209,12 @@ namespace CCMI {
         /// In the future, maybe we do assert PAMI_LIST_TOPOLOGY but that would
         /// imply that we only support irregular geometries with multinomial protocols?
 	//      CCMI_assert (topology->type() == PAMI_LIST_TOPOLOGY);
-#if 0
-	if (topology->type() != PAMI_LIST_TOPOLOGY)
-	  topology->converttopology (PAMI_LIST_TOPOLOGY);	
-	topology->rankList(&_ranks);
-#else
+	//topology->rankList(&_ranks);
         _nranks = topology->size();
         _ranks = (pami_task_t*)malloc(_nranks * sizeof(pami_task_t));
         for(unsigned i = 0; i < _nranks; ++i) {
           _ranks[i] = topology->index2Rank(i);
         }
-#endif
 
         unsigned nph = 0;
         for(unsigned i = _nranks; i > 1; i >>= 1) {
@@ -256,7 +250,7 @@ namespace CCMI {
       /// \param [in] rank the rank of the processor
       ///
       bool isAuxProc   (unsigned rank) {
-        if (rank >= _hnranks)
+	if (rank >= _hnranks)
           return true;
         return false;
       }
@@ -322,6 +316,96 @@ namespace CCMI {
       unsigned              _hnranks;   /** Nearest power of 2 */
       unsigned              _rootindex; /** Index of the root */
       unsigned              _myindex;   /** Index of my node */
+    };
+    
+    class TopologyMap : public MultinomialMap<TopologyMap> {
+    public:
+      TopologyMap () {}
+      
+      TopologyMap (unsigned myrank, PAMI::Topology *topology) : _myindex(myrank), _topology(topology)
+	{
+	  unsigned nph = 0;
+	  for(unsigned i = topology->size(); i > 1; i >>= 1) {
+	    nph++;
+	  }
+	  _hnranks = 1 << nph;
+	  _rootindex = 0;
+	}
+	
+	~TopologyMap () {}
+	
+	void setRoot (unsigned gr) {
+	  _rootindex = _topology->rank2Index((pami_task_t)gr);
+	}
+	
+	///
+	/// \brief Is the rank an auxilary processor
+	/// \param [in] rank the rank of the processor
+	///
+	bool isAuxProc   (unsigned rank) {
+	  if (rank >= _hnranks)
+	    return true;
+	  return false;
+	}
+	
+	///
+	/// \brief Is the rank a peer processor that takes the data from
+	///        the auxillary processor and participates in the
+	///        binomial collective. At the end of the collective
+	///        operation result will be returned to the auxillary
+	///        processor
+	/// \param [in] the rank of the processor
+	///
+	bool isPeerProc  (unsigned rank) {
+	  if (rank < (_topology->size() - _hnranks))
+	    return true;
+	  return false;
+	}
+	
+	///
+	/// \brief Get the aux processor for this peer processor
+	/// \param [in] the rank of the aux processor
+	/// \retval the rank of the peer processor
+	///
+	unsigned  getAuxForPeer (unsigned rank){
+	  return rank + _hnranks;
+	}
+	
+	///
+	/// \brief Get the rank of the peer processor for the aux processor
+	/// \param [in] The rank of the peer processor
+	/// \retval the rank of the aux processor
+	///
+	unsigned  getPeerForAux (unsigned rank) {
+	  return rank - _hnranks;
+	}
+
+	///
+	/// \brief Convert the rank to the global rank for the msend
+	///        interface
+	///
+	unsigned getGlobalRank (unsigned relrank) {
+	  relrank += _rootindex;
+	  return _topology->index2Rank(relrank);
+	}
+	
+	///
+	/// \brief Get my rank in the collective
+	///
+	unsigned getMyRank () {
+	  if (_myindex >= _rootindex)
+	    return _myindex - _rootindex;
+	  
+	  return _myindex + _topology->size() - _rootindex;
+	}
+	
+	unsigned getNumRanks () { return _topology->size(); }
+	
+    protected:
+	size_t              _hnranks;   /** Nearest power of 2 */
+	size_t              _rootindex; /** Index of the root */
+	size_t              _myindex;   /** Index of my node */
+	PAMI::Topology      * _topology;  
     };
   };
 };

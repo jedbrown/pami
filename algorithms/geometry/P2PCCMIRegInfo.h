@@ -66,7 +66,7 @@ namespace CCMI
       }
 
       typedef CCMI::Adaptor::Barrier::BarrierT
-      < CCMI::Schedule::ListMultinomial,
+      < CCMI::Schedule::TopoMultinomial,
         binomial_analyze >
       BinomialBarrier;
 
@@ -177,7 +177,7 @@ namespace CCMI
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
       < 1,
-        CCMI::Schedule::ListMultinomial,
+        CCMI::Schedule::TopoMultinomial,
         CCMI::ConnectionManager::ColorGeometryConnMgr,
         get_colors >
       BinomialBroadcastComposite;
@@ -222,7 +222,7 @@ namespace CCMI
                            PAMI_GEOMETRY_CLASS         * g)
       {
         TRACE_INIT((stderr, "<%p>AsyncRBBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
-        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
+        new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
       unsigned getKey(unsigned                                                root,
@@ -241,7 +241,7 @@ namespace CCMI
                               PAMI_GEOMETRY_CLASS          * g)
       {
         TRACE_INIT((stderr, "<%p>AsyncCSBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
-        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
+        new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
       unsigned getKey_as(unsigned                                   root,
@@ -261,7 +261,7 @@ namespace CCMI
       }
 
       typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
-      < CCMI::Schedule::ListMultinomial,
+      < CCMI::Schedule::TopoMultinomial,
         CCMI::ConnectionManager::RankBasedConnMgr,
         create_schedule>
       AsyncRBBinomialBroadcastComposite;
@@ -275,7 +275,7 @@ namespace CCMI
 
 
       typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
-      < CCMI::Schedule::ListMultinomial,
+      < CCMI::Schedule::TopoMultinomial,
         CCMI::ConnectionManager::CommSeqConnMgr,
         create_schedule_as > AsyncCSBinomialBroadcastComposite;
 
@@ -303,11 +303,11 @@ namespace CCMI
                            PAMI_GEOMETRY_CLASS          * g)
       {
         TRACE_INIT((stderr, "<%p>AMBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
-        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
+        new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
       typedef CCMI::Adaptor::AMBroadcast::AMBroadcastT
-      < CCMI::Schedule::ListMultinomial,
+      < CCMI::Schedule::TopoMultinomial,
         CCMI::ConnectionManager::RankBasedConnMgr,
         create_schedule>
       AMBinomialBroadcastComposite;
@@ -349,7 +349,7 @@ namespace CCMI
 
         typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT
         < 1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
-          CCMI::Schedule::ListMultinomial,
+          CCMI::Schedule::TopoMultinomial,
           CCMI::ConnectionManager::RankBasedConnMgr,
           get_colors > Composite;
 
@@ -386,7 +386,7 @@ namespace CCMI
           strcpy(&m->name[0],"CCMI_ASCS_BinomialAllreduce");
        }
 
-       typedef CCMI::Adaptor::Allreduce::AsyncAllreduceT<CCMI::Schedule::ListMultinomial,
+       typedef CCMI::Adaptor::Allreduce::AsyncAllreduceT<CCMI::Schedule::TopoMultinomial,
          CCMI::ConnectionManager::CommSeqConnMgr, pami_allreduce_t>
          AsyncCSBinomAllreduceComposite;
        typedef CCMI::Adaptor::Allreduce::AsyncAllreduceFactoryT<AsyncCSBinomAllreduceComposite,
@@ -399,7 +399,7 @@ namespace CCMI
          strcpy(&m->name[0],"CCMI_ASCS_BinomialReduce");
        }
 
-       typedef CCMI::Adaptor::Allreduce::AsyncAllreduceT<CCMI::Schedule::ListMultinomial,
+       typedef CCMI::Adaptor::Allreduce::AsyncAllreduceT<CCMI::Schedule::TopoMultinomial,
          CCMI::ConnectionManager::CommSeqConnMgr, pami_reduce_t>
          AsyncCSBinomReduceComposite;
        typedef CCMI::Adaptor::Allreduce::AsyncAllreduceFactoryT<AsyncCSBinomReduceComposite,
@@ -593,7 +593,7 @@ namespace CCMI
          strcpy(&m->name[0],"CCMI_ASCS_ReduceScatter");
        }
 
-       typedef CCMI::Adaptor::Allreduce::AsyncReduceScatterT<CCMI::Schedule::ListMultinomial,
+       typedef CCMI::Adaptor::Allreduce::AsyncReduceScatterT<CCMI::Schedule::TopoMultinomial,
          CCMI::Schedule::GenericTreeSchedule<1, 1, 1>,
          CCMI::ConnectionManager::CommSeqConnMgr, create_schedule>
          AsyncCSReduceScatterComposite;

@@ -142,11 +142,13 @@ namespace CCMI
               nph++;
             }
 
+#if 0  //Commenting out high radix till we have a fast packet M*
           //Capping the number of phases
           if ((nranks <= 4096) && (nph % 3) == 0)  //multiple of 3
             radix = 8;
           else if ((nph & 1) == 0) //multiple of 2
             radix = 4;
+#endif
 
           TRACE_SCHEDULE ((stderr, "<> getRadix() nranks %u, radiz %u\n",nranks,radix));
           return radix;
@@ -420,6 +422,7 @@ namespace CCMI
 
     typedef MultinomialTreeT<LinearMap>  LinearMultinomial;
     typedef MultinomialTreeT<ListMap> ListMultinomial;
+    typedef MultinomialTreeT<TopologyMap> TopoMultinomial;
   };   //Schedule
 }; //CCMI
 
