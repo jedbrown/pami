@@ -471,6 +471,7 @@ namespace PAMI
                                          _lapi_device2,
                                          &_dispatch_id,
                                          _geometry_map);
+          _world_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
           _pgas_collreg->analyze(_contextid,_world_geometry);
           return PAMI_SUCCESS;
         }

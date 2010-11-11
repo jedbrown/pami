@@ -470,6 +470,7 @@ namespace PAMI
             }
             for(size_t n=0; n<_ncontexts; n++)
               {
+                new_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
                 _contexts[n]->_pgas_collreg->analyze_local(n,new_geometry,&to_reduce[0]);
                 _contexts[n]->_p2p_ccmi_collreg->analyze_local(n,new_geometry,&to_reduce[1]);
                 _contexts[n]->_cau_collreg->analyze_local(n,new_geometry,&to_reduce[2]);
@@ -588,6 +589,7 @@ namespace PAMI
             }
             for(size_t n=0; n<_ncontexts; n++)
               {
+                new_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
                 _contexts[n]->_pgas_collreg->analyze_local(n,new_geometry,&to_reduce[0]);
                 _contexts[n]->_p2p_ccmi_collreg->analyze_local(n,new_geometry,&to_reduce[1]);
                 _contexts[n]->_cau_collreg->analyze_local(n,new_geometry,&to_reduce[2]);

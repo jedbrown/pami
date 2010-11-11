@@ -91,6 +91,7 @@ namespace PAMI
           (*_geometry_map)[_commid]=this;
           _virtual_rank    =  _global_all_topo->rank2Index(_rank);
           PAMI_assert(_virtual_rank != -1);
+          resetUEBarrier_impl();
         }
       
       inline Lapi (pami_client_t                        client,
@@ -189,6 +190,7 @@ namespace PAMI
           PAMI_assert(rc == PAMI_SUCCESS);
           _virtual_rank    =  _global_all_topo->rank2Index(_rank);
           PAMI_assert(_virtual_rank != -1);
+          resetUEBarrier_impl();
         }
 
       inline void regenTopo()
@@ -214,6 +216,7 @@ namespace PAMI
           free(_local_master_topo);
           free(_my_master_topo);
           free(_local_topo);
+          resetUEBarrier_impl();
         }
       
       inline bool isLocalMasterParticipant_impl()
@@ -448,7 +451,7 @@ namespace PAMI
       inline void                       setKey_impl(size_t context_id, ckeys_t key, void*value)
         {
           PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
-          TRACE_ERR((stderr, "<%p>Common::setKey(%d, %p)\n", this, key, value));
+          TRACE_ERR((stderr, "<%p>Lapi::setKey(%d, %p)\n", this, key, value));
           _kvcstore[context_id][key]=value;
         }
 
@@ -456,7 +459,7 @@ namespace PAMI
         {
           PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
           void * value = _kvcstore[context_id][key];
-          TRACE_ERR((stderr, "<%p>Common::getKey(%d, %p)\n", this, key, value));
+          TRACE_ERR((stderr, "<%p>Lapi::getKey(%d, %p)\n", this, key, value));
           return value;
         }
 
@@ -611,27 +614,39 @@ namespace PAMI
           return _barriers[ctxt_id]._algo_list[0]->generate(&cmd);
         }
 
-      pami_result_t ue_barrier(pami_event_function     cb_done,
+      pami_result_t ue_barrier_impl(pami_event_function     cb_done,
                                void                   *cookie,
                                size_t                  ctxt_id,
                                pami_context_t          context)
         {
-          TRACE_ERR((stderr, "<%p>Common::ue_barrier()\n", this));
+          TRACE_ERR((stderr, "<%p>Lapi::ue_barrier()\n", this));
+          PAMI_assert (_ue_barrier._factory != NULL);
+
           pami_xfer_t cmd;
           cmd.cb_done=cb_done;
           cmd.cookie =cookie;
           return _ue_barrier.generate(&cmd);
+
         }
 
+      void resetUEBarrier_impl()
+        {
+          _ue_barrier._factory  = (CCMI::Adaptor::CollectiveProtocolFactory*)NULL;
+          _ue_barrier._geometry = (PAMI::Geometry::Lapi*)NULL;
+        }
+
+      void setUEBarrier_impl(CCMI::Adaptor::CollectiveProtocolFactory *f)
+        {
+            if(_ue_barrier._factory == (CCMI::Adaptor::CollectiveProtocolFactory*)NULL)
+            {
+              _ue_barrier._factory  =f;
+              _ue_barrier._geometry =this;
+          }
+        }
 
       pami_client_t getClient_impl()
         {
           return _client;
-        }
-      void setUEBarrier(CCMI::Adaptor::CollectiveProtocolFactory *f)
-        {
-          _ue_barrier._factory  =f;
-          _ue_barrier._geometry =this;
         }
     private:
       AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _allreduces[PAMI_GEOMETRY_NUMALGOLISTS];

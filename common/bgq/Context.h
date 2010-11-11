@@ -519,7 +519,9 @@ namespace PAMI
         // Can always use MU if it's available
         if (_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, _world_geometry, 0);
 
+        _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
         _ccmi_registration->analyze(_contextid, _world_geometry, 0);
+
         _multi_registration->analyze(_contextid, _world_geometry, 0);
 
         // for now, this is the only registration that has a phase 1...
@@ -1054,6 +1056,7 @@ namespace PAMI
         // Can always use MU if it's available
         if (phase == 0 && _pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, geometry, phase);
 
+        geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
         _ccmi_registration->analyze(context_id, geometry, phase);
 
         _multi_registration->analyze(context_id, geometry, phase);

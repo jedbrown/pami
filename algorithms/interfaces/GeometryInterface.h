@@ -150,6 +150,10 @@ namespace PAMI
       inline void                       setKey(size_t context_id, ckeys_t key, void*value);
       inline void                      *getKey(gkeys_t key);
       inline void                      *getKey(size_t context_id, ckeys_t key);
+      inline pami_result_t              ue_barrier(pami_event_function,void*,size_t,pami_context_t);
+      inline void                       resetUEBarrier();
+      inline void                       setUEBarrier(CCMI::Adaptor::CollectiveProtocolFactory *f);
+
 
       // API support
       inline pami_result_t algorithms_num(pami_xfer_type_t  colltype,
@@ -504,6 +508,27 @@ namespace PAMI
     inline void*                       Geometry<T_Geometry>::getKey (size_t context_id, ckeys_t key)
     {
       return static_cast<T_Geometry*>(this)->getKey_impl(context_id, key);
+    }
+
+    template <class T_Geometry>
+    inline pami_result_t               Geometry<T_Geometry>::ue_barrier(pami_event_function      cb_done,
+                                                                        void               *cookie,
+                                                                        size_t              ctxt_id,
+                                                                        pami_context_t      context)
+    {
+      return static_cast<T_Geometry*>(this)->ue_barrier_impl(cb_done, cookie, ctxt_id, context);
+    }
+
+    template <class T_Geometry>
+    inline void                        Geometry<T_Geometry>::resetUEBarrier()
+    {
+      return static_cast<T_Geometry*>(this)->resetUEBarrier_impl();
+    }
+
+    template <class T_Geometry>
+    inline void                        Geometry<T_Geometry>::setUEBarrier(CCMI::Adaptor::CollectiveProtocolFactory *f)
+    {
+      return static_cast<T_Geometry*>(this)->setUEBarrier_impl(f);
     }
 
     template <class T_Geometry>

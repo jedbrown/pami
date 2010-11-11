@@ -131,11 +131,6 @@ namespace PAMI
                                   MPIMulticombineModel,
                                   AllSided>              DefaultNativeInterfaceAS;
 
-  typedef CollRegistration::CCMIRegistration<MPIGeometry,
-                                             DefaultNativeInterface,
-                                             DefaultNativeInterfaceAS,
-                                             MPIDevice> CCMICollreg;
-
  typedef CollRegistration::P2P::CCMIRegistration<MPIGeometry,
                                                  ShmemDevice,
                                                  MPIDevice,
@@ -341,6 +336,7 @@ namespace PAMI
 
           _pgas_collreg=(PGASCollreg*) malloc(sizeof(*_pgas_collreg));
           new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi, &_dispatch_id,_geometry_map);
+          _world_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
           _pgas_collreg->analyze(_contextid,_world_geometry);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
 
@@ -362,11 +358,6 @@ namespace PAMI
           _oldccmi_collreg=(OldCCMICollreg*) malloc(sizeof(*_oldccmi_collreg));
           new(_oldccmi_collreg) OldCCMICollreg(client, (pami_context_t)this, id,*_mpi,_geometry_map);
           _oldccmi_collreg->analyze(_contextid, _world_geometry);
-
-          _ccmi_collreg=(CCMICollreg*) malloc(sizeof(*_ccmi_collreg));
-          new(_ccmi_collreg) CCMICollreg(client, (pami_context_t)this, id,clientid,*_mpi,_geometry_map);
-          _ccmi_collreg->analyze(_contextid, _world_geometry);
-
 
 
 
@@ -786,7 +777,6 @@ namespace PAMI
       MemoryAllocator<4096,16>  _request;
       MPIDevice                *_mpi;
   public:
-      CCMICollreg               *_ccmi_collreg;
       P2PCCMICollreg            *_p2p_ccmi_collreg;
       PGASCollreg               *_pgas_collreg;
       OldCCMICollreg            *_oldccmi_collreg;

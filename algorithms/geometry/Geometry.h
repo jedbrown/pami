@@ -55,19 +55,20 @@ namespace PAMI
                     unsigned                          comm,
                     pami_task_t                       nranks,
                     pami_task_t                      *ranks,
-		    std::map<unsigned, pami_geometry_t> *geometry_map):
+                    std::map<unsigned, pami_geometry_t> *geometry_map):
         Geometry<PAMI::Geometry::Common>(parent,
                                          mapping,
                                          comm,
                                          nranks,
                                          ranks),
-	_kvstore(),                                                                                                      
+        _kvstore(),                                                                                                      
         _commid(comm),                                                                                                   
         _client(client),                                                                                                 
         _geometry_map(geometry_map),                                                                                     
         _masterRank(-1)
         {
           TRACE_ERR((stderr, "<%p>Common()\n", this));
+          resetUEBarrier_impl();
         }
       inline Common (pami_client_t                        client,
                      Geometry<PAMI::Geometry::Common>    *parent,
@@ -156,7 +157,7 @@ namespace PAMI
 
 	  (*_geometry_map)[_commid]=this;
 
-	  _ue_barrier._factory = NULL;
+    resetUEBarrier_impl();
 
         }
       inline Common (pami_client_t                    client,
@@ -204,7 +205,7 @@ namespace PAMI
               };
 	  (*_geometry_map)[_commid]=this;
 
-	  _ue_barrier._factory = NULL;
+          resetUEBarrier_impl();
         }
 
        /// \brief Convenience callback used by geometry completion sub-events
@@ -700,30 +701,38 @@ namespace PAMI
           return _barriers[ctxt_id]._algo_list[0]->generate(&cmd);
         }
 
-      pami_result_t ue_barrier(pami_event_function     cb_done,
-                               void                   *cookie,
-                               size_t                  ctxt_id,
-                               pami_context_t          context)
+      pami_result_t ue_barrier_impl(pami_event_function     cb_done,
+                                    void                   *cookie,
+                                    size_t                  ctxt_id,
+                                    pami_context_t          context)
         {
           TRACE_ERR((stderr, "<%p>Common::ue_barrier()\n", this));
+          PAMI_assert (_ue_barrier._factory != NULL);
+
           pami_xfer_t cmd;
           cmd.cb_done=cb_done;
           cmd.cookie =cookie;
-
-	  PAMI_assert (_ue_barrier._factory != NULL);
-	  
           return _ue_barrier.generate(&cmd);
+        }
+
+      void resetUEBarrier_impl()
+        {
+          _ue_barrier._factory  = (CCMI::Adaptor::CollectiveProtocolFactory*)NULL;
+          _ue_barrier._geometry = (PAMI::Geometry::Common*)NULL;
+        }
+
+      void setUEBarrier_impl(CCMI::Adaptor::CollectiveProtocolFactory *f)
+        {
+          if(_ue_barrier._factory == (CCMI::Adaptor::CollectiveProtocolFactory*)NULL)
+          {
+            _ue_barrier._factory  =f;
+            _ue_barrier._geometry =this;
+          }
         }
 
       pami_client_t getClient_impl()
         {
           return _client;
-        }
-
-      void setUEBarrier(CCMI::Adaptor::CollectiveProtocolFactory *f)
-        {
-          _ue_barrier._factory  =f;
-          _ue_barrier._geometry =this;
         }
 
 
